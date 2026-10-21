@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/dotnet_managed_work_controls.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Reviewed fixed fifteen CLR Task state cases over copied production registry core with explicit test ledger and dispatcher ports; source pinned before/after, SDK10.0.100, no guest credit.",
+  "reviewReason": "Preserve fifteen state controls and append actual production abort-rewriter RED GREEN and full rewrite over pinned original assembly.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "8576d829cf340b845a66e0706bc6f7f0471669cfd027da7f38952a98f0287bf8"
+  "sha256": "80a1dca5807597bef97002cfd137c9dc31a0ec765b8c79e746533a264bb72360"
 }

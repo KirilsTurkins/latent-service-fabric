@@ -85,3 +85,34 @@ Observer failures retain bounded partial streams and public peer state before
 the original failure is rethrown. Private fixture credentials and signing keys
 are excluded from upload paths. This programme alone does not close #693 or
 the broader #746 runtime ticket.
+
+
+The selected managed-work attempt at source
+`5daaa3cd3b344e4cd30544f3ed3e567ced48f344`, run `39555677333`,
+job `119074781821`, remains failed. All 15 actual CLR state controls passed;
+NativeAOT, signing, admission and modes 0 through 7 passed. Mode 8 returned
+`unreachable-code` with zero outbound requests instead of the required
+`HttpRequestException`; later mixed and tenant cases did not run. Artifact
+`12325658266` retains the original component, compiler observations, package
+and raw failed result. No successful mode 8 or accepted-child closing result
+is inferred from that attempt.
+
+The subsequent compiler correction changes only the original request wrapper's
+output-stream cleanup call. The pinned BCL `Stream.Dispose()` dispatches the
+successful `WasiOutputStream.Close()`, which finishes the body and can replace
+the original failed-request exception. Error/abandonment cleanup now calls the
+same stream's original protected `Dispose(true)` and original GC suppression;
+that path aborts the body. The normal successful close, input cleanup and future
+cleanup retain their original bodies. Exact original method hashes and the
+selected cleanup call site are checked before rewriting. The separate closed
+receipt remains explicitly unqualified.
+
+A reproducible CLR control copies the three exact original cleanup bodies into
+explicit resource ports, then invokes the production rewriter for the corrected
+variant. The old variant replaces the original `HttpRequestException`; the new
+variant preserves that same exception object and completes body, input and
+future cleanup. Both variants retain the same successful body-finish sequence.
+These are causal CLR controls, not an observation of a private guest trap frame
+or physical WASI retirement. The owning job runs them against the pinned original
+HTTP assembly after normal compiler installation, before a fresh NativeAOT
+component. Guest mode 8 and every later original oracle remain mandatory.

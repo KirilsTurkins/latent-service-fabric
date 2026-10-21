@@ -81,6 +81,10 @@
         "shell": "bash"
       },
       {
+        "name": "Execute actual failed-request cleanup RED and GREEN controls",
+        "run": "python3 -B tools/dotnet_managed_work_controls.py --dotnet \"$(command -v dotnet)\" --http-abort-tools \"$RUNNER_TEMP/mixed-tools\" --output \"$RUNNER_TEMP/http-abort-controls\""
+      },
+      {
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
@@ -98,7 +102,7 @@
         "with": {
           "if-no-files-found": "warn",
           "name": "dotnet-http-mixed-${{ github.sha }}",
-          "path": "${{ runner.temp }}/mixed-native/*.json\n${{ runner.temp }}/managed-work-state-controls/state-controls.json\n${{ runner.temp }}/managed-work-state-controls/logs/**\n${{ runner.temp }}/mixed-tools/INSTALL-COMPLETE.json\n${{ runner.temp }}/mixed-tools/runtime-inputs.json\n${{ runner.temp }}/mixed-tools/wasi-sdk.json\n${{ runner.temp }}/mixed-tools/logs/**\n${{ runner.temp }}/managed-http-mixed/*.json\n${{ runner.temp }}/managed-http-mixed/reference/reference.json\n${{ runner.temp }}/managed-http-mixed/reference/logs/**\n${{ runner.temp }}/managed-http-mixed/build/*.json\n${{ runner.temp }}/managed-http-mixed/build/compiler.*.txt\n${{ runner.temp }}/managed-http-mixed/build/component.wasm\n${{ runner.temp }}/managed-http-mixed/build/native-aot-raw.wasm\n${{ runner.temp }}/managed-http-mixed/build/native-aot-original.wasm\n${{ runner.temp }}/managed-http-mixed/build/derived-*.dll\n${{ runner.temp }}/managed-http-mixed/build/package/**\n${{ runner.temp }}/managed-http-mixed/build/wit/**\n${{ runner.temp }}/managed-http-mixed/build/logs/**\n${{ runner.temp }}/managed-http-mixed/node/*.json\n${{ runner.temp }}/managed-http-mixed/node/controls/*.json\n${{ runner.temp }}/managed-http-mixed/node/controls/*-partial.stdout\n${{ runner.temp }}/managed-http-mixed/node/controls/*-partial.stderr\n${{ runner.temp }}/managed-http-mixed/tenants/*.json\n${{ runner.temp }}/managed-http-mixed/tenants/examples-controls/*.json\n${{ runner.temp }}/managed-http-mixed/tenants/examples-controls/*-partial.stdout\n${{ runner.temp }}/managed-http-mixed/tenants/examples-controls/*-partial.stderr\n${{ runner.temp }}/managed-http-mixed/tenants/foreign-controls/*.json\n${{ runner.temp }}/managed-http-mixed/tenants/foreign-controls/*-partial.stdout\n${{ runner.temp }}/managed-http-mixed/tenants/foreign-controls/*-partial.stderr\n",
+          "path": "${{ runner.temp }}/mixed-native/*.json\n${{ runner.temp }}/managed-work-state-controls/state-controls.json\n${{ runner.temp }}/managed-work-state-controls/logs/**\n${{ runner.temp }}/http-abort-controls/abort-controls.json\n${{ runner.temp }}/http-abort-controls/rewrite.json\n${{ runner.temp }}/http-abort-controls/logs/**\n${{ runner.temp }}/mixed-tools/INSTALL-COMPLETE.json\n${{ runner.temp }}/mixed-tools/runtime-inputs.json\n${{ runner.temp }}/mixed-tools/wasi-sdk.json\n${{ runner.temp }}/mixed-tools/logs/**\n${{ runner.temp }}/managed-http-mixed/*.json\n${{ runner.temp }}/managed-http-mixed/reference/reference.json\n${{ runner.temp }}/managed-http-mixed/reference/logs/**\n${{ runner.temp }}/managed-http-mixed/build/*.json\n${{ runner.temp }}/managed-http-mixed/build/compiler.*.txt\n${{ runner.temp }}/managed-http-mixed/build/component.wasm\n${{ runner.temp }}/managed-http-mixed/build/native-aot-raw.wasm\n${{ runner.temp }}/managed-http-mixed/build/native-aot-original.wasm\n${{ runner.temp }}/managed-http-mixed/build/derived-*.dll\n${{ runner.temp }}/managed-http-mixed/build/package/**\n${{ runner.temp }}/managed-http-mixed/build/wit/**\n${{ runner.temp }}/managed-http-mixed/build/logs/**\n${{ runner.temp }}/managed-http-mixed/node/*.json\n${{ runner.temp }}/managed-http-mixed/node/controls/*.json\n${{ runner.temp }}/managed-http-mixed/node/controls/*-partial.stdout\n${{ runner.temp }}/managed-http-mixed/node/controls/*-partial.stderr\n${{ runner.temp }}/managed-http-mixed/tenants/*.json\n${{ runner.temp }}/managed-http-mixed/tenants/examples-controls/*.json\n${{ runner.temp }}/managed-http-mixed/tenants/examples-controls/*-partial.stdout\n${{ runner.temp }}/managed-http-mixed/tenants/examples-controls/*-partial.stderr\n${{ runner.temp }}/managed-http-mixed/tenants/foreign-controls/*.json\n${{ runner.temp }}/managed-http-mixed/tenants/foreign-controls/*-partial.stdout\n${{ runner.temp }}/managed-http-mixed/tenants/foreign-controls/*-partial.stderr\n",
           "retention-days": 3
         }
       }
@@ -107,7 +111,7 @@
   },
   "jobId": "mixed-content",
   "kind": "job",
-  "reviewReason": "Preserve original mixed command and limits; append exact managed private-contract controls, fifteen actual CLR Task controls with explicit test ports, and bounded public control logs.",
+  "reviewReason": "Preserve all original commands and append source-bound actual failed-request cleanup RED and GREEN controls plus fixed public receipts.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-published-http.yml"
 }

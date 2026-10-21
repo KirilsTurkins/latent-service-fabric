@@ -132,6 +132,7 @@ internal static class Program
             var selectedMethods = module.GetTypes().SelectMany(type => type.Methods)
                 .ToDictionary(method => method.FullName, method => TaskWait.BodyIdentity(method));
             object? requiredContent = managedWork ? ManagedHttpWork.Apply(module) : null;
+            object? abortCleanup = managedWork ? ManagedHttpWork.AbortCleanup(module) : null;
             if (managedWork)
                 selectedMethods = module.GetTypes().SelectMany(type => type.Methods)
                     .ToDictionary(method => method.FullName, method => TaskWait.BodyIdentity(method));
@@ -162,6 +163,8 @@ internal static class Program
                 result["synchronousRead"] = JsonSerializer.SerializeToNode(syncRead);
             if (requiredContent is not null)
                 result["requiredContentWork"] = JsonSerializer.SerializeToNode(requiredContent);
+            if (abortCleanup is not null)
+                result["requestAbortCleanup"] = JsonSerializer.SerializeToNode(abortCleanup);
             using var receiptOutput = new FileStream(receipt, FileMode.CreateNew, FileAccess.Write, FileShare.None);
             JsonSerializer.Serialize(receiptOutput, result);
             Console.WriteLine(JsonSerializer.Serialize(result));

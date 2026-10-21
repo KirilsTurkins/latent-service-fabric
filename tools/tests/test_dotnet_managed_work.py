@@ -134,5 +134,19 @@ class ManagedWorkContractTests(unittest.TestCase):
                 work.validate_http_rewrite({**work.HTTP_REWRITE,key:changed})
 
 
+    def test_failed_request_cleanup_requires_exact_abort_and_preserves_successful_finish(self):
+        work.validate_abort_rewrite(copy.deepcopy(work.ABORT_REWRITE))
+        for key, expected in work.ABORT_REWRITE.items():
+            if type(expected) is bool: changed = not expected
+            elif type(expected) is int: changed = True
+            else: changed = expected + '-changed'
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                work.validate_abort_rewrite({**work.ABORT_REWRITE, key: changed})
+        for value in (None, [], {**work.ABORT_REWRITE, 'extra': False},
+                      {key: value for key, value in work.ABORT_REWRITE.items() if key != 'originalFailure'}):
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                work.validate_abort_rewrite(value)
+
+
 if __name__ == '__main__':
     unittest.main()

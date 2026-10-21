@@ -149,3 +149,23 @@ def validate_http_rewrite(value: dict) -> None:
             or any(type(value.get(key)) is not type(expected) or value[key] != expected
                 for key, expected in HTTP_REWRITE.items())):
         raise ValueError('dotnet-required-content-work-rewrite-receipt')
+
+
+ABORT_REWRITE = {
+    'profile': 'dotnet-request-abort-cleanup-v1',
+    'method': 'System.Void System.Net.Http.WasiRequestWrapper::Dispose()',
+    'originalBodyDigest': 'sha256:63c5a116d410596de909966cc8c43e574d39491496edeeaa8db44ed31e65be8f',
+    'successfulCloseBodyDigest': 'sha256:f7bdf561babff64617ae550ac89eeeba27dd08d9cd5d09f15e2475951f49cd5a',
+    'protectedDisposeBodyDigest': 'sha256:242ab25d6c4af1de65c1b1c83742a554a892e2873282048e51cbfb6e1694ff33',
+    'cleanup': 'original-protected-Dispose(true)-then-GC-suppression',
+    'body': 'abort-not-successful-finish', 'originalFailure': 'original-handler-rethrow',
+    'inputAndFutureCleanup': 'unchanged', 'modifiedOriginalMethods': 1,
+    'generatedHelpers': 1, 'newHostImports': 0, 'qualified': False,
+}
+
+
+def validate_abort_rewrite(value: dict) -> None:
+    if (type(value) is not dict or set(value) != set(ABORT_REWRITE)
+            or any(type(value.get(key)) is not type(expected) or value[key] != expected
+                for key, expected in ABORT_REWRITE.items())):
+        raise ValueError('dotnet-request-abort-cleanup-rewrite-receipt')

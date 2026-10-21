@@ -384,6 +384,8 @@ class Compiler:
                 self.compiler_patches[-1]["selection"]["synchronousRead"] = http_error_port["synchronousRead"]
             if 'requiredContentWork' in http_error_port:
                 self.compiler_patches[-1]['selection']['requiredContentWork'] = http_error_port['requiredContentWork']
+            if 'requestAbortCleanup' in http_error_port:
+                self.compiler_patches[-1]['selection']['requestAbortCleanup'] = http_error_port['requestAbortCleanup']
             self.generated_materials.extend((self.http_error_port.identity,
                 file_identity(command.output / "http-error-port.json", "dotnet-http-error-port", http_errors.MAX_RECEIPT)))
         if self.task_wait_port is not None:

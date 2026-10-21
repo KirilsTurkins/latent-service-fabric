@@ -92,6 +92,7 @@ def build_evidence(artifact):
     # the maintained compiler therefore selects the finite Task.Wait derivation.
     task_wait.validate_receipt({name: value for name, value in task.items() if name not in extra}, finite=True, managed=True)
     managed_work.validate_http_rewrite(http['requiredContentWork'])
+    managed_work.validate_abort_rewrite(http['requestAbortCleanup'])
     require(http['sourceDigest'] == http_errors.SOURCE_DIGEST
         and all(row['digest'] == http_errors.SOURCE_DIGEST for row in http['frameworkInputs'])
         and http['derived']['digest'] == http['outputDigest']

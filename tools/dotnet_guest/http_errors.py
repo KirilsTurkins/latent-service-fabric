@@ -348,15 +348,16 @@ def prepare(sdk: Path, tools: Path, dotnet: Path, declared: list[str], project: 
     if (set(result) != {"patch", "sourceDigest", "outputDigest", "cecilDigest", "method", "categories",
                        "arbitraryPayloadDisclosure", "defaultClientComponentQualified"} |
                        ({"synchronousRead"} if task_wait_port is not None else set()) |
-                       ({"requiredContentWork"} if managed else set())
+                       ({"requiredContentWork", "requestAbortCleanup"} if managed else set())
             or result["patch"] != "latent.dotnet.http-errors.v1" or result["sourceDigest"] != SOURCE_DIGEST
             or result["cecilDigest"] != CECIL_DIGEST or result["categories"] != list(MARKERS)
             or result["method"] != METHOD
             or result["arbitraryPayloadDisclosure"] is not False or result["defaultClientComponentQualified"] is not False):
         raise ValueError("http-error-port-rewrite-receipt")
     if managed:
-        from tools.dotnet_guest.managed_work import validate_http_rewrite
+        from tools.dotnet_guest.managed_work import validate_abort_rewrite, validate_http_rewrite
         validate_http_rewrite(result['requiredContentWork'])
+        validate_abort_rewrite(result['requestAbortCleanup'])
     if task_wait_port is not None:
         validate_sync_read(result["synchronousRead"])
         task_wait_port.recheck()
