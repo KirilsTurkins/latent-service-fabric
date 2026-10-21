@@ -60,6 +60,25 @@ pub(super) fn activation_runtime(
     })
 }
 
+pub(super) fn native_threads(
+    broker: &ActivationCapabilityBroker,
+    installation: &crate::config::ActivationRuntimeInstallation,
+) -> Result<ProviderRegistration, PlatformError> {
+    let digest = installation.native_configuration_digest()?;
+    broker.register_provider(ProviderConfiguration {
+        capability: "latent:runtime-native/threads@0.1.0",
+        profile: "conservative-native-total-starts-v1",
+        configuration_digest: digest.as_str(),
+        configuration_epoch: installation.identity.epoch,
+        restriction_json: br#"{"operations":["start"]}"#,
+        minimum_call_charges: &[ProviderBudgetRequirement {
+            operation: "start",
+            dimension: BudgetDimension::CpuFuel,
+            minimum: 100,
+        }],
+    })
+}
+
 pub(super) fn clock(
     broker: &ActivationCapabilityBroker,
     epoch: u64,

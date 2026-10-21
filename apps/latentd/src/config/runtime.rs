@@ -72,6 +72,34 @@ pub(super) fn wasmtime(
     if config.engine.java_guest {
         runtime.install_java_guest();
     }
+    if config.engine.activation_stack_accounting
+        == super::model::EngineActivationStackAccounting::ActivationOwnedV1
+    {
+        if runtime.activation_runtime.is_none() {
+            return Err(invalid(
+                "engine.activationStackAccounting.activationRuntime",
+            ));
+        }
+        // This selects the existing root-only affine byte/physical stack owner.
+        // It installs no native-thread provider and creates no extra limit.
+        runtime.owned_native_stacks = true;
+    }
+    if config.engine.threading_profile
+        == super::model::EngineThreadingProfile::CContext144SyncCooperativeV1
+    {
+        let installation = config
+            .providers
+            .as_ref()
+            .and_then(|p| p.activation_runtime.as_ref())
+            .ok_or_else(|| invalid("engine.threadingProfile.activationRuntime"))?;
+        if !installation.native_threads {
+            return Err(invalid("engine.threadingProfile.nativeThreads"));
+        }
+        runtime.owned_native_stacks = true;
+        runtime.owned_native_threads = true;
+        runtime.native_thread_profile =
+            latent_wasmtime::NativeThreadProfile::CContext144SyncCooperativeV1;
+    }
     if config.renderer_profile.is_some() {
         if config.renderer_profile != Some(latent_manifest::RendererProfile::AngularSsrComponentV1)
         {

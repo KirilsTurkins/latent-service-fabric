@@ -139,6 +139,13 @@ impl ProviderRuntime {
                     &mut providers,
                 );
                 owner.registrations.push(registration);
+                if installation.native_threads {
+                    let registration = scalar::native_threads(&broker, installation)?;
+                    // The new capability requires its own explicit binding and
+                    // grant. Existing activation aliases do not opt into it.
+                    providers.push(owner.record(&installation.identity, registration.reference()));
+                    owner.registrations.push(registration);
+                }
             }
             for (installation, logging) in [(&config.context, false), (&config.log, true)] {
                 if let Some(installation) = installation {

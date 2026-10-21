@@ -364,12 +364,18 @@ impl PreparationContext {
         artifact: &CapsuleArtifact,
     ) -> Result<(), PlatformError> {
         let manifest = &artifact.manifest;
-        if manifest.world.0.is_empty()
-            || manifest.execution.backend != ExecutionBackendKind::WasmComponent
-            || !matches!(
+        let compatible_threading = match self.config.selected_thread_profile() {
+            Some(crate::NativeThreadProfile::CContext144SyncCooperativeV1) => {
+                manifest.execution.threading == ThreadingModel::Cooperative
+            }
+            _ => matches!(
                 manifest.execution.threading,
                 ThreadingModel::SingleThreaded | ThreadingModel::Reentrant
-            )
+            ),
+        };
+        if manifest.world.0.is_empty()
+            || manifest.execution.backend != ExecutionBackendKind::WasmComponent
+            || !compatible_threading
             || manifest.execution.state_model != StateModel::Stateless
         {
             return Err(platform_error(
@@ -427,7 +433,7 @@ impl PreparationContext {
         if self.config.owned_native_threads {
             metadata.insert(
                 crate::component_threading::METADATA.into(),
-                crate::component_threading::PROFILE.into(),
+                self.config.native_thread_profile.name().into(),
             );
         }
         metadata.insert(

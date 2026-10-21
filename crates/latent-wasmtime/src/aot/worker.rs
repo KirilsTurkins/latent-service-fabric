@@ -93,7 +93,7 @@ fn run(options: WorkerOptions, clean: bool) -> Result<(), &'static str> {
 fn compile(
     _enforced: &super::sandbox::EnforcedSandbox,
     engine: &wasmtime::Engine,
-    owned_native_threads: bool,
+    owned_native_threads: Option<crate::NativeThreadProfile>,
     options: WorkerOptions,
     input: &mut Input,
     output: &mut Output,
@@ -105,8 +105,15 @@ fn compile(
         .map_err(|_| "invalid component length")?;
     let bytes = protocol::body(input, length).map_err(|_| "invalid component body")?;
     protocol::end_of_input(input).map_err(|_| "trailing component input")?;
-    crate::component_threading::Authentication::verify(owned_native_threads, &bytes)
-        .map_err(|_| "component thread authentication failed")?;
+    // The supervising job admitted this exact profile's input work before it
+    // read/sent the component and retains that affine permit through child reap.
+    // Bootstrap is closed trusted-worker input, not component metadata.
+    crate::component_threading::Authentication::verify_profile(
+        owned_native_threads,
+        &bytes,
+        owned_native_threads.map_or(0, crate::NativeThreadProfile::verification_bytes),
+    )
+    .map_err(|_| "component thread authentication failed")?;
     let native = engine
         .precompile_component(&bytes)
         .map_err(|_| "component compilation failed")?;
