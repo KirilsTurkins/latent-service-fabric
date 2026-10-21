@@ -148,8 +148,8 @@ jobs:
               'suite=unittest.defaultTestLoader.loadTestsFromName("tools.tests.test_sdk_native_products_reader")\n'
               'result=unittest.TextTestRunner(stream=sys.stdout,verbosity=2).run(suite)\n'
               'sys.exit(0 if result.wasSuccessful() and not result.skipped else 1)')
-          require(b'Ran 11 tests' in protocol_reader and b'OK' in protocol_reader,
-              'native-products-protocol-reader-eleven-controls')
+          require(b'Ran 12 tests' in protocol_reader and b'OK' in protocol_reader,
+              'native-products-protocol-reader-twelve-controls')
           release_deadline=commands.run('release-preparation-deadline-controls','cargo','--config',root/'.cargo/managed-guest.toml',
               'test','--locked','-p','latent-wire','--lib','management::release::preparation::tests::',
               '--','--test-threads=1')
@@ -222,8 +222,8 @@ jobs:
           workers=commands.run('ordinary-async-worker-owner-controls','cargo','--config',root/'.cargo/managed-guest.toml',
               'test','--locked','-p','latent-wasmtime','--lib','native_stacks::tests::',
               '--','--test-threads=1')
-          require(b'test result: ok. 12 passed; 0 failed; 0 ignored;' in workers,
-              'native-products-ordinary-async-twelve-owner-controls')
+          require(b'test result: ok. 11 passed; 0 failed; 0 ignored;' in workers,
+              'native-products-ordinary-async-eleven-owner-controls')
           require(before==source_identity(root) and materials==material_identities(),
               'native-products-source-changed')
           products={};owned=output/'native-binaries';owned.mkdir(mode=0o700)

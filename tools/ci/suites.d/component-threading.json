@@ -58,14 +58,17 @@
         "c_preimage::tests::c_proof_payload_is_bounded_before_copy_and_rejects_duplicate_top_level_data",
         "c_preimage::tests::c_proof_nested_core_or_component_metadata_is_never_selected",
         "c_root::tests::fixed_root_settles_only_its_two_logical_tokens_after_c_frames_and_before_detach",
-        "c_root::tests::root_logical_retirement_refuses_missing_or_wrong_typed_settle_import"
+        "c_root::tests::root_logical_retirement_refuses_missing_or_wrong_typed_settle_import",
+        "c_preimage::tests::c_finite_type_envelope_accepts_original_generator_tags_and_refuses_declared_allocation_counts",
+        "c_preimage::tests::c_finite_component_preflight_accepts_one_generator_child_and_refuses_siblings_or_deeper_children",
+        "c_preimage::tests::c_finite_component_preflight_counts_nested_aliases_and_type_storage_before_typed_readers"
       ],
       "expectedIgnored": [],
       "id": "latent-component-threading.lib.latent-component-threading",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-component-threading/Cargo.toml",
-      "minimumCases": 55,
+      "minimumCases": 58,
       "mode": "libtest",
       "package": "latent-component-threading",
       "platforms": [
