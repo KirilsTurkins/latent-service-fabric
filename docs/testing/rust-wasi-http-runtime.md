@@ -5,8 +5,9 @@ interfaces observed from ordinary, unchanged Waki and Golem clients. The
 [actual signed programme](evidence/rust-wasi-http-signed-2026-10-21.json) passed
 64 attempts: 52 ordinary cases, one queued holder and 11 pre-entry refusals.
 It reuses the original authenticated component, backend and native products.
-Individual signed memory, Task and Timer saturation remain required evidence;
-this finite result does not close #689 or #743.
+The separate [nine-attempt limits programme](evidence/rust-wasi-http-limits-2026-10-22.json)
+now supplies individual signed memory, Task and Timer differentials with matched
+fresh reuse. These finite results do not close #689 or #743.
 
 The upstream files are complete originals from
 [`wasip2 1.0.4+wasi-0.2.12`](https://crates.io/crates/wasip2/1.0.4+wasi-0.2.12).
