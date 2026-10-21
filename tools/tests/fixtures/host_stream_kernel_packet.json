@@ -450,6 +450,13 @@
       "bytes": 1036,
       "sha256": "0433a02a0c124f0550eada0ea23e5328fbb5b00a67a6d468aec5c5625ab1021f",
       "text": "struct sk_buff *skb_copy_expand(const struct sk_buff *skb,\n\t\t\t\tint newheadroom, int newtailroom,\n\t\t\t\tgfp_t gfp_mask)\n{\n\t/*\n\t *\tAllocate the copy buffer\n\t */\n\tint head_copy_len, head_copy_off;\n\tstruct sk_buff *n;\n\tint oldheadroom;\n\n\tif (!skb_frags_readable(skb))\n\t\treturn NULL;\n\n\tif (WARN_ON_ONCE(skb_shinfo(skb)->gso_type & SKB_GSO_FRAGLIST))\n\t\treturn NULL;\n\n\toldheadroom = skb_headroom(skb);\n\tn = __alloc_skb(newheadroom + skb->len + newtailroom,\n\t\t\tgfp_mask, skb_alloc_rx_flag(skb),\n\t\t\tNUMA_NO_NODE);\n\tif (!n)\n\t\treturn NULL;\n\n\tskb_reserve(n, newheadroom);\n\n\t/* Set the tail pointer and length */\n\tskb_put(n, skb->len);\n\n\thead_copy_len = oldheadroom;\n\thead_copy_off = 0;\n\tif (newheadroom <= head_copy_len)\n\t\thead_copy_len = newheadroom;\n\telse\n\t\thead_copy_off = newheadroom - head_copy_len;\n\n\t/* Copy the linear header and data. */\n\tBUG_ON(skb_copy_bits(skb, -head_copy_len, n->head + head_copy_off,\n\t\t\t     skb->len + head_copy_len));\n\n\tskb_copy_header(n, skb);\n\n\tskb_headers_offset_update(n, newheadroom - oldheadroom);\n\n\treturn n;\n}\n"
+    },
+    "skb_zerocopy_clone": {
+      "source": "net/core/skbuff.c",
+      "prefix": "static int skb_zerocopy_clone(",
+      "bytes": 454,
+      "sha256": "b07edd30698584c442f24ed8d3e5a06e4b6f260f0e7255152c5021a554454eea",
+      "text": "static int skb_zerocopy_clone(struct sk_buff *nskb, struct sk_buff *orig,\n\t\t\t      gfp_t gfp_mask)\n{\n\tif (skb_zcopy(orig)) {\n\t\tif (skb_zcopy(nskb)) {\n\t\t\t/* !gfp_mask callers are verified to !skb_zcopy(nskb) */\n\t\t\tif (!gfp_mask) {\n\t\t\t\tWARN_ON_ONCE(1);\n\t\t\t\treturn -ENOMEM;\n\t\t\t}\n\t\t\tif (skb_uarg(nskb) == skb_uarg(orig))\n\t\t\t\treturn 0;\n\t\t\tif (skb_copy_ubufs(nskb, GFP_ATOMIC))\n\t\t\t\treturn -EIO;\n\t\t}\n\t\tskb_zcopy_set(nskb, skb_uarg(orig), NULL);\n\t}\n\treturn 0;\n}\n"
     }
   },
   "kernelBuilt": false,

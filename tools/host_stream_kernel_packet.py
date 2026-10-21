@@ -232,6 +232,13 @@ def copy_private(raw, name):
     return declaration+'\n{\n'+body
 
 
+def copy_helpers(text):
+    """Define private copies only after their retained static dependency."""
+    raw = section(text, 'skb_zerocopy_clone')
+    return replace(text, raw, raw + '\n#ifdef CONFIG_LSF_STREAM_FACTORY\n'
+        '#include "../packet-copy-private.c"\n#endif\n')
+
+
 def copy_routing(raw, name):
     require(name in COPIES and section(raw,name)==raw,'packet-copy-dispatch-preimage')
     declaration, body = raw.split('\n{\n',1)
@@ -294,15 +301,14 @@ def derive(inputs):
         'static int lsf_prepaid_audit_return(const void *, unsigned int);\n'
         'static int lsf_prepaid_packet_return(const void *, unsigned int);\n')
     text = replace(text, '#include "../audit-skb-private.c"\n',
-        '#include "../audit-skb-private.c"\n#include "../packet-skb-private.c"\n'
-        '#include "../packet-copy-private.c"\n')
+        '#include "../audit-skb-private.c"\n#include "../packet-skb-private.c"\n')
     copies = ''
     for name in COPIES:
         raw = section(inputs[audit.SKBUFF].decode(),name)
         copies += copy_private(raw,name)+'\n'
         text = replace(text,raw,copy_routing(raw,name))
     outputs['net/packet-copy-private.c'] = copies.encode()
-    outputs[audit.SKBUFF] = text.encode()
+    outputs[audit.SKBUFF] = copy_helpers(text).encode()
     original = inputs[TCP].decode()
     text = original
     declarations = ''

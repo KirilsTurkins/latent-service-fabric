@@ -264,7 +264,7 @@ prior symbols, eight private packet functions and four original TCP functions.
 The original `-Werror`, `-j2`, 900-second total and 300-second command deadlines,
 4 MiB per-command and 16 MiB total diagnostic bounds remain unchanged.
 
-The source authenticates 49 maintained whole files and 22 complete definition
+The source authenticates 49 maintained whole files and 23 complete definition
 preimages. It derives 83 files, preserving 70 of 75 prior outputs exactly and
 changing five shared outputs through closed packet extensions. The constructor,
 copy, clone, collapse and actual final-return dispatchers retain original normal
@@ -278,7 +278,15 @@ heap escape with exit 2; the corrected reference exits 0. Earlier reference setu
 and copied-local-socket fixture failures remain retained. These are mechanism
 controls, not execution of Linux, TCP exchange, real RCU or device DMA.
 
-The new owning object campaign is pending. It will compile the actual maintained
+The first [packet object run](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39600172288)
+failed because private copy definitions preceded the retained static
+`skb_zerocopy_clone` dependency. Its bounded compiler output and 30-member
+artifact remain retained. The correction authenticates that complete unchanged
+helper and moves only the private copy include after it; all implementation
+bodies and the other 82 derived outputs remain exact. A declaration-order
+regression and all twelve prior packet source controls pass.
+
+The corrected owning object campaign is pending. It will compile the actual maintained
 TCP, TCP-output, TCP-input and SKB translation units and retain the same complete
 configuration/security checks and bounded diagnostics. It does not link or boot
 a kernel, install a factory, qualify RX/DMA or certify final-free. Production

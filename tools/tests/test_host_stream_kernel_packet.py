@@ -13,7 +13,7 @@ class KernelLinearPacketSource(unittest.TestCase):
         before = packet.prior.fixture()['source']
         value = packet.fixture()
         self.assertEqual(len(value['source']), 49)
-        self.assertEqual(len(value['sections']), 22)
+        self.assertEqual(len(value['sections']), 23)
         self.assertEqual({name:row for name,row in value['source'].items() if name in before}, before)
         self.assertEqual(set(value['source'])-set(before), {
             'net/ipv4/tcp.c','include/net/tcp.h',
@@ -158,6 +158,22 @@ class KernelLinearPacketSource(unittest.TestCase):
                 self.assertEqual(selected.split('\tif (!n)\n',1)[1],
                     raw.split('\tif (!n)\n',1)[1])
             with self.assertRaises(ValueError):packet.copy_private(raw+'\n',name)
+
+    def test_private_copy_include_follows_unchanged_static_dependency_before_public_copies(self):
+        raw = packet.fixture()['sections']['skb_zerocopy_clone']['text']
+        copies = ''.join(packet.fixture()['sections'][name]['text'] for name in packet.COPIES)
+        source = raw + '\n' + copies
+        selected = packet.copy_helpers(source)
+        include = '#ifdef CONFIG_LSF_STREAM_FACTORY\n#include "../packet-copy-private.c"\n#endif\n'
+        self.assertEqual(selected.count(include), 1)
+        self.assertEqual(selected.replace('\n' + include, '', 1), source)
+        self.assertLess(selected.index(raw) + len(raw), selected.index(include))
+        for name in packet.COPIES:
+            self.assertLess(selected.index(include), selected.index(packet.fixture()['sections'][name]['text']))
+        # Duplicate, changed and missing actual dependency definitions fail closed.
+        for changed in (raw + source, source.replace('return 0;', 'return 1;', 1), copies):
+            with self.subTest(source=changed[:64]), self.assertRaises(ValueError):
+                packet.copy_helpers(changed)
 
     def test_copy_dispatch_has_exact_normal_definition_and_no_stale_birth_fallback(self):
         for name in packet.COPIES:

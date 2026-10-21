@@ -10,6 +10,7 @@
     "KernelLinearPacketSource.test_exact_parent_sources_and_primary_new_source_provenance",
     "KernelLinearPacketSource.test_full_head_and_header_before_publication_and_no_generic_fallback",
     "KernelLinearPacketSource.test_prior_birth_generation_and_closed_kind_routes_precede_any_use",
+    "KernelLinearPacketSource.test_private_copy_include_follows_unchanged_static_dependency_before_public_copies",
     "KernelLinearPacketSource.test_private_passive_fastopen_repair_and_receive_injection_refuse_first",
     "KernelLinearPacketSource.test_retransmit_copy_proves_linear_origin_and_checked_extent_before_new_birth"
   ],
@@ -134,6 +135,18 @@
       ],
       "skipSites": []
     },
+    "KernelLinearPacketSource.test_private_copy_include_follows_unchanged_static_dependency_before_public_copies": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6c4727a3f0f5a392a6110f942bdaa0e2c604f24ba08d4ee2e1c3736f107f25bf",
+        "class:setup-sha256:eb87b30753a51233dbe68f46e52c1f8002db510fb97ceca680f37310caa4c783"
+      ],
+      "skipSites": []
+    },
     "KernelLinearPacketSource.test_private_passive_fastopen_repair_and_receive_injection_refuse_first": {
       "bases": [
         "unittest.TestCase"
@@ -161,6 +174,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_host_stream_kernel_packet.py",
-  "reviewReason": "Add one exclusive source-only linear copied-TCP packet object profile, retaining all nine prior jobs, exact symbol floors, original configuration and bounds; two old job-set assertions project only the separately checked new packet job. No kernel/runtime/install qualification.",
+  "reviewReason": "Retain every prior packet source case and guard; authenticate the exact maintained static zerocopy helper and add its declaration-order regression after actual unlinked Kbuild failure. No implementation body, configuration, budget or oracle changes.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

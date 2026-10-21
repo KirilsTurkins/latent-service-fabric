@@ -70,7 +70,7 @@ every input and successor packet before queue/header inspection. A foreign or
 normal packet cannot be charged retroactively merely because a protected socket
 consumes it. The later temporary-list cleanup retains its original ordering.
 
-The twelve focused source controls passed. A tiny freestanding reference also
+The thirteen focused source controls passed, including declaration order. A tiny freestanding reference also
 executes seventeen new packet controls plus all nineteen prior Netport and
 twenty-four prior audit-SKB controls. The original maintained retransmit copy
 demonstrates the normal-heap escape before the corrected dispatcher passes.
@@ -79,7 +79,11 @@ dataref behavior; it is not actual Linux layout, concurrency, DMA or final-free
 evidence. Its earlier setup and copied-local-socket fixture failures remain
 retained separately. The copied socket fields were correctly insufficient:
 the corrected positive initializes the actual reserved original object.
-No kernel/native/guest build or packet exchange has been run for this draft.
+The first actual unlinked-object Kbuild attempt failed because the private copy
+include preceded the retained static `skb_zerocopy_clone` definition. The
+correction authenticates that complete unchanged helper and relocates only the
+include after it. The failed output is retained; a corrected object build is
+pending. No kernel link/boot, native/guest build or packet exchange is claimed.
 
 ## Device initialization must precede its allocations
 
