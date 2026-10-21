@@ -76,6 +76,60 @@ class RustProjectTests(unittest.TestCase):
             with patch.object(project, "ROOT", root), self.assertRaisesRegex(ValueError, "lock drift"):
                 project.locked_dependencies("my-project")
 
+    def test_original_registry_lock_requires_the_exact_authenticated_host_upstream(self):
+        from tools import host_codec_wasmtime as codec_wasmtime
+
+        path = project.ROOT / "tools/rust_capsule.lock"
+        original = path.read_text()
+        expected = original.replace('name = "latent-capsule-template"', 'name = "my-project"').encode()
+        self.assertEqual(project.locked_dependencies("my-project"), expected)
+        with patch.object(codec_wasmtime, "verify", side_effect=ValueError("tampered-host-fork")), \
+                self.assertRaisesRegex(ValueError, "tampered-host-fork"):
+            project.locked_dependencies("my-project")
+
+        read_text = Path.read_text
+        checksum = "12300d040e8bea7e7ccde75b9919d27ebba47a217a64b09ba058ae8d3b4290b6"
+        self.assertEqual(original.count(checksum), 1)
+        changed = original.replace(checksum, "0" * 64)
+        with patch.object(Path, "read_text", lambda selected, *args, **kwargs:
+                changed if selected == path else read_text(selected, *args, **kwargs)), \
+                self.assertRaisesRegex(ValueError, "lock drift"):
+            project.locked_dependencies("my-project")
+        authoritative = project.ROOT / "Cargo.lock"
+        raw = authoritative.read_text()
+        local = 'name = "wasmtime"\nversion = "48.0.7"\n'
+        self.assertEqual(raw.count(local), 1)
+        replaced = raw.replace(local, 'name = "wasmtime"\nversion = "48.0.6"\n')
+        with patch.object(Path, "read_text", lambda selected, *args, **kwargs:
+                replaced if selected == authoritative else read_text(selected, *args, **kwargs)), \
+                self.assertRaisesRegex(ValueError, "lock drift"):
+            project.locked_dependencies("my-project")
+
+    def test_standalone_sdk_projects_only_the_authenticated_host_fork_to_original_registry(self):
+        from tools import host_codec_wasmtime as codec_wasmtime
+
+        path = project.ROOT / "Cargo.toml"
+        original = path.read_text()
+        prefix = 'wasmtime = { path = "crates/vendor/wasmtime", '
+        self.assertEqual(original.count(prefix), 1)
+        expected = original[original.index("[workspace.package]"):].replace(prefix, "wasmtime = { ", 1)
+        vendor = project.sdk_files()
+        self.assertEqual(vendor["Cargo.toml"].split(b"[workspace.package]", 1)[1],
+                         expected.split("[workspace.package]", 1)[1].encode())
+        selected = {key: value for key, value in codec_wasmtime.DEPENDENCY.items() if key != "path"}
+        for raw in (vendor["Cargo.toml"], self.inputs["Cargo.toml"]):
+            self.assertEqual(tomllib.loads(raw.decode())["workspace"]["dependencies"]["wasmtime"], selected)
+        self.assertFalse(any(name.startswith(codec_wasmtime.PROVIDER + "/") for name in vendor))
+        with patch.object(codec_wasmtime, "verify", side_effect=ValueError("tampered-host-fork")), \
+                self.assertRaisesRegex(ValueError, "tampered-host-fork"):
+            project.sdk_files()
+        changed = original.replace(prefix, 'wasmtime = { path = "foreign/provider", ', 1)
+        read_text = Path.read_text
+        with patch.object(Path, "read_text", lambda selected, *args, **kwargs:
+                changed if selected == path else read_text(selected, *args, **kwargs)), \
+                self.assertRaisesRegex(ValueError, "selection not maintained"):
+            project.sdk_files()
+
     def test_edited_sdk_does_not_satisfy_the_original_source_lock(self):
         files = self.files()
         files["vendor/lsf/sdk/rust-guest/src/blob.rs"] += b"\n// edited\n"

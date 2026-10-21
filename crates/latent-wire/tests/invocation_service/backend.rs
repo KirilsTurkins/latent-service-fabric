@@ -113,7 +113,7 @@ impl ExecutionBackend for Backend {
                     error: DeclaredError {
                         code: "guest.invalid-input".to_owned(),
                         message: "declared fixture error".to_owned(),
-                        payload: b"domain payload".to_vec(),
+                        payload: (b"domain payload".to_vec()).into(),
                         media_type: "application/octet-stream".to_owned(),
                         metadata: Metadata::new(),
                     },
@@ -129,7 +129,7 @@ impl ExecutionBackend for Backend {
                     Err(failure)
                 }
                 _ => Ok(GuestOutcome::Returned {
-                    output: request.activation.input,
+                    output: (request.activation.input).into(),
                     output_media_type: request.activation.input_media_type,
                     consumption,
                 }),

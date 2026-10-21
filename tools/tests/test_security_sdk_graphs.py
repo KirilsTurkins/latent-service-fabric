@@ -98,6 +98,52 @@ class SdkGraphTests(unittest.TestCase):
             with self.subTest(orphan=orphan), patch("tools.security_inventory.tracked_paths", return_value=[*legacy, orphan]), self.assertRaises(SecurityError):
                 inventory(root)
 
+    def test_wasmtime_fork_inventory_keeps_upstream_advisory_identity_and_refuses_partial_or_mutated_sources(self):
+        from tools import host_codec_wasmtime as bounded
+        from tools.security_common import POLICY, read_file, tracked_paths
+        from tools.security_inventory import wasmtime_inventory
+        root = Path(__file__).resolve().parents[2]
+        paths = tracked_paths(root)
+        configuration = json.loads(read_file(POLICY, "inventory.json"))
+        entry = next(row for row in configuration["manifests"] if row["kind"] == "bounded-wasmtime")
+        checked = bounded.verify(root)
+        covered, record = wasmtime_inventory(root, entry, paths)
+        self.assertEqual(covered, {bounded.PROVIDER + "/Cargo.toml", bounded.PROVIDER + "/Cargo.lock"})
+        self.assertEqual(record["name"], "wasmtime")
+        self.assertEqual(record["version"], "48.0.7")
+        self.assertEqual(record["upstreamArchiveSha256"], "12300d040e8bea7e7ccde75b9919d27ebba47a217a64b09ba058ae8d3b4290b6")
+        self.assertEqual(record["buildLock"], "Cargo.lock")
+        self.assertEqual(record["upstreamSourceLockSha256"], digest(read_file(root, entry["lock"])))
+        packages, records = inventory(root)
+        self.assertIn(Package("crates.io", "wasmtime", "48.0.7", entry["path"]), packages)
+        self.assertIn(record, records)
+        for altered in ({**entry, "lock": "Cargo.lock"}, {**entry, "kind": "cargo"}):
+            with self.subTest(entry=altered), self.assertRaisesRegex(SecurityError, "unreviewed-bounded-wasmtime-inventory"):
+                wasmtime_inventory(root, altered, paths)
+        for altered in ([path for path in paths if path != entry["lock"]],
+                        [*paths, bounded.PROVIDER + "/extra/Cargo.toml"]):
+            with self.subTest(paths=len(altered)), self.assertRaisesRegex(SecurityError, "partial-or-unreviewed-bounded-wasmtime-source"):
+                wasmtime_inventory(root, entry, altered)
+        original_read = bounded.read_file
+        for relative in ("UPSTREAM.latent.json", "Cargo.toml", "src/runtime/component/values/accounted.rs"):
+            selected = root / bounded.PROVIDER / relative
+            def changed(path, *limits):
+                raw = original_read(path, *limits)
+                return raw + b"\n" if path == selected else raw
+            with self.subTest(source=relative), patch.object(bounded, "read_file", side_effect=changed), \
+                    self.assertRaisesRegex(SecurityError, "unreviewed-bounded-wasmtime-source"):
+                wasmtime_inventory(root, entry, paths)
+        legacy = [path for path in paths if not path.startswith(bounded.PROVIDER + "/")]
+        with patch("tools.security_inventory.tracked_paths", return_value=legacy):
+            packages, records = inventory(root)
+        self.assertNotIn(Package("crates.io", "wasmtime", "48.0.7", entry["path"]), packages)
+        self.assertEqual(next(row for row in records if row["path"] == entry["path"])["coverage"], "not-shipped-at-source-revision")
+        for orphan in ("Cargo.toml", "README.latent.md", "extra/Cargo.toml"):
+            with self.subTest(orphan=orphan), patch("tools.security_inventory.tracked_paths", return_value=[*legacy, bounded.PROVIDER + "/" + orphan]), \
+                    self.assertRaises(SecurityError):
+                inventory(root)
+        self.assertEqual(checked, bounded.verify(root))
+
     def setUp(self) -> None:
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)

@@ -73,7 +73,7 @@ pub(super) fn outcome(outcome: GuestOutcome, limits: ValueCodecLimits) -> GuestO
             consumption,
         } => match success_output(&output, &output_media_type, limits) {
             Ok(output) => GuestOutcome::Returned {
-                output,
+                output: (output).into(),
                 output_media_type: ECHO_SUCCESS_MEDIA_TYPE.to_owned(),
                 consumption,
             },
@@ -173,7 +173,7 @@ pub(super) fn echo_declared_error(code: &str, message: &str, payload: &[u8]) -> 
     DeclaredError {
         code: code.to_owned(),
         message: message.to_owned(),
-        payload: payload.to_vec(),
+        payload: (payload.to_vec()).into(),
         media_type: ECHO_DOMAIN_ERROR_MEDIA_TYPE.to_owned(),
         metadata: Metadata::new(),
     }

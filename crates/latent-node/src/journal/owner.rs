@@ -192,7 +192,26 @@ impl JournalOwner {
         if record.command_cancellation.take().is_some() {
             record.bytes -= super::command_cancellation::RECORD_BYTES;
         }
-        record.status.terminal_outcome = Some(outcome.retained_terminal_outcome());
+        record.status.terminal_outcome = Some(match &outcome {
+            ActivationOutcome::DeclaredError { error, .. } => {
+                // begin reserved this controller record's complete allowance;
+                // bytes::outcome above admits this compact destination before
+                // allocating it. Keep the actual source payload/child guard in
+                // outcome through the physical copy and subsequent delivery.
+                // A diagnostic record must not retain the child execution
+                // ledger merely by sharing its returned allocation until TTL.
+                latent_activation::RetainedActivationOutcome::DeclaredError(
+                    latent_core::DeclaredError {
+                        code: error.code.clone(),
+                        message: error.message.clone(),
+                        payload: error.payload.as_ref().to_vec().into(),
+                        media_type: error.media_type.clone(),
+                        metadata: error.metadata.clone(),
+                    },
+                )
+            }
+            _ => outcome.retained_terminal_outcome(),
+        });
         record.status.final_consumption = Some(consumption(&outcome).clone());
         record.status.last_updated_unix_millis = now;
         record.status.terminal_at_unix_millis = Some(now);
