@@ -14,9 +14,16 @@ existing bounded quarantine after failure, cancellation or close. Previously
 that quarantine retained memory/scope but could outlive Connection/PoolCall and
 lose the original I/O running owner. No new ledger, executor or allowance is
 introduced. LogicalReference keeps its memory-only reservation and original
-cleanup path. The four new Rust controls are source-complete but have NOT been
-compiled/executed in this delivery; a focused execution is required before
-claiming native behavior qualified.
+cleanup path. Focused hosted run 39522501806, job 118969417852, on source
+d5a60e02c884f80416923f5c4b7a039b275935f9 executed the five original and four new
+broker controls: nine passed, zero failed or ignored. It also compiled
+latent-streams with all features. Artifact 12311666773 binds ten unchanged
+before/after source rows and the bounded output of both successful commands.
+The earlier seven-pass/two-fail result remains retained: the new memory fixtures
+used legacy accounting, corrected to the actual Phase 3 profile from the same
+original request budget, admission sample and deadline. This proves the focused
+broker ownership controls and stream compilation, not an installed kernel
+consumer, actual descriptor bootstrap or complete physical accounting.
 
 ProviderPools also has a fixed one-MiB backing reservation using its existing
 reserve_protocol_metadata ceiling. It grants no installation or physical-free

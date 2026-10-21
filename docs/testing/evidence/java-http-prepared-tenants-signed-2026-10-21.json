@@ -1,0 +1,55 @@
+{
+  "schemaVersion": "latent.java.http-prepared-tenants-evidence.v1",
+  "sourceRevision": "4771b04b2fac223d0d5fb4319c70641a6a54dc5f",
+  "run": 39518571337,
+  "job": 118956591214,
+  "artifact": {
+    "id": 12310601666,
+    "bytes": 230320,
+    "sha256": "sha256:d98892a6ec8f6a5347d79bda0ce08cfafa8edbf91d7ad8175287d48dbf64515f"
+  },
+  "verifiedArchiveMembers": 203,
+  "verifiedExpandedBytes": 566164,
+  "sourceMaterialsVerifiedAgainstGit": 111,
+  "compiledComponentSource": "aa56bdebad8c12f20acce4ec4ecfeca73cf554be",
+  "component": {
+    "sha256": "sha256:1cfb94306437ffc5e63ba76d981c04cba9ba98419c2b2b3c536f5d91005a6a53",
+    "bytes": 17034179
+  },
+  "nativeSource": "6fd19eab2c224fc31481d03de5008de4d3e4429e",
+  "nativeRun": 39516047085,
+  "nativeJob": 118948325038,
+  "nativeArtifact": 12308282426,
+  "currentNativeSourceAndAll134MaterialsEqualBeforeAfter": true,
+  "protocolFiles": 20,
+  "invocations": 12,
+  "enteredInvocations": 11,
+  "httpContacts": 10,
+  "independentHttpConfigurations": 2,
+  "sameNode": true,
+  "singleExecutionCell": true,
+  "distinctTenantPublications": {
+    "examples": "publication:sha256:e78d2afe1a5d2a3f85e47988214f2007db12909d1d8587430651721b4e0867c9",
+    "foreign": "publication:sha256:045ee9fd003a99b72064c7d6e5c575509cd2a9e33c3504be17fe6abf2b5bbfcb"
+  },
+  "preparationSeconds": {
+    "examples": 103.615351267,
+    "foreign": 128.383767305
+  },
+  "preparationReturnsExecutionGrant": false,
+  "originalNodeAndPeerWindowSeconds": 300,
+  "originalInvocationTimeoutMillis": 120000,
+  "perCaseZeroActiveProviderCounters": 18,
+  "perCasePhysicalRetirement": true,
+  "cleanReapedNodeAndStoppedPeers": true,
+  "nativeOrGuestCompilationByConsumer": false,
+  "originalReceiptRewritten": false,
+  "originalOutputHumanLabelError": "One limitations string says21b; typed producer source/run/material identities select6fd. Raw output remains unchanged.",
+  "newVersionedHelperByteEqualsTestedHelper": true,
+  "old21bHelperRestoredByteExact": true,
+  "priorFailedTenantRun": 39514296963,
+  "priorFailedTenantArtifact": 12307672432,
+  "full688Qualified": false,
+  "full741Qualified": false,
+  "remainingScope": "Mixed streaming, backpressure, borrowed-body and limit/lifecycle acceptance requires literal cumulative audit; no HTTPS or whole-runtime claim."
+}

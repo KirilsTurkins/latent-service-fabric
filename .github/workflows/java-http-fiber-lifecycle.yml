@@ -57,6 +57,11 @@ on:
         type: boolean
         default: false
 
+      java_http_prepared_tenants:
+        description: Retained Java component with exact current publication preparation and twelve tenant outcomes
+        type: boolean
+        default: false
+
 permissions:
   contents: read
 
@@ -383,5 +388,86 @@ jobs:
             ${{ runner.temp }}/java-http-spi/campaign/node/qualification.json
             ${{ runner.temp }}/java-http-spi/campaign/node/FAILED.json
             ${{ runner.temp }}/java-http-spi/campaign/node/controls/*.json
+          if-no-files-found: warn
+          retention-days: 3
+
+  http-prepared-tenants:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.java_http_prepared_tenants }}
+    name: Retained Java component and exact prepared same-node HTTP tenants
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      actions: read
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - name: Fetch only the exact original component and current native producer Git objects
+        run: |
+          git fetch --no-tags --depth=1 origin aa56bdebad8c12f20acce4ec4ecfeca73cf554be
+          git fetch --no-tags --depth=1 origin 21b2c84c74881701149115dd8511063c85800b47
+          git fetch --no-tags --depth=1 origin 6fd19eab2c224fc31481d03de5008de4d3e4429e
+      - name: Install only the existing pinned Python recipe dependencies
+        run: python3 -m pip install -r tools/requirements.lock
+      - name: Check fixed tuple, retained component and original twelve-case setup guards
+        run: >-
+          python3 -B -m unittest
+          tools.tests.test_release_preparation_native_products
+          tools.tests.test_java_http_retained_component
+          tools.tests.test_java_http_release_preparation
+          tools.tests.test_java_http_prepared_tenants
+          tools.tests.test_java_http_tenants -v
+      - name: Check separately versioned CLI preparation native tuple
+        run: python3 -B -m unittest tools.tests.test_release_preparation_cli_native_products -v
+      - name: Authenticate the exact protocol-inclusive native producer without rebuilding
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          python3 -B tools/release_preparation_cli_native_products.py
+          --output "$RUNNER_TEMP/java-prepared-native"
+      - name: Authenticate only fixed original Java component and signing inputs without compiling
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          python3 -B tools/java_http_retained_component.py
+          --output "$RUNNER_TEMP/java-prepared-component"
+      - name: Prepare exact publications and execute the unchanged twelve tenant outcomes
+        run: >-
+          python3 -B tools/qualify_java_http_prepared_tenants.py
+          --prepared-native "$RUNNER_TEMP/java-prepared-native"
+          --prepared-component "$RUNNER_TEMP/java-prepared-component"
+          --output "$RUNNER_TEMP/java-prepared-tenants"
+      - name: Retain bounded public evidence without keys, private credentials or repeated native binaries
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: java-http-prepared-tenants-${{ github.sha }}
+          path: |-
+            ${{ runner.temp }}/java-prepared-native/retrieval.json
+            ${{ runner.temp }}/java-prepared-native/native-products.json
+            ${{ runner.temp }}/java-prepared-native/source-inputs.json
+            ${{ runner.temp }}/java-prepared-component/retrieval.json
+            ${{ runner.temp }}/java-prepared-tenants/qualification.json
+            ${{ runner.temp }}/java-prepared-tenants/FAILED.json
+            ${{ runner.temp }}/java-prepared-tenants/tenants/qualification.json
+            ${{ runner.temp }}/java-prepared-tenants/tenants/FAILED.json
+            ${{ runner.temp }}/java-prepared-tenants/tenants/*-preparation.json
+            ${{ runner.temp }}/java-prepared-tenants/tenants/*-case.json
+            ${{ runner.temp }}/java-prepared-tenants/tenants/*-retired.json
+            ${{ runner.temp }}/java-prepared-tenants/tenants/foreign-grants-not-inherited.json
+            ${{ runner.temp }}/java-prepared-tenants/tenants/final-owner.json
+            ${{ runner.temp }}/java-prepared-tenants/tenants/node-stopped.json
+            ${{ runner.temp }}/java-prepared-tenants/tenants/*-peer-stopped.json
+            ${{ runner.temp }}/java-prepared-tenants/tenants/final-products.json
+            ${{ runner.temp }}/java-prepared-tenants/tenants/examples-controls/*.json
+            ${{ runner.temp }}/java-prepared-tenants/tenants/foreign-controls/*.json
+            ${{ runner.temp }}/java-prepared-tenants/tenants/releases/release-set.json
+            ${{ runner.temp }}/java-prepared-tenants/tenants/releases/java-standard-http/build-observation.json
           if-no-files-found: warn
           retention-days: 3
