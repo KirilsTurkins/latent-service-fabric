@@ -208,7 +208,7 @@ fn engine() -> (Engine, Component) {
 }
 fn outcome() -> GuestOutcome {
     GuestOutcome::Returned {
-        output: vec![],
+        output: (vec![]).into(),
         output_media_type: support::MEDIA.into(),
         consumption: BudgetConsumption::default(),
     }

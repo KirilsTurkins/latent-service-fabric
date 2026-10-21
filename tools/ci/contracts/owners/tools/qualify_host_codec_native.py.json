@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_host_codec_native.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Bind original ledger/codec programme including direct identity/require/file-IO helpers and pre-recorded no-stream failure stages; retain all52 planned native cases and original five native products.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "284826a6a03d55bf1dbc61204b7c87d0a7dcfe07fdc27501ccc2ed4cbcb0ec2b"
+}

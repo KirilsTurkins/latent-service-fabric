@@ -24,12 +24,34 @@ fn main() -> Result<(), Box<dyn Error>> {
     env::set_var("PROTOC", protoc_bin_vendored::protoc_bin_path()?);
 
     tonic_prost_build::configure()
+        .extern_path(
+            ".latent.invocation.v1.Success",
+            "crate::result_messages::Success",
+        )
+        .extern_path(
+            ".latent.invocation.v1.DeclaredError",
+            "crate::result_messages::DeclaredError",
+        )
         .build_client(true)
         .build_server(true)
         .build_transport(true)
         .emit_rerun_if_changed(false)
         .file_descriptor_set_path(output.join("latent_descriptor.bin"))
         .compile_protos(&proto_files, std::slice::from_ref(&proto_root))?;
+
+    // Unmodified generation is the test oracle for the two owned message
+    // implementations. It uses the same authoritative schema, never a copy.
+    let reference = output.join("result-message-reference");
+    fs::create_dir_all(&reference)?;
+    tonic_prost_build::configure()
+        .build_client(false)
+        .build_server(false)
+        .emit_rerun_if_changed(false)
+        .out_dir(&reference)
+        .compile_protos(
+            &[proto_root.join("latent/invocation/v1/invocation.proto")],
+            std::slice::from_ref(&proto_root),
+        )?;
 
     println!("cargo:rerun-if-changed={}", proto_manifest.display());
     println!("cargo:rerun-if-changed={}", proto_root.display());

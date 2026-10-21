@@ -39,7 +39,7 @@ fn validate_response(
         .map_err(|_| Status::internal("the invocation runtime returned an invalid receipt"))?;
     match &response.outcome {
         ActivationOutcome::Succeeded(success) => {
-            bytes.payload(&success.output, limits.max_payload_bytes)?;
+            bytes.result_payload(&success.output, limits.max_payload_bytes)?;
             bytes.string(&success.output_media_type, limits.max_string_bytes)?;
             media_type(&success.output_media_type, limits.max_string_bytes)?;
             summary(
@@ -125,7 +125,7 @@ fn declared(
     error: &DeclaredError,
     limits: &InvocationLimits,
 ) -> Result<(), Status> {
-    bytes.payload(&error.payload, limits.max_payload_bytes)?;
+    bytes.result_payload(&error.payload, limits.max_payload_bytes)?;
     for value in [&error.code, &error.message, &error.media_type] {
         bytes.string(value, limits.max_string_bytes)?;
     }

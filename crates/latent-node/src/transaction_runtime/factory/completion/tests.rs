@@ -19,7 +19,7 @@ fn charged() -> BudgetConsumption {
 fn observed() -> [ActivationOutcome; 3] {
     [
         ActivationOutcome::Succeeded(ActivationSuccess {
-            output: b"retained body".to_vec(),
+            output: (b"retained body".to_vec()).into(),
             output_media_type: "application/octet-stream".into(),
             metadata: Metadata::new(),
             consumption: charged(),
@@ -30,7 +30,7 @@ fn observed() -> [ActivationOutcome; 3] {
             error: DeclaredError {
                 code: "original-rejection".into(),
                 message: String::new(),
-                payload: b"retained rejection body".to_vec(),
+                payload: (b"retained rejection body".to_vec()).into(),
                 media_type: "application/octet-stream".into(),
                 metadata: Metadata::new(),
             },

@@ -44,7 +44,7 @@ pub struct ActivationEnvelope {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ActivationSuccess {
-    pub output: Payload,
+    pub output: latent_core::ResultPayload,
     pub output_media_type: String,
     pub consumption: BudgetConsumption,
     pub committed_state_version: Option<String>,
@@ -170,7 +170,7 @@ mod tests {
     #[test]
     fn retained_success_keeps_every_advertised_status_field() {
         let success = ActivationSuccess {
-            output: b"immediate-only".to_vec(),
+            output: (b"immediate-only".to_vec()).into(),
             output_media_type: "application/octet-stream".to_owned(),
             consumption: BudgetConsumption::default(),
             committed_state_version: Some("state-v42".to_owned()),

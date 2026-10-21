@@ -6,7 +6,9 @@ pub(super) fn convert(outcome: ActivationOutcome) -> wit::InvocationOutcome {
     match outcome {
         ActivationOutcome::Succeeded(value) => {
             wit::InvocationOutcome::Success(wit::InvocationResult {
-                payload: value.output,
+                // The accepted ProviderCall owns the prepaid parent output
+                // envelope before this copy and through actual Store lowering.
+                payload: value.output.as_ref().to_vec(),
                 media_type: value.output_media_type,
                 metadata: value.metadata.into_iter().collect(),
             })
@@ -15,7 +17,7 @@ pub(super) fn convert(outcome: ActivationOutcome) -> wit::InvocationOutcome {
             wit::InvocationOutcome::DeclaredError(wit::DeclaredError {
                 code: error.code,
                 message: error.message,
-                payload: error.payload,
+                payload: error.payload.as_ref().to_vec(),
                 media_type: error.media_type,
                 metadata: error.metadata.into_iter().collect(),
             })

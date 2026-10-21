@@ -97,7 +97,7 @@ fn consumption() -> BudgetConsumption {
 
 fn returned(payload: &[u8]) -> GuestOutcome {
     GuestOutcome::Returned {
-        output: payload.to_vec(),
+        output: (payload.to_vec()).into(),
         output_media_type: values::MEDIA_TYPE.to_owned(),
         consumption: consumption(),
     }
@@ -108,7 +108,7 @@ fn declared(payload: &[u8]) -> GuestOutcome {
         error: DeclaredError {
             code: "declared-error".to_owned(),
             message: "component returned a declared error".to_owned(),
-            payload: payload.to_vec(),
+            payload: (payload.to_vec()).into(),
             media_type: values::MEDIA_TYPE.to_owned(),
             metadata: Metadata::new(),
         },

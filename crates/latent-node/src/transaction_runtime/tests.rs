@@ -106,7 +106,7 @@ async fn native_declared_rejection_discards_state_and_preserves_exact_result() {
         error: DeclaredError {
             code: "rejected".into(),
             message: "business rejection".into(),
-            payload: b"reason".to_vec(),
+            payload: (b"reason".to_vec()).into(),
             media_type: "application/octet-stream".into(),
             metadata: Metadata::new(),
         },
@@ -206,7 +206,7 @@ async fn native_incompatible_selected_source_rejects_before_durable_admission() 
 
 fn success(bytes: &[u8]) -> ActivationOutcome {
     ActivationOutcome::Succeeded(ActivationSuccess {
-        output: bytes.to_vec(),
+        output: (bytes.to_vec()).into(),
         output_media_type: "application/octet-stream".into(),
         consumption: BudgetConsumption::default(),
         committed_state_version: None,

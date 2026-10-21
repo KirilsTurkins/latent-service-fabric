@@ -9,6 +9,7 @@ use super::*;
 mod bounds;
 mod composites;
 mod differential;
+mod host_memory;
 #[cfg(target_os = "linux")]
 mod measurement;
 mod scalars;
@@ -49,7 +50,7 @@ fn decode(types: &[Type], json: &str) -> Vec<Val> {
 fn payload(result: EncodedResult) -> String {
     let bytes = match result {
         EncodedResult::Returned(bytes) => bytes,
-        EncodedResult::DeclaredError(error) => error.payload,
+        EncodedResult::DeclaredError(error) => error.payload.as_ref().to_vec(),
     };
     String::from_utf8(bytes).expect("JSON is UTF-8")
 }

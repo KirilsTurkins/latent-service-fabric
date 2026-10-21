@@ -127,7 +127,9 @@ fn successful_classification_and_unwind_keep_the_same_final_drop_order() {
                     assert!(!unwinds, "bounded classification unwind");
                     classify_call_result(
                         Ok(()),
-                        Some(Ok(crate::values::EncodedResult::Returned(b"[]".to_vec()))),
+                        Some(Ok(crate::values::EncodedResult::Returned(
+                            b"[]".to_vec().into(),
+                        ))),
                         &StopControl::new(None, None),
                         false,
                         BudgetConsumption::default(),

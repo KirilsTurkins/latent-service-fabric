@@ -1687,6 +1687,7 @@ dependencies = [
 name = "latent-core"
 version = "0.1.0-alpha.5"
 dependencies = [
+ "bytes",
  "tempfile",
  "tokio",
 ]

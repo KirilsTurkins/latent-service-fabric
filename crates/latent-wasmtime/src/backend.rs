@@ -536,16 +536,19 @@ impl WasmtimeBackend {
                 ));
             }
         }
+        let codec_budget = accounting.budget().clone();
         let temporary_buffer_guard = self.shared.resources.temporary_buffer();
-        let raw_input = input::RawInvocationInput::new(
+        let raw_input = input::RawInvocationInput::new_accounted(
             std::mem::take(&mut request.activation.input),
             input_trace,
-        );
-        let input = values::decode_params(
+            &codec_budget,
+        )?;
+        let input = values::decode_params_accounted(
             &function.params,
             raw_input.bytes(),
             &request.activation.input_media_type,
             runtime.surface.value_codec_limits,
+            &codec_budget,
         )?;
 
         let capabilities = match self
@@ -572,6 +575,19 @@ impl WasmtimeBackend {
             ));
         }
 
+        let output_plan = values::validate_signature(
+            &function.results,
+            runtime.surface.value_codec_limits,
+            runtime.surface.hostcall_fuel,
+        )?;
+        let output_bytes = if output_plan.has_dynamic_values {
+            output_plan.maximum_lift_bytes
+        } else {
+            output_plan.static_lift_bytes
+        };
+        let mut output =
+            values::OwnedValues::output(function.results.len(), output_bytes, &codec_budget)?;
+
         let contained_execution_started = self.shared.clock.monotonic_now();
         let host_state_guard = self.shared.resources.host_state();
         let store_guard = self.shared.resources.store();
@@ -593,18 +609,18 @@ impl WasmtimeBackend {
         raw_input.release(InvocationInputDropReason::BeforeGuestCall);
 
         let component_instance_guard = self.shared.resources.component_instance();
-        let mut output = vec![Val::Bool(false); function.results.len()];
         if let Some(trace) = input_trace {
             trace.stage(InvocationInputPhase::BeforeCallExport);
         }
         let native_stack_scope = native_stack_observer.clone();
         let mut call_phase = CallPhase::Instantiate;
+        output.begin_lift();
         let call = call_export(
             &runtime,
             function,
             &mut store,
-            &input,
-            &mut output,
+            input.as_slice(),
+            output.as_mut_slice(),
             timing,
             setup_started,
             input_trace,
@@ -625,13 +641,13 @@ impl WasmtimeBackend {
                 .as_micros(),
         )
         .unwrap_or(u64::MAX);
+        let codec_capacity_error = output.finish_lift(call_result.is_ok()).err();
         let lifecycle_error = store
             .data_mut()
             .runtime
             .as_mut()
-            .and_then(|runtime| runtime.finalize().err());
-        let (consumption, accounting_error) =
-            invocation_accounting(&mut store, wall_time_micros, timing);
+            .and_then(|runtime| runtime.finalize().err())
+            .or(codec_capacity_error);
         let memory_exhausted = call_result
             .as_ref()
             .err()
@@ -639,12 +655,18 @@ impl WasmtimeBackend {
         timing.component_post_return_micros = elapsed_micros(component_post_return_started);
 
         let encoded = call_result.as_ref().ok().map(|()| {
-            values::encode_result(
+            values::encode_result_accounted(
                 &function.results,
-                &output,
+                output.as_slice(),
                 runtime.surface.value_codec_limits,
+                &codec_budget,
             )
         });
+        // Encoding owns real host buffers too. Observe the original ledger only
+        // after its successful allocations, while input, lifted values, output
+        // bytes, guest linear memory and native stacks still coexist.
+        let (consumption, accounting_error) =
+            invocation_accounting(&mut store, wall_time_micros, timing);
         // Capture the execution winner before cleanup signals unfinished child
         // owners. Cleanup cancellation cannot replace an existing trap, resource
         // failure, or bounded lifecycle failure with a different terminal cause.
@@ -1194,7 +1216,7 @@ async fn call_export(
 
 fn classify_call_result(
     call_result: wasmtime::Result<()>,
-    encoded: Option<Result<values::EncodedResult, PlatformError>>,
+    encoded: Option<Result<values::EncodedResult<latent_core::ResultPayload>, PlatformError>>,
     stop: &StopControl,
     memory_exhausted: bool,
     consumption: BudgetConsumption,
@@ -1217,7 +1239,7 @@ fn classify_call_result(
     match call_result {
         Ok(()) => match encoded.expect("successful call encoded its values") {
             Ok(values::EncodedResult::Returned(output)) => Ok(GuestOutcome::Returned {
-                output,
+                output: (output).into(),
                 output_media_type: values::MEDIA_TYPE.to_owned(),
                 consumption,
             }),
@@ -1266,7 +1288,14 @@ fn invocation_accounting(
     } = store.data().host_call_timing();
     let consumption = BudgetConsumption {
         cpu_fuel: store.data().accounting.native_fuel_consumed(remaining_fuel),
-        peak_memory_bytes: store.data().limiter.peak_memory_bytes(),
+        peak_memory_bytes: store.data().limiter.peak_memory_bytes().max(
+            store
+                .data()
+                .accounting
+                .budget()
+                .snapshot_at(Instant::now())
+                .peak_memory_bytes,
+        ),
         wall_time_micros,
         log_bytes: store.data().logs.bytes(),
         ..BudgetConsumption::default()

@@ -1,0 +1,27 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "host-codec-memory-${{ github.ref }}"
+    },
+    "name": "Ordinary host codec original memory",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/host-codec-memory-736-20261021"
+        ]
+      },
+      "workflow_dispatch": {}
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "native"
+  ],
+  "reviewReason": "Add one source-bound native-only programme for original host codec accounting; preserve all existing workflows and frozen product readers.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/host-codec-memory.yml"
+}

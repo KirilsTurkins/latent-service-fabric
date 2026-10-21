@@ -69,6 +69,7 @@ homepage = "https://github.com/KirilsTurkins/latent-service-fabric"
 description = "Single-node stateless execution fabric for WebAssembly components"
 
 [workspace.dependencies]
+bytes = "=1.12.1"
 base64 = "=0.23.1"
 blake3 = "=1.8.7"
 clap = { version = "=4.6.7", features = ["derive"] }

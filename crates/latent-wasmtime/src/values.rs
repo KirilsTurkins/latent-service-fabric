@@ -2,6 +2,7 @@
 
 mod decode;
 mod encode;
+mod memory;
 mod parse;
 mod signature;
 mod typed;
@@ -9,6 +10,7 @@ mod typed;
 use latent_core::{DeclaredError, PlatformError, PlatformErrorCode};
 use wasmtime::component::{Type, Val};
 
+pub(crate) use memory::OwnedValues;
 pub(crate) use signature::{validate_host_signature, validate_signature};
 
 pub const MEDIA_TYPE: &str = "application/vnd.latent.wit-values.v1+json";
@@ -73,8 +75,8 @@ impl ValueCodecLimits {
     }
 }
 
-pub(crate) enum EncodedResult {
-    Returned(Vec<u8>),
+pub(crate) enum EncodedResult<T = Vec<u8>> {
+    Returned(T),
     DeclaredError(DeclaredError),
 }
 
@@ -85,6 +87,54 @@ pub(crate) fn decode_params(
     limits: ValueCodecLimits,
 ) -> Result<Vec<Val>, PlatformError> {
     decode_params_dispatch(types, payload, media_type, limits).0
+}
+
+/// Actual ordinary invocation uses the admitted original host-memory ledger.
+/// The old diagnostic/Phase1 entry retains its exact per-transfer codec oracle.
+pub(crate) fn decode_params_accounted(
+    types: &[Type],
+    payload: &[u8],
+    media_type: &str,
+    limits: ValueCodecLimits,
+    budget: &latent_core::ActivationBudget,
+) -> Result<OwnedValues, PlatformError> {
+    limits.validate()?;
+    if media_type != MEDIA_TYPE {
+        return Err(failure(
+            PlatformErrorCode::InvalidArgument,
+            "unsupported-invocation-media-type",
+        ));
+    }
+    let nodes = parse::preflight_nodes(payload, limits)?;
+    match typed::params_accounted(types, payload, limits, budget) {
+        Ok(values) => Ok(values),
+        // An original-budget refusal must never replay the allocating legacy
+        // rejection oracle with an independent allowance.
+        Err((error, true)) => Err(error),
+        Err((error, false)) => {
+            drop(error);
+            let bytes = nodes
+                .checked_mul(signature::node_bytes())
+                .and_then(|n| n.checked_mul(2))
+                .and_then(|n| payload.len().checked_mul(4).and_then(|p| n.checked_add(p)))
+                .and_then(|n| n.checked_add(256))
+                .ok_or_else(limit)?;
+            let mut fallback = memory::Escrow::new(Some(budget));
+            fallback.add(bytes)?; // generic JSON + typed diagnostic overlap
+            let result = decode_params_legacy(types, payload, media_type, limits);
+            fallback.confirm();
+            match result {
+                Err(error) => Err(error),
+                Ok(values) => {
+                    drop(values);
+                    Err(failure(
+                        PlatformErrorCode::Internal,
+                        "typed-value-codec-compatibility-failure",
+                    ))
+                }
+            }
+        }
+    }
 }
 
 /// Uses exactly the same typed decoder and encoder as guest invocation. Record
@@ -189,6 +239,27 @@ pub(crate) fn encode_result(
 ) -> Result<EncodedResult, PlatformError> {
     limits.validate()?;
     let payload = encode::results(types, values, limits)?;
+    if matches!((types, values), ([Type::Result(_)], [Val::Result(Err(_))])) {
+        Ok(EncodedResult::DeclaredError(DeclaredError {
+            code: "declared-error".to_owned(),
+            message: "component returned a declared error".to_owned(),
+            payload: (payload).into(),
+            media_type: MEDIA_TYPE.to_owned(),
+            metadata: latent_core::Metadata::new(),
+        }))
+    } else {
+        Ok(EncodedResult::Returned(payload.into()))
+    }
+}
+
+pub(crate) fn encode_result_accounted(
+    types: &[Type],
+    values: &[Val],
+    limits: ValueCodecLimits,
+    budget: &latent_core::ActivationBudget,
+) -> Result<EncodedResult<latent_core::ResultPayload>, PlatformError> {
+    limits.validate()?;
+    let payload = encode::results_accounted(types, values, limits, budget)?;
     if matches!((types, values), ([Type::Result(_)], [Val::Result(Err(_))])) {
         Ok(EncodedResult::DeclaredError(DeclaredError {
             code: "declared-error".to_owned(),
