@@ -1,4 +1,4 @@
-use serde::de::{value::MapAccessDeserializer, MapAccess, Visitor};
+use serde::de::{MapAccess, Visitor, value::MapAccessDeserializer};
 use serde::{Deserialize, Deserializer};
 
 use super::model::{

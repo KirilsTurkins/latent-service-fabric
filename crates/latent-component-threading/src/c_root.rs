@@ -960,9 +960,11 @@ pub(crate) mod tests {
                 && settle[0] < settle[1]
                 && settle[1] < contexts[1]
         );
-        assert!(!ops[contexts[1] + 1..]
-            .iter()
-            .any(|op| matches!(op, Operator::Call { .. } | Operator::CallIndirect { .. })));
+        assert!(
+            !ops[contexts[1] + 1..]
+                .iter()
+                .any(|op| matches!(op, Operator::Call { .. } | Operator::CallIndirect { .. }))
+        );
         for (position, offset) in settle.into_iter().zip([48, 32]) {
             assert!(matches!(ops[position-4],Operator::I64Load{memarg} if memarg.offset==offset));
             assert!(matches!(ops[position-2],Operator::I64Load{memarg} if memarg.offset==offset+8));

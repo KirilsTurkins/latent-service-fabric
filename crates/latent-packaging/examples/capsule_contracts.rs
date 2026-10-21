@@ -3,8 +3,8 @@ use std::collections::BTreeMap;
 use std::io::{Read, Write};
 use std::path::Path;
 
-use latent_artifacts::package::{encode_wit_lock, PackageLimits};
-use latent_packaging::{derive_capsule_contracts, SemanticLimits};
+use latent_artifacts::package::{PackageLimits, encode_wit_lock};
+use latent_packaging::{SemanticLimits, derive_capsule_contracts};
 use serde::Deserialize;
 
 #[derive(Deserialize)]
