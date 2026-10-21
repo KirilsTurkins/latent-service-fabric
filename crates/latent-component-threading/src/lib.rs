@@ -25,6 +25,9 @@ pub use admission::{AdmissionReceipt, transform_owned_thread_admission};
 mod root;
 pub use root::{RootReceipt, transform_owned_root_bootstrap};
 pub mod c_context;
+pub mod c_lifecycle;
+pub mod c_root;
+pub mod c_template;
 mod component;
 pub use component::{ComponentRoutingReceipt, verify_component_routing};
 
