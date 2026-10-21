@@ -61,6 +61,18 @@ int lsf_factory_sidcache_current(struct lsf_factory_context *,
 void lsf_prepaid_sidcache_drain(struct lsf_factory_context *);
 
 
+int lsf_factory_avc_member(const void *, unsigned int, unsigned long,
+                           struct lsf_factory_blob *);
+int lsf_factory_avc_phase(struct lsf_factory_blob, unsigned int);
+int lsf_factory_avc_publish(const void *, unsigned int);
+int lsf_factory_avc_replace(const void *, const void *, unsigned int);
+int lsf_factory_avc_queue(const void *);
+int lsf_factory_avc_candidate(struct lsf_factory_context *, unsigned int,
+                              struct lsf_prepaid_ticket *, unsigned int *);
+int lsf_factory_avc_current(struct lsf_factory_context *,
+                            struct lsf_prepaid_ticket, unsigned int, void **);
+void lsf_prepaid_avc_drain(struct lsf_factory_context *);
+
 /* Deliberately unavailable: mandatory security, outer VFS, protocol, RX,
  * route/cache/deferred layout and final-free consumers are not yet complete.
  * No operator input, device command, env, sysctl or boolean can supply them. */

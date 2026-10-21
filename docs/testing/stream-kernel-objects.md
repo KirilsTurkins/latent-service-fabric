@@ -96,3 +96,20 @@ identities and unchanged security configuration. Supplemental serialized C
 controls remain separate from actual Linux execution. There is no kernel link,
 boot, active LSM/RCU execution, complete allocation closure, physical final-free
 certificate or installed provider.
+
+The separate default-false `avc` selector layers the authenticated AVC prefix
+over the SID-cache derivation. Its exclusive job selects sixteen unlinked
+objects and 61 required definitions, including every fifteen-object SID-cache
+target and all 52 prior definitions. It records digests for eighteen whole
+inputs and 38 derived files. Netlabel and the 256-entry SID cache must already
+be enabled; only the private factory symbol changes. The original four jobs'
+complete step bodies and all build, warning, process and artifact bounds are
+preserved. The AVC mode passed at source
+`d872bfcca2911938165889a7ab804b929d1c422b`, run `39550402947`, job
+`119058043143`: sixteen unlinked x86-64 objects, 61 global function
+definitions, 82 hosted source/controller tests and 21 clean owned commands.
+The [compiled observation](evidence/kernel-avc-objects-compiled-2026-10-21.json)
+binds all 64 archive members, 100 Git materials and unchanged security
+configuration. Its mandatory audit entry remains an unimplemented
+declaration, and complete allocation/final-free closure and production
+installation remain unavailable.

@@ -223,3 +223,60 @@ class KernelSidcacheObjectSelection(unittest.TestCase):
         self.assertIn('/FAILED.json', artifact['path'])
         self.assertEqual(artifact['retention-days'], 3)
         self.assertEqual(artifact['if-no-files-found'], 'warn')
+
+
+class KernelAvcObjectSelection(unittest.TestCase):
+    def test_sixteen_objects_preserve_all_fifty_two_sidcache_definitions_and_add_nine(self):
+        old = candidate.object_selection(False, False, True)
+        selected = candidate.object_selection(False, False, False, True)
+        self.assertEqual(len(selected), 16)
+        self.assertEqual(set(selected) - set(old), {'security/selinux/avc.o'})
+        for name, symbols in old.items():
+            self.assertTrue(set(symbols) <= set(selected[name]))
+        names = [name for values in selected.values() for name in values]
+        self.assertEqual(len(names), 61)
+        self.assertEqual(len(set(names)), 61)
+        self.assertTrue({'lsf_prepaid_avc_has_perm', 'lsf_prepaid_avc_drain',
+            'lsf_factory_avc_replace', 'lsf_factory_avc_current'} <= set(names))
+
+    def test_unknown_or_mixed_avc_profiles_refuse_before_acquisition(self):
+        for value in ('true', 'false', 0, 1, None, [], {}):
+            with self.subTest(value=value), self.assertRaisesRegex(ValueError, 'closed-profile-selector'):
+                candidate.object_selection(False, False, False, value)
+        for modes in ((True, False, False), (False, True, False), (False, False, True),
+                      (True, True, True)):
+            with self.subTest(modes=modes), patch.object(candidate.maintained, 'authenticate_archive') as read:
+                with self.assertRaisesRegex(ValueError, 'exclusive-profile-selector'):
+                    candidate.run(None, None, netlabel=modes[0], netport=modes[1], sidcache=modes[2], avc=True)
+                read.assert_not_called()
+
+    def test_avc_selection_refuses_local_build_before_archive_or_output(self):
+        with patch.dict(candidate.os.environ, {}, clear=True), patch.object(candidate.maintained, 'authenticate_archive') as read:
+            with self.assertRaisesRegex(ValueError, 'hosted-linux-only'):
+                candidate.run(None, None, avc=True)
+            read.assert_not_called()
+
+    def test_exclusive_avc_job_uses_only_closed_inputs_and_original_build_bounds(self):
+        import yaml
+        workflow = yaml.safe_load((candidate.ROOT/'.github/workflows/stream-kernel-objects.yml').read_bytes())
+        events = workflow.get('on', workflow.get(True))
+        self.assertEqual(events['workflow_dispatch']['inputs']['avc'], {
+            'description': 'Compile the closed AVC with SID-cache source profile',
+            'type': 'boolean', 'default': False})
+        job = workflow['jobs']['avc-objects']
+        self.assertEqual(job['timeout-minutes'], 20)
+        guard = next(step for step in job['steps'] if 'env' in step)
+        self.assertEqual(set(guard['env']), {'NETLABEL_REQUEST', 'NETPORT_REQUEST', 'SIDCACHE_REQUEST', 'AVC_REQUEST'})
+        self.assertIn("assert all(value in ('', 'true', 'false') for value in values)", guard['run'])
+        self.assertIn("assert values.count('true') <= 1", guard['run'])
+        commands = '\n'.join(step.get('run', '') for step in job['steps'])
+        self.assertIn('--avc', commands)
+        self.assertNotIn('${{ inputs.', commands)
+        self.assertNotIn('scripts/config', commands)
+        self.assertIn('gcc make flex bison bc libelf-dev libssl-dev', commands)
+        artifact = job['steps'][-1]['with']
+        for name in candidate.object_selection(False, False, False, True):
+            self.assertIn('/objects/'+name, artifact['path'])
+        self.assertIn('/FAILED.json', artifact['path'])
+        self.assertEqual(artifact['retention-days'], 3)
+        self.assertEqual(workflow['concurrency']['cancel-in-progress'], False)
