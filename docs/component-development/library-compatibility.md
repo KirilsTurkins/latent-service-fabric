@@ -48,6 +48,18 @@ configuration identity. Runtime selection remains unqualified; absent runtime
 observations, unknown reachability and initialization, and unproven worker drain
 remain visible. This separate sidecar does not replace the packaged v1 report.
 
+The context also retains dependency identities from the exact captured source
+inventory. It displays each retained dependency's original archive and selected
+tree digests, and its captured version when the resolver recorded a bounded
+version label. An absent or unsafe version stays `not-observed`; it is never
+guessed from the package name. Registry configuration and arbitrary package
+metadata are excluded. Go replacements use their effective source version; a
+local replacement never borrows the superseded module's version. Runtime and
+patch entries precede dependency attribution
+within the existing 64-material, 64-KiB bounds; omitted materials are counted.
+Linked libraries share capsule authority. An attributed package is not a
+separate security principal, and this metadata supplies no execution evidence.
+
 The normal node test workflow writes `compatibility-outcomes.json` from each
 original invocation result. It retains the frontend source separately from the
 compatibility source inventory, redacts payloads/messages, and validates the
@@ -159,6 +171,12 @@ python -m tools.guest_compatibility output/compatibility-report.json
 Add `--context output/compatibility-context.json` to present the separately bound
 standard-runtime and patch context. It must match the report's source/component
 identity. `--json` continues to emit the original v1 report on its own.
+
+The text includes retained package/source digests, relative locations and safe
+emitted symbols, followed by the context's selected/original runtime and patch
+identities. Symbols containing host paths or credential-like text are redacted.
+Displaying these observations does not alter their machine report or infer a
+cause, API elimination, qualified runtime or permission from a dependency name.
 
 Add `--outcomes output/compatibility-outcomes.json` to include the original
 invocation observations. The reader checks the closed diagnostic fields, numeric

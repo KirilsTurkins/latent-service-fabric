@@ -1,19 +1,28 @@
 """Bounded build/runtime provenance beside an immutable compatibility report."""
 from __future__ import annotations
 
+import re
+
 from tools import guest_compatibility as compatibility
 from tools.dev_workflow.common import decode, digest, encode, integer, members, require, sha
 
 SCHEMA = "lsf.guest.compatibility.context.v1"
 MAX_BYTES = 65536
 MAX_MATERIALS = 64
-KINDS = {"sdk", "compiler", "runtime", "patch", "build-tool", "generated"}
+KINDS = {"sdk", "compiler", "runtime", "patch", "build-tool", "generated", "dependency"}
+
+
+def version_token(value):
+    require(isinstance(value, str) and re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.+-]{0,127}', value),
+            'compatibility-context-dependency-version')
+    return value
 
 
 def material(kind: str, name: str, identity: str, *, profile=None,
-             original=None, transformation=None) -> dict:
+             original=None, transformation=None, version=None) -> dict:
     value = {"kind": kind, "name": name, "digest": identity}
-    for key, item in (("profile", profile), ("originalDigest", original), ("transformDigest", transformation)):
+    for key, item in (("profile", profile), ("originalDigest", original), ("transformDigest", transformation),
+                      ("version", version)):
         if item is not None:
             value[key] = item
     validate_material(value)
@@ -21,12 +30,15 @@ def material(kind: str, name: str, identity: str, *, profile=None,
 
 
 def validate_material(value):
-    members(value, {"kind", "name", "digest"}, {"profile", "originalDigest", "transformDigest"})
+    members(value, {"kind", "name", "digest"}, {"profile", "originalDigest", "transformDigest", "version"})
     require(value['kind'] in KINDS, 'compatibility-context-material-kind')
     compatibility.token(value['name'])
     sha(value['digest'])
     if 'profile' in value:
         compatibility.token(value['profile'])
+    if 'version' in value:
+        require(value['kind'] == 'dependency', 'compatibility-context-version-owner')
+        version_token(value['version'])
     for key in ('originalDigest', 'transformDigest'):
         if key in value:
             sha(value[key])
@@ -113,8 +125,26 @@ def present(value):
     selected = value['standardRuntime']
     runtime = selected.get('profile', 'not-observed')
     owner = f"Implementation/qualification owner: #{selected['ownerIssue']}.\n" if 'ownerIssue' in selected else ''
-    return (f"Standard runtime: {runtime}; qualification unknown.\n"
+    text = (f"Standard runtime: {runtime}; qualification unknown.\n"
             f"Host ABI: {value['hostAbiProfile']}.\n"
             f"{owner}"
             "Reachability and initialization remain unknown; worker drain remains unproven.\n"
             "Use the ordinary captured dependency/profile workflow; review grants separately.\n")
+    for row in value['materials']:
+        if row['kind'] not in {'runtime', 'patch', 'dependency'}:
+            continue
+        label = 'Captured dependency' if row['kind'] == 'dependency' else row['kind'].capitalize()
+        details = [f"{label}: {row['name']}", "selected " + row['digest']]
+        if row['kind'] == 'dependency':
+            details.append('captured version ' + row.get('version', 'not-observed'))
+        if 'profile' in row:
+            details.append('profile ' + row['profile'])
+        if 'originalDigest' in row:
+            details.append('original ' + row['originalDigest'])
+        if 'transformDigest' in row:
+            details.append('transformation ' + row['transformDigest'])
+        text += '; '.join(details) + '.\n'
+    if value['omittedMaterials']:
+        text += f"Additional materials omitted: {value['omittedMaterials']}.\n"
+    text += 'Linked libraries share capsule authority; package attribution creates no separate principal.\n'
+    return text

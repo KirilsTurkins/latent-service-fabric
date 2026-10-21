@@ -177,6 +177,24 @@ def present(value: dict) -> str:
         if "ownerIssue" in item:
             text += " Implementation: #" + str(item["ownerIssue"]) + "."
         lines.append(text)
+        attribution = []
+        for key, label in (("packageDigest", "Captured package"), ("sourceDigest", "Source")):
+            if key in item:
+                attribution.append(label + ": " + item[key])
+        if "symbol" in item:
+            # Compiler symbols may contain private paths or credential-like
+            # strings accepted by the older machine token domain. Display only
+            # the same finite identifier form as the emitted-code observer.
+            symbol = item["symbol"]
+            if re.fullmatch(r'[A-Za-z0-9_.+\[\]-]+(?:::[A-Za-z0-9_.+\[\]-]+)*', symbol):
+                attribution.append("Symbol: " + symbol)
+            else:
+                attribution.append("Symbol: redacted")
+        if "location" in item:
+            location = item["location"]
+            attribution.append(f"Location: {location['path']}:{location['line']}:{location['column']}")
+        if attribution:
+            lines.append("  " + "; ".join(attribution) + ".")
     if value["omittedFindings"]:
         lines.append(f"Additional findings omitted: {value['omittedFindings']}.")
     lines.append("Selected observations only; package membership, runtime authority and retry safety are not inferred.")
