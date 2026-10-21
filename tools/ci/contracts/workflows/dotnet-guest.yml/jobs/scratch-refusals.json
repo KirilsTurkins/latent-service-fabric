@@ -29,6 +29,27 @@
         }
       },
       {
+        "uses": "dtolnay/rust-toolchain",
+        "with": {
+          "components": "rustfmt",
+          "targets": "wasm32-unknown-unknown"
+        }
+      },
+      {
+        "uses": "Swatinem/rust-cache",
+        "with": {
+          "cache-all-crates": false,
+          "cache-bin": false,
+          "cache-on-failure": false,
+          "cache-targets": true,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "save-if": false,
+          "shared-key": "host-correctness"
+        }
+      },
+      {
         "uses": "bytecodealliance/actions/wasm-tools/setup",
         "with": {
           "version": "1.254.0"
@@ -83,7 +104,7 @@
   },
   "jobId": "scratch-refusals",
   "kind": "job",
-  "reviewReason": "Retain only existing bounded public installer stdout/stderr at all three existing unconditional upload sites; restore original definition exactly after removing two added paths. No compiler/recipe/limit/guard change.",
+  "reviewReason": "Repair authenticated closed-runtime-compile E0463 missing std/wasm32-unknown-unknown in actual installer-only0b97 run39517523039. Add only exact existing Rust1.97.1 wasm32 target and dependency-cache prerequisites from both maintained sibling jobs; all original workflow commands, conditions, budgets, upload paths and guest/native programme restore exactly. New source control fails original job and proves target/cache ordering and equality across all three installers.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }
