@@ -120,7 +120,11 @@ internal static class Program
                     bool anchor = rootAssembly && mangled is not null && (method.Attributes & MethodAttributes.Static) != 0
                         && ExportAttribute(metadata, method);
                     queries.Add(new Query(id, identity, Digest(signature), symbol, mangled, kind, declaration, anchor));
-                    queries = queries.OrderBy(q => !q.RootAnchor).ThenBy(q => q.Declaration != "pinvoke")
+                    // Preserve root mapping anchors, then the actual captured
+                    // dependency assemblies. Generated SDK PInvokes in the root
+                    // DLL must not crowd every transitive query out of the cap.
+                    queries = queries.OrderBy(q => !q.RootAnchor)
+                        .ThenBy(q => q.AssemblyDigest == assemblyIdentities[0]).ThenBy(q => q.Declaration != "pinvoke")
                         .ThenBy(q => q.Kind == "initialization" ? 0 : q.Kind == "constructor" ? 1 : 2)
                         .ThenBy(q => q.Symbol, StringComparer.Ordinal).ThenBy(q => q.Id, StringComparer.Ordinal)
                         .Take(MaxQueries).ToList();

@@ -45,3 +45,35 @@ reflection, generated code or another configuration cannot reach an operation.
 Runtime execution and worker drain require their own source-bound actual
 observations. These collectors have focused metadata and parser controls;
 their new application-level compiler and signed runtime matrix remains pending.
+
+The dedicated compiler-compatibility programme captures two ordinary transitive
+libraries per language through normal review and offline authoring. It compiles
+one substantive signable component per language with the option selected. Java's
+normal compiler-cache acquisition may additionally build its existing unsigned
+control; that control supplies no initializer or callback qualification.
+
+The fixture performs six real calls: caught filesystem refusal during static
+initialization and construction, caught refusal in an ordinary Timer or Task
+callback, an uncaught initializer branch, a fresh call, an uncaught callback
+branch, and another fresh call. Each completed activation must release the cell,
+all physical activation owners and all 18 provider counters. One missing-runtime
+grant call must be rejected before guest entry. The original fuel, memory,
+120-second invocation and activation-owner limits remain fixed. No filesystem,
+logging or network authority is added. The managed fixture explicitly selects
+the maintained Task profile with monotonic clock, wall clock, random and
+activation declarations; Java uses the maintained fiber-I/O profile.
+
+Java then changes exactly one root call while keeping both reviewed JARs
+byte-identical. Its expected compiler failure must identify that precise original
+native declaration. Only the combination of completed positive queries, actual
+positive compilation and that concrete refusal supports the finite eliminated
+operation. A missing .NET wrapper stays an unknown API result.
+
+`compatibility-outcomes.json` uses the existing redacted actual-outcome reader.
+A separate `compatibility-execution-report.json` records only the exact fixture's
+validated caught fallback and counterfactual observations. The packaged report
+is unchanged. Generic uncaught traps keep unknown causes, and arbitrary worker
+drain remains unproven. The owning artifact retains bounded public results and
+the signable component/package for causal replay; it excludes private DGML,
+response files, query labels, signing keys and application temporary directories.
+These are source-reviewed programme obligations; signed results remain pending.
