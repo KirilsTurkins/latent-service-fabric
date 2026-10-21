@@ -1,0 +1,75 @@
+{
+  "cases": [
+    "OrdinaryCapturedClients.test_capture_preserves_exact_published_code_review_and_removes_originals",
+    "OrdinaryCapturedClients.test_nonce_rejects_unbounded_or_path_like_coordinates_before_output",
+    "OrdinaryCapturedClients.test_original_sync_contract_and_selected_authority_remain_exact",
+    "OrdinaryCapturedClients.test_substituted_published_bytes_features_or_executable_closure_refuse_before_removal",
+    "OrdinaryCapturedClients.test_two_varied_unregistered_crates_use_the_identical_ordinary_source"
+  ],
+  "guards": {
+    "OrdinaryCapturedClients.test_capture_preserves_exact_published_code_review_and_removes_originals": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a2c6b435f80a029b75998e7cd902665523d66a10d9cdea49a7046d7bd938a1e4",
+        "class:setup-sha256:1b2dcbc03a8551dc8fd59f64e3cd533865e40428c4247b12fed67e201100276d"
+      ],
+      "skipSites": []
+    },
+    "OrdinaryCapturedClients.test_nonce_rejects_unbounded_or_path_like_coordinates_before_output": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a2c6b435f80a029b75998e7cd902665523d66a10d9cdea49a7046d7bd938a1e4",
+        "class:setup-sha256:1b2dcbc03a8551dc8fd59f64e3cd533865e40428c4247b12fed67e201100276d"
+      ],
+      "skipSites": []
+    },
+    "OrdinaryCapturedClients.test_original_sync_contract_and_selected_authority_remain_exact": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a2c6b435f80a029b75998e7cd902665523d66a10d9cdea49a7046d7bd938a1e4",
+        "class:setup-sha256:1b2dcbc03a8551dc8fd59f64e3cd533865e40428c4247b12fed67e201100276d"
+      ],
+      "skipSites": []
+    },
+    "OrdinaryCapturedClients.test_substituted_published_bytes_features_or_executable_closure_refuse_before_removal": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a2c6b435f80a029b75998e7cd902665523d66a10d9cdea49a7046d7bd938a1e4",
+        "class:setup-sha256:1b2dcbc03a8551dc8fd59f64e3cd533865e40428c4247b12fed67e201100276d"
+      ],
+      "skipSites": []
+    },
+    "OrdinaryCapturedClients.test_two_varied_unregistered_crates_use_the_identical_ordinary_source": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a2c6b435f80a029b75998e7cd902665523d66a10d9cdea49a7046d7bd938a1e4",
+        "class:setup-sha256:1b2dcbc03a8551dc8fd59f64e3cd533865e40428c4247b12fed67e201100276d"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_rust_wasi_http_runtime_fixture.py",
+  "reviewReason": "Five new ordinary two-client captured-source, varied unseen coordinate, exact authority/budget and substitution/refusal controls; no compiled or signed compatibility claim.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
