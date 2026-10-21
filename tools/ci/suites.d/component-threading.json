@@ -61,14 +61,16 @@
         "c_root::tests::root_logical_retirement_refuses_missing_or_wrong_typed_settle_import",
         "c_preimage::tests::c_finite_type_envelope_accepts_original_generator_tags_and_refuses_declared_allocation_counts",
         "c_preimage::tests::c_finite_component_preflight_accepts_one_generator_child_and_refuses_siblings_or_deeper_children",
-        "c_preimage::tests::c_finite_component_preflight_counts_nested_aliases_and_type_storage_before_typed_readers"
+        "c_preimage::tests::c_finite_component_preflight_counts_nested_aliases_and_type_storage_before_typed_readers",
+        "c_preimage::tests::c_finite_structural_leaves_refuse_declared_vectors_before_typed_or_eager_readers",
+        "c_preimage::tests::c_finite_leaf_framing_excludes_core_and_custom_bytes_but_refuses_bad_structural_frames"
       ],
       "expectedIgnored": [],
       "id": "latent-component-threading.lib.latent-component-threading",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-component-threading/Cargo.toml",
-      "minimumCases": 58,
+      "minimumCases": 60,
       "mode": "libtest",
       "package": "latent-component-threading",
       "platforms": [

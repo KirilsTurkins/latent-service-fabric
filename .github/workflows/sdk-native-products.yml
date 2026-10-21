@@ -196,7 +196,7 @@ jobs:
               'native-products-release-preparation-one-dispatch-control')
           if os.environ['C_THREAD_PROFILE_CONTROLS']=='true':
               result=commands.run('c-original-and-final-proof-controls','cargo','--config',root/'.cargo/managed-guest.toml','test','--locked','-p','latent-component-threading','--lib','--','--test-threads=1')
-              require(b'test result: ok. 58 passed; 0 failed; 0 ignored;' in result,'c-original-and-final-proof-controls-exact-count')
+              require(b'test result: ok. 60 passed; 0 failed; 0 ignored;' in result,'c-original-and-final-proof-controls-exact-count')
               result=commands.run('c-profile-1','cargo','--config',root/'.cargo/managed-guest.toml','test','--locked','-p','latent-wasmtime','--lib','cache::tests::c_verification_work_is_admitted_before_use_and_never_becomes_resident_source','--','--exact','--test-threads=1')
               require(b'test result: ok. 1 passed; 0 failed; 0 ignored;' in result,'c-profile-1-exact-count')
               result=commands.run('c-profile-2','cargo','--config',root/'.cargo/managed-guest.toml','test','--locked','-p','latent-wasmtime','--lib','component_threading::tests::c_profile_requires_prepaid_work_before_reading_proof_and_never_grants_from_data','--','--exact','--test-threads=1')
