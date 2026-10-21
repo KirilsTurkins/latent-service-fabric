@@ -1,0 +1,867 @@
+{
+  "schemaVersion": "lsf.kernel-device-core-source.v1",
+  "upstreamCommit": "7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+  "archiveSha256": "e09b6727e5c521253f0d41694900b9c38fb7604db7d35238a8197aa9f7de2428",
+  "source": {
+    "fs/inode.c": {
+      "bytes": 75338,
+      "sha256": "73e256cf70bb0d80e6fee28d969c6fb44ab4c5c7cd92b6f74edff8b5297e7070",
+      "gitBlob": "7942673f686fdc24d92c2fb8033c2fb3b6df7709",
+      "independentlyGitCorroborated": true
+    },
+    "include/linux/netdevice.h": {
+      "bytes": 170262,
+      "sha256": "35577d1d0decaad06824a0591c5929a1e837c7dc00e95b42cba1bc6743fb3941",
+      "gitBlob": "0aa536df9cb594eb762465b2007390bc90e53815",
+      "independentlyGitCorroborated": false
+    },
+    "include/linux/rcuref.h": {
+      "bytes": 4771,
+      "sha256": "4bad6b9738eeae56cdb0735d8d8b901fd7b3fe4d9432701ffab40100bf9ea7c1",
+      "gitBlob": "6322d8c1c6b4294abb794b4e0af739f1b0caedd9",
+      "independentlyGitCorroborated": false
+    },
+    "include/linux/skbuff.h": {
+      "bytes": 151887,
+      "sha256": "af70ea27cf9a3a2d790b1005a16da7649d3bbb0fd136b2934ed4018077dbb822",
+      "gitBlob": "df548a3d606570d38614fc45403133069ecb9cab",
+      "independentlyGitCorroborated": true
+    },
+    "include/net/dst.h": {
+      "bytes": 16116,
+      "sha256": "78178f0528f8f9ee92ae63c7308f84cfc5d90941d92b674fc42078999a6d3369",
+      "gitBlob": "b3ac23e14adab857ca58013861ac124f68446559",
+      "independentlyGitCorroborated": false
+    },
+    "include/net/dst_ops.h": {
+      "bytes": 2116,
+      "sha256": "388f5247da499afef3ae4f1a7f7ad779192aa31a071355bbb6d50e188e3ae524",
+      "gitBlob": "3a9001a042a5c392a79cfc59af528ef410a28668",
+      "independentlyGitCorroborated": false
+    },
+    "include/net/inet_hashtables.h": {
+      "bytes": 17314,
+      "sha256": "a699f5b96229f9d6fa4bb5bf435285db59b7d2e45918044f2c5fec01e624bf6e",
+      "gitBlob": "b1118125486631e6e02ca2d1f6575dad60e6d705",
+      "independentlyGitCorroborated": false
+    },
+    "include/net/ip.h": {
+      "bytes": 25084,
+      "sha256": "468170661746038b5ecc7bfa114433feeb853708d0af7a65d59541b602473963",
+      "gitBlob": "97c60b3002702ac98ded03e19aaeed539b657373",
+      "independentlyGitCorroborated": false
+    },
+    "include/net/ip_fib.h": {
+      "bytes": 17526,
+      "sha256": "8f006444cb27c3d3dc92eb417ad90a9a9ae818f833982b85de3577a8cc854d65",
+      "gitBlob": "145b90d004ebb45952be61f98bc7c03f0039bd9d",
+      "independentlyGitCorroborated": false
+    },
+    "include/net/lwtunnel.h": {
+      "bytes": 6850,
+      "sha256": "d5df355174e9182e145c1d4a67724d408f663d4eab35eac51f0af2c198b151e9",
+      "gitBlob": "09791f5d9b6ec8f06ff093ec1adcbf75e08bed62",
+      "independentlyGitCorroborated": false
+    },
+    "include/net/netlabel.h": {
+      "bytes": 21017,
+      "sha256": "82861a26d850caa742f5fc54da857720c52dc02f05feabaa93987540e6191f85",
+      "gitBlob": "529160f76cac209ee7473ea7b5ccd49da0789f18",
+      "independentlyGitCorroborated": false
+    },
+    "include/net/nexthop.h": {
+      "bytes": 12985,
+      "sha256": "80faf19c5303d481542adbf2c23463c9a135bb4633957683161f64ff2cba2792",
+      "gitBlob": "d9fb44e8b3219cf01031385f03021097ef6e7a76",
+      "independentlyGitCorroborated": false
+    },
+    "include/net/route.h": {
+      "bytes": 11707,
+      "sha256": "653aee3691e524225bbb9d1e4f7ace85b2e56f81a8047c7b10562201392b71a5",
+      "gitBlob": "76f526e051aa36e3ae33ee37bd8c8c2e19ef9ba6",
+      "independentlyGitCorroborated": false
+    },
+    "include/net/sock.h": {
+      "bytes": 85865,
+      "sha256": "5d52f73f4898f2a52001aa9b7db8e863eee384e4c9fa43eaf281fb01dd9e4182",
+      "gitBlob": "efa549885b7f85e50c55f95ad4eae0c1ef75797a",
+      "independentlyGitCorroborated": true
+    },
+    "include/net/tcp.h": {
+      "bytes": 86800,
+      "sha256": "6d4ba5b9aab587292de3cb3836b5907ac265d866f94a52135452f8010af9243a",
+      "gitBlob": "ad9af706085ab368c9b0723e121f66a71939ad59",
+      "independentlyGitCorroborated": true
+    },
+    "include/net/xfrm.h": {
+      "bytes": 61675,
+      "sha256": "aadaea85ee3054727e4b568e82ca6ea3cee5c9f7be461134ed773f402dcfb9ef",
+      "gitBlob": "a20a01dd6f98e3c058dbedd820eeee60c4c24ae0",
+      "independentlyGitCorroborated": false
+    },
+    "kernel/audit.c": {
+      "bytes": 66999,
+      "sha256": "7a33029ecca2b8a71a8a12e9a1699a8180e64a82acfbdc599b0ec658fa07d564",
+      "gitBlob": "df279dd2e45086b791852f2a46ceb52f24f0fd78",
+      "independentlyGitCorroborated": false
+    },
+    "net/core/dst.c": {
+      "bytes": 8852,
+      "sha256": "362a3128a9d91cd676fe607746f3b169224083d86047a84583862c81f5661b86",
+      "gitBlob": "92aa81b2f33157e91c7de8f96254054380cb9b2a",
+      "independentlyGitCorroborated": true
+    },
+    "net/core/skbuff.c": {
+      "bytes": 189334,
+      "sha256": "6a2fec31182c7c4d247d85aaffba036de9c0b6a9911c3cc1249d00b423ea0ae8",
+      "gitBlob": "5608b5507b5bf03504a9093abaa865af2b82043e",
+      "independentlyGitCorroborated": true
+    },
+    "net/core/sock.c": {
+      "bytes": 111636,
+      "sha256": "f68f84b6dafdd3762b0599ab91f0face78b154d60bdccdf8920cbdf2e9f00be7",
+      "gitBlob": "75db38fdfd35fe87b87ac2755b0ef1db6fb96415",
+      "independentlyGitCorroborated": true
+    },
+    "net/ipv4/af_inet.c": {
+      "bytes": 51938,
+      "sha256": "9079f259c6687d3aa0faea64889f7ec248e7327a5799b90a6f7c860b81522873",
+      "gitBlob": "c310a60760f3433c2dd7f1a65ea61aa1cd2e40ed",
+      "independentlyGitCorroborated": true
+    },
+    "net/ipv4/cipso_ipv4.c": {
+      "bytes": 63739,
+      "sha256": "03a86947b0292c1ed9a1d637a67a12fb147f6839ee0c0c209dfe40eafb4ab089",
+      "gitBlob": "53fcb2089cde2a246c0b84d31582485b2496da64",
+      "independentlyGitCorroborated": false
+    },
+    "net/ipv4/fib_frontend.c": {
+      "bytes": 40789,
+      "sha256": "054b45ed18db33e7f842e3565aa29fd21e171fff61debfe3b9dd2def46f55682",
+      "gitBlob": "5b7c41333d6fc8f779a99dd11c8def5797ba3997",
+      "independentlyGitCorroborated": false
+    },
+    "net/ipv4/fib_semantics.c": {
+      "bytes": 54966,
+      "sha256": "7cb52cf170fbd73a80ac9a92c4cd668d90f935321deab8230f362b30dd4f04a7",
+      "gitBlob": "1e7961b8a7cee82179ef7c9b6f088146a7de799c",
+      "independentlyGitCorroborated": false
+    },
+    "net/ipv4/fib_trie.c": {
+      "bytes": 74770,
+      "sha256": "e87b942d3f04998cc2ceab4e40223bd24a4f2c89f3137bb4d847368485bd37b7",
+      "gitBlob": "f04a735ba7cac117041529fdf8f2a3174d3e816a",
+      "independentlyGitCorroborated": false
+    },
+    "net/ipv4/inet_connection_sock.c": {
+      "bytes": 45201,
+      "sha256": "cb3567452632b9017a463f8dc860bd046bb9e572bacd56d219a2c0e124f453c7",
+      "gitBlob": "eeee6f75833767f0ae5878bb285fbde63d027654",
+      "independentlyGitCorroborated": false
+    },
+    "net/ipv4/inet_hashtables.c": {
+      "bytes": 35429,
+      "sha256": "20113f4e67d557ef06a68322d0cb03da2de5463409eb2b8b5dd80b305e9aa08d",
+      "gitBlob": "37a6acff537e6511a84b7cdfc61af2412eb2cb0b",
+      "independentlyGitCorroborated": true
+    },
+    "net/ipv4/inet_timewait_sock.c": {
+      "bytes": 10794,
+      "sha256": "c200d5880fbf8dd56c0a058beb9b4e92465991038a81b98469aa98ad1c5f31c5",
+      "gitBlob": "74b84ac418e93c176336fc974b82c3586bae3fc1",
+      "independentlyGitCorroborated": true
+    },
+    "net/ipv4/metrics.c": {
+      "bytes": 2214,
+      "sha256": "b23000aa2906b653caa07638117c8c799f7c2ffd25fca9c4fbe0a234293ef134",
+      "gitBlob": "8ddac1f595ed8cc6077e027f53db7db3c7387843",
+      "independentlyGitCorroborated": false
+    },
+    "net/ipv4/nexthop.c": {
+      "bytes": 101381,
+      "sha256": "2be58e25f245b504674b60182098932468bf3b1f6c4cec89146b00419e341814",
+      "gitBlob": "fbb22a63b8807843d4bd5272739a3f7d8669b22f",
+      "independentlyGitCorroborated": false
+    },
+    "net/ipv4/route.c": {
+      "bytes": 97360,
+      "sha256": "18e47ff7b034786411f98221878df2ba5bb645e21c90d30c3a185cff1007aef3",
+      "gitBlob": "596c84fd5ab42f15b53700ecb3ab8d968ca4330f",
+      "independentlyGitCorroborated": true
+    },
+    "net/ipv4/tcp.c": {
+      "bytes": 143675,
+      "sha256": "b10e52525abec71fed9eb8d5fb201cda5118eef04de52fae4159477da3d77ec7",
+      "gitBlob": "21c64ca9bb9b496013773250a71690249756a653",
+      "independentlyGitCorroborated": true
+    },
+    "net/ipv4/tcp_input.c": {
+      "bytes": 218886,
+      "sha256": "82fc39a54ef30599ff19ce2e400c8d5bbec9cd9be8dcc150767f7ec73a4bd979",
+      "gitBlob": "5c581d4821c1dcce1c89f29c5d4a73865b668c73",
+      "independentlyGitCorroborated": true
+    },
+    "net/ipv4/tcp_output.c": {
+      "bytes": 132663,
+      "sha256": "d0a3f8ae8b7ed2b06900344be3bca1ba7f804e96eaba1195ab617fa75f3fd89b",
+      "gitBlob": "feb94fd45c59459bb3669c0a20c985477cdc01e2",
+      "independentlyGitCorroborated": true
+    },
+    "net/netlabel/netlabel_kapi.c": {
+      "bytes": 38938,
+      "sha256": "d16333fd75af20b6ad837bd062a1720390374f72f2ca514174aa6dbbfce8c150",
+      "gitBlob": "33b77084a4e5f34770f960d7c82e481d9889753a",
+      "independentlyGitCorroborated": false
+    },
+    "net/netlink/af_netlink.c": {
+      "bytes": 71601,
+      "sha256": "2145f190dc87bfa5f79739d960766970652ed9e5c271ec847c1eeca4be86fd2d",
+      "gitBlob": "e250d4a3d03097f92c48c1741db405c8ea54899d",
+      "independentlyGitCorroborated": false
+    },
+    "net/socket.c": {
+      "bytes": 92491,
+      "sha256": "95ec72eeccec766e102b6d532270bc52813c2f86d9bfa761d20900e07b2216db",
+      "gitBlob": "723bc3a1ba5cdd17f559a65de73d9c87911e6954",
+      "independentlyGitCorroborated": true
+    },
+    "net/xfrm/xfrm_policy.c": {
+      "bytes": 114568,
+      "sha256": "79929076ddb7f855026ce831d48a8c22972724e639f25f66fe4630207f530680",
+      "gitBlob": "e033390e77855cd0c586b2ed6cc511b812193ce1",
+      "independentlyGitCorroborated": false
+    },
+    "security/lsm_audit.c": {
+      "bytes": 11088,
+      "sha256": "bd55731531fa8d095a2f7857afd8cdd83b689f8a675b7b05217910769c4bf257",
+      "gitBlob": "849e832719e2151a060679db4fe993e13f42b997",
+      "independentlyGitCorroborated": false
+    },
+    "security/security.c": {
+      "bytes": 180030,
+      "sha256": "b72fd7f869275b1caf1a98449e92024a779534fb36c77cb88f4ac210e4493055",
+      "gitBlob": "b31fd25f4e5e3d37e22e111fa67351b51ef99d2f",
+      "independentlyGitCorroborated": true
+    },
+    "security/selinux/avc.c": {
+      "bytes": 31717,
+      "sha256": "e5ead166180e1b51dab8f701f16a595e51ff68eb346f7a8b4549617ce4672ce6",
+      "gitBlob": "688ff9e63f514ec18b8096e59e0edd63ac6f5112"
+    },
+    "security/selinux/hooks.c": {
+      "bytes": 204597,
+      "sha256": "6079b88f15ca1966b640753e35edc291139fe925fca37e5c54d0a2d6e36d8370",
+      "gitBlob": "d4abf15f0e6fb98505df81ac3128255b4cd9e1e7",
+      "independentlyGitCorroborated": true
+    },
+    "security/selinux/include/avc.h": {
+      "bytes": 4623,
+      "sha256": "b1bb6fd0b9fda55cce88a5fb2a359fd64cde40ef18162e6640cd33885ebb5966",
+      "gitBlob": "96a614d47df8d1d67b0b033ebb90954653dfeab7"
+    },
+    "security/selinux/netlabel.c": {
+      "bytes": 16481,
+      "sha256": "972d5786a9fb4da8845c839f06f1999bfc70e88a3d63ec904e0a080504d2631d",
+      "gitBlob": "d51dfe89231229e78903f3aa552286326524dca2",
+      "independentlyGitCorroborated": false
+    },
+    "security/selinux/netport.c": {
+      "bytes": 5952,
+      "sha256": "8deed649b14f7a2dfe7b4dab94dde5f741ddc6858e098c3ef5dbff9e5df38b4b",
+      "gitBlob": "2e22ad9c2bd0d116668985e0fb579b5934df9394",
+      "independentlyGitCorroborated": false
+    },
+    "security/selinux/ss/ebitmap.c": {
+      "bytes": 12211,
+      "sha256": "69ffd1eaf09c8aca73a3aaabda9e31d0207b98b7d8eb4843d66106b0a75e9b94",
+      "gitBlob": "cd84357db2c47a034bb3601eeaaa8806dbf0f7af",
+      "independentlyGitCorroborated": false
+    },
+    "security/selinux/ss/mls.c": {
+      "bytes": 16094,
+      "sha256": "349ec7a62da7777fd3ab12226538a1c486654ee917003b0d6b0b5bf3a6352f88",
+      "gitBlob": "a6e49269f5351df096da8c9fb56103a2f7b0ee9d",
+      "independentlyGitCorroborated": false
+    },
+    "security/selinux/ss/services.c": {
+      "bytes": 97756,
+      "sha256": "0b0a29ad428bd17a50784c4b87b47837e5dfb3e695255e98fb55e4a03d5d08a1",
+      "gitBlob": "54d121d64804295c8ae1f40103957f6a3b671640",
+      "independentlyGitCorroborated": true
+    },
+    "security/selinux/ss/sidtab.c": {
+      "bytes": 14675,
+      "sha256": "5bc885230f9b6023ff7a64b0ff80746f607a572cf7d882eab149f6c1261c4f08",
+      "gitBlob": "c8848cbba81f24abbb2e0d07697ece10d2cc6637",
+      "independentlyGitCorroborated": false
+    },
+    "drivers/pci/probe.c": {
+      "bytes": 90707,
+      "sha256": "b1f5ebdfed1913a0d3310365a3bd8f1d17a5754c5e400fc65d8098188c03e858",
+      "gitBlob": "718293b4bdb98a3d3aac1254bc7223cdef5e55ec",
+      "independentlyGitCorroborated": false
+    },
+    "include/linux/pci.h": {
+      "bytes": 101504,
+      "sha256": "1b44480a5464c73a05d2688d223b86da11d6c620a7dfb2cce23e1102fcfec4a1",
+      "gitBlob": "ee27f1ba01b8e99b1b55e821bbdb9100f74c5771",
+      "independentlyGitCorroborated": false
+    },
+    "drivers/pci/iov.c": {
+      "bytes": 29078,
+      "sha256": "2bbeeaef2efcc6e81e42a537b314218405ed3f58ee85b6f20020ef2f136936c5",
+      "gitBlob": "d595a345a7d47374ef3bb26b2b742bbd2e2660da",
+      "independentlyGitCorroborated": false
+    },
+    "drivers/base/core.c": {
+      "bytes": 149978,
+      "sha256": "421c6bb5c72073659d19a02108ded0400b015837737d0e1f98a04af830c784bb",
+      "gitBlob": "a6134a5e5e110d5876dda2868787d7b77572a657",
+      "independentlyGitCorroborated": false
+    },
+    "lib/kobject.c": {
+      "bytes": 28433,
+      "sha256": "0161a3faaa770cf7a724f94773104a5ab33c5dbafe525729276360cd8120d4ab",
+      "gitBlob": "72fa20f405f1520a63dd50d9aa37f6609306eb3e",
+      "independentlyGitCorroborated": false
+    },
+    "mm/util.c": {
+      "bytes": 32530,
+      "sha256": "e3957dcdbdb19a587ae484f7a6317ea014fe6d64847d70675b5a6c18b3a7071f",
+      "gitBlob": "4f1275023eb7317973c061da950ef582f1660c28",
+      "independentlyGitCorroborated": false
+    },
+    "lib/kasprintf.c": {
+      "bytes": 1426,
+      "sha256": "6706bce50db2579ee692b1eb4e332636291febf983952b4251bbf26f2ba70b1d",
+      "gitBlob": "cd2f5974ed987d57d0d2b388b83edb31ea6ec83e",
+      "independentlyGitCorroborated": false
+    },
+    "include/linux/mm.h": {
+      "bytes": 132024,
+      "sha256": "a15410bd33802e92e80b973a33dfeb480ddbb36f0fc0f357f9a73d14524ddadb",
+      "gitBlob": "1728dc3356089a4c0eb2a31c4b6ab54992effb69",
+      "independentlyGitCorroborated": false
+    },
+    "include/asm-generic/sections.h": {
+      "bytes": 7851,
+      "sha256": "5bc555244fdf0fda9e2444be10f84000d9a8b18224406280b658483c2ea41b2a",
+      "gitBlob": "c768de6f19a9a90d04eab66f522bad2f10ef1fd9",
+      "independentlyGitCorroborated": false
+    },
+    "drivers/acpi/glue.c": {
+      "bytes": 9846,
+      "sha256": "fac107ae53708b696b12582f7380f7bf44879e8a35f4f129e8d2a6c85add963b",
+      "gitBlob": "a194f30876c59a9f8d09fca5aec15b40e062546d",
+      "independentlyGitCorroborated": false
+    },
+    "drivers/acpi/scan.c": {
+      "bytes": 73271,
+      "sha256": "2eb30a1068e3f911b5a52746589df873574104b407d5ed42570371c323adb0c9",
+      "gitBlob": "ae744ab62b1c05f329e08cd1d1a69bea0ac5e6d3",
+      "independentlyGitCorroborated": false
+    },
+    "drivers/acpi/bus.c": {
+      "bytes": 42762,
+      "sha256": "12254ca9d52dc0ede67cb7c3bd9cc5fcf1ab1d74ec5b286b9e2b20cc1afd5858",
+      "gitBlob": "9deb98c0a6fee7556416bcb89b7458b63ae49f68",
+      "independentlyGitCorroborated": false
+    },
+    "drivers/pci/pci-acpi.c": {
+      "bytes": 44973,
+      "sha256": "b7c3ec589bc561e8d2e8c507153978b37d1c1608c115e2ab693484b9c0b450cc",
+      "gitBlob": "3d02959e222fc68e5cbffd1cc13bdd3d80469250",
+      "independentlyGitCorroborated": false
+    },
+    "include/linux/acpi.h": {
+      "bytes": 45981,
+      "sha256": "5a47594fd6e64de376b1227b959f80b6129753d4c967a813e09caf9f0ed3e9da",
+      "gitBlob": "0e8d684ad9f43a461d6901366e53e2eea4ec6436",
+      "independentlyGitCorroborated": false
+    },
+    "include/acpi/acpi_bus.h": {
+      "bytes": 29941,
+      "sha256": "5155c7c72e435b83d30671c1aedf25b0c7a6883941c282114ec1857a61c0d0d1",
+      "gitBlob": "2aa34fcc10a157500f87e1de520fea436285f85a",
+      "independentlyGitCorroborated": false
+    },
+    "include/linux/pci-acpi.h": {
+      "bytes": 4280,
+      "sha256": "6249ad311b6e5e327180a7169f39d4506841e1616778ff4ebfb92e8c6b20ab93",
+      "gitBlob": "078225b514d4848a57f7548be112166d84021e11",
+      "independentlyGitCorroborated": false
+    },
+    "include/linux/fwnode.h": {
+      "bytes": 8483,
+      "sha256": "c03ef0668811d5a0a329b5c4ef0264e3b5bf2a46c1b9b8ead197a116c6eed98d",
+      "gitBlob": "87ee266c7bbe6ece7b85912ebb7886091b9db6d7",
+      "independentlyGitCorroborated": false
+    },
+    "drivers/acpi/osl.c": {
+      "bytes": 41382,
+      "sha256": "fcd2f82051c0328e373a45784054b1600679f89acfba0ebbc1602c205424aeef",
+      "gitBlob": "6537644faf381c61cec792958bf188a3d7ba11a6",
+      "independentlyGitCorroborated": false
+    },
+    "drivers/acpi/internal.h": {
+      "bytes": 11004,
+      "sha256": "92b841ab20f38cbcd115d895ffab093cbc505afe5dfc364e0956d391f3d4856c",
+      "gitBlob": "ced7dff9a5dbfe3c2c3c5b1ba8eec7afdcc4e38e",
+      "independentlyGitCorroborated": false
+    },
+    "lib/klist.c": {
+      "bytes": 10680,
+      "sha256": "138ea7c3d203a6592955ef4f4c74b179264b387eb9dd0333c51e77bfb95f2ba2",
+      "gitBlob": "332a4fbf18ff0812095e9ed980361a9e8d8c5000",
+      "independentlyGitCorroborated": false
+    },
+    "include/linux/workqueue.h": {
+      "bytes": 30844,
+      "sha256": "4b4bca77fe85b8e1b5f783ae41046358ba6c6565d6463e3228eb4b057e972546",
+      "gitBlob": "915af6ef4359ddf6579e661b0a3510f7abd7bf51",
+      "independentlyGitCorroborated": false
+    },
+    "include/linux/kref.h": {
+      "bytes": 3155,
+      "sha256": "2b61168bda14afedf4a56f7688ddc29eff393ceb42001b0d21461e12600035e7",
+      "gitBlob": "d32e21a2538c292452db99b915b1bb6c3ab15e53",
+      "independentlyGitCorroborated": false
+    },
+    "drivers/base/base.h": {
+      "bytes": 9258,
+      "sha256": "f0727aa65d08af024bda1fd5ac75b8a40a91c05b7a6160f5859203f1b96301ba",
+      "gitBlob": "c4ffd09950433797b6439faf9d2d58e235402fe2",
+      "independentlyGitCorroborated": false
+    },
+    "include/linux/device.h": {
+      "bytes": 41947,
+      "sha256": "23efa65fe782654e86a1e72aaa43817bcf7d99f0d13b415c1f585cde5a961e07",
+      "gitBlob": "7969d02fe628db91dbe9a4ba090d78dc65566fab",
+      "independentlyGitCorroborated": false
+    },
+    "include/linux/kobject.h": {
+      "bytes": 7124,
+      "sha256": "17078e8c6ec568b14791f13ae1223df70a4a6363cde0e1894872dbe1248ac506",
+      "gitBlob": "c8219505a79f98bc370e52997efc8af51833cfda",
+      "independentlyGitCorroborated": false
+    }
+  },
+  "sections": {
+    "pci_alloc_dev": {
+      "source": "drivers/pci/probe.c",
+      "prefix": "struct pci_dev *pci_alloc_dev(",
+      "text": "struct pci_dev *pci_alloc_dev(struct pci_bus *bus)\n{\n\tstruct pci_dev *dev;\n\n\tdev = kzalloc(sizeof(struct pci_dev), GFP_KERNEL);\n\tif (!dev)\n\t\treturn NULL;\n\n\tINIT_LIST_HEAD(&dev->bus_list);\n\tdev->dev.type = &pci_dev_type;\n\tdev->bus = pci_bus_get(bus);\n\tdev->driver_exclusive_resource = (struct resource) {\n\t\t.name = \"PCI Exclusive\",\n\t\t.start = 0,\n\t\t.end = -1,\n\t};\n\n\tspin_lock_init(&dev->pcie_cap_lock);\n#ifdef CONFIG_PCI_MSI\n\traw_spin_lock_init(&dev->msi_lock);\n#endif\n\treturn dev;\n}\n",
+      "bytes": 482,
+      "sha256": "d2fe58ccf8dfcdf642f65ef3e855558703229c144107deb5a047ee46e9f4bbbe"
+    },
+    "pci_scan_device": {
+      "source": "drivers/pci/probe.c",
+      "prefix": "static struct pci_dev *pci_scan_device(",
+      "text": "static struct pci_dev *pci_scan_device(struct pci_bus *bus, int devfn)\n{\n\tstruct pci_dev *dev;\n\tu32 l;\n\n\tif (!pci_bus_read_dev_vendor_id(bus, devfn, &l, 60*1000))\n\t\treturn NULL;\n\n\tdev = pci_alloc_dev(bus);\n\tif (!dev)\n\t\treturn NULL;\n\n\tdev->devfn = devfn;\n\tdev->vendor = l & 0xffff;\n\tdev->device = (l >> 16) & 0xffff;\n\n\tif (pci_setup_device(dev)) {\n\t\tpci_bus_put(dev->bus);\n\t\tkfree(dev);\n\t\treturn NULL;\n\t}\n\n\treturn dev;\n}\n",
+      "bytes": 420,
+      "sha256": "57bcf6a3b631357d65b5cc1c454044b2f2991398bb1860dc5597fd1a3d460c89"
+    },
+    "pci_scan_single_device": {
+      "source": "drivers/pci/probe.c",
+      "prefix": "struct pci_dev *pci_scan_single_device(",
+      "text": "struct pci_dev *pci_scan_single_device(struct pci_bus *bus, int devfn)\n{\n\tstruct pci_dev *dev;\n\n\tdev = pci_get_slot(bus, devfn);\n\tif (dev) {\n\t\tpci_dev_put(dev);\n\t\treturn dev;\n\t}\n\n\tdev = pci_scan_device(bus, devfn);\n\tif (!dev)\n\t\treturn NULL;\n\n\tpci_device_add(dev, bus);\n\n\treturn dev;\n}\n",
+      "bytes": 285,
+      "sha256": "cea6bde01f78aa0f79bd37a25237806dd8c9d424f945abc32826e8a22836938a"
+    },
+    "pci_release_dev": {
+      "source": "drivers/pci/probe.c",
+      "prefix": "static void pci_release_dev(",
+      "text": "static void pci_release_dev(struct device *dev)\n{\n\tstruct pci_dev *pci_dev;\n\n\tpci_dev = to_pci_dev(dev);\n\tpci_release_capabilities(pci_dev);\n\tpci_release_of_node(pci_dev);\n\tpcibios_release_device(pci_dev);\n\tpci_bus_put(pci_dev->bus);\n\tbitmap_free(pci_dev->dma_alias_mask);\n\tdev_dbg(dev, \"device released\\n\");\n\tkfree(pci_dev);\n}\n",
+      "bytes": 328,
+      "sha256": "78949d0f2f1fa2363360f56e7d1f2685b96d1460a75affcc1bc9dbf7d1303e13"
+    },
+    "pci_setup_device": {
+      "source": "drivers/pci/probe.c",
+      "prefix": "int pci_setup_device(",
+      "text": "int pci_setup_device(struct pci_dev *dev)\n{\n\tu32 class;\n\tu16 cmd;\n\tu8 hdr_type;\n\tint err, pos = 0;\n\tstruct pci_bus_region region;\n\tstruct resource *res;\n\n\thdr_type = pci_hdr_type(dev);\n\n\tdev->sysdata = dev->bus->sysdata;\n\tdev->dev.parent = dev->bus->bridge;\n\tdev->dev.bus = &pci_bus_type;\n\tdev->hdr_type = hdr_type & 0x7f;\n\tdev->multifunction = !!(hdr_type & 0x80);\n\tdev->error_state = pci_channel_io_normal;\n\tset_pcie_port_type(dev);\n\n\terr = pci_set_of_node(dev);\n\tif (err)\n\t\treturn err;\n\tpci_set_acpi_fwnode(dev);\n\n\tpci_dev_assign_slot(dev);\n\n\t/*\n\t * Assume 32-bit PCI; let 64-bit PCI cards (which are far rarer)\n\t * set this higher, assuming the system even supports it.\n\t */\n\tdev->dma_mask = 0xffffffff;\n\n\tdev_set_name(&dev->dev, \"%04x:%02x:%02x.%d\", pci_domain_nr(dev->bus),\n\t\t     dev->bus->number, PCI_SLOT(dev->devfn),\n\t\t     PCI_FUNC(dev->devfn));\n\n\tclass = pci_class(dev);\n\n\tdev->revision = class & 0xff;\n\tdev->class = class >> 8;\t\t    /* upper 3 bytes */\n\n\tif (pci_early_dump)\n\t\tearly_dump_pci_device(dev);\n\n\t/* Need to have dev->class ready */\n\tdev->cfg_size = pci_cfg_space_size(dev);\n\n\t/* Need to have dev->cfg_size ready */\n\tset_pcie_thunderbolt(dev);\n\n\tset_pcie_untrusted(dev);\n\n\tif (pci_is_pcie(dev))\n\t\tdev->supported_speeds = pcie_get_supported_speeds(dev);\n\n\t/* \"Unknown power state\" */\n\tdev->current_state = PCI_UNKNOWN;\n\n\t/* Early fixups, before probing the BARs */\n\tpci_fixup_device(pci_fixup_early, dev);\n\n\tpci_set_removable(dev);\n\n\tpci_info(dev, \"[%04x:%04x] type %02x class %#08x %s\\n\",\n\t\t dev->vendor, dev->device, dev->hdr_type, dev->class,\n\t\t pci_type_str(dev));\n\n\t/* Device class may be changed after fixup */\n\tclass = dev->class >> 8;\n\n\tif (dev->non_compliant_bars && !dev->mmio_always_on) {\n\t\tpci_read_config_word(dev, PCI_COMMAND, &cmd);\n\t\tif (cmd & (PCI_COMMAND_IO | PCI_COMMAND_MEMORY)) {\n\t\t\tpci_info(dev, \"device has non-compliant BARs; disabling IO/MEM decoding\\n\");\n\t\t\tcmd &= ~PCI_COMMAND_IO;\n\t\t\tcmd &= ~PCI_COMMAND_MEMORY;\n\t\t\tpci_write_config_word(dev, PCI_COMMAND, cmd);\n\t\t}\n\t}\n\n\tdev->broken_intx_masking = pci_intx_mask_broken(dev);\n\n\tswitch (dev->hdr_type) {\t\t    /* header type */\n\tcase PCI_HEADER_TYPE_NORMAL:\t\t    /* standard header */\n\t\tif (class == PCI_CLASS_BRIDGE_PCI)\n\t\t\tgoto bad;\n\t\tpci_read_irq(dev);\n\t\tpci_read_bases(dev, 6, PCI_ROM_ADDRESS);\n\n\t\tpci_subsystem_ids(dev, &dev->subsystem_vendor, &dev->subsystem_device);\n\n\t\t/*\n\t\t * Do the ugly legacy mode stuff here rather than broken chip\n\t\t * quirk code. Legacy mode ATA controllers have fixed\n\t\t * addresses. These are not always echoed in BAR0-3, and\n\t\t * BAR0-3 in a few cases contain junk!\n\t\t */\n\t\tif (class == PCI_CLASS_STORAGE_IDE) {\n\t\t\tu8 progif;\n\t\t\tpci_read_config_byte(dev, PCI_CLASS_PROG, &progif);\n\t\t\tif ((progif & 1) == 0) {\n\t\t\t\tregion.start = 0x1F0;\n\t\t\t\tregion.end = 0x1F7;\n\t\t\t\tres = &dev->resource[0];\n\t\t\t\tres->flags = LEGACY_IO_RESOURCE;\n\t\t\t\tpcibios_bus_to_resource(dev->bus, res, &region);\n\t\t\t\tpci_info(dev, \"BAR 0 %pR: legacy IDE quirk\\n\",\n\t\t\t\t\t res);\n\t\t\t\tregion.start = 0x3F6;\n\t\t\t\tregion.end = 0x3F6;\n\t\t\t\tres = &dev->resource[1];\n\t\t\t\tres->flags = LEGACY_IO_RESOURCE;\n\t\t\t\tpcibios_bus_to_resource(dev->bus, res, &region);\n\t\t\t\tpci_info(dev, \"BAR 1 %pR: legacy IDE quirk\\n\",\n\t\t\t\t\t res);\n\t\t\t}\n\t\t\tif ((progif & 4) == 0) {\n\t\t\t\tregion.start = 0x170;\n\t\t\t\tregion.end = 0x177;\n\t\t\t\tres = &dev->resource[2];\n\t\t\t\tres->flags = LEGACY_IO_RESOURCE;\n\t\t\t\tpcibios_bus_to_resource(dev->bus, res, &region);\n\t\t\t\tpci_info(dev, \"BAR 2 %pR: legacy IDE quirk\\n\",\n\t\t\t\t\t res);\n\t\t\t\tregion.start = 0x376;\n\t\t\t\tregion.end = 0x376;\n\t\t\t\tres = &dev->resource[3];\n\t\t\t\tres->flags = LEGACY_IO_RESOURCE;\n\t\t\t\tpcibios_bus_to_resource(dev->bus, res, &region);\n\t\t\t\tpci_info(dev, \"BAR 3 %pR: legacy IDE quirk\\n\",\n\t\t\t\t\t res);\n\t\t\t}\n\t\t}\n\t\tbreak;\n\n\tcase PCI_HEADER_TYPE_BRIDGE:\t\t    /* bridge header */\n\t\t/*\n\t\t * The PCI-to-PCI bridge spec requires that subtractive\n\t\t * decoding (i.e. transparent) bridge must have programming\n\t\t * interface code of 0x01.\n\t\t */\n\t\tpci_read_irq(dev);\n\t\tdev->transparent = ((dev->class & 0xff) == 1);\n\t\tpci_read_bases(dev, 2, PCI_ROM_ADDRESS1);\n\t\tpci_read_bridge_windows(dev);\n\t\tset_pcie_hotplug_bridge(dev);\n\t\tpos = pci_find_capability(dev, PCI_CAP_ID_SSVID);\n\t\tif (pos) {\n\t\t\tpci_read_config_word(dev, pos + PCI_SSVID_VENDOR_ID, &dev->subsystem_vendor);\n\t\t\tpci_read_config_word(dev, pos + PCI_SSVID_DEVICE_ID, &dev->subsystem_device);\n\t\t}\n\t\tbreak;\n\n\tcase PCI_HEADER_TYPE_CARDBUS:\t\t    /* CardBus bridge header */\n\t\tif (class != PCI_CLASS_BRIDGE_CARDBUS)\n\t\t\tgoto bad;\n\t\tpci_read_irq(dev);\n\t\tpci_read_bases(dev, 1, 0);\n\t\tpci_read_config_word(dev, PCI_CB_SUBSYSTEM_VENDOR_ID, &dev->subsystem_vendor);\n\t\tpci_read_config_word(dev, PCI_CB_SUBSYSTEM_ID, &dev->subsystem_device);\n\t\tbreak;\n\n\tdefault:\t\t\t\t    /* unknown header */\n\t\tpci_err(dev, \"unknown header type %02x, ignoring device\\n\",\n\t\t\tdev->hdr_type);\n\t\tpci_release_of_node(dev);\n\t\treturn -EIO;\n\n\tbad:\n\t\tpci_err(dev, \"ignoring class %#08x (doesn't match header type %02x)\\n\",\n\t\t\tdev->class, dev->hdr_type);\n\t\tdev->class = PCI_CLASS_NOT_DEFINED << 8;\n\t}\n\n\t/* We found a fine healthy device, go go go... */\n\treturn 0;\n}\n",
+      "bytes": 5070,
+      "sha256": "f97424235a56f3205dc944643e2258b1557c40a5de5fee55cb24ae883523c451"
+    },
+    "pci_device_add": {
+      "source": "drivers/pci/probe.c",
+      "prefix": "void pci_device_add(",
+      "text": "void pci_device_add(struct pci_dev *dev, struct pci_bus *bus)\n{\n\tint ret;\n\n\tpci_configure_device(dev);\n\n\tdevice_initialize(&dev->dev);\n\tdev->dev.release = pci_release_dev;\n\n\tset_dev_node(&dev->dev, pcibus_to_node(bus));\n\tdev->dev.dma_mask = &dev->dma_mask;\n\tdev->dev.dma_parms = &dev->dma_parms;\n\tdev->dev.coherent_dma_mask = 0xffffffffull;\n\n\tdma_set_max_seg_size(&dev->dev, 65536);\n\tdma_set_seg_boundary(&dev->dev, 0xffffffff);\n\n\tpcie_failed_link_retrain(dev);\n\n\t/* Fix up broken headers */\n\tpci_fixup_device(pci_fixup_header, dev);\n\n\tpci_reassigndev_resource_alignment(dev);\n\n\tdev->state_saved = false;\n\n\tpci_init_capabilities(dev);\n\n\t/*\n\t * Add the device to our list of discovered devices\n\t * and the bus list for fixup functions, etc.\n\t */\n\tdown_write(&pci_bus_sem);\n\tlist_add_tail(&dev->bus_list, &bus->devices);\n\tup_write(&pci_bus_sem);\n\n\tret = pcibios_device_add(dev);\n\tWARN_ON(ret < 0);\n\n\t/* Set up MSI IRQ domain */\n\tpci_set_msi_domain(dev);\n\n\t/* Notifier could use PCI capabilities */\n\tdev->match_driver = false;\n\tret = device_add(&dev->dev);\n\tWARN_ON(ret < 0);\n\n\tpci_npem_create(dev);\n}\n",
+      "bytes": 1099,
+      "sha256": "aac50bcbdf53443c9843f6bea40e2d05be920809b5c716c411c3f423b1eb21d5"
+    },
+    "pci_iov_add_virtfn": {
+      "source": "drivers/pci/iov.c",
+      "prefix": "int pci_iov_add_virtfn(",
+      "text": "int pci_iov_add_virtfn(struct pci_dev *dev, int id)\n{\n\tint i;\n\tint rc = -ENOMEM;\n\tu64 size;\n\tstruct pci_dev *virtfn;\n\tstruct resource *res;\n\tstruct pci_sriov *iov = dev->sriov;\n\tstruct pci_bus *bus;\n\n\tbus = virtfn_add_bus(dev->bus, pci_iov_virtfn_bus(dev, id));\n\tif (!bus)\n\t\tgoto failed;\n\n\tvirtfn = pci_alloc_dev(bus);\n\tif (!virtfn)\n\t\tgoto failed0;\n\n\tvirtfn->devfn = pci_iov_virtfn_devfn(dev, id);\n\tvirtfn->vendor = dev->vendor;\n\tvirtfn->device = iov->vf_device;\n\tvirtfn->is_virtfn = 1;\n\tvirtfn->physfn = pci_dev_get(dev);\n\tvirtfn->no_command_memory = 1;\n\n\tif (id == 0)\n\t\tpci_read_vf_config_common(virtfn);\n\n\trc = pci_setup_device(virtfn);\n\tif (rc)\n\t\tgoto failed1;\n\n\tvirtfn->dev.parent = dev->dev.parent;\n\tvirtfn->multifunction = 0;\n\n\tfor (i = 0; i < PCI_SRIOV_NUM_BARS; i++) {\n\t\tres = &dev->resource[i + PCI_IOV_RESOURCES];\n\t\tif (!res->parent)\n\t\t\tcontinue;\n\t\tvirtfn->resource[i].name = pci_name(virtfn);\n\t\tvirtfn->resource[i].flags = res->flags;\n\t\tsize = pci_iov_resource_size(dev, i + PCI_IOV_RESOURCES);\n\t\tvirtfn->resource[i].start = res->start + size * id;\n\t\tvirtfn->resource[i].end = virtfn->resource[i].start + size - 1;\n\t\trc = request_resource(res, &virtfn->resource[i]);\n\t\tBUG_ON(rc);\n\t}\n\n\tpci_device_add(virtfn, virtfn->bus);\n\trc = pci_iov_sysfs_link(dev, virtfn, id);\n\tif (rc)\n\t\tgoto failed1;\n\n\tpci_bus_add_device(virtfn);\n\n\treturn 0;\n\nfailed1:\n\tpci_stop_and_remove_bus_device(virtfn);\n\tpci_dev_put(dev);\nfailed0:\n\tvirtfn_remove_bus(dev->bus, bus);\nfailed:\n\n\treturn rc;\n}\n",
+      "bytes": 1482,
+      "sha256": "962195aca0732d71b2ebf6df36bf4a4761619ae3c5c9c384a29958129ddc7314"
+    },
+    "pci_iov_virtfn_bus": {
+      "source": "drivers/pci/iov.c",
+      "prefix": "int pci_iov_virtfn_bus(",
+      "text": "int pci_iov_virtfn_bus(struct pci_dev *dev, int vf_id)\n{\n\tif (!dev->is_physfn)\n\t\treturn -EINVAL;\n\treturn dev->bus->number + ((dev->devfn + dev->sriov->offset +\n\t\t\t\t    dev->sriov->stride * vf_id) >> 8);\n}\n",
+      "bytes": 205,
+      "sha256": "3ea92587142f845f8a5c831a475c531c64ad80f1bba1676b972a117e35a86f89"
+    },
+    "pci_iov_virtfn_devfn": {
+      "source": "drivers/pci/iov.c",
+      "prefix": "int pci_iov_virtfn_devfn(",
+      "text": "int pci_iov_virtfn_devfn(struct pci_dev *dev, int vf_id)\n{\n\tif (!dev->is_physfn)\n\t\treturn -EINVAL;\n\treturn (dev->devfn + dev->sriov->offset +\n\t\tdev->sriov->stride * vf_id) & 0xff;\n}\n",
+      "bytes": 182,
+      "sha256": "8e74c7029d695608d4395dc24a6e70a5db322b7051d67044b67a3a9a1b7241e4"
+    },
+    "dev_set_name": {
+      "source": "drivers/base/core.c",
+      "prefix": "int dev_set_name(",
+      "text": "int dev_set_name(struct device *dev, const char *fmt, ...)\n{\n\tva_list vargs;\n\tint err;\n\n\tva_start(vargs, fmt);\n\terr = kobject_set_name_vargs(&dev->kobj, fmt, vargs);\n\tva_end(vargs);\n\treturn err;\n}\n",
+      "bytes": 197,
+      "sha256": "ebff8c5bb442f87cfe4613715baf64641cd83b58931de66f7ec0756502253315"
+    },
+    "device_release": {
+      "source": "drivers/base/core.c",
+      "prefix": "static void device_release(",
+      "text": "static void device_release(struct kobject *kobj)\n{\n\tstruct device *dev = kobj_to_dev(kobj);\n\tstruct device_private *p = dev->p;\n\n\t/*\n\t * Some platform devices are driven without driver attached\n\t * and managed resources may have been acquired.  Make sure\n\t * all resources are released.\n\t *\n\t * Drivers still can add resources into device after device\n\t * is deleted but alive, so release devres here to avoid\n\t * possible memory leak.\n\t */\n\tdevres_release_all(dev);\n\n\tkfree(dev->dma_range_map);\n\tkfree(dev->driver_override.name);\n\n\tif (dev->release)\n\t\tdev->release(dev);\n\telse if (dev->type && dev->type->release)\n\t\tdev->type->release(dev);\n\telse if (dev->class && dev->class->dev_release)\n\t\tdev->class->dev_release(dev);\n\telse\n\t\tWARN(1, KERN_ERR \"Device '%s' does not have a release() function, it is broken and must be fixed. See Documentation/core-api/kobject.rst.\\n\",\n\t\t\tdev_name(dev));\n\tkfree(p);\n}\n",
+      "bytes": 905,
+      "sha256": "1c6bfbb50f37de4ba84fcb154b5fe88d565402e4867ab3a992536c52fa0e0c5a"
+    },
+    "kobject_set_name_vargs": {
+      "source": "lib/kobject.c",
+      "prefix": "int kobject_set_name_vargs(",
+      "text": "int kobject_set_name_vargs(struct kobject *kobj, const char *fmt,\n\t\t\t\t  va_list vargs)\n{\n\tconst char *s;\n\n\tif (kobj->name && !fmt)\n\t\treturn 0;\n\n\ts = kvasprintf_const(GFP_KERNEL, fmt, vargs);\n\tif (!s)\n\t\treturn -ENOMEM;\n\n\t/*\n\t * ewww... some of these buggers have '/' in the name ... If\n\t * that's the case, we need to make sure we have an actual\n\t * allocated copy to modify, since kvasprintf_const may have\n\t * returned something from .rodata.\n\t */\n\tif (strchr(s, '/')) {\n\t\tchar *t;\n\n\t\tt = kstrdup(s, GFP_KERNEL);\n\t\tkfree_const(s);\n\t\tif (!t)\n\t\t\treturn -ENOMEM;\n\t\ts = strreplace(t, '/', '!');\n\t}\n\tkfree_const(kobj->name);\n\tkobj->name = s;\n\n\treturn 0;\n}\n",
+      "bytes": 652,
+      "sha256": "64afeb0bca6377076d6881e3f4412ee44e2b2200bb0254b9aee3116d3db9ee6d"
+    },
+    "kobject_cleanup": {
+      "source": "lib/kobject.c",
+      "prefix": "static void kobject_cleanup(",
+      "text": "static void kobject_cleanup(struct kobject *kobj)\n{\n\tstruct kobject *parent = kobj->parent;\n\tconst struct kobj_type *t = get_ktype(kobj);\n\tconst char *name = kobj->name;\n\n\tpr_debug(\"'%s' (%p): %s, parent %p\\n\",\n\t\t kobject_name(kobj), kobj, __func__, kobj->parent);\n\n\tif (t && !t->release)\n\t\tpr_debug(\"'%s' (%p): does not have a release() function, it is broken and must be fixed. See Documentation/core-api/kobject.rst.\\n\",\n\t\t\t kobject_name(kobj), kobj);\n\n\t/* remove from sysfs if the caller did not do it */\n\tif (kobj->state_in_sysfs) {\n\t\tpr_debug(\"'%s' (%p): auto cleanup kobject_del\\n\",\n\t\t\t kobject_name(kobj), kobj);\n\t\t__kobject_del(kobj);\n\t} else {\n\t\t/* avoid dropping the parent reference unnecessarily */\n\t\tparent = NULL;\n\t}\n\n\tif (t && t->release) {\n\t\tpr_debug(\"'%s' (%p): calling ktype release\\n\",\n\t\t\t kobject_name(kobj), kobj);\n\t\tt->release(kobj);\n\t}\n\n\t/* free name if we allocated it */\n\tif (name) {\n\t\tpr_debug(\"'%s': free name\\n\", name);\n\t\tkfree_const(name);\n\t}\n\n\tkobject_put(parent);\n}\n",
+      "bytes": 998,
+      "sha256": "c73d5bfc20826a2dc785804dd717d297e80f3bbf1084fb3aac3eab4b583f884c"
+    },
+    "kvasprintf_const": {
+      "source": "lib/kasprintf.c",
+      "prefix": "const char *kvasprintf_const(",
+      "text": "const char *kvasprintf_const(gfp_t gfp, const char *fmt, va_list ap)\n{\n\tif (!strchr(fmt, '%'))\n\t\treturn kstrdup_const(fmt, gfp);\n\tif (!strcmp(fmt, \"%s\"))\n\t\treturn kstrdup_const(va_arg(ap, const char*), gfp);\n\treturn kvasprintf(gfp, fmt, ap);\n}\n",
+      "bytes": 244,
+      "sha256": "05e4ebe15c62c49c59977dae6b70a5244b101c4b8a073457dd4c52c6328b7987"
+    },
+    "kvasprintf": {
+      "source": "lib/kasprintf.c",
+      "prefix": "char *kvasprintf(",
+      "text": "char *kvasprintf(gfp_t gfp, const char *fmt, va_list ap)\n{\n\tunsigned int first, second;\n\tchar *p;\n\tva_list aq;\n\n\tva_copy(aq, ap);\n\tfirst = vsnprintf(NULL, 0, fmt, aq);\n\tva_end(aq);\n\n\tp = kmalloc_track_caller(first+1, gfp);\n\tif (!p)\n\t\treturn NULL;\n\n\tsecond = vsnprintf(p, first+1, fmt, ap);\n\tWARN(first != second, \"different return values (%u and %u) from vsnprintf(\\\"%s\\\", ...)\",\n\t     first, second, fmt);\n\n\treturn p;\n}\n",
+      "bytes": 421,
+      "sha256": "a9417383e6a48a16282156403c041b2d8d2d613f04aecf568b263ceff78f7f48"
+    },
+    "kstrdup_const": {
+      "source": "mm/util.c",
+      "prefix": "const char *kstrdup_const(",
+      "text": "const char *kstrdup_const(const char *s, gfp_t gfp)\n{\n\tif (is_kernel_rodata((unsigned long)s))\n\t\treturn s;\n\n\treturn kstrdup(s, gfp);\n}\n",
+      "bytes": 135,
+      "sha256": "30bbdd18e859a89a43af3ecdb5987d1aec365d7e3dfcaa72e20511bc90ca0046"
+    },
+    "kfree_const": {
+      "source": "mm/util.c",
+      "prefix": "void kfree_const(",
+      "text": "void kfree_const(const void *x)\n{\n\tif (!is_kernel_rodata((unsigned long)x))\n\t\tkfree(x);\n}\n",
+      "bytes": 90,
+      "sha256": "ece147446b951212075c357920f62c8631ec1020c9a67cac6f7805abe73cb35a"
+    },
+    "kstrdup": {
+      "source": "mm/util.c",
+      "prefix": "noinline\nchar *kstrdup(",
+      "text": "noinline\nchar *kstrdup(const char *s, gfp_t gfp)\n{\n\tsize_t len;\n\tchar *buf;\n\n\tif (!s)\n\t\treturn NULL;\n\n\tlen = strlen(s) + 1;\n\tbuf = kmalloc_track_caller(len, gfp);\n\tif (buf)\n\t\tmemcpy(buf, s, len);\n\treturn buf;\n}\n",
+      "bytes": 211,
+      "sha256": "4977242534534944793856dec18f2a2ec8f7d971fee0cac94e95b4b8d74451d5"
+    },
+    "is_kernel_rodata": {
+      "source": "include/asm-generic/sections.h",
+      "prefix": "static inline bool is_kernel_rodata(",
+      "text": "static inline bool is_kernel_rodata(unsigned long addr)\n{\n\treturn addr >= (unsigned long)__start_rodata &&\n\t       addr < (unsigned long)__end_rodata;\n}\n",
+      "bytes": 153,
+      "sha256": "258e98db9300b38c389ea0b78224958d5e2c3777d55623163a82b5abc8ac4905"
+    },
+    "pci_set_acpi_fwnode": {
+      "source": "drivers/pci/pci-acpi.c",
+      "prefix": "void pci_set_acpi_fwnode(",
+      "bytes": 181,
+      "sha256": "e77a82ab63a3d5d8eda5f219dc34c2e911095c4ed94fe1200ef999e4451b1fc0",
+      "text": "void pci_set_acpi_fwnode(struct pci_dev *dev)\n{\n\tif (!dev_fwnode(&dev->dev) && !pci_dev_is_added(dev))\n\t\tACPI_COMPANION_SET(&dev->dev,\n\t\t\t\t   acpi_pci_find_companion(&dev->dev));\n}\n"
+    },
+    "acpi_pci_find_companion": {
+      "source": "drivers/pci/pci-acpi.c",
+      "prefix": "static struct acpi_device *acpi_pci_find_companion(struct device *dev)\n{",
+      "bytes": 1454,
+      "sha256": "531d178c09309c678f077dd27c46bc43f9a6b384b8cc2851d7cbb523544c9dc7",
+      "text": "static struct acpi_device *acpi_pci_find_companion(struct device *dev)\n{\n\tstruct pci_dev *pci_dev = to_pci_dev(dev);\n\tstruct acpi_device *adev;\n\tbool check_children;\n\tu64 addr;\n\n\tif (!dev->parent)\n\t\treturn NULL;\n\n\tdown_read(&pci_acpi_companion_lookup_sem);\n\n\tadev = pci_acpi_find_companion_hook ?\n\t\tpci_acpi_find_companion_hook(pci_dev) : NULL;\n\n\tup_read(&pci_acpi_companion_lookup_sem);\n\n\tif (adev)\n\t\treturn adev;\n\n\tcheck_children = pci_is_bridge(pci_dev);\n\t/* Please ref to ACPI spec for the syntax of _ADR */\n\taddr = (PCI_SLOT(pci_dev->devfn) << 16) | PCI_FUNC(pci_dev->devfn);\n\tadev = acpi_find_child_device(ACPI_COMPANION(dev->parent), addr,\n\t\t\t\t      check_children);\n\n\t/*\n\t * There may be ACPI device objects in the ACPI namespace that are\n\t * children of the device object representing the host bridge, but don't\n\t * represent PCI devices.  Both _HID and _ADR may be present for them,\n\t * even though that is against the specification (for example, see\n\t * Section 6.1 of ACPI 6.3), but in many cases the _ADR returns 0 which\n\t * appears to indicate that they should not be taken into consideration\n\t * as potential companions of PCI devices on the root bus.\n\t *\n\t * To catch this special case, disregard the returned device object if\n\t * it has a valid _HID, addr is 0 and the PCI device at hand is on the\n\t * root bus.\n\t */\n\tif (adev && adev->pnp.type.platform_id && !addr &&\n\t    pci_is_root_bus(pci_dev->bus))\n\t\treturn NULL;\n\n\treturn adev;\n}\n"
+    },
+    "pci_acpi_set_companion_lookup_hook": {
+      "source": "drivers/pci/pci-acpi.c",
+      "prefix": "int pci_acpi_set_companion_lookup_hook(",
+      "bytes": 352,
+      "sha256": "63002d94534742c6cd1deca34e508bfa87059c35fb02753f3aee8bdd8329f400",
+      "text": "int pci_acpi_set_companion_lookup_hook(struct acpi_device *(*func)(struct pci_dev *))\n{\n\tint ret;\n\n\tif (!func)\n\t\treturn -EINVAL;\n\n\tdown_write(&pci_acpi_companion_lookup_sem);\n\n\tif (pci_acpi_find_companion_hook) {\n\t\tret = -EBUSY;\n\t} else {\n\t\tpci_acpi_find_companion_hook = func;\n\t\tret = 0;\n\t}\n\n\tup_write(&pci_acpi_companion_lookup_sem);\n\n\treturn ret;\n}\n"
+    },
+    "pci_acpi_clear_companion_lookup_hook": {
+      "source": "drivers/pci/pci-acpi.c",
+      "prefix": "void pci_acpi_clear_companion_lookup_hook(",
+      "bytes": 180,
+      "sha256": "0992f01d6535fb377188da808cec055d6b4d5622ee94361d9142d61dc764b5e1",
+      "text": "void pci_acpi_clear_companion_lookup_hook(void)\n{\n\tdown_write(&pci_acpi_companion_lookup_sem);\n\n\tpci_acpi_find_companion_hook = NULL;\n\n\tup_write(&pci_acpi_companion_lookup_sem);\n}\n"
+    },
+    "find_child_checks": {
+      "source": "drivers/acpi/glue.c",
+      "prefix": "static int find_child_checks(",
+      "bytes": 1121,
+      "sha256": "f4e9bd9f5aec89d52a20a9f6d75d34596e48e84b42f676b945dc89b263bdb667",
+      "text": "static int find_child_checks(struct acpi_device *adev, bool check_children)\n{\n\tunsigned long long sta;\n\tacpi_status status;\n\n\tif (check_children && !acpi_dev_has_children(adev))\n\t\treturn -ENODEV;\n\n\tstatus = acpi_evaluate_integer(adev->handle, \"_STA\", NULL, &sta);\n\tif (status == AE_NOT_FOUND) {\n\t\t/*\n\t\t * Special case: backlight device objects without _STA are\n\t\t * preferred to other objects with the same _ADR value, because\n\t\t * it is more likely that they are actually useful.\n\t\t */\n\t\tif (adev->pnp.type.backlight)\n\t\t\treturn FIND_CHILD_MID_SCORE;\n\n\t\treturn FIND_CHILD_MIN_SCORE;\n\t}\n\n\tif (ACPI_FAILURE(status) || !(sta & ACPI_STA_DEVICE_ENABLED))\n\t\treturn -ENODEV;\n\n\t/*\n\t * If the device has a _HID returning a valid ACPI/PNP device ID, it is\n\t * better to make it look less attractive here, so that the other device\n\t * with the same _ADR value (that may not have a valid device ID) can be\n\t * matched going forward.  [This means a second spec violation in a row,\n\t * so whatever we do here is best effort anyway.]\n\t */\n\tif (adev->pnp.type.platform_id)\n\t\treturn FIND_CHILD_MIN_SCORE;\n\n\treturn FIND_CHILD_MAX_SCORE;\n}\n"
+    },
+    "check_one_child": {
+      "source": "drivers/acpi/glue.c",
+      "prefix": "static int check_one_child(",
+      "bytes": 1355,
+      "sha256": "10640fd30d487a5a020ac1b541f89828d3e879b5c202d58acab961a9ed3b2e75",
+      "text": "static int check_one_child(struct acpi_device *adev, void *data)\n{\n\tstruct find_child_walk_data *wd = data;\n\tint score;\n\n\tif (!adev->pnp.type.bus_address || acpi_device_adr(adev) != wd->address)\n\t\treturn 0;\n\n\tif (!wd->adev) {\n\t\t/*\n\t\t * This is the first matching object, so save it.  If it is not\n\t\t * necessary to look for any other matching objects, stop the\n\t\t * search.\n\t\t */\n\t\twd->adev = adev;\n\t\treturn !(wd->check_sta || wd->check_children);\n\t}\n\n\t/*\n\t * There is more than one matching device object with the same _ADR\n\t * value.  That really is unexpected, so we are kind of beyond the scope\n\t * of the spec here.  We have to choose which one to return, though.\n\t *\n\t * First, get the score for the previously found object and terminate\n\t * the walk if it is maximum.\n\t*/\n\tif (!wd->score) {\n\t\tscore = find_child_checks(wd->adev, wd->check_children);\n\t\tif (score == FIND_CHILD_MAX_SCORE)\n\t\t\treturn 1;\n\n\t\twd->score = score;\n\t}\n\t/*\n\t * Second, if the object that has just been found has a better score,\n\t * replace the previously found one with it and terminate the walk if\n\t * the new score is maximum.\n\t */\n\tscore = find_child_checks(adev, wd->check_children);\n\tif (score > wd->score) {\n\t\twd->adev = adev;\n\t\tif (score == FIND_CHILD_MAX_SCORE)\n\t\t\treturn 1;\n\n\t\twd->score = score;\n\t}\n\n\t/* Continue, because there may be better matches. */\n\treturn 0;\n}\n"
+    },
+    "acpi_find_child": {
+      "source": "drivers/acpi/glue.c",
+      "prefix": "static struct acpi_device *acpi_find_child(",
+      "bytes": 384,
+      "sha256": "813316c8fcc85e9ed2eb2e8f2cd141fd09446f78e5999e5d4eaebb6ca393bcc1",
+      "text": "static struct acpi_device *acpi_find_child(struct acpi_device *parent,\n\t\t\t\t\t   u64 address, bool check_children,\n\t\t\t\t\t   bool check_sta)\n{\n\tstruct find_child_walk_data wd = {\n\t\t.address = address,\n\t\t.check_children = check_children,\n\t\t.check_sta = check_sta,\n\t\t.adev = NULL,\n\t\t.score = 0,\n\t};\n\n\tif (parent)\n\t\tacpi_dev_for_each_child(parent, check_one_child, &wd);\n\n\treturn wd.adev;\n}\n"
+    },
+    "acpi_find_child_device": {
+      "source": "drivers/acpi/glue.c",
+      "prefix": "struct acpi_device *acpi_find_child_device(",
+      "bytes": 181,
+      "sha256": "771d3345c98c1eaf512aa90c4df79399223b3a80f11fd5cbfc7e1ccae1a0c40a",
+      "text": "struct acpi_device *acpi_find_child_device(struct acpi_device *parent,\n\t\t\t\t\t   u64 address, bool check_children)\n{\n\treturn acpi_find_child(parent, address, check_children, true);\n}\n"
+    },
+    "acpi_scan_lock_acquire": {
+      "source": "drivers/acpi/scan.c",
+      "prefix": "void acpi_scan_lock_acquire(",
+      "bytes": 68,
+      "sha256": "167e6054c184f098bc03a87b67411d8bb91def32d1b9bb536968606b5b34d15d",
+      "text": "void acpi_scan_lock_acquire(void)\n{\n\tmutex_lock(&acpi_scan_lock);\n}\n"
+    },
+    "acpi_scan_lock_release": {
+      "source": "drivers/acpi/scan.c",
+      "prefix": "void acpi_scan_lock_release(",
+      "bytes": 70,
+      "sha256": "b5adfc7e942cd4b01949a4e83363e33c164d66b11c8e33da802369f323b890a8",
+      "text": "void acpi_scan_lock_release(void)\n{\n\tmutex_unlock(&acpi_scan_lock);\n}\n"
+    },
+    "acpi_scan_init": {
+      "source": "drivers/acpi/scan.c",
+      "prefix": "void __init acpi_scan_init(",
+      "bytes": 1667,
+      "sha256": "f2641099746193ffe7842d67151ef27631eeb8bb5b510ac2c7702eb97145d004",
+      "text": "void __init acpi_scan_init(void)\n{\n\tacpi_status status;\n\tstruct acpi_table_stao *stao_ptr;\n\n\tacpi_pci_root_init();\n\tacpi_pci_link_init();\n\tacpi_processor_init();\n\tacpi_platform_init();\n\tacpi_lpss_init();\n\tacpi_apd_init();\n\tacpi_cmos_rtc_init();\n\tacpi_container_init();\n\tacpi_memory_hotplug_init();\n\tacpi_watchdog_init();\n\tacpi_pnp_init();\n\tacpi_int340x_thermal_init();\n\tacpi_init_lpit();\n\n\tacpi_scan_add_handler(&generic_device_handler);\n\n\t/*\n\t * If there is STAO table, check whether it needs to ignore the UART\n\t * device in SPCR table.\n\t */\n\tstatus = acpi_get_table(ACPI_SIG_STAO, 0,\n\t\t\t\t(struct acpi_table_header **)&stao_ptr);\n\tif (ACPI_SUCCESS(status)) {\n\t\tif (stao_ptr->header.length > sizeof(struct acpi_table_stao))\n\t\t\tpr_info(\"STAO Name List not yet supported.\\n\");\n\n\t\tif (stao_ptr->ignore_uart)\n\t\t\tacpi_get_spcr_uart_addr();\n\n\t\tacpi_put_table((struct acpi_table_header *)stao_ptr);\n\t}\n\n\tacpi_gpe_apply_masked_gpes();\n\tacpi_update_all_gpes();\n\n\t/*\n\t * Although we call __add_memory() that is documented to require the\n\t * device_hotplug_lock, it is not necessary here because this is an\n\t * early code when userspace or any other code path cannot trigger\n\t * hotplug/hotunplug operations.\n\t */\n\tmutex_lock(&acpi_scan_lock);\n\t/*\n\t * Enumerate devices in the ACPI namespace.\n\t */\n\tif (acpi_bus_scan(ACPI_ROOT_OBJECT))\n\t\tgoto unlock;\n\n\tacpi_root = acpi_fetch_acpi_dev(ACPI_ROOT_OBJECT);\n\tif (!acpi_root)\n\t\tgoto unlock;\n\n\t/* Fixed feature devices do not exist on HW-reduced platform */\n\tif (!acpi_gbl_reduced_hardware)\n\t\tacpi_bus_scan_fixed();\n\n\tacpi_turn_off_unused_power_resources();\n\n\tacpi_scan_initialized = true;\n\nunlock:\n\tmutex_unlock(&acpi_scan_lock);\n}\n"
+    },
+    "acpi_dev_for_one_check": {
+      "source": "drivers/acpi/bus.c",
+      "prefix": "static int acpi_dev_for_one_check(",
+      "bytes": 218,
+      "sha256": "5da060d5f6efc3b8007bc345a8c161be1efcd49dc347830ebf626a2e7592242c",
+      "text": "static int acpi_dev_for_one_check(struct device *dev, void *context)\n{\n\tstruct acpi_dev_walk_context *adwc = context;\n\n\tif (dev->bus != &acpi_bus_type)\n\t\treturn 0;\n\n\treturn adwc->fn(to_acpi_device(dev), adwc->data);\n}\n"
+    },
+    "acpi_dev_for_each_child": {
+      "source": "drivers/acpi/bus.c",
+      "prefix": "int acpi_dev_for_each_child(",
+      "bytes": 264,
+      "sha256": "847b194e70981c759697b2077fb31d20e7616d6649c33d1439d39fe5e84786c5",
+      "text": "int acpi_dev_for_each_child(struct acpi_device *adev,\n\t\t\t    int (*fn)(struct acpi_device *, void *), void *data)\n{\n\tstruct acpi_dev_walk_context adwc = {\n\t\t.fn = fn,\n\t\t.data = data,\n\t};\n\n\treturn device_for_each_child(&adev->dev, &adwc, acpi_dev_for_one_check);\n}\n"
+    },
+    "device_for_each_child": {
+      "source": "drivers/base/core.c",
+      "prefix": "int device_for_each_child(",
+      "bytes": 375,
+      "sha256": "4d8bf00011c3c219dd55deb33fed7f91a1f087e68ca5b6a029bde50fbb72ebc0",
+      "text": "int device_for_each_child(struct device *parent, void *data,\n\t\t\t  int (*fn)(struct device *dev, void *data))\n{\n\tstruct klist_iter i;\n\tstruct device *child;\n\tint error = 0;\n\n\tif (!parent || !parent->p)\n\t\treturn 0;\n\n\tklist_iter_init(&parent->p->klist_children, &i);\n\twhile (!error && (child = next_device(&i)))\n\t\terror = fn(child, data);\n\tklist_iter_exit(&i);\n\treturn error;\n}\n"
+    },
+    "next_device": {
+      "source": "drivers/base/core.c",
+      "prefix": "static struct device *next_device(",
+      "bytes": 235,
+      "sha256": "a6ee9d19b95802c9e22ea2f727eb3eb2a98579f61c66cb4344e04f039af948ad",
+      "text": "static struct device *next_device(struct klist_iter *i)\n{\n\tstruct klist_node *n = klist_next(i);\n\tstruct device *dev = NULL;\n\tstruct device_private *p;\n\n\tif (n) {\n\t\tp = to_device_private_parent(n);\n\t\tdev = p->device;\n\t}\n\treturn dev;\n}\n"
+    },
+    "set_primary_fwnode": {
+      "source": "drivers/base/core.c",
+      "prefix": "void set_primary_fwnode(",
+      "bytes": 648,
+      "sha256": "ee997770e0cbf08965b127b0fe72ba42e0e8a2854a8b87d0ed54c4e790318580",
+      "text": "void set_primary_fwnode(struct device *dev, struct fwnode_handle *fwnode)\n{\n\tstruct device *parent = dev->parent;\n\tstruct fwnode_handle *fn = dev->fwnode;\n\n\tif (fwnode) {\n\t\tif (fwnode_is_primary(fn))\n\t\t\tfn = fn->secondary;\n\n\t\tif (fn) {\n\t\t\tWARN_ON(fwnode->secondary);\n\t\t\tfwnode->secondary = fn;\n\t\t}\n\t\tdev->fwnode = fwnode;\n\t} else {\n\t\tif (fwnode_is_primary(fn)) {\n\t\t\tdev->fwnode = fn->secondary;\n\n\t\t\t/* Skip nullifying fn->secondary if the primary is shared */\n\t\t\tif (parent && fn == parent->fwnode)\n\t\t\t\treturn;\n\n\t\t\t/* Set fn->secondary = NULL, so fn remains the primary fwnode */\n\t\t\tfn->secondary = NULL;\n\t\t} else {\n\t\t\tdev->fwnode = NULL;\n\t\t}\n\t}\n}\n"
+    },
+    "acpi_device_del_work_fn": {
+      "source": "drivers/acpi/scan.c",
+      "prefix": "static void acpi_device_del_work_fn(",
+      "bytes": 708,
+      "sha256": "efdf60b5299522f8eea67a5acb32895f1826379d396c1fe10fa201bbbc82031f",
+      "text": "static void acpi_device_del_work_fn(struct work_struct *work_not_used)\n{\n\tfor (;;) {\n\t\tstruct acpi_device *adev;\n\n\t\tmutex_lock(&acpi_device_del_lock);\n\n\t\tif (list_empty(&acpi_device_del_list)) {\n\t\t\tmutex_unlock(&acpi_device_del_lock);\n\t\t\tbreak;\n\t\t}\n\t\tadev = list_first_entry(&acpi_device_del_list,\n\t\t\t\t\tstruct acpi_device, del_list);\n\t\tlist_del(&adev->del_list);\n\n\t\tmutex_unlock(&acpi_device_del_lock);\n\n\t\tblocking_notifier_call_chain(&acpi_reconfig_chain,\n\t\t\t\t\t     ACPI_RECONFIG_DEVICE_REMOVE, adev);\n\n\t\tacpi_device_del(adev);\n\t\t/*\n\t\t * Drop references to all power resources that might have been\n\t\t * used by the device.\n\t\t */\n\t\tacpi_power_transition(adev, ACPI_STATE_D3_COLD);\n\t\tacpi_dev_put(adev);\n\t}\n}\n"
+    },
+    "acpi_scan_drop_device": {
+      "source": "drivers/acpi/scan.c",
+      "prefix": "static void acpi_scan_drop_device(",
+      "bytes": 998,
+      "sha256": "f6b818fe0ad2db40db2ee15f3911acf74da8f151f4fe26e36e964a8de2b197b2",
+      "text": "static void acpi_scan_drop_device(acpi_handle handle, void *context)\n{\n\tstatic DECLARE_WORK(work, acpi_device_del_work_fn);\n\tstruct acpi_device *adev = context;\n\n\tmutex_lock(&acpi_device_del_lock);\n\n\t/*\n\t * Use the ACPI hotplug workqueue which is ordered, so this work item\n\t * won't run after any hotplug work items submitted subsequently.  That\n\t * prevents attempts to register device objects identical to those being\n\t * deleted from happening concurrently (such attempts result from\n\t * hotplug events handled via the ACPI hotplug workqueue).  It also will\n\t * run after all of the work items submitted previously, which helps\n\t * those work items to ensure that they are not accessing stale device\n\t * objects.\n\t */\n\tif (list_empty(&acpi_device_del_list))\n\t\tacpi_queue_hotplug_work(&work);\n\n\tlist_add_tail(&adev->del_list, &acpi_device_del_list);\n\t/* Make acpi_ns_validate_handle() return NULL for this handle. */\n\tadev->handle = INVALID_ACPI_HANDLE;\n\n\tmutex_unlock(&acpi_device_del_lock);\n}\n"
+    },
+    "acpi_device_del": {
+      "source": "drivers/acpi/scan.c",
+      "prefix": "static void acpi_device_del(",
+      "bytes": 315,
+      "sha256": "19268e5eeed651e07f7d4b9de844b4ada9489ce409f95efecc8ea6698a6163af",
+      "text": "static void acpi_device_del(struct acpi_device *device)\n{\n\tmutex_lock(&acpi_device_lock);\n\n\tacpi_device_cleanup(device);\n\n\tmutex_unlock(&acpi_device_lock);\n\n\tacpi_power_add_remove_device(device, false);\n\tacpi_device_remove_files(device);\n\tif (device->remove)\n\t\tdevice->remove(device);\n\n\tdevice_del(&device->dev);\n}\n"
+    },
+    "acpi_device_release": {
+      "source": "drivers/acpi/scan.c",
+      "prefix": "static void acpi_device_release(",
+      "bytes": 241,
+      "sha256": "0a133948531ecc07981943b7379f476d81b452012e147b3caa805c281c93f0a1",
+      "text": "static void acpi_device_release(struct device *dev)\n{\n\tstruct acpi_device *acpi_dev = to_acpi_device(dev);\n\n\tacpi_free_properties(acpi_dev);\n\tacpi_free_pnp_ids(&acpi_dev->pnp);\n\tacpi_free_power_resources_lists(acpi_dev);\n\tkfree(acpi_dev);\n}\n"
+    },
+    "acpi_device_add": {
+      "source": "drivers/acpi/scan.c",
+      "prefix": "int acpi_device_add(",
+      "bytes": 1769,
+      "sha256": "adcd402dcb6a86b84f25062e09650e99a7c8c0ddbe0d4a9bad1aa6b9847e3065",
+      "text": "int acpi_device_add(struct acpi_device *device)\n{\n\tstruct acpi_device_bus_id *acpi_device_bus_id;\n\tint result;\n\n\t/*\n\t * Linkage\n\t * -------\n\t * Link this device to its parent and siblings.\n\t */\n\tINIT_LIST_HEAD(&device->wakeup_list);\n\tINIT_LIST_HEAD(&device->physical_node_list);\n\tINIT_LIST_HEAD(&device->del_list);\n\tmutex_init(&device->physical_node_lock);\n\n\tmutex_lock(&acpi_device_lock);\n\n\tacpi_device_bus_id = acpi_device_bus_id_match(acpi_device_hid(device));\n\tif (acpi_device_bus_id) {\n\t\tresult = acpi_device_set_name(device, acpi_device_bus_id);\n\t\tif (result)\n\t\t\tgoto err_unlock;\n\t} else {\n\t\tacpi_device_bus_id = kzalloc(sizeof(*acpi_device_bus_id),\n\t\t\t\t\t     GFP_KERNEL);\n\t\tif (!acpi_device_bus_id) {\n\t\t\tresult = -ENOMEM;\n\t\t\tgoto err_unlock;\n\t\t}\n\t\tacpi_device_bus_id->bus_id =\n\t\t\tkstrdup_const(acpi_device_hid(device), GFP_KERNEL);\n\t\tif (!acpi_device_bus_id->bus_id) {\n\t\t\tkfree(acpi_device_bus_id);\n\t\t\tresult = -ENOMEM;\n\t\t\tgoto err_unlock;\n\t\t}\n\n\t\tida_init(&acpi_device_bus_id->instance_ida);\n\n\t\tresult = acpi_device_set_name(device, acpi_device_bus_id);\n\t\tif (result) {\n\t\t\tkfree_const(acpi_device_bus_id->bus_id);\n\t\t\tkfree(acpi_device_bus_id);\n\t\t\tgoto err_unlock;\n\t\t}\n\n\t\tlist_add_tail(&acpi_device_bus_id->node, &acpi_bus_id_list);\n\t}\n\n\tif (device->wakeup.flags.valid)\n\t\tlist_add_tail(&device->wakeup_list, &acpi_wakeup_device_list);\n\n\tacpi_store_pld_crc(device);\n\n\tmutex_unlock(&acpi_device_lock);\n\n\tresult = device_add(&device->dev);\n\tif (result) {\n\t\tdev_err(&device->dev, \"Error registering device\\n\");\n\t\tgoto err;\n\t}\n\n\tacpi_device_setup_files(device);\n\n\treturn 0;\n\nerr:\n\tmutex_lock(&acpi_device_lock);\n\n\tacpi_device_cleanup(device);\n\nerr_unlock:\n\tmutex_unlock(&acpi_device_lock);\n\n\tacpi_detach_data(device->handle, acpi_scan_drop_device);\n\n\treturn result;\n}\n"
+    },
+    "acpi_dev_get": {
+      "source": "include/acpi/acpi_bus.h",
+      "prefix": "static inline struct acpi_device *acpi_dev_get(",
+      "bytes": 139,
+      "sha256": "54ceab6a70973246a9aef1bc2f3a32b9d37740fe75d9ae579535573d549c0bf4",
+      "text": "static inline struct acpi_device *acpi_dev_get(struct acpi_device *adev)\n{\n\treturn adev ? to_acpi_device(get_device(&adev->dev)) : NULL;\n}\n"
+    },
+    "acpi_dev_put": {
+      "source": "include/acpi/acpi_bus.h",
+      "prefix": "static inline void acpi_dev_put(",
+      "bytes": 99,
+      "sha256": "30688997c18a2287a741f69b01e3a70359eb6dfcc4f2028f17520e2ff5646b9e",
+      "text": "static inline void acpi_dev_put(struct acpi_device *adev)\n{\n\tif (adev)\n\t\tput_device(&adev->dev);\n}\n"
+    },
+    "get_device": {
+      "source": "drivers/base/core.c",
+      "prefix": "struct device *get_device(",
+      "bytes": 109,
+      "sha256": "83b8661e27d0c70b1c0f03eb543d3d7afe1030ca4007fc4affa27c949adc0d7e",
+      "text": "struct device *get_device(struct device *dev)\n{\n\treturn dev ? kobj_to_dev(kobject_get(&dev->kobj)) : NULL;\n}\n"
+    },
+    "put_device": {
+      "source": "drivers/base/core.c",
+      "prefix": "void put_device(",
+      "bytes": 99,
+      "sha256": "fa52af1f6386b55d9e93e3acce803bf25db84db23fcdd361e475ceeb63d48147",
+      "text": "void put_device(struct device *dev)\n{\n\t/* might_sleep(); */\n\tif (dev)\n\t\tkobject_put(&dev->kobj);\n}\n"
+    },
+    "kobject_get": {
+      "source": "lib/kobject.c",
+      "prefix": "struct kobject *kobject_get(",
+      "bytes": 284,
+      "sha256": "bdf0e7c4d1894de8f76a84f8767fd26e0d444c2833ef8d9df7842a26697f1440",
+      "text": "struct kobject *kobject_get(struct kobject *kobj)\n{\n\tif (kobj) {\n\t\tif (!kobj->state_initialized)\n\t\t\tWARN(1, KERN_WARNING\n\t\t\t\t\"kobject: '%s' (%p): is not initialized, yet kobject_get() is being called.\\n\",\n\t\t\t     kobject_name(kobj), kobj);\n\t\tkref_get(&kobj->kref);\n\t}\n\treturn kobj;\n}\n"
+    },
+    "kobject_put": {
+      "source": "lib/kobject.c",
+      "prefix": "void kobject_put(",
+      "bytes": 276,
+      "sha256": "8cc537c41fe28ea0e0c3aec74440323cddda70661f77ca500f9377b2f5a0c679",
+      "text": "void kobject_put(struct kobject *kobj)\n{\n\tif (kobj) {\n\t\tif (!kobj->state_initialized)\n\t\t\tWARN(1, KERN_WARNING\n\t\t\t\t\"kobject: '%s' (%p): is not initialized, yet kobject_put() is being called.\\n\",\n\t\t\t     kobject_name(kobj), kobj);\n\t\tkref_put(&kobj->kref, kobject_release);\n\t}\n}\n"
+    },
+    "kobject_release": {
+      "source": "lib/kobject.c",
+      "prefix": "static void kobject_release(",
+      "bytes": 470,
+      "sha256": "0c14be430e27300a17baff0853f726b4aa9071a63d0376953215e237dfe456e9",
+      "text": "static void kobject_release(struct kref *kref)\n{\n\tstruct kobject *kobj = container_of(kref, struct kobject, kref);\n#ifdef CONFIG_DEBUG_KOBJECT_RELEASE\n\tunsigned long delay = HZ + HZ * get_random_u32_below(4);\n\tpr_info(\"'%s' (%p): %s, parent %p (delayed %ld)\\n\",\n\t\tkobject_name(kobj), kobj, __func__, kobj->parent, delay);\n\tINIT_DELAYED_WORK(&kobj->release, kobject_delayed_cleanup);\n\n\tschedule_delayed_work(&kobj->release, delay);\n#else\n\tkobject_cleanup(kobj);\n#endif\n}\n"
+    },
+    "klist_children_get": {
+      "source": "drivers/base/core.c",
+      "prefix": "static void klist_children_get(",
+      "bytes": 166,
+      "sha256": "005626f949d2b4ad10cc996a2c27a5027c5f4bedfc5fc60de6d20a16ac2719b3",
+      "text": "static void klist_children_get(struct klist_node *n)\n{\n\tstruct device_private *p = to_device_private_parent(n);\n\tstruct device *dev = p->device;\n\n\tget_device(dev);\n}\n"
+    },
+    "klist_children_put": {
+      "source": "drivers/base/core.c",
+      "prefix": "static void klist_children_put(",
+      "bytes": 166,
+      "sha256": "0018c621ccd9ad3673ed3b85b9a787c03d8e9007b413ce2e80dc0dcf3e102d57",
+      "text": "static void klist_children_put(struct klist_node *n)\n{\n\tstruct device_private *p = to_device_private_parent(n);\n\tstruct device *dev = p->device;\n\n\tput_device(dev);\n}\n"
+    },
+    "klist_next": {
+      "source": "lib/klist.c",
+      "prefix": "struct klist_node *klist_next(",
+      "bytes": 723,
+      "sha256": "df9518e0c2977f1736fa2b03c634ab5e3973284ba2b394ff0210f40bd12fa956",
+      "text": "struct klist_node *klist_next(struct klist_iter *i)\n{\n\tvoid (*put)(struct klist_node *) = i->i_klist->put;\n\tstruct klist_node *last = i->i_cur;\n\tstruct klist_node *next;\n\tunsigned long flags;\n\n\tspin_lock_irqsave(&i->i_klist->k_lock, flags);\n\n\tif (last) {\n\t\tnext = to_klist_node(last->n_node.next);\n\t\tif (!klist_dec_and_del(last))\n\t\t\tput = NULL;\n\t} else\n\t\tnext = to_klist_node(i->i_klist->k_list.next);\n\n\ti->i_cur = NULL;\n\twhile (next != to_klist_node(&i->i_klist->k_list)) {\n\t\tif (likely(!knode_dead(next))) {\n\t\t\tkref_get(&next->n_ref);\n\t\t\ti->i_cur = next;\n\t\t\tbreak;\n\t\t}\n\t\tnext = to_klist_node(next->n_node.next);\n\t}\n\n\tspin_unlock_irqrestore(&i->i_klist->k_lock, flags);\n\n\tif (put && last)\n\t\tput(last);\n\treturn i->i_cur;\n}\n"
+    },
+    "klist_iter_exit": {
+      "source": "lib/klist.c",
+      "prefix": "void klist_iter_exit(",
+      "bytes": 116,
+      "sha256": "1076616eb64d6e46663d319c6c2a37a0e362dda441803c06e8158b69321b7d63",
+      "text": "void klist_iter_exit(struct klist_iter *i)\n{\n\tif (i->i_cur) {\n\t\tklist_put(i->i_cur, false);\n\t\ti->i_cur = NULL;\n\t}\n}\n"
+    },
+    "klist_put": {
+      "source": "lib/klist.c",
+      "prefix": "static void klist_put(",
+      "bytes": 279,
+      "sha256": "8848aa50d1b684f73ae752c0981e98c40b5c1c2fb5ff6d516554b1f488281d6f",
+      "text": "static void klist_put(struct klist_node *n, bool kill)\n{\n\tstruct klist *k = knode_klist(n);\n\tvoid (*put)(struct klist_node *) = k->put;\n\n\tspin_lock(&k->k_lock);\n\tif (kill)\n\t\tknode_kill(n);\n\tif (!klist_dec_and_del(n))\n\t\tput = NULL;\n\tspin_unlock(&k->k_lock);\n\tif (put)\n\t\tput(n);\n}\n"
+    },
+    "acpi_queue_hotplug_work": {
+      "source": "drivers/acpi/osl.c",
+      "prefix": "bool acpi_queue_hotplug_work(",
+      "bytes": 103,
+      "sha256": "a32a64d959e72ae007ce9b500d5ef3491d2bff2c4578b5d3ddb7052584ae3348",
+      "text": "bool acpi_queue_hotplug_work(struct work_struct *work)\n{\n\treturn queue_work(kacpi_hotplug_wq, work);\n}\n"
+    },
+    "acpi_os_initialize1": {
+      "source": "drivers/acpi/osl.c",
+      "prefix": "acpi_status __init acpi_os_initialize1(",
+      "bytes": 327,
+      "sha256": "8695bea09850e87f0e5f8ca05814dc5f2e90768e8b6e37f7811420926569c66a",
+      "text": "acpi_status __init acpi_os_initialize1(void)\n{\n\tkacpid_wq = alloc_workqueue(\"kacpid\", 0, 1);\n\tkacpi_notify_wq = alloc_workqueue(\"kacpi_notify\", 0, 0);\n\tkacpi_hotplug_wq = alloc_ordered_workqueue(\"kacpi_hotplug\", 0);\n\tBUG_ON(!kacpid_wq);\n\tBUG_ON(!kacpi_notify_wq);\n\tBUG_ON(!kacpi_hotplug_wq);\n\tacpi_osi_init();\n\treturn AE_OK;\n}\n"
+    },
+    "acpi_os_terminate": {
+      "source": "drivers/acpi/osl.c",
+      "prefix": "acpi_status acpi_os_terminate(",
+      "bytes": 743,
+      "sha256": "02f8a2872895fb92457f88d75cfc0c8855ddfa78501497b53728c2da41ea06fd",
+      "text": "acpi_status acpi_os_terminate(void)\n{\n\tif (acpi_irq_handler) {\n\t\tacpi_os_remove_interrupt_handler(acpi_gbl_FADT.sci_interrupt,\n\t\t\t\t\t\t acpi_irq_handler);\n\t}\n\n\tacpi_os_unmap_generic_address(&acpi_gbl_FADT.xgpe1_block);\n\tacpi_os_unmap_generic_address(&acpi_gbl_FADT.xgpe0_block);\n\tacpi_gbl_xgpe0_block_logical_address = 0UL;\n\tacpi_gbl_xgpe1_block_logical_address = 0UL;\n\n\tacpi_os_unmap_generic_address(&acpi_gbl_FADT.xpm1b_event_block);\n\tacpi_os_unmap_generic_address(&acpi_gbl_FADT.xpm1a_event_block);\n\n\tif (acpi_gbl_FADT.flags & ACPI_FADT_RESET_REGISTER)\n\t\tacpi_os_unmap_generic_address(&acpi_gbl_FADT.reset_register);\n\n\tdestroy_workqueue(kacpid_wq);\n\tdestroy_workqueue(kacpi_notify_wq);\n\tdestroy_workqueue(kacpi_hotplug_wq);\n\n\treturn AE_OK;\n}\n"
+    },
+    "device_private_init": {
+      "source": "drivers/base/core.c",
+      "prefix": "static int device_private_init(struct device *dev)",
+      "text": "static int device_private_init(struct device *dev)\n{\n\tdev->p = kzalloc(sizeof(*dev->p), GFP_KERNEL);\n\tif (!dev->p)\n\t\treturn -ENOMEM;\n\tdev->p->device = dev;\n\tklist_init(&dev->p->klist_children, klist_children_get,\n\t\t   klist_children_put);\n\tINIT_LIST_HEAD(&dev->p->deferred_probe);\n\treturn 0;\n}\n",
+      "bytes": 294,
+      "sha256": "68ffa62c165228e2cc637d9e51d8be43330f601af429a4d8326fafbfe8b9f06a"
+    },
+    "device_add": {
+      "source": "drivers/base/core.c",
+      "prefix": "int device_add(struct device *dev)",
+      "text": "int device_add(struct device *dev)\n{\n\tstruct subsys_private *sp;\n\tstruct device *parent;\n\tstruct kobject *kobj;\n\tstruct class_interface *class_intf;\n\tint error = -EINVAL;\n\tstruct kobject *glue_dir = NULL;\n\n\tdev = get_device(dev);\n\tif (!dev)\n\t\tgoto done;\n\n\tif (!dev->p) {\n\t\terror = device_private_init(dev);\n\t\tif (error)\n\t\t\tgoto done;\n\t}\n\n\t/*\n\t * for statically allocated devices, which should all be converted\n\t * some day, we need to initialize the name. We prevent reading back\n\t * the name, and force the use of dev_name()\n\t */\n\tif (dev->init_name) {\n\t\terror = dev_set_name(dev, \"%s\", dev->init_name);\n\t\tdev->init_name = NULL;\n\t}\n\n\tif (dev_name(dev))\n\t\terror = 0;\n\t/* subsystems can specify simple device enumeration */\n\telse if (dev->bus && dev->bus->dev_name)\n\t\terror = dev_set_name(dev, \"%s%u\", dev->bus->dev_name, dev->id);\n\telse\n\t\terror = -EINVAL;\n\tif (error)\n\t\tgoto name_error;\n\n\tpr_debug(\"device: '%s': %s\\n\", dev_name(dev), __func__);\n\n\tparent = get_device(dev->parent);\n\tkobj = get_device_parent(dev, parent);\n\tif (IS_ERR(kobj)) {\n\t\terror = PTR_ERR(kobj);\n\t\tgoto parent_error;\n\t}\n\tif (kobj)\n\t\tdev->kobj.parent = kobj;\n\n\t/* use parent numa_node */\n\tif (parent && (dev_to_node(dev) == NUMA_NO_NODE))\n\t\tset_dev_node(dev, dev_to_node(parent));\n\n\t/* first, register with generic layer. */\n\t/* we require the name to be set before, and pass NULL */\n\terror = kobject_add(&dev->kobj, dev->kobj.parent, NULL);\n\tif (error) {\n\t\tglue_dir = kobj;\n\t\tgoto Error;\n\t}\n\n\t/* notify platform of device entry */\n\tdevice_platform_notify(dev);\n\n\terror = device_create_file(dev, &dev_attr_uevent);\n\tif (error)\n\t\tgoto attrError;\n\n\terror = device_add_class_symlinks(dev);\n\tif (error)\n\t\tgoto SymlinkError;\n\terror = device_add_attrs(dev);\n\tif (error)\n\t\tgoto AttrsError;\n\terror = bus_add_device(dev);\n\tif (error)\n\t\tgoto BusError;\n\terror = dpm_sysfs_add(dev);\n\tif (error)\n\t\tgoto DPMError;\n\tdevice_pm_add(dev);\n\n\tif (MAJOR(dev->devt)) {\n\t\terror = device_create_file(dev, &dev_attr_dev);\n\t\tif (error)\n\t\t\tgoto DevAttrError;\n\n\t\terror = device_create_sys_dev_entry(dev);\n\t\tif (error)\n\t\t\tgoto SysEntryError;\n\n\t\tdevtmpfs_create_node(dev);\n\t}\n\n\t/* Notify clients of device addition.  This call must come\n\t * after dpm_sysfs_add() and before kobject_uevent().\n\t */\n\tbus_notify(dev, BUS_NOTIFY_ADD_DEVICE);\n\tkobject_uevent(&dev->kobj, KOBJ_ADD);\n\n\t/*\n\t * Check if any of the other devices (consumers) have been waiting for\n\t * this device (supplier) to be added so that they can create a device\n\t * link to it.\n\t *\n\t * This needs to happen after device_pm_add() because device_link_add()\n\t * requires the supplier be registered before it's called.\n\t *\n\t * But this also needs to happen before bus_probe_device() to make sure\n\t * waiting consumers can link to it before the driver is bound to the\n\t * device and the driver sync_state callback is called for this device.\n\t */\n\tif (dev->fwnode && !dev->fwnode->dev) {\n\t\tdev->fwnode->dev = dev;\n\t\tfw_devlink_link_device(dev);\n\t}\n\n\t/*\n\t * The moment the device was linked into the bus's \"klist_devices\" in\n\t * bus_add_device() then it's possible that probe could have been\n\t * attempted in a different thread via userspace loading a driver\n\t * matching the device. \"ready_to_probe\" being unset would have\n\t * blocked those attempts. Now that all of the above initialization has\n\t * happened, unblock probe. If probe happens through another thread\n\t * after this point but before bus_probe_device() runs then it's fine.\n\t * bus_probe_device() -> device_initial_probe() -> __device_attach()\n\t * will notice (under device_lock) that the device is already bound.\n\t */\n\tdevice_lock(dev);\n\tdev_set_ready_to_probe(dev);\n\tdevice_unlock(dev);\n\n\tbus_probe_device(dev);\n\n\t/*\n\t * If all driver registration is done and a newly added device doesn't\n\t * match with any driver, don't block its consumers from probing in\n\t * case the consumer device is able to operate without this supplier.\n\t */\n\tif (dev->fwnode && fw_devlink_drv_reg_done && !dev->can_match)\n\t\tfw_devlink_unblock_consumers(dev);\n\n\tif (parent)\n\t\tklist_add_tail(&dev->p->knode_parent,\n\t\t\t       &parent->p->klist_children);\n\n\tsp = class_to_subsys(dev->class);\n\tif (sp) {\n\t\tmutex_lock(&sp->mutex);\n\t\t/* tie the class to the device */\n\t\tklist_add_tail(&dev->p->knode_class, &sp->klist_devices);\n\n\t\t/* notify any interfaces that the device is here */\n\t\tlist_for_each_entry(class_intf, &sp->interfaces, node)\n\t\t\tif (class_intf->add_dev)\n\t\t\t\tclass_intf->add_dev(dev);\n\t\tmutex_unlock(&sp->mutex);\n\t\tsubsys_put(sp);\n\t}\ndone:\n\tput_device(dev);\n\treturn error;\n SysEntryError:\n\tif (MAJOR(dev->devt))\n\t\tdevice_remove_file(dev, &dev_attr_dev);\n DevAttrError:\n\tdevice_pm_remove(dev);\n\tdpm_sysfs_remove(dev);\n DPMError:\n\tdevice_set_driver(dev, NULL);\n\tbus_remove_device(dev);\n BusError:\n\tdevice_remove_attrs(dev);\n AttrsError:\n\tdevice_remove_class_symlinks(dev);\n SymlinkError:\n\tdevice_remove_file(dev, &dev_attr_uevent);\n attrError:\n\tdevice_platform_notify_remove(dev);\n\tkobject_uevent(&dev->kobj, KOBJ_REMOVE);\n\tglue_dir = get_glue_dir(dev);\n\tkobject_del(&dev->kobj);\n Error:\n\tcleanup_glue_dir(dev, glue_dir);\nparent_error:\n\tput_device(parent);\nname_error:\n\tkfree(dev->p);\n\tdev->p = NULL;\n\tgoto done;\n}\n",
+      "bytes": 5159,
+      "sha256": "671b9bbf631777303056bcbc8335f2a097ed5eb2c942285c8316e2b44acdd7bc"
+    },
+    "device_initialize": {
+      "source": "drivers/base/core.c",
+      "prefix": "void device_initialize(struct device *dev)",
+      "text": "void device_initialize(struct device *dev)\n{\n\tdev->kobj.kset = devices_kset;\n\tkobject_init(&dev->kobj, &device_ktype);\n\tINIT_LIST_HEAD(&dev->dma_pools);\n\tmutex_init(&dev->mutex);\n\tspin_lock_init(&dev->driver_override.lock);\n\tlockdep_set_novalidate_class(&dev->mutex);\n\tspin_lock_init(&dev->devres_lock);\n\tINIT_LIST_HEAD(&dev->devres_head);\n\tdevice_pm_init(dev);\n\tset_dev_node(dev, NUMA_NO_NODE);\n\tINIT_LIST_HEAD(&dev->links.consumers);\n\tINIT_LIST_HEAD(&dev->links.suppliers);\n\tINIT_LIST_HEAD(&dev->links.defer_sync);\n\tdev->links.status = DL_DEV_NO_DRIVER;\n#if defined(CONFIG_ARCH_HAS_SYNC_DMA_FOR_DEVICE) || \\\n    defined(CONFIG_ARCH_HAS_SYNC_DMA_FOR_CPU) || \\\n    defined(CONFIG_ARCH_HAS_SYNC_DMA_FOR_CPU_ALL)\n\tdev->dma_coherent = dma_default_coherent;\n#endif\n\tswiotlb_dev_init(dev);\n}\n",
+      "bytes": 787,
+      "sha256": "32ac5665aa2e1a2ea8e444c5032c81e439c5729cc1b3e6822504e72bbed8b8ec"
+    }
+  },
+  "kernelBuilt": false,
+  "actualDeviceInitialized": false,
+  "trustedNativeBootstrapAuthenticated": false,
+  "completeAllocationClosure": false,
+  "finalFreeCertified": false,
+  "productionInstallation": false,
+  "actualFirmwareExecuted": false,
+  "completeFirmwareClosure": false,
+  "actualDeviceCoreExecuted": false,
+  "completeDeviceCoreClosure": false
+}
