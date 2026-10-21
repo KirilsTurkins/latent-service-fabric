@@ -11,9 +11,14 @@ from tools.rust_capsule_project import ROOT,read_file
 
 class PeriodicDiagnosticTests(unittest.TestCase):
     def test_default_false_diagnostic_restores_every_previous_workflow_body(self):
+        import hashlib
         from tools.ci_lane_inventory import workflow_model
         source='.github/workflows/dotnet-published-http.yml'
-        old=workflow_model(subprocess.check_output(['git','show',selected.BASE+':'+source],cwd=ROOT,text=True,timeout=20))
+        # Exact public Git blob from selected.BASE, retained for clean CI where
+        # the diagnostic branch is not an ancestor of the squash merge.
+        raw=read_file(ROOT/'tools/tests/fixtures/dotnet-periodic-base-workflow.yml')
+        self.assertEqual(hashlib.sha256(raw).hexdigest(),'2158598ce9a64b7a6325de2382083608d64c833a5c3b0addf06f5829e5c04978')
+        old=workflow_model(raw.decode('utf8'))
         actual=workflow_model((ROOT/source).read_text(encoding='utf8'))
         selector=actual['on']['workflow_dispatch']['inputs'].pop('periodic_diagnostic')
         self.assertEqual(selector['type'],'boolean');self.assertIs(selector['default'],False)
@@ -22,6 +27,21 @@ class PeriodicDiagnosticTests(unittest.TestCase):
         for name,previous in old['jobs'].items():
             self.assertEqual(actual['jobs'][name]['if'],previous['if']+' && !inputs.periodic_diagnostic')
             actual['jobs'][name]['if']=previous['if']
+        # #1298 added the actual copied timer-driver control after this frozen
+        # diagnostic base. Remove only that exact additive step and its two
+        # retained-output paths before comparing every previous workflow field.
+        steps=actual['jobs']['owner-capacity']['steps']
+        driver=[step for step in steps if step.get('name') ==
+            'Check the actual private timer driver against the original two queued slots']
+        self.assertEqual(driver,[{'name':'Check the actual private timer driver against the original two queued slots',
+            'run':'python3 -B tools/dotnet_managed_work_controls.py --dotnet "$(command -v dotnet)" --timer-driver-tools "$RUNNER_TEMP/capacity-tools" --output "$RUNNER_TEMP/timer-driver-controls"'}])
+        steps.remove(driver[0])
+        upload=[step for step in steps if step.get('name') ==
+            'Retain bounded public capacity source build and actual owner evidence']
+        self.assertEqual(len(upload),1)
+        extra='${{ runner.temp }}/timer-driver-controls/timer-driver-controls.json\n${{ runner.temp }}/timer-driver-controls/logs/**\n'
+        self.assertEqual(upload[0]['with']['path'].count(extra),1)
+        upload[0]['with']['path']=upload[0]['with']['path'].replace(extra,'',1)
         self.assertEqual(actual,old)
         self.assertEqual(job['timeout-minutes'],30)
         commands='\n'.join(step.get('run','') for step in job['steps'])
@@ -39,8 +59,10 @@ class PeriodicDiagnosticTests(unittest.TestCase):
         self.assertEqual(len(values),37)
 
     def test_exact_frozen_host_log_encoding_identifies_only_one_frame(self):
-        native='6fd19eab2c224fc31481d03de5008de4d3e4429e'
-        source=subprocess.check_output(['git','show',native+':crates/latent-wasmtime/src/host/logging.rs'],cwd=ROOT,timeout=20)
+        import hashlib
+        # Exact logging.rs blob at immutable native producer 6fd19eab2c224fc31481d03de5008de4d3e4429e.
+        source=read_file(ROOT/'tools/tests/fixtures/dotnet-periodic-host-logging.rs')
+        self.assertEqual(hashlib.sha256(source).hexdigest(),'36a08992775520c9e4868f15485080a3fc52dc08d306e1c870e628d6f462fe89')
         body=source.split(b'struct BorrowedLog',1)[1].split(b'\n}',1)[0]
         self.assertEqual(re.findall(rb'^    ([a-z_]+):',body,re.M),[b'activation_id',b'level',b'message',b'fields'])
         self.assertIn(b'normalized.insert("latent.activation_id", &context.activation_id.0);',source)
