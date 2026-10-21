@@ -18,6 +18,7 @@ from tools.build_process_signals import owned_cancellation
 from tools.dotnet_guest.build import build
 from tools.dotnet_guest.compiler import runtime_inputs
 from tools.dotnet_guest.task_wait import PROFILE as TASK_PROFILE
+from tools.dotnet_guest import managed_work, retirement
 from tools.phase2_operator_process import require, stopped_record
 from tools.phase2_operator_scenario import connect, stop
 from tools.phase3_resource_identity import file_identity, source_identity
@@ -43,6 +44,7 @@ MATERIALS=('tools/qualify_dotnet_resource_runtime.py','tools/dotnet_resource_run
     'tools/build_process_signals.py','tools/dotnet_guest/compiler.py','tools/dotnet_guest/build.py',
     'tools/dotnet_guest/runtime.py','tools/dotnet_guest/task_wait.py','tools/dotnet_guest/closed_filesystem.py',
     'tools/dotnet_guest/managed_entropy.py','tools/dotnet_guest/entropy.py','tools/dotnet_guest/internal_io.py',
+    'tools/dotnet_guest/managed_work.py','tools/dotnet_guest/retirement.py',
     'tools/dotnet_guest/composer.py','tools/dotnet_application_dependencies.py','tools/dotnet_dependency_authoring.py',
     '.github/workflows/dotnet-resource-runtime.yml')
 
@@ -50,7 +52,8 @@ MATERIALS=('tools/qualify_dotnet_resource_runtime.py','tools/dotnet_resource_run
 def build_evidence(artifact):
     names=('BUILD-COMPLETE.json','build-observation.json','source-inputs.json','recipe-inputs.json',
         'package-inputs.json','runtime-profile.json','closed-runtime-coverage.json','compiler-patches.json',
-        'task-wait-port.json','closed-filesystem-port.json','noncrypto-entropy-port.json','managed-entropy-port.json')
+        'task-wait-port.json','closed-filesystem-port.json','noncrypto-entropy-port.json','managed-entropy-port.json',
+        'retirement-port.json','internal-io-port.json')
     identities={name:file_identity(artifact/name,32*1024**2) for name in names}
     component=file_identity(artifact/'component.wasm',64*1024**2)
     marker,observed,profile=(read_json(artifact/name,32*1024**2) for name in
@@ -62,17 +65,38 @@ def build_evidence(artifact):
         'resource-dotnet-normal-observed-package')
     require(observed['parameters']=={'compiler':'native-aot-llvm','bindings':'wit-bindgen-csharp','language':'csharp',
         'target':'wasi-wasm','runtime':'native-aot','locked':True,'ambientWasi':False}
-        and profile['profile']=='runtime-logging' and set(profile['declaredImports'])==set(fixture.DECLARATIONS)
+        and profile['profile']=='runtime-managed-logging' and set(profile['declaredImports'])==set(fixture.DECLARATIONS)
         and 'closedIoPort' not in profile,'resource-dotnet-current-runtime-logging-selection')
     for material,filename in (('build-recipe','recipe-inputs.json'),('package-inputs','package-inputs.json'),
         ('runtime-profile','runtime-profile.json'),('dotnet-task-wait-port','task-wait-port.json'),
         ('dotnet-closed-filesystem-port','closed-filesystem-port.json'),
-        ('standard-rng-managed-port','managed-entropy-port.json')):
+        ('standard-rng-managed-port','managed-entropy-port.json'),
+        ('dotnet-internal-io-port','internal-io-port.json')):
         selected=[row for row in observed['materials'] if row['name']==material];value=identities[filename]
         require(selected==[{'name':material,'digest':value['sha256'],'size':value['bytes']}],
             'resource-dotnet-observed-port-material')
     task=read_json(artifact/'task-wait-port.json');fs=read_json(artifact/'closed-filesystem-port.json')
     entropy=read_json(artifact/'managed-entropy-port.json');native=read_json(artifact/'noncrypto-entropy-port.json')
+    owner=read_json(artifact/'retirement-port.json');io_port=read_json(artifact/'internal-io-port.json')
+    coverage=read_json(artifact/'closed-runtime-coverage.json')
+    require(profile['retirementPort']==owner and owner['profile']==retirement.PROFILE
+        and owner['privateImport']==retirement.IDENTITY and owner['publicGraphUnchanged'] is True
+        and owner['authority']=='none' and owner['managedWork']=={
+            'profile':managed_work.PROFILE,'privateImport':managed_work.IDENTITY,'authority':'none','qualified':False}
+        and profile['internalIoPort']==io_port and io_port['profile']=='dotnet-private-async-io-v1'
+        and io_port['coreBytesUnchanged'] is True and io_port['publicApplicationGraphUnchanged'] is True
+        and profile['adapter']['name']=='managed-activation-logging-runtime'
+        and [row for row in observed['materials'] if row['name']==profile['adapter']['name']]==[profile['adapter']]
+        and coverage['gaps']==[] and coverage['authority']=='none'
+        and coverage['compilerPrivateImports']==[retirement.IDENTITY,managed_work.IDENTITY]
+        and coverage['rawComponentDigest']==io_port['selectedDigest']
+        and coverage['runtimeAdapterDigest']==profile['adapter']['digest']
+        and task['managedAcceptedWork']['patch']=='latent.dotnet.managed-accepted-work.v2'
+        and task['managedAcceptedWork']['authoritativeLimits']=='original-activation-owner-ledger'
+        and task['managedAcceptedWork']['timerAdmission']=='original-TimerQueueTimer-before-active-list-mutation'
+        and task['managedAcceptedWork']['timerRetirement']=='original-disarmed-no-accepted-queued-running-or-required-callback'
+        and task['managedAcceptedWork']['newAssemblyReferences']==0,
+        'resource-dotnet-managed-owner-and-private-io-bindings')
     require(task['profile']==TASK_PROFILE and task['completion']=='actual-task-only'
         and len(task['nativeAotReferenceBinding']['responseFiles'])==1
         and task['nativeAotReferenceBinding']['finalCoreLibDerivation']['selectedDigest']==fs['derived']['digest']
@@ -91,11 +115,14 @@ def checked_release(release,capsule,before):
         'resource-dotnet-original-contracts-component-and-service')
 
 
-def execute(artifact,native,output):
+def execute(artifact,native,output,*,late_completion=False,deadline=None):
+    require(type(late_completion) is bool,'resource-dotnet-late-selector')
     output=fresh(output);before=build_evidence(artifact)
     record={'schemaVersion':'latent.dotnet.resource-runtime-node.v1','status':'incomplete',
         'fullTicketQualification':False,'runtimeGrantDenials':[],'secureOperationDenials':[]}
-    commands=Commands(ROOT,fresh(output/'commands'),build_environment(output),deadline_seconds=600,command_seconds=120)
+    remaining=600 if deadline is None else int(min(600,deadline-time.monotonic()))
+    require(remaining>=120,'resource-dotnet-original-node-time-reserved')
+    commands=Commands(ROOT,fresh(output/'commands'),build_environment(output),deadline_seconds=remaining,command_seconds=120)
     node=peer=None;clients={};stage='normal-neutral-package-signing'
     try:
         signed=output/'signed';commands.run(stage,native['capsule_authoring'],'demo-sign-neutral-resources',signed,artifact)
@@ -131,6 +158,10 @@ def execute(artifact,native,output):
                     require(published['outcomeKnown'] and published['data']['release']['digest']==before['component']['sha256'],
                         'resource-dotnet-fresh-component-admitted')
                     publications[tenant]=published['data']['operation']['publication']['id']
+                    if late_completion:
+                        from tools.java_http_release_preparation import prepare
+                        record.setdefault('preparation', {})[tenant] = prepare(selected,
+                            publications[tenant], tenant, before['component']['sha256'], output)
                     manifest=selected.directory/'resource-deployment.json'
                     write_json(manifest,tenants.scoped_deployment(read_json(signed/'my-greeting/deployment.json'),tenant))
                     target=deploy(selected,manifest,publications[tenant])
@@ -138,26 +169,32 @@ def execute(artifact,native,output):
                     record['runtimeGrantDenials'].append({'tenant':tenant,'invocation':denied,
                         'provider':tenants.provider_idle(selected,target),
                         'physical':sample(selected,probe,'resource-dotnet-denied-'+tenant,len(publications))})
-                    stage='ordinary-secure-operation-denial-with-noncrypto-seed-granted'
-                    revision=selected_revision(selected,target)
-                    denied=runtime.call_mode(selected,target,'secure-denied','resource-dotnet-secure-denied-'+tenant)
-                    runtime.checked_invocation(denied,before['component']['sha256'],revision,'secure-denied')
-                    record['secureOperationDenials'].append({'tenant':tenant,'invocation':denied,
-                        'noncryptoBytesGranted':True,'secureU64Granted':False,
-                        'provider':tenants.provider_idle(selected,target),
-                        'physical':sample(selected,probe,'resource-dotnet-secure-retired-'+tenant,len(publications))})
+                    if not late_completion:
+                        stage='ordinary-secure-operation-denial-with-noncrypto-seed-granted'
+                        revision=selected_revision(selected,target)
+                        denied=runtime.call_mode(selected,target,'secure-denied','resource-dotnet-secure-denied-'+tenant)
+                        runtime.checked_invocation(denied,before['component']['sha256'],revision,'secure-denied')
+                        record['secureOperationDenials'].append({'tenant':tenant,'invocation':denied,
+                            'noncryptoBytesGranted':True,'secureU64Granted':False,
+                            'provider':tenants.provider_idle(selected,target),
+                            'physical':sample(selected,probe,'resource-dotnet-secure-retired-'+tenant,len(publications))})
                     targets[tenant]=runtime.grant_secure(selected,node,manifest,publications[tenant],target,tenant)
                 require(publications['examples']!=publications['foreign'],'resource-dotnet-independent-publications')
                 record['credentialDenial']=credential_denial(clients['foreign'],targets['foreign'])
                 stage='joined-resource-callback-clock-rng-log-programme'
-                record['programme']=runtime.programme(clients,targets,probe,output,before['component']['sha256'])
+                if late_completion:
+                    from tools.resource_late_facilities import programme
+                    record['programme']=programme(clients,targets,probe,output,before['component']['sha256'],'dotnet')
+                else:
+                    record['programme']=runtime.programme(clients,targets,probe,output,before['component']['sha256'])
                 for tenant in tenants.TENANTS:delete_all(clients[tenant],[targets[tenant]['name']])
                 record['afterDeletes']=sample(client,probe,'resource-dotnet-after-deletes',0)
                 clients['foreign'].node=None;stop(client,node);record['nodeShutdown']=stopped_record(node)
                 record['peerShutdown']=stop_observation_peer(peer)
                 stderr=bytes(node.buffers[1]);(output/'node-stderr.txt').write_bytes(stderr)
                 record['nativeTimerObservations']=observer.observe(stderr)
-                require(record['nativeTimerObservations']['status']=='observed','resource-dotnet-final-positive-timers')
+                require(record['nativeTimerObservations']['status'] in ({'not-observed','observed'} if late_completion else {'observed'}),
+                    'resource-dotnet-final-positive-timers')
             finally:
                 for selected in clients.values():selected.node=None
                 if node is not None:node.close();(output/'node-stderr.txt').write_bytes(bytes(node.buffers[1]))
@@ -169,6 +206,8 @@ def execute(artifact,native,output):
             and record['nodeShutdown']['record']['clean'] and time.monotonic()<commands.deadline
             and sum(client.calls for client in clients.values())<=384,'resource-dotnet-final-identity-and-retirement')
         record.update(status='passed',build=before,commands=commands.records,cliCalls={t:c.calls for t,c in clients.items()})
+        if late_completion:
+            record.update(lateFacilitiesOnly=True, originalProgrammePassed=False)
         write_workflow_receipt(output/'qualified.json',record);return record
     except BaseException as error:
         record.update(status='failed',stage=stage,errorCategory=type(error).__name__,commands=commands.records)
