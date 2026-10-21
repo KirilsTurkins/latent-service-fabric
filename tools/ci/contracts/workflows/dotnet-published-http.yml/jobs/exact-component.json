@@ -3,7 +3,7 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "if": "github.event_name != 'workflow_dispatch' || !inputs.fresh_component",
+    "if": "(github.event_name != 'workflow_dispatch' || !inputs.fresh_component) && !inputs.mixed_content",
     "name": "Original captured Flurl Refit component with corrected progress records",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -61,7 +61,7 @@
   },
   "jobId": "exact-component",
   "kind": "job",
-  "reviewReason": "Limit exact-SHA provenance fetch to one commit each; no ancestry history is used by original Git material verification. All signing, runtime and source checks unchanged.",
+  "reviewReason": "Explicit review: sole condition adds default-false mixed_content exclusion; every original step command timeout environment and default path is unchanged.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-published-http.yml"
 }
