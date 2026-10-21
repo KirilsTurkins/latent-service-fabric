@@ -63,7 +63,7 @@
       },
       {
         "name": "Acquire only locked SDK sources for the unchanged compiler-owned forwarding root",
-        "run": "cargo fetch --locked --target wasm32-unknown-unknown --target x86_64-unknown-linux-gnu"
+        "run": "cargo fetch --locked"
       },
       {
         "name": "Restore the exact already compiled current110 backend without rebuilding it",
@@ -109,7 +109,7 @@
   },
   "jobId": "ordinary-clients",
   "kind": "job",
-  "reviewReason": "Parent reviewed exact source/owning proposal: all original compiler, artifact, source, library and runtime cases/limits retained; no native/backend rebuild or qualification borrowed from failures.",
+  "reviewReason": "Reviewed causal setup repair: normal installed registry stages every frozen Cargo.lock archive, including mach2-0.6.0 platform data; fetch only data without target filters. No build/script execution, lock/approval/compiler/stager/cap changes; failed1b75 retained.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-wasi-http-installed.yml"
 }
