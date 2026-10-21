@@ -47,8 +47,14 @@ normal build and signing path. It builds one guest and performs no host or
 engine build. Per-case invocation and retirement progress use separate files,
 preserving the original exclusive-create evidence behavior.
 
-Source controls and the authenticated Go source derivation pass locally.
-Actual signed v6 execution is pending; this guide records the intended owning
-programme and grants no qualification from source inspection alone. The full
-cost matrix, result/host buffers, production streams and the remaining #742
-requirements stay open until their own evidence is complete.
+The [signed programme](evidence/go-queued-work-signed-2026-10-21.json) passed
+all25 outcomes at source `d889f0d3ec911c43375ac0679528c3303bad95fb`: six
+pre-entry grant denials and19 entered guest executions across the three queue
+ceilings. Every case records five physical owners and18 active provider counters
+retired; all three nodes and peers stopped cleanly. One ordinary guest was
+compiled. The native cohort retains its original three-current/two-inherited
+product attribution. A later Clippy-only semicolon in an admission test is
+recorded separately and does not rewrite that actual native/source snapshot.
+
+The complete cost matrix, result/host buffers, production streams and the
+remaining #742 requirements stay open.
