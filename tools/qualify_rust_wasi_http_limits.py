@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 from pathlib import Path
 import subprocess
@@ -26,6 +27,8 @@ NATIVE_SOURCES = (
     'crates/latent-wasmtime/src/native_stacks.rs',
     'crates/latent-wasmtime/src/native_stacks/workers.rs',
     'crates/latent-wasmtime/src/containment.rs',
+    'crates/latent-wire/src/invocation/conversion/public_error.rs',
+    'apps/latent/src/error/details.rs',
     'apps/latentd/src/config/providers/activation_runtime.rs',
 )
 SOURCE_HELPERS = (
@@ -97,7 +100,17 @@ def memory_shape(component):
         {'core':6,'minimumPages':17,'maximumPages':None}], 'rust-limit-original-three-memory-shapes')
     return {'definitions':definitions,'definedMinimumPages':53,'definedMinimumBytes':53*65536,
         'lowerRequestedBytes':3*1024**2,'definitionSumIsNotMeasuredRss':True,
-        'actualTypedMemoryTerminalStillRequired':True}
+        'definitionSumAloneProvesInstantiation':False}
+
+
+def memory_context(component):
+    from tools.rust_capsule_project import digest
+    require({'sha256': digest(component), 'bytes': len(component)} == campaign.MEMORY_COMPONENT,
+        'rust-limit-frozen-whole-instance-graph')
+    shape = memory_shape(component)
+    require(shape['definedMinimumBytes'] == campaign.MEMORY_CONTEXT['minimumInstantiatedLinearMemoryBytes']
+        > shape['lowerRequestedBytes'], 'rust-limit-minimum-instantiated-memory-exceeds-lower-request')
+    return copy.deepcopy(campaign.MEMORY_CONTEXT)
 
 
 def qualify(restored, prepared, output):
@@ -124,7 +137,9 @@ def qualify(restored, prepared, output):
         materials = {name:file_identity(ROOT/name,8*1024**2) for name in sorted(names)}
         require(sum(r['bytes'] for r in materials.values())<=16*1024**2,'rust-limit-helper-byte-bound')
         record['materials'] = materials
-        record['memoryShape'] = memory_shape((artifact/'component.wasm').read_bytes())
+        component = (artifact/'component.wasm').read_bytes()
+        record['memoryShape'] = memory_shape(component)
+        record['memoryDifferentialContext'] = memory_context(component)
         stage = 'original-c713-native-and-134-auxiliary-authentication'
         producer = retained.native.verify_prepared(prepared)
         native_source = retained.assert_current(ROOT)
@@ -137,7 +152,8 @@ def qualify(restored, prepared, output):
         identities = {name:file_identity(path,512*1024**2) for name,path in products.items()}
         for path in products.values(): path.chmod(0o700)
         stage = 'nine-isolated-owner-and-memory-attempts'
-        result = campaign.run(artifact,products,output/'node',deadline=deadline)
+        result = campaign.run(artifact,products,output/'node',deadline=deadline,
+            memory_context=record['memoryDifferentialContext'])
         require(result['status'] == 'passed' and len(result['attempts']) == 9 and len(result['phases']) == 4,
                 'rust-limit-all-nine-required')
         require(producer == retained.native.verify_prepared(prepared)

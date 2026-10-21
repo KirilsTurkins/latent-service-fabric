@@ -125,11 +125,71 @@ class RustHttpLimitControls(unittest.TestCase):
             return bytes(component)
         shape=qualifier.memory_shape(model())
         self.assertEqual(shape['definedMinimumBytes'],3473408)
-        self.assertTrue(shape['actualTypedMemoryTerminalStillRequired'])
+        self.assertFalse(shape['definitionSumAloneProvesInstantiation'])
         self.assertGreater(shape['definedMinimumBytes'],shape['lowerRequestedBytes'])
         for index in (0,3,6):
             with self.subTest(index=index),self.assertRaises(RuntimeError):qualifier.memory_shape(model(index))
         with self.assertRaises(ValueError):qualifier.memory_shape(b'not-the-authenticated-component')
+        with self.assertRaisesRegex(RuntimeError,'whole-instance-graph'):qualifier.memory_context(model())
+
+    def test_actual_generic_memory_row_needs_exact_component_and_single_budget_differential(self):
+        row=copy.deepcopy(INPUTS['memory86da']['invocation'])
+        revision=row['response']['data']['resolvedRevision']
+        budget=node.memory_selection(node.NORMAL_BUDGET)
+        # The original detail reader still refuses the actual public projection.
+        with self.assertRaisesRegex(RuntimeError,'typed-memory-producer-detail'):
+            node.memory_outcome(row,revision,budget)
+        result=node.memory_differential_outcome(row,revision,budget,node.MEMORY_CONTEXT)
+        self.assertEqual(result['status'],'awaiting-matched-fresh')
+        self.assertFalse(result['publicGenericErrorAloneProvesMemory'])
+        self.assertFalse(result['internalInstructionOrAllocationSiteProved'])
+        self.assertFalse(result['transportTypedDetailObserved'])
+        for change in ('component','shape','bool-ordinal','upper-request','fuel-request','outbound-request',
+                'bool-budget','fuel-exhausted','wrong-terminal','wrong-code','unexpected-detail',
+                'peer-start','bool-peer','effect','child','state','zero-fuel','over-memory','revision','retryable'):
+            bad=copy.deepcopy(row);selected=copy.deepcopy(budget);context=copy.deepcopy(node.MEMORY_CONTEXT)
+            if change=='component':context['component']['sha256']='sha256:'+'0'*64
+            elif change=='shape':context['minimumPages'][1]=20
+            elif change=='bool-ordinal':context['instantiatedMainCoreOrdinals'][0]=False
+            elif change=='upper-request':selected['memoryBytes']=16*1024**2
+            elif change=='fuel-request':selected['cpuFuel']-=1
+            elif change=='outbound-request':selected['outboundRequests']=1
+            elif change=='bool-budget':selected['effectCount']=False
+            elif change=='fuel-exhausted':bad['response']['data']['consumption']['cpuFuel']=str(budget['cpuFuel'])
+            elif change=='wrong-terminal':bad['response']['data']['terminalState']='guest_trap'
+            elif change=='wrong-code':bad['response']['error']['code']='guest-trap'
+            elif change=='unexpected-detail':bad['response']['error']['details']=[{'kind':'activation.fuel-exhausted'}]
+            elif change=='retryable':bad['response']['error']['retryable']=True
+            elif change=='revision':bad['response']['data']['resolvedRevision']['releaseDigest']='sha256:'+'0'*64
+            elif change=='peer-start':bad['response']['data']['consumption']['outboundRequests']=1
+            elif change=='bool-peer':bad['response']['data']['consumption']['outboundRequests']=False
+            elif change=='effect':bad['response']['data']['consumption']['effectCount']=1
+            elif change=='child':bad['response']['data']['consumption']['childCalls']=1
+            elif change=='state':bad['response']['data']['consumption']['stateReadBytes']='1'
+            elif change=='zero-fuel':bad['response']['data']['consumption']['cpuFuel']='0'
+            else:bad['response']['data']['consumption']['peakMemoryBytes']=str(budget['memoryBytes']+1)
+            with self.subTest(change=change),self.assertRaises(RuntimeError):
+                node.memory_differential_outcome(bad,revision,selected,context)
+
+    def test_memory_differential_cannot_complete_without_original_budget_parsed_fresh(self):
+        row=copy.deepcopy(INPUTS['memory86da']['invocation']);revision=row['response']['data']['resolvedRevision']
+        budget=node.memory_selection(node.NORMAL_BUDGET)
+        lower={'invocation':row,'selectedRevision':revision,'budget':budget,
+            'diagnostic':node.memory_differential_outcome(row,revision,budget,node.MEMORY_CONTEXT)}
+        # Reader model: relabel a retained successful Golem call from the Task
+        # phase. This is never evidence that actual memory fresh9 has run.
+        fresh=copy.deepcopy(INPUTS['fresh86daGolem']);fresh['case']='fresh-memory-three-mib'
+        self.assertTrue(node.complete_memory_differential(lower,fresh)['matchedSameCellFreshObserved'])
+        for change in ('no-result','lower-budget','other-limit','wrong-component','wrong-client','wrong-case','stale-result'):
+            bad=copy.deepcopy(fresh)
+            if change=='no-result':bad['invocation']['decoded']=None
+            elif change=='lower-budget':bad['budget']=budget
+            elif change=='other-limit':bad['budget']['outboundRequests']=7
+            elif change=='wrong-component':bad['selectedRevision']['releaseDigest']='sha256:'+'0'*64
+            elif change=='wrong-client':bad['client']='waki'
+            elif change=='wrong-case':bad['case']='other-fresh'
+            else:bad['invocation']['response']['data']['resolvedRevision']['routeGeneration']='999'
+            with self.subTest(change=change),self.assertRaises(RuntimeError):node.complete_memory_differential(lower,bad)
 
     def test_cleanup_keeps_the_primary_and_still_refuses_on_success(self):
         observations=[];secondary=OSError('controlled cleanup refusal')

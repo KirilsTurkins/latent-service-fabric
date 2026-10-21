@@ -24,6 +24,16 @@ from tools.standard_http.peer import Peer
 
 MATERIALS = ('tools/rust_wasi_http_limit_node.py', *original.MATERIALS)
 PHASES = ('baseline', 'task-one', 'timer-one', 'memory-three-mib')
+MEMORY_COMPONENT = {'sha256': 'sha256:51c0ff8e1cd93ae504a8f14d861fb8ac862b4cf6bdab2d22074183c1e692eb4f', 'bytes': 934498}
+NORMAL_BUDGET = {'blobReadBytes': 0, 'blobWriteBytes': 0, 'childCalls': 0,
+    'cpuFuel': 1_000_000_000, 'effectCount': 0, 'logBytes': 0, 'memoryBytes': 16 * 1024**2,
+    'outboundRequests': 8, 'stateReadBytes': 0, 'stateWriteBytes': 0, 'wallTimeLimitMillis': 5000}
+MEMORY_CONTEXT = {'component': MEMORY_COMPONENT,
+    # These three main cores are instantiated by runtime/application/root in the
+    # exact authenticated component. The digest binds the complete instance graph.
+    'instantiatedMainCoreOrdinals': [0, 3, 6], 'minimumPages': [17, 19, 17],
+    'minimumInstantiatedLinearMemoryBytes': 53 * 65536,
+    'definitionSumAloneProvesInstantiation': False, 'measuredRssClaimed': False}
 
 
 def limits_configuration(value, phase):
@@ -67,6 +77,56 @@ def memory_outcome(row, revision, budget):
             'rust-limit-memory-original-budget-no-contact')
     return {'producerDetail': 'activation.memory-exhausted', 'genericResourceErrorAccepted': False,
             'requestedMemoryBytes': budget['memoryBytes'], 'guestExecutionClaimed': False}
+
+
+def memory_selection(budget):
+    require(budget == NORMAL_BUDGET and all(type(v) is int for v in budget.values()),
+        'rust-limit-memory-original-complete-budget')
+    return {**budget, 'memoryBytes': 3 * 1024**2}
+
+
+def memory_differential_outcome(row, revision, budget, context):
+    """A fixed-component differential; the generic public error is insufficient."""
+    require(json.dumps(context, sort_keys=True) == json.dumps(MEMORY_CONTEXT, sort_keys=True)
+        and budget == memory_selection(NORMAL_BUDGET) and all(type(v) is int for v in budget.values())
+        and revision['releaseDigest'] == MEMORY_COMPONENT['sha256'],
+        'rust-limit-fixed-component-and-only-memory-request-differential')
+    response = row['response']; data = response['data']; error = response['error']
+    require(type(row['exitCode']) is int and row['exitCode'] == 4 and row['decoded'] is None
+        and row['processReaped'] is True and response['outcomeKnown'] is response['requestDispatched'] is True
+        and response['category'] == 'platform-failure' and data['resolvedRevision'] == revision
+        and data['terminalState'] == 'resource_exhausted'
+        and error == {'code': 'resource-exhausted', 'details': [],
+            'message': 'The platform reported a failure.', 'retryable': False},
+        'rust-limit-original-public-memory-projection')
+    consumed = data['consumption']
+    require(all(type(consumed[k]) is int and consumed[k] == 0
+            for k in ('outboundRequests', 'effectCount', 'childCalls'))
+        and all(original.unsigned(consumed[k]) == 0 for k in
+            ('logBytes', 'stateReadBytes', 'stateWriteBytes', 'blobReadBytes', 'blobWriteBytes'))
+        and 0 < original.unsigned(consumed['cpuFuel']) < budget['cpuFuel']
+        and 0 < original.unsigned(consumed['peakMemoryBytes']) <= budget['memoryBytes'],
+        'rust-limit-memory-no-effects-and-unexhausted-fuel')
+    return {'proofKind': 'fixed-instantiated-component-single-memory-request-differential',
+        'requestedMemoryBytes': budget['memoryBytes'],
+        'minimumInstantiatedLinearMemoryBytes': context['minimumInstantiatedLinearMemoryBytes'],
+        'publicGenericErrorAloneProvesMemory': False, 'internalInstructionOrAllocationSiteProved': False,
+        'transportTypedDetailObserved': False, 'transportDetailOmittedByOriginalProjection': True,
+        'matchedSameCellFreshRequired': True, 'status': 'awaiting-matched-fresh'}
+
+
+def complete_memory_differential(lower, fresh_result):
+    require(memory_differential_outcome(lower['invocation'], lower['selectedRevision'],
+            lower['budget'], MEMORY_CONTEXT) == lower['diagnostic']
+        and fresh_result['budget'] == NORMAL_BUDGET
+        and all(type(v) is int for v in fresh_result['budget'].values())
+        and fresh_result['selectedRevision']['releaseDigest'] == MEMORY_COMPONENT['sha256']
+        and fresh_result['case'] == 'fresh-memory-three-mib' and fresh_result['client'] == 'golem',
+        'rust-limit-mandatory-original-budget-opposite-fresh')
+    original.outcome(fresh_result['invocation'], original.cases()[0], 'golem',
+        fresh_result['selectedRevision'], fresh_result['budget'])
+    return {**lower['diagnostic'], 'status': 'passed', 'matchedSameCellFreshObserved': True,
+        'upperRequestedMemoryBytes': fresh_result['budget']['memoryBytes']}
 
 
 def task_outcome(row, revision, budget):
@@ -126,13 +186,15 @@ def baseline_timer(stderr):
         'physicalRetirementProvenByMarker': False}
 
 
-def boundary_call(client, node, target, peers, tenant, phase, probe, output):
+def boundary_call(client, node, target, peers, tenant, phase, probe, output, memory_context):
     memory = phase == 'memory-three-mib'; timer = phase == 'timer-one'
     library = 'golem' if timer else 'waki'
     label = 'node-stop-pending' if timer else phase
     chosen = copy.deepcopy(target)
     if memory:
-        chosen['budget']['memoryBytes'] = 3 * 1024**2
+        chosen['budget'] = memory_selection(target['budget'])
+        write_json(output / 'memory-request-selection.json', {'original': target['budget'],
+            'selected': chosen['budget'], 'context': memory_context, 'onlyMemoryBytesChanged': True})
     path = 'domain-json' if memory else 'pending-headers'
     mode = 'json' if memory else 'capacity'
     endpoint = peers[tenant].url(path)
@@ -181,7 +243,7 @@ def boundary_call(client, node, target, peers, tenant, phase, probe, output):
     # Retire and retain before the new limit-specific oracle may refuse.
     retired = original.retire(client, probe, target, output, phase)
     require(memory or positive is not None and released, 'rust-limit-positive-first-request-required')
-    diagnostic = (memory_outcome(row, revision, chosen['budget']) if memory else
+    diagnostic = (memory_differential_outcome(row, revision, chosen['budget'], memory_context) if memory else
         timer_outcome(row, revision, chosen['budget'], positive) if timer else
         task_outcome(row, revision, chosen['budget']))
     for other in peers:
@@ -210,11 +272,13 @@ def boundary_call(client, node, target, peers, tenant, phase, probe, output):
     return result
 
 
-def run(artifact, native, output, *, deadline):
+def run(artifact, native, output, *, deadline, memory_context):
     output = fresh(output)
     names = ('component.wasm','BUILD-COMPLETE.json','source-inputs.json','recipe-inputs.json',
         'build-observation.json','capsule.json','package-source.json','rust-http-runtime.json')
     identities = {n: file_identity(artifact / n) for n in names}
+    require(identities['component.wasm'] == MEMORY_COMPONENT and memory_context == MEMORY_CONTEXT,
+        'rust-limit-original-whole-instantiated-component-identity')
     record = {'schemaVersion':'latent.rust.wasi-http.limits.v1','status':'incomplete',
         'fullTicketQualification':False,'original':identities,'attempts':[],'phases':[],'cleanupRefusals':[]}
     signed = output / 'releases'
@@ -282,11 +346,16 @@ def run(artifact, native, output, *, deadline):
                     write_json(phase_output/'baseline-real-timer.json',{'case':item,'terminal':terminal})
                     record['attempts'].append({'phase':phase,'client':'golem','kind':'real-timer-pending-release'})
                 else:
-                    item=boundary_call(clients['examples'],node,targets['examples'],peers,'examples',phase,probe,phase_output)
+                    item=boundary_call(clients['examples'],node,targets['examples'],peers,'examples',phase,probe,phase_output,memory_context)
                     record['attempts'].append({'phase':phase,'kind':'isolated-ceiling','evidence':file_identity(phase_output/('case-'+phase+'.json'))})
                     library='waki' if phase=='timer-one' else 'golem'
                     fresh_result=original.invoke(clients['foreign'],node,targets['foreign'],peers,'foreign',library,'delta',original.cases()[0],probe,phase_output,'fresh-'+phase)
                     write_json(phase_output/('case-fresh-'+phase+'.json'),fresh_result)
+                    if phase == 'memory-three-mib':
+                        # Both calls use this same live node/cell; original.invoke
+                        # also requires real parsed JSON, peers, and retirement.
+                        differential = complete_memory_differential(item, fresh_result)
+                        write_json(phase_output/'memory-differential.json', differential)
                     record['attempts'].append({'phase':phase,'client':library,'kind':'same-cell-opposite-fresh'})
                 for index,tenant in enumerate(original.TENANTS):
                     original.retire(clients[tenant],probe,targets[tenant],phase_output,tenant+'-final',population=2-index)
