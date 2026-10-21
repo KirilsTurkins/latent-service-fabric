@@ -1,0 +1,166 @@
+{
+  "cases": [
+    "KernelSidcache.test_actual_policy_destroy_routes_published_birth_before_original_table_is_freed",
+    "KernelSidcache.test_both_normal_and_private_eviction_queue_under_original_lock_before_unlink",
+    "KernelSidcache.test_cache_hit_output_uses_callers_real_string_child_and_actual_lru_update",
+    "KernelSidcache.test_changed_duplicate_crlf_unknown_or_missing_inputs_refuse",
+    "KernelSidcache.test_close_compares_anchor_under_current_policy_rcu_before_any_table_dereference",
+    "KernelSidcache.test_context_conversion_preserves_original_mls_policy_and_sid_search_semantics",
+    "KernelSidcache.test_new_cache_birth_precedes_copy_publication_and_original_cache_limit",
+    "KernelSidcache.test_real_cache_keys_and_original_lru_hit_preserve_creator_without_new_birth",
+    "KernelSidcache.test_real_callback_copies_original_birth_without_following_dead_parent",
+    "KernelSidcache.test_reference_uses_real_factory_and_maintained_cache_bodies_without_geometry_claim",
+    "KernelSidcache.test_same_birth_record_carries_generation_anchor_and_no_extra_quota_or_refund",
+    "KernelSidcache.test_six_real_definitions_and_sixteen_whole_inputs_bind_original_archive"
+  ],
+  "guards": {
+    "KernelSidcache.test_actual_policy_destroy_routes_published_birth_before_original_table_is_freed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:baf1671cba1d666663aef59bdaa803027fb059ab8dee8b25a99187f1cf2db0fc",
+        "class:setup-sha256:cb05f529e9b3e77876b76d6e5d99d9eeba975f0af0a79f271ae2ddbceebe564d"
+      ],
+      "skipSites": []
+    },
+    "KernelSidcache.test_both_normal_and_private_eviction_queue_under_original_lock_before_unlink": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:baf1671cba1d666663aef59bdaa803027fb059ab8dee8b25a99187f1cf2db0fc",
+        "class:setup-sha256:cb05f529e9b3e77876b76d6e5d99d9eeba975f0af0a79f271ae2ddbceebe564d"
+      ],
+      "skipSites": []
+    },
+    "KernelSidcache.test_cache_hit_output_uses_callers_real_string_child_and_actual_lru_update": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:baf1671cba1d666663aef59bdaa803027fb059ab8dee8b25a99187f1cf2db0fc",
+        "class:setup-sha256:cb05f529e9b3e77876b76d6e5d99d9eeba975f0af0a79f271ae2ddbceebe564d"
+      ],
+      "skipSites": []
+    },
+    "KernelSidcache.test_changed_duplicate_crlf_unknown_or_missing_inputs_refuse": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:baf1671cba1d666663aef59bdaa803027fb059ab8dee8b25a99187f1cf2db0fc",
+        "class:setup-sha256:cb05f529e9b3e77876b76d6e5d99d9eeba975f0af0a79f271ae2ddbceebe564d"
+      ],
+      "skipSites": []
+    },
+    "KernelSidcache.test_close_compares_anchor_under_current_policy_rcu_before_any_table_dereference": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:baf1671cba1d666663aef59bdaa803027fb059ab8dee8b25a99187f1cf2db0fc",
+        "class:setup-sha256:cb05f529e9b3e77876b76d6e5d99d9eeba975f0af0a79f271ae2ddbceebe564d"
+      ],
+      "skipSites": []
+    },
+    "KernelSidcache.test_context_conversion_preserves_original_mls_policy_and_sid_search_semantics": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:baf1671cba1d666663aef59bdaa803027fb059ab8dee8b25a99187f1cf2db0fc",
+        "class:setup-sha256:cb05f529e9b3e77876b76d6e5d99d9eeba975f0af0a79f271ae2ddbceebe564d"
+      ],
+      "skipSites": []
+    },
+    "KernelSidcache.test_new_cache_birth_precedes_copy_publication_and_original_cache_limit": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:baf1671cba1d666663aef59bdaa803027fb059ab8dee8b25a99187f1cf2db0fc",
+        "class:setup-sha256:cb05f529e9b3e77876b76d6e5d99d9eeba975f0af0a79f271ae2ddbceebe564d"
+      ],
+      "skipSites": []
+    },
+    "KernelSidcache.test_real_cache_keys_and_original_lru_hit_preserve_creator_without_new_birth": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:baf1671cba1d666663aef59bdaa803027fb059ab8dee8b25a99187f1cf2db0fc",
+        "class:setup-sha256:cb05f529e9b3e77876b76d6e5d99d9eeba975f0af0a79f271ae2ddbceebe564d"
+      ],
+      "skipSites": []
+    },
+    "KernelSidcache.test_real_callback_copies_original_birth_without_following_dead_parent": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:baf1671cba1d666663aef59bdaa803027fb059ab8dee8b25a99187f1cf2db0fc",
+        "class:setup-sha256:cb05f529e9b3e77876b76d6e5d99d9eeba975f0af0a79f271ae2ddbceebe564d"
+      ],
+      "skipSites": []
+    },
+    "KernelSidcache.test_reference_uses_real_factory_and_maintained_cache_bodies_without_geometry_claim": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:baf1671cba1d666663aef59bdaa803027fb059ab8dee8b25a99187f1cf2db0fc",
+        "class:setup-sha256:cb05f529e9b3e77876b76d6e5d99d9eeba975f0af0a79f271ae2ddbceebe564d"
+      ],
+      "skipSites": []
+    },
+    "KernelSidcache.test_same_birth_record_carries_generation_anchor_and_no_extra_quota_or_refund": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:baf1671cba1d666663aef59bdaa803027fb059ab8dee8b25a99187f1cf2db0fc",
+        "class:setup-sha256:cb05f529e9b3e77876b76d6e5d99d9eeba975f0af0a79f271ae2ddbceebe564d"
+      ],
+      "skipSites": []
+    },
+    "KernelSidcache.test_six_real_definitions_and_sixteen_whole_inputs_bind_original_archive": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:baf1671cba1d666663aef59bdaa803027fb059ab8dee8b25a99187f1cf2db0fc",
+        "class:setup-sha256:cb05f529e9b3e77876b76d6e5d99d9eeba975f0af0a79f271ae2ddbceebe564d"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_host_stream_kernel_sidcache.py",
+  "reviewReason": "Twelve additive maintained SID-cache and audit-string source controls. Preserve all prior Netport/NetLabel/factory cases and guards; bind16 whole preimages and6 exact functions, original LRU/policy/RCU semantics, table lifetime and typed original-owner allocation. No actual Linux execution, geometry, complete closure or installed provider credit.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

@@ -124,7 +124,7 @@ def scheduler_overlay(goroot: Path, destination: Path) -> Path:
 def prepare_compiler(goroot: Path, destination: Path) -> Path:
     """Assemble one fresh private async toolchain; never edit the upstream input."""
     goroot, destination = checked_roots(goroot, destination)
-    if (goroot / "VERSION").read_text().splitlines()[0] != "go1.27.2":
+    if (goroot / "VERSION").read_text().splitlines()[0] != "go1.27.3":
         raise ValueError("go-async-compiler-version-drift")
     sources = checked_sources(goroot, UPSTREAM_PREIMAGES)
     install_scheduler(sources)
@@ -234,7 +234,7 @@ def overlay(goroot: Path, destination: Path, go_package: Path | None = None,
 
 if __name__ == "__main__":
     import argparse
-    parser = argparse.ArgumentParser(description="Stage the verified Go 1.27.2 async compiler profile")
+    parser = argparse.ArgumentParser(description="Stage the verified Go 1.27.3 async compiler profile")
     parser.add_argument("--prepare-compiler", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()

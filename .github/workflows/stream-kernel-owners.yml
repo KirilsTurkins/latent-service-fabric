@@ -1,0 +1,58 @@
+name: Stream kernel original owner controls
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [feat/stream-kernel-platform-factory-20261021]
+    paths:
+      - '.github/workflows/stream-kernel-owners.yml'
+      - 'crates/latent-capabilities/src/broker/pools.rs'
+      - 'crates/latent-capabilities/src/broker/pools/**'
+      - 'crates/latent-streams/src/connection.rs'
+      - 'tools/qualify_stream_kernel_owners.py'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'rust-toolchain.toml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: stream-kernel-owners-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  owners:
+    name: Exact original broker I/O owners and selected stream source
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+      - name: Restore compiled Rust dependencies
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
+      - name: Execute exact broker owners and compile stream integration
+        run: python3 tools/qualify_stream_kernel_owners.py --output "$RUNNER_TEMP/stream-kernel-owners"
+      - name: Retain bounded owner execution and compile failures
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: stream-kernel-owners-${{ github.sha }}
+          path: ${{ runner.temp }}/stream-kernel-owners/
+          if-no-files-found: warn
+          retention-days: 7

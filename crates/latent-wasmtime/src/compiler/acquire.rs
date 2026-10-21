@@ -52,22 +52,22 @@ impl<T: Send + Sync + 'static> CompilerPool<T> {
                 owner: false,
             });
         }
-        let reservation =
-            match self
-                .core
-                .cache
-                .begin(input.handle, input.source_bytes, input.metadata_bytes)?
-            {
-                PrepareAccess::Hit(runtime) => {
-                    drop(state);
-                    let (metadata, image) = (self.core.costs)(&runtime);
-                    return Ok(Acquisition::Ready(ReadyPin {
-                        runtime,
-                        permit: permit.charge(metadata, image)?,
-                    }));
-                }
-                PrepareAccess::Compile(reservation) => reservation,
-            };
+        let reservation = match self.core.cache.begin_with_verification(
+            input.handle,
+            input.source_bytes,
+            input.metadata_bytes,
+            input.verification_bytes,
+        )? {
+            PrepareAccess::Hit(runtime) => {
+                drop(state);
+                let (metadata, image) = (self.core.costs)(&runtime);
+                return Ok(Acquisition::Ready(ReadyPin {
+                    runtime,
+                    permit: permit.charge(metadata, image)?,
+                }));
+            }
+            PrepareAccess::Compile(reservation) => reservation,
+        };
         if state.jobs.len() >= limits.maximum_jobs
             || state.waiters >= limits.maximum_waiters
             || input.document_bytes

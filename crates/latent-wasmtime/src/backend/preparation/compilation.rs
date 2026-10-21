@@ -50,7 +50,8 @@ impl super::super::PreparationContext {
         mut reservation: PrepareReservation<PreparedRuntime>,
         job: &PreparationJob,
     ) -> Result<Arc<PreparedRuntime>, PlatformError> {
-        let runtime = self.build_runtime(artifact, key, input, job)?;
+        let runtime =
+            self.build_runtime(artifact, key, input, job, reservation.verification_bytes())?;
         let adoption = job.stage(PreparationStage::CacheAdoption);
         if self.config.prepared_cache_enabled {
             reservation.track_runtime(&runtime)?;
@@ -95,8 +96,9 @@ impl super::super::PreparationContext {
         key: &PreparationKey,
         input: Compilation,
         job: &PreparationJob,
+        verification_bytes: usize,
     ) -> Result<Arc<PreparedRuntime>, PlatformError> {
-        self.build_runtime_with_wait(artifact, key, input, job, None)
+        self.build_runtime_with_wait(artifact, key, input, job, None, verification_bytes)
     }
 
     pub(in crate::backend) fn build_runtime_with_wait(
@@ -106,6 +108,7 @@ impl super::super::PreparationContext {
         input: Compilation,
         job: &PreparationJob,
         wait: Option<&WorkerWindow>,
+        verification_bytes: usize,
     ) -> Result<Arc<PreparedRuntime>, PlatformError> {
         if self.native_aot.is_some()
             || self.config.execution_isolation_profile
@@ -121,9 +124,10 @@ impl super::super::PreparationContext {
             )
         })?;
         self.validate_renderer_component(artifact)?;
-        let threading = crate::component_threading::Authentication::verify(
-            self.config.owned_native_threads,
+        let threading = crate::component_threading::Authentication::verify_profile(
+            self.config.selected_thread_profile(),
             &artifact.component_bytes,
+            verification_bytes,
         )?;
         let compilation = job.stage(PreparationStage::ComponentNew);
         let component = Component::new(&self.engine, &artifact.component_bytes);
@@ -157,6 +161,7 @@ impl super::super::PreparationContext {
         input: Compilation,
         job: &PreparationJob,
         wait: Option<&WorkerWindow>,
+        verification_bytes: usize,
     ) -> Result<Arc<PreparedRuntime>, PlatformError> {
         WorkerWindow::check(wait, || {
             self.check_eligibility(
@@ -167,9 +172,10 @@ impl super::super::PreparationContext {
         })?;
         WorkerWindow::check(wait, || checked.check())?;
         self.validate_renderer_component(checked.artifact())?;
-        let threading = crate::component_threading::Authentication::verify(
-            self.config.owned_native_threads,
+        let threading = crate::component_threading::Authentication::verify_profile(
+            self.config.selected_thread_profile(),
             &checked.artifact().component_bytes,
+            verification_bytes,
         )?;
         let service = self
             .native_aot
@@ -263,7 +269,7 @@ impl super::super::PreparationContext {
             input.handle.clone(),
             input.component_digest,
         );
-        threading.check(self.config.owned_native_threads, &descriptor)?;
+        threading.check_profile(self.config.selected_thread_profile(), &descriptor)?;
         let pre = self.link_component(component, &surface.type_imports)?;
         if self.profile.id == PHASE0_BACKEND_ID {
             crate::phase0::validate_prepared(&pre)?;

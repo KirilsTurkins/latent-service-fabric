@@ -34,7 +34,7 @@
       },
       {
         "name": "Authenticate the maintained upstream compiler",
-        "run": "set -euo pipefail\nout=\"$RUNNER_TEMP/go-closed-network-tools\"\ntest ! -e \"$out\"\nmkdir \"$out\"\ncurl --fail --location --proto '=https' --tlsv1.2 --max-time 180 --output \"$out/go.tar.gz\" https://dl.google.com/go/go1.27.2.linux-amd64.tar.gz\necho \"ecbadb99091a3f46e31f5f934b068b1864eafa7995211b39eaddf76996045fe5  $out/go.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$out/go.tar.gz\" -C \"$out\"\necho \"$out/go/bin\" >> \"$GITHUB_PATH\"\n"
+        "run": "set -euo pipefail\nout=\"$RUNNER_TEMP/go-closed-network-tools\"\ntest ! -e \"$out\"\nmkdir \"$out\"\ncurl --fail --location --proto '=https' --tlsv1.2 --max-time 180 --output \"$out/go.tar.gz\" https://dl.google.com/go/go1.27.3.linux-amd64.tar.gz\necho \"65efbc80fdc1fa2cd2631cad5b481777a68e8725f34e89f50fc6ac714e379b40  $out/go.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$out/go.tar.gz\" -C \"$out\"\necho \"$out/go/bin\" >> \"$GITHUB_PATH\"\n"
       },
       {
         "name": "Compile identical ordinary source and require both real counterfactual outcomes",
@@ -56,7 +56,7 @@
   },
   "jobId": "closed-network",
   "kind": "job",
-  "reviewReason": "Preserve exact pins finite compiler/reference deadlines strict TCP/UDP outcomes and bounded failure artifacts.",
+  "reviewReason": "Fix actual current CI failures: Go 1.27.3 official security patch and archive digest; preserve every original test, command, guard, coverage and bound. All 27 pinned Go overlay files are byte-identical in the official source archive. Preserve historical diagnostics and compiler receipts. Retained entropy authenticates its old compiler before acquiring the separately pinned patched compiler.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-closed-network-reference.yml"
 }

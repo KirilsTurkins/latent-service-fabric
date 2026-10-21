@@ -1,0 +1,330 @@
+{
+  "schemaVersion": "latent.go.resource-runtime-signed.v1",
+  "source": "1bc3808bf6b706288b69032b7d88e28a2d77c003",
+  "run": 39573053368,
+  "job": 119131725206,
+  "workflow": ".github/workflows/go-resource-runtime.yml",
+  "event": "push",
+  "branch": "feat/go-resource-joined-current-20261020",
+  "artifact": {
+    "id": 12333335629,
+    "bytes": 2712748,
+    "sha256": "8557d7a6ea9c0ea588fab89925c9645150d3533934ffa22204e5284506857acd",
+    "crcMembers": 297
+  },
+  "qualificationReceipt": {
+    "sha256": "sha256:1bbc5a17306f753ae2fe2be0ee1522531486bfc162456a5b3805f41d1c82baec",
+    "bytes": 10901
+  },
+  "nodeReceipt": {
+    "sha256": "sha256:e47a3975430b088f739203c1f64ca5074338299ac4749b5e078d1401696946eb",
+    "bytes": 268693
+  },
+  "component": {
+    "sha256": "sha256:4ea488dccca0f1ba64f7fded3163a1cdb8ced4ffaedcd525ba34cef621652177",
+    "bytes": 3216572
+  },
+  "compiler": {
+    "goVersion": "1.27.3",
+    "componentizeGoVersion": "0.4.3",
+    "goBinary": {
+      "sha256": "sha256:5f5eb6d0b2fb6aa0bb5d5f8c5f1c944e0de955c925f0111af92a9d8f79680b5b",
+      "bytes": 17164222
+    },
+    "wasmToolsVersion": "1.254.0"
+  },
+  "native": {
+    "compiledSource": "357eecbd7744bbc026741d241b679966d14b0e95",
+    "producerRun": 39532689221,
+    "producerJob": 119002071182,
+    "products": {
+      "latent": {
+        "sha256": "sha256:0baddbf297f756612afc861cd18dd1e0fc03b1fa60a2697cbf8cb70a641e3828",
+        "bytes": 69007984
+      },
+      "latentd": {
+        "sha256": "sha256:72c8ec2f2e8f3d4f307dc35f1a3a38a147200bdda56b2b192979ac5cadefb377",
+        "bytes": 185509760
+      },
+      "examples/package": {
+        "sha256": "sha256:5d1c60df2cab630e4bb19e06cc699b6cf0c930eef418822f025ab416220e2314",
+        "bytes": 17750192
+      },
+      "examples/capsule_contracts": {
+        "sha256": "sha256:c4936ef9489d2b29f6513d8b48236e95d622a807fccdbf60ee6008c12cec75c1",
+        "bytes": 7245472
+      },
+      "examples/capsule_authoring": {
+        "sha256": "sha256:5c661ba4e2c67e43e3a7ed07f9d24e8348c4e6d8dbd06e157fd2a46f062880b8",
+        "bytes": 24017536
+      }
+    },
+    "producerReceipt": {
+      "sha256": "sha256:3a9c558088ef752d35efadbe0f0e77c0b09848b32f383acd531bf2ea0b98fa83",
+      "bytes": 25783
+    },
+    "sourceSnapshot": {
+      "sha256": "sha256:22c362cbe76391864c6d716e1e383f64204c60e5fdf96d85c80a9247205fd7ba",
+      "bytes": 22275
+    },
+    "consumerSource": {
+      "sha256": "sha256:b4b10b6a7fcebd7c04b7d3446db2625e2b8194d2be476d699ee3634f7f540582",
+      "files": 3323,
+      "bytes": 26288213,
+      "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+      "hermetic": false,
+      "implicitCompilerInputs": "not-attested"
+    },
+    "consumerNativeCompiledByThisCampaign": false,
+    "nativeProductsBuilt": 0,
+    "engineRebuilt": false
+  },
+  "sourceInputs": {
+    "helpers": 33,
+    "recipe": 61,
+    "capturedSdk": 95,
+    "gitUnion": 185,
+    "capturedSourceFiles": 110,
+    "helperTableSha256": "7f7b720c8fd1b712be9bea34b6d1699cab4f6710170c9d9949c5f795b5657e79",
+    "outsideOriginalsRemoved": true,
+    "applicationResourceBridge": false,
+    "catalogueRegistration": false,
+    "normalV5Build": true,
+    "buildCommands": 22,
+    "componentBuilds": 1,
+    "packageWitRetainedInLayers": true
+  },
+  "ownerProfile": {
+    "profile": "go-component-activation-v5",
+    "tasks": 16,
+    "executors": 2,
+    "queuedWork": 2,
+    "waits": 4,
+    "timers": 2,
+    "results": 2,
+    "nativeOwners": 2
+  },
+  "outcomes": {
+    "total": 13,
+    "preCpuPermissionDenials": 2,
+    "admitted": 11,
+    "sequence": [
+      {
+        "tenant": "examples",
+        "mode": "parallel",
+        "activation": "resource-callback-parallel",
+        "exitCode": 0,
+        "decoded": [
+          {
+            "ok": "resource-go|parallel=first:80410d0a+second:00ff80410d0a|entropy=16|wall64=1|fresh=1"
+          }
+        ],
+        "errorCode": null,
+        "cpuFuel": 1842317,
+        "peakMemoryBytes": 3475416,
+        "logBytes": 589
+      },
+      {
+        "tenant": "foreign",
+        "mode": "fresh",
+        "activation": "resource-callback-foreign-fresh",
+        "exitCode": 0,
+        "decoded": [
+          {
+            "ok": "resource-go|fresh=00ff80410d0a|empty=0|fresh=1"
+          }
+        ],
+        "errorCode": null,
+        "cpuFuel": 1466047,
+        "peakMemoryBytes": 3475048,
+        "logBytes": 285
+      },
+      {
+        "tenant": "examples",
+        "mode": "clear",
+        "activation": "resource-callback-clear",
+        "exitCode": 0,
+        "decoded": [
+          {
+            "ok": "resource-go|clear=00ff80410d0a|empty=0|fresh=1"
+          }
+        ],
+        "errorCode": null,
+        "cpuFuel": 1553283,
+        "peakMemoryBytes": 3475232,
+        "logBytes": 269
+      },
+      {
+        "tenant": "examples",
+        "mode": "trap",
+        "activation": "resource-callback-root-trap",
+        "exitCode": 4,
+        "decoded": null,
+        "errorCode": "guest-trap",
+        "cpuFuel": 1876889,
+        "peakMemoryBytes": 3475232,
+        "logBytes": 0
+      },
+      {
+        "tenant": "foreign",
+        "mode": "fresh",
+        "activation": "resource-callback-foreign-after-trap",
+        "exitCode": 0,
+        "decoded": [
+          {
+            "ok": "resource-go|fresh=00ff80410d0a|empty=0|fresh=1"
+          }
+        ],
+        "errorCode": null,
+        "cpuFuel": 1463830,
+        "peakMemoryBytes": 3475048,
+        "logBytes": 295
+      },
+      {
+        "tenant": "examples",
+        "mode": "cancel",
+        "activation": "node-stop-pending",
+        "exitCode": 4,
+        "decoded": null,
+        "errorCode": "cancelled",
+        "cpuFuel": 1535424,
+        "peakMemoryBytes": 3475232,
+        "logBytes": 265
+      },
+      {
+        "tenant": "foreign",
+        "mode": "fresh",
+        "activation": "resource-foreign-after-cancel",
+        "exitCode": 0,
+        "decoded": [
+          {
+            "ok": "resource-go|fresh=00ff80410d0a|empty=0|fresh=1"
+          }
+        ],
+        "errorCode": null,
+        "cpuFuel": 1461035,
+        "peakMemoryBytes": 3475048,
+        "logBytes": 281
+      },
+      {
+        "tenant": "examples",
+        "mode": "deadline",
+        "activation": "node-stop-drain",
+        "exitCode": 4,
+        "decoded": null,
+        "errorCode": "deadline-exceeded",
+        "cpuFuel": 1534039,
+        "peakMemoryBytes": 3475232,
+        "logBytes": 261
+      },
+      {
+        "tenant": "foreign",
+        "mode": "fresh",
+        "activation": "resource-foreign-after-deadline",
+        "exitCode": 0,
+        "decoded": [
+          {
+            "ok": "resource-go|fresh=00ff80410d0a|empty=0|fresh=1"
+          }
+        ],
+        "errorCode": null,
+        "cpuFuel": 1462786,
+        "peakMemoryBytes": 3475048,
+        "logBytes": 285
+      },
+      {
+        "tenant": "foreign",
+        "mode": "callback-error",
+        "activation": "resource-callback-error",
+        "exitCode": 4,
+        "decoded": null,
+        "errorCode": "guest-trap",
+        "cpuFuel": 2033612,
+        "peakMemoryBytes": 3475232,
+        "logBytes": 282
+      },
+      {
+        "tenant": "examples",
+        "mode": "fresh",
+        "activation": "resource-fresh-after-callback-error",
+        "exitCode": 0,
+        "decoded": [
+          {
+            "ok": "resource-go|fresh=00ff80410d0a|empty=0|fresh=1"
+          }
+        ],
+        "errorCode": null,
+        "cpuFuel": 1464244,
+        "peakMemoryBytes": 3475048,
+        "logBytes": 293
+      }
+    ],
+    "independentTenantPublications": true,
+    "sameComponent": true
+  },
+  "retirement": {
+    "casePhysicalAndProviderObservations": 13,
+    "postDeletePhysicalObservation": true,
+    "nodeCleanAndReaped": true,
+    "peerContacts": 0,
+    "peerCleanAndReaped": true,
+    "idleRssBytes": {
+      "minimum": 190717952,
+      "maximum": 191668224
+    },
+    "rssIsAllocatorRetirementProof": false
+  },
+  "pending": {
+    "positivePhysicalAndProviderBarriers": 2,
+    "nativeTimerObservations": {
+      "formatVersion": 1,
+      "qualification": false,
+      "records": [
+        {
+          "mode": "pending",
+          "event": "start-accepted",
+          "sequence": 1,
+          "tasks": 10,
+          "waits": 0,
+          "timers": 1
+        },
+        {
+          "mode": "pending",
+          "event": "next-entered",
+          "sequence": 2,
+          "tasks": 10,
+          "waits": 1,
+          "timers": 1
+        },
+        {
+          "mode": "drain",
+          "event": "start-accepted",
+          "sequence": 3,
+          "tasks": 10,
+          "waits": 0,
+          "timers": 1
+        },
+        {
+          "mode": "drain",
+          "event": "next-entered",
+          "sequence": 4,
+          "tasks": 10,
+          "waits": 1,
+          "timers": 1
+        }
+      ],
+      "status": "observed",
+      "invalidMarkerCount": 0,
+      "overflow": false,
+      "scope": "two-public-node-stop-fixture-activations-only"
+    },
+    "auditRefusalOrLossCountsAsReadiness": false,
+    "rawNativeStderrUploaded": false,
+    "structuredObservationsRetained": true
+  },
+  "concurrencyKind": "interleaved-runtime-owned-logical-tasks",
+  "consoleFlushQueuePresent": false,
+  "nativeThreadsQualified": false,
+  "lateWakeAttemptObserved": false,
+  "fullTicketQualification": false
+}

@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "lsf.kernel-object-observation.v1",
+  "status": "failed",
+  "sourceCommit": "3eb83aad036f6b6591a163d89bd3b5a7e846aa0e",
+  "run": 39555254202,
+  "job": 119073424390,
+  "artifact": {
+    "id": 12325756415,
+    "bytes": 362890,
+    "sha256": "dc7a6c57a4c6a6fae9ace69f52b7b81030276ce7eeab720f2a23e21b18252dca",
+    "crcMembers": 30
+  },
+  "failureStage": "twenty-audit-objects",
+  "causes": [
+    "SKB private include imported the default pr_fmt before the maintained definition.",
+    "The maintained read-only skb_zcopy getter accepts a mutable pointer, unlike the serialized reference helper."
+  ],
+  "diagnostic": {
+    "bytes": 3282,
+    "sha256": "4e9950aa8765202cf431645775853552b81da8390e102418c5abc4217ebb7fe9"
+  },
+  "correction": "Move SKB private include after maintained headers; preserve the copy caller const contract and original getter with a local const cast; align the explicit reference helper parameter with Linux.",
+  "kernelLinked": false,
+  "kernelBooted": false,
+  "actualAuditExecuted": false,
+  "factoryInstalled": false,
+  "completeAllocationClosure": false,
+  "finalFreeCertified": false,
+  "productionInstallation": false
+}

@@ -1,5 +1,16 @@
 # Uninstalled Linux 6.12 lineage prerequisite
 
+The separately [authenticated maintained source](maintained-source.md) pins
+Linux 6.12.113 and its original configuration seed for the next consumer.
+Its bounded archive reader preserves the historical preimages below; it does
+not build, configure or qualify an installed kernel.
+
+The additive [prepaid backing/factory source](prepaid-factory.md) separates
+permanent backing from original activation occupancy and retains the actual
+accepted broker I/O owner in existing quarantine. Its protected source selection
+still refuses: real outer/security/RX consumers and physical qualification remain
+unfinished. It does not replace or relabel the historical recipes below.
+
 This is source work for #738/#739/#740 under the already accepted ADR-0061.
 It is not a supported kernel profile. The normal stream provider still refuses
 installation before allocation, and `ACCOUNTING_QUALIFIED` remains false.
@@ -212,3 +223,61 @@ before-socket-lookup RX allocation cannot borrow a later socket's authority.
 The actual constructor still refuses before allocation. The partial graph,
 explicit model geometry and supplemental C controls cannot qualify a physical
 kernel profile; every production/full-accounting flag remains false.
+
+## Private prepaid outer socket prefix
+
+The additive [outer socket/VFS prefix](prepaid-outer.md) derives the real
+historical outer constructors from nine authenticated whole files, with the
+original context carried before allocation. Actual inode/socket initialization,
+mandatory security calls and synchronous/RCU cleanup remain source-preserved.
+Ordinary host traffic retains its original allocator and free path. Unclosed
+active security hooks/blob allocation refuse rather than being disabled.
+
+This is uninstalled source with supplemental C/type/callback doubles and strict
+source controls. No Linux/kernel layout, allocator bound, RCU completion or
+physical final free is qualified. The factory remains unavailable until real
+protocol/RX/shared-infrastructure and trusted platform/bootstrap consumers are
+complete. It is not installed alongside the earlier global refusing constructor
+adapter; those historical recipes remain separate and unchanged.
+
+## Maintained protocol and LSM blob consumers
+
+The [maintained protocol prefix](prepaid-protocol.md) derives private TCP and
+outer constructors from the authenticated 6.12.113 source, preserving real
+security/module/cgroup/netns initialization and cleanup. Composite LSM blobs
+receive same-context prepaid birth records, including their independent inode
+blob RCU ownership. Normal host allocators remain unchanged. Unknown interior
+returns poison rather than falling back to SLUB. This is uninstalled source and
+supplemental C evidence, not kernel execution or complete physical closure.
+Active unclosed LSM/Netlabel producers and all remaining protocol/RX/platform
+gates still refuse; no security configuration or hook is disabled.
+
+The [maintained Netlabel source](prepaid-netlabel.md) closes nested label birth and option callback ownership within the uninstalled IPv4 prefix; active security and full physical closure still block installation.
+
+The [maintained Netport cache prefix](prepaid-netport.md) carries the existing
+socket owner through cache allocation, publication, eviction, policy flush and
+the selected RCU return path. Its finite context drain revalidates each original
+birth under the original cache lock before deriving an address. Shared cache
+hits do not transfer charges. Lazy SID creation, AVC/audit and the remaining
+RX/platform/final-free chain are still unclosed; no installation is enabled.
+
+The [maintained SID-cache and audit-string prefix](prepaid-sidcache.md) retains
+the original policy, cache/LRU and RCU behavior while carrying the original
+socket owner through context strings and cache nodes. Actual policy destruction
+retires private published births before table address reuse. The formatter,
+queued audit SKBs, AVC, RX and complete final-free chain remain separate gates.
+
+The [private AVC cache prefix](prepaid-avc.md) retains original prepaid births
+through nested permission graphs, policy-preserving replacement and queued RCU
+return. Both owned connect permission checks use the explicit socket source.
+The mandatory audit implementation and remaining active-security/RX/platform
+closure are still unavailable; supplemental C controls do not enable a profile.
+
+The [maintained audit-SKB source prefix](prepaid-audit-skb.md) carries original
+prepaid births through selected header/head allocation, clone, copy, expansion
+and real ordinary/bulk/NAPI/stolen-head free paths. Its supplemental serialized
+controls are separate from Linux compilation or physical final-free evidence.
+The separate [mandatory audit source](prepaid-audit.md) now composes formatter,
+AVC callbacks and original queue handoff with those SKB owners. Actual Linux
+audit delivery and complete physical closure remain unqualified; installation
+is still disabled.

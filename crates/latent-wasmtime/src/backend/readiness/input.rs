@@ -182,9 +182,23 @@ impl PreparationContext {
         let runtime = if matches!(&input, ArtifactInput::Native(_)) {
             drop(artifact);
             let native = native.as_mut().expect("checked input");
-            self.build_native_runtime(native, &key, compilation, &job, worker_wait.as_ref())?
+            self.build_native_runtime(
+                native,
+                &key,
+                compilation,
+                &job,
+                worker_wait.as_ref(),
+                reservation.verification_bytes(),
+            )?
         } else {
-            self.build_runtime_with_wait(&artifact, &key, compilation, &job, worker_wait.as_ref())?
+            self.build_runtime_with_wait(
+                &artifact,
+                &key,
+                compilation,
+                &job,
+                worker_wait.as_ref(),
+                reservation.verification_bytes(),
+            )?
         };
         reservation.track_runtime(&runtime)?;
         Ok(CompilationResult {

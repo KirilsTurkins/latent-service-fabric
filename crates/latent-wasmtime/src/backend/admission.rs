@@ -52,7 +52,7 @@ impl PreparationContext {
     pub(super) fn check_runtime(&self, runtime: &PreparedRuntime) -> Result<(), PlatformError> {
         runtime
             .threading
-            .check(self.config.owned_native_threads, &runtime.descriptor)?;
+            .check_profile(self.config.selected_thread_profile(), &runtime.descriptor)?;
         self.check_eligibility(
             runtime.eligibility.as_ref(),
             &runtime.descriptor.key.release,

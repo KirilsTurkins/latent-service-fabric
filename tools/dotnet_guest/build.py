@@ -29,6 +29,7 @@ RECIPE = ("tools/dotnet_capsule.py", "tools/dotnet_guest/project.py", "tools/dot
     "tools/dotnet_guest/internal_io.py",
     "tools/dotnet_guest/closed_io.py",
     "tools/dotnet_guest/retirement.py",
+    "tools/dotnet_guest/managed_work.py",
     "tools/rust_capsule_project.py", "tools/rust_capsule_build.py", "tools/build_observation.py",
     "tools/build_process.py", "tools/build_process_linux.py", "tools/build_process_windows.py",
     "tools/build_process_signals.py", "tools/build_snapshot.py", "tools/stage_runtime_wit.py", "examples/echo-contract/capsule.json",

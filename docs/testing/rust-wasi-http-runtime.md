@@ -62,6 +62,27 @@ transport to the application or either published client. A selected synchronous
 public contract is refused with `rust-http-selected-explicit-async-export-required`.
 The default non-HTTP authoring contract and generator selection are unchanged.
 
+Installed Rust tools can explicitly capture that same prepared runtime during
+nonpublishing bundle assembly:
+
+```sh
+python3 -B tools/build_dev_guest_tools.py --language rust \
+  --output "$PWD/target/rust-http-tools" --python-prefix /usr/local \
+  --rust-http-runtime /absolute/owned/http-runtime
+```
+
+This option is assembly-only and has source/control evidence; an installed
+bundle build has not yet been qualified. Assembly checks the exact staged Rustc
+and wasm-tools bytes, preserves the original producer receipt and source
+inventory, and copies only the four component/WIT files and pinned composer.
+The complete 113-file consumer recipe and all seven retained runtime files join
+the existing authenticated tool inventory. Installed compilation resolves the
+application's exact package/version/world using the pinned whole-WIT reader and
+selects this adapter only when that world declares all three interfaces above.
+Pure templates and partial declarations retain the ordinary builder path and
+its concrete import refusals. Selection grants no provider authority and uses
+no application or library identity.
+
 The compiler composes a generated forwarding root around the actual application
 component. The root's application imports and public exports must exactly match
 the explicitly selected async contract, including function kinds and nominal

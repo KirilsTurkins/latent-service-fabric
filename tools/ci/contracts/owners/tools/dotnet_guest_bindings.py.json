@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/dotnet_guest_bindings.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve original generated marshalling and invoke the exact compiler-private retirement drain before real task return",
+  "reviewReason": "Reviewed exact generated compiler-private four-operation managed owner bridge and StaticMethod UnsafeAccessor glue; unchanged public graph and genuine wit-bindgen0.62 full fixture CSharp compilation, no guest credit.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "187139280e06ad37e556405cb7db786dcafcaedce0c596e4226219fb5b714087"
+  "sha256": "a1a6b83a032f0c84b50c81aa8939252aa9b48e85e8127ffd6b501fd6f55d86a0"
 }

@@ -9,7 +9,7 @@ use latent_capabilities::broker::{
     },
     pools::{
         ConnectionReservation, PoolAdmission, PoolCall, PooledConnection, ProviderClient,
-        ProviderMetadata,
+        ProviderMetadata, StreamKernelOwnership,
     },
     AuditProviderOutcome, CapabilityAuditDurability, CapabilityCallCost, CapabilityRequestDigest,
     CapabilityStreamBudget, ProviderCall,
@@ -110,12 +110,37 @@ pub(crate) struct Socket {
     stream: Option<Arc<crate::transport::Transport>>,
     _tls_native: Option<HostMemoryReservation>,
     _tls_metadata: Option<ProviderMetadata>,
-    _native: Option<HostMemoryReservation>,
+    _native: Option<SocketMemory>,
     _metadata: Option<ProviderMetadata>,
-    _dns_native: Option<HostMemoryReservation>,
+    _dns_native: Option<SocketMemory>,
     _dns_metadata: Option<ProviderMetadata>,
     kernel_mode: crate::kernel::Mode,
     _kernel_scope: Arc<StreamScope>,
+}
+enum SocketMemory {
+    Logical(HostMemoryReservation),
+    Kernel(StreamKernelOwnership),
+}
+impl SocketMemory {
+    fn reserve(
+        scope: &Arc<StreamScope>,
+        call: &PoolCall,
+        bytes: u64,
+        mode: crate::kernel::Mode,
+    ) -> Result<Self, latent_core::PlatformError> {
+        if mode.retains_unproved() {
+            call.reserve_stream_kernel_ownership(scope, bytes)
+                .map(Self::Kernel)
+        } else {
+            scope.reserve_host_memory(bytes).map(Self::Logical)
+        }
+    }
+    fn confirm(&mut self) {
+        match self {
+            Self::Logical(memory) => memory.confirm(),
+            Self::Kernel(owner) => owner.confirm(),
+        }
+    }
 }
 struct Connecting {
     future: Pin<Box<dyn Future<Output = io::Result<TcpStream>> + Send>>,
@@ -357,7 +382,12 @@ async fn create_socket(
             deadline,
         ),
         StreamResolution::Dns { .. } => {
-            owned.value()._dns_native = Some(scope.reserve_host_memory(64 * 1024)?);
+            owned.value()._dns_native = Some(SocketMemory::reserve(
+                scope,
+                call,
+                64 * 1024,
+                inner.kernel_mode,
+            )?);
             owned.value()._dns_metadata = Some(inner.pools.reserve_protocol_metadata(64 * 1024)?);
             let resolver = inner.resolvers[index]
                 .as_ref()
@@ -394,7 +424,12 @@ async fn create_socket(
     }
     recheck_io(call.io(), deadline.min(valid_until)).await?;
     owned.value()._metadata = Some(inner.pools.reserve_protocol_metadata(96 * 1024)?);
-    owned.value()._native = Some(scope.reserve_host_memory(96 * 1024)?);
+    owned.value()._native = Some(SocketMemory::reserve(
+        scope,
+        call,
+        96 * 1024,
+        inner.kernel_mode,
+    )?);
     let tls_allowance = inner.tls[index]
         .as_ref()
         .map(|_| {

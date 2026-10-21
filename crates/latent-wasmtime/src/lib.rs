@@ -46,8 +46,8 @@ pub use compiler::CompilerObserver;
 pub use config::DevelopmentClockReadings;
 pub use config::{
     BufferedWebValueProfile, CompilerOptimization, ExecutionIsolationProfile, InstanceAllocator,
-    Phase0InstanceAllocator, Phase0WasmtimeConfig, WasmtimeConfig, GENERIC_BACKEND_ID,
-    WASMTIME_VERSION,
+    NativeThreadProfile, Phase0InstanceAllocator, Phase0WasmtimeConfig, WasmtimeConfig,
+    GENERIC_BACKEND_ID, WASMTIME_VERSION,
 };
 pub use containment::RuntimeResourceSnapshot;
 pub use factory::WasmtimeComponentEngineFactory;

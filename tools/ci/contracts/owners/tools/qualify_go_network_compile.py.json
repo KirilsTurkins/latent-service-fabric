@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_go_network_compile.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Source-bound six-case private owner native reference and compile-only actual component; strict no signed/provider/kernel readiness projection.",
+  "reviewReason": "Fix actual current CI failures: Go 1.27.3 official security patch and archive digest; preserve every original test, command, guard, coverage and bound. All 27 pinned Go overlay files are byte-identical in the official source archive. Preserve historical diagnostics and compiler receipts. Retained entropy authenticates its old compiler before acquiring the separately pinned patched compiler.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "7c797d8a5aece6a97b02f280f92a573c39da21e062002bf9c1e46b740525e2c9"
+  "sha256": "c242253af83085e556797d4f5d6e263ccec86f4c66aebf506bc20d570b220c7e"
 }

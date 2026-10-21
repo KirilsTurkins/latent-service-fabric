@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "lsf.kernel-object-reader-failure.v1",
+  "source": "ba43b47d52446305cd0d8609281d3e63a7df46e3",
+  "run": 39531468747,
+  "job": 118998108662,
+  "artifact": 12316345434,
+  "archiveBytes": 49973,
+  "archiveSha256": "b7fbbf307a494113e8bc65d4a4c2d1f8987cb38ef3cc9b02055892ae51dc2e91",
+  "membersVerified": 10,
+  "stage": "configuration",
+  "cause": "reader accepted uppercase-only symbols; actual upstream defconfig has eleven mixed-case symbols",
+  "actualResolvedSymbols": 4309,
+  "oldReader": "RED",
+  "correctedReader": "GREEN",
+  "originalConfigChanged": false,
+  "privateCodeSelectionWeakened": false,
+  "securityDisabled": false,
+  "candidateObjectsCompiled": false,
+  "kernelLinked": false,
+  "kernelBooted": false,
+  "factoryInstalled": false,
+  "baselineConfigIdentity": {
+    "bytes": 143203,
+    "sha256": "239e925557d3d349ea4c47c028e14431063f964ce6e7809024b6e4e804c7b659"
+  }
+}

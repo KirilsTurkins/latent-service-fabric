@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/rust_capsule_build.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Explicit prepared HTTP composition binds the complete consumer recipe while producer material scope excludes unused consumer code; default compiler limits, compatibility, executable approval and packaging remain unchanged.",
+  "reviewReason": "Preserve current merged normal builder and explicit selected HTTP integration; original executable guards and default compiler behavior retained.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "ab843105bee16373938d1f68f24a60bcdf4326e2ea21bf0c5d48794c4e77ba48"
+  "sha256": "d417a0c8c4dd7bf6ebaf71d5aba6e7ac1c77011b04dd2b572fc7417174de6d00"
 }

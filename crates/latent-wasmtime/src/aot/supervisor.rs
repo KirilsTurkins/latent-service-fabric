@@ -223,7 +223,9 @@ impl IsolatedAotCompiler {
             .and_then(|value| value.checked_add(1024 * 1024))
             .ok_or_else(exhausted)?;
         let (work, output) = state.budget.reserve(
-            component,
+            component
+                .checked_add(state.profile.verification_bytes())
+                .ok_or_else(exhausted)?,
             documents,
             state.limits.compiler.maximum_output_bytes,
         )?;

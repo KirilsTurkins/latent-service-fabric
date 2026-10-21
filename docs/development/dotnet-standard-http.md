@@ -5,10 +5,16 @@ identities to the existing typed LSF streaming HTTP capability. It is developmen
 work for [#693](https://github.com/KirilsTurkins/latent-service-fabric/issues/693)
 and the shared runtime work in
 [#680](https://github.com/KirilsTurkins/latent-service-fabric/issues/680).
-One ordinary `new HttpClient()` control now passes actual NativeAOT reference
-binding and composition. Signed default-client execution and complete
-acceptance qualification remain pending. The source does not establish a
-supported `HttpClient` or default ThreadPool release profile.
+Ordinary `new HttpClient()`, unchanged Flurl and Refit factories now have
+source-bound signed execution evidence, including response errors, cancellation,
+early body disposal, private captured consumers and verified HTTPS. See the
+[published clients](dotnet-published-http.md),
+[HTTPS cases](../testing/dotnet-https-libraries.md) and
+[library response boundaries](../testing/dotnet-http-library-edges.md).
+Complete #693 acceptance remains open while the
+[mixed content, accepted-work and tenant programme](../testing/dotnet-http-mixed.md)
+awaits actual execution. Each historical receipt keeps its original compiler,
+component and native source identity; none is transferred to later source.
 
 ## Declared authority and exact composition
 
@@ -75,7 +81,26 @@ request fields. Unsupported request options return configuration errors.
 Response bytes and headers retain the streaming provider's identity-encoding
 profile; this source does not silently enable automatic decompression, redirects,
 proxy, cookie or ambient TLS settings. The pinned WASI BCL also explicitly
-rejects its unsupported settings and synchronous send path.
+rejects its unsupported settings. The selected source-bound compiler derivation
+also supports ordinary synchronous `HttpClient.Send`; its original 15-case
+signed programme and the separate asynchronous pre-cancellation programme are
+recorded in #693. Those results do not imply support for arbitrary socket-based
+handlers or ambient networking.
+
+The exact captured `System.Net.Http.dll` preimage
+`3ab88385e44dbed09c99b0a9a00fd80d6a14033a390d5471289b848267e05587`
+constructs `WasiHttpHandler` beneath `HttpClientHandler`. Its
+`SupportsAutomaticDecompression`, `SupportsProxy` and
+`SupportsRedirectConfiguration` properties return false. Cookie, proxy,
+credentials, automatic-redirection, connection-pool tuning, certificate-policy
+and custom certificate-callback settings throw `PlatformNotSupportedException`;
+for example a null `CookieContainer` setter retains its preceding
+`ArgumentNullException` validation. A managed option cannot bypass host TLS
+verification or grant a second redirect request. HTTP cookies and credentials
+are not ambient guest state. Host credentials remain separately scoped to the
+installed provider and authorized destination. The WASI request wrapper starts
+one original request; it has no automatic retry loop. A lost-response POST
+retains uncertainty and is not replayed by the compiler or adapter.
 
 Original host failure categories remain sticky on the exchange. Local body or
 protocol faults after a started import keep conservative uncertainty and abort

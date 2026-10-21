@@ -1,0 +1,116 @@
+{
+  "schemaVersion": "lsf.kernel-netlabel-object-observation.v2",
+  "status": "compiled-unlinked-source-only",
+  "sourceCommit": "83df2c353005a3080f87f88eddc8fa5bf887ba73",
+  "run": 39536204489,
+  "job": 119013313411,
+  "artifact": {
+    "id": 12317942192,
+    "bytes": 337647,
+    "sha256": "b762f582da8f9e018a5990932182f47d6f16475bf1ed9dc8a5ad4a68b355e61c",
+    "crcMembers": 52
+  },
+  "receipt": {
+    "bytes": 9013,
+    "sha256": "8ca506efe05e47f1d215a1bb3476438b8771bea1abc176310a406444b26d955c"
+  },
+  "upstreamCommit": "7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+  "officialArchive": {
+    "bytes": 148686048,
+    "sha256": "e09b6727e5c521253f0d41694900b9c38fb7604db7d35238a8197aa9f7de2428"
+  },
+  "manifestSha256": "551b4157660f6f63adc90bbc39b1d5d8ba71e5444044f598ef9abdfea9fb7960",
+  "source": {
+    "authenticatedWholeFiles": 13,
+    "authenticatedWholeBytes": 863534,
+    "exactDefinitions": 16,
+    "derivedFiles": 25,
+    "derivedDigestTableSha256": "2028d1a45d4eacf82160893a415e542cb8250158faa89fa07b4ca10bfe5aec30"
+  },
+  "configuration": {
+    "baseline": {
+      "bytes": 143203,
+      "sha256": "ff250d6b1b4dbc95584fa2726d290ea189e4829bf1a11ed26dc67dbb9c5664cb"
+    },
+    "selected": {
+      "bytes": 143192,
+      "sha256": "b2bcccd5507f3f3a673690b660a2321870b57a3c77e72ce8532975f3c4752176"
+    },
+    "onlyChangedSymbol": "CONFIG_LSF_STREAM_FACTORY",
+    "securityAndInetPreserved": [
+      "CONFIG_INET",
+      "CONFIG_SECURITY",
+      "CONFIG_SECURITY_NETWORK",
+      "CONFIG_SECURITY_SELINUX"
+    ],
+    "resolvedSymbols": 4309,
+    "onlyDelta": {
+      "CONFIG_LSF_STREAM_FACTORY": [
+        "n",
+        "y"
+      ]
+    },
+    "NETLABELAlreadyEnabled": true
+  },
+  "compiler": "gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+  "definedPrivateGlobalFunctions": 34,
+  "hostedSourceAndControllerTests": {
+    "count": 26,
+    "jobLogBytes": 48920,
+    "jobLogSha256": "86dd3799d75d7846139ab2473395c0bfbe6abffc27f58fb2fff3a768343946f2"
+  },
+  "cleanOwnedCommands": 17,
+  "supplementalReferenceOnly": {
+    "originalGeneralLabelAllocationExitCode": 2,
+    "newLabelMechanismCases": 17,
+    "compositeSecurityPredecessorCases": 12,
+    "prepaidPredecessorCases": 20,
+    "explicitTypePolicyAllocatorRcuDoubles": true
+  },
+  "kernelLinked": false,
+  "kernelBooted": false,
+  "actualLsmOrLinuxRcuExecuted": false,
+  "factoryInstalled": false,
+  "completeAllocationClosure": false,
+  "finalFreeCertified": false,
+  "hostTlsAccountingQualified": false,
+  "productionInstallation": false,
+  "objects": {
+    "net/socket.o": {
+      "sha256": "629a62c88f3d8d5e071528c62c82f1afa2fb4051981b5cded147f668a3d63cf0"
+    },
+    "fs/inode.o": {
+      "sha256": "a82be67ae273db6caadc242e9fa52da443dc5992cf6603875cb523d68d8a8267"
+    },
+    "net/core/sock.o": {
+      "sha256": "81b0c5374cb4c3b14e629374927d9bf3ecdeb22f5fc5addba7228d2b2666c21f"
+    },
+    "net/ipv4/af_inet.o": {
+      "sha256": "72ff5b5dd7a3133d692860bbd25a3763281e9cb47e570a7d74515ff282676f71"
+    },
+    "security/security.o": {
+      "sha256": "25bbcd7677df83f3d8cc9b1a2434a21c3dd766394359ba590b481cd4ab90d3f7"
+    },
+    "net/factory.o": {
+      "sha256": "3459eaa45e8f503ec8cff57e12144ad7da312465806b5c7e542602ebc2e35d22"
+    },
+    "security/selinux/netlabel.o": {
+      "sha256": "3cc8dc452bfc1721536c3b2fdaf30347f13afeab029691f5c4a6a66cd0000fdb"
+    },
+    "security/selinux/ss/services.o": {
+      "sha256": "da8822ca0ac2af1dcdee822b2884dd09c14cf5b670c1d1bf445fe5820eab182f"
+    },
+    "security/selinux/ss/mls.o": {
+      "sha256": "7521993d0962d86f50b7ee8c0fe4cf6e804b8cc7ebe60b5e682026b532016c0c"
+    },
+    "security/selinux/ss/ebitmap.o": {
+      "sha256": "1ea1533eaf822ef73cb34c4048030cc0d871ef871289847761fd06be3f35f3ad"
+    },
+    "net/netlabel/netlabel_kapi.o": {
+      "sha256": "8a2cd385e536309c67501bdc49fa7559282c8661d4b13db97dc72068077eb6a3"
+    },
+    "net/ipv4/cipso_ipv4.o": {
+      "sha256": "2007e461bc0da8595416bfa0db2027147da121319f375dcb23a91df7259a2bf3"
+    }
+  }
+}

@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework><OutputType>Exe</OutputType>
+    <StartupObject>HttpAbortControl</StartupObject>
+    <ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable>
+    <UseSharedCompilation>false</UseSharedCompilation><NuGetAudit>false</NuGetAudit>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../../tools/http-errors/Program.cs" Link="Program.cs" />
+    <Compile Include="../../../tools/http-errors/TaskWait.cs" Link="TaskWait.cs" />
+    <Compile Include="../../../tools/http-errors/IdleTimerDriver.cs" Link="IdleTimerDriver.cs" />
+    <Compile Include="../../../tools/http-errors/ClosedFilesystem.cs" Link="ClosedFilesystem.cs" />
+    <Compile Include="../../../tools/http-errors/ManagedWorkRuntime.cs" Link="ManagedWorkRuntime.cs" />
+    <Compile Include="../../../tools/http-errors/ManagedWorkBindings.cs" Link="ManagedWorkBindings.cs" />
+    <Compile Include="../../../tools/http-errors/ManagedWorkCopy.cs" Link="ManagedWorkCopy.cs" />
+    <Compile Include="../../../tools/http-errors/ManagedWorkContext.cs" Link="ManagedWorkContext.cs" />
+    <Compile Include="../../../tools/http-errors/ManagedWorkHooks.cs" Link="ManagedWorkHooks.cs" />
+    <Compile Include="../../../tools/http-errors/ManagedWorkPort.cs" Link="ManagedWorkPort.cs" />
+    <Compile Include="../../../tools/http-errors/ManagedHttpWork.cs" Link="ManagedHttpWork.cs" />
+    <Reference Include="Mono.Cecil" HintPath="$(LsfCecilPath)" />
+  </ItemGroup>
+</Project>

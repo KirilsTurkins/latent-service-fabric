@@ -395,7 +395,9 @@ def binding_check(work: Path, pins: dict, command: Commands, bindgen: Path) -> s
 
 
 def package_inputs(output: Path, project: dict, surface: dict, files: dict[str, bytes], component: bytes,
-                   *, additional_resources=(), additional_assets=()) -> None:
+                   *, additional_resources=(), additional_assets=(), threading_model='single-threaded') -> None:
+    if threading_model not in ('single-threaded', 'cooperative'):
+        raise ValueError('unsupported explicit package threading model')
     manifest = read_json(ROOT / "examples/echo-contract/capsule.json")
     manifest["metadata"] = {"name": project["service"], "tenant": project["tenant"]}
     if project["tenant"] is None:
@@ -405,7 +407,7 @@ def package_inputs(output: Path, project: dict, surface: dict, files: dict[str, 
     manifest["component"] = {"digest": digest(component), "version": project["version"], "world": project["world"]}
     manifest["exports"] = surface["exports"]
     manifest["imports"] = [{"contract": name, "optional": False} for name in surface["imports"]]
-    manifest["execution"].update(limits=project["limits"], threading="single-threaded", snapshotEligible=False, fusionEligible=False)
+    manifest["execution"].update(limits=project["limits"], threading=threading_model, snapshotEligible=False, fusionEligible=False)
     manifest["compatibility"]["minimumFabricVersion"] = tomllib.loads(files["vendor/lsf/Cargo.toml"].decode())["workspace"]["package"]["version"]
     write_json(output / "capsule.json", manifest)
     layers = [("component.wasm", "component", "application/wasm"),

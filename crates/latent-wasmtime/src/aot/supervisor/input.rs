@@ -441,10 +441,12 @@ impl AotPreparedInput {
     }
 
     pub(crate) fn authenticate_component_threads(&self) -> Result<(), PlatformError> {
-        self.job
-            .state
-            .profile
-            .authenticate_component(&self.artifact.component_bytes)
+        self.job.state.profile.authenticate_component(
+            &self.artifact.component_bytes,
+            self.job
+                ._work
+                .verification_bytes(self.artifact.component_bytes.len()),
+        )
     }
 
     /// One process attempt, including failure. The taken allowance remains on

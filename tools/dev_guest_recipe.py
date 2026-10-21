@@ -80,9 +80,14 @@ def compile_rust(payload: Path, project: Path, output: Path, check, *, executabl
     check()
     # Captured compiler isolation must select this validated private Zig copy.
     os.environ["PATH"] = str(zig.parent) + os.pathsep + os.environ["PATH"]
+    selected = {}
+    if os.path.lexists(sdk / 'rust-http-runtime'):
+        from tools.dev_rust_http_runtime import compiler_options
+        selected = compiler_options(payload, project, check)
     build(project, output, sdk / "bin/capsule-contracts", None,
           "https://github.com/KirilsTurkins/latent-service-fabric", offline=True,
-          host_linker=linker(zig, cache), rust_bin=sdk / "rust/bin", executable_approval=executable_approval)
+          host_linker=linker(zig, cache), rust_bin=sdk / "rust/bin", executable_approval=executable_approval,
+          **selected)
     check()
 
 

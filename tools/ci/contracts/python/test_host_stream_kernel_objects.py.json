@@ -1,0 +1,595 @@
+{
+  "cases": [
+    "KernelAuditObjectSelection.test_audit_and_auditsyscall_must_already_be_enabled_without_overrides",
+    "KernelAuditObjectSelection.test_audit_selection_refuses_local_build_before_archive_or_output",
+    "KernelAuditObjectSelection.test_exclusive_audit_job_retains_closed_inputs_targets_and_original_bounds",
+    "KernelAuditObjectSelection.test_twenty_objects_keep_all_sixty_one_avc_definitions_and_add_eight",
+    "KernelAuditObjectSelection.test_unknown_and_mixed_audit_profiles_refuse_before_acquisition",
+    "KernelAvcObjectSelection.test_avc_selection_refuses_local_build_before_archive_or_output",
+    "KernelAvcObjectSelection.test_exclusive_avc_job_uses_only_closed_inputs_and_original_build_bounds",
+    "KernelAvcObjectSelection.test_sixteen_objects_preserve_all_fifty_two_sidcache_definitions_and_add_nine",
+    "KernelAvcObjectSelection.test_unknown_or_mixed_avc_profiles_refuse_before_acquisition",
+    "KernelBindObjectSelection.test_bind_selection_refuses_local_build_before_archive_or_output",
+    "KernelBindObjectSelection.test_dependent_profile_requires_original_audit_netlabel_and_sidcache_configuration",
+    "KernelBindObjectSelection.test_exclusive_bind_job_retains_closed_inputs_targets_and_original_bounds",
+    "KernelBindObjectSelection.test_twenty_two_objects_keep_all_sixty_nine_audit_definitions_and_add_six",
+    "KernelBindObjectSelection.test_unknown_and_mixed_bind_profiles_refuse_before_acquisition",
+    "KernelNetlabelObjectSelection.test_default_six_object_floor_is_identical_and_selector_accepts_only_real_boolean",
+    "KernelNetlabelObjectSelection.test_netlabel_must_already_be_enabled_no_configuration_override_is_added",
+    "KernelNetlabelObjectSelection.test_netlabel_twelve_objects_retain_all_old_symbols_and_require_all_twenty_one_new_globals",
+    "KernelNetlabelObjectSelection.test_optin_object_profile_still_refuses_local_build_before_archive_access",
+    "KernelNetportObjectSelection.test_actual_netport_and_connect_hooks_compile_with_all_forty_private_globals",
+    "KernelNetportObjectSelection.test_mixed_profiles_refuse_before_linux_checks_archive_output_or_build",
+    "KernelNetportObjectSelection.test_netport_is_exclusive_boolean_and_both_historical_selections_remain_exact",
+    "KernelNetportObjectSelection.test_netport_optin_refuses_local_build_before_any_source_acquisition",
+    "KernelObjectSelection.test_actual_upstream_mixed_case_symbol_names_stay_exact_and_cannot_bypass_comparison",
+    "KernelObjectSelection.test_archive_snapshot_authenticates_all_bytes_in_an_independent_fresh_file",
+    "KernelObjectSelection.test_config_parser_rejects_duplicate_malformed_empty_and_oversize_symbols",
+    "KernelObjectSelection.test_disabled_or_previously_enabled_private_bodies_never_count_as_compile",
+    "KernelObjectSelection.test_exact_optin_preserves_every_original_config_including_memcg",
+    "KernelObjectSelection.test_failed_owned_process_keeps_partial_streams_and_never_masks_primary_failure",
+    "KernelObjectSelection.test_local_execution_refuses_before_archive_read_or_build",
+    "KernelObjectSelection.test_six_real_objects_require_private_constructor_and_blob_symbols",
+    "KernelRouteCacheObjectSelection.test_all_eight_previous_profiles_retain_their_exact_symbol_oracles",
+    "KernelRouteCacheObjectSelection.test_all_eight_prior_job_bodies_remain_exact_with_only_closed_cache_exclusion",
+    "KernelRouteCacheObjectSelection.test_cache_keeps_same_twenty_four_targets_and_all_eighty_one_original_functions",
+    "KernelRouteCacheObjectSelection.test_exclusive_cache_job_keeps_closed_eight_inputs_config_and_original_bounds",
+    "KernelRouteCacheObjectSelection.test_unknown_mixed_and_local_cache_selection_refuses_before_archive_or_build",
+    "KernelRouteObjectSelection.test_actual_route_configuration_keeps_xfrm_and_refuses_allocating_tracker_or_lwt",
+    "KernelRouteObjectSelection.test_all_seven_original_job_bodies_remain_exact_except_exclusive_if",
+    "KernelRouteObjectSelection.test_route_job_retains_seven_closed_inputs_all_targets_and_original_limits",
+    "KernelRouteObjectSelection.test_twenty_four_objects_keep_all_seventy_five_bind_oracles_and_add_six",
+    "KernelRouteObjectSelection.test_unknown_mixed_and_local_route_modes_refuse_before_source_or_build",
+    "KernelSidcacheObjectSelection.test_fifteen_objects_keep_all_forty_netport_globals_and_add_twelve_real_definitions",
+    "KernelSidcacheObjectSelection.test_focused_owning_job_preserves_original_time_tools_security_and_artifact_bounds",
+    "KernelSidcacheObjectSelection.test_only_one_real_boolean_profile_can_reach_source_or_build",
+    "KernelSidcacheObjectSelection.test_original_cache_256_entry_configuration_is_required_without_override",
+    "KernelSidcacheObjectSelection.test_sidcache_profile_refuses_local_build_before_any_archive_or_output"
+  ],
+  "guards": {
+    "KernelAuditObjectSelection.test_audit_and_auditsyscall_must_already_be_enabled_without_overrides": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelAuditObjectSelection.test_audit_selection_refuses_local_build_before_archive_or_output": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelAuditObjectSelection.test_exclusive_audit_job_retains_closed_inputs_targets_and_original_bounds": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelAuditObjectSelection.test_twenty_objects_keep_all_sixty_one_avc_definitions_and_add_eight": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelAuditObjectSelection.test_unknown_and_mixed_audit_profiles_refuse_before_acquisition": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelAvcObjectSelection.test_avc_selection_refuses_local_build_before_archive_or_output": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelAvcObjectSelection.test_exclusive_avc_job_uses_only_closed_inputs_and_original_build_bounds": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelAvcObjectSelection.test_sixteen_objects_preserve_all_fifty_two_sidcache_definitions_and_add_nine": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelAvcObjectSelection.test_unknown_or_mixed_avc_profiles_refuse_before_acquisition": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelBindObjectSelection.test_bind_selection_refuses_local_build_before_archive_or_output": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelBindObjectSelection.test_dependent_profile_requires_original_audit_netlabel_and_sidcache_configuration": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelBindObjectSelection.test_exclusive_bind_job_retains_closed_inputs_targets_and_original_bounds": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelBindObjectSelection.test_twenty_two_objects_keep_all_sixty_nine_audit_definitions_and_add_six": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelBindObjectSelection.test_unknown_and_mixed_bind_profiles_refuse_before_acquisition": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelNetlabelObjectSelection.test_default_six_object_floor_is_identical_and_selector_accepts_only_real_boolean": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelNetlabelObjectSelection.test_netlabel_must_already_be_enabled_no_configuration_override_is_added": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelNetlabelObjectSelection.test_netlabel_twelve_objects_retain_all_old_symbols_and_require_all_twenty_one_new_globals": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelNetlabelObjectSelection.test_optin_object_profile_still_refuses_local_build_before_archive_access": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelNetportObjectSelection.test_actual_netport_and_connect_hooks_compile_with_all_forty_private_globals": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelNetportObjectSelection.test_mixed_profiles_refuse_before_linux_checks_archive_output_or_build": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelNetportObjectSelection.test_netport_is_exclusive_boolean_and_both_historical_selections_remain_exact": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelNetportObjectSelection.test_netport_optin_refuses_local_build_before_any_source_acquisition": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelObjectSelection.test_actual_upstream_mixed_case_symbol_names_stay_exact_and_cannot_bypass_comparison": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:439d80192a5f2614e2e519872f78b6e6ff97179d4f3c8d1acead1f0502fd7b61"
+      ],
+      "skipSites": []
+    },
+    "KernelObjectSelection.test_archive_snapshot_authenticates_all_bytes_in_an_independent_fresh_file": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:439d80192a5f2614e2e519872f78b6e6ff97179d4f3c8d1acead1f0502fd7b61"
+      ],
+      "skipSites": []
+    },
+    "KernelObjectSelection.test_config_parser_rejects_duplicate_malformed_empty_and_oversize_symbols": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:439d80192a5f2614e2e519872f78b6e6ff97179d4f3c8d1acead1f0502fd7b61"
+      ],
+      "skipSites": []
+    },
+    "KernelObjectSelection.test_disabled_or_previously_enabled_private_bodies_never_count_as_compile": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:439d80192a5f2614e2e519872f78b6e6ff97179d4f3c8d1acead1f0502fd7b61"
+      ],
+      "skipSites": []
+    },
+    "KernelObjectSelection.test_exact_optin_preserves_every_original_config_including_memcg": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:439d80192a5f2614e2e519872f78b6e6ff97179d4f3c8d1acead1f0502fd7b61"
+      ],
+      "skipSites": []
+    },
+    "KernelObjectSelection.test_failed_owned_process_keeps_partial_streams_and_never_masks_primary_failure": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:439d80192a5f2614e2e519872f78b6e6ff97179d4f3c8d1acead1f0502fd7b61"
+      ],
+      "skipSites": []
+    },
+    "KernelObjectSelection.test_local_execution_refuses_before_archive_read_or_build": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:439d80192a5f2614e2e519872f78b6e6ff97179d4f3c8d1acead1f0502fd7b61"
+      ],
+      "skipSites": []
+    },
+    "KernelObjectSelection.test_six_real_objects_require_private_constructor_and_blob_symbols": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:439d80192a5f2614e2e519872f78b6e6ff97179d4f3c8d1acead1f0502fd7b61"
+      ],
+      "skipSites": []
+    },
+    "KernelRouteCacheObjectSelection.test_all_eight_previous_profiles_retain_their_exact_symbol_oracles": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelRouteCacheObjectSelection.test_all_eight_prior_job_bodies_remain_exact_with_only_closed_cache_exclusion": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelRouteCacheObjectSelection.test_cache_keeps_same_twenty_four_targets_and_all_eighty_one_original_functions": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelRouteCacheObjectSelection.test_exclusive_cache_job_keeps_closed_eight_inputs_config_and_original_bounds": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelRouteCacheObjectSelection.test_unknown_mixed_and_local_cache_selection_refuses_before_archive_or_build": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelRouteObjectSelection.test_actual_route_configuration_keeps_xfrm_and_refuses_allocating_tracker_or_lwt": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelRouteObjectSelection.test_all_seven_original_job_bodies_remain_exact_except_exclusive_if": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelRouteObjectSelection.test_route_job_retains_seven_closed_inputs_all_targets_and_original_limits": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelRouteObjectSelection.test_twenty_four_objects_keep_all_seventy_five_bind_oracles_and_add_six": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelRouteObjectSelection.test_unknown_mixed_and_local_route_modes_refuse_before_source_or_build": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelSidcacheObjectSelection.test_fifteen_objects_keep_all_forty_netport_globals_and_add_twelve_real_definitions": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelSidcacheObjectSelection.test_focused_owning_job_preserves_original_time_tools_security_and_artifact_bounds": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelSidcacheObjectSelection.test_only_one_real_boolean_profile_can_reach_source_or_build": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelSidcacheObjectSelection.test_original_cache_256_entry_configuration_is_required_without_override": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelSidcacheObjectSelection.test_sidcache_profile_refuses_local_build_before_any_archive_or_output": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_host_stream_kernel_objects.py",
+  "reviewReason": "Add one closed route-cache object-only profile while preserving every original target, command, configuration, budget and job body; retain previous exact job set after projecting only the separately verified new job.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

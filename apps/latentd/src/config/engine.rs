@@ -1,7 +1,10 @@
 use serde::de::{value::MapAccessDeserializer, MapAccess, Visitor};
 use serde::{Deserialize, Deserializer};
 
-use super::model::{EngineAllocator, EngineConfig, EngineOptimization};
+use super::model::{
+    EngineActivationStackAccounting, EngineAllocator, EngineConfig, EngineOptimization,
+    EngineThreadingProfile,
+};
 
 // Struct derives also accept positional JSON arrays. The operator engine input
 // is an object; preserve streaming duplicate-field rejection while requiring it.
@@ -22,12 +25,16 @@ impl<'de> Deserialize<'de> for EngineConfig {
                     allocator: EngineAllocator,
                     optimization: EngineOptimization,
                     java_guest: bool,
+                    threading_profile: EngineThreadingProfile,
+                    activation_stack_accounting: EngineActivationStackAccounting,
                 }
                 let fields = Fields::deserialize(MapAccessDeserializer::new(map))?;
                 Ok(EngineConfig {
                     allocator: fields.allocator,
                     optimization: fields.optimization,
                     java_guest: fields.java_guest,
+                    threading_profile: fields.threading_profile,
+                    activation_stack_accounting: fields.activation_stack_accounting,
                 })
             }
         }

@@ -69,6 +69,7 @@ struct Entry<T> {
 struct PreparationCost {
     source_bytes: usize,
     metadata_bytes: usize,
+    verification_bytes: usize,
 }
 
 pub(crate) enum PrepareAccess<T> {
@@ -116,11 +117,22 @@ impl<T> PreparedCache<T> {
         self.lock().get(handle)
     }
 
+    #[cfg(test)]
     pub(crate) fn begin(
         self: &Arc<Self>,
         handle: String,
         source_bytes: usize,
         metadata_bytes: usize,
+    ) -> Result<PrepareAccess<T>, PlatformError> {
+        self.begin_with_verification(handle, source_bytes, metadata_bytes, 0)
+    }
+
+    pub(crate) fn begin_with_verification(
+        self: &Arc<Self>,
+        handle: String,
+        source_bytes: usize,
+        metadata_bytes: usize,
+        verification_bytes: usize,
     ) -> Result<PrepareAccess<T>, PlatformError> {
         if handle.is_empty() || handle.len() > MAXIMUM_HANDLE_BYTES {
             return Err(platform_error(
@@ -129,7 +141,10 @@ impl<T> PreparedCache<T> {
                 false,
             ));
         }
-        if source_bytes > self.limits.maximum_source_bytes
+        let owned_source = source_bytes
+            .checked_add(verification_bytes)
+            .ok_or_else(capacity_error)?;
+        if owned_source > self.limits.maximum_source_bytes
             || metadata_bytes > self.limits.maximum_metadata_bytes
         {
             return Err(capacity_error());
@@ -153,13 +168,14 @@ impl<T> PreparedCache<T> {
             ));
         }
         // Limits validation proves these sums fit for every admitted slot.
-        state.preparing_source_bytes += source_bytes;
+        state.preparing_source_bytes += owned_source;
         state.preparing_metadata_bytes += metadata_bytes;
         state.preparing.insert(
             handle.clone(),
             PreparationCost {
                 source_bytes,
                 metadata_bytes,
+                verification_bytes,
             },
         );
         Ok(PrepareAccess::Compile(PrepareReservation {
@@ -266,7 +282,7 @@ impl<T> State<T> {
             .preparing
             .remove(handle)
             .expect("live preparation reservation");
-        self.preparing_source_bytes -= cost.source_bytes;
+        self.preparing_source_bytes -= cost.source_bytes + cost.verification_bytes;
         self.preparing_metadata_bytes -= cost.metadata_bytes;
     }
 }

@@ -78,6 +78,7 @@ pub enum CompilerOptimization {
     Speed,
     SpeedAndSize,
 }
+pub use engine::NativeThreadProfile;
 
 impl CompilerOptimization {
     #[must_use]
@@ -176,6 +177,8 @@ pub struct WasmtimeConfig {
     /// Captured native-thread support. Preparation additionally requires the
     /// exact authenticated canonical-thread shim; recognition grants no work.
     pub owned_native_threads: bool,
+    /// Trusted explicit ABI selection. This grants no Task/Native authority.
+    pub native_thread_profile: NativeThreadProfile,
 }
 
 /// Host-owned bounds for the buffered web ABI, separate from service values.
@@ -201,6 +204,7 @@ impl Default for WasmtimeConfig {
             activation_runtime: None,
             owned_native_stacks: false,
             owned_native_threads: false,
+            native_thread_profile: NativeThreadProfile::RustContext40SoleConsumerOneTaskStartV1,
             target_triple: env!("LATENT_WASMTIME_HOST_TARGET").to_owned(),
             cpu_feature_set: "host-baseline".to_owned(),
             maximum_component_bytes: 16 * 1024 * 1024,
@@ -250,7 +254,26 @@ impl Default for WasmtimeConfig {
 }
 
 impl WasmtimeConfig {
+    pub(crate) fn selected_thread_profile(&self) -> Option<NativeThreadProfile> {
+        self.owned_native_threads
+            .then_some(self.native_thread_profile)
+    }
+    pub(crate) fn thread_verification_bytes(&self) -> usize {
+        self.selected_thread_profile()
+            .map_or(0, NativeThreadProfile::verification_bytes)
+    }
     pub fn validate(&self) -> Result<(), PlatformError> {
+        if !self.owned_native_threads
+            && self.native_thread_profile
+                != NativeThreadProfile::RustContext40SoleConsumerOneTaskStartV1
+        {
+            return Err(invalid_config());
+        }
+        if self.native_thread_profile == NativeThreadProfile::CContext144SyncCooperativeV1
+            && self.angular_renderer
+        {
+            return Err(invalid_config());
+        }
         self.execution_isolation_profile.validate_platform()?;
         #[cfg(feature = "development-clock-fixture")]
         if self.development_clock_readings.is_some()

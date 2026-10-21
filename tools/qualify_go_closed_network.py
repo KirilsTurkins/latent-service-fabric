@@ -48,7 +48,7 @@ def qualify(output: Path) -> dict:
         'tools': before, 'commandLimits': {'overallSeconds': 600, 'perCommandSeconds': 300}}
     (output / 'recipe-inputs.json').write_bytes(recipe)
     try:
-        if commands.run('go-version', tools['go'], 'version').split() != [b'go', b'version', b'go1.27.2', b'linux/amd64']:
+        if commands.run('go-version', tools['go'], 'version').split() != [b'go', b'version', b'go1.27.3', b'linux/amd64']:
             raise ValueError('Go-closed-network-compiler-identity')
         if commands.run('node-version', tools['node'], '--version').strip() != b'v24.19.0':
             raise ValueError('Go-closed-network-reference-engine-identity')
@@ -57,7 +57,7 @@ def qualify(output: Path) -> dict:
         adapted = closed_network_source(original)
         source = read_file(ROOT / FIXTURE / 'reference.go.txt')
         (output / 'main.go').write_bytes(source)
-        (output / 'go.mod').write_bytes(b'module example.invalid/closed-network-reference\n\ngo 1.27.2\n')
+        (output / 'go.mod').write_bytes(b'module example.invalid/closed-network-reference\n\ngo 1.27.3\n')
         replacement = output / 'net_fake.go'
         replacement.write_text(adapted, encoding='utf-8', newline='\n')
         overlay = output / 'closed-overlay.json'

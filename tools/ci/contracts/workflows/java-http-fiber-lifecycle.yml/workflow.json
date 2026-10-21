@@ -48,6 +48,16 @@
           "tools/tests/test_java_array_gc_roots.py",
           "tools/tests/test_java_phase_surface.py",
           "tools/tests/fixtures/java_phase_surface_0bdb.json",
+          "tools/java_http_mixed_fixture.py",
+          "tools/java_http_mixed_node.py",
+          "tools/qualify_java_http_mixed.py",
+          "tools/fixtures/java-http-mixed-bodies/**",
+          "tools/tests/test_java_http_mixed.py",
+          "tools/java_http_late_fixture.py",
+          "tools/java_http_late_node.py",
+          "tools/qualify_java_http_late.py",
+          "tools/fixtures/java-http-late-completion/**",
+          "tools/tests/test_java_http_late.py",
           ".github/workflows/java-http-fiber-lifecycle.yml"
         ]
       },
@@ -58,9 +68,24 @@
             "description": "Fresh ordinary Java HTTP/fiber component with authenticated native products",
             "type": "boolean"
           },
+          "java_http_late_completion": {
+            "default": false,
+            "description": "Ordinary cancelled futures retain ownership through actual late HTTP completion",
+            "type": "boolean"
+          },
+          "java_http_mixed_bodies": {
+            "default": false,
+            "description": "One fresh ordinary Java body-ownership and original-limit component",
+            "type": "boolean"
+          },
           "java_http_phases": {
             "default": false,
             "description": "Fresh ordinary default clients and explicit V7 phase deadlines",
+            "type": "boolean"
+          },
+          "java_http_prepared_tenants": {
+            "default": false,
+            "description": "Retained Java component with exact current publication preparation and twelve tenant outcomes",
             "type": "boolean"
           },
           "java_http_spi": {
@@ -77,10 +102,13 @@
   },
   "requiredJobs": [
     "http-fiber-lifecycle",
+    "http-late-completion",
+    "http-mixed-bodies",
     "http-phase-clients",
+    "http-prepared-tenants",
     "http-public-spi"
   ],
-  "reviewReason": "Compose existing fully preserved Java fiber/phase jobs with separate optional public SPI job; no original step/guard/command/timeout removal.",
+  "reviewReason": "Append one default-false late accepted-task HTTP programme; deep-restore all six existing jobs, guards and commands unchanged",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-http-fiber-lifecycle.yml"
 }

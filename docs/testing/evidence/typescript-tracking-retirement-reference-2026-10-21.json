@@ -1,0 +1,78 @@
+{
+  "schemaVersion": "latent.typescript.tracking-retirement-reference.v1",
+  "scope": "actual-cpp-tracking-classes-with-serialized-js-lifetime-doubles",
+  "baseline": "fd641638c3b2aeff300c44557e0c5b31042d535a",
+  "platform": "windows-x86_64",
+  "compiler": "MSVC 14.44.35207 C++17 /W4 /WX",
+  "original": {
+    "tests": 9,
+    "failures": 9,
+    "errors": 0
+  },
+  "corrected": {
+    "tests": 9,
+    "failures": 0,
+    "errors": 0
+  },
+  "sources": {
+    "sdk/typescript-guest/activation/native_job_queue.h": {
+      "bytes": 9584,
+      "sha256": "3df24d0b1c17c27f8b6a3d9d90ba292dde23804c3af626cdb16d7911f5bffb49"
+    },
+    "sdk/typescript-guest/activation/promise_records.h": {
+      "bytes": 5174,
+      "sha256": "70602d45bdc088d43878a2b44de814bd58ea6d137803f1c4393c2caf6963f3ff"
+    },
+    "sdk/typescript-guest/activation/reaction_records.h": {
+      "bytes": 5680,
+      "sha256": "89dea37b194c3f0c31f17983aabaa624baf8c5091dd16ca3df4dfab4b356a95b"
+    },
+    "sdk/typescript-guest/activation/tests/record_retirement.cpp": {
+      "bytes": 6796,
+      "sha256": "22c460ae4bef7572133373f0f56f140e4fd74fd36e1a1da2c4edd25255c4b363"
+    },
+    "tools/tests/test_typescript_record_retirement.py": {
+      "bytes": 3642,
+      "sha256": "8a49c7b50a8d5af0c6a685571475c0f632712731f09cc06c2bfcdbfe273a7886"
+    },
+    "tools/tests/fixtures/typescript_record_retirement/js/CallAndConstruct.h": {
+      "bytes": 35,
+      "sha256": "b763089c53ab5611d2624838c6b917368c2eb7071ec3016d9c3936ade8e3be25"
+    },
+    "tools/tests/fixtures/typescript_record_retirement/js/GCAPI.h": {
+      "bytes": 35,
+      "sha256": "b763089c53ab5611d2624838c6b917368c2eb7071ec3016d9c3936ade8e3be25"
+    },
+    "tools/tests/fixtures/typescript_record_retirement/js/Promise.h": {
+      "bytes": 35,
+      "sha256": "b763089c53ab5611d2624838c6b917368c2eb7071ec3016d9c3936ade8e3be25"
+    },
+    "tools/tests/fixtures/typescript_record_retirement/js/Realm.h": {
+      "bytes": 35,
+      "sha256": "b763089c53ab5611d2624838c6b917368c2eb7071ec3016d9c3936ade8e3be25"
+    },
+    "tools/tests/fixtures/typescript_record_retirement/js/RootingAPI.h": {
+      "bytes": 35,
+      "sha256": "b763089c53ab5611d2624838c6b917368c2eb7071ec3016d9c3936ade8e3be25"
+    },
+    "tools/tests/fixtures/typescript_record_retirement/js/TypeDecls.h": {
+      "bytes": 35,
+      "sha256": "b763089c53ab5611d2624838c6b917368c2eb7071ec3016d9c3936ade8e3be25"
+    },
+    "tools/tests/fixtures/typescript_record_retirement/jsapi.h": {
+      "bytes": 2117,
+      "sha256": "78f2f23fee553a60e9adb065b837dd0e3684c3986c045598294d2ce3eaa5bb75"
+    }
+  },
+  "checks": [
+    "tracking allocation destroyed before owner acknowledgement",
+    "job persistent callable root destroyed before owner acknowledgement",
+    "failed acknowledgements retain exact tokens in fixed slots",
+    "partial acknowledgements do not double refund",
+    "retry allocates no storage and replays no job or retirement callback"
+  ],
+  "engineQualified": false,
+  "gcQualified": false,
+  "signedExecution": false,
+  "fullIssue745Complete": false
+}

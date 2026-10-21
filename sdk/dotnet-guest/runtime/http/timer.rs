@@ -1,5 +1,10 @@
 //! Real activation-owned timer readiness for the pinned CLR event loop.
-use super::{latent::runtime::activation as runtime, owner::Owner, pump, quota::Slot};
+use super::{
+    latent::runtime::activation as runtime,
+    owner::{self, Owner},
+    pump,
+    quota::Slot,
+};
 use std::{
     cell::{Cell, RefCell},
     future::Future,
@@ -22,7 +27,10 @@ impl Timer {
         let owner = Owner::new(runtime::OwnerKind::Wait)
             .expect("activation timer authority or capacity unavailable");
         let timer = Rc::new(Self {
-            work: RefCell::new(Some(Box::pin(runtime::wait_for(nanos, None)))),
+            work: RefCell::new(Some(Box::pin(runtime::wait_for(
+                nanos,
+                owner::continuation(),
+            )))),
             elapsed: Cell::new(false),
             failure: Cell::new(None),
             owner: Some(owner),

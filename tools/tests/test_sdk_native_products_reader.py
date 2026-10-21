@@ -59,6 +59,27 @@ class FrozenNativeReader(unittest.TestCase):
         for row in variants:
             with self.assertRaises(WorkflowError):self.reader.validate_record(row,self.snapshot,self.native,self.materials)
 
+    def test_finite_selected_producer_keeps_exact_order_and_total_with_up_to_64_stages(self):
+        for count in (33, 64):
+            stages = tuple('stage-' + str(index) for index in range(count))
+            selected = reader.FrozenNativeProducts(source='2'*40, run=2, job=3,
+                artifact=self.artifact, receipts=self.receipts, branch='fixture/native', stages=stages)
+            actual = copy.deepcopy(self.record)
+            actual['commands'] = [{'stage': stage, 'exitCode': 0, 'seconds': 1} for stage in stages]
+            selected.validate_record(actual, self.snapshot, self.native, self.materials)
+            for mutation in ('duplicate', 'reordered', 'aggregate'):
+                wrong = copy.deepcopy(actual)
+                if mutation == 'duplicate': wrong['commands'][1] = copy.deepcopy(wrong['commands'][0])
+                if mutation == 'reordered': wrong['commands'][0], wrong['commands'][1] = wrong['commands'][1], wrong['commands'][0]
+                if mutation == 'aggregate':
+                    for row in wrong['commands']: row['seconds'] = 1320 / count + 1
+                with self.subTest(count=count, mutation=mutation), self.assertRaises(WorkflowError):
+                    selected.validate_record(wrong, self.snapshot, self.native, self.materials)
+        for stages in (tuple('stage-' + str(i) for i in range(65)), ('duplicate', 'duplicate')):
+            with self.subTest(count=len(stages)), self.assertRaisesRegex(WorkflowError, 'frozen-configuration'):
+                reader.FrozenNativeProducts(source='2'*40, run=2, job=3,
+                    artifact=self.artifact, receipts=self.receipts, branch='fixture/native', stages=stages)
+
     def test_moving_source_duplicate_stages_and_unbounded_pins_are_refused(self):
         arguments=dict(source='2'*40,run=2,job=3,artifact=self.artifact,receipts=self.receipts,
             branch='fixture/native',stages=('rust-version',))

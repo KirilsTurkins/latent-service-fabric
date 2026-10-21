@@ -58,7 +58,7 @@ def install(directory: Path, sdk: Path, commands) -> Path:
 
 
 def compose_exact(compiler, raw: Path, component: Path, coverage: dict, *, additional_adapters=(),
-                  owned_retirement: bool = False) -> dict:
+                  owned_retirement: bool = False, managed_work: bool = False) -> dict:
     """Wire each observed WASI import once, using its complete interface name.
 
     The pinned WAC plug command also semver-matches exports. An adapter which
@@ -88,7 +88,7 @@ def compose_exact(compiler, raw: Path, component: Path, coverage: dict, *, addit
                           coverage['runtimeAdapterDigest'], coverage['runtimeWitDigest']))
     from tools.dotnet_guest.retirement import composition_edges
     private_edges = composition_edges(decode(inputs[0][3], maximum_graph),
-        decode(inputs[1][3], maximum_graph), owned_retirement)
+        decode(inputs[1][3], maximum_graph), owned_retirement, managed_work)
     require(coverage.get('compilerPrivateImports', []) == list(private_edges),
             'dotnet-retirement-composition-receipt')
     extra = coverage.get('additionalAdapters')
