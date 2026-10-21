@@ -10,25 +10,27 @@ if __package__ in {None, ''}:
 
 from tools import qualify_typescript_runtime_limits as limits
 from tools import typescript_tracking_component as component
+from tools import activation_stack_native_source as native_source
 from tools.phase2_operator_process import require
 from tools.phase3_resource_identity import file_identity
 from tools.rust_capsule_project import ROOT, fresh, write_json
 
 SOURCES = tuple(dict.fromkeys((*limits.SOURCES, '.github/workflows/typescript-owned-stack.yml',
     'tools/qualify_typescript_owned_stack.py', 'tools/typescript_tracking_component.py',
-    'tools/c_thread_native_products.py')))
+    'tools/activation_stack_native_products.py', 'tools/activation_stack_native_source.py')))
 
 
 def qualify(acquired, prepared, output):
     # This producer is frozen only after the shared C/RootOnly SDK5 build passes.
     # No historical reader is repinned and no guest/engine/compiler is rebuilt.
-    from tools import c_thread_native_products as native
+    from tools import activation_stack_native_products as native
 
     acquired, prepared, output = (Path(p).resolve() for p in (acquired, prepared, output))
     require(output != ROOT and ROOT not in output.parents and all(output != p
         and output not in p.parents and p not in output.parents for p in (acquired, prepared)),
         'typescript-owned-stack-separated-inputs')
     original = component.verify_prepared(acquired)
+    source_origin = native_source.assert_current(ROOT)
     native_origin = native.verify_prepared(prepared)
     products = native.native_products(prepared)
     binaries = {name: file_identity(path, 512*1024**2) for name, path in products.items()}
@@ -53,9 +55,11 @@ def qualify(acquired, prepared, output):
         'typescript-owned-stack-native-changed')
     require(sources == {name: file_identity(ROOT/name, 2*1024**2) for name in SOURCES},
         'typescript-owned-stack-source-changed')
+    require(native_source.assert_current(ROOT) == source_origin,
+        'typescript-owned-stack-native-source-changed')
     value = {'profile': 'typescript-original-activation-root-stack-v1', 'status': 'passed',
         'component': component.COMPONENT, 'componentOrigin': original,
-        'nativeOrigin': native_origin, 'qualificationSources': sources,
+        'nativeOrigin': native_origin, 'nativeSource': source_origin, 'qualificationSources': sources,
         'execution': file_identity(output/'node/qualification.json', 2*1024**2),
         'cases': observed['cases'], 'activationStackAccounting': 'activation-owned-v1',
         'boundaries': boundaries,

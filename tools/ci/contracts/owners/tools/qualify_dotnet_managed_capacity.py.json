@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_dotnet_managed_capacity.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Bind the added deferred-timer source control fixture and runner to the same current signed campaign material set; no execution/oracle change.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "30ce52af187e097bed338f247f91fd052bab7a4d52d47e340d0ce367e4f917ae"
+}

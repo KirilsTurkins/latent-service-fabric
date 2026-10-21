@@ -127,10 +127,66 @@ REWRITE_RECEIPT = {'patch': 'latent.dotnet.managed-accepted-work.v1',
  'qualified': False}
 
 
+# v1 remains an immutable historical receipt. The selected v2 additionally
+# binds each original TimerQueueTimer producer and its native Timer owner.
+TIMER_REWRITE_RECEIPT = {'patch': 'latent.dotnet.managed-accepted-work.v2',
+ 'modifiedOriginalMethods': {'System.Void System.Threading.QueueUserWorkItemCallback::Execute()': '24d788dd686009bd9c37633d78bbe221e0405ebac6e4639a25900ea43a40ffda',
+                             'System.Void System.Threading.QueueUserWorkItemCallback`1::Execute()': '83b3d36f9275ca06a5035475ddf254407c5f2466bb85ba67489d0d4c2ec7c2ae',
+                             'System.Void System.Threading.QueueUserWorkItemCallbackDefaultContext::Execute()': '7fa5fdbfc8cfb1b4eea8eef334152c9827e02ebcc7af19488af4533a31af3445',
+                             'System.Void System.Threading.QueueUserWorkItemCallbackDefaultContext`1::Execute()': 'c1e6ffae01dbfc05922b307ef4ecef2d51106d81de81831cf10ca510028f53d5',
+                             'System.Void System.Threading.Tasks.Task::ScheduleAndStart(System.Boolean)': 'e8dc768f03b492707419b8a0b42c737d09511477283706c247d7c2ea23b69f6f',
+                             'System.Void System.Threading.Tasks.Task::ContinueWithCore(System.Threading.Tasks.Task,System.Threading.Tasks.TaskScheduler,System.Threading.CancellationToken,System.Threading.Tasks.TaskContinuationOptions)': '3b191683964cabe022ef170ac505707bbc8f86d9859c60e5804c4a3be512a588',
+                             'System.Void System.Threading.Tasks.Task::FinishStageThree()': 'c9a030644a719cee1334e3f1c7d20cc3cfbc54e009d98c3a9653c506fc38118a',
+                             'System.Void System.Threading.Tasks.UnwrapPromise`1::.ctor(System.Threading.Tasks.Task,System.Boolean)': '983681313253b07ab4db7856e41e50a713ce6a8a3a27e00a9097721ffb9f9fd4',
+                             'System.Void System.Threading.Tasks.UnwrapPromise`1::ProcessInnerTask(System.Threading.Tasks.Task)': '4a3f34930eb1861aabe76311974eb6fa9acfcc2139e5f0b3fb0df6aa16f8f8c5',
+                             'System.Void System.Threading.Tasks.TaskExceptionHolder::MarkAsHandled(System.Boolean)': 'fed64c98d93669065af30688e9644356f0073492179248c2c2b7db5312bb83b6',
+                             'System.Void System.Threading.Tasks.Task::ExecuteWithThreadLocal(System.Threading.Tasks.Task&,System.Threading.Thread)': 'a32966dad0b1ca31ea2dea3b9043f8b45b6d47fad8efdcdfd856d34cca8c7f1b',
+                             'System.Void System.Threading.Tasks.Task/<>c::<.cctor>b__289_0(System.Object)': '3933c87a0c328cf8deb495fa633edb6b149164c1c01e54878872fad89f86e648',
+                             'System.Runtime.CompilerServices.IAsyncStateMachineBox System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1::GetStateMachineBox(TStateMachine&,System.Threading.Tasks.Task`1<TResult>&)': '10f360a3fb90041302a4a06fc3b8b6347f7b0d27ba07cd6fba5af0d068b5a7a4',
+                             'System.Void System.Threading.ThreadPoolWorkQueueThreadLocals::TransferLocalWork()': '20de413ab84da45069699cc7081077ec8b05a780c7f3a35a99c833cdfb0e6a38',
+                             'System.Void System.Threading.ThreadPoolWorkQueue::Enqueue(System.Object,System.Boolean)': '4c5c012afe0e5aa5c2a4cdc51aba12426e0d871f41d0a1db82a8ff5a920fa085',
+                             'System.Void System.Threading.ThreadPoolWorkQueue::EnqueueAtHighPriority(System.Object)': 'b6e96c60ed73aaae51ae1e20479b4c8a7a3b1a4b3c204472a0abefc10cd5d7df',
+                             'System.Boolean System.Threading.ThreadPoolWorkQueue::LocalFindAndPop(System.Object)': '68f914a3793366fa56a9531a97333b666d0778025ad0bfa2dd133fe74e728eaa',
+                             'System.Void System.Threading.ThreadPoolWorkQueue::DispatchWorkItem(System.Object,System.Threading.Thread)': '95d2738f3cf3a7ad5bafb7e9b400b22fe0ef162fe08f17b8b036fbf2890e855c',
+                             'System.Boolean System.Threading.TimerQueue::UpdateTimer(System.Threading.TimerQueueTimer,System.UInt32,System.UInt32)': 'a6718748ddf98afce1b550bd346cf0140de8944544f600816362c15b61fd4b6b',
+                             'System.Void System.Threading.TimerQueue::DeleteTimer(System.Threading.TimerQueueTimer)': '97df4a648d3a936be0a512e16dff243bee88b9b77a44c5865e8c6f3f0d4f2f8d',
+                             'System.Void System.Threading.TimerQueue::FireNextTimers()': '5e78e327e830b1b1543c560634848e2244663e3ec32686f5d6f8bd7904a11f09',
+                             'System.Void System.Threading.TimerQueueTimer::Fire(System.Boolean)': '7aac3cfdb1d33f5f32c3ef6760cc61596a805b5e33a26cee5d07ced09ec8962b',
+                             'System.Void System.Threading.TimerQueueTimer::CallCallback(System.Boolean)': '078f485b1d05ad88167bae8b04cb7c683ccb6987620d2b433507ec9c52e3097d'},
+ 'copiedRegistryMethods': 58,
+ 'taskIdentity': 'actual-task-unwrap-promise-and-inner',
+ 'requiredContinuationIdentity': 'actual-state-machine-box-before-await-registration',
+ 'queueAdmission': 'before-original-enqueue-with-fault-rollback',
+ 'completion': 'after-original-finish-continuations',
+ 'context': 'private-key-original-immutable-map-original-notifications',
+ 'contextSourceTypes': ['System.Threading.Tasks.Task',
+                        'System.Threading.QueueUserWorkItemCallback',
+                        'System.Threading.QueueUserWorkItemCallback`1',
+                        'System.Threading.QueueUserWorkItemCallbackDefaultContext',
+                        'System.Threading.QueueUserWorkItemCallbackDefaultContext`1'],
+ 'closing': 'original-native-close-and-live-parent-only',
+ 'join': 'original-task-wait-dispatch-with-readiness-each-iteration',
+ 'unobservedFaults': 'original-task-exception-retained-result-owner',
+ 'privateRootBridge': 'exact-Task-UnsafeAccessor-static-forwarders',
+ 'structuralRecordLimit': 32,
+ 'structuralQueueLimit': 64,
+ 'structuralTimerLimit': 32,
+ 'timerAdmission': 'original-TimerQueueTimer-before-active-list-mutation',
+ 'timerRetirement': 'original-disarmed-no-accepted-queued-running-or-required-callback',
+ 'timerCallbackContext': 'original-ExecutionContext-values-with-private-live-timer-owner',
+ 'authoritativeLimits': 'original-activation-owner-ledger',
+ 'newAssemblyReferences': 0,
+ 'qualified': False}
+
+
 def validate_rewrite(value: dict) -> None:
-    if (type(value) is not dict or set(value) != set(REWRITE_RECEIPT)
+    if type(value) is not dict:
+        raise ValueError('dotnet-managed-work-rewrite-receipt')
+    expected_receipt = (TIMER_REWRITE_RECEIPT if value.get('patch') == TIMER_REWRITE_RECEIPT['patch']
+        else REWRITE_RECEIPT)
+    if (set(value) != set(expected_receipt)
             or any(type(value.get(key)) is not type(expected) or value[key] != expected
-                for key, expected in REWRITE_RECEIPT.items())):
+                for key, expected in expected_receipt.items())):
         raise ValueError('dotnet-managed-work-rewrite-receipt')
 
 

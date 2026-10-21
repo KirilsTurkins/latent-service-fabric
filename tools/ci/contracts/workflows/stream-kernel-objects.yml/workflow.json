@@ -17,7 +17,8 @@
           "feat/stream-kernel-audit-skb-20261021",
           "feat/stream-kernel-route-owners-20261021",
           "feat/stream-kernel-route-consumer-20261021",
-          "feat/stream-kernel-route-cache-20261021"
+          "feat/stream-kernel-route-cache-20261021",
+          "feat/stream-kernel-packet-prefix-20261021"
         ],
         "paths": [
           ".github/workflows/stream-kernel-objects.yml",
@@ -32,6 +33,8 @@
           "tools/host_stream_kernel_bind.py",
           "tools/host_stream_kernel_route.py",
           "tools/host_stream_kernel_route_cache.py",
+          "tools/host_stream_kernel_packet.py",
+          "tools/tests/fixtures/host_stream_kernel_packet.json",
           "research/standard-outbound/linux-6.12-lineage/**"
         ]
       },
@@ -62,6 +65,11 @@
             "description": "Compile the closed Netport cache profile instead of the original object profiles",
             "type": "boolean"
           },
+          "packet": {
+            "default": false,
+            "description": "Compile the closed copied-TCP linear packet source profile",
+            "type": "boolean"
+          },
           "route": {
             "default": false,
             "description": "Compile the closed IPv4 route source profile with original reference owners",
@@ -90,12 +98,13 @@
     "bind-objects",
     "netlabel-objects",
     "netport-objects",
+    "packet-objects",
     "route-cache-objects",
     "route-objects",
     "selected-objects",
     "sidcache-objects"
   ],
-  "reviewReason": "Add one closed route-cache object-only profile while preserving every original target, command, configuration, budget and job body; retain previous exact job set after projecting only the separately verified new job.",
+  "reviewReason": "Add one exclusive source-only linear copied-TCP packet object profile, retaining all nine prior jobs, exact symbol floors, original configuration and bounds; two old job-set assertions project only the separately checked new packet job. No kernel/runtime/install qualification.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/stream-kernel-objects.yml"
 }
