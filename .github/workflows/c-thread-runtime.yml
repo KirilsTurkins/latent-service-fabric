@@ -13,6 +13,9 @@ on:
       - 'tools/activation_stack_native_products.py'
       - 'tools/c_thread_package_native_products.py'
       - 'tools/c_thread_admission_native_products.py'
+      - 'tools/host_codec_native_products.py'
+      - 'tools/host_codec_native_products_reader.py'
+      - 'tools/tests/test_host_codec_native_products_reader.py'
       - 'tools/tests/test_c_thread_admission_native_products.py'
       - 'tools/tests/fixtures/c-thread-admission-f244-records.json'
       - 'tools/activation_stack_native_source.py'
@@ -59,14 +62,15 @@ jobs:
         run: |
           git fetch --no-tags --depth=1 origin f6251df89851de98cb869784d095ad5cc2e5b385
           git fetch --no-tags --depth=1 origin f244b81f14abad5d4dc4984cb842aaf1d9076e23
+          git fetch --no-tags --depth=1 origin 7b6365ee39dea9770591a931b96711965f8a1aaf
       - name: Verify source and adverse fixed-product controls
         run: |
           python3 -m pip install --requirement tools/requirements.lock
-          python3 -B -m unittest tools.tests.test_c_thread_runtime tools.tests.test_c_thread_native_products tools.tests.test_sdk_native_products_reader tools.tests.test_c_threading_profile tools.tests.test_activation_stack_native_products tools.tests.test_activation_stack_native_source tools.tests.test_c_thread_package_native_products tools.tests.test_c_threading_compatibility tools.tests.test_c_thread_admission_native_products -v
-      - name: Authenticate three current admission products and two original packaging products
+          python3 -B -m unittest tools.tests.test_c_thread_runtime tools.tests.test_c_thread_native_products tools.tests.test_sdk_native_products_reader tools.tests.test_c_threading_profile tools.tests.test_activation_stack_native_products tools.tests.test_activation_stack_native_source tools.tests.test_c_thread_package_native_products tools.tests.test_c_threading_compatibility tools.tests.test_c_thread_admission_native_products tools.tests.test_host_codec_native_products_reader -v
+      - name: Authenticate all five source-bound host-codec and explicit C products
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 -B tools/c_thread_admission_native_products.py --output "$RUNNER_TEMP/c-thread-native"
+        run: python3 -B tools/host_codec_native_products.py --output "$RUNNER_TEMP/c-thread-native"
       - uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2
         with:
           version: '0.16.0'
