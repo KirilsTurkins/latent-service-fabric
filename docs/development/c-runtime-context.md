@@ -132,3 +132,107 @@ All original26 Rust/parser, C isolation/refusal and pthread controls remain.
 This C11 source addition does not select a production thread profile or supply
 thread creation/join, canonical children, charged bootstrap, synchronization,
 checkpoints or signed/native physical retirement. #744 remains open.
+
+## Ordinary creation and guarded bootstrap source
+
+The next unselected source slice is
+`sdk/c-guest/runtime/threads.c`, with its fixed memory32 ABI in
+`thread-abi.h` and `thread-abi.json`. It supplies ordinary
+`pthread_create/join/self/equal` and `thrd_create/join/current/equal` beneath
+unchanged application calls. A successful creation requires a real canonical
+child. That child installs its own context, checks its actual canonical
+identity and yields to its creator before executing the user start function.
+The creator does not execute the worker inline or manufacture a successful
+handle. A deliberate refusing entry remains until the compiler transform
+authenticates and replaces its exact original bytes.
+
+This is source infrastructure. No maintained builder or production engine
+selects it, and no canonical child or signed runtime has qualified it. The
+hosted source run below supplies executable transform-unit evidence. The original Rust context40 transform, component verifier
+and engine profile remain unchanged.
+
+The C context keeps the existing32-byte SP/TLS prefix. Its144-byte aligned
+record also holds original activation Task/Native/Result tokens, a single-use
+creation state and typed pthread/C11 start/result fields. Root ownership is
+lazy. Child Task, Native and Result admission precede allocation of the
+context,64KiB C stack and conservative TLS image. The fixed creation wrapper
+calls the original native broker with the child's Task token before the sole
+canonical creation instruction. An error before creation frees only unstarted
+allocations and settles their logical owners. A trap or uncertain creation
+cannot be treated as successful retirement.
+
+The32-record registry is an implementation bound, not a new runtime Task or
+native-stack quota. The original broker and Wasm-memory limits can refuse
+earlier. Handles are registry-owned context identities; tombstones are not
+reused during an activation. A join has one joiner and an original Wait
+owner, parks only its caller and switches the actual child. Unknown, self,
+duplicate, API-mismatched and cyclic joins cannot return success. Only the
+fixed child epilogue may establish completed C/TLS frames and detach context.
+Join may then release C stack/TLS allocations and logical owners; cached
+physical native-stack reservations remain charged through Store destruction.
+Root cancellation or a trap does not fabricate a completed join.
+
+`c_template.rs` reconstructs the original pre-initializer TLS image from
+actual active data segments in module order, including overlapping writes and
+zero-filled gaps. Original passive data is not guessed to have initialized
+memory. The new private passive image and fixed stackless `memory.init` copy
+retain all other original sections, functions and data encodings. Every
+original active segment must fit initial memory. The private image cannot be
+dropped or referenced by any other function. Only TLS-relative accesses are
+redirected: copying the conservative linked data tail does not make ordinary
+shared C globals thread-local.
+
+The measured LLVM layout puts an ordinary initialized C global after
+`__tls_base`, inside that conservative copied tail. Consequently the root
+record is not a normal C global. `c_root.rs` instead requires an authenticated
+4KiB low guard and an unchanged64KiB usable root stack at `[4096,69632)`.
+The aligned144-byte root record occupies `[16,160)` inside that guard, within
+the original memory ceiling. Final core bytes must show no active data in the
+guard or root stack, TLS at or above the stack high bound and the heap at or
+above the TLS tail. Start functions and separate reactor initializers are
+refused; the required exported original `__wasm_call_ctors` body must be empty.
+Constructor support is not inferred from an absent symbol.
+
+The root transform recomputes the entire template/child chain from one
+authenticated original. Its fixed wrapper installs context before calling
+ordinary C initialization or the original selected public function, retains
+the original flat return values, drains accepted children and TLS state, then
+checks the restored stack before stackless detach. An unexported one-use
+global prevents a second root entry. Every original body and section remains
+bound alongside the precise new wrapper, global and export route.
+
+The selected compiler must still authenticate every object/archive's TLS
+alignment, protect allocator and registry critical regions, preserve all
+stack accesses and supply final whole-component canonical routing proof for
+this separate C layout. Ordinary C can corrupt its own linear memory; these
+records do not replace host admission or final-byte routing verification.
+The finite root fixtures use scalar core arguments. Canonical string lowering
+may execute C `cabi_realloc` before the public root, and post-return may execute
+C after it. Those paths need their own authenticated context lifecycle before
+an ordinary string component can select this port. No pre-root or post-root
+shared-stack/TLS fallback is implemented or implicitly authorized here.
+Non-default attributes, detach, `pthread_exit`, cancellation unwinding,
+setjmp/longjmp, C++ dynamic TLS, mutex/condition/timed waits, CPU checkpoints,
+atomics and standard I/O are outside this source slice. Their absence cannot
+be counted as full #744 support.
+
+[Run39545094659/job119041367915](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39545094659/job/119041367915)
+passed all40 exact Rust controls at source065623b99069, including all26 original
+cases and14 new C layout, admission, immutable-image and guarded-root cases.
+The unchanged controller also passed the existing actual compiled C, pthread
+key/errno and C11 TLS controls. The [source-bound observation](../testing/evidence/c-thread-bootstrap-source-controls-2026-10-21.json)
+records artifact12321705701 (19,757B), all44 CRC-checked members,14 original
+controller source rows and11 products. The three new Rust modules are bound
+separately to the actual job's checked-out Git source and exact case log; they
+are not invented source rows in the old controller's receipt.
+
+The first hosted attempt39544590130 failed during parser API compilation,
+before any controls. The correction uses the pinned parser's public readers
+and checked byte ranges; that failed attempt is retained without passing
+credit. A local ordinary libc link attempt exceeded its90-second limit and
+produced no linked core; it was stopped and not retried locally. Consequently
+this observation does not claim execution of ordinary create/join calls, a
+canonical child, a production node, whole-component C routing or a qualified
+threading profile. Tool binaries and compiler implicit inputs are not
+independently retained by this artifact. No #744 checkbox closes from this
+finite source slice.

@@ -47,3 +47,69 @@ binds all 52 artifact members, source/configuration identities and object
 digests. Supplemental freestanding controls remain separate mechanism evidence.
 The objects provide no link, boot, active LSM runtime, physical allocation,
 final-free or installation qualification.
+
+## Explicit Netport cache mode
+
+The closed `netport` boolean input and owned Netport branch select one third,
+exclusive job. Both earlier job bodies remain unchanged. Conflicting manual
+Netlabel/Netport requests and unknown input strings fail before source
+acquisition or build; inputs never select arbitrary commands or targets.
+
+This mode authenticates fifteen whole inputs and records digests for all 29
+derived files. The fourteen actual Kbuild targets retain the entire twelve
+Netlabel target/symbol floor and add SELinux `netport.o` and `hooks.o`. All 40
+private globals must be defined. The actual connect call site and cache lifetime
+code are compiled with original kernel headers, SELinux/Netlabel enabled and
+`-Werror`; the original configuration equality, `-j2`, 900/300-second command
+bounds, owned cleanup and bounded failure diagnostics remain.
+
+The first fourteen-object attempt failed in real Kbuild after configuration:
+the private ticket local `current` collided with Linux's macro of that name.
+The correction changes only that local's name, with exact-old-header RED and
+new-header GREEN compiler controls. The [failed observation](evidence/kernel-netport-object-current-macro-failure-2026-10-21.json)
+retains the actual source/run and bounded artifact. The corrected source
+`358ffe5c56790f86e29d2fe63185a606054cb92e` passed run `39543596597`, job
+`119036670283`: all 14 unlinked x86-64 objects, 40 defined private functions,
+42 hosted source/controller tests and 19 clean owned commands. The
+[compiled observation](evidence/kernel-netport-objects-compiled-2026-10-21.json)
+binds all 58 artifact members, 29 derived identities and the unchanged security
+configuration. The earlier twelve-object receipt remains bound to its original
+source. No object result proves real cache/RCU execution, lazy policy SID,
+AVC/audit or RX/SKB/page closure, kernel linking/boot, final-free retirement
+or an installed provider. Production enablement remains off.
+
+The separate `sidcache` selector composes that maintained prefix with the
+original SID-cache/LRU and audit context-string consumers. It compiles fifteen
+unlinked objects, adding `security/selinux/ss/sidtab.o` and requiring all forty
+prior private functions plus twelve new definitions. The original configuration
+must already have the 256-entry SID cache enabled; no cache/security setting is
+overridden. Mixed selectors refuse before archive acquisition. The same job,
+command, process, diagnostic and archive limits apply.
+
+The SID mode passed at exact source
+`53b42987c43a9de7d7460befc1741cfe4a82f496`, run `39546640777`, job
+`119046190396`: all fifteen unlinked x86-64 objects, 52 defined private
+functions, 59 hosted source/controller tests and twenty clean owned commands.
+The [compiled observation](evidence/kernel-sidcache-objects-compiled-2026-10-21.json)
+binds all 61 artifact members, sixteen complete source inputs, 33 derived
+identities and unchanged security configuration. Supplemental serialized C
+controls remain separate from actual Linux execution. There is no kernel link,
+boot, active LSM/RCU execution, complete allocation closure, physical final-free
+certificate or installed provider.
+
+The separate default-false `avc` selector layers the authenticated AVC prefix
+over the SID-cache derivation. Its exclusive job selects sixteen unlinked
+objects and 61 required definitions, including every fifteen-object SID-cache
+target and all 52 prior definitions. It records digests for eighteen whole
+inputs and 38 derived files. Netlabel and the 256-entry SID cache must already
+be enabled; only the private factory symbol changes. The original four jobs'
+complete step bodies and all build, warning, process and artifact bounds are
+preserved. The AVC mode passed at source
+`d872bfcca2911938165889a7ab804b929d1c422b`, run `39550402947`, job
+`119058043143`: sixteen unlinked x86-64 objects, 61 global function
+definitions, 82 hosted source/controller tests and 21 clean owned commands.
+The [compiled observation](evidence/kernel-avc-objects-compiled-2026-10-21.json)
+binds all 64 archive members, 100 Git materials and unchanged security
+configuration. Its mandatory audit entry remains an unimplemented
+declaration, and complete allocation/final-free closure and production
+installation remain unavailable.

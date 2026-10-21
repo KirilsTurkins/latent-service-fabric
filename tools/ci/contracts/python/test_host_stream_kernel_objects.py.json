@@ -1,9 +1,17 @@
 {
   "cases": [
+    "KernelAvcObjectSelection.test_avc_selection_refuses_local_build_before_archive_or_output",
+    "KernelAvcObjectSelection.test_exclusive_avc_job_uses_only_closed_inputs_and_original_build_bounds",
+    "KernelAvcObjectSelection.test_sixteen_objects_preserve_all_fifty_two_sidcache_definitions_and_add_nine",
+    "KernelAvcObjectSelection.test_unknown_or_mixed_avc_profiles_refuse_before_acquisition",
     "KernelNetlabelObjectSelection.test_default_six_object_floor_is_identical_and_selector_accepts_only_real_boolean",
     "KernelNetlabelObjectSelection.test_netlabel_must_already_be_enabled_no_configuration_override_is_added",
     "KernelNetlabelObjectSelection.test_netlabel_twelve_objects_retain_all_old_symbols_and_require_all_twenty_one_new_globals",
     "KernelNetlabelObjectSelection.test_optin_object_profile_still_refuses_local_build_before_archive_access",
+    "KernelNetportObjectSelection.test_actual_netport_and_connect_hooks_compile_with_all_forty_private_globals",
+    "KernelNetportObjectSelection.test_mixed_profiles_refuse_before_linux_checks_archive_output_or_build",
+    "KernelNetportObjectSelection.test_netport_is_exclusive_boolean_and_both_historical_selections_remain_exact",
+    "KernelNetportObjectSelection.test_netport_optin_refuses_local_build_before_any_source_acquisition",
     "KernelObjectSelection.test_actual_upstream_mixed_case_symbol_names_stay_exact_and_cannot_bypass_comparison",
     "KernelObjectSelection.test_archive_snapshot_authenticates_all_bytes_in_an_independent_fresh_file",
     "KernelObjectSelection.test_config_parser_rejects_duplicate_malformed_empty_and_oversize_symbols",
@@ -11,9 +19,62 @@
     "KernelObjectSelection.test_exact_optin_preserves_every_original_config_including_memcg",
     "KernelObjectSelection.test_failed_owned_process_keeps_partial_streams_and_never_masks_primary_failure",
     "KernelObjectSelection.test_local_execution_refuses_before_archive_read_or_build",
-    "KernelObjectSelection.test_six_real_objects_require_private_constructor_and_blob_symbols"
+    "KernelObjectSelection.test_six_real_objects_require_private_constructor_and_blob_symbols",
+    "KernelSidcacheObjectSelection.test_fifteen_objects_keep_all_forty_netport_globals_and_add_twelve_real_definitions",
+    "KernelSidcacheObjectSelection.test_focused_owning_job_preserves_original_time_tools_security_and_artifact_bounds",
+    "KernelSidcacheObjectSelection.test_only_one_real_boolean_profile_can_reach_source_or_build",
+    "KernelSidcacheObjectSelection.test_original_cache_256_entry_configuration_is_required_without_override",
+    "KernelSidcacheObjectSelection.test_sidcache_profile_refuses_local_build_before_any_archive_or_output"
   ],
   "guards": {
+    "KernelAvcObjectSelection.test_avc_selection_refuses_local_build_before_archive_or_output": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelAvcObjectSelection.test_exclusive_avc_job_uses_only_closed_inputs_and_original_build_bounds": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelAvcObjectSelection.test_sixteen_objects_preserve_all_fifty_two_sidcache_definitions_and_add_nine": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelAvcObjectSelection.test_unknown_or_mixed_avc_profiles_refuse_before_acquisition": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "KernelNetlabelObjectSelection.test_default_six_object_floor_is_identical_and_selector_accepts_only_real_boolean": {
       "bases": [
         "unittest.TestCase"
@@ -51,6 +112,54 @@
       "skipSites": []
     },
     "KernelNetlabelObjectSelection.test_optin_object_profile_still_refuses_local_build_before_archive_access": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelNetportObjectSelection.test_actual_netport_and_connect_hooks_compile_with_all_forty_private_globals": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelNetportObjectSelection.test_mixed_profiles_refuse_before_linux_checks_archive_output_or_build": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelNetportObjectSelection.test_netport_is_exclusive_boolean_and_both_historical_selections_remain_exact": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelNetportObjectSelection.test_netport_optin_refuses_local_build_before_any_source_acquisition": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -157,10 +266,70 @@
         "class:setup-sha256:439d80192a5f2614e2e519872f78b6e6ff97179d4f3c8d1acead1f0502fd7b61"
       ],
       "skipSites": []
+    },
+    "KernelSidcacheObjectSelection.test_fifteen_objects_keep_all_forty_netport_globals_and_add_twelve_real_definitions": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelSidcacheObjectSelection.test_focused_owning_job_preserves_original_time_tools_security_and_artifact_bounds": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelSidcacheObjectSelection.test_only_one_real_boolean_profile_can_reach_source_or_build": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelSidcacheObjectSelection.test_original_cache_256_entry_configuration_is_required_without_override": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelSidcacheObjectSelection.test_sidcache_profile_refuses_local_build_before_any_archive_or_output": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_host_stream_kernel_objects.py",
-  "reviewReason": "Reviewed closed exclusive Netlabel object-only mode: original six job body/default and all original commands/config/security/process bounds preserved; twelve targets, thirty-four globals, NETLABEL already enabled, no link boot installation or physical qualification.",
+  "reviewReason": "Add one exclusive sixteen-object AVC-over-SID source lane under original20min/900s/300s/-j2/-Werror/security/config/archive/output bounds. Preserve all four prior job bodies except selector exclusions, old commands/cases/guards and default/offline refusals. Retain every15/52 SID target, add one AVC object and9 definitions. Preserve cache_anchor/SID lifetime and explicit kind allowlists; audit remains unimplemented, no link/boot/installation/closure credit.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

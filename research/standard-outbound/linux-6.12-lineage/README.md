@@ -253,3 +253,22 @@ Active unclosed LSM/Netlabel producers and all remaining protocol/RX/platform
 gates still refuse; no security configuration or hook is disabled.
 
 The [maintained Netlabel source](prepaid-netlabel.md) closes nested label birth and option callback ownership within the uninstalled IPv4 prefix; active security and full physical closure still block installation.
+
+The [maintained Netport cache prefix](prepaid-netport.md) carries the existing
+socket owner through cache allocation, publication, eviction, policy flush and
+the selected RCU return path. Its finite context drain revalidates each original
+birth under the original cache lock before deriving an address. Shared cache
+hits do not transfer charges. Lazy SID creation, AVC/audit and the remaining
+RX/platform/final-free chain are still unclosed; no installation is enabled.
+
+The [maintained SID-cache and audit-string prefix](prepaid-sidcache.md) retains
+the original policy, cache/LRU and RCU behavior while carrying the original
+socket owner through context strings and cache nodes. Actual policy destruction
+retires private published births before table address reuse. The formatter,
+queued audit SKBs, AVC, RX and complete final-free chain remain separate gates.
+
+The [private AVC cache prefix](prepaid-avc.md) retains original prepaid births
+through nested permission graphs, policy-preserving replacement and queued RCU
+return. Both owned connect permission checks use the explicit socket source.
+The mandatory audit implementation and remaining active-security/RX/platform
+closure are still unavailable; supplemental C controls do not enable a profile.

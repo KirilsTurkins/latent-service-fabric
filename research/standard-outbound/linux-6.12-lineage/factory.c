@@ -335,6 +335,148 @@ int lsf_factory_blob_finish(struct lsf_factory_blob copy, unsigned int kind)
     return result;
 }
 
+int lsf_factory_netport_publish(const void *address, unsigned int bucket)
+{
+    struct lsf_factory_blob copy;
+    unsigned long flags;
+    int result;
+    spin_lock_irqsave(&pool_lock, flags);
+    result = lsf_factory_blob_lookup_locked(address, LSF_PREPAID_NETPORT, &copy);
+    if (result == 1 && !lsf_prepaid_netport_publish(&factory.pool, copy.context->key,
+                                                   copy.ticket, bucket))
+        result = -1;
+    spin_unlock_irqrestore(&pool_lock, flags);
+    return result;
+}
+
+int lsf_factory_netport_queue(const void *address)
+{
+    struct lsf_factory_blob copy;
+    unsigned long flags;
+    int result;
+    spin_lock_irqsave(&pool_lock, flags);
+    result = lsf_factory_blob_lookup_locked(address, LSF_PREPAID_NETPORT, &copy);
+    if (result == 1 && !lsf_prepaid_record_queue(&factory.pool, copy.context->key,
+                                                copy.ticket, LSF_PREPAID_NETPORT))
+        result = -1;
+    spin_unlock_irqrestore(&pool_lock, flags);
+    return result;
+}
+
+int lsf_factory_netport_candidate(struct lsf_factory_context *context, unsigned int slot,
+                                  struct lsf_prepaid_ticket *ticket, unsigned int *bucket)
+{
+    unsigned long flags;
+    int result = 0;
+    spin_lock_irqsave(&pool_lock, flags);
+    context = lsf_factory_context_current(context);
+    if (context)
+        result = lsf_prepaid_netport_candidate(&factory.pool, context->key, slot,
+                                               ticket, bucket);
+    spin_unlock_irqrestore(&pool_lock, flags);
+    return result;
+}
+
+int lsf_factory_netport_current(struct lsf_factory_context *context,
+    struct lsf_prepaid_ticket ticket, unsigned int bucket, void **address)
+{
+    unsigned long flags;
+    lsf_u64 offset;
+    int result = 0;
+    spin_lock_irqsave(&pool_lock, flags);
+    context = lsf_factory_context_current(context);
+    if (context && address && factory.pages &&
+        lsf_prepaid_netport_current(&factory.pool, context->key, ticket, bucket, &offset)) {
+        *address = (char *)page_address(factory.pages) + offset;
+        result = 1;
+    }
+    spin_unlock_irqrestore(&pool_lock, flags);
+    return result;
+}
+
+int lsf_factory_sidcache_publish(const void *address, lsf_u64 anchor)
+{
+    struct lsf_factory_blob copy;
+    unsigned long flags;
+    int result;
+    spin_lock_irqsave(&pool_lock, flags);
+    result = lsf_factory_blob_lookup_locked(address, LSF_PREPAID_SIDCACHE, &copy);
+    if (result == 1 && !lsf_prepaid_sidcache_publish(&factory.pool, copy.context->key,
+                                                    copy.ticket, anchor))
+        result = -1;
+    spin_unlock_irqrestore(&pool_lock, flags);
+    return result;
+}
+
+int lsf_factory_sidcache_queue(const void *address)
+{
+    struct lsf_factory_blob copy;
+    unsigned long flags;
+    int result;
+    spin_lock_irqsave(&pool_lock, flags);
+    result = lsf_factory_blob_lookup_locked(address, LSF_PREPAID_SIDCACHE, &copy);
+    if (result == 1 && !lsf_prepaid_record_queue(&factory.pool, copy.context->key,
+                                                copy.ticket, LSF_PREPAID_SIDCACHE))
+        result = -1;
+    spin_unlock_irqrestore(&pool_lock, flags);
+    return result;
+}
+
+/* Only the original policy's sidtab_destroy_entry final-free point calls
+ * this. A queued victim still belongs to its real RCU callback and refuses.
+ * Unknown storage poisons/retains instead of passing into the normal heap. */
+int lsf_factory_sidcache_destroy(const void *address)
+{
+    struct lsf_factory_blob copy;
+    unsigned long flags;
+    int result;
+    spin_lock_irqsave(&pool_lock, flags);
+    result = lsf_factory_blob_lookup_locked(address, LSF_PREPAID_SIDCACHE, &copy);
+    if (result == 1 &&
+        (!lsf_prepaid_record_queue(&factory.pool, copy.context->key,
+                                    copy.ticket, LSF_PREPAID_SIDCACHE) ||
+         !lsf_prepaid_blob_finish(&factory.pool, copy.context->key,
+                                   copy.ticket, LSF_PREPAID_SIDCACHE)))
+        result = -1;
+    spin_unlock_irqrestore(&pool_lock, flags);
+    return result;
+}
+
+int lsf_factory_sidcache_candidate(struct lsf_factory_context *context, unsigned int slot,
+                                   struct lsf_prepaid_ticket *ticket, lsf_u64 *anchor)
+{
+    unsigned long flags;
+    int result = 0;
+    spin_lock_irqsave(&pool_lock, flags);
+    context = lsf_factory_context_current(context);
+    if (context)
+        result = lsf_prepaid_sidcache_candidate(&factory.pool, context->key, slot,
+                                                 ticket, anchor);
+    spin_unlock_irqrestore(&pool_lock, flags);
+    return result;
+}
+
+int lsf_factory_sidcache_current(struct lsf_factory_context *context,
+    struct lsf_prepaid_ticket ticket, lsf_u64 anchor, void **address)
+{
+    unsigned long flags;
+    lsf_u64 offset;
+    int result = 0;
+    spin_lock_irqsave(&pool_lock, flags);
+    context = lsf_factory_context_current(context);
+    if (context && address && factory.pages &&
+        lsf_prepaid_sidcache_current(&factory.pool, context->key, ticket, anchor, &offset)) {
+        *address = (char *)page_address(factory.pages) + offset;
+        result = 1;
+    }
+    spin_unlock_irqrestore(&pool_lock, flags);
+    return result;
+}
+
+#ifdef LSF_STREAM_AVC_SOURCE
+#include "factory-avc.c"
+#endif
+
 void lsf_factory_poison(struct lsf_factory_context *context)
 {
     unsigned long flags;
@@ -454,6 +596,18 @@ static int lsf_factory_release(struct inode *inode, struct file *file)
     for (i = 0; i < LSF_FACTORY_CONTEXTS; ++i)
         factory.pool.contexts[i].closed = 1;
     spin_unlock_irqrestore(&pool_lock, flags);
+    /* A finite scan detaches only this original context's published cache
+     * births under the original cache lock. Real callbacks still own them.
+     * Genuine late descendants may be born after this scan; they stay charged
+     * and cannot make this an acknowledgement of complete retirement. */
+    for (i = 0; i < LSF_FACTORY_CONTEXTS; ++i) {
+        lsf_prepaid_netport_drain(&factory.contexts[i]);
+        lsf_prepaid_sidcache_drain(&factory.contexts[i]);
+    }
+#ifdef LSF_STREAM_AVC_SOURCE
+    for (i = 0; i < LSF_FACTORY_CONTEXTS; ++i)
+        lsf_prepaid_avc_drain(&factory.contexts[i]);
+#endif
     /* Closing a descriptor is not final-free. No __free_pages, object release,
      * owner recycling, reference refund or reopen is justified here. Original
      * node backing and occupancy must stay in bounded native quarantine. */

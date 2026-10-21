@@ -1,0 +1,218 @@
+{
+  "schemaVersion": "lsf.kernel-maintained-avc-source.v1",
+  "upstreamCommit": "7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+  "archiveSha256": "e09b6727e5c521253f0d41694900b9c38fb7604db7d35238a8197aa9f7de2428",
+  "source": {
+    "fs/inode.c": {
+      "bytes": 75338,
+      "sha256": "73e256cf70bb0d80e6fee28d969c6fb44ab4c5c7cd92b6f74edff8b5297e7070",
+      "gitBlob": "7942673f686fdc24d92c2fb8033c2fb3b6df7709"
+    },
+    "include/net/netlabel.h": {
+      "bytes": 21017,
+      "sha256": "82861a26d850caa742f5fc54da857720c52dc02f05feabaa93987540e6191f85",
+      "gitBlob": "529160f76cac209ee7473ea7b5ccd49da0789f18"
+    },
+    "include/net/sock.h": {
+      "bytes": 85865,
+      "sha256": "5d52f73f4898f2a52001aa9b7db8e863eee384e4c9fa43eaf281fb01dd9e4182",
+      "gitBlob": "efa549885b7f85e50c55f95ad4eae0c1ef75797a"
+    },
+    "net/core/sock.c": {
+      "bytes": 111636,
+      "sha256": "f68f84b6dafdd3762b0599ab91f0face78b154d60bdccdf8920cbdf2e9f00be7",
+      "gitBlob": "75db38fdfd35fe87b87ac2755b0ef1db6fb96415"
+    },
+    "net/ipv4/af_inet.c": {
+      "bytes": 51938,
+      "sha256": "9079f259c6687d3aa0faea64889f7ec248e7327a5799b90a6f7c860b81522873",
+      "gitBlob": "c310a60760f3433c2dd7f1a65ea61aa1cd2e40ed"
+    },
+    "net/ipv4/cipso_ipv4.c": {
+      "bytes": 63739,
+      "sha256": "03a86947b0292c1ed9a1d637a67a12fb147f6839ee0c0c209dfe40eafb4ab089",
+      "gitBlob": "53fcb2089cde2a246c0b84d31582485b2496da64"
+    },
+    "net/netlabel/netlabel_kapi.c": {
+      "bytes": 38938,
+      "sha256": "d16333fd75af20b6ad837bd062a1720390374f72f2ca514174aa6dbbfce8c150",
+      "gitBlob": "33b77084a4e5f34770f960d7c82e481d9889753a"
+    },
+    "net/socket.c": {
+      "bytes": 92491,
+      "sha256": "95ec72eeccec766e102b6d532270bc52813c2f86d9bfa761d20900e07b2216db",
+      "gitBlob": "723bc3a1ba5cdd17f559a65de73d9c87911e6954"
+    },
+    "security/security.c": {
+      "bytes": 180030,
+      "sha256": "b72fd7f869275b1caf1a98449e92024a779534fb36c77cb88f4ac210e4493055",
+      "gitBlob": "b31fd25f4e5e3d37e22e111fa67351b51ef99d2f"
+    },
+    "security/selinux/netlabel.c": {
+      "bytes": 16481,
+      "sha256": "972d5786a9fb4da8845c839f06f1999bfc70e88a3d63ec904e0a080504d2631d",
+      "gitBlob": "d51dfe89231229e78903f3aa552286326524dca2"
+    },
+    "security/selinux/ss/ebitmap.c": {
+      "bytes": 12211,
+      "sha256": "69ffd1eaf09c8aca73a3aaabda9e31d0207b98b7d8eb4843d66106b0a75e9b94",
+      "gitBlob": "cd84357db2c47a034bb3601eeaaa8806dbf0f7af"
+    },
+    "security/selinux/ss/mls.c": {
+      "bytes": 16094,
+      "sha256": "349ec7a62da7777fd3ab12226538a1c486654ee917003b0d6b0b5bf3a6352f88",
+      "gitBlob": "a6e49269f5351df096da8c9fb56103a2f7b0ee9d"
+    },
+    "security/selinux/ss/services.c": {
+      "bytes": 97756,
+      "sha256": "0b0a29ad428bd17a50784c4b87b47837e5dfb3e695255e98fb55e4a03d5d08a1",
+      "gitBlob": "54d121d64804295c8ae1f40103957f6a3b671640"
+    },
+    "security/selinux/netport.c": {
+      "bytes": 5952,
+      "sha256": "8deed649b14f7a2dfe7b4dab94dde5f741ddc6858e098c3ef5dbff9e5df38b4b",
+      "gitBlob": "2e22ad9c2bd0d116668985e0fb579b5934df9394"
+    },
+    "security/selinux/hooks.c": {
+      "bytes": 204597,
+      "sha256": "6079b88f15ca1966b640753e35edc291139fe925fca37e5c54d0a2d6e36d8370",
+      "gitBlob": "d4abf15f0e6fb98505df81ac3128255b4cd9e1e7"
+    },
+    "security/selinux/avc.c": {
+      "bytes": 31717,
+      "sha256": "e5ead166180e1b51dab8f701f16a595e51ff68eb346f7a8b4549617ce4672ce6",
+      "gitBlob": "688ff9e63f514ec18b8096e59e0edd63ac6f5112"
+    },
+    "security/selinux/include/avc.h": {
+      "bytes": 4623,
+      "sha256": "b1bb6fd0b9fda55cce88a5fb2a359fd64cde40ef18162e6640cd33885ebb5966",
+      "gitBlob": "96a614d47df8d1d67b0b033ebb90954653dfeab7"
+    },
+    "security/selinux/ss/sidtab.c": {
+      "bytes": 14675,
+      "sha256": "5bc885230f9b6023ff7a64b0ff80746f607a572cf7d882eab149f6c1261c4f08",
+      "gitBlob": "c8848cbba81f24abbb2e0d07697ece10d2cc6637",
+      "independentlyGitCorroborated": false
+    }
+  },
+  "sections": {
+    "avc_xperms_decision_free": {
+      "source": "security/selinux/avc.c",
+      "prefix": "static void avc_xperms_decision_free(",
+      "sha256": "e248763bc576f0a7469327a4422f04908effe9aa8d1e9bedf08382ec3bed4214",
+      "text": "static void avc_xperms_decision_free(struct avc_xperms_decision_node *xpd_node)\n{\n\tstruct extended_perms_decision *xpd;\n\n\txpd = &xpd_node->xpd;\n\tif (xpd->allowed)\n\t\tkmem_cache_free(avc_xperms_data_cachep, xpd->allowed);\n\tif (xpd->auditallow)\n\t\tkmem_cache_free(avc_xperms_data_cachep, xpd->auditallow);\n\tif (xpd->dontaudit)\n\t\tkmem_cache_free(avc_xperms_data_cachep, xpd->dontaudit);\n\tkmem_cache_free(avc_xperms_decision_cachep, xpd_node);\n}\n"
+    },
+    "avc_xperms_free": {
+      "source": "security/selinux/avc.c",
+      "prefix": "static void avc_xperms_free(",
+      "sha256": "323a64718ddff04a0d41a3ce02f1bcc0f1931d9d8802e7035ee8b692da4d5bcb",
+      "text": "static void avc_xperms_free(struct avc_xperms_node *xp_node)\n{\n\tstruct avc_xperms_decision_node *xpd_node, *tmp;\n\n\tif (!xp_node)\n\t\treturn;\n\n\tlist_for_each_entry_safe(xpd_node, tmp, &xp_node->xpd_head, xpd_list) {\n\t\tlist_del(&xpd_node->xpd_list);\n\t\tavc_xperms_decision_free(xpd_node);\n\t}\n\tkmem_cache_free(avc_xperms_cachep, xp_node);\n}\n"
+    },
+    "avc_node_free": {
+      "source": "security/selinux/avc.c",
+      "prefix": "static void avc_node_free(",
+      "sha256": "e5aa486c99f1fb47acf9f20e6a86127e4cf0897789045aac7bc812be83fb45ed",
+      "text": "static void avc_node_free(struct rcu_head *rhead)\n{\n\tstruct avc_node *node = container_of(rhead, struct avc_node, rhead);\n\tavc_xperms_free(node->ae.xp_node);\n\tkmem_cache_free(avc_node_cachep, node);\n\tavc_cache_stats_incr(frees);\n}\n"
+    },
+    "avc_node_delete": {
+      "source": "security/selinux/avc.c",
+      "prefix": "static void avc_node_delete(",
+      "sha256": "b7ef00bfb8e5f9f7a05dddaa6fb6dd1b7db6c1ce4ac383a245ad2d1e30ee5a23",
+      "text": "static void avc_node_delete(struct avc_node *node)\n{\n\thlist_del_rcu(&node->list);\n\tcall_rcu(&node->rhead, avc_node_free);\n\tatomic_dec(&selinux_avc.avc_cache.active_nodes);\n}\n"
+    },
+    "avc_node_kill": {
+      "source": "security/selinux/avc.c",
+      "prefix": "static void avc_node_kill(",
+      "sha256": "587561b11db3c069dbb9320bb2ade823ff8a640086de5ad8cfc5b428efda8b4a",
+      "text": "static void avc_node_kill(struct avc_node *node)\n{\n\tavc_xperms_free(node->ae.xp_node);\n\tkmem_cache_free(avc_node_cachep, node);\n\tavc_cache_stats_incr(frees);\n\tatomic_dec(&selinux_avc.avc_cache.active_nodes);\n}\n"
+    },
+    "avc_node_replace": {
+      "source": "security/selinux/avc.c",
+      "prefix": "static void avc_node_replace(",
+      "sha256": "ba78f66c03e864b2e19bf3d8a1f45416c909fd0dff7b3f3b5813e35c8369b754",
+      "text": "static void avc_node_replace(struct avc_node *new, struct avc_node *old)\n{\n\thlist_replace_rcu(&old->list, &new->list);\n\tcall_rcu(&old->rhead, avc_node_free);\n\tatomic_dec(&selinux_avc.avc_cache.active_nodes);\n}\n"
+    },
+    "avc_insert": {
+      "source": "security/selinux/avc.c",
+      "prefix": "static void avc_insert(",
+      "sha256": "8a1a32db94e739bae8b6739dff0ebb59297371d2fc57caa0252edba20eba801b",
+      "text": "static void avc_insert(u32 ssid, u32 tsid, u16 tclass,\n\t\t       struct av_decision *avd, struct avc_xperms_node *xp_node)\n{\n\tstruct avc_node *pos, *node = NULL;\n\tu32 hvalue;\n\tunsigned long flag;\n\tspinlock_t *lock;\n\tstruct hlist_head *head;\n\n\tif (avc_latest_notif_update(avd->seqno, 1))\n\t\treturn;\n\n\tnode = avc_alloc_node();\n\tif (!node)\n\t\treturn;\n\n\tavc_node_populate(node, ssid, tsid, tclass, avd);\n\tif (avc_xperms_populate(node, xp_node)) {\n\t\tavc_node_kill(node);\n\t\treturn;\n\t}\n\n\thvalue = avc_hash(ssid, tsid, tclass);\n\thead = &selinux_avc.avc_cache.slots[hvalue];\n\tlock = &selinux_avc.avc_cache.slots_lock[hvalue];\n\tspin_lock_irqsave(lock, flag);\n\thlist_for_each_entry(pos, head, list) {\n\t\tif (pos->ae.ssid == ssid &&\n\t\t\tpos->ae.tsid == tsid &&\n\t\t\tpos->ae.tclass == tclass) {\n\t\t\tavc_node_replace(node, pos);\n\t\t\tgoto found;\n\t\t}\n\t}\n\thlist_add_head_rcu(&node->list, head);\nfound:\n\tspin_unlock_irqrestore(lock, flag);\n}\n"
+    },
+    "avc_xperms_decision_alloc": {
+      "source": "security/selinux/avc.c",
+      "prefix": "static struct avc_xperms_decision_node\n\t\t*avc_xperms_decision_alloc(",
+      "sha256": "8e7c16a6abd83653d84b3a31d65ead063b1c80aa96e173ff3d64d7c1cf51c3e9",
+      "text": "static struct avc_xperms_decision_node\n\t\t*avc_xperms_decision_alloc(u8 which)\n{\n\tstruct avc_xperms_decision_node *xpd_node;\n\tstruct extended_perms_decision *xpd;\n\n\txpd_node = kmem_cache_zalloc(avc_xperms_decision_cachep,\n\t\t\t\t     GFP_NOWAIT | __GFP_NOWARN);\n\tif (!xpd_node)\n\t\treturn NULL;\n\n\txpd = &xpd_node->xpd;\n\tif (which & XPERMS_ALLOWED) {\n\t\txpd->allowed = kmem_cache_zalloc(avc_xperms_data_cachep,\n\t\t\t\t\t\tGFP_NOWAIT | __GFP_NOWARN);\n\t\tif (!xpd->allowed)\n\t\t\tgoto error;\n\t}\n\tif (which & XPERMS_AUDITALLOW) {\n\t\txpd->auditallow = kmem_cache_zalloc(avc_xperms_data_cachep,\n\t\t\t\t\t\tGFP_NOWAIT | __GFP_NOWARN);\n\t\tif (!xpd->auditallow)\n\t\t\tgoto error;\n\t}\n\tif (which & XPERMS_DONTAUDIT) {\n\t\txpd->dontaudit = kmem_cache_zalloc(avc_xperms_data_cachep,\n\t\t\t\t\t\tGFP_NOWAIT | __GFP_NOWARN);\n\t\tif (!xpd->dontaudit)\n\t\t\tgoto error;\n\t}\n\treturn xpd_node;\nerror:\n\tavc_xperms_decision_free(xpd_node);\n\treturn NULL;\n}\n"
+    },
+    "avc_add_xperms_decision": {
+      "source": "security/selinux/avc.c",
+      "prefix": "static int avc_add_xperms_decision(",
+      "sha256": "dfd03c161c75d6bb71ff4a1e282fc3ebf8cb29965d9fb51af992cd76340ce915",
+      "text": "static int avc_add_xperms_decision(struct avc_node *node,\n\t\t\tstruct extended_perms_decision *src)\n{\n\tstruct avc_xperms_decision_node *dest_xpd;\n\n\tdest_xpd = avc_xperms_decision_alloc(src->used);\n\tif (!dest_xpd)\n\t\treturn -ENOMEM;\n\tavc_copy_xperms_decision(&dest_xpd->xpd, src);\n\tlist_add(&dest_xpd->xpd_list, &node->ae.xp_node->xpd_head);\n\tnode->ae.xp_node->xp.len++;\n\treturn 0;\n}\n"
+    },
+    "avc_xperms_alloc": {
+      "source": "security/selinux/avc.c",
+      "prefix": "static struct avc_xperms_node *avc_xperms_alloc(",
+      "sha256": "3414dedc3238059e0e413399921b6e929d201a37537f310bda7e1b064fd46b33",
+      "text": "static struct avc_xperms_node *avc_xperms_alloc(void)\n{\n\tstruct avc_xperms_node *xp_node;\n\n\txp_node = kmem_cache_zalloc(avc_xperms_cachep, GFP_NOWAIT | __GFP_NOWARN);\n\tif (!xp_node)\n\t\treturn xp_node;\n\tINIT_LIST_HEAD(&xp_node->xpd_head);\n\treturn xp_node;\n}\n"
+    },
+    "avc_xperms_populate": {
+      "source": "security/selinux/avc.c",
+      "prefix": "static int avc_xperms_populate(",
+      "sha256": "54484eec69b26fdabcc6f2486d07ea74d68d40a2bbbab9092c073f2ef72a31b5",
+      "text": "static int avc_xperms_populate(struct avc_node *node,\n\t\t\t\tstruct avc_xperms_node *src)\n{\n\tstruct avc_xperms_node *dest;\n\tstruct avc_xperms_decision_node *dest_xpd;\n\tstruct avc_xperms_decision_node *src_xpd;\n\n\tif (src->xp.len == 0)\n\t\treturn 0;\n\tdest = avc_xperms_alloc();\n\tif (!dest)\n\t\treturn -ENOMEM;\n\n\tmemcpy(dest->xp.drivers.p, src->xp.drivers.p, sizeof(dest->xp.drivers.p));\n\tdest->xp.len = src->xp.len;\n\n\t/* for each source xpd allocate a destination xpd and copy */\n\tlist_for_each_entry(src_xpd, &src->xpd_head, xpd_list) {\n\t\tdest_xpd = avc_xperms_decision_alloc(src_xpd->xpd.used);\n\t\tif (!dest_xpd)\n\t\t\tgoto error;\n\t\tavc_copy_xperms_decision(&dest_xpd->xpd, &src_xpd->xpd);\n\t\tlist_add(&dest_xpd->xpd_list, &dest->xpd_head);\n\t}\n\tnode->ae.xp_node = dest;\n\treturn 0;\nerror:\n\tavc_xperms_free(dest);\n\treturn -ENOMEM;\n\n}\n"
+    },
+    "avc_alloc_node": {
+      "source": "security/selinux/avc.c",
+      "prefix": "static struct avc_node *avc_alloc_node(",
+      "sha256": "d6a68ba8888815586b925367c0a03ca2af9195c99027ea7cf306d504dcfc5f15",
+      "text": "static struct avc_node *avc_alloc_node(void)\n{\n\tstruct avc_node *node;\n\n\tnode = kmem_cache_zalloc(avc_node_cachep, GFP_NOWAIT | __GFP_NOWARN);\n\tif (!node)\n\t\tgoto out;\n\n\tINIT_HLIST_NODE(&node->list);\n\tavc_cache_stats_incr(allocations);\n\n\tif (atomic_inc_return(&selinux_avc.avc_cache.active_nodes) >\n\t    selinux_avc.avc_cache_threshold)\n\t\tavc_reclaim_node();\n\nout:\n\treturn node;\n}\n"
+    },
+    "avc_update_node": {
+      "source": "security/selinux/avc.c",
+      "prefix": "static int avc_update_node(",
+      "sha256": "8136f8eaf0bc4207171a32ae5a8e32ee1e7dfa37244db3f02f0ffcdd8461005a",
+      "text": "static int avc_update_node(u32 event, u32 perms, u8 driver, u8 xperm, u32 ssid,\n\t\t\t   u32 tsid, u16 tclass, u32 seqno,\n\t\t\t   struct extended_perms_decision *xpd,\n\t\t\t   u32 flags)\n{\n\tu32 hvalue;\n\tint rc = 0;\n\tunsigned long flag;\n\tstruct avc_node *pos, *node, *orig = NULL;\n\tstruct hlist_head *head;\n\tspinlock_t *lock;\n\n\tnode = avc_alloc_node();\n\tif (!node) {\n\t\trc = -ENOMEM;\n\t\tgoto out;\n\t}\n\n\t/* Lock the target slot */\n\thvalue = avc_hash(ssid, tsid, tclass);\n\n\thead = &selinux_avc.avc_cache.slots[hvalue];\n\tlock = &selinux_avc.avc_cache.slots_lock[hvalue];\n\n\tspin_lock_irqsave(lock, flag);\n\n\thlist_for_each_entry(pos, head, list) {\n\t\tif (ssid == pos->ae.ssid &&\n\t\t    tsid == pos->ae.tsid &&\n\t\t    tclass == pos->ae.tclass &&\n\t\t    seqno == pos->ae.avd.seqno){\n\t\t\torig = pos;\n\t\t\tbreak;\n\t\t}\n\t}\n\n\tif (!orig) {\n\t\trc = -ENOENT;\n\t\tavc_node_kill(node);\n\t\tgoto out_unlock;\n\t}\n\n\t/*\n\t * Copy and replace original node.\n\t */\n\n\tavc_node_populate(node, ssid, tsid, tclass, &orig->ae.avd);\n\n\tif (orig->ae.xp_node) {\n\t\trc = avc_xperms_populate(node, orig->ae.xp_node);\n\t\tif (rc) {\n\t\t\tavc_node_kill(node);\n\t\t\tgoto out_unlock;\n\t\t}\n\t}\n\n\tswitch (event) {\n\tcase AVC_CALLBACK_GRANT:\n\t\tnode->ae.avd.allowed |= perms;\n\t\tif (node->ae.xp_node && (flags & AVC_EXTENDED_PERMS))\n\t\t\tavc_xperms_allow_perm(node->ae.xp_node, driver, xperm);\n\t\tbreak;\n\tcase AVC_CALLBACK_TRY_REVOKE:\n\tcase AVC_CALLBACK_REVOKE:\n\t\tnode->ae.avd.allowed &= ~perms;\n\t\tbreak;\n\tcase AVC_CALLBACK_AUDITALLOW_ENABLE:\n\t\tnode->ae.avd.auditallow |= perms;\n\t\tbreak;\n\tcase AVC_CALLBACK_AUDITALLOW_DISABLE:\n\t\tnode->ae.avd.auditallow &= ~perms;\n\t\tbreak;\n\tcase AVC_CALLBACK_AUDITDENY_ENABLE:\n\t\tnode->ae.avd.auditdeny |= perms;\n\t\tbreak;\n\tcase AVC_CALLBACK_AUDITDENY_DISABLE:\n\t\tnode->ae.avd.auditdeny &= ~perms;\n\t\tbreak;\n\tcase AVC_CALLBACK_ADD_XPERMS:\n\t\trc = avc_add_xperms_decision(node, xpd);\n\t\tif (rc) {\n\t\t\tavc_node_kill(node);\n\t\t\tgoto out_unlock;\n\t\t}\n\t\tbreak;\n\t}\n\tavc_node_replace(node, orig);\nout_unlock:\n\tspin_unlock_irqrestore(lock, flag);\nout:\n\treturn rc;\n}\n"
+    },
+    "avc_compute_av": {
+      "source": "security/selinux/avc.c",
+      "prefix": "static noinline void avc_compute_av(",
+      "sha256": "611db78a21d072c16843949434d459fd29d217c48f0bef1c0675c338e8c4e976",
+      "text": "static noinline void avc_compute_av(u32 ssid, u32 tsid, u16 tclass,\n\t\t\t\t    struct av_decision *avd,\n\t\t\t\t    struct avc_xperms_node *xp_node)\n{\n\tINIT_LIST_HEAD(&xp_node->xpd_head);\n\tsecurity_compute_av(ssid, tsid, tclass, avd, &xp_node->xp);\n\tavc_insert(ssid, tsid, tclass, avd, xp_node);\n}\n"
+    },
+    "avc_denied": {
+      "source": "security/selinux/avc.c",
+      "prefix": "static noinline int avc_denied(",
+      "sha256": "45aefb662590df909efcccb5a9bc5ef550d709e95704ba4b793da8697a07ddda",
+      "text": "static noinline int avc_denied(u32 ssid, u32 tsid,\n\t\t\t       u16 tclass, u32 requested,\n\t\t\t       u8 driver, u8 xperm, unsigned int flags,\n\t\t\t       struct av_decision *avd)\n{\n\tif (flags & AVC_STRICT)\n\t\treturn -EACCES;\n\n\tif (enforcing_enabled() &&\n\t    !(avd->flags & AVD_FLAGS_PERMISSIVE))\n\t\treturn -EACCES;\n\n\tavc_update_node(AVC_CALLBACK_GRANT, requested, driver,\n\t\t\txperm, ssid, tsid, tclass, avd->seqno, NULL, flags);\n\treturn 0;\n}\n"
+    },
+    "avc_perm_nonode": {
+      "source": "security/selinux/avc.c",
+      "prefix": "static noinline int avc_perm_nonode(",
+      "sha256": "8ec5ffc33effa3e478fed983ecd83ef395d031e4ec20ac55e3f3ae36b4eb0801",
+      "text": "static noinline int avc_perm_nonode(u32 ssid, u32 tsid, u16 tclass,\n\t\t\t\t    u32 requested, unsigned int flags,\n\t\t\t\t    struct av_decision *avd)\n{\n\tu32 denied;\n\tstruct avc_xperms_node xp_node;\n\n\tavc_compute_av(ssid, tsid, tclass, avd, &xp_node);\n\tdenied = requested & ~(avd->allowed);\n\tif (unlikely(denied))\n\t\treturn avc_denied(ssid, tsid, tclass, requested, 0, 0,\n\t\t\t\t  flags, avd);\n\treturn 0;\n}\n"
+    },
+    "avc_has_perm_noaudit": {
+      "source": "security/selinux/avc.c",
+      "prefix": "inline int avc_has_perm_noaudit(",
+      "sha256": "0ccb6184481ca00cf7b5f7d9cae57f22eca35f09ff595efe2f78eaabdb72cd2a",
+      "text": "inline int avc_has_perm_noaudit(u32 ssid, u32 tsid,\n\t\t\t\tu16 tclass, u32 requested,\n\t\t\t\tunsigned int flags,\n\t\t\t\tstruct av_decision *avd)\n{\n\tu32 denied;\n\tstruct avc_node *node;\n\n\tif (WARN_ON(!requested)) {\n\t\t/* Provide a deny-all, audit-all decision to the caller. */\n\t\t*avd = (struct av_decision){ .auditdeny = 0xffffffff };\n\t\treturn -EACCES;\n\t}\n\n\trcu_read_lock();\n\tnode = avc_lookup(ssid, tsid, tclass);\n\tif (unlikely(!node)) {\n\t\trcu_read_unlock();\n\t\treturn avc_perm_nonode(ssid, tsid, tclass, requested,\n\t\t\t\t       flags, avd);\n\t}\n\tdenied = requested & ~node->ae.avd.allowed;\n\tmemcpy(avd, &node->ae.avd, sizeof(*avd));\n\trcu_read_unlock();\n\n\tif (unlikely(denied))\n\t\treturn avc_denied(ssid, tsid, tclass, requested, 0, 0,\n\t\t\t\t  flags, avd);\n\treturn 0;\n}\n"
+    },
+    "avc_has_perm": {
+      "source": "security/selinux/avc.c",
+      "prefix": "int avc_has_perm(",
+      "sha256": "1700a0bd6f57f8a8872e631ceff872a6a619382d65d63597daa0f29444262fd6",
+      "text": "int avc_has_perm(u32 ssid, u32 tsid, u16 tclass,\n\t\t u32 requested, struct common_audit_data *auditdata)\n{\n\tstruct av_decision avd;\n\tint rc, rc2;\n\n\trc = avc_has_perm_noaudit(ssid, tsid, tclass, requested, 0,\n\t\t\t\t  &avd);\n\n\trc2 = avc_audit(ssid, tsid, tclass, requested, &avd, rc,\n\t\t\tauditdata);\n\tif (rc2)\n\t\treturn rc2;\n\treturn rc;\n}\n"
+    },
+    "sock_has_perm": {
+      "source": "security/selinux/hooks.c",
+      "prefix": "static int sock_has_perm(",
+      "sha256": "b87631911f25d0bb1d37444d8a73f9bebb8a18537e23fcc024b822ee31315981",
+      "text": "static int sock_has_perm(struct sock *sk, u32 perms)\n{\n\tstruct sk_security_struct *sksec = selinux_sock(sk);\n\tstruct common_audit_data ad;\n\tstruct lsm_network_audit net;\n\n\tif (sksec->sid == SECINITSID_KERNEL)\n\t\treturn 0;\n\n\t/*\n\t * Before POLICYDB_CAP_USERSPACE_INITIAL_CONTEXT, sockets that\n\t * inherited the kernel context from early boot used to be skipped\n\t * here, so preserve that behavior unless the capability is set.\n\t *\n\t * By setting the capability the policy signals that it is ready\n\t * for this quirk to be fixed. Note that sockets created by a kernel\n\t * thread or a usermode helper executed without a transition will\n\t * still be skipped in this check regardless of the policycap\n\t * setting.\n\t */\n\tif (!selinux_policycap_userspace_initial_context() &&\n\t    sksec->sid == SECINITSID_INIT)\n\t\treturn 0;\n\n\tad_net_init_from_sk(&ad, &net, sk);\n\n\treturn avc_has_perm(current_sid(), sksec->sid, sksec->sclass, perms,\n\t\t\t    &ad);\n}\n"
+    }
+  },
+  "kernelBuilt": false,
+  "actualLsmExecuted": false,
+  "completeAllocationClosure": false,
+  "productionInstallation": false
+}
