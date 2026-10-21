@@ -146,7 +146,15 @@ mod tests {
         let mut config = WasmtimeConfig {
             owned_native_threads: true,
             owned_native_stacks: true,
-            activation_runtime: Some(Default::default()),
+            activation_runtime: Some(latent_core::activation_runtime::RuntimeLimits {
+                tasks: 8,
+                executors: 2,
+                queued_work: 8,
+                waits: 16,
+                timers: 8,
+                results: 8,
+                native_owners: 8,
+            }),
             ..WasmtimeConfig::default()
         };
         let rust = CompilerEngineSettings::from_config(&config);
