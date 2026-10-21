@@ -3,7 +3,7 @@ mod hash;
 #[cfg(test)]
 mod tests;
 
-use super::{AotCompilerLimits, blob, exhausted, frame, invalid, mismatch};
+use super::{blob, exhausted, frame, invalid, mismatch, AotCompilerLimits};
 use crate::config::{CompilerEngineSettings, DispatchMode};
 use crate::{WasmtimeConfig, WasmtimeEngineProfile};
 use latent_core::PlatformError;

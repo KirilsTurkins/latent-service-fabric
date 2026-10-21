@@ -10,14 +10,14 @@ use latent_blobs::{
     provider::LocalBlobProvider,
 };
 use latent_capabilities::broker::{
-    ActivationCapabilityBroker, ActivationCapabilityRuntime, CapabilityBrokerLimits,
-    ProviderReference, ProviderRegistration,
     io::{IoLimits, IoRuntime},
     pools::{ProviderPoolLimits, ProviderPools},
+    ActivationCapabilityBroker, ActivationCapabilityRuntime, CapabilityBrokerLimits,
+    ProviderReference, ProviderRegistration,
 };
 use latent_control_store::{
-    DirectoryDeploymentRepository,
     bindings::{BindingLimits, ConfiguredBindingProvider},
+    DirectoryDeploymentRepository,
 };
 use latent_core::{PlatformError, PlatformErrorCode, ServiceId, TenantId};
 use latent_policy::capability::PolicyStore;

@@ -5,7 +5,7 @@ mod component;
 
 use std::collections::BTreeMap;
 use std::sync::atomic::Ordering;
-use std::sync::{Arc, mpsc};
+use std::sync::{mpsc, Arc};
 use std::task::{Context, Waker};
 use std::time::Duration;
 
@@ -153,24 +153,20 @@ async fn checked_fallback_without_optimization_stamp_retains_eligibility_on_reus
         .unwrap();
     assert!(Arc::ptr_eq(&runtime, &again));
     authority.state.active.store(false, Ordering::SeqCst);
-    assert!(
-        backend
-            .shared
-            .preparation_context
-            .check_runtime(&runtime)
-            .is_err()
-    );
-    assert!(
-        backend
-            .prepare_runtime_with_integrity(
-                &artifact,
-                &key,
-                ComponentIntegrity::VerifiedBySource,
-                Some(eligibility),
-                &job
-            )
-            .is_err()
-    );
+    assert!(backend
+        .shared
+        .preparation_context
+        .check_runtime(&runtime)
+        .is_err());
+    assert!(backend
+        .prepare_runtime_with_integrity(
+            &artifact,
+            &key,
+            ComponentIntegrity::VerifiedBySource,
+            Some(eligibility),
+            &job
+        )
+        .is_err());
     assert_eq!(backend.resource_snapshot().stores_created, 0);
 }
 
@@ -223,18 +219,14 @@ async fn queued_source_case(enforced: bool, lifecycle: bool) {
     let key = factory.preparation_key(artifact().descriptor.release_digest);
     let mut first = backend.prepare_ready_from_repository(repository.clone(), key.clone());
     let mut second = backend.prepare_ready_from_repository(repository.clone(), key.clone());
-    assert!(
-        first
-            .as_mut()
-            .poll(&mut Context::from_waker(Waker::noop()))
-            .is_pending()
-    );
-    assert!(
-        second
-            .as_mut()
-            .poll(&mut Context::from_waker(Waker::noop()))
-            .is_pending()
-    );
+    assert!(first
+        .as_mut()
+        .poll(&mut Context::from_waker(Waker::noop()))
+        .is_pending());
+    assert!(second
+        .as_mut()
+        .poll(&mut Context::from_waker(Waker::noop()))
+        .is_pending());
     if lifecycle {
         revoke_lifecycle(&repository, &key.release).await;
     } else {
@@ -242,18 +234,14 @@ async fn queued_source_case(enforced: bool, lifecycle: bool) {
     }
 
     release.send(()).unwrap();
-    assert!(
-        tokio::time::timeout(Duration::from_secs(5), first)
-            .await
-            .unwrap()
-            .is_err()
-    );
-    assert!(
-        tokio::time::timeout(Duration::from_secs(5), second)
-            .await
-            .unwrap()
-            .is_err()
-    );
+    assert!(tokio::time::timeout(Duration::from_secs(5), first)
+        .await
+        .unwrap()
+        .is_err());
+    assert!(tokio::time::timeout(Duration::from_secs(5), second)
+        .await
+        .unwrap()
+        .is_err());
     assert!(blocker.await.is_err());
     factory.quiesce_compiler().await.unwrap();
     let snapshot = backend.shared.preparation_observer.snapshot();
@@ -316,14 +304,12 @@ fn explicit_host_requirements_reject_before_component_compilation() {
     );
     assert_eq!(failure.message, "runtime-target-incompatible");
     assert_eq!(backend.resource_snapshot().stores_created, 0);
-    assert!(
-        !backend
-            .preparation_observer()
-            .snapshot()
-            .recent_stages
-            .iter()
-            .any(|entry| entry.stage == crate::PreparationStage::ComponentNew)
-    );
+    assert!(!backend
+        .preparation_observer()
+        .snapshot()
+        .recent_stages
+        .iter()
+        .any(|entry| entry.stage == crate::PreparationStage::ComponentNew));
 }
 
 #[test]
@@ -355,10 +341,8 @@ fn declared_host_requirements_change_metadata_identity_without_changing_componen
             .unwrap()
             .digest
     );
-    assert!(
-        factory
-            .profile()
-            .configuration
-            .contains_key("runtime-compatibility-digest")
-    );
+    assert!(factory
+        .profile()
+        .configuration
+        .contains_key("runtime-compatibility-digest"));
 }

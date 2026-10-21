@@ -1,22 +1,22 @@
 //! Immutable compiler inputs shared without retaining the runtime/pool owner.
 
 use super::preparation::{
-    ComponentIntegrity, PreparationCounters, counters, empty_component, metadata_overflow,
+    counters, empty_component, metadata_overflow, ComponentIntegrity, PreparationCounters,
 };
-use super::{PreparedRuntime, bounded_error, sha256_digest};
+use super::{bounded_error, sha256_digest, PreparedRuntime};
 use crate::bindings;
-use crate::config::{PHASE0_BACKEND_ID, WasmtimeConfig};
+use crate::config::{WasmtimeConfig, PHASE0_BACKEND_ID};
 use crate::containment::platform_error;
 use crate::host::HostState;
 use crate::preparation_observer::PreparationObserver;
-use crate::{WasmtimeEngineProfile, preparation_metadata};
+use crate::{preparation_metadata, WasmtimeEngineProfile};
 use latent_artifacts::{AdmissionAuthority, ArtifactPreparationIdentity, CapsuleArtifact};
 use latent_core::{Metadata, PlatformError, PlatformErrorCode};
 use latent_executor::{PreparationKey, PreparedComponent};
 use latent_manifest::{ExecutionBackendKind, StateModel, ThreadingModel};
 use std::sync::{Arc, Mutex};
-use wasmtime::Engine;
 use wasmtime::component::{Component, InstancePre, Linker};
+use wasmtime::Engine;
 
 pub(super) struct PreparationContext {
     pub(super) capabilities:

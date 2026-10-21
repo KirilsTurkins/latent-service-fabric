@@ -8,17 +8,17 @@ pub(super) mod worker_wait;
 #[cfg(all(test, target_os = "linux"))]
 mod tests;
 
-use std::sync::Arc;
 use std::sync::atomic::Ordering;
+use std::sync::Arc;
 
 use latent_artifacts::{ArtifactPreparationReadBounds, ArtifactRepository};
 use latent_core::{PlatformError, PlatformErrorCode};
 use latent_executor::{PreparationKey, PreparedReadiness};
 
-use super::WasmtimeBackend;
 use super::preparation::{
-    SourceAuthority, authenticated_handle, counters, retained_metadata_bytes,
+    authenticated_handle, counters, retained_metadata_bytes, SourceAuthority,
 };
+use super::WasmtimeBackend;
 use crate::compiler::{Acquisition, Admission, CoalescingKey};
 use crate::containment::platform_error;
 

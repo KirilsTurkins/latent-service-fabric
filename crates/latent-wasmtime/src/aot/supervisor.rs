@@ -4,27 +4,27 @@ mod input;
 mod process;
 pub(in crate::aot) use process::verify_readiness;
 
-pub(crate) use input::AotPreparedInput;
 #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
 pub(crate) use input::tests::Fixture as InputFixture;
+pub(crate) use input::AotPreparedInput;
 
 use super::ownership::{AotResourceLimits, AotResourceSnapshot, Budget, OutputPermit, WorkPermit};
 use super::sandbox::SandboxLimits;
 use super::{
-    AotCompatibilityKey, AotCompilerLimits, TrustedAotCompilerAuthority, TrustedAotOutput,
-    ValidatedAotProfile, error, exhausted, invalid, mismatch,
+    error, exhausted, invalid, mismatch, AotCompatibilityKey, AotCompilerLimits,
+    TrustedAotCompilerAuthority, TrustedAotOutput, ValidatedAotProfile,
 };
 use latent_artifacts::{
-    ArtifactPreparationIdentity, ArtifactPreparationReadLimits, CapsuleArtifact, LifecycleScope,
-    OwnedArtifactPreparationSource, ReleaseUseEligibility, preparation_metadata_fingerprint,
+    preparation_metadata_fingerprint, ArtifactPreparationIdentity, ArtifactPreparationReadLimits,
+    CapsuleArtifact, LifecycleScope, OwnedArtifactPreparationSource, ReleaseUseEligibility,
 };
 use latent_core::{PackageDigest, PlatformError, PlatformErrorCode, ReleaseDigest};
 use sha2::{Digest, Sha256};
 use std::{
     path::{Path, PathBuf},
     sync::{
-        Arc,
         atomic::{AtomicBool, Ordering},
+        Arc,
     },
     time::{Duration, Instant},
 };

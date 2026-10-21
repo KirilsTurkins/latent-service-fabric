@@ -1,5 +1,5 @@
-use std::sync::Barrier;
 use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Barrier;
 
 use super::*;
 
@@ -36,11 +36,9 @@ fn publish(cache: &Arc<PreparedCache<u8>>, handle: &str, value: u8) {
 #[test]
 fn c_verification_work_is_admitted_before_use_and_never_becomes_resident_source() {
     let cache = Arc::new(PreparedCache::<u8>::new(limits()).unwrap());
-    assert!(
-        cache
-            .begin_with_verification("too-large".into(), 2, 3, 11)
-            .is_err()
-    );
+    assert!(cache
+        .begin_with_verification("too-large".into(), 2, 3, 11)
+        .is_err());
     assert_eq!(cache.snapshot().preparing_source_bytes, 0);
     let PrepareAccess::Compile(reservation) =
         cache.begin_with_verification("c".into(), 2, 3, 8).unwrap()

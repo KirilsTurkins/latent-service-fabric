@@ -4,7 +4,7 @@ use std::sync::{Arc, Mutex};
 use latent_core::PlatformError;
 
 use super::state::{Job, Phase, Waiter, WaiterState};
-use super::{Acquisition, Admission, CompilerPool, PreparationWait, ReadyPin, capacity_error};
+use super::{capacity_error, Acquisition, Admission, CompilerPool, PreparationWait, ReadyPin};
 use crate::cache::PrepareAccess;
 
 impl<T: Send + Sync + 'static> CompilerPool<T> {

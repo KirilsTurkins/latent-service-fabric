@@ -1,8 +1,8 @@
 //! A single sealed fetch retained through cache lookup, compilation and loading.
 
-use super::{AotCompilationJob, CompletedAotJob, process};
+use super::{process, AotCompilationJob, CompletedAotJob};
 use crate::aot::seal::{AuthenticatedAotReceipt, AuthenticatedNative};
-use crate::aot::{AotCompatibilityKey, TrustedAotOutput, invalid, mismatch};
+use crate::aot::{invalid, mismatch, AotCompatibilityKey, TrustedAotOutput};
 use latent_artifacts::{ArtifactPreparationIdentity, CapsuleArtifact, ReleaseUseEligibility};
 use latent_core::PlatformError;
 use wasmtime::Engine;
@@ -23,10 +23,10 @@ pub(super) mod tests {
     use crate::aot::supervisor::{AotProcessLimits, IsolatedAotCompiler, Owner, State};
     use crate::aot::{TrustedAotCompilerAuthority, ValidatedAotProfile};
     use latent_artifacts::{
-        ArtifactDescriptor, ArtifactRepository, DirectoryArtifactRepository,
+        content_digest, ArtifactDescriptor, ArtifactRepository, DirectoryArtifactRepository,
         DirectoryArtifactRepositoryConfig, LifecycleScope, ReleaseActor, ReleaseActorKind,
         ReleaseLifecycleAction, ReleaseLifecycleReason, ReleaseMutationContext,
-        ReleaseOperationPrecondition, content_digest,
+        ReleaseOperationPrecondition,
     };
     use latent_core::{ArtifactReference, ContractId, Metadata, ReleaseDigest, TenantId};
     use latent_manifest::{
@@ -38,8 +38,8 @@ pub(super) mod tests {
         path::PathBuf,
         pin::Pin,
         sync::{
-            Arc,
             atomic::{AtomicBool, AtomicU64, Ordering},
+            Arc,
         },
         task::{Context, Poll, Waker},
     };

@@ -106,11 +106,9 @@ fn requirement_shapes_and_typed_spare_capacities_fail_closed() {
     for field in ["runtime", "renderer", "targetTriples", "cpuFeatures"] {
         let mut value = original.clone();
         value["compatibility"][field] = serde_json::Value::Null;
-        assert!(
-            codec
-                .decode_capsule(&serde_json::to_vec(&value).unwrap())
-                .is_err()
-        );
+        assert!(codec
+            .decode_capsule(&serde_json::to_vec(&value).unwrap())
+            .is_err());
     }
     for runtime in [
         serde_json::json!({"engine":"other","minimumVersion":"47.0.3"}),
@@ -119,11 +117,9 @@ fn requirement_shapes_and_typed_spare_capacities_fail_closed() {
     ] {
         let mut value = original.clone();
         value["compatibility"]["runtime"] = runtime;
-        assert!(
-            codec
-                .decode_capsule(&serde_json::to_vec(&value).unwrap())
-                .is_err()
-        );
+        assert!(codec
+            .decode_capsule(&serde_json::to_vec(&value).unwrap())
+            .is_err());
     }
     let mut manifest = capsule();
     manifest.runtime_requirements.target_triples = Vec::with_capacity(1024);
@@ -221,15 +217,13 @@ fn profile_digest_binds_detected_facts_and_budgets_order_independently() {
         first.digest(),
         make(&["x86_64.sse2", "x86_64.avx2"], 11).digest()
     );
-    assert!(
-        RuntimeCompatibilityProfile::new(
-            "wasmtime",
-            "47.0.3",
-            "aarch64-unknown-linux-gnu",
-            &["x86_64.sse2"],
-            1024,
-            10
-        )
-        .is_err()
-    );
+    assert!(RuntimeCompatibilityProfile::new(
+        "wasmtime",
+        "47.0.3",
+        "aarch64-unknown-linux-gnu",
+        &["x86_64.sse2"],
+        1024,
+        10
+    )
+    .is_err());
 }

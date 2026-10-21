@@ -1,7 +1,7 @@
 use latent_core::PlatformError;
 use latent_manifest::RuntimeCompatibilityProfile;
 
-use super::{WASMTIME_VERSION, WasmtimeConfig};
+use super::{WasmtimeConfig, WASMTIME_VERSION};
 
 impl WasmtimeConfig {
     /// Captures native host facts once during node/factory construction. The
@@ -75,11 +75,9 @@ mod tests {
         assert_eq!(first, config.detected_runtime_profile().unwrap());
         assert_eq!(first.target_triple(), env!("LATENT_WASMTIME_HOST_TARGET"));
         #[cfg(target_arch = "x86_64")]
-        assert!(
-            first
-                .cpu_features()
-                .iter()
-                .any(|value| value.as_ref() == "x86_64.sse2")
-        );
+        assert!(first
+            .cpu_features()
+            .iter()
+            .any(|value| value.as_ref() == "x86_64.sse2"));
     }
 }
