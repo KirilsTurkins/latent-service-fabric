@@ -90,6 +90,13 @@ class DotnetHttpMixed(unittest.TestCase):
     def test_manual_only_selector_restores_entire_previous_workflow_without_any_step_changes(self):
         from tools.ci_lane_inventory import workflow_model
         value = workflow_model((ROOT/'.github/workflows/dotnet-published-http.yml').read_text())
+        diagnostic = value['on']['workflow_dispatch']['inputs'].pop('periodic_diagnostic')
+        self.assertEqual(diagnostic['type'], 'boolean');self.assertIs(diagnostic['default'], False)
+        diagnostic_job = value['jobs'].pop('periodic-diagnostic')
+        self.assertEqual(diagnostic_job['if'], "github.event_name == 'workflow_dispatch' && inputs.periodic_diagnostic && !inputs.owner_capacity && !inputs.mixed_content && !inputs.fresh_component")
+        for old_job in ('owner-capacity', 'mixed-content', 'published-http', 'exact-component'):
+            self.assertTrue(value['jobs'][old_job]['if'].endswith(' && !inputs.periodic_diagnostic'))
+            value['jobs'][old_job]['if'] = value['jobs'][old_job]['if'].removesuffix(' && !inputs.periodic_diagnostic')
         capacity = value['on']['workflow_dispatch']['inputs'].pop('owner_capacity')
         self.assertEqual(capacity['type'], 'boolean');self.assertIs(capacity['default'], False)
         capacity_job = value['jobs'].pop('owner-capacity')
