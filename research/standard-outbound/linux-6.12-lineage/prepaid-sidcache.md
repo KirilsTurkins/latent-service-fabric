@@ -59,3 +59,17 @@ original 512 KiB extent, with the same 64 owners and less than 1 MiB combined
 bootstrap ceiling. No backing refund, reuse, physical final-free certificate,
 kernel installation, TLS qualification or production enablement follows from
 these source controls.
+
+
+The actual hosted object campaign passed at exact source
+`53b42987c43a9de7d7460befc1741cfe4a82f496` in run `39546640777`, job
+`119046190396`. All fifteen original-header Kbuild objects, 52 private
+functions, 59 source/controller controls and twenty owned commands passed.
+The [retained compiled observation](../../../docs/testing/evidence/kernel-sidcache-objects-compiled-2026-10-21.json)
+binds the authenticated archive, original 256-entry cache configuration,
+derived files, objects and bounded diagnostics. These objects remain unlinked.
+
+If validation of a private eviction victim fails after the replacement birth
+has been published, the new unlinked birth remains charged under permanent
+poison/quarantine. This fail-closed path makes no complete-retirement claim;
+normal heap fallback and reuse remain forbidden.

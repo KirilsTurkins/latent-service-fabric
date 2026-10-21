@@ -84,5 +84,15 @@ unlinked objects, adding `security/selinux/ss/sidtab.o` and requiring all forty
 prior private functions plus twelve new definitions. The original configuration
 must already have the 256-entry SID cache enabled; no cache/security setting is
 overridden. Mixed selectors refuse before archive acquisition. The same job,
-command, process, diagnostic and archive limits apply. Its real object outcome
-is pending; the supplemental serialized C reference is not Linux execution.
+command, process, diagnostic and archive limits apply.
+
+The SID mode passed at exact source
+`53b42987c43a9de7d7460befc1741cfe4a82f496`, run `39546640777`, job
+`119046190396`: all fifteen unlinked x86-64 objects, 52 defined private
+functions, 59 hosted source/controller tests and twenty clean owned commands.
+The [compiled observation](evidence/kernel-sidcache-objects-compiled-2026-10-21.json)
+binds all 61 artifact members, sixteen complete source inputs, 33 derived
+identities and unchanged security configuration. Supplemental serialized C
+controls remain separate from actual Linux execution. There is no kernel link,
+boot, active LSM/RCU execution, complete allocation closure, physical final-free
+certificate or installed provider.
