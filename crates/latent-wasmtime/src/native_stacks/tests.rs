@@ -361,3 +361,164 @@ fn copied_task_token_cannot_start_another_child_even_after_its_first_mapping_ret
     assert_eq!(budget.host_memory_bytes(), 0);
     assert_eq!(budget.outstanding_reservations(), 0);
 }
+
+#[test]
+fn async_workers_share_original_native_and_memory_limits_and_retire_after_unmap() {
+    let (budget, runtime) = owners(3, 2 * 1024 * 1024);
+    let context =
+        StackContext::with_async_workers(budget.clone(), runtime.clone(), 64 * 1024, 3).unwrap();
+    let guard = PollGuard::enter(&context);
+    let root = Creator.new_stack(64 * 1024, true).unwrap();
+    let first = Creator.new_stack(64 * 1024, true).unwrap();
+    let second = Creator.new_stack(64 * 1024, true).unwrap();
+    assert_eq!(runtime.snapshot().owners[6], 3);
+    let charged = budget.host_memory_bytes();
+    assert!(charged > 3 * 64 * 1024 + 2 * CHILD_METADATA_ESCROW as u64);
+    assert!(Creator.new_stack(64 * 1024, true).is_err());
+    assert_eq!(budget.host_memory_bytes(), charged);
+    drop(root);
+    assert_eq!(runtime.snapshot().owners[6], 2);
+    // The original root token is gone. A remaining actual stack owns this
+    // continuation during Closing; a stale saved root token cannot authorize it.
+    runtime.begin_drain();
+    let replacement = Creator.new_stack(64 * 1024, true).unwrap();
+    assert_eq!(runtime.snapshot().owners[6], 3);
+    context.finish_logical().unwrap();
+    assert!(Creator.new_stack(64 * 1024, true).is_err());
+    drop(first);
+    drop(second);
+    assert!(!context.physically_retired());
+    drop(replacement);
+    assert!(context.physically_retired());
+    assert_eq!(runtime.snapshot().phase, RuntimePhase::Retired);
+    drop(guard);
+    drop(context);
+    drop(runtime);
+    assert_eq!(budget.host_memory_bytes(), 0);
+    assert_eq!(budget.outstanding_reservations(), 0);
+}
+
+#[test]
+fn async_worker_memory_refusal_rolls_back_native_admission_before_mapping() {
+    let (budget, runtime) = owners(16, 100 * 1024);
+    let context =
+        StackContext::with_async_workers(budget.clone(), runtime.clone(), 64 * 1024, 16).unwrap();
+    let guard = PollGuard::enter(&context);
+    let root = Creator.new_stack(64 * 1024, true).unwrap();
+    let charged = budget.host_memory_bytes();
+    assert!(Creator.new_stack(64 * 1024, true).is_err());
+    assert_eq!(budget.host_memory_bytes(), charged);
+    assert_eq!(runtime.snapshot().owners[6], 1);
+    assert_eq!(context.active.load(Ordering::Acquire), 1);
+    runtime.begin_drain();
+    context.finish_logical().unwrap();
+    drop(root);
+    drop(guard);
+    assert!(context.physically_retired());
+    drop(context);
+    drop(runtime);
+    assert_eq!(budget.host_memory_bytes(), 0);
+}
+
+#[tokio::test]
+async fn actual_nested_async_import_needs_an_engine_worker_without_a_c_thread_start() {
+    for workers in [false, true] {
+        let (budget, runtime) = owners(3, 4 * 1024 * 1024);
+        let context = if workers {
+            StackContext::with_async_workers(budget.clone(), runtime.clone(), 64 * 1024, 3)
+        } else {
+            StackContext::new(budget.clone(), runtime.clone(), 64 * 1024)
+        }
+        .unwrap();
+        let mut config = wasmtime::Config::new();
+        config
+            .async_stack_size(64 * 1024)
+            .max_wasm_stack(32 * 1024)
+            .with_host_stack(Arc::new(Creator));
+        let engine = Engine::new(&config).unwrap();
+        let mut linker = Linker::<()>::new(&engine);
+        let observed = runtime.clone();
+        linker
+            .func_wrap_async("host", "wait", move |mut caller, (): ()| {
+                let observed = observed.clone();
+                Box::new(async move {
+                    let leaf = caller
+                        .get_export("leaf")
+                        .and_then(wasmtime::Extern::into_func)
+                        .expect("closed test leaf");
+                    assert_eq!(
+                        leaf.typed::<(), i32>(&caller)?
+                            .call_async(&mut caller, ())
+                            .await?,
+                        7
+                    );
+                    assert_eq!(observed.snapshot().owners[6], 2);
+                    Ok(())
+                })
+            })
+            .unwrap();
+        let code = nested_module(&engine);
+        let mut store = Store::new(&engine, ());
+        let call = async {
+            let instance = linker.instantiate_async(&mut store, &code).await?;
+            instance
+                .get_typed_func::<(), i32>(&mut store, "answer")?
+                .call_async(&mut store, ())
+                .await
+        };
+        let result = scoped(Arc::clone(&context), call).unwrap().await;
+        if workers {
+            assert_eq!(result.unwrap(), 42);
+        } else {
+            assert!(format!("{:#}", result.unwrap_err())
+                .contains("native-stack-prestart-admission-required"));
+        }
+        runtime.begin_drain();
+        context.finish_logical().unwrap();
+        drop(store);
+        context.after_store_dropped().unwrap();
+        assert!(context.physically_retired());
+        assert_eq!(runtime.snapshot().owners[6], 0);
+        // This test's host closure retains a runtime handle to observe real
+        // admission. End that separate lifetime before checking all metadata.
+        drop(linker);
+        drop(code);
+        drop(engine);
+        drop(context);
+        drop(runtime);
+        assert_eq!(budget.host_memory_bytes(), 0);
+        assert_eq!(budget.outstanding_reservations(), 0);
+    }
+}
+
+fn nested_module(engine: &Engine) -> Module {
+    use wasm_encoder::*;
+    let mut code = wasm_encoder::Module::new();
+    let mut types = TypeSection::new();
+    types.ty().function([], []);
+    types.ty().function([], [ValType::I32]);
+    code.section(&types);
+    let mut imports = ImportSection::new();
+    imports.import("host", "wait", EntityType::Function(0));
+    code.section(&imports);
+    let mut functions = FunctionSection::new();
+    functions.function(1).function(1);
+    code.section(&functions);
+    let mut exports = ExportSection::new();
+    exports
+        .export("answer", ExportKind::Func, 1)
+        .export("leaf", ExportKind::Func, 2);
+    code.section(&exports);
+    let mut parent = Function::new([]);
+    parent
+        .instruction(&Instruction::Call(0))
+        .instruction(&Instruction::I32Const(42))
+        .instruction(&Instruction::End);
+    let mut leaf = Function::new([]);
+    leaf.instruction(&Instruction::I32Const(7))
+        .instruction(&Instruction::End);
+    let mut bodies = CodeSection::new();
+    bodies.function(&parent).function(&leaf);
+    code.section(&bodies);
+    wasmtime::Module::new(engine, code.finish()).unwrap()
+}

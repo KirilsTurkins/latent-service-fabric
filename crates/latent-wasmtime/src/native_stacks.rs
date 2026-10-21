@@ -1,8 +1,8 @@
 //! Actual native stack allocation owns its original activation reservation.
 //!
-//! The first profile admits one root stack before Store fuel initialization.
-//! It deliberately rejects any additional allocation: explicit canonical thread
-//! creation stays closed until pre-start metadata and continuation admission exist.
+//! The root is admitted before Store fuel initialization. Canonical C threads
+//! require explicit pre-start admission. The ordinary async profile separately
+//! admits engine worker fibers under a live stack owner and the same ledgers.
 #![allow(unsafe_code)]
 
 use std::cell::RefCell;
@@ -20,6 +20,7 @@ use latent_core::{ActivationBudget, HostMemoryReservation, PlatformError, Platfo
 pub(crate) const CHILD_METADATA_ESCROW: usize = 8192;
 
 mod children;
+mod workers;
 
 thread_local! {
     // Only an internal Future poll installs this allocation context. It carries
@@ -29,6 +30,7 @@ thread_local! {
 
 struct Permit {
     _owner: RuntimeOwner,
+    _worker_metadata: Option<HostMemoryReservation>,
     #[cfg_attr(
         not(all(target_os = "linux", target_arch = "x86_64")),
         allow(dead_code)
@@ -41,6 +43,7 @@ pub(crate) struct StackContext {
     runtime: ActivationRuntime,
     root: Mutex<Option<Permit>>,
     children: Mutex<children::Children>,
+    workers: Option<Mutex<workers::Workers>>,
     size: usize,
     #[cfg_attr(
         not(all(target_os = "linux", target_arch = "x86_64")),
@@ -68,8 +71,30 @@ impl StackContext {
         size: usize,
         maximum_children: usize,
     ) -> Result<Arc<Self>, PlatformError> {
+        Self::create(budget, runtime, size, maximum_children, None)
+    }
+
+    pub(crate) fn with_async_workers(
+        budget: ActivationBudget,
+        runtime: ActivationRuntime,
+        size: usize,
+        maximum_native: usize,
+    ) -> Result<Arc<Self>, PlatformError> {
+        Self::create(budget, runtime, size, 0, Some(maximum_native))
+    }
+
+    fn create(
+        budget: ActivationBudget,
+        runtime: ActivationRuntime,
+        size: usize,
+        maximum_children: usize,
+        maximum_workers: Option<usize>,
+    ) -> Result<Arc<Self>, PlatformError> {
         if maximum_children > 8191 {
             return Err(failure("native-child-table-bound"));
+        }
+        if maximum_workers.is_some_and(|n| n == 0 || n > 8192) {
+            return Err(failure("native-worker-table-bound"));
         }
         let mapped = mapping_size(size)?;
         // These are the existing authoritative Native ceiling and memory ledger.
@@ -82,6 +107,8 @@ impl StackContext {
             .reserve_host_memory(
                 (std::mem::size_of::<Self>()
                     + 64
+                    + maximum_workers.unwrap_or(0)
+                        * std::mem::size_of::<latent_core::activation_runtime::RuntimeToken>()
                     + maximum_children
                         * (std::mem::size_of::<Permit>()
                             + std::mem::size_of::<latent_core::activation_runtime::RuntimeToken>()
@@ -89,15 +116,20 @@ impl StackContext {
             )
             .map_err(|e| e.to_platform_error())?;
         let children = children::Children::new(maximum_children)?;
+        let workers = maximum_workers
+            .map(|maximum| workers::Workers::new(maximum, owner.token()).map(Mutex::new))
+            .transpose()?;
         metadata.confirm();
         Ok(Arc::new(Self {
             budget,
             runtime,
             root: Mutex::new(Some(Permit {
                 _owner: owner,
+                _worker_metadata: None,
                 memory,
             })),
             children: Mutex::new(children),
+            workers,
             size,
             mapped,
             active: AtomicU32::new(0),
@@ -109,12 +141,7 @@ impl StackContext {
 
     pub(crate) fn finish_logical(&self) -> Result<(), PlatformError> {
         // A permit which never allocated a stack has no physical work to await.
-        drop(
-            self.root
-                .lock()
-                .unwrap_or_else(std::sync::PoisonError::into_inner)
-                .take(),
-        );
+        self.drop_unallocated_root();
         let owners = self.runtime.snapshot().owners;
         let retained = self
             .children
@@ -132,12 +159,19 @@ impl StackContext {
     }
 
     pub(crate) fn cancel_unstarted(&self) {
-        drop(
-            self.root
-                .lock()
-                .unwrap_or_else(std::sync::PoisonError::into_inner)
-                .take(),
-        );
+        self.drop_unallocated_root();
+    }
+
+    fn drop_unallocated_root(&self) {
+        let permit = self
+            .root
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .take();
+        if let Some(permit) = permit {
+            self.release_worker_parent(permit._owner.token());
+            drop(permit);
+        }
     }
 
     fn try_retire(&self) {
@@ -163,6 +197,7 @@ impl StackContext {
                 .unwrap_or_else(std::sync::PoisonError::into_inner)
                 .is_none()
             && !self.retirement_failed.load(Ordering::Acquire)
+            && self.worker_parents_empty()
             && self
                 .children
                 .lock()
@@ -212,7 +247,7 @@ unsafe impl wasmtime::StackCreator for Creator {
         if size != context.size {
             return Err(wasmtime::Error::msg("native-stack-size-mismatch"));
         }
-        let permit = context
+        let admitted = context
             .root
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
@@ -224,11 +259,23 @@ unsafe impl wasmtime::StackCreator for Creator {
                     .unwrap_or_else(std::sync::PoisonError::into_inner)
                     .pending
                     .take()
-            })
-            .ok_or_else(|| wasmtime::Error::msg("native-stack-prestart-admission-required"))?;
+            });
+        let permit = match admitted {
+            Some(permit) => permit,
+            None => context.admit_worker()?,
+        };
         #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
         {
-            Ok(Box::new(Mapping::new(context, permit)?))
+            let token = permit._owner.token();
+            match Mapping::new(Arc::clone(&context), permit) {
+                Ok(mapping) => Ok(Box::new(mapping)),
+                Err(error) => {
+                    if !context.retirement_failed.load(Ordering::Acquire) {
+                        context.release_worker_parent(token);
+                    }
+                    Err(error)
+                }
+            }
         }
         #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
         {
@@ -252,14 +299,21 @@ impl Mapping {
         let page = rustix::param::page_size();
         // SAFETY: nonzero bounded length, anonymous private mapping, no requested
         // fixed address. Kernel anonymous pages are initially zero filled.
-        let base = unsafe {
+        let allocation = unsafe {
             rustix::mm::mmap_anonymous(
                 std::ptr::null_mut(),
                 context.mapped,
                 ProtFlags::empty(),
                 MapFlags::PRIVATE,
             )
-        }?;
+        };
+        let base = match allocation {
+            Ok(base) => base,
+            Err(error) => {
+                context.release_worker_parent(permit._owner.token());
+                return Err(error.into());
+            }
+        };
         // Establish ownership before protection can fail, so Drop unmaps on error.
         let mut stack = Self {
             base: base as usize,
@@ -316,7 +370,10 @@ impl Drop for Mapping {
             }
             return;
         }
-        drop(self.permit.take());
+        if let Some(permit) = self.permit.take() {
+            self.context.release_worker_parent(permit._owner.token());
+            drop(permit);
+        }
         self.context.active.fetch_sub(1, Ordering::AcqRel);
         self.context.try_retire();
     }

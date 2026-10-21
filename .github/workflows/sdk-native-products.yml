@@ -148,8 +148,8 @@ jobs:
               'suite=unittest.defaultTestLoader.loadTestsFromName("tools.tests.test_sdk_native_products_reader")\n'
               'result=unittest.TextTestRunner(stream=sys.stdout,verbosity=2).run(suite)\n'
               'sys.exit(0 if result.wasSuccessful() and not result.skipped else 1)')
-          require(b'Ran 11 tests' in protocol_reader and b'OK' in protocol_reader,
-              'native-products-protocol-reader-eleven-controls')
+          require(b'Ran 12 tests' in protocol_reader and b'OK' in protocol_reader,
+              'native-products-protocol-reader-twelve-controls')
           release_deadline=commands.run('release-preparation-deadline-controls','cargo','--config',root/'.cargo/managed-guest.toml',
               'test','--locked','-p','latent-wire','--lib','management::release::preparation::tests::',
               '--','--test-threads=1')
@@ -196,7 +196,7 @@ jobs:
               'native-products-release-preparation-one-dispatch-control')
           if os.environ['C_THREAD_PROFILE_CONTROLS']=='true':
               result=commands.run('c-original-and-final-proof-controls','cargo','--config',root/'.cargo/managed-guest.toml','test','--locked','-p','latent-component-threading','--lib','--','--test-threads=1')
-              require(b'test result: ok. 55 passed; 0 failed; 0 ignored;' in result,'c-original-and-final-proof-controls-exact-count')
+              require(b'test result: ok. 60 passed; 0 failed; 0 ignored;' in result,'c-original-and-final-proof-controls-exact-count')
               result=commands.run('c-profile-1','cargo','--config',root/'.cargo/managed-guest.toml','test','--locked','-p','latent-wasmtime','--lib','cache::tests::c_verification_work_is_admitted_before_use_and_never_becomes_resident_source','--','--exact','--test-threads=1')
               require(b'test result: ok. 1 passed; 0 failed; 0 ignored;' in result,'c-profile-1-exact-count')
               result=commands.run('c-profile-2','cargo','--config',root/'.cargo/managed-guest.toml','test','--locked','-p','latent-wasmtime','--lib','component_threading::tests::c_profile_requires_prepaid_work_before_reading_proof_and_never_grants_from_data','--','--exact','--test-threads=1')
@@ -219,6 +219,11 @@ jobs:
               require(b'test result: ok. 1 passed; 0 failed; 0 ignored;' in result,'c-profile-10-exact-count')
               result=commands.run('c-profile-11','cargo','--config',root/'.cargo/managed-guest.toml','test','--locked','-p','latentd','--lib','config::tests::providers::activation_runtime::activation_owned_stack_selection_keeps_native_threads_and_provider_quotas_unchanged','--','--exact','--test-threads=1')
               require(b'test result: ok. 1 passed; 0 failed; 0 ignored;' in result,'c-profile-11-exact-count')
+          workers=commands.run('ordinary-async-worker-owner-controls','cargo','--config',root/'.cargo/managed-guest.toml',
+              'test','--locked','-p','latent-wasmtime','--lib','native_stacks::tests::',
+              '--','--test-threads=1')
+          require(b'test result: ok. 11 passed; 0 failed; 0 ignored;' in workers,
+              'native-products-ordinary-async-eleven-owner-controls')
           require(before==source_identity(root) and materials==material_identities(),
               'native-products-source-changed')
           products={};owned=output/'native-binaries';owned.mkdir(mode=0o700)

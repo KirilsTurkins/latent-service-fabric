@@ -49,16 +49,20 @@ FIXED_RESULT_SHA256 = "250215cc98e4aa89d079b1d5434de202ee864eedc4ceb5d1d8dbc6b42
 # its affine ProviderCall drops. No host pointer, resource or raw access is added.
 RANDOM_RESULT = f"{CRATE}/src/host/random/completion.rs"
 RANDOM_RESULT_SHA256 = "4490c7099ef74dd0c5cb0ae0c7a280904f71f8f97f2b5c91a752b1c681443802"
-# This third exception only allocates and unmaps guarded root stacks through
+# This third exception only allocates and unmaps guarded activation stacks through
 # Wasmtime's pinned public StackCreator interface. Original activation Native
 # and memory admission precede mapping; actual successful munmap precedes refund.
 # The ordinary profile keeps canonical thread creation closed; explicit child
-# admission retains distinct prepaid original Task tokens. Bind all source, so adding
-# another unsafe operation or changing the physical retirement fence needs review.
+# admission retains distinct prepaid original Task tokens. Ordinary async workers
+# admit their own original Native/memory owners under a live mapped parent;
+# parents retire only after successful munmap, with failed unmapping quarantined.
+# Bind all three sources; child/worker state receives no unsafe allowance.
 NATIVE_STACK = f"{CRATE}/src/native_stacks.rs"
 NATIVE_STACK_CHILD = f"{CRATE}/src/native_stacks/children.rs"
-NATIVE_STACK_CHILD_SHA256 = "18680df6415e0bc399ac9cf072c8033db60805da3ff5ccbecac3bea79b4cc0db"
-NATIVE_STACK_SHA256 = "7343c3a6feb90ef74627f54fa7bbc805e8c4e60255064efc6d1a94301af4c94b"
+NATIVE_STACK_WORKER = f"{CRATE}/src/native_stacks/workers.rs"
+NATIVE_STACK_CHILD_SHA256 = "b85f62e09afe12771c8e2634b3281743fed9817ec615ebb6fb0388905dadc840"
+NATIVE_STACK_SHA256 = "baee4644bcb751ce7bb922df61c155e1ebde96ddcf1353c205df968704123244"
+NATIVE_STACK_WORKER_SHA256 = "8b42a5a426bb83b462f44dec140118326de19487f88e628f0c210cd442cad791"
 ALLOW = '''#[allow(
     unsafe_code,
     reason = "the sole native loader accepts only a private proof over authenticated immutable bytes"
@@ -145,6 +149,10 @@ def validate(root: Path) -> list[str]:
             if hashlib.sha256(source.encode("utf-8")).hexdigest() != NATIVE_STACK_CHILD_SHA256:
                 errors.append("audited native child admission/retirement changed; review original permits and host-only post-StoreDrop release")
             # No unsafe allowance is granted to the child state machine.
+        elif relative == NATIVE_STACK_WORKER:
+            if hashlib.sha256(source.encode("utf-8")).hexdigest() != NATIVE_STACK_WORKER_SHA256:
+                errors.append("audited native worker admission/retirement changed; review live parents, original limits and post-munmap release")
+            # No unsafe allowance is granted to ordinary worker admission.
         if unsafe.search(source) or lowered.search(source):
             errors.append(f"unreviewed unsafe code or allowance in {relative}")
     return errors

@@ -1,0 +1,49 @@
+{
+  "cases": [
+    "TrackingComponent.test_changed_archive_refuses_before_creating_any_output",
+    "TrackingComponent.test_missing_signing_sources_restore_only_exact_archived_wit_layers",
+    "TrackingComponent.test_unsuccessful_or_mixed_producers_never_qualify"
+  ],
+  "guards": {
+    "TrackingComponent.test_changed_archive_refuses_before_creating_any_output": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:73fc598558f1c8b9bf98517069fd50d9423e43669fc8c61b7d8b67bd5ebff5ff",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "TrackingComponent.test_missing_signing_sources_restore_only_exact_archived_wit_layers": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:73fc598558f1c8b9bf98517069fd50d9423e43669fc8c61b7d8b67bd5ebff5ff",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "TrackingComponent.test_unsuccessful_or_mixed_producers_never_qualify": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:73fc598558f1c8b9bf98517069fd50d9423e43669fc8c61b7d8b67bd5ebff5ff",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_typescript_tracking_component.py",
+  "reviewReason": "Preserve both original cases and all old guards; add exact omitted WIT restoration and changed or undeclared source refusals.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
