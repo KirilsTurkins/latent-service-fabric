@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_sdk_explicit_fallback.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Actual76a4 prebuild KeyError: use unchanged frozen reader public API keys; preserve original fixture/budgets/eight outcomes and add actual reader-key adverse routing control; original failure retained, zero prior compiler or guest credit.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "84c880003bad17a35d04de573ad7408fff60214c244d418128ca4d1a4d4ac8bf"
+}
