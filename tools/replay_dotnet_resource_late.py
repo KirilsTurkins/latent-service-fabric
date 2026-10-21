@@ -35,7 +35,7 @@ PREFIXES = {'dotnet-resource-late', 'dotnet-resource-late-reference', 'dotnet-re
 READER = 'tools/qualify_dotnet_resource_runtime.py'
 WORKFLOW = '.github/workflows/dotnet-resource-runtime.yml'
 CHANGED = {
-    READER: {'sha256': 'sha256:246f199200581ce3b1795585c0d868bfcbdf704b9e567fa8c30f05e9fc6aea69', 'bytes': 20848},
+    READER: {'sha256': 'sha256:94e66341700f640e80f5340f27d6cccc48f4b59816b83509dad20f18d859cb3b', 'bytes': 20853},
     WORKFLOW: {'sha256': 'sha256:da03d35554ebc1bb71bd606b86b7d8cd90ac92a0b2fbd4439439098b1ede644e', 'bytes': 15595},
 }
 WIT = {'wit/deps/activation-runtime/package.wit', 'wit/deps/clock/package.wit',

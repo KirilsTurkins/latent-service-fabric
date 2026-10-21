@@ -306,5 +306,24 @@ class ManagedResourceRuntime(unittest.TestCase):
                 with self.assertRaises((WorkflowError,KeyError)):
                     qualification.build_evidence(root)
 
+    def test_fractional_remaining_setup_time_floors_within_original_deadline_before_signing(self):
+        actual_commands=qualification.Commands
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary)
+            with self.assertRaisesRegex(ValueError,'finite build command and overall deadlines required'):
+                actual_commands(root,root,{},deadline_seconds=599.75,command_seconds=120)
+            captured=[]
+            def constructor(*args,**kwargs):
+                captured.append(kwargs)
+                actual_commands(*args,**kwargs)
+                raise RuntimeError('controlled-before-signing')
+            with patch.object(qualification,'build_evidence',return_value={}), \
+                    patch.object(qualification.time,'monotonic',return_value=100.25), \
+                    patch.object(qualification,'Commands',side_effect=constructor), \
+                    self.assertRaisesRegex(RuntimeError,'controlled-before-signing'):
+                qualification.execute(root/'build',{},root/'node',late_completion=True,deadline=700)
+            self.assertEqual(captured,[{'deadline_seconds':599,'command_seconds':120}])
+            self.assertLessEqual(100.25+captured[0]['deadline_seconds'],700)
+
 
 if __name__=='__main__':unittest.main()

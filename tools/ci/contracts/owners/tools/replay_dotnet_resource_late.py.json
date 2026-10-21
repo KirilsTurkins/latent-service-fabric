@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/replay_dotnet_resource_late.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Reviewed exact df4 completed AOT package node-only continuation: same six late/fresh obligations and caps; no guest/native compilation; exact old jobs restored after only explicit default-false replay selector and job removal. Current managed-profile reader is bound to actual owner/private-IO/task-v2 receipts.",
+  "reviewReason": "Actual 798 replay failed before signing because Commands requires an integer finite setup deadline. Floor the clipped fractional remaining seconds; retain >=120 admission, command120, original deadline and all guest limits. One early real-Commands RED/GREEN control, no compiler/native change.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "e7921fdd2556fcb9e4df36e9a3c3a163b40d4df56cb41ee00262f987f0a74883"
+  "sha256": "5c22e6e696821e3e662e90cb8afd10188b1f4bfe7789f764e75f8692f7ed8945"
 }

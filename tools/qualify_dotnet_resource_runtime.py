@@ -120,7 +120,7 @@ def execute(artifact,native,output,*,late_completion=False,deadline=None):
     output=fresh(output);before=build_evidence(artifact)
     record={'schemaVersion':'latent.dotnet.resource-runtime-node.v1','status':'incomplete',
         'fullTicketQualification':False,'runtimeGrantDenials':[],'secureOperationDenials':[]}
-    remaining=600 if deadline is None else min(600,deadline-time.monotonic())
+    remaining=600 if deadline is None else int(min(600,deadline-time.monotonic()))
     require(remaining>=120,'resource-dotnet-original-node-time-reserved')
     commands=Commands(ROOT,fresh(output/'commands'),build_environment(output),deadline_seconds=remaining,command_seconds=120)
     node=peer=None;clients={};stage='normal-neutral-package-signing'
