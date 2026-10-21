@@ -332,3 +332,18 @@ The original failed job and its unexecuted ABI control are not counted as a pass
 The first reader retry39554864662 failed before controls because its extracted
 offset parameter used `usize` instead of the pinned parser's `u64`. It emitted
 no artifact. The correction changes only that parameter type.
+
+The corrected [run39555228481](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39555228481)
+at88958d7 passed all48 source cases, the existing C controls, one selected C link,
+normal component validation and the final four-module graph verifier. The real
+generated C initializer, pre-entry allocation, sync string Err result and
+post-return after detach executed successfully; six negative controls included
+the original4MiB allocation failure. All68 canonical source inputs,14 legacy
+inputs (74 distinct files), five observed tools and four pinned libc preimages
+were checked. The actual System closure contained10 functions and no TLS read;
+the allocator-TLS source control is separate. Two new registry labels were
+corrected to their actual `component::c::tests` module paths without rerunning
+unchanged code. The [compact observation](../testing/evidence/c-canonical-abi-source-2026-10-21.json)
+preserves every prior failure and the exact historical source attribution.
+No canonical child or production native runtime executed, and ordinary
+create/join, checkpointing, blocking I/O and whole #744 qualification remain open.
