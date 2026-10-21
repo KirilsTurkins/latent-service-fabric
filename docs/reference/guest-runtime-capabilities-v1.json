@@ -1,6 +1,6 @@
 {
   "schemaVersion": "latent.guest.runtime-capabilities.v1",
-  "sourceBaseline": "6c88d8b9fde61fa8b94b1bf05c20494933017f64",
+  "sourceBaseline": "e600f474416b59d2420838fa6933569a4a3077c5",
   "informationalOnly": true,
   "usedByResolutionBuildAdmission": false,
   "qualifiedStatusMeaning": "Only the exact finite original programme linked in evidence; source-bound historical receipts are not current-host rebuild claims.",
@@ -37,7 +37,7 @@
       "api": "Ordinary HTTP constructors, body parsing and explicit phase deadlines",
       "status": "qualified-finite-programme",
       "ownerIssue": 688,
-      "sourceBaseline": "6c88d8b9fde61fa8b94b1bf05c20494933017f64",
+      "sourceBaseline": "e600f474416b59d2420838fa6933569a4a3077c5",
       "sources": {
         "tools/java_http_client.py": {
           "sha256": "sha256:c05dcb7a76db093ff101f0e9f130b6c93bbc44dc3e3c771ee60565df8f3a9b17",
@@ -46,13 +46,23 @@
         "tools/java_http_phase_node.py": {
           "sha256": "sha256:3842a061ebcbbb44f06ef7092dcc5650a6f3b1071da7dd9800e99110a6173044",
           "bytes": 19679
+        },
+        "tools/java_http_mixed_node.py": {
+          "sha256": "sha256:8afa6c45fdf4026b439a9894c7c319c0902a1ca413aea01929ef258600339ab7",
+          "bytes": 14618
+        },
+        "tools/java_http_late_node.py": {
+          "sha256": "sha256:0c433afe9edf86281e4fc0d251d5d820c88036a3eb13066a207ae4d9d529ed94",
+          "bytes": 12307
         }
       },
       "evidence": [
-        "docs/testing/evidence/java-http-phase-signed-2026-10-20.json"
+        "docs/testing/evidence/java-http-phase-signed-2026-10-20.json",
+        "docs/testing/evidence/java-http-mixed-signed-2026-10-21.json",
+        "docs/testing/evidence/java-http-late-signed-2026-10-21.json"
       ],
-      "finiteBounds": "Explicit 64MiB component-input profile; original guest/provider execution budgets. Sixteen outcomes and two authority denials.",
-      "remaining": "Tenant programme remains failed before observed HTTP activity; optional extension, complete streaming/lifecycle and full client matrix remain open."
+      "finiteBounds": "Selected ordinary URLConnection/FIO profile with unchanged HttpRequest/Webb/org.json; original phase, ten mixed and four late/fresh signed outcomes plus separate zero-work denials. Historical 6fd native identity stays explicit.",
+      "remaining": "The selected #688 HTTP ticket is complete. This does not qualify all JDK networking, HTTPS, standard raw sockets or callbacks after physical Store retirement."
     },
     {
       "language": "java",
@@ -97,20 +107,34 @@
     {
       "language": "go",
       "api": "go:embed and captured dependency resources",
-      "status": "implemented-source",
+      "status": "qualified-finite-programme",
       "ownerIssue": 681,
-      "sourceBaseline": "6c88d8b9fde61fa8b94b1bf05c20494933017f64",
+      "sourceBaseline": "e600f474416b59d2420838fa6933569a4a3077c5",
       "sources": {
-        "tools/go_capsule_build.py": {
-          "sha256": "sha256:a0a8cc659e7820235840a485620d35369d71a0392df280b2b9e3ac14e96938a2",
-          "bytes": 12579
+        "tools/go_resource_runtime_build.py": {
+          "sha256": "sha256:adf234e551dc691f247645dbfbc3c991159bb816e385feb415b22f9c77ab293b",
+          "bytes": 3256
+        },
+        "tools/go_resource_runtime_fixture.py": {
+          "sha256": "sha256:176f612ae667c8c79f701bb14f4e3daa5a5a4d1d8fea3fbc60f75d95bb55f9f1",
+          "bytes": 10812
+        },
+        "tools/go_guest/runtime.py": {
+          "sha256": "sha256:62cb9d60060cae1eb5dd4398f22294235c26b36129d35a1e237c22a4e31b150b",
+          "bytes": 14030
+        },
+        "tools/go_guest/managed_idle.py": {
+          "sha256": "sha256:5310ba47d883942e95080927f8bbff9e0f1d452e8c6897f11195555bfde245fc",
+          "bytes": 1856
         }
       },
       "evidence": [
-        "docs/component-development/library-compatibility.md"
+        "docs/testing/go-resource-runtime.md",
+        "docs/testing/evidence/go-resource-runtime-signed-2026-10-21.json",
+        "docs/testing/evidence/go-resource-late-signed-2026-10-21.json"
       ],
-      "finiteBounds": "Normal captured-source and package identity boundaries; no ambient host path.",
-      "remaining": "The joined resource/runtime programme is separate from the completed HTTP ticket and must retain its own execution evidence."
+      "finiteBounds": "Explicit go-component-activation-v5: original sixteen-task profile, thirteen joined resource/runtime requests and six already-entered late/fresh requests; immutable 357e native products.",
+      "remaining": "Actual retained ordinary go:embed readers, callbacks and retirement passed. No native-thread, asynchronous flush, callback after Store retirement or general raw-network claim."
     },
     {
       "language": "go",
@@ -139,19 +163,32 @@
       "api": "Managed goroutines, waits, timers and shared-cell admission",
       "status": "qualified-finite-programme",
       "ownerIssue": 742,
-      "sourceBaseline": "6c88d8b9fde61fa8b94b1bf05c20494933017f64",
+      "sourceBaseline": "e600f474416b59d2420838fa6933569a4a3077c5",
       "sources": {
         "tools/go_guest/runtime.py": {
-          "sha256": "sha256:8b81c82303cec5a017cde5b65392e9a32acd335a0ea0b3b6a44e7eee61ddb861",
-          "bytes": 13660
+          "sha256": "sha256:62cb9d60060cae1eb5dd4398f22294235c26b36129d35a1e237c22a4e31b150b",
+          "bytes": 14030
+        },
+        "tools/go_guest/managed_idle.py": {
+          "sha256": "sha256:5310ba47d883942e95080927f8bbff9e0f1d452e8c6897f11195555bfde245fc",
+          "bytes": 1856
+        },
+        "tools/go_guest/queues.py": {
+          "sha256": "sha256:5d9c5d8a8708126873bec775152195d66670a06993894b7d07fc62999e519f85",
+          "bytes": 2998
+        },
+        "tools/go_queue_node.py": {
+          "sha256": "sha256:a51e08ee4ca3d8e1c624e38e0b54ec6059949c8647fd2373736c5b757eba0058",
+          "bytes": 3260
         }
       },
       "evidence": [
         "docs/development/go-runtime-admission.md",
-        "docs/development/go-runtime-costs.md"
+        "docs/development/go-runtime-costs.md",
+        "docs/testing/evidence/go-queued-work-signed-2026-10-21.json"
       ],
-      "finiteBounds": "Original activation limits; one total shared cell in the admission campaign, fresh tenant budgets and measured owners.",
-      "remaining": "Complete accounting and standard-net integration remain open; these are finite source-specific programmes."
+      "finiteBounds": "Earlier profile-specific admission/cost programmes remain historical. The v6 queued-work programme has twenty-five attempts, six pre-entry denials, eight prepaid maintenance queues and sixteen total tasks; ordinary queue ceilings 8/9/16 stay distinct.",
+      "remaining": "v6 holds a separate queue reservation until each goroutine is destroyed. Complete physical memory accounting, all scheduling/checkpoint combinations and ordinary standard-net integration remain open."
     },
     {
       "language": "go",
@@ -197,20 +234,38 @@
     {
       "language": "rust",
       "api": "Ordinary published HTTP clients",
-      "status": "proposed",
+      "status": "qualified-finite-programme",
       "ownerIssue": 689,
-      "sourceBaseline": "6c88d8b9fde61fa8b94b1bf05c20494933017f64",
+      "sourceBaseline": "e600f474416b59d2420838fa6933569a4a3077c5",
       "sources": {
-        "tools/rust_standard_sysroot_build.py": {
-          "sha256": "sha256:a2ad9f2540babf6b3f10530547583d0dee81f05d160ccd8d8f8106998528d6db",
-          "bytes": 10999
+        "tools/rust_wasi_http_profile.py": {
+          "sha256": "sha256:565db5636c48dea41afdfcc063b427409ddd31863f1aacc0675a0565cd75cea8",
+          "bytes": 15020
+        },
+        "tools/rust_wasi_http_compose.py": {
+          "sha256": "sha256:79f0c5f7abf3344a46051420428659de36dfec0e0bd4555fa6050b201bbaee62",
+          "bytes": 12686
+        },
+        "sdk/wasi-http-runtime/state.rs": {
+          "sha256": "sha256:c59418e9cb84aed20596210e99eef634f43ea767caa1b7627a11cb353f02d38a",
+          "bytes": 13500
+        },
+        "sdk/wasi-http-runtime/request_options.rs": {
+          "sha256": "sha256:447b0b0b3aba90d0f1df00914c08f15ef090ed7198938669ece2e5219e40a7f6",
+          "bytes": 6367
+        },
+        "tools/rust_wasi_http_runtime_node.py": {
+          "sha256": "sha256:ecc8ce33cdfcf709cd32b802b0abada8ed311cf5d0300097e86cca7c004fc25c",
+          "bytes": 73456
         }
       },
       "evidence": [
-        "docs/component-development/rust-library-authoring.md"
+        "docs/testing/rust-wasi-http-runtime.md",
+        "docs/testing/evidence/rust-wasi-http-signed-2026-10-21.json",
+        "docs/testing/evidence/rust-wasi-http-installed-2026-10-21.json"
       ],
-      "finiteBounds": "Normal captured dependencies and explicit authority only.",
-      "remaining": "Two required unchanged default clients and their supported executor/socket/runtime path are not qualified."
+      "finiteBounds": "Explicit async public contract and selected WASI HTTP runtime beneath unchanged Waki 0.5.1/Golem 0.2.0. Sixty-four attempts at 16MiB/8 outbound, eight tasks/timers, plus a separate six-attempt installed recipe; original 88b guest, 526 backend and c713 native identities remain separate.",
+      "remaining": "Individual signed memory/Task/Timer saturation is still pending. No arbitrary executor, std::thread, raw socket/TLS, current host rebuild or fully released frontend qualification is inferred."
     },
     {
       "language": "rust",
