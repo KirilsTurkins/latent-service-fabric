@@ -1501,6 +1501,13 @@
       "text": "static const struct device_type pci_dev_type = {\n\t.groups = pci_dev_attr_groups,\n};\n",
       "bytes": 84,
       "sha256": "b7b60c9aa9d8558d87f6aa895a2d22465a57e2bc46d1b0293c5482494f40c00c"
+    },
+    "skb_alloc_rx_flag": {
+      "source": "net/core/skbuff.c",
+      "prefix": "static inline int skb_alloc_rx_flag(const struct sk_buff *skb)",
+      "text": "static inline int skb_alloc_rx_flag(const struct sk_buff *skb)\n{\n\tif (skb_pfmemalloc(skb))\n\t\treturn SKB_ALLOC_RX;\n\treturn 0;\n}\n",
+      "bytes": 127,
+      "sha256": "fa421f81f89ca29d03943ce505f85bffc3dda1b398dac36da2da7e04aa21a441"
     }
   },
   "kernelBuilt": false,

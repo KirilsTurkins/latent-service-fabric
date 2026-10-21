@@ -22,7 +22,7 @@ DEFINITIONS = {'kobject_synth_uevent', 'alloc_uevent_skb', 'uevent_net_broadcast
     'skb_clone', 'skb_kfree_head', 'kfree_skbmem', 'pskb_expand_head', 'skb_copy',
     '__pskb_copy_fclone', 'skb_copy_expand', 'skb_release_data', 'of_device_uevent',
     'netlink_trim', 'netlink_broadcast_deliver', 'netlink_skb_set_owner_r',
-    'netlink_skb_destructor', 'netlink_recvmsg'}
+    'netlink_skb_destructor', 'netlink_recvmsg', 'skb_alloc_rx_flag'}
 GATES = prior.GATES + ('actualEnvPathCallbackExecuted', 'actualReceiverSecurityExecuted',
     'actualUeventSkbRetirementExecuted', 'completeUeventCallbackClosure')
 
@@ -391,8 +391,8 @@ def derive(inputs):
         '\tstruct lsf_device_registration_source);\n')
     text = replace(text, '#include "../packet-skb-private.c"\n',
         '#include "../packet-skb-private.c"\n#include "../device-uevent-skb.c"\n')
-    text = replace(text, '#include "../packet-copy-private.c"\n',
-        '#include "../packet-copy-private.c"\n#include "../device-uevent-copy.c"\n')
+    raw = section(text, 'skb_alloc_rx_flag')
+    text = replace(text, raw, raw + '\n#include "../device-uevent-copy.c"\n')
     for name in fixture()['priorProjectedSections']:
         raw = section(text, name, projected=True)
         text = replace(text, raw, skb_dispatch(raw, name))

@@ -23,7 +23,7 @@ class KernelDeviceUeventDeliverySource(unittest.TestCase):
 
     def test_exact_wholes_definitions_parent_projections_and_false_gates(self):
         parent = delivery.prior.fixture()
-        self.assertEqual((len(self.value['source']), len(self.value['sections'])), (92, 135))
+        self.assertEqual((len(self.value['source']), len(self.value['sections'])), (92, 136))
         for key in ('source', 'sections'):
             self.assertEqual({n: self.value[key][n] for n in parent[key]}, parent[key])
         self.assertEqual(set(self.value['source']) - set(parent['source']), delivery.EXTRAS)
