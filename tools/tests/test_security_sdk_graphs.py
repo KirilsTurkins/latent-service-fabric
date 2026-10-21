@@ -403,7 +403,11 @@ class SdkGraphTests(unittest.TestCase):
             "sdk/dotnet-guest/probes/http-errors/HttpErrorsProbe.csproj":
                 "766809881ad0b7ff2ce3a59edf7a24de0a86d4869b455e27d3f3e9368fde1546",
             "sdk/dotnet-guest/tools/http-errors/HttpErrors.csproj":
-                "37fcd5568bf7f56ac4f3d1a02c03d2d24c8e3efd329c2d6e0803c1aa08cf51c4",
+                "911feb03e1df0d43aa8874db9e1b79d884a98fd380449197daad63b70841c26b",
+            "sdk/dotnet-guest/tests/fixtures/managed-work-state-control/Control.csproj":
+                "5ca77794f0d73192bb1e8b2e837ff7bc508a0c2024ba98f792c5fd2546285c86",
+            "sdk/dotnet-guest/tests/fixtures/http-abort-control/Control.csproj":
+                "767f3f787903c36bf878a0e9a612e1b0828e97d91aa8cb9d142729202882d869",
         }
         for path, checksum in expected.items():
             with self.subTest(path=path):
@@ -420,7 +424,7 @@ class SdkGraphTests(unittest.TestCase):
         packages, records = inventory(root)
         helper = xml.fromstring(read_file(root, "sdk/dotnet-guest/tools/http-errors/HttpErrors.csproj"))
         self.assertEqual([item.attrib for item in helper.iter("Compile")],
-                         [{"Include": "Program.cs"}, {"Include": "TaskWait.cs"}, {"Include": "IdleTimerDriver.cs"}, {"Include": "ClosedFilesystem.cs"}])
+                         [{"Include": "Program.cs"}, {"Include": "TaskWait.cs"}, {"Include": "IdleTimerDriver.cs"}, {"Include": "ClosedFilesystem.cs"}, {"Include": "ManagedWorkRuntime.cs"}, {"Include": "ManagedWorkBindings.cs"}, {"Include": "ManagedWorkCopy.cs"}, {"Include": "ManagedWorkContext.cs"}, {"Include": "ManagedWorkHooks.cs"}, {"Include": "ManagedWorkPort.cs"}, {"Include": "ManagedHttpWork.cs"}])
         references = [item.attrib for item in helper.iter("Reference")]
         self.assertEqual(references, [{"Include": "Mono.Cecil", "HintPath": "$(LsfCecilPath)"}])
         self.assertIn(Package("NuGet", "Microsoft.NET.ILLink.Tasks", "10.0.0",
@@ -432,7 +436,9 @@ class SdkGraphTests(unittest.TestCase):
         from tools.security_common import read_file
         root = Path(__file__).resolve().parents[2]
         paths = ("sdk/dotnet-guest/probes/http-errors/HttpErrorsProbe.csproj",
-                 "sdk/dotnet-guest/tools/http-errors/HttpErrors.csproj")
+                 "sdk/dotnet-guest/tools/http-errors/HttpErrors.csproj",
+                 "sdk/dotnet-guest/tests/fixtures/managed-work-state-control/Control.csproj",
+                 "sdk/dotnet-guest/tests/fixtures/http-abort-control/Control.csproj")
         for path in paths:
             original = read_file(root, path)
             for change in (b'<PackageReference Include="Unreviewed" Version="1.0.0" />',
@@ -449,14 +455,18 @@ class SdkGraphTests(unittest.TestCase):
     def test_http_error_legacy_directory_absence_cannot_hide_partial_or_orphan_manifests(self) -> None:
         from tools.security_common import tracked_paths
         root = Path(__file__).resolve().parents[2]
-        owned = ("sdk/dotnet-guest/probes/http-errors/", "sdk/dotnet-guest/tools/http-errors/")
+        owned = ("sdk/dotnet-guest/probes/http-errors/", "sdk/dotnet-guest/tools/http-errors/",
+                 "sdk/dotnet-guest/tests/fixtures/managed-work-state-control/",
+                 "sdk/dotnet-guest/tests/fixtures/http-abort-control/")
         legacy = [path for path in tracked_paths(root) if not path.startswith(owned)]
         with patch("tools.security_inventory.tracked_paths", return_value=legacy):
             packages, records = inventory(root)
         self.assertEqual({item["path"] for item in records
                           if item["path"].startswith(owned) and item["coverage"] == "not-shipped-at-source-revision"},
                          {"sdk/dotnet-guest/probes/http-errors/HttpErrorsProbe.csproj",
-                          "sdk/dotnet-guest/tools/http-errors/HttpErrors.csproj"})
+                          "sdk/dotnet-guest/tools/http-errors/HttpErrors.csproj",
+                          "sdk/dotnet-guest/tests/fixtures/managed-work-state-control/Control.csproj",
+                          "sdk/dotnet-guest/tests/fixtures/http-abort-control/Control.csproj"})
         self.assertIn(Package("NuGet", "Microsoft.NET.ILLink.Tasks", "10.0.0",
                               "sdk/dotnet-guest/probes/smoke/packages.lock.json"), packages)
         for prefix in owned:

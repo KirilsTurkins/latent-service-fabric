@@ -21,6 +21,11 @@
             "default": false,
             "description": "Compile a new component instead of replaying the authenticated successful build",
             "type": "boolean"
+          },
+          "mixed_content": {
+            "default": false,
+            "description": "One fresh default HttpClient content and accepted-work component without a native rebuild",
+            "type": "boolean"
           }
         }
       }
@@ -32,9 +37,10 @@
   },
   "requiredJobs": [
     "exact-component",
+    "mixed-content",
     "published-http"
   ],
-  "reviewReason": "Keep original compiler commands and all20 signed plus2 denial gates; authenticate original successful7e3 component and replay after only unique progress filenames, without guest or native recompilation.",
+  "reviewReason": "Add explicit default-false mixed_content lane; all old commands and limits preserved, old jobs excluded only on the named manual selection, entire original model restored by focused control.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-published-http.yml"
 }

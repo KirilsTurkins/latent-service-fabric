@@ -59,3 +59,10 @@ world wall {
 world closed-logging { include closed; import latent:log/log@0.1.0; }
 world runtime-logging { include runtime; import latent:log/log@0.1.0; }
 world http-logging { include http; import latent:log/log@0.1.0; }
+
+// Explicit managed accepted-work primaries. Older primary worlds retain their
+// original interface graph and never export this private context bridge.
+world runtime-managed { include runtime; export latent:dotnet-managed-work/owner@0.1.0; }
+world http-managed { include http; export latent:dotnet-managed-work/owner@0.1.0; }
+world runtime-managed-logging { include runtime-managed; import latent:log/log@0.1.0; }
+world http-managed-logging { include http-managed; import latent:log/log@0.1.0; }

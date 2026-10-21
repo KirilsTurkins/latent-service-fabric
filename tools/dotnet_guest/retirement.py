@@ -60,29 +60,34 @@ def private_import(graph: dict) -> bool:
     return _private_interface(graph, 'imports')
 
 
-def composition_edges(consumer: dict, primary: dict, selected: bool) -> tuple[str, ...]:
+def composition_edges(consumer: dict, primary: dict, selected: bool, managed: bool = False) -> tuple[str, ...]:
     """Connect only the compiler-selected, exact private root retirement port.
 
     `selected` comes from prepare's authenticated binding-source projection,
     never from an application capability declaration. The primary adapter must
     supply the exact async value-free drain; additional facets cannot own it.
     """
-    if type(selected) is not bool:
+    if type(selected) is not bool or type(managed) is not bool or (managed and not selected):
         raise ValueError('dotnet-retirement-composition-profile')
     consumed = private_import(consumer)
     if consumed != selected or (selected and not _private_interface(primary, 'exports')):
         raise ValueError('dotnet-retirement-composition-profile-or-edge')
-    return (IDENTITY,) if selected else ()
+    from tools.dotnet_guest import managed_work
+    if (managed_work.private_interface(consumer, 'imports') != managed
+            or managed_work.private_interface(primary, 'exports') != managed):
+        raise ValueError('dotnet-managed-work-composition-profile-or-edge')
+    return ((IDENTITY,) if selected else ()) + ((managed_work.IDENTITY,) if managed else ())
 
 
 def prepare(compiler, source: Path, world: str, output: Path, declared: list[str]):
-    from tools.dotnet_guest import async_exports, runtime
+    from tools.dotnet_guest import async_exports, runtime, managed_work
     from tools.dotnet_guest_bindings import contract_graph, selected_world_metadata, stackful_projection
     from tools.rust_capsule_project import digest, read_file, write_json
     if runtime.ACTIVATION not in declared:
         return source, None
     original = compiler.run('retirement-public-wit', compiler.wasm, 'component', 'wit', source, '--no-docs').decode()
-    if len(original.encode()) > MAX_TEXT or 'latent:dotnet-retirement' in original:
+    if (len(original.encode()) > MAX_TEXT or 'latent:dotnet-retirement' in original
+            or 'latent:dotnet-managed-work' in original):
         raise ValueError('dotnet-retirement-reserved-source-or-size')
     original_graph = compiler.run('retirement-public-graph', compiler.wasm, 'component', 'wit', source, '--json')
     if len(original_graph) > MAX_TEXT:
@@ -91,6 +96,7 @@ def prepare(compiler, source: Path, world: str, output: Path, declared: list[str
     _projected, _graph, count = async_exports.projection(original, graph, world, stackful_projection)
     if not count:
         return source, None
+    managed = managed_work.selected(declared)
     selected = selected_world_metadata(original, graph, world)
     openings = list(re.finditer(r'(?m)^world (%?[A-Za-z][A-Za-z0-9-]*) \{', selected))
     if len(openings) != 1:
@@ -100,12 +106,19 @@ def prepare(compiler, source: Path, world: str, output: Path, declared: list[str
     public.write_text(selected, encoding='utf-8', newline='\n')
     opening = openings[0].end()
     private = output/'selected.wit'
-    private.write_text(selected[:opening]+'\n  import '+IDENTITY+';'+selected[opening:]+PRIVATE, encoding='utf-8', newline='\n')
+    addition = '\n  import ' + IDENTITY + ';'
+    if managed:
+        addition += '\n  import ' + managed_work.IDENTITY + ';'
+    private.write_text(selected[:opening]+addition+selected[opening:]+PRIVATE
+        +(managed_work.PRIVATE if managed else ''), encoding='utf-8', newline='\n')
     canonical = compiler.run('retirement-private-canonical', compiler.wasm, 'component', 'wit', private, '--no-docs').decode()
     if len(canonical.encode()) > MAX_TEXT:
         raise ValueError('dotnet-retirement-canonical-byte-limit')
     restored = output/'restored.wit'
-    restored.write_text(without_private(canonical), encoding='utf-8', newline='\n')
+    restored_text = without_private(canonical)
+    if managed:
+        restored_text = managed_work.without_private(restored_text)
+    restored.write_text(restored_text, encoding='utf-8', newline='\n')
     empty = output/'empty-core.wasm'
     empty.write_bytes(b'\0asm\x01\0\0\0')
     graphs = []
@@ -117,7 +130,8 @@ def prepare(compiler, source: Path, world: str, output: Path, declared: list[str
         if len(raw) > MAX_TEXT:
             raise ValueError('dotnet-retirement-graph-byte-limit')
         graphs.append(contract_graph(json.loads(raw)))
-    if graphs[0] != graphs[1] or not private_import(graphs[2]):
+    if (graphs[0] != graphs[1] or not private_import(graphs[2])
+            or managed_work.private_interface(graphs[2], 'imports') != managed):
         raise ValueError('dotnet-retirement-public-contract-changed')
     if (read_file(public) != selected.encode() or
             compiler.run('retirement-public-recheck', compiler.wasm, 'component', 'wit', source, '--no-docs').decode() != original):
@@ -125,5 +139,8 @@ def prepare(compiler, source: Path, world: str, output: Path, declared: list[str
     record = {'profile':PROFILE, 'privateImport':IDENTITY, 'publicGraphUnchanged':True,
         'originalDigest':digest(selected.encode()), 'selectedDigest':digest(read_file(private)),
         'authority':'none', 'qualification':'unknown', 'signedExecution':'not-run'}
+    if managed:
+        record['managedWork'] = {'profile':managed_work.PROFILE, 'privateImport':managed_work.IDENTITY,
+            'authority':'none', 'qualified':False}
     write_json(compiler.commands.output/'retirement-port.json', record)
     return private, record
