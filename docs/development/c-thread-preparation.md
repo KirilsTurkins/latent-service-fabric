@@ -201,3 +201,14 @@ The shared source guard accepts only that exact native tree, the pinned reversib
 explicit enum defaults in the existing engine test. It records the compiled and
 current identities separately; the other 3324 or 3323 native files remain byte exact.
 All seventeen signed C lifecycle outcomes still require actual guest execution.
+
+
+The c713-backed [ordinary C attempt](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39606172348)
+passed linking, full derivation, final proof binding, validation and contract
+generation, then stopped at compatibility inspection: the base V5 manifest does
+not recognize the selected native-thread internal port. No guest ran. The
+proposed selected C supplement preserves that original inspection and base ABI,
+binds the exact port WIT and full original-core proof, and requires the existing
+native verifier to reproduce the final component bytes. It is compiler evidence;
+independent runtime validation, Native authority and all seventeen guest outcomes
+remain required.

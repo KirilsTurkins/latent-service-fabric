@@ -27,7 +27,7 @@
       },
       {
         "name": "Verify source and adverse fixed-product controls",
-        "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 -B -m unittest tools.tests.test_c_thread_runtime tools.tests.test_c_thread_native_products tools.tests.test_sdk_native_products_reader tools.tests.test_c_threading_profile tools.tests.test_activation_stack_native_products tools.tests.test_activation_stack_native_source -v\n"
+        "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 -B -m unittest tools.tests.test_c_thread_runtime tools.tests.test_c_thread_native_products tools.tests.test_sdk_native_products_reader tools.tests.test_c_threading_profile tools.tests.test_activation_stack_native_products tools.tests.test_activation_stack_native_source tools.tests.test_c_threading_compatibility -v\n"
       },
       {
         "env": {
@@ -71,7 +71,7 @@
   },
   "jobId": "ordinary-c-threads",
   "kind": "job",
-  "reviewReason": "Use the independently authenticated current c713 tuple and shared closed source guard; retain all original seventeen guest cases, commands, caps and old source controls, append six new reader/source controls.",
+  "reviewReason": "Reviewed explicitly selected C runtime-profile supplement preserves original base-v5 inspection and ABI, verifies full component proof with existing native binder, and appends five source refusal controls; all original17 signed oracles/caps remain mandatory.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/c-thread-runtime.yml"
 }

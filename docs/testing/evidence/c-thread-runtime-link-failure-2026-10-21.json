@@ -123,5 +123,33 @@
     "signedGuestExecuted": false,
     "interpretation": "The finite proof reader refused nested component encoding. This failed run retained no component bytes; the historical889 generator graph is separate shape evidence, not the missing C17 graph.",
     "correction": "One nested component with aggregate structural bounds plus raw non-container preflight before any typed reader; awaiting the corrected native producer and a fresh ordinary C programme."
+  },
+  "subsequentCompatibilityFailure": {
+    "source": "baf41898e4a531f974950b0ef87d7c59e11e8540",
+    "run": 39606172348,
+    "job": 119242806544,
+    "artifact": {
+      "id": 12348354558,
+      "bytes": 1525105,
+      "sha256": "sha256:b8b5f8e2a4cf3e24ba018a8a1ba6d6f6e1f7c217f1d5ca10af93fe5366b5de11",
+      "members": 56,
+      "expandedBytes": 5749962
+    },
+    "owningOutcome": "failure",
+    "failedStage": "compatibility",
+    "actualComponentDigest": "sha256:5b55579f29409cf957d382c38e53b65771a600c7637f06a18285b4e684e877b8",
+    "baseHostAbiProfile": "lsf-host-abi-phase3-v5",
+    "actualFinding": {
+      "classification": "unknown-import",
+      "operation": "latent:runtime-native/threads@0.1.0"
+    },
+    "normalCLinkSucceeded": true,
+    "fullCoreDerivationSucceeded": true,
+    "fullComponentProofBindingSucceeded": true,
+    "wasmValidationSucceeded": true,
+    "contractGenerationSucceeded": true,
+    "signedGuestExecuted": false,
+    "runtimeQualification": false,
+    "correctionStatus": "source-only selected compiler/runtime profile supplement under review; original base inspection and ABI retained"
   }
 }

@@ -22,9 +22,11 @@
           "tools/activation_stack_native_source.py",
           "tools/c_guest/threading.py",
           "tools/c_guest/compiler.py",
+          "tools/c_guest/threading_compatibility.py",
           "sdk/c-guest/runtime/tls-keys.c",
           "docs/testing/evidence/c-thread-native-rustfmt-2026-10-21.json",
           "tools/tests/test_c_threading_profile.py",
+          "tools/tests/test_c_threading_compatibility.py",
           "tools/fixtures/c-thread-runtime/**",
           "tools/tests/test_c_thread_runtime.py",
           "tools/tests/test_c_thread_native_products.py",
@@ -43,7 +45,7 @@
   "requiredJobs": [
     "ordinary-c-threads"
   ],
-  "reviewReason": "Preserve original C owning events, job, concurrency and bounds; add exact new immutable reader and closed guard source/test paths for causal retries.",
+  "reviewReason": "Reviewed explicitly selected C runtime-profile supplement preserves original base-v5 inspection and ABI, verifies full component proof with existing native binder, and appends five source refusal controls; all original17 signed oracles/caps remain mandatory.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/c-thread-runtime.yml"
 }

@@ -16,6 +16,7 @@ from tools import c_capsule_build as compiler
 from tools import c_thread_runtime_fixture as fixture, c_thread_runtime_node as node
 from tools.activation_stack_native_source import assert_current
 from tools.c_guest.threading import IMPORTS, PROFILE, RECIPE as THREAD_RECIPE
+from tools.c_guest.threading_compatibility import RECIPE as COMPATIBILITY_RECIPE
 from tools.phase2_operator_process import require
 from tools.phase3_resource_identity import file_identity, source_identity
 from tools.qualify_sdk_scratch import package_identity
@@ -52,7 +53,7 @@ MATERIALS = (
 
 
 def materials():
-    names = tuple(dict.fromkeys((*compiler.RECIPE, *THREAD_RECIPE, *MATERIALS)))
+    names = tuple(dict.fromkeys((*compiler.RECIPE, *THREAD_RECIPE, *COMPATIBILITY_RECIPE, *MATERIALS)))
     require(len(names) <= 256, 'c-thread-helper-count-bound')
     result = {name: file_identity(ROOT / name, 4 * 1024**2) for name in names}
     require(sum(row['bytes'] for row in result.values()) <= 16 * 1024**2,

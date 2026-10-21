@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_c_thread_runtime.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Reviewed c713 native acquisition and exact shared source projection replace only the frozen product reader; preserve every original C17 runtime oracle, command, limit and source test, adding the six exact reader/source controls.",
+  "reviewReason": "Reviewed explicitly selected C runtime-profile supplement preserves original base-v5 inspection and ABI, verifies full component proof with existing native binder, and appends five source refusal controls; all original17 signed oracles/caps remain mandatory.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "10a9188fc6502334677b147f42c4c74997957aba7ce454faf883420ca5c9cefb"
+  "sha256": "66dcacf41423d65a12cec4d738431df5a82164b6c116183e62461c295bc06813"
 }

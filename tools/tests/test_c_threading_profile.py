@@ -78,11 +78,12 @@ class CThreadingProfile(unittest.TestCase):
 
     def test_installed_recipe_ships_optional_helper_and_exact_runtime_without_default_selection(self):
         from tools import dev_tool_distribution
+        from tools.c_guest import threading_compatibility
         with tempfile.TemporaryDirectory() as root:
             payload = Path(root) / 'payload'
             dev_tool_distribution.recipe(payload, 'c')
             recipe = payload / 'recipe'
-            for name in (*threading.RECIPE, *('sdk/c-guest/runtime/' + name for name in
+            for name in (*threading.RECIPE, *threading_compatibility.RECIPE, *('sdk/c-guest/runtime/' + name for name in
                          ('thread-abi.h', 'thread-abi.json', 'threads.c', 'tls-keys.c'))):
                 self.assertEqual((recipe / name).read_bytes(), (c_capsule_project.ROOT / name).read_bytes())
             with patch.object(c_capsule_project, 'ROOT', recipe):

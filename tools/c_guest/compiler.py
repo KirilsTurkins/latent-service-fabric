@@ -282,6 +282,11 @@ class Compiler:
             if threading.public_export(final) != public:
                 raise ValueError('c-threading-final-public-contract-changed')
             lock['threadingProfile'] = threading_profile
+            self.threading_result = {'originalCore': core,
+                'derivedCore': destination / 'c-threading/derived.wasm',
+                'unboundComponent': destination / 'component.wasm',
+                'derivation': destination / 'c-threading/derivation.json',
+                'publicExport': public, 'finalComponent': component}
         self.check_unchanged()
         return component, lock
 
