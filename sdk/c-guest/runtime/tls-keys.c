@@ -1,4 +1,5 @@
-/* Explicit compiler-context PAL; no maintained builder selects this file yet. */
+/* Explicit selected compiler-context PAL. Application calls and these definitions
+ * share compiler-owned private symbols when linked with the original libc. */
 #include <errno.h>
 #include <limits.h>
 #include <pthread.h>

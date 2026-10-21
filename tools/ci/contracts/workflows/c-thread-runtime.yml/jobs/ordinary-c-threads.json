@@ -27,7 +27,7 @@
       },
       {
         "name": "Verify source and adverse fixed-product controls",
-        "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 -B -m unittest tools.tests.test_c_thread_runtime tools.tests.test_c_thread_native_products tools.tests.test_sdk_native_products_reader -v\n"
+        "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 -B -m unittest tools.tests.test_c_thread_runtime tools.tests.test_c_thread_native_products tools.tests.test_sdk_native_products_reader tools.tests.test_c_threading_profile -v\n"
       },
       {
         "env": {
@@ -71,7 +71,7 @@
   },
   "jobId": "ordinary-c-threads",
   "kind": "job",
-  "reviewReason": "Reviewed bounded C17 owning lane: one captured ordinary guest and immutable SDK5 reuse; original budgets, physical/audit barriers and retirement oracles retained.",
+  "reviewReason": "Reviewed actual C17 duplicate-TLS link failure and exact pinned formatter output: closed8 source symbol mapping, historical native identity with closed34-file formatting comparison; all old cases/guards/commands/caps retained.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/c-thread-runtime.yml"
 }

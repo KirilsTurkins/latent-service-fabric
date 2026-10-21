@@ -23,8 +23,10 @@ class CThreadRuntime(unittest.TestCase):
         with patch.object(qualification, 'git_source_identity', return_value=source), \
                 patch.object(qualification, 'source_identity', return_value=source):
             before, actual, native = qualification.native_evidence(products, Path('prepared'))
-        self.assertEqual((before, actual, native), (products.verify_prepared.return_value,
-                         source, products.native_products.return_value))
+        self.assertEqual((before, actual['compiledNativeSource'], actual['consumerNativeSource'], native),
+                         (products.verify_prepared.return_value, source, source,
+                          products.native_products.return_value))
+        self.assertIs(actual['compiledSourceByteExact'], True)
         products.native_products.reset_mock()
         with patch.object(qualification, 'git_source_identity', return_value=source), \
                 patch.object(qualification, 'source_identity', return_value={**source, 'sha256': 'foreign'}), \
@@ -35,6 +37,26 @@ class CThreadRuntime(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, '^original receipt drift$'):
             qualification.native_evidence(products, Path('prepared'))
         products.native_products.assert_not_called()
+
+    def test_formatter_source_exception_is_exact_full_tree_and_digest_bound(self):
+        from unittest.mock import patch
+        from tools import c_thread_native_source as native_source
+        from tools.rust_capsule_project import ROOT
+        raw = (ROOT / native_source.REVIEW).read_bytes()
+        proof = json.loads(raw)
+        result = native_source.compatibility(proof['compiledNativeSource'], proof['formattedConsumerSource'])
+        self.assertIs(result['compiledSourceByteExact'], False)
+        self.assertEqual(len(result['reviewedFormatting']), 34)
+        self.assertEqual(result['otherNativeFilesByteExact'], 3290)
+        for field in ('sha256', 'bytes', 'files', 'scope', 'hermetic', 'implicitCompilerInputs'):
+            bad = dict(proof['formattedConsumerSource'], **{field: 'foreign'})
+            with self.subTest(field=field), self.assertRaisesRegex(RuntimeError, 'exact-reviewed-formatting'):
+                native_source.compatibility(proof['compiledNativeSource'], bad)
+        with self.assertRaisesRegex(RuntimeError, 'exact-reviewed-formatting'):
+            native_source.compatibility(proof['formattedConsumerSource'], proof['compiledNativeSource'])
+        with patch.object(native_source, 'read_file', return_value=raw + b'\n'), \
+                self.assertRaisesRegex(RuntimeError, 'format-review-identity'):
+            native_source.compatibility(proof['compiledNativeSource'], proof['formattedConsumerSource'])
 
     def test_fresh_ordinary_project_is_selected_locked_and_uses_standard_calls(self):
         with tempfile.TemporaryDirectory() as directory:

@@ -14,6 +14,7 @@ if __package__ in {None, ''}:
 
 from tools import c_capsule_build as compiler
 from tools import c_thread_runtime_fixture as fixture, c_thread_runtime_node as node
+from tools.c_thread_native_source import compatibility, REVIEW as FORMAT_REVIEW
 from tools.c_guest.threading import IMPORTS, PROFILE, RECIPE as THREAD_RECIPE
 from tools.java_replay_materials import git_source_identity
 from tools.phase2_operator_process import require
@@ -27,6 +28,7 @@ from tools.rust_capsule_project import ROOT, fresh, inventory, read_file, read_j
 MATERIALS = (
     'tools/qualify_c_thread_runtime.py', 'tools/c_thread_runtime_fixture.py',
     'tools/c_thread_runtime_node.py', 'tools/c_thread_native_products.py',
+    'tools/c_thread_native_source.py', FORMAT_REVIEW,
     'tools/sdk_native_products_reader.py', 'tools/java_replay_materials.py',
     'tools/phase2_operator_canary.py', 'tools/phase2_operator_process.py',
     'tools/phase2_operator_scenario.py', 'tools/phase3_management_scenario.py',
@@ -108,8 +110,8 @@ def build_evidence(artifact, source):
 def native_evidence(products, prepared):
     before = products.verify_prepared(prepared)
     compiled_source = git_source_identity(products.SOURCE)
-    require(source_identity(ROOT) == compiled_source, 'c-thread-current-native-source-must-match-producer')
-    return before, compiled_source, products.native_products(prepared)
+    proof = compatibility(compiled_source, source_identity(ROOT))
+    return before, proof, products.native_products(prepared)
 
 
 def qualify(prepared, output):
@@ -126,9 +128,10 @@ def qualify(prepared, output):
               'nativeProductsRebuilt': False, 'otherLanguageComponentsRebuilt': False}
     started = time.monotonic()
     try:
-        before, compiled_source, native = native_evidence(products, prepared)
+        before, source_proof, native = native_evidence(products, prepared)
         record.update(producer={'source': products.SOURCE, 'receipt': before},
-                      consumerNativeSource=compiled_source, materials=materials())
+                      consumerNativeSource=source_proof['consumerNativeSource'],
+                      nativeSourceCompatibility=source_proof, materials=materials())
         stage = 'normal-selected-c-application'
         application = fixture.prepare(output / 'application')
         source = inventory(snapshot(application))
@@ -144,7 +147,7 @@ def qualify(prepared, output):
                 'c-thread-all-seventeen-original-outcomes')
         stage = 'unchanged-source-tools-products-and-original-build'
         require(time.monotonic() - started <= 1100
-                and source_identity(ROOT) == compiled_source
+                and source_identity(ROOT) == source_proof['consumerNativeSource']
                 and products.verify_prepared(prepared) == before
                 and materials() == record['materials']
                 and inventory(snapshot(application)) == source

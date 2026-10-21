@@ -5,6 +5,7 @@
     "CThreadRuntime.test_cleanup_preserves_original_failure_but_refuses_failed_success_cleanup",
     "CThreadRuntime.test_current_native_source_equality_is_required_before_any_product_use",
     "CThreadRuntime.test_failed_invocation_completion_cannot_be_hidden_by_failed_close",
+    "CThreadRuntime.test_formatter_source_exception_is_exact_full_tree_and_digest_bound",
     "CThreadRuntime.test_fresh_ordinary_project_is_selected_locked_and_uses_standard_calls",
     "CThreadRuntime.test_real_child_owner_observation_is_exact_and_cannot_be_relabelled_pending"
   ],
@@ -69,6 +70,18 @@
       ],
       "skipSites": []
     },
+    "CThreadRuntime.test_formatter_source_exception_is_exact_full_tree_and_digest_bound": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2be903e58e8891d808bbcbead97fda3654ac15cc0d2337b999ed19c3bd322625",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "CThreadRuntime.test_fresh_ordinary_project_is_selected_locked_and_uses_standard_calls": {
       "bases": [
         "unittest.TestCase"
@@ -96,6 +109,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_c_thread_runtime.py",
-  "reviewReason": "Append strict current-native equality and finite33/64-stage reader controls; all original cases, guards, exact stage order and1320-second aggregate retained.",
+  "reviewReason": "Reviewed actual C17 duplicate-TLS link failure and exact pinned formatter output: closed8 source symbol mapping, historical native identity with closed34-file formatting comparison; all old cases/guards/commands/caps retained.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

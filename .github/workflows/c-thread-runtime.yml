@@ -9,6 +9,12 @@ on:
       - 'tools/c_thread_runtime_fixture.py'
       - 'tools/c_thread_runtime_node.py'
       - 'tools/c_thread_native_products.py'
+      - 'tools/c_thread_native_source.py'
+      - 'tools/c_guest/threading.py'
+      - 'tools/c_guest/compiler.py'
+      - 'sdk/c-guest/runtime/tls-keys.c'
+      - 'docs/testing/evidence/c-thread-native-rustfmt-2026-10-21.json'
+      - 'tools/tests/test_c_threading_profile.py'
       - 'tools/fixtures/c-thread-runtime/**'
       - 'tools/tests/test_c_thread_runtime.py'
       - 'tools/tests/test_c_thread_native_products.py'
@@ -42,7 +48,7 @@ jobs:
       - name: Verify source and adverse fixed-product controls
         run: |
           python3 -m pip install --requirement tools/requirements.lock
-          python3 -B -m unittest tools.tests.test_c_thread_runtime tools.tests.test_c_thread_native_products tools.tests.test_sdk_native_products_reader -v
+          python3 -B -m unittest tools.tests.test_c_thread_runtime tools.tests.test_c_thread_native_products tools.tests.test_sdk_native_products_reader tools.tests.test_c_threading_profile -v
       - name: Authenticate the original five native products without rebuilding them
         env:
           GH_TOKEN: ${{ github.token }}

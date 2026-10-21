@@ -171,3 +171,23 @@ root wrapper plus a malformed negative fixture. The corrected byte operations
 retain offset 80, typed logical token retirement and all original quotas; the
 negative fixture still requires refusal before allocating opcode decoding.
 None of these failed runs supplies passing qualification credit.
+
+
+The first ordinary C owning [run 39586182661](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39586182661)
+failed during linking: the original libc and the selected source PAL both defined
+`pthread_setspecific`. No component or guest result was produced. The selected
+compiler now gives exactly the four pthread key and four C11 TSS entry points a
+private source-PAL namespace across ordinary declarations, application calls and
+PAL definitions. Its generation-checked keys stay in the charged TLS context;
+libc retains its original internal keys and TLS `errno`. Static archives remain
+unsupported by this first profile. No multiple-definition allowance is used.
+[The retained failure and preprocessing control](../testing/evidence/c-thread-runtime-link-failure-2026-10-21.json)
+provide source evidence only; all seventeen runtime cases remain required.
+
+A separate actual development formatter failure is repaired with the pinned
+Rust 1.97.1 formatter and the repository configuration. The
+[closed formatting comparison](../testing/evidence/c-thread-native-rustfmt-2026-10-21.json)
+binds the exact original and formatted hashes of 34 native files, with the other
+3290 native files unchanged. The consumer admits only the two complete frozen
+source inventories; f0 remains the historical compiled source. This comparison
+does not claim that the formatted tree was compiled or rebuild the native products.

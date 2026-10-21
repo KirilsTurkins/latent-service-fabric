@@ -67,7 +67,7 @@ class Compiler:
             self.paths['c-threading-transformer'] = threading_tool.resolve(strict=True)
             self.materials['c-threading-transformer'] = file_identity(threading_tool, 'c-threading-transformer')
             self.threading_inputs = threading.libc_inputs(self.paths['zig'])
-            self.materials.update({name: file_identity(path, name, 8192) for name, path in self.threading_inputs.items()})
+            self.materials.update({name: file_identity(path, name, 32768) for name, path in self.threading_inputs.items()})
 
     def run(self, tool: str, *arguments: str) -> str:
         remaining = self.deadline - time.monotonic()
@@ -95,7 +95,7 @@ class Compiler:
             if threading.libc_inputs(self.paths['zig']) != self.threading_inputs:
                 raise ValueError('c-threading-libc-input-changed')
         for name, path in self.threading_inputs.items():
-            if file_identity(path, name, 8192) != self.materials[name]:
+            if file_identity(path, name, 32768) != self.materials[name]:
                 raise ValueError('c-threading-libc-input-changed')
         for name, path in self.paths.items():
             if file_identity(path, name) != self.materials[name]:
@@ -200,7 +200,7 @@ class Compiler:
             runtime = self.sdk / 'runtime'
             sources = [*sources, runtime / 'threads.c', runtime / 'tls-keys.c']
             include_directories = (*include_directories, runtime)
-            defines = (*defines, 'LSF_C_LINKED_LIBC=1')
+            defines = threading.linked_defines(defines)
         self.validate_static_libraries(static_libraries, destination)
         core, component = destination / "core.wasm", destination / "component.wasm"
         command = ["cc", "-std=" + language_standard, "-target", "wasm32-wasi", "-O2",

@@ -55,6 +55,27 @@ class CThreadingProfile(unittest.TestCase):
                 with self.subTest(path=path), self.assertRaisesRegex(ValueError, 'vendored SDK changed'):
                     c_capsule_project.validate(changed)
 
+    def test_linked_tls_symbols_keep_libc_keys_and_encoded_source_keys_separate(self):
+        expected = ('pthread_key_create', 'pthread_key_delete', 'pthread_getspecific',
+                    'pthread_setspecific', 'tss_create', 'tss_delete', 'tss_get', 'tss_set')
+        self.assertEqual(threading.TLS_SYMBOLS, expected)
+        self.assertEqual(threading.linked_defines(('OWNED=7',)),
+                         ('OWNED=7', 'LSF_C_LINKED_LIBC=1',
+                          *(name + '=__lsf_c_' + name for name in expected)))
+        for name in ('LSF_C_LINKED_LIBC', *expected,
+                     *('__lsf_c_' + item for item in expected)):
+            with self.subTest(name=name), self.assertRaisesRegex(ValueError, 'compiler-owned-tls-symbol'):
+                threading.linked_defines((name + '=foreign',))
+        self.assertNotIn('errno', expected)
+        from tools.c_guest.compiler import Compiler
+        import inspect
+        selected = inspect.getsource(Compiler.compile)
+        self.assertIn('defines = threading.linked_defines(defines)', selected)
+        self.assertIn('preprocessor.extend("-D" + define for define in defines)', selected)
+        self.assertIn('command.extend("-D" + define for define in defines)', selected)
+        self.assertIn('or static_libraries', selected)
+        self.assertNotIn('--allow-multiple-definition', selected)
+
     def test_installed_recipe_ships_optional_helper_and_exact_runtime_without_default_selection(self):
         from tools import dev_tool_distribution
         with tempfile.TemporaryDirectory() as root:
