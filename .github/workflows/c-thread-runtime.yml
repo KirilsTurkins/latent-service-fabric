@@ -1,0 +1,78 @@
+name: Ordinary C owned thread lifecycle
+
+on:
+  push:
+    branches: ['feat/c-thread-runtime-consumer-20261021']
+    paths:
+      - '.github/workflows/c-thread-runtime.yml'
+      - 'tools/qualify_c_thread_runtime.py'
+      - 'tools/c_thread_runtime_fixture.py'
+      - 'tools/c_thread_runtime_node.py'
+      - 'tools/c_thread_native_products.py'
+      - 'tools/fixtures/c-thread-runtime/**'
+      - 'tools/tests/test_c_thread_runtime.py'
+      - 'tools/tests/test_c_thread_native_products.py'
+      - 'tools/tests/test_sdk_native_products_reader.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: c-thread-runtime-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  ordinary-c-threads:
+    name: One captured C component and seventeen signed lifecycle cases
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - name: Fetch only the exact frozen native source object
+        run: git fetch --no-tags --depth=1 origin f0d36b38d39a837cef7f6242b4b4a99aa36b8b75
+      - name: Verify source and adverse fixed-product controls
+        run: |
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 -B -m unittest tools.tests.test_c_thread_runtime tools.tests.test_c_thread_native_products tools.tests.test_sdk_native_products_reader -v
+      - name: Authenticate the original five native products without rebuilding them
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/c_thread_native_products.py --output "$RUNNER_TEMP/c-thread-native"
+      - uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2
+        with:
+          version: '0.16.0'
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - name: Install only normal captured C compiler prerequisites
+        run: |
+          python3 -B tools/install_guest_bindgen.py "$RUNNER_TEMP/c-thread-bindgen"
+          echo "$RUNNER_TEMP/c-thread-bindgen" >> "$GITHUB_PATH"
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Compile one ordinary C project and execute all seventeen original cases
+        run: python3 -B tools/qualify_c_thread_runtime.py --prepared "$RUNNER_TEMP/c-thread-native" --output "$RUNNER_TEMP/c-thread-runtime"
+      - name: Retain bounded public build, invocation and cleanup evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: c-thread-runtime-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/c-thread-runtime/*.json
+            ${{ runner.temp }}/c-thread-runtime/build/*.json
+            ${{ runner.temp }}/c-thread-runtime/build/component.wasm
+            ${{ runner.temp }}/c-thread-runtime/build/logs/*.txt
+            ${{ runner.temp }}/c-thread-runtime/node/*.json
+            ${{ runner.temp }}/c-thread-runtime/node/commands/logs/*.txt
+            ${{ runner.temp }}/c-thread-runtime/node/commands/*.json
+          retention-days: 7

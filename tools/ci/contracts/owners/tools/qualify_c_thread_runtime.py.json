@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_c_thread_runtime.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Reviewed bounded C17 owning lane: one captured ordinary guest and immutable SDK5 reuse; original budgets, physical/audit barriers and retirement oracles retained.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "67718005b4dc0c046fd35f29f7ee263f1466df5cfbdb7a7f9c55f3170df33df0"
+}

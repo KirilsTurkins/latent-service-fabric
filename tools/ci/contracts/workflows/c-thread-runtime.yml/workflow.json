@@ -1,0 +1,39 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "c-thread-runtime-${{ github.ref }}"
+    },
+    "name": "Ordinary C owned thread lifecycle",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/c-thread-runtime-consumer-20261021"
+        ],
+        "paths": [
+          ".github/workflows/c-thread-runtime.yml",
+          "tools/qualify_c_thread_runtime.py",
+          "tools/c_thread_runtime_fixture.py",
+          "tools/c_thread_runtime_node.py",
+          "tools/c_thread_native_products.py",
+          "tools/fixtures/c-thread-runtime/**",
+          "tools/tests/test_c_thread_runtime.py",
+          "tools/tests/test_c_thread_native_products.py",
+          "tools/tests/test_sdk_native_products_reader.py"
+        ]
+      },
+      "workflow_dispatch": null
+    },
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "ordinary-c-threads"
+  ],
+  "reviewReason": "Reviewed bounded C17 owning lane: one captured ordinary guest and immutable SDK5 reuse; original budgets, physical/audit barriers and retirement oracles retained.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/c-thread-runtime.yml"
+}

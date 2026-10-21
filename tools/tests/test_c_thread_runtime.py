@@ -13,6 +13,29 @@ from tools.rust_capsule_project import snapshot
 
 
 class CThreadRuntime(unittest.TestCase):
+    def test_current_native_source_equality_is_required_before_any_product_use(self):
+        from unittest.mock import Mock, patch
+        from tools import qualify_c_thread_runtime as qualification
+        products = Mock(SOURCE='a' * 40)
+        products.verify_prepared.return_value = {'verified': 'frozen receipt'}
+        products.native_products.return_value = {'latentd': Path('unexecuted')}
+        source = {'sha256': 'source', 'files': 1, 'bytes': 1}
+        with patch.object(qualification, 'git_source_identity', return_value=source), \
+                patch.object(qualification, 'source_identity', return_value=source):
+            before, actual, native = qualification.native_evidence(products, Path('prepared'))
+        self.assertEqual((before, actual, native), (products.verify_prepared.return_value,
+                         source, products.native_products.return_value))
+        products.native_products.reset_mock()
+        with patch.object(qualification, 'git_source_identity', return_value=source), \
+                patch.object(qualification, 'source_identity', return_value={**source, 'sha256': 'foreign'}), \
+                self.assertRaisesRegex(RuntimeError, 'current-native-source-must-match-producer'):
+            qualification.native_evidence(products, Path('prepared'))
+        products.native_products.assert_not_called()
+        products.verify_prepared.side_effect = RuntimeError('original receipt drift')
+        with self.assertRaisesRegex(RuntimeError, '^original receipt drift$'):
+            qualification.native_evidence(products, Path('prepared'))
+        products.native_products.assert_not_called()
+
     def test_fresh_ordinary_project_is_selected_locked_and_uses_standard_calls(self):
         with tempfile.TemporaryDirectory() as directory:
             project = fixture.prepare(Path(directory) / 'ordinary')

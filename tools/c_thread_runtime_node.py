@@ -19,11 +19,10 @@ from tools.phase2_operator_process import stopped_record
 from tools.phase2_operator_scenario import connect, stop
 from tools.phase3_resource_identity import file_identity
 from tools.phase3_resource_os import Probe
-from tools.phase3_resource_profile import ACTIVE_COUNTERS
+from tools.phase3_resource_profile import ACTIVE_COUNTERS, integer
 from tools.build_observation import build_environment
 from tools.build_process_signals import owned_cancellation
 from tools.qualify_resource_tenants import stop_observation_peer
-from tools.resource_runtime_node import LIVE, integer
 from tools.rust_capsule_build import Commands
 from tools.rust_capsule_node import (RecordingClient, configure as configure_base, delete_all,
     deploy, sample, selected_revision, start_call, MEDIA)
@@ -32,6 +31,8 @@ from tools.sdk_provider_scenario import start_provider
 
 ACTIVATION, NATIVE = IMPORTS
 SERVICE = 'c-thread-runtime'
+LIVE = ('execution-cell-leases', 'guest-invocations', 'guest-stores',
+        'guest-host-states', 'guest-component-instances')
 PROVIDERS = {
     ACTIVATION: ('c-activation', 'activation-owned-v1',
                  ['register', 'park', 'wake', 'settle', 'observe'], 'clock'),
@@ -249,10 +250,12 @@ def wait_child(client, process, probe, target, output):
 
 def invoke(client, probe, target, output, mode, activation, *, cancel=False):
     revision = selected_revision(client, target)
-    # Clip the deadline request below the unchanged five-second guest ceiling,
-    # so its actual terminal receipt can arrive within the original CLI wait.
+    # This final case runs after the ordinary hot-cache controls. Request a
+    # shorter deadline so it can precede fuel exhaustion in the unchanged1B
+    # CPU-spin envelope; the actual terminal cause and positive child/physical
+    # barrier remain mandatory. This makes no fairness or timing guarantee.
     process = start_call(client, target, SERVICE, 'greet', [mode], activation,
-                         wall=3000 if mode == 'deadline' else None)
+                         wall=250 if mode == 'deadline' else None)
     primary = False
     try:
         witness = None
