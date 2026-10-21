@@ -117,6 +117,7 @@ impl<T> PreparedCache<T> {
         self.lock().get(handle)
     }
 
+    #[cfg(test)]
     pub(crate) fn begin(
         self: &Arc<Self>,
         handle: String,

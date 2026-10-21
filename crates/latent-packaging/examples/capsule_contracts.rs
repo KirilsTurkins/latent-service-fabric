@@ -141,8 +141,8 @@ fn c_derive(input: &Path, public: &str, output: &Path) -> Result<(), Box<dyn std
     )?;
     let receipt = serde_json::to_vec_pretty(&serde_json::json!({
         "formatVersion": 1, "profile": "c-context144-sync-cooperative-v1",
-        "originalCoreDigest": format!("sha256:{:x}", Sha256::digest(&original)),
-        "derivedCoreDigest": format!("sha256:{:x}", Sha256::digest(&derived)),
+        "originalCoreDigest": format!("sha256:{:x}", latent_core::digest::HexDigest(&Sha256::digest(&original))),
+        "derivedCoreDigest": format!("sha256:{:x}", latent_core::digest::HexDigest(&Sha256::digest(&derived))),
         "publicExport": public, "rootRecordBytes": proof.root.root_record_bytes,
         "canonicalComponentAuthenticated": false, "standardRuntimeQualified": false,
     }))?;
