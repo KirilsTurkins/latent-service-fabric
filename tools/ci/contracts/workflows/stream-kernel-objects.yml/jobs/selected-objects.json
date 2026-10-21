@@ -3,7 +3,7 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "if": "${{ !(github.event_name == 'push' && (github.ref_name == 'feat/stream-kernel-netlabel-consumer-20261021' || github.ref_name == 'feat/stream-kernel-netport-objects-20261021')) && inputs.netlabel != true && inputs.netport != true }}",
+    "if": "${{ inputs.sidcache != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-audit-owner-20261021') && (!(github.event_name == 'push' && (github.ref_name == 'feat/stream-kernel-netlabel-consumer-20261021' || github.ref_name == 'feat/stream-kernel-netport-objects-20261021')) && inputs.netlabel != true && inputs.netport != true) }}",
     "name": "Six actual maintained objects with private code and SELinux enabled",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -56,7 +56,7 @@
   },
   "jobId": "selected-objects",
   "kind": "job",
-  "reviewReason": "Exclusive Netport14 source-only Kbuild profile; retain both earlier complete job bodies, all twelve old source controls, original security/config/command bounds and all old required globals. Four additive closed-selector controls.",
+  "reviewReason": "Add one exclusive fifteen-object SID-cache/audit-string source lane using the same20min job/900s command deadline/300s command limit/-j2/security configuration/archive identity/output caps. Preserve all three prior job bodies except selector exclusions, every prior command/case/guard and refusal before local execution. Require original256 SID-cache config, all40 existing plus12 new globals; no link/boot/runtime/installation or closure credit.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/stream-kernel-objects.yml"
 }

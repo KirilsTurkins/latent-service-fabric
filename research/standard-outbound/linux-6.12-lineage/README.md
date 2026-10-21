@@ -260,3 +260,9 @@ the selected RCU return path. Its finite context drain revalidates each original
 birth under the original cache lock before deriving an address. Shared cache
 hits do not transfer charges. Lazy SID creation, AVC/audit and the remaining
 RX/platform/final-free chain are still unclosed; no installation is enabled.
+
+The [maintained SID-cache and audit-string prefix](prepaid-sidcache.md) retains
+the original policy, cache/LRU and RCU behavior while carrying the original
+socket owner through context strings and cache nodes. Actual policy destruction
+retires private published births before table address reuse. The formatter,
+queued audit SKBs, AVC, RX and complete final-free chain remain separate gates.

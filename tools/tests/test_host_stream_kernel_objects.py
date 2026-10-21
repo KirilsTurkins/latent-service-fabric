@@ -160,3 +160,66 @@ class KernelNetportObjectSelection(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'exclusive-profile-selector'):
                 candidate.run(None, None, netlabel=True, netport=True)
             read.assert_not_called()
+
+
+class KernelSidcacheObjectSelection(unittest.TestCase):
+    def test_fifteen_objects_keep_all_forty_netport_globals_and_add_twelve_real_definitions(self):
+        old = candidate.object_selection(False, True)
+        selected = candidate.object_selection(False, False, True)
+        self.assertEqual(len(selected), 15)
+        self.assertEqual(set(selected) - set(old), {'security/selinux/ss/sidtab.o'})
+        for name, symbols in old.items():
+            self.assertTrue(set(symbols) <= set(selected[name]))
+        names = [name for values in selected.values() for name in values]
+        self.assertEqual(len(names), 52)
+        self.assertEqual(len(set(names)), 52)
+        self.assertTrue({'lsf_prepaid_security_sid_to_context', 'lsf_prepaid_sid2str_put',
+            'lsf_prepaid_sidcache_detach', 'lsf_factory_sidcache_destroy'} <= set(names))
+
+    def test_only_one_real_boolean_profile_can_reach_source_or_build(self):
+        for value in ('true', 'false', 0, 1, None, [], {}):
+            with self.subTest(value=value), self.assertRaisesRegex(ValueError, 'closed-profile-selector'):
+                candidate.object_selection(False, False, value)
+        for modes in ((True, False, True), (False, True, True), (True, True, True)):
+            with self.subTest(modes=modes), patch.object(candidate.maintained, 'authenticate_archive') as read:
+                with self.assertRaisesRegex(ValueError, 'exclusive-profile-selector'):
+                    candidate.run(None, None, netlabel=modes[0], netport=modes[1], sidcache=modes[2])
+                read.assert_not_called()
+
+    def test_original_cache_256_entry_configuration_is_required_without_override(self):
+        name = 'CONFIG_SECURITY_SELINUX_SID2STR_CACHE_SIZE'
+        candidate.sidcache_configuration({name: '256'}, {name: '256'})
+        for value in ('0', '1', '128', '512', None, 256):
+            with self.subTest(value=value), self.assertRaisesRegex(ValueError, 'sidcache-original-256-entry-profile-required'):
+                candidate.sidcache_configuration({name: value}, {name: '256'})
+        self.assertNotIn('SID2STR', candidate.KCONFIG)
+        with self.assertRaisesRegex(ValueError, 'sidcache-original-256-entry-profile-required'):
+            candidate.sidcache_configuration({name: '256'}, {name: '512'})
+
+    def test_sidcache_profile_refuses_local_build_before_any_archive_or_output(self):
+        with patch.dict(candidate.os.environ, {}, clear=True), patch.object(candidate.maintained, 'authenticate_archive') as read:
+            with self.assertRaisesRegex(ValueError, 'hosted-linux-only'):
+                candidate.run(None, None, sidcache=True)
+            read.assert_not_called()
+
+    def test_focused_owning_job_preserves_original_time_tools_security_and_artifact_bounds(self):
+        import yaml
+        workflow = yaml.safe_load((candidate.ROOT/'.github/workflows/stream-kernel-objects.yml').read_bytes())
+        events = workflow.get('on', workflow.get(True))
+        self.assertEqual(events['workflow_dispatch']['inputs']['sidcache'], {
+            'description': 'Compile the closed SID-cache and audit-string source profile',
+            'type': 'boolean', 'default': False})
+        self.assertEqual(workflow['permissions'], {'contents': 'read'})
+        job = workflow['jobs']['sidcache-objects']
+        self.assertEqual(job['timeout-minutes'], 20)
+        commands = '\n'.join(step.get('run', '') for step in job['steps'])
+        self.assertIn("assert values.count('true') <= 1", commands)
+        self.assertIn("('NETLABEL_REQUEST', 'NETPORT_REQUEST', 'SIDCACHE_REQUEST')", commands)
+        self.assertIn('--sidcache', commands)
+        self.assertIn('gcc make flex bison bc libelf-dev libssl-dev', commands)
+        self.assertNotIn('scripts/config', commands)
+        artifact = job['steps'][-1]['with']
+        self.assertIn('/objects/security/selinux/ss/sidtab.o', artifact['path'])
+        self.assertIn('/FAILED.json', artifact['path'])
+        self.assertEqual(artifact['retention-days'], 3)
+        self.assertEqual(artifact['if-no-files-found'], 'warn')
