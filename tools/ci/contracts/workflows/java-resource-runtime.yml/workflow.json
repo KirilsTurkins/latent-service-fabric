@@ -35,6 +35,11 @@
             "description": "Observe only retained fresh, clear and parallel paths; never qualify original13",
             "type": "boolean"
           },
+          "late_facilities": {
+            "default": false,
+            "description": "One fresh ordinary Java component for accepted callbacks after cancellation",
+            "type": "boolean"
+          },
           "replay_retained_component": {
             "default": false,
             "description": "Re-sign the exact retained Java component and run all original13 cases",
@@ -50,9 +55,10 @@
   },
   "requiredJobs": [
     "joined-facilities",
+    "late-facilities",
     "retained-component"
   ],
-  "reviewReason": "Explicit defaultfalse retained209 Java diagnostic after realparalleltrap; preserved originalnamed full13 replay and unchangednormal30/full13/grants/caps; newclosed3 observations neveracceptance",
+  "reviewReason": "Two explicit default-false accepted late-facility lanes; original jobs restore byte-exact after only selector/job/guard removal; same original limits, immutable 6fd native, two denials plus four ordinary late/fresh calls, no old programme or post-Store credit.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-resource-runtime.yml"
 }

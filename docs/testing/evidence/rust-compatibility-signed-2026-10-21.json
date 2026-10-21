@@ -1,0 +1,1335 @@
+{
+  "status": "passed",
+  "source": "7f169e7d2279f71bc10adaaac58625ae914fe8ed",
+  "run": 39618520612,
+  "job": 119303247822,
+  "archive": {
+    "source": "7f169e7d2279f71bc10adaaac58625ae914fe8ed",
+    "run": 39618520612,
+    "job": 119303247822,
+    "artifact": 12356805578,
+    "archiveBytes": 1428315,
+    "archiveSha256": "e732dd44090eaeb1dfbc3d658d9486f3ef5ce6ed2ddf70129ef2df9824903e8d",
+    "members": 56,
+    "expandedBytes": 5800808,
+    "archiveAndCrcVerified": true,
+    "jobConclusion": "success"
+  },
+  "preparedArchive": {
+    "source": "7f169e7d2279f71bc10adaaac58625ae914fe8ed",
+    "artifact": 12354713986,
+    "archiveBytes": 69873946,
+    "archiveSha256": "ac81dafa46e4390604edc30a62069dc719b5c77b8bd7a6531693217e258e77b7",
+    "members": 54,
+    "expandedBytes": 325222401
+  },
+  "component": {
+    "sha256": "sha256:0b99f474f99f1d913c14ab2c4ccc677af4ebb9d0082a5d705b95dc4e59cd9f5c",
+    "bytes": 49403
+  },
+  "nativeSource": {
+    "sha256": "sha256:a55ef0a2b05ef959f47bab7b44e817da5f73c1c8afc9faa3364d4520ec0ad200",
+    "files": 3325,
+    "bytes": 26391846,
+    "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+    "hermetic": false,
+    "implicitCompilerInputs": "not-attested"
+  },
+  "nativeBinaries": {
+    "latent": {
+      "sha256": "sha256:6136f03e2bbfa8a0244ea25ca0f53df206352cc932e85a418c501ec0a34668e8",
+      "bytes": 71841504
+    },
+    "latentd": {
+      "sha256": "sha256:7efa6f98ae18bc1893c57fb0dff3faf956f445093f6216962b04d28670d93926",
+      "bytes": 191042912
+    },
+    "examples/package": {
+      "sha256": "sha256:724626bc96e51148c8308b538244310e5573d262f31388e3acde61f06f0d95da",
+      "bytes": 20644256
+    },
+    "examples/capsule_contracts": {
+      "sha256": "sha256:8338c9f0686269c08a82ea3b6475895d096eb1b020488448beab3f4cba6519e5",
+      "bytes": 14667848
+    },
+    "examples/capsule_authoring": {
+      "sha256": "sha256:34a16490cb2afc6c621335313b5c8b50e7e114a29144752177d39d9557ba73e8",
+      "bytes": 26764192
+    }
+  },
+  "verifiedRecipeFiles": 69,
+  "verifiedProgrammeMaterials": 5,
+  "qualification": {
+    "formatVersion": 1,
+    "status": "passed",
+    "scope": "signed captured Rust unsupported-operation diagnostics",
+    "materials": {
+      "tools/qualify_rust_compatibility.py": {
+        "sha256": "sha256:ae1e06a89c7f26104a5861c3bb9707718f7c4b6249246db0c9e2c09d33645baa",
+        "bytes": 8516
+      },
+      "tools/rust_compatibility_probe.py": {
+        "sha256": "sha256:12368dcf13cd569e7a56cc38cb474b92c06bfe76f82166609e3c6e942f0fef68",
+        "bytes": 7326
+      },
+      "tools/guest_compatibility.py": {
+        "sha256": "sha256:cc9752af131ee1e0ec5f0308a0ae658380a083cf53a29c5a41eb6e6c2e49f112",
+        "bytes": 14702
+      },
+      "tools/guest_compatibility_outcomes.py": {
+        "sha256": "sha256:5784b0780f13513c918cc63f15c6a2df0f475f9e0e518fe122acdb2cf74034ae",
+        "bytes": 19931
+      },
+      "tools/run_rust_capsule_workflow.py": {
+        "sha256": "sha256:7c32777ab230a9c1da5a8ad99b1edce1fd2518fad81525c52376a66ec27b67d7",
+        "bytes": 34233
+      }
+    },
+    "sourceIdentityDigest": "sha256:e946c33383ecf59e08e6cdbb63e1f870755efd36f03716e299c92a14ad933cf6",
+    "nativeBinaries": {
+      "latent": {
+        "sha256": "sha256:6136f03e2bbfa8a0244ea25ca0f53df206352cc932e85a418c501ec0a34668e8",
+        "bytes": 71841504
+      },
+      "latentd": {
+        "sha256": "sha256:7efa6f98ae18bc1893c57fb0dff3faf956f445093f6216962b04d28670d93926",
+        "bytes": 191042912
+      },
+      "examples/package": {
+        "sha256": "sha256:724626bc96e51148c8308b538244310e5573d262f31388e3acde61f06f0d95da",
+        "bytes": 20644256
+      },
+      "examples/capsule_contracts": {
+        "sha256": "sha256:8338c9f0686269c08a82ea3b6475895d096eb1b020488448beab3f4cba6519e5",
+        "bytes": 14667848
+      },
+      "examples/capsule_authoring": {
+        "sha256": "sha256:34a16490cb2afc6c621335313b5c8b50e7e114a29144752177d39d9557ba73e8",
+        "bytes": 26764192
+      }
+    },
+    "capture": {
+      "formatVersion": 1,
+      "package": "outside-compatibility-library",
+      "version": "0.3.7",
+      "libraries": {
+        "outside-compatibility-library": {
+          "artifact": "outside-compatibility-library/0.3.7/98fd04248a91afcd",
+          "treeDigest": "sha256:ce267d93838dc385c341891724c83a6f67ad21a4ed8bb35c32bafa4737436f99"
+        },
+        "outside-compatibility-callback": {
+          "artifact": "outside-compatibility-callback/0.3.7/ebaa1bbd8c89333d",
+          "treeDigest": "sha256:fb6dae3dbd602a2496f1b0e7ada595074c34ba5bf533746a9151dba64ca745db"
+        }
+      },
+      "sourceDigest": "sha256:a8c511b1734848baf3e1ecf4f0c5eb720c38d9df6c02eeac040ab079b262f487",
+      "librarySourceDigest": "sha256:3111092eb4fcb41af99ab3370a7e4d3466881cceca582ab1f1376e1b1b726379",
+      "callbackSourceDigest": "sha256:323ed10831b36a4226c3fed773decd8861643da45cecc6e526d0d0ac367e3228",
+      "candidateDigest": "sha256:3537d568c1cad52cb842a01125ad20138f42cd33100f7332096098d43c980099",
+      "sdkLockDigest": "sha256:8bafd450d3725db92a9c41a16762746245fae2551ef9093c4607a4fe686dd096",
+      "catalogueRegistration": false,
+      "originalOutsideSources": "removed-after-review",
+      "executableInputs": []
+    },
+    "reference": {
+      "profile": "native-reference",
+      "results": {
+        "caught": "spawned:7",
+        "eliminated": "native-thread:7",
+        "uncaught": "spawned:7"
+      },
+      "compiler": {
+        "sha256": "sha256:d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea",
+        "bytes": 645000
+      },
+      "librarySourceDigest": "sha256:3111092eb4fcb41af99ab3370a7e4d3466881cceca582ab1f1376e1b1b726379",
+      "callbackSourceDigest": "sha256:323ed10831b36a4226c3fed773decd8861643da45cecc6e526d0d0ac367e3228"
+    },
+    "component": {
+      "formatVersion": 1,
+      "observationDigest": "sha256:8ccd9c29db8dc972327631820fdc36f28c70f859f3ac5e6613862d1fa1d98155",
+      "packageAssembled": true,
+      "sourceDigest": "sha256:4e012c7aad881181cde724739f3637724887add71c179accb37184dfaf489cf5",
+      "componentDigest": "sha256:0b99f474f99f1d913c14ab2c4ccc677af4ebb9d0082a5d705b95dc4e59cd9f5c",
+      "sdkBindingDigest": "sha256:2198a5c6afe4491d3fccb75648afaa7cbdc0ec6cd53f231c6d1167ccab973592",
+      "buildSeconds": 80.967535,
+      "commands": [
+        {
+          "stage": "rust-sysroot",
+          "exitCode": 0,
+          "seconds": 0.015637
+        },
+        {
+          "stage": "zig-version",
+          "exitCode": 0,
+          "seconds": 0.015373
+        },
+        {
+          "stage": "bindgen-version",
+          "exitCode": 0,
+          "seconds": 0.015359
+        },
+        {
+          "stage": "sdk-bindings",
+          "exitCode": 0,
+          "seconds": 0.015316
+        },
+        {
+          "stage": "compile",
+          "exitCode": 0,
+          "seconds": 21.004714
+        },
+        {
+          "stage": "component",
+          "exitCode": 0,
+          "seconds": 0.015219
+        },
+        {
+          "stage": "validate",
+          "exitCode": 0,
+          "seconds": 0.014985
+        },
+        {
+          "stage": "contracts",
+          "exitCode": 0,
+          "seconds": 0.014984
+        },
+        {
+          "stage": "compatibility-final-wit",
+          "exitCode": 0,
+          "seconds": 0.014933
+        },
+        {
+          "stage": "package",
+          "exitCode": 0,
+          "seconds": 0.035362
+        },
+        {
+          "stage": "inspect",
+          "exitCode": 0,
+          "seconds": 0.025311
+        }
+      ]
+    },
+    "reportIdentity": "sha256:7be8e191185fe696360d5d0315f00783d7d51abe53cdbfa26df3b3bb734bb3a6",
+    "nodeReceipt": {
+      "sha256": "sha256:3b869a14b2e68609118f8d7bff117a45f416adf745c832a59f53147030c318f9",
+      "bytes": 296336
+    },
+    "commands": [
+      {
+        "stage": "reference-compile",
+        "exitCode": 0,
+        "seconds": 0.10691
+      },
+      {
+        "stage": "reference-caught",
+        "exitCode": 0,
+        "seconds": 0.015439
+      },
+      {
+        "stage": "reference-eliminated",
+        "exitCode": 0,
+        "seconds": 0.016755
+      },
+      {
+        "stage": "reference-uncaught",
+        "exitCode": 0,
+        "seconds": 0.015235
+      },
+      {
+        "stage": "sign-compatibility-fixture",
+        "exitCode": 0,
+        "seconds": 0.308135
+      }
+    ],
+    "publisherAuthenticated": false,
+    "releasePublication": "not-performed",
+    "initializationFailure": "not-tested",
+    "compilerElimination": "cfg-selected-fixture-only",
+    "sixLanguageMatrix": "not-complete",
+    "retrySafety": "unknown"
+  },
+  "capture": {
+    "formatVersion": 1,
+    "package": "outside-compatibility-library",
+    "version": "0.3.7",
+    "libraries": {
+      "outside-compatibility-library": {
+        "artifact": "outside-compatibility-library/0.3.7/98fd04248a91afcd",
+        "treeDigest": "sha256:ce267d93838dc385c341891724c83a6f67ad21a4ed8bb35c32bafa4737436f99"
+      },
+      "outside-compatibility-callback": {
+        "artifact": "outside-compatibility-callback/0.3.7/ebaa1bbd8c89333d",
+        "treeDigest": "sha256:fb6dae3dbd602a2496f1b0e7ada595074c34ba5bf533746a9151dba64ca745db"
+      }
+    },
+    "sourceDigest": "sha256:a8c511b1734848baf3e1ecf4f0c5eb720c38d9df6c02eeac040ab079b262f487",
+    "librarySourceDigest": "sha256:3111092eb4fcb41af99ab3370a7e4d3466881cceca582ab1f1376e1b1b726379",
+    "callbackSourceDigest": "sha256:323ed10831b36a4226c3fed773decd8861643da45cecc6e526d0d0ac367e3228",
+    "candidateDigest": "sha256:3537d568c1cad52cb842a01125ad20138f42cd33100f7332096098d43c980099",
+    "sdkLockDigest": "sha256:8bafd450d3725db92a9c41a16762746245fae2551ef9093c4607a4fe686dd096",
+    "catalogueRegistration": false,
+    "originalOutsideSources": "removed-after-review",
+    "executableInputs": []
+  },
+  "executionReport": {
+    "schemaVersion": "lsf.guest.compatibility.v1",
+    "language": "rust",
+    "sourceDigest": "sha256:4e012c7aad881181cde724739f3637724887add71c179accb37184dfaf489cf5",
+    "componentDigest": "sha256:0b99f474f99f1d913c14ab2c4ccc677af4ebb9d0082a5d705b95dc4e59cd9f5c",
+    "runtimeProfile": "lsf-host-abi-phase3-v4",
+    "inputs": [
+      {
+        "kind": "sdk",
+        "digest": "sha256:05a8e790c294c550482abf359a401e04ad1525fac99f69b1d82a49d453e8b931"
+      },
+      {
+        "kind": "runtime",
+        "digest": "sha256:4413194663dea86eb471981cbd8f37e4d7f77c093ef685333457357cc5a1b0b4",
+        "profile": "lsf-host-abi-phase3-v4"
+      }
+    ],
+    "findings": [
+      {
+        "classification": "unresolved-behavior",
+        "phase": "invocation",
+        "evidence": "not-evaluated"
+      },
+      {
+        "classification": "unresolved-behavior",
+        "phase": "initialization",
+        "evidence": "not-evaluated"
+      },
+      {
+        "classification": "lifecycle-unproven",
+        "phase": "retirement",
+        "evidence": "not-evaluated",
+        "ownerIssue": 736
+      },
+      {
+        "classification": "unsupported-reached",
+        "phase": "invocation",
+        "evidence": "actual-component",
+        "operation": "std::thread::Builder.spawn",
+        "ownerIssue": 743,
+        "packageDigest": "sha256:ce267d93838dc385c341891724c83a6f67ad21a4ed8bb35c32bafa4737436f99",
+        "sourceDigest": "sha256:3111092eb4fcb41af99ab3370a7e4d3466881cceca582ab1f1376e1b1b726379",
+        "symbol": "describe"
+      },
+      {
+        "classification": "unresolved-behavior",
+        "phase": "invocation",
+        "evidence": "actual-component",
+        "operation": "uncaught-thread-spawn",
+        "ownerIssue": 743,
+        "sourceDigest": "sha256:3111092eb4fcb41af99ab3370a7e4d3466881cceca582ab1f1376e1b1b726379"
+      }
+    ],
+    "omittedFindings": 0,
+    "status": "blocked",
+    "authority": "none",
+    "analysisCompleteness": "selected-observations",
+    "identity": "sha256:7be8e191185fe696360d5d0315f00783d7d51abe53cdbfa26df3b3bb734bb3a6"
+  },
+  "invocations": [
+    {
+      "activation": "rust-compatibility-0",
+      "exitCode": 0,
+      "startedAtUnixMillis": "1792595967395",
+      "elapsedNanos": "199292388",
+      "decoded": [
+        {
+          "ok": "unsupported-thread"
+        }
+      ],
+      "response": {
+        "category": "success",
+        "command": "invoke",
+        "data": {
+          "activationId": "rust-compatibility-0",
+          "committedStateVersion": null,
+          "consumption": {
+            "blobReadBytes": "0",
+            "blobWriteBytes": "0",
+            "childCalls": 0,
+            "cpuFuel": "2162",
+            "effectCount": 0,
+            "logBytes": "0",
+            "outboundRequests": 0,
+            "peakMemoryBytes": "1179648",
+            "stateReadBytes": "0",
+            "stateWriteBytes": "0",
+            "wallTimeMicros": "181521"
+          },
+          "effectIds": [],
+          "metadata": {
+            "cell-disposition": "released",
+            "cell-id": "operator-workflow-test:phase0:standard:00000000"
+          },
+          "payload": {
+            "byteLength": "29",
+            "data": "W3sib2siOiJ1bnN1cHBvcnRlZC10aHJlYWQifV0=",
+            "encoding": "base64",
+            "mediaType": "application/vnd.latent.wit-values.v1+json"
+          },
+          "resolvedRevision": {
+            "publicationId": "publication:sha256:54974c8e4c2e62aef2c7660193a86ca8b728c19c6dc277160b83e3809bbdce98",
+            "releaseDigest": "sha256:0b99f474f99f1d913c14ab2c4ccc677af4ebb9d0082a5d705b95dc4e59cd9f5c",
+            "revisionId": "revision-v1:sha256:b69bacf7c8da840e06f235a9555794b7a39b9c7dc03c4a71a2b2a99cd2ad3b17",
+            "routeGeneration": "18"
+          }
+        },
+        "error": null,
+        "outcomeKnown": true,
+        "requestDispatched": true,
+        "schemaVersion": "latent.cli.result.v1"
+      },
+      "processReaped": true
+    },
+    {
+      "activation": "rust-compatibility-1",
+      "exitCode": 0,
+      "startedAtUnixMillis": "1792595967637",
+      "elapsedNanos": "15175826",
+      "decoded": [
+        {
+          "ok": "eliminated"
+        }
+      ],
+      "response": {
+        "category": "success",
+        "command": "invoke",
+        "data": {
+          "activationId": "rust-compatibility-1",
+          "committedStateVersion": null,
+          "consumption": {
+            "blobReadBytes": "0",
+            "blobWriteBytes": "0",
+            "childCalls": 0,
+            "cpuFuel": "1012",
+            "effectCount": 0,
+            "logBytes": "0",
+            "outboundRequests": 0,
+            "peakMemoryBytes": "1179648",
+            "stateReadBytes": "0",
+            "stateWriteBytes": "0",
+            "wallTimeMicros": "2090"
+          },
+          "effectIds": [],
+          "metadata": {
+            "cell-disposition": "released",
+            "cell-id": "operator-workflow-test:phase0:standard:00000000"
+          },
+          "payload": {
+            "byteLength": "21",
+            "data": "W3sib2siOiJlbGltaW5hdGVkIn1d",
+            "encoding": "base64",
+            "mediaType": "application/vnd.latent.wit-values.v1+json"
+          },
+          "resolvedRevision": {
+            "publicationId": "publication:sha256:54974c8e4c2e62aef2c7660193a86ca8b728c19c6dc277160b83e3809bbdce98",
+            "releaseDigest": "sha256:0b99f474f99f1d913c14ab2c4ccc677af4ebb9d0082a5d705b95dc4e59cd9f5c",
+            "revisionId": "revision-v1:sha256:b69bacf7c8da840e06f235a9555794b7a39b9c7dc03c4a71a2b2a99cd2ad3b17",
+            "routeGeneration": "18"
+          }
+        },
+        "error": null,
+        "outcomeKnown": true,
+        "requestDispatched": true,
+        "schemaVersion": "latent.cli.result.v1"
+      },
+      "processReaped": true
+    },
+    {
+      "activation": "rust-compatibility-2",
+      "exitCode": 4,
+      "startedAtUnixMillis": "1792595967696",
+      "elapsedNanos": "20399699",
+      "decoded": null,
+      "response": {
+        "category": "platform-failure",
+        "command": "invoke",
+        "data": {
+          "activationId": "rust-compatibility-2",
+          "consumption": {
+            "blobReadBytes": "0",
+            "blobWriteBytes": "0",
+            "childCalls": 0,
+            "cpuFuel": "1900",
+            "effectCount": 0,
+            "logBytes": "0",
+            "outboundRequests": 0,
+            "peakMemoryBytes": "1179648",
+            "stateReadBytes": "0",
+            "stateWriteBytes": "0",
+            "wallTimeMicros": "2238"
+          },
+          "resolvedRevision": {
+            "publicationId": "publication:sha256:54974c8e4c2e62aef2c7660193a86ca8b728c19c6dc277160b83e3809bbdce98",
+            "releaseDigest": "sha256:0b99f474f99f1d913c14ab2c4ccc677af4ebb9d0082a5d705b95dc4e59cd9f5c",
+            "revisionId": "revision-v1:sha256:b69bacf7c8da840e06f235a9555794b7a39b9c7dc03c4a71a2b2a99cd2ad3b17",
+            "routeGeneration": "18"
+          },
+          "terminalState": "guest_trap"
+        },
+        "error": {
+          "code": "guest-trap",
+          "details": [
+            {
+              "fields": {
+                "code": "guest-trap"
+              },
+              "kind": "activation.guest-trap"
+            },
+            {
+              "fields": {
+                "kind": "unreachable-code"
+              },
+              "kind": "activation.guest-trap-kind"
+            }
+          ],
+          "message": "The platform reported a failure.",
+          "retryable": false
+        },
+        "outcomeKnown": true,
+        "requestDispatched": true,
+        "schemaVersion": "latent.cli.result.v1"
+      },
+      "processReaped": true
+    },
+    {
+      "activation": "rust-compatibility-3",
+      "exitCode": 0,
+      "startedAtUnixMillis": "1792595967759",
+      "elapsedNanos": "15191866",
+      "decoded": [
+        {
+          "ok": "unsupported-thread"
+        }
+      ],
+      "response": {
+        "category": "success",
+        "command": "invoke",
+        "data": {
+          "activationId": "rust-compatibility-3",
+          "committedStateVersion": null,
+          "consumption": {
+            "blobReadBytes": "0",
+            "blobWriteBytes": "0",
+            "childCalls": 0,
+            "cpuFuel": "2162",
+            "effectCount": 0,
+            "logBytes": "0",
+            "outboundRequests": 0,
+            "peakMemoryBytes": "1179648",
+            "stateReadBytes": "0",
+            "stateWriteBytes": "0",
+            "wallTimeMicros": "2080"
+          },
+          "effectIds": [],
+          "metadata": {
+            "cell-disposition": "released",
+            "cell-id": "operator-workflow-test:phase0:standard:00000000"
+          },
+          "payload": {
+            "byteLength": "29",
+            "data": "W3sib2siOiJ1bnN1cHBvcnRlZC10aHJlYWQifV0=",
+            "encoding": "base64",
+            "mediaType": "application/vnd.latent.wit-values.v1+json"
+          },
+          "resolvedRevision": {
+            "publicationId": "publication:sha256:54974c8e4c2e62aef2c7660193a86ca8b728c19c6dc277160b83e3809bbdce98",
+            "releaseDigest": "sha256:0b99f474f99f1d913c14ab2c4ccc677af4ebb9d0082a5d705b95dc4e59cd9f5c",
+            "revisionId": "revision-v1:sha256:b69bacf7c8da840e06f235a9555794b7a39b9c7dc03c4a71a2b2a99cd2ad3b17",
+            "routeGeneration": "18"
+          }
+        },
+        "error": null,
+        "outcomeKnown": true,
+        "requestDispatched": true,
+        "schemaVersion": "latent.cli.result.v1"
+      },
+      "processReaped": true
+    }
+  ],
+  "physicalObservations": [
+    {
+      "phase": "rust-compatibility-0",
+      "activationScopedOwners": [
+        {
+          "activeCount": "0",
+          "attributes": {},
+          "configuredCount": "1",
+          "kind": "cell",
+          "name": "execution-cell-leases",
+          "ownership": "activation-scoped"
+        },
+        {
+          "activeCount": "0",
+          "attributes": {},
+          "configuredCount": "1",
+          "kind": "reservation",
+          "name": "prepared-instance-reservations",
+          "ownership": "activation-scoped"
+        },
+        {
+          "activeCount": "0",
+          "attributes": {},
+          "configuredCount": "1",
+          "kind": "invocation",
+          "name": "guest-invocations",
+          "ownership": "activation-scoped"
+        },
+        {
+          "activeCount": "0",
+          "attributes": {},
+          "configuredCount": "1",
+          "kind": "store",
+          "name": "guest-stores",
+          "ownership": "activation-scoped"
+        },
+        {
+          "activeCount": "0",
+          "attributes": {},
+          "configuredCount": "1",
+          "kind": "host-state",
+          "name": "guest-host-states",
+          "ownership": "activation-scoped"
+        },
+        {
+          "activeCount": "0",
+          "attributes": {},
+          "configuredCount": "1",
+          "kind": "component-instance",
+          "name": "guest-component-instances",
+          "ownership": "activation-scoped"
+        },
+        {
+          "activeCount": "0",
+          "attributes": {},
+          "configuredCount": "1",
+          "kind": "buffer-group",
+          "name": "guest-value-buffers",
+          "ownership": "activation-scoped"
+        },
+        {
+          "activeCount": "0",
+          "attributes": {},
+          "configuredCount": "1",
+          "kind": "probe",
+          "name": "guest-cancellation-probes",
+          "ownership": "activation-scoped"
+        }
+      ],
+      "quotaUsage": {
+        "activeActivations": 0,
+        "queuedActivations": 0,
+        "reservedCpuFuel": "0",
+        "reservedMemoryBytes": "0"
+      },
+      "cellCapacity": [
+        {
+          "accepting": true,
+          "active": 0,
+          "available": 1,
+          "cancellations": "0",
+          "class": "standard",
+          "expired": "0",
+          "granted": "13",
+          "maxWaitMicros": "110",
+          "observationAvailable": true,
+          "oldestLeaseAgeMicros": "0",
+          "quarantined": 0,
+          "queueCapacity": 2,
+          "queueDepth": 0,
+          "queuedTenants": 0,
+          "rejected": "0",
+          "total": 1,
+          "totalWaitMicros": "1117"
+        }
+      ],
+      "os": {
+        "identity": {
+          "processId": 4164,
+          "startTimeTicks": "41490",
+          "executableSha256": "sha256:7efa6f98ae18bc1893c57fb0dff3faf956f445093f6216962b04d28670d93926"
+        },
+        "beganMonotonicNanos": "419652288011",
+        "finishedMonotonicNanos": "419662829998",
+        "metrics": {
+          "threads": 8,
+          "tasks": 8,
+          "handles": 27,
+          "sockets": 3,
+          "listeners": 1,
+          "tcpConnections": 0,
+          "udpSockets": 0,
+          "rssBytes": 92995584,
+          "highWaterRssBytes": 93044736,
+          "disappearedDescriptors": 0,
+          "processes": 1
+        },
+        "processTree": [
+          {
+            "processId": 4164,
+            "startTimeTicks": "41490",
+            "threads": 8,
+            "tasks": 8,
+            "handles": 27,
+            "sockets": 3,
+            "disappearedDescriptors": 0,
+            "unavailable": {},
+            "listeners": 1,
+            "tcpConnections": 0,
+            "udpSockets": 0,
+            "rssBytes": 92995584,
+            "highWaterRssBytes": 93044736
+          }
+        ],
+        "treeComplete": true,
+        "observedProcesses": 1,
+        "disappearedProcesses": [],
+        "procBytesRead": 15375,
+        "consistency": "non-atomic-finite-scan",
+        "unavailable": {
+          "rendererHeapBytes": "guest-JS-allocator-not-exported",
+          "allocatorRetainedBytes": "RSS-is-not-an-allocator-retention-counter"
+        }
+      }
+    },
+    {
+      "phase": "rust-compatibility-1",
+      "activationScopedOwners": [
+        {
+          "activeCount": "0",
+          "attributes": {},
+          "configuredCount": "1",
+          "kind": "cell",
+          "name": "execution-cell-leases",
+          "ownership": "activation-scoped"
+        },
+        {
+          "activeCount": "0",
+          "attributes": {},
+          "configuredCount": "1",
+          "kind": "reservation",
+          "name": "prepared-instance-reservations",
+          "ownership": "activation-scoped"
+        },
+        {
+          "activeCount": "0",
+          "attributes": {},
+          "configuredCount": "1",
+          "kind": "invocation",
+          "name": "guest-invocations",
+          "ownership": "activation-scoped"
+        },
+        {
+          "activeCount": "0",
+          "attributes": {},
+          "configuredCount": "1",
+          "kind": "store",
+          "name": "guest-stores",
+          "ownership": "activation-scoped"
+        },
+        {
+          "activeCount": "0",
+          "attributes": {},
+          "configuredCount": "1",
+          "kind": "host-state",
+          "name": "guest-host-states",
+          "ownership": "activation-scoped"
+        },
+        {
+          "activeCount": "0",
+          "attributes": {},
+          "configuredCount": "1",
+          "kind": "component-instance",
+          "name": "guest-component-instances",
+          "ownership": "activation-scoped"
+        },
+        {
+          "activeCount": "0",
+          "attributes": {},
+          "configuredCount": "1",
+          "kind": "buffer-group",
+          "name": "guest-value-buffers",
+          "ownership": "activation-scoped"
+        },
+        {
+          "activeCount": "0",
+          "attributes": {},
+          "configuredCount": "1",
+          "kind": "probe",
+          "name": "guest-cancellation-probes",
+          "ownership": "activation-scoped"
+        }
+      ],
+      "quotaUsage": {
+        "activeActivations": 0,
+        "queuedActivations": 0,
+        "reservedCpuFuel": "0",
+        "reservedMemoryBytes": "0"
+      },
+      "cellCapacity": [
+        {
+          "accepting": true,
+          "active": 0,
+          "available": 1,
+          "cancellations": "0",
+          "class": "standard",
+          "expired": "0",
+          "granted": "14",
+          "maxWaitMicros": "110",
+          "observationAvailable": true,
+          "oldestLeaseAgeMicros": "0",
+          "quarantined": 0,
+          "queueCapacity": 2,
+          "queueDepth": 0,
+          "queuedTenants": 0,
+          "rejected": "0",
+          "total": 1,
+          "totalWaitMicros": "1193"
+        }
+      ],
+      "os": {
+        "identity": {
+          "processId": 4164,
+          "startTimeTicks": "41490",
+          "executableSha256": "sha256:7efa6f98ae18bc1893c57fb0dff3faf956f445093f6216962b04d28670d93926"
+        },
+        "beganMonotonicNanos": "419710540922",
+        "finishedMonotonicNanos": "419721207732",
+        "metrics": {
+          "threads": 8,
+          "tasks": 8,
+          "handles": 27,
+          "sockets": 3,
+          "listeners": 1,
+          "tcpConnections": 0,
+          "udpSockets": 0,
+          "rssBytes": 93065216,
+          "highWaterRssBytes": 93065216,
+          "disappearedDescriptors": 0,
+          "processes": 1
+        },
+        "processTree": [
+          {
+            "processId": 4164,
+            "startTimeTicks": "41490",
+            "threads": 8,
+            "tasks": 8,
+            "handles": 27,
+            "sockets": 3,
+            "disappearedDescriptors": 0,
+            "unavailable": {},
+            "listeners": 1,
+            "tcpConnections": 0,
+            "udpSockets": 0,
+            "rssBytes": 93065216,
+            "highWaterRssBytes": 93065216
+          }
+        ],
+        "treeComplete": true,
+        "observedProcesses": 1,
+        "disappearedProcesses": [],
+        "procBytesRead": 15825,
+        "consistency": "non-atomic-finite-scan",
+        "unavailable": {
+          "rendererHeapBytes": "guest-JS-allocator-not-exported",
+          "allocatorRetainedBytes": "RSS-is-not-an-allocator-retention-counter"
+        }
+      }
+    },
+    {
+      "phase": "rust-compatibility-2",
+      "activationScopedOwners": [
+        {
+          "activeCount": "0",
+          "attributes": {},
+          "configuredCount": "1",
+          "kind": "cell",
+          "name": "execution-cell-leases",
+          "ownership": "activation-scoped"
+        },
+        {
+          "activeCount": "0",
+          "attributes": {},
+          "configuredCount": "1",
+          "kind": "reservation",
+          "name": "prepared-instance-reservations",
+          "ownership": "activation-scoped"
+        },
+        {
+          "activeCount": "0",
+          "attributes": {},
+          "configuredCount": "1",
+          "kind": "invocation",
+          "name": "guest-invocations",
+          "ownership": "activation-scoped"
+        },
+        {
+          "activeCount": "0",
+          "attributes": {},
+          "configuredCount": "1",
+          "kind": "store",
+          "name": "guest-stores",
+          "ownership": "activation-scoped"
+        },
+        {
+          "activeCount": "0",
+          "attributes": {},
+          "configuredCount": "1",
+          "kind": "host-state",
+          "name": "guest-host-states",
+          "ownership": "activation-scoped"
+        },
+        {
+          "activeCount": "0",
+          "attributes": {},
+          "configuredCount": "1",
+          "kind": "component-instance",
+          "name": "guest-component-instances",
+          "ownership": "activation-scoped"
+        },
+        {
+          "activeCount": "0",
+          "attributes": {},
+          "configuredCount": "1",
+          "kind": "buffer-group",
+          "name": "guest-value-buffers",
+          "ownership": "activation-scoped"
+        },
+        {
+          "activeCount": "0",
+          "attributes": {},
+          "configuredCount": "1",
+          "kind": "probe",
+          "name": "guest-cancellation-probes",
+          "ownership": "activation-scoped"
+        }
+      ],
+      "quotaUsage": {
+        "activeActivations": 0,
+        "queuedActivations": 0,
+        "reservedCpuFuel": "0",
+        "reservedMemoryBytes": "0"
+      },
+      "cellCapacity": [
+        {
+          "accepting": true,
+          "active": 0,
+          "available": 1,
+          "cancellations": "0",
+          "class": "standard",
+          "expired": "0",
+          "granted": "15",
+          "maxWaitMicros": "110",
+          "observationAvailable": true,
+          "oldestLeaseAgeMicros": "0",
+          "quarantined": 0,
+          "queueCapacity": 2,
+          "queueDepth": 0,
+          "queuedTenants": 0,
+          "rejected": "0",
+          "total": 1,
+          "totalWaitMicros": "1275"
+        }
+      ],
+      "os": {
+        "identity": {
+          "processId": 4164,
+          "startTimeTicks": "41490",
+          "executableSha256": "sha256:7efa6f98ae18bc1893c57fb0dff3faf956f445093f6216962b04d28670d93926"
+        },
+        "beganMonotonicNanos": "419774230762",
+        "finishedMonotonicNanos": "419784817572",
+        "metrics": {
+          "threads": 8,
+          "tasks": 8,
+          "handles": 27,
+          "sockets": 3,
+          "listeners": 1,
+          "tcpConnections": 0,
+          "udpSockets": 0,
+          "rssBytes": 93224960,
+          "highWaterRssBytes": 93224960,
+          "disappearedDescriptors": 0,
+          "processes": 1
+        },
+        "processTree": [
+          {
+            "processId": 4164,
+            "startTimeTicks": "41490",
+            "threads": 8,
+            "tasks": 8,
+            "handles": 27,
+            "sockets": 3,
+            "disappearedDescriptors": 0,
+            "unavailable": {},
+            "listeners": 1,
+            "tcpConnections": 0,
+            "udpSockets": 0,
+            "rssBytes": 93224960,
+            "highWaterRssBytes": 93224960
+          }
+        ],
+        "treeComplete": true,
+        "observedProcesses": 1,
+        "disappearedProcesses": [],
+        "procBytesRead": 16275,
+        "consistency": "non-atomic-finite-scan",
+        "unavailable": {
+          "rendererHeapBytes": "guest-JS-allocator-not-exported",
+          "allocatorRetainedBytes": "RSS-is-not-an-allocator-retention-counter"
+        }
+      }
+    },
+    {
+      "phase": "rust-compatibility-3",
+      "activationScopedOwners": [
+        {
+          "activeCount": "0",
+          "attributes": {},
+          "configuredCount": "1",
+          "kind": "cell",
+          "name": "execution-cell-leases",
+          "ownership": "activation-scoped"
+        },
+        {
+          "activeCount": "0",
+          "attributes": {},
+          "configuredCount": "1",
+          "kind": "reservation",
+          "name": "prepared-instance-reservations",
+          "ownership": "activation-scoped"
+        },
+        {
+          "activeCount": "0",
+          "attributes": {},
+          "configuredCount": "1",
+          "kind": "invocation",
+          "name": "guest-invocations",
+          "ownership": "activation-scoped"
+        },
+        {
+          "activeCount": "0",
+          "attributes": {},
+          "configuredCount": "1",
+          "kind": "store",
+          "name": "guest-stores",
+          "ownership": "activation-scoped"
+        },
+        {
+          "activeCount": "0",
+          "attributes": {},
+          "configuredCount": "1",
+          "kind": "host-state",
+          "name": "guest-host-states",
+          "ownership": "activation-scoped"
+        },
+        {
+          "activeCount": "0",
+          "attributes": {},
+          "configuredCount": "1",
+          "kind": "component-instance",
+          "name": "guest-component-instances",
+          "ownership": "activation-scoped"
+        },
+        {
+          "activeCount": "0",
+          "attributes": {},
+          "configuredCount": "1",
+          "kind": "buffer-group",
+          "name": "guest-value-buffers",
+          "ownership": "activation-scoped"
+        },
+        {
+          "activeCount": "0",
+          "attributes": {},
+          "configuredCount": "1",
+          "kind": "probe",
+          "name": "guest-cancellation-probes",
+          "ownership": "activation-scoped"
+        }
+      ],
+      "quotaUsage": {
+        "activeActivations": 0,
+        "queuedActivations": 0,
+        "reservedCpuFuel": "0",
+        "reservedMemoryBytes": "0"
+      },
+      "cellCapacity": [
+        {
+          "accepting": true,
+          "active": 0,
+          "available": 1,
+          "cancellations": "0",
+          "class": "standard",
+          "expired": "0",
+          "granted": "16",
+          "maxWaitMicros": "110",
+          "observationAvailable": true,
+          "oldestLeaseAgeMicros": "0",
+          "quarantined": 0,
+          "queueCapacity": 2,
+          "queueDepth": 0,
+          "queuedTenants": 0,
+          "rejected": "0",
+          "total": 1,
+          "totalWaitMicros": "1348"
+        }
+      ],
+      "os": {
+        "identity": {
+          "processId": 4164,
+          "startTimeTicks": "41490",
+          "executableSha256": "sha256:7efa6f98ae18bc1893c57fb0dff3faf956f445093f6216962b04d28670d93926"
+        },
+        "beganMonotonicNanos": "419832606894",
+        "finishedMonotonicNanos": "419843191860",
+        "metrics": {
+          "threads": 8,
+          "tasks": 8,
+          "handles": 27,
+          "sockets": 3,
+          "listeners": 1,
+          "tcpConnections": 0,
+          "udpSockets": 0,
+          "rssBytes": 93233152,
+          "highWaterRssBytes": 93233152,
+          "disappearedDescriptors": 0,
+          "processes": 1
+        },
+        "processTree": [
+          {
+            "processId": 4164,
+            "startTimeTicks": "41490",
+            "threads": 8,
+            "tasks": 8,
+            "handles": 27,
+            "sockets": 3,
+            "disappearedDescriptors": 0,
+            "unavailable": {},
+            "listeners": 1,
+            "tcpConnections": 0,
+            "udpSockets": 0,
+            "rssBytes": 93233152,
+            "highWaterRssBytes": 93233152
+          }
+        ],
+        "treeComplete": true,
+        "observedProcesses": 1,
+        "disappearedProcesses": [],
+        "procBytesRead": 16725,
+        "consistency": "non-atomic-finite-scan",
+        "unavailable": {
+          "rendererHeapBytes": "guest-JS-allocator-not-exported",
+          "allocatorRetainedBytes": "RSS-is-not-an-allocator-retention-counter"
+        }
+      }
+    }
+  ],
+  "providerIdleObservations": 10,
+  "activeProviderCounters": [
+    "broker_sessions",
+    "broker_handles",
+    "broker_calls",
+    "broker_results",
+    "broker_buffer_bytes",
+    "pool_active_connections",
+    "pool_connecting_connections",
+    "pool_pending_requests",
+    "pool_running_requests",
+    "pool_workers",
+    "pool_cleanup_jobs",
+    "io_calls",
+    "io_occupied_running_slots",
+    "io_queued_calls",
+    "io_staged_bytes",
+    "io_result_bytes",
+    "io_buffers",
+    "io_streams"
+  ],
+  "nodeShutdown": {
+    "processId": 4164,
+    "reaped": true,
+    "record": {
+      "schemaVersion": "latent.standalone.status.v1",
+      "event": "stopped",
+      "clean": true,
+      "report": {
+        "audit": {
+          "workerJoined": true,
+          "queuedOperations": 0,
+          "queryOwners": 0,
+          "queryBytes": 0,
+          "pendingAttempts": 0,
+          "reservedRecords": 0,
+          "stageBytes": 0,
+          "recoveryPending": false,
+          "unknownOutcomes": 0,
+          "previousSessionLossUnknown": false
+        },
+        "rollouts": {
+          "workerJoined": true,
+          "workerLive": false,
+          "queuedCommands": 0,
+          "activeCommands": 0,
+          "retainedRequestBytes": 0,
+          "responseOwners": 0,
+          "responseBytes": 0,
+          "failed": false,
+          "canary": {
+            "retainedWindows": 0,
+            "retainedSamples": 0,
+            "liveSamples": 0,
+            "snapshotOwners": 0
+          }
+        },
+        "policies": {
+          "workCompleted": true,
+          "activeJobs": 0,
+          "retainedReadOwners": 0
+        },
+        "providers": {
+          "clean": true,
+          "controlOwners": 0,
+          "connections": 0,
+          "pendingRequests": 0,
+          "runningRequests": 0,
+          "workers": 0,
+          "cleanupJobs": 0,
+          "failedCleanup": 0,
+          "sessions": 0,
+          "handles": 0,
+          "calls": 0,
+          "results": 0,
+          "ioCalls": 0,
+          "ioRetainedBytes": 0,
+          "blobStages": 0,
+          "blobHandles": 0,
+          "blobWork": 0,
+          "secretGenerations": 0,
+          "secretReferences": 0,
+          "streamOwners": 0,
+          "streamConnections": 0,
+          "streamPendingOperations": 0,
+          "streamRetainedChunks": 0,
+          "streamMaintenanceOwners": 0
+        },
+        "clean": true,
+        "activeConnections": 0,
+        "activeRpcs": 0,
+        "activeControlJobs": 0,
+        "activeActivations": 0,
+        "cancellationRegistrations": 0,
+        "observerCorrelations": 0,
+        "quotaReservations": 0,
+        "queuedReservations": 0,
+        "reservedCpuFuel": 0,
+        "reservedMemoryBytes": 0,
+        "activeLeases": 0,
+        "queuedActivations": 0,
+        "quarantinedCells": 0,
+        "activeBackendInvocations": 0,
+        "instanceReservations": 0,
+        "preparingComponents": 0,
+        "preparingSourceBytes": 0,
+        "preparingMetadataBytes": 0,
+        "liveStores": 0,
+        "liveHostStates": 0,
+        "liveInstances": 0,
+        "liveTemporaryBuffers": 0,
+        "liveCancellationProbes": 0,
+        "telemetryRetainedEntries": 844,
+        "telemetryFlushed": true,
+        "epochHelperJoined": true,
+        "compiler": {
+          "maximum_jobs": 1,
+          "maximum_workers": 1,
+          "maximum_queued_jobs": 0,
+          "maximum_waiters": 3,
+          "maximum_waiters_per_job": 3,
+          "maximum_ready_preparations": 3,
+          "maximum_document_bytes": 5308416,
+          "assigned_jobs": 0,
+          "running_jobs": 0,
+          "queued_jobs": 0,
+          "waiting_callers": 0,
+          "ready_preparations": 0,
+          "ready_metadata_bytes": 0,
+          "ready_compiled_image_bytes": 0,
+          "reserved_document_bytes": 0,
+          "workers_live": 0,
+          "workers_quiescent": 1,
+          "workers_joined": 1,
+          "accepting": false,
+          "failed": false,
+          "jobs_started": 6,
+          "jobs_completed": 6,
+          "jobs_failed": 0,
+          "jobs_abandoned": 0,
+          "coalesced_waiters": 0,
+          "queue_rejected": 0,
+          "waiter_rejected": 0,
+          "ready_rejected": 0,
+          "cancelled_waiters": 0,
+          "discarded_results": 0
+        },
+        "cleanup": {
+          "capacity": 4,
+          "accepting": false,
+          "driverAlive": false,
+          "driverJoined": true,
+          "reserved": 0,
+          "queued": 0,
+          "running": 0,
+          "handoffs": 1,
+          "completed": 1,
+          "timedOut": 0,
+          "panicked": 0,
+          "fallbacks": 0,
+          "failed": false
+        }
+      }
+    }
+  },
+  "originalFiles": {
+    "qualification.json": {
+      "sha256": "sha256:382213bca386b96735cf146015e51beb67e96ded6f46357b4f7e48f5c051d71a",
+      "bytes": 6134
+    },
+    "capture.json": {
+      "sha256": "sha256:c6831db48ebb9ae9cde53d4f9ad07f60ae3dd061bdfb629dd1c6a062ce07f30c",
+      "bytes": 1140
+    },
+    "compatibility-execution-report.json": {
+      "sha256": "sha256:152d1a19904f98a0c014780746a1a6118ba835fd1b27c8172fb5411e44481d88",
+      "bytes": 1964
+    },
+    "node/workflow.json": {
+      "sha256": "sha256:3b869a14b2e68609118f8d7bff117a45f416adf745c832a59f53147030c318f9",
+      "bytes": 296336
+    },
+    "build/BUILD-COMPLETE.json": {
+      "sha256": "sha256:bf60ecca6de799ca61dab11ae7c29c5c10e61fc6ffd3869577824a5697e0cebb",
+      "bytes": 1476
+    },
+    "build/source-inputs.json": {
+      "sha256": "sha256:4e012c7aad881181cde724739f3637724887add71c179accb37184dfaf489cf5",
+      "bytes": 8806
+    },
+    "build/recipe-inputs.json": {
+      "sha256": "sha256:729f5b52a4e9d8df9ffaa86da1d8cd89ae38b22ecab3c4e3112ceabab65e6e1a",
+      "bytes": 9218
+    }
+  },
+  "newGuestOrCompilerRuns": 0,
+  "sixLanguageMatrixComplete": false,
+  "arbitraryApiEliminationProved": false,
+  "genericTrapCauseInferred": false,
+  "arbitraryWorkerQuiescenceProved": false,
+  "fullIssueQualification": false
+}
