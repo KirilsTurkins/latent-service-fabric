@@ -5,6 +5,16 @@ use wasmtime::component::{DynamicValueMemory, Val};
 
 use super::{failure, limit};
 
+/// Wasmtime's typed carrier preserves the domain error's complete budget metadata.
+#[derive(Debug)]
+pub(crate) struct LiftMemoryError(pub(crate) PlatformError);
+impl std::fmt::Display for LiftMemoryError {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str(&self.0.message)
+    }
+}
+impl std::error::Error for LiftMemoryError {}
+
 // As in the existing conservative codec node charge, include finite native
 // allocation bookkeeping. These are capacity bounds, not RSS measurements.
 const ALLOCATION_METADATA: usize = 64;
@@ -314,7 +324,7 @@ impl DynamicValueMemory for LiftMemory {
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
             .add(bytes)
-            .map_err(wasmtime::Error::new)
+            .map_err(|error| wasmtime::Error::new(LiftMemoryError(error)))
     }
     fn confirm(&self) {
         self.memory
@@ -342,6 +352,6 @@ impl DynamicValueMemory for LiftMemory {
     fn fork(&self) -> wasmtime::Result<Arc<dyn DynamicValueMemory>> {
         Self::new(&self.budget)
             .map(|memory| memory as Arc<dyn DynamicValueMemory>)
-            .map_err(wasmtime::Error::new)
+            .map_err(|error| wasmtime::Error::new(LiftMemoryError(error)))
     }
 }

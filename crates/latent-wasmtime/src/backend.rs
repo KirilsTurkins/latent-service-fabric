@@ -1114,7 +1114,8 @@ impl ExecutionBackend for WasmtimeBackend {
 
 fn is_memory_limit_error(error: &wasmtime::Error) -> bool {
     if error.chain().any(|cause| {
-        if let Some(error) = cause.downcast_ref::<PlatformError>() {
+        if let Some(error) = cause.downcast_ref::<crate::values::LiftMemoryError>() {
+            let error = &error.0;
             if error.code == PlatformErrorCode::ResourceExhausted
                 && error.details.iter().any(|detail| {
                     detail.fields.get("dimension").map(String::as_str) == Some("memory-bytes")

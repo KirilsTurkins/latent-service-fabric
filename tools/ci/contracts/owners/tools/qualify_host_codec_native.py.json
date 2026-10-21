@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_host_codec_native.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve original52, six actual allocation, one linked-child/journal and two selected C async-type/sync-Core controls under the new native cohort; same five normal products and bounded failure capture.",
+  "reviewReason": "Bind and execute the exact pinned Wasmtime source authenticator before native source capture and the unchanged61-control programme; preserve all stages, controls, product identities and failure capture.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "adc1cc45eb6c3a3588f4285b87ac45415e5b4c54455dc40f564a94ee61c186db"
+  "sha256": "2ef0ef31ca5560535f3026187f729846f6a728b84974beacba0c3768a6b2a2aa"
 }

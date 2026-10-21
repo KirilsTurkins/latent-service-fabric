@@ -178,8 +178,9 @@ async fn actual_lift_refusal_retains_original_memory_bytes_error_and_does_not_al
         .unwrap_err();
     let original = error
         .chain()
-        .find_map(|cause| cause.downcast_ref::<latent_core::PlatformError>())
-        .expect("original callback error");
+        .find_map(|cause| cause.downcast_ref::<super::super::LiftMemoryError>())
+        .map(|error| &error.0)
+        .expect("original callback error and complete budget metadata");
     assert_eq!(
         original.code,
         latent_core::PlatformErrorCode::ResourceExhausted

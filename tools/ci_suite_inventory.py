@@ -286,6 +286,7 @@ def workspace(root: Path) -> dict[str, Package]:
         documents[name] = (member, d)
         directories[directory] = name
     result = {}
+    authenticated_wasmtime = False
     for name, (member, d) in documents.items():
         dependencies = set()
         for scope in (d, *d.get("target", {}).values()):
@@ -300,6 +301,18 @@ def workspace(root: Path) -> dict[str, Package]:
                         base = root
                     if isinstance(value, dict) and "path" in value:
                         directory = (base / value["path"]).resolve(strict=True)
+                        if directory not in directories and alias == "wasmtime":
+                            # This one pinned allocation-hook fork is an excluded
+                            # dependency, not an owned workspace test package.
+                            from tools import host_codec_wasmtime as codec_wasmtime
+
+                            require(directory == root / codec_wasmtime.PROVIDER
+                                    and value == codec_wasmtime.DEPENDENCY,
+                                    "unregistered-path-dependency")
+                            if not authenticated_wasmtime:
+                                codec_wasmtime.verify(root)
+                                authenticated_wasmtime = True
+                            continue
                         if directory not in directories and name == "latent-streams" and alias == "rustls":
                             # This reviewed third-party dependency is intentionally
                             # outside workspace test targets, never an unknown path.

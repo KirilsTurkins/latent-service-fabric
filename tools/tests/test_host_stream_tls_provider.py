@@ -132,7 +132,18 @@ class BoundedTlsProviderSource(unittest.TestCase):
                     target.write_bytes(target.read_bytes() + b'\n[replace]\n"latent-rustls-outbound:0.23.46" = {path="foreign"}\n')
                 elif kind == "workspace":
                     target = root / "Cargo.toml"
-                    target.write_bytes(target.read_bytes().replace(b'exclude = ["crates/vendor/rustls-outbound"]', b"exclude = []", 1))
+                    raw = target.read_bytes()
+                    excluded = tomllib.loads(raw.decode())["workspace"]["exclude"]
+                    self.assertEqual(excluded.count(provider.PROVIDER), 1)
+                    before = ("exclude = " + json.dumps(excluded)).encode()
+                    after = ("exclude = " + json.dumps(
+                        [name for name in excluded if name != provider.PROVIDER])).encode()
+                    self.assertEqual(raw.count(before), 1)
+                    changed = raw.replace(before, after, 1)
+                    self.assertNotEqual(raw, changed)
+                    self.assertNotIn(provider.PROVIDER,
+                                     tomllib.loads(changed.decode())["workspace"]["exclude"])
+                    target.write_bytes(changed)
                 elif kind == "accounting":
                     target = root / "crates/latent-streams/src/tls.rs"
                     target.write_bytes(target.read_bytes().replace(b"ACCOUNTING_QUALIFIED: bool = false", b"ACCOUNTING_QUALIFIED: bool = true", 1))

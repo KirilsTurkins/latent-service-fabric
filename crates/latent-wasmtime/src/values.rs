@@ -10,7 +10,7 @@ mod typed;
 use latent_core::{DeclaredError, PlatformError, PlatformErrorCode};
 use wasmtime::component::{Type, Val};
 
-pub(crate) use memory::OwnedValues;
+pub(crate) use memory::{LiftMemoryError, OwnedValues};
 pub(crate) use signature::{validate_host_signature, validate_signature};
 
 pub const MEDIA_TYPE: &str = "application/vnd.latent.wit-values.v1+json";

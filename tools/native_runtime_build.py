@@ -125,6 +125,21 @@ def dependency_inventory(metadata: dict, lock: dict, commit: str, epoch: int,
             entry["comment"] = "Authenticated bounded outbound TLS derivation: " + encode({
                 "upstream": checked["upstream"], "recordSha256": checked["recordSha256"],
                 "licenseFiles": checked["licenseFiles"]}).decode().strip()
+        elif package["name"] == "wasmtime" and package.get("source") is None:
+            from tools import host_codec_wasmtime as codec_wasmtime
+
+            manifest = Path(package["manifest_path"]).resolve()
+            require(len(manifest.parents) >= 4, "codec-wasmtime-license-package-path")
+            root = manifest.parents[3]
+            require(package["version"] == codec_wasmtime.VERSION
+                    and package.get("license") == "Apache-2.0 WITH LLVM-exception"
+                    and manifest == root / codec_wasmtime.PROVIDER / "Cargo.toml",
+                    "codec-wasmtime-license-package-identity")
+            checked = codec_wasmtime.verify(root)
+            candidates = {manifest.parent / name for name in checked["licenseFiles"]}
+            entry["comment"] = "Authenticated pinned Wasmtime allocation-hook fork: " + encode({
+                key: checked[key] for key in ("upstreamArchive", "upstreamSha256", "recordSha256",
+                    "patchSha256", "nativeCohort", "licenseFiles")}).decode().strip()
         elif checksum:
             entry["checksums"] = [{"algorithm": "SHA256", "checksumValue": checksum}]
             directory = Path(package["manifest_path"]).parent

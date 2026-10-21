@@ -13,6 +13,7 @@ if __package__ in {None, ''}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from tools.build_observation import build_environment
 from tools.build_process import BuildProcessError
+from tools import host_codec_wasmtime as codec_wasmtime
 from tools.phase2_operator_process import require
 from tools.phase3_resource_identity import file_identity, inventory, source_identity
 from tools.rust_capsule_build import Commands
@@ -129,6 +130,7 @@ RECIPE = ('.github/workflows/host-codec-memory.yml', '.cargo/managed-guest.toml'
     'tools/build_process.py', 'tools/build_process_linux.py', 'tools/build_process_signals.py',
     'tools/phase2_operator_process.py', 'tools/phase3_resource_identity.py',
     'tools/phase3_resource_profile.py', 'tools/rust_capsule_project.py', 'tools/build_snapshot.py',
+    'tools/host_codec_wasmtime.py',
     'crates/vendor/wasmtime/UPSTREAM.latent.json', 'crates/vendor/wasmtime/latent-dynamic-memory.patch',
     'crates/vendor/wasmtime/README.latent.md',
     'examples/echo-contract/capsule.json', 'examples/package-format/capsule/manifest.json',
@@ -211,6 +213,7 @@ def qualify(output: Path, revision: str) -> dict:
     require(len(CONTROLS) == 14 and len({row[0] for row in CONTROLS}) == 14
             and len(names) == len(set(names)) == 61, 'host-codec-control-inventory')
     output = fresh(output)
+    codec_wasmtime.verify(ROOT)
     before, inputs = source_identity(ROOT), materials(ROOT)
     write_json(output/'source-inputs.json', {'native':before, 'materials':inputs})
     require(tomllib.loads((ROOT/'rust-toolchain.toml').read_text())['toolchain']['channel'] == '1.97.1', 'host-codec-rust-pin')
