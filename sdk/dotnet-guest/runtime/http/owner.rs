@@ -19,6 +19,10 @@ impl Owner {
     pub fn new(kind: runtime::OwnerKind) -> Result<Self, runtime::Error> {
         runtime::register(kind, continuation()).map(Self)
     }
+
+    pub(crate) fn token(&self) -> runtime::Token {
+        self.0
+    }
 }
 impl Drop for Owner {
     fn drop(&mut self) {
