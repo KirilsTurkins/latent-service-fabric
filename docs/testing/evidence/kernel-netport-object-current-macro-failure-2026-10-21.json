@@ -1,0 +1,35 @@
+{
+  "schemaVersion": "lsf.kernel-netport-object-failure.v1",
+  "status": "failed-no-qualification",
+  "sourceCommit": "e9ac1400f62c43d812e76f5743c8047361f4d35a",
+  "run": 39542299288,
+  "job": 119032557022,
+  "stage": "fourteen-netport-objects",
+  "artifact": {
+    "id": 12320306202,
+    "bytes": 108886,
+    "sha256": "f301e40411669ac94ff2bf9f00d8c419c20ceb3a5535d35e9d8b0301d386a5f4",
+    "crcMembers": 17
+  },
+  "sourceAndProfileGuardsPassed": true,
+  "officialArchiveAuthenticated": true,
+  "selectedConfigurationCompared": true,
+  "SELinuxAndNetlabelRemainEnabled": true,
+  "compiler": "gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+  "cause": "private-ticket-local-shadowed-linux-current-macro",
+  "correction": "rename-local-current-to-observed_ticket",
+  "retainedPartialObjects": [
+    {
+      "name": "objects/fs/inode.o",
+      "bytes": 79984,
+      "sha256": "a82be67ae273db6caadc242e9fa52da443dc5992cf6603875cb523d68d8a8267"
+    }
+  ],
+  "previousSixAndTwelveJobs": "skipped-exclusive-selector-no-pass-credit",
+  "upstreamPreimagesOrLimitsChanged": false,
+  "kernelLinked": false,
+  "kernelBooted": false,
+  "factoryInstalled": false,
+  "completeAllocationClosure": false,
+  "productionInstallation": false
+}

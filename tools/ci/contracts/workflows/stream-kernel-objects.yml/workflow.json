@@ -10,13 +10,15 @@
       "push": {
         "branches": [
           "test/stream-kernel-objects-20261021",
-          "feat/stream-kernel-netlabel-consumer-20261021"
+          "feat/stream-kernel-netlabel-consumer-20261021",
+          "feat/stream-kernel-netport-objects-20261021"
         ],
         "paths": [
           ".github/workflows/stream-kernel-objects.yml",
           "tools/qualify_host_stream_kernel_objects.py",
           "tools/host_stream_kernel_protocol.py",
           "tools/host_stream_kernel_netlabel.py",
+          "tools/host_stream_kernel_netport.py",
           "research/standard-outbound/linux-6.12-lineage/**"
         ]
       },
@@ -25,6 +27,11 @@
           "netlabel": {
             "default": false,
             "description": "Compile the closed nested Netlabel source profile instead of original six objects",
+            "type": "boolean"
+          },
+          "netport": {
+            "default": false,
+            "description": "Compile the closed Netport cache profile instead of the original object profiles",
             "type": "boolean"
           }
         }
@@ -36,9 +43,10 @@
   },
   "requiredJobs": [
     "netlabel-objects",
+    "netport-objects",
     "selected-objects"
   ],
-  "reviewReason": "Reviewed closed exclusive Netlabel object-only mode: original six job body/default and all original commands/config/security/process bounds preserved; twelve targets, thirty-four globals, NETLABEL already enabled, no link boot installation or physical qualification.",
+  "reviewReason": "Exclusive Netport14 source-only Kbuild profile; retain both earlier complete job bodies, all twelve old source controls, original security/config/command bounds and all old required globals. Four additive closed-selector controls.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/stream-kernel-objects.yml"
 }

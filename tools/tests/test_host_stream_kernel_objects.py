@@ -124,3 +124,39 @@ class KernelNetlabelObjectSelection(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'hosted-linux-only'):
                 candidate.run(None,None,netlabel=True)
             read.assert_not_called()
+
+
+class KernelNetportObjectSelection(unittest.TestCase):
+    def test_netport_is_exclusive_boolean_and_both_historical_selections_remain_exact(self):
+        self.assertEqual(candidate.object_selection(False), candidate.OBJECTS)
+        self.assertEqual(candidate.object_selection(True), candidate.object_selection(True, False))
+        for value in ('true', 'false', 0, 1, None, [], {}):
+            with self.subTest(value=value), self.assertRaisesRegex(ValueError, 'closed-profile-selector'):
+                candidate.object_selection(False, value)
+        with self.assertRaisesRegex(ValueError, 'exclusive-profile-selector'):
+            candidate.object_selection(True, True)
+
+    def test_actual_netport_and_connect_hooks_compile_with_all_forty_private_globals(self):
+        old = candidate.object_selection(True)
+        selected = candidate.object_selection(False, True)
+        self.assertEqual(len(selected), 14)
+        for name, symbols in old.items():
+            self.assertTrue(set(symbols) <= set(selected[name]))
+        self.assertEqual(set(selected) - set(old), {'security/selinux/netport.o', 'security/selinux/hooks.o'})
+        names = [name for symbols in selected.values() for name in symbols]
+        self.assertEqual(len(names), 40)
+        self.assertEqual(len(set(names)), 40)
+        self.assertTrue({'lsf_prepaid_netport_sid', 'lsf_prepaid_netport_drain',
+            'lsf_factory_netport_publish', 'lsf_factory_netport_current'} <= set(names))
+
+    def test_netport_optin_refuses_local_build_before_any_source_acquisition(self):
+        with patch.dict(candidate.os.environ, {}, clear=True), patch.object(candidate.maintained, 'authenticate_archive') as read:
+            with self.assertRaisesRegex(ValueError, 'hosted-linux-only'):
+                candidate.run(None, None, netport=True)
+            read.assert_not_called()
+
+    def test_mixed_profiles_refuse_before_linux_checks_archive_output_or_build(self):
+        with patch.object(candidate.maintained, 'authenticate_archive') as read:
+            with self.assertRaisesRegex(ValueError, 'exclusive-profile-selector'):
+                candidate.run(None, None, netlabel=True, netport=True)
+            read.assert_not_called()
