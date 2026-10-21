@@ -292,8 +292,13 @@ observations, not execution of the new threading source.
 
 The new canonical-ABI fixture uses ordinary pthread/C11 calls beneath an
 unchanged generated `bool` implementation prototype and real string Err/Ok
-results. Local work so far is generation, strict data inspection, Rust syntax
-formatting and JavaScript syntax checking only. The six new Rust cases, actual
-selected threaded C link, core ABI/OOM execution and generated final graph still
-require a reviewed hosted control. No engine, builder, host grant or threading
-profile selects this path, and no additional #744 acceptance criterion closes.
+results. Hosted run39551488404 at2fac08a passed all46 Rust source cases and the
+existing actual C controls. The new link then refused the unsupported Zig0.16
+linker argument `--stack-first` before producing a core. Artifact12323601938
+retains all71 members and the failed stage; its archive SHA-256 is
+`0e74ca8be668114b55fff277d37fb3ba51bec2648379b8362f319f08df0e7120`.
+The correction removes only that unsupported argument, keeping the supported
+stack-size69632 option, original4MiB memory ceiling and every final-byte layout
+check. Actual selected linking, ABI/OOM execution and final graph authentication
+remain pending the corrected hosted control. No engine, builder, host grant or
+threading profile selects this path, and no additional #744 criterion closes.

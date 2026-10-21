@@ -195,7 +195,7 @@ def execute(output, tools):
                 ROOT/(FIXTURE+'probe.c'), ROOT/'sdk/c-guest/runtime/threads.c',
                 ROOT/'sdk/c-guest/runtime/tls-keys.c', ROOT/'sdk/c-guest/src/trap.c',
                 generated/'probe.c', generated/'probe_component_type.o',
-                '-Wl,--no-entry','-Wl,--export-memory','-Wl,--stack-first',
+                '-Wl,--no-entry','-Wl,--export-memory',
                 '-Wl,-z,stack-size=69632','-Wl,--max-memory=4194304',
                 *['-Wl,--export='+name for name in exports],'-o',output/'original.wasm']
         report['selectedCLinks'] = 1
