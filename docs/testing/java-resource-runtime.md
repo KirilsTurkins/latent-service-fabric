@@ -157,4 +157,6 @@ pending evidence; the short clear sleep itself is not claimed to have suspended.
 
 The separate [accepted late-facility programme](java-dotnet-late-facilities.md)
 keeps the original joined programme intact and tests callback completion after
-an ordinary cancellation/disposal request. Its new signed execution is pending.
+an ordinary cancellation/disposal request. Its Java six-case signed observation
+passed on the separately recorded `df4f5628add1a9ba9b1562ee00353fad57e4f7d5`
+component; the original joined receipt retains its earlier scope.

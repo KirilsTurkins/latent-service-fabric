@@ -18,6 +18,7 @@ from tools.build_process_signals import owned_cancellation
 from tools.dotnet_guest.build import build
 from tools.dotnet_guest.compiler import runtime_inputs
 from tools.dotnet_guest.task_wait import PROFILE as TASK_PROFILE
+from tools.dotnet_guest import managed_work, retirement
 from tools.phase2_operator_process import require, stopped_record
 from tools.phase2_operator_scenario import connect, stop
 from tools.phase3_resource_identity import file_identity, source_identity
@@ -43,6 +44,7 @@ MATERIALS=('tools/qualify_dotnet_resource_runtime.py','tools/dotnet_resource_run
     'tools/build_process_signals.py','tools/dotnet_guest/compiler.py','tools/dotnet_guest/build.py',
     'tools/dotnet_guest/runtime.py','tools/dotnet_guest/task_wait.py','tools/dotnet_guest/closed_filesystem.py',
     'tools/dotnet_guest/managed_entropy.py','tools/dotnet_guest/entropy.py','tools/dotnet_guest/internal_io.py',
+    'tools/dotnet_guest/managed_work.py','tools/dotnet_guest/retirement.py',
     'tools/dotnet_guest/composer.py','tools/dotnet_application_dependencies.py','tools/dotnet_dependency_authoring.py',
     '.github/workflows/dotnet-resource-runtime.yml')
 
@@ -50,7 +52,8 @@ MATERIALS=('tools/qualify_dotnet_resource_runtime.py','tools/dotnet_resource_run
 def build_evidence(artifact):
     names=('BUILD-COMPLETE.json','build-observation.json','source-inputs.json','recipe-inputs.json',
         'package-inputs.json','runtime-profile.json','closed-runtime-coverage.json','compiler-patches.json',
-        'task-wait-port.json','closed-filesystem-port.json','noncrypto-entropy-port.json','managed-entropy-port.json')
+        'task-wait-port.json','closed-filesystem-port.json','noncrypto-entropy-port.json','managed-entropy-port.json',
+        'retirement-port.json','internal-io-port.json')
     identities={name:file_identity(artifact/name,32*1024**2) for name in names}
     component=file_identity(artifact/'component.wasm',64*1024**2)
     marker,observed,profile=(read_json(artifact/name,32*1024**2) for name in
@@ -62,17 +65,38 @@ def build_evidence(artifact):
         'resource-dotnet-normal-observed-package')
     require(observed['parameters']=={'compiler':'native-aot-llvm','bindings':'wit-bindgen-csharp','language':'csharp',
         'target':'wasi-wasm','runtime':'native-aot','locked':True,'ambientWasi':False}
-        and profile['profile']=='runtime-logging' and set(profile['declaredImports'])==set(fixture.DECLARATIONS)
+        and profile['profile']=='runtime-managed-logging' and set(profile['declaredImports'])==set(fixture.DECLARATIONS)
         and 'closedIoPort' not in profile,'resource-dotnet-current-runtime-logging-selection')
     for material,filename in (('build-recipe','recipe-inputs.json'),('package-inputs','package-inputs.json'),
         ('runtime-profile','runtime-profile.json'),('dotnet-task-wait-port','task-wait-port.json'),
         ('dotnet-closed-filesystem-port','closed-filesystem-port.json'),
-        ('standard-rng-managed-port','managed-entropy-port.json')):
+        ('standard-rng-managed-port','managed-entropy-port.json'),
+        ('dotnet-internal-io-port','internal-io-port.json')):
         selected=[row for row in observed['materials'] if row['name']==material];value=identities[filename]
         require(selected==[{'name':material,'digest':value['sha256'],'size':value['bytes']}],
             'resource-dotnet-observed-port-material')
     task=read_json(artifact/'task-wait-port.json');fs=read_json(artifact/'closed-filesystem-port.json')
     entropy=read_json(artifact/'managed-entropy-port.json');native=read_json(artifact/'noncrypto-entropy-port.json')
+    owner=read_json(artifact/'retirement-port.json');io_port=read_json(artifact/'internal-io-port.json')
+    coverage=read_json(artifact/'closed-runtime-coverage.json')
+    require(profile['retirementPort']==owner and owner['profile']==retirement.PROFILE
+        and owner['privateImport']==retirement.IDENTITY and owner['publicGraphUnchanged'] is True
+        and owner['authority']=='none' and owner['managedWork']=={
+            'profile':managed_work.PROFILE,'privateImport':managed_work.IDENTITY,'authority':'none','qualified':False}
+        and profile['internalIoPort']==io_port and io_port['profile']=='dotnet-private-async-io-v1'
+        and io_port['coreBytesUnchanged'] is True and io_port['publicApplicationGraphUnchanged'] is True
+        and profile['adapter']['name']=='managed-activation-logging-runtime'
+        and [row for row in observed['materials'] if row['name']==profile['adapter']['name']]==[profile['adapter']]
+        and coverage['gaps']==[] and coverage['authority']=='none'
+        and coverage['compilerPrivateImports']==[retirement.IDENTITY,managed_work.IDENTITY]
+        and coverage['rawComponentDigest']==io_port['selectedDigest']
+        and coverage['runtimeAdapterDigest']==profile['adapter']['digest']
+        and task['managedAcceptedWork']['patch']=='latent.dotnet.managed-accepted-work.v2'
+        and task['managedAcceptedWork']['authoritativeLimits']=='original-activation-owner-ledger'
+        and task['managedAcceptedWork']['timerAdmission']=='original-TimerQueueTimer-before-active-list-mutation'
+        and task['managedAcceptedWork']['timerRetirement']=='original-disarmed-no-accepted-queued-running-or-required-callback'
+        and task['managedAcceptedWork']['newAssemblyReferences']==0,
+        'resource-dotnet-managed-owner-and-private-io-bindings')
     require(task['profile']==TASK_PROFILE and task['completion']=='actual-task-only'
         and len(task['nativeAotReferenceBinding']['responseFiles'])==1
         and task['nativeAotReferenceBinding']['finalCoreLibDerivation']['selectedDigest']==fs['derived']['digest']

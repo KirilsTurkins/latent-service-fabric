@@ -57,7 +57,18 @@ extra greeting component; the .NET lane installs only the normal captured
 compiler and current small adapters. Reference JDK/CLR controls execute the exact
 ordinary library bodies, separately from signed guest evidence.
 
-The local JDK 25 and .NET 10 reference late/fresh paths passed with exact result
-strings and one-character completion output. Signed hosted execution of these
-new paths is pending. Existing joined receipts retain their original explicit
-absence of late-facility qualification.
+The reference JDK 25 and .NET 10 late/fresh paths passed separately. The
+[Java signed observation](evidence/java-resource-late-signed-2026-10-21.json)
+records actual run `39617980436`, job `119283767665`, artifact `12354221143`,
+compiled from `df4f5628add1a9ba9b1562ee00353fad57e4f7d5`: two pre-entry denials
+and four late/fresh calls passed, with six physical retirements, all eighteen
+active provider counters zero, four exact 183-byte completion logs and a clean,
+reaped node. Its component digest is
+`sha256:c19d31b7cf9bdf2c6e2cc6901b3112e23802d5477aad8e17cc581d56f0278365`.
+
+The sibling .NET run `39617997010`, job `119283819097`, artifact `12353339133`
+completed and packaged its fresh component but failed before node execution:
+the reader expected `runtime-logging` while the current compiler correctly
+selected `runtime-managed-logging`. Its original failure remains retained and
+provides no guest execution credit. Existing joined receipts retain their
+original explicit absence of late-facility qualification.

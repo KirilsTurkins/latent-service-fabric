@@ -1,0 +1,67 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "if": "${{ github.event_name == 'workflow_dispatch' && inputs.replay_late_facilities && !inputs.late_facilities }}",
+    "name": "Reuse the authenticated df4 component for late managed facilities",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "name": "Fetch only the two immutable source objects used by authentication",
+        "run": "git fetch --no-tags --depth=1 origin 6fd19eab2c224fc31481d03de5008de4d3e4429e\ngit fetch --no-tags --depth=1 origin df4f5628add1a9ba9b1562ee00353fad57e4f7d5\n"
+      },
+      {
+        "name": "Check the exact current reader and preserved late-callback boundaries",
+        "run": "python3 -m pip install -r tools/requirements.lock\npython3 -B -m unittest tools.tests.test_dotnet_resource_runtime tools.tests.test_resource_late_facilities tools.tests.test_resource_late_workflows tools.tests.test_replay_dotnet_resource_late -v\n"
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Authenticate the same frozen 6fd products without rebuilding",
+        "run": "python3 -B tools/release_preparation_cli_native_products.py --output \"$RUNNER_TEMP/dotnet-resource-late-replay-native\""
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Authenticate the complete failed df4 artifact and completed AOT package",
+        "run": "python3 -B tools/replay_dotnet_resource_late.py acquire --output \"$RUNNER_TEMP/dotnet-resource-late-replay-inputs\""
+      },
+      {
+        "name": "Sign and execute only the original two denials and four late-fresh calls",
+        "run": "python3 -B tools/replay_dotnet_resource_late.py run --prepared \"$RUNNER_TEMP/dotnet-resource-late-replay-inputs\" \\\n  --native \"$RUNNER_TEMP/dotnet-resource-late-replay-native\" --output \"$RUNNER_TEMP/dotnet-resource-late-replay\"\n"
+      },
+      {
+        "if": "always()",
+        "name": "Retain the original failure and bounded new node outcomes",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "dotnet-resource-late-replay-${{ github.sha }}",
+          "path": "${{ runner.temp }}/dotnet-resource-late-replay-native/*.json\n${{ runner.temp }}/dotnet-resource-late-replay-inputs/artifact.zip\n${{ runner.temp }}/dotnet-resource-late-replay-inputs/retrieval.json\n${{ runner.temp }}/dotnet-resource-late-replay/*.json\n${{ runner.temp }}/dotnet-resource-late-replay/node/*.json\n${{ runner.temp }}/dotnet-resource-late-replay/node/node-stderr.txt\n${{ runner.temp }}/dotnet-resource-late-replay/node/commands/logs/**\n${{ runner.temp }}/dotnet-resource-late-replay/node/examples-controls/*.json\n${{ runner.temp }}/dotnet-resource-late-replay/node/foreign-controls/*.json\n${{ runner.temp }}/dotnet-resource-late-replay/node/signed/my-greeting/build-observation.json\n${{ runner.temp }}/dotnet-resource-late-replay/node/signed/release-set.json\n",
+          "retention-days": 3
+        }
+      }
+    ],
+    "timeout-minutes": 20
+  },
+  "jobId": "replay-late-facilities",
+  "kind": "job",
+  "reviewReason": "Reviewed exact df4 completed AOT package node-only continuation: same six late/fresh obligations and caps; no guest/native compilation; exact old jobs restored after only explicit default-false replay selector and job removal. Current managed-profile reader is bound to actual owner/private-IO/task-v2 receipts.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/dotnet-resource-runtime.yml"
+}

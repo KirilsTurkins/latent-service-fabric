@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/replay_dotnet_resource_late.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Reviewed exact df4 completed AOT package node-only continuation: same six late/fresh obligations and caps; no guest/native compilation; exact old jobs restored after only explicit default-false replay selector and job removal. Current managed-profile reader is bound to actual owner/private-IO/task-v2 receipts.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "e7921fdd2556fcb9e4df36e9a3c3a163b40d4df56cb41ee00262f987f0a74883"
+}

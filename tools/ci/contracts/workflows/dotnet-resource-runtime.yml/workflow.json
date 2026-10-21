@@ -21,6 +21,11 @@
             "default": false,
             "description": "One fresh ordinary managed component for accepted callbacks after DisposeAsync",
             "type": "boolean"
+          },
+          "replay_late_facilities": {
+            "default": false,
+            "description": "Reuse the exact completed df4 AOT package after its managed-profile reader repair",
+            "type": "boolean"
           }
         }
       }
@@ -32,9 +37,10 @@
   },
   "requiredJobs": [
     "late-facilities",
+    "replay-late-facilities",
     "resource-runtime"
   ],
-  "reviewReason": "Two explicit default-false accepted late-facility lanes; original jobs restore byte-exact after only selector/job/guard removal; same original limits, immutable 6fd native, two denials plus four ordinary late/fresh calls, no old programme or post-Store credit.",
+  "reviewReason": "Reviewed exact df4 completed AOT package node-only continuation: same six late/fresh obligations and caps; no guest/native compilation; exact old jobs restored after only explicit default-false replay selector and job removal. Current managed-profile reader is bound to actual owner/private-IO/task-v2 receipts.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-resource-runtime.yml"
 }

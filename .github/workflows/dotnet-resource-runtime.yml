@@ -10,6 +10,10 @@ on:
         description: One fresh ordinary managed component for accepted callbacks after DisposeAsync
         type: boolean
         default: false
+      replay_late_facilities:
+        description: Reuse the exact completed df4 AOT package after its managed-profile reader repair
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -21,7 +25,7 @@ concurrency:
 
 jobs:
   resource-runtime:
-    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.late_facilities }}
+    if: ${{ github.event_name != 'workflow_dispatch' || (!inputs.late_facilities && !inputs.replay_late_facilities) }}
     name: Signed managed resources tasks clocks entropy and logging
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -117,7 +121,7 @@ jobs:
             ${{ runner.temp }}/dotnet-resource-runtime/node/signed/release-set.json
 
   late-facilities:
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.late_facilities }}
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.late_facilities && !inputs.replay_late_facilities }}
     name: Accepted managed Timer facilities after pending DisposeAsync and fresh two tenants
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -216,3 +220,55 @@ jobs:
             ${{ runner.temp }}/dotnet-resource-late/node/foreign-controls/*.json
             ${{ runner.temp }}/dotnet-resource-late/node/signed/my-greeting/build-observation.json
             ${{ runner.temp }}/dotnet-resource-late/node/signed/release-set.json
+
+  replay-late-facilities:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.replay_late_facilities && !inputs.late_facilities }}
+    name: Reuse the authenticated df4 component for late managed facilities
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - name: Fetch only the two immutable source objects used by authentication
+        run: |
+          git fetch --no-tags --depth=1 origin 6fd19eab2c224fc31481d03de5008de4d3e4429e
+          git fetch --no-tags --depth=1 origin df4f5628add1a9ba9b1562ee00353fad57e4f7d5
+      - name: Check the exact current reader and preserved late-callback boundaries
+        run: |
+          python3 -m pip install -r tools/requirements.lock
+          python3 -B -m unittest tools.tests.test_dotnet_resource_runtime tools.tests.test_resource_late_facilities tools.tests.test_resource_late_workflows tools.tests.test_replay_dotnet_resource_late -v
+      - name: Authenticate the same frozen 6fd products without rebuilding
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/release_preparation_cli_native_products.py --output "$RUNNER_TEMP/dotnet-resource-late-replay-native"
+      - name: Authenticate the complete failed df4 artifact and completed AOT package
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/replay_dotnet_resource_late.py acquire --output "$RUNNER_TEMP/dotnet-resource-late-replay-inputs"
+      - name: Sign and execute only the original two denials and four late-fresh calls
+        run: |
+          python3 -B tools/replay_dotnet_resource_late.py run --prepared "$RUNNER_TEMP/dotnet-resource-late-replay-inputs" \
+            --native "$RUNNER_TEMP/dotnet-resource-late-replay-native" --output "$RUNNER_TEMP/dotnet-resource-late-replay"
+      - name: Retain the original failure and bounded new node outcomes
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: dotnet-resource-late-replay-${{ github.sha }}
+          retention-days: 3
+          if-no-files-found: warn
+          path: |
+            ${{ runner.temp }}/dotnet-resource-late-replay-native/*.json
+            ${{ runner.temp }}/dotnet-resource-late-replay-inputs/artifact.zip
+            ${{ runner.temp }}/dotnet-resource-late-replay-inputs/retrieval.json
+            ${{ runner.temp }}/dotnet-resource-late-replay/*.json
+            ${{ runner.temp }}/dotnet-resource-late-replay/node/*.json
+            ${{ runner.temp }}/dotnet-resource-late-replay/node/node-stderr.txt
+            ${{ runner.temp }}/dotnet-resource-late-replay/node/commands/logs/**
+            ${{ runner.temp }}/dotnet-resource-late-replay/node/examples-controls/*.json
+            ${{ runner.temp }}/dotnet-resource-late-replay/node/foreign-controls/*.json
+            ${{ runner.temp }}/dotnet-resource-late-replay/node/signed/my-greeting/build-observation.json
+            ${{ runner.temp }}/dotnet-resource-late-replay/node/signed/release-set.json

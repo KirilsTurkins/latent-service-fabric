@@ -16,6 +16,14 @@ class ResourceLateWorkflows(unittest.TestCase):
     def test_removing_only_reviewed_selector_and_job_restores_both_original_workflows(self):
         for language, expected in self.ORIGINALS.items():
             raw = read_file(ROOT/('.github/workflows/'+language+'-resource-runtime.yml')).decode()
+            if language == 'dotnet':
+                raw, replay = raw.split('\n  replay-late-facilities:\n')
+                self.assertTrue(replay.startswith("    if: ${{ github.event_name == 'workflow_dispatch' && inputs.replay_late_facilities && !inputs.late_facilities }}\n"))
+                raw = raw.replace('      replay_late_facilities:\n'
+                    '        description: Reuse the exact completed df4 AOT package after its managed-profile reader repair\n'
+                    '        type: boolean\n        default: false\n', '', 1)
+                raw = raw.replace('(!inputs.late_facilities && !inputs.replay_late_facilities)', '!inputs.late_facilities', 1)
+                raw = raw.replace('inputs.late_facilities && !inputs.replay_late_facilities', 'inputs.late_facilities', 1)
             before, job = raw.split('\n  late-facilities:\n')
             self.assertTrue(job.startswith("    if: ${{ github.event_name == 'workflow_dispatch' && inputs.late_facilities }}\n"))
             if language == 'java':
@@ -41,7 +49,10 @@ class ResourceLateWorkflows(unittest.TestCase):
             selector = workflow['on']['workflow_dispatch']['inputs']['late_facilities']
             self.assertEqual(selector['type'], 'boolean'); self.assertIs(selector['default'], False)
             job = workflow['jobs']['late-facilities']
-            self.assertEqual(job['if'], "${{ github.event_name == 'workflow_dispatch' && inputs.late_facilities }}")
+            expected_if = "${{ github.event_name == 'workflow_dispatch' && inputs.late_facilities }}"
+            if language == 'dotnet':
+                expected_if = "${{ github.event_name == 'workflow_dispatch' && inputs.late_facilities && !inputs.replay_late_facilities }}"
+            self.assertEqual(job['if'], expected_if)
             steps = job['steps']; commands = [step.get('run', '') for step in steps]
             fetch = next(i for i, command in enumerate(commands) if 'git fetch ' in command)
             retrieve = next(i for i, command in enumerate(commands) if 'tools/release_preparation_cli_native_products.py' in command)

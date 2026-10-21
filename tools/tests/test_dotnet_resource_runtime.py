@@ -229,6 +229,25 @@ class ManagedResourceRuntime(unittest.TestCase):
     def test_build_reader_requires_actual_current_runtime_and_final_task_filesystem_rng_bindings(self):
         with tempfile.TemporaryDirectory() as temporary,patch.object(qualification,'package_identity',return_value={'controlled':'package'}):
             root=Path(temporary);docs=self.build(root)
+            actual=json.loads((Path(__file__).parent/'fixtures/dotnet_resource_managed_df4.json').read_bytes())
+            self.assertEqual(actual['source'],'df4f5628add1a9ba9b1562ee00353fad57e4f7d5')
+            self.assertFalse(actual['guestQualification'])
+            self.assertNotEqual(actual['records']['runtime-profile.json']['profile'],'runtime-logging')
+            for name,value in actual['records'].items():
+                docs.setdefault(name,{}).update(value)
+            for name,value in docs.items():(root/name).write_bytes((json.dumps(value)+'\n').encode())
+            observed=json.loads((root/'build-observation.json').read_bytes())
+            observed['materials'].extend([docs['runtime-profile.json']['adapter'],{'name':'dotnet-internal-io-port'}])
+            names={'build-recipe':'recipe-inputs.json','package-inputs':'package-inputs.json','runtime-profile':'runtime-profile.json',
+                'dotnet-task-wait-port':'task-wait-port.json','dotnet-closed-filesystem-port':'closed-filesystem-port.json',
+                'standard-rng-managed-port':'managed-entropy-port.json','dotnet-internal-io-port':'internal-io-port.json'}
+            for material in observed['materials']:
+                if material['name'] in names:
+                    raw=(root/names[material['name']]).read_bytes();material.update(digest=digest(raw),size=len(raw))
+            (root/'build-observation.json').write_bytes((json.dumps(observed)+'\n').encode())
+            marker=json.loads((root/'BUILD-COMPLETE.json').read_bytes())
+            marker['observationDigest']=digest((root/'build-observation.json').read_bytes())
+            (root/'BUILD-COMPLETE.json').write_bytes((json.dumps(marker)+'\n').encode())
             self.assertEqual(qualification.build_evidence(root)['package'],{'controlled':'package'})
             for change in ('closed-profile','closed-metadata','corelib-drift','missing-ilc-binding'):
                 selected=copy.deepcopy(docs)
@@ -242,14 +261,50 @@ class ManagedResourceRuntime(unittest.TestCase):
                 observed=json.loads((root/'build-observation.json').read_bytes())
                 names={'build-recipe':'recipe-inputs.json','package-inputs':'package-inputs.json','runtime-profile':'runtime-profile.json',
                     'dotnet-task-wait-port':'task-wait-port.json','dotnet-closed-filesystem-port':'closed-filesystem-port.json',
-                    'standard-rng-managed-port':'managed-entropy-port.json'}
+                    'standard-rng-managed-port':'managed-entropy-port.json','dotnet-internal-io-port':'internal-io-port.json'}
                 for material in observed['materials']:
+                    if material['name'] not in names:continue
                     raw=(root/names[material['name']]).read_bytes();material.update(digest=digest(raw),size=len(raw))
                 (root/'build-observation.json').write_bytes((json.dumps(observed)+'\n').encode())
                 marker=json.loads((root/'BUILD-COMPLETE.json').read_bytes());marker.update(
                     observationDigest=digest((root/'build-observation.json').read_bytes()),sourceDigest=digest((root/'source-inputs.json').read_bytes()))
                 (root/'BUILD-COMPLETE.json').write_bytes((json.dumps(marker)+'\n').encode())
                 with self.subTest(change=change),self.assertRaises(WorkflowError):qualification.build_evidence(root)
+
+    def test_managed_runtime_reader_binds_owner_private_io_and_original_timer_admission(self):
+        mutations=(
+            lambda d:d['runtime-profile.json'].update(profile='runtime-logging'),
+            lambda d:d['runtime-profile.json']['declaredImports'].append('latent:http/streaming@0.3.0'),
+            lambda d:d['retirement-port.json'].update(authority='http'),
+            lambda d:d['retirement-port.json']['managedWork'].update(privateImport='foreign:work/owner@0.1.0'),
+            lambda d:d['internal-io-port.json'].update(coreBytesUnchanged=False),
+            lambda d:d['internal-io-port.json'].update(publicApplicationGraphUnchanged=False),
+            lambda d:d['closed-runtime-coverage.json'].update(compilerPrivateImports=[]),
+            lambda d:d['closed-runtime-coverage.json'].update(gaps=['missing']),
+            lambda d:d['closed-runtime-coverage.json'].update(runtimeAdapterDigest='sha256:'+'c'*64),
+            lambda d:d['task-wait-port.json']['managedAcceptedWork'].update(authoritativeLimits='unbounded'),
+            lambda d:d['task-wait-port.json']['managedAcceptedWork'].update(timerAdmission='after-enqueue'),
+            lambda d:d['task-wait-port.json']['managedAcceptedWork'].update(newAssemblyReferences=1))
+        for mutate in mutations:
+            with tempfile.TemporaryDirectory() as temporary,patch.object(qualification,'package_identity',return_value={}):
+                root=Path(temporary);docs=self.build(root)
+                actual=json.loads((Path(__file__).parent/'fixtures/dotnet_resource_managed_df4.json').read_bytes())
+                for name,value in actual['records'].items():docs.setdefault(name,{}).update(value)
+                observed=json.loads((root/'build-observation.json').read_bytes())
+                observed['materials'].extend([copy.deepcopy(docs['runtime-profile.json']['adapter']),{'name':'dotnet-internal-io-port'}])
+                mutate(docs)
+                for name,value in docs.items():(root/name).write_bytes((json.dumps(value)+'\n').encode())
+                names={'runtime-profile':'runtime-profile.json','dotnet-task-wait-port':'task-wait-port.json',
+                    'dotnet-internal-io-port':'internal-io-port.json'}
+                for material in observed['materials']:
+                    if material['name'] in names:
+                        raw=(root/names[material['name']]).read_bytes();material.update(digest=digest(raw),size=len(raw))
+                (root/'build-observation.json').write_bytes((json.dumps(observed)+'\n').encode())
+                marker=json.loads((root/'BUILD-COMPLETE.json').read_bytes())
+                marker['observationDigest']=digest((root/'build-observation.json').read_bytes())
+                (root/'BUILD-COMPLETE.json').write_bytes((json.dumps(marker)+'\n').encode())
+                with self.assertRaises((WorkflowError,KeyError)):
+                    qualification.build_evidence(root)
 
 
 if __name__=='__main__':unittest.main()
