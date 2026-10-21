@@ -1,0 +1,93 @@
+{
+  "schemaVersion": "latent.activation-stack.native-compiled.v1",
+  "source": "c7134289f446cb3171eb0ffd800a94afc2a5209f",
+  "run": 39598763649,
+  "job": 119217613970,
+  "artifact": {
+    "id": 12345773653,
+    "size_in_bytes": 68318919,
+    "digest": "sha256:de16d786e7a2a72bae7176451e4887b2afca9f2ec08f9583e2b1caf72d38c491"
+  },
+  "members": 75,
+  "expandedBytes": 314085793,
+  "nativeSource": {
+    "sha256": "sha256:8ae85103a4ea211b686ac7b16222bfa2f6a950a08c5957f9b488785c7f007268",
+    "files": 3325,
+    "bytes": 26391555,
+    "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+    "hermetic": false,
+    "implicitCompilerInputs": "not-attested"
+  },
+  "auxiliaryGitRows": 134,
+  "receipts": {
+    "native-products.json": {
+      "sha256": "sha256:bec02c077f6df2167b77dff4c41f2cd79b14a501f4926b42dd06d69174d02523",
+      "bytes": 27004
+    },
+    "source-inputs.json": {
+      "sha256": "sha256:e0c607e6f6d62a0c2bc85f9e127f985c26ecac88d506bec74f8de533bcb4aa76",
+      "bytes": 22275
+    }
+  },
+  "products": {
+    "latent": {
+      "sha256": "sha256:aad7701ef9fcd1df60f53dfeb90c1e74e3ca7131e3fe2fa30d9e31f27d5e52db",
+      "bytes": 69176392
+    },
+    "latentd": {
+      "sha256": "sha256:77e5afc7576d5dc0831a00e1009544e8bc6c1659ff2dbe1e86d9ac990d3056dc",
+      "bytes": 188938624
+    },
+    "examples/package": {
+      "sha256": "sha256:697287c09863072460378304848a57aad670c43720b5972b503d69b1908fff42",
+      "bytes": 17854768
+    },
+    "examples/capsule_contracts": {
+      "sha256": "sha256:a02d591021cae76792f71fdf026d07b6929cdca8372644a2b5247bea6c99b67d",
+      "bytes": 13844184
+    },
+    "examples/capsule_authoring": {
+      "sha256": "sha256:bc3077253cb60975214f8492b70a92a372b64101143fd2221246ec2d07a1152b",
+      "bytes": 24136488
+    }
+  },
+  "orderedCommands": 34,
+  "originalRustPassed": 50,
+  "cThreadingRustPassed": 60,
+  "cExactRustPassed": 11,
+  "ordinaryWorkerRustPassed": 11,
+  "totalRustPassed": 132,
+  "pythonPassed": 16,
+  "allCommandsSucceeded": true,
+  "wholeArchiveDigestVerified": true,
+  "allMemberCrcAndShaVerified": true,
+  "signedGuestQualification": false,
+  "cLifecycleGuestQualified": false,
+  "typescriptRootOnlyGuestQualified": false,
+  "rustHttpGuestQualified": false,
+  "historicalF0Repinned": false,
+  "priorFailure": {
+    "source": "a4368b26624e7d7c286c99efcf50fe52a3d580c9",
+    "run": 39595541012,
+    "job": 119206807356,
+    "artifact": {
+      "id": 12345155403,
+      "size_in_bytes": 45080,
+      "digest": "sha256:c7691c3609bb86d0ee097881b38d6a051b642fb3063940ccb7b74857901554f4"
+    },
+    "members": 69,
+    "outcome": "failure",
+    "actualError": "new worker test checked zero whole metadata while its own Linker closure retained the264-byte Runtime handle",
+    "workerPassed": 10,
+    "workerFailed": 1,
+    "nativeProductsCaptured": false,
+    "qualified": false
+  },
+  "sourceProjection": {
+    "compiledRevision": "c7134289f446cb3171eb0ffd800a94afc2a5209f",
+    "separatelyReviewedRevision": "8473afecac55bbf6d67b411b7d7b73820991b289",
+    "guard": "tools/activation_stack_native_source.py",
+    "onlyPath": "apps/latentd/src/config/runtime.rs",
+    "semantics": "one exact reversible profile-block helper extraction; report both actual source identities"
+  }
+}
