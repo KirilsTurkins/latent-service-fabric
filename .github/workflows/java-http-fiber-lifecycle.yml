@@ -45,6 +45,11 @@ on:
       - 'tools/qualify_java_http_mixed.py'
       - 'tools/fixtures/java-http-mixed-bodies/**'
       - 'tools/tests/test_java_http_mixed.py'
+      - 'tools/java_http_late_fixture.py'
+      - 'tools/java_http_late_node.py'
+      - 'tools/qualify_java_http_late.py'
+      - 'tools/fixtures/java-http-late-completion/**'
+      - 'tools/tests/test_java_http_late.py'
       - '.github/workflows/java-http-fiber-lifecycle.yml'
   workflow_dispatch:
     inputs:
@@ -69,6 +74,11 @@ on:
 
       java_http_mixed_bodies:
         description: One fresh ordinary Java body-ownership and original-limit component
+        type: boolean
+        default: false
+
+      java_http_late_completion:
+        description: Ordinary cancelled futures retain ownership through actual late HTTP completion
         type: boolean
         default: false
 
@@ -579,5 +589,105 @@ jobs:
             ${{ runner.temp }}/java-http-mixed/campaign/node/controls/*.json
             ${{ runner.temp }}/java-http-mixed/campaign/node/controls/*-partial.stdout
             ${{ runner.temp }}/java-http-mixed/campaign/node/controls/*-partial.stderr
+          if-no-files-found: warn
+          retention-days: 3
+
+  http-late-completion:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.java_http_late_completion }}
+    name: Ordinary Java cancelled futures and real late HTTP completion
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    permissions:
+      contents: read
+      actions: read
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - name: Fetch only the exact protocol-inclusive CLI-dispatch native source
+        run: git fetch --no-tags --depth=1 origin 6fd19eab2c224fc31481d03de5008de4d3e4429e
+      - name: Install only existing pinned Python recipe dependencies
+        run: python3 -m pip install -r tools/requirements.lock
+      - name: Check separately versioned native tuple and late-completion source boundaries
+        run: >-
+          python3 -B -m unittest tools.tests.test_release_preparation_cli_native_products
+          tools.tests.test_java_http_late -v
+      - name: Authenticate exact five native products and all 134 native protocol materials
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          python3 -B tools/release_preparation_cli_native_products.py
+          --output "$RUNNER_TEMP/java-late-native"
+      - name: Check only fixed public failed-assembly input retention
+        run: python3 -B -m unittest tools.tests.test_java_phase_c_context -v
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v5.0.0
+        with:
+          distribution: temurin
+          java-version: 25.0.4+101.0.LTS
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - name: Install the same pinned Java compiler tools without any native Cargo build
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 --max-time 180 \
+            https://services.gradle.org/distributions/gradle-9.1.0-bin.zip \
+            -o "$RUNNER_TEMP/gradle.zip"
+          echo "a17ddd85a26b6a7f5ddb71ff8b05fc5104c0202c6e64782429790c933686c806  $RUNNER_TEMP/gradle.zip" | sha256sum --check
+          unzip -q "$RUNNER_TEMP/gradle.zip" -d "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/gradle-9.1.0/bin" >> "$GITHUB_PATH"
+          timeout --signal=KILL 180s curl --fail --location \
+            --retry 3 --retry-all-errors --retry-delay 1 --max-time 60 \
+            https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \
+            -o "$RUNNER_TEMP/wasi-sdk.tar.gz"
+          echo "87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171  $RUNNER_TEMP/wasi-sdk.tar.gz" | sha256sum --check --strict
+          tar -xzf "$RUNNER_TEMP/wasi-sdk.tar.gz" -C "$RUNNER_TEMP"
+          python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/java-bindgen"
+          echo "$RUNNER_TEMP/java-bindgen" >> "$GITHUB_PATH"
+      - name: Build one offline component and qualify only late accepted-task completion
+        run: >-
+          python3 -B tools/qualify_java_http_late.py
+          --prepared "$RUNNER_TEMP/java-late-native"
+          --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
+          --output "$RUNNER_TEMP/java-http-late"
+      - name: Retain bounded public build and node evidence without private fixture credentials
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: java-http-late-completion-${{ github.sha }}
+          path: |-
+            ${{ runner.temp }}/java-late-native/retrieval.json
+            ${{ runner.temp }}/java-late-native/native-products.json
+            ${{ runner.temp }}/java-late-native/source-inputs.json
+            ${{ runner.temp }}/java-http-late/qualification.json
+            ${{ runner.temp }}/java-http-late/campaign/qualification.json
+            ${{ runner.temp }}/java-http-late/campaign/FAILED.json
+            ${{ runner.temp }}/java-http-late/campaign/final-materials.json
+            ${{ runner.temp }}/java-http-late/campaign/compiler-cache-selection.json
+            ${{ runner.temp }}/java-http-late/campaign/compiler-acquisition/*.log
+            ${{ runner.temp }}/java-http-late/campaign/compiler-acquisition/*.command.json
+            ${{ runner.temp }}/java-http-late/campaign/build/*.json
+            ${{ runner.temp }}/java-http-late/campaign/build/component-inputs/core.wasm
+            ${{ runner.temp }}/java-http-late/campaign/build/component-inputs/closed-runtime.wasm
+            ${{ runner.temp }}/java-http-late/campaign/build/component.wasm
+            ${{ runner.temp }}/java-http-late/campaign/build/package/**
+            ${{ runner.temp }}/java-http-late/campaign/build/compiler-logs/*-java-to-c.log
+            ${{ runner.temp }}/java-http-late/campaign/build/compiler-logs/*-java-owned-classes.log
+            ${{ runner.temp }}/java-http-late/campaign/build/compiler-logs/*-java-coroutine-*.log
+            ${{ runner.temp }}/java-http-late/campaign/build/compiler-logs/*-c-to-wasm.log
+            ${{ runner.temp }}/java-http-late/campaign/build/compiler-logs/*-component-new.log
+            ${{ runner.temp }}/java-http-late/campaign/build/compiler-logs/*-c-to-wasm-context.command.json
+            ${{ runner.temp }}/java-http-late/campaign/build/compiler-logs/*-expected-wit.log
+            ${{ runner.temp }}/java-http-late/campaign/build/compiler-logs/*-compiled-wit.log
+            ${{ runner.temp }}/java-http-late/campaign/node/*.json
+            ${{ runner.temp }}/java-http-late/campaign/node/controls/*.json
+            ${{ runner.temp }}/java-http-late/campaign/node/controls/*-partial.stdout
+            ${{ runner.temp }}/java-http-late/campaign/node/controls/*-partial.stderr
           if-no-files-found: warn
           retention-days: 3

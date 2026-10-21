@@ -1,0 +1,182 @@
+{
+  "status": "passed",
+  "source": "f9a296e9f302de6c489445e2e92b18ad6ac2aef3",
+  "run": 39529845887,
+  "job": 118992976265,
+  "artifact": {
+    "id": 12314528828,
+    "bytes": 1961005,
+    "sha256": "sha256:e7d712304486307888e4a1dae70cd319962a2ee346a33349041ada348796a88e",
+    "membersVerified": 175
+  },
+  "members": 175,
+  "sourceMaterialsComparedWithExactGit": 242,
+  "nativeFiles": 3318,
+  "auxiliaryMaterials": 134,
+  "component": {
+    "sha256": "sha256:ae90c6c77f4d1886f1cf1b81e080702814c0df43c0d4fc04e98ae33fd5ca48b3",
+    "bytes": 4034052
+  },
+  "outcomes": [
+    {
+      "mode": 0,
+      "case": "cancelled-executor-future-late-http",
+      "value": [
+        "1:late:future-task:1:0:1:true:4109"
+      ],
+      "outboundRequests": 2,
+      "retirement": true
+    },
+    {
+      "mode": 2,
+      "case": "fresh-after-executor",
+      "value": [
+        "1:fresh:200:0:0"
+      ],
+      "outboundRequests": 1,
+      "retirement": true
+    },
+    {
+      "mode": 1,
+      "case": "cancelled-default-completable-late-http",
+      "value": [
+        "1:late:completable-default:1:0:1:true:4109"
+      ],
+      "outboundRequests": 2,
+      "retirement": true
+    },
+    {
+      "mode": 2,
+      "case": "fresh-after-completable",
+      "value": [
+        "1:fresh:200:0:0"
+      ],
+      "outboundRequests": 1,
+      "retirement": true
+    }
+  ],
+  "authorityDenials": 1,
+  "httpContacts": 6,
+  "pendingAfterLogicalCancellationSamples": 2,
+  "retainedResultBeforeRealSuffixRelease": 1,
+  "resultAfterPhysicalReturn": 0,
+  "cancelledFutureValueNotOverwritten": true,
+  "actualPeerMarkerReleaseSuffixOrderVerified": true,
+  "perCaseProviderRetirement": 4,
+  "all18ActiveCountersZero": true,
+  "sameCell": "operator-workflow-test:phase0:standard:00000000",
+  "cleanReapedShutdown": true,
+  "peerStoppedZeroOpen": true,
+  "postRetiredStoreCallbackClaimed": false,
+  "nativeRecompiledByConsumer": false,
+  "reproducibilityClaimed": false,
+  "full688Qualified": false,
+  "schemaVersion": "latent.java.http-late-signed.v1",
+  "compiledGuestSource": "f9a296e9f302de6c489445e2e92b18ad6ac2aef3",
+  "fixtureSource": "f9a296e9f302de6c489445e2e92b18ad6ac2aef3",
+  "nativeCompiledSource": "6fd19eab2c224fc31481d03de5008de4d3e4429e",
+  "nativeProducerRun": 39516047085,
+  "nativeProducerJob": 118948325038,
+  "nativeSource": {
+    "sha256": "sha256:4a0631c0abb07cfbf4a32d41d6376c2e89861f73c97eb38d7c8d8b8a869aab82",
+    "files": 3318,
+    "bytes": 26118205,
+    "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+    "hermetic": false,
+    "implicitCompilerInputs": "not-attested"
+  },
+  "products": {
+    "latent": {
+      "sha256": "sha256:1d1ca68fd341f3dfadbc62d17ae7c152d26c4ba79c569dc378f261b24b9cf142",
+      "bytes": 69007584
+    },
+    "latentd": {
+      "sha256": "sha256:1711ac09047a702cbd3fd99aa59b0b67efccb3592533b6d1957ba274d59fb48a",
+      "bytes": 185502152
+    },
+    "package": {
+      "sha256": "sha256:5d1c60df2cab630e4bb19e06cc699b6cf0c930eef418822f025ab416220e2314",
+      "bytes": 17750192
+    },
+    "capsule_contracts": {
+      "sha256": "sha256:c4936ef9489d2b29f6513d8b48236e95d622a807fccdbf60ee6008c12cec75c1",
+      "bytes": 7245472
+    },
+    "capsule_authoring": {
+      "sha256": "sha256:5c661ba4e2c67e43e3a7ed07f9d24e8348c4e6d8dbd06e157fd2a46f062880b8",
+      "bytes": 24017536
+    }
+  },
+  "caseReceipts": [
+    {
+      "case": "cancelled-executor-future-late-http",
+      "mode": 0,
+      "receipt": {
+        "path": "controls/cancelled-executor-future-late-http-case.json",
+        "sha256": "sha256:a1f192f984380316f83489077cf67f062ed3fd24b52daea279e1125fc91c46c8",
+        "bytes": 42025
+      }
+    },
+    {
+      "case": "fresh-after-executor",
+      "mode": 2,
+      "receipt": {
+        "path": "controls/fresh-after-executor-case.json",
+        "sha256": "sha256:ceb54b63342c1c12cd80c562de5a0729bbc94e0e0bd5753258ffe90861672599",
+        "bytes": 23054
+      }
+    },
+    {
+      "case": "cancelled-default-completable-late-http",
+      "mode": 1,
+      "receipt": {
+        "path": "controls/cancelled-default-completable-late-http-case.json",
+        "sha256": "sha256:3a288a28ab395c1ccd3aa4a54272b55aa23ebbfeb223463a6e0bdbc1bdb219df",
+        "bytes": 50816
+      }
+    },
+    {
+      "case": "fresh-after-completable",
+      "mode": 2,
+      "receipt": {
+        "path": "controls/fresh-after-completable-case.json",
+        "sha256": "sha256:1050c52de9add461a00cee6904d664a58b0b15bb9cf32cf70ac21b0ed3d73f53",
+        "bytes": 27273
+      }
+    }
+  ],
+  "sameCellFreshInvocations": 2,
+  "wholeNodeLifetimeSeconds": 300,
+  "invocationWallMillis": 120000,
+  "fuel": 1000000000,
+  "guestMemoryBytes": 67108864,
+  "httpRequestBytes": 4096,
+  "httpResponseBytes": 8192,
+  "chunkBytes": 4096,
+  "outstandingChunks": 2,
+  "nodeAndOperatorComponentInputBytes": 67108864,
+  "integrationBase": "3758619bac0561eae40e39316d6a7db1834c5d7e",
+  "integrationScope": {
+    "qualifiedLateFeatureBlobsUnchanged": [
+      "tools/fixtures/java-http-late-completion/Capsule.java",
+      "tools/java_http_late_fixture.py",
+      "tools/java_http_late_node.py",
+      "tools/qualify_java_http_late.py",
+      "tools/tests/test_java_http_late.py"
+    ],
+    "javaSdkAndWitPreimagesUnchanged": 199,
+    "campaignMaterialDeltas": [
+      "tools/toolchain.toml: unrelated Go 1.27.2 to 1.27.3 patch; Java pin unchanged",
+      "tools/rust_capsule_build.py: optional Rust HTTP recipe; shared Commands/package_inputs unchanged",
+      "tools/fixtures/java-http-mixed-bodies/Capsule.java: separately qualified mixed fixture helper split, never compiled into this late component"
+    ],
+    "historicalNativeCompilationNotTransferredToCurrentSource": true
+  },
+  "scope": "late-accepted-task-completion-after-logical-cancel-before-activation-retirement",
+  "limitations": [
+    "Observed actual late accepted work after logical task cancellation and before activation retirement. No callback into a retired Store is claimed.",
+    "Read-only runtime Result observation is test instrumentation; library HTTP and both default executor paths remain ordinary.",
+    "Earlier closing/drain/trap/cross-tenant evidence retains its own source and original failed campaigns remain failed.",
+    "Historical native source is not rebound to current development; build observation is not hermetic or a byte-reproducibility claim."
+  ]
+}
