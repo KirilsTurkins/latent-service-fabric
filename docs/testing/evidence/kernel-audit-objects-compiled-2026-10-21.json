@@ -1,0 +1,788 @@
+{
+  "status": "passed",
+  "sourceCommit": "ad6b07f0947490cc05a3c65431683a462d798cae",
+  "run": 39555684280,
+  "job": 119074798425,
+  "artifact": {
+    "id": 12325162429,
+    "bytes": 533715,
+    "sha256": "9310bef0b703c306233133d920d4cbb441eb5cedd96bc8576c8ef9e92ffe0138",
+    "crcMembers": 76
+  },
+  "receipt": {
+    "bytes": 15208,
+    "sha256": "aea0c6fa29056981dde6d821d555fb4790bc648f6a418cfd16f147aad6a3d983"
+  },
+  "wholeInputs": 23,
+  "wholeInputBytes": 1616007,
+  "derivedFiles": 45,
+  "objects": {
+    "net/socket.o": {
+      "bytes": 100072,
+      "sha256": "629a62c88f3d8d5e071528c62c82f1afa2fb4051981b5cded147f668a3d63cf0",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_sock_create"
+      ]
+    },
+    "fs/inode.o": {
+      "bytes": 79984,
+      "sha256": "a82be67ae273db6caadc242e9fa52da443dc5992cf6603875cb523d68d8a8267",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_new_inode"
+      ]
+    },
+    "net/core/sock.o": {
+      "bytes": 119520,
+      "sha256": "81b0c5374cb4c3b14e629374927d9bf3ecdeb22f5fc5addba7228d2b2666c21f",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_sk_alloc",
+        "lsf_prepaid_protocol_allocate",
+        "lsf_prepaid_protocol_return",
+        "lsf_prepaid_protocol_clear"
+      ]
+    },
+    "net/ipv4/af_inet.o": {
+      "bytes": 53976,
+      "sha256": "72ff5b5dd7a3133d692860bbd25a3763281e9cb47e570a7d74515ff282676f71",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_inet_create",
+        "lsf_prepaid_protocol_family"
+      ]
+    },
+    "security/security.o": {
+      "bytes": 411400,
+      "sha256": "25bbcd7677df83f3d8cc9b1a2434a21c3dd766394359ba590b481cd4ab90d3f7",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_security_inode_alloc",
+        "lsf_prepaid_security_sk_alloc"
+      ]
+    },
+    "net/factory.o": {
+      "bytes": 31696,
+      "sha256": "2a05445b30155834b4a9620a53e66ddcd7a6dbe294b9de5922eaf5abf6346120",
+      "requiredDefinedSymbols": [
+        "lsf_factory_register",
+        "lsf_factory_blob_allocate",
+        "lsf_factory_blob_finish",
+        "lsf_factory_child_allocate",
+        "lsf_factory_protocol_parent",
+        "lsf_factory_options_publish",
+        "lsf_factory_options_owned",
+        "lsf_factory_options_queue",
+        "lsf_factory_netport_publish",
+        "lsf_factory_netport_queue",
+        "lsf_factory_netport_candidate",
+        "lsf_factory_netport_current",
+        "lsf_factory_sidcache_publish",
+        "lsf_factory_sidcache_queue",
+        "lsf_factory_sidcache_destroy",
+        "lsf_factory_sidcache_candidate",
+        "lsf_factory_sidcache_current",
+        "lsf_factory_avc_member",
+        "lsf_factory_avc_phase",
+        "lsf_factory_avc_replace",
+        "lsf_factory_avc_publish",
+        "lsf_factory_avc_queue",
+        "lsf_factory_avc_candidate",
+        "lsf_factory_avc_current",
+        "lsf_factory_audit_head_current"
+      ]
+    },
+    "security/selinux/netlabel.o": {
+      "bytes": 14624,
+      "sha256": "3cc8dc452bfc1721536c3b2fdaf30347f13afeab029691f5c4a6a66cd0000fdb",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_netlabel_sock_genattr"
+      ]
+    },
+    "security/selinux/ss/services.o": {
+      "bytes": 77336,
+      "sha256": "6c923c61ac5d64818cb06bd4cbd7dd2ce603cd1d16a27b8e766d8b98d2c393a1",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_security_sid_to_secattr",
+        "lsf_prepaid_audit_dup",
+        "lsf_prepaid_audit_string_return",
+        "lsf_prepaid_sidcache_drain",
+        "lsf_prepaid_security_sid_to_context"
+      ]
+    },
+    "security/selinux/ss/mls.o": {
+      "bytes": 12888,
+      "sha256": "7521993d0962d86f50b7ee8c0fe4cf6e804b8cc7ebe60b5e682026b532016c0c",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_mls_export_cat"
+      ]
+    },
+    "security/selinux/ss/ebitmap.o": {
+      "bytes": 13160,
+      "sha256": "1ea1533eaf822ef73cb34c4048030cc0d871ef871289847761fd06be3f35f3ad",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_ebitmap_export"
+      ]
+    },
+    "net/netlabel/netlabel_kapi.o": {
+      "bytes": 30672,
+      "sha256": "8a2cd385e536309c67501bdc49fa7559282c8661d4b13db97dc72068077eb6a3",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_catmap_setlong",
+        "lsf_prepaid_netlbl_sock_setattr",
+        "lsf_prepaid_netlbl_conn_setattr",
+        "lsf_prepaid_netlabel_source",
+        "lsf_prepaid_label_domain_return",
+        "lsf_prepaid_label_catmap_return",
+        "lsf_prepaid_label_secattr_return",
+        "lsf_prepaid_cipso_buffer_return",
+        "lsf_prepaid_options_failed_return",
+        "lsf_prepaid_options_retire",
+        "lsf_prepaid_netlabel_strdup"
+      ]
+    },
+    "net/ipv4/cipso_ipv4.o": {
+      "bytes": 25048,
+      "sha256": "2007e461bc0da8595416bfa0db2027147da121319f375dcb23a91df7259a2bf3",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_cipso_sock_setattr"
+      ]
+    },
+    "security/selinux/netport.o": {
+      "bytes": 9032,
+      "sha256": "d6304536ae577f5ba9019539971947454cd6864a26241fa23dff1d311af02c8a",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_netport_sid",
+        "lsf_prepaid_netport_drain"
+      ]
+    },
+    "security/selinux/hooks.o": {
+      "bytes": 167952,
+      "sha256": "9fc1edd58b0cd9338d239ca569f01b0c9c330abcd0479a784fc1765e9ff62b95",
+      "requiredDefinedSymbols": []
+    },
+    "security/selinux/ss/sidtab.o": {
+      "bytes": 18032,
+      "sha256": "6ce048f8495d52ca0304a60540554b0b069a1cedb5fca84eb85697075f1b1a59",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_sid2str_put",
+        "lsf_prepaid_sid2str_get",
+        "lsf_prepaid_sidcache_detach"
+      ]
+    },
+    "security/selinux/avc.o": {
+      "bytes": 121136,
+      "sha256": "211e7bf803d6bac9a2b46a4256639dbf9828e8f2152cf06fada3ed3e6f973b54",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_avc_has_perm",
+        "lsf_prepaid_avc_drain",
+        "lsf_prepaid_avc_audit"
+      ]
+    },
+    "net/core/skbuff.o": {
+      "bytes": 177368,
+      "sha256": "c38302428aa893bf1155bef09253d8616380ca006a3b4c56d34045e861cffa98",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_audit_skb_new"
+      ]
+    },
+    "kernel/audit.o": {
+      "bytes": 64248,
+      "sha256": "605dadeae642da4959e2504fac99eaca29c0ab176d939d4aca54fc15db584482",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_audit_log_start",
+        "lsf_prepaid_audit_log_end"
+      ]
+    },
+    "security/lsm_audit.o": {
+      "bytes": 10328,
+      "sha256": "ffab0aebcfb4681fb6c3b9c5bcea7f5aa8bba8495cc732d19bf1199b3a0316a5",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_common_lsm_audit"
+      ]
+    },
+    "net/netlink/af_netlink.o": {
+      "bytes": 83552,
+      "sha256": "894f5909b4a3efaaf59b6b0bfb5a2f5e3f6f9080b99d61de6b22f5d4464d531d",
+      "requiredDefinedSymbols": [
+        "netlink_unicast",
+        "netlink_broadcast_filtered"
+      ]
+    }
+  },
+  "requiredDefinedGlobalFunctions": 69,
+  "privateFunctions": 67,
+  "commands": 25,
+  "allCommandsCleaned": true,
+  "diagnosticBytes": 265455,
+  "hostedTests": 99,
+  "jobLog": {
+    "bytes": 69134,
+    "sha256": "1b9634727954bb55307e274e1d1c299748dcd6398443ea9e2facad8cadedbd6a"
+  },
+  "reviewedGitMaterials": [
+    {
+      "path": ".github/workflows/stream-kernel-objects.yml",
+      "bytes": 29906,
+      "sha256": "71e086f40044c3b7539c58bafe44053d2d65e5f9a3f2d2b1653d6cd8bae48c0f"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/README.md",
+      "bytes": 17963,
+      "sha256": "0c352b98741304cd25d67cdae5a8dfc4189ed243d3c918cda832803a32a11ac7"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/admission-reference.c",
+      "bytes": 8250,
+      "sha256": "870f9e6ab6fa3c65313c76a3627fc42e3cd84a9f13eb4fa8c1c01bd135a9dc3e"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/admission.h",
+      "bytes": 6217,
+      "sha256": "fe2d814eb7fb839d0cb34bdda847e29095f35ecb7ae485ac597d3c1bad255f44"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/allocation-closure.md",
+      "bytes": 9568,
+      "sha256": "e680030a43823fa44b2a4ff1ecbee5e013ab3335066a1b29cf0268f810e3709d"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/audit-buffer-private.c",
+      "bytes": 1978,
+      "sha256": "579099502031d49d0cbd096f6e89f8e6bc6097a964fe84ab5d613b4c9f799031"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/audit-private.h",
+      "bytes": 703,
+      "sha256": "bb8ab0690c07e9cdf7f490a2e83e43955cb8f0aac2b2c8f1d4c476cd51b11d92"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/audit-reference.c",
+      "bytes": 13006,
+      "sha256": "1fc527b1d35ee3bbcfe90336c9be3692efef87d37470834570c70c7722de62a7"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/audit-skb-private.c",
+      "bytes": 6035,
+      "sha256": "ffba0b2a935416ee2a03c021e627002036bc679f99e2098a161d6eaeee2ca0a4"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/audit-skb-reference.c",
+      "bytes": 17505,
+      "sha256": "f95206938ab8304e89be426161fe949edfb9e4c5488ee20b4c6119bd68eda954"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/audit-string-private.c",
+      "bytes": 1791,
+      "sha256": "d331cca89e6b438cd4127bae4462000388436dd6dd1cd2d2ec25eaff135a6838"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/avc-private.c",
+      "bytes": 8675,
+      "sha256": "0b056fd6c8af6a3f1b6b6afb472a8fb0a96248176e572900650d18a09d73500a"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/avc-private.h",
+      "bytes": 712,
+      "sha256": "d7d34f1d4946637af72f87faed1becb1e3fe75be107772cafaa9d0cca052a519"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/avc-reference.c",
+      "bytes": 17238,
+      "sha256": "5121827620e9a2ed5440072c90a8f1b73bf9a8f2e7c954e3017a8098a0c32282"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/constructor-gate-reference.c",
+      "bytes": 1809,
+      "sha256": "7a6e3c44221465b951cdd5d1e0304a66c0e402e1f2b02d7dd49eda3b8c3b8317"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/constructor-hooks.c",
+      "bytes": 1729,
+      "sha256": "f696aa8595160ce6421ad25d331e19075a354ac5667ae5a476c20377d4aa1184"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/constructor-hooks.h",
+      "bytes": 1899,
+      "sha256": "bc2d043d2a90428a8d4855449fb89457538120463b7e0ad5908eeb4583e7a87c"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/constructor-reference.c",
+      "bytes": 12398,
+      "sha256": "74fb1a4ba4bf0fed56be26cd2e149e87cbe8f89a9ff2b55e2cc8838c0251312d"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/factory-avc.c",
+      "bytes": 4565,
+      "sha256": "4652bd6e3401d3a2ac7b850be2cdf7eb96e914b710b96e3ccdab5e114142966e"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/factory-private.h",
+      "bytes": 4683,
+      "sha256": "e533550ffc487bba7ec19ee7ba826ed3b889f7dccba04bb005cddac426a99654"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/factory.c",
+      "bytes": 24810,
+      "sha256": "61963a7116871c7903d6a34265e8b8a1de3f59fb928b666b68314125105a1a8a"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/handoff-hooks.c",
+      "bytes": 1281,
+      "sha256": "09ee2cb906f786e29348abd10047c738ea86a3c5451f5dfc5d6777dfb86c203a"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/handoff-hooks.h",
+      "bytes": 570,
+      "sha256": "36962fb18982e5b38438deb1af339c9740e12646c34b3fbb7f4edf310887e93d"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/handoff-reference.c",
+      "bytes": 13305,
+      "sha256": "97a0ea7e462c75779c93d93784ac39ace6138e6ce91400823c12b85eb5b3e7ab"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/handoff.h",
+      "bytes": 4746,
+      "sha256": "1bbda154ed8915e4cb41ddc05e61af168454377a4d030cfad07d45e0b96bc2e2"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/hook-reference.c",
+      "bytes": 7158,
+      "sha256": "1342d5064d9c9783463449ab0e04d080ae8f11a2e5a429bc1a1402e2a147d6a6"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/kernel-hooks.c",
+      "bytes": 1286,
+      "sha256": "eb914f614218edfa82286ff27580c5f37dcb86bed1aba15f14c9d8eff4e12a55"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/kernel-hooks.h",
+      "bytes": 1009,
+      "sha256": "42532443f62c1836ad7600a6e9d1d03891d07bfe34c5ca4d83328b06a619b0a9"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/lineage.h",
+      "bytes": 10036,
+      "sha256": "e870632b2be976e238cf28c47a61b5f52a7b686206265638b086b6c078fe5b17"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/lsm-audit-private.c",
+      "bytes": 1570,
+      "sha256": "0a7c9f7e3d3905f67187dd574b5a325409ff7879c97373cb772dbeed4c3d4c9b"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/maintained-source-6.12.113.json",
+      "bytes": 15509,
+      "sha256": "551b4157660f6f63adc90bbc39b1d5d8ba71e5444044f598ef9abdfea9fb7960"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/maintained-source.md",
+      "bytes": 3933,
+      "sha256": "be09c5afdd575856e6d2c502ded8e32e38c7de98405c0318fd785800b8bfef36"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/netlabel-private.c",
+      "bytes": 5632,
+      "sha256": "5011221e7debcb03460fee6752ca27de439df9f89e1d5628c15b0cc34de44d9d"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/netlabel-private.h",
+      "bytes": 2149,
+      "sha256": "4d9cc47b7bf9e4dd625b7a8ae6c7ecb2eacf203d7601b898d7c0f5323c9669b2"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/netlabel-reference.c",
+      "bytes": 13931,
+      "sha256": "d12a118162218fd9df3ccc92e3897849a1e0e3563f3a7ce2f000703e24aa3c6b"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/netport-private.c",
+      "bytes": 2391,
+      "sha256": "2f66cce9347e0b579b241889ceef62c8ce64fe6328220272dd7cf1d45590fb57"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/netport-private.h",
+      "bytes": 343,
+      "sha256": "17ed375e0c01c51d01f2aafce77a8fcd1a86437adb00383d34e695467a8f72a3"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/netport-reference.c",
+      "bytes": 13745,
+      "sha256": "bca9a65b617edb978fb9fece9bd6b60fc4b0dca9d8c29ecd1df996008001c6f7"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/outer-hooks.h",
+      "bytes": 1175,
+      "sha256": "9dd6f1b803b012f22d42af948157068de750b1ba6c0cbcbef2d3795d1cdf0ae0"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/outer-private.c",
+      "bytes": 4219,
+      "sha256": "3d858b241df2516361f44f3fa90c45515dce2bd2ee705891971a45e26196b239"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/outer-reference.c",
+      "bytes": 12658,
+      "sha256": "36a2b6ed68b752a2ea27a15b2b46ae416d3a3b01bcf3578dedd943dd9ca9ae6f"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/outer-security.c",
+      "bytes": 789,
+      "sha256": "d7828b113b1c41ded01c0d4ce2e7383c4df039efe8a07468a28c21870dc74a34"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/physical-hooks.c",
+      "bytes": 453,
+      "sha256": "1f4edd01366c08588421778ddf319c1a98492b53f91b1fe9b3aad6bbcd0057cf"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/physical-hooks.h",
+      "bytes": 364,
+      "sha256": "88a223e5e80811f2c3899c42d703ab4fbf6a0448fffa0edaf6722b03765488a6"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/physical-plan.h",
+      "bytes": 7774,
+      "sha256": "89f600b51208bf1ed6574df926115f28cfc9f16081492c0a89dbd52f4df503f1"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/physical-reference.c",
+      "bytes": 11342,
+      "sha256": "9a9864c9a973c9487f5b3f64f8385f8ccfc102499012ee97542de969c8cabb41"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/prepaid-audit-skb.md",
+      "bytes": 3059,
+      "sha256": "bab9fe16889b5a532e54200e4a45dc395c793186db0fee2d8d9b90c572410c27"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/prepaid-audit.md",
+      "bytes": 3177,
+      "sha256": "777db11d7b3b005e9b1673a538e3223114d54144d4319aa416f4a7ff3dbc3740"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/prepaid-avc.md",
+      "bytes": 6641,
+      "sha256": "f6ab33b6a6eec82e7499e0f30f0a6691e53a1842ea8462c717c1374bf6f2b849"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/prepaid-factory.md",
+      "bytes": 7427,
+      "sha256": "956deb68c8264e51a7c50f20b32cbea5c0bf0f9717b6c9d19c1f0ba262ace091"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/prepaid-netlabel.md",
+      "bytes": 3937,
+      "sha256": "245d9d600ac320a0bfd95a3caad1ebcdf8062763786b96c18490da57b0a653f4"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/prepaid-netport.md",
+      "bytes": 7126,
+      "sha256": "680e24fecb0df2671ad19591f155fc307150ceffa0acb59ee4638447d315167e"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/prepaid-outer.md",
+      "bytes": 5853,
+      "sha256": "d6abe013e8a1603365616d6b5378322fcb88f7b5c574d4e93a97425096a388e2"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/prepaid-platform.json",
+      "bytes": 1486,
+      "sha256": "9c8a93f3174115bb6ddbb450432da8715a21253a576f9788bac991a16c6011f9"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/prepaid-protocol.md",
+      "bytes": 6412,
+      "sha256": "af649eed87b15e8e4a98c18b3576e0b82bd636894830243f965f109c37ab10dd"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/prepaid-reference.c",
+      "bytes": 7795,
+      "sha256": "7597a52ed6fd84e0cfb22104b6f926470fa30867ca2b1a99e22f7207c81aae0f"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/prepaid-sidcache.md",
+      "bytes": 4641,
+      "sha256": "d1a35733cbf208b7b41cf6077b6d03b90057de055c399de95fb646b571eed5a4"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/prepaid.h",
+      "bytes": 28411,
+      "sha256": "702a9d33500da6edb4af27d8501cc5aabd6ef99705c2fbeadafd986bc5b00429"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/protocol-private.c",
+      "bytes": 3263,
+      "sha256": "683f45141df4b5d891930d8a4f25e089b6566e225d159a3da6c4fa159a8407e6"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/protocol-private.h",
+      "bytes": 1460,
+      "sha256": "cf34306a0ea8fd5af5187b620f2c6c386c080a07a2954d1f45bf83ab36be174a"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/reference-io.h",
+      "bytes": 2427,
+      "sha256": "ee8b2bf1927435d8c09be6f4a309fb62e8dab417841dd19be4a4b971d7364b0b"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/reference.c",
+      "bytes": 7513,
+      "sha256": "cc252730bbc451369495b4b554b7ee75b017e5a3cfca81f0e5ed1d37b20dc1b8"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/security-private.c",
+      "bytes": 1712,
+      "sha256": "af8a4b2903aaa4b75fa0b5d2e2e943205310f80d3269dbadc02a8aa6e44c30bf"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/security-reference.c",
+      "bytes": 10932,
+      "sha256": "582768e74e0f094f76bd804859b709034df17a4eb3731fcbe58d38146413444c"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/sidcache-private.c",
+      "bytes": 2608,
+      "sha256": "8cf79ed659909b29788bfa97152308f034dd81bd28c64918ac61d549a9120099"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/sidcache-private.h",
+      "bytes": 972,
+      "sha256": "38558ae328f14a08709c807d1599372cbbadcfd6e880b2b93712f8a5d2d6c88d"
+    },
+    {
+      "path": "research/standard-outbound/linux-6.12-lineage/sidcache-reference.c",
+      "bytes": 11188,
+      "sha256": "6808b589c0455d4fe9592b85088e631431ddb2d8121dbb4cbfa170c4d3f210a8"
+    },
+    {
+      "path": "tools/qualify_host_stream_kernel_objects.py",
+      "bytes": 21293,
+      "sha256": "b8eb0b5199feb09f551b520c3efe5fd79de8c1cefce8ae9e5b177589d5726842"
+    }
+  ],
+  "hermeticCompilerInputProof": false,
+  "configurationSymbols": 4309,
+  "onlyConfigurationDelta": "CONFIG_LSF_STREAM_FACTORY",
+  "kernelLinked": false,
+  "kernelBooted": false,
+  "actualAuditExecuted": false,
+  "actualLinuxRcuExecuted": false,
+  "factoryInstalled": false,
+  "completeAllocationClosure": false,
+  "finalFreeCertified": false,
+  "productionInstallation": false,
+  "schemaVersion": "lsf.kernel-object-observation.v1",
+  "officialArchive": {
+    "bytes": 148686048,
+    "sha256": "e09b6727e5c521253f0d41694900b9c38fb7604db7d35238a8197aa9f7de2428"
+  },
+  "upstreamCommit": "7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+  "manifestSha256": "551b4157660f6f63adc90bbc39b1d5d8ba71e5444044f598ef9abdfea9fb7960",
+  "configuration": {
+    "baseline": {
+      "bytes": 143203,
+      "sha256": "239e925557d3d349ea4c47c028e14431063f964ce6e7809024b6e4e804c7b659"
+    },
+    "selected": {
+      "bytes": 143192,
+      "sha256": "1b9152e00c4ef645dda8318f804aaae17acbabf4bd4d1b065c7205faabaef2b3"
+    },
+    "onlyChangedSymbol": "CONFIG_LSF_STREAM_FACTORY",
+    "securityAndInetPreserved": [
+      "CONFIG_INET",
+      "CONFIG_SECURITY",
+      "CONFIG_SECURITY_NETWORK",
+      "CONFIG_SECURITY_SELINUX"
+    ]
+  },
+  "objectCount": 20,
+  "derived": {
+    "net/socket.c": {
+      "bytes": 96969,
+      "sha256": "c069c412f74ef86574c0ce27206da86d4bb56508bd22540b7e7053bc48f119b7"
+    },
+    "net/core/sock.c": {
+      "bytes": 113617,
+      "sha256": "24b87c23b0bbd636ac06e0ce30bc145fedd43d267c98a4825897ad740654e934"
+    },
+    "net/ipv4/af_inet.c": {
+      "bytes": 55535,
+      "sha256": "9167aadfc04e6ceb79a29b1bcdfd5baff5022d143ad8d55d30807dd77020b912"
+    },
+    "fs/inode.c": {
+      "bytes": 78655,
+      "sha256": "8c8b1279f58c8990b969437163c58688cbaec6168f16ce22de3b56c9fee0e4a4"
+    },
+    "include/net/sock.h": {
+      "bytes": 86367,
+      "sha256": "f37eb73160c285c9d11610e270da319b5a779d4c82f63f53229cf4425492ba74"
+    },
+    "security/security.c": {
+      "bytes": 181953,
+      "sha256": "9ac1dc39fc71920ab04e9f36f640f48ef163977d485ae5de825eed56eaafe2f7"
+    },
+    "include/net/lsf_stream_protocol_private.h": {
+      "bytes": 1460,
+      "sha256": "cf34306a0ea8fd5af5187b620f2c6c386c080a07a2954d1f45bf83ab36be174a"
+    },
+    "include/net/lsf_stream_outer.h": {
+      "bytes": 1175,
+      "sha256": "9dd6f1b803b012f22d42af948157068de750b1ba6c0cbcbef2d3795d1cdf0ae0"
+    },
+    "include/net/lsf_stream_lineage_core.h": {
+      "bytes": 10036,
+      "sha256": "e870632b2be976e238cf28c47a61b5f52a7b686206265638b086b6c078fe5b17"
+    },
+    "net/factory-private.h": {
+      "bytes": 4683,
+      "sha256": "e533550ffc487bba7ec19ee7ba826ed3b889f7dccba04bb005cddac426a99654"
+    },
+    "net/prepaid.h": {
+      "bytes": 28411,
+      "sha256": "702a9d33500da6edb4af27d8501cc5aabd6ef99705c2fbeadafd986bc5b00429"
+    },
+    "net/factory.c": {
+      "bytes": 24842,
+      "sha256": "7385838b5a7267e0f6cf9a15bc778a0abd95dc12edd0118c8d304c94928aa068"
+    },
+    "net/core/lsf_protocol_private.c": {
+      "bytes": 3263,
+      "sha256": "683f45141df4b5d891930d8a4f25e089b6566e225d159a3da6c4fa159a8407e6"
+    },
+    "security/lsf_security_private.c": {
+      "bytes": 1712,
+      "sha256": "af8a4b2903aaa4b75fa0b5d2e2e943205310f80d3269dbadc02a8aa6e44c30bf"
+    },
+    "net/lsf_outer_private.c": {
+      "bytes": 4219,
+      "sha256": "3d858b241df2516361f44f3fa90c45515dce2bd2ee705891971a45e26196b239"
+    },
+    "security/lsf_outer_security.c": {
+      "bytes": 789,
+      "sha256": "d7828b113b1c41ded01c0d4ce2e7383c4df039efe8a07468a28c21870dc74a34"
+    },
+    "include/net/netlabel.h": {
+      "bytes": 21392,
+      "sha256": "0a30716ddd0175c7ddd7aae18d416b33cab26fc0eda1e2244c5a212bb40ae7b4"
+    },
+    "net/ipv4/cipso_ipv4.c": {
+      "bytes": 66501,
+      "sha256": "e8c8603fa7150068606db5e7f525fabf26bd2c610a57634535b911aea4d3fc15"
+    },
+    "net/netlabel/netlabel_kapi.c": {
+      "bytes": 44662,
+      "sha256": "4eddf54dd9dec74798683a2db7046693d9dcc9dfdc78476f862ef82251c05ea4"
+    },
+    "security/selinux/netlabel.c": {
+      "bytes": 17745,
+      "sha256": "c03dfe79bc065994490527e03552ffeb7c30d250bc2637fea8d2f396acc7df56"
+    },
+    "security/selinux/ss/ebitmap.c": {
+      "bytes": 13197,
+      "sha256": "0169e72cd62f6bb105c9a9702d006da00266fbcc12deaaadc36c3d5f26d094f4"
+    },
+    "security/selinux/ss/mls.c": {
+      "bytes": 16674,
+      "sha256": "44062ce91ce2a93298102d08fbe87579b1c395f6a6ce888dbf86ad6b88ab3548"
+    },
+    "security/selinux/ss/services.c": {
+      "bytes": 103134,
+      "sha256": "9826872fd03fc912451ff14f5b554ed5c3cfd68b4174cdb53d27621cbbd456be"
+    },
+    "include/net/lsf_stream_netlabel_private.h": {
+      "bytes": 2149,
+      "sha256": "4d9cc47b7bf9e4dd625b7a8ae6c7ecb2eacf203d7601b898d7c0f5323c9669b2"
+    },
+    "net/netlabel/lsf_netlabel_private.c": {
+      "bytes": 5632,
+      "sha256": "5011221e7debcb03460fee6752ca27de439df9f89e1d5628c15b0cc34de44d9d"
+    },
+    "security/selinux/netport.c": {
+      "bytes": 8501,
+      "sha256": "30a400ff0ea04f0e9e554e425bfa0a25a4402589c3cebce8010134c5293dfef5"
+    },
+    "security/selinux/hooks.c": {
+      "bytes": 206419,
+      "sha256": "ec27de120ef867bd3363fa6de0d676628f738c197be926f469faeb79e360f92f"
+    },
+    "include/net/lsf_stream_netport_private.h": {
+      "bytes": 343,
+      "sha256": "17ed375e0c01c51d01f2aafce77a8fcd1a86437adb00383d34e695467a8f72a3"
+    },
+    "security/selinux/lsf_netport_private.c": {
+      "bytes": 2391,
+      "sha256": "2f66cce9347e0b579b241889ceef62c8ce64fe6328220272dd7cf1d45590fb57"
+    },
+    "security/selinux/ss/sidtab.c": {
+      "bytes": 18307,
+      "sha256": "e82fa6cc13824adbd370c5502279140555242d97b1086e40510d1caa8212da70"
+    },
+    "include/net/lsf_stream_sidcache_private.h": {
+      "bytes": 972,
+      "sha256": "38558ae328f14a08709c807d1599372cbbadcfd6e880b2b93712f8a5d2d6c88d"
+    },
+    "security/selinux/ss/lsf_sidcache_private.c": {
+      "bytes": 2608,
+      "sha256": "8cf79ed659909b29788bfa97152308f034dd81bd28c64918ac61d549a9120099"
+    },
+    "security/selinux/ss/lsf_audit_string_private.c": {
+      "bytes": 1791,
+      "sha256": "d331cca89e6b438cd4127bae4462000388436dd6dd1cd2d2ec25eaff135a6838"
+    },
+    "security/selinux/avc.c": {
+      "bytes": 45645,
+      "sha256": "36e2faea4197c58b737e6449ee8b89218843abece6c7e66ef358588f4dc20bcd"
+    },
+    "security/selinux/include/avc.h": {
+      "bytes": 4623,
+      "sha256": "b1bb6fd0b9fda55cce88a5fb2a359fd64cde40ef18162e6640cd33885ebb5966"
+    },
+    "include/net/lsf_stream_avc_private.h": {
+      "bytes": 712,
+      "sha256": "d7d34f1d4946637af72f87faed1becb1e3fe75be107772cafaa9d0cca052a519"
+    },
+    "security/selinux/lsf_avc_private.c": {
+      "bytes": 8675,
+      "sha256": "0b056fd6c8af6a3f1b6b6afb472a8fb0a96248176e572900650d18a09d73500a"
+    },
+    "net/factory-avc.c": {
+      "bytes": 4565,
+      "sha256": "4652bd6e3401d3a2ac7b850be2cdf7eb96e914b710b96e3ccdab5e114142966e"
+    },
+    "net/core/skbuff.c": {
+      "bytes": 190891,
+      "sha256": "e26c96a2fd277699ca6a1be859614a75eb45acf55d163ec776fd7c1222ad8ebb"
+    },
+    "net/audit-skb-private.c": {
+      "bytes": 6035,
+      "sha256": "ffba0b2a935416ee2a03c021e627002036bc679f99e2098a161d6eaeee2ca0a4"
+    },
+    "kernel/audit.c": {
+      "bytes": 70970,
+      "sha256": "c49031d5aaca64256d98c54d0914072e8e5e2aa9b71c0126449349b31f4e2ca0"
+    },
+    "security/lsm_audit.c": {
+      "bytes": 11241,
+      "sha256": "f6a2ab566ab99b600d0b7d03fa8b0c796cc820ddc919536063f6ec754592ed14"
+    },
+    "net/audit-private.h": {
+      "bytes": 703,
+      "sha256": "bb8ab0690c07e9cdf7f490a2e83e43955cb8f0aac2b2c8f1d4c476cd51b11d92"
+    },
+    "net/audit-buffer-private.c": {
+      "bytes": 1978,
+      "sha256": "579099502031d49d0cbd096f6e89f8e6bc6097a964fe84ab5d613b4c9f799031"
+    },
+    "net/lsm-audit-private.c": {
+      "bytes": 1570,
+      "sha256": "0a7c9f7e3d3905f67187dd574b5a325409ff7879c97373cb772dbeed4c3d4c9b"
+    }
+  },
+  "mandatoryAuditSourceImplemented": true,
+  "reference": {
+    "kind": "supplemental-serialized-C-doubles",
+    "auditCases": 18,
+    "skbCases": 24,
+    "preservedNetportCases": 19,
+    "kernelExecuted": false,
+    "originalEscapingCloneExit": 2
+  }
+}

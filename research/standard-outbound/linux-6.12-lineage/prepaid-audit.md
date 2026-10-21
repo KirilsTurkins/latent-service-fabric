@@ -41,8 +41,8 @@ existing SKB controls remain.
 The separate default-false audit object lane selects twenty actual Kbuild
 targets and 69 global function definitions, preserving the prior sixteen
 targets and 61 definitions. AUDIT, AUDITSYSCALL, SELinux, Netlabel and the
-256-entry SID cache must already be enabled. Its first actual hosted outcome
-is pending; these source controls are not a compiled-kernel receipt.
+256-entry SID cache must already be enabled. The [object observation](../../../docs/testing/stream-kernel-objects.md) records
+the separate actual hosted result; these serialized controls are not Linux execution.
 
 Kernel linking and boot, real LSM/RCU and audit delivery execution, complete
 route/RX/shared infrastructure ownership, physical final-free certificates,
