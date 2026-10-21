@@ -33,7 +33,8 @@ async fn fixture(
     config
         .wasm_component_model(true)
         .wasm_component_model_async(true)
-        .concurrency_support(true);
+        .concurrency_support(true)
+        .consume_fuel(pending);
     let engine = Engine::new(&config).unwrap();
     let component =
         Component::new(&engine, include_bytes!("../host-memory-accounted.wasm")).unwrap();
@@ -54,6 +55,12 @@ async fn fixture(
         .unwrap();
     let mut store = wasmtime::Store::new(&engine, ());
     store.set_hostcall_fuel(128 * 1024);
+    if pending {
+        // Realloc and echo each execute only i32.const/end. Only the pure Core
+        // post-return loop can reach this first cooperative yield interval.
+        store.set_fuel(1_000_000).unwrap();
+        store.fuel_async_yield_interval(Some(1000)).unwrap();
+    }
     let instance = linker
         .instantiate_async(&mut store, &component)
         .await
@@ -223,14 +230,14 @@ async fn actual_partial_failed_lift_reports_only_allocated_tree_and_retires_afte
 async fn actual_parameter_copy_refunds_before_lift_and_abandoned_post_return_keeps_result_owner() {
     use std::{
         future::Future,
-        task::{Context, Wake, Waker},
+        task::{Context, Poll, Wake, Waker},
     };
     struct Noop;
     impl Wake for Noop {
         fn wake(self: Arc<Self>) {}
     }
     let budget = budget(1024 * 1024);
-    let (mut store, function, entered) = fixture("echo-post", true).await;
+    let (mut store, function, forbidden_import_entered) = fixture("echo-post", true).await;
     let json = serde_json::to_vec(&vec!["x".repeat(8192)]).unwrap();
     let input = decode_params_accounted(
         &[Type::String],
@@ -243,6 +250,7 @@ async fn actual_parameter_copy_refunds_before_lift_and_abandoned_post_return_kee
     let input_bytes = budget.host_memory_bytes();
     let mut output = OwnedValues::output_accounted(1, &budget).unwrap();
     let scope = output.lift_memory().unwrap();
+    let caller_owned_bytes = budget.host_memory_bytes();
     let mut call = Box::pin(function.call_async_with_memory(
         &mut store,
         input.as_slice(),
@@ -250,14 +258,19 @@ async fn actual_parameter_copy_refunds_before_lift_and_abandoned_post_return_kee
         scope,
     ));
     let waker = Waker::from(Arc::new(Noop));
-    assert!(call
-        .as_mut()
-        .poll(&mut Context::from_waker(&waker))
-        .is_pending());
-    assert!(entered.load(Ordering::SeqCst));
+    let state = call.as_mut().poll(&mut Context::from_waker(&waker));
+    assert!(
+        matches!(&state, Poll::Pending),
+        "legal Core post-return yield returned {state:?}"
+    );
+    assert!(!forbidden_import_entered.load(Ordering::SeqCst));
+    // Native lifting precedes post-return. This additional live charge proves
+    // actual native result storage exists beyond the caller's input/slots/scope.
+    assert!(budget.host_memory_bytes() > caller_owned_bytes);
     assert!(peak(&budget) >= input_bytes + 8192); // actual simultaneous deep copy
     assert!(budget.host_memory_bytes() < input_bytes + 4096); // copied parameters actually gone
     drop(call);
+    assert!(matches!(output.as_slice(), [Val::Bool(false)])); // no caller handoff
     drop(input);
     drop(output);
     assert!(budget.host_memory_bytes() > 0); // Store-owned post-return result remains

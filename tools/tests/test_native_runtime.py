@@ -153,6 +153,7 @@ class ManifestTests(unittest.TestCase):
 
     def test_current_wasmtime_shared_license_donor_matches_every_locked_child(self):
         import tomllib
+        from tools import host_codec_wasmtime as codec_wasmtime
         policy = json.loads((ROOT / "packaging/linux/license-sources.json").read_bytes())
         current = [source for source in policy["sources"]
                    if source["donor"] == {"name": "wasmtime", "version": "48.0.7", "file": "LICENSE"}]
@@ -174,21 +175,70 @@ class ManifestTests(unittest.TestCase):
                             if entry["name"] in source["packages"] or entry["name"] == "wasmtime"}
                 self.assertEqual(len(selected), 15)
                 checksums = {(name, entry["version"], donor["source"]): entry["checksum"]
-                             for name, entry in selected.items()}
+                             for name, entry in selected.items() if "checksum" in entry}
+                local = "checksum" not in selected["wasmtime"]
+                actual_donor = ({**donor, "source": None,
+                    "manifest_path": str(ROOT / codec_wasmtime.PROVIDER / "Cargo.toml")}
+                    if local else donor)
                 for name, version in source["packages"].items():
                     with self.subTest(name=name):
                         self.assertEqual(selected[name]["version"], version)
                         child = {**donor, "name": name, "version": version}
                         with patch.object(files, "read", return_value=encode({"git": {"sha1": source["sourceCommit"]}})), \
                                 patch.object(files, "digest", return_value=source["sha256"]):
-                            path, evidence = shared_license(child, [donor], checksums, policy)
-                            self.assertEqual(path, directory / "LICENSE")
-                            self.assertEqual(evidence["donorCrateSha256"], selected["wasmtime"]["checksum"])
+                            path, evidence = shared_license(child, [actual_donor], checksums, policy)
+                            self.assertEqual(path, Path(actual_donor["manifest_path"]).parent / "LICENSE")
+                            if local:
+                                self.assertNotIn("donorCrateSha256", evidence)
+                                self.assertEqual(evidence["nativeCohort"], codec_wasmtime.COHORT)
+                                self.assertEqual(evidence["donorSourceRecordSha256"], codec_wasmtime.RECORD_SHA256)
+                                self.assertEqual(evidence["donorUpstreamArchiveSha256"],
+                                    "12300d040e8bea7e7ccde75b9919d27ebba47a217a64b09ba058ae8d3b4290b6")
+                            else:
+                                self.assertEqual(evidence["donorCrateSha256"], selected["wasmtime"]["checksum"])
                             for sources in ([entry for entry in policy["sources"] if entry is not source],
                                             policy["sources"] + [source],
                                             [{**source, "sourceCommit": "0" * 40}]):
                                 with self.assertRaises(InstallError):
-                                    shared_license(child, [donor], checksums, {**policy, "sources": sources})
+                                    shared_license(child, [actual_donor], checksums, {**policy, "sources": sources})
+
+    def test_local_wasmtime_license_donor_cannot_bypass_child_identity_or_source_authentication(self):
+        from tools import host_codec_wasmtime as codec_wasmtime
+        from tools.rust_capsule_project import read_file
+        import tomllib
+        # Exercise source/policy identity with real bounded file bytes on both
+        # hosts; Linux descriptor ownership has its separate filesystem tests.
+        def inspect(child, donors, checksums, policy):
+            with patch.object(files, "read", side_effect=read_file), \
+                    patch.object(files, "digest", side_effect=lambda path: hashlib.sha256(read_file(path)).hexdigest()):
+                return shared_license(child, donors, checksums, policy)
+        policy = json.loads((ROOT / "packaging/linux/license-sources.json").read_bytes())
+        source = next(row for row in policy["sources"]
+                      if row["donor"] == {"name": "wasmtime", "version": "48.0.7", "file": "LICENSE"})
+        lock = tomllib.loads((ROOT / "Cargo.lock").read_text())["package"]
+        child_lock = next(row for row in lock if row["name"] == "wasmtime-internal-core")
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            (directory / ".cargo_vcs_info.json").write_bytes(encode({"git": {"sha1": source["sourceCommit"]}}))
+            donor = {"name": "wasmtime", "version": "48.0.7", "source": None,
+                "repository": source["repository"], "license": source["license"],
+                "manifest_path": str(ROOT / codec_wasmtime.PROVIDER / "Cargo.toml")}
+            child = {**donor, "name": child_lock["name"], "version": child_lock["version"],
+                "source": child_lock["source"], "manifest_path": str(directory / "Cargo.toml")}
+            checksums = {(child["name"], child["version"], child["source"]): child_lock["checksum"]}
+            inspect(child, [donor], checksums, policy)
+            for altered, proof in ((child, {}), ({**child, "repository": "https://foreign.invalid/repo"}, checksums),
+                                   ({**child, "license": "MIT"}, checksums)):
+                with self.subTest(altered=altered), self.assertRaises(InstallError):
+                    inspect(altered, [donor], proof, policy)
+            (directory / ".cargo_vcs_info.json").write_bytes(encode({"git": {"sha1": "0" * 40}}))
+            with self.assertRaisesRegex(InstallError, "exact-revision"):
+                inspect(child, [donor], checksums, policy)
+            with self.assertRaisesRegex(InstallError, "local-donor-identity"):
+                inspect(child, [{**donor, "manifest_path": str(directory / "Cargo.toml")}], checksums, policy)
+            with patch.object(codec_wasmtime, "verify", side_effect=ValueError("tampered-local-donor")), \
+                    self.assertRaisesRegex(ValueError, "tampered-local-donor"):
+                inspect(child, [donor], checksums, policy)
 
     def test_vm_driver_uses_pinned_image_and_actual_reboot(self):
         profile = json.loads((ROOT / "tools/native-vm-profile.json").read_text())

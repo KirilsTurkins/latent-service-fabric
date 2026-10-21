@@ -63,19 +63,43 @@ def shared_license(package: dict, packages: list[dict], checksums: dict, policy:
               and entry["version"] == source["donor"]["version"]]
     require(len(donors) == 1, "shared-license-donor-missing")
     donor = donors[0]
+    authenticated_donor = None
+    if donor["name"] == "wasmtime" and donor.get("source") is None:
+        from tools import host_codec_wasmtime as codec_wasmtime
+
+        manifest = Path(donor["manifest_path"]).resolve()
+        require(len(manifest.parents) >= 4, "shared-license-local-donor-path")
+        root = manifest.parents[3]
+        require(source["donor"] == {"name": "wasmtime", "version": codec_wasmtime.VERSION, "file": "LICENSE"}
+                and donor["version"] == codec_wasmtime.VERSION
+                and manifest == root / codec_wasmtime.PROVIDER / "Cargo.toml",
+                "shared-license-local-donor-identity")
+        authenticated_donor = codec_wasmtime.verify(root)
+        require(authenticated_donor["licenseFiles"] == {"LICENSE": source["sha256"]},
+                "shared-license-local-original-license")
     for entry in (package, donor):
         repository = (entry.get("repository") or source["repository"]).removesuffix(".git")
         require((repository == source["repository"] or repository.startswith(source["repository"] + "/tree/"))
                 and entry.get("license") == source["license"]
-                and checksums.get((entry["name"], entry["version"], entry.get("source"))), "shared-license-source-identity-mismatch")
+                and ((entry is donor and authenticated_donor is not None)
+                     or checksums.get((entry["name"], entry["version"], entry.get("source")))),
+                "shared-license-source-identity-mismatch")
         vcs = document(files.read(Path(entry["manifest_path"]).parent / ".cargo_vcs_info.json", 8192))
         require(vcs.get("git", {}).get("sha1") == source["sourceCommit"], "shared-license-exact-revision-required")
     name = verify.relative(source["donor"]["file"])
     require("/" not in name, "shared-license-root-file-required")
     path = Path(donor["manifest_path"]).parent / name
     require(files.digest(path) == source["sha256"], "shared-license-reviewed-root-digest-mismatch")
-    return path, {"sourceUrl": source["sourceUrl"], "sha256": source["sha256"], "donor": source["donor"],
-                  "donorCrateSha256": checksums[(donor["name"], donor["version"], donor["source"])]}
+    evidence = {"sourceUrl": source["sourceUrl"], "sha256": source["sha256"], "donor": source["donor"]}
+    if authenticated_donor is not None:
+        evidence.update(donorSourceKind="authenticated-local-fork-original-license",
+                        donorUpstreamArchiveSha256=authenticated_donor["upstreamSha256"],
+                        donorSourceRecordSha256=authenticated_donor["recordSha256"],
+                        donorPatchSha256=authenticated_donor["patchSha256"],
+                        nativeCohort=authenticated_donor["nativeCohort"])
+    else:
+        evidence["donorCrateSha256"] = checksums[(donor["name"], donor["version"], donor["source"])]
+    return path, evidence
 
 
 def dependency_inventory(metadata: dict, lock: dict, commit: str, epoch: int,

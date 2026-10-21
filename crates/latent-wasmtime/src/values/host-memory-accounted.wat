@@ -1,5 +1,6 @@
 ;; Synthetic canonical values; echo-post has an explicit async component type.
-;; Its core ABI, canon lift and post-return remain synchronous.
+;; Its core ABI, canon lift and post-return remain synchronous. The post-return
+;; loop invokes no imports/intrinsics; the pending test uses finite fuel yields.
 (component
   (import "wait" (func $wait))
   (core func $lower (canon lower (func $wait)))
@@ -26,7 +27,7 @@
     (func (export "partial") (result i32) i32.const 96)
     (func (export "echo") (param i32 i32) (result i32) i32.const 0)
     (func (export "realloc") (param i32 i32 i32 i32) (result i32) i32.const 256)
-    (func (export "post") (param i32) call $wait))
+    (func (export "post") (param i32) (loop $post (br $post))))
   (core instance $host (export "wait" (func $lower)))
   (core instance $i (instantiate $m (with "host" (instance $host))))
   (func (export "utf8") (result string)
