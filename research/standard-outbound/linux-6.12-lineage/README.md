@@ -239,3 +239,15 @@ physical final free is qualified. The factory remains unavailable until real
 protocol/RX/shared-infrastructure and trusted platform/bootstrap consumers are
 complete. It is not installed alongside the earlier global refusing constructor
 adapter; those historical recipes remain separate and unchanged.
+
+## Maintained protocol and LSM blob consumers
+
+The [maintained protocol prefix](prepaid-protocol.md) derives private TCP and
+outer constructors from the authenticated 6.12.113 source, preserving real
+security/module/cgroup/netns initialization and cleanup. Composite LSM blobs
+receive same-context prepaid birth records, including their independent inode
+blob RCU ownership. Normal host allocators remain unchanged. Unknown interior
+returns poison rather than falling back to SLUB. This is uninstalled source and
+supplemental C evidence, not kernel execution or complete physical closure.
+Active unclosed LSM/Netlabel producers and all remaining protocol/RX/platform
+gates still refuse; no security configuration or hook is disabled.

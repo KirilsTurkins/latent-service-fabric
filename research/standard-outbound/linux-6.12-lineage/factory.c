@@ -156,6 +156,86 @@ int lsf_factory_deferred(struct lsf_factory_context *context, int acquire)
     return retained;
 }
 
+void *lsf_factory_blob_allocate(struct lsf_factory_context *context,
+                               unsigned long bytes, unsigned int kind)
+{
+    struct lsf_prepaid_ticket ticket;
+    lsf_u64 offset;
+    unsigned long flags;
+    void *result = NULL;
+    spin_lock_irqsave(&pool_lock, flags);
+    context = lsf_factory_context_current(context);
+    if (context && lsf_prepaid_blob_allocate(&factory.pool, context->key,
+                                            bytes, kind, &ticket, &offset)) {
+        result = (char *)page_address(factory.pages) + offset;
+        memset(result, 0, bytes);
+    }
+    spin_unlock_irqrestore(&pool_lock, flags);
+    return result;
+}
+
+/* Caller holds pool_lock. No dereference of address occurs. Classification
+ * outside this single protected extent retains the original normal free path.
+ * Exact births INSIDE it are the only valid private returns. Unknown interior
+ * addresses fence the pool; they are NEVER passed to a normal allocator. */
+static int lsf_factory_blob_lookup_locked(const void *address, unsigned int kind,
+                                          struct lsf_factory_blob *copy)
+{
+    struct lsf_prepaid_key key;
+    struct lsf_prepaid_ticket ticket;
+    unsigned long base, value = (unsigned long)address;
+    if (!factory.pages)
+        return 0;
+    base = (unsigned long)page_address(factory.pages);
+    if (value < base || value - base >= LSF_BACKING_BYTES)
+        return 0;
+    if (!lsf_prepaid_blob_find(&factory.pool, value - base, kind, &key, &ticket))
+        return -1;
+    copy->context = &factory.contexts[key.slot];
+    copy->ticket = ticket;
+    return 1;
+}
+
+int lsf_factory_blob_lookup(const void *address, unsigned int kind,
+                            struct lsf_factory_blob *copy)
+{
+    unsigned long flags;
+    int result;
+    spin_lock_irqsave(&pool_lock, flags);
+    result = lsf_factory_blob_lookup_locked(address, kind, copy);
+    spin_unlock_irqrestore(&pool_lock, flags);
+    return result;
+}
+
+int lsf_factory_blob_queue(const void *address)
+{
+    struct lsf_factory_blob copy;
+    unsigned long flags;
+    int result;
+    spin_lock_irqsave(&pool_lock, flags);
+    result = lsf_factory_blob_lookup_locked(address, LSF_PREPAID_INODE_BLOB, &copy);
+    if (result == 1 && !lsf_prepaid_blob_queue(&factory.pool, copy.context->key,
+                                              copy.ticket))
+        result = -1;
+    spin_unlock_irqrestore(&pool_lock, flags);
+    return result;
+}
+
+int lsf_factory_blob_finish(struct lsf_factory_blob copy, unsigned int kind)
+{
+    struct lsf_factory_context *context;
+    unsigned long flags;
+    int result = 0;
+    spin_lock_irqsave(&pool_lock, flags);
+    context = lsf_factory_context_current(copy.context);
+    if (context)
+        result = lsf_prepaid_blob_finish(&factory.pool, context->key, copy.ticket, kind);
+    if (!result)
+        factory.pool.poisoned = 1;
+    spin_unlock_irqrestore(&pool_lock, flags);
+    return result;
+}
+
 void lsf_factory_poison(struct lsf_factory_context *context)
 {
     unsigned long flags;

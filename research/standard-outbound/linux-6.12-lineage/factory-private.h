@@ -22,6 +22,18 @@ void *lsf_factory_allocate(struct lsf_factory_context *, unsigned long,
 int lsf_factory_return(struct lsf_factory_context *, struct lsf_prepaid_ticket);
 int lsf_factory_deferred(struct lsf_factory_context *, int);
 void lsf_factory_poison(struct lsf_factory_context *);
+/* Allocator-only blob routing. The address may identify an existing birth
+ * record for RETURN, never create or authenticate a new owner. Unknown arena
+ * addresses poison/retain. No symbol is exported or exposed on the device. */
+struct lsf_factory_blob {
+    struct lsf_factory_context *context;
+    struct lsf_prepaid_ticket ticket;
+};
+void *lsf_factory_blob_allocate(struct lsf_factory_context *, unsigned long,
+                              unsigned int);
+int lsf_factory_blob_lookup(const void *, unsigned int, struct lsf_factory_blob *);
+int lsf_factory_blob_queue(const void *);
+int lsf_factory_blob_finish(struct lsf_factory_blob, unsigned int);
 
 /* Deliberately unavailable: mandatory security, outer VFS, protocol, RX,
  * route/cache/deferred layout and final-free consumers are not yet complete.

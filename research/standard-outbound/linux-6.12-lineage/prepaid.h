@@ -19,9 +19,12 @@
 #define LSF_FACTORY_INFRA_BYTES (LSF_BACKING_BYTES - LSF_FACTORY_INFRA_OFFSET)
 
 enum lsf_prepaid_phase { LSF_PREPAID_EMPTY, LSF_PREPAID_LIVE, LSF_PREPAID_RETURNED };
+enum lsf_prepaid_kind {
+    LSF_PREPAID_OBJECT, LSF_PREPAID_INODE_BLOB, LSF_PREPAID_SOCK_BLOB
+};
 struct lsf_prepaid_view {
     lsf_u64 generation, owner_generation, offset, bytes;
-    unsigned int owner, phase;
+    unsigned int owner, phase, kind, deferred;
 };
 struct lsf_prepaid_context {
     struct lsf_scope scope;
@@ -165,6 +168,102 @@ static inline int lsf_prepaid_allocate(struct lsf_prepaid *pool,
     return 0;
 }
 
+/* The kind is selected by the actual private allocator BEFORE publishing the
+ * address. It is not supplied by a free callback, userspace or a later binder.
+ * The factory holds the same pool lock across allocation and this write. */
+static inline int lsf_prepaid_blob_allocate(struct lsf_prepaid *pool,
+    struct lsf_prepaid_key key, lsf_u64 bytes, unsigned int kind,
+    struct lsf_prepaid_ticket *ticket, lsf_u64 *offset)
+{
+    if (kind != LSF_PREPAID_INODE_BLOB && kind != LSF_PREPAID_SOCK_BLOB)
+        return 0;
+    if (!lsf_prepaid_allocate(pool, key, bytes, 0,
+                             (struct lsf_prepaid_ticket){0}, ticket, offset))
+        return 0;
+    pool->records[ticket->slot].kind = kind;
+    return 1;
+}
+
+/* A private return callback only has its original blob address, not an inode
+ * which might already have died. Search the SAME fixed birth records; never
+ * inspect a prefix before an arbitrary pointer or manufacture origin here.
+ * Caller has already established that offset is inside the owned backing. */
+static inline int lsf_prepaid_blob_find(struct lsf_prepaid *pool,
+    lsf_u64 offset, unsigned int kind, struct lsf_prepaid_key *key,
+    struct lsf_prepaid_ticket *ticket)
+{
+    unsigned int i;
+    if (!pool || !key || !ticket || !pool->initialized || pool->poisoned ||
+        offset >= LSF_BACKING_BYTES ||
+        (kind != LSF_PREPAID_INODE_BLOB && kind != LSF_PREPAID_SOCK_BLOB))
+        return 0;
+    for (i = 1; i < LSF_ALLOCATION_SLOTS; ++i) {
+        struct lsf_prepaid_view *record = &pool->records[i];
+        struct lsf_prepaid_context *context;
+        if (record->offset != offset || record->phase != LSF_PREPAID_LIVE ||
+            record->kind != kind || !record->generation || !record->owner_generation)
+            continue;
+        *key = (struct lsf_prepaid_key){record->owner, record->owner_generation};
+        context = lsf_prepaid_context_for(pool, *key);
+        if (!context || !context->live)
+            break;
+        *ticket = (struct lsf_prepaid_ticket){i, record->generation};
+        return 1;
+    }
+    pool->poisoned = 1;
+    return 0;
+}
+
+/* Inode blobs have their OWN RCU callback, independent of inode retirement.
+ * Exactly one continuation belongs to that live original birth record. It
+ * must remain charged until the actual callback has finished all LSM hooks. */
+static inline int lsf_prepaid_blob_queue(struct lsf_prepaid *pool,
+    struct lsf_prepaid_key key, struct lsf_prepaid_ticket ticket)
+{
+    struct lsf_prepaid_context *context = lsf_prepaid_context_for(pool, key);
+    struct lsf_prepaid_view *record;
+    if (!context || !ticket.slot || ticket.slot >= LSF_ALLOCATION_SLOTS)
+        return 0;
+    record = &pool->records[ticket.slot];
+    if (record->phase != LSF_PREPAID_LIVE || record->generation != ticket.generation ||
+        record->owner != key.slot || record->owner_generation != key.generation ||
+        record->kind != LSF_PREPAID_INODE_BLOB || record->deferred ||
+        !context->live || context->continuations == LSF_ALLOCATION_SLOTS) {
+        context->poisoned = 1;
+        return 0;
+    }
+    record->deferred = 1;
+    context->continuations++;
+    return 1;
+}
+
+/* Runs AFTER the original LSM free/free_rcu hooks, under the pool lock. Both
+ * view and callback ownership retire atomically. No arena reuse or backing
+ * refund occurs; recycle still requires the complete closed consumer. */
+static inline int lsf_prepaid_blob_finish(struct lsf_prepaid *pool,
+    struct lsf_prepaid_key key, struct lsf_prepaid_ticket ticket, unsigned int kind)
+{
+    struct lsf_prepaid_context *context = lsf_prepaid_context_for(pool, key);
+    struct lsf_prepaid_view *record;
+    if (!context || !ticket.slot || ticket.slot >= LSF_ALLOCATION_SLOTS)
+        return 0;
+    record = &pool->records[ticket.slot];
+    if (record->phase != LSF_PREPAID_LIVE || record->generation != ticket.generation ||
+        record->owner != key.slot || record->owner_generation != key.generation ||
+        record->kind != kind || !context->live ||
+        (kind != LSF_PREPAID_INODE_BLOB && kind != LSF_PREPAID_SOCK_BLOB) ||
+        (kind == LSF_PREPAID_INODE_BLOB && (!record->deferred || !context->continuations)) ||
+        (kind == LSF_PREPAID_SOCK_BLOB && record->deferred)) {
+        context->poisoned = 1;
+        return 0;
+    }
+    if (record->deferred)
+        context->continuations--;
+    record->phase = LSF_PREPAID_RETURNED;
+    context->live--;
+    return 1;
+}
+
 /* Internal allocator return only. There is deliberately no device operation
  * accepting this ticket or a claimed free. Actual backing remains LIVE. */
 static inline int lsf_prepaid_return(struct lsf_prepaid *pool,
@@ -176,6 +275,7 @@ static inline int lsf_prepaid_return(struct lsf_prepaid *pool,
         return 0;
     record = &pool->records[ticket.slot];
     if (record->generation != ticket.generation || record->phase != LSF_PREPAID_LIVE ||
+        record->kind != LSF_PREPAID_OBJECT || record->deferred ||
         record->owner != key.slot || record->owner_generation != key.generation ||
         !context->live) {
         context->poisoned = 1;
