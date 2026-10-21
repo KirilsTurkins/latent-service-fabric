@@ -143,7 +143,7 @@ class DotnetHttpMixed(unittest.TestCase):
                 else:changed.update(exitCode=0, decoded=['invented-success'])
                 with self.subTest(mode=mode, mutation=mutation), self.assertRaises(WorkflowError):
                     node.checked(changed, mode, revision, budget, nonce='tenant-examples' if mode == 20 else None)
-        for value in (True, False, '', '01', '-1', '1.0', '+1', 'ï¼‘', 2**64, str(2**64)):
+        for value in (True, False, '', '01', '-1', '1.0', '+1', '１', 2**64, str(2**64)):
             with self.subTest(value=value), self.assertRaises(WorkflowError):node.natural(value)
 
     def test_second_origin_changes_only_explicit_destinations_and_scoped_credentials(self):

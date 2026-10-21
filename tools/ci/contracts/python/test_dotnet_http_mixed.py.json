@@ -1,6 +1,7 @@
 {
   "cases": [
     "DotnetHttpMixed.test_actual_retained_node_usage_is_old_red_new_green_and_refuses_hostile_shapes",
+    "DotnetHttpMixed.test_closing_child_and_finally_require_actual_pending_release_completion_order",
     "DotnetHttpMixed.test_every_result_requires_signed_owner_original_budget_and_exact_contact_count",
     "DotnetHttpMixed.test_exact_fixture_runs_real_incomplete_content_and_cancelled_result_on_clr",
     "DotnetHttpMixed.test_late_release_requires_exact_completed_marker_after_actual_pending_gate",
@@ -14,6 +15,18 @@
   ],
   "guards": {
     "DotnetHttpMixed.test_actual_retained_node_usage_is_old_red_new_green_and_refuses_hostile_shapes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:cf87bece919025f158eeca81b8f62b45c459075af1c20dd650f904b21474c46c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DotnetHttpMixed.test_closing_child_and_finally_require_actual_pending_release_completion_order": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -152,6 +165,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_dotnet_http_mixed.py",
-  "reviewReason": "Eleven focused controls: actual006 schema RED/GREEN and adversaries, real CLR content/task reference, both independenttenant configuration/scope, source project and fullworkflow preservation, signed result/budget and causal late/sibling markers.",
+  "reviewReason": "Append ordered Closing-child and awaited-finally negatives; preserve all old cases, skip guards, resource limits and result oracles.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

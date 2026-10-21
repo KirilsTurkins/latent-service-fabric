@@ -5,7 +5,7 @@ unchanged editable-project, declared-WIT, NativeAOT, package and signed-node
 path. It installs no application handler, synchronization context, executor,
 transport hook or hidden pump. It does not repeat the already qualified Flurl,
 Refit, private NuGet, HTTPS, synchronous-send, Task or finite-wait baselines.
-Hosted execution of this new programme is pending.
+The original 9af full run and fc20 continuation remain failures. Fresh execution of the selected managed accepted-work derivation is pending; see [managed closing](dotnet-managed-closing.md) for the production contract and focused controls.
 
 The existing workflow's explicit `mixed_content=true` selector builds one fresh
 component. Its first bounded node phase runs all 20 modes below; the second uses
@@ -22,7 +22,7 @@ workflow model after removing only the addition.
 | 3–4 | Headers-read and content-read requests remain genuinely incomplete behind a real peer body gate while a separately authorized sibling completes; default Task and AsyncLocal contexts remain distinct, while ThreadLocal follows the actual recorded managed thread identities |
 | 5–7 | Normal StreamContent owns and disposes its source exactly once; an incomplete HttpContent producer queues initial bytes and admits sibling progress; a short declared-length upload fails after its original dispatch without retry |
 | 8–10 | The unchanged request limit refuses extra bytes; a partial body retains caller-token cancellation and sibling progress; disposing a response closes its original unread body |
-| 11–13 | Root return and an uncaught root trap retire accepted default managed HTTP work; a logically cancelled TaskCompletionSource cannot be overwritten by an accepted task's actual later body completion |
+| 11–13 | Root return joins the real accepted child and its awaited finally before success; an uncaught root trap retains its separate terminal and physical-retirement oracle; a logically cancelled TaskCompletionSource cannot be overwritten by an accepted task's actual later body completion |
 | 14–17 | Reserved cookies and an ungranted origin cause no contact, a 302 is returned without following its foreign location, and the next activation starts a fresh client/context |
 | 18–19 | Original root cancellation and a shorter root deadline remain platform terminal outcomes while the real body is pending |
 

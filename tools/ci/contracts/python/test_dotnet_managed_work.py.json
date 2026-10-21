@@ -1,0 +1,166 @@
+{
+  "cases": [
+    "ManagedWorkContractTests.test_actual_metadata_receipt_requires_every_producer_and_unqualified_scope",
+    "ManagedWorkContractTests.test_changed_error_and_async_calling_convention_are_refused",
+    "ManagedWorkContractTests.test_managed_selection_cannot_invent_missing_facets",
+    "ManagedWorkContractTests.test_no_missing_or_cross_selected_old_receipt_claims_managed_support",
+    "ManagedWorkContractTests.test_old_private_pair_remains_unchanged",
+    "ManagedWorkContractTests.test_original_profiles_remain_explicit_and_managed_selection_is_boolean",
+    "ManagedWorkContractTests.test_private_contract_is_an_exact_pair_not_a_generic_linker_escape",
+    "ManagedWorkContractTests.test_private_source_projection_is_closed_and_rejects_a_changed_preimage",
+    "ManagedWorkContractTests.test_required_content_task_keeps_original_transport_error_channel",
+    "ManagedWorkContractTests.test_selected_port_binds_exact_new_corelib_and_all_required_facets",
+    "ManagedWorkContractTests.test_token_width_and_exact_parameter_identity_are_not_structural_guesses",
+    "ManagedWorkContractTests.test_tuple_named_owner_and_extra_operation_are_refused"
+  ],
+  "guards": {
+    "ManagedWorkContractTests.test_actual_metadata_receipt_requires_every_producer_and_unqualified_scope": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2ad79f902076d0802582ea79bdc7c2a48527c6ed561d271f1a0144eb5820c28e",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ManagedWorkContractTests.test_changed_error_and_async_calling_convention_are_refused": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2ad79f902076d0802582ea79bdc7c2a48527c6ed561d271f1a0144eb5820c28e",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ManagedWorkContractTests.test_managed_selection_cannot_invent_missing_facets": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2ad79f902076d0802582ea79bdc7c2a48527c6ed561d271f1a0144eb5820c28e",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ManagedWorkContractTests.test_no_missing_or_cross_selected_old_receipt_claims_managed_support": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2ad79f902076d0802582ea79bdc7c2a48527c6ed561d271f1a0144eb5820c28e",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ManagedWorkContractTests.test_old_private_pair_remains_unchanged": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2ad79f902076d0802582ea79bdc7c2a48527c6ed561d271f1a0144eb5820c28e",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ManagedWorkContractTests.test_original_profiles_remain_explicit_and_managed_selection_is_boolean": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2ad79f902076d0802582ea79bdc7c2a48527c6ed561d271f1a0144eb5820c28e",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ManagedWorkContractTests.test_private_contract_is_an_exact_pair_not_a_generic_linker_escape": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2ad79f902076d0802582ea79bdc7c2a48527c6ed561d271f1a0144eb5820c28e",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ManagedWorkContractTests.test_private_source_projection_is_closed_and_rejects_a_changed_preimage": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2ad79f902076d0802582ea79bdc7c2a48527c6ed561d271f1a0144eb5820c28e",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ManagedWorkContractTests.test_required_content_task_keeps_original_transport_error_channel": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2ad79f902076d0802582ea79bdc7c2a48527c6ed561d271f1a0144eb5820c28e",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ManagedWorkContractTests.test_selected_port_binds_exact_new_corelib_and_all_required_facets": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2ad79f902076d0802582ea79bdc7c2a48527c6ed561d271f1a0144eb5820c28e",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ManagedWorkContractTests.test_token_width_and_exact_parameter_identity_are_not_structural_guesses": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2ad79f902076d0802582ea79bdc7c2a48527c6ed561d271f1a0144eb5820c28e",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ManagedWorkContractTests.test_tuple_named_owner_and_extra_operation_are_refused": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2ad79f902076d0802582ea79bdc7c2a48527c6ed561d271f1a0144eb5820c28e",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_dotnet_managed_work.py",
+  "reviewReason": "Twelve new exact private-edge and metadata receipt controls; no guest execution credit.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
