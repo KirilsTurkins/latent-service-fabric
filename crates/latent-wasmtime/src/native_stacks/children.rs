@@ -78,6 +78,7 @@ impl StackContext {
         }
         children.pending = Some(Permit {
             _owner: owner,
+            _worker_metadata: None,
             memory,
         });
         children.started.push(continuation);
