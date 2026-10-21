@@ -1,0 +1,64 @@
+{
+  "schemaVersion": "lsf.rust-http-backend-observation.v1",
+  "source": "a6ec444c8cafe7380f6ae0e08016446ef80a6aba",
+  "run": 39524005962,
+  "job": 118974299096,
+  "originalConclusion": "success",
+  "artifact": {
+    "id": 12311439115,
+    "size_in_bytes": 8216300,
+    "digest": "sha256:401f84f05f6a8a5ff8cecbf1b0788d0b9f456a92b6a475e4a7c502795556f7a8"
+  },
+  "archiveMembers": 26,
+  "sourceRows": 110,
+  "allGitSourceRowsExact": true,
+  "preparedFilesAuthenticated": true,
+  "allNineCommandStagesPassed": true,
+  "component": {
+    "name": "rust-wasi-http-runtime.wasm",
+    "digest": "sha256:628779b61f4c721e1c5690b2fb083a1acbce1b2f1e790e5b6c68530a79505adb",
+    "size": 307665
+  },
+  "originalCompileSeconds": 20.926994,
+  "graphValidation": {
+    "imports": [
+      "latent:clock/monotonic@0.1.0",
+      "latent:http/streaming@0.3.0",
+      "latent:runtime/activation@0.1.0"
+    ],
+    "exports": [
+      "latent:rust-http-retirement/owner@0.1.0",
+      "wasi:clocks/monotonic-clock@0.2.12",
+      "wasi:http/outgoing-handler@0.2.12",
+      "wasi:http/types@0.2.12",
+      "wasi:io/error@0.2.12",
+      "wasi:io/poll@0.2.12",
+      "wasi:io/streams@0.2.12"
+    ],
+    "wholeOriginalTypesCompared": true,
+    "exactCallingConventions": true,
+    "wholeOriginalExportSurfaceCompared": true,
+    "emittedImportsAreExactSubsets": true
+  },
+  "compiledCoreProof": {
+    "originalCoreExact": false,
+    "originalSha256": "sha256:e65fbd67f7bda5e1505fbf505f3fb3a81a0f2f9044a8fb98f9022c7425484f88",
+    "encodedSha256": "sha256:4fff0cec893dee49266bb46527d6cff75cce5203c8043eb0f718661daf61bc8d",
+    "allNonEncoderMetadataSectionsExact": true,
+    "onlyPinnedComponentMetadataProcessed": true
+  },
+  "pythonControlsPassed": 20,
+  "actualFieldsAndOptionsControlsPassed": 11,
+  "signedRuntimeQualified": false,
+  "publisherAuthenticated": false,
+  "metadataCorrections": [
+    "IDE generated SDK module membership",
+    "Exact retained upstream Cargo manifest provenance inventory"
+  ],
+  "producerInputsChangedByMetadataCorrections": false,
+  "backendCompileRepeatedForMetadata": false,
+  "limitations": [
+    "Compiled adapter only; signed unchanged-client and lifecycle qualification remains separate.",
+    "Original failed compile, mapping, async metadata and encoder verifier jobs remain retained."
+  ]
+}

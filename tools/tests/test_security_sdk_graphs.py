@@ -15,6 +15,29 @@ from tools.security_sdk_graphs import c_packages, go_packages, legacy_c_tree, le
 
 
 class SdkGraphTests(unittest.TestCase):
+    def test_original_wasi_manifest_is_only_byte_pinned_provenance_and_mutation_refuses(self):
+        from tools.security_common import POLICY, read_file
+        from tools import rust_wasi_http_profile as profile
+        root = Path(__file__).resolve().parents[2]
+        name = 'sdk/wasi-http-runtime/upstream/Cargo.toml'
+        configuration = json.loads(read_file(POLICY, 'inventory.json'))
+        entries = [row for row in configuration['non_manifest_modules'] if row['path'] == name]
+        self.assertEqual(len(entries), 1)
+        self.assertEqual(entries[0]['sha256'], digest(read_file(root, name)))
+        self.assertEqual('sha256:' + entries[0]['sha256'], profile.validate_assets(root)['upstream/Cargo.toml']['sha256'])
+        self.assertFalse((root/'sdk/wasi-http-runtime/upstream/src/lib.rs').exists())
+        import tomllib
+        workspace = tomllib.loads(read_file(root, 'Cargo.toml').decode())['workspace']['members']
+        self.assertNotIn('sdk/wasi-http-runtime/upstream', workspace)
+        self.assertIn('tools/toolchain-smoke', workspace)
+        inventory(root)
+        original = read_file(root, name)
+        def changed(repo, path, *limits):
+            return original + b'\n[dependencies.unreviewed]\nversion = "1"\n' if repo == root and path == name else read_file(repo, path, *limits)
+        with patch('tools.security_inventory.read_file', side_effect=changed), \
+                self.assertRaisesRegex(SecurityError, 'unreviewed-manifest-lookalike'):
+            inventory(root)
+
     def test_standard_rust_transform_graph_is_pinned_and_missing_directory_cannot_hide_orphans(self) -> None:
         from tools.security_common import POLICY, read_file, tracked_paths
         root = Path(__file__).resolve().parents[2]
