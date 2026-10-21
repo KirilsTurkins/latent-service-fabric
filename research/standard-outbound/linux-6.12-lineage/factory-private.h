@@ -21,6 +21,7 @@ void *lsf_factory_allocate(struct lsf_factory_context *, unsigned long,
                          struct lsf_prepaid_ticket *);
 int lsf_factory_return(struct lsf_factory_context *, struct lsf_prepaid_ticket);
 int lsf_factory_deferred(struct lsf_factory_context *, int);
+void lsf_factory_poison(struct lsf_factory_context *);
 
 /* Deliberately unavailable: mandatory security, outer VFS, protocol, RX,
  * route/cache/deferred layout and final-free consumers are not yet complete.

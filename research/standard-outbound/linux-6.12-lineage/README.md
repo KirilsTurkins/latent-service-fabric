@@ -218,3 +218,19 @@ before-socket-lookup RX allocation cannot borrow a later socket's authority.
 The actual constructor still refuses before allocation. The partial graph,
 explicit model geometry and supplemental C controls cannot qualify a physical
 kernel profile; every production/full-accounting flag remains false.
+
+## Private prepaid outer socket prefix
+
+The additive [outer socket/VFS prefix](prepaid-outer.md) derives the real
+historical outer constructors from nine authenticated whole files, with the
+original context carried before allocation. Actual inode/socket initialization,
+mandatory security calls and synchronous/RCU cleanup remain source-preserved.
+Ordinary host traffic retains its original allocator and free path. Unclosed
+active security hooks/blob allocation refuse rather than being disabled.
+
+This is uninstalled source with supplemental C/type/callback doubles and strict
+source controls. No Linux/kernel layout, allocator bound, RCU completion or
+physical final free is qualified. The factory remains unavailable until real
+protocol/RX/shared-infrastructure and trusted platform/bootstrap consumers are
+complete. It is not installed alongside the earlier global refusing constructor
+adapter; those historical recipes remain separate and unchanged.

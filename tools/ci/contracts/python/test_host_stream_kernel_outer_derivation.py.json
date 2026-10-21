@@ -1,0 +1,153 @@
+{
+  "cases": [
+    "HostStreamKernelOuter.test_deferred_ownership_is_before_unchanged_actual_rcu_callback",
+    "HostStreamKernelOuter.test_nine_whole_preimages_and_seventeen_partial_definitions_are_exact",
+    "HostStreamKernelOuter.test_ordinary_constructor_only_initializes_private_fields_to_nonorigin",
+    "HostStreamKernelOuter.test_original_global_free_is_preserved_after_typed_birth_field_branch",
+    "HostStreamKernelOuter.test_original_outer_constructor_has_no_prepaid_origin",
+    "HostStreamKernelOuter.test_outer_prefix_retains_real_security_order_and_is_not_a_protocol_success",
+    "HostStreamKernelOuter.test_private_inode_keeps_actual_initializer_and_complete_error_cleanup",
+    "HostStreamKernelOuter.test_private_socket_keeps_all_actual_metadata_and_no_global_fallback",
+    "HostStreamKernelOuter.test_security_preflight_refuses_unclosed_hooks_without_disabling_security",
+    "HostStreamKernelOuter.test_unknown_membership_whole_or_partial_preimages_refuse",
+    "HostStreamKernelOuter.test_unknown_origin_poison_and_all_production_gates_stay_closed"
+  ],
+  "guards": {
+    "HostStreamKernelOuter.test_deferred_ownership_is_before_unchanged_actual_rcu_callback": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:021be5dbb2c518416bcf2afea72dcebf1e37324e9281d80754c1e53073169e80",
+        "class:setup-sha256:1a53e333d6d926df681e54cc5f7fa509a3fd9b70e10ad8e03157bdf244cf3669"
+      ],
+      "skipSites": []
+    },
+    "HostStreamKernelOuter.test_nine_whole_preimages_and_seventeen_partial_definitions_are_exact": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:021be5dbb2c518416bcf2afea72dcebf1e37324e9281d80754c1e53073169e80",
+        "class:setup-sha256:1a53e333d6d926df681e54cc5f7fa509a3fd9b70e10ad8e03157bdf244cf3669"
+      ],
+      "skipSites": []
+    },
+    "HostStreamKernelOuter.test_ordinary_constructor_only_initializes_private_fields_to_nonorigin": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:021be5dbb2c518416bcf2afea72dcebf1e37324e9281d80754c1e53073169e80",
+        "class:setup-sha256:1a53e333d6d926df681e54cc5f7fa509a3fd9b70e10ad8e03157bdf244cf3669"
+      ],
+      "skipSites": []
+    },
+    "HostStreamKernelOuter.test_original_global_free_is_preserved_after_typed_birth_field_branch": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:021be5dbb2c518416bcf2afea72dcebf1e37324e9281d80754c1e53073169e80",
+        "class:setup-sha256:1a53e333d6d926df681e54cc5f7fa509a3fd9b70e10ad8e03157bdf244cf3669"
+      ],
+      "skipSites": []
+    },
+    "HostStreamKernelOuter.test_original_outer_constructor_has_no_prepaid_origin": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:021be5dbb2c518416bcf2afea72dcebf1e37324e9281d80754c1e53073169e80",
+        "class:setup-sha256:1a53e333d6d926df681e54cc5f7fa509a3fd9b70e10ad8e03157bdf244cf3669"
+      ],
+      "skipSites": []
+    },
+    "HostStreamKernelOuter.test_outer_prefix_retains_real_security_order_and_is_not_a_protocol_success": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:021be5dbb2c518416bcf2afea72dcebf1e37324e9281d80754c1e53073169e80",
+        "class:setup-sha256:1a53e333d6d926df681e54cc5f7fa509a3fd9b70e10ad8e03157bdf244cf3669"
+      ],
+      "skipSites": []
+    },
+    "HostStreamKernelOuter.test_private_inode_keeps_actual_initializer_and_complete_error_cleanup": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:021be5dbb2c518416bcf2afea72dcebf1e37324e9281d80754c1e53073169e80",
+        "class:setup-sha256:1a53e333d6d926df681e54cc5f7fa509a3fd9b70e10ad8e03157bdf244cf3669"
+      ],
+      "skipSites": []
+    },
+    "HostStreamKernelOuter.test_private_socket_keeps_all_actual_metadata_and_no_global_fallback": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:021be5dbb2c518416bcf2afea72dcebf1e37324e9281d80754c1e53073169e80",
+        "class:setup-sha256:1a53e333d6d926df681e54cc5f7fa509a3fd9b70e10ad8e03157bdf244cf3669"
+      ],
+      "skipSites": []
+    },
+    "HostStreamKernelOuter.test_security_preflight_refuses_unclosed_hooks_without_disabling_security": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:021be5dbb2c518416bcf2afea72dcebf1e37324e9281d80754c1e53073169e80",
+        "class:setup-sha256:1a53e333d6d926df681e54cc5f7fa509a3fd9b70e10ad8e03157bdf244cf3669"
+      ],
+      "skipSites": []
+    },
+    "HostStreamKernelOuter.test_unknown_membership_whole_or_partial_preimages_refuse": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:021be5dbb2c518416bcf2afea72dcebf1e37324e9281d80754c1e53073169e80",
+        "class:setup-sha256:1a53e333d6d926df681e54cc5f7fa509a3fd9b70e10ad8e03157bdf244cf3669"
+      ],
+      "skipSites": []
+    },
+    "HostStreamKernelOuter.test_unknown_origin_poison_and_all_production_gates_stay_closed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:021be5dbb2c518416bcf2afea72dcebf1e37324e9281d80754c1e53073169e80",
+        "class:setup-sha256:1a53e333d6d926df681e54cc5f7fa509a3fd9b70e10ad8e03157bdf244cf3669"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_host_stream_kernel_outer_derivation.py",
+  "reviewReason": "Reviewed uninstalled source-only private prepaid outer socket/VFS derivation; nine exact historical whole source preimages and seventeen partial definitions. Eleven source guards preserve ordinary allocators/security/initializer/error paths, original context and deferred ownership; no factory selection, kernel/host build, physical/layout/RCU/final-free qualification or budget increase.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
