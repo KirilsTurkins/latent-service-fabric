@@ -51,14 +51,21 @@
         "thread_entry::tests::absent_or_wrong_canonical_set_and_thread_new_never_fall_back_to_shared_state",
         "thread_entry::tests::real_table_callback_index_is_preserved_and_context_surrounds_original_rust_body",
         "thread_entry::tests::stale_preimage_and_missing_owned_entry_cannot_qualify_a_callback",
-        "thread_entry::tests::wrong_entry_or_missing_original_table_target_rejects_without_rebinding_a_function"
+        "thread_entry::tests::wrong_entry_or_missing_original_table_target_rejects_without_rebinding_a_function",
+        "c_preimage::tests::c_finite_preflight_refuses_expansive_signatures_locals_and_control_before_validator",
+        "c_preimage::tests::c_proof_payload_roundtrips_original_bytes_but_never_grants_routing",
+        "c_preimage::tests::c_proof_payload_refuses_version_lengths_trailing_bytes_and_invalid_names",
+        "c_preimage::tests::c_proof_payload_is_bounded_before_copy_and_rejects_duplicate_top_level_data",
+        "c_preimage::tests::c_proof_nested_core_or_component_metadata_is_never_selected",
+        "c_root::tests::fixed_root_settles_only_its_two_logical_tokens_after_c_frames_and_before_detach",
+        "c_root::tests::root_logical_retirement_refuses_missing_or_wrong_typed_settle_import"
       ],
       "expectedIgnored": [],
       "id": "latent-component-threading.lib.latent-component-threading",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-component-threading/Cargo.toml",
-      "minimumCases": 48,
+      "minimumCases": 55,
       "mode": "libtest",
       "package": "latent-component-threading",
       "platforms": [

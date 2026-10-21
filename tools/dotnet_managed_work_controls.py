@@ -152,6 +152,74 @@ def verify_timers(dotnet: Path, output: Path) -> dict:
     return value
 
 
+def verify_timer_driver(dotnet: Path, tools: Path, output: Path) -> dict:
+    """Execute the real selected driver CIL with explicit bounded queue ports."""
+    from tools.dotnet_guest import task_wait
+    output = fresh(Path(output).absolute())
+    source = output/'source'; source.mkdir()
+    fixture = 'tools/fixtures/dotnet-timer-driver-queue-control.cs'
+    (source/'Program.cs').write_bytes(read_file(ROOT/fixture))
+    (source/'global.json').write_bytes(read_file(ROOT/'sdk/dotnet-guest/global.json'))
+    (source/'nuget.config').write_text('<configuration><packageSources><clear/></packageSources></configuration>', encoding='utf8')
+    (source/'Control.csproj').write_text('<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup>'
+        '<TargetFramework>net10.0</TargetFramework><OutputType>Exe</OutputType><ImplicitUsings>enable</ImplicitUsings>'
+        '<Nullable>enable</Nullable><UseSharedCompilation>false</UseSharedCompilation><NuGetAudit>false</NuGetAudit>'
+        '</PropertyGroup><ItemGroup><Reference Include="Mono.Cecil" HintPath="$(LsfCecilPath)" /></ItemGroup></Project>', encoding='utf8')
+    before = inventory(snapshot(source))
+    original = task_wait.source_path(tools/'packages')
+    original_identity = task_wait.original(original)
+    cecil = http_errors.cecil_path(tools)
+    tool = http_errors.verify_installed(ROOT/'sdk/dotnet-guest', tools)
+    commands = Commands(source, output, build_environment(output), deadline_seconds=300, command_seconds=120)
+    require(commands.run('driver-control-dotnet-version', dotnet, '--version').strip() == b'10.0.100',
+        'timer-driver-control-sdk')
+    commands.run('driver-control-build', dotnet, 'build', source/'Control.csproj', '-c', 'Release',
+        '--output', output/'bin', '--artifacts-path', output/'artifacts',
+        '-p:LsfCecilPath='+str(cecil), '-nodeReuse:false')
+    assembly = output/'derived-CoreLib.dll'
+    commands.run('driver-control-current-normal-rewrite', dotnet, tools/'http-errors/HttpErrors.dll',
+        '--managed-task-wait', original, assembly, output/'rewrite.json')
+    rewrite = json.loads(read_file(output/'rewrite.json', http_errors.MAX_RECEIPT))
+    task_wait.validate_receipt(rewrite, finite=True, managed=True)
+    derived_identity = file_identity(assembly, 'driver-control-corelib', task_wait.MAX_ASSEMBLY)
+    rows = []
+    names = ['SetNextTimer', 'LsfTimerDriverToken', 'LsfTimerDriverRegister',
+        'LsfTimerDriverCallback', 'LsfTimerDriverRetireIfIdle']
+    for variant in ('old', 'new'):
+        raw = commands.run('driver-control-copy-'+variant, dotnet, output/'bin/Control.dll',
+            'graft', assembly, tools/'http-errors/HttpErrors.dll', output/variant, variant)
+        require(len(raw) <= 1024 and json.loads(raw) == {'copiedActualDriverMethods': names,
+            'testOnlyOriginalOptionProjection': variant == 'old', 'guestQualified': False}, 'timer-driver-closed-copy')
+        for mode in (variant, 'success', 'fault'):
+            raw = commands.run('driver-control-'+variant+'-'+mode, dotnet, output/variant/'Control.dll', 'execute', mode)
+            require(len(raw) <= 2048, 'timer-driver-control-result-bound')
+            value = json.loads(raw)
+            if mode in ('old', 'new'):
+                expected_trace = ['enqueued:1'] + (['enqueued:2', 'refused:2'] if mode == 'old' else ['enqueued:2'])
+                expected_trace += ['dequeued:1', 'dequeued:0', 'enqueued:1', 'enqueued:2', 'refused:2',
+                    'dequeued:1', 'enqueued:2', 'dequeued:1', 'dequeued:0']
+                expected = {'passed': True, 'mode': mode, 'afterCancellation': 2 if mode == 'old' else 1,
+                    'requiredContinuationRan': mode == 'new', 'actualQueuedCeiling': 2, 'maximumQueued': 2,
+                    'originalCapacityRefusal': mode == 'old', 'threeRealEntriesStillRefused': True,
+                    'freshSameBudget': True, 'guestQualified': False, 'queueAndNativeImports': 'explicit-test-ports',
+                    'trace': expected_trace}
+            else:
+                expected = {'passed': True, 'mode': mode, 'originalCompletionPath': True,
+                    'guestQualified': False, 'actualQueuedCeiling': 2}
+            require(value == expected, 'timer-driver-exact-actual-clr-outcome')
+            rows.append({'variant': variant, **value})
+    require(inventory(snapshot(source)) == before and task_wait.original(original) == original_identity
+        and file_identity(assembly, 'driver-control-corelib', task_wait.MAX_ASSEMBLY) == derived_identity
+        and http_errors.verify_installed(ROOT/'sdk/dotnet-guest', tools) == tool,
+        'timer-driver-control-original-source-tool-and-derived-unchanged')
+    value = {'profile': 'dotnet-private-timer-driver-queue-controls-v1', 'cases': rows,
+        'source': json.loads(before), 'original': original_identity, 'derived': derived_identity,
+        'tool': tool, 'commands': commands.records, 'guestQualified': False,
+        'queueAndNativeImports': 'explicit-test-ports'}
+    write_json(output/'timer-driver-controls.json', value)
+    return value
+
+
 def verify_abort(dotnet: Path, tools: Path, output: Path) -> dict:
     """Run the real source-bound rewriter over exact original cleanup bodies."""
     output = fresh(Path(output).absolute())
@@ -227,8 +295,10 @@ def main() -> None:
     modes.add_argument('--http-abort-tools', type=Path)
     modes.add_argument('--timers', action='store_true')
     modes.add_argument('--timer-wait-source', action='store_true')
+    modes.add_argument('--timer-driver-tools', type=Path)
     args = parser.parse_args()
-    value = (verify_timer_wait(args.output) if args.timer_wait_source else
+    value = (verify_timer_driver(args.dotnet.resolve(strict=True), args.timer_driver_tools.resolve(strict=True), args.output)
+        if args.timer_driver_tools is not None else verify_timer_wait(args.output) if args.timer_wait_source else
         verify_abort(args.dotnet.resolve(strict=True), args.http_abort_tools.resolve(strict=True), args.output)
         if args.http_abort_tools is not None else verify_timers(args.dotnet.resolve(strict=True), args.output)
         if args.timers else verify(args.dotnet.resolve(strict=True), args.output))

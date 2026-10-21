@@ -121,6 +121,13 @@ pub(crate) struct WorkPermit {
     input: usize,
     documents: usize,
 }
+impl WorkPermit {
+    /// Original component storage and selected input-recomputation work share
+    /// the SAME existing aggregate input allowance until the child is reaped.
+    pub(crate) fn verification_bytes(&self, component_bytes: usize) -> usize {
+        self.input.saturating_sub(component_bytes)
+    }
+}
 impl Drop for WorkPermit {
     fn drop(&mut self) {
         let mut used = self
@@ -190,6 +197,24 @@ mod tests {
         assert!(budget.reserve(2, 1, 1).is_err());
         assert_eq!(budget.snapshot(), AotResourceSnapshot::default());
         assert!(budget.reserve(usize::MAX, usize::MAX, usize::MAX).is_err());
+        assert_eq!(budget.snapshot(), AotResourceSnapshot::default());
+    }
+
+    #[test]
+    fn recomputed_input_work_shares_the_original_aggregate_and_refunds_after_owner_drop() {
+        let budget = Budget::new(AotResourceLimits {
+            maximum_input_bytes: 10,
+            ..Default::default()
+        })
+        .unwrap();
+        let (work, output) = budget.reserve(2 + 8, 1, 1).unwrap();
+        assert_eq!(work.verification_bytes(2), 8);
+        assert_eq!(budget.snapshot().input_bytes, 10);
+        assert!(budget.reserve(1, 1, 1).is_err());
+        drop(work);
+        assert_eq!(budget.snapshot().input_bytes, 0);
+        assert_eq!(budget.snapshot().native_bytes, 1);
+        drop(output);
         assert_eq!(budget.snapshot(), AotResourceSnapshot::default());
     }
 }

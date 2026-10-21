@@ -1,6 +1,17 @@
 use super::*;
 
 impl<T> PrepareReservation<T> {
+    /// This affine source reservation owns temporary input representations too.
+    /// Publication retains only original source bytes; all verification Vecs
+    /// have returned/dropped before that transfer can occur.
+    pub(crate) fn verification_bytes(&self) -> usize {
+        self.cache
+            .lock()
+            .preparing
+            .get(&self.handle)
+            .expect("live preparation reservation")
+            .verification_bytes
+    }
     pub(crate) fn track_runtime(&mut self, runtime: &Arc<T>) -> Result<(), PlatformError>
     where
         T: TrackedPreparedValue,

@@ -7,18 +7,46 @@ use latent_core::{PlatformError, PlatformErrorCode};
 use latent_executor::PreparedComponent;
 
 pub(crate) const PROFILE: &str = "rust-context40-sole-consumer-one-task-start-v1";
+pub(crate) const C_PROFILE: &str = "c-context144-sync-cooperative-v1";
 pub(crate) const METADATA: &str = "component-thread-authentication";
 
 #[derive(Debug)]
 pub(crate) enum Authentication {
     Disabled,
     Verified([u8; 32]),
+    CVerified([u8; 32]),
 }
 
 impl Authentication {
+    #[cfg(test)]
     pub(crate) fn verify(enabled: bool, bytes: &[u8]) -> Result<Self, PlatformError> {
-        if !enabled {
+        Self::verify_profile(
+            enabled.then_some(crate::NativeThreadProfile::RustContext40SoleConsumerOneTaskStartV1),
+            bytes,
+            0,
+        )
+    }
+
+    pub(crate) fn verify_profile(
+        profile: Option<crate::NativeThreadProfile>,
+        bytes: &[u8],
+        prepaid: usize,
+    ) -> Result<Self, PlatformError> {
+        let Some(profile) = profile else {
             return Ok(Self::Disabled);
+        };
+        if prepaid < profile.verification_bytes() {
+            return Err(crate::containment::platform_error(
+                PlatformErrorCode::ResourceExhausted,
+                "component-thread-verification-work-not-admitted",
+                false,
+            ));
+        }
+        if profile == crate::NativeThreadProfile::CContext144SyncCooperativeV1 {
+            let receipt =
+                latent_component_threading::c_preimage::verify_embedded_c_original_core(bytes)
+                    .map_err(|_| invalid())?;
+            return Ok(Self::CVerified(receipt.component_digest));
         }
         let receipt =
             latent_component_threading::verify_component_routing(bytes).map_err(|_| invalid())?;
@@ -28,18 +56,46 @@ impl Authentication {
     pub(crate) fn retained_bytes(&self) -> usize {
         match self {
             Self::Disabled => 0,
-            Self::Verified(_) => std::mem::size_of::<Self>(),
+            Self::Verified(_) | Self::CVerified(_) => std::mem::size_of::<Self>(),
         }
     }
 
+    #[cfg(test)]
     pub(crate) fn check(
         &self,
         enabled: bool,
         descriptor: &PreparedComponent,
     ) -> Result<(), PlatformError> {
-        match (self, enabled, descriptor.metadata.get(METADATA)) {
-            (Self::Disabled, false, None) => Ok(()),
-            (Self::Verified(digest), true, Some(profile)) if profile == PROFILE => {
+        self.check_profile(
+            enabled.then_some(crate::NativeThreadProfile::RustContext40SoleConsumerOneTaskStartV1),
+            descriptor,
+        )
+    }
+
+    pub(crate) fn check_profile(
+        &self,
+        selected: Option<crate::NativeThreadProfile>,
+        descriptor: &PreparedComponent,
+    ) -> Result<(), PlatformError> {
+        match (self, selected, descriptor.metadata.get(METADATA)) {
+            (Self::Disabled, None, None) => Ok(()),
+            (
+                Self::Verified(digest),
+                Some(crate::NativeThreadProfile::RustContext40SoleConsumerOneTaskStartV1),
+                Some(profile),
+            ) if profile == PROFILE => {
+                let expected = format!("sha256:{:x}", latent_core::digest::HexDigest(digest));
+                if descriptor.metadata.get("component-digest") == Some(&expected) {
+                    Ok(())
+                } else {
+                    Err(invalid())
+                }
+            }
+            (
+                Self::CVerified(digest),
+                Some(crate::NativeThreadProfile::CContext144SyncCooperativeV1),
+                Some(profile),
+            ) if profile == C_PROFILE => {
                 let expected = format!("sha256:{:x}", latent_core::digest::HexDigest(digest));
                 if descriptor.metadata.get("component-digest") == Some(&expected) {
                     Ok(())
@@ -58,7 +114,15 @@ impl Authentication {
         // Descriptor and proof are both private immutable fields of the same
         // PreparedRuntime; the factory additionally checks its selected profile
         // on every cache/readiness/start boundary.
-        self.check(descriptor.metadata.contains_key(METADATA), descriptor)
+        let selected = match descriptor.metadata.get(METADATA).map(String::as_str) {
+            None => None,
+            Some(PROFILE) => {
+                Some(crate::NativeThreadProfile::RustContext40SoleConsumerOneTaskStartV1)
+            }
+            Some(C_PROFILE) => Some(crate::NativeThreadProfile::CContext144SyncCooperativeV1),
+            _ => return Err(invalid()),
+        };
+        self.check_profile(selected, descriptor)
     }
 }
 
@@ -96,6 +160,54 @@ mod tests {
                 ),
             ]),
         }
+    }
+
+    #[test]
+    fn c_profile_requires_prepaid_work_before_reading_proof_and_never_grants_from_data() {
+        let profile = Some(crate::NativeThreadProfile::CContext144SyncCooperativeV1);
+        let work = latent_component_threading::c_preimage::C_VERIFICATION_WORK_BYTES;
+        assert_eq!(work, 48 * 1024 * 1024);
+        for prepaid in [0, work - 1] {
+            assert_eq!(
+                Authentication::verify_profile(profile, b"invalid", prepaid)
+                    .unwrap_err()
+                    .code,
+                PlatformErrorCode::ResourceExhausted
+            );
+        }
+        assert_eq!(
+            Authentication::verify_profile(profile, b"invalid", work)
+                .unwrap_err()
+                .code,
+            PlatformErrorCode::CorruptArtifact
+        );
+        assert!(matches!(
+            Authentication::verify_profile(None, b"invalid", 0),
+            Ok(Authentication::Disabled)
+        ));
+    }
+
+    #[test]
+    fn c_profile_proof_cannot_replay_as_rust_or_under_default_cache_settings() {
+        let proof = Authentication::CVerified([0x11; 32]);
+        let mut original = descriptor();
+        original.metadata.insert(METADATA.into(), C_PROFILE.into());
+        proof
+            .check_profile(
+                Some(crate::NativeThreadProfile::CContext144SyncCooperativeV1),
+                &original,
+            )
+            .unwrap();
+        proof.check_before_instantiation(&original).unwrap();
+        assert!(proof.check_profile(None, &original).is_err());
+        assert!(proof
+            .check_profile(
+                Some(crate::NativeThreadProfile::RustContext40SoleConsumerOneTaskStartV1),
+                &original
+            )
+            .is_err());
+        original.metadata.insert(METADATA.into(), PROFILE.into());
+        assert!(proof.check_before_instantiation(&original).is_err());
     }
 
     #[test]

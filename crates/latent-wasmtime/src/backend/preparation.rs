@@ -132,12 +132,13 @@ impl WasmtimeBackend {
             key.publication.as_ref(),
         )?;
         let handle = authenticated_handle(key, &identity, eligibility.as_ref());
-        let reservation = match self.shared.cache.begin(
+        let reservation = match self.shared.cache.begin_with_verification(
             handle.clone(),
             usize::try_from(identity.component_bytes()).map_err(|_| metadata_overflow())?,
             self.shared
                 .preparation_context
                 .reserved_metadata(metadata_bytes)?,
+            self.config.thread_verification_bytes(),
         )? {
             PrepareAccess::Hit(runtime) => {
                 if runtime.authentication.as_ref() != Some(&identity)

@@ -55,3 +55,37 @@ Earlier failed/rejected publication and historical Java/TypeScript/.NET results
 remain separately attributed. This is Go v5 resource/callback evidence for the
 literal supported profile; native-thread, asynchronous flush, an actual late
 wake, raw-network and complete ticket qualification remain unclaimed.
+
+
+## Already-entered late callback
+
+The separate `go-resource-late.yml` programme passed at source
+`def20373bf9d7842dac3df4ebcecfc52fda3ea0a`, run `39582173371`, job
+`119163314775`. One fresh normal Go v5 component and the same immutable 357e
+native products execute two pre-CPU runtime-grant denials and four admitted
+late/fresh cases across independent tenant publications. The original joined
+thirteen-case programme and its pending observer oracle remain unchanged.
+
+An ordinary `time.AfterFunc` callback signals entry before the root calls
+`Timer.Stop()`, which must return false. The root opens its return gate without
+joining the callback. Accepted work retains two independent resource readers,
+reads exact binary data, obtains eight entropy bytes, checks wall and monotonic
+clocks, logs completion and closes both readers. Exact original-host structured
+log charges of 556 and 552 bytes require both root and callback records; the
+constant root result alone cannot satisfy the callback completion oracle.
+The source and serialized logging rules are bound to the frozen native producer.
+
+The [signed late-callback observation](evidence/go-resource-late-signed-2026-10-21.json)
+retains all four raw outcomes and the complete archive/source identities:
+221 CRC-checked members, 187 Git inputs, 35 helpers and 22 successful normal
+build commands. All six requests had physical retirement and all eighteen
+provider counters at zero before reuse. Both fresh-state calls passed; peer
+contacts were zero and the node was clean and reaped. No native or engine build
+was repeated. The earlier progress-writer failure and superseded cancelled run
+remain attributed separately and supply no passing qualification credit.
+
+This proves completion of an already-entered callback after `Stop(false)` and
+before physical retirement. It does not prove a callback after Store retirement,
+an instruction after the library return, `Poll::Pending`, native threads or an
+asynchronous console flush queue. Other applicable language late-facility rows
+and complete ticket qualification remain open.

@@ -17,7 +17,15 @@
           "fix/runtime-wait-positive-observation-20261020"
         ]
       },
-      "workflow_dispatch": null
+      "workflow_dispatch": {
+        "inputs": {
+          "c-thread-profile-controls": {
+            "default": false,
+            "description": "Run the finite C proof, accounting and normal operator controls with these same products",
+            "type": "boolean"
+          }
+        }
+      }
     },
     "permissions": {
       "contents": "read"
@@ -26,7 +34,7 @@
   "requiredJobs": [
     "products"
   ],
-  "reviewReason": "Add exact owned wait-pending observer producer branch; preserve all events/jobs and bounds",
+  "reviewReason": "Reviewed default-false C profile controls append the original48+new7 parser cases and11 exact host accounting/operator cases; the original50Rust15Python commands, five products, default path, deadlines and quotas remain intact.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/sdk-native-products.yml"
 }

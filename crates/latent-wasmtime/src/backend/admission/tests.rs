@@ -197,6 +197,7 @@ async fn queued_source_case(enforced: bool, lifecycle: bool) {
             source_bytes: 1,
             metadata_bytes: 1,
             document_bytes: 0,
+            verification_bytes: 0,
         })
         .unwrap()
     else {

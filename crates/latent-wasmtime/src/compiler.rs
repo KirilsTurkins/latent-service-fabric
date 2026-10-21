@@ -42,6 +42,7 @@ pub(crate) struct Admission {
     pub(crate) source_bytes: usize,
     pub(crate) metadata_bytes: usize,
     pub(crate) document_bytes: usize,
+    pub(crate) verification_bytes: usize,
 }
 
 pub(crate) struct CompilationResult<T> {

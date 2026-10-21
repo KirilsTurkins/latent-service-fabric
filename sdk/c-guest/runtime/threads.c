@@ -283,6 +283,8 @@ void __lsf_c_root_finish(struct lsf_c_thread *root) {
     }
     require(lsf_c_tls_finish()==0);root->tls_finished=1;
     /* Tombstones stay valid until there can be no further application access.
-     * Root logical owners conservatively remain charged through StoreDrop.
+     * The fixed stackless root wrapper settles these exact logical tokens only
+     * after this C frame and its TLS destructors have returned. Physical host
+     * stack/metadata owners remain charged independently through StoreDrop.
      */
 }

@@ -1,0 +1,100 @@
+{
+  "schemaVersion": "latent.c.native-rustfmt-source.v1",
+  "producer": "f0d36b38d39a837cef7f6242b4b4a99aa36b8b75",
+  "formatter": "rustfmt 1.9.0-stable (8bab26f4f6 2026-07-14)",
+  "configuration": "edition = \"2021\"\nmax_width = 100\nuse_field_init_shorthand = true\nuse_try_shorthand = true\nnewline_style = \"Unix\"\n",
+  "files": [
+    {
+      "path": "crates/latent-component-threading/src/c_preimage.rs",
+      "edition": "2024",
+      "original": {
+        "sha256": "sha256:d329c594a72efa3442efcc809fce7606c4272735e83df67043350f7af2dda035",
+        "bytes": 35559
+      },
+      "formatted": {
+        "sha256": "sha256:d310322aed1be54f93f638377f7ba1b8fc68be46ae87c2b5ba614624aa8d9cce",
+        "bytes": 35560
+      }
+    },
+    {
+      "path": "crates/latent-component-threading/src/c_root.rs",
+      "edition": "2024",
+      "original": {
+        "sha256": "sha256:e9f0ced65eec8b644a26d205ec1ab8fce5588831729a258163d71e1bc529846d",
+        "bytes": 41805
+      },
+      "formatted": {
+        "sha256": "sha256:70ddefacc857bbbff4a0b8bfb7a517584fd659ca7541e8a7ab631d807c389788",
+        "bytes": 41835
+      }
+    }
+  ],
+  "allOriginalsFromGit": true,
+  "formatterOutputEqualsCurrent": true,
+  "qualification": false,
+  "compiledNativeSource": {
+    "sha256": "sha256:37a714bc32b0ea6af4b3f72226601e84c4f20fb271b9d91abd4968e478db212b",
+    "files": 3324,
+    "bytes": 26365840,
+    "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+    "hermetic": false,
+    "implicitCompilerInputs": "not-attested"
+  },
+  "formattedConsumerSource": {
+    "sha256": "sha256:2751cae37918f4313a4a44f72f4996f8d13efbf0d16ce3727b8da53896c315af",
+    "files": 3324,
+    "bytes": 26365871,
+    "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+    "hermetic": false,
+    "implicitCompilerInputs": "not-attested"
+  },
+  "otherNativeFilesByteExact": 3322,
+  "nativeProductsRebuilt": false,
+  "editionSelection": "nearest Cargo package; inherited workspace edition2021; component-threading explicit2024",
+  "perPackageEditions": {
+    "apps/latentd/src/config/engine.rs": "2021",
+    "apps/latentd/src/config/model.rs": "2021",
+    "apps/latentd/src/config/providers.rs": "2021",
+    "apps/latentd/src/config/providers/activation_runtime.rs": "2021",
+    "apps/latentd/src/config/runtime.rs": "2021",
+    "apps/latentd/src/config/security.rs": "2021",
+    "apps/latentd/src/config/tests/engine.rs": "2021",
+    "apps/latentd/src/config/tests/providers/activation_runtime.rs": "2021",
+    "apps/latentd/src/standalone/providers/runtime.rs": "2021",
+    "apps/latentd/src/standalone/providers/scalar.rs": "2021",
+    "crates/latent-component-threading/src/c_abi.rs": "2024",
+    "crates/latent-component-threading/src/c_preimage.rs": "2024",
+    "crates/latent-component-threading/src/c_root.rs": "2024",
+    "crates/latent-component-threading/src/lib.rs": "2024",
+    "crates/latent-manifest/src/runtime_compatibility/profile.rs": "2021",
+    "crates/latent-manifest/src/runtime_compatibility/tests.rs": "2021",
+    "crates/latent-packaging/examples/capsule_contracts.rs": "2021",
+    "crates/latent-wasmtime/src/aot/ownership.rs": "2021",
+    "crates/latent-wasmtime/src/aot/profile.rs": "2021",
+    "crates/latent-wasmtime/src/aot/supervisor.rs": "2021",
+    "crates/latent-wasmtime/src/aot/supervisor/input.rs": "2021",
+    "crates/latent-wasmtime/src/aot/worker.rs": "2021",
+    "crates/latent-wasmtime/src/backend.rs": "2021",
+    "crates/latent-wasmtime/src/backend/admission.rs": "2021",
+    "crates/latent-wasmtime/src/backend/admission/tests.rs": "2021",
+    "crates/latent-wasmtime/src/backend/preparation.rs": "2021",
+    "crates/latent-wasmtime/src/backend/preparation/compilation.rs": "2021",
+    "crates/latent-wasmtime/src/backend/preparation_context.rs": "2021",
+    "crates/latent-wasmtime/src/backend/readiness.rs": "2021",
+    "crates/latent-wasmtime/src/backend/readiness/input.rs": "2021",
+    "crates/latent-wasmtime/src/backend/readiness/tests/owners.rs": "2021",
+    "crates/latent-wasmtime/src/backend/readiness/tests/worker.rs": "2021",
+    "crates/latent-wasmtime/src/cache.rs": "2021",
+    "crates/latent-wasmtime/src/cache/reservation.rs": "2021",
+    "crates/latent-wasmtime/src/cache/tests.rs": "2021",
+    "crates/latent-wasmtime/src/compiler.rs": "2021",
+    "crates/latent-wasmtime/src/compiler/acquire.rs": "2021",
+    "crates/latent-wasmtime/src/compiler/tests/support.rs": "2021",
+    "crates/latent-wasmtime/src/component_threading.rs": "2021",
+    "crates/latent-wasmtime/src/config.rs": "2021",
+    "crates/latent-wasmtime/src/config/engine.rs": "2021",
+    "crates/latent-wasmtime/src/config/profile.rs": "2021",
+    "crates/latent-wasmtime/src/config/runtime_compatibility.rs": "2021",
+    "crates/latent-wasmtime/src/lib.rs": "2021"
+  }
+}

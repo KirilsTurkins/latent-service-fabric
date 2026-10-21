@@ -90,9 +90,20 @@ impl WasmtimeConfig {
         if self.owned_native_threads {
             fields.insert(
                 "component-thread-authentication".into(),
-                crate::component_threading::PROFILE.into(),
+                self.native_thread_profile.name().into(),
             );
-            fields.insert("native-thread-root-abi".into(), "async-stackful-v1".into());
+            fields.insert(
+                "native-thread-root-abi".into(),
+                match self.native_thread_profile {
+                    super::NativeThreadProfile::RustContext40SoleConsumerOneTaskStartV1 => {
+                        "async-stackful-v1"
+                    }
+                    super::NativeThreadProfile::CContext144SyncCooperativeV1 => {
+                        "sync-cooperative-c-abi-v1"
+                    }
+                }
+                .into(),
+            );
             fields.insert(
                 "native-thread-profile".into(),
                 crate::host::native::PROFILE.into(),

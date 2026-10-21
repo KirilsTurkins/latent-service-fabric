@@ -35,6 +35,10 @@ pub struct ExecutionProfileReport {
     compiler: &'static str,
     compiler_sandbox: Option<&'static str>,
     authenticated_native_loading: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    native_thread_profile: Option<&'static str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    activation_stack_accounting: Option<&'static str>,
     #[cfg(feature = "development-test-node")]
     #[serde(skip_serializing_if = "Option::is_none")]
     development_guest_clock: Option<GuestClockReport>,
@@ -66,6 +70,8 @@ impl ExecutionProfileReport {
             return false;
         }
         self.profile == settings.wasmtime.execution_isolation_profile
+            && self.native_thread_profile == native_thread_profile(settings)
+            && self.activation_stack_accounting == activation_stack_accounting(settings)
             && self.host_abi_profile
                 == if settings.wasmtime.transactional_state {
                     PHASE4_HOST_ABI_V1.id
@@ -78,7 +84,7 @@ impl ExecutionProfileReport {
     }
 
     pub(crate) fn attributes(&self) -> BTreeMap<String, String> {
-        [
+        let mut attributes: BTreeMap<String, String> = [
             ("lsf.security.profile", self.profile.name()),
             ("lsf.security.admission", self.admission),
             ("lsf.security.guest-boundary", self.guest_boundary),
@@ -87,7 +93,14 @@ impl ExecutionProfileReport {
         ]
         .into_iter()
         .map(|(key, value)| (key.to_owned(), value.to_owned()))
-        .collect()
+        .collect();
+        if let Some(profile) = self.native_thread_profile {
+            attributes.insert("lsf.native-thread-profile".into(), profile.into());
+        }
+        if let Some(profile) = self.activation_stack_accounting {
+            attributes.insert("lsf.activation-stack-accounting".into(), profile.into());
+        }
+        attributes
     }
 }
 
@@ -138,9 +151,25 @@ pub(super) fn check(settings: &NodeSettings) -> Result<ExecutionProfileReport, P
             .as_ref()
             .map(|_| latent_wasmtime::ISOLATED_AOT_SANDBOX_PROFILE),
         authenticated_native_loading: settings.isolated_aot.is_some(),
+        native_thread_profile: native_thread_profile(settings),
+        activation_stack_accounting: activation_stack_accounting(settings),
         #[cfg(feature = "development-test-node")]
         development_guest_clock: guest_clock_report(settings),
     })
+}
+
+fn native_thread_profile(settings: &NodeSettings) -> Option<&'static str> {
+    settings
+        .wasmtime
+        .owned_native_threads
+        .then_some(settings.wasmtime.native_thread_profile.name())
+}
+
+fn activation_stack_accounting(settings: &NodeSettings) -> Option<&'static str> {
+    settings
+        .wasmtime
+        .owned_native_stacks
+        .then_some("activation-owned-v1")
 }
 
 fn check_state_owners(settings: &NodeSettings) -> Result<(), PlatformError> {

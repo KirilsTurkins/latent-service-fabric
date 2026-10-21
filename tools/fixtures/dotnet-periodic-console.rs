@@ -5,6 +5,8 @@ use std::cell::{Cell, RefCell};
 const MAX_INPUT: usize = 8192;
 const MAX_CHUNK: usize = 256;
 const MAX_TAIL: usize = 128;
+// 38..93 are the original eight owner kinds times seven original host errors.
+pub const LAST_CODE: usize = 93;
 pub const CODES: &[&[u8]] = &[
     b"activation-timer-driver-completion",
     b"activation-timer-driver-epoch-limit",
@@ -54,7 +56,7 @@ impl Decoder {
         if self.total>MAX_INPUT { return Err(()); }
         if self.emitted { return Ok(None); }
         let mut joined=std::mem::take(&mut self.tail); joined.extend_from_slice(bytes);
-        let found=(0..=CODES.len()).filter_map(|code| {
+        let found=(0..=LAST_CODE).filter_map(|code| {
             let marker=format!("LSF-PERIODIC-CODE:{code:04}\n");
             joined.windows(marker.len()).enumerate().find_map(|(at, bytes)|
                 (bytes==marker.as_bytes() && (if at==0 { self.tail_starts_line } else { joined[at-1]==b'\n' })).then_some((at,code)))

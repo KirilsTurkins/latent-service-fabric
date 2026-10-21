@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/dotnet_managed_work_controls.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Add six actual production Rust Timer/Owner lazy-poll lifetime controls with explicit ports; old CLR modes unchanged.",
+  "reviewReason": "Append six actual copied-driver CLR controls; preserve the original Task, timer, Rust wait and cleanup modes.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "6066d8d2827ebce8cc950afc924e0821c71772a46147ff6cae0eac003eb2b79e"
+  "sha256": "4dbac380aaf214be26d82e0ba61c0cd62741bec799049eb32d1c99dd68ff3a1c"
 }
