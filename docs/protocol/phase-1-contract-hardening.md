@@ -687,3 +687,19 @@ managed owner after fresh authorization and protected original-record lookup.
 `Requested` describes only the accepted request. Missing live ownership or
 already accepted commit I/O remains `RecoveryRequired`; neither a staging
 observation nor a cancellation request proves a durable abort.
+
+## Exact publication preparation
+
+The October 21, 2026 descriptor regeneration records the additive
+`ReleaseService.PrepareRelease` RPC introduced by #1255. Its request carries
+the exact publication, lifecycle generation and maximum wait at fields 1–3.
+Its response carries publication, lifecycle generation, component digest and
+prepared status at fields 1–4. Preparation preserves the existing tenant,
+publication and lifecycle checks; the request supplies no execution grant.
+
+Pinned Buf 1.72.0 output was compared against the complete previous descriptor.
+Removing exactly this RPC and its two new messages restores every previous
+descriptor semantic. No existing field, service signature, reservation or enum
+value changes. The .NET generation lock follows the same authoritative source:
+the pinned Grpc.Tools 2.71.0 generators reproduced all sixteen previous outputs
+before regeneration, and only `Release.cs` changes with the current proto.

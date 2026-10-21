@@ -251,7 +251,7 @@ mod tests {
             tenant: "examples".into(),
             token: "x".repeat(32),
             connect_timeout: Duration::from_secs(1),
-            rpc_timeout: Duration::from_secs(300),
+            rpc_timeout: Duration::from_mins(5),
             limits: crate::config::InputLimits::default(),
             manifest_profile: latent_manifest::ManifestValidationProfile::default(),
         };
@@ -273,6 +273,8 @@ mod tests {
         assert!(!is_phase2(&Operation::GetNode(
             proto::GetNodeRequest::default()
         )));
-        assert!(!is_phase2(&Operation::Invoke(Default::default())));
+        assert!(!is_phase2(&Operation::Invoke(
+            proto::InvokeRequest::default()
+        )));
     }
 }
