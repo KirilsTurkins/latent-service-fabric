@@ -722,6 +722,12 @@ mod tests {
         }
         for opcode in [0x1c, 0x1f, 0xe3, 0xe4, 0xe5] {
             let mut module = Module::new();
+            let mut types = TypeSection::new();
+            types.ty().function([], []);
+            module.section(&types);
+            let mut functions = FunctionSection::new();
+            functions.function(0);
+            module.section(&functions);
             let mut code = CodeSection::new();
             let mut function = Function::new([]);
             // The immediate is deliberately truncated. The profile refusal
