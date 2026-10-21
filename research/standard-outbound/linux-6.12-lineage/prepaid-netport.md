@@ -89,7 +89,14 @@ positive evidence.
 The reference uses explicit serialized type/list/policy/lock/RCU doubles. It
 does not execute Linux policy, actual spinlocks or Linux RCU, and does not
 establish real geometry, allocation bounds or physical final free. The corrected
-hosted object attempt remains pending; the original failure is retained.
+source `358ffe5c56790f86e29d2fe63185a606054cb92e` passed the actual hosted
+fourteen-object job `119036670283` in run `39543596597`: 14 x86-64 objects,
+40 private global functions, 29 exact derived identities, all 42 hosted
+source/controller tests and 19 clean owned commands. All 58 artifact members
+were independently read and hashed; the 4,309-symbol configuration differs
+only by enabling the private candidate. SELinux and Netlabel remain enabled.
+The original failed object attempt is retained separately. This compiles the
+real private cache prefix without executing Linux cache, policy or RCU paths.
 
 The authenticated source also exposes remaining real allocation paths:
 
