@@ -148,8 +148,7 @@ authenticates and replaces its exact original bytes.
 
 This is source infrastructure. No maintained builder or production engine
 selects it, and no canonical child or signed runtime has qualified it. The
-new Rust controls must run in hosted CI before they provide executable
-transform evidence. The original Rust context40 transform, component verifier
+hosted source run below supplies executable transform-unit evidence. The original Rust context40 transform, component verifier
 and engine profile remain unchanged.
 
 The C context keeps the existing32-byte SP/TLS prefix. Its144-byte aligned
@@ -216,3 +215,24 @@ Non-default attributes, detach, `pthread_exit`, cancellation unwinding,
 setjmp/longjmp, C++ dynamic TLS, mutex/condition/timed waits, CPU checkpoints,
 atomics and standard I/O are outside this source slice. Their absence cannot
 be counted as full #744 support.
+
+[Run39545094659/job119041367915](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39545094659/job/119041367915)
+passed all40 exact Rust controls at source065623b99069, including all26 original
+cases and14 new C layout, admission, immutable-image and guarded-root cases.
+The unchanged controller also passed the existing actual compiled C, pthread
+key/errno and C11 TLS controls. The [source-bound observation](../testing/evidence/c-thread-bootstrap-source-controls-2026-10-21.json)
+records artifact12321705701 (19,757B), all44 CRC-checked members,14 original
+controller source rows and11 products. The three new Rust modules are bound
+separately to the actual job's checked-out Git source and exact case log; they
+are not invented source rows in the old controller's receipt.
+
+The first hosted attempt39544590130 failed during parser API compilation,
+before any controls. The correction uses the pinned parser's public readers
+and checked byte ranges; that failed attempt is retained without passing
+credit. A local ordinary libc link attempt exceeded its90-second limit and
+produced no linked core; it was stopped and not retried locally. Consequently
+this observation does not claim execution of ordinary create/join calls, a
+canonical child, a production node, whole-component C routing or a qualified
+threading profile. Tool binaries and compiler implicit inputs are not
+independently retained by this artifact. No #744 checkbox closes from this
+finite source slice.
