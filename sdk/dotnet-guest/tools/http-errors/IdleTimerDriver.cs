@@ -160,9 +160,14 @@ internal static class IdleTimerDriver
             method.Parameters.Count == 1 && method.Parameters[0].ParameterType.MetadataType == MetadataType.String);
         var action = new GenericInstanceType(Type("System.Action`2"));
         action.GenericArguments.Add(task); action.GenericArguments.Add(module.TypeSystem.Object);
-        var continueWith = task.Methods.Single(method => method.Name == "ContinueWith" && method.Parameters.Count == 3 &&
+        var continueWith = task.Methods.Single(method => method.Name == "ContinueWith" && method.Parameters.Count == 5 &&
             method.Parameters[0].ParameterType.FullName == action.FullName &&
-            method.Parameters[1].ParameterType.MetadataType == MetadataType.Object && method.Parameters[2].ParameterType.FullName == scheduler.FullName);
+            method.Parameters[1].ParameterType.MetadataType == MetadataType.Object &&
+            method.Parameters[2].ParameterType.FullName == tokenType.FullName &&
+            method.Parameters[3].ParameterType.FullName == "System.Threading.Tasks.TaskContinuationOptions" &&
+            method.Parameters[4].ParameterType.FullName == scheduler.FullName);
+        var notCanceled = Type("System.Threading.Tasks.TaskContinuationOptions").Fields.Single(field => field.Name == "NotOnCanceled");
+        Require(notCanceled.HasConstant && notCanceled.Constant is int option && option == 0x40000);
         var actionConstructor = new MethodReference(".ctor", module.TypeSystem.Void, action) { HasThis = true };
         actionConstructor.Parameters.Add(new ParameterDefinition(module.TypeSystem.Object));
         actionConstructor.Parameters.Add(new ParameterDefinition(module.TypeSystem.IntPtr));
@@ -248,7 +253,11 @@ internal static class IdleTimerDriver
         il.Emit(OpCodes.Ldc_I4, 1000); il.Emit(OpCodes.Conv_U8); il.Emit(OpCodes.Mul); il.Emit(OpCodes.Ldc_I4, 1000); il.Emit(OpCodes.Conv_U8); il.Emit(OpCodes.Mul);
         il.Emit(OpCodes.Call, subscribe); il.Emit(OpCodes.Ldc_I4_1); il.Emit(OpCodes.Call, token); il.Emit(OpCodes.Call, registration); il.Emit(OpCodes.Stloc, driver);
         il.Emit(OpCodes.Ldloc, driver); il.Emit(OpCodes.Ldnull); il.Emit(OpCodes.Ldftn, callback); il.Emit(OpCodes.Newobj, actionConstructor);
-        il.Emit(OpCodes.Ldloc, driver); il.Emit(OpCodes.Ldsfld, epoch); il.Emit(OpCodes.Newobj, stateConstructor); il.Emit(OpCodes.Call, defaultScheduler);
+        il.Emit(OpCodes.Ldloc, driver); il.Emit(OpCodes.Ldsfld, epoch); il.Emit(OpCodes.Newobj, stateConstructor);
+        // Idle cancellation must not enqueue a callback whose original body only
+        // returns. Faulted waits still run the original failure check; successful
+        // waits still queue the original handler with the original scheduler.
+        il.Emit(OpCodes.Call, none); il.Emit(OpCodes.Ldc_I4, (int)notCanceled.Constant); il.Emit(OpCodes.Call, defaultScheduler);
         il.Emit(OpCodes.Callvirt, continueWith); il.Emit(OpCodes.Pop); il.Append(setDone);
 
         var originalSource = new VariableDefinition(ctsType); var queues = new VariableDefinition(instances.ReturnType); var index = new VariableDefinition(module.TypeSystem.Int32);

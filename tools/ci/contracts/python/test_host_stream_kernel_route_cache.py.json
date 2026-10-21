@@ -1,0 +1,179 @@
+{
+  "cases": [
+    "KernelRouteCache.test_a_live_birth_cannot_revive_a_dst_after_its_real_final_put",
+    "KernelRouteCache.test_actual_parent_reference_precedes_record_transfer_and_failed_transfer_put",
+    "KernelRouteCache.test_all_production_and_actual_execution_flags_remain_false",
+    "KernelRouteCache.test_closed_root_fence_and_real_publication_share_the_same_pool_lock",
+    "KernelRouteCache.test_exact_cache_reference_and_independent_drain_reference_are_distinct",
+    "KernelRouteCache.test_exact_maintained_prefix_membership_and_no_independent_extra_git_claim",
+    "KernelRouteCache.test_exception_search_uses_the_real_lock_key_and_finite_original_chain_bound",
+    "KernelRouteCache.test_original_fib_nexthop_and_exception_retirement_algorithms_remain_authenticated",
+    "KernelRouteCache.test_private_cache_copies_preserve_original_cleanup_and_refusal_preimages",
+    "KernelRouteCache.test_real_parent_put_precedes_actual_view_finish_and_unknown_kind_is_closed",
+    "KernelRouteCache.test_reference_extracts_actual_original_get_put_and_selected_cache_bodies",
+    "KernelRouteCache.test_reference_keeps_faithful_compare_exchange_and_explicit_serialized_scope",
+    "KernelRouteCache.test_replaceable_nexthop_aba_never_reuses_a_saved_cache_cell_pointer"
+  ],
+  "guards": {
+    "KernelRouteCache.test_a_live_birth_cannot_revive_a_dst_after_its_real_final_put": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ba1fa1bac9a016a3ee316d6b897461c613ad8f3a5ebc0f40af09ecc203b3289a",
+        "class:setup-sha256:852c11198af00eb1374c664a253e2f0c46d622223215472c64bf6789c70e9fd2"
+      ],
+      "skipSites": []
+    },
+    "KernelRouteCache.test_actual_parent_reference_precedes_record_transfer_and_failed_transfer_put": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ba1fa1bac9a016a3ee316d6b897461c613ad8f3a5ebc0f40af09ecc203b3289a",
+        "class:setup-sha256:852c11198af00eb1374c664a253e2f0c46d622223215472c64bf6789c70e9fd2"
+      ],
+      "skipSites": []
+    },
+    "KernelRouteCache.test_all_production_and_actual_execution_flags_remain_false": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ba1fa1bac9a016a3ee316d6b897461c613ad8f3a5ebc0f40af09ecc203b3289a",
+        "class:setup-sha256:852c11198af00eb1374c664a253e2f0c46d622223215472c64bf6789c70e9fd2"
+      ],
+      "skipSites": []
+    },
+    "KernelRouteCache.test_closed_root_fence_and_real_publication_share_the_same_pool_lock": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ba1fa1bac9a016a3ee316d6b897461c613ad8f3a5ebc0f40af09ecc203b3289a",
+        "class:setup-sha256:852c11198af00eb1374c664a253e2f0c46d622223215472c64bf6789c70e9fd2"
+      ],
+      "skipSites": []
+    },
+    "KernelRouteCache.test_exact_cache_reference_and_independent_drain_reference_are_distinct": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ba1fa1bac9a016a3ee316d6b897461c613ad8f3a5ebc0f40af09ecc203b3289a",
+        "class:setup-sha256:852c11198af00eb1374c664a253e2f0c46d622223215472c64bf6789c70e9fd2"
+      ],
+      "skipSites": []
+    },
+    "KernelRouteCache.test_exact_maintained_prefix_membership_and_no_independent_extra_git_claim": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ba1fa1bac9a016a3ee316d6b897461c613ad8f3a5ebc0f40af09ecc203b3289a",
+        "class:setup-sha256:852c11198af00eb1374c664a253e2f0c46d622223215472c64bf6789c70e9fd2"
+      ],
+      "skipSites": []
+    },
+    "KernelRouteCache.test_exception_search_uses_the_real_lock_key_and_finite_original_chain_bound": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ba1fa1bac9a016a3ee316d6b897461c613ad8f3a5ebc0f40af09ecc203b3289a",
+        "class:setup-sha256:852c11198af00eb1374c664a253e2f0c46d622223215472c64bf6789c70e9fd2"
+      ],
+      "skipSites": []
+    },
+    "KernelRouteCache.test_original_fib_nexthop_and_exception_retirement_algorithms_remain_authenticated": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ba1fa1bac9a016a3ee316d6b897461c613ad8f3a5ebc0f40af09ecc203b3289a",
+        "class:setup-sha256:852c11198af00eb1374c664a253e2f0c46d622223215472c64bf6789c70e9fd2"
+      ],
+      "skipSites": []
+    },
+    "KernelRouteCache.test_private_cache_copies_preserve_original_cleanup_and_refusal_preimages": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ba1fa1bac9a016a3ee316d6b897461c613ad8f3a5ebc0f40af09ecc203b3289a",
+        "class:setup-sha256:852c11198af00eb1374c664a253e2f0c46d622223215472c64bf6789c70e9fd2"
+      ],
+      "skipSites": []
+    },
+    "KernelRouteCache.test_real_parent_put_precedes_actual_view_finish_and_unknown_kind_is_closed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ba1fa1bac9a016a3ee316d6b897461c613ad8f3a5ebc0f40af09ecc203b3289a",
+        "class:setup-sha256:852c11198af00eb1374c664a253e2f0c46d622223215472c64bf6789c70e9fd2"
+      ],
+      "skipSites": []
+    },
+    "KernelRouteCache.test_reference_extracts_actual_original_get_put_and_selected_cache_bodies": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ba1fa1bac9a016a3ee316d6b897461c613ad8f3a5ebc0f40af09ecc203b3289a",
+        "class:setup-sha256:852c11198af00eb1374c664a253e2f0c46d622223215472c64bf6789c70e9fd2"
+      ],
+      "skipSites": []
+    },
+    "KernelRouteCache.test_reference_keeps_faithful_compare_exchange_and_explicit_serialized_scope": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ba1fa1bac9a016a3ee316d6b897461c613ad8f3a5ebc0f40af09ecc203b3289a",
+        "class:setup-sha256:852c11198af00eb1374c664a253e2f0c46d622223215472c64bf6789c70e9fd2"
+      ],
+      "skipSites": []
+    },
+    "KernelRouteCache.test_replaceable_nexthop_aba_never_reuses_a_saved_cache_cell_pointer": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ba1fa1bac9a016a3ee316d6b897461c613ad8f3a5ebc0f40af09ecc203b3289a",
+        "class:setup-sha256:852c11198af00eb1374c664a253e2f0c46d622223215472c64bf6789c70e9fd2"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_host_stream_kernel_route_cache.py",
+  "reviewReason": "Add thirteen maintained cache parent, publication, retirement and exact reference-source controls; preserve every existing case and production gate.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

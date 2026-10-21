@@ -354,7 +354,7 @@ class KernelRouteObjectSelection(unittest.TestCase):
         import json,yaml
         expected={'selected-objects': '3cd0999d36567ab2895fcdae18614b345b21ba64ab76dc34fd99f04d6df8cd9e', 'netlabel-objects': '54c5b3f216ccd13a2974de389f52c91aaf5c845e036e9bad8cc1be775e7e74c0', 'netport-objects': '170b80070821fd979aeda0848fb7352cd047c42bf495f1738f190ce829f73439', 'sidcache-objects': 'af60576c8eac1d372501162ff329d263d139017d81403b4aa3a58d01a46556c8', 'avc-objects': '897be4ea9cafd76ab3544192ebd0ba67f7d78ba3e910bafffeebb1d810e9ac78', 'audit-objects': 'b90d7bae8a9d5a04a947491b719bf59105a1fe75bd031f09a012953f4126cd11', 'bind-objects': 'd535fc904a479d1bbb12543d5c2fb4f9af3a64db10a9dfebe21a3cb81482abe7'}
         workflow=yaml.safe_load((candidate.ROOT/'.github/workflows/stream-kernel-objects.yml').read_bytes())
-        self.assertEqual(set(workflow['jobs']),set(expected)|{'route-objects'})
+        self.assertEqual(set(workflow['jobs'])-{'route-cache-objects','packet-objects'},set(expected)|{'route-objects'})
         for name,digest in expected.items():
             body={k:v for k,v in workflow['jobs'][name].items() if k!='if'}
             actual=hashlib.sha256(json.dumps(body,sort_keys=True,separators=(',',':')).encode()).hexdigest()
@@ -510,3 +510,167 @@ class KernelBindObjectSelection(unittest.TestCase):
         self.assertIn('/FAILED.json',artifact['path'])
         self.assertEqual(artifact['retention-days'], 3)
         self.assertEqual(workflow['concurrency']['cancel-in-progress'], False)
+
+
+class KernelRouteCacheObjectSelection(unittest.TestCase):
+    def test_cache_keeps_same_twenty_four_targets_and_all_eighty_one_original_functions(self):
+        previous=candidate.object_selection(False,False,False,False,False,False,True)
+        selected=candidate.object_selection(False,False,False,False,False,False,False,True)
+        self.assertEqual(set(selected),set(previous))
+        self.assertEqual(len(selected),24)
+        for name,names in previous.items():self.assertTrue(set(names)<=set(selected[name]))
+        names=[name for group in selected.values() for name in group]
+        self.assertEqual(len(names),87);self.assertEqual(len(set(names)),87)
+        self.assertEqual(sum(name.startswith('lsf_') for name in names),82)
+        self.assertEqual(selected['net/factory.o'],previous['net/factory.o']+candidate.ROUTE_CACHE_FACTORY)
+        self.assertEqual(selected['net/ipv4/route.o'],previous['net/ipv4/route.o']+candidate.ROUTE_CACHE_FUNCTIONS)
+
+    def test_unknown_mixed_and_local_cache_selection_refuses_before_archive_or_build(self):
+        for value in ('true','false',0,1,None,[],{}):
+            with self.subTest(value=value),self.assertRaisesRegex(ValueError,'closed-profile-selector'):
+                candidate.object_selection(False,False,False,False,False,False,False,value)
+        keys=('netlabel','netport','sidcache','avc','audit','bind','route')
+        for key in keys:
+            with self.subTest(key=key),patch.object(candidate.maintained,'authenticate_archive') as read:
+                with self.assertRaisesRegex(ValueError,'exclusive-profile-selector'):
+                    candidate.run(None,None,**{key:True},route_cache=True)
+                read.assert_not_called()
+        with patch.dict(candidate.os.environ,{},clear=True),patch.object(candidate.maintained,'authenticate_archive') as read:
+            with self.assertRaisesRegex(ValueError,'hosted-linux-only'):candidate.run(None,None,route_cache=True)
+            read.assert_not_called()
+
+    def test_all_eight_previous_profiles_retain_their_exact_symbol_oracles(self):
+        import json
+        expected={0: '583f9f80e46a57df8938f6f3ce8f300dc2fc43890bf921e6ab4f53c98eeb793e', 1: 'bc7d04ee56cf5a404fe198bd4475ee950b504ebf2420a79ed1e9047f7e6702bc', 2: '47e69130d5456fe8cbae8a78435c3a8487e16589141ebf5b03da789db3738d97', 3: 'fa33596a99f0d8d1581cdec1bf07ac65fc4ae107d58efc662d6487b94925d048', 4: 'ceba030e26252eea55f7871aa74f6051523e3d5e07c25ccb35d1891e4c71263d', 5: '0fa4e5760772ab0ad5f38abf11209260c1f050283606f6aefaf6b8106272137c', 6: '0ed44f5276d265d7a51410c4431b8f6f7940bbfc1e9e9c881ea4695bcaf9fcc2', 7: 'dac5c792097f8b2a38b8743e3d3cb3a3ede96c6edec224efa8f56723cf2eb62f'}
+        for index,digest in expected.items():
+            flags=[False]*7
+            if index:flags[index-1]=True
+            actual=hashlib.sha256(json.dumps(candidate.object_selection(*flags),sort_keys=True,separators=(',',':')).encode()).hexdigest()
+            self.assertEqual(actual,digest,index)
+
+    def test_all_eight_prior_job_bodies_remain_exact_with_only_closed_cache_exclusion(self):
+        import json,yaml
+        expected={'selected-objects': '3cd0999d36567ab2895fcdae18614b345b21ba64ab76dc34fd99f04d6df8cd9e', 'netlabel-objects': '54c5b3f216ccd13a2974de389f52c91aaf5c845e036e9bad8cc1be775e7e74c0', 'netport-objects': '170b80070821fd979aeda0848fb7352cd047c42bf495f1738f190ce829f73439', 'sidcache-objects': 'af60576c8eac1d372501162ff329d263d139017d81403b4aa3a58d01a46556c8', 'avc-objects': '897be4ea9cafd76ab3544192ebd0ba67f7d78ba3e910bafffeebb1d810e9ac78', 'audit-objects': 'b90d7bae8a9d5a04a947491b719bf59105a1fe75bd031f09a012953f4126cd11', 'bind-objects': 'd535fc904a479d1bbb12543d5c2fb4f9af3a64db10a9dfebe21a3cb81482abe7', 'route-objects': '0ebbe0639ac459ac1eb92c950ffba1b22c23c778d6eb6dafd1dc5955cd72f22d'}
+        workflow=yaml.safe_load((candidate.ROOT/'.github/workflows/stream-kernel-objects.yml').read_bytes())
+        self.assertEqual(set(workflow['jobs'])-{'packet-objects'},set(expected)|{'route-cache-objects'})
+        for name,digest in expected.items():
+            body={k:v for k,v in workflow['jobs'][name].items() if k!='if'}
+            self.assertEqual(hashlib.sha256(json.dumps(body,sort_keys=True,separators=(',',':')).encode()).hexdigest(),digest,name)
+            guard=workflow['jobs'][name]['if']
+            self.assertIn('inputs.route_cache != true',guard)
+            self.assertIn("github.ref_name == 'feat/stream-kernel-route-cache-20261021'",guard)
+
+    def test_exclusive_cache_job_keeps_closed_eight_inputs_config_and_original_bounds(self):
+        import yaml
+        workflow=yaml.safe_load((candidate.ROOT/'.github/workflows/stream-kernel-objects.yml').read_bytes())
+        events=workflow.get('on',workflow.get(True))
+        self.assertEqual(events['workflow_dispatch']['inputs']['route_cache'],{
+            'description':'Compile the closed route-cache parent and drain source profile','type':'boolean','default':False})
+        job=workflow['jobs']['route-cache-objects'];self.assertEqual(job['timeout-minutes'],20)
+        guard=next(step for step in job['steps'] if 'env' in step)
+        self.assertEqual(set(guard['env']),{'NETLABEL_REQUEST','NETPORT_REQUEST','SIDCACHE_REQUEST',
+            'AVC_REQUEST','AUDIT_REQUEST','BIND_REQUEST','ROUTE_REQUEST','ROUTE_CACHE_REQUEST'})
+        self.assertIn("assert all(value in ('', 'true', 'false') for value in values)",guard['run'])
+        self.assertIn("assert values.count('true') <= 1",guard['run'])
+        commands='\n'.join(step.get('run','') for step in job['steps'])
+        self.assertIn('--route-cache',commands);self.assertNotIn('${{ inputs.',commands)
+        self.assertIn('tools.tests.test_host_stream_kernel_route tools.tests.test_host_stream_kernel_route_cache -v',commands)
+        self.assertNotIn('scripts/config',commands)
+        self.assertIn('gcc make flex bison bc libelf-dev libssl-dev',commands)
+        artifact=job['steps'][-1]['with']
+        for name in candidate.object_selection(False,False,False,False,False,False,False,True):
+            self.assertIn('/objects/'+name,artifact['path'])
+        self.assertIn('/FAILED.json',artifact['path']);self.assertEqual(artifact['retention-days'],3)
+        self.assertEqual(workflow['concurrency']['cancel-in-progress'],False)
+
+
+class KernelPacketObjectSelection(unittest.TestCase):
+    def test_twenty_seven_objects_retain_all_eighty_seven_and_add_twelve_real_functions(self):
+        previous=candidate.object_selection(False,False,False,False,False,False,False,True)
+        selected=candidate.object_selection(False,False,False,False,False,False,False,False,True)
+        self.assertEqual(len(selected),27)
+        self.assertEqual(set(selected)-set(previous),{'net/ipv4/tcp.o','net/ipv4/tcp_output.o','net/ipv4/tcp_input.o'})
+        for name,names in previous.items():self.assertTrue(set(names)<=set(selected[name]))
+        names=[name for group in selected.values() for name in group]
+        self.assertEqual(len(names),99);self.assertEqual(len(set(names)),99)
+        self.assertEqual(sum(name.startswith('lsf_') for name in names),90)
+        self.assertEqual(selected['net/factory.o'],previous['net/factory.o']+candidate.PACKET_FACTORY)
+        self.assertEqual(selected['net/core/skbuff.o'],previous['net/core/skbuff.o']+candidate.PACKET_SKBUFF)
+        self.assertEqual(selected['net/ipv4/tcp.o'],('lsf_prepaid_tcp_stream_alloc_skb',
+            'lsf_prepaid_tcp_sendmsg_locked','tcp_stream_alloc_skb','tcp_sendmsg_locked'))
+        self.assertEqual(selected['net/ipv4/tcp_output.o'],('tcp_send_fin',))
+        self.assertEqual(selected['net/ipv4/tcp_input.o'],('tcp_rcv_established',))
+
+    def test_unknown_mixed_and_local_packet_profiles_refuse_before_archive_or_build(self):
+        for value in ('true','false',0,1,None,[],{}):
+            with self.subTest(value=value),self.assertRaisesRegex(ValueError,'closed-profile-selector'):
+                candidate.object_selection(False,False,False,False,False,False,False,False,value)
+        for key in ('netlabel','netport','sidcache','avc','audit','bind','route','route_cache'):
+            with self.subTest(key=key),patch.object(candidate.maintained,'authenticate_archive') as read:
+                with self.assertRaisesRegex(ValueError,'exclusive-profile-selector'):
+                    candidate.run(None,None,**{key:True},packet=True)
+                read.assert_not_called()
+        with patch.dict(candidate.os.environ,{},clear=True),patch.object(candidate.maintained,'authenticate_archive') as read:
+            with self.assertRaisesRegex(ValueError,'hosted-linux-only'):candidate.run(None,None,packet=True)
+            read.assert_not_called()
+
+    def test_all_nine_old_profiles_and_job_bodies_remain_exact(self):
+        import json,yaml
+        expected_profiles={0: '583f9f80e46a57df8938f6f3ce8f300dc2fc43890bf921e6ab4f53c98eeb793e', 1: 'bc7d04ee56cf5a404fe198bd4475ee950b504ebf2420a79ed1e9047f7e6702bc', 2: '47e69130d5456fe8cbae8a78435c3a8487e16589141ebf5b03da789db3738d97', 3: 'fa33596a99f0d8d1581cdec1bf07ac65fc4ae107d58efc662d6487b94925d048', 4: 'ceba030e26252eea55f7871aa74f6051523e3d5e07c25ccb35d1891e4c71263d', 5: '0fa4e5760772ab0ad5f38abf11209260c1f050283606f6aefaf6b8106272137c', 6: '0ed44f5276d265d7a51410c4431b8f6f7940bbfc1e9e9c881ea4695bcaf9fcc2', 7: 'dac5c792097f8b2a38b8743e3d3cb3a3ede96c6edec224efa8f56723cf2eb62f', 8: '48679915e3472b4a34d4c48b9ecbe14b55b00ed0aaa25814641eaf761c3f8154'}
+        expected_jobs={'selected-objects': '3cd0999d36567ab2895fcdae18614b345b21ba64ab76dc34fd99f04d6df8cd9e', 'netlabel-objects': '54c5b3f216ccd13a2974de389f52c91aaf5c845e036e9bad8cc1be775e7e74c0', 'netport-objects': '170b80070821fd979aeda0848fb7352cd047c42bf495f1738f190ce829f73439', 'sidcache-objects': 'af60576c8eac1d372501162ff329d263d139017d81403b4aa3a58d01a46556c8', 'avc-objects': '897be4ea9cafd76ab3544192ebd0ba67f7d78ba3e910bafffeebb1d810e9ac78', 'audit-objects': 'b90d7bae8a9d5a04a947491b719bf59105a1fe75bd031f09a012953f4126cd11', 'bind-objects': 'd535fc904a479d1bbb12543d5c2fb4f9af3a64db10a9dfebe21a3cb81482abe7', 'route-objects': '0ebbe0639ac459ac1eb92c950ffba1b22c23c778d6eb6dafd1dc5955cd72f22d', 'route-cache-objects': 'a082804fea4f81095318cc07e6d65b00ce771a01264283f9e78c4211b89b7a9e'}
+        for index,digest in expected_profiles.items():
+            flags=[False]*8
+            if index:flags[index-1]=True
+            actual=hashlib.sha256(json.dumps(candidate.object_selection(*flags),sort_keys=True,separators=(',',':')).encode()).hexdigest()
+            self.assertEqual(actual,digest,index)
+        workflow=yaml.safe_load((candidate.ROOT/'.github/workflows/stream-kernel-objects.yml').read_bytes())
+        self.assertEqual(set(workflow['jobs']),set(expected_jobs)|{'packet-objects'})
+        for name,digest in expected_jobs.items():
+            body={key:value for key,value in workflow['jobs'][name].items() if key!='if'}
+            self.assertEqual(hashlib.sha256(json.dumps(body,sort_keys=True,separators=(',',':')).encode()).hexdigest(),digest,name)
+            self.assertIn('inputs.packet != true',workflow['jobs'][name]['if'])
+            self.assertIn("github.ref_name == 'feat/stream-kernel-packet-prefix-20261021'",workflow['jobs'][name]['if'])
+
+    def test_exclusive_packet_job_preserves_original_config_bounds_and_all_artifacts(self):
+        import yaml
+        workflow=yaml.safe_load((candidate.ROOT/'.github/workflows/stream-kernel-objects.yml').read_bytes())
+        events=workflow.get('on',workflow.get(True))
+        self.assertEqual(events['workflow_dispatch']['inputs']['packet'],{
+            'description':'Compile the closed copied-TCP linear packet source profile','type':'boolean','default':False})
+        job=workflow['jobs']['packet-objects'];self.assertEqual(job['timeout-minutes'],20)
+        guard=next(step for step in job['steps'] if 'env' in step)
+        self.assertEqual(set(guard['env']),{'NETLABEL_REQUEST','NETPORT_REQUEST','SIDCACHE_REQUEST',
+            'AVC_REQUEST','AUDIT_REQUEST','BIND_REQUEST','ROUTE_REQUEST','ROUTE_CACHE_REQUEST','PACKET_REQUEST'})
+        self.assertIn("assert all(value in ('', 'true', 'false') for value in values)",guard['run'])
+        self.assertIn("assert values.count('true') <= 1",guard['run'])
+        commands='\n'.join(step.get('run','') for step in job['steps'])
+        self.assertIn('--packet',commands);self.assertNotIn('${{ inputs.',commands)
+        self.assertIn('tools.tests.test_host_stream_kernel_route tools.tests.test_host_stream_kernel_route_cache tools.tests.test_host_stream_kernel_packet -v',commands)
+        self.assertNotIn('scripts/config',commands)
+        self.assertIn('gcc make flex bison bc libelf-dev libssl-dev',commands)
+        artifact=job['steps'][-1]['with']
+        for name in candidate.object_selection(False,False,False,False,False,False,False,False,True):
+            self.assertIn('/objects/'+name,artifact['path'])
+        self.assertIn('/FAILED.json',artifact['path']);self.assertEqual(artifact['retention-days'],3)
+        self.assertEqual(workflow['concurrency']['cancel-in-progress'],False)
+
+    def test_packet_receipt_cannot_claim_kernel_packet_dma_or_final_free_execution(self):
+        import ast,inspect
+        code=ast.parse(inspect.getsource(candidate.run))
+        branches=[node for node in ast.walk(code) if isinstance(node,ast.If) and
+            isinstance(node.test,ast.Name) and node.test.id=='packet']
+        self.assertEqual(len(branches),1)
+        assigned={}
+        for statement in branches[0].body:
+            if isinstance(statement,ast.Assign) and len(statement.targets)==1:
+                target=statement.targets[0]
+                if isinstance(target,ast.Subscript) and isinstance(target.value,ast.Name) and target.value.id=='receipt':
+                    if isinstance(target.slice,ast.Constant) and isinstance(statement.value,ast.Constant):
+                        assigned[target.slice.value]=statement.value.value
+        self.assertEqual(assigned['profile'],'linear-copied-tcp-packet-source')
+        self.assertIs(assigned['linearCopiedPacketSourceImplemented'],True)
+        self.assertIs(assigned['mandatoryAuditSourceImplemented'],True)
+        for name in ('actualAuditExecuted','actualLinuxRcuExecuted','actualPortOrTimewaitExecuted',
+            'actualRouteOrXfrmExecuted','actualParentCacheDrainExecuted','actualPacketExchangeExecuted',
+            'actualRxDmaExecuted','finalFreeCertified'):
+            self.assertIs(assigned[name],False,name)

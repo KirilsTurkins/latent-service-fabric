@@ -59,14 +59,20 @@ def checked_release(release, capsule, build_identity, *, language='typescript'):
     return release
 
 
-def execute(artifact, native, output, *, language='typescript'):
+def execute(artifact, native, output, *, language='typescript', late_completion=False):
     require(language in ('typescript','go'),'resource-runtime-closed-execution-language')
+    require(type(late_completion) is bool,
+            'resource-runtime-closed-late-programme')
     reader=build_evidence
     if language == 'go':
         from tools.go_resource_runtime_build import build_evidence as reader
     output = fresh(output)
     record = {'schemaVersion':'latent.'+language+'.resource-runtime-node.v1','status':'incomplete',
               'fullTicketQualification':False,'nativeThreadsQualified':False,'runtimeGrantDenials':[]}
+    if late_completion:
+        record.update(lateCompletionProgramme=('running-AfterFunc-Stop-false-accepted-facilities-v1'
+                      if language == 'go' else 'accepted-setTimeout-clear-during-callback-facilities-v1'),
+                      positiveWaitForPendingQualified=False)
     before = reader(artifact);stage='normal-neutral-package-and-sign'
     commands=Commands(ROOT,fresh(output/'commands'),build_environment(output),deadline_seconds=600,command_seconds=120)
     node=peer=None;clients={}
@@ -92,7 +98,8 @@ def execute(artifact, native, output, *, language='typescript'):
             peer,port=start_provider(client,work/'peer',maximum_seconds=480)
             try:
                 config,settings=configure(work/'node',signed,port,language=language)
-                runtime.configure(settings,read_json(artifact/'capsule.json'),language=language)
+                runtime.configure(settings,read_json(artifact/'capsule.json'),language=language,
+                                  standard_entropy=late_completion and language == 'typescript')
                 config.write_bytes((json.dumps(settings,sort_keys=True,separators=(',',':'))+'\n').encode())
                 stage='two-tenant-single-cell-startup'
                 client.environment[timer_observer.ENVIRONMENT]='1'
@@ -112,21 +119,29 @@ def execute(artifact, native, output, *, language='typescript'):
                     manifest=selected.directory/'resource-callback-deployment.json'
                     write_json(manifest,tenants.scoped_deployment(read_json(signed/'my-greeting/deployment.json'),tenant))
                     target=deploy(selected,manifest,publications[tenant])
-                    targets[tenant],denied=runtime.grant(selected,node,manifest,publications[tenant],target,tenant,language=language)
+                    targets[tenant],denied=runtime.grant(selected,node,manifest,publications[tenant],target,tenant,language=language,
+                                                       standard_entropy=late_completion and language == 'typescript')
                     record['runtimeGrantDenials'].append({'tenant':tenant,'invocation':denied,
                         'provider':tenants.provider_idle(selected,targets[tenant]),
                         'physical':sample(selected,probe,'resource-runtime-denied-'+tenant,len(publications))})
                 require(publications['examples']!=publications['foreign'],'resource-runtime-independent-publications')
                 record['credentialDenial']=credential_denial(clients['foreign'],targets['foreign'])
                 stage='resource-callback-cancel-trap-foreign-fresh-programme'
-                record['programme']=runtime.programme(clients,targets,probe,output,before['component']['sha256'],language=language)
+                if late_completion:
+                    if language == 'go':
+                        from tools.go_resource_late import programme
+                    else:
+                        from tools.typescript_resource_late import programme
+                    record['programme']=programme(clients,targets,probe,output,before['component']['sha256'])
+                else:
+                    record['programme']=runtime.programme(clients,targets,probe,output,before['component']['sha256'],language=language)
                 for tenant in tenants.TENANTS:delete_all(clients[tenant],[targets[tenant]['name']])
                 record['afterDeletes']=sample(client,probe,'resource-callback-after-deletes',0)
                 clients['foreign'].node=None;stop(client,node)
                 record['nodeShutdown']=stopped_record(node);record['peerShutdown']=stop_observation_peer(peer)
                 stderr=bytes(node.buffers[1]);(output/'node-stderr.txt').write_bytes(stderr)
                 record['nativeTimerObservations']=timer_observer.observe(stderr)
-                require(record['nativeTimerObservations']['status']=='observed',
+                require(late_completion or record['nativeTimerObservations']['status']=='observed',
                         'resource-runtime-final-positive-timer-observations')
             finally:
                 for selected in clients.values():selected.node=None
