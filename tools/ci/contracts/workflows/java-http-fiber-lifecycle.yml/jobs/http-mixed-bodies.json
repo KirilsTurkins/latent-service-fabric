@@ -46,6 +46,10 @@
         "run": "python3 -B tools/release_preparation_cli_native_products.py --output \"$RUNNER_TEMP/java-mixed-native\""
       },
       {
+        "name": "Check only fixed public failed-assembly input retention",
+        "run": "python3 -B -m unittest tools.tests.test_java_phase_c_context -v"
+      },
+      {
         "uses": "actions/setup-java",
         "with": {
           "distribution": "temurin",
@@ -74,7 +78,7 @@
         "with": {
           "if-no-files-found": "warn",
           "name": "java-http-mixed-bodies-${{ github.sha }}",
-          "path": "${{ runner.temp }}/java-mixed-native/retrieval.json\n${{ runner.temp }}/java-mixed-native/native-products.json\n${{ runner.temp }}/java-mixed-native/source-inputs.json\n${{ runner.temp }}/java-http-mixed/qualification.json\n${{ runner.temp }}/java-http-mixed/campaign/qualification.json\n${{ runner.temp }}/java-http-mixed/campaign/FAILED.json\n${{ runner.temp }}/java-http-mixed/campaign/final-materials.json\n${{ runner.temp }}/java-http-mixed/campaign/compiler-cache-selection.json\n${{ runner.temp }}/java-http-mixed/campaign/compiler-acquisition/*.log\n${{ runner.temp }}/java-http-mixed/campaign/compiler-acquisition/*.command.json\n${{ runner.temp }}/java-http-mixed/campaign/build/*.json\n${{ runner.temp }}/java-http-mixed/campaign/build/component.wasm\n${{ runner.temp }}/java-http-mixed/campaign/build/package/**\n${{ runner.temp }}/java-http-mixed/campaign/build/compiler-logs/*-java-to-c.log\n${{ runner.temp }}/java-http-mixed/campaign/build/compiler-logs/*-java-owned-classes.log\n${{ runner.temp }}/java-http-mixed/campaign/build/compiler-logs/*-java-coroutine-*.log\n${{ runner.temp }}/java-http-mixed/campaign/build/compiler-logs/*-c-to-wasm.log\n${{ runner.temp }}/java-http-mixed/campaign/build/compiler-logs/*-c-to-wasm-context.command.json\n${{ runner.temp }}/java-http-mixed/campaign/build/compiler-logs/*-expected-wit.log\n${{ runner.temp }}/java-http-mixed/campaign/build/compiler-logs/*-compiled-wit.log\n${{ runner.temp }}/java-http-mixed/campaign/node/*.json\n${{ runner.temp }}/java-http-mixed/campaign/node/controls/*.json\n${{ runner.temp }}/java-http-mixed/campaign/node/controls/*-partial.stdout\n${{ runner.temp }}/java-http-mixed/campaign/node/controls/*-partial.stderr",
+          "path": "${{ runner.temp }}/java-mixed-native/retrieval.json\n${{ runner.temp }}/java-mixed-native/native-products.json\n${{ runner.temp }}/java-mixed-native/source-inputs.json\n${{ runner.temp }}/java-http-mixed/qualification.json\n${{ runner.temp }}/java-http-mixed/campaign/qualification.json\n${{ runner.temp }}/java-http-mixed/campaign/FAILED.json\n${{ runner.temp }}/java-http-mixed/campaign/final-materials.json\n${{ runner.temp }}/java-http-mixed/campaign/compiler-cache-selection.json\n${{ runner.temp }}/java-http-mixed/campaign/compiler-acquisition/*.log\n${{ runner.temp }}/java-http-mixed/campaign/compiler-acquisition/*.command.json\n${{ runner.temp }}/java-http-mixed/campaign/build/*.json\n${{ runner.temp }}/java-http-mixed/campaign/build/component-inputs/core.wasm\n${{ runner.temp }}/java-http-mixed/campaign/build/component-inputs/closed-runtime.wasm\n${{ runner.temp }}/java-http-mixed/campaign/build/component.wasm\n${{ runner.temp }}/java-http-mixed/campaign/build/package/**\n${{ runner.temp }}/java-http-mixed/campaign/build/compiler-logs/*-java-to-c.log\n${{ runner.temp }}/java-http-mixed/campaign/build/compiler-logs/*-java-owned-classes.log\n${{ runner.temp }}/java-http-mixed/campaign/build/compiler-logs/*-java-coroutine-*.log\n${{ runner.temp }}/java-http-mixed/campaign/build/compiler-logs/*-c-to-wasm.log\n${{ runner.temp }}/java-http-mixed/campaign/build/compiler-logs/*-component-new.log\n${{ runner.temp }}/java-http-mixed/campaign/build/compiler-logs/*-c-to-wasm-context.command.json\n${{ runner.temp }}/java-http-mixed/campaign/build/compiler-logs/*-expected-wit.log\n${{ runner.temp }}/java-http-mixed/campaign/build/compiler-logs/*-compiled-wit.log\n${{ runner.temp }}/java-http-mixed/campaign/node/*.json\n${{ runner.temp }}/java-http-mixed/campaign/node/controls/*.json\n${{ runner.temp }}/java-http-mixed/campaign/node/controls/*-partial.stdout\n${{ runner.temp }}/java-http-mixed/campaign/node/controls/*-partial.stderr",
           "retention-days": 3
         }
       }
@@ -83,7 +87,7 @@
   },
   "jobId": "http-mixed-bodies",
   "kind": "job",
-  "reviewReason": "Retain exact bounded public partial streams when pending observation fails; all original commands, guards and limits preserved",
+  "reviewReason": "Add fixed public failed-assembly core/adapter and exact component-new log retention plus seven focused controls; all original commands and limits unchanged",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-http-fiber-lifecycle.yml"
 }
