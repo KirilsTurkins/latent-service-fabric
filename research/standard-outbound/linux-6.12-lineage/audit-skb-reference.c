@@ -100,7 +100,7 @@ static struct skb_shared_info *skb_shinfo(const struct sk_buff *skb)
 static unsigned int skb_end_offset(const struct sk_buff *skb) { return skb->end; }
 static u8 *skb_tail_pointer(const struct sk_buff *skb) { return skb->head + skb->tail; }
 static unsigned int skb_headroom(const struct sk_buff *skb) { return (unsigned int)(skb->data - skb->head); }
-static bool skb_zcopy(const struct sk_buff *skb) { (void)skb; return false; }
+static bool skb_zcopy(struct sk_buff *skb) { (void)skb; return false; }
 static bool skb_shared(const struct sk_buff *skb) { return skb->users.count > 1; }
 static bool skb_cloned(const struct sk_buff *skb) { return skb->cloned && skb_shinfo(skb)->dataref.count != 1; }
 static bool skb_pfmemalloc(const struct sk_buff *skb) { return skb->pfmemalloc != 0; }

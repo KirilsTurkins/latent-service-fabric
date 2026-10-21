@@ -79,7 +79,10 @@ static bool lsf_prepaid_audit_linear(const struct sk_buff *skb,
         lsf_factory_audit_head_current(skb->head,
             (unsigned long)skb_end_offset(skb) + SKB_DATA_ALIGN(sizeof(struct skb_shared_info)),
             &head_birth) != 1 || head_birth.context != source.context ||
-        skb_shinfo(skb)->nr_frags || skb_shinfo(skb)->frag_list || skb_zcopy(skb)) {
+        skb_shinfo(skb)->nr_frags || skb_shinfo(skb)->frag_list ||
+        /* Maintained skb_zcopy only reads flags/uarg but takes a mutable
+         * pointer. Keep the copy caller's const contract and original getter. */
+        skb_zcopy((struct sk_buff *)skb)) {
         lsf_factory_poison(source.context);
         return false;
     }

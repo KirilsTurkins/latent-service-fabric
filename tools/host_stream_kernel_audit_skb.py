@@ -124,8 +124,10 @@ def derive(inputs):
     raw = section(original, '__skb_clone')
     text = replace(text, raw, raw + '\n#ifdef CONFIG_LSF_STREAM_FACTORY\n'
         '#include "../audit-skb-private.c"\n#endif\n')
-    text = ('#ifdef CONFIG_LSF_STREAM_FACTORY\n#include "../factory-private.h"\n'
-        'static int lsf_prepaid_audit_return(const void *, unsigned int);\n#endif\n' + text)
+    text = replace(text, '#include "sock_destructor.h"\n',
+        '#include "sock_destructor.h"\n#ifdef CONFIG_LSF_STREAM_FACTORY\n'
+        '#include "../factory-private.h"\n'
+        'static int lsf_prepaid_audit_return(const void *, unsigned int);\n#endif\n')
     outputs[SKBUFF] = text.encode()
     root = maintained.ROOT
     name = 'research/standard-outbound/linux-6.12-lineage/audit-skb-private.c'

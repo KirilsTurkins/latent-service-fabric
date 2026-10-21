@@ -133,3 +133,9 @@ the private include imported the default `pr_fmt` before audit.c defined its
 original macro. The [failed observation](evidence/kernel-audit-object-header-order-failure-2026-10-21.json)
 retains the original artifact. The correction moves only that include after
 the maintained audit headers; the original macro and `-Werror` remain.
+
+The second attempt compiled the audit formatter, then exposed the same header
+ordering issue in skbuff.c and a const mismatch with its original read-only
+`skb_zcopy` getter. The [failed SKB observation](evidence/kernel-audit-skb-compile-failure-2026-10-21.json)
+retains both compiler diagnostics. The correction retains the copy API const
+contract, original getter, all ownership guards and warning policy.
