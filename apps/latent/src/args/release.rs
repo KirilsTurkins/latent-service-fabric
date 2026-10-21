@@ -49,3 +49,14 @@ pub struct RenewEvidenceArgs {
     #[command(flatten)]
     pub operation: ReleaseMutation,
 }
+
+/// Compile an exact admitted publication without invoking or authorizing it.
+#[derive(Args)]
+pub struct PrepareReleaseArgs {
+    #[command(flatten)]
+    pub selector: super::management::PublicationArgs,
+    #[arg(long, value_parser = clap::value_parser!(u64).range(1..))]
+    pub lifecycle_generation: u64,
+    #[arg(long, default_value_t = 300_000, value_parser = clap::value_parser!(u64).range(1..=300_000))]
+    pub maximum_wait_ms: u64,
+}

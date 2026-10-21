@@ -1,0 +1,166 @@
+{
+  "upstreamCommit": "7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+  "archiveSha256": "e09b6727e5c521253f0d41694900b9c38fb7604db7d35238a8197aa9f7de2428",
+  "schemaVersion": "lsf.kernel-maintained-netport-preimages.v1",
+  "source": {
+    "fs/inode.c": {
+      "bytes": 75338,
+      "sha256": "73e256cf70bb0d80e6fee28d969c6fb44ab4c5c7cd92b6f74edff8b5297e7070",
+      "gitBlob": "7942673f686fdc24d92c2fb8033c2fb3b6df7709",
+      "independentlyGitCorroborated": true
+    },
+    "include/net/netlabel.h": {
+      "bytes": 21017,
+      "sha256": "82861a26d850caa742f5fc54da857720c52dc02f05feabaa93987540e6191f85",
+      "gitBlob": "529160f76cac209ee7473ea7b5ccd49da0789f18",
+      "independentlyGitCorroborated": false
+    },
+    "include/net/sock.h": {
+      "bytes": 85865,
+      "sha256": "5d52f73f4898f2a52001aa9b7db8e863eee384e4c9fa43eaf281fb01dd9e4182",
+      "gitBlob": "efa549885b7f85e50c55f95ad4eae0c1ef75797a",
+      "independentlyGitCorroborated": true
+    },
+    "net/core/sock.c": {
+      "bytes": 111636,
+      "sha256": "f68f84b6dafdd3762b0599ab91f0face78b154d60bdccdf8920cbdf2e9f00be7",
+      "gitBlob": "75db38fdfd35fe87b87ac2755b0ef1db6fb96415",
+      "independentlyGitCorroborated": true
+    },
+    "net/ipv4/af_inet.c": {
+      "bytes": 51938,
+      "sha256": "9079f259c6687d3aa0faea64889f7ec248e7327a5799b90a6f7c860b81522873",
+      "gitBlob": "c310a60760f3433c2dd7f1a65ea61aa1cd2e40ed",
+      "independentlyGitCorroborated": true
+    },
+    "net/ipv4/cipso_ipv4.c": {
+      "bytes": 63739,
+      "sha256": "03a86947b0292c1ed9a1d637a67a12fb147f6839ee0c0c209dfe40eafb4ab089",
+      "gitBlob": "53fcb2089cde2a246c0b84d31582485b2496da64",
+      "independentlyGitCorroborated": false
+    },
+    "net/netlabel/netlabel_kapi.c": {
+      "bytes": 38938,
+      "sha256": "d16333fd75af20b6ad837bd062a1720390374f72f2ca514174aa6dbbfce8c150",
+      "gitBlob": "33b77084a4e5f34770f960d7c82e481d9889753a",
+      "independentlyGitCorroborated": false
+    },
+    "net/socket.c": {
+      "bytes": 92491,
+      "sha256": "95ec72eeccec766e102b6d532270bc52813c2f86d9bfa761d20900e07b2216db",
+      "gitBlob": "723bc3a1ba5cdd17f559a65de73d9c87911e6954",
+      "independentlyGitCorroborated": true
+    },
+    "security/security.c": {
+      "bytes": 180030,
+      "sha256": "b72fd7f869275b1caf1a98449e92024a779534fb36c77cb88f4ac210e4493055",
+      "gitBlob": "b31fd25f4e5e3d37e22e111fa67351b51ef99d2f",
+      "independentlyGitCorroborated": true
+    },
+    "security/selinux/netlabel.c": {
+      "bytes": 16481,
+      "sha256": "972d5786a9fb4da8845c839f06f1999bfc70e88a3d63ec904e0a080504d2631d",
+      "gitBlob": "d51dfe89231229e78903f3aa552286326524dca2",
+      "independentlyGitCorroborated": false
+    },
+    "security/selinux/ss/ebitmap.c": {
+      "bytes": 12211,
+      "sha256": "69ffd1eaf09c8aca73a3aaabda9e31d0207b98b7d8eb4843d66106b0a75e9b94",
+      "gitBlob": "cd84357db2c47a034bb3601eeaaa8806dbf0f7af",
+      "independentlyGitCorroborated": false
+    },
+    "security/selinux/ss/mls.c": {
+      "bytes": 16094,
+      "sha256": "349ec7a62da7777fd3ab12226538a1c486654ee917003b0d6b0b5bf3a6352f88",
+      "gitBlob": "a6e49269f5351df096da8c9fb56103a2f7b0ee9d",
+      "independentlyGitCorroborated": false
+    },
+    "security/selinux/ss/services.c": {
+      "bytes": 97756,
+      "sha256": "0b0a29ad428bd17a50784c4b87b47837e5dfb3e695255e98fb55e4a03d5d08a1",
+      "gitBlob": "54d121d64804295c8ae1f40103957f6a3b671640",
+      "independentlyGitCorroborated": true
+    },
+    "security/selinux/netport.c": {
+      "bytes": 5952,
+      "sha256": "8deed649b14f7a2dfe7b4dab94dde5f741ddc6858e098c3ef5dbff9e5df38b4b",
+      "gitBlob": "2e22ad9c2bd0d116668985e0fb579b5934df9394",
+      "independentlyGitCorroborated": false
+    },
+    "security/selinux/hooks.c": {
+      "bytes": 204597,
+      "sha256": "6079b88f15ca1966b640753e35edc291139fe925fca37e5c54d0a2d6e36d8370",
+      "gitBlob": "d4abf15f0e6fb98505df81ac3128255b4cd9e1e7",
+      "independentlyGitCorroborated": true
+    }
+  },
+  "sections": {
+    "sel_netport_insert": {
+      "source": "security/selinux/netport.c",
+      "prefix": "static void sel_netport_insert(",
+      "sha256": "d6e9c7b850ea6474f21324af905ef462d440b668f5d5efa92adbfbae60b9fd66",
+      "text": "static void sel_netport_insert(struct sel_netport *port)\n{\n\tunsigned int idx;\n\n\t/* we need to impose a limit on the growth of the hash table so check\n\t * this bucket to make sure it is within the specified bounds */\n\tidx = sel_netport_hashfn(port->psec.port);\n\tlist_add_rcu(&port->list, &sel_netport_hash[idx].list);\n\tif (sel_netport_hash[idx].size == SEL_NETPORT_HASH_BKT_LIMIT) {\n\t\tstruct sel_netport *tail;\n\t\ttail = list_entry(\n\t\t\trcu_dereference_protected(\n\t\t\t\tlist_tail_rcu(&sel_netport_hash[idx].list),\n\t\t\t\tlockdep_is_held(&sel_netport_lock)),\n\t\t\tstruct sel_netport, list);\n\t\tlist_del_rcu(&tail->list);\n\t\tkfree_rcu(tail, rcu);\n\t} else\n\t\tsel_netport_hash[idx].size++;\n}\n",
+      "allocationClosureProven": false
+    },
+    "sel_netport_sid_slow": {
+      "source": "security/selinux/netport.c",
+      "prefix": "static int sel_netport_sid_slow(",
+      "sha256": "b8c8f0c2e5b231beb80b2d336736046ea56831ebc990ae430f01778be0c95dc9",
+      "text": "static int sel_netport_sid_slow(u8 protocol, u16 pnum, u32 *sid)\n{\n\tint ret;\n\tstruct sel_netport *port;\n\tstruct sel_netport *new;\n\n\tspin_lock_bh(&sel_netport_lock);\n\tport = sel_netport_find(protocol, pnum);\n\tif (port != NULL) {\n\t\t*sid = port->psec.sid;\n\t\tspin_unlock_bh(&sel_netport_lock);\n\t\treturn 0;\n\t}\n\n\tret = security_port_sid(protocol, pnum, sid);\n\tif (ret != 0)\n\t\tgoto out;\n\tnew = kzalloc(sizeof(*new), GFP_ATOMIC);\n\tif (new) {\n\t\tnew->psec.port = pnum;\n\t\tnew->psec.protocol = protocol;\n\t\tnew->psec.sid = *sid;\n\t\tsel_netport_insert(new);\n\t}\n\nout:\n\tspin_unlock_bh(&sel_netport_lock);\n\tif (unlikely(ret))\n\t\tpr_warn(\"SELinux: failure in %s(), unable to determine network port label\\n\",\n\t\t\t__func__);\n\treturn ret;\n}\n",
+      "allocationClosureProven": false
+    },
+    "sel_netport_sid": {
+      "source": "security/selinux/netport.c",
+      "prefix": "int sel_netport_sid(",
+      "sha256": "70bb2b1bc5b3723f5f8d369ed5436abe81dfe55f09896e44d6549e91dfdddacb",
+      "text": "int sel_netport_sid(u8 protocol, u16 pnum, u32 *sid)\n{\n\tstruct sel_netport *port;\n\n\trcu_read_lock();\n\tport = sel_netport_find(protocol, pnum);\n\tif (port != NULL) {\n\t\t*sid = port->psec.sid;\n\t\trcu_read_unlock();\n\t\treturn 0;\n\t}\n\trcu_read_unlock();\n\n\treturn sel_netport_sid_slow(protocol, pnum, sid);\n}\n",
+      "allocationClosureProven": false
+    },
+    "sel_netport_flush": {
+      "source": "security/selinux/netport.c",
+      "prefix": "void sel_netport_flush(",
+      "sha256": "9d285e4c5e7a19eaedef46b8c3a71f18b86f4f18c3e33ab1aaa136199e5c613c",
+      "text": "void sel_netport_flush(void)\n{\n\tunsigned int idx;\n\tstruct sel_netport *port, *port_tmp;\n\n\tspin_lock_bh(&sel_netport_lock);\n\tfor (idx = 0; idx < SEL_NETPORT_HASH_SIZE; idx++) {\n\t\tlist_for_each_entry_safe(port, port_tmp,\n\t\t\t\t\t &sel_netport_hash[idx].list, list) {\n\t\t\tlist_del_rcu(&port->list);\n\t\t\tkfree_rcu(port, rcu);\n\t\t}\n\t\tsel_netport_hash[idx].size = 0;\n\t}\n\tspin_unlock_bh(&sel_netport_lock);\n}\n",
+      "allocationClosureProven": false
+    },
+    "selinux_socket_connect_helper": {
+      "source": "security/selinux/hooks.c",
+      "prefix": "static int selinux_socket_connect_helper(",
+      "sha256": "59c8671094e051c948372bc7338d804fe75f72f613f02e1911aff245371d664a",
+      "text": "static int selinux_socket_connect_helper(struct sock *sk,\n\t\t\t\t\t struct sockaddr *address, int addrlen)\n{\n\tstruct sk_security_struct *sksec = selinux_sock(sk);\n\tint err;\n\n\terr = sock_has_perm(sk, SOCKET__CONNECT);\n\tif (err)\n\t\treturn err;\n\tif (addrlen < offsetofend(struct sockaddr, sa_family))\n\t\treturn -EINVAL;\n\n\t/* connect(AF_UNSPEC) has special handling, as it is a documented\n\t * way to disconnect the socket\n\t */\n\tif (address->sa_family == AF_UNSPEC)\n\t\treturn 0;\n\n\t/*\n\t * If a TCP, DCCP or SCTP socket, check name_connect permission\n\t * for the port.\n\t */\n\tif (sksec->sclass == SECCLASS_TCP_SOCKET ||\n\t    sksec->sclass == SECCLASS_DCCP_SOCKET ||\n\t    sksec->sclass == SECCLASS_SCTP_SOCKET) {\n\t\tstruct common_audit_data ad;\n\t\tstruct lsm_network_audit net = {0,};\n\t\tstruct sockaddr_in *addr4 = NULL;\n\t\tstruct sockaddr_in6 *addr6 = NULL;\n\t\tunsigned short snum;\n\t\tu32 sid, perm;\n\n\t\t/* sctp_connectx(3) calls via selinux_sctp_bind_connect()\n\t\t * that validates multiple connect addresses. Because of this\n\t\t * need to check address->sa_family as it is possible to have\n\t\t * sk->sk_family = PF_INET6 with addr->sa_family = AF_INET.\n\t\t */\n\t\tswitch (address->sa_family) {\n\t\tcase AF_INET:\n\t\t\taddr4 = (struct sockaddr_in *)address;\n\t\t\tif (addrlen < sizeof(struct sockaddr_in))\n\t\t\t\treturn -EINVAL;\n\t\t\tsnum = ntohs(addr4->sin_port);\n\t\t\tbreak;\n\t\tcase AF_INET6:\n\t\t\taddr6 = (struct sockaddr_in6 *)address;\n\t\t\tif (addrlen < SIN6_LEN_RFC2133)\n\t\t\t\treturn -EINVAL;\n\t\t\tsnum = ntohs(addr6->sin6_port);\n\t\t\tbreak;\n\t\tdefault:\n\t\t\t/* Note that SCTP services expect -EINVAL, whereas\n\t\t\t * others expect -EAFNOSUPPORT.\n\t\t\t */\n\t\t\tif (sksec->sclass == SECCLASS_SCTP_SOCKET)\n\t\t\t\treturn -EINVAL;\n\t\t\telse\n\t\t\t\treturn -EAFNOSUPPORT;\n\t\t}\n\n\t\terr = sel_netport_sid(sk->sk_protocol, snum, &sid);\n\t\tif (err)\n\t\t\treturn err;\n\n\t\tswitch (sksec->sclass) {\n\t\tcase SECCLASS_TCP_SOCKET:\n\t\t\tperm = TCP_SOCKET__NAME_CONNECT;\n\t\t\tbreak;\n\t\tcase SECCLASS_DCCP_SOCKET:\n\t\t\tperm = DCCP_SOCKET__NAME_CONNECT;\n\t\t\tbreak;\n\t\tcase SECCLASS_SCTP_SOCKET:\n\t\t\tperm = SCTP_SOCKET__NAME_CONNECT;\n\t\t\tbreak;\n\t\t}\n\n\t\tad.type = LSM_AUDIT_DATA_NET;\n\t\tad.u.net = &net;\n\t\tad.u.net->dport = htons(snum);\n\t\tad.u.net->family = address->sa_family;\n\t\terr = avc_has_perm(sksec->sid, sid, sksec->sclass, perm, &ad);\n\t\tif (err)\n\t\t\treturn err;\n\t}\n\n\treturn 0;\n}\n",
+      "allocationClosureProven": false
+    },
+    "security_port_sid": {
+      "source": "security/selinux/ss/services.c",
+      "prefix": "int security_port_sid(",
+      "sha256": "4e063f860e779862591e3673801a5eba9353f5850a6d9c4a73c4eccd5127d7c2",
+      "text": "int security_port_sid(u8 protocol, u16 port, u32 *out_sid)\n{\n\tstruct selinux_policy *policy;\n\tstruct policydb *policydb;\n\tstruct sidtab *sidtab;\n\tstruct ocontext *c;\n\tint rc;\n\n\tif (!selinux_initialized()) {\n\t\t*out_sid = SECINITSID_PORT;\n\t\treturn 0;\n\t}\n\nretry:\n\trc = 0;\n\trcu_read_lock();\n\tpolicy = rcu_dereference(selinux_state.policy);\n\tpolicydb = &policy->policydb;\n\tsidtab = policy->sidtab;\n\n\tc = policydb->ocontexts[OCON_PORT];\n\twhile (c) {\n\t\tif (c->u.port.protocol == protocol &&\n\t\t    c->u.port.low_port <= port &&\n\t\t    c->u.port.high_port >= port)\n\t\t\tbreak;\n\t\tc = c->next;\n\t}\n\n\tif (c) {\n\t\trc = ocontext_to_sid(sidtab, c, 0, out_sid);\n\t\tif (rc == -ESTALE) {\n\t\t\trcu_read_unlock();\n\t\t\tgoto retry;\n\t\t}\n\t\tif (rc)\n\t\t\tgoto out;\n\t} else {\n\t\t*out_sid = SECINITSID_PORT;\n\t}\n\nout:\n\trcu_read_unlock();\n\treturn rc;\n}\n",
+      "allocationClosureProven": false
+    },
+    "ocontext_to_sid": {
+      "source": "security/selinux/ss/services.c",
+      "prefix": "static int ocontext_to_sid(",
+      "sha256": "c23beb0aa4f2843ce5b21b49690ce90be57e82bf10bb7b3635453e6e74a6efb3",
+      "text": "static int ocontext_to_sid(struct sidtab *sidtab, struct ocontext *c,\n\t\t\t   size_t index, u32 *out_sid)\n{\n\tint rc;\n\tu32 sid;\n\n\t/* Ensure the associated sidtab entry is visible to this thread. */\n\tsid = smp_load_acquire(&c->sid[index]);\n\tif (!sid) {\n\t\trc = sidtab_context_to_sid(sidtab, &c->context[index], &sid);\n\t\tif (rc)\n\t\t\treturn rc;\n\n\t\t/*\n\t\t * Ensure the new sidtab entry is visible to other threads\n\t\t * when they see the SID.\n\t\t */\n\t\tsmp_store_release(&c->sid[index], sid);\n\t}\n\t*out_sid = sid;\n\treturn 0;\n}\n",
+      "allocationClosureProven": false
+    },
+    "sel_netport_hashfn": {
+      "source": "security/selinux/netport.c",
+      "prefix": "static unsigned int sel_netport_hashfn(",
+      "sha256": "664d3a23d39937a2672e3e8bb43e35c6241cd3c576dba946260b51cfb1a4b29f",
+      "text": "static unsigned int sel_netport_hashfn(u16 pnum)\n{\n\treturn (pnum & (SEL_NETPORT_HASH_SIZE - 1));\n}\n",
+      "allocationClosureProven": false
+    },
+    "sel_netport_find": {
+      "source": "security/selinux/netport.c",
+      "prefix": "static struct sel_netport *sel_netport_find(",
+      "sha256": "0d8a1ca6a8cd19924708e37d01dd794d16a777c43ddcc90b731230b305d4a427",
+      "text": "static struct sel_netport *sel_netport_find(u8 protocol, u16 pnum)\n{\n\tunsigned int idx;\n\tstruct sel_netport *port;\n\n\tidx = sel_netport_hashfn(pnum);\n\tlist_for_each_entry_rcu(port, &sel_netport_hash[idx].list, list)\n\t\tif (port->psec.port == pnum && port->psec.protocol == protocol)\n\t\t\treturn port;\n\n\treturn NULL;\n}\n",
+      "allocationClosureProven": false
+    }
+  },
+  "kernelBuilt": false,
+  "actualLsmExecuted": false,
+  "completeAllocationClosure": false,
+  "productionInstallation": false
+}

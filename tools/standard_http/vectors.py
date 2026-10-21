@@ -48,6 +48,7 @@ VECTORS = (
     Vector("commit-pending", b"/conformance/mutation/pending", POST,
            gate="headers", mutation=True),
     Vector("commit-close", b"/conformance/mutation/close", POST, mutation=True),
+    Vector("response-boundary", b"/conformance/body/boundary", GET),
 )
 BY_PATH = {(value.role, value.path): value for value in VECTORS}
 BY_ID = {value.identity: value for value in VECTORS}
@@ -95,6 +96,9 @@ def response(vector: Vector, request, secondary_port: int) -> tuple[bytes, bytes
         body = b'{"id":'
     elif vector.identity == "oversized-body":
         body = b"x" * MAX_RESPONSE
+    elif vector.identity == "response-boundary":
+        body = b"x" * 8192
+        fields = ((b"Content-Type", b"application/octet-stream"),)
     elif vector.identity == "gzip-json":
         body = gzip.compress(body, mtime=0)
         fields += ((b"Content-Encoding", b"gzip"),)

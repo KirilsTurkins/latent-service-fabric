@@ -1,10 +1,23 @@
 //! Release of one admitted logical owner, after its actual future is dropped.
 use super::latent::runtime::activation as runtime;
+use std::cell::Cell;
+
+thread_local! {
+    static CONTINUATION: Cell<Option<runtime::Token>> = const { Cell::new(None) };
+}
+
+pub fn continuation() -> Option<runtime::Token> {
+    CONTINUATION.with(Cell::get)
+}
+
+pub fn set_continuation(owner: Option<runtime::Token>) {
+    CONTINUATION.with(|current| current.set(owner));
+}
 
 pub struct Owner(runtime::Token);
 impl Owner {
     pub fn new(kind: runtime::OwnerKind) -> Result<Self, runtime::Error> {
-        runtime::register(kind, None).map(Self)
+        runtime::register(kind, continuation()).map(Self)
     }
 }
 impl Drop for Owner {

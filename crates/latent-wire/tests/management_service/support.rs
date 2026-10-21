@@ -58,11 +58,11 @@ impl Harness {
         source: Option<Arc<dyn ArtifactRepository>>,
         audit: Option<latent_audit::AuditHandle>,
     ) -> Self {
-        Self::open(limits, source, audit, false, None, false).await
+        Self::open(limits, source, audit, false, None, false, None).await
     }
 
     pub async fn with_rollouts(limits: ManagementLimits, audit: latent_audit::AuditHandle) -> Self {
-        Self::open(limits, None, Some(audit), true, None, false).await
+        Self::open(limits, None, Some(audit), true, None, false, None).await
     }
 
     pub async fn with_canary(
@@ -70,10 +70,17 @@ impl Harness {
         audit: latent_audit::AuditHandle,
         hub: latent_telemetry::BoundedPhase2CanaryOutcomeWindow,
     ) -> Self {
-        Self::open(limits, None, Some(audit), true, Some(hub), false).await
+        Self::open(limits, None, Some(audit), true, Some(hub), false, None).await
     }
     pub async fn with_capabilities(limits: ManagementLimits) -> Self {
-        Self::open(limits, None, None, false, None, true).await
+        Self::open(limits, None, None, false, None, true, None).await
+    }
+
+    pub async fn with_preparation(
+        limits: ManagementLimits,
+        backend: Arc<dyn latent_executor::ExecutionBackend>,
+    ) -> Self {
+        Self::open(limits, None, None, false, None, false, Some(backend)).await
     }
 
     async fn open(
@@ -83,6 +90,7 @@ impl Harness {
         enabled: bool,
         canary: Option<latent_telemetry::BoundedPhase2CanaryOutcomeWindow>,
         capabilities: bool,
+        preparation: Option<Arc<dyn latent_executor::ExecutionBackend>>,
     ) -> Self {
         let root = TempRoot::new();
         let artifacts = Arc::new(
@@ -142,6 +150,15 @@ impl Harness {
             )
             .with_http_control(deployments.clone())
             .unwrap();
+        let adapter = if let Some(backend) = preparation {
+            adapter
+                .with_web_catalog(artifacts.clone())
+                .unwrap()
+                .with_web_preparation(backend)
+                .unwrap()
+        } else {
+            adapter
+        };
         let (adapter, policy_control, capability_broker) = if capabilities {
             let (adapter, policies, broker) =
                 capabilities::configure(adapter, &root.0, &artifacts, &deployments);

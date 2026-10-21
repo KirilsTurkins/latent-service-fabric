@@ -25,7 +25,7 @@ and response publication. No permissive default runtime or new listener exists.
 
 | Service | Supported calls | Standalone behavior |
 | --- | --- | --- |
-| Release | `PublishRelease`, `GetRelease`, `ListReleases`, `GetReleaseLifecycle`, `GetReleaseOperation`, `ChangeReleaseLifecycle`, `RenewReleaseEvidence` | Immutable publication, tenant-scoped metadata, durable lifecycle and bounded evidence renewal. |
+| Release | `PublishRelease`, `GetRelease`, `ListReleases`, `PrepareRelease`, `GetReleaseLifecycle`, `GetReleaseOperation`, `ChangeReleaseLifecycle`, `RenewReleaseEvidence` | Immutable publication, tenant-scoped metadata, durable lifecycle and bounded evidence renewal. |
 | Release (web) | `PublishWebPackage`, `GetWebPublication`, `GetWebOperation`, `ChangeWebLifecycle`, `RenewWebEvidence`, `PrepareWebPublication` | Exact componentless web publication, independent lifecycle, bounded operation recovery and optional shared renderer preparation. |
 | Deployment | `ApplyDeployment`, `GetDeployment`, `ListDeployments`, `DeleteDeployment`, `GetDeploymentOperation` | Atomic tenant-scoped versions, optional managed operation receipts and coherent state snapshots, and bounded pages. |
 | Trigger | `ApplyTrigger`, `GetTrigger`, `ListTriggers`, `DeleteTrigger`, `GetTriggerOperation` | [Closed HTTP routes](http-triggers.md), explicit tenant publication/deployment pins, atomic CAS and bounded historical receipts. Mutations require durable audit. |
@@ -590,3 +590,53 @@ The bounded tenant administrator `NodeService.InspectActivationTree` query and
 `latent activation tree` command project retained lineage and safe producer
 observations. See [activation inspection](activation-inspection.md) for paging,
 retention, authority and execution-versus-cleanup semantics.
+
+## Exact publication preparation
+
+`PrepareRelease` is a separate bounded setup operation for an exact tenant
+publication and positive lifecycle generation. It shares the already configured
+preparation backend, sealed catalog source and compiler/cache accounting used by
+web renderer preparation. It neither fabricates a web renderer nor changes the
+existing web or target-inspection operations. An adapter without that backend
+returns `Unimplemented`.
+
+The tenant administrator is authenticated normally. The selected catalog entry,
+sealed eligibility scope, component, publication and generation must agree;
+currentness is checked before preparation and under the original fence again
+before success. The backend's complete preparation key is retained with that
+exact publication, including engine/configuration/target/CPU identity. Another
+publication containing the same component is not a cache authority alias.
+
+The independent setup wait accepts 1..300000 milliseconds and intersects the
+original authenticated transport expiry. Catalog lookup and the owned readiness
+future both use that same expiry. Timeout/cancellation drops the future and its
+readiness reservation; backend jobs retain their original physical/compiler
+accounting. Successful observation also drops its temporary readiness pin.
+Existing cache capacity, eviction and compiler budgets are unchanged. No guest
+invocation, cell assignment, provider operation or execution grant is requested.
+The normal standalone Wasmtime readiness implementation compiles immutable code
+without a guest Store. The reply is bounded publication/generation/component and
+`prepared: true`; it returns no opaque handle, code or authority and does not
+promise that an evictable entry will survive until a future invocation.
+
+The CLI is `release prepare --publication ID --lifecycle-generation N
+--maximum-wait-ms N`. Its body limit cannot extend the CLI/session timeout.
+Choose an explicit bounded **control** timeout (for example the existing global
+`--rpc-timeout-ms 300000`) for setup only. Subsequent invocations keep their
+original 120-second wall/control timeout, fuel, memory and provider ceilings.
+Preparing is not a workaround for those guest limits, an automatic retry, or a
+way to recover an uncertain previous invocation by executing it again.
+
+The source-bound native producer at `21b2c84c74881701149115dd8511063c85800b47`
+passed [run 39509107706](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39509107706):
+all five normal native products, 49 Rust controls and 15 Python controls, with no
+ignored or skipped tests. Its complete artifact `12305592299` was independently
+verified against the original Git native tree and 134 auxiliary files, including
+all 20 authoritative protocol files. This is native/API evidence; the producer
+did not compile or execute guest components. See the
+[fixed evidence record](../testing/evidence/release-preparation-native-2026-10-21.json).
+
+The earlier Java tenant campaigns' uncertain cold-preparation failures remain
+failed. The unchanged twelve-case tenant programme still needs actual execution
+with explicit preparation; the native controls provide no successful HTTP or
+cross-tenant guest execution evidence.

@@ -14,7 +14,16 @@ from tools.tests.test_sdk_scratch_qualification import ordinary, replace_json
 class RustScratchReplay(unittest.TestCase):
     def test_current_composed_runner_uses_actual_normal_inventory_identity_shape(self):
         observed = gate.current_inputs('rust')['helpers']['run_rust_capsule_workflow.py']
-        self.assertEqual(observed, gate.COMPOSED_RUNNER)
+        if observed != gate.COMPOSED_RUNNER:
+            # Later selectors must not silently repin the frozen historical replay.
+            before = {name: {} for name in ('runtime', 'sdk', 'wit', 'schemas', 'guide', 'helpers')}
+            before['helpers'] = {'run_rust_capsule_workflow.py': gate.ORIGINAL_RUNNER}
+            current = copy.deepcopy(before)
+            current['helpers']['run_rust_capsule_workflow.py'] = observed
+            with self.assertRaisesRegex(RuntimeError, 'current-nonnative-normal-inputs'):
+                gate.normal_inputs(before, current)
+        else:
+            self.assertEqual(observed, gate.COMPOSED_RUNNER)
         self.assertEqual(set(gate.ORIGINAL_RUNNER), {'sha256', 'bytes'})
         self.assertEqual(set(gate.COMPOSED_RUNNER), {'sha256', 'bytes'})
 

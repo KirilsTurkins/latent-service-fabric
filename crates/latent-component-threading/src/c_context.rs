@@ -61,6 +61,12 @@ fn inspect(input: &[u8]) -> Result<CPlan, &'static str> {
                         Operator::I32Const { value } => Some(value as u32),
                         _ => None,
                     };
+                    // This C-only profile requires literal linker addresses.
+                    // In particular, the original Rust plan's first operand
+                    // must never stand in for an extended-constant SP value.
+                    if value.is_some() && (!matches!(ops.read(), Ok(Operator::End)) || !ops.eof()) {
+                        return Err("c-context-single-constant-global-initializer");
+                    }
                     globals.push((global.ty, value));
                 }
             }
@@ -123,6 +129,11 @@ fn inspect(input: &[u8]) -> Result<CPlan, &'static str> {
         template_start,
         template_extent,
     })
+}
+
+pub(super) fn original_template_layout(input: &[u8]) -> Result<(u32, u32), &'static str> {
+    let plan = inspect(input)?;
+    Ok((plan.template_start, plan.template_extent))
 }
 
 struct CRewrite {
@@ -379,7 +390,13 @@ mod tests {
         MemorySection, MemoryType,
     };
 
-    fn fixture(tls_access: bool, tls_export: bool, tls_mutable: bool, shared: bool) -> Vec<u8> {
+    fn fixture_with_global(
+        tls_access: bool,
+        tls_export: bool,
+        tls_mutable: bool,
+        shared: bool,
+        extended: Option<usize>,
+    ) -> Vec<u8> {
         let mut module = Module::new();
         let mut types = TypeSection::new();
         types.ty().function([], [ValType::I32]);
@@ -401,14 +418,26 @@ mod tests {
         });
         module.section(&memory);
         let mut globals = GlobalSection::new();
-        for (value, mutable) in [(65536, true), (65536, tls_mutable), (65584, false)] {
+        for (index, (value, mutable)) in [(65536, true), (65536, tls_mutable), (65584, false)]
+            .into_iter()
+            .enumerate()
+        {
+            let initializer = if extended == Some(index) {
+                ConstExpr::extended([
+                    Instruction::I32Const(value),
+                    Instruction::I32Const(16),
+                    Instruction::I32Add,
+                ])
+            } else {
+                ConstExpr::i32_const(value)
+            };
             globals.global(
                 GlobalType {
                     val_type: ValType::I32,
                     mutable,
                     shared: false,
                 },
-                &ConstExpr::i32_const(value),
+                &initializer,
             );
         }
         module.section(&globals);
@@ -443,6 +472,9 @@ mod tests {
         code.function(&body);
         module.section(&code);
         module.finish()
+    }
+    fn fixture(tls_access: bool, tls_export: bool, tls_mutable: bool, shared: bool) -> Vec<u8> {
+        fixture_with_global(tls_access, tls_export, tls_mutable, shared, None)
     }
     fn run(raw: &[u8]) -> Result<(Vec<u8>, CContextReceipt), &'static str> {
         transform_c_context(raw, Sha256::digest(raw).into())
@@ -515,6 +547,20 @@ mod tests {
             transform_c_context(&raw, [0; 32]).unwrap_err(),
             "c-context-preimage-mismatch"
         );
+    }
+    #[test]
+    fn c_linker_layout_never_trusts_the_first_operand_of_an_extended_global() {
+        for index in 0..3 {
+            let raw = fixture_with_global(true, true, false, false, Some(index));
+            Validator::new().validate_all(&raw).unwrap();
+            // Keep the old Rust routing/profile unchanged; strictness belongs
+            // to the independently selected C layout inspector.
+            assert!(plan(&raw).is_ok());
+            assert_eq!(
+                run(&raw).unwrap_err(),
+                "c-context-single-constant-global-initializer"
+            );
+        }
     }
     #[test]
     fn helper_calls_are_only_stackless_context_lookup_and_original_imports_stay_exact() {

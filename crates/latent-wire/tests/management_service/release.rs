@@ -6,6 +6,8 @@ mod lifecycle;
 mod package;
 #[path = "release/pagination.rs"]
 mod pagination;
+#[path = "release/preparation.rs"]
+mod preparation;
 #[path = "release/publications.rs"]
 mod publications;
 

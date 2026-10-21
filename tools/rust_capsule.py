@@ -79,6 +79,7 @@ def parser() -> argparse.ArgumentParser:
     compile_.add_argument("--offline", action="store_true", help="Use already-cached pinned Cargo dependencies only")
     compile_.add_argument("--executable-approval", help="Exact captured build-script/proc-macro compiler/profile approval digest")
     compile_.add_argument('--standard-runtime', type=Path, help='Exact prepared standard runtime sysroot; requires explicit matching project profile')
+    compile_.add_argument('--http-runtime', type=Path, help='Exact prepared WASI HTTP backend; requires captured clients and explicit HTTP, activation and monotonic source declarations')
     return parser
 
 
@@ -142,7 +143,7 @@ def main(argv: list[str] | None = None) -> int:
         else:
             result = build(args.project, args.output, args.contracts_tool, None if args.package_inputs_only else args.packager,
                            args.repository, offline=args.offline, executable_approval=args.executable_approval,
-                           standard_runtime=args.standard_runtime)
+                           standard_runtime=args.standard_runtime, http_runtime=args.http_runtime)
         print(result)
         return 0
     except (ValueError, OSError, RuntimeError, KeyError, TypeError) as error:

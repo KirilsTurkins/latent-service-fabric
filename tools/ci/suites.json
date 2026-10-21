@@ -1445,10 +1445,14 @@
         "broker::pools::tests::maintenance::maintenance_is_finite_and_fenced_by_deadline_and_provider_rotation",
         "broker::pools::tests::maintenance::operator_recovery_retains_its_slot_until_the_actual_socket_retires",
         "broker::pools::tests::protocol::followup_keeps_the_original_deadline_and_can_progress_with_one_running_slot",
+        "broker::pools::tests::protocol::kernel_backing_uses_existing_fixed_metadata_ceiling",
+        "broker::pools::tests::protocol::kernel_occupancy_rejects_foreign_scope_and_nonoriginal_allowance",
+        "broker::pools::tests::protocol::kernel_occupancy_retains_original_io_request_scope_and_memory",
         "broker::pools::tests::protocol::narrowed_timeout_cannot_be_refreshed_after_queueing",
         "broker::pools::tests::protocol::protocol_metadata_reserves_before_work_and_survives_provider_retirement",
         "broker::pools::tests::protocol::queued_scope_checks_policy_after_waiting_and_does_not_close_the_store",
         "broker::pools::tests::protocol::retained_queue_scope_cannot_reopen_a_dropped_store",
+        "broker::pools::tests::protocol::stopped_kernel_occupancy_fails_checkpoint_without_refunding_owner",
         "broker::pools::tests::provider_round_robin_and_final_broker_check_follow_the_queue",
         "broker::pools::tests::registration::cancelled_registration_and_scheduling_never_dispatch",
         "broker::pools::tests::registration::pending_capacity_is_reserved_before_registration_and_refunded_only_on_drop",
@@ -1551,7 +1555,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-capabilities/Cargo.toml",
-      "minimumCases": 176,
+      "minimumCases": 180,
       "mode": "libtest",
       "package": "latent-capabilities",
       "platforms": [
@@ -9253,7 +9257,9 @@
         "phase4::tests::ordinary_authenticated_user_uses_current_result_authority_without_admin_elevation",
         "invocation::conversion::tests::trap_kinds::known_host_failure_codes_survive_invocation_status_and_foreign_envelopes",
         "invocation::conversion::tests::trap_kinds::host_failure_projection_rejects_unknown_private_fields_and_preserves_bounds",
-        "invocation::conversion::tests::trap_kinds::runtime_phase_projection_is_closed_coupled_and_preserves_terminal_semantics"
+        "invocation::conversion::tests::trap_kinds::runtime_phase_projection_is_closed_coupled_and_preserves_terminal_semantics",
+        "management::release::preparation::tests::release_preparation_wait_is_finite_and_keeps_original_transport_expiry",
+        "management::release::preparation::tests::release_preparation_body_bound_does_not_inherit_a_longer_transport_wait"
       ],
       "expectedIgnored": [
         "phase4::local_transaction::tests::actual_guest_duplicate_conflict_and_dropped_waiter_have_one_execution_commit_and_effect",
@@ -9320,7 +9326,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-wire/Cargo.toml",
-      "minimumCases": 275,
+      "minimumCases": 277,
       "mode": "libtest",
       "package": "latent-wire",
       "platforms": [
@@ -9430,14 +9436,20 @@
         "triggers::audit_recovery::trigger_audit_expiry_caller_loss_and_identity_mismatch_never_claim_false_success",
         "triggers::audit_recovery::trigger_audit_recovery_requires_an_exact_committed_receipt",
         "triggers::trigger_rpc_authentication_atomic_crud_receipts_and_audit",
-        "triggers::trigger_rpc_requires_audit_and_preflights_response_capacity_before_commit"
+        "triggers::trigger_rpc_requires_audit_and_preflights_response_capacity_before_commit",
+        "release::preparation::exact_publications_prepare_without_guest_execution_or_component_cache_alias",
+        "release::preparation::preparation_denies_unauthenticated_foreign_and_stale_selectors_before_backend",
+        "release::preparation::original_preparation_deadline_drops_waiting_owner_without_retry_or_activation",
+        "release::preparation::revocation_during_owned_preparation_refuses_success_and_retires_pin",
+        "release::preparation::readiness_identity_mismatch_and_hard_denial_are_not_relabelled_or_retried",
+        "release::preparation::unconfigured_preparation_refuses_setup_without_installing_a_backend"
       ],
       "expectedIgnored": [],
       "id": "latent-wire.test.management-service",
       "ignoredLeaves": [],
       "kind": "test",
       "manifest": "crates/latent-wire/Cargo.toml",
-      "minimumCases": 48,
+      "minimumCases": 54,
       "mode": "libtest",
       "package": "latent-wire",
       "platforms": [
@@ -9694,14 +9706,18 @@
         "package::registry::tests::copy_budget_and_complete_push_association_are_checked_before_transfer",
         "package::registry::tests::partial_push_retains_confirmed_package_and_uncertain_evidence_without_retry",
         "package::registry::tests::pull_pins_tag_once_exports_exact_evidence_and_releases_all_owners",
-        "error::tests::runtime_phase_uses_only_closed_generic_failure_labels_without_transport_certainty"
+        "error::tests::runtime_phase_uses_only_closed_generic_failure_labels_without_transport_certainty",
+        "management::tests::preparation::release_prepare_requires_exact_publication_generation_and_finite_setup_wait",
+        "management::phase2::execute::release::tests::prepared_release_projection_is_bounded_lossless_and_never_execution_authority",
+        "command::tests::exact_release_preparation_command_keeps_its_public_result_name",
+        "management::execute::tests::parsed_release_prepare_keeps_management_dispatch_and_exact_selection"
       ],
       "expectedIgnored": [],
       "id": "latent.lib.latent",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "apps/latent/Cargo.toml",
-      "minimumCases": 167,
+      "minimumCases": 171,
       "mode": "libtest",
       "package": "latent",
       "platforms": [
@@ -10380,7 +10396,9 @@
         "config::tests::providers::http_streaming::additional_http_installations_share_the_original_fourteen_identity_ceiling",
         "config::tests::providers::http_streaming::additional_http_credentials_keep_closed_file_and_destination_inputs",
         "standalone::providers::runtime::http::streaming::tests::selection_never_queries_foreign_providers_and_requires_one_sealed_match",
-        "standalone::providers::runtime::http::streaming::tests::selection_preserves_liveness_errors_without_fallback_or_partial_dispatch"
+        "standalone::providers::runtime::http::streaming::tests::selection_preserves_liveness_errors_without_fallback_or_partial_dispatch",
+        "standalone::transport::tests::web_preparation::only_exact_release_prepare_path_gets_independent_bounded_setup_time",
+        "standalone::transport::tests::web_preparation::release_setup_transport_keeps_shorter_timeout_and_authentication"
       ],
       "expectedIgnored": [
         "standalone::http::assets::browser::actual_browser_application_uses_only_the_public_shared_http_contract",
@@ -10449,7 +10467,7 @@
       ],
       "kind": "lib",
       "manifest": "apps/latentd/Cargo.toml",
-      "minimumCases": 466,
+      "minimumCases": 468,
       "mode": "libtest",
       "package": "latentd",
       "platforms": [

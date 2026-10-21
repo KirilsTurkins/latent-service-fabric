@@ -9,12 +9,12 @@
     "bindingsRevision": "4f9a02d74cec9257c14ba9b160fa787a3523fd0b"
   },
   "go": {
-    "version": "go1.27.2",
+    "version": "go1.27.3",
     "asyncPatch": "wasiOnIdle",
-    "release": "go1.27.2",
+    "release": "go1.27.3",
     "linuxAmd64": {
-      "url": "https://dl.google.com/go/go1.27.2.linux-amd64.tar.gz",
-      "sha256": "ecbadb99091a3f46e31f5f934b068b1864eafa7995211b39eaddf76996045fe5"
+      "url": "https://dl.google.com/go/go1.27.3.linux-amd64.tar.gz",
+      "sha256": "65efbc80fdc1fa2cd2631cad5b481777a68e8725f34e89f50fc6ac714e379b40"
     }
   },
   "hostAbi": "lsf-host-abi-phase3-v4",

@@ -38,7 +38,7 @@ def capture_source(directory: Path, outside: Path, identity: str) -> tuple[Path,
         raise ValueError('go-http-private-source-independent-outside-checkout-required')
     outside.mkdir(mode=0o700)
     library = outside/'source'; library.mkdir()
-    (library/'go.mod').write_text('module '+identity+'\n\ngo 1.27.2\n',encoding='ascii',newline='\n')
+    (library/'go.mod').write_text('module '+identity+'\n\ngo 1.27.3\n',encoding='ascii',newline='\n')
     (library/'marker.txt').write_text('captured-private-worker',encoding='ascii')
     (library/'marker.go').write_text('''package private
 
@@ -102,7 +102,7 @@ def install(app: Path, library: Path, identity: str, go: Path) -> dict:
     sealed = library.with_name('retained-original-source')
     if (not library.resolve(strict=True).is_relative_to(app.parent.resolve(strict=True))
             or library.parent.resolve() != sealed.parent.resolve() or sealed.exists()
-            or read_file(library/'go.mod') != ('module '+identity+'\n\ngo 1.27.2\n').encode('ascii')):
+            or read_file(library/'go.mod') != ('module '+identity+'\n\ngo 1.27.3\n').encode('ascii')):
         raise ValueError('go-http-library-original-source-retention-boundary')
     library.rename(sealed)
     return {'schemaVersion':'latent.go.http-library.capture.v1','libraries':selected,

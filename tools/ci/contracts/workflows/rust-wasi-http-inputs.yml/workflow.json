@@ -1,0 +1,31 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "rust-wasi-http-inputs-${{ github.ref }}"
+    },
+    "name": "Rust default WASI HTTP compiler inputs",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/rust-wasi-http-inputs-20261021"
+        ],
+        "paths": [
+          ".github/workflows/rust-wasi-http-inputs.yml"
+        ]
+      },
+      "workflow_dispatch": null
+    },
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "compiler-inputs"
+  ],
+  "reviewReason": "One explicit twenty-minute ordinary Rust compiler-input observation using the exact authenticated Wasmtime48.0.7 products; no host build, HTTP backend/signing/dispatch or lifecycle pass claim. All existing jobs/commands/guards remain unchanged.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/rust-wasi-http-inputs.yml"
+}

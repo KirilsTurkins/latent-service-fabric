@@ -1,0 +1,31 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "dotnet-finite-task-waits-${{ github.ref }}"
+    },
+    "name": "Finite and cancellable managed Task waits",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/dotnet-cancellable-task-waits-20261020"
+        ],
+        "paths": [
+          ".github/workflows/dotnet-finite-task-waits.yml"
+        ]
+      },
+      "workflow_dispatch": null
+    },
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "finite-waits"
+  ],
+  "reviewReason": "One fresh finite Task.Wait programme using unchanged native .7 products. Exact four declarations select finite port; original16 task cases/order/commands/guards/bounds preserved, without old16 current qualification claim.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/dotnet-finite-task-waits.yml"
+}

@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_dotnet_finite_waits.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Actual cb9 pre-ILC composition failure: derive exact unchanged method count from authenticated validated9/10 TaskWait helpers, keep44744 unjoined/44753 infinite exact; add source-equality barrier and four controls. Original18 outcomes/allexisting workflow steps/budgets remain.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "fbc7885ec9d27133580e2962b77bf09e50ac5d0f6d00d71b4843704e5c615d6d"
+}

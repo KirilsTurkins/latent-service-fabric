@@ -72,7 +72,7 @@ class GoNativeAuthoring(unittest.TestCase):
         self.assertEqual(Path(environment['GIT_CONFIG_GLOBAL']).read_bytes(), b'')
         arguments = command[1:]
         if arguments == ['version']:
-            raw = b'go version go1.27.2 linux/amd64\n'
+            raw = b'go version go1.27.3 linux/amd64\n'
         elif arguments == ['mod', 'edit', '-json']:
             raw = canonical(self.parse(work / 'go.mod'))
         elif arguments[:2] == ['mod', 'edit']:

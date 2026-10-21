@@ -33,9 +33,20 @@ struct key_value {
 static struct key_definition definitions[KEY_COUNT];
 static _Thread_local struct key_value values[KEY_COUNT];
 static _Thread_local unsigned finishing;
+#if defined(LSF_C_LINKED_LIBC)
+#if LSF_C_LINKED_LIBC != 1
+#error unsupported linked libc selection
+#endif
+#ifdef __wasilibc_unmodified_upstream
+#error unsupported linked libc errno family
+#endif
+/* The selected WASI libc owns errno and __errno_location. Its original TLS
+ * accesses are redirected by the same checked whole-core context derivation. */
+#else
 _Thread_local int errno;
 
 int *__errno_location(void) { return &errno; }
+#endif
 
 static struct key_definition *lookup(pthread_key_t key, unsigned *index) {
     unsigned value = (unsigned)key;

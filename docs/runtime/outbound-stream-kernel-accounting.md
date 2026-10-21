@@ -65,7 +65,9 @@ Closed typed counters and real owned peer barriers distinguish each transition.
 No address, port, inode, payload, credential, raw ss output or /proc listing is
 published. Both TLS crates and all selected source/lock identities are bound
 before and after execution. Focused source tests alone are not native execution.
-The corrected actual lane remains pending until its exact receipt is retained.
+The corrected 68f reference and later exact-composition 199 reference both passed
+all 30 cases with zero ignored/filtered cases. Those observations preserve their
+original source and logical-ownership scope; they supply no final-free proof.
 
 A future supported kernel profile must authenticate the actual kernel/image,
 allocator and relevant networking configuration; prove a complete worst-case
@@ -77,6 +79,41 @@ Neither a sampled plateau nor cgroup/socket buffer configuration alone supplies
 that contract. No such profile or final-free producer is claimed by this repair.
 `ACCOUNTING_QUALIFIED` and all kernel/full-TLS/production qualification flags
 remain false. #738/#739/#740 remain open.
+
+The separate [Linux 6.12 lineage source prerequisite](../../research/standard-outbound/linux-6.12-lineage/README.md)
+authenticates three complete upstream preimages and derives copied pre-free
+tokens followed by post-allocator observations. Its bounded private mechanism
+is uninstalled; incomplete SKB/page coverage, missing trusted admission and
+running-kernel/BTF authentication still prevent a supported profile. Neither its
+supplemental C controls nor an empty mechanism can release original quarantine.
+
+Its additive constructor prerequisite reserves an entire checked allocation
+bundle before the first socket, TIME_WAIT or SKB allocator; SKB header/fclone and
+data need two distinct prepaid records. Failed/uncertain constructors retain the
+original charge. This is still an uninstalled source derivation: the actual
+selected adapter refuses unknown trusted context/layout before allocation.
+Complete physical costs, all allocation/clone/page paths, socket-cookie handoff,
+running-kernel/BTF binding and final-free consumption remain required. Neither
+synthetic C layout costs nor this deliberate refusal qualifies a usable profile.
+
+An additional uninstalled derivation now carries a socket's original RESERVED
+record/address into its authenticated outer initialization paths. It uses the
+unchanged kernel cookie generator only after copying the original token/scope,
+then revalidates generation and address before LIVE. Existing clone cookies are
+preserved. This removes the constructor-only model's premature zero-cookie commit
+attempt; it does not install a factory or qualify a kernel. Its C controls compile
+the private hook and upstream cookie chain with explicit doubles; the outer
+constructor insertions remain source-only evidence. Complete live installation,
+physical allocation closure and sealed final-free gates stay open.
+
+The subsequent [physical extent prerequisite](../../research/standard-outbound/linux-6.12-lineage/allocation-closure.md)
+distinguishes allocator-slot return from actual backing-allocation retirement.
+Its additive private recipe keeps all five object-return kinds charged in a
+nonreusable held state. A checked disjoint planner uses the same original
+reservations/slots; explicit model geometry does not authenticate a kernel.
+NAPI/page-pool allocation before socket lookup, shared cache/route/deferred
+ownership, complete physical costs and sealed backing final-free still lack
+trusted installation. The actual constructor and normal provider remain closed.
 
 The finite ss vocabulary is checked against the [primary iproute2 format source](https://github.com/iproute2/iproute2/blob/v6.17.0/misc/ss.c).
 The actual installed tool digest is retained independently; that format reference

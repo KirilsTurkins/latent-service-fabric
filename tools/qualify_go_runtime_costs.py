@@ -74,7 +74,7 @@ def stack_placement_reference(output):
     work.mkdir()
     source = fixture.stack_reference_source()
     (work / 'main.go').write_bytes(source)
-    (work / 'go.mod').write_bytes(b'module lsf-cost-stack-proof\n\ngo 1.27.2\n')
+    (work / 'go.mod').write_bytes(b'module lsf-cost-stack-proof\n\ngo 1.27.3\n')
     compiler = shutil.which('go')
     require(compiler is not None, 'Go-cost-maintained-Go-compiler-required')
     environment = build_environment(output)
@@ -83,7 +83,7 @@ def stack_placement_reference(output):
         GOCACHE=str(output / 'cache'), GOMODCACHE=str(output / 'modules'))
     commands = Commands(work, output, environment, deadline_seconds=240, command_seconds=180)
     require(commands.run('stack-reference-compiler-version', compiler, 'version').strip()
-            == b'go version go1.27.2 linux/amd64', 'Go-cost-pinned-compiler-version')
+            == b'go version go1.27.3 linux/amd64', 'Go-cost-pinned-compiler-version')
     commands.run('stack-reference-compile-not-execute', compiler, 'build',
         '-gcflags=lsf-cost-stack-proof=-m=2 -S', '-o', output / 'not-executed.wasm', '.')
     stderr = read_file(output / 'logs/01-stack-reference-compile-not-execute.stderr.txt', 262144)

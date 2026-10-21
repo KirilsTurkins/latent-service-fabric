@@ -35,6 +35,7 @@ pub fn prepare(command: &Command, config: &ResolvedConfig) -> Result<Operation, 
         Command::Audit(command) => super::phase2::prepare::audit(command, config),
         Command::Release(
             ReleaseCommand::Lifecycle(_)
+            | ReleaseCommand::Prepare(_)
             | ReleaseCommand::Operation(_)
             | ReleaseCommand::PublishPackage(_)
             | ReleaseCommand::Revoke(_)

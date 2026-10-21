@@ -7,12 +7,42 @@ from tools import guest_compatibility as compatibility
 from tools import guest_compatibility_context as context
 from tools import guest_emitted_code, guest_runtime_receipts
 from tools.dev_workflow.common import decode, digest, encode, require
-from tools.rust_capsule_project import read_file, write_json
+from tools.rust_capsule_project import inventory, read_file, write_json
 
 # Rust's shared Commands/package_inputs module is imported by every owner, so
 # its runtime receipt dependency belongs in their common captured closure too.
 RECIPE = ('tools/guest_compatibility_context.py', 'tools/guest_compatibility_context_build.py',
           'tools/guest_runtime_receipts.py', 'tools/guest_emitted_code.py')
+
+
+def dependency_materials(files, source_inputs, language):
+    graph = guest_runtime_receipts.captured_graph(files)
+    if graph is None:
+        return [], 0
+    require(inventory(files) == source_inputs, 'compatibility-context-detached-dependency-inventory')
+    require(graph.get('language') in (None, language) and isinstance(graph.get('artifacts'), list)
+            and len(graph['artifacts']) <= 1024, 'compatibility-context-dependency-graph')
+    retained, omitted = [], 0
+    for row in graph['artifacts']:
+        # This is the already captured graph, never a resolver/catalogue query.
+        # Retain only closed public attribution fields, not source locations,
+        # arbitrary ecosystem metadata or registry configuration.
+        try:
+            require(isinstance(row['metadata'], dict), 'compatibility-context-dependency-metadata')
+            # A native replacement records the actual selected source version
+            # separately. A local replacement has no version; do not borrow
+            # the superseded module's requested version for those bytes.
+            version = row['metadata'].get('effectiveVersion', row['metadata'].get('version'))
+            if version is not None:
+                try:
+                    context.version_token(version)
+                except ValueError:
+                    version = None
+            retained.append(context.material('dependency', row['id'], row['treeDigest'],
+                original=row['original']['digest'], version=version))
+        except (KeyError, TypeError, ValueError):
+            omitted += 1
+    return retained, omitted
 
 
 def finish(output: Path, files: dict[str, bytes], source_inputs: bytes,
@@ -88,8 +118,11 @@ def finish(output: Path, files: dict[str, bytes], source_inputs: bytes,
                 profile=patch['profile'], original=patch['original']['digest'], transformation=transformation))
     # Prefer all identified runtime/patch entries if a compiler observation
     # already fills the finite material count. Omission never becomes support.
-    retained.sort(key=lambda row: (row['kind'] not in {'runtime', 'patch'}, row['kind'], row['name']))
-    omitted = max(0, len(retained) - context.MAX_MATERIALS)
+    dependencies, omitted = dependency_materials(files, source_inputs, report['language'])
+    retained.extend(dependencies)
+    retained.sort(key=lambda row: (row['kind'] == 'dependency', row['kind'] not in {'runtime', 'patch'},
+                                   row['kind'], row['name']))
+    omitted += max(0, len(retained) - context.MAX_MATERIALS)
     value = context.create(report, retained[:context.MAX_MATERIALS], selected, omitted=omitted)
     write_json(output / 'compatibility-context.json', value)
     captured_graph = guest_runtime_receipts.captured_graph(files)

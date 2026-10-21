@@ -1,0 +1,31 @@
+{
+  "upstreamCommit": "adc218676eef25575469234709c2d87185ca223a",
+  "license": "GPL-2.0-only",
+  "functions": {
+    "sk_prot_free": {
+      "source": "net/core/sock.c",
+      "sha256": "f5f841ccf11bc762a489f045506aea271ec3ffbd8b998601ce344ec4e33a60b2",
+      "text": "static void sk_prot_free(struct proto *prot, struct sock *sk)\n{\n\tstruct kmem_cache *slab;\n\tstruct module *owner;\n\n\towner = prot->owner;\n\tslab = prot->slab;\n\n\tcgroup_sk_free(&sk->sk_cgrp_data);\n\tmem_cgroup_sk_free(sk);\n\tsecurity_sk_free(sk);\n\tif (slab != NULL)\n\t\tkmem_cache_free(slab, sk);\n\telse\n\t\tkfree(sk);\n\tmodule_put(owner);\n}\n"
+    },
+    "inet_twsk_free": {
+      "source": "net/ipv4/inet_timewait_sock.c",
+      "sha256": "8acf696e7f74297109148404f0c20149df2bd3a1a6b5316a15267d3712b032f1",
+      "text": "void inet_twsk_free(struct inet_timewait_sock *tw)\n{\n\tstruct module *owner = tw->tw_prot->owner;\n\ttwsk_destructor((struct sock *)tw);\n\tkmem_cache_free(tw->tw_prot->twsk_prot->twsk_slab, tw);\n\tmodule_put(owner);\n}\n"
+    },
+    "skb_kfree_head": {
+      "source": "net/core/skbuff.c",
+      "sha256": "b17f364ca964d10f352e25a8a68ea294335d014262b077948b8253d2c2eed4ae",
+      "text": "static void skb_kfree_head(void *head, unsigned int end_offset)\n{\n\tif (end_offset == SKB_SMALL_HEAD_HEADROOM)\n\t\tkmem_cache_free(net_hotdata.skb_small_head_cache, head);\n\telse\n\t\tkfree(head);\n}\n"
+    },
+    "skb_free_head": {
+      "source": "net/core/skbuff.c",
+      "sha256": "21ddb3a681dacb08912c1fe5a14d3aff25697e9bfe26b00e531edba64ad9a4eb",
+      "text": "static void skb_free_head(struct sk_buff *skb)\n{\n\tunsigned char *head = skb->head;\n\n\tif (skb->head_frag) {\n\t\tif (skb_pp_recycle(skb, head))\n\t\t\treturn;\n\t\tskb_free_frag(head);\n\t} else {\n\t\tskb_kfree_head(head, skb_end_offset(skb));\n\t}\n}\n"
+    },
+    "kfree_skbmem": {
+      "source": "net/core/skbuff.c",
+      "sha256": "4e7fd3c46126a83d31e442f60861f8953115fa03d778d46d1783f642bb837c71",
+      "text": "static void kfree_skbmem(struct sk_buff *skb)\n{\n\tstruct sk_buff_fclones *fclones;\n\n\tswitch (skb->fclone) {\n\tcase SKB_FCLONE_UNAVAILABLE:\n\t\tkmem_cache_free(net_hotdata.skbuff_cache, skb);\n\t\treturn;\n\n\tcase SKB_FCLONE_ORIG:\n\t\tfclones = container_of(skb, struct sk_buff_fclones, skb1);\n\n\t\t/* We usually free the clone (TX completion) before original skb\n\t\t * This test would have no chance to be true for the clone,\n\t\t * while here, branch prediction will be good.\n\t\t */\n\t\tif (refcount_read(&fclones->fclone_ref) == 1)\n\t\t\tgoto fastpath;\n\t\tbreak;\n\n\tdefault: /* SKB_FCLONE_CLONE */\n\t\tfclones = container_of(skb, struct sk_buff_fclones, skb2);\n\t\tbreak;\n\t}\n\tif (!refcount_dec_and_test(&fclones->fclone_ref))\n\t\treturn;\nfastpath:\n\tkmem_cache_free(net_hotdata.skbuff_fclone_cache, fclones);\n}\n"
+    }
+  }
+}

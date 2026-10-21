@@ -325,6 +325,9 @@ service ReleaseService {
   rpc GetRelease(GetReleaseRequest) returns (GetReleaseResponse);
   // Phase 1 standalone: supported.
   rpc ListReleases(ListReleasesRequest) returns (ListReleasesResponse);
+  // Bounded tenant-owned compilation/cache preparation only: never executes a
+  // guest, grants authority, changes an activation deadline or returns a handle.
+  rpc PrepareRelease(PrepareReleaseRequest) returns (PrepareReleaseResponse);
   rpc GetReleaseLifecycle(GetReleaseLifecycleRequest) returns (GetReleaseLifecycleResponse);
   rpc GetReleaseOperation(GetReleaseOperationRequest) returns (GetReleaseOperationResponse);
   rpc ChangeReleaseLifecycle(ChangeReleaseLifecycleRequest) returns (ChangeReleaseLifecycleResponse);
@@ -443,6 +446,23 @@ message PrepareWebPublicationRequest {
 }
 
 message PrepareWebPublicationResponse {
+  PublicationRef publication = 1;
+  uint64 lifecycle_generation = 2;
+  string component_digest = 3;
+  bool prepared = 4;
+}
+
+// Exact admitted publication/generation, not a component-only cache alias.
+message PrepareReleaseRequest {
+  PublicationRef publication = 1;
+  uint64 lifecycle_generation = 2;
+  // Independent setup bound, 1..300000, clamped to authenticated transport.
+  uint64 maximum_wait_millis = 3;
+}
+
+// A current preparation observation, never a transferable execution grant or
+// a promise that an evictable cache entry remains available for a later call.
+message PrepareReleaseResponse {
   PublicationRef publication = 1;
   uint64 lifecycle_generation = 2;
   string component_digest = 3;

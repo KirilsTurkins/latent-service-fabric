@@ -1,0 +1,49 @@
+{
+  "schemaVersion": "lsf.uninstalled-kernel-prepaid-candidate.v1",
+  "sourceBaseline": {
+    "commit": "adc218676eef25575469234709c2d87185ca223a",
+    "historicalOnly": true,
+    "driver": "drivers/net/virtio_net.c"
+  },
+  "candidate": {
+    "architecture": "x86_64",
+    "pageBytes": 4096,
+    "virtualDevice": "dedicated-virtio-net-pci",
+    "networkNamespace": "dedicated",
+    "receiveQueues": 1,
+    "transmitQueues": 1,
+    "mtu": 1500,
+    "mergeableReceiveBuffers": false,
+    "gro": false,
+    "gso": false,
+    "tso": false,
+    "scatterGather": false,
+    "xdp": false,
+    "mandatorySecurityHooks": "preserve-and-authenticate-all-existing-hooks",
+    "otherHostInterfaces": "unchanged-and-unselected"
+  },
+  "backingProposal": {
+    "wholePageOrder": 7,
+    "backingBytes": 524288,
+    "existingProviderMetadataReservation": 1048576,
+    "tcpContexts": 2,
+    "tcpOccupancyBytes": 98304,
+    "dnsContexts": 2,
+    "dnsOccupancyBytes": 65536,
+    "remainingInfrastructureBytes": 196608,
+    "totalRecordLimit": 256,
+    "ownerSlotLimit": 64
+  },
+  "completeResolvedConfig": null,
+  "maintainedKernelCommit": null,
+  "compilerIdentity": null,
+  "imageIdentity": null,
+  "btfIdentity": null,
+  "trustedNativeBootstrapAuthenticated": false,
+  "outerSocketAndSecurityConsumersInstalled": false,
+  "rxDmaPageRouteCacheClosureComplete": false,
+  "actualLayoutFitsProposal": false,
+  "finalFreeProducerInstalled": false,
+  "kernelBuilt": false,
+  "productionInstallation": false
+}

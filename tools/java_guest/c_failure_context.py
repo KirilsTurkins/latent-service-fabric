@@ -139,3 +139,44 @@ def run(compiler, generated: Path, selected: tuple[str, ...], *arguments) -> str
             except Exception:
                 pass
         raise
+
+
+def retain_component_inputs(compiler, source: Path, output: Path, selected: tuple[str, ...]) -> None:
+    """Only failed public phase-fixture assembly retains two fixed Wasm inputs.
+
+    This runs before the existing owned temporary directory is removed. It
+    neither extends its lifetime nor changes the original assembly exception.
+    Raw Wasm has its own explicit output bounds; the 16 MiB log cap is unchanged.
+    """
+    try:
+        if type(selected) is not tuple or selected != PHASE_FIXTURE_SOURCES or compiler is None:
+            return
+        records = compiler.records
+        if (not records or records[-1].get('stage') != 'component-new'
+                or type(records[-1].get('exitCode')) is not int or records[-1]['exitCode'] == 0):
+            return
+        limits = {'core.wasm': 64*1024*1024, 'closed-runtime.wasm': 4*1024*1024}
+        # Validate BOTH anchored inputs before publishing either one. No source
+        # tree, generated C, private directory or neighbouring file is captured.
+        raw = {name: paths.read(source, name, maximum) for name, maximum in limits.items()}
+        if any(not value.startswith(b'\0asm\x01\0\0\0') for value in raw.values()):
+            raise ValueError('java-component-input-magic')
+        target = output/'component-inputs'
+        target.mkdir()
+        identities = {}
+        for name, value in raw.items():
+            paths.write_new(target/name, value)
+            identities[name] = {'sha256': digest(value), 'bytes': len(value)}
+        record = {'schemaVersion': 'latent.java.public-fixture-component-inputs.v1',
+            'status': 'retained', 'qualification': False, 'publicFixtureOnly': True,
+            'failedStage': 'component-new', 'inputs': identities, 'limits': limits,
+            'logLimitBytesUnchanged': 16*1024*1024}
+        paths.write_new(output/'component-inputs.json', encoded(record))
+    except BaseException:
+        try:
+            paths.write_new(output/'component-inputs-refused.json', encoded({
+                'schemaVersion': 'latent.java.public-fixture-component-inputs.v1',
+                'status': 'unavailable', 'qualification': False,
+                'reason': 'fixed-assembly-inputs-unavailable-or-unsafe'}))
+        except BaseException:
+            pass

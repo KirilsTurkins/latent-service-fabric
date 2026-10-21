@@ -1,0 +1,114 @@
+{
+  "cases": [
+    "HostStreamKernelBirthDerivation.test_actual_kernel_seam_refuses_unknown_and_shares_original_owner_state",
+    "HostStreamKernelBirthDerivation.test_carrier_checks_full_scope_shapes_credits_slots_and_affine_commit",
+    "HostStreamKernelBirthDerivation.test_existing_free_hook_source_and_normal_provider_gates_are_unmodified",
+    "HostStreamKernelBirthDerivation.test_skb_both_reservations_precede_header_and_data_including_napi",
+    "HostStreamKernelBirthDerivation.test_socket_admission_precedes_both_allocators_and_preserves_failure_cleanup",
+    "HostStreamKernelBirthDerivation.test_three_whole_source_and_constructor_preimages_are_exact",
+    "HostStreamKernelBirthDerivation.test_timewait_quota_first_and_original_cookie_before_observation",
+    "HostStreamKernelBirthDerivation.test_unknown_changed_repeated_or_fragment_source_refuses"
+  ],
+  "guards": {
+    "HostStreamKernelBirthDerivation.test_actual_kernel_seam_refuses_unknown_and_shares_original_owner_state": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a1bf2f1b49228c3465b8448899c0dfa7b7a7d1b7575e468b95901db28adfa161",
+        "class:setup-sha256:508f0f29a7343d94ded4dafba0a9fed6f2e7e9f92d4320cf19dbb5c4f2d71b3c"
+      ],
+      "skipSites": []
+    },
+    "HostStreamKernelBirthDerivation.test_carrier_checks_full_scope_shapes_credits_slots_and_affine_commit": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a1bf2f1b49228c3465b8448899c0dfa7b7a7d1b7575e468b95901db28adfa161",
+        "class:setup-sha256:508f0f29a7343d94ded4dafba0a9fed6f2e7e9f92d4320cf19dbb5c4f2d71b3c"
+      ],
+      "skipSites": []
+    },
+    "HostStreamKernelBirthDerivation.test_existing_free_hook_source_and_normal_provider_gates_are_unmodified": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a1bf2f1b49228c3465b8448899c0dfa7b7a7d1b7575e468b95901db28adfa161",
+        "class:setup-sha256:508f0f29a7343d94ded4dafba0a9fed6f2e7e9f92d4320cf19dbb5c4f2d71b3c"
+      ],
+      "skipSites": []
+    },
+    "HostStreamKernelBirthDerivation.test_skb_both_reservations_precede_header_and_data_including_napi": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a1bf2f1b49228c3465b8448899c0dfa7b7a7d1b7575e468b95901db28adfa161",
+        "class:setup-sha256:508f0f29a7343d94ded4dafba0a9fed6f2e7e9f92d4320cf19dbb5c4f2d71b3c"
+      ],
+      "skipSites": []
+    },
+    "HostStreamKernelBirthDerivation.test_socket_admission_precedes_both_allocators_and_preserves_failure_cleanup": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a1bf2f1b49228c3465b8448899c0dfa7b7a7d1b7575e468b95901db28adfa161",
+        "class:setup-sha256:508f0f29a7343d94ded4dafba0a9fed6f2e7e9f92d4320cf19dbb5c4f2d71b3c"
+      ],
+      "skipSites": []
+    },
+    "HostStreamKernelBirthDerivation.test_three_whole_source_and_constructor_preimages_are_exact": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a1bf2f1b49228c3465b8448899c0dfa7b7a7d1b7575e468b95901db28adfa161",
+        "class:setup-sha256:508f0f29a7343d94ded4dafba0a9fed6f2e7e9f92d4320cf19dbb5c4f2d71b3c"
+      ],
+      "skipSites": []
+    },
+    "HostStreamKernelBirthDerivation.test_timewait_quota_first_and_original_cookie_before_observation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a1bf2f1b49228c3465b8448899c0dfa7b7a7d1b7575e468b95901db28adfa161",
+        "class:setup-sha256:508f0f29a7343d94ded4dafba0a9fed6f2e7e9f92d4320cf19dbb5c4f2d71b3c"
+      ],
+      "skipSites": []
+    },
+    "HostStreamKernelBirthDerivation.test_unknown_changed_repeated_or_fragment_source_refuses": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a1bf2f1b49228c3465b8448899c0dfa7b7a7d1b7575e468b95901db28adfa161",
+        "class:setup-sha256:508f0f29a7343d94ded4dafba0a9fed6f2e7e9f92d4320cf19dbb5c4f2d71b3c"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_host_stream_kernel_birth_derivation.py",
+  "reviewReason": "Eight new constructor/preimage/affine-scope controls, fourteen carrier and ten constructor references; old source and normal gates unchanged",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

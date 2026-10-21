@@ -10,6 +10,63 @@ from tools.rust_capsule_project import digest
 
 
 class JavaPhaseCContext(unittest.TestCase):
+    def test_failed_public_assembly_retains_only_both_exact_regular_wasm_inputs(self):
+        import json
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve();source = root/'compiled';source.mkdir();output = root/'output';output.mkdir()
+            raw = {'core.wasm': b'\0asm\x01\0\0\0public-core',
+                'closed-runtime.wasm': b'\0asm\x01\0\0\0closed-adapter'}
+            for name, value in raw.items(): (source/name).write_bytes(value)
+            (source/'private-neighbour').write_bytes(b'never-capture')
+            compiler = SimpleNamespace(records=[{'stage': 'component-new', 'exitCode': 1}])
+            context.retain_component_inputs(compiler, source, output, context.PHASE_FIXTURE_SOURCES)
+            record = json.loads((output/'component-inputs.json').read_bytes())
+            self.assertFalse(record['qualification']);self.assertTrue(record['publicFixtureOnly'])
+            self.assertEqual(set(record['inputs']), set(raw))
+            for name, value in raw.items():
+                self.assertEqual((output/'component-inputs'/name).read_bytes(), value)
+                self.assertEqual(record['inputs'][name], {'sha256': digest(value), 'bytes': len(value)})
+            self.assertEqual(sorted(path.name for path in (output/'component-inputs').iterdir()), sorted(raw))
+            self.assertEqual(record['logLimitBytesUnchanged'], 16*1024*1024)
+
+    def test_default_success_other_stages_and_nonclosed_selections_never_capture_inputs(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            for selected, stage, code in (((), 'component-new', 1),
+                    (context.FIXTURE_SOURCES, 'component-new', 1),
+                    (list(context.PHASE_FIXTURE_SOURCES), 'component-new', 1),
+                    (context.PHASE_FIXTURE_SOURCES, 'java-to-c', 1),
+                    (context.PHASE_FIXTURE_SOURCES, 'component-new', 0)):
+                compiler = SimpleNamespace(records=[{'stage': stage, 'exitCode': code}])
+                context.retain_component_inputs(compiler, root/'unopened', root, selected)
+                self.assertEqual(list(root.iterdir()), [])
+
+    def test_missing_oversized_bad_magic_and_hardlinked_pair_refuse_before_raw_publication(self):
+        import os
+        for kind in ('missing', 'oversized', 'magic', 'hardlink'):
+            with self.subTest(kind=kind), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary).resolve();source = root/'compiled';source.mkdir();output = root/'output';output.mkdir()
+                (source/'core.wasm').write_bytes(b'\0asm\x01\0\0\0core')
+                adapter = source/'closed-runtime.wasm'
+                if kind == 'oversized':
+                    with adapter.open('wb') as stream: stream.truncate(4*1024*1024+1)
+                elif kind == 'magic': adapter.write_bytes(b'not-wasm')
+                elif kind == 'hardlink': os.link(source/'core.wasm', adapter)
+                compiler = SimpleNamespace(records=[{'stage': 'component-new', 'exitCode': 1}])
+                context.retain_component_inputs(compiler, source, output, context.PHASE_FIXTURE_SOURCES)
+                self.assertFalse((output/'component-inputs').exists())
+                self.assertTrue((output/'component-inputs-refused.json').is_file())
+
+    def test_failed_retention_does_not_mask_the_original_assembly_exception(self):
+        original = RuntimeError('original-assembly-failure')
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            compiler = SimpleNamespace(records=[{'stage': 'component-new', 'exitCode': 1}])
+            with self.assertRaises(RuntimeError) as caught:
+                try: raise original
+                finally: context.retain_component_inputs(compiler, root/'missing', root, context.PHASE_FIXTURE_SOURCES)
+            self.assertIs(caught.exception, original)
+
     def test_old_selection_refuses_and_phase_selection_retains_actual_declaration_and_uses(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary).resolve(); path = root/'c/j/u/TimeZone.c'

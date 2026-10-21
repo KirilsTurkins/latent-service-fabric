@@ -128,5 +128,58 @@ class FrozenNativeReader(unittest.TestCase):
             with self.assertRaises(WorkflowError):self.reader.receipt_preimages(Path('unexecuted-fixture'))
 
 
+    def _git_material_fixture(self, *, protocol=True, mode='100644', changed=False, path='api/proto/latent/control/v1/release.proto'):
+        names = [*reader.MATERIALS, 'wit/package.wit', 'schemas/fixture.json',
+                 'examples/echo-contract/wit/fixture.wit']
+        if protocol: names.append(path)
+        rows, objects = [], []
+        for name in sorted(names):
+            payload = name.encode('utf-8')
+            oid = reader.hashlib.sha1(b'blob '+str(len(payload)).encode()+b'\0'+payload).hexdigest()
+            rows.append((name, (mode if name == path else '100644')+' blob '+oid+'\t'+name+'\0'))
+            actual = b'x'+payload[1:] if changed and name == path else payload
+            objects.append((name, oid.encode()+b' blob '+str(len(actual)).encode()+b'\n'+actual+b'\n'))
+        def tree(arguments, **_kwargs):
+            include = 'api/proto' in arguments
+            return ''.join(row for name, row in rows if include or not name.startswith('api/proto/')).encode()
+        def batch(arguments, **kwargs):
+            selected = set(kwargs['input'].splitlines())
+            result = b''.join(row for name, row in objects if row.split(b' ', 1)[0] in selected)
+            return type('Result', (), {'stdout': result})()
+        return patch.object(reader.subprocess, 'check_output', side_effect=tree), patch.object(reader.subprocess, 'run', side_effect=batch)
+
+    def test_protocol_tree_is_explicit_additive_and_preserves_historical_materials(self):
+        selected = reader.FrozenNativeProducts(source='2'*40, run=2, job=3,
+            artifact=self.artifact, receipts=self.receipts, branch='fixture/native',
+            stages=('rust-version',), include_protocol=True)
+        tree, batch = self._git_material_fixture()
+        with tree, batch:
+            old = self.reader._git_materials()
+            new = selected._git_materials()
+        self.assertFalse(self.reader.include_protocol)
+        self.assertEqual(old, {name: value for name, value in new.items() if not name.startswith('api/proto/')})
+        self.assertEqual(set(new)-set(old), {'api/proto/latent/control/v1/release.proto'})
+        self.assertEqual(new['api/proto/latent/control/v1/release.proto'], {
+            'sha256': 'sha256:'+reader.hashlib.sha256(b'api/proto/latent/control/v1/release.proto').hexdigest(),
+            'bytes': len('api/proto/latent/control/v1/release.proto')})
+
+    def test_protocol_tree_absence_symlink_escape_and_object_tamper_are_refused(self):
+        selected = reader.FrozenNativeProducts(source='2'*40, run=2, job=3,
+            artifact=self.artifact, receipts=self.receipts, branch='fixture/native',
+            stages=('rust-version',), include_protocol=True)
+        for hostile in ({'protocol': False}, {'mode': '120000'}, {'changed': True},
+                        {'path': 'api/proto/../outside.proto'}):
+            with self.subTest(hostile=hostile):
+                tree, batch = self._git_material_fixture(**hostile)
+                with tree, batch, self.assertRaises(WorkflowError): selected._git_materials()
+
+    def test_protocol_selection_rejects_non_boolean_configuration(self):
+        for flag in (1, 'true', None, [], {}):
+            with self.subTest(flag=flag), self.assertRaisesRegex(WorkflowError, 'frozen-configuration'):
+                reader.FrozenNativeProducts(source='2'*40, run=2, job=3, artifact=self.artifact,
+                    receipts=self.receipts, branch='fixture/native', stages=('rust-version',),
+                    include_protocol=flag)
+
+
 if __name__ == '__main__':
     unittest.main()

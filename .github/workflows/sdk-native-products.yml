@@ -65,7 +65,7 @@ jobs:
               result={p:file_identity(root/p) for p in selected}
               for directory, maximum_files, maximum_bytes in (
                   ('wit',2048,8*1024**2),('schemas',256,4*1024**2),
-                  ('examples/echo-contract/wit',128,1024**2)):
+                  ('examples/echo-contract/wit',128,1024**2),('api/proto',128,1024**2)):
                   observed=inventory(root/directory,maximum_files=maximum_files,
                       maximum_bytes=maximum_bytes,deadline=time.monotonic()+30)
                   for row in observed['files']:
@@ -136,6 +136,57 @@ jobs:
               '--','--exact','--test-threads=1')
           require(b'test result: ok. 1 passed; 0 failed; 0 ignored;' in operational_binding,
               'native-products-phase-operational-one-binding-control')
+          protocol_reader=commands.run('release-preparation-protocol-reader-controls','python3','-B','-c',
+              'import sys,unittest\n'
+              'suite=unittest.defaultTestLoader.loadTestsFromName("tools.tests.test_sdk_native_products_reader")\n'
+              'result=unittest.TextTestRunner(stream=sys.stdout,verbosity=2).run(suite)\n'
+              'sys.exit(0 if result.wasSuccessful() and not result.skipped else 1)')
+          require(b'Ran 11 tests' in protocol_reader and b'OK' in protocol_reader,
+              'native-products-protocol-reader-eleven-controls')
+          release_deadline=commands.run('release-preparation-deadline-controls','cargo','--config',root/'.cargo/managed-guest.toml',
+              'test','--locked','-p','latent-wire','--lib','management::release::preparation::tests::',
+              '--','--test-threads=1')
+          require(b'test result: ok. 2 passed; 0 failed; 0 ignored;' in release_deadline,
+              'native-products-release-preparation-two-deadline-controls')
+          web_readiness=commands.run('release-preparation-web-readiness-controls','cargo','--config',root/'.cargo/managed-guest.toml',
+              'test','--locked','-p','latent-wire','--lib','management::release::web::preparation::tests::',
+              '--','--test-threads=1')
+          require(b'test result: ok. 4 passed; 0 failed; 0 ignored;' in web_readiness,
+              'native-products-original-web-four-readiness-controls')
+          release_rpc=commands.run('release-preparation-rpc-controls','cargo','--config',root/'.cargo/managed-guest.toml',
+              'test','--locked','-p','latent-wire','--test','management_service','release::preparation::',
+              '--','--test-threads=1')
+          require(b'test result: ok. 6 passed; 0 failed; 0 ignored;' in release_rpc,
+              'native-products-release-preparation-six-scoped-rpc-controls')
+          release_cli=commands.run('release-preparation-cli-controls','cargo','--config',root/'.cargo/managed-guest.toml',
+              'test','--locked','-p','latent','--lib',
+              'management::tests::preparation::release_prepare_requires_exact_publication_generation_and_finite_setup_wait',
+              '--','--exact','--test-threads=1')
+          require(b'test result: ok. 1 passed; 0 failed; 0 ignored;' in release_cli,
+              'native-products-release-preparation-one-cli-control')
+          release_projection=commands.run('release-preparation-projection-controls','cargo','--config',root/'.cargo/managed-guest.toml',
+              'test','--locked','-p','latent','--lib',
+              'management::phase2::execute::release::tests::prepared_release_projection_is_bounded_lossless_and_never_execution_authority',
+              '--','--exact','--test-threads=1')
+          require(b'test result: ok. 1 passed; 0 failed; 0 ignored;' in release_projection,
+              'native-products-release-preparation-one-projection-control')
+          release_transport=commands.run('release-preparation-transport-controls','cargo','--config',root/'.cargo/managed-guest.toml',
+              'test','--locked','-p','latentd','--lib','standalone::transport::tests::web_preparation::',
+              '--','--test-threads=1')
+          require(b'test result: ok. 4 passed; 0 failed; 0 ignored;' in release_transport,
+              'native-products-release-preparation-four-transport-controls')
+          release_command_name=commands.run('release-preparation-command-name-controls','cargo','--config',root/'.cargo/managed-guest.toml',
+              'test','--locked','-p','latent','--lib',
+              'command::tests::exact_release_preparation_command_keeps_its_public_result_name',
+              '--','--exact','--test-threads=1')
+          require(b'test result: ok. 1 passed; 0 failed; 0 ignored;' in release_command_name,
+              'native-products-release-preparation-one-command-name-control')
+          release_dispatch=commands.run('release-preparation-dispatch-controls','cargo','--config',root/'.cargo/managed-guest.toml',
+              'test','--locked','-p','latent','--lib',
+              'management::execute::tests::parsed_release_prepare_keeps_management_dispatch_and_exact_selection',
+              '--','--exact','--test-threads=1')
+          require(b'test result: ok. 1 passed; 0 failed; 0 ignored;' in release_dispatch,
+              'native-products-release-preparation-one-dispatch-control')
           require(before==source_identity(root) and materials==material_identities(),
               'native-products-source-changed')
           products={};owned=output/'native-binaries';owned.mkdir(mode=0o700)

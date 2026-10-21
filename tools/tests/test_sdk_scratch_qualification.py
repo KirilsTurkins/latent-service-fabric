@@ -183,6 +183,32 @@ class ScratchQualification(unittest.TestCase):
         download = next(step['with'] for step in selected['steps'] if 'download-artifact@' in step.get('uses', ''))
         self.assertEqual(download['name'], 'rust-scratch-prepared-${{ github.sha }}')
 
+    def test_dotnet_scratch_installs_same_pinned_runtime_target_before_closed_compiler(self):
+        from tools.ci_lane_inventory import workflow_model
+        jobs = workflow_model((qualifier.ROOT/'.github/workflows/dotnet-guest.yml').read_text(encoding='utf-8'))['jobs']
+        scratch = jobs['scratch-refusals']
+        self.assertEqual(scratch['needs'], 'toolchain')
+        self.assertEqual(scratch['timeout-minutes'], 20)
+        selected = {}
+        for name in ('toolchain', 'scratch-refusals', 'published-tasks'):
+            steps = jobs[name]['steps']
+            compiler = next(i for i, step in enumerate(steps)
+                            if step.get('name') == 'Install the pinned native compiler and closed runtime')
+            rust = [(i, step) for i, step in enumerate(steps)
+                    if step.get('uses', '').startswith('dtolnay/rust-toolchain@')]
+            cache = [(i, step) for i, step in enumerate(steps)
+                     if step.get('uses', '').startswith('Swatinem/rust-cache@')]
+            self.assertEqual(len(rust), 1)
+            self.assertEqual(len(cache), 1)
+            self.assertLess(rust[0][0], cache[0][0])
+            self.assertLess(cache[0][0], compiler)
+            self.assertEqual(rust[0][1]['uses'],
+                             'dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5')
+            self.assertEqual(rust[0][1]['with']['targets'], 'wasm32-unknown-unknown')
+            selected[name] = (rust[0][1], cache[0][1])
+        self.assertEqual(selected['scratch-refusals'], selected['toolchain'])
+        self.assertEqual(selected['scratch-refusals'], selected['published-tasks'])
+
     def test_existing_compatibility_report_keeps_unknown_and_trap_separate_from_actual_unsupported(self):
         from tools import guest_compatibility as compatibility
         from tools.sdk_scratch_probe import refusal

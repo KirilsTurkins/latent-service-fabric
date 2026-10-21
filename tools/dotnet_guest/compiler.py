@@ -198,8 +198,9 @@ class Compiler:
         declared = interface_names(json.loads(self.run("declared-runtime-wit", self.wasm,
             "component", "wit", source, "--json")), world)["imports"]
         runtime.select(declared, [])
-        from tools.dotnet_guest import retirement
+        from tools.dotnet_guest import retirement, managed_work
         binding_source, retirement_port = retirement.prepare(self, source, world, output/'retirement-port', declared)
+        managed = retirement_port is not None and 'managedWork' in retirement_port
         if retirement_port is not None:
             self.compiler_patches.append({'name':retirement.PROFILE, 'profile':retirement.PROFILE,
                 'original':file_identity(output/'retirement-port/original.wit', 'original-retirement-wit', retirement.MAX_TEXT),
@@ -262,7 +263,9 @@ class Compiler:
         if task_wait.selected(declared, receipt.get('asyncExportBridge')):
             self.task_wait_port = task_wait.prepare(self.sdk, self.http_error_tools, self.package_cache, self.dotnet,
                 declared, receipt.get('asyncExportBridge'), project, output, command.output, self.run,
-                protect_inputs=self.isolation.protect_inputs if self.isolation else None)
+                protect_inputs=self.isolation.protect_inputs if self.isolation else None, managed=managed)
+        if managed != (self.task_wait_port is not None and 'managedAcceptedWork' in self.task_wait_port.evidence):
+            raise ValueError('dotnet-managed-work-binding-CoreLib-selection-drift')
         self.filesystem_port = closed_filesystem.prepare(self.sdk, self.http_error_tools, self.package_cache, self.dotnet,
             project, output, command.output, self.run, task_wait_port=self.task_wait_port,
             protect_inputs=self.isolation.protect_inputs if self.isolation else None)
@@ -336,12 +339,12 @@ class Compiler:
             self.generated_materials.extend((port["derived"],
                 file_identity(command.output / "noncrypto-entropy-port.json", "noncrypto-entropy-port")))
         if self.managed_entropy_port is not None:
-            managed = self.managed_entropy_port.finish(project, command.output)
-            self.compiler_patches.append({"name": managed["patch"], "profile": managed["profile"],
-                "original": managed["frameworkInputs"][0], "selected": managed["derived"],
-                "selection": {key: managed[key] for key in ("sourceCaptureDigest", "targetsDigest", "helper",
+            entropy_receipt = self.managed_entropy_port.finish(project, command.output)
+            self.compiler_patches.append({"name": entropy_receipt["patch"], "profile": entropy_receipt["profile"],
+                "original": entropy_receipt["frameworkInputs"][0], "selected": entropy_receipt["derived"],
+                "selection": {key: entropy_receipt[key] for key in ("sourceCaptureDigest", "targetsDigest", "helper",
                     "replaced", "unchangedMethods", "nativeAotReferenceBinding", "namedAlgorithmFactorySupported")}})
-            self.generated_materials.extend((managed["helper"], managed["derived"],
+            self.generated_materials.extend((entropy_receipt["helper"], entropy_receipt["derived"],
                 file_identity(command.output / "managed-entropy-port.json", "standard-rng-managed-port")))
         actual = list((project / "obj").rglob("bindings.json"))
         if len(actual) != 1 or json.loads(read_file(actual[0], 16 * 1024 * 1024))["outputs"] != receipt["outputs"]:
@@ -363,6 +366,10 @@ class Compiler:
                 raise ValueError('dotnet-retirement-compiled-import-missing-or-changed')
             actual = [name for name in actual if name != retirement.IDENTITY]
             self.generated_materials.append(file_identity(command.output/'retirement-port.json', 'dotnet-retirement-port'))
+        if managed_work.private_interface(json.loads(raw_wit), 'imports') != managed:
+            raise ValueError('dotnet-managed-work-compiled-import-missing-or-changed')
+        if managed:
+            actual = [name for name in actual if name != managed_work.IDENTITY]
         http_error_port = None
         if self.http_error_port is not None:
             http_error_port = self.http_error_port.finish(project, command.output, corelib_port=self.filesystem_port)
@@ -375,6 +382,10 @@ class Compiler:
             }]
             if "synchronousRead" in http_error_port:
                 self.compiler_patches[-1]["selection"]["synchronousRead"] = http_error_port["synchronousRead"]
+            if 'requiredContentWork' in http_error_port:
+                self.compiler_patches[-1]['selection']['requiredContentWork'] = http_error_port['requiredContentWork']
+            if 'requestAbortCleanup' in http_error_port:
+                self.compiler_patches[-1]['selection']['requestAbortCleanup'] = http_error_port['requestAbortCleanup']
             self.generated_materials.extend((self.http_error_port.identity,
                 file_identity(command.output / "http-error-port.json", "dotnet-http-error-port", http_errors.MAX_RECEIPT)))
         if self.task_wait_port is not None:
@@ -383,8 +394,18 @@ class Compiler:
                 'original': port['frameworkInput'], 'selected': port['derived'],
                 'selection': {key: port[key] for key in ('sourceCaptureDigest', 'targetsDigest', 'method',
                     'maximumNestedWaits', 'completion', 'exceptionPropagation', 'nestedTaskIdentity',
+                    'finiteAndCancellableWaits', 'generatedHelperCount',
                     'originalWaitBodyDigest', 'originalLoopBodyDigest', 'originalDispatchBodyDigest',
                     'unchangedOriginalMethods', 'completeOriginalWaitRemainderPreserved', 'nativeAotReferenceBinding')}})
+            if port['finiteAndCancellableWaits'] == 'original-Task-WhenAny-Delay':
+                self.compiler_patches[-1]['selection'].update({key: port[key] for key in (
+                    'finiteWaitCleanup', 'zeroTimeout', 'waitCancellation', 'publicWaitValidationAndExceptions')})
+            if managed:
+                self.compiler_patches.append({'name': managed_work.PROFILE, 'profile': managed_work.PROFILE,
+                    'original': port['frameworkInput'], 'selected': port['derived'],
+                    'selection': {'sourceCaptureDigest': port['sourceCaptureDigest'],
+                        'nativeAotReferenceBinding': port['nativeAotReferenceBinding'],
+                        'managedAcceptedWork': port['managedAcceptedWork']}})
             self.generated_materials.extend((self.task_wait_port.identity,
                 file_identity(command.output / 'task-wait-port.json', 'dotnet-task-wait-port', http_errors.MAX_RECEIPT)))
         filesystem = self.filesystem_port.finish(project, command.output)
@@ -396,7 +417,7 @@ class Compiler:
                 'nativeAotReferenceBinding')}})
         self.generated_materials.extend((self.filesystem_port.identity,
             file_identity(command.output / 'closed-filesystem-port.json', 'dotnet-closed-filesystem-port', http_errors.MAX_RECEIPT)))
-        profile = runtime.select(declared, actual)
+        profile = runtime.select(declared, actual, managed_work=managed)
         adapter = self.runtimes[profile]
         from tools.dotnet_guest.internal_io import PROFILE as IO_PROFILE, prepare as prepare_internal_io
         from tools.dotnet_guest import closed_io
@@ -435,11 +456,11 @@ class Compiler:
         component = output / "component.wasm"
         self.runtime = adapter
         coverage = inspect_runtime(self, raw, additional_adapters=additional,
-                                   owned_retirement=retirement_port is not None)
+                                   owned_retirement=retirement_port is not None, managed_work=managed)
         if additional:
             from tools.dotnet_guest.composer import compose_exact
             compose_exact(self, raw, component, coverage, additional_adapters=additional,
-                          owned_retirement=retirement_port is not None)
+                          owned_retirement=retirement_port is not None, managed_work=managed)
         else:
             self.run("closed-runtime-composition", self.wac, "plug", raw, "--plug", adapter, "-o", component)
         self.run("validate", self.wasm, "validate", component)
@@ -450,6 +471,8 @@ class Compiler:
             raise ValueError('compiler-private-retirement-export-escaped-composition')
         if retirement_port is not None and retirement.IDENTITY in final:
             raise ValueError('compiler-private-retirement-import-escaped-composition')
+        if managed_work.IDENTITY in final_interfaces['exports'] or managed_work.IDENTITY in final:
+            raise ValueError('compiler-private-managed-work-edge-escaped-composition')
         if not set(final) <= set(declared):
             raise ValueError("runtime adapter introduced undeclared authority:" +
                              ",".join(sorted(set(final) - set(declared))))

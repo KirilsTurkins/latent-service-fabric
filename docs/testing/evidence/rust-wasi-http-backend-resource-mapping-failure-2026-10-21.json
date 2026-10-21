@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "latent.rust.wasi-http.backend-observation.v1",
+  "source": "4ddc525b849f242cae462ddca868a070cbbadeb2",
+  "run": 39520282259,
+  "job": 118962180357,
+  "conclusion": "failure",
+  "pythonControls": 16,
+  "actualSourceResourceControls": 11,
+  "ignored": 0,
+  "failureStage": "standard-http-runtime-compile",
+  "compilerEntered": true,
+  "cause": "E0277: StandardRuntime omitted streams::Guest associated resource mapping. Actual Input/Output resource methods already exist.",
+  "originalCompilerDiagnostic": "the trait bound `StandardRuntime: streams::Guest` is not satisfied",
+  "artifact": {
+    "id": 12311062956,
+    "bytes": 10018,
+    "sha256": "09bfaa5a89b70b64b298393ef2c94af76f852fcba7d4c7915e861c9e6bf2b2ac",
+    "members": 13,
+    "crcAndMemberHashesVerified": true
+  },
+  "repair": "Map standard input-stream and output-stream resources to the existing actual http_io::Input and http_io::Output implementations.",
+  "signedQualification": false,
+  "adapterCompiled": false,
+  "failurePreserved": true
+}

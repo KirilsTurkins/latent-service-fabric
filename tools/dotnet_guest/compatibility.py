@@ -39,11 +39,11 @@ def members(graph: dict, direction: str) -> dict:
 
 
 def coverage(raw: dict, adapter: dict, *, additional_adapters=(), additional_names=(),
-             owned_retirement: bool = False) -> dict:
+             owned_retirement: bool = False, managed_work: bool = False) -> dict:
     """Member presence is a necessary check; WAC still checks all type signatures."""
     required, supplied = members(raw, 'imports'), members(adapter, 'exports')
     from tools.dotnet_guest.retirement import composition_edges
-    private_edges = composition_edges(raw, adapter, owned_retirement)
+    private_edges = composition_edges(raw, adapter, owned_retirement, managed_work)
     require(len(additional_adapters) <= 4, 'dotnet-runtime-additional-adapter-limit')
     require(not additional_names or (len(additional_names) == len(additional_adapters)
             and len(set(additional_names)) == len(additional_names)), 'dotnet-runtime-additional-adapter-name')
@@ -87,7 +87,7 @@ def findings(value: dict) -> list:
     return result
 
 
-def inspect(compiler, raw: Path, *, additional_adapters=(), owned_retirement: bool = False) -> dict:
+def inspect(compiler, raw: Path, *, additional_adapters=(), owned_retirement: bool = False, managed_work: bool = False) -> dict:
     raw_bytes, adapter_bytes = read_file(raw, 64 * 1024 * 1024), read_file(compiler.runtime, 64 * 1024 * 1024)
     raw_graph = compiler.run('native-aot-raw-wit', compiler.wasm, 'component', 'wit', raw, '--json')
     adapter_graph = compiler.run('closed-runtime-adapter-wit', compiler.wasm, 'component', 'wit', compiler.runtime, '--json')
@@ -105,7 +105,7 @@ def inspect(compiler, raw: Path, *, additional_adapters=(), owned_retirement: bo
         (compiler.commands.output / source).write_bytes(graph)
     value = coverage(decode(raw_graph, MAX_GRAPH), decode(adapter_graph, MAX_GRAPH),
                      additional_adapters=graphs, additional_names=[row['name'] for row in extra],
-                     owned_retirement=owned_retirement)
+                     owned_retirement=owned_retirement, managed_work=managed_work)
     require(read_file(raw, 64 * 1024 * 1024) == raw_bytes
             and read_file(compiler.runtime, 64 * 1024 * 1024) == adapter_bytes, 'dotnet-runtime-coverage-stale-input')
     require(all(read_file(path, 64 * 1024 * 1024) == body for path, body in original),
@@ -155,12 +155,13 @@ def retain_failure(output: Path) -> None:
         require(digest(graph) == row['witDigest'], 'dotnet-runtime-coverage-stale-receipt')
         graphs.append(decode(graph, MAX_GRAPH))
     from tools.dotnet_guest.retirement import IDENTITY
+    from tools.dotnet_guest.managed_work import IDENTITY as MANAGED
     private_edges = value.get('compilerPrivateImports', [])
-    require(private_edges in ([], [IDENTITY]), 'dotnet-retirement-composition-receipt')
+    require(private_edges in ([], [IDENTITY], [IDENTITY, MANAGED]), 'dotnet-retirement-composition-receipt')
     actual = coverage(decode(read_file(output / 'native-aot-raw.wit.json', MAX_GRAPH), MAX_GRAPH),
                       decode(read_file(output / 'closed-runtime-adapter.wit.json', MAX_GRAPH), MAX_GRAPH),
                       additional_adapters=graphs, additional_names=[row['name'] for row in extra],
-                      owned_retirement=private_edges == [IDENTITY])
+                      owned_retirement=bool(private_edges), managed_work=private_edges == [IDENTITY, MANAGED])
     require(all(actual[key] == value[key] for key in actual), 'dotnet-runtime-coverage-stale-receipt')
     source = output / 'source-inputs.json'
     if not source.exists():

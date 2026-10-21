@@ -20,10 +20,17 @@ METHODS = {
 }
 
 
-def validate_receipt(value: dict, base_digest: str, joined: bool) -> None:
+def validate_receipt(value: dict, base_digest: str, joined: bool, *, task_wait_port=None) -> None:
+    if type(joined) is not bool or (task_wait_port is not None and not joined):
+        raise ValueError('closed-filesystem-rewrite-receipt')
+    helpers = 9 if joined else 0
+    if task_wait_port is not None:
+        if type(task_wait_port) is not task_wait.Port or task_wait_port.identity['digest'] != base_digest:
+            raise ValueError('closed-filesystem-authenticated-task-wait-required')
+        helpers = task_wait_port.validated_helper_count()
     fixed = {'patch': PATCH, 'originalDigest': task_wait.SOURCE, 'baseDigest': base_digest,
         'cecilDigest': http_errors.CECIL_DIGEST, 'originalMethodBodies': METHODS,
-        'modifiedOriginalMethods': 2, 'unchangedBaseMethods': 44753 if joined else 44744,
+        'modifiedOriginalMethods': 2, 'unchangedBaseMethods': 44744 + helpers,
         'otherBaseBodiesUnchanged': True, 'publicWrappersUnchanged': True,
         'newHostImports': 0, 'filesystemAuthority': False}
     if (type(value) is not dict or set(value) != set(fixed) | {'outputDigest'}
@@ -124,7 +131,7 @@ def prepare(sdk: Path, tools: Path, packages: Path, dotnet: Path, project: Path,
     run('closed-filesystem-rewrite', dotnet, tools / 'http-errors/HttpErrors.dll', '--closed-filesystem',
         original, base, assembly, receipt)
     result = json.loads(read_file(receipt, http_errors.MAX_RECEIPT))
-    validate_receipt(result, base_identity['digest'], task_wait_port is not None)
+    validate_receipt(result, base_identity['digest'], task_wait_port is not None, task_wait_port=task_wait_port)
     identity = file_identity(assembly, 'closed-filesystem-derived-corelib', task_wait.MAX_ASSEMBLY)
     if identity['digest'] != result['outputDigest']:
         raise ValueError('closed-filesystem-rewrite-output-drift')

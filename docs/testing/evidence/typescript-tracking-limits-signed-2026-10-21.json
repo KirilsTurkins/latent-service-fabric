@@ -1,0 +1,74 @@
+{
+  "schemaVersion": "latent.typescript.tracking-limits-signed.v1",
+  "status": "PASS",
+  "source": "63224663df622426a8a657355fb6ccc6294215ee",
+  "run": 39561770610,
+  "job": 119094482153,
+  "artifact": 12328935407,
+  "archive": {
+    "bytes": 8806047,
+    "sha256": "sha256:544655acf815a0fe85a0da4174fb4cca948fcfa119c08088d1ab4b229f816313"
+  },
+  "crcMembers": 327,
+  "component": {
+    "sha256": "sha256:27c0a75bf794e49ba6062b9ec09129cfc51ac78b6274c43959cc7e8ecb46e693",
+    "bytes": 12410038
+  },
+  "capturedSources": 99,
+  "recipeInputs": 111,
+  "qualificationSources": 10,
+  "buildCommands": 26,
+  "invocations": 15,
+  "physicalRetirements": 15,
+  "zeroOwnerSamples": 15,
+  "activeCounters": 18,
+  "cleanReapedNodes": 5,
+  "contacts": 0,
+  "boundaries": [
+    {
+      "kind": "task",
+      "label": "activation-runtime-task-register-denied:2",
+      "admitted": 12
+    },
+    {
+      "kind": "queue",
+      "label": "activation-runtime-queue-register-denied:2",
+      "admitted": 14
+    },
+    {
+      "kind": "native",
+      "label": "activation-runtime-promise-native-register-denied:2",
+      "admitted": 53
+    },
+    {
+      "kind": "timer",
+      "label": "activation-runtime-timer-start-denied:2",
+      "admitted": 8
+    },
+    {
+      "kind": "memory",
+      "terminal": "resource-exhausted",
+      "memoryBudget": 67108864,
+      "bootstrapPeak": 9519608,
+      "negativePeak": 64045560
+    }
+  ],
+  "engineProducer": {
+    "run": 39540608310,
+    "source": "5c38079b1de2e0bbfe437ad7003582460618742d",
+    "head": "927096bfbfb08a776411ab68b1e4d2c2e4ece7ea",
+    "originalBoundaryConclusion": "cancelled"
+  },
+  "nativeProducer": {
+    "source": "357eecbd7744bbc026741d241b679966d14b0e95",
+    "run": 39532689221,
+    "job": 119002071182
+  },
+  "engineRebuilt": false,
+  "hostRebuilt": false,
+  "completeAccountingQualified": false,
+  "socketProfileQualified": false,
+  "originalBoundaryPassingCredit": false,
+  "referenceTrackingControls": 9,
+  "actualGuestCompilerSeconds": 17.299326
+}
