@@ -1,10 +1,5 @@
 //! Real activation-owned timer readiness for the pinned CLR event loop.
-use super::{
-    latent::runtime::activation as runtime,
-    owner::{self, Owner},
-    pump,
-    quota::Slot,
-};
+use super::{latent::runtime::activation as runtime, owner::Owner, pump, quota::Slot};
 use std::{
     cell::{Cell, RefCell},
     future::Future,
@@ -26,11 +21,12 @@ impl Timer {
         let slot = Slot::new();
         let owner = Owner::new(runtime::OwnerKind::Wait)
             .expect("activation timer authority or capacity unavailable");
+        // The actual host wait is admitted on this lazy future's first poll.
+        // Its creating managed callback may already have returned by then;
+        // retain the admitted Wait owner as the continuation until actual drop.
+        let continuation = Some(owner.token());
         let timer = Rc::new(Self {
-            work: RefCell::new(Some(Box::pin(runtime::wait_for(
-                nanos,
-                owner::continuation(),
-            )))),
+            work: RefCell::new(Some(Box::pin(runtime::wait_for(nanos, continuation)))),
             elapsed: Cell::new(false),
             failure: Cell::new(None),
             owner: Some(owner),
