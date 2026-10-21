@@ -47,9 +47,14 @@ programme is physical kernel qualification.
 Route ownership remains a separate concrete gap. `ip_route_connect` and
 `ip_route_newports` must continue to share the same real flow key and perform
 the final-port IPSEC/policy lookup. Their lower chain reaches `rt_dst_alloc`,
-`dst_alloc`, FIB/exception caches, metrics COW, `rt_dst_clone`, XFRM and lwt state,
+`dst_alloc`, FIB/exception caches, shared FIB metrics, `rt_dst_clone`, XFRM and lwt state,
 and retains netdevice/reference tracker owners. Those producers cannot be
 replaced by a direct route, ignored transform, forced cache miss or guessed
 later pointer attestation. Remaining route, RX/SKB/NAPI/page, DNS, protocol
 retirement, layout, trusted installation and sealed final-free proof still
 block complete allocation closure and production enablement.
+
+The subsequent [route source prefix](route-private.md) preserves actual IPv4
+metrics references; its IPv4 COW operation is WARN/NULL, rather than the generic
+metrics allocator. It adds prepaid route misses and original final-refcount/RCU
+returns while retaining explicit cache-parent and policy-chain hard gates.
