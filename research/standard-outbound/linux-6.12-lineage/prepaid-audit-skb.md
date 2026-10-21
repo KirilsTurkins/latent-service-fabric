@@ -3,10 +3,10 @@
 This uninstalled prefix derives the maintained Linux 6.12.113 SKB allocation,
 clone, copy, expansion and real free paths for private audit producers. It is
 not an audit delivery implementation or a completed outbound provider. The
-mandatory formatter, audit selection/callback chain and queued delivery still
-need composition; no caller selects the new audit constructor today.
+mandatory formatter and audit selection/callback chain are composed by the
+separate [mandatory audit source](prepaid-audit.md). Neither prefix is installed.
 
-Nineteen complete authenticated inputs total 1,501,580 bytes. Nine exact
+Twenty-one complete authenticated inputs total 1,537,920 bytes. Nine exact
 maintained function definitions bind the changed paths. The private header
 and data allocations use the original socket/accepted audit descendant birth
 before initialization or publication. They share the original 256 records,
@@ -32,7 +32,7 @@ route private records before their original heap/cache operations. Unknown
 arena addresses remain charged and never enter those normal allocators.
 
 The supplemental freestanding reference retains an actual original clone
-that escapes the prepaid owner as RED (exit 2), followed by 21 passing controls
+that escapes the prepaid owner as RED (exit 2), followed by 24 passing SKB controls and 19 preserved Netport controls
 for the selected source. Its layout, header-copy, atomic, list/lock and
 allocator support are explicit serialized doubles. Selected factory, clone,
 copy and return functions are actual source bodies. The reference does not
@@ -41,7 +41,7 @@ The eight Python controls also retain every changed function's original
 CONFIG-off projection and refuse changed/duplicate/CRLF preimages.
 
 No actual kernel object is compiled by this source observation. The supported
-kernel geometry, mandatory audit delivery, all remaining producer closure,
+kernel geometry, actual mandatory audit delivery, all remaining producer closure,
 kernel link/boot, installed operation and sealed physical final-free proof
 remain open. The complete consumer stays unavailable and production enablement
 remains off.

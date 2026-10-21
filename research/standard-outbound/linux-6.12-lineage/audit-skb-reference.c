@@ -158,7 +158,10 @@ static void audit_reset(void) { reset(); heap_count = heap_returns = 0; }
 static void audit_observed(const char *label)
 { lsf_ref_write("AUDIT_SKB_CONTROL ", 18); lsf_ref_write(label, lsf_ref_length(label)); lsf_ref_write(" PASS\n", 6); }
 
-int main(void)
+#ifndef LSF_AUDIT_SKB_REFERENCE_ENTRY
+#define LSF_AUDIT_SKB_REFERENCE_ENTRY main
+#endif
+int LSF_AUDIT_SKB_REFERENCE_ENTRY(void)
 {
     struct sk_buff *skb, *copy;
     struct lsf_prepaid_context *owner;
@@ -265,6 +268,18 @@ int main(void)
     skb->end++;
     assert(!skb_clone(skb, GFP_ATOMIC) && owner->poisoned && owner->live == 3 && !heap_count);
     audit_observed("misaligned-shared-info-refused-before-dereference");
+    audit_reset(); owner = &factory.pool.contexts[0];
+    skb = lsf_prepaid_audit_skb_new(parent, 1024); assert(skb); skb->len = 4096;
+    assert(!skb_copy(skb, GFP_ATOMIC) && owner->poisoned && owner->live == 3 && !heap_count);
+    audit_observed("inconsistent-length-refused-before-copy-allocation-and-skb-put");
+    audit_reset(); owner = &factory.pool.contexts[0];
+    skb = lsf_prepaid_audit_skb_new(parent, 1024); assert(skb); skb->data = skb->head + skb->end + 1;
+    assert(!skb_clone(skb, GFP_ATOMIC) && owner->poisoned && owner->live == 3 && !heap_count);
+    audit_observed("out-of-span-data-refused-before-pointer-subtraction");
+    audit_reset(); owner = &factory.pool.contexts[0];
+    skb = lsf_prepaid_audit_skb_new(parent, 1024); assert(skb); skb->tail = skb->end + 1;
+    assert(!skb_copy(skb, GFP_ATOMIC) && owner->poisoned && owner->live == 3 && !heap_count);
+    audit_observed("out-of-span-tail-refused-before-copy-allocation");
     audit_reset(); owner = &factory.pool.contexts[0];
     skb_kfree_head(backing + 1, 0);
     assert(factory.pool.poisoned && owner->live == 1 && !heap_returns);

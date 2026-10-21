@@ -16,8 +16,8 @@ int lsf_prepaid_audit_string_return(const void *address)
 {
     struct lsf_factory_blob birth;
     int owned = lsf_factory_blob_lookup(address, LSF_PREPAID_AUDIT_STRING, &birth);
-    if (owned == 1)
-        lsf_factory_blob_finish(birth, LSF_PREPAID_AUDIT_STRING);
+    if (owned == 1 && !lsf_factory_blob_finish(birth, LSF_PREPAID_AUDIT_STRING))
+        return -1;
     /* Zero alone permits the unchanged normal allocator. Unknown in-extent
      * addresses and failed finishes retain the poisoned original owner. */
     return owned;

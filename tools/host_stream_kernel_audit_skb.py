@@ -5,7 +5,7 @@ import hashlib
 import json
 from pathlib import Path
 
-from tools import host_stream_kernel_sidcache as sidcache
+from tools import host_stream_kernel_avc as avc
 from tools import host_stream_kernel_maintained as maintained
 
 FIXTURE = Path(__file__).parent / 'tests/fixtures/host_stream_kernel_audit_skb.json'
@@ -26,7 +26,7 @@ def fixture():
     require(value['upstreamCommit'] == maintained.COMMIT and
         value['archiveSha256'] == maintained.manifest()['archive']['sha256'], 'upstream')
     require(set(value['sections']) == NAMES and
-        set(value['source']) == set(sidcache.fixture()['source']) | EXTRAS, 'membership')
+        set(value['source']) == set(avc.fixture()['source']) | EXTRAS, 'membership')
     require(all(value[key] is False for key in ('kernelBuilt', 'actualAuditExecuted',
         'actualLinuxRcuExecuted', 'completeAllocationClosure', 'productionInstallation')),
         'uninstalled-only')
@@ -115,7 +115,7 @@ def authenticate(inputs):
 
 def derive(inputs):
     authenticate(inputs)
-    outputs = sidcache.derive({name: inputs[name] for name in sidcache.fixture()['source']})
+    outputs = avc.derive({name: inputs[name] for name in avc.fixture()['source']})
     original = inputs[SKBUFF].decode()
     text = original
     for name in sorted(NAMES - {'__skb_clone'}):

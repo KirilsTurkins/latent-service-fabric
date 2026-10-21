@@ -57,22 +57,10 @@
       "gitBlob": "b31fd25f4e5e3d37e22e111fa67351b51ef99d2f",
       "independentlyGitCorroborated": true
     },
-    "security/selinux/hooks.c": {
-      "bytes": 204597,
-      "sha256": "6079b88f15ca1966b640753e35edc291139fe925fca37e5c54d0a2d6e36d8370",
-      "gitBlob": "d4abf15f0e6fb98505df81ac3128255b4cd9e1e7",
-      "independentlyGitCorroborated": true
-    },
     "security/selinux/netlabel.c": {
       "bytes": 16481,
       "sha256": "972d5786a9fb4da8845c839f06f1999bfc70e88a3d63ec904e0a080504d2631d",
       "gitBlob": "d51dfe89231229e78903f3aa552286326524dca2",
-      "independentlyGitCorroborated": false
-    },
-    "security/selinux/netport.c": {
-      "bytes": 5952,
-      "sha256": "8deed649b14f7a2dfe7b4dab94dde5f741ddc6858e098c3ef5dbff9e5df38b4b",
-      "gitBlob": "2e22ad9c2bd0d116668985e0fb579b5934df9394",
       "independentlyGitCorroborated": false
     },
     "security/selinux/ss/ebitmap.c": {
@@ -92,6 +80,28 @@
       "sha256": "0b0a29ad428bd17a50784c4b87b47837e5dfb3e695255e98fb55e4a03d5d08a1",
       "gitBlob": "54d121d64804295c8ae1f40103957f6a3b671640",
       "independentlyGitCorroborated": true
+    },
+    "security/selinux/netport.c": {
+      "bytes": 5952,
+      "sha256": "8deed649b14f7a2dfe7b4dab94dde5f741ddc6858e098c3ef5dbff9e5df38b4b",
+      "gitBlob": "2e22ad9c2bd0d116668985e0fb579b5934df9394",
+      "independentlyGitCorroborated": false
+    },
+    "security/selinux/hooks.c": {
+      "bytes": 204597,
+      "sha256": "6079b88f15ca1966b640753e35edc291139fe925fca37e5c54d0a2d6e36d8370",
+      "gitBlob": "d4abf15f0e6fb98505df81ac3128255b4cd9e1e7",
+      "independentlyGitCorroborated": true
+    },
+    "security/selinux/avc.c": {
+      "bytes": 31717,
+      "sha256": "e5ead166180e1b51dab8f701f16a595e51ff68eb346f7a8b4549617ce4672ce6",
+      "gitBlob": "688ff9e63f514ec18b8096e59e0edd63ac6f5112"
+    },
+    "security/selinux/include/avc.h": {
+      "bytes": 4623,
+      "sha256": "b1bb6fd0b9fda55cce88a5fb2a359fd64cde40ef18162e6640cd33885ebb5966",
+      "gitBlob": "96a614d47df8d1d67b0b033ebb90954653dfeab7"
     },
     "security/selinux/ss/sidtab.c": {
       "bytes": 14675,

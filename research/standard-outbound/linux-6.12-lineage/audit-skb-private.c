@@ -6,8 +6,8 @@ static int lsf_prepaid_audit_return(const void *address, unsigned int kind)
 {
     struct lsf_factory_blob birth;
     int owned = lsf_factory_blob_lookup(address, kind, &birth);
-    if (owned == 1)
-        lsf_factory_blob_finish(birth, kind);
+    if (owned == 1 && !lsf_factory_blob_finish(birth, kind))
+        return -1;
     return owned;
 }
 
@@ -56,9 +56,24 @@ static bool lsf_prepaid_audit_linear(const struct sk_buff *skb,
                                      struct lsf_factory_blob source)
 {
     struct lsf_factory_blob head_birth;
+    unsigned long head = (unsigned long)skb->head;
+    unsigned long data = (unsigned long)skb->data;
+    unsigned long tail;
+#ifdef NET_SKBUFF_DATA_USES_OFFSET
+    tail = skb->tail;
+#else
+    if ((unsigned long)skb->tail < head) {
+        lsf_factory_poison(source.context);
+        return false;
+    }
+    tail = (unsigned long)skb->tail - head;
+#endif
     /* The audit constructor supplies no fragments or zero-copy references.
      * An unexpected modified shape fails closed before any new allocation. */
     if (skb->fclone != SKB_FCLONE_UNAVAILABLE || skb->head_frag || skb->data_len ||
+        data < head || data - head > skb_end_offset(skb) ||
+        tail > skb_end_offset(skb) || tail < data - head ||
+        skb->len != tail - (data - head) ||
         skb_end_offset(skb) > LSF_TCP_BYTES ||
         skb_end_offset(skb) % SKB_DATA_ALIGN(1) ||
         lsf_factory_audit_head_current(skb->head,

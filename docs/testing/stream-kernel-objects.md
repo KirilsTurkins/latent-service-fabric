@@ -113,3 +113,17 @@ binds all 64 archive members, 100 Git materials and unchanged security
 configuration. Its mandatory audit entry remains an unimplemented
 declaration, and complete allocation/final-free closure and production
 installation remain unavailable.
+
+
+The separate default-false `audit` selector composes mandatory audit formatting,
+AVC callbacks and charged SKB ownership. Its exclusive job retains all five
+earlier job step bodies, all sixteen prior targets and all 61 prior function
+definitions. It adds `skbuff.o`, `audit.o`, `lsm_audit.o` and `af_netlink.o`:
+twenty objects and 69 defined global functions (67 private functions and the
+two original Netlink delivery entry points). The derivation authenticates
+23 whole inputs and records all 45 outputs. AUDIT and AUDITSYSCALL must already
+be enabled before and after selection; only the private factory symbol may
+change. The existing archive, warning, `-j2`, 900/300-second, owned-process and
+bounded-diagnostic limits remain. Its actual hosted outcome is pending.
+Source implementation and supplemental serialized C controls do not establish
+Linux audit execution, delivery, complete physical closure or installation.

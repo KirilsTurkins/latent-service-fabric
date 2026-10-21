@@ -12,8 +12,8 @@ class KernelAuditSkb(unittest.TestCase):
 
     def test_whole_source_and_all_selected_definitions_have_exact_original_preimages(self):
         value = audit.fixture()
-        self.assertEqual((len(value['source']), len(value['sections'])), (19, 9))
-        self.assertEqual(sum(row['bytes'] for row in value['source'].values()), 1501580)
+        self.assertEqual((len(value['source']), len(value['sections'])), (21, 9))
+        self.assertEqual(sum(row['bytes'] for row in value['source'].values()), 1537920)
         for name, row in sid.fixture()['source'].items():
             self.assertEqual(value['source'][name], row)
         self.assertFalse(value['source']['net/netlink/af_netlink.c']['independentlyGitCorroborated'])
