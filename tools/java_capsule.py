@@ -91,6 +91,8 @@ def parser() -> argparse.ArgumentParser:
     compile_.add_argument("--gradle", default="gradle")
     compile_.add_argument("--offline-cache", type=Path, help="Captured immutable Gradle compiler dependency cache")
     compile_.add_argument('--executable-approval', help='Exact captured executable-input approval for an isolated annotation processor stage')
+    compile_.add_argument('--compiler-methods', action='store_true',
+                          help='Collect bounded compiler method observations; no API execution or support claim')
     compile_.add_argument("--read-only-cache", type=Path, help="Verified immutable Gradle module cache; updates stay in the owned compiler home")
     compile_.add_argument("--runtime-profile", choices=("teavm-activation-fibers-v1", "teavm-activation-fibers-io-v1"),
                           help="Explicit SDK activation runtime profile; WIT imports and operator grants remain required")
@@ -170,6 +172,7 @@ def main(argv: list[str] | None = None) -> int:
             if args.runtime_profile is not None: selection["runtime_profile"] = args.runtime_profile
             if args.read_only_cache is not None: selection["read_only_cache"] = args.read_only_cache
             if args.executable_approval is not None: selection["executable_approval"] = args.executable_approval
+            if args.compiler_methods: selection['compiler_methods'] = True
             result = build(args.project, args.output, args.contracts_tool, args.packager, args.repository,
                            args.wasi_sdk, gradle=args.gradle, offline_cache=args.offline_cache, **selection)
         print(result)

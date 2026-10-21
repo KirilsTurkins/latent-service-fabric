@@ -1,0 +1,127 @@
+{
+  "cases": [
+    "ScannerMethods.test_actual_response_paths_select_only_original_captured_transitive_references",
+    "ScannerMethods.test_exact_compiler_label_presence_absence_and_unmapped_generic_stay_separate",
+    "ScannerMethods.test_exact_pinned_writer_source_vocabulary_is_covered_without_styles_or_categories",
+    "ScannerMethods.test_missing_anchor_cannot_certify_whole_graph_absence_and_writer_shape_is_exact",
+    "ScannerMethods.test_names_are_exact_and_not_substrings_or_source_text_scans",
+    "ScannerMethods.test_private_node_labels_and_xml_entities_are_never_public",
+    "ScannerMethods.test_public_binding_preserves_unknown_and_rejects_rehashed_execution_or_stale_inputs",
+    "ScannerMethods.test_source_or_metadata_query_tamper_is_not_accepted_as_compiler_evidence",
+    "ScannerMethods.test_whole_graph_must_parse_after_matching_query_no_prefix_or_dangling_edge_proof"
+  ],
+  "guards": {
+    "ScannerMethods.test_actual_response_paths_select_only_original_captured_transitive_references": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5cef2e9e9402ea8745cef1ca312b4ffb1c28f2b366b62e4eba646e062156aeb8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ScannerMethods.test_exact_compiler_label_presence_absence_and_unmapped_generic_stay_separate": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5cef2e9e9402ea8745cef1ca312b4ffb1c28f2b366b62e4eba646e062156aeb8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ScannerMethods.test_exact_pinned_writer_source_vocabulary_is_covered_without_styles_or_categories": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5cef2e9e9402ea8745cef1ca312b4ffb1c28f2b366b62e4eba646e062156aeb8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ScannerMethods.test_missing_anchor_cannot_certify_whole_graph_absence_and_writer_shape_is_exact": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5cef2e9e9402ea8745cef1ca312b4ffb1c28f2b366b62e4eba646e062156aeb8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ScannerMethods.test_names_are_exact_and_not_substrings_or_source_text_scans": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5cef2e9e9402ea8745cef1ca312b4ffb1c28f2b366b62e4eba646e062156aeb8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ScannerMethods.test_private_node_labels_and_xml_entities_are_never_public": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5cef2e9e9402ea8745cef1ca312b4ffb1c28f2b366b62e4eba646e062156aeb8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ScannerMethods.test_public_binding_preserves_unknown_and_rejects_rehashed_execution_or_stale_inputs": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5cef2e9e9402ea8745cef1ca312b4ffb1c28f2b366b62e4eba646e062156aeb8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ScannerMethods.test_source_or_metadata_query_tamper_is_not_accepted_as_compiler_evidence": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5cef2e9e9402ea8745cef1ca312b4ffb1c28f2b366b62e4eba646e062156aeb8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ScannerMethods.test_whole_graph_must_parse_after_matching_query_no_prefix_or_dangling_edge_proof": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5cef2e9e9402ea8745cef1ca312b4ffb1c28f2b366b62e4eba646e062156aeb8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_dotnet_compiler_reachability.py",
+  "reviewReason": "Review nine compiler scanner/anchor controls and exact frozen writer vocabulary; source observations never prove API support or execution.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

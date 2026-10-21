@@ -38,6 +38,7 @@ RECIPE = ("tools/java_capsule.py", "tools/java_capsule_project.py", "tools/java_
           "tools/java_resource_artifacts.py", "tools/java_dependency_authoring.py", "tools/toolchain.toml",
           "tools/java_guest/compiler.py", "tools/java_guest/resources.py", "tools/java_guest/class_origin.py", "tools/java_guest/bindings.py", "tools/java_guest/model.py",
           "tools/java_guest/compiler_diagnostics.py", "tools/java_guest/c_failure_context.py", "tools/java_guest/coroutine_patch.py",
+          "tools/java_guest/reachability.py",
           "tools/dev_workflow/paths.py", "tools/dev_workflow/windows.py",
           "tools/java_guest/java.py", "tools/java_guest/c.py", "tools/java_guest/async_imports.py", "tools/java_guest/lock.py", "tools/java_guest/surface.py", "tools/rust_capsule_project.py",
           "tools/rust_capsule_build.py", "tools/build_observation.py", "tools/build_process.py",
@@ -77,9 +78,11 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
           repository: str, wasi_sdk: Path, *, gradle="gradle", timeout=900,
           offline_cache: Path | None = None, read_only_cache: Path | None = None,
           runtime_profile: str | None = None, executable_approval: str | None = None,
-          failure_contexts: tuple[str, ...] = ()) -> Path:
+          failure_contexts: tuple[str, ...] = (), compiler_methods: bool = False) -> Path:
     from tools.java_guest.c_failure_context import selection
     selection(failure_contexts)
+    if type(compiler_methods) is not bool:
+        raise ValueError('Java compiler method observations require an explicit boolean')
     if type(timeout) not in {int, float} or not 0 < timeout <= 900:
         raise ValueError("Java build deadline must be positive and at most 900 seconds")
     if runtime_profile is not None and (type(runtime_profile) is not str or runtime_profile not in ACTIVATION_PROFILES):
@@ -125,6 +128,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 stage = "application-dependencies"
                 approval, processor_stage = None, None
                 cache_selection = {"read_only_cache": read_only_cache} if read_only_cache is not None else {}
+                if compiler_methods: cache_selection['compiler_methods'] = True
                 if has_processors:
                     if offline_cache is None and read_only_cache is None:
                         raise DependencyError('java-annotation-processors-require-captured-compiler-cache')
@@ -292,6 +296,41 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     for name in ('java-processor-classpath', 'java-annotation-processors'):
                         data = read_file(output / (name + '.json'), 8 * 1024 * 1024)
                         materials.append({"name": name, "digest": digest(data), "size": len(data)})
+                methods_material = None
+                if compiler_methods and getattr(compiler, 'reachability_observation', None) is not None:
+                    from tools.java_guest import reachability
+                    from tools import guest_runtime_receipts
+                    graph = guest_runtime_receipts.captured_graph(files)
+                    try:
+                        observed_methods = reachability.bind(compiler.reachability_observation,
+                            source=digest(source_inputs), component=digest(component),
+                            compiler=digest(compiler.compiler_inputs), recipe=digest(recipe_inputs),
+                            graph=digest(canonical(graph)) if graph is not None else None)
+                        write_json(output / 'compatibility-compiler-methods.json', observed_methods)
+                        data = read_file(output / 'compatibility-compiler-methods.json', reachability.MAX_INDEX)
+                        methods_material = {'name': 'compiler-method-reachability', 'digest': digest(data), 'size': len(data)}
+                        materials.append(methods_material)
+                    except Exception:
+                        # This observation cannot turn diagnostics into a new
+                        # build gate or change the original compatibility report.
+                        write_json(output / 'compatibility-compiler-methods-unavailable.json', {
+                            'schemaVersion': 'lsf.guest.compatibility.failure.v1', 'status': 'unavailable',
+                            'authority': 'none', 'reason': 'compiler-method-observation-unavailable-or-stale'})
+                elif compiler_methods:
+                    write_json(output / 'compatibility-compiler-methods-unavailable.json', {
+                        'schemaVersion': 'lsf.guest.compatibility.failure.v1', 'status': 'unavailable',
+                        'authority': 'none', 'reason': 'compiler-method-observation-unavailable-or-stale'})
+                if compiler_methods:
+                    # Optional collection is a signed material, not a new
+                    # field in the native signer's closed build recipe.
+                    selected = canonical({'schemaVersion': 'lsf.guest.compiler-method-selection.v1',
+                        'language': 'java', 'selected': True,
+                        'status': 'observed' if methods_material is not None else 'unavailable',
+                        'observation': methods_material}) + b'\n'
+                    with (output / 'compiler-method-observation-selection.json').open('xb') as stream:
+                        stream.write(selected)
+                    materials.append({'name': 'compiler-method-observation-selection',
+                        'digest': digest(selected), 'size': len(selected)})
                 finished = int(time.time())
                 if finished < started or finished - started > 900 or time.monotonic() - start > timeout:
                     raise ValueError("Java build clock or overall deadline invalid")

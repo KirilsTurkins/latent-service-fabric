@@ -88,7 +88,11 @@ def packages(lock: dict, directory: Path, content_hash) -> dict[str, Path]:
 
 
 class Compiler:
-    def __init__(self, tools: Path, commands, vendor: Path, *, offline: bool = False, captured: bool = False):
+    def __init__(self, tools: Path, commands, vendor: Path, *, offline: bool = False, captured: bool = False,
+                 compiler_methods: bool = False):
+        if type(compiler_methods) is not bool:
+            raise ValueError('dotnet compiler method observations require an explicit boolean')
+        self.compiler_methods, self.reachability_observation = compiler_methods, None
         if sys.platform != "linux" or platform.machine() not in {"x86_64", "AMD64"}:
             raise ValueError("the pinned NativeAOT LLVM compiler is qualified only on Linux x86-64")
         self.tools, self.commands, self.vendor = tools.resolve(strict=True), commands, vendor
@@ -176,6 +180,7 @@ class Compiler:
             self.run("native-aot", self.dotnet, "build", project / "Capsule.csproj", "-c", "Release", "--no-restore",
                 "-nodeReuse:false", "-p:UseSharedCompilation=false", "-p:WasiSdkRoot=" + str(self.wasi_sdk),
                 "-p:WitBindgenExe=" + str(wrapper), '-p:ImportDirectoryBuildProps=false', '-p:ImportDirectoryBuildTargets=false',
+                *(['-p:IlcGenerateDgmlFile=true'] if self.compiler_methods else []),
                 *(['-p:EmitCompilerGeneratedFiles=true', '-p:CompilerGeneratedFilesOutputPath=' + str(output / 'generator-outputs')]
                   if self.application_closure else []))
         except BaseException:
@@ -247,8 +252,10 @@ class Compiler:
         if self.noncrypto_port is not None:
             from tools.dotnet_guest.managed_entropy import prepare as prepare_managed_entropy
             self.managed_entropy_port = prepare_managed_entropy(self, project, output)
+        application_selection = None
         if self.application_closure is not None:
             selected = configure(self.application_closure, work, self.package_cache)
+            application_selection = selected
             self.cache_before = tree_identity({'nuget-packages': self.package_cache})
             write_json(command.output / 'nuget-build-inputs.json', selected)
             self.isolation.protect_inputs(self.package_cache, work, project / 'src', project / 'lsf', project / 'Capsule.csproj', project / 'component.wit')
@@ -324,6 +331,14 @@ class Compiler:
             if self.isolation:
                 self.isolation.protect_inputs(wrapper)
             self.native_aot(project, output, wrapper)
+            if self.compiler_methods:
+                from tools.dotnet_guest import reachability
+                try:
+                    self.reachability_observation = reachability.collect(self, project, output, application_selection)
+                except Exception:
+                    self.reachability_observation = {'schemaVersion': 'lsf.guest.compatibility.failure.v1',
+                        'status': 'unavailable', 'authority': 'none',
+                        'reason': 'compiler-method-observation-unavailable-or-stale'}
             if self.isolation:
                 if wrapper.read_text() != script:
                     raise ValueError('SDK-owned-binding-wrapper-mutated')
