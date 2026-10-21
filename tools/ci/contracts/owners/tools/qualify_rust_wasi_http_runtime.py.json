@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_rust_wasi_http_runtime.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Bind exact reviewed one-guest normal compiler and signed programme runner",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "15345125cae2c81c7e252736bc7cbdb9b1fd7775304a884fc406991a88e1cfe9"
+}

@@ -1,0 +1,31 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "rust-wasi-http-clients-${{ github.ref }}"
+    },
+    "name": "Rust ordinary WASI HTTP signed runtime",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/rust-wasi-http-signed-20261021"
+        ],
+        "paths": [
+          ".github/workflows/rust-wasi-http-clients.yml"
+        ]
+      },
+      "workflow_dispatch": null
+    },
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "ordinary-clients"
+  ],
+  "reviewReason": "Add one explicit finite ordinary two-client signed consumer workflow; retain all original workflows/jobs",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/rust-wasi-http-clients.yml"
+}

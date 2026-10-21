@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/release_preparation_cli_native_products.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Bind existing immutable versioned6fd producer reader; original21b helper unchanged",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "c308e776aa7112c4fd0dd3409f6baea564383ea374c011270eba9c1ef5196824"
+}
