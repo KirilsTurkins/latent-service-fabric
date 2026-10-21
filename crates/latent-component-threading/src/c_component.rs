@@ -30,7 +30,7 @@ fn start_shim() -> Vec<u8> {
 
 type Producers = BTreeMap<String, BTreeMap<String, String>>;
 
-fn producer_fields(data: &[u8], offset: usize) -> Result<Producers, &'static str> {
+fn producer_fields(data: &[u8], offset: u64) -> Result<Producers, &'static str> {
     let reader =
         wasmparser::ProducersSectionReader::new(wasmparser::BinaryReader::new(data, offset))
             .map_err(|_| "c-component-producers")?;

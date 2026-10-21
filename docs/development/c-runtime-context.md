@@ -329,3 +329,6 @@ metadata/data mutations were refused. The corrected reader derives that exact
 merge from bounded, pinned original metadata and preserves all other fields;
 its two new Rust controls and actual graph/ABI/OOM programme remain pending.
 The original failed job and its unexecuted ABI control are not counted as a pass.
+The first reader retry39554864662 failed before controls because its extracted
+offset parameter used `usize` instead of the pinned parser's `u64`. It emitted
+no artifact. The correction changes only that parameter type.
