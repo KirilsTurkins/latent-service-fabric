@@ -1,0 +1,449 @@
+{
+  "schemaVersion": "latent.rust.wasi-http.limits-observation.v1",
+  "source": "7003c123007c4e87e13296ee48d4472ab743f394",
+  "run": 39682987900,
+  "job": 119509893888,
+  "url": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39682987900/job/119509893888",
+  "outerConclusion": "success",
+  "artifact": {
+    "id": 12385591076,
+    "sha256": "sha256:fe22aefc9143e0abf0e1e26f6937819252830925e1b461e52a9d59f33f185c54",
+    "bytes": 2430722,
+    "members": 427,
+    "expandedBytes": 8866515
+  },
+  "signedQualification": true,
+  "scope": "Selected explicit-async WASI HTTP0.2.12 ordinary-client profile; individual Task/Timer/memory differentials and matched fresh reuse, not general Rust ecosystem/thread scheduling.",
+  "newBuilds": {
+    "guest": 0,
+    "backend": 0,
+    "native": 0
+  },
+  "original": {
+    "sourceBinding": {
+      "originalExecutedMaterials": 143,
+      "originalRecipeRows": 116,
+      "allOriginalInputsGitExact": true,
+      "currentReaderDelta": [
+        {
+          "name": "tools/rust_wasi_http_runtime_node.py",
+          "originalCompiledProgrammeReader": {
+            "sha256": "sha256:4812700c02cc0a5cedf1b5fa4fad460ba6beed2830389d05643ea3e299328225",
+            "bytes": 57127
+          },
+          "currentReader": {
+            "sha256": "sha256:ecc8ce33cdfcf709cd32b802b0abada8ed311cf5d0300097e86cca7c004fc25c",
+            "bytes": 73456
+          },
+          "reason": "exact source-authenticated Waki/Golem HeaderError and ErrorCode formatting plus compact aggregate references; original phases/flags/variants/details/caps retained",
+          "guestCompilerOrBackendChanged": false
+        }
+      ],
+      "originalGuestCompilationSource": "88b3c9c1d305eb8e308a7187600f782163bc6131",
+      "currentGuestCompilationClaimed": false
+    },
+    "originalOuterConclusion": "failure",
+    "originalRun": 39623507324,
+    "originalJob": 119302796812,
+    "artifact": {
+      "id": 12356057824,
+      "size_in_bytes": 13216354,
+      "digest": "sha256:4982b44e3eb97f4cad2eb6e00e6e38dbc955d72df4fc86491ed0039e3f738732"
+    },
+    "originalMemberIdentities": 420,
+    "originalBuildComplete": {
+      "sha256": "sha256:084c4769ff40444b2fbd3357847bb36bba2b18544578399295be2d6a8534c18d",
+      "bytes": 3967
+    },
+    "originalComponent": {
+      "sha256": "sha256:51c0ff8e1cd93ae504a8f14d861fb8ac862b4cf6bdab2d22074183c1e692eb4f",
+      "bytes": 934498
+    },
+    "publicWitRestoration": {
+      "wit/deps/clock-monotonic/package.wit": {
+        "digest": "sha256:a009ecd4ad23d581523fe97b66327ebe352ac27c9c72d4e09ecc9bb003c466ea",
+        "size": 139
+      },
+      "wit/deps/http/package.wit": {
+        "digest": "sha256:6fcae4b3123ec3ce0b32a4e65390630be3bde40ee74b50d7b732150b6bb6147d",
+        "size": 2915
+      },
+      "wit/deps/runtime/package.wit": {
+        "digest": "sha256:0855e3524edbe15a5d174a825df6034ef41cd87f1330e2fba884ea6e2c58e946",
+        "size": 2539
+      },
+      "wit/world.wit": {
+        "digest": "sha256:bcc62b3cd5dc21e568bda3256c264cdaabc93f4de2fbbcf97cd974dcf7d87761",
+        "size": 275
+      }
+    },
+    "restorationSource": "unchanged maintained fixture.prepare; no capture or compiler",
+    "originalBuildObservationRewritten": false,
+    "originalPackageInputsRewritten": false,
+    "originalCompilerSource": "88b3c9c1d305eb8e308a7187600f782163bc6131",
+    "guestCompilationPerformed": false
+  },
+  "nativeProducts": {
+    "schemaVersion": "latent.sdk.phase-native-products.v1",
+    "compiledSource": "c7134289f446cb3171eb0ffd800a94afc2a5209f",
+    "compiledTree": "98a4dd76d899941c4c25535c1a01bbaef87a12c4",
+    "producerRun": 39598763649,
+    "producerJob": 119217613970,
+    "producerReceipt": {
+      "sha256": "sha256:bec02c077f6df2167b77dff4c41f2cd79b14a501f4926b42dd06d69174d02523",
+      "bytes": 27004
+    },
+    "sourceSnapshot": {
+      "sha256": "sha256:e0c607e6f6d62a0c2bc85f9e127f985c26ecac88d506bec74f8de533bcb4aa76",
+      "bytes": 22275
+    },
+    "products": {
+      "latent": {
+        "sha256": "sha256:aad7701ef9fcd1df60f53dfeb90c1e74e3ca7131e3fe2fa30d9e31f27d5e52db",
+        "bytes": 69176392
+      },
+      "latentd": {
+        "sha256": "sha256:77e5afc7576d5dc0831a00e1009544e8bc6c1659ff2dbe1e86d9ac990d3056dc",
+        "bytes": 188938624
+      },
+      "examples/package": {
+        "sha256": "sha256:697287c09863072460378304848a57aad670c43720b5972b503d69b1908fff42",
+        "bytes": 17854768
+      },
+      "examples/capsule_contracts": {
+        "sha256": "sha256:a02d591021cae76792f71fdf026d07b6929cdca8372644a2b5247bea6c99b67d",
+        "bytes": 13844184
+      },
+      "examples/capsule_authoring": {
+        "sha256": "sha256:bc3077253cb60975214f8492b70a92a372b64101143fd2221246ec2d07a1152b",
+        "bytes": 24136488
+      }
+    },
+    "signedQualification": false,
+    "guestComponentsCompiledByProducer": false,
+    "historicalNormalReceiptCreated": false,
+    "wholeArchiveRetained": false,
+    "origin": {
+      "artifact": 12345773653,
+      "archiveDigest": "sha256:de16d786e7a2a72bae7176451e4887b2afca9f2ec08f9583e2b1caf72d38c491",
+      "archiveDigestVerification": "official-metadata-only-selected-members-hash-verified",
+      "fixedMembersPreflighted": {
+        "native-products.json": {
+          "bytes": 27004,
+          "compressedBytes": 8215
+        },
+        "source-inputs.json": {
+          "bytes": 22275,
+          "compressedBytes": 7116
+        },
+        "native-binaries/latent": {
+          "bytes": 69176392,
+          "compressedBytes": 15482485
+        },
+        "native-binaries/latentd": {
+          "bytes": 188938624,
+          "compressedBytes": 39360779
+        },
+        "native-binaries/examples-package": {
+          "bytes": 17854768,
+          "compressedBytes": 4261978
+        },
+        "native-binaries/examples-capsule_contracts": {
+          "bytes": 13844184,
+          "compressedBytes": 3213689
+        },
+        "native-binaries/examples-capsule_authoring": {
+          "bytes": 24136488,
+          "compressedBytes": 5945930
+        }
+      },
+      "rangeBytes": 68287380,
+      "rangeRequests": 279
+    }
+  },
+  "actualNativeSourceCompatibility": {
+    "compiledSourceRevision": "c7134289f446cb3171eb0ffd800a94afc2a5209f",
+    "compiledNativeSource": {
+      "sha256": "sha256:8ae85103a4ea211b686ac7b16222bfa2f6a950a08c5957f9b488785c7f007268",
+      "files": 3325,
+      "bytes": 26391555,
+      "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+      "hermetic": false,
+      "implicitCompilerInputs": "not-attested"
+    },
+    "consumerNativeSource": {
+      "sha256": "sha256:a55ef0a2b05ef959f47bab7b44e817da5f73c1c8afc9faa3364d4520ec0ad200",
+      "files": 3325,
+      "bytes": 26391846,
+      "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+      "hermetic": false,
+      "implicitCompilerInputs": "not-attested"
+    },
+    "compiledSourceByteExact": false,
+    "reviewedSourceChanges": [
+      {
+        "path": "apps/latentd/src/config/runtime.rs",
+        "reviewedRevision": "8473afecac55bbf6d67b411b7d7b73820991b289",
+        "operation": "reverse-fixed-stack-profile-helper-extraction",
+        "compiledFile": {
+          "sha256": "sha256:afb01d90bba9bbbecf641bc8467075c67fa3b83696e7f37004c25a3cc71d38a6",
+          "bytes": 9601
+        },
+        "currentFile": {
+          "sha256": "sha256:439a1879d288e2658b4b95865d6e58bab548e40cc618c0b6e9a8c5b991f70be9",
+          "bytes": 9789
+        },
+        "reverseInlineByteExact": true,
+        "allOtherNativeFilesByteExact": 3323
+      },
+      {
+        "path": "apps/latentd/src/config/tests/engine.rs",
+        "reviewedRevision": "d79bd0d49431d95f7cf46297629649682c277b69",
+        "operation": "reverse-two-fixed-explicit-test-defaults",
+        "compiledFile": {
+          "sha256": "sha256:c640fd38d4702aeadc919269086f0653374720ff2db3b22d7f60cab4c27e4e33",
+          "bytes": 7524
+        },
+        "currentFile": {
+          "sha256": "sha256:7dd8fee5a7ac533fbcb815a02145291d421129f24899f03e1a2f494c0fda298c",
+          "bytes": 7627
+        },
+        "reverseSubstitutionsByteExact": true,
+        "allOtherNativeFilesByteExact": 3323
+      }
+    ]
+  },
+  "actualAuxiliaryCompatibility": {
+    "auxiliaryRows": 134,
+    "unchangedAuxiliaryRows": 134,
+    "unlinkedFrontendChanges": [],
+    "allAuxiliaryRowsCurrentAtProducerCompilation": true
+  },
+  "verification": {
+    "status": "PASS",
+    "run": 39682987900,
+    "job": 119509893888,
+    "source": "7003c123007c4e87e13296ee48d4472ab743f394",
+    "archive": 12385591076,
+    "members": 427,
+    "expandedBytes": 8866515,
+    "executedGitMaterials": 197,
+    "historicalRecipeRows": 116,
+    "compiledNativeGitFiles": 3325,
+    "auxiliaryGitRows": 134,
+    "attempts": 9,
+    "physicalRetirements": 17,
+    "providerZeroCountersEach": 18,
+    "cleanReapedNodes": 4,
+    "contacts": {
+      "baseline": {
+        "examples": 1,
+        "foreign": 2
+      },
+      "task-one": {
+        "examples": 1,
+        "foreign": 1
+      },
+      "timer-one": {
+        "examples": 2,
+        "foreign": 1
+      },
+      "memory-three-mib": {
+        "examples": 0,
+        "foreign": 1
+      }
+    },
+    "privateMemoryAllocationSiteProved": false,
+    "publicMemoryTypedDetailObserved": false,
+    "original88bOuterFailureRetained": true,
+    "newGuestBackendNativeBuilds": 0,
+    "liveOriginRechecked": true
+  },
+  "cases": {
+    "baseline": {
+      "attempts": 3,
+      "parsedClients": [
+        "waki",
+        "golem"
+      ],
+      "golemRealTimerPending": true,
+      "ordinaryDrainGuestClose": "not-observed",
+      "closeSynthesized": false
+    },
+    "task": {
+      "selectedTasks": 1,
+      "allOtherOwnerCeilingsUnchanged": true,
+      "firstHeldResponsePositivePhysicalProviderWitness": true,
+      "wakiAcceptedResponses": 1,
+      "nextError": "ErrorCode::InternalError(Some(\"latent-runtime-resource-exhausted\"))",
+      "oppositeFreshClient": "golem",
+      "publicErrorAloneProvesOwnerKind": false
+    },
+    "timer": {
+      "selectedTimers": 1,
+      "allOtherOwnerCeilingsUnchanged": true,
+      "golemFirstActualPendingTimers": 1,
+      "observedOutboundStarts": 2,
+      "nextTerminal": "guest-trap",
+      "nextTrapKind": "unreachable-code",
+      "oppositeFreshClient": "waki",
+      "actualInstructionProved": false,
+      "genericTrapAloneProvesOwnerKind": false
+    },
+    "memory": {
+      "proofKind": "fixed-instantiated-component-single-memory-request-differential",
+      "requestedMemoryBytes": 3145728,
+      "minimumInstantiatedLinearMemoryBytes": 3473408,
+      "publicGenericErrorAloneProvesMemory": false,
+      "internalInstructionOrAllocationSiteProved": false,
+      "transportTypedDetailObserved": false,
+      "transportDetailOmittedByOriginalProjection": true,
+      "matchedSameCellFreshRequired": true,
+      "status": "passed",
+      "matchedSameCellFreshObserved": true,
+      "upperRequestedMemoryBytes": 16777216,
+      "instantiatedMainMemoryMinimaPages": [
+        17,
+        19,
+        17
+      ],
+      "linearMemoryPageBytes": 65536,
+      "shortfallBeforeOtherAllocationsBytes": 327680,
+      "actualLowerPublicCode": "resource-exhausted",
+      "actualLowerPublicDetails": [],
+      "lowerPeerContacts": 0,
+      "lowerCpuFuel": "158",
+      "lowerPeakMemoryBytes": "5088",
+      "matchedFreshClient": "golem",
+      "allOtherInvocationBudgetFieldsUnchanged": true,
+      "operatorLimitsUnchanged": true,
+      "definitionSumIsNotMeasuredRss": true
+    }
+  },
+  "earlierLimitsFailures": [
+    {
+      "source": "2dfc1e182d4508b880b69fd90a0000f21e4209ee",
+      "run": 39676754945,
+      "job": 119488500678,
+      "conclusion": "failure",
+      "artifact": {
+        "id": 12383071495,
+        "bytes": 2110451,
+        "sha256": "sha256:aef25d993412004d8a98f6299e29d1861d2542f8d8f93e4232ff99f316528e23",
+        "members": 116
+      },
+      "observed": "Three ordinary baseline calls succeeded; new reader wrongly required explicit guest RootClose after ordinary private drain. Lower limits and final programme were not qualified."
+    },
+    {
+      "source": "86da3a0ddd708625a8693ccb414454d7a26ef567",
+      "run": 39679815322,
+      "job": 119499046669,
+      "conclusion": "failure",
+      "artifact": {
+        "id": 12384450273,
+        "bytes": 2381756,
+        "sha256": "sha256:6e71f9709158bf58c2dc5dd23c98991f4c72ed20bf06d2df52ddc33f75788060",
+        "members": 391
+      },
+      "observed": "Seven attempts passed; eighth memory call returned resource-exhausted/details[] and failed the invented public typed-detail expectation. Fresh9 and final memory-node gates were unreached."
+    }
+  ],
+  "finalComposition": {
+    "actualSource": "7003c123007c4e87e13296ee48d4472ab743f394",
+    "development": "4e973393da0ef004bc693aa0291afaa685dd9a12",
+    "actualMaterials": 197,
+    "unchangedRows": 192,
+    "changedRows": {
+      "apps/latent/src/error/details.rs": {
+        "executed": {
+          "sha256": "sha256:0ed644a922ec60059dfacfa513b24033b434b51738e463f3e4eed840ca2b935a",
+          "bytes": 9860
+        },
+        "composed": {
+          "sha256": "sha256:c8b114de3a214ef050547acdb1d367df59de0e64d7ccffc36394641d225cb2a9",
+          "bytes": 10024
+        },
+        "reviewedMeaning": "Forward-only1318 public allowlist accepts only producer-owned matching memory/fuel dimension; original c713 sanitizer and observed empty details remain historical."
+      },
+      "crates/latent-node/src/activation_runner.rs": {
+        "executed": {
+          "sha256": "sha256:3862ca403dbca78927320ee785eca19a7cd0629d2183ea783c1a6d80645184e9",
+          "bytes": 35473
+        },
+        "composed": {
+          "sha256": "sha256:0009ce16b42ad14ff74da84ea70562f38fee9d33b5ea29b8c6977fa36b3298b6",
+          "bytes": 37977
+        },
+        "reviewedMeaning": "Forward-only1318 appends constant dimension to the original typed detail, preserving private cell_id, terminal/code and operator reason; includes one new unit case. Not part of compiled c713."
+      },
+      "crates/latent-wire/src/invocation/conversion/public_error.rs": {
+        "executed": {
+          "sha256": "sha256:37d0facd35edffc3f7ed3792b331ebd162a418c673d047f48b2ddd1feea57702",
+          "bytes": 8148
+        },
+        "composed": {
+          "sha256": "sha256:22d7f64d006cca060743b44c7251266c88642f99bbc39a0ea2c1e6c08574deb0",
+          "bytes": 8312
+        },
+        "reviewedMeaning": "Forward-only1318 wire allowlist exposes only matching constant dimension; no private allocation/site text or old receipt rewrite."
+      },
+      "tools/guest_compatibility_context.py": {
+        "executed": {
+          "sha256": "sha256:a4b73020b14a2db16c437d92d80f0790989cffbcb7d82d49eed20858cff77037",
+          "bytes": 8129
+        },
+        "composed": {
+          "sha256": "sha256:a335b326d995de2e11cae5e302221d347fe108695d677c47478cc6ffb5a8c5ad",
+          "bytes": 8320
+        },
+        "reviewedMeaning": "1317 display-only rendering of already authenticated generated transformation identity; machine context/schema/selection unchanged."
+      },
+      "tools/guest_runtime_receipts.py": {
+        "executed": {
+          "sha256": "sha256:3ff4a3dc509dd0287972c48e9df1898a6909b314cb3b76b7e5d22d37bfca5a91",
+          "bytes": 12480
+        },
+        "composed": {
+          "sha256": "sha256:09b8cea1c5c864eac01f67bed66fe3c09afab5a3ee71238385781ca5b6fbfd1f",
+          "bytes": 12510
+        },
+        "reviewedMeaning": "1310 additive Go-v6 profile spelling in Go-only branch; Rust receipt validation unchanged."
+      }
+    },
+    "actualCompiledNativeCurrentAtFinalTree": false,
+    "finalTreeIsRepeatedQualification": false,
+    "oldRecordedNativeProjectionPreserved": true,
+    "actualSnapshotPreserved": true
+  },
+  "relatedSigned64": "rust-wasi-http-signed-2026-10-21.json",
+  "relatedInstalled6": "rust-wasi-http-installed-2026-10-21.json",
+  "broaderRuntime743QualificationClaimed": false,
+  "historicalFailuresRequalified": false,
+  "actualExecutedMaterials": {
+    "source": "7003c123007c4e87e13296ee48d4472ab743f394",
+    "rows": 197,
+    "bytes": 2338357,
+    "canonicalSha256": "sha256:8cfc8303f8f476397a2fd826f110d24da848c07ee3109db6ac27a9555ecada4a"
+  },
+  "originalBackend": {
+    "source": "52654f7b86ef0043a8250dea39093d955ee9f480",
+    "sourceRows": 110,
+    "sourceDigest": "sha256:ef74c69129aa4b18a8ae1a8ba1352dd78c263d167f74e66f028084322c104cd4",
+    "receipt": {
+      "sha256": "sha256:61938a608eab857c99bd79a4351932036026400aeb694ea40d614e71fc9d630c",
+      "bytes": 4443
+    },
+    "originalOuterConclusion": "failure",
+    "backendStepPassed": true,
+    "rebuiltByLimits": false
+  },
+  "fullTicketQualification": false,
+  "acceptanceBoundary": {
+    "individualMemoryTaskTimerLimitsQualified": true,
+    "independentGuestExecutorQueuesQualified": false,
+    "eligibleGuestSiblingProgressQualified": false,
+    "activationQueueCancellationIsGuestExecutorQueueProof": false,
+    "selectedProfileAdvertisesGuestExecutorOrThreadApi": false,
+    "literalAc3QueueFairnessClauseUnproven": true
+  }
+}

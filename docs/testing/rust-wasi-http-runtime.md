@@ -123,8 +123,8 @@ call; the diagnostic is not qualification. The Component Model's
 distinguishes a function's async effect from its Core ABI. Generator-only controls
 verify the explicit contract and unchanged ordinary source bodies. The installed
 finite installed programme and the signed 64-attempt programme now prove real
-execution of that contract. Individual signed memory/Task/Timer limit cases
-remain pending.
+execution of that contract. The separate [individual limits programme](rust-wasi-http-limits.md)
+now supplies signed memory/Task/Timer differentials and matched fresh calls.
 
 The `8e6ce8d` installed owning attempt compiled one genuine installed-entry
 component with all 32 normal compiler/composition commands passing. Its
@@ -154,6 +154,8 @@ outbound starts and eight accepted TCP connections, with seven parsed complete
 responses and one exact preparse close. Both pass physical/provider retirement
 and fresh opposite-client reuse. The limiting owner and trap instruction remain
 unknown. Peak memory below 16 MiB and positive Task/Wait/Timer ownership do not
-prove individual memory, Task or Timer exhaustion. Those three signed limit
-cases are the remaining mandatory evidence identified by the current literal
-#689 audit; no blanket runtime or scheduler qualification is inferred.
+prove individual memory, Task or Timer exhaustion. The separate nine-attempt
+limits programme supplies those three differentials with their own positive,
+physical/provider retirement and fresh gates. Its memory public detail remains
+empty and its Timer instruction remains unknown; no blanket runtime or
+scheduler qualification is inferred.

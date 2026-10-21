@@ -1,0 +1,127 @@
+{
+  "cases": [
+    "RustHttpLimitControls.test_actual_generic_memory_row_needs_exact_component_and_single_budget_differential",
+    "RustHttpLimitControls.test_cleanup_keeps_the_primary_and_still_refuses_on_success",
+    "RustHttpLimitControls.test_fixed_memory_shape_checks_count_flags_and_all_original_minima",
+    "RustHttpLimitControls.test_memory_differential_cannot_complete_without_original_budget_parsed_fresh",
+    "RustHttpLimitControls.test_memory_requires_the_typed_producer_detail_and_no_effect",
+    "RustHttpLimitControls.test_only_the_named_owner_ceiling_changes_and_defaults_are_preserved",
+    "RustHttpLimitControls.test_ordinary_baseline_requires_real_pending_without_inventing_guest_close",
+    "RustHttpLimitControls.test_task_one_requires_one_actual_response_and_the_exact_original_error",
+    "RustHttpLimitControls.test_timer_one_requires_its_real_pending_count_second_start_and_precise_trap"
+  ],
+  "guards": {
+    "RustHttpLimitControls.test_actual_generic_memory_row_needs_exact_component_and_single_budget_differential": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:45089d145b94ac5b8b3d80154af4729c089390ebade6bd845a415544bbf8a76c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "RustHttpLimitControls.test_cleanup_keeps_the_primary_and_still_refuses_on_success": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:45089d145b94ac5b8b3d80154af4729c089390ebade6bd845a415544bbf8a76c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "RustHttpLimitControls.test_fixed_memory_shape_checks_count_flags_and_all_original_minima": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:45089d145b94ac5b8b3d80154af4729c089390ebade6bd845a415544bbf8a76c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "RustHttpLimitControls.test_memory_differential_cannot_complete_without_original_budget_parsed_fresh": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:45089d145b94ac5b8b3d80154af4729c089390ebade6bd845a415544bbf8a76c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "RustHttpLimitControls.test_memory_requires_the_typed_producer_detail_and_no_effect": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:45089d145b94ac5b8b3d80154af4729c089390ebade6bd845a415544bbf8a76c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "RustHttpLimitControls.test_only_the_named_owner_ceiling_changes_and_defaults_are_preserved": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:45089d145b94ac5b8b3d80154af4729c089390ebade6bd845a415544bbf8a76c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "RustHttpLimitControls.test_ordinary_baseline_requires_real_pending_without_inventing_guest_close": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:45089d145b94ac5b8b3d80154af4729c089390ebade6bd845a415544bbf8a76c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "RustHttpLimitControls.test_task_one_requires_one_actual_response_and_the_exact_original_error": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:45089d145b94ac5b8b3d80154af4729c089390ebade6bd845a415544bbf8a76c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "RustHttpLimitControls.test_timer_one_requires_its_real_pending_count_second_start_and_precise_trap": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:45089d145b94ac5b8b3d80154af4729c089390ebade6bd845a415544bbf8a76c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_rust_wasi_http_limits.py",
+  "reviewReason": "Reviewed exact86da/c713 public memory detail omission: fixed whole51c component instantiated53page minimum exceeds only3MiB requested memory; require unchanged original16MiB same-cell parsed fresh plus all original retirement gates. Unknown private site retained; old typed reader/64 unchanged; two new adverse controls.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
