@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/rust_capsule_build.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Add only an explicit prepared HTTP runtime path, captured-namespace private composition and bound runtime materials; default compiler stages, limits, executable approval, compatibility and packaging remain mandatory.",
+  "reviewReason": "Explicit prepared HTTP composition binds the complete consumer recipe while producer material scope excludes unused consumer code; default compiler limits, compatibility, executable approval and packaging remain unchanged.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "2d9e4bab99f90994493d8c8227e537ddb64768dfd0f379a66b52b56dc0923105"
+  "sha256": "ab843105bee16373938d1f68f24a60bcdf4326e2ea21bf0c5d48794c4e77ba48"
 }
