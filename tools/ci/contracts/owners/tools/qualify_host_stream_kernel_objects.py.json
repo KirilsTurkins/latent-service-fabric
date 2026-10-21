@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_host_stream_kernel_objects.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Add one exclusive20-object mandatory audit/SKB source compile lane, preserving5old job bodies except exclusiveif and all25old test guards. Keep61existing globals plus8(6private and2originalNetlink), originalAUDIT/AUDITSYSCALL=y, NETLABEL=y andSIDcache256 withoutoverride; same20min/900s/300s/-j2/-Werror/config/security/archive/process/diagnostic bounds. Source implementation true is separate from actualAuditExecuted=false/fullclosure=false; no link/boot/installation credit.",
+  "reviewReason": "Add the exclusive closed bind-bucket object-only profile over the full mandatory-audit floor; preserve all existing jobs, commands, tests, security config and original runtime/diagnostic limits. No kernel execution or installation qualification.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "b8eb0b5199feb09f551b520c3efe5fd79de8c1cefce8ae9e5b177589d5726842"
+  "sha256": "eaf6520b1a1e875df15101155ed5ab55e790b23a712e3760c5683f0cf0e7a3e1"
 }
