@@ -95,7 +95,7 @@ class HostStreamKernelFactory(unittest.TestCase):
         self.assertLess(raw.index("lsf_prepaid_context_create("), raw.index("consumer->create("))
         closed = raw[raw.index("static int lsf_factory_release("):raw.index("static const struct file_operations")]
         self.assertIn("factory.pool.stopped = 1", closed)
-        self.assertIn("factory.uncertain = 1", closed)
+        self.assertIn("WRITE_ONCE(factory.uncertain, 1)", closed)
         self.assertNotIn("lsf_prepaid_recycle(", closed)
         self.assertNotIn("__free_pages(", closed)
 

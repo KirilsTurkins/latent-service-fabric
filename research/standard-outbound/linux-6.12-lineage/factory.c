@@ -72,7 +72,7 @@ static int lsf_factory_open(struct inode *inode, struct file *file)
     if (!ns_capable(&init_user_ns, CAP_SYS_ADMIN))
         return -EPERM;
     mutex_lock(&factory_lock);
-    if (factory.opened || factory.uncertain) {
+    if (factory.opened || READ_ONCE(factory.uncertain)) {
         error = -EBUSY;
         goto out;
     }
@@ -85,7 +85,7 @@ static int lsf_factory_open(struct inode *inode, struct file *file)
         goto out;
     }
     if (!lsf_prepaid_initialize(&factory.pool)) {
-        factory.uncertain = 1;
+        WRITE_ONCE(factory.uncertain, 1);
         goto out;
     }
     factory.mm = current->mm;
@@ -156,6 +156,20 @@ int lsf_factory_deferred(struct lsf_factory_context *context, int acquire)
     return retained;
 }
 
+void lsf_factory_poison(struct lsf_factory_context *context)
+{
+    unsigned long flags;
+    spin_lock_irqsave(&pool_lock, flags);
+    /* Prove exact static membership/current generation before dereferencing
+     * this private pointer. Unknown origin still fences the entire factory;
+     * it cannot create a release or silently return availability. */
+    context = lsf_factory_context_current(context);
+    if (context)
+        factory.pool.contexts[context->key.slot].poisoned = 1;
+    WRITE_ONCE(factory.uncertain, 1);
+    spin_unlock_irqrestore(&pool_lock, flags);
+}
+
 static ssize_t lsf_factory_write(struct file *file, const char __user *buffer,
                                  size_t count, loff_t *position)
 {
@@ -187,7 +201,7 @@ static ssize_t lsf_factory_write(struct file *file, const char __user *buffer,
         scope.identity[i] = le64_to_cpu(request.scope[i]);
     maximum = type == SOCK_STREAM ? LSF_TCP_BYTES : LSF_DNS_BYTES;
     mutex_lock(&factory_lock);
-    if (!lsf_factory_actor(file) || factory.uncertain || factory.reply_pending ||
+    if (!lsf_factory_actor(file) || READ_ONCE(factory.uncertain) || factory.reply_pending ||
         factory.inflight || lease <= factory.last_lease) {
         error = -EPERM;
         goto out;
@@ -214,7 +228,7 @@ static ssize_t lsf_factory_write(struct file *file, const char __user *buffer,
     mutex_lock(&factory_lock);
     factory.inflight = 0;
     if (error || !context->socket || factory.pool.stopped) {
-        factory.uncertain = 1;
+        WRITE_ONCE(factory.uncertain, 1);
         error = error < 0 ? error : -EIO;
         goto out;
     }
@@ -237,7 +251,7 @@ static ssize_t lsf_factory_read(struct file *file, char __user *buffer,
         error = -EPERM;
     else if (count == sizeof(factory.reply) && factory.reply_pending) {
         if (copy_to_user(buffer, &factory.reply, sizeof(factory.reply))) {
-            factory.uncertain = 1;
+            WRITE_ONCE(factory.uncertain, 1);
             error = -EFAULT;
         } else {
             factory.reply_pending = 0;
@@ -257,7 +271,7 @@ static int lsf_factory_release(struct inode *inode, struct file *file)
     mutex_lock(&factory_lock);
     spin_lock_irqsave(&pool_lock, flags);
     factory.pool.stopped = 1;
-    factory.uncertain = 1;
+    WRITE_ONCE(factory.uncertain, 1);
     for (i = 0; i < LSF_FACTORY_CONTEXTS; ++i)
         factory.pool.contexts[i].closed = 1;
     spin_unlock_irqrestore(&pool_lock, flags);
