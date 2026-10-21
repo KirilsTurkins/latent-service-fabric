@@ -267,6 +267,12 @@ socket owner through context strings and cache nodes. Actual policy destruction
 retires private published births before table address reuse. The formatter,
 queued audit SKBs, AVC, RX and complete final-free chain remain separate gates.
 
+The [private AVC cache prefix](prepaid-avc.md) retains original prepaid births
+through nested permission graphs, policy-preserving replacement and queued RCU
+return. Both owned connect permission checks use the explicit socket source.
+The mandatory audit implementation and remaining active-security/RX/platform
+closure are still unavailable; supplemental C controls do not enable a profile.
+
 The [maintained audit-SKB source prefix](prepaid-audit-skb.md) carries original
 prepaid births through selected header/head allocation, clone, copy, expansion
 and real ordinary/bulk/NAPI/stolen-head free paths. Its supplemental serialized

@@ -1,0 +1,247 @@
+{
+  "schemaVersion": "lsf.kernel-avc-object-observation.v1",
+  "status": "compiled-unlinked-source-only",
+  "sourceCommit": "d872bfcca2911938165889a7ab804b929d1c422b",
+  "run": 39550402947,
+  "job": 119058043143,
+  "artifact": {
+    "id": 12323152759,
+    "bytes": 422825,
+    "sha256": "ea0bcc24360065045a1239e2f661d3a3016fd54d6f319c853cca456d1aacd177",
+    "crcMembers": 64
+  },
+  "receipt": {
+    "bytes": 12909,
+    "sha256": "f522a0cfd705303291e5c125c1a04fd2067a6a06aa569ba51aef88bc084ec43f"
+  },
+  "upstreamCommit": "7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+  "officialArchive": {
+    "bytes": 148686048,
+    "sha256": "e09b6727e5c521253f0d41694900b9c38fb7604db7d35238a8197aa9f7de2428"
+  },
+  "manifestSha256": "551b4157660f6f63adc90bbc39b1d5d8ba71e5444044f598ef9abdfea9fb7960",
+  "source": {
+    "authenticatedWholeFiles": 18,
+    "authenticatedWholeBytes": 1125098,
+    "exactAvcDefinitions": 19,
+    "priorSidcacheDefinitions": 6,
+    "derivedFiles": 38,
+    "reviewedGitMaterials": 100,
+    "derivedDigestTableSha256": "5d50e493b163ab09c7bf81d7454eb214c9a94761a07e2f3533040e12339501f2"
+  },
+  "configuration": {
+    "baseline": {
+      "bytes": 143203,
+      "sha256": "ff250d6b1b4dbc95584fa2726d290ea189e4829bf1a11ed26dc67dbb9c5664cb"
+    },
+    "selected": {
+      "bytes": 143192,
+      "sha256": "b2bcccd5507f3f3a673690b660a2321870b57a3c77e72ce8532975f3c4752176"
+    },
+    "onlyChangedSymbol": "CONFIG_LSF_STREAM_FACTORY",
+    "securityAndInetPreserved": [
+      "CONFIG_INET",
+      "CONFIG_SECURITY",
+      "CONFIG_SECURITY_NETWORK",
+      "CONFIG_SECURITY_SELINUX"
+    ],
+    "resolvedSymbols": 4309,
+    "onlyDelta": {
+      "CONFIG_LSF_STREAM_FACTORY": [
+        "n",
+        "y"
+      ]
+    },
+    "NETLABELAlreadyEnabled": true,
+    "SIDCACHEOriginalEntries": 256
+  },
+  "objects": {
+    "net/socket.o": {
+      "bytes": 100072,
+      "sha256": "629a62c88f3d8d5e071528c62c82f1afa2fb4051981b5cded147f668a3d63cf0",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_sock_create"
+      ]
+    },
+    "fs/inode.o": {
+      "bytes": 79984,
+      "sha256": "a82be67ae273db6caadc242e9fa52da443dc5992cf6603875cb523d68d8a8267",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_new_inode"
+      ]
+    },
+    "net/core/sock.o": {
+      "bytes": 119520,
+      "sha256": "81b0c5374cb4c3b14e629374927d9bf3ecdeb22f5fc5addba7228d2b2666c21f",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_sk_alloc",
+        "lsf_prepaid_protocol_allocate",
+        "lsf_prepaid_protocol_return",
+        "lsf_prepaid_protocol_clear"
+      ]
+    },
+    "net/ipv4/af_inet.o": {
+      "bytes": 53976,
+      "sha256": "72ff5b5dd7a3133d692860bbd25a3763281e9cb47e570a7d74515ff282676f71",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_inet_create",
+        "lsf_prepaid_protocol_family"
+      ]
+    },
+    "security/security.o": {
+      "bytes": 411400,
+      "sha256": "25bbcd7677df83f3d8cc9b1a2434a21c3dd766394359ba590b481cd4ab90d3f7",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_security_inode_alloc",
+        "lsf_prepaid_security_sk_alloc"
+      ]
+    },
+    "net/factory.o": {
+      "bytes": 31040,
+      "sha256": "25f34daa631660d8e8850c517db70691a9514a2705a4ab76a2400fb6ab4cb16a",
+      "requiredDefinedSymbols": [
+        "lsf_factory_register",
+        "lsf_factory_blob_allocate",
+        "lsf_factory_blob_finish",
+        "lsf_factory_child_allocate",
+        "lsf_factory_protocol_parent",
+        "lsf_factory_options_publish",
+        "lsf_factory_options_owned",
+        "lsf_factory_options_queue",
+        "lsf_factory_netport_publish",
+        "lsf_factory_netport_queue",
+        "lsf_factory_netport_candidate",
+        "lsf_factory_netport_current",
+        "lsf_factory_sidcache_publish",
+        "lsf_factory_sidcache_queue",
+        "lsf_factory_sidcache_destroy",
+        "lsf_factory_sidcache_candidate",
+        "lsf_factory_sidcache_current",
+        "lsf_factory_avc_member",
+        "lsf_factory_avc_phase",
+        "lsf_factory_avc_replace",
+        "lsf_factory_avc_publish",
+        "lsf_factory_avc_queue",
+        "lsf_factory_avc_candidate",
+        "lsf_factory_avc_current"
+      ]
+    },
+    "security/selinux/netlabel.o": {
+      "bytes": 14624,
+      "sha256": "3cc8dc452bfc1721536c3b2fdaf30347f13afeab029691f5c4a6a66cd0000fdb",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_netlabel_sock_genattr"
+      ]
+    },
+    "security/selinux/ss/services.o": {
+      "bytes": 77336,
+      "sha256": "7c482624cc7b29c7cfb64ea5ee648ee2eb87129f44782498fb47003ca5af9254",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_security_sid_to_secattr",
+        "lsf_prepaid_audit_dup",
+        "lsf_prepaid_audit_string_return",
+        "lsf_prepaid_sidcache_drain",
+        "lsf_prepaid_security_sid_to_context"
+      ]
+    },
+    "security/selinux/ss/mls.o": {
+      "bytes": 12888,
+      "sha256": "7521993d0962d86f50b7ee8c0fe4cf6e804b8cc7ebe60b5e682026b532016c0c",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_mls_export_cat"
+      ]
+    },
+    "security/selinux/ss/ebitmap.o": {
+      "bytes": 13160,
+      "sha256": "1ea1533eaf822ef73cb34c4048030cc0d871ef871289847761fd06be3f35f3ad",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_ebitmap_export"
+      ]
+    },
+    "net/netlabel/netlabel_kapi.o": {
+      "bytes": 30672,
+      "sha256": "8a2cd385e536309c67501bdc49fa7559282c8661d4b13db97dc72068077eb6a3",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_catmap_setlong",
+        "lsf_prepaid_netlbl_sock_setattr",
+        "lsf_prepaid_netlbl_conn_setattr",
+        "lsf_prepaid_netlabel_source",
+        "lsf_prepaid_label_domain_return",
+        "lsf_prepaid_label_catmap_return",
+        "lsf_prepaid_label_secattr_return",
+        "lsf_prepaid_cipso_buffer_return",
+        "lsf_prepaid_options_failed_return",
+        "lsf_prepaid_options_retire",
+        "lsf_prepaid_netlabel_strdup"
+      ]
+    },
+    "net/ipv4/cipso_ipv4.o": {
+      "bytes": 25048,
+      "sha256": "2007e461bc0da8595416bfa0db2027147da121319f375dcb23a91df7259a2bf3",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_cipso_sock_setattr"
+      ]
+    },
+    "security/selinux/netport.o": {
+      "bytes": 9032,
+      "sha256": "d6304536ae577f5ba9019539971947454cd6864a26241fa23dff1d311af02c8a",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_netport_sid",
+        "lsf_prepaid_netport_drain"
+      ]
+    },
+    "security/selinux/hooks.o": {
+      "bytes": 167952,
+      "sha256": "9fc1edd58b0cd9338d239ca569f01b0c9c330abcd0479a784fc1765e9ff62b95",
+      "requiredDefinedSymbols": []
+    },
+    "security/selinux/ss/sidtab.o": {
+      "bytes": 18032,
+      "sha256": "6ce048f8495d52ca0304a60540554b0b069a1cedb5fca84eb85697075f1b1a59",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_sid2str_put",
+        "lsf_prepaid_sid2str_get",
+        "lsf_prepaid_sidcache_detach"
+      ]
+    },
+    "security/selinux/avc.o": {
+      "bytes": 117560,
+      "sha256": "724e77c7779b572556c8541b2ff0ba5b96966378dc2067a6692b9894baa87f83",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_avc_has_perm",
+        "lsf_prepaid_avc_drain"
+      ]
+    }
+  },
+  "hostedSourceAndControllerTests": {
+    "count": 82,
+    "jobLog": {
+      "bytes": 66417,
+      "sha256": "d109c3e7b206286b6debe7d60b89863d15e0862cff2971f0015b22024c078cb4"
+    }
+  },
+  "ownedCommands": 21,
+  "allOwnedCommandsCompletedAndCleaned": true,
+  "supplementalReferenceOnly": {
+    "sourceCommit": "d872bfcca2911938165889a7ab804b929d1c422b",
+    "avcControls": 24,
+    "sidcacheControls": 14,
+    "netportControls": 19,
+    "originalGeneralHeapExit": 2,
+    "selectedPrivateExit": 0,
+    "scope": "Selected actual source with serialized type, policy, list, lock and RCU doubles; not Linux concurrency, geometry, policy or RCU execution."
+  },
+  "knownFailClosedLimitations": [
+    "Mandatory audit has only its exact declaration and is not implemented by this source.",
+    "Inherited SID-cache poison may retain a newly published unlinked birth; permanent quarantine is not completed retirement."
+  ],
+  "kernelLinked": false,
+  "kernelBooted": false,
+  "actualLsmOrLinuxRcuExecuted": false,
+  "mandatoryAuditImplemented": false,
+  "factoryInstalled": false,
+  "completeAllocationClosure": false,
+  "finalFreeCertified": false,
+  "hostTlsAccountingQualified": false,
+  "productionInstallation": false
+}

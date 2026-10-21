@@ -496,6 +496,10 @@ int lsf_factory_sidcache_current(struct lsf_factory_context *context,
     return result;
 }
 
+#ifdef LSF_STREAM_AVC_SOURCE
+#include "factory-avc.c"
+#endif
+
 void lsf_factory_poison(struct lsf_factory_context *context)
 {
     unsigned long flags;
@@ -623,6 +627,10 @@ static int lsf_factory_release(struct inode *inode, struct file *file)
         lsf_prepaid_netport_drain(&factory.contexts[i]);
         lsf_prepaid_sidcache_drain(&factory.contexts[i]);
     }
+#ifdef LSF_STREAM_AVC_SOURCE
+    for (i = 0; i < LSF_FACTORY_CONTEXTS; ++i)
+        lsf_prepaid_avc_drain(&factory.contexts[i]);
+#endif
     /* Closing a descriptor is not final-free. No __free_pages, object release,
      * owner recycling, reference refund or reopen is justified here. Original
      * node backing and occupancy must stay in bounded native quarantine. */
