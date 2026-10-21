@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_wasi_http_runtime.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Explicit async selected contract, normal sync-Core bindings and exact root import/export graph review; old compiler/runtime limits retained.",
+  "reviewReason": "Reviewed c713 native acquisition and exact shared source projection preserve all original Rust64 runtime oracles, caps and commands, with additive reader/source controls and a fresh source-bound adapter.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "86864f37628dee7608c14068ca03ff30d283c0256540f4be4a0586168be62e63"
+  "sha256": "9526f298a2724c097ed202aff699aef0e4fab55d87a0970182d2e72f795050ab"
 }

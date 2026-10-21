@@ -10,7 +10,8 @@ on:
       - 'tools/rust_wasi_http_runtime_node.py'
       - 'tools/rust_wasi_http_root.py'
       - 'tools/rust_wasi_http_compose.py'
-      - 'tools/c_thread_native_products.py'
+      - 'tools/activation_stack_native_products.py'
+      - 'tools/activation_stack_native_source.py'
       - 'tools/tests/test_rust_wasi_http_runtime.py'
       - 'tools/tests/test_rust_wasi_http_runtime_fixture.py'
       - 'tools/tests/test_rust_wasi_http_profile.py'
@@ -69,9 +70,9 @@ jobs:
           python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/rust-http-tools"
           echo "$RUNNER_TEMP/rust-http-tools" >> "$GITHUB_PATH"
       - name: Fetch the exact historical native producer source without a host build
-        run: git fetch --no-tags --depth=1 origin f0d36b38d39a837cef7f6242b4b4a99aa36b8b75
+        run: git fetch --no-tags --depth=1 origin c7134289f446cb3171eb0ffd800a94afc2a5209f
       - name: Check actual-source capture and refusal oracles without compiling a guest
-        run: python3 -B -m unittest tools.tests.test_rust_wasi_http_runtime_fixture tools.tests.test_rust_wasi_http_runtime tools.tests.test_rust_wasi_http_profile tools.tests.test_rust_wasi_http_inputs_prepared -q
+        run: python3 -B -m unittest tools.tests.test_rust_wasi_http_runtime_fixture tools.tests.test_rust_wasi_http_runtime tools.tests.test_rust_wasi_http_profile tools.tests.test_rust_wasi_http_inputs_prepared tools.tests.test_activation_stack_native_products tools.tests.test_activation_stack_native_source -q
       - name: Acquire only locked SDK sources for this current adapter
         run: cargo fetch --locked --target wasm32-unknown-unknown --target x86_64-unknown-linux-gnu
       - name: Compile exactly one current source-bound standard backend
@@ -79,7 +80,7 @@ jobs:
       - name: Authenticate the original five products without building another host
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 -B tools/c_thread_native_products.py --output "$RUNNER_TEMP/rust-http-native"
+        run: python3 -B tools/activation_stack_native_products.py --output "$RUNNER_TEMP/rust-http-native"
       - name: Compile one ordinary captured guest then sign and execute all strict cases
         env:
           GH_TOKEN: ${{ github.token }}

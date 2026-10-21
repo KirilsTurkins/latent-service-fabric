@@ -21,9 +21,9 @@ if __package__ in {None,''}:
 
 from tools import rust_wasi_http_runtime_fixture as fixture, rust_wasi_http_runtime_node as node
 from tools import rust_wasi_http_inputs as runtime
+from tools.activation_stack_native_source import assert_current
 from tools.application_dependencies import verify_inputs
 from tools.build_observation import build_environment, resolve_tools
-from tools.java_replay_materials import git_source_identity
 from tools.phase2_operator_process import require
 from tools.phase3_resource_identity import file_identity
 from tools.qualify_rust_capsules import source_identity
@@ -33,22 +33,15 @@ from tools.rust_capsule_project import ROOT, canonical, digest, fresh, inventory
 from tools.rust_wasi_http_profile import AUTHORITY, PROFILE
 from tools.dotnet_guest.internal_io import core_modules
 
-NATIVE_SOURCE='f0d36b38d39a837cef7f6242b4b4a99aa36b8b75'
+NATIVE_SOURCE='c7134289f446cb3171eb0ffd800a94afc2a5209f'
 # Every original native auxiliary input remains byte exact. Selected current
 # guest/compiler-root recipes and the fresh adapter are attested separately.
 MATERIALS=('tools/qualify_rust_wasi_http_runtime.py','tools/rust_wasi_http_runtime_fixture.py',
     'tools/rust_wasi_http_fixture.py','tools/rust_wasi_http_runtime_node.py','tools/qualify_rust_wasi_http_inputs.py',
-    'tools/c_thread_native_products.py','tools/sdk_native_products_reader.py',
+    'tools/activation_stack_native_products.py','tools/activation_stack_native_source.py',
+    'tools/sdk_native_products_reader.py',
     'tools/java_replay_materials.py','tools/qualify_rust_capsules.py',
     'tools/install_guest_bindgen.py','tools/toolchain.toml',*node.MATERIALS)
-
-
-def native_source_compatibility(original,current):
-    require(type(original) is dict and type(current) is dict
-        and set(original)=={'sha256','files','bytes','scope','hermetic','implicitCompilerInputs'}
-        and original==current,'rust-http-exact-compiled-native-source')
-    return {'compiledNativeSource':original,'consumerNativeSource':current,
-        'compiledSourceByteExact':True,'reviewedFormatting':[]}
 
 
 def native_compatibility(original,current):
@@ -177,7 +170,7 @@ def qualify(native_directory,adapter_directory,output):
     # This one owning lane uses actual emitted guest code. Refuse on Windows
     # before fresh output, executable approval or any tool/network operation.
     require(sys.platform=='linux' and sys.version_info>=(3,13),'rust-http-runtime-linux-python313')
-    from tools import c_thread_native_products as products
+    from tools import activation_stack_native_products as products
     require(products.SOURCE==NATIVE_SOURCE,'rust-http-exact-current-native-producer')
     native_directory=Path(native_directory).resolve(strict=True)
     adapter_directory=Path(adapter_directory).resolve(strict=True)
@@ -187,15 +180,17 @@ def qualify(native_directory,adapter_directory,output):
             for p in (native_directory,adapter_directory)),'rust-http-separated-owned-output')
     output=fresh(output);deadline=time.monotonic()+1100
     original_native=products.verify_prepared(native_directory)
-    binaries=products.native_products(native_directory)
-    for path in binaries.values():path.chmod(0o700)
-    before=source_identity(ROOT)
-    compiled_source=git_source_identity(products.SOURCE)
-    source_proof=native_source_compatibility(compiled_source,before)
+    source_proof=assert_current(ROOT)
+    require(source_proof['compiledSourceRevision']==products.SOURCE,
+        'rust-http-source-proof-producer-binding')
+    before=source_proof['consumerNativeSource']
+    compiled_source=source_proof['compiledNativeSource']
     original_inputs=read_json(native_directory/'source-inputs.json')
     require(original_inputs['native']==compiled_source,'rust-http-authenticated-compiled-native-identity')
     aux_current={name:file_identity(ROOT/name) for name in original_inputs['materials']}
     compatibility=native_compatibility(original_inputs['materials'],aux_current)
+    binaries=products.native_products(native_directory)
+    for path in binaries.values():path.chmod(0o700)
     (adapter_directory/'component-composer/wac').chmod(0o700)
     tools,_identities=resolve_tools(tomllib.loads(read_file(ROOT/'tools/toolchain.toml').decode()),ROOT,build_environment(output))
     prepared=runtime.Prepared(adapter_directory,tools['rustc'],tools['wasm-tools'])

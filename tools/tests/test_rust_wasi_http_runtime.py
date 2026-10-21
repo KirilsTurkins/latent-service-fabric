@@ -129,16 +129,20 @@ class SourceAndNativeSeparation(unittest.TestCase):
                 qualification.catalogue_inputs(source,recipe,altered)
 
     def test_new_native_tuple_requires_exact_source_even_for_the_old_reviewed_formatter_pair(self):
+        from tools import activation_stack_native_source as guard
         proof=json.loads((qualification.ROOT/'docs/testing/evidence/c-thread-native-rustfmt-2026-10-21.json').read_text())
-        original=proof['compiledNativeSource']
-        result=qualification.native_source_compatibility(original,copy.deepcopy(original))
+        original=copy.deepcopy(guard.COMPILED)
+        with patch.object(guard,'git_source_identity',return_value=copy.deepcopy(original)), \
+                patch.object(guard,'source_identity',return_value=copy.deepcopy(original)):
+            result=qualification.assert_current(qualification.ROOT)
         self.assertTrue(result['compiledSourceByteExact'])
-        self.assertEqual(result['reviewedFormatting'],[])
+        self.assertEqual(result['reviewedSourceChanges'],[])
         for selected in (proof['formattedConsumerSource'],dict(original,files=original['files']+1),{}):
-            with self.subTest(selected=selected),self.assertRaisesRegex(RuntimeError,'exact-compiled-native-source'):
-                qualification.native_source_compatibility(original,selected)
-        with self.assertRaisesRegex(RuntimeError,'exact-compiled-native-source'):
-            qualification.native_source_compatibility({},{})
+            with self.subTest(selected=selected), \
+                    patch.object(guard,'git_source_identity',return_value=copy.deepcopy(original)), \
+                    patch.object(guard,'source_identity',return_value=selected), \
+                    self.assertRaisesRegex(RuntimeError,'exact-current-source'):
+                qualification.assert_current(qualification.ROOT)
 
     def test_only_the_reviewed_unlinked_frontend_pair_may_differ(self):
         # The newer historical C tuple already contains the reviewed frontend.
