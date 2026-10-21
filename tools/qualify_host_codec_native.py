@@ -107,7 +107,9 @@ RECIPE = ('.github/workflows/host-codec-memory.yml', '.cargo/managed-guest.toml'
     'tools/toolchain.toml', 'tools/rust_capsule_build.py', 'tools/build_observation.py',
     'tools/build_process.py', 'tools/build_process_linux.py', 'tools/build_process_signals.py',
     'tools/phase2_operator_process.py', 'tools/phase3_resource_identity.py',
-    'tools/phase3_resource_profile.py', 'tools/rust_capsule_project.py', 'tools/build_snapshot.py')
+    'tools/phase3_resource_profile.py', 'tools/rust_capsule_project.py', 'tools/build_snapshot.py',
+    'examples/echo-contract/capsule.json', 'examples/package-format/capsule/manifest.json',
+    'examples/package-format/capsule/config.json')
 
 def exact_list(raw: bytes, expected: tuple[str, ...]) -> None:
     names = re.findall(rb'^([^\r\n]+): test$', raw, re.M)
