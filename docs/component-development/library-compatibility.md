@@ -103,6 +103,14 @@ Task, thread, frame, queue, timer, guest-memory and native-memory failures can
 retain their particular resource. A cancellation acknowledgement does not prove
 physical retirement. An uncertain external operation does not become retryable.
 
+Typed engine memory and fuel interruptions retain their public
+`activation.memory-exhausted` or `activation.fuel-exhausted` detail with the
+matching `memory-bytes` or `cpu-fuel` dimension. Wire and CLI readers omit the
+private cell identity and backend reason, and reject mismatched dimensions.
+This identifies the producer's resource class; it does not identify an allocation
+site, prove physical retirement, or classify a generic resource-exhausted error.
+Older hosts can omit this detail, which remains unknown to public readers.
+
 `blocked` means a retained observation identifies a concrete blocker.
 `incomplete` means observations leave unresolved behavior, lifecycle or optional
 extension use. `observed` describes only the retained observations; it is not a

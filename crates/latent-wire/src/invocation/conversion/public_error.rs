@@ -182,6 +182,8 @@ fn fields(kind: &str) -> Option<&'static [(&'static str, Value)]> {
             ("consumed", Unsigned),
             ("requested", Unsigned),
         ],
+        "activation.memory-exhausted" => &[("dimension", Known(&["memory-bytes"]))],
+        "activation.fuel-exhausted" => &[("dimension", Known(&["cpu-fuel"]))],
         "activation.guest-trap-kind" => &[
             ("kind", Value::GuestTrapKind),
             (
