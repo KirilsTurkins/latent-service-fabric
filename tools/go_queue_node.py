@@ -42,10 +42,10 @@ def programme(clients, targets, probe, output, component, ceiling):
                 row = call(client,target,'greeting','greet',['resource-runtime:'+mode],label)
                 entry = {'tenant':tenant,'mode':mode,'expectedAdmissionDenial':denied,'invocation':row}
                 result['cases'].append(entry)
-                write_json(output/'queue-progress.json',result)
+                write_json(output/(label+'-invoked.json'),result)
                 outcome(row,target,revision,mode,denied)
                 entry['retirement'] = retire(client,probe,target,output,label)
-                write_json(output/'queue-progress.json',result)
+                write_json(output/(label+'-retired.json'),result)
         result['status'] = 'passed'
         write_json(output/'programme.json',result)
         return result

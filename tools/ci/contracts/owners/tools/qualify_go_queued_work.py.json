@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_go_queued_work.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Forward explicit v6 profile to captured dependency verifier before the first normal compile",
+  "reviewReason": "Use verified3plus2 native products with exactcurrentnative source and separate progress receipts",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "c6d96091d75a32642c96e98a787433386a4cbecf9135a5603ba6982a864b0f67"
+  "sha256": "00f05e3f162e355b5ee8a23b4fc8904e3269d9e81c74a0e8909ac02f6744888b"
 }

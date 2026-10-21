@@ -24,8 +24,8 @@
         }
       },
       {
-        "name": "Fetch the exact successful current SDK5 producer before validation",
-        "run": "git fetch --no-tags --depth=1 origin 357eecbd7744bbc026741d241b679966d14b0e95"
+        "name": "Fetch the exact current three-product and inherited two-product sources before validation",
+        "run": "git fetch --no-tags --depth=1 origin f244b81f14abad5d4dc4984cb842aaf1d9076e23 f6251df89851de98cb869784d095ad5cc2e5b385"
       },
       {
         "name": "Install original locked reader dependencies",
@@ -53,8 +53,8 @@
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
-        "name": "Retrieve exactly five authenticated SDK5 products without rebuilding the host",
-        "run": "python3 -B tools/rust_http_installed_native_products.py --output \"$RUNNER_TEMP/go-queue-native\""
+        "name": "Retrieve exactly three current and two inherited authenticated products without rebuilding the host",
+        "run": "python3 -B tools/c_thread_admission_native_products.py --output \"$RUNNER_TEMP/go-queue-native\""
       },
       {
         "name": "Build one unchanged transitive Go v6 component and require25 signed queue and lifecycle outcomes",
@@ -76,7 +76,7 @@
   },
   "jobId": "queued-work",
   "kind": "job",
-  "reviewReason": "One normal captured Go build and25 signed queue differential outcomes; bounded raw timer stderr retained",
+  "reviewReason": "Explicit joint review of two renamed native acquisition commands: current three-product Go v6 signer plus exact original two packaging products. All other steps, full Go build and25 outcomes remain byte exact; no historical before/coverage obligations exist or are removed.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-queued-work.yml"
 }

@@ -22,6 +22,46 @@ fn canonical_creator_without_proof_never_opens_descriptive_threading_parser() {
 }
 
 #[test]
+fn canonical_creator_with_unverified_c_payload_never_opens_descriptive_threading_parser() {
+    use std::borrow::Cow;
+    use wasm_encoder::CustomSection;
+
+    let original = wasm_encoder::Module::new().finish();
+    let public = b"examples:threading/api@1.0.0#greet";
+    let mut payload = b"LSFCPR01".to_vec();
+    payload.extend_from_slice(&1u32.to_le_bytes());
+    payload.extend_from_slice(&u32::try_from(public.len()).unwrap().to_le_bytes());
+    payload.extend_from_slice(&u32::try_from(original.len()).unwrap().to_le_bytes());
+    payload.extend_from_slice(public);
+    payload.extend_from_slice(&original);
+    for duplicate in [false, true] {
+        let mut canonical = wasm_encoder::CanonicalFunctionSection::new();
+        canonical.thread_new_indirect(0, 0);
+        let mut component = Component::new();
+        component.section(&canonical);
+        let section = CustomSection {
+            name: Cow::Borrowed(latent_component_threading::c_preimage::C_PREIMAGE_SECTION),
+            data: Cow::Borrowed(&payload),
+        };
+        component.section(&section);
+        if duplicate {
+            component.section(&section);
+        }
+        let bytes = component.finish();
+        assert!(
+            latent_component_threading::c_preimage::verify_embedded_c_original_core(&bytes)
+                .is_err()
+        );
+        assert_eq!(
+            validate(&bytes, SemanticLimits::default())
+                .unwrap_err()
+                .message,
+            "unverified-native-thread-component"
+        );
+    }
+}
+
+#[test]
 fn nonblocking_subtask_cancellation_keeps_other_more_async_operations_closed() {
     use wasm_encoder::{CanonicalFunctionSection, ComponentTypeSection};
     let mut canonical = CanonicalFunctionSection::new();

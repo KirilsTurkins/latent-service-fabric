@@ -30,8 +30,22 @@ queue9 must permit ordinary fresh work, refuse parallel child admission and then
 permit fresh work again. Queue16 must pass the original thirteen-outcome
 resource, callback, cancellation, deadline, trap and tenant-reuse programme.
 Every case requires physical retirement and provider cleanup. Other original
-owner limits and application budgets stay fixed. The campaign reuses the
-historically identified 357e native products and builds no host or engine.
+owner limits and application budgets stay fixed.
+
+The initial `729531d` campaign refused the stale v5 capture selector before
+compilation. The corrected `2a9fc15` campaign completed all 22 normal build
+commands and produced the original 3,219,953-byte component
+`d5e6d61d5d21fa42a3877ef7f00d1eff825cb1afd982b187ede5ef9af8d3e31f`.
+Its old 357e signer then refused the unrecognized v6 provenance profile, before
+any guest execution. Both campaigns remain failed.
+
+The new native cohort builds the affected CLI, daemon and signer example, and
+inherits the unchanged package and contract examples from f625. It adds v6 to
+the closed Go provenance list while keeping an unknown v7 profile refused.
+The owning programme uses those authenticated products through the existing
+normal build and signing path. It builds one guest and performs no host or
+engine build. Per-case invocation and retirement progress use separate files,
+preserving the original exclusive-create evidence behavior.
 
 Source controls and the authenticated Go source derivation pass locally.
 Actual signed v6 execution is pending; this guide records the intended owning

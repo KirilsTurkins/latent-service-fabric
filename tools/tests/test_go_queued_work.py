@@ -192,6 +192,38 @@ class QueuedWork(unittest.TestCase):
                     self.assertFalse((outside/'data').exists())
                     self.assertEqual((app/'sdk-lock.json').read_bytes(),b'unchanged-sdk')
 
+    def test_queue_reports_retain_each_invocation_before_validation_and_retirement(self):
+        from tools import go_queue_node as node
+        from tools.rust_capsule_project import read_json
+        clients = {tenant:object() for tenant in ('examples','foreign')}
+        targets = {tenant:object() for tenant in clients}
+        for ceiling,count in ((8,2),(9,6)):
+            with self.subTest(ceiling=ceiling), tempfile.TemporaryDirectory() as temporary:
+                output = Path(temporary)
+                with patch.object(node,'selected_revision',return_value={'releaseDigest':'original'}), \
+                        patch.object(node,'call',return_value={'controlledInvocation':True}), \
+                        patch.object(node,'outcome'),patch.object(node,'retire',return_value={'controlledRetirement':True}):
+                    result = node.programme(clients,targets,None,output,'original',ceiling)
+                invoked = sorted(output.glob('queue-*-invoked.json'))
+                retired = sorted(output.glob('queue-*-retired.json'))
+                self.assertEqual((len(invoked),len(retired)),(count,count))
+                self.assertEqual(result['status'],'passed')
+                for path in invoked:
+                    self.assertNotIn('retirement',read_json(path)['cases'][-1])
+                for path in retired:
+                    self.assertEqual(read_json(path)['cases'][-1]['retirement'],{'controlledRetirement':True})
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)
+            with patch.object(node,'selected_revision',return_value={'releaseDigest':'original'}), \
+                    patch.object(node,'call',return_value={'controlledInvocation':True}), \
+                    patch.object(node,'outcome',side_effect=RuntimeError('refused')),patch.object(node,'retire') as retire:
+                with self.assertRaisesRegex(RuntimeError,'refused'):
+                    node.programme(clients,targets,None,output,'original',8)
+                retire.assert_not_called()
+            self.assertEqual(len(list(output.glob('queue-*-invoked.json'))),1)
+            self.assertEqual(len(list(output.glob('queue-*-retired.json'))),0)
+            self.assertEqual(read_json(output/'queue-FAILED.json')['status'],'failed')
+
     def test_incomplete_overlay_refuses_before_output(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

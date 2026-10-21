@@ -12,7 +12,7 @@ import subprocess
 import sys
 
 if __package__ in {None,''}:sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
-from tools import go_resource_runtime_fixture as fixture, rust_http_installed_native_products as products
+from tools import go_resource_runtime_fixture as fixture
 from tools.go_guest.queues import PROFILE
 from tools.go_resource_runtime_build import build_evidence
 from tools.phase2_operator_process import require
@@ -20,14 +20,16 @@ from tools.phase3_resource_identity import file_identity, source_identity
 from tools.qualify_go_resource_runtime import MATERIALS as RESOURCE_MATERIALS
 from tools.qualify_sdk_scratch import build_component
 from tools.qualify_typescript_resource_runtime import execute
-from tools.rust_capsule_project import ROOT, fresh, inventory, snapshot
+from tools.rust_capsule_project import ROOT, fresh, inventory, read_json, snapshot
 from tools.run_rust_capsule_workflow import write_workflow_receipt
 
 MATERIALS = (*RESOURCE_MATERIALS, 'tools/qualify_go_queued_work.py','tools/go_queue_node.py',
-    'tools/go_guest/queues.py','.github/workflows/go-queued-work.yml')
+    'tools/go_guest/queues.py','.github/workflows/go-queued-work.yml',
+    'tools/c_thread_admission_native_products.py','tools/c_thread_package_native_products.py')
 
 
 def qualify(native_directory, output):
+    from tools import c_thread_admission_native_products as products
     require(sys.platform == 'linux' and sys.version_info >= (3,13), 'Go-queue-linux-python313')
     native_directory = Path(native_directory).resolve(strict=True)
     output = Path(output).absolute()
@@ -41,12 +43,14 @@ def qualify(native_directory, output):
     source = subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,timeout=10).decode().strip()
     helpers = {name:file_identity(ROOT/name) for name in MATERIALS}
     consumer_native = source_identity(ROOT)
+    require(consumer_native == read_json(native_directory/'source-inputs.json')['native'],
+            'Go-queue-exact-current-native-source')
     go = shutil.which('go')
     require(go is not None, 'Go-queue-owned-pinned-compiler-required')
     compiler = file_identity(Path(go).resolve(strict=True),128*1024*1024)
     record = {'schemaVersion':'latent.go.queued-work-qualification.v1','status':'incomplete',
         'source':source,'materials':helpers,'compiledNative':native_record,'consumerNativeSource':consumer_native,
-        'compiledNativeSource':products.SOURCE,'consumerNativeCompiledByThisCampaign':False,
+        'nativeCohortSource':products.SOURCE,'consumerNativeCompiledByThisCampaign':False,
         'compiler':compiler,'nativeProductsBuilt':0,'engineRebuilt':False,'guestComponentsCompiled':0,
         'historicalNormalProgrammeRelabelledAsCurrent':False,'fullTicketQualification':False,
         'profile':PROFILE,'queueReservationsPerLogicalGoroutine':1,'reservationLifetime':'through-gdestroy',
@@ -68,7 +72,7 @@ def qualify(native_directory, output):
             require(observed['status'] == 'passed', 'Go-queue-real-signed-programme')
             record['programmes'].append({'queueCeiling':ceiling,
                 'receipt':file_identity(output/('node-'+str(ceiling))/'qualified.json')})
-            write_workflow_receipt(output/'progress.json',record)
+            write_workflow_receipt(output/('progress-'+str(ceiling)+'.json'),record)
         require(inventory(snapshot(app)) == before and products.verify_prepared(native_directory) == native_record
                 and source_identity(ROOT) == consumer_native
                 and helpers == {name:file_identity(ROOT/name) for name in MATERIALS}

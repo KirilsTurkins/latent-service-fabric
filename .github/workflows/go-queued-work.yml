@@ -36,8 +36,8 @@ jobs:
     - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
       with:
         python-version: 3.13.5
-    - name: Fetch the exact successful current SDK5 producer before validation
-      run: git fetch --no-tags --depth=1 origin 357eecbd7744bbc026741d241b679966d14b0e95
+    - name: Fetch the exact current three-product and inherited two-product sources before validation
+      run: git fetch --no-tags --depth=1 origin f244b81f14abad5d4dc4984cb842aaf1d9076e23 f6251df89851de98cb869784d095ad5cc2e5b385
     - name: Install original locked reader dependencies
       run: python3 -m pip install -r tools/requirements.lock
     - name: Preserve explicit Go profile and independent queue admission boundaries
@@ -89,10 +89,10 @@ jobs:
         echo "$out/go-async/bin" >> "$GITHUB_PATH"
 
         '
-    - name: Retrieve exactly five authenticated SDK5 products without rebuilding the host
+    - name: Retrieve exactly three current and two inherited authenticated products without rebuilding the host
       env:
         GH_TOKEN: ${{ github.token }}
-      run: python3 -B tools/rust_http_installed_native_products.py --output "$RUNNER_TEMP/go-queue-native"
+      run: python3 -B tools/c_thread_admission_native_products.py --output "$RUNNER_TEMP/go-queue-native"
     - name: Build one unchanged transitive Go v6 component and require25 signed queue and lifecycle outcomes
       run: python3 -B tools/qualify_go_queued_work.py --native "$RUNNER_TEMP/go-queue-native" --output "$RUNNER_TEMP/go-queue-runtime"
     - name: Retain bounded original construction and actual outcomes including failures

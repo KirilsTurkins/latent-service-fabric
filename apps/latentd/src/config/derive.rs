@@ -19,7 +19,8 @@ pub(super) fn settings(config: &NodeConfig) -> Result<NodeSettings, PlatformErro
     super::security::validate(config)?;
     let state = super::state::derive_optional(config)?;
     let capacity = validation::validate(config)?;
-    let admission = policy::admission(config, &capacity)?;
+    let wasmtime = runtime::wasmtime(config, &capacity)?;
+    let admission = policy::admission(config, &capacity, &wasmtime)?;
     let delegation_limits = config.budget_profile.limits()?;
     let invocation = runtime::invocation(config, &capacity)?;
     let management = runtime::management(config, &invocation)?;
@@ -36,7 +37,6 @@ pub(super) fn settings(config: &NodeConfig) -> Result<NodeSettings, PlatformErro
         ..TelemetryPipelineConfig::default()
     };
     telemetry.validate().map_err(|_| invalid("telemetry"))?;
-    let wasmtime = runtime::wasmtime(config, &capacity)?;
     let manifest_profile = if state.is_some() && wasmtime.transactional_state {
         latent_manifest::ManifestValidationProfile::phase4(
             config.budget_profile.profile(),
