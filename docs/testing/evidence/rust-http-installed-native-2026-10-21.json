@@ -1,0 +1,63 @@
+{
+  "schemaVersion": "latent.sdk.current-installed-http.producer-review.v1",
+  "status": "passed",
+  "source": "357eecbd7744bbc026741d241b679966d14b0e95",
+  "run": 39532689221,
+  "job": 119002071182,
+  "artifact": {
+    "id": 12316652021,
+    "size_in_bytes": 66201411,
+    "digest": "sha256:3ccc2717ac335233335d0a37e5e173be786e201ca0619a594894ba0503776b6c"
+  },
+  "members": 49,
+  "wholeArchiveSha256Verified": true,
+  "allMembersCrcAndSha256Verified": true,
+  "compiledNativeSource": {
+    "sha256": "sha256:f913a7cfd552e5714455196f6aed2371afa1b6adba1ba56d23aea871af6b0744",
+    "files": 3318,
+    "bytes": 26128348,
+    "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+    "hermetic": false,
+    "implicitCompilerInputs": "not-attested"
+  },
+  "nativeGitIdentityExact": true,
+  "auxiliaryGitRows": 134,
+  "auxiliaryGitBytesExact": true,
+  "products": {
+    "latent": {
+      "sha256": "sha256:0baddbf297f756612afc861cd18dd1e0fc03b1fa60a2697cbf8cb70a641e3828",
+      "bytes": 69007984
+    },
+    "latentd": {
+      "sha256": "sha256:72c8ec2f2e8f3d4f307dc35f1a3a38a147200bdda56b2b192979ac5cadefb377",
+      "bytes": 185509760
+    },
+    "examples/package": {
+      "sha256": "sha256:5d1c60df2cab630e4bb19e06cc699b6cf0c930eef418822f025ab416220e2314",
+      "bytes": 17750192
+    },
+    "examples/capsule_contracts": {
+      "sha256": "sha256:c4936ef9489d2b29f6513d8b48236e95d622a807fccdbf60ee6008c12cec75c1",
+      "bytes": 7245472
+    },
+    "examples/capsule_authoring": {
+      "sha256": "sha256:5c661ba4e2c67e43e3a7ed07f9d24e8348c4e6d8dbd06e157fd2a46f062880b8",
+      "bytes": 24017536
+    }
+  },
+  "rustPassed": 50,
+  "pythonPassed": 15,
+  "newSDKGuestBackendAOTBuilds": 0,
+  "signedRuntimeQualification": false,
+  "receipts": {
+    "native-products.json": {
+      "sha256": "sha256:3a9c558088ef752d35efadbe0f0e77c0b09848b32f383acd531bf2ea0b98fa83",
+      "bytes": 25783
+    },
+    "source-inputs.json": {
+      "sha256": "sha256:22c362cbe76391864c6d716e1e383f64204c60e5fdf96d85c80a9247205fd7ba",
+      "bytes": 22275
+    }
+  },
+  "producerPurpose": "Current five native pool/admission/protocol/stream input changes; no historical tuple is repinned."
+}
