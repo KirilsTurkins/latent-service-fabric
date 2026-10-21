@@ -631,9 +631,11 @@ impl<'a> Graph<'a> {
                     if c.lifted
                         || Self::indexed(&self.funcs, core_func_index)? != Value::MainFunc(c.root)
                         || c.start_instances != 1
-                        || c.function_types.get(type_index as usize) != Some(&Some(false))
+                        || c.function_types.get(type_index as usize) != Some(&Some(true))
                     {
-                        return Err("c-component-single-owned-sync-lift-after-initialize");
+                        return Err(
+                            "c-component-single-owned-async-type-sync-abi-lift-after-initialize",
+                        );
                     }
                     let mut memory = 0;
                     let mut realloc = 0;
