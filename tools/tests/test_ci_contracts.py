@@ -843,8 +843,9 @@ class RepositoryMigrationTests(unittest.TestCase):
         setup = [step for step in original["steps"]
                  if step.get("uses", "").split("@")[0] in
                  {"actions/checkout", "actions/setup-python", "actions/setup-dotnet",
+                  "dtolnay/rust-toolchain", "Swatinem/rust-cache",
                   "bytecodealliance/actions/wasm-tools/setup"} or step.get("name") in names]
-        self.assertEqual(len(setup), 7)
+        self.assertEqual(len(setup), 9)
         self.assertEqual(diagnostic["steps"][:-1], setup)
         upload = diagnostic["steps"][-1]
         self.assertEqual(upload["if"], "always()")

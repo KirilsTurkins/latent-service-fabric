@@ -29,6 +29,27 @@
         }
       },
       {
+        "uses": "dtolnay/rust-toolchain",
+        "with": {
+          "components": "rustfmt",
+          "targets": "wasm32-unknown-unknown"
+        }
+      },
+      {
+        "uses": "Swatinem/rust-cache",
+        "with": {
+          "cache-all-crates": false,
+          "cache-bin": false,
+          "cache-on-failure": false,
+          "cache-targets": true,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "save-if": false,
+          "shared-key": "host-correctness"
+        }
+      },
+      {
         "uses": "bytecodealliance/actions/wasm-tools/setup",
         "with": {
           "version": "1.254.0"
@@ -63,7 +84,7 @@
   },
   "jobId": "tool-install-diagnostic",
   "kind": "job",
-  "reviewReason": "Reviewed explicit default-false manual installer-only diagnostic. The seven scratch setup/install steps are exact copies; all original workflow fields restore after removing only the input, new job and exact normal-toolchain manual exclusion. No guest/native host/AOT programme, target setup, compiler arguments, original commands, budgets or upload paths change. Retain bounded existing public installer streams to determine the original unknown closed-runtime-compile failure.",
+  "reviewReason": "Corrected installer-only verification after authenticated E0463. All original7 scratch setup/install steps and bounded uploads unchanged; add only exact sibling Rust1.97.1 wasm32 target/cache prerequisites. Defaultfalse/manual-only20min, no parentAOT/guest/nativehost. Full production workflow restores exactly after removing only diagnostic input/job/exclusion.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }
