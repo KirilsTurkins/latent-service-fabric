@@ -114,8 +114,9 @@ fn finite_engine_profiles_derive_checked_pool_capacity_without_opening_storage()
                 allocator,
                 optimization,
                 java_guest: false,
-                threading_profile: Default::default(),
-                activation_stack_accounting: Default::default(),
+                threading_profile: crate::config::model::EngineThreadingProfile::default(),
+                activation_stack_accounting:
+                    crate::config::model::EngineActivationStackAccounting::default(),
             };
             config.cells.push(CellConfig {
                 class: "small".to_owned(),

@@ -253,3 +253,50 @@ closure, real layout/backing bounds, sealed image/BTF, trusted final-free
 installation and node/operator conformance remain open. The complete consumer
 and production profile remain unavailable under the original 96/64 KiB and
 fixed-slot limits.
+
+## Compiled copied-TCP packet object extension
+
+The separate `feat/stream-kernel-packet-prefix-20261021` branch adds a closed
+`--packet` object-only selection. It preserves all nine prior modes, their
+commands, symbol floors and configuration checks. The additional mode selects
+27 actual translation units and requires 99 defined function symbols: all 87
+prior symbols, eight private packet functions and four original TCP functions.
+The original `-Werror`, `-j2`, 900-second total and 300-second command deadlines,
+4 MiB per-command and 16 MiB total diagnostic bounds remain unchanged.
+
+The source authenticates 49 maintained whole files and 23 complete definition
+preimages. It derives 83 files, preserving 70 of 75 prior outputs exactly and
+changing five shared outputs through closed packet extensions. The constructor,
+copy, clone, collapse and actual final-return dispatchers retain original normal
+paths. Protected collapse refuses normal or foreign queue packets before their
+inspection, rather than adopting an uncharged RX origin.
+
+Seventeen supplemental tiny C controls passed with explicit serialized layout,
+atomic, lock and last-dataref doubles, along with all 24 prior audit-SKB and 19
+Netport controls. The original maintained retransmit copy demonstrates a normal
+heap escape with exit 2; the corrected reference exits 0. Earlier reference setup
+and copied-local-socket fixture failures remain retained. These are mechanism
+controls, not execution of Linux, TCP exchange, real RCU or device DMA.
+
+The first [packet object run](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39600172288)
+failed because private copy definitions preceded the retained static
+`skb_zerocopy_clone` dependency. Its bounded compiler output and 30-member
+artifact remain retained. The correction authenticates that complete unchanged
+helper and moves only the private copy include after it; all implementation
+bodies and the other 82 derived outputs remain exact. A declaration-order
+regression and all twelve prior packet source controls pass.
+
+The corrected [owning campaign](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39601912368)
+passed on source `7029895fec970a0b16ce43c448ca741430f581e1`. The
+[compact observation](evidence/kernel-packet-objects-compiled-2026-10-21.json)
+binds all 97 ZIP members, 189 exact Git materials, 27 x86 ELF objects and 99
+GLOBAL function oracles (90 private and nine original). It retains the same
+4,309-symbol configuration with only `CONFIG_LSF_STREAM_FACTORY` changed from `n` to `y`, all 175
+actual source/controller tests and 32 completed, cleaned commands. The TCP,
+TCP-output, TCP-input and SKB translation units were actually compiled under the
+original security configuration and diagnostic bounds. This does not link or boot
+a kernel, install a factory, qualify RX/DMA or certify final-free. Production
+installation and complete allocation closure remain false; the full factory
+consumer remains unavailable. RX/TX device initialization, trusted prelookup
+infrastructure, neighbour/DNS and actual final-free/installation qualification
+remain separate unfinished work.
