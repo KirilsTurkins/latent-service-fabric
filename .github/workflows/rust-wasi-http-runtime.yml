@@ -79,6 +79,7 @@ jobs:
             ${{ runner.temp }}/rust-http-runtime/adapter.wit.json
             ${{ runner.temp }}/rust-http-runtime/raw-runtime.wasm
             ${{ runner.temp }}/rust-http-runtime/rust-wasi-http-runtime.wasm
+            ${{ runner.temp }}/rust-http-runtime/component-composer/wac
             ${{ runner.temp }}/rust-http-runtime/logs/*.stdout.txt
             ${{ runner.temp }}/rust-http-runtime/logs/*.stderr.txt
           if-no-files-found: warn

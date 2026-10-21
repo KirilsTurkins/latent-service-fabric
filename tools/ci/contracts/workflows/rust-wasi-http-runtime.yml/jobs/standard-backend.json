@@ -73,7 +73,7 @@
         "with": {
           "if-no-files-found": "warn",
           "name": "rust-wasi-http-backend-${{ github.sha }}",
-          "path": "${{ runner.temp }}/rust-http-resource-controls.txt\n${{ runner.temp }}/rust-http-runtime/INSTALL-COMPLETE.json\n${{ runner.temp }}/rust-http-runtime/INSTALL-FAILED.json\n${{ runner.temp }}/rust-http-runtime/source-inputs.json\n${{ runner.temp }}/rust-http-runtime/reference.wit.json\n${{ runner.temp }}/rust-http-runtime/adapter.wit.json\n${{ runner.temp }}/rust-http-runtime/raw-runtime.wasm\n${{ runner.temp }}/rust-http-runtime/rust-wasi-http-runtime.wasm\n${{ runner.temp }}/rust-http-runtime/logs/*.stdout.txt\n${{ runner.temp }}/rust-http-runtime/logs/*.stderr.txt",
+          "path": "${{ runner.temp }}/rust-http-resource-controls.txt\n${{ runner.temp }}/rust-http-runtime/INSTALL-COMPLETE.json\n${{ runner.temp }}/rust-http-runtime/INSTALL-FAILED.json\n${{ runner.temp }}/rust-http-runtime/source-inputs.json\n${{ runner.temp }}/rust-http-runtime/reference.wit.json\n${{ runner.temp }}/rust-http-runtime/adapter.wit.json\n${{ runner.temp }}/rust-http-runtime/raw-runtime.wasm\n${{ runner.temp }}/rust-http-runtime/rust-wasi-http-runtime.wasm\n${{ runner.temp }}/rust-http-runtime/component-composer/wac\n${{ runner.temp }}/rust-http-runtime/logs/*.stdout.txt\n${{ runner.temp }}/rust-http-runtime/logs/*.stderr.txt",
           "retention-days": 3
         }
       }
@@ -82,7 +82,7 @@
   },
   "jobId": "standard-backend",
   "kind": "job",
-  "reviewReason": "Actual39519143235 failed before compilation because the Wasm-only dependency fetch omitted locked cpufeatures0.2.17 needed by the Linux host compiler closure. Fetch both exact Linux host and Wasm target sources; preserve locked offline compilation, all27 original controls, original20-minute lifetime and bounded evidence. No runtime, recipe or authority change.",
+  "reviewReason": "Retain the pinned public composer for prepared backend consumers",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-wasi-http-runtime.yml"
 }

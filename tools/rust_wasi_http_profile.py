@@ -126,14 +126,136 @@ def validate_assets(root=ROOT):
     return actual
 
 
+def shape(graph, value, *, type_index=False, depth=0, work=None):
+    """Compare complete nominal types without mistaking encoder IDs for ABI.
+
+    Options and tuple members carry type references too. The original closed
+    .NET comparator is unchanged; this profile handles the complete WASI graph.
+    """
+    work = [65536] if work is None else work
+    work[0] -= 1
+    if depth > 64 or work[0] < 0:
+        raise ValueError('rust-http-type-depth-or-work-bound')
+    def nested(child, referenced=False):
+        return shape(graph, child, type_index=referenced, depth=depth+1, work=work)
+    if type_index and type(value) is int:
+        if not 0 <= value < len(graph['types']):
+            raise ValueError('rust-http-type-reference-bound')
+        row = graph['types'][value]
+        owner = row.get('owner')
+        nominal = None
+        if owner and 'interface' in owner:
+            from tools.dotnet_guest.internal_io import interface_name
+            nominal = interface_name(graph, owner['interface'])
+        return {'name': row['name'], 'owner': nominal, 'kind': nested(row['kind'])}
+    if isinstance(value, dict):
+        result = {}
+        for key, child in value.items():
+            if key in {'docs', 'stability'}:
+                continue
+            if key == 'kind' and isinstance(child, dict) and set(child) in ({'method'}, {'async-method'}):
+                result[key] = {'method': nested(next(iter(child.values())), True)}
+            elif key == 'kind' and child in ('freestanding', 'async-freestanding'):
+                result[key] = 'freestanding'
+            else:
+                result[key] = nested(child, key in {'type', 'types', 'result', 'borrow',
+                    'own', 'list', 'option', 'ok', 'err', 'future', 'stream',
+                    'constructor', 'static', 'async-static'})
+        return result
+    if isinstance(value, list):
+        return [nested(child, type_index) for child in value]
+    return value
+
+
+def verify_compiled_core(raw: bytes, cores: list[bytes]):
+    """Certify encoder metadata processing while preserving every other byte."""
+    from tools.dotnet_guest.internal_io import integer
+    marker = 'component-type:wit-bindgen:0.62.0:latent:rust-http-runtime@0.1.0:client:encoded world'
+
+    def string(data, position):
+        size, position = integer(data, position)
+        end = position + size
+        if size > 4096 or end > len(data):
+            raise ValueError('rust-http-core-metadata-string-bound')
+        return data[position:end].decode('utf-8'), end
+
+    def split(data):
+        if len(data) > 64 * 1024 * 1024 or data[:8] != b'\0asm\x01\0\0\0':
+            raise ValueError('rust-http-core-header-or-bound')
+        position, kept, metadata = 8, [], {}
+        count = 0
+        while position < len(data):
+            count += 1
+            if count > 256:
+                raise ValueError('rust-http-core-section-bound')
+            start, kind = position, data[position]
+            size, position = integer(data, position + 1)
+            end = position + size
+            if end > len(data):
+                raise ValueError('rust-http-core-section-bound')
+            if kind == 0:
+                name, payload = string(data[:end], position)
+                if name == 'producers' or name.startswith('component-type:'):
+                    if name not in ('producers', marker) or name in metadata:
+                        raise ValueError('rust-http-core-unknown-or-duplicate-metadata')
+                    metadata[name] = data[payload:end]
+                else:
+                    kept.append(data[start:end])
+            else:
+                kept.append(data[start:end])
+            position = end
+        return kept, metadata
+
+    def producers(data):
+        count, position = integer(data, 0)
+        if count > 8:
+            raise ValueError('rust-http-core-producer-bound')
+        fields = []
+        for _ in range(count):
+            name, position = string(data, position)
+            size, position = integer(data, position)
+            if size > 16:
+                raise ValueError('rust-http-core-producer-bound')
+            values = []
+            for _ in range(size):
+                key, position = string(data, position)
+                value, position = string(data, position)
+                values.append((key, value))
+            fields.append((name, values))
+        if position != len(data):
+            raise ValueError('rust-http-core-producer-trailing')
+        return fields
+
+    if not 1 <= len(cores) <= 8:
+        raise ValueError('rust-http-core-count')
+    before, metadata = split(raw)
+    if raw in cores:
+        return {'originalCoreExact': True, 'originalSha256': digest(raw)}
+    expected = [('language', [('Rust', '')]), ('processed-by', [
+        ('rustc', '1.97.1 (8bab26f4f 2026-07-14)')])]
+    if set(metadata) != {marker, 'producers'} or producers(metadata['producers']) != expected:
+        raise ValueError('rust-http-core-original-metadata')
+    expected[1][1].extend([('wit-component', '0.259.0'), ('wit-bindgen-rust', '0.62.0')])
+    matches = []
+    for core in cores:
+        after, observed = split(core)
+        if after == before and set(observed) == {'producers'} and producers(observed['producers']) == expected:
+            matches.append(core)
+    if len(matches) != 1:
+        raise ValueError('rust-http-core-executable-or-metadata-drift')
+    return {'originalCoreExact': False, 'originalSha256': digest(raw),
+        'encodedSha256': digest(matches[0]), 'allNonEncoderMetadataSectionsExact': True,
+        'onlyPinnedComponentMetadataProcessed': True}
+
+
 def validate_adapter(reference: dict, actual: dict):
     """Compare every type/function against original whole WIT and private edge.
 
     Async is allowed on exactly the selected internal blocking operations and
-    drain. Resource owners, signatures, error variants and all unused members
-    remain part of the comparison; matching interface labels alone is weaker.
+    drain. Every exported member, resource and error remains exact. Unused
+    host-import members may be eliminated by the linker; every emitted import
+    still has its original complete signature/type and no unknown member.
     """
-    from tools.dotnet_guest.internal_io import shape
     for direction, expected_names in (('imports', AUTHORITY), ('exports', EXTERNAL | {RETIREMENT})):
         expected = names(reference, direction, 'client')
         observed = names(actual, direction)
@@ -141,13 +263,17 @@ def validate_adapter(reference: dict, actual: dict):
             raise ValueError('rust-http-adapter-exact-interface-set')
         for identity in expected_names:
             before, after = expected[identity], observed[identity]
-            if before['types'].keys() != after['types'].keys() or before['functions'].keys() != after['functions'].keys():
-                raise ValueError('rust-http-adapter-exact-type-or-function-set')
-            for name, index in before['types'].items():
-                if shape(reference, index, type_index=True) != shape(actual, after['types'][name], type_index=True):
+            if direction == 'exports':
+                if before['types'].keys() != after['types'].keys() or before['functions'].keys() != after['functions'].keys():
+                    raise ValueError('rust-http-adapter-exact-type-or-function-set')
+            elif (not after['functions'] or not after['types'].keys() <= before['types'].keys()
+                    or not after['functions'].keys() <= before['functions'].keys()):
+                raise ValueError('rust-http-adapter-unknown-or-empty-import-member')
+            for name, index in after['types'].items():
+                if shape(reference, before['types'][name], type_index=True) != shape(actual, index, type_index=True):
                     raise ValueError('rust-http-adapter-original-type-drift:' + identity + '#' + name)
-            for name, function in before['functions'].items():
-                candidate = after['functions'][name]
+            for name, candidate in after['functions'].items():
+                function = before['functions'][name]
                 if shape(reference, function) != shape(actual, candidate):
                     raise ValueError('rust-http-adapter-original-function-drift:' + identity + '#' + name)
                 allowed = direction == 'exports' and (name in ASYNC.get(identity, ()) or identity == RETIREMENT and name == 'drain')
@@ -158,4 +284,5 @@ def validate_adapter(reference: dict, actual: dict):
                 if asynchronous != (allowed or original_async):
                     raise ValueError('rust-http-adapter-unreviewed-calling-convention:' + identity + '#' + name)
     return {'imports': sorted(AUTHORITY), 'exports': sorted(EXTERNAL | {RETIREMENT}),
-        'wholeOriginalTypesCompared': True, 'exactCallingConventions': True}
+        'wholeOriginalTypesCompared': True, 'exactCallingConventions': True,
+        'wholeOriginalExportSurfaceCompared': True, 'emittedImportsAreExactSubsets': True}
