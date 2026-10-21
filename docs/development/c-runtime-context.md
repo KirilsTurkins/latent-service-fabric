@@ -302,3 +302,15 @@ stack-size69632 option, original4MiB memory ceiling and every final-byte layout
 check. Actual selected linking, ABI/OOM execution and final graph authentication
 remain pending the corrected hosted control. No engine, builder, host grant or
 threading profile selects this path, and no additional #744 criterion closes.
+
+The corrected run39552433461 retained another concrete link failure: both the
+standalone PAL and original WASI libc defined `errno`. Artifact12324491302 has
+71 authenticated members and archive SHA-256
+`72cd6d8b82777d62f485c4d6434b4d9f458a25af79006affcf7ce94ad97fb083`.
+The internal `LSF_C_LINKED_LIBC=1` mode leaves both errno storage and its location
+function to the original linked libc. Its thread-local accesses still pass
+through the same whole-core context derivation. The existing no-libc controls
+retain their original fallback definitions. Five preprocessing-only controls
+confirmed exact standalone output, an external TLS declaration in linked mode,
+and refusal of invalid mode/header families; they did not link or run a core.
+The linked source/header preimages are checked before and after the programme.

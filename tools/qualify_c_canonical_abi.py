@@ -21,6 +21,12 @@ ROOT = Path(__file__).resolve().parents[1]
 FIXTURE = 'sdk/c-guest/runtime-fixtures/canonical-abi/'
 WORLD = 'examples:threading/service@1.0.0'
 EXPORT = 'examples:threading/api@1.0.0#greet'
+LIBC_ERRNO_SOURCES = {
+    'libc/include/wasm-wasi-musl/errno.h': '844d1aa7a14734acde284e3109db63e29511540f6c9ccfefe46e455fd5b3ab40',
+    'libc/include/wasm-wasi-musl/__errno.h': 'b9ce417c2b172bf982d8ef0236adfe442f54e7d0d344e75104cbcede88a9d7e2',
+    'libc/wasi/libc-bottom-half/cloudlibc/src/libc/errno/errno.c': 'eeecab4885f9dba3df77a2c81c1960f1f84779a2b16f0b2aceb1d83af1d47aa3',
+    'libc/wasi/libc-bottom-half/sources/__errno_location.c': 'fb6d59a8ca5b99dc0799db259a7b35e7403818469f6cbf6a6ec1178fec98f702',
+}
 SOURCES = (
     'tools/qualify_c_canonical_abi.py', 'tools/qualify_c_context_lowering.py',
     'tools/build_process.py', 'tools/build_process_linux.py', 'tools/build_process_windows.py',
@@ -101,6 +107,13 @@ def tree(directory):
     return rows
 
 
+def libc_errno_inputs(lib):
+    rows = {name:identity(lib/name,8192) for name in LIBC_ERRNO_SOURCES}
+    require(all(row['sha256'] == LIBC_ERRNO_SOURCES[name] for name,row in rows.items()),
+            'c-abi-original-libc-errno-preimages')
+    return rows
+
+
 def execute(output, tools):
     require(sys.platform == 'linux' and not output.exists() and not output.is_symlink(),
             'c-abi-fresh-owned-linux-output')
@@ -112,7 +125,7 @@ def execute(output, tools):
     environment.update(ZIG_GLOBAL_CACHE_DIR=str(output/'zig-global'),
                        ZIG_LOCAL_CACHE_DIR=str(output/'zig-local'))
     deadline, used, primary = time.monotonic()+360, 0, False
-    generated_before = None
+    generated_before, libc_before, lib = None, None, None
     report = {'schemaVersion':'latent.c.canonical-abi-source-control.v1', 'status':'failed',
               'source':before, 'tools':original_tools, 'commands':[], 'selectedCLinks':0,
               'actualGeneratedCAbiExecuted':False, 'actualComponentGraphAuthenticated':False,
@@ -183,6 +196,9 @@ def execute(output, tools):
                                  command([tools['zig'],'env'],'zig-env').decode('utf-8'), re.MULTILINE)
         require(len(directories) == 1, 'c-abi-zig-lib-directory')
         lib = Path(json.loads(directories[0]))
+        libc_before = libc_errno_inputs(lib)
+        report['originalLibcErrnoInputs'] = libc_before
+        report['errnoOwner'] = 'original-linked-wasi-libc-tls'
         headers = [lib/'libc/include/wasm-wasi-musl', lib/'libc/include/generic-musl']
         report['explicitWasiHeaders'] = header_identity(headers)
         flags = [value for path in headers for value in ('-isystem',str(path))]
@@ -191,6 +207,7 @@ def execute(output, tools):
                    '__lsf_c_root_initialize','__lsf_c_root_finish')
         link = [tools['zig'],'cc','-target','wasm32-wasi','-std=c11','-O2','-g0',
                 '-Wall','-Wextra','-Werror','-matomics','-mbulk-memory','-pthread',
+                '-DLSF_C_LINKED_LIBC=1',
                 '-mexec-model=reactor',*flags,'-I',generated,
                 ROOT/(FIXTURE+'probe.c'), ROOT/'sdk/c-guest/runtime/threads.c',
                 ROOT/'sdk/c-guest/runtime/tls-keys.c', ROOT/'sdk/c-guest/src/trap.c',
@@ -242,10 +259,14 @@ def execute(output, tools):
                 report['toolsUnchanged'] = original_tools == {name:identity(path) for name,path in tools.items()}
                 report['generatedInputsUnchanged'] = (None if generated_before is None else
                                                       generated_before == tree(output/'generated'))
+                report['libcErrnoInputsUnchanged'] = (None if libc_before is None else
+                                                    libc_before == libc_errno_inputs(lib))
             except (OSError, ValueError):
                 report['inputFenceObservationRefused'] = True
                 report['status'] = 'failed'
-            if not report.get('sourceUnchanged') or not report.get('toolsUnchanged') or report.get('generatedInputsUnchanged') is False:
+            if (not report.get('sourceUnchanged') or not report.get('toolsUnchanged')
+                    or report.get('generatedInputsUnchanged') is False
+                    or report.get('libcErrnoInputsUnchanged') is False):
                 report['status'] = 'failed'
             (output/'report.json').write_text(json.dumps(report,indent=2,sort_keys=True)+'\n')
             if not primary:
