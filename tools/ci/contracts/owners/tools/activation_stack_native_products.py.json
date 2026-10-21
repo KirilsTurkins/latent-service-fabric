@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/activation_stack_native_products.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Reviewed c713 native acquisition and exact shared source projection preserve all original Rust64 runtime oracles, caps and commands, with additive reader/source controls and a fresh source-bound adapter.",
+  "reviewReason": "Parent reviewed exact source/owning proposal: all original compiler, artifact, source, library and runtime cases/limits retained; no native/backend rebuild or qualification borrowed from failures.",
   "schemaVersion": "latent.ci.contracts.v1",
   "sha256": "8964783aca30521a0c9882df15f98ca574b0b2d1b965a0951cd2cbf2a1abe352"
 }

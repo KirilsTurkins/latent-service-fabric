@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_rust_wasi_http_installed.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Parent reviewed exact source/owning proposal: all original compiler, artifact, source, library and runtime cases/limits retained; no native/backend rebuild or qualification borrowed from failures.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "f55954ca005ef5ad0692f8c2e815e0b2cd76641ef2e59aa666e69259553ee025"
+}

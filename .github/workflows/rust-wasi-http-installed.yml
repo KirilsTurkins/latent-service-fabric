@@ -1,0 +1,128 @@
+name: Installed Rust ordinary WASI HTTP recipe
+
+on:
+  push:
+    branches: ['feat/rust-http-installed-current-20261021']
+    paths:
+      - '.github/workflows/rust-wasi-http-installed.yml'
+      - 'tools/qualify_rust_wasi_http_installed.py'
+      - 'tools/rust_wasi_http_installed_*.py'
+      - 'tools/rust_wasi_http_current_backend.py'
+      - 'tools/dev_rust_http_runtime.py'
+      - 'tools/dev_guest_recipe.py'
+      - 'tools/dev_tool_distribution.py'
+      - 'tools/tests/test_rust_wasi_http_installed.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: rust-wasi-http-installed-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  ordinary-clients:
+    name: One installed recipe guest and six signed parsed-client outcomes
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      CARGO_BUILD_JOBS: '2'
+      CARGO_INCREMENTAL: '0'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - name: Prepare the normal captured compiler sandbox and pinned binding tool only
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/rust-http-tools"
+          echo "$RUNNER_TEMP/rust-http-tools" >> "$GITHUB_PATH"
+      - name: Fetch the exact historical native producer source without a host build
+        run: |
+          git fetch --no-tags --depth=1 origin c7134289f446cb3171eb0ffd800a94afc2a5209f
+          git fetch --no-tags --depth=1 origin 52654f7b86ef0043a8250dea39093d955ee9f480
+      - name: Check exact installed recipe and original runtime source boundaries
+        run: python3 -B -m unittest tools.tests.test_rust_wasi_http_installed tools.tests.test_dev_rust_http_runtime tools.tests.test_rust_wasi_http_async_runtime_replay -q
+      - name: Acquire only locked SDK sources for the unchanged compiler-owned forwarding root
+        run: cargo fetch --locked --target wasm32-unknown-unknown --target x86_64-unknown-linux-gnu
+      - name: Restore the exact already compiled current110 backend without rebuilding it
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: rust-wasi-http-runtime-52654f7b86ef0043a8250dea39093d955ee9f480
+          run-id: '39606039445'
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/rust-http-original
+      - name: Authenticate the original five products without building another host
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/activation_stack_native_products.py --output "$RUNNER_TEMP/rust-http-native"
+      - name: Acquire only the existing pinned installed linker archive
+        run: |
+          python3 -B - <<'PY'
+          import os
+          from pathlib import Path
+          from tools.build_dev_guest_tools import download, SOURCES
+          download(Path(os.environ['RUNNER_TEMP'])/'rust-http-installed-zig.tar.xz', SOURCES['zig'])
+          PY
+      - name: Assemble current installed inputs then compile and sign one ordinary guest
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          python3 -B tools/qualify_rust_wasi_http_installed.py
+          --native-products "$RUNNER_TEMP/rust-http-native"
+          --http-runtime "$RUNNER_TEMP/rust-http-original/rust-http-current-backend"
+          --retained-backend "$RUNNER_TEMP/rust-http-original"
+          --zig-archive "$RUNNER_TEMP/rust-http-installed-zig.tar.xz"
+          --python-prefix "$pythonLocation"
+          --output "$RUNNER_TEMP/rust-http-installed"
+      - name: Retain bounded public installed build and signed cleanup observations
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: rust-wasi-http-installed-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/rust-http-installed/*.json
+            ${{ runner.temp }}/rust-http-installed/installed.stdout
+            ${{ runner.temp }}/rust-http-installed/installed.stderr
+            ${{ runner.temp }}/rust-http-installed/staged/*.json
+            ${{ runner.temp }}/rust-http-installed/staged/payload/guest-tools.json
+            ${{ runner.temp }}/rust-http-installed/installed-execution/*.json
+            ${{ runner.temp }}/rust-http-installed/installed-execution/*.stdout
+            ${{ runner.temp }}/rust-http-installed/installed-execution/*.stderr
+            ${{ runner.temp }}/rust-http-installed/installed-execution/approved/output/*.json
+            ${{ runner.temp }}/rust-http-installed/installed-execution/approved/output/*.wasm
+            ${{ runner.temp }}/rust-http-installed/installed-execution/approved/output/logs/*.txt
+            ${{ runner.temp }}/rust-http-installed/installed-execution/unapproved/output/*.json
+            ${{ runner.temp }}/rust-http-installed/installed-execution/unapproved/output/logs/*.txt
+            ${{ runner.temp }}/rust-http-installed/node/*.json
+            ${{ runner.temp }}/rust-http-installed/node/examples-controls/*.json
+            ${{ runner.temp }}/rust-http-installed/node/foreign-controls/*.json
+            ${{ runner.temp }}/rust-http-native/*.json
+          if-no-files-found: warn
+          retention-days: 3

@@ -31,7 +31,7 @@ from tools.phase3_resource_identity import file_identity
 from tools.qualify_rust_wasi_http_runtime import verify_build
 from tools.rust_capsule_project import ROOT, fresh, inventory, read_file, read_json, snapshot, write_json
 
-MATERIALS = ('tools/qualify_rust_wasi_http_installed.py', 'tools/qualify_rust_wasi_http_runtime.py',
+MATERIALS = ('.github/workflows/rust-wasi-http-installed.yml', 'tools/qualify_rust_wasi_http_installed.py', 'tools/qualify_rust_wasi_http_runtime.py',
     'tools/build_dev_guest_tools.py', 'tools/install_guest_bindgen.py',
     'tools/rust_wasi_http_runtime_fixture.py', *inputs.MATERIALS, *node.MATERIALS, *backend.MATERIALS)
 
