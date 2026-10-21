@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "latent.rust.wasi-http.backend-observation.v1",
+  "source": "aba74d9d26c63a041bfbea13060e35213b31c135",
+  "run": 39519143235,
+  "job": 118958434382,
+  "conclusion": "failure",
+  "pythonControls": 16,
+  "actualSourceResourceControls": 11,
+  "ignored": 0,
+  "failureStage": "standard-http-runtime-compile",
+  "compilerEntered": false,
+  "cause": "Locked cpufeatures 0.2.17 host compiler dependency absent after Wasm-only fetch; Cargo correctly refused a network request under --offline.",
+  "originalCompilerDiagnostic": "error: failed to download `cpufeatures v0.2.17`\n\nCaused by:\n  attempting to make an HTTP request, but --offline was specified\n",
+  "artifact": {
+    "id": 12310117872,
+    "bytes": 9317,
+    "sha256": "082c311a87fc0085804f075a9a930ae743a728db6cddf07a210bd19ee1fd1ac6",
+    "members": 13,
+    "expandedBytes": 16924,
+    "crcAndMemberHashesVerified": true
+  },
+  "repair": "Acquire exact locked Linux host and Wasm target compiler sources before the original offline adapter build.",
+  "signedQualification": false,
+  "adapterCompiled": false,
+  "failurePreserved": true
+}

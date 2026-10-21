@@ -60,7 +60,7 @@
       },
       {
         "name": "Acquire only locked SDK compiler sources before offline compilation",
-        "run": "cargo fetch --locked --target wasm32-unknown-unknown"
+        "run": "cargo fetch --locked --target wasm32-unknown-unknown --target x86_64-unknown-linux-gnu"
       },
       {
         "name": "Compile and authenticate only the selected WASI backend",
@@ -82,7 +82,7 @@
   },
   "jobId": "standard-backend",
   "kind": "job",
-  "reviewReason": "One locked offline Wasm backend compile after explicit pinned SDK dependency fetch,16 Python and11 actual-source resource controls; bounded public evidence only, no native host or signed application build.",
+  "reviewReason": "Actual39519143235 failed before compilation because the Wasm-only dependency fetch omitted locked cpufeatures0.2.17 needed by the Linux host compiler closure. Fetch both exact Linux host and Wasm target sources; preserve locked offline compilation, all27 original controls, original20-minute lifetime and bounded evidence. No runtime, recipe or authority change.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-wasi-http-runtime.yml"
 }
