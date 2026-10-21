@@ -1,0 +1,62 @@
+{
+  "cases": [
+    "TrackingInputs.test_cancelled_boundary_is_not_qualification_but_successful_owning_jobs_can_be_reused",
+    "TrackingInputs.test_changed_archive_is_rejected_before_any_directory_or_member_is_created",
+    "TrackingInputs.test_forged_prepared_receipt_is_rejected_before_engine_loading",
+    "TrackingInputs.test_head_job_name_branch_and_tested_merge_artifact_cannot_be_interchanged"
+  ],
+  "guards": {
+    "TrackingInputs.test_cancelled_boundary_is_not_qualification_but_successful_owning_jobs_can_be_reused": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:55991faadbc9b1a12f9f663e0880e8354100beade135f680600632c6e4d34f0f",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "TrackingInputs.test_changed_archive_is_rejected_before_any_directory_or_member_is_created": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:55991faadbc9b1a12f9f663e0880e8354100beade135f680600632c6e4d34f0f",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "TrackingInputs.test_forged_prepared_receipt_is_rejected_before_engine_loading": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:55991faadbc9b1a12f9f663e0880e8354100beade135f680600632c6e4d34f0f",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "TrackingInputs.test_head_job_name_branch_and_tested_merge_artifact_cannot_be_interchanged": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:55991faadbc9b1a12f9f663e0880e8354100beade135f680600632c6e4d34f0f",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_typescript_tracking_replay_inputs.py",
+  "reviewReason": "Review bounded tracking-engine reuse, immutable successful producer jobs and exact native artifacts; preserve every original five-profile limit and all refusal/retirement oracles. Add adverse provenance controls without changing existing cases or guards.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
