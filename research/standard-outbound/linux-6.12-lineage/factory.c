@@ -467,7 +467,7 @@ static const struct file_operations lsf_factory_operations = {
     .read = lsf_factory_read,
     .write = lsf_factory_write,
     .release = lsf_factory_release,
-    .llseek = no_llseek,
+    .llseek = NULL,
 };
 static struct miscdevice lsf_factory_device = {
     .minor = MISC_DYNAMIC_MINOR,

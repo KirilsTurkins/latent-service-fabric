@@ -6,6 +6,7 @@
 #include "prepaid.h"
 
 struct lsf_factory_context;
+int lsf_factory_register(void);
 struct lsf_factory_consumer {
     /* These must be compiled from the exact complete selected platform, not
      * registered dynamically. create includes outer socket/inode, security,
