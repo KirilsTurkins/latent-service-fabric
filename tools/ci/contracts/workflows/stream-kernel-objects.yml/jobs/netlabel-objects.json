@@ -3,7 +3,7 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "if": "${{ inputs.packet != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-packet-prefix-20261021') && (inputs.route_cache != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-cache-20261021') && (inputs.route != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-consumer-20261021') && (inputs.bind != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-owners-20261021') && (inputs.audit != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-audit-skb-20261021') && (inputs.avc != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-avc-consumer-20261021') && (inputs.sidcache != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-audit-owner-20261021') && (inputs.netport != true && ((github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-netlabel-consumer-20261021') || inputs.netlabel == true)))))))) }}",
+    "if": "${{ inputs.device != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-device-closure-20261021') && (inputs.packet != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-packet-prefix-20261021') && (inputs.route_cache != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-cache-20261021') && (inputs.route != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-consumer-20261021') && (inputs.bind != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-owners-20261021') && (inputs.audit != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-audit-skb-20261021') && (inputs.avc != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-avc-consumer-20261021') && (inputs.sidcache != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-audit-owner-20261021') && (inputs.netport != true && ((github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-netlabel-consumer-20261021') || inputs.netlabel == true))))))))) }}",
     "name": "Twelve actual maintained objects with nested Netlabel owners and SELinux enabled",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -56,7 +56,7 @@
   },
   "jobId": "netlabel-objects",
   "kind": "job",
-  "reviewReason": "Add one exclusive source-only linear copied-TCP packet object profile, retaining all nine prior jobs, exact symbol floors, original configuration and bounds; two old job-set assertions project only the separately checked new packet job. No kernel/runtime/install qualification.",
+  "reviewReason": "Reviewed closed NodeFixed PCI prefix and exclusive 32-object source compile; retain all original cases commands bounds and security configuration; no installation or runtime proof",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/stream-kernel-objects.yml"
 }

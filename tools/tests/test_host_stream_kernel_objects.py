@@ -354,7 +354,7 @@ class KernelRouteObjectSelection(unittest.TestCase):
         import json,yaml
         expected={'selected-objects': '3cd0999d36567ab2895fcdae18614b345b21ba64ab76dc34fd99f04d6df8cd9e', 'netlabel-objects': '54c5b3f216ccd13a2974de389f52c91aaf5c845e036e9bad8cc1be775e7e74c0', 'netport-objects': '170b80070821fd979aeda0848fb7352cd047c42bf495f1738f190ce829f73439', 'sidcache-objects': 'af60576c8eac1d372501162ff329d263d139017d81403b4aa3a58d01a46556c8', 'avc-objects': '897be4ea9cafd76ab3544192ebd0ba67f7d78ba3e910bafffeebb1d810e9ac78', 'audit-objects': 'b90d7bae8a9d5a04a947491b719bf59105a1fe75bd031f09a012953f4126cd11', 'bind-objects': 'd535fc904a479d1bbb12543d5c2fb4f9af3a64db10a9dfebe21a3cb81482abe7'}
         workflow=yaml.safe_load((candidate.ROOT/'.github/workflows/stream-kernel-objects.yml').read_bytes())
-        self.assertEqual(set(workflow['jobs'])-{'route-cache-objects','packet-objects'},set(expected)|{'route-objects'})
+        self.assertEqual(set(workflow['jobs'])-{'route-cache-objects','packet-objects','device-objects'},set(expected)|{'route-objects'})
         for name,digest in expected.items():
             body={k:v for k,v in workflow['jobs'][name].items() if k!='if'}
             actual=hashlib.sha256(json.dumps(body,sort_keys=True,separators=(',',':')).encode()).hexdigest()
@@ -552,7 +552,7 @@ class KernelRouteCacheObjectSelection(unittest.TestCase):
         import json,yaml
         expected={'selected-objects': '3cd0999d36567ab2895fcdae18614b345b21ba64ab76dc34fd99f04d6df8cd9e', 'netlabel-objects': '54c5b3f216ccd13a2974de389f52c91aaf5c845e036e9bad8cc1be775e7e74c0', 'netport-objects': '170b80070821fd979aeda0848fb7352cd047c42bf495f1738f190ce829f73439', 'sidcache-objects': 'af60576c8eac1d372501162ff329d263d139017d81403b4aa3a58d01a46556c8', 'avc-objects': '897be4ea9cafd76ab3544192ebd0ba67f7d78ba3e910bafffeebb1d810e9ac78', 'audit-objects': 'b90d7bae8a9d5a04a947491b719bf59105a1fe75bd031f09a012953f4126cd11', 'bind-objects': 'd535fc904a479d1bbb12543d5c2fb4f9af3a64db10a9dfebe21a3cb81482abe7', 'route-objects': '0ebbe0639ac459ac1eb92c950ffba1b22c23c778d6eb6dafd1dc5955cd72f22d'}
         workflow=yaml.safe_load((candidate.ROOT/'.github/workflows/stream-kernel-objects.yml').read_bytes())
-        self.assertEqual(set(workflow['jobs'])-{'packet-objects'},set(expected)|{'route-cache-objects'})
+        self.assertEqual(set(workflow['jobs'])-{'packet-objects','device-objects'},set(expected)|{'route-cache-objects'})
         for name,digest in expected.items():
             body={k:v for k,v in workflow['jobs'][name].items() if k!='if'}
             self.assertEqual(hashlib.sha256(json.dumps(body,sort_keys=True,separators=(',',':')).encode()).hexdigest(),digest,name)
@@ -624,7 +624,7 @@ class KernelPacketObjectSelection(unittest.TestCase):
             actual=hashlib.sha256(json.dumps(candidate.object_selection(*flags),sort_keys=True,separators=(',',':')).encode()).hexdigest()
             self.assertEqual(actual,digest,index)
         workflow=yaml.safe_load((candidate.ROOT/'.github/workflows/stream-kernel-objects.yml').read_bytes())
-        self.assertEqual(set(workflow['jobs']),set(expected_jobs)|{'packet-objects'})
+        self.assertEqual(set(workflow['jobs'])-{'device-objects'},set(expected_jobs)|{'packet-objects'})
         for name,digest in expected_jobs.items():
             body={key:value for key,value in workflow['jobs'][name].items() if key!='if'}
             self.assertEqual(hashlib.sha256(json.dumps(body,sort_keys=True,separators=(',',':')).encode()).hexdigest(),digest,name)
@@ -673,4 +673,136 @@ class KernelPacketObjectSelection(unittest.TestCase):
         for name in ('actualAuditExecuted','actualLinuxRcuExecuted','actualPortOrTimewaitExecuted',
             'actualRouteOrXfrmExecuted','actualParentCacheDrainExecuted','actualPacketExchangeExecuted',
             'actualRxDmaExecuted','finalFreeCertified'):
+            self.assertIs(assigned[name],False,name)
+
+
+class KernelDeviceObjectSelection(unittest.TestCase):
+    def test_thirty_two_objects_preserve_all_ninety_nine_and_add_only_real_pci_name_functions(self):
+        previous=candidate.object_selection(False,False,False,False,False,False,False,False,True)
+        selected=candidate.object_selection(False,False,False,False,False,False,False,False,False,True)
+        self.assertEqual(len(selected),32)
+        self.assertEqual(set(selected)-set(previous),set(candidate.DEVICE_OBJECTS))
+        for name,names in previous.items():self.assertTrue(set(names)<=set(selected[name]))
+        names=[name for group in selected.values() for name in group]
+        self.assertEqual(len(names),121);self.assertEqual(len(set(names)),121)
+        self.assertEqual(sum(name.startswith('lsf_') for name in names),99)
+        self.assertEqual(selected['net/factory.o'],previous['net/factory.o']+candidate.DEVICE_FACTORY)
+        self.assertNotIn('drivers/pci/iov.o',selected)
+        self.assertEqual(selected['lib/kasprintf.o'],('kvasprintf','kvasprintf_const'))
+        self.assertEqual(selected['mm/util.o'],('kstrdup','kstrdup_const','kfree_const'))
+
+    def test_unknown_mixed_and_local_device_profiles_refuse_before_any_archive_read(self):
+        for value in ('true','false',0,1,None,[],{}):
+            with self.subTest(value=value),self.assertRaisesRegex(ValueError,'closed-profile-selector'):
+                candidate.object_selection(False,False,False,False,False,False,False,False,False,value)
+        for key in ('netlabel','netport','sidcache','avc','audit','bind','route','route_cache','packet'):
+            with self.subTest(key=key),patch.object(candidate.maintained,'authenticate_archive') as read:
+                with self.assertRaisesRegex(ValueError,'exclusive-profile-selector'):
+                    candidate.run(None,None,**{key:True},device=True)
+                read.assert_not_called()
+        with patch.dict(candidate.os.environ,{},clear=True),patch.object(candidate.maintained,'authenticate_archive') as read:
+            with self.assertRaisesRegex(ValueError,'hosted-linux-only'):candidate.run(None,None,device=True)
+            read.assert_not_called()
+
+    def test_all_ten_previous_profiles_and_job_bodies_remain_exact(self):
+        import json,yaml
+        expected_profiles={0: '583f9f80e46a57df8938f6f3ce8f300dc2fc43890bf921e6ab4f53c98eeb793e', 1: 'bc7d04ee56cf5a404fe198bd4475ee950b504ebf2420a79ed1e9047f7e6702bc', 2: '47e69130d5456fe8cbae8a78435c3a8487e16589141ebf5b03da789db3738d97', 3: 'fa33596a99f0d8d1581cdec1bf07ac65fc4ae107d58efc662d6487b94925d048', 4: 'ceba030e26252eea55f7871aa74f6051523e3d5e07c25ccb35d1891e4c71263d', 5: '0fa4e5760772ab0ad5f38abf11209260c1f050283606f6aefaf6b8106272137c', 6: '0ed44f5276d265d7a51410c4431b8f6f7940bbfc1e9e9c881ea4695bcaf9fcc2', 7: 'dac5c792097f8b2a38b8743e3d3cb3a3ede96c6edec224efa8f56723cf2eb62f', 8: '48679915e3472b4a34d4c48b9ecbe14b55b00ed0aaa25814641eaf761c3f8154', 9: '511b9d5b722502603d6fbddfa9940a19a9aac12639784544c19931096efd149b'}
+        expected_jobs={'selected-objects': '3cd0999d36567ab2895fcdae18614b345b21ba64ab76dc34fd99f04d6df8cd9e', 'netlabel-objects': '54c5b3f216ccd13a2974de389f52c91aaf5c845e036e9bad8cc1be775e7e74c0', 'netport-objects': '170b80070821fd979aeda0848fb7352cd047c42bf495f1738f190ce829f73439', 'sidcache-objects': 'af60576c8eac1d372501162ff329d263d139017d81403b4aa3a58d01a46556c8', 'avc-objects': '897be4ea9cafd76ab3544192ebd0ba67f7d78ba3e910bafffeebb1d810e9ac78', 'audit-objects': 'b90d7bae8a9d5a04a947491b719bf59105a1fe75bd031f09a012953f4126cd11', 'bind-objects': 'd535fc904a479d1bbb12543d5c2fb4f9af3a64db10a9dfebe21a3cb81482abe7', 'route-objects': '0ebbe0639ac459ac1eb92c950ffba1b22c23c778d6eb6dafd1dc5955cd72f22d', 'route-cache-objects': 'a082804fea4f81095318cc07e6d65b00ce771a01264283f9e78c4211b89b7a9e', 'packet-objects': '692a351fc3162a20f4cd2fff73b6f2c01f6654524def775ee3860dc36f691261'}
+        for index,digest in expected_profiles.items():
+            flags=[False]*9
+            if index:flags[index-1]=True
+            actual=hashlib.sha256(json.dumps(candidate.object_selection(*flags),sort_keys=True,separators=(',',':')).encode()).hexdigest()
+            self.assertEqual(actual,digest,index)
+        workflow=yaml.safe_load((candidate.ROOT/'.github/workflows/stream-kernel-objects.yml').read_bytes())
+        self.assertEqual(set(workflow['jobs'])-{'device-objects'},set(expected_jobs))
+        for name,digest in expected_jobs.items():
+            body={k:v for k,v in workflow['jobs'][name].items() if k!='if'}
+            self.assertEqual(hashlib.sha256(json.dumps(body,sort_keys=True,separators=(',',':')).encode()).hexdigest(),digest,name)
+            self.assertIn('inputs.device != true',workflow['jobs'][name]['if'])
+            self.assertIn("github.ref_name == 'feat/stream-kernel-device-closure-20261021'",workflow['jobs'][name]['if'])
+
+    def test_device_job_has_ten_closed_inputs_same_deadlines_security_and_all_products(self):
+        import yaml
+        workflow=yaml.safe_load((candidate.ROOT/'.github/workflows/stream-kernel-objects.yml').read_bytes())
+        events=workflow.get('on',workflow.get(True))
+        self.assertEqual(events['workflow_dispatch']['inputs']['device'],{
+            'description':'Compile the closed NodeFixed PCI birth and constant-name source profile','type':'boolean','default':False})
+        job=workflow['jobs']['device-objects'];self.assertEqual(job['timeout-minutes'],20)
+        guard=next(step for step in job['steps'] if 'env' in step)
+        self.assertEqual(set(guard['env']),{'NETLABEL_REQUEST','NETPORT_REQUEST','SIDCACHE_REQUEST',
+            'AVC_REQUEST','AUDIT_REQUEST','BIND_REQUEST','ROUTE_REQUEST','ROUTE_CACHE_REQUEST','PACKET_REQUEST','DEVICE_REQUEST'})
+        self.assertIn("assert all(value in ('', 'true', 'false') for value in values)",guard['run'])
+        self.assertIn("assert values.count('true') <= 1",guard['run'])
+        commands='\n'.join(step.get('run','') for step in job['steps'])
+        self.assertIn('--device',commands);self.assertNotIn('${{ inputs.',commands)
+        self.assertIn('tools.tests.test_host_stream_kernel_packet tools.tests.test_host_stream_kernel_device -v',commands)
+        self.assertNotIn('scripts/config',commands)
+        self.assertIn('gcc make flex bison bc libelf-dev libssl-dev',commands)
+        artifact=job['steps'][-1]['with']
+        for name in candidate.object_selection(False,False,False,False,False,False,False,False,False,True):
+            self.assertIn('/objects/'+name,artifact['path'])
+        self.assertIn('/FAILED.json',artifact['path']);self.assertEqual(artifact['retention-days'],3)
+        self.assertEqual(workflow['concurrency']['cancel-in-progress'],False)
+
+    def test_device_config_preserves_actual_security_and_truthfully_unselected_iov_of(self):
+        before={**dict.fromkeys(candidate.DEVICE_REQUIRED,'y'),**dict.fromkeys(candidate.DEVICE_DISABLED,'n')}
+        candidate.device_configuration(before,dict(before))
+        for name in (*candidate.DEVICE_REQUIRED,*candidate.DEVICE_DISABLED):
+            changed={**before,name:'n' if before[name]=='y' else 'y'}
+            for first,second in ((before,changed),(changed,before),(changed,changed)):
+                with self.subTest(name=name),self.assertRaisesRegex(ValueError,'device-original'):
+                    candidate.device_configuration(first,second)
+        self.assertEqual(candidate.DEVICE_DISABLED,('CONFIG_PCI_IOV','CONFIG_OF'))
+        self.assertIn('CONFIG_STRICT_KERNEL_RWX',candidate.DEVICE_REQUIRED)
+
+    def test_exact_extracted_nine_names_are_anchored_bounded_authenticated_before_use(self):
+        original=dict.fromkeys(set(candidate.maintained.manifest()['source'])|{'net/Kconfig','net/Makefile'}|
+            set(candidate.packet_source.fixture()['source']),b'')
+        missing=set(candidate.device_source.fixture()['source'])-set(original)
+        self.assertEqual(missing,candidate.device_source.EXTRAS);self.assertEqual(len(missing),9)
+        with tempfile.TemporaryDirectory() as directory:
+            tree=Path(directory)
+            for index,name in enumerate(sorted(missing)):
+                path=tree/name;path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(str(index).encode())
+            with patch.object(candidate.device_source,'authenticate') as authenticate,patch.object(candidate.paths,'read',wraps=candidate.paths.read) as read:
+                selected=candidate.device_extracted_inputs(tree,original)
+                extracted=[call for call in read.call_args_list if call.args[0]==tree]
+                self.assertEqual(len(extracted),9)
+                for call in extracted:self.assertEqual(call.args[2],candidate.maintained.MAX_FILE)
+                authenticate.assert_called_once_with({name:selected[name] for name in candidate.device_source.fixture()['source']})
+            with patch.object(candidate.paths,'read',wraps=candidate.paths.read) as read:
+                with self.assertRaisesRegex(ValueError,'device-original-archive-membership'):
+                    candidate.device_extracted_inputs(tree,{})
+                self.assertFalse(any(call.args[0]==tree for call in read.call_args_list))
+            with patch.object(candidate.maintained,'MAX_SELECTED',8),patch.object(candidate.device_source,'authenticate') as authenticate:
+                with self.assertRaisesRegex(ValueError,'device-total-selected-byte-bound'):
+                    candidate.device_extracted_inputs(tree,original)
+                authenticate.assert_not_called()
+            first=tree/sorted(missing)[0];first.write_bytes(b'xx')
+            with patch.object(candidate.maintained,'MAX_FILE',1),patch.object(candidate.device_source,'authenticate') as authenticate:
+                with self.assertRaisesRegex(candidate.paths.DevError,'file-byte-limit'):
+                    candidate.device_extracted_inputs(tree,original)
+                authenticate.assert_not_called()
+
+    def test_device_receipt_never_substitutes_source_compile_for_runtime_or_bootstrap(self):
+        import ast,inspect
+        code=ast.parse(inspect.getsource(candidate.run))
+        branches=[node for node in ast.walk(code) if isinstance(node,ast.If) and
+            isinstance(node.test,ast.Name) and node.test.id=='device']
+        branches=[branch for branch in branches if any(isinstance(node,ast.Assign) and
+            isinstance(node.value,ast.Constant) and node.value.value=='nodefixed-pci-enumeration-source' for node in branch.body)]
+        self.assertEqual(len(branches),1)
+        assigned={}
+        for statement in branches[0].body:
+            if isinstance(statement,ast.Assign) and len(statement.targets)==1:
+                target=statement.targets[0]
+                if isinstance(target,ast.Subscript) and isinstance(target.value,ast.Name) and target.value.id=='receipt':
+                    if isinstance(target.slice,ast.Constant) and isinstance(statement.value,ast.Constant):
+                        assigned[target.slice.value]=statement.value.value
+        self.assertIs(assigned['deviceEnumerationSourceImplemented'],True)
+        self.assertIs(assigned['mandatoryAuditSourceImplemented'],True)
+        for name in ('actualAuditExecuted','actualLinuxRcuExecuted','actualPortOrTimewaitExecuted',
+            'actualRouteOrXfrmExecuted','actualParentCacheDrainExecuted','actualPacketExchangeExecuted',
+            'actualRxDmaExecuted','actualDeviceInitialized','trustedNativeBootstrapAuthenticated',
+            'actualRodataPlacementProved','actualPciIovExecuted','finalFreeCertified'):
             self.assertIs(assigned[name],False,name)

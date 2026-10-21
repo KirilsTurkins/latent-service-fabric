@@ -18,7 +18,8 @@
           "feat/stream-kernel-route-owners-20261021",
           "feat/stream-kernel-route-consumer-20261021",
           "feat/stream-kernel-route-cache-20261021",
-          "feat/stream-kernel-packet-prefix-20261021"
+          "feat/stream-kernel-packet-prefix-20261021",
+          "feat/stream-kernel-device-closure-20261021"
         ],
         "paths": [
           ".github/workflows/stream-kernel-objects.yml",
@@ -35,6 +36,8 @@
           "tools/host_stream_kernel_route_cache.py",
           "tools/host_stream_kernel_packet.py",
           "tools/tests/fixtures/host_stream_kernel_packet.json",
+          "tools/host_stream_kernel_device.py",
+          "tools/tests/fixtures/host_stream_kernel_device.json",
           "research/standard-outbound/linux-6.12-lineage/**"
         ]
       },
@@ -53,6 +56,11 @@
           "bind": {
             "default": false,
             "description": "Compile the closed bind-bucket source profile with mandatory audit",
+            "type": "boolean"
+          },
+          "device": {
+            "default": false,
+            "description": "Compile the closed NodeFixed PCI birth and constant-name source profile",
             "type": "boolean"
           },
           "netlabel": {
@@ -96,6 +104,7 @@
     "audit-objects",
     "avc-objects",
     "bind-objects",
+    "device-objects",
     "netlabel-objects",
     "netport-objects",
     "packet-objects",
@@ -104,7 +113,7 @@
     "selected-objects",
     "sidcache-objects"
   ],
-  "reviewReason": "Add one exclusive source-only linear copied-TCP packet object profile, retaining all nine prior jobs, exact symbol floors, original configuration and bounds; two old job-set assertions project only the separately checked new packet job. No kernel/runtime/install qualification.",
+  "reviewReason": "Reviewed closed NodeFixed PCI prefix and exclusive 32-object source compile; retain all original cases commands bounds and security configuration; no installation or runtime proof",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/stream-kernel-objects.yml"
 }

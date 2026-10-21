@@ -300,3 +300,45 @@ installation and complete allocation closure remain false; the full factory
 consumer remains unavailable. RX/TX device initialization, trusted prelookup
 infrastructure, neighbour/DNS and actual final-free/installation qualification
 remain separate unfinished work.
+
+
+## Compiled NodeFixed PCI birth and constant-name extension
+
+The separate `feat/stream-kernel-device-closure-20261021` selection adds
+`--device` while retaining all ten prior object profiles, their complete jobs,
+commands, symbol floors and original bounds. It compiles 32 unlinked translation
+units and requires 121 defined GLOBAL functions (99 private and 22 original),
+including all prior 27 objects and 99 symbols. The new PCI probe, driver core,
+kobject, string and formatting objects include the real selected constructors
+and the unchanged normal name allocation and final cleanup definitions.
+
+The [owning run](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39626855421)
+passed on source `7c05cb4d78e9cb20acfc2b07d68481db0fee3782`. Its
+[compact observation](evidence/kernel-device-objects-compiled-2026-10-21.json)
+binds 112 CRC-checked members, 196 exact Git materials, 58 complete maintained
+inputs, 19 definition preimages and 95 derived outputs. Eighty-one prior packet
+outputs remain exact; two factory extensions reverse exactly. All 202 actual
+source/controller tests and 37 completed, cleaned commands passed. The original
+4,309-symbol configuration changes only `CONFIG_LSF_STREAM_FACTORY` from `n` to
+`y`; SELinux, Netlabel, audit, XFRM, ACPI and strict kernel RWX remain enabled.
+PCI IOV and OF remain disabled, so the explicit pre-bus VF refusal is source and
+supplemental reference evidence, not enabled IOV compilation or execution.
+
+The generic single archive authentication still permits only 32 extra names.
+Nine additional fixed device names are read as anchored bounded regular files
+from that wholly authenticated private extraction; the entire 58-file fixture
+is authenticated before derivation. The 4 MiB file and 16 MiB aggregate bounds
+are unchanged. No additional archive acquisition or broader input alias exists.
+
+The separate serialized C reference retains original allocation-before-backing
+RED (exit 2) and current GREEN (40 assertions). Its original name/cleanup bodies
+are actual C, while section placement, type/lock/hardware, remaining PCI setup,
+device-add and VF tail are explicit doubles. It supplies no Linux runtime proof.
+Normal factory selection remains NULL and registration/open refuse. If the
+future initializer fails after opening backing, poisoned pages and actor
+references remain retained without a usable fd; native original-owner retention
+on that failed-open path is still missing. Full PCI/core/setup, firmware,
+capability, DMA, per-CPU, virtio/RX and prelookup allocation/free closure, trusted
+bootstrap, sealed image/BTF, final-free installation and node/operator/provider
+conformance remain mandatory. No kernel is linked, booted or installed, no
+native SDK build is claimed, and all production/accounting gates remain false.

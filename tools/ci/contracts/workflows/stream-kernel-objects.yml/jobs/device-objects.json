@@ -1,0 +1,78 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "if": "${{ (github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-device-closure-20261021') || inputs.device == true }}",
+    "name": "Thirty-two actual maintained objects with NodeFixed PCI birth and original name allocation chain",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "env": {
+          "AUDIT_REQUEST": "${{ inputs.audit }}",
+          "AVC_REQUEST": "${{ inputs.avc }}",
+          "BIND_REQUEST": "${{ inputs.bind }}",
+          "DEVICE_REQUEST": "${{ inputs.device }}",
+          "NETLABEL_REQUEST": "${{ inputs.netlabel }}",
+          "NETPORT_REQUEST": "${{ inputs.netport }}",
+          "PACKET_REQUEST": "${{ inputs.packet }}",
+          "ROUTE_CACHE_REQUEST": "${{ inputs.route_cache }}",
+          "ROUTE_REQUEST": "${{ inputs.route }}",
+          "SIDCACHE_REQUEST": "${{ inputs.sidcache }}"
+        },
+        "name": "Refuse mixed or unknown object profile inputs before acquisition or build",
+        "run": "python3 - <<'PY'\nimport os\nvalues = [os.environ[name] for name in ('NETLABEL_REQUEST', 'NETPORT_REQUEST', 'SIDCACHE_REQUEST', 'AVC_REQUEST', 'AUDIT_REQUEST', 'BIND_REQUEST', 'ROUTE_REQUEST', 'ROUTE_CACHE_REQUEST', 'PACKET_REQUEST', 'DEVICE_REQUEST')]\nassert all(value in ('', 'true', 'false') for value in values)\nassert values.count('true') <= 1\nPY\n"
+      },
+      {
+        "name": "Install the existing locked Python recipe dependencies",
+        "run": "python3 -m pip install -r tools/requirements.lock"
+      },
+      {
+        "name": "Check exact config selection and private symbol oracles without a build",
+        "run": "python3 -B -m unittest tools.tests.test_host_stream_kernel_objects tools.tests.test_host_stream_kernel_netlabel tools.tests.test_host_stream_kernel_netport tools.tests.test_host_stream_kernel_sidcache tools.tests.test_host_stream_kernel_avc tools.tests.test_host_stream_kernel_audit_skb tools.tests.test_host_stream_kernel_audit tools.tests.test_host_stream_kernel_bind tools.tests.test_host_stream_kernel_route tools.tests.test_host_stream_kernel_route_cache tools.tests.test_host_stream_kernel_packet tools.tests.test_host_stream_kernel_device -v"
+      },
+      {
+        "name": "Install only normal upstream Kbuild prerequisites",
+        "run": "sudo apt-get update\nsudo apt-get install --yes gcc make flex bison bc libelf-dev libssl-dev\n"
+      },
+      {
+        "name": "Acquire only the exact maintained official source archive",
+        "run": "set -euo pipefail\ncurl --fail --location --proto '=https' --tlsv1.2 --max-time 180 \\\n  https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.12.113.tar.xz \\\n  --output \"$RUNNER_TEMP/linux-6.12.113.tar.xz\"\necho \"e09b6727e5c521253f0d41694900b9c38fb7604db7d35238a8197aa9f7de2428  $RUNNER_TEMP/linux-6.12.113.tar.xz\" | sha256sum --check --strict\n",
+        "shell": "bash"
+      },
+      {
+        "name": "Derive actual source preserve security config and compile thirty-two unlinked PCI birth name-chain packet and mandatory-audit objects",
+        "run": "python3 -B tools/qualify_host_stream_kernel_objects.py --archive \"$RUNNER_TEMP/linux-6.12.113.tar.xz\" --output \"$RUNNER_TEMP/stream-kernel-objects\" --device"
+      },
+      {
+        "if": "always()",
+        "name": "Retain bounded configuration compiler objects and failure evidence",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "stream-kernel-device-objects-${{ github.sha }}",
+          "path": "${{ runner.temp }}/stream-kernel-objects/qualification.json\n${{ runner.temp }}/stream-kernel-objects/FAILED.json\n${{ runner.temp }}/stream-kernel-objects/selection.json\n${{ runner.temp }}/stream-kernel-objects/commands.json\n${{ runner.temp }}/stream-kernel-objects/baseline.config\n${{ runner.temp }}/stream-kernel-objects/selected.config\n${{ runner.temp }}/stream-kernel-objects/commands/logs/*.txt\n${{ runner.temp }}/stream-kernel-objects/objects/include/generated/autoconf.h\n${{ runner.temp }}/stream-kernel-objects/objects/net/socket.o\n${{ runner.temp }}/stream-kernel-objects/objects/fs/inode.o\n${{ runner.temp }}/stream-kernel-objects/objects/net/core/sock.o\n${{ runner.temp }}/stream-kernel-objects/objects/net/ipv4/af_inet.o\n${{ runner.temp }}/stream-kernel-objects/objects/security/security.o\n${{ runner.temp }}/stream-kernel-objects/objects/net/factory.o\n${{ runner.temp }}/stream-kernel-objects/objects/security/selinux/netlabel.o\n${{ runner.temp }}/stream-kernel-objects/objects/security/selinux/ss/services.o\n${{ runner.temp }}/stream-kernel-objects/objects/security/selinux/ss/mls.o\n${{ runner.temp }}/stream-kernel-objects/objects/security/selinux/ss/ebitmap.o\n${{ runner.temp }}/stream-kernel-objects/objects/net/netlabel/netlabel_kapi.o\n${{ runner.temp }}/stream-kernel-objects/objects/net/ipv4/cipso_ipv4.o\n${{ runner.temp }}/stream-kernel-objects/objects/security/selinux/netport.o\n${{ runner.temp }}/stream-kernel-objects/objects/security/selinux/hooks.o\n${{ runner.temp }}/stream-kernel-objects/objects/security/selinux/ss/sidtab.o\n${{ runner.temp }}/stream-kernel-objects/objects/security/selinux/avc.o\n${{ runner.temp }}/stream-kernel-objects/objects/net/core/skbuff.o\n${{ runner.temp }}/stream-kernel-objects/objects/kernel/audit.o\n${{ runner.temp }}/stream-kernel-objects/objects/security/lsm_audit.o\n${{ runner.temp }}/stream-kernel-objects/objects/net/netlink/af_netlink.o\n${{ runner.temp }}/stream-kernel-objects/objects/net/ipv4/inet_hashtables.o\n${{ runner.temp }}/stream-kernel-objects/objects/net/ipv4/inet_connection_sock.o\n${{ runner.temp }}/stream-kernel-objects/objects/net/ipv4/route.o\n${{ runner.temp }}/stream-kernel-objects/objects/net/core/dst.o\n${{ runner.temp }}/stream-kernel-objects/objects/net/ipv4/tcp.o\n${{ runner.temp }}/stream-kernel-objects/objects/net/ipv4/tcp_output.o\n${{ runner.temp }}/stream-kernel-objects/objects/net/ipv4/tcp_input.o\n${{ runner.temp }}/stream-kernel-objects/objects/drivers/pci/probe.o\n${{ runner.temp }}/stream-kernel-objects/objects/drivers/base/core.o\n${{ runner.temp }}/stream-kernel-objects/objects/lib/kobject.o\n${{ runner.temp }}/stream-kernel-objects/objects/mm/util.o\n${{ runner.temp }}/stream-kernel-objects/objects/lib/kasprintf.o\n",
+          "retention-days": 3
+        }
+      }
+    ],
+    "timeout-minutes": 20
+  },
+  "jobId": "device-objects",
+  "kind": "job",
+  "reviewReason": "Reviewed closed NodeFixed PCI prefix and exclusive 32-object source compile; retain all original cases commands bounds and security configuration; no installation or runtime proof",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/stream-kernel-objects.yml"
+}
