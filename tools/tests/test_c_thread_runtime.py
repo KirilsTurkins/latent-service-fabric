@@ -46,8 +46,8 @@ class CThreadRuntime(unittest.TestCase):
         proof = json.loads(raw)
         result = native_source.compatibility(proof['compiledNativeSource'], proof['formattedConsumerSource'])
         self.assertIs(result['compiledSourceByteExact'], False)
-        self.assertEqual(len(result['reviewedFormatting']), 34)
-        self.assertEqual(result['otherNativeFilesByteExact'], 3290)
+        self.assertEqual(len(result['reviewedFormatting']), 2)
+        self.assertEqual(result['otherNativeFilesByteExact'], 3322)
         for field in ('sha256', 'bytes', 'files', 'scope', 'hermetic', 'implicitCompilerInputs'):
             bad = dict(proof['formattedConsumerSource'], **{field: 'foreign'})
             with self.subTest(field=field), self.assertRaisesRegex(RuntimeError, 'exact-reviewed-formatting'):

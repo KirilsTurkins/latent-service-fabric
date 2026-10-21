@@ -185,9 +185,9 @@ unsupported by this first profile. No multiple-definition allowance is used.
 provide source evidence only; all seventeen runtime cases remain required.
 
 A separate actual development formatter failure is repaired with the pinned
-Rust 1.97.1 formatter and the repository configuration. The
+Rust 1.97.1 formatter, each Cargo package edition and the repository configuration. The
 [closed formatting comparison](../testing/evidence/c-thread-native-rustfmt-2026-10-21.json)
-binds the exact original and formatted hashes of 34 native files, with the other
-3290 native files unchanged. The consumer admits only the two complete frozen
+binds the exact original and formatted hashes of two C transformer files, with the other
+3322 native files unchanged. The consumer admits only the two complete frozen
 source inventories; f0 remains the historical compiled source. This comparison
 does not claim that the formatted tree was compiled or rebuild the native products.
