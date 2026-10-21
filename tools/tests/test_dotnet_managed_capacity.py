@@ -116,6 +116,17 @@ class ManagedCapacityTests(unittest.TestCase):
         self.assertIs(caught.exception, original)
         retained.assert_called_once()
 
+    def test_periodic_closed_diagnostic_is_never_a_qualified_capacity_outcome(self):
+        budget = {'cpuFuel': 1000000000, 'memoryBytes': 134217728}
+        row = self.row(); row['decoded'] = ['1:'+node.EXPECTED[3]]
+        node.checked(row, 3, {'exact': True}, budget)
+        for value in ('periodic:diagnostic:2:fixture-assertion',
+                      'periodic:diagnostic:6:admission-refused',
+                      'periodic:diagnostic:7:unknown'):
+            failed = copy.deepcopy(row); failed['decoded'] = ['1:'+value]
+            with self.subTest(value=value), self.assertRaises(WorkflowError):
+                node.checked(failed, 3, {'exact': True}, budget)
+
 
 if __name__ == '__main__':
     unittest.main()

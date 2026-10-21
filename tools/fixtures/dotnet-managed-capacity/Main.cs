@@ -10,6 +10,7 @@ public class ApiExportsImpl : IApiExports
 {
     private static int calls;
     private static readonly AsyncLocal<string?> context = new();
+    private static int periodicStage;
     public static string Run(uint mode, string endpoint)
     {
         Need(++calls == 1 && context.Value is null && SynchronizationContext.Current is null);
@@ -30,7 +31,9 @@ public class ApiExportsImpl : IApiExports
         case 0: return await Tasks();
         case 1: return await Queue();
         case 2: return await Timers();
-        case 3: return await Periodic();
+        case 3:
+            try { return await Periodic(); }
+            catch (Exception error) { return PeriodicFailure(error); }
         case 4: return await Disposed();
         case 5: Accepted(endpoint); return "closing-timer:accepted";
         case 6: return NativeLedger();
@@ -123,13 +126,47 @@ public class ApiExportsImpl : IApiExports
     private static async Task<string> Periodic()
     {
         var done = new TaskCompletionSource<int>(); int fired = 0;
+        periodicStage = 1;
         using var actual = new Timer(_ => {
-            Need(context.Value == "capacity-root" && Observe().timers >= 1);
-            if (++fired == 2) done.SetResult(2);
+            // Diagnostic failure stays a failed strict oracle. Keep the original
+            // successful callback; avoid losing its closed cause to TimerHandler's
+            // original FailFast when an assertion or admission throws here.
+            periodicStage = 2;
+            try {
+                Need(context.Value == "capacity-root");
+                periodicStage = 3;
+                Need(Observe().timers >= 1);
+                periodicStage = 4;
+                if (++fired == 2) done.SetResult(2);
+                periodicStage = 5;
+            }
+            catch (Exception error) { done.TrySetException(error); }
         }, null, 1, 100);
-        Need(await done.Task == 2); actual.Change(Timeout.Infinite, Timeout.Infinite);
-        await actual.DisposeAsync(); Need(fired == 2); await FreshTimer();
+        Need(await done.Task == 2); periodicStage = 6;
+        actual.Change(Timeout.Infinite, Timeout.Infinite); periodicStage = 7;
+        await actual.DisposeAsync(); periodicStage = 8;
+        Need(fired == 2); await FreshTimer(); periodicStage = 9;
         return "periodic:2:context:disposed:fresh";
+    }
+    private static string PeriodicFailure(Exception error)
+    {
+        // No arbitrary exception text/type, paths, arguments or captured values
+        // leave the component. Unrecognized failures remain explicitly unknown.
+        if (error is TaskSchedulerException { InnerException: { } inner }) error = inner;
+        string code = error is InvalidOperationException ? error.Message switch {
+            "managed-capacity-assertion" => "fixture-assertion",
+            "managed-work-admission-refused" => "admission-refused",
+            "managed-work-parent-retired" => "parent-retired",
+            "managed-work-captured-parent-retired" => "captured-parent-retired",
+            "managed-work-context-owner" => "context-owner",
+            "managed-work-execution-parent" => "execution-parent",
+            "managed-timer-dispatch-owner" => "timer-dispatch-owner",
+            "managed-timer-dispatch-state" => "timer-dispatch-state",
+            "managed-timer-return-owner" => "timer-return-owner",
+            "managed-timer-return-state" => "timer-return-state",
+            _ => "unknown",
+        } : "unknown";
+        return "periodic:diagnostic:" + periodicStage + ":" + code;
     }
     private static async Task<string> Disposed()
     {
