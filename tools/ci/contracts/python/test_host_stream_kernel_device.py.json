@@ -1,0 +1,270 @@
+{
+  "cases": [
+    "KernelDevicePrefixSource.test_actual_birth_and_real_rodata_guard_precede_every_setup_effect",
+    "KernelDevicePrefixSource.test_actual_factory_root_prepaid_before_pointer_and_single_constructor",
+    "KernelDevicePrefixSource.test_final_callback_keeps_every_original_cleanup_before_private_return",
+    "KernelDevicePrefixSource.test_fixed_coordinate_does_not_select_every_virtio_or_any_operator_path",
+    "KernelDevicePrefixSource.test_identity_and_real_owner_checked_before_birth_and_original_setup",
+    "KernelDevicePrefixSource.test_name_uses_actual_normal_const_string_allocation_and_cleanup_contract",
+    "KernelDevicePrefixSource.test_new_whole_pci_use_lookup_is_positive_only_and_never_adopts_addresses",
+    "KernelDevicePrefixSource.test_original_factory_close_mutex_spans_every_selected_constructor_exit",
+    "KernelDevicePrefixSource.test_original_packet_inputs_and_six_complete_definitions_are_preserved",
+    "KernelDevicePrefixSource.test_previously_discovered_device_is_put_and_never_adopted",
+    "KernelDevicePrefixSource.test_private_setup_keeps_every_original_statement_except_name_spelling",
+    "KernelDevicePrefixSource.test_real_pci_constructor_changes_only_original_allocator_and_signature",
+    "KernelDevicePrefixSource.test_same_original_store_tail_and_separate_node_domain_no_application_scope",
+    "KernelDevicePrefixSource.test_same_record_actual_parent_generation_and_children_block_early_return",
+    "KernelDevicePrefixSource.test_selected_fence_precedes_existing_lookup_and_keeps_complete_normal_body",
+    "KernelDevicePrefixSource.test_sriov_alternate_path_refuses_before_any_bus_or_device_birth",
+    "KernelDevicePrefixSource.test_sriov_coordinate_helpers_are_complete_original_read_only_geometry",
+    "KernelDevicePrefixSource.test_unclosed_original_setup_and_mandatory_registration_still_block_enablement",
+    "KernelDevicePrefixSource.test_unknown_interior_never_normal_frees_and_real_final_return_keeps_backing",
+    "KernelDevicePrefixSource.test_whole_source_definition_missing_changed_duplicate_and_crlf_refuse"
+  ],
+  "guards": {
+    "KernelDevicePrefixSource.test_actual_birth_and_real_rodata_guard_precede_every_setup_effect": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e0d29c665faa1e637d661b50fe56aaf501274592cb2fc636379beb9c1f7e3a3c",
+        "class:setup-sha256:2ff876bc958da2edd4d6627b70ecc465102898bbb17b46521a73624fa5d22a1e"
+      ],
+      "skipSites": []
+    },
+    "KernelDevicePrefixSource.test_actual_factory_root_prepaid_before_pointer_and_single_constructor": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e0d29c665faa1e637d661b50fe56aaf501274592cb2fc636379beb9c1f7e3a3c",
+        "class:setup-sha256:2ff876bc958da2edd4d6627b70ecc465102898bbb17b46521a73624fa5d22a1e"
+      ],
+      "skipSites": []
+    },
+    "KernelDevicePrefixSource.test_final_callback_keeps_every_original_cleanup_before_private_return": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e0d29c665faa1e637d661b50fe56aaf501274592cb2fc636379beb9c1f7e3a3c",
+        "class:setup-sha256:2ff876bc958da2edd4d6627b70ecc465102898bbb17b46521a73624fa5d22a1e"
+      ],
+      "skipSites": []
+    },
+    "KernelDevicePrefixSource.test_fixed_coordinate_does_not_select_every_virtio_or_any_operator_path": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e0d29c665faa1e637d661b50fe56aaf501274592cb2fc636379beb9c1f7e3a3c",
+        "class:setup-sha256:2ff876bc958da2edd4d6627b70ecc465102898bbb17b46521a73624fa5d22a1e"
+      ],
+      "skipSites": []
+    },
+    "KernelDevicePrefixSource.test_identity_and_real_owner_checked_before_birth_and_original_setup": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e0d29c665faa1e637d661b50fe56aaf501274592cb2fc636379beb9c1f7e3a3c",
+        "class:setup-sha256:2ff876bc958da2edd4d6627b70ecc465102898bbb17b46521a73624fa5d22a1e"
+      ],
+      "skipSites": []
+    },
+    "KernelDevicePrefixSource.test_name_uses_actual_normal_const_string_allocation_and_cleanup_contract": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e0d29c665faa1e637d661b50fe56aaf501274592cb2fc636379beb9c1f7e3a3c",
+        "class:setup-sha256:2ff876bc958da2edd4d6627b70ecc465102898bbb17b46521a73624fa5d22a1e"
+      ],
+      "skipSites": []
+    },
+    "KernelDevicePrefixSource.test_new_whole_pci_use_lookup_is_positive_only_and_never_adopts_addresses": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e0d29c665faa1e637d661b50fe56aaf501274592cb2fc636379beb9c1f7e3a3c",
+        "class:setup-sha256:2ff876bc958da2edd4d6627b70ecc465102898bbb17b46521a73624fa5d22a1e"
+      ],
+      "skipSites": []
+    },
+    "KernelDevicePrefixSource.test_original_factory_close_mutex_spans_every_selected_constructor_exit": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e0d29c665faa1e637d661b50fe56aaf501274592cb2fc636379beb9c1f7e3a3c",
+        "class:setup-sha256:2ff876bc958da2edd4d6627b70ecc465102898bbb17b46521a73624fa5d22a1e"
+      ],
+      "skipSites": []
+    },
+    "KernelDevicePrefixSource.test_original_packet_inputs_and_six_complete_definitions_are_preserved": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e0d29c665faa1e637d661b50fe56aaf501274592cb2fc636379beb9c1f7e3a3c",
+        "class:setup-sha256:2ff876bc958da2edd4d6627b70ecc465102898bbb17b46521a73624fa5d22a1e"
+      ],
+      "skipSites": []
+    },
+    "KernelDevicePrefixSource.test_previously_discovered_device_is_put_and_never_adopted": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e0d29c665faa1e637d661b50fe56aaf501274592cb2fc636379beb9c1f7e3a3c",
+        "class:setup-sha256:2ff876bc958da2edd4d6627b70ecc465102898bbb17b46521a73624fa5d22a1e"
+      ],
+      "skipSites": []
+    },
+    "KernelDevicePrefixSource.test_private_setup_keeps_every_original_statement_except_name_spelling": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e0d29c665faa1e637d661b50fe56aaf501274592cb2fc636379beb9c1f7e3a3c",
+        "class:setup-sha256:2ff876bc958da2edd4d6627b70ecc465102898bbb17b46521a73624fa5d22a1e"
+      ],
+      "skipSites": []
+    },
+    "KernelDevicePrefixSource.test_real_pci_constructor_changes_only_original_allocator_and_signature": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e0d29c665faa1e637d661b50fe56aaf501274592cb2fc636379beb9c1f7e3a3c",
+        "class:setup-sha256:2ff876bc958da2edd4d6627b70ecc465102898bbb17b46521a73624fa5d22a1e"
+      ],
+      "skipSites": []
+    },
+    "KernelDevicePrefixSource.test_same_original_store_tail_and_separate_node_domain_no_application_scope": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e0d29c665faa1e637d661b50fe56aaf501274592cb2fc636379beb9c1f7e3a3c",
+        "class:setup-sha256:2ff876bc958da2edd4d6627b70ecc465102898bbb17b46521a73624fa5d22a1e"
+      ],
+      "skipSites": []
+    },
+    "KernelDevicePrefixSource.test_same_record_actual_parent_generation_and_children_block_early_return": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e0d29c665faa1e637d661b50fe56aaf501274592cb2fc636379beb9c1f7e3a3c",
+        "class:setup-sha256:2ff876bc958da2edd4d6627b70ecc465102898bbb17b46521a73624fa5d22a1e"
+      ],
+      "skipSites": []
+    },
+    "KernelDevicePrefixSource.test_selected_fence_precedes_existing_lookup_and_keeps_complete_normal_body": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e0d29c665faa1e637d661b50fe56aaf501274592cb2fc636379beb9c1f7e3a3c",
+        "class:setup-sha256:2ff876bc958da2edd4d6627b70ecc465102898bbb17b46521a73624fa5d22a1e"
+      ],
+      "skipSites": []
+    },
+    "KernelDevicePrefixSource.test_sriov_alternate_path_refuses_before_any_bus_or_device_birth": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e0d29c665faa1e637d661b50fe56aaf501274592cb2fc636379beb9c1f7e3a3c",
+        "class:setup-sha256:2ff876bc958da2edd4d6627b70ecc465102898bbb17b46521a73624fa5d22a1e"
+      ],
+      "skipSites": []
+    },
+    "KernelDevicePrefixSource.test_sriov_coordinate_helpers_are_complete_original_read_only_geometry": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e0d29c665faa1e637d661b50fe56aaf501274592cb2fc636379beb9c1f7e3a3c",
+        "class:setup-sha256:2ff876bc958da2edd4d6627b70ecc465102898bbb17b46521a73624fa5d22a1e"
+      ],
+      "skipSites": []
+    },
+    "KernelDevicePrefixSource.test_unclosed_original_setup_and_mandatory_registration_still_block_enablement": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e0d29c665faa1e637d661b50fe56aaf501274592cb2fc636379beb9c1f7e3a3c",
+        "class:setup-sha256:2ff876bc958da2edd4d6627b70ecc465102898bbb17b46521a73624fa5d22a1e"
+      ],
+      "skipSites": []
+    },
+    "KernelDevicePrefixSource.test_unknown_interior_never_normal_frees_and_real_final_return_keeps_backing": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e0d29c665faa1e637d661b50fe56aaf501274592cb2fc636379beb9c1f7e3a3c",
+        "class:setup-sha256:2ff876bc958da2edd4d6627b70ecc465102898bbb17b46521a73624fa5d22a1e"
+      ],
+      "skipSites": []
+    },
+    "KernelDevicePrefixSource.test_whole_source_definition_missing_changed_duplicate_and_crlf_refuse": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e0d29c665faa1e637d661b50fe56aaf501274592cb2fc636379beb9c1f7e3a3c",
+        "class:setup-sha256:2ff876bc958da2edd4d6627b70ecc465102898bbb17b46521a73624fa5d22a1e"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_host_stream_kernel_device.py",
+  "reviewReason": "Reviewed closed NodeFixed PCI prefix and exclusive 32-object source compile; retain all original cases commands bounds and security configuration; no installation or runtime proof",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

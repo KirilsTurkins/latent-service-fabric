@@ -14,6 +14,13 @@
     "KernelBindObjectSelection.test_exclusive_bind_job_retains_closed_inputs_targets_and_original_bounds",
     "KernelBindObjectSelection.test_twenty_two_objects_keep_all_sixty_nine_audit_definitions_and_add_six",
     "KernelBindObjectSelection.test_unknown_and_mixed_bind_profiles_refuse_before_acquisition",
+    "KernelDeviceObjectSelection.test_all_ten_previous_profiles_and_job_bodies_remain_exact",
+    "KernelDeviceObjectSelection.test_device_config_preserves_actual_security_and_truthfully_unselected_iov_of",
+    "KernelDeviceObjectSelection.test_device_job_has_ten_closed_inputs_same_deadlines_security_and_all_products",
+    "KernelDeviceObjectSelection.test_device_receipt_never_substitutes_source_compile_for_runtime_or_bootstrap",
+    "KernelDeviceObjectSelection.test_exact_extracted_nine_names_are_anchored_bounded_authenticated_before_use",
+    "KernelDeviceObjectSelection.test_thirty_two_objects_preserve_all_ninety_nine_and_add_only_real_pci_name_functions",
+    "KernelDeviceObjectSelection.test_unknown_mixed_and_local_device_profiles_refuse_before_any_archive_read",
     "KernelNetlabelObjectSelection.test_default_six_object_floor_is_identical_and_selector_accepts_only_real_boolean",
     "KernelNetlabelObjectSelection.test_netlabel_must_already_be_enabled_no_configuration_override_is_added",
     "KernelNetlabelObjectSelection.test_netlabel_twelve_objects_retain_all_old_symbols_and_require_all_twenty_one_new_globals",
@@ -209,6 +216,90 @@
       "skipSites": []
     },
     "KernelBindObjectSelection.test_unknown_and_mixed_bind_profiles_refuse_before_acquisition": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelDeviceObjectSelection.test_all_ten_previous_profiles_and_job_bodies_remain_exact": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelDeviceObjectSelection.test_device_config_preserves_actual_security_and_truthfully_unselected_iov_of": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelDeviceObjectSelection.test_device_job_has_ten_closed_inputs_same_deadlines_security_and_all_products": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelDeviceObjectSelection.test_device_receipt_never_substitutes_source_compile_for_runtime_or_bootstrap": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelDeviceObjectSelection.test_exact_extracted_nine_names_are_anchored_bounded_authenticated_before_use": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelDeviceObjectSelection.test_thirty_two_objects_preserve_all_ninety_nine_and_add_only_real_pci_name_functions": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelDeviceObjectSelection.test_unknown_mixed_and_local_device_profiles_refuse_before_any_archive_read": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -655,6 +746,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_host_stream_kernel_objects.py",
-  "reviewReason": "Add one exclusive source-only linear copied-TCP packet object profile, retaining all nine prior jobs, exact symbol floors, original configuration and bounds; two old job-set assertions project only the separately checked new packet job. No kernel/runtime/install qualification.",
+  "reviewReason": "Reviewed closed NodeFixed PCI prefix and exclusive 32-object source compile; retain all original cases commands bounds and security configuration; no installation or runtime proof",
   "schemaVersion": "latent.ci.contracts.v1"
 }
