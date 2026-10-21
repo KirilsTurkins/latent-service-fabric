@@ -193,7 +193,8 @@ class Compiler:
             raise ValueError("invalid or oversized C source")
         if isinstance(memory_bytes, bool) or memory_bytes < 2 * 1024 * 1024 or memory_bytes > 64 * 1024 * 1024 or memory_bytes % 65536:
             raise ValueError("C memory ceiling must be page-aligned and between 2 and 64 MiB")
-        generated, lock = generate(self.run, wit_source, world, destination, self.platform)
+        generated, lock = generate(self.run, wit_source, world, destination, self.platform,
+                                   sync_core_abi=threaded)
         public = None
         if threaded:
             graph = json.loads(self.run('wasm-tools', 'component', 'wit', '--json', str(destination / 'wit')))

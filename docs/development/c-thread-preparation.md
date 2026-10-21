@@ -212,3 +212,21 @@ binds the exact port WIT and full original-core proof, and requires the existing
 native verifier to reproduce the final component bytes. It is compiler evidence;
 independent runtime validation, Native authority and all seventeen guest outcomes
 remain required.
+
+## Explicit public async effect
+
+The selected C cooperative profile requires an explicitly declared public
+`greet: async func(name: string) -> result<string, string>` contract. The
+application implementation remains ordinary synchronous C. The pinned generator
+receives `--async=-all`: this keeps its synchronous Core ABI and the original
+C implementation signature while preserving the explicitly async WIT type in
+component metadata. The compiler records both choices in the binding lock.
+The native closed graph requires that async public type and still refuses
+canonical `async` and callback ABI options. A synchronous selected WIT entry is
+refused; no public contract is silently converted. The default C profile does
+not receive this generator option.
+
+The earlier 563 component's second guest fault is retained. The sync-contract
+blocking restriction is a source-supported cause hypothesis until a fresh
+explicit-contract programme provides the causal result; it is not a measured
+trap label. The original 17 outcomes, grants, and limits remain mandatory.

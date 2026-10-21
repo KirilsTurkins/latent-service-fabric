@@ -15,7 +15,7 @@ from tools.rust_capsule_project import snapshot
 def graph():
     return {'worlds': [{'exports': {'interface-0': {'interface': {'id': 0}}}}],
             'interfaces': [{'name': 'api', 'package': 0, 'types': {}, 'functions': {
-                'greet': {'name': 'greet', 'kind': 'freestanding',
+                'greet': {'name': 'greet', 'kind': 'async-freestanding',
                           'params': [{'name': 'name', 'type': 'string'}], 'result': 0}}}],
             'packages': [{'name': 'examples:ordinary@1.0.0'}],
             'types': [{'kind': {'result': {'ok': 'string', 'err': 'string'}}}]}
@@ -102,7 +102,7 @@ class CThreadingProfile(unittest.TestCase):
         mutations = [
             lambda g: g['worlds'].append(g['worlds'][0]),
             lambda g: g['worlds'][0]['exports'].update(other={'interface': {'id': 0}}),
-            lambda g: g['interfaces'][0]['functions']['greet'].update(kind='async-freestanding'),
+            lambda g: g['interfaces'][0]['functions']['greet'].update(kind='freestanding'),
             lambda g: g['types'][0].update(kind={'resource': {}}),
             lambda g: g['interfaces'][0]['types'].update(opaque=0),
             lambda g: g['packages'][0].update(name='foreign@name@1.0.0'),
@@ -112,6 +112,37 @@ class CThreadingProfile(unittest.TestCase):
             mutation(changed)
             with self.assertRaisesRegex(ValueError, 'finite-public-contract'):
                 threading.public_export(changed)
+
+    def test_sync_core_binding_selection_is_explicit_and_default_arguments_remain_unchanged(self):
+        from tools.c_guest.bindings import generate
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / 'source'
+            source.mkdir()
+            (source / 'world.wit').write_text('package examples:ordinary@1.0.0; world service {}')
+            commands = []
+            def run(*args):
+                commands.append(args)
+                if args[1] == '--version':
+                    return 'wit-bindgen-cli 0.62.0\n'
+                output = Path(args[args.index('--out-dir') + 1])
+                for name in ('probe.c', 'probe.h', 'probe_component_type.o'):
+                    (output / name).write_bytes(b'controlled generator output')
+                return ''
+            _, original = generate(run, source, 'service', root / 'ordinary', None)
+            self.assertFalse(any(str(arg).startswith('--async') for arg in commands[0]))
+            _, selected = generate(run, source, 'service', root / 'selected', None, sync_core_abi=True)
+            self.assertEqual(commands[2], ('wit-bindgen', 'c', str(root / 'selected/wit'), '--world',
+                                           'service', '--rename-world', 'probe', '--out-dir',
+                                           str(root / 'selected/bindings'), '--async=-all'))
+            self.assertEqual(selected['bindingAbi'], 'sync-core-explicit-async-wit-v1')
+            self.assertEqual(selected['asyncFilter'], '-all')
+            self.assertEqual(original, {key: value for key, value in selected.items()
+                                        if key not in ('bindingAbi', 'asyncFilter')})
+            for bad in (1, 'true', None, [], {}):
+                with self.subTest(bad=bad), self.assertRaisesRegex(ValueError, 'ABI selection'):
+                    generate(run, source, 'service', root / 'refused', None, sync_core_abi=bad)
+                self.assertFalse((root / 'refused').exists())
 
     def test_owned_import_projection_preserves_original_sync_export_and_refuses_duplicates(self):
         with tempfile.TemporaryDirectory() as root:

@@ -84,13 +84,13 @@ def public_contract(graph):
             'c-abi-original-export-identity')
     function = interface['functions']['greet']
     result = function['result']
-    require(function['name'] == 'greet' and function['kind'] == 'freestanding'
+    require(function['name'] == 'greet' and function['kind'] == 'async-freestanding'
             and function['params'] == [{'name':'name', 'type':'string'}]
             and type(result) is int and 0 <= result < len(graph['types'])
             and graph['types'][result]['kind'] == {'result':{'ok':'string', 'err':'string'}},
-            'c-abi-original-sync-string-result')
+            'c-abi-original-async-effect-sync-core-string-result')
     return {'interface':package.replace('@', '/api@'), 'name':'greet',
-            'params':['string'], 'result':{'ok':'string', 'err':'string'}, 'async':False}
+            'params':['string'], 'result':{'ok':'string', 'err':'string'}, 'async':True}
 
 
 def tree(directory):
@@ -174,7 +174,8 @@ def execute(output, tools):
         require(command([tools['wit-bindgen'],'--version'],'bindgen-version').strip() == b'wit-bindgen-cli 0.62.0', 'c-abi-bindgen-version')
         require(command([tools['wasm-tools'],'--version'],'wasm-version').strip().split()[:2] == [b'wasm-tools',b'1.254.0'], 'c-abi-wasm-version')
         require(command([tools['node'],'--version'],'node-version').strip() == b'v24.19.0', 'c-abi-node-version')
-        generated, lock = generate(generated_run, ROOT/FIXTURE, WORLD, output/'generated', ROOT/'wit/platform')
+        generated, lock = generate(generated_run, ROOT/FIXTURE, WORLD, output/'generated', ROOT/'wit/platform',
+                                   sync_core_abi=True)
         report['bindings'] = lock
         (output/'bindings.json').write_text(json.dumps(lock,indent=2)+'\n')
         generated_before = tree(output/'generated')
@@ -183,7 +184,7 @@ def execute(output, tools):
         public_index = next(iter(graph['worlds'][0]['exports'].values()))['interface']['id']
         # Adverse projections are derived from the actual parsed source world.
         for name, mutation in [('unknown-export', lambda g: g['worlds'][0]['exports'].update(other={})),
-                               ('async-export', lambda g: g['interfaces'][public_index]['functions']['greet'].update(kind='async-freestanding'))]:
+                               ('sync-export', lambda g: g['interfaces'][public_index]['functions']['greet'].update(kind='freestanding'))]:
             changed = copy.deepcopy(graph); mutation(changed)
             try:
                 public_contract(changed)

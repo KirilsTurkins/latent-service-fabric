@@ -68,7 +68,7 @@ def stage(source: Path, world: str, destination: Path, platform: Path) -> Path:
 
 
 def public_export(graph):
-    """Read the real generated graph; the first profile accepts one sync string API."""
+    """Read the real generated graph; the selected public async effect uses a synchronous Core ABI."""
     def require(value):
         if not value:
             raise ValueError('c-threading-finite-public-contract-required')
@@ -84,7 +84,7 @@ def public_export(graph):
     require(interface['types'] == {} and len(interface['functions']) == 1)
     name, function = next(iter(interface['functions'].items()))
     result = function['result']
-    require(function['kind'] == 'freestanding' and function['name'] == name
+    require(function['kind'] == 'async-freestanding' and function['name'] == name
             and len(function['params']) == 1 and function['params'][0]['type'] == 'string'
             and type(result) is int and 0 <= result < len(graph['types'])
             and graph['types'][result]['kind'] == {'result': {'ok': 'string', 'err': 'string'}})
