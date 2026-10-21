@@ -251,3 +251,5 @@ returns poison rather than falling back to SLUB. This is uninstalled source and
 supplemental C evidence, not kernel execution or complete physical closure.
 Active unclosed LSM/Netlabel producers and all remaining protocol/RX/platform
 gates still refuse; no security configuration or hook is disabled.
+
+The [maintained Netlabel source](prepaid-netlabel.md) closes nested label birth and option callback ownership within the uninstalled IPv4 prefix; active security and full physical closure still block installation.
