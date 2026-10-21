@@ -15,7 +15,8 @@
           "feat/stream-kernel-audit-owner-20261021",
           "feat/stream-kernel-avc-consumer-20261021",
           "feat/stream-kernel-audit-skb-20261021",
-          "feat/stream-kernel-route-owners-20261021"
+          "feat/stream-kernel-route-owners-20261021",
+          "feat/stream-kernel-route-consumer-20261021"
         ],
         "paths": [
           ".github/workflows/stream-kernel-objects.yml",
@@ -28,6 +29,7 @@
           "tools/host_stream_kernel_audit_skb.py",
           "tools/host_stream_kernel_audit.py",
           "tools/host_stream_kernel_bind.py",
+          "tools/host_stream_kernel_route.py",
           "research/standard-outbound/linux-6.12-lineage/**"
         ]
       },
@@ -58,6 +60,11 @@
             "description": "Compile the closed Netport cache profile instead of the original object profiles",
             "type": "boolean"
           },
+          "route": {
+            "default": false,
+            "description": "Compile the closed IPv4 route source profile with original reference owners",
+            "type": "boolean"
+          },
           "sidcache": {
             "default": false,
             "description": "Compile the closed SID-cache and audit-string source profile",
@@ -76,10 +83,11 @@
     "bind-objects",
     "netlabel-objects",
     "netport-objects",
+    "route-objects",
     "selected-objects",
     "sidcache-objects"
   ],
-  "reviewReason": "Add the exclusive closed bind-bucket object-only profile over the full mandatory-audit floor; preserve all existing jobs, commands, tests, security config and original runtime/diagnostic limits. No kernel execution or installation qualification.",
+  "reviewReason": "Add one exclusive route object-only lane preserving all seven previous job bodies, 22 objects and75 global oracles, every original case/guard and original config/runtime/diagnostic bounds. No kernel link, boot, execution or installation qualification.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/stream-kernel-objects.yml"
 }

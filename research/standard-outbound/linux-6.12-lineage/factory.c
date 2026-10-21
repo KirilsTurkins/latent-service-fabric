@@ -358,6 +358,36 @@ int lsf_factory_blob_finish(struct lsf_factory_blob copy, unsigned int kind)
     return result;
 }
 
+int lsf_factory_route_queue(const void *address)
+{
+    struct lsf_factory_blob copy;
+    unsigned long flags;
+    int result;
+    spin_lock_irqsave(&pool_lock, flags);
+    result = lsf_factory_blob_lookup_locked(address, LSF_PREPAID_ROUTE, &copy);
+    if (result == 1 && !lsf_prepaid_route_queue(&factory.pool, copy.context->key,
+                                                copy.ticket))
+        result = -1;
+    spin_unlock_irqrestore(&pool_lock, flags);
+    return result;
+}
+
+int lsf_factory_route_return(const void *address)
+{
+    struct lsf_factory_blob copy;
+    unsigned long flags;
+    int result;
+    spin_lock_irqsave(&pool_lock, flags);
+    result = lsf_factory_blob_lookup_locked(address, LSF_PREPAID_ROUTE, &copy);
+    if (result == 1 && !lsf_prepaid_blob_finish(&factory.pool, copy.context->key,
+                                               copy.ticket, LSF_PREPAID_ROUTE))
+        result = -1;
+    /* Zero alone preserves the normal SLUB return. Unknown in-extent records,
+     * duplicate/stale generations and poisoned births stay physically held. */
+    spin_unlock_irqrestore(&pool_lock, flags);
+    return result;
+}
+
 int lsf_factory_netport_publish(const void *address, unsigned int bucket)
 {
     struct lsf_factory_blob copy;
