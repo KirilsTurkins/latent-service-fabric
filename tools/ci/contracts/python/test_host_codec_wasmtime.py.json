@@ -1,0 +1,75 @@
+{
+  "cases": [
+    "PinnedWasmtimeSource.test_exact_vendor_source_and_original_license_are_required_by_the_ci_graph",
+    "PinnedWasmtimeSource.test_native_inventory_retains_original_license_and_distinct_fork_provenance",
+    "PinnedWasmtimeSource.test_original_patched_added_metadata_extra_and_missing_vendor_bytes_are_refused",
+    "PinnedWasmtimeSource.test_unregistered_local_dependency_cannot_reuse_the_wasmtime_alias",
+    "PinnedWasmtimeSource.test_workspace_selection_isolation_global_override_and_registry_lock_are_refused"
+  ],
+  "guards": {
+    "PinnedWasmtimeSource.test_exact_vendor_source_and_original_license_are_required_by_the_ci_graph": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:92c5f4a5c5c781beee8bd5890415806c52625826d4be661ca36cf3c41fb8527c",
+        "class:setup-sha256:0a68a711ecd0cbf5db9e60af422b4c9e6f829672aca12dcb6ec28c67f6a32cce"
+      ],
+      "skipSites": []
+    },
+    "PinnedWasmtimeSource.test_native_inventory_retains_original_license_and_distinct_fork_provenance": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:92c5f4a5c5c781beee8bd5890415806c52625826d4be661ca36cf3c41fb8527c",
+        "class:setup-sha256:0a68a711ecd0cbf5db9e60af422b4c9e6f829672aca12dcb6ec28c67f6a32cce"
+      ],
+      "skipSites": []
+    },
+    "PinnedWasmtimeSource.test_original_patched_added_metadata_extra_and_missing_vendor_bytes_are_refused": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:92c5f4a5c5c781beee8bd5890415806c52625826d4be661ca36cf3c41fb8527c",
+        "class:setup-sha256:0a68a711ecd0cbf5db9e60af422b4c9e6f829672aca12dcb6ec28c67f6a32cce"
+      ],
+      "skipSites": []
+    },
+    "PinnedWasmtimeSource.test_unregistered_local_dependency_cannot_reuse_the_wasmtime_alias": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:92c5f4a5c5c781beee8bd5890415806c52625826d4be661ca36cf3c41fb8527c",
+        "class:setup-sha256:0a68a711ecd0cbf5db9e60af422b4c9e6f829672aca12dcb6ec28c67f6a32cce"
+      ],
+      "skipSites": []
+    },
+    "PinnedWasmtimeSource.test_workspace_selection_isolation_global_override_and_registry_lock_are_refused": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:92c5f4a5c5c781beee8bd5890415806c52625826d4be661ca36cf3c41fb8527c",
+        "class:setup-sha256:0a68a711ecd0cbf5db9e60af422b4c9e6f829672aca12dcb6ec28c67f6a32cce"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_host_codec_wasmtime.py",
+  "reviewReason": "Require exact authenticated pinned Wasmtime source, original license, isolated selection and refusal of modified or unknown local dependencies; preserve all existing TLS controls.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

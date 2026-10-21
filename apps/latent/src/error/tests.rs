@@ -2,6 +2,47 @@ use super::*;
 use latent_core::ErrorDetail;
 
 #[test]
+fn typed_memory_and_fuel_details_survive_cli_redaction_without_private_cell_or_reason() {
+    for (kind, dimension, opposite) in [
+        ("activation.memory-exhausted", "memory-bytes", "cpu-fuel"),
+        ("activation.fuel-exhausted", "cpu-fuel", "memory-bytes"),
+    ] {
+        let detail = |value: &str| ErrorDetail {
+            kind: kind.into(),
+            fields: [
+                ("dimension".into(), value.into()),
+                ("cell_id".into(), "private-cell-identity".into()),
+                ("reason".into(), "/private/backend/path".into()),
+            ]
+            .into(),
+        };
+        let error = |value| PlatformError {
+            code: PlatformErrorCode::ResourceExhausted,
+            message: "private backend allocation text".into(),
+            retryable: false,
+            details: vec![detail(value)],
+        };
+        let public = platform_value(&error(dimension));
+        assert_eq!(public["code"], "resource-exhausted");
+        assert_eq!(public["retryable"], false);
+        assert_eq!(
+            public["details"],
+            json!([{"kind":kind, "fields":{"dimension":dimension}}])
+        );
+        assert!(!public.to_string().contains("private"));
+        for invalid in [
+            opposite,
+            "",
+            "MemoryBytes",
+            "memory-bytes\n",
+            "/private/backend/path",
+        ] {
+            assert_eq!(platform_value(&error(invalid))["details"], json!([]));
+        }
+    }
+}
+
+#[test]
 fn runtime_phase_uses_only_closed_generic_failure_labels_without_transport_certainty() {
     let detail = |kind: &str, phase: &str| ErrorDetail {
         kind: "activation.guest-trap-kind".into(),

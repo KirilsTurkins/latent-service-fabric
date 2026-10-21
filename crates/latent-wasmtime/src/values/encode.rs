@@ -10,6 +10,29 @@ pub(super) fn results(
     values: &[Val],
     limits: ValueCodecLimits,
 ) -> Result<Vec<u8>, PlatformError> {
+    write_results(types, values, limits, None).map(|output| output.bytes)
+}
+
+pub(super) fn results_accounted(
+    types: &[Type],
+    values: &[Val],
+    limits: ValueCodecLimits,
+    budget: &latent_core::ActivationBudget,
+) -> Result<latent_core::ResultPayload, PlatformError> {
+    let output = write_results(types, values, limits, Some(budget))?;
+    match output.memory.take() {
+        Some(memory) => latent_core::ResultPayload::from_reserved(output.bytes, memory, budget)
+            .map_err(|error| error.to_platform_error()),
+        None => Ok(output.bytes.into()), // explicit legacy Phase1 only
+    }
+}
+
+fn write_results(
+    types: &[Type],
+    values: &[Val],
+    limits: ValueCodecLimits,
+    budget: Option<&latent_core::ActivationBudget>,
+) -> Result<LimitedBytes, PlatformError> {
     if types.len() != values.len() {
         return Err(invalid_result());
     }
@@ -17,23 +40,42 @@ pub(super) fn results(
         output: LimitedBytes {
             bytes: Vec::new(),
             maximum: limits.max_output_bytes,
+            memory: super::memory::Escrow::new(budget),
+            refusal: None,
         },
         remaining_nodes: limits.max_nodes,
         depth: 0,
         limits,
     };
-    encoder.open(b'[', values.len())?;
-    for (index, (ty, value)) in types.iter().zip(values).enumerate() {
-        encoder.comma(index)?;
-        encoder.value(ty, value)?;
+    let result = (|| {
+        encoder.open(b'[', values.len())?;
+        for (index, (ty, value)) in types.iter().zip(values).enumerate() {
+            encoder.comma(index)?;
+            encoder.value(ty, value)?;
+        }
+        encoder.close(b']')
+    })();
+    if let Err(error) = result {
+        // serde_json wraps writer failures. Preserve the first original ledger
+        // refusal instead of replacing its MemoryBytes metadata with a codec cap.
+        return Err(encoder.output.refusal.take().unwrap_or(error));
     }
-    encoder.close(b']')?;
-    Ok(encoder.output.bytes)
+    Ok(encoder.output)
 }
 
 struct LimitedBytes {
     bytes: Vec<u8>,
     maximum: usize,
+    memory: super::memory::Escrow,
+    refusal: Option<PlatformError>,
+}
+impl LimitedBytes {
+    fn refused(&mut self, error: PlatformError) -> std::io::Error {
+        if self.refusal.is_none() {
+            self.refusal = Some(error);
+        }
+        std::io::Error::other("original-host-memory-refusal")
+    }
 }
 
 impl Write for LimitedBytes {
@@ -48,9 +90,29 @@ impl Write for LimitedBytes {
             let capacity = needed
                 .max(self.bytes.capacity().saturating_mul(2))
                 .min(self.maximum);
-            self.bytes
-                .try_reserve_exact(capacity - self.bytes.len())
-                .map_err(std::io::Error::other)?;
+            let old_capacity = self.bytes.capacity();
+            // Keep the old allocation charged while a replacement is prepared.
+            // Include conservative allocator bookkeeping before either path.
+            let allocation = capacity
+                .checked_add(64)
+                .ok_or_else(|| std::io::Error::other("invocation-value-limit"))?;
+            if let Err(error) = self.memory.add(allocation) {
+                return Err(self.refused(error));
+            }
+            if let Err(error) = self.bytes.try_reserve_exact(capacity - self.bytes.len()) {
+                if let Err(error) = self.memory.shrink(if old_capacity == 0 {
+                    0
+                } else {
+                    old_capacity + 64
+                }) {
+                    return Err(self.refused(error));
+                }
+                return Err(std::io::Error::other(error));
+            }
+            self.memory.confirm();
+            if let Err(error) = self.memory.shrink(self.bytes.capacity() + 64) {
+                return Err(self.refused(error));
+            }
         }
         self.bytes.extend_from_slice(bytes);
         Ok(bytes.len())
@@ -100,6 +162,17 @@ impl Encoder {
         self.node()?;
         serde_json::to_writer(&mut self.output, value).map_err(|_| limit())
     }
+    fn formatted(&mut self, value: &impl std::fmt::Display) -> Result<(), PlatformError> {
+        // Largest primitive f64 Display is under 384 UTF-8 bytes (including
+        // subnormals and sign). Format in fixed stack storage before applying
+        // the unchanged codec string ceiling; never allocate a hidden String.
+        let mut scratch = [0u8; 384];
+        let mut output = std::io::Cursor::new(scratch.as_mut_slice());
+        write!(output, "{value}").map_err(|_| limit())?;
+        let length = output.position() as usize;
+        let value = std::str::from_utf8(&scratch[..length]).map_err(|_| invalid_result())?;
+        self.string(value)
+    }
     fn key(&mut self, name: &str) -> Result<(), PlatformError> {
         self.string(name)?;
         self.raw(b":")
@@ -126,10 +199,30 @@ impl Encoder {
             (Type::S8, Val::S8(value)) => integer!(value),
             (Type::S16, Val::S16(value)) => integer!(value),
             (Type::S32, Val::S32(value)) => integer!(value),
-            (Type::U64, Val::U64(value)) => self.string(&value.to_string()),
-            (Type::S64, Val::S64(value)) => self.string(&value.to_string()),
-            (Type::Float32, Val::Float32(value)) => self.string(&float32(*value)),
-            (Type::Float64, Val::Float64(value)) => self.string(&float64(*value)),
+            (Type::U64, Val::U64(value)) => self.formatted(value),
+            (Type::S64, Val::S64(value)) => self.formatted(value),
+            (Type::Float32, Val::Float32(value)) => {
+                if value.is_nan() {
+                    self.string("nan")
+                } else if *value == f32::INFINITY {
+                    self.string("inf")
+                } else if *value == f32::NEG_INFINITY {
+                    self.string("-inf")
+                } else {
+                    self.formatted(value)
+                }
+            }
+            (Type::Float64, Val::Float64(value)) => {
+                if value.is_nan() {
+                    self.string("nan")
+                } else if *value == f64::INFINITY {
+                    self.string("inf")
+                } else if *value == f64::NEG_INFINITY {
+                    self.string("-inf")
+                } else {
+                    self.formatted(value)
+                }
+            }
             (Type::Char, Val::Char(value)) => self.string(value.encode_utf8(&mut [0; 4])),
             (Type::String, Val::String(value)) => self.string(value),
             (Type::List(list), Val::List(values)) => self.list(list, values),
@@ -289,29 +382,5 @@ impl Encoder {
             (None, None) => self.primitive(b"null"),
             _ => Err(invalid_result()),
         }
-    }
-}
-
-fn float32(value: f32) -> String {
-    if value.is_nan() {
-        "nan".to_owned()
-    } else if value == f32::INFINITY {
-        "inf".to_owned()
-    } else if value == f32::NEG_INFINITY {
-        "-inf".to_owned()
-    } else {
-        value.to_string()
-    }
-}
-
-fn float64(value: f64) -> String {
-    if value.is_nan() {
-        "nan".to_owned()
-    } else if value == f64::INFINITY {
-        "inf".to_owned()
-    } else if value == f64::NEG_INFINITY {
-        "-inf".to_owned()
-    } else {
-        value.to_string()
     }
 }

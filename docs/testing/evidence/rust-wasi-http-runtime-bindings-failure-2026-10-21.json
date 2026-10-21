@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "latent.rust.wasi-http.fixture-bindings-failure.v1",
+  "source": "f6926e58a9402e8b071d3b1b856d01ef3c90e124",
+  "run": 39527094048,
+  "job": 118984199255,
+  "jobUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39527094048/job/118984199255",
+  "jobConclusion": "failure",
+  "artifact": {
+    "id": 12312963725,
+    "bytes": 4251717,
+    "sha256": "58d2268ee20525c46ea1bb863ac941f6dc68469d02579632dcc1e80c013b5ace",
+    "members": 39,
+    "allMemberCrcVerified": true
+  },
+  "compilerDiagnostic": {
+    "path": "rust-http-runtime-qualification/build/logs/04-compile.stderr.txt",
+    "bytes": 4446,
+    "sha256": "0768762287905dbcefeeafa31c67806a4e6afb6a958ce022d08634a3da6e3bf8",
+    "error": "error: missing one of:\n       * `generate_all` option\n       * `with: { \"latent:clock/monotonic@0.1.0\": path::to::bindings, }`\n       * `with: { \"latent:clock/monotonic@0.1.0\": generate, }`\n       \n       Caused by:\n         missing `with` mapping for the key `latent:clock/monotonic@0.1.0`\n  --> src/lib.rs:23:5\n   |\n23 |     wit_bindgen::generate!({path: \"wit\", world: \"service\"});\n   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n   |\n   = note: this error originates in the macro `wit_bindgen::generate` (in Nightly builds, run with -Z macro-backtrace for more info)\n\n",
+    "stage": "compile"
+  },
+  "publishedLibrariesCompiled": [
+    "waki 0.5.1",
+    "golem-wasi-http 0.2.0"
+  ],
+  "developerLibrariesCompiled": 2,
+  "fixtureCompilationSucceeded": false,
+  "componentCreated": false,
+  "signedRuntimeQualification": false,
+  "backendRebuilt": false,
+  "nativeProductsRebuilt": false,
+  "correction": "Add only three explicit generate mappings for the fixture original-world HTTP, ACTIVATION and CLOCK declarations. Preserve original public sync contract, ordinary library source, captured approval, limits, backend, case order and acceptance oracles."
+}

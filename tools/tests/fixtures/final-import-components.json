@@ -1,0 +1,177 @@
+{
+  "schemaVersion": "latent.final-import.control-inputs.v1",
+  "scope": "retained-component-inspection-only",
+  "cases": [
+    {
+      "language": "c",
+      "origin": {
+        "evidence": "docs/testing/evidence/c-closed-filesystem-signed-2026-10-20.json",
+        "evidenceIdentity": {
+          "sha256": "sha256:2ce6b9687f972df101bb8306fc03f9030bed92294c0eb5ba1402819517859f31",
+          "bytes": 12298
+        },
+        "source": "6578570a34fd7c7fa42be1205303731b0203dae3",
+        "run": 39362851384,
+        "job": 118432795119,
+        "artifact": {
+          "id": 12237909871,
+          "bytes": 504101,
+          "sha256": "sha256:b8afd276629489be19a812dfc654e46a67b2998b8f69baa44b60a32ff3152cba"
+        }
+      },
+      "files": {
+        "component.wasm": {
+          "sha256": "sha256:880f839d13d202f7954a1e72f5e02d7259ea8b8c867cfc05167156cc78b102e1",
+          "bytes": 864021
+        },
+        "capsule.json": {
+          "sha256": "sha256:42cc8792d40b229322feb7d8d2bf473e715e27f224536f7b90e38bf3c1ad684a",
+          "bytes": 1036
+        }
+      }
+    },
+    {
+      "language": "rust",
+      "origin": {
+        "evidence": "docs/testing/evidence/rust-wasi-http-signed-2026-10-21.json",
+        "evidenceIdentity": {
+          "sha256": "sha256:928969c9825b9f61cdc662354a98cb94c0f00011219e2b1bde6c3459c138d7a0",
+          "bytes": 13114
+        },
+        "source": "407cac236c337b4cfae6d855d499717fd9ddce95",
+        "run": 39668260882,
+        "job": 119458961583,
+        "artifact": {
+          "id": 12378817614,
+          "sha256": "sha256:d1e368ed13a377774e33c4aaa77458396a48c7d6ea5993ac03769e4f558f6ae8",
+          "bytes": 3365582,
+          "members": 815,
+          "expandedBytes": 13668740
+        },
+        "actualCompilerSource": "88b3c9c1d305eb8e308a7187600f782163bc6131",
+        "actualCompilerRun": 39623507324,
+        "retainedOriginalRuntimeFailuresReclassified": false
+      },
+      "files": {
+        "component.wasm": {
+          "sha256": "sha256:51c0ff8e1cd93ae504a8f14d861fb8ac862b4cf6bdab2d22074183c1e692eb4f",
+          "bytes": 934498
+        },
+        "capsule.json": {
+          "sha256": "sha256:f68b9e7b6ecf9e3855f896f2fa0b3bb14ae1726de2dd53371588f0520aea3350",
+          "bytes": 1306
+        }
+      }
+    },
+    {
+      "language": "go",
+      "origin": {
+        "evidence": "docs/testing/evidence/go-queued-work-signed-2026-10-21.json",
+        "evidenceIdentity": {
+          "sha256": "sha256:b6ae64db9b0f295c415d2ce874068605c67c8939daad03743c8eb5335a25d0ee",
+          "bytes": 32792
+        },
+        "source": "d889f0d3ec911c43375ac0679528c3303bad95fb",
+        "run": 39663672168,
+        "job": 119442944970,
+        "artifact": 12375268701
+      },
+      "files": {
+        "component.wasm": {
+          "sha256": "sha256:3346a5d79a7cabca7ad125acd5db26363fafd5c39d2d5e710c38c346037e2d3f",
+          "bytes": 3219953
+        },
+        "capsule.json": {
+          "sha256": "sha256:2aa929fcba635351e9b878b979dadeec427d08d29d14b0357a17ea8ae2f37d49",
+          "bytes": 1469
+        }
+      }
+    },
+    {
+      "language": "typescript",
+      "origin": {
+        "evidence": "docs/testing/evidence/typescript-activation-owned-stack-signed-2026-10-21.json",
+        "evidenceIdentity": {
+          "sha256": "sha256:ce922321636123376e2265faba19f5ee3ee8a5071a4e26cb784480106b47fd3f",
+          "bytes": 346861
+        },
+        "source": "85d7a036b4baf53b917cd353d4888ea6ff5f6d1c",
+        "run": 39603465482,
+        "job": 119233562662,
+        "artifact": {
+          "id": 12347677033,
+          "bytes": 241573,
+          "sha256": "sha256:f57e29885cfa45f2ea4538ed4b254abf15e5202ffe6559d908cfc4f5e88fa833",
+          "crcMembers": 234
+        },
+        "componentCompilerOrigin": {
+          "source": "63224663df622426a8a657355fb6ccc6294215ee",
+          "run": 39561770610,
+          "job": 119094482153,
+          "artifact": 12328935407,
+          "archiveBytes": 8806047,
+          "archiveDigest": "sha256:544655acf815a0fe85a0da4174fb4cca948fcfa119c08088d1ab4b229f816313",
+          "crcMembers": 327
+        }
+      },
+      "files": {
+        "component.wasm": {
+          "sha256": "sha256:27c0a75bf794e49ba6062b9ec09129cfc51ac78b6274c43959cc7e8ecb46e693",
+          "bytes": 12410038
+        },
+        "capsule.json": {
+          "sha256": "sha256:884eb9cee017fb66f8eb7f255e5b4b53862e82909581e3c23d7b248d70dd913f",
+          "bytes": 1419
+        }
+      }
+    },
+    {
+      "language": "java",
+      "origin": {
+        "evidence": "docs/testing/evidence/java-compiler-observations-signed-2026-10-21.json",
+        "evidenceIdentity": {
+          "sha256": "sha256:06e161401174108347b02f3e35f6fe55012a5303c22e5bb08168dbda0d3e6a80",
+          "bytes": 78822
+        },
+        "source": null,
+        "run": null,
+        "job": null,
+        "artifact": null
+      },
+      "files": {
+        "component.wasm": {
+          "sha256": "sha256:ba0b292c5354cd38a661b66e61c2f43a88b76b24b725ef115f2ffa94da5cfd1a",
+          "bytes": 1533590
+        },
+        "capsule.json": {
+          "sha256": "sha256:684d36e3ef9a2bc53169f586bb1a4c9fe8c3064d5b31e7e2c1e285495a6a2abf",
+          "bytes": 1301
+        }
+      }
+    },
+    {
+      "language": "dotnet",
+      "origin": {
+        "evidence": "docs/testing/evidence/dotnet-compiler-observations-signed-2026-10-21.json",
+        "evidenceIdentity": {
+          "sha256": "sha256:1bb4e5894fd2f477dc33780dced78f803ab055c77c7af100eaecf5a4dd865abe",
+          "bytes": 77766
+        },
+        "source": null,
+        "run": null,
+        "job": null,
+        "artifact": null
+      },
+      "files": {
+        "component.wasm": {
+          "sha256": "sha256:a7c13d1435dc7a715b6d6fb6e4b9c8d51adb07e68d06623ed74090b4e8064662",
+          "bytes": 2528118
+        },
+        "capsule.json": {
+          "sha256": "sha256:3b393529d0c582f1b4dfa8d3537b2e5803e8a894f68cc700eef76d8bb6e81caf",
+          "bytes": 1387
+        }
+      }
+    }
+  ]
+}

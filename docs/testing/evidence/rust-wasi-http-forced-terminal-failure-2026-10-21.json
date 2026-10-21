@@ -1,0 +1,142 @@
+{
+  "schemaVersion": "latent.rust.wasi-http.forced-terminal-review.v1",
+  "sourceRevision": "7750dec26e98495690e88c6dc2b9097d2a7cfca7",
+  "run": 39637534045,
+  "job": 119352043581,
+  "artifact": {
+    "id": 12363381683,
+    "bytes": 2992197,
+    "sha256": "sha256:68033783e895031ef387e1da615c94ac1ab40e15249193c0533ddb7ff1c1dc56",
+    "members": 631
+  },
+  "outerConclusion": "failure",
+  "passedCases": 37,
+  "failedCase": "foreign-pending-cancel",
+  "actualInvocation": {
+    "activation": "node-stop-pending",
+    "exitCode": 4,
+    "startedAtUnixMillis": "1792601346402",
+    "elapsedNanos": "72255236",
+    "decoded": null,
+    "response": {
+      "category": "platform-failure",
+      "command": "invoke",
+      "data": {
+        "activationId": "node-stop-pending",
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "48372",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 1,
+          "peakMemoryBytes": "9995232",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "54985"
+        },
+        "resolvedRevision": {
+          "publicationId": "publication:sha256:e47d8e4bc142be6961be52258b207caa6c2d7699fcce5d577b4d91a775b5d078",
+          "releaseDigest": "sha256:51c0ff8e1cd93ae504a8f14d861fb8ac862b4cf6bdab2d22074183c1e692eb4f",
+          "revisionId": "revision-v1:sha256:c99f4131d04478f565c72d03550093aac42c526aafd19a5b849f8f1d5eb341a5",
+          "routeGeneration": "13"
+        },
+        "terminalState": "cancelled"
+      },
+      "error": {
+        "code": "cancelled",
+        "details": [],
+        "message": "The platform reported a failure.",
+        "retryable": false
+      },
+      "outcomeKnown": true,
+      "requestDispatched": true,
+      "schemaVersion": "latent.cli.result.v1"
+    },
+    "processReaped": true
+  },
+  "positiveOriginalNativeTimer": {
+    "originalReader": "tools/dotnet_resource_timer_observer.py",
+    "nativeHookChanged": false,
+    "otherLanguageExecutionClaimed": false,
+    "nativeRecords": {
+      "formatVersion": 1,
+      "qualification": false,
+      "records": [
+        {
+          "mode": "pending",
+          "event": "wait-pending",
+          "sequence": 1,
+          "tasks": 1,
+          "waits": 1,
+          "timers": 1
+        }
+      ],
+      "status": "observed",
+      "invalidMarkerCount": 0,
+      "overflow": false,
+      "scope": "two-public-node-stop-fixture-activations-only",
+      "managedProfileLimits": {
+        "tasks": 8,
+        "waits": 16,
+        "timers": 8
+      },
+      "goProgrammeExecutionClaimed": false
+    },
+    "waitPending": {
+      "mode": "pending",
+      "event": "wait-pending",
+      "sequence": 1,
+      "tasks": 1,
+      "waits": 1,
+      "timers": 1
+    },
+    "proof": "actual original wait_for Poll::Pending with task/wait/timer charged"
+  },
+  "positivePhysicalOwners": {
+    "execution-cell-leases": "1",
+    "guest-invocations": "1",
+    "guest-stores": "1",
+    "guest-host-states": "1",
+    "guest-component-instances": "1"
+  },
+  "nativeTerminalStderrRetained": false,
+  "failedCaseFinalPhysicalRetirementObserved": false,
+  "originalFailurePromoted": false,
+  "guestCloseMarkerContract": "host/runtime.rs close import ONLY; not a host Store/activation retirement hook",
+  "ordinaryReturnStillRequiresGuestClose": true,
+  "forcedOnly": [
+    "cancel",
+    "deadline"
+  ],
+  "forcedPublicTerminalStillExact": true,
+  "positivePendingAndPhysicalProviderOwnershipStillRequired": true,
+  "finalPhysicalFiveAndProvider18ZeroStillRequired": true,
+  "physicalRetirementInferredFromMarker": false,
+  "newDiagnosticBound": {
+    "stderrBytes": 262144,
+    "numericMarkerLines": 16,
+    "bytesPerLine": 128
+  },
+  "compilerBackendNativeGuestRebuilt": false,
+  "qualification": false,
+  "sourceBindings": {
+    "crates/latent-wasmtime/src/host/runtime.rs": {
+      "sha256": "sha256:de55dceadeccea2ba8f1593593b819e96bb46431ce509bcbe9dd4a3d0b680744",
+      "bytes": 27102
+    },
+    "crates/latent-wasmtime/src/host/runtime/positive_timer_observer.rs": {
+      "sha256": "sha256:02b19d4f6f457aeb1a93a481450acc09fceac57bef0d406f8efb9c84ca3b7bd7",
+      "bytes": 9524
+    },
+    "tools/rust_wasi_http_root.py": {
+      "sha256": "sha256:b01c8dc66c42c83fb306feb072034b20be5f4c9ebdfd7737f111e87d30c9211e",
+      "bytes": 19274
+    },
+    "tools/toolchain-smoke/examples/rust_wasi_http_runtime.rs": {
+      "sha256": "sha256:6374fe9a8991dc1741c1dfbe6448c372d00fd7d72f0cb3359d19e1ffbdcdc8bd",
+      "bytes": 3292
+    }
+  }
+}

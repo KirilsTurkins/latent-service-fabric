@@ -1,0 +1,111 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "env": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_INCREMENTAL": "0",
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "name": "One fresh captured guest and original finite two-client programme",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "dtolnay/rust-toolchain",
+        "with": {
+          "targets": "wasm32-unknown-unknown"
+        }
+      },
+      {
+        "uses": "Swatinem/rust-cache",
+        "with": {
+          "cache-all-crates": false,
+          "cache-bin": false,
+          "cache-on-failure": false,
+          "cache-targets": true,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "save-if": false,
+          "shared-key": "host-correctness"
+        }
+      },
+      {
+        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "uses": "mlugg/setup-zig",
+        "with": {
+          "version": "0.16.0"
+        }
+      },
+      {
+        "name": "Prepare the normal captured compiler sandbox and pinned binding tool only",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\npython3 -m pip install --requirement tools/requirements.lock\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/rust-http-tools\"\necho \"$RUNNER_TEMP/rust-http-tools\" >> \"$GITHUB_PATH\"\n"
+      },
+      {
+        "name": "Fetch the exact historical native producer source without a host build",
+        "run": "git fetch --no-tags --depth=1 origin c7134289f446cb3171eb0ffd800a94afc2a5209f"
+      },
+      {
+        "name": "Check actual-source capture and refusal oracles without compiling a guest",
+        "run": "python3 -B -m unittest tools.tests.test_rust_wasi_http_runtime_fixture tools.tests.test_rust_wasi_http_runtime tools.tests.test_rust_wasi_http_profile tools.tests.test_rust_wasi_http_inputs_prepared tools.tests.test_activation_stack_native_products tools.tests.test_activation_stack_native_source -q"
+      },
+      {
+        "name": "Acquire only locked SDK sources for this current adapter",
+        "run": "cargo fetch --locked --target wasm32-unknown-unknown --target x86_64-unknown-linux-gnu"
+      },
+      {
+        "name": "Compile exactly one current source-bound standard backend",
+        "run": "python3 -B tools/rust_wasi_http_inputs.py --output \"$RUNNER_TEMP/rust-http-current-backend\""
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Authenticate the original five products without building another host",
+        "run": "python3 -B tools/activation_stack_native_products.py --output \"$RUNNER_TEMP/rust-http-native\""
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Compile one ordinary captured guest then sign and execute all strict cases",
+        "run": "python3 -B tools/qualify_rust_wasi_http_runtime.py --native-products \"$RUNNER_TEMP/rust-http-native\" --http-runtime \"$RUNNER_TEMP/rust-http-current-backend\" --output \"$RUNNER_TEMP/rust-http-runtime-qualification\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain bounded public source build invocation and cleanup observations",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "rust-wasi-http-runtime-${{ github.sha }}",
+          "path": "${{ runner.temp }}/rust-http-runtime-qualification/qualification.json\n${{ runner.temp }}/rust-http-runtime-qualification/FAILED.json\n${{ runner.temp }}/rust-http-runtime-qualification/current-build.json\n${{ runner.temp }}/rust-http-runtime-qualification/capture.json\n${{ runner.temp }}/rust-http-runtime-qualification/source/candidate.json\n${{ runner.temp }}/rust-http-runtime-qualification/source/application/Cargo.toml\n${{ runner.temp }}/rust-http-runtime-qualification/source/application/Cargo.lock\n${{ runner.temp }}/rust-http-runtime-qualification/source/application/latent.dependencies*.json\n${{ runner.temp }}/rust-http-runtime-qualification/source/application/cargo-resolved.lock.json\n${{ runner.temp }}/rust-http-runtime-qualification/approval-required/*.json\n${{ runner.temp }}/rust-http-runtime-qualification/approval-required/logs/**\n${{ runner.temp }}/rust-http-runtime-qualification/build/*.json\n${{ runner.temp }}/rust-http-runtime-qualification/build/*.wasm\n${{ runner.temp }}/rust-http-runtime-qualification/build/logs/**\n${{ runner.temp }}/rust-http-runtime-qualification/node/*.json\n${{ runner.temp }}/rust-http-runtime-qualification/node/examples-controls/*.json\n${{ runner.temp }}/rust-http-runtime-qualification/node/foreign-controls/*.json\n${{ runner.temp }}/rust-http-runtime-qualification/node/provider-absence/*.json\n${{ runner.temp }}/rust-http-runtime-qualification/node/provider-absence/controls/*.json\n${{ runner.temp }}/rust-http-native/*.json\n${{ runner.temp }}/rust-http-current-backend/*.json\n${{ runner.temp }}/rust-http-current-backend/*.wasm\n${{ runner.temp }}/rust-http-current-backend/component-composer/wac\n${{ runner.temp }}/rust-http-current-backend/logs/*.stdout.txt\n${{ runner.temp }}/rust-http-current-backend/logs/*.stderr.txt\n",
+          "retention-days": 3
+        }
+      }
+    ],
+    "timeout-minutes": 20
+  },
+  "jobId": "ordinary-clients",
+  "kind": "job",
+  "reviewReason": "Reviewed c713 native acquisition and exact shared source projection preserve all original Rust64 runtime oracles, caps and commands, with additive reader/source controls and a fresh source-bound adapter.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/rust-wasi-http-clients.yml"
+}

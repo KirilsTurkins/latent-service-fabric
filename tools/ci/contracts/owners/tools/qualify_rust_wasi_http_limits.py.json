@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_rust_wasi_http_limits.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Reviewed exact86da/c713 public memory detail omission: fixed whole51c component instantiated53page minimum exceeds only3MiB requested memory; require unchanged original16MiB same-cell parsed fresh plus all original retirement gates. Unknown private site retained; old typed reader/64 unchanged; two new adverse controls.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "1ff5d57f229b1c037db7b1d5e293fc86000ec67501cd5b901f3b5c83db762a70"
+}

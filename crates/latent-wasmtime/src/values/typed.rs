@@ -27,7 +27,35 @@ pub(super) fn params(
     payload: &[u8],
     limits: ValueCodecLimits,
 ) -> Result<Vec<Val>, PlatformError> {
+    params_with_state(types, payload, State::new(limits))
+        .map(|owned| owned.values)
+        .map_err(|(error, _)| error)
+}
+
+pub(super) fn params_accounted(
+    types: &[Type],
+    payload: &[u8],
+    limits: ValueCodecLimits,
+    budget: &latent_core::ActivationBudget,
+) -> Result<super::memory::OwnedValues, (PlatformError, bool)> {
     let mut state = State::new(limits);
+    state.memory = super::memory::Escrow::new(Some(budget));
+    // Normalized input and serde's escaped-string scratch may coexist and
+    // reallocate. This input-sized escrow precedes either allocation.
+    let scratch = payload
+        .len()
+        .checked_mul(4)
+        .and_then(|n| n.checked_add(256))
+        .ok_or_else(|| (super::limit(), false))?;
+    state.memory.add(scratch).map_err(|error| (error, true))?;
+    params_with_state(types, payload, state)
+}
+
+fn params_with_state(
+    types: &[Type],
+    payload: &[u8],
+    mut state: State,
+) -> Result<super::memory::OwnedValues, (PlatformError, bool)> {
     let normalized = super::parse::normalize_negative_zero(payload);
     let mut deserializer = serde_json::Deserializer::from_slice(&normalized);
     let result = sequences::Params {
@@ -36,7 +64,18 @@ pub(super) fn params(
     }
     .deserialize(&mut deserializer)
     .and_then(|values| deserializer.end().map(|()| values));
-    result.map_err(|_| state.failure.unwrap_or_else(invalid_input))
+    // Parser scratch/normalization is destroyed before the retained bound shrinks.
+    drop(deserializer);
+    drop(normalized);
+    match result {
+        Ok(values) => {
+            super::memory::OwnedValues::finish(values, state.memory).map_err(|error| (error, true))
+        }
+        Err(_) => Err((
+            state.failure.unwrap_or_else(invalid_input),
+            state.memory_refused,
+        )),
+    }
 }
 
 struct Seed<'a> {

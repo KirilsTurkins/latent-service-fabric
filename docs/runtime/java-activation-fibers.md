@@ -285,16 +285,37 @@ latency, fairness or physical memory plateaus.
 
 ## Remaining profile requirements
 
-CompletableFuture, work-stealing/virtual-thread factories, scheduled
-executors, recurring callbacks, broader cached-factory, reset-future and
-duration-based TimeUnit qualification, full interruption and
-wait/notify races, shared I/O readiness, sockets/DNS,
-cross-tenant reuse, late wakes and node stop remain open. General generated host
-I/O still uses the existing synchronous lowering and does not establish sibling
-progress while an accepted socket operation waits. Published library/default
-factory qualification, dependency safe-point coverage and measured active/parked
-owner plateaus are also required for #741. Issues #741, #736 and the SDK
-Library milestone remain open.
+As of 21 October 2026, later finite signed programmes qualify selected
+ordinary APIs beyond the historical failures above. [#1237](https://github.com/KirilsTurkins/latent-service-fabric/pull/1237)
+and [#1306](https://github.com/KirilsTurkins/latent-service-fabric/pull/1306)
+retain [joined resource/Timer work](../testing/java-resource-runtime.md) and
+[entered late Timer callbacks](../testing/java-dotnet-late-facilities.md), including
+fresh tenant invocations. [#1268](https://github.com/KirilsTurkins/latent-service-fabric/pull/1268)
+qualifies [mixed ordinary HTTP bodies](../testing/java-http-mixed-bodies.md).
+[#1273](https://github.com/KirilsTurkins/latent-service-fabric/pull/1273) qualifies
+[accepted HTTP completion after logical cancellation](../testing/java-http-late-completion.md)
+through an ordinary executor and default `CompletableFuture.supplyAsync`, before
+activation retirement. The selected fiber-I/O bridge supports sibling progress
+while a typed HTTP operation is genuinely pending; this is distinct from a
+standard raw socket port. [#1032](https://github.com/KirilsTurkins/latent-service-fabric/pull/1032)
+retains the [unchanged published Commons Lang/Hutool default-worker programmes](../testing/java-published-worker-libraries.md).
+Each linked receipt keeps its actual source, component, native tuple and finite
+limits; none requalifies every later integration or the whole runtime profile.
+
+Work-stealing/virtual-thread factories and scheduled executors remain explicitly
+outside the selected supported subset; #741 does not require universal JVM
+coverage. Remaining acceptance concerns all observables and combinations of the
+named supported subset: full interruption and wait/notify races, broader
+cached/reset/duration behavior, dependency checkpoint coverage and
+non-suspendable initialization/CPU boundaries, measured active/parked ownership
+costs, supported stream integration with distinct authority, and lifecycle or
+node-stop races. The qualified finite late-callback and tenant observations do
+not prove arbitrary post-retirement wakes or opaque worker quiescence.
+Issues #741, #736 and the SDK Library milestone remain open.
+
+The following earlier CompletableFuture candidate history retains its original
+source-specific failures and then-pending requirements; it does not replace the
+later finite signed observations linked above.
 
 The isolated CompletableFuture candidate supplies pending `CompletableFuture`,
 `CompletionStage` and `CompletionException` through their unchanged standard

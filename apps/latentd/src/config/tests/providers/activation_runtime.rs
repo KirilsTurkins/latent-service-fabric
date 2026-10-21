@@ -190,7 +190,7 @@ fn cooperative_admission_requires_the_selected_c_profile_and_exact_store_owner_l
             1 => wrong.owned_native_stacks = false,
             2 => {
                 wrong.native_thread_profile =
-                    NativeThreadProfile::RustContext40SoleConsumerOneTaskStartV1
+                    NativeThreadProfile::RustContext40SoleConsumerOneTaskStartV1;
             }
             3 => wrong.activation_runtime = None,
             _ => wrong.activation_runtime.as_mut().unwrap().native_owners += 1,

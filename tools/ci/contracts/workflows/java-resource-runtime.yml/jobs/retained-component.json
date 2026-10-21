@@ -3,7 +3,7 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "if": "${{ github.event_name == 'workflow_dispatch' && (inputs.replay_retained_component || inputs.diagnose_retained_component) }}",
+    "if": "${{ github.event_name == 'workflow_dispatch' && !inputs.late_facilities && (inputs.replay_retained_component || inputs.diagnose_retained_component) }}",
     "name": "Sign unchanged Java component or diagnose closed modes explicitly",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -77,7 +77,7 @@
   },
   "jobId": "retained-component",
   "kind": "job",
-  "reviewReason": "Explicit defaultfalse retained209 Java diagnostic after realparalleltrap; preserved originalnamed full13 replay and unchangednormal30/full13/grants/caps; newclosed3 observations neveracceptance",
+  "reviewReason": "Two explicit default-false accepted late-facility lanes; original jobs restore byte-exact after only selector/job/guard removal; same original limits, immutable 6fd native, two denials plus four ordinary late/fresh calls, no old programme or post-Store credit.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-resource-runtime.yml"
 }

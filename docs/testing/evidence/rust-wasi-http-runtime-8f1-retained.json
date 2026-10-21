@@ -1,0 +1,544 @@
+{
+  "source": "8f1d08257e724dca71b0c20aeff547524cba7076",
+  "run": 39532447535,
+  "job": 119001285605,
+  "artifact": {
+    "id": 12315739891,
+    "size_in_bytes": 4643426,
+    "digest": "sha256:ab5bd26fd462e4c34182b31b47e0155e4d8c107c1f28075d7fd2ff1981a56ee0"
+  },
+  "members": {
+    "rust-http-runtime-qualification/FAILED.json": {
+      "digest": "sha256:c88eb65ab9759a23f7254e1becee538850ca5d47d98eb137a3c4edc2a9741691",
+      "size": 764069
+    },
+    "rust-http-runtime-qualification/current-build.json": {
+      "digest": "sha256:11c58c4f9e4a7f1a99e0c3ab62869e3dc14ebf94f30e4031b721d5cad77f19ca",
+      "size": 24171
+    },
+    "rust-http-runtime-qualification/capture.json": {
+      "digest": "sha256:3d39151dd85f9fbcc8c90dc9162d9171640f0eb08c24cd83146bc758b5886f70",
+      "size": 326197
+    },
+    "rust-http-runtime-qualification/source/candidate.json": {
+      "digest": "sha256:239da951884cde5e3befb1536ab2b48e5f18341c141c23f14ffa6807fd53bc8e",
+      "size": 2226756
+    },
+    "rust-http-runtime-qualification/source/application/Cargo.lock": {
+      "digest": "sha256:9075b7bef5036dda178b763bfdbb04f149c0199de51a273c24a2869fed3d6f2b",
+      "size": 47777
+    },
+    "rust-http-runtime-qualification/source/application/Cargo.toml": {
+      "digest": "sha256:17927aca682ec2cf1a62b011fc6fd5255aed5e53ca55158d438908de02fa757b",
+      "size": 2714
+    },
+    "rust-http-runtime-qualification/source/application/cargo-resolved.lock.json": {
+      "digest": "sha256:e251e2a0ba3040b4eab5f636c6168bc6ddcb8e14f64873e80bcff846f2235c93",
+      "size": 204043
+    },
+    "rust-http-runtime-qualification/source/application/latent.dependencies.json": {
+      "digest": "sha256:a432a02f8f7da13bc8825ecf853c5885f564584b3f85af6b945150df09bddf6f",
+      "size": 423252
+    },
+    "rust-http-runtime-qualification/source/application/latent.dependencies.lock.json": {
+      "digest": "sha256:239da951884cde5e3befb1536ab2b48e5f18341c141c23f14ffa6807fd53bc8e",
+      "size": 2226756
+    },
+    "rust-http-runtime-qualification/approval-required/BUILD-FAILED.json": {
+      "digest": "sha256:f98ac472dc6872a2b424c2e74b5ff2226c0aad8c50675c577b06bafb060d75f1",
+      "size": 378
+    },
+    "rust-http-runtime-qualification/approval-required/compatibility-report.json": {
+      "digest": "sha256:fa9def5f84f49e6cb0ef81ed71412da51d210d9c865ccce4ae741b3175b18767",
+      "size": 609
+    },
+    "rust-http-runtime-qualification/approval-required/executable-input-approval-request.json": {
+      "digest": "sha256:fd3c85131df8e9ce2d1939d5a2e5ef0eb91c6f2ee8dd917222f53dff1b825e10",
+      "size": 342867
+    },
+    "rust-http-runtime-qualification/approval-required/logs/00-rust-sysroot.stderr.txt": {
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    "rust-http-runtime-qualification/approval-required/logs/00-rust-sysroot.stdout.txt": {
+      "digest": "sha256:e3efe495dbde0281b1aec2e158d7ad673972fae278fdc349d9d4304b697b4cd0",
+      "size": 64
+    },
+    "rust-http-runtime-qualification/approval-required/logs/01-zig-version.stderr.txt": {
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    "rust-http-runtime-qualification/approval-required/logs/01-zig-version.stdout.txt": {
+      "digest": "sha256:aa037454b5e8320521a32b278a3f4aff05fc79009ab5503f5d4a1b9a33b38c47",
+      "size": 7
+    },
+    "rust-http-runtime-qualification/approval-required/recipe-inputs.json": {
+      "digest": "sha256:36f8c77e4b46aa71120d0c32bafc955a405e314b03648d298b5704421e9cae09",
+      "size": 15451
+    },
+    "rust-http-runtime-qualification/approval-required/rust-compiler-inputs.json": {
+      "digest": "sha256:d575424e82c87bdc4eead00883fed601436ac9c56afb26ba3b7f1e968eaaa1c0",
+      "size": 3856088
+    },
+    "rust-http-runtime-qualification/approval-required/source-inputs.json": {
+      "digest": "sha256:f0aaa7b379d0856e795ca639acd5bfd8f03776a0b24433632118a4193358d93f",
+      "size": 9194
+    },
+    "rust-http-runtime-qualification/build/BUILD-COMPLETE.json": {
+      "digest": "sha256:99901a163c355cece6f323d255205bc74f74103b0453582943e57269b428b2a8",
+      "size": 3972
+    },
+    "rust-http-runtime-qualification/build/application-dependencies.json": {
+      "digest": "sha256:862070b55214a66d4b7b51e700cf85ff2e7ae09d1510f37ad96f8a1b9a544d9d",
+      "size": 2450065
+    },
+    "rust-http-runtime-qualification/build/build-observation.json": {
+      "digest": "sha256:4939d85dfb0681f1285cbcce985a2fe4f3570ab0904cc62d35a7ef82ecd6422e",
+      "size": 4326
+    },
+    "rust-http-runtime-qualification/build/capsule.json": {
+      "digest": "sha256:bc660761517fb9c15f738425a9923d6f8c78b692c609eaac6d42e59d945280b1",
+      "size": 1306
+    },
+    "rust-http-runtime-qualification/build/cargo-inputs.json": {
+      "digest": "sha256:1520cc1e500d000fbbbeea5401e9a09eed11352ef3ecb62516e2d03aa1d609c0",
+      "size": 599
+    },
+    "rust-http-runtime-qualification/build/compatibility-inspection.json": {
+      "digest": "sha256:ff2566403f1f555aba876ada60b73342ba778e883bcc6786fe2c34304069a6ae",
+      "size": 511
+    },
+    "rust-http-runtime-qualification/build/compatibility-context.json": {
+      "digest": "sha256:da3b73e968e3f74d4aca4ed0b0570e9d3d167c5fa302918a7d5111c580054118",
+      "size": 5096
+    },
+    "rust-http-runtime-qualification/build/compatibility-reachability.json": {
+      "digest": "sha256:ee06c6ae3e0d0ced5604684028ab27ad0bfc4d38374e85421cba806e85be3622",
+      "size": 25609
+    },
+    "rust-http-runtime-qualification/build/compatibility-report.json": {
+      "digest": "sha256:f9c9551b11703dec2e1ead06061d8285e63eadf1e93e4ebea043f039b6c0cc83",
+      "size": 1252
+    },
+    "rust-http-runtime-qualification/build/component.wasm": {
+      "digest": "sha256:ceff069712671613cbb1d330fbb256979147b3d630b14114e59df5025193ab6f",
+      "size": 932193
+    },
+    "rust-http-runtime-qualification/build/contracts.json": {
+      "digest": "sha256:71c66a868e541f488aa2a79fee70fd6ccc78ad0f84c6cfb955a5cb21a93cb29a",
+      "size": 674
+    },
+    "rust-http-runtime-qualification/build/deployment.json": {
+      "digest": "sha256:6dc864bebf8676a2a66319e4c606e797fb32da94f8a8947251531ff243f25b19",
+      "size": 889
+    },
+    "rust-http-runtime-qualification/build/executable-input-approval-request.json": {
+      "digest": "sha256:fd3c85131df8e9ce2d1939d5a2e5ef0eb91c6f2ee8dd917222f53dff1b825e10",
+      "size": 342867
+    },
+    "rust-http-runtime-qualification/build/executable-input-outputs.json": {
+      "digest": "sha256:601ff6cb359d37e544cddfb8c2c094d672a21da0bd9a8a1ad21438049a47ffff",
+      "size": 29035
+    },
+    "rust-http-runtime-qualification/build/logs/00-rust-sysroot.stderr.txt": {
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    "rust-http-runtime-qualification/build/logs/00-rust-sysroot.stdout.txt": {
+      "digest": "sha256:e3efe495dbde0281b1aec2e158d7ad673972fae278fdc349d9d4304b697b4cd0",
+      "size": 64
+    },
+    "rust-http-runtime-qualification/build/logs/01-zig-version.stderr.txt": {
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    "rust-http-runtime-qualification/build/logs/01-zig-version.stdout.txt": {
+      "digest": "sha256:aa037454b5e8320521a32b278a3f4aff05fc79009ab5503f5d4a1b9a33b38c47",
+      "size": 7
+    },
+    "rust-http-runtime-qualification/build/logs/02-bindgen-version.stderr.txt": {
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    "rust-http-runtime-qualification/build/logs/02-bindgen-version.stdout.txt": {
+      "digest": "sha256:10f3a9e5d1a5332ea2094b43c9e350da2823067d71a0ffe4b2ca4ad883849310",
+      "size": 23
+    },
+    "rust-http-runtime-qualification/build/logs/03-sdk-bindings.stderr.txt": {
+      "digest": "sha256:6844d7c75f103e0af0f3c8b4f6b3eb47a7590575413c9252d640227d68df2bb3",
+      "size": 64
+    },
+    "rust-http-runtime-qualification/build/logs/03-sdk-bindings.stdout.txt": {
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    "rust-http-runtime-qualification/build/logs/04-compile.stderr.txt": {
+      "digest": "sha256:e480ea9d2745188e6bb405dae675a6d7c69f233374232565409b87793c23b719",
+      "size": 3729
+    },
+    "rust-http-runtime-qualification/build/logs/04-compile.stdout.txt": {
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    "rust-http-runtime-qualification/build/logs/05-component.stderr.txt": {
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    "rust-http-runtime-qualification/build/logs/05-component.stdout.txt": {
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    "rust-http-runtime-qualification/build/logs/06-validate.stderr.txt": {
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    "rust-http-runtime-qualification/build/logs/06-validate.stdout.txt": {
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    "rust-http-runtime-qualification/build/logs/07-contracts.stderr.txt": {
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    "rust-http-runtime-qualification/build/logs/08-rust-http-original-graph.stderr.txt": {
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    "rust-http-runtime-qualification/build/logs/07-contracts.stdout.txt": {
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    "rust-http-runtime-qualification/build/logs/08-rust-http-original-graph.stdout.txt": {
+      "digest": "sha256:de5a1ec9f23768bc117cd527c5415fb55d3a69b6f9cb50f95a0633b1d72da328",
+      "size": 32699
+    },
+    "rust-http-runtime-qualification/build/logs/09-rust-http-original-canonical-wit.stderr.txt": {
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    "rust-http-runtime-qualification/build/logs/09-rust-http-original-canonical-wit.stdout.txt": {
+      "digest": "sha256:d7e88a3f9408f7c1673f1ae6b8da2d600b5929373584dac87e8b1a99ef8bec56",
+      "size": 5663
+    },
+    "rust-http-runtime-qualification/build/logs/10-rust-http-projection-original-wit.stderr.txt": {
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    "rust-http-runtime-qualification/build/logs/11-rust-http-projection-adapter-wit.stderr.txt": {
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    "rust-http-runtime-qualification/build/logs/11-rust-http-projection-adapter-wit.stdout.txt": {
+      "digest": "sha256:d732fd277df1cd5f3ce8f1e6c6a1fa462e6eaa839d0c5b80f3f39414fa789667",
+      "size": 62301
+    },
+    "rust-http-runtime-qualification/build/logs/10-rust-http-projection-original-wit.stdout.txt": {
+      "digest": "sha256:de5a1ec9f23768bc117cd527c5415fb55d3a69b6f9cb50f95a0633b1d72da328",
+      "size": 32699
+    },
+    "rust-http-runtime-qualification/build/logs/12-rust-http-projection-unbundle.stderr.txt": {
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    "rust-http-runtime-qualification/build/logs/12-rust-http-projection-unbundle.stdout.txt": {
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    "rust-http-runtime-qualification/build/logs/13-rust-http-projection-print.stderr.txt": {
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    "rust-http-runtime-qualification/build/logs/13-rust-http-projection-print.stdout.txt": {
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    "rust-http-runtime-qualification/build/logs/14-rust-http-projection-encode.stderr.txt": {
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    "rust-http-runtime-qualification/build/logs/14-rust-http-projection-encode.stdout.txt": {
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    "rust-http-runtime-qualification/build/logs/15-rust-http-projection-validate.stderr.txt": {
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    "rust-http-runtime-qualification/build/logs/15-rust-http-projection-validate.stdout.txt": {
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    "rust-http-runtime-qualification/build/logs/16-rust-http-projection-selected-wit.stderr.txt": {
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    "rust-http-runtime-qualification/build/logs/16-rust-http-projection-selected-wit.stdout.txt": {
+      "digest": "sha256:c8e21320feb40326316c5a5d2ba20df3c400a456225ce41ae96c84d4ec205a97",
+      "size": 32723
+    },
+    "rust-http-runtime-qualification/build/logs/17-rust-http-compiler-root-normalize-lock.stderr.txt": {
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    "rust-http-runtime-qualification/build/logs/17-rust-http-compiler-root-normalize-lock.stdout.txt": {
+      "digest": "sha256:76b9c5a0e8b19e3dffa83f992e5913650061a131faa69efaa9a86bc087077e43",
+      "size": 151763
+    },
+    "rust-http-runtime-qualification/build/logs/18-rust-http-compiler-root-compile.stderr.txt": {
+      "digest": "sha256:6e32860a3108b97561c37299748a0014debfa8668b386e7d04e067163e637ced",
+      "size": 1224
+    },
+    "rust-http-runtime-qualification/build/logs/18-rust-http-compiler-root-compile.stdout.txt": {
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    "rust-http-runtime-qualification/build/logs/19-rust-http-compiler-root-component.stderr.txt": {
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    "rust-http-runtime-qualification/build/logs/19-rust-http-compiler-root-component.stdout.txt": {
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    "rust-http-runtime-qualification/build/logs/20-rust-http-compiler-root-graph.stderr.txt": {
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    "rust-http-runtime-qualification/build/logs/20-rust-http-compiler-root-graph.stdout.txt": {
+      "digest": "sha256:e2220ea0b21ce48438c95e87bb4d2079a2743cb168c2824da33ce1b9216bf275",
+      "size": 1548
+    },
+    "rust-http-runtime-qualification/build/logs/21-rust-http-projection-original-wit.stderr.txt": {
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    "rust-http-runtime-qualification/build/logs/21-rust-http-projection-original-wit.stdout.txt": {
+      "digest": "sha256:e2220ea0b21ce48438c95e87bb4d2079a2743cb168c2824da33ce1b9216bf275",
+      "size": 1548
+    },
+    "rust-http-runtime-qualification/build/logs/22-rust-http-projection-adapter-wit.stderr.txt": {
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    "rust-http-runtime-qualification/build/logs/22-rust-http-projection-adapter-wit.stdout.txt": {
+      "digest": "sha256:d732fd277df1cd5f3ce8f1e6c6a1fa462e6eaa839d0c5b80f3f39414fa789667",
+      "size": 62301
+    },
+    "rust-http-runtime-qualification/build/logs/23-rust-http-projection-unbundle.stderr.txt": {
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    "rust-http-runtime-qualification/build/logs/24-rust-http-projection-print.stderr.txt": {
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    "rust-http-runtime-qualification/build/logs/23-rust-http-projection-unbundle.stdout.txt": {
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    "rust-http-runtime-qualification/build/logs/24-rust-http-projection-print.stdout.txt": {
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    "rust-http-runtime-qualification/build/logs/25-rust-http-projection-encode.stderr.txt": {
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    "rust-http-runtime-qualification/build/logs/25-rust-http-projection-encode.stdout.txt": {
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    "rust-http-runtime-qualification/build/logs/26-rust-http-projection-validate.stderr.txt": {
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    "rust-http-runtime-qualification/build/logs/26-rust-http-projection-validate.stdout.txt": {
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    "rust-http-runtime-qualification/build/logs/27-rust-http-projection-selected-wit.stderr.txt": {
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    "rust-http-runtime-qualification/build/logs/27-rust-http-projection-selected-wit.stdout.txt": {
+      "digest": "sha256:cc3513b485af4ef321d71bb912fd16192c0d5a5c3ff5640256f47f2c937e6c88",
+      "size": 1554
+    },
+    "rust-http-runtime-qualification/build/logs/28-rust-http-exact-composition.stderr.txt": {
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    "rust-http-runtime-qualification/build/logs/28-rust-http-exact-composition.stdout.txt": {
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    "rust-http-runtime-qualification/build/logs/29-rust-http-final-validation.stderr.txt": {
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    "rust-http-runtime-qualification/build/logs/30-rust-http-final-graph.stderr.txt": {
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    "rust-http-runtime-qualification/build/logs/29-rust-http-final-validation.stdout.txt": {
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    "rust-http-runtime-qualification/build/logs/30-rust-http-final-graph.stdout.txt": {
+      "digest": "sha256:b7e47b33ab1d134a6ee25eb619af491217e941554b308e46a82f1341d19df44d",
+      "size": 13442
+    },
+    "rust-http-runtime-qualification/build/logs/31-compatibility-final-wit.stderr.txt": {
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    "rust-http-runtime-qualification/build/logs/31-compatibility-final-wit.stdout.txt": {
+      "digest": "sha256:b7e47b33ab1d134a6ee25eb619af491217e941554b308e46a82f1341d19df44d",
+      "size": 13442
+    },
+    "rust-http-runtime-qualification/build/logs/32-package.stderr.txt": {
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    "rust-http-runtime-qualification/build/logs/32-package.stdout.txt": {
+      "digest": "sha256:444428b39ebea1d78f45324e4fda961afe2e26c640fec255f55747954d390a97",
+      "size": 292
+    },
+    "rust-http-runtime-qualification/build/logs/33-inspect.stderr.txt": {
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    "rust-http-runtime-qualification/build/package-inputs.json": {
+      "digest": "sha256:69b4d6a6508c45d0d0d79f55ca42af1117fdc46a59a05ca677df3e708ecc0ecc",
+      "size": 1198
+    },
+    "rust-http-runtime-qualification/build/logs/33-inspect.stdout.txt": {
+      "digest": "sha256:444428b39ebea1d78f45324e4fda961afe2e26c640fec255f55747954d390a97",
+      "size": 292
+    },
+    "rust-http-runtime-qualification/build/package-source.json": {
+      "digest": "sha256:e76cb751232c6f83a5f9df96e7d3ccccce8884a3e25357bbe10523b9306e7d6f",
+      "size": 1647
+    },
+    "rust-http-runtime-qualification/build/recipe-inputs.json": {
+      "digest": "sha256:7c8edee3f5652b0bbd0ee4542b8f6a52fbf75c03c6300a9e612b4107aef4b601",
+      "size": 15578
+    },
+    "rust-http-runtime-qualification/build/rust-compiler-inputs.json": {
+      "digest": "sha256:d575424e82c87bdc4eead00883fed601436ac9c56afb26ba3b7f1e968eaaa1c0",
+      "size": 3856088
+    },
+    "rust-http-runtime-qualification/build/rust-http-composition.json": {
+      "digest": "sha256:2a2432183644b542ef6cb824380aa71f6f6b4af6a0462534b4062448cf82e2a7",
+      "size": 4910
+    },
+    "rust-http-runtime-qualification/build/rust-http-root-executable-outputs.json": {
+      "digest": "sha256:b6604bafaba7a9a50765b142759a9e05600bde01fb72caa5204a03ec7524ecd0",
+      "size": 1770
+    },
+    "rust-http-runtime-qualification/build/rust-http-root-locks.json": {
+      "digest": "sha256:67425d09ae0e5aceb8c7ab55173d94282bf4116d06e46451391abde2871c86f6",
+      "size": 18606
+    },
+    "rust-http-runtime-qualification/build/rust-http-root-source.json": {
+      "digest": "sha256:fd38fe0b013d052298dc61959cb1fa1d7edddbc5a208225f8f278b80f65ccaf8",
+      "size": 442
+    },
+    "rust-http-runtime-qualification/build/rust-http-runtime.json": {
+      "digest": "sha256:15a80a784ef5d79fa8fb51dc43c892bb95e7199e340e7e1c4ac614372fe313f5",
+      "size": 4443
+    },
+    "rust-http-runtime-qualification/build/source-inputs.json": {
+      "digest": "sha256:f0aaa7b379d0856e795ca639acd5bfd8f03776a0b24433632118a4193358d93f",
+      "size": 9194
+    },
+    "rust-http-runtime-qualification/build/standard-runtime-selection.json": {
+      "digest": "sha256:2defc62ef825113b96163ba35847215a4b07d96add183d6867b006e56ef62625",
+      "size": 4251
+    },
+    "rust-http-runtime-qualification/build/wit-lock.json": {
+      "digest": "sha256:258c9d3f2cd62dd49a7abc04be6b12d516d342a76b1d064c5a53dd224e9336e4",
+      "size": 917
+    },
+    "rust-http-runtime-qualification/build/surface.json": {
+      "digest": "sha256:7d97520a89562a075ec7871f6468c3b9805c6bac82223ed5516f04b76e3b019b",
+      "size": 231
+    },
+    "rust-http-runtime-qualification/node/FAILED.json": {
+      "digest": "sha256:d76edafd73ccf827c85edde06e7f5fa2ccf2abb5f00df07b874cb66ee4658345",
+      "size": 4964
+    },
+    "rust-http-runtime-qualification/node/provider-absence/controls/002.json": {
+      "digest": "sha256:eeb30ad022fef0b82d2b427d9bab42e482b7988ddb9877fe049858b87350d16c",
+      "size": 2721
+    },
+    "rust-http-runtime-qualification/node/provider-absence/controls/001.json": {
+      "digest": "sha256:904eb1a52e19f3c5a7d8821b3c61c413f62f9a3d26d72af8cbdfa4bec6ea6dbe",
+      "size": 7242
+    },
+    "rust-http-runtime-qualification/node/provider-absence/FAILED.json": {
+      "digest": "sha256:cb89d36720cf19ac8f1fa883e66cab8542feb075921bec83c7afcab6b444c3f1",
+      "size": 1336
+    },
+    "rust-http-runtime-qualification/node/provider-absence/controls/003.json": {
+      "digest": "sha256:8fc6f763c0b5c35a9d2c0466ad2eac2691826af5261fef98b29dfa9d6d98e80f",
+      "size": 241
+    },
+    "rust-http-runtime-qualification/node/provider-absence/controls/004.json": {
+      "digest": "sha256:c5a738563860ffcfcfeda49b2dffd2a0bf8476379c0a7b823525ec7db5c6dc7c",
+      "size": 2264
+    },
+    "rust-http-runtime-qualification/node/provider-absence/controls/005.json": {
+      "digest": "sha256:2d9031ab0e2349e228f6bf410ece6692ff71e4bbfcc9352dadca95542782fc80",
+      "size": 7265
+    },
+    "rust-http-runtime-qualification/node/provider-absence/controls/006.json": {
+      "digest": "sha256:531dc4097f29c6ad4d5c2739333d3427307a3d7eafa1ebc057ad90fb9ff1abe3",
+      "size": 2144
+    },
+    "rust-http-runtime-qualification/node/provider-absence/controls/rust-http-provider-absent-waki.json": {
+      "digest": "sha256:5f873b486e07e987970c7852201da8ba04cd6d083b94250042cddf73f4556de3",
+      "size": 1073
+    },
+    "rust-http-runtime-qualification/node/provider-absence/controls/timing-001.json": {
+      "digest": "sha256:b82d39e85ee1c84c12ca8a969daf4fd41859e125e2209a61c19802b6ea31a9a4",
+      "size": 146
+    },
+    "rust-http-runtime-qualification/node/provider-absence/controls/timing-002.json": {
+      "digest": "sha256:ef333f792dea5f5f2abd19455c03afb0cafaac775a90c14a34d274a6174e5dae",
+      "size": 147
+    },
+    "rust-http-runtime-qualification/node/provider-absence/controls/timing-004.json": {
+      "digest": "sha256:72892a01e8120b41bcf470516a72e7f5245562bd40bba0dc392cf897185cda48",
+      "size": 147
+    },
+    "rust-http-runtime-qualification/node/provider-absence/controls/timing-003.json": {
+      "digest": "sha256:0e0324a42cc36cd7180cd5a21069f4d9e3d37159d22f1da390420938a6ca8b6a",
+      "size": 146
+    },
+    "rust-http-runtime-qualification/node/provider-absence/controls/timing-005.json": {
+      "digest": "sha256:a55fe8bf38aaa0338ffe4d0327fe63029940085d6b54612ac8face345c788a80",
+      "size": 146
+    },
+    "rust-http-runtime-qualification/node/provider-absence/controls/timing-006.json": {
+      "digest": "sha256:e69d8e2a9a5b0ace7254363ffe6ec00e368eb034fdec1cd8e216de7147cf894a",
+      "size": 146
+    },
+    "rust-http-runtime-qualification/node/provider-absence/invocation-waki.json": {
+      "digest": "sha256:5f873b486e07e987970c7852201da8ba04cd6d083b94250042cddf73f4556de3",
+      "size": 1073
+    },
+    "rust-http-native/native-products.json": {
+      "digest": "sha256:253198f40836c349fe82b28363ca312a3ed51f9b022866623be995a967acece9",
+      "size": 25782
+    },
+    "rust-http-native/retrieval.json": {
+      "digest": "sha256:4d115aa5ef59f87e02c6c666dbc812c7906d60877ce62bd13af51ab3e47a4d7e",
+      "size": 2530
+    },
+    "rust-http-native/source-inputs.json": {
+      "digest": "sha256:02cd78c08043387f8c0d2a5bbf1624357b3071d3b9565fca92748876c4edf643",
+      "size": 22275
+    }
+  }
+}

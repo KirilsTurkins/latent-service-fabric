@@ -37,7 +37,7 @@
           "fetch-depth": 0,
           "filter": "blob:none",
           "persist-credentials": false,
-          "sparse-checkout": "/tools/ci_profile.py\n/tools/ci_suite_inventory.py\n/tools/host_stream_tls_provider.py\n/tools/host_stream_tls_patch.py\n/tools/rust_capsule_project.py\n/crates/vendor/rustls-outbound/\n/sdk/host-stream-tls/rustls-0.23.46-bounds/PROVIDER.json\n/sdk/host-stream-tls/rustls-0.23.46-bounds/PATCH.json\n/Cargo.lock\n/tools/ci/suites.json\n/tools/ci/suites.d/\nCargo.toml\n*.rs\n",
+          "sparse-checkout": "/tools/ci_profile.py\n/tools/ci_suite_inventory.py\n/tools/host_codec_wasmtime.py\n/tools/host_stream_tls_provider.py\n/tools/host_stream_tls_patch.py\n/tools/rust_capsule_project.py\n/crates/vendor/wasmtime/\n/crates/vendor/rustls-outbound/\n/sdk/host-stream-tls/rustls-0.23.46-bounds/PROVIDER.json\n/sdk/host-stream-tls/rustls-0.23.46-bounds/PATCH.json\n/Cargo.lock\n/tools/ci/suites.json\n/tools/ci/suites.d/\nCargo.toml\n*.rs\n",
           "sparse-checkout-cone-mode": false
         }
       },
@@ -51,7 +51,7 @@
   },
   "jobId": "profile",
   "kind": "job",
-  "reviewReason": "Select only the authenticated excluded bounded TLS dependency with full source/license provenance; preserve all parser and CI controls and keep production accounting disabled",
+  "reviewReason": "Retain the exact authenticated Wasmtime source and helper in sparse CI classification; no command or gate removal.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/ci.yml"
 }

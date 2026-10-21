@@ -59,13 +59,20 @@ def checked_release(release, capsule, build_identity, *, language='typescript'):
     return release
 
 
-def execute(artifact, native, output, *, language='typescript', late_completion=False):
+def execute(artifact, native, output, *, language='typescript', late_completion=False, go_queue_ceiling=None):
     require(language in ('typescript','go'),'resource-runtime-closed-execution-language')
     require(type(late_completion) is bool,
             'resource-runtime-closed-late-programme')
     reader=build_evidence
     if language == 'go':
         from tools.go_resource_runtime_build import build_evidence as reader
+    require(go_queue_ceiling is None or language == 'go' and not late_completion
+            and type(go_queue_ceiling) is int and go_queue_ceiling in (8,9,16),
+            'resource-runtime-closed-Go-queue-programme')
+    if go_queue_ceiling is not None:
+        from tools.go_guest.queues import PROFILE as queue_profile
+        from tools.go_resource_runtime_build import build_evidence as go_build_evidence
+        reader = lambda artifact: go_build_evidence(artifact, profile=queue_profile)
     output = fresh(output)
     record = {'schemaVersion':'latent.'+language+'.resource-runtime-node.v1','status':'incomplete',
               'fullTicketQualification':False,'nativeThreadsQualified':False,'runtimeGrantDenials':[]}
@@ -99,7 +106,7 @@ def execute(artifact, native, output, *, language='typescript', late_completion=
             try:
                 config,settings=configure(work/'node',signed,port,language=language)
                 runtime.configure(settings,read_json(artifact/'capsule.json'),language=language,
-                                  standard_entropy=late_completion and language == 'typescript')
+                                  standard_entropy=late_completion and language == 'typescript', go_queue_ceiling=go_queue_ceiling)
                 config.write_bytes((json.dumps(settings,sort_keys=True,separators=(',',':'))+'\n').encode())
                 stage='two-tenant-single-cell-startup'
                 client.environment[timer_observer.ENVIRONMENT]='1'
@@ -127,7 +134,10 @@ def execute(artifact, native, output, *, language='typescript', late_completion=
                 require(publications['examples']!=publications['foreign'],'resource-runtime-independent-publications')
                 record['credentialDenial']=credential_denial(clients['foreign'],targets['foreign'])
                 stage='resource-callback-cancel-trap-foreign-fresh-programme'
-                if late_completion:
+                if go_queue_ceiling in (8,9):
+                    from tools.go_queue_node import programme
+                    record['programme']=programme(clients,targets,probe,output,before['component']['sha256'],go_queue_ceiling)
+                elif late_completion:
                     if language == 'go':
                         from tools.go_resource_late import programme
                     else:
@@ -141,7 +151,7 @@ def execute(artifact, native, output, *, language='typescript', late_completion=
                 record['nodeShutdown']=stopped_record(node);record['peerShutdown']=stop_observation_peer(peer)
                 stderr=bytes(node.buffers[1]);(output/'node-stderr.txt').write_bytes(stderr)
                 record['nativeTimerObservations']=timer_observer.observe(stderr)
-                require(late_completion or record['nativeTimerObservations']['status']=='observed',
+                require(late_completion or go_queue_ceiling in (8,9) or record['nativeTimerObservations']['status']=='observed',
                         'resource-runtime-final-positive-timer-observations')
             finally:
                 for selected in clients.values():selected.node=None
@@ -155,6 +165,8 @@ def execute(artifact, native, output, *, language='typescript', late_completion=
         require(reader(artifact)==before and record['nodeShutdown']['reaped']
                 and record['nodeShutdown']['record']['clean'] and time.monotonic()<commands.deadline
                 and sum(c.calls for c in clients.values())<=384,'resource-runtime-final-build-and-physical-retirement')
+        if go_queue_ceiling is not None:
+            record['goQueuedWorkCeiling']=go_queue_ceiling
         record.update(status='passed',build=before,commands=commands.records,cliCalls={t:c.calls for t,c in clients.items()})
         write_workflow_receipt(output/'qualified.json',record);return record
     except BaseException as error:

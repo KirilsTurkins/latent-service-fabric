@@ -110,7 +110,7 @@ fn success_report(used: BudgetConsumption) -> ExecutionReport {
 
 fn returned(output: &[u8], used: BudgetConsumption) -> GuestOutcome {
     GuestOutcome::Returned {
-        output: output.to_vec(),
+        output: (output.to_vec()).into(),
         output_media_type: "text/plain".to_owned(),
         consumption: used,
     }
@@ -133,10 +133,7 @@ fn spawn(
     tokio::spawn(async move { runner.invoke(envelope).await })
 }
 
-async fn join(
-    task: tokio::task::JoinHandle<ActivationOutcome>,
-    label: &str,
-) -> ActivationOutcome {
+async fn join(task: tokio::task::JoinHandle<ActivationOutcome>, label: &str) -> ActivationOutcome {
     tokio::time::timeout(TEST_TIMEOUT, task)
         .await
         .unwrap_or_else(|_| panic!("{label} timed out"))

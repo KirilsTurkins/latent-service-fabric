@@ -44,6 +44,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_c_thread_admission_native_products.py",
-  "reviewReason": "Add three controls against actual f244 three-product overlay/f625 two-product provenance, exact six-field source identities, failed controls/source/material/lineage drift refusal; original frozen readers remain unchanged.",
+  "reviewReason": "Add3 actualproducer and adverse ancestry controls without changing existingcases or guards",
   "schemaVersion": "latent.ci.contracts.v1"
 }

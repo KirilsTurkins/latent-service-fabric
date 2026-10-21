@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/activation_stack_native_products.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "New dedicated diagnostics workflow delegates directly to the unchanged frozen c713 reader; authenticate exact source, artifact, products and materials, no native rebuild or historical receipt mutation.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "8964783aca30521a0c9882df15f98ca574b0b2d1b965a0951cd2cbf2a1abe352"
+}

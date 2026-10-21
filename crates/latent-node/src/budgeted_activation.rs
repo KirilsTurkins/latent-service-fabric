@@ -697,7 +697,7 @@ mod tests {
 
     fn success(consumption: BudgetConsumption) -> ActivationOutcome {
         ActivationOutcome::Succeeded(ActivationSuccess {
-            output: Vec::new(),
+            output: (Vec::new()).into(),
             output_media_type: "application/octet-stream".to_owned(),
             consumption,
             committed_state_version: None,
@@ -791,7 +791,7 @@ mod tests {
                 error: DeclaredError {
                     code: "domain".to_owned(),
                     message: "declared".to_owned(),
-                    payload: Vec::new(),
+                    payload: (Vec::new()).into(),
                     media_type: "application/octet-stream".to_owned(),
                     metadata: Metadata::new(),
                 },

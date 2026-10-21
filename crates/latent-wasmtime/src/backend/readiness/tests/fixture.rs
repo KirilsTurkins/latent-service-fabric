@@ -68,8 +68,35 @@ impl Fixture {
     }
 
     pub async fn with_services(services: WasmtimeHostServices) -> Self {
+        Self::with_services_and_budget(services, None).await
+    }
+
+    pub async fn with_codec_budget(
+        services: WasmtimeHostServices,
+        budget: latent_core::ResourceBudget,
+    ) -> Self {
+        Self::with_services_and_budget(services, Some(budget)).await
+    }
+
+    async fn with_services_and_budget(
+        services: WasmtimeHostServices,
+        budget: Option<latent_core::ResourceBudget>,
+    ) -> Self {
         let root = tempfile::tempdir().unwrap();
-        let input = packaging::capsule(packaging::component::Options::default());
+        let mut input = packaging::capsule(packaging::component::Options::default());
+        if let Some(budget) = &budget {
+            let manifest = input
+                .layers
+                .iter_mut()
+                .find(|layer| layer.path == "capsule.json")
+                .unwrap();
+            let mut json: serde_json::Value = serde_json::from_slice(&manifest.bytes).unwrap();
+            json["execution"]["limits"]["cpuFuel"] = serde_json::json!(budget.cpu_fuel);
+            json["execution"]["limits"]["memoryBytes"] = serde_json::json!(budget.memory_bytes);
+            json["execution"]["limits"]["wallTimeLimitMillis"] =
+                serde_json::json!(budget.wall_time_limit_millis);
+            manifest.bytes = serde_json::to_vec(&json).unwrap();
+        }
         let inventory = sbom::inventory(&input);
         let bundle =
             latent_packaging::build_package_with_sbom(input, inventory, Default::default())
@@ -93,6 +120,13 @@ impl Fixture {
         let config = WasmtimeConfig {
             compiler_workers: Some(1),
             maximum_concurrent_preparations: 3,
+            maximum_fuel: budget
+                .as_ref()
+                .map_or_else(|| WasmtimeConfig::default().maximum_fuel, |b| b.cpu_fuel),
+            maximum_memory_bytes: budget.as_ref().map_or_else(
+                || WasmtimeConfig::default().maximum_memory_bytes,
+                |b| b.memory_bytes,
+            ),
             ..Default::default()
         };
         let authority = Arc::new(

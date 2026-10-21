@@ -23,8 +23,7 @@ use latent_activation::ActivationEnvelope;
 use latent_artifacts::{ArtifactRepository, CapsuleArtifact};
 use latent_core::{
     ActivationId, BoxFuture, BudgetConsumption, BudgetDimension, CapabilityId, CellId,
-    DeclaredError, Metadata, Payload, PlatformError, PlatformErrorCode, ReleaseDigest,
-    ResourceBudget,
+    DeclaredError, Metadata, PlatformError, PlatformErrorCode, ReleaseDigest, ResourceBudget,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -117,7 +116,7 @@ impl GuestInterruptionKind {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum GuestOutcome {
     Returned {
-        output: Payload,
+        output: latent_core::ResultPayload,
         output_media_type: String,
         consumption: BudgetConsumption,
     },

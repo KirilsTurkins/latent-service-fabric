@@ -124,6 +124,29 @@ class CompatibilityAttribution(unittest.TestCase):
             self.assertIn(expected if expected != 'patch' else 'Patch', text)
         self.assertIn('qualification unknown', text)
 
+    def test_actual_generated_transform_material_is_visible_without_changing_the_bound_context(self):
+        value = report.report('go', digest(b'source'), None, 'lsf-host-abi-phase3-v5', [], [])
+        material = context.material('generated', 'maintained-sdk-binding-generation', digest(b'generated-result'),
+            original=digest(b'original-wit'), transformation=digest(b'actual-transform-receipt'))
+        selected = context.create(value, [material], {'state': 'absent'})
+        before = copy.deepcopy(selected)
+        text = context.present(selected)
+        self.assertIn('Generated transformation: maintained-sdk-binding-generation', text)
+        for key in ('digest', 'originalDigest', 'transformDigest'):
+            self.assertIn(material[key], text)
+        self.assertEqual(selected, before)
+        self.assertIn('qualification unknown', text)
+        self.assertIn('worker drain remains unproven', text)
+
+    def test_untransformed_generated_tool_material_does_not_claim_an_original_or_transformation(self):
+        value = report.report('c', digest(b'source'), None, 'lsf-host-abi-phase3-v5', [], [])
+        for options in ({}, {'original': digest(b'original')}, {'transformation': digest(b'transform')}):
+            material = context.material('generated', 'c-generator-inputs', digest(b'generated'), **options)
+            selected = context.create(value, [material], {'state': 'absent'})
+            text = context.present(selected)
+            self.assertNotIn('Generated transformation:', text)
+            self.assertNotIn(material['digest'], text)
+
     def test_text_retains_bounded_package_source_symbol_and_location_without_raw_symbol_leak(self):
         finding = report.finding('target-incompatible', 'compile', 'compiler',
             package_digest=digest(b'package'), source_digest=digest(b'source'),

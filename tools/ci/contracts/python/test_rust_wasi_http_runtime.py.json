@@ -1,0 +1,439 @@
+{
+  "cases": [
+    "RuntimeOracles.test_actual_ambiguous_cl_te_error_has_its_own_send_only_oracle",
+    "RuntimeOracles.test_actual_peer_bytes_bind_ambiguous_framing_to_one_current_request",
+    "RuntimeOracles.test_actual_waki_header_error_requires_its_complete_exact_public_format",
+    "RuntimeOracles.test_capacity_uses_actual_accepted_count_and_specific_error_without_naming_an_unobserved_owner",
+    "RuntimeOracles.test_failed_summary_collection_never_masks_the_primary_controller_failure",
+    "RuntimeOracles.test_forced_host_terminal_never_synthesizes_guest_close_and_other_paths_still_require_it",
+    "RuntimeOracles.test_full52_case_aggregate_is_bounded_without_losing_original_per_case_values",
+    "RuntimeOracles.test_golem_transitive_timer_uses_original_closed_pending_not_preparation_or_elapsed_time",
+    "RuntimeOracles.test_neutral_deployment_never_changes_world_or_inherits_foreign_grants",
+    "RuntimeOracles.test_partial_collection_and_cleanup_failure_cannot_replace_the_primary_invocation_failure",
+    "RuntimeOracles.test_pending_requires_all_five_original_physical_owners_and_current_tenant_provider_work",
+    "RuntimeOracles.test_pre_result_failure_keeps_bounded_actual_cli_bytes_without_inventing_completion",
+    "RuntimeOracles.test_programme_remains_within_original_peer_and_per_activation_authority_limits",
+    "RuntimeOracles.test_real_library_diagnostics_discriminate_timeout_permission_json_and_opaque_stream_errors",
+    "RuntimeOracles.test_result_is_the_real_rust_result_type_with_exact_current_revision_and_budget",
+    "RuntimeOracles.test_retained_golem_pressure_trap_is_exact_and_does_not_weaken_other_outcomes",
+    "RuntimeOracles.test_root_cancel_deadline_and_trap_never_accept_successful_library_completion",
+    "RuntimeOracles.test_source_authenticated_library_formatters_refuse_unprefixed_or_wrong_typed_variants",
+    "RuntimeOracles.test_terminal_timer_observation_is_retained_before_a_strict_terminal_refusal",
+    "RuntimeOracles.test_two_tenant_configuration_binds_only_three_exact_authorities_and_policy_ids",
+    "SourceAndNativeSeparation.test_actual_available_usage_list_and_all_original_owner_counters_are_required",
+    "SourceAndNativeSeparation.test_actual_output_guard_receipt_and_original_compiler_success_are_both_required",
+    "SourceAndNativeSeparation.test_actual_pressure_requires_seven_complete_responses_and_one_exact_preparse_close",
+    "SourceAndNativeSeparation.test_backend_producer_origin_requires_exact_successful_source_job_and_artifact",
+    "SourceAndNativeSeparation.test_catalogue_absence_is_bound_to_complete_actual_source_and_recipe_names",
+    "SourceAndNativeSeparation.test_each_original_core_namespace_must_remain_in_the_actual_selected_component",
+    "SourceAndNativeSeparation.test_final_peer_ledger_keeps_default_strict_and_requires_the_exact_pressure_row",
+    "SourceAndNativeSeparation.test_new_native_tuple_requires_exact_source_even_for_the_old_reviewed_formatter_pair",
+    "SourceAndNativeSeparation.test_only_the_reviewed_unlinked_frontend_pair_may_differ",
+    "SourceAndNativeSeparation.test_peer_snapshot_is_retained_before_a_contact_refusal_without_inventing_counts",
+    "SourceAndNativeSeparation.test_pressure_diagnostic_is_one_original_golem_case_and_default_plan_is_exact",
+    "SourceAndNativeSeparation.test_restored_backend_members_and_composer_are_bound_before_they_can_execute",
+    "SourceAndNativeSeparation.test_unsupported_platform_refuses_before_output_or_product_acquisition"
+  ],
+  "guards": {
+    "RuntimeOracles.test_actual_ambiguous_cl_te_error_has_its_own_send_only_oracle": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef7b7a81cd4845458ffc24fcba0658d20929cab152ecf198605c957f787eb6bc",
+        "class:setup-sha256:1d8a8ffd3fd8cd3d83922eb51f82743daaff67fcde6406e824325582d88ebff7"
+      ],
+      "skipSites": []
+    },
+    "RuntimeOracles.test_actual_peer_bytes_bind_ambiguous_framing_to_one_current_request": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef7b7a81cd4845458ffc24fcba0658d20929cab152ecf198605c957f787eb6bc",
+        "class:setup-sha256:1d8a8ffd3fd8cd3d83922eb51f82743daaff67fcde6406e824325582d88ebff7"
+      ],
+      "skipSites": []
+    },
+    "RuntimeOracles.test_actual_waki_header_error_requires_its_complete_exact_public_format": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef7b7a81cd4845458ffc24fcba0658d20929cab152ecf198605c957f787eb6bc",
+        "class:setup-sha256:1d8a8ffd3fd8cd3d83922eb51f82743daaff67fcde6406e824325582d88ebff7"
+      ],
+      "skipSites": []
+    },
+    "RuntimeOracles.test_capacity_uses_actual_accepted_count_and_specific_error_without_naming_an_unobserved_owner": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef7b7a81cd4845458ffc24fcba0658d20929cab152ecf198605c957f787eb6bc",
+        "class:setup-sha256:1d8a8ffd3fd8cd3d83922eb51f82743daaff67fcde6406e824325582d88ebff7"
+      ],
+      "skipSites": []
+    },
+    "RuntimeOracles.test_failed_summary_collection_never_masks_the_primary_controller_failure": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef7b7a81cd4845458ffc24fcba0658d20929cab152ecf198605c957f787eb6bc",
+        "class:setup-sha256:1d8a8ffd3fd8cd3d83922eb51f82743daaff67fcde6406e824325582d88ebff7"
+      ],
+      "skipSites": []
+    },
+    "RuntimeOracles.test_forced_host_terminal_never_synthesizes_guest_close_and_other_paths_still_require_it": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef7b7a81cd4845458ffc24fcba0658d20929cab152ecf198605c957f787eb6bc",
+        "class:setup-sha256:1d8a8ffd3fd8cd3d83922eb51f82743daaff67fcde6406e824325582d88ebff7"
+      ],
+      "skipSites": []
+    },
+    "RuntimeOracles.test_full52_case_aggregate_is_bounded_without_losing_original_per_case_values": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef7b7a81cd4845458ffc24fcba0658d20929cab152ecf198605c957f787eb6bc",
+        "class:setup-sha256:1d8a8ffd3fd8cd3d83922eb51f82743daaff67fcde6406e824325582d88ebff7"
+      ],
+      "skipSites": []
+    },
+    "RuntimeOracles.test_golem_transitive_timer_uses_original_closed_pending_not_preparation_or_elapsed_time": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef7b7a81cd4845458ffc24fcba0658d20929cab152ecf198605c957f787eb6bc",
+        "class:setup-sha256:1d8a8ffd3fd8cd3d83922eb51f82743daaff67fcde6406e824325582d88ebff7"
+      ],
+      "skipSites": []
+    },
+    "RuntimeOracles.test_neutral_deployment_never_changes_world_or_inherits_foreign_grants": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef7b7a81cd4845458ffc24fcba0658d20929cab152ecf198605c957f787eb6bc",
+        "class:setup-sha256:1d8a8ffd3fd8cd3d83922eb51f82743daaff67fcde6406e824325582d88ebff7"
+      ],
+      "skipSites": []
+    },
+    "RuntimeOracles.test_partial_collection_and_cleanup_failure_cannot_replace_the_primary_invocation_failure": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef7b7a81cd4845458ffc24fcba0658d20929cab152ecf198605c957f787eb6bc",
+        "class:setup-sha256:1d8a8ffd3fd8cd3d83922eb51f82743daaff67fcde6406e824325582d88ebff7"
+      ],
+      "skipSites": []
+    },
+    "RuntimeOracles.test_pending_requires_all_five_original_physical_owners_and_current_tenant_provider_work": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef7b7a81cd4845458ffc24fcba0658d20929cab152ecf198605c957f787eb6bc",
+        "class:setup-sha256:1d8a8ffd3fd8cd3d83922eb51f82743daaff67fcde6406e824325582d88ebff7"
+      ],
+      "skipSites": []
+    },
+    "RuntimeOracles.test_pre_result_failure_keeps_bounded_actual_cli_bytes_without_inventing_completion": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef7b7a81cd4845458ffc24fcba0658d20929cab152ecf198605c957f787eb6bc",
+        "class:setup-sha256:1d8a8ffd3fd8cd3d83922eb51f82743daaff67fcde6406e824325582d88ebff7"
+      ],
+      "skipSites": []
+    },
+    "RuntimeOracles.test_programme_remains_within_original_peer_and_per_activation_authority_limits": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef7b7a81cd4845458ffc24fcba0658d20929cab152ecf198605c957f787eb6bc",
+        "class:setup-sha256:1d8a8ffd3fd8cd3d83922eb51f82743daaff67fcde6406e824325582d88ebff7"
+      ],
+      "skipSites": []
+    },
+    "RuntimeOracles.test_real_library_diagnostics_discriminate_timeout_permission_json_and_opaque_stream_errors": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef7b7a81cd4845458ffc24fcba0658d20929cab152ecf198605c957f787eb6bc",
+        "class:setup-sha256:1d8a8ffd3fd8cd3d83922eb51f82743daaff67fcde6406e824325582d88ebff7"
+      ],
+      "skipSites": []
+    },
+    "RuntimeOracles.test_result_is_the_real_rust_result_type_with_exact_current_revision_and_budget": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef7b7a81cd4845458ffc24fcba0658d20929cab152ecf198605c957f787eb6bc",
+        "class:setup-sha256:1d8a8ffd3fd8cd3d83922eb51f82743daaff67fcde6406e824325582d88ebff7"
+      ],
+      "skipSites": []
+    },
+    "RuntimeOracles.test_retained_golem_pressure_trap_is_exact_and_does_not_weaken_other_outcomes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef7b7a81cd4845458ffc24fcba0658d20929cab152ecf198605c957f787eb6bc",
+        "class:setup-sha256:1d8a8ffd3fd8cd3d83922eb51f82743daaff67fcde6406e824325582d88ebff7"
+      ],
+      "skipSites": []
+    },
+    "RuntimeOracles.test_root_cancel_deadline_and_trap_never_accept_successful_library_completion": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef7b7a81cd4845458ffc24fcba0658d20929cab152ecf198605c957f787eb6bc",
+        "class:setup-sha256:1d8a8ffd3fd8cd3d83922eb51f82743daaff67fcde6406e824325582d88ebff7"
+      ],
+      "skipSites": []
+    },
+    "RuntimeOracles.test_source_authenticated_library_formatters_refuse_unprefixed_or_wrong_typed_variants": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef7b7a81cd4845458ffc24fcba0658d20929cab152ecf198605c957f787eb6bc",
+        "class:setup-sha256:1d8a8ffd3fd8cd3d83922eb51f82743daaff67fcde6406e824325582d88ebff7"
+      ],
+      "skipSites": []
+    },
+    "RuntimeOracles.test_terminal_timer_observation_is_retained_before_a_strict_terminal_refusal": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef7b7a81cd4845458ffc24fcba0658d20929cab152ecf198605c957f787eb6bc",
+        "class:setup-sha256:1d8a8ffd3fd8cd3d83922eb51f82743daaff67fcde6406e824325582d88ebff7"
+      ],
+      "skipSites": []
+    },
+    "RuntimeOracles.test_two_tenant_configuration_binds_only_three_exact_authorities_and_policy_ids": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef7b7a81cd4845458ffc24fcba0658d20929cab152ecf198605c957f787eb6bc",
+        "class:setup-sha256:1d8a8ffd3fd8cd3d83922eb51f82743daaff67fcde6406e824325582d88ebff7"
+      ],
+      "skipSites": []
+    },
+    "SourceAndNativeSeparation.test_actual_available_usage_list_and_all_original_owner_counters_are_required": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef7b7a81cd4845458ffc24fcba0658d20929cab152ecf198605c957f787eb6bc",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "SourceAndNativeSeparation.test_actual_output_guard_receipt_and_original_compiler_success_are_both_required": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef7b7a81cd4845458ffc24fcba0658d20929cab152ecf198605c957f787eb6bc",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "SourceAndNativeSeparation.test_actual_pressure_requires_seven_complete_responses_and_one_exact_preparse_close": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef7b7a81cd4845458ffc24fcba0658d20929cab152ecf198605c957f787eb6bc",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "SourceAndNativeSeparation.test_backend_producer_origin_requires_exact_successful_source_job_and_artifact": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef7b7a81cd4845458ffc24fcba0658d20929cab152ecf198605c957f787eb6bc",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "SourceAndNativeSeparation.test_catalogue_absence_is_bound_to_complete_actual_source_and_recipe_names": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef7b7a81cd4845458ffc24fcba0658d20929cab152ecf198605c957f787eb6bc",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "SourceAndNativeSeparation.test_each_original_core_namespace_must_remain_in_the_actual_selected_component": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef7b7a81cd4845458ffc24fcba0658d20929cab152ecf198605c957f787eb6bc",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "SourceAndNativeSeparation.test_final_peer_ledger_keeps_default_strict_and_requires_the_exact_pressure_row": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef7b7a81cd4845458ffc24fcba0658d20929cab152ecf198605c957f787eb6bc",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "SourceAndNativeSeparation.test_new_native_tuple_requires_exact_source_even_for_the_old_reviewed_formatter_pair": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef7b7a81cd4845458ffc24fcba0658d20929cab152ecf198605c957f787eb6bc",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "SourceAndNativeSeparation.test_only_the_reviewed_unlinked_frontend_pair_may_differ": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef7b7a81cd4845458ffc24fcba0658d20929cab152ecf198605c957f787eb6bc",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "SourceAndNativeSeparation.test_peer_snapshot_is_retained_before_a_contact_refusal_without_inventing_counts": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef7b7a81cd4845458ffc24fcba0658d20929cab152ecf198605c957f787eb6bc",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "SourceAndNativeSeparation.test_pressure_diagnostic_is_one_original_golem_case_and_default_plan_is_exact": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef7b7a81cd4845458ffc24fcba0658d20929cab152ecf198605c957f787eb6bc",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "SourceAndNativeSeparation.test_restored_backend_members_and_composer_are_bound_before_they_can_execute": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef7b7a81cd4845458ffc24fcba0658d20929cab152ecf198605c957f787eb6bc",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "SourceAndNativeSeparation.test_unsupported_platform_refuses_before_output_or_product_acquisition": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef7b7a81cd4845458ffc24fcba0658d20929cab152ecf198605c957f787eb6bc",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_rust_wasi_http_runtime.py",
+  "reviewReason": "Parent reviewed actual diagnostic8TCP7parsed7complete plus one exact closed-before-parse row only for the original Golem pressure trap; normal64/default, Waki, all other contacts/credentials, original caps/retirement/fresh gates remain strict.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

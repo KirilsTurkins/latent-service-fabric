@@ -1,0 +1,335 @@
+{
+  "schemaVersion": "latent.rust.wasi-http.installed-observation.v1",
+  "status": "passed",
+  "source": "ed4fdcbbbef79bd93a9aef06af05c78817c16026",
+  "run": 39663071131,
+  "job": 119440854202,
+  "artifact": {
+    "id": 12377211167,
+    "bytes": 3473259,
+    "sha256": "sha256:8f5a8f024e9639dc68c59eb30062a981ba7b6b5b43fd8c23a68fd11e785b133a",
+    "members": 247,
+    "expandedBytes": 14111613
+  },
+  "entry": "recipe/tools/dev_guest_recipe.py",
+  "installedRecipeQualification": true,
+  "signedQualification": true,
+  "publisherAuthenticated": false,
+  "fullReleasedFrontendQualified": false,
+  "fullTicketQualification": false,
+  "nativeProductsBuilt": 0,
+  "backendComponentsBuilt": 0,
+  "guestComponentsCompiled": 1,
+  "compilerCommands": 32,
+  "executableInputsExplicitlyApproved": 16,
+  "installedInventoryRows": 1226,
+  "assemblyGitMaterials": 245,
+  "rustRecipeGitMaterials": 116,
+  "compilerNetwork": "denied",
+  "checkoutMounted": false,
+  "component": {
+    "sha256": "sha256:d03467500fb5ee02fcdcac3bbd66deb6a08be05839a113344f251e21d80a373b",
+    "bytes": 936546
+  },
+  "nativeProducer": {
+    "source": "c7134289f446cb3171eb0ffd800a94afc2a5209f",
+    "run": 39598763649,
+    "job": 119217613970,
+    "artifact": 12345773653,
+    "fiveProducts": {
+      "latent": {
+        "sha256": "sha256:aad7701ef9fcd1df60f53dfeb90c1e74e3ca7131e3fe2fa30d9e31f27d5e52db",
+        "bytes": 69176392
+      },
+      "latentd": {
+        "sha256": "sha256:77e5afc7576d5dc0831a00e1009544e8bc6c1659ff2dbe1e86d9ac990d3056dc",
+        "bytes": 188938624
+      },
+      "package": {
+        "sha256": "sha256:697287c09863072460378304848a57aad670c43720b5972b503d69b1908fff42",
+        "bytes": 17854768
+      },
+      "capsule_contracts": {
+        "sha256": "sha256:a02d591021cae76792f71fdf026d07b6929cdca8372644a2b5247bea6c99b67d",
+        "bytes": 13844184
+      },
+      "capsule_authoring": {
+        "sha256": "sha256:bc3077253cb60975214f8492b70a92a372b64101143fd2221246ec2d07a1152b",
+        "bytes": 24136488
+      }
+    }
+  },
+  "adapterProducer": {
+    "buildKind": "retained-successful-current-source-backend-step",
+    "originalCompilerSource": "52654f7b86ef0043a8250dea39093d955ee9f480",
+    "run": 39606039445,
+    "job": 119242356259,
+    "originalOuterConclusion": "failure",
+    "backendStep": "Compile exactly one current source-bound standard backend",
+    "backendStepConclusion": "success",
+    "artifact": {
+      "id": 12348516779,
+      "size_in_bytes": 13089773,
+      "digest": "sha256:7ac1bc23b5d3cfe764708b4a5bfb43f13747543f6a4bb398a4db941dfb5f8561"
+    },
+    "originalArtifactMembers": 341,
+    "selectedOriginalMaterials": {
+      "INSTALL-COMPLETE.json": {
+        "sha256": "sha256:61938a608eab857c99bd79a4351932036026400aeb694ea40d614e71fc9d630c",
+        "bytes": 4443
+      },
+      "source-inputs.json": {
+        "sha256": "sha256:ef74c69129aa4b18a8ae1a8ba1352dd78c263d167f74e66f028084322c104cd4",
+        "bytes": 14792
+      },
+      "rust-wasi-http-runtime.wasm": {
+        "sha256": "sha256:9032c5ae7f7821b58c6bacb8e543d12b17a3c41642ec3c8e28c4414e6d809a02",
+        "bytes": 308960
+      },
+      "raw-runtime.wasm": {
+        "sha256": "sha256:08b0aecb33c3fa2782b71943c0f31d057062c087b85afccd550f3485d32aae22",
+        "bytes": 265637
+      },
+      "reference.wit.json": {
+        "sha256": "sha256:70ba9a773ac08092722dfe539e74ef5d6149ab830534cf0e4d2feabdf549a650",
+        "bytes": 310606
+      },
+      "adapter.wit.json": {
+        "sha256": "sha256:d732fd277df1cd5f3ce8f1e6c6a1fa462e6eaa839d0c5b80f3f39414fa789667",
+        "bytes": 62301
+      },
+      "component-composer/wac": {
+        "sha256": "sha256:250c11762916ba733c7d22b62487580f21270ec9dde4f13460ea69d300e25406",
+        "bytes": 21726840
+      }
+    },
+    "producerReceipt": {
+      "sha256": "sha256:61938a608eab857c99bd79a4351932036026400aeb694ea40d614e71fc9d630c",
+      "bytes": 4443
+    },
+    "sourceInventory": {
+      "sha256": "sha256:ef74c69129aa4b18a8ae1a8ba1352dd78c263d167f74e66f028084322c104cd4",
+      "bytes": 14792
+    },
+    "currentProducerSourceByteExact": true,
+    "receiptRewritten": false,
+    "historicalAdapterReceiptRebound": false,
+    "backendCompilationPerformed": false,
+    "originalOuterPromotedToPass": false,
+    "signedQualification": false
+  },
+  "packaging": {
+    "schemaVersion": "latent.rust.wasi-http.installed-packaging.v1",
+    "originalCompiler": {
+      "build-observation.json": {
+        "sha256": "sha256:fd0649edc72e9027a6e178f4371b3f086632e7c201e5bd99d1a36d71f57e5544",
+        "bytes": 4325
+      },
+      "BUILD-COMPLETE.json": {
+        "sha256": "sha256:bf035f2dd834b72224c3e28cc42ea9903da05dba9cbe32635d2611cac1deb894",
+        "bytes": 3796
+      },
+      "component.wasm": {
+        "sha256": "sha256:d03467500fb5ee02fcdcac3bbd66deb6a08be05839a113344f251e21d80a373b",
+        "bytes": 936546
+      }
+    },
+    "packager": {
+      "sha256": "sha256:aad7701ef9fcd1df60f53dfeb90c1e74e3ca7131e3fe2fa30d9e31f27d5e52db",
+      "bytes": 69176392
+    },
+    "actualPackage": {
+      "componentDigest": "sha256:d03467500fb5ee02fcdcac3bbd66deb6a08be05839a113344f251e21d80a373b",
+      "executionAuthorized": false,
+      "kind": "capsule",
+      "layerBytes": "948733",
+      "layers": 10,
+      "name": "rust-wasi-http",
+      "packageDigest": "sha256:c55cb07491b3167f89d8b1feff9e195d2c9de6f07196a4add3aa88875dce3ace",
+      "sbomInventoryDigest": null,
+      "trustEvaluated": false,
+      "version": "1.0.0",
+      "webBuildOutputs": null
+    },
+    "controllerPackaging": {
+      "sha256": "sha256:3afd12b907ff5eec6931596b3ccbb624d79e4162a10157152478fd9bfcd89be0",
+      "bytes": 474
+    },
+    "joinedBuildObservation": {
+      "sha256": "sha256:e2d2c899801a1d69c70a76915c908676f977ec8ea5bab6d9aab8405f78467d40",
+      "bytes": 3600
+    },
+    "joinedComplete": {
+      "sha256": "sha256:369008a882d36fa0949564f71cf49168b49e25bd71dc80f4775b1bffb6ddba9a",
+      "bytes": 2671
+    },
+    "componentCompilationPerformed": false,
+    "signRefusalDiagnostic": {
+      "scope": "actual-compile-only-signing-before-controller-packaging",
+      "exitCode": 1,
+      "stdout": {
+        "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "stderr": {
+        "sha256": "sha256:39d3c8dc3ae073acfa28a00483d44bb91f1be940c5c0d68446d1bc596788b2e9",
+        "bytes": 50
+      }
+    },
+    "entry": "tools/dev_workflow/build_artifacts.package +tools/dev_workflow/build_provenance.complete"
+  },
+  "runtime": {
+    "invocationAttempts": 6,
+    "preEntryRefusals": 2,
+    "signedGuestExecutions": 4,
+    "contacts": 4,
+    "cases": [
+      {
+        "case": "examples-waki",
+        "tenant": "examples",
+        "client": "waki",
+        "outsideCrate": "alpha",
+        "selectedRevision": {
+          "publicationId": "publication:sha256:d394e04203cbd27306106d077d563018603eb6702bcd39cd263174f47d874371",
+          "routeGeneration": "5",
+          "releaseDigest": "sha256:d03467500fb5ee02fcdcac3bbd66deb6a08be05839a113344f251e21d80a373b",
+          "revisionId": "revision-v1:sha256:60c8ad8da58bc5714af016de43d896e4b446ce408b4a94b22f39dc0999b627fc"
+        },
+        "observedContacts": 1
+      },
+      {
+        "case": "foreign-golem",
+        "tenant": "foreign",
+        "client": "golem",
+        "outsideCrate": "delta",
+        "selectedRevision": {
+          "publicationId": "publication:sha256:a7f8af4a5476d59f547f6316db3d85846fc18f0a4350780e622f5934e89e069e",
+          "routeGeneration": "5",
+          "releaseDigest": "sha256:d03467500fb5ee02fcdcac3bbd66deb6a08be05839a113344f251e21d80a373b",
+          "revisionId": "revision-v1:sha256:7bbda03a295325a572559aa213e789c2bbc0454045c2085c55a2240cd907c694"
+        },
+        "observedContacts": 1
+      },
+      {
+        "case": "examples-golem",
+        "tenant": "examples",
+        "client": "golem",
+        "outsideCrate": "delta",
+        "selectedRevision": {
+          "publicationId": "publication:sha256:d394e04203cbd27306106d077d563018603eb6702bcd39cd263174f47d874371",
+          "routeGeneration": "5",
+          "releaseDigest": "sha256:d03467500fb5ee02fcdcac3bbd66deb6a08be05839a113344f251e21d80a373b",
+          "revisionId": "revision-v1:sha256:60c8ad8da58bc5714af016de43d896e4b446ce408b4a94b22f39dc0999b627fc"
+        },
+        "observedContacts": 1
+      },
+      {
+        "case": "foreign-waki",
+        "tenant": "foreign",
+        "client": "waki",
+        "outsideCrate": "alpha",
+        "selectedRevision": {
+          "publicationId": "publication:sha256:a7f8af4a5476d59f547f6316db3d85846fc18f0a4350780e622f5934e89e069e",
+          "routeGeneration": "5",
+          "releaseDigest": "sha256:d03467500fb5ee02fcdcac3bbd66deb6a08be05839a113344f251e21d80a373b",
+          "revisionId": "revision-v1:sha256:7bbda03a295325a572559aa213e789c2bbc0454045c2085c55a2240cd907c694"
+        },
+        "observedContacts": 1
+      }
+    ],
+    "physicalOwnerKindsZero": 5,
+    "providerCountersZero": 18,
+    "shutdownClean": true,
+    "sameNode": true,
+    "separatePublications": {
+      "examples": "publication:sha256:d394e04203cbd27306106d077d563018603eb6702bcd39cd263174f47d874371",
+      "foreign": "publication:sha256:a7f8af4a5476d59f547f6316db3d85846fc18f0a4350780e622f5934e89e069e"
+    }
+  },
+  "currentComposition": {
+    "development": "238eeeac5c46e0ad9a0381d3954c1b389fc651d5",
+    "rustRecipeGitMaterialsByteExact": 116,
+    "assemblyGitMaterialsByteExact": 240,
+    "assemblyOnlyOtherLanguageChanges": [
+      {
+        "path": "tools/dotnet_guest/build.py",
+        "compiledAssembly": {
+          "sha256": "sha256:ea69607d13d315b9433828b1d5b0c22d38115c9433c9bd4af48de62edc878153",
+          "bytes": 14983
+        },
+        "currentSource": {
+          "sha256": "sha256:d8ddb54c549fbbc73344ab288deeab89c04cda47ad67f7eb1b0eb7184a2f7baf",
+          "bytes": 17582
+        },
+        "executedRustMaterial": false,
+        "rustRecipeInput": false
+      },
+      {
+        "path": "tools/dotnet_guest/compiler.py",
+        "compiledAssembly": {
+          "sha256": "sha256:956b9eefd58b046243303197550ebee915c5d794e58661df050efa32f743be38",
+          "bytes": 36681
+        },
+        "currentSource": {
+          "sha256": "sha256:0870c070b7a6087e16a042e1d38a10428c77da76143874b6758f186072762454",
+          "bytes": 37521
+        },
+        "executedRustMaterial": false,
+        "rustRecipeInput": false
+      },
+      {
+        "path": "tools/dotnet_guest/task_wait.py",
+        "compiledAssembly": {
+          "sha256": "sha256:6fe3fa041f9beffba5627712178e2f9737136e85accb01704432b4a2518ba31c",
+          "bytes": 13216
+        },
+        "currentSource": {
+          "sha256": "sha256:b15de2d66cf795c0e81696a9cf49fd3acbb6fb55ccdd3cde1a71e7c11f98a64a",
+          "bytes": 13366
+        },
+        "executedRustMaterial": false,
+        "rustRecipeInput": false
+      },
+      {
+        "path": "tools/java_capsule_build.py",
+        "compiledAssembly": {
+          "sha256": "sha256:b33d30bbe178204e1e8de155c0b216c4c901df17e0d8248fb6464b4f07bc2870",
+          "bytes": 24958
+        },
+        "currentSource": {
+          "sha256": "sha256:f8c6abb189a144bb5c96559f3b792ce18256700d1420109c48c67794eb5fbf02",
+          "bytes": 27961
+        },
+        "executedRustMaterial": false,
+        "rustRecipeInput": false
+      },
+      {
+        "path": "tools/java_guest/compiler.py",
+        "compiledAssembly": {
+          "sha256": "sha256:f92b4c892818ef1402bc5782b9dd470df81de06d943c987aa7b7117ad7df6ea6",
+          "bytes": 29812
+        },
+        "currentSource": {
+          "sha256": "sha256:ece99fb112e72288830b4b7ad7095f973925cbfac4f447dbfb070cf5345cc4b0",
+          "bytes": 31570
+        },
+        "executedRustMaterial": false,
+        "rustRecipeInput": false
+      }
+    ],
+    "currentAssemblyReexecuted": false,
+    "originalInstalledInventoryRewritten": false,
+    "actualAssemblyRemainsHistoricalAtSource": "ed4fdcbbbef79bd93a9aef06af05c78817c16026",
+    "qualifierGitMaterialsByteExact": 155,
+    "otherLanguageAssemblyScope": "Five other-language helpers outside the selected Rust compiler recipe; original complete assembly source inventory remains attributed to ed4, not reexecuted as current."
+  },
+  "originalFailure": {
+    "source": "8e6ce8dc9eff0925f69f0e29d0941f8917b982de",
+    "run": 39639273063,
+    "job": 119358216546,
+    "conclusion": "failure",
+    "compileOnlyObservationCorrectlyOmittedPackager": true,
+    "originalCompilerRecordsRewritten": false
+  },
+  "qualifierGitMaterials": 155
+}
