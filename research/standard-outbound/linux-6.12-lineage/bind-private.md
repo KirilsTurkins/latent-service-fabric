@@ -4,7 +4,7 @@ This uninstalled source prefix uses Linux 6.12.113 commit
 `7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e`. The closed derivation authenticates
 complete upstream files and twelve exact function preimages before rewriting.
 It preserves the previously derived protocol, Netlabel, Netport, SID-cache and
-AVC chain. The complete factory consumer remains unavailable.
+AVC and mandatory audit chain. The complete factory consumer remains unavailable.
 
 The actual owned socket already reaches `__inet_hash_connect` and
 `inet_csk_get_port`, but the maintained misses allocate bind buckets from SLUB.
@@ -33,13 +33,13 @@ The metadata uses no extra queue or independent ledger. A view's live record
 remains charged throughout these real cache users. Root close is not an empty
 bucket proof. Poisoned private storage is still logically unlinked when the
 original code requires removal, but never falls through to SLUB or an early
-backing refund. The original96KiB TCP/64KiB DNS allowances, fixed256 records,
+backing refund. The original 96 KiB TCP/64 KiB DNS allowances, fixed 256 records,
 fixed contexts and monotonic per-context allocation remain unchanged.
 
 The supplemental freestanding C programme executes selected maintained
 constructors/destructors, the private allocator/classifier bodies and serialized
 list/lock/type doubles. It retains the original general-cache allocation RED
-and checks24 bounded lifetime/refusal cases. It does not execute actual Linux
+and checks 25 bounded lifetime/refusal cases. It does not execute actual Linux
 types, port scanning, TIMEWAIT, networking, concurrency or RCU. Focused Python
 controls require exact normal-body projection and source provenance. Neither
 programme is physical kernel qualification.

@@ -55,7 +55,8 @@ struct inet_bind_bucket *lsf_prepaid_bind_bucket_create(struct kmem_cache *cache
     return lsf_prepaid_bind_bucket_create_owned(cachep, net, head, snum, l3mdev, &source);
 }
 
-void *lsf_prepaid_bind2_allocate(struct kmem_cache *cachep, const struct sock *sk)
+void *lsf_prepaid_bind2_allocate(struct kmem_cache *cachep, struct net *net,
+                                 const struct sock *sk)
 {
     struct lsf_factory_blob source;
     int owned = lsf_prepaid_bind_source(sk, &source);
@@ -63,7 +64,8 @@ void *lsf_prepaid_bind2_allocate(struct kmem_cache *cachep, const struct sock *s
         return kmem_cache_alloc(cachep, GFP_ATOMIC);
     if (owned < 0)
         return NULL;
-    if (cachep != tcp_or_dccp_get_hashinfo(sk)->bind2_bucket_cachep) {
+    if (cachep != tcp_or_dccp_get_hashinfo(sk)->bind2_bucket_cachep ||
+        net != sock_net(sk)) {
         lsf_factory_poison(source.context);
         return NULL;
     }

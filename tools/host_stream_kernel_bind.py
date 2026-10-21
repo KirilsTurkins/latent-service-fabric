@@ -11,6 +11,7 @@ if __package__ in (None, ''):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from tools.dev_workflow import paths
 from tools import host_stream_kernel_avc as avc
+from tools import host_stream_kernel_audit as audit
 
 OWNED = avc.OWNED
 FIXTURE = Path(__file__).parent/'tests/fixtures/host_stream_kernel_bind.json'
@@ -34,7 +35,7 @@ def fixture():
     value = json.loads(FIXTURE.read_bytes())
     require(value['upstreamCommit'] == avc.maintained.COMMIT and
         value['archiveSha256'] == avc.fixture()['archiveSha256'], 'maintained-source')
-    require(set(value['source']) == set(avc.fixture()['source']) | {HASH, CSK, TW, HEADER},
+    require(set(value['source']) == set(audit.fixture()['source']) | {HASH, CSK, TW, HEADER},
         'whole-source-membership')
     require(set(value['sections']) == set(OBSERVED) | set(UNMODIFIED), 'definition-membership')
     require(value['kernelBuilt'] is value['actualKernelExecuted'] is
@@ -79,7 +80,7 @@ def observed(original, name):
     if name == 'inet_bind2_bucket_create':
         raw = '\tstruct inet_bind2_bucket *tb2 = kmem_cache_alloc(cachep, GFP_ATOMIC);\n'
         return replace(original, raw, alternate(raw,
-            '\tstruct inet_bind2_bucket *tb2 = lsf_prepaid_bind2_allocate(cachep, sk);\n'))
+            '\tstruct inet_bind2_bucket *tb2 = lsf_prepaid_bind2_allocate(cachep, net, sk);\n'))
     if name == '__inet_inherit_port':
         # This private factory creates outbound sockets, not listening parents.
         # Reject an owned participant before locks/cache lookup/allocation;
@@ -97,7 +98,7 @@ def observed(original, name):
     if name == '__inet_bhash2_update_saddr':
         raw = '\tnew_tb2 = kmem_cache_alloc(hinfo->bind2_bucket_cachep, GFP_ATOMIC);\n'
         text = replace(text, raw, alternate(raw,
-            '\tnew_tb2 = lsf_prepaid_bind2_allocate(hinfo->bind2_bucket_cachep, sk);\n'))
+            '\tnew_tb2 = lsf_prepaid_bind2_allocate(hinfo->bind2_bucket_cachep, net, sk);\n'))
         raw = '\tif (tb2 != new_tb2)\n\t\tkmem_cache_free(hinfo->bind2_bucket_cachep, new_tb2);\n'
         return replace(text, raw, alternate(raw,
             '\tif (tb2 != new_tb2 &&\n'
@@ -139,7 +140,7 @@ def authenticate(inputs):
 
 def derive(inputs):
     authenticate(inputs)
-    outputs = avc.derive({name:inputs[name] for name in avc.fixture()['source']})
+    outputs = audit.derive({name:inputs[name] for name in audit.fixture()['source']})
     for path in (HASH, CSK):
         original = inputs[path].decode();text = original
         for name in OBSERVED:

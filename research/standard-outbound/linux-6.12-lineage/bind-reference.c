@@ -189,7 +189,7 @@ int main(void)
     tb=bucket();assert(tb && context->live==2);observed("draining-live-socket-may-create-child");
     destroy(tb);assert(context->live==1);observed("empty-bucket-retains-original-socket");
 
-    reset();cache_held=1;tb2=lsf_prepaid_bind2_allocate(&bind2_cache,owned_sk);cache_held=0;
+    reset();cache_held=1;tb2=lsf_prepaid_bind2_allocate(&bind2_cache,&selected_net,owned_sk);cache_held=0;
     assert(tb2);first=identity(tb2,LSF_PREPAID_BIND2_BUCKET);
     assert(lsf_prepaid_bind_return(tb2,LSF_PREPAID_BIND2_BUCKET));
     assert(factory.pool.records[first.ticket.slot].phase==LSF_PREPAID_RETURNED && !normal_freed);
@@ -208,7 +208,7 @@ int main(void)
     assert(!bucket() && !normal_allocated);observed("original-fixed-record-exhaustion-no-fallback");
 
     reset();factory.pool.contexts[0].cursor=LSF_TCP_BYTES;
-    cache_held=1;tb2=lsf_prepaid_bind2_allocate(&bind2_cache,owned_sk);cache_held=0;
+    cache_held=1;tb2=lsf_prepaid_bind2_allocate(&bind2_cache,&selected_net,owned_sk);cache_held=0;
     assert(!tb2 && !normal_allocated);observed("original-tcp-byte-bound-no-fallback");
 
     reset();cache_held=1;
@@ -233,6 +233,11 @@ int main(void)
     reset();cache_held=1;
     assert(!lsf_prepaid_bind_bucket_create(&bind_cache,&other_net,&head,1,0,owned_sk));cache_held=0;
     assert(!normal_allocated && !head.chain.first && factory.uncertain);observed("foreign-network-refused-before-publication");
+
+    reset();tb=bucket();assert(tb);cache_held=1;
+    assert(!inet_bind2_bucket_create(&bind2_cache,&other_net,&head2,tb,owned_sk));cache_held=0;
+    assert(!normal_allocated && !head2.chain.first && hlist_empty(&tb->bhash2) && factory.uncertain);
+    observed("foreign-bind2-network-refused-before-allocation");
 
     reset();tb=bucket();assert(tb);first=identity(tb,LSF_PREPAID_BIND_BUCKET);
     assert(lsf_prepaid_bind_return((char *)tb+1,LSF_PREPAID_BIND_BUCKET));

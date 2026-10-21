@@ -6,67 +6,110 @@
     "fs/inode.c": {
       "bytes": 75338,
       "sha256": "73e256cf70bb0d80e6fee28d969c6fb44ab4c5c7cd92b6f74edff8b5297e7070",
-      "gitBlob": "7942673f686fdc24d92c2fb8033c2fb3b6df7709"
+      "gitBlob": "7942673f686fdc24d92c2fb8033c2fb3b6df7709",
+      "independentlyGitCorroborated": true
+    },
+    "include/linux/skbuff.h": {
+      "bytes": 151887,
+      "sha256": "af70ea27cf9a3a2d790b1005a16da7649d3bbb0fd136b2934ed4018077dbb822",
+      "gitBlob": "df548a3d606570d38614fc45403133069ecb9cab",
+      "independentlyGitCorroborated": true
     },
     "include/net/inet_hashtables.h": {
       "bytes": 17314,
       "sha256": "a699f5b96229f9d6fa4bb5bf435285db59b7d2e45918044f2c5fec01e624bf6e",
-      "gitBlob": "b1118125486631e6e02ca2d1f6575dad60e6d705"
+      "gitBlob": "b1118125486631e6e02ca2d1f6575dad60e6d705",
+      "independentlyGitCorroborated": false
     },
     "include/net/netlabel.h": {
       "bytes": 21017,
       "sha256": "82861a26d850caa742f5fc54da857720c52dc02f05feabaa93987540e6191f85",
-      "gitBlob": "529160f76cac209ee7473ea7b5ccd49da0789f18"
+      "gitBlob": "529160f76cac209ee7473ea7b5ccd49da0789f18",
+      "independentlyGitCorroborated": false
     },
     "include/net/sock.h": {
       "bytes": 85865,
       "sha256": "5d52f73f4898f2a52001aa9b7db8e863eee384e4c9fa43eaf281fb01dd9e4182",
-      "gitBlob": "efa549885b7f85e50c55f95ad4eae0c1ef75797a"
+      "gitBlob": "efa549885b7f85e50c55f95ad4eae0c1ef75797a",
+      "independentlyGitCorroborated": true
+    },
+    "kernel/audit.c": {
+      "bytes": 66999,
+      "sha256": "7a33029ecca2b8a71a8a12e9a1699a8180e64a82acfbdc599b0ec658fa07d564",
+      "gitBlob": "df279dd2e45086b791852f2a46ceb52f24f0fd78",
+      "independentlyGitCorroborated": false
+    },
+    "net/core/skbuff.c": {
+      "bytes": 189334,
+      "sha256": "6a2fec31182c7c4d247d85aaffba036de9c0b6a9911c3cc1249d00b423ea0ae8",
+      "gitBlob": "5608b5507b5bf03504a9093abaa865af2b82043e",
+      "independentlyGitCorroborated": true
     },
     "net/core/sock.c": {
       "bytes": 111636,
       "sha256": "f68f84b6dafdd3762b0599ab91f0face78b154d60bdccdf8920cbdf2e9f00be7",
-      "gitBlob": "75db38fdfd35fe87b87ac2755b0ef1db6fb96415"
+      "gitBlob": "75db38fdfd35fe87b87ac2755b0ef1db6fb96415",
+      "independentlyGitCorroborated": true
     },
     "net/ipv4/af_inet.c": {
       "bytes": 51938,
       "sha256": "9079f259c6687d3aa0faea64889f7ec248e7327a5799b90a6f7c860b81522873",
-      "gitBlob": "c310a60760f3433c2dd7f1a65ea61aa1cd2e40ed"
+      "gitBlob": "c310a60760f3433c2dd7f1a65ea61aa1cd2e40ed",
+      "independentlyGitCorroborated": true
     },
     "net/ipv4/cipso_ipv4.c": {
       "bytes": 63739,
       "sha256": "03a86947b0292c1ed9a1d637a67a12fb147f6839ee0c0c209dfe40eafb4ab089",
-      "gitBlob": "53fcb2089cde2a246c0b84d31582485b2496da64"
+      "gitBlob": "53fcb2089cde2a246c0b84d31582485b2496da64",
+      "independentlyGitCorroborated": false
     },
     "net/ipv4/inet_connection_sock.c": {
       "bytes": 45201,
       "sha256": "cb3567452632b9017a463f8dc860bd046bb9e572bacd56d219a2c0e124f453c7",
-      "gitBlob": "eeee6f75833767f0ae5878bb285fbde63d027654"
+      "gitBlob": "eeee6f75833767f0ae5878bb285fbde63d027654",
+      "independentlyGitCorroborated": false
     },
     "net/ipv4/inet_hashtables.c": {
       "bytes": 35429,
       "sha256": "20113f4e67d557ef06a68322d0cb03da2de5463409eb2b8b5dd80b305e9aa08d",
-      "gitBlob": "37a6acff537e6511a84b7cdfc61af2412eb2cb0b"
+      "gitBlob": "37a6acff537e6511a84b7cdfc61af2412eb2cb0b",
+      "independentlyGitCorroborated": true
     },
     "net/ipv4/inet_timewait_sock.c": {
       "bytes": 10794,
       "sha256": "c200d5880fbf8dd56c0a058beb9b4e92465991038a81b98469aa98ad1c5f31c5",
-      "gitBlob": "74b84ac418e93c176336fc974b82c3586bae3fc1"
+      "gitBlob": "74b84ac418e93c176336fc974b82c3586bae3fc1",
+      "independentlyGitCorroborated": true
     },
     "net/netlabel/netlabel_kapi.c": {
       "bytes": 38938,
       "sha256": "d16333fd75af20b6ad837bd062a1720390374f72f2ca514174aa6dbbfce8c150",
-      "gitBlob": "33b77084a4e5f34770f960d7c82e481d9889753a"
+      "gitBlob": "33b77084a4e5f34770f960d7c82e481d9889753a",
+      "independentlyGitCorroborated": false
+    },
+    "net/netlink/af_netlink.c": {
+      "bytes": 71601,
+      "sha256": "2145f190dc87bfa5f79739d960766970652ed9e5c271ec847c1eeca4be86fd2d",
+      "gitBlob": "e250d4a3d03097f92c48c1741db405c8ea54899d",
+      "independentlyGitCorroborated": false
     },
     "net/socket.c": {
       "bytes": 92491,
       "sha256": "95ec72eeccec766e102b6d532270bc52813c2f86d9bfa761d20900e07b2216db",
-      "gitBlob": "723bc3a1ba5cdd17f559a65de73d9c87911e6954"
+      "gitBlob": "723bc3a1ba5cdd17f559a65de73d9c87911e6954",
+      "independentlyGitCorroborated": true
+    },
+    "security/lsm_audit.c": {
+      "bytes": 11088,
+      "sha256": "bd55731531fa8d095a2f7857afd8cdd83b689f8a675b7b05217910769c4bf257",
+      "gitBlob": "849e832719e2151a060679db4fe993e13f42b997",
+      "independentlyGitCorroborated": false
     },
     "security/security.c": {
       "bytes": 180030,
       "sha256": "b72fd7f869275b1caf1a98449e92024a779534fb36c77cb88f4ac210e4493055",
-      "gitBlob": "b31fd25f4e5e3d37e22e111fa67351b51ef99d2f"
+      "gitBlob": "b31fd25f4e5e3d37e22e111fa67351b51ef99d2f",
+      "independentlyGitCorroborated": true
     },
     "security/selinux/avc.c": {
       "bytes": 31717,
@@ -76,7 +119,8 @@
     "security/selinux/hooks.c": {
       "bytes": 204597,
       "sha256": "6079b88f15ca1966b640753e35edc291139fe925fca37e5c54d0a2d6e36d8370",
-      "gitBlob": "d4abf15f0e6fb98505df81ac3128255b4cd9e1e7"
+      "gitBlob": "d4abf15f0e6fb98505df81ac3128255b4cd9e1e7",
+      "independentlyGitCorroborated": true
     },
     "security/selinux/include/avc.h": {
       "bytes": 4623,
@@ -86,27 +130,32 @@
     "security/selinux/netlabel.c": {
       "bytes": 16481,
       "sha256": "972d5786a9fb4da8845c839f06f1999bfc70e88a3d63ec904e0a080504d2631d",
-      "gitBlob": "d51dfe89231229e78903f3aa552286326524dca2"
+      "gitBlob": "d51dfe89231229e78903f3aa552286326524dca2",
+      "independentlyGitCorroborated": false
     },
     "security/selinux/netport.c": {
       "bytes": 5952,
       "sha256": "8deed649b14f7a2dfe7b4dab94dde5f741ddc6858e098c3ef5dbff9e5df38b4b",
-      "gitBlob": "2e22ad9c2bd0d116668985e0fb579b5934df9394"
+      "gitBlob": "2e22ad9c2bd0d116668985e0fb579b5934df9394",
+      "independentlyGitCorroborated": false
     },
     "security/selinux/ss/ebitmap.c": {
       "bytes": 12211,
       "sha256": "69ffd1eaf09c8aca73a3aaabda9e31d0207b98b7d8eb4843d66106b0a75e9b94",
-      "gitBlob": "cd84357db2c47a034bb3601eeaaa8806dbf0f7af"
+      "gitBlob": "cd84357db2c47a034bb3601eeaaa8806dbf0f7af",
+      "independentlyGitCorroborated": false
     },
     "security/selinux/ss/mls.c": {
       "bytes": 16094,
       "sha256": "349ec7a62da7777fd3ab12226538a1c486654ee917003b0d6b0b5bf3a6352f88",
-      "gitBlob": "a6e49269f5351df096da8c9fb56103a2f7b0ee9d"
+      "gitBlob": "a6e49269f5351df096da8c9fb56103a2f7b0ee9d",
+      "independentlyGitCorroborated": false
     },
     "security/selinux/ss/services.c": {
       "bytes": 97756,
       "sha256": "0b0a29ad428bd17a50784c4b87b47837e5dfb3e695255e98fb55e4a03d5d08a1",
-      "gitBlob": "54d121d64804295c8ae1f40103957f6a3b671640"
+      "gitBlob": "54d121d64804295c8ae1f40103957f6a3b671640",
+      "independentlyGitCorroborated": true
     },
     "security/selinux/ss/sidtab.c": {
       "bytes": 14675,

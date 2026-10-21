@@ -14,7 +14,7 @@ int lsf_prepaid_bind_owned(const struct sock *);
 struct inet_bind_bucket *lsf_prepaid_bind_bucket_create(struct kmem_cache *,
     struct net *, struct inet_bind_hashbucket *, unsigned short, int,
     const struct sock *);
-void *lsf_prepaid_bind2_allocate(struct kmem_cache *, const struct sock *);
+void *lsf_prepaid_bind2_allocate(struct kmem_cache *, struct net *, const struct sock *);
 bool lsf_prepaid_bind_return(const void *, unsigned int);
 #endif
 #endif

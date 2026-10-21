@@ -12,14 +12,14 @@ class KernelBind(unittest.TestCase):
 
     def owned(self, name):return (bind.OWNED/name).read_text()
 
-    def test_twenty_two_complete_sources_and_twelve_definitions_are_exact(self):
-        self.assertEqual(len(self.fixture['source']),22)
-        self.assertEqual(sum(row['bytes'] for row in self.fixture['source'].values()),1233836)
+    def test_twenty_seven_complete_sources_and_twelve_definitions_are_exact(self):
+        self.assertEqual(len(self.fixture['source']),27)
+        self.assertEqual(sum(row['bytes'] for row in self.fixture['source'].values()),1724745)
         self.assertEqual(len(self.fixture['sections']),12)
         for name,row in self.fixture['sections'].items():
             self.assertEqual(bind.section(row['text'],name),row['text'])
             self.assertEqual(hashlib.sha256(row['text'].encode()).hexdigest(),row['sha256'])
-        for name,row in bind.avc.fixture()['source'].items():self.assertEqual(self.fixture['source'][name],row)
+        for name,row in bind.audit.fixture()['source'].items():self.assertEqual(self.fixture['source'][name],row)
 
     def test_definition_edits_duplicates_crlf_and_unknown_names_refuse(self):
         with self.assertRaises(ValueError):bind.authenticate({})
@@ -68,8 +68,8 @@ class KernelBind(unittest.TestCase):
     def test_shared_bind2_constructor_and_saddr_preallocation_use_same_exact_producer(self):
         create=bind.observed(self.original('inet_bind2_bucket_create'),'inet_bind2_bucket_create')
         update=bind.observed(self.original('__inet_bhash2_update_saddr'),'__inet_bhash2_update_saddr')
-        self.assertIn('lsf_prepaid_bind2_allocate(cachep, sk)',create)
-        self.assertIn('lsf_prepaid_bind2_allocate(hinfo->bind2_bucket_cachep, sk)',update)
+        self.assertIn('lsf_prepaid_bind2_allocate(cachep, net, sk)',create)
+        self.assertIn('lsf_prepaid_bind2_allocate(hinfo->bind2_bucket_cachep, net, sk)',update)
         self.assertLess(update.index('lsf_prepaid_bind2_allocate('),update.index('spin_lock_bh('))
         self.assertLess(update.index('tb2 != new_tb2 &&'),update.index('lsf_prepaid_bind_return(new_tb2,'))
         self.assertIn('inet_bind2_bucket_init(tb2, net, head2, inet_csk(sk)->icsk_bind_hash, sk)',update)
