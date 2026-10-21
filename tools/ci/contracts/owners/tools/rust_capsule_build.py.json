@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/rust_capsule_build.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve current merged normal builder and explicit selected HTTP integration; original executable guards and default compiler behavior retained.",
+  "reviewReason": "Keep the existing exact Rust standard recipe equality gate synchronized with the four reviewed TLS fork material entries.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "d417a0c8c4dd7bf6ebaf71d5aba6e7ac1c77011b04dd2b572fc7417174de6d00"
+  "sha256": "46d8b9245911248d14d80cae251ee37d84c8f9a4b912806a79b9f0e86edec700"
 }

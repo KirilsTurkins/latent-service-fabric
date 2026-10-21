@@ -75,7 +75,7 @@ fn rejection() -> t::CommandInspection {
             i::DeclaredError {
                 code: "account-blocked".into(),
                 message: "original decision".into(),
-                payload: vec![],
+                payload: (vec![]).into(),
                 media_type: "application/octet-stream".into(),
                 metadata: std::collections::HashMap::default(),
             },

@@ -197,7 +197,7 @@ fn result_outcome(
     };
     Ok(match result.outcome() {
         Outcome::Committed => ActivationOutcome::Succeeded(ActivationSuccess {
-            output: value.bytes.clone(),
+            output: (value.bytes.clone()).into(),
             output_media_type: value.media_type.clone(),
             metadata: value.metadata.iter().cloned().collect(),
             consumption,
@@ -211,7 +211,7 @@ fn result_outcome(
                     .ok_or_else(|| error(PlatformErrorCode::Internal))?
                     .into(),
                 message: String::new(),
-                payload: value.bytes.clone(),
+                payload: (value.bytes.clone()).into(),
                 media_type: value.media_type.clone(),
                 metadata: value.metadata.iter().cloned().collect(),
             },

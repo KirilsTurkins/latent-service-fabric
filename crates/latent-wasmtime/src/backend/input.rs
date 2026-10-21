@@ -4,7 +4,9 @@ use std::future::Future;
 use std::pin::Pin;
 use std::task::{Context, Poll};
 
-use latent_core::{BoxFuture, PlatformError};
+use latent_core::{
+    ActivationBudget, BoxFuture, BudgetProfile, HostMemoryReservation, PlatformError,
+};
 use latent_executor::{ExecutionCancellation, ExecutionReport, ExecutionRequest};
 
 use crate::invocation_input_observer::{InputTrace, InvocationObservation, RawGuard};
@@ -106,13 +108,52 @@ impl WasmtimeBackend {
 /// The type parameter permits destructor-order tests without an unsafe allocator.
 pub(super) struct RawInvocationInput<T = Vec<u8>> {
     bytes: T,
+    memory: Option<HostMemoryReservation>,
     observation: Option<RawGuard>,
 }
 
 impl RawInvocationInput {
     pub(super) fn new(bytes: Vec<u8>, trace: Option<&InputTrace>) -> Self {
         let observation = trace.and_then(|trace| trace.raw_owner(bytes.len(), bytes.capacity()));
-        Self { bytes, observation }
+        Self {
+            bytes,
+            memory: None,
+            observation,
+        }
+    }
+
+    /// Admit the transferred actual allocation at this invocation boundary.
+    /// Ingress allocated it earlier; ownership here includes all unused capacity,
+    /// not just the selected byte length. Retain through actual raw destruction.
+    pub(super) fn new_accounted(
+        bytes: Vec<u8>,
+        trace: Option<&InputTrace>,
+        budget: &ActivationBudget,
+    ) -> Result<Self, PlatformError> {
+        let mut owner = Self::new(bytes, trace);
+        if matches!(
+            budget.profile(),
+            BudgetProfile::Phase3 | BudgetProfile::Phase4
+        ) && owner.bytes.capacity() != 0
+        {
+            // The stack wrapper needs no heap allocation. Include the same finite
+            // conservative 64-byte allocator bookkeeping as other codec owners.
+            let capacity = (owner.bytes.capacity() as u64)
+                .checked_add(64)
+                .ok_or_else(|| {
+                    crate::containment::platform_error(
+                        latent_core::PlatformErrorCode::ResourceExhausted,
+                        "invocation-value-limit",
+                        false,
+                    )
+                })?;
+            let mut memory = budget
+                .reserve_host_memory(capacity)
+                .map_err(|error| error.to_platform_error())?;
+            memory.confirm(); // transferred bytes already physically exist
+            owner.memory = Some(memory);
+        }
+        Ok(owner)
     }
 
     pub(super) fn bytes(&self) -> &[u8] {

@@ -79,6 +79,10 @@ fn generic_and_legacy_payload_adapters_have_distinct_compatibility() {
         "per-call-echo-world-max-transfer"
     );
     assert_eq!(generic.configuration["ambient-wasi-authority"], "none");
+    assert_eq!(
+        generic.configuration["dynamic-value-memory"],
+        wasmtime::component::DYNAMIC_VALUE_MEMORY_COHORT
+    );
     assert!(generic.async_support && generic.fuel_enabled && generic.epoch_interruption_enabled);
 }
 

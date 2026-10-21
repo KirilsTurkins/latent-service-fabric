@@ -12,7 +12,7 @@ fn success() -> proto::InvokeResponse {
         route_generation: u64::MAX,
         publication_id: Some(format!("publication:sha256:{}", "2".repeat(64))),
         result: Some(proto::invoke_response::Result::Success(proto::Success {
-            payload: vec![0, 255, 10],
+            payload: (vec![0, 255, 10]).into(),
             media_type: "application/octet-stream".to_owned(),
             committed_state_version: Some("state-version".to_owned()),
             effect_ids: vec!["effect-1".to_owned()],
@@ -83,7 +83,7 @@ fn declared_and_unresolved_platform_failures_keep_distinct_typed_outcomes() {
         proto::DeclaredError {
             code: "invalid-value".to_owned(),
             message: "requested domain detail\nsecond line".to_owned(),
-            payload: br#"{"case":"empty"}"#.to_vec(),
+            payload: (br#"{"case":"empty"}"#.to_vec()).into(),
             media_type: "application/json".to_owned(),
             metadata: HashMap::default(),
         },

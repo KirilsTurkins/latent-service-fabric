@@ -70,9 +70,11 @@ jobs:
           sparse-checkout: |
             /tools/ci_profile.py
             /tools/ci_suite_inventory.py
+            /tools/host_codec_wasmtime.py
             /tools/host_stream_tls_provider.py
             /tools/host_stream_tls_patch.py
             /tools/rust_capsule_project.py
+            /crates/vendor/wasmtime/
             /crates/vendor/rustls-outbound/
             /sdk/host-stream-tls/rustls-0.23.46-bounds/PROVIDER.json
             /sdk/host-stream-tls/rustls-0.23.46-bounds/PATCH.json

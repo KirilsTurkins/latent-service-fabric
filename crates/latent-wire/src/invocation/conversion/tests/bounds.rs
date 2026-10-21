@@ -287,8 +287,9 @@ fn omitted_response_fields_and_spare_capacity_are_bounded_before_conversion() {
     else {
         unreachable!()
     };
-    error.payload = Vec::with_capacity(65);
-    error.payload.push(1);
+    let mut sparse_payload = Vec::with_capacity(65);
+    sparse_payload.push(1);
+    error.payload = sparse_payload.into();
     let small = InvocationLimits {
         max_payload_bytes: 64,
         ..InvocationLimits::default()

@@ -9,6 +9,8 @@
 
 pub mod phase4;
 pub mod platform_error;
+#[doc(hidden)]
+pub mod result_messages;
 
 /// Control-plane APIs from the `latent.control.v1` Protobuf package.
 pub mod control {
@@ -20,6 +22,7 @@ pub mod control {
 /// Generic invocation APIs from the `latent.invocation.v1` Protobuf package.
 pub mod invocation {
     pub mod v1 {
+        pub use crate::result_messages::{DeclaredError, Success};
         tonic::include_proto!("latent.invocation.v1");
     }
 }

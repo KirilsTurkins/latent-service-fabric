@@ -88,7 +88,7 @@ mod tests {
         let rejection = i::DeclaredError {
             code: "account-blocked".into(),
             message: "original business rejection".into(),
-            payload: vec![0, 255],
+            payload: (vec![0, 255]).into(),
             ..Default::default()
         };
         let mut response = Response::from(t::LookupCommandResponse {
@@ -110,7 +110,7 @@ mod tests {
             ))
         );
         let success = i::Success {
-            payload: vec![1, 0, 255],
+            payload: (vec![1, 0, 255]).into(),
             media_type: "application/octet-stream".into(),
             ..Default::default()
         };

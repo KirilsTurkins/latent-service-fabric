@@ -74,7 +74,7 @@ mod tests {
     use latent_core::{BudgetConsumption, Metadata, PlatformErrorCode};
     fn output(bytes: Vec<u8>, metadata: Metadata) -> ActivationOutcome {
         ActivationOutcome::Succeeded(ActivationSuccess {
-            output: bytes,
+            output: (bytes).into(),
             output_media_type: "application/json".into(),
             consumption: BudgetConsumption::default(),
             committed_state_version: None,
