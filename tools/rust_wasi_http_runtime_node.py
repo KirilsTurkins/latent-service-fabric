@@ -30,7 +30,8 @@ from tools.rust_wasi_http_runtime_fixture import SERVICE
 from tools.rust_wasi_http_profile import ACTIVATION, CLOCK, HTTP
 from tools.standard_http.observations import delta, require_zero_contact, validate as validate_peer
 from tools.standard_http.peer import Peer
-from tools.standard_http.vectors import DOMAIN, PARTIAL, json_bytes
+from tools.standard_http.protocol import Request
+from tools.standard_http.vectors import BY_ID, DOMAIN, PARTIAL, json_bytes, response as peer_response
 from tools.static_api.node import policy
 
 RUNTIME_LIMITS={'tasks':8,'executors':2,'queuedWork':8,'waits':16,'timers':8,'results':8,'nativeOwners':8}
@@ -61,7 +62,7 @@ def cases():
         ('redirect-denied-stopped','redirect','/conformance/redirect-denied','302:redirect-stopped',1,'redirect-denied',''),
         ('malformed-json','malformed-json','/conformance/body/malformed-json','error:json-decode',1,'malformed-json',''),
         ('truncated','bytes','/conformance/body/truncated','error:body-or-protocol',1,'truncated-body',''),
-        ('malformed-framing','bytes','/conformance/body/malformed','error:body-or-protocol',1,'malformed-framing',''),
+        ('malformed-framing','bytes','/conformance/body/malformed','error:malformed-framing',1,'malformed-framing',''),
         ('oversized','bytes','/conformance/body/oversized','error:response-size',1,'oversized-body',''),
         ('partial-complete','bytes','/conformance/body/partial',f'200:bytes:{len(PARTIAL)}',1,'partial-body','release'),
         ('early-drop','early-drop','/conformance/body/partial','200:partial:4',1,'partial-body',''),
@@ -247,12 +248,13 @@ def library_error(payload,client_name,expected):
                 and code=='set_first_byte_timeout'),'rust-http-exact-unsupported-option-setter-not-other-error')
         exact=True
     elif expected=='error:request-denied':
-        require(phase=='send' and not public['serdeJsonError'] and code=='HttpRequestDenied',
+        require(phase=='send' and not public['serdeJsonError'] and code=='ErrorCode::HttpRequestDenied',
             'rust-http-real-request-denied-not-unavailable')
         exact=True
     elif expected=='error:reserved-header':
         require(phase=='send' and not public['serdeJsonError']
-            and (value['debug']=='Forbidden' if client_name=='waki' else code=='Forbidden'),
+            and (value['display']==value['debug']=='HeaderError::Forbidden' and code is None
+                if client_name=='waki' else code=='HeaderError::Forbidden'),
             'rust-http-real-forbidden-header-not-transport-or-permission')
         exact=True
     elif expected=='error:json-decode':
@@ -262,15 +264,20 @@ def library_error(payload,client_name,expected):
         exact=True
     elif expected=='error:resource-capacity':
         require(phase=='send' and not public['serdeJsonError']
-            and code=='InternalError(Some("latent-runtime-resource-exhausted"))',
+            and code=='ErrorCode::InternalError(Some("latent-runtime-resource-exhausted"))',
             'rust-http-real-original-runtime-resource-capacity-not-permission-or-unsupported')
+        exact=True
+    elif expected=='error:malformed-framing':
+        require(phase=='send' and not public['serdeJsonError']
+            and code=='ErrorCode::InternalError(Some("latent-http-connection-failed"))',
+            'rust-http-exact-ambiguous-framing-send-error')
         exact=True
     else:
         require(expected in {'error:body-or-protocol','error:response-size','error:uncertain-post'}
             and not public['serdeJsonError'],'rust-http-closed-library-error-oracle')
-        selected=({'HttpProtocolError','HttpResponseIncomplete'} if expected=='error:body-or-protocol'
-            else {'InternalError(Some("latent-http-response-too-large"))'} if expected=='error:response-size'
-            else {'InternalError(Some("latent-http-uncertain"))','HttpResponseIncomplete'})
+        selected=({'ErrorCode::HttpProtocolError','ErrorCode::HttpResponseIncomplete'} if expected=='error:body-or-protocol'
+            else {'ErrorCode::InternalError(Some("latent-http-response-too-large"))'} if expected=='error:response-size'
+            else {'ErrorCode::InternalError(Some("latent-http-uncertain"))','ErrorCode::HttpResponseIncomplete'})
         exact=phase=='send' and code in selected
         if client_name=='golem' and phase=='body' and public['isBody'] is True:
             # Unlike Waki's opaque resource-handle Debug, Golem Body::buffer
@@ -294,12 +301,31 @@ def library_error(payload,client_name,expected):
 
 def outcome(row,spec,client_name,revision,budget):
     _name,_mode,_path,expected,outbound,_vector,action=spec
+    if expected=='error:malformed-framing':
+        require(tuple(spec)==('malformed-framing','bytes','/conformance/body/malformed',
+            'error:malformed-framing',1,'malformed-framing',''),
+            'rust-http-ambiguous-framing-oracle-only-for-its-exact-vector')
     response=row['response'];data=response['data']
     require(type(row['exitCode']) is int and row['processReaped'] is True and response['outcomeKnown'] is True
         and response['requestDispatched'] is True and data.get('resolvedRevision')==revision,
         'rust-http-known-current-revision-and-reaped-call')
     consumption=data['consumption'];capacity=None
-    if action=='capacity':
+    if action=='capacity' and client_name=='golem':
+        require(tuple(spec)==('resource-capacity','capacity','/conformance/json',
+            'error:resource-capacity',8,'domain-json','capacity'),
+            'rust-http-golem-pressure-only-its-exact-original-case')
+        require(row['exitCode']==4 and row['decoded'] is None
+            and response['category']=='platform-failure' and data.get('terminalState')=='guest_trap'
+            and response.get('error',{}).get('code')=='guest-trap'
+            and response['error'].get('details')==[
+                {'fields':{'code':'guest-trap'},'kind':'activation.guest-trap'},
+                {'fields':{'kind':'unreachable-code'},'kind':'activation.guest-trap-kind'}],
+            'rust-http-golem-held-pressure-exact-unreachable-trap')
+        capacity={'observedOutboundRequests':8,'heldResponseCountProved':False,'publicTerminal':'guest-trap',
+            'trapKind':'unreachable-code','timerTrapSiteProved':False,
+            'catchableLibraryErrorObserved':False,'limitingOwnerKindProven':False,
+            'taskExhaustionClaimed':False,'originalEnvelopeChanged':False}
+    elif action=='capacity':
         decoded=row['decoded'];prefix='fresh:'+client_name+':capacity:'
         require(row['exitCode']==0 and type(decoded) is list and len(decoded)==1
             and type(decoded[0]) is dict and set(decoded[0])=={'ok'} and type(decoded[0]['ok']) is str
@@ -355,6 +381,49 @@ def golem_timer_pending(stderr,mode):
     return {'originalReader':'tools/dotnet_resource_timer_observer.py',
         'nativeHookChanged':False,'otherLanguageExecutionClaimed':False,'nativeRecords':observed,
         'waitPending':pending[-1],'proof':'actual original wait_for Poll::Pending with task/wait/timer charged'}
+
+
+def golem_terminal_timer(stderr,mode,positive,action=''):
+    require(type(stderr) is bytes and len(stderr)<=MAXIMUM_STDERR and mode in {'pending','drain'}
+        and action in {'','release','trap','cancel','deadline'},'rust-http-bounded-terminal-timer-input')
+    observed=timer_observer.observe(stderr)
+    require(observed['status']=='observed' and not observed['overflow']
+        and observed['invalidMarkerCount']==0,'rust-http-valid-original-terminal-timer-records')
+    rows=observed['records']
+    sequences=[int(line.split(b'|')[3]) for line in stderr.splitlines() if line.startswith(TIMER_PREFIX)]
+    require(type(positive) is dict and type(positive.get('waitPending')) is dict
+        and set(positive['waitPending'])=={'mode','event','sequence','tasks','waits','timers'}
+        and all(type(positive['waitPending'][key]) is int for key in ('sequence','tasks','waits','timers')),
+        'rust-http-typed-original-positive-pending-record')
+    require(sequences==list(range(1,len(rows)+1)) and positive['waitPending'] in rows
+        and positive['waitPending']['mode']==mode and positive['waitPending']['event']=='wait-pending'
+        and all(1<=positive['waitPending'][key]<=RUNTIME_LIMITS[key] for key in ('tasks','waits','timers')),
+        'rust-http-current-positive-pending-and-ordered-terminal-records')
+    closes=[row for row in rows if row['mode']==mode and row['event']=='root-close']
+    require(len(closes)<=1 and all(row['sequence']>positive['waitPending']['sequence'] for row in closes),
+        'rust-http-no-stale-or-duplicate-guest-close')
+    forced=action in {'cancel','deadline'}
+    require(not forced or {'cancel':'pending','deadline':'drain'}[action]==mode,
+        'rust-http-exact-forced-terminal-observer-mode')
+    # RootClose is emitted only by the guest activation.close import. Forced
+    # host termination can stop the app before its compiler-owned root drain;
+    # it must still pass the exact public terminal and full retirement gates.
+    require(forced or bool(closes),'rust-http-original-native-root-close-after-real-pending')
+    return {'nativeRecords':observed,'guestCloseStatus':'observed' if closes else 'not-observed',
+        'forcedHostTermination':forced,'guestCloseSynthesized':False,
+        'physicalRetirementProvenByMarker':False}
+
+
+def retain_terminal_timer(node,output,label):
+    node.drain();stderr=bytes(node.buffers[1])
+    markers=[line for line in stderr.splitlines() if line.startswith(TIMER_PREFIX)]
+    write_json(output/('terminal-native-timer-'+label+'.json'),{
+        'qualification':False,'scope':'actual-bounded-native-observer-before-terminal-assertion',
+        'stderrBytes':len(stderr),'stderrDigest':digest(stderr),
+        'markersTruncated':len(markers)>16 or any(len(line)>128 for line in markers),
+        'markerLines':[base64.b64encode(line[:128]).decode('ascii') for line in markers[:16]],
+        'parsed':timer_observer.observe(stderr)})
+    return stderr
 
 
 def retain_partial(process,node,output,label):
@@ -413,6 +482,85 @@ def close_call(process,*,primary_failure):
     except BaseException:pass
 
 
+def malformed_framing_peer(before,after):
+    """Bind the public send error to this peer's complete ambiguous CL+TE head.
+
+    The category alone does not prove the parser's failing branch. The fixed
+    source-bound vector, complete write and one current request prove the
+    supplied response and exclude an invisible retry or a different vector.
+    """
+    change=delta(before,after)
+    wire,suffix=peer_response(BY_ID['malformed-framing'],None,0)
+    require(wire==b'HTTP/1.1 200 Fixture\r\nContent-Length: 1\r\n'
+        b'Transfer-Encoding: chunked\r\nConnection: close\r\n\r\n0\r\n\r\n'
+        and suffix==b'','rust-http-original-ambiguous-cl-te-vector')
+    require(after['openConnections']==0 and change['acceptedConnections']==change['startedRequests']
+        ==change['completedResponseWrites']==1 and len(change['requests'])==1
+        and change['rejectedRequests']==change['committedMutations']==change['connectionBoundRejections']==0,
+        'rust-http-ambiguous-framing-one-complete-contact-no-retry')
+    row,=change['requests']
+    require(row['request']==before['acceptedConnections']+1 and row.get('vector')=='malformed-framing'
+        and row['method']=='GET' and row['role']=='primary' and row['state']=='closed'
+        and row['closeReason']=='response-write-complete'
+        and row['responseBytesWritten']==len(wire),
+        'rust-http-exact-ambiguous-response-vector-and-complete-bytes')
+    return {'request':row['request'],'vector':row['vector'],'responseBytesWritten':len(wire),
+        'responseDigest':digest(wire),'contacts':1,'parserBranchInferred':False}
+
+
+def retain_peer_observations(output,label,before,after):
+    # Actual controlled-public-peer state is diagnostic evidence even when the
+    # next strict outcome/contact assertion refuses. Never turn charged starts
+    # into an invented remote request, response object or physical close.
+    value={'qualification':False,'scope':'controlled-peer-observation-before-contact-assertion',
+        'before':before,'after':after}
+    write_json(output/('peer-before-contact-'+label+'.json'),value)
+    return value
+
+
+def programme_selection(pressure_observation_only):
+    require(type(pressure_observation_only) is bool,'rust-http-exact-pressure-diagnostic-selection')
+    original=tuple(enumerate(cases()))
+    if pressure_observation_only:
+        return original[-1:], (('foreign','golem'),)
+    return original, (('examples','waki'),('foreign','golem'))
+
+
+def closed_before_request(row):
+    # This proves no parsed request or written response, not zero received
+    # request bytes: the public peer does not expose a per-connection RX count.
+    require(type(row) is dict and set(row)=={'request','role','state','responseBytesWritten',
+        'receiveBufferBytes','sendBufferBytes','closeReason'}
+        and type(row['request']) is int and 1<=row['request']<=32
+        and row['role']=='primary' and row['state']=='closed'
+        and type(row['responseBytesWritten']) is int and row['responseBytesWritten']==0
+        and row['closeReason']=='remote-write-half-ended'
+        and all(type(row[k]) is int and 0<row[k]<=128*1024
+            for k in ('receiveBufferBytes','sendBufferBytes')),
+        'rust-http-exact-closed-before-request-parsed')
+    return row
+
+
+def golem_pressure_peer(before,after):
+    change=delta(before,after)
+    require(after['openConnections']==0 and change['acceptedConnections']==8
+        and change['startedRequests']==change['completedResponseWrites']==7
+        and change['rejectedRequests']==change['committedMutations']==change['connectionBoundRejections']==0
+        and len(change['requests'])==8,'rust-http-golem-pressure-eight-connections-seven-parsed')
+    completed=change['requests'][:-1];last=closed_before_request(change['requests'][-1])
+    request=Request();request.method=b'GET'
+    wire,suffix=peer_response(BY_ID['domain-json'],request,0)
+    require(suffix==b'' and all(row.get('vector')=='domain-json' and row.get('method')=='GET'
+        and row['role']=='primary' and row['state']=='closed'
+        and row.get('closeReason')=='response-write-complete' and row['responseBytesWritten']==len(wire)
+        and row.get('bodyBytes')==0 and row.get('authorizationPresent') is True
+        and row.get('cookiePresent') is False and row.get('proxyAuthorizationPresent') is False
+        for row in completed),'rust-http-golem-pressure-exact-seven-complete-authorized-json-responses')
+    return {'acceptedConnections':8,'parsedRequests':7,'completedResponseWrites':7,
+        'closedBeforeRequestParsed':last,'receivedRequestBytesProved':False,
+        'heldResponseCountProved':False,'timerTrapSiteProved':False}
+
+
 def invoke(client,node,target,peers,tenant,client_name,alias,spec,probe,output,label):
     _name,mode,path,_expected,contacts,vector,action=spec
     require(alias in {'alpha','delta'} and client_name in {'waki','golem'},'rust-http-closed-ordinary-client-selection')
@@ -463,30 +611,44 @@ def invoke(client,node,target,peers,tenant,client_name,alias,spec,probe,output,l
     # Original public result is retained before any posthoc assertion/cleanup.
     write_json(output/('invocation-'+label+'.json'),row)
     require(row['activation']==activation,'rust-http-exact-owned-activation-result')
+    framing=None
+    if spec[3]=='error:malformed-framing':
+        for _ in range(64):
+            for value in peers.values():value.poll(.002)
+            if all(value.observation()['openConnections']==0 for value in peers.values()):break
+        snapshots={name:value.observation() for name,value in peers.items()}
+        # Retain controlled public peer data before the outcome can refuse;
+        # no credential bytes or successful guest outcome are manufactured.
+        write_json(output/('peer-before-outcome-'+label+'.json'),{
+            'qualification':False,'scope':'controlled-peer-observation-before-outcome',
+            'before':before,'after':snapshots})
+        framing=malformed_framing_peer(before[tenant],snapshots[tenant])
     diagnostic=outcome(row,spec,client_name,pin,chosen['budget'])
-    if action=='capacity':contacts=diagnostic['observedAcceptedResponses']
+    if action=='capacity':
+        contacts=diagnostic['observedOutboundRequests' if client_name=='golem' else 'observedAcceptedResponses']
     require(action not in {'release','cancel','deadline'} or pending is not None,'rust-http-missing-real-pending-witness')
     require(action!='release' or released,'rust-http-real-body-release-not-observed')
     require(action!='cancel' or cancelled is not None,'rust-http-cancel-receipt-required')
     terminal_timer=None
     if native_mode:
-        node.drain();terminal_timer=timer_observer.observe(bytes(node.buffers[1]))
-        require(terminal_timer['status']=='observed' and not terminal_timer['overflow']
-            and terminal_timer['invalidMarkerCount']==0
-            and any(r['mode']==native_mode and r['event']=='root-close'
-                and r['sequence']>pending['transitiveTimer']['waitPending']['sequence']
-                for r in terminal_timer['records']),'rust-http-original-native-root-close-after-real-pending')
+        stderr=retain_terminal_timer(node,output,label)
+        terminal_timer=golem_terminal_timer(stderr,native_mode,pending['transitiveTimer'],action)
     for _ in range(64):
         for value in peers.values():value.poll(.002)
         if all(value.observation()['openConnections']==0 for value in peers.values()):break
     observations={name:value.observation() for name,value in peers.items()}
+    if action=='capacity':retain_peer_observations(output,label,before,observations)
+    pressure_peer=(golem_pressure_peer(before[tenant],observations[tenant])
+        if action=='capacity' and client_name=='golem' else None)
+    parsed_contacts=pressure_peer['parsedRequests'] if pressure_peer else contacts
     for name,value in observations.items():
         change=delta(before[name],value)
         new=value['requests'][before[name]['acceptedConnections']:]
-        require(value['openConnections']==0 and change['startedRequests']==(contacts if name==tenant else 0)
+        require(value['openConnections']==0 and change['startedRequests']==(parsed_contacts if name==tenant else 0)
             and change['acceptedConnections']==(contacts if name==tenant else 0),'rust-http-exact-contact-and-physical-peer-close')
         if name!=tenant or contacts==0:require_zero_contact(before[name],value)
-        expected_vectors=[vector]*contacts if name==tenant else []
+        if pressure_peer and name==tenant:new=new[:-1]
+        expected_vectors=[vector]*parsed_contacts if name==tenant else []
         require([r.get('vector') for r in new]==expected_vectors
             and all(r['role']==role and r['state']=='closed'
                 and r['authorizationPresent'] is (role=='primary')
@@ -500,6 +662,7 @@ def invoke(client,node,target,peers,tenant,client_name,alias,spec,probe,output,l
     return {'case':label,'tenant':tenant,'client':client_name,'outsideCrate':alias,'specification':list(spec),
         'invocation':row,'libraryError':diagnostic,'pending':pending,'cancel':cancelled,'selectedRevision':pin,'budget':chosen['budget'],
         'terminalNativeTimer':terminal_timer,'actualActivation':activation,'observedContacts':contacts,
+        'malformedFramingPeer':framing,'parsedPeerRequests':parsed_contacts,'pressurePeer':pressure_peer,
         'retirement':retired,'peerBefore':before,'peerAfter':observations}
 
 
@@ -549,25 +712,34 @@ def deployment(source,tenant):
     return value
 
 
-def check_peer_final(value,expected):
+def check_peer_final(value,expected,*,closed_before_parse=()):
     validate_peer(value)
+    require(type(closed_before_parse) in (tuple,list) and len(closed_before_parse)<=1,
+        'rust-http-one-explicit-pressure-unparsed-connection')
+    excluded={closed_before_request(row)['request']:row for row in closed_before_parse}
+    require(len(excluded)==len(closed_before_parse)
+        and all(key<=len(value['requests']) and value['requests'][key-1]==row for key,row in excluded.items()),
+        'rust-http-final-same-authenticated-unparsed-connection')
+    parsed=[row for row in value['requests'] if row['request'] not in excluded]
     require(value['state']=='stopped' and value['listeningOrigins']==value['openConnections']==0
-        and value['acceptedConnections']==value['startedRequests']==len(expected)
+        and value['acceptedConnections']==len(expected)+len(excluded) and value['startedRequests']==len(expected)
         and value['rejectedRequests']==value['connectionBoundRejections']==0
-        and [row.get('vector') for row in value['requests']]==expected
+        and [row.get('vector') for row in parsed]==expected
         and all(row['state']=='closed' and row.get('cookiePresent') is False
             and row.get('proxyAuthorizationPresent') is False
-            and row.get('authorizationPresent') is (row['role']=='primary') for row in value['requests']),
+            and row.get('authorizationPresent') is (row['role']=='primary') for row in parsed),
         'rust-http-final-exact-peer-contact-and-owner-ledger')
     require(value['committedMutations']==expected.count('commit-close'),
         'rust-http-uncertain-mutation-never-replayed')
-    for row in value['requests']:
+    for row in parsed:
         if row['vector']=='commit-close':
             require(row['mutationCommitted'] is True and row['bodyBytes']==4
                 and row['responseBytesWritten']==0 and row['closeReason']=='response-withheld-after-commit',
                 'rust-http-final-single-uncertain-mutation')
-    return {'contacts':len(expected),'mutations':value['committedMutations'],
+    result={'contacts':len(expected)+len(excluded),'mutations':value['committedMutations'],
         'completedWrites':value['completedResponseWrites'],'allClosed':True,'vectors':list(expected)}
+    if excluded:result.update(parsedRequests=len(expected),closedBeforeRequestParsed=list(excluded))
+    return result
 
 
 def provider_absence(signed,native,output,deadline):
@@ -704,7 +876,53 @@ def queued_cancel(client,node,target,peers,probe,output):
             if process is not None:close_call(process,primary_failure=primary_failure)
 
 
-def run(artifact,native,output,*,deadline):
+def compact_record(record,output):
+    """Bind original per-case evidence without copying it into the aggregate."""
+    def reference(name,value):
+        path=output/name
+        require(read_json(path,262144)==value,'rust-http-summary-original-evidence-required')
+        return {'path':name,**file_identity(path,262144)}
+    result=dict(record)
+    allowed={tenant+'-'+spec[0] for tenant in TENANTS for spec in cases()}
+    allowed.update(tenant+'-cross-fresh' for tenant in TENANTS)
+    require(len(record['cases'])<=52 and len(record['preEntryRefusals'])<=8,
+        'rust-http-summary-original-case-count-bounds')
+    result['cases']=[]
+    for item in record['cases']:
+        require(item['case'] in allowed,'rust-http-summary-owned-case-name')
+        result['cases'].append({key:item[key] for key in ('case','tenant','client','observedContacts')}
+            | {'evidence':reference('case-'+item['case']+'.json',item)})
+    result['preEntryRefusals']=[]
+    for item in record['preEntryRefusals']:
+        require(item['tenant'] in TENANTS and item['case'] in
+            {'ungranted','missing-http','missing-clock','missing-activation'},
+            'rust-http-summary-owned-refusal-name')
+        result['preEntryRefusals'].append({'tenant':item['tenant'],'case':item['case'],
+            'evidence':reference('pre-entry-'+item['tenant']+'-'+item['case']+'.json',item)})
+    if 'queuedCancel' in record:
+        result['queuedCancel']={'evidence':reference('queued-before-dispatch.json',record['queuedCancel'])}
+    if 'providerAbsence' in record:
+        value=record['providerAbsence']
+        result['providerAbsence']={'status':value['status'],'httpProviderInstalled':value['httpProviderInstalled'],
+            'invocations':[{'client':item['client']} for item in value['invocations']],
+            'evidence':reference('provider-absence/qualification.json',value)}
+    result['evidenceLayout']='individual-original-records-with-sha256-and-byte-length'
+    return result
+
+
+def retain_failed_record(output,record):
+    # Reporting must never replace the original controller failure, including
+    # when collection or its bounded serialization refuses.
+    try:write_json(output/'FAILED.json',compact_record(record,output))
+    except BaseException:
+        try:write_json(output/'FAILED.json',{'schemaVersion':record['schemaVersion'],
+            'status':'failed','stage':record['stage'],'qualification':False,
+            'summaryRetentionRefused':True,'originalFailurePreserved':True})
+        except BaseException:pass
+
+
+def run(artifact,native,output,*,deadline,pressure_observation_only=False):
+    selected_cases,selected_clients=programme_selection(pressure_observation_only)
     output=fresh(output)
     original_names=('component.wasm','BUILD-COMPLETE.json','source-inputs.json','recipe-inputs.json',
         'build-observation.json','capsule.json','package-source.json','rust-http-runtime.json')
@@ -715,6 +933,8 @@ def run(artifact,native,output,*,deadline):
         'preEntryRefusals':[],'source':materials,'original':original,'nativeProducts':products,
         'fullTicketQualification':False,'libraryCodePatched':False,'applicationTransportInjected':False,
         'ordinaryFactories':['waki::Client::new()','golem_wasi_http::Client::new()']}
+    if pressure_observation_only:
+        record.update(qualification=False,diagnosticOnly=True,scope='single-original-golem-capacity-call')
     stage='normal-neutral-signing';node=None
     try:
         environment=build_environment(output);signed=output/'releases'
@@ -723,7 +943,8 @@ def run(artifact,native,output,*,deadline):
         require(result.returncode==0,'rust-http-normal-signing')
         record['signing']=checked_signing(artifact,signed,original)
         stage='actual-provider-absence'
-        record['providerAbsence']=provider_absence(signed,native,output/'provider-absence',deadline)
+        if not pressure_observation_only:
+            record['providerAbsence']=provider_absence(signed,native,output/'provider-absence',deadline)
         with tempfile.TemporaryDirectory(prefix='lsf-rust-http-runtime-') as temporary, \
             owned_cancellation() as cancellation,ExitStack() as cleanup:
             work=Path(temporary)
@@ -757,7 +978,7 @@ def run(artifact,native,output,*,deadline):
                 manifests[tenant]=manifest;target=deploy(selected,manifest,publication)
                 grants=grant(selected,node,publication,tenant,peers[tenant]);all_grants[tenant]=grants
                 # Each of the exact three declarations remains independently mandatory.
-                for missing in (None,HTTP,CLOCK,ACTIVATION):
+                for missing in (() if pressure_observation_only else (None,HTTP,CLOCK,ACTIVATION)):
                     selected_grants=[] if missing is None else [g for g in grants if g['capability']!=missing]
                     target=deploy(selected,manifest,publication,generation=str(target['generation']),grants=selected_grants)
                     name='ungranted' if missing is None else 'missing-'+{HTTP:'http',CLOCK:'clock',ACTIVATION:'activation'}[missing]
@@ -775,24 +996,48 @@ def run(artifact,native,output,*,deadline):
             require(publications['examples']!=publications['foreign'],'rust-http-no-cross-tenant-publication-identity')
             record['publications']=publications;record['credentialDenial']=credential_denial(clients['foreign'],targets['foreign'])
             expected={tenant:[] for tenant in TENANTS}
+            unparsed={tenant:[] for tenant in TENANTS}
             stage='ordinary-client-programme'
             # Alternating tenant executions exercise repeated A->B reuse; the
             # two outside coordinates alternate independently of either library.
-            for index,spec in enumerate(cases()):
-                for tenant,client_name in (('examples','waki'),('foreign','golem')):
+            for index,spec in selected_cases:
+                for tenant,client_name in selected_clients:
                     label=tenant+'-'+spec[0];stage=label
-                    item=invoke(clients[tenant],node,targets[tenant],peers,tenant,client_name,
-                        'alpha' if index%2==0 else 'delta',spec,probe,output,label)
-                    expected[tenant].extend([spec[5]]*item['observedContacts']);record['cases'].append(item)
+                    try:
+                        item=invoke(clients[tenant],node,targets[tenant],peers,tenant,client_name,
+                            'alpha' if index%2==0 else 'delta',spec,probe,output,label)
+                    except BaseException:
+                        if pressure_observation_only:
+                            # Preserve the original assertion. The same normal
+                            # owner check and subsequent actual peer snapshot
+                            # distinguish transport state from charged starts.
+                            try:
+                                retire(clients[tenant],probe,targets[tenant],output,'diagnostic-pressure-after-refusal')
+                                for _ in range(64):
+                                    for peer in peers.values():peer.poll(.002)
+                                    if all(peer.observation()['openConnections']==0 for peer in peers.values()):break
+                                write_json(output/'diagnostic-pressure-after-retirement.json',{
+                                    'qualification':False,'primaryFailurePreserved':True,
+                                    'peers':{name:peer.observation() for name,peer in peers.items()}})
+                            except BaseException:
+                                try:write_json(output/'diagnostic-pressure-retention-refused.json',{
+                                    'qualification':False,'primaryFailurePreserved':True,'retentionStatus':'refused'})
+                                except BaseException:pass
+                        raise
+                    expected[tenant].extend([spec[5]]*item['parsedPeerRequests']);record['cases'].append(item)
+                    if item['pressurePeer'] is not None:
+                        require(tenant=='foreign' and client_name=='golem' and spec[0]=='resource-capacity',
+                            'rust-http-unparsed-connection-only-original-golem-pressure')
+                        unparsed[tenant].append(item['pressurePeer']['closedBeforeRequestParsed'])
                     write_json(output/('case-'+label+'.json'),item)
-                if index==0:
+                if index==0 and not pressure_observation_only:
                     stage='queued-before-dispatch-cancel'
                     record['queuedCancel']=queued_cancel(clients['examples'],node,targets['examples'],peers,probe,output)
                     expected['examples'].append('pending-headers')
                     write_json(output/'queued-before-dispatch.json',record['queuedCancel'])
             # A final opposite-library call in each tenant must start at one:
             # no client/static/credential state transfers with the reused cell.
-            for tenant,client_name in (('examples','golem'),('foreign','waki')):
+            for tenant,client_name in (() if pressure_observation_only else (('examples','golem'),('foreign','waki'))):
                 spec=('cross-tenant-fresh','json','/conformance/json',DOMAIN_TEXT,1,'domain-json','')
                 item=invoke(clients[tenant],node,targets[tenant],peers,tenant,client_name,'delta',spec,probe,output,tenant+'-cross-fresh')
                 record['cases'].append(item);expected[tenant].append('domain-json')
@@ -809,20 +1054,25 @@ def run(artifact,native,output,*,deadline):
                 observed=peer.close();public=json.dumps(observed,ensure_ascii=True).encode()
                 require(all(secret not in public and secret.removeprefix(b'Bearer ') not in public
                     for secret in secrets_to_protect),'rust-http-no-controlled-credential-retained')
-                record['peers'][tenant]=check_peer_final(observed,expected[tenant])
+                record['peers'][tenant]=check_peer_final(observed,expected[tenant],closed_before_parse=unparsed[tenant])
                 write_json(output/(tenant+'-peer-final.json'),observed)
             record['startup']=node.startup_record
         require(original=={name:file_identity(artifact/name) for name in original_names}
             and products=={name:file_identity(path,512*1024**2) for name,path in native.items()}
             and materials=={name:file_identity(ROOT/name) for name in MATERIALS}
             and time.monotonic()<deadline,'rust-http-final-source-products-and-original-deadline')
+        if pressure_observation_only:
+            record.update(status='diagnostic-completed',qualification=False,guestExecutions=1,
+                invocationAttempts=1,preEntryRefusalsCount=0)
+            summary=compact_record(record,output)
+            write_json(output/'diagnostic.json',summary);return summary
         record.update(status='passed',guestExecutions=len(record['cases'])+1,
             invocationAttempts=len(record['cases'])+len(record['preEntryRefusals'])+4,
             preEntryRefusalsCount=len(record['preEntryRefusals'])+3,
             ordinaryLibraryCases=len(record['cases']),queuedBeforeGuestCancelled=1,providerAbsenceRefusals=2)
-        write_json(output/'qualification.json',record);return record
+        summary=compact_record(record,output)
+        write_json(output/'qualification.json',summary);return summary
     except BaseException:
         record.update(status='failed',stage=stage)
-        try:write_json(output/'FAILED.json',record)
-        except OSError:pass
+        retain_failed_record(output,record)
         raise
