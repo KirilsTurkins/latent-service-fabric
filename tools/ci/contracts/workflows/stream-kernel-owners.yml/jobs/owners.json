@@ -1,0 +1,62 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "name": "Exact original broker I/O owners and selected stream source",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "dtolnay/rust-toolchain"
+      },
+      {
+        "name": "Restore compiled Rust dependencies",
+        "uses": "Swatinem/rust-cache",
+        "with": {
+          "cache-all-crates": false,
+          "cache-bin": false,
+          "cache-on-failure": false,
+          "cache-targets": true,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "save-if": false,
+          "shared-key": "host-correctness"
+        }
+      },
+      {
+        "name": "Execute exact broker owners and compile stream integration",
+        "run": "python3 tools/qualify_stream_kernel_owners.py --output \"$RUNNER_TEMP/stream-kernel-owners\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain bounded owner execution and compile failures",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "stream-kernel-owners-${{ github.sha }}",
+          "path": "${{ runner.temp }}/stream-kernel-owners/",
+          "retention-days": 7
+        }
+      }
+    ],
+    "timeout-minutes": 20
+  },
+  "jobId": "owners",
+  "kind": "job",
+  "reviewReason": "One reviewed owner-only job; preserve all existing commands/cases/limits, execute nine exact broker cases and compile stream integration, no kernel/SDK/engine build.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/stream-kernel-owners.yml"
+}

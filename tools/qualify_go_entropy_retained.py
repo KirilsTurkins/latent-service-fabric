@@ -28,7 +28,7 @@ from tools.rust_capsule_project import ROOT, TEMPLATES, digest, fresh, inventory
 
 
 def compiler_inputs(directory):
-    """Bind the fixed source-run tools manifest and the reviewed Go archive."""
+    """Bind historical generator tools and the separately pinned current Go archive."""
     pins = read_json(ROOT/'sdk/go-guest/toolchain.lock.json')
     archive = file_identity(directory/'go.tar.gz', 128*1024**2)
     require(archive['sha256'] == 'sha256:'+pins['go']['linuxAmd64']['sha256'],
@@ -48,7 +48,9 @@ def compiler_inputs(directory):
         require(actual['sha256'] == 'sha256:'+fields[0], 'go-entropy-retained-tool-bytes')
         observed[name] = actual
         (directory/name).chmod(0o700)
-    return {'artifactId': 12215479048, 'runId': 39310234677, 'goArchive': archive, 'tools': observed}
+    return {'artifactId': 12215479048, 'runId': 39310234677, 'goArchive': archive,
+        'goArchiveOrigin': {'url': pins['go']['linuxAmd64']['url'], 'version': pins['go']['version']},
+        'tools': observed}
 
 
 def historical(acquired):

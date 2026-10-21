@@ -21,13 +21,19 @@ explicit close releases access only. Optional values keep presence and sequence
 values retain `uint64`. The separately admitted Phase 4 profile and signed
 Linux-node transaction execution matrix are tracked by #389.
 
-This profile uses pinned upstream Go 1.27.2 with the reviewed `wasiOnIdle`
+This profile uses pinned upstream Go 1.27.3 with the reviewed `wasiOnIdle`
 scheduler source overlay and
 componentize-go 0.4.3 commit recorded in [toolchain.lock.json](toolchain.lock.json).
 Do not substitute stock Go or TinyGo. No ambient WASI imports survive the
 closed runtime adapter. Runtime clocks and entropy are explicit LSF imports,
 requiring installed providers, policy bindings and per-deployment grants.
 The first node call without those grants must fail closed.
+
+Go 1.27.3 fixes the upstream certificate-verification advisory GO-2026-6809.
+The [source audit](../../docs/testing/evidence/go-1.27.3-source-audit-2026-10-21.json)
+authenticates all 29 selected upstream files and the scheduler postimages.
+Earlier signed receipts and diagnostic catalogues retain their original compiler
+version; this security update does not claim a new signed guest qualification.
 
 The opt-in [maintenance worker profile](../../docs/development/go-managed-idle.md)
 reserves finite original-ledger capacity for the pinned runtime's internal

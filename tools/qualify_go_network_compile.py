@@ -82,13 +82,13 @@ def qualify(output: Path) -> dict:
             raise ValueError('Go-network-reference-compiler-unavailable')
         go_path = Path(go_path).resolve(strict=True)
         reference_tool = file_identity(go_path, 'go')
-        if commands.run('reference-go-version', go_path, 'version').split() != [b'go', b'version', b'go1.27.2', b'linux/amd64']:
+        if commands.run('reference-go-version', go_path, 'version').split() != [b'go', b'version', b'go1.27.3', b'linux/amd64']:
             raise ValueError('Go-network-reference-compiler-identity')
         # This standalone reference compiles only the exact private owner source
         # against ordinary Go context/sync. It has no WIT/native host substitute.
         owner = output / 'owner-reference'
         owner.mkdir()
-        (owner / 'go.mod').write_bytes(b'module example.invalid/stream-owner\n\ngo 1.27.2\n')
+        (owner / 'go.mod').write_bytes(b'module example.invalid/stream-owner\n\ngo 1.27.3\n')
         owner_source = read_file(ROOT / 'sdk/go-guest/capabilities/network-owner.go.in')
         owner_tests = read_file(ROOT / OWNER_TEST)
         (owner / 'owner.go').write_bytes(owner_source)

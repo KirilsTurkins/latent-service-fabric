@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/build_dev_guest_tools.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Retain exact project LICENSE and NOTICE in guest-tool payloads before existing bundle hashing; preserve every compiler, source, qualification and license obligation.",
+  "reviewReason": "Explicit assembly-only prepared Rust HTTP capture; default/nonRust commands unchanged",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "d75c32459f543c89a69cea25b487e9367f20f13796acbcc4a0c8f4cc89f89ae6"
+  "sha256": "f86803047c1561f6a14b11f29f4ff40d7c8b8dde5b006dbed27128d34cf4492f"
 }

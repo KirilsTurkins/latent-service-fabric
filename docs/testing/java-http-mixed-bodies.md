@@ -59,7 +59,20 @@ comparison of all ten modes preserves results, errors and ownership operations.
 This is a fixture refactor, not a raised parser limit or compiler acceptance
 change. The original failed artifacts and core remain unchanged.
 
-The eight focused source/controller controls and existing peer controls are not
-signed-component evidence. Hosted execution is pending. Earlier default-client,
-phase, SPI and tenant programmes keep their original source attribution. No full
-#688/#741, HTTPS, full JDK or release qualification is claimed.
+The [exact-source hosted campaign](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39528776339/job/118989568182)
+passed all ten signed outcomes, one zero-work grant denial and eleven HTTP
+contacts at `ef3d836b670775ad398ffee2895fd725c88f1750`. All 237 archive members,
+raw outcomes/revisions, two pending physical observations, ten per-case provider
+retirements and final clean/reaped node/stopped peer were independently verified.
+The component is 7,721,494 bytes, SHA-256
+`642b2b7038fa79d18f8c75cd3620788365f3c7ac5c967b78ac80849614fc8862`.
+The [fixed receipt](evidence/java-http-mixed-signed-2026-10-21.json) preserves
+both failed attempts and the separately compiled historical native source.
+
+The current integration preserves all 199 Java SDK/WIT preimages. Its only two
+campaign-material changes are the unrelated Go toolchain patch and optional Rust
+HTTP recipe; shared Commands/package inputs remain unchanged. This does not
+transfer the historical native compilation to later source. Earlier default,
+phase, SPI and tenant programmes retain their original identities. Late accepted
+task completion remains a separate gate. No full #688/#741, HTTPS, full JDK,
+byte reproducibility or release qualification is claimed.
