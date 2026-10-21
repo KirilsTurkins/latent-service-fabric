@@ -26,13 +26,21 @@ enum lsf_prepaid_kind {
     LSF_PREPAID_SIDCACHE, LSF_PREPAID_AUDIT_STRING, LSF_PREPAID_AUDIT_BUFFER,
     LSF_PREPAID_AUDIT_SKB, LSF_PREPAID_AUDIT_HEAD,
     LSF_PREPAID_AVC_NODE, LSF_PREPAID_AVC_XPERMS,
-    LSF_PREPAID_AVC_DECISION, LSF_PREPAID_AVC_DATA
+    LSF_PREPAID_AVC_DECISION, LSF_PREPAID_AVC_DATA,
+    LSF_PREPAID_BIND_BUCKET, LSF_PREPAID_BIND2_BUCKET
 };
 static inline int lsf_prepaid_avc_kind(unsigned int kind)
 {
     return kind == LSF_PREPAID_AVC_NODE || kind == LSF_PREPAID_AVC_XPERMS ||
         kind == LSF_PREPAID_AVC_DECISION || kind == LSF_PREPAID_AVC_DATA;
 }
+/* Bind buckets use original hash-lock/empty-list lifetime, not an RCU
+ * continuation. Their LIVE birth stays charged through all real users. */
+static inline int lsf_prepaid_bind_kind(unsigned int kind)
+{
+    return kind == LSF_PREPAID_BIND_BUCKET || kind == LSF_PREPAID_BIND2_BUCKET;
+}
+
 enum lsf_prepaid_deferred {
     LSF_PREPAID_PRIVATE, LSF_PREPAID_QUEUED, LSF_PREPAID_PUBLISHED
 };
@@ -214,7 +222,8 @@ static inline int lsf_prepaid_child_allocate(struct lsf_prepaid *pool,
 {
     if (((kind < LSF_PREPAID_LABEL || kind > LSF_PREPAID_IP_OPTIONS) &&
          kind != LSF_PREPAID_NETPORT && kind != LSF_PREPAID_SIDCACHE &&
-         kind != LSF_PREPAID_AUDIT_STRING && !lsf_prepaid_avc_kind(kind)) ||
+         kind != LSF_PREPAID_AUDIT_STRING && !lsf_prepaid_avc_kind(kind) &&
+         !lsf_prepaid_bind_kind(kind)) ||
         !lsf_prepaid_allocate(pool, key, bytes, 1, parent, ticket, offset))
         return 0;
     pool->records[ticket->slot].kind = kind;
@@ -234,7 +243,8 @@ static inline int lsf_prepaid_blob_find(struct lsf_prepaid *pool,
         offset >= LSF_BACKING_BYTES ||
         ((kind < LSF_PREPAID_INODE_BLOB || kind > LSF_PREPAID_IP_OPTIONS) &&
          kind != LSF_PREPAID_NETPORT && kind != LSF_PREPAID_SIDCACHE &&
-         kind != LSF_PREPAID_AUDIT_STRING && !lsf_prepaid_avc_kind(kind)))
+         kind != LSF_PREPAID_AUDIT_STRING && !lsf_prepaid_avc_kind(kind) &&
+         !lsf_prepaid_bind_kind(kind)))
         return 0;
     for (i = 1; i < LSF_ALLOCATION_SLOTS; ++i) {
         struct lsf_prepaid_view *record = &pool->records[i];
@@ -550,7 +560,8 @@ static inline int lsf_prepaid_blob_finish(struct lsf_prepaid *pool,
         record->kind != kind || !context->live ||
         ((kind < LSF_PREPAID_INODE_BLOB || kind > LSF_PREPAID_IP_OPTIONS) &&
          kind != LSF_PREPAID_NETPORT && kind != LSF_PREPAID_SIDCACHE &&
-         kind != LSF_PREPAID_AUDIT_STRING && !lsf_prepaid_avc_kind(kind)) ||
+         kind != LSF_PREPAID_AUDIT_STRING && !lsf_prepaid_avc_kind(kind) &&
+         !lsf_prepaid_bind_kind(kind)) ||
         record->deferred > LSF_PREPAID_PUBLISHED ||
         (kind == LSF_PREPAID_INODE_BLOB && record->deferred != LSF_PREPAID_QUEUED) ||
         (kind == LSF_PREPAID_IP_OPTIONS && record->deferred == LSF_PREPAID_PUBLISHED) ||
