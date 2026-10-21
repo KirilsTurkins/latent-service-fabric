@@ -341,8 +341,9 @@ class RuntimeOracles(unittest.TestCase):
     def test_pending_requires_all_five_original_physical_owners_and_current_tenant_provider_work(self):
         physical={'inventory':{'topology':{'available':True,'complete':True,
             'entries':[{'name':name,'activeCount':'1'} for name in node.PHYSICAL]}}}
-        counts={'nodeUsage':{'unavailable':False,'counters':dict.fromkeys(node.ACTIVE_COUNTERS,'0')},
-            'tenantUsage':{'unavailable':False,'counters':{'calls':'1','sessions':'1'}}}
+        proof=json.loads((qualification.ROOT/'docs/testing/evidence/rust-wasi-http-tenant-counter-failure-2026-10-21.json').read_bytes())
+        counts={'nodeUsage':proof['observedNodeUsage'], 'tenantUsage':proof['observedTenantUsage']}
+        self.assertIsNot(counts['tenantUsage']['unavailable'],False) # actual old RED
         for name in ('broker_calls','pool_active_connections','pool_running_requests'):
             counts['nodeUsage']['counters'][name]='1'
         with patch.object(node,'sample',return_value=physical),patch.object(node,'usage',return_value=counts):
@@ -362,6 +363,20 @@ class RuntimeOracles(unittest.TestCase):
             for key in ('calls','sessions'):
                 changed=copy.deepcopy(counts);changed['tenantUsage']['counters'][key]='0'
                 with self.subTest(owner=key),patch.object(node,'usage',return_value=changed),self.assertRaises(Exception):
+                    node.positive_pending(None,None,None)
+            for kind in ('scope','false','unknown','dict','missing','counter-missing','counter-type','boolean','negative','overflow'):
+                changed=copy.deepcopy(counts);tenant=changed['tenantUsage']
+                if kind=='scope':tenant['scope']='node'
+                elif kind=='false':tenant['unavailable']=False
+                elif kind=='unknown':tenant['unavailable']=['provider-unavailable']
+                elif kind=='dict':tenant['unavailable']={}
+                elif kind=='missing':tenant.pop('unavailable')
+                elif kind=='counter-missing':tenant['counters'].pop('calls')
+                elif kind=='counter-type':tenant['counters']=[]
+                elif kind=='boolean':tenant['counters']['calls']=True
+                elif kind=='negative':tenant['counters']['sessions']='-1'
+                else:tenant['counters']['calls']=str(2**64)
+                with self.subTest(tenant=kind),patch.object(node,'usage',return_value=changed),self.assertRaises(Exception):
                     node.positive_pending(None,None,None)
 
     def test_programme_remains_within_original_peer_and_per_activation_authority_limits(self):

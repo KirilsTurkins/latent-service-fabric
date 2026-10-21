@@ -265,6 +265,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_rust_wasi_http_runtime.py",
-  "reviewReason": "Reviewed c713 native acquisition and exact shared source projection preserve all original Rust64 runtime oracles, caps and commands, with additive reader/source controls and a fresh source-bound adapter.",
+  "reviewReason": "Correct the actual tenant usage API empty-list schema, preserving all prior case names and guards; retained034 RED/GREEN plus scope, availability, positive owner and canonical counter adverses.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
