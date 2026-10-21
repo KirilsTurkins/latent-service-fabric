@@ -22,7 +22,7 @@ class InstalledRustHttp(unittest.TestCase):
         from unittest.mock import patch
         from tools.dev_workflow import build_artifacts,build_provenance
         import json,time
-        artifact=self.root/'attempt/output';artifact.mkdir(parents=True)
+        artifact=self.root/'attempt/output';artifact.mkdir(parents=True,mode=0o700)
         (artifact/'component.wasm').write_bytes(b'component')
         packager=self.root/'latent';packager.write_bytes(b'actual-controlled-cli')
         signer=self.root/'signer';signer.write_bytes(b'actual-controlled-signer')
