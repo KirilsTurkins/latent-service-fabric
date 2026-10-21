@@ -1,0 +1,79 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "env": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "name": "Original guest with three isolated ceilings and fresh reuse",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13"
+        }
+      },
+      {
+        "name": "Install only the existing pinned Python controller dependencies",
+        "run": "python3 -m pip install --requirement tools/requirements.lock"
+      },
+      {
+        "name": "Fetch exact original compiler and native source objects without compilation",
+        "run": "git fetch --no-tags --depth=1 origin 88b3c9c1d305eb8e308a7187600f782163bc6131 c7134289f446cb3171eb0ffd800a94afc2a5209f"
+      },
+      {
+        "name": "Check six strict limit and primary failure controls",
+        "run": "python3 -B -m unittest tools.tests.test_rust_wasi_http_limits -v"
+      },
+      {
+        "name": "Restore only the fixed original public compiled guest artifact",
+        "uses": "actions/download-artifact",
+        "with": {
+          "github-token": "${{ github.token }}",
+          "name": "rust-wasi-http-runtime-88b3c9c1d305eb8e308a7187600f782163bc6131",
+          "path": "${{ runner.temp }}/rust-http-original",
+          "run-id": "39623507324"
+        }
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Authenticate unchanged original native products without another host build",
+        "run": "python3 -B tools/activation_stack_native_products.py --output \"$RUNNER_TEMP/rust-http-native\""
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Re-sign the original component and execute only nine isolated limit attempts",
+        "run": "python3 -B tools/qualify_rust_wasi_http_limits.py --original-artifact \"$RUNNER_TEMP/rust-http-original\" --native-products \"$RUNNER_TEMP/rust-http-native\" --output \"$RUNNER_TEMP/rust-http-limits\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain exact ancestry and bounded original public outcomes",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "rust-wasi-http-limits-${{ github.sha }}",
+          "path": "${{ runner.temp }}/rust-http-limits/*.json\n${{ runner.temp }}/rust-http-limits/build/*.json\n${{ runner.temp }}/rust-http-limits/build/*.wasm\n${{ runner.temp }}/rust-http-limits/build/wit/**\n${{ runner.temp }}/rust-http-limits/node/*.json\n${{ runner.temp }}/rust-http-limits/node/*/*.json\n${{ runner.temp }}/rust-http-limits/node/*/examples-controls/*.json\n${{ runner.temp }}/rust-http-limits/node/*/foreign-controls/*.json\n",
+          "retention-days": 1
+        }
+      }
+    ],
+    "timeout-minutes": 20
+  },
+  "jobId": "individual-limits",
+  "kind": "job",
+  "reviewReason": "Disable persisted checkout credentials after actual scoped artipacked finding; public pinned fetch, nine attempts, all commands/caps unchanged.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/rust-wasi-http-limits.yml"
+}

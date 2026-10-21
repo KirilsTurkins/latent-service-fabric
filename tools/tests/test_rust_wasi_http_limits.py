@@ -1,0 +1,208 @@
+"""Failure-injection and data models only; never new limit qualification."""
+import copy
+import json
+from pathlib import Path
+import unittest
+
+from tools import qualify_rust_wasi_http_limits as qualifier
+from tools import rust_wasi_http_limit_node as node
+from tools.dotnet_guest.internal_io import encoded_integer
+
+
+INPUTS = json.loads((Path(__file__).parent/'fixtures/rust-http-limit-model-inputs.json').read_bytes())
+
+
+class RustHttpLimitControls(unittest.TestCase):
+    def test_ordinary_baseline_requires_real_pending_without_inventing_guest_close(self):
+        prefix=node.original.TIMER_PREFIX
+        raw=b'\n'.join(prefix+row for row in (
+            b'|pending|start-accepted|1|1|1|1', b'|pending|next-entered|2|1|1|1',
+            b'|pending|wait-pending|3|1|1|1'))+b'\n'
+        proof=node.baseline_timer(raw)
+        self.assertEqual(proof['guestCloseStatus'],'not-observed')
+        self.assertFalse(proof['guestCloseSynthesized'])
+        self.assertFalse(proof['forcedHostTermination'])
+        # The old full64 non-forced reader remains strict and refuses this model.
+        with self.assertRaisesRegex(RuntimeError,'root-close-after-real-pending'):
+            node.original.golem_terminal_timer(raw,'pending',{'waitPending':proof['waitPending']},'release')
+        closed=raw+prefix+b'|pending|root-close|4|0|0|0\n'
+        self.assertEqual(node.baseline_timer(closed)['guestCloseStatus'],'observed')
+        for invalid in (b'', raw.replace(b'wait-pending',b'next-entered'),
+                raw.replace(b'|3|1|1|1',b'|4|1|1|1'),
+                raw.replace(b'|3|1|1|1',b'|3|0|1|1'),
+                raw.replace(b'pending',b'drain'),
+                prefix+b'|pending|root-close|1|0|0|0\n'+raw,
+                closed+prefix+b'|overflow\n'):
+            with self.subTest(invalid=invalid),self.assertRaises(RuntimeError):node.baseline_timer(invalid)
+
+    def test_only_the_named_owner_ceiling_changes_and_defaults_are_preserved(self):
+        value={'providers':{'activationRuntime':{'limits':dict(node.original.RUNTIME_LIMITS)},
+            'httpStreaming':{'unmodified':'provider'}},'cells':[{'capacity':1,'queueCapacity':2}],
+            'engine':{'activationStackAccounting':'activation-owned-v1'}}
+        for phase in node.PHASES:
+            selected=node.limits_configuration(value,phase)
+            self.assertEqual(value['providers']['activationRuntime']['limits'],node.original.RUNTIME_LIMITS)
+            self.assertEqual(selected['cells'],value['cells'])
+            self.assertEqual(selected['engine'],value['engine'])
+            changed={k for k in node.original.RUNTIME_LIMITS
+                if selected['providers']['activationRuntime']['limits'][k]!=node.original.RUNTIME_LIMITS[k]}
+            self.assertEqual(changed,{'tasks'} if phase=='task-one' else {'timers'} if phase=='timer-one' else set())
+        for bad in (None,True,'tasks','timer-zero','memory','unknown'):
+            with self.subTest(bad=bad),self.assertRaises(RuntimeError):node.limits_configuration(value,bad)
+        stale=copy.deepcopy(value);stale['providers']['activationRuntime']['limits']['waits']=8
+        with self.assertRaises(RuntimeError):node.limits_configuration(stale,'task-one')
+
+    def test_task_one_requires_one_actual_response_and_the_exact_original_error(self):
+        actual=INPUTS['waki'];row=copy.deepcopy(actual['invocation'])
+        with self.assertRaisesRegex(RuntimeError,'one-retained-task'):
+            node.task_outcome(row,actual['selectedRevision'],actual['budget'])
+        self.assertIn(':capacity:8:',row['decoded'][0]['ok'])
+        row['decoded'][0]['ok']=row['decoded'][0]['ok'].replace(':capacity:8:',':capacity:1:')
+        row['response']['data']['consumption']['outboundRequests']=1
+        result=node.task_outcome(row,actual['selectedRevision'],actual['budget'])
+        self.assertEqual(result['acceptedResponses'],1)
+        self.assertFalse(result['publicErrorAloneProvesOwnerKind'])
+        for change in ('accepted-zero','outbound','error-kind','stale-revision'):
+            bad=copy.deepcopy(row);revision=copy.deepcopy(actual['selectedRevision'])
+            if change=='accepted-zero':bad['decoded'][0]['ok']=bad['decoded'][0]['ok'].replace(':capacity:1:',':capacity:0:')
+            elif change=='outbound':bad['response']['data']['consumption']['outboundRequests']=2
+            elif change=='error-kind':bad['decoded'][0]['ok']=bad['decoded'][0]['ok'].replace('latent-runtime-resource-exhausted','latent-runtime-permission-denied')
+            else:revision['routeGeneration']='999'
+            with self.subTest(change=change),self.assertRaises(RuntimeError):
+                node.task_outcome(bad,revision,actual['budget'])
+
+    def test_timer_one_requires_its_real_pending_count_second_start_and_precise_trap(self):
+        actual=INPUTS['golem'];row=copy.deepcopy(actual['invocation'])
+        positive={'transitiveTimer':{'waitPending':copy.deepcopy(INPUTS['pendingTimer'])}}
+        with self.assertRaisesRegex(RuntimeError,'one-live-timer'):
+            node.timer_outcome(row,actual['selectedRevision'],actual['budget'],positive)
+        row['response']['data']['consumption']['outboundRequests']=2
+        result=node.timer_outcome(row,actual['selectedRevision'],actual['budget'],positive)
+        self.assertFalse(result['trapInstructionProved'])
+        self.assertFalse(result['genericTrapAloneProvesOwnerKind'])
+        for kind in ('zero-timer','bool-timer','different-trap','deadline','zero-fuel','wrong-outbound'):
+            bad=copy.deepcopy(row);witness=copy.deepcopy(positive)
+            if kind=='zero-timer':witness['transitiveTimer']['waitPending']['timers']=0
+            elif kind=='bool-timer':witness['transitiveTimer']['waitPending']['timers']=True
+            elif kind=='different-trap':bad['response']['error']['details'][1]['fields']['kind']='out-of-bounds-memory'
+            elif kind=='deadline':bad['response']['error']['code']='deadline-exceeded'
+            elif kind=='zero-fuel':bad['response']['data']['consumption']['cpuFuel']='0'
+            else:bad['response']['data']['consumption']['outboundRequests']=1
+            with self.subTest(kind=kind),self.assertRaises(RuntimeError):
+                node.timer_outcome(bad,actual['selectedRevision'],actual['budget'],witness)
+
+    def test_memory_requires_the_typed_producer_detail_and_no_effect(self):
+        actual=INPUTS['golem'];row=copy.deepcopy(actual['invocation']);budget=copy.deepcopy(actual['budget'])
+        budget['memoryBytes']=3*1024**2
+        row['response']['error']={'code':'resource-exhausted','details':[
+            {'kind':'activation.memory-exhausted','fields':{'cell_id':'original-cell'}}]}
+        row['response']['data']['terminalState']='resource_exhausted'
+        row['response']['data']['consumption'].update(outboundRequests=0,cpuFuel='0',peakMemoryBytes='0')
+        self.assertFalse(node.memory_outcome(row,actual['selectedRevision'],budget)['genericResourceErrorAccepted'])
+        for change in ('generic-capacity','fuel-detail','duplicate-memory','peer-start','bool-start','over-budget','wrong-terminal'):
+            bad=copy.deepcopy(row)
+            if change=='generic-capacity':bad['response']['error']['details']=[]
+            elif change=='fuel-detail':bad['response']['error']['details'][0]['kind']='activation.fuel-exhausted'
+            elif change=='duplicate-memory':bad['response']['error']['details']*=2
+            elif change=='peer-start':bad['response']['data']['consumption']['outboundRequests']=1
+            elif change=='bool-start':bad['response']['data']['consumption']['outboundRequests']=False
+            elif change=='over-budget':bad['response']['data']['consumption']['peakMemoryBytes']=str(budget['memoryBytes']+1)
+            else:bad['response']['data']['terminalState']='guest_trap'
+            with self.subTest(change=change),self.assertRaises(RuntimeError):
+                node.memory_outcome(bad,actual['selectedRevision'],budget)
+
+    def test_fixed_memory_shape_checks_count_flags_and_all_original_minima(self):
+        def model(changed=None):
+            component=bytearray(b'\0asm\x0d\0\x01\0')
+            for index in range(9):
+                core=bytearray(b'\0asm\x01\0\0\0')
+                if index in (0,3,6):
+                    pages=19 if index==3 else 17
+                    if changed==index:pages+=1
+                    payload=b'\x01\x00'+encoded_integer(pages)
+                    core+=b'\x05'+encoded_integer(len(payload))+payload
+                component+=b'\x01'+encoded_integer(len(core))+core
+            return bytes(component)
+        shape=qualifier.memory_shape(model())
+        self.assertEqual(shape['definedMinimumBytes'],3473408)
+        self.assertFalse(shape['definitionSumAloneProvesInstantiation'])
+        self.assertGreater(shape['definedMinimumBytes'],shape['lowerRequestedBytes'])
+        for index in (0,3,6):
+            with self.subTest(index=index),self.assertRaises(RuntimeError):qualifier.memory_shape(model(index))
+        with self.assertRaises(ValueError):qualifier.memory_shape(b'not-the-authenticated-component')
+        with self.assertRaisesRegex(RuntimeError,'whole-instance-graph'):qualifier.memory_context(model())
+
+    def test_actual_generic_memory_row_needs_exact_component_and_single_budget_differential(self):
+        row=copy.deepcopy(INPUTS['memory86da']['invocation'])
+        revision=row['response']['data']['resolvedRevision']
+        budget=node.memory_selection(node.NORMAL_BUDGET)
+        # The original detail reader still refuses the actual public projection.
+        with self.assertRaisesRegex(RuntimeError,'typed-memory-producer-detail'):
+            node.memory_outcome(row,revision,budget)
+        result=node.memory_differential_outcome(row,revision,budget,node.MEMORY_CONTEXT)
+        self.assertEqual(result['status'],'awaiting-matched-fresh')
+        self.assertFalse(result['publicGenericErrorAloneProvesMemory'])
+        self.assertFalse(result['internalInstructionOrAllocationSiteProved'])
+        self.assertFalse(result['transportTypedDetailObserved'])
+        for change in ('component','shape','bool-ordinal','upper-request','fuel-request','outbound-request',
+                'bool-budget','fuel-exhausted','wrong-terminal','wrong-code','unexpected-detail',
+                'peer-start','bool-peer','effect','child','state','zero-fuel','over-memory','revision','retryable'):
+            bad=copy.deepcopy(row);selected=copy.deepcopy(budget);context=copy.deepcopy(node.MEMORY_CONTEXT)
+            if change=='component':context['component']['sha256']='sha256:'+'0'*64
+            elif change=='shape':context['minimumPages'][1]=20
+            elif change=='bool-ordinal':context['instantiatedMainCoreOrdinals'][0]=False
+            elif change=='upper-request':selected['memoryBytes']=16*1024**2
+            elif change=='fuel-request':selected['cpuFuel']-=1
+            elif change=='outbound-request':selected['outboundRequests']=1
+            elif change=='bool-budget':selected['effectCount']=False
+            elif change=='fuel-exhausted':bad['response']['data']['consumption']['cpuFuel']=str(budget['cpuFuel'])
+            elif change=='wrong-terminal':bad['response']['data']['terminalState']='guest_trap'
+            elif change=='wrong-code':bad['response']['error']['code']='guest-trap'
+            elif change=='unexpected-detail':bad['response']['error']['details']=[{'kind':'activation.fuel-exhausted'}]
+            elif change=='retryable':bad['response']['error']['retryable']=True
+            elif change=='revision':bad['response']['data']['resolvedRevision']['releaseDigest']='sha256:'+'0'*64
+            elif change=='peer-start':bad['response']['data']['consumption']['outboundRequests']=1
+            elif change=='bool-peer':bad['response']['data']['consumption']['outboundRequests']=False
+            elif change=='effect':bad['response']['data']['consumption']['effectCount']=1
+            elif change=='child':bad['response']['data']['consumption']['childCalls']=1
+            elif change=='state':bad['response']['data']['consumption']['stateReadBytes']='1'
+            elif change=='zero-fuel':bad['response']['data']['consumption']['cpuFuel']='0'
+            else:bad['response']['data']['consumption']['peakMemoryBytes']=str(budget['memoryBytes']+1)
+            with self.subTest(change=change),self.assertRaises(RuntimeError):
+                node.memory_differential_outcome(bad,revision,selected,context)
+
+    def test_memory_differential_cannot_complete_without_original_budget_parsed_fresh(self):
+        row=copy.deepcopy(INPUTS['memory86da']['invocation']);revision=row['response']['data']['resolvedRevision']
+        budget=node.memory_selection(node.NORMAL_BUDGET)
+        lower={'invocation':row,'selectedRevision':revision,'budget':budget,
+            'diagnostic':node.memory_differential_outcome(row,revision,budget,node.MEMORY_CONTEXT)}
+        # Reader model: relabel a retained successful Golem call from the Task
+        # phase. This is never evidence that actual memory fresh9 has run.
+        fresh=copy.deepcopy(INPUTS['fresh86daGolem']);fresh['case']='fresh-memory-three-mib'
+        self.assertTrue(node.complete_memory_differential(lower,fresh)['matchedSameCellFreshObserved'])
+        for change in ('no-result','lower-budget','other-limit','wrong-component','wrong-client','wrong-case','stale-result'):
+            bad=copy.deepcopy(fresh)
+            if change=='no-result':bad['invocation']['decoded']=None
+            elif change=='lower-budget':bad['budget']=budget
+            elif change=='other-limit':bad['budget']['outboundRequests']=7
+            elif change=='wrong-component':bad['selectedRevision']['releaseDigest']='sha256:'+'0'*64
+            elif change=='wrong-client':bad['client']='waki'
+            elif change=='wrong-case':bad['case']='other-fresh'
+            else:bad['invocation']['response']['data']['resolvedRevision']['routeGeneration']='999'
+            with self.subTest(change=change),self.assertRaises(RuntimeError):node.complete_memory_differential(lower,bad)
+
+    def test_cleanup_keeps_the_primary_and_still_refuses_on_success(self):
+        observations=[];secondary=OSError('controlled cleanup refusal')
+        def broken():raise secondary
+        cleanup=node.owned_cleanup(broken,'node',observations)
+        primary=RuntimeError('original failure')
+        try:
+            raise primary
+        except RuntimeError as observed:
+            cleanup();self.assertIs(observed,primary)
+        self.assertEqual(observations,[{'owner':'node','cleanupRefused':True,'primaryPreserved':True}])
+        with self.assertRaises(OSError) as caught:cleanup()
+        self.assertIs(caught.exception,secondary)
+
+
+if __name__=='__main__':unittest.main()
