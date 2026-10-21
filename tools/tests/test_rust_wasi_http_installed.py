@@ -18,6 +18,51 @@ from tools import rust_wasi_http_installed_inputs as inputs
 
 
 class InstalledRustHttp(unittest.TestCase):
+    def test_selected_installed_rust_imports_include_linux_dispatch_without_controller_only_inventory(self):
+        import json
+        from tools import dev_tool_distribution as distribution
+        payload=self.root/'isolated-payload';payload.mkdir()
+        distribution.recipe(payload,'rust',rust_http_runtime=True)
+        recipe=payload/'recipe'
+        self.assertFalse((recipe/'tools/dev_workflow/tool_inventory.py').exists())
+        for name in ('build_process.py','build_process_linux.py','build_process_signals.py'):
+            self.assertEqual((recipe/'tools'/name).read_bytes(),(inputs.ROOT/'tools'/name).read_bytes())
+        script=('import sys,importlib,json;sys.path.insert(0,sys.argv[1]);'
+            'mods=("tools.dev_guest_recipe","tools.rust_capsule_build","tools.dev_rust_http_runtime",'
+            '"tools.rust_wasi_http_compose","tools.application_dependency_approval",'
+            '"tools.rust_application_dependencies","tools.captured_compiler_isolation",'
+            '"tools.build_process_linux");'
+            '[importlib.import_module(name) for name in mods];print(json.dumps(mods))')
+        result=subprocess.run([sys.executable,'-I','-B','-c',script,str(recipe)],
+            cwd=self.root,env={**os.environ,'PYTHONPATH':''},capture_output=True,timeout=30)
+        self.assertEqual(result.returncode,0,result.stderr.decode())
+        self.assertIn('tools.build_process_linux',json.loads(result.stdout))
+
+    def test_outer_inventory_boundary_uses_the_genuine_checker_and_refuses_payload_or_source_drift(self):
+        from tools import dev_tool_distribution as distribution
+        from tools.phase3_resource_identity import file_identity
+        payload=self.root/'payload'
+        (payload/'recipe').mkdir(parents=True)
+        control=payload/'recipe/control.py';control.write_bytes(b'controlled unexecuted recipe')
+        value=distribution.compiler_inventory(payload,'a'*40,'rust')
+        original=file_identity(payload/'guest-tools.json')
+        assembled={'inventoryIdentity':value['identity']}
+        owning.check_installed_inventory(payload,assembled,original)
+        for changed in ('file','inventory-source','selected-inventory','assembled-identity'):
+            raw=(payload/'guest-tools.json').read_bytes()
+            chosen=copy.deepcopy(assembled);selected=copy.deepcopy(original)
+            if changed=='file':control.write_bytes(b'altered recipe')
+            elif changed=='inventory-source':
+                import json
+                inventory=json.loads(raw);inventory['sourceCommit']='b'*40
+                (payload/'guest-tools.json').write_bytes(canonical(inventory))
+            elif changed=='selected-inventory':selected['sha256']=digest(b'different inventory')
+            else:chosen['inventoryIdentity']=digest(b'different selected source')
+            with self.subTest(changed=changed),self.assertRaises((ValueError,RuntimeError)):
+                owning.check_installed_inventory(payload,chosen,selected)
+            control.write_bytes(b'controlled unexecuted recipe')
+            (payload/'guest-tools.json').write_bytes(raw)
+
     def test_fixed_source_and_all_auxiliary_inputs_precede_installed_product_use(self):
         from unittest.mock import Mock, patch
         from tools import activation_stack_native_source as guard

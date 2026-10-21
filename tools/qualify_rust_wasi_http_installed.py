@@ -36,6 +36,14 @@ MATERIALS = ('.github/workflows/rust-wasi-http-installed.yml', 'tools/qualify_ru
     'tools/rust_wasi_http_runtime_fixture.py', *inputs.MATERIALS, *node.MATERIALS, *backend.MATERIALS)
 
 
+def check_installed_inventory(payload, assembled, inventory_before):
+    from tools.dev_workflow import tool_inventory
+    descriptor = inputs.inventory_descriptor(payload, read_json(payload/'guest-tools.json'))
+    require(assembled['inventoryIdentity'] == tool_inventory.check(payload, descriptor, 'linux-x86_64')
+        and inventory_before == file_identity(payload/'guest-tools.json'),
+        'installed-rust-full-inventory-before-trusting-compiler-output')
+
+
 def qualify(native_directory, adapter_directory, zig_archive, python_prefix, output, *, retained_backend):
     require(sys.platform == 'linux' and sys.version_info[:3] == (3, 13, 5),
         'installed-rust-owning-linux-python3135')
@@ -91,6 +99,7 @@ def qualify(native_directory, adapter_directory, zig_archive, python_prefix, out
         record['installedCommand'].update(exitCode=result.returncode,
             stdout=file_identity(output/'installed.stdout'), stderr=file_identity(output/'installed.stderr'))
         require(result.returncode == 0, 'installed-rust-maintained-recipe-failed')
+        check_installed_inventory(payload, assembled, inventory_before)
         execution = read_json(work/'installed-build.json', 16*1024**2)
         require(execution['status'] == 'passed' and execution['entry'] == record['entry']
             and execution['assemblySource'] == assembled['assemblySource']
@@ -116,11 +125,8 @@ def qualify(native_directory, adapter_directory, zig_archive, python_prefix, out
         record['node'] = file_identity(output/'node/qualification.json', 16*1024**2)
         prepared.check()
         runtime.Prepared(adapter_directory, tools['rustc'], tools['wasm-tools']).check()
-        from tools.dev_workflow import tool_inventory
-        descriptor = inputs.inventory_descriptor(payload, read_json(payload/'guest-tools.json'))
-        require(assembled['inventoryIdentity'] == tool_inventory.check(payload, descriptor, 'linux-x86_64')
-            and inventory_before == file_identity(payload/'guest-tools.json')
-            and sandbox_before == file_identity(sandbox)
+        check_installed_inventory(payload, assembled, inventory_before)
+        require(sandbox_before == file_identity(sandbox)
             and assembled['nativeProducer'] == inputs.products.verify_prepared(native_directory)
             and assembled['adapterInputs'] == {name: file_identity(adapter_directory/name, 64*1024**2)
                 for name in inputs.installed.MEMBERS}

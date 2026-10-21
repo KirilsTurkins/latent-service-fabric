@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_wasi_http_installed.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Parent reviewed exact source/owning proposal: all original compiler, artifact, source, library and runtime cases/limits retained; no native/backend rebuild or qualification borrowed from failures.",
+  "reviewReason": "Parent source review approved the exact retained failure correction and additive adversarial controls; all prior commands, cases, caps and guards remain.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "f55954ca005ef5ad0692f8c2e815e0b2cd76641ef2e59aa666e69259553ee025"
+  "sha256": "8bcfad2e42496b675d6459906fda4c94b97167f8077416735a58c4534646720a"
 }

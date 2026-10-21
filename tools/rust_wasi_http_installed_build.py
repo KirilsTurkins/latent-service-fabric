@@ -87,13 +87,11 @@ def main(argv=None):
     # added; the checkout is not mounted by the owning controller.
     sys.path.insert(0, str(payload/'recipe'))
     from tools.build_process import run_bounded_result
-    from tools.dev_workflow import tool_inventory
-    from tools.dev_workflow.common import HOST_ABI
     from tools.rust_capsule_project import canonical, digest, inventory, snapshot
-    descriptor = {'language': 'rust', 'hostAbi': HOST_ABI,
-        'template': {'ownerIssue': 544, 'revision': args.source},
-        'build': {'inventory': {'path': 'guest-tools.json', 'sha256': args.inventory_sha256}, 'tools': []}}
-    before = tool_inventory.check(payload, descriptor, 'linux-x86_64')
+    # The owning controller validates the complete maintained inventory before
+    # and after this namespace. Its exact digest selects this readonly mount;
+    # the recipe does not depend on the controller-only inventory module.
+    before = json.loads((payload/'guest-tools.json').read_bytes())['identity']
     captured = inventory(snapshot(capture))
     record = {'schemaVersion': 'latent.rust.wasi-http.installed-build.v1', 'status': 'incomplete',
         'entry': 'recipe/tools/dev_guest_recipe.py', 'compilerInventory': before,
@@ -153,7 +151,7 @@ def main(argv=None):
         record['artifacts'] = {name: identity(built/name) for name in ('component.wasm', 'source-inputs.json',
             'recipe-inputs.json', 'build-observation.json', 'BUILD-COMPLETE.json', 'rust-http-runtime.json',
             'rust-http-composition.json', 'executable-input-outputs.json')}
-        require(before == tool_inventory.check(payload, descriptor, 'linux-x86_64')
+        require(identity(payload/'guest-tools.json')['sha256'] == args.inventory_sha256
             and captured == inventory(snapshot(capture))
             and all(captured == inventory(snapshot(work/name/'app')) for name in ('unapproved', 'approved'))
             and identity(Path(__file__)) == record['qualifier'] and time.monotonic()-started < 900,
