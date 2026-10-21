@@ -48,6 +48,15 @@ jobs:
           cargo build --locked -p latent-component-threading --bin c-context --target-dir "$RUNNER_TEMP/c-context-tools"
       - name: Execute fixed C compiler and actual core-Wasm callback controls
         run: python3 tools/qualify_c_context_lowering.py --zig "$(command -v zig)" --node "$(command -v node)" --transformer "$RUNNER_TEMP/c-context-tools/debug/c-context" --output "$RUNNER_TEMP/c-context-mechanism"
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - name: Install only the pinned normal C bindings generator
+        run: |
+          python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/c-canonical-tools"
+          echo "$RUNNER_TEMP/c-canonical-tools" >> "$GITHUB_PATH"
+      - name: Link one selected C core and authenticate its real canonical ABI graph
+        run: python3 tools/qualify_c_canonical_abi.py --zig "$(command -v zig)" --wit-bindgen "$(command -v wit-bindgen)" --wasm-tools "$(command -v wasm-tools)" --node "$(command -v node)" --transformer "$RUNNER_TEMP/c-context-tools/debug/c-context" --output "$RUNNER_TEMP/c-canonical-abi"
       - name: Retain source mechanism observations, including failure
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -64,5 +73,13 @@ jobs:
             ${{ runner.temp }}/c-context-mechanism/tls-keys/*.wasm
             ${{ runner.temp }}/c-context-mechanism/tss/*.json
             ${{ runner.temp }}/c-context-mechanism/tss/*.wasm
+            ${{ runner.temp }}/c-canonical-abi/report.json
+            ${{ runner.temp }}/c-canonical-abi/*.json
+            ${{ runner.temp }}/c-canonical-abi/*.wasm
+            ${{ runner.temp }}/c-canonical-abi/*.txt
+            ${{ runner.temp }}/c-canonical-abi/selected/*.json
+            ${{ runner.temp }}/c-canonical-abi/selected/*.wasm
+            ${{ runner.temp }}/c-canonical-abi/generated/bindings/*
+            ${{ runner.temp }}/c-canonical-abi/generated/wit/**/*.wit
           if-no-files-found: warn
           retention-days: 7

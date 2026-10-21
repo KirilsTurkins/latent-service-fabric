@@ -1,0 +1,176 @@
+{
+  "schemaVersion": "latent.c.canonical-abi-observation.v1",
+  "status": "passed",
+  "observedDate": "2026-10-21",
+  "sourceRevision": "88958d7306a6696489f0175a484fd61b0be86932",
+  "run": {
+    "id": 39555228481,
+    "jobId": 119073346703,
+    "event": "workflow_dispatch",
+    "conclusion": "success",
+    "url": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39555228481"
+  },
+  "artifact": {
+    "id": 12325432354,
+    "bytes": 863001,
+    "sha256": "52d6427f9979505edafef58695133822412afe1dab53b1da528cc64f3911a64b",
+    "crcVerifiedMembers": 88
+  },
+  "reports": {
+    "c-canonical-abi/report.json": {
+      "bytes": 17924,
+      "sha256": "b9ebe23ad058ea0d4adb11c5140787078de29fc57a84de1ed500f46073c8216c"
+    },
+    "c-context-mechanism/report.json": {
+      "bytes": 7687,
+      "sha256": "a735622f6b5d4ab0b0aad7c729595777b24232141c5a60dc8c92dcfbb66e8b95"
+    },
+    "c-canonical-abi/component-proof.json": {
+      "bytes": 554,
+      "sha256": "2a230bc54f6097770aa993c1601cd0a06520867b943da8385f210ba54d5a25b7"
+    },
+    "c-canonical-abi/selected/receipt.json": {
+      "bytes": 459,
+      "sha256": "b4cb5caa76ebf363098723b96ff886d01827f7e1836408b7caf571a2537dd237"
+    }
+  },
+  "sourceBindings": {
+    "canonicalProgrammeGitRows": 68,
+    "legacyProgrammeGitRows": 14,
+    "distinctGitRows": 74,
+    "canonicalToolsObserved": 5,
+    "exactLibcErrnoPreimages": {
+      "libc/include/wasm-wasi-musl/__errno.h": {
+        "bytes": 188,
+        "sha256": "b9ce417c2b172bf982d8ef0236adfe442f54e7d0d344e75104cbcede88a9d7e2"
+      },
+      "libc/include/wasm-wasi-musl/errno.h": {
+        "bytes": 507,
+        "sha256": "844d1aa7a14734acde284e3109db63e29511540f6c9ccfefe46e455fd5b3ab40"
+      },
+      "libc/wasi/libc-bottom-half/cloudlibc/src/libc/errno/errno.c": {
+        "bytes": 5227,
+        "sha256": "eeecab4885f9dba3df77a2c81c1960f1f84779a2b16f0b2aceb1d83af1d47aa3"
+      },
+      "libc/wasi/libc-bottom-half/sources/__errno_location.c": {
+        "bytes": 71,
+        "sha256": "fb6d59a8ca5b99dc0799db259a7b35e7403818469f6cbf6a6ec1178fec98f702"
+      }
+    },
+    "beforeAfterFences": [
+      "source",
+      "tools",
+      "generatedInputs",
+      "libcErrnoInputs"
+    ],
+    "compilerImplicitInputsAttested": false
+  },
+  "actual": {
+    "rustCases": 48,
+    "baselineCases": 40,
+    "newCases": 8,
+    "ignored": 0,
+    "filtered": 0,
+    "selectedCLinks": 1,
+    "linkSeconds": 17.74883047200001,
+    "canonicalProgrammeCommands": 15,
+    "normalGenerator": "wit-bindgen-cli 0.62.0",
+    "normalEncoder": "wasm-tools 1.254.0",
+    "componentGraphAuthenticated": true,
+    "fixedCoreModules": 4,
+    "mainSectionsExactExceptAuthenticatedMetadata": 21,
+    "systemClosureFunctions": 10,
+    "systemClosureReadsTls": false,
+    "generatedAbiNegativeControls": 6,
+    "loweringBeforeRoot": true,
+    "originalSyncStringResultErr": true,
+    "postReturnAfterDetach": true,
+    "original4MiBOomRefused": true,
+    "errnoOwner": "original-linked-wasi-libc-tls"
+  },
+  "products": {
+    "bindings.json": {
+      "bytes": 515,
+      "sha256": "c48ce77c9a4ddd965fac0b5b17badc37c9e9ec8a4d1de6c0cce0d127feb5d51c"
+    },
+    "component-proof.json": {
+      "bytes": 554,
+      "sha256": "2a230bc54f6097770aa993c1601cd0a06520867b943da8385f210ba54d5a25b7"
+    },
+    "component.wasm": {
+      "bytes": 876344,
+      "sha256": "f040342f89261b8afe5de18668c5c479ef599907a5203f85945d147b383acff2"
+    },
+    "original.wasm": {
+      "bytes": 870336,
+      "sha256": "1a9509a53c25702392fe40aff477b493bd56b8fc13075f56231aa87d7194a676"
+    },
+    "selected/core.wasm": {
+      "bytes": 874190,
+      "sha256": "fedc59c2461dce6bb81b7e02152498539e5cc82f0d73628f5b75bcb9369f09ff"
+    },
+    "selected/receipt.json": {
+      "bytes": 459,
+      "sha256": "b4cb5caa76ebf363098723b96ff886d01827f7e1836408b7caf571a2537dd237"
+    }
+  },
+  "graph": {
+    "schemaVersion": "latent.c.canonical-component-source.v1",
+    "originalDigest": "sha256:1a9509a53c25702392fe40aff477b493bd56b8fc13075f56231aa87d7194a676",
+    "componentDigest": "sha256:f040342f89261b8afe5de18668c5c479ef599907a5203f85945d147b383acff2",
+    "mainCoreDigest": "sha256:944cdcda61b23f9355decfffc52e321cead9ab2d5b4dfd8967c66f4d95c4cd81",
+    "mainModule": 0,
+    "initializeModule": 3,
+    "rawCreationSlot": 0,
+    "nativeAdmissionSlot": 5,
+    "actualComponentGraphAuthenticated": true,
+    "canonicalCreationEnabled": false,
+    "standardRuntimeQualified": false
+  },
+  "retainedFailures": [
+    {
+      "source": "2fac08a976ec93fb0287356d9b107b86039ce747",
+      "runId": 39551488404,
+      "artifactId": 12323601938,
+      "sha256": "0e74ca8be668114b55fff277d37fb3ba51bec2648379b8362f319f08df0e7120",
+      "stage": "selected-c-link",
+      "cause": "unsupported-linker-argument-stack-first"
+    },
+    {
+      "source": "d0d18dfa3920ee42475d2c3dbfc3bb58ccb5db8c",
+      "runId": 39552433461,
+      "artifactId": 12324491302,
+      "sha256": "72cd6d8b82777d62f485c4d6434b4d9f458a25af79006affcf7ce94ad97fb083",
+      "stage": "selected-c-link",
+      "cause": "duplicate-errno-definitions"
+    },
+    {
+      "source": "1a0e01dd39fdf074641704c98cc55df4c906b041",
+      "runId": 39553398769,
+      "artifactId": 12324403326,
+      "sha256": "aed1d69aefa9a6e91b19497306e621edf6bf0297e6463938fdb724c48f0a949f",
+      "stage": "actual-component-proof",
+      "cause": "reader-assumed-main-encoder-producer-instead-of-original-generator-merge"
+    },
+    {
+      "source": "bba3c703cb5b93023782189fe2a4bb6bddb31af9",
+      "runId": 39554864662,
+      "artifactId": null,
+      "stage": "rust-compilation",
+      "cause": "extracted-producer-reader-offset-used-usize-instead-of-pinned-u64"
+    }
+  ],
+  "historicalRegistryCorrections": {
+    "c_component::tests::c_encoder_merges_only_the_original_pinned_c_generator_metadata": "component::c::tests::c_encoder_merges_only_the_original_pinned_c_generator_metadata",
+    "c_component::tests::c_generator_metadata_refuses_unknown_versions_encoding_duplicates_and_conflicts": "component::c::tests::c_generator_metadata_refuses_unknown_versions_encoding_duplicates_and_conflicts"
+  },
+  "scope": {
+    "canonicalChildExecuted": false,
+    "nativeRuntimeExecuted": false,
+    "ordinaryCreateJoinQualified": false,
+    "pthreadProfileQualified": false,
+    "compilerOrHostSelectsProfile": false,
+    "all744AcceptanceCriteriaMet": false,
+    "actualAllocatorTlsFailurePathExercised": false
+  }
+}

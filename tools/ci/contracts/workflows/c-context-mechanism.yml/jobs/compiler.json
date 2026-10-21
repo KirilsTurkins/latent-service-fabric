@@ -52,13 +52,27 @@
         "run": "python3 tools/qualify_c_context_lowering.py --zig \"$(command -v zig)\" --node \"$(command -v node)\" --transformer \"$RUNNER_TEMP/c-context-tools/debug/c-context\" --output \"$RUNNER_TEMP/c-context-mechanism\""
       },
       {
+        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "name": "Install only the pinned normal C bindings generator",
+        "run": "python3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/c-canonical-tools\"\necho \"$RUNNER_TEMP/c-canonical-tools\" >> \"$GITHUB_PATH\"\n"
+      },
+      {
+        "name": "Link one selected C core and authenticate its real canonical ABI graph",
+        "run": "python3 tools/qualify_c_canonical_abi.py --zig \"$(command -v zig)\" --wit-bindgen \"$(command -v wit-bindgen)\" --wasm-tools \"$(command -v wasm-tools)\" --node \"$(command -v node)\" --transformer \"$RUNNER_TEMP/c-context-tools/debug/c-context\" --output \"$RUNNER_TEMP/c-canonical-abi\""
+      },
+      {
         "if": "always()",
         "name": "Retain source mechanism observations, including failure",
         "uses": "actions/upload-artifact",
         "with": {
           "if-no-files-found": "warn",
           "name": "c-context-mechanism-${{ github.sha }}",
-          "path": "${{ runner.temp }}/c-context-mechanism/report.json\n${{ runner.temp }}/c-context-mechanism/*.txt\n${{ runner.temp }}/c-context-mechanism/*.wasm\n${{ runner.temp }}/c-context-mechanism/*.ll\n${{ runner.temp }}/c-context-mechanism/selected/*.json\n${{ runner.temp }}/c-context-mechanism/selected/*.wasm\n${{ runner.temp }}/c-context-mechanism/tls-keys/*.json\n${{ runner.temp }}/c-context-mechanism/tls-keys/*.wasm\n${{ runner.temp }}/c-context-mechanism/tss/*.json\n${{ runner.temp }}/c-context-mechanism/tss/*.wasm\n",
+          "path": "${{ runner.temp }}/c-context-mechanism/report.json\n${{ runner.temp }}/c-context-mechanism/*.txt\n${{ runner.temp }}/c-context-mechanism/*.wasm\n${{ runner.temp }}/c-context-mechanism/*.ll\n${{ runner.temp }}/c-context-mechanism/selected/*.json\n${{ runner.temp }}/c-context-mechanism/selected/*.wasm\n${{ runner.temp }}/c-context-mechanism/tls-keys/*.json\n${{ runner.temp }}/c-context-mechanism/tls-keys/*.wasm\n${{ runner.temp }}/c-context-mechanism/tss/*.json\n${{ runner.temp }}/c-context-mechanism/tss/*.wasm\n${{ runner.temp }}/c-canonical-abi/report.json\n${{ runner.temp }}/c-canonical-abi/*.json\n${{ runner.temp }}/c-canonical-abi/*.wasm\n${{ runner.temp }}/c-canonical-abi/*.txt\n${{ runner.temp }}/c-canonical-abi/selected/*.json\n${{ runner.temp }}/c-canonical-abi/selected/*.wasm\n${{ runner.temp }}/c-canonical-abi/generated/bindings/*\n${{ runner.temp }}/c-canonical-abi/generated/wit/**/*.wit\n",
           "retention-days": 7
         }
       }
@@ -67,7 +81,7 @@
   },
   "jobId": "compiler",
   "kind": "job",
-  "reviewReason": "Add finite C11 tss entry points over the same bounded context PAL and actual compiled-core controls; preserve all original Rust/C/key controls, limits, commands and default runtime selection.",
+  "reviewReason": "Append one bounded selected C canonical ABI source control; preserve every original command, case, guard, timeout and public observation; no engine or threading qualification.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/c-context-mechanism.yml"
 }
