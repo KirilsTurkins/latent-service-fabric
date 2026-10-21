@@ -32,6 +32,26 @@ No native host rebuild is requested. A zero-contact peer and clean reaped node
 are mandatory. There is no native-thread, asynchronous flush, actual late-wake,
 arbitrary Go runtime or complete raw-network qualification claim.
 
-Actual signed execution is pending. Source tests do not satisfy #681 AC8.
-Earlier failures and historical Java/TypeScript/.NET results remain separately
-attributed; this programme cannot close a requirement before actual execution.
+The owning programme passed at exact source
+`1bc3808bf6b706288b69032b7d88e28a2d77c003`, run `39573053368`, job
+`119131725206`. The [signed observation](evidence/go-resource-runtime-signed-2026-10-21.json)
+binds artifact `12333335629`: all 297 CRC members, 185 distinct Git inputs,
+33 helpers, 61 recipe inputs, 95 captured SDK inputs, the 110-file source
+inventory and the actual 3,216,572-byte component. All 22 normal build commands
+completed successfully; no native or engine product was rebuilt.
+
+Two missing-runtime requests were denied before CPU. Eleven admitted cases
+returned their exact ordinary resource values or expected trap, cancellation
+and deadline results. All thirteen case-local physical/provider observations
+were retired before reuse, both pending barriers had actual accepted timer-start
+and next-entered records plus live Store/cell/provider owners, and fresh state
+passed across both tenant publications. The peer received zero contacts and
+both peer and node were clean and reaped. Four closed timer observations are
+retained in the structured receipts; raw node stderr was not uploaded by this
+workflow. The original audit refusal/loss is retained and is not readiness
+proof. Finite RSS observations are not allocator or universal memory bounds.
+
+Earlier failed/rejected publication and historical Java/TypeScript/.NET results
+remain separately attributed. This is Go v5 resource/callback evidence for the
+literal supported profile; native-thread, asynchronous flush, an actual late
+wake, raw-network and complete ticket qualification remain unclaimed.
