@@ -143,3 +143,31 @@ The earlier 889 graph/ABI result is historical source evidence; it is not this
 host profile's runtime result. Mutex/condition variables, CPU checkpoints,
 preemption, arbitrary C++ dynamic TLS, shared-memory atomics and broad library
 compatibility remain outside this finite slice.
+
+
+## Authenticated native producer observation
+
+[Run 39581446809](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39581446809),
+job 119159766073, compiled the five normal managed-guest native products from
+`f0d36b38d39a837cef7f6242b4b4a99aa36b8b75`. Its complete 73-member archive,
+3324 native source files, 134 auxiliary inputs including generated-protocol
+sources, all five binary identities and 33 bounded ordered commands were checked.
+The original 50 Rust and 15 Python controls passed alongside 55 transformer and 11
+selected cache/engine/operator controls. The compact
+[producer observation](../testing/evidence/c-thread-native-2026-10-21.json)
+keeps signed guest qualification and C lifecycle qualification false.
+
+The immutable `tools/c_thread_native_products.py` reader retains that exact
+source/run/job/archive/receipt tuple; earlier native readers remain unchanged.
+The shared reader admits at most 64 fixed stage names, still requires their exact
+order and successful outcomes, and retains the original 1320-second aggregate.
+The source composition adds no native input difference from the exercised f0
+source. No C guest was compiled or admitted by this producer.
+
+Earlier owning failures are retained: 5aae failed digest formatting,789ec failed
+a test-only runtime-limit initializer, de637 failed missing test encoder imports,
+and 382 compiled all 55 but exposed over-aligned byte operations in the new C
+root wrapper plus a malformed negative fixture. The corrected byte operations
+retain offset 80, typed logical token retirement and all original quotas; the
+negative fixture still requires refusal before allocating opcode decoding.
+None of these failed runs supplies passing qualification credit.
