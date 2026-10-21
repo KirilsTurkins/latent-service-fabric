@@ -1,0 +1,50 @@
+name: Audit journal lifecycle qualification
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ['feat/audit-journal-lifecycle-990']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: audit-lifecycle-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  source:
+    name: Retain exact bounded lifecycle source
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Archive tracked source without credentials or build products
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir "$RUNNER_TEMP/audit-lifecycle-source"
+          git rev-parse HEAD > "$RUNNER_TEMP/audit-lifecycle-source/source-sha.txt"
+          python3 - <<'PY'
+          import os
+          import pathlib
+          import subprocess
+          import tarfile
+          roots = {'.cargo', '.github', 'apps', 'crates', 'tools', 'docs', 'adr', 'sdk', 'wit', 'proto', 'schemas', 'examples', 'tests'}
+          paths = [pathlib.Path(os.fsdecode(p)) for p in subprocess.check_output(['git', 'ls-files', '-z']).split(b'\0') if p]
+          paths = [p for p in paths if len(p.parts) == 1 or p.parts[0] in roots]
+          if len(paths) > 100000 or sum(p.lstat().st_size for p in paths) > 256 * 1024 * 1024:
+              raise SystemExit('source snapshot exceeds its finite allowance')
+          out = pathlib.Path(os.environ['RUNNER_TEMP']) / 'audit-lifecycle-source' / 'source.tar.gz'
+          with tarfile.open(out, 'w:gz') as archive:
+              for path in paths:
+                  archive.add(path, recursive=False)
+          PY
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: audit-lifecycle-source-${{ github.sha }}
+          path: ${{ runner.temp }}/audit-lifecycle-source/
+          if-no-files-found: error
+          retention-days: 7
