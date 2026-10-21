@@ -20,7 +20,7 @@ def dependency_materials(files, source_inputs, language):
     if graph is None:
         return [], 0
     require(inventory(files) == source_inputs, 'compatibility-context-detached-dependency-inventory')
-    require(graph.get('language') == language and isinstance(graph.get('artifacts'), list)
+    require(graph.get('language') in (None, language) and isinstance(graph.get('artifacts'), list)
             and len(graph['artifacts']) <= 1024, 'compatibility-context-dependency-graph')
     retained, omitted = [], 0
     for row in graph['artifacts']:
