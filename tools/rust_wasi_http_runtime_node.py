@@ -30,7 +30,7 @@ from tools.rust_wasi_http_runtime_fixture import SERVICE
 from tools.rust_wasi_http_profile import ACTIVATION, CLOCK, HTTP
 from tools.standard_http.observations import delta, require_zero_contact, validate as validate_peer
 from tools.standard_http.peer import Peer
-from tools.standard_http.vectors import DOMAIN, PARTIAL, json_bytes
+from tools.standard_http.vectors import BY_ID, DOMAIN, PARTIAL, json_bytes, response as peer_response
 from tools.static_api.node import policy
 
 RUNTIME_LIMITS={'tasks':8,'executors':2,'queuedWork':8,'waits':16,'timers':8,'results':8,'nativeOwners':8}
@@ -61,7 +61,7 @@ def cases():
         ('redirect-denied-stopped','redirect','/conformance/redirect-denied','302:redirect-stopped',1,'redirect-denied',''),
         ('malformed-json','malformed-json','/conformance/body/malformed-json','error:json-decode',1,'malformed-json',''),
         ('truncated','bytes','/conformance/body/truncated','error:body-or-protocol',1,'truncated-body',''),
-        ('malformed-framing','bytes','/conformance/body/malformed','error:body-or-protocol',1,'malformed-framing',''),
+        ('malformed-framing','bytes','/conformance/body/malformed','error:malformed-framing',1,'malformed-framing',''),
         ('oversized','bytes','/conformance/body/oversized','error:response-size',1,'oversized-body',''),
         ('partial-complete','bytes','/conformance/body/partial',f'200:bytes:{len(PARTIAL)}',1,'partial-body','release'),
         ('early-drop','early-drop','/conformance/body/partial','200:partial:4',1,'partial-body',''),
@@ -266,6 +266,11 @@ def library_error(payload,client_name,expected):
             and code=='ErrorCode::InternalError(Some("latent-runtime-resource-exhausted"))',
             'rust-http-real-original-runtime-resource-capacity-not-permission-or-unsupported')
         exact=True
+    elif expected=='error:malformed-framing':
+        require(phase=='send' and not public['serdeJsonError']
+            and code=='ErrorCode::InternalError(Some("latent-http-connection-failed"))',
+            'rust-http-exact-ambiguous-framing-send-error')
+        exact=True
     else:
         require(expected in {'error:body-or-protocol','error:response-size','error:uncertain-post'}
             and not public['serdeJsonError'],'rust-http-closed-library-error-oracle')
@@ -295,6 +300,10 @@ def library_error(payload,client_name,expected):
 
 def outcome(row,spec,client_name,revision,budget):
     _name,_mode,_path,expected,outbound,_vector,action=spec
+    if expected=='error:malformed-framing':
+        require(tuple(spec)==('malformed-framing','bytes','/conformance/body/malformed',
+            'error:malformed-framing',1,'malformed-framing',''),
+            'rust-http-ambiguous-framing-oracle-only-for-its-exact-vector')
     response=row['response'];data=response['data']
     require(type(row['exitCode']) is int and row['processReaped'] is True and response['outcomeKnown'] is True
         and response['requestDispatched'] is True and data.get('resolvedRevision')==revision,
@@ -414,6 +423,32 @@ def close_call(process,*,primary_failure):
     except BaseException:pass
 
 
+def malformed_framing_peer(before,after):
+    """Bind the public send error to this peer's complete ambiguous CL+TE head.
+
+    The category alone does not prove the parser's failing branch. The fixed
+    source-bound vector, complete write and one current request prove the
+    supplied response and exclude an invisible retry or a different vector.
+    """
+    change=delta(before,after)
+    wire,suffix=peer_response(BY_ID['malformed-framing'],None,0)
+    require(wire==b'HTTP/1.1 200 Fixture\r\nContent-Length: 1\r\n'
+        b'Transfer-Encoding: chunked\r\nConnection: close\r\n\r\n0\r\n\r\n'
+        and suffix==b'','rust-http-original-ambiguous-cl-te-vector')
+    require(after['openConnections']==0 and change['acceptedConnections']==change['startedRequests']
+        ==change['completedResponseWrites']==1 and len(change['requests'])==1
+        and change['rejectedRequests']==change['committedMutations']==change['connectionBoundRejections']==0,
+        'rust-http-ambiguous-framing-one-complete-contact-no-retry')
+    row,=change['requests']
+    require(row['request']==before['acceptedConnections']+1 and row.get('vector')=='malformed-framing'
+        and row['method']=='GET' and row['role']=='primary' and row['state']=='closed'
+        and row['closeReason']=='response-write-complete'
+        and row['responseBytesWritten']==len(wire),
+        'rust-http-exact-ambiguous-response-vector-and-complete-bytes')
+    return {'request':row['request'],'vector':row['vector'],'responseBytesWritten':len(wire),
+        'responseDigest':digest(wire),'contacts':1,'parserBranchInferred':False}
+
+
 def invoke(client,node,target,peers,tenant,client_name,alias,spec,probe,output,label):
     _name,mode,path,_expected,contacts,vector,action=spec
     require(alias in {'alpha','delta'} and client_name in {'waki','golem'},'rust-http-closed-ordinary-client-selection')
@@ -464,6 +499,18 @@ def invoke(client,node,target,peers,tenant,client_name,alias,spec,probe,output,l
     # Original public result is retained before any posthoc assertion/cleanup.
     write_json(output/('invocation-'+label+'.json'),row)
     require(row['activation']==activation,'rust-http-exact-owned-activation-result')
+    framing=None
+    if spec[3]=='error:malformed-framing':
+        for _ in range(64):
+            for value in peers.values():value.poll(.002)
+            if all(value.observation()['openConnections']==0 for value in peers.values()):break
+        snapshots={name:value.observation() for name,value in peers.items()}
+        # Retain controlled public peer data before the outcome can refuse;
+        # no credential bytes or successful guest outcome are manufactured.
+        write_json(output/('peer-before-outcome-'+label+'.json'),{
+            'qualification':False,'scope':'controlled-peer-observation-before-outcome',
+            'before':before,'after':snapshots})
+        framing=malformed_framing_peer(before[tenant],snapshots[tenant])
     diagnostic=outcome(row,spec,client_name,pin,chosen['budget'])
     if action=='capacity':contacts=diagnostic['observedAcceptedResponses']
     require(action not in {'release','cancel','deadline'} or pending is not None,'rust-http-missing-real-pending-witness')
@@ -501,6 +548,7 @@ def invoke(client,node,target,peers,tenant,client_name,alias,spec,probe,output,l
     return {'case':label,'tenant':tenant,'client':client_name,'outsideCrate':alias,'specification':list(spec),
         'invocation':row,'libraryError':diagnostic,'pending':pending,'cancel':cancelled,'selectedRevision':pin,'budget':chosen['budget'],
         'terminalNativeTimer':terminal_timer,'actualActivation':activation,'observedContacts':contacts,
+        'malformedFramingPeer':framing,
         'retirement':retired,'peerBefore':before,'peerAfter':observations}
 
 

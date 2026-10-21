@@ -341,6 +341,78 @@ class RuntimeOracles(unittest.TestCase):
                 with self.subTest(client=client,code=code),self.assertRaises(RuntimeError):
                     node.library_error('library-error:'+json.dumps(changed),client,expected)
 
+    def test_actual_ambiguous_cl_te_error_has_its_own_send_only_oracle(self):
+        evidence=json.loads((qualification.ROOT/'docs/testing/evidence/rust-wasi-http-malformed-framing-failure-2026-10-21.json').read_bytes())
+        row=evidence['actualInvocation'];payload=row['decoded'][0]['ok'].removeprefix('fresh:waki:')
+        actual=json.loads(payload.removeprefix('library-error:'))
+        self.assertEqual(row['response']['data']['consumption']['outboundRequests'],1)
+        self.assertEqual(actual['phase'],'send')
+        # Retained exact payload: original body/protocol oracle was RED and
+        # remains RED. Only the dedicated ambiguous-head case becomes GREEN.
+        with self.assertRaisesRegex(RuntimeError,'specific-protocol'):
+            node.library_error(payload,'waki','error:body-or-protocol')
+        self.assertTrue(node.library_error(payload,'waki','error:malformed-framing')['exactUnderlyingCategoryProven'])
+        for client in ('waki','golem'):
+            value=copy.deepcopy(actual)
+            if client=='golem':
+                value['public']={'isBuilder':False,'isRequest':True,'isBody':False,'isDecode':False,
+                    'isTimeout':False,'isStatus':False,'serdeJsonError':False,
+                    'sourceDisplay':actual['public']['typedWasiErrorCode']}
+            self.assertTrue(node.library_error('library-error:'+json.dumps(value),client,'error:malformed-framing')['exactUnderlyingCategoryProven'])
+            for kind in ('body','json','permission','unavailable','protocol','other-connection','opaque'):
+                changed=copy.deepcopy(value)
+                if kind in {'body','json'}:changed['phase']=kind
+                elif kind=='opaque':
+                    changed.update(phase='body',debug='input_stream read failed: LastOperationFailed(Error { handle: 1 })')
+                    changed['debugBytes']=len(changed['debug'])
+                else:
+                    changed['public']['typedWasiErrorCode' if client=='waki' else 'sourceDisplay']={
+                        'permission':'ErrorCode::HttpRequestDenied','unavailable':'ErrorCode::InternalError(Some("latent-http-unavailable"))',
+                        'protocol':'ErrorCode::HttpProtocolError','other-connection':'ConnectionFailed'}[kind]
+                with self.subTest(client=client,kind=kind),self.assertRaisesRegex(RuntimeError,'ambiguous-framing-send'):
+                    node.library_error('library-error:'+json.dumps(changed),client,'error:malformed-framing')
+        spec=list(next(r for r in node.cases() if r[0]=='malformed-framing'))
+        spec[0]='truncated'
+        with self.assertRaisesRegex(RuntimeError,'only-for-its-exact-vector'):
+            node.outcome(row,spec,'waki',{}, {})
+
+    def test_actual_peer_bytes_bind_ambiguous_framing_to_one_current_request(self):
+        import socket,time
+        from tools.standard_http.peer import Peer
+        from tools.standard_http.protocol import FixtureError
+        from tools.standard_http.vectors import BY_ID,response
+        peer=Peer(b'Bearer '+b'0'*64)
+        try:
+            before=peer.observation();wire=b''
+            with socket.create_connection(('127.0.0.1',peer.ports['primary']),timeout=2) as stream:
+                stream.sendall(b'GET /conformance/body/malformed HTTP/1.1\r\nHost: '
+                    +f"127.0.0.1:{peer.ports['primary']}".encode()
+                    +b'\r\nAuthorization: Bearer '+b'0'*64+b'\r\n\r\n')
+                stream.setblocking(False);expires=time.monotonic()+2;ended=False
+                while not ended:
+                    self.assertLess(time.monotonic(),expires)
+                    peer.poll(.001)
+                    try:
+                        body=stream.recv(4096);wire+=body;ended=body==b''
+                    except BlockingIOError:pass
+            after=peer.observation()
+            self.assertEqual(wire,response(BY_ID['malformed-framing'],None,0)[0])
+            proof=node.malformed_framing_peer(before,after)
+            self.assertEqual(proof['responseDigest'],digest(wire))
+            self.assertEqual(proof['contacts'],1)
+            self.assertFalse(proof['parserBranchInferred'])
+            for kind in ('vector','short-write','wrong-close','method','generation','retry'):
+                changed=copy.deepcopy(after)
+                if kind=='vector':changed['requests'][0]['vector']='truncated-body'
+                elif kind=='short-write':changed['requests'][0]['responseBytesWritten']-=1
+                elif kind=='wrong-close':changed['requests'][0]['closeReason']='connection-lost'
+                elif kind=='method':changed['requests'][0]['method']='POST'
+                elif kind=='generation':changed['generation']='f'*32
+                else:changed['acceptedConnections']+=1
+                with self.subTest(kind=kind),self.assertRaises((RuntimeError,FixtureError)):
+                    node.malformed_framing_peer(before,changed)
+        finally:peer.close()
+
     def test_full52_case_aggregate_is_bounded_without_losing_original_per_case_values(self):
         record={'schemaVersion':'latent.rust.wasi-http.node.v1','status':'passed',
             'cases':[],'preEntryRefusals':[],'guestExecutions':53,'invocationAttempts':64}

@@ -1,5 +1,7 @@
 {
   "cases": [
+    "RuntimeOracles.test_actual_ambiguous_cl_te_error_has_its_own_send_only_oracle",
+    "RuntimeOracles.test_actual_peer_bytes_bind_ambiguous_framing_to_one_current_request",
     "RuntimeOracles.test_actual_waki_header_error_requires_its_complete_exact_public_format",
     "RuntimeOracles.test_capacity_uses_actual_accepted_count_and_specific_error_without_naming_an_unobserved_owner",
     "RuntimeOracles.test_failed_summary_collection_never_masks_the_primary_controller_failure",
@@ -26,6 +28,30 @@
     "SourceAndNativeSeparation.test_unsupported_platform_refuses_before_output_or_product_acquisition"
   ],
   "guards": {
+    "RuntimeOracles.test_actual_ambiguous_cl_te_error_has_its_own_send_only_oracle": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef7b7a81cd4845458ffc24fcba0658d20929cab152ecf198605c957f787eb6bc",
+        "class:setup-sha256:1d8a8ffd3fd8cd3d83922eb51f82743daaff67fcde6406e824325582d88ebff7"
+      ],
+      "skipSites": []
+    },
+    "RuntimeOracles.test_actual_peer_bytes_bind_ambiguous_framing_to_one_current_request": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef7b7a81cd4845458ffc24fcba0658d20929cab152ecf198605c957f787eb6bc",
+        "class:setup-sha256:1d8a8ffd3fd8cd3d83922eb51f82743daaff67fcde6406e824325582d88ebff7"
+      ],
+      "skipSites": []
+    },
     "RuntimeOracles.test_actual_waki_header_error_requires_its_complete_exact_public_format": {
       "bases": [
         "unittest.TestCase"
@@ -317,6 +343,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_rust_wasi_http_runtime.py",
-  "reviewReason": "Reviewed source-authenticated exact Type::Case formatting for both pinned clients; original phases, flags, variants and details remain strict; bounded aggregate references preserve original per-case evidence and unchanged64 attempts.",
+  "reviewReason": "Parent source review approved the exact retained failure correction and additive adversarial controls; all prior commands, cases, caps and guards remain.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
