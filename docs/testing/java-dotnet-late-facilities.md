@@ -69,6 +69,28 @@ reaped node. Its component digest is
 The sibling .NET run `39617997010`, job `119283819097`, artifact `12353339133`
 completed and packaged its fresh component but failed before node execution:
 the reader expected `runtime-logging` while the current compiler correctly
-selected `runtime-managed-logging`. Its original failure remains retained and
-provides no guest execution credit. Existing joined receipts retain their
-original explicit absence of late-facility qualification.
+selected `runtime-managed-logging`. The first node-only continuation
+`39623608654` also failed before signing: the command runner rejected a
+fractional setup deadline. Both original failures remain retained without guest
+credit. The correction floors the remaining setup time within its original
+deadline; invocation and owner limits stay unchanged.
+
+The [.NET signed observation](evidence/dotnet-resource-late-signed-2026-10-21.json)
+records successful node-only run `39626040271`, job `119311438368`, artifact
+`12355949645`, at consumer source `919ff6d022a334513500c3eebe75f025624d3c4b`.
+It reuses the exact original 2,783,038-byte component
+`sha256:8187d723f0c41b6232752a2a3e265cdbbde85b6dc6df7991af3d6489ae1e09b1`,
+its `df4` compiler/package records, all 138 SDK files, 64 recipe files and the
+historical `6fd` five products/134 materials. Two pre-entry denials and four
+late/fresh calls passed, including two actual pending self-disposals, six
+physical retirements, all eighteen active provider counters zero, four exact
+183-byte completion logs and clean/reaped shutdown with zero peer contacts.
+No AOT or native product was rebuilt for either reader/controller correction.
+
+The explicit `replay_late_facilities=true`, `late_facilities=false` workflow
+selector authenticates that one fixed original artifact and all original Git
+preimages. It requires exact reviewed reader/workflow byte identities and retains
+before/after package, SDK, native and source fences. Both original workflow jobs
+skip only for that explicit selection. Existing joined receipts retain their
+original source identities and explicit absence of late-facility qualification;
+the two new observations supply that separate finite evidence.
