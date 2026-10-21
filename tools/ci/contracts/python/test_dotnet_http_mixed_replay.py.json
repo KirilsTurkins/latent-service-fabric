@@ -1,0 +1,75 @@
+{
+  "cases": [
+    "ManagedHttpReplay.test_actual_failure_stays_red_under_original_oracle_and_is_only_a_failed_diagnostic",
+    "ManagedHttpReplay.test_archive_identity_precedes_extraction_and_regular_shape_refuses_escape_private_or_links",
+    "ManagedHttpReplay.test_default_false_diagnostic_restores_every_original_workflow_step_guard_and_bound",
+    "ManagedHttpReplay.test_only_exact_failed_run_job_artifact_are_eligible",
+    "ManagedHttpReplay.test_original_controller_application_and_tenant_oracles_are_byte_exact"
+  ],
+  "guards": {
+    "ManagedHttpReplay.test_actual_failure_stays_red_under_original_oracle_and_is_only_a_failed_diagnostic": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5520f8336963552f8d608815c6f92c273be7fcec847baf24c1da51a7e6b5e6e6",
+        "class:setup-sha256:833976a6dd66c337bb3e2766f7483a3c5e948a1b54f817b8b66b2623e48b2869"
+      ],
+      "skipSites": []
+    },
+    "ManagedHttpReplay.test_archive_identity_precedes_extraction_and_regular_shape_refuses_escape_private_or_links": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5520f8336963552f8d608815c6f92c273be7fcec847baf24c1da51a7e6b5e6e6",
+        "class:setup-sha256:833976a6dd66c337bb3e2766f7483a3c5e948a1b54f817b8b66b2623e48b2869"
+      ],
+      "skipSites": []
+    },
+    "ManagedHttpReplay.test_default_false_diagnostic_restores_every_original_workflow_step_guard_and_bound": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5520f8336963552f8d608815c6f92c273be7fcec847baf24c1da51a7e6b5e6e6",
+        "class:setup-sha256:833976a6dd66c337bb3e2766f7483a3c5e948a1b54f817b8b66b2623e48b2869"
+      ],
+      "skipSites": []
+    },
+    "ManagedHttpReplay.test_only_exact_failed_run_job_artifact_are_eligible": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5520f8336963552f8d608815c6f92c273be7fcec847baf24c1da51a7e6b5e6e6",
+        "class:setup-sha256:833976a6dd66c337bb3e2766f7483a3c5e948a1b54f817b8b66b2623e48b2869"
+      ],
+      "skipSites": []
+    },
+    "ManagedHttpReplay.test_original_controller_application_and_tenant_oracles_are_byte_exact": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5520f8336963552f8d608815c6f92c273be7fcec847baf24c1da51a7e6b5e6e6",
+        "class:setup-sha256:833976a6dd66c337bb3e2766f7483a3c5e948a1b54f817b8b66b2623e48b2869"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_dotnet_http_mixed_replay.py",
+  "reviewReason": "Reviewed diagnostic-only default-false continuation preserves original failed request-limit result and all default commands; exact full workflow restoration/source pins, no new compile or qualification waiver.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

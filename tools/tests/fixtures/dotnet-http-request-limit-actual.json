@@ -1,0 +1,57 @@
+{
+  "activation": "managed-mixed-request-limit",
+  "exitCode": 4,
+  "startedAtUnixMillis": "1792553637498",
+  "elapsedNanos": "43520864",
+  "decoded": null,
+  "response": {
+    "category": "platform-failure",
+    "command": "invoke",
+    "data": {
+      "activationId": "managed-mixed-request-limit",
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "59627392",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "57346808",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "28995"
+      },
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:eb8dcde85cc6f7d89f5bcab9cfd6091f50671c1ce6c5ee811a943c6e78bdbc23",
+        "releaseDigest": "sha256:5fb10e8d82dbcb78ee68ed9954b7cda3441e2fc28fc7327a2b37dab4b326782e",
+        "revisionId": "revision-v1:sha256:0e706103c31ea61f6bb2cae0b185c10e41f962a265f5b0b2a4f9a7b397ade443",
+        "routeGeneration": "3"
+      },
+      "terminalState": "guest_trap"
+    },
+    "error": {
+      "code": "guest-trap",
+      "details": [
+        {
+          "fields": {
+            "code": "guest-trap"
+          },
+          "kind": "activation.guest-trap"
+        },
+        {
+          "fields": {
+            "kind": "unreachable-code"
+          },
+          "kind": "activation.guest-trap-kind"
+        }
+      ],
+      "message": "The platform reported a failure.",
+      "retryable": false
+    },
+    "outcomeKnown": true,
+    "requestDispatched": true,
+    "schemaVersion": "latent.cli.result.v1"
+  },
+  "processReaped": true
+}

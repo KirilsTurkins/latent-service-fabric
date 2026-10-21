@@ -152,6 +152,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_dotnet_http_mixed.py",
-  "reviewReason": "Eleven focused controls: actual006 schema RED/GREEN and adversaries, real CLR content/task reference, both independenttenant configuration/scope, source project and fullworkflow preservation, signed result/budget and causal late/sibling markers.",
+  "reviewReason": "Reviewed diagnostic-only default-false continuation preserves original failed request-limit result and all default commands; exact full workflow restoration/source pins, no new compile or qualification waiver.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

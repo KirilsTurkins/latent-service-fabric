@@ -90,6 +90,15 @@ class DotnetHttpMixed(unittest.TestCase):
     def test_manual_only_selector_restores_entire_previous_workflow_without_any_step_changes(self):
         from tools.ci_lane_inventory import workflow_model
         value = workflow_model((ROOT/'.github/workflows/dotnet-published-http.yml').read_text())
+        if 'mixed_content_continuation' in value['on']['workflow_dispatch']['inputs']:
+            diagnostic = value['on']['workflow_dispatch']['inputs'].pop('mixed_content_continuation')
+            self.assertEqual(diagnostic['type'], 'boolean');self.assertIs(diagnostic['default'], False)
+            diagnostic_job = value['jobs'].pop('mixed-content-continuation')
+            self.assertEqual(diagnostic_job['if'], "github.event_name == 'workflow_dispatch' && inputs.mixed_content_continuation")
+            for name in ('published-http', 'exact-component', 'mixed-content'):
+                suffix = ' && !inputs.mixed_content_continuation'
+                self.assertTrue(value['jobs'][name]['if'].endswith(suffix))
+                value['jobs'][name]['if'] = value['jobs'][name]['if'].removesuffix(suffix)
         selection = value['on']['workflow_dispatch']['inputs'].pop('mixed_content')
         self.assertEqual(selection['type'], 'boolean');self.assertIs(selection['default'], False)
         job = value['jobs'].pop('mixed-content')

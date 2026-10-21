@@ -7,7 +7,7 @@
       "CARGO_BUILD_JOBS": 2,
       "CARGO_INCREMENTAL": 0
     },
-    "if": "github.event_name == 'workflow_dispatch' && inputs.mixed_content",
+    "if": "github.event_name == 'workflow_dispatch' && inputs.mixed_content && !inputs.mixed_content_continuation",
     "name": "Default HttpClient streamed content and accepted managed work",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -99,7 +99,7 @@
   },
   "jobId": "mixed-content",
   "kind": "job",
-  "reviewReason": "One explicit default-false source-bound mixed30 programme; oldjobs only excluded on named manual input, all original commands and limits restored byte-semantically by focused control; one guest no native build.",
+  "reviewReason": "Reviewed diagnostic-only default-false continuation preserves original failed request-limit result and all default commands; exact full workflow restoration/source pins, no new compile or qualification waiver.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-published-http.yml"
 }

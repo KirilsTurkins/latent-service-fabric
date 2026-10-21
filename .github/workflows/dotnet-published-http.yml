@@ -13,6 +13,10 @@ on:
         description: One fresh default HttpClient content and accepted-work component without a native rebuild
         type: boolean
         default: false
+      mixed_content_continuation:
+        description: Preserve the exact failed request-limit result and collect only its unrun cases using the retained component
+        type: boolean
+        default: false
 permissions:
   contents: read
   actions: read
@@ -20,8 +24,63 @@ concurrency:
   group: dotnet-published-http-${{ github.ref }}
   cancel-in-progress: false
 jobs:
+  mixed-content-continuation:
+    if: github.event_name == 'workflow_dispatch' && inputs.mixed_content_continuation
+    name: Failed managed HTTP programme continuation with original component
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - name: Install existing locked diagnostic reader dependencies
+        run: python3 -m pip install -r tools/requirements.lock
+      - name: Fetch the exact original component and native source preimages
+        run: git fetch --no-tags --depth=1 origin 9af3b431816650679c85f3da6ee4f5ad28a8473e 6fd19eab2c224fc31481d03de5008de4d3e4429e
+      - name: Check immutable failed origin and strict continuation boundaries
+        run: python3 -B -m unittest tools.tests.test_dotnet_http_mixed_replay -v
+      - name: Authenticate the original five native products without rebuilding
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/release_preparation_cli_native_products.py --output "$RUNNER_TEMP/mixed-replay-native"
+      - name: Authenticate the original successful component and failed programme
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/replay_dotnet_http_mixed.py prepare --output "$RUNNER_TEMP/mixed-replay-prepared"
+      - name: Preserve failed limit and retire it before original fresh mixed and tenant cases
+        run: python3 -B tools/replay_dotnet_http_mixed.py run --prepared "$RUNNER_TEMP/mixed-replay-prepared" --native "$RUNNER_TEMP/mixed-replay-native" --output "$RUNNER_TEMP/mixed-continuation"
+      - name: Retain bounded original failure and diagnostic continuation evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: dotnet-http-mixed-continuation-${{ github.sha }}
+          retention-days: 3
+          if-no-files-found: warn
+          path: |
+            ${{ runner.temp }}/mixed-replay-native/*.json
+            ${{ runner.temp }}/mixed-replay-prepared/retrieval.json
+            ${{ runner.temp }}/mixed-replay-prepared/managed-http-mixed/FAILED.json
+            ${{ runner.temp }}/mixed-replay-prepared/managed-http-mixed/node/FAILED.json
+            ${{ runner.temp }}/mixed-replay-prepared/managed-http-mixed/node/controls/managed-mixed-request-limit-result.json
+            ${{ runner.temp }}/mixed-continuation/*.json
+            ${{ runner.temp }}/mixed-continuation/node/*.json
+            ${{ runner.temp }}/mixed-continuation/node/node-stdout.txt
+            ${{ runner.temp }}/mixed-continuation/node/node-stderr.txt
+            ${{ runner.temp }}/mixed-continuation/node/controls/*.json
+            ${{ runner.temp }}/mixed-continuation/node/controls/*-partial.stdout
+            ${{ runner.temp }}/mixed-continuation/node/controls/*-partial.stderr
+            ${{ runner.temp }}/mixed-continuation/tenants/*.json
+            ${{ runner.temp }}/mixed-continuation/tenants/examples-controls/*.json
+            ${{ runner.temp }}/mixed-continuation/tenants/examples-controls/*-partial.stdout
+            ${{ runner.temp }}/mixed-continuation/tenants/examples-controls/*-partial.stderr
+            ${{ runner.temp }}/mixed-continuation/tenants/foreign-controls/*.json
+            ${{ runner.temp }}/mixed-continuation/tenants/foreign-controls/*-partial.stdout
+            ${{ runner.temp }}/mixed-continuation/tenants/foreign-controls/*-partial.stderr
   mixed-content:
-    if: github.event_name == 'workflow_dispatch' && inputs.mixed_content
+    if: github.event_name == 'workflow_dispatch' && inputs.mixed_content && !inputs.mixed_content_continuation
     name: Default HttpClient streamed content and accepted managed work
     runs-on: ubuntu-24.04
     timeout-minutes: 40
@@ -122,7 +181,7 @@ jobs:
             ${{ runner.temp }}/managed-http-mixed/tenants/foreign-controls/*-partial.stdout
             ${{ runner.temp }}/managed-http-mixed/tenants/foreign-controls/*-partial.stderr
   published-http:
-    if: github.event_name == 'workflow_dispatch' && inputs.fresh_component && !inputs.mixed_content
+    if: github.event_name == 'workflow_dispatch' && inputs.fresh_component && !inputs.mixed_content && !inputs.mixed_content_continuation
     name: Signed ordinary Flurl Refit and outside NuGet clients
     runs-on: ubuntu-24.04
     timeout-minutes: 40
@@ -213,7 +272,7 @@ jobs:
             ${{ runner.temp }}/published-http/node/*.json
             ${{ runner.temp }}/published-http/node/controls/*.json
   exact-component:
-    if: (github.event_name != 'workflow_dispatch' || !inputs.fresh_component) && !inputs.mixed_content
+    if: (github.event_name != 'workflow_dispatch' || !inputs.fresh_component) && !inputs.mixed_content && !inputs.mixed_content_continuation
     name: Original captured Flurl Refit component with corrected progress records
     runs-on: ubuntu-24.04
     timeout-minutes: 20

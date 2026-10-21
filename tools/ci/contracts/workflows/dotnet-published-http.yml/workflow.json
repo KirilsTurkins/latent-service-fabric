@@ -26,6 +26,11 @@
             "default": false,
             "description": "One fresh default HttpClient content and accepted-work component without a native rebuild",
             "type": "boolean"
+          },
+          "mixed_content_continuation": {
+            "default": false,
+            "description": "Preserve the exact failed request-limit result and collect only its unrun cases using the retained component",
+            "type": "boolean"
           }
         }
       }
@@ -38,9 +43,10 @@
   "requiredJobs": [
     "exact-component",
     "mixed-content",
+    "mixed-content-continuation",
     "published-http"
   ],
-  "reviewReason": "Add explicit default-false mixed_content lane; all old commands and limits preserved, old jobs excluded only on the named manual selection, entire original model restored by focused control.",
+  "reviewReason": "Reviewed diagnostic-only default-false continuation preserves original failed request-limit result and all default commands; exact full workflow restoration/source pins, no new compile or qualification waiver.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-published-http.yml"
 }
