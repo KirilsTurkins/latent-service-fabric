@@ -1,0 +1,293 @@
+/* SPDX-License-Identifier: GPL-2.0-only */
+/* Uninstalled builtin candidate. No Kconfig/Makefile or supported profile. */
+#include <linux/capability.h>
+#include <linux/cred.h>
+#include <linux/fs.h>
+#include <linux/in.h>
+#include <linux/miscdevice.h>
+#include <linux/mm.h>
+#include <linux/mutex.h>
+#include <linux/module.h>
+#include <linux/nsproxy.h>
+#include <linux/pid.h>
+#include <linux/sched/mm.h>
+#include <linux/spinlock.h>
+#include <linux/uaccess.h>
+#include <linux/user_namespace.h>
+#include <net/net_namespace.h>
+#include "factory-private.h"
+
+#define LSF_FACTORY_MAGIC 0x4c534646u
+#define LSF_FACTORY_VERSION 1u
+/* Wire is explicit little-endian scalars; no pointer, byte-cost, free ticket,
+ * qualification flag, physical-layout certificate or release operation. */
+struct lsf_factory_create {
+    __le32 magic, version, family, type, protocol, reserved;
+    __le64 scope[8], lease;
+};
+struct lsf_factory_reply { __le64 lease, handle; };
+struct lsf_factory_context {
+    struct lsf_prepaid_key key;
+    struct socket *socket;
+    struct net *net;
+    lsf_u64 lease;
+};
+static struct {
+    struct lsf_prepaid pool;
+    struct lsf_factory_context contexts[LSF_FACTORY_CONTEXTS];
+    struct page *pages;
+    struct mm_struct *mm;
+    struct pid *tgid;
+    const struct cred *cred;
+    struct net *net;
+    struct lsf_factory_reply reply;
+    lsf_u64 last_lease;
+    unsigned int opened, reply_pending, inflight, uncertain;
+} factory;
+static DEFINE_MUTEX(factory_lock);
+static DEFINE_SPINLOCK(pool_lock);
+
+/* These source assertions cover only the candidate backing + static metadata.
+ * They DO NOT prove VFS/LSM/RX/device or full platform costs. Registration stays
+ * unavailable until the complete selection is source-authenticated. */
+static_assert(PAGE_SIZE == 4096);
+static_assert((PAGE_SIZE << LSF_BACKING_ORDER) == LSF_BACKING_BYTES);
+static_assert(sizeof(factory) + LSF_BACKING_BYTES < LSF_BOOTSTRAP_CEILING);
+
+static int lsf_factory_actor(struct file *file)
+{
+    return file->private_data == &factory && factory.mm == current->mm &&
+        factory.tgid == task_tgid(current) && factory.cred == current_cred() &&
+        file->f_cred == factory.cred && current->nsproxy->net_ns == factory.net;
+}
+
+static int lsf_factory_open(struct inode *inode, struct file *file)
+{
+    int error = -EOPNOTSUPP;
+    (void)inode;
+    /* Check BEFORE any candidate backing allocation or reference ownership.
+     * Root credentials alone cannot assert closure or activate this backend. */
+    if (!lsf_factory_selected_consumer())
+        return error;
+    if (!ns_capable(&init_user_ns, CAP_SYS_ADMIN))
+        return -EPERM;
+    mutex_lock(&factory_lock);
+    if (factory.opened || factory.uncertain) {
+        error = -EBUSY;
+        goto out;
+    }
+    /* Never alloc_pages_exact: its transient rounded allocation could exceed
+     * the charged extent. No retry, lower-order or generic allocator fallback. */
+    factory.pages = alloc_pages(GFP_KERNEL | __GFP_ZERO | __GFP_NORETRY,
+                                LSF_BACKING_ORDER);
+    if (!factory.pages) {
+        error = -ENOMEM;
+        goto out;
+    }
+    if (!lsf_prepaid_initialize(&factory.pool)) {
+        factory.uncertain = 1;
+        goto out;
+    }
+    factory.mm = current->mm;
+    mmgrab(factory.mm);
+    factory.tgid = get_pid(task_tgid(current));
+    factory.cred = get_current_cred();
+    factory.net = get_net(current->nsproxy->net_ns);
+    factory.opened = 1;
+    file->private_data = &factory;
+    error = 0;
+out:
+    mutex_unlock(&factory_lock);
+    return error;
+}
+
+static struct lsf_factory_context *lsf_factory_context_current(
+    struct lsf_factory_context *context)
+{
+    unsigned int i;
+    /* Never dereference an arbitrary pointer before proving exact membership. */
+    for (i = 0; i < LSF_FACTORY_CONTEXTS; ++i)
+        if (context == &factory.contexts[i] &&
+            lsf_prepaid_context_for(&factory.pool, context->key))
+            return context;
+    return NULL;
+}
+
+void *lsf_factory_allocate(struct lsf_factory_context *context, unsigned long bytes,
+                         struct lsf_prepaid_ticket parent, int descendant,
+                         struct lsf_prepaid_ticket *ticket)
+{
+    lsf_u64 offset;
+    unsigned long flags;
+    void *result = NULL;
+    spin_lock_irqsave(&pool_lock, flags);
+    context = lsf_factory_context_current(context);
+    if (context && lsf_prepaid_allocate(&factory.pool, context->key, bytes,
+                                       descendant, parent, ticket, &offset)) {
+        result = (char *)page_address(factory.pages) + offset;
+        memset(result, 0, bytes);
+    }
+    spin_unlock_irqrestore(&pool_lock, flags);
+    return result;
+}
+
+int lsf_factory_return(struct lsf_factory_context *context,
+                       struct lsf_prepaid_ticket ticket)
+{
+    int returned = 0;
+    unsigned long flags;
+    spin_lock_irqsave(&pool_lock, flags);
+    context = lsf_factory_context_current(context);
+    if (context)
+        returned = lsf_prepaid_return(&factory.pool, context->key, ticket);
+    spin_unlock_irqrestore(&pool_lock, flags);
+    return returned;
+}
+
+int lsf_factory_deferred(struct lsf_factory_context *context, int acquire)
+{
+    int retained = 0;
+    unsigned long flags;
+    spin_lock_irqsave(&pool_lock, flags);
+    context = lsf_factory_context_current(context);
+    if (context)
+        retained = lsf_prepaid_continuation(&factory.pool, context->key, acquire);
+    spin_unlock_irqrestore(&pool_lock, flags);
+    return retained;
+}
+
+static ssize_t lsf_factory_write(struct file *file, const char __user *buffer,
+                                 size_t count, loff_t *position)
+{
+    const struct lsf_factory_consumer *consumer = lsf_factory_selected_consumer();
+    struct lsf_factory_create request;
+    struct lsf_factory_context *context;
+    struct lsf_scope scope;
+    struct lsf_prepaid_key key;
+    unsigned int i, family, type, protocol;
+    unsigned long flags;
+    lsf_u64 maximum, lease;
+    int error;
+    (void)position;
+    if (!consumer)
+        return -EOPNOTSUPP;
+    if (count != sizeof(request) || copy_from_user(&request, buffer, sizeof(request)))
+        return -EINVAL;
+    family = le32_to_cpu(request.family);
+    type = le32_to_cpu(request.type);
+    protocol = le32_to_cpu(request.protocol);
+    lease = le64_to_cpu(request.lease);
+    if (le32_to_cpu(request.magic) != LSF_FACTORY_MAGIC ||
+        le32_to_cpu(request.version) != LSF_FACTORY_VERSION || request.reserved ||
+        !lease || family != AF_INET ||
+        !((type == SOCK_STREAM && protocol == IPPROTO_TCP) ||
+          (type == SOCK_DGRAM && protocol == IPPROTO_UDP)))
+        return -EOPNOTSUPP;
+    for (i = 0; i < 8; ++i)
+        scope.identity[i] = le64_to_cpu(request.scope[i]);
+    maximum = type == SOCK_STREAM ? LSF_TCP_BYTES : LSF_DNS_BYTES;
+    mutex_lock(&factory_lock);
+    if (!lsf_factory_actor(file) || factory.uncertain || factory.reply_pending ||
+        factory.inflight || lease <= factory.last_lease) {
+        error = -EPERM;
+        goto out;
+    }
+    /* Context exists before the consumer may enter ANY outer allocation/LSM.
+     * No sock_create_kern fallback, socket lookup or later attestation exists. */
+    spin_lock_irqsave(&pool_lock, flags);
+    error = lsf_prepaid_context_create(&factory.pool, scope, maximum, &key);
+    spin_unlock_irqrestore(&pool_lock, flags);
+    if (!error) {
+        error = -ENOBUFS;
+        goto out;
+    }
+    context = &factory.contexts[key.slot];
+    context->key = key;
+    context->net = factory.net;
+    context->lease = lease;
+    factory.last_lease = lease;
+    factory.inflight = 1;
+    /* A native caller must retain this original lease after possible entry,
+     * even when copy-out fails, the fd closes, or create reports uncertainty. */
+    mutex_unlock(&factory_lock);
+    error = consumer->create(factory.net, family, type, protocol, context, &context->socket);
+    mutex_lock(&factory_lock);
+    factory.inflight = 0;
+    if (error || !context->socket || factory.pool.stopped) {
+        factory.uncertain = 1;
+        error = error < 0 ? error : -EIO;
+        goto out;
+    }
+    factory.reply.lease = cpu_to_le64(lease);
+    factory.reply.handle = cpu_to_le64(key.generation);
+    factory.reply_pending = 1;
+    error = sizeof(request);
+out:
+    mutex_unlock(&factory_lock);
+    return error;
+}
+
+static ssize_t lsf_factory_read(struct file *file, char __user *buffer,
+                                size_t count, loff_t *position)
+{
+    int error = -EINVAL;
+    (void)position;
+    mutex_lock(&factory_lock);
+    if (!lsf_factory_actor(file))
+        error = -EPERM;
+    else if (count == sizeof(factory.reply) && factory.reply_pending) {
+        if (copy_to_user(buffer, &factory.reply, sizeof(factory.reply))) {
+            factory.uncertain = 1;
+            error = -EFAULT;
+        } else {
+            factory.reply_pending = 0;
+            error = sizeof(factory.reply);
+        }
+    }
+    mutex_unlock(&factory_lock);
+    return error;
+}
+
+static int lsf_factory_release(struct inode *inode, struct file *file)
+{
+    unsigned int i;
+    unsigned long flags;
+    (void)inode;
+    (void)file;
+    mutex_lock(&factory_lock);
+    spin_lock_irqsave(&pool_lock, flags);
+    factory.pool.stopped = 1;
+    factory.uncertain = 1;
+    for (i = 0; i < LSF_FACTORY_CONTEXTS; ++i)
+        factory.pool.contexts[i].closed = 1;
+    spin_unlock_irqrestore(&pool_lock, flags);
+    /* Closing a descriptor is not final-free. No __free_pages, object release,
+     * owner recycling, reference refund or reopen is justified here. Original
+     * node backing and occupancy must stay in bounded native quarantine. */
+    mutex_unlock(&factory_lock);
+    return 0;
+}
+
+static const struct file_operations lsf_factory_operations = {
+    .owner = THIS_MODULE,
+    .open = lsf_factory_open,
+    .read = lsf_factory_read,
+    .write = lsf_factory_write,
+    .release = lsf_factory_release,
+    .llseek = no_llseek,
+};
+static struct miscdevice lsf_factory_device = {
+    .minor = MISC_DYNAMIC_MINOR,
+    .name = "lsf-stream-factory",
+    .mode = 0600,
+    .fops = &lsf_factory_operations,
+};
+
+/* Future builtin entry; deliberately no initcall/Kconfig/Makefile today.
+ * Even manually invoking this function cannot register an incomplete backend. */
+int lsf_factory_register(void)
+{
+    if (!lsf_factory_selected_consumer())
+        return -EOPNOTSUPP;
+    return misc_register(&lsf_factory_device);
+}

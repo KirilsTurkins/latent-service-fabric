@@ -1,5 +1,11 @@
 # Uninstalled Linux 6.12 lineage prerequisite
 
+The additive [prepaid backing/factory source](prepaid-factory.md) separates
+permanent backing from original activation occupancy and retains the actual
+accepted broker I/O owner in existing quarantine. Its protected source selection
+still refuses: real outer/security/RX consumers and physical qualification remain
+unfinished. It does not replace or relabel the historical recipes below.
+
 This is source work for #738/#739/#740 under the already accepted ADR-0061.
 It is not a supported kernel profile. The normal stream provider still refuses
 installation before allocation, and `ACCOUNTING_QUALIFIED` remains false.
