@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/typescript_tracking_replay_inputs.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Review bounded tracking-engine reuse, immutable successful producer jobs and exact native artifacts; preserve every original five-profile limit and all refusal/retirement oracles. Add adverse provenance controls without changing existing cases or guards.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "685f5a3240f015a19391f7725a4c29594ebb5147ebafb10ba8d6d4a70aba515a"
+}

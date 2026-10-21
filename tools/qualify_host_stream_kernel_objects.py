@@ -23,6 +23,7 @@ from tools import host_stream_kernel_netport as netport_source
 from tools import host_stream_kernel_sidcache as sidcache_source
 from tools import host_stream_kernel_avc as avc_source
 from tools import host_stream_kernel_audit as audit_source
+from tools import host_stream_kernel_bind as bind_source
 from tools.owned_test_process import ProcessFailure, run_owned
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -79,11 +80,20 @@ AUDIT_OBJECTS = {
     'net/netlink/af_netlink.o': ('netlink_unicast', 'netlink_broadcast_filtered'),
 }
 AUDIT_REQUIRED = ('CONFIG_AUDIT', 'CONFIG_AUDITSYSCALL')
+BIND_OBJECTS = {
+    'net/ipv4/inet_hashtables.o': ('lsf_prepaid_bind_check', 'lsf_prepaid_bind_owned',
+        'lsf_prepaid_bind_bucket_create', 'lsf_prepaid_bind2_allocate', 'lsf_prepaid_bind_return'),
+    'net/ipv4/inet_connection_sock.o': ('inet_csk_get_port',),
+}
 
 
-def object_selection(netlabel, netport=False, sidcache=False, avc=False, audit=False):
-    require(all(type(value) is bool for value in (netlabel, netport, sidcache, avc, audit)), 'closed-profile-selector')
-    require(sum((netlabel, netport, sidcache, avc, audit)) <= 1, 'exclusive-profile-selector')
+def object_selection(netlabel, netport=False, sidcache=False, avc=False, audit=False, bind=False):
+    require(all(type(value) is bool for value in (netlabel, netport, sidcache, avc, audit, bind)), 'closed-profile-selector')
+    require(sum((netlabel, netport, sidcache, avc, audit, bind)) <= 1, 'exclusive-profile-selector')
+    if bind:
+        selected = object_selection(False, False, False, False, True)
+        selected.update(BIND_OBJECTS)
+        return selected
     if audit:
         selected = object_selection(False, False, False, True)
         selected.update(AUDIT_OBJECTS)
@@ -214,8 +224,8 @@ def identity(path):
         return {'bytes': path.stat().st_size, 'sha256': hashlib.file_digest(stream, 'sha256').hexdigest()}
 
 
-def run(archive, output, *, netlabel=False, netport=False, sidcache=False, avc=False, audit=False):
-    selected_objects = object_selection(netlabel, netport, sidcache, avc, audit)
+def run(archive, output, *, netlabel=False, netport=False, sidcache=False, avc=False, audit=False, bind=False):
+    selected_objects = object_selection(netlabel, netport, sidcache, avc, audit, bind)
     require(sys.platform == 'linux' and os.environ.get('GITHUB_ACTIONS') == 'true'
         and os.environ.get('RUNNER_OS') == 'Linux', 'hosted-linux-only')
     value = maintained.manifest()
@@ -226,8 +236,8 @@ def run(archive, output, *, netlabel=False, netport=False, sidcache=False, avc=F
     # All archive readers and tar now consume this private verified snapshot,
     # never reopen the caller's mutable pathname. Recheck before any make.
     additional_sources = ('net/Kconfig', 'net/Makefile')
-    if netlabel or netport or sidcache or avc or audit:
-        recipe = audit_source if audit else avc_source if avc else sidcache_source if sidcache else netport_source if netport else netlabel_source
+    if netlabel or netport or sidcache or avc or audit or bind:
+        recipe = bind_source if bind else audit_source if audit else avc_source if avc else sidcache_source if sidcache else netport_source if netport else netlabel_source
         additional_sources += tuple(name for name in recipe.fixture()['source'] if name not in value['source'])
     original = maintained.authenticate_archive(archive, value, additional_sources)
     archive_identity = identity(archive)
@@ -258,7 +268,14 @@ def run(archive, output, *, netlabel=False, netport=False, sidcache=False, avc=F
         require(identity(archive) == archive_identity, 'snapshot-changed-during-extraction')
         require(all((tree / name).read_bytes() == raw for name, raw in original.items()), 'extracted-preimage-drift')
         stage = 'derive'
-        if audit:
+        if bind:
+            derived = bind_source.derive({name: original[name] for name in bind_source.fixture()['source']})
+            receipt['profile'] = 'bind-bucket-owner-source'
+            receipt['mandatoryAuditSourceImplemented'] = True
+            receipt['actualAuditExecuted'] = False
+            receipt['actualLinuxRcuExecuted'] = False
+            receipt['actualPortOrTimewaitExecuted'] = False
+        elif audit:
             derived = audit_source.derive({name: original[name] for name in audit_source.fixture()['source']})
             receipt['profile'] = 'mandatory-audit-owner-source'
             receipt['mandatoryAuditSourceImplemented'] = True
@@ -302,13 +319,13 @@ def run(archive, output, *, netlabel=False, netport=False, sidcache=False, avc=F
         commands.run('resolve-selected-config', *common, 'olddefconfig')
         final = (build / '.config').read_bytes()
         selected_configuration(before, configuration(final))
-        if netlabel or netport or sidcache or avc or audit:
+        if netlabel or netport or sidcache or avc or audit or bind:
             netlabel_configuration(before, configuration(final))
             receipt['netlabelEnabledBeforeAndAfter'] = True
-        if sidcache or avc or audit:
+        if sidcache or avc or audit or bind:
             sidcache_configuration(before, configuration(final))
             receipt['sidcacheOriginalEntries'] = 256
-        if audit:
+        if audit or bind:
             audit_configuration(before, configuration(final))
             receipt['auditEnabledBeforeAndAfter'] = list(AUDIT_REQUIRED)
         (output / 'selected.config').write_bytes(final)
@@ -317,18 +334,18 @@ def run(archive, output, *, netlabel=False, netport=False, sidcache=False, avc=F
             'securityAndInetPreserved': list(REQUIRED)}
         receipt['compiler'] = compiler
         paths.write_new(output / 'selection.json', (json.dumps(receipt, indent=2)+'\n').encode())
-        stage = 'twenty-audit-objects' if audit else 'sixteen-avc-objects' if avc else 'fifteen-sidcache-objects' if sidcache else 'fourteen-netport-objects' if netport else 'twelve-netlabel-objects' if netlabel else 'six-objects'
-        commands.run('twenty-selected-real-kbuild-objects' if audit else 'sixteen-selected-real-kbuild-objects' if avc else 'fifteen-selected-real-kbuild-objects' if sidcache else 'fourteen-selected-real-kbuild-objects' if netport else 'twelve-selected-real-kbuild-objects' if netlabel else 'six-selected-real-kbuild-objects',
+        stage = 'twenty-two-bind-objects' if bind else 'twenty-audit-objects' if audit else 'sixteen-avc-objects' if avc else 'fifteen-sidcache-objects' if sidcache else 'fourteen-netport-objects' if netport else 'twelve-netlabel-objects' if netlabel else 'six-objects'
+        commands.run('twenty-two-selected-real-kbuild-objects' if bind else 'twenty-selected-real-kbuild-objects' if audit else 'sixteen-selected-real-kbuild-objects' if avc else 'fifteen-selected-real-kbuild-objects' if sidcache else 'fourteen-selected-real-kbuild-objects' if netport else 'twelve-selected-real-kbuild-objects' if netlabel else 'six-selected-real-kbuild-objects',
                      *common, '-j2', *selected_objects)
         autoconf = (build / 'include/generated/autoconf.h').read_bytes()
         require(all(('#define '+name+' 1\n').encode() in autoconf for name in (*REQUIRED, SELECTED)),
             'generated-private-or-security-code-disabled')
-        if netlabel or netport or sidcache or avc or audit:
+        if netlabel or netport or sidcache or avc or audit or bind:
             require(b'#define CONFIG_NETLABEL 1\n' in autoconf, 'netlabel-generated-code-disabled')
-        if sidcache or avc or audit:
+        if sidcache or avc or audit or bind:
             require(b'#define CONFIG_SECURITY_SELINUX_SID2STR_CACHE_SIZE 256\n' in autoconf,
                     'sidcache-generated-profile-disabled')
-        if audit:
+        if audit or bind:
             require(all(('#define '+name+' 1\n').encode() in autoconf for name in AUDIT_REQUIRED),
                     'audit-generated-code-disabled')
         require((build / '.config').read_bytes() == final, 'build-mutated-config')
@@ -366,5 +383,6 @@ if __name__ == '__main__':
     parser.add_argument('--sidcache', action='store_true', help='select the closed SID-cache and audit-string object-only profile')
     parser.add_argument('--avc', action='store_true', help='select the closed AVC with SID-cache object-only profile')
     parser.add_argument('--audit', action='store_true', help='select the closed mandatory audit and SKB object-only profile')
+    parser.add_argument('--bind', action='store_true', help='select the closed bind-bucket and mandatory audit object-only profile')
     args = parser.parse_args()
-    run(args.archive.resolve(strict=True), args.output, netlabel=args.netlabel, netport=args.netport, sidcache=args.sidcache, avc=args.avc, audit=args.audit)
+    run(args.archive.resolve(strict=True), args.output, netlabel=args.netlabel, netport=args.netport, sidcache=args.sidcache, avc=args.avc, audit=args.audit, bind=args.bind)

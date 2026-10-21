@@ -95,12 +95,19 @@ def execute(artifact,native,output):
         result.update(status='failed',stage=stage);write_json(output/'FAILED.json',result);raise
 
 
-def qualify(acquired, tools, output):
+def qualify(acquired, tools, output, *, tracking_retirement=False):
     acquired,tools,output=(Path(p).resolve() for p in (acquired,tools,output))
     require(output!=ROOT and ROOT not in output.parents and all(output!=p and output not in p.parents
         and p not in output.parents for p in (acquired,tools)),'fetch-conformance-separated-inputs')
-    native,identity=native_inputs(acquired/'native');output=fresh(output)
+    reader=native_inputs
     sources=SOURCES
+    if tracking_retirement:
+        from tools import typescript_tracking_replay_inputs as tracking
+        tracking.compiler_inputs(acquired)
+        reader=tracking.native_inputs
+        sources=(*SOURCES,'tools/typescript_tracking_replay_inputs.py',
+            '.github/workflows/typescript-tracking-limits.yml')
+    native,identity=reader(acquired/'native');output=fresh(output)
     source_before={name:file_identity(ROOT/name,2*1024**2) for name in sources}
     write_json(output/'qualification-source-inputs.json',source_before)
     before_native={name:file_identity(path,192*1024**2) for name,path in native.items()}
@@ -113,16 +120,21 @@ def qualify(acquired, tools, output):
     require(before==inventory(snapshot(app)),'fetch-conformance-source-changed')
     require(source_before=={name:file_identity(ROOT/name,2*1024**2) for name in sources},
         'fetch-conformance-qualification-source-changed')
-    require(native_inputs(acquired/'native')[1]==identity
+    require(reader(acquired/'native')[1]==identity
         and before_native=={name:file_identity(path,192*1024**2) for name,path in native.items()},
         'fetch-conformance-native-input-changed')
     value={'status':'passed','source':digest(before),'build':base.build_evidence(artifact),
         'execution':file_identity(output/'node/qualification.json'),'cases':observed['cases'],
         'historicalNative':identity,'qualificationSources':source_before,'fullTicketQualification':False}
+    if tracking_retirement:
+        tracking.compiler_inputs(acquired)
+        value['trackingRetirementAcquisition']=file_identity(acquired/'acquisition.json')
     write_json(output/'qualification.json',value);return value
 
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
     for name in ('acquired','tools','output'):parser.add_argument('--'+name,type=Path,required=True)
-    args=parser.parse_args();print(json.dumps(qualify(args.acquired,args.tools,args.output)))
+    parser.add_argument('--tracking-retirement',action='store_true')
+    args=parser.parse_args();print(json.dumps(qualify(args.acquired,args.tools,args.output,
+        tracking_retirement=args.tracking_retirement)))

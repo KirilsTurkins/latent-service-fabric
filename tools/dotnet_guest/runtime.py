@@ -17,6 +17,10 @@ ADAPTERS = {
     "closed-logging": ("dotnet-closed-logging-runtime", "closed-logging-runtime.wasm"),
     "runtime-logging": ("dotnet-activation-logging-runtime", "activation-logging-runtime.wasm"),
     "http-logging": ("dotnet-http-logging-runtime", "http-logging-runtime.wasm"),
+    "runtime-managed": ("dotnet-managed-activation-runtime", "managed-activation-runtime.wasm"),
+    "http-managed": ("dotnet-managed-http-runtime", "managed-http-runtime.wasm"),
+    "runtime-managed-logging": ("dotnet-managed-activation-logging-runtime", "managed-activation-logging-runtime.wasm"),
+    "http-managed-logging": ("dotnet-managed-http-logging-runtime", "managed-http-logging-runtime.wasm"),
 }
 EXAMPLES = tuple("tools/toolchain-smoke/examples/" + example.replace("-", "_") + ".rs"
                  for example, _binary in ADAPTERS.values())
@@ -34,13 +38,15 @@ WASI_IMPORTS = frozenset(
         "filesystem/preopens", "filesystem/types", "random/random")) | WASI_HTTP_IMPORTS | WASI_INSECURE_IMPORTS
 
 
-def select(declared: list[str], emitted: list[str]) -> str:
+def select(declared: list[str], emitted: list[str], *, managed_work: bool = False) -> str:
     """An emitted WASI dependency is never a grant of LSF network authority.
 
     The caller extracts these identities from bounded authoritative wasm-tools
     graphs. Exact resource and operation shapes are then checked by actual
     component composition and the normal frozen host-ABI admission checks.
     """
+    if type(managed_work) is not bool:
+        raise ValueError('dotnet-managed-work-selection')
     declarations, actual = set(declared), set(emitted)
     if len(declarations) != len(declared) or len(actual) != len(emitted):
         raise ValueError("dotnet-runtime-duplicate-import")
@@ -77,6 +83,10 @@ def select(declared: list[str], emitted: list[str]) -> str:
         profile = "http"
     else:
         profile = "runtime" if ACTIVATION in declarations else "closed"
+    if managed_work:
+        if profile not in ('runtime', 'http') or not {CLOCK, ACTIVATION, WALL, RANDOM} <= declarations:
+            raise ValueError('dotnet-managed-work-authority-selection')
+        profile += '-managed'
     return profile + "-logging" if LOG in declarations and WASI_STDIO & actual else profile
 
 

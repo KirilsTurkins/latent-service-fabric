@@ -1,0 +1,10 @@
+package latent:dotnet-managed-work@0.1.0;
+
+// Compiler-private bridge to the original activation owner ledger. The normal
+// component composition consumes this entire interface before host admission.
+interface owner {
+    reserve: func(kind: u32, parent-generation: u64, parent-id: u64) -> result<tuple<u64, u64>, u32>;
+    settle: func(generation: u64, id: u64) -> result<_, u32>;
+    close: func() -> result<_, u32>;
+    context: func(generation: u64, id: u64);
+}

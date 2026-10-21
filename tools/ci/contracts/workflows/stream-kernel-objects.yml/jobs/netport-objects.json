@@ -3,7 +3,7 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "if": "${{ inputs.audit != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-audit-skb-20261021') && (inputs.avc != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-avc-consumer-20261021') && (inputs.sidcache != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-audit-owner-20261021') && ((github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-netport-objects-20261021') || inputs.netport == true))) }}",
+    "if": "${{ inputs.bind != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-owners-20261021') && (inputs.audit != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-audit-skb-20261021') && (inputs.avc != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-avc-consumer-20261021') && (inputs.sidcache != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-audit-owner-20261021') && ((github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-netport-objects-20261021') || inputs.netport == true)))) }}",
     "name": "Fourteen actual maintained objects with Netport cache owners and SELinux enabled",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -64,7 +64,7 @@
   },
   "jobId": "netport-objects",
   "kind": "job",
-  "reviewReason": "Add one exclusive20-object mandatory audit/SKB source compile lane, preserving5old job bodies except exclusiveif and all25old test guards. Keep61existing globals plus8(6private and2originalNetlink), originalAUDIT/AUDITSYSCALL=y, NETLABEL=y andSIDcache256 withoutoverride; same20min/900s/300s/-j2/-Werror/config/security/archive/process/diagnostic bounds. Source implementation true is separate from actualAuditExecuted=false/fullclosure=false; no link/boot/installation credit.",
+  "reviewReason": "Add the exclusive closed bind-bucket object-only profile over the full mandatory-audit floor; preserve all existing jobs, commands, tests, security config and original runtime/diagnostic limits. No kernel execution or installation qualification.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/stream-kernel-objects.yml"
 }

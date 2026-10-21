@@ -1,0 +1,36 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "typescript-tracking-limits-${{ github.ref }}"
+    },
+    "name": "TypeScript tracking retirement resource limits",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/typescript-tracking-limits-20261021"
+        ],
+        "paths": [
+          ".github/workflows/typescript-tracking-limits.yml",
+          "sdk/typescript-guest/probes/runtime-limits/**",
+          "tools/typescript_runtime_limits.py",
+          "tools/typescript_tracking_replay_inputs.py",
+          "tools/qualify_typescript_runtime_limits.py",
+          "tools/tests/test_typescript_runtime_limits.py",
+          "tools/tests/test_typescript_tracking_replay_inputs.py"
+        ]
+      },
+      "workflow_dispatch": null
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "fetch-conformance"
+  ],
+  "reviewReason": "Add a bounded current tracking-engine resource programme reusing authenticated successful producer jobs and preserving the original independent five-profile runtime assertions.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/typescript-tracking-limits.yml"
+}
