@@ -674,6 +674,7 @@ pub fn verify_embedded_c_original_core(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use wasm_encoder::{ConstExpr, DataSection};
 
     fn component(payloads: &[&[u8]]) -> Vec<u8> {
         let mut component = wasm_encoder::Component::new();
