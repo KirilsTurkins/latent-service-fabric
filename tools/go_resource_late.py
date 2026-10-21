@@ -8,8 +8,8 @@ from __future__ import annotations
 import json
 import subprocess
 
-from tools.phase2_operator_process import require
-from tools.rust_capsule_project import ROOT, digest, read_file, write_json
+from tools.phase2_operator_process import require, write_json
+from tools.rust_capsule_project import ROOT, digest, read_file
 
 EXPECTED = 'resource-go|late=stopped-false|readers=2|entropy=8|wall64=1|fresh=1'
 ROOT_LOG = b'resource-go:late:root-return:callback-still-accepted\n'
