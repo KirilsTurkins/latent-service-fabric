@@ -1,0 +1,2363 @@
+{
+  "schemaVersion": "latent.compiler-diagnostics.public-actual.v1",
+  "language": "java",
+  "status": "qualified-finite-programme",
+  "issue": 679,
+  "fullTicketQualification": false,
+  "origin": {
+    "source": "991370f3297971ef1328a18b3874df229f5bd479",
+    "run": 39654746914,
+    "job": 119411934822,
+    "artifact": 12371845715,
+    "archive": {
+      "sha256": "sha256:3974afe8525f24d1c215ef8a6f7ff0abeb4abd3ddbb181173fc0187be571af88",
+      "bytes": 1999408
+    },
+    "archiveMembers": 156,
+    "expandedBytes": 9971961,
+    "jobUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39654746914/job/119411934822"
+  },
+  "qualificationRecord": {
+    "artifactMember": "java-compiler-diagnostics/qualified.json",
+    "sha256": "sha256:98848c27517b2655bfe7bb98902824da765e68113ca42333cbe393864dcea027",
+    "bytes": 137655
+  },
+  "verification": {
+    "schemaVersion": "latent.compiler-diagnostics.cached-verification.v1",
+    "status": "passed",
+    "language": "java",
+    "source": "991370f3297971ef1328a18b3874df229f5bd479",
+    "run": 39654746914,
+    "job": 119411934822,
+    "artifact": 12371845715,
+    "archive": {
+      "sha256": "sha256:3974afe8525f24d1c215ef8a6f7ff0abeb4abd3ddbb181173fc0187be571af88",
+      "bytes": 1999408
+    },
+    "archiveMembers": 156,
+    "expandedBytes": 9971961,
+    "allCrcShaAndExtractedBytes": true,
+    "gitMaterials": 131,
+    "recipeInputs": 74,
+    "vendorSdkInputs": 202,
+    "gitBlobsChecked": 331,
+    "component": {
+      "sha256": "sha256:ba0b292c5354cd38a661b66e61c2f43a88b76b24b725ef115f2ffa94da5cfd1a",
+      "bytes": 1533590
+    },
+    "signedOutcomes": 6,
+    "preEntryDenials": 1,
+    "compilerQueriesChecked": 8,
+    "sameJarSingleEdgeCompilerRefusal": true,
+    "physicalAfterEachCase": 6,
+    "activeProviderCounterDimensions": 18,
+    "requiredWasmtimeTopologyKinds": 5,
+    "originalProcessAndExecutableIdentityChecked": true,
+    "osProbeTreeComplete": true,
+    "osConsistency": "non-atomic-finite-scan",
+    "rssIsRetirementProof": false,
+    "physicalAfterPreEntryDenialAndDelete": true,
+    "cleanReapedNode": true,
+    "zeroContactClosedPeer": true,
+    "compiledNativeSource": "c7134289f446cb3171eb0ffd800a94afc2a5209f",
+    "sourceProjectionChanges": 2,
+    "nativeProductsBuilt": 0,
+    "compatibilityReportRecomputed": true,
+    "applicationCodeExecutedOnCompilerHost": false,
+    "privateRawJarAndCompilerTemporaryInputsRetained": false,
+    "arbitraryApiSupport": "unknown",
+    "workerDrainQualified": false,
+    "fullTicketQualification": false,
+    "officialOrigin": "cached-exact-documents-root-refreshed-live-separately"
+  },
+  "component": {
+    "sha256": "sha256:ba0b292c5354cd38a661b66e61c2f43a88b76b24b725ef115f2ffa94da5cfd1a",
+    "bytes": 1533590
+  },
+  "compiledNative": {
+    "schemaVersion": "latent.sdk.phase-native-products.v1",
+    "compiledSource": "c7134289f446cb3171eb0ffd800a94afc2a5209f",
+    "compiledTree": "98a4dd76d899941c4c25535c1a01bbaef87a12c4",
+    "producerRun": 39598763649,
+    "producerJob": 119217613970,
+    "producerReceipt": {
+      "sha256": "sha256:bec02c077f6df2167b77dff4c41f2cd79b14a501f4926b42dd06d69174d02523",
+      "bytes": 27004
+    },
+    "sourceSnapshot": {
+      "sha256": "sha256:e0c607e6f6d62a0c2bc85f9e127f985c26ecac88d506bec74f8de533bcb4aa76",
+      "bytes": 22275
+    },
+    "products": {
+      "latent": {
+        "sha256": "sha256:aad7701ef9fcd1df60f53dfeb90c1e74e3ca7131e3fe2fa30d9e31f27d5e52db",
+        "bytes": 69176392
+      },
+      "latentd": {
+        "sha256": "sha256:77e5afc7576d5dc0831a00e1009544e8bc6c1659ff2dbe1e86d9ac990d3056dc",
+        "bytes": 188938624
+      },
+      "examples/package": {
+        "sha256": "sha256:697287c09863072460378304848a57aad670c43720b5972b503d69b1908fff42",
+        "bytes": 17854768
+      },
+      "examples/capsule_contracts": {
+        "sha256": "sha256:a02d591021cae76792f71fdf026d07b6929cdca8372644a2b5247bea6c99b67d",
+        "bytes": 13844184
+      },
+      "examples/capsule_authoring": {
+        "sha256": "sha256:bc3077253cb60975214f8492b70a92a372b64101143fd2221246ec2d07a1152b",
+        "bytes": 24136488
+      }
+    },
+    "signedQualification": false,
+    "guestComponentsCompiledByProducer": false,
+    "historicalNormalReceiptCreated": false,
+    "wholeArchiveRetained": false,
+    "origin": {
+      "artifact": 12345773653,
+      "archiveDigest": "sha256:de16d786e7a2a72bae7176451e4887b2afca9f2ec08f9583e2b1caf72d38c491",
+      "archiveDigestVerification": "official-metadata-only-selected-members-hash-verified",
+      "fixedMembersPreflighted": {
+        "native-products.json": {
+          "bytes": 27004,
+          "compressedBytes": 8215
+        },
+        "source-inputs.json": {
+          "bytes": 22275,
+          "compressedBytes": 7116
+        },
+        "native-binaries/latent": {
+          "bytes": 69176392,
+          "compressedBytes": 15482485
+        },
+        "native-binaries/latentd": {
+          "bytes": 188938624,
+          "compressedBytes": 39360779
+        },
+        "native-binaries/examples-package": {
+          "bytes": 17854768,
+          "compressedBytes": 4261978
+        },
+        "native-binaries/examples-capsule_contracts": {
+          "bytes": 13844184,
+          "compressedBytes": 3213689
+        },
+        "native-binaries/examples-capsule_authoring": {
+          "bytes": 24136488,
+          "compressedBytes": 5945930
+        }
+      },
+      "rangeBytes": 68287380,
+      "rangeRequests": 279
+    }
+  },
+  "nativeSource": {
+    "compiledSourceRevision": "c7134289f446cb3171eb0ffd800a94afc2a5209f",
+    "compiledNativeSource": {
+      "sha256": "sha256:8ae85103a4ea211b686ac7b16222bfa2f6a950a08c5957f9b488785c7f007268",
+      "files": 3325,
+      "bytes": 26391555,
+      "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+      "hermetic": false,
+      "implicitCompilerInputs": "not-attested"
+    },
+    "consumerNativeSource": {
+      "sha256": "sha256:a55ef0a2b05ef959f47bab7b44e817da5f73c1c8afc9faa3364d4520ec0ad200",
+      "files": 3325,
+      "bytes": 26391846,
+      "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+      "hermetic": false,
+      "implicitCompilerInputs": "not-attested"
+    },
+    "compiledSourceByteExact": false,
+    "reviewedSourceChanges": [
+      {
+        "path": "apps/latentd/src/config/runtime.rs",
+        "reviewedRevision": "8473afecac55bbf6d67b411b7d7b73820991b289",
+        "operation": "reverse-fixed-stack-profile-helper-extraction",
+        "compiledFile": {
+          "sha256": "sha256:afb01d90bba9bbbecf641bc8467075c67fa3b83696e7f37004c25a3cc71d38a6",
+          "bytes": 9601
+        },
+        "currentFile": {
+          "sha256": "sha256:439a1879d288e2658b4b95865d6e58bab548e40cc618c0b6e9a8c5b991f70be9",
+          "bytes": 9789
+        },
+        "reverseInlineByteExact": true,
+        "allOtherNativeFilesByteExact": 3323
+      },
+      {
+        "path": "apps/latentd/src/config/tests/engine.rs",
+        "reviewedRevision": "d79bd0d49431d95f7cf46297629649682c277b69",
+        "operation": "reverse-two-fixed-explicit-test-defaults",
+        "compiledFile": {
+          "sha256": "sha256:c640fd38d4702aeadc919269086f0653374720ff2db3b22d7f60cab4c27e4e33",
+          "bytes": 7524
+        },
+        "currentFile": {
+          "sha256": "sha256:7dd8fee5a7ac533fbcb815a02145291d421129f24899f03e1a2f494c0fda298c",
+          "bytes": 7627
+        },
+        "reverseSubstitutionsByteExact": true,
+        "allOtherNativeFilesByteExact": 3323
+      }
+    ]
+  },
+  "capture": {
+    "originalJars": {
+      "outside-diagnostics-data/2026.10.21": {
+        "digest": "sha256:16f7e10753dc25f1570a94ee05e7a46ce436990576581f93ab2abb723ea6c4e5",
+        "size": 3015
+      },
+      "outside-diagnostics-library/2026.10.21": {
+        "digest": "sha256:17dd5f9fe7452b97b844487b046d2232869a1d4b949782d7847b7bf9cba3ab2f",
+        "size": 4879
+      }
+    },
+    "capturedInputIdentity": "sha256:94f828af5fe2c7ee242187f4fa3f084494182a4b723223b32dafd67a3f2c2072",
+    "originalSource": "sha256:1a001ff50ee77d7b7f581396c1036843eda491ed800297385a451479e33453ae",
+    "applicationTransportInjected": false,
+    "applicationSchedulerInjected": false,
+    "catalogueEligibilityCheck": false,
+    "originalInputsRemoved": true
+  },
+  "compilerQueries": {
+    "methods": [
+      {
+        "id": "f2f562a3776b653fe79e27fbd8dda1d90fcdd4413f884e9a58fdd072b483f649",
+        "classDigest": "sha256:84b183b1556f8771881f70ca719c3010daf380bad20468527e2275a49ca96557",
+        "packageDigest": "sha256:16f7e10753dc25f1570a94ee05e7a46ce436990576581f93ab2abb723ea6c4e5",
+        "kind": "initialization",
+        "state": "linked",
+        "symbol": "method-f2f562a3776b653fe79e27fbd8dda1d90fcdd4413f884e9a58fdd072b483f649",
+        "symbolRedacted": true,
+        "signatureDigest": "sha256:eb8803ad1f63f3301d12fec0f9d83bba1e45b8b0295919a8579ea07f2cfae279",
+        "declaration": "ordinary",
+        "apiClassification": "unknown"
+      },
+      {
+        "id": "50c3c1ad09e790631f91c195ea1694a3b8704d0e53b83358046692325c6adfa0",
+        "classDigest": "sha256:84b183b1556f8771881f70ca719c3010daf380bad20468527e2275a49ca96557",
+        "packageDigest": "sha256:16f7e10753dc25f1570a94ee05e7a46ce436990576581f93ab2abb723ea6c4e5",
+        "kind": "constructor",
+        "state": "linked",
+        "symbol": "method-50c3c1ad09e790631f91c195ea1694a3b8704d0e53b83358046692325c6adfa0",
+        "symbolRedacted": true,
+        "signatureDigest": "sha256:7ddff02174cc8737a48fd0843a8d7cb3c3bd3c325eac191150b7ad5abc6771a8",
+        "declaration": "ordinary",
+        "apiClassification": "unknown"
+      },
+      {
+        "id": "94ec5bc0fd7cee8c50a9686d6f51ce2aabfab42e513fd0e64b4781c072983a63",
+        "classDigest": "sha256:84b183b1556f8771881f70ca719c3010daf380bad20468527e2275a49ca96557",
+        "packageDigest": "sha256:16f7e10753dc25f1570a94ee05e7a46ce436990576581f93ab2abb723ea6c4e5",
+        "kind": "method",
+        "state": "linked",
+        "symbol": "outside.diagnosticsdata.Core.fallback",
+        "symbolRedacted": false,
+        "signatureDigest": "sha256:acee35a15b561af7e62550765357c0b378f6fc2205b450d11f5cd9b37b7fccc7",
+        "declaration": "ordinary",
+        "apiClassification": "unknown"
+      },
+      {
+        "id": "20acd2e10aa0633096066b3cf1d486c754f3b80041e3e8690ff08c1cf1645db4",
+        "classDigest": "sha256:84b183b1556f8771881f70ca719c3010daf380bad20468527e2275a49ca96557",
+        "packageDigest": "sha256:16f7e10753dc25f1570a94ee05e7a46ce436990576581f93ab2abb723ea6c4e5",
+        "kind": "method",
+        "state": "linked",
+        "symbol": "outside.diagnosticsdata.Core.uncaught",
+        "symbolRedacted": false,
+        "signatureDigest": "sha256:6a64d5d55f853296c075862d43fd4a86f740383edf58f32d44994a8659530652",
+        "declaration": "ordinary",
+        "apiClassification": "unknown"
+      },
+      {
+        "id": "81f31721280cf3d5530bd9c1f704b119f8f591ac04123a1edcad1d8670ff8a95",
+        "classDigest": "sha256:84b183b1556f8771881f70ca719c3010daf380bad20468527e2275a49ca96557",
+        "packageDigest": "sha256:16f7e10753dc25f1570a94ee05e7a46ce436990576581f93ab2abb723ea6c4e5",
+        "kind": "method",
+        "state": "not-retained",
+        "symbol": "outside.diagnosticsdata.Core.opaqueNative",
+        "symbolRedacted": false,
+        "signatureDigest": "sha256:f30180033e616c5afc38876baf9108334d98012ac092638c56c797abfeb22e79",
+        "declaration": "native",
+        "apiClassification": "unknown"
+      },
+      {
+        "id": "c053857396b12a737b73ce6bd5f43bf10fca722bb4b7ff93d9086b49ce4d9f2a",
+        "classDigest": "sha256:2e4b5202a31b3a108c9663d74db1c568b61a87ef757982f6be25e836822ccf33",
+        "packageDigest": "sha256:17dd5f9fe7452b97b844487b046d2232869a1d4b949782d7847b7bf9cba3ab2f",
+        "kind": "constructor",
+        "state": "linked",
+        "symbol": "method-c053857396b12a737b73ce6bd5f43bf10fca722bb4b7ff93d9086b49ce4d9f2a",
+        "symbolRedacted": true,
+        "signatureDigest": "sha256:7ddff02174cc8737a48fd0843a8d7cb3c3bd3c325eac191150b7ad5abc6771a8",
+        "declaration": "ordinary",
+        "apiClassification": "unknown"
+      },
+      {
+        "id": "1a82d7d0faab357553330f9d915500b6797c35e145bb9df74579064bec310cd2",
+        "classDigest": "sha256:2e4b5202a31b3a108c9663d74db1c568b61a87ef757982f6be25e836822ccf33",
+        "packageDigest": "sha256:17dd5f9fe7452b97b844487b046d2232869a1d4b949782d7847b7bf9cba3ab2f",
+        "kind": "method",
+        "state": "linked",
+        "symbol": "outside.diagnostics.Library.run",
+        "symbolRedacted": false,
+        "signatureDigest": "sha256:b57c9dacaf1c331fb02ce396d94c51355bb79ee2a7bd6daca14d18a1cc95291d",
+        "declaration": "ordinary",
+        "apiClassification": "unknown"
+      },
+      {
+        "id": "f581ca0cd46bfe158538b353be003962c7b0ee4513f283bc976d634dd72b88ee",
+        "classDigest": "sha256:5b6aad93c440db35d88f026946a59484883190dfc6738201dbd8d1e5ba05cbdf",
+        "packageDigest": "sha256:17dd5f9fe7452b97b844487b046d2232869a1d4b949782d7847b7bf9cba3ab2f",
+        "kind": "method",
+        "state": "linked",
+        "symbol": "method-f581ca0cd46bfe158538b353be003962c7b0ee4513f283bc976d634dd72b88ee",
+        "symbolRedacted": true,
+        "signatureDigest": "sha256:3a4b23554f9ef34358b2b3f617c4283aefeb86d0d37debb90656adddac26511b",
+        "declaration": "ordinary",
+        "apiClassification": "unknown"
+      }
+    ],
+    "scope": "completed-dependency-map-exact-method-only",
+    "nativeApiSupport": "unknown-until-exact-counterfactual-compiler-refusal"
+  },
+  "compilerObservation": {
+    "artifactMember": "java-compiler-diagnostics/build/compatibility-compiler-methods.json",
+    "sha256": "sha256:cec3069fd32f2a8254e98ac4d4bd6c6e9ede1fc366b13e0add91a8178dc0763d",
+    "bytes": 12709
+  },
+  "counterfactual": {
+    "sourceBefore": "sha256:338291843dd6a21f30649f5f4b4a7fbfb6619f2dae1ed5a887eb7f7fdf212db4",
+    "sourceAfter": "sha256:5d53274c26c53e0463cfc01c829f5c38b42af492edce1de82d5e5299bb8cb150",
+    "capturedInputIdentity": "sha256:94f828af5fe2c7ee242187f4fa3f084494182a4b723223b32dafd67a3f2c2072",
+    "onlyRootEdgeAdded": true,
+    "libraryBytesChanged": false,
+    "compilerFailureObserved": true,
+    "originalFailureCategory": "ValueError",
+    "exactCompilerFinding": {
+      "classification": "target-incompatible",
+      "phase": "compile",
+      "evidence": "compiler",
+      "operation": "outside.diagnosticsdata.Core.opaqueNative",
+      "ownerIssue": 741,
+      "packageDigest": "sha256:16f7e10753dc25f1570a94ee05e7a46ce436990576581f93ab2abb723ea6c4e5",
+      "sourceDigest": "sha256:57ba4202c7624927dde54f10dd4a150669c3c2068c2cf106d0d3f4f9200a3777",
+      "symbol": "outside.diagnosticsdata.Core.opaqueNative"
+    },
+    "libraryOriginalDigest": "sha256:16f7e10753dc25f1570a94ee05e7a46ce436990576581f93ab2abb723ea6c4e5",
+    "compilerReport": {
+      "sha256": "sha256:a67ae73f20f4cf6e9fa17de1715f3982cce6e954b22009e03b189090df8dc270",
+      "bytes": 1329
+    },
+    "eliminatedScope": "one-exact-declaration-with-unselected-root-edge",
+    "arbitraryNativeApiSupport": "unknown",
+    "applicationInitializerExecutedOnHost": false
+  },
+  "executionReport": {
+    "schemaVersion": "lsf.guest.compatibility.v1",
+    "language": "java",
+    "sourceDigest": "sha256:5d4d9673602699e9723eedae6a6b4ae4eec30d1df61e4ade44f181d84f0b058e",
+    "componentDigest": "sha256:ba0b292c5354cd38a661b66e61c2f43a88b76b24b725ef115f2ffa94da5cfd1a",
+    "runtimeProfile": "teavm-activation-fibers-io-v1",
+    "inputs": [
+      {
+        "kind": "application",
+        "digest": "sha256:5d4d9673602699e9723eedae6a6b4ae4eec30d1df61e4ade44f181d84f0b058e"
+      },
+      {
+        "kind": "compiler",
+        "digest": "sha256:e2201fef4be775c8e478de98fc837890de55cf7673927d49b5f74f6de23f1cdc"
+      },
+      {
+        "kind": "runtime",
+        "digest": "sha256:c8337254e06ac0cfac0cb98e0fba67333a3c10440b792e87f973c77bf046b4ff"
+      }
+    ],
+    "findings": [
+      {
+        "classification": "unsupported-reached",
+        "phase": "initialization",
+        "evidence": "actual-component",
+        "operation": "java.io.FileInputStream",
+        "ownerIssue": 741,
+        "packageDigest": "sha256:16f7e10753dc25f1570a94ee05e7a46ce436990576581f93ab2abb723ea6c4e5",
+        "sourceDigest": "sha256:5d4d9673602699e9723eedae6a6b4ae4eec30d1df61e4ade44f181d84f0b058e"
+      },
+      {
+        "classification": "unsupported-reached",
+        "phase": "invocation",
+        "evidence": "actual-component",
+        "operation": "java.io.FileInputStream",
+        "ownerIssue": 741,
+        "packageDigest": "sha256:16f7e10753dc25f1570a94ee05e7a46ce436990576581f93ab2abb723ea6c4e5",
+        "sourceDigest": "sha256:5d4d9673602699e9723eedae6a6b4ae4eec30d1df61e4ade44f181d84f0b058e"
+      },
+      {
+        "classification": "unresolved-behavior",
+        "phase": "initialization",
+        "evidence": "actual-component",
+        "operation": "uncaught-initializer-cause-unknown",
+        "packageDigest": "sha256:16f7e10753dc25f1570a94ee05e7a46ce436990576581f93ab2abb723ea6c4e5",
+        "sourceDigest": "sha256:5d4d9673602699e9723eedae6a6b4ae4eec30d1df61e4ade44f181d84f0b058e"
+      },
+      {
+        "classification": "unresolved-behavior",
+        "phase": "invocation",
+        "evidence": "actual-component",
+        "operation": "uncaught-callback-cause-unknown",
+        "packageDigest": "sha256:16f7e10753dc25f1570a94ee05e7a46ce436990576581f93ab2abb723ea6c4e5",
+        "sourceDigest": "sha256:5d4d9673602699e9723eedae6a6b4ae4eec30d1df61e4ade44f181d84f0b058e"
+      },
+      {
+        "classification": "unsupported-eliminated",
+        "phase": "compile",
+        "evidence": "compiler",
+        "operation": "outside.diagnosticsdata.Core.opaqueNative",
+        "packageDigest": "sha256:16f7e10753dc25f1570a94ee05e7a46ce436990576581f93ab2abb723ea6c4e5",
+        "sourceDigest": "sha256:5d4d9673602699e9723eedae6a6b4ae4eec30d1df61e4ade44f181d84f0b058e"
+      },
+      {
+        "classification": "lifecycle-unproven",
+        "phase": "retirement",
+        "evidence": "not-evaluated",
+        "operation": "arbitrary-library-worker-drain"
+      }
+    ],
+    "omittedFindings": 0,
+    "status": "blocked",
+    "authority": "none",
+    "analysisCompleteness": "selected-observations",
+    "identity": "sha256:6e9a429f5d42bc78ffc49211f652bc13627c73dd20a2ca4311af7c9a521a6f26"
+  },
+  "redactedActualOutcomes": {
+    "authority": "none",
+    "cases": [
+      {
+        "activationDiagnostic": {
+          "state": "absent"
+        },
+        "case": "init",
+        "category": "success",
+        "cause": "unknown",
+        "clientProcess": "reaped",
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": "0",
+          "cpuFuel": "5029174",
+          "effectCount": "0",
+          "logBytes": "0",
+          "outboundRequests": "0",
+          "peakMemoryBytes": "9374456",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "8596"
+        },
+        "errorCodeState": "absent",
+        "libraryReachability": "unknown",
+        "outcomeKnown": true,
+        "physicalRetirement": "unproven",
+        "resourceDimension": "unknown",
+        "targetMatches": true
+      },
+      {
+        "activationDiagnostic": {
+          "state": "absent"
+        },
+        "case": "callback",
+        "category": "success",
+        "cause": "unknown",
+        "clientProcess": "reaped",
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": "0",
+          "cpuFuel": "5233550",
+          "effectCount": "0",
+          "logBytes": "0",
+          "outboundRequests": "0",
+          "peakMemoryBytes": "9374456",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "14125"
+        },
+        "errorCodeState": "absent",
+        "libraryReachability": "unknown",
+        "outcomeKnown": true,
+        "physicalRetirement": "unproven",
+        "resourceDimension": "unknown",
+        "targetMatches": true
+      },
+      {
+        "activationDiagnostic": {
+          "state": "absent"
+        },
+        "case": "init-trap",
+        "category": "platform-failure",
+        "cause": "unknown",
+        "clientProcess": "reaped",
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": "0",
+          "cpuFuel": "5006022",
+          "effectCount": "0",
+          "logBytes": "0",
+          "outboundRequests": "0",
+          "peakMemoryBytes": "9374456",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "7692"
+        },
+        "errorCode": "guest-trap",
+        "errorCodeState": "observed",
+        "guestTrapCode": "guest-trap",
+        "guestTrapKind": "unreachable-code",
+        "libraryReachability": "unknown",
+        "outcomeKnown": true,
+        "physicalRetirement": "unproven",
+        "resourceDimension": "unknown",
+        "targetMatches": true
+      },
+      {
+        "activationDiagnostic": {
+          "state": "absent"
+        },
+        "case": "after-init-trap",
+        "category": "success",
+        "cause": "unknown",
+        "clientProcess": "reaped",
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": "0",
+          "cpuFuel": "5030091",
+          "effectCount": "0",
+          "logBytes": "0",
+          "outboundRequests": "0",
+          "peakMemoryBytes": "9374456",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "7336"
+        },
+        "errorCodeState": "absent",
+        "libraryReachability": "unknown",
+        "outcomeKnown": true,
+        "physicalRetirement": "unproven",
+        "resourceDimension": "unknown",
+        "targetMatches": true
+      },
+      {
+        "activationDiagnostic": {
+          "state": "absent"
+        },
+        "case": "callback-trap",
+        "category": "platform-failure",
+        "cause": "unknown",
+        "clientProcess": "reaped",
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": "0",
+          "cpuFuel": "5203571",
+          "effectCount": "0",
+          "logBytes": "0",
+          "outboundRequests": "0",
+          "peakMemoryBytes": "9374456",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "15518"
+        },
+        "errorCode": "guest-trap",
+        "errorCodeState": "observed",
+        "guestTrapCode": "guest-trap",
+        "guestTrapKind": "unreachable-code",
+        "libraryReachability": "unknown",
+        "outcomeKnown": true,
+        "physicalRetirement": "unproven",
+        "resourceDimension": "unknown",
+        "targetMatches": true
+      },
+      {
+        "activationDiagnostic": {
+          "state": "absent"
+        },
+        "case": "after-callback-trap",
+        "category": "success",
+        "cause": "unknown",
+        "clientProcess": "reaped",
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": "0",
+          "cpuFuel": "5030091",
+          "effectCount": "0",
+          "logBytes": "0",
+          "outboundRequests": "0",
+          "peakMemoryBytes": "9374456",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "7153"
+        },
+        "errorCodeState": "absent",
+        "libraryReachability": "unknown",
+        "outcomeKnown": true,
+        "physicalRetirement": "unproven",
+        "resourceDimension": "unknown",
+        "targetMatches": true
+      }
+    ],
+    "compatibilityReportIdentity": "sha256:e2fc3edc554074f9941b92aca0215df234a4e396f61a959a4420d8fb193a7ff6",
+    "compatibilitySourceDigest": "sha256:5d4d9673602699e9723eedae6a6b4ae4eec30d1df61e4ade44f181d84f0b058e",
+    "componentDigest": "sha256:ba0b292c5354cd38a661b66e61c2f43a88b76b24b725ef115f2ffa94da5cfd1a",
+    "contextIdentity": "sha256:bd80fb1318405cd174fe5f84ef082300539b32b867f4386ba73a890de1558807",
+    "contextState": "observed",
+    "frontendSourceDigest": "sha256:5d4d9673602699e9723eedae6a6b4ae4eec30d1df61e4ade44f181d84f0b058e",
+    "identity": "sha256:0c3ee28e1feeda1dc1984da053d93362571afa1814f863639e3aae272c2a8161",
+    "initialization": "unknown",
+    "libraryReachability": "unknown",
+    "omittedCases": 0,
+    "retrySafety": "unknown",
+    "schemaVersion": "lsf.guest.compatibility.outcomes.v1",
+    "workerDrain": "unproven"
+  },
+  "signedCases": [
+    {
+      "mode": "init",
+      "label": "init",
+      "invocationRecord": {
+        "artifactMember": "java-compiler-diagnostics/node/controls/diagnostics-java-init.json",
+        "sha256": "sha256:d8659398ff205f06f652368564b5f8d52ebf2477df756c175b29144917a77a99",
+        "bytes": 1347
+      },
+      "retirementRecord": {
+        "artifactMember": "java-compiler-diagnostics/node/retired-diagnostics-java-init.json",
+        "sha256": "sha256:3b417418549b49254cd13c9c08bc8ad5c8a874880e8f640a3fb7e31d09d84f5d",
+        "bytes": 15423
+      },
+      "exitCode": 0,
+      "processReaped": true,
+      "decoded": [
+        {
+          "ok": "diagnostics|init|init=1|ctor=1|denied=2|fallback=42|fresh=1"
+        }
+      ],
+      "outcomeKnown": true,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:25793c9f0842b459c6e770ffee4c4174aa0bb168bf35c21bcf2937af91158904",
+        "releaseDigest": "sha256:ba0b292c5354cd38a661b66e61c2f43a88b76b24b725ef115f2ffa94da5cfd1a",
+        "revisionId": "revision-v1:sha256:36834e7edd035744997376275003f10ddfadaacc2786091567ecbd233a6c8e65",
+        "routeGeneration": "4"
+      },
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "5029174",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "9374456",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "8596"
+      },
+      "errorCode": null,
+      "activeProviderCounters": {
+        "broker_sessions": "0",
+        "broker_handles": "0",
+        "broker_calls": "0",
+        "broker_results": "0",
+        "broker_buffer_bytes": "0",
+        "pool_active_connections": "0",
+        "pool_connecting_connections": "0",
+        "pool_pending_requests": "0",
+        "pool_running_requests": "0",
+        "pool_workers": "0",
+        "pool_cleanup_jobs": "0",
+        "io_calls": "0",
+        "io_occupied_running_slots": "0",
+        "io_queued_calls": "0",
+        "io_staged_bytes": "0",
+        "io_result_bytes": "0",
+        "io_buffers": "0",
+        "io_streams": "0"
+      },
+      "physical": {
+        "phase": "diagnostics-java-init",
+        "topologyAvailable": true,
+        "topologyComplete": true,
+        "ownedTopology": [
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "1",
+            "kind": "cell",
+            "name": "execution-cell-leases",
+            "ownership": "activation-scoped"
+          },
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "1",
+            "kind": "reservation",
+            "name": "prepared-instance-reservations",
+            "ownership": "activation-scoped"
+          },
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "1",
+            "kind": "invocation",
+            "name": "guest-invocations",
+            "ownership": "activation-scoped"
+          },
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "1",
+            "kind": "store",
+            "name": "guest-stores",
+            "ownership": "activation-scoped"
+          },
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "1",
+            "kind": "host-state",
+            "name": "guest-host-states",
+            "ownership": "activation-scoped"
+          },
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "1",
+            "kind": "component-instance",
+            "name": "guest-component-instances",
+            "ownership": "activation-scoped"
+          },
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "1",
+            "kind": "buffer-group",
+            "name": "guest-value-buffers",
+            "ownership": "activation-scoped"
+          },
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "1",
+            "kind": "probe",
+            "name": "guest-cancellation-probes",
+            "ownership": "activation-scoped"
+          },
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "0",
+            "kind": "process",
+            "name": "resident-service-processes",
+            "ownership": "service-resident"
+          },
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "0",
+            "kind": "thread",
+            "name": "resident-service-threads",
+            "ownership": "service-resident"
+          },
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "0",
+            "kind": "listener",
+            "name": "resident-service-listeners",
+            "ownership": "service-resident"
+          }
+        ],
+        "cellCapacity": [
+          {
+            "accepting": true,
+            "active": 0,
+            "available": 1,
+            "cancellations": "0",
+            "class": "standard",
+            "expired": "0",
+            "granted": "2",
+            "maxWaitMicros": "72",
+            "observationAvailable": true,
+            "oldestLeaseAgeMicros": "0",
+            "quarantined": 0,
+            "queueCapacity": 2,
+            "queueDepth": 0,
+            "queuedTenants": 0,
+            "rejected": "0",
+            "total": 1,
+            "totalWaitMicros": "134"
+          }
+        ],
+        "quotaUsage": {
+          "activeActivations": 0,
+          "queuedActivations": 0,
+          "reservedCpuFuel": "0",
+          "reservedMemoryBytes": "0"
+        },
+        "queueDepth": "0",
+        "preparations": {
+          "available": true,
+          "preparing": "0",
+          "preparingSourceBytes": "0",
+          "preparingMetadataBytes": "0"
+        },
+        "os": {
+          "identity": {
+            "processId": 3722,
+            "startTimeTicks": "36080",
+            "executableSha256": "sha256:77e5afc7576d5dc0831a00e1009544e8bc6c1659ff2dbe1e86d9ac990d3056dc"
+          },
+          "treeComplete": true,
+          "observedProcesses": 1,
+          "disappearedProcesses": [],
+          "consistency": "non-atomic-finite-scan",
+          "unavailable": {
+            "rendererHeapBytes": "guest-JS-allocator-not-exported",
+            "allocatorRetainedBytes": "RSS-is-not-an-allocator-retention-counter"
+          }
+        },
+        "rssIsRetirementProof": false
+      }
+    },
+    {
+      "mode": "callback",
+      "label": "callback",
+      "invocationRecord": {
+        "artifactMember": "java-compiler-diagnostics/node/controls/diagnostics-java-callback.json",
+        "sha256": "sha256:97c9ebb2af69b0888e9b9f9af0eb911774af3be3171b1ac485dcb80ca48d0c56",
+        "bytes": 1386
+      },
+      "retirementRecord": {
+        "artifactMember": "java-compiler-diagnostics/node/retired-diagnostics-java-callback.json",
+        "sha256": "sha256:7ac3a751c82e5cbbcf2bb2d5802fec984c8cb7fa6624175c6929552423fc8ddf",
+        "bytes": 15437
+      },
+      "exitCode": 0,
+      "processReaped": true,
+      "decoded": [
+        {
+          "ok": "diagnostics|callback|init=1|ctor=1|denied=3|fallback=42|finally=1|fresh=1"
+        }
+      ],
+      "outcomeKnown": true,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:25793c9f0842b459c6e770ffee4c4174aa0bb168bf35c21bcf2937af91158904",
+        "releaseDigest": "sha256:ba0b292c5354cd38a661b66e61c2f43a88b76b24b725ef115f2ffa94da5cfd1a",
+        "revisionId": "revision-v1:sha256:36834e7edd035744997376275003f10ddfadaacc2786091567ecbd233a6c8e65",
+        "routeGeneration": "4"
+      },
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "5233550",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "9374456",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "14125"
+      },
+      "errorCode": null,
+      "activeProviderCounters": {
+        "broker_sessions": "0",
+        "broker_handles": "0",
+        "broker_calls": "0",
+        "broker_results": "0",
+        "broker_buffer_bytes": "0",
+        "pool_active_connections": "0",
+        "pool_connecting_connections": "0",
+        "pool_pending_requests": "0",
+        "pool_running_requests": "0",
+        "pool_workers": "0",
+        "pool_cleanup_jobs": "0",
+        "io_calls": "0",
+        "io_occupied_running_slots": "0",
+        "io_queued_calls": "0",
+        "io_staged_bytes": "0",
+        "io_result_bytes": "0",
+        "io_buffers": "0",
+        "io_streams": "0"
+      },
+      "physical": {
+        "phase": "diagnostics-java-callback",
+        "topologyAvailable": true,
+        "topologyComplete": true,
+        "ownedTopology": [
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "1",
+            "kind": "cell",
+            "name": "execution-cell-leases",
+            "ownership": "activation-scoped"
+          },
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "1",
+            "kind": "reservation",
+            "name": "prepared-instance-reservations",
+            "ownership": "activation-scoped"
+          },
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "1",
+            "kind": "invocation",
+            "name": "guest-invocations",
+            "ownership": "activation-scoped"
+          },
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "1",
+            "kind": "store",
+            "name": "guest-stores",
+            "ownership": "activation-scoped"
+          },
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "1",
+            "kind": "host-state",
+            "name": "guest-host-states",
+            "ownership": "activation-scoped"
+          },
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "1",
+            "kind": "component-instance",
+            "name": "guest-component-instances",
+            "ownership": "activation-scoped"
+          },
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "1",
+            "kind": "buffer-group",
+            "name": "guest-value-buffers",
+            "ownership": "activation-scoped"
+          },
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "1",
+            "kind": "probe",
+            "name": "guest-cancellation-probes",
+            "ownership": "activation-scoped"
+          },
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "0",
+            "kind": "process",
+            "name": "resident-service-processes",
+            "ownership": "service-resident"
+          },
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "0",
+            "kind": "thread",
+            "name": "resident-service-threads",
+            "ownership": "service-resident"
+          },
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "0",
+            "kind": "listener",
+            "name": "resident-service-listeners",
+            "ownership": "service-resident"
+          }
+        ],
+        "cellCapacity": [
+          {
+            "accepting": true,
+            "active": 0,
+            "available": 1,
+            "cancellations": "0",
+            "class": "standard",
+            "expired": "0",
+            "granted": "3",
+            "maxWaitMicros": "72",
+            "observationAvailable": true,
+            "oldestLeaseAgeMicros": "0",
+            "quarantined": 0,
+            "queueCapacity": 2,
+            "queueDepth": 0,
+            "queuedTenants": 0,
+            "rejected": "0",
+            "total": 1,
+            "totalWaitMicros": "197"
+          }
+        ],
+        "quotaUsage": {
+          "activeActivations": 0,
+          "queuedActivations": 0,
+          "reservedCpuFuel": "0",
+          "reservedMemoryBytes": "0"
+        },
+        "queueDepth": "0",
+        "preparations": {
+          "available": true,
+          "preparing": "0",
+          "preparingSourceBytes": "0",
+          "preparingMetadataBytes": "0"
+        },
+        "os": {
+          "identity": {
+            "processId": 3722,
+            "startTimeTicks": "36080",
+            "executableSha256": "sha256:77e5afc7576d5dc0831a00e1009544e8bc6c1659ff2dbe1e86d9ac990d3056dc"
+          },
+          "treeComplete": true,
+          "observedProcesses": 1,
+          "disappearedProcesses": [],
+          "consistency": "non-atomic-finite-scan",
+          "unavailable": {
+            "rendererHeapBytes": "guest-JS-allocator-not-exported",
+            "allocatorRetainedBytes": "RSS-is-not-an-allocator-retention-counter"
+          }
+        },
+        "rssIsRetirementProof": false
+      }
+    },
+    {
+      "mode": "init-trap",
+      "label": "init-trap",
+      "invocationRecord": {
+        "artifactMember": "java-compiler-diagnostics/node/controls/diagnostics-java-init-trap.json",
+        "sha256": "sha256:673e01f3344c7223fbd892901e0603d04b03402b0ec3affdec3ed4e4854a89b2",
+        "bytes": 1201
+      },
+      "retirementRecord": {
+        "artifactMember": "java-compiler-diagnostics/node/retired-diagnostics-java-init-trap.json",
+        "sha256": "sha256:666fa63150f4f17002d79e1de27e3bce9a4e52ee4117ce56f0bc6ea92b17bb2b",
+        "bytes": 15431
+      },
+      "exitCode": 4,
+      "processReaped": true,
+      "decoded": null,
+      "outcomeKnown": true,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:25793c9f0842b459c6e770ffee4c4174aa0bb168bf35c21bcf2937af91158904",
+        "releaseDigest": "sha256:ba0b292c5354cd38a661b66e61c2f43a88b76b24b725ef115f2ffa94da5cfd1a",
+        "revisionId": "revision-v1:sha256:36834e7edd035744997376275003f10ddfadaacc2786091567ecbd233a6c8e65",
+        "routeGeneration": "4"
+      },
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "5006022",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "9374456",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "7692"
+      },
+      "errorCode": "guest-trap",
+      "activeProviderCounters": {
+        "broker_sessions": "0",
+        "broker_handles": "0",
+        "broker_calls": "0",
+        "broker_results": "0",
+        "broker_buffer_bytes": "0",
+        "pool_active_connections": "0",
+        "pool_connecting_connections": "0",
+        "pool_pending_requests": "0",
+        "pool_running_requests": "0",
+        "pool_workers": "0",
+        "pool_cleanup_jobs": "0",
+        "io_calls": "0",
+        "io_occupied_running_slots": "0",
+        "io_queued_calls": "0",
+        "io_staged_bytes": "0",
+        "io_result_bytes": "0",
+        "io_buffers": "0",
+        "io_streams": "0"
+      },
+      "physical": {
+        "phase": "diagnostics-java-init-trap",
+        "topologyAvailable": true,
+        "topologyComplete": true,
+        "ownedTopology": [
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "1",
+            "kind": "cell",
+            "name": "execution-cell-leases",
+            "ownership": "activation-scoped"
+          },
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "1",
+            "kind": "reservation",
+            "name": "prepared-instance-reservations",
+            "ownership": "activation-scoped"
+          },
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "1",
+            "kind": "invocation",
+            "name": "guest-invocations",
+            "ownership": "activation-scoped"
+          },
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "1",
+            "kind": "store",
+            "name": "guest-stores",
+            "ownership": "activation-scoped"
+          },
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "1",
+            "kind": "host-state",
+            "name": "guest-host-states",
+            "ownership": "activation-scoped"
+          },
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "1",
+            "kind": "component-instance",
+            "name": "guest-component-instances",
+            "ownership": "activation-scoped"
+          },
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "1",
+            "kind": "buffer-group",
+            "name": "guest-value-buffers",
+            "ownership": "activation-scoped"
+          },
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "1",
+            "kind": "probe",
+            "name": "guest-cancellation-probes",
+            "ownership": "activation-scoped"
+          },
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "0",
+            "kind": "process",
+            "name": "resident-service-processes",
+            "ownership": "service-resident"
+          },
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "0",
+            "kind": "thread",
+            "name": "resident-service-threads",
+            "ownership": "service-resident"
+          },
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "0",
+            "kind": "listener",
+            "name": "resident-service-listeners",
+            "ownership": "service-resident"
+          }
+        ],
+        "cellCapacity": [
+          {
+            "accepting": true,
+            "active": 0,
+            "available": 1,
+            "cancellations": "0",
+            "class": "standard",
+            "expired": "0",
+            "granted": "4",
+            "maxWaitMicros": "72",
+            "observationAvailable": true,
+            "oldestLeaseAgeMicros": "0",
+            "quarantined": 0,
+            "queueCapacity": 2,
+            "queueDepth": 0,
+            "queuedTenants": 0,
+            "rejected": "0",
+            "total": 1,
+            "totalWaitMicros": "255"
+          }
+        ],
+        "quotaUsage": {
+          "activeActivations": 0,
+          "queuedActivations": 0,
+          "reservedCpuFuel": "0",
+          "reservedMemoryBytes": "0"
+        },
+        "queueDepth": "0",
+        "preparations": {
+          "available": true,
+          "preparing": "0",
+          "preparingSourceBytes": "0",
+          "preparingMetadataBytes": "0"
+        },
+        "os": {
+          "identity": {
+            "processId": 3722,
+            "startTimeTicks": "36080",
+            "executableSha256": "sha256:77e5afc7576d5dc0831a00e1009544e8bc6c1659ff2dbe1e86d9ac990d3056dc"
+          },
+          "treeComplete": true,
+          "observedProcesses": 1,
+          "disappearedProcesses": [],
+          "consistency": "non-atomic-finite-scan",
+          "unavailable": {
+            "rendererHeapBytes": "guest-JS-allocator-not-exported",
+            "allocatorRetainedBytes": "RSS-is-not-an-allocator-retention-counter"
+          }
+        },
+        "rssIsRetirementProof": false
+      }
+    },
+    {
+      "mode": "fresh",
+      "label": "after-init-trap",
+      "invocationRecord": {
+        "artifactMember": "java-compiler-diagnostics/node/controls/diagnostics-java-after-init-trap.json",
+        "sha256": "sha256:342f62bfb22ff944d25d6141dda3552459b40df4305b392cd8f17aa41ad97442",
+        "bytes": 1370
+      },
+      "retirementRecord": {
+        "artifactMember": "java-compiler-diagnostics/node/retired-diagnostics-java-after-init-trap.json",
+        "sha256": "sha256:f4764b03876879d2bd917d64e0a33359f1fa1698ce9e1db9ceb46935a8f2105b",
+        "bytes": 15437
+      },
+      "exitCode": 0,
+      "processReaped": true,
+      "decoded": [
+        {
+          "ok": "diagnostics|fresh|init=1|ctor=1|denied=2|fallback=42|fresh=1"
+        }
+      ],
+      "outcomeKnown": true,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:25793c9f0842b459c6e770ffee4c4174aa0bb168bf35c21bcf2937af91158904",
+        "releaseDigest": "sha256:ba0b292c5354cd38a661b66e61c2f43a88b76b24b725ef115f2ffa94da5cfd1a",
+        "revisionId": "revision-v1:sha256:36834e7edd035744997376275003f10ddfadaacc2786091567ecbd233a6c8e65",
+        "routeGeneration": "4"
+      },
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "5030091",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "9374456",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "7336"
+      },
+      "errorCode": null,
+      "activeProviderCounters": {
+        "broker_sessions": "0",
+        "broker_handles": "0",
+        "broker_calls": "0",
+        "broker_results": "0",
+        "broker_buffer_bytes": "0",
+        "pool_active_connections": "0",
+        "pool_connecting_connections": "0",
+        "pool_pending_requests": "0",
+        "pool_running_requests": "0",
+        "pool_workers": "0",
+        "pool_cleanup_jobs": "0",
+        "io_calls": "0",
+        "io_occupied_running_slots": "0",
+        "io_queued_calls": "0",
+        "io_staged_bytes": "0",
+        "io_result_bytes": "0",
+        "io_buffers": "0",
+        "io_streams": "0"
+      },
+      "physical": {
+        "phase": "diagnostics-java-after-init-trap",
+        "topologyAvailable": true,
+        "topologyComplete": true,
+        "ownedTopology": [
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "1",
+            "kind": "cell",
+            "name": "execution-cell-leases",
+            "ownership": "activation-scoped"
+          },
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "1",
+            "kind": "reservation",
+            "name": "prepared-instance-reservations",
+            "ownership": "activation-scoped"
+          },
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "1",
+            "kind": "invocation",
+            "name": "guest-invocations",
+            "ownership": "activation-scoped"
+          },
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "1",
+            "kind": "store",
+            "name": "guest-stores",
+            "ownership": "activation-scoped"
+          },
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "1",
+            "kind": "host-state",
+            "name": "guest-host-states",
+            "ownership": "activation-scoped"
+          },
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "1",
+            "kind": "component-instance",
+            "name": "guest-component-instances",
+            "ownership": "activation-scoped"
+          },
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "1",
+            "kind": "buffer-group",
+            "name": "guest-value-buffers",
+            "ownership": "activation-scoped"
+          },
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "1",
+            "kind": "probe",
+            "name": "guest-cancellation-probes",
+            "ownership": "activation-scoped"
+          },
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "0",
+            "kind": "process",
+            "name": "resident-service-processes",
+            "ownership": "service-resident"
+          },
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "0",
+            "kind": "thread",
+            "name": "resident-service-threads",
+            "ownership": "service-resident"
+          },
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "0",
+            "kind": "listener",
+            "name": "resident-service-listeners",
+            "ownership": "service-resident"
+          }
+        ],
+        "cellCapacity": [
+          {
+            "accepting": true,
+            "active": 0,
+            "available": 1,
+            "cancellations": "0",
+            "class": "standard",
+            "expired": "0",
+            "granted": "5",
+            "maxWaitMicros": "72",
+            "observationAvailable": true,
+            "oldestLeaseAgeMicros": "0",
+            "quarantined": 0,
+            "queueCapacity": 2,
+            "queueDepth": 0,
+            "queuedTenants": 0,
+            "rejected": "0",
+            "total": 1,
+            "totalWaitMicros": "316"
+          }
+        ],
+        "quotaUsage": {
+          "activeActivations": 0,
+          "queuedActivations": 0,
+          "reservedCpuFuel": "0",
+          "reservedMemoryBytes": "0"
+        },
+        "queueDepth": "0",
+        "preparations": {
+          "available": true,
+          "preparing": "0",
+          "preparingSourceBytes": "0",
+          "preparingMetadataBytes": "0"
+        },
+        "os": {
+          "identity": {
+            "processId": 3722,
+            "startTimeTicks": "36080",
+            "executableSha256": "sha256:77e5afc7576d5dc0831a00e1009544e8bc6c1659ff2dbe1e86d9ac990d3056dc"
+          },
+          "treeComplete": true,
+          "observedProcesses": 1,
+          "disappearedProcesses": [],
+          "consistency": "non-atomic-finite-scan",
+          "unavailable": {
+            "rendererHeapBytes": "guest-JS-allocator-not-exported",
+            "allocatorRetainedBytes": "RSS-is-not-an-allocator-retention-counter"
+          }
+        },
+        "rssIsRetirementProof": false
+      }
+    },
+    {
+      "mode": "callback-trap",
+      "label": "callback-trap",
+      "invocationRecord": {
+        "artifactMember": "java-compiler-diagnostics/node/controls/diagnostics-java-callback-trap.json",
+        "sha256": "sha256:564991a36895a9b0b6bf59c7a595c8cce18b3258ceb7fda156a8958d10d1941e",
+        "bytes": 1210
+      },
+      "retirementRecord": {
+        "artifactMember": "java-compiler-diagnostics/node/retired-diagnostics-java-callback-trap.json",
+        "sha256": "sha256:2c899ba412a432acf9fe6e44ab089b4b71770bb9123b0f781033e9c072cd8a33",
+        "bytes": 15435
+      },
+      "exitCode": 4,
+      "processReaped": true,
+      "decoded": null,
+      "outcomeKnown": true,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:25793c9f0842b459c6e770ffee4c4174aa0bb168bf35c21bcf2937af91158904",
+        "releaseDigest": "sha256:ba0b292c5354cd38a661b66e61c2f43a88b76b24b725ef115f2ffa94da5cfd1a",
+        "revisionId": "revision-v1:sha256:36834e7edd035744997376275003f10ddfadaacc2786091567ecbd233a6c8e65",
+        "routeGeneration": "4"
+      },
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "5203571",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "9374456",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "15518"
+      },
+      "errorCode": "guest-trap",
+      "activeProviderCounters": {
+        "broker_sessions": "0",
+        "broker_handles": "0",
+        "broker_calls": "0",
+        "broker_results": "0",
+        "broker_buffer_bytes": "0",
+        "pool_active_connections": "0",
+        "pool_connecting_connections": "0",
+        "pool_pending_requests": "0",
+        "pool_running_requests": "0",
+        "pool_workers": "0",
+        "pool_cleanup_jobs": "0",
+        "io_calls": "0",
+        "io_occupied_running_slots": "0",
+        "io_queued_calls": "0",
+        "io_staged_bytes": "0",
+        "io_result_bytes": "0",
+        "io_buffers": "0",
+        "io_streams": "0"
+      },
+      "physical": {
+        "phase": "diagnostics-java-callback-trap",
+        "topologyAvailable": true,
+        "topologyComplete": true,
+        "ownedTopology": [
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "1",
+            "kind": "cell",
+            "name": "execution-cell-leases",
+            "ownership": "activation-scoped"
+          },
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "1",
+            "kind": "reservation",
+            "name": "prepared-instance-reservations",
+            "ownership": "activation-scoped"
+          },
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "1",
+            "kind": "invocation",
+            "name": "guest-invocations",
+            "ownership": "activation-scoped"
+          },
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "1",
+            "kind": "store",
+            "name": "guest-stores",
+            "ownership": "activation-scoped"
+          },
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "1",
+            "kind": "host-state",
+            "name": "guest-host-states",
+            "ownership": "activation-scoped"
+          },
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "1",
+            "kind": "component-instance",
+            "name": "guest-component-instances",
+            "ownership": "activation-scoped"
+          },
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "1",
+            "kind": "buffer-group",
+            "name": "guest-value-buffers",
+            "ownership": "activation-scoped"
+          },
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "1",
+            "kind": "probe",
+            "name": "guest-cancellation-probes",
+            "ownership": "activation-scoped"
+          },
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "0",
+            "kind": "process",
+            "name": "resident-service-processes",
+            "ownership": "service-resident"
+          },
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "0",
+            "kind": "thread",
+            "name": "resident-service-threads",
+            "ownership": "service-resident"
+          },
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "0",
+            "kind": "listener",
+            "name": "resident-service-listeners",
+            "ownership": "service-resident"
+          }
+        ],
+        "cellCapacity": [
+          {
+            "accepting": true,
+            "active": 0,
+            "available": 1,
+            "cancellations": "0",
+            "class": "standard",
+            "expired": "0",
+            "granted": "6",
+            "maxWaitMicros": "72",
+            "observationAvailable": true,
+            "oldestLeaseAgeMicros": "0",
+            "quarantined": 0,
+            "queueCapacity": 2,
+            "queueDepth": 0,
+            "queuedTenants": 0,
+            "rejected": "0",
+            "total": 1,
+            "totalWaitMicros": "378"
+          }
+        ],
+        "quotaUsage": {
+          "activeActivations": 0,
+          "queuedActivations": 0,
+          "reservedCpuFuel": "0",
+          "reservedMemoryBytes": "0"
+        },
+        "queueDepth": "0",
+        "preparations": {
+          "available": true,
+          "preparing": "0",
+          "preparingSourceBytes": "0",
+          "preparingMetadataBytes": "0"
+        },
+        "os": {
+          "identity": {
+            "processId": 3722,
+            "startTimeTicks": "36080",
+            "executableSha256": "sha256:77e5afc7576d5dc0831a00e1009544e8bc6c1659ff2dbe1e86d9ac990d3056dc"
+          },
+          "treeComplete": true,
+          "observedProcesses": 1,
+          "disappearedProcesses": [],
+          "consistency": "non-atomic-finite-scan",
+          "unavailable": {
+            "rendererHeapBytes": "guest-JS-allocator-not-exported",
+            "allocatorRetainedBytes": "RSS-is-not-an-allocator-retention-counter"
+          }
+        },
+        "rssIsRetirementProof": false
+      }
+    },
+    {
+      "mode": "fresh",
+      "label": "after-callback-trap",
+      "invocationRecord": {
+        "artifactMember": "java-compiler-diagnostics/node/controls/diagnostics-java-after-callback-trap.json",
+        "sha256": "sha256:c78e33db597932b46b1f820bcbe44916003d721e92ecd236725224253609aa28",
+        "bytes": 1378
+      },
+      "retirementRecord": {
+        "artifactMember": "java-compiler-diagnostics/node/retired-diagnostics-java-after-callback-trap.json",
+        "sha256": "sha256:f38b22f23fa72c618129a20616b8c0006380ef8ff1b6cfecea1c0d70e41622e4",
+        "bytes": 15442
+      },
+      "exitCode": 0,
+      "processReaped": true,
+      "decoded": [
+        {
+          "ok": "diagnostics|fresh|init=1|ctor=1|denied=2|fallback=42|fresh=1"
+        }
+      ],
+      "outcomeKnown": true,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:25793c9f0842b459c6e770ffee4c4174aa0bb168bf35c21bcf2937af91158904",
+        "releaseDigest": "sha256:ba0b292c5354cd38a661b66e61c2f43a88b76b24b725ef115f2ffa94da5cfd1a",
+        "revisionId": "revision-v1:sha256:36834e7edd035744997376275003f10ddfadaacc2786091567ecbd233a6c8e65",
+        "routeGeneration": "4"
+      },
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "5030091",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "9374456",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "7153"
+      },
+      "errorCode": null,
+      "activeProviderCounters": {
+        "broker_sessions": "0",
+        "broker_handles": "0",
+        "broker_calls": "0",
+        "broker_results": "0",
+        "broker_buffer_bytes": "0",
+        "pool_active_connections": "0",
+        "pool_connecting_connections": "0",
+        "pool_pending_requests": "0",
+        "pool_running_requests": "0",
+        "pool_workers": "0",
+        "pool_cleanup_jobs": "0",
+        "io_calls": "0",
+        "io_occupied_running_slots": "0",
+        "io_queued_calls": "0",
+        "io_staged_bytes": "0",
+        "io_result_bytes": "0",
+        "io_buffers": "0",
+        "io_streams": "0"
+      },
+      "physical": {
+        "phase": "diagnostics-java-after-callback-trap",
+        "topologyAvailable": true,
+        "topologyComplete": true,
+        "ownedTopology": [
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "1",
+            "kind": "cell",
+            "name": "execution-cell-leases",
+            "ownership": "activation-scoped"
+          },
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "1",
+            "kind": "reservation",
+            "name": "prepared-instance-reservations",
+            "ownership": "activation-scoped"
+          },
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "1",
+            "kind": "invocation",
+            "name": "guest-invocations",
+            "ownership": "activation-scoped"
+          },
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "1",
+            "kind": "store",
+            "name": "guest-stores",
+            "ownership": "activation-scoped"
+          },
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "1",
+            "kind": "host-state",
+            "name": "guest-host-states",
+            "ownership": "activation-scoped"
+          },
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "1",
+            "kind": "component-instance",
+            "name": "guest-component-instances",
+            "ownership": "activation-scoped"
+          },
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "1",
+            "kind": "buffer-group",
+            "name": "guest-value-buffers",
+            "ownership": "activation-scoped"
+          },
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "1",
+            "kind": "probe",
+            "name": "guest-cancellation-probes",
+            "ownership": "activation-scoped"
+          },
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "0",
+            "kind": "process",
+            "name": "resident-service-processes",
+            "ownership": "service-resident"
+          },
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "0",
+            "kind": "thread",
+            "name": "resident-service-threads",
+            "ownership": "service-resident"
+          },
+          {
+            "activeCount": "0",
+            "attributes": {},
+            "configuredCount": "0",
+            "kind": "listener",
+            "name": "resident-service-listeners",
+            "ownership": "service-resident"
+          }
+        ],
+        "cellCapacity": [
+          {
+            "accepting": true,
+            "active": 0,
+            "available": 1,
+            "cancellations": "0",
+            "class": "standard",
+            "expired": "0",
+            "granted": "7",
+            "maxWaitMicros": "95",
+            "observationAvailable": true,
+            "oldestLeaseAgeMicros": "0",
+            "quarantined": 0,
+            "queueCapacity": 2,
+            "queueDepth": 0,
+            "queuedTenants": 0,
+            "rejected": "0",
+            "total": 1,
+            "totalWaitMicros": "473"
+          }
+        ],
+        "quotaUsage": {
+          "activeActivations": 0,
+          "queuedActivations": 0,
+          "reservedCpuFuel": "0",
+          "reservedMemoryBytes": "0"
+        },
+        "queueDepth": "0",
+        "preparations": {
+          "available": true,
+          "preparing": "0",
+          "preparingSourceBytes": "0",
+          "preparingMetadataBytes": "0"
+        },
+        "os": {
+          "identity": {
+            "processId": 3722,
+            "startTimeTicks": "36080",
+            "executableSha256": "sha256:77e5afc7576d5dc0831a00e1009544e8bc6c1659ff2dbe1e86d9ac990d3056dc"
+          },
+          "treeComplete": true,
+          "observedProcesses": 1,
+          "disappearedProcesses": [],
+          "consistency": "non-atomic-finite-scan",
+          "unavailable": {
+            "rendererHeapBytes": "guest-JS-allocator-not-exported",
+            "allocatorRetainedBytes": "RSS-is-not-an-allocator-retention-counter"
+          }
+        },
+        "rssIsRetirementProof": false
+      }
+    }
+  ],
+  "missingActivationGrant": {
+    "invocationRecord": {
+      "artifactMember": "java-compiler-diagnostics/node/controls/diagnostics-without-activation.json",
+      "sha256": "sha256:68782417a6f341ebaabc3dc9558588c0ea1da9be3f99e051043a9de6df5cdd45",
+      "bytes": 1063
+    },
+    "exitCode": 4,
+    "outcomeKnown": true,
+    "errorCode": "permission-denied",
+    "consumption": {
+      "blobReadBytes": "0",
+      "blobWriteBytes": "0",
+      "childCalls": 0,
+      "cpuFuel": "0",
+      "effectCount": 0,
+      "logBytes": "0",
+      "outboundRequests": 0,
+      "peakMemoryBytes": "0",
+      "stateReadBytes": "0",
+      "stateWriteBytes": "0",
+      "wallTimeMicros": "842"
+    },
+    "activeProviderCounters": {
+      "broker_sessions": "0",
+      "broker_handles": "0",
+      "broker_calls": "0",
+      "broker_results": "0",
+      "broker_buffer_bytes": "0",
+      "pool_active_connections": "0",
+      "pool_connecting_connections": "0",
+      "pool_pending_requests": "0",
+      "pool_running_requests": "0",
+      "pool_workers": "0",
+      "pool_cleanup_jobs": "0",
+      "io_calls": "0",
+      "io_occupied_running_slots": "0",
+      "io_queued_calls": "0",
+      "io_staged_bytes": "0",
+      "io_result_bytes": "0",
+      "io_buffers": "0",
+      "io_streams": "0"
+    },
+    "physical": {
+      "phase": "diagnostics-without-activation",
+      "topologyAvailable": true,
+      "topologyComplete": true,
+      "ownedTopology": [
+        {
+          "activeCount": "0",
+          "attributes": {},
+          "configuredCount": "1",
+          "kind": "cell",
+          "name": "execution-cell-leases",
+          "ownership": "activation-scoped"
+        },
+        {
+          "activeCount": "0",
+          "attributes": {},
+          "configuredCount": "1",
+          "kind": "reservation",
+          "name": "prepared-instance-reservations",
+          "ownership": "activation-scoped"
+        },
+        {
+          "activeCount": "0",
+          "attributes": {},
+          "configuredCount": "1",
+          "kind": "invocation",
+          "name": "guest-invocations",
+          "ownership": "activation-scoped"
+        },
+        {
+          "activeCount": "0",
+          "attributes": {},
+          "configuredCount": "1",
+          "kind": "store",
+          "name": "guest-stores",
+          "ownership": "activation-scoped"
+        },
+        {
+          "activeCount": "0",
+          "attributes": {},
+          "configuredCount": "1",
+          "kind": "host-state",
+          "name": "guest-host-states",
+          "ownership": "activation-scoped"
+        },
+        {
+          "activeCount": "0",
+          "attributes": {},
+          "configuredCount": "1",
+          "kind": "component-instance",
+          "name": "guest-component-instances",
+          "ownership": "activation-scoped"
+        },
+        {
+          "activeCount": "0",
+          "attributes": {},
+          "configuredCount": "1",
+          "kind": "buffer-group",
+          "name": "guest-value-buffers",
+          "ownership": "activation-scoped"
+        },
+        {
+          "activeCount": "0",
+          "attributes": {},
+          "configuredCount": "1",
+          "kind": "probe",
+          "name": "guest-cancellation-probes",
+          "ownership": "activation-scoped"
+        },
+        {
+          "activeCount": "0",
+          "attributes": {},
+          "configuredCount": "0",
+          "kind": "process",
+          "name": "resident-service-processes",
+          "ownership": "service-resident"
+        },
+        {
+          "activeCount": "0",
+          "attributes": {},
+          "configuredCount": "0",
+          "kind": "thread",
+          "name": "resident-service-threads",
+          "ownership": "service-resident"
+        },
+        {
+          "activeCount": "0",
+          "attributes": {},
+          "configuredCount": "0",
+          "kind": "listener",
+          "name": "resident-service-listeners",
+          "ownership": "service-resident"
+        }
+      ],
+      "cellCapacity": [
+        {
+          "accepting": true,
+          "active": 0,
+          "available": 1,
+          "cancellations": "0",
+          "class": "standard",
+          "expired": "0",
+          "granted": "1",
+          "maxWaitMicros": "72",
+          "observationAvailable": true,
+          "oldestLeaseAgeMicros": "0",
+          "quarantined": 0,
+          "queueCapacity": 2,
+          "queueDepth": 0,
+          "queuedTenants": 0,
+          "rejected": "0",
+          "total": 1,
+          "totalWaitMicros": "72"
+        }
+      ],
+      "quotaUsage": {
+        "activeActivations": 0,
+        "queuedActivations": 0,
+        "reservedCpuFuel": "0",
+        "reservedMemoryBytes": "0"
+      },
+      "queueDepth": "0",
+      "preparations": {
+        "available": true,
+        "preparing": "0",
+        "preparingSourceBytes": "0",
+        "preparingMetadataBytes": "0"
+      },
+      "os": {
+        "identity": {
+          "processId": 3722,
+          "startTimeTicks": "36080",
+          "executableSha256": "sha256:77e5afc7576d5dc0831a00e1009544e8bc6c1659ff2dbe1e86d9ac990d3056dc"
+        },
+        "treeComplete": true,
+        "observedProcesses": 1,
+        "disappearedProcesses": [],
+        "consistency": "non-atomic-finite-scan",
+        "unavailable": {
+          "rendererHeapBytes": "guest-JS-allocator-not-exported",
+          "allocatorRetainedBytes": "RSS-is-not-an-allocator-retention-counter"
+        }
+      },
+      "rssIsRetirementProof": false
+    }
+  },
+  "afterDeletes": {
+    "phase": "after-deletes",
+    "topologyAvailable": true,
+    "topologyComplete": true,
+    "ownedTopology": [
+      {
+        "activeCount": "0",
+        "attributes": {},
+        "configuredCount": "1",
+        "kind": "cell",
+        "name": "execution-cell-leases",
+        "ownership": "activation-scoped"
+      },
+      {
+        "activeCount": "0",
+        "attributes": {},
+        "configuredCount": "1",
+        "kind": "reservation",
+        "name": "prepared-instance-reservations",
+        "ownership": "activation-scoped"
+      },
+      {
+        "activeCount": "0",
+        "attributes": {},
+        "configuredCount": "1",
+        "kind": "invocation",
+        "name": "guest-invocations",
+        "ownership": "activation-scoped"
+      },
+      {
+        "activeCount": "0",
+        "attributes": {},
+        "configuredCount": "1",
+        "kind": "store",
+        "name": "guest-stores",
+        "ownership": "activation-scoped"
+      },
+      {
+        "activeCount": "0",
+        "attributes": {},
+        "configuredCount": "1",
+        "kind": "host-state",
+        "name": "guest-host-states",
+        "ownership": "activation-scoped"
+      },
+      {
+        "activeCount": "0",
+        "attributes": {},
+        "configuredCount": "1",
+        "kind": "component-instance",
+        "name": "guest-component-instances",
+        "ownership": "activation-scoped"
+      },
+      {
+        "activeCount": "0",
+        "attributes": {},
+        "configuredCount": "1",
+        "kind": "buffer-group",
+        "name": "guest-value-buffers",
+        "ownership": "activation-scoped"
+      },
+      {
+        "activeCount": "0",
+        "attributes": {},
+        "configuredCount": "1",
+        "kind": "probe",
+        "name": "guest-cancellation-probes",
+        "ownership": "activation-scoped"
+      },
+      {
+        "activeCount": "0",
+        "attributes": {},
+        "configuredCount": "0",
+        "kind": "process",
+        "name": "resident-service-processes",
+        "ownership": "service-resident"
+      },
+      {
+        "activeCount": "0",
+        "attributes": {},
+        "configuredCount": "0",
+        "kind": "thread",
+        "name": "resident-service-threads",
+        "ownership": "service-resident"
+      },
+      {
+        "activeCount": "0",
+        "attributes": {},
+        "configuredCount": "0",
+        "kind": "listener",
+        "name": "resident-service-listeners",
+        "ownership": "service-resident"
+      }
+    ],
+    "cellCapacity": [
+      {
+        "accepting": true,
+        "active": 0,
+        "available": 1,
+        "cancellations": "0",
+        "class": "standard",
+        "expired": "0",
+        "granted": "7",
+        "maxWaitMicros": "95",
+        "observationAvailable": true,
+        "oldestLeaseAgeMicros": "0",
+        "quarantined": 0,
+        "queueCapacity": 2,
+        "queueDepth": 0,
+        "queuedTenants": 0,
+        "rejected": "0",
+        "total": 1,
+        "totalWaitMicros": "473"
+      }
+    ],
+    "quotaUsage": {
+      "activeActivations": 0,
+      "queuedActivations": 0,
+      "reservedCpuFuel": "0",
+      "reservedMemoryBytes": "0"
+    },
+    "queueDepth": "0",
+    "preparations": {
+      "available": true,
+      "preparing": "0",
+      "preparingSourceBytes": "0",
+      "preparingMetadataBytes": "0"
+    },
+    "os": {
+      "identity": {
+        "processId": 3722,
+        "startTimeTicks": "36080",
+        "executableSha256": "sha256:77e5afc7576d5dc0831a00e1009544e8bc6c1659ff2dbe1e86d9ac990d3056dc"
+      },
+      "treeComplete": true,
+      "observedProcesses": 1,
+      "disappearedProcesses": [],
+      "consistency": "non-atomic-finite-scan",
+      "unavailable": {
+        "rendererHeapBytes": "guest-JS-allocator-not-exported",
+        "allocatorRetainedBytes": "RSS-is-not-an-allocator-retention-counter"
+      }
+    },
+    "rssIsRetirementProof": false
+  },
+  "nodeShutdown": {
+    "processId": 3722,
+    "reaped": true,
+    "record": {
+      "schemaVersion": "latent.standalone.status.v1",
+      "event": "stopped",
+      "clean": true,
+      "report": {
+        "audit": {
+          "workerJoined": true,
+          "queuedOperations": 0,
+          "queryOwners": 0,
+          "queryBytes": 0,
+          "pendingAttempts": 0,
+          "reservedRecords": 0,
+          "stageBytes": 0,
+          "recoveryPending": false,
+          "unknownOutcomes": 0,
+          "previousSessionLossUnknown": false
+        },
+        "rollouts": {
+          "workerJoined": true,
+          "workerLive": false,
+          "queuedCommands": 0,
+          "activeCommands": 0,
+          "retainedRequestBytes": 0,
+          "responseOwners": 0,
+          "responseBytes": 0,
+          "failed": false,
+          "canary": {
+            "retainedWindows": 0,
+            "retainedSamples": 0,
+            "liveSamples": 0,
+            "snapshotOwners": 0
+          }
+        },
+        "policies": {
+          "workCompleted": true,
+          "activeJobs": 0,
+          "retainedReadOwners": 0
+        },
+        "providers": {
+          "clean": true,
+          "controlOwners": 0,
+          "connections": 0,
+          "pendingRequests": 0,
+          "runningRequests": 0,
+          "workers": 0,
+          "cleanupJobs": 0,
+          "failedCleanup": 0,
+          "sessions": 0,
+          "handles": 0,
+          "calls": 0,
+          "results": 0,
+          "ioCalls": 0,
+          "ioRetainedBytes": 0,
+          "blobStages": 0,
+          "blobHandles": 0,
+          "blobWork": 0,
+          "secretGenerations": 0,
+          "secretReferences": 0,
+          "streamOwners": 0,
+          "streamConnections": 0,
+          "streamPendingOperations": 0,
+          "streamRetainedChunks": 0,
+          "streamMaintenanceOwners": 0
+        },
+        "clean": true,
+        "activeConnections": 0,
+        "activeRpcs": 0,
+        "activeControlJobs": 0,
+        "activeActivations": 0,
+        "cancellationRegistrations": 0,
+        "observerCorrelations": 0,
+        "quotaReservations": 0,
+        "queuedReservations": 0,
+        "reservedCpuFuel": 0,
+        "reservedMemoryBytes": 0,
+        "activeLeases": 0,
+        "queuedActivations": 0,
+        "quarantinedCells": 0,
+        "activeBackendInvocations": 0,
+        "instanceReservations": 0,
+        "preparingComponents": 0,
+        "preparingSourceBytes": 0,
+        "preparingMetadataBytes": 0,
+        "liveStores": 0,
+        "liveHostStates": 0,
+        "liveInstances": 0,
+        "liveTemporaryBuffers": 0,
+        "liveCancellationProbes": 0,
+        "telemetryRetainedEntries": 252,
+        "telemetryFlushed": true,
+        "epochHelperJoined": true,
+        "compiler": {
+          "maximum_jobs": 1,
+          "maximum_workers": 1,
+          "maximum_queued_jobs": 0,
+          "maximum_waiters": 3,
+          "maximum_waiters_per_job": 3,
+          "maximum_ready_preparations": 3,
+          "maximum_document_bytes": 5308416,
+          "assigned_jobs": 0,
+          "running_jobs": 0,
+          "queued_jobs": 0,
+          "waiting_callers": 0,
+          "ready_preparations": 0,
+          "ready_metadata_bytes": 0,
+          "ready_compiled_image_bytes": 0,
+          "reserved_document_bytes": 0,
+          "workers_live": 0,
+          "workers_quiescent": 1,
+          "workers_joined": 1,
+          "accepting": false,
+          "failed": false,
+          "jobs_started": 1,
+          "jobs_completed": 1,
+          "jobs_failed": 0,
+          "jobs_abandoned": 0,
+          "coalesced_waiters": 0,
+          "queue_rejected": 0,
+          "waiter_rejected": 0,
+          "ready_rejected": 0,
+          "cancelled_waiters": 0,
+          "discarded_results": 0
+        },
+        "cleanup": {
+          "capacity": 4,
+          "accepting": false,
+          "driverAlive": false,
+          "driverJoined": true,
+          "reserved": 0,
+          "queued": 0,
+          "running": 0,
+          "handoffs": 0,
+          "completed": 0,
+          "timedOut": 0,
+          "panicked": 0,
+          "fallbacks": 0,
+          "failed": false
+        }
+      }
+    }
+  },
+  "peerShutdown": {
+    "counts": {
+      "requests": 0,
+      "authorized": 0,
+      "unexpected": 0,
+      "holds": 0,
+      "closedHolds": 0
+    },
+    "closed": true,
+    "reaped": true,
+    "exitCode": 0
+  },
+  "limitations": {
+    "graphIsRuntimeExecutionEvidence": false,
+    "arbitraryNativeApiSupport": "unknown",
+    "uncaughtTrapApiCause": "unknown",
+    "arbitraryWorkerDrainQualified": false,
+    "postRetiredStoreCallbackQualified": false,
+    "allSixLanguageMatrixQualified": false,
+    "privateRawJarsCompilerResponseFilesAndDgmlRetained": false,
+    "historicalDotnet991Observation": "unavailable-actual-refusal-branch-unknown",
+    "laterSourceCompilationRequalified": false
+  }
+}

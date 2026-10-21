@@ -110,6 +110,11 @@ certificate of general library compatibility. Compiler elimination requires a
 source identity and compiler evidence. A scan for an API name cannot prove
 reachability or elimination.
 
+Java and .NET offer explicit, default-off
+[compiler method observations](compiler-method-observations.md). Dependency or
+scanner retention stays separate from API support and actual execution; missing
+or incomplete observations remain unknown.
+
 The additive Rust diagnostics programme uses an outside captured crate and its
 transitive callback crate through the ordinary Cargo authoring and lock-review
 workflow. It removes the original sources before the network-disabled build,

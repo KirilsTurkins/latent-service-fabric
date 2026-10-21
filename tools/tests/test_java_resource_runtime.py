@@ -218,7 +218,8 @@ class JavaResourceRuntime(unittest.TestCase):
             if name.endswith('TeaVMPlugin'):
                 self.assertEqual(facilities, [b'dev.latent.guest.facilities.compiler.EntropyPlugin',
                                       b'dev.latent.guest.facilities.compiler.LoggingPlugin',
-                                      b'dev.latent.guest.facilities.compiler.ClosedFilesystemPlugin'])
+                              b'dev.latent.guest.facilities.compiler.ClosedFilesystemPlugin',
+                              b'dev.latent.guest.facilities.compiler.ReachabilityPlugin'])
                 expected = (self.sdk / 'resources/services' / name).read_bytes().splitlines() + expected
             else:
                 self.assertEqual(facilities, [b'dev.latent.guest.facilities.compiler.EntropySubstitution'])
