@@ -1,0 +1,153 @@
+{
+  "cases": [
+    "KernelNetport.test_actual_callback_returns_only_queued_original_birth_without_post_return_reads",
+    "KernelNetport.test_actual_keys_policy_locks_and_original_sixteen_entry_eviction_remain",
+    "KernelNetport.test_drain_snapshots_pool_then_revalidates_under_cache_lock_before_dereferencing",
+    "KernelNetport.test_existing_fixed_record_carries_bucket_before_publication_and_no_extra_table",
+    "KernelNetport.test_fifteen_whole_preimages_and_nine_definitions_bind_maintained_archive",
+    "KernelNetport.test_normal_free_and_connect_remainders_are_preserved_under_explicit_owned_branches",
+    "KernelNetport.test_old_optional_heap_cache_allocation_becomes_original_child_or_closed_error",
+    "KernelNetport.test_raw_policy_sid_and_mandatory_avc_audit_are_explicit_remaining_real_allocators",
+    "KernelNetport.test_reference_selects_ten_real_factory_functions_and_actual_upstream_cache_bodies",
+    "KernelNetport.test_shared_cache_reads_do_not_adopt_another_context_or_change_policy_results",
+    "KernelNetport.test_unknown_duplicate_crlf_and_changed_definitions_or_whole_membership_refuse"
+  ],
+  "guards": {
+    "KernelNetport.test_actual_callback_returns_only_queued_original_birth_without_post_return_reads": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5cba6e6e1b0fc8a85ad593975488d41915ad7cd4ea872ca34aa7e766369ab51e",
+        "class:setup-sha256:93dc23229c9ab780138226cab7e8968266681bbba03788255087381a81ea0f57"
+      ],
+      "skipSites": []
+    },
+    "KernelNetport.test_actual_keys_policy_locks_and_original_sixteen_entry_eviction_remain": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5cba6e6e1b0fc8a85ad593975488d41915ad7cd4ea872ca34aa7e766369ab51e",
+        "class:setup-sha256:93dc23229c9ab780138226cab7e8968266681bbba03788255087381a81ea0f57"
+      ],
+      "skipSites": []
+    },
+    "KernelNetport.test_drain_snapshots_pool_then_revalidates_under_cache_lock_before_dereferencing": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5cba6e6e1b0fc8a85ad593975488d41915ad7cd4ea872ca34aa7e766369ab51e",
+        "class:setup-sha256:93dc23229c9ab780138226cab7e8968266681bbba03788255087381a81ea0f57"
+      ],
+      "skipSites": []
+    },
+    "KernelNetport.test_existing_fixed_record_carries_bucket_before_publication_and_no_extra_table": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5cba6e6e1b0fc8a85ad593975488d41915ad7cd4ea872ca34aa7e766369ab51e",
+        "class:setup-sha256:93dc23229c9ab780138226cab7e8968266681bbba03788255087381a81ea0f57"
+      ],
+      "skipSites": []
+    },
+    "KernelNetport.test_fifteen_whole_preimages_and_nine_definitions_bind_maintained_archive": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5cba6e6e1b0fc8a85ad593975488d41915ad7cd4ea872ca34aa7e766369ab51e",
+        "class:setup-sha256:93dc23229c9ab780138226cab7e8968266681bbba03788255087381a81ea0f57"
+      ],
+      "skipSites": []
+    },
+    "KernelNetport.test_normal_free_and_connect_remainders_are_preserved_under_explicit_owned_branches": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5cba6e6e1b0fc8a85ad593975488d41915ad7cd4ea872ca34aa7e766369ab51e",
+        "class:setup-sha256:93dc23229c9ab780138226cab7e8968266681bbba03788255087381a81ea0f57"
+      ],
+      "skipSites": []
+    },
+    "KernelNetport.test_old_optional_heap_cache_allocation_becomes_original_child_or_closed_error": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5cba6e6e1b0fc8a85ad593975488d41915ad7cd4ea872ca34aa7e766369ab51e",
+        "class:setup-sha256:93dc23229c9ab780138226cab7e8968266681bbba03788255087381a81ea0f57"
+      ],
+      "skipSites": []
+    },
+    "KernelNetport.test_raw_policy_sid_and_mandatory_avc_audit_are_explicit_remaining_real_allocators": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5cba6e6e1b0fc8a85ad593975488d41915ad7cd4ea872ca34aa7e766369ab51e",
+        "class:setup-sha256:93dc23229c9ab780138226cab7e8968266681bbba03788255087381a81ea0f57"
+      ],
+      "skipSites": []
+    },
+    "KernelNetport.test_reference_selects_ten_real_factory_functions_and_actual_upstream_cache_bodies": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5cba6e6e1b0fc8a85ad593975488d41915ad7cd4ea872ca34aa7e766369ab51e",
+        "class:setup-sha256:93dc23229c9ab780138226cab7e8968266681bbba03788255087381a81ea0f57"
+      ],
+      "skipSites": []
+    },
+    "KernelNetport.test_shared_cache_reads_do_not_adopt_another_context_or_change_policy_results": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5cba6e6e1b0fc8a85ad593975488d41915ad7cd4ea872ca34aa7e766369ab51e",
+        "class:setup-sha256:93dc23229c9ab780138226cab7e8968266681bbba03788255087381a81ea0f57"
+      ],
+      "skipSites": []
+    },
+    "KernelNetport.test_unknown_duplicate_crlf_and_changed_definitions_or_whole_membership_refuse": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5cba6e6e1b0fc8a85ad593975488d41915ad7cd4ea872ca34aa7e766369ab51e",
+        "class:setup-sha256:93dc23229c9ab780138226cab7e8968266681bbba03788255087381a81ea0f57"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_host_stream_kernel_netport.py",
+  "reviewReason": "Add eleven exact maintained Netport cache/source controls; preserve all prior Netlabel/protocol/factory/outer controls and deny production installation.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
