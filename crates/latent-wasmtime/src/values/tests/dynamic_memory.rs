@@ -227,7 +227,7 @@ async fn actual_partial_failed_lift_reports_only_allocated_tree_and_retires_afte
 }
 
 #[tokio::test]
-async fn actual_parameter_copy_refunds_before_lift_and_abandoned_post_return_keeps_result_owner() {
+async fn actual_parameter_copy_refunds_and_cancelled_post_return_cannot_credit_a_new_result() {
     use std::{
         future::Future,
         task::{Context, Poll, Wake, Waker},
@@ -271,10 +271,34 @@ async fn actual_parameter_copy_refunds_before_lift_and_abandoned_post_return_kee
     assert!(budget.host_memory_bytes() < input_bytes + 4096); // copied parameters actually gone
     drop(call);
     assert!(matches!(output.as_slice(), [Val::Bool(false)])); // no caller handoff
+
+    // The fuel-yield FiberFuture disposes and unwinds its native result on
+    // cancellation. The caller still owns the shared aggregate scope, so its
+    // conservative charge remains until that final scope is actually dropped.
+    assert!(budget.host_memory_bytes() > 0);
     drop(input);
     drop(output);
-    assert!(budget.host_memory_bytes() > 0); // Store-owned post-return result remains
+    assert_eq!(budget.host_memory_bytes(), 0);
+    assert_eq!(budget.outstanding_reservations(), 0);
+
+    // Reuse this exact original budget while the cancelled Store is still
+    // alive. Its later cleanup must not grant credit against a new live result.
+    let (mut next_store, next_function, _) = fixture("utf8", false).await;
+    let mut next_output = OwnedValues::output_accounted(1, &budget).unwrap();
+    let next_scope = next_output.lift_memory().unwrap();
+    next_function
+        .call_async_with_memory(&mut next_store, &[], next_output.as_mut_slice(), next_scope)
+        .await
+        .unwrap();
+    next_output.finish_lift(true).unwrap();
+    assert!(matches!(next_output.as_slice(), [Val::String(value)] if value == "tiny"));
+    let retained = budget.host_memory_bytes();
+    assert!(retained > 0);
     drop(store);
+    assert_eq!(budget.host_memory_bytes(), retained);
+    drop(next_store);
+    assert_eq!(budget.host_memory_bytes(), retained);
+    drop(next_output);
     assert_eq!(budget.host_memory_bytes(), 0);
     assert_eq!(budget.outstanding_reservations(), 0);
 }

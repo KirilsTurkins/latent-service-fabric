@@ -158,6 +158,18 @@ def locked_dependencies(name: str) -> bytes:
         if package["name"] == name:
             raise ValueError("project name collides with a dependency")
         original = packages.get((package["name"], package["version"], package.get("source")))
+        if original is None and package["name"] == "wasmtime":
+            from tools import host_codec_wasmtime as codec_wasmtime
+
+            # Standalone guest projects keep the original registry lock bytes.
+            # The host's maintained fork may stand for that exact upstream only
+            # after its complete reviewed source and original archive authenticate.
+            local = packages.get((codec_wasmtime.NAME, codec_wasmtime.VERSION, None))
+            if (local is not None and "checksum" not in local
+                    and package["version"] == codec_wasmtime.VERSION
+                    and package.get("source") == "registry+https://github.com/rust-lang/crates.io-index"
+                    and package.get("checksum") == codec_wasmtime.verify(ROOT)["upstreamSha256"]):
+                continue
         if original is None or original.get("checksum") != package.get("checksum"):
             raise ValueError("standalone lock drift: regenerate and review tools/rust_capsule.lock")
     needle = f'name = "{template}"'

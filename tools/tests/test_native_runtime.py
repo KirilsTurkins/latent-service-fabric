@@ -235,7 +235,9 @@ class ManifestTests(unittest.TestCase):
             with self.assertRaisesRegex(InstallError, "exact-revision"):
                 inspect(child, [donor], checksums, policy)
             with self.assertRaisesRegex(InstallError, "local-donor-identity"):
-                inspect(child, [{**donor, "manifest_path": str(directory / "Cargo.toml")}], checksums, policy)
+                # Keep enough parents on Linux to reach the identity guard;
+                # /tmp/<temporary>/Cargo.toml is rejected by the path guard first.
+                inspect(child, [{**donor, "manifest_path": str(directory / "foreign" / "Cargo.toml")}], checksums, policy)
             with patch.object(codec_wasmtime, "verify", side_effect=ValueError("tampered-local-donor")), \
                     self.assertRaisesRegex(ValueError, "tampered-local-donor"):
                 inspect(child, [donor], checksums, policy)
