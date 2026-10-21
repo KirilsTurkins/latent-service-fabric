@@ -112,10 +112,21 @@ impl ValidatedAotProfile {
         Ok(())
     }
 
-    pub(crate) fn authenticate_component(&self, bytes: &[u8]) -> Result<(), PlatformError> {
-        crate::component_threading::Authentication::verify(
-            self.bootstrap.settings.owned_native_threads(),
+    pub(crate) fn verification_bytes(&self) -> usize {
+        self.bootstrap
+            .settings
+            .native_thread_profile()
+            .map_or(0, crate::NativeThreadProfile::verification_bytes)
+    }
+    pub(crate) fn authenticate_component(
+        &self,
+        bytes: &[u8],
+        prepaid: usize,
+    ) -> Result<(), PlatformError> {
+        crate::component_threading::Authentication::verify_profile(
+            self.bootstrap.settings.native_thread_profile(),
             bytes,
+            prepaid,
         )?;
         Ok(())
     }
@@ -144,7 +155,7 @@ pub(crate) fn engine_from_bootstrap(
 pub(crate) fn engine_from_bootstrap_with_threading(
     bytes: &[u8],
     limits: AotCompilerLimits,
-) -> Result<(Engine, [u8; 32], bool), PlatformError> {
+) -> Result<(Engine, [u8; 32], Option<crate::NativeThreadProfile>), PlatformError> {
     let limits = limits.validate()?;
     if bytes.len() > MAX_BOOTSTRAP_BYTES {
         return Err(exhausted());
@@ -163,7 +174,7 @@ pub(crate) fn engine_from_bootstrap_with_threading(
     if blob(actual) != expected {
         return Err(mismatch());
     }
-    Ok((engine, actual, value.settings.owned_native_threads()))
+    Ok((engine, actual, value.settings.native_thread_profile()))
 }
 
 fn compiler_engine(settings: &CompilerEngineSettings) -> Result<Engine, PlatformError> {

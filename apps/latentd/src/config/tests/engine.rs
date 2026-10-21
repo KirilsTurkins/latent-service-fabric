@@ -13,6 +13,77 @@ fn ordinary_node_inherits_finite_table_capacity_without_extra_engine_options() {
 }
 
 #[test]
+fn c_threading_engine_input_is_closed_and_default_input_remains_unselected() {
+    for value in [
+        "null",
+        "true",
+        "[]",
+        "{}",
+        "1",
+        "\"cooperative\"",
+        "\"rust-context40-sole-consumer-one-task-start-v1\"",
+    ] {
+        let source = document().replacen(
+            '{',
+            &format!("{{\"engine\":{{\"threadingProfile\":{value}}},"),
+            1,
+        );
+        assert!(input::decode(source.as_bytes()).is_err());
+    }
+    let source = document().replacen(
+        '{',
+        "{\"engine\":{\"threadingProfile\":\"c-context144-sync-cooperative-v1\"},",
+        1,
+    );
+    assert_eq!(
+        input::decode(source.as_bytes())
+            .unwrap()
+            .engine
+            .threading_profile,
+        crate::config::model::EngineThreadingProfile::CContext144SyncCooperativeV1
+    );
+    let source = document().replacen('{', "{\"engine\":{\"threadingProfile\":\"single-threaded\",\"threadingProfile\":\"single-threaded\"},", 1);
+    assert!(input::decode(source.as_bytes()).is_err());
+}
+
+#[test]
+fn activation_stack_accounting_is_a_closed_opt_in_and_omission_stays_default() {
+    for value in [
+        "null",
+        "false",
+        "[]",
+        "{}",
+        "1",
+        "\"engine-managed\"",
+        "\"native\"",
+    ] {
+        let source = document().replacen(
+            '{',
+            &format!("{{\"engine\":{{\"activationStackAccounting\":{value}}},"),
+            1,
+        );
+        assert!(input::decode(source.as_bytes()).is_err(), "{value}");
+    }
+    let source = document().replacen(
+        '{',
+        "{\"engine\":{\"activationStackAccounting\":\"activation-owned-v1\"},",
+        1,
+    );
+    assert_eq!(
+        input::decode(source.as_bytes())
+            .unwrap()
+            .engine
+            .activation_stack_accounting,
+        crate::config::model::EngineActivationStackAccounting::ActivationOwnedV1
+    );
+    let mut missing_runtime = input::decode(source.as_bytes()).unwrap();
+    missing_runtime.providers = None;
+    assert!(missing_runtime.derive().is_err());
+    let source = document().replacen('{', "{\"engine\":{\"activationStackAccounting\":\"activation-owned-v1\",\"activationStackAccounting\":\"activation-owned-v1\"},", 1);
+    assert!(input::decode(source.as_bytes()).is_err());
+}
+
+#[test]
 fn java_guest_engine_is_explicit_and_does_not_raise_operator_limits() {
     let (_directory, mut config) = config();
     let before = config.clone().derive().unwrap().wasmtime;
@@ -43,6 +114,8 @@ fn finite_engine_profiles_derive_checked_pool_capacity_without_opening_storage()
                 allocator,
                 optimization,
                 java_guest: false,
+                threading_profile: Default::default(),
+                activation_stack_accounting: Default::default(),
             };
             config.cells.push(CellConfig {
                 class: "small".to_owned(),

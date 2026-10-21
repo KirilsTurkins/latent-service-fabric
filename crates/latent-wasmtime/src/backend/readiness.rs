@@ -134,6 +134,7 @@ impl WasmtimeBackend {
             source_bytes,
             metadata_bytes,
             document_bytes: 0,
+            verification_bytes: self.config.thread_verification_bytes(),
         };
         // A later source snapshot may see refreshed catalog evidence. It must
         // never upgrade the original grant captured by this preparation.

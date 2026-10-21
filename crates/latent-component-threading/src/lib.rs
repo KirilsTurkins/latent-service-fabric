@@ -27,6 +27,7 @@ pub use root::{RootReceipt, transform_owned_root_bootstrap};
 pub mod c_abi;
 pub mod c_context;
 pub mod c_lifecycle;
+pub mod c_preimage;
 pub mod c_root;
 pub mod c_template;
 mod component;

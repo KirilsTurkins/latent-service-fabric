@@ -79,8 +79,11 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
         files, dependency_root = build_inputs(project_path)
         guest_resources.select(files)
         project, lock, pins = validate(files)
+        threaded = project.get('threadingProfile', 'single-threaded') != 'single-threaded'
+        if threaded:
+            from tools.c_guest import threading
         source_inputs = inventory(files)
-        recipe_files = {path: read_file(ROOT / path) for path in RECIPE}
+        recipe_files = {path: read_file(ROOT / path) for path in (*RECIPE, *(threading.RECIPE if threaded else ()))}
         recipe_inputs = inventory(recipe_files)
         (output / "source-inputs.json").write_bytes(source_inputs)
         (output / "recipe-inputs.json").write_bytes(recipe_inputs)
@@ -101,8 +104,9 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             if packager is None:
                 write_json(output / "diagnostic-source.json", {"capturedSource": str(work), "requestedSource": str(project_path)})
             compiler = Compiler(temporary / "compiler", 900, sdk=work / "vendor/lsf/sdk/c-guest",
-                                platform=None, config=pins, commands=commands, installed=installed)
-            if closure is not None:
+                                platform=None, config=pins, commands=commands, installed=installed,
+                                **({'threading_tool': checked_path(contracts_tool)} if threaded else {}))
+            if closure is not None or threaded:
                 stage = "captured-compiler-isolation"
                 isolated_inputs = compiler.enable_captured_isolation(temporary)
             application = selected(closure, runtime_profile=runtime_profile,
@@ -130,20 +134,24 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 profile_defines = ('_POSIX_C_SOURCE=200809L', '_DEFAULT_SOURCE')
                 defines = (*defines, *(value for value in profile_defines if not any(
                     item.split('=', 1)[0] == value.split('=', 1)[0] for item in defines)))
+            if threaded:
+                compile_wit = threading.stage(compile_wit, project['world'], temporary / 'threaded-wit',
+                                              work / 'vendor/lsf/wit/platform')
             component_path, generated = compiler.compile(sources, compile_wit, project["world"], temporary / "compiled",
-                                                          memory_bytes=64 * 1024 * 1024,
+                                                          memory_bytes=project['limits']['memoryBytes'] if threaded else 64 * 1024 * 1024,
                                                           include_directories=application.includes,
                                                           static_libraries=application.archives, defines=defines,
                                                           runtime_profile=runtime_profile, language_standard=language_standard,
-                                                          embed_directories=resources.directories if language_standard == 'c23' else ())
-            if closure is not None:
+                                                          embed_directories=resources.directories if language_standard == 'c23' else (),
+                                                          **({'threading_profile': threading.PROFILE} if threaded else {}))
+            if closure is not None or threaded:
                 write_json(output / "compiler-inputs.json", isolated_inputs)
             component = read_file(component_path, 64 * 1024 * 1024)
             (output / "component.wasm").write_bytes(component)
             write_json(output / "bindings.json", generated)
             stage = "contracts"
             wit_files = {"wit/" + path: data for path, data in snapshot(temporary / "compiled/wit").items()}
-            package_files = {**files, **wit_files} if runtime_profile in standard_facilities.PROFILE_IMPORTS else files
+            package_files = {**files, **wit_files} if threaded or runtime_profile in standard_facilities.PROFILE_IMPORTS else files
             wit_input = temporary / "wit-inputs.json"
             write_json(wit_input, {"world": project["world"], "sources": [
                 {"path": path, "content": data.decode()} for path, data in package_files.items() if path.startswith("wit/") and path.endswith(".wit")]})
@@ -157,7 +165,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             guest_compatibility_build.inspect(commands, compiler.paths["wasm-tools"], output, surface,
                 host_abi_profile=guest_compatibility_build.declared_host_abi(surface))
             package_inputs(output, project, surface, {**package_files, **resources.sources}, component,
-                           additional_resources=resources.rows)
+                           additional_resources=resources.rows,
+                           **({'threading_model': 'cooperative'} if threaded else {}))
             if packager is not None:
                 stage = "package"
                 commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package", *packaging_arguments(files))
@@ -185,8 +194,13 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 for name in ("application-dependencies.json", "c-libraries.json", "c-resources.json"):
                     data = read_file(output / name, 8 * 1024 * 1024)
                     materials.append({"name": name.removesuffix(".json"), "digest": digest(data), "size": len(data)})
+            if closure is not None or threaded:
                 data = read_file(output / "compiler-inputs.json", 8 * 1024 * 1024)
                 materials.append({"name": "c-compiler-sysroot-and-isolation", "digest": digest(data), "size": len(data)})
+            if threaded:
+                data = read_file(temporary / 'compiled/c-threading/derivation.json', 64 * 1024)
+                (output / 'c-threading-derivation.json').write_bytes(data)
+                materials.append({'name': 'c-threading-derivation', 'digest': digest(data), 'size': len(data)})
             if "c-generated-inputs.json" in files:
                 data = files["c-generated-inputs.json"]
                 materials.append({"name": "c-generator-inputs",

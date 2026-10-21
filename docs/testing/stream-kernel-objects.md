@@ -187,3 +187,36 @@ ownership are still required. No kernel was linked or booted, no real audit,
 port/TIMEWAIT or RCU behavior was executed, and no trusted factory, complete
 physical-closure proof or final-free installation was supplied. The complete
 consumer and production provider remain unavailable under unchanged limits.
+
+
+The separate default-false `route` selector retains all seven earlier jobs and
+all 22 prior objects. It adds the actual IPv4 route and destination translation
+units: 24 unlinked objects and 81 defined GLOBAL FUNC symbols (76 private and
+five original). The derivation authenticates 42 complete maintained files and
+28 function preimages, recording 68 outputs. Of the prior 51 bind outputs, 48
+remain byte exact; the three shared files have closed full-source projections
+for the route kind and queue/return functions. The actual FIB/cache/metrics and
+reference-count algorithms remain authoritative. XFRM was already enabled;
+this private source explicitly refuses the unclosed policy/transform path.
+The allocating reference tracker and LWT were already disabled in the selected
+baseline, and no setting is overridden.
+
+This mode passed at exact source
+`65c7f6e53796408aaa6d8442c86ccee1ae07257e`, run `39568850687`, job
+`119117693703`: all 24 objects, 81 function definitions, 139 hosted
+source/controller controls and 29 completed/cleaned commands. The
+[compiled observation](evidence/kernel-route-objects-compiled-2026-10-21.json)
+binds all 88 CRC-checked archive members and 166 Git materials. Independent
+ELF, complete-source derivation and configuration readers accepted the retained
+bytes. All 4,309 configuration symbols retain the same sole factory n-to-y
+delta; security, Netlabel, SID-cache size and audit requirements remain.
+The original `-Werror`, `-j2`, 900/300-second command deadlines and 4 MiB/16 MiB
+diagnostic bounds remain. Serialized C doubles separately retain the original
+allocator RED and 34 passing mechanism controls.
+
+Compilation does not execute Linux route lookup, XFRM, port/TIMEWAIT, audit or
+RCU behavior. Cache-parent drain, exception/transform producers, RX/SKB/page,
+neighbour and shared-infrastructure ownership remain incomplete. No kernel
+was linked or booted, no trusted factory or complete physical/final-free proof
+was installed, and the complete consumer and production profile remain
+unavailable under the original 96/64 KiB and fixed-slot limits.

@@ -17,6 +17,7 @@ pub struct RuntimeCompatibilityProfile {
     maximum_memory_bytes: u64,
     maximum_fuel: u64,
     renderer: Option<crate::RendererRequirement>,
+    c_cooperative_context: bool,
     digest: [u8; 32],
 }
 
@@ -62,6 +63,7 @@ impl RuntimeCompatibilityProfile {
             maximum_memory_bytes,
             maximum_fuel,
             renderer: None,
+            c_cooperative_context: false,
             digest: [0; 32],
         };
         profile.digest = profile.fingerprint();
@@ -71,6 +73,17 @@ impl RuntimeCompatibilityProfile {
     #[must_use]
     pub fn digest(&self) -> &[u8; 32] {
         &self.digest
+    }
+
+    /// Trusted adapter fact only. The final-byte C proof and actual runtime
+    /// grants are independently required by the selected Wasmtime backend.
+    pub fn with_c_cooperative_context(mut self) -> Result<Self, PlatformError> {
+        if self.version.as_ref() != "48.0.7" || self.renderer.is_some() {
+            return Err(incompatible("c-cooperative-context-profile-incompatible"));
+        }
+        self.c_cooperative_context = true;
+        self.digest = self.fingerprint();
+        Ok(self)
     }
 
     /// The trusted adapter installs a renderer only after checking its engine
@@ -148,11 +161,16 @@ impl RuntimeCompatibilityProfile {
         {
             return Err(incompatible("runtime-cpu-incompatible"));
         }
-        if manifest.execution.backend != ExecutionBackendKind::WasmComponent
-            || !matches!(
+        let supported_threading = if self.c_cooperative_context {
+            manifest.execution.threading == ThreadingModel::Cooperative
+        } else {
+            matches!(
                 manifest.execution.threading,
                 ThreadingModel::SingleThreaded | ThreadingModel::Reentrant
             )
+        };
+        if manifest.execution.backend != ExecutionBackendKind::WasmComponent
+            || !supported_threading
             || manifest.execution.state_model != StateModel::Stateless
         {
             return Err(incompatible("runtime-execution-incompatible"));
@@ -196,6 +214,9 @@ impl RuntimeCompatibilityProfile {
             }]);
             hash.update((renderer.profile_digest.len() as u64).to_le_bytes());
             hash.update(renderer.profile_digest.as_bytes());
+        }
+        if self.c_cooperative_context {
+            hash.update(b"c-context144-sync-cooperative-v1\0");
         }
         hash.finalize().into()
     }

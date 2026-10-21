@@ -24,7 +24,8 @@ class Compiler:
 
     def __init__(self, temporary: Path, timeout: int = 300, *, sdk: Path = SDK,
                  platform: Path | None = ROOT / "wit/platform", config: dict | None = None,
-                 commands=None, installed: dict[str, Path] | None = None):
+                 commands=None, installed: dict[str, Path] | None = None,
+                 threading_tool: Path | None = None):
         if not 1 <= timeout <= 900:
             raise ValueError("C build deadline must be between 1 and 900 seconds")
         temporary.mkdir(parents=True, exist_ok=True)
@@ -58,6 +59,15 @@ class Compiler:
                 raise ValueError(f"{tool}: expected {version}, found {actual}")
         self.closed_filesystem = closed_filesystem.prepare(self.paths['zig'], self.sdk)
         self.materials.update(self.closed_filesystem.materials)
+        self.threading_inputs = {}
+        if threading_tool is not None:
+            from tools.c_guest import threading
+            if not threading_tool.is_absolute() or threading_tool.is_symlink() or not threading_tool.is_file():
+                raise ValueError('c-threading-transformer-requires-owned-tool')
+            self.paths['c-threading-transformer'] = threading_tool.resolve(strict=True)
+            self.materials['c-threading-transformer'] = file_identity(threading_tool, 'c-threading-transformer')
+            self.threading_inputs = threading.libc_inputs(self.paths['zig'])
+            self.materials.update({name: file_identity(path, name, 8192) for name, path in self.threading_inputs.items()})
 
     def run(self, tool: str, *arguments: str) -> str:
         remaining = self.deadline - time.monotonic()
@@ -80,6 +90,13 @@ class Compiler:
 
     def check_unchanged(self) -> None:
         self.closed_filesystem.check_unchanged()
+        if self.threading_inputs:
+            from tools.c_guest import threading
+            if threading.libc_inputs(self.paths['zig']) != self.threading_inputs:
+                raise ValueError('c-threading-libc-input-changed')
+        for name, path in self.threading_inputs.items():
+            if file_identity(path, name, 8192) != self.materials[name]:
+                raise ValueError('c-threading-libc-input-changed')
         for name, path in self.paths.items():
             if file_identity(path, name) != self.materials[name]:
                 raise ValueError("C compiler tool changed during build")
@@ -157,9 +174,16 @@ class Compiler:
                 trap: bool = True, include_directories: tuple[Path, ...] = (),
                 static_libraries: tuple[Path, ...] = (), defines: tuple[str, ...] = (),
                 runtime_profile: str = standard_facilities.DEFAULT, language_standard: str = C_STANDARD,
-                embed_directories: tuple[Path, ...] = ()) -> tuple[Path, dict]:
+                embed_directories: tuple[Path, ...] = (),
+                threading_profile: str = 'single-threaded') -> tuple[Path, dict]:
         standard_facilities.selected_profile({'runtimeProfile': runtime_profile})
         selected_standard({'languageStandard': language_standard})
+        threaded = threading_profile != 'single-threaded'
+        if threaded:
+            from tools.c_guest import threading
+            threading.selected({'threadingProfile': threading_profile})
+        if threaded and ('c-threading-transformer' not in self.paths or static_libraries):
+            raise ValueError('c-threading-requires-transformer-and-no-static-archives')
         if embed_directories and (language_standard != 'c23' or len(embed_directories) > 64):
             raise ValueError('c-embed-directories-require-bounded-c23-selection')
         if not sources or len(sources) > 64:
@@ -169,6 +193,14 @@ class Compiler:
         if isinstance(memory_bytes, bool) or memory_bytes < 2 * 1024 * 1024 or memory_bytes > 64 * 1024 * 1024 or memory_bytes % 65536:
             raise ValueError("C memory ceiling must be page-aligned and between 2 and 64 MiB")
         generated, lock = generate(self.run, wit_source, world, destination, self.platform)
+        public = None
+        if threaded:
+            graph = json.loads(self.run('wasm-tools', 'component', 'wit', '--json', str(destination / 'wit')))
+            public = threading.public_export(graph)
+            runtime = self.sdk / 'runtime'
+            sources = [*sources, runtime / 'threads.c', runtime / 'tls-keys.c']
+            include_directories = (*include_directories, runtime)
+            defines = (*defines, 'LSF_C_LINKED_LIBC=1')
         self.validate_static_libraries(static_libraries, destination)
         core, component = destination / "core.wasm", destination / "component.wasm"
         command = ["cc", "-std=" + language_standard, "-target", "wasm32-wasi", "-O2",
@@ -176,6 +208,13 @@ class Compiler:
                    "-Wl,--no-entry", "-Wl,--export-memory", "-Wl,-z,stack-size=65536",
                    f"-Wl,--max-memory={memory_bytes}", "-I", str(generated),
                    "-I", str(self.sdk / "include"), *map(str, sources)]
+        thread_flags = []
+        if threaded:
+            thread_flags = ['-matomics', '-mbulk-memory', '-pthread']
+            for family in ('wasm-wasi-musl', 'generic-musl'):
+                thread_flags.extend(['-isystem', str(self.paths['zig'].parent / 'lib/libc/include' / family)])
+            command[command.index('-Wl,-z,stack-size=65536')] = '-Wl,-z,stack-size=69632'
+            command.extend([*thread_flags, *('-Wl,--export=' + name for name in threading.EXPORTS)])
         for directory in include_directories:
             command.extend(["-I", str(directory)])
         for directory in embed_directories:
@@ -194,6 +233,7 @@ class Compiler:
             for directory in embed_directories:
                 preprocessor.append('--embed-dir=' + str(directory))
             preprocessor.extend("-D" + define for define in defines)
+            preprocessor.extend(thread_flags)
             selected_sources = [*sources, generated / "probe.c"]
             if trap:
                 selected_sources.append(self.sdk / "src/trap.c")
@@ -205,8 +245,13 @@ class Compiler:
             self.isolation.receipt["preprocessorInputs"] = sorted(
                 {row["path"]: row for row in observed}.values(), key=lambda row: row["path"])
         self.run("zig", *command)
+        encoded_core = core
+        if threaded:
+            derived = destination / 'c-threading'
+            self.run('c-threading-transformer', '--c-thread-derive-v1', str(core), public, str(derived))
+            encoded_core = derived / 'derived.wasm'
         try:
-            component_command = ["component", "new", str(core), "-o", str(component)]
+            component_command = ["component", "new", str(encoded_core), "-o", str(component)]
             if runtime_profile in {standard_facilities.LOGGING_PROFILE, standard_facilities.COMBINED_PROFILE}:
                 adapter = destination / "standard-stdio-adapter.wasm"
                 self.run("wasm-tools", "parse", str(self.sdk / "src/standard-stdio.wat"), "-o", str(adapter))
@@ -222,10 +267,21 @@ class Compiler:
                 except (OSError, ValueError):
                     pass
             raise
-        self.run("wasm-tools", "validate", str(component))
+        if threaded:
+            bound = destination / 'c-threading-component.wasm'
+            self.run('c-threading-transformer', '--c-thread-bind-v1', str(core), str(component), public, str(bound))
+            component = bound
+            self.run('wasm-tools', 'validate', '--features', 'cm-threading,cm-async-stackful', str(component))
+        else:
+            self.run("wasm-tools", "validate", str(component))
         actual = self.run("wasm-tools", "component", "wit", str(component))
         if "wasi:" in actual or "wasi_snapshot_preview1" in actual:
             raise ValueError("ambient WASI is outside the C capsule authoring profile")
+        if threaded:
+            final = json.loads(self.run('wasm-tools', 'component', 'wit', '--json', str(component)))
+            if threading.public_export(final) != public:
+                raise ValueError('c-threading-final-public-contract-changed')
+            lock['threadingProfile'] = threading_profile
         self.check_unchanged()
         return component, lock
 

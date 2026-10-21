@@ -22,6 +22,28 @@ fn host() -> RuntimeCompatibilityProfile {
 }
 
 #[test]
+fn cooperative_c_is_a_distinct_trusted_profile_and_default_fingerprint_is_stable() {
+    let ordinary = RuntimeCompatibilityProfile::new(
+        "wasmtime",
+        "48.0.7",
+        "x86_64-unknown-linux-gnu",
+        &[],
+        u64::MAX,
+        u64::MAX,
+    )
+    .unwrap();
+    let selected = ordinary.clone().with_c_cooperative_context().unwrap();
+    assert_ne!(ordinary.digest(), selected.digest());
+    let mut manifest = capsule();
+    ordinary.check_capsule(&manifest).unwrap();
+    assert!(selected.check_capsule(&manifest).is_err());
+    manifest.execution.threading = crate::ThreadingModel::Cooperative;
+    assert!(ordinary.check_capsule(&manifest).is_err());
+    selected.check_capsule(&manifest).unwrap();
+    assert!(host().with_c_cooperative_context().is_err());
+}
+
+#[test]
 fn omitted_requirements_preserve_canonical_json_and_empty_arrays_normalize() {
     let codec = JsonManifestCodec::default();
     let original = capsule();

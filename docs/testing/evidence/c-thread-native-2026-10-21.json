@@ -1,0 +1,59 @@
+{
+  "status": "passed",
+  "source": "f0d36b38d39a837cef7f6242b4b4a99aa36b8b75",
+  "run": 39581446809,
+  "job": 119159766073,
+  "artifact": {
+    "id": 12338580939,
+    "size_in_bytes": 68308279,
+    "digest": "sha256:512a83eaed2f261e655f1cca569582f9147dadd6fd79a9e1e3e48250a45b2efb"
+  },
+  "receipts": {
+    "native-products.json": {
+      "sha256": "sha256:e7d7cdae7ebd371c3dff45ab9daf4b81d7025e215088510059522b1dbe0e41a0",
+      "bytes": 26887
+    },
+    "source-inputs.json": {
+      "sha256": "sha256:f21a58ad6b8a6536d63a19e90d9985993bd75b62ae8260e9f03d1a80ff421b78",
+      "bytes": 22275
+    }
+  },
+  "members": 73,
+  "nativeSource": {
+    "sha256": "sha256:37a714bc32b0ea6af4b3f72226601e84c4f20fb271b9d91abd4968e478db212b",
+    "files": 3324,
+    "bytes": 26365840,
+    "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+    "hermetic": false,
+    "implicitCompilerInputs": "not-attested"
+  },
+  "auxiliaryGitRows": 134,
+  "commands": 33,
+  "originalRustPassed": 50,
+  "selectedRustPassed": 66,
+  "pythonPassed": 15,
+  "products": {
+    "latent": {
+      "sha256": "sha256:1b0576ffb1d22080728537192a38baf64d448aad30eb545e0a12c81607472b50",
+      "bytes": 69176392
+    },
+    "latentd": {
+      "sha256": "sha256:b7f8250db0f509457263ae302be7c19b789ffd2d0736f1d8d3f703aa9a609b19",
+      "bytes": 188900752
+    },
+    "examples/package": {
+      "sha256": "sha256:bbadca4e2c11a879dfddb09a141222bb40e8e14041408b891480568e9b602814",
+      "bytes": 17854792
+    },
+    "examples/capsule_contracts": {
+      "sha256": "sha256:996f3b9dae181c40c537d8699ee7fa0eec4f5b601926399f630e9db9bed3dcbe",
+      "bytes": 13835784
+    },
+    "examples/capsule_authoring": {
+      "sha256": "sha256:c2901b1a761748f90b483a6495dab414fb114ab3f11c45185cfb2a60b7ab0008",
+      "bytes": 24136512
+    }
+  },
+  "signedGuestQualification": false,
+  "cLifecycleGuestQualified": false
+}

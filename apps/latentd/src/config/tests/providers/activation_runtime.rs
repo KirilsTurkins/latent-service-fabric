@@ -15,6 +15,114 @@ fn document() -> Value {
 }
 
 #[test]
+fn c_native_opt_in_preserves_the_old_provider_digest_and_requires_its_own_binding() {
+    let original = document();
+    let decode =
+        |value: &Value| super::super::input::decode(&serde_json::to_vec(value).unwrap()).unwrap();
+    let before = decode(&original)
+        .providers
+        .unwrap()
+        .activation_runtime
+        .unwrap();
+    let mut explicit_false = original.clone();
+    explicit_false["providers"]["activationRuntime"]["nativeThreads"] = false.into();
+    let unchanged = decode(&explicit_false)
+        .providers
+        .unwrap()
+        .activation_runtime
+        .unwrap();
+    assert_eq!(
+        before.configuration_digest().unwrap(),
+        unchanged.configuration_digest().unwrap()
+    );
+    assert!(unchanged.native_configuration_digest().is_err());
+    let mut selected = original.clone();
+    selected["providers"]["activationRuntime"]["nativeThreads"] = true.into();
+    let native = decode(&selected)
+        .providers
+        .unwrap()
+        .activation_runtime
+        .unwrap();
+    assert_ne!(
+        before.configuration_digest().unwrap(),
+        native.configuration_digest().unwrap()
+    );
+    native.native_configuration_digest().unwrap();
+    let mut native_binding = original["providers"]["bindings"][0].clone();
+    native_binding["name"] = "native".into();
+    native_binding["contract"] = "latent:runtime-native/threads@0.1.0".into();
+    selected["providers"]["bindings"]
+        .as_array_mut()
+        .unwrap()
+        .push(native_binding.clone());
+    assert_eq!(
+        decode(&selected)
+            .providers
+            .unwrap()
+            .definitions()
+            .unwrap()
+            .len(),
+        2
+    );
+    explicit_false["providers"]["bindings"]
+        .as_array_mut()
+        .unwrap()
+        .push(native_binding);
+    assert!(decode(&explicit_false)
+        .providers
+        .unwrap()
+        .definitions()
+        .is_err());
+}
+
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+#[test]
+fn protected_c_profile_reaches_normal_node_settings_without_raising_any_limits() {
+    use std::os::unix::fs::PermissionsExt;
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("node.json");
+    let mut original = document();
+    let uncreated = directory.path().join("uncreated-data");
+    original["dataDirectory"] = json!(uncreated);
+    let derive = |value: &Value| {
+        std::fs::write(&path, serde_json::to_vec(value).unwrap()).unwrap();
+        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600)).unwrap();
+        super::super::NodeConfig::load(&path).unwrap().derive()
+    };
+    let before = derive(&original).unwrap();
+    let mut selected = original.clone();
+    selected["engine"] = json!({"threadingProfile":"c-context144-sync-cooperative-v1"});
+    assert!(derive(&selected).is_err());
+    selected["providers"]["activationRuntime"]["nativeThreads"] = true.into();
+    let settings = derive(&selected).unwrap();
+    assert!(settings.wasmtime.owned_native_threads && settings.wasmtime.owned_native_stacks);
+    assert_eq!(
+        settings.wasmtime.native_thread_profile,
+        latent_wasmtime::NativeThreadProfile::CContext144SyncCooperativeV1
+    );
+    assert_eq!(
+        settings.wasmtime.activation_runtime,
+        before.wasmtime.activation_runtime
+    );
+    assert_eq!(
+        settings.wasmtime.maximum_memory_bytes,
+        before.wasmtime.maximum_memory_bytes
+    );
+    assert_eq!(settings.wasmtime.maximum_fuel, before.wasmtime.maximum_fuel);
+    assert_eq!(
+        settings.wasmtime.prepared_cache_maximum_source_bytes,
+        before.wasmtime.prepared_cache_maximum_source_bytes
+    );
+    assert_eq!(
+        settings.wasmtime.maximum_concurrent_preparations,
+        before.wasmtime.maximum_concurrent_preparations
+    );
+    selected.as_object_mut().unwrap().remove("engine");
+    assert!(derive(&selected).is_err());
+    assert!(!uncreated.exists());
+}
+
+#[test]
 fn runtime_bindings_do_not_follow_clock_read_permissions() {
     let original = document();
     let decode =
@@ -51,6 +159,76 @@ fn runtime_bindings_do_not_follow_clock_read_permissions() {
         .unwrap()
         .definitions()
         .is_err());
+}
+
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+#[test]
+fn activation_owned_stack_selection_keeps_native_threads_and_provider_quotas_unchanged() {
+    use std::os::unix::fs::PermissionsExt;
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("node.json");
+    let mut original = document();
+    let uncreated = directory.path().join("uncreated-data");
+    original["dataDirectory"] = json!(uncreated);
+    let derive = |value: &Value| {
+        std::fs::write(&path, serde_json::to_vec(value).unwrap()).unwrap();
+        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600)).unwrap();
+        super::super::NodeConfig::load(&path).unwrap().derive()
+    };
+    let before = derive(&original).unwrap();
+    let mut selected = original.clone();
+    selected["engine"] = json!({"activationStackAccounting":"activation-owned-v1"});
+    let after = derive(&selected).unwrap();
+    assert!(!before.wasmtime.owned_native_stacks && !before.wasmtime.owned_native_threads);
+    assert!(after.wasmtime.owned_native_stacks && !after.wasmtime.owned_native_threads);
+    assert_eq!(
+        after.wasmtime.async_stack_bytes,
+        before.wasmtime.async_stack_bytes
+    );
+    assert_eq!(
+        after.wasmtime.maximum_memory_bytes,
+        before.wasmtime.maximum_memory_bytes
+    );
+    assert_eq!(after.wasmtime.maximum_fuel, before.wasmtime.maximum_fuel);
+    assert_eq!(
+        after.wasmtime.prepared_cache_maximum_source_bytes,
+        before.wasmtime.prepared_cache_maximum_source_bytes
+    );
+    assert_eq!(
+        after.wasmtime.activation_runtime,
+        before.wasmtime.activation_runtime
+    );
+    let installation = |settings: &super::super::NodeSettings| {
+        settings
+            .providers
+            .as_ref()
+            .unwrap()
+            .activation_runtime
+            .as_ref()
+            .unwrap()
+            .configuration_digest()
+            .unwrap()
+    };
+    assert_eq!(installation(&after), installation(&before));
+    assert!(
+        !after
+            .providers
+            .as_ref()
+            .unwrap()
+            .activation_runtime
+            .as_ref()
+            .unwrap()
+            .native_threads
+    );
+    selected["providers"]
+        .as_object_mut()
+        .unwrap()
+        .remove("activationRuntime");
+    assert!(derive(&selected).is_err());
+    selected["providers"] = original["providers"].clone();
+    selected["engine"]["allocator"] = "pooling".into();
+    assert!(derive(&selected).is_err());
+    assert!(!uncreated.exists());
 }
 
 #[test]

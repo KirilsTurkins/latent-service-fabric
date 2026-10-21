@@ -27,7 +27,8 @@ enum lsf_prepaid_kind {
     LSF_PREPAID_AUDIT_SKB, LSF_PREPAID_AUDIT_HEAD,
     LSF_PREPAID_AVC_NODE, LSF_PREPAID_AVC_XPERMS,
     LSF_PREPAID_AVC_DECISION, LSF_PREPAID_AVC_DATA,
-    LSF_PREPAID_BIND_BUCKET, LSF_PREPAID_BIND2_BUCKET
+    LSF_PREPAID_BIND_BUCKET, LSF_PREPAID_BIND2_BUCKET,
+    LSF_PREPAID_ROUTE
 };
 static inline int lsf_prepaid_avc_kind(unsigned int kind)
 {
@@ -224,7 +225,8 @@ static inline int lsf_prepaid_child_allocate(struct lsf_prepaid *pool,
          kind != LSF_PREPAID_NETPORT && kind != LSF_PREPAID_SIDCACHE &&
          kind != LSF_PREPAID_AUDIT_STRING && kind != LSF_PREPAID_AUDIT_SKB &&
          kind != LSF_PREPAID_AUDIT_HEAD && kind != LSF_PREPAID_AUDIT_BUFFER &&
-         !lsf_prepaid_avc_kind(kind) && !lsf_prepaid_bind_kind(kind)) ||
+         !lsf_prepaid_avc_kind(kind) && !lsf_prepaid_bind_kind(kind) &&
+         kind != LSF_PREPAID_ROUTE) ||
         !lsf_prepaid_allocate(pool, key, bytes, 1, parent, ticket, offset))
         return 0;
     pool->records[ticket->slot].kind = kind;
@@ -246,7 +248,8 @@ static inline int lsf_prepaid_blob_find(struct lsf_prepaid *pool,
          kind != LSF_PREPAID_NETPORT && kind != LSF_PREPAID_SIDCACHE &&
          kind != LSF_PREPAID_AUDIT_STRING && kind != LSF_PREPAID_AUDIT_SKB &&
          kind != LSF_PREPAID_AUDIT_HEAD && kind != LSF_PREPAID_AUDIT_BUFFER &&
-         !lsf_prepaid_avc_kind(kind) && !lsf_prepaid_bind_kind(kind)))
+         !lsf_prepaid_avc_kind(kind) && !lsf_prepaid_bind_kind(kind) &&
+         kind != LSF_PREPAID_ROUTE))
         return 0;
     for (i = 1; i < LSF_ALLOCATION_SLOTS; ++i) {
         struct lsf_prepaid_view *record = &pool->records[i];
@@ -287,6 +290,28 @@ static inline int lsf_prepaid_record_queue(struct lsf_prepaid *pool,
         ((kind == LSF_PREPAID_NETPORT || kind == LSF_PREPAID_SIDCACHE ||
           kind == LSF_PREPAID_AVC_NODE) &&
          record->deferred != LSF_PREPAID_PUBLISHED) ||
+        !context->live || context->continuations == LSF_ALLOCATION_SLOTS) {
+        context->poisoned = 1;
+        return 0;
+    }
+    record->deferred = LSF_PREPAID_QUEUED;
+    context->continuations++;
+    return 1;
+}
+
+/* Only after the original dst rcuref reached zero, immediately BEFORE the
+ * original call_rcu_hurry. Cache publication alone is not retirement. */
+static inline int lsf_prepaid_route_queue(struct lsf_prepaid *pool,
+    struct lsf_prepaid_key key, struct lsf_prepaid_ticket ticket)
+{
+    struct lsf_prepaid_context *context = lsf_prepaid_context_for(pool, key);
+    struct lsf_prepaid_view *record;
+    if (!context || !ticket.slot || ticket.slot >= LSF_ALLOCATION_SLOTS)
+        return 0;
+    record = &pool->records[ticket.slot];
+    if (record->phase != LSF_PREPAID_LIVE || record->generation != ticket.generation ||
+        record->owner != key.slot || record->owner_generation != key.generation ||
+        record->kind != LSF_PREPAID_ROUTE || record->deferred != LSF_PREPAID_PRIVATE ||
         !context->live || context->continuations == LSF_ALLOCATION_SLOTS) {
         context->poisoned = 1;
         return 0;
@@ -564,7 +589,8 @@ static inline int lsf_prepaid_blob_finish(struct lsf_prepaid *pool,
          kind != LSF_PREPAID_NETPORT && kind != LSF_PREPAID_SIDCACHE &&
          kind != LSF_PREPAID_AUDIT_STRING && kind != LSF_PREPAID_AUDIT_SKB &&
          kind != LSF_PREPAID_AUDIT_HEAD && kind != LSF_PREPAID_AUDIT_BUFFER &&
-         !lsf_prepaid_avc_kind(kind) && !lsf_prepaid_bind_kind(kind)) ||
+         !lsf_prepaid_avc_kind(kind) && !lsf_prepaid_bind_kind(kind) &&
+         kind != LSF_PREPAID_ROUTE) ||
         record->deferred > LSF_PREPAID_PUBLISHED ||
         (kind == LSF_PREPAID_INODE_BLOB && record->deferred != LSF_PREPAID_QUEUED) ||
         (kind == LSF_PREPAID_IP_OPTIONS && record->deferred == LSF_PREPAID_PUBLISHED) ||
@@ -573,7 +599,8 @@ static inline int lsf_prepaid_blob_finish(struct lsf_prepaid *pool,
          record->deferred == LSF_PREPAID_PUBLISHED) ||
         (kind != LSF_PREPAID_INODE_BLOB && kind != LSF_PREPAID_IP_OPTIONS &&
          kind != LSF_PREPAID_NETPORT && kind != LSF_PREPAID_SIDCACHE &&
-         kind != LSF_PREPAID_AVC_NODE && record->deferred) ||
+         kind != LSF_PREPAID_AVC_NODE && kind != LSF_PREPAID_ROUTE && record->deferred) ||
+        (kind == LSF_PREPAID_ROUTE && record->deferred == LSF_PREPAID_PUBLISHED) ||
         (record->deferred == LSF_PREPAID_QUEUED && !context->continuations)) {
         context->poisoned = 1;
         return 0;

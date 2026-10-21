@@ -27,6 +27,7 @@ async fn dropping_final_currentness_wait_releases_exact_warm_ready_pin() {
             source_bytes: 1,
             metadata_bytes: 1,
             document_bytes: 0,
+            verification_bytes: 0,
         })
         .unwrap()
     else {
@@ -78,6 +79,7 @@ async fn dropping_post_acquire_source_wait_releases_unstarted_job_and_document_c
             source_bytes: identity.component_bytes() as usize,
             metadata_bytes: 1,
             document_bytes: 0,
+            verification_bytes: 0,
         })
         .unwrap()
     else {
