@@ -15,6 +15,46 @@ from tools.security_sdk_graphs import c_packages, go_packages, legacy_c_tree, le
 
 
 class SdkGraphTests(unittest.TestCase):
+    def test_compiler_metadata_helper_has_one_exact_framework_only_manifest_and_no_orphan_allowance(self):
+        import xml.etree.ElementTree as xml
+        from tools.security_common import POLICY, read_file, tracked_paths
+        root = Path(__file__).resolve().parents[2]
+        directory = 'sdk/dotnet-guest/tools/compiler-metadata'
+        path = directory + '/CompilerMetadata.csproj'
+        configuration = json.loads(read_file(POLICY, 'inventory.json'))
+        rows = [row for row in configuration['manifests'] if row['path'] == path]
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]['kind'], 'no-external-packages')
+        original = read_file(root, path)
+        self.assertEqual(rows[0]['sha256'], digest(original.replace(b'\r\n', b'\n')))
+        project = xml.fromstring(original)
+        self.assertEqual(project.attrib, {'Sdk': 'Microsoft.NET.Sdk'})
+        self.assertEqual([node.tag for node in project], ['PropertyGroup', 'ItemGroup'])
+        self.assertEqual({node.tag: node.text for node in project[0]}, {
+            'OutputType': 'Exe', 'TargetFramework': 'net10.0', 'ImplicitUsings': 'enable',
+            'Nullable': 'enable', 'EnableDefaultCompileItems': 'false'})
+        self.assertEqual([(node.tag, node.attrib) for node in project[1]], [('Compile', {'Include': 'Program.cs'})])
+        for tag in ('PackageReference', 'ProjectReference', 'Reference', 'Import'):
+            self.assertEqual(list(project.iter(tag)), [])
+        _, records = inventory(root)
+        self.assertEqual(next(row for row in records if row['path'] == path)['coverage'], 'reviewed-no-external-packages')
+        for extra in (b'<PackageReference Include="Unreviewed" Version="1.0.0" />',
+                      b'<Import Project="outside.targets" />', b'<Compile Include="outside.cs" />'):
+            mutated = original.replace(b'</Project>', extra + b'</Project>')
+            def changed(repo, name, *limits):
+                return mutated if repo == root and name == path else read_file(repo, name, *limits)
+            with self.subTest(extra=extra), patch('tools.security_inventory.read_file', side_effect=changed), \
+                    self.assertRaisesRegex(SecurityError, 'unreviewed-sdk-manifest-change'):
+                inventory(root)
+        legacy = [name for name in tracked_paths(root) if not name.startswith(directory + '/')]
+        with patch('tools.security_inventory.tracked_paths', return_value=legacy):
+            _, records = inventory(root)
+        self.assertEqual(next(row for row in records if row['path'] == path)['coverage'], 'not-shipped-at-source-revision')
+        for orphan in ('Program.cs', 'Extra.csproj'):
+            with self.subTest(orphan=orphan), patch('tools.security_inventory.tracked_paths',
+                    return_value=[*legacy, directory + '/' + orphan]), self.assertRaises(SecurityError):
+                inventory(root)
+
     def test_original_wasi_manifest_is_only_byte_pinned_provenance_and_mutation_refuses(self):
         from tools.security_common import POLICY, read_file
         from tools import rust_wasi_http_profile as profile
@@ -403,11 +443,13 @@ class SdkGraphTests(unittest.TestCase):
             "sdk/dotnet-guest/probes/http-errors/HttpErrorsProbe.csproj":
                 "766809881ad0b7ff2ce3a59edf7a24de0a86d4869b455e27d3f3e9368fde1546",
             "sdk/dotnet-guest/tools/http-errors/HttpErrors.csproj":
-                "911feb03e1df0d43aa8874db9e1b79d884a98fd380449197daad63b70841c26b",
+                "f2c7a0583896978a564abc90af940b66400b733359221d3344fdfa1f5c0055ec",
             "sdk/dotnet-guest/tests/fixtures/managed-work-state-control/Control.csproj":
-                "5ca77794f0d73192bb1e8b2e837ff7bc508a0c2024ba98f792c5fd2546285c86",
+                "e6a82918ae0965ae9267a2e167fd90001fdc02195874d76b6cbf94046d6e0ffd",
             "sdk/dotnet-guest/tests/fixtures/http-abort-control/Control.csproj":
-                "767f3f787903c36bf878a0e9a612e1b0828e97d91aa8cb9d142729202882d869",
+                "1f288b33da1181d2d9ccb2ceb3f0363b5178be883c6b9eb6c05b6a98d2d5c225",
+            "sdk/dotnet-guest/tests/fixtures/managed-timer-state-control/Control.csproj":
+                "b98c105dbc08bba94f2d49a3d28e10f4ce2d197f9b52a1939c82adf446f35a3c",
         }
         for path, checksum in expected.items():
             with self.subTest(path=path):
@@ -424,7 +466,7 @@ class SdkGraphTests(unittest.TestCase):
         packages, records = inventory(root)
         helper = xml.fromstring(read_file(root, "sdk/dotnet-guest/tools/http-errors/HttpErrors.csproj"))
         self.assertEqual([item.attrib for item in helper.iter("Compile")],
-                         [{"Include": "Program.cs"}, {"Include": "TaskWait.cs"}, {"Include": "IdleTimerDriver.cs"}, {"Include": "ClosedFilesystem.cs"}, {"Include": "ManagedWorkRuntime.cs"}, {"Include": "ManagedWorkBindings.cs"}, {"Include": "ManagedWorkCopy.cs"}, {"Include": "ManagedWorkContext.cs"}, {"Include": "ManagedWorkHooks.cs"}, {"Include": "ManagedWorkPort.cs"}, {"Include": "ManagedHttpWork.cs"}])
+                         [{"Include": "Program.cs"}, {"Include": "TaskWait.cs"}, {"Include": "IdleTimerDriver.cs"}, {"Include": "ClosedFilesystem.cs"}, {"Include": "ManagedWorkRuntime.cs"}, {"Include": "ManagedWorkTimers.cs"}, {"Include": "ManagedWorkBindings.cs"}, {"Include": "ManagedWorkCopy.cs"}, {"Include": "ManagedWorkContext.cs"}, {"Include": "ManagedWorkHooks.cs"}, {"Include": "ManagedWorkPort.cs"}, {"Include": "ManagedHttpWork.cs"}])
         references = [item.attrib for item in helper.iter("Reference")]
         self.assertEqual(references, [{"Include": "Mono.Cecil", "HintPath": "$(LsfCecilPath)"}])
         self.assertIn(Package("NuGet", "Microsoft.NET.ILLink.Tasks", "10.0.0",
@@ -438,7 +480,8 @@ class SdkGraphTests(unittest.TestCase):
         paths = ("sdk/dotnet-guest/probes/http-errors/HttpErrorsProbe.csproj",
                  "sdk/dotnet-guest/tools/http-errors/HttpErrors.csproj",
                  "sdk/dotnet-guest/tests/fixtures/managed-work-state-control/Control.csproj",
-                 "sdk/dotnet-guest/tests/fixtures/http-abort-control/Control.csproj")
+                 "sdk/dotnet-guest/tests/fixtures/http-abort-control/Control.csproj",
+                 "sdk/dotnet-guest/tests/fixtures/managed-timer-state-control/Control.csproj")
         for path in paths:
             original = read_file(root, path)
             for change in (b'<PackageReference Include="Unreviewed" Version="1.0.0" />',
@@ -457,7 +500,8 @@ class SdkGraphTests(unittest.TestCase):
         root = Path(__file__).resolve().parents[2]
         owned = ("sdk/dotnet-guest/probes/http-errors/", "sdk/dotnet-guest/tools/http-errors/",
                  "sdk/dotnet-guest/tests/fixtures/managed-work-state-control/",
-                 "sdk/dotnet-guest/tests/fixtures/http-abort-control/")
+                 "sdk/dotnet-guest/tests/fixtures/http-abort-control/",
+                 "sdk/dotnet-guest/tests/fixtures/managed-timer-state-control/")
         legacy = [path for path in tracked_paths(root) if not path.startswith(owned)]
         with patch("tools.security_inventory.tracked_paths", return_value=legacy):
             packages, records = inventory(root)
@@ -466,7 +510,8 @@ class SdkGraphTests(unittest.TestCase):
                          {"sdk/dotnet-guest/probes/http-errors/HttpErrorsProbe.csproj",
                           "sdk/dotnet-guest/tools/http-errors/HttpErrors.csproj",
                           "sdk/dotnet-guest/tests/fixtures/managed-work-state-control/Control.csproj",
-                          "sdk/dotnet-guest/tests/fixtures/http-abort-control/Control.csproj"})
+                          "sdk/dotnet-guest/tests/fixtures/http-abort-control/Control.csproj",
+                          "sdk/dotnet-guest/tests/fixtures/managed-timer-state-control/Control.csproj"})
         self.assertIn(Package("NuGet", "Microsoft.NET.ILLink.Tasks", "10.0.0",
                               "sdk/dotnet-guest/probes/smoke/packages.lock.json"), packages)
         for prefix in owned:

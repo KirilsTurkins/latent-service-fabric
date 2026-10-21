@@ -5,10 +5,12 @@ using System.Threading.Tasks;
 namespace Lsf.CompilerOwned;
 
 // Production tool inputs. ManagedWorkContext/Hooks replace exactly these
-// eight bodies with authenticated CoreLib accessors before issuing a receipt.
+// ten bodies with authenticated CoreLib accessors before issuing a receipt.
 // State-machine controls supply separate ports while compiling the same core.
 public static partial class ManagedWorkRuntime
 {
+    private static partial bool TimerScheduled(object item) => throw new PlatformNotSupportedException("unbound original TimerQueueTimer state");
+    private static partial int TimerCallbacks(object item) => throw new PlatformNotSupportedException("unbound original TimerQueueTimer callbacks");
     private static partial object? ContextValue(ExecutionContext? context) => throw new PlatformNotSupportedException("unbound-managed-work-context-read");
     private static partial ExecutionContext ContextWithOwner(ExecutionContext? context, object owner) => throw new PlatformNotSupportedException("unbound-managed-work-context-write");
     private static partial void BindAsyncContext(Task task) => throw new PlatformNotSupportedException("unbound-managed-work-async-context");

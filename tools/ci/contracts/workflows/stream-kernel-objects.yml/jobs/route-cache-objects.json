@@ -3,7 +3,7 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "if": "${{ (github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-cache-20261021') || inputs.route_cache == true }}",
+    "if": "${{ inputs.firmware != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-device-setup-20261021') && (inputs.device != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-device-closure-20261021') && (inputs.packet != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-packet-prefix-20261021') && ((github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-cache-20261021') || inputs.route_cache == true))) }}",
     "name": "Twenty-four actual maintained objects with real route-cache parents and close drain",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -70,7 +70,7 @@
   },
   "jobId": "route-cache-objects",
   "kind": "job",
-  "reviewReason": "Add one closed route-cache object-only profile while preserving every original target, command, configuration, budget and job body; retain previous exact job set after projecting only the separately verified new job.",
+  "reviewReason": "Reviewed cached ACPI reference and prepaid cleanup continuation source; exclusive37object compile preserves all prior profiles cases commands security and bounds; no runtime installed or shared-queue physical qualification",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/stream-kernel-objects.yml"
 }

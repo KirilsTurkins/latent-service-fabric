@@ -16,7 +16,7 @@ from tools.build_process import BuildProcessError, run_bounded_result
 from tools.java_guest.bindings import generate
 from tools.java_guest.surface import surface as wit_surface, matches as matching_wit_surface
 from tools.java_guest.sdk import install as install_sdk
-from tools.java_guest import c_failure_context, coroutine_patch
+from tools.java_guest import c_failure_context, coroutine_patch, reachability
 from tools.rust_capsule_project import ROOT, canonical, digest, inventory, read_file, snapshot, write_json
 from tools.stage_runtime_wit import copy_wit_tree, dependencies
 
@@ -120,9 +120,15 @@ def read_only_dependency_cache(path: Path) -> Path:
 
 
 class Compiler:
+    compiler_methods = False
+
     def __init__(self, directory: Path, wasi_sdk: Path, *, gradle="gradle", sdk: Path | None = None,
                  platform: Path | None = None, config: dict | None = None, timeout=900,
-                 offline_cache: Path | None = None, read_only_cache: Path | None = None):
+                 offline_cache: Path | None = None, read_only_cache: Path | None = None,
+                 compiler_methods: bool = False):
+        if type(compiler_methods) is not bool:
+            raise ValueError('Java compiler method observations require an explicit boolean')
+        self.compiler_methods = compiler_methods
         if offline_cache is not None and read_only_cache is not None:
             raise ValueError("Java dependency cache selections are mutually exclusive")
         selected_cache = read_only_dependency_cache(read_only_cache) if read_only_cache is not None else None
@@ -153,6 +159,7 @@ class Compiler:
         self.retained_bytes = 0
         self.paths = {}
         self.materials = []
+        self.reachability_observation = None
         config = config or tomllib.loads((ROOT / "tools/toolchain.toml").read_text())
         if (self.wasi_sdk / "VERSION").read_text().splitlines() != [
             "29.0", "wasi-libc: ac020b86fd44", "llvm: 222fc11f2b8f", "llvm-version: 21.1.4", "config: f992bcc08219"]:
@@ -372,7 +379,7 @@ class Compiler:
                 selected.parent.mkdir(parents=True, exist_ok=True)
                 selected.write_bytes(read_file(java_root / name))
                 application_source_names.add(name)
-        if activation_profile:
+        if activation_profile or self.compiler_methods:
             from tools.java_guest.class_origin import checkpoint_index
             origins = json.loads(self.run("java-source-origins", "java",
                 self.sdk / "fibers/analysis/SourceOrigins.java", origin_sources))
@@ -392,8 +399,25 @@ class Compiler:
             if set(source_packages) != application_source_names:
                 raise ValueError("incomplete Java captured source origins")
             write_json(destination / "source-origins.json", origins)
-            coroutine_patch.record_original_classpath(project)
+            if activation_profile:
+                coroutine_patch.record_original_classpath(project)
+        # javac metadata is read passively. This task was already required by
+        # the activation compiler; no application initializer is run here.
+        if activation_profile or self.compiler_methods:
             self.run("java-owned-classes", "gradle", "--no-daemon", *(["--offline"] if self.offline else []), "classes", cwd=project)
+        method_queries = None
+        if self.compiler_methods:
+            try:
+                owned_classes = set(checkpoint_index(project / "build/classes/java/main", source_packages,
+                                                     application_classpath).decode().splitlines())
+                payload, method_queries = reachability.queries(project / "build/classes/java/main", application_classpath,
+                                                               application_classes=owned_classes)
+                query_resource = project / 'src/main/resources' / reachability.RESOURCE
+                query_resource.parent.mkdir(parents=True, exist_ok=True)
+                query_resource.write_bytes(payload)
+            except Exception:
+                pass  # Missing/overbound analysis is unknown, never a compiler gate.
+        if activation_profile:
             index = checkpoint_index(project / "build/classes/java/main", source_packages, application_classpath)
             target = project / "src/main/resources/META-INF/latent/runtime-checkpoints.classes"
             target.parent.mkdir(parents=True, exist_ok=True); target.write_bytes(index)
@@ -404,7 +428,12 @@ class Compiler:
                 "checkpointClassIndexDigest": digest(index), "checkpointClasses": index.decode("utf-8").splitlines(),
             })
             coroutine_profile = coroutine_patch.stage(self, project, destination)
-        c_failure_context.teavm(self, project, failure_contexts)
+        compiler_log = c_failure_context.teavm(self, project, failure_contexts)
+        if method_queries is not None:
+            try:
+                self.reachability_observation = reachability.observation(compiler_log, method_queries)
+            except Exception:
+                pass  # An absent/interrupted projection cannot certify elimination.
         if coroutine_profile is not None:
             coroutine_profile = coroutine_patch.loaded(project, coroutine_profile, compiler=self)
             write_json(destination / 'coroutine-compiler-profile.json', coroutine_profile)

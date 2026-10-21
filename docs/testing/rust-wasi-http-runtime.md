@@ -71,8 +71,15 @@ python3 -B tools/build_dev_guest_tools.py --language rust \
   --rust-http-runtime /absolute/owned/http-runtime
 ```
 
-This option is assembly-only and has source/control evidence; an installed
-bundle build has not yet been qualified. Assembly checks the exact staged Rustc
+The maintained installed recipe now has a [signed finite qualification](evidence/rust-wasi-http-installed-2026-10-21.json)
+from [run 39663071131](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39663071131):
+one guest compiled through `recipe/tools/dev_guest_recipe.py`, both unchanged
+clients parsed JSON across two independently authorized tenant publications,
+and two pre-entry denials, four contacts, physical/provider retirement and a
+clean shutdown passed. This qualifies the installed recipe; release publisher
+authentication and the full released frontend remain unqualified.
+
+Assembly checks the exact staged Rustc
 and wasm-tools bytes, preserves the original producer receipt and source
 inventory, and copies only the four component/WIT files and pinned composer.
 The complete 113-file consumer recipe and all seven retained runtime files join
@@ -119,7 +126,12 @@ node execution; that attempt did not retain the signer stderr. The installed
 controller now follows the existing ordinary public CLI packaging and provenance
 join before signing, inside the unchanged original 900-second compiler clock.
 The genuine join preserves the original compiler statement and marker verbatim
-and adds the actual packager identity. This requires one corrected installed
-build and six signed attempts; it does not require another host or backend build.
+and adds the actual packager identity. The corrected installed attempt passed all 32 compiler commands and six signed
+attempts using the retained native and backend products. No host or backend
+was rebuilt. The original 155 qualifier materials, 245 assembly inputs and 116
+Rust recipe inputs remain bound to `ed4fdcbb...`. Current development preserves
+all 155 qualifier and 116 Rust recipe bytes; five Java/.NET assembly
+helpers outside the selected Rust compiler recipe differ, listed in the observation. The historical installed inventory
+and compiler statements have not been rewritten as a current assembly.
 The original [failure observation](evidence/rust-wasi-http-installed-packaging-failure-2026-10-21.json)
 remains failed.

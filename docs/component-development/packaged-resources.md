@@ -313,4 +313,8 @@ their profile, grant, provenance and error limitations. The new
 requires exact transitive binary/empty/text and independent-stream results;
 its finite39-outcome signed observation is now source-bound. The separate
 [Go/Rust/TypeScript resource breadth programme](embedded-resource-conformance.md)
-is still pending signed execution.
+records the finite signed resource results and preserves the TypeScript outer
+report failure separately from its authenticated actual 33-call observation.
+Joined callbacks, pending cancellation, trap/fresh and accepted late facility
+completion are linked separately from the [standard-facility matrix](standard-facilities.md),
+with each original compiled source and native tuple retained.

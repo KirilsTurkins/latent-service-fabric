@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><TargetFramework>net10.0</TargetFramework><OutputType>Exe</OutputType><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable><UseSharedCompilation>false</UseSharedCompilation><NuGetAudit>false</NuGetAudit></PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../../tools/http-errors/ManagedWorkRuntime.cs" Link="ManagedWorkRuntime.cs" />
+    <Compile Include="../../../tools/http-errors/ManagedWorkTimers.cs" Link="ManagedWorkTimers.cs" />
+  </ItemGroup>
+</Project>

@@ -61,7 +61,7 @@ def checked_release(release, capsule, build_identity, *, language='typescript'):
 
 def execute(artifact, native, output, *, language='typescript', late_completion=False):
     require(language in ('typescript','go'),'resource-runtime-closed-execution-language')
-    require(type(late_completion) is bool and (not late_completion or language == 'go'),
+    require(type(late_completion) is bool,
             'resource-runtime-closed-late-programme')
     reader=build_evidence
     if language == 'go':
@@ -70,7 +70,8 @@ def execute(artifact, native, output, *, language='typescript', late_completion=
     record = {'schemaVersion':'latent.'+language+'.resource-runtime-node.v1','status':'incomplete',
               'fullTicketQualification':False,'nativeThreadsQualified':False,'runtimeGrantDenials':[]}
     if late_completion:
-        record.update(lateCompletionProgramme='running-AfterFunc-Stop-false-accepted-facilities-v1',
+        record.update(lateCompletionProgramme=('running-AfterFunc-Stop-false-accepted-facilities-v1'
+                      if language == 'go' else 'accepted-setTimeout-clear-during-callback-facilities-v1'),
                       positiveWaitForPendingQualified=False)
     before = reader(artifact);stage='normal-neutral-package-and-sign'
     commands=Commands(ROOT,fresh(output/'commands'),build_environment(output),deadline_seconds=600,command_seconds=120)
@@ -97,7 +98,8 @@ def execute(artifact, native, output, *, language='typescript', late_completion=
             peer,port=start_provider(client,work/'peer',maximum_seconds=480)
             try:
                 config,settings=configure(work/'node',signed,port,language=language)
-                runtime.configure(settings,read_json(artifact/'capsule.json'),language=language)
+                runtime.configure(settings,read_json(artifact/'capsule.json'),language=language,
+                                  standard_entropy=late_completion and language == 'typescript')
                 config.write_bytes((json.dumps(settings,sort_keys=True,separators=(',',':'))+'\n').encode())
                 stage='two-tenant-single-cell-startup'
                 client.environment[timer_observer.ENVIRONMENT]='1'
@@ -117,7 +119,8 @@ def execute(artifact, native, output, *, language='typescript', late_completion=
                     manifest=selected.directory/'resource-callback-deployment.json'
                     write_json(manifest,tenants.scoped_deployment(read_json(signed/'my-greeting/deployment.json'),tenant))
                     target=deploy(selected,manifest,publications[tenant])
-                    targets[tenant],denied=runtime.grant(selected,node,manifest,publications[tenant],target,tenant,language=language)
+                    targets[tenant],denied=runtime.grant(selected,node,manifest,publications[tenant],target,tenant,language=language,
+                                                       standard_entropy=late_completion and language == 'typescript')
                     record['runtimeGrantDenials'].append({'tenant':tenant,'invocation':denied,
                         'provider':tenants.provider_idle(selected,targets[tenant]),
                         'physical':sample(selected,probe,'resource-runtime-denied-'+tenant,len(publications))})
@@ -125,7 +128,10 @@ def execute(artifact, native, output, *, language='typescript', late_completion=
                 record['credentialDenial']=credential_denial(clients['foreign'],targets['foreign'])
                 stage='resource-callback-cancel-trap-foreign-fresh-programme'
                 if late_completion:
-                    from tools.go_resource_late import programme
+                    if language == 'go':
+                        from tools.go_resource_late import programme
+                    else:
+                        from tools.typescript_resource_late import programme
                     record['programme']=programme(clients,targets,probe,output,before['component']['sha256'])
                 else:
                     record['programme']=runtime.programme(clients,targets,probe,output,before['component']['sha256'],language=language)

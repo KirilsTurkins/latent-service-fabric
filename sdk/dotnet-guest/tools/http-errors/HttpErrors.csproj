@@ -14,6 +14,7 @@
     <Compile Include="IdleTimerDriver.cs" />
     <Compile Include="ClosedFilesystem.cs" />
     <Compile Include="ManagedWorkRuntime.cs" />
+    <Compile Include="ManagedWorkTimers.cs" />
     <Compile Include="ManagedWorkBindings.cs" />
     <Compile Include="ManagedWorkCopy.cs" />
     <Compile Include="ManagedWorkContext.cs" />

@@ -42,7 +42,7 @@
           "GH_TOKEN": "${{ github.token }}"
         },
         "name": "Acquire the same reviewed C and RootOnly native products",
-        "run": "python3 -B - <<'PY'\nimport os, subprocess\nfrom pathlib import Path\nfrom tools import c_thread_native_products as native\nsubprocess.check_call(['git','fetch','--no-tags','--depth=1','origin',native.SOURCE])\nnative.prepare(Path(os.environ['RUNNER_TEMP'])/'typescript-owned-stack-native')\nPY\n"
+        "run": "python3 -B - <<'PY'\nimport os, subprocess\nfrom pathlib import Path\nfrom tools import activation_stack_native_products as native\nsubprocess.check_call(['git','fetch','--no-tags','--depth=1','origin',native.SOURCE])\nnative.prepare(Path(os.environ['RUNNER_TEMP'])/'typescript-owned-stack-native')\nPY\n"
       },
       {
         "name": "Sign and replay the unchanged fifteen actual guest invocations",
@@ -64,7 +64,7 @@
   },
   "jobId": "original-ledger",
   "kind": "job",
-  "reviewReason": "Reuse the immutable successful TypeScript component and shared current native products; preserve all original five profiles, limits and result/retirement oracles, add the explicit existing RootOnly stack selection and verify its original Native and memory costs. No compiler, engine, guest or host build in this lane.",
+  "reviewReason": "Select the new successful shared ordinary-worker native tuple and retain all original fifteen invocations, component bytes, five profiles, ceilings and retirement oracles; no guest, engine or host build.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-owned-stack.yml"
 }

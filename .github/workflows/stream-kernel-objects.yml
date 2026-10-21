@@ -1,7 +1,7 @@
 name: Stream maintained kernel object check
 on:
   push:
-    branches: ['test/stream-kernel-objects-20261021', 'feat/stream-kernel-netlabel-consumer-20261021', 'feat/stream-kernel-netport-objects-20261021', 'feat/stream-kernel-audit-owner-20261021', 'feat/stream-kernel-avc-consumer-20261021', 'feat/stream-kernel-audit-skb-20261021', 'feat/stream-kernel-route-owners-20261021', 'feat/stream-kernel-route-consumer-20261021', 'feat/stream-kernel-route-cache-20261021']
+    branches: ['test/stream-kernel-objects-20261021', 'feat/stream-kernel-netlabel-consumer-20261021', 'feat/stream-kernel-netport-objects-20261021', 'feat/stream-kernel-audit-owner-20261021', 'feat/stream-kernel-avc-consumer-20261021', 'feat/stream-kernel-audit-skb-20261021', 'feat/stream-kernel-route-owners-20261021', 'feat/stream-kernel-route-consumer-20261021', 'feat/stream-kernel-route-cache-20261021', 'feat/stream-kernel-packet-prefix-20261021', 'feat/stream-kernel-device-closure-20261021', 'feat/stream-kernel-device-setup-20261021']
     paths:
       - '.github/workflows/stream-kernel-objects.yml'
       - 'tools/qualify_host_stream_kernel_objects.py'
@@ -15,6 +15,12 @@ on:
       - 'tools/host_stream_kernel_bind.py'
       - 'tools/host_stream_kernel_route.py'
       - 'tools/host_stream_kernel_route_cache.py'
+      - 'tools/host_stream_kernel_packet.py'
+      - 'tools/tests/fixtures/host_stream_kernel_packet.json'
+      - 'tools/host_stream_kernel_device.py'
+      - 'tools/tests/fixtures/host_stream_kernel_device.json'
+      - 'tools/host_stream_kernel_device_firmware.py'
+      - 'tools/tests/fixtures/host_stream_kernel_device_firmware.json'
       - 'research/standard-outbound/linux-6.12-lineage/**'
   workflow_dispatch:
     inputs:
@@ -50,6 +56,18 @@ on:
         description: Compile the closed route-cache parent and drain source profile
         type: boolean
         default: false
+      packet:
+        description: Compile the closed copied-TCP linear packet source profile
+        type: boolean
+        default: false
+      device:
+        description: Compile the closed NodeFixed PCI birth and constant-name source profile
+        type: boolean
+        default: false
+      firmware:
+        description: Compile the closed cached ACPI companion lifetime source profile
+        type: boolean
+        default: false
 permissions:
   contents: read
 concurrency:
@@ -57,7 +75,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   selected-objects:
-    if: ${{ inputs.route_cache != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-cache-20261021') && (inputs.route != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-consumer-20261021') && (inputs.bind != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-owners-20261021') && (inputs.audit != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-audit-skb-20261021') && (inputs.avc != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-avc-consumer-20261021') && (inputs.sidcache != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-audit-owner-20261021') && (!(github.event_name == 'push' && (github.ref_name == 'feat/stream-kernel-netlabel-consumer-20261021' || github.ref_name == 'feat/stream-kernel-netport-objects-20261021')) && inputs.netlabel != true && inputs.netport != true)))))) }}
+    if: ${{ inputs.firmware != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-device-setup-20261021') && (inputs.device != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-device-closure-20261021') && (inputs.packet != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-packet-prefix-20261021') && (inputs.route_cache != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-cache-20261021') && (inputs.route != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-consumer-20261021') && (inputs.bind != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-owners-20261021') && (inputs.audit != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-audit-skb-20261021') && (inputs.avc != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-avc-consumer-20261021') && (inputs.sidcache != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-audit-owner-20261021') && (!(github.event_name == 'push' && (github.ref_name == 'feat/stream-kernel-netlabel-consumer-20261021' || github.ref_name == 'feat/stream-kernel-netport-objects-20261021')) && inputs.netlabel != true && inputs.netport != true))))))))) }}
     name: Six actual maintained objects with private code and SELinux enabled
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -112,7 +130,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 3
   netlabel-objects:
-    if: ${{ inputs.route_cache != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-cache-20261021') && (inputs.route != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-consumer-20261021') && (inputs.bind != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-owners-20261021') && (inputs.audit != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-audit-skb-20261021') && (inputs.avc != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-avc-consumer-20261021') && (inputs.sidcache != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-audit-owner-20261021') && (inputs.netport != true && ((github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-netlabel-consumer-20261021') || inputs.netlabel == true))))))) }}
+    if: ${{ inputs.firmware != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-device-setup-20261021') && (inputs.device != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-device-closure-20261021') && (inputs.packet != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-packet-prefix-20261021') && (inputs.route_cache != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-cache-20261021') && (inputs.route != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-consumer-20261021') && (inputs.bind != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-owners-20261021') && (inputs.audit != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-audit-skb-20261021') && (inputs.avc != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-avc-consumer-20261021') && (inputs.sidcache != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-audit-owner-20261021') && (inputs.netport != true && ((github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-netlabel-consumer-20261021') || inputs.netlabel == true)))))))))) }}
     name: Twelve actual maintained objects with nested Netlabel owners and SELinux enabled
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -173,7 +191,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 3
   netport-objects:
-    if: ${{ inputs.route_cache != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-cache-20261021') && (inputs.route != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-consumer-20261021') && (inputs.bind != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-owners-20261021') && (inputs.audit != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-audit-skb-20261021') && (inputs.avc != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-avc-consumer-20261021') && (inputs.sidcache != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-audit-owner-20261021') && ((github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-netport-objects-20261021') || inputs.netport == true)))))) }}
+    if: ${{ inputs.firmware != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-device-setup-20261021') && (inputs.device != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-device-closure-20261021') && (inputs.packet != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-packet-prefix-20261021') && (inputs.route_cache != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-cache-20261021') && (inputs.route != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-consumer-20261021') && (inputs.bind != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-owners-20261021') && (inputs.audit != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-audit-skb-20261021') && (inputs.avc != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-avc-consumer-20261021') && (inputs.sidcache != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-audit-owner-20261021') && ((github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-netport-objects-20261021') || inputs.netport == true))))))))) }}
     name: Fourteen actual maintained objects with Netport cache owners and SELinux enabled
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -248,7 +266,7 @@ jobs:
           retention-days: 3
 
   sidcache-objects:
-    if: ${{ inputs.route_cache != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-cache-20261021') && (inputs.route != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-consumer-20261021') && (inputs.bind != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-owners-20261021') && (inputs.audit != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-audit-skb-20261021') && (inputs.avc != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-avc-consumer-20261021') && ((github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-audit-owner-20261021') || inputs.sidcache == true))))) }}
+    if: ${{ inputs.firmware != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-device-setup-20261021') && (inputs.device != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-device-closure-20261021') && (inputs.packet != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-packet-prefix-20261021') && (inputs.route_cache != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-cache-20261021') && (inputs.route != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-consumer-20261021') && (inputs.bind != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-owners-20261021') && (inputs.audit != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-audit-skb-20261021') && (inputs.avc != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-avc-consumer-20261021') && ((github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-audit-owner-20261021') || inputs.sidcache == true)))))))) }}
     name: Fifteen actual maintained objects with SID cache and audit strings
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -325,7 +343,7 @@ jobs:
           retention-days: 3
 
   avc-objects:
-    if: ${{ inputs.route_cache != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-cache-20261021') && (inputs.route != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-consumer-20261021') && (inputs.bind != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-owners-20261021') && (inputs.audit != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-audit-skb-20261021') && ((github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-avc-consumer-20261021') || inputs.avc == true)))) }}
+    if: ${{ inputs.firmware != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-device-setup-20261021') && (inputs.device != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-device-closure-20261021') && (inputs.packet != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-packet-prefix-20261021') && (inputs.route_cache != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-cache-20261021') && (inputs.route != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-consumer-20261021') && (inputs.bind != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-owners-20261021') && (inputs.audit != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-audit-skb-20261021') && ((github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-avc-consumer-20261021') || inputs.avc == true))))))) }}
     name: Sixteen actual maintained objects with AVC and SID cache
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -404,7 +422,7 @@ jobs:
           retention-days: 3
 
   audit-objects:
-    if: ${{ inputs.route_cache != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-cache-20261021') && (inputs.route != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-consumer-20261021') && (inputs.bind != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-owners-20261021') && ((github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-audit-skb-20261021') || inputs.audit == true))) }}
+    if: ${{ inputs.firmware != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-device-setup-20261021') && (inputs.device != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-device-closure-20261021') && (inputs.packet != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-packet-prefix-20261021') && (inputs.route_cache != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-cache-20261021') && (inputs.route != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-consumer-20261021') && (inputs.bind != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-owners-20261021') && ((github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-audit-skb-20261021') || inputs.audit == true)))))) }}
     name: Twenty actual maintained objects with mandatory audit and SKB owners
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -487,7 +505,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 3
   bind-objects:
-    if: ${{ inputs.route_cache != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-cache-20261021') && (inputs.route != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-consumer-20261021') && ((github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-owners-20261021') || inputs.bind == true)) }}
+    if: ${{ inputs.firmware != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-device-setup-20261021') && (inputs.device != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-device-closure-20261021') && (inputs.packet != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-packet-prefix-20261021') && (inputs.route_cache != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-cache-20261021') && (inputs.route != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-consumer-20261021') && ((github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-owners-20261021') || inputs.bind == true))))) }}
     name: Twenty-two actual maintained objects with bind buckets and mandatory audit
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -573,7 +591,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 3
   route-objects:
-    if: ${{ inputs.route_cache != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-cache-20261021') && ((github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-consumer-20261021') || inputs.route == true) }}
+    if: ${{ inputs.firmware != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-device-setup-20261021') && (inputs.device != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-device-closure-20261021') && (inputs.packet != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-packet-prefix-20261021') && (inputs.route_cache != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-cache-20261021') && ((github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-consumer-20261021') || inputs.route == true)))) }}
     name: Twenty-four actual maintained objects with IPv4 routes and original reference owners
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -662,7 +680,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 3
   route-cache-objects:
-    if: ${{ (github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-cache-20261021') || inputs.route_cache == true }}
+    if: ${{ inputs.firmware != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-device-setup-20261021') && (inputs.device != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-device-closure-20261021') && (inputs.packet != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-packet-prefix-20261021') && ((github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-cache-20261021') || inputs.route_cache == true))) }}
     name: Twenty-four actual maintained objects with real route-cache parents and close drain
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -749,5 +767,306 @@ jobs:
             ${{ runner.temp }}/stream-kernel-objects/objects/net/ipv4/inet_connection_sock.o
             ${{ runner.temp }}/stream-kernel-objects/objects/net/ipv4/route.o
             ${{ runner.temp }}/stream-kernel-objects/objects/net/core/dst.o
+          if-no-files-found: warn
+          retention-days: 3
+  packet-objects:
+    if: ${{ inputs.firmware != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-device-setup-20261021') && (inputs.device != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-device-closure-20261021') && ((github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-packet-prefix-20261021') || inputs.packet == true)) }}
+    name: Twenty-seven actual maintained objects with prepaid linear packets and TCP consumers
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - name: Refuse mixed or unknown object profile inputs before acquisition or build
+        env:
+          NETLABEL_REQUEST: ${{ inputs.netlabel }}
+          NETPORT_REQUEST: ${{ inputs.netport }}
+          SIDCACHE_REQUEST: ${{ inputs.sidcache }}
+          AVC_REQUEST: ${{ inputs.avc }}
+          AUDIT_REQUEST: ${{ inputs.audit }}
+          BIND_REQUEST: ${{ inputs.bind }}
+          ROUTE_REQUEST: ${{ inputs.route }}
+          ROUTE_CACHE_REQUEST: ${{ inputs.route_cache }}
+          PACKET_REQUEST: ${{ inputs.packet }}
+        run: |
+          python3 - <<'PY'
+          import os
+          values = [os.environ[name] for name in ('NETLABEL_REQUEST', 'NETPORT_REQUEST', 'SIDCACHE_REQUEST', 'AVC_REQUEST', 'AUDIT_REQUEST', 'BIND_REQUEST', 'ROUTE_REQUEST', 'ROUTE_CACHE_REQUEST', 'PACKET_REQUEST')]
+          assert all(value in ('', 'true', 'false') for value in values)
+          assert values.count('true') <= 1
+          PY
+      - name: Install the existing locked Python recipe dependencies
+        run: python3 -m pip install -r tools/requirements.lock
+      - name: Check exact config selection and private symbol oracles without a build
+        run: python3 -B -m unittest tools.tests.test_host_stream_kernel_objects tools.tests.test_host_stream_kernel_netlabel tools.tests.test_host_stream_kernel_netport tools.tests.test_host_stream_kernel_sidcache tools.tests.test_host_stream_kernel_avc tools.tests.test_host_stream_kernel_audit_skb tools.tests.test_host_stream_kernel_audit tools.tests.test_host_stream_kernel_bind tools.tests.test_host_stream_kernel_route tools.tests.test_host_stream_kernel_route_cache tools.tests.test_host_stream_kernel_packet -v
+      - name: Install only normal upstream Kbuild prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes gcc make flex bison bc libelf-dev libssl-dev
+      - name: Acquire only the exact maintained official source archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --proto '=https' --tlsv1.2 --max-time 180 \
+            https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.12.113.tar.xz \
+            --output "$RUNNER_TEMP/linux-6.12.113.tar.xz"
+          echo "e09b6727e5c521253f0d41694900b9c38fb7604db7d35238a8197aa9f7de2428  $RUNNER_TEMP/linux-6.12.113.tar.xz" | sha256sum --check --strict
+      - name: Derive actual source preserve security config and compile twenty-seven unlinked packet TCP and mandatory-audit objects
+        run: >-
+          python3 -B tools/qualify_host_stream_kernel_objects.py
+          --archive "$RUNNER_TEMP/linux-6.12.113.tar.xz"
+          --output "$RUNNER_TEMP/stream-kernel-objects" --packet
+      - name: Retain bounded configuration compiler objects and failure evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: stream-kernel-packet-objects-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/stream-kernel-objects/qualification.json
+            ${{ runner.temp }}/stream-kernel-objects/FAILED.json
+            ${{ runner.temp }}/stream-kernel-objects/selection.json
+            ${{ runner.temp }}/stream-kernel-objects/commands.json
+            ${{ runner.temp }}/stream-kernel-objects/baseline.config
+            ${{ runner.temp }}/stream-kernel-objects/selected.config
+            ${{ runner.temp }}/stream-kernel-objects/commands/logs/*.txt
+            ${{ runner.temp }}/stream-kernel-objects/objects/include/generated/autoconf.h
+            ${{ runner.temp }}/stream-kernel-objects/objects/net/socket.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/fs/inode.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/net/core/sock.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/net/ipv4/af_inet.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/security/security.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/net/factory.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/security/selinux/netlabel.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/security/selinux/ss/services.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/security/selinux/ss/mls.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/security/selinux/ss/ebitmap.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/net/netlabel/netlabel_kapi.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/net/ipv4/cipso_ipv4.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/security/selinux/netport.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/security/selinux/hooks.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/security/selinux/ss/sidtab.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/security/selinux/avc.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/net/core/skbuff.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/kernel/audit.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/security/lsm_audit.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/net/netlink/af_netlink.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/net/ipv4/inet_hashtables.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/net/ipv4/inet_connection_sock.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/net/ipv4/route.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/net/core/dst.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/net/ipv4/tcp.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/net/ipv4/tcp_output.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/net/ipv4/tcp_input.o
+          if-no-files-found: warn
+          retention-days: 3
+  device-objects:
+    if: ${{ inputs.firmware != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-device-setup-20261021') && ((github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-device-closure-20261021') || inputs.device == true) }}
+    name: Thirty-two actual maintained objects with NodeFixed PCI birth and original name allocation chain
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - name: Refuse mixed or unknown object profile inputs before acquisition or build
+        env:
+          NETLABEL_REQUEST: ${{ inputs.netlabel }}
+          NETPORT_REQUEST: ${{ inputs.netport }}
+          SIDCACHE_REQUEST: ${{ inputs.sidcache }}
+          AVC_REQUEST: ${{ inputs.avc }}
+          AUDIT_REQUEST: ${{ inputs.audit }}
+          BIND_REQUEST: ${{ inputs.bind }}
+          ROUTE_REQUEST: ${{ inputs.route }}
+          ROUTE_CACHE_REQUEST: ${{ inputs.route_cache }}
+          PACKET_REQUEST: ${{ inputs.packet }}
+          DEVICE_REQUEST: ${{ inputs.device }}
+        run: |
+          python3 - <<'PY'
+          import os
+          values = [os.environ[name] for name in ('NETLABEL_REQUEST', 'NETPORT_REQUEST', 'SIDCACHE_REQUEST', 'AVC_REQUEST', 'AUDIT_REQUEST', 'BIND_REQUEST', 'ROUTE_REQUEST', 'ROUTE_CACHE_REQUEST', 'PACKET_REQUEST', 'DEVICE_REQUEST')]
+          assert all(value in ('', 'true', 'false') for value in values)
+          assert values.count('true') <= 1
+          PY
+      - name: Install the existing locked Python recipe dependencies
+        run: python3 -m pip install -r tools/requirements.lock
+      - name: Check exact config selection and private symbol oracles without a build
+        run: python3 -B -m unittest tools.tests.test_host_stream_kernel_objects tools.tests.test_host_stream_kernel_netlabel tools.tests.test_host_stream_kernel_netport tools.tests.test_host_stream_kernel_sidcache tools.tests.test_host_stream_kernel_avc tools.tests.test_host_stream_kernel_audit_skb tools.tests.test_host_stream_kernel_audit tools.tests.test_host_stream_kernel_bind tools.tests.test_host_stream_kernel_route tools.tests.test_host_stream_kernel_route_cache tools.tests.test_host_stream_kernel_packet tools.tests.test_host_stream_kernel_device -v
+      - name: Install only normal upstream Kbuild prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes gcc make flex bison bc libelf-dev libssl-dev
+      - name: Acquire only the exact maintained official source archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --proto '=https' --tlsv1.2 --max-time 180 \
+            https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.12.113.tar.xz \
+            --output "$RUNNER_TEMP/linux-6.12.113.tar.xz"
+          echo "e09b6727e5c521253f0d41694900b9c38fb7604db7d35238a8197aa9f7de2428  $RUNNER_TEMP/linux-6.12.113.tar.xz" | sha256sum --check --strict
+      - name: Derive actual source preserve security config and compile thirty-two unlinked PCI birth name-chain packet and mandatory-audit objects
+        run: >-
+          python3 -B tools/qualify_host_stream_kernel_objects.py
+          --archive "$RUNNER_TEMP/linux-6.12.113.tar.xz"
+          --output "$RUNNER_TEMP/stream-kernel-objects" --device
+      - name: Retain bounded configuration compiler objects and failure evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: stream-kernel-device-objects-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/stream-kernel-objects/qualification.json
+            ${{ runner.temp }}/stream-kernel-objects/FAILED.json
+            ${{ runner.temp }}/stream-kernel-objects/selection.json
+            ${{ runner.temp }}/stream-kernel-objects/commands.json
+            ${{ runner.temp }}/stream-kernel-objects/baseline.config
+            ${{ runner.temp }}/stream-kernel-objects/selected.config
+            ${{ runner.temp }}/stream-kernel-objects/commands/logs/*.txt
+            ${{ runner.temp }}/stream-kernel-objects/objects/include/generated/autoconf.h
+            ${{ runner.temp }}/stream-kernel-objects/objects/net/socket.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/fs/inode.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/net/core/sock.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/net/ipv4/af_inet.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/security/security.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/net/factory.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/security/selinux/netlabel.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/security/selinux/ss/services.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/security/selinux/ss/mls.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/security/selinux/ss/ebitmap.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/net/netlabel/netlabel_kapi.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/net/ipv4/cipso_ipv4.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/security/selinux/netport.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/security/selinux/hooks.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/security/selinux/ss/sidtab.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/security/selinux/avc.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/net/core/skbuff.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/kernel/audit.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/security/lsm_audit.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/net/netlink/af_netlink.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/net/ipv4/inet_hashtables.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/net/ipv4/inet_connection_sock.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/net/ipv4/route.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/net/core/dst.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/net/ipv4/tcp.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/net/ipv4/tcp_output.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/net/ipv4/tcp_input.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/drivers/pci/probe.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/drivers/base/core.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/lib/kobject.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/mm/util.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/lib/kasprintf.o
+          if-no-files-found: warn
+          retention-days: 3
+
+  firmware-objects:
+    if: ${{ (github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-device-setup-20261021') || inputs.firmware == true }}
+    name: Thirty-seven actual maintained objects with cached ACPI reference and queued cleanup ownership
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - name: Refuse mixed or unknown object profile inputs before acquisition or build
+        env:
+          NETLABEL_REQUEST: ${{ inputs.netlabel }}
+          NETPORT_REQUEST: ${{ inputs.netport }}
+          SIDCACHE_REQUEST: ${{ inputs.sidcache }}
+          AVC_REQUEST: ${{ inputs.avc }}
+          AUDIT_REQUEST: ${{ inputs.audit }}
+          BIND_REQUEST: ${{ inputs.bind }}
+          ROUTE_REQUEST: ${{ inputs.route }}
+          ROUTE_CACHE_REQUEST: ${{ inputs.route_cache }}
+          PACKET_REQUEST: ${{ inputs.packet }}
+          DEVICE_REQUEST: ${{ inputs.device }}
+          FIRMWARE_REQUEST: ${{ inputs.firmware }}
+        run: |
+          python3 - <<'PY'
+          import os
+          values = [os.environ[name] for name in ('NETLABEL_REQUEST', 'NETPORT_REQUEST', 'SIDCACHE_REQUEST', 'AVC_REQUEST', 'AUDIT_REQUEST', 'BIND_REQUEST', 'ROUTE_REQUEST', 'ROUTE_CACHE_REQUEST', 'PACKET_REQUEST', 'DEVICE_REQUEST', 'FIRMWARE_REQUEST')]
+          assert all(value in ('', 'true', 'false') for value in values)
+          assert values.count('true') <= 1
+          PY
+      - name: Install the existing locked Python recipe dependencies
+        run: python3 -m pip install -r tools/requirements.lock
+      - name: Check exact config selection and private symbol oracles without a build
+        run: python3 -B -m unittest tools.tests.test_host_stream_kernel_objects tools.tests.test_host_stream_kernel_netlabel tools.tests.test_host_stream_kernel_netport tools.tests.test_host_stream_kernel_sidcache tools.tests.test_host_stream_kernel_avc tools.tests.test_host_stream_kernel_audit_skb tools.tests.test_host_stream_kernel_audit tools.tests.test_host_stream_kernel_bind tools.tests.test_host_stream_kernel_route tools.tests.test_host_stream_kernel_route_cache tools.tests.test_host_stream_kernel_packet tools.tests.test_host_stream_kernel_device tools.tests.test_host_stream_kernel_device_firmware -v
+      - name: Install only normal upstream Kbuild prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes gcc make flex bison bc libelf-dev libssl-dev
+      - name: Acquire only the exact maintained official source archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --proto '=https' --tlsv1.2 --max-time 180 \
+            https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.12.113.tar.xz \
+            --output "$RUNNER_TEMP/linux-6.12.113.tar.xz"
+          echo "e09b6727e5c521253f0d41694900b9c38fb7604db7d35238a8197aa9f7de2428  $RUNNER_TEMP/linux-6.12.113.tar.xz" | sha256sum --check --strict
+      - name: Derive actual source preserve security config and compile thirty-seven unlinked cached ACPI reference device and mandatory-audit objects
+        run: >-
+          python3 -B tools/qualify_host_stream_kernel_objects.py
+          --archive "$RUNNER_TEMP/linux-6.12.113.tar.xz"
+          --output "$RUNNER_TEMP/stream-kernel-objects" --firmware
+      - name: Retain bounded configuration compiler objects and failure evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: stream-kernel-firmware-objects-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/stream-kernel-objects/qualification.json
+            ${{ runner.temp }}/stream-kernel-objects/FAILED.json
+            ${{ runner.temp }}/stream-kernel-objects/selection.json
+            ${{ runner.temp }}/stream-kernel-objects/commands.json
+            ${{ runner.temp }}/stream-kernel-objects/baseline.config
+            ${{ runner.temp }}/stream-kernel-objects/selected.config
+            ${{ runner.temp }}/stream-kernel-objects/commands/logs/*.txt
+            ${{ runner.temp }}/stream-kernel-objects/objects/include/generated/autoconf.h
+            ${{ runner.temp }}/stream-kernel-objects/objects/net/socket.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/fs/inode.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/net/core/sock.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/net/ipv4/af_inet.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/security/security.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/net/factory.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/security/selinux/netlabel.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/security/selinux/ss/services.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/security/selinux/ss/mls.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/security/selinux/ss/ebitmap.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/net/netlabel/netlabel_kapi.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/net/ipv4/cipso_ipv4.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/security/selinux/netport.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/security/selinux/hooks.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/security/selinux/ss/sidtab.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/security/selinux/avc.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/net/core/skbuff.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/kernel/audit.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/security/lsm_audit.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/net/netlink/af_netlink.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/net/ipv4/inet_hashtables.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/net/ipv4/inet_connection_sock.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/net/ipv4/route.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/net/core/dst.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/net/ipv4/tcp.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/net/ipv4/tcp_output.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/net/ipv4/tcp_input.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/drivers/pci/probe.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/drivers/base/core.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/lib/kobject.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/mm/util.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/lib/kasprintf.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/drivers/acpi/scan.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/drivers/acpi/bus.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/drivers/acpi/glue.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/drivers/acpi/osl.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/drivers/pci/pci-acpi.o
           if-no-files-found: warn
           retention-days: 3

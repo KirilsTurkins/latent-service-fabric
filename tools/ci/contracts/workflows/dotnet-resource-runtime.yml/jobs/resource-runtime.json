@@ -7,6 +7,7 @@
       "CARGO_BUILD_JOBS": 2,
       "CARGO_INCREMENTAL": 0
     },
+    "if": "${{ github.event_name != 'workflow_dispatch' || (!inputs.late_facilities && !inputs.replay_late_facilities) }}",
     "name": "Signed managed resources tasks clocks entropy and logging",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -98,7 +99,7 @@
   },
   "jobId": "resource-runtime",
   "kind": "job",
-  "reviewReason": "Add separate bounded managed resource callbacks qualification: unchanged explicit runtime/entropy limits, current pinned NativeAOT compiler, original source77 native products; no host rebuild, no implicit authority or whole-ticket claim.",
+  "reviewReason": "Reviewed exact df4 completed AOT package node-only continuation: same six late/fresh obligations and caps; no guest/native compilation; exact old jobs restored after only explicit default-false replay selector and job removal. Current managed-profile reader is bound to actual owner/private-IO/task-v2 receipts.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-resource-runtime.yml"
 }

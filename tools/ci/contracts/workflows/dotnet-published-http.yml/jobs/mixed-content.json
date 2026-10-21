@@ -7,7 +7,7 @@
       "CARGO_BUILD_JOBS": 2,
       "CARGO_INCREMENTAL": 0
     },
-    "if": "github.event_name == 'workflow_dispatch' && inputs.mixed_content",
+    "if": "github.event_name == 'workflow_dispatch' && inputs.mixed_content && !inputs.owner_capacity && !inputs.periodic_diagnostic",
     "name": "Default HttpClient streamed content and accepted managed work",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -111,7 +111,7 @@
   },
   "jobId": "mixed-content",
   "kind": "job",
-  "reviewReason": "Preserve all original commands and append source-bound actual failed-request cleanup RED and GREEN controls plus fixed public receipts.",
+  "reviewReason": "Default-false diagnostic-only periodic lane; explicit review preserves every original command/step/limit and adds only manual diagnostic exclusion. Whole previous four-job workflow restores byte-equivalent semantic data.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-published-http.yml"
 }

@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/dotnet_periodic_diagnostic.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Reviewed diagnostic-only original Reserve failure projection preserves success/arguments/tokens/refusal/FailFast; adds all56 original owner-kind/host-error pairs plus67 actual CLR controls and two Python source-boundaries. No capacity credit or increased limit.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "78589194671f7c979d58dfcda94ec82639742aa1a3ab5cf89926e8fb0255461b"
+}
