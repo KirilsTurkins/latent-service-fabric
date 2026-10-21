@@ -175,7 +175,7 @@ fn inspect(input: &[u8], template_extent: u32) -> Result<CEntry, &'static str> {
                     if function
                         .get_locals_reader()
                         .map_err(|_| "c-lifecycle-entry-locals")?
-                        .count()
+                        .get_count()
                         != 0
                     {
                         return Err("c-lifecycle-entry-refusal-locals");
@@ -852,7 +852,7 @@ mod tests {
         for payload in Parser::new(0).parse_all(&output) {
             if let Payload::CodeSectionEntry(body) = payload.unwrap() {
                 if function == entry.remap(entry.entry) {
-                    offset = Some(body.range().start);
+                    offset = Some(usize::try_from(body.range().start).unwrap());
                 }
                 function += 1;
             }

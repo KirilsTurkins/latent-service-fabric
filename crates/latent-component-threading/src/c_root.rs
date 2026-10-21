@@ -149,7 +149,7 @@ fn inspect(input: &[u8], export: &str, start: u32, extent: u32) -> Result<Root, 
                     empty_ctors = body
                         .get_locals_reader()
                         .map_err(|_| "c-root-ctor-locals")?
-                        .count()
+                        .get_count()
                         == 0
                         && matches!(ops.read(), Ok(Operator::End))
                         && ops.eof();
@@ -470,11 +470,7 @@ fn snapshot(input: &[u8]) -> Result<Bytes, &'static str> {
                     let global = global.map_err(|_| "c-root-snapshot-global")?;
                     bytes.globals.push((
                         global.ty,
-                        global
-                            .init_expr
-                            .get_binary_reader()
-                            .remaining_buffer()
-                            .to_vec(),
+                        checked_bytes(input, global.init_expr.get_binary_reader().range())?,
                     ));
                 }
             }

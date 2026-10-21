@@ -158,7 +158,7 @@ fn inspect(input: &[u8]) -> Result<Template, &'static str> {
                     refusal = body
                         .get_locals_reader()
                         .map_err(|_| "c-template-copy-locals")?
-                        .count()
+                        .get_count()
                         == 0
                         && matches!(ops.read(), Ok(Operator::Unreachable))
                         && matches!(ops.read(), Ok(Operator::End))
@@ -360,7 +360,13 @@ fn verify(input: &[u8], output: &[u8], template: &Template) -> Result<(), &'stat
     if !matches!(framing.read_var_u32(), Ok(1)) {
         return Err("c-template-proof-segment-count");
     }
-    old.segments.push(framing.remaining_buffer().to_vec());
+    let remaining = framing.bytes_remaining();
+    old.segments.push(
+        framing
+            .read_bytes(remaining)
+            .map_err(|_| "c-template-proof-segment-bytes")?
+            .to_vec(),
+    );
     if old != new {
         return Err("c-template-original-remainder-or-fixed-copy-changed");
     }
