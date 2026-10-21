@@ -1,0 +1,392 @@
+{
+  "schema": "latent.go.security-patch-source.v1",
+  "advisory": "GO-2026-6809",
+  "cve": "CVE-2026-111943",
+  "fixedVersion": "1.27.3",
+  "officialReleaseIndex": "https://go.dev/dl/?mode=json",
+  "advisorySource": "https://raw.githubusercontent.com/golang/vulndb/master/data/osv/GO-2026-6809.json",
+  "archive": {
+    "filename": "go1.27.3.src.tar.gz",
+    "os": "",
+    "arch": "",
+    "version": "go1.27.3",
+    "sha256": "6e7749035cf360f06b2575d162ea79df9fda8ef671889e5c375f8e50777f26bb",
+    "size": 35134035,
+    "kind": "source"
+  },
+  "rows": [
+    {
+      "path": "crypto/tls/cache.go",
+      "bytes": 1288,
+      "sha256": "553ad7a40a9b198bea838833e3e5ed5660ec9b031ad75f58a9ea119e44bd3bfb",
+      "existingPins": [
+        {
+          "owner": "network.py",
+          "sha256": "553ad7a40a9b198bea838833e3e5ed5660ec9b031ad75f58a9ea119e44bd3bfb"
+        }
+      ],
+      "matchesExistingPin": true
+    },
+    {
+      "path": "net/dial.go",
+      "bytes": 32230,
+      "sha256": "1ea8719962e33747db841fae362a339c29315fde2c5554a344b2935aa6f803b5",
+      "existingPins": [
+        {
+          "owner": "network.py",
+          "sha256": "1ea8719962e33747db841fae362a339c29315fde2c5554a344b2935aa6f803b5"
+        }
+      ],
+      "matchesExistingPin": true
+    },
+    {
+      "path": "net/http/client.go",
+      "bytes": 36093,
+      "sha256": "ced3428a85206de8de79c10de38d34951e0b9823c0ccb68ff51329d048a1f7b9",
+      "existingPins": [
+        {
+          "owner": "http.py",
+          "sha256": "ced3428a85206de8de79c10de38d34951e0b9823c0ccb68ff51329d048a1f7b9"
+        }
+      ],
+      "matchesExistingPin": true
+    },
+    {
+      "path": "net/http/request.go",
+      "bytes": 51543,
+      "sha256": "c3257079994b4e4f74f01cef72508919983ba31f91fcf599d348e9d52cec1540",
+      "existingPins": [
+        {
+          "owner": "http.py",
+          "sha256": "c3257079994b4e4f74f01cef72508919983ba31f91fcf599d348e9d52cec1540"
+        }
+      ],
+      "matchesExistingPin": true
+    },
+    {
+      "path": "net/http/roundtrip.go",
+      "bytes": 1034,
+      "sha256": "a02501dcc615b6af4144655cd28f6a6901973267d2a188794e4552104dcf589a",
+      "existingPins": [
+        {
+          "owner": "http.py",
+          "sha256": "a02501dcc615b6af4144655cd28f6a6901973267d2a188794e4552104dcf589a"
+        }
+      ],
+      "matchesExistingPin": true
+    },
+    {
+      "path": "net/http/transport.go",
+      "bytes": 107642,
+      "sha256": "c9146e77adc22d4b74ba77384ec7be7fc27c3af21ff20485f642b4d611b381a4",
+      "existingPins": [
+        {
+          "owner": "http.py",
+          "sha256": "c9146e77adc22d4b74ba77384ec7be7fc27c3af21ff20485f642b4d611b381a4"
+        }
+      ],
+      "matchesExistingPin": true
+    },
+    {
+      "path": "net/lookup.go",
+      "bytes": 30201,
+      "sha256": "e8b6b0a0dc7ca0715fe14e6599b1784dc85ce59689e0cb3f9a7fe3eea26ada19",
+      "existingPins": [
+        {
+          "owner": "network.py",
+          "sha256": "e8b6b0a0dc7ca0715fe14e6599b1784dc85ce59689e0cb3f9a7fe3eea26ada19"
+        }
+      ],
+      "matchesExistingPin": true
+    },
+    {
+      "path": "net/net_fake.go",
+      "bytes": 27195,
+      "sha256": "784b369c57be52fa87ace5f10e07e3c24b45d549639e1487734b793024188df3",
+      "existingPins": [
+        {
+          "owner": "runtime.py",
+          "sha256": "784b369c57be52fa87ace5f10e07e3c24b45d549639e1487734b793024188df3"
+        }
+      ],
+      "matchesExistingPin": true
+    },
+    {
+      "path": "net/tcpsock.go",
+      "bytes": 14550,
+      "sha256": "0c3392bd7c2966f894e01ea27514623cf09dc2660e426049219f7e5ee3ec0f74",
+      "existingPins": [
+        {
+          "owner": "network.py",
+          "sha256": "0c3392bd7c2966f894e01ea27514623cf09dc2660e426049219f7e5ee3ec0f74"
+        }
+      ],
+      "matchesExistingPin": true
+    },
+    {
+      "path": "os/file_unix.go",
+      "bytes": 14265,
+      "sha256": "877dd004355c475e8805b5700061604558422da057037556e0cf6edeb36ab7ec",
+      "existingPins": [
+        {
+          "owner": "activation.py",
+          "sha256": "877dd004355c475e8805b5700061604558422da057037556e0cf6edeb36ab7ec"
+        }
+      ],
+      "matchesExistingPin": true
+    },
+    {
+      "path": "runtime/lock_futex.go",
+      "bytes": 3151,
+      "sha256": "c411429c46c093a5214ceebb3557f66de31056826fc2ab234ebfae70c0a2efb5",
+      "existingPins": [
+        {
+          "owner": "runtime.py",
+          "sha256": "c411429c46c093a5214ceebb3557f66de31056826fc2ab234ebfae70c0a2efb5"
+        },
+        {
+          "owner": "runtime.py",
+          "sha256": "b0f86c66fc0598546c54e4db32d9e1479b77e66e67539872870fe41a3d413798"
+        }
+      ],
+      "matchesExistingPin": true
+    },
+    {
+      "path": "runtime/lock_js.go",
+      "bytes": 7308,
+      "sha256": "b354c0bdb9ac4bbc7ba52361653e81768324a147fca6d3ea42c19e6e3abf1ab6",
+      "existingPins": [
+        {
+          "owner": "runtime.py",
+          "sha256": "b354c0bdb9ac4bbc7ba52361653e81768324a147fca6d3ea42c19e6e3abf1ab6"
+        },
+        {
+          "owner": "runtime.py",
+          "sha256": "32537875a1bae14517f33ca4fa5cb37daa4fb375da655a534d9e8dc6da3dbed8"
+        }
+      ],
+      "matchesExistingPin": true
+    },
+    {
+      "path": "runtime/lock_sema.go",
+      "bytes": 4245,
+      "sha256": "75d2a07f05071f1537a1fad231e3397ae33ebac5026c66d09959b7c898f1ea5c",
+      "existingPins": [
+        {
+          "owner": "runtime.py",
+          "sha256": "75d2a07f05071f1537a1fad231e3397ae33ebac5026c66d09959b7c898f1ea5c"
+        },
+        {
+          "owner": "runtime.py",
+          "sha256": "284889789238c412c9f2e2c99e10912641fac591523a462659c9ec49ab905239"
+        }
+      ],
+      "matchesExistingPin": true
+    },
+    {
+      "path": "runtime/lock_wasip1.go",
+      "bytes": 2172,
+      "sha256": "946dfcba88ee68b89cb936a12a9a60a82f451ba915eef6e0708791cc4fc2981c",
+      "existingPins": [
+        {
+          "owner": "runtime.py",
+          "sha256": "946dfcba88ee68b89cb936a12a9a60a82f451ba915eef6e0708791cc4fc2981c"
+        },
+        {
+          "owner": "runtime.py",
+          "sha256": "720415791179802557117471740f92cddf4b8a8aa0ebfdba1322bbc621e1f62c"
+        }
+      ],
+      "matchesExistingPin": true
+    },
+    {
+      "path": "runtime/mcleanup.go",
+      "bytes": 26788,
+      "sha256": "bda3732f12dc16750994d6ce6b10b6844beb2ea1aa854c3407be757097f04207",
+      "existingPins": [
+        {
+          "owner": "activation.py",
+          "sha256": "bda3732f12dc16750994d6ce6b10b6844beb2ea1aa854c3407be757097f04207"
+        }
+      ],
+      "matchesExistingPin": true
+    },
+    {
+      "path": "runtime/mfinal.go",
+      "bytes": 20192,
+      "sha256": "49d40539afdd927355c9cfbfabc7130c561d0a19e68ca5e621082e58e9d96cd7",
+      "existingPins": [
+        {
+          "owner": "activation.py",
+          "sha256": "49d40539afdd927355c9cfbfabc7130c561d0a19e68ca5e621082e58e9d96cd7"
+        }
+      ],
+      "matchesExistingPin": true
+    },
+    {
+      "path": "runtime/mgc.go",
+      "bytes": 79497,
+      "sha256": "b1cb75ff1b5da577a1af442d5c52da2a08328510e4e70f66cb88d92e02a5b33e",
+      "existingPins": [
+        {
+          "owner": "activation.py",
+          "sha256": "b1cb75ff1b5da577a1af442d5c52da2a08328510e4e70f66cb88d92e02a5b33e"
+        }
+      ],
+      "matchesExistingPin": true
+    },
+    {
+      "path": "runtime/mgcscavenge.go",
+      "bytes": 53513,
+      "sha256": "8d462284b9cc551410de1d19b910e4d263d29869596314c0a8dc4af8f8afa25b",
+      "existingPins": [
+        {
+          "owner": "activation.py",
+          "sha256": "8d462284b9cc551410de1d19b910e4d263d29869596314c0a8dc4af8f8afa25b"
+        }
+      ],
+      "matchesExistingPin": true
+    },
+    {
+      "path": "runtime/mgcsweep.go",
+      "bytes": 33692,
+      "sha256": "81139b39aeacd63e86bdadb6e921882e871bb30c87479b454aa5d82adc0c91aa",
+      "existingPins": [
+        {
+          "owner": "activation.py",
+          "sha256": "81139b39aeacd63e86bdadb6e921882e871bb30c87479b454aa5d82adc0c91aa"
+        }
+      ],
+      "matchesExistingPin": true
+    },
+    {
+      "path": "runtime/mheap.go",
+      "bytes": 102387,
+      "sha256": "848cedd74ae1d10af65eb3beed88ddd7d22d184a64a5a7477251c4886e8a459d",
+      "existingPins": [
+        {
+          "owner": "timers.py",
+          "sha256": "848cedd74ae1d10af65eb3beed88ddd7d22d184a64a5a7477251c4886e8a459d"
+        }
+      ],
+      "matchesExistingPin": true
+    },
+    {
+      "path": "runtime/netpoll_wasip1.go",
+      "bytes": 6148,
+      "sha256": "5462ad1c05a38ba052d77b3795fb284e2606471585ef5faef4f99cc27f400082",
+      "existingPins": [
+        {
+          "owner": "runtime.py",
+          "sha256": "5462ad1c05a38ba052d77b3795fb284e2606471585ef5faef4f99cc27f400082"
+        }
+      ],
+      "matchesExistingPin": true
+    },
+    {
+      "path": "runtime/os_wasip1.go",
+      "bytes": 7223,
+      "sha256": "c8ddc4ddc00af788539897f9a75c814d9c7fcfe9416dbf977f896631c158a3ca",
+      "existingPins": [
+        {
+          "owner": "runtime.py",
+          "sha256": "c8ddc4ddc00af788539897f9a75c814d9c7fcfe9416dbf977f896631c158a3ca"
+        }
+      ],
+      "matchesExistingPin": true
+    },
+    {
+      "path": "runtime/pinner.go",
+      "bytes": 12153,
+      "sha256": "6f638fb797edb1ed42601f11a086c8f6a34f095d7c85b9f53773e59528ff38bd",
+      "existingPins": [
+        {
+          "owner": "activation.py",
+          "sha256": "6f638fb797edb1ed42601f11a086c8f6a34f095d7c85b9f53773e59528ff38bd"
+        }
+      ],
+      "matchesExistingPin": true
+    },
+    {
+      "path": "runtime/proc.go",
+      "bytes": 243217,
+      "sha256": "40d15ce858cf058cff92606001a29ee1689db88c121a2f0c283163a0d64a7375",
+      "existingPins": [
+        {
+          "owner": "runtime.py",
+          "sha256": "40d15ce858cf058cff92606001a29ee1689db88c121a2f0c283163a0d64a7375"
+        },
+        {
+          "owner": "runtime.py",
+          "sha256": "64e0822a2f8b8a6ed6e764e5c0f224b392e3a1343a328d30d7b34441ae7c9cef"
+        }
+      ],
+      "matchesExistingPin": true
+    },
+    {
+      "path": "runtime/runtime2.go",
+      "bytes": 57123,
+      "sha256": "7d66ed912f68b1259947807ca1bdf79ee7e54c6a61a716d88db663d570af66da",
+      "existingPins": [
+        {
+          "owner": "activation.py",
+          "sha256": "7d66ed912f68b1259947807ca1bdf79ee7e54c6a61a716d88db663d570af66da"
+        }
+      ],
+      "matchesExistingPin": true
+    },
+    {
+      "path": "runtime/time.go",
+      "bytes": 43649,
+      "sha256": "cf2ae4e953a3315c226499f553a8e8e1529d27ceac166b4fb75e8d7b3a4fa682",
+      "existingPins": [
+        {
+          "owner": "activation.py",
+          "sha256": "cf2ae4e953a3315c226499f553a8e8e1529d27ceac166b4fb75e8d7b3a4fa682"
+        }
+      ],
+      "matchesExistingPin": true
+    },
+    {
+      "path": "syscall/fs_wasip1.go",
+      "bytes": 24956,
+      "sha256": "5cf5a98b3361c2d839e084b183366849cd276c9585620f04cc3c75e35a371448",
+      "existingPins": [
+        {
+          "owner": "runtime.py",
+          "sha256": "5cf5a98b3361c2d839e084b183366849cd276c9585620f04cc3c75e35a371448"
+        }
+      ],
+      "matchesExistingPin": true
+    },
+    {
+      "path": "syscall/syscall_wasip1.go",
+      "bytes": 9643,
+      "sha256": "2017243455e2f7f62bdd0c36040be61af3989b5d96ab81d115d24228657ed1b1",
+      "existingPins": [
+        {
+          "owner": "runtime.py",
+          "sha256": "2017243455e2f7f62bdd0c36040be61af3989b5d96ab81d115d24228657ed1b1"
+        }
+      ],
+      "matchesExistingPin": true
+    },
+    {
+      "path": "unique/canonmap.go",
+      "bytes": 10513,
+      "sha256": "c2231dbb996483905d256f0c1d8cf64266fd89c63bc339e0530e536bedb5aedb",
+      "existingPins": [
+        {
+          "owner": "activation.py",
+          "sha256": "c2231dbb996483905d256f0c1d8cf64266fd89c63bc339e0530e536bedb5aedb"
+        }
+      ],
+      "matchesExistingPin": true
+    }
+  ],
+  "schedulerPostimagesExact": true,
+  "scope": "Archive authenticated against official release index. Read-only source audit; no compiler execution.",
+  "compilerExecuted": false,
+  "signedGuestQualification": false,
+  "historicalDiagnosticCataloguesChanged": false
+}

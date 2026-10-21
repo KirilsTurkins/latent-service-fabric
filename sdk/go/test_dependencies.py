@@ -11,7 +11,7 @@ from unittest import mock
 import dependencies
 
 
-VERSION = "1.27.2"
+VERSION = "1.27.3"
 CHECKSUM = "h1:" + "A" * 43 + "="
 
 

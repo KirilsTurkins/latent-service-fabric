@@ -303,8 +303,8 @@ jobs:
           cargo install --git https://github.com/bytecodealliance/componentize-go --rev 148dba505f8c6c64ad84db777cfde5e34e25098b --locked componentize-go
           test "$(wasm-tools --version | cut -d ' ' -f 1,2)" = 'wasm-tools 1.254.0'
           mkdir -p "$RUNNER_TEMP/go-guest-tools"
-          curl --fail --location --max-time 180 --output "$RUNNER_TEMP/go-guest-tools/go.tar.gz" https://dl.google.com/go/go1.27.2.linux-amd64.tar.gz
-          echo "ecbadb99091a3f46e31f5f934b068b1864eafa7995211b39eaddf76996045fe5  $RUNNER_TEMP/go-guest-tools/go.tar.gz" | sha256sum --check --strict
+          curl --fail --location --max-time 180 --output "$RUNNER_TEMP/go-guest-tools/go.tar.gz" https://dl.google.com/go/go1.27.3.linux-amd64.tar.gz
+          echo "65efbc80fdc1fa2cd2631cad5b481777a68e8725f34e89f50fc6ac714e379b40  $RUNNER_TEMP/go-guest-tools/go.tar.gz" | sha256sum --check --strict
           tar -xzf "$RUNNER_TEMP/go-guest-tools/go.tar.gz" -C "$RUNNER_TEMP/go-guest-tools"
           python3 tools/go_guest/runtime.py --prepare-compiler "$RUNNER_TEMP/go-guest-tools/go" --output "$RUNNER_TEMP/go-guest-tools/go-async"
           echo "$RUNNER_TEMP/go-guest-tools/go-async/bin" >> "$GITHUB_PATH"
@@ -863,11 +863,14 @@ jobs:
           run-id: 39310234677
           github-token: ${{ github.token }}
           path: ${{ runner.temp }}/go-entropy-tools
-      - name: Authenticate original Go archive and prepare only the maintained async compiler
+      - name: Authenticate historical tools and prepare the maintained patched Go compiler
         run: |
           set -euo pipefail
           out="$RUNNER_TEMP/go-entropy-tools"
           echo "ecbadb99091a3f46e31f5f934b068b1864eafa7995211b39eaddf76996045fe5  $out/go.tar.gz" | sha256sum --check --strict
+          mv "$out/go.tar.gz" "$out/go1.27.2-historical.tar.gz"
+          curl --fail --location --proto '=https' --tlsv1.2 --max-time 180 --output "$out/go.tar.gz" https://dl.google.com/go/go1.27.3.linux-amd64.tar.gz
+          echo "65efbc80fdc1fa2cd2631cad5b481777a68e8725f34e89f50fc6ac714e379b40  $out/go.tar.gz" | sha256sum --check --strict
           python3 -B -c 'import os; from pathlib import Path; from tools.qualify_go_entropy_retained import compiler_inputs; compiler_inputs(Path(os.environ["RUNNER_TEMP"])/"go-entropy-tools")'
           test "$("$out/componentize-go" --version)" = 'componentize-go 0.4.3'
           tar -xzf "$out/go.tar.gz" -C "$out"

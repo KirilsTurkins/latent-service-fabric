@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/go_dependency_watch_fixture.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve Go and development runtime coverage; explicitly grant the signed Go fixture capabilities and require two distinct successful fresh activations per reviewed build; exercise native and faulted bounded metadata parsing on Python 3.13.",
+  "reviewReason": "Fix actual current CI failures: Go 1.27.3 official security patch and archive digest; preserve every original test, command, guard, coverage and bound. All 27 pinned Go overlay files are byte-identical in the official source archive. Preserve historical diagnostics and compiler receipts. Retained entropy authenticates its old compiler before acquiring the separately pinned patched compiler.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "179f3307b62ef4db085413f27659ee112d4855e61ac72a1ce96641b8bec1a226"
+  "sha256": "091d83b79c7ba528307677c4d3115a7a82b5a1ea2036759493668f828b220fd4"
 }

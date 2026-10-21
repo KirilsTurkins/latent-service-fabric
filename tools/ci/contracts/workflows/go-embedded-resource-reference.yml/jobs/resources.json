@@ -58,7 +58,7 @@
       },
       {
         "name": "Install the existing pinned component compiler no native host build",
-        "run": "set -euo pipefail\ncargo install --git https://github.com/bytecodealliance/componentize-go --rev 148dba505f8c6c64ad84db777cfde5e34e25098b --locked componentize-go\ntest \"$(wasm-tools --version | cut -d ' ' -f 1,2)\" = 'wasm-tools 1.254.0'\nmkdir -p \"$RUNNER_TEMP/go-embedded-tools\"\ncurl --fail --location --max-time 180 --output \"$RUNNER_TEMP/go-embedded-tools/go.tar.gz\" https://dl.google.com/go/go1.27.2.linux-amd64.tar.gz\necho \"ecbadb99091a3f46e31f5f934b068b1864eafa7995211b39eaddf76996045fe5  $RUNNER_TEMP/go-embedded-tools/go.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/go-embedded-tools/go.tar.gz\" -C \"$RUNNER_TEMP/go-embedded-tools\"\npython3 tools/go_guest/runtime.py --prepare-compiler \"$RUNNER_TEMP/go-embedded-tools/go\" --output \"$RUNNER_TEMP/go-embedded-tools/go-async\"\necho \"$RUNNER_TEMP/go-embedded-tools/go-async/bin\" >> \"$GITHUB_PATH\"\n"
+        "run": "set -euo pipefail\ncargo install --git https://github.com/bytecodealliance/componentize-go --rev 148dba505f8c6c64ad84db777cfde5e34e25098b --locked componentize-go\ntest \"$(wasm-tools --version | cut -d ' ' -f 1,2)\" = 'wasm-tools 1.254.0'\nmkdir -p \"$RUNNER_TEMP/go-embedded-tools\"\ncurl --fail --location --max-time 180 --output \"$RUNNER_TEMP/go-embedded-tools/go.tar.gz\" https://dl.google.com/go/go1.27.3.linux-amd64.tar.gz\necho \"65efbc80fdc1fa2cd2631cad5b481777a68e8725f34e89f50fc6ac714e379b40  $RUNNER_TEMP/go-embedded-tools/go.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/go-embedded-tools/go.tar.gz\" -C \"$RUNNER_TEMP/go-embedded-tools\"\npython3 tools/go_guest/runtime.py --prepare-compiler \"$RUNNER_TEMP/go-embedded-tools/go\" --output \"$RUNNER_TEMP/go-embedded-tools/go-async\"\necho \"$RUNNER_TEMP/go-embedded-tools/go-async/bin\" >> \"$GITHUB_PATH\"\n"
       },
       {
         "name": "Build one fresh greeting sign admit and require original27 plus8 resource calls",
@@ -80,7 +80,7 @@
   },
   "jobId": "resources",
   "kind": "job",
-  "reviewReason": "Add one input-free20-minute Go embedded-resource replay using authenticated successful94d normal27/native5/fourcompanions. Exact reviewed unused-helper and single startup-test postimages only; all native/SDK/WIT/used inputs and original programme gates retained. Fresh resource greeting+eight actual calls remain pending; no host rebuild or current-normal fabrication.",
+  "reviewReason": "Fix actual current CI failures: Go 1.27.3 official security patch and archive digest; preserve every original test, command, guard, coverage and bound. All 27 pinned Go overlay files are byte-identical in the official source archive. Preserve historical diagnostics and compiler receipts. Retained entropy authenticates its old compiler before acquiring the separately pinned patched compiler.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-embedded-resource-reference.yml"
 }
