@@ -22,3 +22,9 @@ name = "c-context"
 path = "src/bin/c-context.rs"
 test = false
 bench = false
+
+[[bin]]
+name = "rust-context"
+path = "src/bin/rust-context.rs"
+test = false
+bench = false
