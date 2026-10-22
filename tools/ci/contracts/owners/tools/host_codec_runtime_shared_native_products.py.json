@@ -1,8 +1,0 @@
-{
-  "kind": "owner",
-  "path": "tools/host_codec_runtime_shared_native_products.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Direct invoked CI owner pins the independently reviewed actual163 closed69 reader and inherits all original64 default acquisition and product guards",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "af90ef008759ad3d4a7a7c7071b18a8c3c464e7ec95a6dc90c1980164dcab3de"
-}

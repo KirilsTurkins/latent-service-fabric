@@ -50,14 +50,15 @@ jobs:
           git fetch --no-tags --depth=1 origin cb8ceefc5f6343301871dbde1d8a853d3581cc30
           git fetch --no-tags --depth=1 origin 1d5062ee63c0d5ff202d47e21793f6fb9bb8a21a
           git fetch --no-tags --depth=1 origin 597ef2bc0db168d4aee1c2416c38f9a8b9fef9e8
+          git fetch --no-tags --depth=1 origin ce8c04a7d9fdf3be79e16b2f9a26803b97a7e3e1
       - name: Verify source and adverse fixed-product controls
         run: |
           python3 -m pip install --requirement tools/requirements.lock
-          python3 -B -m unittest tools.tests.test_c_timed_runtime tools.tests.test_c_threading_profile tools.tests.test_host_codec_runtime_shared_native_products -v
+          python3 -B -m unittest tools.tests.test_c_timed_runtime tools.tests.test_c_threading_profile tools.tests.test_host_codec_session_native_products -v
       - name: Authenticate five verified native products
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 -B tools/host_codec_runtime_shared_native_products.py --output "$RUNNER_TEMP/c-thread-native"
+        run: python3 -B tools/host_codec_session_native_products.py --output "$RUNNER_TEMP/c-thread-native"
       - uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2
         with:
           version: '0.16.0'

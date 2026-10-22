@@ -1,0 +1,193 @@
+{
+  "schemaVersion": "latent.host-codec.session-native-evidence.v1",
+  "ownerIssues": [
+    736,
+    745,
+    744
+  ],
+  "status": "passed",
+  "sourceRevision": "ce8c04a7d9fdf3be79e16b2f9a26803b97a7e3e1",
+  "scope": "ordinary-original-sealed-session-Core-and-Stats-strong-and-weak-Arc-backing-including-both-private-billing-Arcs-owned-identity-text-and-fixed-handle-slots-and-selected-C-canonical-realloc-private-System-stack-routing-and-ordinary-runtime-and-timer-strong-and-weak-Arc-backing-including-private-billing-Arc-and-ordinary-host-blob-fixed-Vec-and-streaming-HTTP-fixed-Vec-and-two-private-Shared-Arc-storage-shapes-and-three-retained-capability-directory-backings-and-six-closed-context-reply-buffers-and-concrete-callback-future-box-and-retained-activation-context-and-linear-allocation-notifications-codec-table-and-selected-Store-instance-buffer-registry-FuncRefs-container-resource-substitutions-original-memory-and-selected-c-public-async-type-sync-core-admission-and-authenticated-c-ready-handoff-and-closed-guest-trap-diagnostics-and-exact-native-thread-audit-codec-and-CLI-projection; direct-Core-HostFunc-construction, shared-preparation-closures, concurrent-task, other-hostcall-values-custom-Lower-shared-interior-error-owned-copies-and-opaque-accessor-scheduler-frames, request ingress and discarded scaffolding and other hostcall copies, shared broker and compiled-plan preparation, HandleEntry and transitive provider payload/transport/queue graphs, legacy framing and serialized controller frames excluded",
+  "profile": "normal-managed-guest-default-features",
+  "nativeCohort": "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-retained-capability-directories-blob-streaming-shared-tables-runtime-timer-strong-weak-session-core-stats-c-canonical-system-stack-memory-v13",
+  "wasmtimeAllocationCohort": "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-memory-v9",
+  "source": {
+    "sha256": "sha256:1d03e2ae7b156402620744b110faf89ad483c5ba32d3982d70cf4114504e668e",
+    "files": 3641,
+    "bytes": 31712078,
+    "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+    "hermetic": false,
+    "implicitCompilerInputs": "not-attested"
+  },
+  "compiler": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "products": {
+    "latent": {
+      "sha256": "sha256:38c1f60c195c7a897dfc05cf732770ce443131381b261dc281b86d6e563ced4a",
+      "bytes": 72418384
+    },
+    "latentd": {
+      "sha256": "sha256:a4ed21bd3d4453e16055790c9f325311acdd291997563be679fc9d43425e207e",
+      "bytes": 190278472
+    },
+    "examples/package": {
+      "sha256": "sha256:062c9b2dbedd45911fd7fe7484af4dfc40a74f28827d9c12c631af5e4e77b3d1",
+      "bytes": 21172136
+    },
+    "examples/capsule_contracts": {
+      "sha256": "sha256:5e068b96470768f57a53b5a38c91064b7a1b437dc001099a83b01aae3e0da05b",
+      "bytes": 13865672
+    },
+    "examples/capsule_authoring": {
+      "sha256": "sha256:a4b9b64fdb8b1a7ff977c0b6f29737867c9669d16c8526a1b3492d3277f5d5a9",
+      "bytes": 27426320
+    }
+  },
+  "origin": {
+    "repository": "KirilsTurkins/latent-service-fabric",
+    "workflow": ".github/workflows/host-codec-memory.yml",
+    "event": "push",
+    "branch": "feat/session-core-memory-20261022",
+    "run": 39859151957,
+    "job": 120105084569,
+    "runUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39859151957",
+    "artifact": 12461318141,
+    "artifactName": "host-codec-memory-ce8c04a7d9fdf3be79e16b2f9a26803b97a7e3e1",
+    "archiveBytes": 70528200,
+    "archiveSha256": "sha256:2863cca47238fe400a5e72ea85d3eef2fc7180f8f78aa7ca884bb9bf9ede7bc5",
+    "archiveMembers": 159,
+    "expandedBytes": 325568106,
+    "receipts": {
+      "native-products.json": {
+        "bytes": 116232,
+        "sha256": "sha256:7347bb46e2288dab8a0fed2a9d7987762cf8df0e6d7f64c15cdd01b70da6c96c"
+      },
+      "source-inputs.json": {
+        "bytes": 24574,
+        "sha256": "sha256:9afcc08a9aa36600f037e1bf31ff2c075c9bc5dd63343679957e5fbcbca8e45f"
+      }
+    }
+  },
+  "recipeAndAuxiliaryMaterials": 148,
+  "literalRecipeEntries": 22,
+  "controlCount": 172,
+  "commandCount": 75,
+  "verifiedLogStreamHashes": 150,
+  "ignoredControls": 0,
+  "controlGroups": {
+    "original-host-memory": 6,
+    "result-owner": 4,
+    "result-wire": 4,
+    "result-capacity": 1,
+    "actual-host-codec": 9,
+    "actual-dynamic-allocation-hook": 6,
+    "raw-input-lifetime": 4,
+    "result-lifetime": 2,
+    "original-accounting": 20,
+    "child-capacity": 1,
+    "c-public-async-type": 1,
+    "c-public-sync-abi": 1,
+    "journal-result-retirement": 1,
+    "ordinary-backend": 1,
+    "actual-native-table-owner": 9,
+    "actual-native-store-owner": 10,
+    "closed-guest-trap-diagnostics": 1,
+    "actual-native-registry-owner": 4,
+    "actual-native-funcrefs-owner": 5,
+    "c-ready-handoff": 2,
+    "resource-substitutions": 5,
+    "actual-linear-allocation-notifications": 3,
+    "native-thread-audit-codec": 3,
+    "retained-activation-context": 11,
+    "actual-host-future-owner": 5,
+    "c-canonical-wait-routes": 2,
+    "actual-owned-context-reply": 5,
+    "cli-native-thread-audit-projection": 2,
+    "actual-retained-capability-directory": 5,
+    "actual-streaming-table-shared-owner": 10,
+    "actual-blob-table-owner": 1,
+    "original-session-table-native-owner": 2,
+    "actual-runtime-timer-strong-weak-owner": 17,
+    "original-session-native-owner": 6,
+    "original-session-optional-shared-owner": 1,
+    "c-canonical-private-system-stack": 2
+  },
+  "newControlGroups": {
+    "original-session-native-owner": [
+      "broker::tests::session_native_memory::original_session_native_owned_payloads_and_both_headers_share_exact_profile_budget",
+      "broker::tests::session_native_memory::original_session_native_refusal_rolls_back_unallocated_preparations_and_admission",
+      "broker::tests::session_native_memory::original_session_native_observer_and_reused_registry_never_credit_a_fresh_budget",
+      "broker::tests::session_native_memory::original_session_native_real_provider_call_keeps_closed_session_backing_until_drop",
+      "broker::tests::session_native_memory::original_session_native_real_provider_result_keeps_original_owner_after_scope_close",
+      "broker::tests::session_native_memory::original_session_native_concurrent_final_core_drops_retire_the_real_registry_weak_graph"
+    ],
+    "original-session-optional-shared-owner": [
+      "broker::session::shared::tests::original_session_native_optional_billing_and_unwind_keep_actual_weak_storage_paid"
+    ],
+    "c-canonical-private-system-stack": [
+      "c_abi::tests::c_system_stack_disjoint_reservation_and_zero_context_realloc_scope",
+      "c_abi::tests::c_system_stack_rejects_aliases_and_live_realloc_tls"
+    ]
+  },
+  "prior163Prefix": {
+    "sourceRevision": "597ef2bc0db168d4aee1c2416c38f9a8b9fef9e8",
+    "run": 39835325986,
+    "job": 120022000948,
+    "groups": 33,
+    "controls": 163,
+    "exactSelectorsAndCommandPrefixPreserved": true
+  },
+  "verification": {
+    "wholeArchiveDigestAndAllMemberCrcVerified": true,
+    "all159MemberIdentitiesVerified": true,
+    "all75ExactArgumentsAnd150LogIdentitiesVerified": true,
+    "all172DiscoveredAndSuccessfulNamesVerified": true,
+    "complete3641NativeAnd148AuxiliaryIdentitiesEqualExecutedPhysicalSource": true,
+    "allFiveProductIdentitiesVerified": true,
+    "liveSuccessfulOfficialRunJobArtifactVerified": true
+  },
+  "completedSlice": {
+    "sealedSessionBacking": "Core and Stats original Arc storage, private billing Arcs, copied identity text and fixed slot Vec are prepaid before allocation on the original Phase3/4 budget.",
+    "physicalWeakLifetime": "Original registry Weak owners keep their actual headers paid without retaining or reviving the payload; concurrent final drops and original-ledger refusal are controlled.",
+    "realProviderOwners": "Actual retained calls and results keep the original Core backing until their real drops.",
+    "canonicalCAllocation": "Selected C canonical realloc uses a separate bounded System stack with zero canonical context; root/System aliasing and TLS-dependent live reallocators are rejected."
+  },
+  "historicalAttempts": [
+    {
+      "run": 39858163700,
+      "job": 120101664983,
+      "conclusion": "failure",
+      "reason": "Two new cfg(test) C root-transform calls lacked their module qualification; exact two-line test-only fix applied."
+    },
+    {
+      "run": 39858121950,
+      "job": 120101521547,
+      "conclusion": "cancelled",
+      "reason": "Cancelled after the same libtest compile failure was established; no successful native observation."
+    }
+  ],
+  "claimBoundary": {
+    "signedGuestQualification": false,
+    "whole736CostCriteriaComplete": false,
+    "whole745CostCriteriaComplete": false,
+    "whole744RuntimeComplete": false,
+    "hermeticCompilerInputsAttested": false,
+    "remainingWork": [
+      "Shared broker and compiled-plan preparation.",
+      "HandleEntry and transitive provider payload, transport, queue and ingress graphs.",
+      "Full activation retirement, including the separately observed descendant cumulative-budget settlement coupling.",
+      "Signed C timer and broader language/runtime qualification."
+    ],
+    "separateActualFailures": [
+      {
+        "run": 39859160012,
+        "job": 120105405608,
+        "reason": "Signed C child caller observed cumulative ceiling retention after actual child success; production retirement fix remains open."
+      },
+      {
+        "run": 39859159829,
+        "job": 120105843556,
+        "reason": "Five final-zero stream fixtures retained real provider/broker owners; explicit lifetime cleanup repair remains open."
+      }
+    ]
+  }
+}

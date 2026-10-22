@@ -62,6 +62,14 @@ only the scope flag is unsafe. A distinct bounded original-memory System stack
 and rebuilt compiler tooling are required before retrying. This failure is not
 a signed timer qualification; all failed artifacts remain retained.
 
+The next attempt consumes the verified 172-control native products from
+`ce8c04a7d9fdf3be79e16b2f9a26803b97a7e3e1` (run `39859151957`). Their C
+transform reserves separate 64 KiB Root and System stacks inside the original
+bounded linear memory and rejects live canonical allocators requiring TLS.
+The native controls passed; signed timer execution remains pending. A separate
+CI failure exposed cumulative child-budget retention by physically retained
+session headers, so these products do not establish complete retirement.
+
 Timer-budget exhaustion, timer-specific cancellation/deadline barriers,
 recurring callbacks, cross-tenant reuse and published/transitive libraries
 remain required beyond this finite programme.
