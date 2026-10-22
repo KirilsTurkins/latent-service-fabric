@@ -1,0 +1,33 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "c-thread-prefix-${{ github.ref }}"
+    },
+    "name": "Retained C thread prefix diagnostic",
+    "on": {
+      "push": {
+        "branches": [
+          "diag/c-thread-prefix-20261022"
+        ],
+        "paths": [
+          ".github/workflows/c-thread-prefix-diagnostic.yml",
+          "tools/c_thread_prefix_inputs.py",
+          "tools/diagnose_c_thread_prefix.py",
+          "tools/tests/test_c_thread_prefix.py"
+        ]
+      }
+    },
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "retained-prefix"
+  ],
+  "reviewReason": "Bounded diagnostic-only three-call observation of immutable failed d928 C component using original7b native products; no guest/native compilation, no17-case qualification, retain original source/build/provenance and all physical/provider cleanup.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/c-thread-prefix-diagnostic.yml"
+}

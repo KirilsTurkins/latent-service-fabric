@@ -1,0 +1,92 @@
+{
+  "run": 39629088035,
+  "job": 119322059030,
+  "outerConclusion": "failure",
+  "stage": "normal-single-component-signing",
+  "error": "provenance-malformed",
+  "component": {
+    "sha256": "sha256:d4f77074cf84f89cd6d1e074ab96d006f2389870484d5f9c526bcd72205c0ee5",
+    "bytes": 1853427
+  },
+  "materialMapping": [
+    {
+      "path": "lib/libc/include/generic-musl/threads.h",
+      "label": "c-threading-libc-0",
+      "digest": "sha256:402b75ff71dd5051ebf8744fe7e09a9e43740b9798e6c02701929c852972a2fc",
+      "size": 1794
+    },
+    {
+      "path": "lib/libc/include/wasm-wasi-musl/__errno.h",
+      "label": "c-threading-libc-1",
+      "digest": "sha256:b9ce417c2b172bf982d8ef0236adfe442f54e7d0d344e75104cbcede88a9d7e2",
+      "size": 188
+    },
+    {
+      "path": "lib/libc/include/wasm-wasi-musl/errno.h",
+      "label": "c-threading-libc-2",
+      "digest": "sha256:844d1aa7a14734acde284e3109db63e29511540f6c9ccfefe46e455fd5b3ab40",
+      "size": 507
+    },
+    {
+      "path": "lib/libc/include/wasm-wasi-musl/pthread.h",
+      "label": "c-threading-libc-3",
+      "digest": "sha256:21b1fd90de05919d0718109f16fa1408a0750dcf65f63cc661c506f07e8e1ca1",
+      "size": 11218
+    },
+    {
+      "path": "lib/libc/musl/src/thread/pthread_getspecific.c",
+      "label": "c-threading-libc-4",
+      "digest": "sha256:5b0e9479040a4a891d021daf202dfab5def79233ec948558eaa3c36fd0203cf7",
+      "size": 269
+    },
+    {
+      "path": "lib/libc/musl/src/thread/pthread_setspecific.c",
+      "label": "c-threading-libc-5",
+      "digest": "sha256:e588f3345a6c8d636fae1b0832827474c74c171fa3dd7861b2a3e5cbe87b5520",
+      "size": 248
+    },
+    {
+      "path": "lib/libc/musl/src/thread/tss_set.c",
+      "label": "c-threading-libc-6",
+      "digest": "sha256:2dbc898eadabcd478ce8028a0b450e47f02f454d5d66de220805dbd45adcce23",
+      "size": 246
+    },
+    {
+      "path": "lib/libc/wasi/libc-bottom-half/cloudlibc/src/libc/errno/errno.c",
+      "label": "c-threading-libc-7",
+      "digest": "sha256:eeecab4885f9dba3df77a2c81c1960f1f84779a2b16f0b2aceb1d83af1d47aa3",
+      "size": 5227
+    },
+    {
+      "path": "lib/libc/wasi/libc-bottom-half/sources/__errno_location.c",
+      "label": "c-threading-libc-8",
+      "digest": "sha256:fb6d59a8ca5b99dc0799db259a7b35e7403818469f6cbf6a6ec1178fec98f702",
+      "size": 71
+    },
+    {
+      "path": "lib/libc/wasi/libc-top-half/musl/src/thread/pthread_key_create.c",
+      "label": "c-threading-libc-9",
+      "digest": "sha256:96b57e03ae683118bcb004b08b6d42db8990d4abf3731781ec3bfd65d0b0b4ba",
+      "size": 2402
+    }
+  ],
+  "signerSchemaUnchanged": true,
+  "oldObservationRewritten": false,
+  "guestExecuted": false,
+  "validatorSource": {
+    "path": "crates/latent-signing/src/provenance/validate.rs",
+    "sha256": "sha256:494afaf1e026937a9333a316f16b4e1a41207d52b40ecbd61385360d028e4dfa",
+    "bytes": 11979
+  },
+  "controlSource": {
+    "sha256": "sha256:eca58daf85f53ac36917c572069f1a3d181387be27e3b418a5d3fd2437dc0474",
+    "bytes": 10649
+  },
+  "compiler": "rustc1.97.1 std-only extracted original material loop and digest helpers",
+  "compileExitCode": 0,
+  "executionExitCode": 0,
+  "oldActual27MaterialRows": "MalformedProvenance",
+  "newSame27RowsWithOnly10Labels": "Ok",
+  "slashAdverse": "MalformedProvenance",
+  "fullSignerOrGuestQualification": false
+}

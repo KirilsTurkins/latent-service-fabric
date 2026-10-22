@@ -1,13 +1,28 @@
 {
   "cases": [
+    "CThreadingProfile.test_closed_libc_material_labels_preserve_original_paths_and_recheck_the_same_files",
     "CThreadingProfile.test_default_project_and_sdk_bytes_have_no_threading_additions",
     "CThreadingProfile.test_installed_recipe_ships_optional_helper_and_exact_runtime_without_default_selection",
+    "CThreadingProfile.test_linked_tls_symbols_keep_libc_keys_and_encoded_source_keys_separate",
     "CThreadingProfile.test_owned_import_projection_preserves_original_sync_export_and_refuses_duplicates",
     "CThreadingProfile.test_public_export_comes_from_actual_identity_and_sync_value_graph",
     "CThreadingProfile.test_selected_runtime_is_captured_and_lock_checked_before_compilation",
-    "CThreadingProfile.test_selection_requires_one_explicit_closed_string"
+    "CThreadingProfile.test_selection_requires_one_explicit_closed_string",
+    "CThreadingProfile.test_sync_core_binding_selection_is_explicit_and_default_arguments_remain_unchanged"
   ],
   "guards": {
+    "CThreadingProfile.test_closed_libc_material_labels_preserve_original_paths_and_recheck_the_same_files": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6d5a3e2a995d58f01106a95ba4f32c943a087d57800dcc3edf587dffc6922eff",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "CThreadingProfile.test_default_project_and_sdk_bytes_have_no_threading_additions": {
       "bases": [
         "unittest.TestCase"
@@ -15,7 +30,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:066a9a6a706377872fdd957572eb301109c9ea9f4bd26a08040c63b752cc7881",
+        "module:setup-sha256:6d5a3e2a995d58f01106a95ba4f32c943a087d57800dcc3edf587dffc6922eff",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -27,7 +42,19 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:066a9a6a706377872fdd957572eb301109c9ea9f4bd26a08040c63b752cc7881",
+        "module:setup-sha256:6d5a3e2a995d58f01106a95ba4f32c943a087d57800dcc3edf587dffc6922eff",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CThreadingProfile.test_linked_tls_symbols_keep_libc_keys_and_encoded_source_keys_separate": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6d5a3e2a995d58f01106a95ba4f32c943a087d57800dcc3edf587dffc6922eff",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -39,7 +66,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:066a9a6a706377872fdd957572eb301109c9ea9f4bd26a08040c63b752cc7881",
+        "module:setup-sha256:6d5a3e2a995d58f01106a95ba4f32c943a087d57800dcc3edf587dffc6922eff",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -51,7 +78,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:066a9a6a706377872fdd957572eb301109c9ea9f4bd26a08040c63b752cc7881",
+        "module:setup-sha256:6d5a3e2a995d58f01106a95ba4f32c943a087d57800dcc3edf587dffc6922eff",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -63,7 +90,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:066a9a6a706377872fdd957572eb301109c9ea9f4bd26a08040c63b752cc7881",
+        "module:setup-sha256:6d5a3e2a995d58f01106a95ba4f32c943a087d57800dcc3edf587dffc6922eff",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -75,7 +102,19 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:066a9a6a706377872fdd957572eb301109c9ea9f4bd26a08040c63b752cc7881",
+        "module:setup-sha256:6d5a3e2a995d58f01106a95ba4f32c943a087d57800dcc3edf587dffc6922eff",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CThreadingProfile.test_sync_core_binding_selection_is_explicit_and_default_arguments_remain_unchanged": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6d5a3e2a995d58f01106a95ba4f32c943a087d57800dcc3edf587dffc6922eff",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -83,6 +122,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_c_threading_profile.py",
-  "reviewReason": "Six finite C profile source/installed recipe controls preserve omitted project behavior and reject unowned or malformed selections before compilation.",
+  "reviewReason": "Root reviewed changed explicit-async selected public expectation and strict boolean Core-ABI control. Existing cases retained; no skip or platform guard added. Existing whole-source/line guard hashes intentionally refreshed for the reviewed inserted test.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

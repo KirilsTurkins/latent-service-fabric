@@ -1,11 +1,13 @@
 # Selected C context preparation
 
-This source packet adds `c-context144-sync-cooperative-v1`. It has no hosted
-execution result yet and does not complete #744. The default C project and the
-existing Rust context40 profile keep their selection and serialized settings.
+`c-context144-sync-cooperative-v1` has passed one signed seventeen-case
+[ordinary C lifecycle programme](../testing/evidence/c-thread-runtime-2026-10-22.json).
+This finite create/join/TLS/drain/cancellation result does not complete #744.
+The default C project and the existing Rust context40 profile keep their
+selection and serialized settings.
 
 The C project must explicitly name `threadingProfile`. The normal captured C
-builder owns the four runtime files, the two runtime WIT imports, linked-libc
+builder owns the five runtime files, the two runtime WIT imports, linked-libc
 mode, guarded stack layout, derivation and ordinary component encoder. The
 existing `capsule_contracts` executable performs the two bounded derive/bind
 operations. Its original two-argument WIT operation is unchanged. Static
@@ -44,7 +46,7 @@ non-Ok host result traps. Detach follows both settlements and has no following
 C or host calls. The host's existing finalization guard remains strict, and
 its separate physical stack/metadata owners survive until Store destruction.
 
-The installed C recipe stages the optional helper and the four exact runtime
+The installed C recipe stages the optional helper and the five exact runtime
 sources in its normal inventory. `tools/c_capsule.py new ... --threading-profile
 c-context144-sync-cooperative-v1` captures those sources into the project's
 existing SDK lock. The installed `tools/dev_guest_recipe.py` uses the same
@@ -63,7 +65,8 @@ It adds no provider, capability, quota, proof requirement or guest import.
 Omission retains the old engine-managed stack selection. C threading implies
 activation-owned stacks. The normal check report includes these selected
 facts; default report fields remain absent. The new ordinary-stack source
-controls are unrun Rust cases until the reviewed hosted producer executes them.
+controls have their own native producer evidence; the signed C lifecycle result
+below uses the separately authenticated 128-control native tuple.
 
 ## Prepaid verification work
 
@@ -100,11 +103,14 @@ TLS image extent is at most 128 KiB. The checked expression
 
 The final graph has four cores of at most 2 MiB, at most 32 core instances and
 32 component instances, 512 aliases, 256 canonical functions and 4,096 parser
-rows. Top-level structural sections are at most 64 KiB; typed sections are at
-most 16 KiB. A conservative count of the recursive component/instance/module
+rows. One nested component is supported at a fixed two-container depth, with
+aggregate bounds shared across both containers. Structural leaves are at most
+64 KiB and receive the raw at-most-256 integer envelope before typed decoding;
+core and custom payloads have their separate bounds. Aggregate typed sections
+are at most 16 KiB. A conservative count of the recursive component/instance/module
 type prefix bytes is at most 16 before recursive type decoding. Coincident
 string/index bytes count too and can refuse a wider encoding; they cannot
-underestimate actual nesting. Nested executable components are refused.
+underestimate actual nesting. Additional nested components are refused.
 These are supported-profile restrictions, not increases to guest/runtime limits.
 
 `PreparedCache::begin_with_verification` checks **original source + 48 MiB**
@@ -130,22 +136,51 @@ existing defaults, an at-most-8-MiB C component requires at most 56 MiB from a
 64-MiB cache preparation allowance and from the AOT aggregate input allowance.
 The AOT aggregate still independently limits simultaneous jobs; no cap is raised.
 
-## Required next actual programme
+## Actual finite lifecycle result
 
-The next reviewed owning lane must build one ordinary captured C guest through
-this selected normal builder and execute real pthread/C11 create, self/equal,
-join and independently scheduled child callbacks with thread-local values and
-the original libc errno. It must observe a genuine pending join/Wait and the
-original native admission/physical owner events, not infer them from a thread
-handle or a successful root result. Cancellation, root trap, exact invalid
-identity/join states, Store retirement and fresh invocation remain mandatory.
-The earlier 889 graph/ABI result is historical source evidence; it is not this
-host profile's runtime result. Mutex/condition variables, CPU checkpoints,
-preemption, arbitrary C++ dynamic TLS, shared-memory atomics and broad library
-compatibility remain outside this finite slice.
+[Run 39746829051](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39746829051),
+job 119717266947, built one normal captured C component from
+`b05cf85c51cf3dd5369da570e63a7d0eb6f9427b` and passed all seventeen original
+outcomes. These cover independent activation/Native denials, pthread and C11
+create/self/equal/join, mixed and invalid-handle cases, three children reaching
+the original eight-Native-owner limit, normal root drain, declared error,
+root/callback traps, cancellation, deadline and fresh calls after each failure.
+The original deferred-entry, TLS, libc `errno`, key/TSS destructor and child-side
+owner assertions passed. Child observation saw the original parent join parked;
+it does not establish a specific host-future `Poll::Pending` instruction.
+
+The complete 309-member archive authenticates 104 executed Git materials,
+57 recipe inputs, 63 captured source entries, eleven actual package inputs and
+25 successful normal build commands. The component, selected compatibility
+supplement, original base inspection, native proof and signing/package bindings
+were checked together. The five tools came from the immutable
+[128-control producer](../testing/evidence/host-codec-owned-reply-native-2026-10-22.json);
+all 3,628 native source files and 148 auxiliary inputs matched before use. The
+later `4745793ea95` commit repairs generic CI fetch inputs and two test mocks;
+it is a separate CI-only head, not the signed programme's producer.
+
+Every attempt has five physical-owner and eighteen active-provider counters
+at zero after retirement. The node, provider cleanup worker and unused HTTP
+peer stopped and reaped cleanly. Cancellation and deadline retain exact current
+Native-start and child-observe pairs with live physical owners. Their raw audit
+pages also report optional dropped observations, 148 and 182 respectively.
+The barrier proves those positive records and complete frozen cursor coverage;
+it makes no lossless or negative-evidence claim. The diagnostic queue envelope
+is the measured 18 observation escrows plus one concurrent control-query escrow,
+73 units of 4,096 bytes, with a verified idle premise before each affected call.
+Application/provider limits and the production best-effort audit contract stay
+unchanged.
+
+All nine complete #744 acceptance criteria remain open. Mutex/condition/timed
+waits, compiled CPU-loop checkpoints, independent executor queues, standard
+sockets, recurring timers, broad callback/unwind behavior, unchanged published
+libraries and a transitive worker/timer case need their own actual qualification.
+This programme does not prove cross-tenant reuse or general POSIX/C++ support.
+Earlier failures and partial runs remain failed, with no retroactive credit;
+their fixed origins are recorded in the lifecycle evidence.
 
 
-## Authenticated native producer observation
+## Historical native producer observations
 
 [Run 39581446809](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39581446809),
 job 119159766073, compiled the five normal managed-guest native products from
@@ -171,3 +206,67 @@ root wrapper plus a malformed negative fixture. The corrected byte operations
 retain offset 80, typed logical token retirement and all original quotas; the
 negative fixture still requires refusal before allocating opcode decoding.
 None of these failed runs supplies passing qualification credit.
+
+
+The first ordinary C owning [run 39586182661](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39586182661)
+failed during linking: the original libc and the selected source PAL both defined
+`pthread_setspecific`. No component or guest result was produced. The selected
+compiler now gives exactly the four pthread key and four C11 TSS entry points a
+private source-PAL namespace across ordinary declarations, application calls and
+PAL definitions. Its generation-checked keys stay in the charged TLS context;
+libc retains its original internal keys and TLS `errno`. Static archives remain
+unsupported by this first profile. No multiple-definition allowance is used.
+[The retained failure and preprocessing control](../testing/evidence/c-thread-runtime-link-failure-2026-10-21.json)
+provide source evidence only; all seventeen runtime cases remain required.
+
+A separate actual development formatter failure is repaired with the pinned
+Rust 1.97.1 formatter, each Cargo package edition and the repository configuration. The
+[closed formatting comparison](../testing/evidence/c-thread-native-rustfmt-2026-10-21.json)
+binds the exact original and formatted hashes of two C transformer files, with the other
+3322 native files unchanged. The consumer admits only the two complete frozen
+source inventories for that historical comparison; f0 remains the original
+compiled source. This comparison does not claim that the formatted tree was compiled.
+
+The subsequent historical ordinary C campaign used the separate
+[c713 native tuple](../testing/evidence/activation-stack-native-2026-10-21.json).
+Its 132 Rust and 16 Python controls passed, including the complete sixty-case C
+proof suite, eleven exact C profile controls and eleven ordinary-worker controls.
+The shared source guard accepts only that exact native tree, the pinned reversible
+`install_stack_accounting` helper extraction, or that extraction plus two exact
+explicit enum defaults in the existing engine test. It records the compiled and
+current identities separately; the other 3324 or 3323 native files remain byte exact.
+At that stage, all seventeen signed C lifecycle outcomes still required actual
+guest execution.
+
+
+The c713-backed [ordinary C attempt](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39606172348)
+passed linking, full derivation, final proof binding, validation and contract
+generation, then stopped at compatibility inspection: the base V5 manifest does
+not recognize the selected native-thread internal port. No guest ran. The
+proposed selected C supplement preserves that original inspection and base ABI,
+binds the exact port WIT and full original-core proof, and requires the existing
+native verifier to reproduce the final component bytes. It is compiler evidence;
+independent runtime validation, Native authority and all seventeen guest outcomes
+remain required.
+
+## Explicit public async effect
+
+The selected C cooperative profile requires an explicitly declared public
+`greet: async func(name: string) -> result<string, string>` contract. The
+application implementation remains ordinary synchronous C. The pinned generator
+receives `--async=-all`: this keeps its synchronous Core ABI and the original
+C implementation signature while preserving the explicitly async WIT type in
+component metadata. The compiler records both choices in the binding lock.
+The native closed graph requires that async public type and still refuses
+canonical `async` and callback ABI options. A synchronous selected WIT entry is
+refused; no public contract is silently converted. The default C profile does
+not receive this generator option.
+
+The earlier 563 component's second guest fault remains an unknown historical
+trap; it is not retroactively relabeled. A later retained-component diagnostic
+observed the closed `CannotResumeThread` variant. The selected C header and
+final canonical proof now use the Ready-aware `thread-yield-then-promote`
+handoff. Copied-source controls distinguish that route from resume-only
+rejection, and the signed seventeen-case programme above exercises the corrected
+route with its original handshake, grants and limits. This does not identify an
+instruction site in the earlier failed component.
