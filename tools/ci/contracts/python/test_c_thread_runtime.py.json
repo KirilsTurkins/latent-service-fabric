@@ -9,7 +9,10 @@
     "CThreadRuntime.test_failed_invocation_completion_cannot_be_hidden_by_failed_close",
     "CThreadRuntime.test_formatter_source_exception_is_exact_full_tree_and_digest_bound",
     "CThreadRuntime.test_fresh_ordinary_project_is_selected_locked_and_uses_standard_calls",
-    "CThreadRuntime.test_real_child_owner_observation_is_exact_and_cannot_be_relabelled_pending"
+    "CThreadRuntime.test_positive_child_barrier_refuses_unknown_coverage_and_stale_or_fabricated_pairs",
+    "CThreadRuntime.test_positive_child_cursor_requires_one_frozen_session_and_retains_each_actual_loss_count",
+    "CThreadRuntime.test_real_child_owner_observation_is_exact_and_cannot_be_relabelled_pending",
+    "CThreadRuntime.test_retained_current_child_pair_is_positive_evidence_with_raw_loss_not_losslessness"
   ],
   "guards": {
     "CThreadRuntime.test_actual_empty_list_usage_schema_is_required": {
@@ -20,7 +23,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:2be903e58e8891d808bbcbead97fda3654ac15cc0d2337b999ed19c3bd322625",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+        "class:setup-sha256:6608c6d59006b517edcc69dd775148dc3653a28a82ffd7d5c023ef18b5b6cecf"
       ],
       "skipSites": []
     },
@@ -32,7 +35,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:2be903e58e8891d808bbcbead97fda3654ac15cc0d2337b999ed19c3bd322625",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+        "class:setup-sha256:6608c6d59006b517edcc69dd775148dc3653a28a82ffd7d5c023ef18b5b6cecf"
       ],
       "skipSites": []
     },
@@ -44,7 +47,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:2be903e58e8891d808bbcbead97fda3654ac15cc0d2337b999ed19c3bd322625",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+        "class:setup-sha256:6608c6d59006b517edcc69dd775148dc3653a28a82ffd7d5c023ef18b5b6cecf"
       ],
       "skipSites": []
     },
@@ -56,7 +59,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:2be903e58e8891d808bbcbead97fda3654ac15cc0d2337b999ed19c3bd322625",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+        "class:setup-sha256:6608c6d59006b517edcc69dd775148dc3653a28a82ffd7d5c023ef18b5b6cecf"
       ],
       "skipSites": []
     },
@@ -68,7 +71,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:2be903e58e8891d808bbcbead97fda3654ac15cc0d2337b999ed19c3bd322625",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+        "class:setup-sha256:6608c6d59006b517edcc69dd775148dc3653a28a82ffd7d5c023ef18b5b6cecf"
       ],
       "skipSites": []
     },
@@ -80,7 +83,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:2be903e58e8891d808bbcbead97fda3654ac15cc0d2337b999ed19c3bd322625",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+        "class:setup-sha256:6608c6d59006b517edcc69dd775148dc3653a28a82ffd7d5c023ef18b5b6cecf"
       ],
       "skipSites": []
     },
@@ -92,7 +95,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:2be903e58e8891d808bbcbead97fda3654ac15cc0d2337b999ed19c3bd322625",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+        "class:setup-sha256:6608c6d59006b517edcc69dd775148dc3653a28a82ffd7d5c023ef18b5b6cecf"
       ],
       "skipSites": []
     },
@@ -104,7 +107,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:2be903e58e8891d808bbcbead97fda3654ac15cc0d2337b999ed19c3bd322625",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+        "class:setup-sha256:6608c6d59006b517edcc69dd775148dc3653a28a82ffd7d5c023ef18b5b6cecf"
       ],
       "skipSites": []
     },
@@ -116,7 +119,31 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:2be903e58e8891d808bbcbead97fda3654ac15cc0d2337b999ed19c3bd322625",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+        "class:setup-sha256:6608c6d59006b517edcc69dd775148dc3653a28a82ffd7d5c023ef18b5b6cecf"
+      ],
+      "skipSites": []
+    },
+    "CThreadRuntime.test_positive_child_barrier_refuses_unknown_coverage_and_stale_or_fabricated_pairs": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2be903e58e8891d808bbcbead97fda3654ac15cc0d2337b999ed19c3bd322625",
+        "class:setup-sha256:6608c6d59006b517edcc69dd775148dc3653a28a82ffd7d5c023ef18b5b6cecf"
+      ],
+      "skipSites": []
+    },
+    "CThreadRuntime.test_positive_child_cursor_requires_one_frozen_session_and_retains_each_actual_loss_count": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2be903e58e8891d808bbcbead97fda3654ac15cc0d2337b999ed19c3bd322625",
+        "class:setup-sha256:6608c6d59006b517edcc69dd775148dc3653a28a82ffd7d5c023ef18b5b6cecf"
       ],
       "skipSites": []
     },
@@ -128,13 +155,25 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:2be903e58e8891d808bbcbead97fda3654ac15cc0d2337b999ed19c3bd322625",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+        "class:setup-sha256:6608c6d59006b517edcc69dd775148dc3653a28a82ffd7d5c023ef18b5b6cecf"
+      ],
+      "skipSites": []
+    },
+    "CThreadRuntime.test_retained_current_child_pair_is_positive_evidence_with_raw_loss_not_losslessness": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2be903e58e8891d808bbcbead97fda3654ac15cc0d2337b999ed19c3bd322625",
+        "class:setup-sha256:6608c6d59006b517edcc69dd775148dc3653a28a82ffd7d5c023ef18b5b6cecf"
       ],
       "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_c_thread_runtime.py",
-  "reviewReason": "Review retention-only actual audit/inventory writes before the unchanged child-entry predicate, bounded existing partial stdout/stderr upload and regression; no seventeen-case retry or oracle/cap change.",
+  "reviewReason": "Root full-reviewed positive-only child evidence reader and helper/import changes; preserve every prior case ID/base/decorator/skip and default zero-drop behavior; add3 bounded positive/absence/adverse cases.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

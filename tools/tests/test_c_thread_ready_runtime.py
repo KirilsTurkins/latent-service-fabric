@@ -1,5 +1,6 @@
 """Fixed product routing, with the original seventeen-case body retained."""
 import ast
+import hashlib
 from pathlib import Path
 import subprocess
 import tempfile
@@ -60,7 +61,20 @@ if products is not None and products.SOURCE == 'f5351a9331ed954c49ae83f2f4004e0f
             b"        inventory = client.call('node', 'get', 'operator-workflow-test')['data']['inventory']\n"
             b"        write_json(output / f'child-inventory-{process.authoring_activation}-{attempt}.json', inventory)\n")
         self.assertNotEqual(retained, original_node)
-        self.assertEqual(retained, (qualification.ROOT / node).read_bytes())
+        current_node = (qualification.ROOT / node).read_text()
+        def function(text, name):
+            item = next(value for value in ast.parse(text).body if isinstance(value, ast.FunctionDef) and value.name == name)
+            return '\n'.join(text.splitlines()[item.lineno - 1:item.end_lineno]) + '\n'
+        helper = function(current_node, 'positive_audit_coverage')
+        child = function(current_node, 'child_entry')
+        self.assertEqual(hashlib.sha256(helper.encode()).hexdigest(), '994d4f544302a7f5d8b7025df68bbdab32cf0d6070dabcb0be1e94dbf35ef8c5')
+        self.assertEqual(hashlib.sha256(child.encode()).hexdigest(), '44db0ed2e9927c641646b898e684edbe247c7a79f991a818371cf77a77afcc8c')
+        projected = current_node.replace(helper + '\n\n', '').replace(child, function(original_node.decode(), 'child_entry'))
+        projected = projected.replace(
+            '        witness = child_entry(inventory, pages, process.authoring_activation,\n'
+            '            expected_revision=revision, positive_only=True)\n',
+            '        witness = child_entry(inventory, pages, process.authoring_activation, expected_revision=revision)\n')
+        self.assertEqual(retained, projected.encode())
         self.assertIn('tools/host_codec_linear_memory_native_products.py', qualification.MATERIALS)
         self.assertIn('tools/host_codec_linear_memory_native_products_reader.py', qualification.MATERIALS)
         self.assertIn('tools/c_thread_linear_memory_native_source.py', qualification.MATERIALS)

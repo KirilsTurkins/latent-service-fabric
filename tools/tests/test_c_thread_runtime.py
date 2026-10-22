@@ -15,8 +15,11 @@ from tools.rust_capsule_project import snapshot
 class CThreadRuntime(unittest.TestCase):
     def test_failed_child_audit_retains_raw_page_and_live_inventory_before_original_refusal(self):
         from unittest.mock import patch
-        page = {'category': 'success', 'outcomeKnown': True,
-            'data': {'page': {'nextPageToken': None}, 'coverage': {'droppedObservations': '1'}, 'records': []}}
+        page = {'category': 'success', 'outcomeKnown': True, 'requestDispatched': True,
+            'data': {'page': {'nextPageToken': None}, 'records': [], 'coverage': {
+                'epoch': 'a' * 32, 'retainedFloor': '1', 'highWatermark': '0', 'scanned': '0',
+                'droppedObservations': '1', 'unknownOutcomes': '1',
+                'previousSessionLossUnknown': False, 'stop': 'AUDIT_PAGE_STOP_END'}}}
         inventory = {'topology': {'available': True, 'complete': True,
             'entries': [{'name': name, 'activeCount': '1'} for name in node.LIVE]}}
         client = SimpleNamespace(deadline=10**12, call=lambda *args: page if args[0] == 'audit'
@@ -25,10 +28,105 @@ class CThreadRuntime(unittest.TestCase):
             owner=SimpleNamespace(exited=lambda: False))
         with tempfile.TemporaryDirectory() as directory, patch.object(node, 'selected_revision', return_value={}):
             output = Path(directory)
-            with self.assertRaisesRegex(RuntimeError, '^c-thread-lossless-current-audit-required$'):
+            with self.assertRaisesRegex(RuntimeError, '^c-thread-positive-audit-known-coverage$'):
                 node.wait_child(client, process, None, {}, output)
             self.assertEqual(json.loads((output / 'child-audit-c-retention-0-1.json').read_bytes()), page)
             self.assertEqual(json.loads((output / 'child-inventory-c-retention-0.json').read_bytes()), inventory)
+
+    @staticmethod
+    def positive_child_model():
+        revision = {'publicationId': 'publication:sha256:' + '1' * 64,
+            'releaseDigest': 'sha256:' + '2' * 64, 'revisionId': 'revision-v1:sha256:' + '3' * 64,
+            'routeGeneration': '7'}
+        inventory = {'topology': {'available': True, 'complete': True,
+            'entries': [{'name': name, 'activeCount': '1'} for name in node.LIVE]}}
+        records = []
+        for sequence, capability, operation in ((1, node.NATIVE, 'start'), (2, node.ACTIVATION, 'observe')):
+            records.append({'epoch': 'a' * 32, 'sequence': str(sequence), 'data': {'observation': {
+                'kind': 'PHASE2_AUDIT_EVENT_KIND_CAPABILITY_PROVIDER_OUTCOME', 'identities': {
+                    'publicationId': revision['publicationId'], 'componentDigest': revision['releaseDigest'],
+                    'revision': revision['revisionId'], 'routeGeneration': '7', 'capability': {
+                        'activation': 'c-positive', 'rootActivation': 'c-positive',
+                        'service': 'examples/' + node.SERVICE, 'capability': capability,
+                        'providerProfile': node.PROVIDERS[capability][1], 'operation': operation,
+                        'providerOutcome': 'AUDIT_PROVIDER_OUTCOME_HOST_COMPLETED'}}}}})
+        pages = [{'category': 'success', 'outcomeKnown': True, 'requestDispatched': True, 'data': {
+            'records': records, 'page': {'nextPageToken': None}, 'coverage': {
+                'epoch': 'a' * 32, 'retainedFloor': '1', 'highWatermark': '2', 'scanned': '2',
+                'droppedObservations': '328', 'unknownOutcomes': '0',
+                'previousSessionLossUnknown': False, 'stop': 'AUDIT_PAGE_STOP_END'}}}]
+        return inventory, pages, revision
+
+    def test_retained_current_child_pair_is_positive_evidence_with_raw_loss_not_losslessness(self):
+        inventory, pages, revision = self.positive_child_model()
+        original = copy.deepcopy(pages)
+        result = node.child_entry(inventory, pages, 'c-positive', expected_revision=revision, positive_only=True)
+        self.assertEqual(result['nativeStartCompletedSequence'], 1)
+        self.assertEqual(result['childObserveCompletedSequence'], 2)
+        self.assertEqual(result['auditCoverage']['droppedObservationsByPage'], ['328'])
+        self.assertTrue(result['auditCoverage']['optionalObservationLossReported'])
+        self.assertFalse(result['auditCoverage']['losslessCaptureClaimed'])
+        self.assertFalse(result['auditCoverage']['negativeEvidenceClaimed'])
+        self.assertEqual(pages, original)
+        with self.assertRaisesRegex(RuntimeError, '^c-thread-lossless-current-audit-required$'):
+            node.child_entry(inventory, pages, 'c-positive', expected_revision=revision)
+        for missing in (0, 1):
+            partial = copy.deepcopy(pages)
+            del partial[0]['data']['records'][missing]
+            self.assertIsNone(node.child_entry(inventory, partial, 'c-positive',
+                expected_revision=revision, positive_only=True))
+
+    def test_positive_child_barrier_refuses_unknown_coverage_and_stale_or_fabricated_pairs(self):
+        inventory, pages, revision = self.positive_child_model()
+        for name in ('epoch', 'session', 'unknown', 'saturated', 'bool-counter', 'noncanonical-counter',
+                     'incomplete', 'scan', 'duplicate', 'order', 'high', 'revision', 'provider', 'outcome'):
+            bad = copy.deepcopy(pages)
+            coverage, records = bad[0]['data']['coverage'], bad[0]['data']['records']
+            if name == 'epoch': coverage['epoch'] = 'b' * 32
+            elif name == 'session': coverage['previousSessionLossUnknown'] = True
+            elif name == 'unknown': coverage['unknownOutcomes'] = '1'
+            elif name == 'saturated': coverage['droppedObservations'] = str(2**64 - 1)
+            elif name == 'bool-counter': coverage['droppedObservations'] = True
+            elif name == 'noncanonical-counter': coverage['droppedObservations'] = '0328'
+            elif name == 'incomplete': bad[0]['data']['page']['nextPageToken'] = 'not-complete'
+            elif name == 'scan': coverage['scanned'] = '1'
+            elif name == 'duplicate': records.append(copy.deepcopy(records[-1])); coverage['scanned'] = '3'
+            elif name == 'order': records.reverse()
+            elif name == 'high': records[-1]['sequence'] = '3'
+            elif name == 'revision': records[-1]['data']['observation']['identities']['revision'] = 'foreign'
+            elif name == 'provider': records[-1]['data']['observation']['identities']['capability']['providerProfile'] = 'foreign'
+            else: records[-1]['data']['observation']['identities']['capability']['providerOutcome'] = 'AUDIT_PROVIDER_OUTCOME_REJECTED'
+            with self.subTest(name=name):
+                if name == 'outcome':
+                    self.assertIsNone(node.child_entry(inventory, bad, 'c-positive',
+                        expected_revision=revision, positive_only=True))
+                else:
+                    with self.assertRaises(RuntimeError):
+                        node.child_entry(inventory, bad, 'c-positive', expected_revision=revision, positive_only=True)
+        self.assertIsNone(node.child_entry(inventory, pages, 'stale', expected_revision=revision, positive_only=True))
+        with self.assertRaisesRegex(RuntimeError, '^c-thread-closed-audit-evidence-mode$'):
+            node.child_entry(inventory, pages, 'c-positive', expected_revision=revision, positive_only='true')
+
+    def test_positive_child_cursor_requires_one_frozen_session_and_retains_each_actual_loss_count(self):
+        inventory, pages, revision = self.positive_child_model()
+        first, last = copy.deepcopy(pages[0]), copy.deepcopy(pages[0])
+        first['data']['records'] = first['data']['records'][:1]
+        last['data']['records'] = last['data']['records'][1:]
+        first['data']['coverage'].update(scanned='1', droppedObservations='327', stop='AUDIT_PAGE_STOP_RECORD_LIMIT')
+        last['data']['coverage']['scanned'] = '1'
+        first['data']['page']['nextPageToken'] = 'fixed-cursor'
+        pair = [first, last]
+        witness = node.child_entry(inventory, pair, 'c-positive', expected_revision=revision, positive_only=True)
+        self.assertEqual(witness['auditCoverage']['droppedObservationsByPage'], ['327', '328'])
+        for name in ('epoch', 'high', 'decreasing-loss', 'early-end', 'cycle'):
+            bad = copy.deepcopy(pair)
+            if name == 'epoch': bad[-1]['data']['coverage']['epoch'] = 'b' * 32
+            elif name == 'high': bad[-1]['data']['coverage']['highWatermark'] = '3'
+            elif name == 'decreasing-loss': bad[-1]['data']['coverage']['droppedObservations'] = '326'
+            elif name == 'early-end': bad[0]['data']['page']['nextPageToken'] = None
+            else: bad.append(copy.deepcopy(last)); bad[1]['data']['page']['nextPageToken'] = 'fixed-cursor'
+            with self.subTest(name=name), self.assertRaises(RuntimeError):
+                node.child_entry(inventory, bad, 'c-positive', expected_revision=revision, positive_only=True)
 
     def test_explicit_fixed_product_source_is_checked_without_falling_back_to_v1(self):
         from unittest.mock import Mock, patch

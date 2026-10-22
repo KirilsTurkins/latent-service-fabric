@@ -106,7 +106,56 @@ def usage(client, target, *, idle):
     return value
 
 
-def child_entry(inventory, pages, activation, *, expected_revision):
+def positive_audit_coverage(pages):
+    """Qualify retained positive records, never completeness of optional capture."""
+    require(type(pages) is list and 0 < len(pages) <= 4, 'c-thread-audit-page-bound')
+    epoch, high, drops, seen_tokens, previous_sequence = None, None, [], set(), 0
+    for index, page in enumerate(pages):
+        require(page['category'] == 'success' and page['outcomeKnown'] is True
+                and page['requestDispatched'] is True, 'c-thread-positive-audit-query-known')
+        coverage = page['data']['coverage']
+        raw_epoch = coverage['epoch']
+        require(type(raw_epoch) is str and len(raw_epoch) == 32
+                and all(value in '0123456789abcdef' for value in raw_epoch), 'c-thread-positive-audit-epoch')
+        numbers = {}
+        for name in ('retainedFloor', 'highWatermark', 'scanned', 'droppedObservations', 'unknownOutcomes'):
+            require(type(coverage[name]) is str, 'c-thread-positive-audit-wire-counter')
+            numbers[name] = integer(coverage[name])
+        require(numbers['retainedFloor'] == 1 and numbers['unknownOutcomes'] == 0
+                and coverage['previousSessionLossUnknown'] is False
+                and numbers['droppedObservations'] < 2**64 - 1, 'c-thread-positive-audit-known-coverage')
+        if epoch is None:
+            epoch, high = raw_epoch, numbers['highWatermark']
+        require((raw_epoch, numbers['highWatermark']) == (epoch, high),
+                'c-thread-positive-audit-frozen-cursor')
+        records = page['data']['records']
+        require(type(records) is list and len(records) <= 64
+                and len(records) <= numbers['scanned'] <= 1024, 'c-thread-positive-audit-scan-bound')
+        for row in records:
+            sequence = integer(row['sequence'])
+            require(row['epoch'] == epoch and previous_sequence < sequence <= high,
+                    'c-thread-positive-audit-ordered-current-record')
+            previous_sequence = sequence
+        token = page['data']['page']['nextPageToken']
+        if index == len(pages) - 1:
+            require(token is None and coverage['stop'] == 'AUDIT_PAGE_STOP_END',
+                    'c-thread-positive-audit-complete-cursor')
+        else:
+            require(type(token) is str and 0 < len(token) <= 256 and token not in seen_tokens
+                    and coverage['stop'] in ('AUDIT_PAGE_STOP_RECORD_LIMIT', 'AUDIT_PAGE_STOP_BYTE_LIMIT',
+                                             'AUDIT_PAGE_STOP_SCAN_LIMIT'), 'c-thread-positive-audit-next-cursor')
+            seen_tokens.add(token)
+        if drops:
+            require(numbers['droppedObservations'] >= integer(drops[-1]),
+                    'c-thread-positive-audit-monotonic-loss-counter')
+        drops.append(coverage['droppedObservations'])
+    return {'mode': 'retained-positive-records', 'epoch': epoch, 'highWatermark': str(high),
+        'droppedObservationsByPage': drops, 'optionalObservationLossReported': any(integer(v) > 0 for v in drops),
+        'completeFrozenCursor': True, 'losslessCaptureClaimed': False, 'negativeEvidenceClaimed': False}
+
+
+def child_entry(inventory, pages, activation, *, expected_revision, positive_only=False):
+    require(type(positive_only) is bool, 'c-thread-closed-audit-evidence-mode')
     topology = inventory['topology']
     require(topology['available'] is True and topology['complete'] is True, 'c-thread-live-topology')
     rows = {row['name']: row for row in topology['entries']}
@@ -115,10 +164,11 @@ def child_entry(inventory, pages, activation, *, expected_revision):
         return None
     require(type(pages) is list and 0 < len(pages) <= 4, 'c-thread-audit-page-bound')
     require(pages[-1]['data']['page']['nextPageToken'] is None, 'c-thread-audit-complete')
+    coverage = positive_audit_coverage(pages) if positive_only else None
     observed, seen, epochs = {}, set(), set()
     for page in pages:
         require(page['category'] == 'success' and page['outcomeKnown'] is True
-                and integer(page['data']['coverage']['droppedObservations']) == 0,
+                and (positive_only or integer(page['data']['coverage']['droppedObservations']) == 0),
                 'c-thread-lossless-current-audit-required')
         require(type(page['data']['records']) is list and len(page['data']['records']) <= 64,
                 'c-thread-audit-record-bound')
@@ -149,9 +199,12 @@ def child_entry(inventory, pages, activation, *, expected_revision):
     starts, entered = observed.get((NATIVE, 'start'), []), observed.get((ACTIVATION, 'observe'), [])
     if len(starts) != 1 or len(entered) != 1 or starts[0] >= entered[0]:
         return None
-    return {'activation': activation, 'nativeStartCompletedSequence': starts[0],
+    result = {'activation': activation, 'nativeStartCompletedSequence': starts[0],
         'childObserveCompletedSequence': entered[0], 'physicalOwners': {name: 1 for name in LIVE},
         'sourceBoundChildEntry': True, 'typedObserveSuccessClaimed': False, 'waitForPollPendingClaimed': False}
+    if positive_only:
+        result['auditCoverage'] = coverage
+    return result
 
 
 @contextmanager
@@ -238,7 +291,8 @@ def wait_child(client, process, probe, target, output):
                 break
         inventory = client.call('node', 'get', 'operator-workflow-test')['data']['inventory']
         write_json(output / f'child-inventory-{process.authoring_activation}-{attempt}.json', inventory)
-        witness = child_entry(inventory, pages, process.authoring_activation, expected_revision=revision)
+        witness = child_entry(inventory, pages, process.authoring_activation,
+            expected_revision=revision, positive_only=True)
         if witness is not None:
             physical = sample(client, probe, 'entered-' + process.authoring_activation, 1, active=True)
             value = {'witness': witness, 'inventory': inventory, 'auditPages': pages,
