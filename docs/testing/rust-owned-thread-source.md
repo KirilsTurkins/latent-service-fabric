@@ -55,7 +55,8 @@ name do not acquire a registry runtime patch. The ordinary creator declares the
 runtime and clock dependencies and includes them in normal binding generation.
 Only the macro's `generate_all` option changes: application function bodies,
 Cargo features, requested limits and grants stay intact. This source route has four focused
-capture/Prepared/creator controls; it has not compiled an ordinary guest.
+capture/Prepared/creator controls. Those source controls alone establish no
+compilation; actual compiler observations follow below.
 
 The first selected ThreadPool profile explicitly refuses `after_start` and
 `before_stop` hooks with `io::ErrorKind::Unsupported` before pool owner admission,
@@ -146,6 +147,26 @@ All 169 Git source identities, 62 artifact rows and 7,094 archived source/CAS
 entries were independently checked. This establishes the actual compiler
 boundary, with every private-graph, canonical-body, checkpoint and runtime
 qualification gate still false. No component or guest was signed or executed.
+
+Run `39858644814` at `cfede0b2d663ea824102745882925efca39a95ca`
+passed the selected `lto=false` compiler observation and all final original-source,
+compiler-distribution, isolation and Prepared checks, including all 70 source
+mechanism cases. Its authentic captured executor rlib is 301,772 bytes,
+`sha256:00ef3bef5558e844bf12ccfa91906e15bea1ffd4e6dcedfb49e6dfb3c9f04b41`.
+The original core is 262,563 bytes,
+`sha256:425f6fbedf2835ce7ab5a2e126fbbd7564998c03703f9b360f04f859158ff203`;
+the validated derived core is 247,965 bytes,
+`sha256:051f03dfd7d98774a7b2a482a52bec86306e26d13ab556385f8d958806325ca3`.
+The sole retained ZIP is 52,035,991 bytes,
+`sha256:db72eff1f6e73ed5cb53a24c9ed5bc1876247299b8267b400efe126684b4c7ea`.
+Its 66 closed files total 108,798,949 expanded bytes. All 64 artifact rows,
+169 exact Git inputs and 7,094 original source/CAS paths (102,991,172 bytes)
+were independently hash-checked. The same job rebuilt its strict sysroot;
+this is no automatic cache/distribution reuse permission. The effective Cargo
+configuration, actual rustc command output and authentic compiler-artifact row
+are retained. This supplies original object inputs, not whole private-body,
+canonical ABI, checkpoint or runtime qualification. Every such gate remains
+false; no component or guest was signed or executed.
 
 Beyond those actual compiler inputs, validation consists of source/preimage controls and metadata typechecks
 with explicit public-wrapper/ABI ports. Earlier native source controls exercise
