@@ -1,15 +1,14 @@
 {
-  "status": "eight-runtime-slices-verified-outer-controller-failed",
-  "source": "4109d63e3d31483a7579690477acdf845a80a0eb",
-  "run": 39696684411,
-  "job": 119555653541,
-  "artifact": 12391730669,
-  "bytes": 17677708,
-  "sha256": "c4203859d5344dc1bb4f402f29a8f8801933c3b48cad0251054062b758f8516c",
-  "members": 281,
-  "expandedBytes": 55235305,
-  "outerConclusion": "failure",
-  "controllerError": "exclusive-progress-file-written-twice",
+  "status": "owning-success-eight-runtime-slices-verified",
+  "source": "57f98dbfea9d1d9e5327c363a60b9aa98f6b668a",
+  "run": 39699135077,
+  "job": 119563781269,
+  "artifact": 12392541123,
+  "bytes": 17682789,
+  "sha256": "18a604735cf92777466e9c4f02eb2712dda7f49271d992967f9ae95ddee2e408",
+  "members": 284,
+  "expandedBytes": 55250145,
+  "outerConclusion": "success",
   "runtimeSlicesVerified": 8,
   "normalGuestBuilds": 2,
   "buildCommands": 40,
@@ -24,8 +23,8 @@
   "variants": {
     "eliminated": {
       "build": {
-        "sha256": "sha256:6ae4b122d966295b8e581efc45b0f8d44651840e4a120d4a81672838a3d2d6c4",
-        "bytes": 12473660
+        "sha256": "sha256:e593fc1dc046166837e02689859dde8243d9f5d367c7a47600086120df115aa3",
+        "bytes": 12473675
       },
       "compilerWitness": {
         "rootEdgeSelected": false,
@@ -52,14 +51,14 @@
             "blobReadBytes": "0",
             "blobWriteBytes": "0",
             "childCalls": 0,
-            "cpuFuel": "3479106",
+            "cpuFuel": "3480674",
             "effectCount": 0,
             "logBytes": "0",
             "outboundRequests": 0,
             "peakMemoryBytes": "9502720",
             "stateReadBytes": "0",
             "stateWriteBytes": "0",
-            "wallTimeMicros": "45171900"
+            "wallTimeMicros": "43990318"
           },
           "nativeRefusalRequired": false
         },
@@ -76,14 +75,14 @@
             "blobReadBytes": "0",
             "blobWriteBytes": "0",
             "childCalls": 0,
-            "cpuFuel": "3493843",
+            "cpuFuel": "3495411",
             "effectCount": 0,
             "logBytes": "0",
             "outboundRequests": 0,
             "peakMemoryBytes": "9502720",
             "stateReadBytes": "0",
             "stateWriteBytes": "0",
-            "wallTimeMicros": "12101"
+            "wallTimeMicros": "12062"
           },
           "nativeRefusalRequired": false
         },
@@ -96,14 +95,14 @@
             "blobReadBytes": "0",
             "blobWriteBytes": "0",
             "childCalls": 0,
-            "cpuFuel": "1803929",
+            "cpuFuel": "1805415",
             "effectCount": 0,
             "logBytes": "0",
             "outboundRequests": 0,
             "peakMemoryBytes": "9502720",
             "stateReadBytes": "0",
             "stateWriteBytes": "0",
-            "wallTimeMicros": "9369"
+            "wallTimeMicros": "7823"
           },
           "nativeRefusalRequired": false
         },
@@ -120,14 +119,14 @@
             "blobReadBytes": "0",
             "blobWriteBytes": "0",
             "childCalls": 0,
-            "cpuFuel": "3508431",
+            "cpuFuel": "3509999",
             "effectCount": 0,
             "logBytes": "0",
             "outboundRequests": 0,
             "peakMemoryBytes": "9502720",
             "stateReadBytes": "0",
             "stateWriteBytes": "0",
-            "wallTimeMicros": "11735"
+            "wallTimeMicros": "15722"
           },
           "nativeRefusalRequired": false
         }
@@ -139,8 +138,8 @@
     },
     "reached": {
       "build": {
-        "sha256": "sha256:b42e26b701983fc7cbd3a6d51f8c9072937ff3af2ef27d24a6f94497a10f2262",
-        "bytes": 12479642
+        "sha256": "sha256:95d8802fc5de6875e6ac29819935a2eabe5a5fc484603c4cdb6bec1e12648850",
+        "bytes": 12479622
       },
       "compilerWitness": {
         "rootEdgeSelected": true,
@@ -167,14 +166,14 @@
             "blobReadBytes": "0",
             "blobWriteBytes": "0",
             "childCalls": 0,
-            "cpuFuel": "3620930",
+            "cpuFuel": "3622888",
             "effectCount": 0,
             "logBytes": "0",
             "outboundRequests": 0,
             "peakMemoryBytes": "9502720",
             "stateReadBytes": "0",
             "stateWriteBytes": "0",
-            "wallTimeMicros": "44181119"
+            "wallTimeMicros": "43899349"
           },
           "nativeRefusalRequired": true
         },
@@ -191,14 +190,14 @@
             "blobReadBytes": "0",
             "blobWriteBytes": "0",
             "childCalls": 0,
-            "cpuFuel": "3635667",
+            "cpuFuel": "3637625",
             "effectCount": 0,
             "logBytes": "0",
             "outboundRequests": 0,
             "peakMemoryBytes": "9502720",
             "stateReadBytes": "0",
             "stateWriteBytes": "0",
-            "wallTimeMicros": "12360"
+            "wallTimeMicros": "11062"
           },
           "nativeRefusalRequired": true
         },
@@ -211,14 +210,14 @@
             "blobReadBytes": "0",
             "blobWriteBytes": "0",
             "childCalls": 0,
-            "cpuFuel": "1867528",
+            "cpuFuel": "1869379",
             "effectCount": 0,
             "logBytes": "0",
             "outboundRequests": 0,
             "peakMemoryBytes": "9502720",
             "stateReadBytes": "0",
             "stateWriteBytes": "0",
-            "wallTimeMicros": "9348"
+            "wallTimeMicros": "9208"
           },
           "nativeRefusalRequired": false
         },
@@ -235,14 +234,14 @@
             "blobReadBytes": "0",
             "blobWriteBytes": "0",
             "childCalls": 0,
-            "cpuFuel": "3650255",
+            "cpuFuel": "3652213",
             "effectCount": 0,
             "logBytes": "0",
             "outboundRequests": 0,
             "peakMemoryBytes": "9502720",
             "stateReadBytes": "0",
             "stateWriteBytes": "0",
-            "wallTimeMicros": "11944"
+            "wallTimeMicros": "11841"
           },
           "nativeRefusalRequired": true
         }
@@ -253,129 +252,39 @@
       "peerRequests": 0
     }
   },
-  "finalSourceProductsFenceObserved": false,
-  "finalExecutionReportsEmitted": false,
-  "wholeQualifierPassed": false,
+  "finalSourceProductsFenceObserved": true,
+  "finalExecutionReportsEmitted": true,
+  "wholeQualifierPassed": true,
   "wholeTicketQualified": false,
   "compilerPayloadsRetained": false,
   "schemaVersion": "latent.typescript.elimination.observation.v1",
-  "controllerCorrections": [
-    "distinct-exclusive-progress-files",
-    "use-actual-build-sourceInputs-field"
-  ],
-  "cachedFinalizationControl": {
-    "schema": "latent.typescript.elimination.cached-finalization-control.v1",
-    "status": "passed",
-    "originalOuterConclusion": "failure",
-    "runtimeCallsReplayed": 0,
-    "guestBuilds": 0,
-    "actualSourceStatementsExecuted": [
-      "variant-progress-write",
-      "execution-report-loop"
-    ],
-    "originalFinalSourceProductsFenceObserved": false,
-    "originalFinalExecutionReportsEmitted": false
-  },
-  "cachedExecutionReports": {
-    "eliminated": {
-      "schemaVersion": "lsf.guest.compatibility.v1",
-      "language": "typescript",
-      "sourceDigest": "sha256:a4bdcfd4e291bba3a5a9c93d5505dcbf40fc8c84325d9a7e826ca35e192620d5",
-      "componentDigest": "sha256:6ae4b122d966295b8e581efc45b0f8d44651840e4a120d4a81672838a3d2d6c4",
-      "runtimeProfile": "spidermonkey-public-sync-v1",
-      "inputs": [
-        {
-          "kind": "application",
-          "digest": "sha256:a4bdcfd4e291bba3a5a9c93d5505dcbf40fc8c84325d9a7e826ca35e192620d5"
-        },
-        {
-          "kind": "compiler",
-          "digest": "sha256:282715e6d99d6e78d7196457bc7cebe15372ed89c0635b17816930e0f448fc65"
-        }
-      ],
-      "findings": [
-        {
-          "classification": "unsupported-eliminated",
-          "phase": "compile",
-          "evidence": "compiler",
-          "operation": "Date.now",
-          "ownerIssue": 745,
-          "sourceDigest": "sha256:dd13a6b49f4787b3e5c2b63c8d18b8677b1a30bc4b699d3a631b1556477668da",
-          "symbol": "unsupportedClockCallback"
-        },
-        {
-          "classification": "unresolved-behavior",
-          "phase": "invocation",
-          "evidence": "actual-component",
-          "operation": "uncaught-fixture-trap-cause-unknown"
-        },
-        {
-          "classification": "lifecycle-unproven",
-          "phase": "retirement",
-          "evidence": "not-evaluated",
-          "operation": "arbitrary-library-worker-drain"
-        }
-      ],
-      "omittedFindings": 0,
-      "status": "incomplete",
-      "authority": "none",
-      "analysisCompleteness": "selected-observations",
-      "identity": "sha256:692af2b8b88a959316d9f05abe8babbb3a4f4464ed0132cbed8eacc105eafea3"
+  "mergedExecutedMaterialsByteExact": 191,
+  "currentSourceIsNativeCompilationClaim": false,
+  "previousAttempts": [
+    {
+      "source": "0c1d11d14ba2057d2188bf500d1b6d81a08c8b2f",
+      "run": 39695563334,
+      "conclusion": "failure",
+      "stage": "ordinary-typescript-typecheck",
+      "actualRuntimeCalls": 0
     },
-    "reached": {
-      "schemaVersion": "lsf.guest.compatibility.v1",
-      "language": "typescript",
-      "sourceDigest": "sha256:88252bcbf6ea5aacbade2cafe1fc42ecb34ded6f4c127ea1a492f469ff6d89ba",
-      "componentDigest": "sha256:b42e26b701983fc7cbd3a6d51f8c9072937ff3af2ef27d24a6f94497a10f2262",
-      "runtimeProfile": "spidermonkey-public-sync-v1",
-      "inputs": [
-        {
-          "kind": "application",
-          "digest": "sha256:88252bcbf6ea5aacbade2cafe1fc42ecb34ded6f4c127ea1a492f469ff6d89ba"
-        },
-        {
-          "kind": "compiler",
-          "digest": "sha256:282715e6d99d6e78d7196457bc7cebe15372ed89c0635b17816930e0f448fc65"
-        }
-      ],
-      "findings": [
-        {
-          "classification": "unsupported-reached",
-          "phase": "invocation",
-          "evidence": "actual-component",
-          "operation": "Date.now",
-          "ownerIssue": 745,
-          "sourceDigest": "sha256:dd13a6b49f4787b3e5c2b63c8d18b8677b1a30bc4b699d3a631b1556477668da",
-          "symbol": "unsupportedClockCallback"
-        },
-        {
-          "classification": "unresolved-behavior",
-          "phase": "invocation",
-          "evidence": "actual-component",
-          "operation": "uncaught-fixture-trap-cause-unknown"
-        },
-        {
-          "classification": "lifecycle-unproven",
-          "phase": "retirement",
-          "evidence": "not-evaluated",
-          "operation": "arbitrary-library-worker-drain"
-        }
-      ],
-      "omittedFindings": 0,
-      "status": "blocked",
-      "authority": "none",
-      "analysisCompleteness": "selected-observations",
-      "identity": "sha256:b63472b1d6313e4ab0840248d266c18bfe03457d0fe856c231c508d6636979d3"
+    {
+      "source": "4109d63e3d31483a7579690477acdf845a80a0eb",
+      "run": 39696684411,
+      "job": 119555653541,
+      "artifact": 12391730669,
+      "bytes": 17677708,
+      "sha256": "c4203859d5344dc1bb4f402f29a8f8801933c3b48cad0251054062b758f8516c",
+      "members": 281,
+      "expandedBytes": 55235305,
+      "outerConclusion": "failure",
+      "controllerError": "exclusive-progress-file-written-twice",
+      "runtimeSlicesVerified": 8,
+      "finalSourceProductsFenceObserved": false,
+      "finalExecutionReportsEmitted": false,
+      "wholeQualifierPassed": false
     }
-  },
-  "cachedExecutionReportsWereEmittedByOriginalRun": false,
-  "currentSourceProjection": {
-    "originalExecutedMaterials": 191,
-    "byteExact": 190,
-    "changedPath": "tools/qualify_typescript_elimination.py",
-    "changedLines": 2,
-    "guestOrPredicateChanges": false
-  },
+  ],
   "nativeProducts": {
     "threeProductSource": "f244b81f14abad5d4dc4984cb842aaf1d9076e23",
     "twoProductSource": "f6251df89851de98cb869784d095ad5cc2e5b385",
