@@ -4,7 +4,7 @@ This is the complete crates.io Wasmtime 48.0.7 package, licensed under
 Apache-2.0 WITH LLVM-exception (see the unmodified LICENSE). The original
 archive checksum and all 250 original file identities are recorded in
 UPSTREAM.latent.json. `latent-dynamic-memory.patch` applies to that exact
-original package; it contains twenty-eight changed upstream files and six added
+original package; it contains twenty-nine changed upstream files and six added
 implementation files. Other Wasmtime packages remain at the original locked
 registry versions.
 
@@ -34,16 +34,17 @@ retains confirmed actual allocations through native unwind, without confirming
 a hypothetical signature maximum as observed peak.
 
 The native cohort is
-`wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-memory-v7`. Runtime engine configuration identity
+`wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-memory-v8`. Runtime engine configuration identity
 includes this cohort, so old prepared/AOT identity cannot certify this host.
 The immutable v1/7b programme passed 61 controls; v2/de0 passed81,
-v3/48a passed85, v4/3e417 passed92 and v5/94f passed97. The v6/89bbb
-programme passed100 controls but failed audit discovery on a missing test import;
-its three audit cases were unreached. This v7 retained-context extension keeps
-all103 prior selectors and adds eleven context controls (eight existing and
-three new). Exact native-thread audit recognition leaves the default host ABI,
-provider selection, independent authority and grants unchanged. No earlier
-binary or copied-helper test qualifies this new source.
+v3/48a passed85, v4/3e417 passed92, v5/94f passed97 and v7/f535 passed114.
+The intervening v6 attempts remain failed (15 and100 controls passed before
+distinct test compilation failures). This v8 extension adds five planned host
+future controls and two exact C canonical wait-route compiler controls while
+preserving all114 prior selectors. Neither historical
+products nor copied-helper controls qualify this new source. Exact native-thread
+audit recognition leaves the default ABI, provider selection and independent
+authority/grants unchanged.
 
 The optional `ResourceLimiter::table_allocating` hook returns an owned original
 allocation guard. Actual table backing destroys before its guard; dropping Store
@@ -139,6 +140,15 @@ maps release any hidden upstream B-tree root; surplus buffers are compacted
 under the existing finite policy. Publication clones remain conservatively
 covered while that context is alive. Phase1 is unchanged. Incoming surplus,
 discarded request scaffolding and later typed-hostcall copies remain excluded.
+
+Selected concurrent typed and dynamic host calls now preadmit the exact
+concrete callback Future Box Layout before allocation and trait-object erasure.
+The Box and affine original owner travel together through sync-lowered blocking
+and async-lowered queues. The actual Box is destroyed before its owner; both
+fields are installed before confirmation so confirmation unwind is also safe.
+Zero-sized futures and unaccounted legacy embeddings remain lazy. This pays
+only that engine-created per-invocation Box, not captured/transitive values,
+the callback-provided opaque Box, dynamic accessor Box, or scheduler wrappers.
 
 This extension does not pay direct Core HostFunc state/context constructors,
 shared preparation closure/import backing, concurrent task/queue/resource and hostcall frames,

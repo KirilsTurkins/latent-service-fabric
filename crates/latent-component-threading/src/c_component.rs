@@ -540,6 +540,67 @@ mod tests {
         }
     }
 
+    #[test]
+    fn c_wait_canonical_functions_keep_suspend_and_deferred_resume_distinct() {
+        for (function, expected) in [
+            (CanonicalFunction::ThreadSuspend, Value::CThreadSuspend),
+            (
+                CanonicalFunction::ThreadResumeLater,
+                Value::CThreadResumeLater,
+            ),
+            (CanonicalFunction::ThreadSuspendThenResume, Value::Other),
+            (CanonicalFunction::ThreadSuspendThenPromote, Value::Other),
+            (CanonicalFunction::ThreadYield, Value::Other),
+        ] {
+            let mut selected = public_lift_graph(true);
+            selected.canonical(function).unwrap();
+            assert_eq!(selected.funcs.last(), Some(&expected));
+        }
+        // Extending the selected C proof cannot silently extend Rust's proof.
+        let mut original_rust = public_lift_graph(true);
+        original_rust.c = None;
+        original_rust
+            .canonical(CanonicalFunction::ThreadSuspend)
+            .unwrap();
+        assert_eq!(original_rust.funcs.last(), Some(&Value::Other));
+    }
+
+    #[test]
+    fn c_wait_final_graph_requires_the_exact_canonical_wake_target() {
+        for (name, expected) in [
+            ("[thread-suspend]", Value::CThreadSuspend),
+            ("[thread-resume-later]", Value::CThreadResumeLater),
+        ] {
+            assert_eq!(handoff_graph(name, expected).finish(), Ok((0, 1)));
+            for foreign in [
+                Value::Other,
+                Value::Native,
+                Value::CThreadPromote,
+                Value::CThreadIndex,
+                if expected == Value::CThreadSuspend {
+                    Value::CThreadResumeLater
+                } else {
+                    Value::CThreadSuspend
+                },
+            ] {
+                assert_eq!(
+                    handoff_graph(name, foreign).finish(),
+                    Err("c-component-canonical-context-route")
+                );
+            }
+        }
+        for forbidden in [
+            "[thread-suspend-then-resume]",
+            "[thread-suspend-then-promote]",
+            "[thread-yield]",
+        ] {
+            assert_eq!(
+                handoff_graph(forbidden, Value::CThreadSuspend).finish(),
+                Err("c-component-unknown-root-intrinsic")
+            );
+        }
+    }
+
     fn metadata(version: &str, name: &str, marker: &[u8]) -> Vec<u8> {
         metadata_with_generator(version, name, marker, false)
     }
