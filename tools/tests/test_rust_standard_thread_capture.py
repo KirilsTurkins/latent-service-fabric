@@ -122,6 +122,8 @@ class StandardThreadCapture(unittest.TestCase):
         fixture = StandardLogging()
         with tempfile.TemporaryDirectory() as directory:
             prepared, compiler, value = fixture.prepared(Path(directory))
+            original_flags = json.loads(standard.Prepared(prepared, compiler).arguments()[1].split('=', 1)[1])
+            self.assertEqual(original_flags, ['--sysroot=' + str(prepared / 'sysroot')])
             value.update(profile=std.THREAD_PROFILE, standardStdio='explicit-unsupported-v1',
                 standardThreads=capture.profile.PROFILE, standardThreadSourceSelected=True,
                 standardThreadRuntimeQualified=False,
@@ -132,6 +134,7 @@ class StandardThreadCapture(unittest.TestCase):
             selected.check()
             flags = json.loads(selected.arguments()[1].split('=', 1)[1])
             self.assertEqual(flags[0], '--sysroot=' + str(prepared / 'sysroot'))
+            self.assertEqual(flags[1], '-Clink-arg=--no-stack-first')
             self.assertIn('-Clink-arg=--export=__lsf_rust_owned_thread_entry', flags)
             self.assertTrue(set(capture.RECIPE) <= set(standard.source_build_inputs(standard.THREAD)))
             for key, changed in (('recipeDigest', digest(b'older recipe')),

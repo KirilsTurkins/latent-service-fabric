@@ -120,6 +120,17 @@ compression or an expanded-size refusal, and full digests before compression.
 This preserves every original captured path and leaves the outer 128MiB cap
 unchanged. It does not authorize larger compiler products or runtime enablement.
 
+Run `39849348413` compiled and validated the original 207,732-byte application
+core with ordinary `lto=true`, then refused `rust-root-linker-stack-range`.
+The pinned linker placed its real stack at `[0, 1,048,576)`, while both the
+selected runtime and context transform require non-null stack bounds. The
+selected THREAD compiler boundary therefore explicitly passes the supported
+`--no-stack-first` linker flag, placing the real stack after static data. It
+keeps the original null, alignment, range and minimum-size guards and consumes
+the actual linker-exported bounds; it does not manufacture post-link addresses.
+Other profiles keep their original flags. Its newly emitted layout still
+requires an actual compiler observation, and the runtime gate remains closed.
+
 Beyond those actual compiler inputs, validation consists of source/preimage controls and metadata typechecks
 with explicit public-wrapper/ABI ports. Earlier native source controls exercise
 the actual registry, wait, TLS and lifecycle bodies with explicit reference

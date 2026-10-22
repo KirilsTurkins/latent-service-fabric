@@ -138,6 +138,10 @@ class Prepared:
         # original compiler's host sysroot. It is not ambient RUSTFLAGS.
         flags = ['--sysroot=' + str(self.root)]
         if has_threads(self.profile):
+            # The selected bootstrap requires a non-null linker-owned low
+            # bound. Keep the real stack after static data; do not invent or
+            # relax a zero-address stack/context sentinel after linking.
+            flags.append('-Clink-arg=--no-stack-first')
             # These are implementation support exports, not new public WIT.
             # The finite component route must authenticate all actual uses.
             for name in ('__stack_pointer', '__stack_low', '__indirect_function_table',
