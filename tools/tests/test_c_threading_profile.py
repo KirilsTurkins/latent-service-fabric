@@ -75,6 +75,8 @@ class CThreadingProfile(unittest.TestCase):
         self.assertIn('command.extend("-D" + define for define in defines)', selected)
         self.assertIn('or static_libraries', selected)
         self.assertNotIn('--allow-multiple-definition', selected)
+        self.assertIn('"-Wl,-z,stack-size=65536"', selected)
+        self.assertIn("= '-Wl,-z,stack-size=135168'", selected)
 
     def test_selected_sync_symbols_are_closed_and_cannot_override_original_libc(self):
         expected = ('pthread_mutex_init', 'pthread_mutex_lock', 'pthread_mutex_trylock',

@@ -1,4 +1,4 @@
-use super::session::{HandleEntry, SessionCore, Stats};
+use super::session::{HandleEntry, SessionCoreOwner, StatsOwner};
 use super::{
     busy, capacity, denied, error, stopped, CapabilitySession, Charge, GuestCapabilityHandle, Kind,
     PlatformError,
@@ -112,7 +112,7 @@ impl CapabilityCallCost {
 }
 
 struct WorkLifetime {
-    stats: Arc<Stats>,
+    stats: StatsOwner,
     active: bool,
     buffer_bytes: usize,
     _slot: Charge,
@@ -134,7 +134,7 @@ struct Work {
     pending_budget: Option<BudgetReservationGroup>,
     input: Zeroizing<Vec<u8>>,
     row: Arc<HandleEntry>,
-    session: Arc<SessionCore>,
+    session: SessionCoreOwner,
     id: u64,
     deadline: Instant,
     maximum_output_bytes: usize,
@@ -150,7 +150,7 @@ impl Work {
         self.recheck_authority(true)
     }
     fn recheck_authority(&mut self, require_audit: bool) -> Result<(), PlatformError> {
-        let core = Arc::clone(&self.session);
+        let core = self.session.clone();
         let row = Arc::clone(&self.row);
         let live = core.owner.live.try_read().map_err(|_| busy())?;
         let binding = &core.plan.bindings[row.binding];
@@ -217,7 +217,7 @@ pub struct CapabilityDispatch {
     _lookup: Option<LookupOwner>,
 }
 struct LookupOwner {
-    core: Arc<SessionCore>,
+    core: SessionCoreOwner,
     id: GuestCapabilityHandle,
 }
 impl Drop for LookupOwner {
@@ -250,7 +250,7 @@ impl CapabilityDispatch {
 /// Bytes and their original activation/handle/buffer ownership are inseparable.
 /// All response bytes are zeroed before their reservation is released.
 struct ResultLifetime {
-    stats: Arc<Stats>,
+    stats: StatsOwner,
     buffer_bytes: usize,
 }
 impl Drop for ResultLifetime {
@@ -265,7 +265,7 @@ pub struct OwnedCapabilityResponse {
     audit: Option<Box<super::audit::CallAudit>>,
     deadline: Instant,
     bytes: Zeroizing<Vec<u8>>,
-    pub(super) session: Arc<SessionCore>,
+    pub(super) session: SessionCoreOwner,
     _row: Arc<HandleEntry>,
     id: u64,
     _bytes: Charge,
@@ -311,8 +311,8 @@ impl ProviderCall {
     pub(super) fn stream_budget(&self) -> Option<super::CapabilityStreamBudget> {
         self.work.as_ref().expect("affine call").stream_budget
     }
-    pub(super) fn session_core(&self) -> Arc<SessionCore> {
-        Arc::clone(&self.work.as_ref().expect("affine call").session)
+    pub(super) fn session_core(&self) -> SessionCoreOwner {
+        self.work.as_ref().expect("affine call").session.clone()
     }
     pub(super) fn take_audit(&mut self) -> Option<Box<super::audit::CallAudit>> {
         self.work.as_mut().expect("affine call").audit.take()
@@ -506,8 +506,8 @@ impl ProviderCall {
     pub fn is_cancelled(&self) -> bool {
         self.check().is_err()
     }
-    pub(super) fn same_session(&self, session: &Arc<SessionCore>) -> bool {
-        Arc::ptr_eq(&self.work.as_ref().expect("affine call").session, session)
+    pub(super) fn same_session(&self, session: &SessionCoreOwner) -> bool {
+        SessionCoreOwner::ptr_eq(&self.work.as_ref().expect("affine call").session, session)
     }
     #[must_use]
     pub fn maximum_output_bytes(&self) -> usize {
@@ -564,7 +564,7 @@ impl ProviderCall {
         drop(input_bytes);
         session.stats.results.fetch_add(1, Ordering::AcqRel);
         let result_lifetime = ResultLifetime {
-            stats: Arc::clone(&session.stats),
+            stats: session.stats.clone(),
             buffer_bytes: maximum_output_bytes,
         };
         lifetime.buffer_bytes = input_size;
@@ -595,7 +595,7 @@ impl CapabilitySession {
     ) -> Result<CapabilityDispatch, PlatformError> {
         let handle = self.bind(capability, operation, resource)?;
         let lookup = LookupOwner {
-            core: Arc::clone(&self.core),
+            core: self.core.clone(),
             id: handle,
         };
         let call = self.start_call(handle, operation, resource, input, cost, true)?;
@@ -664,7 +664,7 @@ impl CapabilitySession {
             drop(failure);
             error(code, "capability-provider-failed")
         })?;
-        if !Arc::ptr_eq(&response.session, &self.core) || response.id != id {
+        if !SessionCoreOwner::ptr_eq(&response.session, &self.core) || response.id != id {
             return Err(denied());
         }
         response.finish_audit().await;
@@ -794,7 +794,7 @@ impl CapabilitySession {
             pending_budget: budget_reservation,
             input: Zeroizing::new(input.to_vec()),
             row: Arc::clone(&row),
-            session: Arc::clone(&self.core),
+            session: self.core.clone(),
             id,
             deadline: self.core.owner.clock.monotonic_now(),
             maximum_output_bytes: cost.maximum_output_bytes,
@@ -804,7 +804,7 @@ impl CapabilitySession {
             result,
             metadata,
             lifetime: WorkLifetime {
-                stats: Arc::clone(&self.core.stats),
+                stats: self.core.stats.clone(),
                 active: false,
                 buffer_bytes: input_size + cost.maximum_output_bytes,
                 _slot: call_slot,

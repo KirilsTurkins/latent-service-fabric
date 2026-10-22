@@ -28,6 +28,7 @@ async fn rotation_fences_old_grants_and_drain_reports_actual_retained_owners() {
     assert_eq!(observed(&fixture).configuration_epoch, 1);
     assert_eq!(observed(&fixture).owners, 0);
     let (session, control) = fixture.session(5000);
+    let control_session_bytes = control.native_session_bytes();
     let stream = lifecycle.start(&session, request()).unwrap().await.unwrap();
     let (mut peer, _) = listener.accept().await.unwrap();
     assert_eq!(
@@ -95,7 +96,7 @@ async fn rotation_fences_old_grants_and_drain_reports_actual_retained_owners() {
             .owners,
         0
     );
-    assert_eq!(control.budget.host_memory_bytes(), 0);
+    assert_eq!(control.budget.host_memory_bytes(), control_session_bytes);
     assert_eq!(observed(&fixture).live_accepted_write_bytes, 0);
     assert_eq!(observed(&fixture).owners, 0);
     drop(runtime);
@@ -109,6 +110,8 @@ async fn rotation_fences_old_grants_and_drain_reports_actual_retained_owners() {
         .is_none());
     drop(session);
     fixture.clean().await;
+    drop(fixture);
+    control.assert_native_settled();
 }
 
 fn observed(fixture: &Fixture) -> latent_capabilities::broker::network::StreamNodeUsage {

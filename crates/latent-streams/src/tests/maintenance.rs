@@ -84,6 +84,7 @@ async fn expiry(dns: bool) {
     let stop = maintenance.stop_handle();
     let driver = tokio::spawn(maintenance.run());
     let (session, control) = fixture.session(5000);
+    let control_session_bytes = control.native_session_bytes();
     let stream = lifecycle
         .start(
             &session,
@@ -125,7 +126,7 @@ async fn expiry(dns: bool) {
     assert!(control.budget.host_memory_bytes() > 0);
     assert!(control.budget.host_memory_bytes() < native_before);
     drop(stream);
-    assert_eq!(control.budget.host_memory_bytes(), 0);
+    assert_eq!(control.budget.host_memory_bytes(), control_session_bytes);
     assert_eq!(lifecycle.status().unwrap().usage.owners, 0);
     stop.stop();
     driver.await.unwrap().unwrap();
@@ -136,6 +137,8 @@ async fn expiry(dns: bool) {
     }
     drop(session);
     fixture.clean().await;
+    drop(fixture);
+    control.assert_native_settled();
 }
 
 #[tokio::test]

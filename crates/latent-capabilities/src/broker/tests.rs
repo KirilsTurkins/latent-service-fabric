@@ -9,6 +9,7 @@ mod clocks;
 mod diagnostics;
 mod resource_table_memory;
 mod route_fence;
+mod session_native_memory;
 mod transaction_imports;
 mod web_imports;
 

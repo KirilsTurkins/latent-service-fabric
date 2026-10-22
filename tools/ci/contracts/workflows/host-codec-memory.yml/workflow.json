@@ -19,7 +19,8 @@
           "feat/owned-context-replies-memory-20261022",
           "feat/capability-lowering-current-20261022",
           "feat/streaming-table-memory-20261022",
-          "feat/runtime-shared-memory-20261022"
+          "feat/runtime-shared-memory-20261022",
+          "feat/session-core-memory-20261022"
         ]
       },
       "workflow_dispatch": {}
@@ -31,7 +32,7 @@
   "requiredJobs": [
     "native"
   ],
-  "reviewReason": "Enable one source-bound runtime shared-memory programme on its dedicated branch while retaining every existing branch and required job.",
+  "reviewReason": "Select one172 native programme for original sealed session backing and closed C allocator System routing",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/host-codec-memory.yml"
 }

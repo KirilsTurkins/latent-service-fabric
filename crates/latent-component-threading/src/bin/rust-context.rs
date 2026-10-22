@@ -1,7 +1,8 @@
 //! Explicit owned Rust compiler mechanism; no runtime feature is enabled here.
 use latent_component_threading::{
-    MAX_BYTES, transform_owned_root_bootstrap, transform_owned_thread_admission,
-    transform_owned_thread_entry, verify_component_routing,
+    MAX_BYTES, prepare_owned_public_root, transform_owned_canonical_root_bootstrap,
+    transform_owned_root_bootstrap, transform_owned_thread_admission, transform_owned_thread_entry,
+    verify_component_routing,
 };
 use std::{
     fs,
@@ -45,8 +46,60 @@ fn write(path: &Path, raw: &[u8]) -> Result<(), Box<dyn std::error::Error>> {
         .write_all(raw)?;
     Ok(())
 }
+fn ordinary(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
+    if args.len() != 7 {
+        return Err("usage: rust-context --ordinary-core INPUT sha256:DIGEST PUBLIC_EXPORT POST_RETURN_OR_DASH REALLOC_OR_DASH FRESH_OUTPUT".into());
+    }
+    let expected = preimage(&args[2])?;
+    let raw = read(&args[1])?;
+    let (prepared, public) = prepare_owned_public_root(&raw, expected, &args[3])?;
+    let (threaded, thread) = transform_owned_thread_entry(&prepared, public.derived_digest)?;
+    let (rooted, root) = transform_owned_canonical_root_bootstrap(
+        &threaded,
+        thread.stack.derived_digest,
+        &thread,
+        (args[4] != "-").then_some(args[4].as_str()),
+        (args[5] != "-").then_some(args[5].as_str()),
+    )?;
+    let (derived, admission) = transform_owned_thread_admission(&rooted, root.derived_digest)?;
+    let number = |value: Option<u32>| value.map_or_else(|| "null".to_owned(), |v| v.to_string());
+    let json = format!(
+        concat!(
+            "{{\n  \"schemaVersion\":\"latent.rust.ordinary-core-source.v1\",\n",
+            "  \"originalDigest\":\"sha256:{}\",\n  \"preparedDigest\":\"sha256:{}\",\n",
+            "  \"threadDigest\":\"sha256:{}\",\n  \"rootDigest\":\"sha256:{}\",\n",
+            "  \"derivedDigest\":\"sha256:{}\",\n  \"publicFunction\":{},\n",
+            "  \"nativeAdmissionImportInserted\":{},\n  \"nativeAdmissionImport\":{},\n",
+            "  \"postReturnFunction\":{},\n  \"originalPostReturnBody\":{},\n",
+            "  \"reallocFunction\":{},\n  \"originalReallocBody\":{},\n",
+            "  \"privateExecutorGraphAuthenticated\":false,\n",
+            "  \"canonicalAbiBodiesAuthenticated\":false,\n",
+            "  \"componentRoutingAuthenticated\":false,\n  \"canonicalCreationEnabled\":false,\n",
+            "  \"schedulingCheckpointsInstalled\":false,\n  \"standardRuntimeQualified\":false\n}}\n"
+        ),
+        hex(&public.original_digest),
+        hex(&public.derived_digest),
+        hex(&thread.stack.derived_digest),
+        hex(&root.derived_digest),
+        hex(&admission.derived_digest),
+        public.derived_public_function,
+        public.native_import_inserted,
+        public.native_admission_import,
+        number(root.post_return_function),
+        number(root.original_post_return_body),
+        number(root.realloc_function),
+        number(root.original_realloc_body),
+    );
+    let output = Path::new(&args[6]);
+    fs::create_dir(output)?;
+    write(&output.join("core.wasm"), &derived)?;
+    write(&output.join("receipt.json"), json.as_bytes())
+}
 fn run() -> Result<(), Box<dyn std::error::Error>> {
-    let args: Vec<_> = std::env::args().skip(1).take(4).collect();
+    let args: Vec<_> = std::env::args().skip(1).take(8).collect();
+    if args.first().is_some_and(|value| value == "--ordinary-core") {
+        return ordinary(&args);
+    }
     if args.len() != 3 {
         return Err("usage: rust-context INPUT sha256:DIGEST FRESH_OUTPUT | --verify-component INPUT FRESH_RECEIPT".into());
     }

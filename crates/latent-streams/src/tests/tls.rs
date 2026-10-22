@@ -126,6 +126,7 @@ async fn direct_host_tls_validates_peer_transfers_and_retires_original_charges()
         drop(peer.directory);
     });
     let (session, control) = fixture.session(5000);
+    let control_session_bytes = control.native_session_bytes();
     let stream = fixture
         .provider
         .start(&session, request(&fixture))
@@ -156,9 +157,11 @@ async fn direct_host_tls_validates_peer_transfers_and_retires_original_charges()
         .await
         .unwrap()
         .unwrap();
-    assert_eq!(control.budget.host_memory_bytes(), 0);
+    assert_eq!(control.budget.host_memory_bytes(), control_session_bytes);
     drop(session);
     fixture.clean().await;
+    drop(fixture);
+    control.assert_native_settled();
 }
 
 #[tokio::test]
@@ -177,6 +180,7 @@ async fn wrong_tls_hostname_fails_closed_without_cleartext_fallback() {
         assert!(peer.acceptor.accept(socket).await.is_err());
     });
     let (session, control) = fixture.session(5000);
+    let control_session_bytes = control.native_session_bytes();
     let result = fixture
         .provider
         .start(&session, request(&fixture))
@@ -187,10 +191,12 @@ async fn wrong_tls_hostname_fails_closed_without_cleartext_fallback() {
         .await
         .unwrap()
         .unwrap();
-    assert_eq!(control.budget.host_memory_bytes(), 0);
+    assert_eq!(control.budget.host_memory_bytes(), control_session_bytes);
     assert_eq!(fixture.provider.usage().unwrap().connections, 0);
     drop(session);
     fixture.clean().await;
+    drop(fixture);
+    control.assert_native_settled();
 }
 
 #[tokio::test]
@@ -236,6 +242,7 @@ async fn stalled_tls_handshake_uses_original_deadline_and_physical_owner() {
         assert!(!bytes.is_empty()); // A single real ClientHello, no fallback.
     });
     let (session, control) = fixture.session(200);
+    let control_session_bytes = control.native_session_bytes();
     let began = Instant::now();
     let result = fixture
         .provider
@@ -251,9 +258,11 @@ async fn stalled_tls_handshake_uses_original_deadline_and_physical_owner() {
         .await
         .unwrap()
         .unwrap();
-    assert_eq!(control.budget.host_memory_bytes(), 0);
+    assert_eq!(control.budget.host_memory_bytes(), control_session_bytes);
     drop(session);
     fixture.clean().await;
+    drop(fixture);
+    control.assert_native_settled();
 }
 
 #[tokio::test]
@@ -274,6 +283,7 @@ async fn tls_rotation_preserves_pending_original_owner_until_peer_socket_retires
         assert!(matches!(tls.read(&mut byte).await, Ok(0) | Err(_)));
     });
     let (session, control) = fixture.session(5000);
+    let control_session_bytes = control.native_session_bytes();
     let stream = lifecycle
         .start(&session, request(&fixture))
         .unwrap()
@@ -297,10 +307,12 @@ async fn tls_rotation_preserves_pending_original_owner_until_peer_socket_retires
     assert_eq!(lifecycle.status().unwrap().usage.connections, 0);
     assert!(control.budget.host_memory_bytes() > 0);
     drop(stream);
-    assert_eq!(control.budget.host_memory_bytes(), 0);
+    assert_eq!(control.budget.host_memory_bytes(), control_session_bytes);
     drop(session);
     drop(lifecycle);
     fixture.clean().await;
+    drop(fixture);
+    control.assert_native_settled();
 }
 
 fn exact_certificate(
@@ -457,6 +469,7 @@ async fn current_maximum_valid_chain_roots_and_stapled_extension_retire_actual_o
             tls.shutdown().await.unwrap();
         });
         let (session, control) = fixture.session(5000);
+        let control_session_bytes = control.native_session_bytes();
         let stream = fixture
             .provider
             .start(&session, request(&fixture))
@@ -478,9 +491,11 @@ async fn current_maximum_valid_chain_roots_and_stapled_extension_retire_actual_o
             .await
             .unwrap()
             .unwrap();
-        assert_eq!(control.budget.host_memory_bytes(), 0);
+        assert_eq!(control.budget.host_memory_bytes(), control_session_bytes);
         drop(session);
         fixture.clean().await;
+        drop(fixture);
+        control.assert_native_settled();
     }
 }
 
