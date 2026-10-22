@@ -154,6 +154,7 @@ fn store(engine: &Engine, original: &ActivationBudget, empty: bool) -> Store<Hos
         .unwrap()
     };
     store.limiter(|state| &mut state.limiter);
+    store.set_epoch_deadline(1);
     store.set_fuel(FUEL).unwrap();
     store.fuel_async_yield_interval(Some(1000)).unwrap();
     store
