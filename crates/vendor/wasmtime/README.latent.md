@@ -39,7 +39,10 @@ includes this cohort, so old prepared/AOT identity cannot certify this host.
 The immutable v1/7b programme passed 61 controls; v2/de0 passed81,
 v3/48a passed85, v4/3e417 passed92 and v5/94f passed97. This v6 linear-memory
 notification extension adds three planned controls, preserving all97 prior
-selectors. Neither an earlier binary nor copied-helper tests qualify this new source.
+selectors. The same native programme also adds three exact native-thread audit
+codec controls; this descriptive codec recognition leaves the default host ABI,
+provider selection, independent authority and grants unchanged. Neither an
+earlier binary nor copied-helper tests qualify this new source.
 
 The optional `ResourceLimiter::table_allocating` hook returns an owned original
 allocation guard. Actual table backing destroys before its guard; dropping Store

@@ -180,7 +180,13 @@ CONTROLS = (('original-host-memory',
  'host::native_linear_memory_tests::',
  ('host::native_linear_memory_tests::actual_linear_memory_is_confirmed_before_subsequent_native_instance_allocations',
   'host::native_linear_memory_tests::actual_linear_creator_failure_rolls_back_without_confirming_unallocated_pages',
-  'host::native_linear_memory_tests::actual_linear_growth_confirms_success_and_failed_growth_preserves_prior_peak')))
+  'host::native_linear_memory_tests::actual_linear_growth_confirms_success_and_failed_growth_preserves_prior_peak')),
+ ('native-thread-audit-codec',
+ 'latent-audit',
+ 'native_thread_audit_',
+ ('durable::tests::capability::native_thread_audit_encodes_exact_grant_and_host_completion_without_changing_default_abi',
+  'durable::tests::capability::native_thread_audit_refuses_other_versions_operations_and_resource_classes',
+  'durable::tests::capability::native_thread_audit_retains_identity_outcome_and_redaction_boundaries')))
 
 PRODUCTS = ('latent', 'latentd', 'examples/package', 'examples/capsule_contracts', 'examples/capsule_authoring')
 RECIPE = ('.github/workflows/host-codec-memory.yml', '.cargo/managed-guest.toml',
@@ -269,8 +275,8 @@ def qualify(output: Path, revision: str) -> dict:
     require(re.fullmatch('[0-9a-f]{40}', revision) is not None, 'host-codec-source-revision')
     require(sys.platform == 'linux', 'host-codec-linux-owner-required')
     names = [name for _,_,_,cases in CONTROLS for name in cases]
-    require(len(CONTROLS) == 22 and len({row[0] for row in CONTROLS}) == 22
-            and len(names) == len(set(names)) == 100, 'host-codec-control-inventory')
+    require(len(CONTROLS) == 23 and len({row[0] for row in CONTROLS}) == 23
+            and len(names) == len(set(names)) == 103, 'host-codec-control-inventory')
     output = fresh(output)
     codec_wasmtime.verify(ROOT)
     before, inputs = source_identity(ROOT), materials(ROOT)
@@ -308,12 +314,12 @@ def qualify(output: Path, revision: str) -> dict:
             products[name] = identity
         record = {'schemaVersion':'latent.host-codec.native-products.v1','status':'passed',
             'sourceRevision':revision,'source':before,'materials':inputs,'compiler':compiler,
-            'products':products,'commands':stages.records,'controlCount':100,'nativeCohort':codec_wasmtime.COHORT,
+            'products':products,'commands':stages.records,'controlCount':103,'nativeCohort':codec_wasmtime.COHORT,
             'controls':{stage:list(names) for stage,_,_,names in CONTROLS},
             'profile':'normal-managed-guest-default-features','signedQualification':False,
             'guestJavaScriptEngineCompiled':False,'guestSourceCompiled':False,
             'historicalReceiptRewritten':False,
-            'scope':'ordinary-host-linear-allocation-notifications-codec-table-and-selected-Store-instance-buffer-registry-FuncRefs-container-resource-substitutions-original-memory-and-selected-c-public-async-type-sync-core-admission-and-authenticated-c-ready-handoff-and-closed-guest-trap-diagnostics; direct-Core-HostFunc-construction, shared-preparation-closures, concurrent-task, hostcall, request-context transitive buffers, legacy framing and serialized controller frames excluded'}
+            'scope':'ordinary-host-linear-allocation-notifications-codec-table-and-selected-Store-instance-buffer-registry-FuncRefs-container-resource-substitutions-original-memory-and-selected-c-public-async-type-sync-core-admission-and-authenticated-c-ready-handoff-and-closed-guest-trap-diagnostics-and-exact-native-thread-audit-codec; direct-Core-HostFunc-construction, shared-preparation-closures, concurrent-task, hostcall, request-context transitive buffers, legacy framing and serialized controller frames excluded'}
         write_json(output/'native-products.json',record)
         return record
     except Exception as error:

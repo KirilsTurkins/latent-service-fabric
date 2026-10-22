@@ -5,7 +5,7 @@
       "cancel-in-progress": false,
       "group": "host-codec-memory-${{ github.ref }}"
     },
-    "name": "Ordinary host codec table Store registry FuncRefs resource memory and closed diagnostics",
+    "name": "Ordinary host linear codec table Store registry FuncRefs resource memory and diagnostics",
     "on": {
       "push": {
         "branches": [
@@ -13,7 +13,8 @@
           "feat/typescript-table-memory-20261022",
           "feat/activation-registry-memory-20261022",
           "feat/activation-funcrefs-memory-20261022",
-          "feat/component-resource-map-memory-20261022"
+          "feat/component-resource-map-memory-20261022",
+          "feat/linear-memory-notifications-20261022"
         ]
       },
       "workflow_dispatch": {}
@@ -25,7 +26,7 @@
   "requiredJobs": [
     "native"
   ],
-  "reviewReason": "Preserve92 prior controls and append5 escaped resource-substitution owners, with same original grants, five products and22recipe materials; no unsupported whole-memory claim.",
+  "reviewReason": "Preserve97 original hosted controls and append3 actual allocator success/failure/growth controls plus3 exact native-thread audit codec controls; same original limits, five products and22recipe entries; explicit v6 source identity, no whole SDK memory or authority claim.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/host-codec-memory.yml"
 }

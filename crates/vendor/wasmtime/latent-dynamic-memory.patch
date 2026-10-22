@@ -669,7 +669,7 @@
  mod resources;
  mod storage;
  pub(crate) mod store;
-@@ -810,3 +812,10 @@
+@@ -810,3 +812,9 @@
 
  #[cfg(not(feature = "component-model-async"))]
  pub(crate) use concurrent_disabled as concurrent;
@@ -678,8 +678,7 @@
 +pub use dynamic_memory::DynamicValueMemory;
 +
 +/// Native source cohort for the maintained original-owner dynamic value extension.
-+pub const DYNAMIC_VALUE_MEMORY_COHORT: &str =
-+    "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-memory-v6";
++pub const DYNAMIC_VALUE_MEMORY_COHORT: &str = "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-memory-v6";
 --- /dev/null
 +++ b/src/runtime/component/resource_types.rs
 @@ -0,0 +1,140 @@

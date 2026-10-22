@@ -18,12 +18,12 @@ RECORD_SHA256 = "123b016146ef6afb59be67dddc2df605b4e47172a1c65b9ca06b20830a324e6
 # registry inventory. Changing a claimed record or patch cannot authorize bytes.
 POSTIMAGES = {
     "README.latent.md": {
-        "sha256": "ae9a5ea86241f6c182f8ba6c62a2a23250955969e9b61ceeaf25385783c5755b",
-        "bytes": 8836
+        "sha256": "cf3e06046cfbde9ead8ce432e97a32d7114a728e6b9adfbc49e78f368da607e4",
+        "bytes": 9048
     },
     "latent-dynamic-memory.patch": {
-        "sha256": "3a4cb39f9b454258e0af5351f820cfc5cc358c873f22f5b4516575fc86263f5e",
-        "bytes": 164834
+        "sha256": "db992fae7f81a16459ddd57318da6fd263f6d01cf90d3de7d4906dc91103010a",
+        "bytes": 164828
     },
     "src/runtime.rs": {
         "sha256": "3290f57919f6dc6b6f797ee55cd62504ce31e91500741501e261f2c7e4eac970",
@@ -62,8 +62,8 @@ POSTIMAGES = {
         "bytes": 9471
     },
     "src/runtime/component/mod.rs": {
-        "sha256": "8ed8607bd903d8232685a47d6608554b6824e5638383abc128227d92f7bacc1d",
-        "bytes": 32987
+        "sha256": "276eecb5b8c2b523e9664f3796349ea1b6ea30b1e912f753c29da50686bf6a46",
+        "bytes": 32983
     },
     "src/runtime/component/resource_types.rs": {
         "sha256": "4e37f8fb059389b694fec202163830b98a9ae033003be03ef5e3da42641d4988",
