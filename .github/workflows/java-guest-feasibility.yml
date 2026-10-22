@@ -812,6 +812,10 @@ jobs:
 
           ${{ runner.temp }}/java-resource-conformance/compiler/compiler-cache-selection.json
 
+          ${{ runner.temp }}/java-resource-conformance/compiler/compiler-acquisition/*-java-to-c.log
+
+          ${{ runner.temp }}/java-resource-conformance/compiler/compiler-acquisition/*-java-to-c.command.json
+
           ${{ runner.temp }}/java-resource-conformance/node/workflow.json
 
           ${{ runner.temp }}/java-resource-conformance/node/FAILED.json

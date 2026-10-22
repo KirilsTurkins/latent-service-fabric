@@ -64,7 +64,7 @@
         "with": {
           "if-no-files-found": "warn",
           "name": "java-resource-conformance-${{ github.sha }}",
-          "path": "${{ runner.temp }}/java-resource-conformance/qualified.json\n${{ runner.temp }}/java-resource-conformance/FAILED.json\n${{ runner.temp }}/java-resource-conformance/logs/**\n${{ runner.temp }}/java-resource-conformance/build/*.json\n${{ runner.temp }}/java-resource-conformance/build/component.wasm\n${{ runner.temp }}/java-resource-conformance/build/compiler-logs/**\n${{ runner.temp }}/java-resource-conformance/build/logs/**\n${{ runner.temp }}/java-resource-conformance/compiler/compiler-cache-selection.json\n${{ runner.temp }}/java-resource-conformance/node/workflow.json\n${{ runner.temp }}/java-resource-conformance/node/FAILED.json\n${{ runner.temp }}/java-resource-conformance/node/controls/*.json",
+          "path": "${{ runner.temp }}/java-resource-conformance/qualified.json\n${{ runner.temp }}/java-resource-conformance/FAILED.json\n${{ runner.temp }}/java-resource-conformance/logs/**\n${{ runner.temp }}/java-resource-conformance/build/*.json\n${{ runner.temp }}/java-resource-conformance/build/component.wasm\n${{ runner.temp }}/java-resource-conformance/build/compiler-logs/**\n${{ runner.temp }}/java-resource-conformance/build/logs/**\n${{ runner.temp }}/java-resource-conformance/compiler/compiler-cache-selection.json\n${{ runner.temp }}/java-resource-conformance/compiler/compiler-acquisition/*-java-to-c.log\n${{ runner.temp }}/java-resource-conformance/compiler/compiler-acquisition/*-java-to-c.command.json\n${{ runner.temp }}/java-resource-conformance/node/workflow.json\n${{ runner.temp }}/java-resource-conformance/node/FAILED.json\n${{ runner.temp }}/java-resource-conformance/node/controls/*.json",
           "retention-days": 3
         }
       }
@@ -73,7 +73,7 @@
   },
   "jobId": "resource-conformance",
   "kind": "job",
-  "reviewReason": "Add one bounded Java resource conformance child; preserve all original Java workflow jobs/commands/deadlines and normal29 cases. Exact transitive bytes/stream/clock/trap/fresh controls, original capability and owner fences; no native host rebuild or whole-ticket claim.",
+  "reviewReason": "Retain the failed compiler-cache acquisition java-to-c log and command that the actual resource job omitted; preserve every command, bound and qualification outcome.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-guest-feasibility.yml"
 }
