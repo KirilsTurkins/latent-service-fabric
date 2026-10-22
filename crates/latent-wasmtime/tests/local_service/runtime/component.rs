@@ -517,7 +517,7 @@ fn guest() -> Module {
     module.section(&exports);
     let mut body = Function::new([(2, ValType::I64), (4, ValType::I32)]);
     case(&mut body, 15, |b| {
-        emit(b, [Instruction::I32Const(0), Instruction::Return])
+        emit(b, [Instruction::I32Const(42), Instruction::Return])
     });
     case(&mut body, 23, |b| {
         register(b, 0, false, PRIMARY);

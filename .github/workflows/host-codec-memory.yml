@@ -1,7 +1,7 @@
-name: Ordinary host codec table Store registry memory and closed diagnostics
+name: Ordinary host codec table Store registry FuncRefs memory and closed diagnostics
 on:
   push:
-    branches: ['feat/host-codec-memory-736-20261021', 'feat/typescript-table-memory-20261022', 'feat/activation-registry-memory-20261022']
+    branches: ['feat/host-codec-memory-736-20261021', 'feat/typescript-table-memory-20261022', 'feat/activation-registry-memory-20261022', 'feat/activation-funcrefs-memory-20261022']
   workflow_dispatch: {}
 permissions:
   contents: read
@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   native:
-    name: Original ledger, actual codec table Store registry ownership and closed diagnostics
+    name: Original ledger, actual codec table Store registry FuncRefs ownership and closed diagnostics
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     env:
@@ -45,7 +45,7 @@ jobs:
         run: python3 -m pip install -r tools/requirements.lock
       - name: Refuse missing, ignored or changed control evidence
         run: python3 -B -m unittest tools.tests.test_host_codec_native -v
-      - name: Execute eighty-five source-bound controls with the ordinary native host
+      - name: Execute ninety-two source-bound controls with the ordinary native host
         id: own-native-memory
         run: >-
           python3 -B tools/qualify_host_codec_native.py

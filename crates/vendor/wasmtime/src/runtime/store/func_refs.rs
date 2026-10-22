@@ -10,13 +10,106 @@ use alloc::sync::Arc;
 use core::mem::size_of;
 use core::ptr::NonNull;
 
+mod native;
+use crate::runtime::native_memory::Memory;
+use native::NativeFuncRefs;
+
+/// Store-local roots and address-stable function references.
+pub struct FuncRefs {
+    inner: FuncRefsInner,
+}
+
+enum FuncRefsInner {
+    Legacy(LegacyFuncRefs),
+    Native(NativeFuncRefs<Storage>),
+}
+
+impl Default for FuncRefs {
+    fn default() -> Self {
+        Self {
+            inner: FuncRefsInner::Legacy(LegacyFuncRefs::default()),
+        }
+    }
+}
+
+impl FuncRefs {
+    pub(crate) fn new(memory: Memory) -> Result<Self> {
+        Ok(match memory {
+            None => Self::default(),
+            Some(memory) => Self {
+                inner: FuncRefsInner::Native(NativeFuncRefs::new(memory)?),
+            },
+        })
+    }
+
+    pub fn fill(&mut self, modules: &ModuleRegistry) {
+        match &mut self.inner {
+            FuncRefsInner::Legacy(legacy) => legacy.fill(modules),
+            FuncRefsInner::Native(native) => {
+                native.fill(|func_ref| unsafe { !try_fill(func_ref, modules) })
+            }
+        }
+    }
+
+    /// Root both shared InstancePre arrays before exposing their raw references.
+    pub fn push_instance_pre(
+        &mut self,
+        defs: Arc<TryVec<Definition>>,
+        funcs: Arc<TryVec<VMFuncRef>>,
+        host_funcs: usize,
+    ) -> Result<()> {
+        match &mut self.inner {
+            FuncRefsInner::Legacy(legacy) => {
+                legacy.reserve_storage(host_funcs)?;
+                legacy.push_instance_pre_definitions(defs)?;
+                legacy.push_instance_pre_func_refs(funcs)?;
+                Ok(())
+            }
+            FuncRefsInner::Native(native) => native.push_roots(
+                Storage::InstancePreDefinitions { defs },
+                Storage::InstancePreFuncRefs { funcs },
+            ),
+        }
+    }
+
+    pub fn push_arc_host(
+        &mut self,
+        func: Arc<HostFunc>,
+        modules: &ModuleRegistry,
+    ) -> Result<NonNull<VMFuncRef>> {
+        match &mut self.inner {
+            FuncRefsInner::Legacy(legacy) => Ok(legacy.push_arc_host(func, modules)?),
+            FuncRefsInner::Native(native) => {
+                let mut func_ref = func.func_ref().clone();
+                let has_hole = unsafe { !try_fill(&mut func_ref, modules) };
+                native.push(func_ref, has_hole, Storage::ArcHost { func })
+            }
+        }
+    }
+
+    pub fn push_box_host(
+        &mut self,
+        func: Box<HostFunc>,
+        modules: &ModuleRegistry,
+    ) -> Result<NonNull<VMFuncRef>> {
+        match &mut self.inner {
+            FuncRefsInner::Legacy(legacy) => Ok(legacy.push_box_host(func, modules)?),
+            FuncRefsInner::Native(native) => {
+                let mut func_ref = func.func_ref().clone();
+                let has_hole = unsafe { !try_fill(&mut func_ref, modules) };
+                native.push(func_ref, has_hole, Storage::BoxHost { func })
+            }
+        }
+    }
+}
+
 /// An arena of `VMFuncRef`s.
 ///
 /// Allows a store to pin and own funcrefs so that it can patch in trampolines
 /// for `VMFuncRef`s that are missing a `wasm_call` trampoline and
 /// need Wasm to supply it.
 #[derive(Default)]
-pub struct FuncRefs {
+struct LegacyFuncRefs {
     /// A bump allocation arena where we allocate `VMFuncRef`s such
     /// that they are pinned and owned.
     bump: AlwaysMut<bumpalo::Bump>,
@@ -78,7 +171,7 @@ enum Storage {
     },
 }
 
-impl FuncRefs {
+impl LegacyFuncRefs {
     /// Push the given `VMFuncRef` into this arena, returning a
     /// pinned pointer to it.
     ///

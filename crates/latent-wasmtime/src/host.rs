@@ -485,6 +485,8 @@ mod tests {
 }
 
 #[cfg(test)]
+mod native_func_refs_tests;
+#[cfg(test)]
 mod native_registry_tests;
 #[cfg(test)]
 mod native_resource_types_tests;

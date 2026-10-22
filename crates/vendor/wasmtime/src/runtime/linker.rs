@@ -1241,7 +1241,10 @@ impl<T> Linker<T> {
                 &self.pool[key.module],
                 &self.pool[key.name],
                 // Should be safe since `T` is connecting the linker and store
-                unsafe { item.to_extern(store.0).panic_on_oom() },
+                unsafe {
+                    item.to_extern(store.0)
+                        .expect("host function allocation or admission failed")
+                },
             )
         })
     }
@@ -1305,7 +1308,7 @@ impl<T> Linker<T> {
         T: 'static,
     {
         self.try_get_by_import(store, import)
-            .expect("out of memory")
+            .expect("host function allocation or admission failed")
     }
 
     /// Same as [`Linker::get_by_import`] but returns an error instead of
@@ -1359,39 +1362,24 @@ impl<T> Linker<T> {
     where
         T: 'static,
     {
-        if let Some(external) = self.get(&mut store, module, "").map(Some).or_else(|e| {
-            if e.is::<OutOfMemory>() {
-                Err(e)
-            } else {
-                Ok(None)
+        for name in ["", "_start"] {
+            // Absence permits the historical fallback. A defined function's
+            // original allocation/admission failure must remain an error.
+            if self._get(module, name).is_none() {
+                continue;
             }
-        })? {
+            let external = self.get(&mut store, module, name)?;
             if let Extern::Func(func) = external {
                 return Ok(func);
             }
-            bail!("default export in '{module}' is not a function");
-        }
-
-        // For compatibility, also recognize "_start".
-        if let Some(external) = self
-            .get(&mut store, module, "_start")
-            .map(Some)
-            .or_else(|e| {
-                if e.is::<OutOfMemory>() {
-                    Err(e)
-                } else {
-                    Ok(None)
-                }
-            })?
-        {
-            if let Extern::Func(func) = external {
-                return Ok(func);
+            if name.is_empty() {
+                bail!("default export in '{module}' is not a function");
             }
             bail!("`_start` in '{module}' is not a function");
         }
 
-        // Otherwise return a no-op function.
-        Ok(Func::wrap(store, || {}))
+        // Otherwise return a no-op function, retaining fallible admission.
+        Func::try_wrap(store, || {})
     }
 }
 
@@ -1434,7 +1422,7 @@ impl Definition {
     /// Note the unsafety here is due to calling `HostFunc::to_func`. The
     /// requirement here is that the `T` that was originally used to create the
     /// `HostFunc` matches the `T` on the store.
-    pub(crate) unsafe fn to_extern(&self, store: &mut StoreOpaque) -> Result<Extern, OutOfMemory> {
+    pub(crate) unsafe fn to_extern(&self, store: &mut StoreOpaque) -> Result<Extern> {
         match self {
             Definition::Extern { item, .. } => Ok(item.clone()),
             // SAFETY: the contract of this function is the same as what's

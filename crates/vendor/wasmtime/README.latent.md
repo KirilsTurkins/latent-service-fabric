@@ -4,7 +4,7 @@ This is the complete crates.io Wasmtime 48.0.7 package, licensed under
 Apache-2.0 WITH LLVM-exception (see the unmodified LICENSE). The original
 archive checksum and all 250 original file identities are recorded in
 UPSTREAM.latent.json. `latent-dynamic-memory.patch` applies to that exact
-original package; it contains nineteen changed upstream files and four added
+original package; it contains twenty-three changed upstream files and five added
 implementation files. Other Wasmtime packages remain at the original locked
 registry versions.
 
@@ -34,11 +34,12 @@ retains confirmed actual allocations through native unwind, without confirming
 a hypothetical signature maximum as observed peak.
 
 The native cohort is
-`wasmtime-48.0.7-latent-value-table-store-registry-memory-v3`. Runtime engine configuration identity
+`wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-memory-v4`. Runtime engine configuration identity
 includes this cohort, so old prepared/AOT identity cannot certify this host.
 The immutable v1/7b programme passed 61 controls; the v2/de0 programme passed
-81 controls. This v3 registry extension and its four additional controls await
-native qualification; those prior binaries do not qualify this source.
+81 controls. The v3 registry extension retains four additional controls. This v4 FuncRefs
+extension adds five planned controls, preserving all85 prior selectors. Neither
+an earlier binary nor copied-helper tests qualify this new source.
 
 The optional `ResourceLimiter::table_allocating` hook returns an owned original
 allocation guard. Actual table backing destroys before its guard; dropping Store
@@ -94,7 +95,18 @@ prior keys and owners. Duplicate modules reuse registry backing, sparse indices
 retain None holes, and foreign-Engine rejection precedes all admission. The
 legacy embedding retains the upstream B-tree and fallible registration path.
 
-This extension does not pay FuncRefs bump/vector backing, concurrent task/queue/resource and hostcall frames,
+Selected Store FuncRefs admit an exact stable VMFuncRef Box and geometric
+arena, hole and root directory backing before allocation. All replacements and
+stable boxes are staged before a root/hole is published; refused candidates
+leave prior pointers and roots intact. Physical buffers and boxes die before
+refund; removing a filled hole keeps retained directory capacity charged.
+Shared InstancePre definitions and prepatched references enter as an atomic
+pair of paid root slots. Legacy embeddings keep the original bump arena.
+Fallible Core function/Linker insertion preserves original typed admission
+errors, including defined default-function lookup without fallback masking.
+
+This extension does not pay direct Core HostFunc state/context constructors,
+shared preparation closure/import backing, concurrent task/queue/resource and hostcall frames,
 request-context transitive buffers, or controller/legacy transport allocations.
 Existing finite caps are not original memory admission. Whole SDK cost acceptance
 remains open; the source package and planned controls are not execution evidence.

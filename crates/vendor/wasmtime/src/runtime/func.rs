@@ -376,7 +376,8 @@ impl Func {
         ty: FuncType,
         func: impl Fn(Caller<'_, T>, &[Val], &mut [Val]) -> Result<()> + Send + Sync + 'static,
     ) -> Self {
-        Self::try_new_(store, ty, func).panic_on_oom()
+        Self::try_new_(store, ty, func)
+            .expect("host function allocation or admission failed; use Func::try_new")
     }
 
     /// Same as [`Func::new`] but returns an error instead of panicking on
@@ -399,7 +400,7 @@ impl Func {
         mut store: impl AsContextMut<Data = T>,
         ty: FuncType,
         func: impl Fn(Caller<'_, T>, &[Val], &mut [Val]) -> Result<()> + Send + Sync + 'static,
-    ) -> Result<Self, OutOfMemory> {
+    ) -> Result<Self> {
         let store = store.as_context_mut().0;
         let host = HostFunc::new(store.engine(), ty, func)?;
 
@@ -449,7 +450,10 @@ impl Func {
 
         // SAFETY: the `T` used by `func` matches the `T` of the store we're
         // inserting into via this function's type signature.
-        unsafe { host.into_func(store).panic_on_oom() }
+        unsafe {
+            host.into_func(store)
+                .expect("host function allocation or admission failed")
+        }
     }
 
     /// Creates a new host-defined WebAssembly function which, when called,
@@ -540,7 +544,10 @@ impl Func {
 
         // SAFETY: the `T` used by `func` matches the `T` of the store we're
         // inserting into via this function's type signature.
-        unsafe { host.into_func(store).panic_on_oom() }
+        unsafe {
+            host.into_func(store)
+                .expect("host function allocation or admission failed")
+        }
     }
 
     /// Creates a new `Func` from a store and a funcref within that store.
@@ -861,7 +868,10 @@ impl Func {
 
         // SAFETY: The `T` the closure takes is the same as the `T` of the store
         // we're inserting into via the type signature above.
-        unsafe { host.into_func(store).panic_on_oom() }
+        unsafe {
+            host.into_func(store)
+                .expect("host function allocation or admission failed")
+        }
     }
 
     /// Returns the underlying wasm type that this `Func` has.
@@ -2688,7 +2698,7 @@ impl HostFunc {
     ///
     /// Can only be inserted into stores with a matching `T` relative to when
     /// this `HostFunc` was first created.
-    pub unsafe fn to_func(self: &Arc<Self>, store: &mut StoreOpaque) -> Result<Func, OutOfMemory> {
+    pub unsafe fn to_func(self: &Arc<Self>, store: &mut StoreOpaque) -> Result<Func> {
         self.validate_store(store);
         let (funcrefs, modules) = store.func_refs_and_modules();
         let funcref = funcrefs.push_arc_host(self.clone(), modules)?;
@@ -2748,7 +2758,7 @@ impl HostFunc {
     }
 
     /// Same as [`HostFunc::to_func`], different ownership.
-    unsafe fn into_func(self, store: &mut StoreOpaque) -> Result<Func, OutOfMemory> {
+    unsafe fn into_func(self, store: &mut StoreOpaque) -> Result<Func> {
         self.validate_store(store);
 
         // This function could be called by a guest at any time, and it requires

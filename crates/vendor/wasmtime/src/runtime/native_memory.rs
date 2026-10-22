@@ -171,6 +171,10 @@ impl<T> NativeVec<T> {
         self.values[index..].rotate_right(1);
     }
 
+    pub(crate) fn retain_mut(&mut self, retain: impl FnMut(&mut T) -> bool) {
+        self.values.retain_mut(retain);
+    }
+
     pub(crate) fn resize_with(&mut self, len: usize, mut value: impl FnMut() -> T) -> Result<()> {
         self.reserve(len.saturating_sub(self.values.len()))?;
         self.values.resize_with(len, &mut value)?;
