@@ -2,7 +2,11 @@
 /* Uninstalled task-creation prefix. No export, caller certificate or ready flag. */
 #ifndef LSF_STREAM_CLEANUP_TASK_PRIVATE_H
 #define LSF_STREAM_CLEANUP_TASK_PRIVATE_H
+#ifdef __KERNEL__
+#include "../../net/prepaid.h"
+#else
 #include "prepaid.h"
+#endif
 
 struct task_struct;
 struct lsf_cleanup_task_source {
