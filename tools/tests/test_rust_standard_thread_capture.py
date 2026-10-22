@@ -100,7 +100,13 @@ class StandardThreadCapture(unittest.TestCase):
             before, after = project.snapshot(original), project.snapshot(selected)
             descriptor, _ = build.validate_project(after)
             self.assertEqual(descriptor['runtimeProfile'], standard.THREAD)
-            self.assertEqual(after['src/lib.rs'], before['src/lib.rs'])
+            opening = b'wit_bindgen::generate!({'
+            # Exact generator configuration is the sole source change; the
+            # ordinary application function and all public calls stay intact.
+            self.assertEqual(after['src/lib.rs'], before['src/lib.rs'].replace(
+                opening, opening + b' generate_all,', 1))
+            self.assertEqual(after['src/lib.rs'].split(b'#[cfg(target_arch', 1)[0],
+                             before['src/lib.rs'].split(b'#[cfg(target_arch', 1)[0])
             self.assertEqual(after['Cargo.toml'], before['Cargo.toml'])
             self.assertEqual(descriptor['limits'], json.loads(before['capsule-project.json'])['limits'])
             self.assertNotIn('grants', descriptor)
@@ -116,6 +122,8 @@ class StandardThreadCapture(unittest.TestCase):
         fixture = StandardLogging()
         with tempfile.TemporaryDirectory() as directory:
             prepared, compiler, value = fixture.prepared(Path(directory))
+            original_flags = json.loads(standard.Prepared(prepared, compiler).arguments()[1].split('=', 1)[1])
+            self.assertEqual(original_flags, ['--sysroot=' + str(prepared / 'sysroot')])
             value.update(profile=std.THREAD_PROFILE, standardStdio='explicit-unsupported-v1',
                 standardThreads=capture.profile.PROFILE, standardThreadSourceSelected=True,
                 standardThreadRuntimeQualified=False,
@@ -126,6 +134,7 @@ class StandardThreadCapture(unittest.TestCase):
             selected.check()
             flags = json.loads(selected.arguments()[1].split('=', 1)[1])
             self.assertEqual(flags[0], '--sysroot=' + str(prepared / 'sysroot'))
+            self.assertEqual(flags[1], '-Clink-arg=--no-stack-first')
             self.assertIn('-Clink-arg=--export=__lsf_rust_owned_thread_entry', flags)
             self.assertTrue(set(capture.RECIPE) <= set(standard.source_build_inputs(standard.THREAD)))
             for key, changed in (('recipeDigest', digest(b'older recipe')),

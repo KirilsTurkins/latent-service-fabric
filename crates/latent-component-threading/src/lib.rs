@@ -23,7 +23,11 @@ pub use thread_entry::{ThreadEntryReceipt, transform_owned_thread_entry};
 mod admission;
 pub use admission::{AdmissionReceipt, transform_owned_thread_admission};
 mod root;
-pub use root::{RootReceipt, transform_owned_root_bootstrap};
+pub use root::{
+    RootReceipt, transform_owned_canonical_root_bootstrap, transform_owned_root_bootstrap,
+};
+mod public_root;
+pub use public_root::{PublicRootReceipt, prepare_owned_public_root};
 pub mod c_abi;
 pub mod c_context;
 pub mod c_lifecycle;

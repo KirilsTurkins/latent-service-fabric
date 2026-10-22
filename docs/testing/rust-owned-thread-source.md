@@ -52,8 +52,9 @@ generic dependency transformations remain replacement-only. The normal builder
 reproduces the port from original CAS bytes and rejects a stale recipe, changed
 output, unknown runtime version or changed archive. Local packages with the same
 name do not acquire a registry runtime patch. The ordinary creator declares the
-runtime and clock dependencies while preserving application source, Cargo
-features, requested limits and grants. This source route has four focused
+runtime and clock dependencies and includes them in normal binding generation.
+Only the macro's `generate_all` option changes: application function bodies,
+Cargo features, requested limits and grants stay intact. This source route has four focused
 capture/Prepared/creator controls; it has not compiled an ordinary guest.
 
 The first selected ThreadPool profile explicitly refuses `after_start` and
@@ -67,17 +68,82 @@ source and is not claimed to pass for this finite selected profile.
 sources in an owned temporary tree and uses the existing locked offline build
 route. It has a distinct build profile and conditional recipe, refuses combined
 logging/entropy selection in this first profile, and never changes an installed
-compiler. This option has not yet been executed. A successful future sysroot
-build is still only a compiler input, not runtime qualification.
+compiler. [Run 39833272771](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39833272771)
+compiled this sysroot and the original context utility at source
+`64effa838840fb50b95ee11f4dda64b883f1a3a3`. All 86 source identities and
+27 manifest files were verified; the complete 29-file artifact is 76,683,777
+bytes. Sysroot identity is
+`sha256:e1aee58616abccac3a53516684c71210ac85e69979d598a49299efd9b40b5a72`.
+The earlier nine std diagnostics remain failed historical observations. This
+establishes compiler inputs only, with every runtime qualification flag false.
 
 The explicit `rust-context` compiler utility composes the existing stack/entry,
 root and original Native-admission transforms, preserving each intermediate
 digest. Its separate final-component command verifies the existing native
 admission routing. Both receipts keep runtime enablement, private executor graph
-authentication and checkpoint qualification false. This new utility has not
-yet been compiled or executed.
+authentication and checkpoint qualification false.
 
-Current validation consists of source/preimage controls and metadata typechecks
+The later source-only `--ordinary-core` route prepares the actual public WIT
+core export and missing typed Native import without an application marker. It
+attaches the context before canonical allocation, preserves each allocator
+caller's actual stack pointer, and retains the installed root and logical
+owners until the real post-return cleanup returns. Async drain and TLS finish
+remain in the public export; the final detached postlude is still System-only.
+Original allocator/post-return bodies are retained, not replaced with models.
+Their complete private graph and callback behavior are not yet authenticated.
+Run `39845781774` at `e54b298b241050f5ce3badc63d39b30a968b4df7`
+compiled this new utility and passed all 70 source mechanism controls, including
+the four new encoded cases. It rebuilt the selected std and completed normal
+capture, then refused the original source/CAS archive's 32MiB expanded bound
+before application compilation. It did not execute an application or guest.
+
+The workflow's explicit default-false `application-diagnostic` input compiles
+one ordinary captured `futures-executor 0.3.31` application using its default
+ThreadPool constructors and original `lto=true` configuration. It reuses normal
+source capture, Prepared checks, isolated compilation and exact executable
+approval, retaining the actual core or first compiler/transform failure. It
+does not open the production component selector, write BUILD-COMPLETE, package,
+sign, invoke a guest or claim progress semantics. New source identities retain
+the existing 256-file/16MiB bound; logs, 180-second command bounds, 600-second
+diagnostic deadline and 128MiB aggregate artifact cap are unchanged. Full
+compiler-distribution guards remain: cross-job installation metadata can differ,
+so this joint job builds the selected sysroot with its actual compiler rather
+than claiming automatic artifact reuse.
+
+The original normal capture includes the complete native dependency closure,
+including host packages. Its unique source/CAS exceeds 32MiB expanded even
+though the observed partial archive compresses to 6,658,554 bytes. The diagnostic
+therefore explicitly permits at most 128MiB expanded source/CAS in its one
+32MiB gzip archive; the 4MiB individual-file and 32,768-entry bounds remain.
+It retains the complete accepted lock and source/CAS byte inventory before
+compression or an expanded-size refusal, and full digests before compression.
+This preserves every original captured path and leaves the outer 128MiB cap
+unchanged. It does not authorize larger compiler products or runtime enablement.
+
+Run `39849348413` compiled and validated the original 207,732-byte application
+core with ordinary `lto=true`, then refused `rust-root-linker-stack-range`.
+The pinned linker placed its real stack at `[0, 1,048,576)`, while both the
+selected runtime and context transform require non-null stack bounds. The
+selected THREAD compiler boundary therefore explicitly passes the supported
+`--no-stack-first` linker flag, placing the real stack after static data. It
+keeps the original null, alignment, range and minimum-size guards and consumes
+the actual linker-exported bounds; it does not manufacture post-link addresses.
+Other profiles keep their original flags.
+
+Run `39850836555` at `728f3b9715e6b763912e820124604db793436952`
+passed the complete bounded compiler diagnostic and all final source, compiler,
+isolation and Prepared checks. It compiled the authentic captured ordinary
+application with `lto=true`, validated its 207,731-byte original core, derived
+the 194,957-byte owned core and validated that output. Its actual linker stack
+is `[25,664, 1,074,240)`, exactly 1MiB, within 17 initial memory pages. Static
+data ends at 24,968; the derived core retains the original memory/data and
+exported stack bounds. The complete retained artifact is 108,293,674 bytes.
+All 169 Git source identities, 62 artifact rows and 7,094 archived source/CAS
+entries were independently checked. This establishes the actual compiler
+boundary, with every private-graph, canonical-body, checkpoint and runtime
+qualification gate still false. No component or guest was signed or executed.
+
+Beyond those actual compiler inputs, validation consists of source/preimage controls and metadata typechecks
 with explicit public-wrapper/ABI ports. Earlier native source controls exercise
 the actual registry, wait, TLS and lifecycle bodies with explicit reference
 boundaries; they do not execute an actual canonical Rust child, rebuilt std,
@@ -87,7 +153,8 @@ captured executor refusal paths. Metadata typechecking supplements those cases.
 
 Before any supported runtime claim, the remaining minimum delivery is:
 
-1. Compile the jointly selected sysroot and the actual `rust-context` utility.
+1. Compile and inspect an actual captured default ThreadPool application's
+   emitted graph through the compiled ordinary-root/canonical-cleanup utility.
 2. Execute the normal captured target-side executor/std route with its complete
    original capture/patch identities; source integration alone is insufficient.
 3. Authenticate the final private pool bridge callsites, table/callback targets,

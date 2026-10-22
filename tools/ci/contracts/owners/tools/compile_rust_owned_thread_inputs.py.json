@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/compile_rust_owned_thread_inputs.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Freeze exact joint compiler input recipe including minimum normal route and source readers; build utility and offline sysroot only with bounded retained failure evidence",
+  "reviewReason": "Bind optional exact captured application core diagnostic, authentic public root and canonical cleanup mechanism, all false runtime gates and original resource caps",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "d70b9ccb7f53b3474cab18f18e19ead45494176f87e9d342e8b0a052001b8631"
+  "sha256": "7f53780eddef04b6d2db737d8bb6c4085f6a39392eec7cfae4e1814655383ed4"
 }
