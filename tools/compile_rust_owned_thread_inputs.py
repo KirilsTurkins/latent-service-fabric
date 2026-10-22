@@ -178,9 +178,9 @@ def run(output, rust_bin, expected_head, *, application_diagnostic=False):
             summary['stage'] = 'source-mechanism-controls'
             controls = commands.run('owned-core-source-mechanism-controls', tools['cargo'], 'test', '--locked',
                 '--package', 'latent-component-threading', '--lib', '--', '--test-threads=1')
-            require(b'test result: ok. 70 passed; 0 failed; 0 ignored;' in controls,
+            require(b'test result: ok. 72 passed; 0 failed; 0 ignored;' in controls,
                     'rust-thread-inputs-exact-source-mechanism-controls')
-            summary['sourceMechanismControlsPassed'] = 70
+            summary['sourceMechanismControlsPassed'] = 72
             summary['stage'] = 'emitted-result-guard-engine-controls'
             summary['emittedResultGuardControls'] = result_controls.run(
                 commands, copied, output / 'result-guard-controls')
