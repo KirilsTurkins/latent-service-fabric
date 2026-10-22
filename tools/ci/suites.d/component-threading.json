@@ -65,14 +65,16 @@
         "c_preimage::tests::c_finite_structural_leaves_refuse_declared_vectors_before_typed_or_eager_readers",
         "c_preimage::tests::c_finite_leaf_framing_excludes_core_and_custom_bytes_but_refuses_bad_structural_frames",
         "component::c::tests::c_public_lift_requires_declared_async_type_with_original_sync_core_abi",
-        "component::c::tests::c_declared_async_effect_does_not_enable_callback_or_async_core_abi"
+        "component::c::tests::c_declared_async_effect_does_not_enable_callback_or_async_core_abi",
+        "component::c::tests::c_ready_handoff_canonical_requires_ready_aware_promote",
+        "component::c::tests::c_ready_handoff_final_graph_refuses_resume_or_mismatched_target"
       ],
       "expectedIgnored": [],
       "id": "latent-component-threading.lib.latent-component-threading",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-component-threading/Cargo.toml",
-      "minimumCases": 62,
+      "minimumCases": 64,
       "mode": "libtest",
       "package": "latent-component-threading",
       "platforms": [
