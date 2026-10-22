@@ -7,11 +7,8 @@ use wasmtime::{Engine, Instance, Module, NativeMemoryBinding, Store};
 
 const OWNER: u64 = crate::native_tables::OWNER_ESCROW as u64;
 const MIB: u64 = 1024 * 1024;
-const CORE: &str = r#"(module (func (export "answer") (result i32) i32.const 42))"#;
-const COMPONENT: &str = r#"(component
-    (core module $m (func (export "answer") (result i32) i32.const 42))
-    (core instance $i (instantiate $m))
-    (func (export "answer") (result u32) (canon lift (core func $i "answer"))))"#;
+const CORE: &[u8] = include_bytes!("native-store-core.wasm");
+const COMPONENT: &[u8] = include_bytes!("native-store-component.wasm");
 
 // Test-controller observations are outside the invocation allocation claim.
 #[derive(Default)]
@@ -269,13 +266,7 @@ fn actual_instance_map_overlap_refusal_preserves_prior_instance_and_fresh_reuse(
 #[test]
 fn actual_passive_segment_backing_remains_owned_until_guest_elem_drop() {
     let engine = Engine::default();
-    let module = Module::new(
-        &engine,
-        r#"(module
-        (elem $elements funcref (ref.null func) (ref.null func) (ref.null func))
-        (func (export "clear") elem.drop $elements))"#,
-    )
-    .unwrap();
+    let module = Module::new(&engine, include_bytes!("native-store-passive.wasm")).unwrap();
     let budget = budget(MIB);
     let observed = Arc::new(Observations::default());
     let mut store = store(&engine, &budget, &observed).unwrap();
