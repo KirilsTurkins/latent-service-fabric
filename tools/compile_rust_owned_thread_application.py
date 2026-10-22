@@ -26,7 +26,7 @@ from tools.guest_dependency_inputs import capture_source
 from tools.rust_application_dependencies import configure
 from tools.rust_capsule_project import (
     canonical, checked_path, decode_json, digest, fresh, inventory, read_file, snapshot, write_json,
-    sdk_files,
+    sdk_files, host_projection_inputs,
 )
 
 RECIPE = tuple(dict.fromkeys(('tools/compile_rust_owned_thread_application.py',
@@ -34,7 +34,7 @@ RECIPE = tuple(dict.fromkeys(('tools/compile_rust_owned_thread_application.py',
     'tools/toolchain-smoke/examples/tutorial_greeting/component.rs',
     'tools/toolchain-smoke/examples/tutorial_greeting/world.wit',
     *builder.RECIPE, *standard.source_build_inputs(standard.THREAD), *fixture.RECIPE,
-    *sdk_files())))
+    *sdk_files(), *host_projection_inputs())))
 MAX_CORE = 8 * 1024 * 1024
 MAX_EXPANDED_SOURCE = 128 * 1024 * 1024
 MAX_SOURCE_ARCHIVE = 32 * 1024 * 1024
@@ -170,6 +170,7 @@ def run(output: Path, rust_bin: Path, owned_sysroot: Path, context_tool: Path, *
               'standardRuntimeQualified': False, 'normalBuildComplete': False}
     commands = None
     try:
+        host_projection = host_projection_inputs()
         rust_bin, context_tool = checked_path(rust_bin), checked_path(context_tool)
         prepared = standard.Prepared(owned_sysroot, rust_bin / 'rustc', standard.THREAD)
         try:
@@ -321,6 +322,7 @@ def run(output: Path, rust_bin: Path, owned_sysroot: Path, context_tool: Path, *
             observed.check_unchanged()
             require(inventory(snapshot(app)) == source
                     and compiled_source == files
+                    and host_projection_inputs() == host_projection
                     and inventory({name: read_file(builder.ROOT / name) for name in RECIPE}) == recipe
                     and time.monotonic() < deadline,
                     'rust-thread-app-final-source-or-deadline')

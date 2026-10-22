@@ -71,7 +71,7 @@ class PinnedWasmtimeSource(unittest.TestCase):
                 original.replace(needle, ('exclude = ' + json.dumps(
                     [name for name in excluded if name != source.PROVIDER])).encode(), 1),
                 original.replace(b'path = "crates/vendor/wasmtime"', b'path = "foreign/wasmtime"', 1),
-                original + b'\n[patch.crates-io]\nwasmtime = {path="foreign"}\n',
+                original.replace(b'[patch.crates-io]\n', b'[patch.crates-io]\nwasmtime = {path="foreign"}\n', 1),
                 original + b'\n[replace]\n"wasmtime:48.0.7" = {path="foreign"}\n')
             for raw in mutations:
                 self.assertNotEqual(original, raw)

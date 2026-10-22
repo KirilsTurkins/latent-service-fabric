@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_capsules.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve exact Go private/generator and C/TypeScript/Console inputs while retaining both new TypeScript entropy backend inputs; no default selection or authority change.",
+  "reviewReason": "Preserve reviewed physical result-owner retirement, authenticate the exact host-only bytes source and upstream advisory identity, project only original registry guest inputs, and retain exact before/after source decision fences; all previous cases, limits and execution guards preserved.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "fac4196052dc39012bed473194f9b91757396769be2967177a9cae87fb0395c6"
+  "sha256": "951e9acbd7223f8b6035bce9f1df40757e24bb6ce6f6487404a4ddb07cdb9948"
 }

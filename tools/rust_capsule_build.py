@@ -15,7 +15,8 @@ import tomllib
 from tools.build_observation import build_environment, file_identity, public_repository, resolve_tools
 from tools.build_process import BuildProcessError, run_bounded_result
 from tools.rust_capsule_project import (ROOT, canonical, checked_path, digest, fresh,
-                                        inventory, decode_json, read_file, read_json, snapshot, write_json)
+                                        inventory, decode_json, read_file, read_json, snapshot, write_json,
+                                        PROJECTION_RECIPE, host_projection_inputs)
 from tools.stage_runtime_wit import copy_wit_tree, dependencies
 from tools import guest_authoring_frontend, guest_compatibility_build, guest_resources
 
@@ -76,7 +77,8 @@ STANDARD_RECIPE = (
     'tools/build_process_signals.py',
     'tools/captured_compiler_isolation.py',
 )
-RECIPE += STANDARD_RECIPE
+RECIPE += STANDARD_RECIPE + PROJECTION_RECIPE
+RECIPE += tuple(host_projection_inputs())
 RECIPE += ("tools/application_dependencies.py", "tools/application_dependency_store.py", "tools/application_dependency_tools.py",
            "tools/application_dependency_approval.py", "tools/rust_application_dependencies.py", "tools/captured_compiler_isolation.py")
 
@@ -513,6 +515,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
     # implicit dependency hidden outside the observation.
     for name in ("examples/echo-contract/capsule.json", "examples/echo-contract/deployment.json"):
         recipe_files[name] = read_file(ROOT / name)
+    host_projection = host_projection_inputs()
+    recipe_files.update(host_projection)
     recipe_inputs = inventory(recipe_files)
     output = fresh(output)
     commands = None
@@ -684,7 +688,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             observed.check_unchanged()
             if captured_files != files:
                 raise ValueError("project changed during the observed build")
-            if inventory({name: read_file(ROOT / name) for name in recipe_files}) != recipe_inputs:
+            if (host_projection_inputs() != host_projection
+                    or inventory({name: read_file(ROOT / name) for name in recipe_files}) != recipe_inputs):
                 raise ValueError("authoring recipe changed during the build")
             for material in materials:
                 if file_identity(paths[material["name"]], material["name"]) != material:
