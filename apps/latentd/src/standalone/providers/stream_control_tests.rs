@@ -327,6 +327,9 @@ fn catalog_contention_preserves_configured_and_confirmed_generations_until_expli
     assert!(!recovered.execution_permission);
     drop(session);
     drop(lifecycle);
+    drop(old);
+    drop(catalog);
+    drop(pools);
     fixture.untouched_peer();
     clean(node, &invocation);
     assert_eq!(execution.budget.host_memory_bytes(), 0);
@@ -550,6 +553,7 @@ fn explicit_drain_retires_current_owner_and_requires_a_normal_restart_for_fresh_
         .block_on(node.publish_outbound_stream_bindings(&fixture.guard))
         .is_err());
     fixture.untouched_peer();
+    drop(pools);
     clean(node, &invocation);
     assert_eq!(execution.budget.host_memory_bytes(), 0);
     assert_eq!(execution.budget.outstanding_reservations(), 0);
