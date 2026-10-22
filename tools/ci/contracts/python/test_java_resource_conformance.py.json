@@ -1,6 +1,7 @@
 {
   "cases": [
     "JavaResourceConformance.test_clock_parser_requires_actual_full_width_wall_and_ordered_bounded_monotonic",
+    "JavaResourceConformance.test_downloaded_native_modes_validate_then_execute_and_refuse_tamper",
     "JavaResourceConformance.test_normal_unknown_transitive_capture_binds_exact_data_and_removes_originals",
     "JavaResourceConformance.test_original_shared_runner_ast_is_preserved_after_only_new_selector_guard_and_branch",
     "JavaResourceConformance.test_report_requires_original29_data_clock_and_owner_zero_without_count_relaxation",
@@ -21,6 +22,21 @@
         "class:setup-sha256:2b18d3ff4985695fb4b067236664790b0f19e58147bfb7d8b209b290e0807875"
       ],
       "skipSites": []
+    },
+    "JavaResourceConformance.test_downloaded_native_modes_validate_then_execute_and_refuse_tamper": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4cd9eef2afeffaecc3b16c82cb6421e2b16988b432fd3629699aedb4ed0c82d2",
+        "class:setup-sha256:2b18d3ff4985695fb4b067236664790b0f19e58147bfb7d8b209b290e0807875"
+      ],
+      "skipSites": [
+        "self.skipTest('requires real Linux executable modes/process ownership')",
+        "skip-control-sha256:0b36eca69a574e42745a1dbab5450ba3744148eca0f969f09f221f6941fc9a22"
+      ]
     },
     "JavaResourceConformance.test_normal_unknown_transitive_capture_binds_exact_data_and_removes_originals": {
       "bases": [
@@ -109,6 +125,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_java_resource_conformance.py",
-  "reviewReason": "Explicitly review the import-only setup fingerprint change from subprocess to hashlib for pinned parsed-source preservation controls. All8 case IDs, class setup, bases, decorators and skip sites are identical; no historical Git object is required on shallow CI. No test, skip or product behavior changed.",
+  "reviewReason": "Preserve8 original cases and every fixture guard; append one Linux real denied-exec/recovery/tamper control.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
