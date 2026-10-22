@@ -1,13 +1,13 @@
 # Selected C context preparation
 
-`c-context144-sync-cooperative-v1` has passed one signed seventeen-case
-[ordinary C lifecycle programme](../testing/evidence/c-thread-runtime-2026-10-22.json).
-This finite create/join/TLS/drain/cancellation result does not complete #744.
+`c-context144-sync-cooperative-v1` has passed a signed twenty-case
+[ordinary C lifecycle and synchronization programme](../testing/evidence/c-synchronization-runtime-2026-10-22.json),
+preserving the original seventeen-case lifecycle prefix. This finite result does not complete #744.
 The default C project and the existing Rust context40 profile keep their
 selection and serialized settings.
 
 The C project must explicitly name `threadingProfile`. The normal captured C
-builder owns the five runtime files, the two runtime WIT imports, linked-libc
+builder owns the six runtime files, the two runtime WIT imports, linked-libc
 mode, guarded stack layout, derivation and ordinary component encoder. The
 existing `capsule_contracts` executable performs the two bounded derive/bind
 operations. Its original two-argument WIT operation is unchanged. Static
@@ -46,7 +46,7 @@ non-Ok host result traps. Detach follows both settlements and has no following
 C or host calls. The host's existing finalization guard remains strict, and
 its separate physical stack/metadata owners survive until Store destruction.
 
-The installed C recipe stages the optional helper and the five exact runtime
+The installed C recipe stages the optional helper and the six exact runtime
 sources in its normal inventory. `tools/c_capsule.py new ... --threading-profile
 c-context144-sync-cooperative-v1` captures those sources into the project's
 existing SDK lock. The installed `tools/dev_guest_recipe.py` uses the same
@@ -178,6 +178,34 @@ libraries and a transitive worker/timer case need their own actual qualification
 This programme does not prove cross-tenant reuse or general POSIX/C++ support.
 Earlier failures and partial runs remain failed, with no retroactive credit;
 their fixed origins are recorded in the lifecycle evidence.
+
+
+## Actual ordinary synchronization extension
+
+The selected source now supplies normal, recursive and error-checking pthread
+mutexes, plain/recursive C11 mutexes, and untimed condition waits with signal
+and broadcast. A contended call acquires its original broker Wait before
+publishing a waiter on its admitted C stack. Canonical suspension parks only
+that caller; notification defers its continuation. Condition wait retains the
+same Wait through mutex reacquisition. Join uses the same suspension mechanism
+and checks actual TLS and final frame completion before releasing backing.
+
+[Run 39823871350](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39823871350)
+passed all twenty signed outcomes from `e859a0b7bd35f28cf3667d35f131389b0797cef0`.
+It preserves the original seventeen-case prefix, then executes contended pthread
+synchronization, mixed pthread/C11 synchronization and a fresh ordinary call
+through one captured component. Both synchronization cases observed two original
+Waits and parked tasks, three Tasks, two Results and six Native owners while the
+independently eligible producer ran. All twenty retirements had zero physical
+and active-provider owners; node and peer shutdown were clean. The complete
+[finite result and failed attempt history](../testing/evidence/c-synchronization-runtime-2026-10-22.json)
+record the exact archive, component, source, limits and unsupported operations.
+Thirteen serialized source controls and a compiled fixture object are separate
+source evidence; they do not qualify canonical scheduling or physical cleanup.
+
+Timed waits, robust/process-shared mutexes, ordinary exit/cancellation unwind,
+compiled CPU checkpoints, shared-memory atomics and broad library compatibility
+remain required before broader support or issue #744 completion.
 
 
 ## Historical native producer observations

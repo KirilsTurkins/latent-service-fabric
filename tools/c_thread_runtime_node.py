@@ -357,8 +357,9 @@ def invoke(client, probe, target, output, mode, activation, *, cancel=False):
         else:
             require(row['exitCode'] == 0 and type(row['decoded']) is list and len(row['decoded']) == 1
                     and set(row['decoded'][0]) == {'ok'}, 'c-thread-ordinary-success')
-            children = {'mixed': 2, 'pressure': 3}.get(mode, 1)
-            witness = fixture.observation(row['decoded'][0]['ok'], children)
+            children = {'mixed': 2, 'pressure': 3, 'sync-pthread': 2, 'sync-mixed': 2}.get(mode, 1)
+            witness = fixture.observation(row['decoded'][0]['ok'], children,
+                synchronized=mode in ('sync-pthread', 'sync-mixed'))
         result = {'activation': activation, 'mode': mode, 'exitCode': row['exitCode'],
                   'witness': witness, 'retirement': retire(client, probe, target, output, activation)}
         return result
@@ -409,8 +410,14 @@ def programme(client, node, probe, manifest, target, output):
     for label, mode in controls:
         outcomes.append(invoke(client, probe, target, output, mode, 'c-thread-' + label, cancel=mode == 'cancel'))
     require(len(outcomes) == 17, 'c-thread-original-seventeen-controls')
+    for label, mode in (('sync-pthread', 'sync-pthread'), ('sync-mixed', 'sync-mixed'),
+                        ('fresh-sync', 'pthread')):
+        outcomes.append(invoke(client, probe, target, output, mode, 'c-thread-' + label))
+    require(len(outcomes) == 20, 'c-thread-original-seventeen-and-three-synchronization-controls')
     return {'schemaVersion': 'latent.c.thread-runtime.v1', 'status': 'passed',
         'profile': PROFILE, 'runtimeLimits': dict(fixture.LIMITS), 'outcomes': outcomes,
+        'originalSeventeenOutcomePrefix': 17,
+        'pthreadAndMixedBasicSynchronizationQualified': True,
         'selectedRevision': selected_revision(client, target), 'full744Qualified': False,
         'mutexConditionVariablesQualified': False, 'compiledLoopCheckpointsQualified': False,
         'arbitraryStackPointerEscapeQualified': False, 'cppDynamicTlsQualified': False,

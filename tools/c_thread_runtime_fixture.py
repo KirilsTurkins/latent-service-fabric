@@ -15,13 +15,15 @@ API = 'examples:c-thread-runtime/api@1.0.0'
 LIMITS = {'tasks': 8, 'executors': 2, 'queuedWork': 8, 'waits': 16,
           'timers': 8, 'results': 8, 'nativeOwners': 8}
 MODES = ('pthread', 'c11', 'mixed', 'invalid', 'pressure', 'root-return',
-         'application-error', 'root-trap', 'callback-trap', 'cancel', 'deadline')
+         'application-error', 'root-trap', 'callback-trap', 'cancel', 'deadline',
+         'sync-pthread', 'sync-mixed')
 
 
 def prepare(directory: Path) -> Path:
     project = c_capsule_project.create(directory, 'greeting', name='c-thread-runtime',
                                        threading_profile=PROFILE)
     (project / 'src/main.c').write_bytes(read_file(ROOT / (FIXTURE + 'main.c')))
+    (project / 'src/synchronization.h').write_bytes(read_file(ROOT / (FIXTURE + 'synchronization.h')))
     (project / 'wit/world.wit').write_bytes(read_file(ROOT / (FIXTURE + 'world.wit')))
     config = json.loads(read_file(project / 'capsule-project.json'))
     config['world'] = WORLD
@@ -35,7 +37,7 @@ def prepare(directory: Path) -> Path:
     return project
 
 
-def observation(value: str, children: int) -> dict:
+def observation(value: str, children: int, *, synchronized: bool = False) -> dict:
     """Consume real child-side observe output, never turn a model into proof."""
     if type(value) is not str or not value.startswith('joined:') or len(value) > 160:
         raise ValueError('c-thread-observed-result')
@@ -44,8 +46,10 @@ def observation(value: str, children: int) -> dict:
                               or len(part) > 20 or str(int(part)) != part for part in parts):
         raise ValueError('c-thread-observed-numeric-shape')
     count, entered, destructed, waits, parked, tasks, results, native, memory = map(int, parts)
-    if (type(children) is not int or not 1 <= children <= 3
-            or (count, entered, destructed, waits, parked) != (children, children, children, 1, 1)
+    expected_waits = 2 if synchronized is True else 1
+    if (type(synchronized) is not bool or synchronized and children != 2
+            or type(children) is not int or not 1 <= children <= 3
+            or (count, entered, destructed, waits, parked) != (children, children, children, expected_waits, expected_waits)
             or tasks != children + 1 or results != children or native != 2 + 2 * children
             or not 0 < memory <= 32 * 1024 * 1024):
         raise ValueError('c-thread-real-join-owner-witness')

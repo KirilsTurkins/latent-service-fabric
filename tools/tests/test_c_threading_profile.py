@@ -49,7 +49,7 @@ class CThreadingProfile(unittest.TestCase):
             self.assertTrue(threading.selected(actual))
             selected = {name for name in files if name.startswith('vendor/lsf/sdk/c-guest/runtime/')}
             self.assertEqual(selected, {'vendor/lsf/sdk/c-guest/runtime/' + name for name in
-                                       ('thread-abi.h', 'thread-abi.json', 'threads.c', 'tls-keys.c', 'template-copy.c')})
+                                       ('thread-abi.h', 'thread-abi.json', 'threads.c', 'tls-keys.c', 'template-copy.c', 'synchronization.c')})
             for path in selected:
                 changed = dict(files, **{path: files[path] + b'\n'})
                 with self.subTest(path=path), self.assertRaisesRegex(ValueError, 'vendored SDK changed'):
@@ -61,7 +61,7 @@ class CThreadingProfile(unittest.TestCase):
         self.assertEqual(threading.TLS_SYMBOLS, expected)
         self.assertEqual(threading.linked_defines(('OWNED=7',)),
                          ('OWNED=7', 'LSF_C_LINKED_LIBC=1',
-                          *(name + '=__lsf_c_' + name for name in expected)))
+                          *(name + '=__lsf_c_' + name for name in (*expected, *threading.SYNC_SYMBOLS))))
         for name in ('LSF_C_LINKED_LIBC', *expected,
                      *('__lsf_c_' + item for item in expected)):
             with self.subTest(name=name), self.assertRaisesRegex(ValueError, 'compiler-owned-tls-symbol'):
@@ -76,6 +76,22 @@ class CThreadingProfile(unittest.TestCase):
         self.assertIn('or static_libraries', selected)
         self.assertNotIn('--allow-multiple-definition', selected)
 
+    def test_selected_sync_symbols_are_closed_and_cannot_override_original_libc(self):
+        expected = ('pthread_mutex_init', 'pthread_mutex_lock', 'pthread_mutex_trylock',
+            'pthread_mutex_unlock', 'pthread_mutex_destroy', 'pthread_mutex_timedlock',
+            '__pthread_mutex_lock', '__pthread_mutex_trylock', '__pthread_mutex_unlock',
+            'pthread_cond_init', 'pthread_cond_destroy', 'pthread_cond_wait',
+            'pthread_cond_signal', 'pthread_cond_broadcast', 'pthread_cond_timedwait',
+            'mtx_init', 'mtx_lock', 'mtx_trylock', 'mtx_unlock', 'mtx_destroy', 'mtx_timedlock',
+            'cnd_init', 'cnd_destroy', 'cnd_wait', 'cnd_signal', 'cnd_broadcast', 'cnd_timedwait')
+        self.assertEqual(threading.SYNC_SYMBOLS, expected)
+        self.assertEqual(len(set(expected)), 27)
+        self.assertEqual(threading.linked_defines(())[-len(expected):],
+            tuple(name + '=__lsf_c_' + name for name in expected))
+        for name in (*expected, *('__lsf_c_' + item for item in expected)):
+            with self.subTest(name=name), self.assertRaisesRegex(ValueError, 'compiler-owned-tls-symbol'):
+                threading.linked_defines((name + '=foreign',))
+
     def test_installed_recipe_ships_optional_helper_and_exact_runtime_without_default_selection(self):
         from tools import dev_tool_distribution
         from tools.c_guest import threading_compatibility
@@ -84,7 +100,7 @@ class CThreadingProfile(unittest.TestCase):
             dev_tool_distribution.recipe(payload, 'c')
             recipe = payload / 'recipe'
             for name in (*threading.RECIPE, *threading_compatibility.RECIPE, *('sdk/c-guest/runtime/' + name for name in
-                         ('thread-abi.h', 'thread-abi.json', 'threads.c', 'tls-keys.c', 'template-copy.c'))):
+                         ('thread-abi.h', 'thread-abi.json', 'threads.c', 'tls-keys.c', 'template-copy.c', 'synchronization.c'))):
                 self.assertEqual((recipe / name).read_bytes(), (c_capsule_project.ROOT / name).read_bytes())
             with patch.object(c_capsule_project, 'ROOT', recipe):
                 c_capsule_project.create(Path(root) / 'ordinary', 'greeting')

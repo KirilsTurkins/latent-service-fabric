@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_c_canonical_abi.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Require the selected C public async effect while preserving sync Core bindings and default generation; preserve existing controls and add explicit binding ABI selection/refusal control.",
+  "reviewReason": "Compose the reviewed C17 sync Core binding selection and both captured included C runtime units, template-copy.c and synchronization.c, without altering prior ABI controls or qualification claims.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "5712c388d5a45f2c2bad41d4cce592cc05b16d04c4790321c72ff8dfd447752b"
+  "sha256": "6dce1573a4de2fa81253738456e2669b48e73ae0ffd171710598815b99d58538"
 }

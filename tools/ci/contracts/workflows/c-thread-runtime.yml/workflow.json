@@ -9,7 +9,8 @@
     "on": {
       "push": {
         "branches": [
-          "feat/c-thread-runtime-consumer-20261021"
+          "feat/c-thread-runtime-consumer-20261021",
+          "feat/c-owned-sync-20261022"
         ],
         "paths": [
           ".github/workflows/c-thread-runtime.yml",
@@ -46,6 +47,10 @@
           "sdk/c-guest/runtime/tls-keys.c",
           "sdk/c-guest/runtime/threads.c",
           "sdk/c-guest/runtime/template-copy.c",
+          "sdk/c-guest/runtime/synchronization.c",
+          "tools/c_sync_source_controls.py",
+          "tools/tests/fixtures/c-sync-reference.c",
+          "tools/tests/fixtures/c-sync-reference.cjs",
           "docs/testing/evidence/c-thread-native-rustfmt-2026-10-21.json",
           "tools/tests/test_c_threading_profile.py",
           "tools/tests/test_c_threading_compatibility.py",
@@ -67,7 +72,7 @@
   "requiredJobs": [
     "ordinary-c-threads"
   ],
-  "reviewReason": "Root full-reviewed exact cb8 native128 origin/closed CLI group; preserve all original17 outcomes/caps and every old Python case/base/decorator/skip; new reader source and complete148/native admission controls.",
+  "reviewReason": "Preserve exact native128 source triggers, permissions and required job while adding the C synchronization feature branch and source paths.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/c-thread-runtime.yml"
 }

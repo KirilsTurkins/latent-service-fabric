@@ -289,6 +289,10 @@ class CThreadRuntime(unittest.TestCase):
             self.assertEqual(config['limits']['memoryBytes'], 32 * 1024 * 1024)
             self.assertEqual(config['limits']['outboundRequests'], 0)
             source = (project / 'src/main.c').read_text()
+            self.assertEqual(sorted(path.name for path in (project / 'src').glob('*.c')), ['main.c'])
+            self.assertIn('#include "synchronization.h"', source)
+            self.assertEqual((project / 'src/synchronization.h').read_bytes(),
+                (fixture.ROOT / (fixture.FIXTURE + 'synchronization.h')).read_bytes())
             for ordinary in ('pthread_create(', 'pthread_join(', 'pthread_self(', 'pthread_equal(',
                              'thrd_create(', 'thrd_join(', 'thrd_current(', 'thrd_equal(',
                              'pthread_key_create(', '_Thread_local', 'errno ='):
@@ -310,6 +314,23 @@ class CThreadRuntime(unittest.TestCase):
                 fixture.observation(value, 2)
         with self.assertRaises(ValueError):
             fixture.observation('joined:2:2:2:1:1:3:2:6:1048576', True)
+
+    def test_synchronization_observation_requires_both_real_waiters_without_relaxing_original_join(self):
+        value = 'joined:2:2:2:2:2:3:2:6:1048576'
+        row = fixture.observation(value, 2, synchronized=True)
+        self.assertEqual((row['waits'], row['parkedTasks']), (2, 2))
+        self.assertFalse(row['waitForPollPendingClaimed'])
+        with self.assertRaises(ValueError):
+            fixture.observation(value, 2)
+        for bad in ('joined:2:2:2:1:1:3:2:6:1048576', 'joined:2:2:2:2:1:3:2:6:1048576',
+                    'joined:2:2:2:2:2:3:2:5:1048576', 'joined:2:2:2:2:2:3:2:6:0'):
+            with self.subTest(bad=bad), self.assertRaises(ValueError):
+                fixture.observation(bad, 2, synchronized=True)
+        for invalid in ('yes', 1, None):
+            with self.subTest(invalid=invalid), self.assertRaises(ValueError):
+                fixture.observation(value, 2, synchronized=invalid)
+        with self.assertRaises(ValueError):
+            fixture.observation('joined:1:1:1:2:2:2:1:4:1048576', 1, synchronized=True)
 
     def test_child_entry_requires_exact_current_native_and_child_events_and_five_owners(self):
         revision = {'publicationId': 'publication:sha256:' + '1' * 64,

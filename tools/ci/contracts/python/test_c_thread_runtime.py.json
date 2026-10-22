@@ -13,7 +13,8 @@
     "CThreadRuntime.test_positive_child_barrier_refuses_unknown_coverage_and_stale_or_fabricated_pairs",
     "CThreadRuntime.test_positive_child_cursor_requires_one_frozen_session_and_retains_each_actual_loss_count",
     "CThreadRuntime.test_real_child_owner_observation_is_exact_and_cannot_be_relabelled_pending",
-    "CThreadRuntime.test_retained_current_child_pair_is_positive_evidence_with_raw_loss_not_losslessness"
+    "CThreadRuntime.test_retained_current_child_pair_is_positive_evidence_with_raw_loss_not_losslessness",
+    "CThreadRuntime.test_synchronization_observation_requires_both_real_waiters_without_relaxing_original_join"
   ],
   "guards": {
     "CThreadRuntime.test_actual_empty_list_usage_schema_is_required": {
@@ -183,10 +184,22 @@
         "class:setup-sha256:6608c6d59006b517edcc69dd775148dc3653a28a82ffd7d5c023ef18b5b6cecf"
       ],
       "skipSites": []
+    },
+    "CThreadRuntime.test_synchronization_observation_requires_both_real_waiters_without_relaxing_original_join": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2be903e58e8891d808bbcbead97fda3654ac15cc0d2337b999ed19c3bd322625",
+        "class:setup-sha256:6608c6d59006b517edcc69dd775148dc3653a28a82ffd7d5c023ef18b5b6cecf"
+      ],
+      "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_c_thread_runtime.py",
-  "reviewReason": "Add one actual diagnostic envelope boundary:18 optional observations plus one serialized query require exactly73 config units; all old cases/guards/caps remain and no lossless audit guarantee is claimed",
+  "reviewReason": "Keep all15 cases and original assertions; additionally require one main.c translation unit and the captured byte-exact synchronization header.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
