@@ -827,7 +827,19 @@ jobs:
             fc9b44a6b8dce9effd6b490f1a169a7ad8edbf12 \
             955da9c7465b88541e39b043203abb92782ae26a \
             fb79a7ab6ea86f53baec78ee341aca075c14a2ef \
-            aa56bdebad8c12f20acce4ec4ecfeca73cf554be
+            aa56bdebad8c12f20acce4ec4ecfeca73cf554be \
+            f6251df89851de98cb869784d095ad5cc2e5b385 \
+            f244b81f14abad5d4dc4984cb842aaf1d9076e23 \
+            7b6365ee39dea9770591a931b96711965f8a1aaf \
+            050b9e71ba04a4bdc559f4a7fa48d6bd94c2ff38 \
+            de0aed36f0b135d6d88fb536484e60aee978f218 \
+            3e4178271b4b7fe75a69c8f0665dbe275b41d7c3 \
+            173ccd9c096e4db643aa9627bd4550cef27fb922 \
+            ea118974d93843265a504f5d30571ed7cfe8a7d2 \
+            f5351a9331ed954c49ae83f2f4004e0f96d25d0e \
+            ff5aadaecd11874f53aa80e56ffdfff0efda312b \
+            4ed0db7f07245732d07f867e95ec008a804485e5 \
+            cb8ceefc5f6343301871dbde1d8a853d3581cc30
       - name: Install Python validator dependencies
         run: python -m pip install --requirement tools/requirements.lock
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
