@@ -49,7 +49,7 @@ class CThreadingProfile(unittest.TestCase):
             self.assertTrue(threading.selected(actual))
             selected = {name for name in files if name.startswith('vendor/lsf/sdk/c-guest/runtime/')}
             self.assertEqual(selected, {'vendor/lsf/sdk/c-guest/runtime/' + name for name in
-                                       ('thread-abi.h', 'thread-abi.json', 'threads.c', 'tls-keys.c')})
+                                       ('thread-abi.h', 'thread-abi.json', 'threads.c', 'tls-keys.c', 'synchronization.c')})
             for path in selected:
                 changed = dict(files, **{path: files[path] + b'\n'})
                 with self.subTest(path=path), self.assertRaisesRegex(ValueError, 'vendored SDK changed'):
@@ -62,7 +62,7 @@ class CThreadingProfile(unittest.TestCase):
             dev_tool_distribution.recipe(payload, 'c')
             recipe = payload / 'recipe'
             for name in (*threading.RECIPE, *('sdk/c-guest/runtime/' + name for name in
-                         ('thread-abi.h', 'thread-abi.json', 'threads.c', 'tls-keys.c'))):
+                         ('thread-abi.h', 'thread-abi.json', 'threads.c', 'tls-keys.c', 'synchronization.c'))):
                 self.assertEqual((recipe / name).read_bytes(), (c_capsule_project.ROOT / name).read_bytes())
             with patch.object(c_capsule_project, 'ROOT', recipe):
                 c_capsule_project.create(Path(root) / 'ordinary', 'greeting')
