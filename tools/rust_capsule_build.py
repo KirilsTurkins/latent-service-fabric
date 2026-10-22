@@ -534,6 +534,10 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 environment.update(CARGO_NET_OFFLINE="true", RUSTUP_AUTO_INSTALL="0")
             paths, materials = resolve_tools(pins["toolchain"], work, environment, installed=rust_bin)
             prepared_runtime = standard.Prepared(standard_runtime, paths['rustc'], runtime_profile) if standard_runtime is not None else None
+            thread_component = None
+            if standard.has_threads(runtime_profile):
+                from tools import rust_owned_thread_component
+                thread_component = rust_owned_thread_component.select(prepared_runtime, paths['rustc'])
             prepared_http = http_inputs.Prepared(http_runtime, paths['rustc'], paths['wasm-tools']) if http_runtime is not None else None
             bindgen_path = shutil.which("wit-bindgen", path=environment.get("PATH"))
             if bindgen_path is None:
@@ -592,6 +596,9 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     approval = approve_execution(verified, isolation, executable_recipe, executable_approval)
                 from tools.rust_standard_entropy_profile import verify_capture
                 verify_capture(verified, runtime_profile)
+                if standard.has_threads(runtime_profile):
+                    from tools.rust_standard_thread_capture import verify_capture as verify_thread_capture
+                    verify_thread_capture(verified, runtime_profile)
                 closure = prepare(observed.dependency_root, work, output, "rust", execution_approval=approval)
                 adapted_manifest, cargo_inputs = configure_application(closure, work, Path(environment["CARGO_HOME"]))
                 isolation.protect_inputs(work)
@@ -624,7 +631,10 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 prepared_runtime.check()
             module = temporary / "target/wasm32-unknown-unknown/release" / (project["name"].replace("-", "_") + ".wasm")
             stage = "component"
-            componentize(commands, paths["wasm-tools"], module, output, digest(source_inputs))
+            if thread_component is not None:
+                thread_component.componentize(commands, paths['wasm-tools'], module, output, digest(source_inputs))
+            else:
+                componentize(commands, paths["wasm-tools"], module, output, digest(source_inputs))
             commands.run("validate", paths["wasm-tools"], "validate", output / "component.wasm", "--features", "cm-async,cm-async-stackful,cm-more-async-builtins")
             component = read_file(output / "component.wasm", 64 * 1024 * 1024)
             stage = "contracts"
@@ -642,6 +652,9 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 compose_http(commands, paths, output/'component.wasm', surface, prepared_http,
                     work, isolation=isolation, environment_guard=environment_guard)
                 component = read_file(output/'component.wasm', 64*1024*1024)
+            if thread_component is not None:
+                # Check the final bytes after every optional composition.
+                thread_component.verify_final(component, surface)
             if standard.has_entropy(runtime_profile) and 'latent:random/random@0.1.0' not in surface['imports']:
                 raise ValueError('standard entropy requires explicit original-world RANDOM declaration')
             if standard.has_logging(runtime_profile) and standard.LOG not in surface['imports']:
@@ -650,7 +663,9 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             stage = "compatibility"
             guest_compatibility_build.inspect(commands, paths["wasm-tools"], output, surface,
                 host_abi_profile=guest_compatibility_build.declared_host_abi(surface))
-            package_inputs(output, project, surface, files, component)
+            package_inputs(output, project, surface, files, component,
+                **({'threading_model': 'cooperative', 'additional_assets': thread_component.assets()}
+                   if thread_component is not None else {}))
             if packager is not None:
                 stage = "package"
                 commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package", *packaging_arguments(files))
@@ -676,9 +691,13 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     raise ValueError("tool binary changed during the build")
             if prepared_runtime is not None:
                 prepared_runtime.check()
+                if thread_component is not None:
+                    thread_component.check()
                 standard_inputs = prepared_runtime.material()
                 (output / 'rust-standard-runtime.json').write_bytes(standard_inputs)
                 materials.append({'name': 'rust-standard-runtime', 'digest': digest(standard_inputs), 'size': len(standard_inputs)})
+                if thread_component is not None:
+                    materials.extend(thread_component.materials(output))
             if prepared_http is not None:
                 prepared_http.check()
                 for name in ('rust-http-runtime.json', 'rust-http-composition.json',
