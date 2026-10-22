@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build two exact owned Rust compiler inputs; no guest or runtime qualification."""
+"""Build exact compiler inputs and optional core diagnostic; no guest qualification."""
 from __future__ import annotations
 
 import argparse
@@ -9,6 +9,7 @@ import re
 import shutil
 import subprocess
 import sys
+import time
 
 if __package__ in {None, ''}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -25,7 +26,7 @@ ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = '.github/workflows/rust-owned-thread-inputs.yml'
 CRATE = 'crates/latent-component-threading/'
 CRATE_SOURCES = tuple(CRATE + 'src/' + name for name in (
-    'lib.rs', 'thread_entry.rs', 'root.rs', 'admission.rs', 'component.rs',
+    'lib.rs', 'thread_entry.rs', 'root.rs', 'public_root.rs', 'admission.rs', 'component.rs',
     'c_abi.rs', 'c_component.rs', 'c_context.rs', 'c_lifecycle.rs',
     'c_preimage.rs', 'c_root.rs', 'c_template.rs', 'bin/c-context.rs', 'bin/rust-context.rs'))
 RECIPE = tuple(dict.fromkeys((
@@ -48,17 +49,22 @@ def git(*args, input=None):
     return result.stdout
 
 
-def sources(expected):
+def sources(expected, application_diagnostic=False):
     require(re.fullmatch('[0-9a-f]{40}', expected) is not None,
             'rust-thread-inputs-expected-head')
     require(git('rev-parse', '--verify', 'HEAD').decode().strip() == expected
             and not git('status', '--porcelain=v1', '--untracked-files=no'),
             'rust-thread-inputs-clean-exact-head')
-    require(len(RECIPE) <= 256, 'rust-thread-inputs-source-count')
-    queries = ''.join(expected + ':' + name + '\n' for name in RECIPE).encode()
+    require(type(application_diagnostic) is bool, 'rust-thread-inputs-diagnostic-selector')
+    selected = RECIPE
+    if application_diagnostic:
+        from tools import compile_rust_owned_thread_application as application
+        selected = tuple(dict.fromkeys((*RECIPE, *application.RECIPE)))
+    require(len(selected) <= 256, 'rust-thread-inputs-source-count')
+    queries = ''.join(expected + ':' + name + '\n' for name in selected).encode()
     raw = git('cat-file', '--batch', input=queries)
     offset, total, rows = 0, 0, []
-    for name in RECIPE:
+    for name in selected:
         end = raw.find(b'\n', offset)
         require(end >= offset, 'rust-thread-inputs-git-header')
         fields = raw[offset:end].split()
@@ -118,7 +124,8 @@ def retained_files(output):
     return rows
 
 
-def run(output, rust_bin, expected_head):
+def run(output, rust_bin, expected_head, *, application_diagnostic=False):
+    started = time.monotonic()
     output = fresh(output); rust_bin = checked_path(rust_bin)
     summary = {'schemaVersion': 'latent.rust.owned-thread-inputs.v1', 'status': 'in-progress',
         'actualGuestExecuted': False, 'ordinaryThreadPoolQualified': False,
@@ -127,7 +134,7 @@ def run(output, rust_bin, expected_head):
         'kernelBuiltOrBooted': False, 'stage': 'source'}
     commands = None
     try:
-        original = sources(expected_head)
+        original = sources(expected_head, application_diagnostic)
         write_json(output / 'source-inputs.json', original)
         tools = {name: checked_path(rust_bin / name) for name in ('cargo', 'rustc')}
         identities = {name: file_identity(path, name) for name, path in tools.items()}
@@ -146,7 +153,9 @@ def run(output, rust_bin, expected_head):
         target = ROOT / 'target'
         environment.update(CARGO_TARGET_DIR=str(target), CARGO_INCREMENTAL='0',
             CARGO_PROFILE_DEV_DEBUG='0', CARGO_PROFILE_DEV_DEBUG_ASSERTIONS='true',
-            CARGO_PROFILE_DEV_OVERFLOW_CHECKS='true', RUSTUP_TOOLCHAIN='1.97.1', RUSTC=str(tools['rustc']))
+            CARGO_PROFILE_DEV_OVERFLOW_CHECKS='true', CARGO_PROFILE_TEST_DEBUG='0',
+            CARGO_PROFILE_TEST_DEBUG_ASSERTIONS='true', CARGO_PROFILE_TEST_OVERFLOW_CHECKS='true',
+            RUSTUP_TOOLCHAIN='1.97.1', RUSTC=str(tools['rustc']))
         commands = Commands(ROOT, build_output, environment, deadline_seconds=600, command_seconds=180)
         summary['stage'] = 'tool-version'
         version = commands.run('rust-version', tools['rustc'], '--version', '--verbose').decode()
@@ -164,6 +173,13 @@ def run(output, rust_bin, expected_head):
         require(file_identity(copied, 'rust-context', 32 * 1024 * 1024) == identity,
                 'rust-thread-inputs-tool-copy')
         summary['contextTool'] = identity
+        if application_diagnostic:
+            summary['stage'] = 'source-mechanism-controls'
+            controls = commands.run('owned-core-source-mechanism-controls', tools['cargo'], 'test', '--locked',
+                '--package', 'latent-component-threading', '--lib', '--', '--test-threads=1')
+            require(b'test result: ok. 70 passed; 0 failed; 0 ignored;' in controls,
+                    'rust-thread-inputs-exact-source-mechanism-controls')
+            summary['sourceMechanismControlsPassed'] = 70
         summary['stage'] = 'owned-sysroot-build'
         built = std.build(archive, output / 'owned-sysroot', rust_bin, threads=True)
         require(built['profile'] == std.THREAD_PROFILE
@@ -172,8 +188,13 @@ def run(output, rust_bin, expected_head):
                 and built['compilerDistributionDigest'] == summary['compilerDistributionDigest'],
                 'rust-thread-inputs-sysroot-profile')
         summary['sysrootIdentity'] = built['identity']
+        if application_diagnostic:
+            from tools import compile_rust_owned_thread_application as application
+            summary['stage'] = 'ordinary-application-core-diagnostic'
+            summary['applicationDiagnostic'] = application.run(output / 'application-diagnostic',
+                rust_bin, output / 'owned-sysroot', copied, deadline=started + 600)
         summary['stage'] = 'recheck'
-        require(sources(expected_head) == original, 'rust-thread-inputs-source-mutated')
+        require(sources(expected_head, application_diagnostic) == original, 'rust-thread-inputs-source-mutated')
         require(distribution(rust_bin.parent) == compiler
                 and {name: file_identity(path, name) for name, path in tools.items()} == identities,
                 'rust-thread-inputs-compiler-mutated')
@@ -199,9 +220,11 @@ def main(argv=None):
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--rust-bin', type=Path, required=True)
     parser.add_argument('--expected-head', required=True)
+    parser.add_argument('--application-diagnostic', action='store_true')
     args = parser.parse_args(argv)
     try:
-        value = run(args.output, args.rust_bin, args.expected_head)
+        value = run(args.output, args.rust_bin, args.expected_head,
+                    application_diagnostic=args.application_diagnostic)
         print(json.dumps({key: value[key] for key in ('status', 'contextTool', 'sysrootIdentity')}))
         return 0
     except (ValueError, OSError, RuntimeError) as error:

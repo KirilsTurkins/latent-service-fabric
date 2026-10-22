@@ -20,6 +20,10 @@ pub struct RootReceipt {
     pub lifecycle_global: u32,
     pub root_stack_low: u32,
     pub root_stack_high: u32,
+    pub post_return_function: Option<u32>,
+    pub original_post_return_body: Option<u32>,
+    pub realloc_function: Option<u32>,
+    pub original_realloc_body: Option<u32>,
     pub root_export_bootstrap_qualified: bool,
     pub canonical_creation_enabled: bool,
 }
@@ -39,6 +43,8 @@ struct Root {
     get: u32,
     set: u32,
     low: u32,
+    post_return: Option<(u32, u32, Vec<ValType>)>,
+    realloc: Option<(u32, u32)>,
 }
 
 fn value(ty: wasmparser::ValType) -> Result<ValType, &'static str> {
@@ -51,7 +57,12 @@ fn value(ty: wasmparser::ValType) -> Result<ValType, &'static str> {
     })
 }
 
-fn inspect(input: &[u8], thread: &ThreadEntryReceipt) -> Result<Root, &'static str> {
+fn inspect(
+    input: &[u8],
+    thread: &ThreadEntryReceipt,
+    post_return: Option<&str>,
+    realloc: Option<&str>,
+) -> Result<Root, &'static str> {
     let base = plan(input)?;
     let mut types = Vec::new();
     let mut functions = Vec::new();
@@ -114,7 +125,10 @@ fn inspect(input: &[u8], thread: &ThreadEntryReceipt) -> Result<Root, &'static s
                             return Err("rust-root-stack-low-export");
                         }
                     }
-                    if [ROOT, BOOT, FINISH, REAP].contains(&export.name) {
+                    if [ROOT, BOOT, FINISH, REAP].contains(&export.name)
+                        || post_return == Some(export.name)
+                        || realloc == Some(export.name)
+                    {
                         if export.kind != ExternalKind::Func
                             || exports.insert(export.name, export.index).is_some()
                         {
@@ -127,7 +141,15 @@ fn inspect(input: &[u8], thread: &ThreadEntryReceipt) -> Result<Root, &'static s
             _ => {}
         }
     }
-    if exports.len() != 4 || globals >= MAX_FUNCTIONS || functions.len() >= MAX_FUNCTIONS as usize {
+    if exports.len() != 4 + usize::from(post_return.is_some()) + usize::from(realloc.is_some())
+        || globals >= MAX_FUNCTIONS
+        || base.imported_functions
+            + base.function_count
+            + 1
+            + u32::from(post_return.is_some())
+            + u32::from(realloc.is_some())
+            > MAX_FUNCTIONS
+    {
         return Err("rust-root-support-exports-or-bounds");
     }
     let function_type = |name: &str| -> Result<(u32, &wasmparser::FuncType), &'static str> {
@@ -163,7 +185,7 @@ fn inspect(input: &[u8], thread: &ThreadEntryReceipt) -> Result<Root, &'static s
         .values()
         .copied()
         .collect::<std::collections::BTreeSet<_>>();
-    if distinct.len() != 4
+    if distinct.len() != 4 + usize::from(post_return.is_some()) + usize::from(realloc.is_some())
         || distinct.contains(&thread.entry_function)
         || distinct.contains(&thread.stack.helper_get_function)
         || distinct.contains(&thread.stack.helper_set_function)
@@ -242,6 +264,40 @@ fn inspect(input: &[u8], thread: &ThreadEntryReceipt) -> Result<Root, &'static s
         get: thread.stack.helper_get_function,
         set: thread.stack.helper_set_function,
         low,
+        realloc: match realloc {
+            None => None,
+            Some(name) => {
+                let (ty, function) = function_type(name)?;
+                if function.params() != [wasmparser::ValType::I32; 4]
+                    || function.results() != [wasmparser::ValType::I32]
+                {
+                    return Err("rust-root-realloc-signature");
+                }
+                Some((exports[name], ty))
+            }
+        },
+        post_return: match post_return {
+            None => None,
+            Some(name) => {
+                let (ty, function) = function_type(name)?;
+                if !function.results().is_empty()
+                    || function.params() != root.results()
+                    || function.params().len() > 16
+                {
+                    return Err("rust-root-post-return-flat-signature");
+                }
+                Some((
+                    exports[name],
+                    ty,
+                    function
+                        .params()
+                        .iter()
+                        .copied()
+                        .map(value)
+                        .collect::<Result<_, _>>()?,
+                ))
+            }
+        },
     })
 }
 
@@ -258,30 +314,26 @@ fn reject(body: &mut Function) {
         .instruction(&Instruction::End);
 }
 impl Root {
-    fn wrapper(&self) -> Function {
-        let context = self.params.len() as u32;
-        let mut locals = vec![(1, ValType::I32)];
-        locals.extend(self.results.iter().map(|ty| (1, *ty)));
-        let mut body = Function::new(locals);
+    fn bootstrap(&self, body: &mut Function, context: u32) {
         body.instruction(&Instruction::GlobalGet(self.lifecycle));
-        reject(&mut body);
+        reject(body);
         body.instruction(&Instruction::Call(self.base.context_get));
-        reject(&mut body);
+        reject(body);
         body.instruction(&Instruction::GlobalGet(self.base.stack_global))
             .instruction(&Instruction::I32Const(self.base.stack_initial as i32))
             .instruction(&Instruction::I32Ne);
-        reject(&mut body);
+        reject(body);
         body.instruction(&Instruction::I32Const(self.low as i32));
         body.instruction(&Instruction::GlobalGet(self.base.stack_global))
             .instruction(&Instruction::Call(self.boot))
             .instruction(&Instruction::LocalTee(context))
             .instruction(&Instruction::I32Eqz);
-        reject(&mut body);
+        reject(body);
         body.instruction(&Instruction::LocalGet(context))
             .instruction(&Instruction::I32Load(address(12)))
             .instruction(&Instruction::I32Const(1))
             .instruction(&Instruction::I32Ne);
-        reject(&mut body);
+        reject(body);
         for (offset, expected) in [
             (0, self.base.stack_initial),
             (4, self.low),
@@ -291,12 +343,12 @@ impl Root {
                 .instruction(&Instruction::I32Load(address(offset)))
                 .instruction(&Instruction::I32Const(expected as i32))
                 .instruction(&Instruction::I32Ne);
-            reject(&mut body);
+            reject(body);
         }
         body.instruction(&Instruction::GlobalGet(self.base.stack_global))
             .instruction(&Instruction::I32Const(self.base.stack_initial as i32))
             .instruction(&Instruction::I32Ne);
-        reject(&mut body);
+        reject(body);
         body.instruction(&Instruction::LocalGet(context))
             .instruction(&Instruction::I32Const(2))
             .instruction(&Instruction::I32Store(address(12)))
@@ -304,6 +356,42 @@ impl Root {
             .instruction(&Instruction::Call(self.context_set))
             .instruction(&Instruction::I32Const(1))
             .instruction(&Instruction::GlobalSet(self.lifecycle));
+    }
+    fn wrapper(&self) -> Function {
+        let context = self.params.len() as u32;
+        let mut locals = vec![(1, ValType::I32)];
+        locals.extend(self.results.iter().map(|ty| (1, *ty)));
+        let mut body = Function::new(locals);
+        if self.realloc.is_some() {
+            body.instruction(&Instruction::GlobalGet(self.lifecycle))
+                .instruction(&Instruction::I32Eqz)
+                .instruction(&Instruction::If(BlockType::Empty));
+            self.bootstrap(&mut body, context);
+            body.instruction(&Instruction::Else)
+                .instruction(&Instruction::GlobalGet(self.lifecycle))
+                .instruction(&Instruction::I32Const(6))
+                .instruction(&Instruction::I32Ne);
+            reject(&mut body);
+            body.instruction(&Instruction::Call(self.base.context_get))
+                .instruction(&Instruction::LocalTee(context))
+                .instruction(&Instruction::I32Eqz);
+            reject(&mut body);
+            body.instruction(&Instruction::LocalGet(context))
+                .instruction(&Instruction::I32Load(address(12)))
+                .instruction(&Instruction::I32Const(2))
+                .instruction(&Instruction::I32Ne);
+            reject(&mut body);
+            body.instruction(&Instruction::LocalGet(context))
+                .instruction(&Instruction::I32Load(address(0)))
+                .instruction(&Instruction::I32Const(self.base.stack_initial as i32))
+                .instruction(&Instruction::I32Ne);
+            reject(&mut body);
+            body.instruction(&Instruction::I32Const(1))
+                .instruction(&Instruction::GlobalSet(self.lifecycle))
+                .instruction(&Instruction::End);
+        } else {
+            self.bootstrap(&mut body, context);
+        }
         for index in 0..self.params.len() as u32 {
             body.instruction(&Instruction::LocalGet(index));
         }
@@ -313,6 +401,111 @@ impl Root {
         }
         body.instruction(&Instruction::LocalGet(context))
             .instruction(&Instruction::Call(self.finish));
+        body.instruction(&Instruction::Call(self.base.context_get))
+            .instruction(&Instruction::LocalGet(context))
+            .instruction(&Instruction::I32Ne);
+        reject(&mut body);
+        body.instruction(&Instruction::LocalGet(context))
+            .instruction(&Instruction::I32Load(address(12)))
+            .instruction(&Instruction::I32Const(4))
+            .instruction(&Instruction::I32Ne);
+        reject(&mut body);
+        body.instruction(&Instruction::LocalGet(context))
+            .instruction(&Instruction::I32Load(address(0)))
+            .instruction(&Instruction::LocalGet(context))
+            .instruction(&Instruction::I32Load(address(8)))
+            .instruction(&Instruction::I32Ne);
+        reject(&mut body);
+        if self.post_return.is_some() {
+            // The original root body and async TLS/drain have returned, but
+            // actual canonical result cleanup still owns this installed root.
+            // No System release, context detach or Task settlement occurs yet.
+            body.instruction(&Instruction::I32Const(4))
+                .instruction(&Instruction::GlobalSet(self.lifecycle));
+        } else {
+            body.instruction(&Instruction::LocalGet(context))
+                .instruction(&Instruction::I32Const(5))
+                .instruction(&Instruction::I32Store(address(12)))
+                .instruction(&Instruction::I32Const(0))
+                .instruction(&Instruction::Call(self.context_set))
+                .instruction(&Instruction::I32Const(3))
+                .instruction(&Instruction::GlobalSet(self.lifecycle))
+                .instruction(&Instruction::LocalGet(context))
+                .instruction(&Instruction::Call(self.reap))
+                .instruction(&Instruction::I32Const(2))
+                .instruction(&Instruction::GlobalSet(self.lifecycle));
+        }
+        for index in 0..self.results.len() as u32 {
+            body.instruction(&Instruction::LocalGet(context + 1 + index));
+        }
+        body.instruction(&Instruction::End);
+        body
+    }
+    fn realloc_wrapper(&self) -> Function {
+        let context = 4;
+        let mut body = Function::new([(3, ValType::I32)]);
+        body.instruction(&Instruction::GlobalGet(self.lifecycle))
+            .instruction(&Instruction::I32Eqz)
+            .instruction(&Instruction::If(BlockType::Empty));
+        self.bootstrap(&mut body, context);
+        body.instruction(&Instruction::I32Const(6))
+            .instruction(&Instruction::GlobalSet(self.lifecycle))
+            .instruction(&Instruction::Else);
+        body.instruction(&Instruction::GlobalGet(self.lifecycle))
+            .instruction(&Instruction::I32Const(6))
+            .instruction(&Instruction::I32Eq)
+            .instruction(&Instruction::GlobalGet(self.lifecycle))
+            .instruction(&Instruction::I32Const(1))
+            .instruction(&Instruction::I32Eq)
+            .instruction(&Instruction::I32Or)
+            .instruction(&Instruction::I32Eqz);
+        reject(&mut body);
+        body.instruction(&Instruction::Call(self.base.context_get))
+            .instruction(&Instruction::LocalTee(context))
+            .instruction(&Instruction::I32Eqz);
+        reject(&mut body);
+        body.instruction(&Instruction::End);
+        body.instruction(&Instruction::LocalGet(context))
+            .instruction(&Instruction::I32Load(address(0)))
+            .instruction(&Instruction::LocalSet(6));
+        for index in 0..4 {
+            body.instruction(&Instruction::LocalGet(index));
+        }
+        body.instruction(&Instruction::Call(
+            self.cloned + 1 + u32::from(self.post_return.is_some()),
+        ))
+        .instruction(&Instruction::LocalSet(5))
+        .instruction(&Instruction::Call(self.base.context_get))
+        .instruction(&Instruction::LocalGet(context))
+        .instruction(&Instruction::I32Ne);
+        reject(&mut body);
+        body.instruction(&Instruction::LocalGet(context))
+            .instruction(&Instruction::I32Load(address(0)))
+            .instruction(&Instruction::LocalGet(6))
+            .instruction(&Instruction::I32Ne);
+        reject(&mut body);
+        body.instruction(&Instruction::LocalGet(5))
+            .instruction(&Instruction::End);
+        body
+    }
+    fn post_return_wrapper(&self) -> Function {
+        let (_, _, params) = self.post_return.as_ref().expect("selected post-return");
+        let context = params.len() as u32;
+        let mut body = Function::new([(1, ValType::I32)]);
+        body.instruction(&Instruction::GlobalGet(self.lifecycle))
+            .instruction(&Instruction::I32Const(4))
+            .instruction(&Instruction::I32Ne);
+        reject(&mut body);
+        body.instruction(&Instruction::Call(self.base.context_get))
+            .instruction(&Instruction::LocalTee(context))
+            .instruction(&Instruction::I32Eqz);
+        reject(&mut body);
+        body.instruction(&Instruction::I32Const(5))
+            .instruction(&Instruction::GlobalSet(self.lifecycle));
+        for index in 0..params.len() as u32 {
+            body.instruction(&Instruction::LocalGet(index));
+        }
+        body.instruction(&Instruction::Call(self.cloned + 1));
         body.instruction(&Instruction::Call(self.base.context_get))
             .instruction(&Instruction::LocalGet(context))
             .instruction(&Instruction::I32Ne);
@@ -339,9 +532,6 @@ impl Root {
             .instruction(&Instruction::Call(self.reap))
             .instruction(&Instruction::I32Const(2))
             .instruction(&Instruction::GlobalSet(self.lifecycle));
-        for index in 0..self.results.len() as u32 {
-            body.instruction(&Instruction::LocalGet(context + 1 + index));
-        }
         body.instruction(&Instruction::End);
         body
     }
@@ -390,6 +580,8 @@ struct RewriteRoot {
     plan: Root,
     next: u32,
     original: Option<Function>,
+    original_post_return: Option<Function>,
+    original_realloc: Option<Function>,
 }
 impl Reencode for RewriteRoot {
     type Error = &'static str;
@@ -416,6 +608,12 @@ impl Reencode for RewriteRoot {
     ) -> Result<(), reencode::Error<Self::Error>> {
         reencode::utils::parse_function_section(self, section, reader)?;
         section.function(self.plan.ty);
+        if let Some((_, ty, _)) = self.plan.post_return.as_ref() {
+            section.function(*ty);
+        }
+        if let Some((_, ty)) = self.plan.realloc {
+            section.function(ty);
+        }
         Ok(())
     }
     fn parse_function_body(
@@ -437,6 +635,17 @@ impl Reencode for RewriteRoot {
         if index == self.plan.root {
             self.original = Some(function);
             code.function(&self.plan.wrapper());
+        } else if self
+            .plan
+            .post_return
+            .as_ref()
+            .is_some_and(|(target, _, _)| *target == index)
+        {
+            self.original_post_return = Some(function);
+            code.function(&self.plan.post_return_wrapper());
+        } else if self.plan.realloc.is_some_and(|(target, _)| target == index) {
+            self.original_realloc = Some(function);
+            code.function(&self.plan.realloc_wrapper());
         } else {
             code.function(&function);
         }
@@ -453,6 +662,22 @@ impl Reencode for RewriteRoot {
                 .as_ref()
                 .ok_or(reencode::Error::UserError("rust-root-body-missing"))?,
         );
+        if self.plan.post_return.is_some() {
+            code.function(
+                self.original_post_return
+                    .as_ref()
+                    .ok_or(reencode::Error::UserError(
+                        "rust-root-post-return-body-missing",
+                    ))?,
+            );
+        }
+        if self.plan.realloc.is_some() {
+            code.function(
+                self.original_realloc
+                    .as_ref()
+                    .ok_or(reencode::Error::UserError("rust-root-realloc-body-missing"))?,
+            );
+        }
         Ok(())
     }
 }
@@ -465,11 +690,39 @@ pub fn transform_owned_root_bootstrap(
     expected_preimage: [u8; 32],
     thread: &ThreadEntryReceipt,
 ) -> Result<(Vec<u8>, RootReceipt), &'static str> {
+    transform(input, expected_preimage, thread, None, None)
+}
+
+/// Preserve the real installed root context and logical owners through the
+/// exact ordinary canonical allocator/post-return functions selected from WIT.
+/// This does not authenticate those bodies or enable a standard runtime.
+pub fn transform_owned_canonical_root_bootstrap(
+    input: &[u8],
+    expected_preimage: [u8; 32],
+    thread: &ThreadEntryReceipt,
+    post_return: Option<&str>,
+    realloc: Option<&str>,
+) -> Result<(Vec<u8>, RootReceipt), &'static str> {
+    if post_return.is_some_and(|s| !s.starts_with("cabi_post_") || s.len() > 768)
+        || realloc.is_some_and(|s| s != "cabi_realloc")
+    {
+        return Err("rust-root-explicit-canonical-export-name");
+    }
+    transform(input, expected_preimage, thread, post_return, realloc)
+}
+
+fn transform(
+    input: &[u8],
+    expected_preimage: [u8; 32],
+    thread: &ThreadEntryReceipt,
+    post_return: Option<&str>,
+    realloc: Option<&str>,
+) -> Result<(Vec<u8>, RootReceipt), &'static str> {
     let original_digest = Sha256::digest(input).into();
     if original_digest != expected_preimage || original_digest != thread.stack.derived_digest {
         return Err("rust-root-thread-transform-preimage-mismatch");
     }
-    let root = inspect(input, thread)?;
+    let root = inspect(input, thread, post_return, realloc)?;
     let mut receipt = RootReceipt {
         original_digest,
         derived_digest: [0; 32],
@@ -481,6 +734,12 @@ pub fn transform_owned_root_bootstrap(
         lifecycle_global: root.lifecycle,
         root_stack_low: root.low,
         root_stack_high: root.base.stack_initial,
+        post_return_function: root.post_return.as_ref().map(|(function, _, _)| *function),
+        original_post_return_body: root.post_return.as_ref().map(|_| root.cloned + 1),
+        realloc_function: root.realloc.map(|(function, _)| function),
+        original_realloc_body: root
+            .realloc
+            .map(|_| root.cloned + 1 + u32::from(root.post_return.is_some())),
         root_export_bootstrap_qualified: false,
         canonical_creation_enabled: false,
     };
@@ -488,6 +747,8 @@ pub fn transform_owned_root_bootstrap(
         plan: root,
         next: 0,
         original: None,
+        original_post_return: None,
+        original_realloc: None,
     };
     let mut module = Module::new();
     rewrite
@@ -514,6 +775,9 @@ mod tests {
     };
 
     fn fixture(low: bool, alias: bool) -> Vec<u8> {
+        canonical_fixture(low, alias, false)
+    }
+    fn canonical_fixture(low: bool, alias: bool, canonical: bool) -> Vec<u8> {
         let mut module = Module::new();
         let mut types = TypeSection::new();
         types.ty().function([], [ValType::I32]);
@@ -527,6 +791,10 @@ mod tests {
         types
             .ty()
             .function([ValType::I32, ValType::I64], [ValType::I64, ValType::I32]);
+        if canonical {
+            types.ty().function([ValType::I64, ValType::I32], []);
+            types.ty().function([ValType::I32; 4], [ValType::I32]);
+        }
         module.section(&types);
         let mut imports = ImportSection::new();
         imports.import("$root", "[context-get-1]", EntityType::Function(0));
@@ -541,6 +809,10 @@ mod tests {
         let mut functions = FunctionSection::new();
         for ty in [1, 4, 2, 1, 1] {
             functions.function(ty);
+        }
+        if canonical {
+            functions.function(5);
+            functions.function(6);
         }
         module.section(&functions);
         let mut tables = TableSection::new();
@@ -594,6 +866,14 @@ mod tests {
         ] {
             exports.export(name, ExportKind::Func, index);
         }
+        if canonical {
+            exports.export(
+                "cabi_post_examples:ordinary/run@1.0.0#run",
+                ExportKind::Func,
+                9,
+            );
+            exports.export("cabi_realloc", ExportKind::Func, 10);
+        }
         module.section(&exports);
         let mut elements = ElementSection::new();
         elements.active(
@@ -623,6 +903,20 @@ mod tests {
             let mut body = Function::new([]);
             body.instruction(&Instruction::End);
             code.function(&body);
+        }
+        if canonical {
+            // Encoded mechanism fixtures only: not execution of an original
+            // allocator, bindgen post-return or selected Rust runtime.
+            let mut post = Function::new([]);
+            post.instruction(&Instruction::GlobalGet(0))
+                .instruction(&Instruction::Drop)
+                .instruction(&Instruction::End);
+            code.function(&post);
+            let mut realloc = Function::new([]);
+            realloc
+                .instruction(&Instruction::LocalGet(3))
+                .instruction(&Instruction::End);
+            code.function(&realloc);
         }
         module.section(&code);
         module.finish()
@@ -779,5 +1073,87 @@ mod tests {
         assert!(!admission.component_routing_authenticated);
         assert!(!admission.canonical_creation_enabled);
         assert!(!root.root_export_bootstrap_qualified);
+    }
+
+    #[test]
+    fn canonical_post_return_keeps_root_context_until_actual_cleanup_returns() {
+        let input = canonical_fixture(true, false, true);
+        let (threaded, thread) = transform_owned_thread_entry(&input, digest(&input)).unwrap();
+        let (output, receipt) = transform_owned_canonical_root_bootstrap(
+            &threaded,
+            digest(&threaded),
+            &thread,
+            Some("cabi_post_examples:ordinary/run@1.0.0#run"),
+            Some("cabi_realloc"),
+        )
+        .unwrap();
+        assert_eq!(receipt.post_return_function, Some(9));
+        assert_eq!(receipt.realloc_function, Some(10));
+        assert_eq!(
+            receipt.original_post_return_body,
+            Some(receipt.original_rust_body + 1)
+        );
+        assert_eq!(
+            receipt.original_realloc_body,
+            Some(receipt.original_rust_body + 2)
+        );
+        let bodies = bodies(&output);
+        let calls = |body: &wasmparser::FunctionBody<'_>| {
+            let mut reader = body.get_operators_reader().unwrap();
+            let mut calls = Vec::new();
+            while !reader.eof() {
+                if let Operator::Call { function_index } = reader.read().unwrap() {
+                    calls.push(function_index);
+                }
+            }
+            calls
+        };
+        let root_calls = calls(&bodies[1]);
+        assert!(root_calls.contains(&receipt.finish_function));
+        assert!(!root_calls.contains(&receipt.reap_function));
+        let post_calls = calls(&bodies[5]);
+        assert!(post_calls.contains(&receipt.original_post_return_body.unwrap()));
+        assert!(post_calls.contains(&receipt.reap_function));
+        assert!(!post_calls.contains(&receipt.finish_function));
+        let realloc_calls = calls(&bodies[6]);
+        assert!(realloc_calls.contains(&receipt.original_realloc_body.unwrap()));
+        assert!(realloc_calls.contains(&receipt.bootstrap_function));
+        assert!(!realloc_calls.contains(&receipt.finish_function));
+        assert!(!realloc_calls.contains(&receipt.reap_function));
+        let (admitted, admission) =
+            transform_owned_thread_admission(&output, digest(&output)).unwrap();
+        Validator::new().validate_all(&admitted).unwrap();
+        assert!(!receipt.canonical_creation_enabled && !receipt.root_export_bootstrap_qualified);
+        assert!(
+            !admission.component_routing_authenticated && !admission.canonical_creation_enabled
+        );
+    }
+
+    #[test]
+    fn canonical_cleanup_names_and_actual_exports_are_required() {
+        let input = fixture(true, false);
+        let (threaded, thread) = transform_owned_thread_entry(&input, digest(&input)).unwrap();
+        assert_eq!(
+            transform_owned_canonical_root_bootstrap(
+                &threaded,
+                digest(&threaded),
+                &thread,
+                Some("ordinary-user-cleanup"),
+                None,
+            )
+            .unwrap_err(),
+            "rust-root-explicit-canonical-export-name"
+        );
+        assert_eq!(
+            transform_owned_canonical_root_bootstrap(
+                &threaded,
+                digest(&threaded),
+                &thread,
+                Some("cabi_post_examples:ordinary/run@1.0.0#run"),
+                Some("cabi_realloc"),
+            )
+            .unwrap_err(),
+            "rust-root-support-exports-or-bounds"
+        );
     }
 }

@@ -1,0 +1,230 @@
+"""Compile one captured ordinary ThreadPool core, then expose real graph gaps.
+
+The production component selector remains closed. This explicit compiler-only
+programme reuses its original capture, Prepared, isolation and approval pieces;
+it never writes BUILD-COMPLETE or packages, signs, invokes or enables a runtime.
+"""
+from __future__ import annotations
+
+from pathlib import Path
+import shutil
+import tarfile
+import tempfile
+import time
+import sys
+
+from tools import rust_owned_thread_fixture as fixture, rust_standard_logging_inputs as standard
+from tools import rust_capsule_build as builder, rust_owned_thread_component as component
+from tools import rust_standard_thread_capture as port
+from tools.application_dependencies import prepare, verify_inputs
+from tools.application_dependency_approval import approve, request
+from tools.build_observation import build_environment, file_identity, resolve_tools
+from tools.captured_compiler_isolation import Isolation
+from tools.dev_workflow.common import require
+from tools.guest_dependency_inputs import capture_source
+from tools.rust_application_dependencies import configure
+from tools.rust_capsule_project import (
+    canonical, checked_path, decode_json, digest, fresh, inventory, read_file, snapshot, write_json,
+    sdk_files,
+)
+
+RECIPE = tuple(dict.fromkeys(('tools/compile_rust_owned_thread_application.py',
+    'tools/install_guest_bindgen.py', 'tools/toolchain.toml',
+    'tools/toolchain-smoke/examples/tutorial_greeting/component.rs',
+    'tools/toolchain-smoke/examples/tutorial_greeting/world.wit',
+    *builder.RECIPE, *standard.source_build_inputs(standard.THREAD), *fixture.RECIPE,
+    *sdk_files())))
+MAX_CORE = 8 * 1024 * 1024
+
+
+def emitted_core(raw: bytes, work: Path, target: Path, name: str) -> Path:
+    require(len(raw) <= 4 * 1024 * 1024, 'rust-thread-app-cargo-output-bound')
+    lines = raw.splitlines()
+    require(len(lines) <= 8192, 'rust-thread-app-cargo-record-bound')
+    selected, finished = [], False
+    for line in lines:
+        row = decode_json(line)
+        require(isinstance(row, dict) and not finished, 'rust-thread-app-cargo-terminal')
+        if row.get('reason') == 'build-finished':
+            require(row.get('success') is True, 'rust-thread-app-build-failed')
+            finished = True
+        if row.get('reason') != 'compiler-artifact' or row.get('target', {}).get('name') != name:
+            continue
+        require(row['target'].get('crate_types') == ['cdylib']
+                and row.get('profile', {}).get('test') is False
+                and row.get('manifest_path') == str(work / 'Cargo.toml')
+                and isinstance(row.get('filenames'), list) and len(row['filenames']) <= 16,
+                'rust-thread-app-emitted-target')
+        for value in row['filenames']:
+            require(isinstance(value, str), 'rust-thread-app-emitted-path')
+            path = checked_path(Path(value))
+            if path.suffix == '.wasm':
+                require(path.is_relative_to(target), 'rust-thread-app-core-outside-target')
+                selected.append(path)
+    require(finished and len(selected) == 1, 'rust-thread-app-core-emission-closure')
+    return selected[0]
+
+
+def source_archive(app: Path, output: Path):
+    """Retain the actual normal source/capture/CAS, without compiler outputs."""
+    count, total = 0, 0
+    with tarfile.open(output, 'w:gz') as archive:
+        for path in sorted(app.rglob('*')):
+            relative = path.relative_to(app)
+            if relative.parts[0] == 'target':
+                continue
+            checked_path(path)
+            if path.is_dir():
+                continue
+            count += 1
+            raw = read_file(path, 4 * 1024 * 1024)
+            total += len(raw)
+            require(count <= 32768 and total <= 32 * 1024 * 1024,
+                    'rust-thread-app-retained-source-bound')
+            archive.add(path, arcname=relative.as_posix(), recursive=False)
+            require(output.stat().st_size <= 32 * 1024 * 1024,
+                    'rust-thread-app-source-archive-bound')
+    return file_identity(output, 'application-source-and-capture.tar.gz', 32 * 1024 * 1024)
+
+
+def run(output: Path, rust_bin: Path, owned_sysroot: Path, context_tool: Path, *, deadline: float):
+    require(sys.platform == 'linux', 'rust-thread-app-linux-captured-compiler-required')
+    output = fresh(output)
+    record = {'schemaVersion': 'latent.rust.ordinary-thread-core-observation.v1',
+              'status': 'in-progress', 'stage': 'prepare', 'actualGuestExecuted': False,
+              'ordinaryThreadPoolQualified': False, 'privateExecutorGraphAuthenticated': False,
+              'canonicalAbiBodiesAuthenticated': False, 'canonicalCreationEnabled': False,
+              'standardRuntimeQualified': False, 'normalBuildComplete': False}
+    commands = None
+    try:
+        rust_bin, context_tool = checked_path(rust_bin), checked_path(context_tool)
+        prepared = standard.Prepared(owned_sysroot, rust_bin / 'rustc', standard.THREAD)
+        try:
+            component.select(prepared, rust_bin / 'rustc')
+        except ValueError as error:
+            require(str(error) == 'rust-thread-private-executor-and-canonical-graph-unqualified',
+                    'rust-thread-app-production-gate-changed')
+        else:
+            raise ValueError('rust-thread-app-unqualified-production-gate-open')
+        record['normalComponentGateRefused'] = True
+        require(time.monotonic() < deadline, 'rust-thread-app-programme-deadline')
+        with tempfile.TemporaryDirectory(prefix='lsf-rust-thread-input-') as directory:
+            temporary = Path(directory)
+            record['stage'] = 'normal-source-and-capture'
+            app, captured = fixture.prepare(temporary / 'application', rust_bin / 'cargo')
+            record['capture'] = captured
+            observed = capture_source(app, 'rust')
+            files = observed.files
+            project, pins = builder.validate_project(files)
+            require(standard.selection(project) == standard.THREAD,
+                    'rust-thread-app-selected-profile')
+            verified = verify_inputs(observed.dependency_root, 'rust')
+            require(verified is not None, 'rust-thread-app-original-capture-required')
+            port.verify_capture(verified, standard.THREAD)
+            source = inventory(files)
+            (output / 'source-inputs.json').write_bytes(source)
+            record['retainedOriginalSource'] = source_archive(app, output / 'application-source-and-capture.tar.gz')
+            work = temporary / 'compiler/source'
+            work.mkdir(parents=True)
+            for name, raw in files.items():
+                path = work / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(raw)
+            environment = build_environment(temporary)
+            environment.update(CARGO_NET_OFFLINE='true', RUSTUP_AUTO_INSTALL='0',
+                CARGO_INCREMENTAL='0', CARGO_HOME=str(temporary / 'cargo-home'),
+                CARGO_TARGET_DIR=str(temporary / 'target'), RUSTC=str(rust_bin / 'rustc'),
+                RUSTUP_TOOLCHAIN=pins['toolchain']['rust']['toolchain'])
+            paths, identities = resolve_tools(pins['toolchain'], work, environment, installed=rust_bin)
+            for name in ('wit-bindgen', 'zig', 'sh'):
+                value = shutil.which(name, path=environment.get('PATH'))
+                require(value is not None, 'rust-thread-app-pinned-build-tool-unavailable')
+                paths[name] = checked_path(Path(value).resolve(strict=True))
+            # These existing compiler tools keep normal builder material
+            # limits; the retained owned context executable remains <=32MiB.
+            identities.extend(file_identity(paths[n], n) for n in ('wit-bindgen', 'zig', 'sh'))
+            record['tools'] = identities
+            remaining = min(600, int(deadline - time.monotonic()))
+            require(remaining > 0, 'rust-thread-app-programme-deadline')
+            commands = builder.Commands(work, output, environment,
+                deadline_seconds=remaining, command_seconds=min(180, remaining))
+            require(commands.run('zig-version', paths['zig'], 'version').decode().strip()
+                    == pins['toolchain']['sdk']['zig'], 'rust-thread-app-pinned-zig')
+            require(commands.run('bindgen-version', paths['wit-bindgen'], '--version').decode().strip()
+                    == 'wit-bindgen-cli ' + pins['toolchain']['rust']['dependencies']['wit-bindgen'],
+                    'rust-thread-app-pinned-bindgen')
+            linker = temporary / 'captured-host-linker'
+            linker.write_text('#!' + str(paths['sh'])
+                + '\nexec "$LSF_CAPTURED_ZIG" cc -target x86_64-linux-gnu.2.39 "$@"\n')
+            linker.chmod(0o700)
+            environment.update(CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER=str(linker),
+                LSF_CAPTURED_ZIG=str(paths['zig']), ZIG_GLOBAL_CACHE_DIR=str(temporary / 'zig-global'),
+                ZIG_LOCAL_CACHE_DIR=str(temporary / 'zig-local'))
+            selected = {name: paths[name] for name in ('cargo', 'rustc', 'wasm-tools', 'wit-bindgen', 'zig')}
+            selected.update(shell=paths['sh'], linker=linker)
+            isolation = Isolation(temporary, selected, {
+                'rust-compiler-and-sysroot': rust_bin.parent,
+                'zig-host-linker-and-sysroot': paths['zig'].parent,
+                'rust-standard-stdio-sysroot': prepared.root})
+            guard = builder.RustEnvironment(environment, isolation)
+            write_json(output / 'rust-compiler-inputs.json', isolation.receipt)
+            recipe = inventory({name: read_file(builder.ROOT / name) for name in RECIPE})
+            (output / 'recipe-inputs.json').write_bytes(recipe)
+            specification = request(verified, isolation, digest(canonical({
+                'sourceSnapshot': digest(source), 'prepared': digest(prepared.raw),
+                'recipe': digest(recipe)})))
+            approval = approve(verified, isolation, specification['recipeDigest'], digest(canonical(specification)))
+            write_json(output / 'executable-input-approval.json', {
+                'identity': approval.identity, 'specification': specification,
+                'scope': 'explicit-reviewed-SDK-owned-compiler-only-programme'})
+            closure = prepare(observed.dependency_root, work, output, 'rust', execution_approval=approval)
+            adapted, cargo_inputs = configure(closure, work, Path(environment['CARGO_HOME']))
+            write_json(output / 'cargo-inputs.json', cargo_inputs)
+            isolation.protect_inputs(work)
+            record['bindingDigest'] = builder.binding_check(work, pins, commands, paths['wit-bindgen'])
+            record['stage'] = 'one-isolated-offline-original-compile'
+            prepared.check()
+            raw = guard.compile(commands, paths['cargo'], [
+                'build', '--locked', '--release', '--lib', '--target', 'wasm32-unknown-unknown',
+                '--message-format=json', *prepared.arguments()], work)
+            prepared.check()
+            executable_outputs = builder.RustExecutableOutputs(temporary / 'target', output, approval.identity)
+            core_path = emitted_core(raw, work, temporary / 'target', project['name'].replace('-', '_'))
+            core = read_file(core_path, MAX_CORE)
+            (output / 'raw-core.wasm').write_bytes(core)
+            record['originalCore'] = file_identity(output / 'raw-core.wasm', 'original-core', MAX_CORE)
+            record['stage'] = 'actual-owned-core-transform'
+            commands.run('validate-original-core', paths['wasm-tools'], 'validate', output / 'raw-core.wasm')
+            commands.run('ordinary-owned-core', context_tool, '--ordinary-core', output / 'raw-core.wasm',
+                digest(core), fixture.PUBLIC, fixture.POST, 'cabi_realloc', output / 'derived')
+            commands.run('validate-derived-core', paths['wasm-tools'], 'validate', output / 'derived/core.wasm',
+                '--features', 'cm-async,cm-async-stackful,cm-more-async-builtins')
+            receipt = decode_json(read_file(output / 'derived/receipt.json'))
+            require(receipt['originalDigest'] == digest(core)
+                    and receipt['privateExecutorGraphAuthenticated'] is False
+                    and receipt['canonicalAbiBodiesAuthenticated'] is False
+                    and receipt['standardRuntimeQualified'] is False, 'rust-thread-app-source-only-receipt')
+            closure.check_unchanged()
+            executable_outputs.check_unchanged()
+            guard.check_unchanged(environment)
+            isolation.check_unchanged()
+            prepared.check()
+            compiled_source = snapshot(work, exclude=('dependencies', 'application-vendor'))
+            require(compiled_source.get('Cargo.toml') == adapted,
+                    'rust-thread-app-adapted-manifest-mutated')
+            compiled_source['Cargo.toml'] = files['Cargo.toml']
+            observed.check_unchanged()
+            require(inventory(snapshot(app)) == source
+                    and compiled_source == files
+                    and inventory({name: read_file(builder.ROOT / name) for name in RECIPE}) == recipe
+                    and time.monotonic() < deadline,
+                    'rust-thread-app-final-source-or-deadline')
+            record.update(status='observed-core-only-graph-unqualified', stage='complete',
+                          commands=commands.records, actualApplicationCoreCompiled=True)
+            write_json(output / 'observation.json', record)
+            return record
+    except Exception as error:
+        record.update(status='failed', errorType=type(error).__name__, reason=str(error),
+                      commands=[] if commands is None else commands.records)
+        write_json(output / 'FAILED.json', record)
+        raise
