@@ -1551,14 +1551,16 @@
         "namespace::tests::authority::scoped_pages_cannot_cross_caller_entity_activation_or_owned_view_and_revoke_promptly",
         "namespace::tests::cancellation_control_keeps_its_actual_owner_and_never_revives_a_closed_gate",
         "namespace::tests::delegation_service_and_shared_domains_require_explicit_distinct_policy_tuples",
-        "namespace::tests::stable_caller_identity_ignores_token_rotation_and_rejects_claimed_shared_scope"
+        "namespace::tests::stable_caller_identity_ignores_token_rotation_and_rejects_claimed_shared_scope",
+        "broker::tests::resource_table_memory::resource_table_native_backing_original_ledger_and_phase1_are_distinct_from_metadata",
+        "broker::tests::resource_table_memory::resource_table_native_backing_refusal_preserves_live_owners_and_closed_session_fence"
       ],
       "expectedIgnored": [],
       "id": "latent-capabilities.lib.latent-capabilities",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-capabilities/Cargo.toml",
-      "minimumCases": 180,
+      "minimumCases": 182,
       "mode": "libtest",
       "package": "latent-capabilities",
       "platforms": [
@@ -7462,7 +7464,13 @@
         "host::capabilities::retained::tests::retained_capability_directory_refusal_keeps_original_error_contents_and_fresh_grant",
         "host::capabilities::retained::tests::retained_capability_directory_elements_die_before_refund_even_during_unwind",
         "host::capabilities::retained::tests::retained_capability_all_three_real_directories_bind_original_budget_across_replacement",
-        "host::capabilities::retained::tests::retained_capability_empty_zst_and_phase1_paths_preserve_lazy_behavior"
+        "host::capabilities::retained::tests::retained_capability_empty_zst_and_phase1_paths_preserve_lazy_behavior",
+        "host::streaming_http::table::tests::native_streaming_http_pending_reservation_outlives_table_without_cross_budget_credit",
+        "host::streaming_http::table::shared::tests::native_streaming_shared_arc_clones_hold_original_backing_and_phase1_stays_unbound",
+        "host::streaming_http::table::shared::tests::native_streaming_shared_arc_refusal_preserves_exact_budget_and_fresh_same_grant",
+        "host::streaming_http::table::shared::tests::native_streaming_shared_arc_concurrent_last_clones_drop_payload_once_before_refund",
+        "host::streaming_http::table::shared::tests::native_streaming_shared_arc_payload_unwind_still_retires_its_original_owner",
+        "host::blob::table::tests::blob_table_native_backing_retains_unused_slots_and_actual_values_until_drop"
       ],
       "expectedIgnored": [
         "cache::measurement::cache_lookup_collector",
@@ -7475,7 +7483,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 469,
+      "minimumCases": 475,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [
