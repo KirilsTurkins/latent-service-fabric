@@ -7447,7 +7447,12 @@
         "host::native_linear_memory_tests::actual_linear_growth_confirms_success_and_failed_growth_preserves_prior_peak",
         "host::owned_context::tests::retained_context_uses_original_memory_until_drop_and_rolls_back_refused_admission",
         "host::owned_context::tests::retained_context_bound_excludes_discarded_scaffolding_and_caller_web_identity",
-        "host::owned_context::tests::retained_context_keeps_legacy_profile_unaccounted_and_arithmetic_checked"
+        "host::owned_context::tests::retained_context_keeps_legacy_profile_unaccounted_and_arithmetic_checked",
+        "host::native_host_future_tests::actual_host_future_typed_and_dynamic_boxes_retain_original_memory_while_pending",
+        "host::native_host_future_tests::actual_host_future_refusal_preserves_original_error_and_fresh_budget_reuse",
+        "host::native_host_future_tests::actual_host_future_cancellation_cannot_credit_another_live_store",
+        "host::native_host_future_tests::actual_host_future_callback_error_is_unchanged_and_its_box_retires",
+        "host::native_host_future_tests::actual_host_future_legacy_unaccounted_embedding_keeps_original_scalar_result"
       ],
       "expectedIgnored": [
         "cache::measurement::cache_lookup_collector",
@@ -7460,7 +7465,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 454,
+      "minimumCases": 459,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [

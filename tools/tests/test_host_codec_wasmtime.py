@@ -114,7 +114,7 @@ class PinnedWasmtimeSource(unittest.TestCase):
                 registry.workspace(root)
 
     def test_actual_table_hook_sources_and_new_cohort_require_exact_postimages(self):
-        self.assertEqual(source.COHORT, 'wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-memory-v7')
+        self.assertEqual(source.COHORT, 'wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-memory-v8')
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             self.fixture(root)
@@ -202,6 +202,20 @@ class PinnedWasmtimeSource(unittest.TestCase):
                     with self.assertRaisesRegex(ValueError, 'host-codec-wasmtime-source-identity'):
                         source.verify(root)
                     target.write_bytes(original)
+            self.assertEqual(len(source.verify(root)['files']), 259)
+
+
+    def test_per_call_host_future_owner_requires_its_exact_source_postimage(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.fixture(root)
+            target = root / source.PROVIDER / 'src/runtime/component/func/host.rs'
+            original = target.read_bytes()
+            self.assertIn(b'future: Box::pin(future)', original)
+            target.write_bytes(original.replace(b'future: Box::pin(future)', b'future: unreviewed_future(future)', 1))
+            with self.assertRaisesRegex(ValueError, 'host-codec-wasmtime-source-identity'):
+                source.verify(root)
+            target.write_bytes(original)
             self.assertEqual(len(source.verify(root)['files']), 259)
 
 
