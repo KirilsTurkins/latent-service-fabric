@@ -1335,7 +1335,7 @@ jobs:
             ${{ runner.temp }}/stream-kernel-objects/objects/net/core/filter.o
             ${{ runner.temp }}/stream-kernel-objects/objects/kernel/signal.o
             ${{ runner.temp }}/stream-kernel-objects/objects/fs/fcntl.o
-            ${{ runner.temp }}/stream-kernel-objects/objects/kernel/sched/wait.o
+            ${{ runner.temp }}/stream-kernel-objects/objects/kernel/sched/build_utility.o
             ${{ runner.temp }}/stream-kernel-objects/objects/kernel/sched/core.o
             ${{ runner.temp }}/stream-kernel-objects/objects/fs/select.o
             ${{ runner.temp }}/stream-kernel-objects/objects/fs/eventpoll.o

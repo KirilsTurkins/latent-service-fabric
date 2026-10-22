@@ -1105,6 +1105,39 @@ class KernelRegistrationObjectSelection(unittest.TestCase):
 
 
 class KernelRecipientObjectSelection(unittest.TestCase):
+    def test_wait_uses_authenticated_maintained_containing_tu_without_invented_prologue(self):
+        import hashlib
+        selected = candidate.object_selection(False, recipient=True)
+        self.assertNotIn('kernel/sched/wait.o', selected)
+        self.assertEqual(selected['kernel/sched/build_utility.o'],
+            ('lsf_prepaid_device_wake', 'lsf_prepaid_device_wake_sync', 'lsf_prepaid_device_wake_locked'))
+        names = ('kernel/sched/Makefile', 'kernel/sched/build_utility.c', 'kernel/sched/sched.h')
+        self.assertEqual(tuple(candidate.RECIPIENT_SCHEDULER_INPUTS), names)
+        sources = dict(zip(names, (b'obj-y += build_utility.o\n',
+            b'#include <linux/wait_api.h>\n#include "sched.h"\n#include "wait.c"\n', b'actual-header')))
+        identities = {name: {'bytes': len(raw), 'sha256': hashlib.sha256(raw).hexdigest(),
+            'gitBlob': hashlib.sha1(b'blob ' + str(len(raw)).encode() + b'\0' + raw).hexdigest()}
+            for name, raw in sources.items()}
+        with tempfile.TemporaryDirectory() as directory:
+            tree = Path(directory)
+            for name, raw in sources.items():
+                path = tree / name;path.parent.mkdir(parents=True, exist_ok=True);path.write_bytes(raw)
+            with patch.object(candidate, 'RECIPIENT_SCHEDULER_INPUTS', identities):
+                self.assertEqual(candidate.recipient_scheduler_inputs(tree), sources)
+                (tree / names[2]).write_bytes(b'changed')
+                with self.assertRaises(ValueError):
+                    candidate.recipient_scheduler_inputs(tree)
+            (tree / names[2]).write_bytes(sources[names[2]])
+            # A correctly rehashed but wrong containing-TU relation also fails.
+            sources[names[0]] = b'obj-y += wait.o\n'
+            (tree / names[0]).write_bytes(sources[names[0]])
+            identities[names[0]] = {'bytes': len(sources[names[0]]),
+                'sha256': hashlib.sha256(sources[names[0]]).hexdigest(),
+                'gitBlob': hashlib.sha1(b'blob ' + str(len(sources[names[0]])).encode() + b'\0' + sources[names[0]]).hexdigest()}
+            with patch.object(candidate, 'RECIPIENT_SCHEDULER_INPUTS', identities):
+                with self.assertRaisesRegex(ValueError, 'recipient-maintained-wait-containing-tu'):
+                    candidate.recipient_scheduler_inputs(tree)
+
     def test_56_objects_preserve_all_48_201_and_require_243_distinct_globals(self):
         old = candidate.object_selection(False, registration=True)
         new = candidate.object_selection(False, recipient=True)
@@ -1194,7 +1227,8 @@ class KernelRecipientObjectSelection(unittest.TestCase):
                     patch.object(candidate, 'device_extracted_inputs', side_effect=select), \
                     patch.object(candidate, 'firmware_extracted_inputs', side_effect=select), \
                     patch.object(candidate, 'registration_extracted_inputs', side_effect=select), \
-                    patch.object(candidate, 'recipient_extracted_inputs', side_effect=select):
+                    patch.object(candidate, 'recipient_extracted_inputs', side_effect=select), \
+                    patch.object(candidate, 'recipient_scheduler_inputs', return_value={}):
                 output, frozen, original = candidate.recipient_derive_frozen(root, {})
                 self.assertEqual((output, original), ({'output': b'exact'}, {}))
                 self.assertEqual(calls, ['validate'])

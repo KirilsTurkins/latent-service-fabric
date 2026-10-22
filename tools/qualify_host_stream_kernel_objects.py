@@ -220,7 +220,7 @@ REGISTRATION_DISABLED = ('CONFIG_BPF_SYSCALL', 'CONFIG_UEVENT_HELPER', 'CONFIG_O
 RECIPIENT_OBJECTS = {
  'kernel/signal.o': ('lsf_prepaid_device_do_send_sig_info',),
  'fs/fcntl.o': ('lsf_prepaid_device_kill_fasync',),
- 'kernel/sched/wait.o': ('lsf_prepaid_device_wake', 'lsf_prepaid_device_wake_sync', 'lsf_prepaid_device_wake_locked'),
+ 'kernel/sched/build_utility.o': ('lsf_prepaid_device_wake', 'lsf_prepaid_device_wake_sync', 'lsf_prepaid_device_wake_locked'),
  'kernel/sched/core.o': ('default_wake_function',),
  'fs/select.o': ('lsf_prepaid_device_pollwake', 'lsf_prepaid_device_pollwake_matches'),
  'fs/eventpoll.o': ('lsf_prepaid_device_epoll_callback', 'lsf_prepaid_device_epoll_matches'),
@@ -247,6 +247,10 @@ RECIPIENT_EXISTING = {
 RECIPIENT_EXTRACTED = ('fs/eventpoll.c', 'fs/fcntl.c', 'fs/select.c', 'include/linux/capability.h',
  'include/linux/rcupdate.h', 'include/linux/wait.h', 'include/net/scm.h', 'kernel/capability.c',
  'kernel/rcu/tree.c', 'kernel/sched/core.c', 'kernel/sched/wait.c', 'kernel/signal.c', 'security/commoncap.c')
+RECIPIENT_SCHEDULER_INPUTS = {
+ 'kernel/sched/Makefile': {'bytes': 1351, 'sha256': 'aac538af88b3c614b14196551c4dc8aa18a2f18fe777849c078d96f0d3c74d4b', 'gitBlob': '976092b7bd4520ebc1a607734520ac342585a120'},
+ 'kernel/sched/build_utility.c': {'bytes': 2386, 'sha256': '9291d5887b521d3636e12ad4cff09feda4a8ff8f30980109478ef2edc16451e4', 'gitBlob': '80a3df49ab478420a8827f62a0bdf3374479082e'},
+ 'kernel/sched/sched.h': {'bytes': 106490, 'sha256': '1afb7a7301268b04699adf70f61e0a6027ebfdf87f878c5cea4fb97671f0a282', 'gitBlob': '5e788dc39f630dfed96e46dfc4d5382b31e4ea07'}}
 RECIPIENT_REQUIRED = ('CONFIG_EPOLL', 'CONFIG_SIGNALFD', 'CONFIG_IO_URING', 'CONFIG_TRACEPOINTS',
  'CONFIG_PERF_EVENTS', 'CONFIG_FTRACE', 'CONFIG_KPROBES', 'CONFIG_TREE_RCU', 'CONFIG_PREEMPT_RCU')
 
@@ -567,6 +571,22 @@ def recipient_extracted_inputs(tree, original):
     return selected
 
 
+def recipient_scheduler_inputs(tree):
+    # Maintained wait.c is included by build_utility.c, not an independent TU.
+    # Authenticate its real Kbuild parent/header from the SAME private archive;
+    # never invent a header prologue or alter either original/private C body.
+    selected = {name: paths.read(tree, name, maintained.MAX_FILE)
+        for name in RECIPIENT_SCHEDULER_INPUTS}
+    maintained.authenticate_files(selected, RECIPIENT_SCHEDULER_INPUTS)
+    makefile = selected['kernel/sched/Makefile']
+    unit = selected['kernel/sched/build_utility.c']
+    require(makefile.count(b'obj-y += build_utility.o\n') == 1 and
+        b'obj-y += wait.o\n' not in makefile and unit.count(b'#include "wait.c"\n') == 1 and
+        unit.index(b'#include <linux/wait_api.h>\n') < unit.index(b'#include "sched.h"\n') <
+        unit.index(b'#include "wait.c"\n'), 'recipient-maintained-wait-containing-tu')
+    return selected
+
+
 def recipient_derive_frozen(tree, original_inputs):
     # Single-process, new-mode-only fixture context. Original validators run
     # bottom-up once. Every later fixture access gets an independent deep copy,
@@ -598,6 +618,9 @@ def recipient_derive_frozen(tree, original_inputs):
         selected = firmware_extracted_inputs(tree, selected)
         selected = registration_extracted_inputs(tree, selected)
         selected = recipient_extracted_inputs(tree, selected)
+        selected.update(recipient_scheduler_inputs(tree))
+        require(sum(map(len, selected.values())) <= maintained.MAX_SELECTED,
+            'recipient-total-selected-byte-bound')
         derived = recipient_source.derive({
             name: selected[name] for name in recipient_source.fixture()['source']})
     finally:
@@ -659,6 +682,7 @@ def run(archive, output, *, netlabel=False, netport=False, sidcache=False, avc=F
             receipt['postExtractionFirmwareArchiveSources'] = list(FIRMWARE_EXTRACTED)
             receipt['postExtractionRegistrationArchiveSources'] = list(REGISTRATION_EXTRACTED)
             receipt['postExtractionRecipientArchiveSources'] = list(RECIPIENT_EXTRACTED)
+            receipt['recipientSchedulerContainingSources'] = RECIPIENT_SCHEDULER_INPUTS
             receipt['recipientSourceFreeze'] = frozen
             receipt['recipientContinuationSourceImplemented'] = True
             receipt['mandatoryAuditSourceImplemented'] = True
