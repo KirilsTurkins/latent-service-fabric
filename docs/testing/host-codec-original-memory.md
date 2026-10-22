@@ -93,9 +93,34 @@ boundary correction keeps backend reports guest-only and final consumption
 aggregate; a later composed source does not inherit this archive's execution claim.
 V3 remains unsigned and native-only; previous receipts are unchanged.
 
+## Store-local function reference ownership
+
+[The separate v4 evidence](evidence/host-codec-funcrefs-native-2026-10-22.json)
+binds [run 39711228748](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39711228748)
+at `3e4178271b4b7fe75a69c8f0665dbe275b41d7c3`. **All 92 native controls passed**:
+the previous 85 selectors, five actual function-reference controls and two
+canonical C Ready handoff controls. Independent verification covers all 95
+archive members, 43 commands, 86 log streams, five products, 3,615 source files
+and 148 materials.
+
+Selected function-reference boxes, arena capacity and root directories now retain
+their original activation owners. All staged capacities and boxes are admitted
+before publishing a root or pointer; refusal preserves earlier roots and guest
+calls. InstancePre pairs admit both root slots together. Default-function lookup
+preserves a defined function's original admission error. Legacy embeddings retain
+their original arena behavior.
+
+The same native run passed the strengthened backend/core reporting controls:
+backend reports contain own guest memory, while the original ledger retains the
+aggregate native peak. The later generic integration fixture correction at
+`99be2b4275c72ee10a8f88d58d93f761cebb8d0e` equalizes request identity lengths;
+the frozen v4 run did not execute that later fixture. V4 remains unsigned and
+native-only; it did not compile or execute a C or TypeScript guest.
+
 ## Scope retained outside this slice
 
-FuncRefs, concurrent tasks, hostcall backing and
+Resource-substitution metadata, direct Core HostFunc construction, shared
+preparation closures, concurrent tasks, hostcall backing and
 request-context transitive allocations still need their remaining ownership
 work. Serialized controller/transport frames and legacy Phase0 framing retain
 their existing boundaries. These common runtime prerequisites are a partial
