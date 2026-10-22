@@ -21,13 +21,13 @@ pub struct StoreData {
 }
 
 impl StoreData {
-    pub fn new(engine: &Engine) -> StoreData {
+    pub fn new(engine: &Engine, memory: crate::runtime::native_memory::Memory) -> StoreData {
         #[cfg(not(feature = "component-model"))]
-        let _ = engine;
+        let _ = (engine, memory);
         StoreData {
             id: StoreId::allocate(),
             #[cfg(feature = "component-model")]
-            components: crate::component::ComponentStoreData::new(engine),
+            components: crate::component::ComponentStoreData::new(engine, memory),
         }
     }
 

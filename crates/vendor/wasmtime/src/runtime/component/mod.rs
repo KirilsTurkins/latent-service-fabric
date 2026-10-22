@@ -815,4 +815,5 @@ mod dynamic_memory;
 pub use dynamic_memory::DynamicValueMemory;
 
 /// Native source cohort for the maintained original-owner dynamic value extension.
-pub const DYNAMIC_VALUE_MEMORY_COHORT: &str = "wasmtime-48.0.7-latent-dynamic-value-memory-v1";
+pub const DYNAMIC_VALUE_MEMORY_COHORT: &str =
+    "wasmtime-48.0.7-latent-value-table-store-memory-v2";

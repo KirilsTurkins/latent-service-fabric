@@ -7,6 +7,91 @@ pub const DEFAULT_TABLE_LIMIT: usize = 10000;
 /// Value returned by [`ResourceLimiter::memories`] default method
 pub const DEFAULT_MEMORY_LIMIT: usize = 10000;
 
+/// Owned admission for one actual native backing allocation.
+///
+/// The allocation requests its complete checked layout before allocating. Once
+/// allocation succeeds, `allocated` confirms it. The owner stays with the real
+/// buffer until destruction, including replacement overlap or pooled decommit.
+/// It must own its state rather than borrow the Store's user data.
+pub trait NativeAllocation: Send + Sync {
+    /// Confirm that the admitted backing allocation now physically exists.
+    fn allocated(&mut self);
+}
+
+/// Backwards-compatible name for the native table allocation callback.
+pub use NativeAllocation as TableAllocation;
+
+/// Original memory admission selected before a Store or its instances allocate.
+///
+/// A successful nonzero reservation must return an affine owner. The owner must
+/// keep the admitted bytes charged until the actual allocation is destroyed;
+/// it cannot borrow Store user data, which is destroyed before engine backing.
+pub trait NativeMemory: Send + Sync {
+    /// Reserve the complete checked allocation size before allocating it.
+    fn reserve(&self, bytes: usize) -> Result<Box<dyn NativeAllocation>>;
+}
+
+/// An admitted, solely transferred native-memory factory allocation.
+///
+/// Construction accepts the factory value, not an existing Arc, so callers
+/// cannot retain strong or Weak aliases to its allocation. Only private engine
+/// clones exist thereafter. The supplied owner must admit `allocation_size`
+/// before this constructor; it is released after the last factory Arc is freed.
+pub struct NativeMemoryBinding {
+    memory: core::mem::ManuallyDrop<Arc<dyn NativeMemory>>,
+    allocation: core::mem::ManuallyDrop<Box<dyn NativeAllocation>>,
+}
+
+#[repr(C, align(2))]
+struct NativeFactoryArcHeader {
+    strong: core::sync::atomic::AtomicUsize,
+    weak: core::sync::atomic::AtomicUsize,
+}
+
+impl NativeMemoryBinding {
+    /// Checked backing layout used by the pinned Rust 1.97.1 Arc::new.
+    ///
+    /// alloc/src/sync.rs defines repr(C) ArcInner with two AtomicUsize counters
+    /// followed by T, and allocates Box<ArcInner<T>>. Include both header padding
+    /// and trailing alignment. No Arc raw-pointer ABI is used by this API.
+    pub fn allocation_size<T: NativeMemory>() -> usize {
+        core::alloc::Layout::new::<NativeFactoryArcHeader>()
+            .extend(core::alloc::Layout::new::<T>())
+            .expect("factory Arc layout overflow")
+            .0
+            .pad_to_align()
+            .size()
+    }
+
+    /// Allocate the sole factory Arc under its already-admitted owner.
+    pub fn new<T: NativeMemory + 'static>(
+        factory: T,
+        mut allocation: Box<dyn NativeAllocation>,
+    ) -> Self {
+        let memory: Arc<dyn NativeMemory> = Arc::new(factory);
+        allocation.allocated();
+        Self {
+            memory: core::mem::ManuallyDrop::new(memory),
+            allocation: core::mem::ManuallyDrop::new(allocation),
+        }
+    }
+
+    pub(crate) fn memory(&self) -> Arc<dyn NativeMemory> {
+        Arc::clone(&self.memory)
+    }
+}
+
+impl Drop for NativeMemoryBinding {
+    fn drop(&mut self) {
+        // All private Store clones must already be destroyed. In particular,
+        // do not refund if a foreign factory destructor panics during Arc drop.
+        unsafe {
+            core::mem::ManuallyDrop::drop(&mut self.memory);
+            core::mem::ManuallyDrop::drop(&mut self.allocation);
+        }
+    }
+}
+
 /// Used by hosts to limit resource consumption of instances.
 ///
 /// This trait is used in conjunction with the
@@ -125,6 +210,16 @@ pub trait ResourceLimiter: Send {
         Ok(())
     }
 
+    /// Admit actual table backing before allocation or pooled ownership transfer.
+    ///
+    /// `bytes` is the checked backing layout, not an element count or guessed
+    /// vector capacity. A returned owner follows that allocation after Store
+    /// user data is destroyed. Returning `None` preserves ordinary unaccounted
+    /// embedding behavior; an accounted table cannot grow without a new owner.
+    fn table_allocating(&mut self, _bytes: usize) -> Result<Option<Box<dyn TableAllocation>>> {
+        Ok(None)
+    }
+
     /// The maximum number of instances that can be created for a `Store`.
     ///
     /// Module instantiation will fail if this limit is exceeded.
@@ -197,6 +292,16 @@ pub trait ResourceLimiterAsync: Send {
     fn table_grow_failed(&mut self, error: crate::Error) -> Result<()> {
         log::debug!("ignoring table growth failure error: {error:?}");
         Ok(())
+    }
+
+    /// Admit actual table backing before allocation or pooled ownership transfer.
+    ///
+    /// `bytes` is the checked backing layout, not an element count or guessed
+    /// vector capacity. A returned owner follows that allocation after Store
+    /// user data is destroyed. Returning `None` preserves ordinary unaccounted
+    /// embedding behavior; an accounted table cannot grow without a new owner.
+    fn table_allocating(&mut self, _bytes: usize) -> Result<Option<Box<dyn TableAllocation>>> {
+        Ok(None)
     }
 
     /// Identical to [`ResourceLimiter::instances`]`

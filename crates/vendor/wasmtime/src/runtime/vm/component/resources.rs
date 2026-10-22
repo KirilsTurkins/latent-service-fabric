@@ -24,13 +24,13 @@ use super::{HandleCounter, HandleTable, InstanceState, RemovedResource};
 use crate::bail_bug;
 use crate::component::store::ComponentTaskState;
 use crate::prelude::*;
+use crate::runtime::native_memory::NativeMap;
 use core::error::Error;
 use core::fmt;
 use core::mem;
 use wasmtime_environ::component::{
     ComponentTypes, RuntimeComponentInstanceIndex, TypeResourceTableIndex,
 };
-use wasmtime_environ::prelude::TryPrimaryMap;
 
 /// Contextual state necessary to perform resource-related operations.
 ///
@@ -56,7 +56,7 @@ pub struct ResourceTables<'a> {
     /// `ResourceAny::resource_drop` which won't consult this table as it's
     /// only operating over the host table.
     pub guest: Option<(
-        &'a mut TryPrimaryMap<RuntimeComponentInstanceIndex, InstanceState>,
+        &'a mut NativeMap<RuntimeComponentInstanceIndex, InstanceState>,
         &'a ComponentTypes,
     )>,
 

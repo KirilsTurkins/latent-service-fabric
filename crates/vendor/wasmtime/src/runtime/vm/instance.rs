@@ -5,6 +5,7 @@
 use crate::code::ModuleWithCode;
 use crate::module::ModuleRegistry;
 use crate::prelude::*;
+use crate::runtime::native_memory::{Memory as NativeMemory, NativeMap, NativeVec};
 use crate::runtime::vm::export::{Export, ExportMemory};
 use crate::runtime::vm::memory::{Memory, RuntimeMemoryCreator};
 use crate::runtime::vm::table::{Table, TableElementType};
@@ -113,7 +114,7 @@ pub struct Instance {
     /// The `MemoryAllocationIndex` was given from our `InstanceAllocator` and
     /// must be given back to the instance allocator when deallocating each
     /// memory.
-    memories: TryPrimaryMap<DefinedMemoryIndex, (MemoryAllocationIndex, Memory)>,
+    memories: NativeMap<DefinedMemoryIndex, (MemoryAllocationIndex, Memory)>,
 
     /// WebAssembly table data.
     ///
@@ -123,7 +124,7 @@ pub struct Instance {
     /// The `TableAllocationIndex` was given from our `InstanceAllocator` and
     /// must be given back to the instance allocator when deallocating each
     /// table.
-    tables: TryPrimaryMap<DefinedTableIndex, (TableAllocationIndex, Table)>,
+    tables: NativeMap<DefinedTableIndex, (TableAllocationIndex, Table)>,
 
     /// Evaluated passive element segments.
     ///
@@ -131,7 +132,7 @@ pub struct Instance {
     //
     // TODO(#12621): This should be a `TrySecondaryMap<PassiveElemIndex, _>`
     // but that type is currently footgun-y / isn't actually OOM-safe yet.
-    passive_elements: TryVec<PassiveElementSegment>,
+    passive_elements: NativeVec<PassiveElementSegment>,
 
     // TODO: add support for multiple memories; `wmemcheck_state` corresponds to
     // memory 0.
@@ -167,12 +168,14 @@ impl Instance {
     /// and `tables` must have been allocated for `req.store`.
     unsafe fn new(
         req: InstanceAllocationRequest,
-        memories: &mut TryPrimaryMap<DefinedMemoryIndex, (MemoryAllocationIndex, Memory)>,
-        tables: &mut TryPrimaryMap<DefinedTableIndex, (TableAllocationIndex, Table)>,
-    ) -> Result<InstanceHandle, OutOfMemory> {
+        memories: &mut NativeMap<DefinedMemoryIndex, (MemoryAllocationIndex, Memory)>,
+        tables: &mut NativeMap<DefinedTableIndex, (TableAllocationIndex, Table)>,
+    ) -> Result<InstanceHandle> {
         let module = req.runtime_info.env_module();
         let memory_tys = &module.memories;
-        let mut passive_elements = TryVec::with_capacity(module.passive_elements.len())?;
+        let memory = req.store.native_memory();
+        let mut passive_elements =
+            NativeVec::with_capacity(module.passive_elements.len(), memory.clone())?;
 
         #[cfg(feature = "wmemcheck")]
         let wmemcheck_state = if req.store.engine().config().wmemcheck {
@@ -192,7 +195,7 @@ impl Instance {
 
         for (_, (ty, len)) in req.runtime_info.env_module().passive_elements.iter() {
             let len = usize::try_from(*len).unwrap();
-            passive_elements.push(PassiveElementSegment::new(*ty, len)?)?;
+            passive_elements.push(PassiveElementSegment::new(*ty, len, memory.clone())?)?;
         }
 
         // Allocate the instance and its `VMContext` with empty memory and table
@@ -200,17 +203,20 @@ impl Instance {
         // after it succeeds do we transfer ownership of the pool-allocated
         // `memories`/`tables` into the instance (below), so that a failure here
         // leaves them in the caller's deallocation guard to be freed.
-        let mut ret = OwnedInstance::new(Instance {
-            id: req.id,
-            runtime_info: req.runtime_info.clone(),
-            memories: TryPrimaryMap::default(),
-            tables: TryPrimaryMap::default(),
-            passive_elements,
-            #[cfg(feature = "wmemcheck")]
-            wmemcheck_state,
-            store: None,
-            vmctx: OwnedVMContext::new(),
-        })?;
+        let mut ret = OwnedInstance::new(
+            Instance {
+                id: req.id,
+                runtime_info: req.runtime_info.clone(),
+                memories: NativeMap::default(),
+                tables: NativeMap::default(),
+                passive_elements,
+                #[cfg(feature = "wmemcheck")]
+                wmemcheck_state,
+                store: None,
+                vmctx: OwnedVMContext::new(),
+            },
+            memory,
+        )?;
 
         // Can't fail any more, so transfer ownership of `memories` and `tables`
         // to this instance.
@@ -1009,7 +1015,9 @@ impl Instance {
         self.passive_elements_mut()[passive.index()].elements_mut()
     }
 
-    pub(crate) fn passive_elements_mut(self: Pin<&mut Self>) -> &mut TryVec<PassiveElementSegment> {
+    pub(crate) fn passive_elements_mut(
+        self: Pin<&mut Self>,
+    ) -> &mut NativeVec<PassiveElementSegment> {
         // SAFETY: Not moving data out of `self`.
         &mut unsafe { self.get_unchecked_mut() }.passive_elements
     }
@@ -1517,14 +1525,14 @@ impl Instance {
 
     fn memories_mut(
         self: Pin<&mut Self>,
-    ) -> &mut TryPrimaryMap<DefinedMemoryIndex, (MemoryAllocationIndex, Memory)> {
+    ) -> &mut NativeMap<DefinedMemoryIndex, (MemoryAllocationIndex, Memory)> {
         // SAFETY: see `store_mut` above.
         unsafe { &mut self.get_unchecked_mut().memories }
     }
 
     pub(crate) fn tables_mut(
         self: Pin<&mut Self>,
-    ) -> &mut TryPrimaryMap<DefinedTableIndex, (TableAllocationIndex, Table)> {
+    ) -> &mut NativeMap<DefinedTableIndex, (TableAllocationIndex, Table)> {
         // SAFETY: see `store_mut` above.
         unsafe { &mut self.get_unchecked_mut().tables }
     }
@@ -1639,6 +1647,9 @@ pub struct OwnedVMContext<T> {
     /// seems not too bad.
     vmctx_self_reference: SendSyncPtr<T>,
 
+    // Kept in the real allocation header, preserving the transparent handle.
+    allocation: Option<Box<dyn crate::NativeAllocation>>,
+
     /// This field ensures that going from `Pin<&mut T>` to `&mut T` is not a
     /// safe operation.
     _marker: core::marker::PhantomPinned,
@@ -1649,6 +1660,7 @@ impl<T> OwnedVMContext<T> {
     pub fn new() -> OwnedVMContext<T> {
         OwnedVMContext {
             vmctx_self_reference: SendSyncPtr::new(NonNull::dangling()),
+            allocation: None,
             _marker: core::marker::PhantomPinned,
         }
     }
@@ -1783,8 +1795,9 @@ impl<T: InstanceLayout> OwnedInstance<T> {
     /// Allocates a new `OwnedInstance` and places `instance` inside of it.
     ///
     /// This will `instance`
-    pub(super) fn new(mut instance: T) -> Result<OwnedInstance<T>, OutOfMemory> {
+    pub(super) fn new(mut instance: T, memory: NativeMemory) -> Result<OwnedInstance<T>> {
         let layout = instance.layout();
+        let allocation = crate::runtime::native_memory::reserve(&memory, layout.size())?;
         debug_assert!(layout.size() >= size_of_val(&instance));
         debug_assert!(layout.align() >= align_of_val(&instance));
 
@@ -1799,13 +1812,14 @@ impl<T: InstanceLayout> OwnedInstance<T> {
             }
         };
         let Some(instance_ptr) = NonNull::new(ptr.cast::<T>()) else {
-            return Err(OutOfMemory::new(layout.size()));
+            return Err(OutOfMemory::new(layout.size()).into());
         };
 
         // SAFETY: it's part of the unsafe contract of `InstanceLayout` that the
         // `add` here is appropriate for the layout allocated.
         let vmctx_self_reference = unsafe { instance_ptr.add(1).cast() };
         instance.owned_vmctx_mut().vmctx_self_reference = vmctx_self_reference.into();
+        instance.owned_vmctx_mut().allocation = allocation;
 
         // SAFETY: we allocated above and it's an unsafe contract of
         // `InstanceLayout` that the layout is suitable for writing the
@@ -1814,10 +1828,18 @@ impl<T: InstanceLayout> OwnedInstance<T> {
             instance_ptr.write(instance);
         }
 
-        let ret = OwnedInstance {
+        let mut ret = OwnedInstance {
             instance: SendSyncPtr::new(instance_ptr),
             _marker: marker::PhantomData,
         };
+
+        if let Some(allocation) = unsafe { ret.get_mut().get_unchecked_mut() }
+            .owned_vmctx_mut()
+            .allocation
+            .as_mut()
+        {
+            allocation.allocated();
+        }
 
         // Double-check various vmctx calculations are correct.
         debug_assert_eq!(
@@ -1854,8 +1876,18 @@ impl<T: InstanceLayout> Drop for OwnedInstance<T> {
     fn drop(&mut self) {
         unsafe {
             let layout = self.get().layout();
+            let mut allocation = mem::ManuallyDrop::new(
+                self.get_mut()
+                    .get_unchecked_mut()
+                    .owned_vmctx_mut()
+                    .allocation
+                    .take(),
+            );
             ptr::drop_in_place(self.instance.as_ptr());
             alloc::alloc::dealloc(self.instance.as_ptr().cast(), layout);
+            // If element destruction unwinds, keep admission with the uncertain
+            // allocation rather than refunding before its physical free.
+            mem::ManuallyDrop::drop(&mut allocation);
         }
     }
 }
@@ -1863,13 +1895,13 @@ impl<T: InstanceLayout> Drop for OwnedInstance<T> {
 #[derive(Debug)]
 pub(crate) struct PassiveElementSegment {
     needs_gc_rooting: bool,
-    elements: TryVec<ValRaw>,
+    elements: NativeVec<ValRaw>,
 }
 
 impl PassiveElementSegment {
     /// Create a new passive element segment with the given capacity.
-    pub(crate) fn new(ty: WasmRefType, capacity: usize) -> Result<Self, OutOfMemory> {
-        let mut elements = TryVec::with_capacity(capacity)?;
+    pub(crate) fn new(ty: WasmRefType, capacity: usize, memory: NativeMemory) -> Result<Self> {
+        let mut elements = NativeVec::with_capacity(capacity, memory)?;
         elements.resize_with(capacity, || ValRaw::null())?;
         Ok(Self {
             needs_gc_rooting: ty.is_vmgcref_type_and_not_i31(),

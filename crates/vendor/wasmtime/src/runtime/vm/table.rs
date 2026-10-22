@@ -25,6 +25,14 @@ pub enum TableElementType {
 }
 
 impl TableElementType {
+    fn allocation_layout(&self, len: usize) -> Result<Layout> {
+        Ok(match self {
+            Self::Func => Layout::array::<FuncTableElem>(len)?,
+            Self::GcRef => Layout::array::<Option<VMGcRef>>(len)?,
+            Self::Cont => Layout::array::<ContTableElem>(len)?,
+        })
+    }
+
     /// Returns the size required to actually store an element of this particular type
     pub fn element_size(&self) -> usize {
         match self {
@@ -136,6 +144,8 @@ pub struct StaticFuncTable {
     /// Where data for this table is stored. The length of this list is the
     /// maximum size of the table.
     data: SendSyncPtr<[FuncTableElem]>,
+    // Pooled Tables keep this owner through their existing reset/decommit queue.
+    _allocation: Option<Box<dyn crate::TableAllocation>>,
     /// The current size of the table.
     size: usize,
     /// Whether elements of this table are initialized lazily.
@@ -146,6 +156,8 @@ pub struct StaticGcRefTable {
     /// Where data for this table is stored. The length of this list is the
     /// maximum size of the table.
     data: SendSyncPtr<[Option<VMGcRef>]>,
+    // Pooled Tables keep this owner through their existing reset/decommit queue.
+    _allocation: Option<Box<dyn crate::TableAllocation>>,
     /// The current size of the table.
     size: usize,
 }
@@ -154,6 +166,8 @@ pub struct StaticContTable {
     /// Where data for this table is stored. The length of this list is the
     /// maximum size of the table.
     data: SendSyncPtr<[ContTableElem]>,
+    // Pooled Tables keep this owner through their existing reset/decommit queue.
+    _allocation: Option<Box<dyn crate::TableAllocation>>,
     /// The current size of the table.
     size: usize,
 }
@@ -186,6 +200,8 @@ pub struct DynamicFuncTable {
     /// Dynamically managed storage space for this table. The length of this
     /// vector is the current size of the table.
     elements: TryVec<FuncTableElem>,
+    // Field order destroys actual backing before refunding its original owner.
+    allocation: Option<Box<dyn crate::TableAllocation>>,
     /// Maximum size that `elements` can grow to.
     maximum: Option<usize>,
     /// Whether elements of this table are initialized lazily.
@@ -196,6 +212,8 @@ pub struct DynamicGcRefTable {
     /// Dynamically managed storage space for this table. The length of this
     /// vector is the current size of the table.
     elements: TryVec<Option<VMGcRef>>,
+    // Field order destroys actual backing before refunding its original owner.
+    allocation: Option<Box<dyn crate::TableAllocation>>,
     /// Maximum size that `elements` can grow to.
     maximum: Option<usize>,
 }
@@ -204,6 +222,8 @@ pub struct DynamicContTable {
     /// Dynamically managed storage space for this table. The length of this
     /// vector is the current size of the table.
     elements: TryVec<ContTableElem>,
+    // Field order destroys actual backing before refunding its original owner.
+    allocation: Option<Box<dyn crate::TableAllocation>>,
     /// Maximum size that `elements` can grow to.
     maximum: Option<usize>,
 }
@@ -281,49 +301,89 @@ pub(crate) fn wasm_to_table_type(ty: WasmRefType) -> TableElementType {
     }
 }
 
-/// Allocate dynamic table elements of the given length.
-///
-/// Relies on the fact that our tables' elements are initialized to `None`,
-/// which is represented by zero, to allocate pre-zeroed memory from the global
-/// allocator and avoid manual zero-initialization.
+/// Allocate exact dynamic table backing for the original Func/Gc zero-niche types.
 ///
 /// # Safety
 ///
-/// Should only ever be called with a `T` that is a table element type and where
-/// `Option<T>`'s `None` variant is represented with zero.
+/// T must be an original Func/Gc table element whose Option None is all-zero.
 unsafe fn alloc_dynamic_table_elements<T>(len: usize) -> Result<TryVec<Option<T>>> {
-    debug_assert!(
-        unsafe {
-            core::mem::MaybeUninit::<Option<T>>::zeroed()
-                .assume_init()
-                .is_none()
-        },
-        "null table elements are represented with zeroed memory"
-    );
-
-    if len == 0 {
-        return Ok(TryVec::new());
+    let layout = Layout::array::<Option<T>>(len)?;
+    if layout.size() == 0 {
+        // Disabled reference types can make Option<T> zero-sized even when
+        // len is nonzero. Global alloc(0) is invalid; a ZST Vec has no backing.
+        let mut elements = TryVec::new();
+        elements.resize_with(len, || None)?;
+        return Ok(elements);
     }
-
-    let align = mem::align_of::<Option<T>>();
-
-    let size = mem::size_of::<Option<T>>();
-    let size = size.next_multiple_of(align);
-    let size = size
-        .checked_mul(len)
-        .ok_or_else(|| format_err!("overflow calculating table allocation size"))?;
-
-    let layout = Layout::from_size_align(size, align)?;
-
     let ptr = unsafe { alloc::alloc::alloc_zeroed(layout) };
     if ptr.is_null() {
-        return Err(OutOfMemory::new(size).into());
+        return Err(OutOfMemory::new(layout.size()).into());
     }
+    // SAFETY: exact Layout and original all-zero None contract above.
+    let elements = unsafe { TryVec::<Option<T>>::from_raw_parts(ptr.cast(), len, len) };
+    debug_assert!(elements.iter().all(|e| e.is_none()));
+    Ok(elements)
+}
 
-    let elems = unsafe { TryVec::<Option<T>>::from_raw_parts(ptr.cast(), len, len) };
-    debug_assert!(elems.iter().all(|e| e.is_none()));
+/// Exact continuation backing without assuming a zero Option discriminant.
+unsafe fn alloc_dynamic_cont_table_elements(len: usize) -> Result<TryVec<ContTableElem>> {
+    let layout = Layout::array::<ContTableElem>(len)?;
+    if layout.size() == 0 {
+        let mut elements = TryVec::new();
+        elements.resize_with(len, || None)?;
+        return Ok(elements);
+    }
+    let ptr = unsafe { alloc::alloc::alloc(layout) };
+    if ptr.is_null() {
+        return Err(OutOfMemory::new(layout.size()).into());
+    }
+    let ptr = ptr.cast::<ContTableElem>();
+    for index in 0..len {
+        // SAFETY: the checked Layout contains len aligned cells. Constructing
+        // None cannot allocate or unwind, including for a disabled/ZST type.
+        unsafe { ptr.add(index).write(None) };
+    }
+    Ok(unsafe { TryVec::from_raw_parts(ptr, len, len) })
+}
 
-    Ok(elems)
+fn grow_dynamic_table<T>(
+    elements: &mut TryVec<Option<T>>,
+    allocation: &mut Option<Box<dyn crate::TableAllocation>>,
+    new_size: usize,
+    limiter: Option<&mut StoreResourceLimiter<'_>>,
+    allocate: unsafe fn(usize) -> Result<TryVec<Option<T>>>,
+) -> Result<()> {
+    let bytes = Layout::array::<Option<T>>(new_size)?.size();
+    let mut replacement_owner = match limiter {
+        Some(limiter) => limiter.table_allocating(bytes)?,
+        None => None,
+    };
+    ensure!(
+        allocation.is_none() || replacement_owner.is_some(),
+        "accounted table growth lost its original allocation owner"
+    );
+    if replacement_owner.is_none() {
+        // Preserve the original ordinary embedding path when no owner is used.
+        elements.resize_with(new_size, || None)?;
+        return Ok(());
+    }
+    // SAFETY: called only for the same table element types as new_dynamic.
+    // Allocation uses the exact checked Layout admitted above; no geometric
+    // Vec capacity can appear before its original budget reservation.
+    let replacement = unsafe { allocate(new_size)? };
+    if let Some(owner) = &mut replacement_owner {
+        owner.allocated();
+    }
+    // Declare the old owner first: unwind also drops the actual old buffer
+    // before its guard. No element is cloned, including GC and continuation refs.
+    let old_owner = mem::replace(allocation, replacement_owner);
+    let mut old_elements = mem::replace(elements, replacement);
+    for (source, target) in old_elements.iter_mut().zip(elements.iter_mut()) {
+        *target = source.take();
+    }
+    drop(old_elements);
+    drop(old_owner);
+    Ok(())
 }
 
 impl Table {
@@ -331,35 +391,57 @@ impl Table {
     pub async fn new_dynamic(
         ty: &wasmtime_environ::Table,
         tunables: &Tunables,
-        limiter: Option<&mut StoreResourceLimiter<'_>>,
+        mut limiter: Option<&mut StoreResourceLimiter<'_>>,
     ) -> Result<Self> {
-        let (minimum, maximum) = Self::limit_new(ty, limiter).await?;
-        match wasm_to_table_type(ty.ref_type) {
-            TableElementType::Func => Ok(Self::from(DynamicFuncTable {
+        let (minimum, maximum) = Self::limit_new(ty, limiter.as_deref_mut()).await?;
+        let element_type = wasm_to_table_type(ty.ref_type);
+        let bytes = element_type.allocation_layout(minimum)?.size();
+        let mut allocation = match limiter {
+            Some(limiter) => limiter.table_allocating(bytes)?,
+            None => None,
+        };
+        // Create the backing before confirming or publishing its owned guard.
+        let mut table = match element_type {
+            TableElementType::Func => Self::from(DynamicFuncTable {
                 elements: unsafe { alloc_dynamic_table_elements(minimum)? },
+                allocation: None,
                 maximum,
                 lazy_init: tunables.table_lazy_init,
-            })),
-            TableElementType::GcRef => Ok(Self::from(DynamicGcRefTable {
+            }),
+            TableElementType::GcRef => Self::from(DynamicGcRefTable {
                 elements: unsafe { alloc_dynamic_table_elements(minimum)? },
+                allocation: None,
                 maximum,
-            })),
-            TableElementType::Cont => {
-                let mut elements = TryVec::new();
-                elements.resize_with(minimum, || None)?;
-                Ok(Self::from(DynamicContTable { elements, maximum }))
-            }
+            }),
+            TableElementType::Cont => Self::from(DynamicContTable {
+                elements: unsafe { alloc_dynamic_cont_table_elements(minimum)? },
+                allocation: None,
+                maximum,
+            }),
+        };
+        if let Some(owner) = &mut allocation {
+            owner.allocated();
         }
+        match &mut table {
+            Table::Dynamic(DynamicTable::Func(table)) => table.allocation = allocation,
+            Table::Dynamic(DynamicTable::GcRef(table)) => table.allocation = allocation,
+            Table::Dynamic(DynamicTable::Cont(table)) => table.allocation = allocation,
+            Table::Static(_) => unreachable!(),
+        }
+        Ok(table)
     }
 
     /// Create a new static (immovable) table instance for the specified table plan.
-    pub async unsafe fn new_static(
+    pub unsafe fn new_static(
         ty: &wasmtime_environ::Table,
         tunables: &Tunables,
         data: SendSyncPtr<[u8]>,
-        limiter: Option<&mut StoreResourceLimiter<'_>>,
+        limits: (usize, Option<usize>),
+        allocation: &mut Option<Box<dyn crate::TableAllocation>>,
     ) -> Result<Self> {
-        let (minimum, maximum) = Self::limit_new(ty, limiter).await?;
+        // The pool validates the original element limits and reserves its exact
+        // page-aligned retained slot before committing any of those pages.
+        let (minimum, maximum) = limits;
         let size = minimum;
         let max = maximum.unwrap_or(usize::MAX);
 
@@ -386,6 +468,7 @@ impl Table {
                 ));
                 Ok(Self::from(StaticFuncTable {
                     data,
+                    _allocation: allocation.take(),
                     size,
                     lazy_init: tunables.table_lazy_init,
                 }))
@@ -410,7 +493,11 @@ impl Table {
                     data.as_non_null().cast::<Option<VMGcRef>>(),
                     cmp::min(len, max),
                 ));
-                Ok(Self::from(StaticGcRefTable { data, size }))
+                Ok(Self::from(StaticGcRefTable {
+                    data,
+                    _allocation: allocation.take(),
+                    size,
+                }))
             }
             TableElementType::Cont => {
                 let len = {
@@ -432,7 +519,11 @@ impl Table {
                     data.as_non_null().cast::<ContTableElem>(),
                     cmp::min(len, max),
                 ));
-                Ok(Self::from(StaticContTable { data, size }))
+                Ok(Self::from(StaticContTable {
+                    data,
+                    _allocation: allocation.take(),
+                    size,
+                }))
             }
         }
     }
@@ -440,7 +531,7 @@ impl Table {
     // Calls the `store`'s limiter to optionally prevent the table from being created.
     //
     // Returns the minimum and maximum size of the table if the table can be created.
-    async fn limit_new(
+    pub(crate) async fn limit_new(
         ty: &wasmtime_environ::Table,
         limiter: Option<&mut StoreResourceLimiter<'_>>,
     ) -> Result<(usize, Option<usize>)> {
@@ -674,13 +765,13 @@ impl Table {
                 }
                 *size = new_size;
             }
-            Table::Static(StaticTable::GcRef(StaticGcRefTable { data, size })) => {
+            Table::Static(StaticTable::GcRef(StaticGcRefTable { data, size, .. })) => {
                 unsafe {
                     debug_assert!(data.as_ref()[*size..new_size].iter().all(|x| x.is_none()));
                 }
                 *size = new_size;
             }
-            Table::Static(StaticTable::Cont(StaticContTable { data, size })) => {
+            Table::Static(StaticTable::Cont(StaticContTable { data, size, .. })) => {
                 unsafe {
                     debug_assert!(data.as_ref()[*size..new_size].iter().all(|x| x.is_none()));
                 }
@@ -694,14 +785,44 @@ impl Table {
             // loading the base address. However, in that case the above checks
             // that delta is non-zero and the new size doesn't exceed the
             // maximum mean we can't get here.
-            Table::Dynamic(DynamicTable::Func(DynamicFuncTable { elements, .. })) => {
-                elements.resize_with(new_size, || None)?;
+            Table::Dynamic(DynamicTable::Func(DynamicFuncTable {
+                elements,
+                allocation,
+                ..
+            })) => {
+                grow_dynamic_table(
+                    elements,
+                    allocation,
+                    new_size,
+                    limiter.as_deref_mut(),
+                    alloc_dynamic_table_elements,
+                )?;
             }
-            Table::Dynamic(DynamicTable::GcRef(DynamicGcRefTable { elements, .. })) => {
-                elements.resize_with(new_size, || None)?;
+            Table::Dynamic(DynamicTable::GcRef(DynamicGcRefTable {
+                elements,
+                allocation,
+                ..
+            })) => {
+                grow_dynamic_table(
+                    elements,
+                    allocation,
+                    new_size,
+                    limiter.as_deref_mut(),
+                    alloc_dynamic_table_elements,
+                )?;
             }
-            Table::Dynamic(DynamicTable::Cont(DynamicContTable { elements, .. })) => {
-                elements.resize_with(new_size, || None)?;
+            Table::Dynamic(DynamicTable::Cont(DynamicContTable {
+                elements,
+                allocation,
+                ..
+            })) => {
+                grow_dynamic_table(
+                    elements,
+                    allocation,
+                    new_size,
+                    limiter.as_deref_mut(),
+                    alloc_dynamic_cont_table_elements,
+                )?;
             }
         }
 
@@ -794,16 +915,18 @@ impl Table {
                     current_elements: *size,
                 }
             }
-            Table::Static(StaticTable::GcRef(StaticGcRefTable { data, size })) => {
+            Table::Static(StaticTable::GcRef(StaticGcRefTable { data, size, .. })) => {
                 VMTableDefinition {
                     base: data.cast().into(),
                     current_elements: *size,
                 }
             }
-            Table::Static(StaticTable::Cont(StaticContTable { data, size })) => VMTableDefinition {
-                base: data.cast().into(),
-                current_elements: *size,
-            },
+            Table::Static(StaticTable::Cont(StaticContTable { data, size, .. })) => {
+                VMTableDefinition {
+                    base: data.cast().into(),
+                    current_elements: *size,
+                }
+            }
             Table::Dynamic(DynamicTable::Func(DynamicFuncTable { elements, .. })) => {
                 VMTableDefinition {
                     base: NonNull::new(elements.as_mut_ptr()).unwrap().cast().into(),
@@ -875,7 +998,7 @@ impl Table {
         assert_eq!(self.element_type(), TableElementType::GcRef);
         match self {
             Self::Dynamic(DynamicTable::GcRef(DynamicGcRefTable { elements, .. })) => elements,
-            Self::Static(StaticTable::GcRef(StaticGcRefTable { data, size })) => unsafe {
+            Self::Static(StaticTable::GcRef(StaticGcRefTable { data, size, .. })) => unsafe {
                 &data.as_non_null().as_ref()[..*size]
             },
             _ => unreachable!(),
@@ -888,7 +1011,7 @@ impl Table {
             Self::Dynamic(DynamicTable::Cont(DynamicContTable { elements, .. })) => unsafe {
                 slice::from_raw_parts(elements.as_ptr().cast(), elements.len())
             },
-            Self::Static(StaticTable::Cont(StaticContTable { data, size })) => unsafe {
+            Self::Static(StaticTable::Cont(StaticContTable { data, size, .. })) => unsafe {
                 slice::from_raw_parts(data.as_ptr().cast(), *size)
             },
             _ => unreachable!(),
@@ -901,7 +1024,7 @@ impl Table {
             Self::Dynamic(DynamicTable::Cont(DynamicContTable { elements, .. })) => unsafe {
                 slice::from_raw_parts_mut(elements.as_mut_ptr().cast(), elements.len())
             },
-            Self::Static(StaticTable::Cont(StaticContTable { data, size })) => unsafe {
+            Self::Static(StaticTable::Cont(StaticContTable { data, size, .. })) => unsafe {
                 slice::from_raw_parts_mut(data.as_ptr().cast(), *size)
             },
             _ => unreachable!(),
@@ -915,7 +1038,7 @@ impl Table {
         assert_eq!(self.element_type(), TableElementType::GcRef);
         match self {
             Self::Dynamic(DynamicTable::GcRef(DynamicGcRefTable { elements, .. })) => elements,
-            Self::Static(StaticTable::GcRef(StaticGcRefTable { data, size })) => unsafe {
+            Self::Static(StaticTable::GcRef(StaticGcRefTable { data, size, .. })) => unsafe {
                 &mut data.as_non_null().as_mut()[..*size]
             },
             _ => unreachable!(),
@@ -968,6 +1091,7 @@ impl Default for Table {
     fn default() -> Self {
         Self::from(StaticFuncTable {
             data: SendSyncPtr::new(NonNull::from(&mut [])),
+            _allocation: None,
             size: 0,
             lazy_init: false,
         })

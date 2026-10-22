@@ -175,8 +175,20 @@ impl ResourceLimiter for TrackingLimiter {
         desired: usize,
         maximum: Option<usize>,
     ) -> wasmtime::Result<bool> {
-        self.pending_memory_growth = None;
+        // A later table callback observes that the preceding permitted linear
+        // allocation completed. Confirm it before competing native admission.
+        self.confirm_memory_growth();
         self.limits.table_growing(current, desired, maximum)
+    }
+
+    fn table_allocating(
+        &mut self,
+        bytes: usize,
+    ) -> wasmtime::Result<Option<Box<dyn wasmtime::TableAllocation>>> {
+        match &self.budget {
+            Some(budget) => crate::native_tables::reserve(budget, bytes),
+            None => Ok(None),
+        }
     }
 
     fn table_grow_failed(&mut self, error: wasmtime::Error) -> wasmtime::Result<()> {
@@ -471,3 +483,8 @@ mod tests {
             .is_err());
     }
 }
+
+#[cfg(test)]
+mod native_store_tests;
+#[cfg(test)]
+mod native_table_tests;

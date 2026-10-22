@@ -121,7 +121,36 @@ CONTROLS = (('original-host-memory',
  ('ordinary-backend',
   'latent-wasmtime',
   'ordinary_backend_codec_reports_original_peak_and_result_outlives_store_cleanup',
-  ('backend::readiness::tests::invocation::ordinary_backend_codec_reports_original_peak_and_result_outlives_store_cleanup',)))
+  ('backend::readiness::tests::invocation::ordinary_backend_codec_reports_original_peak_and_result_outlives_store_cleanup',)),
+ ('actual-native-table-owner',
+  'latent-wasmtime',
+  'host::native_table_tests::',
+  ('host::native_table_tests::actual_typescript_fixed_tables_debit_original_memory_and_outlive_limiter_destruction',
+   'host::native_table_tests::actual_table_refusal_keeps_exact_original_memory_error_and_no_retained_owner',
+   'host::native_table_tests::actual_dynamic_table_growth_pays_exact_old_new_overlap_and_keeps_function_cells',
+   'host::native_table_tests::actual_dynamic_table_refused_replacement_keeps_original_cells_capacity_and_owner',
+   'host::native_table_tests::actual_tiny_and_zero_tables_do_not_reserve_declared_maximum_capacity',
+   'host::native_table_tests::actual_preceding_linear_allocation_is_confirmed_before_table_memory_admission',
+   'host::native_table_tests::actual_original_element_and_table_count_caps_still_refuse_without_extra_owners',
+   'host::native_table_tests::actual_pooled_table_slot_keeps_owner_through_user_data_then_real_flush',
+   'host::native_table_tests::actual_batched_pool_table_keeps_original_owner_until_decommit_queue_destruction')),
+ ('actual-native-store-owner',
+ 'latent-wasmtime',
+ 'host::native_store_tests::',
+ ('host::native_store_tests::actual_store_box_refusal_preserves_original_error_and_exactly_once_data_drop',
+  'host::native_store_tests::actual_dummy_instance_refusal_rolls_back_box_map_factory_and_user_data',
+  'host::native_store_tests::actual_store_core_and_component_owners_outlive_user_data_until_physical_cleanup',
+  'host::native_store_tests::actual_into_data_frees_inner_and_factory_before_returning_once_owned_data',
+  'host::native_store_tests::actual_user_data_unwind_cannot_refund_the_still_allocated_store',
+  'host::native_store_tests::actual_instance_map_overlap_refusal_preserves_prior_instance_and_fresh_reuse',
+  'host::native_store_tests::actual_passive_segment_backing_remains_owned_until_guest_elem_drop',
+  'host::native_store_tests::actual_tiny_component_still_fits_original_one_mib_and_one_billion_fuel',
+  'host::native_store_tests::actual_cancelled_lift_preserves_store_owners_and_cannot_credit_another_live_store',
+  'host::native_store_tests::actual_factory_arc_layout_includes_overalignment_and_both_pinned_counters')),
+ ('closed-guest-trap-diagnostics',
+ 'latent-wasmtime',
+ 'containment::tests::backend_trap_labels_match_the_public_closed_classification',
+ ('containment::tests::backend_trap_labels_match_the_public_closed_classification',)) )
 
 PRODUCTS = ('latent', 'latentd', 'examples/package', 'examples/capsule_contracts', 'examples/capsule_authoring')
 RECIPE = ('.github/workflows/host-codec-memory.yml', '.cargo/managed-guest.toml',
@@ -210,8 +239,8 @@ def qualify(output: Path, revision: str) -> dict:
     require(re.fullmatch('[0-9a-f]{40}', revision) is not None, 'host-codec-source-revision')
     require(sys.platform == 'linux', 'host-codec-linux-owner-required')
     names = [name for _,_,_,cases in CONTROLS for name in cases]
-    require(len(CONTROLS) == 14 and len({row[0] for row in CONTROLS}) == 14
-            and len(names) == len(set(names)) == 61, 'host-codec-control-inventory')
+    require(len(CONTROLS) == 17 and len({row[0] for row in CONTROLS}) == 17
+            and len(names) == len(set(names)) == 81, 'host-codec-control-inventory')
     output = fresh(output)
     codec_wasmtime.verify(ROOT)
     before, inputs = source_identity(ROOT), materials(ROOT)
@@ -249,12 +278,12 @@ def qualify(output: Path, revision: str) -> dict:
             products[name] = identity
         record = {'schemaVersion':'latent.host-codec.native-products.v1','status':'passed',
             'sourceRevision':revision,'source':before,'materials':inputs,'compiler':compiler,
-            'products':products,'commands':stages.records,'controlCount':61,'nativeCohort':'wasmtime-48.0.7-latent-dynamic-value-memory-v1',
+            'products':products,'commands':stages.records,'controlCount':81,'nativeCohort':codec_wasmtime.COHORT,
             'controls':{stage:list(names) for stage,_,_,names in CONTROLS},
             'profile':'normal-managed-guest-default-features','signedQualification':False,
             'guestJavaScriptEngineCompiled':False,'guestSourceCompiled':False,
             'historicalReceiptRewritten':False,
-            'scope':'ordinary-host-codec-original-memory-and-selected-c-public-async-type-sync-core-admission; legacy framing and serialized transport controller frames excluded'}
+            'scope':'ordinary-host-codec-table-and-selected-Store-instance-buffer-original-memory-and-selected-c-public-async-type-sync-core-admission-and-closed-guest-trap-diagnostics; registry, FuncRefs, concurrent-task, hostcall, request-context transitive buffers, legacy framing and serialized controller frames excluded'}
         write_json(output/'native-products.json',record)
         return record
     except Exception as error:

@@ -48,6 +48,7 @@ pub(crate) mod gc;
 pub(crate) mod instance;
 pub(crate) mod instantiate;
 pub(crate) mod limits;
+pub(crate) mod native_memory;
 pub(crate) mod linker;
 pub(crate) mod memory;
 pub(crate) mod module;

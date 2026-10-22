@@ -1,5 +1,6 @@
 use crate::prelude::*;
 use crate::runtime::component::{HostResourceData, Instance};
+use crate::runtime::native_memory::{Memory as NativeMemory, NativeMap};
 use crate::runtime::vm;
 use crate::runtime::vm::component::{
     CallContext, ComponentInstance, HandleCounter, HandleTable, OwnedComponentInstance,
@@ -8,7 +9,6 @@ use crate::store::{StoreData, StoreId, StoreOpaque};
 use crate::{AsContext, AsContextMut, Engine, Store, StoreContextMut};
 use core::pin::Pin;
 use wasmtime_environ::component::RuntimeComponentInstanceIndex;
-use wasmtime_environ::prelude::TryPrimaryMap;
 
 #[cfg(feature = "component-model-async")]
 use crate::{
@@ -37,7 +37,7 @@ const DEFAULT_MAX_COMPONENT_HANDLES: usize = 100_000;
 pub struct ComponentStoreData {
     /// All component instances, in a similar manner to how core wasm instances
     /// are managed.
-    instances: TryPrimaryMap<ComponentInstanceId, Option<OwnedComponentInstance>>,
+    instances: NativeMap<ComponentInstanceId, Option<OwnedComponentInstance>>,
 
     /// Whether an instance belonging to this store has trapped.
     trapped: bool,
@@ -92,9 +92,9 @@ pub struct RuntimeInstance {
 }
 
 impl ComponentStoreData {
-    pub fn new(engine: &Engine) -> ComponentStoreData {
+    pub fn new(engine: &Engine, memory: NativeMemory) -> ComponentStoreData {
         ComponentStoreData {
-            instances: Default::default(),
+            instances: NativeMap::new(memory),
             trapped: false,
             num_component_instances: 0,
             component_host_table: Default::default(),
@@ -289,7 +289,7 @@ impl StoreData {
     pub(crate) fn push_component_instance(
         &mut self,
         data: OwnedComponentInstance,
-    ) -> Result<ComponentInstanceId, OutOfMemory> {
+    ) -> Result<ComponentInstanceId> {
         let expected = data.get().id();
         let ret = self.components.instances.push(Some(data))?;
         assert_eq!(expected, ret);

@@ -15,6 +15,7 @@ mod factory;
 mod host;
 mod invocation_input_observer;
 mod native_stacks;
+mod native_tables;
 mod phase0;
 mod preparation_metadata;
 mod preparation_observer;

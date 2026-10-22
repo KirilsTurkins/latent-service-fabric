@@ -5,11 +5,12 @@
       "cancel-in-progress": false,
       "group": "host-codec-memory-${{ github.ref }}"
     },
-    "name": "Ordinary host codec original memory",
+    "name": "Ordinary host codec table Store memory and closed diagnostics",
     "on": {
       "push": {
         "branches": [
-          "feat/host-codec-memory-736-20261021"
+          "feat/host-codec-memory-736-20261021",
+          "feat/typescript-table-memory-20261022"
         ]
       },
       "workflow_dispatch": {}
@@ -21,7 +22,7 @@
   "requiredJobs": [
     "native"
   ],
-  "reviewReason": "Add one source-bound native-only programme for original host codec accounting; preserve all existing workflows and frozen product readers.",
+  "reviewReason": "Run one reviewed combined81 native-only cohort on its isolated branch; preserve original triggers plus explicit new feature branch, permissions, concurrency, tool pins, budgets and failure artifact retention.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/host-codec-memory.yml"
 }

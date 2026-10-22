@@ -12,6 +12,7 @@ use crate::module::ModuleRegistry;
 #[cfg(feature = "component-model-async")]
 use crate::runtime::component::concurrent::ConcurrentInstanceState;
 use crate::runtime::component::{ComponentInstanceId, RuntimeInstance};
+use crate::runtime::native_memory::NativeMap;
 use crate::runtime::vm::instance::{InstanceLayout, OwnedInstance, OwnedVMContext};
 use crate::runtime::vm::vmcontext::VMFunctionBody;
 use crate::runtime::vm::{
@@ -28,7 +29,6 @@ use core::mem::offset_of;
 use core::pin::Pin;
 use core::ptr::NonNull;
 use wasmtime_environ::component::*;
-use wasmtime_environ::error::OutOfMemory;
 use wasmtime_environ::prelude::TryPrimaryMap;
 use wasmtime_environ::{HostPtr, PrimaryMap, VMSharedTypeIndex};
 
@@ -130,11 +130,11 @@ pub struct ComponentInstance {
 
     /// Contains state specific to each (sub-)component instance within this
     /// top-level instance.
-    instance_states: TryPrimaryMap<RuntimeComponentInstanceIndex, InstanceState>,
+    instance_states: NativeMap<RuntimeComponentInstanceIndex, InstanceState>,
 
     /// What all compile-time-identified core instances are mapped to within the
     /// `Store` that this component belongs to.
-    instances: TryPrimaryMap<RuntimeInstanceIndex, InstanceId>,
+    instances: NativeMap<RuntimeInstanceIndex, InstanceId>,
 
     /// Storage for the type information about resources within this component
     /// instance.
@@ -322,35 +322,48 @@ impl ComponentInstance {
         resource_types: Arc<TryPrimaryMap<ResourceIndex, ResourceType>>,
         imports: &Arc<PrimaryMap<RuntimeImportIndex, RuntimeImport>>,
         store: NonNull<dyn VMStore>,
-    ) -> Result<OwnedComponentInstance, OutOfMemory> {
+    ) -> Result<OwnedComponentInstance> {
         let offsets = VMComponentOffsets::new(HostPtr, component.env_component());
         let num_instances = component.env_component().num_runtime_component_instances;
-        let mut instance_states = TryPrimaryMap::with_capacity(num_instances.try_into().unwrap())?;
+        // SAFETY: the caller supplies the owning Store for the whole instance.
+        let memory = unsafe { store.as_ref() }.native_memory();
+        let mut instance_states =
+            NativeMap::with_capacity(num_instances.try_into().unwrap(), memory.clone())?;
         for _ in 0..num_instances {
             instance_states.push(InstanceState::default())?;
         }
 
-        let instances = TryPrimaryMap::with_capacity(
+        let instances = NativeMap::with_capacity(
             component
                 .env_component()
                 .num_runtime_instances
                 .try_into()
                 .unwrap(),
+            memory.clone(),
         )?;
 
-        let mut ret = OwnedInstance::new(ComponentInstance {
-            id,
-            offsets,
-            instance_states,
-            instances,
-            component: component.clone(),
-            resource_types,
-            imports: imports.clone(),
-            store: VMStoreRawPtr(store),
-            vmctx: OwnedVMContext::new(),
-        })?;
+        let mut ret = OwnedInstance::new(
+            ComponentInstance {
+                id,
+                offsets,
+                instance_states,
+                instances,
+                component: component.clone(),
+                resource_types,
+                imports: imports.clone(),
+                store: VMStoreRawPtr(store),
+                vmctx: OwnedVMContext::new(),
+            },
+            memory,
+        )?;
         unsafe {
             ret.get_mut().initialize_vmctx();
+            // The context follows the complete owned header, not its starting
+            // field offset. Keep both inverse paths tied to the real layout.
+            debug_assert_eq!(
+                ret.get().vmctx().as_ref().instance().cast_const(),
+                core::ptr::from_ref(ret.get()),
+            );
         }
         Ok(ret)
     }
@@ -863,7 +876,7 @@ impl ComponentInstance {
     pub fn instance_states(
         self: Pin<&mut Self>,
     ) -> (
-        &mut TryPrimaryMap<RuntimeComponentInstanceIndex, InstanceState>,
+        &mut NativeMap<RuntimeComponentInstanceIndex, InstanceState>,
         &ComponentTypes,
     ) {
         // safety: we've chosen the `pin` guarantee of `self` to not apply to
@@ -909,10 +922,7 @@ impl ComponentInstance {
 
     /// Pushes a new runtime instance that's been created into
     /// `self.instances`.
-    pub fn push_instance_id(
-        self: Pin<&mut Self>,
-        id: InstanceId,
-    ) -> Result<RuntimeInstanceIndex, OutOfMemory> {
+    pub fn push_instance_id(self: Pin<&mut Self>, id: InstanceId) -> Result<RuntimeInstanceIndex> {
         self.instances_mut().push(id)
     }
 
@@ -926,7 +936,7 @@ impl ComponentInstance {
         self.instances[idx]
     }
 
-    fn instances_mut(self: Pin<&mut Self>) -> &mut TryPrimaryMap<RuntimeInstanceIndex, InstanceId> {
+    fn instances_mut(self: Pin<&mut Self>) -> &mut NativeMap<RuntimeInstanceIndex, InstanceId> {
         // SAFETY: we've chosen the `Pin` guarantee of `Self` to not apply to
         // the map returned.
         unsafe { &mut self.get_unchecked_mut().instances }
@@ -1010,11 +1020,9 @@ impl VMComponentContext {
     /// Moves the `self` pointer backwards to the `ComponentInstance` pointer
     /// that this `VMComponentContext` trails.
     pub fn instance(&self) -> *mut ComponentInstance {
-        unsafe {
-            (self as *const Self as *mut u8)
-                .offset(-(offset_of!(ComponentInstance, vmctx) as isize))
-                as *mut ComponentInstance
-        }
+        // SAFETY: this context trails its owning ComponentInstance. Use the
+        // same complete-layout inverse as host entry and vmctx_instance_id.
+        unsafe { ComponentInstance::from_vmctx(NonNull::from(self)).as_ptr() }
     }
 
     /// Helper function to cast between context types using a debug assertion to

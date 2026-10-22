@@ -835,7 +835,17 @@ impl WasmtimeBackend {
                 .cpu_fuel;
             host_state.accounting.reset_fuel_watermark(initial_fuel);
         }
-        let mut store = Store::new(&self.engine, host_state);
+        let mut store = if matches!(
+            host_state.accounting.budget().profile(),
+            latent_core::BudgetProfile::Phase3 | latent_core::BudgetProfile::Phase4
+        ) {
+            let memory = crate::native_tables::binding(host_state.accounting.budget())
+                .map_err(native_store_error)?;
+            Store::try_new_with_memory_binding(&self.engine, host_state, memory)
+                .map_err(native_store_error)?
+        } else {
+            Store::new(&self.engine, host_state)
+        };
         store.set_hostcall_fuel(hostcall_fuel);
         store.limiter(|state| &mut state.limiter);
         store.set_fuel(initial_fuel).map_err(|error| {
@@ -1110,6 +1120,24 @@ impl ExecutionBackend for WasmtimeBackend {
             Ok(())
         })
     }
+}
+
+fn native_store_error(error: wasmtime::Error) -> PlatformError {
+    if let Some(error) = error
+        .chain()
+        .find_map(|cause| cause.downcast_ref::<latent_core::BudgetError>())
+    {
+        return error.to_platform_error();
+    }
+    platform_error(
+        if error.is::<wasmtime::OutOfMemory>() {
+            PlatformErrorCode::ResourceExhausted
+        } else {
+            PlatformErrorCode::Internal
+        },
+        "native invocation Store construction failed",
+        false,
+    )
 }
 
 fn is_memory_limit_error(error: &wasmtime::Error) -> bool {
