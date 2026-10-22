@@ -233,7 +233,11 @@ class RepositoryInventoryTests(unittest.TestCase):
             'Fetch exact historical source inputs for Python preservation controls']
         self.assertEqual(len(matches), 1)
         self.assertEqual(matches[0]['if'], "matrix.lane == 'python'")
-        words = shlex.split(matches[0]['run'].replace('\\\n', ''))
+        logical = matches[0]['run'].replace('\\\n', '')
+        # Newlines delimit shell commands even when shlex.split discards them.
+        # Every frozen revision must remain an argument to this one git fetch.
+        self.assertEqual(len([line for line in logical.splitlines() if line.strip()]), 1)
+        words = shlex.split(logical)
         self.assertEqual(words[:5], ['git', 'fetch', '--no-tags', '--depth=1', 'origin'])
         expected = {module.SOURCE for module in (go_http_tenant_native_products,
             http_phase_native_products, http_tenant_native_products, java_phase_native_products,

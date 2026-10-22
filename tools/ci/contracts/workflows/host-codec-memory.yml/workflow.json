@@ -32,7 +32,7 @@
   "requiredJobs": [
     "native"
   ],
-  "reviewReason": "Select the session owner branch and exact 170-case programme",
+  "reviewReason": "Select one172 native programme for original sealed session backing and closed C allocator System routing",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/host-codec-memory.yml"
 }

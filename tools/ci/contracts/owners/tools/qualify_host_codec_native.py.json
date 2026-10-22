@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_host_codec_native.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Prepay original sealed session strong and weak storage before allocation; append seven exact native controls",
+  "reviewReason": "Append seven original session owners and two exact C canonical private System stack controls after the unchanged163 prefix; retain the original Wasmtime fork, products, recipe and bounds",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "c00d10a3c72cd65a6dc7648e38df4f791ac60d5b080439d96a09e506f754994c"
+  "sha256": "586b1ac5d39c292189c89ca513f13fcd6d6e940a146c69cb78f96ced338a0d4d"
 }
