@@ -7433,7 +7433,12 @@
         "host::native_func_refs_tests::actual_funcrefs_all_four_staged_refusals_preserve_roots_fill_and_original_error",
         "host::native_func_refs_tests::actual_funcrefs_shared_linker_root_survives_linker_drop_until_store_destruction",
         "host::native_func_refs_tests::actual_funcrefs_instance_pre_pair_refusal_preserves_prior_instance_and_retry",
-        "host::native_func_refs_tests::actual_funcrefs_default_lookup_preserves_original_admission_error"
+        "host::native_func_refs_tests::actual_funcrefs_default_lookup_preserves_original_admission_error",
+        "host::native_resource_types_tests::actual_resource_types_pre_and_function_metadata_outlive_store_and_factory",
+        "host::native_resource_types_tests::actual_resource_types_both_admission_refusals_preserve_prior_instance_and_retry",
+        "host::native_resource_types_tests::actual_resource_types_independent_stores_cannot_refund_live_foreign_metadata",
+        "host::native_resource_types_tests::actual_resource_types_concurrent_metadata_clones_release_original_owner_once",
+        "host::native_resource_types_tests::actual_resource_types_zero_resource_tiny_call_keeps_original_one_mib_and_billion_fuel"
       ],
       "expectedIgnored": [
         "cache::measurement::cache_lookup_collector",
@@ -7446,7 +7451,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 443,
+      "minimumCases": 448,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [

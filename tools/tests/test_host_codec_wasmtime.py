@@ -21,7 +21,7 @@ class PinnedWasmtimeSource(unittest.TestCase):
 
     def test_exact_vendor_source_and_original_license_are_required_by_the_ci_graph(self):
         checked = source.verify()
-        self.assertEqual(len(checked['files']), 258)
+        self.assertEqual(len(checked['files']), 259)
         self.assertEqual(checked['nativeCohort'], source.COHORT)
         self.assertEqual(checked['licenseFiles'], {'LICENSE': hashlib.sha256(
             (source.ROOT / source.PROVIDER / 'LICENSE').read_bytes()).hexdigest()})
@@ -114,7 +114,7 @@ class PinnedWasmtimeSource(unittest.TestCase):
                 registry.workspace(root)
 
     def test_actual_table_hook_sources_and_new_cohort_require_exact_postimages(self):
-        self.assertEqual(source.COHORT, 'wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-memory-v4')
+        self.assertEqual(source.COHORT, 'wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-memory-v5')
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             self.fixture(root)
@@ -147,7 +147,7 @@ class PinnedWasmtimeSource(unittest.TestCase):
                     with self.assertRaisesRegex(ValueError, 'host-codec-wasmtime-source-identity'):
                         source.verify(root)
                     target.write_bytes(original)
-            self.assertEqual(len(source.verify(root)['files']), 258)
+            self.assertEqual(len(source.verify(root)['files']), 259)
 
     def test_funcrefs_stable_arena_and_directory_sources_cannot_be_substituted(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -164,7 +164,29 @@ class PinnedWasmtimeSource(unittest.TestCase):
                     with self.assertRaisesRegex(ValueError, 'host-codec-wasmtime-source-identity'):
                         source.verify(root)
                     target.write_bytes(original)
-            self.assertEqual(len(source.verify(root)['files']), 258)
+            self.assertEqual(len(source.verify(root)['files']), 259)
+
+
+    def test_resource_substitution_map_and_escape_ownership_sources_cannot_be_substituted(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.fixture(root)
+            for name in ('src/runtime/component/resource_types.rs',
+                         'src/runtime/component/instance.rs',
+                         'src/runtime/component/linker.rs',
+                         'src/runtime/component/matching.rs',
+                         'src/runtime/component/types.rs',
+                         'src/runtime/component/mod.rs',
+                         'src/runtime/vm/component.rs',
+                         'src/runtime/native_memory.rs'):
+                with self.subTest(name=name):
+                    target = root / source.PROVIDER / name
+                    original = target.read_bytes()
+                    target.write_bytes(original + b'\nchanged-resource-owner\n')
+                    with self.assertRaisesRegex(ValueError, 'host-codec-wasmtime-source-identity'):
+                        source.verify(root)
+                    target.write_bytes(original)
+            self.assertEqual(len(source.verify(root)['files']), 259)
 
 
 if __name__ == '__main__':
