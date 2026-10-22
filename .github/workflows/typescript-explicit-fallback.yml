@@ -1,0 +1,82 @@
+name: TypeScript explicit application fallback
+on:
+  push:
+    branches: ['feat/typescript-explicit-fallback-20261022']
+    paths:
+      - '.github/workflows/typescript-explicit-fallback.yml'
+      - 'tools/qualify_typescript_explicit_fallback.py'
+      - 'tools/typescript_explicit_fallback_fixture.py'
+      - 'tools/typescript_explicit_fallback_node.py'
+      - 'tools/tests/test_typescript_explicit_fallback.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: typescript-explicit-fallback-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  explicit-fallback:
+    name: One normal TypeScript component and four actual fallback outcomes
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Fetch the immutable existing native source objects
+        run: |
+          git fetch --no-tags --depth=1 origin f6251df89851de98cb869784d095ad5cc2e5b385
+          git fetch --no-tags --depth=1 origin f244b81f14abad5d4dc4984cb842aaf1d9076e23
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.19.0
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - name: Install locked Python controls
+        run: python3 -m pip install -r tools/requirements.lock
+      - name: Check the finite fallback readers and original native product boundaries
+        run: python3 -B -m unittest tools.tests.test_typescript_explicit_fallback tools.tests.test_sdk_explicit_fallback -v
+      - name: Install the ordinary compiler namespace boundary
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Install the normal pinned TypeScript tools with their existing engine
+        run: python3 -B tools/typescript_capsule.py install-tools "$RUNNER_TEMP/typescript-fallback-tools"
+      - name: Authenticate the existing five native products with original compilation lineage
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/c_thread_admission_native_products.py --output "$RUNNER_TEMP/typescript-fallback-native"
+      - name: Capture transitive callbacks build once sign and observe four actual invocations
+        run: |
+          python3 -B tools/qualify_typescript_explicit_fallback.py \
+            --native-products "$RUNNER_TEMP/typescript-fallback-native" \
+            --tools "$RUNNER_TEMP/typescript-fallback-tools" --output "$RUNNER_TEMP/typescript-fallback"
+      - name: Retain source construction outcomes and actual retirement observations
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: typescript-explicit-fallback-${{ github.sha }}
+          retention-days: 7
+          if-no-files-found: warn
+          path: |
+            ${{ runner.temp }}/typescript-fallback-native/*.json
+            ${{ runner.temp }}/typescript-fallback/*.json
+            ${{ runner.temp }}/typescript-fallback/*.log
+            ${{ runner.temp }}/typescript-fallback/logs/**
+            ${{ runner.temp }}/typescript-fallback/build/*.json
+            ${{ runner.temp }}/typescript-fallback/build/*.wit
+            ${{ runner.temp }}/typescript-fallback/build/wit/**
+            ${{ runner.temp }}/typescript-fallback/build/component.wasm
+            ${{ runner.temp }}/typescript-fallback/build/package/**
+            ${{ runner.temp }}/typescript-fallback/build/logs/**
+            ${{ runner.temp }}/typescript-fallback/node/*.json
+            ${{ runner.temp }}/typescript-fallback/node/*.log
+            ${{ runner.temp }}/typescript-fallback/node/controls/**

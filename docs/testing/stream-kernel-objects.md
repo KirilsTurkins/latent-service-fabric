@@ -385,3 +385,47 @@ Sealed image/layout/BTF, installed final-free production and node/operator/
 provider conformance remain mandatory. No kernel is linked, booted or installed;
 actual firmware execution, complete allocation closure and production gates
 remain false. This campaign builds no SDK native products.
+
+## Compiled registration, sysfs and uevent source extension
+
+The exclusive `--registration` profile preserves all twelve earlier profiles,
+their complete jobs, symbol floors and bounds. Its
+[owning run](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39688445198)
+passed on source `1b4e81c653d5a2dc4473d4cc7af55f3f4ea9854b`. The
+[public observation](evidence/kernel-device-registration-objects-compiled-2026-10-22.json)
+binds 160 CRC-checked archive members, 253 Git materials, 92 complete maintained
+inputs, 136 complete definition preimages and 155 derived outputs. Twenty-one
+guides are authenticated historical context; all 232 executable, data and
+contract materials and all 114 source-freeze identities match the exercised
+source. The receipt records digest tables for the derived files; it does not
+claim those source files are uploaded as archive members.
+
+Actual Kbuild compiled 48 unlinked x86 objects and checked 201 defined GLOBAL
+functions (156 private and 45 original), retaining the prior 37-object and
+145-function floor. All 129 selected hosted source/controller tests and 53
+completed, cleaned commands passed. The earlier 234-case firmware campaign is
+retained historical evidence and was not repeated. The original 4,309-symbol
+configuration changes only `CONFIG_LSF_STREAM_FACTORY` from `n` to `y`;
+SELinux, Netlabel, audit, XFRM, ACPI and strict RWX remain enabled. The generic
+extra-source cap stays 32. Nine fixed device, 13 firmware and 20 registration
+paths use anchored reads from the same authenticated extraction, with the
+original 4 MiB per-file and 16 MiB aggregate bounds.
+
+Two earlier owning failures remain recorded as failures: the private const
+callback chain did not match the maintained mutable `dev_of_node` signature,
+then a private SKB-copy include preceded its actual static helper. The final
+source corrects only that private type chain and include placement; 152 derived
+outputs remain exact and the other three reverse exactly to the reviewed
+source. Supplemental compiler counterexamples and the historical serialized
+owner, SKB, callback and tap references provide no Linux runtime proof.
+
+The source implements prepaid core/capability/registration, sysfs/IDR and
+uevent ENV/PATH/SKB/filter paths with the original 512 KiB bank, 192 KiB
+infrastructure tail and 256 records. Normal factory selection remains `NULL`.
+Real recipient callbacks, notifications, receive-work and signal ownership,
+physical shared queues, native bootstrap and failed-open original-owner
+retention, complete device/DMA/RX and neighbour/DNS/deferred allocation closure
+remain unfinished. Sealed image/layout/BTF, installed final-free production
+and real node/operator/provider conformance are still required. No kernel is
+linked, booted or installed, no SDK native products are built, and actual
+registration, complete allocation closure and all production gates remain false.
