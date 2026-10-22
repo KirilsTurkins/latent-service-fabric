@@ -165,7 +165,12 @@ CONTROLS = (('original-host-memory',
   'host::native_func_refs_tests::actual_funcrefs_all_four_staged_refusals_preserve_roots_fill_and_original_error',
   'host::native_func_refs_tests::actual_funcrefs_shared_linker_root_survives_linker_drop_until_store_destruction',
   'host::native_func_refs_tests::actual_funcrefs_instance_pre_pair_refusal_preserves_prior_instance_and_retry',
-  'host::native_func_refs_tests::actual_funcrefs_default_lookup_preserves_original_admission_error')))
+  'host::native_func_refs_tests::actual_funcrefs_default_lookup_preserves_original_admission_error')),
+ ('c-ready-handoff',
+ 'latent-component-threading',
+ 'c_ready_handoff_',
+ ('component::c::tests::c_ready_handoff_canonical_requires_ready_aware_promote',
+  'component::c::tests::c_ready_handoff_final_graph_refuses_resume_or_mismatched_target')))
 
 PRODUCTS = ('latent', 'latentd', 'examples/package', 'examples/capsule_contracts', 'examples/capsule_authoring')
 RECIPE = ('.github/workflows/host-codec-memory.yml', '.cargo/managed-guest.toml',
@@ -254,8 +259,8 @@ def qualify(output: Path, revision: str) -> dict:
     require(re.fullmatch('[0-9a-f]{40}', revision) is not None, 'host-codec-source-revision')
     require(sys.platform == 'linux', 'host-codec-linux-owner-required')
     names = [name for _,_,_,cases in CONTROLS for name in cases]
-    require(len(CONTROLS) == 19 and len({row[0] for row in CONTROLS}) == 19
-            and len(names) == len(set(names)) == 90, 'host-codec-control-inventory')
+    require(len(CONTROLS) == 20 and len({row[0] for row in CONTROLS}) == 20
+            and len(names) == len(set(names)) == 92, 'host-codec-control-inventory')
     output = fresh(output)
     codec_wasmtime.verify(ROOT)
     before, inputs = source_identity(ROOT), materials(ROOT)
@@ -293,12 +298,12 @@ def qualify(output: Path, revision: str) -> dict:
             products[name] = identity
         record = {'schemaVersion':'latent.host-codec.native-products.v1','status':'passed',
             'sourceRevision':revision,'source':before,'materials':inputs,'compiler':compiler,
-            'products':products,'commands':stages.records,'controlCount':90,'nativeCohort':codec_wasmtime.COHORT,
+            'products':products,'commands':stages.records,'controlCount':92,'nativeCohort':codec_wasmtime.COHORT,
             'controls':{stage:list(names) for stage,_,_,names in CONTROLS},
             'profile':'normal-managed-guest-default-features','signedQualification':False,
             'guestJavaScriptEngineCompiled':False,'guestSourceCompiled':False,
             'historicalReceiptRewritten':False,
-            'scope':'ordinary-host-codec-table-and-selected-Store-instance-buffer-registry-FuncRefs-container-original-memory-and-selected-c-public-async-type-sync-core-admission-and-closed-guest-trap-diagnostics; direct-Core-HostFunc-construction, shared-preparation-closures, concurrent-task, hostcall, request-context transitive buffers, legacy framing and serialized controller frames excluded'}
+            'scope':'ordinary-host-codec-table-and-selected-Store-instance-buffer-registry-FuncRefs-container-original-memory-and-selected-c-public-async-type-sync-core-admission-and-authenticated-c-ready-handoff-and-closed-guest-trap-diagnostics; direct-Core-HostFunc-construction, shared-preparation-closures, concurrent-task, hostcall, request-context transitive buffers, legacy framing and serialized controller frames excluded'}
         write_json(output/'native-products.json',record)
         return record
     except Exception as error:

@@ -55,7 +55,7 @@
       },
       {
         "id": "own-native-memory",
-        "name": "Execute ninety source-bound controls with the ordinary native host",
+        "name": "Execute ninety-two source-bound controls with the ordinary native host",
         "run": "python3 -B tools/qualify_host_codec_native.py --source-commit \"${{ github.sha }}\" --output \"$RUNNER_TEMP/host-codec-memory\""
       },
       {
@@ -74,7 +74,7 @@
   },
   "jobId": "native",
   "kind": "job",
-  "reviewReason": "Run90 strict controls in unchanged normal profile, products, finite job limits and all original commands.",
+  "reviewReason": "Run92 strict controls in unchanged normal profile, five products and finite job limits; preserve all3 exact commands.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/host-codec-memory.yml"
 }

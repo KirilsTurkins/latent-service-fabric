@@ -45,7 +45,7 @@ jobs:
         run: python3 -m pip install -r tools/requirements.lock
       - name: Refuse missing, ignored or changed control evidence
         run: python3 -B -m unittest tools.tests.test_host_codec_native -v
-      - name: Execute ninety source-bound controls with the ordinary native host
+      - name: Execute ninety-two source-bound controls with the ordinary native host
         id: own-native-memory
         run: >-
           python3 -B tools/qualify_host_codec_native.py
