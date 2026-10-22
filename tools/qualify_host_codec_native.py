@@ -234,9 +234,31 @@ CONTROLS = (('original-host-memory',
   'host::capabilities::retained::tests::retained_capability_directory_refusal_keeps_original_error_contents_and_fresh_grant',
   'host::capabilities::retained::tests::retained_capability_directory_elements_die_before_refund_even_during_unwind',
   'host::capabilities::retained::tests::retained_capability_all_three_real_directories_bind_original_budget_across_replacement',
-  'host::capabilities::retained::tests::retained_capability_empty_zst_and_phase1_paths_preserve_lazy_behavior')))
+  'host::capabilities::retained::tests::retained_capability_empty_zst_and_phase1_paths_preserve_lazy_behavior')),
+ ('actual-streaming-table-shared-owner',
+ 'latent-wasmtime',
+ 'host::streaming_http::table::',
+ ('host::streaming_http::table::tests::foreign_wrong_kind_stale_and_busy_handles_fail_closed',
+  'host::streaming_http::table::tests::finite_table_drops_actual_resources_even_with_busy_entries',
+  'host::streaming_http::table::tests::late_guard_cannot_erase_a_published_borrowed_or_reused_slot',
+  'host::streaming_http::table::tests::cancelled_opening_upload_reaps_actual_transport_then_reuses_reserved_slot',
+  'host::streaming_http::table::tests::cancelled_pending_read_reaps_actual_transport_then_reuses_unreturned_chunk_slot',
+  'host::streaming_http::table::tests::native_streaming_http_pending_reservation_outlives_table_without_cross_budget_credit',
+  'host::streaming_http::table::shared::tests::native_streaming_shared_arc_clones_hold_original_backing_and_phase1_stays_unbound',
+  'host::streaming_http::table::shared::tests::native_streaming_shared_arc_refusal_preserves_exact_budget_and_fresh_same_grant',
+  'host::streaming_http::table::shared::tests::native_streaming_shared_arc_concurrent_last_clones_drop_payload_once_before_refund',
+  'host::streaming_http::table::shared::tests::native_streaming_shared_arc_payload_unwind_still_retires_its_original_owner')),
+ ('actual-blob-table-owner',
+ 'latent-wasmtime',
+ 'blob_table_native_backing_',
+ ('host::blob::table::tests::blob_table_native_backing_retains_unused_slots_and_actual_values_until_drop',)),
+ ('original-session-table-native-owner',
+ 'latent-capabilities',
+ 'resource_table_native_backing_',
+ ('broker::tests::resource_table_memory::resource_table_native_backing_original_ledger_and_phase1_are_distinct_from_metadata',
+  'broker::tests::resource_table_memory::resource_table_native_backing_refusal_preserves_live_owners_and_closed_session_fence')))
 
-NATIVE_COHORT = 'wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-retained-capability-directories-memory-v10'
+NATIVE_COHORT = 'wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-retained-capability-directories-blob-streaming-shared-tables-memory-v11'
 
 PRODUCTS = ('latent', 'latentd', 'examples/package', 'examples/capsule_contracts', 'examples/capsule_authoring')
 RECIPE = ('.github/workflows/host-codec-memory.yml', '.cargo/managed-guest.toml',
@@ -325,8 +347,8 @@ def qualify(output: Path, revision: str) -> dict:
     require(re.fullmatch('[0-9a-f]{40}', revision) is not None, 'host-codec-source-revision')
     require(sys.platform == 'linux', 'host-codec-linux-owner-required')
     names = [name for _,_,_,cases in CONTROLS for name in cases]
-    require(len(CONTROLS) == 29 and len({row[0] for row in CONTROLS}) == 29
-            and len(names) == len(set(names)) == 133, 'host-codec-control-inventory')
+    require(len(CONTROLS) == 32 and len({row[0] for row in CONTROLS}) == 32
+            and len(names) == len(set(names)) == 146, 'host-codec-control-inventory')
     output = fresh(output)
     codec_wasmtime.verify(ROOT)
     before, inputs = source_identity(ROOT), materials(ROOT)
@@ -364,13 +386,13 @@ def qualify(output: Path, revision: str) -> dict:
             products[name] = identity
         record = {'schemaVersion':'latent.host-codec.native-products.v1','status':'passed',
             'sourceRevision':revision,'source':before,'materials':inputs,'compiler':compiler,
-            'products':products,'commands':stages.records,'controlCount':133,'nativeCohort':NATIVE_COHORT,
+            'products':products,'commands':stages.records,'controlCount':146,'nativeCohort':NATIVE_COHORT,
             'wasmtimeAllocationCohort':codec_wasmtime.COHORT,
             'controls':{stage:list(names) for stage,_,_,names in CONTROLS},
             'profile':'normal-managed-guest-default-features','signedQualification':False,
             'guestJavaScriptEngineCompiled':False,'guestSourceCompiled':False,
             'historicalReceiptRewritten':False,
-            'scope':'ordinary-host-three-retained-capability-directory-backings-and-six-closed-context-reply-buffers-and-concrete-callback-future-box-and-retained-activation-context-and-linear-allocation-notifications-codec-table-and-selected-Store-instance-buffer-registry-FuncRefs-container-resource-substitutions-original-memory-and-selected-c-public-async-type-sync-core-admission-and-authenticated-c-ready-handoff-and-closed-guest-trap-diagnostics-and-exact-native-thread-audit-codec-and-CLI-projection; direct-Core-HostFunc-construction, shared-preparation-closures, concurrent-task, other-hostcall-values-custom-Lower-shared-interior-error-owned-copies-and-opaque-accessor-scheduler-frames, request ingress and discarded scaffolding and other hostcall copies, legacy framing and serialized controller frames excluded'}
+            'scope':'ordinary-host-blob-fixed-Vec-and-streaming-HTTP-fixed-Vec-and-two-private-Shared-Arc-storage-shapes-and-three-retained-capability-directory-backings-and-six-closed-context-reply-buffers-and-concrete-callback-future-box-and-retained-activation-context-and-linear-allocation-notifications-codec-table-and-selected-Store-instance-buffer-registry-FuncRefs-container-resource-substitutions-original-memory-and-selected-c-public-async-type-sync-core-admission-and-authenticated-c-ready-handoff-and-closed-guest-trap-diagnostics-and-exact-native-thread-audit-codec-and-CLI-projection; direct-Core-HostFunc-construction, shared-preparation-closures, concurrent-task, other-hostcall-values-custom-Lower-shared-interior-error-owned-copies-and-opaque-accessor-scheduler-frames, request ingress and discarded scaffolding and other hostcall copies, SessionCore and transitive provider graphs, legacy framing and serialized controller frames excluded'}
         write_json(output/'native-products.json',record)
         return record
     except Exception as error:
