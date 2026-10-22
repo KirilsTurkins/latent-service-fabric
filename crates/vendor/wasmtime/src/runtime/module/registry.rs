@@ -1,8 +1,10 @@
 //! Implements a registry of modules for a store.
 
+use super::native_registry::{RegistryIndices, RegistryMap};
 use crate::code::{EngineCode, EngineCodePC, ModuleWithCode, StoreCode, StoreCodePC};
 #[cfg(feature = "component-model")]
 use crate::component::Component;
+use crate::runtime::native_memory::Memory;
 use crate::runtime::vm::VMWasmCallFunction;
 use crate::sync::{OnceLock, RwLock};
 use crate::vm::CompiledModuleId;
@@ -64,18 +66,21 @@ pub struct ModuleRegistry {
     /// then take the last element of the range. That picks the
     /// highest start address <= the query, and we can check whether
     /// it contains the address.
-    loaded_code: TryBTreeMap<StoreCodePC, LoadedCode>,
+    loaded_code: RegistryMap<StoreCodePC, LoadedCode>,
 
     /// Map from EngineCodePC start to StoreCodePC start. We use this
     /// to memoize the store-code creation process: each EngineCode is
     /// instantiated to a StoreCode only once per store.
-    store_code: TryBTreeMap<EngineCodePC, StoreCodePC>,
+    store_code: RegistryMap<EngineCodePC, StoreCodePC>,
 
     /// Modules instantiated in this registry.
     ///
     /// Every module is placed in this map, but not every module will
     /// be in a LoadedCode entry, because the module may have no text.
-    modules: TryBTreeMap<RegisteredModuleId, Module>,
+    modules: RegistryMap<RegisteredModuleId, Module>,
+
+    // Retain the factory after every registry buffer and its affine owner.
+    memory: Memory,
 }
 
 struct LoadedCode {
@@ -94,7 +99,7 @@ struct LoadedCode {
     ///
     /// This is lazily populated as modules are registered and instantiated from
     /// a component.
-    modules: TrySecondaryMap<StaticModuleIndex, Option<RegisteredModuleId>>,
+    modules: RegistryIndices,
 }
 
 /// An identifier of a module that has previously been inserted into a
@@ -106,7 +111,7 @@ struct LoadedCode {
 pub struct RegisteredModuleId(CompiledModuleId);
 
 fn assert_no_overlap(
-    loaded_code: &TryBTreeMap<StoreCodePC, LoadedCode>,
+    loaded_code: &RegistryMap<StoreCodePC, LoadedCode>,
     range: Range<StoreCodePC>,
 ) {
     if let Some((start, _)) = loaded_code.range(range.start..).next() {
@@ -150,6 +155,15 @@ impl<'a> ModuleOrComponent<'a> {
 }
 
 impl ModuleRegistry {
+    pub(crate) fn new(memory: Memory) -> Result<Self> {
+        Ok(Self {
+            loaded_code: RegistryMap::new(memory.clone())?,
+            store_code: RegistryMap::new(memory.clone())?,
+            modules: RegistryMap::new(memory.clone())?,
+            memory,
+        })
+    }
+
     /// Get a previously-registered module by id.
     pub fn module_by_id(&self, id: RegisteredModuleId) -> Option<&Module> {
         self.modules.get(id)
@@ -275,6 +289,9 @@ impl ModuleRegistry {
             Engine::same(engine, module_or_component.engine()),
             "cross-`Engine` usage is not supported"
         );
+        if self.memory.is_some() {
+            return self.register_accounted(module_or_component, engine, breakpoint_state);
+        }
         let compiled_id = match module_or_component {
             ModuleOrComponent::Module(module) => module.id(),
             #[cfg(feature = "component-model")]
@@ -289,7 +306,9 @@ impl ModuleRegistry {
         let id = match module_or_component {
             ModuleOrComponent::Module(module) => {
                 let id = RegisteredModuleId(compiled_id);
-                self.modules.entry(id).or_insert_with(|| module.clone())?;
+                self.modules
+                    .legacy_entry(id)
+                    .or_insert_with(|| module.clone())?;
                 Some(id)
             }
             #[cfg(feature = "component-model")]
@@ -297,7 +316,7 @@ impl ModuleRegistry {
         };
 
         // Create a StoreCode if one does not already exist.
-        let store_code_pc = match self.store_code.entry(code.text_range().start) {
+        let store_code_pc = match self.store_code.legacy_entry(code.text_range().start) {
             Entry::Vacant(v) => {
                 let store_code = StoreCode::new(engine, code)?;
                 let store_code_pc = store_code.text_range().start;
@@ -307,7 +326,7 @@ impl ModuleRegistry {
                     #[cfg(feature = "component-model")]
                     ModuleOrComponent::Component(component) => component.index(),
                 };
-                self.loaded_code.insert(
+                self.loaded_code.insert_prepared(
                     store_code_pc,
                     LoadedCode {
                         code: store_code,
@@ -328,10 +347,109 @@ impl ModuleRegistry {
                 .expect("loaded_code must have entry for StoreCodePC");
             loaded_code
                 .modules
-                .insert(module.env_module().module_index, Some(id))?;
+                .insert_prepared(module.env_module().module_index, Some(id))?;
             breakpoint_state.update(&mut loaded_code.code, module)?;
         }
 
+        Ok(id)
+    }
+
+    /// Accounted registration stages every replacement before publishing any
+    /// module/code/index edge. A later admission refusal drops only those
+    /// empty replacements, retaining all previous registry values and owners.
+    /// The caller has already rejected a foreign Engine before reaching here.
+    fn register_accounted(
+        &mut self,
+        module_or_component: ModuleOrComponent<'_>,
+        engine: &Engine,
+        breakpoint_state: RegisterBreakpointState,
+    ) -> Result<Option<RegisteredModuleId>> {
+        let (id, code, index) = match module_or_component {
+            ModuleOrComponent::Module(module) => (
+                Some(RegisteredModuleId(module.id())),
+                module.engine_code(),
+                module.index(),
+            ),
+            #[cfg(feature = "component-model")]
+            ModuleOrComponent::Component(component) => {
+                (None, component.engine_code(), component.index())
+            }
+        };
+        let code_key = code.text_range().start;
+        let existing = self.store_code.get(code_key).copied();
+        let mut pending_code = if existing.is_none() {
+            let store_code = StoreCode::new(engine, code)?;
+            assert_no_overlap(&self.loaded_code, store_code.text_range());
+            Some(LoadedCode {
+                code: store_code,
+                index: index.clone(),
+                modules: RegistryIndices::new(self.memory.clone())?,
+            })
+        } else {
+            None
+        };
+        let pc = existing.unwrap_or_else(|| pending_code.as_ref().unwrap().code.text_range().start);
+        let module_capacity = match id {
+            Some(id) => self.modules.prepare_insert(id)?,
+            None => None,
+        };
+        let loaded_capacity = if pending_code.is_some() {
+            self.loaded_code.prepare_insert(pc)?
+        } else {
+            None
+        };
+        let code_capacity = if pending_code.is_some() {
+            self.store_code.prepare_insert(code_key)?
+        } else {
+            None
+        };
+        let secondary_capacity = match module_or_component {
+            ModuleOrComponent::Module(module) => {
+                let loaded = pending_code.as_ref().unwrap_or_else(|| {
+                    self.loaded_code
+                        .get(pc)
+                        .expect("registered code must have a loaded entry")
+                });
+                loaded
+                    .modules
+                    .prepare_index(module.env_module().module_index)?
+            }
+            #[cfg(feature = "component-model")]
+            ModuleOrComponent::Component(_) => None,
+        };
+
+        // All admission has finished. The accounted map insertions below use
+        // only this staged capacity; there is no allocating Entry escape.
+        self.modules.commit_capacity(module_capacity);
+        self.loaded_code.commit_capacity(loaded_capacity);
+        self.store_code.commit_capacity(code_capacity);
+        if let Some(loaded) = pending_code.as_mut() {
+            loaded.modules.commit_capacity(secondary_capacity);
+        } else {
+            self.loaded_code
+                .get_mut(pc)
+                .unwrap()
+                .modules
+                .commit_capacity(secondary_capacity);
+        }
+        if let (ModuleOrComponent::Module(module), Some(id)) = (&module_or_component, id) {
+            if !self.modules.contains_key(id) {
+                self.modules.insert_prepared(id, (*module).clone())?;
+            }
+        }
+        if let Some(loaded) = pending_code {
+            self.loaded_code.insert_prepared(pc, loaded)?;
+            self.store_code.insert_prepared(code_key, pc)?;
+        }
+        if let (ModuleOrComponent::Module(module), Some(id)) = (module_or_component, id) {
+            let loaded = self.loaded_code.get_mut(pc).unwrap();
+            loaded
+                .modules
+                .insert_prepared(module.env_module().module_index, Some(id))?;
+            // Retain the original breakpoint update and its failure semantics
+            // after every complete registry edge has been installed.
+            breakpoint_state.update(&mut loaded.code, module)?;
+        }
         Ok(id)
     }
 

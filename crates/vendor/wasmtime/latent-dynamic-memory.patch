@@ -85,7 +85,7 @@
 +        memory: Option<Arc<dyn DynamicValueMemory>>,
 +    ) -> Result<PreparedCall<DynamicValues>> {
          let store = store.as_context_mut();
- 
+
          concurrent::prepare_call(
 @@ -179,7 +203,7 @@
              false,
@@ -359,7 +359,7 @@
 @@ -280,6 +280,32 @@
              .await?
      }
- 
+
 +    /// Dynamic call with explicit original-owner allocation admission.
 +    /// The supplied scope must be retained until every returned Val is destroyed.
 +    #[cfg(feature = "async")]
@@ -405,7 +405,7 @@
 +        memory: Option<alloc::sync::Arc<dyn crate::component::DynamicValueMemory>>,
      ) -> Result<()> {
          let mut store = store.as_context_mut();
- 
+
 @@ -351,6 +387,12 @@
                  },
                  |cx, results_ty, src: &[ValRaw; MAX_FLAT_RESULTS]| {
@@ -422,7 +422,7 @@
 @@ -632,6 +674,34 @@
          }
      }
- 
+
 +    pub(crate) fn lift_results_into_accounted(
 +        cx: &mut LiftContext<'_>,
 +        ty: InterfaceType,
@@ -467,7 +467,7 @@
      /// Like lowering, lifting always has options configured.
 @@ -386,6 +388,8 @@
          let (component, instance) = instance.component_and_self();
- 
+
          Ok(LiftContext {
 +            dynamic_depth: 0,
 +            dynamic_memory: None,
@@ -512,7 +512,7 @@
 --- a/src/runtime/component/mod.rs
 +++ b/src/runtime/component/mod.rs
 @@ -810,3 +810,9 @@
- 
+
  #[cfg(not(feature = "component-model-async"))]
  pub(crate) use concurrent_disabled as concurrent;
 +
@@ -520,7 +520,7 @@
 +pub use dynamic_memory::DynamicValueMemory;
 +
 +/// Native source cohort for the maintained original-owner dynamic value extension.
-+pub const DYNAMIC_VALUE_MEMORY_COHORT: &str = "wasmtime-48.0.7-latent-value-table-store-memory-v2";
++pub const DYNAMIC_VALUE_MEMORY_COHORT: &str = "wasmtime-48.0.7-latent-value-table-store-registry-memory-v3";
 --- a/src/runtime/component/store.rs
 +++ b/src/runtime/component/store.rs
 @@ -1,5 +1,6 @@
@@ -535,7 +535,7 @@
  use core::pin::Pin;
  use wasmtime_environ::component::RuntimeComponentInstanceIndex;
 -use wasmtime_environ::prelude::TryPrimaryMap;
- 
+
  #[cfg(feature = "component-model-async")]
  use crate::{
 @@ -37,7 +37,7 @@
@@ -544,12 +544,12 @@
      /// are managed.
 -    instances: TryPrimaryMap<ComponentInstanceId, Option<OwnedComponentInstance>>,
 +    instances: NativeMap<ComponentInstanceId, Option<OwnedComponentInstance>>,
- 
+
      /// Whether an instance belonging to this store has trapped.
      trapped: bool,
 @@ -92,9 +92,9 @@
  }
- 
+
  impl ComponentStoreData {
 -    pub fn new(engine: &Engine) -> ComponentStoreData {
 +    pub fn new(engine: &Engine, memory: NativeMemory) -> ComponentStoreData {
@@ -586,7 +586,7 @@
              InterfaceType::Bool => Val::Bool(bool::linear_lift_from_flat(cx, ty, next(src))?),
              InterfaceType::S8 => Val::S8(i8::linear_lift_from_flat(cx, ty, next(src))?),
 @@ -241,6 +245,9 @@
- 
+
      /// Deserialize a value of this type from the heap.
      pub(crate) fn load(cx: &mut LiftContext<'_>, ty: InterfaceType, bytes: &[u8]) -> Result<Val> {
 +        if cx.dynamic_memory.is_some() {
@@ -1075,7 +1075,7 @@
 @@ -1,4 +1,5 @@
  use crate::prelude::*;
 +use alloc::sync::Arc;
- 
+
  /// Value returned by [`ResourceLimiter::instances`] default method
  pub const DEFAULT_INSTANCE_LIMIT: usize = 10000;
 @@ -6,6 +7,91 @@
@@ -1167,7 +1167,7 @@
 +        }
 +    }
 +}
- 
+
  /// Used by hosts to limit resource consumption of instances.
  ///
 @@ -123,6 +209,16 @@
@@ -1185,7 +1185,7 @@
 +    fn table_allocating(&mut self, _bytes: usize) -> Result<Option<Box<dyn TableAllocation>>> {
 +        Ok(None)
      }
- 
+
      /// The maximum number of instances that can be created for a `Store`.
 @@ -197,6 +293,16 @@
      fn table_grow_failed(&mut self, error: crate::Error) -> Result<()> {
@@ -1202,11 +1202,488 @@
 +    fn table_allocating(&mut self, _bytes: usize) -> Result<Option<Box<dyn TableAllocation>>> {
 +        Ok(None)
      }
- 
+
      /// Identical to [`ResourceLimiter::instances`]`
+--- a/src/runtime/module.rs
++++ b/src/runtime/module.rs
+@@ -22,6 +22,7 @@
+     CompiledFunctionsTable, CompiledModuleInfo, EntityIndex, FuncKey, HostPtr, ModuleTypes,
+     ObjectKind, StaticModuleIndex, TypeTrace, VMOffsets, VMSharedTypeIndex, WasmChecksum,
+ };
++mod native_registry;
+ mod registry;
+
+ pub use registry::*;
+--- /dev/null
++++ b/src/runtime/module/native_registry.rs
+@@ -0,0 +1,242 @@
++//! Store-local ordered indices whose selected backing uses the original owner.
++//!
++//! The legacy path keeps the upstream B-tree. Accounted stores use a sorted
++//! vector: every exact replacement can be admitted before any registry edge is
++//! inserted. Queries retain ordered/range semantics without allocating.
++
++use super::registry::RegisteredModuleId;
++use crate::prelude::*;
++use crate::runtime::native_memory::{Memory, NativeVec};
++use core::ops::{Bound, Range, RangeBounds};
++use wasmtime_environ::collections::btree_map::Entry;
++use wasmtime_environ::{EntityRef, StaticModuleIndex};
++
++// Amortize registry insertion work. Spare capacity is part of the admitted
++// physical allocation and remains charged until replacement or destruction.
++fn growth_capacity(required: usize) -> usize {
++    required.checked_next_power_of_two().unwrap_or(required)
++}
++
++pub(super) enum RegistryMap<K: Copy, V> {
++    Legacy(TryBTreeMap<K, V>),
++    Accounted(NativeVec<(K, V)>),
++}
++
++pub(super) enum RegistryIndices {
++    Legacy(TrySecondaryMap<StaticModuleIndex, Option<RegisteredModuleId>>),
++    Accounted(NativeVec<Option<RegisteredModuleId>>),
++}
++
++impl Default for RegistryIndices {
++    fn default() -> Self {
++        Self::Legacy(TrySecondaryMap::new())
++    }
++}
++
++impl RegistryIndices {
++    pub(super) fn new(memory: Memory) -> Result<Self> {
++        Ok(match memory {
++            None => Self::default(),
++            Some(memory) => Self::Accounted(NativeVec::with_capacity(0, Some(memory))?),
++        })
++    }
++
++    pub(super) fn get(&self, key: StaticModuleIndex) -> Option<&Option<RegisteredModuleId>> {
++        match self {
++            Self::Legacy(values) => values.get(key),
++            Self::Accounted(values) => values.get(key.index()),
++        }
++    }
++
++    pub(super) fn prepare_index(
++        &self,
++        key: StaticModuleIndex,
++    ) -> Result<Option<NativeVec<Option<RegisteredModuleId>>>> {
++        match self {
++            Self::Legacy(_) => Ok(None),
++            Self::Accounted(values) => {
++                let required = key
++                    .index()
++                    .checked_add(1)
++                    .ok_or_else(|| OutOfMemory::new(usize::MAX))?;
++                values.prepare_capacity(growth_capacity(required))
++            }
++        }
++    }
++
++    pub(super) fn commit_capacity(
++        &mut self,
++        replacement: Option<NativeVec<Option<RegisteredModuleId>>>,
++    ) {
++        match self {
++            Self::Legacy(_) => assert!(replacement.is_none()),
++            Self::Accounted(values) => values.commit_capacity(replacement),
++        }
++    }
++
++    pub(super) fn insert_prepared(
++        &mut self,
++        key: StaticModuleIndex,
++        value: Option<RegisteredModuleId>,
++    ) -> Result<Option<Option<RegisteredModuleId>>> {
++        match self {
++            Self::Legacy(values) => Ok(values.insert(key, value)?),
++            Self::Accounted(values) => {
++                let index = key.index();
++                if let Some(previous) = values.get_mut(index) {
++                    return Ok(Some(core::mem::replace(previous, value)));
++                }
++                // Only Option<RegisteredModuleId> is used: filling holes
++                // cannot allocate or invoke tenant/user code.
++                while values.len() <= index {
++                    values.insert_reserved(values.len(), None);
++                }
++                values[index] = value;
++                Ok(None)
++            }
++        }
++    }
++}
++
++impl<K: Copy, V> Default for RegistryMap<K, V> {
++    fn default() -> Self {
++        Self::Legacy(TryBTreeMap::new())
++    }
++}
++
++fn bounds<K: Copy + Ord, V>(values: &[(K, V)], range: &impl RangeBounds<K>) -> Range<usize> {
++    let start = match range.start_bound() {
++        Bound::Included(key) => values.partition_point(|(current, _)| current < key),
++        Bound::Excluded(key) => values.partition_point(|(current, _)| current <= key),
++        Bound::Unbounded => 0,
++    };
++    let end = match range.end_bound() {
++        Bound::Included(key) => values.partition_point(|(current, _)| current <= key),
++        Bound::Excluded(key) => values.partition_point(|(current, _)| current < key),
++        Bound::Unbounded => values.len(),
++    };
++    start..end
++}
++
++fn pair<K: Copy, V>((key, value): &(K, V)) -> (K, &V) {
++    (*key, value)
++}
++
++fn pair_mut<K: Copy, V>((key, value): &mut (K, V)) -> (K, &mut V) {
++    (*key, value)
++}
++
++impl<K: Copy + Ord, V> RegistryMap<K, V> {
++    pub(super) fn new(memory: Memory) -> Result<Self> {
++        Ok(match memory {
++            None => Self::default(),
++            Some(memory) => Self::Accounted(NativeVec::with_capacity(0, Some(memory))?),
++        })
++    }
++
++    pub(super) fn get(&self, key: K) -> Option<&V> {
++        match self {
++            Self::Legacy(values) => values.get(key),
++            Self::Accounted(values) => values
++                .binary_search_by_key(&key, |(key, _)| *key)
++                .ok()
++                .map(|index| &values[index].1),
++        }
++    }
++
++    pub(super) fn get_mut(&mut self, key: K) -> Option<&mut V> {
++        match self {
++            Self::Legacy(values) => values.get_mut(key),
++            Self::Accounted(values) => values
++                .binary_search_by_key(&key, |(key, _)| *key)
++                .ok()
++                .map(|index| &mut values[index].1),
++        }
++    }
++
++    pub(super) fn contains_key(&self, key: K) -> bool {
++        self.get(key).is_some()
++    }
++
++    pub(super) fn prepare_insert(&self, key: K) -> Result<Option<NativeVec<(K, V)>>> {
++        match self {
++            Self::Accounted(values) if !self.contains_key(key) => {
++                let required = values
++                    .len()
++                    .checked_add(1)
++                    .ok_or_else(|| OutOfMemory::new(usize::MAX))?;
++                values.prepare_capacity(growth_capacity(required))
++            }
++            _ => Ok(None),
++        }
++    }
++
++    pub(super) fn commit_capacity(&mut self, replacement: Option<NativeVec<(K, V)>>) {
++        match self {
++            Self::Legacy(_) => assert!(replacement.is_none()),
++            Self::Accounted(values) => values.commit_capacity(replacement),
++        }
++    }
++
++    pub(super) fn insert_prepared(&mut self, key: K, value: V) -> Result<Option<V>> {
++        match self {
++            Self::Legacy(values) => Ok(values.insert(key, value)?),
++            Self::Accounted(values) => match values.binary_search_by_key(&key, |(key, _)| *key) {
++                Ok(index) => Ok(Some(core::mem::replace(&mut values[index].1, value))),
++                Err(index) => {
++                    values.insert_reserved(index, (key, value));
++                    Ok(None)
++                }
++            },
++        }
++    }
++
++    // The unchanged registration path may use the upstream Entry only when
++    // no original-memory factory is installed. Accounted callers cannot
++    // obtain an allocating container or a fallible insertion after staging.
++    pub(super) fn legacy_entry(&mut self, key: K) -> Entry<'_, K, V> {
++        match self {
++            Self::Legacy(values) => values.entry(key),
++            Self::Accounted(_) => panic!("accounted registry requires prepared insertion"),
++        }
++    }
++
++    pub(super) fn range(
++        &self,
++        range: impl RangeBounds<K>,
++    ) -> impl DoubleEndedIterator<Item = (K, &V)> {
++        let (legacy, accounted) = match self {
++            Self::Legacy(values) => (Some(values.range(range)), None),
++            Self::Accounted(values) => (None, Some(values[bounds(values, &range)].iter())),
++        };
++        legacy
++            .into_iter()
++            .flatten()
++            .chain(accounted.into_iter().flatten().map(pair))
++    }
++
++    pub(super) fn range_mut(
++        &mut self,
++        range: impl RangeBounds<K>,
++    ) -> impl Iterator<Item = (K, &mut V)> {
++        let (legacy, accounted) = match self {
++            Self::Legacy(values) => (Some(values.range_mut(range)), None),
++            Self::Accounted(values) => {
++                let selected = bounds(values, &range);
++                (None, Some(values[selected].iter_mut()))
++            }
++        };
++        legacy
++            .into_iter()
++            .flatten()
++            .chain(accounted.into_iter().flatten().map(pair_mut))
++    }
++
++    pub(super) fn iter(&self) -> impl Iterator<Item = (K, &V)> {
++        self.range(..)
++    }
++
++    pub(super) fn values(&self) -> impl Iterator<Item = &V> {
++        self.iter().map(|(_, value)| value)
++    }
++}
+--- a/src/runtime/module/registry.rs
++++ b/src/runtime/module/registry.rs
+@@ -1,8 +1,10 @@
+ //! Implements a registry of modules for a store.
+
++use super::native_registry::{RegistryIndices, RegistryMap};
+ use crate::code::{EngineCode, EngineCodePC, ModuleWithCode, StoreCode, StoreCodePC};
+ #[cfg(feature = "component-model")]
+ use crate::component::Component;
++use crate::runtime::native_memory::Memory;
+ use crate::runtime::vm::VMWasmCallFunction;
+ use crate::sync::{OnceLock, RwLock};
+ use crate::vm::CompiledModuleId;
+@@ -64,18 +66,21 @@
+     /// then take the last element of the range. That picks the
+     /// highest start address <= the query, and we can check whether
+     /// it contains the address.
+-    loaded_code: TryBTreeMap<StoreCodePC, LoadedCode>,
++    loaded_code: RegistryMap<StoreCodePC, LoadedCode>,
+
+     /// Map from EngineCodePC start to StoreCodePC start. We use this
+     /// to memoize the store-code creation process: each EngineCode is
+     /// instantiated to a StoreCode only once per store.
+-    store_code: TryBTreeMap<EngineCodePC, StoreCodePC>,
++    store_code: RegistryMap<EngineCodePC, StoreCodePC>,
+
+     /// Modules instantiated in this registry.
+     ///
+     /// Every module is placed in this map, but not every module will
+     /// be in a LoadedCode entry, because the module may have no text.
+-    modules: TryBTreeMap<RegisteredModuleId, Module>,
++    modules: RegistryMap<RegisteredModuleId, Module>,
++
++    // Retain the factory after every registry buffer and its affine owner.
++    memory: Memory,
+ }
+
+ struct LoadedCode {
+@@ -94,7 +99,7 @@
+     ///
+     /// This is lazily populated as modules are registered and instantiated from
+     /// a component.
+-    modules: TrySecondaryMap<StaticModuleIndex, Option<RegisteredModuleId>>,
++    modules: RegistryIndices,
+ }
+
+ /// An identifier of a module that has previously been inserted into a
+@@ -106,7 +111,7 @@
+ pub struct RegisteredModuleId(CompiledModuleId);
+
+ fn assert_no_overlap(
+-    loaded_code: &TryBTreeMap<StoreCodePC, LoadedCode>,
++    loaded_code: &RegistryMap<StoreCodePC, LoadedCode>,
+     range: Range<StoreCodePC>,
+ ) {
+     if let Some((start, _)) = loaded_code.range(range.start..).next() {
+@@ -150,6 +155,15 @@
+ }
+
+ impl ModuleRegistry {
++    pub(crate) fn new(memory: Memory) -> Result<Self> {
++        Ok(Self {
++            loaded_code: RegistryMap::new(memory.clone())?,
++            store_code: RegistryMap::new(memory.clone())?,
++            modules: RegistryMap::new(memory.clone())?,
++            memory,
++        })
++    }
++
+     /// Get a previously-registered module by id.
+     pub fn module_by_id(&self, id: RegisteredModuleId) -> Option<&Module> {
+         self.modules.get(id)
+@@ -275,6 +289,9 @@
+             Engine::same(engine, module_or_component.engine()),
+             "cross-`Engine` usage is not supported"
+         );
++        if self.memory.is_some() {
++            return self.register_accounted(module_or_component, engine, breakpoint_state);
++        }
+         let compiled_id = match module_or_component {
+             ModuleOrComponent::Module(module) => module.id(),
+             #[cfg(feature = "component-model")]
+@@ -289,7 +306,9 @@
+         let id = match module_or_component {
+             ModuleOrComponent::Module(module) => {
+                 let id = RegisteredModuleId(compiled_id);
+-                self.modules.entry(id).or_insert_with(|| module.clone())?;
++                self.modules
++                    .legacy_entry(id)
++                    .or_insert_with(|| module.clone())?;
+                 Some(id)
+             }
+             #[cfg(feature = "component-model")]
+@@ -297,7 +316,7 @@
+         };
+
+         // Create a StoreCode if one does not already exist.
+-        let store_code_pc = match self.store_code.entry(code.text_range().start) {
++        let store_code_pc = match self.store_code.legacy_entry(code.text_range().start) {
+             Entry::Vacant(v) => {
+                 let store_code = StoreCode::new(engine, code)?;
+                 let store_code_pc = store_code.text_range().start;
+@@ -307,7 +326,7 @@
+                     #[cfg(feature = "component-model")]
+                     ModuleOrComponent::Component(component) => component.index(),
+                 };
+-                self.loaded_code.insert(
++                self.loaded_code.insert_prepared(
+                     store_code_pc,
+                     LoadedCode {
+                         code: store_code,
+@@ -328,10 +347,109 @@
+                 .expect("loaded_code must have entry for StoreCodePC");
+             loaded_code
+                 .modules
+-                .insert(module.env_module().module_index, Some(id))?;
++                .insert_prepared(module.env_module().module_index, Some(id))?;
+             breakpoint_state.update(&mut loaded_code.code, module)?;
+         }
+
++        Ok(id)
++    }
++
++    /// Accounted registration stages every replacement before publishing any
++    /// module/code/index edge. A later admission refusal drops only those
++    /// empty replacements, retaining all previous registry values and owners.
++    /// The caller has already rejected a foreign Engine before reaching here.
++    fn register_accounted(
++        &mut self,
++        module_or_component: ModuleOrComponent<'_>,
++        engine: &Engine,
++        breakpoint_state: RegisterBreakpointState,
++    ) -> Result<Option<RegisteredModuleId>> {
++        let (id, code, index) = match module_or_component {
++            ModuleOrComponent::Module(module) => (
++                Some(RegisteredModuleId(module.id())),
++                module.engine_code(),
++                module.index(),
++            ),
++            #[cfg(feature = "component-model")]
++            ModuleOrComponent::Component(component) => {
++                (None, component.engine_code(), component.index())
++            }
++        };
++        let code_key = code.text_range().start;
++        let existing = self.store_code.get(code_key).copied();
++        let mut pending_code = if existing.is_none() {
++            let store_code = StoreCode::new(engine, code)?;
++            assert_no_overlap(&self.loaded_code, store_code.text_range());
++            Some(LoadedCode {
++                code: store_code,
++                index: index.clone(),
++                modules: RegistryIndices::new(self.memory.clone())?,
++            })
++        } else {
++            None
++        };
++        let pc = existing.unwrap_or_else(|| pending_code.as_ref().unwrap().code.text_range().start);
++        let module_capacity = match id {
++            Some(id) => self.modules.prepare_insert(id)?,
++            None => None,
++        };
++        let loaded_capacity = if pending_code.is_some() {
++            self.loaded_code.prepare_insert(pc)?
++        } else {
++            None
++        };
++        let code_capacity = if pending_code.is_some() {
++            self.store_code.prepare_insert(code_key)?
++        } else {
++            None
++        };
++        let secondary_capacity = match module_or_component {
++            ModuleOrComponent::Module(module) => {
++                let loaded = pending_code.as_ref().unwrap_or_else(|| {
++                    self.loaded_code
++                        .get(pc)
++                        .expect("registered code must have a loaded entry")
++                });
++                loaded
++                    .modules
++                    .prepare_index(module.env_module().module_index)?
++            }
++            #[cfg(feature = "component-model")]
++            ModuleOrComponent::Component(_) => None,
++        };
++
++        // All admission has finished. The accounted map insertions below use
++        // only this staged capacity; there is no allocating Entry escape.
++        self.modules.commit_capacity(module_capacity);
++        self.loaded_code.commit_capacity(loaded_capacity);
++        self.store_code.commit_capacity(code_capacity);
++        if let Some(loaded) = pending_code.as_mut() {
++            loaded.modules.commit_capacity(secondary_capacity);
++        } else {
++            self.loaded_code
++                .get_mut(pc)
++                .unwrap()
++                .modules
++                .commit_capacity(secondary_capacity);
++        }
++        if let (ModuleOrComponent::Module(module), Some(id)) = (&module_or_component, id) {
++            if !self.modules.contains_key(id) {
++                self.modules.insert_prepared(id, (*module).clone())?;
++            }
++        }
++        if let Some(loaded) = pending_code {
++            self.loaded_code.insert_prepared(pc, loaded)?;
++            self.store_code.insert_prepared(code_key, pc)?;
++        }
++        if let (ModuleOrComponent::Module(module), Some(id)) = (module_or_component, id) {
++            let loaded = self.loaded_code.get_mut(pc).unwrap();
++            loaded
++                .modules
++                .insert_prepared(module.env_module().module_index, Some(id))?;
++            // Retain the original breakpoint update and its failure semantics
++            // after every complete registry edge has been installed.
++            breakpoint_state.update(&mut loaded.code, module)?;
++        }
+         Ok(id)
+     }
+
 --- /dev/null
 +++ b/src/runtime/native_memory.rs
-@@ -0,0 +1,337 @@
+@@ -0,0 +1,375 @@
 +//! Affine ownership for selected invocation-created engine backing buffers.
 +//!
 +//! These wrappers expose element mutation, never the allocating container.
@@ -1340,6 +1817,44 @@
 +            .push(value)
 +            .expect("capacity was admitted above");
 +        Ok(())
++    }
++
++    /// Stage an empty replacement without changing any current element or owner.
++    pub(crate) fn prepare_capacity(&self, required: usize) -> Result<Option<Self>> {
++        if self.memory.is_none() || required <= self.values.capacity() {
++            return Ok(None);
++        }
++        Self::with_capacity(required, self.memory.clone()).map(Some)
++    }
++
++    /// Commit a previously admitted empty replacement, without allocating.
++    pub(crate) fn commit_capacity(&mut self, replacement: Option<Self>) {
++        let Some(replacement) = replacement else {
++            return;
++        };
++        assert!(replacement.is_empty() && replacement.values.capacity() >= self.len());
++        assert!(match (&self.memory, &replacement.memory) {
++            (Some(current), Some(prepared)) => Arc::ptr_eq(current, prepared),
++            (None, None) => true,
++            _ => false,
++        });
++        let old = core::mem::replace(self, replacement);
++        // The old owning iterator retains its original backing charge until
++        // the actual old allocation is destroyed after the final move.
++        for value in old {
++            self.values
++                .push(value)
++                .expect("replacement capacity was admitted");
++        }
++    }
++
++    /// Insert into already admitted capacity. Exposes no allocating container.
++    pub(crate) fn insert_reserved(&mut self, index: usize, value: T) {
++        assert!(index <= self.len() && self.len() < self.values.capacity());
++        self.values
++            .push(value)
++            .expect("insertion capacity was admitted");
++        self.values[index..].rotate_right(1);
 +    }
 +
 +    pub(crate) fn resize_with(&mut self, len: usize, mut value: impl FnMut() -> T) -> Result<()> {
@@ -1579,12 +2094,12 @@
 +    allocation: ManuallyDrop<Option<Box<dyn crate::NativeAllocation>>>,
 +    native_memory: ManuallyDrop<crate::runtime::native_memory::MemorySource>,
  }
- 
+
  #[derive(Copy, Clone, Debug)]
 @@ -358,6 +362,17 @@
          }
      }
- 
+
 +    pub(crate) fn table_allocating(
 +        &mut self,
 +        bytes: usize,
@@ -1610,13 +2125,13 @@
 @@ -468,7 +484,7 @@
      #[cfg(feature = "stack-switching")]
      continuations: Vec<Box<VMContRef>>,
- 
+
 -    instances: TryPrimaryMap<InstanceId, StoreInstance>,
 +    instances: crate::runtime::native_memory::NativeMap<InstanceId, StoreInstance>,
- 
+
      signal_handler: Option<SignalHandler>,
      modules: ModuleRegistry,
-@@ -719,18 +735,68 @@
+@@ -719,23 +735,73 @@
      /// memory allocation fails. See the `OutOfMemory` type's documentation for
      /// details on Wasmtime's out-of-memory handling.
      pub fn try_new(engine: &Engine, data: T) -> Result<Self> {
@@ -1672,9 +2187,9 @@
 +        }
 +        let store_data = StoreData::new(engine, memory.clone());
          log::trace!("creating new store {:?}", store_data.id());
- 
+
          let pkey = engine.allocator().next_available_pkey();
- 
+
          let inner = StoreOpaque {
 +            native_memory: memory.clone(),
              _marker: marker::PhantomPinned,
@@ -1683,10 +2198,16 @@
              #[cfg(feature = "stack-switching")]
              continuations: Vec::new(),
 -            instances: TryPrimaryMap::new(),
-+            instances: crate::runtime::native_memory::NativeMap::with_capacity(0, memory)?,
++            instances: crate::runtime::native_memory::NativeMap::with_capacity(0, memory.clone())?,
              signal_handler: None,
              gc_store: None,
              #[cfg(feature = "gc")]
+             gc_data: Default::default(),
+-            modules: ModuleRegistry::default(),
++            modules: ModuleRegistry::new(memory)?,
+             func_refs: FuncRefs::default(),
+             host_globals: TryPrimaryMap::new(),
+             instance_count: 0,
 @@ -760,7 +826,7 @@
              #[cfg(feature = "debug")]
              frame_data_cache: FrameDataCache::new(),
@@ -1710,14 +2231,14 @@
 +            native_memory: ManuallyDrop::new(source),
 +        };
 +        let inner = &mut *store.inner;
- 
+
          let store_data =
              <NonNull<ManuallyDrop<T>>>::from(&mut inner.data_no_provenance).cast::<()>();
          inner.inner.vm_store_context.store_data = store_data.into();
- 
+
 -        inner.traitobj = StorePtr(Some(NonNull::from(&mut *inner)));
 +        inner.traitobj = StorePtr(Some(NonNull::from(&mut **inner)));
- 
+
          // Wasmtime uses the callee argument to host functions to learn about
          // the original pointer to the `Store` itself, allowing it to
 @@ -806,7 +880,7 @@
@@ -1732,13 +2253,13 @@
 @@ -816,9 +890,7 @@
              inner.default_caller_vmctx = default_caller_vmctx.into();
          }
- 
+
 -        Ok(Self {
 -            inner: ManuallyDrop::new(inner),
 -        })
 +        Ok(store)
      }
- 
+
      /// Access the underlying `T` data owned by this `Store`.
 @@ -871,8 +943,14 @@
          // there is a comment indicating this as well.
@@ -1755,11 +2276,11 @@
 +            data
          }
      }
- 
+
 @@ -2145,6 +2223,10 @@
          Ok(ptr)
      }
- 
+
 +    pub(crate) fn native_memory(&self) -> crate::runtime::native_memory::Memory {
 +        self.native_memory.clone()
 +    }
@@ -1780,7 +2301,7 @@
 +++ b/src/runtime/store/data.rs
 @@ -21,13 +21,13 @@
  }
- 
+
  impl StoreData {
 -    pub fn new(engine: &Engine) -> StoreData {
 +    pub fn new(engine: &Engine, memory: crate::runtime::native_memory::Memory) -> StoreData {
@@ -1794,7 +2315,7 @@
 +            components: crate::component::ComponentStoreData::new(engine, memory),
          }
      }
- 
+
 --- a/src/runtime/vm/component.rs
 +++ b/src/runtime/vm/component.rs
 @@ -12,6 +12,7 @@
@@ -1812,19 +2333,19 @@
 -use wasmtime_environ::error::OutOfMemory;
  use wasmtime_environ::prelude::TryPrimaryMap;
  use wasmtime_environ::{HostPtr, PrimaryMap, VMSharedTypeIndex};
- 
+
 @@ -130,11 +130,11 @@
- 
+
      /// Contains state specific to each (sub-)component instance within this
      /// top-level instance.
 -    instance_states: TryPrimaryMap<RuntimeComponentInstanceIndex, InstanceState>,
 +    instance_states: NativeMap<RuntimeComponentInstanceIndex, InstanceState>,
- 
+
      /// What all compile-time-identified core instances are mapped to within the
      /// `Store` that this component belongs to.
 -    instances: TryPrimaryMap<RuntimeInstanceIndex, InstanceId>,
 +    instances: NativeMap<RuntimeInstanceIndex, InstanceId>,
- 
+
      /// Storage for the type information about resources within this component
      /// instance.
 @@ -322,35 +322,48 @@
@@ -1843,7 +2364,7 @@
          for _ in 0..num_instances {
              instance_states.push(InstanceState::default())?;
          }
- 
+
 -        let instances = TryPrimaryMap::with_capacity(
 +        let instances = NativeMap::with_capacity(
              component
@@ -1853,7 +2374,7 @@
                  .unwrap(),
 +            memory.clone(),
          )?;
- 
+
 -        let mut ret = OwnedInstance::new(ComponentInstance {
 -            id,
 -            offsets,
@@ -1900,7 +2421,7 @@
      ) {
          // safety: we've chosen the `pin` guarantee of `self` to not apply to
 @@ -909,10 +922,7 @@
- 
+
      /// Pushes a new runtime instance that's been created into
      /// `self.instances`.
 -    pub fn push_instance_id(
@@ -1910,11 +2431,11 @@
 +    pub fn push_instance_id(self: Pin<&mut Self>, id: InstanceId) -> Result<RuntimeInstanceIndex> {
          self.instances_mut().push(id)
      }
- 
+
 @@ -926,7 +936,7 @@
          self.instances[idx]
      }
- 
+
 -    fn instances_mut(self: Pin<&mut Self>) -> &mut TryPrimaryMap<RuntimeInstanceIndex, InstanceId> {
 +    fn instances_mut(self: Pin<&mut Self>) -> &mut NativeMap<RuntimeInstanceIndex, InstanceId> {
          // SAFETY: we've chosen the `Pin` guarantee of `Self` to not apply to
@@ -1933,7 +2454,7 @@
 +        // same complete-layout inverse as host entry and vmctx_instance_id.
 +        unsafe { ComponentInstance::from_vmctx(NonNull::from(self)).as_ptr() }
      }
- 
+
      /// Helper function to cast between context types using a debug assertion to
 --- a/src/runtime/vm/component/resources.rs
 +++ b/src/runtime/vm/component/resources.rs
@@ -1949,7 +2470,7 @@
      ComponentTypes, RuntimeComponentInstanceIndex, TypeResourceTableIndex,
  };
 -use wasmtime_environ::prelude::TryPrimaryMap;
- 
+
  /// Contextual state necessary to perform resource-related operations.
  ///
 @@ -56,7 +56,7 @@
@@ -1960,7 +2481,7 @@
 +        &'a mut NativeMap<RuntimeComponentInstanceIndex, InstanceState>,
          &'a ComponentTypes,
      )>,
- 
+
 --- a/src/runtime/vm/instance.rs
 +++ b/src/runtime/vm/instance.rs
 @@ -5,6 +5,7 @@
@@ -1977,7 +2498,7 @@
      /// memory.
 -    memories: TryPrimaryMap<DefinedMemoryIndex, (MemoryAllocationIndex, Memory)>,
 +    memories: NativeMap<DefinedMemoryIndex, (MemoryAllocationIndex, Memory)>,
- 
+
      /// WebAssembly table data.
      ///
 @@ -123,7 +124,7 @@
@@ -1986,7 +2507,7 @@
      /// table.
 -    tables: TryPrimaryMap<DefinedTableIndex, (TableAllocationIndex, Table)>,
 +    tables: NativeMap<DefinedTableIndex, (TableAllocationIndex, Table)>,
- 
+
      /// Evaluated passive element segments.
      ///
 @@ -131,7 +132,7 @@
@@ -1995,7 +2516,7 @@
      // but that type is currently footgun-y / isn't actually OOM-safe yet.
 -    passive_elements: TryVec<PassiveElementSegment>,
 +    passive_elements: NativeVec<PassiveElementSegment>,
- 
+
      // TODO: add support for multiple memories; `wmemcheck_state` corresponds to
      // memory 0.
 @@ -167,12 +168,14 @@
@@ -2014,17 +2535,17 @@
 +        let memory = req.store.native_memory();
 +        let mut passive_elements =
 +            NativeVec::with_capacity(module.passive_elements.len(), memory.clone())?;
- 
+
          #[cfg(feature = "wmemcheck")]
          let wmemcheck_state = if req.store.engine().config().wmemcheck {
 @@ -192,7 +195,7 @@
- 
+
          for (_, (ty, len)) in req.runtime_info.env_module().passive_elements.iter() {
              let len = usize::try_from(*len).unwrap();
 -            passive_elements.push(PassiveElementSegment::new(*ty, len)?)?;
 +            passive_elements.push(PassiveElementSegment::new(*ty, len, memory.clone())?)?;
          }
- 
+
          // Allocate the instance and its `VMContext` with empty memory and table
 @@ -200,17 +203,20 @@
          // after it succeeds do we transfer ownership of the pool-allocated
@@ -2055,13 +2576,13 @@
 +            },
 +            memory,
 +        )?;
- 
+
          // Can't fail any more, so transfer ownership of `memories` and `tables`
          // to this instance.
 @@ -1009,7 +1015,9 @@
          self.passive_elements_mut()[passive.index()].elements_mut()
      }
- 
+
 -    pub(crate) fn passive_elements_mut(self: Pin<&mut Self>) -> &mut TryVec<PassiveElementSegment> {
 +    pub(crate) fn passive_elements_mut(
 +        self: Pin<&mut Self>,
@@ -2070,7 +2591,7 @@
          &mut unsafe { self.get_unchecked_mut() }.passive_elements
      }
 @@ -1517,14 +1525,14 @@
- 
+
      fn memories_mut(
          self: Pin<&mut Self>,
 -    ) -> &mut TryPrimaryMap<DefinedMemoryIndex, (MemoryAllocationIndex, Memory)> {
@@ -2078,7 +2599,7 @@
          // SAFETY: see `store_mut` above.
          unsafe { &mut self.get_unchecked_mut().memories }
      }
- 
+
      pub(crate) fn tables_mut(
          self: Pin<&mut Self>,
 -    ) -> &mut TryPrimaryMap<DefinedTableIndex, (TableAllocationIndex, Table)> {
@@ -2089,7 +2610,7 @@
 @@ -1639,6 +1647,9 @@
      /// seems not too bad.
      vmctx_self_reference: SendSyncPtr<T>,
- 
+
 +    // Kept in the real allocation header, preserving the transparent handle.
 +    allocation: Option<Box<dyn crate::NativeAllocation>>,
 +
@@ -2114,7 +2635,7 @@
 +        let allocation = crate::runtime::native_memory::reserve(&memory, layout.size())?;
          debug_assert!(layout.size() >= size_of_val(&instance));
          debug_assert!(layout.align() >= align_of_val(&instance));
- 
+
 @@ -1799,13 +1812,14 @@
              }
          };
@@ -2122,19 +2643,19 @@
 -            return Err(OutOfMemory::new(layout.size()));
 +            return Err(OutOfMemory::new(layout.size()).into());
          };
- 
+
          // SAFETY: it's part of the unsafe contract of `InstanceLayout` that the
          // `add` here is appropriate for the layout allocated.
          let vmctx_self_reference = unsafe { instance_ptr.add(1).cast() };
          instance.owned_vmctx_mut().vmctx_self_reference = vmctx_self_reference.into();
 +        instance.owned_vmctx_mut().allocation = allocation;
- 
+
          // SAFETY: we allocated above and it's an unsafe contract of
          // `InstanceLayout` that the layout is suitable for writing the
 @@ -1814,10 +1828,18 @@
              instance_ptr.write(instance);
          }
- 
+
 -        let ret = OwnedInstance {
 +        let mut ret = OwnedInstance {
              instance: SendSyncPtr::new(instance_ptr),
@@ -2148,7 +2669,7 @@
 +        {
 +            allocation.allocated();
 +        }
- 
+
          // Double-check various vmctx calculations are correct.
          debug_assert_eq!(
 @@ -1854,8 +1876,18 @@
@@ -2177,7 +2698,7 @@
 -    elements: TryVec<ValRaw>,
 +    elements: NativeVec<ValRaw>,
  }
- 
+
  impl PassiveElementSegment {
      /// Create a new passive element segment with the given capacity.
 -    pub(crate) fn new(ty: WasmRefType, capacity: usize) -> Result<Self, OutOfMemory> {
@@ -2198,17 +2719,17 @@
 @@ -325,8 +326,9 @@
          let num_defined_memories = module.num_defined_memories();
          let num_defined_tables = module.num_defined_tables();
- 
+
 -        let memories = TryPrimaryMap::with_capacity(num_defined_memories)?;
 -        let tables = TryPrimaryMap::with_capacity(num_defined_tables)?;
 +        let memory = request.store.native_memory();
 +        let memories = NativeMap::with_capacity(num_defined_memories, memory.clone())?;
 +        let tables = NativeMap::with_capacity(num_defined_tables, memory)?;
- 
+
          // Note that incrementing the instance count here must be done just
          // before creation of `DeallocateOnDrop`. This is required to ensure
 @@ -356,8 +358,8 @@
- 
+
          struct DeallocateOnDrop<'a> {
              run_deallocate: bool,
 -            memories: TryPrimaryMap<DefinedMemoryIndex, (MemoryAllocationIndex, Memory)>,
@@ -2217,7 +2738,7 @@
 +            tables: NativeMap<DefinedTableIndex, (TableAllocationIndex, Table)>,
              allocator: &'a (dyn InstanceAllocator + 'a),
          }
- 
+
 @@ -403,7 +405,7 @@
      async fn allocate_memories(
          &self,
@@ -2226,7 +2747,7 @@
 +        memories: &mut NativeMap<DefinedMemoryIndex, (MemoryAllocationIndex, Memory)>,
      ) -> Result<()> {
          let module = request.runtime_info.env_module();
- 
+
 @@ -434,7 +436,7 @@
      /// `Self::allocate_memories`.
      unsafe fn deallocate_memories(
@@ -2244,7 +2765,7 @@
 +        tables: &mut NativeMap<DefinedTableIndex, (TableAllocationIndex, Table)>,
      ) -> Result<()> {
          let module = request.runtime_info.env_module();
- 
+
 @@ -485,7 +487,7 @@
      /// `Self::allocate_tables`.
      unsafe fn deallocate_tables(
@@ -2262,7 +2783,7 @@
              active: true,
 +            allocation: None,
          };
- 
+
 +        let limits = Table::limit_new(ty, request.limiter.as_deref_mut()).await?;
 +        let element_type = crate::vm::table::wasm_to_table_type(ty.ref_type);
 +        let element_size = element_type.element_size();
@@ -2292,7 +2813,7 @@
 +        if let Some(owner) = &mut guard.allocation {
 +            owner.allocated();
          }
- 
+
          let ptr = NonNull::new(std::ptr::slice_from_raw_parts_mut(base.cast(), data_size)).unwrap();
 @@ -161,9 +185,9 @@
                  ty,
@@ -2314,7 +2835,7 @@
 +            // Drop runs the slot return below before this field refunds it.
 +            allocation: Option<Box<dyn crate::TableAllocation>>,
          }
- 
+
          impl Drop for DeallocateIndexGuard<'_> {
 @@ -179,6 +205,10 @@
                  if !self.active {
@@ -2331,7 +2852,7 @@
 +++ b/src/runtime/vm/table.rs
 @@ -25,6 +25,14 @@
  }
- 
+
  impl TableElementType {
 +    fn allocation_layout(&self, len: usize) -> Result<Layout> {
 +        Ok(match self {
@@ -2401,7 +2922,7 @@
 @@ -281,49 +301,89 @@
      }
  }
- 
+
 -/// Allocate dynamic table elements of the given length.
 -///
 -/// Relies on the fact that our tables' elements are initialized to `None`,
@@ -2523,7 +3044,7 @@
 +    drop(old_owner);
 +    Ok(())
  }
- 
+
  impl Table {
 @@ -331,35 +391,57 @@
      pub async fn new_dynamic(
@@ -2581,7 +3102,7 @@
 +        }
 +        Ok(table)
      }
- 
+
      /// Create a new static (immovable) table instance for the specified table plan.
 -    pub async unsafe fn new_static(
 +    pub unsafe fn new_static(
@@ -2598,7 +3119,7 @@
 +        let (minimum, maximum) = limits;
          let size = minimum;
          let max = maximum.unwrap_or(usize::MAX);
- 
+
 @@ -386,6 +468,7 @@
                  ));
                  Ok(Self::from(StaticFuncTable {
@@ -2710,7 +3231,7 @@
 +                )?;
              }
          }
- 
+
 @@ -794,16 +915,18 @@
                      current_elements: *size,
                  }

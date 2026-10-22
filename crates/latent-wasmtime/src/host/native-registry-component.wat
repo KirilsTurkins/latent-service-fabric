@@ -1,0 +1,10 @@
+(component
+  (core module $first (func (export "answer") (result i32) i32.const 42) (func $first_fault (export "fault") unreachable))
+  (core module $unused (func (export "answer") (result i32) i32.const 7))
+  (core module $third (func (export "answer") (result i32) i32.const 43) (func $third_fault (export "fault") unreachable))
+  (core instance $t (instantiate $third))
+  (core instance $f (instantiate $first))
+  (func (export "third") (result u32) (canon lift (core func $t "answer")))
+  (func (export "first") (result u32) (canon lift (core func $f "answer")))
+  (func (export "third-fault") (canon lift (core func $t "fault")))
+  (func (export "first-fault") (canon lift (core func $f "fault"))))

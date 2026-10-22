@@ -4,7 +4,7 @@ This is the complete crates.io Wasmtime 48.0.7 package, licensed under
 Apache-2.0 WITH LLVM-exception (see the unmodified LICENSE). The original
 archive checksum and all 250 original file identities are recorded in
 UPSTREAM.latent.json. `latent-dynamic-memory.patch` applies to that exact
-original package; it contains seventeen changed upstream files and three added
+original package; it contains nineteen changed upstream files and four added
 implementation files. Other Wasmtime packages remain at the original locked
 registry versions.
 
@@ -34,11 +34,11 @@ retains confirmed actual allocations through native unwind, without confirming
 a hypothetical signature maximum as observed peak.
 
 The native cohort is
-`wasmtime-48.0.7-latent-value-table-store-memory-v2`. Runtime engine configuration identity
+`wasmtime-48.0.7-latent-value-table-store-registry-memory-v3`. Runtime engine configuration identity
 includes this cohort, so old prepared/AOT identity cannot certify this host.
-The earlier v1/7b native programme passed its original 61 controls and retains
-its immutable source and receipts. The v2 table/Store extension and its nineteen planned
-native controls have not yet received native qualification.
+The immutable v1/7b programme passed 61 controls; the v2/de0 programme passed
+81 controls. This v3 registry extension and its four additional controls await
+native qualification; those prior binaries do not qualify this source.
 
 The optional `ResourceLimiter::table_allocating` hook returns an owned original
 allocation guard. Actual table backing destroys before its guard; dropping Store
@@ -86,8 +86,15 @@ replacement overlap is admitted; source-owning iterators retain original guards
 until buffers die. Entry/slice mutation cannot expose an allocating container.
 Original unaccounted embedding paths retain the existing fallible containers.
 
-This extension does not pay the remaining per-Store module-registry trees,
-FuncRefs bump/vector backing, concurrent task/queue/resource and hostcall frames,
+Accounted Store registries use sorted, paid vectors for all three ordered
+indices and the secondary module-index array. Empty registries stay lazy;
+geometric spare capacity and old/new overlap stay charged. Every replacement
+is staged before publishing any registry edge; later refusal preserves all
+prior keys and owners. Duplicate modules reuse registry backing, sparse indices
+retain None holes, and foreign-Engine rejection precedes all admission. The
+legacy embedding retains the upstream B-tree and fallible registration path.
+
+This extension does not pay FuncRefs bump/vector backing, concurrent task/queue/resource and hostcall frames,
 request-context transitive buffers, or controller/legacy transport allocations.
 Existing finite caps are not original memory admission. Whole SDK cost acceptance
 remains open; the source package and planned controls are not execution evidence.

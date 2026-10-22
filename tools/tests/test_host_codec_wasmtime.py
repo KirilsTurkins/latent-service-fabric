@@ -21,7 +21,7 @@ class PinnedWasmtimeSource(unittest.TestCase):
 
     def test_exact_vendor_source_and_original_license_are_required_by_the_ci_graph(self):
         checked = source.verify()
-        self.assertEqual(len(checked['files']), 256)
+        self.assertEqual(len(checked['files']), 257)
         self.assertEqual(checked['nativeCohort'], source.COHORT)
         self.assertEqual(checked['licenseFiles'], {'LICENSE': hashlib.sha256(
             (source.ROOT / source.PROVIDER / 'LICENSE').read_bytes()).hexdigest()})
@@ -114,7 +114,7 @@ class PinnedWasmtimeSource(unittest.TestCase):
                 registry.workspace(root)
 
     def test_actual_table_hook_sources_and_new_cohort_require_exact_postimages(self):
-        self.assertEqual(source.COHORT, 'wasmtime-48.0.7-latent-value-table-store-memory-v2')
+        self.assertEqual(source.COHORT, 'wasmtime-48.0.7-latent-value-table-store-registry-memory-v3')
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             self.fixture(root)
@@ -138,7 +138,8 @@ class PinnedWasmtimeSource(unittest.TestCase):
             for name in ('src/runtime/native_memory.rs', 'src/runtime/vm/instance.rs',
                          'src/runtime/vm/component.rs', 'src/runtime/component/store.rs',
                          'src/runtime/store/data.rs', 'src/runtime/vm/component/resources.rs',
-                         'src/runtime/vm/instance/allocator.rs', 'src/runtime.rs'):
+                         'src/runtime/vm/instance/allocator.rs', 'src/runtime.rs', 'src/runtime/module.rs',
+                         'src/runtime/module/registry.rs', 'src/runtime/module/native_registry.rs'):
                 with self.subTest(name=name):
                     target = root / source.PROVIDER / name
                     original = target.read_bytes()
@@ -146,7 +147,7 @@ class PinnedWasmtimeSource(unittest.TestCase):
                     with self.assertRaisesRegex(ValueError, 'host-codec-wasmtime-source-identity'):
                         source.verify(root)
                     target.write_bytes(original)
-            self.assertEqual(len(source.verify(root)['files']), 256)
+            self.assertEqual(len(source.verify(root)['files']), 257)
 
 
 if __name__ == '__main__':
