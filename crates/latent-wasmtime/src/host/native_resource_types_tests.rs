@@ -228,6 +228,7 @@ fn actual_resource_types_concurrent_metadata_clones_release_original_owner_once(
 #[test]
 fn actual_resource_types_zero_resource_tiny_call_keeps_original_one_mib_and_billion_fuel() {
     let mut config = Config::new();
+    config.wasm_component_model(true);
     config.consume_fuel(true);
     let engine = Engine::new(&config).unwrap();
     let component = Component::new(&engine, include_bytes!("native-store-component.wasm")).unwrap();
