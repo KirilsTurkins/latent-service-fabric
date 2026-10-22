@@ -23,6 +23,55 @@ AFTER = WALL+1
 
 
 class JavaResourceConformance(unittest.TestCase):
+    def test_downloaded_native_modes_validate_then_execute_and_refuse_tamper(self):
+        import os
+        import sys
+        if sys.platform != 'linux':
+            self.skipTest('requires real Linux executable modes/process ownership')
+        from tools.tests.test_sdk_scratch_qualification import ordinary, replace_json
+        from tools import qualify_sdk_scratch as scratch
+        from tools.build_process import BuildProcessError, run_bounded_result
+        from tools.phase3_resource_identity import file_identity
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            # Controlled source/normal qualification fixture; no Java build.
+            receipt = ordinary(root)
+            receipt['schemaVersion'] = 'latent.java-capsule.qualification.v1'
+            node = json.loads((root/'node/workflow.json').read_bytes())
+            node['language'] = 'java'
+            node['invocations'] = [{'original': index} for index in range(29)]
+            replace_json(root/'node/workflow.json', node)
+            receipt['node']['receiptDigest'] = file_identity(root/'node/workflow.json')['sha256']
+            for name in scratch.PRODUCTS:
+                path = root/'native-binaries'/name.replace('/', '-')
+                path.write_bytes(b'#!/usr/bin/env python3\nprint("resource-native-ready")\n')
+                path.chmod(0o644)
+                receipt['binaries'][name] = file_identity(path)
+            replace_json(root/'qualification.json', receipt)
+            source = json.loads((root/'source-inputs.json').read_bytes())
+            unrelated = root/'unrelated'; unrelated.write_bytes(b'not a product'); unrelated.chmod(0o644)
+            contracts = root/'native-binaries/examples-capsule_contracts'
+            with self.assertRaisesRegex(BuildProcessError, 'command-failed'):
+                run_bounded_result([str(contracts)], cwd=root, env=dict(os.environ), timeout_seconds=5, max_output_bytes=1024)
+            # Keep real receipt/companion/product validation. Only the selected
+            # source fixture replaces repository inputs; chmod/exec are real.
+            def prepared(directory, language):
+                return scratch._prepared_with_inputs(directory, language, source)
+            with patch.object(qualification, 'prepared', side_effect=prepared):
+                binaries, _, _ = qualification.prepared_executables(root)
+            self.assertEqual({name:file_identity(path) for name,path in binaries.items()}, receipt['binaries'])
+            self.assertTrue(all(path.stat().st_mode & 0o777 == 0o700 for path in binaries.values()))
+            self.assertEqual(unrelated.stat().st_mode & 0o777, 0o644)
+            result = run_bounded_result([str(contracts)], cwd=root, env=dict(os.environ), timeout_seconds=5, max_output_bytes=1024)
+            self.assertEqual((result.returncode, result.stdout, result.stderr), (0, b'resource-native-ready\n', b''))
+            for path in binaries.values(): path.chmod(0o644)
+            binaries['latent'].write_bytes(b'changed after original observation')
+            with patch.object(qualification, 'prepared', side_effect=prepared), \
+                    self.assertRaisesRegex(RuntimeError, 'scratch-original-native-tuple-mismatch'):
+                qualification.prepared_executables(root)
+            self.assertTrue(all(path.stat().st_mode & 0o777 == 0o644 for path in binaries.values()))
+
     def test_normal_unknown_transitive_capture_binds_exact_data_and_removes_originals(self):
         class Javac:
             def run(self, stage, tool, *args):
