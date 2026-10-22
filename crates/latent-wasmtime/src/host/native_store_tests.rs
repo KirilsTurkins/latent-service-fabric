@@ -14,10 +14,25 @@ const COMPONENT: &[u8] = include_bytes!("native-store-component.wasm");
 #[derive(Default)]
 pub(super) struct Observations {
     requests: Mutex<Vec<usize>>,
+    before_request: Mutex<Option<(usize, Box<dyn FnOnce(usize) + Send>)>>,
     data_drops: AtomicUsize,
     pub(super) factory_drops: AtomicUsize,
     pub(super) data_charge: AtomicU64,
     factory_charge: AtomicU64,
+}
+impl Observations {
+    // Test-controller seam: run once immediately before an actual native
+    // reservation. The callback cannot replace or fabricate the admission.
+    pub(super) fn before_request(
+        &self,
+        ordinal: usize,
+        callback: impl FnOnce(usize) + Send + 'static,
+    ) {
+        assert!(ordinal > self.requests.lock().unwrap().len());
+        let mut before = self.before_request.lock().unwrap();
+        assert!(before.is_none());
+        *before = Some((ordinal, Box::new(callback)));
+    }
 }
 struct Factory {
     budget: ActivationBudget,
@@ -25,7 +40,25 @@ struct Factory {
 }
 impl wasmtime::NativeMemory for Factory {
     fn reserve(&self, bytes: usize) -> wasmtime::Result<Box<dyn wasmtime::NativeAllocation>> {
-        self.observations.requests.lock().unwrap().push(bytes);
+        let ordinal = {
+            let mut requests = self.observations.requests.lock().unwrap();
+            requests.push(bytes);
+            requests.len()
+        };
+        let callback = {
+            let mut before = self.observations.before_request.lock().unwrap();
+            if before
+                .as_ref()
+                .is_some_and(|(target, _)| *target == ordinal)
+            {
+                before.take()
+            } else {
+                None
+            }
+        };
+        if let Some((_, callback)) = callback {
+            callback(bytes);
+        }
         Ok(crate::native_tables::reserve(&self.budget, bytes)?.unwrap())
     }
 }

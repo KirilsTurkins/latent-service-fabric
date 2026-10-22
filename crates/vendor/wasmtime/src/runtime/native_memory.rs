@@ -268,6 +268,13 @@ impl<K: EntityRef, V> NativeMap<K, V> {
         })
     }
 
+    /// A private fixed-capacity wrapper may discard the factory only after it
+    /// has prepaid all slots and prevents every subsequent capacity increase.
+    /// The affine backing owner stays with this map independently of factory.
+    pub(crate) fn detach_factory(&mut self) {
+        self.memory = None;
+    }
+
     pub(crate) fn reserve(&mut self, additional: usize) -> Result<()> {
         if self.memory.is_none() {
             return Ok(self.values.reserve(additional)?);
