@@ -15,6 +15,7 @@ if __package__ in {None, ''}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from tools import rust_standard_sysroot_build as std
+from tools import rust_thread_guard_controls as result_controls
 from tools.build_observation import build_environment, file_identity
 from tools.captured_compiler_isolation import distribution
 from tools.dev_workflow.common import encode, require
@@ -37,7 +38,7 @@ RECIPE = tuple(dict.fromkeys((
     'tools/dev_workflow/common.py', 'tools/application_dependency_store.py',
     'tools/rust_standard_logging_inputs.py', 'tools/rust_application_dependencies.py',
     'tools/rust_standard_thread_capture.py', 'tools/rust_owned_thread_component.py',
-    *CRATE_SOURCES, *std.recipe(threads=True))))
+    *result_controls.RECIPE, *CRATE_SOURCES, *std.recipe(threads=True))))
 
 
 def git(*args, input=None):
@@ -180,6 +181,9 @@ def run(output, rust_bin, expected_head, *, application_diagnostic=False):
             require(b'test result: ok. 70 passed; 0 failed; 0 ignored;' in controls,
                     'rust-thread-inputs-exact-source-mechanism-controls')
             summary['sourceMechanismControlsPassed'] = 70
+            summary['stage'] = 'emitted-result-guard-engine-controls'
+            summary['emittedResultGuardControls'] = result_controls.run(
+                commands, copied, output / 'result-guard-controls')
         summary['stage'] = 'owned-sysroot-build'
         built = std.build(archive, output / 'owned-sysroot', rust_bin, threads=True)
         require(built['profile'] == std.THREAD_PROFILE

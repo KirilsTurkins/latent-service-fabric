@@ -1,0 +1,36 @@
+{
+  "cases": [
+    "CanonicalResults.test_structured_exits_require_one_static_area_and_reject_branch_or_dynamic_bypass",
+    "CanonicalResults.test_whole_post_body_original_allocator_and_private_bss_ranges_are_required"
+  ],
+  "guards": {
+    "CanonicalResults.test_structured_exits_require_one_static_area_and_reject_branch_or_dynamic_bypass": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:7bad2472b6918ab5b7538a94227cd3d8f9cde5acd747c78ef3a86b716634655b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CanonicalResults.test_whole_post_body_original_allocator_and_private_bss_ranges_are_required": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:7bad2472b6918ab5b7538a94227cd3d8f9cde5acd747c78ef3a86b716634655b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_rust_thread_canonical_results.py",
+  "reviewReason": "Bind original parsed WIT public/world type, reachable static return paths, complete post allocator body and private BSS disjointness; no source receipt grants runtime authority.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

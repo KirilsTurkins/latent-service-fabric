@@ -1,6 +1,7 @@
 //! Explicit owned Rust compiler mechanism; no runtime feature is enabled here.
 use latent_component_threading::{
-    MAX_BYTES, prepare_owned_public_root, transform_owned_canonical_root_bootstrap,
+    CanonicalResultGuard, MAX_BYTES, prepare_owned_public_root,
+    transform_owned_canonical_root_bootstrap, transform_owned_guarded_canonical_root_bootstrap,
     transform_owned_root_bootstrap, transform_owned_thread_admission, transform_owned_thread_entry,
     verify_component_routing,
 };
@@ -46,21 +47,35 @@ fn write(path: &Path, raw: &[u8]) -> Result<(), Box<dyn std::error::Error>> {
         .write_all(raw)?;
     Ok(())
 }
-fn ordinary(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
-    if args.len() != 7 {
-        return Err("usage: rust-context --ordinary-core INPUT sha256:DIGEST PUBLIC_EXPORT POST_RETURN_OR_DASH REALLOC_OR_DASH FRESH_OUTPUT".into());
+fn ordinary(args: &[String], guarded: bool) -> Result<(), Box<dyn std::error::Error>> {
+    if args.len() != if guarded { 9 } else { 7 } {
+        return Err("usage: rust-context --ordinary-core INPUT sha256:DIGEST PUBLIC_EXPORT POST_RETURN_OR_DASH REALLOC_OR_DASH FRESH_OUTPUT | --guarded-ordinary-core INPUT sha256:DIGEST PUBLIC_EXPORT POST_RETURN REALLOC STATIC_AREA ORIGINAL_HEAP_LOW FRESH_OUTPUT".into());
     }
     let expected = preimage(&args[2])?;
     let raw = read(&args[1])?;
     let (prepared, public) = prepare_owned_public_root(&raw, expected, &args[3])?;
     let (threaded, thread) = transform_owned_thread_entry(&prepared, public.derived_digest)?;
-    let (rooted, root) = transform_owned_canonical_root_bootstrap(
-        &threaded,
-        thread.stack.derived_digest,
-        &thread,
-        (args[4] != "-").then_some(args[4].as_str()),
-        (args[5] != "-").then_some(args[5].as_str()),
-    )?;
+    let (rooted, root) = if guarded {
+        transform_owned_guarded_canonical_root_bootstrap(
+            &threaded,
+            thread.stack.derived_digest,
+            &thread,
+            &args[4],
+            &args[5],
+            CanonicalResultGuard {
+                static_area: args[6].parse()?,
+                original_heap_low: args[7].parse()?,
+            },
+        )?
+    } else {
+        transform_owned_canonical_root_bootstrap(
+            &threaded,
+            thread.stack.derived_digest,
+            &thread,
+            (args[4] != "-").then_some(args[4].as_str()),
+            (args[5] != "-").then_some(args[5].as_str()),
+        )?
+    };
     let (derived, admission) = transform_owned_thread_admission(&rooted, root.derived_digest)?;
     let number = |value: Option<u32>| value.map_or_else(|| "null".to_owned(), |v| v.to_string());
     let json = format!(
@@ -75,6 +90,7 @@ fn ordinary(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
             "  \"rootStackLow\":{},\n  \"rootStackHigh\":{},\n",
             "  \"canonicalSystemStackLow\":{},\n  \"canonicalSystemStackHigh\":{},\n",
             "  \"canonicalSystemScopeGlobal\":{},\n  \"canonicalSystemClosureFunctions\":{},\n",
+            "  \"canonicalStaticResultArea\":{},\n  \"canonicalResultGuardInstalled\":{},\n",
             "  \"canonicalResultAreaAuthenticated\":false,\n",
             "  \"privateExecutorGraphAuthenticated\":false,\n",
             "  \"canonicalAbiBodiesAuthenticated\":false,\n",
@@ -99,16 +115,24 @@ fn ordinary(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
         number(root.canonical_system_stack_high),
         number(root.canonical_system_scope_global),
         root.canonical_system_closure_functions,
+        number(root.canonical_result_area),
+        root.canonical_result_guard_installed,
     );
-    let output = Path::new(&args[6]);
+    let output = Path::new(&args[if guarded { 8 } else { 6 }]);
     fs::create_dir(output)?;
     write(&output.join("core.wasm"), &derived)?;
     write(&output.join("receipt.json"), json.as_bytes())
 }
 fn run() -> Result<(), Box<dyn std::error::Error>> {
-    let args: Vec<_> = std::env::args().skip(1).take(8).collect();
+    let args: Vec<_> = std::env::args().skip(1).take(10).collect();
     if args.first().is_some_and(|value| value == "--ordinary-core") {
-        return ordinary(&args);
+        return ordinary(&args, false);
+    }
+    if args
+        .first()
+        .is_some_and(|value| value == "--guarded-ordinary-core")
+    {
+        return ordinary(&args, true);
     }
     if args.len() != 3 {
         return Err("usage: rust-context INPUT sha256:DIGEST FRESH_OUTPUT | --verify-component INPUT FRESH_RECEIPT".into());

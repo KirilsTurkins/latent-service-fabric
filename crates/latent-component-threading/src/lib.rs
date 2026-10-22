@@ -24,7 +24,8 @@ mod admission;
 pub use admission::{AdmissionReceipt, transform_owned_thread_admission};
 mod root;
 pub use root::{
-    RootReceipt, transform_owned_canonical_root_bootstrap, transform_owned_root_bootstrap,
+    CanonicalResultGuard, RootReceipt, transform_owned_canonical_root_bootstrap,
+    transform_owned_guarded_canonical_root_bootstrap, transform_owned_root_bootstrap,
 };
 mod public_root;
 pub use public_root::{PublicRootReceipt, prepare_owned_public_root};
