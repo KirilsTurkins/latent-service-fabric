@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_c_thread_runtime.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Bind the ordinary public synchronization fixture and require the original seventeen outcomes followed by two synchronization cases and a fresh invocation, using one component and unchanged limits.",
+  "reviewReason": "Compose reviewed native128 exact-source admission with the original17 and three appended signed synchronization outcomes; preserve all original limits and assertions.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "9d322ed1bf675fb5aa89773bf04c18abbc2f360a4266f9eee8541463225005f0"
+  "sha256": "509a05c65838bb3edb5eac7bfef7e00806d700dcb8f3ea3e783985b1c122d54e"
 }

@@ -21,7 +21,7 @@ SCOPE = ('ordinary-host-codec-original-memory-and-selected-c-public-async-type-s
     'legacy framing and serialized transport controller frames excluded')
 
 
-def _producer_contract(raw, groups, count):
+def _producer_contract(raw, groups, count, *, extra_control=None):
     """Read literal data from the frozen Git producer, without importing it."""
     require(type(raw) is bytes and 0 < len(raw) <= 128 * 1024, 'codec-reader-producer-source-bound')
     wanted = {}
@@ -45,7 +45,8 @@ def _producer_contract(raw, groups, count):
         require(type(row) is tuple and len(row) == 4, 'codec-reader-control-row')
         stage, package, needle, cases = row
         require(type(stage) is str and re.fullmatch(r'[a-z0-9-]{1,60}', stage)
-            and type(package) is str and re.fullmatch(r'latent-[a-z-]{1,48}', package)
+            and type(package) is str
+            and (re.fullmatch(r'latent-[a-z-]{1,48}', package) or row == extra_control)
             and type(needle) is str and 0 < len(needle) <= 160
             and type(cases) is tuple and 0 < len(cases) <= 32
             and all(type(case) is str and re.fullmatch(r'[A-Za-z0-9_:]{1,256}', case) for case in cases),
@@ -55,6 +56,7 @@ def _producer_contract(raw, groups, count):
         'codec-reader-exact-sixty-one-controls' if count == 61
         else 'codec-reader-exact-ninety-two-controls' if count == 92
         else 'codec-reader-exact-one-hundred-fourteen-controls' if count == 114
+        else 'codec-reader-exact-one-hundred-twenty-eight-controls' if count == 128
         else 'codec-reader-exact-eighty-one-controls')
     return controls, recipe
 
@@ -113,6 +115,7 @@ class FrozenHostCodecProducts(FrozenNativeProducts):
             'codec-reader-all-thirty-one-commands' if self.command_count == 31
             else 'codec-reader-all-forty-three-commands' if self.command_count == 43
             else 'codec-reader-all-fifty-one-commands' if self.command_count == 51
+            else 'codec-reader-all-fifty-nine-commands' if self.command_count == 59
             else 'codec-reader-all-thirty-seven-commands')
         require(type(commands[2]) is dict and type(commands[2].get('argv')) is list
             and len(commands[2]['argv']) > 2, 'codec-reader-original-host-build-command')

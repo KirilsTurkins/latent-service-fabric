@@ -8,7 +8,7 @@ import unittest
 from unittest.mock import patch
 
 from tools import qualify_c_thread_runtime as qualification
-from tools import host_codec_linear_memory_native_products as native
+from tools import host_codec_owned_reply_native_products as native
 
 ORIGINAL = '173ccd9c096e4db643aa9627bd4550cef27fb922'
 
@@ -40,7 +40,7 @@ class CThreadReadyRuntime(unittest.TestCase):
         imports = [item for item in ast.walk(selected) if isinstance(item, ast.ImportFrom)
                    and item.module == 'tools']
         self.assertEqual([(item.names[0].name, item.names[0].asname) for item in imports],
-                         [('host_codec_linear_memory_native_products', 'products')])
+                         [('host_codec_owned_reply_native_products', 'products')])
         imports[0].names[0].name = 'host_codec_native_products'
         projection = new_functions['assert_current'].body.pop(0)
         self.assertEqual(ast.dump(projection), ast.dump(ast.parse('''
@@ -80,6 +80,8 @@ if products is not None and products.SOURCE == 'f5351a9331ed954c49ae83f2f4004e0f
         self.assertIn('tools/host_codec_linear_memory_native_products.py', qualification.MATERIALS)
         self.assertIn('tools/host_codec_linear_memory_native_products_reader.py', qualification.MATERIALS)
         self.assertIn('tools/c_thread_linear_memory_native_source.py', qualification.MATERIALS)
+        self.assertIn('tools/host_codec_owned_reply_native_products.py', qualification.MATERIALS)
+        self.assertIn('tools/host_codec_owned_reply_native_products_reader.py', qualification.MATERIALS)
         self.assertIn('.github/workflows/c-thread-runtime.yml', qualification.MATERIALS)
 
 

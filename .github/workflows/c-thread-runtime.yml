@@ -5,6 +5,11 @@ on:
     branches: ['feat/c-thread-runtime-consumer-20261021', 'feat/c-owned-sync-20261022']
     paths:
       - '.github/workflows/c-thread-runtime.yml'
+      - 'tools/host_codec_owned_reply_native_products.py'
+      - 'tools/host_codec_owned_reply_native_products_reader.py'
+      - 'tools/tests/test_host_codec_owned_reply_native_products.py'
+      - 'tools/tests/test_host_codec_owned_reply_native_products_reader.py'
+      - 'tools/tests/test_c_thread_owned_reply_runtime.py'
       - 'tools/host_codec_linear_memory_native_products.py'
       - 'tools/host_codec_linear_memory_native_products_reader.py'
       - 'tools/tests/test_host_codec_linear_memory_native_products.py'
@@ -81,14 +86,16 @@ jobs:
           git fetch --no-tags --depth=1 origin ea118974d93843265a504f5d30571ed7cfe8a7d2
           git fetch --no-tags --depth=1 origin f5351a9331ed954c49ae83f2f4004e0f96d25d0e
           git fetch --no-tags --depth=1 origin ff5aadaecd11874f53aa80e56ffdfff0efda312b
+          git fetch --no-tags --depth=1 origin 4ed0db7f07245732d07f867e95ec008a804485e5
+          git fetch --no-tags --depth=1 origin cb8ceefc5f6343301871dbde1d8a853d3581cc30
       - name: Verify source and adverse fixed-product controls
         run: |
           python3 -m pip install --requirement tools/requirements.lock
-          python3 -B -m unittest tools.tests.test_c_thread_runtime tools.tests.test_c_thread_native_products tools.tests.test_sdk_native_products_reader tools.tests.test_c_threading_profile tools.tests.test_activation_stack_native_products tools.tests.test_activation_stack_native_source tools.tests.test_c_thread_package_native_products tools.tests.test_c_threading_compatibility tools.tests.test_c_thread_admission_native_products tools.tests.test_host_codec_native_products_reader tools.tests.test_host_codec_linear_memory_native_products_reader tools.tests.test_host_codec_linear_memory_native_products tools.tests.test_c_thread_ready_runtime tools.tests.test_c_thread_linear_memory_native_source -v
-      - name: Authenticate five fixed 114-control ready-aware C products
+          python3 -B -m unittest tools.tests.test_c_thread_runtime tools.tests.test_c_thread_native_products tools.tests.test_sdk_native_products_reader tools.tests.test_c_threading_profile tools.tests.test_activation_stack_native_products tools.tests.test_activation_stack_native_source tools.tests.test_c_thread_package_native_products tools.tests.test_c_threading_compatibility tools.tests.test_c_thread_admission_native_products tools.tests.test_host_codec_native_products_reader tools.tests.test_host_codec_linear_memory_native_products_reader tools.tests.test_host_codec_linear_memory_native_products tools.tests.test_c_thread_ready_runtime tools.tests.test_c_thread_linear_memory_native_source tools.tests.test_host_codec_owned_reply_native_products_reader tools.tests.test_host_codec_owned_reply_native_products tools.tests.test_c_thread_owned_reply_runtime -v
+      - name: Authenticate five fixed 128-control ready-aware C products
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 -B tools/host_codec_linear_memory_native_products.py --output "$RUNNER_TEMP/c-thread-native"
+        run: python3 -B tools/host_codec_owned_reply_native_products.py --output "$RUNNER_TEMP/c-thread-native"
       - uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2
         with:
           version: '0.16.0'
