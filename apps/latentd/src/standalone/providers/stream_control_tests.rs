@@ -445,7 +445,7 @@ fn explicit_drain_retires_current_owner_and_requires_a_normal_restart_for_fresh_
                         execution.budget.outstanding_reservations(),
                         before_read_owners
                     );
-                    let observed = stream.observe();
+                    let observed = stream.inspect();
                     assert_eq!(observed.accepted_write_bytes, 0);
                     assert_eq!(observed.delivered_read_bytes, 0);
                     assert!(!observed.application_write_attempted);
