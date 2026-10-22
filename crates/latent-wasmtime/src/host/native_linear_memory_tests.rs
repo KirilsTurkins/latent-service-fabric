@@ -79,7 +79,8 @@ fn actual_linear_memory_is_confirmed_before_subsequent_native_instance_allocatio
 }
 
 struct RefusingCreator;
-// No memory or pointer escapes: the creator always returns its original error.
+// SAFETY: no memory or pointer escapes; the creator always returns its original error.
+#[allow(unsafe_code)]
 unsafe impl wasmtime::MemoryCreator for RefusingCreator {
     fn new_memory(
         &self,
