@@ -135,6 +135,7 @@ async fn expiry(dns: bool) {
     if let Some(peer) = dns_peer {
         peer.await.unwrap();
     }
+    drop(lifecycle);
     drop(session);
     fixture.clean().await;
     drop(fixture);

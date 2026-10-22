@@ -72,6 +72,10 @@ fn ordinary(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
             "  \"nativeAdmissionImportInserted\":{},\n  \"nativeAdmissionImport\":{},\n",
             "  \"postReturnFunction\":{},\n  \"originalPostReturnBody\":{},\n",
             "  \"reallocFunction\":{},\n  \"originalReallocBody\":{},\n",
+            "  \"rootStackLow\":{},\n  \"rootStackHigh\":{},\n",
+            "  \"canonicalSystemStackLow\":{},\n  \"canonicalSystemStackHigh\":{},\n",
+            "  \"canonicalSystemScopeGlobal\":{},\n  \"canonicalSystemClosureFunctions\":{},\n",
+            "  \"canonicalResultAreaAuthenticated\":false,\n",
             "  \"privateExecutorGraphAuthenticated\":false,\n",
             "  \"canonicalAbiBodiesAuthenticated\":false,\n",
             "  \"componentRoutingAuthenticated\":false,\n  \"canonicalCreationEnabled\":false,\n",
@@ -89,6 +93,12 @@ fn ordinary(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
         number(root.original_post_return_body),
         number(root.realloc_function),
         number(root.original_realloc_body),
+        root.root_stack_low,
+        root.root_stack_high,
+        number(root.canonical_system_stack_low),
+        number(root.canonical_system_stack_high),
+        number(root.canonical_system_scope_global),
+        root.canonical_system_closure_functions,
     );
     let output = Path::new(&args[6]);
     fs::create_dir(output)?;

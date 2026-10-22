@@ -99,6 +99,7 @@ async fn rotation_fences_old_grants_and_drain_reports_actual_retained_owners() {
     assert_eq!(control.budget.host_memory_bytes(), control_session_bytes);
     assert_eq!(observed(&fixture).live_accepted_write_bytes, 0);
     assert_eq!(observed(&fixture).owners, 0);
+    drop(replacement);
     drop(runtime);
     drop(lifecycle);
     assert!(weak.upgrade().is_none());

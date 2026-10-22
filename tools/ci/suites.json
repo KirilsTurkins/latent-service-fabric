@@ -2245,14 +2245,19 @@
         "activation_runtime::shared::tests::preparation_prepays_both_padded_headers_and_rolls_back_without_observation",
         "activation_runtime::tests::readiness_weak_headers_remain_paid_without_retaining_runtime_payload",
         "activation_runtime::tests::runtime_header_refusal_precedes_generation_and_keeps_original_ledger",
-        "activation_runtime::tests::timer_header_refusal_precedes_admission_and_waiter_retains_actual_backing"
+        "activation_runtime::tests::timer_header_refusal_precedes_admission_and_waiter_retains_actual_backing",
+        "budget::descendants::native_retirement_tests::native_only_owner_settles_actual_work_without_refunding_physical_child_capacity",
+        "budget::descendants::native_retirement_tests::ordinary_retained_accounting_owner_still_holds_the_whole_accepted_grant",
+        "budget::descendants::native_retirement_tests::missing_or_invalid_completion_remains_conservative_with_native_only_owners",
+        "budget::descendants::native_retirement_tests::transitive_native_ancestry_never_pins_an_ordinary_ancestor_cumulative_grant",
+        "budget::descendants::native_retirement_tests::concurrent_last_ordinary_and_physical_owners_settle_each_original_counter_once"
       ],
       "expectedIgnored": [],
       "id": "latent-core.lib.latent-core",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-core/Cargo.toml",
-      "minimumCases": 156,
+      "minimumCases": 161,
       "mode": "libtest",
       "package": "latent-core",
       "platforms": [

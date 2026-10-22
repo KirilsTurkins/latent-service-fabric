@@ -135,6 +135,7 @@ class StandardThreadCapture(unittest.TestCase):
             flags = json.loads(selected.arguments()[1].split('=', 1)[1])
             self.assertEqual(flags[0], '--sysroot=' + str(prepared / 'sysroot'))
             self.assertEqual(flags[1], '-Clink-arg=--no-stack-first')
+            self.assertEqual(flags[2:4], ['-Clink-arg=-z', '-Clink-arg=stack-size=1114112'])
             self.assertEqual(selected.arguments()[2:], ['--config', 'profile.release.lto=false'])
             self.assertIn('-Clink-arg=--export=__lsf_rust_owned_thread_entry', flags)
             self.assertTrue(set(capture.RECIPE) <= set(standard.source_build_inputs(standard.THREAD)))
