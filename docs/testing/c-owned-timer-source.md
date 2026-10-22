@@ -62,11 +62,18 @@ only the scope flag is unsafe. A distinct bounded original-memory System stack
 and rebuilt compiler tooling are required before retrying. This failure is not
 a signed timer qualification; all failed artifacts remain retained.
 
-The next attempt consumes the verified 172-control native products from
+The corrected attempt consumes the verified 172-control native products from
 `ce8c04a7d9fdf3be79e16b2f9a26803b97a7e3e1` (run `39859151957`). Their C
 transform reserves separate 64 KiB Root and System stacks inside the original
 bounded linear memory and rejects live canonical allocators requiring TLS.
-The native controls passed; signed timer execution remains pending. A separate
+The native controls passed. Signed run `39863159247` then passed all 36 outcomes
+on `02478e6e4354323d9a30f7fa1b46240b96a8bcff`: one captured 2,078,955-byte
+component, 26 successful build commands and all original twenty cases plus
+sixteen timer/authority/fresh cases. All 36 calls have complete retirement,
+five physical owner counters and eighteen active provider counters at zero,
+followed by clean node/peer shutdown. The
+[source-bound observation](evidence/c-timed-runtime-signed-2026-10-22.json)
+retains actual input, compiler, native and artifact identities. A separate
 CI failure exposed cumulative child-budget retention by physically retained
 session headers, so these products do not establish complete retirement.
 
