@@ -2,7 +2,7 @@
 use super::{
     Arc, Charge, Kind, PlatformError, PoolAdmission, PoolCall, ProviderClient, ProviderPools,
 };
-use crate::broker::{io::IoLease, network::StreamScope};
+use crate::broker::{io::IoLease, network::StreamScope, session::SessionCoreOwner};
 
 /// Retain after the actual protocol objects it accounts for. Dropping a waiter
 /// must never drop this charge while a socket/driver/parser still owns that state.
@@ -60,8 +60,9 @@ impl PoolCall {
         self.io.checkpoint()?;
         if !matches!(bytes, 65_536 | 98_304)
             || !scope.with_session(|original| {
-                self.io
-                    .with_session(|accepted| Arc::ptr_eq(&original.core, &accepted.core))
+                self.io.with_session(|accepted| {
+                    SessionCoreOwner::ptr_eq(&original.core, &accepted.core)
+                })
             })
         {
             return Err(super::denied());

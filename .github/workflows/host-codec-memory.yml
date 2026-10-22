@@ -1,7 +1,7 @@
 name: Ordinary host shared table and runtime memory diagnostics
 on:
   push:
-    branches: ['feat/host-codec-memory-736-20261021', 'feat/typescript-table-memory-20261022', 'feat/activation-registry-memory-20261022', 'feat/activation-funcrefs-memory-20261022', 'feat/component-resource-map-memory-20261022', 'feat/linear-memory-notifications-20261022', 'feat/hostcall-future-memory-20261022', 'feat/owned-context-replies-memory-20261022', 'feat/capability-lowering-current-20261022', 'feat/streaming-table-memory-20261022', 'feat/runtime-shared-memory-20261022']
+    branches: ['feat/host-codec-memory-736-20261021', 'feat/typescript-table-memory-20261022', 'feat/activation-registry-memory-20261022', 'feat/activation-funcrefs-memory-20261022', 'feat/component-resource-map-memory-20261022', 'feat/linear-memory-notifications-20261022', 'feat/hostcall-future-memory-20261022', 'feat/owned-context-replies-memory-20261022', 'feat/capability-lowering-current-20261022', 'feat/streaming-table-memory-20261022', 'feat/runtime-shared-memory-20261022', 'feat/session-core-memory-20261022']
   workflow_dispatch: {}
 permissions:
   contents: read
@@ -45,7 +45,7 @@ jobs:
         run: python3 -m pip install -r tools/requirements.lock
       - name: Refuse missing, ignored or changed control evidence
         run: python3 -B -m unittest tools.tests.test_host_codec_native -v
-      - name: Execute one hundred sixty-three source-bound controls with the ordinary native host
+      - name: Execute one hundred seventy source-bound controls with the ordinary native host
         id: own-native-memory
         run: >-
           python3 -B tools/qualify_host_codec_native.py

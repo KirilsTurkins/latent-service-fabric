@@ -20,6 +20,7 @@ async fn a_policy_change_while_readable_is_pending_is_checked_before_syscall() {
     let endpoint = config.destinations[0].endpoint.clone();
     let fixture = Fixture::new(config);
     let (session, control) = fixture.session(5000);
+    let control_session_bytes = control.native_session_bytes();
     let stream = fixture
         .provider
         .start(
@@ -64,9 +65,11 @@ async fn a_policy_change_while_readable_is_pending_is_checked_before_syscall() {
         Err(failure) if failure.kind() == std::io::ErrorKind::ConnectionReset => {}
         value => panic!("revoked readable owner must retire: {value:?}"),
     }
-    assert_eq!(control.budget.host_memory_bytes(), 0);
+    assert_eq!(control.budget.host_memory_bytes(), control_session_bytes);
     drop(session);
     fixture.clean().await;
+    drop(fixture);
+    control.assert_native_settled();
 }
 
 #[tokio::test]
@@ -77,6 +80,7 @@ async fn provider_retirement_wakes_pending_read_without_early_refund() {
     let endpoint = config.destinations[0].endpoint.clone();
     let fixture = Fixture::new(config);
     let (session, control) = fixture.session(5000);
+    let control_session_bytes = control.native_session_bytes();
     let stream = fixture
         .provider
         .start(
@@ -104,7 +108,9 @@ async fn provider_retirement_wakes_pending_read_without_early_refund() {
     assert_eq!(fixture.pools.snapshot().unwrap().connections, 0);
     assert_eq!(fixture.pools.snapshot().unwrap().running_requests, 1);
     drop(stream);
-    assert_eq!(control.budget.host_memory_bytes(), 0);
+    assert_eq!(control.budget.host_memory_bytes(), control_session_bytes);
     drop(session);
     fixture.clean().await;
+    drop(fixture);
+    control.assert_native_settled();
 }

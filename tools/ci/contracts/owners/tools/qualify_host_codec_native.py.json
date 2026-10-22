@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_host_codec_native.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Append the exact seventeen original runtime/timer strong and weak ownership controls after the unchanged146-control native prefix; preserve Wasmtime and all execution/resource guards.",
+  "reviewReason": "Prepay original sealed session strong and weak storage before allocation; append seven exact native controls",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "1763edab12230491f624dfc681cb4c08b91b46f5c370821360e8173fe6fdcd85"
+  "sha256": "c00d10a3c72cd65a6dc7648e38df4f791ac60d5b080439d96a09e506f754994c"
 }

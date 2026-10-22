@@ -1,10 +1,10 @@
 use super::{CapabilitySession, RandomError};
-use crate::broker::session::SessionCore;
-use std::sync::{atomic::Ordering, Arc};
+use crate::broker::session::SessionCoreOwner;
+use std::sync::atomic::Ordering;
 
 /// Pending work reserves aggregate capacity; started entropy work spends it.
 pub(super) struct Reservation {
-    core: Arc<SessionCore>,
+    core: SessionCoreOwner,
     bytes: usize,
     committed: bool,
 }

@@ -276,9 +276,22 @@ CONTROLS = (('original-host-memory',
   'activation_runtime::tests::runtime_header_refusal_precedes_generation_and_keeps_original_ledger',
   'activation_runtime::tests::task_support_admission_checks_original_kind_and_liveness_under_the_same_lock',
   'activation_runtime::tests::timer_header_refusal_precedes_admission_and_waiter_retains_actual_backing',
-  'activation_runtime::tests::waking_a_parked_thread_leaves_runnable_sibling_and_fences_reused_slots')))
+  'activation_runtime::tests::waking_a_parked_thread_leaves_runnable_sibling_and_fences_reused_slots')),
+ ('original-session-native-owner',
+  'latent-capabilities',
+  'broker::tests::session_native_memory::',
+  ('broker::tests::session_native_memory::original_session_native_owned_payloads_and_both_headers_share_exact_profile_budget',
+   'broker::tests::session_native_memory::original_session_native_refusal_rolls_back_unallocated_preparations_and_admission',
+   'broker::tests::session_native_memory::original_session_native_observer_and_reused_registry_never_credit_a_fresh_budget',
+   'broker::tests::session_native_memory::original_session_native_real_provider_call_keeps_closed_session_backing_until_drop',
+   'broker::tests::session_native_memory::original_session_native_real_provider_result_keeps_original_owner_after_scope_close',
+   'broker::tests::session_native_memory::original_session_native_concurrent_final_core_drops_retire_the_real_registry_weak_graph')),
+ ('original-session-optional-shared-owner',
+  'latent-capabilities',
+  'broker::session::shared::tests::',
+  ('broker::session::shared::tests::original_session_native_optional_billing_and_unwind_keep_actual_weak_storage_paid',)))
 
-NATIVE_COHORT = 'wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-retained-capability-directories-blob-streaming-shared-tables-runtime-timer-strong-weak-memory-v12'
+NATIVE_COHORT = 'wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-retained-capability-directories-blob-streaming-shared-tables-runtime-timer-strong-weak-session-core-stats-memory-v13'
 
 PRODUCTS = ('latent', 'latentd', 'examples/package', 'examples/capsule_contracts', 'examples/capsule_authoring')
 RECIPE = ('.github/workflows/host-codec-memory.yml', '.cargo/managed-guest.toml',
@@ -367,8 +380,8 @@ def qualify(output: Path, revision: str) -> dict:
     require(re.fullmatch('[0-9a-f]{40}', revision) is not None, 'host-codec-source-revision')
     require(sys.platform == 'linux', 'host-codec-linux-owner-required')
     names = [name for _,_,_,cases in CONTROLS for name in cases]
-    require(len(CONTROLS) == 33 and len({row[0] for row in CONTROLS}) == 33
-            and len(names) == len(set(names)) == 163, 'host-codec-control-inventory')
+    require(len(CONTROLS) == 35 and len({row[0] for row in CONTROLS}) == 35
+            and len(names) == len(set(names)) == 170, 'host-codec-control-inventory')
     output = fresh(output)
     codec_wasmtime.verify(ROOT)
     before, inputs = source_identity(ROOT), materials(ROOT)
@@ -406,7 +419,7 @@ def qualify(output: Path, revision: str) -> dict:
             products[name] = identity
         record = {'schemaVersion':'latent.host-codec.native-products.v1','status':'passed',
             'sourceRevision':revision,'source':before,'materials':inputs,'compiler':compiler,
-            'products':products,'commands':stages.records,'controlCount':163,'nativeCohort':NATIVE_COHORT,
+            'products':products,'commands':stages.records,'controlCount':170,'nativeCohort':NATIVE_COHORT,
             'wasmtimeAllocationCohort':codec_wasmtime.COHORT,
             'controls':{stage:list(names) for stage,_,_,names in CONTROLS},
             'profile':'normal-managed-guest-default-features','signedQualification':False,

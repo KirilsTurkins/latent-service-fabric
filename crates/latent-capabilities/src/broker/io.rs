@@ -178,7 +178,7 @@ impl Operation {
                 .lock()
                 .unwrap_or_else(std::sync::PoisonError::into_inner);
             match &state.authority {
-                Authority::Waiting(waiting) => Arc::clone(&waiting.core),
+                Authority::Waiting(waiting) => waiting.core.clone(),
                 Authority::Running(call) => call.session_core(),
             }
         };

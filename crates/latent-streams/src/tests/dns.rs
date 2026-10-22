@@ -64,6 +64,7 @@ async fn pending_dns_socket_keeps_original_native_charge_until_actual_cancelled_
     };
     let fixture = Fixture::new(configuration);
     let (session, control) = fixture.session(5000);
+    let control_session_bytes = control.native_session_bytes();
     let mut pending = fixture
         .provider
         .start(
@@ -114,7 +115,7 @@ async fn pending_dns_socket_keeps_original_native_charge_until_actual_cancelled_
             .active,
         0
     );
-    assert_eq!(control.budget.host_memory_bytes(), 0);
+    assert_eq!(control.budget.host_memory_bytes(), control_session_bytes);
     assert_eq!(
         control.budget.snapshot_at(Instant::now()).outbound_requests,
         1
@@ -129,4 +130,6 @@ async fn pending_dns_socket_keeps_original_native_charge_until_actual_cancelled_
     drop(listener);
     drop(session);
     fixture.clean().await;
+    drop(fixture);
+    control.assert_native_settled();
 }
