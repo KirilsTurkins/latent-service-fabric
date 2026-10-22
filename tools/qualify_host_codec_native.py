@@ -256,9 +256,29 @@ CONTROLS = (('original-host-memory',
  'latent-capabilities',
  'resource_table_native_backing_',
  ('broker::tests::resource_table_memory::resource_table_native_backing_original_ledger_and_phase1_are_distinct_from_metadata',
-  'broker::tests::resource_table_memory::resource_table_native_backing_refusal_preserves_live_owners_and_closed_session_fence')))
+  'broker::tests::resource_table_memory::resource_table_native_backing_refusal_preserves_live_owners_and_closed_session_fence')),
+ ('actual-runtime-timer-strong-weak-owner',
+ 'latent-core',
+ 'activation_runtime::',
+ ('activation_runtime::owner_refusal::tests::disabled_zero_and_invalid_counts_do_not_consume_refusal_allowance',
+  'activation_runtime::owner_refusal::tests::exact_closed_bucket_records_are_bounded_and_process_capped',
+  'activation_runtime::owner_refusal::tests::failed_witness_write_does_not_escape_or_change_original_counts',
+  'activation_runtime::shared::tests::concurrent_last_strong_and_last_weak_refund_exactly_once',
+  'activation_runtime::shared::tests::concurrent_last_strong_and_weak_drop_keep_both_headers_paid',
+  'activation_runtime::shared::tests::payload_unwind_still_retires_both_headers_before_refund',
+  'activation_runtime::shared::tests::preparation_prepays_both_padded_headers_and_rolls_back_without_observation',
+  'activation_runtime::tests::close_allows_bounded_live_continuations_and_rejects_independent_work',
+  'activation_runtime::tests::continuations_require_live_original_generation_before_any_admission',
+  'activation_runtime::tests::foreign_store_token_and_opaque_sleeping_work_cannot_establish_quiescence',
+  'activation_runtime::tests::lazy_path_allocates_no_records_and_accepted_owners_share_finite_limits',
+  'activation_runtime::tests::readiness_weak_headers_remain_paid_without_retaining_runtime_payload',
+  'activation_runtime::tests::recurring_timer_coalesces_storms_and_cancelled_waits_keep_physical_ownership',
+  'activation_runtime::tests::runtime_header_refusal_precedes_generation_and_keeps_original_ledger',
+  'activation_runtime::tests::task_support_admission_checks_original_kind_and_liveness_under_the_same_lock',
+  'activation_runtime::tests::timer_header_refusal_precedes_admission_and_waiter_retains_actual_backing',
+  'activation_runtime::tests::waking_a_parked_thread_leaves_runnable_sibling_and_fences_reused_slots')))
 
-NATIVE_COHORT = 'wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-retained-capability-directories-blob-streaming-shared-tables-memory-v11'
+NATIVE_COHORT = 'wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-retained-capability-directories-blob-streaming-shared-tables-runtime-timer-strong-weak-memory-v12'
 
 PRODUCTS = ('latent', 'latentd', 'examples/package', 'examples/capsule_contracts', 'examples/capsule_authoring')
 RECIPE = ('.github/workflows/host-codec-memory.yml', '.cargo/managed-guest.toml',
@@ -347,8 +367,8 @@ def qualify(output: Path, revision: str) -> dict:
     require(re.fullmatch('[0-9a-f]{40}', revision) is not None, 'host-codec-source-revision')
     require(sys.platform == 'linux', 'host-codec-linux-owner-required')
     names = [name for _,_,_,cases in CONTROLS for name in cases]
-    require(len(CONTROLS) == 32 and len({row[0] for row in CONTROLS}) == 32
-            and len(names) == len(set(names)) == 146, 'host-codec-control-inventory')
+    require(len(CONTROLS) == 33 and len({row[0] for row in CONTROLS}) == 33
+            and len(names) == len(set(names)) == 163, 'host-codec-control-inventory')
     output = fresh(output)
     codec_wasmtime.verify(ROOT)
     before, inputs = source_identity(ROOT), materials(ROOT)
@@ -386,13 +406,13 @@ def qualify(output: Path, revision: str) -> dict:
             products[name] = identity
         record = {'schemaVersion':'latent.host-codec.native-products.v1','status':'passed',
             'sourceRevision':revision,'source':before,'materials':inputs,'compiler':compiler,
-            'products':products,'commands':stages.records,'controlCount':146,'nativeCohort':NATIVE_COHORT,
+            'products':products,'commands':stages.records,'controlCount':163,'nativeCohort':NATIVE_COHORT,
             'wasmtimeAllocationCohort':codec_wasmtime.COHORT,
             'controls':{stage:list(names) for stage,_,_,names in CONTROLS},
             'profile':'normal-managed-guest-default-features','signedQualification':False,
             'guestJavaScriptEngineCompiled':False,'guestSourceCompiled':False,
             'historicalReceiptRewritten':False,
-            'scope':'ordinary-host-blob-fixed-Vec-and-streaming-HTTP-fixed-Vec-and-two-private-Shared-Arc-storage-shapes-and-three-retained-capability-directory-backings-and-six-closed-context-reply-buffers-and-concrete-callback-future-box-and-retained-activation-context-and-linear-allocation-notifications-codec-table-and-selected-Store-instance-buffer-registry-FuncRefs-container-resource-substitutions-original-memory-and-selected-c-public-async-type-sync-core-admission-and-authenticated-c-ready-handoff-and-closed-guest-trap-diagnostics-and-exact-native-thread-audit-codec-and-CLI-projection; direct-Core-HostFunc-construction, shared-preparation-closures, concurrent-task, other-hostcall-values-custom-Lower-shared-interior-error-owned-copies-and-opaque-accessor-scheduler-frames, request ingress and discarded scaffolding and other hostcall copies, SessionCore and transitive provider graphs, legacy framing and serialized controller frames excluded'}
+            'scope':'ordinary-runtime-and-timer-strong-and-weak-Arc-backing-including-private-billing-Arc-and-ordinary-host-blob-fixed-Vec-and-streaming-HTTP-fixed-Vec-and-two-private-Shared-Arc-storage-shapes-and-three-retained-capability-directory-backings-and-six-closed-context-reply-buffers-and-concrete-callback-future-box-and-retained-activation-context-and-linear-allocation-notifications-codec-table-and-selected-Store-instance-buffer-registry-FuncRefs-container-resource-substitutions-original-memory-and-selected-c-public-async-type-sync-core-admission-and-authenticated-c-ready-handoff-and-closed-guest-trap-diagnostics-and-exact-native-thread-audit-codec-and-CLI-projection; direct-Core-HostFunc-construction, shared-preparation-closures, concurrent-task, other-hostcall-values-custom-Lower-shared-interior-error-owned-copies-and-opaque-accessor-scheduler-frames, request ingress and discarded scaffolding and other hostcall copies, SessionCore and transitive provider graphs, legacy framing and serialized controller frames excluded'}
         write_json(output/'native-products.json',record)
         return record
     except Exception as error:

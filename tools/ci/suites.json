@@ -2231,14 +2231,21 @@
         "result_payload::tests::a_foreign_reservation_cannot_certify_the_original_budget",
         "result_payload::tests::accounted_payload_clone_and_transport_hold_the_same_bytes_and_charge",
         "result_payload::tests::legacy_constructor_preserves_capacity_and_comparison",
-        "result_payload::tests::owner_allocation_refusal_releases_original_storage_and_charge"
+        "result_payload::tests::owner_allocation_refusal_releases_original_storage_and_charge",
+        "activation_runtime::shared::tests::concurrent_last_strong_and_last_weak_refund_exactly_once",
+        "activation_runtime::shared::tests::concurrent_last_strong_and_weak_drop_keep_both_headers_paid",
+        "activation_runtime::shared::tests::payload_unwind_still_retires_both_headers_before_refund",
+        "activation_runtime::shared::tests::preparation_prepays_both_padded_headers_and_rolls_back_without_observation",
+        "activation_runtime::tests::readiness_weak_headers_remain_paid_without_retaining_runtime_payload",
+        "activation_runtime::tests::runtime_header_refusal_precedes_generation_and_keeps_original_ledger",
+        "activation_runtime::tests::timer_header_refusal_precedes_admission_and_waiter_retains_actual_backing"
       ],
       "expectedIgnored": [],
       "id": "latent-core.lib.latent-core",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-core/Cargo.toml",
-      "minimumCases": 149,
+      "minimumCases": 156,
       "mode": "libtest",
       "package": "latent-core",
       "platforms": [
