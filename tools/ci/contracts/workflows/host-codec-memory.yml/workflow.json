@@ -18,7 +18,8 @@
           "feat/hostcall-future-memory-20261022",
           "feat/owned-context-replies-memory-20261022",
           "feat/capability-lowering-current-20261022",
-          "feat/streaming-table-memory-20261022"
+          "feat/streaming-table-memory-20261022",
+          "feat/runtime-shared-memory-20261022"
         ]
       },
       "workflow_dispatch": {}
@@ -30,7 +31,7 @@
   "requiredJobs": [
     "native"
   ],
-  "reviewReason": "Allow one source-bound original ledger shared-table campaign on its dedicated branch with existing finite limits.",
+  "reviewReason": "Enable one source-bound runtime shared-memory programme on its dedicated branch while retaining every existing branch and required job.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/host-codec-memory.yml"
 }
