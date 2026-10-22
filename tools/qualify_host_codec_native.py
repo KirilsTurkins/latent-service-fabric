@@ -186,7 +186,21 @@ CONTROLS = (('original-host-memory',
  'native_thread_audit_',
  ('durable::tests::capability::native_thread_audit_encodes_exact_grant_and_host_completion_without_changing_default_abi',
   'durable::tests::capability::native_thread_audit_refuses_other_versions_operations_and_resource_classes',
-  'durable::tests::capability::native_thread_audit_retains_identity_outcome_and_redaction_boundaries')))
+  'durable::tests::capability::native_thread_audit_retains_identity_outcome_and_redaction_boundaries')),
+ ('retained-activation-context',
+ 'latent-wasmtime',
+ 'host::owned_context::tests::',
+ ('host::owned_context::tests::web_asset_identity_comes_from_the_prepared_revision_not_caller_metadata',
+  'host::owned_context::tests::unselected_or_mismatched_execution_cannot_spoof_the_reserved_web_identity',
+  'host::owned_context::tests::web_identity_map_entry_is_charged_before_context_ownership_transfer',
+  'host::owned_context::tests::validated_context_moves_every_field_and_ordinary_backing_buffer',
+  'host::owned_context::tests::capacity_threshold_is_inclusive_and_excess_has_a_hard_postcondition',
+  'host::owned_context::tests::spare_capacity_does_not_change_the_existing_logical_admission_boundary',
+  'host::owned_context::tests::excessive_values_keep_map_nodes_and_ordinary_keys_in_place',
+  'host::owned_context::tests::excessive_keys_rebuild_only_their_map_and_preserve_values_and_order',
+  'host::owned_context::tests::retained_context_uses_original_memory_until_drop_and_rolls_back_refused_admission',
+  'host::owned_context::tests::retained_context_bound_excludes_discarded_scaffolding_and_caller_web_identity',
+  'host::owned_context::tests::retained_context_keeps_legacy_profile_unaccounted_and_arithmetic_checked')))
 
 PRODUCTS = ('latent', 'latentd', 'examples/package', 'examples/capsule_contracts', 'examples/capsule_authoring')
 RECIPE = ('.github/workflows/host-codec-memory.yml', '.cargo/managed-guest.toml',
@@ -275,8 +289,8 @@ def qualify(output: Path, revision: str) -> dict:
     require(re.fullmatch('[0-9a-f]{40}', revision) is not None, 'host-codec-source-revision')
     require(sys.platform == 'linux', 'host-codec-linux-owner-required')
     names = [name for _,_,_,cases in CONTROLS for name in cases]
-    require(len(CONTROLS) == 23 and len({row[0] for row in CONTROLS}) == 23
-            and len(names) == len(set(names)) == 103, 'host-codec-control-inventory')
+    require(len(CONTROLS) == 24 and len({row[0] for row in CONTROLS}) == 24
+            and len(names) == len(set(names)) == 114, 'host-codec-control-inventory')
     output = fresh(output)
     codec_wasmtime.verify(ROOT)
     before, inputs = source_identity(ROOT), materials(ROOT)
@@ -314,12 +328,12 @@ def qualify(output: Path, revision: str) -> dict:
             products[name] = identity
         record = {'schemaVersion':'latent.host-codec.native-products.v1','status':'passed',
             'sourceRevision':revision,'source':before,'materials':inputs,'compiler':compiler,
-            'products':products,'commands':stages.records,'controlCount':103,'nativeCohort':codec_wasmtime.COHORT,
+            'products':products,'commands':stages.records,'controlCount':114,'nativeCohort':codec_wasmtime.COHORT,
             'controls':{stage:list(names) for stage,_,_,names in CONTROLS},
             'profile':'normal-managed-guest-default-features','signedQualification':False,
             'guestJavaScriptEngineCompiled':False,'guestSourceCompiled':False,
             'historicalReceiptRewritten':False,
-            'scope':'ordinary-host-linear-allocation-notifications-codec-table-and-selected-Store-instance-buffer-registry-FuncRefs-container-resource-substitutions-original-memory-and-selected-c-public-async-type-sync-core-admission-and-authenticated-c-ready-handoff-and-closed-guest-trap-diagnostics-and-exact-native-thread-audit-codec; direct-Core-HostFunc-construction, shared-preparation-closures, concurrent-task, hostcall, request-context transitive buffers, legacy framing and serialized controller frames excluded'}
+            'scope':'ordinary-host-retained-activation-context-and-linear-allocation-notifications-codec-table-and-selected-Store-instance-buffer-registry-FuncRefs-container-resource-substitutions-original-memory-and-selected-c-public-async-type-sync-core-admission-and-authenticated-c-ready-handoff-and-closed-guest-trap-diagnostics-and-exact-native-thread-audit-codec; direct-Core-HostFunc-construction, shared-preparation-closures, concurrent-task, hostcall, request ingress and discarded scaffolding and later hostcall copies, legacy framing and serialized controller frames excluded'}
         write_json(output/'native-products.json',record)
         return record
     except Exception as error:

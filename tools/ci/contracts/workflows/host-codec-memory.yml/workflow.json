@@ -5,7 +5,7 @@
       "cancel-in-progress": false,
       "group": "host-codec-memory-${{ github.ref }}"
     },
-    "name": "Ordinary host linear codec table Store registry FuncRefs resource memory and diagnostics",
+    "name": "Ordinary host runtime and retained context memory diagnostics",
     "on": {
       "push": {
         "branches": [
@@ -26,7 +26,7 @@
   "requiredJobs": [
     "native"
   ],
-  "reviewReason": "Preserve97 original hosted controls and append3 actual allocator success/failure/growth controls plus3 exact native-thread audit codec controls; same original limits, five products and22recipe entries; explicit v6 source identity, no whole SDK memory or authority claim.",
+  "reviewReason": "Append retained-context original-memory controls to the unchanged103-prefix programme; authenticate the exact original memory placeholder block while retaining whole-tree and all other upstream guards.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/host-codec-memory.yml"
 }

@@ -12,18 +12,18 @@ from tools.rust_capsule_project import ROOT, read_file
 PROVIDER = "crates/vendor/wasmtime"
 NAME = "wasmtime"
 VERSION = "48.0.7"
-COHORT = "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-memory-v6"
-RECORD_SHA256 = "123b016146ef6afb59be67dddc2df605b4e47172a1c65b9ca06b20830a324e64"
+COHORT = "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-memory-v7"
+RECORD_SHA256 = "a68566cae9faf5d778fb3bdb0b60371b94f2a0617d707eb0b039ac2ea66e690c"
 # Explicit reviewed postimages; the remaining original files use the immutable
 # registry inventory. Changing a claimed record or patch cannot authorize bytes.
 POSTIMAGES = {
     "README.latent.md": {
-        "sha256": "cf3e06046cfbde9ead8ce432e97a32d7114a728e6b9adfbc49e78f368da607e4",
-        "bytes": 9048
+        "sha256": "75fe94e6b62d548bc343d1de02921b45af3307f091f3ab1ccdf3b484ffd6108d",
+        "bytes": 9803
     },
     "latent-dynamic-memory.patch": {
-        "sha256": "db992fae7f81a16459ddd57318da6fd263f6d01cf90d3de7d4906dc91103010a",
-        "bytes": 164828
+        "sha256": "f772e640437dfc23f2b12c545a78cec1c0b9d5404c775e21e423c5bfffeda485",
+        "bytes": 164845
     },
     "src/runtime.rs": {
         "sha256": "3290f57919f6dc6b6f797ee55cd62504ce31e91500741501e261f2c7e4eac970",
@@ -62,8 +62,8 @@ POSTIMAGES = {
         "bytes": 9471
     },
     "src/runtime/component/mod.rs": {
-        "sha256": "276eecb5b8c2b523e9664f3796349ea1b6ea30b1e912f753c29da50686bf6a46",
-        "bytes": 32983
+        "sha256": "e12015ce0a2c145e0957b8bb6025ec682d547beb3f0c082f7674ca80dd131947",
+        "bytes": 33000
     },
     "src/runtime/component/resource_types.rs": {
         "sha256": "4e37f8fb059389b694fec202163830b98a9ae033003be03ef5e3da42641d4988",
