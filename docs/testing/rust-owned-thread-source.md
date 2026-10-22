@@ -52,8 +52,9 @@ generic dependency transformations remain replacement-only. The normal builder
 reproduces the port from original CAS bytes and rejects a stale recipe, changed
 output, unknown runtime version or changed archive. Local packages with the same
 name do not acquire a registry runtime patch. The ordinary creator declares the
-runtime and clock dependencies while preserving application source, Cargo
-features, requested limits and grants. This source route has four focused
+runtime and clock dependencies and includes them in normal binding generation.
+Only the macro's `generate_all` option changes: application function bodies,
+Cargo features, requested limits and grants stay intact. This source route has four focused
 capture/Prepared/creator controls; it has not compiled an ordinary guest.
 
 The first selected ThreadPool profile explicitly refuses `after_start` and

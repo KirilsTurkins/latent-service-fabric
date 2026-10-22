@@ -100,7 +100,13 @@ class StandardThreadCapture(unittest.TestCase):
             before, after = project.snapshot(original), project.snapshot(selected)
             descriptor, _ = build.validate_project(after)
             self.assertEqual(descriptor['runtimeProfile'], standard.THREAD)
-            self.assertEqual(after['src/lib.rs'], before['src/lib.rs'])
+            opening = b'wit_bindgen::generate!({'
+            # Exact generator configuration is the sole source change; the
+            # ordinary application function and all public calls stay intact.
+            self.assertEqual(after['src/lib.rs'], before['src/lib.rs'].replace(
+                opening, opening + b' generate_all,', 1))
+            self.assertEqual(after['src/lib.rs'].split(b'#[cfg(target_arch', 1)[0],
+                             before['src/lib.rs'].split(b'#[cfg(target_arch', 1)[0])
             self.assertEqual(after['Cargo.toml'], before['Cargo.toml'])
             self.assertEqual(descriptor['limits'], json.loads(before['capsule-project.json'])['limits'])
             self.assertNotIn('grants', descriptor)
