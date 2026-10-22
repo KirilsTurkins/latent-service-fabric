@@ -255,6 +255,7 @@ class RepositoryInventoryTests(unittest.TestCase):
             'ff5aadaecd11874f53aa80e56ffdfff0efda312b',
             '4ed0db7f07245732d07f867e95ec008a804485e5',
             'cb8ceefc5f6343301871dbde1d8a853d3581cc30',
+            '1d5062ee63c0d5ff202d47e21793f6fb9bb8a21a',
         ))
         self.assertEqual(len(words[5:]), len(expected))
         self.assertEqual(set(words[5:]), expected)

@@ -1,7 +1,7 @@
 {
   "schemaVersion":"latent.ci.contracts.v2",
   "kind":"python",
-  "reviewReason":"Preserve the exact closed historical fetch-set assertion and lane/order/hash guards; include the twelve C/codec origins now fetched for existing preservation controls.",
+  "reviewReason":"Append only the exact newly consumed1d506 source object to the closed Python-only preservation fetch union; all21 prior origins remain required.",
   "module":"tools/tests/test_ci_lane_inventory.py",
   "cases":["InventoryTests.test_complete_model_matches","InventoryTests.test_contract_dispatcher_cannot_drop_or_replace_the_owned_lane","InventoryTests.test_current_suite_inventory_supplies_exact_lane_contracts","InventoryTests.test_final_result_and_superseded_cancellation_remain_fail_closed","InventoryTests.test_http_response_policy_cannot_be_dropped_redirected_or_unbounded","InventoryTests.test_http_response_policy_requires_the_discovered_ignored_native_owner","InventoryTests.test_inventory_drift_is_rejected","InventoryTests.test_lane_is_single_bounded_owner_with_reviewed_command","InventoryTests.test_manual_catalog_scope_is_unchanged","InventoryTests.test_old_serial_renderer_and_provider_slots_cannot_return","InventoryTests.test_physical_qualification_stays_after_bounded_lanes","InventoryTests.test_renderer_preparation_remains_conditionally_selected","InventoryTests.test_required_matrix_rejects_omitted_lanes_exclusions_and_failure_masking","InventoryTests.test_unknown_schema_is_rejected","InventoryTests.test_worker_choice_is_explicitly_one_or_two","RepositoryInventoryTests.test_current_workflow_has_the_bounded_lane_contract","RepositoryInventoryTests.test_python_preservation_inputs_fetch_only_exact_frozen_source_commits"],
   "guards":{
