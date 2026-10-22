@@ -62,7 +62,66 @@ impl core::fmt::Debug for HostFunc {
 enum HostResult<T> {
     Done(Result<T>),
     #[cfg(feature = "component-model-async")]
-    Future(Pin<Box<dyn Future<Output = Result<T>> + Send>>),
+    Future(HostFuture<T>),
+}
+
+/// Own only the concrete engine callback-future Box, not its transitive values
+/// or the separate async scheduler/accessor boxes. The native owner is outside
+/// the allocation it protects, so the actual Box dies before its reservation.
+#[cfg(feature = "component-model-async")]
+struct HostFuture<T> {
+    future: Pin<Box<dyn Future<Output = Result<T>> + Send>>,
+    _allocation: Option<Box<dyn crate::NativeAllocation>>,
+}
+
+#[cfg(feature = "component-model-async")]
+impl<T: 'static> HostResult<T> {
+    fn future<F>(memory: crate::runtime::native_memory::Memory, future: F) -> Self
+    where
+        F: Future<Output = Result<T>> + Send + 'static,
+    {
+        match HostFuture::new(memory, future) {
+            Ok(future) => Self::Future(future),
+            Err(error) => Self::Done(Err(error)),
+        }
+    }
+}
+
+#[cfg(feature = "component-model-async")]
+impl<T: 'static> HostFuture<T> {
+    fn new<F>(memory: crate::runtime::native_memory::Memory, future: F) -> Result<Self>
+    where
+        F: Future<Output = Result<T>> + Send + 'static,
+    {
+        // The concrete type is still known before trait-object erasure. Pin
+        // adds no allocation; a ZST Box has no backing allocation or owner.
+        let allocation = crate::runtime::native_memory::reserve(
+            &memory,
+            core::alloc::Layout::new::<F>().size(),
+        )?;
+        let mut owner = Self {
+            future: Box::pin(future),
+            _allocation: allocation,
+        };
+        // Install both fields before confirmation: an unwinding callback
+        // must destroy/deallocate the actual future before refunding it.
+        if let Some(allocation) = owner._allocation.as_mut() {
+            allocation.allocated();
+        }
+        Ok(owner)
+    }
+}
+
+#[cfg(feature = "component-model-async")]
+impl<T> Future for HostFuture<T> {
+    type Output = Result<T>;
+
+    fn poll(
+        self: Pin<&mut Self>,
+        cx: &mut core::task::Context<'_>,
+    ) -> core::task::Poll<Self::Output> {
+        self.get_mut().future.as_mut().poll(cx)
+    }
 }
 
 impl HostFunc {
@@ -145,9 +204,11 @@ impl HostFunc {
             Asyncness::Yes,
             StaticHostFn::<_, true>::new(move |store, params| {
                 let func = func.clone();
-                HostResult::Future(Box::pin(
+                let memory = store.0.native_memory();
+                HostResult::future(
+                    memory,
                     store.wrap_call(move |accessor| func(accessor, params)),
-                ))
+                )
             }),
         )
     }
@@ -226,13 +287,18 @@ impl HostFunc {
             DynamicHostFn::<_, true>::new(
                 move |store, ty, mut params_and_results, result_start| {
                     let func = func.clone();
-                    HostResult::Future(Box::pin(store.wrap_call(move |accessor| {
-                        Box::pin(async move {
-                            let (params, results) = params_and_results.split_at_mut(result_start);
-                            func(accessor, ty, params, results).await?;
-                            Ok(params_and_results)
-                        })
-                    })))
+                    let memory = store.0.native_memory();
+                    HostResult::future(
+                        memory,
+                        store.wrap_call(move |accessor| {
+                            Box::pin(async move {
+                                let (params, results) =
+                                    params_and_results.split_at_mut(result_start);
+                                func(accessor, ty, params, results).await?;
+                                Ok(params_and_results)
+                            })
+                        }),
+                    )
                 },
             ),
         )

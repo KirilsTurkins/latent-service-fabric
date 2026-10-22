@@ -5,7 +5,7 @@
       "cancel-in-progress": false,
       "group": "host-codec-memory-${{ github.ref }}"
     },
-    "name": "Ordinary host runtime and retained context memory diagnostics",
+    "name": "Ordinary host concrete future and runtime memory diagnostics",
     "on": {
       "push": {
         "branches": [
@@ -14,7 +14,8 @@
           "feat/activation-registry-memory-20261022",
           "feat/activation-funcrefs-memory-20261022",
           "feat/component-resource-map-memory-20261022",
-          "feat/linear-memory-notifications-20261022"
+          "feat/linear-memory-notifications-20261022",
+          "feat/hostcall-future-memory-20261022"
         ]
       },
       "workflow_dispatch": {}
@@ -26,7 +27,7 @@
   "requiredJobs": [
     "native"
   ],
-  "reviewReason": "Append retained-context original-memory controls to the unchanged103-prefix programme; authenticate the exact original memory placeholder block while retaining whole-tree and all other upstream guards.",
+  "reviewReason": "Reviewed v8 appends five concrete host Future owner controls and two exact C canonical wait-route controls after all114 prior selectors; original recipes/products/assertions/commands retained, metadata fingerprints updated.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/host-codec-memory.yml"
 }

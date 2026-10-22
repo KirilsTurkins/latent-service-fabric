@@ -502,6 +502,8 @@ mod tests {
 #[cfg(test)]
 mod native_func_refs_tests;
 #[cfg(test)]
+mod native_host_future_tests;
+#[cfg(test)]
 mod native_linear_memory_tests;
 #[cfg(test)]
 mod native_registry_tests;
