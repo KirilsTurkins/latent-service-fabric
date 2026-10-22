@@ -129,14 +129,27 @@ class StandardThreadCapture(unittest.TestCase):
                 standardThreadRuntimeQualified=False,
                 recipeDigest=digest(project.inventory({name: (project.ROOT / name).read_bytes()
                     for name in std.recipe(threads=True)})))
+            from tools.rust_thread_path_remap import standard_flags, APPLICATION, source_mapping
+            value['rustEncodedFlags'], value['threadSourcePathRemap'] = standard_flags(Path(directory), std.FLAGS)
             fixture.publish(prepared, value)
             selected = standard.Prepared(prepared, compiler, standard.THREAD)
             selected.check()
-            flags = json.loads(selected.arguments()[1].split('=', 1)[1])
+            with self.assertRaisesRegex(DevError, 'actual-application-source-required'):
+                selected.arguments()
+            arguments = selected.arguments(source_root=Path(directory))
+            flags = json.loads(arguments[1].split('=', 1)[1])
             self.assertEqual(flags[0], '--sysroot=' + str(prepared / 'sysroot'))
-            self.assertEqual(flags[1], '-Clink-arg=--no-stack-first')
-            self.assertEqual(flags[2:4], ['-Clink-arg=-z', '-Clink-arg=stack-size=1114112'])
-            self.assertEqual(selected.arguments()[2:], ['--config', 'profile.release.lto=false'])
+            self.assertEqual(flags[1], source_mapping(Path(directory), APPLICATION)['argument'])
+            self.assertEqual(flags[2], '-Clink-arg=--no-stack-first')
+            self.assertEqual(flags[3:5], ['-Clink-arg=-z', '-Clink-arg=stack-size=1114112'])
+            self.assertEqual(arguments[2:], ['--config', 'profile.release.lto=false'])
+            original = value['rustEncodedFlags']
+            for changed in (original[:-1], [*original[:-1], '--remap-path-prefix=foreign=/lsf/rust/library']):
+                value['rustEncodedFlags'] = changed
+                fixture.publish(prepared, value)
+                with self.assertRaisesRegex(DevError, 'remap-receipt-arguments'):
+                    standard.Prepared(prepared, compiler, standard.THREAD)
+            value['rustEncodedFlags'] = original
             self.assertIn('-Clink-arg=--export=__lsf_rust_owned_thread_entry', flags)
             self.assertTrue(set(capture.RECIPE) <= set(standard.source_build_inputs(standard.THREAD)))
             for key, changed in (('recipeDigest', digest(b'older recipe')),
