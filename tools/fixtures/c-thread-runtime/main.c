@@ -169,7 +169,8 @@ bool exports_examples_c_thread_runtime_api_greet(probe_string_t *input,
     local = 70; errno = 23;
 #if LSF_C_TIMED_CLOCK
     if (input->len >= 6 && memcmp(input->ptr, "timed-", 6) == 0) {
-        timed_children(input, result); require(root_frame == 0x744); return true;
+        bool success = timed_children(input, result, error);
+        require(root_frame == 0x744); return success;
     }
 #endif
     unsigned children = 1;

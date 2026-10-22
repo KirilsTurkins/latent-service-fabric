@@ -123,31 +123,32 @@ static void *timed_worker(void *opaque) {
 }
 static int timed_c11_worker(void *opaque) { return (int)(uintptr_t)timed_worker(opaque); }
 
-static void timed_validation(void) {
+static unsigned timed_validation(void) {
     struct timespec zero = {0}, bad = {0, 1000000000L}, remaining = {91, 92};
     latent_runtime_activation_observation_t before, after;
     latent_runtime_activation_error_t error = 255;
     /* Keep the declared bounded entropy import in the real linked component.
      * Exact public import/surface validation must not accept a dead declaration. */
     unsigned char entropy[8];
-    require(getentropy(entropy, sizeof(entropy)) == 0 && errno == 23);
-    require(latent_runtime_activation_observe(&before, &error));
-    require(nanosleep(&zero, &remaining) == 0 && errno == 23);
-    require(remaining.tv_sec == 0 && remaining.tv_nsec == 0);
+    if (!(getentropy(entropy, sizeof(entropy)) == 0 && errno == 23)) return 1;
+    if (!(latent_runtime_activation_observe(&before, &error))) return 2;
+    if (!(nanosleep(&zero, &remaining) == 0 && errno == 23)) return 3;
+    if (!(remaining.tv_sec == 0 && remaining.tv_nsec == 0)) return 4;
     remaining = (struct timespec){91, 92};
-    require(nanosleep(&bad, &remaining) == -1 && errno == EINVAL);
-    require(remaining.tv_sec == 91 && remaining.tv_nsec == 92); errno = 23;
-    require(thrd_sleep(&bad, &remaining) == -2 && errno == 23);
-    require(remaining.tv_sec == 91 && remaining.tv_nsec == 92);
-    require(thrd_sleep(&zero, &remaining) == 0 && errno == 23);
-    require(remaining.tv_sec == 0 && remaining.tv_nsec == 0);
-    require(latent_runtime_activation_observe(&after, &error));
-    require(before.tasks == after.tasks && before.waits == after.waits && before.timers == after.timers);
-    require(before.results == after.results && before.native_owners == after.native_owners);
-    require(before.native_memory_bytes == after.native_memory_bytes && before.admission_failures == after.admission_failures);
+    if (!(nanosleep(&bad, &remaining) == -1 && errno == EINVAL)) return 5;
+    if (!(remaining.tv_sec == 91 && remaining.tv_nsec == 92)) return 6; errno = 23;
+    if (!(thrd_sleep(&bad, &remaining) == -2 && errno == 23)) return 7;
+    if (!(remaining.tv_sec == 91 && remaining.tv_nsec == 92)) return 8;
+    if (!(thrd_sleep(&zero, &remaining) == 0 && errno == 23)) return 9;
+    if (!(remaining.tv_sec == 0 && remaining.tv_nsec == 0)) return 10;
+    if (!(latent_runtime_activation_observe(&after, &error))) return 11;
+    if (!(before.tasks == after.tasks && before.waits == after.waits && before.timers == after.timers)) return 12;
+    if (!(before.results == after.results && before.native_owners == after.native_owners)) return 13;
+    if (!(before.native_memory_bytes == after.native_memory_bytes && before.admission_failures == after.admission_failures)) return 14;
+    return 0;
 }
 
-static void timed_children(probe_string_t *input, probe_string_t *result) {
+static bool timed_children(probe_string_t *input, probe_string_t *result, probe_string_t *error) {
     timed_c11 = mode(input, "timed-sleep-c11") || mode(input, "timed-mutex-timeout-c11")
         || mode(input, "timed-mutex-notify-c11") || mode(input, "timed-condition-notify-c11")
         || mode(input, "timed-condition-timeout-c11") || mode(input, "timed-condition-broadcast-c11");
@@ -157,7 +158,13 @@ static void timed_children(probe_string_t *input, probe_string_t *result) {
         : mode(input, "timed-condition-notify") || mode(input, "timed-condition-notify-c11") ? 3
         : mode(input, "timed-condition-broadcast") || mode(input, "timed-condition-broadcast-c11") ? 5 : 4;
     timed_children_count = timed_kind == 5 ? 3 : 2;
-    timed_validation();
+    unsigned failure = timed_validation();
+    if (failure) {
+        char output[96], *cursor = output;
+        memcpy(cursor, "timed-validation:", 17); cursor += 17;
+        number(&cursor, failure); *cursor++ = ':'; number(&cursor, (unsigned)errno); *cursor = 0;
+        probe_string_dup(error, output); probe_string_free(input); return false;
+    }
     if (timed_c11) {
         require(mtx_init(&timed_gate.c11, mtx_timed) == thrd_success);
         require(cnd_init(&timed_condition.c11) == thrd_success);
@@ -200,5 +207,5 @@ static void timed_children(probe_string_t *input, probe_string_t *result) {
     number(&cursor, timed_snapshot.waits); *cursor++ = ':';
     number(&cursor, timed_snapshot.parked_tasks); *cursor++ = ':';
     number(&cursor, timed_snapshot.native_memory_bytes); *cursor = 0;
-    probe_string_dup(result, output); probe_string_free(input);
+    probe_string_dup(result, output); probe_string_free(input); return true;
 }
