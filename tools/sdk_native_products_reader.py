@@ -50,7 +50,7 @@ class FrozenNativeProducts:
             and type(branch) is str and re.fullmatch(r'[A-Za-z0-9._/-]{1,128}', branch)
             and type(event) is str and event in ('push', 'workflow_dispatch')
             and type(include_protocol) is bool
-            and type(stages) is tuple and 0 < len(stages) <= 64
+            and type(stages) is tuple and self._valid_stages(stages)
             and len(set(stages)) == len(stages)
             and all(type(stage) is str and re.fullmatch(r'[a-z0-9-]{1,80}', stage) for stage in stages),
             'sdk-native-frozen-configuration')
@@ -60,6 +60,11 @@ class FrozenNativeProducts:
         # Own detached data so callers cannot mutate the original pin dictionaries.
         self.artifact, self.receipts = copy.deepcopy(artifact), copy.deepcopy(receipts)
         self._pins()
+
+    def _valid_stages(self, stages):
+        """Historical readers retain their original finite stage-count bound."""
+        return 0 < len(stages) <= 64
+
     def validate_record(self, record, snapshot, native, materials):
         require(type(record) is dict and set(record) == {'schemaVersion', 'status', 'sourceRevision', 'source',
             'materials', 'compiler', 'products', 'commands', 'profile', 'signedQualification',
