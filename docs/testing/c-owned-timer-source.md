@@ -2,7 +2,7 @@
 
 The owned C profile now has source for pthread/C11 mutex deadlines, condition
 timeout and reacquisition, `nanosleep` and `thrd_sleep`. This timed branch has
-not executed as a signed component and remains unqualified. It requires both
+not passed its signed programme and remains unqualified. It requires both
 `c-context144-sync-cooperative-v1` and the explicit standard clock/entropy or
 combined facilities profile. It does not install ambient clocks or grants.
 The untimed profile retains its existing selected behavior; timed methods there
@@ -46,14 +46,21 @@ library qualification remain separate open requirements of #744 and #736.
 
 The next owning programme is `.github/workflows/c-timed-runtime.yml`. It uses
 one newly captured clock-selected component and the exact 163-control native
-products. It preserves the original twenty lifecycle/synchronization outcomes,
+products for its initial attempts. It preserves the original twenty lifecycle/synchronization outcomes,
 then appends twelve pthread/C11 sleep, mutex timeout/handoff and condition
 notification/timeout/reacquisition cases, three independent clock/entropy
 authority denials and a fresh timed call. The source fixture also checks lazy
 zero sleep, invalid duration/remaining output and errno preservation. The
 32 MiB / one-billion fuel / five-second envelope and original runtime owner
-limits stay fixed. This programme is pending actual execution; source checks
-and a zero-warning fixture object compile do not qualify those outcomes.
+limits stay fixed. Actual run `39854116727` built and signed the component and
+passed all original twenty outcomes, then trapped at the first timed preflight.
+Its first entropy result requires canonical allocation. Wasmtime deliberately
+clears component context slots during canonical `realloc`; the selected C ABI
+incorrectly forwarded this live-root allocation to stack/TLS helpers requiring
+that context. Its existing System stack also aliases the root stack, so switching
+only the scope flag is unsafe. A distinct bounded original-memory System stack
+and rebuilt compiler tooling are required before retrying. This failure is not
+a signed timer qualification; all failed artifacts remain retained.
 
 Timer-budget exhaustion, timer-specific cancellation/deadline barriers,
 recurring callbacks, cross-tenant reuse and published/transitive libraries
