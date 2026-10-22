@@ -33,6 +33,24 @@ class CThreadReadyRuntime(unittest.TestCase):
         original = subprocess.check_output(['git', 'show', ORIGINAL + ':tools/qualify_c_thread_runtime.py'],
                                            cwd=qualification.ROOT).decode()
         current = (qualification.ROOT / 'tools/qualify_c_thread_runtime.py').read_text()
+        # Remove only the exact appended synchronization extension before the
+        # unchanged whole-original-body comparison below. Every new fragment
+        # must occur exactly once; changed old guards cannot be projected away.
+        def project_once(text, added, previous):
+            self.assertEqual(text.count(added), 1, added)
+            return text.replace(added, previous)
+        for added, previous in (
+            ("'signed-original-seventeen-and-three-synchronization-programme'",
+             "'signed-seventeen-case-c-thread-programme'"),
+            ("                and record['node']['programme']['originalSeventeenOutcomePrefix'] == 17\n"
+             "                and len(record['node']['programme']['outcomes']) == 20,\n"
+             "                'c-thread-all-seventeen-original-and-three-synchronization-outcomes')",
+             "                and len(record['node']['programme']['outcomes']) == 17,\n"
+             "                'c-thread-all-seventeen-original-outcomes')"),
+            ('record.update(status=\'passed\', observedCases=20)',
+             'record.update(status=\'passed\', observedCases=17)'),
+        ):
+            current = project_once(current, added, previous)
         old, new = ast.parse(original), ast.parse(current)
         old_functions = {item.name: item for item in old.body if isinstance(item, ast.FunctionDef)}
         new_functions = {item.name: item for item in new.body if isinstance(item, ast.FunctionDef)}
@@ -62,6 +80,20 @@ if products is not None and products.SOURCE == 'f5351a9331ed954c49ae83f2f4004e0f
             b"        write_json(output / f'child-inventory-{process.authoring_activation}-{attempt}.json', inventory)\n")
         self.assertNotEqual(retained, original_node)
         current_node = (qualification.ROOT / node).read_text()
+        current_node = project_once(current_node,
+            "            children = {'mixed': 2, 'pressure': 3, 'sync-pthread': 2, 'sync-mixed': 2}.get(mode, 1)\n"
+            "            witness = fixture.observation(row['decoded'][0]['ok'], children,\n"
+            "                synchronized=mode in ('sync-pthread', 'sync-mixed'))\n",
+            "            children = {'mixed': 2, 'pressure': 3}.get(mode, 1)\n"
+            "            witness = fixture.observation(row['decoded'][0]['ok'], children)\n")
+        current_node = project_once(current_node,
+            "    for label, mode in (('sync-pthread', 'sync-pthread'), ('sync-mixed', 'sync-mixed'),\n"
+            "                        ('fresh-sync', 'pthread')):\n"
+            "        outcomes.append(invoke(client, probe, target, output, mode, 'c-thread-' + label))\n"
+            "    require(len(outcomes) == 20, 'c-thread-original-seventeen-and-three-synchronization-controls')\n", '')
+        current_node = project_once(current_node,
+            "        'originalSeventeenOutcomePrefix': 17,\n"
+            "        'pthreadAndMixedBasicSynchronizationQualified': True,\n", '')
         def function(text, name):
             item = next(value for value in ast.parse(text).body if isinstance(value, ast.FunctionDef) and value.name == name)
             return '\n'.join(text.splitlines()[item.lineno - 1:item.end_lineno]) + '\n'
