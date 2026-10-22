@@ -45,7 +45,7 @@ unwind, compiled CPU checkpoints, sockets and unchanged published/transitive
 library qualification remain separate open requirements of #744 and #736.
 
 The next owning programme is `.github/workflows/c-timed-runtime.yml`. It uses
-one newly captured clock-selected component and the exact 146-control native
+one newly captured clock-selected component and the exact 163-control native
 products. It preserves the original twenty lifecycle/synchronization outcomes,
 then appends twelve pthread/C11 sleep, mutex timeout/handoff and condition
 notification/timeout/reacquisition cases, three independent clock/entropy
