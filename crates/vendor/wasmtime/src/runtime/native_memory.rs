@@ -133,6 +133,44 @@ impl<T> NativeVec<T> {
         Ok(())
     }
 
+    /// Stage an empty replacement without changing any current element or owner.
+    pub(crate) fn prepare_capacity(&self, required: usize) -> Result<Option<Self>> {
+        if self.memory.is_none() || required <= self.values.capacity() {
+            return Ok(None);
+        }
+        Self::with_capacity(required, self.memory.clone()).map(Some)
+    }
+
+    /// Commit a previously admitted empty replacement, without allocating.
+    pub(crate) fn commit_capacity(&mut self, replacement: Option<Self>) {
+        let Some(replacement) = replacement else {
+            return;
+        };
+        assert!(replacement.is_empty() && replacement.values.capacity() >= self.len());
+        assert!(match (&self.memory, &replacement.memory) {
+            (Some(current), Some(prepared)) => Arc::ptr_eq(current, prepared),
+            (None, None) => true,
+            _ => false,
+        });
+        let old = core::mem::replace(self, replacement);
+        // The old owning iterator retains its original backing charge until
+        // the actual old allocation is destroyed after the final move.
+        for value in old {
+            self.values
+                .push(value)
+                .expect("replacement capacity was admitted");
+        }
+    }
+
+    /// Insert into already admitted capacity. Exposes no allocating container.
+    pub(crate) fn insert_reserved(&mut self, index: usize, value: T) {
+        assert!(index <= self.len() && self.len() < self.values.capacity());
+        self.values
+            .push(value)
+            .expect("insertion capacity was admitted");
+        self.values[index..].rotate_right(1);
+    }
+
     pub(crate) fn resize_with(&mut self, len: usize, mut value: impl FnMut() -> T) -> Result<()> {
         self.reserve(len.saturating_sub(self.values.len()))?;
         self.values.resize_with(len, &mut value)?;

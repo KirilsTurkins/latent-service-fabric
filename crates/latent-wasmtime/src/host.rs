@@ -485,6 +485,8 @@ mod tests {
 }
 
 #[cfg(test)]
+mod native_registry_tests;
+#[cfg(test)]
 mod native_store_tests;
 #[cfg(test)]
 mod native_table_tests;

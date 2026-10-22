@@ -13,7 +13,7 @@
       "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
       "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
     },
-    "name": "Original ledger, actual codec table Store ownership and closed diagnostics",
+    "name": "Original ledger, actual codec table Store registry ownership and closed diagnostics",
     "runs-on": "ubuntu-24.04",
     "steps": [
       {
@@ -55,7 +55,7 @@
       },
       {
         "id": "own-native-memory",
-        "name": "Execute eighty-one source-bound controls with the ordinary native host",
+        "name": "Execute eighty-five source-bound controls with the ordinary native host",
         "run": "python3 -B tools/qualify_host_codec_native.py --source-commit \"${{ github.sha }}\" --output \"$RUNNER_TEMP/host-codec-memory\""
       },
       {
@@ -74,7 +74,7 @@
   },
   "jobId": "native",
   "kind": "job",
-  "reviewReason": "Root-reviewed display/count rename and stable own-native-memory step id for combined81; all three run bodies, conditions, shell and working directory exact under a bijection; original61 controls remain exact prefix. No command, historical obligation or failure gate removed.",
+  "reviewReason": "Run all 85 strict controls in the same normal profile and unchanged finite owning job.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/host-codec-memory.yml"
 }

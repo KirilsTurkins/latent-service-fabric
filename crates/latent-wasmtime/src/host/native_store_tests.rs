@@ -5,18 +5,18 @@ use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 use wasmtime::{Engine, Instance, Module, NativeMemoryBinding, Store};
 
-const OWNER: u64 = crate::native_tables::OWNER_ESCROW as u64;
-const MIB: u64 = 1024 * 1024;
-const CORE: &[u8] = include_bytes!("native-store-core.wasm");
+pub(super) const OWNER: u64 = crate::native_tables::OWNER_ESCROW as u64;
+pub(super) const MIB: u64 = 1024 * 1024;
+pub(super) const CORE: &[u8] = include_bytes!("native-store-core.wasm");
 const COMPONENT: &[u8] = include_bytes!("native-store-component.wasm");
 
 // Test-controller observations are outside the invocation allocation claim.
 #[derive(Default)]
-struct Observations {
+pub(super) struct Observations {
     requests: Mutex<Vec<usize>>,
     data_drops: AtomicUsize,
-    factory_drops: AtomicUsize,
-    data_charge: AtomicU64,
+    pub(super) factory_drops: AtomicUsize,
+    pub(super) data_charge: AtomicU64,
     factory_charge: AtomicU64,
 }
 struct Factory {
@@ -39,7 +39,7 @@ impl Drop for Factory {
             .fetch_add(1, Ordering::SeqCst);
     }
 }
-struct Data {
+pub(super) struct Data {
     budget: ActivationBudget,
     observations: Arc<Observations>,
 }
@@ -54,7 +54,7 @@ impl Drop for Data {
 fn factory_bytes() -> u64 {
     NativeMemoryBinding::allocation_size::<Factory>() as u64 + OWNER
 }
-fn store(
+pub(super) fn store(
     engine: &Engine,
     budget: &ActivationBudget,
     observations: &Arc<Observations>,
@@ -84,10 +84,10 @@ fn binding(
         owner,
     ))
 }
-fn requests(observations: &Observations) -> Vec<usize> {
+pub(super) fn requests(observations: &Observations) -> Vec<usize> {
     observations.requests.lock().unwrap().clone()
 }
-fn core_answer(instance: Instance, store: &mut Store<Data>) -> i32 {
+pub(super) fn core_answer(instance: Instance, store: &mut Store<Data>) -> i32 {
     instance
         .get_typed_func::<(), i32>(&mut *store, "answer")
         .unwrap()
@@ -238,10 +238,14 @@ fn actual_instance_map_overlap_refusal_preserves_prior_instance_and_fresh_reuse(
     let mut initial = store(&engine, &baseline, &baseline_observed).unwrap();
     Instance::new(&mut initial, &module, &[]).unwrap();
     let retained = baseline.host_memory_bytes();
-    let first = requests(&baseline_observed);
-    // A second real instance replaces the owner-map capacity2 with capacity3.
-    assert_eq!(first.len(), 5);
-    let replacement = (first[3] / 2 * 3) as u64 + OWNER;
+    let before_second = requests(&baseline_observed).len();
+    Instance::new(&mut initial, &module, &[]).unwrap();
+    let all = requests(&baseline_observed);
+    // Reusing the same registered module needs only the instance-owner map
+    // replacement and its new VMContext. Measure their actual layouts rather
+    // than depending on the number of earlier registry allocations.
+    assert_eq!(all.len() - before_second, 2);
+    let replacement = all[before_second] as u64 + OWNER;
     drop(initial);
     assert_eq!(baseline.host_memory_bytes(), 0);
     let limit = retained + replacement - 1;

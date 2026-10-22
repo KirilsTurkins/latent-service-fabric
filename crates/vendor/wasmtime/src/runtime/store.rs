@@ -796,12 +796,12 @@ impl<T> Store<T> {
             vm_store_context: Default::default(),
             #[cfg(feature = "stack-switching")]
             continuations: Vec::new(),
-            instances: crate::runtime::native_memory::NativeMap::with_capacity(0, memory)?,
+            instances: crate::runtime::native_memory::NativeMap::with_capacity(0, memory.clone())?,
             signal_handler: None,
             gc_store: None,
             #[cfg(feature = "gc")]
             gc_data: Default::default(),
-            modules: ModuleRegistry::default(),
+            modules: ModuleRegistry::new(memory)?,
             func_refs: FuncRefs::default(),
             host_globals: TryPrimaryMap::new(),
             instance_count: 0,

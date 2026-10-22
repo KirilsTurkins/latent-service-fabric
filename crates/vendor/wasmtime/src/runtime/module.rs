@@ -22,6 +22,7 @@ use wasmtime_environ::{
     CompiledFunctionsTable, CompiledModuleInfo, EntityIndex, FuncKey, HostPtr, ModuleTypes,
     ObjectKind, StaticModuleIndex, TypeTrace, VMOffsets, VMSharedTypeIndex, WasmChecksum,
 };
+mod native_registry;
 mod registry;
 
 pub use registry::*;

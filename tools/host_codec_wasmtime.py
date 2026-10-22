@@ -12,18 +12,18 @@ from tools.rust_capsule_project import ROOT, read_file
 PROVIDER = "crates/vendor/wasmtime"
 NAME = "wasmtime"
 VERSION = "48.0.7"
-COHORT = "wasmtime-48.0.7-latent-value-table-store-memory-v2"
-RECORD_SHA256 = "1f42297615586b8668c0e2683e15e8cfce2039c5f87d615e8bfd23d8e713a9d9"
+COHORT = "wasmtime-48.0.7-latent-value-table-store-registry-memory-v3"
+RECORD_SHA256 = "41dfa865024719d9a8500ffd9288d51d30ba74c98a8facc3125f68ba0f352066"
 # Explicit reviewed postimages; the remaining original files use the immutable
 # registry inventory. Changing a claimed record or patch cannot authorize bytes.
 POSTIMAGES = {
     "README.latent.md": {
-        "sha256": "177bf31b2fbe66d8ba48ac81c7be448da6daf2a09b8629be752d7ce869d05468",
-        "bytes": 5980
+        "sha256": "fd1f6046f9cc63db7fe77226a0474f876e017cea82f8d239141b868a45227707",
+        "bytes": 6474
     },
     "latent-dynamic-memory.patch": {
-        "sha256": "930452d2cf9f9ebe50e7548394fd3fec5afe469d6d4d749825f6ba70b3b9b431",
-        "bytes": 109911
+        "sha256": "188826d259dae3e50a3547e0a8d1e147deb44d9f363163248cdf66193a1b353b",
+        "bytes": 130001
     },
     "src/runtime.rs": {
         "sha256": "3290f57919f6dc6b6f797ee55cd62504ce31e91500741501e261f2c7e4eac970",
@@ -50,8 +50,8 @@ POSTIMAGES = {
         "bytes": 116904
     },
     "src/runtime/component/mod.rs": {
-        "sha256": "d0d73897629408a9e7e88512461ff818e0624a93243095b08b982e4445b9c331",
-        "bytes": 32858
+        "sha256": "bd4c7e4476613457ca1083d1837537060f2cfade7b64ca34070de203f2125f0f",
+        "bytes": 32867
     },
     "src/runtime/component/store.rs": {
         "sha256": "248924cbb1cd3955b8857c106f2284398464e68cf5b5c86992753bf1ee38f6ce",
@@ -69,13 +69,25 @@ POSTIMAGES = {
         "sha256": "32144e28f2dc4afee18490fb08521dd0f0d10bc3e66e00d7fc4592d56fca74fb",
         "bytes": 19434
     },
+    "src/runtime/module.rs": {
+        "sha256": "7fff202d7ccf20d683f6b8e6a646c6aeae2216a4ca28abdef98c2e6d1d509e14",
+        "bytes": 50980
+    },
+    "src/runtime/module/native_registry.rs": {
+        "sha256": "2f638a74b19ab83d1f03b9b3aee8b5f8c10951d933b1d606863bea5f70291469",
+        "bytes": 8389
+    },
+    "src/runtime/module/registry.rs": {
+        "sha256": "74d234ddb2bd014b6acd5e7e9c3ac515cd47ab797497c5ffcfa4a51c5450cb04",
+        "bytes": 24899
+    },
     "src/runtime/native_memory.rs": {
-        "sha256": "1b84d091f7437cc5a832a669ac3db1eb63bab1d5378231dfcc5276b070f9e9db",
-        "bytes": 9790
+        "sha256": "093b437d9b94c6a254d487048f21c9038d959fe0fda268c9d42428f0f92adc75",
+        "bytes": 11421
     },
     "src/runtime/store.rs": {
-        "sha256": "2f1fdec9c98190280d319f63f6310ba4a8581c8196d4a35cb658d7be2088d98f",
-        "bytes": 105934
+        "sha256": "e77f2bd910ea32dda74fe8145ba75f1ce2cffc25558a5442969a35c3716b8299",
+        "bytes": 105945
     },
     "src/runtime/store/data.rs": {
         "sha256": "2203688a431803aebf3c227ec5e663e2a7bb42695455ce51920ea9f9240d3b32",
@@ -135,7 +147,7 @@ def verify(root: Path = ROOT) -> dict:
                 for row in record["originalFiles"]}
     require(len(record["originalFiles"]) == len(original) == 250, "original-file-set")
     expected = {**original, **POSTIMAGES, "UPSTREAM.latent.json": identity(raw)}
-    require(len(expected) == 256, "maintained-file-set")
+    require(len(expected) == 257, "maintained-file-set")
     actual, total = {}, 0
     for ordinal, path in enumerate(source.rglob("*")):
         require(ordinal < 1024 and not path.is_symlink(), "source-tree-bound-or-link")
