@@ -65,7 +65,7 @@
     "attributes": "NULL/default only; non-NULL returns ENOTSUP before admission",
     "detach": "unsupported, never successful",
     "exitAndCancellationUnwind": "not implemented; no ordinary exit/cancel mapping advertised",
-    "mutexConditionTimedWait": "not implemented",
+    "mutexConditionTimedWait": "source implementation only when the selected standard clock PAL is composed; actual timed component execution remains unqualified",
     "mutexConditionVariables": "source implementation: normal/recursive/errorcheck pthread mutexes, plain/recursive C11 mutexes, untimed condition waits, signal and broadcast; signed execution remains required",
     "cpuCheckpointsAndAtomics": "not implemented; current transform rejects actual atomics",
     "setjmpLongjmp": "not supported by selected continuation ABI",
@@ -119,5 +119,27 @@
   "automaticallySelected": false,
   "fullIssue744Complete": false,
   "rootSourceTransformImplemented": true,
-  "rootSourceTransformExecuted": false
+  "rootSourceTransformExecuted": false,
+  "conditionalTimedSource": {
+    "compilerDefine": "LSF_C_TIMED_CLOCK=1",
+    "requiresRuntimeProfile": [
+      "c-standard-clock-entropy-v1",
+      "c-standard-facilities-v1"
+    ],
+    "ordinaryApis": [
+      "pthread_mutex_timedlock",
+      "pthread_cond_timedwait",
+      "mtx_timedlock",
+      "cnd_timedwait",
+      "nanosleep",
+      "thrd_sleep"
+    ],
+    "clockInputs": "nine separately authenticated original WASI libc clock/attribute/type inputs",
+    "timeout": "convert the supported absolute clock once at Timer admission; later wall changes do not restart the wait",
+    "waitOwnership": "original caller Wait remains through condition mutex reacquisition; timer-next owns its additional original physical Wait",
+    "notification": "unlink/state/handoff first, claim and stop only the exact Timer; never manually promote a live engine timer await",
+    "cancellation": "authoritative Task wake refuses global cancellation/deadline; neither becomes requested elapsed success",
+    "runtimeQualified": false,
+    "recurringCallbacksQualified": false
+  }
 }

@@ -2,6 +2,9 @@
  * Unselected source infrastructure: exact final-byte bootstrap/admission and
  * component routing verification are required before any engine can run it.
  */
+#if LSF_C_TIMED_CLOCK && !defined(_POSIX_C_SOURCE)
+#define _POSIX_C_SOURCE 200809L
+#endif
 #include <errno.h>
 #include <pthread.h>
 #include <threads.h>

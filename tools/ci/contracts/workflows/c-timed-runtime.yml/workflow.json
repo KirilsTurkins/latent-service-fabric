@@ -1,0 +1,37 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "c-timed-runtime-${{ github.ref }}"
+    },
+    "name": "Ordinary C timed waits and sleep",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/c-owned-timers-20261022"
+        ],
+        "paths": [
+          ".github/workflows/c-timed-runtime.yml",
+          "tools/qualify_c_timed_runtime.py",
+          "tools/c_timed_runtime_*.py",
+          "tools/c_timed_source_controls.py",
+          "tools/tests/fixtures/c-timed-broadcast-source.*",
+          "tools/fixtures/c-thread-runtime/timing.h",
+          "sdk/c-guest/runtime/synchronization.c"
+        ]
+      },
+      "workflow_dispatch": null
+    },
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "ordinary-c-threads"
+  ],
+  "reviewReason": "First published bounded timer programme on actual163 original runtime/timer ledger products;36 outcomes plus source-only broadcast regression at unchanged caps",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/c-timed-runtime.yml"
+}
