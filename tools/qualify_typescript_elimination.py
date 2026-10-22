@@ -97,13 +97,13 @@ def qualify(products: Path, compiler_tools: Path, output: Path):
             record['variants'][label] = {'build': build, 'compilerModuleWitness': witness,
                 'bundleObservation': file_identity(artifact / 'bundle-selected-inputs.json'),
                 'node': file_identity(output / label / 'node/qualified.json')}
-            write_json(output / 'observed-variants.json', record['variants'])
+            write_json(output / ('observed-variants-' + label + '.json'), record['variants'])
         # No API-elimination report is emitted before BOTH actual variants pass.
         require(set(record['variants']) == {'eliminated', 'reached'}, 'elimination-both-real-variants-before-reports')
         for label, selected in (('eliminated', False), ('reached', True)):
             build = record['variants'][label]['build']
             artifact = output / label / 'build'
-            source_digest = build['documents']['source-inputs.json']['sha256']
+            source_digest = build['sourceInputs']['sha256']
             report = compatibility.report('typescript', source_digest, build['component']['sha256'],
                 'spidermonkey-public-sync-v1',
                 [{'kind': 'application', 'digest': source_digest},
