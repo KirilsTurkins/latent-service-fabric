@@ -354,7 +354,7 @@ class KernelRouteObjectSelection(unittest.TestCase):
         import json,yaml
         expected={'selected-objects': '3cd0999d36567ab2895fcdae18614b345b21ba64ab76dc34fd99f04d6df8cd9e', 'netlabel-objects': '54c5b3f216ccd13a2974de389f52c91aaf5c845e036e9bad8cc1be775e7e74c0', 'netport-objects': '170b80070821fd979aeda0848fb7352cd047c42bf495f1738f190ce829f73439', 'sidcache-objects': 'af60576c8eac1d372501162ff329d263d139017d81403b4aa3a58d01a46556c8', 'avc-objects': '897be4ea9cafd76ab3544192ebd0ba67f7d78ba3e910bafffeebb1d810e9ac78', 'audit-objects': 'b90d7bae8a9d5a04a947491b719bf59105a1fe75bd031f09a012953f4126cd11', 'bind-objects': 'd535fc904a479d1bbb12543d5c2fb4f9af3a64db10a9dfebe21a3cb81482abe7'}
         workflow=yaml.safe_load((candidate.ROOT/'.github/workflows/stream-kernel-objects.yml').read_bytes())
-        self.assertEqual((set(workflow['jobs'])-{'firmware-objects','registration-objects'})-{'route-cache-objects','packet-objects','device-objects'},set(expected)|{'route-objects'})
+        self.assertEqual((set(workflow['jobs'])-{'firmware-objects','registration-objects','recipient-objects'})-{'route-cache-objects','packet-objects','device-objects'},set(expected)|{'route-objects'})
         for name,digest in expected.items():
             body={k:v for k,v in workflow['jobs'][name].items() if k!='if'}
             actual=hashlib.sha256(json.dumps(body,sort_keys=True,separators=(',',':')).encode()).hexdigest()
@@ -552,7 +552,7 @@ class KernelRouteCacheObjectSelection(unittest.TestCase):
         import json,yaml
         expected={'selected-objects': '3cd0999d36567ab2895fcdae18614b345b21ba64ab76dc34fd99f04d6df8cd9e', 'netlabel-objects': '54c5b3f216ccd13a2974de389f52c91aaf5c845e036e9bad8cc1be775e7e74c0', 'netport-objects': '170b80070821fd979aeda0848fb7352cd047c42bf495f1738f190ce829f73439', 'sidcache-objects': 'af60576c8eac1d372501162ff329d263d139017d81403b4aa3a58d01a46556c8', 'avc-objects': '897be4ea9cafd76ab3544192ebd0ba67f7d78ba3e910bafffeebb1d810e9ac78', 'audit-objects': 'b90d7bae8a9d5a04a947491b719bf59105a1fe75bd031f09a012953f4126cd11', 'bind-objects': 'd535fc904a479d1bbb12543d5c2fb4f9af3a64db10a9dfebe21a3cb81482abe7', 'route-objects': '0ebbe0639ac459ac1eb92c950ffba1b22c23c778d6eb6dafd1dc5955cd72f22d'}
         workflow=yaml.safe_load((candidate.ROOT/'.github/workflows/stream-kernel-objects.yml').read_bytes())
-        self.assertEqual((set(workflow['jobs'])-{'firmware-objects','registration-objects'})-{'packet-objects','device-objects'},set(expected)|{'route-cache-objects'})
+        self.assertEqual((set(workflow['jobs'])-{'firmware-objects','registration-objects','recipient-objects'})-{'packet-objects','device-objects'},set(expected)|{'route-cache-objects'})
         for name,digest in expected.items():
             body={k:v for k,v in workflow['jobs'][name].items() if k!='if'}
             self.assertEqual(hashlib.sha256(json.dumps(body,sort_keys=True,separators=(',',':')).encode()).hexdigest(),digest,name)
@@ -624,7 +624,7 @@ class KernelPacketObjectSelection(unittest.TestCase):
             actual=hashlib.sha256(json.dumps(candidate.object_selection(*flags),sort_keys=True,separators=(',',':')).encode()).hexdigest()
             self.assertEqual(actual,digest,index)
         workflow=yaml.safe_load((candidate.ROOT/'.github/workflows/stream-kernel-objects.yml').read_bytes())
-        self.assertEqual((set(workflow['jobs'])-{'firmware-objects','registration-objects'})-{'device-objects'},set(expected_jobs)|{'packet-objects'})
+        self.assertEqual((set(workflow['jobs'])-{'firmware-objects','registration-objects','recipient-objects'})-{'device-objects'},set(expected_jobs)|{'packet-objects'})
         for name,digest in expected_jobs.items():
             body={key:value for key,value in workflow['jobs'][name].items() if key!='if'}
             self.assertEqual(hashlib.sha256(json.dumps(body,sort_keys=True,separators=(',',':')).encode()).hexdigest(),digest,name)
@@ -714,7 +714,7 @@ class KernelDeviceObjectSelection(unittest.TestCase):
             actual=hashlib.sha256(json.dumps(candidate.object_selection(*flags),sort_keys=True,separators=(',',':')).encode()).hexdigest()
             self.assertEqual(actual,digest,index)
         workflow=yaml.safe_load((candidate.ROOT/'.github/workflows/stream-kernel-objects.yml').read_bytes())
-        self.assertEqual((set(workflow['jobs'])-{'firmware-objects','registration-objects'})-{'device-objects'},set(expected_jobs))
+        self.assertEqual((set(workflow['jobs'])-{'firmware-objects','registration-objects','recipient-objects'})-{'device-objects'},set(expected_jobs))
         for name,digest in expected_jobs.items():
             body={k:v for k,v in workflow['jobs'][name].items() if k!='if'}
             self.assertEqual(hashlib.sha256(json.dumps(body,sort_keys=True,separators=(',',':')).encode()).hexdigest(),digest,name)
@@ -846,7 +846,7 @@ class KernelFirmwareObjectSelection(unittest.TestCase):
             value=hashlib.sha256(json.dumps(candidate.object_selection(*flags),sort_keys=True,separators=(',',':')).encode()).hexdigest()
             self.assertEqual(value,digest,index)
         workflow=yaml.safe_load((candidate.ROOT/'.github/workflows/stream-kernel-objects.yml').read_bytes())
-        self.assertEqual(set(workflow['jobs'])-{'firmware-objects','registration-objects'},set(expected_jobs))
+        self.assertEqual(set(workflow['jobs'])-{'firmware-objects','registration-objects','recipient-objects'},set(expected_jobs))
         for name,digest in expected_jobs.items():
             body={k:v for k,v in workflow['jobs'][name].items() if k!='if'}
             self.assertEqual(hashlib.sha256(json.dumps(body,sort_keys=True,separators=(',',':')).encode()).hexdigest(),digest,name)
@@ -1081,9 +1081,9 @@ class KernelRegistrationObjectSelection(unittest.TestCase):
     def test_exclusive_workflow_has_original_bounds_all48_artifacts_and_closed_env_not_shell_inputs(self):
         import yaml
         workflow = yaml.safe_load((candidate.ROOT / '.github/workflows/stream-kernel-objects.yml').read_bytes())
-        self.assertEqual(len(workflow['jobs']), 13)
+        self.assertEqual(len(workflow['jobs']), 14)
         for name, body in workflow['jobs'].items():
-            if name != 'registration-objects':
+            if name not in ('registration-objects', 'recipient-objects'):
                 self.assertIn('inputs.registration != true', body['if'])
                 self.assertIn("github.ref_name == 'feat/stream-kernel-device-registration-20261021'", body['if'])
         job = workflow['jobs']['registration-objects']
@@ -1098,6 +1098,141 @@ class KernelRegistrationObjectSelection(unittest.TestCase):
         self.assertNotIn('scripts/config', commands)
         self.assertIn('tools.tests.test_host_stream_kernel_device_uevent_delivery', commands)
         for name in candidate.object_selection(False, registration=True):
+            self.assertIn('/objects/' + name, job['steps'][-1]['with']['path'])
+        self.assertIn('/FAILED.json', job['steps'][-1]['with']['path'])
+        self.assertEqual(job['steps'][-1]['with']['retention-days'], 3)
+        self.assertIs(workflow['concurrency']['cancel-in-progress'], False)
+
+
+class KernelRecipientObjectSelection(unittest.TestCase):
+    def test_56_objects_preserve_all_48_201_and_require_243_distinct_globals(self):
+        old = candidate.object_selection(False, registration=True)
+        new = candidate.object_selection(False, recipient=True)
+        self.assertEqual((len(new), sum(map(len, new.values()))), (56, 243))
+        for name, symbols in old.items():
+            self.assertEqual(new[name][:len(symbols)], symbols)
+        self.assertEqual(set(new) - set(old), set(candidate.RECIPIENT_OBJECTS))
+        names = [name for group in new.values() for name in group]
+        self.assertEqual(len(names), len(set(names)))
+        self.assertEqual(sum(name.startswith('lsf_') for name in names), 196)
+        self.assertEqual(new['kernel/sched/core.o'], ('default_wake_function',))
+        self.assertEqual(new['security/commoncap.o'], ('cap_capable',))
+
+    def test_closed_recipient_mode_rejects_mixed_unknown_and_local_before_source_read(self):
+        for value in ('true', 'false', 0, 1, None, [], {}):
+            with self.subTest(value=value), self.assertRaisesRegex(ValueError, 'closed-profile-selector'):
+                candidate.object_selection(False, recipient=value)
+        for name in ('netlabel', 'netport', 'sidcache', 'avc', 'audit', 'bind', 'route',
+                     'route_cache', 'packet', 'device', 'firmware', 'registration'):
+            with self.subTest(name=name), patch.object(candidate.maintained, 'authenticate_archive') as read:
+                with self.assertRaisesRegex(ValueError, 'exclusive-profile-selector'):
+                    candidate.run(None, None, recipient=True, **{name: True})
+                read.assert_not_called()
+        with patch.dict(candidate.os.environ, {}, clear=True), patch.object(candidate.maintained, 'authenticate_archive') as read:
+            with self.assertRaisesRegex(ValueError, 'hosted-linux-only'):
+                candidate.run(None, None, recipient=True)
+            read.assert_not_called()
+
+    def test_original_enabled_wait_tracing_and_non_rt_configs_are_required_without_override(self):
+        before = dict.fromkeys(candidate.RECIPIENT_REQUIRED, 'y')
+        candidate.recipient_configuration(before, before)
+        for name in candidate.RECIPIENT_REQUIRED:
+            with self.subTest(name=name), self.assertRaisesRegex(ValueError, 'recipient-original-config-required'):
+                candidate.recipient_configuration(before, {**before, name: 'n'})
+        for value in ('y', 'm', None, 0, 1):
+            with self.subTest(value=value), self.assertRaisesRegex(ValueError, 'recipient-original-non-rt-profile-required'):
+                candidate.recipient_configuration(before, {**before, 'CONFIG_PREEMPT_RT': value})
+        self.assertNotIn('PREEMPT', candidate.KCONFIG)
+
+    def test_13_anchored_same_archive_inputs_authenticate_full105_before_any_derive(self):
+        original = dict.fromkeys(set(candidate.maintained.manifest()['source']) | {'net/Kconfig', 'net/Makefile'} |
+            set(candidate.packet_source.fixture()['source']) | set(candidate.device_source.EXTRAS) |
+            set(candidate.firmware_source.EXTRAS) | set(candidate.REGISTRATION_EXTRACTED), b'')
+        value = candidate.recipient_source.fixture()
+        self.assertEqual(len(value['source']), 105)
+        self.assertEqual(set(value['source']) - set(original), set(candidate.RECIPIENT_EXTRACTED))
+        with tempfile.TemporaryDirectory() as directory:
+            tree = Path(directory)
+            for index, name in enumerate(candidate.RECIPIENT_EXTRACTED):
+                path = tree / name;path.parent.mkdir(parents=True, exist_ok=True);path.write_bytes(str(index).encode())
+            with patch.object(candidate.recipient_source, 'authenticate') as auth, \
+                    patch.object(candidate.paths, 'read', wraps=candidate.paths.read) as read:
+                selected = candidate.recipient_extracted_inputs(tree, original)
+                calls = [call for call in read.call_args_list if call.args[0] == tree]
+                self.assertEqual([call.args[1] for call in calls], list(candidate.RECIPIENT_EXTRACTED))
+                self.assertTrue(all(call.args[2] == candidate.maintained.MAX_FILE for call in calls))
+                auth.assert_called_once_with({name: selected[name] for name in value['source']})
+            with patch.object(candidate.paths, 'read', wraps=candidate.paths.read) as read:
+                with self.assertRaisesRegex(ValueError, 'recipient-original-archive-membership'):
+                    candidate.recipient_extracted_inputs(tree, {})
+                self.assertFalse(any(call.args[0] == tree for call in read.call_args_list))
+            with patch.object(candidate.maintained, 'MAX_SELECTED', 1), \
+                    patch.object(candidate.recipient_source, 'authenticate') as auth:
+                with self.assertRaisesRegex(ValueError, 'recipient-total-selected-byte-bound'):
+                    candidate.recipient_extracted_inputs(tree, original)
+                auth.assert_not_called()
+
+    def test_entire_new_fixture_context_restores_on_failure_and_refuses_mutable_recipe(self):
+        from types import SimpleNamespace
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            (root / 'recipe.py').write_text('recipe')
+            (root / 'fixture.json').write_text('fixture')
+            calls = []
+            def fixture():
+                calls.append('validate');return {'source': {}, 'nested': {'values': []}}
+            def derive(inputs):
+                copy = module.fixture();copy['nested']['values'].append('local')
+                self.assertEqual(module.fixture()['nested']['values'], [])
+                return {'output': b'exact'}
+            module = SimpleNamespace(__file__=str(root / 'recipe.py'), FIXTURE=root / 'fixture.json',
+                OWNED=root, fixture=fixture, derive=derive)
+            def select(tree, values):
+                self.assertIsNot(module.fixture, fixture)
+                return dict(values)
+            with patch.object(candidate, 'ROOT', root), patch.object(candidate, 'recipient_source', module), \
+                    patch.object(candidate, 'device_extracted_inputs', side_effect=select), \
+                    patch.object(candidate, 'firmware_extracted_inputs', side_effect=select), \
+                    patch.object(candidate, 'registration_extracted_inputs', side_effect=select), \
+                    patch.object(candidate, 'recipient_extracted_inputs', side_effect=select):
+                output, frozen, original = candidate.recipient_derive_frozen(root, {})
+                self.assertEqual((output, original), ({'output': b'exact'}, {}))
+                self.assertEqual(calls, ['validate'])
+                self.assertIs(module.fixture, fixture)
+                failure = ValueError('exact-failure')
+                def failing(inputs):
+                    raise failure
+                module.derive = failing
+                with self.assertRaises(ValueError) as caught:
+                    candidate.recipient_derive_frozen(root, {})
+                self.assertIs(caught.exception, failure)
+                self.assertIs(module.fixture, fixture)
+                def changed(inputs):
+                    (root / 'fixture.json').write_text('changed');return {}
+                module.derive = changed
+                with self.assertRaisesRegex(ValueError, 'recipient-source-changed-during-derivation'):
+                    candidate.recipient_derive_frozen(root, {})
+                self.assertIs(module.fixture, fixture)
+
+    def test_new_job_is_exclusive_preserves_old13_and_retains_all56_original_bounds(self):
+        import yaml
+        workflow = yaml.safe_load((candidate.ROOT / '.github/workflows/stream-kernel-objects.yml').read_bytes())
+        self.assertEqual(len(workflow['jobs']), 14)
+        for name, body in workflow['jobs'].items():
+            if name != 'recipient-objects':
+                self.assertIn('inputs.recipient != true', body['if'])
+                self.assertIn("github.ref_name == 'feat/stream-kernel-device-recipient-20261022'", body['if'])
+        job = workflow['jobs']['recipient-objects']
+        self.assertEqual(job['timeout-minutes'], 20)
+        guard = next(step for step in job['steps'] if 'env' in step)
+        self.assertEqual(len(guard['env']), 13)
+        self.assertIn("assert all(value in ('', 'true', 'false') for value in values)", guard['run'])
+        self.assertIn("assert values.count('true') <= 1", guard['run'])
+        commands = '\n'.join(step.get('run', '') for step in job['steps'])
+        self.assertIn('--recipient', commands)
+        self.assertNotIn(chr(36) + '{{ inputs.', commands)
+        self.assertNotIn('scripts/config', commands)
+        for name in candidate.object_selection(False, recipient=True):
             self.assertIn('/objects/' + name, job['steps'][-1]['with']['path'])
         self.assertIn('/FAILED.json', job['steps'][-1]['with']['path'])
         self.assertEqual(job['steps'][-1]['with']['retention-days'], 3)
