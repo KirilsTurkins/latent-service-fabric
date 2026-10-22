@@ -1,8 +1,8 @@
 # Selected C context preparation
 
-`c-context144-sync-cooperative-v1` has passed one signed seventeen-case
-[ordinary C lifecycle programme](../testing/evidence/c-thread-runtime-2026-10-22.json).
-This finite create/join/TLS/drain/cancellation result does not complete #744.
+`c-context144-sync-cooperative-v1` has passed a signed twenty-case
+[ordinary C lifecycle and synchronization programme](../testing/evidence/c-synchronization-runtime-2026-10-22.json),
+preserving the original seventeen-case lifecycle prefix. This finite result does not complete #744.
 The default C project and the existing Rust context40 profile keep their
 selection and serialized settings.
 
@@ -180,7 +180,7 @@ Earlier failures and partial runs remain failed, with no retroactive credit;
 their fixed origins are recorded in the lifecycle evidence.
 
 
-## Prepared ordinary synchronization extension
+## Actual ordinary synchronization extension
 
 The selected source now supplies normal, recursive and error-checking pthread
 mutexes, plain/recursive C11 mutexes, and untimed condition waits with signal
@@ -190,11 +190,16 @@ that caller; notification defers its continuation. Condition wait retains the
 same Wait through mutex reacquisition. Join uses the same suspension mechanism
 and checks actual TLS and final frame completion before releasing backing.
 
-The prepared owning programme preserves its original seventeen outcomes, then
-adds pthread synchronization, mixed pthread/C11 synchronization and a fresh
-ordinary invocation through the same captured component. The producer must
-observe both the root join and consumer condition wait while an independently
-eligible producer runs. These three additional outcomes have not executed.
+[Run 39823871350](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39823871350)
+passed all twenty signed outcomes from `e859a0b7bd35f28cf3667d35f131389b0797cef0`.
+It preserves the original seventeen-case prefix, then executes contended pthread
+synchronization, mixed pthread/C11 synchronization and a fresh ordinary call
+through one captured component. Both synchronization cases observed two original
+Waits and parked tasks, three Tasks, two Results and six Native owners while the
+independently eligible producer ran. All twenty retirements had zero physical
+and active-provider owners; node and peer shutdown were clean. The complete
+[finite result and failed attempt history](../testing/evidence/c-synchronization-runtime-2026-10-22.json)
+record the exact archive, component, source, limits and unsupported operations.
 Thirteen serialized source controls and a compiled fixture object are separate
 source evidence; they do not qualify canonical scheduling or physical cleanup.
 
