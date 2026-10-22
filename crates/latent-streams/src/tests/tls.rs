@@ -158,6 +158,8 @@ async fn direct_host_tls_validates_peer_transfers_and_retires_original_charges()
         .unwrap()
         .unwrap();
     assert_eq!(control.budget.host_memory_bytes(), control_session_bytes);
+    drop(stream);
+    drop(original);
     drop(session);
     fixture.clean().await;
     drop(fixture);
@@ -309,6 +311,7 @@ async fn tls_rotation_preserves_pending_original_owner_until_peer_socket_retires
     drop(stream);
     assert_eq!(control.budget.host_memory_bytes(), control_session_bytes);
     drop(session);
+    drop(replacement);
     drop(lifecycle);
     fixture.clean().await;
     drop(fixture);

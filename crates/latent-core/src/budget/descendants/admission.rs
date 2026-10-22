@@ -1,7 +1,8 @@
 use super::{
     capacity, denied, ActivationBudget, Arc, AtomicUsize, BudgetDimension, BudgetProfile,
-    CapacityClaim, ChildBudgetDelegation, ClockSample, EffectiveActivationBudget, Lineage,
-    Ordering, ParentReservation, PlatformError, ResourceBudget,
+    CapacityClaim, ChildBudgetDelegation, ClockSample, EffectiveActivationBudget,
+    HostMemoryAccounting, Lineage, Mutex, Ordering, ParentReservation, PlatformError,
+    ResourceBudget,
 };
 use crate::IncomingDeadline;
 
@@ -60,7 +61,7 @@ impl ActivationBudget {
             .map_err(|e| e.to_platform_error())?;
         let mut parent = ParentReservation {
             capacity,
-            cumulative: Some(cumulative),
+            cumulative: Mutex::new(Some(cumulative)),
             memory: 0,
             accepted: false,
         };
@@ -108,7 +109,7 @@ impl CapacityClaim {
             return Err(error);
         }
         Ok(Self {
-            parent: parent.clone(),
+            parent: HostMemoryAccounting::new(parent),
             tree: Arc::clone(&lineage.tree),
         })
     }

@@ -1,7 +1,10 @@
 //! Hardened activation resource budgets, deadline grants, and accounting.
 
 use std::fmt;
-use std::sync::{Arc, Mutex, MutexGuard};
+use std::sync::{
+    atomic::{AtomicUsize, Ordering},
+    Arc, Mutex, MutexGuard,
+};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use crate::error::{ErrorDetail, PlatformError, PlatformErrorCode};
@@ -19,6 +22,7 @@ pub use descendants::{
     BudgetCancellationProbe, ChildBudgetDelegation, ChildBudgetOwner, DelegationLimits,
     DescendantBudgetSnapshot,
 };
+use host_memory::HostMemoryAccounting;
 pub use host_memory::HostMemoryReservation;
 pub use profile::BudgetProfile;
 pub use reservation_group::BudgetReservationGroup;
@@ -744,13 +748,15 @@ impl BudgetFinalization {
 /// Clones share one state. All mutations and finalization are serialized so a
 /// concurrent consumer cannot overflow, exceed a ceiling, race a refund, or
 /// mutate a finalized report.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct ActivationBudget {
     inner: Arc<ActivationBudgetInner>,
 }
 
 #[derive(Debug)]
 struct ActivationBudgetInner {
+    // Ordinary accounting authority, excluding physical-memory-only owners.
+    accounting_owners: AtomicUsize,
     profile: BudgetProfile,
     closed: std::sync::atomic::AtomicBool,
     lineage: std::sync::OnceLock<descendants::Lineage>,
@@ -795,6 +801,7 @@ impl ActivationBudget {
         let started_at = grant.deadline.admitted_at_monotonic();
         Self {
             inner: Arc::new(ActivationBudgetInner {
+                accounting_owners: AtomicUsize::new(1),
                 profile,
                 closed: std::sync::atomic::AtomicBool::new(false),
                 lineage: std::sync::OnceLock::new(),
@@ -1183,8 +1190,36 @@ impl ActivationBudget {
     }
 
     fn lock_state(&self) -> MutexGuard<'_, AccountingState> {
-        self.inner
-            .state
+        self.inner.lock_state()
+    }
+}
+
+impl Clone for ActivationBudget {
+    fn clone(&self) -> Self {
+        let previous = self.inner.accounting_owners.fetch_add(1, Ordering::Relaxed);
+        // Match Arc's overflow bound; cloning a live ordinary owner cannot
+        // race a transition back from zero, and memory owners expose no such API.
+        if previous > isize::MAX as usize {
+            std::process::abort();
+        }
+        Self {
+            inner: Arc::clone(&self.inner),
+        }
+    }
+}
+impl Drop for ActivationBudget {
+    fn drop(&mut self) {
+        if self.inner.accounting_owners.fetch_sub(1, Ordering::Release) == 1 {
+            std::sync::atomic::fence(Ordering::Acquire);
+            // Settle only cumulative work. Memory capacity and live-descendant
+            // slots remain owned until the original physical Inner is destroyed.
+            self.inner.settle_parent_cumulative();
+        }
+    }
+}
+impl ActivationBudgetInner {
+    fn lock_state(&self) -> MutexGuard<'_, AccountingState> {
+        self.state
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
     }

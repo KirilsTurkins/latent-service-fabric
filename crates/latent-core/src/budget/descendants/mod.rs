@@ -2,6 +2,8 @@
 //! ancestry consists only of bounded accounting and cancellation metadata.
 mod admission;
 mod memory;
+#[cfg(test)]
+mod native_retirement_tests;
 mod retirement;
 #[cfg(test)]
 mod tests;
@@ -9,14 +11,14 @@ mod tests;
 use super::{
     AccountingState, ActivationBudget, ActivationBudgetInner, BudgetConsumption, BudgetDimension,
     BudgetFinalization, BudgetProfile, BudgetReservationGroup, ClockSample,
-    EffectiveActivationBudget, ResourceBudget,
+    EffectiveActivationBudget, HostMemoryAccounting, ResourceBudget,
 };
 use crate::{PlatformError, PlatformErrorCode};
 use std::{
     fmt,
     sync::{
         atomic::{AtomicUsize, Ordering},
-        Arc,
+        Arc, Mutex,
     },
     time::Instant,
 };
@@ -91,18 +93,18 @@ impl Lineage {
     }
 }
 struct CapacityClaim {
-    parent: ActivationBudget,
+    parent: HostMemoryAccounting,
     tree: Arc<Tree>,
 }
 struct ParentReservation {
     capacity: CapacityClaim,
-    cumulative: Option<BudgetReservationGroup>,
+    cumulative: Mutex<Option<BudgetReservationGroup>>,
     memory: u64,
     accepted: bool,
 }
 impl ParentReservation {
-    fn parent(&self) -> &ActivationBudget {
-        &self.capacity.parent
+    fn parent(&self) -> &ActivationBudgetInner {
+        &self.capacity.parent.inner
     }
 }
 
@@ -149,9 +151,9 @@ impl ActivationBudget {
     /// The caller owns this future; no task or waiter is retained by the tree.
     pub async fn descendant_cancelled(&self) {
         let mut signals = Vec::new();
-        let mut cursor = self;
+        let mut cursor = self.inner.as_ref();
         for _ in 0..=16 {
-            let Some(lineage) = cursor.inner.lineage.get() else {
+            let Some(lineage) = cursor.lineage.get() else {
                 return;
             };
             signals.push(lineage.cancellation.cancelled());
@@ -206,12 +208,12 @@ impl ActivationBudget {
     /// cancelled ancestors close new delegation and cancel accepted descendants.
     #[must_use]
     pub fn descendant_is_cancelled(&self) -> bool {
-        let mut cursor = self;
+        let mut cursor = self.inner.as_ref();
         for _ in 0..=16 {
-            let Some(lineage) = cursor.inner.lineage.get() else {
+            let Some(lineage) = cursor.lineage.get() else {
                 return true;
             };
-            if cursor.inner.closed.load(Ordering::Acquire) || lineage.cancellation.is_cancelled() {
+            if cursor.closed.load(Ordering::Acquire) || lineage.cancellation.is_cancelled() {
                 return true;
             }
             let Some(parent) = &lineage.parent else {
@@ -231,12 +233,12 @@ impl ActivationBudget {
         if self.deadline().is_expired_at(now) {
             return true;
         }
-        let mut cursor = self;
+        let mut cursor = self.inner.as_ref();
         for depth in 0..=16 {
-            let Some(lineage) = cursor.inner.lineage.get() else {
+            let Some(lineage) = cursor.lineage.get() else {
                 return true;
             };
-            if (depth != 0 && cursor.inner.closed.load(Ordering::Acquire))
+            if (depth != 0 && cursor.closed.load(Ordering::Acquire))
                 || lineage.cancellation.is_cancelled()
             {
                 return true;
@@ -319,7 +321,8 @@ impl ChildBudgetOwner {
         &self.budget
     }
     /// Called after the execution owner has established actual completion.
-    /// Other retained ledger owners still prevent retirement/refunds.
+    /// Ordinary retained accounting owners still hold cumulative reservations.
+    /// Memory-only owners retain physical capacity until their actual drop.
     #[must_use]
     pub fn finish(self, reported: Option<&BudgetConsumption>, now: Instant) -> BudgetFinalization {
         self.budget.finalize_at(reported, now)
