@@ -10,7 +10,7 @@ use super::executor_control::Drain;
 use super::executor_root::{self as root, CapturedCallbacks};
 use super::executor_worker::{self as worker, Callbacks as WorkerCallbacks};
 use crate::io;
-use crate::ptr::{self, NonNull};
+use crate::ptr::NonNull;
 
 #[repr(C)]
 pub(crate) struct Reply {
@@ -60,13 +60,13 @@ unsafe fn write(out: *mut Reply, result: io::Result<Reply>) {
     unsafe { out.write(result.unwrap_or_else(Reply::error)) };
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub(crate) unsafe extern "C" fn __lsf_rust_pool_prepare(out: *mut Reply) {
     let result = root::prepare().map(Reply::key);
     unsafe { write(out, result) };
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub(crate) unsafe extern "C" fn __lsf_rust_pool_commit(
     pool: u64,
     pointer: *mut (),
@@ -77,7 +77,7 @@ pub(crate) unsafe extern "C" fn __lsf_rust_pool_commit(
     unsafe { root::commit_prepared(pool, pointer, CapturedCallbacks { progress, release }) };
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub(crate) unsafe extern "C" fn __lsf_rust_pool_abort_setup(pool: u64) {
     root::abort_prepared(pool);
 }
@@ -162,7 +162,7 @@ fn request(operation: u32, pool: u64, a: u64, b: u64, pointer: *mut ()) -> io::R
     Ok(result)
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub(crate) unsafe extern "C" fn __lsf_rust_pool_request(
     operation: u32,
     pool: u64,

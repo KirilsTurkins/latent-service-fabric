@@ -97,7 +97,7 @@ pub(crate) fn register_wait(lease: &mut WaitLease, pointer: *mut Node) {
         .0
         .take()
         .expect("one std Wait registry reservation");
-    state(|r| r.install(ticket, lease.token(), lease.index, pointer.addr(), domain))
+    state(|r| r.install(ticket, lease.token(), lease.index, pointer.expose_provenance(), domain))
         .expect("std Wait identity publication refused");
     lease.registered = true;
 }
@@ -157,9 +157,12 @@ pub(crate) fn drive_wait(token: Token) {
                 Ok(0) => {
                     if state(|r| r.elapsed(token, timer, index)).expect("stale std Timer readiness")
                     {
-                        let pointer = state(|r| r.pointer(token, index))
-                            .expect("elapsed std Wait node vanished")
-                            as *mut Node;
+                        let address = state(|r| r.pointer(token, index))
+                            .expect("elapsed std Wait node vanished");
+                        // install exposed this still-live System node's
+                        // provenance. This registry address is never accepted
+                        // from a guest message or used after node removal.
+                        let pointer = crate::ptr::with_exposed_provenance_mut::<Node>(address);
                         // No engine operation/borrow is live at this lookup.
                         // elapsed unlinks/marks the node before its wake call.
                         unsafe {

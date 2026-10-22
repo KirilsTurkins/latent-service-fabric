@@ -123,7 +123,7 @@ impl Control {
     }
     pub(crate) fn reserve_worker(&self, generation: u64, parent: Token) -> io::Result<u64> {
         let (id, slot) = self.state(|state| {
-            let gen = state
+            let generation_row = state
                 .provision
                 .filter(|g| g.id == generation)
                 .ok_or_else(invalid)?;
@@ -133,11 +133,11 @@ impl Control {
                 .position(Option::is_none)
                 .ok_or_else(|| io::Error::from(io::ErrorKind::WouldBlock))?;
             let id = state.next()?;
-            let value = state.life.reserve_worker(gen.value).map_err(state_error)?;
+            let value = state.life.reserve_worker(generation_row.value).map_err(state_error)?;
             state.workers[slot] = Some(Worker {
                 id,
                 value,
-                generation: gen,
+                generation: generation_row,
                 canonical: None,
                 close: None,
             });
@@ -358,7 +358,7 @@ impl Control {
         let owner = self.state(|state| {
             let slot = state.worker(key)?;
             let row = state.workers[slot].as_ref().unwrap();
-            let gen = state
+            let generation_row = state
                 .workers
                 .iter()
                 .flatten()
@@ -367,7 +367,7 @@ impl Control {
                 .generation;
             if !state
                 .life
-                .claim_close(row.value, gen.value)
+                .claim_close(row.value, generation_row.value)
                 .map_err(state_error)?
             {
                 return Ok(None);
