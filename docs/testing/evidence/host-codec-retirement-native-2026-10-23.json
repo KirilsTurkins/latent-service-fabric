@@ -1,0 +1,183 @@
+{
+  "schemaVersion": "latent.host-codec.retirement-native-evidence.v1",
+  "ownerIssues": [
+    736,
+    745,
+    744
+  ],
+  "status": "passed",
+  "sourceRevision": "b606b1402961593dd918722a66fe293bfab9b319",
+  "scope": "ordinary-physical-native-only-accounting-retention-separate-from-last-ordinary-owner-cumulative-child-retirement-and-original-sealed-session-Core-and-Stats-strong-and-weak-Arc-backing-including-both-private-billing-Arcs-owned-identity-text-and-fixed-handle-slots-and-selected-C-canonical-realloc-private-System-stack-routing-and-ordinary-runtime-and-timer-strong-and-weak-Arc-backing-including-private-billing-Arc-and-ordinary-host-blob-fixed-Vec-and-streaming-HTTP-fixed-Vec-and-two-private-Shared-Arc-storage-shapes-and-three-retained-capability-directory-backings-and-six-closed-context-reply-buffers-and-concrete-callback-future-box-and-retained-activation-context-and-linear-allocation-notifications-codec-table-and-selected-Store-instance-buffer-registry-FuncRefs-container-resource-substitutions-original-memory-and-selected-c-public-async-type-sync-core-admission-and-authenticated-c-ready-handoff-and-closed-guest-trap-diagnostics-and-exact-native-thread-audit-codec-and-CLI-projection; direct-Core-HostFunc-construction, shared-preparation-closures, concurrent-task, other-hostcall-values-custom-Lower-shared-interior-error-owned-copies-and-opaque-accessor-scheduler-frames, request ingress and discarded scaffolding and other hostcall copies, shared broker and compiled-plan preparation, HandleEntry and transitive provider payload/transport/queue graphs, legacy framing and serialized controller frames excluded",
+  "profile": "normal-managed-guest-default-features",
+  "nativeCohort": "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-retained-capability-directories-blob-streaming-shared-tables-runtime-timer-strong-weak-session-core-stats-c-canonical-system-stack-native-only-cumulative-retirement-memory-v14",
+  "wasmtimeAllocationCohort": "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-memory-v9",
+  "source": {
+    "sha256": "sha256:4b62a8853d9f8702ddcd6c0c969e207a7b2df629aa2a4751397060e9af0bde82",
+    "files": 3642,
+    "bytes": 31735351,
+    "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+    "hermetic": false,
+    "implicitCompilerInputs": "not-attested"
+  },
+  "compiler": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "products": {
+    "latent": {
+      "sha256": "sha256:098f91058e1605c71eaf1e64f3c5196f1122a389613c431322cb7f5dcd5a74a6",
+      "bytes": 72418704
+    },
+    "latentd": {
+      "sha256": "sha256:1a0a0ba7ca2e595b207238f5d9f1265f30e5d1a5b28e7161dcf45eae6dc290d0",
+      "bytes": 190307968
+    },
+    "examples/package": {
+      "sha256": "sha256:05a4fdee8f4a1168de0eeb8ec2af80448a70ce261d5b984d190346b2bd8e5de5",
+      "bytes": 21172488
+    },
+    "examples/capsule_contracts": {
+      "sha256": "sha256:d4b70dd7317351d21de38eb1dcbd0cd9f39ec290ae0e39e9af8914f47699e9f1",
+      "bytes": 13866120
+    },
+    "examples/capsule_authoring": {
+      "sha256": "sha256:83e92fc17e6fac19aa2f526080e8b9116314c5ec8c99be044eb89e118c7f27a4",
+      "bytes": 27426664
+    }
+  },
+  "origin": {
+    "repository": "KirilsTurkins/latent-service-fabric",
+    "workflow": ".github/workflows/host-codec-memory.yml",
+    "event": "push",
+    "branch": "feat/session-core-memory-20261022",
+    "run": 39869241256,
+    "job": 120139175577,
+    "runUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39869241256",
+    "artifact": 12466206919,
+    "artifactName": "host-codec-memory-b606b1402961593dd918722a66fe293bfab9b319",
+    "archiveBytes": 70510666,
+    "archiveSha256": "sha256:d877dbebf42935a137ebcf966406bee6ebe93946ca79a9a78c696a0dacd97a7e",
+    "archiveMembers": 163,
+    "expandedBytes": 325605385,
+    "receipts": {
+      "native-products.json": {
+        "bytes": 119004,
+        "sha256": "sha256:4f55d3c5e458849ec01f6ff6304f425b4b9126bd831e35a561ab8b84b0752f22"
+      },
+      "source-inputs.json": {
+        "bytes": 24574,
+        "sha256": "sha256:2a54d15feca9f5aaa884475d1cf5a6f8c45761bf40f4dd37935aa4d16004c39d"
+      }
+    }
+  },
+  "recipeAndAuxiliaryMaterials": 148,
+  "literalRecipeEntries": 22,
+  "controlCount": 177,
+  "commandCount": 77,
+  "verifiedLogStreamHashes": 154,
+  "ignoredControls": 0,
+  "controlGroups": {
+    "original-host-memory": 6,
+    "result-owner": 4,
+    "result-wire": 4,
+    "result-capacity": 1,
+    "actual-host-codec": 9,
+    "actual-dynamic-allocation-hook": 6,
+    "raw-input-lifetime": 4,
+    "result-lifetime": 2,
+    "original-accounting": 20,
+    "child-capacity": 1,
+    "c-public-async-type": 1,
+    "c-public-sync-abi": 1,
+    "journal-result-retirement": 1,
+    "ordinary-backend": 1,
+    "actual-native-table-owner": 9,
+    "actual-native-store-owner": 10,
+    "closed-guest-trap-diagnostics": 1,
+    "actual-native-registry-owner": 4,
+    "actual-native-funcrefs-owner": 5,
+    "c-ready-handoff": 2,
+    "resource-substitutions": 5,
+    "actual-linear-allocation-notifications": 3,
+    "native-thread-audit-codec": 3,
+    "retained-activation-context": 11,
+    "actual-host-future-owner": 5,
+    "c-canonical-wait-routes": 2,
+    "actual-owned-context-reply": 5,
+    "cli-native-thread-audit-projection": 2,
+    "actual-retained-capability-directory": 5,
+    "actual-streaming-table-shared-owner": 10,
+    "actual-blob-table-owner": 1,
+    "original-session-table-native-owner": 2,
+    "actual-runtime-timer-strong-weak-owner": 17,
+    "original-session-native-owner": 6,
+    "original-session-optional-shared-owner": 1,
+    "c-canonical-private-system-stack": 2,
+    "actual-native-only-cumulative-retirement": 5
+  },
+  "newControlGroups": {
+    "actual-native-only-cumulative-retirement": [
+      "budget::descendants::native_retirement_tests::native_only_owner_settles_actual_work_without_refunding_physical_child_capacity",
+      "budget::descendants::native_retirement_tests::ordinary_retained_accounting_owner_still_holds_the_whole_accepted_grant",
+      "budget::descendants::native_retirement_tests::missing_or_invalid_completion_remains_conservative_with_native_only_owners",
+      "budget::descendants::native_retirement_tests::transitive_native_ancestry_never_pins_an_ordinary_ancestor_cumulative_grant",
+      "budget::descendants::native_retirement_tests::concurrent_last_ordinary_and_physical_owners_settle_each_original_counter_once"
+    ]
+  },
+  "prior172Prefix": {
+    "sourceRevision": "ce8c04a7d9fdf3be79e16b2f9a26803b97a7e3e1",
+    "run": 39859151957,
+    "job": 120105084569,
+    "groups": 36,
+    "controls": 172,
+    "exactSelectorsAndCommandPrefixPreserved": true
+  },
+  "verification": {
+    "wholeArchiveDigestAndAll163MemberCrcAndIdentitiesVerified": true,
+    "all77ExactArgumentsAnd154LogIdentitiesVerified": true,
+    "all177DiscoveredAndSuccessfulNamesVerified": true,
+    "completeNativeInputFiles": 3642,
+    "completeNativeInputBytes": 31735351,
+    "allNativeAnd148AuxiliaryIdentitiesEqualExecutedPhysicalSource": true,
+    "allFiveProductIdentitiesVerified": true,
+    "liveSuccessfulOfficialRunJobArtifactVerified": true
+  },
+  "completedSlice": {
+    "ordinaryAccounting": "Final ordinary execution-accounting owner settles cumulative parent reservations exactly once on the same original budget; missing or invalid completion remains conservative.",
+    "nativeOnlyAccounting": "Physical-memory reservations and physical ancestry retain the same original memory ledger without pinning ordinary cumulative execution grants. Actual memory and child capacity remain charged until physical Inner retirement.",
+    "originalReturnedResult": "The original returned ResultPayload bytes retain ordinary execution accounting through their last Bytes clone or transport owner; compact journal copies remain independent.",
+    "sealedSessionBacking": "Original SessionCore/Stats payloads, identity text, slot Vec and both private Arc headers are prepaid before construction; registry Weak headers retain only physical storage.",
+    "canonicalCAllocation": "Selected C canonical realloc uses a separate bounded System stack for zero canonical context; root/System aliases and TLS-dependent live reallocators fail closed."
+  },
+  "historicalAttempts": [
+    {
+      "run": 39863616941,
+      "job": 120120189912,
+      "sourceRevision": "8c2bc670cf762395ac94d27192b9664a8809b9c3",
+      "conclusion": "failure",
+      "failedStage": "journal-result-retirement-run",
+      "reason": "Physical-only result retention released a child cumulative reservation before the last original returned byte owner; fixed by explicit ordinary ResultPayload accounting ownership, preserving the journal assertions."
+    },
+    {
+      "run": 39867304127,
+      "job": 120132621956,
+      "sourceRevision": "dc9b22402f6061081c0ddd34dbc15d3e6ed1a96d",
+      "conclusion": "failure",
+      "failedStage": "actual-native-only-cumulative-retirement-run",
+      "successfulPriorControls": 172,
+      "successfulAdditionalControls": 4,
+      "reason": "The new ordinary-owner control used committed-only snapshot_at for occupied capacity. Corrected to assert committed zero plus original occupied CPU100/calls8 through granted-minus-remaining; post-drop CPU17/calls1 and all physical-owner assertions preserved."
+    }
+  ],
+  "claimBoundary": {
+    "signedGuestQualification": false,
+    "guestSourceCompiled": false,
+    "whole736CostCriteriaComplete": false,
+    "whole745CostCriteriaComplete": false,
+    "whole744RuntimeComplete": false,
+    "hermeticCompilerInputsAttested": false,
+    "remainingWork": [
+      "Shared broker and compiled-plan preparation.",
+      "HandleEntry and transitive provider payload, transport, queue and ingress graphs.",
+      "Pre-existing final Bytes Owned Box metadata retirement: its reservation field currently drops before the outer owner Box deallocates.",
+      "Complete activation retirement and signed C timer plus broader language/runtime qualification."
+    ]
+  }
+}

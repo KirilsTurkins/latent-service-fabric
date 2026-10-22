@@ -26,7 +26,7 @@ from tools.qualify_sdk_scratch import package_identity
 from tools.rust_capsule_project import ROOT, fresh, inventory, read_file, read_json, snapshot, write_json
 
 MATERIALS = ('tools/qualify_c_timed_runtime.py', 'tools/c_timed_runtime_fixture.py',
-    'tools/c_timed_runtime_node.py', 'tools/host_codec_session_native_products.py',
+    'tools/c_timed_runtime_node.py', 'tools/host_codec_retirement_native_products.py',
     'tools/guest_runtime_profiles.py', '.github/workflows/c-timed-runtime.yml',
     fixture.FIXTURE + 'timing.h', 'tools/c_timed_source_controls.py',
     'tools/tests/fixtures/c-timed-broadcast-source.c',
@@ -100,7 +100,7 @@ def build_evidence(artifact, source):
 def qualify(prepared, output):
     require(sys.platform == 'linux' and sys.version_info >= (3, 13) and os.geteuid() != 0,
             'c-thread-unprivileged-linux-python313')
-    from tools import host_codec_session_native_products as products
+    from tools import host_codec_retirement_native_products as products
     output = output.absolute()
     require(output != ROOT and output not in ROOT.parents and ROOT not in output.parents,
             'c-thread-output-outside-checkout')

@@ -1,8 +1,9 @@
 # Selected C timed-wait source
 
 The owned C profile now has source for pthread/C11 mutex deadlines, condition
-timeout and reacquisition, `nanosleep` and `thrd_sleep`. This timed branch has
-not passed its signed programme and remains unqualified. It requires both
+timeout and reacquisition, `nanosleep` and `thrd_sleep`. The finite signed
+36-outcome programme passed on the source and native products recorded below.
+The full #744 runtime remains incomplete. Timed operations require both
 `c-context144-sync-cooperative-v1` and the explicit standard clock/entropy or
 combined facilities profile. It does not install ambient clocks or grants.
 The untimed profile retains its existing selected behavior; timed methods there
@@ -35,16 +36,17 @@ selection and original-input revalidation. These checks establish source/ABI
 behavior only. They do not execute canonical timer waiting or the original
 ledger, and no guest/native runtime was run locally.
 
-The required next programme is one normally captured signed component retaining
+The owning programme uses one normally captured signed component retaining
 the original twenty lifecycle/synchronization outcomes, with actual timed
 mutex success/timeout, condition notify/timeout/reacquisition, independently
-runnable siblings, timer/Wait refusal, cancellation/deadline and fresh calls.
-It must retain original limits, actual provider/physical retirement and exact
-compiler/libc/native identities. Recurring callbacks, ordinary cancellation
+runnable siblings and fresh calls. Timer/Wait refusal and timer-specific
+cancellation/deadline still require further actual cases. The programme retains
+original limits, actual provider/physical retirement and exact compiler/libc/native
+identities. Recurring callbacks, ordinary cancellation
 unwind, compiled CPU checkpoints, sockets and unchanged published/transitive
 library qualification remain separate open requirements of #744 and #736.
 
-The next owning programme is `.github/workflows/c-timed-runtime.yml`. It uses
+The owning programme is `.github/workflows/c-timed-runtime.yml`. It used
 one newly captured clock-selected component and the exact 163-control native
 products for its initial attempts. It preserves the original twenty lifecycle/synchronization outcomes,
 then appends twelve pthread/C11 sleep, mutex timeout/handoff and condition
@@ -76,6 +78,17 @@ followed by clean node/peer shutdown. The
 retains actual input, compiler, native and artifact identities. A separate
 CI failure exposed cumulative child-budget retention by physically retained
 session headers, so these products do not establish complete retirement.
+
+That child-budget regression and the original journal result-owner regression
+were repaired in #1356. The corrected native177 programme `39869241256` passed
+on `b606b1402961593dd918722a66fe293bfab9b319`, including all 172 prior controls
+and five ordinary-versus-physical ownership controls. Independent strict live
+verification checked 163 archive members, 77 exact commands, all 154 stream
+hashes, 3,642 native source files, all 148 auxiliary materials and five products.
+The current C consumer uses those separately frozen products; its historical
+36-outcome result remains attributable to the older native172 source until the
+current signed programme completes. The original reader/defaults and all C
+case, owner, fuel, memory and timing bounds remain unchanged.
 
 Timer-budget exhaustion, timer-specific cancellation/deadline barriers,
 recurring callbacks, cross-tenant reuse and published/transitive libraries

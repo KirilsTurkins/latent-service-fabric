@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_c_timed_runtime.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Use actual verified native172 SessionCore and C canonical System stack products; preserve all original C36 outcomes, bounds, and frozen inputs.",
+  "reviewReason": "Consume actual verified native177 products while retaining all original C36 cases, bounds, historical readers and fixed-source controls.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "6daff1b749c4e4de95e27e6ae2370b39b03cdb352addaa0b876dad24b2c739d7"
+  "sha256": "5efc9c71926ca6d9d07aaa184d532bcb246f01ed55ee3fb8ffe6e7f039ea155c"
 }
