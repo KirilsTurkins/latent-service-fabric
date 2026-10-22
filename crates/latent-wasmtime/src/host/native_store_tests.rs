@@ -296,17 +296,23 @@ fn actual_passive_segment_backing_remains_owned_until_guest_elem_drop() {
 
 #[test]
 fn actual_tiny_component_still_fits_original_one_mib_and_one_billion_fuel() {
-    let engine = Engine::default();
+    let mut config = wasmtime::Config::new();
+    config.wasm_component_model(true).consume_fuel(true);
+    let engine = Engine::new(&config).unwrap();
     let component = wasmtime::component::Component::new(&engine, COMPONENT).unwrap();
     let budget = budget(MIB);
     let observed = Arc::new(Observations::default());
     let mut store = store(&engine, &budget, &observed).unwrap();
+    let fuel = budget.granted().cpu_fuel;
+    store.set_fuel(fuel).unwrap();
     let linker = wasmtime::component::Linker::new(&engine);
     let instance = linker.instantiate(&mut store, &component).unwrap();
     let function = instance
         .get_typed_func::<(), (u32,)>(&mut store, "answer")
         .unwrap();
+    // TypedFunc::call completes the pinned engine's post_return_impl itself.
     assert_eq!(function.call(&mut store, ()).unwrap(), (42,));
+    assert!(store.get_fuel().unwrap() < fuel);
     assert_eq!(budget.granted().memory_bytes, MIB);
     assert_eq!(budget.granted().cpu_fuel, 1_000_000_000);
     assert!(budget.host_memory_bytes() < MIB);
