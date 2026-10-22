@@ -102,7 +102,7 @@
       {
         "if": "matrix.lane == 'python'",
         "name": "Fetch exact historical source inputs for Python preservation controls",
-        "run": "git fetch --no-tags --depth=1 origin \\\n  6f5f180136d140ac670561695260f71514781015 \\\n  36eaed79dbd92cac12bad2dd1f52cd5d1acd525f \\\n  8f7780dd0a35e3375524d72e7dfaddf847deaa5c \\\n  77bf0e3f3b68e17342b6146abd6f2de34a3efa00 \\\n  f9192fb5785ca7bed8b33dbb869b3d775b72ab4b \\\n  fc9b44a6b8dce9effd6b490f1a169a7ad8edbf12 \\\n  955da9c7465b88541e39b043203abb92782ae26a \\\n  fb79a7ab6ea86f53baec78ee341aca075c14a2ef \\\n  aa56bdebad8c12f20acce4ec4ecfeca73cf554be \\\n  f6251df89851de98cb869784d095ad5cc2e5b385 \\\n  f244b81f14abad5d4dc4984cb842aaf1d9076e23 \\\n  7b6365ee39dea9770591a931b96711965f8a1aaf \\\n  050b9e71ba04a4bdc559f4a7fa48d6bd94c2ff38 \\\n  de0aed36f0b135d6d88fb536484e60aee978f218 \\\n  3e4178271b4b7fe75a69c8f0665dbe275b41d7c3 \\\n  173ccd9c096e4db643aa9627bd4550cef27fb922 \\\n  ea118974d93843265a504f5d30571ed7cfe8a7d2 \\\n  f5351a9331ed954c49ae83f2f4004e0f96d25d0e \\\n  ff5aadaecd11874f53aa80e56ffdfff0efda312b \\\n  4ed0db7f07245732d07f867e95ec008a804485e5 \\\n  cb8ceefc5f6343301871dbde1d8a853d3581cc30 \\\n  1d5062ee63c0d5ff202d47e21793f6fb9bb8a21a \\\n  597ef2bc0db168d4aee1c2416c38f9a8b9fef9e8\n"
+        "run": "git fetch --no-tags --depth=1 origin \\\n  6f5f180136d140ac670561695260f71514781015 \\\n  36eaed79dbd92cac12bad2dd1f52cd5d1acd525f \\\n  8f7780dd0a35e3375524d72e7dfaddf847deaa5c \\\n  77bf0e3f3b68e17342b6146abd6f2de34a3efa00 \\\n  f9192fb5785ca7bed8b33dbb869b3d775b72ab4b \\\n  fc9b44a6b8dce9effd6b490f1a169a7ad8edbf12 \\\n  955da9c7465b88541e39b043203abb92782ae26a \\\n  fb79a7ab6ea86f53baec78ee341aca075c14a2ef \\\n  aa56bdebad8c12f20acce4ec4ecfeca73cf554be \\\n  f6251df89851de98cb869784d095ad5cc2e5b385 \\\n  f244b81f14abad5d4dc4984cb842aaf1d9076e23 \\\n  7b6365ee39dea9770591a931b96711965f8a1aaf \\\n  050b9e71ba04a4bdc559f4a7fa48d6bd94c2ff38 \\\n  de0aed36f0b135d6d88fb536484e60aee978f218 \\\n  3e4178271b4b7fe75a69c8f0665dbe275b41d7c3 \\\n  173ccd9c096e4db643aa9627bd4550cef27fb922 \\\n  ea118974d93843265a504f5d30571ed7cfe8a7d2 \\\n  f5351a9331ed954c49ae83f2f4004e0f96d25d0e \\\n  ff5aadaecd11874f53aa80e56ffdfff0efda312b \\\n  4ed0db7f07245732d07f867e95ec008a804485e5 \\\n  cb8ceefc5f6343301871dbde1d8a853d3581cc30 \\\n  1d5062ee63c0d5ff202d47e21793f6fb9bb8a21a \\\n  597ef2bc0db168d4aee1c2416c38f9a8b9fef9e8 \\\n  ce8c04a7d9fdf3be79e16b2f9a26803b97a7e3e1 \\\n  b606b1402961593dd918722a66fe293bfab9b319\n"
       },
       {
         "name": "Install Python validator dependencies",
@@ -297,7 +297,7 @@
   },
   "jobId": "contracts",
   "kind": "job",
-  "reviewReason": "Keep all23 exact frozen revisions inside the existing single shell git fetch command",
+  "reviewReason": "Consume actual verified native177 products while retaining all original C36 cases, bounds, historical readers and fixed-source controls.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/ci.yml"
 }
