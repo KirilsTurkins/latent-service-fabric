@@ -15,7 +15,7 @@ if __package__ in (None, ""):
 from tools import ci_rust_artifacts as artifacts
 from tools import ci_suite_discovery as discovery
 from tools.owned_test_process import ProcessFailure, run_owned
-from tools.rust_capsule_project import fresh
+from tools.rust_capsule_project import fresh, host_projection_inputs
 from tools.test_run import digest, redact
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -64,7 +64,16 @@ def locked(root: Path) -> bytes:
             if row != {"name": "node-worker-stack-reference", "version": "0.0.0", "dependencies": ["tokio"]}:
                 raise ValueError("stack-reference-local-package")
         elif row not in workspace:
-            raise ValueError("stack-reference-registry-coordinate")
+            from tools import result_owner_bytes as host_bytes
+            from tools.security_common import SecurityError
+
+            if (row != host_bytes.REGISTRY_PACKAGE
+                    or {"name": "bytes", "version": host_bytes.VERSION} not in workspace):
+                raise ValueError("stack-reference-registry-coordinate")
+            try:
+                host_bytes.verify(root)
+            except SecurityError as error:
+                raise ValueError("stack-reference-host-bytes-source") from error
     return raw
 
 
@@ -117,7 +126,9 @@ def verify_executables(executables: dict[str, Path], identities: dict[str, str])
 def qualify(root: Path, output: Path, revision: str) -> dict:
     environment = {**os.environ, "RUST_MIN_STACK": str(AMBIENT), "CARGO_BUILD_JOBS": "2", "CARGO_INCREMENTAL": "0"}
     artifacts.require_source(root, revision, environment)
-    before = {name: hashlib.sha256(read(root, name)).hexdigest() for name in INPUTS}
+    host_projection = host_projection_inputs(root)
+    input_names = tuple(dict.fromkeys((*INPUTS, *host_projection)))
+    before = {name: hashlib.sha256(read(root, name)).hexdigest() for name in input_names}
     lock, source, tests = locked(root), read(root, PROFILE), read(root, TESTS)
     old = original_semantics(source)
     if sys.platform != "linux" or platform.machine() != "x86_64":
@@ -188,8 +199,8 @@ def qualify(root: Path, output: Path, revision: str) -> dict:
     for label, identities in copied.items():
         if identities != {name: hashlib.sha256(read(output / label, name)).hexdigest() for name in identities}:
             raise ValueError("stack-reference-copied-source-changed")
-    after = {name: hashlib.sha256(read(root, name)).hexdigest() for name in INPUTS}
-    if before != after:
+    after = {name: hashlib.sha256(read(root, name)).hexdigest() for name in input_names}
+    if host_projection_inputs(root) != host_projection or before != after:
         raise ValueError("stack-reference-source-changed")
     verify_executables(executables, executable_identities)
     receipt = {"schemaVersion": "lsf.node-worker-stack-reference.v1", "sourceRevision": revision,

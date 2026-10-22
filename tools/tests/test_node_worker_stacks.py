@@ -27,6 +27,22 @@ class NodeWorkerStackReference(unittest.TestCase):
                     patch.object(reference, "read", side_effect=[changed, workspace]), self.assertRaises(ValueError):
                 reference.locked(reference.ROOT)
 
+    def test_host_bytes_exception_requires_authenticated_source_and_matching_local_lock(self):
+        from tools import result_owner_bytes as host_bytes
+        from tools.security_common import SecurityError
+
+        with patch.object(host_bytes, "verify", side_effect=SecurityError("changed-source")), \
+                self.assertRaisesRegex(ValueError, "host-bytes-source"):
+            reference.locked(reference.ROOT)
+        raw = (reference.ROOT / reference.LOCK).read_bytes()
+        workspace = (reference.ROOT / "Cargo.lock").read_bytes()
+        local = b'name = "bytes"\nversion = "1.12.1"\n'
+        self.assertEqual(workspace.count(local), 1)
+        changed = workspace.replace(local, b'name = "bytes"\nversion = "1.12.2"\n')
+        with patch.object(reference, "read", side_effect=[raw, changed]), \
+                self.assertRaisesRegex(ValueError, "registry-coordinate"):
+            reference.locked(reference.ROOT)
+
     def test_old_semantic_derivation_changes_only_explicit_stack_size_and_rejects_unknown_shape(self):
         source = (reference.ROOT / reference.PROFILE).read_bytes()
         old = reference.original_semantics(source)

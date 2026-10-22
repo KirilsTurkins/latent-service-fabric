@@ -1,0 +1,43 @@
+name: Physical result owner retirement
+
+on:
+  push:
+    branches: ['feat/result-box-retirement-20261023']
+    paths:
+      - 'crates/vendor/bytes/**'
+      - 'crates/latent-core/src/result_payload.rs'
+      - '.github/workflows/result-owner-retirement.yml'
+  pull_request:
+    paths:
+      - 'crates/vendor/bytes/**'
+      - 'crates/latent-core/src/result_payload.rs'
+      - '.github/workflows/result-owner-retirement.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: result-owner-retirement-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  physical-owner:
+    name: Actual owner allocation and final-clone retirement
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+      - name: Compile only the std-only bytes crate and allocator observer
+        shell: bash
+        run: |
+          rustc --edition=2021 --crate-name=bytes --crate-type=rlib --cfg 'feature="std"' \
+            crates/vendor/bytes/src/lib.rs -o "$RUNNER_TEMP/libbytes.rlib"
+          rustc --edition=2021 --test crates/vendor/bytes/tests/test_owner_retirement.rs \
+            --extern "bytes=$RUNNER_TEMP/libbytes.rlib" -o "$RUNNER_TEMP/result-owner-tests"
+      - name: Observe actual allocation frees through clones, copies, races and unwind
+        shell: bash
+        run: '"$RUNNER_TEMP/result-owner-tests" --test-threads=1'
