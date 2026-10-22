@@ -3,11 +3,13 @@
 use crate::{ActivationBudget, HostMemoryReservation, PlatformError, PlatformErrorCode};
 use std::sync::{
     atomic::{AtomicU64, Ordering},
-    Arc, Mutex, Weak,
+    Mutex,
 };
 use std::time::Instant;
 
 mod owner_refusal;
+mod shared;
+use shared::{Shared, SharedWeak};
 mod timer;
 pub use timer::{RuntimeTimer, TimerWait};
 
@@ -122,7 +124,7 @@ pub struct RuntimeSnapshot {
 
 #[derive(Debug, Clone)]
 pub struct ActivationRuntime {
-    inner: Arc<Inner>,
+    inner: Shared<Inner>,
 }
 #[derive(Debug)]
 struct Inner {
@@ -130,8 +132,6 @@ struct Inner {
     limits: RuntimeLimits,
     generation: u64,
     state: Mutex<State>,
-    // The Arc and mutex live until the final actual runtime owner is dropped.
-    allocation: HostMemoryReservation,
 }
 #[derive(Debug)]
 struct State {
@@ -160,14 +160,15 @@ struct Record {
 #[derive(Debug)]
 #[must_use = "retain with accepted work until actual settlement"]
 pub struct RuntimeOwner {
-    inner: Arc<Inner>,
+    inner: Shared<Inner>,
     token: RuntimeToken,
 }
 
-/// Non-owning readiness delivery; never retains a Store or budget after drop.
+/// Non-owning readiness delivery. The weak header retains its original memory
+/// charge until actual destruction, without retaining the runtime payload.
 #[derive(Debug, Clone)]
 pub struct RuntimeWake {
-    inner: Weak<Inner>,
+    inner: SharedWeak<Inner>,
     token: RuntimeToken,
 }
 
@@ -181,11 +182,7 @@ impl ActivationRuntime {
             ));
         }
         budget.descendant_snapshot()?;
-        let allocation = budget
-            .reserve_host_memory(
-                (std::mem::size_of::<Inner>() + 2 * std::mem::size_of::<usize>() + 64) as u64,
-            )
-            .map_err(|failure| failure.to_platform_error())?;
+        let allocation = Shared::<Inner>::reserve(&budget)?;
         let generation = GENERATION
             .fetch_update(Ordering::AcqRel, Ordering::Acquire, |n| n.checked_add(1))
             .map_err(|_| {
@@ -194,7 +191,7 @@ impl ActivationRuntime {
                     "runtime-generation-exhausted",
                 )
             })?;
-        let mut inner = Arc::new(Inner {
+        let inner = allocation.allocate(Inner {
             budget,
             limits,
             generation,
@@ -206,12 +203,7 @@ impl ActivationRuntime {
                 admission_failures: 0,
                 stale_wakes: 0,
             }),
-            allocation,
         });
-        Arc::get_mut(&mut inner)
-            .expect("fresh sole runtime owner")
-            .allocation
-            .confirm();
         Ok(Self { inner })
     }
 
@@ -354,7 +346,7 @@ impl ActivationRuntime {
             state.phase = RuntimePhase::Running;
         }
         Ok(RuntimeOwner {
-            inner: Arc::clone(&self.inner),
+            inner: self.inner.clone(),
             token,
         })
     }
@@ -400,7 +392,7 @@ impl ActivationRuntime {
             }
         }
         Ok(RuntimeWake {
-            inner: Arc::downgrade(&self.inner),
+            inner: self.inner.downgrade(),
             token,
         })
     }
@@ -409,7 +401,7 @@ impl ActivationRuntime {
     #[must_use]
     pub fn wake(&self, token: RuntimeToken) -> bool {
         RuntimeWake {
-            inner: Arc::downgrade(&self.inner),
+            inner: self.inner.downgrade(),
             token,
         }
         .wake()

@@ -658,13 +658,20 @@ def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
             if has_entropy(runtime_profile) and entropy.runtime_package(row):
                 files = directory_files(Path(row['source']['path']))
                 changes, runtime_port = entropy.captured_changes(row, files, runtime_profile)
+            runtime_thread_port = None
+            from tools.rust_standard_logging_inputs import has_threads
+            if has_threads(runtime_profile):
+                from tools import rust_standard_thread_capture as threads
+                if threads.runtime_package(row):
+                    files = directory_files(Path(row['source']['path']))
+                    changes, runtime_thread_port = threads.captured_changes(row, files, runtime_profile)
             if transformed != raw_manifest:
                 changes['Cargo.toml'] = transformed
             if changes:
                 if files is None:
                     files = ({'Cargo.toml': raw_manifest} if row['format'] == 'file'
                              else directory_files(Path(row['source']['path'])))
-                if runtime_port is not None and 'Cargo.toml' in changes:
+                if (runtime_port is not None or runtime_thread_port is not None) and 'Cargo.toml' in changes:
                     checksum = json.loads(changes['.cargo-checksum.json'])
                     checksum['files']['Cargo.toml'] = digest(transformed)[7:]
                     changes['.cargo-checksum.json'] = canonical(checksum) + b'\n'
@@ -680,7 +687,8 @@ def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
                     'inputDigest': tree_identity(original_rows), 'outputDigest': tree_identity(output_rows),
                     'files': changed_rows,
                     'tool': file_identity(Path(__file__), 'cargo-selected-path-relocator'),
-                    'selection': {**selected, **({'runtimeEntropyPort': runtime_port} if runtime_port is not None else {})}})
+                    'selection': {**selected, **({'runtimeEntropyPort': runtime_port} if runtime_port is not None else {}),
+                                  **({'runtimeThreadPort': runtime_thread_port} if runtime_thread_port is not None else {})}})
         # Native vendor replacement is captured input, not ambient Cargo config.
         config = tomllib.loads(configuration.decode())
         for source in config.get('source', {}).values():

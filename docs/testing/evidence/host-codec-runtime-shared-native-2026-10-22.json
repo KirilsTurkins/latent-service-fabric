@@ -1,0 +1,176 @@
+{
+  "schemaVersion": "latent.host-codec.runtime-shared-native-evidence.v1",
+  "ownerIssues": [
+    736,
+    745,
+    744
+  ],
+  "status": "passed",
+  "sourceRevision": "597ef2bc0db168d4aee1c2416c38f9a8b9fef9e8",
+  "scope": "ordinary-runtime-and-timer-strong-and-weak-Arc-backing-including-private-billing-Arc-and-ordinary-host-blob-fixed-Vec-and-streaming-HTTP-fixed-Vec-and-two-private-Shared-Arc-storage-shapes-and-three-retained-capability-directory-backings-and-six-closed-context-reply-buffers-and-concrete-callback-future-box-and-retained-activation-context-and-linear-allocation-notifications-codec-table-and-selected-Store-instance-buffer-registry-FuncRefs-container-resource-substitutions-original-memory-and-selected-c-public-async-type-sync-core-admission-and-authenticated-c-ready-handoff-and-closed-guest-trap-diagnostics-and-exact-native-thread-audit-codec-and-CLI-projection; direct-Core-HostFunc-construction, shared-preparation-closures, concurrent-task, other-hostcall-values-custom-Lower-shared-interior-error-owned-copies-and-opaque-accessor-scheduler-frames, request ingress and discarded scaffolding and other hostcall copies, SessionCore and transitive provider graphs, legacy framing and serialized controller frames excluded",
+  "profile": "normal-managed-guest-default-features",
+  "nativeCohort": "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-retained-capability-directories-blob-streaming-shared-tables-runtime-timer-strong-weak-memory-v12",
+  "wasmtimeAllocationCohort": "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-memory-v9",
+  "source": {
+    "sha256": "sha256:310180c8289fd2918c3a480162af5bcc70203625bce6f249015028f4ef593ace",
+    "files": 3636,
+    "bytes": 31641145,
+    "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+    "hermetic": false,
+    "implicitCompilerInputs": "not-attested"
+  },
+  "compiler": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "products": {
+    "latent": {
+      "sha256": "sha256:32f290f4f5c92291d1d4e9a4ae6b7462d07d7a68f35ed3459d210a2a83b36b18",
+      "bytes": 72404512
+    },
+    "latentd": {
+      "sha256": "sha256:414682bd8fd89beda035b09951cde0142d53540c64a8a1e2a087c57e02e55fc0",
+      "bytes": 190214360
+    },
+    "examples/package": {
+      "sha256": "sha256:4fbed6af523a5591ebfd6593fb55e499714bea1898c9977d2941b644e0f84597",
+      "bytes": 21161648
+    },
+    "examples/capsule_contracts": {
+      "sha256": "sha256:865d01e9ba8b7b2cf850834f2b9bc1d52a0b78c8bb1ba3dc6c0ac902070d2138",
+      "bytes": 13855480
+    },
+    "examples/capsule_authoring": {
+      "sha256": "sha256:72eb43ed8e8944be761b03e4b28c52deb97e00ad0dc30c5786a464db80ab51ba",
+      "bytes": 27417496
+    }
+  },
+  "origin": {
+    "repository": "KirilsTurkins/latent-service-fabric",
+    "workflow": ".github/workflows/host-codec-memory.yml",
+    "event": "push",
+    "branch": "feat/runtime-shared-memory-20261022",
+    "run": 39835325986,
+    "job": 120022000948,
+    "runUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39835325986",
+    "artifact": 12451317202,
+    "artifactName": "host-codec-memory-597ef2bc0db168d4aee1c2416c38f9a8b9fef9e8",
+    "archiveBytes": 70484445,
+    "archiveSha256": "sha256:1e0ddcde71403af345a266435e260b0b833e8d84aea93eefefb35f37b1432359",
+    "archiveMembers": 147,
+    "expandedBytes": 325444675,
+    "receiptMember": "native-products.json",
+    "receiptBytes": 109053,
+    "receiptSha256": "sha256:57f6fe2ddf1e7add171f201157f82f83e3ae16e19e80ee02e5a4f8394db63080",
+    "sourceInputsMember": "source-inputs.json",
+    "sourceInputsBytes": 24574,
+    "sourceInputsSha256": "sha256:8dcbfeaf1e2e5c2f8f43fbf33efaee0be78e15cd13926b1ce8a711b0e5a357e7"
+  },
+  "recipeAndAuxiliaryMaterials": 148,
+  "literalRecipeEntries": 22,
+  "controlCount": 163,
+  "commandCount": 69,
+  "verifiedLogStreamHashes": 138,
+  "ignoredControls": 0,
+  "controlGroups": {
+    "original-host-memory": 6,
+    "result-owner": 4,
+    "result-wire": 4,
+    "result-capacity": 1,
+    "actual-host-codec": 9,
+    "actual-dynamic-allocation-hook": 6,
+    "raw-input-lifetime": 4,
+    "result-lifetime": 2,
+    "original-accounting": 20,
+    "child-capacity": 1,
+    "c-public-async-type": 1,
+    "c-public-sync-abi": 1,
+    "journal-result-retirement": 1,
+    "ordinary-backend": 1,
+    "actual-native-table-owner": 9,
+    "actual-native-store-owner": 10,
+    "closed-guest-trap-diagnostics": 1,
+    "actual-native-registry-owner": 4,
+    "actual-native-funcrefs-owner": 5,
+    "c-ready-handoff": 2,
+    "resource-substitutions": 5,
+    "actual-linear-allocation-notifications": 3,
+    "native-thread-audit-codec": 3,
+    "retained-activation-context": 11,
+    "actual-host-future-owner": 5,
+    "c-canonical-wait-routes": 2,
+    "actual-owned-context-reply": 5,
+    "cli-native-thread-audit-projection": 2,
+    "actual-retained-capability-directory": 5,
+    "actual-streaming-table-shared-owner": 10,
+    "actual-blob-table-owner": 1,
+    "original-session-table-native-owner": 2,
+    "actual-runtime-timer-strong-weak-owner": 17
+  },
+  "newControlGroups": {
+    "actual-runtime-timer-strong-weak-owner": [
+      "activation_runtime::owner_refusal::tests::disabled_zero_and_invalid_counts_do_not_consume_refusal_allowance",
+      "activation_runtime::owner_refusal::tests::exact_closed_bucket_records_are_bounded_and_process_capped",
+      "activation_runtime::owner_refusal::tests::failed_witness_write_does_not_escape_or_change_original_counts",
+      "activation_runtime::shared::tests::concurrent_last_strong_and_last_weak_refund_exactly_once",
+      "activation_runtime::shared::tests::concurrent_last_strong_and_weak_drop_keep_both_headers_paid",
+      "activation_runtime::shared::tests::payload_unwind_still_retires_both_headers_before_refund",
+      "activation_runtime::shared::tests::preparation_prepays_both_padded_headers_and_rolls_back_without_observation",
+      "activation_runtime::tests::close_allows_bounded_live_continuations_and_rejects_independent_work",
+      "activation_runtime::tests::continuations_require_live_original_generation_before_any_admission",
+      "activation_runtime::tests::foreign_store_token_and_opaque_sleeping_work_cannot_establish_quiescence",
+      "activation_runtime::tests::lazy_path_allocates_no_records_and_accepted_owners_share_finite_limits",
+      "activation_runtime::tests::readiness_weak_headers_remain_paid_without_retaining_runtime_payload",
+      "activation_runtime::tests::recurring_timer_coalesces_storms_and_cancelled_waits_keep_physical_ownership",
+      "activation_runtime::tests::runtime_header_refusal_precedes_generation_and_keeps_original_ledger",
+      "activation_runtime::tests::task_support_admission_checks_original_kind_and_liveness_under_the_same_lock",
+      "activation_runtime::tests::timer_header_refusal_precedes_admission_and_waiter_retains_actual_backing",
+      "activation_runtime::tests::waking_a_parked_thread_leaves_runnable_sibling_and_fences_reused_slots"
+    ]
+  },
+  "prior146Prefix": {
+    "sourceRevision": "1d5062ee63c0d5ff202d47e21793f6fb9bb8a21a",
+    "run": 39826486316,
+    "job": 119991014294,
+    "groups": 32,
+    "controls": 146,
+    "exactSelectorsAndCommandPrefixPreserved": true
+  },
+  "verification": {
+    "wholeArchiveDigestAndAllMemberCrcVerified": true,
+    "all147MemberIdentitiesVerified": true,
+    "all69ExactArgumentsAnd138LogIdentitiesVerified": true,
+    "all163DiscoveredAndSuccessfulNamesVerified": true,
+    "complete3636NativeAnd148AuxiliaryIdentitiesEqualExecutedSource": true,
+    "allFiveProductIdentitiesVerified": true,
+    "liveSuccessfulOfficialRunJobArtifactVerified": true,
+    "independentReviewAndLiveVerificationCompleted": true,
+    "all259WasmtimeForkFilesUnchangedFromPrior146": true
+  },
+  "completedSlice": {
+    "runtimeBacking": "Original runtime Arc header/payload and private billing Arc are prepaid before allocation and generation assignment.",
+    "timerBacking": "Original timer Arc header/payload and private billing Arc are prepaid before allocation or Timer-owner registration; an accepted TimerWait retains actual backing after timer handles close.",
+    "weakReadiness": "Each readiness Weak retains header billing without retaining or reviving the runtime payload; physical slab/payload destruction precedes final Weak refund.",
+    "concurrentLastDrops": "Every billing clone uses Arc::into_inner after its physical strong/weak drops; last-strong/last-weak races and payload unwind retain the original charge.",
+    "refusal": "One-byte-less original-ledger capacity refuses before runtime/timer allocation/admission; original records, owners, reservation counts and peak observations are unchanged."
+  },
+  "claimBoundary": {
+    "signedGuestQualification": false,
+    "whole736CostCriteriaComplete": false,
+    "whole745CostCriteriaComplete": false,
+    "whole744RuntimeComplete": false,
+    "hermeticCompilerInputsAttested": false,
+    "newlyAccountedStorage": [
+      "runtime Arc physical header/payload",
+      "timer Arc physical header/payload",
+      "private billing Arc header/payload for both closed owner shapes",
+      "original runtime header retained by readiness Weak handles"
+    ],
+    "excluded": [
+      "SessionCore reachable graph",
+      "transitive provider values and payloads",
+      "provider transport and buffer graph closure",
+      "other hostcall allocations and queues",
+      "shared preparation",
+      "ingress and controller storage"
+    ],
+    "historicalReceiptsRewritten": false
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "rust-owned-thread-inputs-${{ github.ref }}"
+    },
+    "name": "Owned Rust thread compiler inputs",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/rust-standard-thread-runtime-20261022"
+        ],
+        "paths": [
+          ".github/workflows/rust-owned-thread-inputs.yml",
+          "tools/compile_rust_owned_thread_inputs.py"
+        ]
+      },
+      "workflow_dispatch": null
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "compiler-inputs"
+  ],
+  "reviewReason": "One finite hosted compiler-input campaign; source-matched Rust context utility and owned offline thread sysroot only, no runtime qualification or host rebuild",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/rust-owned-thread-inputs.yml"
+}
