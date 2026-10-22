@@ -129,6 +129,21 @@ pub struct SessionResourceTableReservation {
     _slot: Charge,
 }
 impl SessionResourceTableReservation {
+    /// Prepay table backing from this table's original activation ledger.
+    /// The broker metadata reservation is a separate node/session bound.
+    /// Retain the returned guard until the allocation is actually destroyed.
+    /// Phase1 keeps its existing accounting and returns no native reservation.
+    pub fn reserve_native_backing(
+        &self,
+        bytes: u64,
+    ) -> Result<Option<latent_core::HostMemoryReservation>, PlatformError> {
+        if !self.core.budget.profile().supports_descendants() {
+            return Ok(None);
+        }
+        self.with_session(|session| session.reserve_host_memory(bytes))
+            .map(Some)
+    }
+
     /// Re-enter only the original sealed session. Every new provider operation
     /// still requires current admission and a guarded policy/audit dispatch.
     pub fn with_session<T>(&self, inspect: impl FnOnce(&CapabilitySession) -> T) -> T {

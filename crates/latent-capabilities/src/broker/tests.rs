@@ -7,6 +7,7 @@ use fixture::*;
 mod audit;
 mod clocks;
 mod diagnostics;
+mod resource_table_memory;
 mod route_fence;
 mod transaction_imports;
 mod web_imports;
