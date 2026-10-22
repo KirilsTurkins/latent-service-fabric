@@ -232,10 +232,12 @@ def wait_child(client, process, probe, target, output):
                 command += ('--page-token', token)
             page = client.call(*command)
             pages.append(page)
+            write_json(output / f'child-audit-{process.authoring_activation}-{attempt}-{len(pages)}.json', page)
             token = page['data']['page']['nextPageToken']
             if token is None:
                 break
         inventory = client.call('node', 'get', 'operator-workflow-test')['data']['inventory']
+        write_json(output / f'child-inventory-{process.authoring_activation}-{attempt}.json', inventory)
         witness = child_entry(inventory, pages, process.authoring_activation, expected_revision=revision)
         if witness is not None:
             physical = sample(client, probe, 'entered-' + process.authoring_activation, 1, active=True)

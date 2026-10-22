@@ -51,9 +51,16 @@ if products is not None and products.SOURCE == 'f5351a9331ed954c49ae83f2f4004e0f
         for name in old_functions:
             self.assertEqual(ast.dump(old_functions[name]), ast.dump(new_functions[name]), name)
         node = 'tools/c_thread_runtime_node.py'
-        self.assertEqual(subprocess.check_output(['git', 'show', ORIGINAL + ':' + node],
-                                                cwd=qualification.ROOT),
-                         (qualification.ROOT / node).read_bytes())
+        original_node = subprocess.check_output(['git', 'show', ORIGINAL + ':' + node], cwd=qualification.ROOT)
+        retained = original_node.replace(b'            pages.append(page)\n',
+            b'            pages.append(page)\n'
+            b"            write_json(output / f'child-audit-{process.authoring_activation}-{attempt}-{len(pages)}.json', page)\n")
+        retained = retained.replace(
+            b"        inventory = client.call('node', 'get', 'operator-workflow-test')['data']['inventory']\n",
+            b"        inventory = client.call('node', 'get', 'operator-workflow-test')['data']['inventory']\n"
+            b"        write_json(output / f'child-inventory-{process.authoring_activation}-{attempt}.json', inventory)\n")
+        self.assertNotEqual(retained, original_node)
+        self.assertEqual(retained, (qualification.ROOT / node).read_bytes())
         self.assertIn('tools/host_codec_linear_memory_native_products.py', qualification.MATERIALS)
         self.assertIn('tools/host_codec_linear_memory_native_products_reader.py', qualification.MATERIALS)
         self.assertIn('tools/c_thread_linear_memory_native_source.py', qualification.MATERIALS)

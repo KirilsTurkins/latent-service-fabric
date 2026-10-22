@@ -114,6 +114,8 @@ jobs:
             ${{ runner.temp }}/c-thread-runtime/build/wit/**
             ${{ runner.temp }}/c-thread-runtime/build/logs/*.txt
             ${{ runner.temp }}/c-thread-runtime/node/*.json
+            ${{ runner.temp }}/c-thread-runtime/node/*.stdout
+            ${{ runner.temp }}/c-thread-runtime/node/*.stderr
             ${{ runner.temp }}/c-thread-runtime/node/commands/logs/*.txt
             ${{ runner.temp }}/c-thread-runtime/node/commands/*.json
           retention-days: 7

@@ -13,6 +13,23 @@ from tools.rust_capsule_project import snapshot
 
 
 class CThreadRuntime(unittest.TestCase):
+    def test_failed_child_audit_retains_raw_page_and_live_inventory_before_original_refusal(self):
+        from unittest.mock import patch
+        page = {'category': 'success', 'outcomeKnown': True,
+            'data': {'page': {'nextPageToken': None}, 'coverage': {'droppedObservations': '1'}, 'records': []}}
+        inventory = {'topology': {'available': True, 'complete': True,
+            'entries': [{'name': name, 'activeCount': '1'} for name in node.LIVE]}}
+        client = SimpleNamespace(deadline=10**12, call=lambda *args: page if args[0] == 'audit'
+            else {'data': {'inventory': inventory}})
+        process = SimpleNamespace(authoring_activation='c-retention', authoring_started_unix_millis=1,
+            owner=SimpleNamespace(exited=lambda: False))
+        with tempfile.TemporaryDirectory() as directory, patch.object(node, 'selected_revision', return_value={}):
+            output = Path(directory)
+            with self.assertRaisesRegex(RuntimeError, '^c-thread-lossless-current-audit-required$'):
+                node.wait_child(client, process, None, {}, output)
+            self.assertEqual(json.loads((output / 'child-audit-c-retention-0-1.json').read_bytes()), page)
+            self.assertEqual(json.loads((output / 'child-inventory-c-retention-0.json').read_bytes()), inventory)
+
     def test_explicit_fixed_product_source_is_checked_without_falling_back_to_v1(self):
         from unittest.mock import Mock, patch
         from tools.phase2_operator_process import WorkflowError
