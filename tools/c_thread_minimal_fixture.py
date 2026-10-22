@@ -4,7 +4,7 @@ import hashlib
 from tools import c_thread_runtime_fixture as original
 from tools.rust_capsule_project import ROOT, read_file
 
-BASE_SHA256='88c7192cc21fc62e19b04ebe48198b3032e921103c70344104b5c3de61f253a2'
+BASE_SHA256='952ea08c07bee537511a0746c572367879029e2c2576a65b43af00b764453edc'
 MODES=('application-error','minimal-c11','minimal-pthread','c11','pthread')
 FUNCTIONS=b"""
 /* Diagnostic-only child bodies: no TLS/key/errno/self-join/observe assertions.
