@@ -1,6 +1,7 @@
 /* Ordinary pthread/C11 calls. The declared observe API supplies actual owner
  * witnesses; no private continuation or thread-runtime intrinsic is called. */
 #include <time.h>
+#include <unistd.h>
 
 static union { pthread_mutex_t pthread; mtx_t c11; } timed_gate;
 static union { pthread_cond_t pthread; cnd_t c11; } timed_condition;
@@ -126,6 +127,10 @@ static void timed_validation(void) {
     struct timespec zero = {0}, bad = {0, 1000000000L}, remaining = {91, 92};
     latent_runtime_activation_observation_t before, after;
     latent_runtime_activation_error_t error = 255;
+    /* Keep the declared bounded entropy import in the real linked component.
+     * Exact public import/surface validation must not accept a dead declaration. */
+    unsigned char entropy[8];
+    require(getentropy(entropy, sizeof(entropy)) == 0 && errno == 23);
     require(latent_runtime_activation_observe(&before, &error));
     require(nanosleep(&zero, &remaining) == 0 && errno == 23);
     require(remaining.tv_sec == 0 && remaining.tv_nsec == 0);
