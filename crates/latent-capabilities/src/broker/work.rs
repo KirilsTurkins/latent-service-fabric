@@ -1,4 +1,4 @@
-use super::session::{HandleEntry, SessionCoreOwner, StatsOwner};
+use super::session::{HandleEntryOwner, SessionCoreOwner, StatsOwner};
 use super::{
     busy, capacity, denied, error, stopped, CapabilitySession, Charge, GuestCapabilityHandle, Kind,
     PlatformError,
@@ -133,7 +133,7 @@ struct Work {
     input_size: usize,
     pending_budget: Option<BudgetReservationGroup>,
     input: Zeroizing<Vec<u8>>,
-    row: Arc<HandleEntry>,
+    row: HandleEntryOwner,
     session: SessionCoreOwner,
     id: u64,
     deadline: Instant,
@@ -151,7 +151,7 @@ impl Work {
     }
     fn recheck_authority(&mut self, require_audit: bool) -> Result<(), PlatformError> {
         let core = self.session.clone();
-        let row = Arc::clone(&self.row);
+        let row = self.row.clone();
         let live = core.owner.live.try_read().map_err(|_| busy())?;
         let binding = &core.plan.bindings[row.binding];
         let installed = binding.provider.live.try_read().map_err(|_| busy())?;
@@ -163,7 +163,7 @@ impl Work {
                     .slots
                     .get(usize::from(row.id.wire_parts().0))
                     .and_then(Option::as_ref)
-                    .is_none_or(|current| !Arc::ptr_eq(current, &row)))
+                    .is_none_or(|current| !HandleEntryOwner::ptr_eq(current, &row)))
         {
             return Err(denied());
         }
@@ -266,7 +266,7 @@ pub struct OwnedCapabilityResponse {
     deadline: Instant,
     bytes: Zeroizing<Vec<u8>>,
     pub(super) session: SessionCoreOwner,
-    _row: Arc<HandleEntry>,
+    _row: HandleEntryOwner,
     id: u64,
     _bytes: Charge,
     _metadata: Charge,
@@ -703,7 +703,7 @@ impl CapabilitySession {
             .slots
             .get(usize::from(handle.wire_parts().0))
             .and_then(Option::as_ref)
-            .is_none_or(|current| !Arc::ptr_eq(current, &row))
+            .is_none_or(|current| !HandleEntryOwner::ptr_eq(current, &row))
         {
             return Err(denied());
         }
@@ -793,7 +793,7 @@ impl CapabilitySession {
             input_size,
             pending_budget: budget_reservation,
             input: Zeroizing::new(input.to_vec()),
-            row: Arc::clone(&row),
+            row: row.clone(),
             session: self.core.clone(),
             id,
             deadline: self.core.owner.clock.monotonic_now(),

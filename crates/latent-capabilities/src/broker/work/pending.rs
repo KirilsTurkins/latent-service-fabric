@@ -2,20 +2,20 @@
 use super::{CapabilityCallCost, ProviderCall, Work, WorkLifetime};
 use crate::broker::{
     busy, capacity, denied, error,
-    session::{HandleEntry, SessionCoreOwner},
+    session::{HandleEntryOwner, SessionCoreOwner},
     CapabilitySession, GuestCapabilityHandle, HostClock, Kind,
 };
 use latent_core::{BudgetDimension, PlatformError, PlatformErrorCode};
 use latent_policy::capability::ResourceTarget;
 use std::{
-    sync::{atomic::Ordering, Arc},
+    sync::atomic::Ordering,
     time::{Duration, Instant},
 };
 use zeroize::Zeroizing;
 
 pub(in crate::broker) struct PendingWork {
     core: SessionCoreOwner,
-    row: Arc<HandleEntry>,
+    row: HandleEntryOwner,
     clock: HostClock,
     work: Option<Work>,
     entered: bool,
@@ -62,7 +62,7 @@ impl PendingWork {
                 .slots
                 .get(usize::from(row.id.wire_parts().0))
                 .and_then(Option::as_ref)
-                .is_none_or(|current| !Arc::ptr_eq(current, row))
+                .is_none_or(|current| !HandleEntryOwner::ptr_eq(current, row))
         {
             return Err(denied());
         }
@@ -147,7 +147,7 @@ impl PendingWork {
 
     fn reserve(
         core: &SessionCoreOwner,
-        row: &Arc<HandleEntry>,
+        row: &HandleEntryOwner,
         clock: HostClock,
         cost: CapabilityCallCost,
         deadline: Instant,
@@ -190,7 +190,7 @@ impl PendingWork {
             input_size: 0,
             pending_budget,
             input: Zeroizing::new(Vec::new()),
-            row: Arc::clone(row),
+            row: row.clone(),
             session: core.clone(),
             id,
             deadline,

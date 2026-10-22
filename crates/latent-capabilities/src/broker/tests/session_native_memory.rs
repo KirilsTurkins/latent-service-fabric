@@ -170,8 +170,13 @@ fn original_session_native_real_provider_call_keeps_closed_session_backing_until
     let (request, control) =
         super::resource_table_memory::selected(&fixture, BudgetProfile::Phase3);
     let session = fixture.session(&request, &control);
-    let native_bytes = control.budget.host_memory_bytes();
+    let native_before_handle = control.budget.host_memory_bytes();
     let handle = session.bind(CAP, "read", resource()).unwrap();
+    let native_bytes = control.budget.host_memory_bytes();
+    assert_eq!(
+        native_bytes,
+        native_before_handle + super::handle_native_memory::row_bytes()
+    );
     let mut call = session
         .dispatch(handle, "read", resource(), b"input", output(), |call| call)
         .unwrap();
@@ -204,8 +209,13 @@ fn original_session_native_real_provider_result_keeps_original_owner_after_scope
     let (request, control) =
         super::resource_table_memory::selected(&fixture, BudgetProfile::Phase3);
     let session = fixture.session(&request, &control);
-    let native_bytes = control.budget.host_memory_bytes();
+    let native_before_handle = control.budget.host_memory_bytes();
     let handle = session.bind(CAP, "read", resource()).unwrap();
+    let native_bytes = control.budget.host_memory_bytes();
+    assert_eq!(
+        native_bytes,
+        native_before_handle + super::handle_native_memory::row_bytes()
+    );
     let response = session
         .dispatch(handle, "read", resource(), b"input", output(), |call| {
             call.complete(b"retained")

@@ -4,6 +4,128 @@ mod audit;
 mod fixture;
 use fixture::*;
 
+fn selected_handle_native(fixture: &ClockFixture) -> (latent_executor::ExecutionRequest, Control) {
+    use latent_core::{ActivationBudget, BudgetProfile, ClockSample, EffectiveActivationBudget};
+    let (mut request, mut control) = fixture.request();
+    let limits = &request.budget;
+    let grant = EffectiveActivationBudget::admit_profile_at(
+        BudgetProfile::Phase3,
+        limits,
+        limits,
+        limits,
+        None,
+        ClockSample::system_now(),
+    )
+    .unwrap();
+    control.budget = ActivationBudget::with_profile(grant, BudgetProfile::Phase3).unwrap();
+    request.activation.deadline_unix_millis = control.budget.deadline().unix_millis();
+    (request, control)
+}
+
+#[test]
+fn original_pending_clock_handle_native_row_is_one_paid_owner_before_publication() {
+    use crate::broker::session::{native_handle, HandleEntryOwner};
+    let fixture = ClockFixture::new(HostClock::Wall, CapabilityBrokerLimits::default(), false);
+    let (request, control) = selected_handle_native(&fixture);
+    let session = fixture.base.session(&request, &control);
+    let baseline = control.budget.host_memory_bytes();
+    let before = fixture.base.broker.snapshot();
+    let bytes = HandleEntryOwner::allocation_bytes().unwrap()
+        + native_handle::payload_bytes(fixture.clock.operation(), ResourceTarget::Clock).unwrap();
+    fixture.fence.hold_at.store(1, Ordering::SeqCst);
+    let timer = Timer::new();
+    let mut future = Box::pin(session.begin_host_clock(fixture.clock, &timer));
+    pending(future.as_mut());
+    let retained = fixture.base.broker.snapshot();
+    assert_eq!(retained.handles, before.handles + 1);
+    assert!(session
+        .core
+        .state
+        .lock()
+        .unwrap()
+        .slots
+        .iter()
+        .all(Option::is_none));
+    assert_eq!(control.budget.host_memory_bytes(), baseline + bytes);
+    assert_eq!(control.budget.outstanding_reservations(), 6);
+    for _ in 0..3 {
+        timer.advance(Duration::from_millis(10));
+        pending(future.as_mut());
+        assert_eq!(fixture.base.broker.snapshot(), retained);
+        assert_eq!(control.budget.host_memory_bytes(), baseline + bytes);
+        assert_eq!(control.budget.outstanding_reservations(), 6);
+    }
+    drop(future);
+    fixture.idle(&session, before);
+    assert_eq!(control.budget.host_memory_bytes(), baseline);
+    assert_eq!(control.budget.outstanding_reservations(), 4);
+    fixture.fence.hold_at.store(0, Ordering::SeqCst);
+    let call = ready(session.begin_host_clock(fixture.clock, &timer)).unwrap();
+    assert_eq!(control.budget.host_memory_bytes(), baseline + bytes);
+    assert_eq!(control.budget.outstanding_reservations(), 6);
+    drop(call);
+    fixture.idle(&session, before);
+    assert_eq!(control.budget.host_memory_bytes(), baseline);
+    drop(session);
+    drop(fixture);
+    assert_eq!(control.budget.host_memory_bytes(), 0);
+    assert_eq!(control.budget.outstanding_reservations(), 0);
+}
+
+#[test]
+fn original_pending_clock_handle_native_refusal_does_not_publish_or_count_a_row() {
+    use crate::broker::session::{native_handle, HandleEntryOwner};
+    let fixture = ClockFixture::new(
+        HostClock::Monotonic,
+        CapabilityBrokerLimits::default(),
+        false,
+    );
+    let (request, control) = selected_handle_native(&fixture);
+    let session = fixture.base.session(&request, &control);
+    let baseline = control.budget.host_memory_bytes();
+    let bytes = HandleEntryOwner::allocation_bytes().unwrap()
+        + native_handle::payload_bytes(fixture.clock.operation(), ResourceTarget::Clock).unwrap();
+    let held_bytes = request.budget.memory_bytes - baseline - bytes + 1;
+    let mut held = control.budget.reserve_host_memory(held_bytes).unwrap();
+    let padding = vec![0u8; held_bytes as usize].into_boxed_slice();
+    held.confirm();
+    let before = fixture.base.broker.snapshot();
+    let timer = Timer::new();
+    let failure = ready(session.begin_host_clock(fixture.clock, &timer))
+        .err()
+        .unwrap();
+    assert_eq!(failure.code, PlatformErrorCode::ResourceExhausted);
+    fixture.idle(&session, before);
+    assert!(session
+        .core
+        .state
+        .lock()
+        .unwrap()
+        .slots
+        .iter()
+        .all(Option::is_none));
+    assert_eq!(control.budget.host_memory_bytes(), baseline + held_bytes);
+    assert_eq!(control.budget.outstanding_reservations(), 5);
+    assert_eq!(
+        control
+            .budget
+            .snapshot_at(std::time::Instant::now())
+            .peak_memory_bytes,
+        baseline + held_bytes
+    );
+    assert_eq!(fixture.fence.calls.load(Ordering::SeqCst), 0);
+    drop(padding);
+    drop(held);
+    let call = ready(session.begin_host_clock(fixture.clock, &timer)).unwrap();
+    assert_eq!(control.budget.host_memory_bytes(), baseline + bytes);
+    drop(call);
+    fixture.idle(&session, before);
+    drop(session);
+    drop(fixture);
+    assert_eq!(control.budget.host_memory_bytes(), 0);
+    assert_eq!(control.budget.outstanding_reservations(), 0);
+}
+
 #[test]
 fn clock_pending_binding_and_work_keep_one_owned_reservation_until_one_commit() {
     for clock in [HostClock::Monotonic, HostClock::Wall] {

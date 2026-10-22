@@ -7,6 +7,7 @@ use fixture::*;
 mod audit;
 mod clocks;
 mod diagnostics;
+mod handle_native_memory;
 mod resource_table_memory;
 mod route_fence;
 mod session_native_memory;
