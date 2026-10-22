@@ -60,6 +60,7 @@ class Compiler:
         self.closed_filesystem = closed_filesystem.prepare(self.paths['zig'], self.sdk)
         self.materials.update(self.closed_filesystem.materials)
         self.threading_inputs = {}
+        self.threading_clock_inputs = {}
         if threading_tool is not None:
             from tools.c_guest import threading
             if not threading_tool.is_absolute() or threading_tool.is_symlink() or not threading_tool.is_file():
@@ -98,6 +99,13 @@ class Compiler:
         for name, path in self.threading_inputs.items():
             if file_identity(path, threading.libc_material_name(name), 32768) != self.materials[name]:
                 raise ValueError('c-threading-libc-input-changed')
+        if getattr(self, 'threading_clock_inputs', None):
+            from tools.c_guest import threading
+            if threading.clock_libc_inputs(self.paths['zig']) != self.threading_clock_inputs:
+                raise ValueError('c-threading-libc-clock-input-changed')
+            for name, path in self.threading_clock_inputs.items():
+                if file_identity(path, threading.clock_libc_material_name(name), 32768) != self.materials[name]:
+                    raise ValueError('c-threading-libc-clock-input-changed')
         for name, path in self.paths.items():
             if file_identity(path, name) != self.materials[name]:
                 raise ValueError("C compiler tool changed during build")
@@ -202,7 +210,14 @@ class Compiler:
             runtime = self.sdk / 'runtime'
             sources = [*sources, runtime / 'threads.c', runtime / 'tls-keys.c', runtime / 'template-copy.c']
             include_directories = (*include_directories, runtime)
-            defines = threading.linked_defines(defines)
+            timed_clock = runtime_profile in {standard_facilities.PROFILE, standard_facilities.COMBINED_PROFILE}
+            if timed_clock:
+                self.threading_clock_inputs = threading.clock_libc_inputs(self.paths['zig'])
+                self.materials.update({name: file_identity(path, threading.clock_libc_material_name(name), 32768)
+                    for name, path in self.threading_clock_inputs.items()})
+                defines = threading.linked_defines(defines, timed_clock=True)
+            else:
+                defines = threading.linked_defines(defines)
         self.validate_static_libraries(static_libraries, destination)
         core, component = destination / "core.wasm", destination / "component.wasm"
         command = ["cc", "-std=" + language_standard, "-target", "wasm32-wasi", "-O2",

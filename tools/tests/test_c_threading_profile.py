@@ -92,6 +92,42 @@ class CThreadingProfile(unittest.TestCase):
             with self.subTest(name=name), self.assertRaisesRegex(ValueError, 'compiler-owned-tls-symbol'):
                 threading.linked_defines((name + '=foreign',))
 
+    def test_timed_clock_namespace_is_explicit_and_preserves_untimed_defines(self):
+        plain = threading.linked_defines(())
+        self.assertNotIn('LSF_C_TIMED_CLOCK=1', plain)
+        self.assertEqual(threading.linked_defines((), timed_clock=False), plain)
+        actual = threading.linked_defines((), timed_clock=True)
+        self.assertEqual(actual, (plain[0], 'LSF_C_TIMED_CLOCK=1', *plain[1:],
+            'nanosleep=__lsf_c_nanosleep', 'thrd_sleep=__lsf_c_thrd_sleep'))
+        for selected in (False, True):
+            with self.subTest(selected=selected), self.assertRaisesRegex(ValueError, 'compiler-owned'):
+                threading.linked_defines(('LSF_C_TIMED_CLOCK=1',), timed_clock=selected)
+        for name in ('nanosleep', 'thrd_sleep', '__lsf_c_nanosleep', '__lsf_c_thrd_sleep'):
+            with self.subTest(name=name), self.assertRaisesRegex(ValueError, 'compiler-owned'):
+                threading.linked_defines((name + '=foreign',), timed_clock=True)
+        for selected in (1, None, 'true'):
+            with self.subTest(selected=selected), self.assertRaisesRegex(ValueError, 'selection'):
+                threading.linked_defines((), timed_clock=selected)
+
+    def test_clock_input_revalidation_is_separate_from_original_tls_material_labels(self):
+        import hashlib
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            path = root / 'clock.h'
+            original = b'original-closed-clock-header\n'
+            path.write_bytes(original)
+            with patch.object(threading, 'CLOCK_LIBC', {'clock.h': hashlib.sha256(original).hexdigest()}):
+                self.assertEqual(threading.clock_libc_inputs(root / 'zig'), {'clock.h': path})
+                self.assertEqual(threading.clock_libc_material_name('clock.h'), 'c-threading-clock-0')
+                path.write_bytes(original + b'changed')
+                with self.assertRaisesRegex(ValueError, 'clock-preimage'):
+                    threading.clock_libc_inputs(root / 'zig')
+                with self.assertRaisesRegex(ValueError, 'clock-material-path'):
+                    threading.clock_libc_material_name('foreign.h')
+        self.assertEqual({threading.libc_material_name(name) for name in threading.LIBC},
+                         {'c-threading-libc-' + str(index) for index in range(len(threading.LIBC))})
+
     def test_installed_recipe_ships_optional_helper_and_exact_runtime_without_default_selection(self):
         from tools import dev_tool_distribution
         from tools.c_guest import threading_compatibility
