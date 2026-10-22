@@ -478,3 +478,34 @@ and installed final-free/node/operator conformance remain required. No kernel
 is linked, booted or installed and no SDK native products are built. Actual
 recipient/RCU execution, complete allocation closure and all production gates
 remain false.
+
+## Original owner resumption after final child returns
+
+[The factory-only receipt](evidence/kernel-device-retirement-object-compiled-2026-10-22.json)
+records [run 39716583421](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39716583421)
+at `334f95cd0627e4f02dd54d3ae07fa33d6417ff93`: one actual `net/factory.o`,
+all 87 required external function definitions, 16 exact source/controller cases
+and six completed commands with descendant cleanup. All 19 ZIP members and
+271 Git materials were authenticated. The derivation binds 134 source identities,
+three recipe identities, 161 selected original inputs and all 189 output files;
+182 outputs remain exact and seven factory fragments have closed projections.
+
+The source copies the validated original device/PCI generations under the same
+pool lock before a final return. Eight existing wakes and the two security-cache
+final-return paths resume only that original cleanup. It preserves the existing
+queue, child/publication fence, callback/error paths and configured limits.
+The earlier 56-object/243-function result remains historical and was not rerun.
+
+Current baseline-to-selected configuration still changes only
+`CONFIG_LSF_STREAM_FACTORY` from `n` to `y` across 4,309 symbols. Against the
+historical recipient run, one hosted compiler probe advanced:
+`CONFIG_RUSTC_VERSION` from `109900` to `109901` in both configurations.
+All other 4,308 symbols are identical; `CONFIG_RUST` is absent from both
+configuration tables and generated headers, so Rust kernel code is unselected.
+
+The 17 supplemental C controls use serialized lock, queue, generation and record
+doubles; the retained historical no-wake and two counterfactual variants remain
+RED. They provide no Linux scheduling or physical retirement certificate.
+The factory consumer stays unavailable. Shared queue/worker/RCU/bootstrap costs,
+actual callback completion, remaining allocation closure, sealed image/layout/BTF,
+link/boot/install and finite node/operator/provider conformance remain required.
