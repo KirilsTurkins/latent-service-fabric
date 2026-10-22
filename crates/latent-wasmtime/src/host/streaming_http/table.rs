@@ -5,10 +5,11 @@ use latent_capabilities::broker::{
     streaming_http::{HttpBody, HttpUpload, StreamingHttpError as Error},
     CapabilitySession, SessionResourceTableReservation,
 };
-use std::sync::{
-    atomic::{AtomicU32, AtomicU64, Ordering},
-    Arc,
-};
+use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
+mod shared;
+use latent_core::HostMemoryReservation;
+use shared::Shared;
+
 const CAPACITY: usize = 64;
 static NEXT_REP: AtomicU32 = AtomicU32::new(1);
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -31,22 +32,24 @@ pub(super) enum Value {
 struct Entry {
     // Bit 0 marks an empty slot; bit 1 remains set once its value is published,
     // including while borrowed. A guard can erase only its unpublished slot.
-    state: Arc<AtomicU64>,
+    state: Shared<AtomicU64>,
     kind: Kind,
     value: Option<Value>,
 }
 #[derive(Default)]
 pub(crate) struct Table {
     entries: Vec<Entry>,
-    memory: Option<Arc<SessionResourceTableReservation>>,
+    memory: Option<Shared<SessionResourceTableReservation>>,
+    // The actual Vec and every retained entry die before this capacity refunds.
+    native: Option<HostMemoryReservation>,
 }
 
 pub(super) struct Reservation {
-    state: Arc<AtomicU64>,
+    state: Shared<AtomicU64>,
     rep: u32,
     // Metadata that survives Store destruction remains charged until this
     // affine guard actually disappears; the fixed table's slack covers it.
-    _memory: Option<Arc<SessionResourceTableReservation>>,
+    _memory: Option<Shared<SessionResourceTableReservation>>,
 }
 
 impl Reservation {
@@ -80,17 +83,43 @@ impl Table {
         }
         let memory =
             session.reserve_resource_table(CAPACITY * std::mem::size_of::<Entry>() + 4096)?;
-        let mut entries = Vec::with_capacity(CAPACITY);
-        if entries.capacity() != CAPACITY {
+        let quota_memory = memory.reserve_native_backing(Shared::<
+            SessionResourceTableReservation,
+        >::allocation_bytes()?)?;
+        let table_bytes = std::alloc::Layout::array::<Entry>(CAPACITY)
+            .map_err(|_| HttpError::BudgetExhausted)?
+            .size()
+            .checked_add(shared::ALLOCATION_BOOKKEEPING)
+            .and_then(|bytes| u64::try_from(bytes).ok())
+            .ok_or(HttpError::BudgetExhausted)?;
+        let native = memory.reserve_native_backing(table_bytes)?;
+        // The sealed broker table owner is installed before creating any state
+        // Arc or table buffer. Failed partial construction never publishes rows.
+        let memory = Shared::new(memory, quota_memory)?;
+        let mut candidate = Self {
+            entries: Vec::with_capacity(CAPACITY),
+            memory: Some(memory),
+            native,
+        };
+        if candidate.entries.capacity() != CAPACITY {
             return Err(HttpError::BudgetExhausted.into());
         }
-        entries.resize_with(CAPACITY, || Entry {
-            state: Arc::new(AtomicU64::new(0)),
-            kind: Kind::Upload,
-            value: None,
-        });
-        self.entries = entries;
-        self.memory = Some(Arc::new(memory));
+        if let Some(native) = &mut candidate.native {
+            native.confirm();
+        }
+        for _ in 0..CAPACITY {
+            let native = candidate
+                .memory
+                .as_ref()
+                .unwrap()
+                .reserve_native_backing(Shared::<AtomicU64>::allocation_bytes()?)?;
+            candidate.entries.push(Entry {
+                state: Shared::new(AtomicU64::new(0), native)?,
+                kind: Kind::Upload,
+                value: None,
+            });
+        }
+        *self = candidate;
         Ok(())
     }
     pub(super) fn reserve(&mut self, kind: Kind) -> Result<u32, Error> {
@@ -110,11 +139,11 @@ impl Table {
     pub(super) fn reserve_guarded(&mut self, kind: Kind) -> Result<Reservation, Error> {
         let rep = self.reserve(kind)?;
         let entry = self.entry(rep, kind)?;
-        let state = Arc::clone(&entry.state);
+        let state = entry.state.clone();
         Ok(Reservation {
             state,
             rep,
-            _memory: self.memory.as_ref().map(Arc::clone),
+            _memory: self.memory.clone(),
         })
     }
     fn entry(&mut self, rep: u32, kind: Kind) -> Result<&mut Entry, Error> {
@@ -199,7 +228,7 @@ impl Table {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::sync::atomic::AtomicUsize;
+    use std::sync::{atomic::AtomicUsize, Arc};
     struct Upload(Arc<AtomicUsize>);
     impl Drop for Upload {
         fn drop(&mut self) {
@@ -220,12 +249,13 @@ mod tests {
         Table {
             entries: (0..CAPACITY)
                 .map(|_| Entry {
-                    state: Arc::new(AtomicU64::new(0)),
+                    state: Shared::new(AtomicU64::new(0), None).unwrap(),
                     kind: Kind::Upload,
                     value: None,
                 })
                 .collect(),
             memory: None,
+            native: None,
         }
     }
     #[test]
@@ -312,7 +342,7 @@ mod tests {
 
     struct DropWitness {
         live: Arc<AtomicUsize>,
-        slot: Arc<AtomicU64>,
+        slot: Shared<AtomicU64>,
         rep: u32,
     }
     impl Drop for DropWitness {
@@ -353,7 +383,7 @@ mod tests {
                 .unwrap();
             let (mut peer, _) = listener.accept().await.unwrap();
             let reservation = table.reserve_guarded(kind).unwrap();
-            let slot = Arc::clone(&reservation.state);
+            let slot = reservation.state.clone();
             let rep = reservation.rep();
             live.fetch_add(1, Ordering::AcqRel);
             let mut pending = Box::pin(pending_transport(Reserved {
@@ -398,5 +428,85 @@ mod tests {
     #[tokio::test]
     async fn cancelled_pending_read_reaps_actual_transport_then_reuses_unreturned_chunk_slot() {
         cancel_real_transport(Kind::Chunk).await;
+    }
+
+    #[tokio::test]
+    async fn native_streaming_http_pending_reservation_outlives_table_without_cross_budget_credit()
+    {
+        use std::{future::Future, task::Context};
+        use tokio::{
+            io::AsyncReadExt,
+            net::{TcpListener, TcpStream},
+        };
+        let budget = crate::host::native_table_tests::budget(1024 * 1024);
+        let table_bytes = (std::alloc::Layout::array::<Entry>(CAPACITY).unwrap().size()
+            + shared::ALLOCATION_BOOKKEEPING) as u64;
+        let native = budget.reserve_host_memory(table_bytes).unwrap();
+        let mut table = Table {
+            entries: Vec::with_capacity(CAPACITY),
+            memory: None,
+            native: Some(native),
+        };
+        table.native.as_mut().unwrap().confirm();
+        let state_bytes = Shared::<AtomicU64>::allocation_bytes().unwrap();
+        for _ in 0..CAPACITY {
+            let native = budget.reserve_host_memory(state_bytes).unwrap();
+            table.entries.push(Entry {
+                state: Shared::new(AtomicU64::new(0), Some(native)).unwrap(),
+                kind: Kind::Upload,
+                value: None,
+            });
+        }
+        // This control pays actual table/state backing directly. The real sealed
+        // session's separate shared broker owner is exercised by integration.
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let client = TcpStream::connect(listener.local_addr().unwrap())
+            .await
+            .unwrap();
+        let (mut peer, _) = listener.accept().await.unwrap();
+        let reservation = table.reserve_guarded(Kind::Upload).unwrap();
+        let slot = reservation.state.clone();
+        let rep = reservation.rep();
+        let live = Arc::new(AtomicUsize::new(1));
+        let mut pending = Box::pin(pending_transport(Reserved {
+            value: PendingSocket {
+                stream: client,
+                _witness: DropWitness {
+                    live: live.clone(),
+                    slot,
+                    rep,
+                },
+            },
+            reservation,
+        }));
+        let mut context = Context::from_waker(std::task::Waker::noop());
+        assert!(pending.as_mut().poll(&mut context).is_pending());
+        assert_eq!(
+            budget.host_memory_bytes(),
+            table_bytes + CAPACITY as u64 * state_bytes
+        );
+        drop(table);
+        assert_eq!(budget.host_memory_bytes(), state_bytes);
+        assert_eq!(budget.outstanding_reservations(), 1);
+        assert_eq!(live.load(Ordering::Acquire), 1);
+        let other_budget = crate::host::native_table_tests::budget(1024 * 1024);
+        let native = other_budget.reserve_host_memory(state_bytes).unwrap();
+        let other = Shared::new(AtomicU64::new(62), Some(native)).unwrap();
+        drop(pending);
+        assert_eq!(budget.host_memory_bytes(), 0);
+        assert_eq!(budget.outstanding_reservations(), 0);
+        assert_eq!(live.load(Ordering::Acquire), 0);
+        assert_eq!(other_budget.host_memory_bytes(), state_bytes);
+        assert_eq!(other.load(Ordering::Acquire), 62);
+        let mut byte = [0];
+        assert_eq!(
+            tokio::time::timeout(std::time::Duration::from_secs(2), peer.read(&mut byte))
+                .await
+                .unwrap()
+                .unwrap(),
+            0
+        );
+        drop(other);
+        assert_eq!(other_budget.host_memory_bytes(), 0);
     }
 }
