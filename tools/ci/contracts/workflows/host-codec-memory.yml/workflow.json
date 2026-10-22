@@ -5,7 +5,7 @@
       "cancel-in-progress": false,
       "group": "host-codec-memory-${{ github.ref }}"
     },
-    "name": "Ordinary host capability directory and runtime memory diagnostics",
+    "name": "Ordinary host shared table and runtime memory diagnostics",
     "on": {
       "push": {
         "branches": [
@@ -17,7 +17,8 @@
           "feat/linear-memory-notifications-20261022",
           "feat/hostcall-future-memory-20261022",
           "feat/owned-context-replies-memory-20261022",
-          "feat/capability-lowering-current-20261022"
+          "feat/capability-lowering-current-20261022",
+          "feat/streaming-table-memory-20261022"
         ]
       },
       "workflow_dispatch": {}
@@ -29,7 +30,7 @@
   "requiredJobs": [
     "native"
   ],
-  "reviewReason": "Reviewed v10 appends five original-ledger retained capability directory controls after all128 prior selectors; original recipes/products/limits/commands and all existing Python guards retained. Producer-local native cohort explicitly retains unchanged authenticated Wasmtime v9 allocation fork.",
+  "reviewReason": "Allow one source-bound original ledger shared-table campaign on its dedicated branch with existing finite limits.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/host-codec-memory.yml"
 }

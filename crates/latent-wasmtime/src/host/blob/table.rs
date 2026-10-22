@@ -30,14 +30,17 @@ struct Entry {
 pub(crate) struct Table {
     entries: Vec<Entry>,
     memory: Option<SessionResourceTableReservation>,
+    // Elements and their actual Vec backing die before the original charge.
+    native: Option<latent_core::HostMemoryReservation>,
 }
 impl Table {
     pub(super) fn initialize(&mut self, session: &CapabilitySession) -> Result<(), Error> {
         if !self.entries.is_empty() {
             return Ok(());
         }
-        let memory =
-            session.reserve_resource_table(CAPACITY * std::mem::size_of::<Entry>() + 4096)?;
+        let bytes = CAPACITY * std::mem::size_of::<Entry>() + 4096;
+        let memory = session.reserve_resource_table(bytes)?;
+        let native = memory.reserve_native_backing(bytes as u64)?;
         let mut entries = Vec::with_capacity(CAPACITY);
         if entries.capacity() != CAPACITY {
             return Err(Error::BudgetExhausted);
@@ -47,8 +50,15 @@ impl Table {
             kind: Kind::Writer,
             value: None,
         });
-        self.entries = entries;
-        self.memory = Some(memory);
+        let mut replacement = Self {
+            entries,
+            memory: Some(memory),
+            native,
+        };
+        if let Some(native) = &mut replacement.native {
+            native.confirm();
+        }
+        *self = replacement;
         Ok(())
     }
     pub(super) fn reserve(&mut self, kind: Kind) -> Result<u32, Error> {
@@ -153,6 +163,7 @@ mod tests {
                 })
                 .collect(),
             memory: None,
+            native: None,
         }
     }
     #[test]
@@ -203,5 +214,66 @@ mod tests {
         assert_eq!(drops.load(Ordering::Acquire), CAPACITY - 1);
         drop(active);
         assert_eq!(drops.load(Ordering::Acquire), CAPACITY);
+    }
+
+    #[test]
+    fn blob_table_native_backing_retains_unused_slots_and_actual_values_until_drop() {
+        use latent_core::ActivationBudget;
+        use std::sync::atomic::AtomicU64;
+        struct Witness {
+            budget: ActivationBudget,
+            observed: Arc<AtomicU64>,
+            drops: Arc<AtomicUsize>,
+        }
+        impl Drop for Witness {
+            fn drop(&mut self) {
+                self.observed
+                    .store(self.budget.host_memory_bytes(), Ordering::SeqCst);
+                self.drops.fetch_add(1, Ordering::SeqCst);
+            }
+        }
+        impl BlobWriter for Witness {
+            fn write(&mut self, _: u64, _: Vec<u8>) -> Result<BlobFuture<'_, u64>, Error> {
+                Err(Error::InvalidState)
+            }
+            fn seal(self: Box<Self>) -> Result<BlobFuture<'static, BlobSeal>, Error> {
+                Err(Error::InvalidState)
+            }
+        }
+        let budget = crate::host::native_table_tests::budget(1024 * 1024);
+        let bytes = (CAPACITY * std::mem::size_of::<Entry>() + 4096) as u64;
+        let native = budget.reserve_host_memory(bytes).unwrap();
+        // Prepay before allocating the actual production table. The separate
+        // sealed-session controls cover initialize's reservation source/fence.
+        let mut table = table();
+        table.native = Some(native);
+        table.native.as_mut().unwrap().confirm();
+        let observed = Arc::new(AtomicU64::new(0));
+        let drops = Arc::new(AtomicUsize::new(0));
+        for round in 0..2 {
+            let rep = table.reserve(Kind::Writer).unwrap();
+            table
+                .put(
+                    u64::from(rep),
+                    Kind::Writer,
+                    Value::Writer(Box::new(Witness {
+                        budget: budget.clone(),
+                        observed: observed.clone(),
+                        drops: drops.clone(),
+                    })),
+                )
+                .unwrap();
+            if round == 0 {
+                table.close(u64::from(rep)).unwrap();
+                assert_eq!(observed.load(Ordering::SeqCst), bytes);
+                assert_eq!(budget.host_memory_bytes(), bytes);
+                assert_eq!(budget.outstanding_reservations(), 1);
+            }
+        }
+        drop(table);
+        assert_eq!(observed.load(Ordering::SeqCst), bytes);
+        assert_eq!(drops.load(Ordering::SeqCst), 2);
+        assert_eq!(budget.host_memory_bytes(), 0);
+        assert_eq!(budget.outstanding_reservations(), 0);
     }
 }
