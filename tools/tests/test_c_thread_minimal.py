@@ -22,7 +22,7 @@ class CThreadMinimal(unittest.TestCase):
   with tempfile.TemporaryDirectory()as temp:
    a=original.prepare(Path(temp)/'original');b=selected.prepare(Path(temp)/'minimal')
    left,right=snapshot(a),snapshot(b)
-   self.assertEqual(set(left),set(right));self.assertEqual(len(left),63)
+   self.assertEqual(set(left),set(right));self.assertEqual(len(left),65)
    self.assertEqual([n for n in left if left[n]!=right[n]],['src/main.c'])
    self.assertEqual(read_json(a/'capsule-project.json'),read_json(b/'capsule-project.json'))
    self.assertIn(b'greet: async func',right['wit/world.wit'])

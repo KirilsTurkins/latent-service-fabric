@@ -4,7 +4,10 @@ import hashlib
 from tools import c_thread_runtime_fixture as original
 from tools.rust_capsule_project import ROOT, read_file
 
-BASE_SHA256='88c7192cc21fc62e19b04ebe48198b3032e921103c70344104b5c3de61f253a2'
+# Closed maintained source variants: untimed synchronization and its explicitly
+# selected clock overlay. The diagnostic inserts only its two original blocks.
+BASE_SHA256='059e6cbe3745de72102dbde6ab2fedf3b8de840359759fb87a6b6b33f36192f9'
+TIMED_BASE_SHA256='952ea08c07bee537511a0746c572367879029e2c2576a65b43af00b764453edc'
 MODES=('application-error','minimal-c11','minimal-pthread','c11','pthread')
 FUNCTIONS=b"""
 /* Diagnostic-only child bodies: no TLS/key/errno/self-join/observe assertions.
@@ -55,7 +58,7 @@ CASES=b"""
 """
 
 def selected_source(raw):
-    if type(raw) is not bytes or hashlib.sha256(raw).hexdigest()!=BASE_SHA256:
+    if type(raw) is not bytes or hashlib.sha256(raw).hexdigest() not in (BASE_SHA256,TIMED_BASE_SHA256):
         raise ValueError('c-minimal-original-main-preimage')
     first=b'static int c11_worker(void *argument) { return (int)(uintptr_t)worker(argument); }\n'
     second=b'    unsigned children = 1;\n'
