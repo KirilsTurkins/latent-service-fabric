@@ -31,6 +31,8 @@ MATERIALS = (
     'tools/c_thread_runtime_node.py', 'tools/host_codec_native_products.py',
     'tools/host_codec_linear_memory_native_products.py',
     'tools/host_codec_linear_memory_native_products_reader.py',
+    'tools/host_codec_owned_reply_native_products.py',
+    'tools/host_codec_owned_reply_native_products_reader.py',
     'tools/c_thread_linear_memory_native_source.py',
     'tools/host_codec_native_products_reader.py',
     'tools/sdk_native_products_reader.py', 'tools/java_replay_materials.py',
@@ -183,7 +185,7 @@ def native_evidence(products, prepared):
 def qualify(prepared, output):
     require(sys.platform == 'linux' and sys.version_info >= (3, 13) and os.geteuid() != 0,
             'c-thread-unprivileged-linux-python313')
-    from tools import host_codec_linear_memory_native_products as products
+    from tools import host_codec_owned_reply_native_products as products
     output = output.absolute()
     require(output != ROOT and output not in ROOT.parents and ROOT not in output.parents,
             'c-thread-output-outside-checkout')

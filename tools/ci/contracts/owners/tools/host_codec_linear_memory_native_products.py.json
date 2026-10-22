@@ -1,8 +1,0 @@
-{
-  "kind": "owner",
-  "path": "tools/host_codec_linear_memory_native_products.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Review one normal C build and all original17 signed lifecycle oracles on the independently verified immutable114 native cohort; admit only the exact unselected stream-test correction, retain original defaults/caps and old receipts, no native rebuild.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "30d65c10fb6d51a4bcbd5ae8298b8afa5ccfa5f1e47c563e8a3097202de565ac"
-}

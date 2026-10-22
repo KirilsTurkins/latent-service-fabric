@@ -23,18 +23,18 @@
       },
       {
         "name": "Fetch exact frozen source and unchanged reader test models",
-        "run": "git fetch --no-tags --depth=1 origin f6251df89851de98cb869784d095ad5cc2e5b385\ngit fetch --no-tags --depth=1 origin f244b81f14abad5d4dc4984cb842aaf1d9076e23\ngit fetch --no-tags --depth=1 origin 7b6365ee39dea9770591a931b96711965f8a1aaf\ngit fetch --no-tags --depth=1 origin 050b9e71ba04a4bdc559f4a7fa48d6bd94c2ff38\ngit fetch --no-tags --depth=1 origin 3e4178271b4b7fe75a69c8f0665dbe275b41d7c3\ngit fetch --no-tags --depth=1 origin 173ccd9c096e4db643aa9627bd4550cef27fb922\ngit fetch --no-tags --depth=1 origin ea118974d93843265a504f5d30571ed7cfe8a7d2\ngit fetch --no-tags --depth=1 origin f5351a9331ed954c49ae83f2f4004e0f96d25d0e\ngit fetch --no-tags --depth=1 origin ff5aadaecd11874f53aa80e56ffdfff0efda312b\n"
+        "run": "git fetch --no-tags --depth=1 origin f6251df89851de98cb869784d095ad5cc2e5b385\ngit fetch --no-tags --depth=1 origin f244b81f14abad5d4dc4984cb842aaf1d9076e23\ngit fetch --no-tags --depth=1 origin 7b6365ee39dea9770591a931b96711965f8a1aaf\ngit fetch --no-tags --depth=1 origin 050b9e71ba04a4bdc559f4a7fa48d6bd94c2ff38\ngit fetch --no-tags --depth=1 origin 3e4178271b4b7fe75a69c8f0665dbe275b41d7c3\ngit fetch --no-tags --depth=1 origin 173ccd9c096e4db643aa9627bd4550cef27fb922\ngit fetch --no-tags --depth=1 origin ea118974d93843265a504f5d30571ed7cfe8a7d2\ngit fetch --no-tags --depth=1 origin f5351a9331ed954c49ae83f2f4004e0f96d25d0e\ngit fetch --no-tags --depth=1 origin ff5aadaecd11874f53aa80e56ffdfff0efda312b\ngit fetch --no-tags --depth=1 origin 4ed0db7f07245732d07f867e95ec008a804485e5\ngit fetch --no-tags --depth=1 origin cb8ceefc5f6343301871dbde1d8a853d3581cc30\n"
       },
       {
         "name": "Verify source and adverse fixed-product controls",
-        "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 -B -m unittest tools.tests.test_c_thread_runtime tools.tests.test_c_thread_native_products tools.tests.test_sdk_native_products_reader tools.tests.test_c_threading_profile tools.tests.test_activation_stack_native_products tools.tests.test_activation_stack_native_source tools.tests.test_c_thread_package_native_products tools.tests.test_c_threading_compatibility tools.tests.test_c_thread_admission_native_products tools.tests.test_host_codec_native_products_reader tools.tests.test_host_codec_linear_memory_native_products_reader tools.tests.test_host_codec_linear_memory_native_products tools.tests.test_c_thread_ready_runtime tools.tests.test_c_thread_linear_memory_native_source -v\n"
+        "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 -B -m unittest tools.tests.test_c_thread_runtime tools.tests.test_c_thread_native_products tools.tests.test_sdk_native_products_reader tools.tests.test_c_threading_profile tools.tests.test_activation_stack_native_products tools.tests.test_activation_stack_native_source tools.tests.test_c_thread_package_native_products tools.tests.test_c_threading_compatibility tools.tests.test_c_thread_admission_native_products tools.tests.test_host_codec_native_products_reader tools.tests.test_host_codec_linear_memory_native_products_reader tools.tests.test_host_codec_linear_memory_native_products tools.tests.test_c_thread_ready_runtime tools.tests.test_c_thread_linear_memory_native_source tools.tests.test_host_codec_owned_reply_native_products_reader tools.tests.test_host_codec_owned_reply_native_products tools.tests.test_c_thread_owned_reply_runtime -v\n"
       },
       {
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
-        "name": "Authenticate five fixed 114-control ready-aware C products",
-        "run": "python3 -B tools/host_codec_linear_memory_native_products.py --output \"$RUNNER_TEMP/c-thread-native\""
+        "name": "Authenticate five fixed 128-control ready-aware C products",
+        "run": "python3 -B tools/host_codec_owned_reply_native_products.py --output \"$RUNNER_TEMP/c-thread-native\""
       },
       {
         "uses": "mlugg/setup-zig",
@@ -71,7 +71,7 @@
   },
   "jobId": "ordinary-c-threads",
   "kind": "job",
-  "reviewReason": "Retain existing bounded public CLI control results, timings and original read-only failure diagnostics before the unchanged C audit predicate; no command, quota or oracle changes",
+  "reviewReason": "Root full-reviewed exact cb8 native128 origin/closed CLI group; preserve all original17 outcomes/caps and every old Python case/base/decorator/skip; new reader source and complete148/native admission controls.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/c-thread-runtime.yml"
 }

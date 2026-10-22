@@ -13,6 +13,11 @@
         ],
         "paths": [
           ".github/workflows/c-thread-runtime.yml",
+          "tools/host_codec_owned_reply_native_products.py",
+          "tools/host_codec_owned_reply_native_products_reader.py",
+          "tools/tests/test_host_codec_owned_reply_native_products.py",
+          "tools/tests/test_host_codec_owned_reply_native_products_reader.py",
+          "tools/tests/test_c_thread_owned_reply_runtime.py",
           "tools/host_codec_linear_memory_native_products.py",
           "tools/host_codec_linear_memory_native_products_reader.py",
           "tools/tests/test_host_codec_linear_memory_native_products.py",
@@ -62,7 +67,7 @@
   "requiredJobs": [
     "ordinary-c-threads"
   ],
-  "reviewReason": "Review one normal C build and all original17 signed lifecycle oracles on the independently verified immutable114 native cohort; admit only the exact unselected stream-test correction, retain original defaults/caps and old receipts, no native rebuild.",
+  "reviewReason": "Root full-reviewed exact cb8 native128 origin/closed CLI group; preserve all original17 outcomes/caps and every old Python case/base/decorator/skip; new reader source and complete148/native admission controls.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/c-thread-runtime.yml"
 }
