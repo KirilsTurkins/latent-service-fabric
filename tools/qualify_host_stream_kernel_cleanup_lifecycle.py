@@ -119,7 +119,11 @@ def run(archive, output):
         # This generated exact selected config is also independently pinned in
         # the authenticated provider source fixture, never a copied local file.
         stage = 'complete-source-composition'
-        derived = programme.compose(base,original_inputs,final)
+        fixture_config,receipt['sourceFixtureConfiguration'] = programme.source_fixture_configuration(final)
+        # Retain both real selected bytes and the explicit data-only fixture
+        # projection. The actual Kbuild configuration is NEVER rewritten.
+        (output/'source-fixture.config').write_bytes(fixture_config)
+        derived = programme.compose(base,original_inputs,fixture_config)
         receipt['selectedOriginalInputs'] = {name:objects.identity(tree/name)
             for name in programme.source_names() if name != 'selected.config'}
         receipt['derived'] = {}
@@ -155,6 +159,8 @@ def run(archive, output):
         stage = '24-affected-objects'
         commands.run('24-affected-real-kbuild-objects',*common,'-j2',*selected)
         baseline.generated_configuration((build/'include/generated/autoconf.h').read_bytes())
+        require(b'#define CONFIG_RUST ' not in (build/'include/generated/autoconf.h').read_bytes(),
+            'cleanup-lifecycle-generated-rust-must-remain-unselected')
         require((build/'.config').read_bytes() == final,'cleanup-lifecycle-build-config-drift')
         receipt['objects'], receipt['geometry'] = {}, {}
         geometry_root = output/'geometry'; geometry_root.mkdir()

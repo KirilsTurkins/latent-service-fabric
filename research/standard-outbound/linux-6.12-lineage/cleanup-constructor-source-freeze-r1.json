@@ -5,8 +5,8 @@
   "previousMergedSource": "94f1c0c928033de552d9a1981282e3293497b85b",
   "source": {
     ".github/workflows/stream-kernel-cleanup-lifecycle.yml": {
-      "bytes": 5902,
-      "sha256": "ebc851652ab6efd943b9e3a53fe51cae173f43274ce4a10f18e755aceb4b75e6"
+      "bytes": 5987,
+      "sha256": "ebb14fcc75158ef81172464a92daddaa1d4715f3821c2a35d00d1e394018d6ca"
     },
     "research/standard-outbound/linux-6.12-lineage/acct-cleanup-observer.c": {
       "bytes": 1664,
@@ -53,8 +53,8 @@
       "sha256": "4aae93a68e7df5cb7934701807e1560c2471138e250378a71a09558dc7140dee"
     },
     "research/standard-outbound/linux-6.12-lineage/cleanup-constructor-profile-r1.md": {
-      "bytes": 14609,
-      "sha256": "f43274d4bf355d8e7249f9a18a4455de786b7da8cebf9560ca79ddf3d9505174"
+      "bytes": 14997,
+      "sha256": "032e45048d62ce646121fcc5bce88c34c6aa92195391eda3243cab6724bbd96c"
     },
     "research/standard-outbound/linux-6.12-lineage/cleanup-descendants-private.h": {
       "bytes": 1804,
@@ -285,8 +285,8 @@
       "sha256": "f0092fe3a22f848b334a15a1a61150bfc01f117e79c62ccd4d4d7fac6e06297b"
     },
     "tools/ci/contracts/owners/tools/qualify_host_stream_kernel_cleanup_lifecycle.py.json": {
-      "bytes": 534,
-      "sha256": "ccdc3de0a61b086dcb35ade756191694b25d287b2c8e7d7e21c37994851a56dc"
+      "bytes": 581,
+      "sha256": "db42a9edecfb4715ac3bb534bfd04c9239a13c56250214dabbdb6053e866a74c"
     },
     "tools/ci/contracts/python/test_host_stream_kernel_cleanup_association.py.json": {
       "bytes": 2055,
@@ -349,8 +349,8 @@
       "sha256": "84ac389ee189905dff38be4923bb3b7714ae96b233a0b3cb48d416b2717f543c"
     },
     "tools/ci/contracts/python/test_host_stream_kernel_cleanup_programme.py.json": {
-      "bytes": 3225,
-      "sha256": "b6985a44235e0d6e2ae6b90539a67696952af175a3930e04969b4b32d06b6381"
+      "bytes": 3861,
+      "sha256": "530ca6da13ebd94723c07419030b8a50cdc9f4905cb41912f7c757b116388ed6"
     },
     "tools/ci/contracts/python/test_host_stream_kernel_cleanup_provider_birth.py.json": {
       "bytes": 3823,
@@ -389,8 +389,8 @@
       "sha256": "021a66aa2a35445016039dcb7c5e94c06faf72ba8976674119ef44f2710265b0"
     },
     "tools/ci/contracts/workflows/stream-kernel-cleanup-lifecycle.yml/jobs/cleanup-lifecycle.json": {
-      "bytes": 5463,
-      "sha256": "375a2203a59ede1ae29a17df492ff16e2ee011cdf520c325b75e52245a28b6c5"
+      "bytes": 5584,
+      "sha256": "b88d546fdd843e833bac571e97a78bda78169e8780ba3e8c91362e8fcfdf8a43"
     },
     "tools/ci/contracts/workflows/stream-kernel-cleanup-lifecycle.yml/workflow.json": {
       "bytes": 1316,
@@ -461,8 +461,8 @@
       "sha256": "bb5aa1066274773bd872e6c6e39f49bf5d8f963ec5c4bd2c446ea4cbb0d3ac57"
     },
     "tools/host_stream_kernel_cleanup_programme.py": {
-      "bytes": 11282,
-      "sha256": "458cfcf394a012b2aff1ac6e1aaeacef69647478ab9c0800f6bf3c54b1bd27a6"
+      "bytes": 12749,
+      "sha256": "bc4d8f5b0f7c7da641804df467b77e88deb4def980073e9d1df751a0e2a6e60f"
     },
     "tools/host_stream_kernel_cleanup_provider_birth.py": {
       "bytes": 7540,
@@ -501,8 +501,8 @@
       "sha256": "9f1e41e484947839784ed39cc7d2b5c44524a3e84d14c2f5086f7824c025f456"
     },
     "tools/qualify_host_stream_kernel_cleanup_lifecycle.py": {
-      "bytes": 13296,
-      "sha256": "5a9ad6ba1c0f6c347adbf9a47cee8105df33689c5936c267156b997bbbb7d1b2"
+      "bytes": 13805,
+      "sha256": "3783cef5346dd33b4bfe1e3d8adfcae95cf02577794207a345f4d53da85b5d8c"
     },
     "tools/tests/fixtures/host_stream_kernel_cleanup_association.json": {
       "bytes": 2303,
@@ -661,8 +661,8 @@
       "sha256": "2fc97e9e57050cc26cde9db64ffa3638f618f0d10b8273489d46f5efdc7dc3f9"
     },
     "tools/tests/test_host_stream_kernel_cleanup_programme.py": {
-      "bytes": 4324,
-      "sha256": "e043cbd6b2c24ed2a65d95916ea2636cee37c8ddfc0519f4ecc44e257a7fcf55"
+      "bytes": 5710,
+      "sha256": "4f5b8ecc0287271f1415d783551cef1fe520df1760e66e87e0b6e2b47cbb727c"
     },
     "tools/tests/test_host_stream_kernel_cleanup_provider_birth.py": {
       "bytes": 3476,
@@ -2095,7 +2095,7 @@
   },
   "sourceControls": {
     "newQueueNonfinalObserver": 13,
-    "newProgramme": 5
+    "newProgramme": 6
   },
   "sourceControlsScope": "Python source and bounded interleaving controls; no native or Linux execution",
   "finiteProgramme": "tools/qualify_host_stream_kernel_cleanup_lifecycle.py",
@@ -2118,5 +2118,23 @@
     "Existing OS/provider references are not Root allocations or refundable storage.",
     "Historical observations are not current runtime qualification.",
     "Exact CRLF sources use individual -text attributes; no frozen original was normalized."
-  ]
+  ],
+  "priorProgrammeFailure": {
+    "run": 39872161435,
+    "source": "c22c40700ed6bd0415dae63f9519487b9e3ae513",
+    "stage": "complete-source-composition",
+    "artifact": 12466304376,
+    "artifactBytes": 102392,
+    "artifactSha256": "bc481c868928dce74e5c3fb37471b300eb3550249a9bc3c6deb958f589e9f544",
+    "actualConfiguration": {
+      "bytes": 143192,
+      "sha256": "1b9152e00c4ef645dda8318f804aaae17acbabf4bd4d1b065c7205faabaef2b3"
+    },
+    "sourceFixtureConfiguration": {
+      "bytes": 143192,
+      "sha256": "b2bcccd5507f3f3a673690b660a2321870b57a3c77e72ce8532975f3c4752176"
+    },
+    "actualAtomicExecution": false,
+    "objectsCompiled": false
+  }
 }

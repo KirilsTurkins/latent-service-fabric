@@ -219,3 +219,8 @@ atomic shims and deterministic interference. That control is not Linux/device
 execution. The original four-object recipe remains unchanged. Runtime extended
 Task and initialized LSM composite sizes remain explicitly unknown; constant
 subgraph fitting cannot turn whole infrastructure or consumer qualification on.
+The source fixtures retain actual0694's immutable Rust compiler probe 109901.
+An actual hosted probe 109900 can use the explicitly recorded source-only
+projection of that one line while Rust kernel code remains unselected and all
+other configuration bytes match. Both configurations are retained; Kbuild uses
+the unchanged actual configuration. Every other probe or option drift refuses.

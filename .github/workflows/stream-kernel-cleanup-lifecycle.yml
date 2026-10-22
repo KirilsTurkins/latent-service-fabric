@@ -64,6 +64,7 @@ jobs:
             ${{ runner.temp }}/stream-kernel-cleanup-lifecycle/commands.json
             ${{ runner.temp }}/stream-kernel-cleanup-lifecycle/baseline.config
             ${{ runner.temp }}/stream-kernel-cleanup-lifecycle/selected.config
+            ${{ runner.temp }}/stream-kernel-cleanup-lifecycle/source-fixture.config
             ${{ runner.temp }}/stream-kernel-cleanup-lifecycle/atomic-control.c
             ${{ runner.temp }}/stream-kernel-cleanup-lifecycle/atomic-control
             ${{ runner.temp }}/stream-kernel-cleanup-lifecycle/geometry/*.bin

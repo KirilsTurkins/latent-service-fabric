@@ -27,6 +27,28 @@ class CleanupProgrammeSource(unittest.TestCase):
         self.assertIn('NR_CPUS',wq['contextMaximumBytes'])
         self.assertNotIn('blob_sizes.lbs_task',dict(source.GEOMETRY['kernel/fork.o'][1]).values())
 
+    def test_only_known_unselected_rust_probe_projects_without_build_config_mutation(self):
+        import hashlib
+        from unittest.mock import patch
+        snapshot=b'CONFIG_X86_64=y\nCONFIG_RUSTC_VERSION=109901\n'
+        actual=snapshot.replace(b'109901',b'109900')
+        value=dict(source={'selected.config':dict(bytes=len(snapshot),
+            sha256=hashlib.sha256(snapshot).hexdigest(),artifactSource='immutable-upstream-snapshot',
+            runId=123,artifactId=456)})
+        with patch.object(source.io,'preimages',return_value=value):
+            projected,proof=source.source_fixture_configuration(actual)
+            self.assertEqual(projected,snapshot)
+            self.assertEqual(actual,b'CONFIG_X86_64=y\nCONFIG_RUSTC_VERSION=109900\n')
+            self.assertEqual(proof['difference']['symbol'],'CONFIG_RUSTC_VERSION')
+            self.assertFalse(proof['actualConfigurationMutated'])
+            self.assertTrue(proof['allOtherConfigurationBytesExact'])
+            self.assertEqual(source.source_fixture_configuration(snapshot)[1]['difference'],{})
+            for bad in (actual.replace(b'109900',b'109899'),
+                        actual.replace(b'CONFIG_X86_64=y',b'CONFIG_X86_64=n'),
+                        actual+b'CONFIG_RUST=y\n'):
+                with self.assertRaises(ValueError):
+                    source.source_fixture_configuration(bad)
+
     def test_exact_atomic_leaf_and_failure_programmes_are_real_generated_c(self):
         text = atomic.program().decode()
         self.assertEqual(text.count(atomic.source.atomic_nonfinal()),1)

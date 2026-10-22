@@ -39,6 +39,33 @@ def source_names():
     return {name for stage in STAGES for name in stage.preimages()['source']}
 
 
+def source_fixture_configuration(raw):
+    """Keep real config intact; bind the one known unselected compiler probe.
+
+    Source fixtures use actual0694's immutable config. The hosted baseline and
+    selected build always retain the actual runner's full configuration bytes.
+    """
+    bound = io.preimages()['source']['selected.config']
+    expected = {key:bound[key] for key in ('bytes','sha256')}
+    def identity(value):
+        return dict(bytes=len(value),sha256=hashlib.sha256(value).hexdigest())
+    require(type(raw) is bytes and baseline.objects.configuration(raw).get('CONFIG_RUST','n') == 'n',
+        'cleanup-programme-rust-kernel-must-remain-unselected')
+    fixture = raw
+    difference = {}
+    if identity(raw) != expected:
+        actual = b'CONFIG_RUSTC_VERSION=109900\n'
+        snapshot = b'CONFIG_RUSTC_VERSION=109901\n'
+        require(raw.count(actual) == 1,'cleanup-programme-unknown-compiler-probe')
+        fixture = raw.replace(actual,snapshot,1)
+        require(identity(fixture) == expected,'cleanup-programme-other-config-byte-drift')
+        difference = dict(symbol='CONFIG_RUSTC_VERSION',actual=109900,sourceFixture=109901,
+            reason='Rust kernel code is unselected; all other config bytes remain exact.')
+    return fixture,dict(actual=identity(raw),sourceFixture=identity(fixture),
+        difference=difference,actualConfigurationMutated=False,rustKernelSelected=False,
+        allOtherConfigurationBytesExact=True)
+
+
 def compose(base, originals, config):
     """Every stage consumes its exact whole originals and pinned parent bytes."""
     outputs = dict(base)

@@ -3,6 +3,7 @@
     "CleanupProgrammeSource.test_capacity_bootstrap_and_geometry_fail_closed",
     "CleanupProgrammeSource.test_exact_atomic_leaf_and_failure_programmes_are_real_generated_c",
     "CleanupProgrammeSource.test_geometry_stays_in_real_defining_translation_units",
+    "CleanupProgrammeSource.test_only_known_unselected_rust_probe_projects_without_build_config_mutation",
     "CleanupProgrammeSource.test_original_recipe_unchanged_and_fixed_new_programme",
     "CleanupProgrammeSource.test_same_record_alignment_and_runtime_unknowns_do_not_become_fit_claims"
   ],
@@ -43,6 +44,18 @@
       ],
       "skipSites": []
     },
+    "CleanupProgrammeSource.test_only_known_unselected_rust_probe_projects_without_build_config_mutation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:56787395b94f8a1aef0d49e04fb393983339287227961659de5c78060993dc72",
+        "class:setup-sha256:f950c9664951bf01c4db024b9ebe242ef170c00d2b0598f393a9687ad0d8219f"
+      ],
+      "skipSites": []
+    },
     "CleanupProgrammeSource.test_original_recipe_unchanged_and_fixed_new_programme": {
       "bases": [
         "unittest.TestCase"
@@ -70,6 +83,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_host_stream_kernel_cleanup_programme.py",
-  "reviewReason": "Additive reviewed finite cleanup constructor source controls and one 24-object hosted geometry/atomic programme; original four-object recipe and all earlier cases retained; no kernel link/boot, consumer selection or runtime/native qualification.",
+  "reviewReason": "Retain exact actual hosted config and immutable source snapshot; explicitly project only known unselected Rust compiler probe109900 to109901, all other bytes exact; add one positive/negative source control and retain both configurations. No configuration option or prior command/case removed.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
