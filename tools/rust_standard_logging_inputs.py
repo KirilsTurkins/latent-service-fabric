@@ -142,6 +142,9 @@ class Prepared:
             # bound. Keep the real stack after static data; do not invent or
             # relax a zero-address stack/context sentinel after linking.
             flags.append('-Clink-arg=--no-stack-first')
+            # Preserve one MiB for Root and reserve a disjoint 64KiB System
+            # stack inside the original linker-owned memory geometry.
+            flags.extend(['-Clink-arg=-z', '-Clink-arg=stack-size=1114112'])
             # These are implementation support exports, not new public WIT.
             # The finite component route must authenticate all actual uses.
             for name in ('__stack_pointer', '__stack_low', '__indirect_function_table',
