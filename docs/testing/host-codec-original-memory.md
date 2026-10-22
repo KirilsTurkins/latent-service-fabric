@@ -117,9 +117,33 @@ aggregate native peak. The later generic integration fixture correction at
 the frozen v4 run did not execute that later fixture. V4 remains unsigned and
 native-only; it did not compile or execute a C or TypeScript guest.
 
+## Resource-substitution metadata ownership
+
+[The separate v5 evidence](evidence/host-codec-resource-types-native-2026-10-22.json)
+binds [run 39714929391](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39714929391)
+at `94f2976f2fdba0b5f1a730d9fc668e9e61571443`. **All 97 native controls passed**,
+including the previous 92 selectors and five resource-substitution cases.
+Independent verification checked all 99 archive members, 45 commands, 90 log
+streams, five products, 3,619 source files and 148 materials.
+
+Imported and defined resource maps preadmit their finite capacity. Escaping
+type and InstancePre metadata retain the original owners after Store and factory
+destruction. Private shared handles free the actual map and Arc storage before
+refunding their owners, including concurrent final drops. Actual engine controls
+cover both admission refusals with prior-instance preservation and retry,
+independent Store budgets, concurrent metadata release and unchanged tiny-call
+memory and fuel limits.
+
+The generic tight-memory node regression is outside those selected 97 controls.
+It still failed before guest entry after the request fixture correction. Source
+investigation found that initial linear memory could already exist while its
+ledger observation remained pending through later native initialization. The
+subsequent allocator notification repair is separate work; v5 does not qualify
+it. This remains unsigned native evidence, with prior receipts unchanged.
+
 ## Scope retained outside this slice
 
-Resource-substitution metadata, direct Core HostFunc construction, shared
+Initial linear-memory success/failure notifications, direct Core HostFunc construction, shared
 preparation closures, concurrent tasks, hostcall backing and
 request-context transitive allocations still need their remaining ownership
 work. Serialized controller/transport frames and legacy Phase0 framing retain
