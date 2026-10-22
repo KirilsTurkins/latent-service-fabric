@@ -142,8 +142,9 @@ def build_evidence(artifact, source):
             'package': package_identity(artifact, marker)}
 
 
-def assert_current(root):
-    from tools import host_codec_native_products as products
+def assert_current(root, products=None):
+    if products is None:
+        from tools import host_codec_native_products as products
     compiled = git_source_identity(products.SOURCE)
     current = source_identity(root)
     require(current == compiled, 'c-thread-current-native-source-must-be-byte-exact')
@@ -154,7 +155,7 @@ def assert_current(root):
 
 def native_evidence(products, prepared):
     before = products.verify_prepared(prepared)
-    proof = assert_current(ROOT)
+    proof = assert_current(ROOT, products)
     require(products.SOURCE == proof['compiledSourceRevision'],
             'c-thread-exact-native-producer')
     snapshot = read_json(prepared / 'source-inputs.json')

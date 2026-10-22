@@ -13,6 +13,44 @@ from tools.rust_capsule_project import snapshot
 
 
 class CThreadRuntime(unittest.TestCase):
+    def test_explicit_fixed_product_source_is_checked_without_falling_back_to_v1(self):
+        from unittest.mock import Mock, patch
+        from tools.phase2_operator_process import WorkflowError
+        from tools import qualify_c_thread_runtime as qualification
+        compiled = {'sha256': 'sha256:' + '1' * 64, 'files': 3, 'bytes': 32,
+            'scope': 'explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs',
+            'hermetic': False, 'implicitCompilerInputs': 'not-attested'}
+        identity = {'sha256': 'sha256:' + '2' * 64, 'bytes': 1}
+        products = {'latent': identity, 'latentd': identity, 'examples/package': identity,
+            'examples/capsule_contracts': identity, 'examples/capsule_authoring': identity}
+        selected = SimpleNamespace(SOURCE='a' * 40,
+            verify_prepared=Mock(return_value={'compiledSource': 'a' * 40, 'products': products}),
+            native_products=Mock(return_value={'controlled': 'source-routing-model'}))
+        snapshot = {'native': compiled, 'materials': {'controlled/' + str(i): identity for i in range(148)}}
+        def expected_source(source):
+            self.assertEqual(source, selected.SOURCE)
+            return compiled
+        with patch.object(qualification, 'git_source_identity', side_effect=expected_source), \
+                patch.object(qualification, 'source_identity', return_value=compiled), \
+                patch.object(qualification, 'read_json', return_value=snapshot), \
+                patch.object(qualification, 'file_identity', return_value=identity):
+            before, proof, tools = qualification.native_evidence(selected, Path('controlled'))
+            self.assertEqual(proof['compiledSourceRevision'], selected.SOURCE)
+            self.assertEqual(proof['compiledNativeSource'], proof['consumerNativeSource'])
+            self.assertEqual(proof['auxiliaryMaterialsByteExact'], 148)
+            self.assertEqual(before['compiledSource'], selected.SOURCE)
+            self.assertEqual(tools, {'controlled': 'source-routing-model'})
+            selected.native_products.reset_mock()
+            selected.verify_prepared.return_value['compiledSource'] = 'b' * 40
+            with self.assertRaisesRegex(WorkflowError, 'c-thread-all-five-products-from-exact-native-producer'):
+                qualification.native_evidence(selected, Path('controlled'))
+            selected.native_products.assert_not_called()
+            selected.verify_prepared.return_value['compiledSource'] = selected.SOURCE
+            with patch.object(qualification, 'source_identity', return_value={**compiled, 'bytes': 33}):
+                with self.assertRaisesRegex(WorkflowError, 'c-thread-current-native-source-must-be-byte-exact'):
+                    qualification.native_evidence(selected, Path('controlled'))
+            selected.native_products.assert_not_called()
+
     def test_current_native_source_equality_is_required_before_any_product_use(self):
         from unittest.mock import Mock, patch
         from tools import qualify_c_thread_runtime as qualification
