@@ -1,17 +1,16 @@
-use super::{busy, capacity, session::SessionCore, CapabilitySession, Charge, Kind, PlatformError};
-use std::{
-    sync::{atomic::Ordering, Arc},
-    time::Instant,
+use super::{
+    busy, capacity, session::SessionCoreOwner, CapabilitySession, Charge, Kind, PlatformError,
 };
+use std::{sync::atomic::Ordering, time::Instant};
 
 // An activation owner while waiting for shared I/O capacity. It confers no
 // provider authority: dispatch still performs the final policy/publication fence.
 pub(super) struct WaitingCall {
-    pub core: Arc<SessionCore>,
+    pub core: SessionCoreOwner,
     _metadata: Charge,
     _lifetime: WaitingLifetime,
 }
-struct WaitingLifetime(Arc<super::session::Stats>);
+struct WaitingLifetime(super::session::StatsOwner);
 impl Drop for WaitingLifetime {
     fn drop(&mut self) {
         self.0.waiting.fetch_sub(1, Ordering::AcqRel);
@@ -33,9 +32,9 @@ impl WaitingCall {
         let metadata = core.owner.counters.acquire(Kind::Metadata, 512)?;
         core.stats.waiting.fetch_add(1, Ordering::AcqRel);
         Ok(Self {
-            core: Arc::clone(core),
+            core: core.clone(),
             _metadata: metadata,
-            _lifetime: WaitingLifetime(Arc::clone(&core.stats)),
+            _lifetime: WaitingLifetime(core.stats.clone()),
         })
     }
     pub fn deadline(&self) -> Result<Instant, PlatformError> {

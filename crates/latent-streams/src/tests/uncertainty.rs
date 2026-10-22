@@ -68,6 +68,30 @@ async fn mutation_peer(
     fresh.shutdown().await.unwrap();
 }
 
+async fn complete_fresh_exchange(
+    stream: Box<dyn latent_capabilities::broker::network::OutboundStream>,
+) {
+    assert_eq!(
+        stream
+            .write(b"FRESH".to_vec(), None)
+            .unwrap()
+            .await
+            .unwrap(),
+        5
+    );
+    stream
+        .shutdown(latent_capabilities::broker::network::StreamShutdown::Send)
+        .unwrap()
+        .await
+        .unwrap();
+    let mut reply = Vec::new();
+    while let Some(mut chunk) = stream.read(2, None).unwrap().await.unwrap() {
+        reply.extend_from_slice(&chunk.copy_bytes().unwrap());
+    }
+    assert_eq!(&reply, b"OK");
+    stream.close().await.unwrap();
+}
+
 #[tokio::test]
 async fn lost_mutation_reply_preserves_typed_uncertainty_and_never_replays() {
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
@@ -86,6 +110,7 @@ async fn lost_mutation_reply_preserves_typed_uncertainty_and_never_replays() {
         retired,
     ));
     let (original, control) = session(&f, "uncertain-mutation-root");
+    let control_session_bytes = control.native_session_bytes();
     let stream = f
         .provider
         .start(&original, request(&f))
@@ -127,7 +152,7 @@ async fn lost_mutation_reply_preserves_typed_uncertainty_and_never_replays() {
     let terminal = control.budget.finalize_at(None, Instant::now());
     assert_eq!(terminal.consumption().outbound_requests, 1);
     drop(stream);
-    assert_eq!(control.budget.host_memory_bytes(), 0);
+    assert_eq!(control.budget.host_memory_bytes(), control_session_bytes);
     assert_eq!(
         control.budget.snapshot_at(Instant::now()),
         *terminal.consumption()
@@ -135,31 +160,14 @@ async fn lost_mutation_reply_preserves_typed_uncertainty_and_never_replays() {
     drop(original);
 
     let (fresh, budget) = session(&f, "fresh-after-uncertainty");
+    let budget_session_bytes = budget.native_session_bytes();
     let stream = f
         .provider
         .start(&fresh, request(&f))
         .unwrap()
         .await
         .unwrap();
-    assert_eq!(
-        stream
-            .write(b"FRESH".to_vec(), None)
-            .unwrap()
-            .await
-            .unwrap(),
-        5
-    );
-    stream
-        .shutdown(latent_capabilities::broker::network::StreamShutdown::Send)
-        .unwrap()
-        .await
-        .unwrap();
-    let mut reply = Vec::new();
-    while let Some(mut chunk) = stream.read(2, None).unwrap().await.unwrap() {
-        reply.extend_from_slice(&chunk.copy_bytes().unwrap());
-    }
-    assert_eq!(&reply, b"OK");
-    stream.close().await.unwrap();
+    complete_fresh_exchange(stream).await;
     peer.await.unwrap();
     assert_eq!(attempts.load(Ordering::Acquire), 2);
     assert_eq!(mutations.load(Ordering::Acquire), 1);
@@ -167,7 +175,10 @@ async fn lost_mutation_reply_preserves_typed_uncertainty_and_never_replays() {
         budget.budget.snapshot_at(Instant::now()).outbound_requests,
         1
     );
-    assert_eq!(budget.budget.host_memory_bytes(), 0);
+    assert_eq!(budget.budget.host_memory_bytes(), budget_session_bytes);
     drop(fresh);
     f.clean().await;
+    drop(f);
+    budget.assert_native_settled();
+    control.assert_native_settled();
 }

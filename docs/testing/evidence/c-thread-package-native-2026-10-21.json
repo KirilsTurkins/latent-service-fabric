@@ -1,0 +1,97 @@
+{
+  "source": "f6251df89851de98cb869784d095ad5cc2e5b385",
+  "run": 39621720110,
+  "job": 119296651794,
+  "artifact": {
+    "id": 12355629104,
+    "size_in_bytes": 70117766,
+    "digest": "sha256:eff899b51ceeea5af53c34ccb546b18a80dba735763730d517f2b65dc2b26254"
+  },
+  "members": 77,
+  "expandedBytes": 323710639,
+  "nativeSource": {
+    "sha256": "sha256:598ed59a0797ac24c006fe47162d74672b7a603669192e7019a83eced0a98d14",
+    "files": 3325,
+    "bytes": 26393594,
+    "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+    "hermetic": false,
+    "implicitCompilerInputs": "not-attested"
+  },
+  "auxiliaryGitRows": 134,
+  "receipts": {
+    "native-products.json": {
+      "sha256": "sha256:f2369a8dcd9bc477dc19afec0a3dbf72ff9fd6251c2e2cb5a916d97590539edd",
+      "bytes": 27125
+    },
+    "source-inputs.json": {
+      "sha256": "sha256:2d4b53ee1d52592fd57dbb002416ea2839b2b3b85f402d92d2cd5ac89539af34",
+      "bytes": 22275
+    }
+  },
+  "products": {
+    "latent": {
+      "sha256": "sha256:c5a32c8021140770a56b714ba897846601d119991e45ce310d7638004dedaa25",
+      "bytes": 72344472
+    },
+    "latentd": {
+      "sha256": "sha256:4f895d4fcb5b0e303a25371bc26841bee6e05928208da22ef3b34c9abe5af775",
+      "bytes": 188939160
+    },
+    "examples/package": {
+      "sha256": "sha256:07feedce67fd514014eb660dc2c60f9daffdcb1bb28fa5a9064465f6e5046db4",
+      "bytes": 21091976
+    },
+    "examples/capsule_contracts": {
+      "sha256": "sha256:32870ecc73aaed002087a9327f25bb22922a622748fb705fd63021b21947a8da",
+      "bytes": 13844296
+    },
+    "examples/capsule_authoring": {
+      "sha256": "sha256:28433de3893f89060bc8c53b5231ed19619caa9a95486f278464f63947bbb2ea",
+      "bytes": 27354784
+    }
+  },
+  "rustCommandCounts": {
+    "closed-http-refusal-controls": 3,
+    "neutral-resource-signing-controls": 3,
+    "positive-timer-observer-controls": 8,
+    "phase-nominal-type-owner-controls": 2,
+    "descriptive-native-thread-proof-controls": 2,
+    "phase-emitted-type-owner-controls": 1,
+    "independent-http-configuration-controls": 8,
+    "independent-http-dispatch-controls": 2,
+    "independent-http-secret-controls": 1,
+    "phase-operational-metadata-controls": 1,
+    "phase-operational-binding-controls": 1,
+    "release-preparation-deadline-controls": 2,
+    "release-preparation-web-readiness-controls": 4,
+    "release-preparation-rpc-controls": 6,
+    "release-preparation-cli-controls": 1,
+    "release-preparation-projection-controls": 1,
+    "release-preparation-transport-controls": 4,
+    "release-preparation-command-name-controls": 1,
+    "release-preparation-dispatch-controls": 1,
+    "c-original-and-final-proof-controls": 60,
+    "c-profile-1": 1,
+    "c-profile-2": 1,
+    "c-profile-3": 1,
+    "c-profile-4": 1,
+    "c-profile-5": 1,
+    "c-profile-6": 1,
+    "c-profile-7": 1,
+    "c-profile-8": 1,
+    "c-profile-9": 1,
+    "c-profile-10": 1,
+    "c-profile-11": 1,
+    "ordinary-async-worker-owner-controls": 11
+  },
+  "wholeArchiveDigestVerified": true,
+  "allMemberCrcAndShaVerified": true,
+  "schemaVersion": "latent.sdk.c-packaging.native-observation.v1",
+  "commands": 35,
+  "rustPassed": 134,
+  "pythonPassed": 16,
+  "signedGuestQualification": false,
+  "cLifecycleGuestQualified": false,
+  "oldC713Repinned": false,
+  "scope": "Five canonical native products; descriptive full C proof is recognized, runtime profile and Native authority remain independently mandatory."
+}

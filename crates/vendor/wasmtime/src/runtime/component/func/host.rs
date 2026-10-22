@@ -59,6 +59,50 @@ impl core::fmt::Debug for HostFunc {
     }
 }
 
+/// An affine owner for a typed host reply's original native backing.
+///
+/// The builder must run only after `allocation` has admitted every backing
+/// allocation it creates. The owner is confirmed after both fields exist, and
+/// is released only after the actual reply has been destroyed. There is no
+/// unowned extraction or cloning API.
+///
+/// This does not account arbitrary allocations made by a custom `Lower`
+/// implementation, shared/interior owners, or data copied into an escaping
+/// error. Embedders must audit their closed reply builders and lowering types;
+/// it is not a generic transitive-memory guarantee for any `R: Lower`.
+pub struct HostOutput<R> {
+    value: R,
+    allocation: Option<Box<dyn crate::NativeAllocation>>,
+}
+
+impl<R> HostOutput<R> {
+    /// Build a reply while an already-admitted original backing owner is live.
+    /// `None` is explicit legacy/unaccounted ownership, never an admission retry.
+    pub fn build(
+        allocation: Option<Box<dyn crate::NativeAllocation>>,
+        build: impl FnOnce() -> R,
+    ) -> Self {
+        let mut output = Self {
+            value: build(),
+            allocation,
+        };
+        if let Some(owner) = &mut output.allocation {
+            owner.allocated();
+        }
+        output
+    }
+
+    #[cfg(feature = "async")]
+    fn lower_with(self, lower: impl FnOnce(&R) -> Result<()>) -> Result<()> {
+        // Keep the actual R in this wrapper throughout lowering, including a
+        // guest realloc suspension/error. The closed LSF reply Lower graph
+        // only borrows its strings/lists; no original backing enters an Error.
+        let result = lower(&self.value);
+        drop(self);
+        result
+    }
+}
+
 enum HostResult<T> {
     Done(Result<T>),
     #[cfg(feature = "component-model-async")]
@@ -178,6 +222,33 @@ impl HostFunc {
         Self::new(
             Asyncness::Yes,
             StaticHostFn::<_, false>::new(move |store, params| {
+                HostResult::Done(
+                    store
+                        .block_on(|store| Pin::from(func(store, params)))
+                        .and_then(|r| r),
+                )
+            }),
+        )
+    }
+
+    /// Equivalent for `LinkerInstance::func_wrap_async_owned`.
+    #[cfg(feature = "async")]
+    pub(crate) fn func_wrap_async_owned<T, F, P, R>(func: F) -> Result<Arc<HostFunc>>
+    where
+        T: 'static,
+        F: Fn(
+                StoreContextMut<'_, T>,
+                P,
+            ) -> Box<dyn Future<Output = Result<HostOutput<R>>> + Send + '_>
+            + Send
+            + Sync
+            + 'static,
+        P: ComponentNamedList + Lift + 'static,
+        R: ComponentNamedList + Lower + 'static,
+    {
+        Self::new(
+            Asyncness::Yes,
+            StaticOwnedHostFn::new(move |store, params| {
                 HostResult::Done(
                     store
                         .block_on(|store| Pin::from(func(store, params)))
@@ -682,13 +753,7 @@ where
     const ASYNC: bool = ASYNC;
 
     fn typecheck(ty: TypeFuncIndex, types: &InstanceType<'_>) -> Result<()> {
-        let ty = &types.types[ty];
-        typecheck_async(ASYNC, ty.async_)?;
-        P::typecheck(&InterfaceType::Tuple(ty.params), types)
-            .context("type mismatch with parameters")?;
-        R::typecheck(&InterfaceType::Tuple(ty.results), types)
-            .context("type mismatch with results")?;
-        Ok(())
+        typed_typecheck::<P, R>(ASYNC, ty, types)
     }
 
     fn run(&self, store: StoreContextMut<'_, T>, params: P) -> HostResult<R> {
@@ -696,20 +761,7 @@ where
     }
 
     fn lift_params(cx: &mut LiftContext<'_>, ty: TypeFuncIndex, src: Source<'_>) -> Result<P> {
-        let ty = InterfaceType::Tuple(cx.types[ty].params);
-        match src {
-            Source::Flat(storage) => {
-                // SAFETY: the contract of `ComponentType` for `P` means that
-                // it's safe to interpret the parameters `storage` as
-                // `P::Lower`. The contract of `entrypoint` is that everything
-                // is initialized correctly internally.
-                let storage: &P::Lower = unsafe { slice_to_storage(storage) };
-                P::linear_lift_from_flat(cx, ty, storage)
-            }
-            Source::Memory(offset) => {
-                P::linear_lift_from_memory(cx, ty, &cx.memory()[offset..][..P::SIZE32])
-            }
-        }
+        typed_lift_params::<P>(cx, ty, src)
     }
 
     fn lower_result(
@@ -718,18 +770,109 @@ where
         ret: R,
         dst: Destination<'_>,
     ) -> Result<()> {
-        let fty = &cx.types[ty];
-        let ty = InterfaceType::Tuple(fty.results);
-        match dst {
-            Destination::Flat(storage) => {
-                // SAFETY: the contract of `ComponentType` for `R` means that
-                // it's safe to reinterpret `ValRaw` storage to initialize as
-                // `R::Lower`.
-                let storage: &mut MaybeUninit<R::Lower> = unsafe { slice_to_storage_mut(storage) };
-                ret.linear_lower_to_flat(cx, ty, storage)
-            }
-            Destination::Memory(ptr) => ret.linear_lower_to_memory(cx, ty, ptr),
+        typed_lower_result(cx, ty, &ret, dst)
+    }
+}
+
+#[cfg(feature = "async")]
+struct StaticOwnedHostFn<F>(F);
+
+#[cfg(feature = "async")]
+impl<F> StaticOwnedHostFn<F> {
+    fn new<T, P, R>(func: F) -> Self
+    where
+        T: 'static,
+        P: ComponentNamedList + Lift + 'static,
+        R: ComponentNamedList + Lower + 'static,
+        F: Fn(StoreContextMut<'_, T>, P) -> HostResult<HostOutput<R>>,
+    {
+        Self(func)
+    }
+}
+
+#[cfg(feature = "async")]
+impl<T, F, P, R> HostFn<T, P, HostOutput<R>> for StaticOwnedHostFn<F>
+where
+    T: 'static,
+    F: Fn(StoreContextMut<'_, T>, P) -> HostResult<HostOutput<R>>,
+    P: ComponentNamedList + Lift + 'static,
+    R: ComponentNamedList + Lower + 'static,
+{
+    const ASYNC: bool = false;
+
+    fn typecheck(ty: TypeFuncIndex, types: &InstanceType<'_>) -> Result<()> {
+        typed_typecheck::<P, R>(false, ty, types)
+    }
+
+    fn run(&self, store: StoreContextMut<'_, T>, params: P) -> HostResult<HostOutput<R>> {
+        (self.0)(store, params)
+    }
+
+    fn lift_params(cx: &mut LiftContext<'_>, ty: TypeFuncIndex, src: Source<'_>) -> Result<P> {
+        typed_lift_params::<P>(cx, ty, src)
+    }
+
+    fn lower_result(
+        cx: &mut LowerContext<'_, T>,
+        ty: TypeFuncIndex,
+        ret: HostOutput<R>,
+        dst: Destination<'_>,
+    ) -> Result<()> {
+        ret.lower_with(|value| typed_lower_result(cx, ty, value, dst))
+    }
+}
+
+fn typed_typecheck<P: ComponentNamedList, R: ComponentNamedList>(
+    async_: bool,
+    ty: TypeFuncIndex,
+    types: &InstanceType<'_>,
+) -> Result<()> {
+    let ty = &types.types[ty];
+    typecheck_async(async_, ty.async_)?;
+    P::typecheck(&InterfaceType::Tuple(ty.params), types)
+        .context("type mismatch with parameters")?;
+    R::typecheck(&InterfaceType::Tuple(ty.results), types).context("type mismatch with results")?;
+    Ok(())
+}
+
+fn typed_lift_params<P: ComponentNamedList + Lift>(
+    cx: &mut LiftContext<'_>,
+    ty: TypeFuncIndex,
+    src: Source<'_>,
+) -> Result<P> {
+    let ty = InterfaceType::Tuple(cx.types[ty].params);
+    match src {
+        Source::Flat(storage) => {
+            // SAFETY: the contract of `ComponentType` for `P` means that
+            // it's safe to interpret the parameters `storage` as
+            // `P::Lower`. The contract of `entrypoint` is that everything
+            // is initialized correctly internally.
+            let storage: &P::Lower = unsafe { slice_to_storage(storage) };
+            P::linear_lift_from_flat(cx, ty, storage)
         }
+        Source::Memory(offset) => {
+            P::linear_lift_from_memory(cx, ty, &cx.memory()[offset..][..P::SIZE32])
+        }
+    }
+}
+
+fn typed_lower_result<T, R: ComponentNamedList + Lower>(
+    cx: &mut LowerContext<'_, T>,
+    ty: TypeFuncIndex,
+    ret: &R,
+    dst: Destination<'_>,
+) -> Result<()> {
+    let fty = &cx.types[ty];
+    let ty = InterfaceType::Tuple(fty.results);
+    match dst {
+        Destination::Flat(storage) => {
+            // SAFETY: the contract of `ComponentType` for `R` means that
+            // it's safe to reinterpret `ValRaw` storage to initialize as
+            // `R::Lower`.
+            let storage: &mut MaybeUninit<R::Lower> = unsafe { slice_to_storage_mut(storage) };
+            ret.linear_lower_to_flat(cx, ty, storage)
+        }
+        Destination::Memory(ptr) => ret.linear_lower_to_memory(cx, ty, ptr),
     }
 }
 

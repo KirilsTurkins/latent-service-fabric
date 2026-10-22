@@ -89,7 +89,8 @@ class StandardCombined(unittest.TestCase):
         compiler.check_unchanged = lambda: None
         calls = []
         compiler.run = lambda *args: calls.append(args) or ''
-        def generate(run, wit, world, destination, platform):
+        def generate(run, wit, world, destination, platform, *, sync_core_abi=False):
+            self.assertFalse(sync_core_abi)
             destination.mkdir()
             return destination, {'source': 'controlled-binding-boundary'}
         for ordinal, profile in enumerate((facilities.DEFAULT, facilities.PROFILE,

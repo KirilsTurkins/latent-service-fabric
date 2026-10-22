@@ -42,6 +42,9 @@ pub(crate) fn install(
                 // Cancellation cannot roll back an already acknowledged or uncertain effect.
                 // The provider has recorded that outcome independently of guest delivery.
                 checkpoint(&mut store)?;
+                if result.is_ok() {
+                    store.data_mut().capabilities.prepare_pool_lowering()?;
+                }
                 let result = result
                     .map(|completion| {
                         store

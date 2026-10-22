@@ -186,6 +186,13 @@ async fn kernel_occupancy_retains_original_io_request_scope_and_memory() {
     let observer = session.observer();
     let call = setup.call(&session).await;
     let scope = Arc::new(session.reserve_stream().unwrap());
+    let (request, _) = setup.fixture.request("kernel-original-owner");
+    let (core_payload, _) = crate::broker::session::native_backing::payload_bytes(
+        &request,
+        &session.core.plan.target.tenant.0,
+        setup.fixture.broker.limits().maximum_handles_per_session,
+    )
+    .unwrap();
     let before = control.budget.host_memory_bytes();
     let mut original = call
         .reserve_stream_kernel_ownership(&scope, 98_304)
@@ -196,9 +203,14 @@ async fn kernel_occupancy_retains_original_io_request_scope_and_memory() {
     assert_eq!(control.budget.host_memory_bytes(), before + 98_304);
     assert!(!observer.is_quiescent());
     drop(original);
-    assert_eq!(control.budget.host_memory_bytes(), before);
+    assert_eq!(control.budget.host_memory_bytes(), before - core_payload);
+    assert_eq!(control.budget.outstanding_reservations(), 3);
     assert!(observer.is_quiescent());
+    drop(observer);
     clean(&setup.pools).await;
+    drop(setup);
+    assert_eq!(control.budget.host_memory_bytes(), 0);
+    assert_eq!(control.budget.outstanding_reservations(), 0);
 }
 
 #[tokio::test]

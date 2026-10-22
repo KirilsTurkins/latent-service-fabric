@@ -73,6 +73,37 @@ impl ContextExposurePolicy {
         })
     }
 
+    pub(crate) fn metadata_pairs_exact(&self, values: &Metadata) -> Vec<(String, String)> {
+        exact_pairs(values, |key| {
+            self.metadata_prefixes.iter().any(|p| key.starts_with(p))
+        })
+    }
+    pub(crate) fn claim_pairs_exact(&self, values: &Metadata) -> Vec<(String, String)> {
+        exact_pairs(values, |key| {
+            self.claim_keys.iter().any(|allowed| key == allowed)
+        })
+    }
+    pub(crate) fn baggage_pairs_exact(&self, values: &Metadata) -> Vec<(String, String)> {
+        exact_pairs(values, |key| {
+            self.baggage_keys.iter().any(|allowed| key == allowed)
+        })
+    }
+    pub(crate) fn metadata_reply_charge(&self, values: &Metadata) -> wasmtime::Result<usize> {
+        pair_charge(values, |key| {
+            self.metadata_prefixes.iter().any(|p| key.starts_with(p))
+        })
+    }
+    pub(crate) fn claim_reply_charge(&self, values: &Metadata) -> wasmtime::Result<usize> {
+        pair_charge(values, |key| {
+            self.claim_keys.iter().any(|allowed| key == allowed)
+        })
+    }
+    pub(crate) fn baggage_reply_charge(&self, values: &Metadata) -> wasmtime::Result<usize> {
+        pair_charge(values, |key| {
+            self.baggage_keys.iter().any(|allowed| key == allowed)
+        })
+    }
+
     pub(crate) fn metadata_bytes(&self, values: &Metadata) -> usize {
         selected_bytes(values, |key| {
             self.metadata_prefixes
@@ -142,6 +173,59 @@ fn selected_bytes(metadata: &Metadata, include: impl Fn(&str) -> bool) -> usize 
             .max(2)
             .saturating_mul(2 * std::mem::size_of::<(String, String)>()),
     )
+}
+
+// The selected Phase3/4 reply path uses an exact count, never collect growth.
+// Pinned Rust1.97.1 RawVec::try_allocate_in requests this precise Layout and
+// stores exactly that capacity. Legacy helpers/preflight contracts stay above.
+fn exact_pairs(values: &Metadata, include: impl Fn(&str) -> bool) -> Vec<(String, String)> {
+    let count = values.keys().filter(|key| include(key)).count();
+    let mut result = Vec::with_capacity(count);
+    for (key, value) in values.iter().filter(|(key, _)| include(key)) {
+        result.push((key.clone(), value.clone()));
+    }
+    result
+}
+
+// Same finite per-backing bookkeeping convention as retained context/codec.
+// This is a conservative accounting envelope, not an allocator RSS sensor.
+const REPLY_ALLOCATION_BOOKKEEPING: usize = 64;
+
+pub(super) fn reply_string_charge(value: &str) -> wasmtime::Result<usize> {
+    if value.is_empty() {
+        return Ok(0);
+    }
+    // String::clone forwards to Vec::clone/to_vec, requesting exactly len.
+    value
+        .len()
+        .checked_add(REPLY_ALLOCATION_BOOKKEEPING)
+        .ok_or_else(reply_charge_overflow)
+}
+
+pub(super) fn reply_add(total: usize, value: usize) -> wasmtime::Result<usize> {
+    total.checked_add(value).ok_or_else(reply_charge_overflow)
+}
+
+fn pair_charge(values: &Metadata, include: impl Fn(&str) -> bool) -> wasmtime::Result<usize> {
+    let mut count = 0usize;
+    let mut bytes = 0usize;
+    for (key, value) in values.iter().filter(|(key, _)| include(key)) {
+        count = count.checked_add(1).ok_or_else(reply_charge_overflow)?;
+        bytes = reply_add(bytes, reply_string_charge(key)?)?;
+        bytes = reply_add(bytes, reply_string_charge(value)?)?;
+    }
+    if count == 0 {
+        return Ok(0);
+    }
+    let backing = count
+        .checked_mul(std::mem::size_of::<(String, String)>())
+        .and_then(|n| n.checked_add(REPLY_ALLOCATION_BOOKKEEPING))
+        .ok_or_else(reply_charge_overflow)?;
+    reply_add(bytes, backing)
+}
+
+fn reply_charge_overflow() -> wasmtime::Error {
+    wasmtime::Error::msg("context-reply-allocation-overflow")
 }
 
 fn invalid_policy() -> PlatformError {

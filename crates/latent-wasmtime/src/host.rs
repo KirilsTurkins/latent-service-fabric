@@ -10,7 +10,7 @@ pub(crate) mod accounting;
 pub(crate) mod blob;
 pub(crate) mod capabilities;
 pub(crate) mod clock;
-mod context;
+pub(crate) mod context;
 pub(crate) mod events;
 pub(crate) mod http;
 mod logging;
@@ -317,6 +317,7 @@ impl HostState {
         if accounting.budget().profile().supports_descendants() {
             limiter.budget = Some(accounting.budget().clone());
         }
+        let capabilities = capabilities::HostCapabilities::new(None, accounting.budget());
         Self {
             context,
             runtime: None,
@@ -333,7 +334,7 @@ impl HostState {
             #[cfg(feature = "development-clock-fixture")]
             development_clock_readings: config.development_clock_readings,
             host_call_timing: HostCallTiming::default(),
-            capabilities: capabilities::HostCapabilities::default(),
+            capabilities,
             transaction: transaction::Access::default(),
         }
     }
@@ -513,3 +514,6 @@ mod native_resource_types_tests;
 mod native_store_tests;
 #[cfg(test)]
 mod native_table_tests;
+
+#[cfg(test)]
+mod native_context_reply_tests;

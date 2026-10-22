@@ -189,4 +189,17 @@ class JavaSpiManualWorkflow(unittest.TestCase):
         moved = steps[index:index + 2]
         self.assertEqual(moved, old['jobs']['compiler-component']['steps'][-2:])
         del steps[index:index + 2]; steps.extend(moved)
+        # The resource lane additionally retains its actual compiler acquisition
+        # logs. Preserve the original workflow comparison around these two
+        # explicit diagnostic additions.
+        resource_steps = selected['jobs']['resource-conformance']['steps']
+        upload = next(step for step in resource_steps if step.get('name') ==
+            'Retain public source resource provenance actual results and cleanup')
+        paths = upload['with']['path']
+        for suffix in ('*-java-to-c.log', '*-java-to-c.command.json'):
+            added = '${{ runner.temp }}/java-resource-conformance/compiler/compiler-acquisition/' + suffix
+            self.assertEqual(paths.splitlines().count(added), 1)
+            self.assertNotIn(added, str(old['jobs']['resource-conformance']))
+            paths = paths.replace(added + '\n', '', 1)
+        upload['with']['path'] = paths
         self.assertEqual(selected, old)

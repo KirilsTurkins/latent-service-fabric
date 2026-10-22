@@ -41,6 +41,7 @@ async fn actual_tcp_partial_reads_eof_and_send_half_close() {
         socket.shutdown().await.unwrap();
     });
     let (session, control) = fixture.session(5000);
+    let control_session_bytes = control.native_session_bytes();
     let stream = fixture
         .provider
         .start(&session, request(&fixture))
@@ -78,10 +79,12 @@ async fn actual_tcp_partial_reads_eof_and_send_half_close() {
     assert!(stream.inspect().application_write_attempted);
     assert_eq!(stream.close().await.unwrap().state, StreamState::Closed);
     peer.await.unwrap();
-    assert_eq!(control.budget.host_memory_bytes(), 0);
+    assert_eq!(control.budget.host_memory_bytes(), control_session_bytes);
     assert_eq!(fixture.provider.usage().unwrap().connections, 0);
     drop(session);
     fixture.clean().await;
+    drop(fixture);
+    control.assert_native_settled();
 }
 
 #[tokio::test]
@@ -94,6 +97,7 @@ async fn retained_chunks_keep_original_charges_after_socket_close() {
         assert_eq!(socket.read(&mut eof).await.unwrap(), 0);
     });
     let (session, control) = fixture.session(5000);
+    let control_session_bytes = control.native_session_bytes();
     let stream = fixture
         .provider
         .start(&session, request(&fixture))
@@ -149,16 +153,19 @@ async fn retained_chunks_keep_original_charges_after_socket_close() {
     drop(second_bytes);
     drop(first);
     drop(second);
-    assert_eq!(control.budget.host_memory_bytes(), 0);
+    assert_eq!(control.budget.host_memory_bytes(), control_session_bytes);
     assert_eq!(fixture.pools.snapshot().unwrap().running_requests, 0);
     drop(session);
     fixture.clean().await;
+    drop(fixture);
+    control.assert_native_settled();
 }
 
 #[tokio::test]
 async fn dropped_facade_does_not_refund_an_unpolled_pending_socket() {
     let (fixture, listener) = fixture().await;
     let (session, control) = fixture.session(5000);
+    let control_session_bytes = control.native_session_bytes();
     let stream = fixture
         .provider
         .start(&session, request(&fixture))
@@ -183,15 +190,18 @@ async fn dropped_facade_does_not_refund_an_unpolled_pending_socket() {
     );
     assert_eq!(fixture.pools.snapshot().unwrap().connections, 0);
     assert_eq!(fixture.pools.snapshot().unwrap().running_requests, 0);
-    assert_eq!(control.budget.host_memory_bytes(), 0);
+    assert_eq!(control.budget.host_memory_bytes(), control_session_bytes);
     drop(session);
     fixture.clean().await;
+    drop(fixture);
+    control.assert_native_settled();
 }
 
 #[tokio::test]
 async fn wrong_endpoint_is_denied_before_network_dispatch() {
     let (fixture, listener) = fixture().await;
     let (session, control) = fixture.session(5000);
+    let control_session_bytes = control.native_session_bytes();
     let mut request = request(&fixture);
     request.endpoint.port = request.endpoint.port.saturating_add(1);
     let failure = fixture.provider.start(&session, request).err().unwrap();
@@ -200,7 +210,7 @@ async fn wrong_endpoint_is_denied_before_network_dispatch() {
         control.budget.snapshot_at(Instant::now()).outbound_requests,
         0
     );
-    assert_eq!(control.budget.host_memory_bytes(), 0);
+    assert_eq!(control.budget.host_memory_bytes(), control_session_bytes);
     assert!(
         tokio::time::timeout(Duration::from_millis(50), listener.accept())
             .await
@@ -208,12 +218,15 @@ async fn wrong_endpoint_is_denied_before_network_dispatch() {
     );
     drop(session);
     fixture.clean().await;
+    drop(fixture);
+    control.assert_native_settled();
 }
 
 #[tokio::test]
 async fn revoking_policy_prevents_application_write_on_existing_socket() {
     let (fixture, listener) = fixture().await;
     let (session, control) = fixture.session(5000);
+    let control_session_bytes = control.native_session_bytes();
     let stream = fixture
         .provider
         .start(&session, request(&fixture))
@@ -248,7 +261,9 @@ async fn revoking_policy_prevents_application_write_on_existing_socket() {
     let mut bytes = Vec::new();
     peer.read_to_end(&mut bytes).await.unwrap();
     assert!(bytes.is_empty());
-    assert_eq!(control.budget.host_memory_bytes(), 0);
+    assert_eq!(control.budget.host_memory_bytes(), control_session_bytes);
     drop(session);
     fixture.clean().await;
+    drop(fixture);
+    control.assert_native_settled();
 }

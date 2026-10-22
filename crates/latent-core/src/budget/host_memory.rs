@@ -1,6 +1,42 @@
 //! Native allocation ownership in the original activation ledger. Linear
 //! memory observations exclude these bytes, so neither path charges them twice.
-use super::{ActivationBudget, BudgetDimension, BudgetError, BudgetProfile};
+use super::{
+    AccountingState, ActivationBudget, ActivationBudgetInner, BudgetDimension, BudgetError,
+    BudgetProfile, ResourceBudget,
+};
+use std::sync::{Arc, MutexGuard};
+
+/// Private physical-memory retention of the SAME original accounting state.
+/// It cannot consume, finalize, delegate or create an ordinary budget owner.
+#[derive(Debug)]
+pub(super) struct HostMemoryAccounting {
+    pub(super) inner: Arc<ActivationBudgetInner>,
+}
+impl HostMemoryAccounting {
+    pub(super) fn new(budget: &ActivationBudget) -> Self {
+        Self {
+            inner: Arc::clone(&budget.inner),
+        }
+    }
+    fn lock_state(&self) -> MutexGuard<'_, AccountingState> {
+        self.inner.lock_state()
+    }
+    fn granted(&self) -> &ResourceBudget {
+        &self.inner.granted
+    }
+    fn propagate_memory(&self, bytes: u64, increase: bool) {
+        self.inner.propagate_memory(bytes, increase);
+    }
+    fn is_same_instance(&self, budget: &ActivationBudget) -> bool {
+        Arc::ptr_eq(&self.inner, &budget.inner)
+    }
+}
+// Keep every existing native reservation and billing Arc layout unchanged.
+const _: () =
+    assert!(std::mem::size_of::<HostMemoryAccounting>() == std::mem::size_of::<ActivationBudget>());
+const _: () = assert!(
+    std::mem::align_of::<HostMemoryAccounting>() == std::mem::align_of::<ActivationBudget>()
+);
 
 /// Affine capacity reserved before a native allocation. Call `confirm` only
 /// after allocation succeeds; retain this guard with the actual allocation,
@@ -8,7 +44,7 @@ use super::{ActivationBudget, BudgetDimension, BudgetError, BudgetProfile};
 #[derive(Debug)]
 #[must_use = "retain with the actual native allocation"]
 pub struct HostMemoryReservation {
-    budget: ActivationBudget,
+    budget: HostMemoryAccounting,
     bytes: u64,
     confirmed_bytes: u64,
 }
@@ -57,7 +93,7 @@ impl ActivationBudget {
             state.consumption.peak_memory_bytes = state.consumption.peak_memory_bytes.max(observed);
         }
         Ok(HostMemoryReservation {
-            budget: self.clone(),
+            budget: HostMemoryAccounting::new(self),
             bytes,
             confirmed_bytes: if transaction { bytes } else { 0 },
         })

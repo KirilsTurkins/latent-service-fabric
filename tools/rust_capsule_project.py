@@ -317,6 +317,25 @@ panic = "abort"
         else:
             binding_source = binding_source.replace(opening, opening + ' with: { ' + mapping + ' },', 1)
         files['src/lib.rs'] = binding_source.encode()
+    if standard.has_threads(selected_runtime):
+        # Explicit compiler/runtime dependencies; no grant or limit changes.
+        marker = b'world service {'
+        current_world = files['wit/world.wit']
+        if current_world.count(marker) != 1:
+            raise ValueError('maintained thread template world shape changed')
+        imports = ('latent:runtime/activation@0.1.0', 'latent:runtime-native/threads@0.1.0',
+                   'latent:clock/monotonic@0.1.0', 'latent:clock/wall@0.1.0')
+        additions = ''.join('\n    import ' + name + ';' for name in imports).encode()
+        files['wit/world.wit'] = current_world.replace(marker, marker + additions, 1)
+        for package in ('activation-runtime', 'native-runtime', 'clock'):
+            files['wit/deps/' + package + '/package.wit'] = read_file(ROOT / 'wit/platform' / package / 'package.wit')
+        # The ordinary bindings must include the interfaces declared by this
+        # profile. This changes generator configuration, not the user's APIs.
+        opening = 'wit_bindgen::generate!({'
+        binding_source = files['src/lib.rs'].decode()
+        if binding_source.count(opening) != 1 or 'generate_all' in binding_source:
+            raise ValueError('maintained thread template binding shape changed')
+        files['src/lib.rs'] = binding_source.replace(opening, opening + ' generate_all,', 1).encode()
     files["capsule-project.json"] = json.dumps(project, indent=2).encode() + b"\n"
     if template == "transactional-aggregate":
         from tools.transaction_guest_project import augment

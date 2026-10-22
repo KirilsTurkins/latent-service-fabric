@@ -1,0 +1,36 @@
+{
+  "cases": [
+    "CThreadMinimal.test_minimal_overlay_preserves_every_original_byte_and_full_standard_lifecycle_calls",
+    "CThreadMinimal.test_only_application_main_changes_and_all_original_limits_profile_wit_remain_exact"
+  ],
+  "guards": {
+    "CThreadMinimal.test_minimal_overlay_preserves_every_original_byte_and_full_standard_lifecycle_calls": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:3851f47bfd643a6c608033e1b1386697bfdf2858d03d0899ee30107a28397a56",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CThreadMinimal.test_only_application_main_changes_and_all_original_limits_profile_wit_remain_exact": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:3851f47bfd643a6c608033e1b1386697bfdf2858d03d0899ee30107a28397a56",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_c_thread_minimal.py",
+  "reviewReason": "Diagnostic-only one ordinary C build and five raw prefix/minimal/original observations; original17 programme and runtime unchanged, exact original7b native cohort, no native build or qualification claim.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

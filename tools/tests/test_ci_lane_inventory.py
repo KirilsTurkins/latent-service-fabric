@@ -233,13 +233,35 @@ class RepositoryInventoryTests(unittest.TestCase):
             'Fetch exact historical source inputs for Python preservation controls']
         self.assertEqual(len(matches), 1)
         self.assertEqual(matches[0]['if'], "matrix.lane == 'python'")
-        words = shlex.split(matches[0]['run'].replace('\\\n', ''))
+        logical = matches[0]['run'].replace('\\\n', '')
+        # Newlines delimit shell commands even when shlex.split discards them.
+        # Every frozen revision must remain an argument to this one git fetch.
+        self.assertEqual(len([line for line in logical.splitlines() if line.strip()]), 1)
+        words = shlex.split(logical)
         self.assertEqual(words[:5], ['git', 'fetch', '--no-tags', '--depth=1', 'origin'])
         expected = {module.SOURCE for module in (go_http_tenant_native_products,
             http_phase_native_products, http_tenant_native_products, java_phase_native_products,
             wait_runtime_native_products, wasmtime_48_0_7_native_products)}
         expected.update((qualify_go_write_progress.BASELINE,
             qualify_go_write_progress.CLOSE_BASELINE, 'aa56bdebad8c12f20acce4ec4ecfeca73cf554be'))
+        # These exact additional C/codec origins are needed by the preservation
+        # controls. Keep the set closed: unrelated history must not be fetched.
+        expected.update((
+            'f6251df89851de98cb869784d095ad5cc2e5b385',
+            'f244b81f14abad5d4dc4984cb842aaf1d9076e23',
+            '7b6365ee39dea9770591a931b96711965f8a1aaf',
+            '050b9e71ba04a4bdc559f4a7fa48d6bd94c2ff38',
+            'de0aed36f0b135d6d88fb536484e60aee978f218',
+            '3e4178271b4b7fe75a69c8f0665dbe275b41d7c3',
+            '173ccd9c096e4db643aa9627bd4550cef27fb922',
+            'ea118974d93843265a504f5d30571ed7cfe8a7d2',
+            'f5351a9331ed954c49ae83f2f4004e0f96d25d0e',
+            'ff5aadaecd11874f53aa80e56ffdfff0efda312b',
+            '4ed0db7f07245732d07f867e95ec008a804485e5',
+            'cb8ceefc5f6343301871dbde1d8a853d3581cc30',
+            '1d5062ee63c0d5ff202d47e21793f6fb9bb8a21a',
+            '597ef2bc0db168d4aee1c2416c38f9a8b9fef9e8',
+        ))
         self.assertEqual(len(words[5:]), len(expected))
         self.assertEqual(set(words[5:]), expected)
         self.assertTrue(all(len(value) == 40 and set(value) <= set('0123456789abcdef') for value in expected))

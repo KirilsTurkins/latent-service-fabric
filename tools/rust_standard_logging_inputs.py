@@ -21,7 +21,8 @@ CLOSED = 'rust-standard-closed-v1'
 PROFILE = 'rust-standard-logging-v1'
 ENTROPY = 'rust-standard-entropy-v1'
 LOGGING_ENTROPY = 'rust-standard-logging-entropy-v1'
-PREPARED = frozenset({CLOSED, PROFILE, ENTROPY, LOGGING_ENTROPY})
+THREAD = 'rust-standard-owned-thread-v1'
+PREPARED = frozenset({CLOSED, PROFILE, ENTROPY, LOGGING_ENTROPY, THREAD})
 LOG = 'latent:log/log@0.1.0'
 # Workspace metadata authenticates the explicit std source build. It is not
 # a required input to the normal compiler recipe or its minimal offline CLI.
@@ -47,8 +48,15 @@ def has_entropy(profile):
     return profile in {ENTROPY, LOGGING_ENTROPY}
 
 
+def has_threads(profile):
+    return profile == THREAD
+
+
 def source_build_inputs(profile):
     selection({'runtimeProfile': profile})
+    if has_threads(profile):
+        from tools import rust_standard_thread_capture as capture, rust_owned_thread_component as component
+        return (*SOURCE_BUILD_METADATA, *capture.RECIPE, *component.RECIPE)
     return SOURCE_BUILD_METADATA if profile in PREPARED else ()
 
 
@@ -62,8 +70,9 @@ class Prepared:
         self.raw = read_file(self.path / 'std-sysroot-build.json', 1024 * 1024)
         value = read_json(self.path / 'std-sysroot-build.json', 1024 * 1024)
         require(isinstance(value, dict) and value.get('schemaVersion') == 'latent.rust.std-built-source.v1'
-                and value.get('profile') == ((built.LOGGING_ENTROPY_PROFILE if has_logging(profile) else built.ENTROPY_PROFILE)
-                    if has_entropy(profile) else (built.LOGGING_PROFILE if has_logging(profile) else built.PROFILE))
+                and value.get('profile') == (built.THREAD_PROFILE if has_threads(profile) else
+                    ((built.LOGGING_ENTROPY_PROFILE if has_logging(profile) else built.ENTROPY_PROFILE)
+                    if has_entropy(profile) else (built.LOGGING_PROFILE if has_logging(profile) else built.PROFILE)))
                 and value.get('standardStdio') == ('typed-log-v1' if has_logging(profile) else 'explicit-unsupported-v1')
                 and value.get('standardEntropy', 'original-unsupported-v1') ==
                     ('typed-random-u64-v1' if has_entropy(profile) else 'original-unsupported-v1')
@@ -73,8 +82,15 @@ class Prepared:
                 'rust-standard-runtime-prepared-profile')
         unsigned = {key: item for key, item in value.items() if key != 'identity'}
         require(value.get('identity') == digest(encode(unsigned)), 'rust-standard-runtime-receipt-identity')
+        if has_threads(profile):
+            from tools.rust_standard_thread_profile import PROFILE as THREAD_SOURCE
+            require(value.get('standardThreads') == THREAD_SOURCE
+                    and value.get('standardThreadSourceSelected') is True
+                    and value.get('standardThreadRuntimeQualified') is False,
+                    'rust-standard-thread-source-profile')
         require(value.get('recipeDigest') == digest(inventory({n: read_file(ROOT / n)
-                for n in dict.fromkeys(built.RECIPE)})), 'rust-standard-runtime-recipe-drift')
+                for n in dict.fromkeys(built.recipe(threads=has_threads(profile)))})),
+                'rust-standard-runtime-recipe-drift')
         require(isinstance(value.get('tools'), dict)
                 and value['tools'].get('rustc') == file_identity(self.rustc, 'rustc'),
                 'rust-standard-runtime-compiler-drift')
@@ -120,8 +136,28 @@ class Prepared:
     def arguments(self):
         # Target-only Cargo config leaves host build scripts/macros on the
         # original compiler's host sysroot. It is not ambient RUSTFLAGS.
-        return ['--config', 'target.' + clock.TARGET + '.rustflags=' +
-                json.dumps(['--sysroot=' + str(self.root)], separators=(',', ':'))]
+        flags = ['--sysroot=' + str(self.root)]
+        if has_threads(self.profile):
+            # The selected bootstrap requires a non-null linker-owned low
+            # bound. Keep the real stack after static data; do not invent or
+            # relax a zero-address stack/context sentinel after linking.
+            flags.append('-Clink-arg=--no-stack-first')
+            # Preserve one MiB for Root and reserve a disjoint 64KiB System
+            # stack inside the original linker-owned memory geometry.
+            flags.extend(['-Clink-arg=-z', '-Clink-arg=stack-size=1114112'])
+            # These are implementation support exports, not new public WIT.
+            # The finite component route must authenticate all actual uses.
+            for name in ('__stack_pointer', '__stack_low', '__indirect_function_table',
+                         '__lsf_rust_owned_thread_entry', '__lsf_rust_root_bootstrap',
+                         '__lsf_rust_root_finish', '__lsf_rust_root_reap'):
+                flags.append('-Clink-arg=--export=' + name)
+        arguments = ['--config', 'target.' + clock.TARGET + '.rustflags=' +
+                     json.dumps(flags, separators=(',', ':'))]
+        if has_threads(self.profile):
+            # Preserve compiler-object boundaries for the selected profile's
+            # complete private graph. Application Cargo source stays original.
+            arguments.extend(['--config', 'profile.release.lto=false'])
+        return arguments
 
     def material(self):
         return encode({'schemaVersion': 'latent.rust.standard-stdio-input.v1', 'profile': self.profile,

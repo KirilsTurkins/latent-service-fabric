@@ -805,7 +805,10 @@ impl WasmtimeBackend {
             self.shared.log_sink.clone(),
         );
 
-        host_state.capabilities = crate::host::capabilities::HostCapabilities::new(capabilities);
+        host_state.capabilities = crate::host::capabilities::HostCapabilities::new(
+            capabilities,
+            host_state.accounting.budget(),
+        );
         if let Some(transaction) = transaction.take_host() {
             host_state.transaction = crate::host::transaction::Access::attach(transaction);
         }

@@ -1,4 +1,6 @@
-use super::{AccountingState, ActivationBudget, BudgetDimension, ParentReservation};
+use super::{
+    AccountingState, ActivationBudget, ActivationBudgetInner, BudgetDimension, ParentReservation,
+};
 use crate::BudgetError;
 
 impl ActivationBudget {
@@ -57,8 +59,12 @@ impl ActivationBudget {
         }
     }
     pub(in crate::budget) fn propagate_memory(&self, bytes: u64, increase: bool) {
+        self.inner.propagate_memory(bytes, increase);
+    }
+}
+impl ActivationBudgetInner {
+    pub(in crate::budget) fn propagate_memory(&self, bytes: u64, increase: bool) {
         let Some(parent) = self
-            .inner
             .lineage
             .get()
             .and_then(|lineage| lineage.parent.as_ref())

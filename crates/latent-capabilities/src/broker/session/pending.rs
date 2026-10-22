@@ -1,7 +1,7 @@
 //! One bounded row owner across pre-publication clock currentness contention.
 use super::{
     next_incarnation, CapabilitySession, GuestCapabilityHandle, HandleEntry, HandleLifetime,
-    SessionCore,
+    SessionCoreOwner,
 };
 use crate::broker::{busy, capacity, denied, stopped, HostClock, Kind, PlatformError};
 use latent_policy::capability::{ResourceRequest, ResourceTarget};
@@ -11,7 +11,7 @@ use std::sync::{
 };
 
 pub(in crate::broker) struct PendingBinding {
-    core: Arc<SessionCore>,
+    core: SessionCoreOwner,
     clock: HostClock,
     row: Option<Arc<HandleEntry>>,
     entered: bool,
@@ -21,7 +21,7 @@ pub(in crate::broker) struct PendingBinding {
 impl PendingBinding {
     pub(in crate::broker) fn new(session: &CapabilitySession, clock: HostClock) -> Self {
         Self {
-            core: Arc::clone(&session.core),
+            core: session.core.clone(),
             clock,
             row: None,
             entered: false,
@@ -88,7 +88,7 @@ impl PendingBinding {
                 _metadata: metadata,
                 _slot: charge,
                 lifetime: HandleLifetime {
-                    stats: Arc::clone(&core.stats),
+                    stats: core.stats.clone(),
                     counted: AtomicBool::new(true),
                 },
             }));

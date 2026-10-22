@@ -2,7 +2,7 @@ use super::*;
 use std::sync::{atomic::AtomicBool, Barrier};
 
 #[derive(Default)]
-struct Signal(
+pub(super) struct Signal(
     AtomicBool,
     std::sync::Mutex<Option<std::task::Waker>>,
     AtomicBool,
@@ -30,7 +30,7 @@ impl BudgetCancellationProbe for Signal {
         }
     }
 }
-fn request(fuel: u64, memory: u64, calls: u32) -> ResourceBudget {
+pub(super) fn request(fuel: u64, memory: u64, calls: u32) -> ResourceBudget {
     ResourceBudget {
         cpu_fuel: fuel,
         memory_bytes: memory,
@@ -45,7 +45,7 @@ fn request(fuel: u64, memory: u64, calls: u32) -> ResourceBudget {
         effect_count: 0,
     }
 }
-fn root(limits: DelegationLimits) -> (ActivationBudget, Arc<Signal>, ClockSample) {
+pub(super) fn root(limits: DelegationLimits) -> (ActivationBudget, Arc<Signal>, ClockSample) {
     let sample = ClockSample::new(1000, Instant::now());
     let requested = request(1000, 1000, 32);
     let grant = EffectiveActivationBudget::admit_profile_at(
@@ -62,14 +62,14 @@ fn root(limits: DelegationLimits) -> (ActivationBudget, Arc<Signal>, ClockSample
     budget.enable_descendants(limits, signal.clone()).unwrap();
     (budget, signal, sample)
 }
-fn reserve(
+pub(super) fn reserve(
     parent: &ActivationBudget,
     requested: &ResourceBudget,
     sample: ClockSample,
 ) -> Result<ChildBudgetDelegation, PlatformError> {
     parent.delegate_at(requested, requested, parent.granted(), None, sample)
 }
-fn accept(pending: ChildBudgetDelegation, sample: ClockSample) -> ChildBudgetOwner {
+pub(super) fn accept(pending: ChildBudgetDelegation, sample: ClockSample) -> ChildBudgetOwner {
     let grant = pending.grant();
     pending
         .accept(&grant, Arc::new(Signal::default()), sample.monotonic())

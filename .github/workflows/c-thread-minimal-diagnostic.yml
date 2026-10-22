@@ -1,0 +1,75 @@
+name: Minimal ordinary C child diagnostic
+
+on:
+  push:
+    branches: ['diag/c-thread-minimal-20261022']
+    paths:
+      - '.github/workflows/c-thread-minimal-diagnostic.yml'
+      - 'tools/c_thread_minimal_fixture.py'
+      - 'tools/diagnose_c_thread_minimal.py'
+      - 'tools/tests/test_c_thread_minimal.py'
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: c-thread-minimal-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  minimal-child:
+    name: One normal C build and five diagnostic observations
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - name: Fetch exact unchanged native source object
+        run: git fetch --no-tags --depth=1 origin 7b6365ee39dea9770591a931b96711965f8a1aaf
+      - name: Check source-only minimal and original diagnostic controls
+        run: |
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 -B -m unittest tools.tests.test_c_thread_minimal tools.tests.test_c_thread_prefix -v
+      - name: Authenticate all five unchanged native products
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/host_codec_native_products.py --output "$RUNNER_TEMP/c-minimal-native"
+      - uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2
+        with:
+          version: '0.16.0'
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - name: Install only normal captured C compiler prerequisites
+        run: |
+          python3 -B tools/install_guest_bindgen.py "$RUNNER_TEMP/c-minimal-bindgen"
+          echo "$RUNNER_TEMP/c-minimal-bindgen" >> "$GITHUB_PATH"
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Build one diagnostic component and observe exactly five calls
+        run: python3 -B tools/diagnose_c_thread_minimal.py --prepared "$RUNNER_TEMP/c-minimal-native" --output "$RUNNER_TEMP/c-thread-minimal"
+      - name: Retain bounded public source, build, call and cleanup observations
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: c-thread-minimal-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/c-thread-minimal/*.json
+            ${{ runner.temp }}/c-thread-minimal/*.txt
+            ${{ runner.temp }}/c-thread-minimal/controls/*.json
+            ${{ runner.temp }}/c-thread-minimal/commands/logs/*.txt
+            ${{ runner.temp }}/c-thread-minimal/application/src/main.c
+            ${{ runner.temp }}/c-thread-minimal/application/wit/**
+            ${{ runner.temp }}/c-thread-minimal/build/*.json
+            ${{ runner.temp }}/c-thread-minimal/build/component.wasm
+            ${{ runner.temp }}/c-thread-minimal/build/logs/*.txt
+            ${{ runner.temp }}/c-thread-minimal/build/wit/**
+          retention-days: 7

@@ -69,14 +69,20 @@
         "component::c::tests::c_ready_handoff_canonical_requires_ready_aware_promote",
         "component::c::tests::c_ready_handoff_final_graph_refuses_resume_or_mismatched_target",
         "component::c::tests::c_wait_canonical_functions_keep_suspend_and_deferred_resume_distinct",
-        "component::c::tests::c_wait_final_graph_requires_the_exact_canonical_wake_target"
+        "component::c::tests::c_wait_final_graph_requires_the_exact_canonical_wake_target",
+        "public_root::tests::inserted_native_import_remaps_the_real_public_export_body_and_table",
+        "public_root::tests::existing_exact_native_import_is_reused_but_guest_markers_and_foreign_types_are_refused",
+        "root::tests::canonical_post_return_keeps_root_context_until_actual_cleanup_returns",
+        "root::tests::canonical_cleanup_names_and_actual_exports_are_required",
+        "c_abi::tests::c_system_stack_disjoint_reservation_and_zero_context_realloc_scope",
+        "c_abi::tests::c_system_stack_rejects_aliases_and_live_realloc_tls"
       ],
       "expectedIgnored": [],
       "id": "latent-component-threading.lib.latent-component-threading",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-component-threading/Cargo.toml",
-      "minimumCases": 66,
+      "minimumCases": 72,
       "mode": "libtest",
       "package": "latent-component-threading",
       "platforms": [

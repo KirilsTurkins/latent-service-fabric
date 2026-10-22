@@ -140,6 +140,7 @@ async fn pressure(retain: bool) {
         Fixture::new(config)
     };
     let (session, control) = fixture.session(5000);
+    let control_session_bytes = control.native_session_bytes();
     let stream = fixture
         .provider
         .start(
@@ -246,7 +247,7 @@ async fn pressure(retain: bool) {
         assert!(session.reserve_stream().is_err());
         drop(second);
     } else {
-        assert_eq!(control.budget.host_memory_bytes(), 0);
+        assert_eq!(control.budget.host_memory_bytes(), control_session_bytes);
         assert_eq!(fixture.pools.snapshot().unwrap().connections, 0);
     }
     let closed = observe(key);
@@ -286,6 +287,8 @@ async fn pressure(retain: bool) {
         assert!(control.budget.host_memory_bytes() >= 96 * 1024);
     } else {
         fixture.clean().await;
+        drop(fixture);
+        control.assert_native_settled();
     }
 }
 
