@@ -238,7 +238,7 @@ impl t::transaction_service_server::TransactionService for Service {
                     i::DeclaredError {
                         code: "original-rejection".into(),
                         message: "business decision".into(),
-                        payload: vec![1],
+                        payload: vec![1].into(),
                         media_type: "application/octet-stream".into(),
                         metadata: std::collections::HashMap::default(),
                     },
