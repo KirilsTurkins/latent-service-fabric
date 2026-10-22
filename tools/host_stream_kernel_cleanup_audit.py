@@ -5,6 +5,7 @@ remain. Runtime audit-context transition/work graphs still need qualification.
 """
 import hashlib
 import json
+import re
 from pathlib import Path
 from tools import host_stream_kernel_cleanup_perf as prior
 
@@ -167,12 +168,16 @@ def transform(outputs, inputs):
     text = replace(text, original, updated)
     # Both original reset/replacement sites and the original final key return.
     for pointer in ('ctx->filterkey', 'context->filterkey'):
-        needle = '\tkfree(' + pointer + ');\n'
-        count = text.count(needle)
+        needle = re.compile(r'^(\t+)kfree\(' + re.escape(pointer) + r'\);\n', re.M)
+        count = len(needle.findall(text))
         require(count == (2 if pointer == 'ctx->filterkey' else 1), 'cleanup-audit-key-return-sites')
-        text = text.replace(needle, '#ifdef CONFIG_LSF_STREAM_FACTORY\n'
-            '\tif (!lsf_factory_cleanup_child_finish(' + pointer + ', LSF_CLEANUP_AUDIT_KEY))\n'
-            '#endif\n\t\tkfree(' + pointer + ');\n')
+        def key_return(match):
+            indent = match.group(1)
+            return ('#ifdef CONFIG_LSF_STREAM_FACTORY\n' + indent +
+                'if (!lsf_factory_cleanup_child_finish(' + pointer + ', LSF_CLEANUP_AUDIT_KEY))\n' +
+                indent + '\tkfree(' + pointer + ');\n#else\n' +
+                indent + 'kfree(' + pointer + ');\n#endif\n')
+        text = needle.sub(key_return, text)
     outputs[name] = (include + text + '\n#ifdef CONFIG_LSF_STREAM_FACTORY\n'
         '#include "lsf-cleanup-audit.c"\n#endif\n').encode()
     outputs['kernel/lsf-cleanup-audit.c'] = private_audit().encode()

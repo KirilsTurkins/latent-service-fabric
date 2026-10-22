@@ -262,7 +262,10 @@ int lsf_prepaid_cleanup_provider_irq_abort_opener_locked(struct lsf_cleanup_task
         '\tif (wq->flags & WQ_UNBOUND) {\n')
     outputs[name] = replace(text, old, new).encode()
     name = 'drivers/acpi/osl.c'
-    text = replace(outputs[name].decode(), '#include "../../net/acpi-cleanup-provider-executor.c"\n',
+    text = replace(outputs[name].decode(), '#include <net/lsf_stream_device_firmware.h>\n',
+        '#include <net/lsf_stream_device_firmware.h>\n'
+        '#include <net/lsf_stream_cleanup_provider_executor.h>\n')
+    text = replace(text, '#include "../../net/acpi-cleanup-provider-executor.c"\n',
         '#include "../../net/acpi-cleanup-provider-executor.c"\n'
         '#include "../../net/acpi-cleanup-provider-queue.c"\n')
     outputs[name] = replace(text, '\tlsf_prepaid_acpi_reference_queue_state(false);\n',

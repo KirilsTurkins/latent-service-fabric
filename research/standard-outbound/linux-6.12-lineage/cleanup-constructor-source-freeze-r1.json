@@ -405,8 +405,8 @@
       "sha256": "c5accd10e7a592eb1456eb5d9bd189dc56288f1709d9834bf7e874312edea49c"
     },
     "tools/host_stream_kernel_cleanup_audit.py": {
-      "bytes": 9543,
-      "sha256": "c9caeb933b7c02b8625d577a2db5acfc8cf166eee17ba86b6bece176aa3af87b"
+      "bytes": 9780,
+      "sha256": "7e00472dc4f6466afe5a94dff0cf37aa9c538ea1d9aa9fb7b711ed9fe80fa54e"
     },
     "tools/host_stream_kernel_cleanup_cgroup.py": {
       "bytes": 5366,
@@ -485,8 +485,8 @@
       "sha256": "5b4c2206c0d15a7d390cbce8a9f9881cb5fc4f9b84df0ae8bb1aa72214904efc"
     },
     "tools/host_stream_kernel_cleanup_provider_queue.py": {
-      "bytes": 16480,
-      "sha256": "68833219d5fe11b6773cf6dd3749de0b8e8e76307d669e024d43b91aef73e982"
+      "bytes": 16677,
+      "sha256": "6ac7ba180af30d5fbc073b3fc2619026f7da9eded5c21cf084bb113c134a39d5"
     },
     "tools/host_stream_kernel_cleanup_provider_retirement.py": {
       "bytes": 10455,
@@ -1201,8 +1201,8 @@
       "sha256": "6249ad311b6e5e327180a7169f39d4506841e1616778ff4ebfb92e8c6b20ab93"
     },
     "drivers/acpi/osl.c": {
-      "bytes": 41820,
-      "sha256": "e6854af5e6218c4a8c0eebe9e1e1a8bb95c16b62ede81158b6cde973cfa29769"
+      "bytes": 41874,
+      "sha256": "6e40dfa25a0e3ad0202a11efad2cadd9bc0df0f61b48f7f8d2a7eae757af9b7a"
     },
     "lib/klist.c": {
       "bytes": 10680,
@@ -1809,8 +1809,8 @@
       "sha256": "034b7d0eba1dfa1377ee44c8a68613800b77820944cef51cf1b0ef5069e6b6c2"
     },
     "kernel/auditsc.c": {
-      "bytes": 84597,
-      "sha256": "322ab00106e67dccdb4fe5ddcf1853dd07f109354b12b7c8e2952dbb777884f5"
+      "bytes": 84697,
+      "sha256": "95da7c032a073a558df98696e074c866a8724c9e94cf7289c8468a5f1c5adf42"
     },
     "kernel/lsf-cleanup-audit.c": {
       "bytes": 3093,
@@ -2136,5 +2136,32 @@
     },
     "actualAtomicExecution": false,
     "objectsCompiled": false
+  },
+  "priorCompileFailure": {
+    "run": 39873344452,
+    "source": "b722288ad10e623a864d5c7cb58a5a23ee1d1f4b",
+    "stage": "24-affected-objects",
+    "artifact": 12467253002,
+    "artifactBytes": 400246,
+    "artifactSha256": "6d198f0b048bc093cdc4ed50aea4052b5719bac523d99a621c651fc2282e538f",
+    "exactLeafNativeControl": {
+      "source": {
+        "bytes": 3700,
+        "sha256": "cfe8026bc45f1eb614eb3a4bcbdd6e8829f27f5e713bb9a342f95874db940c3a"
+      },
+      "executable": {
+        "bytes": 16184,
+        "sha256": "99e69e1bdd2a0922ff1910eea7bf56aa1df35ed360295133b5b025e9e411881f"
+      },
+      "passed": true,
+      "compilerAtomicsExecuted": true,
+      "deterministicInterleavings": true,
+      "actualLinuxAtomicExecution": false,
+      "deviceDestructorExecuted": false,
+      "nativeCapacityRefunded": false
+    },
+    "wholeObjectProgrammePassed": false,
+    "actualLinuxExecution": false,
+    "actualNativeLedger": false
   }
 }
