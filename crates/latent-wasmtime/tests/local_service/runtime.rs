@@ -594,21 +594,21 @@ async fn signed_runtime_limits_closing_and_generation_fences_use_normal_node_adm
     );
     assert_ne!(first, second);
     f.idle().await;
-    let direct = success(
-        f.manager
-            .start(f.request("lazy-no-concurrency", 15))
-            .unwrap()
-            .await,
-    );
+    // These memory observations differ only in runtime work. The activation
+    // and defaulted root IDs are both retained by the original context charge.
+    let direct_request = f.request("lazy-no-concurrency", 15);
+    let owned_request = f.request("native-runtime-work", 0);
+    let mut native_exhausted = f.request("native-runtime-deny", 23);
+    let id_widths = [&direct_request, &owned_request, &native_exhausted]
+        .map(|request| request.activation_id.as_ref().unwrap().0.len());
+    assert_eq!(id_widths, [19; 3]);
+    let direct = success(f.manager.start(direct_request).unwrap().await);
+    // Compare identical canonical result bytes/capacity: this baseline does
+    // no runtime imports, while mode23 catches its native-memory refusal.
+    assert_eq!(direct.output.as_ref(), b"[42]");
     f.idle().await;
-    let owned = success(
-        f.manager
-            .start(f.request("accounted-runtime-owner", 0))
-            .unwrap()
-            .await,
-    );
+    let owned = success(f.manager.start(owned_request).unwrap().await);
     f.idle().await;
-    let mut native_exhausted = f.request("native-runtime-exhaustion", 23);
     native_exhausted.budget.memory_bytes = direct.consumption.peak_memory_bytes;
     let exhausted = success(f.manager.start(native_exhausted).unwrap().await);
     assert_eq!(

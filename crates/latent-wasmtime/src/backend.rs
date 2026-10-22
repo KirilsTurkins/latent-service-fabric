@@ -1329,14 +1329,10 @@ fn invocation_accounting(
     } = store.data().host_call_timing();
     let consumption = BudgetConsumption {
         cpu_fuel: store.data().accounting.native_fuel_consumed(remaining_fuel),
-        peak_memory_bytes: store.data().limiter.peak_memory_bytes().max(
-            store
-                .data()
-                .accounting
-                .budget()
-                .snapshot_at(Instant::now())
-                .peak_memory_bytes,
-        ),
+        // Terminal backend reports contain this execution's own guest memory.
+        // Native owners already contribute to the shared original ledger;
+        // finalization adds them once while their actual storage remains live.
+        peak_memory_bytes: peak_memory,
         wall_time_micros,
         log_bytes: store.data().logs.bytes(),
         ..BudgetConsumption::default()

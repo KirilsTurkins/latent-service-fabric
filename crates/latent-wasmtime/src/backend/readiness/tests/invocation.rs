@@ -381,8 +381,13 @@ async fn ordinary_backend_codec_reports_original_peak_and_result_outlives_store_
     assert_eq!(snapshot.active_invocations, 0);
     assert_eq!(f.backend.active_instance_reservations(), 0);
     let original_peak = original.snapshot_at(Instant::now()).peak_memory_bytes;
-    assert!(consumption.peak_memory_bytes >= raw_capacity + 64);
-    assert_eq!(consumption.peak_memory_bytes, original_peak);
+    assert_eq!(consumption.peak_memory_bytes, 0); // own guest linear memory only
+    assert!(original_peak >= raw_capacity + 64);
+    // The activation owner reconciles the guest-only backend report with the
+    // same ledger. Native/input/result peak must survive without a second charge.
+    let terminal = original.finalize_at(Some(&consumption), Instant::now());
+    assert!(terminal.violation().is_none());
+    assert_eq!(terminal.consumption().peak_memory_bytes, original_peak);
     assert!(original_peak < 64 * 1024); // no maxDecoded/output blanket precharge
     let retained = original.host_memory_bytes();
     assert!(retained >= output.capacity() as u64);
