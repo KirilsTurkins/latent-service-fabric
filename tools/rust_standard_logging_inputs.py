@@ -148,8 +148,13 @@ class Prepared:
                          '__lsf_rust_owned_thread_entry', '__lsf_rust_root_bootstrap',
                          '__lsf_rust_root_finish', '__lsf_rust_root_reap'):
                 flags.append('-Clink-arg=--export=' + name)
-        return ['--config', 'target.' + clock.TARGET + '.rustflags=' +
-                json.dumps(flags, separators=(',', ':'))]
+        arguments = ['--config', 'target.' + clock.TARGET + '.rustflags=' +
+                     json.dumps(flags, separators=(',', ':'))]
+        if has_threads(self.profile):
+            # Preserve compiler-object boundaries for the selected profile's
+            # complete private graph. Application Cargo source stays original.
+            arguments.extend(['--config', 'profile.release.lto=false'])
+        return arguments
 
     def material(self):
         return encode({'schemaVersion': 'latent.rust.standard-stdio-input.v1', 'profile': self.profile,
