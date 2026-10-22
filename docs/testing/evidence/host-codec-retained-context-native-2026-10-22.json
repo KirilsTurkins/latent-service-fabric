@@ -1,0 +1,184 @@
+{
+  "status": "passed",
+  "ownerIssues": [
+    736,
+    745
+  ],
+  "diagnosticSupportIssue": 679,
+  "schemaVersion": "latent.host-codec.retained-context-native-evidence.v1",
+  "scope": "ordinary-host-retained-activation-context-and-linear-allocation-notifications-codec-table-and-selected-Store-instance-buffer-registry-FuncRefs-container-resource-substitutions-original-memory-and-selected-c-public-async-type-sync-core-admission-and-authenticated-c-ready-handoff-and-closed-guest-trap-diagnostics-and-exact-native-thread-audit-codec; direct-Core-HostFunc-construction, shared-preparation-closures, concurrent-task, hostcall, request ingress and discarded scaffolding and later hostcall copies, legacy framing and serialized controller frames excluded",
+  "sourceRevision": "f5351a9331ed954c49ae83f2f4004e0f96d25d0e",
+  "nativeCohort": "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-memory-v7",
+  "profile": "normal-managed-guest-default-features",
+  "source": {
+    "sha256": "sha256:6503419aaf79eba04a8c3358c1dd6a91458fe3e7f447413bcff7da6025a0bc96",
+    "files": 3622,
+    "bytes": 31499697,
+    "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+    "hermetic": false,
+    "implicitCompilerInputs": "not-attested"
+  },
+  "compiler": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "products": {
+    "latent": {
+      "sha256": "sha256:d0b7beefea1e2d4badf601e14fb28a4ccc6201c64d96465e92d278ad9eb48259",
+      "bytes": 72401528
+    },
+    "latentd": {
+      "sha256": "sha256:52b97acde576b730011922b6eb1c3714bd8d8c9f3881094d05d8e911d64f2be7",
+      "bytes": 190116848
+    },
+    "examples/package": {
+      "sha256": "sha256:8ae0569c98e5e959c9366623881f3419564ce37742c56691daaf9be15f596d2e",
+      "bytes": 21160200
+    },
+    "examples/capsule_contracts": {
+      "sha256": "sha256:629218db7c512a5c51e18070baf1e49a4a7622aeb1b2ce98d86e1f3eae386860",
+      "bytes": 13854416
+    },
+    "examples/capsule_authoring": {
+      "sha256": "sha256:4d07b43e3ce3be71f871d695a5284accfb57bc87472c4fc013490e143dd9260a",
+      "bytes": 27416432
+    }
+  },
+  "origin": {
+    "repository": "KirilsTurkins/latent-service-fabric",
+    "workflow": ".github/workflows/host-codec-memory.yml",
+    "event": "push",
+    "run": 39723924277,
+    "job": 119643418717,
+    "artifact": 12402318143,
+    "artifactName": "host-codec-memory-f5351a9331ed954c49ae83f2f4004e0f96d25d0e",
+    "archiveBytes": 70406286,
+    "archiveSha256": "sha256:832b109a4e41a2b02cbcc5e6c49114f3cd32aa959083b53c8f2caa6f5c3276cc",
+    "archiveMembers": 111,
+    "expandedBytes": 325242056,
+    "receiptMember": "native-products.json",
+    "receiptBytes": 85615,
+    "receiptSha256": "sha256:6a7f8d4d53244c51e985211ce9decdc38a25dd2eb50b1676a247743d8d43057d",
+    "sourceInputsMember": "source-inputs.json",
+    "sourceInputsBytes": 24573,
+    "sourceInputsSha256": "sha256:d92f6ecabd7db2d22042d3502592ba54c490b114fde6e5cb77d0812a568102ce"
+  },
+  "recipeAndAuxiliaryMaterials": 148,
+  "controlCount": 114,
+  "commandCount": 51,
+  "verifiedLogStreamHashes": 102,
+  "ignoredControls": 0,
+  "controlGroups": {
+    "original-host-memory": 6,
+    "result-owner": 4,
+    "result-wire": 4,
+    "result-capacity": 1,
+    "actual-host-codec": 9,
+    "actual-dynamic-allocation-hook": 6,
+    "raw-input-lifetime": 4,
+    "result-lifetime": 2,
+    "original-accounting": 20,
+    "child-capacity": 1,
+    "c-public-async-type": 1,
+    "c-public-sync-abi": 1,
+    "journal-result-retirement": 1,
+    "ordinary-backend": 1,
+    "actual-native-table-owner": 9,
+    "actual-native-store-owner": 10,
+    "closed-guest-trap-diagnostics": 1,
+    "actual-native-registry-owner": 4,
+    "actual-native-funcrefs-owner": 5,
+    "c-ready-handoff": 2,
+    "resource-substitutions": 5,
+    "actual-linear-allocation-notifications": 3,
+    "native-thread-audit-codec": 3,
+    "retained-activation-context": 11
+  },
+  "earlierEvidence": [
+    "host-codec-funcrefs-native-2026-10-22.json",
+    "host-codec-registry-native-2026-10-22.json",
+    "host-codec-table-store-native-2026-10-22.json",
+    "host-codec-original-memory-native-2026-10-22.json"
+  ],
+  "reportingBoundary": {
+    "actualSelectedControls": "All114 exact selected controls passed, including three allocator notification controls, three exact native audit codec controls and eleven retained-context controls (eight existing and three new).",
+    "genericCiRemainsDistinct": "The same-source generic CI separately found the missing unsafe test-item review record and a TCP integration assertion that demanded zero memory while retaining its Returned output. Those fixes are subsequent source-only changes and are not retroactively executed by this frozen114 programme.",
+    "runtimeRegression": "The original tight-memory node integration is outside these114 selected controls. Its unchanged same-source generic case was observed passing before the later TCP test failed; generic workflow success is not inferred.",
+    "noRetroactiveQualification": true
+  },
+  "verification": {
+    "wholeArchive": true,
+    "all111MemberCrcAndHashes": true,
+    "exact51CommandArgv": true,
+    "all102StreamHashes": true,
+    "all114ActualResultsNoIgnores": true,
+    "fiveActualProductHashes": true,
+    "sourceAnd148MaterialsMatchFrozenGit": true,
+    "liveGitHubMetadata": true
+  },
+  "limitations": {
+    "signedQualification": false,
+    "guestJavaScriptEngineCompiled": false,
+    "guestSourceCompiled": false,
+    "historicalReceiptsRewritten": false,
+    "fullSdkCostAcceptance": false,
+    "sourceHermetic": false,
+    "implicitCompilerInputs": "not-attested",
+    "excluded": [
+      "direct Core HostFunc state/context constructors and shared preparation closures/import backing",
+      "typed hostcall String/Vec/future/result copies and concurrent task/queue frames",
+      "incoming request surplus and discarded scaffolding; later hostcall copies",
+      "legacy framing and serialized controller frames"
+    ]
+  },
+  "original97Controls": {
+    "unchangedSelectorPrefix": true,
+    "evidence": "host-codec-resource-types-native-2026-10-22.json",
+    "originalSourceRevision": "94f2976f2fdba0b5f1a730d9fc668e9e61571443",
+    "implementationUnchangedClaim": false
+  },
+  "additional17Controls": {
+    "actual-linear-allocation-notifications": [
+      "host::native_linear_memory_tests::actual_linear_memory_is_confirmed_before_subsequent_native_instance_allocations",
+      "host::native_linear_memory_tests::actual_linear_creator_failure_rolls_back_without_confirming_unallocated_pages",
+      "host::native_linear_memory_tests::actual_linear_growth_confirms_success_and_failed_growth_preserves_prior_peak"
+    ],
+    "native-thread-audit-codec": [
+      "durable::tests::capability::native_thread_audit_encodes_exact_grant_and_host_completion_without_changing_default_abi",
+      "durable::tests::capability::native_thread_audit_refuses_other_versions_operations_and_resource_classes",
+      "durable::tests::capability::native_thread_audit_retains_identity_outcome_and_redaction_boundaries"
+    ],
+    "retained-activation-context": [
+      "host::owned_context::tests::web_asset_identity_comes_from_the_prepared_revision_not_caller_metadata",
+      "host::owned_context::tests::unselected_or_mismatched_execution_cannot_spoof_the_reserved_web_identity",
+      "host::owned_context::tests::web_identity_map_entry_is_charged_before_context_ownership_transfer",
+      "host::owned_context::tests::validated_context_moves_every_field_and_ordinary_backing_buffer",
+      "host::owned_context::tests::capacity_threshold_is_inclusive_and_excess_has_a_hard_postcondition",
+      "host::owned_context::tests::spare_capacity_does_not_change_the_existing_logical_admission_boundary",
+      "host::owned_context::tests::excessive_values_keep_map_nodes_and_ordinary_keys_in_place",
+      "host::owned_context::tests::excessive_keys_rebuild_only_their_map_and_preserve_values_and_order",
+      "host::owned_context::tests::retained_context_uses_original_memory_until_drop_and_rolls_back_refused_admission",
+      "host::owned_context::tests::retained_context_bound_excludes_discarded_scaffolding_and_caller_web_identity",
+      "host::owned_context::tests::retained_context_keeps_legacy_profile_unaccounted_and_arithmetic_checked"
+    ]
+  },
+  "failedAttempts": [
+    {
+      "sourceRevision": "ea118974d93843265a504f5d30571ed7cfe8a7d2",
+      "run": 39719330378,
+      "job": 119628898818,
+      "artifact": 12400718037,
+      "status": "failed",
+      "actualPassed": 15,
+      "unreached": 88,
+      "failure": "Required unsafe MemoryCreator test implementation needed an item-level allow under the unchanged crate deny lint."
+    },
+    {
+      "sourceRevision": "89bbbde0cede1a2c41dbc14023dbbf9cf3a713d2",
+      "run": 39721155021,
+      "job": 119634636753,
+      "artifact": 12401298142,
+      "status": "failed",
+      "actualPassed": 100,
+      "unreached": 3,
+      "failure": "Native-thread audit test discovery failed because Phase2AuditEventKind was not imported."
+    }
+  ]
+}
