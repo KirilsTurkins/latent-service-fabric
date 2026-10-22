@@ -38,19 +38,27 @@ RECIPE = tuple(dict.fromkeys(('tools/compile_rust_owned_thread_application.py',
 MAX_CORE = 8 * 1024 * 1024
 MAX_EXPANDED_SOURCE = 128 * 1024 * 1024
 MAX_SOURCE_ARCHIVE = 32 * 1024 * 1024
+MAX_EXECUTOR_OBJECT = 8 * 1024 * 1024
 
 
-def emitted_core(raw: bytes, work: Path, target: Path, name: str) -> Path:
+def cargo_records(raw: bytes):
     require(len(raw) <= 4 * 1024 * 1024, 'rust-thread-app-cargo-output-bound')
     lines = raw.splitlines()
     require(len(lines) <= 8192, 'rust-thread-app-cargo-record-bound')
-    selected, finished = [], False
+    finished = False
     for line in lines:
         row = decode_json(line)
         require(isinstance(row, dict) and not finished, 'rust-thread-app-cargo-terminal')
         if row.get('reason') == 'build-finished':
             require(row.get('success') is True, 'rust-thread-app-build-failed')
             finished = True
+        yield row
+    require(finished, 'rust-thread-app-cargo-missing-terminal')
+
+
+def emitted_core(raw: bytes, work: Path, target: Path, name: str) -> Path:
+    selected = []
+    for row in cargo_records(raw):
         if row.get('reason') != 'compiler-artifact' or row.get('target', {}).get('name') != name:
             continue
         require(row['target'].get('crate_types') == ['cdylib']
@@ -64,7 +72,49 @@ def emitted_core(raw: bytes, work: Path, target: Path, name: str) -> Path:
             if path.suffix == '.wasm':
                 require(path.is_relative_to(target), 'rust-thread-app-core-outside-target')
                 selected.append(path)
-    require(finished and len(selected) == 1, 'rust-thread-app-core-emission-closure')
+    require(len(selected) == 1, 'rust-thread-app-core-emission-closure')
+    return selected[0]
+
+
+def emitted_executor(raw: bytes, work: Path, target: Path, package: dict):
+    """Attribute one actual target rlib to the already verified native capture."""
+    metadata = package['metadata']
+    require(package['format'] == 'directory'
+            and metadata['package'] == port.profile.EXECUTOR
+            and metadata['version'] == port.profile.EXECUTOR_VERSION
+            and metadata['vendorChecksum']['package'] == port.profile.EXECUTOR_ARCHIVE_SHA256,
+            'rust-thread-app-authentic-executor-capture')
+    manifest = checked_path(work / package['mount'] / 'Cargo.toml')
+    source = checked_path(manifest.parent / 'src/lib.rs')
+    directory = target / standard.clock.TARGET / 'release/deps'
+    selected = []
+    for row in cargo_records(raw):
+        if row.get('reason') != 'compiler-artifact' or row.get('target', {}).get('name') != 'futures_executor':
+            continue
+        kind = row['target']
+        features = row.get('features')
+        require(isinstance(row.get('package_id'), str)
+                and digest(row['package_id'].encode()) == metadata['nativeIdDigest']
+                and row.get('manifest_path') == str(manifest)
+                and kind.get('src_path') == str(source)
+                and kind.get('kind') == ['lib'] and kind.get('crate_types') == ['lib']
+                and kind.get('edition') == '2018'
+                and isinstance(features, list) and len(features) <= 64
+                and all(isinstance(value, str) for value in features)
+                and len(features) == len(metadata['features'])
+                and set(features) == set(metadata['features'])
+                and row.get('profile', {}).get('test') is False
+                and row.get('fresh') is False and row.get('executable') is None
+                and isinstance(row.get('filenames'), list) and len(row['filenames']) <= 16,
+                'rust-thread-app-executor-emission-attribution')
+        for value in row['filenames']:
+            require(isinstance(value, str), 'rust-thread-app-executor-emitted-path')
+            path = checked_path(Path(value))
+            require(path.parent == directory and path.suffix in {'.rlib', '.rmeta'},
+                    'rust-thread-app-executor-target-output')
+            if path.suffix == '.rlib':
+                selected.append((path, row))
+    require(len(selected) == 1, 'rust-thread-app-executor-emission-closure')
     return selected[0]
 
 
@@ -156,6 +206,9 @@ def run(output: Path, rust_bin: Path, owned_sysroot: Path, context_tool: Path, *
             verified = verify_inputs(observed.dependency_root, 'rust')
             require(verified is not None, 'rust-thread-app-original-capture-required')
             port.verify_capture(verified, standard.THREAD)
+            runtime = [row for row in verified.lock['artifacts']
+                       if row['id'] == captured['runtimeArtifact']]
+            require(len(runtime) == 1, 'rust-thread-app-captured-executor-identity')
             source = inventory(files)
             require(captured['sourceDigest'] == digest(source)
                     and captured['publicExport'] == fixture.PUBLIC
@@ -223,12 +276,25 @@ def run(output: Path, rust_bin: Path, owned_sysroot: Path, context_tool: Path, *
             record['bindingDigest'] = builder.binding_check(work, pins, commands, paths['wit-bindgen'])
             record['stage'] = 'one-isolated-offline-original-compile'
             prepared.check()
+            target_arguments = prepared.arguments()
+            record['targetCargoConfiguration'] = target_arguments
             raw = guard.compile(commands, paths['cargo'], [
                 'build', '--locked', '--release', '--lib', '--target', 'wasm32-unknown-unknown',
-                '--message-format=json', *prepared.arguments()], work)
+                '--message-format=json', '--verbose', *target_arguments], work)
             prepared.check()
             executable_outputs = builder.RustExecutableOutputs(temporary / 'target', output, approval.identity)
             core_path = emitted_core(raw, work, temporary / 'target', project['name'].replace('-', '_'))
+            executor_path, executor_emission = emitted_executor(raw, work, temporary / 'target', runtime[0])
+            executor_identity = file_identity(executor_path, 'captured-futures-executor.rlib', MAX_EXECUTOR_OBJECT)
+            shutil.copyfile(executor_path, output / 'captured-futures-executor.rlib')
+            require(file_identity(output / 'captured-futures-executor.rlib',
+                                  'captured-futures-executor.rlib', MAX_EXECUTOR_OBJECT) == executor_identity,
+                    'rust-thread-app-executor-object-copy')
+            write_json(output / 'executor-object-emission.json', {
+                'capturedArtifact': runtime[0]['id'], 'capturedTreeDigest': runtime[0]['treeDigest'],
+                'compilerArtifact': executor_emission, 'object': executor_identity,
+                'privateExecutorGraphAuthenticated': False, 'runtimeQualified': False})
+            record['executorObject'] = executor_identity
             core = read_file(core_path, MAX_CORE)
             (output / 'raw-core.wasm').write_bytes(core)
             record['originalCore'] = file_identity(output / 'raw-core.wasm', 'original-core', MAX_CORE)
