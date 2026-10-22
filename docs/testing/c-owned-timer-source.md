@@ -85,10 +85,17 @@ on `b606b1402961593dd918722a66fe293bfab9b319`, including all 172 prior controls
 and five ordinary-versus-physical ownership controls. Independent strict live
 verification checked 163 archive members, 77 exact commands, all 154 stream
 hashes, 3,642 native source files, all 148 auxiliary materials and five products.
-The current C consumer uses those separately frozen products; its historical
-36-outcome result remains attributable to the older native172 source until the
-current signed programme completes. The original reader/defaults and all C
-case, owner, fuel, memory and timing bounds remain unchanged.
+Signed run `39871569330` then passed all 36 outcomes on
+`a13d79dd1b26de7c02916e74f42c76670cdab9b6` using those separately frozen
+native177 products. Independent strict live verification checked all 518
+archive members, 114 Git materials, 57 recipe inputs, 66 captured sources,
+26 successful build commands and 151 CLI calls. All 36 retirements have zero
+physical/provider owners, followed by clean node and peer shutdown. The
+[current source-bound result](evidence/c-timed-runtime-signed-2026-10-23.json)
+retains its own component, source, artifact and audit observations. The earlier
+native172 C success and all failed attempts remain separately attributable.
+The original readers/defaults and all C case, owner, fuel, memory and timing
+bounds remain unchanged.
 
 Timer-budget exhaustion, timer-specific cancellation/deadline barriers,
 recurring callbacks, cross-tenant reuse and published/transitive libraries
