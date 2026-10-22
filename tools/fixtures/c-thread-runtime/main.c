@@ -115,7 +115,7 @@ static void observed_result(probe_string_t *result, unsigned children) {
     probe_string_dup(result, output);
 }
 
-#include "synchronization.c"
+#include "synchronization.h"
 
 bool exports_examples_c_thread_runtime_api_greet(probe_string_t *input,
                                                 probe_string_t *result, probe_string_t *error) {

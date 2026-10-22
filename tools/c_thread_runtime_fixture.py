@@ -23,7 +23,7 @@ def prepare(directory: Path) -> Path:
     project = c_capsule_project.create(directory, 'greeting', name='c-thread-runtime',
                                        threading_profile=PROFILE)
     (project / 'src/main.c').write_bytes(read_file(ROOT / (FIXTURE + 'main.c')))
-    (project / 'src/synchronization.c').write_bytes(read_file(ROOT / (FIXTURE + 'synchronization.c')))
+    (project / 'src/synchronization.h').write_bytes(read_file(ROOT / (FIXTURE + 'synchronization.h')))
     (project / 'wit/world.wit').write_bytes(read_file(ROOT / (FIXTURE + 'world.wit')))
     config = json.loads(read_file(project / 'capsule-project.json'))
     config['world'] = WORLD

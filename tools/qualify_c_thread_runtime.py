@@ -54,7 +54,7 @@ MATERIALS = (
     'tools/dev_workflow/process.py', 'tools/c_guest/__init__.py',
     'tools/build_process_signals.py', 'tools/guest_runtime_profiles.py',
     'tools/install_guest_bindgen.py', '.github/workflows/c-thread-runtime.yml',
-    fixture.FIXTURE + 'main.c', fixture.FIXTURE + 'synchronization.c', fixture.FIXTURE + 'world.wit',
+    fixture.FIXTURE + 'main.c', fixture.FIXTURE + 'synchronization.h', fixture.FIXTURE + 'world.wit',
 )
 
 

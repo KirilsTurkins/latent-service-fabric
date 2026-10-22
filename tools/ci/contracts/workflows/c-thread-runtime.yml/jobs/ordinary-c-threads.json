@@ -66,7 +66,7 @@
         "uses": "actions/upload-artifact",
         "with": {
           "name": "c-thread-ready-runtime-${{ github.sha }}",
-          "path": "${{ runner.temp }}/c-thread-runtime/*.json\n${{ runner.temp }}/c-thread-runtime/build/*.json\n${{ runner.temp }}/c-thread-runtime/build/component.wasm\n${{ runner.temp }}/c-thread-runtime/application/src/main.c\n${{ runner.temp }}/c-thread-runtime/application/src/synchronization.c\n${{ runner.temp }}/c-thread-runtime/application/wit/**\n${{ runner.temp }}/c-thread-runtime/build/wit/**\n${{ runner.temp }}/c-thread-runtime/build/logs/*.txt\n${{ runner.temp }}/c-thread-runtime/node/*.json\n${{ runner.temp }}/c-thread-runtime/node/*.stdout\n${{ runner.temp }}/c-thread-runtime/node/*.stderr\n${{ runner.temp }}/c-thread-runtime/node/controls/*.json\n${{ runner.temp }}/c-thread-runtime/node/commands/logs/*.txt\n${{ runner.temp }}/c-thread-runtime/node/commands/*.json\n${{ runner.temp }}/c-sync-source/*.json\n${{ runner.temp }}/c-sync-source/*.txt\n${{ runner.temp }}/c-sync-source/*.h\n${{ runner.temp }}/c-sync-source/*.o\n${{ runner.temp }}/c-sync-source/*.wasm\n",
+          "path": "${{ runner.temp }}/c-thread-runtime/*.json\n${{ runner.temp }}/c-thread-runtime/build/*.json\n${{ runner.temp }}/c-thread-runtime/build/component.wasm\n${{ runner.temp }}/c-thread-runtime/application/src/main.c\n${{ runner.temp }}/c-thread-runtime/application/src/synchronization.h\n${{ runner.temp }}/c-thread-runtime/application/wit/**\n${{ runner.temp }}/c-thread-runtime/build/wit/**\n${{ runner.temp }}/c-thread-runtime/build/logs/*.txt\n${{ runner.temp }}/c-thread-runtime/node/*.json\n${{ runner.temp }}/c-thread-runtime/node/*.stdout\n${{ runner.temp }}/c-thread-runtime/node/*.stderr\n${{ runner.temp }}/c-thread-runtime/node/controls/*.json\n${{ runner.temp }}/c-thread-runtime/node/commands/logs/*.txt\n${{ runner.temp }}/c-thread-runtime/node/commands/*.json\n${{ runner.temp }}/c-sync-source/*.json\n${{ runner.temp }}/c-sync-source/*.txt\n${{ runner.temp }}/c-sync-source/*.h\n${{ runner.temp }}/c-sync-source/*.o\n${{ runner.temp }}/c-sync-source/*.wasm\n",
           "retention-days": 7
         }
       }
@@ -75,7 +75,7 @@
   },
   "jobId": "ordinary-c-threads",
   "kind": "job",
-  "reviewReason": "Keep all C17 native128 commands and limits; add the bounded13 serialized production-source controls and20-outcome synchronization prefix extension.",
+  "reviewReason": "Keep all commands and bounds; retain the renamed included synchronization header in owning artifacts.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/c-thread-runtime.yml"
 }

@@ -126,7 +126,7 @@ jobs:
             ${{ runner.temp }}/c-thread-runtime/build/*.json
             ${{ runner.temp }}/c-thread-runtime/build/component.wasm
             ${{ runner.temp }}/c-thread-runtime/application/src/main.c
-            ${{ runner.temp }}/c-thread-runtime/application/src/synchronization.c
+            ${{ runner.temp }}/c-thread-runtime/application/src/synchronization.h
             ${{ runner.temp }}/c-thread-runtime/application/wit/**
             ${{ runner.temp }}/c-thread-runtime/build/wit/**
             ${{ runner.temp }}/c-thread-runtime/build/logs/*.txt

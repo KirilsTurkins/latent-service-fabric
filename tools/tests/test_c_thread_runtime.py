@@ -289,6 +289,10 @@ class CThreadRuntime(unittest.TestCase):
             self.assertEqual(config['limits']['memoryBytes'], 32 * 1024 * 1024)
             self.assertEqual(config['limits']['outboundRequests'], 0)
             source = (project / 'src/main.c').read_text()
+            self.assertEqual(sorted(path.name for path in (project / 'src').glob('*.c')), ['main.c'])
+            self.assertIn('#include "synchronization.h"', source)
+            self.assertEqual((project / 'src/synchronization.h').read_bytes(),
+                (fixture.ROOT / (fixture.FIXTURE + 'synchronization.h')).read_bytes())
             for ordinary in ('pthread_create(', 'pthread_join(', 'pthread_self(', 'pthread_equal(',
                              'thrd_create(', 'thrd_join(', 'thrd_current(', 'thrd_equal(',
                              'pthread_key_create(', '_Thread_local', 'errno ='):

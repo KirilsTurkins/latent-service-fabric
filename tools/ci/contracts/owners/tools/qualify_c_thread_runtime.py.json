@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_c_thread_runtime.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Compose reviewed native128 exact-source admission with the original17 and three appended signed synchronization outcomes; preserve all original limits and assertions.",
+  "reviewReason": "Capture the included synchronization header so the normal C builder compiles it only through main.c; preserve all20 outcomes, predicates, authority and limits.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "509a05c65838bb3edb5eac7bfef7e00806d700dcb8f3ea3e783985b1c122d54e"
+  "sha256": "361b3163c794a811cdb26235c0f712d0c887ffd9a2b4bd192f3fa3ac2aa653a4"
 }
