@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_c_thread_runtime.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Root full-read approval: native_evidence carries the explicitly fixed caller through compiled/current source equality; omitted assert_current retains original7b default, all original controls remain and new foreign-source refusal/routing control is additive.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "80cfad533a378d0b62fe30999a89534aad9a6f4baca9330632d149fa5d6d9776"
+}

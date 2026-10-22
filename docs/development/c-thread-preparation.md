@@ -171,3 +171,62 @@ root wrapper plus a malformed negative fixture. The corrected byte operations
 retain offset 80, typed logical token retirement and all original quotas; the
 negative fixture still requires refusal before allocating opcode decoding.
 None of these failed runs supplies passing qualification credit.
+
+
+The first ordinary C owning [run 39586182661](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39586182661)
+failed during linking: the original libc and the selected source PAL both defined
+`pthread_setspecific`. No component or guest result was produced. The selected
+compiler now gives exactly the four pthread key and four C11 TSS entry points a
+private source-PAL namespace across ordinary declarations, application calls and
+PAL definitions. Its generation-checked keys stay in the charged TLS context;
+libc retains its original internal keys and TLS `errno`. Static archives remain
+unsupported by this first profile. No multiple-definition allowance is used.
+[The retained failure and preprocessing control](../testing/evidence/c-thread-runtime-link-failure-2026-10-21.json)
+provide source evidence only; all seventeen runtime cases remain required.
+
+A separate actual development formatter failure is repaired with the pinned
+Rust 1.97.1 formatter, each Cargo package edition and the repository configuration. The
+[closed formatting comparison](../testing/evidence/c-thread-native-rustfmt-2026-10-21.json)
+binds the exact original and formatted hashes of two C transformer files, with the other
+3322 native files unchanged. The consumer admits only the two complete frozen
+source inventories for that historical comparison; f0 remains the original
+compiled source. This comparison does not claim that the formatted tree was compiled.
+
+The next ordinary C campaign uses the separate
+[c713 native tuple](../testing/evidence/activation-stack-native-2026-10-21.json).
+Its 132 Rust and 16 Python controls passed, including the complete sixty-case C
+proof suite, eleven exact C profile controls and eleven ordinary-worker controls.
+The shared source guard accepts only that exact native tree, the pinned reversible
+`install_stack_accounting` helper extraction, or that extraction plus two exact
+explicit enum defaults in the existing engine test. It records the compiled and
+current identities separately; the other 3324 or 3323 native files remain byte exact.
+All seventeen signed C lifecycle outcomes still require actual guest execution.
+
+
+The c713-backed [ordinary C attempt](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39606172348)
+passed linking, full derivation, final proof binding, validation and contract
+generation, then stopped at compatibility inspection: the base V5 manifest does
+not recognize the selected native-thread internal port. No guest ran. The
+proposed selected C supplement preserves that original inspection and base ABI,
+binds the exact port WIT and full original-core proof, and requires the existing
+native verifier to reproduce the final component bytes. It is compiler evidence;
+independent runtime validation, Native authority and all seventeen guest outcomes
+remain required.
+
+## Explicit public async effect
+
+The selected C cooperative profile requires an explicitly declared public
+`greet: async func(name: string) -> result<string, string>` contract. The
+application implementation remains ordinary synchronous C. The pinned generator
+receives `--async=-all`: this keeps its synchronous Core ABI and the original
+C implementation signature while preserving the explicitly async WIT type in
+component metadata. The compiler records both choices in the binding lock.
+The native closed graph requires that async public type and still refuses
+canonical `async` and callback ABI options. A synchronous selected WIT entry is
+refused; no public contract is silently converted. The default C profile does
+not receive this generator option.
+
+The earlier 563 component's second guest fault is retained. The sync-contract
+blocking restriction is a source-supported cause hypothesis until a fresh
+explicit-contract programme provides the causal result; it is not a measured
+trap label. The original 17 outcomes, grants, and limits remain mandatory.

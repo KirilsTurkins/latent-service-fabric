@@ -1,0 +1,127 @@
+{
+  "cases": [
+    "CThreadRuntime.test_actual_empty_list_usage_schema_is_required",
+    "CThreadRuntime.test_child_entry_requires_exact_current_native_and_child_events_and_five_owners",
+    "CThreadRuntime.test_cleanup_preserves_original_failure_but_refuses_failed_success_cleanup",
+    "CThreadRuntime.test_current_native_source_equality_is_required_before_any_product_use",
+    "CThreadRuntime.test_explicit_fixed_product_source_is_checked_without_falling_back_to_v1",
+    "CThreadRuntime.test_failed_invocation_completion_cannot_be_hidden_by_failed_close",
+    "CThreadRuntime.test_formatter_source_exception_is_exact_full_tree_and_digest_bound",
+    "CThreadRuntime.test_fresh_ordinary_project_is_selected_locked_and_uses_standard_calls",
+    "CThreadRuntime.test_real_child_owner_observation_is_exact_and_cannot_be_relabelled_pending"
+  ],
+  "guards": {
+    "CThreadRuntime.test_actual_empty_list_usage_schema_is_required": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2be903e58e8891d808bbcbead97fda3654ac15cc0d2337b999ed19c3bd322625",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CThreadRuntime.test_child_entry_requires_exact_current_native_and_child_events_and_five_owners": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2be903e58e8891d808bbcbead97fda3654ac15cc0d2337b999ed19c3bd322625",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CThreadRuntime.test_cleanup_preserves_original_failure_but_refuses_failed_success_cleanup": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2be903e58e8891d808bbcbead97fda3654ac15cc0d2337b999ed19c3bd322625",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CThreadRuntime.test_current_native_source_equality_is_required_before_any_product_use": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2be903e58e8891d808bbcbead97fda3654ac15cc0d2337b999ed19c3bd322625",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CThreadRuntime.test_explicit_fixed_product_source_is_checked_without_falling_back_to_v1": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2be903e58e8891d808bbcbead97fda3654ac15cc0d2337b999ed19c3bd322625",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CThreadRuntime.test_failed_invocation_completion_cannot_be_hidden_by_failed_close": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2be903e58e8891d808bbcbead97fda3654ac15cc0d2337b999ed19c3bd322625",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CThreadRuntime.test_formatter_source_exception_is_exact_full_tree_and_digest_bound": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2be903e58e8891d808bbcbead97fda3654ac15cc0d2337b999ed19c3bd322625",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CThreadRuntime.test_fresh_ordinary_project_is_selected_locked_and_uses_standard_calls": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2be903e58e8891d808bbcbead97fda3654ac15cc0d2337b999ed19c3bd322625",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CThreadRuntime.test_real_child_owner_observation_is_exact_and_cannot_be_relabelled_pending": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2be903e58e8891d808bbcbead97fda3654ac15cc0d2337b999ed19c3bd322625",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_c_thread_runtime.py",
+  "reviewReason": "Root full-read approval: native_evidence carries the explicitly fixed caller through compiled/current source equality; omitted assert_current retains original7b default, all original controls remain and new foreign-source refusal/routing control is additive.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
