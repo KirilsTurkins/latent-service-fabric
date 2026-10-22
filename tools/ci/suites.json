@@ -7438,7 +7438,10 @@
         "host::native_resource_types_tests::actual_resource_types_both_admission_refusals_preserve_prior_instance_and_retry",
         "host::native_resource_types_tests::actual_resource_types_independent_stores_cannot_refund_live_foreign_metadata",
         "host::native_resource_types_tests::actual_resource_types_concurrent_metadata_clones_release_original_owner_once",
-        "host::native_resource_types_tests::actual_resource_types_zero_resource_tiny_call_keeps_original_one_mib_and_billion_fuel"
+        "host::native_resource_types_tests::actual_resource_types_zero_resource_tiny_call_keeps_original_one_mib_and_billion_fuel",
+        "host::native_linear_memory_tests::actual_linear_memory_is_confirmed_before_subsequent_native_instance_allocations",
+        "host::native_linear_memory_tests::actual_linear_creator_failure_rolls_back_without_confirming_unallocated_pages",
+        "host::native_linear_memory_tests::actual_linear_growth_confirms_success_and_failed_growth_preserves_prior_peak"
       ],
       "expectedIgnored": [
         "cache::measurement::cache_lookup_collector",
@@ -7451,7 +7454,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 448,
+      "minimumCases": 451,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [

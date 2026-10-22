@@ -4,7 +4,7 @@ This is the complete crates.io Wasmtime 48.0.7 package, licensed under
 Apache-2.0 WITH LLVM-exception (see the unmodified LICENSE). The original
 archive checksum and all 250 original file identities are recorded in
 UPSTREAM.latent.json. `latent-dynamic-memory.patch` applies to that exact
-original package; it contains twenty-seven changed upstream files and six added
+original package; it contains twenty-eight changed upstream files and six added
 implementation files. Other Wasmtime packages remain at the original locked
 registry versions.
 
@@ -34,12 +34,12 @@ retains confirmed actual allocations through native unwind, without confirming
 a hypothetical signature maximum as observed peak.
 
 The native cohort is
-`wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-memory-v5`. Runtime engine configuration identity
+`wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-memory-v6`. Runtime engine configuration identity
 includes this cohort, so old prepared/AOT identity cannot certify this host.
 The immutable v1/7b programme passed 61 controls; v2/de0 passed81,
-v3/48a passed85 and v4/3e417 passed92. This v5 resource-substitution extension
-adds five planned controls, preserving all92 prior selectors. Neither an
-earlier binary nor copied-helper tests qualify this new source.
+v3/48a passed85, v4/3e417 passed92 and v5/94f passed97. This v6 linear-memory
+notification extension adds three planned controls, preserving all97 prior
+selectors. Neither an earlier binary nor copied-helper tests qualify this new source.
 
 The optional `ResourceLimiter::table_allocating` hook returns an owned original
 allocation guard. Actual table backing destroys before its guard; dropping Store
@@ -115,6 +115,17 @@ allocation before dropping the resource payload and its original owners, even
 for concurrent last drops. The Arc layout is reserved before allocation;
 confirmation unwind follows the installed shared-handle cleanup path. Legacy
 preparation/embedding maps keep the original fallible Arc/map behavior.
+
+Successful initial dynamic/static linear-memory allocation and subsequent
+successful growth now notify the limiter at the actual allocator boundary,
+before later instance initialization can allocate competing native buffers.
+Failed initial admission/allocation discards only pending unallocated memory
+and preserves the original error; failed growth keeps the prior confirmed peak.
+Sync and async limiter callbacks default to no-op for other embeddings. These
+notifications establish the original ledger high-water mark when the actual
+accessible pages coexist with setup storage, rather than waiting for a later
+table callback or terminal accounting. The original tight-budget invocation
+regression and its caps remain unchanged.
 
 This extension does not pay direct Core HostFunc state/context constructors,
 shared preparation closure/import backing, concurrent task/queue/resource and hostcall frames,

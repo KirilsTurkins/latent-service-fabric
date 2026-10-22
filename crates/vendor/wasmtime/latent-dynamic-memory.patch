@@ -1,8 +1,6 @@
-diff --git a/src/runtime.rs b/src/runtime.rs
-index 883f10a..4ae8b01 100644
 --- a/src/runtime.rs
 +++ b/src/runtime.rs
-@@ -53,6 +53,7 @@ pub(crate) mod memory;
+@@ -53,6 +53,7 @@
  pub(crate) mod module;
  #[cfg(feature = "debug-builtins")]
  pub(crate) mod native_debug;
@@ -10,8 +8,6 @@ index 883f10a..4ae8b01 100644
  pub(crate) mod resources;
  pub(crate) mod store;
  pub(crate) mod trampoline;
-diff --git a/src/runtime/component/concurrent/func.rs b/src/runtime/component/concurrent/func.rs
-index 2f0abc2..8a2f110 100644
 --- a/src/runtime/component/concurrent/func.rs
 +++ b/src/runtime/component/concurrent/func.rs
 @@ -1,10 +1,12 @@
@@ -27,7 +23,7 @@ index 2f0abc2..8a2f110 100644
  use core::marker;
  use core::mem::MaybeUninit;
  use core::ptr::NonNull;
-@@ -13,7 +15,7 @@ use wasmtime_environ::component::{InterfaceType, MAX_FLAT_PARAMS, MAX_FLAT_RESUL
+@@ -13,7 +15,7 @@
  /// Returned from [`Func::start_call_concurrent`] to represent a
  /// pending-but-not-yet-resolved call into wasm.
  pub struct FuncCallConcurrent<'a, T> {
@@ -36,11 +32,10 @@ index 2f0abc2..8a2f110 100644
      results: &'a mut [Val],
      _marker: marker::PhantomData<fn(T)>,
  }
-@@ -133,9 +135,20 @@ impl Func {
-         mut store: impl AsContextMut<Data = T>,
+@@ -134,8 +136,19 @@
          params: &'a [Val],
          results: &'a mut [Val],
-+    ) -> Result<FuncCallConcurrent<'a, T>> {
+     ) -> Result<FuncCallConcurrent<'a, T>> {
 +        self.start_call_concurrent_with_memory(store, params, results, None)
 +    }
 +
@@ -50,7 +45,7 @@ index 2f0abc2..8a2f110 100644
 +        params: &'a [Val],
 +        results: &'a mut [Val],
 +        memory: Option<Arc<dyn DynamicValueMemory>>,
-     ) -> Result<FuncCallConcurrent<'a, T>> {
++    ) -> Result<FuncCallConcurrent<'a, T>> {
          self.check_params_results(store.as_context_mut(), params, results)?;
 -        let prepared = self.prepare_call_dynamic(store.as_context_mut(), params.to_vec())?;
 +        let params = DynamicValues::clone_params(params, memory.clone())?;
@@ -58,7 +53,7 @@ index 2f0abc2..8a2f110 100644
          let call = concurrent::QueuedCall::new(store.as_context_mut(), prepared)?;
          Ok(FuncCallConcurrent {
              call,
-@@ -156,10 +169,20 @@ impl Func {
+@@ -156,9 +169,19 @@
          let _ = accessor;
          let FuncCallConcurrent { call, results, .. } = call;
          let run_results = call.await?;
@@ -69,7 +64,7 @@ index 2f0abc2..8a2f110 100644
 +        let DynamicValues { values, memory } = run_results;
 +        for (result, slot) in values.into_iter().zip(results) {
              *slot = result;
-         }
++        }
 +        // The consumed iterator has physically freed its Vec buffer. The Any
 +        // result Box was freed by QueuedCall's downcast before this continuation.
 +        if let Some(memory) = memory {
@@ -77,11 +72,10 @@ index 2f0abc2..8a2f110 100644
 +                dynamic_memory::allocation_bytes::<Val>(capacity)?
 +                    + dynamic_memory::allocation_bytes::<DynamicValues>(1)?,
 +            );
-+        }
+         }
          Ok(())
      }
-
-@@ -168,8 +191,9 @@ impl Func {
+@@ -168,8 +191,9 @@
      fn prepare_call_dynamic<'a, T: Send + 'static>(
          self,
          mut store: StoreContextMut<'a, T>,
@@ -93,7 +87,7 @@ index 2f0abc2..8a2f110 100644
          let store = store.as_context_mut();
 
          concurrent::prepare_call(
-@@ -179,7 +203,7 @@ impl Func {
+@@ -179,7 +203,7 @@
              false,
              move |func, store, params_out| {
                  func.with_lower_context(store, |cx, ty| {
@@ -102,7 +96,7 @@ index 2f0abc2..8a2f110 100644
                  })
              },
              move |func, store, results| {
-@@ -188,10 +212,36 @@ impl Func {
+@@ -188,10 +212,36 @@
                  } else {
                      MAX_FLAT_RESULTS
                  };
@@ -140,9 +134,6 @@ index 2f0abc2..8a2f110 100644
              },
          )
      }
-diff --git a/src/runtime/component/dynamic_memory.rs b/src/runtime/component/dynamic_memory.rs
-new file mode 100644
-index 0000000..877b2ae
 --- /dev/null
 +++ b/src/runtime/component/dynamic_memory.rs
 @@ -0,0 +1,217 @@
@@ -363,11 +354,9 @@ index 0000000..877b2ae
 +        _ => value.clone(),
 +    })
 +}
-diff --git a/src/runtime/component/func.rs b/src/runtime/component/func.rs
-index 715bcac..64be393 100644
 --- a/src/runtime/component/func.rs
 +++ b/src/runtime/component/func.rs
-@@ -280,6 +280,32 @@ impl Func {
+@@ -280,6 +280,32 @@
              .await?
      }
 
@@ -400,7 +389,7 @@ index 715bcac..64be393 100644
      pub(crate) fn check_params_results<T>(
          &self,
          store: StoreContextMut<T>,
-@@ -311,6 +337,16 @@ impl Func {
+@@ -311,6 +337,16 @@
          mut store: impl AsContextMut,
          params: &[Val],
          results: &mut [Val],
@@ -417,7 +406,7 @@ index 715bcac..64be393 100644
      ) -> Result<()> {
          let mut store = store.as_context_mut();
 
-@@ -351,6 +387,12 @@ impl Func {
+@@ -351,6 +387,12 @@
                  },
                  |cx, results_ty, src: &[ValRaw; MAX_FLAT_RESULTS]| {
                      let max_flat = MAX_FLAT_RESULTS;
@@ -430,7 +419,7 @@ index 715bcac..64be393 100644
                      for (result, slot) in
                          Self::lift_results(cx, results_ty, src, max_flat)?.zip(results)
                      {
-@@ -632,6 +674,34 @@ impl Func {
+@@ -632,6 +674,34 @@
          }
      }
 
@@ -465,11 +454,9 @@ index 715bcac..64be393 100644
      fn load_results<'a, 'b>(
          cx: &'a mut LiftContext<'b>,
          results_ty: &'a TypeTuple,
-diff --git a/src/runtime/component/func/options.rs b/src/runtime/component/func/options.rs
-index b2b4f3b..0c424a9 100644
 --- a/src/runtime/component/func/options.rs
 +++ b/src/runtime/component/func/options.rs
-@@ -335,6 +335,8 @@ impl<'a, T: 'static> LowerContext<'a, T> {
+@@ -335,6 +335,8 @@
  /// operations (or loading from memory).
  #[doc(hidden)]
  pub struct LiftContext<'a> {
@@ -478,7 +465,7 @@ index b2b4f3b..0c424a9 100644
      store_id: StoreId,
      current_scope_id: Option<u32>,
      /// Like lowering, lifting always has options configured.
-@@ -386,6 +388,8 @@ impl<'a> LiftContext<'a> {
+@@ -386,6 +388,8 @@
          let (component, instance) = instance.component_and_self();
 
          Ok(LiftContext {
@@ -487,14 +474,16 @@ index b2b4f3b..0c424a9 100644
              store_id,
              current_scope_id,
              memory,
-diff --git a/src/runtime/component/func/typed.rs b/src/runtime/component/func/typed.rs
-index 78a1bb6..644ef24 100644
 --- a/src/runtime/component/func/typed.rs
 +++ b/src/runtime/component/func/typed.rs
-@@ -1591,6 +1591,32 @@ impl WasmStr {
-         }
-     }
-
+@@ -1587,6 +1587,32 @@
+                 } else {
+                     self.decode_utf16(memory, self.len ^ UTF16_TAG)
+                 }
++            }
++        }
++    }
++
 +    pub(crate) fn to_string_accounted(&self, cx: &LiftContext<'_>) -> Result<String> {
 +        use crate::component::dynamic_memory::{decoded_text, text};
 +        let memory = cx.memory();
@@ -517,15 +506,9 @@ index 78a1bb6..644ef24 100644
 +                    .checked_mul(2)
 +                    .ok_or_else(|| format_err!("dynamic-value-allocation-overflow"))?;
 +                decoded_text(scope, &memory[self.ptr..][..len], true)
-+            }
-+        }
-+    }
-+
-     fn decode_utf8<'a>(&self, memory: &'a [u8]) -> Result<Cow<'a, str>> {
-         // Note that bounds-checking already happen in construction of `WasmStr`
-         // so this is never expected to panic. This could theoretically be
-diff --git a/src/runtime/component/instance.rs b/src/runtime/component/instance.rs
-index 453b6dc..285bbac 100644
+             }
+         }
+     }
 --- a/src/runtime/component/instance.rs
 +++ b/src/runtime/component/instance.rs
 @@ -1,5 +1,6 @@
@@ -535,7 +518,7 @@ index 453b6dc..285bbac 100644
  use crate::component::store::{ComponentInstanceId, StoreComponentInstanceId};
  use crate::component::{
      Component, ComponentExportIndex, ComponentNamedList, Func, Lift, Lower, ResourceType,
-@@ -687,8 +688,6 @@ pub(crate) enum RuntimeImport {
+@@ -687,8 +688,6 @@
      },
  }
 
@@ -544,7 +527,7 @@ index 453b6dc..285bbac 100644
  impl<'a> Instantiator<'a> {
      fn new(
          component: &'a Component,
-@@ -698,13 +697,18 @@ impl<'a> Instantiator<'a> {
+@@ -698,13 +697,18 @@
          let env_component = component.env_component();
          let (modules, engine, breakpoints) = store.modules_and_engine_and_breakpoints_mut();
          modules.register_component(component, engine, breakpoints)?;
@@ -566,7 +549,7 @@ index 453b6dc..285bbac 100644
              imports,
              store.traitobj(),
          )?;
-@@ -1037,16 +1041,11 @@ impl<'a> Instantiator<'a> {
+@@ -1037,16 +1041,11 @@
          store.store_data_mut().component_instance_mut(self.id)
      }
 
@@ -588,7 +571,7 @@ index 453b6dc..285bbac 100644
      }
  }
 
-@@ -1061,7 +1060,7 @@ impl<'a> Instantiator<'a> {
+@@ -1061,7 +1060,7 @@
  pub struct InstancePre<T: 'static> {
      component: Component,
      imports: Arc<PrimaryMap<RuntimeImportIndex, RuntimeImport>>,
@@ -597,7 +580,7 @@ index 453b6dc..285bbac 100644
      asyncness: Asyncness,
      _marker: marker::PhantomData<fn() -> T>,
  }
-@@ -1089,7 +1088,7 @@ impl<T: 'static> InstancePre<T> {
+@@ -1089,7 +1088,7 @@
      pub(crate) unsafe fn new_unchecked(
          component: Component,
          imports: Arc<PrimaryMap<RuntimeImportIndex, RuntimeImport>>,
@@ -606,11 +589,9 @@ index 453b6dc..285bbac 100644
      ) -> InstancePre<T> {
          let mut asyncness = Asyncness::No;
          for (_, import) in imports.iter() {
-diff --git a/src/runtime/component/linker.rs b/src/runtime/component/linker.rs
-index cb41df2..65d8032 100644
 --- a/src/runtime/component/linker.rs
 +++ b/src/runtime/component/linker.rs
-@@ -3,6 +3,7 @@ use crate::component::concurrent::Accessor;
+@@ -3,6 +3,7 @@
  use crate::component::func::HostFunc;
  use crate::component::instance::RuntimeImport;
  use crate::component::matching::{InstanceType, TypeChecker};
@@ -618,7 +599,7 @@ index cb41df2..65d8032 100644
  use crate::component::types;
  use crate::component::{
      Component, ComponentNamedList, Instance, InstancePre, Lift, Lower, ResourceType, Val,
-@@ -169,7 +170,7 @@ impl<T: 'static> Linker<T> {
+@@ -169,7 +170,7 @@
              engine: &self.engine,
              types: component.types(),
              strings: &self.strings,
@@ -627,11 +608,9 @@ index cb41df2..65d8032 100644
          };
 
          // Walk over the component's list of import names and use that to lookup
-diff --git a/src/runtime/component/matching.rs b/src/runtime/component/matching.rs
-index 9c2dccf..5ac097b 100644
 --- a/src/runtime/component/matching.rs
 +++ b/src/runtime/component/matching.rs
-@@ -2,24 +2,23 @@ use crate::Module;
+@@ -2,24 +2,23 @@
  use crate::component::ResourceType;
  use crate::component::func::HostFunc;
  use crate::component::linker::Definition;
@@ -660,7 +639,7 @@ index 9c2dccf..5ac097b 100644
  }
 
  #[derive(Copy, Clone)]
-@@ -32,7 +31,7 @@ pub struct InstanceType<'a> {
+@@ -32,7 +31,7 @@
      /// If this isn't present then resource types are considered "abstract" and
      /// un-intantiated. This doesn't refer to a concrete instantiated component,
      /// but rather an abstract component type.
@@ -669,7 +648,7 @@ index 9c2dccf..5ac097b 100644
  }
 
  impl TypeChecker<'_> {
-@@ -95,8 +94,7 @@ impl TypeChecker<'_> {
+@@ -95,8 +94,7 @@
                      // succeed since `imported_resources` has not yet been
                      // cloned.
                      None => {
@@ -679,11 +658,9 @@ index 9c2dccf..5ac097b 100644
                          assert_eq!(id, i);
                      }
 
-diff --git a/src/runtime/component/mod.rs b/src/runtime/component/mod.rs
-index 7bf166b..a3de9a1 100644
 --- a/src/runtime/component/mod.rs
 +++ b/src/runtime/component/mod.rs
-@@ -111,6 +111,8 @@ mod instance;
+@@ -111,6 +111,8 @@
  mod linker;
  mod matching;
  mod resource_table;
@@ -692,7 +669,7 @@ index 7bf166b..a3de9a1 100644
  mod resources;
  mod storage;
  pub(crate) mod store;
-@@ -810,3 +812,10 @@ pub(crate) mod concurrent_disabled;
+@@ -810,3 +812,10 @@
 
  #[cfg(not(feature = "component-model-async"))]
  pub(crate) use concurrent_disabled as concurrent;
@@ -702,10 +679,7 @@ index 7bf166b..a3de9a1 100644
 +
 +/// Native source cohort for the maintained original-owner dynamic value extension.
 +pub const DYNAMIC_VALUE_MEMORY_COHORT: &str =
-+    "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-memory-v5";
-diff --git a/src/runtime/component/resource_types.rs b/src/runtime/component/resource_types.rs
-new file mode 100644
-index 0000000..2483742
++    "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-memory-v6";
 --- /dev/null
 +++ b/src/runtime/component/resource_types.rs
 @@ -0,0 +1,140 @@
@@ -849,8 +823,6 @@ index 0000000..2483742
 +        }
 +    }
 +}
-diff --git a/src/runtime/component/store.rs b/src/runtime/component/store.rs
-index 7c9b359..795e1ea 100644
 --- a/src/runtime/component/store.rs
 +++ b/src/runtime/component/store.rs
 @@ -1,5 +1,6 @@
@@ -860,7 +832,7 @@ index 7c9b359..795e1ea 100644
  use crate::runtime::vm;
  use crate::runtime::vm::component::{
      CallContext, ComponentInstance, HandleCounter, HandleTable, OwnedComponentInstance,
-@@ -8,7 +9,6 @@ use crate::store::{StoreData, StoreId, StoreOpaque};
+@@ -8,7 +9,6 @@
  use crate::{AsContext, AsContextMut, Engine, Store, StoreContextMut};
  use core::pin::Pin;
  use wasmtime_environ::component::RuntimeComponentInstanceIndex;
@@ -868,7 +840,7 @@ index 7c9b359..795e1ea 100644
 
  #[cfg(feature = "component-model-async")]
  use crate::{
-@@ -37,7 +37,7 @@ const DEFAULT_MAX_COMPONENT_HANDLES: usize = 100_000;
+@@ -37,7 +37,7 @@
  pub struct ComponentStoreData {
      /// All component instances, in a similar manner to how core wasm instances
      /// are managed.
@@ -877,7 +849,7 @@ index 7c9b359..795e1ea 100644
 
      /// Whether an instance belonging to this store has trapped.
      trapped: bool,
-@@ -92,9 +92,9 @@ pub struct RuntimeInstance {
+@@ -92,9 +92,9 @@
  }
 
  impl ComponentStoreData {
@@ -889,7 +861,7 @@ index 7c9b359..795e1ea 100644
              trapped: false,
              num_component_instances: 0,
              component_host_table: Default::default(),
-@@ -289,7 +289,7 @@ impl StoreData {
+@@ -289,7 +289,7 @@
      pub(crate) fn push_component_instance(
          &mut self,
          data: OwnedComponentInstance,
@@ -898,8 +870,6 @@ index 7c9b359..795e1ea 100644
          let expected = data.get().id();
          let ret = self.components.instances.push(Some(data))?;
          assert_eq!(expected, ret);
-diff --git a/src/runtime/component/types.rs b/src/runtime/component/types.rs
-index e299f48..d5a6368 100644
 --- a/src/runtime/component/types.rs
 +++ b/src/runtime/component/types.rs
 @@ -3,6 +3,7 @@
@@ -910,7 +880,7 @@ index e299f48..d5a6368 100644
  use crate::{Engine, ExternType, FuncType, prelude::*};
  use alloc::sync::Arc;
  use core::fmt;
-@@ -42,7 +43,7 @@ pub use crate::component::resources::ResourceType;
+@@ -42,7 +43,7 @@
  struct Handle<T> {
      index: T,
      types: Arc<ComponentTypes>,
@@ -919,7 +889,7 @@ index e299f48..d5a6368 100644
  }
 
  impl<T> Handle<T> {
-@@ -72,7 +73,7 @@ impl<T> Handle<T> {
+@@ -72,7 +73,7 @@
          (self.index == other.index
              && Arc::ptr_eq(&self.types, &other.types)
              && match (&self.resources, &other.resources) {
@@ -928,8 +898,6 @@ index e299f48..d5a6368 100644
                  (None, None) => true,
                  _ => false,
              })
-diff --git a/src/runtime/component/values.rs b/src/runtime/component/values.rs
-index 176350d..10f1391 100644
 --- a/src/runtime/component/values.rs
 +++ b/src/runtime/component/values.rs
 @@ -1,3 +1,4 @@
@@ -937,7 +905,7 @@ index 176350d..10f1391 100644
  use crate::ValRaw;
  use crate::component::ResourceAny;
  use crate::component::concurrent::{self, ErrorContext, FutureAny, StreamAny};
-@@ -103,6 +104,9 @@ impl Val {
+@@ -103,6 +104,9 @@
          ty: InterfaceType,
          src: &mut Iter<'_, ValRaw>,
      ) -> Result<Val> {
@@ -947,7 +915,7 @@ index 176350d..10f1391 100644
          Ok(match ty {
              InterfaceType::Bool => Val::Bool(bool::linear_lift_from_flat(cx, ty, next(src))?),
              InterfaceType::S8 => Val::S8(i8::linear_lift_from_flat(cx, ty, next(src))?),
-@@ -241,6 +245,9 @@ impl Val {
+@@ -241,6 +245,9 @@
 
      /// Deserialize a value of this type from the heap.
      pub(crate) fn load(cx: &mut LiftContext<'_>, ty: InterfaceType, bytes: &[u8]) -> Result<Val> {
@@ -957,7 +925,7 @@ index 176350d..10f1391 100644
          Ok(match ty {
              InterfaceType::Bool => Val::Bool(bool::linear_lift_from_memory(cx, ty, bytes)?),
              InterfaceType::S8 => Val::S8(i8::linear_lift_from_memory(cx, ty, bytes)?),
-@@ -1121,11 +1128,10 @@ fn load_variant(
+@@ -1121,11 +1128,10 @@
              let payload_offset = usize::try_from(info.payload_offset32).unwrap();
              let case_abi = cx.types.canonical_abi(&case_ty);
              let case_size = usize::try_from(case_abi.size32).unwrap();
@@ -973,7 +941,7 @@ index 176350d..10f1391 100644
          }
          None => None,
      };
-@@ -1147,7 +1153,10 @@ fn lift_variant(
+@@ -1147,7 +1153,10 @@
          Some(ty) => {
              cx.consume_fuel(size_of::<Val>())?;
              (
@@ -985,7 +953,7 @@ index 176350d..10f1391 100644
                  cx.types.canonical_abi(&ty).flat_count(usize::MAX).unwrap(),
              )
          }
-@@ -1218,11 +1227,39 @@ fn push_flags(
+@@ -1218,11 +1227,39 @@
      mut offset: u32,
      mut bits: u32,
  ) -> Result<()> {
@@ -1026,9 +994,6 @@ index 176350d..10f1391 100644
          }
          bits >>= 1;
          offset += 1;
-diff --git a/src/runtime/component/values/accounted.rs b/src/runtime/component/values/accounted.rs
-new file mode 100644
-index 0000000..34c24ea
 --- /dev/null
 +++ b/src/runtime/component/values/accounted.rs
 @@ -0,0 +1,403 @@
@@ -1435,11 +1400,9 @@ index 0000000..34c24ea
 +    cx.dynamic_depth -= 1;
 +    result
 +}
-diff --git a/src/runtime/func.rs b/src/runtime/func.rs
-index 62961b1..ea4a27d 100644
 --- a/src/runtime/func.rs
 +++ b/src/runtime/func.rs
-@@ -376,7 +376,8 @@ impl Func {
+@@ -376,7 +376,8 @@
          ty: FuncType,
          func: impl Fn(Caller<'_, T>, &[Val], &mut [Val]) -> Result<()> + Send + Sync + 'static,
      ) -> Self {
@@ -1449,7 +1412,7 @@ index 62961b1..ea4a27d 100644
      }
 
      /// Same as [`Func::new`] but returns an error instead of panicking on
-@@ -399,7 +400,7 @@ impl Func {
+@@ -399,7 +400,7 @@
          mut store: impl AsContextMut<Data = T>,
          ty: FuncType,
          func: impl Fn(Caller<'_, T>, &[Val], &mut [Val]) -> Result<()> + Send + Sync + 'static,
@@ -1458,7 +1421,7 @@ index 62961b1..ea4a27d 100644
          let store = store.as_context_mut().0;
          let host = HostFunc::new(store.engine(), ty, func)?;
 
-@@ -449,7 +450,10 @@ impl Func {
+@@ -449,7 +450,10 @@
 
          // SAFETY: the `T` used by `func` matches the `T` of the store we're
          // inserting into via this function's type signature.
@@ -1470,7 +1433,7 @@ index 62961b1..ea4a27d 100644
      }
 
      /// Creates a new host-defined WebAssembly function which, when called,
-@@ -540,7 +544,10 @@ impl Func {
+@@ -540,7 +544,10 @@
 
          // SAFETY: the `T` used by `func` matches the `T` of the store we're
          // inserting into via this function's type signature.
@@ -1482,7 +1445,7 @@ index 62961b1..ea4a27d 100644
      }
 
      /// Creates a new `Func` from a store and a funcref within that store.
-@@ -861,7 +868,10 @@ impl Func {
+@@ -861,7 +868,10 @@
 
          // SAFETY: The `T` the closure takes is the same as the `T` of the store
          // we're inserting into via the type signature above.
@@ -1494,7 +1457,7 @@ index 62961b1..ea4a27d 100644
      }
 
      /// Returns the underlying wasm type that this `Func` has.
-@@ -2688,7 +2698,7 @@ impl HostFunc {
+@@ -2688,7 +2698,7 @@
      ///
      /// Can only be inserted into stores with a matching `T` relative to when
      /// this `HostFunc` was first created.
@@ -1503,7 +1466,7 @@ index 62961b1..ea4a27d 100644
          self.validate_store(store);
          let (funcrefs, modules) = store.func_refs_and_modules();
          let funcref = funcrefs.push_arc_host(self.clone(), modules)?;
-@@ -2748,7 +2758,7 @@ impl HostFunc {
+@@ -2748,7 +2758,7 @@
      }
 
      /// Same as [`HostFunc::to_func`], different ownership.
@@ -1512,11 +1475,9 @@ index 62961b1..ea4a27d 100644
          self.validate_store(store);
 
          // This function could be called by a guest at any time, and it requires
-diff --git a/src/runtime/instance.rs b/src/runtime/instance.rs
-index 53fd54f..88fad93 100644
 --- a/src/runtime/instance.rs
 +++ b/src/runtime/instance.rs
-@@ -984,14 +984,9 @@ fn pre_instantiate_raw(
+@@ -984,14 +984,9 @@
          // will insert a function into the store automatically as part of
          // instantiation, so reserve space here to make insertion more efficient
          // as it won't have to realloc during the instantiation.
@@ -1534,8 +1495,6 @@ index 53fd54f..88fad93 100644
      }
 
      store.set_async_required(asyncness);
-diff --git a/src/runtime/limits.rs b/src/runtime/limits.rs
-index 41a40b6..174fbb6 100644
 --- a/src/runtime/limits.rs
 +++ b/src/runtime/limits.rs
 @@ -1,4 +1,5 @@
@@ -1544,10 +1503,11 @@ index 41a40b6..174fbb6 100644
 
  /// Value returned by [`ResourceLimiter::instances`] default method
  pub const DEFAULT_INSTANCE_LIMIT: usize = 10000;
-@@ -7,6 +8,91 @@ pub const DEFAULT_TABLE_LIMIT: usize = 10000;
+@@ -6,6 +7,91 @@
+ pub const DEFAULT_TABLE_LIMIT: usize = 10000;
  /// Value returned by [`ResourceLimiter::memories`] default method
  pub const DEFAULT_MEMORY_LIMIT: usize = 10000;
-
++
 +/// Owned admission for one actual native backing allocation.
 +///
 +/// The allocation requests its complete checked layout before allocating. Once
@@ -1632,31 +1592,33 @@ index 41a40b6..174fbb6 100644
 +        }
 +    }
 +}
-+
+
  /// Used by hosts to limit resource consumption of instances.
  ///
- /// This trait is used in conjunction with the
-@@ -125,6 +211,16 @@ pub trait ResourceLimiter: Send {
-         Ok(())
-     }
+@@ -73,6 +159,17 @@
+         maximum: Option<usize>,
+     ) -> Result<bool>;
 
-+    /// Admit actual table backing before allocation or pooled ownership transfer.
-+    ///
-+    /// `bytes` is the checked backing layout, not an element count or guessed
-+    /// vector capacity. A returned owner follows that allocation after Store
-+    /// user data is destroyed. Returning `None` preserves ordinary unaccounted
-+    /// embedding behavior; an accounted table cannot grow without a new owner.
-+    fn table_allocating(&mut self, _bytes: usize) -> Result<Option<Box<dyn TableAllocation>>> {
-+        Ok(None)
-+    }
++    /// Confirms that a permitted initial linear-memory allocation or growth
++    /// succeeded. Called after the actual accessible bytes exist, before later
++    /// instance initialization can allocate native storage. The default keeps
++    /// existing embeddings unchanged; this notification cannot refuse success.
++    fn memory_allocated(&mut self) {}
 +
-     /// The maximum number of instances that can be created for a `Store`.
++    /// Releases a pending initial-memory admission when its allocation failed.
++    /// The original allocation error is propagated unchanged. Already confirmed
++    /// memory is unaffected; growth failures use `memory_grow_failed` instead.
++    fn memory_allocation_failed(&mut self) {}
++
+     /// Notifies the resource limiter that growing a linear memory, permitted by
+     /// the `memory_growing` method, has failed.
      ///
-     /// Module instantiation will fail if this limit is exceeded.
-@@ -199,6 +295,16 @@ pub trait ResourceLimiterAsync: Send {
+@@ -123,6 +220,16 @@
+     fn table_grow_failed(&mut self, error: crate::Error) -> Result<()> {
+         log::debug!("ignoring table growth failure error: {error:?}");
          Ok(())
-     }
-
++    }
++
 +    /// Admit actual table backing before allocation or pooled ownership transfer.
 +    ///
 +    /// `bytes` is the checked backing layout, not an element count or guessed
@@ -1665,16 +1627,42 @@ index 41a40b6..174fbb6 100644
 +    /// embedding behavior; an accounted table cannot grow without a new owner.
 +    fn table_allocating(&mut self, _bytes: usize) -> Result<Option<Box<dyn TableAllocation>>> {
 +        Ok(None)
+     }
+
+     /// The maximum number of instances that can be created for a `Store`.
+@@ -179,6 +286,12 @@
+         maximum: Option<usize>,
+     ) -> Result<bool>;
+
++    /// Identical to [`ResourceLimiter::memory_allocated`].
++    fn memory_allocated(&mut self) {}
++
++    /// Identical to [`ResourceLimiter::memory_allocation_failed`].
++    fn memory_allocation_failed(&mut self) {}
++
+     /// Identical to [`ResourceLimiter::memory_grow_failed`]
+     fn memory_grow_failed(&mut self, error: crate::Error) -> Result<()> {
+         log::debug!("ignoring memory growth failure error: {error:?}");
+@@ -197,6 +310,16 @@
+     fn table_grow_failed(&mut self, error: crate::Error) -> Result<()> {
+         log::debug!("ignoring table growth failure error: {error:?}");
+         Ok(())
 +    }
 +
++    /// Admit actual table backing before allocation or pooled ownership transfer.
++    ///
++    /// `bytes` is the checked backing layout, not an element count or guessed
++    /// vector capacity. A returned owner follows that allocation after Store
++    /// user data is destroyed. Returning `None` preserves ordinary unaccounted
++    /// embedding behavior; an accounted table cannot grow without a new owner.
++    fn table_allocating(&mut self, _bytes: usize) -> Result<Option<Box<dyn TableAllocation>>> {
++        Ok(None)
+     }
+
      /// Identical to [`ResourceLimiter::instances`]`
-     fn instances(&self) -> usize {
-         DEFAULT_INSTANCE_LIMIT
-diff --git a/src/runtime/linker.rs b/src/runtime/linker.rs
-index 2c8fed9..17ba79f 100644
 --- a/src/runtime/linker.rs
 +++ b/src/runtime/linker.rs
-@@ -1241,7 +1241,10 @@ impl<T> Linker<T> {
+@@ -1241,7 +1241,10 @@
                  &self.pool[key.module],
                  &self.pool[key.name],
                  // Should be safe since `T` is connecting the linker and store
@@ -1686,7 +1674,7 @@ index 2c8fed9..17ba79f 100644
              )
          })
      }
-@@ -1305,7 +1308,7 @@ impl<T> Linker<T> {
+@@ -1305,7 +1308,7 @@
          T: 'static,
      {
          self.try_get_by_import(store, import)
@@ -1695,7 +1683,7 @@ index 2c8fed9..17ba79f 100644
      }
 
      /// Same as [`Linker::get_by_import`] but returns an error instead of
-@@ -1359,39 +1362,24 @@ impl<T> Linker<T> {
+@@ -1359,39 +1362,24 @@
      where
          T: 'static,
      {
@@ -1704,13 +1692,14 @@ index 2c8fed9..17ba79f 100644
 -                Err(e)
 -            } else {
 -                Ok(None)
+-            }
+-        })? {
 +        for name in ["", "_start"] {
 +            // Absence permits the historical fallback. A defined function's
 +            // original allocation/admission failure must remain an error.
 +            if self._get(module, name).is_none() {
 +                continue;
-             }
--        })? {
++            }
 +            let external = self.get(&mut store, module, name)?;
              if let Extern::Func(func) = external {
                  return Ok(func);
@@ -1745,7 +1734,7 @@ index 2c8fed9..17ba79f 100644
      }
  }
 
-@@ -1434,7 +1422,7 @@ impl Definition {
+@@ -1434,7 +1422,7 @@
      /// Note the unsafety here is due to calling `HostFunc::to_func`. The
      /// requirement here is that the `T` that was originally used to create the
      /// `HostFunc` matches the `T` on the store.
@@ -1754,11 +1743,9 @@ index 2c8fed9..17ba79f 100644
          match self {
              Definition::Extern { item, .. } => Ok(item.clone()),
              // SAFETY: the contract of this function is the same as what's
-diff --git a/src/runtime/module.rs b/src/runtime/module.rs
-index 19b0f1f..5c52b55 100644
 --- a/src/runtime/module.rs
 +++ b/src/runtime/module.rs
-@@ -22,6 +22,7 @@ use wasmtime_environ::{
+@@ -22,6 +22,7 @@
      CompiledFunctionsTable, CompiledModuleInfo, EntityIndex, FuncKey, HostPtr, ModuleTypes,
      ObjectKind, StaticModuleIndex, TypeTrace, VMOffsets, VMSharedTypeIndex, WasmChecksum,
  };
@@ -1766,9 +1753,6 @@ index 19b0f1f..5c52b55 100644
  mod registry;
 
  pub use registry::*;
-diff --git a/src/runtime/module/native_registry.rs b/src/runtime/module/native_registry.rs
-new file mode 100644
-index 0000000..9eeced1
 --- /dev/null
 +++ b/src/runtime/module/native_registry.rs
 @@ -0,0 +1,242 @@
@@ -2014,8 +1998,6 @@ index 0000000..9eeced1
 +        self.iter().map(|(_, value)| value)
 +    }
 +}
-diff --git a/src/runtime/module/registry.rs b/src/runtime/module/registry.rs
-index f056a8d..8ede619 100644
 --- a/src/runtime/module/registry.rs
 +++ b/src/runtime/module/registry.rs
 @@ -1,8 +1,10 @@
@@ -2029,7 +2011,7 @@ index f056a8d..8ede619 100644
  use crate::runtime::vm::VMWasmCallFunction;
  use crate::sync::{OnceLock, RwLock};
  use crate::vm::CompiledModuleId;
-@@ -64,18 +66,21 @@ pub struct ModuleRegistry {
+@@ -64,18 +66,21 @@
      /// then take the last element of the range. That picks the
      /// highest start address <= the query, and we can check whether
      /// it contains the address.
@@ -2054,7 +2036,7 @@ index f056a8d..8ede619 100644
  }
 
  struct LoadedCode {
-@@ -94,7 +99,7 @@ struct LoadedCode {
+@@ -94,7 +99,7 @@
      ///
      /// This is lazily populated as modules are registered and instantiated from
      /// a component.
@@ -2063,7 +2045,7 @@ index f056a8d..8ede619 100644
  }
 
  /// An identifier of a module that has previously been inserted into a
-@@ -106,7 +111,7 @@ struct LoadedCode {
+@@ -106,7 +111,7 @@
  pub struct RegisteredModuleId(CompiledModuleId);
 
  fn assert_no_overlap(
@@ -2072,7 +2054,7 @@ index f056a8d..8ede619 100644
      range: Range<StoreCodePC>,
  ) {
      if let Some((start, _)) = loaded_code.range(range.start..).next() {
-@@ -150,6 +155,15 @@ impl<'a> ModuleOrComponent<'a> {
+@@ -150,6 +155,15 @@
  }
 
  impl ModuleRegistry {
@@ -2088,7 +2070,7 @@ index f056a8d..8ede619 100644
      /// Get a previously-registered module by id.
      pub fn module_by_id(&self, id: RegisteredModuleId) -> Option<&Module> {
          self.modules.get(id)
-@@ -275,6 +289,9 @@ impl ModuleRegistry {
+@@ -275,6 +289,9 @@
              Engine::same(engine, module_or_component.engine()),
              "cross-`Engine` usage is not supported"
          );
@@ -2098,7 +2080,7 @@ index f056a8d..8ede619 100644
          let compiled_id = match module_or_component {
              ModuleOrComponent::Module(module) => module.id(),
              #[cfg(feature = "component-model")]
-@@ -289,7 +306,9 @@ impl ModuleRegistry {
+@@ -289,7 +306,9 @@
          let id = match module_or_component {
              ModuleOrComponent::Module(module) => {
                  let id = RegisteredModuleId(compiled_id);
@@ -2109,7 +2091,7 @@ index f056a8d..8ede619 100644
                  Some(id)
              }
              #[cfg(feature = "component-model")]
-@@ -297,7 +316,7 @@ impl ModuleRegistry {
+@@ -297,7 +316,7 @@
          };
 
          // Create a StoreCode if one does not already exist.
@@ -2118,7 +2100,7 @@ index f056a8d..8ede619 100644
              Entry::Vacant(v) => {
                  let store_code = StoreCode::new(engine, code)?;
                  let store_code_pc = store_code.text_range().start;
-@@ -307,7 +326,7 @@ impl ModuleRegistry {
+@@ -307,7 +326,7 @@
                      #[cfg(feature = "component-model")]
                      ModuleOrComponent::Component(component) => component.index(),
                  };
@@ -2127,7 +2109,7 @@ index f056a8d..8ede619 100644
                      store_code_pc,
                      LoadedCode {
                          code: store_code,
-@@ -328,13 +347,112 @@ impl ModuleRegistry {
+@@ -328,10 +347,109 @@
                  .expect("loaded_code must have entry for StoreCodePC");
              loaded_code
                  .modules
@@ -2136,9 +2118,9 @@ index f056a8d..8ede619 100644
              breakpoint_state.update(&mut loaded_code.code, module)?;
          }
 
-         Ok(id)
-     }
-
++        Ok(id)
++    }
++
 +    /// Accounted registration stages every replacement before publishing any
 +    /// module/code/index edge. A later admission refusal drops only those
 +    /// empty replacements, retaining all previous registry values and owners.
@@ -2235,15 +2217,9 @@ index f056a8d..8ede619 100644
 +            // after every complete registry edge has been installed.
 +            breakpoint_state.update(&mut loaded.code, module)?;
 +        }
-+        Ok(id)
-+    }
-+
-     /// Fetches frame information about a program counter in a backtrace.
-     ///
-     /// Returns an object if this `pc` is known to some previously registered
-diff --git a/src/runtime/native_memory.rs b/src/runtime/native_memory.rs
-new file mode 100644
-index 0000000..18f2bec
+         Ok(id)
+     }
+
 --- /dev/null
 +++ b/src/runtime/native_memory.rs
 @@ -0,0 +1,386 @@
@@ -2633,8 +2609,6 @@ index 0000000..18f2bec
 +        }
 +    }
 +}
-diff --git a/src/runtime/store.rs b/src/runtime/store.rs
-index 2dc5e9e..7d6b43f 100644
 --- a/src/runtime/store.rs
 +++ b/src/runtime/store.rs
 @@ -34,11 +34,10 @@
@@ -2653,7 +2627,7 @@ index 2dc5e9e..7d6b43f 100644
  //!
  //! * `StoreInner<T>` - the first layer of the contents of a `Store<T>`, what's
  //!   stored inside the `Box`. This is the general Rust pattern when one struct
-@@ -95,6 +94,7 @@ use crate::trampoline::VMHostGlobalContext;
+@@ -95,6 +94,7 @@
  use crate::{BreakpointState, DebugHandler, FrameDataCache};
  use crate::{Engine, Module, Val, ValRaw, module::ModuleRegistry};
  use crate::{Global, Instance, Table};
@@ -2661,7 +2635,7 @@ index 2dc5e9e..7d6b43f 100644
  use core::convert::Infallible;
  use core::fmt;
  #[cfg(any(feature = "async", feature = "gc"))]
-@@ -196,6 +196,10 @@ mod gc_disabled;
+@@ -196,6 +196,10 @@
  pub struct Store<T: 'static> {
      // for comments about `ManuallyDrop`, see `Store::into_data`
      inner: ManuallyDrop<Box<StoreInner<T>>>,
@@ -2672,10 +2646,36 @@ index 2dc5e9e..7d6b43f 100644
  }
 
  #[derive(Copy, Clone, Debug)]
-@@ -358,6 +362,17 @@ impl StoreResourceLimiter<'_> {
+@@ -337,6 +341,22 @@
          }
      }
 
++    pub(crate) fn memory_allocated(&mut self) {
++        match self {
++            Self::Sync(s) => s.memory_allocated(),
++            #[cfg(feature = "async")]
++            Self::Async(s) => s.memory_allocated(),
++        }
++    }
++
++    pub(crate) fn memory_allocation_failed(&mut self) {
++        match self {
++            Self::Sync(s) => s.memory_allocation_failed(),
++            #[cfg(feature = "async")]
++            Self::Async(s) => s.memory_allocation_failed(),
++        }
++    }
++
+     pub(crate) fn memory_grow_failed(&mut self, error: crate::Error) -> Result<()> {
+         match self {
+             Self::Sync(s) => s.memory_grow_failed(error),
+@@ -355,6 +375,17 @@
+             Self::Sync(s) => s.table_growing(current, desired, maximum),
+             #[cfg(feature = "async")]
+             Self::Async(s) => s.table_growing(current, desired, maximum).await,
++        }
++    }
++
 +    pub(crate) fn table_allocating(
 +        &mut self,
 +        bytes: usize,
@@ -2684,13 +2684,10 @@ index 2dc5e9e..7d6b43f 100644
 +            Self::Sync(s) => s.table_allocating(bytes),
 +            #[cfg(feature = "async")]
 +            Self::Async(s) => s.table_allocating(bytes),
-+        }
-+    }
-+
-     pub(crate) fn table_grow_failed(&mut self, error: crate::Error) -> Result<()> {
-         match self {
-             Self::Sync(s) => s.table_grow_failed(error),
-@@ -437,6 +452,7 @@ impl<T> DerefMut for StoreInner<T> {
+         }
+     }
+
+@@ -437,6 +468,7 @@
  /// necessary, allowing code to be monomorphic and compiled into the `wasmtime`
  /// crate itself.
  pub struct StoreOpaque {
@@ -2698,7 +2695,7 @@ index 2dc5e9e..7d6b43f 100644
      // This `StoreOpaque` structure has references to itself. These aren't
      // immediately evident, however, so we need to tell the compiler that it
      // contains self-references. This notably suppresses `noalias` annotations
-@@ -468,7 +484,7 @@ pub struct StoreOpaque {
+@@ -468,7 +500,7 @@
      #[cfg(feature = "stack-switching")]
      continuations: Vec<Box<VMContRef>>,
 
@@ -2707,7 +2704,7 @@ index 2dc5e9e..7d6b43f 100644
 
      signal_handler: Option<SignalHandler>,
      modules: ModuleRegistry,
-@@ -719,24 +735,74 @@ impl<T> Store<T> {
+@@ -719,24 +751,74 @@
      /// memory allocation fails. See the `OutOfMemory` type's documentation for
      /// details on Wasmtime's out-of-memory handling.
      pub fn try_new(engine: &Engine, data: T) -> Result<Self> {
@@ -2786,7 +2783,7 @@ index 2dc5e9e..7d6b43f 100644
              host_globals: TryPrimaryMap::new(),
              instance_count: 0,
              instance_limit: crate::DEFAULT_INSTANCE_LIMIT,
-@@ -760,7 +826,7 @@ impl<T> Store<T> {
+@@ -760,7 +842,7 @@
              #[cfg(feature = "debug")]
              frame_data_cache: FrameDataCache::new(),
          };
@@ -2795,7 +2792,7 @@ index 2dc5e9e..7d6b43f 100644
              inner,
              limiter: None,
              call_hook: None,
-@@ -769,13 +835,21 @@ impl<T> Store<T> {
+@@ -769,13 +851,21 @@
              data_no_provenance: ManuallyDrop::new(data),
              #[cfg(feature = "debug")]
              debug_handler: None,
@@ -2819,7 +2816,7 @@ index 2dc5e9e..7d6b43f 100644
 
          // Wasmtime uses the callee argument to host functions to learn about
          // the original pointer to the `Store` itself, allowing it to
-@@ -806,7 +880,7 @@ impl<T> Store<T> {
+@@ -806,7 +896,7 @@
              let id = match result {
                  Ok(id) => id,
                  Err(e) => {
@@ -2828,7 +2825,7 @@ index 2dc5e9e..7d6b43f 100644
                          return Err(e);
                      }
                      panic!("instance allocator failed to allocate default callee")
-@@ -816,9 +890,7 @@ impl<T> Store<T> {
+@@ -816,9 +906,7 @@
              inner.default_caller_vmctx = default_caller_vmctx.into();
          }
 
@@ -2839,7 +2836,7 @@ index 2dc5e9e..7d6b43f 100644
      }
 
      /// Access the underlying `T` data owned by this `Store`.
-@@ -871,8 +943,14 @@ impl<T> Store<T> {
+@@ -871,8 +959,14 @@
          // there is a comment indicating this as well.
          unsafe {
              let mut inner = ManuallyDrop::take(&mut self.inner);
@@ -2855,7 +2852,7 @@ index 2dc5e9e..7d6b43f 100644
          }
      }
 
-@@ -2145,6 +2223,10 @@ at https://bytecodealliance.org/security.
+@@ -2145,6 +2239,10 @@
          Ok(ptr)
      }
 
@@ -2866,7 +2863,7 @@ index 2dc5e9e..7d6b43f 100644
      /// Constructs and executes an `InstanceAllocationRequest` and pushes the
      /// returned instance into the store.
      ///
-@@ -2427,6 +2509,8 @@ impl<T> Drop for Store<T> {
+@@ -2427,6 +2525,8 @@
          unsafe {
              ManuallyDrop::drop(&mut self.inner.data_no_provenance);
              ManuallyDrop::drop(&mut self.inner);
@@ -2875,11 +2872,9 @@ index 2dc5e9e..7d6b43f 100644
          }
      }
  }
-diff --git a/src/runtime/store/data.rs b/src/runtime/store/data.rs
-index 3ed9501..9710eae 100644
 --- a/src/runtime/store/data.rs
 +++ b/src/runtime/store/data.rs
-@@ -21,13 +21,13 @@ pub struct StoreData {
+@@ -21,13 +21,13 @@
  }
 
  impl StoreData {
@@ -2896,11 +2891,9 @@ index 3ed9501..9710eae 100644
          }
      }
 
-diff --git a/src/runtime/store/func_refs.rs b/src/runtime/store/func_refs.rs
-index 1c16ebd..35f6465 100644
 --- a/src/runtime/store/func_refs.rs
 +++ b/src/runtime/store/func_refs.rs
-@@ -10,13 +10,106 @@ use alloc::sync::Arc;
+@@ -10,13 +10,106 @@
  use core::mem::size_of;
  use core::ptr::NonNull;
 
@@ -3008,7 +3001,7 @@ index 1c16ebd..35f6465 100644
      /// A bump allocation arena where we allocate `VMFuncRef`s such
      /// that they are pinned and owned.
      bump: AlwaysMut<bumpalo::Bump>,
-@@ -78,7 +171,7 @@ enum Storage {
+@@ -78,7 +171,7 @@
      },
  }
 
@@ -3017,9 +3010,6 @@ index 1c16ebd..35f6465 100644
      /// Push the given `VMFuncRef` into this arena, returning a
      /// pinned pointer to it.
      ///
-diff --git a/src/runtime/store/func_refs/native.rs b/src/runtime/store/func_refs/native.rs
-new file mode 100644
-index 0000000..ab496d3
 --- /dev/null
 +++ b/src/runtime/store/func_refs/native.rs
 @@ -0,0 +1,112 @@
@@ -3135,8 +3125,6 @@ index 0000000..ab496d3
 +            .retain_mut(|pointer| unsafe { still_has_hole(pointer.as_mut()) });
 +    }
 +}
-diff --git a/src/runtime/vm/component.rs b/src/runtime/vm/component.rs
-index a733086..af998b0 100644
 --- a/src/runtime/vm/component.rs
 +++ b/src/runtime/vm/component.rs
 @@ -7,11 +7,12 @@
@@ -3153,7 +3141,7 @@ index a733086..af998b0 100644
  use crate::runtime::vm::instance::{InstanceLayout, OwnedInstance, OwnedVMContext};
  use crate::runtime::vm::vmcontext::VMFunctionBody;
  use crate::runtime::vm::{
-@@ -28,8 +29,6 @@ use core::mem::offset_of;
+@@ -28,8 +29,6 @@
  use core::pin::Pin;
  use core::ptr::NonNull;
  use wasmtime_environ::component::*;
@@ -3162,7 +3150,7 @@ index a733086..af998b0 100644
  use wasmtime_environ::{HostPtr, PrimaryMap, VMSharedTypeIndex};
 
  #[allow(
-@@ -130,15 +129,15 @@ pub struct ComponentInstance {
+@@ -130,15 +129,15 @@
 
      /// Contains state specific to each (sub-)component instance within this
      /// top-level instance.
@@ -3181,7 +3169,7 @@ index a733086..af998b0 100644
 
      /// Arguments that this instance used to be instantiated.
      ///
-@@ -319,38 +318,51 @@ impl ComponentInstance {
+@@ -319,38 +318,51 @@
      pub(crate) fn new(
          id: ComponentInstanceId,
          component: &Component,
@@ -3248,7 +3236,7 @@ index a733086..af998b0 100644
          }
          Ok(ret)
      }
-@@ -826,14 +838,12 @@ impl ComponentInstance {
+@@ -826,14 +838,12 @@
      }
 
      /// Returns a reference to the resource type information.
@@ -3265,7 +3253,7 @@ index a733086..af998b0 100644
          // SAFETY: we've chosen the `Pin` guarantee of `Self` to not apply to
          // the map returned.
          unsafe { &mut self.get_unchecked_mut().resource_types }
-@@ -863,7 +873,7 @@ impl ComponentInstance {
+@@ -863,7 +873,7 @@
      pub fn instance_states(
          self: Pin<&mut Self>,
      ) -> (
@@ -3274,7 +3262,7 @@ index a733086..af998b0 100644
          &ComponentTypes,
      ) {
          // safety: we've chosen the `pin` guarantee of `self` to not apply to
-@@ -909,10 +919,7 @@ impl ComponentInstance {
+@@ -909,10 +919,7 @@
 
      /// Pushes a new runtime instance that's been created into
      /// `self.instances`.
@@ -3286,7 +3274,7 @@ index a733086..af998b0 100644
          self.instances_mut().push(id)
      }
 
-@@ -926,7 +933,7 @@ impl ComponentInstance {
+@@ -926,7 +933,7 @@
          self.instances[idx]
      }
 
@@ -3295,7 +3283,7 @@ index a733086..af998b0 100644
          // SAFETY: we've chosen the `Pin` guarantee of `Self` to not apply to
          // the map returned.
          unsafe { &mut self.get_unchecked_mut().instances }
-@@ -1010,11 +1017,9 @@ impl VMComponentContext {
+@@ -1010,11 +1017,9 @@
      /// Moves the `self` pointer backwards to the `ComponentInstance` pointer
      /// that this `VMComponentContext` trails.
      pub fn instance(&self) -> *mut ComponentInstance {
@@ -3310,11 +3298,9 @@ index a733086..af998b0 100644
      }
 
      /// Helper function to cast between context types using a debug assertion to
-diff --git a/src/runtime/vm/component/resources.rs b/src/runtime/vm/component/resources.rs
-index 0fceed9..c677f10 100644
 --- a/src/runtime/vm/component/resources.rs
 +++ b/src/runtime/vm/component/resources.rs
-@@ -24,13 +24,13 @@ use super::{HandleCounter, HandleTable, InstanceState, RemovedResource};
+@@ -24,13 +24,13 @@
  use crate::bail_bug;
  use crate::component::store::ComponentTaskState;
  use crate::prelude::*;
@@ -3329,7 +3315,7 @@ index 0fceed9..c677f10 100644
 
  /// Contextual state necessary to perform resource-related operations.
  ///
-@@ -56,7 +56,7 @@ pub struct ResourceTables<'a> {
+@@ -56,7 +56,7 @@
      /// `ResourceAny::resource_drop` which won't consult this table as it's
      /// only operating over the host table.
      pub guest: Option<(
@@ -3338,8 +3324,6 @@ index 0fceed9..c677f10 100644
          &'a ComponentTypes,
      )>,
 
-diff --git a/src/runtime/vm/instance.rs b/src/runtime/vm/instance.rs
-index 06ba7e4..f4f823b 100644
 --- a/src/runtime/vm/instance.rs
 +++ b/src/runtime/vm/instance.rs
 @@ -5,6 +5,7 @@
@@ -3350,7 +3334,7 @@ index 06ba7e4..f4f823b 100644
  use crate::runtime::vm::export::{Export, ExportMemory};
  use crate::runtime::vm::memory::{Memory, RuntimeMemoryCreator};
  use crate::runtime::vm::table::{Table, TableElementType};
-@@ -113,7 +114,7 @@ pub struct Instance {
+@@ -113,7 +114,7 @@
      /// The `MemoryAllocationIndex` was given from our `InstanceAllocator` and
      /// must be given back to the instance allocator when deallocating each
      /// memory.
@@ -3359,7 +3343,7 @@ index 06ba7e4..f4f823b 100644
 
      /// WebAssembly table data.
      ///
-@@ -123,7 +124,7 @@ pub struct Instance {
+@@ -123,7 +124,7 @@
      /// The `TableAllocationIndex` was given from our `InstanceAllocator` and
      /// must be given back to the instance allocator when deallocating each
      /// table.
@@ -3368,7 +3352,7 @@ index 06ba7e4..f4f823b 100644
 
      /// Evaluated passive element segments.
      ///
-@@ -131,7 +132,7 @@ pub struct Instance {
+@@ -131,7 +132,7 @@
      //
      // TODO(#12621): This should be a `TrySecondaryMap<PassiveElemIndex, _>`
      // but that type is currently footgun-y / isn't actually OOM-safe yet.
@@ -3377,7 +3361,7 @@ index 06ba7e4..f4f823b 100644
 
      // TODO: add support for multiple memories; `wmemcheck_state` corresponds to
      // memory 0.
-@@ -167,12 +168,14 @@ impl Instance {
+@@ -167,12 +168,14 @@
      /// and `tables` must have been allocated for `req.store`.
      unsafe fn new(
          req: InstanceAllocationRequest,
@@ -3396,7 +3380,7 @@ index 06ba7e4..f4f823b 100644
 
          #[cfg(feature = "wmemcheck")]
          let wmemcheck_state = if req.store.engine().config().wmemcheck {
-@@ -192,7 +195,7 @@ impl Instance {
+@@ -192,7 +195,7 @@
 
          for (_, (ty, len)) in req.runtime_info.env_module().passive_elements.iter() {
              let len = usize::try_from(*len).unwrap();
@@ -3405,7 +3389,7 @@ index 06ba7e4..f4f823b 100644
          }
 
          // Allocate the instance and its `VMContext` with empty memory and table
-@@ -200,17 +203,20 @@ impl Instance {
+@@ -200,17 +203,20 @@
          // after it succeeds do we transfer ownership of the pool-allocated
          // `memories`/`tables` into the instance (below), so that a failure here
          // leaves them in the caller's deallocation guard to be freed.
@@ -3437,7 +3421,7 @@ index 06ba7e4..f4f823b 100644
 
          // Can't fail any more, so transfer ownership of `memories` and `tables`
          // to this instance.
-@@ -1009,7 +1015,9 @@ impl Instance {
+@@ -1009,7 +1015,9 @@
          self.passive_elements_mut()[passive.index()].elements_mut()
      }
 
@@ -3448,7 +3432,7 @@ index 06ba7e4..f4f823b 100644
          // SAFETY: Not moving data out of `self`.
          &mut unsafe { self.get_unchecked_mut() }.passive_elements
      }
-@@ -1517,14 +1525,14 @@ impl Instance {
+@@ -1517,14 +1525,14 @@
 
      fn memories_mut(
          self: Pin<&mut Self>,
@@ -3465,7 +3449,7 @@ index 06ba7e4..f4f823b 100644
          // SAFETY: see `store_mut` above.
          unsafe { &mut self.get_unchecked_mut().tables }
      }
-@@ -1639,6 +1647,9 @@ pub struct OwnedVMContext<T> {
+@@ -1639,6 +1647,9 @@
      /// seems not too bad.
      vmctx_self_reference: SendSyncPtr<T>,
 
@@ -3475,7 +3459,7 @@ index 06ba7e4..f4f823b 100644
      /// This field ensures that going from `Pin<&mut T>` to `&mut T` is not a
      /// safe operation.
      _marker: core::marker::PhantomPinned,
-@@ -1649,6 +1660,7 @@ impl<T> OwnedVMContext<T> {
+@@ -1649,6 +1660,7 @@
      pub fn new() -> OwnedVMContext<T> {
          OwnedVMContext {
              vmctx_self_reference: SendSyncPtr::new(NonNull::dangling()),
@@ -3483,7 +3467,7 @@ index 06ba7e4..f4f823b 100644
              _marker: core::marker::PhantomPinned,
          }
      }
-@@ -1783,8 +1795,9 @@ impl<T: InstanceLayout> OwnedInstance<T> {
+@@ -1783,8 +1795,9 @@
      /// Allocates a new `OwnedInstance` and places `instance` inside of it.
      ///
      /// This will `instance`
@@ -3494,7 +3478,7 @@ index 06ba7e4..f4f823b 100644
          debug_assert!(layout.size() >= size_of_val(&instance));
          debug_assert!(layout.align() >= align_of_val(&instance));
 
-@@ -1799,13 +1812,14 @@ impl<T: InstanceLayout> OwnedInstance<T> {
+@@ -1799,13 +1812,14 @@
              }
          };
          let Some(instance_ptr) = NonNull::new(ptr.cast::<T>()) else {
@@ -3510,7 +3494,7 @@ index 06ba7e4..f4f823b 100644
 
          // SAFETY: we allocated above and it's an unsafe contract of
          // `InstanceLayout` that the layout is suitable for writing the
-@@ -1814,11 +1828,19 @@ impl<T: InstanceLayout> OwnedInstance<T> {
+@@ -1814,10 +1828,18 @@
              instance_ptr.write(instance);
          }
 
@@ -3519,7 +3503,7 @@ index 06ba7e4..f4f823b 100644
              instance: SendSyncPtr::new(instance_ptr),
              _marker: marker::PhantomData,
          };
-
++
 +        if let Some(allocation) = unsafe { ret.get_mut().get_unchecked_mut() }
 +            .owned_vmctx_mut()
 +            .allocation
@@ -3527,11 +3511,10 @@ index 06ba7e4..f4f823b 100644
 +        {
 +            allocation.allocated();
 +        }
-+
+
          // Double-check various vmctx calculations are correct.
          debug_assert_eq!(
-             vmctx_self_reference.addr(),
-@@ -1854,8 +1876,18 @@ impl<T: InstanceLayout> Drop for OwnedInstance<T> {
+@@ -1854,8 +1876,18 @@
      fn drop(&mut self) {
          unsafe {
              let layout = self.get().layout();
@@ -3550,7 +3533,7 @@ index 06ba7e4..f4f823b 100644
          }
      }
  }
-@@ -1863,13 +1895,13 @@ impl<T: InstanceLayout> Drop for OwnedInstance<T> {
+@@ -1863,13 +1895,13 @@
  #[derive(Debug)]
  pub(crate) struct PassiveElementSegment {
      needs_gc_rooting: bool,
@@ -3567,8 +3550,6 @@ index 06ba7e4..f4f823b 100644
          elements.resize_with(capacity, || ValRaw::null())?;
          Ok(Self {
              needs_gc_rooting: ty.is_vmgcref_type_and_not_i31(),
-diff --git a/src/runtime/vm/instance/allocator.rs b/src/runtime/vm/instance/allocator.rs
-index c94853c..4ffdd02 100644
 --- a/src/runtime/vm/instance/allocator.rs
 +++ b/src/runtime/vm/instance/allocator.rs
 @@ -1,4 +1,5 @@
@@ -3577,7 +3558,7 @@ index c94853c..4ffdd02 100644
  use crate::runtime::vm::imports::Imports;
  use crate::runtime::vm::instance::{Instance, InstanceHandle};
  use crate::runtime::vm::memory::Memory;
-@@ -325,8 +326,9 @@ impl dyn InstanceAllocator + '_ {
+@@ -325,8 +326,9 @@
          let num_defined_memories = module.num_defined_memories();
          let num_defined_tables = module.num_defined_tables();
 
@@ -3589,7 +3570,7 @@ index c94853c..4ffdd02 100644
 
          // Note that incrementing the instance count here must be done just
          // before creation of `DeallocateOnDrop`. This is required to ensure
-@@ -356,8 +358,8 @@ impl dyn InstanceAllocator + '_ {
+@@ -356,8 +358,8 @@
 
          struct DeallocateOnDrop<'a> {
              run_deallocate: bool,
@@ -3600,7 +3581,7 @@ index c94853c..4ffdd02 100644
              allocator: &'a (dyn InstanceAllocator + 'a),
          }
 
-@@ -403,7 +405,7 @@ impl dyn InstanceAllocator + '_ {
+@@ -403,7 +405,7 @@
      async fn allocate_memories(
          &self,
          request: &mut InstanceAllocationRequest<'_, '_>,
@@ -3609,7 +3590,7 @@ index c94853c..4ffdd02 100644
      ) -> Result<()> {
          let module = request.runtime_info.env_module();
 
-@@ -434,7 +436,7 @@ impl dyn InstanceAllocator + '_ {
+@@ -434,7 +436,7 @@
      /// `Self::allocate_memories`.
      unsafe fn deallocate_memories(
          &self,
@@ -3618,7 +3599,7 @@ index c94853c..4ffdd02 100644
      ) {
          for (memory_index, (allocation_index, memory)) in mem::take(memories) {
              // Because deallocating memory is infallible, we don't need to worry
-@@ -456,7 +458,7 @@ impl dyn InstanceAllocator + '_ {
+@@ -456,7 +458,7 @@
      async fn allocate_tables(
          &self,
          request: &mut InstanceAllocationRequest<'_, '_>,
@@ -3627,7 +3608,7 @@ index c94853c..4ffdd02 100644
      ) -> Result<()> {
          let module = request.runtime_info.env_module();
 
-@@ -485,7 +487,7 @@ impl dyn InstanceAllocator + '_ {
+@@ -485,7 +487,7 @@
      /// `Self::allocate_tables`.
      unsafe fn deallocate_tables(
          &self,
@@ -3636,11 +3617,9 @@ index c94853c..4ffdd02 100644
      ) {
          for (table_index, (allocation_index, table)) in mem::take(tables) {
              // SAFETY: the tables here were allocated from this allocator per
-diff --git a/src/runtime/vm/instance/allocator/pooling/table_pool.rs b/src/runtime/vm/instance/allocator/pooling/table_pool.rs
-index 6f060cb..d97d8a4 100644
 --- a/src/runtime/vm/instance/allocator/pooling/table_pool.rs
 +++ b/src/runtime/vm/instance/allocator/pooling/table_pool.rs
-@@ -147,13 +147,37 @@ impl TablePool {
+@@ -147,12 +147,36 @@
              pool: self,
              allocation_index,
              active: true,
@@ -3672,14 +3651,13 @@ index 6f060cb..d97d8a4 100644
 -        let data_size = self.data_size(crate::vm::table::wasm_to_table_type(ty.ref_type));
          unsafe {
              commit_pages(base, data_size)?;
-         }
++        }
 +        if let Some(owner) = &mut guard.allocation {
 +            owner.allocated();
-+        }
+         }
 
          let ptr = NonNull::new(std::ptr::slice_from_raw_parts_mut(base.cast(), data_size)).unwrap();
-         let table = unsafe {
-@@ -161,9 +185,9 @@ impl TablePool {
+@@ -161,9 +185,9 @@
                  ty,
                  tunables,
                  SendSyncPtr::new(ptr),
@@ -3692,7 +3670,7 @@ index 6f060cb..d97d8a4 100644
          };
          guard.active = false;
          return Ok((allocation_index, table));
-@@ -172,6 +196,8 @@ impl TablePool {
+@@ -172,6 +196,8 @@
              pool: &'a TablePool,
              allocation_index: TableAllocationIndex,
              active: bool,
@@ -3701,7 +3679,7 @@ index 6f060cb..d97d8a4 100644
          }
 
          impl Drop for DeallocateIndexGuard<'_> {
-@@ -179,6 +205,10 @@ impl TablePool {
+@@ -179,6 +205,10 @@
                  if !self.active {
                      return;
                  }
@@ -3712,11 +3690,81 @@ index 6f060cb..d97d8a4 100644
                  self.pool
                      .index_allocator
                      .free(SlotId(self.allocation_index.0), 0);
-diff --git a/src/runtime/vm/table.rs b/src/runtime/vm/table.rs
-index 011e5a5..e94a1b6 100644
+--- a/src/runtime/vm/memory.rs
++++ b/src/runtime/vm/memory.rs
+@@ -243,13 +243,28 @@
+         engine: &Engine,
+         creator: &dyn RuntimeMemoryCreator,
+         memory_image: Option<&Arc<MemoryImage>>,
+-        limiter: Option<&mut StoreResourceLimiter<'_>>,
++        mut limiter: Option<&mut StoreResourceLimiter<'_>>,
+         kind: MemoryKind,
+     ) -> Result<Self> {
+-        let (minimum, maximum) = Self::limit_new(ty, limiter).await?;
++        let (minimum, maximum) = Self::limit_new(ty, limiter.as_deref_mut())
++            .await
++            .inspect_err(|_| {
++                if let Some(limiter) = limiter.as_deref_mut() {
++                    limiter.memory_allocation_failed();
++                }
++            })?;
+         let tunables = engine.tunables();
+         let memory_tunables = MemoryTunables::new(tunables, kind);
+-        let allocation = creator.new_memory(ty, &memory_tunables, minimum, maximum)?;
++        let allocation = creator
++            .new_memory(ty, &memory_tunables, minimum, maximum)
++            .inspect_err(|_| {
++                if let Some(limiter) = limiter.as_deref_mut() {
++                    limiter.memory_allocation_failed();
++                }
++            })?;
++        if let Some(limiter) = limiter {
++            limiter.memory_allocated();
++        }
+
+         let memory = LocalMemory::new(ty, &memory_tunables, allocation, memory_image)?;
+         Ok(if ty.shared {
+@@ -267,10 +282,24 @@
+         base: MemoryBase,
+         base_capacity: usize,
+         memory_image: MemoryImageSlot,
+-        limiter: Option<&mut StoreResourceLimiter<'_>>,
++        mut limiter: Option<&mut StoreResourceLimiter<'_>>,
+     ) -> Result<Self> {
+-        let (minimum, maximum) = Self::limit_new(ty, limiter).await?;
+-        let pooled_memory = StaticMemory::new(base, base_capacity, minimum, maximum)?;
++        let (minimum, maximum) = Self::limit_new(ty, limiter.as_deref_mut())
++            .await
++            .inspect_err(|_| {
++                if let Some(limiter) = limiter.as_deref_mut() {
++                    limiter.memory_allocation_failed();
++                }
++            })?;
++        let pooled_memory =
++            StaticMemory::new(base, base_capacity, minimum, maximum).inspect_err(|_| {
++                if let Some(limiter) = limiter.as_deref_mut() {
++                    limiter.memory_allocation_failed();
++                }
++            })?;
++        if let Some(limiter) = limiter {
++            limiter.memory_allocated();
++        }
+         let allocation = try_new::<Box<_>>(pooled_memory)?;
+
+         // Configure some defaults a bit differently for this memory within the
+@@ -706,6 +735,9 @@
+
+         match result {
+             Ok(()) => {
++                if let Some(limiter) = limiter {
++                    limiter.memory_allocated();
++                }
+                 // On successful growth double-check that the base pointer
+                 // didn't move if it shouldn't have.
+                 if required_to_not_move_memory {
 --- a/src/runtime/vm/table.rs
 +++ b/src/runtime/vm/table.rs
-@@ -25,6 +25,14 @@ pub enum TableElementType {
+@@ -25,6 +25,14 @@
  }
 
  impl TableElementType {
@@ -3731,7 +3779,7 @@ index 011e5a5..e94a1b6 100644
      /// Returns the size required to actually store an element of this particular type
      pub fn element_size(&self) -> usize {
          match self {
-@@ -136,6 +144,8 @@ pub struct StaticFuncTable {
+@@ -136,6 +144,8 @@
      /// Where data for this table is stored. The length of this list is the
      /// maximum size of the table.
      data: SendSyncPtr<[FuncTableElem]>,
@@ -3740,7 +3788,7 @@ index 011e5a5..e94a1b6 100644
      /// The current size of the table.
      size: usize,
      /// Whether elements of this table are initialized lazily.
-@@ -146,6 +156,8 @@ pub struct StaticGcRefTable {
+@@ -146,6 +156,8 @@
      /// Where data for this table is stored. The length of this list is the
      /// maximum size of the table.
      data: SendSyncPtr<[Option<VMGcRef>]>,
@@ -3749,7 +3797,7 @@ index 011e5a5..e94a1b6 100644
      /// The current size of the table.
      size: usize,
  }
-@@ -154,6 +166,8 @@ pub struct StaticContTable {
+@@ -154,6 +166,8 @@
      /// Where data for this table is stored. The length of this list is the
      /// maximum size of the table.
      data: SendSyncPtr<[ContTableElem]>,
@@ -3758,7 +3806,7 @@ index 011e5a5..e94a1b6 100644
      /// The current size of the table.
      size: usize,
  }
-@@ -186,6 +200,8 @@ pub struct DynamicFuncTable {
+@@ -186,6 +200,8 @@
      /// Dynamically managed storage space for this table. The length of this
      /// vector is the current size of the table.
      elements: TryVec<FuncTableElem>,
@@ -3767,7 +3815,7 @@ index 011e5a5..e94a1b6 100644
      /// Maximum size that `elements` can grow to.
      maximum: Option<usize>,
      /// Whether elements of this table are initialized lazily.
-@@ -196,6 +212,8 @@ pub struct DynamicGcRefTable {
+@@ -196,6 +212,8 @@
      /// Dynamically managed storage space for this table. The length of this
      /// vector is the current size of the table.
      elements: TryVec<Option<VMGcRef>>,
@@ -3776,7 +3824,7 @@ index 011e5a5..e94a1b6 100644
      /// Maximum size that `elements` can grow to.
      maximum: Option<usize>,
  }
-@@ -204,6 +222,8 @@ pub struct DynamicContTable {
+@@ -204,6 +222,8 @@
      /// Dynamically managed storage space for this table. The length of this
      /// vector is the current size of the table.
      elements: TryVec<ContTableElem>,
@@ -3785,7 +3833,7 @@ index 011e5a5..e94a1b6 100644
      /// Maximum size that `elements` can grow to.
      maximum: Option<usize>,
  }
-@@ -281,49 +301,89 @@ pub(crate) fn wasm_to_table_type(ty: WasmRefType) -> TableElementType {
+@@ -281,49 +301,89 @@
      }
  }
 
@@ -3813,14 +3861,7 @@ index 011e5a5..e94a1b6 100644
 -
 -    if len == 0 {
 -        return Ok(TryVec::new());
-+    let layout = Layout::array::<Option<T>>(len)?;
-+    if layout.size() == 0 {
-+        // Disabled reference types can make Option<T> zero-sized even when
-+        // len is nonzero. Global alloc(0) is invalid; a ZST Vec has no backing.
-+        let mut elements = TryVec::new();
-+        elements.resize_with(len, || None)?;
-+        return Ok(elements);
-     }
+-    }
 -
 -    let align = mem::align_of::<Option<T>>();
 -
@@ -3832,19 +3873,31 @@ index 011e5a5..e94a1b6 100644
 -
 -    let layout = Layout::from_size_align(size, align)?;
 -
++    let layout = Layout::array::<Option<T>>(len)?;
++    if layout.size() == 0 {
++        // Disabled reference types can make Option<T> zero-sized even when
++        // len is nonzero. Global alloc(0) is invalid; a ZST Vec has no backing.
++        let mut elements = TryVec::new();
++        elements.resize_with(len, || None)?;
++        return Ok(elements);
++    }
      let ptr = unsafe { alloc::alloc::alloc_zeroed(layout) };
      if ptr.is_null() {
 -        return Err(OutOfMemory::new(size).into());
+-    }
+-
+-    let elems = unsafe { TryVec::<Option<T>>::from_raw_parts(ptr.cast(), len, len) };
+-    debug_assert!(elems.iter().all(|e| e.is_none()));
+-
+-    Ok(elems)
 +        return Err(OutOfMemory::new(layout.size()).into());
-     }
++    }
 +    // SAFETY: exact Layout and original all-zero None contract above.
 +    let elements = unsafe { TryVec::<Option<T>>::from_raw_parts(ptr.cast(), len, len) };
 +    debug_assert!(elements.iter().all(|e| e.is_none()));
 +    Ok(elements)
 +}
-
--    let elems = unsafe { TryVec::<Option<T>>::from_raw_parts(ptr.cast(), len, len) };
--    debug_assert!(elems.iter().all(|e| e.is_none()));
++
 +/// Exact continuation backing without assuming a zero Option discriminant.
 +unsafe fn alloc_dynamic_cont_table_elements(len: usize) -> Result<TryVec<ContTableElem>> {
 +    let layout = Layout::array::<ContTableElem>(len)?;
@@ -3865,8 +3918,7 @@ index 011e5a5..e94a1b6 100644
 +    }
 +    Ok(unsafe { TryVec::from_raw_parts(ptr, len, len) })
 +}
-
--    Ok(elems)
++
 +fn grow_dynamic_table<T>(
 +    elements: &mut TryVec<Option<T>>,
 +    allocation: &mut Option<Box<dyn crate::TableAllocation>>,
@@ -3908,7 +3960,7 @@ index 011e5a5..e94a1b6 100644
  }
 
  impl Table {
-@@ -331,35 +391,57 @@ impl Table {
+@@ -331,35 +391,57 @@
      pub async fn new_dynamic(
          ty: &wasmtime_environ::Table,
          tunables: &Tunables,
@@ -3945,6 +3997,7 @@ index 011e5a5..e94a1b6 100644
 -                elements.resize_with(minimum, || None)?;
 -                Ok(Self::from(DynamicContTable { elements, maximum }))
 -            }
+-        }
 +            }),
 +            TableElementType::Cont => Self::from(DynamicContTable {
 +                elements: unsafe { alloc_dynamic_cont_table_elements(minimum)? },
@@ -3960,7 +4013,7 @@ index 011e5a5..e94a1b6 100644
 +            Table::Dynamic(DynamicTable::GcRef(table)) => table.allocation = allocation,
 +            Table::Dynamic(DynamicTable::Cont(table)) => table.allocation = allocation,
 +            Table::Static(_) => unreachable!(),
-         }
++        }
 +        Ok(table)
      }
 
@@ -3981,7 +4034,7 @@ index 011e5a5..e94a1b6 100644
          let size = minimum;
          let max = maximum.unwrap_or(usize::MAX);
 
-@@ -386,6 +468,7 @@ impl Table {
+@@ -386,6 +468,7 @@
                  ));
                  Ok(Self::from(StaticFuncTable {
                      data,
@@ -3989,7 +4042,7 @@ index 011e5a5..e94a1b6 100644
                      size,
                      lazy_init: tunables.table_lazy_init,
                  }))
-@@ -410,7 +493,11 @@ impl Table {
+@@ -410,7 +493,11 @@
                      data.as_non_null().cast::<Option<VMGcRef>>(),
                      cmp::min(len, max),
                  ));
@@ -4002,7 +4055,7 @@ index 011e5a5..e94a1b6 100644
              }
              TableElementType::Cont => {
                  let len = {
-@@ -432,7 +519,11 @@ impl Table {
+@@ -432,7 +519,11 @@
                      data.as_non_null().cast::<ContTableElem>(),
                      cmp::min(len, max),
                  ));
@@ -4015,7 +4068,7 @@ index 011e5a5..e94a1b6 100644
              }
          }
      }
-@@ -440,7 +531,7 @@ impl Table {
+@@ -440,7 +531,7 @@
      // Calls the `store`'s limiter to optionally prevent the table from being created.
      //
      // Returns the minimum and maximum size of the table if the table can be created.
@@ -4024,7 +4077,7 @@ index 011e5a5..e94a1b6 100644
          ty: &wasmtime_environ::Table,
          limiter: Option<&mut StoreResourceLimiter<'_>>,
      ) -> Result<(usize, Option<usize>)> {
-@@ -674,13 +765,13 @@ impl Table {
+@@ -674,13 +765,13 @@
                  }
                  *size = new_size;
              }
@@ -4040,11 +4093,17 @@ index 011e5a5..e94a1b6 100644
                  unsafe {
                      debug_assert!(data.as_ref()[*size..new_size].iter().all(|x| x.is_none()));
                  }
-@@ -694,14 +785,44 @@ impl Table {
+@@ -694,14 +785,44 @@
              // loading the base address. However, in that case the above checks
              // that delta is non-zero and the new size doesn't exceed the
              // maximum mean we can't get here.
 -            Table::Dynamic(DynamicTable::Func(DynamicFuncTable { elements, .. })) => {
+-                elements.resize_with(new_size, || None)?;
+-            }
+-            Table::Dynamic(DynamicTable::GcRef(DynamicGcRefTable { elements, .. })) => {
+-                elements.resize_with(new_size, || None)?;
+-            }
+-            Table::Dynamic(DynamicTable::Cont(DynamicContTable { elements, .. })) => {
 -                elements.resize_with(new_size, || None)?;
 +            Table::Dynamic(DynamicTable::Func(DynamicFuncTable {
 +                elements,
@@ -4058,9 +4117,7 @@ index 011e5a5..e94a1b6 100644
 +                    limiter.as_deref_mut(),
 +                    alloc_dynamic_table_elements,
 +                )?;
-             }
--            Table::Dynamic(DynamicTable::GcRef(DynamicGcRefTable { elements, .. })) => {
--                elements.resize_with(new_size, || None)?;
++            }
 +            Table::Dynamic(DynamicTable::GcRef(DynamicGcRefTable {
 +                elements,
 +                allocation,
@@ -4073,9 +4130,7 @@ index 011e5a5..e94a1b6 100644
 +                    limiter.as_deref_mut(),
 +                    alloc_dynamic_table_elements,
 +                )?;
-             }
--            Table::Dynamic(DynamicTable::Cont(DynamicContTable { elements, .. })) => {
--                elements.resize_with(new_size, || None)?;
++            }
 +            Table::Dynamic(DynamicTable::Cont(DynamicContTable {
 +                elements,
 +                allocation,
@@ -4091,18 +4146,12 @@ index 011e5a5..e94a1b6 100644
              }
          }
 
-@@ -794,16 +915,18 @@ impl Table {
+@@ -794,16 +915,18 @@
                      current_elements: *size,
                  }
              }
 -            Table::Static(StaticTable::GcRef(StaticGcRefTable { data, size })) => {
 +            Table::Static(StaticTable::GcRef(StaticGcRefTable { data, size, .. })) => {
-+                VMTableDefinition {
-+                    base: data.cast().into(),
-+                    current_elements: *size,
-+                }
-+            }
-+            Table::Static(StaticTable::Cont(StaticContTable { data, size, .. })) => {
                  VMTableDefinition {
                      base: data.cast().into(),
                      current_elements: *size,
@@ -4112,10 +4161,16 @@ index 011e5a5..e94a1b6 100644
 -                base: data.cast().into(),
 -                current_elements: *size,
 -            },
++            Table::Static(StaticTable::Cont(StaticContTable { data, size, .. })) => {
++                VMTableDefinition {
++                    base: data.cast().into(),
++                    current_elements: *size,
++                }
++            }
              Table::Dynamic(DynamicTable::Func(DynamicFuncTable { elements, .. })) => {
                  VMTableDefinition {
                      base: NonNull::new(elements.as_mut_ptr()).unwrap().cast().into(),
-@@ -840,6 +963,7 @@ impl Table {
+@@ -840,6 +963,7 @@
                  data,
                  size,
                  lazy_init,
@@ -4123,7 +4178,7 @@ index 011e5a5..e94a1b6 100644
              })) => (
                  unsafe { slice::from_raw_parts(data.as_ptr().cast(), *size) },
                  *lazy_init,
-@@ -863,6 +987,7 @@ impl Table {
+@@ -863,6 +987,7 @@
                  data,
                  size,
                  lazy_init,
@@ -4131,7 +4186,7 @@ index 011e5a5..e94a1b6 100644
              })) => (
                  unsafe { slice::from_raw_parts_mut(data.as_ptr().cast(), *size) },
                  *lazy_init,
-@@ -875,7 +1000,7 @@ impl Table {
+@@ -875,7 +1000,7 @@
          assert_eq!(self.element_type(), TableElementType::GcRef);
          match self {
              Self::Dynamic(DynamicTable::GcRef(DynamicGcRefTable { elements, .. })) => elements,
@@ -4140,7 +4195,7 @@ index 011e5a5..e94a1b6 100644
                  &data.as_non_null().as_ref()[..*size]
              },
              _ => unreachable!(),
-@@ -888,7 +1013,7 @@ impl Table {
+@@ -888,7 +1013,7 @@
              Self::Dynamic(DynamicTable::Cont(DynamicContTable { elements, .. })) => unsafe {
                  slice::from_raw_parts(elements.as_ptr().cast(), elements.len())
              },
@@ -4149,7 +4204,7 @@ index 011e5a5..e94a1b6 100644
                  slice::from_raw_parts(data.as_ptr().cast(), *size)
              },
              _ => unreachable!(),
-@@ -901,7 +1026,7 @@ impl Table {
+@@ -901,7 +1026,7 @@
              Self::Dynamic(DynamicTable::Cont(DynamicContTable { elements, .. })) => unsafe {
                  slice::from_raw_parts_mut(elements.as_mut_ptr().cast(), elements.len())
              },
@@ -4158,7 +4213,7 @@ index 011e5a5..e94a1b6 100644
                  slice::from_raw_parts_mut(data.as_ptr().cast(), *size)
              },
              _ => unreachable!(),
-@@ -915,7 +1040,7 @@ impl Table {
+@@ -915,7 +1040,7 @@
          assert_eq!(self.element_type(), TableElementType::GcRef);
          match self {
              Self::Dynamic(DynamicTable::GcRef(DynamicGcRefTable { elements, .. })) => elements,
@@ -4167,7 +4222,7 @@ index 011e5a5..e94a1b6 100644
                  &mut data.as_non_null().as_mut()[..*size]
              },
              _ => unreachable!(),
-@@ -968,6 +1093,7 @@ impl Default for Table {
+@@ -968,6 +1093,7 @@
      fn default() -> Self {
          Self::from(StaticFuncTable {
              data: SendSyncPtr::new(NonNull::from(&mut [])),

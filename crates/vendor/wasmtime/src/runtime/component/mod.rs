@@ -818,4 +818,4 @@ pub use dynamic_memory::DynamicValueMemory;
 
 /// Native source cohort for the maintained original-owner dynamic value extension.
 pub const DYNAMIC_VALUE_MEMORY_COHORT: &str =
-    "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-memory-v5";
+    "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-memory-v6";

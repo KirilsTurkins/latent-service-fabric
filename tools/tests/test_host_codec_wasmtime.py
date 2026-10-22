@@ -114,7 +114,7 @@ class PinnedWasmtimeSource(unittest.TestCase):
                 registry.workspace(root)
 
     def test_actual_table_hook_sources_and_new_cohort_require_exact_postimages(self):
-        self.assertEqual(source.COHORT, 'wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-memory-v5')
+        self.assertEqual(source.COHORT, 'wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-memory-v6')
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             self.fixture(root)
@@ -183,6 +183,22 @@ class PinnedWasmtimeSource(unittest.TestCase):
                     target = root / source.PROVIDER / name
                     original = target.read_bytes()
                     target.write_bytes(original + b'\nchanged-resource-owner\n')
+                    with self.assertRaisesRegex(ValueError, 'host-codec-wasmtime-source-identity'):
+                        source.verify(root)
+                    target.write_bytes(original)
+            self.assertEqual(len(source.verify(root)['files']), 259)
+
+
+    def test_actual_linear_allocator_notifications_cannot_be_substituted(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.fixture(root)
+            for name in ('src/runtime/limits.rs', 'src/runtime/store.rs',
+                         'src/runtime/vm/memory.rs'):
+                with self.subTest(name=name):
+                    target = root / source.PROVIDER / name
+                    original = target.read_bytes()
+                    target.write_bytes(original + b'\nchanged-linear-notification\n')
                     with self.assertRaisesRegex(ValueError, 'host-codec-wasmtime-source-identity'):
                         source.verify(root)
                     target.write_bytes(original)
