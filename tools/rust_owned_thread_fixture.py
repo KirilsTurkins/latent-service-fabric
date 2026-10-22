@@ -3,14 +3,20 @@
 This is source for a compiler diagnostic first. No source/native reference
 control is credited as actual guest progress or runtime qualification.
 """
+import argparse
+import json
 from pathlib import Path
+import sys
+
+if __package__ in {None, ''}:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from tools import cargo_native_authoring as author, rust_application_dependencies as native
 from tools import rust_dependency_authoring as review, rust_standard_logging_inputs as standard
 from tools import rust_standard_thread_capture as port, rust_standard_thread_profile as profile
 from tools.application_dependencies import LOCK
 from tools.dev_workflow.common import require
-from tools.rust_capsule_project import create, digest, inventory, read_file, snapshot
+from tools.rust_capsule_project import create, digest, inventory, read_file, snapshot, write_json
 
 RECIPE = ('tools/rust_owned_thread_fixture.py', 'tools/rust_capsule_project.py',
           'tools/cargo_native_authoring.py', 'tools/rust_dependency_authoring.py',
@@ -63,3 +69,18 @@ def prepare(destination: Path, cargo: Path):
                  'runtimeArtifact': selected[0]['id'], 'candidateDigest': digest(raw),
                  'publicExport': PUBLIC, 'postReturnExport': POST,
                  'actualGuestExecuted': False, 'ordinaryThreadPoolQualified': False}
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--application', type=Path, required=True)
+    parser.add_argument('--cargo', type=Path, required=True)
+    parser.add_argument('--report', type=Path, required=True)
+    args = parser.parse_args()
+    _application, receipt = prepare(args.application, args.cargo)
+    write_json(args.report, receipt)
+    print(json.dumps(receipt))
+
+
+if __name__ == '__main__':
+    main()

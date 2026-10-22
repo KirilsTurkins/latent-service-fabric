@@ -110,8 +110,20 @@ def run(output: Path, rust_bin: Path, owned_sysroot: Path, context_tool: Path, *
         require(time.monotonic() < deadline, 'rust-thread-app-programme-deadline')
         with tempfile.TemporaryDirectory(prefix='lsf-rust-thread-input-') as directory:
             temporary = Path(directory)
+            environment = build_environment(temporary)
+            remaining = min(600, int(deadline - time.monotonic()))
+            require(remaining > 0, 'rust-thread-app-programme-deadline')
+            commands = builder.Commands(builder.ROOT, output, environment,
+                deadline_seconds=remaining, command_seconds=min(180, remaining))
             record['stage'] = 'normal-source-and-capture'
-            app, captured = fixture.prepare(temporary / 'application', rust_bin / 'cargo')
+            app = temporary / 'application'
+            # The normal resolver keeps its own original implementation and
+            # privacy rules. This owned outer process applies the programme's
+            # stricter time/output bounds and retains the real failure trace.
+            commands.run('capture-original-application', sys.executable, '-B',
+                builder.ROOT / 'tools/rust_owned_thread_fixture.py',
+                '--application', app, '--cargo', rust_bin / 'cargo', '--report', output / 'capture.json')
+            captured = decode_json(read_file(output / 'capture.json'))
             record['capture'] = captured
             observed = capture_source(app, 'rust')
             files = observed.files
@@ -122,6 +134,12 @@ def run(output: Path, rust_bin: Path, owned_sysroot: Path, context_tool: Path, *
             require(verified is not None, 'rust-thread-app-original-capture-required')
             port.verify_capture(verified, standard.THREAD)
             source = inventory(files)
+            require(captured['sourceDigest'] == digest(source)
+                    and captured['publicExport'] == fixture.PUBLIC
+                    and captured['postReturnExport'] == fixture.POST
+                    and captured['actualGuestExecuted'] is False
+                    and captured['ordinaryThreadPoolQualified'] is False,
+                    'rust-thread-app-original-capture-receipt')
             (output / 'source-inputs.json').write_bytes(source)
             record['retainedOriginalSource'] = source_archive(app, output / 'application-source-and-capture.tar.gz')
             work = temporary / 'compiler/source'
@@ -130,7 +148,7 @@ def run(output: Path, rust_bin: Path, owned_sysroot: Path, context_tool: Path, *
                 path = work / name
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_bytes(raw)
-            environment = build_environment(temporary)
+            commands.root = work
             environment.update(CARGO_NET_OFFLINE='true', RUSTUP_AUTO_INSTALL='0',
                 CARGO_INCREMENTAL='0', CARGO_HOME=str(temporary / 'cargo-home'),
                 CARGO_TARGET_DIR=str(temporary / 'target'), RUSTC=str(rust_bin / 'rustc'),
@@ -144,10 +162,6 @@ def run(output: Path, rust_bin: Path, owned_sysroot: Path, context_tool: Path, *
             # limits; the retained owned context executable remains <=32MiB.
             identities.extend(file_identity(paths[n], n) for n in ('wit-bindgen', 'zig', 'sh'))
             record['tools'] = identities
-            remaining = min(600, int(deadline - time.monotonic()))
-            require(remaining > 0, 'rust-thread-app-programme-deadline')
-            commands = builder.Commands(work, output, environment,
-                deadline_seconds=remaining, command_seconds=min(180, remaining))
             require(commands.run('zig-version', paths['zig'], 'version').decode().strip()
                     == pins['toolchain']['sdk']['zig'], 'rust-thread-app-pinned-zig')
             require(commands.run('bindgen-version', paths['wit-bindgen'], '--version').decode().strip()
