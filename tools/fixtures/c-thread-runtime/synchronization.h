@@ -42,7 +42,7 @@ static void *sync_worker(void *opaque) {
     local += argument->slot + 1; errno = argument->api == 1 ? 37 : 41;
     require(pthread_setspecific(key, (void *)(uintptr_t)1) == 0);
     sync_gate_lock();
-    ++entered;
+    FIXTURE_ENTER();
     if (argument->slot == 0) {
         sync_consumer_waiting = 1; sync_signal_started();
         while (!sync_finished) sync_wait_done();

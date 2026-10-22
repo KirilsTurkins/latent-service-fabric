@@ -1,7 +1,6 @@
 /* Ordinary source. The selected maintained compiler owns the thread PAL. */
 #if LSF_C_TIMED_CLOCK
 #define _POSIX_C_SOURCE 200809L
-#include <stdatomic.h>
 #endif
 #include "probe.h"
 #include <errno.h>
@@ -16,10 +15,22 @@ static pthread_key_t key;
 static pthread_t root_id;
 static uintptr_t root_stack_address;
 #if LSF_C_TIMED_CLOCK
-static _Atomic unsigned entered, destructed;
+/* The selected unshared profile rejects Wasm atomics. All shared fixture
+ * counters use ordinary public mutex operations; no lock spans a host call. */
+static pthread_mutex_t fixture_counter_mutex = PTHREAD_MUTEX_INITIALIZER;
+static unsigned fixture_counters[4];
+static unsigned fixture_counter_read(unsigned index);
+static void fixture_counter_add(unsigned index);
+static void fixture_counter_set(unsigned index, unsigned value);
+#define entered fixture_counter_read(0)
+#define destructed fixture_counter_read(1)
+#define FIXTURE_ENTER() fixture_counter_add(0)
+#define FIXTURE_DESTRUCT() fixture_counter_add(1)
 static volatile unsigned hold, callback_trap;
 #else
 static volatile unsigned entered, destructed, hold, callback_trap;
+#define FIXTURE_ENTER() (++entered)
+#define FIXTURE_DESTRUCT() (++destructed)
 #endif
 static volatile uint32_t spin;
 static latent_runtime_activation_observation_t snapshots[3];
@@ -28,11 +39,29 @@ struct argument { pthread_t identity; unsigned slot, api; uint8_t *drain_result;
 static struct argument arguments[3];
 
 static void require(int predicate) { if (!predicate) __builtin_trap(); }
+#if LSF_C_TIMED_CLOCK
+static unsigned fixture_counter_read(unsigned index) {
+    require(pthread_mutex_lock(&fixture_counter_mutex) == 0);
+    unsigned value = fixture_counters[index];
+    require(pthread_mutex_unlock(&fixture_counter_mutex) == 0);
+    return value;
+}
+static void fixture_counter_add(unsigned index) {
+    require(pthread_mutex_lock(&fixture_counter_mutex) == 0);
+    ++fixture_counters[index];
+    require(pthread_mutex_unlock(&fixture_counter_mutex) == 0);
+}
+static void fixture_counter_set(unsigned index, unsigned value) {
+    require(pthread_mutex_lock(&fixture_counter_mutex) == 0);
+    fixture_counters[index] = value;
+    require(pthread_mutex_unlock(&fixture_counter_mutex) == 0);
+}
+#endif
 static void destructor(void *value) {
     require(value == (void *)(uintptr_t)1 && local >= 8);
     require(!pthread_equal(pthread_self(), root_id));
     require(errno == 37 || errno == 41);
-    ++destructed;
+    FIXTURE_DESTRUCT();
 }
 
 static void *worker(void *opaque) {
@@ -47,7 +76,7 @@ static void *worker(void *opaque) {
     require(pthread_setspecific(key, (void *)(uintptr_t)1) == 0);
     require(pthread_join(pthread_self(), NULL) == EDEADLK);
     require(thrd_join(thrd_current(), NULL) == thrd_error);
-    ++entered;
+    FIXTURE_ENTER();
     latent_runtime_activation_error_t error = 255;
     require(latent_runtime_activation_observe(&snapshots[argument->slot], &error));
     const latent_runtime_activation_observation_t *observed = &snapshots[argument->slot];

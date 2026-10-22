@@ -5,7 +5,8 @@
 static union { pthread_mutex_t pthread; mtx_t c11; } timed_gate;
 static union { pthread_cond_t pthread; cnd_t c11; } timed_condition;
 static unsigned timed_c11, timed_kind, timed_children_count;
-static _Atomic unsigned timed_sibling, timed_completed;
+#define timed_sibling fixture_counter_read(2)
+#define timed_completed fixture_counter_read(3)
 static latent_runtime_activation_observation_t timed_snapshot;
 
 static struct timespec timed_deadline(clockid_t clock, long millis) {
@@ -57,40 +58,40 @@ static void *timed_worker(void *opaque) {
     require(pthread_equal(pthread_self(), argument->identity));
     require(!pthread_equal(pthread_self(), root_id) && pthread_getspecific(key) == NULL);
     local += argument->slot + 1; errno = argument->api == 1 ? 37 : 41;
-    require(pthread_setspecific(key, (void *)(uintptr_t)1) == 0); ++entered;
+    require(pthread_setspecific(key, (void *)(uintptr_t)1) == 0); FIXTURE_ENTER();
     if (timed_kind == 0) { /* Sleep parks one child while its sibling runs. */
         if (argument->slot == 0) { timed_pause(200); require(timed_sibling == 1); }
-        else { timed_observe(); timed_sibling = 1; }
+        else { timed_observe(); fixture_counter_set(2, 1); }
     } else if (timed_kind == 1) { /* Root holds mutex throughout timeout. */
         if (argument->slot == 0) {
             struct timespec deadline = timed_deadline(CLOCK_REALTIME, 200), now;
             if (timed_c11) require(mtx_timedlock(&timed_gate.c11, &deadline) == thrd_timedout);
             else require(pthread_mutex_timedlock(&timed_gate.pthread, &deadline) == ETIMEDOUT);
             require(clock_gettime(CLOCK_REALTIME, &now) == 0 && timed_compare(now, deadline));
-            require(timed_sibling == 1); ++timed_completed;
-        } else { timed_observe(); timed_sibling = 1; }
+            require(timed_sibling == 1); fixture_counter_add(3);
+        } else { timed_observe(); fixture_counter_set(2, 1); }
     } else if (timed_kind == 2) { /* Mutex handoff closes the waiter's Timer. */
         if (argument->slot == 0) {
             timed_lock(); timed_pause(200); timed_observe();
-            timed_sibling = 1; timed_unlock();
+            fixture_counter_set(2, 1); timed_unlock();
         } else {
             struct timespec deadline = timed_deadline(CLOCK_REALTIME, 1000);
             if (timed_c11) require(mtx_timedlock(&timed_gate.c11, &deadline) == thrd_success);
             else require(pthread_mutex_timedlock(&timed_gate.pthread, &deadline) == 0);
-            require(timed_sibling == 1); ++timed_completed; timed_unlock();
+            require(timed_sibling == 1); fixture_counter_add(3); timed_unlock();
         }
     } else if (timed_kind == 5) { /* Two timed consumers and a broadcaster. */
         if (argument->slot < 2) {
             timed_lock(); struct timespec deadline = timed_deadline(CLOCK_REALTIME, 1000);
             if (timed_c11) require(cnd_timedwait(&timed_condition.c11, &timed_gate.c11, &deadline) == thrd_success);
             else require(pthread_cond_timedwait(&timed_condition.pthread, &timed_gate.pthread, &deadline) == 0);
-            require(timed_sibling == 1); ++timed_completed; timed_unlock();
+            require(timed_sibling == 1); fixture_counter_add(3); timed_unlock();
         } else {
             timed_observe(); timed_lock();
             if (timed_c11) require(cnd_broadcast(&timed_condition.c11) == thrd_success);
             else require(pthread_cond_broadcast(&timed_condition.pthread) == 0);
             timed_pause(200); require(timed_completed == 0);
-            timed_sibling = 1; timed_unlock();
+            fixture_counter_set(2, 1); timed_unlock();
         }
     } else { /* Condition notification/expiry must reacquire the SAME mutex. */
         if (argument->slot == 0) {
@@ -100,7 +101,7 @@ static void *timed_worker(void *opaque) {
                 : pthread_cond_timedwait(&timed_condition.pthread, &timed_gate.pthread, &deadline);
             require(code == (timed_kind == 3 ? (timed_c11 ? thrd_success : 0)
                 : (timed_c11 ? thrd_timedout : ETIMEDOUT)));
-            require(timed_sibling == 1); ++timed_completed;
+            require(timed_sibling == 1); fixture_counter_add(3);
             /* Only the owner can unlock; returning unlocked must fail here. */
             timed_unlock();
         } else {
@@ -112,7 +113,7 @@ static void *timed_worker(void *opaque) {
             /* Keep the mutex through signal and timeout. The consumer must
              * remain blocked until actual reacquisition becomes possible. */
             timed_pause(timed_kind == 3 ? 200 : 400);
-            require(timed_completed == 0); timed_sibling = 1; timed_unlock();
+            require(timed_completed == 0); fixture_counter_set(2, 1); timed_unlock();
         }
     }
     require(frame == 0x7194 && local == 8 + argument->slot);
