@@ -3,8 +3,10 @@ use latent_capabilities::broker::{CapabilityCallCost, CapabilitySession, Provide
 use latent_core::PlatformError;
 use latent_policy::capability::ResourceTarget;
 mod failure;
+mod retained;
 pub(super) use failure::host_error;
 pub(crate) use failure::HostCapabilityFailure;
+use retained::Retained;
 
 #[derive(Default)]
 pub(crate) struct HostCapabilities {
@@ -13,9 +15,9 @@ pub(crate) struct HostCapabilities {
     pub(super) blobs: super::blob::table::Table,
     pub(super) streams: super::streaming_http::table::Table,
     pub(super) network: super::networking::table::Table,
-    lowering: Vec<ProviderCall>,
-    secret_lowering: Vec<latent_capabilities::broker::secrets::SecretLowering>,
-    pooled_lowering: Vec<latent_capabilities::broker::pools::PoolCall>,
+    lowering: Retained<ProviderCall>,
+    secret_lowering: Retained<latent_capabilities::broker::secrets::SecretLowering>,
+    pooled_lowering: Retained<latent_capabilities::broker::pools::PoolCall>,
     pub(super) session: Option<CapabilitySession>,
 }
 impl HostCapabilities {
@@ -39,14 +41,17 @@ impl HostCapabilities {
         }
     }
 
-    pub(crate) fn new(session: Option<CapabilitySession>) -> Self {
+    pub(crate) fn new(
+        session: Option<CapabilitySession>,
+        budget: &latent_core::ActivationBudget,
+    ) -> Self {
         Self {
             streams: super::streaming_http::table::Table::default(),
             network: super::networking::table::Table::default(),
             blobs: super::blob::table::Table::default(),
-            lowering: Vec::new(),
-            secret_lowering: Vec::new(),
-            pooled_lowering: Vec::new(),
+            lowering: Retained::new(budget),
+            secret_lowering: Retained::new(budget),
+            pooled_lowering: Retained::new(budget),
             session,
         }
     }
@@ -154,20 +159,29 @@ impl HostCapabilities {
             .ok_or(latent_capabilities::broker::http::HttpError::PermissionDenied)?;
         invoker.start(session, request)
     }
+    pub(super) fn prepare_secret_lowering(&mut self) -> wasmtime::Result<()> {
+        self.secret_lowering.prepare_one()
+    }
+    pub(super) fn prepare_pool_lowering(&mut self) -> wasmtime::Result<()> {
+        self.pooled_lowering.prepare_one()
+    }
+    pub(super) fn prepare_lowering(&mut self) -> wasmtime::Result<()> {
+        self.lowering.prepare_one()
+    }
     pub(super) fn retain_secret_lowering(
         &mut self,
         owner: latent_capabilities::broker::secrets::SecretLowering,
     ) {
-        self.secret_lowering.push(owner);
+        self.secret_lowering.push_prepared(owner);
     }
     pub(super) fn retain_pool_lowering(
         &mut self,
         call: latent_capabilities::broker::pools::PoolCall,
     ) {
-        self.pooled_lowering.push(call);
+        self.pooled_lowering.push_prepared(call);
     }
     pub(super) fn retain_lowering(&mut self, call: ProviderCall) {
-        self.lowering.push(call);
+        self.lowering.push_prepared(call);
     }
     pub(super) fn log(
         &self,
@@ -209,12 +223,15 @@ impl HostCapabilities {
             )
             .map_err(host_error)?
         {
+            // Original authority/result admission preceded this directory
+            // reservation; no corresponding guest DTO has been built yet.
+            self.prepare_lowering()?;
             // The present typed binding has no post-lowering callback. Keep the
             // affine owner until Store destruction instead of asserting that a
             // returned Rust DTO has already been lowered. Broker call/result and
             // metadata caps bound this vector before each allocation. This also
             // covers reentrant canonical realloc and future async guest calls.
-            self.lowering.push(call);
+            self.lowering.push_prepared(call);
         }
         Ok(())
     }

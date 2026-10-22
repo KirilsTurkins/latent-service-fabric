@@ -48,6 +48,9 @@ pub(crate) fn install(
                     Err(error) => Err(error),
                 };
                 checkpoint(&mut store)?;
+                if result.is_ok() {
+                    store.data_mut().capabilities.prepare_lowering()?;
+                }
                 let result = result
                     .map(|completion| {
                         store

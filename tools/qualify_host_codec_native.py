@@ -226,7 +226,17 @@ CONTROLS = (('original-host-memory',
  'latent',
  'native_thread_audit_projection_',
  ('management::phase2::projection::audit::capability::tests::native_thread_audit_projection_preserves_exact_v6_facts_without_default_authority',
-  'management::phase2::projection::audit::capability::tests::native_thread_audit_projection_refuses_foreign_versions_classes_operations_and_outcomes')))
+  'management::phase2::projection::audit::capability::tests::native_thread_audit_projection_refuses_foreign_versions_classes_operations_and_outcomes')),
+ ('actual-retained-capability-directory',
+ 'latent-wasmtime',
+ 'host::capabilities::retained::tests::',
+ ('host::capabilities::retained::tests::retained_capability_directory_growth_pays_exact_old_new_overlap_and_unused_capacity',
+  'host::capabilities::retained::tests::retained_capability_directory_refusal_keeps_original_error_contents_and_fresh_grant',
+  'host::capabilities::retained::tests::retained_capability_directory_elements_die_before_refund_even_during_unwind',
+  'host::capabilities::retained::tests::retained_capability_all_three_real_directories_bind_original_budget_across_replacement',
+  'host::capabilities::retained::tests::retained_capability_empty_zst_and_phase1_paths_preserve_lazy_behavior')))
+
+NATIVE_COHORT = 'wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-retained-capability-directories-memory-v10'
 
 PRODUCTS = ('latent', 'latentd', 'examples/package', 'examples/capsule_contracts', 'examples/capsule_authoring')
 RECIPE = ('.github/workflows/host-codec-memory.yml', '.cargo/managed-guest.toml',
@@ -315,8 +325,8 @@ def qualify(output: Path, revision: str) -> dict:
     require(re.fullmatch('[0-9a-f]{40}', revision) is not None, 'host-codec-source-revision')
     require(sys.platform == 'linux', 'host-codec-linux-owner-required')
     names = [name for _,_,_,cases in CONTROLS for name in cases]
-    require(len(CONTROLS) == 28 and len({row[0] for row in CONTROLS}) == 28
-            and len(names) == len(set(names)) == 128, 'host-codec-control-inventory')
+    require(len(CONTROLS) == 29 and len({row[0] for row in CONTROLS}) == 29
+            and len(names) == len(set(names)) == 133, 'host-codec-control-inventory')
     output = fresh(output)
     codec_wasmtime.verify(ROOT)
     before, inputs = source_identity(ROOT), materials(ROOT)
@@ -354,12 +364,13 @@ def qualify(output: Path, revision: str) -> dict:
             products[name] = identity
         record = {'schemaVersion':'latent.host-codec.native-products.v1','status':'passed',
             'sourceRevision':revision,'source':before,'materials':inputs,'compiler':compiler,
-            'products':products,'commands':stages.records,'controlCount':128,'nativeCohort':codec_wasmtime.COHORT,
+            'products':products,'commands':stages.records,'controlCount':133,'nativeCohort':NATIVE_COHORT,
+            'wasmtimeAllocationCohort':codec_wasmtime.COHORT,
             'controls':{stage:list(names) for stage,_,_,names in CONTROLS},
             'profile':'normal-managed-guest-default-features','signedQualification':False,
             'guestJavaScriptEngineCompiled':False,'guestSourceCompiled':False,
             'historicalReceiptRewritten':False,
-            'scope':'ordinary-host-six-closed-context-reply-buffers-and-concrete-callback-future-box-and-retained-activation-context-and-linear-allocation-notifications-codec-table-and-selected-Store-instance-buffer-registry-FuncRefs-container-resource-substitutions-original-memory-and-selected-c-public-async-type-sync-core-admission-and-authenticated-c-ready-handoff-and-closed-guest-trap-diagnostics-and-exact-native-thread-audit-codec-and-CLI-projection; direct-Core-HostFunc-construction, shared-preparation-closures, concurrent-task, other-hostcall-values-custom-Lower-shared-interior-error-owned-copies-and-opaque-accessor-scheduler-frames, request ingress and discarded scaffolding and other hostcall copies, legacy framing and serialized controller frames excluded'}
+            'scope':'ordinary-host-three-retained-capability-directory-backings-and-six-closed-context-reply-buffers-and-concrete-callback-future-box-and-retained-activation-context-and-linear-allocation-notifications-codec-table-and-selected-Store-instance-buffer-registry-FuncRefs-container-resource-substitutions-original-memory-and-selected-c-public-async-type-sync-core-admission-and-authenticated-c-ready-handoff-and-closed-guest-trap-diagnostics-and-exact-native-thread-audit-codec-and-CLI-projection; direct-Core-HostFunc-construction, shared-preparation-closures, concurrent-task, other-hostcall-values-custom-Lower-shared-interior-error-owned-copies-and-opaque-accessor-scheduler-frames, request ingress and discarded scaffolding and other hostcall copies, legacy framing and serialized controller frames excluded'}
         write_json(output/'native-products.json',record)
         return record
     except Exception as error:
