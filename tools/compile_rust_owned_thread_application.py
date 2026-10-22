@@ -280,7 +280,9 @@ def run(output: Path, rust_bin: Path, owned_sysroot: Path, context_tool: Path, *
             record['bindingDigest'] = builder.binding_check(work, pins, commands, paths['wit-bindgen'])
             record['stage'] = 'one-isolated-offline-original-compile'
             prepared.check()
-            target_arguments = prepared.arguments()
+            from tools.rust_thread_path_remap import source_mapping, APPLICATION
+            record['applicationSourcePathRemap'] = source_mapping(work, APPLICATION)
+            target_arguments = prepared.arguments(source_root=work)
             record['targetCargoConfiguration'] = target_arguments
             raw = guard.compile(commands, paths['cargo'], [
                 'build', '--locked', '--release', '--lib', '--target', 'wasm32-unknown-unknown',

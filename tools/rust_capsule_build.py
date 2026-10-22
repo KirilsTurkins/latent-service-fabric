@@ -613,7 +613,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             compile_arguments = ["build", "--locked", "--release", "--lib", "--target", "wasm32-unknown-unknown", *diagnostics]
             if prepared_runtime is not None:
                 prepared_runtime.check()
-                compile_arguments.extend(prepared_runtime.arguments())
+                compile_arguments.extend(prepared_runtime.arguments(source_root=work)
+                    if standard.has_threads(runtime_profile) else prepared_runtime.arguments())
             if closure is not None:
                 selection = closure.lock["selection"]
                 if selection.get("features"):
