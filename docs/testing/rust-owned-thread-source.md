@@ -128,8 +128,20 @@ selected THREAD compiler boundary therefore explicitly passes the supported
 `--no-stack-first` linker flag, placing the real stack after static data. It
 keeps the original null, alignment, range and minimum-size guards and consumes
 the actual linker-exported bounds; it does not manufacture post-link addresses.
-Other profiles keep their original flags. Its newly emitted layout still
-requires an actual compiler observation, and the runtime gate remains closed.
+Other profiles keep their original flags.
+
+Run `39850836555` at `728f3b9715e6b763912e820124604db793436952`
+passed the complete bounded compiler diagnostic and all final source, compiler,
+isolation and Prepared checks. It compiled the authentic captured ordinary
+application with `lto=true`, validated its 207,731-byte original core, derived
+the 194,957-byte owned core and validated that output. Its actual linker stack
+is `[25,664, 1,074,240)`, exactly 1MiB, within 17 initial memory pages. Static
+data ends at 24,968; the derived core retains the original memory/data and
+exported stack bounds. The complete retained artifact is 108,293,674 bytes.
+All 169 Git source identities, 62 artifact rows and 7,094 archived source/CAS
+entries were independently checked. This establishes the actual compiler
+boundary, with every private-graph, canonical-body, checkpoint and runtime
+qualification gate still false. No component or guest was signed or executed.
 
 Beyond those actual compiler inputs, validation consists of source/preimage controls and metadata typechecks
 with explicit public-wrapper/ABI ports. Earlier native source controls exercise
