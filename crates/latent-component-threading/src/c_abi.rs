@@ -930,13 +930,13 @@ pub(crate) mod tests {
         // The former single reservation cannot silently host both stacks.
         let aliased = c_root::tests::fixture(69632, false, false);
         assert_eq!(
-            transform_c_root_bootstrap(&aliased, Sha256::digest(&aliased).into(), "run")
+            c_root::transform_c_root_bootstrap(&aliased, Sha256::digest(&aliased).into(), "run")
                 .unwrap_err(),
             "c-root-exact-guard-and-usable-stack-layout"
         );
         let occupied = c_root::tests::fixture(HIGH, true, false);
         assert_eq!(
-            transform_c_root_bootstrap(&occupied, Sha256::digest(&occupied).into(), "run")
+            c_root::transform_c_root_bootstrap(&occupied, Sha256::digest(&occupied).into(), "run")
                 .unwrap_err(),
             "c-root-original-active-data-overlaps-guard-or-stack"
         );
