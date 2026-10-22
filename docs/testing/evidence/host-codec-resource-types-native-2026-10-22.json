@@ -1,0 +1,141 @@
+{
+  "status": "passed",
+  "ownerIssues": [
+    736,
+    745
+  ],
+  "diagnosticSupportIssue": 679,
+  "schemaVersion": "latent.host-codec.resource-types-native-evidence.v1",
+  "scope": "ordinary-host-codec-table-and-selected-Store-instance-buffer-registry-FuncRefs-container-resource-substitutions-original-memory-and-selected-c-public-async-type-sync-core-admission-and-authenticated-c-ready-handoff-and-closed-guest-trap-diagnostics; direct-Core-HostFunc-construction, shared-preparation-closures, concurrent-task, hostcall, request-context transitive buffers, legacy framing and serialized controller frames excluded",
+  "sourceRevision": "94f2976f2fdba0b5f1a730d9fc668e9e61571443",
+  "nativeCohort": "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-memory-v5",
+  "profile": "normal-managed-guest-default-features",
+  "source": {
+    "sha256": "sha256:0d9c8285776103be65ad9e9a56d9fbd2001fff0f998fa6a54788a939d28e20f8",
+    "files": 3619,
+    "bytes": 31476362,
+    "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+    "hermetic": false,
+    "implicitCompilerInputs": "not-attested"
+  },
+  "compiler": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "products": {
+    "latent": {
+      "sha256": "sha256:c0e9282c2ed219b5ec0d93dc3c2195cfb2de5d8a68c79fcc8e82a3ed38c59246",
+      "bytes": 72401304
+    },
+    "latentd": {
+      "sha256": "sha256:bc4f5ac72bd8e04520e64e583c7dd6d59e3a4990bfd159f14b69ceb019700802",
+      "bytes": 190071032
+    },
+    "examples/package": {
+      "sha256": "sha256:62bd0caa21102ee612de38bd2487f936c8f3ce3cefe1a6bbee28f246a4081cdf",
+      "bytes": 21160192
+    },
+    "examples/capsule_contracts": {
+      "sha256": "sha256:f2e00122c238aa85073b9155300969d8790e57ec9487834be4180a9c76eefd4b",
+      "bytes": 13854408
+    },
+    "examples/capsule_authoring": {
+      "sha256": "sha256:5598eaf3f472c8fc01ff6512a6fdddd8904aa8661f8cc635c8180fd6cde9435d",
+      "bytes": 27416424
+    }
+  },
+  "origin": {
+    "repository": "KirilsTurkins/latent-service-fabric",
+    "workflow": ".github/workflows/host-codec-memory.yml",
+    "event": "push",
+    "run": 39714929391,
+    "job": 119614643270,
+    "artifact": 12399171581,
+    "artifactName": "host-codec-memory-94f2976f2fdba0b5f1a730d9fc668e9e61571443",
+    "archiveBytes": 70390590,
+    "archiveSha256": "sha256:1a1383886dc919c85e8b598889dd42cf609580d6df07f28bb1ce6a61c19716e3",
+    "archiveMembers": 99,
+    "expandedBytes": 325168844,
+    "receiptMember": "native-products.json",
+    "receiptBytes": 77912,
+    "receiptSha256": "sha256:6fd4e9921401b5c313127cd4ae1242c90279a840fbc842092fd6e070691c790a",
+    "sourceInputsMember": "source-inputs.json",
+    "sourceInputsBytes": 24573,
+    "sourceInputsSha256": "sha256:37f34d2894416fd139a4e69b44024c95bd5e7c1d5f3260ca321962f2249f6771"
+  },
+  "recipeAndAuxiliaryMaterials": 148,
+  "controlCount": 97,
+  "commandCount": 45,
+  "verifiedLogStreamHashes": 90,
+  "ignoredControls": 0,
+  "controlGroups": {
+    "original-host-memory": 6,
+    "result-owner": 4,
+    "result-wire": 4,
+    "result-capacity": 1,
+    "actual-host-codec": 9,
+    "actual-dynamic-allocation-hook": 6,
+    "raw-input-lifetime": 4,
+    "result-lifetime": 2,
+    "original-accounting": 20,
+    "child-capacity": 1,
+    "c-public-async-type": 1,
+    "c-public-sync-abi": 1,
+    "journal-result-retirement": 1,
+    "ordinary-backend": 1,
+    "actual-native-table-owner": 9,
+    "actual-native-store-owner": 10,
+    "closed-guest-trap-diagnostics": 1,
+    "actual-native-registry-owner": 4,
+    "actual-native-funcrefs-owner": 5,
+    "c-ready-handoff": 2,
+    "resource-substitutions": 5
+  },
+  "original92Controls": {
+    "unchangedSelectorPrefix": true,
+    "evidence": "host-codec-funcrefs-native-2026-10-22.json",
+    "originalSourceRevision": "3e4178271b4b7fe75a69c8f0665dbe275b41d7c3",
+    "implementationUnchangedClaim": false
+  },
+  "additional5Controls": {
+    "resource-substitutions": [
+      "host::native_resource_types_tests::actual_resource_types_pre_and_function_metadata_outlive_store_and_factory",
+      "host::native_resource_types_tests::actual_resource_types_both_admission_refusals_preserve_prior_instance_and_retry",
+      "host::native_resource_types_tests::actual_resource_types_independent_stores_cannot_refund_live_foreign_metadata",
+      "host::native_resource_types_tests::actual_resource_types_concurrent_metadata_clones_release_original_owner_once",
+      "host::native_resource_types_tests::actual_resource_types_zero_resource_tiny_call_keeps_original_one_mib_and_billion_fuel"
+    ]
+  },
+  "earlierEvidence": [
+    "host-codec-registry-native-2026-10-22.json",
+    "host-codec-table-store-native-2026-10-22.json",
+    "host-codec-original-memory-native-2026-10-22.json"
+  ],
+  "reportingBoundary": {
+    "actualSelectedControls": "Original own-guest backend reporting and strict original aggregate ledger controls passed in this97 programme. The99be fixture ID-width normalization is included as source, but the generic node mode23 integration test is outside these selected controls.",
+    "unresolvedGenericRegression": "The later generic mode23 integration still failed before guest entry despite equal request-ID widths. Root-cause source investigation identified missing initial linear-allocation success notification; the subsequent v6 repair and its planned controls are not qualified by this frozen97 programme.",
+    "noRetroactiveQualification": true
+  },
+  "verification": {
+    "wholeArchive": true,
+    "all99MemberCrcAndHashes": true,
+    "exact45CommandArgv": true,
+    "all90StreamHashes": true,
+    "all97ActualResultsNoIgnores": true,
+    "fiveActualProductHashes": true,
+    "sourceAnd148MaterialsMatchFrozenGit": true,
+    "liveGitHubMetadata": true
+  },
+  "limitations": {
+    "signedQualification": false,
+    "guestJavaScriptEngineCompiled": false,
+    "guestSourceCompiled": false,
+    "historicalReceiptsRewritten": false,
+    "fullSdkCostAcceptance": false,
+    "sourceHermetic": false,
+    "implicitCompilerInputs": "not-attested",
+    "excluded": [
+      "direct Core HostFunc state/context constructors and shared preparation closures/import backing",
+      "typed hostcall String/Vec/future/result and concurrent task/queue/native hostcall frames",
+      "request-context transitive buffers, legacy framing and serialized controller frames",
+      "initial linear-memory allocator success/failure notification repair and generic tight-budget node invocation regression (subsequent v6 source)"
+    ]
+  }
+}

@@ -75,6 +75,24 @@ all = "warn"
                 self.write(f"{boundary.CRATE}/src/extra.rs", addition)
                 self.assertTrue(boundary.validate(self.root))
 
+    def test_refusing_memory_creator_exception_is_one_exact_test_item(self) -> None:
+        source = (Path(__file__).resolve().parents[2] / boundary.REFUSING_CREATOR_TEST).read_text(encoding="utf-8")
+        self.write(boundary.REFUSING_CREATOR_TEST, source)
+        self.assertEqual(boundary.validate(self.root), [])
+        for changed in (
+            source.replace('Err("native-linear-original-creator-refusal".into())', 'Ok(create_memory())'),
+            source + '\nunsafe fn extra() {}\n',
+            source + '\n#[allow(unsafe_code)] fn extra() {}\n',
+            source + '\n' + boundary.REFUSING_CREATOR_IMPL,
+            source.replace('#[allow(unsafe_code)]', '#![allow(unsafe_code)]'),
+        ):
+            with self.subTest(changed=changed[-120:]):
+                self.write(boundary.REFUSING_CREATOR_TEST, changed)
+                self.assertTrue(boundary.validate(self.root))
+        self.write(boundary.REFUSING_CREATOR_TEST, source)
+        self.write(f"{boundary.CRATE}/src/copied_creator.rs", boundary.REFUSING_CREATOR_IMPL)
+        self.assertTrue(any("copied_creator.rs" in error for error in boundary.validate(self.root)))
+
     def test_native_stack_exception_binds_guard_original_admission_and_physical_retirement(self) -> None:
         source = (Path(__file__).resolve().parents[2] / boundary.NATIVE_STACK).read_text(encoding="utf-8")
         self.write(boundary.NATIVE_STACK, source)
