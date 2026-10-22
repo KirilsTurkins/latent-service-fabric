@@ -78,6 +78,9 @@ async fn canonical_guest_reads_partial_chunks_eof_and_reuses_no_authenticated_so
         assert_eq!(report.cleanup, ExecutionCleanup::Reusable);
         fixture.idle();
         assert_eq!(fixture.io.snapshot(), IoSnapshot::default());
+        assert!(control.budget.host_memory_bytes() >= output.capacity() as u64);
+        assert_eq!(control.budget.outstanding_reservations(), 1);
+        drop(output);
         assert_eq!(control.budget.host_memory_bytes(), 0);
         assert_eq!(fixture.pools.snapshot().unwrap().connections, 0);
     }
