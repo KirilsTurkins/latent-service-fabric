@@ -1,0 +1,62 @@
+{
+  "cases": [
+    "StandardThreadCapture.test_ordinary_creator_keeps_application_source_limits_and_grants_while_component_gate_stays_closed",
+    "StandardThreadCapture.test_real_generic_replacement_capture_materializes_and_rechecks_inline_runtime_from_original_cas",
+    "StandardThreadCapture.test_thread_prepared_input_keeps_exact_current_recipe_flags_and_source_only_status",
+    "StandardThreadCapture.test_unselected_local_same_name_unknown_version_and_vendor_tampering_do_not_gain_port"
+  ],
+  "guards": {
+    "StandardThreadCapture.test_ordinary_creator_keeps_application_source_limits_and_grants_while_component_gate_stays_closed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:cb701d0b0b5eebd8abb049ea40b4ab91271d423b6a1400d28d22254ae582db30",
+        "class:setup-sha256:3fdf91ea17b1c8a8ae6552fcdf7ba24844a2b25f79fa94b620dd783fa1809c2e"
+      ],
+      "skipSites": []
+    },
+    "StandardThreadCapture.test_real_generic_replacement_capture_materializes_and_rechecks_inline_runtime_from_original_cas": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:cb701d0b0b5eebd8abb049ea40b4ab91271d423b6a1400d28d22254ae582db30",
+        "class:setup-sha256:3fdf91ea17b1c8a8ae6552fcdf7ba24844a2b25f79fa94b620dd783fa1809c2e"
+      ],
+      "skipSites": []
+    },
+    "StandardThreadCapture.test_thread_prepared_input_keeps_exact_current_recipe_flags_and_source_only_status": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:cb701d0b0b5eebd8abb049ea40b4ab91271d423b6a1400d28d22254ae582db30",
+        "class:setup-sha256:3fdf91ea17b1c8a8ae6552fcdf7ba24844a2b25f79fa94b620dd783fa1809c2e"
+      ],
+      "skipSites": []
+    },
+    "StandardThreadCapture.test_unselected_local_same_name_unknown_version_and_vendor_tampering_do_not_gain_port": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:cb701d0b0b5eebd8abb049ea40b4ab91271d423b6a1400d28d22254ae582db30",
+        "class:setup-sha256:3fdf91ea17b1c8a8ae6552fcdf7ba24844a2b25f79fa94b620dd783fa1809c2e"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_rust_standard_thread_capture.py",
+  "reviewReason": "Exercise actual generic replacement CAS capture and materialization, executor provenance refusals, unchanged ordinary source/limits/grants and strict source-only Prepared inputs while private component gate stays closed",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

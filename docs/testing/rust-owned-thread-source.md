@@ -2,8 +2,10 @@
 
 This is implementation source for the explicit cooperative
 `lsf-rust-std-owned-thread-runtime-v1` profile. It is not selected by a shipping
-application builder, and no signed ordinary `std::thread` or ThreadPool result
-is claimed. The existing clock, logging, entropy, `no_std`/`alloc` and explicit
+application runtime, and no signed ordinary `std::thread` or ThreadPool result
+is claimed. The normal builder recognizes the explicit source profile and
+refuses application compilation while its private component graph is
+unqualified. The existing clock, logging, entropy, `no_std`/`alloc` and explicit
 async profiles retain their separate execution evidence.
 
 The selected target is Rust 1.97.1, commit
@@ -44,6 +46,16 @@ their real future destructor and final wake-handle drop. Closing workers cannot
 silently accept work: a continuation requires a separately admitted successor
 generation, and old Close messages cannot close that successor.
 
+Normal capture embeds the selected modules into the original authenticated
+`src/lib.rs`. Only that existing file and its Cargo vendor checksum change;
+generic dependency transformations remain replacement-only. The normal builder
+reproduces the port from original CAS bytes and rejects a stale recipe, changed
+output, unknown runtime version or changed archive. Local packages with the same
+name do not acquire a registry runtime patch. The ordinary creator declares the
+runtime and clock dependencies while preserving application source, Cargo
+features, requested limits and grants. This source route has four focused
+capture/Prepared/creator controls; it has not compiled an ordinary guest.
+
 The first selected ThreadPool profile explicitly refuses `after_start` and
 `before_stop` hooks with `io::ErrorKind::Unsupported` before pool owner admission,
 channel or Arc allocation. Keeping a hook as a successor recipe would change
@@ -76,8 +88,8 @@ captured executor refusal paths. Metadata typechecking supplements those cases.
 Before any supported runtime claim, the remaining minimum delivery is:
 
 1. Compile the jointly selected sysroot and the actual `rust-context` utility.
-2. Wire the captured target-side executor overlay and std profile into normal
-   builder selection and bind the complete original capture/patch identities.
+2. Execute the normal captured target-side executor/std route with its complete
+   original capture/patch identities; source integration alone is insufficient.
 3. Authenticate the final private pool bridge callsites, table/callback targets,
    original Arc origin and all post-TLS/frame destructor paths. A private symbol
    or opaque serial alone is not authority to transfer or retire a pool.

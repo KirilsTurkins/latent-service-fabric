@@ -1,0 +1,57 @@
+name: Owned Rust thread compiler inputs
+on:
+  workflow_dispatch:
+  push:
+    branches: ['feat/rust-standard-thread-runtime-20261022']
+    paths:
+      - .github/workflows/rust-owned-thread-inputs.yml
+      - tools/compile_rust_owned_thread_inputs.py
+permissions:
+  contents: read
+concurrency:
+  group: rust-owned-thread-inputs-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  compiler-inputs:
+    name: Compile exact Rust context utility and owned thread sysroot
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
+      - name: Install existing pinned Python compiler recipe dependencies
+        run: python3 -m pip install -r tools/requirements.lock
+      - name: Build the two exact owned compiler inputs once
+        env:
+          EXPECTED_HEAD: ${{ github.sha }}
+        run: >-
+          python3 -B tools/compile_rust_owned_thread_inputs.py
+          --expected-head "$EXPECTED_HEAD"
+          --rust-bin "$(dirname "$(rustup which rustc)")"
+          --output "$RUNNER_TEMP/rust-owned-thread-inputs"
+      - name: Retain bounded source, tool, sysroot and actual failure logs
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: rust-owned-thread-inputs-${{ github.sha }}
+          path: ${{ runner.temp }}/rust-owned-thread-inputs/**
+          if-no-files-found: error
+          retention-days: 3
