@@ -34,17 +34,17 @@ retains confirmed actual allocations through native unwind, without confirming
 a hypothetical signature maximum as observed peak.
 
 The native cohort is
-`wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-memory-v8`. Runtime engine configuration identity
+`wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-memory-v9`. Runtime engine configuration identity
 includes this cohort, so old prepared/AOT identity cannot certify this host.
 The immutable v1/7b programme passed 61 controls; v2/de0 passed81,
-v3/48a passed85, v4/3e417 passed92, v5/94f passed97 and v7/f535 passed114.
-The intervening v6 attempts remain failed (15 and100 controls passed before
-distinct test compilation failures). This v8 extension adds five planned host
-future controls and two exact C canonical wait-route compiler controls while
-preserving all114 prior selectors. Neither historical
-products nor copied-helper controls qualify this new source. Exact native-thread
-audit recognition leaves the default ABI, provider selection and independent
-authority/grants unchanged.
+v3/48a passed85, v4/3e417 passed92, v5/94f passed97, v7/f535 passed114,
+and v8/4ed0 passed121. The intervening v6 attempts remain failed (15 and100
+controls passed before distinct test compilation failures). This v9 extension
+adds five planned closed context reply controls and two exact CLI native-thread
+audit projection controls while preserving all121 prior selectors. Historical
+products and copied-helper controls do not qualify this new source. Exact native
+thread audit recognition and projection leave the default ABI, provider selection
+and independent authority/grants unchanged.
 
 The optional `ResourceLimiter::table_allocating` hook returns an owned original
 allocation guard. Actual table backing destroys before its guard; dropping Store
@@ -139,7 +139,7 @@ remains the last field until the actual context fields are destroyed. Empty
 maps release any hidden upstream B-tree root; surplus buffers are compacted
 under the existing finite policy. Publication clones remain conservatively
 covered while that context is alive. Phase1 is unchanged. Incoming surplus,
-discarded request scaffolding and later typed-hostcall copies remain excluded.
+discarded request scaffolding and other typed-hostcall copies remain excluded.
 
 Selected concurrent typed and dynamic host calls now preadmit the exact
 concrete callback Future Box Layout before allocation and trait-object erasure.
@@ -150,8 +150,22 @@ Zero-sized futures and unaccounted legacy embeddings remain lazy. This pays
 only that engine-created per-invocation Box, not captured/transitive values,
 the callback-provided opaque Box, dynamic accessor Box, or scheduler wrappers.
 
+The optional typed HostOutput<R> reply path retains R as its first private
+field and its affine original allocation owner last. Actual typed lowering
+borrows R, so original String/Vec/record backing stays owned through guest
+realloc, cancellation, error and queue cleanup until actual R destruction.
+Only the six closed LSF context reply builders use the new path: their original
+capability and logical-size preflights run before a checked payload-scaled
+reservation and before any reply clones. Selected pairs allocate exactly their
+finite filtered count; empty heap replies remain lazy. The two scalar context
+operations and Phase1 retain their original behavior. The public optional API
+requires caller proof for custom Lower implementations, shared/interior data,
+and any newly copied backing owned by an escaping error; it does not establish
+a generic transitive value guarantee. Callback-provided opaque boxes, blocking
+or scheduler frames and typed input escape remain outside this slice.
+
 This extension does not pay direct Core HostFunc state/context constructors,
 shared preparation closure/import backing, concurrent task/queue/resource and hostcall frames,
-request ingress/discarded scaffolding, later hostcall copies, or controller/legacy transport allocations.
+request ingress/discarded scaffolding, other hostcall copies, or controller/legacy transport allocations.
 Existing finite caps are not original memory admission. Whole SDK cost acceptance
 remains open; the source package and planned controls are not execution evidence.

@@ -10,7 +10,7 @@ pub(crate) mod accounting;
 pub(crate) mod blob;
 pub(crate) mod capabilities;
 pub(crate) mod clock;
-mod context;
+pub(crate) mod context;
 pub(crate) mod events;
 pub(crate) mod http;
 mod logging;
@@ -513,3 +513,6 @@ mod native_resource_types_tests;
 mod native_store_tests;
 #[cfg(test)]
 mod native_table_tests;
+
+#[cfg(test)]
+mod native_context_reply_tests;
