@@ -240,6 +240,22 @@ class RepositoryInventoryTests(unittest.TestCase):
             wait_runtime_native_products, wasmtime_48_0_7_native_products)}
         expected.update((qualify_go_write_progress.BASELINE,
             qualify_go_write_progress.CLOSE_BASELINE, 'aa56bdebad8c12f20acce4ec4ecfeca73cf554be'))
+        # These exact additional C/codec origins are needed by the preservation
+        # controls. Keep the set closed: unrelated history must not be fetched.
+        expected.update((
+            'f6251df89851de98cb869784d095ad5cc2e5b385',
+            'f244b81f14abad5d4dc4984cb842aaf1d9076e23',
+            '7b6365ee39dea9770591a931b96711965f8a1aaf',
+            '050b9e71ba04a4bdc559f4a7fa48d6bd94c2ff38',
+            'de0aed36f0b135d6d88fb536484e60aee978f218',
+            '3e4178271b4b7fe75a69c8f0665dbe275b41d7c3',
+            '173ccd9c096e4db643aa9627bd4550cef27fb922',
+            'ea118974d93843265a504f5d30571ed7cfe8a7d2',
+            'f5351a9331ed954c49ae83f2f4004e0f96d25d0e',
+            'ff5aadaecd11874f53aa80e56ffdfff0efda312b',
+            '4ed0db7f07245732d07f867e95ec008a804485e5',
+            'cb8ceefc5f6343301871dbde1d8a853d3581cc30',
+        ))
         self.assertEqual(len(words[5:]), len(expected))
         self.assertEqual(set(words[5:]), expected)
         self.assertTrue(all(len(value) == 40 and set(value) <= set('0123456789abcdef') for value in expected))

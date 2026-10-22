@@ -9,6 +9,7 @@ from unittest.mock import patch
 
 from tools import ci_cargo as cargo, ci_fast as fast, ci_suite_inventory as registry
 from tools import host_stream_tls_provider as provider
+from tools import host_codec_wasmtime as codec
 from tools.ci_rust_artifacts import ArtifactError
 
 
@@ -23,6 +24,7 @@ class AuthenticatedRustFormat(unittest.TestCase):
             dest.parent.mkdir(parents=True, exist_ok=True)
             dest.write_bytes((provider.ROOT / name).read_bytes())
         shutil.copytree(provider.ROOT / provider.PROVIDER, root / provider.PROVIDER)
+        shutil.copytree(provider.ROOT / codec.PROVIDER, root / codec.PROVIDER)
 
     def test_real_command_checks_every_owned_package_and_only_omits_authenticated_dependency(self):
         command = cargo.format_command(provider.ROOT)

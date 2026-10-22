@@ -1,13 +1,56 @@
 {
   "cases": [
+    "PinnedWasmtimeSource.test_actual_linear_allocator_notifications_cannot_be_substituted",
+    "PinnedWasmtimeSource.test_actual_table_hook_sources_and_new_cohort_require_exact_postimages",
     "PinnedWasmtimeSource.test_exact_vendor_source_and_original_license_are_required_by_the_ci_graph",
+    "PinnedWasmtimeSource.test_funcrefs_stable_arena_and_directory_sources_cannot_be_substituted",
     "PinnedWasmtimeSource.test_native_inventory_retains_original_license_and_distinct_fork_provenance",
     "PinnedWasmtimeSource.test_original_patched_added_metadata_extra_and_missing_vendor_bytes_are_refused",
+    "PinnedWasmtimeSource.test_owned_context_reply_lowering_requires_exact_guard_and_public_entrypoint_sources",
+    "PinnedWasmtimeSource.test_per_call_host_future_owner_requires_its_exact_source_postimage",
+    "PinnedWasmtimeSource.test_resource_substitution_map_and_escape_ownership_sources_cannot_be_substituted",
+    "PinnedWasmtimeSource.test_store_header_binding_and_guarded_buffer_postimages_cannot_be_substituted",
     "PinnedWasmtimeSource.test_unregistered_local_dependency_cannot_reuse_the_wasmtime_alias",
     "PinnedWasmtimeSource.test_workspace_selection_isolation_global_override_and_registry_lock_are_refused"
   ],
   "guards": {
+    "PinnedWasmtimeSource.test_actual_linear_allocator_notifications_cannot_be_substituted": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:92c5f4a5c5c781beee8bd5890415806c52625826d4be661ca36cf3c41fb8527c",
+        "class:setup-sha256:0a68a711ecd0cbf5db9e60af422b4c9e6f829672aca12dcb6ec28c67f6a32cce"
+      ],
+      "skipSites": []
+    },
+    "PinnedWasmtimeSource.test_actual_table_hook_sources_and_new_cohort_require_exact_postimages": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:92c5f4a5c5c781beee8bd5890415806c52625826d4be661ca36cf3c41fb8527c",
+        "class:setup-sha256:0a68a711ecd0cbf5db9e60af422b4c9e6f829672aca12dcb6ec28c67f6a32cce"
+      ],
+      "skipSites": []
+    },
     "PinnedWasmtimeSource.test_exact_vendor_source_and_original_license_are_required_by_the_ci_graph": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:92c5f4a5c5c781beee8bd5890415806c52625826d4be661ca36cf3c41fb8527c",
+        "class:setup-sha256:0a68a711ecd0cbf5db9e60af422b4c9e6f829672aca12dcb6ec28c67f6a32cce"
+      ],
+      "skipSites": []
+    },
+    "PinnedWasmtimeSource.test_funcrefs_stable_arena_and_directory_sources_cannot_be_substituted": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -32,6 +75,54 @@
       "skipSites": []
     },
     "PinnedWasmtimeSource.test_original_patched_added_metadata_extra_and_missing_vendor_bytes_are_refused": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:92c5f4a5c5c781beee8bd5890415806c52625826d4be661ca36cf3c41fb8527c",
+        "class:setup-sha256:0a68a711ecd0cbf5db9e60af422b4c9e6f829672aca12dcb6ec28c67f6a32cce"
+      ],
+      "skipSites": []
+    },
+    "PinnedWasmtimeSource.test_owned_context_reply_lowering_requires_exact_guard_and_public_entrypoint_sources": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:92c5f4a5c5c781beee8bd5890415806c52625826d4be661ca36cf3c41fb8527c",
+        "class:setup-sha256:0a68a711ecd0cbf5db9e60af422b4c9e6f829672aca12dcb6ec28c67f6a32cce"
+      ],
+      "skipSites": []
+    },
+    "PinnedWasmtimeSource.test_per_call_host_future_owner_requires_its_exact_source_postimage": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:92c5f4a5c5c781beee8bd5890415806c52625826d4be661ca36cf3c41fb8527c",
+        "class:setup-sha256:0a68a711ecd0cbf5db9e60af422b4c9e6f829672aca12dcb6ec28c67f6a32cce"
+      ],
+      "skipSites": []
+    },
+    "PinnedWasmtimeSource.test_resource_substitution_map_and_escape_ownership_sources_cannot_be_substituted": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:92c5f4a5c5c781beee8bd5890415806c52625826d4be661ca36cf3c41fb8527c",
+        "class:setup-sha256:0a68a711ecd0cbf5db9e60af422b4c9e6f829672aca12dcb6ec28c67f6a32cce"
+      ],
+      "skipSites": []
+    },
+    "PinnedWasmtimeSource.test_store_header_binding_and_guarded_buffer_postimages_cannot_be_substituted": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -70,6 +161,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_host_codec_wasmtime.py",
-  "reviewReason": "Require exact authenticated pinned Wasmtime source, original license, isolated selection and refusal of modified or unknown local dependencies; preserve all existing TLS controls.",
+  "reviewReason": "Reviewed v9 appends five closed context reply ownership controls and two exact CLI native-thread audit projection controls after all121 prior selectors; original recipes/products/assertions/commands and prior Python guards retained.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

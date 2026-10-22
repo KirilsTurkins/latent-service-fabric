@@ -76,6 +76,13 @@ async fn guest_reads_before_full_body_and_store_drop_closes_the_stream() {
         assert_eq!(report.cleanup, ExecutionCleanup::Reusable);
         f.idle();
         assert_eq!(f.io.snapshot(), IoSnapshot::default());
+        // Store/table/provider backing has retired. Only the actual returned
+        // result allocation remains owned; releasing it settles the last guard.
+        assert!(control.budget.host_memory_bytes() >= output.capacity() as u64);
+        assert_eq!(control.budget.outstanding_reservations(), 1);
+        drop(output);
+        assert_eq!(control.budget.host_memory_bytes(), 0);
+        assert_eq!(control.budget.outstanding_reservations(), 0);
     }
     server.await.unwrap();
     assert!(f

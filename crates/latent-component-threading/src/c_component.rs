@@ -437,6 +437,170 @@ mod tests {
         }
     }
 
+    #[test]
+    fn c_ready_handoff_canonical_requires_ready_aware_promote() {
+        let mut selected = public_lift_graph(true);
+        selected
+            .canonical(CanonicalFunction::ThreadYieldThenPromote)
+            .unwrap();
+        assert_eq!(selected.funcs.last(), Some(&Value::CThreadPromote));
+        let mut old_resume = public_lift_graph(true);
+        old_resume
+            .canonical(CanonicalFunction::ThreadYieldThenResume)
+            .unwrap();
+        assert_eq!(old_resume.funcs.last(), Some(&Value::Other));
+        let mut original_rust = public_lift_graph(true);
+        original_rust.c = None;
+        original_rust
+            .canonical(CanonicalFunction::ThreadYieldThenPromote)
+            .unwrap();
+        assert_eq!(original_rust.funcs.last(), Some(&Value::Other));
+    }
+    fn handoff_graph(name: &str, target: Value) -> Graph<'static> {
+        let mut graph = public_lift_graph(true);
+        graph.c.as_mut().unwrap().lifted = true;
+        graph.cores = vec![Core {
+            bytes: &[],
+            types: vec![],
+            functions: vec![],
+            exports: BTreeMap::new(),
+            imports: vec![
+                Import {
+                    module: "$root".into(),
+                    name: NEW.into(),
+                    function_type: 0,
+                },
+                Import {
+                    module: NATIVE.into(),
+                    name: "start".into(),
+                    function_type: 0,
+                },
+                Import {
+                    module: "$root".into(),
+                    name: name.into(),
+                    function_type: 0,
+                },
+            ],
+            bodies: vec![],
+            local_table: None,
+            imported_table: None,
+            element: None,
+            unsupported_helper_sections: false,
+            nonfunction_imports: false,
+        }];
+        graph.main_instances = vec![0];
+        graph.shim_instances = 1;
+        graph.fixup_instances = vec![1];
+        graph.native_imports = 1;
+        graph.raw_table = Some(Value::MainTable(0));
+        graph.native_memory = Some(Value::MainMemory(0));
+        graph.signatures = vec![
+            Signature {
+                params: vec![],
+                results: vec![]
+            };
+            2
+        ];
+        graph.raw_import = 0;
+        graph.native_import = 1;
+        graph.main_imports = vec![Value::Shim(0), Value::Shim(1), target];
+        graph.instances = vec![
+            CoreInstance {
+                kind: 0,
+                arguments: BTreeMap::new(),
+                exports: BTreeMap::from([
+                    ("0".into(), Value::Raw),
+                    ("1".into(), Value::Native),
+                    ("$imports".into(), Value::ShimTable),
+                ]),
+            },
+            CoreInstance {
+                kind: 3,
+                arguments: BTreeMap::from([("".into(), 0)]),
+                exports: BTreeMap::new(),
+            },
+        ];
+        graph
+    }
+    #[test]
+    fn c_ready_handoff_final_graph_refuses_resume_or_mismatched_target() {
+        assert_eq!(
+            handoff_graph("[thread-yield-then-promote]", Value::CThreadPromote).finish(),
+            Ok((0, 1))
+        );
+        assert_eq!(
+            handoff_graph("[thread-yield-then-resume]", Value::CThreadPromote).finish(),
+            Err("c-component-unknown-root-intrinsic")
+        );
+        for foreign in [Value::Other, Value::Native, Value::CThreadIndex] {
+            assert_eq!(
+                handoff_graph("[thread-yield-then-promote]", foreign).finish(),
+                Err("c-component-canonical-context-route")
+            );
+        }
+    }
+
+    #[test]
+    fn c_wait_canonical_functions_keep_suspend_and_deferred_resume_distinct() {
+        for (function, expected) in [
+            (CanonicalFunction::ThreadSuspend, Value::CThreadSuspend),
+            (
+                CanonicalFunction::ThreadResumeLater,
+                Value::CThreadResumeLater,
+            ),
+            (CanonicalFunction::ThreadSuspendThenResume, Value::Other),
+            (CanonicalFunction::ThreadSuspendThenPromote, Value::Other),
+            (CanonicalFunction::ThreadYield, Value::Other),
+        ] {
+            let mut selected = public_lift_graph(true);
+            selected.canonical(function).unwrap();
+            assert_eq!(selected.funcs.last(), Some(&expected));
+        }
+        // Extending the selected C proof cannot silently extend Rust's proof.
+        let mut original_rust = public_lift_graph(true);
+        original_rust.c = None;
+        original_rust
+            .canonical(CanonicalFunction::ThreadSuspend)
+            .unwrap();
+        assert_eq!(original_rust.funcs.last(), Some(&Value::Other));
+    }
+
+    #[test]
+    fn c_wait_final_graph_requires_the_exact_canonical_wake_target() {
+        for (name, expected) in [
+            ("[thread-suspend]", Value::CThreadSuspend),
+            ("[thread-resume-later]", Value::CThreadResumeLater),
+        ] {
+            assert_eq!(handoff_graph(name, expected).finish(), Ok((0, 1)));
+            for foreign in [
+                Value::Other,
+                Value::Native,
+                Value::CThreadPromote,
+                Value::CThreadIndex,
+                if expected == Value::CThreadSuspend {
+                    Value::CThreadResumeLater
+                } else {
+                    Value::CThreadSuspend
+                },
+            ] {
+                assert_eq!(
+                    handoff_graph(name, foreign).finish(),
+                    Err("c-component-canonical-context-route")
+                );
+            }
+        }
+        for forbidden in [
+            "[thread-suspend-then-resume]",
+            "[thread-suspend-then-promote]",
+            "[thread-yield]",
+        ] {
+            assert_eq!(
+                handoff_graph(forbidden, Value::CThreadSuspend).finish(),
+                Err("c-component-unknown-root-intrinsic")
+            );
+        }
+    }
+
     fn metadata(version: &str, name: &str, marker: &[u8]) -> Vec<u8> {
         metadata_with_generator(version, name, marker, false)
     }

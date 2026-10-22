@@ -48,7 +48,9 @@ pub(crate) fn install(
                     let mut store = access.as_context_mut();
                     checkpoint(&mut store)?;
                     let result = match completion {
-                        Ok(HttpCompletion { response, owner }) => {
+                        Ok(completion) => {
+                            store.data_mut().capabilities.prepare_pool_lowering()?;
+                            let HttpCompletion { response, owner } = completion;
                             let result = response
                                 .map(|response| wit::Response {
                                     status: response.status(),

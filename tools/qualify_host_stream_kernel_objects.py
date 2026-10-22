@@ -30,6 +30,7 @@ from tools import host_stream_kernel_packet as packet_source
 from tools import host_stream_kernel_device as device_source
 from tools import host_stream_kernel_device_firmware as firmware_source
 from tools import host_stream_kernel_device_uevent_delivery as registration_source
+from tools import host_stream_kernel_device_delivery as recipient_source
 from tools.owned_test_process import ProcessFailure, run_owned
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -216,9 +217,53 @@ REGISTRATION_REQUIRED = ('CONFIG_SYSFS', 'CONFIG_KERNFS', 'CONFIG_NET_NS', 'CONF
 REGISTRATION_DISABLED = ('CONFIG_BPF_SYSCALL', 'CONFIG_UEVENT_HELPER', 'CONFIG_OF', 'CONFIG_NLMON')
 
 
-def object_selection(netlabel, netport=False, sidcache=False, avc=False, audit=False, bind=False, route=False, route_cache=False, packet=False, device=False, firmware=False, registration=False):
-    require(all(type(value) is bool for value in (netlabel, netport, sidcache, avc, audit, bind, route, route_cache, packet, device, firmware, registration)), 'closed-profile-selector')
-    require(sum((netlabel, netport, sidcache, avc, audit, bind, route, route_cache, packet, device, firmware, registration)) <= 1, 'exclusive-profile-selector')
+RECIPIENT_OBJECTS = {
+ 'kernel/signal.o': ('lsf_prepaid_device_do_send_sig_info',),
+ 'fs/fcntl.o': ('lsf_prepaid_device_kill_fasync',),
+ 'kernel/sched/build_utility.o': ('lsf_prepaid_device_wake', 'lsf_prepaid_device_wake_sync', 'lsf_prepaid_device_wake_locked'),
+ 'kernel/sched/core.o': ('default_wake_function',),
+ 'fs/select.o': ('lsf_prepaid_device_pollwake', 'lsf_prepaid_device_pollwake_matches'),
+ 'fs/eventpoll.o': ('lsf_prepaid_device_epoll_callback', 'lsf_prepaid_device_epoll_matches'),
+ 'kernel/capability.o': ('lsf_prepaid_device_file_ns_capable',),
+ 'security/commoncap.o': ('cap_capable',)}
+RECIPIENT_EXISTING = {
+ 'net/core/sock.o': ('lsf_prepaid_device_sk_wake_async_rcu', 'lsf_prepaid_device_socket_notify'),
+ 'net/netlink/af_netlink.o': ('lsf_prepaid_device_broadcast_filtered', 'lsf_prepaid_device_recvmsg_tail'),
+ 'security/security.o': ('lsf_prepaid_device_security_file_send_sigiotask', 'lsf_prepaid_device_security_capable',
+                        'lsf_prepaid_device_security_secctx', 'lsf_prepaid_device_security_release_secctx'),
+ 'security/selinux/hooks.o': ('lsf_prepaid_device_selinux_file_send_sigiotask', 'lsf_prepaid_device_selinux_sigio_hook',
+                            'lsf_prepaid_device_selinux_capable', 'lsf_prepaid_device_selinux_capable_hook',
+                            'lsf_prepaid_device_selinux_secctx', 'lsf_prepaid_device_selinux_release_secctx',
+                            'lsf_prepaid_device_selinux_secctx_hook', 'lsf_prepaid_device_selinux_release_secctx_hook'),
+ 'security/selinux/avc.o': ('lsf_prepaid_device_avc_drain',),
+ 'security/selinux/ss/services.o': ('lsf_prepaid_device_sidcache_drain',),
+ 'security/selinux/ss/sidtab.o': ('lsf_prepaid_device_sidcache_detach',),
+ 'net/factory.o': ('lsf_factory_blob_poison', 'lsf_factory_device_recipient_begin',
+                   'lsf_factory_device_recipient_current', 'lsf_factory_device_recipient_finish',
+                   'lsf_factory_device_recipient_signal_allocate', 'lsf_factory_device_recipient_signal_birth',
+                   'lsf_factory_device_recipient_signal_return', 'lsf_factory_device_recipient_blob',
+                   'lsf_factory_device_security_candidate', 'lsf_factory_device_security_current',
+                   'lsf_factory_device_recipient_packet')}
+RECIPIENT_EXTRACTED = ('fs/eventpoll.c', 'fs/fcntl.c', 'fs/select.c', 'include/linux/capability.h',
+ 'include/linux/rcupdate.h', 'include/linux/wait.h', 'include/net/scm.h', 'kernel/capability.c',
+ 'kernel/rcu/tree.c', 'kernel/sched/core.c', 'kernel/sched/wait.c', 'kernel/signal.c', 'security/commoncap.c')
+RECIPIENT_SCHEDULER_INPUTS = {
+ 'kernel/sched/Makefile': {'bytes': 1351, 'sha256': 'aac538af88b3c614b14196551c4dc8aa18a2f18fe777849c078d96f0d3c74d4b', 'gitBlob': '976092b7bd4520ebc1a607734520ac342585a120'},
+ 'kernel/sched/build_utility.c': {'bytes': 2386, 'sha256': '9291d5887b521d3636e12ad4cff09feda4a8ff8f30980109478ef2edc16451e4', 'gitBlob': '80a3df49ab478420a8827f62a0bdf3374479082e'},
+ 'kernel/sched/sched.h': {'bytes': 106490, 'sha256': '1afb7a7301268b04699adf70f61e0a6027ebfdf87f878c5cea4fb97671f0a282', 'gitBlob': '5e788dc39f630dfed96e46dfc4d5382b31e4ea07'}}
+RECIPIENT_REQUIRED = ('CONFIG_EPOLL', 'CONFIG_SIGNALFD', 'CONFIG_IO_URING', 'CONFIG_TRACEPOINTS',
+ 'CONFIG_PERF_EVENTS', 'CONFIG_FTRACE', 'CONFIG_KPROBES', 'CONFIG_TREE_RCU', 'CONFIG_PREEMPT_RCU')
+
+
+def object_selection(netlabel, netport=False, sidcache=False, avc=False, audit=False, bind=False, route=False, route_cache=False, packet=False, device=False, firmware=False, registration=False, recipient=False):
+    require(all(type(value) is bool for value in (netlabel, netport, sidcache, avc, audit, bind, route, route_cache, packet, device, firmware, registration, recipient)), 'closed-profile-selector')
+    require(sum((netlabel, netport, sidcache, avc, audit, bind, route, route_cache, packet, device, firmware, registration, recipient)) <= 1, 'exclusive-profile-selector')
+    if recipient:
+        selected = object_selection(False, registration=True)
+        selected.update(RECIPIENT_OBJECTS)
+        for name, symbols in RECIPIENT_EXISTING.items():
+            selected[name] += symbols
+        return selected
     if registration:
         selected = object_selection(False, firmware=True)
         selected.update(REGISTRATION_OBJECTS)
@@ -502,8 +547,92 @@ def registration_derive_frozen(tree, original_inputs):
     return derived, before, selected
 
 
-def run(archive, output, *, netlabel=False, netport=False, sidcache=False, avc=False, audit=False, bind=False, route=False, route_cache=False, packet=False, device=False, firmware=False, registration=False):
-    selected_objects = object_selection(netlabel, netport, sidcache, avc, audit, bind, route, route_cache, packet, device, firmware, registration)
+def recipient_configuration(before, after):
+    require(all(before.get(name) == after.get(name) == 'y' for name in RECIPIENT_REQUIRED),
+        'recipient-original-config-required')
+    require(before.get('CONFIG_PREEMPT_RT', 'n') == after.get('CONFIG_PREEMPT_RT', 'n') == 'n',
+        'recipient-original-non-rt-profile-required')
+
+
+def recipient_extracted_inputs(tree, original):
+    expected = (set(maintained.manifest()['source']) | {'net/Kconfig', 'net/Makefile'} |
+        set(packet_source.fixture()['source']) | set(device_source.EXTRAS) |
+        set(firmware_source.EXTRAS) | set(REGISTRATION_EXTRACTED))
+    require(set(original) == expected, 'recipient-original-archive-membership')
+    missing = set(recipient_source.fixture()['source']) - set(original)
+    require(missing == set(RECIPIENT_EXTRACTED) and len(missing) == 13,
+        'recipient-fixed-extracted-membership')
+    selected = dict(original)
+    for name in RECIPIENT_EXTRACTED:
+        selected[name] = paths.read(tree, name, maintained.MAX_FILE)
+    require(sum(map(len, selected.values())) <= maintained.MAX_SELECTED,
+        'recipient-total-selected-byte-bound')
+    recipient_source.authenticate({name: selected[name] for name in recipient_source.fixture()['source']})
+    return selected
+
+
+def recipient_scheduler_inputs(tree):
+    # Maintained wait.c is included by build_utility.c, not an independent TU.
+    # Authenticate its real Kbuild parent/header from the SAME private archive;
+    # never invent a header prologue or alter either original/private C body.
+    selected = {name: paths.read(tree, name, maintained.MAX_FILE)
+        for name in RECIPIENT_SCHEDULER_INPUTS}
+    maintained.authenticate_files(selected, RECIPIENT_SCHEDULER_INPUTS)
+    makefile = selected['kernel/sched/Makefile']
+    unit = selected['kernel/sched/build_utility.c']
+    require(makefile.count(b'obj-y += build_utility.o\n') == 1 and
+        b'obj-y += wait.o\n' not in makefile and unit.count(b'#include "wait.c"\n') == 1 and
+        unit.index(b'#include <linux/wait_api.h>\n') < unit.index(b'#include "sched.h"\n') <
+        unit.index(b'#include "wait.c"\n'), 'recipient-maintained-wait-containing-tu')
+    return selected
+
+
+def recipient_derive_frozen(tree, original_inputs):
+    # Single-process, new-mode-only fixture context. Original validators run
+    # bottom-up once. Every later fixture access gets an independent deep copy,
+    # and every original function is restored on success or exception.
+    from copy import deepcopy
+    modules = []
+    current = recipient_source
+    while current is not None and current not in modules:
+        require(len(modules) < 32, 'recipient-fixed-fixture-chain-bound')
+        require(hasattr(current, 'FIXTURE') and callable(getattr(current, 'fixture', None)),
+            'recipient-fixed-fixture-chain-shape')
+        modules.append(current)
+        current = getattr(current, 'prior', None)
+    sources = {Path(module.__file__).resolve() for module in modules}
+    sources.update(Path(module.FIXTURE).resolve() for module in modules)
+    sources.update(path.resolve() for path in recipient_source.OWNED.iterdir()
+        if path.suffix in ('.c', '.h'))
+    require(all(ROOT in path.parents for path in sources), 'recipient-source-outside-checkout')
+    before = {str(path.relative_to(ROOT)).replace(chr(92), '/'): identity(path) for path in sources}
+    saved = []
+    try:
+        for module in reversed(modules):
+            validated = module.fixture()
+            saved.append((module, module.fixture))
+            module.fixture = lambda value=deepcopy(validated): deepcopy(value)
+        # No new-profile fixture selection, authentication or input
+        # comprehension runs outside this validated immutable-copy context.
+        selected = device_extracted_inputs(tree, original_inputs)
+        selected = firmware_extracted_inputs(tree, selected)
+        selected = registration_extracted_inputs(tree, selected)
+        selected = recipient_extracted_inputs(tree, selected)
+        selected.update(recipient_scheduler_inputs(tree))
+        require(sum(map(len, selected.values())) <= maintained.MAX_SELECTED,
+            'recipient-total-selected-byte-bound')
+        derived = recipient_source.derive({
+            name: selected[name] for name in recipient_source.fixture()['source']})
+    finally:
+        for module, original in reversed(saved):
+            module.fixture = original
+        require(before == {str(path.relative_to(ROOT)).replace(chr(92), '/'): identity(path) for path in sources},
+            'recipient-source-changed-during-derivation')
+    return derived, before, selected
+
+
+def run(archive, output, *, netlabel=False, netport=False, sidcache=False, avc=False, audit=False, bind=False, route=False, route_cache=False, packet=False, device=False, firmware=False, registration=False, recipient=False):
+    selected_objects = object_selection(netlabel, netport, sidcache, avc, audit, bind, route, route_cache, packet, device, firmware, registration, recipient)
     require(sys.platform == 'linux' and os.environ.get('GITHUB_ACTIONS') == 'true'
         and os.environ.get('RUNNER_OS') == 'Linux', 'hosted-linux-only')
     value = maintained.manifest()
@@ -514,8 +643,8 @@ def run(archive, output, *, netlabel=False, netport=False, sidcache=False, avc=F
     # All archive readers and tar now consume this private verified snapshot,
     # never reopen the caller's mutable pathname. Recheck before any make.
     additional_sources = ('net/Kconfig', 'net/Makefile')
-    if netlabel or netport or sidcache or avc or audit or bind or route or route_cache or packet or device or firmware or registration:
-        recipe = packet_source if packet or device or firmware or registration else route_cache_source if route_cache else route_source if route else bind_source if bind else audit_source if audit else avc_source if avc else sidcache_source if sidcache else netport_source if netport else netlabel_source
+    if netlabel or netport or sidcache or avc or audit or bind or route or route_cache or packet or device or firmware or registration or recipient:
+        recipe = packet_source if packet or device or firmware or registration or recipient else route_cache_source if route_cache else route_source if route else bind_source if bind else audit_source if audit else avc_source if avc else sidcache_source if sidcache else netport_source if netport else netlabel_source
         additional_sources += tuple(name for name in recipe.fixture()['source'] if name not in value['source'])
     original = maintained.authenticate_archive(archive, value, additional_sources)
     archive_identity = identity(archive)
@@ -546,7 +675,23 @@ def run(archive, output, *, netlabel=False, netport=False, sidcache=False, avc=F
         require(identity(archive) == archive_identity, 'snapshot-changed-during-extraction')
         require(all((tree / name).read_bytes() == raw for name, raw in original.items()), 'extracted-preimage-drift')
         stage = 'derive'
-        if registration:
+        if recipient:
+            derived, frozen, original = recipient_derive_frozen(tree, original)
+            receipt['profile'] = 'nodefixed-recipient-signal-security-source'
+            receipt['postExtractionDeviceArchiveSources'] = sorted(device_source.EXTRAS)
+            receipt['postExtractionFirmwareArchiveSources'] = list(FIRMWARE_EXTRACTED)
+            receipt['postExtractionRegistrationArchiveSources'] = list(REGISTRATION_EXTRACTED)
+            receipt['postExtractionRecipientArchiveSources'] = list(RECIPIENT_EXTRACTED)
+            receipt['recipientSchedulerContainingSources'] = RECIPIENT_SCHEDULER_INPUTS
+            receipt['recipientSourceFreeze'] = frozen
+            receipt['recipientContinuationSourceImplemented'] = True
+            receipt['mandatoryAuditSourceImplemented'] = True
+            for gate in recipient_source.GATES:
+                receipt[gate] = False
+            receipt['actualSharedWorkqueueAccounted'] = False
+            receipt['actualRecipientCallbackClosure'] = False
+            receipt['instrumentationAdmissionQualified'] = False
+        elif registration:
             derived, frozen, original = registration_derive_frozen(tree, original)
             receipt['profile'] = 'nodefixed-registration-uevent-source'
             receipt['postExtractionDeviceArchiveSources'] = sorted(device_source.EXTRAS)
@@ -684,61 +829,69 @@ def run(archive, output, *, netlabel=False, netport=False, sidcache=False, avc=F
         commands.run('resolve-selected-config', *common, 'olddefconfig')
         final = (build / '.config').read_bytes()
         selected_configuration(before, configuration(final))
-        if netlabel or netport or sidcache or avc or audit or bind or route or route_cache or packet or device or firmware or registration:
+        if netlabel or netport or sidcache or avc or audit or bind or route or route_cache or packet or device or firmware or registration or recipient:
             netlabel_configuration(before, configuration(final))
             receipt['netlabelEnabledBeforeAndAfter'] = True
-        if sidcache or avc or audit or bind or route or route_cache or packet or device or firmware or registration:
+        if sidcache or avc or audit or bind or route or route_cache or packet or device or firmware or registration or recipient:
             sidcache_configuration(before, configuration(final))
             receipt['sidcacheOriginalEntries'] = 256
-        if audit or bind or route or route_cache or packet or device or firmware or registration:
+        if audit or bind or route or route_cache or packet or device or firmware or registration or recipient:
             audit_configuration(before, configuration(final))
             receipt['auditEnabledBeforeAndAfter'] = list(AUDIT_REQUIRED)
-        if route or route_cache or packet or device or firmware or registration:
+        if route or route_cache or packet or device or firmware or registration or recipient:
             route_configuration(before, configuration(final))
             receipt['routeXfrmEnabledBeforeAndAfter'] = True
             receipt['routeTrackerAndLwtOriginallyDisabled'] = True
-        if device or firmware or registration:
+        if device or firmware or registration or recipient:
             device_configuration(before, configuration(final))
             receipt['deviceRequiredBeforeAndAfter'] = list(DEVICE_REQUIRED)
             receipt['deviceDisabledBeforeAndAfter'] = list(DEVICE_DISABLED)
-        if registration:
+        if registration or recipient:
             registration_configuration(before, configuration(final))
             receipt['registrationRequiredBeforeAndAfter'] = list(REGISTRATION_REQUIRED)
             receipt['registrationDisabledBeforeAndAfter'] = list(REGISTRATION_DISABLED)
+        if recipient:
+            recipient_configuration(before, configuration(final))
+            receipt['recipientRequiredBeforeAndAfter'] = list(RECIPIENT_REQUIRED)
+            receipt['recipientOriginalNonRtRequired'] = True
         (output / 'selected.config').write_bytes(final)
         receipt['configuration'] = {'baseline': identity(output / 'baseline.config'),
             'selected': identity(output / 'selected.config'), 'onlyChangedSymbol': SELECTED,
             'securityAndInetPreserved': list(REQUIRED)}
         receipt['compiler'] = compiler
         paths.write_new(output / 'selection.json', (json.dumps(receipt, indent=2)+'\n').encode())
-        stage = 'forty-eight-registration-objects' if registration else 'thirty-seven-firmware-objects' if firmware else 'thirty-two-device-objects' if device else 'twenty-seven-packet-objects' if packet else 'twenty-four-route-cache-objects' if route_cache else 'twenty-four-route-objects' if route else 'twenty-two-bind-objects' if bind else 'twenty-audit-objects' if audit else 'sixteen-avc-objects' if avc else 'fifteen-sidcache-objects' if sidcache else 'fourteen-netport-objects' if netport else 'twelve-netlabel-objects' if netlabel else 'six-objects'
-        commands.run('forty-eight-selected-real-kbuild-objects' if registration else 'thirty-seven-selected-real-kbuild-objects' if firmware else 'thirty-two-selected-real-kbuild-objects' if device else 'twenty-seven-selected-real-kbuild-objects' if packet else 'twenty-four-selected-real-kbuild-objects' if route or route_cache else 'twenty-two-selected-real-kbuild-objects' if bind else 'twenty-selected-real-kbuild-objects' if audit else 'sixteen-selected-real-kbuild-objects' if avc else 'fifteen-selected-real-kbuild-objects' if sidcache else 'fourteen-selected-real-kbuild-objects' if netport else 'twelve-selected-real-kbuild-objects' if netlabel else 'six-selected-real-kbuild-objects',
+        stage = 'fifty-six-recipient-objects' if recipient else 'forty-eight-registration-objects' if registration else 'thirty-seven-firmware-objects' if firmware else 'thirty-two-device-objects' if device else 'twenty-seven-packet-objects' if packet else 'twenty-four-route-cache-objects' if route_cache else 'twenty-four-route-objects' if route else 'twenty-two-bind-objects' if bind else 'twenty-audit-objects' if audit else 'sixteen-avc-objects' if avc else 'fifteen-sidcache-objects' if sidcache else 'fourteen-netport-objects' if netport else 'twelve-netlabel-objects' if netlabel else 'six-objects'
+        commands.run('fifty-six-selected-real-kbuild-objects' if recipient else 'forty-eight-selected-real-kbuild-objects' if registration else 'thirty-seven-selected-real-kbuild-objects' if firmware else 'thirty-two-selected-real-kbuild-objects' if device else 'twenty-seven-selected-real-kbuild-objects' if packet else 'twenty-four-selected-real-kbuild-objects' if route or route_cache else 'twenty-two-selected-real-kbuild-objects' if bind else 'twenty-selected-real-kbuild-objects' if audit else 'sixteen-selected-real-kbuild-objects' if avc else 'fifteen-selected-real-kbuild-objects' if sidcache else 'fourteen-selected-real-kbuild-objects' if netport else 'twelve-selected-real-kbuild-objects' if netlabel else 'six-selected-real-kbuild-objects',
                      *common, '-j2', *selected_objects)
         autoconf = (build / 'include/generated/autoconf.h').read_bytes()
         require(all(('#define '+name+' 1\n').encode() in autoconf for name in (*REQUIRED, SELECTED)),
             'generated-private-or-security-code-disabled')
-        if netlabel or netport or sidcache or avc or audit or bind or route or route_cache or packet or device or firmware or registration:
+        if netlabel or netport or sidcache or avc or audit or bind or route or route_cache or packet or device or firmware or registration or recipient:
             require(b'#define CONFIG_NETLABEL 1\n' in autoconf, 'netlabel-generated-code-disabled')
-        if sidcache or avc or audit or bind or route or route_cache or packet or device or firmware or registration:
+        if sidcache or avc or audit or bind or route or route_cache or packet or device or firmware or registration or recipient:
             require(b'#define CONFIG_SECURITY_SELINUX_SID2STR_CACHE_SIZE 256\n' in autoconf,
                     'sidcache-generated-profile-disabled')
-        if audit or bind or route or route_cache or packet or device or firmware or registration:
+        if audit or bind or route or route_cache or packet or device or firmware or registration or recipient:
             require(all(('#define '+name+' 1\n').encode() in autoconf for name in AUDIT_REQUIRED),
                     'audit-generated-code-disabled')
-        if route or route_cache or packet or device or firmware or registration:
+        if route or route_cache or packet or device or firmware or registration or recipient:
             require(b'#define CONFIG_XFRM 1\n' in autoconf and
                 b'#define CONFIG_NET_DEV_REFCNT_TRACKER ' not in autoconf and
                 b'#define CONFIG_LWTUNNEL ' not in autoconf, 'route-generated-profile-drift')
-        if device or firmware or registration:
+        if device or firmware or registration or recipient:
             require(all(('#define '+name+' 1\n').encode() in autoconf for name in DEVICE_REQUIRED),
                 'device-generated-code-disabled')
             require(all(('#define '+name+' ').encode() not in autoconf for name in DEVICE_DISABLED),
                 'device-generated-disabled-code-drift')
-        if registration:
+        if registration or recipient:
             require(all(('#define '+name+' 1\n').encode() in autoconf for name in REGISTRATION_REQUIRED),
                 'registration-generated-code-disabled')
             require(all(('#define '+name+' ').encode() not in autoconf for name in REGISTRATION_DISABLED),
                 'registration-generated-disabled-code-drift')
+        if recipient:
+            require(all(('#define '+name+' 1\n').encode() in autoconf for name in RECIPIENT_REQUIRED),
+                'recipient-generated-code-disabled')
+            require(b'#define CONFIG_PREEMPT_RT ' not in autoconf, 'recipient-generated-rt-drift')
         require((build / '.config').read_bytes() == final, 'build-mutated-config')
         receipt['objects'] = {}
         for name, expected in selected_objects.items():
@@ -781,5 +934,6 @@ if __name__ == '__main__':
     parser.add_argument('--device', action='store_true', help='select the closed NodeFixed PCI birth and constant-name object-only profile')
     parser.add_argument('--firmware', action='store_true', help='select the closed cached-ACPI companion lifetime object-only profile')
     parser.add_argument('--registration', action='store_true', help='select the closed registration and uevent source-only object profile')
+    parser.add_argument('--recipient', action='store_true', help='select the closed recipient/signal/security source-only object profile')
     args = parser.parse_args()
-    run(args.archive.resolve(strict=True), args.output, netlabel=args.netlabel, netport=args.netport, sidcache=args.sidcache, avc=args.avc, audit=args.audit, bind=args.bind, route=args.route, route_cache=args.route_cache, packet=args.packet, device=args.device, firmware=args.firmware, registration=args.registration)
+    run(args.archive.resolve(strict=True), args.output, netlabel=args.netlabel, netport=args.netport, sidcache=args.sidcache, avc=args.avc, audit=args.audit, bind=args.bind, route=args.route, route_cache=args.route_cache, packet=args.packet, device=args.device, firmware=args.firmware, registration=args.registration, recipient=args.recipient)

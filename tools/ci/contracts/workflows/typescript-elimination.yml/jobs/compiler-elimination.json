@@ -1,0 +1,87 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "name": "Two normal components one root edge and eight actual outcomes",
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    },
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "name": "Fetch the immutable existing native source objects",
+        "run": "git fetch --no-tags --depth=1 origin f6251df89851de98cb869784d095ad5cc2e5b385\ngit fetch --no-tags --depth=1 origin f244b81f14abad5d4dc4984cb842aaf1d9076e23\n"
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "actions/setup-node",
+        "with": {
+          "node-version": "24.19.0"
+        }
+      },
+      {
+        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "name": "Install locked Python controls",
+        "run": "python3 -m pip install -r tools/requirements.lock"
+      },
+      {
+        "name": "Check finite compiler-contribution and actual-outcome readers",
+        "run": "python3 -B -m unittest tools.tests.test_typescript_elimination -v"
+      },
+      {
+        "name": "Install the ordinary compiler namespace boundary",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
+      },
+      {
+        "name": "Install the normal pinned TypeScript tools with their existing engine",
+        "run": "python3 -B tools/typescript_capsule.py install-tools \"$RUNNER_TEMP/typescript-elimination-tools\""
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Authenticate the existing five native products with original compilation lineage",
+        "run": "python3 -B tools/c_thread_admission_native_products.py --output \"$RUNNER_TEMP/typescript-elimination-native\""
+      },
+      {
+        "name": "Build both unchanged-library variants sign and observe eight actual invocations",
+        "run": "python3 -B tools/qualify_typescript_elimination.py \\\n  --native-products \"$RUNNER_TEMP/typescript-elimination-native\" \\\n  --tools \"$RUNNER_TEMP/typescript-elimination-tools\" --output \"$RUNNER_TEMP/typescript-elimination\"\n"
+      },
+      {
+        "if": "always()",
+        "name": "Retain source construction outcomes and actual retirement observations",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "typescript-elimination-${{ github.sha }}",
+          "path": "${{ runner.temp }}/typescript-elimination-native/*.json\n${{ runner.temp }}/typescript-elimination/*.json\n${{ runner.temp }}/typescript-elimination/logs/**\n${{ runner.temp }}/typescript-elimination/*/compatibility-execution-report.json\n${{ runner.temp }}/typescript-elimination/*/build/*.json\n${{ runner.temp }}/typescript-elimination/*/build/*.wit\n${{ runner.temp }}/typescript-elimination/*/build/wit/**\n${{ runner.temp }}/typescript-elimination/*/build/component.wasm\n${{ runner.temp }}/typescript-elimination/*/build/package/**\n${{ runner.temp }}/typescript-elimination/*/build/logs/**\n${{ runner.temp }}/typescript-elimination/*/node/*.json\n${{ runner.temp }}/typescript-elimination/*/node/*.log\n${{ runner.temp }}/typescript-elimination/*/node/controls/**\n",
+          "retention-days": 7
+        }
+      }
+    ],
+    "timeout-minutes": 20
+  },
+  "jobId": "compiler-elimination",
+  "kind": "job",
+  "reviewReason": "Add finite two-build one-root-edge TypeScript compiler/elimination programme; preserve all historical campaigns and guards.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/typescript-elimination.yml"
+}

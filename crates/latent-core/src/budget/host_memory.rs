@@ -224,7 +224,11 @@ mod tests {
         owner.confirm();
         assert_eq!(budget.outstanding_reservations(), 1);
         budget.observe_peak_memory(600).unwrap();
-        let terminal = budget.finalize_at(None, Instant::now());
+        let report = crate::BudgetConsumption {
+            peak_memory_bytes: 600,
+            ..crate::BudgetConsumption::default()
+        };
+        let terminal = budget.finalize_at(Some(&report), Instant::now());
         assert!(terminal.violation().is_none());
         assert_eq!(terminal.consumption().peak_memory_bytes, 850);
         assert_eq!(budget.host_memory_bytes(), 250);
@@ -233,6 +237,29 @@ mod tests {
         assert_eq!(budget.outstanding_reservations(), 0);
         assert_eq!(budget.host_memory_bytes(), 0);
         assert_eq!(budget.finalize_at(None, Instant::now()), terminal);
+
+        // An aggregate snapshot is not an own-guest report. Strict
+        // reconciliation must still reject that double-counted input.
+        let duplicate = self::budget();
+        let mut native = duplicate.reserve_host_memory(250).unwrap();
+        native.confirm();
+        duplicate.observe_peak_memory(600).unwrap();
+        let aggregate = duplicate.snapshot_at(Instant::now());
+        assert_eq!(aggregate.peak_memory_bytes, 850);
+        let refused = duplicate.finalize_at(Some(&aggregate), Instant::now());
+        assert!(matches!(
+            refused.violation(),
+            Some(BudgetError::Exhausted {
+                dimension: BudgetDimension::MemoryBytes,
+                limit: 1000,
+                consumed: 850,
+                requested: 850,
+            })
+        ));
+        assert_eq!(duplicate.host_memory_bytes(), 250);
+        drop(native);
+        assert_eq!(duplicate.host_memory_bytes(), 0);
+        assert_eq!(duplicate.outstanding_reservations(), 0);
     }
 
     #[test]

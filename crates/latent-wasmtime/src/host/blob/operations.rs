@@ -152,6 +152,9 @@ pub(super) fn seal(
             access.with(|mut access| {
                 let mut store = access.as_context_mut();
                 checkpoint(&mut store)?;
+                if result.is_ok() {
+                    store.data_mut().capabilities.prepare_pool_lowering()?;
+                }
                 let result = result.map(|sealed| {
                     store
                         .data_mut()

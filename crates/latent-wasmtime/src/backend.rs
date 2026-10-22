@@ -788,8 +788,11 @@ impl WasmtimeBackend {
             ));
         }
 
-        let host_context =
-            ActivationHostContext::from_request(request, accounting.deadline().unix_millis());
+        let host_context = ActivationHostContext::from_request_accounted(
+            request,
+            accounting.deadline().unix_millis(),
+            accounting.budget(),
+        )?;
         let mut initial_fuel = accounting.initial_fuel();
         let mut host_state = HostState::with_config(
             host_context,
@@ -802,7 +805,10 @@ impl WasmtimeBackend {
             self.shared.log_sink.clone(),
         );
 
-        host_state.capabilities = crate::host::capabilities::HostCapabilities::new(capabilities);
+        host_state.capabilities = crate::host::capabilities::HostCapabilities::new(
+            capabilities,
+            host_state.accounting.budget(),
+        );
         if let Some(transaction) = transaction.take_host() {
             host_state.transaction = crate::host::transaction::Access::attach(transaction);
         }
@@ -835,7 +841,17 @@ impl WasmtimeBackend {
                 .cpu_fuel;
             host_state.accounting.reset_fuel_watermark(initial_fuel);
         }
-        let mut store = Store::new(&self.engine, host_state);
+        let mut store = if matches!(
+            host_state.accounting.budget().profile(),
+            latent_core::BudgetProfile::Phase3 | latent_core::BudgetProfile::Phase4
+        ) {
+            let memory = crate::native_tables::binding(host_state.accounting.budget())
+                .map_err(native_store_error)?;
+            Store::try_new_with_memory_binding(&self.engine, host_state, memory)
+                .map_err(native_store_error)?
+        } else {
+            Store::new(&self.engine, host_state)
+        };
         store.set_hostcall_fuel(hostcall_fuel);
         store.limiter(|state| &mut state.limiter);
         store.set_fuel(initial_fuel).map_err(|error| {
@@ -1112,6 +1128,24 @@ impl ExecutionBackend for WasmtimeBackend {
     }
 }
 
+fn native_store_error(error: wasmtime::Error) -> PlatformError {
+    if let Some(error) = error
+        .chain()
+        .find_map(|cause| cause.downcast_ref::<latent_core::BudgetError>())
+    {
+        return error.to_platform_error();
+    }
+    platform_error(
+        if error.is::<wasmtime::OutOfMemory>() {
+            PlatformErrorCode::ResourceExhausted
+        } else {
+            PlatformErrorCode::Internal
+        },
+        "native invocation Store construction failed",
+        false,
+    )
+}
+
 fn is_memory_limit_error(error: &wasmtime::Error) -> bool {
     if error.chain().any(|cause| {
         if let Some(error) = cause.downcast_ref::<crate::values::LiftMemoryError>() {
@@ -1301,14 +1335,10 @@ fn invocation_accounting(
     } = store.data().host_call_timing();
     let consumption = BudgetConsumption {
         cpu_fuel: store.data().accounting.native_fuel_consumed(remaining_fuel),
-        peak_memory_bytes: store.data().limiter.peak_memory_bytes().max(
-            store
-                .data()
-                .accounting
-                .budget()
-                .snapshot_at(Instant::now())
-                .peak_memory_bytes,
-        ),
+        // Terminal backend reports contain this execution's own guest memory.
+        // Native owners already contribute to the shared original ledger;
+        // finalization adds them once while their actual storage remains live.
+        peak_memory_bytes: peak_memory,
         wall_time_micros,
         log_bytes: store.data().logs.bytes(),
         ..BudgetConsumption::default()

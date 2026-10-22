@@ -111,6 +111,8 @@ mod instance;
 mod linker;
 mod matching;
 mod resource_table;
+mod resource_types;
+pub(crate) use self::resource_types::ResourceTypes;
 mod resources;
 mod storage;
 pub(crate) mod store;
@@ -126,7 +128,7 @@ pub use self::concurrent::{
     VMComponentAsyncStore, VecBuffer, WriteBuffer,
 };
 pub use self::func::{
-    ComponentNamedList, ComponentType, Func, Lift, Lower, TypedFunc, WasmList, WasmStr,
+    ComponentNamedList, ComponentType, Func, HostOutput, Lift, Lower, TypedFunc, WasmList, WasmStr,
 };
 pub use self::has_data::*;
 pub use self::instance::{Instance, InstancePre};
@@ -815,4 +817,4 @@ mod dynamic_memory;
 pub use dynamic_memory::DynamicValueMemory;
 
 /// Native source cohort for the maintained original-owner dynamic value extension.
-pub const DYNAMIC_VALUE_MEMORY_COHORT: &str = "wasmtime-48.0.7-latent-dynamic-value-memory-v1";
+pub const DYNAMIC_VALUE_MEMORY_COHORT: &str = "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-memory-v9";

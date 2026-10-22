@@ -10,7 +10,7 @@ pub(crate) mod accounting;
 pub(crate) mod blob;
 pub(crate) mod capabilities;
 pub(crate) mod clock;
-mod context;
+pub(crate) mod context;
 pub(crate) mod events;
 pub(crate) mod http;
 mod logging;
@@ -110,6 +110,13 @@ impl TrackingLimiter {
         }
     }
 
+    fn discard_pending_memory_growth(&mut self) {
+        if let Some(pending) = self.pending_memory_growth.take() {
+            self.current_memory_bytes = self.current_memory_bytes.saturating_sub(pending.bytes);
+            self.peak_memory_bytes = pending.previous_peak_memory_bytes;
+        }
+    }
+
     #[cfg(test)]
     fn current_memory_bytes(&self) -> usize {
         self.current_memory_bytes
@@ -161,11 +168,16 @@ impl ResourceLimiter for TrackingLimiter {
         Ok(allowed)
     }
 
+    fn memory_allocated(&mut self) {
+        self.confirm_memory_growth();
+    }
+
+    fn memory_allocation_failed(&mut self) {
+        self.discard_pending_memory_growth();
+    }
+
     fn memory_grow_failed(&mut self, error: wasmtime::Error) -> wasmtime::Result<()> {
-        if let Some(pending) = self.pending_memory_growth.take() {
-            self.current_memory_bytes = self.current_memory_bytes.saturating_sub(pending.bytes);
-            self.peak_memory_bytes = pending.previous_peak_memory_bytes;
-        }
+        self.discard_pending_memory_growth();
         self.limits.memory_grow_failed(error)
     }
 
@@ -175,8 +187,20 @@ impl ResourceLimiter for TrackingLimiter {
         desired: usize,
         maximum: Option<usize>,
     ) -> wasmtime::Result<bool> {
-        self.pending_memory_growth = None;
+        // A later table callback observes that the preceding permitted linear
+        // allocation completed. Confirm it before competing native admission.
+        self.confirm_memory_growth();
         self.limits.table_growing(current, desired, maximum)
+    }
+
+    fn table_allocating(
+        &mut self,
+        bytes: usize,
+    ) -> wasmtime::Result<Option<Box<dyn wasmtime::TableAllocation>>> {
+        match &self.budget {
+            Some(budget) => crate::native_tables::reserve(budget, bytes),
+            None => Ok(None),
+        }
     }
 
     fn table_grow_failed(&mut self, error: wasmtime::Error) -> wasmtime::Result<()> {
@@ -196,7 +220,7 @@ impl ResourceLimiter for TrackingLimiter {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub(crate) struct ActivationHostContext {
     activation_id: ActivationId,
     root_activation_id: ActivationId,
@@ -208,6 +232,8 @@ pub(crate) struct ActivationHostContext {
     baggage: Metadata,
     deadline_unix_millis: Option<u64>,
     metadata: Metadata,
+    // Declared last: every retained String/map is destroyed before refund.
+    _context_memory: Option<latent_core::HostMemoryReservation>,
 }
 
 impl ActivationHostContext {
@@ -235,6 +261,7 @@ impl ActivationHostContext {
             baggage,
             deadline_unix_millis,
             metadata,
+            _context_memory: None,
         }
     }
 }
@@ -290,6 +317,7 @@ impl HostState {
         if accounting.budget().profile().supports_descendants() {
             limiter.budget = Some(accounting.budget().clone());
         }
+        let capabilities = capabilities::HostCapabilities::new(None, accounting.budget());
         Self {
             context,
             runtime: None,
@@ -306,7 +334,7 @@ impl HostState {
             #[cfg(feature = "development-clock-fixture")]
             development_clock_readings: config.development_clock_readings,
             host_call_timing: HostCallTiming::default(),
-            capabilities: capabilities::HostCapabilities::default(),
+            capabilities,
             transaction: transaction::Access::default(),
         }
     }
@@ -471,3 +499,21 @@ mod tests {
             .is_err());
     }
 }
+
+#[cfg(test)]
+mod native_func_refs_tests;
+#[cfg(test)]
+mod native_host_future_tests;
+#[cfg(test)]
+mod native_linear_memory_tests;
+#[cfg(test)]
+mod native_registry_tests;
+#[cfg(test)]
+mod native_resource_types_tests;
+#[cfg(test)]
+mod native_store_tests;
+#[cfg(test)]
+mod native_table_tests;
+
+#[cfg(test)]
+mod native_context_reply_tests;

@@ -110,6 +110,11 @@ jobs:
               '--','--test-threads=1')
           require(b'test result: ok. 2 passed; 0 failed; 0 ignored;' in nominal,
               'native-products-phase-nominal-two-controls')
+          descriptive=commands.run('descriptive-native-thread-proof-controls','cargo','--config',root/'.cargo/managed-guest.toml',
+              'test','--locked','-p','latent-packaging','--lib','semantics::wasm::tests::canonical_creator_',
+              '--','--test-threads=1')
+          require(b'test result: ok. 2 passed; 0 failed; 0 ignored;' in descriptive,
+              'native-products-descriptive-two-native-proof-controls')
           emitted=commands.run('phase-emitted-type-owner-controls','cargo','--config',root/'.cargo/managed-guest.toml',
               'test','--locked','-p','latent-packaging','--lib',
               'phase_component_nominal_pruning_rejects_missing_or_changed_owned_types','--','--test-threads=1')

@@ -39,8 +39,9 @@ class SnapshotError(RuntimeError):
 # The committed tools tree includes ownership-local CI contracts. Keep a
 # fixed, reviewed file budget shared with the downstream attribution reader;
 # directory, per-file, total-byte and archive-byte budgets remain independent.
-# The complete Phase 4 selection exceeds the former 32 MiB envelope. Retain
-# every selected compiler input within fixed 48 MiB source / 56 MiB archive caps.
+# The current selected tree includes the authenticated Wasmtime source and
+# exceeds 64 MiB. Retain every selected compiler input within fixed 72 MiB
+# source / 80 MiB archive caps; activation/runtime budgets are independent.
 MAX_SOURCE_FILES = 8192
 
 
@@ -49,8 +50,8 @@ class SnapshotLimits:
     max_entries: int = MAX_SOURCE_FILES
     max_directories: int = 4096
     max_file_bytes: int = 4 * 1024 * 1024
-    max_total_bytes: int = 64 * 1024 * 1024
-    max_archive_bytes: int = 72 * 1024 * 1024
+    max_total_bytes: int = 72 * 1024 * 1024
+    max_archive_bytes: int = 80 * 1024 * 1024
 
     def validate(self) -> None:
         hard = SnapshotLimits()

@@ -1,0 +1,261 @@
+{
+  "schemaVersion": "latent.c.synchronization-runtime-observation.v1",
+  "status": "authenticated-finite-success",
+  "source": "e859a0b7bd35f28cf3667d35f131389b0797cef0",
+  "run": 39823871350,
+  "job": 119981875413,
+  "artifact": {
+    "id": 12445617932,
+    "sha256": "sha256:aefd4a714d4cfa15b623249bf8c7b51f807ea31dafddfcf372d456117dabbb49",
+    "bytes": 1966645,
+    "members": 352,
+    "expandedBytes": 7135678
+  },
+  "verification": {
+    "historicalGitMaterials": 105,
+    "recipeRows": 57,
+    "capturedSourceRows": 65,
+    "packageInputs": 11,
+    "successfulBuildCommands": 25,
+    "nativeProducer": "cb8ceefc5f6343301871dbde1d8a853d3581cc30",
+    "nativeSourceFiles": 3628,
+    "nativeAuxiliaryMaterials": 148,
+    "nativeProducts": 5,
+    "liveOriginChecked": true
+  },
+  "component": {
+    "sha256": "sha256:632e93fbfe1d0f317aa0741efd503abc0eef9fa50293955ddf706b1dff88d6bd",
+    "bytes": 1939486
+  },
+  "programme": {
+    "originalSeventeenOutcomePrefix": 17,
+    "outcomes": {
+      "authority-0": {
+        "exitCode": 4,
+        "decoded": null
+      },
+      "authority-1": {
+        "exitCode": 4,
+        "decoded": null
+      },
+      "pthread": {
+        "exitCode": 0,
+        "decoded": [
+          {
+            "ok": "joined:1:1:1:1:1:2:1:4:4286489"
+          }
+        ]
+      },
+      "c11": {
+        "exitCode": 0,
+        "decoded": [
+          {
+            "ok": "joined:1:1:1:1:1:2:1:4:4286469"
+          }
+        ]
+      },
+      "mixed": {
+        "exitCode": 0,
+        "decoded": [
+          {
+            "ok": "joined:2:2:2:1:1:3:2:6:6387727"
+          }
+        ]
+      },
+      "invalid": {
+        "exitCode": 0,
+        "decoded": [
+          {
+            "ok": "joined:1:1:1:1:1:2:1:4:4286489"
+          }
+        ]
+      },
+      "pressure": {
+        "exitCode": 0,
+        "decoded": [
+          {
+            "ok": "joined:3:3:3:1:1:4:3:8:8488990"
+          }
+        ]
+      },
+      "root-return": {
+        "exitCode": 0,
+        "decoded": [
+          {
+            "ok": "drain-1"
+          }
+        ]
+      },
+      "application-error": {
+        "exitCode": 3,
+        "decoded": [
+          {
+            "err": "application-error"
+          }
+        ]
+      },
+      "root-trap": {
+        "exitCode": 4,
+        "decoded": null
+      },
+      "fresh-root-trap": {
+        "exitCode": 0,
+        "decoded": [
+          {
+            "ok": "joined:1:1:1:1:1:2:1:4:4286521"
+          }
+        ]
+      },
+      "callback-trap": {
+        "exitCode": 4,
+        "decoded": null
+      },
+      "fresh-callback-trap": {
+        "exitCode": 0,
+        "decoded": [
+          {
+            "ok": "joined:1:1:1:1:1:2:1:4:4286533"
+          }
+        ]
+      },
+      "cancel": {
+        "exitCode": 4,
+        "decoded": null
+      },
+      "fresh-cancel": {
+        "exitCode": 0,
+        "decoded": [
+          {
+            "ok": "joined:2:2:2:1:1:3:2:6:6387755"
+          }
+        ]
+      },
+      "deadline": {
+        "exitCode": 4,
+        "decoded": null
+      },
+      "fresh-deadline": {
+        "exitCode": 0,
+        "decoded": [
+          {
+            "ok": "joined:1:1:1:1:1:2:1:4:4286517"
+          }
+        ]
+      },
+      "sync-pthread": {
+        "exitCode": 0,
+        "decoded": [
+          {
+            "ok": "joined:2:2:2:2:2:3:2:6:6387762"
+          }
+        ]
+      },
+      "sync-mixed": {
+        "exitCode": 0,
+        "decoded": [
+          {
+            "ok": "joined:2:2:2:2:2:3:2:6:6387752"
+          }
+        ]
+      },
+      "fresh-sync": {
+        "exitCode": 0,
+        "decoded": [
+          {
+            "ok": "joined:1:1:1:1:1:2:1:4:4286501"
+          }
+        ]
+      }
+    },
+    "basicPthreadAndMixedSynchronizationQualified": true,
+    "retirements": 20,
+    "physicalOwnersPerRetirement": 5,
+    "activeProviderCountersPerRetirement": 18,
+    "cleanNodeShutdown": true,
+    "cleanPeerShutdown": true
+  },
+  "synchronizationWitnesses": {
+    "sync-pthread": {
+      "children": 2,
+      "entered": 2,
+      "destructed": 2,
+      "waits": 2,
+      "parkedTasks": 2,
+      "tasks": 3,
+      "results": 2,
+      "nativeOwners": 6,
+      "nativeMemoryBytes": 6387762,
+      "positivePoint": "generated activation.observe in child while original parent join is parked",
+      "waitForPollPendingClaimed": false
+    },
+    "sync-mixed": {
+      "children": 2,
+      "entered": 2,
+      "destructed": 2,
+      "waits": 2,
+      "parkedTasks": 2,
+      "tasks": 3,
+      "results": 2,
+      "nativeOwners": 6,
+      "nativeMemoryBytes": 6387752,
+      "positivePoint": "generated activation.observe in child while original parent join is parked",
+      "waitForPollPendingClaimed": false
+    }
+  },
+  "originalLimits": {
+    "memoryBytes": 33554432,
+    "cpuFuel": 1000000000,
+    "wallTimeLimitMillis": 5000,
+    "runtime": {
+      "tasks": 8,
+      "executors": 2,
+      "queuedWork": 8,
+      "waits": 16,
+      "timers": 8,
+      "results": 8,
+      "nativeOwners": 8
+    }
+  },
+  "sourceOnlyReferenceControls": {
+    "cases": 13,
+    "canonicalAndBrokerPorts": "explicit-serialized-doubles",
+    "actualOriginalLedgerExecuted": false,
+    "signedQualification": false
+  },
+  "failureHistory": [
+    {
+      "source": "1f9285563270efa800e4381664fc25a90cb89a89",
+      "run": 39747760817,
+      "job": 119720392794,
+      "artifact": 12411822770,
+      "stage": "compile",
+      "reason": "Included synchronization fixture was also compiled as a separate translation unit. No guest executed.",
+      "status": "failed"
+    },
+    {
+      "source": "377abddaf55b46545bca5ad4e233057eac6f014c",
+      "run": 39749405540,
+      "job": 119725877727,
+      "artifact": 12413530252,
+      "stage": "link",
+      "reason": "Strong synchronization definitions collided with unchanged precompiled libc. No guest executed.",
+      "status": "failed"
+    }
+  ],
+  "laterChanges": {
+    "head": "4a6f5047c01bd61f86d801de4f73d2d9b03316ad",
+    "signedProgrammeInputsByteExact": true,
+    "changes": "Only Java compiler-cache failure artifact paths and matching CI metadata; no qualification rerun."
+  },
+  "boundaries": {
+    "full744Qualified": false,
+    "mutexConditionVariablesQualified": false,
+    "timedWaitsQualified": false,
+    "compiledLoopCheckpointsQualified": false,
+    "crossTenantReuseQualified": false,
+    "unchangedPublishedLibraryQualified": false,
+    "transitiveWorkerTimerQualified": false,
+    "losslessAuditClaimed": false,
+    "historicalFailureRewritten": false
+  }
+}

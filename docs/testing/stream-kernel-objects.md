@@ -429,3 +429,130 @@ remain unfinished. Sealed image/layout/BTF, installed final-free production
 and real node/operator/provider conformance are still required. No kernel is
 linked, booted or installed, no SDK native products are built, and actual
 registration, complete allocation closure and all production gates remain false.
+
+## Compiled recipient, notification and security source extension
+
+The exclusive `--recipient` profile retains all thirteen earlier profiles and
+their complete job bodies, floors and bounds. Its
+[owning run](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39709818544)
+passed on source `1625510fc6b6bcd32505511729ea355cae226b38`. The
+[public observation](evidence/kernel-device-recipient-objects-compiled-2026-10-22.json)
+binds all 184 CRC-checked archive members, 283 Git materials, 105 complete
+maintained inputs, 189 complete definitions and 189 reproduced derived outputs.
+Twenty-four guides are historical context; all 259 executable, data and contract
+materials and all 132 source-freeze identities match the exercised source.
+Derived source is bound by digest tables; the artifact contains the objects,
+configuration, receipts and bounded diagnostics, not all derived C/H files.
+
+Actual Kbuild compiled 56 unlinked x86 objects and checked 243 defined GLOBAL
+functions (196 private, 47 original), preserving the 48-object/201-function
+floor. All 166 exact selected source/controller tests and 61 completed, cleaned
+commands passed. The original 4,309-symbol configuration changes only
+`CONFIG_LSF_STREAM_FACTORY` from `n` to `y`. SELinux, Netlabel, audit, XFRM,
+ACPI, epoll, io_uring, tracing and original RCU options remain enabled;
+PREEMPT_RT must already be disabled. No configuration is weakened to pass.
+
+The first attempt remains a failed, retained 41-member/25-object observation.
+The recipe selected standalone `wait.o`, but the maintained scheduler includes
+`wait.c` in `build_utility.c`. The corrected target preserves the same private
+function checks and every original/private C body. Its complete original
+Makefile, containing unit and scheduler header are authenticated from the same
+archive before build; no header prologue is invented. The generic extra-source
+cap stays 32. The previous fixed paths, thirteen recipient paths and three
+containing-unit inputs retain the original 4 MiB file/16 MiB aggregate bounds.
+
+The source now propagates original PCI/generation ownership through real sender
+admission, irreversible queue transfer, independent receive WORK, known wait/
+poll/epoll callbacks and the actual SIGIO permission/signal paths. Device-domain
+SELinux AVC, SID/cache, audit and final-return children use the original bank;
+unknown producers and uncertain retirement refuse or quarantine. Supplemental
+sender, receive, signal, drain and poison controls use explicit serialized
+kernel doubles. They do not execute Linux callbacks or qualify physical RCU.
+
+The original 512 KiB bank, 192 KiB infrastructure tail, 256 records, 64 owners
+and TCP/DNS 96/64 KiB allowances are unchanged. Normal factory selection stays
+`NULL`. Generation-bound cleanup resumption, complete callback/instrumentation
+closure, physical shared queues, bootstrap and failed-open original ownership,
+the remaining device/DMA/RX/neighbour/DNS/deferred graph, sealed image/layout/BTF
+and installed final-free/node/operator conformance remain required. No kernel
+is linked, booted or installed and no SDK native products are built. Actual
+recipient/RCU execution, complete allocation closure and all production gates
+remain false.
+
+## Original owner resumption after final child returns
+
+[The factory-only receipt](evidence/kernel-device-retirement-object-compiled-2026-10-22.json)
+records [run 39716583421](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39716583421)
+at `334f95cd0627e4f02dd54d3ae07fa33d6417ff93`: one actual `net/factory.o`,
+all 87 required external function definitions, 16 exact source/controller cases
+and six completed commands with descendant cleanup. All 19 ZIP members and
+271 Git materials were authenticated. The derivation binds 134 source identities,
+three recipe identities, 161 selected original inputs and all 189 output files;
+182 outputs remain exact and seven factory fragments have closed projections.
+
+The source copies the validated original device/PCI generations under the same
+pool lock before a final return. Eight existing wakes and the two security-cache
+final-return paths resume only that original cleanup. It preserves the existing
+queue, child/publication fence, callback/error paths and configured limits.
+The earlier 56-object/243-function result remains historical and was not rerun.
+
+Current baseline-to-selected configuration still changes only
+`CONFIG_LSF_STREAM_FACTORY` from `n` to `y` across 4,309 symbols. Against the
+historical recipient run, one hosted compiler probe advanced:
+`CONFIG_RUSTC_VERSION` from `109900` to `109901` in both configurations.
+All other 4,308 symbols are identical; `CONFIG_RUST` is absent from both
+configuration tables and generated headers, so Rust kernel code is unselected.
+
+The 17 supplemental C controls use serialized lock, queue, generation and record
+doubles; the retained historical no-wake and two counterfactual variants remain
+RED. They provide no Linux scheduling or physical retirement certificate.
+The factory consumer stays unavailable. Shared queue/worker/RCU/bootstrap costs,
+actual callback completion, remaining allocation closure, sealed image/layout/BTF,
+link/boot/install and finite node/operator/provider conformance remain required.
+
+## Unpublished cleanup task and guarded stack objects
+
+[The four-object receipt](evidence/kernel-cleanup-stack-objects-compiled-2026-10-22.json)
+records [run 39735038465](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39735038465)
+at `0694cb4092c76c2bbb65546bd20acb6e09a17707`. Actual Kbuild compiled
+`net/factory.o`, `kernel/fork.o`, `kernel/kthread.o` and `mm/vmalloc.o`.
+All 111 required external GLOBAL functions, including the original 87 factory
+oracles, 27 hosted source cases and 13 completed commands with descendant cleanup
+passed. All 40 archive members, 293 Git materials, 173 selected original inputs,
+144 source-freeze identities and 208 derived output identities were authenticated.
+The earlier 56-object/243-function programme was not rerun.
+
+Four explicitly recorded const-only suffixes measure layout from these real
+translation units. Their exact production-source prefixes and suffix hashes
+remain separate. The 208 production-derived files are bound by digest tables;
+the artifact retains objects, receipts, configs and diagnostics, not all source.
+The unchanged 4,309-symbol baseline matches the prior retirement run exactly;
+within this run only `CONFIG_LSF_STREAM_FACTORY` changes from `n` to `y`.
+
+The request is 208 bytes and the base `task_struct` is 7,360 bytes aligned to 64.
+The guarded stack uses 16,384 payload bytes plus 304 metadata bytes and up to 4,095
+alignment bytes: a 20,783-byte record with five PTE slots including its guard.
+Their 64-byte-rounded request/base-task/stack sum is 28,416 bytes. The original
+512 KiB bank plus 37,168 bytes of static metadata totals 561,456 bytes under the
+original 1 MiB bootstrap ceiling. These are compile-time measurements only.
+The runtime extended `arch_task_struct_size` is unknown: this lower bound does
+not establish complete 192 KiB infrastructure fit or actual task/worker capacity.
+
+The source retains the original owner through actual prepublication task copy,
+existing-table-only guarded mapping and synchronous unmap. VA metadata returns
+only when an adjacent original free extent can absorb it; uncertainty retains
+the original request/task/stack and bank. Ordinary fork/kthread/VM allocator
+bodies, security configuration and the original 512/192 KiB/256-record limits
+are preserved. The 30 selected plus two unselected supplemental C controls use
+serialized VM/task/lock/TLB doubles and provide no Linux execution evidence.
+
+The first 16-member attempt remains a failed Kbuild observation: its generated
+header used a net-local include from `include/net`. The corrected kernel-only
+relative include reuses the same original prepaid owner types; its nonkernel
+body and 207 other derived outputs remain exact. No requirement was weakened.
+
+No task is published, worker made ready, kernel linked/booted/installed or
+normal factory enabled. Extended task/PID/security/instrumentation descendants,
+running-stack/RCU/TLB final return, actual worker/queue/stop ownership, bootstrap,
+remaining device/RX/DNS/deferred closure, sealed image/layout/BTF and finite
+installed node/operator/provider conformance remain required.

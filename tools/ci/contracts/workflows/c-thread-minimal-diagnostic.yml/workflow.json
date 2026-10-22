@@ -1,0 +1,33 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "c-thread-minimal-${{ github.ref }}"
+    },
+    "name": "Minimal ordinary C child diagnostic",
+    "on": {
+      "push": {
+        "branches": [
+          "diag/c-thread-minimal-20261022"
+        ],
+        "paths": [
+          ".github/workflows/c-thread-minimal-diagnostic.yml",
+          "tools/c_thread_minimal_fixture.py",
+          "tools/diagnose_c_thread_minimal.py",
+          "tools/tests/test_c_thread_minimal.py"
+        ]
+      }
+    },
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "minimal-child"
+  ],
+  "reviewReason": "Diagnostic-only one ordinary C build and five raw prefix/minimal/original observations; original17 programme and runtime unchanged, exact original7b native cohort, no native build or qualification claim.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/c-thread-minimal-diagnostic.yml"
+}

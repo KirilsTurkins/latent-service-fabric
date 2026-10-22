@@ -237,6 +237,41 @@ class AuthenticatedWasmtimePlaceholderTests(unittest.TestCase):
             self.assertEqual(len(validator.ERRORS), 2)
             self.assertTrue(all("owned" in error for error in validator.ERRORS))
 
+    def test_maintained_memory_placeholder_requires_exact_original_block_and_identity(self):
+        import json
+        from tools import host_codec_wasmtime as provider
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.fixture(root)
+            checked = provider.verify(root)
+            source = root / provider.PROVIDER / "src/runtime/vm/memory.rs"
+            record = root / provider.PROVIDER / "UPSTREAM.latent.json"
+            original_source, original_record = source.read_text(encoding="utf-8"), record.read_bytes()
+            block = validator.UPSTREAM_WASMTIME_MEMORY_PLACEHOLDER
+            self.assertEqual(original_source.count(block), 1)
+            for kind in ("context", "relocated-token", "copied-token", "original-identity"):
+                with self.subTest(kind=kind):
+                    source.write_text(original_source, encoding="utf-8", newline="\n")
+                    record.write_bytes(original_record)
+                    if kind == "context":
+                        source.write_text(original_source.replace("// FIXME(#4244)", "// changed (#4244)", 1), encoding="utf-8", newline="\n")
+                    elif kind == "relocated-token":
+                        moved = block.replace('todo!("using shared memory with the pooling allocator is a work in progress");', 'return Err(anyhow!("unsupported"));')
+                        source.write_text(original_source.replace(block, moved) + '\nfn copied() { todo!(); }\n', encoding="utf-8", newline="\n")
+                    elif kind == "copied-token":
+                        source.write_text(original_source + '\nfn copied() { todo!(); }\n', encoding="utf-8", newline="\n")
+                    else:
+                        data = json.loads(original_record)
+                        row = next(row for row in data["originalFiles"] if row["path"] == "src/runtime/vm/memory.rs")
+                        row["sha256"] = "0" * 64
+                        record.write_text(json.dumps(data), encoding="utf-8", newline="\n")
+                    validator.ERRORS.clear()
+                    # Isolate the extra block/origin guard even if a future
+                    # reviewed provider postimage authenticated these changes.
+                    with patch.object(validator, "ROOT", root), patch.object(provider, "verify", return_value=checked):
+                        self.assertEqual(validator.authenticated_wasmtime_placeholders(), {})
+                    self.assertTrue(any("Wasmtime placeholder source authentication failed" in error for error in validator.ERRORS))
+
 
 class SourceTraversalTests(unittest.TestCase):
     def setUp(self) -> None:

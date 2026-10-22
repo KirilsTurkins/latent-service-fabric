@@ -3,6 +3,7 @@ use crate::component::concurrent::Accessor;
 use crate::component::func::HostFunc;
 use crate::component::instance::RuntimeImport;
 use crate::component::matching::{InstanceType, TypeChecker};
+use crate::component::resource_types::ResourceTypes;
 use crate::component::types;
 use crate::component::{
     Component, ComponentNamedList, Instance, InstancePre, Lift, Lower, ResourceType, Val,
@@ -169,7 +170,7 @@ impl<T: 'static> Linker<T> {
             engine: &self.engine,
             types: component.types(),
             strings: &self.strings,
-            imported_resources: try_new::<Arc<_>>(TryPrimaryMap::new())?,
+            imported_resources: ResourceTypes::new()?,
         };
 
         // Walk over the component's list of import names and use that to lookup
@@ -555,6 +556,30 @@ impl<T: 'static> LinkerInstance<'_, T> {
         Return: ComponentNamedList + Lower + 'static,
     {
         self.insert(name, Definition::Func(HostFunc::func_wrap_async(f)?))?;
+        Ok(())
+    }
+
+    /// Define the ordinary async-Rust/sync-WIT callback with an affine reply
+    /// owner retained through actual lowering and reply destruction.
+    ///
+    /// The underlying `Return` alone defines the canonical ABI. The caller must
+    /// uphold [`super::HostOutput`]'s closed builder/lowering ownership contract;
+    /// this API does not pay arbitrary custom Lower or captured allocations.
+    #[cfg(feature = "async")]
+    pub fn func_wrap_async_owned<Params, Return, F>(&mut self, name: &str, f: F) -> Result<()>
+    where
+        F: Fn(
+                StoreContextMut<'_, T>,
+                Params,
+            )
+                -> Box<dyn Future<Output = Result<super::HostOutput<Return>>> + Send + '_>
+            + Send
+            + Sync
+            + 'static,
+        Params: ComponentNamedList + Lift + 'static,
+        Return: ComponentNamedList + Lower + 'static,
+    {
+        self.insert(name, Definition::Func(HostFunc::func_wrap_async_owned(f)?))?;
         Ok(())
     }
 

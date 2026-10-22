@@ -428,7 +428,33 @@ fn explicit_drain_retires_current_owner_and_requires_a_normal_restart_for_fresh_
         .unwrap();
     let (mut peer, _) = fixture.listener.accept().unwrap();
     peer.set_read_timeout(Some(Duration::from_secs(1))).unwrap();
-    let pending = stream.read(16 * 1024, None).unwrap();
+    let before_read_bytes = execution.budget.host_memory_bytes();
+    let before_read_owners = execution.budget.outstanding_reservations();
+    let pending = invocation.block_on(async {
+        // The maintenance authority scan can briefly hold the session's
+        // nonblocking bookkeeping lock. Refused setup has not dispatched I/O.
+        for _ in 0..16 {
+            match stream.read(16 * 1024, None) {
+                Ok(pending) => return pending,
+                Err(error) => {
+                    assert_eq!(error.code, latent_streams::StreamErrorCode::Exhausted);
+                    assert_eq!(error.accepted_prefix_bytes, 0);
+                    assert!(!error.may_have_applied);
+                    assert_eq!(execution.budget.host_memory_bytes(), before_read_bytes);
+                    assert_eq!(
+                        execution.budget.outstanding_reservations(),
+                        before_read_owners
+                    );
+                    let observed = stream.inspect();
+                    assert_eq!(observed.accepted_write_bytes, 0);
+                    assert_eq!(observed.delivered_read_bytes, 0);
+                    assert!(!observed.application_write_attempted);
+                    tokio::time::sleep(Duration::from_millis(10)).await;
+                }
+            }
+        }
+        panic!("read setup remained exhausted under its original unchanged bounds")
+    });
     assert_eq!(lifecycle.status().unwrap().usage.connections, 1);
     assert_eq!(lifecycle.status().unwrap().usage.pending_operations, 1);
     let charged = execution.budget.host_memory_bytes();

@@ -1,0 +1,553 @@
+{
+  "schemaVersion": "lsf.kernel-cleanup-stack-objects-compiled.v1",
+  "sourceCommit": "0694cb4092c76c2bbb65546bd20acb6e09a17707",
+  "run": 39735038465,
+  "job": 119678628804,
+  "workflow": ".github/workflows/stream-kernel-cleanup-stack.yml",
+  "event": "push",
+  "branch": "feat/stream-kernel-guarded-stack-20261022",
+  "artifact": {
+    "id": 12406663268,
+    "bytes": 260900,
+    "sha256": "47f464bd0fa0855d5bfad2a2206e42ac28fed04279fbd08a7f01808e49c6c244",
+    "crcMembers": 40,
+    "memberDigestTableSha256": "de57719bb6dd77045d549f219a6ae2645be0d612c3d6fa13fd78b662ee378eb4"
+  },
+  "receipt": {
+    "bytes": 97892,
+    "sha256": "61d227e2b4d71df6b30b076b2a6ab180d0518648b86145a6cc1008eb3a75f9a3"
+  },
+  "upstreamCommit": "7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+  "officialArchive": {
+    "bytes": 148686048,
+    "sha256": "e09b6727e5c521253f0d41694900b9c38fb7604db7d35238a8197aa9f7de2428"
+  },
+  "manifestSha256": "551b4157660f6f63adc90bbc39b1d5d8ba71e5444044f598ef9abdfea9fb7960",
+  "source": {
+    "gitMaterials": 293,
+    "gitMaterialTableSha256": "fa2a09f12ce29e78eb9bcc7bbba1d372efaf4972841576294a7995e57dd731f8",
+    "gitOnlyUnexecutedContextPaths": [
+      "research/standard-outbound/linux-6.12-lineage/device-retirement-plan-r1.md",
+      "research/standard-outbound/linux-6.12-lineage/guarded-stack-plan-r1.md"
+    ],
+    "oldGitMaterialsExact": 271,
+    "currentCodeDataAndContractMaterials": 291,
+    "authenticatedSelectedOriginalInputs": 173,
+    "selectedOriginalInputBytes": 9141235,
+    "selectedOriginalInputDigestTableSha256": "5d343864f103a6d70f75daaef46763b80bd782d99a9226be94867c8ed139724c",
+    "derivedFiles": 208,
+    "derivedDigestTableSha256": "24e228ec8a3dc3d30096ad8c63155314813bf13f8796500f37399d2d0669d7cc",
+    "sourceFreezeFiles": 144,
+    "sourceFreezeDigestTableSha256": "6cf5e9667b712a16bd639323ebb6c45b1daa1bacf4bb9b5dee110c9afd607997",
+    "recipeSources": {
+      "tools/qualify_host_stream_kernel_objects.py": {
+        "bytes": 58085,
+        "sha256": "2a5f32b7797677ceaf8c4f1f0343859b1456ab00a54ff9ee52516b317e0e9cd7"
+      },
+      "tools/qualify_host_stream_kernel_retirement.py": {
+        "bytes": 12625,
+        "sha256": "b32ecdc53ec79f0fa4339e24ef80ffb41f2e72c99b39f2e4abe09b26947060c4"
+      },
+      "tools/qualify_host_stream_kernel_cleanup_stack.py": {
+        "bytes": 22601,
+        "sha256": "dcd6300a726cfee952db7913faa6feb1051eafcf6b36c3caf9a95597b7d26a04"
+      },
+      ".github/workflows/stream-kernel-cleanup-stack.yml": {
+        "bytes": 4521,
+        "sha256": "fa67ec298339a1825669a57a0f2c5a1a34e438f55235f526d81b4762fc71ed21"
+      }
+    },
+    "originalGenericExtraSourceCap": 32,
+    "perFileByteLimit": 4194304,
+    "aggregateSelectedByteLimit": 16777216,
+    "digestTableEncoding": "SHA256 of sorted-key compact ASCII JSON"
+  },
+  "configuration": {
+    "baseline": {
+      "bytes": 143203,
+      "sha256": "ff250d6b1b4dbc95584fa2726d290ea189e4829bf1a11ed26dc67dbb9c5664cb"
+    },
+    "selected": {
+      "bytes": 143192,
+      "sha256": "b2bcccd5507f3f3a673690b660a2321870b57a3c77e72ce8532975f3c4752176"
+    },
+    "onlyChangedSymbol": "CONFIG_LSF_STREAM_FACTORY",
+    "symbols": 4309,
+    "stackRequiredUnchanged": [
+      "CONFIG_X86_64",
+      "CONFIG_VMAP_STACK",
+      "CONFIG_THREAD_INFO_IN_TASK",
+      "CONFIG_SMP",
+      "CONFIG_NUMA",
+      "CONFIG_HOTPLUG_CPU"
+    ],
+    "stackUnsupportedOptionsRemainDisabled": [
+      "CONFIG_MEMCG",
+      "CONFIG_KASAN",
+      "CONFIG_KMSAN",
+      "CONFIG_DEBUG_PAGEALLOC",
+      "CONFIG_DEBUG_KMEMLEAK",
+      "CONFIG_PAGE_TABLE_CHECK",
+      "CONFIG_DEBUG_LOCK_ALLOC"
+    ],
+    "resolvedSymbols": 4309,
+    "onlyDelta": {
+      "CONFIG_LSF_STREAM_FACTORY": [
+        "n",
+        "y"
+      ]
+    },
+    "allOriginalSecurityAndProfileGuardsPreserved": true,
+    "historicalRetirementBaselineExact": true
+  },
+  "objects": {
+    "net/factory.o": {
+      "bytes": 138264,
+      "sha256": "0171efbe5de146c158c300b396f08c83f2871517721808f07bfa131ba3417050",
+      "requiredDefinedSymbols": [
+        "lsf_factory_register",
+        "lsf_factory_blob_allocate",
+        "lsf_factory_blob_finish",
+        "lsf_factory_child_allocate",
+        "lsf_factory_protocol_parent",
+        "lsf_factory_options_publish",
+        "lsf_factory_options_owned",
+        "lsf_factory_options_queue",
+        "lsf_factory_netport_publish",
+        "lsf_factory_netport_queue",
+        "lsf_factory_netport_candidate",
+        "lsf_factory_netport_current",
+        "lsf_factory_sidcache_publish",
+        "lsf_factory_sidcache_queue",
+        "lsf_factory_sidcache_destroy",
+        "lsf_factory_sidcache_candidate",
+        "lsf_factory_sidcache_current",
+        "lsf_factory_avc_member",
+        "lsf_factory_avc_phase",
+        "lsf_factory_avc_replace",
+        "lsf_factory_avc_publish",
+        "lsf_factory_avc_queue",
+        "lsf_factory_avc_candidate",
+        "lsf_factory_avc_current",
+        "lsf_factory_audit_head_current",
+        "lsf_factory_route_queue",
+        "lsf_factory_route_return",
+        "lsf_factory_route_parent_attach",
+        "lsf_factory_route_cache_publish",
+        "lsf_factory_route_current",
+        "lsf_factory_route_parent_take",
+        "lsf_factory_packet_birth",
+        "lsf_factory_packet_head_current",
+        "lsf_factory_device_pci_ready",
+        "lsf_factory_device_pci_enter",
+        "lsf_factory_device_pci_leave",
+        "lsf_factory_device_pci_allocate",
+        "lsf_factory_device_pci_return",
+        "lsf_factory_device_pci_owned",
+        "lsf_factory_device_firmware_begin",
+        "lsf_factory_device_firmware_get",
+        "lsf_factory_device_firmware_current",
+        "lsf_factory_device_firmware_invalidate",
+        "lsf_factory_device_firmware_retire",
+        "lsf_factory_device_firmware_constructor_enter",
+        "lsf_factory_device_firmware_constructor_leave",
+        "lsf_factory_device_core_begin",
+        "lsf_factory_device_core_owned",
+        "lsf_factory_device_core_allocate",
+        "lsf_factory_device_core_return",
+        "lsf_factory_device_core_tail_enter",
+        "lsf_factory_device_core_tail_finish",
+        "lsf_factory_device_capabilities_owned",
+        "lsf_factory_device_capability_allocate",
+        "lsf_factory_device_capability_return",
+        "lsf_factory_device_registration_constructor_revoke",
+        "lsf_factory_device_registration_kobject",
+        "lsf_factory_device_registration_node",
+        "lsf_factory_device_registration_current",
+        "lsf_factory_device_registration_allocate",
+        "lsf_factory_device_registration_return_begin",
+        "lsf_factory_device_registration_return_finish",
+        "lsf_factory_device_sysfs_pair",
+        "lsf_factory_device_sysfs_name",
+        "lsf_factory_device_sysfs_release",
+        "lsf_factory_device_sysfs_iattrs",
+        "lsf_factory_device_uevent_poison",
+        "lsf_factory_device_uevent_kobject",
+        "lsf_factory_device_uevent_birth",
+        "lsf_factory_device_uevent_current",
+        "lsf_factory_device_uevent_allocate",
+        "lsf_factory_device_uevent_return",
+        "lsf_factory_device_uevent_head_current",
+        "lsf_factory_device_uevent_path_bytes",
+        "lsf_factory_device_tap_admit",
+        "lsf_factory_device_tap_retired",
+        "lsf_factory_blob_poison",
+        "lsf_factory_device_recipient_begin",
+        "lsf_factory_device_recipient_current",
+        "lsf_factory_device_recipient_finish",
+        "lsf_factory_device_recipient_signal_allocate",
+        "lsf_factory_device_recipient_signal_birth",
+        "lsf_factory_device_recipient_signal_return",
+        "lsf_factory_device_recipient_blob",
+        "lsf_factory_device_security_candidate",
+        "lsf_factory_device_security_current",
+        "lsf_factory_device_recipient_packet",
+        "lsf_factory_cleanup_task_reserve",
+        "lsf_factory_cleanup_task_claim",
+        "lsf_factory_cleanup_task_abort",
+        "lsf_factory_cleanup_stack_reserve",
+        "lsf_factory_cleanup_stack_current",
+        "lsf_factory_cleanup_stack_finish",
+        "lsf_factory_cleanup_stack_poison"
+      ]
+    },
+    "kernel/fork.o": {
+      "bytes": 86720,
+      "sha256": "f86a1dcad9f1fac32523597cf4a4109523c37a367e2b66fca26c94f5c478957f",
+      "requiredDefinedSymbols": [
+        "kernel_clone",
+        "free_task",
+        "put_task_stack",
+        "lsf_prepaid_cleanup_task_geometry",
+        "lsf_prepaid_cleanup_dup_task_struct"
+      ]
+    },
+    "kernel/kthread.o": {
+      "bytes": 48520,
+      "sha256": "107b60559c3d2cc2dfe71900aaa01db41711ac9cbf3ef252a3bc1de8f95d413a",
+      "requiredDefinedSymbols": [
+        "kthreadd",
+        "kthread_worker_fn",
+        "kthread_stop",
+        "kthread_create_worker",
+        "lsf_prepaid_cleanup_worker_create"
+      ]
+    },
+    "mm/vmalloc.o": {
+      "bytes": 144512,
+      "sha256": "aa2cb1836ba8a2c1a9570dbd57db6ea7908d580e846dce3a853f2243e85ca347",
+      "requiredDefinedSymbols": [
+        "vunmap_range",
+        "vfree",
+        "vunmap",
+        "lsf_prepaid_cleanup_stack_geometry",
+        "lsf_prepaid_cleanup_stack_create",
+        "lsf_prepaid_cleanup_stack_abort_unpublished",
+        "lsf_prepaid_cleanup_stack_foreign_unmap"
+      ]
+    }
+  },
+  "actualDefinedGlobalFunctions": {
+    "net/factory.o": 100,
+    "kernel/fork.o": 58,
+    "kernel/kthread.o": 43,
+    "mm/vmalloc.o": 65
+  },
+  "requiredGlobalFunctions": 111,
+  "allOriginalFactory87OraclesPreserved": true,
+  "staticWorkerHelperRequiredAsGlobal": false,
+  "publicWorkerEntryRequired": "kthread_create_worker",
+  "objectFormat": "ELF64 little-endian ET_REL/EM_X86_64, externally defined GLOBAL FUNCs",
+  "compileOnlyTranslationUnitSuffixes": {
+    "net/factory.c": {
+      "reviewedDerivedPrefix": {
+        "bytes": 31485,
+        "sha256": "8e18c2f05035831f410d2e84ae222c86f780a41c0627b0ed87250a0ea31e9161"
+      },
+      "compileOnlySuffix": {
+        "bytes": 691,
+        "sha256": "6a6c195a740410dadec6df7f3ee8c9b9d3d017aded7ebf0beb7cd705f5c80f35"
+      },
+      "compiledWholeSource": {
+        "bytes": 32176,
+        "sha256": "9b4308126caff31ccf3257329807b353619956701204a104fec8de93e412f160"
+      },
+      "geometrySymbol": "lsf_cleanup_geometry_factory"
+    },
+    "kernel/fork.c": {
+      "reviewedDerivedPrefix": {
+        "bytes": 87353,
+        "sha256": "adb568ac1f8e33a8ecbd93f15fe3a62f03a9370de8e0a07318501d4a126cdf20"
+      },
+      "compileOnlySuffix": {
+        "bytes": 548,
+        "sha256": "633552a65580682a30107a287c5efda6628d926e310310bedba2ef530561989f"
+      },
+      "compiledWholeSource": {
+        "bytes": 87901,
+        "sha256": "91f145a06ed873844b001e9b6048d6d1898b143b026f46c1f54aa46ae8599260"
+      },
+      "geometrySymbol": "lsf_cleanup_geometry_task"
+    },
+    "kernel/kthread.c": {
+      "reviewedDerivedPrefix": {
+        "bytes": 44399,
+        "sha256": "ebf2691dc17a2bfa3bc23022647f08f627cb30b004abc5fe8abb4df8dce0e236"
+      },
+      "compileOnlySuffix": {
+        "bytes": 479,
+        "sha256": "7af49659abe934ca2acad0cb0c40041a18a28912de5c62c88e963400311bcd04"
+      },
+      "compiledWholeSource": {
+        "bytes": 44878,
+        "sha256": "c0debaf4f5a1e8d3563e08482cbad4b0c70eacf920491bc9b3892c72b5e838ad"
+      },
+      "geometrySymbol": "lsf_cleanup_geometry_request"
+    },
+    "mm/vmalloc.c": {
+      "reviewedDerivedPrefix": {
+        "bytes": 139581,
+        "sha256": "6de6b6ec8a52f769af96c3bedfc67f63d89036ffba49b84d42432a2995703073"
+      },
+      "compileOnlySuffix": {
+        "bytes": 730,
+        "sha256": "422c0e4de0cd70db2fb95699aaad2b571fc398aeae99fa329495b8242a4a4a79"
+      },
+      "compiledWholeSource": {
+        "bytes": 140311,
+        "sha256": "9fb6d3ebc816be9f63a5c80ec5d5082bd930bb7e5b67b578fb52d9071bd47af5"
+      },
+      "geometrySymbol": "lsf_cleanup_geometry_mapping"
+    }
+  },
+  "compileOnlySuffixesAreProductionSource": false,
+  "geometry": {
+    "net/factory.o": {
+      "values": {
+        "backingBytes": 524288,
+        "infrastructureBytes": 196608,
+        "bootstrapCeiling": 1048576,
+        "allocationSlots": 256,
+        "factoryBytes": 37136,
+        "deviceStateBytes": 136,
+        "poolBytes": 36888,
+        "staticMetadataBytes": 37168
+      },
+      "binary": {
+        "bytes": 80,
+        "sha256": "c6c4042db79307e03eab4837a09b7bb89640b8877e023612652007bb5a57ebef"
+      },
+      "section": ".lsf_cleanup_geometry",
+      "symbol": "lsf_cleanup_geometry_factory"
+    },
+    "kernel/fork.o": {
+      "values": {
+        "taskStructBaseBytes": 7360,
+        "cacheLineBytes": 64,
+        "taskAlignment": 64,
+        "stackBytes": 16384,
+        "stackAlignment": 16384,
+        "pageBytes": 4096
+      },
+      "binary": {
+        "bytes": 64,
+        "sha256": "5d8b9c50cebf3880b2f16cef05311651ce222b1c6aadb52ff8f8b6d21946264b"
+      },
+      "section": ".lsf_cleanup_geometry",
+      "symbol": "lsf_cleanup_geometry_task"
+    },
+    "kernel/kthread.o": {
+      "values": {
+        "requestBytes": 208,
+        "requestAlignment": 8,
+        "workerBytes": 56,
+        "lockClassKeyBytes": 0
+      },
+      "binary": {
+        "bytes": 48,
+        "sha256": "833c0d0c95090307f11a42f7df0c2b7e944d5cc5fc8167c55786caec6b9411c5"
+      },
+      "section": ".lsf_cleanup_geometry",
+      "symbol": "lsf_cleanup_geometry_request"
+    },
+    "mm/vmalloc.o": {
+      "values": {
+        "mappingMetadataBytes": 304,
+        "mappingAlignment": 8,
+        "stackRecordBytes": 20783,
+        "stackPayloadBytes": 16384,
+        "guardBytes": 4096,
+        "bankAlignmentSlack": 4095,
+        "vmStructBytes": 72,
+        "vaDescriptorBytes": 72,
+        "leafSlots": 5
+      },
+      "binary": {
+        "bytes": 88,
+        "sha256": "3cb1d09cd7eac7494602a62c242b7f7dd3cf6335d78bd28c8730972cb3caddd5"
+      },
+      "section": ".lsf_cleanup_geometry",
+      "symbol": "lsf_cleanup_geometry_mapping"
+    }
+  },
+  "geometryScope": {
+    "source": "compile-only const ELF section from four real maintained TUs",
+    "extendedArchTaskBytesKnown": false,
+    "actualRuntimeGeometryFunctionExecuted": false,
+    "wholeInfrastructureFitQualified": false,
+    "minimumRequestBaseTaskAndStackBytes": 28416,
+    "bootstrapStaticBytesIncludingBank": 561456
+  },
+  "ownedCommands": {
+    "count": 13,
+    "allExitZero": true,
+    "allCompleted": true,
+    "allDescendantsCleaned": true,
+    "deadlineSeconds": 900,
+    "perCommandSeconds": 300,
+    "perCommandOutputBytes": 4194304,
+    "totalOutputBytes": 16777216,
+    "records": [
+      {
+        "stage": "extract-authenticated-source",
+        "exitCode": 0,
+        "completed": true,
+        "elapsedMillis": 7415.553709000008,
+        "descendantsCleaned": true
+      },
+      {
+        "stage": "compiler-identity",
+        "exitCode": 0,
+        "completed": true,
+        "elapsedMillis": 28.917290999999068,
+        "descendantsCleaned": true
+      },
+      {
+        "stage": "original-defconfig",
+        "exitCode": 0,
+        "completed": true,
+        "elapsedMillis": 3664.9372899999976,
+        "descendantsCleaned": true
+      },
+      {
+        "stage": "resolve-selected-config",
+        "exitCode": 0,
+        "completed": true,
+        "elapsedMillis": 1128.8669139999997,
+        "descendantsCleaned": true
+      },
+      {
+        "stage": "four-affected-real-kbuild-objects",
+        "exitCode": 0,
+        "completed": true,
+        "elapsedMillis": 6574.8029650000035,
+        "descendantsCleaned": true
+      },
+      {
+        "stage": "symbols-net-factory.o",
+        "exitCode": 0,
+        "completed": true,
+        "elapsedMillis": 60.25087300000109,
+        "descendantsCleaned": true
+      },
+      {
+        "stage": "geometry-net-factory.o",
+        "exitCode": 0,
+        "completed": true,
+        "elapsedMillis": 28.212267999990104,
+        "descendantsCleaned": true
+      },
+      {
+        "stage": "symbols-kernel-fork.o",
+        "exitCode": 0,
+        "completed": true,
+        "elapsedMillis": 59.92977600000415,
+        "descendantsCleaned": true
+      },
+      {
+        "stage": "geometry-kernel-fork.o",
+        "exitCode": 0,
+        "completed": true,
+        "elapsedMillis": 28.628179999998338,
+        "descendantsCleaned": true
+      },
+      {
+        "stage": "symbols-kernel-kthread.o",
+        "exitCode": 0,
+        "completed": true,
+        "elapsedMillis": 59.92216399999961,
+        "descendantsCleaned": true
+      },
+      {
+        "stage": "geometry-kernel-kthread.o",
+        "exitCode": 0,
+        "completed": true,
+        "elapsedMillis": 28.953733000008697,
+        "descendantsCleaned": true
+      },
+      {
+        "stage": "symbols-mm-vmalloc.o",
+        "exitCode": 0,
+        "completed": true,
+        "elapsedMillis": 60.4293340000055,
+        "descendantsCleaned": true
+      },
+      {
+        "stage": "geometry-mm-vmalloc.o",
+        "exitCode": 0,
+        "completed": true,
+        "elapsedMillis": 27.99371599999745,
+        "descendantsCleaned": true
+      }
+    ]
+  },
+  "hostedSourceControls": 27,
+  "rawHostedSourceLog": {
+    "bytes": 111800,
+    "sha256": "ebaad6808a645d6dd0154c15df002b8e1e77250fd1091364df7dc6377c0f0fd9"
+  },
+  "historicalRecipientObjects": 56,
+  "historicalRecipientDefinedSymbols": 243,
+  "historicalRecipientBuildReexecuted": false,
+  "firstFailedAttempt": {
+    "sourceCommit": "1a6a1ee4fd4bf99dd61054c2de0cfdcd6f393fb0",
+    "run": 39733536678,
+    "job": 119673849676,
+    "artifact": 12406500922,
+    "artifactBytes": 137610,
+    "artifactSha256": "161e56bec41e9fb9e40da987d3ee28b1f24dff5b35d9183c3fe13012bf38f35a",
+    "crcMembers": 16,
+    "stage": "actual four-object Kbuild",
+    "reason": "generated include/net cleanup-task header retained net-local prepaid.h include",
+    "correction": "kernel-only relative include resolves the same existing net/prepaid.h; nonkernel body unchanged",
+    "priorDerivedOutputsExact": 207,
+    "changedOutput": "include/net/lsf_stream_cleanup_task.h",
+    "countedAsPass": false
+  },
+  "sourceMechanismReference": {
+    "selectedGuardedStackControls": 30,
+    "unselectedNoVmapControls": 2,
+    "redCounterfactuals": 2,
+    "serializedLinuxDoublesOnly": true,
+    "linuxRuntimeExecuted": false
+  },
+  "retirementResumptionSourceImplemented": true,
+  "stackMappingSourceImplemented": true,
+  "additionalSourcesIndependentlyGitCorroborated": false,
+  "nativeHostProductsCompiled": false,
+  "linuxMappingExecuted": false,
+  "taskCreated": false,
+  "executorReady": false,
+  "runningTaskStackRetirementImplemented": false,
+  "extendedArchTaskBytesKnown": false,
+  "actualRuntimeGeometryFunctionExecuted": false,
+  "wholeInfrastructureFitQualified": false,
+  "trustedNativeBootstrapAuthenticated": false,
+  "kernelLinked": false,
+  "kernelBooted": false,
+  "factoryInstalled": false,
+  "physicalQueueQualified": false,
+  "actualSharedWorkqueueAccounted": false,
+  "completeAllocationClosure": false,
+  "finalFreeCertified": false,
+  "productionInstallation": false,
+  "remainingGates": [
+    "extended x86 task size and full PID/security/instrumentation descendants before real task publication",
+    "running task stack final-use, scheduler/RCU/TLB ownership and physical final return",
+    "real private cleanup worker readiness/stop and all queued/inflight callbacks within original capacity",
+    "trusted NodeFixed/native bootstrap and failed-open original-owner retention",
+    "remaining device/DMA/RX, neighbour, DNS and deferred allocation/final-free closure",
+    "sealed maintained image/configuration/layout/BTF and installed final-free producer",
+    "kernel link, boot, factory installation and finite real node/operator/provider conformance"
+  ]
+}

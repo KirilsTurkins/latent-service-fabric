@@ -1,7 +1,7 @@
-name: Ordinary host codec original memory
+name: Ordinary host shared table and runtime memory diagnostics
 on:
   push:
-    branches: ['feat/host-codec-memory-736-20261021']
+    branches: ['feat/host-codec-memory-736-20261021', 'feat/typescript-table-memory-20261022', 'feat/activation-registry-memory-20261022', 'feat/activation-funcrefs-memory-20261022', 'feat/component-resource-map-memory-20261022', 'feat/linear-memory-notifications-20261022', 'feat/hostcall-future-memory-20261022', 'feat/owned-context-replies-memory-20261022', 'feat/capability-lowering-current-20261022', 'feat/streaming-table-memory-20261022']
   workflow_dispatch: {}
 permissions:
   contents: read
@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   native:
-    name: Original ledger, actual codec and backend result ownership
+    name: Original ledger shared tables and runtime memory ownership diagnostics
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     env:
@@ -45,7 +45,8 @@ jobs:
         run: python3 -m pip install -r tools/requirements.lock
       - name: Refuse missing, ignored or changed control evidence
         run: python3 -B -m unittest tools.tests.test_host_codec_native -v
-      - name: Execute sixty-one source-bound controls with the ordinary native host
+      - name: Execute one hundred forty-six source-bound controls with the ordinary native host
+        id: own-native-memory
         run: >-
           python3 -B tools/qualify_host_codec_native.py
           --source-commit "${{ github.sha }}"

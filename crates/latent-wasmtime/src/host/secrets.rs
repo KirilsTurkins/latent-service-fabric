@@ -51,21 +51,45 @@ pub(crate) fn install(
                     Err(error) => Err(error),
                 };
                 checkpoint(&mut store)?;
-                let result = completion
-                    .and_then(|disclosure| {
+                let result = match completion {
+                    Ok(disclosure) => {
                         let mut value = None;
+                        let mut directory_error = None;
                         let owner = disclosure.disclose(&mut |view| {
+                            // disclose performs its original final authority
+                            // checks before this trusted callback. Reserve the
+                            // directory before cloning any plaintext or DTO.
+                            if let Err(error) =
+                                store.data_mut().capabilities.prepare_secret_lowering()
+                            {
+                                directory_error = Some(error);
+                                return;
+                            }
                             value = Some(SecretValue {
                                 bytes: view.bytes.to_vec(),
                                 media_type: view.media_type.to_owned(),
                                 version: Some(view.version.to_owned()),
                                 expires_at_unix_millis: view.expires_at_unix_millis,
                             });
-                        })?;
-                        store.data_mut().capabilities.retain_secret_lowering(owner);
-                        value.ok_or(SecretError::Unavailable)
-                    })
-                    .map_err(convert_error);
+                        });
+                        if let Some(error) = directory_error {
+                            // Preserve the exact original budget error. No DTO
+                            // was cloned on refusal; retain this explicit drop
+                            // ordering if the trusted builder changes later.
+                            drop(value);
+                            drop(owner);
+                            return Err(error);
+                        }
+                        match owner {
+                            Ok(owner) => {
+                                store.data_mut().capabilities.retain_secret_lowering(owner);
+                                value.ok_or(SecretError::Unavailable).map_err(convert_error)
+                            }
+                            Err(error) => Err(convert_error(error)),
+                        }
+                    }
+                    Err(error) => Err(convert_error(error)),
+                };
                 synchronize(&mut store)?;
                 store.data_mut().record_host_call(started);
                 Ok((result,))

@@ -1,5 +1,6 @@
 """Authenticated installed profile inputs and exact source-world selection."""
 import copy
+import hashlib
 import json
 from pathlib import Path
 import subprocess
@@ -88,13 +89,17 @@ class InstalledRustHttpRuntime(unittest.TestCase):
         distribution.recipe(self.payload, 'rust', rust_http_runtime=True)
         for name, raw in consumer_files().items():
             self.assertEqual(read_file(self.payload / 'recipe' / name), raw)
+        expected = {name: {path: hashlib.sha256(raw).hexdigest() for path, raw in files.items()}
+                    for name, files in (('source', source_files()), ('consumer', consumer_files()))}
         command = [sys.executable, '-I', '-B', '-c',
-            'import sys;sys.path.insert(0,sys.argv[1]);'
+            'import sys,json,hashlib;sys.path.insert(0,sys.argv[1]);'
             'from tools.rust_wasi_http_inputs import source_files,consumer_files;'
-            'assert len(source_files())==110 and len(consumer_files())==113',
+            'print(json.dumps({name:{path:hashlib.sha256(raw).hexdigest() for path,raw in files.items()}'
+            ' for name,files in (("source",source_files()),("consumer",consumer_files()))}))',
             str(self.payload / 'recipe')]
         result = subprocess.run(command, cwd=self.root, capture_output=True, timeout=30)
         self.assertEqual(result.returncode, 0, result.stderr.decode())
+        self.assertEqual(json.loads(result.stdout), expected)
 
     def test_default_and_other_language_recipes_do_not_acquire_the_runtime(self):
         distribution.recipe(self.payload, 'rust')

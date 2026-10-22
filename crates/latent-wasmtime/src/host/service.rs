@@ -76,11 +76,13 @@ pub(crate) fn install(
                         let mut store = access.as_context_mut();
                         checkpoint(&mut store)?;
                         let result = match completion {
-                            Ok(LocalServiceCompletion {
-                                outcome: result,
-                                call,
-                                child,
-                            }) => {
+                            Ok(completion) => {
+                                store.data_mut().capabilities.prepare_lowering()?;
+                                let LocalServiceCompletion {
+                                    outcome: result,
+                                    call,
+                                    child,
+                                } = completion;
                                 let result = outcome::convert(result);
                                 // Parent output capacity was reserved before child
                                 // admission and remains owned through Store drop.

@@ -1,0 +1,43 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "stream-kernel-cleanup-stack-${{ github.ref }}"
+    },
+    "name": "Stream maintained cleanup task and guarded stack objects",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/stream-kernel-guarded-stack-20261022"
+        ],
+        "paths": [
+          ".github/workflows/stream-kernel-cleanup-stack.yml",
+          "tools/qualify_host_stream_kernel_cleanup_stack.py",
+          "tools/host_stream_kernel_cleanup_task.py",
+          "tools/host_stream_kernel_guarded_stack.py",
+          "tools/tests/fixtures/host_stream_kernel_cleanup_task.json",
+          "tools/tests/fixtures/host_stream_kernel_guarded_stack.json",
+          "tools/tests/test_host_stream_kernel_cleanup_task.py",
+          "tools/tests/test_host_stream_kernel_guarded_stack.py",
+          "tools/tests/test_host_stream_kernel_cleanup_stack_objects.py",
+          "research/standard-outbound/linux-6.12-lineage/cleanup-task-private.h",
+          "research/standard-outbound/linux-6.12-lineage/factory-cleanup-task.c",
+          "research/standard-outbound/linux-6.12-lineage/kernel-cleanup-worker.c",
+          "research/standard-outbound/linux-6.12-lineage/cleanup-stack-private.h",
+          "research/standard-outbound/linux-6.12-lineage/factory-cleanup-stack.c",
+          "research/standard-outbound/linux-6.12-lineage/cleanup-stack-vmap.c"
+        ]
+      }
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "cleanup-stack-objects"
+  ],
+  "reviewReason": "Reviewed source-only private cleanup task and guarded stack constructor plus one four-TU object recipe; old lanes and limits unchanged; measurements compile-only and runtime installation gates stay false.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/stream-kernel-cleanup-stack.yml"
+}

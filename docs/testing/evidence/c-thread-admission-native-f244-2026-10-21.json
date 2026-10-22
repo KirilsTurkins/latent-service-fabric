@@ -1,0 +1,169 @@
+{
+  "schemaVersion": "latent.sdk.composite-native-independent-verification.v1",
+  "status": "passed",
+  "source": "f244b81f14abad5d4dc4984cb842aaf1d9076e23",
+  "run": 39645135536,
+  "job": 119378576823,
+  "artifact": {
+    "id": 12367356857,
+    "size_in_bytes": 61993733,
+    "digest": "sha256:e4cb1d108f96e8595bc9941ef5f7fb9dbedca356e08b396bf5f46b8065cc037c"
+  },
+  "members": 19,
+  "expandedBytes": 288762177,
+  "compiledNativeSource": {
+    "sha256": "sha256:ef513fe681eef835cbf87cfcb91d973c0cdf5186906e06646926e2c114e90638",
+    "files": 3325,
+    "bytes": 26398761,
+    "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+    "hermetic": false,
+    "implicitCompilerInputs": "not-attested"
+  },
+  "inheritedNativeSource": {
+    "sha256": "sha256:598ed59a0797ac24c006fe47162d74672b7a603669192e7019a83eced0a98d14",
+    "files": 3325,
+    "bytes": 26393594,
+    "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+    "hermetic": false,
+    "implicitCompilerInputs": "not-attested"
+  },
+  "compiledNativeChanges": [
+    "apps/latentd/src/config/derive.rs",
+    "apps/latentd/src/config/policy.rs",
+    "apps/latentd/src/config/tests/providers/activation_runtime.rs",
+    "crates/latent-signing/src/provenance/tests.rs",
+    "crates/latent-signing/src/provenance/validate.rs"
+  ],
+  "allOtherNativeFilesByteExact": 3320,
+  "producerMaterialsGitExact": 160,
+  "originalAuxiliaryGitExact": 134,
+  "commands": 7,
+  "rustTests": 14,
+  "products": {
+    "latent": {
+      "sha256": "sha256:95096a62d68e32a8a3125713ed78409fbcfd96234e19d0bc28bf4152a947af24",
+      "bytes": 72344408
+    },
+    "latentd": {
+      "sha256": "sha256:4ea650604df9b76d438650ee6ebec55bf5f439fad4f3a3f23915603357a08a4e",
+      "bytes": 188944080
+    },
+    "examples/package": {
+      "sha256": "sha256:07feedce67fd514014eb660dc2c60f9daffdcb1bb28fa5a9064465f6e5046db4",
+      "bytes": 21091976
+    },
+    "examples/capsule_contracts": {
+      "sha256": "sha256:32870ecc73aaed002087a9327f25bb22922a622748fb705fd63021b21947a8da",
+      "bytes": 13844296
+    },
+    "examples/capsule_authoring": {
+      "sha256": "sha256:a47b6f6b359d37e05b37bc52cfadf94b1ea51fb7276bf7e97ddfddb14a7e43a1",
+      "bytes": 27354800
+    }
+  },
+  "perProductCompilation": {
+    "latent": {
+      "sourceRevision": "f244b81f14abad5d4dc4984cb842aaf1d9076e23",
+      "nativeSource": {
+        "sha256": "sha256:ef513fe681eef835cbf87cfcb91d973c0cdf5186906e06646926e2c114e90638",
+        "files": 3325,
+        "bytes": 26398761,
+        "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+        "hermetic": false,
+        "implicitCompilerInputs": "not-attested"
+      },
+      "identity": {
+        "sha256": "sha256:95096a62d68e32a8a3125713ed78409fbcfd96234e19d0bc28bf4152a947af24",
+        "bytes": 72344408
+      }
+    },
+    "latentd": {
+      "sourceRevision": "f244b81f14abad5d4dc4984cb842aaf1d9076e23",
+      "nativeSource": {
+        "sha256": "sha256:ef513fe681eef835cbf87cfcb91d973c0cdf5186906e06646926e2c114e90638",
+        "files": 3325,
+        "bytes": 26398761,
+        "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+        "hermetic": false,
+        "implicitCompilerInputs": "not-attested"
+      },
+      "identity": {
+        "sha256": "sha256:4ea650604df9b76d438650ee6ebec55bf5f439fad4f3a3f23915603357a08a4e",
+        "bytes": 188944080
+      }
+    },
+    "examples/package": {
+      "sourceRevision": "f6251df89851de98cb869784d095ad5cc2e5b385",
+      "nativeSource": {
+        "sha256": "sha256:598ed59a0797ac24c006fe47162d74672b7a603669192e7019a83eced0a98d14",
+        "files": 3325,
+        "bytes": 26393594,
+        "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+        "hermetic": false,
+        "implicitCompilerInputs": "not-attested"
+      },
+      "identity": {
+        "sha256": "sha256:07feedce67fd514014eb660dc2c60f9daffdcb1bb28fa5a9064465f6e5046db4",
+        "bytes": 21091976
+      }
+    },
+    "examples/capsule_contracts": {
+      "sourceRevision": "f6251df89851de98cb869784d095ad5cc2e5b385",
+      "nativeSource": {
+        "sha256": "sha256:598ed59a0797ac24c006fe47162d74672b7a603669192e7019a83eced0a98d14",
+        "files": 3325,
+        "bytes": 26393594,
+        "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+        "hermetic": false,
+        "implicitCompilerInputs": "not-attested"
+      },
+      "identity": {
+        "sha256": "sha256:32870ecc73aaed002087a9327f25bb22922a622748fb705fd63021b21947a8da",
+        "bytes": 13844296
+      }
+    },
+    "examples/capsule_authoring": {
+      "sourceRevision": "f244b81f14abad5d4dc4984cb842aaf1d9076e23",
+      "nativeSource": {
+        "sha256": "sha256:ef513fe681eef835cbf87cfcb91d973c0cdf5186906e06646926e2c114e90638",
+        "files": 3325,
+        "bytes": 26398761,
+        "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+        "hermetic": false,
+        "implicitCompilerInputs": "not-attested"
+      },
+      "identity": {
+        "sha256": "sha256:a47b6f6b359d37e05b37bc52cfadf94b1ea51fb7276bf7e97ddfddb14a7e43a1",
+        "bytes": 27354800
+      }
+    }
+  },
+  "signedGuestQualification": false,
+  "newNativeProducts": 3,
+  "inheritedNativeProducts": 2,
+  "receipts": {
+    "native-products.json": {
+      "sha256": "sha256:f0e8c6b7cae2ee68daff0d46f27de1ed3ebd12ecf1516173ac7e619b6c19cb44",
+      "bytes": 55570
+    },
+    "source-inputs.json": {
+      "sha256": "sha256:5dba7da494916696f503c9090ed6d0b99c11e72c005b2e54b722feb72bd20f67",
+      "bytes": 28650
+    }
+  },
+  "inheritedProducer": {
+    "source": "f6251df89851de98cb869784d095ad5cc2e5b385",
+    "run": 39621720110,
+    "job": 119296651794,
+    "artifact": 12355629104,
+    "retainedKeys": [
+      "examples/package",
+      "examples/capsule_contracts"
+    ]
+  },
+  "originalFailedProducerRuns": [
+    39641713750,
+    39643334168
+  ],
+  "qualificationScope": "native product controls only; C17 and Go guest programmes pending separately; no original receipt repinned"
+}

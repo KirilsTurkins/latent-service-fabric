@@ -34,11 +34,10 @@
 //!
 //! Next comes the internal structure of the `Store<T>` itself. This looks like:
 //!
-//! * `Store<T>` - this type is just a pointer large. It's primarily just
-//!   intended to be consumed by the outside world. Note that the "just a
-//!   pointer large" is a load-bearing implementation detail in Wasmtime. This
-//!   enables it to store a pointer to its own trait object which doesn't need
-//!   to change over time.
+//! * `Store<T>` - this type owns a stable heap pointer and, in the maintained
+//!   bounded-memory profile, affine owners kept outside that allocation. The
+//!   stable address of StoreInner, rather than the wrapper's size, enables its
+//!   self trait-object pointer to remain unchanged when the wrapper moves.
 //!
 //! * `StoreInner<T>` - the first layer of the contents of a `Store<T>`, what's
 //!   stored inside the `Box`. This is the general Rust pattern when one struct
@@ -95,6 +94,7 @@ use crate::trampoline::VMHostGlobalContext;
 use crate::{BreakpointState, DebugHandler, FrameDataCache};
 use crate::{Engine, Module, Val, ValRaw, module::ModuleRegistry};
 use crate::{Global, Instance, Table};
+use alloc::sync::Arc;
 use core::convert::Infallible;
 use core::fmt;
 #[cfg(any(feature = "async", feature = "gc"))]
@@ -196,6 +196,10 @@ mod gc_disabled;
 pub struct Store<T: 'static> {
     // for comments about `ManuallyDrop`, see `Store::into_data`
     inner: ManuallyDrop<Box<StoreInner<T>>>,
+    // Outside the Box: release only after its actual deallocation, even when T
+    // has already destroyed the resource limiter. Leak conservatively on panic.
+    allocation: ManuallyDrop<Option<Box<dyn crate::NativeAllocation>>>,
+    native_memory: ManuallyDrop<crate::runtime::native_memory::MemorySource>,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -337,6 +341,22 @@ impl StoreResourceLimiter<'_> {
         }
     }
 
+    pub(crate) fn memory_allocated(&mut self) {
+        match self {
+            Self::Sync(s) => s.memory_allocated(),
+            #[cfg(feature = "async")]
+            Self::Async(s) => s.memory_allocated(),
+        }
+    }
+
+    pub(crate) fn memory_allocation_failed(&mut self) {
+        match self {
+            Self::Sync(s) => s.memory_allocation_failed(),
+            #[cfg(feature = "async")]
+            Self::Async(s) => s.memory_allocation_failed(),
+        }
+    }
+
     pub(crate) fn memory_grow_failed(&mut self, error: crate::Error) -> Result<()> {
         match self {
             Self::Sync(s) => s.memory_grow_failed(error),
@@ -355,6 +375,17 @@ impl StoreResourceLimiter<'_> {
             Self::Sync(s) => s.table_growing(current, desired, maximum),
             #[cfg(feature = "async")]
             Self::Async(s) => s.table_growing(current, desired, maximum).await,
+        }
+    }
+
+    pub(crate) fn table_allocating(
+        &mut self,
+        bytes: usize,
+    ) -> Result<Option<Box<dyn crate::TableAllocation>>> {
+        match self {
+            Self::Sync(s) => s.table_allocating(bytes),
+            #[cfg(feature = "async")]
+            Self::Async(s) => s.table_allocating(bytes),
         }
     }
 
@@ -437,6 +468,7 @@ impl<T> DerefMut for StoreInner<T> {
 /// necessary, allowing code to be monomorphic and compiled into the `wasmtime`
 /// crate itself.
 pub struct StoreOpaque {
+    native_memory: crate::runtime::native_memory::Memory,
     // This `StoreOpaque` structure has references to itself. These aren't
     // immediately evident, however, so we need to tell the compiler that it
     // contains self-references. This notably suppresses `noalias` annotations
@@ -468,7 +500,7 @@ pub struct StoreOpaque {
     #[cfg(feature = "stack-switching")]
     continuations: Vec<Box<VMContRef>>,
 
-    instances: TryPrimaryMap<InstanceId, StoreInstance>,
+    instances: crate::runtime::native_memory::NativeMap<InstanceId, StoreInstance>,
 
     signal_handler: Option<SignalHandler>,
     modules: ModuleRegistry,
@@ -719,24 +751,74 @@ impl<T> Store<T> {
     /// memory allocation fails. See the `OutOfMemory` type's documentation for
     /// details on Wasmtime's out-of-memory handling.
     pub fn try_new(engine: &Engine, data: T) -> Result<Self> {
-        let store_data = StoreData::new(engine);
+        Self::try_new_impl(
+            engine,
+            data,
+            crate::runtime::native_memory::MemorySource::None,
+        )
+    }
+
+    /// Create a Store with original native allocation admission selected before
+    /// construction. Admission errors remain the factory's typed errors.
+    pub fn try_new_with_memory(
+        engine: &Engine,
+        data: T,
+        memory: Arc<dyn crate::NativeMemory>,
+    ) -> Result<Self> {
+        Self::try_new_impl(
+            engine,
+            data,
+            crate::runtime::native_memory::MemorySource::External(memory),
+        )
+    }
+
+    /// Create a Store with a solely transferred, admitted factory allocation.
+    /// The binding outlives all private factory clones and the actual inner Box.
+    pub fn try_new_with_memory_binding(
+        engine: &Engine,
+        data: T,
+        memory: crate::NativeMemoryBinding,
+    ) -> Result<Self> {
+        Self::try_new_impl(
+            engine,
+            data,
+            crate::runtime::native_memory::MemorySource::Owned(memory),
+        )
+    }
+
+    fn try_new_impl(
+        engine: &Engine,
+        data: T,
+        source: crate::runtime::native_memory::MemorySource,
+    ) -> Result<Self> {
+        let memory = source.memory();
+        let mut allocation =
+            crate::runtime::native_memory::reserve(&memory, core::mem::size_of::<StoreInner<T>>())?;
+        // Allocate before wrapping T in ManuallyDrop: every constructor error
+        // still destroys T exactly once. The uninitialized Box owns only bytes.
+        let mut boxed = try_new::<Box<_>>(core::mem::MaybeUninit::<StoreInner<T>>::uninit())?;
+        if let Some(allocation) = allocation.as_mut() {
+            allocation.allocated();
+        }
+        let store_data = StoreData::new(engine, memory.clone());
         log::trace!("creating new store {:?}", store_data.id());
 
         let pkey = engine.allocator().next_available_pkey();
 
         let inner = StoreOpaque {
+            native_memory: memory.clone(),
             _marker: marker::PhantomPinned,
             engine: engine.clone(),
             vm_store_context: Default::default(),
             #[cfg(feature = "stack-switching")]
             continuations: Vec::new(),
-            instances: TryPrimaryMap::new(),
+            instances: crate::runtime::native_memory::NativeMap::with_capacity(0, memory.clone())?,
             signal_handler: None,
             gc_store: None,
             #[cfg(feature = "gc")]
             gc_data: Default::default(),
-            modules: ModuleRegistry::default(),
-            func_refs: FuncRefs::default(),
+            modules: ModuleRegistry::new(memory.clone())?,
+            func_refs: FuncRefs::new(memory)?,
             host_globals: TryPrimaryMap::new(),
             instance_count: 0,
             instance_limit: crate::DEFAULT_INSTANCE_LIMIT,
@@ -760,7 +842,7 @@ impl<T> Store<T> {
             #[cfg(feature = "debug")]
             frame_data_cache: FrameDataCache::new(),
         };
-        let mut inner = try_new::<Box<_>>(StoreInner {
+        boxed.write(StoreInner {
             inner,
             limiter: None,
             call_hook: None,
@@ -769,13 +851,21 @@ impl<T> Store<T> {
             data_no_provenance: ManuallyDrop::new(data),
             #[cfg(feature = "debug")]
             debug_handler: None,
-        })?;
+        });
+        // SAFETY: the entire StoreInner was initialized immediately above.
+        let inner = unsafe { boxed.assume_init() };
+        let mut store = Self {
+            inner: ManuallyDrop::new(inner),
+            allocation: ManuallyDrop::new(allocation),
+            native_memory: ManuallyDrop::new(source),
+        };
+        let inner = &mut *store.inner;
 
         let store_data =
             <NonNull<ManuallyDrop<T>>>::from(&mut inner.data_no_provenance).cast::<()>();
         inner.inner.vm_store_context.store_data = store_data.into();
 
-        inner.traitobj = StorePtr(Some(NonNull::from(&mut *inner)));
+        inner.traitobj = StorePtr(Some(NonNull::from(&mut **inner)));
 
         // Wasmtime uses the callee argument to host functions to learn about
         // the original pointer to the `Store` itself, allowing it to
@@ -806,7 +896,7 @@ impl<T> Store<T> {
             let id = match result {
                 Ok(id) => id,
                 Err(e) => {
-                    if e.is::<OutOfMemory>() {
+                    if inner.native_memory.is_some() || e.is::<OutOfMemory>() {
                         return Err(e);
                     }
                     panic!("instance allocator failed to allocate default callee")
@@ -816,9 +906,7 @@ impl<T> Store<T> {
             inner.default_caller_vmctx = default_caller_vmctx.into();
         }
 
-        Ok(Self {
-            inner: ManuallyDrop::new(inner),
-        })
+        Ok(store)
     }
 
     /// Access the underlying `T` data owned by this `Store`.
@@ -871,8 +959,14 @@ impl<T> Store<T> {
         // there is a comment indicating this as well.
         unsafe {
             let mut inner = ManuallyDrop::take(&mut self.inner);
+            let mut allocation = ManuallyDrop::new(ManuallyDrop::take(&mut self.allocation));
+            let mut native_memory = ManuallyDrop::new(ManuallyDrop::take(&mut self.native_memory));
             core::mem::forget(self);
-            ManuallyDrop::take(&mut inner.data_no_provenance)
+            let data = ManuallyDrop::take(&mut inner.data_no_provenance);
+            drop(inner);
+            ManuallyDrop::drop(&mut native_memory);
+            ManuallyDrop::drop(&mut allocation);
+            data
         }
     }
 
@@ -2145,6 +2239,10 @@ at https://bytecodealliance.org/security.
         Ok(ptr)
     }
 
+    pub(crate) fn native_memory(&self) -> crate::runtime::native_memory::Memory {
+        self.native_memory.clone()
+    }
+
     /// Constructs and executes an `InstanceAllocationRequest` and pushes the
     /// returned instance into the store.
     ///
@@ -2427,6 +2525,8 @@ impl<T> Drop for Store<T> {
         unsafe {
             ManuallyDrop::drop(&mut self.inner.data_no_provenance);
             ManuallyDrop::drop(&mut self.inner);
+            ManuallyDrop::drop(&mut self.native_memory);
+            ManuallyDrop::drop(&mut self.allocation);
         }
     }
 }

@@ -984,14 +984,9 @@ fn pre_instantiate_raw(
         // will insert a function into the store automatically as part of
         // instantiation, so reserve space here to make insertion more efficient
         // as it won't have to realloc during the instantiation.
-        funcrefs.reserve_storage(host_funcs)?;
-
-        // The usage of `to_extern_store_rooted` requires that the items are
-        // rooted via another means, which happens here by cloning the list of
-        // items into the store once. This avoids cloning each individual item
-        // below.
-        funcrefs.push_instance_pre_definitions(items.clone())?;
-        funcrefs.push_instance_pre_func_refs(func_refs.clone())?;
+        // The selected path admits both root slots before publishing either.
+        // Legacy callers retain their original host_funcs reservation.
+        funcrefs.push_instance_pre(items.clone(), func_refs.clone(), host_funcs)?;
     }
 
     store.set_async_required(asyncness);

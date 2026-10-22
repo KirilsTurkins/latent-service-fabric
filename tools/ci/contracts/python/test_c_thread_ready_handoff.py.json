@@ -1,0 +1,49 @@
+{
+  "cases": [
+    "CThreadReadyHandoff.test_executed_fixed_reader_controller_and_workflow_are_source_bound",
+    "CThreadReadyHandoff.test_fixed_source_refusal_precedes_any_normal_guest_compiler_execution",
+    "CThreadReadyHandoff.test_only_fixed_native_route_and_explicit_diagnostic_metadata_change_original_run"
+  ],
+  "guards": {
+    "CThreadReadyHandoff.test_executed_fixed_reader_controller_and_workflow_are_source_bound": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:125867e02da25a191f6a42c50a6e52fae4e781aaa1476a882f724e394deb86a4",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CThreadReadyHandoff.test_fixed_source_refusal_precedes_any_normal_guest_compiler_execution": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:125867e02da25a191f6a42c50a6e52fae4e781aaa1476a882f724e394deb86a4",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CThreadReadyHandoff.test_only_fixed_native_route_and_explicit_diagnostic_metadata_change_original_run": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:125867e02da25a191f6a42c50a6e52fae4e781aaa1476a882f724e394deb86a4",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_c_thread_ready_handoff.py",
+  "reviewReason": "Review one fresh ordinary C build and five diagnostic observations on independently authenticated immutable v4 products, preserving old seventeen-call and historical diagnostics; no qualification claim.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

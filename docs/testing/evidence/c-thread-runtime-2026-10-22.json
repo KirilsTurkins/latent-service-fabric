@@ -1,0 +1,433 @@
+{
+  "schemaVersion": "latent.c.thread-runtime.lifecycle-evidence.v1",
+  "ownerIssue": 744,
+  "status": "passed-finite-seventeen-case-slice",
+  "profile": "c-context144-sync-cooperative-v1",
+  "sourceRevision": "b05cf85c51cf3dd5369da570e63a7d0eb6f9427b",
+  "origin": {
+    "repository": "KirilsTurkins/latent-service-fabric",
+    "workflow": ".github/workflows/c-thread-runtime.yml",
+    "event": "push",
+    "branch": "feat/c-thread-runtime-consumer-20261021",
+    "run": 39746829051,
+    "job": 119717266947,
+    "artifact": 12412195498,
+    "artifactName": "c-thread-ready-runtime-b05cf85c51cf3dd5369da570e63a7d0eb6f9427b",
+    "archiveBytes": 1826483,
+    "archiveSha256": "sha256:37361eeb0e67b3ed5a4177a31e63fdd488668843e72b28839cfc1f390f7ee8e2",
+    "archiveMembers": 309,
+    "expandedBytes": 6805326
+  },
+  "verification": {
+    "exhaustiveArchiveAndCRC": true,
+    "capturedGitMaterialRows": 104,
+    "recipeRows": 57,
+    "capturedSourceRows": 63,
+    "actualPackageInputs": 11,
+    "successfulNormalBuildCommands": 25,
+    "component": {
+      "sha256": "sha256:694ee959c1ed6b07f25ccceaff9e85e744b14ddc9ae340451684a7c909700f85",
+      "bytes": 1850514
+    },
+    "selectedBaseInspectionRetained": true,
+    "selectedSupplementAndFullNativeProofVerified": true,
+    "independentLiveOriginAndWholeArchiveVerification": true,
+    "verifierSha256": "sha256:c4dd65f806fc53b32319abddb6e3eda73f6728844f9625d095d682a098576c55",
+    "verifierBuiltOrExecutedGuestOrNative": false
+  },
+  "nativeProducer": {
+    "sourceRevision": "cb8ceefc5f6343301871dbde1d8a853d3581cc30",
+    "run": 39742557852,
+    "job": 119703099390,
+    "artifact": 12410348071,
+    "evidence": "docs/testing/evidence/host-codec-owned-reply-native-2026-10-22.json",
+    "products": 5,
+    "nativeSourceFiles": 3628,
+    "auxiliaryMaterials": 148,
+    "consumerFullNativeSourceByteExact": true,
+    "consumerAllAuxiliaryMaterialsByteExact": true,
+    "rebuiltForThisProgramme": false
+  },
+  "limits": {
+    "memoryBytes": 33554432,
+    "cpuFuel": 1000000000,
+    "wallTimeLimitMillis": 5000,
+    "logBytes": 0,
+    "activationRuntime": {
+      "tasks": 8,
+      "executors": 2,
+      "queuedWork": 8,
+      "waits": 16,
+      "timers": 8,
+      "results": 8,
+      "nativeOwners": 8
+    }
+  },
+  "actualOutcomes": [
+    {
+      "case": "authority-0",
+      "exitCode": 4,
+      "decoded": null,
+      "meaning": "independently absent activation or Native grant; rejected before guest execution"
+    },
+    {
+      "case": "authority-1",
+      "exitCode": 4,
+      "decoded": null,
+      "meaning": "independently absent activation or Native grant; rejected before guest execution"
+    },
+    {
+      "case": "pthread",
+      "exitCode": 0,
+      "decoded": [
+        {
+          "ok": "joined:1:1:1:1:1:2:1:4:4286177"
+        }
+      ]
+    },
+    {
+      "case": "c11",
+      "exitCode": 0,
+      "decoded": [
+        {
+          "ok": "joined:1:1:1:1:1:2:1:4:4286157"
+        }
+      ]
+    },
+    {
+      "case": "mixed",
+      "exitCode": 0,
+      "decoded": [
+        {
+          "ok": "joined:2:2:2:1:1:3:2:6:6387415"
+        }
+      ]
+    },
+    {
+      "case": "invalid",
+      "exitCode": 0,
+      "decoded": [
+        {
+          "ok": "joined:1:1:1:1:1:2:1:4:4286177"
+        }
+      ]
+    },
+    {
+      "case": "pressure",
+      "exitCode": 0,
+      "decoded": [
+        {
+          "ok": "joined:3:3:3:1:1:4:3:8:8488678"
+        }
+      ]
+    },
+    {
+      "case": "root-return",
+      "exitCode": 0,
+      "decoded": [
+        {
+          "ok": "drain-1"
+        }
+      ]
+    },
+    {
+      "case": "application-error",
+      "exitCode": 3,
+      "decoded": [
+        {
+          "err": "application-error"
+        }
+      ]
+    },
+    {
+      "case": "root-trap",
+      "exitCode": 4,
+      "decoded": null,
+      "errorCode": "guest-trap"
+    },
+    {
+      "case": "fresh-root-trap",
+      "exitCode": 0,
+      "decoded": [
+        {
+          "ok": "joined:1:1:1:1:1:2:1:4:4286209"
+        }
+      ]
+    },
+    {
+      "case": "callback-trap",
+      "exitCode": 4,
+      "decoded": null,
+      "errorCode": "guest-trap"
+    },
+    {
+      "case": "fresh-callback-trap",
+      "exitCode": 0,
+      "decoded": [
+        {
+          "ok": "joined:1:1:1:1:1:2:1:4:4286221"
+        }
+      ]
+    },
+    {
+      "case": "cancel",
+      "exitCode": 4,
+      "decoded": null,
+      "errorCode": "cancelled",
+      "terminalState": "cancelled",
+      "acceptedCancellation": true
+    },
+    {
+      "case": "fresh-cancel",
+      "exitCode": 0,
+      "decoded": [
+        {
+          "ok": "joined:2:2:2:1:1:3:2:6:6387443"
+        }
+      ]
+    },
+    {
+      "case": "deadline",
+      "exitCode": 4,
+      "decoded": null,
+      "errorCode": "deadline-exceeded",
+      "terminalState": "deadline_exceeded",
+      "requestedWallTimeMillis": 250
+    },
+    {
+      "case": "fresh-deadline",
+      "exitCode": 0,
+      "decoded": [
+        {
+          "ok": "joined:1:1:1:1:1:2:1:4:4286205"
+        }
+      ]
+    }
+  ],
+  "ordinaryChildWitnesses": {
+    "pthread": {
+      "children": 1,
+      "tasks": 2,
+      "results": 1,
+      "nativeOwners": 4
+    },
+    "c11": {
+      "children": 1,
+      "tasks": 2,
+      "results": 1,
+      "nativeOwners": 4
+    },
+    "mixed": {
+      "children": 2,
+      "tasks": 3,
+      "results": 2,
+      "nativeOwners": 6
+    },
+    "pressure": {
+      "children": 3,
+      "tasks": 4,
+      "results": 3,
+      "nativeOwners": 8
+    },
+    "common": {
+      "parentJoinParked": true,
+      "waits": 1,
+      "parkedTasks": 1,
+      "realTLSAndErrnoAssertions": true,
+      "keyAndTSSDestructors": true,
+      "originalDeferredEntryAssertionsPassed": true,
+      "waitForPollPendingClaimed": false
+    }
+  },
+  "cancelAndDeadlineEntry": {
+    "cancel": {
+      "nativeStartCompletedSequence": 227,
+      "childObserveCompletedSequence": 233,
+      "livePhysicalOwners": 5,
+      "completeFrozenCursor": true,
+      "droppedObservationsByPage": [
+        "148",
+        "148"
+      ],
+      "sourceBoundChildEntry": true,
+      "typedObserveSuccessClaimed": false,
+      "waitForPollPendingClaimed": false,
+      "losslessCaptureClaimed": false,
+      "negativeEvidenceClaimed": false
+    },
+    "deadline": {
+      "nativeStartCompletedSequence": 263,
+      "childObserveCompletedSequence": 269,
+      "livePhysicalOwners": 5,
+      "completeFrozenCursor": true,
+      "droppedObservationsByPage": [
+        "182",
+        "182"
+      ],
+      "sourceBoundChildEntry": true,
+      "typedObserveSuccessClaimed": false,
+      "waitForPollPendingClaimed": false,
+      "losslessCaptureClaimed": false,
+      "negativeEvidenceClaimed": false
+    }
+  },
+  "diagnosticAuditEnvelope": {
+    "queuedOperations": 73,
+    "configUnitBytes": 4096,
+    "queuedBytes": 299008,
+    "ordinaryObservations": 18,
+    "perObservationEscrowBytes": 16384,
+    "concurrentControlQueryBytes": 4096,
+    "preCallIdlePremiseVerified": true,
+    "diskBytes": 16777216,
+    "records": 1024,
+    "queryOwners": 2,
+    "optionalObservationLossReported": true,
+    "productionAuditGuaranteeClaimed": false
+  },
+  "retirement": {
+    "actualAttempts": 17,
+    "physicalSamples": 17,
+    "physicalOwnersPerSample": 5,
+    "allPhysicalOwnersZero": true,
+    "activeProviderCountersPerSample": 18,
+    "allActiveProviderCountersZero": true,
+    "tenantUsageZero": true,
+    "nodeAndPeerCleanlyStoppedAndReaped": true,
+    "peerHTTPRequests": 0
+  },
+  "laterCIOnlyRepair": {
+    "sourceRevision": "4745793ea95f0c29b12631c3f3fdd716bcb3c7c4",
+    "paths": [
+      ".github/workflows/ci.yml",
+      "tools/ci/contracts/workflows/ci.yml/jobs/contracts.json",
+      "tools/tests/test_c_standard_combined.py",
+      "tools/tests/test_c_compiled_resources.py"
+    ],
+    "mockModuleControlsPassed": 19,
+    "readerSourceControlsPassed": 54,
+    "nativeProductionInputsChanged": false,
+    "nativeAuxiliaryMaterialsChanged": false,
+    "signedProgrammeRerun": false,
+    "genericCIQualificationClaimed": false
+  },
+  "retainedFailedOrigins": [
+    {
+      "sourceRevision": "157cd01af49865953e51fdaaebc8be7d22784ccf",
+      "run": 39726939565,
+      "job": 119652891364,
+      "artifact": 12403377407,
+      "archiveBytes": 1605341,
+      "archiveSha256": "sha256:578eec885acd457df90df5fe943036c9769e05449566d852f814436868dfb9da",
+      "actualRetirements": 13,
+      "status": "failed",
+      "reason": "Failed during child-entry audit; failure controls were not retained, so the actual audit refusal category remains unknown.",
+      "passingQualificationCredit": false
+    },
+    {
+      "sourceRevision": "a2b3bc4eaf200ef23d434e83c758b7155ff68cfc",
+      "run": 39729837948,
+      "job": 119662097067,
+      "artifact": 12404258698,
+      "archiveBytes": 1605823,
+      "archiveSha256": "sha256:1a08a041e57b09974578f31db17a9d55b4eb2b047cddb528a5b913f4c0d4cab1",
+      "actualRetirements": 13,
+      "status": "failed",
+      "reason": "bounded controls written before refusal but missing from upload",
+      "passingQualificationCredit": false
+    },
+    {
+      "sourceRevision": "c89db19b4a43c470b5789ed01bcf8b26edc5f6d4",
+      "run": 39730964054,
+      "job": 119665657164,
+      "artifact": 12404782752,
+      "archiveBytes": 1712327,
+      "archiveSha256": "sha256:c812ba18b5139fecba09d3386914d87eb7189732fe4276aab8b10dc364e05ffb",
+      "actualRetirements": 13,
+      "status": "failed",
+      "reason": "cumulative optional observation loss; mandatory child pair not established",
+      "passingQualificationCredit": false
+    },
+    {
+      "sourceRevision": "5a3a8828501c3e5e0cfc42ddd5f355f592c88b1d",
+      "run": 39733536127,
+      "job": 119673847965,
+      "artifact": 12405798672,
+      "archiveBytes": 1769232,
+      "archiveSha256": "sha256:232cd196a56920fd008f6f99fee11dffc84575e83d67169e40db4114d9f25ce4",
+      "actualRetirements": 13,
+      "status": "failed",
+      "reason": "positive-entry barrier still missing mandatory child pair under inherited diagnostic envelope",
+      "passingQualificationCredit": false
+    },
+    {
+      "sourceRevision": "e6494ac35113d7a874fa2016ac6d7af36e37b2e7",
+      "run": 39735699609,
+      "job": 119680739679,
+      "artifact": 12407615224,
+      "archiveBytes": 1712921,
+      "archiveSha256": "sha256:6a07944a64df5fd1444c9dcfe82cfa7b5348e72bc56336431f90a8d7818c5188",
+      "actualRetirements": 13,
+      "status": "failed",
+      "reason": "invalid-management-response at audit projection; rejected raw Native row was not captured",
+      "passingQualificationCredit": false
+    }
+  ],
+  "acceptanceCriteria": [
+    {
+      "criterion": 1,
+      "complete": false,
+      "scope": "Creation, identity, join, TLS and deferred child entry exercised; mutex/reentrant/condition/timed-wait subset remains unqualified."
+    },
+    {
+      "criterion": 2,
+      "complete": false,
+      "scope": "Selected guarded stack/context/Ready handoff and finish paths exercised; general callback reentrancy, unwind/setjmp and broader ABI qualification remain open."
+    },
+    {
+      "criterion": 3,
+      "complete": false,
+      "scope": "No compiled dependency checkpoint or synchronized CPU-loop progress qualification; unsupported static archives remain refused."
+    },
+    {
+      "criterion": 4,
+      "complete": false,
+      "scope": "Child-side observation with the parent join parked is positive evidence; independent work queues, blocking I/O, timeouts and lost-wakeup matrix remain open."
+    },
+    {
+      "criterion": 5,
+      "complete": false,
+      "scope": "Three children reach Native owners 8 with original affine accounting and retirement; full count/stack/queue/timer/nested/lazy cost matrix remains open."
+    },
+    {
+      "criterion": 6,
+      "complete": false,
+      "scope": "Normal root drain, cancellation, deadline, trap and fresh reuse exercised; sleep/timed waits/recurring callbacks/late completions remain open."
+    },
+    {
+      "criterion": 7,
+      "complete": false,
+      "scope": "No standard socket/DNS/read/write/poll/close or partial transfer/EOF/TLS qualification."
+    },
+    {
+      "criterion": 8,
+      "complete": false,
+      "scope": "Independent activation and Native grants exercised; no opaque stream or typed HTTP policy matrix qualified."
+    },
+    {
+      "criterion": 9,
+      "complete": false,
+      "scope": "Normal captured libc/compiler/recipe/component and final WIT/proof binding authenticated; broader ABI/native/C++/published-library compatibility remains open."
+    }
+  ],
+  "full744Qualified": false,
+  "unchangedPublishedLibraryQualified": false,
+  "transitiveWorkerTimerQualified": false,
+  "crossTenantReuseQualified": false,
+  "mutexConditionTimedWaitQualified": false,
+  "compiledLoopCheckpointsQualified": false,
+  "standardSocketsQualified": false,
+  "generalPOSIXQualified": false,
+  "losslessAuditClaimed": false,
+  "oldFailureReceiptsRewritten": false
+}
