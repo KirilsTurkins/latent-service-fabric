@@ -22,8 +22,8 @@ POSTIMAGES = {
         "bytes": 5980
     },
     "latent-dynamic-memory.patch": {
-        "sha256": "7174452516ad451c5f7057c75c80b96784a4e69b8a18943ef9a0385bc3ddc26f",
-        "bytes": 108391
+        "sha256": "930452d2cf9f9ebe50e7548394fd3fec5afe469d6d4d749825f6ba70b3b9b431",
+        "bytes": 109911
     },
     "src/runtime.rs": {
         "sha256": "3290f57919f6dc6b6f797ee55cd62504ce31e91500741501e261f2c7e4eac970",
@@ -66,16 +66,16 @@ POSTIMAGES = {
         "bytes": 16605
     },
     "src/runtime/limits.rs": {
-        "sha256": "0bcebb9240acae85704612e9a7a1e3c41bb2e64d774ce79eb0b75d0a55e0b813",
-        "bytes": 19412
+        "sha256": "32144e28f2dc4afee18490fb08521dd0f0d10bc3e66e00d7fc4592d56fca74fb",
+        "bytes": 19434
     },
     "src/runtime/native_memory.rs": {
-        "sha256": "0c897686b3c2a331282195e8660f6bc6d20f9901c6a036b44d47c8d7de411489",
-        "bytes": 9270
+        "sha256": "1b84d091f7437cc5a832a669ac3db1eb63bab1d5378231dfcc5276b070f9e9db",
+        "bytes": 9790
     },
     "src/runtime/store.rs": {
-        "sha256": "de302e728703c7c76c460edb877afcd26622ffce2f9ca4012ca70553c4cd7373",
-        "bytes": 105912
+        "sha256": "2f1fdec9c98190280d319f63f6310ba4a8581c8196d4a35cb658d7be2088d98f",
+        "bytes": 105934
     },
     "src/runtime/store/data.rs": {
         "sha256": "2203688a431803aebf3c227ec5e663e2a7bb42695455ce51920ea9f9240d3b32",
@@ -102,8 +102,8 @@ POSTIMAGES = {
         "bytes": 13753
     },
     "src/runtime/vm/table.rs": {
-        "sha256": "d83c0cafa69da8b7cddd07414db3f337ccc7e1a810d86208c29e493b851ae649",
-        "bytes": 41113
+        "sha256": "663756ebc9376a46f87eba43369367c1515c720bdf9c21ee11e120944a45e8f9",
+        "bytes": 41151
     }
 }
 DEPENDENCY = {"path": PROVIDER, "version": "=48.0.7", "default-features": False,

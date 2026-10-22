@@ -1,4 +1,5 @@
 use crate::prelude::*;
+use alloc::sync::Arc;
 
 /// Value returned by [`ResourceLimiter::instances`] default method
 pub const DEFAULT_INSTANCE_LIMIT: usize = 10000;

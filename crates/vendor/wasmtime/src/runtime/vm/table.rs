@@ -963,6 +963,7 @@ impl Table {
                 data,
                 size,
                 lazy_init,
+                ..
             })) => (
                 unsafe { slice::from_raw_parts(data.as_ptr().cast(), *size) },
                 *lazy_init,
@@ -986,6 +987,7 @@ impl Table {
                 data,
                 size,
                 lazy_init,
+                ..
             })) => (
                 unsafe { slice::from_raw_parts_mut(data.as_ptr().cast(), *size) },
                 *lazy_init,

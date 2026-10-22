@@ -1072,7 +1072,13 @@
 +}
 --- a/src/runtime/limits.rs
 +++ b/src/runtime/limits.rs
-@@ -6,6 +6,91 @@
+@@ -1,4 +1,5 @@
+ use crate::prelude::*;
++use alloc::sync::Arc;
+ 
+ /// Value returned by [`ResourceLimiter::instances`] default method
+ pub const DEFAULT_INSTANCE_LIMIT: usize = 10000;
+@@ -6,6 +7,91 @@
  pub const DEFAULT_TABLE_LIMIT: usize = 10000;
  /// Value returned by [`ResourceLimiter::memories`] default method
  pub const DEFAULT_MEMORY_LIMIT: usize = 10000;
@@ -1164,7 +1170,7 @@
  
  /// Used by hosts to limit resource consumption of instances.
  ///
-@@ -123,6 +208,16 @@
+@@ -123,6 +209,16 @@
      fn table_grow_failed(&mut self, error: crate::Error) -> Result<()> {
          log::debug!("ignoring table growth failure error: {error:?}");
          Ok(())
@@ -1181,7 +1187,7 @@
      }
  
      /// The maximum number of instances that can be created for a `Store`.
-@@ -197,6 +292,16 @@
+@@ -197,6 +293,16 @@
      fn table_grow_failed(&mut self, error: crate::Error) -> Result<()> {
          log::debug!("ignoring table growth failure error: {error:?}");
          Ok(())
@@ -1200,7 +1206,7 @@
      /// Identical to [`ResourceLimiter::instances`]`
 --- /dev/null
 +++ b/src/runtime/native_memory.rs
-@@ -0,0 +1,320 @@
+@@ -0,0 +1,337 @@
 +//! Affine ownership for selected invocation-created engine backing buffers.
 +//!
 +//! These wrappers expose element mutation, never the allocating container.
@@ -1209,6 +1215,7 @@
 +
 +use crate::prelude::*;
 +use crate::{NativeAllocation, NativeMemory};
++use alloc::sync::Arc;
 +use core::alloc::Layout;
 +use core::fmt;
 +use core::ops::{Deref, DerefMut, Index, IndexMut};
@@ -1472,6 +1479,13 @@
 +    pub(crate) fn iter_mut(&mut self) -> impl ExactSizeIterator<Item = (K, &mut V)> {
 +        self.values.iter_mut()
 +    }
++
++    pub(crate) fn get_disjoint_mut<const N: usize>(
++        &mut self,
++        indices: [K; N],
++    ) -> core::result::Result<[&mut V; N], core::slice::GetDisjointMutError> {
++        self.values.get_disjoint_mut(indices)
++    }
 +}
 +
 +impl<K: EntityRef, V> Deref for NativeMap<K, V> {
@@ -1491,6 +1505,15 @@
 +impl<K: EntityRef, V> IndexMut<K> for NativeMap<K, V> {
 +    fn index_mut(&mut self, key: K) -> &mut V {
 +        &mut self.values[key]
++    }
++}
++
++impl<'a, K: EntityRef, V> IntoIterator for &'a mut NativeMap<K, V> {
++    type Item = (K, &'a mut V);
++    type IntoIter = <&'a mut TryPrimaryMap<K, V> as IntoIterator>::IntoIter;
++
++    fn into_iter(self) -> Self::IntoIter {
++        (&mut self.values).into_iter()
 +    }
 +}
 +
@@ -1539,7 +1562,15 @@
  //!
  //! * `StoreInner<T>` - the first layer of the contents of a `Store<T>`, what's
  //!   stored inside the `Box`. This is the general Rust pattern when one struct
-@@ -196,6 +195,10 @@
+@@ -95,6 +94,7 @@
+ use crate::{BreakpointState, DebugHandler, FrameDataCache};
+ use crate::{Engine, Module, Val, ValRaw, module::ModuleRegistry};
+ use crate::{Global, Instance, Table};
++use alloc::sync::Arc;
+ use core::convert::Infallible;
+ use core::fmt;
+ #[cfg(any(feature = "async", feature = "gc"))]
+@@ -196,6 +196,10 @@
  pub struct Store<T: 'static> {
      // for comments about `ManuallyDrop`, see `Store::into_data`
      inner: ManuallyDrop<Box<StoreInner<T>>>,
@@ -1550,7 +1581,7 @@
  }
  
  #[derive(Copy, Clone, Debug)]
-@@ -358,6 +361,17 @@
+@@ -358,6 +362,17 @@
          }
      }
  
@@ -1568,7 +1599,7 @@
      pub(crate) fn table_grow_failed(&mut self, error: crate::Error) -> Result<()> {
          match self {
              Self::Sync(s) => s.table_grow_failed(error),
-@@ -437,6 +451,7 @@
+@@ -437,6 +452,7 @@
  /// necessary, allowing code to be monomorphic and compiled into the `wasmtime`
  /// crate itself.
  pub struct StoreOpaque {
@@ -1576,7 +1607,7 @@
      // This `StoreOpaque` structure has references to itself. These aren't
      // immediately evident, however, so we need to tell the compiler that it
      // contains self-references. This notably suppresses `noalias` annotations
-@@ -468,7 +483,7 @@
+@@ -468,7 +484,7 @@
      #[cfg(feature = "stack-switching")]
      continuations: Vec<Box<VMContRef>>,
  
@@ -1585,7 +1616,7 @@
  
      signal_handler: Option<SignalHandler>,
      modules: ModuleRegistry,
-@@ -719,18 +734,68 @@
+@@ -719,18 +735,68 @@
      /// memory allocation fails. See the `OutOfMemory` type's documentation for
      /// details on Wasmtime's out-of-memory handling.
      pub fn try_new(engine: &Engine, data: T) -> Result<Self> {
@@ -1656,7 +1687,7 @@
              signal_handler: None,
              gc_store: None,
              #[cfg(feature = "gc")]
-@@ -760,7 +825,7 @@
+@@ -760,7 +826,7 @@
              #[cfg(feature = "debug")]
              frame_data_cache: FrameDataCache::new(),
          };
@@ -1665,7 +1696,7 @@
              inner,
              limiter: None,
              call_hook: None,
-@@ -769,13 +834,21 @@
+@@ -769,13 +835,21 @@
              data_no_provenance: ManuallyDrop::new(data),
              #[cfg(feature = "debug")]
              debug_handler: None,
@@ -1689,7 +1720,7 @@
  
          // Wasmtime uses the callee argument to host functions to learn about
          // the original pointer to the `Store` itself, allowing it to
-@@ -806,7 +879,7 @@
+@@ -806,7 +880,7 @@
              let id = match result {
                  Ok(id) => id,
                  Err(e) => {
@@ -1698,7 +1729,7 @@
                          return Err(e);
                      }
                      panic!("instance allocator failed to allocate default callee")
-@@ -816,9 +889,7 @@
+@@ -816,9 +890,7 @@
              inner.default_caller_vmctx = default_caller_vmctx.into();
          }
  
@@ -1709,7 +1740,7 @@
      }
  
      /// Access the underlying `T` data owned by this `Store`.
-@@ -871,8 +942,14 @@
+@@ -871,8 +943,14 @@
          // there is a comment indicating this as well.
          unsafe {
              let mut inner = ManuallyDrop::take(&mut self.inner);
@@ -1725,7 +1756,7 @@
          }
      }
  
-@@ -2145,6 +2222,10 @@
+@@ -2145,6 +2223,10 @@
          Ok(ptr)
      }
  
@@ -1736,7 +1767,7 @@
      /// Constructs and executes an `InstanceAllocationRequest` and pushes the
      /// returned instance into the store.
      ///
-@@ -2427,6 +2508,8 @@
+@@ -2427,6 +2509,8 @@
          unsafe {
              ManuallyDrop::drop(&mut self.inner.data_no_provenance);
              ManuallyDrop::drop(&mut self.inner);
@@ -2704,7 +2735,23 @@
              Table::Dynamic(DynamicTable::Func(DynamicFuncTable { elements, .. })) => {
                  VMTableDefinition {
                      base: NonNull::new(elements.as_mut_ptr()).unwrap().cast().into(),
-@@ -875,7 +998,7 @@
+@@ -840,6 +963,7 @@
+                 data,
+                 size,
+                 lazy_init,
++                ..
+             })) => (
+                 unsafe { slice::from_raw_parts(data.as_ptr().cast(), *size) },
+                 *lazy_init,
+@@ -863,6 +987,7 @@
+                 data,
+                 size,
+                 lazy_init,
++                ..
+             })) => (
+                 unsafe { slice::from_raw_parts_mut(data.as_ptr().cast(), *size) },
+                 *lazy_init,
+@@ -875,7 +1000,7 @@
          assert_eq!(self.element_type(), TableElementType::GcRef);
          match self {
              Self::Dynamic(DynamicTable::GcRef(DynamicGcRefTable { elements, .. })) => elements,
@@ -2713,7 +2760,7 @@
                  &data.as_non_null().as_ref()[..*size]
              },
              _ => unreachable!(),
-@@ -888,7 +1011,7 @@
+@@ -888,7 +1013,7 @@
              Self::Dynamic(DynamicTable::Cont(DynamicContTable { elements, .. })) => unsafe {
                  slice::from_raw_parts(elements.as_ptr().cast(), elements.len())
              },
@@ -2722,7 +2769,7 @@
                  slice::from_raw_parts(data.as_ptr().cast(), *size)
              },
              _ => unreachable!(),
-@@ -901,7 +1024,7 @@
+@@ -901,7 +1026,7 @@
              Self::Dynamic(DynamicTable::Cont(DynamicContTable { elements, .. })) => unsafe {
                  slice::from_raw_parts_mut(elements.as_mut_ptr().cast(), elements.len())
              },
@@ -2731,7 +2778,7 @@
                  slice::from_raw_parts_mut(data.as_ptr().cast(), *size)
              },
              _ => unreachable!(),
-@@ -915,7 +1038,7 @@
+@@ -915,7 +1040,7 @@
          assert_eq!(self.element_type(), TableElementType::GcRef);
          match self {
              Self::Dynamic(DynamicTable::GcRef(DynamicGcRefTable { elements, .. })) => elements,
@@ -2740,7 +2787,7 @@
                  &mut data.as_non_null().as_mut()[..*size]
              },
              _ => unreachable!(),
-@@ -968,6 +1091,7 @@
+@@ -968,6 +1093,7 @@
      fn default() -> Self {
          Self::from(StaticFuncTable {
              data: SendSyncPtr::new(NonNull::from(&mut [])),

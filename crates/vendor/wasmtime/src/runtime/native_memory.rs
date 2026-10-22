@@ -6,6 +6,7 @@
 
 use crate::prelude::*;
 use crate::{NativeAllocation, NativeMemory};
+use alloc::sync::Arc;
 use core::alloc::Layout;
 use core::fmt;
 use core::ops::{Deref, DerefMut, Index, IndexMut};
@@ -269,6 +270,13 @@ impl<K: EntityRef, V> NativeMap<K, V> {
     pub(crate) fn iter_mut(&mut self) -> impl ExactSizeIterator<Item = (K, &mut V)> {
         self.values.iter_mut()
     }
+
+    pub(crate) fn get_disjoint_mut<const N: usize>(
+        &mut self,
+        indices: [K; N],
+    ) -> core::result::Result<[&mut V; N], core::slice::GetDisjointMutError> {
+        self.values.get_disjoint_mut(indices)
+    }
 }
 
 impl<K: EntityRef, V> Deref for NativeMap<K, V> {
@@ -288,6 +296,15 @@ impl<K: EntityRef, V> Index<K> for NativeMap<K, V> {
 impl<K: EntityRef, V> IndexMut<K> for NativeMap<K, V> {
     fn index_mut(&mut self, key: K) -> &mut V {
         &mut self.values[key]
+    }
+}
+
+impl<'a, K: EntityRef, V> IntoIterator for &'a mut NativeMap<K, V> {
+    type Item = (K, &'a mut V);
+    type IntoIter = <&'a mut TryPrimaryMap<K, V> as IntoIterator>::IntoIter;
+
+    fn into_iter(self) -> Self::IntoIter {
+        (&mut self.values).into_iter()
     }
 }
 
