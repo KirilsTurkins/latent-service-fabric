@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_host_codec_native.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Reviewed v8 appends five concrete host Future owner controls and two exact C canonical wait-route controls after all114 prior selectors; original recipes/products/assertions/commands retained, metadata fingerprints updated.",
+  "reviewReason": "Reviewed v9 appends five closed context reply ownership controls and two exact CLI native-thread audit projection controls after all121 prior selectors; original recipes/products/assertions/commands and prior Python guards retained.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "c5e19b86fc8707d2aae5da9d8f2d51d617111fe911bc7124149ed7a22b77506f"
+  "sha256": "8620467d96b7300855353ed544a17ab3271e0b2dabba47bc291c57a565e8cf81"
 }

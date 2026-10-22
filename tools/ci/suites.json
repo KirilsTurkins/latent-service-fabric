@@ -7452,7 +7452,12 @@
         "host::native_host_future_tests::actual_host_future_refusal_preserves_original_error_and_fresh_budget_reuse",
         "host::native_host_future_tests::actual_host_future_cancellation_cannot_credit_another_live_store",
         "host::native_host_future_tests::actual_host_future_callback_error_is_unchanged_and_its_box_retires",
-        "host::native_host_future_tests::actual_host_future_legacy_unaccounted_embedding_keeps_original_scalar_result"
+        "host::native_host_future_tests::actual_host_future_legacy_unaccounted_embedding_keeps_original_scalar_result",
+        "host::native_context_reply_tests::actual_context_reply_six_shapes_and_scalars_fit_original_one_mib_and_billion_fuel",
+        "host::native_context_reply_tests::actual_context_reply_original_refusal_keeps_exact_error_and_fresh_same_grant",
+        "host::native_context_reply_tests::actual_context_reply_pending_lower_cancellation_cannot_credit_another_store",
+        "host::native_context_reply_tests::actual_context_reply_guest_realloc_error_is_unchanged_and_owner_retires",
+        "host::native_context_reply_tests::actual_context_reply_empty_selection_and_phase1_keep_lazy_legacy_behavior"
       ],
       "expectedIgnored": [
         "cache::measurement::cache_lookup_collector",
@@ -7465,7 +7470,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 459,
+      "minimumCases": 464,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [
