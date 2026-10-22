@@ -301,6 +301,8 @@ enum Value {
     CContextSet,
     CThreadIndex,
     CThreadPromote,
+    CThreadSuspend,
+    CThreadResumeLater,
     Other,
 }
 #[derive(Clone)]
@@ -611,6 +613,8 @@ impl<'a> Graph<'a> {
                 } => Some(Value::CContextSet),
                 CanonicalFunction::ThreadIndex => Some(Value::CThreadIndex),
                 CanonicalFunction::ThreadYieldThenPromote => Some(Value::CThreadPromote),
+                CanonicalFunction::ThreadSuspend => Some(Value::CThreadSuspend),
+                CanonicalFunction::ThreadResumeLater => Some(Value::CThreadResumeLater),
                 _ => None,
             };
             if let Some(value) = builtin {
@@ -965,6 +969,8 @@ impl<'a> Graph<'a> {
                         "[context-set-1]" => Value::CContextSet,
                         "[thread-index]" => Value::CThreadIndex,
                         "[thread-yield-then-promote]" => Value::CThreadPromote,
+                        "[thread-suspend]" => Value::CThreadSuspend,
+                        "[thread-resume-later]" => Value::CThreadResumeLater,
                         NEW => continue,
                         _ => return Err("c-component-unknown-root-intrinsic"),
                     };
