@@ -535,8 +535,26 @@ UPSTREAM_WASMTIME_PLACEHOLDERS = {
 }
 
 
+# This one file now contains maintained allocation notifications. Its sole
+# placeholder remains the complete unchanged upstream shared/pooling branch.
+# The original file and block were checked against the checksum-pinned 48.0.7
+# registry archive; the complete maintained tree is authenticated before use.
+UPSTREAM_WASMTIME_MEMORY_IDENTITY = {
+    "sha256": "90b8bd49d3dbe21ae6e4060e0ec21815039a2fbe52db0ceb7c4712cb93a3c8b9",
+    "bytes": 30649,
+}
+UPSTREAM_WASMTIME_MEMORY_PLACEHOLDER = '''        Ok(if ty.shared {
+            // FIXME(#4244): not supported with the pooling allocator (which
+            // `new_static` is always used with), see `MemoryPool::validate` as
+            // well).
+            todo!("using shared memory with the pooling allocator is a work in progress");
+        } else {
+            Memory::Local(memory)
+        })'''
+
+
 def authenticated_wasmtime_placeholders() -> dict[Path, dict[str, int]]:
-    """Recognize eight original occurrences in seven unchanged upstream files."""
+    """Recognize eight unchanged upstream occurrences in seven sealed paths."""
     sys.path.insert(0, str(ROOT))
     try:
         from tools import host_codec_wasmtime as provider
@@ -551,10 +569,14 @@ def authenticated_wasmtime_placeholders() -> dict[Path, dict[str, int]]:
                     for row in record["originalFiles"]}
         allowed = {}
         for name, counts in UPSTREAM_WASMTIME_PLACEHOLDERS.items():
-            if checked["files"][name] != original[name]:
-                raise ValueError("placeholder-source-must-be-unchanged-upstream")
             relative = Path(provider.PROVIDER) / name
             text = (ROOT / relative).read_text(encoding="utf-8")
+            if name == "src/runtime/vm/memory.rs":
+                if (original[name] != UPSTREAM_WASMTIME_MEMORY_IDENTITY
+                        or text.count(UPSTREAM_WASMTIME_MEMORY_PLACEHOLDER) != 1):
+                    raise ValueError("placeholder-block-must-be-unchanged-upstream")
+            elif checked["files"][name] != original[name]:
+                raise ValueError("placeholder-source-must-be-unchanged-upstream")
             if any(text.count(token) != count for token, count in counts.items()):
                 raise ValueError("upstream-placeholder-occurrence-drift")
             allowed[relative] = counts

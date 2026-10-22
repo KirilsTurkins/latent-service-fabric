@@ -509,9 +509,167 @@
              }
          }
      }
+--- a/src/runtime/component/instance.rs
++++ b/src/runtime/component/instance.rs
+@@ -1,5 +1,6 @@
+ use crate::component::func::HostFunc;
+ use crate::component::matching::InstanceType;
++use crate::component::resource_types::ResourceTypes;
+ use crate::component::store::{ComponentInstanceId, StoreComponentInstanceId};
+ use crate::component::{
+     Component, ComponentExportIndex, ComponentNamedList, Func, Lift, Lower, ResourceType,
+@@ -687,8 +688,6 @@
+     },
+ }
+
+-pub type ImportedResources = TryPrimaryMap<ResourceIndex, ResourceType>;
+-
+ impl<'a> Instantiator<'a> {
+     fn new(
+         component: &'a Component,
+@@ -698,13 +697,18 @@
+         let env_component = component.env_component();
+         let (modules, engine, breakpoints) = store.modules_and_engine_and_breakpoints_mut();
+         modules.register_component(component, engine, breakpoints)?;
+-        let imported_resources: ImportedResources =
+-            TryPrimaryMap::with_capacity(env_component.imported_resources.len())?;
++        let memory = store.native_memory();
++        let capacity = if memory.is_some() {
++            env_component.num_resources as usize
++        } else {
++            env_component.imported_resources.len()
++        };
++        let imported_resources = ResourceTypes::with_capacity(capacity, memory)?;
+
+         let instance = ComponentInstance::new(
+             store.store_data().components.next_component_instance_id(),
+             component,
+-            try_new::<Arc<_>>(imported_resources)?,
++            imported_resources,
+             imports,
+             store.traitobj(),
+         )?;
+@@ -1037,16 +1041,11 @@
+         store.store_data_mut().component_instance_mut(self.id)
+     }
+
+-    // NB: This method is only intended to be called during the instantiation
+-    // process because the `Arc::get_mut` here is fallible and won't generally
+-    // succeed once the instance has been handed to the embedder. Before that
+-    // though it should be guaranteed that the single owning reference currently
+-    // lives within the `ComponentInstance` that's being built.
+-    fn instance_resource_types_mut<'b>(
+-        &self,
+-        store: &'b mut StoreOpaque,
+-    ) -> &'b mut ImportedResources {
+-        Arc::get_mut(self.instance_mut(store).resource_types_mut()).unwrap()
++    // Mutation is confined to instantiation, before the private shared handle
++    // is cloned into exported type metadata or an InstancePre. ResourceTypes
++    // preserves the original sole-strong-reference assertion on each push.
++    fn instance_resource_types_mut<'b>(&self, store: &'b mut StoreOpaque) -> &'b mut ResourceTypes {
++        self.instance_mut(store).resource_types_mut()
+     }
+ }
+
+@@ -1061,7 +1060,7 @@
+ pub struct InstancePre<T: 'static> {
+     component: Component,
+     imports: Arc<PrimaryMap<RuntimeImportIndex, RuntimeImport>>,
+-    resource_types: Arc<TryPrimaryMap<ResourceIndex, ResourceType>>,
++    resource_types: ResourceTypes,
+     asyncness: Asyncness,
+     _marker: marker::PhantomData<fn() -> T>,
+ }
+@@ -1089,7 +1088,7 @@
+     pub(crate) unsafe fn new_unchecked(
+         component: Component,
+         imports: Arc<PrimaryMap<RuntimeImportIndex, RuntimeImport>>,
+-        resource_types: Arc<TryPrimaryMap<ResourceIndex, ResourceType>>,
++        resource_types: ResourceTypes,
+     ) -> InstancePre<T> {
+         let mut asyncness = Asyncness::No;
+         for (_, import) in imports.iter() {
+--- a/src/runtime/component/linker.rs
++++ b/src/runtime/component/linker.rs
+@@ -3,6 +3,7 @@
+ use crate::component::func::HostFunc;
+ use crate::component::instance::RuntimeImport;
+ use crate::component::matching::{InstanceType, TypeChecker};
++use crate::component::resource_types::ResourceTypes;
+ use crate::component::types;
+ use crate::component::{
+     Component, ComponentNamedList, Instance, InstancePre, Lift, Lower, ResourceType, Val,
+@@ -169,7 +170,7 @@
+             engine: &self.engine,
+             types: component.types(),
+             strings: &self.strings,
+-            imported_resources: try_new::<Arc<_>>(TryPrimaryMap::new())?,
++            imported_resources: ResourceTypes::new()?,
+         };
+
+         // Walk over the component's list of import names and use that to lookup
+--- a/src/runtime/component/matching.rs
++++ b/src/runtime/component/matching.rs
+@@ -2,24 +2,23 @@
+ use crate::component::ResourceType;
+ use crate::component::func::HostFunc;
+ use crate::component::linker::Definition;
++use crate::component::resource_types::ResourceTypes;
+ use crate::component::types::{FutureType, StreamType};
+ use crate::runtime::vm::component::ComponentInstance;
+ use crate::types::matching;
+ use crate::{Engine, prelude::*};
+ use alloc::sync::Arc;
+ use wasmtime_environ::component::{
+-    ComponentTypes, NameMap, ResourceIndex, TypeComponentInstance, TypeDef, TypeFuncIndex,
+-    TypeFutureTableIndex, TypeModule, TypeResourceTable, TypeResourceTableIndex,
+-    TypeStreamTableIndex,
++    ComponentTypes, NameMap, TypeComponentInstance, TypeDef, TypeFuncIndex, TypeFutureTableIndex,
++    TypeModule, TypeResourceTable, TypeResourceTableIndex, TypeStreamTableIndex,
+ };
+-use wasmtime_environ::prelude::TryPrimaryMap;
+ use wasmtime_environ::{Atom, StringPool};
+
+ pub struct TypeChecker<'a> {
+     pub engine: &'a Engine,
+     pub types: &'a Arc<ComponentTypes>,
+     pub strings: &'a StringPool,
+-    pub imported_resources: Arc<TryPrimaryMap<ResourceIndex, ResourceType>>,
++    pub imported_resources: ResourceTypes,
+ }
+
+ #[derive(Copy, Clone)]
+@@ -32,7 +31,7 @@
+     /// If this isn't present then resource types are considered "abstract" and
+     /// un-intantiated. This doesn't refer to a concrete instantiated component,
+     /// but rather an abstract component type.
+-    pub resources: Option<&'a Arc<TryPrimaryMap<ResourceIndex, ResourceType>>>,
++    pub resources: Option<&'a ResourceTypes>,
+ }
+
+ impl TypeChecker<'_> {
+@@ -95,8 +94,7 @@
+                     // succeed since `imported_resources` has not yet been
+                     // cloned.
+                     None => {
+-                        let resources = Arc::get_mut(&mut self.imported_resources).unwrap();
+-                        let id = resources.push(*actual)?;
++                        let id = self.imported_resources.push(*actual)?;
+                         assert_eq!(id, i);
+                     }
+
 --- a/src/runtime/component/mod.rs
 +++ b/src/runtime/component/mod.rs
-@@ -810,3 +810,10 @@
+@@ -111,6 +111,8 @@
+ mod linker;
+ mod matching;
+ mod resource_table;
++mod resource_types;
++pub(crate) use self::resource_types::ResourceTypes;
+ mod resources;
+ mod storage;
+ pub(crate) mod store;
+@@ -810,3 +812,9 @@
 
  #[cfg(not(feature = "component-model-async"))]
  pub(crate) use concurrent_disabled as concurrent;
@@ -520,8 +678,150 @@
 +pub use dynamic_memory::DynamicValueMemory;
 +
 +/// Native source cohort for the maintained original-owner dynamic value extension.
-+pub const DYNAMIC_VALUE_MEMORY_COHORT: &str =
-+    "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-memory-v4";
++pub const DYNAMIC_VALUE_MEMORY_COHORT: &str = "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-memory-v7";
+--- /dev/null
++++ b/src/runtime/component/resource_types.rs
+@@ -0,0 +1,140 @@
++//! Instance resource substitutions can escape their Store in type/InstancePre
++//! handles. Keep the allocation owner with every private strong handle, without
++//! carrying the Store's native factory past Store destruction.
++
++use crate::component::ResourceType;
++use crate::native_memory::{Memory, NativeMap};
++use crate::{NativeAllocation, prelude::*};
++use alloc::sync::Arc;
++use core::alloc::Layout;
++use core::mem::ManuallyDrop;
++use core::ops::Deref;
++use core::sync::atomic::AtomicUsize;
++use wasmtime_environ::component::ResourceIndex;
++
++/// Private implementation type also used by the hidden instance-type view.
++/// No Arc or Weak handle is exposed: every strong clone uses the drop below.
++pub struct ResourceTypes {
++    inner: Inner,
++}
++
++enum Inner {
++    Legacy(Arc<TryPrimaryMap<ResourceIndex, ResourceType>>),
++    Accounted(ManuallyDrop<Arc<Accounted>>),
++}
++
++struct Accounted {
++    values: ManuallyDrop<NativeMap<ResourceIndex, ResourceType>>,
++    allocation: ManuallyDrop<Box<dyn NativeAllocation>>,
++    capacity: usize,
++}
++
++impl Drop for Accounted {
++    fn drop(&mut self) {
++        // The Arc allocation is already freed by into_inner. If a backing
++        // destructor unwinds, retain the outer owner conservatively.
++        unsafe {
++            ManuallyDrop::drop(&mut self.values);
++            ManuallyDrop::drop(&mut self.allocation);
++        }
++    }
++}
++
++impl ResourceTypes {
++    pub(crate) fn new() -> Result<Self> {
++        Self::with_capacity(0, None)
++    }
++
++    pub(crate) fn with_capacity(capacity: usize, memory: Memory) -> Result<Self> {
++        let Some(memory) = memory else {
++            return Ok(Self {
++                inner: Inner::Legacy(try_new::<Arc<_>>(TryPrimaryMap::with_capacity(capacity)?)?),
++            });
++        };
++
++        // num_resources is the exact finite total of imported and defined
++        // resources. All later pushes use these prepaid slots; none can grow.
++        let mut values = NativeMap::with_capacity(capacity, Some(memory.clone()))?;
++        values.detach_factory();
++        // The pinned alloc::sync::ArcInner has two AtomicUsize counters then T.
++        // Include alignment/padding, without depending on Arc raw-pointer ABI.
++        let bytes = Layout::new::<[AtomicUsize; 2]>()
++            .extend(Layout::new::<Accounted>())
++            .map_err(|_| OutOfMemory::new(usize::MAX))?
++            .0
++            .pad_to_align()
++            .size();
++        let allocation = memory.reserve(bytes)?;
++        let shared = try_new::<Arc<_>>(Accounted {
++            values: ManuallyDrop::new(values),
++            allocation: ManuallyDrop::new(allocation),
++            capacity,
++        })?;
++        let mut result = Self {
++            inner: Inner::Accounted(ManuallyDrop::new(shared)),
++        };
++        // Install the last-strong drop path before invoking the confirmation
++        // callback, so its unwind cannot refund an allocated Arc prematurely.
++        if let Inner::Accounted(shared) = &mut result.inner {
++            Arc::get_mut(shared).unwrap().allocation.allocated();
++        }
++        Ok(result)
++    }
++
++    pub(crate) fn push(&mut self, value: ResourceType) -> Result<ResourceIndex> {
++        match &mut self.inner {
++            Inner::Legacy(shared) => Ok(Arc::get_mut(shared).unwrap().push(value)?),
++            Inner::Accounted(shared) => {
++                let inner = Arc::get_mut(shared).unwrap();
++                ensure!(
++                    inner.values.len() < inner.capacity,
++                    "resource-type-map-capacity"
++                );
++                inner.values.push(value)
++            }
++        }
++    }
++
++    pub(crate) fn ptr_eq(a: &Self, b: &Self) -> bool {
++        match (&a.inner, &b.inner) {
++            (Inner::Legacy(a), Inner::Legacy(b)) => Arc::ptr_eq(a, b),
++            (Inner::Accounted(a), Inner::Accounted(b)) => Arc::ptr_eq(a, b),
++            _ => false,
++        }
++    }
++}
++
++impl Clone for ResourceTypes {
++    fn clone(&self) -> Self {
++        Self {
++            inner: match &self.inner {
++                Inner::Legacy(shared) => Inner::Legacy(shared.clone()),
++                Inner::Accounted(shared) => Inner::Accounted(ManuallyDrop::new(Arc::clone(shared))),
++            },
++        }
++    }
++}
++
++impl Deref for ResourceTypes {
++    type Target = TryPrimaryMap<ResourceIndex, ResourceType>;
++
++    fn deref(&self) -> &Self::Target {
++        match &self.inner {
++            Inner::Legacy(shared) => shared,
++            Inner::Accounted(shared) => &shared.values,
++        }
++    }
++}
++
++impl Drop for ResourceTypes {
++    fn drop(&mut self) {
++        if let Inner::Accounted(shared) = &mut self.inner {
++            // All strong clones take this path and no Weak can escape. The
++            // standard into_inner guarantee selects exactly one last payload,
++            // even when several handles are destroyed concurrently. Its Arc
++            // allocation is freed before Accounted drops backing and owners.
++            let shared = unsafe { ManuallyDrop::take(shared) };
++            drop(Arc::into_inner(shared));
++        }
++    }
++}
 --- a/src/runtime/component/store.rs
 +++ b/src/runtime/component/store.rs
 @@ -1,5 +1,6 @@
@@ -569,6 +869,34 @@
          let expected = data.get().id();
          let ret = self.components.instances.push(Some(data))?;
          assert_eq!(expected, ret);
+--- a/src/runtime/component/types.rs
++++ b/src/runtime/component/types.rs
+@@ -3,6 +3,7 @@
+ #[cfg(feature = "component-model-async")]
+ use crate::component::ComponentType;
+ use crate::component::matching::InstanceType;
++use crate::component::resource_types::ResourceTypes;
+ use crate::{Engine, ExternType, FuncType, prelude::*};
+ use alloc::sync::Arc;
+ use core::fmt;
+@@ -42,7 +43,7 @@
+ struct Handle<T> {
+     index: T,
+     types: Arc<ComponentTypes>,
+-    resources: Option<Arc<TryPrimaryMap<ResourceIndex, ResourceType>>>,
++    resources: Option<ResourceTypes>,
+ }
+
+ impl<T> Handle<T> {
+@@ -72,7 +73,7 @@
+         (self.index == other.index
+             && Arc::ptr_eq(&self.types, &other.types)
+             && match (&self.resources, &other.resources) {
+-                (Some(a), Some(b)) => Arc::ptr_eq(a, b),
++                (Some(a), Some(b)) => ResourceTypes::ptr_eq(a, b),
+                 (None, None) => true,
+                 _ => false,
+             })
 --- a/src/runtime/component/values.rs
 +++ b/src/runtime/component/values.rs
 @@ -1,3 +1,4 @@
@@ -1266,7 +1594,25 @@
 
  /// Used by hosts to limit resource consumption of instances.
  ///
-@@ -123,6 +209,16 @@
+@@ -73,6 +159,17 @@
+         maximum: Option<usize>,
+     ) -> Result<bool>;
+
++    /// Confirms that a permitted initial linear-memory allocation or growth
++    /// succeeded. Called after the actual accessible bytes exist, before later
++    /// instance initialization can allocate native storage. The default keeps
++    /// existing embeddings unchanged; this notification cannot refuse success.
++    fn memory_allocated(&mut self) {}
++
++    /// Releases a pending initial-memory admission when its allocation failed.
++    /// The original allocation error is propagated unchanged. Already confirmed
++    /// memory is unaffected; growth failures use `memory_grow_failed` instead.
++    fn memory_allocation_failed(&mut self) {}
++
+     /// Notifies the resource limiter that growing a linear memory, permitted by
+     /// the `memory_growing` method, has failed.
+     ///
+@@ -123,6 +220,16 @@
      fn table_grow_failed(&mut self, error: crate::Error) -> Result<()> {
          log::debug!("ignoring table growth failure error: {error:?}");
          Ok(())
@@ -1283,7 +1629,20 @@
      }
 
      /// The maximum number of instances that can be created for a `Store`.
-@@ -197,6 +293,16 @@
+@@ -179,6 +286,12 @@
+         maximum: Option<usize>,
+     ) -> Result<bool>;
+
++    /// Identical to [`ResourceLimiter::memory_allocated`].
++    fn memory_allocated(&mut self) {}
++
++    /// Identical to [`ResourceLimiter::memory_allocation_failed`].
++    fn memory_allocation_failed(&mut self) {}
++
+     /// Identical to [`ResourceLimiter::memory_grow_failed`]
+     fn memory_grow_failed(&mut self, error: crate::Error) -> Result<()> {
+         log::debug!("ignoring memory growth failure error: {error:?}");
+@@ -197,6 +310,16 @@
      fn table_grow_failed(&mut self, error: crate::Error) -> Result<()> {
          log::debug!("ignoring table growth failure error: {error:?}");
          Ok(())
@@ -1862,7 +2221,7 @@
 
 --- /dev/null
 +++ b/src/runtime/native_memory.rs
-@@ -0,0 +1,379 @@
+@@ -0,0 +1,386 @@
 +//! Affine ownership for selected invocation-created engine backing buffers.
 +//!
 +//! These wrappers expose element mutation, never the allocating container.
@@ -2137,6 +2496,13 @@
 +        })
 +    }
 +
++    /// A private fixed-capacity wrapper may discard the factory only after it
++    /// has prepaid all slots and prevents every subsequent capacity increase.
++    /// The affine backing owner stays with this map independently of factory.
++    pub(crate) fn detach_factory(&mut self) {
++        self.memory = None;
++    }
++
 +    pub(crate) fn reserve(&mut self, additional: usize) -> Result<()> {
 +        if self.memory.is_none() {
 +            return Ok(self.values.reserve(additional)?);
@@ -2279,10 +2645,36 @@
  }
 
  #[derive(Copy, Clone, Debug)]
-@@ -358,6 +362,17 @@
+@@ -337,6 +341,22 @@
          }
      }
 
++    pub(crate) fn memory_allocated(&mut self) {
++        match self {
++            Self::Sync(s) => s.memory_allocated(),
++            #[cfg(feature = "async")]
++            Self::Async(s) => s.memory_allocated(),
++        }
++    }
++
++    pub(crate) fn memory_allocation_failed(&mut self) {
++        match self {
++            Self::Sync(s) => s.memory_allocation_failed(),
++            #[cfg(feature = "async")]
++            Self::Async(s) => s.memory_allocation_failed(),
++        }
++    }
++
+     pub(crate) fn memory_grow_failed(&mut self, error: crate::Error) -> Result<()> {
+         match self {
+             Self::Sync(s) => s.memory_grow_failed(error),
+@@ -355,6 +375,17 @@
+             Self::Sync(s) => s.table_growing(current, desired, maximum),
+             #[cfg(feature = "async")]
+             Self::Async(s) => s.table_growing(current, desired, maximum).await,
++        }
++    }
++
 +    pub(crate) fn table_allocating(
 +        &mut self,
 +        bytes: usize,
@@ -2291,13 +2683,10 @@
 +            Self::Sync(s) => s.table_allocating(bytes),
 +            #[cfg(feature = "async")]
 +            Self::Async(s) => s.table_allocating(bytes),
-+        }
-+    }
-+
-     pub(crate) fn table_grow_failed(&mut self, error: crate::Error) -> Result<()> {
-         match self {
-             Self::Sync(s) => s.table_grow_failed(error),
-@@ -437,6 +452,7 @@
+         }
+     }
+
+@@ -437,6 +468,7 @@
  /// necessary, allowing code to be monomorphic and compiled into the `wasmtime`
  /// crate itself.
  pub struct StoreOpaque {
@@ -2305,7 +2694,7 @@
      // This `StoreOpaque` structure has references to itself. These aren't
      // immediately evident, however, so we need to tell the compiler that it
      // contains self-references. This notably suppresses `noalias` annotations
-@@ -468,7 +484,7 @@
+@@ -468,7 +500,7 @@
      #[cfg(feature = "stack-switching")]
      continuations: Vec<Box<VMContRef>>,
 
@@ -2314,7 +2703,7 @@
 
      signal_handler: Option<SignalHandler>,
      modules: ModuleRegistry,
-@@ -719,24 +735,74 @@
+@@ -719,24 +751,74 @@
      /// memory allocation fails. See the `OutOfMemory` type's documentation for
      /// details on Wasmtime's out-of-memory handling.
      pub fn try_new(engine: &Engine, data: T) -> Result<Self> {
@@ -2393,7 +2782,7 @@
              host_globals: TryPrimaryMap::new(),
              instance_count: 0,
              instance_limit: crate::DEFAULT_INSTANCE_LIMIT,
-@@ -760,7 +826,7 @@
+@@ -760,7 +842,7 @@
              #[cfg(feature = "debug")]
              frame_data_cache: FrameDataCache::new(),
          };
@@ -2402,7 +2791,7 @@
              inner,
              limiter: None,
              call_hook: None,
-@@ -769,13 +835,21 @@
+@@ -769,13 +851,21 @@
              data_no_provenance: ManuallyDrop::new(data),
              #[cfg(feature = "debug")]
              debug_handler: None,
@@ -2426,7 +2815,7 @@
 
          // Wasmtime uses the callee argument to host functions to learn about
          // the original pointer to the `Store` itself, allowing it to
-@@ -806,7 +880,7 @@
+@@ -806,7 +896,7 @@
              let id = match result {
                  Ok(id) => id,
                  Err(e) => {
@@ -2435,7 +2824,7 @@
                          return Err(e);
                      }
                      panic!("instance allocator failed to allocate default callee")
-@@ -816,9 +890,7 @@
+@@ -816,9 +906,7 @@
              inner.default_caller_vmctx = default_caller_vmctx.into();
          }
 
@@ -2446,7 +2835,7 @@
      }
 
      /// Access the underlying `T` data owned by this `Store`.
-@@ -871,8 +943,14 @@
+@@ -871,8 +959,14 @@
          // there is a comment indicating this as well.
          unsafe {
              let mut inner = ManuallyDrop::take(&mut self.inner);
@@ -2462,7 +2851,7 @@
          }
      }
 
-@@ -2145,6 +2223,10 @@
+@@ -2145,6 +2239,10 @@
          Ok(ptr)
      }
 
@@ -2473,7 +2862,7 @@
      /// Constructs and executes an `InstanceAllocationRequest` and pushes the
      /// returned instance into the store.
      ///
-@@ -2427,6 +2509,8 @@
+@@ -2427,6 +2525,8 @@
          unsafe {
              ManuallyDrop::drop(&mut self.inner.data_no_provenance);
              ManuallyDrop::drop(&mut self.inner);
@@ -2737,7 +3126,13 @@
 +}
 --- a/src/runtime/vm/component.rs
 +++ b/src/runtime/vm/component.rs
-@@ -12,6 +12,7 @@
+@@ -7,11 +7,12 @@
+ //! cranelift-compiled adapters, will use this `VMComponentContext` as well.
+
+ use crate::Result;
+-use crate::component::{Component, Instance, InstancePre, ResourceType, RuntimeImport};
++use crate::component::{Component, Instance, InstancePre, ResourceTypes, RuntimeImport};
+ use crate::module::ModuleRegistry;
  #[cfg(feature = "component-model-async")]
  use crate::runtime::component::concurrent::ConcurrentInstanceState;
  use crate::runtime::component::{ComponentInstanceId, RuntimeInstance};
@@ -2745,15 +3140,16 @@
  use crate::runtime::vm::instance::{InstanceLayout, OwnedInstance, OwnedVMContext};
  use crate::runtime::vm::vmcontext::VMFunctionBody;
  use crate::runtime::vm::{
-@@ -28,7 +29,6 @@
+@@ -28,8 +29,6 @@
  use core::pin::Pin;
  use core::ptr::NonNull;
  use wasmtime_environ::component::*;
 -use wasmtime_environ::error::OutOfMemory;
- use wasmtime_environ::prelude::TryPrimaryMap;
+-use wasmtime_environ::prelude::TryPrimaryMap;
  use wasmtime_environ::{HostPtr, PrimaryMap, VMSharedTypeIndex};
 
-@@ -130,11 +130,11 @@
+ #[allow(
+@@ -130,15 +129,15 @@
 
      /// Contains state specific to each (sub-)component instance within this
      /// top-level instance.
@@ -2767,8 +3163,17 @@
 
      /// Storage for the type information about resources within this component
      /// instance.
-@@ -322,35 +322,48 @@
-         resource_types: Arc<TryPrimaryMap<ResourceIndex, ResourceType>>,
+-    resource_types: Arc<TryPrimaryMap<ResourceIndex, ResourceType>>,
++    resource_types: ResourceTypes,
+
+     /// Arguments that this instance used to be instantiated.
+     ///
+@@ -319,38 +318,51 @@
+     pub(crate) fn new(
+         id: ComponentInstanceId,
+         component: &Component,
+-        resource_types: Arc<TryPrimaryMap<ResourceIndex, ResourceType>>,
++        resource_types: ResourceTypes,
          imports: &Arc<PrimaryMap<RuntimeImportIndex, RuntimeImport>>,
          store: NonNull<dyn VMStore>,
 -    ) -> Result<OwnedComponentInstance, OutOfMemory> {
@@ -2830,7 +3235,24 @@
          }
          Ok(ret)
      }
-@@ -863,7 +876,7 @@
+@@ -826,14 +838,12 @@
+     }
+
+     /// Returns a reference to the resource type information.
+-    pub fn resource_types(&self) -> &Arc<TryPrimaryMap<ResourceIndex, ResourceType>> {
++    pub fn resource_types(&self) -> &ResourceTypes {
+         &self.resource_types
+     }
+
+     /// Returns a mutable reference to the resource type information.
+-    pub fn resource_types_mut(
+-        self: Pin<&mut Self>,
+-    ) -> &mut Arc<TryPrimaryMap<ResourceIndex, ResourceType>> {
++    pub fn resource_types_mut(self: Pin<&mut Self>) -> &mut ResourceTypes {
+         // SAFETY: we've chosen the `Pin` guarantee of `Self` to not apply to
+         // the map returned.
+         unsafe { &mut self.get_unchecked_mut().resource_types }
+@@ -863,7 +873,7 @@
      pub fn instance_states(
          self: Pin<&mut Self>,
      ) -> (
@@ -2839,7 +3261,7 @@
          &ComponentTypes,
      ) {
          // safety: we've chosen the `pin` guarantee of `self` to not apply to
-@@ -909,10 +922,7 @@
+@@ -909,10 +919,7 @@
 
      /// Pushes a new runtime instance that's been created into
      /// `self.instances`.
@@ -2851,7 +3273,7 @@
          self.instances_mut().push(id)
      }
 
-@@ -926,7 +936,7 @@
+@@ -926,7 +933,7 @@
          self.instances[idx]
      }
 
@@ -2860,7 +3282,7 @@
          // SAFETY: we've chosen the `Pin` guarantee of `Self` to not apply to
          // the map returned.
          unsafe { &mut self.get_unchecked_mut().instances }
-@@ -1010,11 +1020,9 @@
+@@ -1010,11 +1017,9 @@
      /// Moves the `self` pointer backwards to the `ComponentInstance` pointer
      /// that this `VMComponentContext` trails.
      pub fn instance(&self) -> *mut ComponentInstance {
@@ -3267,6 +3689,78 @@
                  self.pool
                      .index_allocator
                      .free(SlotId(self.allocation_index.0), 0);
+--- a/src/runtime/vm/memory.rs
++++ b/src/runtime/vm/memory.rs
+@@ -243,13 +243,28 @@
+         engine: &Engine,
+         creator: &dyn RuntimeMemoryCreator,
+         memory_image: Option<&Arc<MemoryImage>>,
+-        limiter: Option<&mut StoreResourceLimiter<'_>>,
++        mut limiter: Option<&mut StoreResourceLimiter<'_>>,
+         kind: MemoryKind,
+     ) -> Result<Self> {
+-        let (minimum, maximum) = Self::limit_new(ty, limiter).await?;
++        let (minimum, maximum) = Self::limit_new(ty, limiter.as_deref_mut())
++            .await
++            .inspect_err(|_| {
++                if let Some(limiter) = limiter.as_deref_mut() {
++                    limiter.memory_allocation_failed();
++                }
++            })?;
+         let tunables = engine.tunables();
+         let memory_tunables = MemoryTunables::new(tunables, kind);
+-        let allocation = creator.new_memory(ty, &memory_tunables, minimum, maximum)?;
++        let allocation = creator
++            .new_memory(ty, &memory_tunables, minimum, maximum)
++            .inspect_err(|_| {
++                if let Some(limiter) = limiter.as_deref_mut() {
++                    limiter.memory_allocation_failed();
++                }
++            })?;
++        if let Some(limiter) = limiter {
++            limiter.memory_allocated();
++        }
+
+         let memory = LocalMemory::new(ty, &memory_tunables, allocation, memory_image)?;
+         Ok(if ty.shared {
+@@ -267,10 +282,24 @@
+         base: MemoryBase,
+         base_capacity: usize,
+         memory_image: MemoryImageSlot,
+-        limiter: Option<&mut StoreResourceLimiter<'_>>,
++        mut limiter: Option<&mut StoreResourceLimiter<'_>>,
+     ) -> Result<Self> {
+-        let (minimum, maximum) = Self::limit_new(ty, limiter).await?;
+-        let pooled_memory = StaticMemory::new(base, base_capacity, minimum, maximum)?;
++        let (minimum, maximum) = Self::limit_new(ty, limiter.as_deref_mut())
++            .await
++            .inspect_err(|_| {
++                if let Some(limiter) = limiter.as_deref_mut() {
++                    limiter.memory_allocation_failed();
++                }
++            })?;
++        let pooled_memory =
++            StaticMemory::new(base, base_capacity, minimum, maximum).inspect_err(|_| {
++                if let Some(limiter) = limiter.as_deref_mut() {
++                    limiter.memory_allocation_failed();
++                }
++            })?;
++        if let Some(limiter) = limiter {
++            limiter.memory_allocated();
++        }
+         let allocation = try_new::<Box<_>>(pooled_memory)?;
+
+         // Configure some defaults a bit differently for this memory within the
+@@ -706,6 +735,9 @@
+
+         match result {
+             Ok(()) => {
++                if let Some(limiter) = limiter {
++                    limiter.memory_allocated();
++                }
+                 // On successful growth double-check that the base pointer
+                 // didn't move if it shouldn't have.
+                 if required_to_not_move_memory {
 --- a/src/runtime/vm/table.rs
 +++ b/src/runtime/vm/table.rs
 @@ -25,6 +25,14 @@

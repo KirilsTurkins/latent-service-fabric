@@ -1290,14 +1290,17 @@
         "phase2::tests::omitted_identity_strings_are_bounded",
         "phase2::tests::retained_events_do_not_keep_caller_spare_capacity",
         "phase2::tests::sensitive_and_cross_tenant_actor_metadata_fail_closed",
-        "phase2::tests::tenant_queries_are_isolated_and_paginated"
+        "phase2::tests::tenant_queries_are_isolated_and_paginated",
+        "durable::tests::capability::native_thread_audit_encodes_exact_grant_and_host_completion_without_changing_default_abi",
+        "durable::tests::capability::native_thread_audit_refuses_other_versions_operations_and_resource_classes",
+        "durable::tests::capability::native_thread_audit_retains_identity_outcome_and_redaction_boundaries"
       ],
       "expectedIgnored": [],
       "id": "latent-audit.lib.latent-audit",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-audit/Cargo.toml",
-      "minimumCases": 50,
+      "minimumCases": 53,
       "mode": "libtest",
       "package": "latent-audit",
       "platforms": [
@@ -7433,7 +7436,18 @@
         "host::native_func_refs_tests::actual_funcrefs_all_four_staged_refusals_preserve_roots_fill_and_original_error",
         "host::native_func_refs_tests::actual_funcrefs_shared_linker_root_survives_linker_drop_until_store_destruction",
         "host::native_func_refs_tests::actual_funcrefs_instance_pre_pair_refusal_preserves_prior_instance_and_retry",
-        "host::native_func_refs_tests::actual_funcrefs_default_lookup_preserves_original_admission_error"
+        "host::native_func_refs_tests::actual_funcrefs_default_lookup_preserves_original_admission_error",
+        "host::native_resource_types_tests::actual_resource_types_pre_and_function_metadata_outlive_store_and_factory",
+        "host::native_resource_types_tests::actual_resource_types_both_admission_refusals_preserve_prior_instance_and_retry",
+        "host::native_resource_types_tests::actual_resource_types_independent_stores_cannot_refund_live_foreign_metadata",
+        "host::native_resource_types_tests::actual_resource_types_concurrent_metadata_clones_release_original_owner_once",
+        "host::native_resource_types_tests::actual_resource_types_zero_resource_tiny_call_keeps_original_one_mib_and_billion_fuel",
+        "host::native_linear_memory_tests::actual_linear_memory_is_confirmed_before_subsequent_native_instance_allocations",
+        "host::native_linear_memory_tests::actual_linear_creator_failure_rolls_back_without_confirming_unallocated_pages",
+        "host::native_linear_memory_tests::actual_linear_growth_confirms_success_and_failed_growth_preserves_prior_peak",
+        "host::owned_context::tests::retained_context_uses_original_memory_until_drop_and_rolls_back_refused_admission",
+        "host::owned_context::tests::retained_context_bound_excludes_discarded_scaffolding_and_caller_web_identity",
+        "host::owned_context::tests::retained_context_keeps_legacy_profile_unaccounted_and_arithmetic_checked"
       ],
       "expectedIgnored": [
         "cache::measurement::cache_lookup_collector",
@@ -7446,7 +7460,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 443,
+      "minimumCases": 454,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [

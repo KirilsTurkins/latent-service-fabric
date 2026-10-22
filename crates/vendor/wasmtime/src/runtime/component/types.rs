@@ -3,6 +3,7 @@
 #[cfg(feature = "component-model-async")]
 use crate::component::ComponentType;
 use crate::component::matching::InstanceType;
+use crate::component::resource_types::ResourceTypes;
 use crate::{Engine, ExternType, FuncType, prelude::*};
 use alloc::sync::Arc;
 use core::fmt;
@@ -42,7 +43,7 @@ pub use crate::component::resources::ResourceType;
 struct Handle<T> {
     index: T,
     types: Arc<ComponentTypes>,
-    resources: Option<Arc<TryPrimaryMap<ResourceIndex, ResourceType>>>,
+    resources: Option<ResourceTypes>,
 }
 
 impl<T> Handle<T> {
@@ -72,7 +73,7 @@ impl<T> Handle<T> {
         (self.index == other.index
             && Arc::ptr_eq(&self.types, &other.types)
             && match (&self.resources, &other.resources) {
-                (Some(a), Some(b)) => Arc::ptr_eq(a, b),
+                (Some(a), Some(b)) => ResourceTypes::ptr_eq(a, b),
                 (None, None) => true,
                 _ => false,
             })

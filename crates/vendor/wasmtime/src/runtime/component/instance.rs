@@ -1,5 +1,6 @@
 use crate::component::func::HostFunc;
 use crate::component::matching::InstanceType;
+use crate::component::resource_types::ResourceTypes;
 use crate::component::store::{ComponentInstanceId, StoreComponentInstanceId};
 use crate::component::{
     Component, ComponentExportIndex, ComponentNamedList, Func, Lift, Lower, ResourceType,
@@ -687,8 +688,6 @@ pub(crate) enum RuntimeImport {
     },
 }
 
-pub type ImportedResources = TryPrimaryMap<ResourceIndex, ResourceType>;
-
 impl<'a> Instantiator<'a> {
     fn new(
         component: &'a Component,
@@ -698,13 +697,18 @@ impl<'a> Instantiator<'a> {
         let env_component = component.env_component();
         let (modules, engine, breakpoints) = store.modules_and_engine_and_breakpoints_mut();
         modules.register_component(component, engine, breakpoints)?;
-        let imported_resources: ImportedResources =
-            TryPrimaryMap::with_capacity(env_component.imported_resources.len())?;
+        let memory = store.native_memory();
+        let capacity = if memory.is_some() {
+            env_component.num_resources as usize
+        } else {
+            env_component.imported_resources.len()
+        };
+        let imported_resources = ResourceTypes::with_capacity(capacity, memory)?;
 
         let instance = ComponentInstance::new(
             store.store_data().components.next_component_instance_id(),
             component,
-            try_new::<Arc<_>>(imported_resources)?,
+            imported_resources,
             imports,
             store.traitobj(),
         )?;
@@ -1037,16 +1041,11 @@ impl<'a> Instantiator<'a> {
         store.store_data_mut().component_instance_mut(self.id)
     }
 
-    // NB: This method is only intended to be called during the instantiation
-    // process because the `Arc::get_mut` here is fallible and won't generally
-    // succeed once the instance has been handed to the embedder. Before that
-    // though it should be guaranteed that the single owning reference currently
-    // lives within the `ComponentInstance` that's being built.
-    fn instance_resource_types_mut<'b>(
-        &self,
-        store: &'b mut StoreOpaque,
-    ) -> &'b mut ImportedResources {
-        Arc::get_mut(self.instance_mut(store).resource_types_mut()).unwrap()
+    // Mutation is confined to instantiation, before the private shared handle
+    // is cloned into exported type metadata or an InstancePre. ResourceTypes
+    // preserves the original sole-strong-reference assertion on each push.
+    fn instance_resource_types_mut<'b>(&self, store: &'b mut StoreOpaque) -> &'b mut ResourceTypes {
+        self.instance_mut(store).resource_types_mut()
     }
 }
 
@@ -1061,7 +1060,7 @@ impl<'a> Instantiator<'a> {
 pub struct InstancePre<T: 'static> {
     component: Component,
     imports: Arc<PrimaryMap<RuntimeImportIndex, RuntimeImport>>,
-    resource_types: Arc<TryPrimaryMap<ResourceIndex, ResourceType>>,
+    resource_types: ResourceTypes,
     asyncness: Asyncness,
     _marker: marker::PhantomData<fn() -> T>,
 }
@@ -1089,7 +1088,7 @@ impl<T: 'static> InstancePre<T> {
     pub(crate) unsafe fn new_unchecked(
         component: Component,
         imports: Arc<PrimaryMap<RuntimeImportIndex, RuntimeImport>>,
-        resource_types: Arc<TryPrimaryMap<ResourceIndex, ResourceType>>,
+        resource_types: ResourceTypes,
     ) -> InstancePre<T> {
         let mut asyncness = Asyncness::No;
         for (_, import) in imports.iter() {

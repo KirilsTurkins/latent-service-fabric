@@ -788,8 +788,11 @@ impl WasmtimeBackend {
             ));
         }
 
-        let host_context =
-            ActivationHostContext::from_request(request, accounting.deadline().unix_millis());
+        let host_context = ActivationHostContext::from_request_accounted(
+            request,
+            accounting.deadline().unix_millis(),
+            accounting.budget(),
+        )?;
         let mut initial_fuel = accounting.initial_fuel();
         let mut host_state = HostState::with_config(
             host_context,

@@ -4,7 +4,7 @@ This is the complete crates.io Wasmtime 48.0.7 package, licensed under
 Apache-2.0 WITH LLVM-exception (see the unmodified LICENSE). The original
 archive checksum and all 250 original file identities are recorded in
 UPSTREAM.latent.json. `latent-dynamic-memory.patch` applies to that exact
-original package; it contains twenty-three changed upstream files and five added
+original package; it contains twenty-eight changed upstream files and six added
 implementation files. Other Wasmtime packages remain at the original locked
 registry versions.
 
@@ -34,12 +34,16 @@ retains confirmed actual allocations through native unwind, without confirming
 a hypothetical signature maximum as observed peak.
 
 The native cohort is
-`wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-memory-v4`. Runtime engine configuration identity
+`wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-memory-v7`. Runtime engine configuration identity
 includes this cohort, so old prepared/AOT identity cannot certify this host.
-The immutable v1/7b programme passed 61 controls; the v2/de0 programme passed
-81 controls. The v3 registry extension retains four additional controls. This v4 FuncRefs
-extension adds five planned controls, preserving all85 prior selectors. Neither
-an earlier binary nor copied-helper tests qualify this new source.
+The immutable v1/7b programme passed 61 controls; v2/de0 passed81,
+v3/48a passed85, v4/3e417 passed92 and v5/94f passed97. The v6/89bbb
+programme passed100 controls but failed audit discovery on a missing test import;
+its three audit cases were unreached. This v7 retained-context extension keeps
+all103 prior selectors and adds eleven context controls (eight existing and
+three new). Exact native-thread audit recognition leaves the default host ABI,
+provider selection, independent authority and grants unchanged. No earlier
+binary or copied-helper test qualifies this new source.
 
 The optional `ResourceLimiter::table_allocating` hook returns an owned original
 allocation guard. Actual table backing destroys before its guard; dropping Store
@@ -105,8 +109,39 @@ pair of paid root slots. Legacy embeddings keep the original bump arena.
 Fallible Core function/Linker insertion preserves original typed admission
 errors, including defined default-function lookup without fallback masking.
 
+Selected per-instance resource substitutions preadmit the exact finite total
+of imported and defined resource slots. The fixed-capacity map detaches its
+native factory before its shared handle can escape the Store through type or
+InstancePre metadata. Its affine backing owner still follows every actual
+resource allocation. Private strong handles expose no Arc or Weak escape, and
+every clone destroys through pinned Arc::into_inner. This frees the shared Arc
+allocation before dropping the resource payload and its original owners, even
+for concurrent last drops. The Arc layout is reserved before allocation;
+confirmation unwind follows the installed shared-handle cleanup path. Legacy
+preparation/embedding maps keep the original fallible Arc/map behavior.
+
+Successful initial dynamic/static linear-memory allocation and subsequent
+successful growth now notify the limiter at the actual allocator boundary,
+before later instance initialization can allocate competing native buffers.
+Failed initial admission/allocation discards only pending unallocated memory
+and preserves the original error; failed growth keeps the prior confirmed peak.
+Sync and async limiter callbacks default to no-op for other embeddings. These
+notifications establish the original ledger high-water mark when the actual
+accessible pages coexist with setup storage, rather than waiting for a later
+table callback or terminal accounting. The original tight-budget invocation
+regression and its caps remain unchanged.
+
+Retained Phase3/Phase4 activation context strings and maps now reserve the
+a conservative envelope derived from the existing string/map bounds in the original memory ledger before their
+selected transformation. The affine guard is attached before confirmation and
+remains the last field until the actual context fields are destroyed. Empty
+maps release any hidden upstream B-tree root; surplus buffers are compacted
+under the existing finite policy. Publication clones remain conservatively
+covered while that context is alive. Phase1 is unchanged. Incoming surplus,
+discarded request scaffolding and later typed-hostcall copies remain excluded.
+
 This extension does not pay direct Core HostFunc state/context constructors,
 shared preparation closure/import backing, concurrent task/queue/resource and hostcall frames,
-request-context transitive buffers, or controller/legacy transport allocations.
+request ingress/discarded scaffolding, later hostcall copies, or controller/legacy transport allocations.
 Existing finite caps are not original memory admission. Whole SDK cost acceptance
 remains open; the source package and planned controls are not execution evidence.

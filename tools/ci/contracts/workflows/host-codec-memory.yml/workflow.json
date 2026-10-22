@@ -5,14 +5,16 @@
       "cancel-in-progress": false,
       "group": "host-codec-memory-${{ github.ref }}"
     },
-    "name": "Ordinary host codec table Store registry FuncRefs memory and closed diagnostics",
+    "name": "Ordinary host runtime and retained context memory diagnostics",
     "on": {
       "push": {
         "branches": [
           "feat/host-codec-memory-736-20261021",
           "feat/typescript-table-memory-20261022",
           "feat/activation-registry-memory-20261022",
-          "feat/activation-funcrefs-memory-20261022"
+          "feat/activation-funcrefs-memory-20261022",
+          "feat/component-resource-map-memory-20261022",
+          "feat/linear-memory-notifications-20261022"
         ]
       },
       "workflow_dispatch": {}
@@ -24,7 +26,7 @@
   "requiredJobs": [
     "native"
   ],
-  "reviewReason": "Add only the isolated FuncRefs feature branch and update cohort wording; preserve required jobs and execution policy.",
+  "reviewReason": "Append retained-context original-memory controls to the unchanged103-prefix programme; authenticate the exact original memory placeholder block while retaining whole-tree and all other upstream guards.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/host-codec-memory.yml"
 }

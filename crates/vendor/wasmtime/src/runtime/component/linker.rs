@@ -3,6 +3,7 @@ use crate::component::concurrent::Accessor;
 use crate::component::func::HostFunc;
 use crate::component::instance::RuntimeImport;
 use crate::component::matching::{InstanceType, TypeChecker};
+use crate::component::resource_types::ResourceTypes;
 use crate::component::types;
 use crate::component::{
     Component, ComponentNamedList, Instance, InstancePre, Lift, Lower, ResourceType, Val,
@@ -169,7 +170,7 @@ impl<T: 'static> Linker<T> {
             engine: &self.engine,
             types: component.types(),
             strings: &self.strings,
-            imported_resources: try_new::<Arc<_>>(TryPrimaryMap::new())?,
+            imported_resources: ResourceTypes::new()?,
         };
 
         // Walk over the component's list of import names and use that to lookup

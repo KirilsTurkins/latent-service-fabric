@@ -24,7 +24,7 @@ from tools.rust_capsule_build import Commands
 from tools.rust_capsule_project import ROOT, TEMPLATES, digest, fresh, inventory, read_file, read_json, snapshot, write_json
 
 MATERIALS = (*FIXTURE_MATERIALS, *RECIPE, 'tools/java_resource_fixture.py', 'tools/java_resource_probe.py',
-    'tools/qualify_java_resources.py', 'tools/java_standard_http_library.py',
+    'tools/qualify_java_resources.py', 'tools/qualify_sdk_scratch.py', 'tools/java_standard_http_library.py',
     'tools/run_rust_capsule_workflow.py', 'tools/rust_capsule_node.py')
 
 
@@ -113,12 +113,22 @@ def campaign(output, binaries, companions, ancestry, wasi_sdk, *, read_only_cach
         raise
 
 
+def prepared_executables(directory):
+    binaries, companions, ancestry = prepared(directory, 'java')
+    if os.name == 'posix':
+        # Artifact restoration drops executable modes. Enable only the five
+        # products already authenticated against the normal qualification.
+        for binary in binaries.values():
+            binary.chmod(0o700)
+    return binaries, companions, ancestry
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ('output','native-qualification','wasi-sdk'):
         parser.add_argument('--'+name,type=Path,required=True)
     parser.add_argument('--read-only-cache',type=Path)
     args = parser.parse_args()
-    binaries, companions, ancestry = prepared(args.native_qualification.resolve(strict=True),'java')
+    binaries, companions, ancestry = prepared_executables(args.native_qualification.resolve(strict=True))
     print(campaign(args.output, binaries, companions, ancestry, args.wasi_sdk.resolve(strict=True),
         read_only_cache=args.read_only_cache)['status'])

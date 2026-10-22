@@ -3,7 +3,7 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "if": "${{ inputs.registration != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-device-registration-20261021') && ((github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-device-setup-20261021') || inputs.firmware == true) }}",
+    "if": "${{ inputs.recipient != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-device-recipient-20261022') && (inputs.registration != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-device-registration-20261021') && ((github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-device-setup-20261021') || inputs.firmware == true)) }}",
     "name": "Thirty-seven actual maintained objects with cached ACPI reference and queued cleanup ownership",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -73,7 +73,7 @@
   },
   "jobId": "firmware-objects",
   "kind": "job",
-  "reviewReason": "Reviewed grouped uninstalled PCI registration sysfs IDR and uevent consumers; exclusive48object/201function compile retains all prior profiles commands cases security and original bounds; no runtime physical closure link boot or installation qualification",
+  "reviewReason": "Reviewed grouped recipient signal and mandatory security source; one exclusive object-only lane retains every historical command, case, configuration and physical qualification boundary.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/stream-kernel-objects.yml"
 }
