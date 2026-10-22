@@ -32,6 +32,16 @@ class CTimedRuntime(unittest.TestCase):
         self.assertEqual(selected['providers']['activationRuntime']['limits'], original_fixture.LIMITS)
         self.assertEqual(len(selected['providers']['bindings']), 6)
         self.assertNotIn('grants', selected)
+        # Actual ActivationRuntimeInstallation::validate_installation forbids
+        # sharing its tenant/service identity with a scalar provider.
+        runtime = selected['providers']['activationRuntime']['identity']
+        for name, (contract, _, _, _) in node.profiles('c').items():
+            scalar = selected['providers'][name]['identity']
+            self.assertNotEqual((scalar['tenant'], scalar['service']),
+                (runtime['tenant'], runtime['service']))
+            binding = next(row for row in selected['providers']['bindings']
+                if row.get('contract') == contract)
+            self.assertEqual(binding['providerService'], scalar['service'])
         for bad in (capsule['imports'][:-1], [*capsule['imports'], capsule['imports'][0]],
                     [dict(row, optional=True) for row in capsule['imports']]):
             with self.assertRaisesRegex(RuntimeError, 'five-explicit-imports'):

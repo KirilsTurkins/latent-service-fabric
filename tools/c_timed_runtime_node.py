@@ -23,6 +23,7 @@ from tools.rust_capsule_project import ROOT, fresh, read_json
 from tools.sdk_provider_scenario import start_provider
 
 SERVICE = original.SERVICE
+SCALAR_SERVICE = 'c-clock-host'
 PROVIDERS = dict(original.PROVIDERS)
 PROVIDERS[original.ACTIVATION] = ('c-activation', 'activation-owned-v1',
     ['register', 'park', 'wake', 'settle', 'observe', 'timer-start', 'timer-next', 'timer-stop'], 'clock')
@@ -41,9 +42,9 @@ def configure(settings, capsule):
         if row['contract'] in original.IMPORTS])
     original.configure(settings, projected)
     for name, (contract, _, _, _) in profiles('c').items():
-        settings['providers'][name] = {'identity': {'id': name, 'tenant': 'examples', 'service': 'c-runtime-host', 'epoch': 1}}
+        settings['providers'][name] = {'identity': {'id': name, 'tenant': 'examples', 'service': SCALAR_SERVICE, 'epoch': 1}}
         settings['providers']['bindings'].append({'name': name, 'tenant': 'examples',
-            'consumerService': 'examples/' + SERVICE, 'providerService': 'c-runtime-host',
+            'consumerService': 'examples/' + SERVICE, 'providerService': SCALAR_SERVICE,
             'contract': contract, 'providerBinding': name + '-installed'})
     require(len(settings['providers']['bindings']) == 6, 'c-timed-original-plus-five-bindings')
     return settings
@@ -54,7 +55,8 @@ def install(client, node, target):
     for capability, (identity, profile, operations, resource) in PROVIDERS.items():
         rows = [row for row in node.startup_record['providers'] if row['capability'] == capability]
         require(len(rows) == 1 and rows[0]['tenant'] == 'examples'
-                and rows[0]['service'] == 'c-runtime-host' and rows[0]['profile'] == profile
+                and rows[0]['service'] == ('c-runtime-host' if capability in original.IMPORTS else SCALAR_SERVICE)
+                and rows[0]['profile'] == profile
                 and rows[0]['configurationEpoch'] == '1', 'c-thread-exact-installed-provider')
         descriptor = rows[0]
         binding = client.directory / (identity + '-binding.json')
