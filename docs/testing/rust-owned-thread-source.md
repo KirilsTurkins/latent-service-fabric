@@ -99,7 +99,11 @@ before application compilation. It did not execute an application or guest.
 
 The workflow's explicit default-false `application-diagnostic` input compiles
 one ordinary captured `futures-executor 0.3.31` application using its default
-ThreadPool constructors and original `lto=true` configuration. It reuses normal
+ThreadPool constructors. The successful original diagnostic used `lto=true`.
+The selected THREAD compiler boundary now records `profile.release.lto=false`
+as an explicit Cargo configuration, preserving original application Cargo/CAS
+bytes and other profiles while retaining compiler object boundaries for the
+private graph. It reuses normal
 source capture, Prepared checks, isolated compilation and exact executable
 approval, retaining the actual core or first compiler/transform failure. It
 does not open the production component selector, write BUILD-COMPLETE, package,
