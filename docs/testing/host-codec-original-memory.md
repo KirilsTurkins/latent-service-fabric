@@ -45,10 +45,38 @@ its original source revision. This evidence is source-bound CI qualification;
 compiled by this native programme. The source record explicitly leaves implicit
 compiler inputs unattested and declares `hermetic: false`.
 
+## Actual table and selected Store ownership
+
+[The separate v2 evidence](evidence/host-codec-table-store-native-2026-10-22.json)
+binds [run 39702795582](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39702795582)
+at `de0aed36f0b135d6d88fb536484e60aee978f218`. **All 81 controls passed**:
+the original 61, nine table controls, ten Store controls and one existing closed
+trap-classification control. Independent whole-archive checks cover all 83
+members, 37 command records, 74 log streams, five products, 3,603 native source
+files and 148 recipe/auxiliary materials.
+
+Table owners cover actual dynamic backing, replacement overlap and pooled
+reset/decommit lifetime. Affine owners also cover the Store Box, selected Core
+and Component instance layouts and selected instance/segment buffers. They stay
+charged through user-data destruction. Successful cleanup and `into_data` refund
+after deallocation; destructor unwind retains still-owned backing. Cancellation
+cannot credit another live Store. The tiny component executes under its
+unchanged 1 MiB memory and one-billion fuel grant; the codec controls retain
+64 MiB/one-billion limits.
+
+The evidence preserves three failed attempts separately: compilation before any
+control, a count-limit fixture failure (69 passed/1 failed/11 unreached), and
+binary-loader fixture failures (75 passed/5 failed/1 unreached). Their repaired
+sources receive no retroactive passing credit. The original v1 receipt remains
+unchanged. V2 is also unsigned and native-only, with implicit compiler inputs
+unattested; no guest or JavaScript-engine build ran.
+
 ## Scope retained outside this slice
 
-Serialized controller/transport frames and legacy Phase0 framing retain their
-existing ownership boundaries. This common codec prerequisite is a partial
+Per-Store registry metadata, FuncRefs, concurrent tasks, hostcall backing and
+request-context transitive allocations still need their remaining ownership
+work. Serialized controller/transport frames and legacy Phase0 framing retain
+their existing boundaries. These common runtime prerequisites are a partial
 delivery for [#736](https://github.com/KirilsTurkins/latent-service-fabric/issues/736)
 and [#745](https://github.com/KirilsTurkins/latent-service-fabric/issues/745); the
 whole tickets and the full TypeScript cost criterion require their remaining

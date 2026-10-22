@@ -1,0 +1,181 @@
+{
+  "schemaVersion": "latent.host-codec.table-store-native-evidence.v1",
+  "status": "passed",
+  "ownerIssues": [
+    736,
+    745
+  ],
+  "diagnosticSupportIssue": 679,
+  "scope": "Original-memory ownership for actual table backing and selected Store/instance buffers, retaining the original common codec controls.",
+  "sourceRevision": "de0aed36f0b135d6d88fb536484e60aee978f218",
+  "nativeCohort": "wasmtime-48.0.7-latent-value-table-store-memory-v2",
+  "profile": "normal-managed-guest-default-features",
+  "origin": {
+    "repository": "KirilsTurkins/latent-service-fabric",
+    "workflow": ".github/workflows/host-codec-memory.yml",
+    "event": "push",
+    "run": 39702795582,
+    "job": 119575748362,
+    "artifact": 12393673565,
+    "artifactName": "host-codec-memory-de0aed36f0b135d6d88fb536484e60aee978f218",
+    "archiveBytes": 70328915,
+    "archiveSha256": "sha256:db0bf86b985fc53a1c146383af58b4fc5074b7c1f4c3dda019fb89c4e3edd964",
+    "archiveMembers": 83,
+    "expandedBytes": 324741235,
+    "receiptMember": "native-products.json",
+    "receiptBytes": 68567,
+    "receiptSha256": "sha256:5a0160810ddcc520771bcc2feede1f9e2e82e1ec88260192aef20f4b9356abe3"
+  },
+  "source": {
+    "sha256": "sha256:4a4877a19a202263f188ca31bae88a405163a306daa1c74afe4cd68a1b546127",
+    "files": 3603,
+    "bytes": 31348944,
+    "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+    "hermetic": false,
+    "implicitCompilerInputs": "not-attested"
+  },
+  "recipeAndAuxiliaryMaterials": 148,
+  "compiler": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "controlCount": 81,
+  "commandCount": 37,
+  "verifiedLogStreamHashes": 74,
+  "ignoredControls": 0,
+  "controlGroups": {
+    "original-host-memory": 6,
+    "result-owner": 4,
+    "result-wire": 4,
+    "result-capacity": 1,
+    "actual-host-codec": 9,
+    "actual-dynamic-allocation-hook": 6,
+    "raw-input-lifetime": 4,
+    "result-lifetime": 2,
+    "original-accounting": 20,
+    "child-capacity": 1,
+    "c-public-async-type": 1,
+    "c-public-sync-abi": 1,
+    "journal-result-retirement": 1,
+    "ordinary-backend": 1,
+    "actual-native-table-owner": 9,
+    "actual-native-store-owner": 10,
+    "closed-guest-trap-diagnostics": 1
+  },
+  "original61Controls": {
+    "unchangedPrefix": true,
+    "evidence": "host-codec-original-memory-native-2026-10-22.json",
+    "originalSourceRevision": "7b6365ee39dea9770591a931b96711965f8a1aaf",
+    "originalReceiptSha256": "sha256:23cf17c9b55fb7bf5b3e26bee996b0c03e07c0349ded357f1b47a52cc3c418bc"
+  },
+  "additional20Controls": {
+    "actual-native-table-owner": [
+      "host::native_table_tests::actual_typescript_fixed_tables_debit_original_memory_and_outlive_limiter_destruction",
+      "host::native_table_tests::actual_table_refusal_keeps_exact_original_memory_error_and_no_retained_owner",
+      "host::native_table_tests::actual_dynamic_table_growth_pays_exact_old_new_overlap_and_keeps_function_cells",
+      "host::native_table_tests::actual_dynamic_table_refused_replacement_keeps_original_cells_capacity_and_owner",
+      "host::native_table_tests::actual_tiny_and_zero_tables_do_not_reserve_declared_maximum_capacity",
+      "host::native_table_tests::actual_preceding_linear_allocation_is_confirmed_before_table_memory_admission",
+      "host::native_table_tests::actual_original_element_and_table_count_caps_still_refuse_without_extra_owners",
+      "host::native_table_tests::actual_pooled_table_slot_keeps_owner_through_user_data_then_real_flush",
+      "host::native_table_tests::actual_batched_pool_table_keeps_original_owner_until_decommit_queue_destruction"
+    ],
+    "actual-native-store-owner": [
+      "host::native_store_tests::actual_store_box_refusal_preserves_original_error_and_exactly_once_data_drop",
+      "host::native_store_tests::actual_dummy_instance_refusal_rolls_back_box_map_factory_and_user_data",
+      "host::native_store_tests::actual_store_core_and_component_owners_outlive_user_data_until_physical_cleanup",
+      "host::native_store_tests::actual_into_data_frees_inner_and_factory_before_returning_once_owned_data",
+      "host::native_store_tests::actual_user_data_unwind_cannot_refund_the_still_allocated_store",
+      "host::native_store_tests::actual_instance_map_overlap_refusal_preserves_prior_instance_and_fresh_reuse",
+      "host::native_store_tests::actual_passive_segment_backing_remains_owned_until_guest_elem_drop",
+      "host::native_store_tests::actual_tiny_component_still_fits_original_one_mib_and_one_billion_fuel",
+      "host::native_store_tests::actual_cancelled_lift_preserves_store_owners_and_cannot_credit_another_live_store",
+      "host::native_store_tests::actual_factory_arc_layout_includes_overalignment_and_both_pinned_counters"
+    ],
+    "closed-guest-trap-diagnostics": [
+      "containment::tests::backend_trap_labels_match_the_public_closed_classification"
+    ]
+  },
+  "products": {
+    "latent": {
+      "sha256": "sha256:75015a6c571f0718a4d188205f8711fba16f6ae51494f9fa6db1cff2f0d9a884",
+      "bytes": 72401240
+    },
+    "latentd": {
+      "sha256": "sha256:f20c8af821f9148b413abd25e1daceaa33325b7a4aac48960ebe4ff89d4fcc09",
+      "bytes": 189688528
+    },
+    "examples/package": {
+      "sha256": "sha256:08d9c1a4560c55f5afe4b00b5e8dde6a675507c357c083be4461d6a41c6a6c0c",
+      "bytes": 21160192
+    },
+    "examples/capsule_contracts": {
+      "sha256": "sha256:ba58dd1ee4a9caef78000a356500772caa62f852d15b4ba4d595f5f1bf36f574",
+      "bytes": 13854408
+    },
+    "examples/capsule_authoring": {
+      "sha256": "sha256:091775aece7de4fdc68e20ebbda1c4b875be22857068b2855a5e19e80c044a00",
+      "bytes": 27416424
+    }
+  },
+  "previousFailedAttempts": [
+    {
+      "sourceRevision": "fa09ea970939abb5f63d443acaf22a3bcfc30740",
+      "run": 39698731997,
+      "job": 119562424367,
+      "artifact": 12392580419,
+      "archiveBytes": 17291,
+      "archiveSha256": "sha256:f23f8bbed9a9f9b1429001e4c6d37299121335cd30aa336cbdcf494787d32e14",
+      "failedStage": "normal-host-build",
+      "passedControls": 0,
+      "failedControls": 0,
+      "unreachedControls": 81,
+      "reason": "Twelve native compile integration errors; no native control executed."
+    },
+    {
+      "sourceRevision": "050b9e71ba04a4bdc559f4a7fa48d6bd94c2ff38",
+      "run": 39699798311,
+      "job": 119565991515,
+      "artifact": 12393140040,
+      "archiveBytes": 55846,
+      "archiveSha256": "sha256:41ca4a1c474ed48b2cfcaf1986e86881cd8b5e423a6af982722bc7c94f003399",
+      "failedStage": "actual-native-table-owner-run",
+      "passedControls": 69,
+      "failedControls": 1,
+      "unreachedControls": 11,
+      "reason": "Count-limit fixture changed limits after cached installation and used host-created dummy tables instead of real module instantiation."
+    },
+    {
+      "sourceRevision": "330a691b30ee941122e4955dcf1fb3270879cfe5",
+      "run": 39701557143,
+      "job": 119571730805,
+      "artifact": 12392798980,
+      "archiveBytes": 59631,
+      "archiveSha256": "sha256:96cb9fe042b239c6e086eb379ba822540ed8161e1dd7c6e1943cb979679a609d",
+      "failedStage": "actual-native-store-owner-run",
+      "passedControls": 75,
+      "failedControls": 5,
+      "unreachedControls": 1,
+      "reason": "Five Store controls passed WAT text to the unchanged binary-only managed loader; subsequent paired binaries preserve the exact original fixtures."
+    }
+  ],
+  "signedQualification": false,
+  "guestJavaScriptEngineCompiled": false,
+  "guestSourceCompiled": false,
+  "historicalReceiptRewritten": false,
+  "claimBoundaries": [
+    "All 81 named controls executed in this source-bound ordinary native programme; no ignored control.",
+    "The selected tiny component actually uses its original 1 MiB memory and 1 billion fuel; tiny codec controls retain 64 MiB and 1 billion fuel.",
+    "Table growth pays actual old/new capacity; pooled owners survive real reset/decommit. Store and instance owners follow physical cleanup and into_data, while destructor unwind retains still-owned backing and cancellation cannot credit another Store.",
+    "Closed CannotBlockSyncTask/CannotResumeThread diagnostics do not establish a C runtime failure cause.",
+    "This unsigned native-only programme does not rebuild or qualify a JavaScript engine, guest source, transport closure, or the whole SDK cost criterion."
+  ],
+  "remainingOutsideSlice": [
+    "Per-Store ModuleRegistry metadata",
+    "FuncRefs backing and host functions",
+    "Concurrent-task queues and allocations",
+    "Hostcall backing",
+    "Request-context transitive allocations",
+    "Legacy Phase0 framing",
+    "Serialized controller/transport frames"
+  ],
+  "wholeIssue736Complete": false,
+  "wholeTypeScriptCostCriterionComplete": false
+}
