@@ -7,7 +7,7 @@
 //! cranelift-compiled adapters, will use this `VMComponentContext` as well.
 
 use crate::Result;
-use crate::component::{Component, Instance, InstancePre, ResourceType, RuntimeImport};
+use crate::component::{Component, Instance, InstancePre, ResourceTypes, RuntimeImport};
 use crate::module::ModuleRegistry;
 #[cfg(feature = "component-model-async")]
 use crate::runtime::component::concurrent::ConcurrentInstanceState;
@@ -29,7 +29,6 @@ use core::mem::offset_of;
 use core::pin::Pin;
 use core::ptr::NonNull;
 use wasmtime_environ::component::*;
-use wasmtime_environ::prelude::TryPrimaryMap;
 use wasmtime_environ::{HostPtr, PrimaryMap, VMSharedTypeIndex};
 
 #[allow(
@@ -138,7 +137,7 @@ pub struct ComponentInstance {
 
     /// Storage for the type information about resources within this component
     /// instance.
-    resource_types: Arc<TryPrimaryMap<ResourceIndex, ResourceType>>,
+    resource_types: ResourceTypes,
 
     /// Arguments that this instance used to be instantiated.
     ///
@@ -319,7 +318,7 @@ impl ComponentInstance {
     pub(crate) fn new(
         id: ComponentInstanceId,
         component: &Component,
-        resource_types: Arc<TryPrimaryMap<ResourceIndex, ResourceType>>,
+        resource_types: ResourceTypes,
         imports: &Arc<PrimaryMap<RuntimeImportIndex, RuntimeImport>>,
         store: NonNull<dyn VMStore>,
     ) -> Result<OwnedComponentInstance> {
@@ -839,14 +838,12 @@ impl ComponentInstance {
     }
 
     /// Returns a reference to the resource type information.
-    pub fn resource_types(&self) -> &Arc<TryPrimaryMap<ResourceIndex, ResourceType>> {
+    pub fn resource_types(&self) -> &ResourceTypes {
         &self.resource_types
     }
 
     /// Returns a mutable reference to the resource type information.
-    pub fn resource_types_mut(
-        self: Pin<&mut Self>,
-    ) -> &mut Arc<TryPrimaryMap<ResourceIndex, ResourceType>> {
+    pub fn resource_types_mut(self: Pin<&mut Self>) -> &mut ResourceTypes {
         // SAFETY: we've chosen the `Pin` guarantee of `Self` to not apply to
         // the map returned.
         unsafe { &mut self.get_unchecked_mut().resource_types }

@@ -5,14 +5,15 @@
       "cancel-in-progress": false,
       "group": "host-codec-memory-${{ github.ref }}"
     },
-    "name": "Ordinary host codec table Store registry FuncRefs memory and closed diagnostics",
+    "name": "Ordinary host codec table Store registry FuncRefs resource memory and closed diagnostics",
     "on": {
       "push": {
         "branches": [
           "feat/host-codec-memory-736-20261021",
           "feat/typescript-table-memory-20261022",
           "feat/activation-registry-memory-20261022",
-          "feat/activation-funcrefs-memory-20261022"
+          "feat/activation-funcrefs-memory-20261022",
+          "feat/component-resource-map-memory-20261022"
         ]
       },
       "workflow_dispatch": {}
@@ -24,7 +25,7 @@
   "requiredJobs": [
     "native"
   ],
-  "reviewReason": "Add only the isolated FuncRefs feature branch and update cohort wording; preserve required jobs and execution policy.",
+  "reviewReason": "Preserve92 prior controls and append5 escaped resource-substitution owners, with same original grants, five products and22recipe materials; no unsupported whole-memory claim.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/host-codec-memory.yml"
 }

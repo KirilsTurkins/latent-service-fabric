@@ -2,24 +2,23 @@ use crate::Module;
 use crate::component::ResourceType;
 use crate::component::func::HostFunc;
 use crate::component::linker::Definition;
+use crate::component::resource_types::ResourceTypes;
 use crate::component::types::{FutureType, StreamType};
 use crate::runtime::vm::component::ComponentInstance;
 use crate::types::matching;
 use crate::{Engine, prelude::*};
 use alloc::sync::Arc;
 use wasmtime_environ::component::{
-    ComponentTypes, NameMap, ResourceIndex, TypeComponentInstance, TypeDef, TypeFuncIndex,
-    TypeFutureTableIndex, TypeModule, TypeResourceTable, TypeResourceTableIndex,
-    TypeStreamTableIndex,
+    ComponentTypes, NameMap, TypeComponentInstance, TypeDef, TypeFuncIndex, TypeFutureTableIndex,
+    TypeModule, TypeResourceTable, TypeResourceTableIndex, TypeStreamTableIndex,
 };
-use wasmtime_environ::prelude::TryPrimaryMap;
 use wasmtime_environ::{Atom, StringPool};
 
 pub struct TypeChecker<'a> {
     pub engine: &'a Engine,
     pub types: &'a Arc<ComponentTypes>,
     pub strings: &'a StringPool,
-    pub imported_resources: Arc<TryPrimaryMap<ResourceIndex, ResourceType>>,
+    pub imported_resources: ResourceTypes,
 }
 
 #[derive(Copy, Clone)]
@@ -32,7 +31,7 @@ pub struct InstanceType<'a> {
     /// If this isn't present then resource types are considered "abstract" and
     /// un-intantiated. This doesn't refer to a concrete instantiated component,
     /// but rather an abstract component type.
-    pub resources: Option<&'a Arc<TryPrimaryMap<ResourceIndex, ResourceType>>>,
+    pub resources: Option<&'a ResourceTypes>,
 }
 
 impl TypeChecker<'_> {
@@ -95,8 +94,7 @@ impl TypeChecker<'_> {
                     // succeed since `imported_resources` has not yet been
                     // cloned.
                     None => {
-                        let resources = Arc::get_mut(&mut self.imported_resources).unwrap();
-                        let id = resources.push(*actual)?;
+                        let id = self.imported_resources.push(*actual)?;
                         assert_eq!(id, i);
                     }
 

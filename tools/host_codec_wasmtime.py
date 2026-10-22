@@ -12,18 +12,18 @@ from tools.rust_capsule_project import ROOT, read_file
 PROVIDER = "crates/vendor/wasmtime"
 NAME = "wasmtime"
 VERSION = "48.0.7"
-COHORT = "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-memory-v4"
-RECORD_SHA256 = "def8ba01cacc7f08532c1ac4947ea87d3a63e11aeb7aa996fe92d2320c3c6416"
+COHORT = "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-memory-v5"
+RECORD_SHA256 = "c9794eb860b59a8cb298ef5932c1ba7f0e0886cd1e7e90d6eaea68b1d0a84783"
 # Explicit reviewed postimages; the remaining original files use the immutable
 # registry inventory. Changing a claimed record or patch cannot authorize bytes.
 POSTIMAGES = {
     "README.latent.md": {
-        "sha256": "ac697de8a866880975bff6d5f41e87ccfc5c86fbb573527397e2b5d422f6d027",
-        "bytes": 7317
+        "sha256": "0419e44a936bb6ff22af1998b33dda1ab424195e23d8b83f5e0506221d91c1e4",
+        "bytes": 8061
     },
     "latent-dynamic-memory.patch": {
-        "sha256": "e3df0c9df44cb424e6875be69c608effe190ec9345a2536a4c7f91e716e8593d",
-        "bytes": 145250
+        "sha256": "96344c84c5d0b6a8d9f25c23e3f450c8231cd6330289b5a2b3e51bf4acc94823",
+        "bytes": 166884
     },
     "src/runtime.rs": {
         "sha256": "3290f57919f6dc6b6f797ee55cd62504ce31e91500741501e261f2c7e4eac970",
@@ -49,13 +49,33 @@ POSTIMAGES = {
         "sha256": "1d54e072c057598b9bbe3ba0d00872eb9de0f531cb9cb2656b929c878bbc43ba",
         "bytes": 116904
     },
+    "src/runtime/component/instance.rs": {
+        "sha256": "3e509517c45b4cb855b3cadfda2df1ee3bd171f6319e1cf13b4ffd9476e17c4c",
+        "bytes": 47912
+    },
+    "src/runtime/component/linker.rs": {
+        "sha256": "36336f459595c676c6cd110e26715d2bb022a791cb74c973f6f4664b3d6ea5c2",
+        "bytes": 39721
+    },
+    "src/runtime/component/matching.rs": {
+        "sha256": "6f7a6165a8efe819f49de8e6f95d8b6b28dba5c4eaee400f0af70d74a3017f4f",
+        "bytes": 9471
+    },
     "src/runtime/component/mod.rs": {
-        "sha256": "a4504e7872516b4bca8fd0b2e0e470230ce96f07291856979119212e5bc03149",
-        "bytes": 32880
+        "sha256": "49f94aceb4ea5c014802f959c82713dd7f7f2e79b3a547bac82678788063939f",
+        "bytes": 32967
+    },
+    "src/runtime/component/resource_types.rs": {
+        "sha256": "4e37f8fb059389b694fec202163830b98a9ae033003be03ef5e3da42641d4988",
+        "bytes": 5025
     },
     "src/runtime/component/store.rs": {
         "sha256": "248924cbb1cd3955b8857c106f2284398464e68cf5b5c86992753bf1ee38f6ce",
         "bytes": 23704
+    },
+    "src/runtime/component/types.rs": {
+        "sha256": "3f3a0d08bceb6f2981a92d377a884a5d92c70502d5f1b3c90037fc14574e2b5c",
+        "bytes": 43048
     },
     "src/runtime/component/values.rs": {
         "sha256": "05e63166d688ce034b5151b960be030186c4575d6c0ec6eb8db6cba85f7dcc32",
@@ -94,8 +114,8 @@ POSTIMAGES = {
         "bytes": 24899
     },
     "src/runtime/native_memory.rs": {
-        "sha256": "b7af509da0ea768a750e2e7a857c4c4eb90edaf759018c9dbce6add1ee842e96",
-        "bytes": 11546
+        "sha256": "0670c370bb25265f7236329c0aa91eb7ff357cd2a53b84c052a7487c6b27bdd2",
+        "bytes": 11864
     },
     "src/runtime/store.rs": {
         "sha256": "3c099088acca747b58a73e30981f8f10dd669ea82aea551d7c9b6703c189963e",
@@ -114,8 +134,8 @@ POSTIMAGES = {
         "bytes": 3903
     },
     "src/runtime/vm/component.rs": {
-        "sha256": "f3ff8d49543212eba5d0da5d33ae2b950be07b07fe607f139ccb3d5c8bcab37b",
-        "bytes": 44845
+        "sha256": "1a5ef94428a9356e9e6167ed0317683fe23b2db76c468ba10d2897ba04768682",
+        "bytes": 44649
     },
     "src/runtime/vm/component/resources.rs": {
         "sha256": "7143d4aacd672b4ca8e9d7ee8dadfe033b34be63066aa73e99b158be4066ba2b",
@@ -167,7 +187,7 @@ def verify(root: Path = ROOT) -> dict:
                 for row in record["originalFiles"]}
     require(len(record["originalFiles"]) == len(original) == 250, "original-file-set")
     expected = {**original, **POSTIMAGES, "UPSTREAM.latent.json": identity(raw)}
-    require(len(expected) == 258, "maintained-file-set")
+    require(len(expected) == 259, "maintained-file-set")
     actual, total = {}, 0
     for ordinal, path in enumerate(source.rglob("*")):
         require(ordinal < 1024 and not path.is_symlink(), "source-tree-bound-or-link")
