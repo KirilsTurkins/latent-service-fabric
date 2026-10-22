@@ -49,6 +49,23 @@ FIXED_RESULT_SHA256 = "250215cc98e4aa89d079b1d5434de202ee864eedc4ceb5d1d8dbc6b42
 # its affine ProviderCall drops. No host pointer, resource or raw access is added.
 RANDOM_RESULT = f"{CRATE}/src/host/random/completion.rs"
 RANDOM_RESULT_SHA256 = "4490c7099ef74dd0c5cb0ae0c7a280904f71f8f97f2b5c91a752b1c681443802"
+# The actual allocator-failure test must implement Wasmtime's unsafe trait,
+# but this exact item always refuses and creates no memory or native pointer.
+# Strip only this item at this test path; every other allowance/site is checked.
+REFUSING_CREATOR_TEST = f"{CRATE}/src/host/native_linear_memory_tests.rs"
+REFUSING_CREATOR_IMPL = '''#[allow(unsafe_code)]
+unsafe impl wasmtime::MemoryCreator for RefusingCreator {
+    fn new_memory(
+        &self,
+        _: wasmtime::MemoryType,
+        _: usize,
+        _: Option<usize>,
+        _: Option<usize>,
+        _: usize,
+    ) -> Result<Box<dyn wasmtime::LinearMemory>, String> {
+        Err("native-linear-original-creator-refusal".into())
+    }
+}'''
 # This third exception only allocates and unmaps guarded activation stacks through
 # Wasmtime's pinned public StackCreator interface. Original activation Native
 # and memory admission precede mapping; actual successful munmap precedes refund.
@@ -140,6 +157,11 @@ def validate(root: Path) -> list[str]:
                 errors.append("audited random-result lowering changed; review pinned ABI, zeroization and physical output ownership")
             else:
                 source = ""
+        elif relative == REFUSING_CREATOR_TEST:
+            if source.count(REFUSING_CREATOR_IMPL) != 1:
+                errors.append("audited refusing memory creator test changed; review its sole always-error trait item")
+            else:
+                source = source.replace(REFUSING_CREATOR_IMPL, "", 1)
         elif relative == NATIVE_STACK:
             if hashlib.sha256(source.encode("utf-8")).hexdigest() != NATIVE_STACK_SHA256:
                 errors.append("audited native-stack allocator changed; review original admission and physical unmapping")
