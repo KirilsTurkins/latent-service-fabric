@@ -21,7 +21,7 @@ SCOPE = ('ordinary-host-codec-original-memory-and-selected-c-public-async-type-s
     'legacy framing and serialized transport controller frames excluded')
 
 
-def producer_contract(raw):
+def _producer_contract(raw, groups, count):
     """Read literal data from the frozen Git producer, without importing it."""
     require(type(raw) is bytes and 0 < len(raw) <= 128 * 1024, 'codec-reader-producer-source-bound')
     wanted = {}
@@ -34,7 +34,7 @@ def producer_contract(raw):
     require(set(wanted) == {'CONTROLS', 'RECIPE', 'PRODUCTS'} and wanted['PRODUCTS'] == PRODUCTS,
         'codec-reader-original-five-products')
     controls, recipe = wanted['CONTROLS'], wanted['RECIPE']
-    require(type(controls) is tuple and len(controls) == 14
+    require(type(controls) is tuple and len(controls) == groups
         and type(recipe) is tuple and len(recipe) == len(set(recipe)) == 22
         and WORKFLOW in recipe and 'tools/qualify_host_codec_native.py' in recipe
         and all(type(name) is str and re.fullmatch(r'[A-Za-z0-9_./-]{1,256}', name)
@@ -51,18 +51,29 @@ def producer_contract(raw):
             and all(type(case) is str and re.fullmatch(r'[A-Za-z0-9_:]{1,256}', case) for case in cases),
             'codec-reader-control-identities')
         names.extend(cases); stages.append(stage)
-    require(len(stages) == len(set(stages)) == 14 and len(names) == len(set(names)) == 61,
-        'codec-reader-exact-sixty-one-controls')
+    require(len(stages) == len(set(stages)) == groups and len(names) == len(set(names)) == count,
+        'codec-reader-exact-sixty-one-controls' if count == 61 else 'codec-reader-exact-eighty-one-controls')
     return controls, recipe
 
 
+def producer_contract(raw):
+    return _producer_contract(raw, 14, 61)
+
+
 class FrozenHostCodecProducts(FrozenNativeProducts):
+    cohort, scope = COHORT, SCOPE
+    control_count, command_count = 61, 31
+    job_name = 'Original ledger, actual codec and backend result ownership'
+
+    def _producer_contract(self, raw):
+        return producer_contract(raw)
+
     def __init__(self, *, source, run, job, artifact, receipts, branch):
         require(type(source) is str and re.fullmatch(r'[0-9a-f]{40}', source),
             'codec-reader-explicit-frozen-source')
         raw = subprocess.check_output(['git', 'show', source + ':tools/qualify_host_codec_native.py'],
             cwd=ROOT, timeout=30)
-        self.controls, self.recipe = producer_contract(raw)
+        self.controls, self.recipe = self._producer_contract(raw)
         stages = ('source-revision', 'rust-version', 'normal-host-build',
             *(stage + suffix for stage, _, _, _ in self.controls for suffix in ('-list', '-run')))
         super().__init__(source=source, run=run, job=job, artifact=artifact, receipts=receipts,
@@ -72,7 +83,7 @@ class FrozenHostCodecProducts(FrozenNativeProducts):
         return self.recipe
 
     def _producer_origin(self):
-        return WORKFLOW, 'Original ledger, actual codec and backend result ownership', 'host-codec-memory-'
+        return WORKFLOW, self.job_name, 'host-codec-memory-'
 
     def validate_record(self, record, snapshot, native, materials):
         fields = {'schemaVersion', 'status', 'sourceRevision', 'source', 'materials', 'compiler',
@@ -85,18 +96,19 @@ class FrozenHostCodecProducts(FrozenNativeProducts):
             and record['source'] == native and record['materials'] == materials
             and snapshot == {'native': native, 'materials': materials}, 'codec-reader-exact-producer-source')
         require(record['profile'] == 'normal-managed-guest-default-features'
-            and record['nativeCohort'] == COHORT and record['scope'] == SCOPE
+            and record['nativeCohort'] == self.cohort and record['scope'] == self.scope
             and record['signedQualification'] is False and record['guestSourceCompiled'] is False
             and record['guestJavaScriptEngineCompiled'] is False and record['historicalReceiptRewritten'] is False
             and type(record['compiler']) is str and len(record['compiler']) <= 128
             and record['compiler'].startswith('rustc 1.97.1 ('), 'codec-reader-profile-not-guest-qualification')
-        require(type(record['controlCount']) is int and record['controlCount'] == 61
+        require(type(record['controlCount']) is int and record['controlCount'] == self.control_count
             and record['controls'] == {stage: list(cases) for stage, _, _, cases in self.controls}
             and type(record['products']) is dict and set(record['products']) == set(PRODUCTS)
             and all(_identity(row) for row in record['products'].values()), 'codec-reader-controls-and-five-products')
         commands = record['commands']
-        require(type(commands) is list and len(commands) == len(self.stages) == 31,
-            'codec-reader-all-thirty-one-commands')
+        require(type(commands) is list and len(commands) == len(self.stages) == self.command_count,
+            'codec-reader-all-thirty-one-commands' if self.command_count == 31
+            else 'codec-reader-all-thirty-seven-commands')
         require(type(commands[2]) is dict and type(commands[2].get('argv')) is list
             and len(commands[2]['argv']) > 2, 'codec-reader-original-host-build-command')
         config = commands[2]['argv'][2]
