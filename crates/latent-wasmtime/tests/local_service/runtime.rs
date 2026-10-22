@@ -600,6 +600,9 @@ async fn signed_runtime_limits_closing_and_generation_fences_use_normal_node_adm
             .unwrap()
             .await,
     );
+    // Compare identical canonical result bytes/capacity: this baseline does
+    // no runtime imports, while mode23 catches its native-memory refusal.
+    assert_eq!(direct.output.as_ref(), b"[42]");
     f.idle().await;
     let owned = success(
         f.manager
