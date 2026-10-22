@@ -1,0 +1,1090 @@
+{
+  "schemaVersion": "lsf.kernel-device-recipient-objects-compiled.v1",
+  "sourceCommit": "1625510fc6b6bcd32505511729ea355cae226b38",
+  "run": 39709818544,
+  "job": 119598217305,
+  "workflow": ".github/workflows/stream-kernel-objects.yml",
+  "event": "push",
+  "branch": "feat/stream-kernel-device-recipient-20261022",
+  "artifact": {
+    "id": 12396074732,
+    "bytes": 1273493,
+    "sha256": "08f89f63417c11ecff410a33eaa56638ac65bd6e42dd15079253309d1abcfee5",
+    "crcMembers": 184
+  },
+  "receipt": {
+    "bytes": 79812,
+    "sha256": "66236a8afee05793fac52b8777bc9789c3f132b72c3b92a6fa50fb41109063ee"
+  },
+  "upstreamCommit": "7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+  "officialArchive": {
+    "bytes": 148686048,
+    "sha256": "e09b6727e5c521253f0d41694900b9c38fb7604db7d35238a8197aa9f7de2428"
+  },
+  "manifestSha256": "551b4157660f6f63adc90bbc39b1d5d8ba71e5444044f598ef9abdfea9fb7960",
+  "source": {
+    "gitMaterials": 283,
+    "gitMaterialTableSha256": "e2e4e0956971550faa214163c0d6e21d2f0bdcbacefae1c5e2a4b287c8251811",
+    "gitOnlyUnexecutedContextPaths": [
+      "docs/testing/stream-kernel-objects.md",
+      "research/standard-outbound/linux-6.12-lineage/README.md",
+      "research/standard-outbound/linux-6.12-lineage/allocation-closure.md",
+      "research/standard-outbound/linux-6.12-lineage/bind-private.md",
+      "research/standard-outbound/linux-6.12-lineage/device-core-prefix.md",
+      "research/standard-outbound/linux-6.12-lineage/device-firmware-prefix.md",
+      "research/standard-outbound/linux-6.12-lineage/device-prefix.md",
+      "research/standard-outbound/linux-6.12-lineage/device-recipient-plan-r1.md",
+      "research/standard-outbound/linux-6.12-lineage/device-recipient-retirement-plan-r1.md",
+      "research/standard-outbound/linux-6.12-lineage/device-recipient-security-plan-r1.md",
+      "research/standard-outbound/linux-6.12-lineage/device-uevent.md",
+      "research/standard-outbound/linux-6.12-lineage/maintained-source.md",
+      "research/standard-outbound/linux-6.12-lineage/packet.md",
+      "research/standard-outbound/linux-6.12-lineage/prepaid-audit-skb.md",
+      "research/standard-outbound/linux-6.12-lineage/prepaid-audit.md",
+      "research/standard-outbound/linux-6.12-lineage/prepaid-avc.md",
+      "research/standard-outbound/linux-6.12-lineage/prepaid-factory.md",
+      "research/standard-outbound/linux-6.12-lineage/prepaid-netlabel.md",
+      "research/standard-outbound/linux-6.12-lineage/prepaid-netport.md",
+      "research/standard-outbound/linux-6.12-lineage/prepaid-outer.md",
+      "research/standard-outbound/linux-6.12-lineage/prepaid-protocol.md",
+      "research/standard-outbound/linux-6.12-lineage/prepaid-sidcache.md",
+      "research/standard-outbound/linux-6.12-lineage/route-cache.md",
+      "research/standard-outbound/linux-6.12-lineage/route-private.md"
+    ],
+    "currentExecutableDataAndContractMaterials": 259,
+    "wholeInputs": 105,
+    "wholeInputBytes": 5857037,
+    "definitionPreimages": 189,
+    "derivedFiles": 189,
+    "sourceFreezeFiles": 132,
+    "sourceFreezeDigestTableSha256": "919e2d309c9d7327a2f2f7b723b034a6c7ab0fb29b8a0e5bada3d6e046494eb7",
+    "derivedDigestTableSha256": "ab4199d3ec24d87e68754b6567ddc90bd1f8b41f046c8b5db719e5cac9c03dc3",
+    "derivedOutputsExactToReviewedR4": 189,
+    "reviewedConsumerSourceBlobsExact": 55,
+    "authenticatedOriginalExtractionInputs": 103,
+    "authenticatedSelectedExtractionInputs": 161,
+    "originalGenericExtraSourceCap": 32,
+    "fixedPostExtractionDevicePaths": [
+      "drivers/base/core.c",
+      "drivers/pci/iov.c",
+      "drivers/pci/probe.c",
+      "include/asm-generic/sections.h",
+      "include/linux/mm.h",
+      "include/linux/pci.h",
+      "lib/kasprintf.c",
+      "lib/kobject.c",
+      "mm/util.c"
+    ],
+    "fixedPostExtractionFirmwarePaths": [
+      "drivers/acpi/bus.c",
+      "drivers/acpi/glue.c",
+      "drivers/acpi/internal.h",
+      "drivers/acpi/osl.c",
+      "drivers/acpi/scan.c",
+      "drivers/pci/pci-acpi.c",
+      "include/acpi/acpi_bus.h",
+      "include/linux/acpi.h",
+      "include/linux/fwnode.h",
+      "include/linux/kref.h",
+      "include/linux/pci-acpi.h",
+      "include/linux/workqueue.h",
+      "lib/klist.c"
+    ],
+    "fixedPostExtractionRegistrationPaths": [
+      "drivers/base/base.h",
+      "drivers/net/nlmon.c",
+      "drivers/of/device.c",
+      "drivers/pci/pci-driver.c",
+      "drivers/pci/pci.c",
+      "fs/kernfs/dir.c",
+      "fs/kernfs/file.c",
+      "fs/kernfs/inode.c",
+      "fs/kernfs/kernfs-internal.h",
+      "fs/kernfs/symlink.c",
+      "fs/sysfs/dir.c",
+      "include/linux/device.h",
+      "include/linux/idr.h",
+      "include/linux/kernfs.h",
+      "include/linux/kobject.h",
+      "include/linux/netlink.h",
+      "include/linux/radix-tree.h",
+      "lib/idr.c",
+      "lib/kobject_uevent.c",
+      "lib/radix-tree.c"
+    ],
+    "fixedPostExtractionRecipientPaths": [
+      "fs/eventpoll.c",
+      "fs/fcntl.c",
+      "fs/select.c",
+      "include/linux/capability.h",
+      "include/linux/rcupdate.h",
+      "include/linux/wait.h",
+      "include/net/scm.h",
+      "kernel/capability.c",
+      "kernel/rcu/tree.c",
+      "kernel/sched/core.c",
+      "kernel/sched/wait.c",
+      "kernel/signal.c",
+      "security/commoncap.c"
+    ],
+    "originalSchedulerContainingSources": {
+      "kernel/sched/Makefile": {
+        "bytes": 1351,
+        "sha256": "aac538af88b3c614b14196551c4dc8aa18a2f18fe777849c078d96f0d3c74d4b",
+        "gitBlob": "976092b7bd4520ebc1a607734520ac342585a120"
+      },
+      "kernel/sched/build_utility.c": {
+        "bytes": 2386,
+        "sha256": "9291d5887b521d3636e12ad4cff09feda4a8ff8f30980109478ef2edc16451e4",
+        "gitBlob": "80a3df49ab478420a8827f62a0bdf3374479082e"
+      },
+      "kernel/sched/sched.h": {
+        "bytes": 106490,
+        "sha256": "1afb7a7301268b04699adf70f61e0a6027ebfdf87f878c5cea4fb97671f0a282",
+        "gitBlob": "5e788dc39f630dfed96e46dfc4d5382b31e4ea07"
+      }
+    },
+    "extraSourcesIndependentlyGitCorroborated": false,
+    "perFileByteLimit": 4194304,
+    "aggregateSelectedByteLimit": 16777216,
+    "digestTableEncoding": "SHA256 of sorted-key compact ASCII JSON"
+  },
+  "configuration": {
+    "baseline": {
+      "bytes": 143203,
+      "sha256": "239e925557d3d349ea4c47c028e14431063f964ce6e7809024b6e4e804c7b659"
+    },
+    "selected": {
+      "bytes": 143192,
+      "sha256": "1b9152e00c4ef645dda8318f804aaae17acbabf4bd4d1b065c7205faabaef2b3"
+    },
+    "onlyChangedSymbol": "CONFIG_LSF_STREAM_FACTORY",
+    "securityAndInetPreserved": [
+      "CONFIG_INET",
+      "CONFIG_SECURITY",
+      "CONFIG_SECURITY_NETWORK",
+      "CONFIG_SECURITY_SELINUX"
+    ],
+    "resolvedSymbols": 4309,
+    "onlyDelta": {
+      "CONFIG_LSF_STREAM_FACTORY": [
+        "n",
+        "y"
+      ]
+    },
+    "NETLABELAlreadyEnabled": true,
+    "SIDCACHEOriginalEntries": 256,
+    "AUDITAndAUDITSYSCALLAlreadyEnabled": [
+      "CONFIG_AUDIT",
+      "CONFIG_AUDITSYSCALL"
+    ],
+    "XFRMAlreadyEnabled": true,
+    "trackerAndLwtOriginallyDisabled": true,
+    "deviceRequiredAlreadyEnabled": [
+      "CONFIG_PCI",
+      "CONFIG_ACPI",
+      "CONFIG_PCI_QUIRKS",
+      "CONFIG_STRICT_KERNEL_RWX"
+    ],
+    "deviceRequiredAlreadyDisabled": [
+      "CONFIG_PCI_IOV",
+      "CONFIG_OF"
+    ],
+    "registrationRequiredAlreadyEnabled": [
+      "CONFIG_SYSFS",
+      "CONFIG_KERNFS",
+      "CONFIG_NET_NS",
+      "CONFIG_SECURITY_NETWORK"
+    ],
+    "registrationRequiredAlreadyDisabled": [
+      "CONFIG_BPF_SYSCALL",
+      "CONFIG_UEVENT_HELPER",
+      "CONFIG_OF",
+      "CONFIG_NLMON"
+    ],
+    "recipientRequiredAlreadyEnabled": [
+      "CONFIG_EPOLL",
+      "CONFIG_SIGNALFD",
+      "CONFIG_IO_URING",
+      "CONFIG_TRACEPOINTS",
+      "CONFIG_PERF_EVENTS",
+      "CONFIG_FTRACE",
+      "CONFIG_KPROBES",
+      "CONFIG_TREE_RCU",
+      "CONFIG_PREEMPT_RCU"
+    ],
+    "PREEMPT_RTOriginallyDisabled": true
+  },
+  "objects": {
+    "net/socket.o": {
+      "bytes": 100072,
+      "sha256": "629a62c88f3d8d5e071528c62c82f1afa2fb4051981b5cded147f668a3d63cf0",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_sock_create"
+      ]
+    },
+    "fs/inode.o": {
+      "bytes": 79984,
+      "sha256": "a82be67ae273db6caadc242e9fa52da443dc5992cf6603875cb523d68d8a8267",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_new_inode"
+      ]
+    },
+    "net/core/sock.o": {
+      "bytes": 122352,
+      "sha256": "c1632d4b68ee8bc9c4a728d762b79803d4fd68beaf551c1b50e9deb16725608b",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_sk_alloc",
+        "lsf_prepaid_protocol_allocate",
+        "lsf_prepaid_protocol_return",
+        "lsf_prepaid_protocol_clear",
+        "lsf_prepaid_device_sk_wake_async_rcu",
+        "lsf_prepaid_device_socket_notify"
+      ]
+    },
+    "net/ipv4/af_inet.o": {
+      "bytes": 54040,
+      "sha256": "2a4875441365d480d4bbe79a1657f139aee1207f9d56b3135f4e6ed32e3ab1a1",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_inet_create",
+        "lsf_prepaid_protocol_family"
+      ]
+    },
+    "security/security.o": {
+      "bytes": 416560,
+      "sha256": "d4804a5bde440fd6b70ecd46885b27a090cb94e15899f07c7b6a5fe40cf03580",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_security_inode_alloc",
+        "lsf_prepaid_security_sk_alloc",
+        "security_kernfs_init_security",
+        "security_sock_rcv_skb",
+        "lsf_prepaid_device_security_file_send_sigiotask",
+        "lsf_prepaid_device_security_capable",
+        "lsf_prepaid_device_security_secctx",
+        "lsf_prepaid_device_security_release_secctx"
+      ]
+    },
+    "net/factory.o": {
+      "bytes": 125800,
+      "sha256": "414c2fdab718173fdd88ac50960b1d253920a1c054b1c13b1716bd1dd656a8dd",
+      "requiredDefinedSymbols": [
+        "lsf_factory_register",
+        "lsf_factory_blob_allocate",
+        "lsf_factory_blob_finish",
+        "lsf_factory_child_allocate",
+        "lsf_factory_protocol_parent",
+        "lsf_factory_options_publish",
+        "lsf_factory_options_owned",
+        "lsf_factory_options_queue",
+        "lsf_factory_netport_publish",
+        "lsf_factory_netport_queue",
+        "lsf_factory_netport_candidate",
+        "lsf_factory_netport_current",
+        "lsf_factory_sidcache_publish",
+        "lsf_factory_sidcache_queue",
+        "lsf_factory_sidcache_destroy",
+        "lsf_factory_sidcache_candidate",
+        "lsf_factory_sidcache_current",
+        "lsf_factory_avc_member",
+        "lsf_factory_avc_phase",
+        "lsf_factory_avc_replace",
+        "lsf_factory_avc_publish",
+        "lsf_factory_avc_queue",
+        "lsf_factory_avc_candidate",
+        "lsf_factory_avc_current",
+        "lsf_factory_audit_head_current",
+        "lsf_factory_route_queue",
+        "lsf_factory_route_return",
+        "lsf_factory_route_parent_attach",
+        "lsf_factory_route_cache_publish",
+        "lsf_factory_route_current",
+        "lsf_factory_route_parent_take",
+        "lsf_factory_packet_birth",
+        "lsf_factory_packet_head_current",
+        "lsf_factory_device_pci_ready",
+        "lsf_factory_device_pci_enter",
+        "lsf_factory_device_pci_leave",
+        "lsf_factory_device_pci_allocate",
+        "lsf_factory_device_pci_return",
+        "lsf_factory_device_pci_owned",
+        "lsf_factory_device_firmware_begin",
+        "lsf_factory_device_firmware_get",
+        "lsf_factory_device_firmware_current",
+        "lsf_factory_device_firmware_invalidate",
+        "lsf_factory_device_firmware_retire",
+        "lsf_factory_device_firmware_constructor_enter",
+        "lsf_factory_device_firmware_constructor_leave",
+        "lsf_factory_device_core_begin",
+        "lsf_factory_device_core_owned",
+        "lsf_factory_device_core_allocate",
+        "lsf_factory_device_core_return",
+        "lsf_factory_device_core_tail_enter",
+        "lsf_factory_device_core_tail_finish",
+        "lsf_factory_device_capabilities_owned",
+        "lsf_factory_device_capability_allocate",
+        "lsf_factory_device_capability_return",
+        "lsf_factory_device_registration_constructor_revoke",
+        "lsf_factory_device_registration_kobject",
+        "lsf_factory_device_registration_node",
+        "lsf_factory_device_registration_current",
+        "lsf_factory_device_registration_allocate",
+        "lsf_factory_device_registration_return_begin",
+        "lsf_factory_device_registration_return_finish",
+        "lsf_factory_device_sysfs_pair",
+        "lsf_factory_device_sysfs_name",
+        "lsf_factory_device_sysfs_release",
+        "lsf_factory_device_sysfs_iattrs",
+        "lsf_factory_device_uevent_poison",
+        "lsf_factory_device_uevent_kobject",
+        "lsf_factory_device_uevent_birth",
+        "lsf_factory_device_uevent_current",
+        "lsf_factory_device_uevent_allocate",
+        "lsf_factory_device_uevent_return",
+        "lsf_factory_device_uevent_head_current",
+        "lsf_factory_device_uevent_path_bytes",
+        "lsf_factory_device_tap_admit",
+        "lsf_factory_device_tap_retired",
+        "lsf_factory_blob_poison",
+        "lsf_factory_device_recipient_begin",
+        "lsf_factory_device_recipient_current",
+        "lsf_factory_device_recipient_finish",
+        "lsf_factory_device_recipient_signal_allocate",
+        "lsf_factory_device_recipient_signal_birth",
+        "lsf_factory_device_recipient_signal_return",
+        "lsf_factory_device_recipient_blob",
+        "lsf_factory_device_security_candidate",
+        "lsf_factory_device_security_current",
+        "lsf_factory_device_recipient_packet"
+      ]
+    },
+    "security/selinux/netlabel.o": {
+      "bytes": 15256,
+      "sha256": "f2271becd901faeb6fd656807cad29d2186869883ffb41f647fa01c2b86b5328",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_netlabel_sock_genattr"
+      ]
+    },
+    "security/selinux/ss/services.o": {
+      "bytes": 78192,
+      "sha256": "086d833fc662fae2d03b130b4832117da0dcd9faa4c62b11b7971a6fedfbdd28",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_security_sid_to_secattr",
+        "lsf_prepaid_audit_dup",
+        "lsf_prepaid_audit_string_return",
+        "lsf_prepaid_sidcache_drain",
+        "lsf_prepaid_security_sid_to_context",
+        "lsf_prepaid_device_sidcache_drain"
+      ]
+    },
+    "security/selinux/ss/mls.o": {
+      "bytes": 12888,
+      "sha256": "7521993d0962d86f50b7ee8c0fe4cf6e804b8cc7ebe60b5e682026b532016c0c",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_mls_export_cat"
+      ]
+    },
+    "security/selinux/ss/ebitmap.o": {
+      "bytes": 13160,
+      "sha256": "1ea1533eaf822ef73cb34c4048030cc0d871ef871289847761fd06be3f35f3ad",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_ebitmap_export"
+      ]
+    },
+    "net/netlabel/netlabel_kapi.o": {
+      "bytes": 32528,
+      "sha256": "09e9ef44ff942a21f1deec83039748cf18eb0d02632d51a5a8f8353084290f2e",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_catmap_setlong",
+        "lsf_prepaid_netlbl_sock_setattr",
+        "lsf_prepaid_netlbl_conn_setattr",
+        "lsf_prepaid_netlabel_source",
+        "lsf_prepaid_label_domain_return",
+        "lsf_prepaid_label_catmap_return",
+        "lsf_prepaid_label_secattr_return",
+        "lsf_prepaid_cipso_buffer_return",
+        "lsf_prepaid_options_failed_return",
+        "lsf_prepaid_options_retire",
+        "lsf_prepaid_netlabel_strdup"
+      ]
+    },
+    "net/ipv4/cipso_ipv4.o": {
+      "bytes": 25096,
+      "sha256": "6571e70d6be0398a55a06272b5f852bbc711bcd1cf6a28875f98be3426edd725",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_cipso_sock_setattr"
+      ]
+    },
+    "security/selinux/netport.o": {
+      "bytes": 9328,
+      "sha256": "26360430305f97e805ff179c9f3403b4d8218695c6f5cda8ca9f8b370964d139",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_netport_sid",
+        "lsf_prepaid_netport_drain"
+      ]
+    },
+    "security/selinux/hooks.o": {
+      "bytes": 174336,
+      "sha256": "2edc7c7cf9788b644751cf4ea96f0a107f4688e8638663eef8ffd96431c29206",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_device_selinux_kernfs_hook",
+        "lsf_prepaid_device_selinux_socket_hook",
+        "lsf_prepaid_device_selinux_file_send_sigiotask",
+        "lsf_prepaid_device_selinux_sigio_hook",
+        "lsf_prepaid_device_selinux_capable",
+        "lsf_prepaid_device_selinux_capable_hook",
+        "lsf_prepaid_device_selinux_secctx",
+        "lsf_prepaid_device_selinux_release_secctx",
+        "lsf_prepaid_device_selinux_secctx_hook",
+        "lsf_prepaid_device_selinux_release_secctx_hook"
+      ]
+    },
+    "security/selinux/ss/sidtab.o": {
+      "bytes": 19200,
+      "sha256": "0d9320e1e780bed5180eec683258874b396efae2d562c0baf0386a5441e10f0e",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_sid2str_put",
+        "lsf_prepaid_sid2str_get",
+        "lsf_prepaid_sidcache_detach",
+        "lsf_prepaid_device_sidcache_detach"
+      ]
+    },
+    "security/selinux/avc.o": {
+      "bytes": 124128,
+      "sha256": "48aeedf67a0f768c93c8ddff58d592946cb397c9c0d269f4723e71fe95b900a7",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_avc_has_perm",
+        "lsf_prepaid_avc_drain",
+        "lsf_prepaid_avc_audit",
+        "lsf_prepaid_device_avc_drain"
+      ]
+    },
+    "net/core/skbuff.o": {
+      "bytes": 193664,
+      "sha256": "c10895a062d149dad1321b6f027813f4a82ef3107b0b84af219a6e1bc8ed429b",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_audit_skb_new",
+        "lsf_prepaid_packet_skb_new",
+        "lsf_prepaid_packet_alloc_sock",
+        "lsf_prepaid_packet_linear",
+        "lsf_prepaid_packet_for_sock",
+        "lsf_prepaid_device_uevent_skb_new"
+      ]
+    },
+    "kernel/audit.o": {
+      "bytes": 64528,
+      "sha256": "546ead47fa11704653982c6f60680c4e65badc6317b51ade2db5f240fc414c38",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_audit_log_start",
+        "lsf_prepaid_audit_log_end"
+      ]
+    },
+    "security/lsm_audit.o": {
+      "bytes": 10328,
+      "sha256": "ffab0aebcfb4681fb6c3b9c5bcea7f5aa8bba8495cc732d19bf1199b3a0316a5",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_common_lsm_audit"
+      ]
+    },
+    "net/netlink/af_netlink.o": {
+      "bytes": 91712,
+      "sha256": "c923816d0c37b486a5a0a5103dbcd607361b9e4925048e389f0b5832ab02ec1d",
+      "requiredDefinedSymbols": [
+        "netlink_unicast",
+        "netlink_broadcast_filtered",
+        "netlink_add_tap",
+        "netlink_remove_tap",
+        "lsf_prepaid_device_broadcast_filtered",
+        "lsf_prepaid_device_recvmsg_tail"
+      ]
+    },
+    "net/ipv4/inet_hashtables.o": {
+      "bytes": 40008,
+      "sha256": "15073d1469c841c7ef1c9bbcbec51287da669641b44122ec9407aaf96631bfa6",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_bind_check",
+        "lsf_prepaid_bind_owned",
+        "lsf_prepaid_bind_bucket_create",
+        "lsf_prepaid_bind2_allocate",
+        "lsf_prepaid_bind_return"
+      ]
+    },
+    "net/ipv4/inet_connection_sock.o": {
+      "bytes": 42872,
+      "sha256": "994725c668892381819e64d99f95697307cca3f418cc3e61cea505d65fcfe97e",
+      "requiredDefinedSymbols": [
+        "inet_csk_get_port"
+      ]
+    },
+    "net/ipv4/route.o": {
+      "bytes": 91608,
+      "sha256": "f1193c4fa40615f61886357a3cb860bfb7a346a2971ff8d91b5a4d5cc6c4ec31",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_route_key",
+        "lsf_prepaid_route_xfrm",
+        "ip_route_output_flow",
+        "lsf_prepaid_route_cache_return",
+        "lsf_prepaid_route_cache_drain"
+      ]
+    },
+    "net/core/dst.o": {
+      "bytes": 16048,
+      "sha256": "20dd73c819e5a2f3a5b00428ad97916aa922540df2a9572c8a08dd7d81792762",
+      "requiredDefinedSymbols": [
+        "dst_release"
+      ]
+    },
+    "net/ipv4/tcp.o": {
+      "bytes": 106352,
+      "sha256": "c20900370d84bfaf2c17bf80a0837892a557e6a75d5ec6bbc466549850a6fd53",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_tcp_stream_alloc_skb",
+        "lsf_prepaid_tcp_sendmsg_locked",
+        "tcp_stream_alloc_skb",
+        "tcp_sendmsg_locked"
+      ]
+    },
+    "net/ipv4/tcp_output.o": {
+      "bytes": 64176,
+      "sha256": "a68b314afefde0ee0e3ac98d2aaf48a81ab5a06251fb802f3bc6f916e1ebdb5a",
+      "requiredDefinedSymbols": [
+        "tcp_send_fin"
+      ]
+    },
+    "net/ipv4/tcp_input.o": {
+      "bytes": 95840,
+      "sha256": "f5e6b4d4660348f42c29549bb65d183cdefaf1f924d2ff68cbbafc6c54bcaa84",
+      "requiredDefinedSymbols": [
+        "tcp_rcv_established"
+      ]
+    },
+    "drivers/pci/probe.o": {
+      "bytes": 72448,
+      "sha256": "e73c5f8ff9eb1f785bad5cbb7671aceb8f57f5198825751b0164c1b62e1ea1db",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_pci_alloc_dev",
+        "lsf_prepaid_pci_setup_device",
+        "lsf_prepaid_pci_scan_single_device",
+        "pci_alloc_dev",
+        "pci_setup_device",
+        "pci_scan_single_device",
+        "lsf_prepaid_device_uevent_pci_type_known"
+      ]
+    },
+    "drivers/base/core.o": {
+      "bytes": 131432,
+      "sha256": "c1f38d054e94293078bf59ba035e754ec8fddedcc6ffe2c79d89ac4bd39fcae6",
+      "requiredDefinedSymbols": [
+        "dev_set_name",
+        "device_add",
+        "device_initialize",
+        "get_device",
+        "put_device",
+        "device_for_each_child",
+        "set_primary_fwnode",
+        "lsf_prepaid_device_uevent_device",
+        "lsf_prepaid_device_uevent_ops_known"
+      ]
+    },
+    "lib/kobject.o": {
+      "bytes": 29216,
+      "sha256": "170a32faf1928b9353503039d0dd0d1380dc1a874be080899a0498947ee03afc",
+      "requiredDefinedSymbols": [
+        "kobject_set_name_vargs",
+        "kobject_put",
+        "kobject_get",
+        "kobject_rename",
+        "kobject_move"
+      ]
+    },
+    "mm/util.o": {
+      "bytes": 36304,
+      "sha256": "9a1fdc3344038febd0fd5ee5cc2907ef385c257679dd6ff6faa9dfcfe2917eba",
+      "requiredDefinedSymbols": [
+        "kstrdup",
+        "kstrdup_const",
+        "kfree_const"
+      ]
+    },
+    "lib/kasprintf.o": {
+      "bytes": 4744,
+      "sha256": "d735c5f3ee9eb2dde040073239a155c9e63080016bb3b592cde76978a8e97b3b",
+      "requiredDefinedSymbols": [
+        "kvasprintf",
+        "kvasprintf_const"
+      ]
+    },
+    "drivers/acpi/scan.o": {
+      "bytes": 67160,
+      "sha256": "07b13b370e542a65e2a5de2fc3dc85f4290fa35faf5028955777d260b8958aa4",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_acpi_scan_enter",
+        "lsf_prepaid_acpi_scan_leave",
+        "lsf_prepaid_acpi_reference"
+      ]
+    },
+    "drivers/acpi/bus.o": {
+      "bytes": 37984,
+      "sha256": "8f7729086508f57e3c7937e5e0fe6d32e90712def766628915d636504d29ce24",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_acpi_dev_for_each_child",
+        "acpi_dev_for_each_child"
+      ]
+    },
+    "drivers/acpi/glue.o": {
+      "bytes": 12808,
+      "sha256": "84985ebb784256f9772b57f03629ccb57730bdd3c6e918fbd6adcd8764546991",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_acpi_find_child_device",
+        "acpi_find_child_device"
+      ]
+    },
+    "drivers/acpi/osl.o": {
+      "bytes": 46328,
+      "sha256": "e44edffd5e650610b4e8039104ef5383e25e69c488546e42851e141144beebdb",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_acpi_queue_reference_put",
+        "lsf_prepaid_acpi_reference_queue_ready",
+        "acpi_queue_hotplug_work"
+      ]
+    },
+    "drivers/pci/pci-acpi.o": {
+      "bytes": 27400,
+      "sha256": "abd7f81a9fb353d0fa06d5f27664e60c4ff7d3f567674e22663182fec1cdf213",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_pci_set_acpi_fwnode",
+        "pci_set_acpi_fwnode"
+      ]
+    },
+    "drivers/pci/pci.o": {
+      "bytes": 145680,
+      "sha256": "79cbc23ea6eb47bff2ec51cafd538bbd3bad11a959158e5308692b60666cf4ca",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_pci_add_cap_save_buffer"
+      ]
+    },
+    "drivers/pci/pci-driver.o": {
+      "bytes": 38896,
+      "sha256": "5227ece44f1765bbb6fe6412618f47adf44d9287841f929bef50e07b20c5fd00",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_device_uevent_pci_bus_known"
+      ]
+    },
+    "fs/kernfs/dir.o": {
+      "bytes": 42160,
+      "sha256": "1d4c0048a389ec24a864bf57cb45de2f27d28e19f6ef6c8bba2be1ff6bbe72a1",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_device_kernfs_new_node",
+        "lsf_prepaid_device_kernfs_create_dir_ns"
+      ]
+    },
+    "fs/kernfs/file.o": {
+      "bytes": 21424,
+      "sha256": "32d795f2a40ac4bccf07692e02ec04ab35862a07285f4f67bab2f55f73750ea8",
+      "requiredDefinedSymbols": [
+        "kernfs_notify"
+      ]
+    },
+    "fs/kernfs/inode.o": {
+      "bytes": 12600,
+      "sha256": "2f0b099a906332ab02c91bb15ab0e03d5c32cbf06efd03214f727fadd19895e0",
+      "requiredDefinedSymbols": [
+        "kernfs_xattr_get",
+        "kernfs_xattr_set"
+      ]
+    },
+    "fs/kernfs/symlink.o": {
+      "bytes": 4240,
+      "sha256": "6fb6491dbbb22e673f6e36523f53a075f0ae9c760db136b46ba04c963b8d0a2c",
+      "requiredDefinedSymbols": [
+        "kernfs_create_link"
+      ]
+    },
+    "fs/sysfs/dir.o": {
+      "bytes": 8176,
+      "sha256": "1679c154380f92a23b33898561a222b74a3588a8e6576febea6d27ecf90d6932",
+      "requiredDefinedSymbols": [
+        "sysfs_create_dir_ns"
+      ]
+    },
+    "lib/idr.o": {
+      "bytes": 15352,
+      "sha256": "2b991fae5ed0e9e7e87337b67e2918d0a661223aaa4443f525d181d528d2e175",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_device_idr_alloc_cyclic",
+        "idr_alloc_u32"
+      ]
+    },
+    "lib/radix-tree.o": {
+      "bytes": 28552,
+      "sha256": "dd1f5e33a7ff91f4d9ed8ffb326529edfc7abc5993edd0b63f9c377b3a57c1d0",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_device_idr_get_free"
+      ]
+    },
+    "lib/kobject_uevent.o": {
+      "bytes": 20224,
+      "sha256": "bfc50125868ca5b2b4c9bb6e6d2338452f5c71b13fa9faead8a51c4a46bf56a7",
+      "requiredDefinedSymbols": [
+        "kobject_uevent_env"
+      ]
+    },
+    "net/core/filter.o": {
+      "bytes": 226528,
+      "sha256": "c30b15e0451613a0058f454e7b7edd2999bc1a3d6bca28d04f905e8e9cd5c6dd",
+      "requiredDefinedSymbols": [
+        "sk_filter_trim_cap"
+      ]
+    },
+    "kernel/signal.o": {
+      "bytes": 123216,
+      "sha256": "a31cdc3731d7c22dd3d1c3e5d110c8d7f9e279fde1e82b38888b78250e40658f",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_device_do_send_sig_info"
+      ]
+    },
+    "fs/fcntl.o": {
+      "bytes": 24720,
+      "sha256": "095559df6480496b08e9ab8884770b004cd30b9b43dd4a81881117162fdece57",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_device_kill_fasync"
+      ]
+    },
+    "kernel/sched/build_utility.o": {
+      "bytes": 177016,
+      "sha256": "0aa47efd4683fccb3c45b2b6ebd70c4b26aee7426ce771d92ed6331d9af47151",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_device_wake",
+        "lsf_prepaid_device_wake_sync",
+        "lsf_prepaid_device_wake_locked"
+      ]
+    },
+    "kernel/sched/core.o": {
+      "bytes": 304864,
+      "sha256": "eebecfafc5de4376f953ba085e3d23f26cdd49a3c9c7948b67ad80ab4daed4e4",
+      "requiredDefinedSymbols": [
+        "default_wake_function"
+      ]
+    },
+    "fs/select.o": {
+      "bytes": 33192,
+      "sha256": "4c5961447b793f73325c258972182da3a26638c662a2339d5c99fb07f515bd46",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_device_pollwake",
+        "lsf_prepaid_device_pollwake_matches"
+      ]
+    },
+    "fs/eventpoll.o": {
+      "bytes": 43952,
+      "sha256": "efe9b0120dddca6a86a89b583be01f27dc927bd45807bfb12f419b44658e2043",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_device_epoll_callback",
+        "lsf_prepaid_device_epoll_matches"
+      ]
+    },
+    "kernel/capability.o": {
+      "bytes": 16168,
+      "sha256": "ff76e97973601661bc2d56bc6bbf73c932830725cdf25d0a1a4a04a01e63803b",
+      "requiredDefinedSymbols": [
+        "lsf_prepaid_device_file_ns_capable"
+      ]
+    },
+    "security/commoncap.o": {
+      "bytes": 20296,
+      "sha256": "3f3ec1014de5dbfd9aca62daeaecb4307f404313e2c6eaa88716a69687cc1c30",
+      "requiredDefinedSymbols": [
+        "cap_capable"
+      ]
+    }
+  },
+  "requiredGlobalFunctionCount": 243,
+  "privateGlobalFunctionCount": 196,
+  "originalGlobalFunctionCount": 47,
+  "preservedPriorObjectFloor": 48,
+  "preservedPriorFunctionFloor": 201,
+  "hostedSourceAndControllerTests": {
+    "count": 166,
+    "exactOfficialCaseSetVerified": true,
+    "controllerCases": 77,
+    "sourceCases": 89,
+    "jobLog": {
+      "bytes": 94081,
+      "sha256": "d88dc821056dde7b7aa8be811eaddee100dddaf0d34bef4d1cf2a14638863d60"
+    },
+    "priorPassingCReferencesRepeatedForTargetCorrection": false
+  },
+  "ownedCommands": {
+    "count": 61,
+    "allCompletedAndCleaned": true,
+    "aggregateDeadlineSeconds": 900,
+    "perCommandDeadlineSeconds": 300,
+    "diagnosticBytes": 515981,
+    "perCommandDiagnosticLimit": 4194304,
+    "aggregateDiagnosticLimit": 16777216
+  },
+  "supplementalReferences": {
+    "kernel-device-delivery-reference-r1": {
+      "verification": {
+        "bytes": 5073,
+        "sha256": "8bc38c6d2a8d41de071a86131ba20ba4dfccd4909ab415d6308b2ebcb16d7f05"
+      },
+      "serializedDoublesOnly": true,
+      "kernelRuntimeExecuted": false,
+      "rows": [
+        {
+          "variant": "current",
+          "runExitCode": 0,
+          "outcome": {
+            "result": 0,
+            "completed": 18,
+            "failed": 0
+          }
+        },
+        {
+          "variant": "transfer-error-counterfactual",
+          "runExitCode": 2,
+          "outcome": {
+            "result": 2,
+            "completed": 2,
+            "failed": 2
+          }
+        }
+      ]
+    },
+    "kernel-device-receive-reference-r1": {
+      "verification": {
+        "bytes": 5109,
+        "sha256": "9d17eea8731678d7c79b0635780c853bd58a464ee36a8bcbf71d0a49b7d75ab2"
+      },
+      "serializedDoublesOnly": true,
+      "kernelRuntimeExecuted": false,
+      "rows": [
+        {
+          "variant": "current",
+          "runExitCode": 0,
+          "outcome": {
+            "result": 0,
+            "completed": 15,
+            "failed": 0
+          }
+        },
+        {
+          "variant": "postfree-admission-counterfactual",
+          "runExitCode": 2,
+          "outcome": {
+            "result": 2,
+            "completed": 1,
+            "failed": 1
+          }
+        }
+      ]
+    },
+    "kernel-device-sigio-dispatch-reference-r1": {
+      "verification": {
+        "bytes": 4761,
+        "sha256": "fd09f591e9c7b0c87194ca4e3cfd5ec66ad099d2e9829afca4c9af1284426197"
+      },
+      "serializedDoublesOnly": true,
+      "kernelRuntimeExecuted": false,
+      "rows": [
+        {
+          "variant": "current",
+          "runExitCode": 0,
+          "outcome": {
+            "result": 0,
+            "completed": 7,
+            "failed": 0
+          }
+        },
+        {
+          "variant": "silent-refusal-counterfactual",
+          "runExitCode": 2,
+          "outcome": {
+            "result": 2,
+            "completed": 2,
+            "failed": 2
+          }
+        }
+      ]
+    },
+    "kernel-device-signal-retirement-reference-r3": {
+      "verification": {
+        "bytes": 10949,
+        "sha256": "64416cffb8819d966ce779dd3233306b87ad227959466957f53ef084dab8af65"
+      },
+      "serializedDoublesOnly": true,
+      "kernelRuntimeExecuted": false,
+      "rows": [
+        {
+          "variant": "current",
+          "runExitCode": 0,
+          "outcome": {
+            "result": 0,
+            "completed": 15,
+            "failed": 0
+          }
+        },
+        {
+          "variant": "premature-final-return-counterfactual",
+          "runExitCode": 2,
+          "outcome": {
+            "result": 103,
+            "completed": 2,
+            "failed": 3
+          }
+        },
+        {
+          "variant": "rt-producer-refused",
+          "runExitCode": 0,
+          "outcome": {
+            "result": 0,
+            "completed": 1,
+            "failed": 0
+          }
+        }
+      ]
+    },
+    "kernel-device-security-drain-reference-r3": {
+      "verification": {
+        "bytes": 9346,
+        "sha256": "9a16ac1c25250023cd7a8ed0c5c68c662ea671a575fedbcaed55b840c4099b58"
+      },
+      "serializedDoublesOnly": true,
+      "kernelRuntimeExecuted": false,
+      "rows": [
+        {
+          "variant": "current",
+          "runExitCode": 0,
+          "outcome": {
+            "result": 0,
+            "completed": 16,
+            "failed": 0
+          }
+        },
+        {
+          "variant": "premature-live-owner-drain-counterfactual",
+          "runExitCode": 2,
+          "outcome": {
+            "result": 101,
+            "completed": 0,
+            "failed": 1
+          }
+        }
+      ]
+    },
+    "kernel-device-security-poison-reference-r1": {
+      "verification": {
+        "bytes": 9227,
+        "sha256": "2e111b50e47f85bdb913c7eb6f688a371ad4798353f514a8aac6823cf72b8b94"
+      },
+      "serializedDoublesOnly": true,
+      "kernelRuntimeExecuted": false,
+      "rows": [
+        {
+          "variant": "current",
+          "runExitCode": 0,
+          "outcome": {
+            "result": 0,
+            "completed": 4,
+            "failed": 0
+          }
+        },
+        {
+          "variant": "context-only-poison-counterfactual",
+          "runExitCode": 2,
+          "outcome": {
+            "result": 102,
+            "completed": 1,
+            "failed": 2
+          }
+        }
+      ]
+    }
+  },
+  "earlierActualFailure": {
+    "sourceCommit": "78dc4e6de203ef792f777126eb35178c71bbfb2c",
+    "run": 39708439501,
+    "job": 119593836624,
+    "artifact": {
+      "id": 12395967621,
+      "bytes": 430081,
+      "sha256": "ef9d643667edcc5a352a4c933bf358bb6e79cfc76524b942a9bead044522de34"
+    },
+    "retainedVerification": {
+      "bytes": 6518,
+      "sha256": "bce6d645f1b95bb959a6f5abbea26148751b857053f51a2a87546f9af2f1f306"
+    },
+    "crcMembers": 41,
+    "retainedObjectFiles": 25,
+    "actualFailure": "Owning recipe compiled wait.c standalone instead of its real maintained build_utility.c containing translation unit.",
+    "failureRetained": true,
+    "passed": false
+  },
+  "recipientContinuationSourceImplemented": true,
+  "mandatoryAuditSourceImplemented": true,
+  "additionalSourcesIndependentlyGitCorroborated": false,
+  "kernelLinked": false,
+  "kernelBooted": false,
+  "factoryInstalled": false,
+  "completeAllocationClosure": false,
+  "productionInstallation": false,
+  "kernelBuilt": false,
+  "actualDeviceInitialized": false,
+  "trustedNativeBootstrapAuthenticated": false,
+  "finalFreeCertified": false,
+  "actualFirmwareExecuted": false,
+  "completeFirmwareClosure": false,
+  "actualDeviceCoreExecuted": false,
+  "completeDeviceCoreClosure": false,
+  "actualDeviceCapabilitiesExecuted": false,
+  "completeCapabilitiesClosure": false,
+  "actualDeviceRegistrationExecuted": false,
+  "completeDeviceRegistration": false,
+  "actualSysfsRegistrationExecuted": false,
+  "completeSysfsClosure": false,
+  "mandatoryKernfsSecurityQualified": false,
+  "ueventDeliveryOwned": false,
+  "actualUeventDeliveryExecuted": false,
+  "completeUeventClosure": false,
+  "actualTapAdmissionExecuted": false,
+  "completeTapFenceQualified": false,
+  "actualEnvPathCallbackExecuted": false,
+  "actualReceiverSecurityExecuted": false,
+  "actualUeventSkbRetirementExecuted": false,
+  "completeUeventCallbackClosure": false,
+  "actualRecipientSignalExecuted": false,
+  "completeRecipientSignalClosure": false,
+  "actualReceiveTailExecuted": false,
+  "completeReceiveTailClosure": false,
+  "recipientSigioSecurityOwned": false,
+  "recipientInstrumentationOwned": false,
+  "actualRecipientRcuExecuted": false,
+  "recipientSignalRcuPhysicallyQualified": false,
+  "deviceSecurityCarrierQualified": false,
+  "actualDeviceSecurityExecuted": false,
+  "deviceSecurityCachesDrained": false,
+  "completeDeviceSecurityClosure": false,
+  "actualOwnedWaitExecuted": false,
+  "completeWaitCallbackSet": false,
+  "actualEpollNotificationExecuted": false,
+  "instrumentationAdmissionQualified": false,
+  "actualSenderContinuationExecuted": false,
+  "actualReceiverContinuationExecuted": false,
+  "completeScmCallbackClosure": false,
+  "completeRecipientCapabilityClosure": false,
+  "actualSharedWorkqueueAccounted": false,
+  "actualRecipientCallbackClosure": false,
+  "nativeCompiledByThisCampaign": false,
+  "actualLinuxRcuExecuted": false,
+  "actualRxDmaExecuted": false,
+  "hostTlsAccountingQualified": false,
+  "remainingGates": [
+    "generation-bound cleanup resumption after final security-cache children and complete callback closure",
+    "synchronized multi-family instrumentation admission and physical retirement",
+    "NodeFixed/native bootstrap and failed-open original-owner retention",
+    "physical shared hotplug workqueue, RCU queues and worker admission and retirement",
+    "full PCI setup, driver, DMA, virtio, per-CPU and prelookup RX allocation closure",
+    "remaining neighbour, DNS, page and deferred allocation/final-free closure",
+    "sealed maintained image/configuration/layout/BTF and installed final-free producer",
+    "kernel link, boot, factory installation and finite real node/operator/provider conformance"
+  ]
+}
