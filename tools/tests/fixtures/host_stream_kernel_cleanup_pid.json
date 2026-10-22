@@ -1,0 +1,137 @@
+{
+  "schemaVersion": "lsf.kernel-cleanup-pid-source.v1",
+  "upstreamCommit": "7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+  "archiveSha256": "e09b6727e5c521253f0d41694900b9c38fb7604db7d35238a8197aa9f7de2428",
+  "source": {
+    "kernel/pid.c": {
+      "bytes": 19245,
+      "sha256": "c6fc014785996084c52df570b21bb4770e8fa90865140d049bf0bf3baabb6427"
+    },
+    "include/linux/pid.h": {
+      "bytes": 9607,
+      "sha256": "bdbff03fdce4ca9ca3059fcc19a4da3990c2fbfc92847fffc88309002e009378"
+    },
+    "include/linux/pid_namespace.h": {
+      "bytes": 3143,
+      "sha256": "35c7ec4de78697a401e8d39c8812a88da7aae9c1d8b719a2c768e1bbf056d0aa"
+    }
+  },
+  "sections": {
+    "alloc_pid": {
+      "source": "kernel/pid.c",
+      "text": "struct pid *alloc_pid(struct pid_namespace *ns, pid_t *set_tid,\n\t\t      size_t set_tid_size)\n{\n\tstruct pid *pid;\n\tenum pid_type type;\n\tint i, nr;\n\tstruct pid_namespace *tmp;\n\tstruct upid *upid;\n\tint retval = -ENOMEM;\n\n\t/*\n\t * set_tid_size contains the size of the set_tid array. Starting at\n\t * the most nested currently active PID namespace it tells alloc_pid()\n\t * which PID to set for a process in that most nested PID namespace\n\t * up to set_tid_size PID namespaces. It does not have to set the PID\n\t * for a process in all nested PID namespaces but set_tid_size must\n\t * never be greater than the current ns->level + 1.\n\t */\n\tif (set_tid_size > ns->level + 1)\n\t\treturn ERR_PTR(-EINVAL);\n\n\tpid = kmem_cache_alloc(ns->pid_cachep, GFP_KERNEL);\n\tif (!pid)\n\t\treturn ERR_PTR(retval);\n\n\ttmp = ns;\n\tpid->level = ns->level;\n\n\tfor (i = ns->level; i >= 0; i--) {\n\t\tint tid = 0;\n\n\t\tif (set_tid_size) {\n\t\t\ttid = set_tid[ns->level - i];\n\n\t\t\tretval = -EINVAL;\n\t\t\tif (tid < 1 || tid >= pid_max)\n\t\t\t\tgoto out_free;\n\t\t\t/*\n\t\t\t * Also fail if a PID != 1 is requested and\n\t\t\t * no PID 1 exists.\n\t\t\t */\n\t\t\tif (tid != 1 && !tmp->child_reaper)\n\t\t\t\tgoto out_free;\n\t\t\tretval = -EPERM;\n\t\t\tif (!checkpoint_restore_ns_capable(tmp->user_ns))\n\t\t\t\tgoto out_free;\n\t\t\tset_tid_size--;\n\t\t}\n\n\t\tidr_preload(GFP_KERNEL);\n\t\tspin_lock_irq(&pidmap_lock);\n\n\t\tif (tid) {\n\t\t\tnr = idr_alloc(&tmp->idr, NULL, tid,\n\t\t\t\t       tid + 1, GFP_ATOMIC);\n\t\t\t/*\n\t\t\t * If ENOSPC is returned it means that the PID is\n\t\t\t * alreay in use. Return EEXIST in that case.\n\t\t\t */\n\t\t\tif (nr == -ENOSPC)\n\t\t\t\tnr = -EEXIST;\n\t\t} else {\n\t\t\tint pid_min = 1;\n\t\t\t/*\n\t\t\t * init really needs pid 1, but after reaching the\n\t\t\t * maximum wrap back to RESERVED_PIDS\n\t\t\t */\n\t\t\tif (idr_get_cursor(&tmp->idr) > RESERVED_PIDS)\n\t\t\t\tpid_min = RESERVED_PIDS;\n\n\t\t\t/*\n\t\t\t * Store a null pointer so find_pid_ns does not find\n\t\t\t * a partially initialized PID (see below).\n\t\t\t */\n\t\t\tnr = idr_alloc_cyclic(&tmp->idr, NULL, pid_min,\n\t\t\t\t\t      pid_max, GFP_ATOMIC);\n\t\t}\n\t\tspin_unlock_irq(&pidmap_lock);\n\t\tidr_preload_end();\n\n\t\tif (nr < 0) {\n\t\t\tretval = (nr == -ENOSPC) ? -EAGAIN : nr;\n\t\t\tgoto out_free;\n\t\t}\n\n\t\tpid->numbers[i].nr = nr;\n\t\tpid->numbers[i].ns = tmp;\n\t\ttmp = tmp->parent;\n\t}\n\n\t/*\n\t * ENOMEM is not the most obvious choice especially for the case\n\t * where the child subreaper has already exited and the pid\n\t * namespace denies the creation of any new processes. But ENOMEM\n\t * is what we have exposed to userspace for a long time and it is\n\t * documented behavior for pid namespaces. So we can't easily\n\t * change it even if there were an error code better suited.\n\t */\n\tretval = -ENOMEM;\n\n\tget_pid_ns(ns);\n\trefcount_set(&pid->count, 1);\n\tspin_lock_init(&pid->lock);\n\tfor (type = 0; type < PIDTYPE_MAX; ++type)\n\t\tINIT_HLIST_HEAD(&pid->tasks[type]);\n\n\tinit_waitqueue_head(&pid->wait_pidfd);\n\tINIT_HLIST_HEAD(&pid->inodes);\n\n\tupid = pid->numbers + ns->level;\n\tspin_lock_irq(&pidmap_lock);\n\tif (!(ns->pid_allocated & PIDNS_ADDING))\n\t\tgoto out_unlock;\n\tpid->stashed = NULL;\n\tpid->ino = ++pidfs_ino;\n\tfor ( ; upid >= pid->numbers; --upid) {\n\t\t/* Make the PID visible to find_pid_ns. */\n\t\tidr_replace(&upid->ns->idr, pid, upid->nr);\n\t\tupid->ns->pid_allocated++;\n\t}\n\tspin_unlock_irq(&pidmap_lock);\n\n\treturn pid;\n\nout_unlock:\n\tspin_unlock_irq(&pidmap_lock);\n\tput_pid_ns(ns);\n\nout_free:\n\tspin_lock_irq(&pidmap_lock);\n\twhile (++i <= ns->level) {\n\t\tupid = pid->numbers + i;\n\t\tidr_remove(&upid->ns->idr, upid->nr);\n\t}\n\n\t/* On failure to allocate the first pid, reset the state */\n\tif (ns->pid_allocated == PIDNS_ADDING)\n\t\tidr_set_cursor(&ns->idr, 0);\n\n\tspin_unlock_irq(&pidmap_lock);\n\n\tkmem_cache_free(ns->pid_cachep, pid);\n\treturn ERR_PTR(retval);\n}\n",
+      "bytes": 3665,
+      "sha256": "99bf9ca67162820dfc42ebcf7c883fa4888cc3e7d07b7808ce4403efafae6461"
+    },
+    "put_pid": {
+      "source": "kernel/pid.c",
+      "text": "void put_pid(struct pid *pid)\n{\n\tstruct pid_namespace *ns;\n\n\tif (!pid)\n\t\treturn;\n\n\tns = pid->numbers[pid->level].ns;\n\tif (refcount_dec_and_test(&pid->count)) {\n\t\tkmem_cache_free(ns->pid_cachep, pid);\n\t\tput_pid_ns(ns);\n\t}\n}\n",
+      "bytes": 223,
+      "sha256": "4b978134c0cec27962694531f1c82d28fdc893a7909d8cf54ed23a09299924a1"
+    },
+    "free_pid": {
+      "source": "kernel/pid.c",
+      "text": "void free_pid(struct pid *pid)\n{\n\t/* We can be called with write_lock_irq(&tasklist_lock) held */\n\tint i;\n\tunsigned long flags;\n\n\tspin_lock_irqsave(&pidmap_lock, flags);\n\tfor (i = 0; i <= pid->level; i++) {\n\t\tstruct upid *upid = pid->numbers + i;\n\t\tstruct pid_namespace *ns = upid->ns;\n\t\tswitch (--ns->pid_allocated) {\n\t\tcase 2:\n\t\tcase 1:\n\t\t\t/* When all that is left in the pid namespace\n\t\t\t * is the reaper wake up the reaper.  The reaper\n\t\t\t * may be sleeping in zap_pid_ns_processes().\n\t\t\t */\n\t\t\twake_up_process(ns->child_reaper);\n\t\t\tbreak;\n\t\tcase PIDNS_ADDING:\n\t\t\t/* Handle a fork failure of the first process */\n\t\t\tWARN_ON(ns->child_reaper);\n\t\t\tns->pid_allocated = 0;\n\t\t\tbreak;\n\t\t}\n\n\t\tidr_remove(&ns->idr, upid->nr);\n\t}\n\tspin_unlock_irqrestore(&pidmap_lock, flags);\n\n\tcall_rcu(&pid->rcu, delayed_put_pid);\n}\n",
+      "bytes": 813,
+      "sha256": "ba281dc29458b4a9980ccb9051f170a22212580f7e5230a6d0582f3d8c727796"
+    },
+    "delayed_put_pid": {
+      "source": "kernel/pid.c",
+      "text": "static void delayed_put_pid(struct rcu_head *rhp)\n{\n\tstruct pid *pid = container_of(rhp, struct pid, rcu);\n\tput_pid(pid);\n}\n",
+      "bytes": 124,
+      "sha256": "d9c579b45f4d20a35a44f1799e14dd2de5758012725b896a7921c55469f1beaa"
+    }
+  },
+  "radixDefinitions": {
+    "idr_alloc_cyclic": {
+      "source": "lib/idr.c",
+      "prefix": "int idr_alloc_cyclic(",
+      "bytes": 407,
+      "sha256": "6f599c027a2fdd0a207d721fcb7f3bad4fe2698610ab75f9e175238a67945bce",
+      "text": "int idr_alloc_cyclic(struct idr *idr, void *ptr, int start, int end, gfp_t gfp)\n{\n\tu32 id = idr->idr_next;\n\tint err, max = end > 0 ? end - 1 : INT_MAX;\n\n\tif ((int)id < start)\n\t\tid = start;\n\n\terr = idr_alloc_u32(idr, ptr, &id, max, gfp);\n\tif ((err == -ENOSPC) && (id > start)) {\n\t\tid = start;\n\t\terr = idr_alloc_u32(idr, ptr, &id, max, gfp);\n\t}\n\tif (err)\n\t\treturn err;\n\n\tidr->idr_next = id + 1;\n\treturn id;\n}\n"
+    },
+    "radix_tree_node_rcu_free": {
+      "source": "lib/radix-tree.c",
+      "prefix": "void radix_tree_node_rcu_free(",
+      "bytes": 488,
+      "sha256": "4102196dc5b413722d42e35b4a7904dd786f88d495def0a2cd6a439e6848ebeb",
+      "text": "void radix_tree_node_rcu_free(struct rcu_head *head)\n{\n\tstruct radix_tree_node *node =\n\t\t\tcontainer_of(head, struct radix_tree_node, rcu_head);\n\n\t/*\n\t * Must only free zeroed nodes into the slab.  We can be left with\n\t * non-NULL entries by radix_tree_free_nodes, so clear the entries\n\t * and tags here.\n\t */\n\tmemset(node->slots, 0, sizeof(node->slots));\n\tmemset(node->tags, 0, sizeof(node->tags));\n\tINIT_LIST_HEAD(&node->private_list);\n\n\tkmem_cache_free(radix_tree_node_cachep, node);\n}\n"
+    },
+    "radix_tree_extend": {
+      "source": "lib/radix-tree.c",
+      "prefix": "static int radix_tree_extend(",
+      "bytes": 1488,
+      "sha256": "cf774cfa5f2b22c55e21238ea4f224875dcc0991e49ab4f7f1c35734c51e3497",
+      "text": "static int radix_tree_extend(struct radix_tree_root *root, gfp_t gfp,\n\t\t\t\tunsigned long index, unsigned int shift)\n{\n\tvoid *entry;\n\tunsigned int maxshift;\n\tint tag;\n\n\t/* Figure out what the shift should be.  */\n\tmaxshift = shift;\n\twhile (index > shift_maxindex(maxshift))\n\t\tmaxshift += RADIX_TREE_MAP_SHIFT;\n\n\tentry = rcu_dereference_raw(root->xa_head);\n\tif (!entry && (!is_idr(root) || root_tag_get(root, IDR_FREE)))\n\t\tgoto out;\n\n\tdo {\n\t\tstruct radix_tree_node *node = radix_tree_node_alloc(gfp, NULL,\n\t\t\t\t\t\t\troot, shift, 0, 1, 0);\n\t\tif (!node)\n\t\t\treturn -ENOMEM;\n\n\t\tif (is_idr(root)) {\n\t\t\tall_tag_set(node, IDR_FREE);\n\t\t\tif (!root_tag_get(root, IDR_FREE)) {\n\t\t\t\ttag_clear(node, IDR_FREE, 0);\n\t\t\t\troot_tag_set(root, IDR_FREE);\n\t\t\t}\n\t\t} else {\n\t\t\t/* Propagate the aggregated tag info to the new child */\n\t\t\tfor (tag = 0; tag < RADIX_TREE_MAX_TAGS; tag++) {\n\t\t\t\tif (root_tag_get(root, tag))\n\t\t\t\t\ttag_set(node, tag, 0);\n\t\t\t}\n\t\t}\n\n\t\tBUG_ON(shift > BITS_PER_LONG);\n\t\tif (radix_tree_is_internal_node(entry)) {\n\t\t\tentry_to_node(entry)->parent = node;\n\t\t} else if (xa_is_value(entry)) {\n\t\t\t/* Moving a value entry root->xa_head to a node */\n\t\t\tnode->nr_values = 1;\n\t\t}\n\t\t/*\n\t\t * entry was already in the radix tree, so we do not need\n\t\t * rcu_assign_pointer here\n\t\t */\n\t\tnode->slots[0] = (void __rcu *)entry;\n\t\tentry = node_to_entry(node);\n\t\trcu_assign_pointer(root->xa_head, entry);\n\t\tshift += RADIX_TREE_MAP_SHIFT;\n\t} while (shift <= maxshift);\nout:\n\treturn maxshift + RADIX_TREE_MAP_SHIFT;\n}\n"
+    },
+    "radix_tree_node_ctor": {
+      "source": "lib/radix-tree.c",
+      "prefix": "static void\nradix_tree_node_ctor(",
+      "bytes": 157,
+      "sha256": "cdf755bef297b34e1571f2fdb6be02a7a7bafe5f330cc9e5df6388592c6155e7",
+      "text": "static void\nradix_tree_node_ctor(void *arg)\n{\n\tstruct radix_tree_node *node = arg;\n\n\tmemset(node, 0, sizeof(*node));\n\tINIT_LIST_HEAD(&node->private_list);\n}\n"
+    },
+    "idr_get_free": {
+      "source": "lib/radix-tree.c",
+      "prefix": "void __rcu **idr_get_free(",
+      "bytes": 1940,
+      "sha256": "6c8f7892357b2b592e295d5f5c24e2e82905595d63e9b4a6850e0960b4ed6c9f",
+      "text": "void __rcu **idr_get_free(struct radix_tree_root *root,\n\t\t\t      struct radix_tree_iter *iter, gfp_t gfp,\n\t\t\t      unsigned long max)\n{\n\tstruct radix_tree_node *node = NULL, *child;\n\tvoid __rcu **slot = (void __rcu **)&root->xa_head;\n\tunsigned long maxindex, start = iter->next_index;\n\tunsigned int shift, offset = 0;\n\n grow:\n\tshift = radix_tree_load_root(root, &child, &maxindex);\n\tif (!radix_tree_tagged(root, IDR_FREE))\n\t\tstart = max(start, maxindex + 1);\n\tif (start > max)\n\t\treturn ERR_PTR(-ENOSPC);\n\n\tif (start > maxindex) {\n\t\tint error = radix_tree_extend(root, gfp, start, shift);\n\t\tif (error < 0)\n\t\t\treturn ERR_PTR(error);\n\t\tshift = error;\n\t\tchild = rcu_dereference_raw(root->xa_head);\n\t}\n\tif (start == 0 && shift == 0)\n\t\tshift = RADIX_TREE_MAP_SHIFT;\n\n\twhile (shift) {\n\t\tshift -= RADIX_TREE_MAP_SHIFT;\n\t\tif (child == NULL) {\n\t\t\t/* Have to add a child node.  */\n\t\t\tchild = radix_tree_node_alloc(gfp, node, root, shift,\n\t\t\t\t\t\t\toffset, 0, 0);\n\t\t\tif (!child)\n\t\t\t\treturn ERR_PTR(-ENOMEM);\n\t\t\tall_tag_set(child, IDR_FREE);\n\t\t\trcu_assign_pointer(*slot, node_to_entry(child));\n\t\t\tif (node)\n\t\t\t\tnode->count++;\n\t\t} else if (!radix_tree_is_internal_node(child))\n\t\t\tbreak;\n\n\t\tnode = entry_to_node(child);\n\t\toffset = radix_tree_descend(node, &child, start);\n\t\tif (!tag_get(node, IDR_FREE, offset)) {\n\t\t\toffset = radix_tree_find_next_bit(node, IDR_FREE,\n\t\t\t\t\t\t\toffset + 1);\n\t\t\tstart = next_index(start, node, offset);\n\t\t\tif (start > max || start == 0)\n\t\t\t\treturn ERR_PTR(-ENOSPC);\n\t\t\twhile (offset == RADIX_TREE_MAP_SIZE) {\n\t\t\t\toffset = node->offset + 1;\n\t\t\t\tnode = node->parent;\n\t\t\t\tif (!node)\n\t\t\t\t\tgoto grow;\n\t\t\t\tshift = node->shift;\n\t\t\t}\n\t\t\tchild = rcu_dereference_raw(node->slots[offset]);\n\t\t}\n\t\tslot = &node->slots[offset];\n\t}\n\n\titer->index = start;\n\tif (node)\n\t\titer->next_index = 1 + min(max, (start | node_maxindex(node)));\n\telse\n\t\titer->next_index = 1;\n\titer->node = node;\n\tset_iter_tags(iter, node, offset, IDR_FREE);\n\n\treturn slot;\n}\n"
+    },
+    "radix_tree_node_alloc": {
+      "source": "lib/radix-tree.c",
+      "prefix": "static struct radix_tree_node *\nradix_tree_node_alloc(",
+      "bytes": 1531,
+      "sha256": "d19b4bb9f549ec3ce4f6af2d06cec4cdac1c4a5e57edd5ba456d08d56fa14ac3",
+      "text": "static struct radix_tree_node *\nradix_tree_node_alloc(gfp_t gfp_mask, struct radix_tree_node *parent,\n\t\t\tstruct radix_tree_root *root,\n\t\t\tunsigned int shift, unsigned int offset,\n\t\t\tunsigned int count, unsigned int nr_values)\n{\n\tstruct radix_tree_node *ret = NULL;\n\n\t/*\n\t * Preload code isn't irq safe and it doesn't make sense to use\n\t * preloading during an interrupt anyway as all the allocations have\n\t * to be atomic. So just do normal allocation when in interrupt.\n\t */\n\tif (!gfpflags_allow_blocking(gfp_mask) && !in_interrupt()) {\n\t\tstruct radix_tree_preload *rtp;\n\n\t\t/*\n\t\t * Even if the caller has preloaded, try to allocate from the\n\t\t * cache first for the new node to get accounted to the memory\n\t\t * cgroup.\n\t\t */\n\t\tret = kmem_cache_alloc(radix_tree_node_cachep,\n\t\t\t\t       gfp_mask | __GFP_NOWARN);\n\t\tif (ret)\n\t\t\tgoto out;\n\n\t\t/*\n\t\t * Provided the caller has preloaded here, we will always\n\t\t * succeed in getting a node here (and never reach\n\t\t * kmem_cache_alloc)\n\t\t */\n\t\trtp = this_cpu_ptr(&radix_tree_preloads);\n\t\tif (rtp->nr) {\n\t\t\tret = rtp->nodes;\n\t\t\trtp->nodes = ret->parent;\n\t\t\trtp->nr--;\n\t\t}\n\t\t/*\n\t\t * Update the allocation stack trace as this is more useful\n\t\t * for debugging.\n\t\t */\n\t\tkmemleak_update_trace(ret);\n\t\tgoto out;\n\t}\n\tret = kmem_cache_alloc(radix_tree_node_cachep, gfp_mask);\nout:\n\tBUG_ON(radix_tree_is_internal_node(ret));\n\tif (ret) {\n\t\tret->shift = shift;\n\t\tret->offset = offset;\n\t\tret->count = count;\n\t\tret->nr_values = nr_values;\n\t\tret->parent = parent;\n\t\tret->array = root;\n\t}\n\treturn ret;\n}\n"
+    },
+    "idr_alloc_u32": {
+      "source": "lib/idr.c",
+      "prefix": "int idr_alloc_u32(",
+      "bytes": 744,
+      "sha256": "a407bcb6bdbfbd405f1669f41f9f7cccd1fc14c8d10e3bb90ebd0bc20c936187",
+      "text": "int idr_alloc_u32(struct idr *idr, void *ptr, u32 *nextid,\n\t\t\tunsigned long max, gfp_t gfp)\n{\n\tstruct radix_tree_iter iter;\n\tvoid __rcu **slot;\n\tunsigned int base = idr->idr_base;\n\tunsigned int id = *nextid;\n\n\tif (WARN_ON_ONCE(!(idr->idr_rt.xa_flags & ROOT_IS_IDR)))\n\t\tidr->idr_rt.xa_flags |= IDR_RT_MARKER;\n\tif (max < base)\n\t\treturn -ENOSPC;\n\n\tid = (id < base) ? 0 : id - base;\n\tradix_tree_iter_init(&iter, id);\n\tslot = idr_get_free(&idr->idr_rt, &iter, gfp, max - base);\n\tif (IS_ERR(slot))\n\t\treturn PTR_ERR(slot);\n\n\t*nextid = iter.index + base;\n\t/* there is a memory barrier inside radix_tree_iter_replace() */\n\tradix_tree_iter_replace(&idr->idr_rt, &iter, slot, ptr);\n\tradix_tree_iter_tag_clear(&idr->idr_rt, &iter, IDR_FREE);\n\n\treturn 0;\n}\n"
+    }
+  },
+  "parentDerived": {
+    "include/net/lsf_stream_cleanup_descendants.h": {
+      "bytes": 1804,
+      "sha256": "9956d7e2918701abab7ecc74c0a313bd41e5e29c2c80ac94b18c82662c2d87e5"
+    },
+    "net/device-prepaid.h": {
+      "bytes": 12030,
+      "sha256": "4932bb41e06e134ec09ce7387e374c220ffe0247bc5e7155d112c570e065ae30"
+    },
+    "net/factory-cleanup-descendants.c": {
+      "bytes": 12021,
+      "sha256": "eb2d7c5dc40a94813a432f476f89741c8495baed630966881c57b594fc19144c"
+    },
+    "kernel/lsf-cleanup-descendants.c": {
+      "bytes": 4982,
+      "sha256": "40ca650efee8c73da129f8a8ccef39983ec112cd9c52ed316d572623e7969d40"
+    },
+    "net/factory.c": {
+      "bytes": 31943,
+      "sha256": "19c0710b379b35c257bba130308ec0d6d5bb32463dd76e3c1b510ee166713f04"
+    },
+    "kernel/fork.c": {
+      "bytes": 88167,
+      "sha256": "55df1272247021da8e66ee67ca17b84e8aa224eb9448d54c6097d29307c77eed"
+    },
+    "lib/radix-tree.c": {
+      "bytes": 49132,
+      "sha256": "5d0ee22390ec2ed57ca4a8d830ad881664290f7376e82b5b78dde7736bfb39b9"
+    },
+    "lib/idr.c": {
+      "bytes": 19659,
+      "sha256": "7cbc47ed4ea2ff2f821abbae49b46039a54ddf936dc43ddf7f400396e8f7745b"
+    }
+  },
+  "taskCreated": false,
+  "executorReady": false,
+  "fullConstructorClosure": false,
+  "sharedPidBootstrapOwnerQualified": false,
+  "actualRcuExecution": false,
+  "completeAllocationClosure": false,
+  "productionInstallation": false
+}

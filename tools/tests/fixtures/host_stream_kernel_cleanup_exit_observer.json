@@ -1,0 +1,91 @@
+{
+  "schemaVersion": "lsf.kernel-cleanup-exit-observer-source.v1",
+  "upstreamCommit": "7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+  "source": {
+    "kernel/taskstats.c": {
+      "bytes": 16193,
+      "sha256": "d84842541750a30f73a08a1d622e6d69397ebe9a20ea6e37a0a93d828483dca9",
+      "gitBlob": "c2eaf3d33ceadddff688bda5d864423ff58f566e"
+    },
+    "kernel/exit.c": {
+      "bytes": 50076,
+      "sha256": "540a565afcc467ad1d148018170724937164805773b0621f8fb0efef62ee97b0",
+      "gitBlob": "8ae45b2b8cf94874739579726105da137b6f9066"
+    },
+    "kernel/profile.c": {
+      "bytes": 5775,
+      "sha256": "5f8a6780b713a414e42cedaad2ec21e525a539b310a380279578c124797b4d30",
+      "gitBlob": "1fcf1adcf4eb033ef0a5e2960c63404700b94519"
+    },
+    "kernel/acct.c": {
+      "bytes": 17163,
+      "sha256": "315df5f1223e3885f0e7ea99e5478cb595f9853c17c25b5be0945a98ec78ce68",
+      "gitBlob": "d9d55fa4d01a71f98da9caa4b3b9d36bde991c3e"
+    }
+  },
+  "sections": {
+    "register_taskstats": {
+      "source": "kernel/taskstats.c",
+      "text": "static int cmd_attr_register_cpumask(struct genl_info *info)\n{\n\tcpumask_var_t mask;\n\tint rc;\n\n\tif (!alloc_cpumask_var(&mask, GFP_KERNEL))\n\t\treturn -ENOMEM;\n\trc = parse(info->attrs[TASKSTATS_CMD_ATTR_REGISTER_CPUMASK], mask);\n\tif (rc < 0)\n\t\tgoto out;\n\trc = add_del_listener(info->snd_portid, mask, REGISTER);\nout:\n\tfree_cpumask_var(mask);\n\treturn rc;\n}\n",
+      "bytes": 352,
+      "sha256": "0e1e819076c1473bbd3e7ec47caeaff0c12203a1a461eab5d6b4b9813a5ee4e8"
+    },
+    "add_del_listener": {
+      "source": "kernel/taskstats.c",
+      "text": "static int add_del_listener(pid_t pid, const struct cpumask *mask, int isadd)\n{\n\tstruct listener_list *listeners;\n\tstruct listener *s, *tmp, *s2;\n\tunsigned int cpu;\n\tint ret = 0;\n\n\tif (!cpumask_subset(mask, cpu_possible_mask))\n\t\treturn -EINVAL;\n\n\tif (current_user_ns() != &init_user_ns)\n\t\treturn -EINVAL;\n\n\tif (task_active_pid_ns(current) != &init_pid_ns)\n\t\treturn -EINVAL;\n\n\tif (isadd == REGISTER) {\n\t\tfor_each_cpu(cpu, mask) {\n\t\t\ts = kmalloc_node(sizeof(struct listener),\n\t\t\t\t\tGFP_KERNEL, cpu_to_node(cpu));\n\t\t\tif (!s) {\n\t\t\t\tret = -ENOMEM;\n\t\t\t\tgoto cleanup;\n\t\t\t}\n\t\t\ts->pid = pid;\n\t\t\ts->valid = 1;\n\n\t\t\tlisteners = &per_cpu(listener_array, cpu);\n\t\t\tdown_write(&listeners->sem);\n\t\t\tlist_for_each_entry(s2, &listeners->list, list) {\n\t\t\t\tif (s2->pid == pid && s2->valid)\n\t\t\t\t\tgoto exists;\n\t\t\t}\n\t\t\tlist_add(&s->list, &listeners->list);\n\t\t\ts = NULL;\nexists:\n\t\t\tup_write(&listeners->sem);\n\t\t\tkfree(s); /* nop if NULL */\n\t\t}\n\t\treturn 0;\n\t}\n\n\t/* Deregister or cleanup */\ncleanup:\n\tfor_each_cpu(cpu, mask) {\n\t\tlisteners = &per_cpu(listener_array, cpu);\n\t\tdown_write(&listeners->sem);\n\t\tlist_for_each_entry_safe(s, tmp, &listeners->list, list) {\n\t\t\tif (s->pid == pid) {\n\t\t\t\tlist_del(&s->list);\n\t\t\t\tkfree(s);\n\t\t\t\tbreak;\n\t\t\t}\n\t\t}\n\t\tup_write(&listeners->sem);\n\t}\n\treturn ret;\n}\n",
+      "bytes": 1265,
+      "sha256": "d4734765fcc41ed1d7cc993b4da2f13659479cda2eaa5f3034ee922bfb9f8b69"
+    },
+    "deregister_taskstats": {
+      "source": "kernel/taskstats.c",
+      "text": "static int cmd_attr_deregister_cpumask(struct genl_info *info)\n{\n\tcpumask_var_t mask;\n\tint rc;\n\n\tif (!alloc_cpumask_var(&mask, GFP_KERNEL))\n\t\treturn -ENOMEM;\n\trc = parse(info->attrs[TASKSTATS_CMD_ATTR_DEREGISTER_CPUMASK], mask);\n\tif (rc < 0)\n\t\tgoto out;\n\trc = add_del_listener(info->snd_portid, mask, DEREGISTER);\nout:\n\tfree_cpumask_var(mask);\n\treturn rc;\n}\n",
+      "bytes": 358,
+      "sha256": "a99c59d0e21fa72dc3436501fe7e9886f924e6f1cc2853f2a054b4d6d406d8f9"
+    },
+    "tgid_alloc": {
+      "source": "kernel/taskstats.c",
+      "text": "static struct taskstats *taskstats_tgid_alloc(struct task_struct *tsk)\n{\n\tstruct signal_struct *sig = tsk->signal;\n\tstruct taskstats *stats_new, *stats;\n\n\t/* Pairs with smp_store_release() below. */\n\tstats = smp_load_acquire(&sig->stats);\n\tif (stats || thread_group_empty(tsk))\n\t\treturn stats;\n\n\t/* No problem if kmem_cache_zalloc() fails */\n\tstats_new = kmem_cache_zalloc(taskstats_cache, GFP_KERNEL);\n\n\tspin_lock_irq(&tsk->sighand->siglock);\n\tstats = sig->stats;\n\tif (!stats) {\n\t\t/*\n\t\t * Pairs with smp_store_release() above and order the\n\t\t * kmem_cache_zalloc().\n\t\t */\n\t\tsmp_store_release(&sig->stats, stats_new);\n\t\tstats = stats_new;\n\t\tstats_new = NULL;\n\t}\n\tspin_unlock_irq(&tsk->sighand->siglock);\n\n\tif (stats_new)\n\t\tkmem_cache_free(taskstats_cache, stats_new);\n\n\treturn stats;\n}\n",
+      "bytes": 786,
+      "sha256": "9623b0226b352180aa86d75dc2243471dfae43d4d92a35879baeabdc5171e174"
+    },
+    "taskstats_exit": {
+      "source": "kernel/taskstats.c",
+      "text": "void taskstats_exit(struct task_struct *tsk, int group_dead)\n{\n\tint rc;\n\tstruct listener_list *listeners;\n\tstruct taskstats *stats;\n\tstruct sk_buff *rep_skb;\n\tsize_t size;\n\tint is_thread_group;\n\n\tif (!family_registered)\n\t\treturn;\n\n\t/*\n\t * Size includes space for nested attributes\n\t */\n\tsize = taskstats_packet_size();\n\n\tis_thread_group = !!taskstats_tgid_alloc(tsk);\n\tif (is_thread_group) {\n\t\t/* PID + STATS + TGID + STATS */\n\t\tsize = 2 * size;\n\t\t/* fill the tsk->signal->stats structure */\n\t\tfill_tgid_exit(tsk);\n\t}\n\n\tlisteners = raw_cpu_ptr(&listener_array);\n\tif (list_empty(&listeners->list))\n\t\treturn;\n\n\trc = prepare_reply(NULL, TASKSTATS_CMD_NEW, &rep_skb, size);\n\tif (rc < 0)\n\t\treturn;\n\n\tstats = mk_reply(rep_skb, TASKSTATS_TYPE_PID,\n\t\t\t task_pid_nr_ns(tsk, &init_pid_ns));\n\tif (!stats)\n\t\tgoto err;\n\n\tfill_stats(&init_user_ns, &init_pid_ns, tsk, stats);\n\tif (group_dead)\n\t\tstats->ac_flag |= AGROUP;\n\n\t/*\n\t * Doesn't matter if tsk is the leader or the last group member leaving\n\t */\n\tif (!is_thread_group || !group_dead)\n\t\tgoto send;\n\n\tstats = mk_reply(rep_skb, TASKSTATS_TYPE_TGID,\n\t\t\t task_tgid_nr_ns(tsk, &init_pid_ns));\n\tif (!stats)\n\t\tgoto err;\n\n\tmemcpy(stats, tsk->signal->stats, sizeof(*stats));\n\tstats->version = TASKSTATS_VERSION;\n\nsend:\n\tsend_cpu_listeners(rep_skb, listeners);\n\treturn;\nerr:\n\tnlmsg_free(rep_skb);\n}\n",
+      "bytes": 1331,
+      "sha256": "b36610feeccc4782965805b554b42f1b27a2b4ee40d1690f08b465615a9b1e6b"
+    },
+    "sys_acct": {
+      "source": "kernel/acct.c",
+      "text": "SYSCALL_DEFINE1(acct, const char __user *, name)\n{\n\tint error = 0;\n\n\tif (!capable(CAP_SYS_PACCT))\n\t\treturn -EPERM;\n\n\tif (name) {\n\t\tstruct filename *tmp = getname(name);\n\n\t\tif (IS_ERR(tmp))\n\t\t\treturn PTR_ERR(tmp);\n\t\tmutex_lock(&acct_on_mutex);\n\t\terror = acct_on(tmp);\n\t\tmutex_unlock(&acct_on_mutex);\n\t\tputname(tmp);\n\t} else {\n\t\trcu_read_lock();\n\t\tpin_kill(task_active_pid_ns(current)->bacct);\n\t}\n\n\treturn error;\n}\n",
+      "bytes": 413,
+      "sha256": "6f5460f900fb1a75375a38d433d199b150e99b3ce77647d5a10bfeb37a2e2f67"
+    },
+    "acct_on": {
+      "source": "kernel/acct.c",
+      "text": "static int acct_on(struct filename *pathname)\n{\n\tstruct file *file;\n\tstruct vfsmount *mnt, *internal;\n\tstruct pid_namespace *ns = task_active_pid_ns(current);\n\tstruct bsd_acct_struct *acct;\n\tstruct fs_pin *old;\n\tint err;\n\n\tacct = kzalloc(sizeof(struct bsd_acct_struct), GFP_KERNEL);\n\tif (!acct)\n\t\treturn -ENOMEM;\n\n\t/* Difference from BSD - they don't do O_APPEND */\n\tfile = file_open_name(pathname, O_WRONLY|O_APPEND|O_LARGEFILE, 0);\n\tif (IS_ERR(file)) {\n\t\tkfree(acct);\n\t\treturn PTR_ERR(file);\n\t}\n\n\tif (!S_ISREG(file_inode(file)->i_mode)) {\n\t\tkfree(acct);\n\t\tfilp_close(file, NULL);\n\t\treturn -EACCES;\n\t}\n\n\t/* Exclude kernel kernel internal filesystems. */\n\tif (file_inode(file)->i_sb->s_flags & (SB_NOUSER | SB_KERNMOUNT)) {\n\t\tkfree(acct);\n\t\tfilp_close(file, NULL);\n\t\treturn -EINVAL;\n\t}\n\n\t/* Exclude procfs and sysfs. */\n\tif (file_inode(file)->i_sb->s_iflags & SB_I_USERNS_VISIBLE) {\n\t\tkfree(acct);\n\t\tfilp_close(file, NULL);\n\t\treturn -EINVAL;\n\t}\n\n\tif (!(file->f_mode & FMODE_CAN_WRITE)) {\n\t\tkfree(acct);\n\t\tfilp_close(file, NULL);\n\t\treturn -EIO;\n\t}\n\tinternal = mnt_clone_internal(&file->f_path);\n\tif (IS_ERR(internal)) {\n\t\tkfree(acct);\n\t\tfilp_close(file, NULL);\n\t\treturn PTR_ERR(internal);\n\t}\n\terr = mnt_get_write_access(internal);\n\tif (err) {\n\t\tmntput(internal);\n\t\tkfree(acct);\n\t\tfilp_close(file, NULL);\n\t\treturn err;\n\t}\n\tmnt = file->f_path.mnt;\n\tfile->f_path.mnt = internal;\n\n\tatomic_long_set(&acct->count, 1);\n\tinit_fs_pin(&acct->pin, acct_pin_kill);\n\tacct->file = file;\n\tacct->needcheck = jiffies;\n\tacct->ns = ns;\n\tmutex_init(&acct->lock);\n\tINIT_WORK(&acct->work, close_work);\n\tinit_completion(&acct->done);\n\tmutex_lock_nested(&acct->lock, 1);\t/* nobody has seen it yet */\n\tpin_insert(&acct->pin, mnt);\n\n\trcu_read_lock();\n\told = xchg(&ns->bacct, &acct->pin);\n\tmutex_unlock(&acct->lock);\n\tpin_kill(old);\n\tmnt_put_write_access(mnt);\n\tmntput(mnt);\n\treturn 0;\n}\n",
+      "bytes": 1860,
+      "sha256": "f1753c495c2cd79104bb1b0e3027137f77507fcebc698842a7c166f464b4c805"
+    },
+    "acct_process": {
+      "source": "kernel/acct.c",
+      "text": "void acct_process(void)\n{\n\tstruct pid_namespace *ns;\n\n\t/*\n\t * This loop is safe lockless, since current is still\n\t * alive and holds its namespace, which in turn holds\n\t * its parent.\n\t */\n\tfor (ns = task_active_pid_ns(current); ns != NULL; ns = ns->parent) {\n\t\tif (ns->bacct)\n\t\t\tbreak;\n\t}\n\tif (unlikely(ns))\n\t\tslow_acct_process(ns);\n}\n",
+      "bytes": 336,
+      "sha256": "40c7a7b1d83d46e9386f26de96a26fbb6265b1642d8c7f2ea42629db877c3c1d"
+    }
+  },
+  "parentDerived": {
+    "net/factory.c": {
+      "bytes": 33281,
+      "sha256": "32d3d09d03db36e996ecfa643689a04d32018e26ec5f97f68f244c836bd65182"
+    },
+    "net/factory-cleanup-observer.c": {
+      "bytes": 2502,
+      "sha256": "0de50c7b05a7fc954c9b575c46ee9ad12daa880e76723b43a132a4c1d774183a"
+    }
+  },
+  "actualObserverExecution": false,
+  "actualCompanionPut": false,
+  "bootstrapQualified": false,
+  "fullConstructorClosure": false,
+  "productionInstallation": false
+}

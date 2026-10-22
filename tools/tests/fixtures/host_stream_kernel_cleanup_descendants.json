@@ -1,0 +1,305 @@
+{
+  "schemaVersion": "lsf.kernel-cleanup-descendants-source.v1",
+  "upstreamCommit": "7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+  "archiveSha256": "e09b6727e5c521253f0d41694900b9c38fb7604db7d35238a8197aa9f7de2428",
+  "source": {
+    "kernel/cred.c": {
+      "bytes": 19151,
+      "sha256": "db468c351a69d5250f7d66a71439eefac376fef619d8c9bc06af79fc65306500"
+    },
+    "kernel/fork.c": {
+      "bytes": 87199,
+      "sha256": "a3c798d12392a4a519eb398f8937c0d5cac6d0875daaad87b07c2a13e77e021c"
+    },
+    "security/security.c": {
+      "bytes": 180030,
+      "sha256": "b72fd7f869275b1caf1a98449e92024a779534fb36c77cb88f4ac210e4493055"
+    },
+    "kernel/delayacct.c": {
+      "bytes": 7570,
+      "sha256": "aeb6636521d77641fec00ab8f8de8bd9981b60aa3b49bad48f6ec51252c18c49"
+    },
+    "include/linux/delayacct.h": {
+      "bytes": 6924,
+      "sha256": "88e61a0f5784e23e16984e6f82f8d4ef9f60aa8324b74ce96f75ab3985510f10"
+    },
+    "include/linux/sched/signal.h": {
+      "bytes": 22050,
+      "sha256": "12403236f57691b3649da2389d678ce111962b64339d3ef32a47b8981e38728a"
+    },
+    "security/selinux/hooks.c": {
+      "bytes": 204597,
+      "sha256": "6079b88f15ca1966b640753e35edc291139fe925fca37e5c54d0a2d6e36d8370"
+    }
+  },
+  "sections": {
+    "prepare_creds": {
+      "source": "kernel/cred.c",
+      "text": "struct cred *prepare_creds(void)\n{\n\tstruct task_struct *task = current;\n\tconst struct cred *old;\n\tstruct cred *new;\n\n\tnew = kmem_cache_alloc(cred_jar, GFP_KERNEL);\n\tif (!new)\n\t\treturn NULL;\n\n\tkdebug(\"prepare_creds() alloc %p\", new);\n\n\told = task->cred;\n\tmemcpy(new, old, sizeof(struct cred));\n\n\tnew->non_rcu = 0;\n\tatomic_long_set(&new->usage, 1);\n\tget_group_info(new->group_info);\n\tget_uid(new->user);\n\tget_user_ns(new->user_ns);\n\n#ifdef CONFIG_KEYS\n\tkey_get(new->session_keyring);\n\tkey_get(new->process_keyring);\n\tkey_get(new->thread_keyring);\n\tkey_get(new->request_key_auth);\n#endif\n\n#ifdef CONFIG_SECURITY\n\tnew->security = NULL;\n#endif\n\n\tnew->ucounts = get_ucounts(new->ucounts);\n\tif (!new->ucounts)\n\t\tgoto error;\n\n\tif (security_prepare_creds(new, old, GFP_KERNEL_ACCOUNT) < 0)\n\t\tgoto error;\n\n\treturn new;\n\nerror:\n\tabort_creds(new);\n\treturn NULL;\n}\n",
+      "bytes": 852,
+      "sha256": "aafacbb92df88f05a0b82954b5d20450a1a80678cf2bcb75d322d45f4c0bae75"
+    },
+    "copy_creds": {
+      "source": "kernel/cred.c",
+      "text": "int copy_creds(struct task_struct *p, unsigned long clone_flags)\n{\n\tstruct cred *new;\n\tint ret;\n\n#ifdef CONFIG_KEYS_REQUEST_CACHE\n\tp->cached_requested_key = NULL;\n#endif\n\n\tif (\n#ifdef CONFIG_KEYS\n\t\t!p->cred->thread_keyring &&\n#endif\n\t\tclone_flags & CLONE_THREAD\n\t    ) {\n\t\tp->real_cred = get_cred_many(p->cred, 2);\n\t\tkdebug(\"share_creds(%p{%ld})\",\n\t\t       p->cred, atomic_long_read(&p->cred->usage));\n\t\tinc_rlimit_ucounts(task_ucounts(p), UCOUNT_RLIMIT_NPROC, 1);\n\t\treturn 0;\n\t}\n\n\tnew = prepare_creds();\n\tif (!new)\n\t\treturn -ENOMEM;\n\n\tif (clone_flags & CLONE_NEWUSER) {\n\t\tret = create_user_ns(new);\n\t\tif (ret < 0)\n\t\t\tgoto error_put;\n\t\tret = set_cred_ucounts(new);\n\t\tif (ret < 0)\n\t\t\tgoto error_put;\n\t}\n\n#ifdef CONFIG_KEYS\n\t/* new threads get their own thread keyrings if their parent already\n\t * had one */\n\tif (new->thread_keyring) {\n\t\tkey_put(new->thread_keyring);\n\t\tnew->thread_keyring = NULL;\n\t\tif (clone_flags & CLONE_THREAD)\n\t\t\tinstall_thread_keyring_to_cred(new);\n\t}\n\n\t/* The process keyring is only shared between the threads in a process;\n\t * anything outside of those threads doesn't inherit.\n\t */\n\tif (!(clone_flags & CLONE_THREAD)) {\n\t\tkey_put(new->process_keyring);\n\t\tnew->process_keyring = NULL;\n\t}\n#endif\n\n\tp->cred = p->real_cred = get_cred(new);\n\tinc_rlimit_ucounts(task_ucounts(p), UCOUNT_RLIMIT_NPROC, 1);\n\treturn 0;\n\nerror_put:\n\tput_cred(new);\n\treturn ret;\n}\n",
+      "bytes": 1378,
+      "sha256": "86a4f5581e8e706847c7b11835464f5e46f9003e7a1e7a45ae5a8bca430cd929"
+    },
+    "put_cred_rcu": {
+      "source": "kernel/cred.c",
+      "text": "static void put_cred_rcu(struct rcu_head *rcu)\n{\n\tstruct cred *cred = container_of(rcu, struct cred, rcu);\n\n\tkdebug(\"put_cred_rcu(%p)\", cred);\n\n\tif (atomic_long_read(&cred->usage) != 0)\n\t\tpanic(\"CRED: put_cred_rcu() sees %p with usage %ld\\n\",\n\t\t      cred, atomic_long_read(&cred->usage));\n\n\tsecurity_cred_free(cred);\n\tkey_put(cred->session_keyring);\n\tkey_put(cred->process_keyring);\n\tkey_put(cred->thread_keyring);\n\tkey_put(cred->request_key_auth);\n\tif (cred->group_info)\n\t\tput_group_info(cred->group_info);\n\tfree_uid(cred->user);\n\tif (cred->ucounts)\n\t\tput_ucounts(cred->ucounts);\n\tput_user_ns(cred->user_ns);\n\tkmem_cache_free(cred_jar, cred);\n}\n",
+      "bytes": 647,
+      "sha256": "419753fea39606681d1f5e58e6bc590e5c0077bd26c5d924352ddf7647149f20"
+    },
+    "put_cred": {
+      "source": "kernel/cred.c",
+      "text": "void __put_cred(struct cred *cred)\n{\n\tkdebug(\"__put_cred(%p{%ld})\", cred,\n\t       atomic_long_read(&cred->usage));\n\n\tBUG_ON(atomic_long_read(&cred->usage) != 0);\n\tBUG_ON(cred == current->cred);\n\tBUG_ON(cred == current->real_cred);\n\n\tif (cred->non_rcu)\n\t\tput_cred_rcu(&cred->rcu);\n\telse\n\t\tcall_rcu(&cred->rcu, put_cred_rcu);\n}\n",
+      "bytes": 326,
+      "sha256": "791beeed79771a9777b96d18e6937d416e8ec22a81ee1c5e1eafd78e3faa42cf"
+    },
+    "exit_creds": {
+      "source": "kernel/cred.c",
+      "text": "void exit_creds(struct task_struct *tsk)\n{\n\tstruct cred *real_cred, *cred;\n\n\tkdebug(\"exit_creds(%u,%p,%p,{%ld})\", tsk->pid, tsk->real_cred, tsk->cred,\n\t       atomic_long_read(&tsk->cred->usage));\n\n\treal_cred = (struct cred *) tsk->real_cred;\n\ttsk->real_cred = NULL;\n\n\tcred = (struct cred *) tsk->cred;\n\ttsk->cred = NULL;\n\n\tif (real_cred == cred) {\n\t\tput_cred_many(cred, 2);\n\t} else {\n\t\tput_cred(real_cred);\n\t\tput_cred(cred);\n\t}\n\n#ifdef CONFIG_KEYS_REQUEST_CACHE\n\tkey_put(tsk->cached_requested_key);\n\ttsk->cached_requested_key = NULL;\n#endif\n}\n",
+      "bytes": 544,
+      "sha256": "155ada1866752a51df9d8483d3b15a5c1a1df118579f6e1061726040d9415c99"
+    },
+    "security_prepare_creds": {
+      "source": "security/security.c",
+      "text": "int security_prepare_creds(struct cred *new, const struct cred *old, gfp_t gfp)\n{\n\tint rc = lsm_cred_alloc(new, gfp);\n\n\tif (rc)\n\t\treturn rc;\n\n\trc = call_int_hook(cred_prepare, new, old, gfp);\n\tif (unlikely(rc))\n\t\tsecurity_cred_free(new);\n\treturn rc;\n}\n",
+      "bytes": 252,
+      "sha256": "a1e60661addc737112af4c89a6f42f15d1c48f2d00cc804d415edc01aace7dd8"
+    },
+    "security_cred_free": {
+      "source": "security/security.c",
+      "text": "void security_cred_free(struct cred *cred)\n{\n\t/*\n\t * There is a failure case in prepare_creds() that\n\t * may result in a call here with ->security being NULL.\n\t */\n\tif (unlikely(cred->security == NULL))\n\t\treturn;\n\n\tcall_void_hook(cred_free, cred);\n\n\tkfree(cred->security);\n\tcred->security = NULL;\n}\n",
+      "bytes": 299,
+      "sha256": "ebbd66ae31adbce68036d7c71292baaebe9da20c0ff00c1cd4d9762a486a4874"
+    },
+    "lsm_blob_alloc": {
+      "source": "security/security.c",
+      "text": "static int lsm_blob_alloc(void **dest, size_t size, gfp_t gfp)\n{\n\tif (size == 0) {\n\t\t*dest = NULL;\n\t\treturn 0;\n\t}\n\n\t*dest = kzalloc(size, gfp);\n\tif (*dest == NULL)\n\t\treturn -ENOMEM;\n\treturn 0;\n}\n",
+      "bytes": 195,
+      "sha256": "e9959657d6e9ef7c5c7452015bb3cc14ebf3fe678020153c5d11d87cb6aa884c"
+    },
+    "copy_sighand": {
+      "source": "kernel/fork.c",
+      "text": "static int copy_sighand(u64 clone_flags, struct task_struct *tsk)\n{\n\tstruct sighand_struct *sig;\n\n\tif (clone_flags & CLONE_SIGHAND) {\n\t\trefcount_inc(&current->sighand->count);\n\t\treturn 0;\n\t}\n\tsig = kmem_cache_alloc(sighand_cachep, GFP_KERNEL);\n\tRCU_INIT_POINTER(tsk->sighand, sig);\n\tif (!sig)\n\t\treturn -ENOMEM;\n\n\trefcount_set(&sig->count, 1);\n\tspin_lock_irq(&current->sighand->siglock);\n\tmemcpy(sig->action, current->sighand->action, sizeof(sig->action));\n\tspin_unlock_irq(&current->sighand->siglock);\n\n\t/* Reset all signal handler not set to SIG_IGN to SIG_DFL. */\n\tif (clone_flags & CLONE_CLEAR_SIGHAND)\n\t\tflush_signal_handlers(tsk, 0);\n\n\treturn 0;\n}\n",
+      "bytes": 653,
+      "sha256": "80aba23f3362a4c9256ce9de0d6db03dac3806bef048c52dda6f9c2f665d6973"
+    },
+    "copy_signal": {
+      "source": "kernel/fork.c",
+      "text": "static int copy_signal(unsigned long clone_flags, struct task_struct *tsk)\n{\n\tstruct signal_struct *sig;\n\n\tif (clone_flags & CLONE_THREAD)\n\t\treturn 0;\n\n\tsig = kmem_cache_zalloc(signal_cachep, GFP_KERNEL);\n\ttsk->signal = sig;\n\tif (!sig)\n\t\treturn -ENOMEM;\n\n\tsig->nr_threads = 1;\n\tsig->quick_threads = 1;\n\tatomic_set(&sig->live, 1);\n\trefcount_set(&sig->sigcnt, 1);\n\n\t/* list_add(thread_node, thread_head) without INIT_LIST_HEAD() */\n\tsig->thread_head = (struct list_head)LIST_HEAD_INIT(tsk->thread_node);\n\ttsk->thread_node = (struct list_head)LIST_HEAD_INIT(sig->thread_head);\n\n\tinit_waitqueue_head(&sig->wait_chldexit);\n\tsig->curr_target = tsk;\n\tinit_sigpending(&sig->shared_pending);\n\tINIT_HLIST_HEAD(&sig->multiprocess);\n\tseqlock_init(&sig->stats_lock);\n\tprev_cputime_init(&sig->prev_cputime);\n\n#ifdef CONFIG_POSIX_TIMERS\n\tINIT_HLIST_HEAD(&sig->posix_timers);\n\thrtimer_init(&sig->real_timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);\n\tsig->real_timer.function = it_real_fn;\n#endif\n\n\ttask_lock(current->group_leader);\n\tmemcpy(sig->rlim, current->signal->rlim, sizeof sig->rlim);\n\ttask_unlock(current->group_leader);\n\n\tposix_cpu_timers_init_group(sig);\n\n\ttty_audit_fork(sig);\n\tsched_autogroup_fork(sig);\n\n\tsig->oom_score_adj = current->signal->oom_score_adj;\n\tsig->oom_score_adj_min = current->signal->oom_score_adj_min;\n\n\tmutex_init(&sig->cred_guard_mutex);\n\tinit_rwsem(&sig->exec_update_lock);\n\n\treturn 0;\n}\n",
+      "bytes": 1402,
+      "sha256": "a0bde4a5c611a3019bb4df981b417f0a8f8e81cb14381a2352a1f352eac737ef"
+    },
+    "cleanup_sighand": {
+      "source": "kernel/fork.c",
+      "text": "void __cleanup_sighand(struct sighand_struct *sighand)\n{\n\tif (refcount_dec_and_test(&sighand->count)) {\n\t\tsignalfd_cleanup(sighand);\n\t\t/*\n\t\t * sighand_cachep is SLAB_TYPESAFE_BY_RCU so we can free it\n\t\t * without an RCU grace period, see __lock_task_sighand().\n\t\t */\n\t\tkmem_cache_free(sighand_cachep, sighand);\n\t}\n}\n",
+      "bytes": 316,
+      "sha256": "9812d0a0cdfa12a9ebb9b3206853453dd6b41eaf9608707764b0442b413f5ed3"
+    },
+    "free_signal_struct": {
+      "source": "kernel/fork.c",
+      "text": "static inline void free_signal_struct(struct signal_struct *sig)\n{\n\ttaskstats_tgid_free(sig);\n\tsched_autogroup_exit(sig);\n\t/*\n\t * __mmdrop is not safe to call from softirq context on x86 due to\n\t * pgd_dtor so postpone it to the async context\n\t */\n\tif (sig->oom_mm)\n\t\tmmdrop_async(sig->oom_mm);\n\tkmem_cache_free(signal_cachep, sig);\n}\n",
+      "bytes": 335,
+      "sha256": "528175b3cade248361093a0f6e6e67490f71d569a67024b2dae44727c4ceb673"
+    },
+    "put_task_struct": {
+      "source": "kernel/fork.c",
+      "text": "void __put_task_struct(struct task_struct *tsk)\n{\n\tWARN_ON(!tsk->exit_state);\n\tWARN_ON(refcount_read(&tsk->usage));\n\tWARN_ON(tsk == current);\n\n\tsched_ext_free(tsk);\n\tio_uring_free(tsk);\n\tcgroup_free(tsk);\n\ttask_numa_free(tsk, true);\n\tsecurity_task_free(tsk);\n\texit_creds(tsk);\n\tdelayacct_tsk_free(tsk);\n\tput_signal_struct(tsk->signal);\n\tsched_core_free(tsk);\n\tfree_task(tsk);\n}\n",
+      "bytes": 378,
+      "sha256": "363fd5bb1d31e6c31a5429f6150285aa1b40daa197a079336b404f7f0d908053"
+    },
+    "sighand_ctor": {
+      "source": "kernel/fork.c",
+      "text": "static void sighand_ctor(void *data)\n{\n\tstruct sighand_struct *sighand = data;\n\n\tspin_lock_init(&sighand->siglock);\n\tinit_waitqueue_head(&sighand->signalfd_wqh);\n}\n",
+      "bytes": 164,
+      "sha256": "b06d46dc6655ef8fb4b85b73e93aba37fbe50ad12ef827c28632c3f6164ac69e"
+    },
+    "delayacct_tsk_init": {
+      "source": "include/linux/delayacct.h",
+      "text": "static inline void delayacct_tsk_init(struct task_struct *tsk)\n{\n\t/* reinitialize in case parent's non-null pointer was dup'ed*/\n\ttsk->delays = NULL;\n\tif (delayacct_on)\n\t\t__delayacct_tsk_init(tsk);\n}\n",
+      "bytes": 200,
+      "sha256": "ec472ddcbbb4257821a1b3eeda81e090970f40048a22eaee42c87b402ca73d12"
+    },
+    "delayacct_tsk_free": {
+      "source": "include/linux/delayacct.h",
+      "text": "static inline void delayacct_tsk_free(struct task_struct *tsk)\n{\n\tif (tsk->delays)\n\t\tkmem_cache_free(delayacct_cache, tsk->delays);\n\ttsk->delays = NULL;\n}\n",
+      "bytes": 155,
+      "sha256": "bc98fd8fe44588ce69630341d9b7fce56a24372f92bb2fb86bfeb9a66338dcce"
+    },
+    "delayacct_init_enabled": {
+      "source": "kernel/delayacct.c",
+      "text": "void __delayacct_tsk_init(struct task_struct *tsk)\n{\n\ttsk->delays = kmem_cache_zalloc(delayacct_cache, GFP_KERNEL);\n\tif (tsk->delays)\n\t\traw_spin_lock_init(&tsk->delays->lock);\n}\n",
+      "bytes": 178,
+      "sha256": "2ae78ba21d61f5d48c89c0cb088fa09626410fc26f8e3b2980be09a0283045dd"
+    }
+  },
+  "parentDerived": {
+    "net/device-prepaid.h": {
+      "bytes": 11664,
+      "sha256": "73d9b8e44325b96f4113ca0babcf3bb2e702d9490813e698189ef3d5ebc52a9e"
+    },
+    "net/factory-device.c": {
+      "bytes": 8806,
+      "sha256": "5d447fbd84b7de485bac66bd596e3500a6a93a58e66f337d71ef751a724bb844"
+    },
+    "net/factory.c": {
+      "bytes": 31854,
+      "sha256": "c2c78aac7aba5aeeccbf555eed2249816acdae7e78e1262536b913d6a93e90f8"
+    },
+    "net/factory-cleanup-lifecycle.c": {
+      "bytes": 18059,
+      "sha256": "26895d7228e7643817a5186f13906e20e1d1cd86074aa76ffaee2bb8f8d89753"
+    },
+    "kernel/fork.c": {
+      "bytes": 87666,
+      "sha256": "04c486c4689b87e4baa0b288fc789ba6285102e5aa9f88eaa0b6ef6bb0696697"
+    },
+    "kernel/kthread.c": {
+      "bytes": 45273,
+      "sha256": "95419e92ea9ef507248bd2f1f647c5e48f54b2c47f328536b8ffd492b2200b2e"
+    },
+    "security/security.c": {
+      "bytes": 184849,
+      "sha256": "edb5470c015802bfca35b4cbb7dc0e973d1935649b5e938f0119cbb845f9294c"
+    }
+  },
+  "parentInputs": [
+    "arch/x86/include/asm/irq_work.h",
+    "arch/x86/include/asm/page.h",
+    "arch/x86/include/asm/page_64_types.h",
+    "arch/x86/include/asm/pgtable.h",
+    "arch/x86/include/asm/pgtable_64.h",
+    "arch/x86/kernel/fpu/init.c",
+    "arch/x86/kernel/irq_work.c",
+    "arch/x86/kernel/process.c",
+    "arch/x86/mm/tlb.c",
+    "drivers/acpi/bus.c",
+    "drivers/acpi/glue.c",
+    "drivers/acpi/internal.h",
+    "drivers/acpi/osl.c",
+    "drivers/acpi/scan.c",
+    "drivers/base/base.h",
+    "drivers/base/core.c",
+    "drivers/net/nlmon.c",
+    "drivers/of/device.c",
+    "drivers/pci/iov.c",
+    "drivers/pci/pci-acpi.c",
+    "drivers/pci/pci-driver.c",
+    "drivers/pci/pci.c",
+    "drivers/pci/probe.c",
+    "fs/eventpoll.c",
+    "fs/fcntl.c",
+    "fs/inode.c",
+    "fs/kernfs/dir.c",
+    "fs/kernfs/file.c",
+    "fs/kernfs/inode.c",
+    "fs/kernfs/kernfs-internal.h",
+    "fs/kernfs/symlink.c",
+    "fs/select.c",
+    "fs/sysfs/dir.c",
+    "include/acpi/acpi_bus.h",
+    "include/asm-generic/sections.h",
+    "include/linux/acpi.h",
+    "include/linux/capability.h",
+    "include/linux/device.h",
+    "include/linux/fwnode.h",
+    "include/linux/idr.h",
+    "include/linux/irq_work.h",
+    "include/linux/kernfs.h",
+    "include/linux/kobject.h",
+    "include/linux/kref.h",
+    "include/linux/kthread.h",
+    "include/linux/mm.h",
+    "include/linux/netdevice.h",
+    "include/linux/netlink.h",
+    "include/linux/pci-acpi.h",
+    "include/linux/pci.h",
+    "include/linux/radix-tree.h",
+    "include/linux/rcupdate.h",
+    "include/linux/rcuref.h",
+    "include/linux/sched/task.h",
+    "include/linux/sched/task_stack.h",
+    "include/linux/skbuff.h",
+    "include/linux/thread_info.h",
+    "include/linux/vmalloc.h",
+    "include/linux/wait.h",
+    "include/linux/workqueue.h",
+    "include/net/dst.h",
+    "include/net/dst_ops.h",
+    "include/net/inet_hashtables.h",
+    "include/net/ip.h",
+    "include/net/ip_fib.h",
+    "include/net/lwtunnel.h",
+    "include/net/netlabel.h",
+    "include/net/nexthop.h",
+    "include/net/route.h",
+    "include/net/scm.h",
+    "include/net/sock.h",
+    "include/net/tcp.h",
+    "include/net/xfrm.h",
+    "kernel/audit.c",
+    "kernel/capability.c",
+    "kernel/exit.c",
+    "kernel/fork.c",
+    "kernel/irq_work.c",
+    "kernel/kthread.c",
+    "kernel/rcu/tree.c",
+    "kernel/sched/core.c",
+    "kernel/sched/wait.c",
+    "kernel/signal.c",
+    "kernel/smp.c",
+    "lib/idr.c",
+    "lib/kasprintf.c",
+    "lib/klist.c",
+    "lib/kobject.c",
+    "lib/kobject_uevent.c",
+    "lib/radix-tree.c",
+    "mm/util.c",
+    "mm/vmalloc.c",
+    "net/core/dst.c",
+    "net/core/filter.c",
+    "net/core/skbuff.c",
+    "net/core/sock.c",
+    "net/ipv4/af_inet.c",
+    "net/ipv4/cipso_ipv4.c",
+    "net/ipv4/fib_frontend.c",
+    "net/ipv4/fib_semantics.c",
+    "net/ipv4/fib_trie.c",
+    "net/ipv4/inet_connection_sock.c",
+    "net/ipv4/inet_hashtables.c",
+    "net/ipv4/inet_timewait_sock.c",
+    "net/ipv4/metrics.c",
+    "net/ipv4/nexthop.c",
+    "net/ipv4/route.c",
+    "net/ipv4/tcp.c",
+    "net/ipv4/tcp_input.c",
+    "net/ipv4/tcp_output.c",
+    "net/netlabel/netlabel_kapi.c",
+    "net/netlink/af_netlink.c",
+    "net/socket.c",
+    "net/xfrm/xfrm_policy.c",
+    "security/commoncap.c",
+    "security/lsm_audit.c",
+    "security/security.c",
+    "security/selinux/avc.c",
+    "security/selinux/hooks.c",
+    "security/selinux/include/avc.h",
+    "security/selinux/netlabel.c",
+    "security/selinux/netport.c",
+    "security/selinux/ss/ebitmap.c",
+    "security/selinux/ss/mls.c",
+    "security/selinux/ss/services.c",
+    "security/selinux/ss/sidtab.c"
+  ],
+  "oldFinalSuffixSha256": "f2dc824b6b33ac470e1f41d1a9ad7927d193bab135aba870c6a0ff1dab217e33",
+  "taskCreated": false,
+  "executorReady": false,
+  "fullConstructorClosure": false,
+  "lsmCallbackAllocationClosure": false,
+  "actualRcuExecution": false,
+  "completeAllocationClosure": false,
+  "productionInstallation": false
+}

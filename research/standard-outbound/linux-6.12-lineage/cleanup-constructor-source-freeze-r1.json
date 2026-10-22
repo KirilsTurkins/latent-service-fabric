@@ -1,0 +1,2122 @@
+{
+  "schemaVersion": "lsf.cleanup-constructor-reviewed-source-freeze.v1",
+  "status": "UNSELECTED-SOURCE-AND-FINITE-PROGRAMME",
+  "upstreamCommit": "7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+  "previousMergedSource": "94f1c0c928033de552d9a1981282e3293497b85b",
+  "source": {
+    ".github/workflows/stream-kernel-cleanup-lifecycle.yml": {
+      "bytes": 5902,
+      "sha256": "ebc851652ab6efd943b9e3a53fe51cae173f43274ce4a10f18e755aceb4b75e6"
+    },
+    "research/standard-outbound/linux-6.12-lineage/acct-cleanup-observer.c": {
+      "bytes": 1664,
+      "sha256": "5ad454d30573710c5db59906f62694932c3d073d693d6d81825795294d2f7240"
+    },
+    "research/standard-outbound/linux-6.12-lineage/acpi-cleanup-provider-executor.c": {
+      "bytes": 546,
+      "sha256": "91c756571eff99ce9284715e731a1b647e7fac5b6f88a1739812a8830b8bd6e7"
+    },
+    "research/standard-outbound/linux-6.12-lineage/acpi-cleanup-provider-queue.c": {
+      "bytes": 3261,
+      "sha256": "e136709a7628fce196e88af1caf8498a99689b0cdb293747a6c91262a4fc65ff"
+    },
+    "research/standard-outbound/linux-6.12-lineage/cleanup-association-private.h": {
+      "bytes": 490,
+      "sha256": "298b5f079b9f0628ae45bd44f6b08061d39fa230c2afd9932cc31d6e2041bfa2"
+    },
+    "research/standard-outbound/linux-6.12-lineage/cleanup-audit-private.h": {
+      "bytes": 357,
+      "sha256": "d4bbf051da6685c0a3638553cf52690f192aebb13ec1cbe7d01cc595b38fde44"
+    },
+    "research/standard-outbound/linux-6.12-lineage/cleanup-caller-context-plan-r1.md": {
+      "bytes": 6128,
+      "sha256": "9e9db0442943da1a804489875c2faca1d0ef36ae4dc1cdebae41c2c050d710f6"
+    },
+    "research/standard-outbound/linux-6.12-lineage/cleanup-cgroup-private.h": {
+      "bytes": 305,
+      "sha256": "ca79a9784b318b1398717c381af85662958be770b9d940977075e1b0dbf169e7"
+    },
+    "research/standard-outbound/linux-6.12-lineage/cleanup-clone-private.h": {
+      "bytes": 661,
+      "sha256": "e065dcd8df1c921b4b1c53eef704d792bfafa6e6aac0e28f7e350961f00cf95f"
+    },
+    "research/standard-outbound/linux-6.12-lineage/cleanup-close-private.h": {
+      "bytes": 839,
+      "sha256": "ebed5130b3e35ec2e44ecd1d705a0ab39b029d0c0157f5c34273f249e638d1ca"
+    },
+    "research/standard-outbound/linux-6.12-lineage/cleanup-constructor-descendants-plan-r1.md": {
+      "bytes": 6969,
+      "sha256": "02ec00a16db50e87067bd8b2898e3c250f1c3312df999a6cad633f2c21a7f6d1"
+    },
+    "research/standard-outbound/linux-6.12-lineage/cleanup-constructor-private.h": {
+      "bytes": 2370,
+      "sha256": "4aae93a68e7df5cb7934701807e1560c2471138e250378a71a09558dc7140dee"
+    },
+    "research/standard-outbound/linux-6.12-lineage/cleanup-constructor-profile-r1.md": {
+      "bytes": 14609,
+      "sha256": "f43274d4bf355d8e7249f9a18a4455de786b7da8cebf9560ca79ddf3d9505174"
+    },
+    "research/standard-outbound/linux-6.12-lineage/cleanup-descendants-private.h": {
+      "bytes": 1804,
+      "sha256": "9956d7e2918701abab7ecc74c0a313bd41e5e29c2c80ac94b18c82662c2d87e5"
+    },
+    "research/standard-outbound/linux-6.12-lineage/cleanup-descendants-source-r1.md": {
+      "bytes": 4974,
+      "sha256": "d1eabf1a3461dae8b4060a5ad28e1bdb7829b5b3e0ee7b0062a22666e9a325d9"
+    },
+    "research/standard-outbound/linux-6.12-lineage/cleanup-exit-observer-private.h": {
+      "bytes": 542,
+      "sha256": "792a5af9b68cb9af22e6a5d454bd11e071bc6b83670178f6fa6e20ac584f28e4"
+    },
+    "research/standard-outbound/linux-6.12-lineage/cleanup-io-private.h": {
+      "bytes": 457,
+      "sha256": "9e6f1117ba5d6bf4105e083ce27e44a3bc94c66487fd69595340184fd75e0c20"
+    },
+    "research/standard-outbound/linux-6.12-lineage/cleanup-irq-relay-plan-r1.md": {
+      "bytes": 6563,
+      "sha256": "2179f409783d2ac1c0e8e49a37c089f047fd659205a07f17d35dc85b47b9268f"
+    },
+    "research/standard-outbound/linux-6.12-lineage/cleanup-lifecycle-plan-r1.md": {
+      "bytes": 6245,
+      "sha256": "b2192b2fa7d72c469c2f09d1a948a358dcd84d75cabd3da0f863220f214aeaa9"
+    },
+    "research/standard-outbound/linux-6.12-lineage/cleanup-lifecycle-private.h": {
+      "bytes": 3061,
+      "sha256": "8541d5fc1066cc55f9857155be624fa5a24c444162ad4c52bce3e6f688967e85"
+    },
+    "research/standard-outbound/linux-6.12-lineage/cleanup-observer-private.h": {
+      "bytes": 718,
+      "sha256": "d265bf4c65f24661db6230875822344f347800c32567348423e89ea7aacb1a68"
+    },
+    "research/standard-outbound/linux-6.12-lineage/cleanup-observer-proposal-r1.md": {
+      "bytes": 7729,
+      "sha256": "8a3e04d9a2c5a90d9b72329e421ddef78cd81d35c572b9506706b62dc817dda2"
+    },
+    "research/standard-outbound/linux-6.12-lineage/cleanup-observer-writers-r1.md": {
+      "bytes": 10145,
+      "sha256": "4bf00fe1fa4a5e086f7b49a27a167c863f8a1de74bc1aca23016aff99ef68618"
+    },
+    "research/standard-outbound/linux-6.12-lineage/cleanup-perf-private.h": {
+      "bytes": 481,
+      "sha256": "bf6b4c3f97651b2c42dac1429d3484fd3f8ce9aeea40f8fc85967257cf364f6d"
+    },
+    "research/standard-outbound/linux-6.12-lineage/cleanup-pid-private.h": {
+      "bytes": 2096,
+      "sha256": "dac6e1717cca10ccf998df3f2a01537e682fd67af62312e0f966fa9106aa41ca"
+    },
+    "research/standard-outbound/linux-6.12-lineage/cleanup-provider-boundary-r1.md": {
+      "bytes": 13024,
+      "sha256": "b605af7149e9271be044c58c1d632c03ff5e403b9edada51afcb5d6b5fd768a5"
+    },
+    "research/standard-outbound/linux-6.12-lineage/cleanup-provider-executor-private.h": {
+      "bytes": 1477,
+      "sha256": "50c79afdc0db50f5a173c1fc5b584d0e007f5e088d31ac95d702c133a4f62c4c"
+    },
+    "research/standard-outbound/linux-6.12-lineage/cleanup-provider-operation-private.h": {
+      "bytes": 1204,
+      "sha256": "2ae68c7ae2979e40ea46f5c12d68a53338080b4159e000d6e57a192b03acb64c"
+    },
+    "research/standard-outbound/linux-6.12-lineage/cleanup-provider-operation-proposal-r1.md": {
+      "bytes": 10007,
+      "sha256": "637bd730034e91529a31d8e05e3b7617ff5403ba6dd97a39166555b08d268de3"
+    },
+    "research/standard-outbound/linux-6.12-lineage/cleanup-security-carrier.h": {
+      "bytes": 2398,
+      "sha256": "450d7f7c550a7e3e8ee8c3a3d020546f01d51936e755a071f1575a662f63cc19"
+    },
+    "research/standard-outbound/linux-6.12-lineage/cleanup-selected-hooks-r1.md": {
+      "bytes": 7394,
+      "sha256": "9f157aa3706fde4ed23d42aa88f159b57ab8f7cb099211eeb8cb7dcef494bd3a"
+    },
+    "research/standard-outbound/linux-6.12-lineage/cleanup-stack-retire.c": {
+      "bytes": 6254,
+      "sha256": "806c409d42768770baade09193059d0827f441197bab546a36b55ece06409181"
+    },
+    "research/standard-outbound/linux-6.12-lineage/cleanup-worker-operations-private.h": {
+      "bytes": 352,
+      "sha256": "ee2b24ce10a70f22690fed970e64fd81ab43bf73465112fb793d84d81dcb7cd9"
+    },
+    "research/standard-outbound/linux-6.12-lineage/cleanup-worker-operations-proposal-r1.md": {
+      "bytes": 7599,
+      "sha256": "73a6385091fcabe03db77e9c1b305cb221f68dfb0528af4499d8265c57f88b81"
+    },
+    "research/standard-outbound/linux-6.12-lineage/connector-cleanup-observer.c": {
+      "bytes": 827,
+      "sha256": "f72520a149aa1171b02dc2fe07204b3f7b1f4d58056ad8dbfc581b3a6adbc936"
+    },
+    "research/standard-outbound/linux-6.12-lineage/factory-cleanup-association.c": {
+      "bytes": 2402,
+      "sha256": "418635b306e21efcbdcc5a79b3096bdcded8f737f79a58c111716484d8fc4e51"
+    },
+    "research/standard-outbound/linux-6.12-lineage/factory-cleanup-clone.c": {
+      "bytes": 1607,
+      "sha256": "07daf500cce62c1890cc981d9d0eb11fa5a42771950f5ec9c8c66ffb6a2e2bb1"
+    },
+    "research/standard-outbound/linux-6.12-lineage/factory-cleanup-close.c": {
+      "bytes": 10700,
+      "sha256": "0296e463ca28594a8516f2b06b0d4f2cc42a90ea20fc78e675f7f44a72bf0925"
+    },
+    "research/standard-outbound/linux-6.12-lineage/factory-cleanup-constructor.c": {
+      "bytes": 9010,
+      "sha256": "9951f55405cf7cd375b094acaae98ac9ffcdba845dc12e4903caf9fc7e93180b"
+    },
+    "research/standard-outbound/linux-6.12-lineage/factory-cleanup-descendants.c": {
+      "bytes": 12021,
+      "sha256": "eb2d7c5dc40a94813a432f476f89741c8495baed630966881c57b594fc19144c"
+    },
+    "research/standard-outbound/linux-6.12-lineage/factory-cleanup-entry.c": {
+      "bytes": 2208,
+      "sha256": "6dbb04dad879974581f336254eb324e9fc2e866e1c0993606fb1b15ccd639313"
+    },
+    "research/standard-outbound/linux-6.12-lineage/factory-cleanup-io.c": {
+      "bytes": 2324,
+      "sha256": "985d0d534331fe7c63cef07962e1ca97f97ef59dd9c065913f86b18d134cef48"
+    },
+    "research/standard-outbound/linux-6.12-lineage/factory-cleanup-irq.c": {
+      "bytes": 2172,
+      "sha256": "edd78ffe407faf5a79b6121d1e2f83067a6120802e76368f0a0725b1089b9691"
+    },
+    "research/standard-outbound/linux-6.12-lineage/factory-cleanup-lifecycle.c": {
+      "bytes": 18059,
+      "sha256": "26895d7228e7643817a5186f13906e20e1d1cd86074aa76ffaee2bb8f8d89753"
+    },
+    "research/standard-outbound/linux-6.12-lineage/factory-cleanup-observer.c": {
+      "bytes": 2456,
+      "sha256": "07788155761062087390a100659892683ed23bc46449dd12105005f141e4fa29"
+    },
+    "research/standard-outbound/linux-6.12-lineage/factory-cleanup-perf.c": {
+      "bytes": 1806,
+      "sha256": "034b7d0eba1dfa1377ee44c8a68613800b77820944cef51cf1b0ef5069e6b6c2"
+    },
+    "research/standard-outbound/linux-6.12-lineage/factory-cleanup-pid.c": {
+      "bytes": 6647,
+      "sha256": "eede614aea673f8d9d8e2b70614b849e40de6012062d1f05f930ea258ca7f6b1"
+    },
+    "research/standard-outbound/linux-6.12-lineage/factory-cleanup-provider-birth.c": {
+      "bytes": 1025,
+      "sha256": "de694dd1900535022571318da8ee4179fd151619117e5cdf80b2e996277d5e1f"
+    },
+    "research/standard-outbound/linux-6.12-lineage/factory-cleanup-provider-executor.c": {
+      "bytes": 8954,
+      "sha256": "6f54e74d281a84051816efceb33fb22d667b78e6cf879f1465a22b88b0f0e39b"
+    },
+    "research/standard-outbound/linux-6.12-lineage/factory-cleanup-provider-initialize.c": {
+      "bytes": 4937,
+      "sha256": "9dbe70147807352fbd57662f6d4c9d14c2c3ae2fa85edffe78367794138c0271"
+    },
+    "research/standard-outbound/linux-6.12-lineage/factory-cleanup-provider-operation.c": {
+      "bytes": 12648,
+      "sha256": "490f96129eb9055e6b2cbcc64c3c4f3bc157d86c41db04c34516b945a64c8c7e"
+    },
+    "research/standard-outbound/linux-6.12-lineage/factory-cleanup-provider-queue.c": {
+      "bytes": 11883,
+      "sha256": "7a66f003e5caddc772cbfc3436c727d72d4e427a78501b2187e4efa68c2affb4"
+    },
+    "research/standard-outbound/linux-6.12-lineage/factory-cleanup-provider-retirement.c": {
+      "bytes": 7651,
+      "sha256": "8445628d1bb7c998ff2486b512cb61e1ec78c25d2eed80c8df49259a1267e4d5"
+    },
+    "research/standard-outbound/linux-6.12-lineage/factory-cleanup-security.c": {
+      "bytes": 13906,
+      "sha256": "07aca6570253621b8c7d4a57a7bc901664c88f60d4727bbf96db22358b45bc7f"
+    },
+    "research/standard-outbound/linux-6.12-lineage/factory-cleanup-worker-operations.c": {
+      "bytes": 1629,
+      "sha256": "be8daff484fcf600a1821676b6d20401c8e48e6222ad4e8d77420eb79c10ff22"
+    },
+    "research/standard-outbound/linux-6.12-lineage/kernel-cleanup-association.c": {
+      "bytes": 529,
+      "sha256": "727277b909f6dd651a9f11b6fbab927aea5dad5280d085038c1d9dd2cdd49353"
+    },
+    "research/standard-outbound/linux-6.12-lineage/kernel-cleanup-clone.c": {
+      "bytes": 1889,
+      "sha256": "803226975db53aa2b0278f89e213491519826f100387f24f21d7bcc703b92e81"
+    },
+    "research/standard-outbound/linux-6.12-lineage/kernel-cleanup-close.c": {
+      "bytes": 2050,
+      "sha256": "8bc730e799816e3e31cd381d96283abcf150e3becc9771a91bd8558822c69b2e"
+    },
+    "research/standard-outbound/linux-6.12-lineage/kernel-cleanup-constructor-irq.c": {
+      "bytes": 3811,
+      "sha256": "ef177963937b48b8a48e8d99e69f9061c779368e7ad77e5243071942ce530dbf"
+    },
+    "research/standard-outbound/linux-6.12-lineage/kernel-cleanup-irq.c": {
+      "bytes": 8800,
+      "sha256": "dcf154dc9601a02c697b02f09bc7518e1879e376786aa674634816b80d7359eb"
+    },
+    "research/standard-outbound/linux-6.12-lineage/kernel-cleanup-lifecycle.c": {
+      "bytes": 3964,
+      "sha256": "1e9b1f56f030e3461df9e451bc70961d46e273d01ee9b9a564e306a9e954e226"
+    },
+    "research/standard-outbound/linux-6.12-lineage/kprobe-cleanup-observer.c": {
+      "bytes": 3601,
+      "sha256": "a4e4343bac449a5b0bed5ba0b1b3ef7d48a08d86a2e365a5a8f430631b841586"
+    },
+    "research/standard-outbound/linux-6.12-lineage/kthread-cleanup-provider-initialize.c": {
+      "bytes": 1776,
+      "sha256": "93f43b06f841bd6694dcbdd34b747cb1762d21b5537f9d3848db916d36e5eefe"
+    },
+    "research/standard-outbound/linux-6.12-lineage/kthread-cleanup-provider-queue.c": {
+      "bytes": 2412,
+      "sha256": "3f672d406f831aaaf04fcfe6e5827dc3280013f4c058f065f5bc2e6390db8514"
+    },
+    "research/standard-outbound/linux-6.12-lineage/taskstats-cleanup-observer.c": {
+      "bytes": 2509,
+      "sha256": "6010c1cffbae3b13756f7e75031a6b272e30309fdfe4cd04a21801115a5b143a"
+    },
+    "research/standard-outbound/linux-6.12-lineage/tracepoint-cleanup-observer.c": {
+      "bytes": 4023,
+      "sha256": "21364903b6a949d7914af2addffc3eee0c28e8560013c8c24d1f9a427cafef21"
+    },
+    "research/standard-outbound/linux-6.12-lineage/workqueue-cleanup-provider-birth.c": {
+      "bytes": 1194,
+      "sha256": "d023e76a979c664d4dca4af3a07486f75e26001f904b0b07d72d390b4a530ac9"
+    },
+    "research/standard-outbound/linux-6.12-lineage/workqueue-cleanup-provider-executor.c": {
+      "bytes": 13812,
+      "sha256": "3dbca5ba6c54ddfd28be0ac1571847c68d4bc9dd9ceb785a6c8c98b3b494bf2e"
+    },
+    "research/standard-outbound/linux-6.12-lineage/workqueue-cleanup-provider-operation.c": {
+      "bytes": 1628,
+      "sha256": "1a7fa3259a29f6cb74795ae190ae0edf2b494e783e83a394d5da72552671081f"
+    },
+    "research/standard-outbound/linux-6.12-lineage/workqueue-cleanup-provider-queue.c": {
+      "bytes": 11621,
+      "sha256": "f0092fe3a22f848b334a15a1a61150bfc01f117e79c62ccd4d4d7fac6e06297b"
+    },
+    "tools/ci/contracts/owners/tools/qualify_host_stream_kernel_cleanup_lifecycle.py.json": {
+      "bytes": 534,
+      "sha256": "ccdc3de0a61b086dcb35ade756191694b25d287b2c8e7d7e21c37994851a56dc"
+    },
+    "tools/ci/contracts/python/test_host_stream_kernel_cleanup_association.py.json": {
+      "bytes": 2055,
+      "sha256": "da0939d22bdc10aa9f789ca5b074bfef03a5c5f09fb39b71c96514263b919366"
+    },
+    "tools/ci/contracts/python/test_host_stream_kernel_cleanup_audit.py.json": {
+      "bytes": 3684,
+      "sha256": "3c074865ce38e3d70cce928b1e1a4f9792d45ab00e2322f2affc152157d8956a"
+    },
+    "tools/ci/contracts/python/test_host_stream_kernel_cleanup_cgroup.py.json": {
+      "bytes": 2625,
+      "sha256": "d4610facc30a28a968d5336daecaf023501f571aac7e76d60a912ad36a3b6732"
+    },
+    "tools/ci/contracts/python/test_host_stream_kernel_cleanup_clone.py.json": {
+      "bytes": 3712,
+      "sha256": "d7d18b99a8a8f35cf8b2870c5376d3a7af7ab367fb71fd67545f604d6878634e"
+    },
+    "tools/ci/contracts/python/test_host_stream_kernel_cleanup_close.py.json": {
+      "bytes": 4263,
+      "sha256": "7f1e3aec762f6b6e5e50a1b2804d01fa64c09c78a0f391e502322d437bccb43c"
+    },
+    "tools/ci/contracts/python/test_host_stream_kernel_cleanup_constructor.py.json": {
+      "bytes": 4357,
+      "sha256": "dca87c29fef91102ddc093af0a02e6b9855d08e5e5d2568032b9072f1bb5dfd3"
+    },
+    "tools/ci/contracts/python/test_host_stream_kernel_cleanup_descendants.py.json": {
+      "bytes": 5052,
+      "sha256": "97ed23435fecb8fffd2f50a16535b80028b8ad75268e746d2b4f4c06def89258"
+    },
+    "tools/ci/contracts/python/test_host_stream_kernel_cleanup_entry.py.json": {
+      "bytes": 3754,
+      "sha256": "90525273ff8f51108e41825abdf334440c1125401d51e04be6c88542d367ec83"
+    },
+    "tools/ci/contracts/python/test_host_stream_kernel_cleanup_exit_observer.py.json": {
+      "bytes": 3265,
+      "sha256": "cc89eec85d3be6a2a4ef3a7e879be0c574df3159ec6b95143ec671c854a37390"
+    },
+    "tools/ci/contracts/python/test_host_stream_kernel_cleanup_io.py.json": {
+      "bytes": 3112,
+      "sha256": "c3bbc665075c41fccaac24a6623f1ade6f33af027b82f391021c69eae5dfc5a8"
+    },
+    "tools/ci/contracts/python/test_host_stream_kernel_cleanup_irq.py.json": {
+      "bytes": 3810,
+      "sha256": "af1d27c340c9b5c271b7c31fab4851d303d32a0d1d74bf72a1a4dfb2d1a3705d"
+    },
+    "tools/ci/contracts/python/test_host_stream_kernel_cleanup_lifecycle.py.json": {
+      "bytes": 6647,
+      "sha256": "1e46d7b4f1f2f296994fda986219306fb9e6da461e947fc5092673362924bd65"
+    },
+    "tools/ci/contracts/python/test_host_stream_kernel_cleanup_observer.py.json": {
+      "bytes": 6129,
+      "sha256": "726d12ae90ede9f3584871d75a5116e501dabaafd715e9c619e208c6eae0e693"
+    },
+    "tools/ci/contracts/python/test_host_stream_kernel_cleanup_perf.py.json": {
+      "bytes": 3158,
+      "sha256": "601efa6bc7345b314d7ff90d03d8cdca2b0a9b135e6703ff6b0f609555ee58a1"
+    },
+    "tools/ci/contracts/python/test_host_stream_kernel_cleanup_pid.py.json": {
+      "bytes": 3830,
+      "sha256": "84ac389ee189905dff38be4923bb3b7714ae96b233a0b3cb48d416b2717f543c"
+    },
+    "tools/ci/contracts/python/test_host_stream_kernel_cleanup_programme.py.json": {
+      "bytes": 3225,
+      "sha256": "b6985a44235e0d6e2ae6b90539a67696952af175a3930e04969b4b32d06b6381"
+    },
+    "tools/ci/contracts/python/test_host_stream_kernel_cleanup_provider_birth.py.json": {
+      "bytes": 3823,
+      "sha256": "5533b0e1b45ff600990c0323ae69bbea7131f825106476fe05dcc26415dab8e3"
+    },
+    "tools/ci/contracts/python/test_host_stream_kernel_cleanup_provider_executor.py.json": {
+      "bytes": 4413,
+      "sha256": "4e9ea1263c05502b90810246fc14959de5d4f80fd86d476e76e849b60a2dcaf5"
+    },
+    "tools/ci/contracts/python/test_host_stream_kernel_cleanup_provider_initialize.py.json": {
+      "bytes": 4423,
+      "sha256": "b83b64bd99ff486b0615454b7d69dca8eb98f524ebc66d193e2fbba9eb0201d1"
+    },
+    "tools/ci/contracts/python/test_host_stream_kernel_cleanup_provider_nonfinal.py.json": {
+      "bytes": 2159,
+      "sha256": "333401fd153ff0f23eccc885d93731aa7671a7539d0b126c3ee323f3f0bf5e35"
+    },
+    "tools/ci/contracts/python/test_host_stream_kernel_cleanup_provider_operation.py.json": {
+      "bytes": 3861,
+      "sha256": "610757a63854b594e4b765fbfd0016f29f80f1066b9578414d49cbddeffb5ba8"
+    },
+    "tools/ci/contracts/python/test_host_stream_kernel_cleanup_provider_queue.py.json": {
+      "bytes": 3282,
+      "sha256": "b3b3dfd34774df2809adcfff07819ef40dc733d1e50a80c72193336ab9047094"
+    },
+    "tools/ci/contracts/python/test_host_stream_kernel_cleanup_provider_retirement.py.json": {
+      "bytes": 3854,
+      "sha256": "83d99a38111f804bb9b45502f265099d452963d6e8a29faa2a6dfd2719caf392"
+    },
+    "tools/ci/contracts/python/test_host_stream_kernel_cleanup_security.py.json": {
+      "bytes": 4384,
+      "sha256": "7b27a11ee680f4c965586bb80ba362a016782fcc3d0d7f175ada385ce0e4432f"
+    },
+    "tools/ci/contracts/python/test_host_stream_kernel_cleanup_worker_operations.py.json": {
+      "bytes": 3904,
+      "sha256": "021a66aa2a35445016039dcb7c5e94c06faf72ba8976674119ef44f2710265b0"
+    },
+    "tools/ci/contracts/workflows/stream-kernel-cleanup-lifecycle.yml/jobs/cleanup-lifecycle.json": {
+      "bytes": 5463,
+      "sha256": "375a2203a59ede1ae29a17df492ff16e2ee011cdf520c325b75e52245a28b6c5"
+    },
+    "tools/ci/contracts/workflows/stream-kernel-cleanup-lifecycle.yml/workflow.json": {
+      "bytes": 1316,
+      "sha256": "5da33f565f14ac8095733a03d444aeaf8bb43c78664aefbccb310f31585af103"
+    },
+    "tools/host_stream_kernel_cleanup_association.py": {
+      "bytes": 4899,
+      "sha256": "941f5700873e4d541088db2103f61d18b965af5b8a08f1e15e816aed679f922c"
+    },
+    "tools/host_stream_kernel_cleanup_atomic_control.py": {
+      "bytes": 3587,
+      "sha256": "7f18cd596c91ca9e6fe8fde2014dbd7feb12b2b0a35910eb90b500ccde6e17fb"
+    },
+    "tools/host_stream_kernel_cleanup_audit.py": {
+      "bytes": 9543,
+      "sha256": "c9caeb933b7c02b8625d577a2db5acfc8cf166eee17ba86b6bece176aa3af87b"
+    },
+    "tools/host_stream_kernel_cleanup_cgroup.py": {
+      "bytes": 5366,
+      "sha256": "8472aa024cbb301d74e2280ac707ba6f7a75d3b7ec88bf8e85e12212df2d5bcf"
+    },
+    "tools/host_stream_kernel_cleanup_clone.py": {
+      "bytes": 6872,
+      "sha256": "f1e9521c8c12c2fce095892ec05452e512616f290bd21e26ccd1e4dc594cfbe2"
+    },
+    "tools/host_stream_kernel_cleanup_close.py": {
+      "bytes": 10980,
+      "sha256": "084137cb3562aabb2f2ad5dfb9e5a169dbc88ae4a2d080839fcda2583196ce2b"
+    },
+    "tools/host_stream_kernel_cleanup_constructor.py": {
+      "bytes": 25528,
+      "sha256": "d0a61a717465bf17ea6c03c09db37ee0deabc63dae7e0e890f73f86f9aa87cc7"
+    },
+    "tools/host_stream_kernel_cleanup_descendants.py": {
+      "bytes": 17124,
+      "sha256": "ce578547309b91477881082596a3326cd6dfaa82b2b537a120ae1e7bf14007ec"
+    },
+    "tools/host_stream_kernel_cleanup_entry.py": {
+      "bytes": 6515,
+      "sha256": "63853d9f4ad09df2dc1be01c173e659875a6c3608edbb51aa8ac968fe9278a6e"
+    },
+    "tools/host_stream_kernel_cleanup_exit_observer.py": {
+      "bytes": 7256,
+      "sha256": "203a3edf96767a97489e84b605f6c48d46fe3957ca3c78537bb59ce51bb4a19e"
+    },
+    "tools/host_stream_kernel_cleanup_io.py": {
+      "bytes": 10335,
+      "sha256": "0ae8cf8299fcd59247b4ce0ee0e9782e34e193b4cfc7da375126158ff62c2392"
+    },
+    "tools/host_stream_kernel_cleanup_irq.py": {
+      "bytes": 6934,
+      "sha256": "8420ef4ab228f2b9b6f52affd8a3b1e8355c1b49d201ba23f393acade7cf9548"
+    },
+    "tools/host_stream_kernel_cleanup_lifecycle.py": {
+      "bytes": 11402,
+      "sha256": "8ee5b92677ffb89b290af284f49e833642156abfe09e020acaa058ed02b0c55a"
+    },
+    "tools/host_stream_kernel_cleanup_observer.py": {
+      "bytes": 12794,
+      "sha256": "5c27e3c2b4adcb184730c29406e3fa4fab5e56ca1a7ed948eeda25a12f74fdf6"
+    },
+    "tools/host_stream_kernel_cleanup_perf.py": {
+      "bytes": 7859,
+      "sha256": "e2653e529425aac823bf7f9b69b12eac72195ceab8cce6dac02c3758383a58d5"
+    },
+    "tools/host_stream_kernel_cleanup_pid.py": {
+      "bytes": 15752,
+      "sha256": "bb5aa1066274773bd872e6c6e39f49bf5d8f963ec5c4bd2c446ea4cbb0d3ac57"
+    },
+    "tools/host_stream_kernel_cleanup_programme.py": {
+      "bytes": 11282,
+      "sha256": "458cfcf394a012b2aff1ac6e1aaeacef69647478ab9c0800f6bf3c54b1bd27a6"
+    },
+    "tools/host_stream_kernel_cleanup_provider_birth.py": {
+      "bytes": 7540,
+      "sha256": "d82d542e5b220a286e062d64bd45c04f1e25e527334b48c4e86bdeadfae8233d"
+    },
+    "tools/host_stream_kernel_cleanup_provider_executor.py": {
+      "bytes": 8421,
+      "sha256": "e3f090466f78995ed5e0dacbd79ea665318e3be5bd233be43bcfadb43d96b720"
+    },
+    "tools/host_stream_kernel_cleanup_provider_initialize.py": {
+      "bytes": 11559,
+      "sha256": "2c9bff0125c5b7c81129a2cddd71f356c8a8ef0b71c6d30c606afc8ce10b5a3e"
+    },
+    "tools/host_stream_kernel_cleanup_provider_nonfinal.py": {
+      "bytes": 7249,
+      "sha256": "c533c51bdaa498e362a3056daa89100767065d9c90582bf95972deaab78f3266"
+    },
+    "tools/host_stream_kernel_cleanup_provider_operation.py": {
+      "bytes": 6514,
+      "sha256": "5b4c2206c0d15a7d390cbce8a9f9881cb5fc4f9b84df0ae8bb1aa72214904efc"
+    },
+    "tools/host_stream_kernel_cleanup_provider_queue.py": {
+      "bytes": 16480,
+      "sha256": "68833219d5fe11b6773cf6dd3749de0b8e8e76307d669e024d43b91aef73e982"
+    },
+    "tools/host_stream_kernel_cleanup_provider_retirement.py": {
+      "bytes": 10455,
+      "sha256": "b7294d2ac0b10bbca84b2a9fde565c3224d5559f264008ff77eb71744125cabe"
+    },
+    "tools/host_stream_kernel_cleanup_security.py": {
+      "bytes": 13462,
+      "sha256": "7ac05aa7ce27f3204eda77c1f7e085b7d0524950057697110e2b05278d5ff2f6"
+    },
+    "tools/host_stream_kernel_cleanup_worker_operations.py": {
+      "bytes": 6178,
+      "sha256": "9f1e41e484947839784ed39cc7d2b5c44524a3e84d14c2f5086f7824c025f456"
+    },
+    "tools/qualify_host_stream_kernel_cleanup_lifecycle.py": {
+      "bytes": 13296,
+      "sha256": "5a9ad6ba1c0f6c347adbf9a47cee8105df33689c5936c267156b997bbbb7d1b2"
+    },
+    "tools/tests/fixtures/host_stream_kernel_cleanup_association.json": {
+      "bytes": 2303,
+      "sha256": "b8d982ad908a159ee1ab5bc6375bd9f9e942709292ab2e077b39c34d8a0d4256"
+    },
+    "tools/tests/fixtures/host_stream_kernel_cleanup_audit.json": {
+      "bytes": 14142,
+      "sha256": "f10052fc5d4ae907648ba145e42d86261d4427b4b140846d953e734ab6ef032b"
+    },
+    "tools/tests/fixtures/host_stream_kernel_cleanup_cgroup.json": {
+      "bytes": 26720,
+      "sha256": "6ef07c08b42688e585b8bebf2175eb12f2ab66ebb15a8d630c174346f26fc0a8"
+    },
+    "tools/tests/fixtures/host_stream_kernel_cleanup_clone.json": {
+      "bytes": 5511,
+      "sha256": "dd1f2bcb8da6042bc3cd2aa48704b0ad686f71c22c361e7bf1122582a02f445d"
+    },
+    "tools/tests/fixtures/host_stream_kernel_cleanup_close.json": {
+      "bytes": 10516,
+      "sha256": "a603cf1a3c5c2b634cd9fe8b2a4d54d219ed754d4cfa116f05ea9deb4c597198"
+    },
+    "tools/tests/fixtures/host_stream_kernel_cleanup_constructor.json": {
+      "bytes": 40449,
+      "sha256": "b6e24094bf9d391ab4ac9e68caa30ecb98d944856f650331f454013c6ff0b4e2"
+    },
+    "tools/tests/fixtures/host_stream_kernel_cleanup_descendants.json": {
+      "bytes": 18331,
+      "sha256": "ff4a5327398e9a2d1e70078b82adc1c7fa2636809da38b86511383bb2b00beaf"
+    },
+    "tools/tests/fixtures/host_stream_kernel_cleanup_entry.json": {
+      "bytes": 3579,
+      "sha256": "116b255bef5c80b120a2b3823accf904961d8f5d999d80e0e912467aa936e9aa"
+    },
+    "tools/tests/fixtures/host_stream_kernel_cleanup_exit_observer.json": {
+      "bytes": 10308,
+      "sha256": "e8e908206e2728d39312f39b8e0472428bae42712bd7456a80aea19a79594fe4"
+    },
+    "tools/tests/fixtures/host_stream_kernel_cleanup_io.json": {
+      "bytes": 5617,
+      "sha256": "f9c12d5161d3e635a5989ae5cb33263387a32be339a2972d8220ea1f945c9b6c"
+    },
+    "tools/tests/fixtures/host_stream_kernel_cleanup_irq.json": {
+      "bytes": 7576,
+      "sha256": "7ad5bc0ebbb9aafabcbd2e50b741b1264e865d91c9928f9d82ecbf22d28eaa88"
+    },
+    "tools/tests/fixtures/host_stream_kernel_cleanup_lifecycle.json": {
+      "bytes": 17915,
+      "sha256": "e2519dc27c879ff74b54f5e9cba1e7b58a8066f8d95b9d65379527b78eae2665"
+    },
+    "tools/tests/fixtures/host_stream_kernel_cleanup_observer.json": {
+      "bytes": 33304,
+      "sha256": "56d203ba01c8ac9d33ac74e586d3fad5fb16fe70d3386129bf63f874882815cf"
+    },
+    "tools/tests/fixtures/host_stream_kernel_cleanup_perf.json": {
+      "bytes": 15392,
+      "sha256": "6d2ea96942a54c2045933f2952c4b314a8d17c9b2afd79c896c11e249dd883ea"
+    },
+    "tools/tests/fixtures/host_stream_kernel_cleanup_pid.json": {
+      "bytes": 17239,
+      "sha256": "d438a475d0f64547bbc3f59b23e0a061c33dae0454cb151ad4e2cb1b9015b482"
+    },
+    "tools/tests/fixtures/host_stream_kernel_cleanup_provider_birth.json": {
+      "bytes": 8010,
+      "sha256": "1a4563111a9dd305b7baa80ee77cc20bb58086c6db236598f2267409389e2272"
+    },
+    "tools/tests/fixtures/host_stream_kernel_cleanup_provider_executor.json": {
+      "bytes": 10494,
+      "sha256": "767f86ad857fdaa36c5b30ab61922bbdacb3f7422383ddbcfb61c6179dbeb59a"
+    },
+    "tools/tests/fixtures/host_stream_kernel_cleanup_provider_initialize.json": {
+      "bytes": 14302,
+      "sha256": "fc9d89906f2ba263baf19b145db79339233339c05fcf38b3192ada88b2c1d41d"
+    },
+    "tools/tests/fixtures/host_stream_kernel_cleanup_provider_nonfinal.json": {
+      "bytes": 4117,
+      "sha256": "261907775933b41a76b72d561920c333cf1f51e1501d4b91be339c0f42e89573"
+    },
+    "tools/tests/fixtures/host_stream_kernel_cleanup_provider_operation.json": {
+      "bytes": 8421,
+      "sha256": "121e8dde033b4834fea2f930982e62ad794ea9e40222081a27f656df7fb26172"
+    },
+    "tools/tests/fixtures/host_stream_kernel_cleanup_provider_queue.json": {
+      "bytes": 7308,
+      "sha256": "90d662020c649d36c5b687dd2ca4a364e8360b8969cafb1c3cf586a7a82849ba"
+    },
+    "tools/tests/fixtures/host_stream_kernel_cleanup_provider_retirement.json": {
+      "bytes": 9299,
+      "sha256": "e47f8f51aca56df35fa58a0e6be6e2ea07773fd23382628ba4eacff44b3c9784"
+    },
+    "tools/tests/fixtures/host_stream_kernel_cleanup_security.json": {
+      "bytes": 3599,
+      "sha256": "aca415288ab4154e0d0138823a10320970da398607837fd773a1be790a744867"
+    },
+    "tools/tests/fixtures/host_stream_kernel_cleanup_worker_operations.json": {
+      "bytes": 14234,
+      "sha256": "09a942e111b2aa05c7d993cf39fd64f9baf3e5f21a83e667e9fee1ffea50b6f7"
+    },
+    "tools/tests/test_host_stream_kernel_cleanup_association.py": {
+      "bytes": 1873,
+      "sha256": "dd3f83ac4755f8d6697d08e1350a2e1dcc39e731d505bffbcf71f1850d48d70d"
+    },
+    "tools/tests/test_host_stream_kernel_cleanup_audit.py": {
+      "bytes": 4587,
+      "sha256": "e65d1da10481a0d8a689c865fff824461d706f966f458324c47d9a6759a042cd"
+    },
+    "tools/tests/test_host_stream_kernel_cleanup_cgroup.py": {
+      "bytes": 3841,
+      "sha256": "8691ec17bd0211552c82292bcae8e17221ef0192695083d920109627159dd9cd"
+    },
+    "tools/tests/test_host_stream_kernel_cleanup_clone.py": {
+      "bytes": 4750,
+      "sha256": "c72971334a565520723df2d84e57a05a05f48c019488d59d802cdb8a72ce3463"
+    },
+    "tools/tests/test_host_stream_kernel_cleanup_close.py": {
+      "bytes": 7480,
+      "sha256": "afce617e7a2d14e959c4e8ba109067a2dbf6ef78ffd28614677ee6b0fcb45876"
+    },
+    "tools/tests/test_host_stream_kernel_cleanup_constructor.py": {
+      "bytes": 6220,
+      "sha256": "d9cd669b6dca38ce6431d019c220ffa7e2a42ff2e17efcaf3426b4cab54f7921"
+    },
+    "tools/tests/test_host_stream_kernel_cleanup_descendants.py": {
+      "bytes": 7661,
+      "sha256": "7a0c2dc3240db40afe039bab82a47fb2ded153bd773e745f05872ee1e8392dca"
+    },
+    "tools/tests/test_host_stream_kernel_cleanup_entry.py": {
+      "bytes": 3873,
+      "sha256": "f7222981ff40bcaac44c7e4cdf048d8c76d90d1af3862b4df4bfb53e4088dd3e"
+    },
+    "tools/tests/test_host_stream_kernel_cleanup_exit_observer.py": {
+      "bytes": 4409,
+      "sha256": "d392516e7b64169567bb2b79babcd7a1e7744e5c00e232e59c3275e9ef84970f"
+    },
+    "tools/tests/test_host_stream_kernel_cleanup_io.py": {
+      "bytes": 4560,
+      "sha256": "5d89d947d58dcb8a6ba1a4160993f973d77f8bae8acc5d81ea2f348e37d67ec8"
+    },
+    "tools/tests/test_host_stream_kernel_cleanup_irq.py": {
+      "bytes": 4733,
+      "sha256": "26bae7c9e4bc7f01340669badbc8ce01632745bb62bc987d53e886067a3e23e7"
+    },
+    "tools/tests/test_host_stream_kernel_cleanup_lifecycle.py": {
+      "bytes": 8976,
+      "sha256": "73b2d3d546ee2bc6ed29495a01ca14e5fd4bcec1f0e6b223051702b03f8b4b76"
+    },
+    "tools/tests/test_host_stream_kernel_cleanup_observer.py": {
+      "bytes": 10557,
+      "sha256": "fdc798f55f2bbcc8bb00353d961e041fba2814917aa76ac119d008c9aaed8107"
+    },
+    "tools/tests/test_host_stream_kernel_cleanup_perf.py": {
+      "bytes": 4961,
+      "sha256": "40ffa39a4adfb89de177530bb3b30283d5793ca0d53c09ec1e7f967ad9f16a1f"
+    },
+    "tools/tests/test_host_stream_kernel_cleanup_pid.py": {
+      "bytes": 7057,
+      "sha256": "2fc97e9e57050cc26cde9db64ffa3638f618f0d10b8273489d46f5efdc7dc3f9"
+    },
+    "tools/tests/test_host_stream_kernel_cleanup_programme.py": {
+      "bytes": 4186,
+      "sha256": "51b7e1ab19c8f12d09f062d7bce3b553451cafe5e5c0ad346aae5debfec477ce"
+    },
+    "tools/tests/test_host_stream_kernel_cleanup_provider_birth.py": {
+      "bytes": 3476,
+      "sha256": "19e613bf5eab14aa165be6abc7d48ac05652687704385ff93ea85596183f6945"
+    },
+    "tools/tests/test_host_stream_kernel_cleanup_provider_executor.py": {
+      "bytes": 6393,
+      "sha256": "fd61784b5485e2efb3973121f3e3f2872fca7211dc52e025ed4c1342167a44b9"
+    },
+    "tools/tests/test_host_stream_kernel_cleanup_provider_initialize.py": {
+      "bytes": 5240,
+      "sha256": "9b977e509215fea6e668b56b0f8b3f58fb40f2a4da9040721795064835ba8f7d"
+    },
+    "tools/tests/test_host_stream_kernel_cleanup_provider_nonfinal.py": {
+      "bytes": 3239,
+      "sha256": "a36856dff7477f30241b52d37d2ba3a21d8f53110d135250ffce7ab1d74fc13a"
+    },
+    "tools/tests/test_host_stream_kernel_cleanup_provider_operation.py": {
+      "bytes": 5827,
+      "sha256": "428cdae2b0a4c5fe7b1d20cd7d13f9a3e5a790dcae306722364a06250ae980a4"
+    },
+    "tools/tests/test_host_stream_kernel_cleanup_provider_queue.py": {
+      "bytes": 4853,
+      "sha256": "8fc61eb96c86ca5bf0d16c0d1f1fa391bf173d4c0b24b611661e9e0185308f27"
+    },
+    "tools/tests/test_host_stream_kernel_cleanup_provider_retirement.py": {
+      "bytes": 4402,
+      "sha256": "0e0c7c628e68b4bafcedc02762a0cd74f0b9813a493914489a9680a2398791d4"
+    },
+    "tools/tests/test_host_stream_kernel_cleanup_security.py": {
+      "bytes": 6373,
+      "sha256": "e01c64c24b15fa42773d85d53b2872e700f095c78ea66c40ee38063661f48eb1"
+    },
+    "tools/tests/test_host_stream_kernel_cleanup_worker_operations.py": {
+      "bytes": 4846,
+      "sha256": "314db0ca32a360f415218fdafb0a405b81d3263c056a54d52ae91ec44492fede"
+    },
+    ".gitattributes": {
+      "bytes": 5209,
+      "sha256": "686bb136a7feb5f0bcbcb8936ea4312adc5836e5be9a714ad335ff6d999aa300"
+    }
+  },
+  "frozenEarlierSource": {
+    "research/standard-outbound/linux-6.12-lineage/cleanup-lifecycle-plan-r1.md": {
+      "bytes": 6245,
+      "sha256": "b2192b2fa7d72c469c2f09d1a948a358dcd84d75cabd3da0f863220f214aeaa9"
+    },
+    "research/standard-outbound/linux-6.12-lineage/cleanup-lifecycle-private.h": {
+      "bytes": 3061,
+      "sha256": "8541d5fc1066cc55f9857155be624fa5a24c444162ad4c52bce3e6f688967e85"
+    },
+    "research/standard-outbound/linux-6.12-lineage/cleanup-stack-retire.c": {
+      "bytes": 6254,
+      "sha256": "806c409d42768770baade09193059d0827f441197bab546a36b55ece06409181"
+    },
+    "research/standard-outbound/linux-6.12-lineage/factory-cleanup-lifecycle.c": {
+      "bytes": 18059,
+      "sha256": "26895d7228e7643817a5186f13906e20e1d1cd86074aa76ffaee2bb8f8d89753"
+    },
+    "research/standard-outbound/linux-6.12-lineage/kernel-cleanup-lifecycle.c": {
+      "bytes": 3964,
+      "sha256": "1e9b1f56f030e3461df9e451bc70961d46e273d01ee9b9a564e306a9e954e226"
+    },
+    "tools/host_stream_kernel_cleanup_lifecycle.py": {
+      "bytes": 11402,
+      "sha256": "8ee5b92677ffb89b290af284f49e833642156abfe09e020acaa058ed02b0c55a"
+    },
+    "tools/tests/fixtures/host_stream_kernel_cleanup_lifecycle.json": {
+      "bytes": 17915,
+      "sha256": "e2519dc27c879ff74b54f5e9cba1e7b58a8066f8d95b9d65379527b78eae2665"
+    },
+    "tools/tests/test_host_stream_kernel_cleanup_lifecycle.py": {
+      "bytes": 8976,
+      "sha256": "73b2d3d546ee2bc6ed29495a01ca14e5fd4bcec1f0e6b223051702b03f8b4b76"
+    },
+    "research/standard-outbound/linux-6.12-lineage/factory-cleanup-entry.c": {
+      "bytes": 2208,
+      "sha256": "6dbb04dad879974581f336254eb324e9fc2e866e1c0993606fb1b15ccd639313"
+    },
+    "tools/host_stream_kernel_cleanup_entry.py": {
+      "bytes": 6515,
+      "sha256": "63853d9f4ad09df2dc1be01c173e659875a6c3608edbb51aa8ac968fe9278a6e"
+    },
+    "tools/tests/fixtures/host_stream_kernel_cleanup_entry.json": {
+      "bytes": 3579,
+      "sha256": "116b255bef5c80b120a2b3823accf904961d8f5d999d80e0e912467aa936e9aa"
+    },
+    "tools/tests/test_host_stream_kernel_cleanup_entry.py": {
+      "bytes": 3873,
+      "sha256": "f7222981ff40bcaac44c7e4cdf048d8c76d90d1af3862b4df4bfb53e4088dd3e"
+    },
+    "research/standard-outbound/linux-6.12-lineage/kernel-cleanup-irq.c": {
+      "bytes": 8800,
+      "sha256": "dcf154dc9601a02c697b02f09bc7518e1879e376786aa674634816b80d7359eb"
+    },
+    "research/standard-outbound/linux-6.12-lineage/factory-cleanup-irq.c": {
+      "bytes": 2172,
+      "sha256": "edd78ffe407faf5a79b6121d1e2f83067a6120802e76368f0a0725b1089b9691"
+    },
+    "research/standard-outbound/linux-6.12-lineage/cleanup-irq-relay-plan-r1.md": {
+      "bytes": 6563,
+      "sha256": "2179f409783d2ac1c0e8e49a37c089f047fd659205a07f17d35dc85b47b9268f"
+    },
+    "tools/host_stream_kernel_cleanup_irq.py": {
+      "bytes": 6934,
+      "sha256": "8420ef4ab228f2b9b6f52affd8a3b1e8355c1b49d201ba23f393acade7cf9548"
+    },
+    "tools/tests/fixtures/host_stream_kernel_cleanup_irq.json": {
+      "bytes": 7576,
+      "sha256": "7ad5bc0ebbb9aafabcbd2e50b741b1264e865d91c9928f9d82ecbf22d28eaa88"
+    },
+    "tools/tests/test_host_stream_kernel_cleanup_irq.py": {
+      "bytes": 4733,
+      "sha256": "26bae7c9e4bc7f01340669badbc8ce01632745bb62bc987d53e886067a3e23e7"
+    },
+    "research/standard-outbound/linux-6.12-lineage/cleanup-descendants-private.h": {
+      "bytes": 1804,
+      "sha256": "9956d7e2918701abab7ecc74c0a313bd41e5e29c2c80ac94b18c82662c2d87e5"
+    },
+    "research/standard-outbound/linux-6.12-lineage/factory-cleanup-descendants.c": {
+      "bytes": 12021,
+      "sha256": "eb2d7c5dc40a94813a432f476f89741c8495baed630966881c57b594fc19144c"
+    },
+    "research/standard-outbound/linux-6.12-lineage/cleanup-descendants-source-r1.md": {
+      "bytes": 4974,
+      "sha256": "d1eabf1a3461dae8b4060a5ad28e1bdb7829b5b3e0ee7b0062a22666e9a325d9"
+    },
+    "tools/host_stream_kernel_cleanup_descendants.py": {
+      "bytes": 17124,
+      "sha256": "ce578547309b91477881082596a3326cd6dfaa82b2b537a120ae1e7bf14007ec"
+    },
+    "tools/tests/fixtures/host_stream_kernel_cleanup_descendants.json": {
+      "bytes": 18331,
+      "sha256": "ff4a5327398e9a2d1e70078b82adc1c7fa2636809da38b86511383bb2b00beaf"
+    },
+    "tools/tests/test_host_stream_kernel_cleanup_descendants.py": {
+      "bytes": 7661,
+      "sha256": "7a0c2dc3240db40afe039bab82a47fb2ded153bd773e745f05872ee1e8392dca"
+    }
+  },
+  "derived": {
+    "net/socket.c": {
+      "bytes": 96969,
+      "sha256": "c069c412f74ef86574c0ce27206da86d4bb56508bd22540b7e7053bc48f119b7"
+    },
+    "net/core/sock.c": {
+      "bytes": 113922,
+      "sha256": "cc7a5f9d0150ef3cdb68a1a6287c917a82ee3ea83f13192468c20b4959b5d24a"
+    },
+    "net/ipv4/af_inet.c": {
+      "bytes": 56008,
+      "sha256": "2ded81a89fdfe8aee5239d59a921b4e6f9ed1145a1d1ad2b85f76f57d01b0d59"
+    },
+    "fs/inode.c": {
+      "bytes": 78655,
+      "sha256": "8c8b1279f58c8990b969437163c58688cbaec6168f16ce22de3b56c9fee0e4a4"
+    },
+    "include/net/sock.h": {
+      "bytes": 86367,
+      "sha256": "f37eb73160c285c9d11610e270da319b5a779d4c82f63f53229cf4425492ba74"
+    },
+    "security/security.c": {
+      "bytes": 185609,
+      "sha256": "3341ceb0348fd7034ee953755c71a102c5cbf4ab28be13dd734f7a93ad2e389c"
+    },
+    "include/net/lsf_stream_protocol_private.h": {
+      "bytes": 1460,
+      "sha256": "cf34306a0ea8fd5af5187b620f2c6c386c080a07a2954d1f45bf83ab36be174a"
+    },
+    "include/net/lsf_stream_outer.h": {
+      "bytes": 1175,
+      "sha256": "9dd6f1b803b012f22d42af948157068de750b1ba6c0cbcbef2d3795d1cdf0ae0"
+    },
+    "include/net/lsf_stream_lineage_core.h": {
+      "bytes": 10036,
+      "sha256": "e870632b2be976e238cf28c47a61b5f52a7b686206265638b086b6c078fe5b17"
+    },
+    "net/factory-private.h": {
+      "bytes": 5388,
+      "sha256": "428213984538caf52d6dcede7ac9d8e3abfd5611ec44e9449ff48d3440720c6b"
+    },
+    "net/prepaid.h": {
+      "bytes": 30613,
+      "sha256": "638907b75128eb886c574d43a8adf3110eea5e63ec77dc2b7712c653d23428cb"
+    },
+    "net/factory.c": {
+      "bytes": 33331,
+      "sha256": "80c4087a32d4569f5f838c431048099b3719018cce6b4efb4c6c3d8590ad1ef2"
+    },
+    "net/core/lsf_protocol_private.c": {
+      "bytes": 3263,
+      "sha256": "683f45141df4b5d891930d8a4f25e089b6566e225d159a3da6c4fa159a8407e6"
+    },
+    "security/lsf_security_private.c": {
+      "bytes": 1712,
+      "sha256": "af8a4b2903aaa4b75fa0b5d2e2e943205310f80d3269dbadc02a8aa6e44c30bf"
+    },
+    "net/lsf_outer_private.c": {
+      "bytes": 4219,
+      "sha256": "3d858b241df2516361f44f3fa90c45515dce2bd2ee705891971a45e26196b239"
+    },
+    "security/lsf_outer_security.c": {
+      "bytes": 789,
+      "sha256": "d7828b113b1c41ded01c0d4ce2e7383c4df039efe8a07468a28c21870dc74a34"
+    },
+    "include/net/netlabel.h": {
+      "bytes": 21392,
+      "sha256": "0a30716ddd0175c7ddd7aae18d416b33cab26fc0eda1e2244c5a212bb40ae7b4"
+    },
+    "net/ipv4/cipso_ipv4.c": {
+      "bytes": 66501,
+      "sha256": "e8c8603fa7150068606db5e7f525fabf26bd2c610a57634535b911aea4d3fc15"
+    },
+    "net/netlabel/netlabel_kapi.c": {
+      "bytes": 44662,
+      "sha256": "4eddf54dd9dec74798683a2db7046693d9dcc9dfdc78476f862ef82251c05ea4"
+    },
+    "security/selinux/netlabel.c": {
+      "bytes": 17753,
+      "sha256": "f908e7cfecb79a204b80fc3dd3d44fd9f84db6e2d82b43258ecdd0e799175739"
+    },
+    "security/selinux/ss/ebitmap.c": {
+      "bytes": 13197,
+      "sha256": "0169e72cd62f6bb105c9a9702d006da00266fbcc12deaaadc36c3d5f26d094f4"
+    },
+    "security/selinux/ss/mls.c": {
+      "bytes": 16674,
+      "sha256": "44062ce91ce2a93298102d08fbe87579b1c395f6a6ce888dbf86ad6b88ab3548"
+    },
+    "security/selinux/ss/services.c": {
+      "bytes": 103134,
+      "sha256": "9826872fd03fc912451ff14f5b554ed5c3cfd68b4174cdb53d27621cbbd456be"
+    },
+    "include/net/lsf_stream_netlabel_private.h": {
+      "bytes": 2149,
+      "sha256": "4d9cc47b7bf9e4dd625b7a8ae6c7ecb2eacf203d7601b898d7c0f5323c9669b2"
+    },
+    "net/netlabel/lsf_netlabel_private.c": {
+      "bytes": 5653,
+      "sha256": "5fb0e0cd413c3581038f66e65f320a5d9cd2255ba4ac3a29985ff495c5cc56ca"
+    },
+    "security/selinux/netport.c": {
+      "bytes": 8501,
+      "sha256": "30a400ff0ea04f0e9e554e425bfa0a25a4402589c3cebce8010134c5293dfef5"
+    },
+    "security/selinux/hooks.c": {
+      "bytes": 208914,
+      "sha256": "be29cf703ca3beb339b4f224c7982112e2058b9537657c9a55ebb2e2b898bac9"
+    },
+    "include/net/lsf_stream_netport_private.h": {
+      "bytes": 343,
+      "sha256": "17ed375e0c01c51d01f2aafce77a8fcd1a86437adb00383d34e695467a8f72a3"
+    },
+    "security/selinux/lsf_netport_private.c": {
+      "bytes": 2391,
+      "sha256": "2f66cce9347e0b579b241889ceef62c8ce64fe6328220272dd7cf1d45590fb57"
+    },
+    "security/selinux/ss/sidtab.c": {
+      "bytes": 18307,
+      "sha256": "e82fa6cc13824adbd370c5502279140555242d97b1086e40510d1caa8212da70"
+    },
+    "include/net/lsf_stream_sidcache_private.h": {
+      "bytes": 972,
+      "sha256": "38558ae328f14a08709c807d1599372cbbadcfd6e880b2b93712f8a5d2d6c88d"
+    },
+    "security/selinux/ss/lsf_sidcache_private.c": {
+      "bytes": 7701,
+      "sha256": "cf50d5c92b204410d2239b220873cf7df81f438f3953f4bf7f03cdce993d695f"
+    },
+    "security/selinux/ss/lsf_audit_string_private.c": {
+      "bytes": 3612,
+      "sha256": "562b431ee153b4c8b5ab08a0ec32b45f1c5dc27af30c82e142fae9d5e9332fc4"
+    },
+    "security/selinux/avc.c": {
+      "bytes": 45645,
+      "sha256": "36e2faea4197c58b737e6449ee8b89218843abece6c7e66ef358588f4dc20bcd"
+    },
+    "security/selinux/include/avc.h": {
+      "bytes": 4623,
+      "sha256": "b1bb6fd0b9fda55cce88a5fb2a359fd64cde40ef18162e6640cd33885ebb5966"
+    },
+    "include/net/lsf_stream_avc_private.h": {
+      "bytes": 712,
+      "sha256": "d7d34f1d4946637af72f87faed1becb1e3fe75be107772cafaa9d0cca052a519"
+    },
+    "security/selinux/lsf_avc_private.c": {
+      "bytes": 10435,
+      "sha256": "34c53b1f30c1ac7141718a43f1632d285051808dc077782ce424aef2ba3e0f84"
+    },
+    "net/factory-avc.c": {
+      "bytes": 5465,
+      "sha256": "b03102a92f595a647ec6646571e0e86f1bd09744b6d3631587cc9f521ee2ec26"
+    },
+    "net/core/skbuff.c": {
+      "bytes": 197585,
+      "sha256": "5bf6c085dd50ea1e4ca945db88c7de44f0adc6ff9fd1bb85cf99332db16b6347"
+    },
+    "net/audit-skb-private.c": {
+      "bytes": 6038,
+      "sha256": "4006b055629159eda067317521b51f05919512b310553dcd994ddc9522788c50"
+    },
+    "kernel/audit.c": {
+      "bytes": 70970,
+      "sha256": "c49031d5aaca64256d98c54d0914072e8e5e2aa9b71c0126449349b31f4e2ca0"
+    },
+    "security/lsm_audit.c": {
+      "bytes": 11241,
+      "sha256": "f6a2ab566ab99b600d0b7d03fa8b0c796cc820ddc919536063f6ec754592ed14"
+    },
+    "net/audit-private.h": {
+      "bytes": 703,
+      "sha256": "bb8ab0690c07e9cdf7f490a2e83e43955cb8f0aac2b2c8f1d4c476cd51b11d92"
+    },
+    "net/audit-buffer-private.c": {
+      "bytes": 1978,
+      "sha256": "579099502031d49d0cbd096f6e89f8e6bc6097a964fe84ab5d613b4c9f799031"
+    },
+    "net/lsm-audit-private.c": {
+      "bytes": 1570,
+      "sha256": "0a7c9f7e3d3905f67187dd574b5a325409ff7879c97373cb772dbeed4c3d4c9b"
+    },
+    "net/ipv4/inet_hashtables.c": {
+      "bytes": 37483,
+      "sha256": "9b18936a5dfdae99c2a4826b9ba1ac40cea6df57d0ebcc3aec8ed87195445732"
+    },
+    "net/ipv4/inet_connection_sock.c": {
+      "bytes": 45581,
+      "sha256": "b653085c215a73e0d9c0dc4e750190fa329de714ef4395aca90b2874b40f5a86"
+    },
+    "net/ipv4/inet_timewait_sock.c": {
+      "bytes": 10794,
+      "sha256": "c200d5880fbf8dd56c0a058beb9b4e92465991038a81b98469aa98ad1c5f31c5"
+    },
+    "include/net/inet_hashtables.h": {
+      "bytes": 17314,
+      "sha256": "a699f5b96229f9d6fa4bb5bf435285db59b7d2e45918044f2c5fec01e624bf6e"
+    },
+    "include/net/lsf_stream_bind_private.h": {
+      "bytes": 783,
+      "sha256": "8eea1bcd71ef7267537686a8a4b36d65c2814ce92a66af41e5ebcd6a89301a31"
+    },
+    "net/ipv4/lsf_bind_private.c": {
+      "bytes": 3971,
+      "sha256": "8a2b4701ed37459719b587449c9f3404b2ed1243d474ffc96024100a5d59bf09"
+    },
+    "include/linux/netdevice.h": {
+      "bytes": 170262,
+      "sha256": "35577d1d0decaad06824a0591c5929a1e837c7dc00e95b42cba1bc6743fb3941"
+    },
+    "net/ipv4/fib_frontend.c": {
+      "bytes": 40789,
+      "sha256": "054b45ed18db33e7f842e3565aa29fd21e171fff61debfe3b9dd2def46f55682"
+    },
+    "net/ipv4/fib_semantics.c": {
+      "bytes": 54966,
+      "sha256": "7cb52cf170fbd73a80ac9a92c4cd668d90f935321deab8230f362b30dd4f04a7"
+    },
+    "net/ipv4/metrics.c": {
+      "bytes": 2214,
+      "sha256": "b23000aa2906b653caa07638117c8c799f7c2ffd25fca9c4fbe0a234293ef134"
+    },
+    "net/xfrm/xfrm_policy.c": {
+      "bytes": 114568,
+      "sha256": "79929076ddb7f855026ce831d48a8c22972724e639f25f66fe4630207f530680"
+    },
+    "include/net/dst.h": {
+      "bytes": 16116,
+      "sha256": "78178f0528f8f9ee92ae63c7308f84cfc5d90941d92b674fc42078999a6d3369"
+    },
+    "net/ipv4/route.c": {
+      "bytes": 112672,
+      "sha256": "fca43a90119a02e9003e1e03536cb963611a384731507e96e9758acb29128404"
+    },
+    "net/ipv4/fib_trie.c": {
+      "bytes": 74770,
+      "sha256": "e87b942d3f04998cc2ceab4e40223bd24a4f2c89f3137bb4d847368485bd37b7"
+    },
+    "include/net/dst_ops.h": {
+      "bytes": 2116,
+      "sha256": "388f5247da499afef3ae4f1a7f7ad779192aa31a071355bbb6d50e188e3ae524"
+    },
+    "include/net/ip.h": {
+      "bytes": 25084,
+      "sha256": "468170661746038b5ecc7bfa114433feeb853708d0af7a65d59541b602473963"
+    },
+    "include/net/ip_fib.h": {
+      "bytes": 17526,
+      "sha256": "8f006444cb27c3d3dc92eb417ad90a9a9ae818f833982b85de3577a8cc854d65"
+    },
+    "include/net/xfrm.h": {
+      "bytes": 61675,
+      "sha256": "aadaea85ee3054727e4b568e82ca6ea3cee5c9f7be461134ed773f402dcfb9ef"
+    },
+    "net/core/dst.c": {
+      "bytes": 9256,
+      "sha256": "f8639be02b30ef1f37d58f6fd5c1d291d5ea8930147620027d10113fa191ad83"
+    },
+    "include/net/lwtunnel.h": {
+      "bytes": 6850,
+      "sha256": "d5df355174e9182e145c1d4a67724d408f663d4eab35eac51f0af2c198b151e9"
+    },
+    "include/net/route.h": {
+      "bytes": 11959,
+      "sha256": "0400a77d1689f26a2066a217e3cc64f765fc7794c41723fbd2797f272138a303"
+    },
+    "include/net/lsf_stream_route_private.h": {
+      "bytes": 454,
+      "sha256": "864ec66bfa64075bf05499cde2d542ef509b7e1fa276ef46db5af8f0637b5e58"
+    },
+    "net/ipv4/lsf_route_private.c": {
+      "bytes": 4514,
+      "sha256": "6a30d05fb6c136a61fb45aab159e5369b3148f355cfe09a1f797a21b5e1644dd"
+    },
+    "include/linux/rcuref.h": {
+      "bytes": 4771,
+      "sha256": "4bad6b9738eeae56cdb0735d8d8b901fd7b3fe4d9432701ffab40100bf9ea7c1"
+    },
+    "net/ipv4/nexthop.c": {
+      "bytes": 101381,
+      "sha256": "2be58e25f245b504674b60182098932468bf3b1f6c4cec89146b00419e341814"
+    },
+    "include/net/nexthop.h": {
+      "bytes": 12985,
+      "sha256": "80faf19c5303d481542adbf2c23463c9a135bb4633957683161f64ff2cba2792"
+    },
+    "net/route-cache-owner.h": {
+      "bytes": 911,
+      "sha256": "d364beade64d3ea14a7fdfb2ff2088669ad691461aa0ac04acfe3bc4b1618d38"
+    },
+    "include/net/lsf_stream_route_cache_private.h": {
+      "bytes": 780,
+      "sha256": "f6dd8d1d00b6640996209bf011cc96bb31ce904e145017d91f5e86989b1fea44"
+    },
+    "net/route-cache-factory.c": {
+      "bytes": 7090,
+      "sha256": "020619105c28c0ea3f6eb18791b5a0399660c96e5fcf3dd5b2e737a37cb2a8b8"
+    },
+    "net/ipv4/lsf_route_cache_private.c": {
+      "bytes": 7161,
+      "sha256": "e97c0a06ba05b3536d7b8ebea1f0b837bed9af6999acf1782be697b6b698a979"
+    },
+    "net/ipv4/tcp_output.c": {
+      "bytes": 144216,
+      "sha256": "01842e2bd1efc5af8925db65836b925fbdbaec871c1b29ffd1b5056f14922444"
+    },
+    "net/ipv4/tcp_input.c": {
+      "bytes": 220878,
+      "sha256": "20cab650c05e3323aced8f2ce252f7a0d306afa8d0e301928f746bc81f06f599"
+    },
+    "include/net/tcp.h": {
+      "bytes": 86800,
+      "sha256": "6d4ba5b9aab587292de3cb3836b5907ac265d866f94a52135452f8010af9243a"
+    },
+    "net/ipv4/tcp.c": {
+      "bytes": 160616,
+      "sha256": "a6998e6fe5c8f90570ed53689b61b8c02026128a5eb9b72dde425fbabd691b9a"
+    },
+    "include/net/lsf_stream_packet_private.h": {
+      "bytes": 1461,
+      "sha256": "03b91bf5bbff1dc1699891b2bf2381f37e3e9050b010927e46458d04fdf90f2d"
+    },
+    "net/packet-factory.c": {
+      "bytes": 3630,
+      "sha256": "58f4533b704f702e846ccb405e929771ce6ec766d49614a6a6af6ba7ba5e7371"
+    },
+    "net/packet-skb-private.c": {
+      "bytes": 7739,
+      "sha256": "0c4f51e07b1231023d39e573c56011a5ee212d3b4d79212993781558339de2ad"
+    },
+    "net/packet-copy-private.c": {
+      "bytes": 2717,
+      "sha256": "5bce3cca766997c578443fdda7d6b44b227d4ed7238fefbae4de16f4ec1fdb97"
+    },
+    "lib/kasprintf.c": {
+      "bytes": 1426,
+      "sha256": "6706bce50db2579ee692b1eb4e332636291febf983952b4251bbf26f2ba70b1d"
+    },
+    "mm/util.c": {
+      "bytes": 32530,
+      "sha256": "e3957dcdbdb19a587ae484f7a6317ea014fe6d64847d70675b5a6c18b3a7071f"
+    },
+    "include/linux/mm.h": {
+      "bytes": 132024,
+      "sha256": "a15410bd33802e92e80b973a33dfeb480ddbb36f0fc0f357f9a73d14524ddadb"
+    },
+    "drivers/base/core.c": {
+      "bytes": 151930,
+      "sha256": "244f28347787aec850a4f139a4666e0b2f194a185a77e729acf803f90aeaeea9"
+    },
+    "drivers/pci/probe.c": {
+      "bytes": 99050,
+      "sha256": "798022ba39bc092bd23c79d933c36dcb4b805dada12a146622f1532f25807b6a"
+    },
+    "lib/kobject.c": {
+      "bytes": 30668,
+      "sha256": "91d81b1c81ab755db0e4358b5b9e3c4718d5030401dcf4ad7561e6ccd0a973ee"
+    },
+    "drivers/pci/iov.c": {
+      "bytes": 30837,
+      "sha256": "81f4615311b2d742ca782278983c1a279530da23baa366933a9848caa8b6574e"
+    },
+    "include/linux/pci.h": {
+      "bytes": 101504,
+      "sha256": "1b44480a5464c73a05d2688d223b86da11d6c620a7dfb2cce23e1102fcfec4a1"
+    },
+    "include/asm-generic/sections.h": {
+      "bytes": 7851,
+      "sha256": "5bc555244fdf0fda9e2444be10f84000d9a8b18224406280b658483c2ea41b2a"
+    },
+    "net/device-prepaid.h": {
+      "bytes": 13816,
+      "sha256": "191386bc8478365a7008cbce16b4a3c1151e069701b1d0ab7ce51fdd976c4fe9"
+    },
+    "include/net/lsf_stream_device_private.h": {
+      "bytes": 2008,
+      "sha256": "c152a8171332eb6754a34d6cba03feb15cb4c3362e178871bf2ddc6a3ad4e2ec"
+    },
+    "net/factory-device.c": {
+      "bytes": 9539,
+      "sha256": "ea34ec0766dae58aed49baba41d038b04c46a2861d873a1c734324d6299184d8"
+    },
+    "include/linux/workqueue.h": {
+      "bytes": 30844,
+      "sha256": "4b4bca77fe85b8e1b5f783ae41046358ba6c6565d6463e3228eb4b057e972546"
+    },
+    "drivers/acpi/glue.c": {
+      "bytes": 10012,
+      "sha256": "a7c102b52215ad26bd052a708285c1643e064d676bdb638072e9a62b0adf297e"
+    },
+    "include/acpi/acpi_bus.h": {
+      "bytes": 29941,
+      "sha256": "5155c7c72e435b83d30671c1aedf25b0c7a6883941c282114ec1857a61c0d0d1"
+    },
+    "include/linux/pci-acpi.h": {
+      "bytes": 4280,
+      "sha256": "6249ad311b6e5e327180a7169f39d4506841e1616778ff4ebfb92e8c6b20ab93"
+    },
+    "drivers/acpi/osl.c": {
+      "bytes": 41820,
+      "sha256": "e6854af5e6218c4a8c0eebe9e1e1a8bb95c16b62ede81158b6cde973cfa29769"
+    },
+    "lib/klist.c": {
+      "bytes": 10680,
+      "sha256": "138ea7c3d203a6592955ef4f4c74b179264b387eb9dd0333c51e77bfb95f2ba2"
+    },
+    "include/linux/fwnode.h": {
+      "bytes": 8483,
+      "sha256": "c03ef0668811d5a0a329b5c4ef0264e3b5bf2a46c1b9b8ead197a116c6eed98d"
+    },
+    "drivers/acpi/scan.c": {
+      "bytes": 74050,
+      "sha256": "3eff6399d9188100fc30fc87b180c54778d44823104a5b2c7e73e747e0a37b15"
+    },
+    "include/linux/kref.h": {
+      "bytes": 3155,
+      "sha256": "2b61168bda14afedf4a56f7688ddc29eff393ceb42001b0d21461e12600035e7"
+    },
+    "include/linux/acpi.h": {
+      "bytes": 45981,
+      "sha256": "5a47594fd6e64de376b1227b959f80b6129753d4c967a813e09caf9f0ed3e9da"
+    },
+    "drivers/acpi/bus.c": {
+      "bytes": 42927,
+      "sha256": "c373f14568493681af0dc93c2da4bbd87b0aeddcf45a6fbbaebcfd87d3856671"
+    },
+    "drivers/acpi/internal.h": {
+      "bytes": 11004,
+      "sha256": "92b841ab20f38cbcd115d895ffab093cbc505afe5dfc364e0956d391f3d4856c"
+    },
+    "drivers/pci/pci-acpi.c": {
+      "bytes": 46719,
+      "sha256": "9f6044c8c3f40599da823e5479a1456a7027ad579fca79386a798e78819dfd43"
+    },
+    "net/device-acpi-child.c": {
+      "bytes": 2052,
+      "sha256": "883627f985f0e032d9657ad39eb29c981ff0aedfd3b51d184d6eecc603881a5b"
+    },
+    "net/device-acpi-walk.c": {
+      "bytes": 1195,
+      "sha256": "1876737d58a93ce4023ef61f7bed201a7f3806b8af80686e06f53dea76bc7cd8"
+    },
+    "net/device-acpi-lock.c": {
+      "bytes": 1595,
+      "sha256": "aee897595fdcb1d60b760de8228938f8c28dd14a8898cbd6e11d18e69e8b5a33"
+    },
+    "net/device-acpi-private.c": {
+      "bytes": 1770,
+      "sha256": "d5437094b81b2c6ce0c1d52c14156d9bf6a6a077d2fa215f2662639adc047140"
+    },
+    "net/device-acpi-queue.c": {
+      "bytes": 1360,
+      "sha256": "e93c8254ebe12949fcf81b61e55d0eb776095b9a5e1c388906470b2b7ab65547"
+    },
+    "net/factory-device-firmware.c": {
+      "bytes": 16825,
+      "sha256": "484ef1141d328e8377020cbef584d26ac3419b72b9c3ac7c1ebcd9abd9c7c2e7"
+    },
+    "include/net/lsf_stream_device_firmware.h": {
+      "bytes": 1640,
+      "sha256": "6d295c3f655985538c1c0822d7ed0c305e33d604457b7fdb31954d6060ced7f7"
+    },
+    "drivers/base/base.h": {
+      "bytes": 9258,
+      "sha256": "f0727aa65d08af024bda1fd5ac75b8a40a91c05b7a6160f5859203f1b96301ba"
+    },
+    "include/linux/device.h": {
+      "bytes": 41947,
+      "sha256": "23efa65fe782654e86a1e72aaa43817bcf7d99f0d13b415c1f585cde5a961e07"
+    },
+    "include/linux/kobject.h": {
+      "bytes": 7124,
+      "sha256": "17078e8c6ec568b14791f13ae1223df70a4a6363cde0e1894872dbe1248ac506"
+    },
+    "net/factory-device-core.c": {
+      "bytes": 12022,
+      "sha256": "2c153e1cca1eb589e6e8b0cb2875cbb1b01fe51fba8f7642675deb7f62b9cf3b"
+    },
+    "include/net/lsf_stream_device_core.h": {
+      "bytes": 698,
+      "sha256": "ecd9ab40f272911f8e0ca142fcefe142787ab3fed8907d9f27fb172d6c12cda5"
+    },
+    "drivers/pci/pci.c": {
+      "bytes": 187959,
+      "sha256": "665d92073a3695b1afbf3c3702dfb5f879ef78932610c2e9c7f5c9172194e02f"
+    },
+    "include/net/lsf_stream_device_capabilities.h": {
+      "bytes": 557,
+      "sha256": "30f5eee2cc0fc9ea5f064c005478ad662a9dc8ea74d8ee9612a1d64f3e78bc73"
+    },
+    "net/factory-device-capabilities.c": {
+      "bytes": 4472,
+      "sha256": "dc4eff952f92cb52ec45a107123285c1117afd7fb3f60e1b4cee135e3b1ec93a"
+    },
+    "include/linux/radix-tree.h": {
+      "bytes": 16332,
+      "sha256": "fe9a3fcc465541926488720246bf1029424a1ca72ceeaff438647640c823a892"
+    },
+    "include/linux/kernfs.h": {
+      "bytes": 19961,
+      "sha256": "a5802d1a8f8ad6e18fc57d458d6f6e686968de2194e18ca72dd7479f3dddad5c"
+    },
+    "lib/radix-tree.c": {
+      "bytes": 49800,
+      "sha256": "0034524e5696f9f8460373f10ff1880da04b4b86041c0a22480ae5624b323591"
+    },
+    "lib/idr.c": {
+      "bytes": 19984,
+      "sha256": "8d681ffb5578ae2aff1f5921382f93a98ae6b37e78275fd6b3b4e3c9b7af5e70"
+    },
+    "include/linux/idr.h": {
+      "bytes": 9958,
+      "sha256": "485060f431354181579bbf8b9e92f276834192f94c604c69a3688dbf12c2bad9"
+    },
+    "include/net/lsf_stream_device_registration.h": {
+      "bytes": 1806,
+      "sha256": "2cacfe51df59c5d2c996280d5d665d949a7cd211019f70a74b00d79f9b29dea9"
+    },
+    "net/factory-device-registration.c": {
+      "bytes": 12869,
+      "sha256": "3309a0145f10936a5afe28d4f7979e53c2d27837e0b0eee535ac22be6fd066a7"
+    },
+    "fs/kernfs/file.c": {
+      "bytes": 27988,
+      "sha256": "9125c5b5811267e2584dc623d056eef6d0028cbde935fba7a86e154e1582d6d0"
+    },
+    "fs/kernfs/dir.c": {
+      "bytes": 53024,
+      "sha256": "b11c838c7b69112131068ae542cf6114d7cffb99a6193680e9769b9552912440"
+    },
+    "fs/sysfs/dir.c": {
+      "bytes": 5980,
+      "sha256": "ed16f630f6a72803b83b0c3d5df43176f0cd4d32c14454f3a5a4e8f43f50a324"
+    },
+    "fs/kernfs/inode.c": {
+      "bytes": 11905,
+      "sha256": "d62555cfdc84bf44db921cbec2dc8a6cf93febc40b0dbd1b45dd46cb64218f34"
+    },
+    "fs/kernfs/symlink.c": {
+      "bytes": 4648,
+      "sha256": "eee922c34d163bf61025fed14ca2c2dcbde9b39a5633088f8e789a99375198a2"
+    },
+    "fs/kernfs/kernfs-internal.h": {
+      "bytes": 4678,
+      "sha256": "f2928c935339cd0b58efa1f655911ebbca8c3a33ed1adab51953ca5ce678f7ae"
+    },
+    "include/net/lsf_stream_device_sysfs.h": {
+      "bytes": 1356,
+      "sha256": "075ee9919b11e06f1af8f5e8d09fbe693bb22d2ef32ebcf983b98d8c776af0ed"
+    },
+    "net/factory-device-sysfs.c": {
+      "bytes": 4390,
+      "sha256": "3d0fe4d48be85c807766289a850dec492f0d136627713ad74a1ebbd5274b8688"
+    },
+    "fs/kernfs/lsf-device-sysfs.c": {
+      "bytes": 767,
+      "sha256": "ebed28cd5b9f2a2a80adc83053cd7261764580297b9c7ab9fae90421c3bf0aa5"
+    },
+    "include/linux/netlink.h": {
+      "bytes": 11068,
+      "sha256": "8c786eab3971089c33c8f101fdd96eabbb2c3975fb34a39e7a2f7fe577c83066"
+    },
+    "drivers/net/nlmon.c": {
+      "bytes": 2631,
+      "sha256": "1313a95c6fc7669a2543a88fc5bf786cdecc1111f9b25794250b97f915a7e8ff"
+    },
+    "net/netlink/af_netlink.c": {
+      "bytes": 72670,
+      "sha256": "797b906557648fcc7b94e15d7aea8986d8955380365b42b0d654b198b6ec5957"
+    },
+    "include/net/lsf_stream_device_uevent.h": {
+      "bytes": 1515,
+      "sha256": "7236cc8883ea00d62db68fa4a644226bfb26a3ab344ca0ced657d15729b781f3"
+    },
+    "net/factory-device-uevent-taps.c": {
+      "bytes": 3849,
+      "sha256": "03685a37af5de011c061914f3a3c0774ff5c51abcf20458e011e632b440f27e1"
+    },
+    "drivers/of/device.c": {
+      "bytes": 9044,
+      "sha256": "cf8f77133cf15587976eeb4adf0d4116f1890fe93770ddc98da7c378d06cb2a8"
+    },
+    "drivers/pci/pci-driver.c": {
+      "bytes": 44968,
+      "sha256": "ee4fde41eba28cadaf567b47526104d3a4ed7468a08a9e71014cf071e5085a88"
+    },
+    "lib/kobject_uevent.c": {
+      "bytes": 28026,
+      "sha256": "1bcd75211fdee43a189fdb93833dd8dd54b384aaf3736183b413d6f351449653"
+    },
+    "net/core/filter.c": {
+      "bytes": 341272,
+      "sha256": "e4c5b2ae51c1e3b7c8abdb3fd044f49e319a303a4040e9c4eebf22d444627593"
+    },
+    "include/net/lsf_stream_device_uevent_consumer.h": {
+      "bytes": 904,
+      "sha256": "1be389073b559a3952f5f4b77fc2a19fe063fb556e507375b537206af59c29bd"
+    },
+    "net/device-uevent-allocator.h": {
+      "bytes": 1207,
+      "sha256": "a2212e180fc971fe12474011ce566c696e8c573c5cacd52c9420e8cdc91f1dd1"
+    },
+    "net/factory-device-uevent.c": {
+      "bytes": 11672,
+      "sha256": "97d80f0f0086ddf553fefe53ac67768c1e88b4eee324f21b58ef04269a317289"
+    },
+    "lib/lsf-device-uevent-kobject.c": {
+      "bytes": 2219,
+      "sha256": "b139ad614cda391995dabe3f7e3b4ddb00d72e0e929df8021b521036cb81035f"
+    },
+    "drivers/base/lsf-device-uevent-callbacks.c": {
+      "bytes": 1769,
+      "sha256": "247a00b325303fbca6e1ea3745b3b3f1a7bd20cb3e1d9e09940b03c2878faba9"
+    },
+    "net/device-uevent-skb.c": {
+      "bytes": 5377,
+      "sha256": "71a907c9979df3a842be6a4bddde8d9785e401d6c3869abf5b7dc00eb1c4e4b1"
+    },
+    "net/device-uevent-copy.c": {
+      "bytes": 3626,
+      "sha256": "ce49086b8afd598d10d6cb17fddc2d1577a5745f00099ffe6a169234f256f593"
+    },
+    "kernel/signal.c": {
+      "bytes": 130899,
+      "sha256": "3f8bdeb855c08e1113e7fa9937760adc651972a67e84e6069e6441ebb976b2ce"
+    },
+    "kernel/rcu/tree.c": {
+      "bytes": 191263,
+      "sha256": "91ce798bfe8cd8435d1481ea7f074f854b35c34cc3b76be24f0f559ed901e0f2"
+    },
+    "include/linux/rcupdate.h": {
+      "bytes": 43502,
+      "sha256": "41f05da7996e58166ee15e9fa7c0586361ed2bec1b3468c74e868b340b560860"
+    },
+    "include/net/lsf_stream_device_recipient.h": {
+      "bytes": 1290,
+      "sha256": "5c7ca17800950a8c40879c9d0df2d098cc52c92c34f6f53b66b65906dbbc5507"
+    },
+    "net/device-recipient-allocator.h": {
+      "bytes": 1164,
+      "sha256": "c41d031f098297cfdc1d236d1b8b41d2ded842899fa02f2eeb616d126f7fb2d3"
+    },
+    "net/factory-device-recipient.c": {
+      "bytes": 13517,
+      "sha256": "e82bab808341a5d4d4fce266527b4797a81bcad2827e2dbf4bb6743d68e28bcb"
+    },
+    "kernel/lsf-device-recipient-signal.c": {
+      "bytes": 6406,
+      "sha256": "389e5c44844cf453491c322be84e414aa39b2b2ee72e66105f37919615f36abc"
+    },
+    "fs/fcntl.c": {
+      "bytes": 26985,
+      "sha256": "4667736c65e1399fb9e861bc02c59ae154b24b54abec288f2b101497e2d71cf6"
+    },
+    "net/device-owner-carrier.h": {
+      "bytes": 4607,
+      "sha256": "5991e31d181145c87a4d1c0de5cf5060c114d2646a25dcde08079388becf742f"
+    },
+    "net/device-security-prepaid.h": {
+      "bytes": 4354,
+      "sha256": "a119bb41a3a991a62b36fdeee43ddea5628faeb8e56d26507cf3fc9e1623bc09"
+    },
+    "net/factory-device-security.c": {
+      "bytes": 17041,
+      "sha256": "d6a89f48dd1d3ccf0f7190a40f851448351d5be03a506756c54ed7f56ee8c3d6"
+    },
+    "include/net/lsf_stream_device_recipient_security.h": {
+      "bytes": 890,
+      "sha256": "e78bdd00d714e7ef2d7bf04a3a3c0b28de13b5ca623ed19ea8297617716b00f7"
+    },
+    "fs/lsf-device-recipient-fcntl.c": {
+      "bytes": 4783,
+      "sha256": "3b0aa4446bbb792acca5993bde110a943675f9ca1be43502e7620266a942b2a8"
+    },
+    "net/core/lsf-device-recipient-sock.c": {
+      "bytes": 1103,
+      "sha256": "114be226c7c6c71f56b9a23b3606e60f9c55dfab5fb52b2dc0fecebf28f3e7e4"
+    },
+    "fs/select.c": {
+      "bytes": 35797,
+      "sha256": "18db0d2d2a7b20fb7ff61230c4a5c27510e7dc1c1c87f6ac641883f9e922efa6"
+    },
+    "kernel/sched/core.c": {
+      "bytes": 279839,
+      "sha256": "42f85b5a8c6b4cf05a5da435f48b7293e6d82fc7adeae3926f165cfd26e6a402"
+    },
+    "kernel/sched/wait.c": {
+      "bytes": 14026,
+      "sha256": "79bbc068b4c7929c420a069328c806a57971171a6d4157d794cdafe1d1811043"
+    },
+    "include/linux/wait.h": {
+      "bytes": 44062,
+      "sha256": "91ed5167b9d412a8cbff0b8b75931f5ad502dccab7097c31662b2bd48f383962"
+    },
+    "fs/eventpoll.c": {
+      "bytes": 78453,
+      "sha256": "abcbd86a1de750b2fdeb64da3dd9e386f2aee296eeee0e3fa5bad2284092e5af"
+    },
+    "include/net/lsf_stream_device_notification.h": {
+      "bytes": 1420,
+      "sha256": "7fdcc8189b56426e59670110d9201929964d8cd464fd4215fa50d2c3f20793e4"
+    },
+    "net/factory-device-notifications.c": {
+      "bytes": 1378,
+      "sha256": "d775ef0fb14cc74781700818313a6527018e5cac8ca11adc1dab5a214067a196"
+    },
+    "kernel/sched/lsf-device-notification-wait.c": {
+      "bytes": 2901,
+      "sha256": "edcbfb0836f7dd3233415c585f70715c4c556780cd6a9421b7305d485a9b593d"
+    },
+    "fs/lsf-device-notification-poll.c": {
+      "bytes": 1597,
+      "sha256": "bb1f1e8eb76141a05641e698625dea3a8b1759437898d18c4172b43df944353a"
+    },
+    "fs/lsf-device-notification-epoll.c": {
+      "bytes": 5730,
+      "sha256": "8031302febac4ae33c5596ea75449c037c36e50ca6e1919070a607850247c543"
+    },
+    "net/core/lsf-device-notification-sock.c": {
+      "bytes": 2359,
+      "sha256": "cc0bc55e4ca2d829596ddc73cede7fd820da4737bdc614d71629402a56695386"
+    },
+    "security/commoncap.c": {
+      "bytes": 43585,
+      "sha256": "f8dba4df187cd446bc336dfeed000b41bdd0a9afd8b8d985d9c9d502cec587d7"
+    },
+    "kernel/capability.c": {
+      "bytes": 15243,
+      "sha256": "6ae8b521a2a6c82620ef40a53f64fd12e8ebb83405ec50fa079a54bd38ac49cf"
+    },
+    "include/net/scm.h": {
+      "bytes": 5499,
+      "sha256": "227359f34b17a1bb8b728a96684a8a9845b57c9983eb7bbc53b76ea7b7c47007"
+    },
+    "include/linux/capability.h": {
+      "bytes": 6607,
+      "sha256": "221054223f8522d4969c678612e7515e83804c46df7f5f27b11c9a488e3c29d1"
+    },
+    "include/net/lsf_stream_device_delivery.h": {
+      "bytes": 1753,
+      "sha256": "71dde329f445254965b034f5520079e04be5a2ed1fc32b7b7b791513f17932b1"
+    },
+    "net/netlink/lsf-device-delivery.c": {
+      "bytes": 12581,
+      "sha256": "e14e197152a08d0a92f25da4fb58e29584db3205ba96d30343a3bd9f0ff0eddc"
+    },
+    "kernel/lsf-device-delivery-capability.c": {
+      "bytes": 467,
+      "sha256": "4f810072b789d3f8223f26a06fa929cb14a6322cb225fc003e7d77193c25047c"
+    },
+    "security/lsf-device-delivery-capability.c": {
+      "bytes": 3136,
+      "sha256": "4e182f817493bffe95846022fb67695f43dd2a26349408330043c03c49630bc8"
+    },
+    "security/selinux/lsf-device-delivery-capability.c": {
+      "bytes": 3282,
+      "sha256": "08663fe3ee42a8f55f2d09557b487cd3c1db3be7259cd0d728d4abbeb5ef301c"
+    },
+    "arch/x86/kernel/process.c": {
+      "bytes": 26949,
+      "sha256": "dd5e215d048e0d2940d2dccd0fef55ea0eb59a23051f5b2ed2b1c2dc26f3fc61"
+    },
+    "kernel/kthread.c": {
+      "bytes": 46381,
+      "sha256": "2a2d8a47ecb43101f98796ce5c69c0148c7b96eb53204bdafe5c7615baaca78d"
+    },
+    "kernel/fork.c": {
+      "bytes": 88470,
+      "sha256": "0bc038b732b70206ddd5ec0c9b3444b8642b7849ca912eae7e2865bc18cdad22"
+    },
+    "arch/x86/include/asm/page_64_types.h": {
+      "bytes": 3144,
+      "sha256": "0fabfb5b6c79bbd8909e2f69192b56889265438a80b2f2b79768a860ef8ad7d0"
+    },
+    "include/linux/kthread.h": {
+      "bytes": 7169,
+      "sha256": "8912cbbd1e401babd60f3d799bc25a873f8abf51cf84bdc8ec4d220b463bd916"
+    },
+    "include/linux/sched/task.h": {
+      "bytes": 6756,
+      "sha256": "ee19639668eb7e96fd077c7dcb557e850b1e24a93231c62905c3484d5a96f38d"
+    },
+    "kernel/lsf-cleanup-task.c": {
+      "bytes": 1503,
+      "sha256": "a6fac2509d394ec7baaa8ebb221743b96b86ad93a417f0c95200815ee8b59f69"
+    },
+    "kernel/lsf-cleanup-worker.c": {
+      "bytes": 3788,
+      "sha256": "96aaa841f6be24a4949b37aead28d885147287495beb03c6cc523a1be9c7b0dd"
+    },
+    "include/net/lsf_stream_cleanup_task.h": {
+      "bytes": 1202,
+      "sha256": "9d0a29823fa68352654f790b03f07aa6bac1b7848812d02433cd58b8e0abc9a5"
+    },
+    "net/factory-cleanup-task.c": {
+      "bytes": 8092,
+      "sha256": "770a58e837a41a01f9c3e89c4641ad9cd8cc6e2ae14ff3527556c865bfc55928"
+    },
+    "mm/vmalloc.c": {
+      "bytes": 139665,
+      "sha256": "2d5588c305b1aa83883e646a6f788abafe23122c267e4801ebb12dfc86923f10"
+    },
+    "include/linux/vmalloc.h": {
+      "bytes": 10315,
+      "sha256": "60159fcf546e3394f9321deeb84e6ef5b4866c52fdd292f34fbca1b6a404771c"
+    },
+    "include/linux/thread_info.h": {
+      "bytes": 7653,
+      "sha256": "928bedd0a91b7780c7ebd87e0c71b6416edd031e4f0ed60fa97f7e55a407e980"
+    },
+    "arch/x86/include/asm/page.h": {
+      "bytes": 2504,
+      "sha256": "138bd06c07516ffc50d9f0953e4d01da9cbda193a6a99880cb551153c98d26a5"
+    },
+    "arch/x86/include/asm/pgtable.h": {
+      "bytes": 43453,
+      "sha256": "29482c1bed37286cfda370cf0189d04ceab11a9e2b83e4a122f9802416052537"
+    },
+    "arch/x86/include/asm/pgtable_64.h": {
+      "bytes": 7869,
+      "sha256": "b4994573c729c98d6f5e33373f05a00a3d1f784968b71e24522e986498e79d76"
+    },
+    "mm/lsf-cleanup-stack.c": {
+      "bytes": 13463,
+      "sha256": "c42ff3bb249c2de864bdbff0a1964d9feef65b1f0dff47e1996e90b210951546"
+    },
+    "include/net/lsf_stream_cleanup_stack.h": {
+      "bytes": 1031,
+      "sha256": "21ecfafd48962d6b34e2cd55762eb8ba7060f6edd52a32b152271634dc92f080"
+    },
+    "net/factory-cleanup-stack.c": {
+      "bytes": 4401,
+      "sha256": "511728101b855e06d2fc6fa6f2458fafdbeecec15898e52d82953bf694ce5cb4"
+    },
+    "kernel/exit.c": {
+      "bytes": 50076,
+      "sha256": "540a565afcc467ad1d148018170724937164805773b0621f8fb0efef62ee97b0"
+    },
+    "include/linux/sched/task_stack.h": {
+      "bytes": 3032,
+      "sha256": "57323641cc01aff14a12272d4af6c30bd97f3bbf4d14ba615ea0e5ade53eaa24"
+    },
+    "arch/x86/mm/tlb.c": {
+      "bytes": 41529,
+      "sha256": "9f2298069204bb8efbdaeb5a376f7d3458e20adffbe34a3456610c6a814c37df"
+    },
+    "arch/x86/kernel/fpu/init.c": {
+      "bytes": 5666,
+      "sha256": "73ab6b4e6688b220b1314d7dcfb76496e91e1c7aa15f9ac7738caf76bd5cd4ed"
+    },
+    "kernel/lsf-cleanup-lifecycle-task.c": {
+      "bytes": 4199,
+      "sha256": "8eeebbf87a15b1c94185bd2c3dce1463623e3b9a453c157d9a5c111666a70f7a"
+    },
+    "include/net/lsf_stream_cleanup_lifecycle.h": {
+      "bytes": 3729,
+      "sha256": "58e970352846e5ec727f98f239703342855e529f584a407fc5bba8b9e71d0928"
+    },
+    "net/factory-cleanup-lifecycle.c": {
+      "bytes": 17369,
+      "sha256": "6450b89e2d5f6e85fcd72f2682f1d851ec19ca6ce5900cea10ba68b714eb4794"
+    },
+    "mm/lsf-cleanup-stack-retire.c": {
+      "bytes": 6408,
+      "sha256": "b6524f750d2e54817f8ddf3b248544fe39b37712ae573a8268bbf8f7c989e32a"
+    },
+    "kernel/lsf-cleanup-lifecycle.c": {
+      "bytes": 4117,
+      "sha256": "fd1ac6c869c962ccc8678ac0d428c3a521f028d0021e90707f0e77c19a6af20a"
+    },
+    "net/factory-cleanup-entry.c": {
+      "bytes": 2208,
+      "sha256": "6dbb04dad879974581f336254eb324e9fc2e866e1c0993606fb1b15ccd639313"
+    },
+    "kernel/lsf-cleanup-entry.c": {
+      "bytes": 2811,
+      "sha256": "70b68134f9ba5f86d8cde19543a4abaaea633ded75f5a3941d5555a058d34c5c"
+    },
+    "kernel/lsf-cleanup-irq.c": {
+      "bytes": 7241,
+      "sha256": "94ae9dfc1b733f4180b47f2367f29627b7327b14d9621221f56278bcf1bfd1e3"
+    },
+    "net/factory-cleanup-irq.c": {
+      "bytes": 2172,
+      "sha256": "edd78ffe407faf5a79b6121d1e2f83067a6120802e76368f0a0725b1089b9691"
+    },
+    "kernel/cred.c": {
+      "bytes": 19423,
+      "sha256": "2fa1a81f07881795a6a65c7ef2015733adcedad0857c5100bc35802b8d339c08"
+    },
+    "kernel/delayacct.c": {
+      "bytes": 7570,
+      "sha256": "aeb6636521d77641fec00ab8f8de8bd9981b60aa3b49bad48f6ec51252c18c49"
+    },
+    "include/linux/delayacct.h": {
+      "bytes": 7175,
+      "sha256": "dc87496faff2c7c83139ceb21413a8ed2b38b0c090f89947d11bb45858d2d797"
+    },
+    "include/linux/sched/signal.h": {
+      "bytes": 22050,
+      "sha256": "12403236f57691b3649da2389d678ce111962b64339d3ef32a47b8981e38728a"
+    },
+    "kernel/lsf-cleanup-cred.c": {
+      "bytes": 2915,
+      "sha256": "887d6f33fce757248246383cae2c639f2f1d5516b96c2f4e0df0f7764768684c"
+    },
+    "security/lsf-cleanup-cred-security.c": {
+      "bytes": 1018,
+      "sha256": "e8996cda6824ff2e2470e87c827ffcb40fa018f8c5b20586a15e11ccce2119cf"
+    },
+    "kernel/lsf-cleanup-descendants.c": {
+      "bytes": 5859,
+      "sha256": "be8928fab2e2e6c691914a32769ca8c21913325103e7f68c051c6bc1213b8ac0"
+    },
+    "include/net/lsf_stream_cleanup_descendants.h": {
+      "bytes": 2042,
+      "sha256": "99005408d933b53c84ce070cfde6841c34a472ce6bc322cbee54355b4a953f24"
+    },
+    "net/factory-cleanup-descendants.c": {
+      "bytes": 12835,
+      "sha256": "a9c2b03de32091d381daace85c27f77740d33051951224819a9d9fa8b00cb3c4"
+    },
+    "kernel/pid.c": {
+      "bytes": 19784,
+      "sha256": "88f0f7acdffce689ec0451fd319d789191333aa2bde3fab07e7d2456f663f1e6"
+    },
+    "include/linux/pid.h": {
+      "bytes": 9607,
+      "sha256": "bdbff03fdce4ca9ca3059fcc19a4da3990c2fbfc92847fffc88309002e009378"
+    },
+    "include/linux/pid_namespace.h": {
+      "bytes": 3143,
+      "sha256": "35c7ec4de78697a401e8d39c8812a88da7aae9c1d8b719a2c768e1bbf056d0aa"
+    },
+    "kernel/lsf-cleanup-pid.c": {
+      "bytes": 5063,
+      "sha256": "424024bc8deffd09746fa42fc76404151a9e9dbc05fce3178b31d04a49351d4f"
+    },
+    "lib/lsf-cleanup-pid-radix.c": {
+      "bytes": 5533,
+      "sha256": "590504633358c358cd0ffbb7cecaf3e28dc1d616488a18b229cc748ad66680be"
+    },
+    "lib/lsf-cleanup-pid-idr.c": {
+      "bytes": 1621,
+      "sha256": "353867b567ec94e2004c9b310a6457f585a7bda103b39b5379e2a8800c9838ef"
+    },
+    "include/net/lsf_stream_cleanup_pid.h": {
+      "bytes": 2096,
+      "sha256": "dac6e1717cca10ccf998df3f2a01537e682fd67af62312e0f966fa9106aa41ca"
+    },
+    "net/factory-cleanup-pid.c": {
+      "bytes": 6647,
+      "sha256": "eede614aea673f8d9d8e2b70614b849e40de6012062d1f05f930ea258ca7f6b1"
+    },
+    "kernel/lsf-cleanup-constructor.c": {
+      "bytes": 18936,
+      "sha256": "53cb6e2553e4703448230ec648031ef39628087d7254dd16f1de6ea74b0f9faf"
+    },
+    "kernel/lsf-cleanup-constructor-irq.c": {
+      "bytes": 3811,
+      "sha256": "ef177963937b48b8a48e8d99e69f9061c779368e7ad77e5243071942ce530dbf"
+    },
+    "include/net/lsf_stream_cleanup_constructor.h": {
+      "bytes": 2370,
+      "sha256": "4aae93a68e7df5cb7934701807e1560c2471138e250378a71a09558dc7140dee"
+    },
+    "net/factory-cleanup-constructor.c": {
+      "bytes": 9062,
+      "sha256": "642693360667988223d10c6ef1f0dea11778c8a8140ee9354cab8adccd307a82"
+    },
+    "mm/mempolicy.c": {
+      "bytes": 92874,
+      "sha256": "5e41bf5aaded9f7a61c44facbd38e9262bc7548c1fbca10249448686a5ac11b0"
+    },
+    "mm/lsf-cleanup-mpol.c": {
+      "bytes": 942,
+      "sha256": "e55c4e67fa39e69448e6312b0e5115df527295af06dd2747fd0373e1cac743d2"
+    },
+    "security/lsf-cleanup-task-security.c": {
+      "bytes": 838,
+      "sha256": "f060ee87a3e083a7bb298a6623f8e53ec14490f212d7abfbd370195960f127d2"
+    },
+    "net/cleanup-security-carrier.h": {
+      "bytes": 2398,
+      "sha256": "450d7f7c550a7e3e8ee8c3a3d020546f01d51936e755a071f1575a662f63cc19"
+    },
+    "net/factory-cleanup-security.c": {
+      "bytes": 13906,
+      "sha256": "07aca6570253621b8c7d4a57a7bc901664c88f60d4727bbf96db22358b45bc7f"
+    },
+    "kernel/events/core.c": {
+      "bytes": 354874,
+      "sha256": "088bffb6dc7cc94e652f7af22e51377a57f3f5aad64897eef09dc18741acb912"
+    },
+    "kernel/events/lsf-cleanup-perf.c": {
+      "bytes": 4075,
+      "sha256": "2bdc9433f1be2471c3a27ae57821008b2daac857c7d26e07a653353dc25b5077"
+    },
+    "include/net/lsf_stream_cleanup_perf.h": {
+      "bytes": 481,
+      "sha256": "bf6b4c3f97651b2c42dac1429d3484fd3f8ce9aeea40f8fc85967257cf364f6d"
+    },
+    "net/factory-cleanup-perf.c": {
+      "bytes": 1806,
+      "sha256": "034b7d0eba1dfa1377ee44c8a68613800b77820944cef51cf1b0ef5069e6b6c2"
+    },
+    "kernel/auditsc.c": {
+      "bytes": 84597,
+      "sha256": "322ab00106e67dccdb4fe5ddcf1853dd07f109354b12b7c8e2952dbb777884f5"
+    },
+    "kernel/lsf-cleanup-audit.c": {
+      "bytes": 3093,
+      "sha256": "829f23dcc58ca214636bf4911d2c49f8e7c7dde184da3f11e25bf30963ad45a5"
+    },
+    "include/net/lsf_stream_cleanup_audit.h": {
+      "bytes": 357,
+      "sha256": "d4bbf051da6685c0a3638553cf52690f192aebb13ec1cbe7d01cc595b38fde44"
+    },
+    "kernel/lsf-cleanup-clone.c": {
+      "bytes": 2981,
+      "sha256": "43c11a7c9494437cc6a759989d5c787767f9a885688d65c818ce0c4cca983157"
+    },
+    "kernel/lsf-cleanup-clone-args.c": {
+      "bytes": 3387,
+      "sha256": "412f29955fb195d1c070301ba2d3672bcb405eaeb3772e21a84eb5e66568deb1"
+    },
+    "net/factory-cleanup-clone.c": {
+      "bytes": 1524,
+      "sha256": "a8eaf29863ab990c83eeaa2a15bac893359602277906309e8f1a51795f5067ec"
+    },
+    "include/net/lsf_stream_cleanup_clone.h": {
+      "bytes": 661,
+      "sha256": "e065dcd8df1c921b4b1c53eef704d792bfafa6e6aac0e28f7e350961f00cf95f"
+    },
+    "block/blk-ioc.c": {
+      "bytes": 11491,
+      "sha256": "48a3c66bd33959b50a85d46db71aaa8906a7a56ed5d745a0c07ce9322aa353fc"
+    },
+    "include/linux/iocontext.h": {
+      "bytes": 4255,
+      "sha256": "42fee24cedeab234b602a3b1c8905885ff765f2ae356167a72ae537567b8d3e5"
+    },
+    "block/lsf-cleanup-io.c": {
+      "bytes": 1964,
+      "sha256": "a6258577d847a1b25470d19f729a93a8a157f45f7df1e266caa0d1e76c44f3bc"
+    },
+    "net/factory-cleanup-io.c": {
+      "bytes": 2324,
+      "sha256": "985d0d534331fe7c63cef07962e1ca97f97ef59dd9c065913f86b18d134cef48"
+    },
+    "include/net/lsf_stream_cleanup_io.h": {
+      "bytes": 457,
+      "sha256": "9e6f1117ba5d6bf4105e083ce27e44a3bc94c66487fd69595340184fd75e0c20"
+    },
+    "kernel/cgroup/cgroup.c": {
+      "bytes": 195160,
+      "sha256": "fe2bde3c220e33070ef1811d70df6d9e6001fdd111a926e4f3ea0ad8c55923e5"
+    },
+    "kernel/cgroup/lsf-cleanup-cgroup.c": {
+      "bytes": 1002,
+      "sha256": "997ba8578373e619bea29c531bdc848c5ccf6c177d990ad996958f0aa4b26d80"
+    },
+    "include/net/lsf_stream_cleanup_cgroup.h": {
+      "bytes": 305,
+      "sha256": "ca79a9784b318b1398717c381af85662958be770b9d940977075e1b0dbf169e7"
+    },
+    "kernel/lsf-cleanup-association.c": {
+      "bytes": 3165,
+      "sha256": "320536bb9e562249aa8d1991e887bc1ad08239abd15a37d20b5d00bfd1f3c11b"
+    },
+    "net/factory-cleanup-association.c": {
+      "bytes": 2402,
+      "sha256": "418635b306e21efcbdcc5a79b3096bdcded8f737f79a58c111716484d8fc4e51"
+    },
+    "include/net/lsf_stream_cleanup_association.h": {
+      "bytes": 490,
+      "sha256": "298b5f079b9f0628ae45bd44f6b08061d39fa230c2afd9932cc31d6e2041bfa2"
+    },
+    "kernel/lsf-cleanup-close.c": {
+      "bytes": 2119,
+      "sha256": "8796527f9959a0a5c5052e7c03b7ee82ded5c3befd243cf39927d2d3daa843be"
+    },
+    "net/factory-cleanup-close.c": {
+      "bytes": 10937,
+      "sha256": "c698b4e2821533659590650e34b35378d1bda21af6afcf69a737fca6c5773517"
+    },
+    "include/net/lsf_stream_cleanup_close.h": {
+      "bytes": 839,
+      "sha256": "ebed5130b3e35ec2e44ecd1d705a0ab39b029d0c0157f5c34273f249e638d1ca"
+    },
+    "kernel/tracepoint.c": {
+      "bytes": 22955,
+      "sha256": "72f2ac9258560c350e84f28fb729ebb156d728632b1fbaff98ea36d66a7f36be"
+    },
+    "include/linux/tracepoint.h": {
+      "bytes": 19510,
+      "sha256": "3fd991d4107e3cc5d1d78c63572ba82b44fb553790cb6fa7540068693093a515"
+    },
+    "drivers/connector/cn_proc.c": {
+      "bytes": 14648,
+      "sha256": "ab4acfc4f5bdfcee0bd6846c6aa7c33cf1525fb5c48ef37472ad9f2836050260"
+    },
+    "drivers/connector/connector.c": {
+      "bytes": 7521,
+      "sha256": "6558752da50d18fe83ea351707cd2eb58babd64e4c4e33196750765336c89719"
+    },
+    "kernel/kprobes.c": {
+      "bytes": 78413,
+      "sha256": "0a5a03848c9068cb16745aa967c7ede3b18eb7f02fb6bd48794cfafc5aa32b48"
+    },
+    "kernel/trace/rethook.c": {
+      "bytes": 9682,
+      "sha256": "e2396a408328618d929d65c55165728fbfff41a4b9e71902b73c13765141ae68"
+    },
+    "include/linux/rethook.h": {
+      "bytes": 3223,
+      "sha256": "3b705968074b6b29a48c3590ce49bdaef6523b22256d6a808a2792f1e0f3e989"
+    },
+    "arch/x86/kernel/kprobes/core.c": {
+      "bytes": 32783,
+      "sha256": "227a2361c491996c1f98e37fd268720d0daf0f0c09eab2a9894d6b4d9d9b7f29"
+    },
+    "arch/x86/kernel/kprobes/opt.c": {
+      "bytes": 14910,
+      "sha256": "e853067b6f3d4bac9f5381736317a4a37bf5b75edb589773bc03cabef2ae7d4e"
+    },
+    "include/linux/connector.h": {
+      "bytes": 4111,
+      "sha256": "9bc092f90191af214b42b90e630ef559817341cdb59c8fb4928441fc17eadc21"
+    },
+    "include/uapi/linux/connector.h": {
+      "bytes": 2267,
+      "sha256": "baf377aa9333e06705fddbcf44ff8bfd9a40ab4fbe982773494599ce143603c4"
+    },
+    "include/linux/objpool.h": {
+      "bytes": 9815,
+      "sha256": "d12ad94edbf5395d8d0cd8943eb7fdba37b759a4f76c1002d920715d78b48bd3"
+    },
+    "kernel/lsf-cleanup-observer-tracepoint.c": {
+      "bytes": 4023,
+      "sha256": "21364903b6a949d7914af2addffc3eee0c28e8560013c8c24d1f9a427cafef21"
+    },
+    "kernel/lsf-cleanup-observer-kprobe.c": {
+      "bytes": 3601,
+      "sha256": "a4e4343bac449a5b0bed5ba0b1b3ef7d48a08d86a2e365a5a8f430631b841586"
+    },
+    "drivers/connector/lsf-cleanup-observer.c": {
+      "bytes": 827,
+      "sha256": "f72520a149aa1171b02dc2fe07204b3f7b1f4d58056ad8dbfc581b3a6adbc936"
+    },
+    "net/factory-cleanup-observer.c": {
+      "bytes": 3208,
+      "sha256": "d945e5440fecbf32ab66e17d51f3f5e6b152176797e8649edbff70dd6fefe833"
+    },
+    "include/net/lsf_stream_cleanup_observer.h": {
+      "bytes": 718,
+      "sha256": "d265bf4c65f24661db6230875822344f347800c32567348423e89ea7aacb1a68"
+    },
+    "kernel/module/kmod.c": {
+      "bytes": 5137,
+      "sha256": "c6f5562f35922e7ef38f7ea8a04ed26449399d6fa2d49b7ea13dc4a569dbfd48"
+    },
+    "include/linux/module.h": {
+      "bytes": 28222,
+      "sha256": "972e8336c0e0f04fc69b1bae9c12597046628dfb08ed480095db28836a41f233"
+    },
+    "include/linux/kmod.h": {
+      "bytes": 1045,
+      "sha256": "28be64ad90b5d62b1dbad620e6dbda2443277d9474dd1420142cd3a9ce638013"
+    },
+    "kernel/umh.c": {
+      "bytes": 16368,
+      "sha256": "4c0de9615886a2f5f7d802f06982baf0c80c3c3202ea98ab97b3cface6bdf47b"
+    },
+    "include/linux/preempt.h": {
+      "bytes": 16128,
+      "sha256": "c10fe586cd48f44503abfafa3e257560fd34a2d68cdb7cfeb9674ee59e244b6d"
+    },
+    "include/linux/umh.h": {
+      "bytes": 1862,
+      "sha256": "f0002537741ab5b124ec980051f2d91c459cf79452e89e1b1684108104f053d5"
+    },
+    "include/net/lsf_stream_cleanup_worker_operations.h": {
+      "bytes": 352,
+      "sha256": "ee2b24ce10a70f22690fed970e64fd81ab43bf73465112fb793d84d81dcb7cd9"
+    },
+    "net/factory-cleanup-worker-operations.c": {
+      "bytes": 230,
+      "sha256": "fbd7119af3794f684af4057f3ba9780a82cdadbc17fe22a70b9d37aea7de4e2c"
+    },
+    "kernel/workqueue.c": {
+      "bytes": 236419,
+      "sha256": "09a491c07228b6107abb2341da046aa648cf10682ae0fb986dda532e94615ebf"
+    },
+    "kernel/workqueue_internal.h": {
+      "bytes": 2580,
+      "sha256": "43ed1f3000247d02b8c2999cb70e34c26e88bfc2fb795f024508cb92aac9d48e"
+    },
+    "include/net/lsf_stream_cleanup_provider_operation.h": {
+      "bytes": 1204,
+      "sha256": "2ae68c7ae2979e40ea46f5c12d68a53338080b4159e000d6e57a192b03acb64c"
+    },
+    "kernel/lsf-cleanup-provider-operation.c": {
+      "bytes": 1628,
+      "sha256": "1a7fa3259a29f6cb74795ae190ae0edf2b494e783e83a394d5da72552671081f"
+    },
+    "net/factory-cleanup-provider-operation.c": {
+      "bytes": 12648,
+      "sha256": "490f96129eb9055e6b2cbcc64c3c4f3bc157d86c41db04c34516b945a64c8c7e"
+    },
+    "net/acpi-cleanup-provider-executor.c": {
+      "bytes": 546,
+      "sha256": "91c756571eff99ce9284715e731a1b647e7fac5b6f88a1739812a8830b8bd6e7"
+    },
+    "include/net/lsf_stream_cleanup_provider_executor.h": {
+      "bytes": 4972,
+      "sha256": "fcd868be07841d5d0887ef196d07aee3558f9cf697a82a4d303063ee0605a74a"
+    },
+    "net/factory-cleanup-provider-executor.c": {
+      "bytes": 9429,
+      "sha256": "125ae176bf5dac3bc75318165fd44707c568e8524f222a14e41dece07f453e4f"
+    },
+    "kernel/lsf-cleanup-provider-executor.c": {
+      "bytes": 34849,
+      "sha256": "5a19df6a7e045497be036a350e275f20050a2ae944b755dcc381330c94a0eda0"
+    },
+    "net/factory-cleanup-provider-birth.c": {
+      "bytes": 1025,
+      "sha256": "de694dd1900535022571318da8ee4179fd151619117e5cdf80b2e996277d5e1f"
+    },
+    "lib/lsf-cleanup-provider-pool-radix.c": {
+      "bytes": 4005,
+      "sha256": "7e7ae49d3274ee66bd0bae4ba4b89be57ae645fd2b0a4c1ca74b69489b69f969"
+    },
+    "lib/lsf-cleanup-provider-pool-idr.c": {
+      "bytes": 1429,
+      "sha256": "26b29087ea5e6ae4322c95fb8a5f697699a873c58ac67765e2681d055ca10dff"
+    },
+    "net/factory-cleanup-provider-initialize.c": {
+      "bytes": 5012,
+      "sha256": "395f6eedb1aad0c41f734bbeee999e08fba298d2feb03d72d6b65b6890bd8abf"
+    },
+    "kernel/lsf-cleanup-provider-initialize.c": {
+      "bytes": 2068,
+      "sha256": "36b4dc2b261c5f56e3f1f87f140aaf71445f2a89aa0e1a63dc0d054bdbdf8d3e"
+    },
+    "net/factory-cleanup-provider-retirement.c": {
+      "bytes": 7954,
+      "sha256": "5cf8c1df21f5ff7c542bba7f3c226689d929128e6fe1a190dc711dc602fcc601"
+    },
+    "net/factory-cleanup-provider-queue.c": {
+      "bytes": 11883,
+      "sha256": "7a66f003e5caddc772cbfc3436c727d72d4e427a78501b2187e4efa68c2affb4"
+    },
+    "kernel/lsf-cleanup-provider-queue.c": {
+      "bytes": 2412,
+      "sha256": "3f672d406f831aaaf04fcfe6e5827dc3280013f4c058f065f5bc2e6390db8514"
+    },
+    "net/acpi-cleanup-provider-queue.c": {
+      "bytes": 3261,
+      "sha256": "e136709a7628fce196e88af1caf8498a99689b0cdb293747a6c91262a4fc65ff"
+    },
+    "net/factory-cleanup-provider-nonfinal.c": {
+      "bytes": 353,
+      "sha256": "1ba1996d6360a343341dd0f4a80e1345bc551c5175a457f2465639c638fdeb5e"
+    },
+    "kernel/taskstats.c": {
+      "bytes": 16746,
+      "sha256": "6d725464bbe9bda277c3be2003c16410a6ee2fe5c4f8cd5be9c38d6737e4d452"
+    },
+    "kernel/profile.c": {
+      "bytes": 5775,
+      "sha256": "5f8a6780b713a414e42cedaad2ec21e525a539b310a380279578c124797b4d30"
+    },
+    "kernel/acct.c": {
+      "bytes": 17777,
+      "sha256": "45e01f9b9c8feebca3f00a8a3b7bd5c3128c4df5652ade8f9491fb56acf65f70"
+    },
+    "kernel/lsf-cleanup-observer-taskstats.c": {
+      "bytes": 2509,
+      "sha256": "6010c1cffbae3b13756f7e75031a6b272e30309fdfe4cd04a21801115a5b143a"
+    },
+    "kernel/lsf-cleanup-observer-acct.c": {
+      "bytes": 1664,
+      "sha256": "5ad454d30573710c5db59906f62694932c3d073d693d6d81825795294d2f7240"
+    },
+    "include/net/lsf_stream_cleanup_exit_observer.h": {
+      "bytes": 542,
+      "sha256": "792a5af9b68cb9af22e6a5d454bd11e071bc6b83670178f6fa6e20ac584f28e4"
+    }
+  },
+  "sourceControls": {
+    "newQueueNonfinalObserver": 13,
+    "newProgramme": 5
+  },
+  "sourceControlsScope": "Python source and bounded interleaving controls; no native or Linux execution",
+  "finiteProgramme": "tools/qualify_host_stream_kernel_cleanup_lifecycle.py",
+  "workflow": ".github/workflows/stream-kernel-cleanup-lifecycle.yml",
+  "programmeRun": false,
+  "kernelBuilt": false,
+  "kernelBooted": false,
+  "taskCreated": false,
+  "consumerSelected": false,
+  "actualAtomicExecution": false,
+  "actualRcuExecution": false,
+  "actualIrqExecution": false,
+  "actualNativeLedger": false,
+  "wholeInfrastructureFitQualified": false,
+  "fullConstructorClosure": false,
+  "completeAllocationClosure": false,
+  "productionInstallation": false,
+  "exclusions": [
+    "This manifest does not hash itself. Git binds its content.",
+    "Existing OS/provider references are not Root allocations or refundable storage.",
+    "Historical observations are not current runtime qualification.",
+    "Exact CRLF sources use individual -text attributes; no frozen original was normalized."
+  ]
+}
