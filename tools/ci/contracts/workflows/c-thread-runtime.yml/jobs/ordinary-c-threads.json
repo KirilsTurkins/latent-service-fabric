@@ -1,0 +1,77 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "env": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "name": "One captured C component and seventeen signed lifecycle cases",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "name": "Fetch only the exact frozen native source object",
+        "run": "git fetch --no-tags --depth=1 origin f6251df89851de98cb869784d095ad5cc2e5b385\ngit fetch --no-tags --depth=1 origin f244b81f14abad5d4dc4984cb842aaf1d9076e23\ngit fetch --no-tags --depth=1 origin 7b6365ee39dea9770591a931b96711965f8a1aaf\n"
+      },
+      {
+        "name": "Verify source and adverse fixed-product controls",
+        "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 -B -m unittest tools.tests.test_c_thread_runtime tools.tests.test_c_thread_native_products tools.tests.test_sdk_native_products_reader tools.tests.test_c_threading_profile tools.tests.test_activation_stack_native_products tools.tests.test_activation_stack_native_source tools.tests.test_c_thread_package_native_products tools.tests.test_c_threading_compatibility tools.tests.test_c_thread_admission_native_products tools.tests.test_host_codec_native_products_reader -v\n"
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Authenticate all five source-bound host-codec and explicit C products",
+        "run": "python3 -B tools/host_codec_native_products.py --output \"$RUNNER_TEMP/c-thread-native\""
+      },
+      {
+        "uses": "mlugg/setup-zig",
+        "with": {
+          "version": "0.16.0"
+        }
+      },
+      {
+        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "name": "Install only normal captured C compiler prerequisites",
+        "run": "python3 -B tools/install_guest_bindgen.py \"$RUNNER_TEMP/c-thread-bindgen\"\necho \"$RUNNER_TEMP/c-thread-bindgen\" >> \"$GITHUB_PATH\"\nsudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
+      },
+      {
+        "name": "Compile one ordinary C project and execute all seventeen original cases",
+        "run": "python3 -B tools/qualify_c_thread_runtime.py --prepared \"$RUNNER_TEMP/c-thread-native\" --output \"$RUNNER_TEMP/c-thread-runtime\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain bounded public build, invocation and cleanup evidence",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "name": "c-thread-runtime-${{ github.sha }}",
+          "path": "${{ runner.temp }}/c-thread-runtime/*.json\n${{ runner.temp }}/c-thread-runtime/build/*.json\n${{ runner.temp }}/c-thread-runtime/build/component.wasm\n${{ runner.temp }}/c-thread-runtime/build/logs/*.txt\n${{ runner.temp }}/c-thread-runtime/node/*.json\n${{ runner.temp }}/c-thread-runtime/node/commands/logs/*.txt\n${{ runner.temp }}/c-thread-runtime/node/commands/*.json\n",
+          "retention-days": 7
+        }
+      }
+    ],
+    "timeout-minutes": 20
+  },
+  "jobId": "ordinary-c-threads",
+  "kind": "job",
+  "reviewReason": "Root full-read approval of exact3-path C61 integration: replace only old f2443+f6252 acquisition command with strict immutable7b five-product acquisition; append7b fetch and three reader controls, retain all old tests and original17 runtime outcomes/caps. No native rebuild.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/c-thread-runtime.yml"
+}
