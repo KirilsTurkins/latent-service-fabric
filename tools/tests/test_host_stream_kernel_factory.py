@@ -102,7 +102,7 @@ class HostStreamKernelFactory(unittest.TestCase):
     def test_native_ownership_is_original_accepted_session_io_and_fixed_allowance(self):
         raw = (ROOT / "crates/latent-capabilities/src/broker/pools/protocol.rs").read_text()
         for item in ("io: IoLease", "Arc<super::admission::Request>", "Arc<StreamScope>",
-                     "Arc::ptr_eq(&original.core, &accepted.core)", "65_536 | 98_304",
+                     "SessionCoreOwner::ptr_eq(&original.core, &accepted.core)", "65_536 | 98_304",
                      "io: self.io.lease()", "self.retain_stream_request()",
                      "scope.reserve_host_memory(bytes)?"):
             self.assertIn(item, raw)
