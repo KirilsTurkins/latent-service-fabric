@@ -27,7 +27,7 @@ class Projection(unittest.TestCase):
         method = source.split('pub const fn wire_name(self)')[1].split('/// Parses')[0]
         names = {part.split('"')[0] for part in method.split('=> "')[1:]}
         self.assertEqual(names, diagnostics.TRAP_KINDS)
-        self.assertEqual(len(names), 14)
+        self.assertEqual(len(names), 15)
         for kind in names:
             result = failure()
             code = 'guest-runtime-error' if kind == 'runtime-error' else 'guest-trap'
@@ -49,6 +49,7 @@ class Projection(unittest.TestCase):
                        {'kind': 'runtime-error'}, {'kind': 'stack-overflow', 'phase': 'instantiate'},
                        {'kind': 'cannot-block-sync-task', 'phase': 'call-and-postreturn'},
                        {'kind': 'cannot-block-sync-task '}, {'kind': 'CannotBlockSyncTask'},
+                       {'kind': 'cannot-resume-thread '}, {'kind': 'CannotResumeThread'},
                        {'kind': 'unreachable-code', 'private': 'private-secret'},
                        {'kind': 'unreachable-code', 'phase': None}):
             result = failure()
