@@ -1,0 +1,360 @@
+{
+  "schemaVersion": "latent.c.timed-runtime.signed-observation.v1",
+  "status": "authenticated-finite-success",
+  "source": "a13d79dd1b26de7c02916e74f42c76670cdab9b6",
+  "run": 39871569330,
+  "job": 120146991032,
+  "artifact": 12466786846,
+  "event": "push",
+  "archiveMembers": 518,
+  "expandedBytes": 7890285,
+  "archiveSha256": "sha256:28f01a8f035c6e57a083147ccc7907bcf801d397368c08ab93918a40fd3595fe",
+  "historicalGitMaterials": 114,
+  "recipeRows": 57,
+  "capturedSourceRows": 66,
+  "packageInputs": 13,
+  "successfulBuildCommands": 26,
+  "component": {
+    "sha256": "sha256:a4657d65bf9b4af58cb5fdeae09d77c5341c5fefa57f23e12ffbcc3469126e6b",
+    "bytes": 2078955
+  },
+  "nativeProducer": "b606b1402961593dd918722a66fe293bfab9b319",
+  "nativeSourceFiles": 3642,
+  "nativeAuxiliaryMaterials": 148,
+  "nativeProducts": 5,
+  "actualOutcomes": {
+    "c-thread-authority-0": {
+      "exitCode": 4,
+      "decoded": null
+    },
+    "c-thread-authority-1": {
+      "exitCode": 4,
+      "decoded": null
+    },
+    "c-thread-pthread": {
+      "exitCode": 0,
+      "decoded": [
+        {
+          "ok": "joined:1:1:1:1:1:2:1:4:4291610"
+        }
+      ]
+    },
+    "c-thread-c11": {
+      "exitCode": 0,
+      "decoded": [
+        {
+          "ok": "joined:1:1:1:1:1:2:1:4:4291582"
+        }
+      ]
+    },
+    "c-thread-mixed": {
+      "exitCode": 0,
+      "decoded": [
+        {
+          "ok": "joined:2:2:2:1:1:3:2:6:6392844"
+        }
+      ]
+    },
+    "c-thread-invalid": {
+      "exitCode": 0,
+      "decoded": [
+        {
+          "ok": "joined:1:1:1:1:1:2:1:4:4291610"
+        }
+      ]
+    },
+    "c-thread-pressure": {
+      "exitCode": 0,
+      "decoded": [
+        {
+          "ok": "joined:3:3:3:1:1:4:3:8:8494113"
+        }
+      ]
+    },
+    "c-thread-root-return": {
+      "exitCode": 0,
+      "decoded": [
+        {
+          "ok": "drain-1"
+        }
+      ]
+    },
+    "c-thread-application-error": {
+      "exitCode": 3,
+      "decoded": [
+        {
+          "err": "application-error"
+        }
+      ]
+    },
+    "c-thread-root-trap": {
+      "exitCode": 4,
+      "decoded": null
+    },
+    "c-thread-fresh-root-trap": {
+      "exitCode": 0,
+      "decoded": [
+        {
+          "ok": "joined:1:1:1:1:1:2:1:4:4291658"
+        }
+      ]
+    },
+    "c-thread-callback-trap": {
+      "exitCode": 4,
+      "decoded": null
+    },
+    "c-thread-fresh-callback-trap": {
+      "exitCode": 0,
+      "decoded": [
+        {
+          "ok": "joined:1:1:1:1:1:2:1:4:4291678"
+        }
+      ]
+    },
+    "c-thread-cancel": {
+      "exitCode": 4,
+      "decoded": null
+    },
+    "c-thread-fresh-cancel": {
+      "exitCode": 0,
+      "decoded": [
+        {
+          "ok": "joined:2:2:2:1:1:3:2:6:6392886"
+        }
+      ]
+    },
+    "c-thread-deadline": {
+      "exitCode": 4,
+      "decoded": null
+    },
+    "c-thread-fresh-deadline": {
+      "exitCode": 0,
+      "decoded": [
+        {
+          "ok": "joined:1:1:1:1:1:2:1:4:4291652"
+        }
+      ]
+    },
+    "c-thread-sync-pthread": {
+      "exitCode": 0,
+      "decoded": [
+        {
+          "ok": "joined:2:2:2:2:2:3:2:6:6392893"
+        }
+      ]
+    },
+    "c-thread-sync-mixed": {
+      "exitCode": 0,
+      "decoded": [
+        {
+          "ok": "joined:2:2:2:2:2:3:2:6:6392879"
+        }
+      ]
+    },
+    "c-thread-fresh-sync": {
+      "exitCode": 0,
+      "decoded": [
+        {
+          "ok": "joined:1:1:1:1:1:2:1:4:4291628"
+        }
+      ]
+    },
+    "c-thread-timed-sleep": {
+      "exitCode": 0,
+      "decoded": [
+        {
+          "ok": "timed:timed-sleep:1:3:2:6393494"
+        }
+      ]
+    },
+    "c-thread-timed-sleep-c11": {
+      "exitCode": 0,
+      "decoded": [
+        {
+          "ok": "timed:timed-sleep-c11:1:3:2:6393522"
+        }
+      ]
+    },
+    "c-thread-timed-mutex-timeout": {
+      "exitCode": 0,
+      "decoded": [
+        {
+          "ok": "timed:timed-mutex-timeout:1:3:2:6393550"
+        }
+      ]
+    },
+    "c-thread-timed-mutex-timeout-c11": {
+      "exitCode": 0,
+      "decoded": [
+        {
+          "ok": "timed:timed-mutex-timeout-c11:1:3:2:6393578"
+        }
+      ]
+    },
+    "c-thread-timed-mutex-notify": {
+      "exitCode": 0,
+      "decoded": [
+        {
+          "ok": "timed:timed-mutex-notify:1:3:2:6393543"
+        }
+      ]
+    },
+    "c-thread-timed-mutex-notify-c11": {
+      "exitCode": 0,
+      "decoded": [
+        {
+          "ok": "timed:timed-mutex-notify-c11:1:3:2:6393571"
+        }
+      ]
+    },
+    "c-thread-timed-condition-notify": {
+      "exitCode": 0,
+      "decoded": [
+        {
+          "ok": "timed:timed-condition-notify:1:3:2:6393571"
+        }
+      ]
+    },
+    "c-thread-timed-condition-notify-c11": {
+      "exitCode": 0,
+      "decoded": [
+        {
+          "ok": "timed:timed-condition-notify-c11:1:3:2:6393599"
+        }
+      ]
+    },
+    "c-thread-timed-condition-timeout": {
+      "exitCode": 0,
+      "decoded": [
+        {
+          "ok": "timed:timed-condition-timeout:1:3:2:6393578"
+        }
+      ]
+    },
+    "c-thread-timed-condition-timeout-c11": {
+      "exitCode": 0,
+      "decoded": [
+        {
+          "ok": "timed:timed-condition-timeout-c11:1:3:2:6393606"
+        }
+      ]
+    },
+    "c-thread-timed-condition-broadcast": {
+      "exitCode": 0,
+      "decoded": [
+        {
+          "ok": "timed:timed-condition-broadcast:2:5:3:8495448"
+        }
+      ]
+    },
+    "c-thread-timed-condition-broadcast-c11": {
+      "exitCode": 0,
+      "decoded": [
+        {
+          "ok": "timed:timed-condition-broadcast-c11:2:5:3:8495476"
+        }
+      ]
+    },
+    "c-timed-authority-0": {
+      "exitCode": 4,
+      "decoded": null
+    },
+    "c-timed-authority-1": {
+      "exitCode": 4,
+      "decoded": null
+    },
+    "c-timed-authority-2": {
+      "exitCode": 4,
+      "decoded": null
+    },
+    "c-thread-fresh-timed": {
+      "exitCode": 0,
+      "decoded": [
+        {
+          "ok": "timed:timed-sleep-c11:1:3:2:6393498"
+        }
+      ]
+    }
+  },
+  "retirements": 36,
+  "physicalOwnersPerRetirement": 5,
+  "activeProviderCountersPerRetirement": 18,
+  "childEntryBarriers": {
+    "cancel": {
+      "activation": "c-thread-cancel",
+      "nativeStartCompletedSequence": 231,
+      "childObserveCompletedSequence": 237,
+      "physicalOwners": {
+        "execution-cell-leases": 1,
+        "guest-invocations": 1,
+        "guest-stores": 1,
+        "guest-host-states": 1,
+        "guest-component-instances": 1
+      },
+      "sourceBoundChildEntry": true,
+      "typedObserveSuccessClaimed": false,
+      "waitForPollPendingClaimed": false,
+      "auditCoverage": {
+        "mode": "retained-positive-records",
+        "epoch": "dd7d0a492df430576da1d51c31628215",
+        "highWatermark": "237",
+        "droppedObservationsByPage": [
+          "144",
+          "144"
+        ],
+        "optionalObservationLossReported": true,
+        "completeFrozenCursor": true,
+        "losslessCaptureClaimed": false,
+        "negativeEvidenceClaimed": false
+      }
+    },
+    "deadline": {
+      "activation": "c-thread-deadline",
+      "nativeStartCompletedSequence": 272,
+      "childObserveCompletedSequence": 278,
+      "physicalOwners": {
+        "execution-cell-leases": 1,
+        "guest-invocations": 1,
+        "guest-stores": 1,
+        "guest-host-states": 1,
+        "guest-component-instances": 1
+      },
+      "sourceBoundChildEntry": true,
+      "typedObserveSuccessClaimed": false,
+      "waitForPollPendingClaimed": false,
+      "auditCoverage": {
+        "mode": "retained-positive-records",
+        "epoch": "dd7d0a492df430576da1d51c31628215",
+        "highWatermark": "278",
+        "droppedObservationsByPage": [
+          "173",
+          "173"
+        ],
+        "optionalObservationLossReported": true,
+        "completeFrozenCursor": true,
+        "losslessCaptureClaimed": false,
+        "negativeEvidenceClaimed": false
+      }
+    }
+  },
+  "cleanNodeShutdown": true,
+  "cleanPeerShutdown": true,
+  "oldFailureReceiptsRewritten": false,
+  "full744Qualified": false,
+  "mutexConditionVariablesQualified": false,
+  "compiledLoopCheckpointsQualified": false,
+  "finiteTimedMutexConditionAndSleepQualified": true,
+  "recurringCallbacksQualified": false,
+  "physicalNativeSourceByteExact": true,
+  "all148PhysicalAuxiliaryMaterialsByteExact": true,
+  "capturedSourceReconstruction": "Exact frozen Git ABI JSON and Linux LF generated project and SDK lock; all 66 source identities must match the captured owning manifest.",
+  "losslessAuditClaimed": false,
+  "verifierBuiltOrExecutedGuestOrNative": false,
+  "liveOriginChecked": true,
+  "archiveBytes": 2219367,
+  "componentCompiledOnce": true,
+  "buildAndRuntimeSourceIdentitiesRemainSeparate": true,
+  "native177Receipt": "host-codec-retirement-native-2026-10-23.json",
+  "previousSignedSuccess": "c-timed-runtime-signed-2026-10-22.json",
+  "boundary": "The current programme consumes the actual successful native177 cohort after the original journal and child-budget regression fixes. Full #744, transitive ownership, final opaque Bytes owner-box retirement and broader language/runtime qualification remain separate open requirements."
+}
