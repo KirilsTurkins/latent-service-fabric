@@ -1,0 +1,181 @@
+{
+  "schemaVersion": "latent.host-codec.shared-table-native-evidence.v1",
+  "ownerIssues": [
+    736,
+    745
+  ],
+  "status": "passed",
+  "sourceRevision": "1d5062ee63c0d5ff202d47e21793f6fb9bb8a21a",
+  "scope": "ordinary-host-blob-fixed-Vec-and-streaming-HTTP-fixed-Vec-and-two-private-Shared-Arc-storage-shapes-and-three-retained-capability-directory-backings-and-six-closed-context-reply-buffers-and-concrete-callback-future-box-and-retained-activation-context-and-linear-allocation-notifications-codec-table-and-selected-Store-instance-buffer-registry-FuncRefs-container-resource-substitutions-original-memory-and-selected-c-public-async-type-sync-core-admission-and-authenticated-c-ready-handoff-and-closed-guest-trap-diagnostics-and-exact-native-thread-audit-codec-and-CLI-projection; direct-Core-HostFunc-construction, shared-preparation-closures, concurrent-task, other-hostcall-values-custom-Lower-shared-interior-error-owned-copies-and-opaque-accessor-scheduler-frames, request ingress and discarded scaffolding and other hostcall copies, SessionCore and transitive provider graphs, legacy framing and serialized controller frames excluded",
+  "profile": "normal-managed-guest-default-features",
+  "nativeCohort": "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-retained-capability-directories-blob-streaming-shared-tables-memory-v11",
+  "wasmtimeAllocationCohort": "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-memory-v9",
+  "source": {
+    "sha256": "sha256:9981a5dd24da39e475b938524fc7b0befea32624dd2bf646a78288f09c5755cd",
+    "files": 3633,
+    "bytes": 31622704,
+    "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+    "hermetic": false,
+    "implicitCompilerInputs": "not-attested"
+  },
+  "compiler": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "products": {
+    "latent": {
+      "sha256": "sha256:146983ddcccbd4309225c7ef351f62d22ce901146aa449a72bdd7054079431fa",
+      "bytes": 72403640
+    },
+    "latentd": {
+      "sha256": "sha256:60e506b6b55f4839e2eeafe4d5477e0b1ebcad128ef2effc8fd99d4b4b60b115",
+      "bytes": 190184240
+    },
+    "examples/package": {
+      "sha256": "sha256:bc482432852005e5ddae9c3bc67155350df6d81b836239ade7cd0989c9752fa4",
+      "bytes": 21160448
+    },
+    "examples/capsule_contracts": {
+      "sha256": "sha256:1019d9004a2bb1d17ebb8eb41b029a7b98c5db297282fe38b577604d7901fa42",
+      "bytes": 13854600
+    },
+    "examples/capsule_authoring": {
+      "sha256": "sha256:e06d42c549eb0e3bd9206267e5ba13cad7446a325cc1cedf21e17dc3bd44c4c9",
+      "bytes": 27416688
+    }
+  },
+  "origin": {
+    "repository": "KirilsTurkins/latent-service-fabric",
+    "workflow": ".github/workflows/host-codec-memory.yml",
+    "event": "push",
+    "branch": "feat/streaming-table-memory-20261022",
+    "run": 39826486316,
+    "job": 119991014294,
+    "runUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39826486316",
+    "artifact": 12447931391,
+    "artifactName": "host-codec-memory-1d5062ee63c0d5ff202d47e21793f6fb9bb8a21a",
+    "archiveBytes": 70484951,
+    "archiveSha256": "sha256:5cc8fbec9ce4113c0dddd2800449a9cc282592a2ccaef5588e65ae4087e4db41",
+    "archiveMembers": 143,
+    "expandedBytes": 325401077,
+    "receiptMember": "native-products.json",
+    "receiptBytes": 105178,
+    "receiptSha256": "sha256:092538e044e5cdb742f775223eb250222d030916b8ea3fb2f78b7aa6eba0e4aa",
+    "sourceInputsMember": "source-inputs.json",
+    "sourceInputsBytes": 24574,
+    "sourceInputsSha256": "sha256:1d8b20c0c21fbf6345946abc9052e978fd33acd20418db40b5a8ba127ef0ce2d"
+  },
+  "recipeAndAuxiliaryMaterials": 148,
+  "literalRecipeEntries": 22,
+  "controlCount": 146,
+  "commandCount": 67,
+  "verifiedLogStreamHashes": 134,
+  "ignoredControls": 0,
+  "controlGroups": {
+    "original-host-memory": 6,
+    "result-owner": 4,
+    "result-wire": 4,
+    "result-capacity": 1,
+    "actual-host-codec": 9,
+    "actual-dynamic-allocation-hook": 6,
+    "raw-input-lifetime": 4,
+    "result-lifetime": 2,
+    "original-accounting": 20,
+    "child-capacity": 1,
+    "c-public-async-type": 1,
+    "c-public-sync-abi": 1,
+    "journal-result-retirement": 1,
+    "ordinary-backend": 1,
+    "actual-native-table-owner": 9,
+    "actual-native-store-owner": 10,
+    "closed-guest-trap-diagnostics": 1,
+    "actual-native-registry-owner": 4,
+    "actual-native-funcrefs-owner": 5,
+    "c-ready-handoff": 2,
+    "resource-substitutions": 5,
+    "actual-linear-allocation-notifications": 3,
+    "native-thread-audit-codec": 3,
+    "retained-activation-context": 11,
+    "actual-host-future-owner": 5,
+    "c-canonical-wait-routes": 2,
+    "actual-owned-context-reply": 5,
+    "cli-native-thread-audit-projection": 2,
+    "actual-retained-capability-directory": 5,
+    "actual-streaming-table-shared-owner": 10,
+    "actual-blob-table-owner": 1,
+    "original-session-table-native-owner": 2
+  },
+  "newControlGroups": {
+    "actual-streaming-table-shared-owner": [
+      "host::streaming_http::table::tests::foreign_wrong_kind_stale_and_busy_handles_fail_closed",
+      "host::streaming_http::table::tests::finite_table_drops_actual_resources_even_with_busy_entries",
+      "host::streaming_http::table::tests::late_guard_cannot_erase_a_published_borrowed_or_reused_slot",
+      "host::streaming_http::table::tests::cancelled_opening_upload_reaps_actual_transport_then_reuses_reserved_slot",
+      "host::streaming_http::table::tests::cancelled_pending_read_reaps_actual_transport_then_reuses_unreturned_chunk_slot",
+      "host::streaming_http::table::tests::native_streaming_http_pending_reservation_outlives_table_without_cross_budget_credit",
+      "host::streaming_http::table::shared::tests::native_streaming_shared_arc_clones_hold_original_backing_and_phase1_stays_unbound",
+      "host::streaming_http::table::shared::tests::native_streaming_shared_arc_refusal_preserves_exact_budget_and_fresh_same_grant",
+      "host::streaming_http::table::shared::tests::native_streaming_shared_arc_concurrent_last_clones_drop_payload_once_before_refund",
+      "host::streaming_http::table::shared::tests::native_streaming_shared_arc_payload_unwind_still_retires_its_original_owner"
+    ],
+    "actual-blob-table-owner": [
+      "host::blob::table::tests::blob_table_native_backing_retains_unused_slots_and_actual_values_until_drop"
+    ],
+    "original-session-table-native-owner": [
+      "broker::tests::resource_table_memory::resource_table_native_backing_original_ledger_and_phase1_are_distinct_from_metadata",
+      "broker::tests::resource_table_memory::resource_table_native_backing_refusal_preserves_live_owners_and_closed_session_fence"
+    ]
+  },
+  "prior133Prefix": {
+    "sourceRevision": "fa0341aab45bd0568fccd06704d23b8bc6e28ae6",
+    "run": 39747761284,
+    "job": 119720394387,
+    "groups": 29,
+    "controls": 133,
+    "exactSelectorsAndCommandPrefixPreserved": true
+  },
+  "verification": {
+    "wholeArchiveDigestAndAllMemberCrcVerified": true,
+    "all143MemberIdentitiesVerified": true,
+    "all67ExactArgumentsAnd134LogIdentitiesVerified": true,
+    "all146DiscoveredAndSuccessfulNamesVerified": true,
+    "complete3633NativeAnd148AuxiliaryIdentitiesEqualExecutedSource": true,
+    "allFiveProductIdentitiesVerified": true,
+    "liveSuccessfulOfficialRunJobArtifactVerified": true,
+    "independentReviewAndLiveVerificationCompleted": true,
+    "all259WasmtimeForkFilesUnchangedFromPrior133": true
+  },
+  "completedSlice": {
+    "blobTable": "Original sealed session prepays fixed Vec backing; original broker quota is separate.",
+    "streamingHttpTable": "Original sealed session prepays fixed Vec and two private Arc backing shapes.",
+    "escapingProviderFuture": "Real pending TCP owner retains the last slot allocation after table destruction.",
+    "concurrentLastClones": "Every private clone uses Arc::into_inner; backing retires before payload and native guard.",
+    "refusal": "Original memory refusal retains existing owners and exact limits; physically retained padding is retired before fresh same-grant admission.",
+    "phase1": "Existing optional unbound behavior remains distinct from selected original-memory accounting."
+  },
+  "separateComponentIntegration": {
+    "case": "guest_reads_before_full_body_and_store_drop_closes_the_stream",
+    "retirementAssertionStrengthened": true,
+    "selectedIn146NativeLibraryControls": false,
+    "resultClaimedByThisObservation": false,
+    "note": "The real Component/HTTP integration runs separately in generic CI; no signed guest result is inferred here."
+  },
+  "claimBoundary": {
+    "signedGuestQualification": false,
+    "whole736CostCriteriaComplete": false,
+    "whole745CostCriteriaComplete": false,
+    "hermeticCompilerInputsAttested": false,
+    "newlyAccountedStorage": [
+      "fixed blob table contiguous backing",
+      "fixed streaming HTTP table contiguous backing",
+      "private shared AtomicU64 Arc storage",
+      "private shared SessionResourceTableReservation Arc storage"
+    ],
+    "excluded": [
+      "SessionCore reachable graph",
+      "transitive provider values and payloads",
+      "provider transport and buffer graph closure",
+      "other hostcall allocations and queues",
+      "shared preparation",
+      "ingress and controller storage"
+    ],
+    "historicalReceiptsRewritten": false
+  }
+}

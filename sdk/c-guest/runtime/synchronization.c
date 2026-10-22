@@ -19,6 +19,7 @@ struct sync_wait {
     unsigned linked, notified, suspended;
 #if LSF_C_TIMED_CLOCK
     struct lsf_c_token timer;
+    uint64_t condition_sequence;
 #endif
 };
 #if LSF_C_TIMED_CLOCK
@@ -62,6 +63,17 @@ static struct sync_cond sync_cond_read(const void *object) {
 static void sync_cond_write(void *object,struct sync_cond value) {
     memcpy(object,&value,sizeof(value));
 }
+#if LSF_C_TIMED_CLOCK
+static uint64_t sync_cond_sequence(struct sync_cond value) {
+    return (uint64_t)value.reserved[0]|((uint64_t)value.reserved[1]<<32);
+}
+static int sync_cond_publish_sequence(struct sync_cond *value,struct sync_wait *node) {
+    uint64_t sequence=sync_cond_sequence(*value);
+    if (sequence==UINT64_MAX) return EAGAIN;
+    ++sequence;value->reserved[0]=(uint32_t)sequence;value->reserved[1]=(uint32_t)(sequence>>32);
+    node->condition_sequence=sequence;return 0;
+}
+#endif
 static uint32_t sync_identity(void) { return (uint32_t)(uintptr_t)current(); }
 static int sync_begin(struct sync_wait *node) {
     struct lsf_c_thread *caller=current();
@@ -266,6 +278,10 @@ static int sync_cond_wait(void *object,void *mutex) {
             locked.count!=1 || (value.mutex && value.mutex!=mutex) || value.waiters==UINT32_MAX) {
         sync_end(&node);return EINVAL;
     }
+#if LSF_C_TIMED_CLOCK
+    error=sync_cond_publish_sequence(&value,&node);
+    if (error) { sync_end(&node);return error; }
+#endif
     node.linked=1;node.next=NULL;
     if (value.tail) value.tail->next=&node;else value.head=&node;
     value.tail=&node;value.mutex=mutex;++value.waiters;sync_cond_write(object,value);
@@ -282,6 +298,24 @@ static int sync_cond_wake(void *object,int all) {
     if (object==NULL) return EINVAL;
     struct sync_cond value=sync_cond_read(object);
     if (!sync_cond_valid(value)) return EINVAL;
+#if LSF_C_TIMED_CLOCK
+    /* timer-stop may await. Never detach a list of stack nodes or retain its
+     * next pointer across notification: a different timer may expire and
+     * destroy that stack. Each removal linearizes against the live queue.
+     * The closed sequence wave excludes waiters published during the call. */
+    uint64_t cutoff=sync_cond_sequence(value);unsigned visited=0;
+    for (;;) {
+        struct sync_wait *first=value.head;
+        if (!first || first->condition_sequence>cutoff) break;
+        require(++visited<=RECORD_LIMIT+1u && first->condition_sequence!=0);
+        value.head=first->next;require(value.waiters!=0);--value.waiters;
+        if (!value.head) { value.tail=NULL;value.mutex=NULL; }
+        sync_cond_write(object,value);first->next=NULL;first->linked=0;
+        sync_notify(first); /* No access to first or cached next after await. */
+        if (!all) break;
+        value=sync_cond_read(object);require(sync_cond_valid(value));
+    }
+#else
     struct sync_wait *first=value.head;
     if (first) {
         if (all) { value.head=value.tail=NULL;value.waiters=0; }
@@ -294,6 +328,7 @@ static int sync_cond_wake(void *object,int all) {
             first->next=NULL;first->linked=0;sync_notify(first);first=next;
         } while (first);
     }
+#endif
     return 0;
 }
 int pthread_cond_init(pthread_cond_t *restrict object,const pthread_condattr_t *restrict attr) {
@@ -457,6 +492,8 @@ static int sync_cond_timed(void *object,void *mutex,const struct timespec *deadl
         sync_end(&node);return EINVAL;
     }
     if (nanos!=0) {
+        error=sync_cond_publish_sequence(&value,&node);
+        if (error) { sync_end(&node);return error; }
         node.linked=1;node.next=NULL;
         if (value.tail) value.tail->next=&node;else value.head=&node;
         value.tail=&node;value.mutex=mutex;++value.waiters;sync_cond_write(object,value);

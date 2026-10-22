@@ -90,6 +90,19 @@ class Compiler:
                              max_output_bytes=4 * 1024 * 1024)
         return result.stdout.decode("utf-8")
 
+    def select_threading_clock_inputs(self) -> None:
+        from tools.c_guest import threading
+        inputs = threading.clock_libc_inputs(self.paths['zig'])
+        identities = {name: file_identity(path, threading.clock_libc_material_name(name), 32768)
+                      for name, path in inputs.items()}
+        if self.threading_clock_inputs:
+            if inputs != self.threading_clock_inputs or any(
+                    self.materials[name] != identity for name, identity in identities.items()):
+                raise ValueError('c-threading-libc-clock-input-changed')
+        else:
+            self.threading_clock_inputs = inputs
+            self.materials.update(identities)
+
     def check_unchanged(self) -> None:
         self.closed_filesystem.check_unchanged()
         if self.threading_inputs:
@@ -212,9 +225,7 @@ class Compiler:
             include_directories = (*include_directories, runtime)
             timed_clock = runtime_profile in {standard_facilities.PROFILE, standard_facilities.COMBINED_PROFILE}
             if timed_clock:
-                self.threading_clock_inputs = threading.clock_libc_inputs(self.paths['zig'])
-                self.materials.update({name: file_identity(path, threading.clock_libc_material_name(name), 32768)
-                    for name, path in self.threading_clock_inputs.items()})
+                self.select_threading_clock_inputs()
                 defines = threading.linked_defines(defines, timed_clock=True)
             else:
                 defines = threading.linked_defines(defines)

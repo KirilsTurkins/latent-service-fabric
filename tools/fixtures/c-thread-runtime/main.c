@@ -1,4 +1,8 @@
 /* Ordinary source. The selected maintained compiler owns the thread PAL. */
+#if LSF_C_TIMED_CLOCK
+#define _POSIX_C_SOURCE 200809L
+#include <stdatomic.h>
+#endif
 #include "probe.h"
 #include <errno.h>
 #include <pthread.h>
@@ -11,7 +15,12 @@ static _Thread_local unsigned local = 7;
 static pthread_key_t key;
 static pthread_t root_id;
 static uintptr_t root_stack_address;
+#if LSF_C_TIMED_CLOCK
+static _Atomic unsigned entered, destructed;
+static volatile unsigned hold, callback_trap;
+#else
 static volatile unsigned entered, destructed, hold, callback_trap;
+#endif
 static volatile uint32_t spin;
 static latent_runtime_activation_observation_t snapshots[3];
 
@@ -116,6 +125,9 @@ static void observed_result(probe_string_t *result, unsigned children) {
 }
 
 #include "synchronization.h"
+#if LSF_C_TIMED_CLOCK
+#include "timing.h"
+#endif
 
 bool exports_examples_c_thread_runtime_api_greet(probe_string_t *input,
                                                 probe_string_t *result, probe_string_t *error) {
@@ -126,6 +138,11 @@ bool exports_examples_c_thread_runtime_api_greet(probe_string_t *input,
     require(pthread_key_create(&key, destructor) == 0);
     require(pthread_setspecific(key, (void *)(uintptr_t)77) == 0);
     local = 70; errno = 23;
+#if LSF_C_TIMED_CLOCK
+    if (input->len >= 6 && memcmp(input->ptr, "timed-", 6) == 0) {
+        timed_children(input, result); require(root_frame == 0x744); return true;
+    }
+#endif
     unsigned children = 1;
     if (mode(input, "sync-pthread") || mode(input, "sync-mixed")) {
         children = 2;

@@ -43,3 +43,25 @@ It must retain original limits, actual provider/physical retirement and exact
 compiler/libc/native identities. Recurring callbacks, ordinary cancellation
 unwind, compiled CPU checkpoints, sockets and unchanged published/transitive
 library qualification remain separate open requirements of #744 and #736.
+
+The next owning programme is `.github/workflows/c-timed-runtime.yml`. It uses
+one newly captured clock-selected component and the exact 146-control native
+products. It preserves the original twenty lifecycle/synchronization outcomes,
+then appends twelve pthread/C11 sleep, mutex timeout/handoff and condition
+notification/timeout/reacquisition cases, three independent clock/entropy
+authority denials and a fresh timed call. The source fixture also checks lazy
+zero sleep, invalid duration/remaining output and errno preservation. The
+32 MiB / one-billion fuel / five-second envelope and original runtime owner
+limits stay fixed. This programme is pending actual execution; source checks
+and a zero-warning fixture object compile do not qualify those outcomes.
+
+Timer-budget exhaustion, timer-specific cancellation/deadline barriers,
+recurring callbacks, cross-tenant reuse and published/transitive libraries
+remain required beyond this finite programme.
+
+A separate serialized source regression compiles the actual synchronization
+implementation with the pinned public WASI headers and explicit broker/canonical
+doubles. During the first timer-stop it expires and poisons a later wait node,
+then publishes a new waiter. The broadcaster must reread the live queue and
+leave the newer sequence untouched. This source control passed; it does not
+claim canonical execution, original-ledger execution or signed qualification.
