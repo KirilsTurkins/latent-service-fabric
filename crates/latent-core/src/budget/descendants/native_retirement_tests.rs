@@ -71,8 +71,12 @@ fn ordinary_retained_accounting_owner_still_holds_the_whole_accepted_grant() {
     child.accounting().consume_cpu_fuel(17).unwrap();
     let report = child.finish(None, sample.monotonic());
     assert!(report.violation().is_none());
-    assert_eq!(parent.snapshot_at(sample.monotonic()).cpu_fuel, 100);
-    assert_eq!(parent.snapshot_at(sample.monotonic()).child_calls, 8);
+    // A held grant occupies capacity without becoming committed consumption.
+    assert_eq!(parent.snapshot_at(sample.monotonic()).cpu_fuel, 0);
+    assert_eq!(parent.snapshot_at(sample.monotonic()).child_calls, 0);
+    let remaining = parent.remaining_at(sample.monotonic());
+    assert_eq!(parent.granted().cpu_fuel - remaining.cpu_fuel, 100);
+    assert_eq!(parent.granted().child_calls - remaining.child_calls, 8);
     assert_eq!(parent.outstanding_reservations(), 1);
     assert_eq!(retained.host_memory_bytes(), 64);
     assert_eq!(retained.outstanding_reservations(), 1);
