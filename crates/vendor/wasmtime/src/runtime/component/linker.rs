@@ -559,6 +559,30 @@ impl<T: 'static> LinkerInstance<'_, T> {
         Ok(())
     }
 
+    /// Define the ordinary async-Rust/sync-WIT callback with an affine reply
+    /// owner retained through actual lowering and reply destruction.
+    ///
+    /// The underlying `Return` alone defines the canonical ABI. The caller must
+    /// uphold [`super::HostOutput`]'s closed builder/lowering ownership contract;
+    /// this API does not pay arbitrary custom Lower or captured allocations.
+    #[cfg(feature = "async")]
+    pub fn func_wrap_async_owned<Params, Return, F>(&mut self, name: &str, f: F) -> Result<()>
+    where
+        F: Fn(
+                StoreContextMut<'_, T>,
+                Params,
+            )
+                -> Box<dyn Future<Output = Result<super::HostOutput<Return>>> + Send + '_>
+            + Send
+            + Sync
+            + 'static,
+        Params: ComponentNamedList + Lift + 'static,
+        Return: ComponentNamedList + Lower + 'static,
+    {
+        self.insert(name, Definition::Func(HostFunc::func_wrap_async_owned(f)?))?;
+        Ok(())
+    }
+
     /// Defines a new host-provided async function into this [`LinkerInstance`].
     ///
     /// This function defines a host function available to call from

@@ -1,0 +1,127 @@
+{
+  "cases": [
+    "CleanupStackObjects.test_actual_global_text_symbols_and_readonly_geometry_data_are_distinct",
+    "CleanupStackObjects.test_closed_owning_origin_and_one_job_cannot_build_boot_or_link_more",
+    "CleanupStackObjects.test_compile_only_suffix_preserves_exact_production_prefix_and_four_targets",
+    "CleanupStackObjects.test_geometry_section_requires_fixed_count_magic_endianness_and_length",
+    "CleanupStackObjects.test_only_four_affected_units_and_111_global_function_oracles_are_selected",
+    "CleanupStackObjects.test_original_materials_and_twelve_extra_whole_inputs_are_preserved",
+    "CleanupStackObjects.test_original_security_and_stack_configuration_cannot_be_disabled_or_changed",
+    "CleanupStackObjects.test_parent_recipe_drift_is_not_an_accepted_alias",
+    "CleanupStackObjects.test_source_after_hash_checks_also_run_on_failed_parent_derivation"
+  ],
+  "guards": {
+    "CleanupStackObjects.test_actual_global_text_symbols_and_readonly_geometry_data_are_distinct": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:71d49096746607ffc7b063c7fec5014a1a6810b30d8c7d9c2f46ab387e49e078",
+        "class:setup-sha256:9e5a3dbb82b77d21c8d1197ccab809f7459faec8e7528959163483df1ae5cebb"
+      ],
+      "skipSites": []
+    },
+    "CleanupStackObjects.test_closed_owning_origin_and_one_job_cannot_build_boot_or_link_more": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:71d49096746607ffc7b063c7fec5014a1a6810b30d8c7d9c2f46ab387e49e078",
+        "class:setup-sha256:9e5a3dbb82b77d21c8d1197ccab809f7459faec8e7528959163483df1ae5cebb"
+      ],
+      "skipSites": []
+    },
+    "CleanupStackObjects.test_compile_only_suffix_preserves_exact_production_prefix_and_four_targets": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:71d49096746607ffc7b063c7fec5014a1a6810b30d8c7d9c2f46ab387e49e078",
+        "class:setup-sha256:9e5a3dbb82b77d21c8d1197ccab809f7459faec8e7528959163483df1ae5cebb"
+      ],
+      "skipSites": []
+    },
+    "CleanupStackObjects.test_geometry_section_requires_fixed_count_magic_endianness_and_length": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:71d49096746607ffc7b063c7fec5014a1a6810b30d8c7d9c2f46ab387e49e078",
+        "class:setup-sha256:9e5a3dbb82b77d21c8d1197ccab809f7459faec8e7528959163483df1ae5cebb"
+      ],
+      "skipSites": []
+    },
+    "CleanupStackObjects.test_only_four_affected_units_and_111_global_function_oracles_are_selected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:71d49096746607ffc7b063c7fec5014a1a6810b30d8c7d9c2f46ab387e49e078",
+        "class:setup-sha256:9e5a3dbb82b77d21c8d1197ccab809f7459faec8e7528959163483df1ae5cebb"
+      ],
+      "skipSites": []
+    },
+    "CleanupStackObjects.test_original_materials_and_twelve_extra_whole_inputs_are_preserved": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:71d49096746607ffc7b063c7fec5014a1a6810b30d8c7d9c2f46ab387e49e078",
+        "class:setup-sha256:9e5a3dbb82b77d21c8d1197ccab809f7459faec8e7528959163483df1ae5cebb"
+      ],
+      "skipSites": []
+    },
+    "CleanupStackObjects.test_original_security_and_stack_configuration_cannot_be_disabled_or_changed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:71d49096746607ffc7b063c7fec5014a1a6810b30d8c7d9c2f46ab387e49e078",
+        "class:setup-sha256:9e5a3dbb82b77d21c8d1197ccab809f7459faec8e7528959163483df1ae5cebb"
+      ],
+      "skipSites": []
+    },
+    "CleanupStackObjects.test_parent_recipe_drift_is_not_an_accepted_alias": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:71d49096746607ffc7b063c7fec5014a1a6810b30d8c7d9c2f46ab387e49e078",
+        "class:setup-sha256:9e5a3dbb82b77d21c8d1197ccab809f7459faec8e7528959163483df1ae5cebb"
+      ],
+      "skipSites": []
+    },
+    "CleanupStackObjects.test_source_after_hash_checks_also_run_on_failed_parent_derivation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:71d49096746607ffc7b063c7fec5014a1a6810b30d8c7d9c2f46ab387e49e078",
+        "class:setup-sha256:9e5a3dbb82b77d21c8d1197ccab809f7459faec8e7528959163483df1ae5cebb"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_host_stream_kernel_cleanup_stack_objects.py",
+  "reviewReason": "Reviewed actual maintained public kthread_create_worker GLOBAL oracle; static __kthread_create_worker excluded,111 total and original87factory oracles retained; no source/bounds change.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
