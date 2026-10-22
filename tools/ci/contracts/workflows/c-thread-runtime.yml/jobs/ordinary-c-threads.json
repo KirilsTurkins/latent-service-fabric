@@ -22,19 +22,19 @@
         }
       },
       {
-        "name": "Fetch only the exact frozen native source object",
-        "run": "git fetch --no-tags --depth=1 origin f6251df89851de98cb869784d095ad5cc2e5b385\ngit fetch --no-tags --depth=1 origin f244b81f14abad5d4dc4984cb842aaf1d9076e23\ngit fetch --no-tags --depth=1 origin 7b6365ee39dea9770591a931b96711965f8a1aaf\n"
+        "name": "Fetch exact frozen source and unchanged reader test models",
+        "run": "git fetch --no-tags --depth=1 origin f6251df89851de98cb869784d095ad5cc2e5b385\ngit fetch --no-tags --depth=1 origin f244b81f14abad5d4dc4984cb842aaf1d9076e23\ngit fetch --no-tags --depth=1 origin 7b6365ee39dea9770591a931b96711965f8a1aaf\ngit fetch --no-tags --depth=1 origin 050b9e71ba04a4bdc559f4a7fa48d6bd94c2ff38\ngit fetch --no-tags --depth=1 origin 3e4178271b4b7fe75a69c8f0665dbe275b41d7c3\ngit fetch --no-tags --depth=1 origin 173ccd9c096e4db643aa9627bd4550cef27fb922\ngit fetch --no-tags --depth=1 origin ea118974d93843265a504f5d30571ed7cfe8a7d2\ngit fetch --no-tags --depth=1 origin f5351a9331ed954c49ae83f2f4004e0f96d25d0e\ngit fetch --no-tags --depth=1 origin ff5aadaecd11874f53aa80e56ffdfff0efda312b\n"
       },
       {
         "name": "Verify source and adverse fixed-product controls",
-        "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 -B -m unittest tools.tests.test_c_thread_runtime tools.tests.test_c_thread_native_products tools.tests.test_sdk_native_products_reader tools.tests.test_c_threading_profile tools.tests.test_activation_stack_native_products tools.tests.test_activation_stack_native_source tools.tests.test_c_thread_package_native_products tools.tests.test_c_threading_compatibility tools.tests.test_c_thread_admission_native_products tools.tests.test_host_codec_native_products_reader -v\n"
+        "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 -B -m unittest tools.tests.test_c_thread_runtime tools.tests.test_c_thread_native_products tools.tests.test_sdk_native_products_reader tools.tests.test_c_threading_profile tools.tests.test_activation_stack_native_products tools.tests.test_activation_stack_native_source tools.tests.test_c_thread_package_native_products tools.tests.test_c_threading_compatibility tools.tests.test_c_thread_admission_native_products tools.tests.test_host_codec_native_products_reader tools.tests.test_host_codec_linear_memory_native_products_reader tools.tests.test_host_codec_linear_memory_native_products tools.tests.test_c_thread_ready_runtime tools.tests.test_c_thread_linear_memory_native_source -v\n"
       },
       {
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
-        "name": "Authenticate all five source-bound host-codec and explicit C products",
-        "run": "python3 -B tools/host_codec_native_products.py --output \"$RUNNER_TEMP/c-thread-native\""
+        "name": "Authenticate five fixed 114-control ready-aware C products",
+        "run": "python3 -B tools/host_codec_linear_memory_native_products.py --output \"$RUNNER_TEMP/c-thread-native\""
       },
       {
         "uses": "mlugg/setup-zig",
@@ -61,8 +61,8 @@
         "name": "Retain bounded public build, invocation and cleanup evidence",
         "uses": "actions/upload-artifact",
         "with": {
-          "name": "c-thread-runtime-${{ github.sha }}",
-          "path": "${{ runner.temp }}/c-thread-runtime/*.json\n${{ runner.temp }}/c-thread-runtime/build/*.json\n${{ runner.temp }}/c-thread-runtime/build/component.wasm\n${{ runner.temp }}/c-thread-runtime/build/logs/*.txt\n${{ runner.temp }}/c-thread-runtime/node/*.json\n${{ runner.temp }}/c-thread-runtime/node/commands/logs/*.txt\n${{ runner.temp }}/c-thread-runtime/node/commands/*.json\n",
+          "name": "c-thread-ready-runtime-${{ github.sha }}",
+          "path": "${{ runner.temp }}/c-thread-runtime/*.json\n${{ runner.temp }}/c-thread-runtime/build/*.json\n${{ runner.temp }}/c-thread-runtime/build/component.wasm\n${{ runner.temp }}/c-thread-runtime/application/src/main.c\n${{ runner.temp }}/c-thread-runtime/application/wit/**\n${{ runner.temp }}/c-thread-runtime/build/wit/**\n${{ runner.temp }}/c-thread-runtime/build/logs/*.txt\n${{ runner.temp }}/c-thread-runtime/node/*.json\n${{ runner.temp }}/c-thread-runtime/node/commands/logs/*.txt\n${{ runner.temp }}/c-thread-runtime/node/commands/*.json\n",
           "retention-days": 7
         }
       }
@@ -71,7 +71,7 @@
   },
   "jobId": "ordinary-c-threads",
   "kind": "job",
-  "reviewReason": "Root full-read approval of exact3-path C61 integration: replace only old f2443+f6252 acquisition command with strict immutable7b five-product acquisition; append7b fetch and three reader controls, retain all old tests and original17 runtime outcomes/caps. No native rebuild.",
+  "reviewReason": "Review one normal C build and all original17 signed lifecycle oracles on the independently verified immutable114 native cohort; admit only the exact unselected stream-test correction, retain original defaults/caps and old receipts, no native rebuild. Explicit replacement: old7b acquisition command becomes exact114 reader acquisition; all original53 source controls remain with12 additional controls and exact historical model fetches.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/c-thread-runtime.yml"
 }

@@ -3,9 +3,9 @@
   "policy": {
     "concurrency": {
       "cancel-in-progress": false,
-      "group": "c-thread-runtime-${{ github.ref }}"
+      "group": "c-thread-ready-runtime-${{ github.ref }}"
     },
-    "name": "Ordinary C owned thread lifecycle",
+    "name": "Ready-aware ordinary C owned thread lifecycle",
     "on": {
       "push": {
         "branches": [
@@ -13,6 +13,14 @@
         ],
         "paths": [
           ".github/workflows/c-thread-runtime.yml",
+          "tools/host_codec_linear_memory_native_products.py",
+          "tools/host_codec_linear_memory_native_products_reader.py",
+          "tools/tests/test_host_codec_linear_memory_native_products.py",
+          "tools/tests/test_host_codec_linear_memory_native_products_reader.py",
+          "tools/tests/test_c_thread_ready_runtime.py",
+          "tools/tests/test_c_thread_linear_memory_native_source.py",
+          "tools/c_thread_linear_memory_native_source.py",
+          "sdk/c-guest/runtime/thread-abi.h",
           "tools/qualify_c_thread_runtime.py",
           "tools/c_thread_runtime_fixture.py",
           "tools/c_thread_runtime_node.py",
@@ -54,7 +62,7 @@
   "requiredJobs": [
     "ordinary-c-threads"
   ],
-  "reviewReason": "Use independently authenticated immutable7b five-product native cohort and explicit async C public type with unchanged sync Core ABI; preserve every original17 lifecycle oracle, limits, old fixed reader controls, no native rebuild.",
+  "reviewReason": "Review one normal C build and all original17 signed lifecycle oracles on the independently verified immutable114 native cohort; admit only the exact unselected stream-test correction, retain original defaults/caps and old receipts, no native rebuild.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/c-thread-runtime.yml"
 }

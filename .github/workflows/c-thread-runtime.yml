@@ -1,10 +1,18 @@
-name: Ordinary C owned thread lifecycle
+name: Ready-aware ordinary C owned thread lifecycle
 
 on:
   push:
     branches: ['feat/c-thread-runtime-consumer-20261021']
     paths:
       - '.github/workflows/c-thread-runtime.yml'
+      - 'tools/host_codec_linear_memory_native_products.py'
+      - 'tools/host_codec_linear_memory_native_products_reader.py'
+      - 'tools/tests/test_host_codec_linear_memory_native_products.py'
+      - 'tools/tests/test_host_codec_linear_memory_native_products_reader.py'
+      - 'tools/tests/test_c_thread_ready_runtime.py'
+      - 'tools/tests/test_c_thread_linear_memory_native_source.py'
+      - 'tools/c_thread_linear_memory_native_source.py'
+      - 'sdk/c-guest/runtime/thread-abi.h'
       - 'tools/qualify_c_thread_runtime.py'
       - 'tools/c_thread_runtime_fixture.py'
       - 'tools/c_thread_runtime_node.py'
@@ -41,7 +49,7 @@ permissions:
   actions: read
 
 concurrency:
-  group: c-thread-runtime-${{ github.ref }}
+  group: c-thread-ready-runtime-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -58,19 +66,25 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: 3.13.5
-      - name: Fetch only the exact frozen native source object
+      - name: Fetch exact frozen source and unchanged reader test models
         run: |
           git fetch --no-tags --depth=1 origin f6251df89851de98cb869784d095ad5cc2e5b385
           git fetch --no-tags --depth=1 origin f244b81f14abad5d4dc4984cb842aaf1d9076e23
           git fetch --no-tags --depth=1 origin 7b6365ee39dea9770591a931b96711965f8a1aaf
+          git fetch --no-tags --depth=1 origin 050b9e71ba04a4bdc559f4a7fa48d6bd94c2ff38
+          git fetch --no-tags --depth=1 origin 3e4178271b4b7fe75a69c8f0665dbe275b41d7c3
+          git fetch --no-tags --depth=1 origin 173ccd9c096e4db643aa9627bd4550cef27fb922
+          git fetch --no-tags --depth=1 origin ea118974d93843265a504f5d30571ed7cfe8a7d2
+          git fetch --no-tags --depth=1 origin f5351a9331ed954c49ae83f2f4004e0f96d25d0e
+          git fetch --no-tags --depth=1 origin ff5aadaecd11874f53aa80e56ffdfff0efda312b
       - name: Verify source and adverse fixed-product controls
         run: |
           python3 -m pip install --requirement tools/requirements.lock
-          python3 -B -m unittest tools.tests.test_c_thread_runtime tools.tests.test_c_thread_native_products tools.tests.test_sdk_native_products_reader tools.tests.test_c_threading_profile tools.tests.test_activation_stack_native_products tools.tests.test_activation_stack_native_source tools.tests.test_c_thread_package_native_products tools.tests.test_c_threading_compatibility tools.tests.test_c_thread_admission_native_products tools.tests.test_host_codec_native_products_reader -v
-      - name: Authenticate all five source-bound host-codec and explicit C products
+          python3 -B -m unittest tools.tests.test_c_thread_runtime tools.tests.test_c_thread_native_products tools.tests.test_sdk_native_products_reader tools.tests.test_c_threading_profile tools.tests.test_activation_stack_native_products tools.tests.test_activation_stack_native_source tools.tests.test_c_thread_package_native_products tools.tests.test_c_threading_compatibility tools.tests.test_c_thread_admission_native_products tools.tests.test_host_codec_native_products_reader tools.tests.test_host_codec_linear_memory_native_products_reader tools.tests.test_host_codec_linear_memory_native_products tools.tests.test_c_thread_ready_runtime tools.tests.test_c_thread_linear_memory_native_source -v
+      - name: Authenticate five fixed 114-control ready-aware C products
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 -B tools/host_codec_native_products.py --output "$RUNNER_TEMP/c-thread-native"
+        run: python3 -B tools/host_codec_linear_memory_native_products.py --output "$RUNNER_TEMP/c-thread-native"
       - uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2
         with:
           version: '0.16.0'
@@ -90,11 +104,14 @@ jobs:
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: c-thread-runtime-${{ github.sha }}
+          name: c-thread-ready-runtime-${{ github.sha }}
           path: |
             ${{ runner.temp }}/c-thread-runtime/*.json
             ${{ runner.temp }}/c-thread-runtime/build/*.json
             ${{ runner.temp }}/c-thread-runtime/build/component.wasm
+            ${{ runner.temp }}/c-thread-runtime/application/src/main.c
+            ${{ runner.temp }}/c-thread-runtime/application/wit/**
+            ${{ runner.temp }}/c-thread-runtime/build/wit/**
             ${{ runner.temp }}/c-thread-runtime/build/logs/*.txt
             ${{ runner.temp }}/c-thread-runtime/node/*.json
             ${{ runner.temp }}/c-thread-runtime/node/commands/logs/*.txt

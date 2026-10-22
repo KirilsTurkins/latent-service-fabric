@@ -1,0 +1,64 @@
+"""Fixed product routing, with the original seventeen-case body retained."""
+import ast
+from pathlib import Path
+import subprocess
+import tempfile
+import unittest
+from unittest.mock import patch
+
+from tools import qualify_c_thread_runtime as qualification
+from tools import host_codec_linear_memory_native_products as native
+
+ORIGINAL = '173ccd9c096e4db643aa9627bd4550cef27fb922'
+
+
+class CThreadReadyRuntime(unittest.TestCase):
+    def test_fixed_v4_admission_runs_before_any_compiler_or_node_work(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / 'refused'
+            with patch.object(qualification.sys, 'platform', 'linux'), \
+                    patch.object(qualification.sys, 'version_info', (3, 13)), \
+                    patch.object(qualification.os, 'geteuid', return_value=1000, create=True), \
+                    patch.object(qualification, 'native_evidence', side_effect=RuntimeError('fixed-v7-refusal')) as admission, \
+                    patch.object(qualification.compiler, 'build') as compiler, \
+                    patch.object(qualification.node, 'run') as node, \
+                    self.assertRaisesRegex(RuntimeError, '^fixed-v7-refusal$'):
+                qualification.qualify(Path(directory) / 'prepared', output)
+            admission.assert_called_once_with(native, Path(directory) / 'prepared')
+            compiler.assert_not_called()
+            node.assert_not_called()
+
+    def test_seventeen_outcomes_oracles_caps_and_default_assert_current_are_unchanged(self):
+        original = subprocess.check_output(['git', 'show', ORIGINAL + ':tools/qualify_c_thread_runtime.py'],
+                                           cwd=qualification.ROOT).decode()
+        current = (qualification.ROOT / 'tools/qualify_c_thread_runtime.py').read_text()
+        old, new = ast.parse(original), ast.parse(current)
+        old_functions = {item.name: item for item in old.body if isinstance(item, ast.FunctionDef)}
+        new_functions = {item.name: item for item in new.body if isinstance(item, ast.FunctionDef)}
+        selected = new_functions['qualify']
+        imports = [item for item in ast.walk(selected) if isinstance(item, ast.ImportFrom)
+                   and item.module == 'tools']
+        self.assertEqual([(item.names[0].name, item.names[0].asname) for item in imports],
+                         [('host_codec_linear_memory_native_products', 'products')])
+        imports[0].names[0].name = 'host_codec_native_products'
+        projection = new_functions['assert_current'].body.pop(0)
+        self.assertEqual(ast.dump(projection), ast.dump(ast.parse('''
+if products is not None and products.SOURCE == 'f5351a9331ed954c49ae83f2f4004e0f96d25d0e':
+    from tools.c_thread_linear_memory_native_source import assert_current as selected_source
+    return selected_source(root)
+''').body[0]))
+        self.assertEqual(set(old_functions), set(new_functions))
+        for name in old_functions:
+            self.assertEqual(ast.dump(old_functions[name]), ast.dump(new_functions[name]), name)
+        node = 'tools/c_thread_runtime_node.py'
+        self.assertEqual(subprocess.check_output(['git', 'show', ORIGINAL + ':' + node],
+                                                cwd=qualification.ROOT),
+                         (qualification.ROOT / node).read_bytes())
+        self.assertIn('tools/host_codec_linear_memory_native_products.py', qualification.MATERIALS)
+        self.assertIn('tools/host_codec_linear_memory_native_products_reader.py', qualification.MATERIALS)
+        self.assertIn('tools/c_thread_linear_memory_native_source.py', qualification.MATERIALS)
+        self.assertIn('.github/workflows/c-thread-runtime.yml', qualification.MATERIALS)
+
+
+if __name__ == '__main__':
+    unittest.main()

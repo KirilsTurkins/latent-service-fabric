@@ -29,6 +29,9 @@ from tools.rust_capsule_project import ROOT, fresh, inventory, read_file, read_j
 MATERIALS = (
     'tools/qualify_c_thread_runtime.py', 'tools/c_thread_runtime_fixture.py',
     'tools/c_thread_runtime_node.py', 'tools/host_codec_native_products.py',
+    'tools/host_codec_linear_memory_native_products.py',
+    'tools/host_codec_linear_memory_native_products_reader.py',
+    'tools/c_thread_linear_memory_native_source.py',
     'tools/host_codec_native_products_reader.py',
     'tools/sdk_native_products_reader.py', 'tools/java_replay_materials.py',
     'tools/phase2_operator_canary.py', 'tools/phase2_operator_process.py',
@@ -143,6 +146,9 @@ def build_evidence(artifact, source):
 
 
 def assert_current(root, products=None):
+    if products is not None and products.SOURCE == 'f5351a9331ed954c49ae83f2f4004e0f96d25d0e':
+        from tools.c_thread_linear_memory_native_source import assert_current as selected_source
+        return selected_source(root)
     if products is None:
         from tools import host_codec_native_products as products
     compiled = git_source_identity(products.SOURCE)
@@ -177,7 +183,7 @@ def native_evidence(products, prepared):
 def qualify(prepared, output):
     require(sys.platform == 'linux' and sys.version_info >= (3, 13) and os.geteuid() != 0,
             'c-thread-unprivileged-linux-python313')
-    from tools import host_codec_native_products as products
+    from tools import host_codec_linear_memory_native_products as products
     output = output.absolute()
     require(output != ROOT and output not in ROOT.parents and ROOT not in output.parents,
             'c-thread-output-outside-checkout')

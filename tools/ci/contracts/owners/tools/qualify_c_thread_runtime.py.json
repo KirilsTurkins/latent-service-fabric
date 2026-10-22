@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_c_thread_runtime.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Root full-read approval: native_evidence carries the explicitly fixed caller through compiled/current source equality; omitted assert_current retains original7b default, all original controls remain and new foreign-source refusal/routing control is additive.",
+  "reviewReason": "Review one normal C build and all original17 signed lifecycle oracles on the independently verified immutable114 native cohort; admit only the exact unselected stream-test correction, retain original defaults/caps and old receipts, no native rebuild.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "80cfad533a378d0b62fe30999a89534aad9a6f4baca9330632d149fa5d6d9776"
+  "sha256": "3a6600e52c3deea7f10938b1771f8d02e5d66dd8e80b69e0eba92469c02b01b8"
 }
