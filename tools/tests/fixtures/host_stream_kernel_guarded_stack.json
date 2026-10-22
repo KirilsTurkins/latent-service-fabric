@@ -1,0 +1,93 @@
+{
+  "schemaVersion": "lsf.kernel-guarded-stack-source.v1",
+  "upstreamCommit": "7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+  "source": {
+    "mm/vmalloc.c": {
+      "bytes": 139333,
+      "sha256": "351e940965d3b2d0b0c44a970f596787613cb87dace7c6790e9c948c51246188"
+    },
+    "include/linux/vmalloc.h": {
+      "bytes": 10315,
+      "sha256": "60159fcf546e3394f9321deeb84e6ef5b4866c52fdd292f34fbca1b6a404771c"
+    },
+    "include/linux/thread_info.h": {
+      "bytes": 7653,
+      "sha256": "928bedd0a91b7780c7ebd87e0c71b6416edd031e4f0ed60fa97f7e55a407e980"
+    },
+    "arch/x86/include/asm/page.h": {
+      "bytes": 2504,
+      "sha256": "138bd06c07516ffc50d9f0953e4d01da9cbda193a6a99880cb551153c98d26a5"
+    },
+    "arch/x86/include/asm/pgtable.h": {
+      "bytes": 43453,
+      "sha256": "29482c1bed37286cfda370cf0189d04ceab11a9e2b83e4a122f9802416052537"
+    },
+    "arch/x86/include/asm/pgtable_64.h": {
+      "bytes": 7869,
+      "sha256": "b4994573c729c98d6f5e33373f05a00a3d1f784968b71e24522e986498e79d76"
+    }
+  },
+  "sections": {
+    "remove_vm_area": {
+      "source": "mm/vmalloc.c",
+      "text": "struct vm_struct *remove_vm_area(const void *addr)\n{\n\tstruct vmap_area *va;\n\tstruct vm_struct *vm;\n\n\tmight_sleep();\n\n\tif (WARN(!PAGE_ALIGNED(addr), \"Trying to vfree() bad address (%p)\\n\",\n\t\t\taddr))\n\t\treturn NULL;\n\n\tva = find_unlink_vmap_area((unsigned long)addr);\n\tif (!va || !va->vm)\n\t\treturn NULL;\n\tvm = va->vm;\n\n\tdebug_check_no_locks_freed(vm->addr, get_vm_area_size(vm));\n\tdebug_check_no_obj_freed(vm->addr, get_vm_area_size(vm));\n\tkasan_free_module_shadow(vm);\n\tkasan_poison_vmalloc(vm->addr, get_vm_area_size(vm));\n\n\tfree_unmap_vmap_area(va);\n\treturn vm;\n}\n",
+      "bytes": 563,
+      "sha256": "cdaec7ec735e47cb9eea7637c9e4440091f041c623f308fba7e9bfcf1feb2319"
+    },
+    "alloc_vmap_area": {
+      "source": "mm/vmalloc.c",
+      "text": "static struct vmap_area *alloc_vmap_area(unsigned long size,\n\t\t\t\tunsigned long align,\n\t\t\t\tunsigned long vstart, unsigned long vend,\n\t\t\t\tint node, gfp_t gfp_mask,\n\t\t\t\tunsigned long va_flags, struct vm_struct *vm)\n{\n\tstruct vmap_node *vn;\n\tstruct vmap_area *va;\n\tunsigned long freed;\n\tunsigned long addr;\n\tunsigned int vn_id;\n\tint purged = 0;\n\tint ret;\n\n\tif (unlikely(!size || offset_in_page(size) || !is_power_of_2(align)))\n\t\treturn ERR_PTR(-EINVAL);\n\n\tif (unlikely(!vmap_initialized))\n\t\treturn ERR_PTR(-EBUSY);\n\n\tmight_sleep();\n\n\t/*\n\t * If a VA is obtained from a global heap(if it fails here)\n\t * it is anyway marked with this \"vn_id\" so it is returned\n\t * to this pool's node later. Such way gives a possibility\n\t * to populate pools based on users demand.\n\t *\n\t * On success a ready to go VA is returned.\n\t */\n\tva = node_alloc(size, align, vstart, vend, &addr, &vn_id);\n\tif (!va) {\n\t\tgfp_mask = gfp_mask & GFP_RECLAIM_MASK;\n\n\t\tva = kmem_cache_alloc_node(vmap_area_cachep, gfp_mask, node);\n\t\tif (unlikely(!va))\n\t\t\treturn ERR_PTR(-ENOMEM);\n\n\t\t/*\n\t\t * Only scan the relevant parts containing pointers to other objects\n\t\t * to avoid false negatives.\n\t\t */\n\t\tkmemleak_scan_area(&va->rb_node, SIZE_MAX, gfp_mask);\n\t}\n\nretry:\n\tif (addr == vend) {\n\t\tpreload_this_cpu_lock(&free_vmap_area_lock, gfp_mask, node);\n\t\taddr = __alloc_vmap_area(&free_vmap_area_root, &free_vmap_area_list,\n\t\t\tsize, align, vstart, vend);\n\t\tspin_unlock(&free_vmap_area_lock);\n\t}\n\n\ttrace_alloc_vmap_area(addr, size, align, vstart, vend, addr == vend);\n\n\t/*\n\t * If an allocation fails, the \"vend\" address is\n\t * returned. Therefore trigger the overflow path.\n\t */\n\tif (unlikely(addr == vend))\n\t\tgoto overflow;\n\n\tva->va_start = addr;\n\tva->va_end = addr + size;\n\tva->vm = NULL;\n\tva->flags = (va_flags | vn_id);\n\n\tif (vm) {\n\t\tvm->addr = (void *)va->va_start;\n\t\tvm->size = va_size(va);\n\t\tva->vm = vm;\n\t}\n\n\tvn = addr_to_node(va->va_start);\n\n\tspin_lock(&vn->busy.lock);\n\tinsert_vmap_area(va, &vn->busy.root, &vn->busy.head);\n\tspin_unlock(&vn->busy.lock);\n\n\tBUG_ON(!IS_ALIGNED(va->va_start, align));\n\tBUG_ON(va->va_start < vstart);\n\tBUG_ON(va->va_end > vend);\n\n\tret = kasan_populate_vmalloc(addr, size);\n\tif (ret) {\n\t\tfree_vmap_area(va);\n\t\treturn ERR_PTR(ret);\n\t}\n\n\treturn va;\n\noverflow:\n\tif (!purged) {\n\t\treclaim_and_purge_vmap_areas();\n\t\tpurged = 1;\n\t\tgoto retry;\n\t}\n\n\tfreed = 0;\n\tblocking_notifier_call_chain(&vmap_notify_list, 0, &freed);\n\n\tif (freed > 0) {\n\t\tpurged = 0;\n\t\tgoto retry;\n\t}\n\n\tif (!(gfp_mask & __GFP_NOWARN) && printk_ratelimit())\n\t\tpr_warn(\"vmalloc_node_range for size %lu failed: Address range restricted to %#lx - %#lx\\n\",\n\t\t\t\tsize, vstart, vend);\n\n\tkmem_cache_free(vmap_area_cachep, va);\n\treturn ERR_PTR(-EBUSY);\n}\n",
+      "bytes": 2697,
+      "sha256": "b17385613938c4ae84fec43cbe20acc0a18ac7899426b9cbdcb80e1f37d8245d"
+    },
+    "free_vmap_area_noflush": {
+      "source": "mm/vmalloc.c",
+      "text": "static void free_vmap_area_noflush(struct vmap_area *va)\n{\n\tunsigned long nr_lazy_max = lazy_max_pages();\n\tunsigned long va_start = va->va_start;\n\tunsigned int vn_id = decode_vn_id(va->flags);\n\tstruct vmap_node *vn;\n\tunsigned long nr_lazy;\n\n\tif (WARN_ON_ONCE(!list_empty(&va->list)))\n\t\treturn;\n\n\tnr_lazy = atomic_long_add_return(va_size(va) >> PAGE_SHIFT,\n\t\t\t\t\t &vmap_lazy_nr);\n\n\t/*\n\t * If it was request by a certain node we would like to\n\t * return it to that node, i.e. its pool for later reuse.\n\t */\n\tvn = is_vn_id_valid(vn_id) ?\n\t\tid_to_node(vn_id):addr_to_node(va->va_start);\n\n\tspin_lock(&vn->lazy.lock);\n\tinsert_vmap_area(va, &vn->lazy.root, &vn->lazy.head);\n\tspin_unlock(&vn->lazy.lock);\n\n\ttrace_free_vmap_area_noflush(va_start, nr_lazy, nr_lazy_max);\n\n\t/* After this point, we may free va at any time */\n\tif (unlikely(nr_lazy > nr_lazy_max))\n\t\tschedule_work(&drain_vmap_work);\n}\n",
+      "bytes": 888,
+      "sha256": "6b7de4ed01b627a3d9b49e99036b62121f50ea5bc42eef5c6e5af105256442ab"
+    },
+    "vunmap_range": {
+      "source": "mm/vmalloc.c",
+      "text": "void vunmap_range(unsigned long addr, unsigned long end)\n{\n\tflush_cache_vunmap(addr, end);\n\tvunmap_range_noflush(addr, end);\n\tflush_tlb_kernel_range(addr, end);\n}\n",
+      "bytes": 163,
+      "sha256": "9b57786d92e3a361b7506a41bfc765b8e0535c87ae905f936c8caf77f56bba96"
+    },
+    "merge": {
+      "source": "mm/vmalloc.c",
+      "text": "static __always_inline struct vmap_area *\n__merge_or_add_vmap_area(struct vmap_area *va,\n\tstruct rb_root *root, struct list_head *head, bool augment)\n{\n\tstruct vmap_area *sibling;\n\tstruct list_head *next;\n\tstruct rb_node **link;\n\tstruct rb_node *parent;\n\tbool merged = false;\n\n\t/*\n\t * Find a place in the tree where VA potentially will be\n\t * inserted, unless it is merged with its sibling/siblings.\n\t */\n\tlink = find_va_links(va, root, NULL, &parent);\n\tif (!link)\n\t\treturn NULL;\n\n\t/*\n\t * Get next node of VA to check if merging can be done.\n\t */\n\tnext = get_va_next_sibling(parent, link);\n\tif (unlikely(next == NULL))\n\t\tgoto insert;\n\n\t/*\n\t * start            end\n\t * |                |\n\t * |<------VA------>|<-----Next----->|\n\t *                  |                |\n\t *                  start            end\n\t */\n\tif (next != head) {\n\t\tsibling = list_entry(next, struct vmap_area, list);\n\t\tif (sibling->va_start == va->va_end) {\n\t\t\tsibling->va_start = va->va_start;\n\n\t\t\t/* Free vmap_area object. */\n\t\t\tkmem_cache_free(vmap_area_cachep, va);\n\n\t\t\t/* Point to the new merged area. */\n\t\t\tva = sibling;\n\t\t\tmerged = true;\n\t\t}\n\t}\n\n\t/*\n\t * start            end\n\t * |                |\n\t * |<-----Prev----->|<------VA------>|\n\t *                  |                |\n\t *                  start            end\n\t */\n\tif (next->prev != head) {\n\t\tsibling = list_entry(next->prev, struct vmap_area, list);\n\t\tif (sibling->va_end == va->va_start) {\n\t\t\t/*\n\t\t\t * If both neighbors are coalesced, it is important\n\t\t\t * to unlink the \"next\" node first, followed by merging\n\t\t\t * with \"previous\" one. Otherwise the tree might not be\n\t\t\t * fully populated if a sibling's augmented value is\n\t\t\t * \"normalized\" because of rotation operations.\n\t\t\t */\n\t\t\tif (merged)\n\t\t\t\t__unlink_va(va, root, augment);\n\n\t\t\tsibling->va_end = va->va_end;\n\n\t\t\t/* Free vmap_area object. */\n\t\t\tkmem_cache_free(vmap_area_cachep, va);\n\n\t\t\t/* Point to the new merged area. */\n\t\t\tva = sibling;\n\t\t\tmerged = true;\n\t\t}\n\t}\n\ninsert:\n\tif (!merged)\n\t\t__link_va(va, root, parent, link, head, augment);\n\n\treturn va;\n}\n",
+      "bytes": 2057,
+      "sha256": "8aa145a459994c4f1e9b53e68809b885fbf5a68b5c27d31947bed1fb19ab6bf4"
+    },
+    "pte_map": {
+      "source": "mm/vmalloc.c",
+      "text": "static int vmap_pages_pte_range(pmd_t *pmd, unsigned long addr,\n\t\tunsigned long end, pgprot_t prot, struct page **pages, int *nr,\n\t\tpgtbl_mod_mask *mask)\n{\n\tint err = 0;\n\tpte_t *pte;\n\n\t/*\n\t * nr is a running index into the array which helps higher level\n\t * callers keep track of where we're up to.\n\t */\n\n\tpte = pte_alloc_kernel_track(pmd, addr, mask);\n\tif (!pte)\n\t\treturn -ENOMEM;\n\tdo {\n\t\tstruct page *page = pages[*nr];\n\n\t\tif (WARN_ON(!pte_none(ptep_get(pte)))) {\n\t\t\terr = -EBUSY;\n\t\t\tbreak;\n\t\t}\n\t\tif (WARN_ON(!page)) {\n\t\t\terr = -ENOMEM;\n\t\t\tbreak;\n\t\t}\n\t\tif (WARN_ON(!pfn_valid(page_to_pfn(page)))) {\n\t\t\terr = -EINVAL;\n\t\t\tbreak;\n\t\t}\n\n\t\tset_pte_at(&init_mm, addr, pte, mk_pte(page, prot));\n\t\t(*nr)++;\n\t} while (pte++, addr += PAGE_SIZE, addr != end);\n\t*mask |= PGTBL_PTE_MODIFIED;\n\n\treturn err;\n}\n",
+      "bytes": 796,
+      "sha256": "01a18a5973a31708f4bf4af1df3754dd11bab89bbb52d62ab292fc4c3bc35184"
+    },
+    "va_clip": {
+      "source": "mm/vmalloc.c",
+      "text": "static __always_inline int\nva_clip(struct rb_root *root, struct list_head *head,\n\t\tstruct vmap_area *va, unsigned long nva_start_addr,\n\t\tunsigned long size)\n{\n\tstruct vmap_area *lva = NULL;\n\tenum fit_type type = classify_va_fit_type(va, nva_start_addr, size);\n\n\tif (type == FL_FIT_TYPE) {\n\t\t/*\n\t\t * No need to split VA, it fully fits.\n\t\t *\n\t\t * |               |\n\t\t * V      NVA      V\n\t\t * |---------------|\n\t\t */\n\t\tunlink_va_augment(va, root);\n\t\tkmem_cache_free(vmap_area_cachep, va);\n\t} else if (type == LE_FIT_TYPE) {\n\t\t/*\n\t\t * Split left edge of fit VA.\n\t\t *\n\t\t * |       |\n\t\t * V  NVA  V   R\n\t\t * |-------|-------|\n\t\t */\n\t\tva->va_start += size;\n\t} else if (type == RE_FIT_TYPE) {\n\t\t/*\n\t\t * Split right edge of fit VA.\n\t\t *\n\t\t *         |       |\n\t\t *     L   V  NVA  V\n\t\t * |-------|-------|\n\t\t */\n\t\tva->va_end = nva_start_addr;\n\t} else if (type == NE_FIT_TYPE) {\n\t\t/*\n\t\t * Split no edge of fit VA.\n\t\t *\n\t\t *     |       |\n\t\t *   L V  NVA  V R\n\t\t * |---|-------|---|\n\t\t */\n\t\tlva = __this_cpu_xchg(ne_fit_preload_node, NULL);\n\t\tif (unlikely(!lva)) {\n\t\t\t/*\n\t\t\t * For percpu allocator we do not do any pre-allocation\n\t\t\t * and leave it as it is. The reason is it most likely\n\t\t\t * never ends up with NE_FIT_TYPE splitting. In case of\n\t\t\t * percpu allocations offsets and sizes are aligned to\n\t\t\t * fixed align request, i.e. RE_FIT_TYPE and FL_FIT_TYPE\n\t\t\t * are its main fitting cases.\n\t\t\t *\n\t\t\t * There are a few exceptions though, as an example it is\n\t\t\t * a first allocation (early boot up) when we have \"one\"\n\t\t\t * big free space that has to be split.\n\t\t\t *\n\t\t\t * Also we can hit this path in case of regular \"vmap\"\n\t\t\t * allocations, if \"this\" current CPU was not preloaded.\n\t\t\t * See the comment in alloc_vmap_area() why. If so, then\n\t\t\t * GFP_NOWAIT is used instead to get an extra object for\n\t\t\t * split purpose. That is rare and most time does not\n\t\t\t * occur.\n\t\t\t *\n\t\t\t * What happens if an allocation gets failed. Basically,\n\t\t\t * an \"overflow\" path is triggered to purge lazily freed\n\t\t\t * areas to free some memory, then, the \"retry\" path is\n\t\t\t * triggered to repeat one more time. See more details\n\t\t\t * in alloc_vmap_area() function.\n\t\t\t */\n\t\t\tlva = kmem_cache_alloc(vmap_area_cachep, GFP_NOWAIT);\n\t\t\tif (!lva)\n\t\t\t\treturn -1;\n\t\t}\n\n\t\t/*\n\t\t * Build the remainder.\n\t\t */\n\t\tlva->va_start = va->va_start;\n\t\tlva->va_end = nva_start_addr;\n\n\t\t/*\n\t\t * Shrink this VA to remaining size.\n\t\t */\n\t\tva->va_start = nva_start_addr + size;\n\t} else {\n\t\treturn -1;\n\t}\n\n\tif (type != FL_FIT_TYPE) {\n\t\taugment_tree_propagate_from(va);\n\n\t\tif (lva)\t/* type == NE_FIT_TYPE */\n\t\t\tinsert_vmap_area_augment(lva, &va->rb_node, root, head);\n\t}\n\n\treturn 0;\n}\n",
+      "bytes": 2647,
+      "sha256": "e56d6e2618c3a14c8fa1531dafcc16299198e7abb4362d9130e0a78be3e24dba"
+    },
+    "find_va_links": {
+      "source": "mm/vmalloc.c",
+      "text": "static __always_inline struct rb_node **\nfind_va_links(struct vmap_area *va,\n\tstruct rb_root *root, struct rb_node *from,\n\tstruct rb_node **parent)\n{\n\tstruct vmap_area *tmp_va;\n\tstruct rb_node **link;\n\n\tif (root) {\n\t\tlink = &root->rb_node;\n\t\tif (unlikely(!*link)) {\n\t\t\t*parent = NULL;\n\t\t\treturn link;\n\t\t}\n\t} else {\n\t\tlink = &from;\n\t}\n\n\t/*\n\t * Go to the bottom of the tree. When we hit the last point\n\t * we end up with parent rb_node and correct direction, i name\n\t * it link, where the new va->rb_node will be attached to.\n\t */\n\tdo {\n\t\ttmp_va = rb_entry(*link, struct vmap_area, rb_node);\n\n\t\t/*\n\t\t * During the traversal we also do some sanity check.\n\t\t * Trigger the BUG() if there are sides(left/right)\n\t\t * or full overlaps.\n\t\t */\n\t\tif (va->va_end <= tmp_va->va_start)\n\t\t\tlink = &(*link)->rb_left;\n\t\telse if (va->va_start >= tmp_va->va_end)\n\t\t\tlink = &(*link)->rb_right;\n\t\telse {\n\t\t\tWARN(1, \"vmalloc bug: 0x%lx-0x%lx overlaps with 0x%lx-0x%lx\\n\",\n\t\t\t\tva->va_start, va->va_end, tmp_va->va_start, tmp_va->va_end);\n\n\t\t\treturn NULL;\n\t\t}\n\t} while (*link);\n\n\t*parent = &tmp_va->rb_node;\n\treturn link;\n}\n",
+      "bytes": 1101,
+      "sha256": "c5c08911fec0988a466dbde09311dd05d66e1dd4c7e72f87ce37879434f869fc"
+    },
+    "get_va_next_sibling": {
+      "source": "mm/vmalloc.c",
+      "text": "static __always_inline struct list_head *\nget_va_next_sibling(struct rb_node *parent, struct rb_node **link)\n{\n\tstruct list_head *list;\n\n\tif (unlikely(!parent))\n\t\t/*\n\t\t * The red-black tree where we try to find VA neighbors\n\t\t * before merging or inserting is empty, i.e. it means\n\t\t * there is no free vmap space. Normally it does not\n\t\t * happen but we handle this case anyway.\n\t\t */\n\t\treturn NULL;\n\n\tlist = &rb_entry(parent, struct vmap_area, rb_node)->list;\n\treturn (&parent->rb_right == link ? list->next : list);\n}\n",
+      "bytes": 521,
+      "sha256": "da9871ee2111c9c91ca2684f17dc00d54fb9344bf1bf8f7c34242a5003b296b5"
+    }
+  },
+  "stackMappingSourceImplemented": true,
+  "linuxMappingExecuted": false,
+  "taskCreated": false,
+  "executorReady": false,
+  "runningTaskStackRetirementImplemented": false,
+  "completeAllocationClosure": false,
+  "productionInstallation": false
+}
