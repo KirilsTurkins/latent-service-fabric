@@ -33,6 +33,32 @@ class CThreadRuntime(unittest.TestCase):
             self.assertEqual(json.loads((output / 'child-audit-c-retention-0-1.json').read_bytes()), page)
             self.assertEqual(json.loads((output / 'child-inventory-c-retention-0.json').read_bytes()), inventory)
 
+    def test_c_diagnostic_audit_envelope_matches_original_eighteen_observation_burst_only(self):
+        settings = {'workers': {'runtime': 1, 'control': 1}, 'cells': [
+            {'capacity': 1, 'queueCapacity': 2, 'maximumMemoryBytes': 67108864}],
+            'audit': {'mode': 'durable', 'records': 1024, 'diskBytes': 16777216,
+                'queuedOperations': 8, 'queryOwners': 2},
+            'execution': {'maximumCpuFuel': 10000000000, 'maximumWallTimeMillis': 5000},
+            'providers': {'bindings': [{'name': 'original-http-binding'}]}}
+        before = copy.deepcopy(settings)
+        capsule = {'imports': [{'contract': name, 'optional': False} for name in node.IMPORTS],
+            'execution': {'limits': {'memoryBytes': 33554432, 'wallTimeLimitMillis': 5000}}}
+        node.configure(settings, capsule)
+        expected = dict(before['audit'], queuedOperations=73)
+        self.assertEqual(settings['audit'], expected)
+        self.assertEqual(73 * 4096, 9 * 2 * 16384 + 4096)
+        self.assertEqual((73 * 4096 - 4096) // 16384, 18)
+        self.assertLess(72 * 4096, 18 * 16384 + 4096)
+        for name in ('workers', 'cells', 'execution'):
+            self.assertEqual(settings[name], before[name])
+        self.assertEqual(settings['providers']['activationRuntime']['limits'], fixture.LIMITS)
+        for field in ('queuedOperations', 'records', 'diskBytes', 'queryOwners'):
+            bad = copy.deepcopy(before)
+            bad['audit'][field] += 1
+            with self.subTest(field=field), self.assertRaisesRegex(RuntimeError,
+                    '^c-thread-original-diagnostic-audit-envelope$'):
+                node.configure(bad, capsule)
+
     @staticmethod
     def positive_child_model():
         revision = {'publicationId': 'publication:sha256:' + '1' * 64,

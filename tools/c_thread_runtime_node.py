@@ -52,6 +52,12 @@ def configure(settings, capsule):
     require(settings['workers'] == {'runtime': 1, 'control': 1}
             and len(settings['cells']) == 1 and settings['cells'][0]['capacity'] == 1
             and settings['cells'][0]['queueCapacity'] == 2, 'c-thread-original-one-cell')
+    require(settings['audit'] == {'mode': 'durable', 'records': 1024, 'diskBytes': 16 * 1024 * 1024,
+            'queuedOperations': 8, 'queryOwners': 2}, 'c-thread-original-diagnostic-audit-envelope')
+    # Nine original pre-hold provider calls can offer 18 optional observations.
+    # Each holds 16 KiB through journal completion; one serialized query needs 4 KiB.
+    # This is a finite test-environment envelope, not a durable/lossless guarantee.
+    settings['audit']['queuedOperations'] = (9 * 2 * 16384 + 4096) // 4096
     settings.setdefault('engine', {})['threadingProfile'] = PROFILE
     providers = settings['providers']
     providers['activationRuntime'] = {'identity': {'id': 'c-activation', 'tenant': 'examples',
@@ -310,6 +316,14 @@ def invoke(client, probe, target, output, mode, activation, *, cancel=False):
     # shorter deadline so it can precede fuel exhaustion in the unchanged1B
     # CPU-spin envelope; the actual terminal cause and positive child/physical
     # barrier remain mandatory. This makes no fairness or timing guarantee.
+    if mode in ('cancel', 'deadline'):
+        audit_before = usage(client, target, idle=True)
+        write_json(output / ('audit-before-' + activation + '.json'), audit_before)
+        counters = audit_before['nodeUsage']['counters']
+        require(all(integer(counters[name]) == 0 for name in ('audit_queued_operations',
+            'audit_queued_bytes', 'audit_reserved_records', 'audit_reserved_bytes', 'audit_pending_attempts',
+            'audit_query_owners', 'audit_query_bytes', 'audit_recovery_pending', 'audit_closed')),
+            'c-thread-precall-audit-idle-premise')
     process = start_call(client, target, SERVICE, 'greet', [mode], activation,
                          wall=250 if mode == 'deadline' else None)
     primary = False
