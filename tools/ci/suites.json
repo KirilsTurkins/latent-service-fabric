@@ -7447,7 +7447,17 @@
         "host::native_linear_memory_tests::actual_linear_growth_confirms_success_and_failed_growth_preserves_prior_peak",
         "host::owned_context::tests::retained_context_uses_original_memory_until_drop_and_rolls_back_refused_admission",
         "host::owned_context::tests::retained_context_bound_excludes_discarded_scaffolding_and_caller_web_identity",
-        "host::owned_context::tests::retained_context_keeps_legacy_profile_unaccounted_and_arithmetic_checked"
+        "host::owned_context::tests::retained_context_keeps_legacy_profile_unaccounted_and_arithmetic_checked",
+        "host::native_host_future_tests::actual_host_future_typed_and_dynamic_boxes_retain_original_memory_while_pending",
+        "host::native_host_future_tests::actual_host_future_refusal_preserves_original_error_and_fresh_budget_reuse",
+        "host::native_host_future_tests::actual_host_future_cancellation_cannot_credit_another_live_store",
+        "host::native_host_future_tests::actual_host_future_callback_error_is_unchanged_and_its_box_retires",
+        "host::native_host_future_tests::actual_host_future_legacy_unaccounted_embedding_keeps_original_scalar_result",
+        "host::native_context_reply_tests::actual_context_reply_six_shapes_and_scalars_fit_original_one_mib_and_billion_fuel",
+        "host::native_context_reply_tests::actual_context_reply_original_refusal_keeps_exact_error_and_fresh_same_grant",
+        "host::native_context_reply_tests::actual_context_reply_pending_lower_cancellation_cannot_credit_another_store",
+        "host::native_context_reply_tests::actual_context_reply_guest_realloc_error_is_unchanged_and_owner_retires",
+        "host::native_context_reply_tests::actual_context_reply_empty_selection_and_phase1_keep_lazy_legacy_behavior"
       ],
       "expectedIgnored": [
         "cache::measurement::cache_lookup_collector",
@@ -7460,7 +7470,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 454,
+      "minimumCases": 464,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [
@@ -9796,14 +9806,16 @@
         "management::phase2::execute::release::tests::prepared_release_projection_is_bounded_lossless_and_never_execution_authority",
         "command::tests::exact_release_preparation_command_keeps_its_public_result_name",
         "management::execute::tests::parsed_release_prepare_keeps_management_dispatch_and_exact_selection",
-        "error::tests::typed_memory_and_fuel_details_survive_cli_redaction_without_private_cell_or_reason"
+        "error::tests::typed_memory_and_fuel_details_survive_cli_redaction_without_private_cell_or_reason",
+        "management::phase2::projection::audit::capability::tests::native_thread_audit_projection_preserves_exact_v6_facts_without_default_authority",
+        "management::phase2::projection::audit::capability::tests::native_thread_audit_projection_refuses_foreign_versions_classes_operations_and_outcomes"
       ],
       "expectedIgnored": [],
       "id": "latent.lib.latent",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "apps/latent/Cargo.toml",
-      "minimumCases": 172,
+      "minimumCases": 174,
       "mode": "libtest",
       "package": "latent",
       "platforms": [

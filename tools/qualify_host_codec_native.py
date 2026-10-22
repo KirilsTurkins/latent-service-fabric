@@ -200,7 +200,33 @@ CONTROLS = (('original-host-memory',
   'host::owned_context::tests::excessive_keys_rebuild_only_their_map_and_preserve_values_and_order',
   'host::owned_context::tests::retained_context_uses_original_memory_until_drop_and_rolls_back_refused_admission',
   'host::owned_context::tests::retained_context_bound_excludes_discarded_scaffolding_and_caller_web_identity',
-  'host::owned_context::tests::retained_context_keeps_legacy_profile_unaccounted_and_arithmetic_checked')))
+  'host::owned_context::tests::retained_context_keeps_legacy_profile_unaccounted_and_arithmetic_checked')),
+ ('actual-host-future-owner',
+ 'latent-wasmtime',
+ 'host::native_host_future_tests::',
+ ('host::native_host_future_tests::actual_host_future_typed_and_dynamic_boxes_retain_original_memory_while_pending',
+  'host::native_host_future_tests::actual_host_future_refusal_preserves_original_error_and_fresh_budget_reuse',
+  'host::native_host_future_tests::actual_host_future_cancellation_cannot_credit_another_live_store',
+  'host::native_host_future_tests::actual_host_future_callback_error_is_unchanged_and_its_box_retires',
+  'host::native_host_future_tests::actual_host_future_legacy_unaccounted_embedding_keeps_original_scalar_result')),
+ ('c-canonical-wait-routes',
+ 'latent-component-threading',
+ 'c_wait_',
+ ('component::c::tests::c_wait_canonical_functions_keep_suspend_and_deferred_resume_distinct',
+  'component::c::tests::c_wait_final_graph_requires_the_exact_canonical_wake_target')),
+ ('actual-owned-context-reply',
+ 'latent-wasmtime',
+ 'host::native_context_reply_tests::',
+ ('host::native_context_reply_tests::actual_context_reply_six_shapes_and_scalars_fit_original_one_mib_and_billion_fuel',
+  'host::native_context_reply_tests::actual_context_reply_original_refusal_keeps_exact_error_and_fresh_same_grant',
+  'host::native_context_reply_tests::actual_context_reply_pending_lower_cancellation_cannot_credit_another_store',
+  'host::native_context_reply_tests::actual_context_reply_guest_realloc_error_is_unchanged_and_owner_retires',
+  'host::native_context_reply_tests::actual_context_reply_empty_selection_and_phase1_keep_lazy_legacy_behavior')),
+ ('cli-native-thread-audit-projection',
+ 'latent',
+ 'native_thread_audit_projection_',
+ ('management::phase2::projection::audit::capability::tests::native_thread_audit_projection_preserves_exact_v6_facts_without_default_authority',
+  'management::phase2::projection::audit::capability::tests::native_thread_audit_projection_refuses_foreign_versions_classes_operations_and_outcomes')))
 
 PRODUCTS = ('latent', 'latentd', 'examples/package', 'examples/capsule_contracts', 'examples/capsule_authoring')
 RECIPE = ('.github/workflows/host-codec-memory.yml', '.cargo/managed-guest.toml',
@@ -289,8 +315,8 @@ def qualify(output: Path, revision: str) -> dict:
     require(re.fullmatch('[0-9a-f]{40}', revision) is not None, 'host-codec-source-revision')
     require(sys.platform == 'linux', 'host-codec-linux-owner-required')
     names = [name for _,_,_,cases in CONTROLS for name in cases]
-    require(len(CONTROLS) == 24 and len({row[0] for row in CONTROLS}) == 24
-            and len(names) == len(set(names)) == 114, 'host-codec-control-inventory')
+    require(len(CONTROLS) == 28 and len({row[0] for row in CONTROLS}) == 28
+            and len(names) == len(set(names)) == 128, 'host-codec-control-inventory')
     output = fresh(output)
     codec_wasmtime.verify(ROOT)
     before, inputs = source_identity(ROOT), materials(ROOT)
@@ -328,12 +354,12 @@ def qualify(output: Path, revision: str) -> dict:
             products[name] = identity
         record = {'schemaVersion':'latent.host-codec.native-products.v1','status':'passed',
             'sourceRevision':revision,'source':before,'materials':inputs,'compiler':compiler,
-            'products':products,'commands':stages.records,'controlCount':114,'nativeCohort':codec_wasmtime.COHORT,
+            'products':products,'commands':stages.records,'controlCount':128,'nativeCohort':codec_wasmtime.COHORT,
             'controls':{stage:list(names) for stage,_,_,names in CONTROLS},
             'profile':'normal-managed-guest-default-features','signedQualification':False,
             'guestJavaScriptEngineCompiled':False,'guestSourceCompiled':False,
             'historicalReceiptRewritten':False,
-            'scope':'ordinary-host-retained-activation-context-and-linear-allocation-notifications-codec-table-and-selected-Store-instance-buffer-registry-FuncRefs-container-resource-substitutions-original-memory-and-selected-c-public-async-type-sync-core-admission-and-authenticated-c-ready-handoff-and-closed-guest-trap-diagnostics-and-exact-native-thread-audit-codec; direct-Core-HostFunc-construction, shared-preparation-closures, concurrent-task, hostcall, request ingress and discarded scaffolding and later hostcall copies, legacy framing and serialized controller frames excluded'}
+            'scope':'ordinary-host-six-closed-context-reply-buffers-and-concrete-callback-future-box-and-retained-activation-context-and-linear-allocation-notifications-codec-table-and-selected-Store-instance-buffer-registry-FuncRefs-container-resource-substitutions-original-memory-and-selected-c-public-async-type-sync-core-admission-and-authenticated-c-ready-handoff-and-closed-guest-trap-diagnostics-and-exact-native-thread-audit-codec-and-CLI-projection; direct-Core-HostFunc-construction, shared-preparation-closures, concurrent-task, other-hostcall-values-custom-Lower-shared-interior-error-owned-copies-and-opaque-accessor-scheduler-frames, request ingress and discarded scaffolding and other hostcall copies, legacy framing and serialized controller frames excluded'}
         write_json(output/'native-products.json',record)
         return record
     except Exception as error:

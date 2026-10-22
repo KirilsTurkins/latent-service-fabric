@@ -114,7 +114,7 @@ class PinnedWasmtimeSource(unittest.TestCase):
                 registry.workspace(root)
 
     def test_actual_table_hook_sources_and_new_cohort_require_exact_postimages(self):
-        self.assertEqual(source.COHORT, 'wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-memory-v7')
+        self.assertEqual(source.COHORT, 'wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-memory-v9')
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             self.fixture(root)
@@ -199,6 +199,40 @@ class PinnedWasmtimeSource(unittest.TestCase):
                     target = root / source.PROVIDER / name
                     original = target.read_bytes()
                     target.write_bytes(original + b'\nchanged-linear-notification\n')
+                    with self.assertRaisesRegex(ValueError, 'host-codec-wasmtime-source-identity'):
+                        source.verify(root)
+                    target.write_bytes(original)
+            self.assertEqual(len(source.verify(root)['files']), 259)
+
+
+    def test_per_call_host_future_owner_requires_its_exact_source_postimage(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.fixture(root)
+            target = root / source.PROVIDER / 'src/runtime/component/func/host.rs'
+            original = target.read_bytes()
+            self.assertIn(b'future: Box::pin(future)', original)
+            target.write_bytes(original.replace(b'future: Box::pin(future)', b'future: unreviewed_future(future)', 1))
+            with self.assertRaisesRegex(ValueError, 'host-codec-wasmtime-source-identity'):
+                source.verify(root)
+            target.write_bytes(original)
+            self.assertEqual(len(source.verify(root)['files']), 259)
+
+
+    def test_owned_context_reply_lowering_requires_exact_guard_and_public_entrypoint_sources(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.fixture(root)
+            for name, token in (
+                ('src/runtime/component/func/host.rs', b'let result = lower(&self.value);'),
+                ('src/runtime/component/linker.rs', b'pub fn func_wrap_async_owned<Params, Return, F>'),
+                ('src/runtime/component/mod.rs', b'HostOutput'),
+            ):
+                with self.subTest(name=name):
+                    target = root / source.PROVIDER / name
+                    original = target.read_bytes()
+                    self.assertIn(token, original)
+                    target.write_bytes(original.replace(token, b'unreviewed_owned_reply', 1))
                     with self.assertRaisesRegex(ValueError, 'host-codec-wasmtime-source-identity'):
                         source.verify(root)
                     target.write_bytes(original)
