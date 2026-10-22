@@ -236,3 +236,118 @@ fn transaction_resource_selection_cannot_claim_generic_provider_or_commit_comple
         assert!(context.validate().is_err());
     }
 }
+
+fn native_thread_observation(provider_completed: bool) -> AuditObservation {
+    let mut value = required();
+    let context = value.identities.capability.as_mut().unwrap();
+    context.capability = "latent:runtime-native/threads@0.1.0".into();
+    context.operation = "start".into();
+    context.resource_class = AuditCapabilityResourceClass::Context;
+    context.provider_profile = "conservative-native-total-starts-v1".into();
+    context.required = false;
+    context.request.as_mut().unwrap().scope = if provider_completed {
+        AuditCapabilityDigestScope::ProviderRequest
+    } else {
+        AuditCapabilityDigestScope::ResourceSelection
+    };
+    context.provider_outcome = provider_completed.then_some(AuditProviderOutcome::HostCompleted);
+    AuditObservation {
+        scope: value.scope,
+        actor: value.actor,
+        identities: value.identities,
+        kind: if provider_completed {
+            Phase2AuditEventKind::CapabilityProviderOutcome
+        } else {
+            Phase2AuditEventKind::CapabilityGrantAllowed
+        },
+        outcome: crate::AuditOutcome::Succeeded,
+        reason: AuditReason::Admitted,
+        cache_kind: None,
+        occurred_at_unix_millis: 1,
+    }
+}
+
+#[test]
+fn native_thread_audit_encodes_exact_grant_and_host_completion_without_changing_default_abi() {
+    assert_eq!(
+        latent_core::PHASE3_HOST_ABI_CURRENT,
+        latent_core::PHASE3_HOST_ABI_V5
+    );
+    assert!(latent_core::PHASE3_HOST_ABI_CURRENT
+        .interface("latent:runtime-native/threads@0.1.0")
+        .is_none());
+    for completed in [false, true] {
+        let event = native_thread_observation(completed);
+        codec::observation(&event).unwrap();
+        let normalized: AuditObservation = codec::normalize(&event, 16384).unwrap();
+        codec::observation(&normalized).unwrap();
+        assert_eq!(normalized, event);
+        codec::envelope(
+            &event.scope,
+            &event.actor,
+            AuditRecordData::Observation(event.clone()),
+            16384,
+        )
+        .unwrap();
+    }
+}
+
+#[test]
+fn native_thread_audit_refuses_other_versions_operations_and_resource_classes() {
+    for completed in [false, true] {
+        let original = native_thread_observation(completed);
+        for capability in [
+            "latent:runtime-native/threads@0.2.0",
+            "latent:runtime-native/other@0.1.0",
+            "foreign:runtime-native/threads@0.1.0",
+        ] {
+            let mut bad = original.clone();
+            bad.identities.capability.as_mut().unwrap().capability = capability.into();
+            assert!(codec::observation(&bad).is_err(), "accepted {capability}");
+        }
+        for operation in ["register", "resume", "start-later", ""] {
+            let mut bad = original.clone();
+            bad.identities.capability.as_mut().unwrap().operation = operation.into();
+            assert!(codec::observation(&bad).is_err(), "accepted {operation}");
+        }
+        for class in [
+            AuditCapabilityResourceClass::Clock,
+            AuditCapabilityResourceClass::Stream,
+            AuditCapabilityResourceClass::Service,
+            AuditCapabilityResourceClass::State,
+        ] {
+            let mut bad = original.clone();
+            bad.identities.capability.as_mut().unwrap().resource_class = class;
+            assert!(codec::observation(&bad).is_err(), "accepted {class:?}");
+        }
+    }
+}
+
+#[test]
+fn native_thread_audit_retains_identity_outcome_and_redaction_boundaries() {
+    let original = native_thread_observation(true);
+    for outcome in [
+        AuditProviderOutcome::HttpResponseReceived,
+        AuditProviderOutcome::BlobSealed,
+        AuditProviderOutcome::SecretResolved,
+        AuditProviderOutcome::LocalDispatchAccepted,
+        AuditProviderOutcome::BrokerAcknowledged,
+    ] {
+        let mut bad = original.clone();
+        bad.identities.capability.as_mut().unwrap().provider_outcome = Some(outcome);
+        assert!(codec::observation(&bad).is_err(), "accepted {outcome:?}");
+    }
+    let mut bad = original.clone();
+    bad.identities.publication = None;
+    assert!(codec::observation(&bad).is_err());
+    let mut bad = original.clone();
+    bad.identities.capability.as_mut().unwrap().binding.revision = 0;
+    assert!(codec::observation(&bad).is_err());
+    let mut bad = original.clone();
+    let context = bad.identities.capability.as_mut().unwrap();
+    context.parent_activation = Some(context.activation.clone());
+    assert!(codec::observation(&bad).is_err());
+    let mut json = serde_json::to_value(&original).unwrap();
+    json["identities"]["capability"]["childPointer"] = "must-not-be-recorded".into();
+    assert!(serde_json::from_value::<AuditObservation>(json).is_err());
+}
