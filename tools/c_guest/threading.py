@@ -28,6 +28,7 @@ SYNC_SYMBOLS = ('pthread_mutex_init', 'pthread_mutex_lock', 'pthread_mutex_trylo
     'pthread_cond_signal', 'pthread_cond_broadcast', 'pthread_cond_timedwait',
     'mtx_init', 'mtx_lock', 'mtx_trylock', 'mtx_unlock', 'mtx_destroy', 'mtx_timedlock',
     'cnd_init', 'cnd_destroy', 'cnd_wait', 'cnd_signal', 'cnd_broadcast', 'cnd_timedwait')
+TIME_SYMBOLS = ('nanosleep', 'thrd_sleep')
 LIBC = {
     'lib/libc/include/wasm-wasi-musl/pthread.h': '21b1fd90de05919d0718109f16fa1408a0750dcf65f63cc661c506f07e8e1ca1',
     'lib/libc/include/generic-musl/threads.h': '402b75ff71dd5051ebf8744fe7e09a9e43740b9798e6c02701929c852972a2fc',
@@ -41,15 +42,30 @@ LIBC = {
     'lib/libc/wasi/libc-bottom-half/cloudlibc/src/libc/errno/errno.c': 'eeecab4885f9dba3df77a2c81c1960f1f84779a2b16f0b2aceb1d83af1d47aa3',
     'lib/libc/wasi/libc-bottom-half/sources/__errno_location.c': 'fb6d59a8ca5b99dc0799db259a7b35e7403818469f6cbf6a6ec1178fec98f702',
 }
+CLOCK_LIBC = {
+    'lib/libc/include/wasm-wasi-musl/time.h': '2ea91196e2b6268feabec85041a9bda6381800b470451a6bcff9445510c93546',
+    'lib/libc/include/wasm-wasi-musl/__header_time.h': '03fe8f66a5ffa0b448a96e9a0f19bde5e8cd5923c024d4e927b16f6d8d9c14c9',
+    'lib/libc/include/wasm-wasi-musl/__typedef_clockid_t.h': '8c5015e345a26d625eae38b7239c01f8f10897d1ed4759f402adfec76ca3373a',
+    'lib/libc/include/wasm-wasi-musl/__struct_timespec.h': 'b19b09edfe60735c5dd38da0416e722409473ec94885e465aab7c4fd98202840',
+    'lib/libc/include/wasm-wasi-musl/__typedef_time_t.h': 'b1ad083733361f8b5077ff9dc3412bd7d7a5f455fdd1eef5fb66d188fada1e98',
+    'lib/libc/wasi/libc-top-half/musl/src/thread/pthread_condattr_setclock.c': '2e59c0481c5f6055ff42553ec5c41aa2515fa850d364a709b0f6135cc7c58824',
+    'lib/libc/wasi/libc-bottom-half/cloudlibc/src/libc/time/clock_gettime.c': '085da1cd574b0e1ad04a59b8537f8bc6bd88c8c267b9339296bcb3602059e171',
+    'lib/libc/wasi/libc-bottom-half/cloudlibc/src/common/clock.h': '2d5729e49eb4b2a63740f77503e551a7bfbf7f2273ddf19c07909972af70e22d',
+    'lib/libc/wasi/libc-bottom-half/cloudlibc/src/common/time.h': 'f741eaba88d013e87a1284d7a270338d45ead8d347b64aac702de4e4fb50ab95',
+}
 
 
-def linked_defines(defines):
-    symbols = (*TLS_SYMBOLS, *SYNC_SYMBOLS)
-    reserved = {'LSF_C_LINKED_LIBC', *symbols,
-                *('__lsf_c_' + name for name in symbols)}
+def linked_defines(defines, *, timed_clock=False):
+    if type(timed_clock) is not bool:
+        raise ValueError('c-threading-timed-clock-selection')
+    symbols = (*TLS_SYMBOLS, *SYNC_SYMBOLS, *(TIME_SYMBOLS if timed_clock else ()))
+    reserved_symbols = symbols
+    reserved = {'LSF_C_LINKED_LIBC', 'LSF_C_TIMED_CLOCK', *reserved_symbols,
+                *('__lsf_c_' + name for name in reserved_symbols)}
     if any(value.split('=', 1)[0] in reserved for value in defines):
         raise ValueError('c-threading-compiler-owned-tls-symbol')
     return (*defines, 'LSF_C_LINKED_LIBC=1',
+            *(('LSF_C_TIMED_CLOCK=1',) if timed_clock else ()),
             *(name + '=__lsf_c_' + name for name in symbols))
 
 
@@ -71,6 +87,19 @@ def libc_material_name(path):
     if path not in LIBC:
         raise ValueError('c-threading-original-libc-material-path')
     return 'c-threading-libc-' + str(sorted(LIBC).index(path))
+
+
+def clock_libc_inputs(zig):
+    paths = {name: zig.parent / name for name in CLOCK_LIBC}
+    if any(digest(read_file(path, 32768)) != 'sha256:' + CLOCK_LIBC[name] for name, path in paths.items()):
+        raise ValueError('c-threading-original-libc-clock-preimage')
+    return paths
+
+
+def clock_libc_material_name(path):
+    if path not in CLOCK_LIBC:
+        raise ValueError('c-threading-original-libc-clock-material-path')
+    return 'c-threading-clock-' + str(sorted(CLOCK_LIBC).index(path))
 
 
 def stage(source: Path, world: str, destination: Path, platform: Path) -> Path:

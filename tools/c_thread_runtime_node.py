@@ -310,6 +310,24 @@ def wait_child(client, process, probe, target, output):
     raise ValueError('c-thread-child-entry-not-observed')
 
 
+def wait_audit_idle(client, target, output, activation):
+    names = ('audit_queued_operations', 'audit_queued_bytes', 'audit_reserved_records',
+        'audit_reserved_bytes', 'audit_pending_attempts', 'audit_query_owners',
+        'audit_query_bytes', 'audit_recovery_pending', 'audit_closed')
+    for attempt in range(16):
+        observed = usage(client, target, idle=True)
+        write_json(output / ('audit-before-' + activation + '-' + str(attempt) + '.json'), observed)
+        counters = observed['nodeUsage']['counters']
+        require(integer(counters['audit_closed']) == 0
+            and integer(counters['audit_recovery_pending']) == 0, 'c-thread-precall-audit-live')
+        if all(integer(counters[name]) == 0 for name in names):
+            write_json(output / ('audit-before-' + activation + '.json'), observed)
+            return observed
+        if attempt < 15:
+            time.sleep(0.01)
+    raise ValueError('c-thread-precall-audit-idle-premise')
+
+
 def invoke(client, probe, target, output, mode, activation, *, cancel=False):
     revision = selected_revision(client, target)
     # This final case runs after the ordinary hot-cache controls. Request a
@@ -317,13 +335,7 @@ def invoke(client, probe, target, output, mode, activation, *, cancel=False):
     # CPU-spin envelope; the actual terminal cause and positive child/physical
     # barrier remain mandatory. This makes no fairness or timing guarantee.
     if mode in ('cancel', 'deadline'):
-        audit_before = usage(client, target, idle=True)
-        write_json(output / ('audit-before-' + activation + '.json'), audit_before)
-        counters = audit_before['nodeUsage']['counters']
-        require(all(integer(counters[name]) == 0 for name in ('audit_queued_operations',
-            'audit_queued_bytes', 'audit_reserved_records', 'audit_reserved_bytes', 'audit_pending_attempts',
-            'audit_query_owners', 'audit_query_bytes', 'audit_recovery_pending', 'audit_closed')),
-            'c-thread-precall-audit-idle-premise')
+        wait_audit_idle(client, target, output, activation)
     process = start_call(client, target, SERVICE, 'greet', [mode], activation,
                          wall=250 if mode == 'deadline' else None)
     primary = False
