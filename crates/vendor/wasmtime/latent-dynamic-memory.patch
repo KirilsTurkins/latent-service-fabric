@@ -1,13 +1,13 @@
 --- a/src/runtime.rs
 +++ b/src/runtime.rs
-@@ -48,6 +48,7 @@
- pub(crate) mod instance;
- pub(crate) mod instantiate;
- pub(crate) mod limits;
-+pub(crate) mod native_memory;
- pub(crate) mod linker;
- pub(crate) mod memory;
+@@ -53,6 +53,7 @@
  pub(crate) mod module;
+ #[cfg(feature = "debug-builtins")]
+ pub(crate) mod native_debug;
++pub(crate) mod native_memory;
+ pub(crate) mod resources;
+ pub(crate) mod store;
+ pub(crate) mod trampoline;
 --- a/src/runtime/component/concurrent/func.rs
 +++ b/src/runtime/component/concurrent/func.rs
 @@ -1,10 +1,12 @@
@@ -511,7 +511,7 @@
      }
 --- a/src/runtime/component/mod.rs
 +++ b/src/runtime/component/mod.rs
-@@ -810,3 +810,10 @@
+@@ -810,3 +810,9 @@
  
  #[cfg(not(feature = "component-model-async"))]
  pub(crate) use concurrent_disabled as concurrent;
@@ -520,8 +520,7 @@
 +pub use dynamic_memory::DynamicValueMemory;
 +
 +/// Native source cohort for the maintained original-owner dynamic value extension.
-+pub const DYNAMIC_VALUE_MEMORY_COHORT: &str =
-+    "wasmtime-48.0.7-latent-value-table-store-memory-v2";
++pub const DYNAMIC_VALUE_MEMORY_COHORT: &str = "wasmtime-48.0.7-latent-value-table-store-memory-v2";
 --- a/src/runtime/component/store.rs
 +++ b/src/runtime/component/store.rs
 @@ -1,5 +1,6 @@
