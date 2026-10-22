@@ -302,9 +302,24 @@ CONTROLS = (('original-host-memory',
    'budget::descendants::native_retirement_tests::ordinary_retained_accounting_owner_still_holds_the_whole_accepted_grant',
    'budget::descendants::native_retirement_tests::missing_or_invalid_completion_remains_conservative_with_native_only_owners',
    'budget::descendants::native_retirement_tests::transitive_native_ancestry_never_pins_an_ordinary_ancestor_cumulative_grant',
-   'budget::descendants::native_retirement_tests::concurrent_last_ordinary_and_physical_owners_settle_each_original_counter_once')))
+   'budget::descendants::native_retirement_tests::concurrent_last_ordinary_and_physical_owners_settle_each_original_counter_once')),
+ ('original-handle-owned-text',
+  'latent-capabilities',
+  'broker::session::native_handle::tests::',
+  ('broker::session::native_handle::tests::original_handle_native_all_shipping_owned_text_shapes_include_nested_copies',)),
+ ('original-handle-native-owner',
+  'latent-capabilities',
+  'broker::tests::handle_native_memory::',
+  ('broker::tests::handle_native_memory::original_handle_native_backing_is_distinct_from_logical_metadata_and_legacy',
+   'broker::tests::handle_native_memory::original_handle_native_refusal_precedes_allocation_and_preserves_admission',
+   'broker::tests::handle_native_memory::original_handle_last_shared_drops_keep_text_headers_and_stats_paid_after_session_close')),
+ ('original-pending-clock-handle-native-owner',
+  'latent-capabilities',
+  'original_pending_clock_handle_native_',
+  ('broker::tests::clocks::original_pending_clock_handle_native_row_is_one_paid_owner_before_publication',
+   'broker::tests::clocks::original_pending_clock_handle_native_refusal_does_not_publish_or_count_a_row')))
 
-NATIVE_COHORT = 'wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-retained-capability-directories-blob-streaming-shared-tables-runtime-timer-strong-weak-session-core-stats-c-canonical-system-stack-native-only-cumulative-retirement-memory-v14'
+NATIVE_COHORT = 'wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-retained-capability-directories-blob-streaming-shared-tables-runtime-timer-strong-weak-session-core-stats-c-canonical-system-stack-native-only-cumulative-retirement-handle-owned-text-memory-v15'
 
 PRODUCTS = ('latent', 'latentd', 'examples/package', 'examples/capsule_contracts', 'examples/capsule_authoring')
 RECIPE = ('.github/workflows/host-codec-memory.yml', '.cargo/managed-guest.toml',
@@ -393,8 +408,8 @@ def qualify(output: Path, revision: str) -> dict:
     require(re.fullmatch('[0-9a-f]{40}', revision) is not None, 'host-codec-source-revision')
     require(sys.platform == 'linux', 'host-codec-linux-owner-required')
     names = [name for _,_,_,cases in CONTROLS for name in cases]
-    require(len(CONTROLS) == 37 and len({row[0] for row in CONTROLS}) == 37
-            and len(names) == len(set(names)) == 177, 'host-codec-control-inventory')
+    require(len(CONTROLS) == 40 and len({row[0] for row in CONTROLS}) == 40
+            and len(names) == len(set(names)) == 183, 'host-codec-control-inventory')
     output = fresh(output)
     codec_wasmtime.verify(ROOT)
     before, inputs = source_identity(ROOT), materials(ROOT)
@@ -432,13 +447,13 @@ def qualify(output: Path, revision: str) -> dict:
             products[name] = identity
         record = {'schemaVersion':'latent.host-codec.native-products.v1','status':'passed',
             'sourceRevision':revision,'source':before,'materials':inputs,'compiler':compiler,
-            'products':products,'commands':stages.records,'controlCount':177,'nativeCohort':NATIVE_COHORT,
+            'products':products,'commands':stages.records,'controlCount':183,'nativeCohort':NATIVE_COHORT,
             'wasmtimeAllocationCohort':codec_wasmtime.COHORT,
             'controls':{stage:list(names) for stage,_,_,names in CONTROLS},
             'profile':'normal-managed-guest-default-features','signedQualification':False,
             'guestJavaScriptEngineCompiled':False,'guestSourceCompiled':False,
             'historicalReceiptRewritten':False,
-            'scope':'ordinary-physical-native-only-accounting-retention-separate-from-last-ordinary-owner-cumulative-child-retirement-and-original-sealed-session-Core-and-Stats-strong-and-weak-Arc-backing-including-both-private-billing-Arcs-owned-identity-text-and-fixed-handle-slots-and-selected-C-canonical-realloc-private-System-stack-routing-and-ordinary-runtime-and-timer-strong-and-weak-Arc-backing-including-private-billing-Arc-and-ordinary-host-blob-fixed-Vec-and-streaming-HTTP-fixed-Vec-and-two-private-Shared-Arc-storage-shapes-and-three-retained-capability-directory-backings-and-six-closed-context-reply-buffers-and-concrete-callback-future-box-and-retained-activation-context-and-linear-allocation-notifications-codec-table-and-selected-Store-instance-buffer-registry-FuncRefs-container-resource-substitutions-original-memory-and-selected-c-public-async-type-sync-core-admission-and-authenticated-c-ready-handoff-and-closed-guest-trap-diagnostics-and-exact-native-thread-audit-codec-and-CLI-projection; direct-Core-HostFunc-construction, shared-preparation-closures, concurrent-task, other-hostcall-values-custom-Lower-shared-interior-error-owned-copies-and-opaque-accessor-scheduler-frames, request ingress and discarded scaffolding and other hostcall copies, shared broker and compiled-plan preparation, HandleEntry and transitive provider payload/transport/queue graphs, legacy framing and serialized controller frames excluded'}
+            'scope':'original-HandleEntry-row-and-every-owned-resource-text-copy-and-pending-clock-row-followed-by-ordinary-physical-native-only-accounting-retention-separate-from-last-ordinary-owner-cumulative-child-retirement-and-original-sealed-session-Core-and-Stats-strong-and-weak-Arc-backing-including-both-private-billing-Arcs-owned-identity-text-and-fixed-handle-slots-and-selected-C-canonical-realloc-private-System-stack-routing-and-ordinary-runtime-and-timer-strong-and-weak-Arc-backing-including-private-billing-Arc-and-ordinary-host-blob-fixed-Vec-and-streaming-HTTP-fixed-Vec-and-two-private-Shared-Arc-storage-shapes-and-three-retained-capability-directory-backings-and-six-closed-context-reply-buffers-and-concrete-callback-future-box-and-retained-activation-context-and-linear-allocation-notifications-codec-table-and-selected-Store-instance-buffer-registry-FuncRefs-container-resource-substitutions-original-memory-and-selected-c-public-async-type-sync-core-admission-and-authenticated-c-ready-handoff-and-closed-guest-trap-diagnostics-and-exact-native-thread-audit-codec-and-CLI-projection; direct-Core-HostFunc-construction, shared-preparation-closures, concurrent-task, other-hostcall-values-custom-Lower-shared-interior-error-owned-copies-and-opaque-accessor-scheduler-frames, request ingress and discarded scaffolding and other hostcall copies, shared broker and compiled-plan preparation and transitive provider payload/transport/queue graphs, legacy framing and serialized controller frames excluded'}
         write_json(output/'native-products.json',record)
         return record
     except Exception as error:
