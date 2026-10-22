@@ -385,7 +385,7 @@ pub(crate) fn install(linker: &mut Linker<HostState>) -> wasmtime::Result<()> {
             )
         },
     )?;
-    interface.func_wrap::<(), (context::ResourceBudget,), _>(
+    interface.func_wrap::<_, (), (context::ResourceBudget,)>(
         "remaining-budget",
         |caller, ()| {
             let access = Access::<HostState, HasSelf<HostState>>::new(caller, |state| state);
