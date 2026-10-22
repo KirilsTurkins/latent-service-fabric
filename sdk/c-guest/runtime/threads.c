@@ -102,10 +102,6 @@ int __lsf_c_root_initialize(struct lsf_c_thread *root,uint32_t extent) {
     root->canonical_id=lsf_c_thread_index();return 0;
 }
 
-__attribute__((export_name("__lsf_c_template_copy")))
-void __lsf_c_template_copy(void *destination) {
-    (void)destination;__builtin_trap();
-}
 static int ensure_template(struct lsf_c_thread *root) {
     if (root->initial_template!=NULL) return 0;
     require(token_live(root->task) && token_live(root->context_owner));

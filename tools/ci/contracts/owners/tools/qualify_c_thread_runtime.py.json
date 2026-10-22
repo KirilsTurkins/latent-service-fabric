@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_c_thread_runtime.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Review one normal C build and all original17 signed lifecycle oracles on the independently verified immutable114 native cohort; admit only the exact unselected stream-test correction, retain original defaults/caps and old receipts, no native rebuild.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "3a6600e52c3deea7f10938b1771f8d02e5d66dd8e80b69e0eba92469c02b01b8"
+}

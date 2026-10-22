@@ -1,0 +1,38 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "c-thread-ready-minimal-${{ github.ref }}"
+    },
+    "name": "Ready-aware ordinary C child diagnostic",
+    "on": {
+      "push": {
+        "branches": [
+          "diag/c-thread-ready-minimal-20261022"
+        ],
+        "paths": [
+          ".github/workflows/c-thread-ready-handoff.yml",
+          "tools/c_thread_minimal_fixture.py",
+          "tools/diagnose_c_thread_ready_handoff.py",
+          "tools/host_codec_funcrefs_native_products.py",
+          "tools/host_codec_funcrefs_native_products_reader.py",
+          "tools/tests/test_host_codec_funcrefs_native_products.py",
+          "tools/tests/test_c_thread_ready_handoff.py",
+          "sdk/c-guest/runtime/thread-abi.h",
+          "tools/tests/test_c_thread_minimal.py"
+        ]
+      }
+    },
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "minimal-child"
+  ],
+  "reviewReason": "Review one fresh ordinary C build and five diagnostic observations on independently authenticated immutable v4 products, preserving old seventeen-call and historical diagnostics; no qualification claim.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/c-thread-ready-handoff.yml"
+}

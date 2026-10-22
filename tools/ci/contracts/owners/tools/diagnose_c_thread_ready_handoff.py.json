@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/diagnose_c_thread_ready_handoff.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Review one fresh ordinary C build and five diagnostic observations on independently authenticated immutable v4 products, preserving old seventeen-call and historical diagnostics; no qualification claim.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "7728abdd3942b3cfdcdfe77068d7469245a84aed2005d4f5bd3e9778c2ffad49"
+}

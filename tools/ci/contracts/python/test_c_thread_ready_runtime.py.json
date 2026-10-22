@@ -1,0 +1,36 @@
+{
+  "cases": [
+    "CThreadReadyRuntime.test_fixed_v4_admission_runs_before_any_compiler_or_node_work",
+    "CThreadReadyRuntime.test_seventeen_outcomes_oracles_caps_and_default_assert_current_are_unchanged"
+  ],
+  "guards": {
+    "CThreadReadyRuntime.test_fixed_v4_admission_runs_before_any_compiler_or_node_work": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:7048f107c46769e4eb6e0788f478f920d8a241b5f7333084d5babedb8fdaadf8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CThreadReadyRuntime.test_seventeen_outcomes_oracles_caps_and_default_assert_current_are_unchanged": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:7048f107c46769e4eb6e0788f478f920d8a241b5f7333084d5babedb8fdaadf8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_c_thread_ready_runtime.py",
+  "reviewReason": "Root full-reviewed positive-only child evidence reader and helper/import changes; preserve every prior case ID/base/decorator/skip and default zero-drop behavior; add3 bounded positive/absence/adverse cases.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

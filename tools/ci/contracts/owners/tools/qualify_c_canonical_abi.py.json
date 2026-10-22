@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_c_canonical_abi.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Bind the new included synchronization translation unit alongside original C runtime sources; preserve all ABI controls, compiled target, source counts and unsupported-profile assertions.",
+  "reviewReason": "Compose the reviewed C17 sync Core binding selection and both captured included C runtime units, template-copy.c and synchronization.c, without altering prior ABI controls or qualification claims.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "dadab6a22b7b8689d5f97a914f4e30fc46c94e6f81a0a1ae22fc45f8f9e24892"
+  "sha256": "6dce1573a4de2fa81253738456e2669b48e73ae0ffd171710598815b99d58538"
 }
