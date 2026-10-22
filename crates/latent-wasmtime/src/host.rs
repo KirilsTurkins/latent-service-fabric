@@ -220,7 +220,7 @@ impl ResourceLimiter for TrackingLimiter {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub(crate) struct ActivationHostContext {
     activation_id: ActivationId,
     root_activation_id: ActivationId,
@@ -232,6 +232,8 @@ pub(crate) struct ActivationHostContext {
     baggage: Metadata,
     deadline_unix_millis: Option<u64>,
     metadata: Metadata,
+    // Declared last: every retained String/map is destroyed before refund.
+    _context_memory: Option<latent_core::HostMemoryReservation>,
 }
 
 impl ActivationHostContext {
@@ -259,6 +261,7 @@ impl ActivationHostContext {
             baggage,
             deadline_unix_millis,
             metadata,
+            _context_memory: None,
         }
     }
 }
