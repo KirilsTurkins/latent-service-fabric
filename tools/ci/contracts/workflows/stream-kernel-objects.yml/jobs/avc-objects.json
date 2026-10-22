@@ -3,7 +3,7 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "if": "${{ inputs.registration != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-device-registration-20261021') && (inputs.firmware != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-device-setup-20261021') && (inputs.device != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-device-closure-20261021') && (inputs.packet != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-packet-prefix-20261021') && (inputs.route_cache != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-cache-20261021') && (inputs.route != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-consumer-20261021') && (inputs.bind != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-owners-20261021') && (inputs.audit != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-audit-skb-20261021') && ((github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-avc-consumer-20261021') || inputs.avc == true)))))))) }}",
+    "if": "${{ inputs.recipient != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-device-recipient-20261022') && (inputs.registration != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-device-registration-20261021') && (inputs.firmware != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-device-setup-20261021') && (inputs.device != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-device-closure-20261021') && (inputs.packet != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-packet-prefix-20261021') && (inputs.route_cache != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-cache-20261021') && (inputs.route != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-consumer-20261021') && (inputs.bind != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-owners-20261021') && (inputs.audit != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-audit-skb-20261021') && ((github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-avc-consumer-20261021') || inputs.avc == true))))))))) }}",
     "name": "Sixteen actual maintained objects with AVC and SID cache",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -66,7 +66,7 @@
   },
   "jobId": "avc-objects",
   "kind": "job",
-  "reviewReason": "Reviewed grouped uninstalled PCI registration sysfs IDR and uevent consumers; exclusive48object/201function compile retains all prior profiles commands cases security and original bounds; no runtime physical closure link boot or installation qualification",
+  "reviewReason": "Reviewed grouped recipient signal and mandatory security source; one exclusive object-only lane retains every historical command, case, configuration and physical qualification boundary.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/stream-kernel-objects.yml"
 }

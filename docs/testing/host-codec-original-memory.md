@@ -5,8 +5,8 @@ actual Wasmtime dynamic result allocations and encoded output to the supplied
 original activation budget. Raw input's existing allocation is charged at the
 invocation ownership boundary. New decoded, lifted and encoded buffers reserve
 before allocation; growth pays for old and replacement buffers while both exist.
-The reported consumption includes the
-original ledger peak after result encoding.
+The activation owner combines the backend's own guest-memory report with the
+original ledger, whose peak includes native owners and result encoding.
 
 The pinned Wasmtime 48.0.7 extension reserves actual strings, containers, names,
 flags and boxed values before allocation. Parameter copies have an independent
@@ -71,9 +71,56 @@ sources receive no retroactive passing credit. The original v1 receipt remains
 unchanged. V2 is also unsigned and native-only, with implicit compiler inputs
 unattested; no guest or JavaScript-engine build ran.
 
+## Store-local registry ownership
+
+[The separate v3 evidence](evidence/host-codec-registry-native-2026-10-22.json)
+binds [run 39705847409](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39705847409)
+at `48a6532d8e1f23e7abd8e47d2e75a4dcaf5216f9`. **All 85 native controls passed**,
+including four registry controls. Independent checks cover all 87 archive members,
+39 commands, 78 log streams, five products, 3,611 source files and 148 materials.
+
+The three Store-local registry indices and sparse secondary module maps now pay
+for actual backing, spare capacity and old/new replacement overlap. Registration
+admits every replacement before publishing edges; refusal preserves previous
+entries. Duplicate and foreign-Engine cases, sparse lookup, actual guest calls
+and closed backtrace lookup are covered. Physical buffers are freed before their
+owners refund. Shared Engine code metadata remains outside this Store-local slice.
+
+Shared CI separately exposed a backend report that included native memory already
+owned by the original ledger, causing finalization to charge it twice. That
+integration failure remains distinct from this successful native tuple. The report
+boundary correction keeps backend reports guest-only and final consumption
+aggregate; a later composed source does not inherit this archive's execution claim.
+V3 remains unsigned and native-only; previous receipts are unchanged.
+
+## Store-local function reference ownership
+
+[The separate v4 evidence](evidence/host-codec-funcrefs-native-2026-10-22.json)
+binds [run 39711228748](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39711228748)
+at `3e4178271b4b7fe75a69c8f0665dbe275b41d7c3`. **All 92 native controls passed**:
+the previous 85 selectors, five actual function-reference controls and two
+canonical C Ready handoff controls. Independent verification covers all 95
+archive members, 43 commands, 86 log streams, five products, 3,615 source files
+and 148 materials.
+
+Selected function-reference boxes, arena capacity and root directories now retain
+their original activation owners. All staged capacities and boxes are admitted
+before publishing a root or pointer; refusal preserves earlier roots and guest
+calls. InstancePre pairs admit both root slots together. Default-function lookup
+preserves a defined function's original admission error. Legacy embeddings retain
+their original arena behavior.
+
+The same native run passed the strengthened backend/core reporting controls:
+backend reports contain own guest memory, while the original ledger retains the
+aggregate native peak. The later generic integration fixture correction at
+`99be2b4275c72ee10a8f88d58d93f761cebb8d0e` equalizes request identity lengths;
+the frozen v4 run did not execute that later fixture. V4 remains unsigned and
+native-only; it did not compile or execute a C or TypeScript guest.
+
 ## Scope retained outside this slice
 
-Per-Store registry metadata, FuncRefs, concurrent tasks, hostcall backing and
+Resource-substitution metadata, direct Core HostFunc construction, shared
+preparation closures, concurrent tasks, hostcall backing and
 request-context transitive allocations still need their remaining ownership
 work. Serialized controller/transport frames and legacy Phase0 framing retain
 their existing boundaries. These common runtime prerequisites are a partial
