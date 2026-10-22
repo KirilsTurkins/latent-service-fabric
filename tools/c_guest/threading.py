@@ -19,6 +19,15 @@ EXPORTS = ('__stack_pointer', '__tls_base', '__data_end', '__heap_base', '__stac
 # changes to the original libc archive. Static archives remain unsupported.
 TLS_SYMBOLS = ('pthread_key_create', 'pthread_key_delete', 'pthread_getspecific',
                'pthread_setspecific', 'tss_create', 'tss_delete', 'tss_get', 'tss_set')
+# The selected source synchronization implementation must likewise remain
+# distinct from strong pthread/C11 symbols in the unchanged precompiled libc.
+SYNC_SYMBOLS = ('pthread_mutex_init', 'pthread_mutex_lock', 'pthread_mutex_trylock',
+    'pthread_mutex_unlock', 'pthread_mutex_destroy', 'pthread_mutex_timedlock',
+    '__pthread_mutex_lock', '__pthread_mutex_trylock', '__pthread_mutex_unlock',
+    'pthread_cond_init', 'pthread_cond_destroy', 'pthread_cond_wait',
+    'pthread_cond_signal', 'pthread_cond_broadcast', 'pthread_cond_timedwait',
+    'mtx_init', 'mtx_lock', 'mtx_trylock', 'mtx_unlock', 'mtx_destroy', 'mtx_timedlock',
+    'cnd_init', 'cnd_destroy', 'cnd_wait', 'cnd_signal', 'cnd_broadcast', 'cnd_timedwait')
 LIBC = {
     'lib/libc/include/wasm-wasi-musl/pthread.h': '21b1fd90de05919d0718109f16fa1408a0750dcf65f63cc661c506f07e8e1ca1',
     'lib/libc/include/generic-musl/threads.h': '402b75ff71dd5051ebf8744fe7e09a9e43740b9798e6c02701929c852972a2fc',
@@ -35,12 +44,13 @@ LIBC = {
 
 
 def linked_defines(defines):
-    reserved = {'LSF_C_LINKED_LIBC', *TLS_SYMBOLS,
-                *('__lsf_c_' + name for name in TLS_SYMBOLS)}
+    symbols = (*TLS_SYMBOLS, *SYNC_SYMBOLS)
+    reserved = {'LSF_C_LINKED_LIBC', *symbols,
+                *('__lsf_c_' + name for name in symbols)}
     if any(value.split('=', 1)[0] in reserved for value in defines):
         raise ValueError('c-threading-compiler-owned-tls-symbol')
     return (*defines, 'LSF_C_LINKED_LIBC=1',
-            *(name + '=__lsf_c_' + name for name in TLS_SYMBOLS))
+            *(name + '=__lsf_c_' + name for name in symbols))
 
 
 def selected(project):
