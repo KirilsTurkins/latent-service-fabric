@@ -375,6 +375,8 @@ fn trap_label(trap: &Trap) -> &'static str {
         Trap::BadConversionToInteger => "bad-conversion-to-integer",
         Trap::UnreachableCodeReached => "unreachable-code",
         Trap::AllocationTooLarge => "allocation-too-large",
+        Trap::CannotBlockSyncTask => "cannot-block-sync-task",
+        Trap::CannotResumeThread => "cannot-resume-thread",
         _ => "guest-fault",
     }
 }
@@ -500,6 +502,11 @@ mod tests {
             ),
             (Trap::UnreachableCodeReached, GuestTrapKind::UnreachableCode),
             (Trap::AllocationTooLarge, GuestTrapKind::AllocationTooLarge),
+            (
+                Trap::CannotBlockSyncTask,
+                GuestTrapKind::CannotBlockSyncTask,
+            ),
+            (Trap::CannotResumeThread, GuestTrapKind::CannotResumeThread),
         ] {
             let outcome =
                 classify_runtime_failure(None, false, Some(&engine_trap), consumption()).unwrap();

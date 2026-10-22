@@ -21,7 +21,7 @@ class PinnedWasmtimeSource(unittest.TestCase):
 
     def test_exact_vendor_source_and_original_license_are_required_by_the_ci_graph(self):
         checked = source.verify()
-        self.assertEqual(len(checked['files']), 255)
+        self.assertEqual(len(checked['files']), 256)
         self.assertEqual(checked['nativeCohort'], source.COHORT)
         self.assertEqual(checked['licenseFiles'], {'LICENSE': hashlib.sha256(
             (source.ROOT / source.PROVIDER / 'LICENSE').read_bytes()).hexdigest()})
@@ -112,6 +112,41 @@ class PinnedWasmtimeSource(unittest.TestCase):
             (root / 'member/Cargo.toml').write_text('[package]\nname="member"\nversion="0.1.0"\n[dependencies]\nwasmtime={path="../foreign"}\n')
             with self.assertRaisesRegex(ValueError, 'unregistered-path-dependency'):
                 registry.workspace(root)
+
+    def test_actual_table_hook_sources_and_new_cohort_require_exact_postimages(self):
+        self.assertEqual(source.COHORT, 'wasmtime-48.0.7-latent-value-table-store-memory-v2')
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.fixture(root)
+            for name in ('src/runtime/limits.rs', 'src/runtime/store.rs',
+                         'src/runtime/vm/table.rs',
+                         'src/runtime/vm/instance/allocator/pooling/table_pool.rs'):
+                with self.subTest(name=name):
+                    target = root / source.PROVIDER / name
+                    original = target.read_bytes()
+                    target.write_bytes(original + b'\nchanged-table-owner\n')
+                    with self.assertRaisesRegex(ValueError, 'host-codec-wasmtime-source-identity'):
+                        source.verify(root)
+                    target.write_bytes(original)
+            self.assertEqual(source.verify(root)['nativeCohort'], source.COHORT)
+
+
+    def test_store_header_binding_and_guarded_buffer_postimages_cannot_be_substituted(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.fixture(root)
+            for name in ('src/runtime/native_memory.rs', 'src/runtime/vm/instance.rs',
+                         'src/runtime/vm/component.rs', 'src/runtime/component/store.rs',
+                         'src/runtime/store/data.rs', 'src/runtime/vm/component/resources.rs',
+                         'src/runtime/vm/instance/allocator.rs', 'src/runtime.rs'):
+                with self.subTest(name=name):
+                    target = root / source.PROVIDER / name
+                    original = target.read_bytes()
+                    target.write_bytes(original + b'\nchanged-store-owner\n')
+                    with self.assertRaisesRegex(ValueError, 'host-codec-wasmtime-source-identity'):
+                        source.verify(root)
+                    target.write_bytes(original)
+            self.assertEqual(len(source.verify(root)['files']), 256)
 
 
 if __name__ == '__main__':

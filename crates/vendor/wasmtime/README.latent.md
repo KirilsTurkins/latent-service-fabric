@@ -1,10 +1,10 @@
-# Pinned dynamic component-value allocation admission
+# Pinned value, table and Store allocation admission
 
 This is the complete crates.io Wasmtime 48.0.7 package, licensed under
 Apache-2.0 WITH LLVM-exception (see the unmodified LICENSE). The original
 archive checksum and all 250 original file identities are recorded in
 UPSTREAM.latent.json. `latent-dynamic-memory.patch` applies to that exact
-original package; it contains the six changed upstream files and two added
+original package; it contains seventeen changed upstream files and three added
 implementation files. Other Wasmtime packages remain at the original locked
 registry versions.
 
@@ -34,10 +34,60 @@ retains confirmed actual allocations through native unwind, without confirming
 a hypothetical signature maximum as observed peak.
 
 The native cohort is
-`wasmtime-48.0.7-latent-dynamic-value-memory-v1`. Runtime engine configuration
-identity includes this cohort, so old prepared/AOT identity cannot certify the
-new host. The native programme retains the original 52 controls and adds six
-actual engine allocation controls, one linked-child journal retirement control and
-two selected C public async-type/synchronous-Core admission controls. This source package is not itself evidence
-that any control executed or that the whole host/transport resource contract is
-complete.
+`wasmtime-48.0.7-latent-value-table-store-memory-v2`. Runtime engine configuration identity
+includes this cohort, so old prepared/AOT identity cannot certify this host.
+The earlier v1/7b native programme passed its original 61 controls and retains
+its immutable source and receipts. The v2 table/Store extension and its nineteen planned
+native controls have not yet received native qualification.
+
+The optional `ResourceLimiter::table_allocating` hook returns an owned original
+allocation guard. Actual table backing destroys before its guard; dropping Store
+user data does not refund a still-live table. Accounted dynamic growth admits the
+exact checked replacement Layout while retaining the old buffer and owner, moves
+Option cells without cloning, then destroys old backing before refund. Explicit
+None initialization avoids assuming a zero representation for continuation refs.
+Ordinary embeddings without the hook keep the original unaccounted growth path.
+
+Pooling reserves the complete page-aligned slot before committing its pages and
+retains the guard in the real Table through its existing reset/decommit queue.
+Engine-wide pool creation remains node-owned. Original finite element/count and
+pool limits remain; a table callback confirms preceding completed linear growth
+before native backing competes for the same activation ledger. This table slice
+does not claim all Store metadata, controller/transport frames or legacy Phase0
+memory is charged, and the source package is not execution evidence.
+
+
+The optional NativeMemory factory is selected before Store construction. LSF
+Phase3/4 transfers a paid NativeMemoryBinding: its only Arc is created from an
+owned factory value after admission; no strong/Weak handle is exposed. The
+finite Arc Layout follows pinned Rust1.97.1 alloc/src/sync.rs ArcInner
+(repr(C,align(2)), two AtomicUsize counters, T, checked extend/pad_to_align).
+The factory binding is destroyed after all private Store/container clones and
+after actual inner Box destruction, and refunds only after its Arc backing is
+freed. Generic externally supplied factory Arcs remain caller-owned.
+
+StoreInner's exact Box Layout is reserved before allocation. Constructor failure
+keeps T ordinarily owned until the Box is initialized, then a complete Store
+wrapper handles dummy-instance refusal and exactly-once data destruction.
+The Box guard and binding live outside that Box, including into_data. Context
+references still point to the stable StoreInner address. Destruction uncertainty
+retains admission conservatively rather than refunding leaked backing.
+
+Both Core and Component raw instance/VMContext Layouts hold their affine owner
+in the actual trailing OwnedVMContext header; the pointer-sized OwnedInstance
+handle is unchanged. The owner is extracted before actual instance destruction,
+then released after exact raw deallocation. Context inverse pointers use the
+complete instance size, with a real-constructor debug roundtrip assertion.
+
+Private NativeMap/NativeVec wrappers preadmit exact checked capacities for the
+Store/Core/Component instance-owner vectors, Core memory/table descriptors,
+Component state/runtime-instance maps and passive segment arrays. Actual old/new
+replacement overlap is admitted; source-owning iterators retain original guards
+until buffers die. Entry/slice mutation cannot expose an allocating container.
+Original unaccounted embedding paths retain the existing fallible containers.
+
+This extension does not pay the remaining per-Store module-registry trees,
+FuncRefs bump/vector backing, concurrent task/queue/resource and hostcall frames,
+request-context transitive buffers, or controller/legacy transport allocations.
+Existing finite caps are not original memory admission. Whole SDK cost acceptance
+remains open; the source package and planned controls are not execution evidence.

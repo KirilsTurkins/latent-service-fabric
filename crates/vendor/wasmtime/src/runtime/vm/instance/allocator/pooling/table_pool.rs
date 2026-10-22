@@ -147,12 +147,36 @@ impl TablePool {
             pool: self,
             allocation_index,
             active: true,
+            allocation: None,
         };
 
+        let limits = Table::limit_new(ty, request.limiter.as_deref_mut()).await?;
+        let element_type = crate::vm::table::wasm_to_table_type(ty.ref_type);
+        let element_size = element_type.element_size();
+        ensure!(
+            element_size != 0,
+            "zero-sized reference tables require the on-demand allocator"
+        );
+        let data_size = self.data_size(element_type);
+        // The same physical capacity check as new_static, before page commit.
+        // In particular, continuation cells can exceed the nominal pointer size.
+        ensure!(
+            limits.0 <= data_size / element_size,
+            "initial table size of {} exceeds the pooling allocator's configured maximum table size",
+            limits.0,
+        );
+        // This existing index guard retains pending/confirmed admission until
+        // either a successful Table takes it, or safe unpublished-slot return.
+        guard.allocation = match request.limiter.as_deref_mut() {
+            Some(limiter) => limiter.table_allocating(self.table_size.byte_count())?,
+            None => None,
+        };
         let base = self.get(allocation_index);
-        let data_size = self.data_size(crate::vm::table::wasm_to_table_type(ty.ref_type));
         unsafe {
             commit_pages(base, data_size)?;
+        }
+        if let Some(owner) = &mut guard.allocation {
+            owner.allocated();
         }
 
         let ptr = NonNull::new(std::ptr::slice_from_raw_parts_mut(base.cast(), data_size)).unwrap();
@@ -161,9 +185,9 @@ impl TablePool {
                 ty,
                 tunables,
                 SendSyncPtr::new(ptr),
-                request.limiter.as_deref_mut(),
-            )
-            .await?
+                limits,
+                &mut guard.allocation,
+            )?
         };
         guard.active = false;
         return Ok((allocation_index, table));
@@ -172,6 +196,8 @@ impl TablePool {
             pool: &'a TablePool,
             allocation_index: TableAllocationIndex,
             active: bool,
+            // Drop runs the slot return below before this field refunds it.
+            allocation: Option<Box<dyn crate::TableAllocation>>,
         }
 
         impl Drop for DeallocateIndexGuard<'_> {
@@ -179,6 +205,10 @@ impl TablePool {
                 if !self.active {
                     return;
                 }
+                // No application table was published or could write the slot.
+                // Original pool clear/commit invariants therefore allow this
+                // abort return. Admission remains live until this transfer to
+                // the node pool completes; fields only drop after this body.
                 self.pool
                     .index_allocator
                     .free(SlotId(self.allocation_index.0), 0);

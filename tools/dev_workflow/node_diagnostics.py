@@ -10,7 +10,7 @@ TRAP_CODES = frozenset({"guest-trap", "guest-runtime-error", "budget-accounting-
 TRAP_KINDS = frozenset({"stack-overflow", "memory-out-of-bounds", "heap-misaligned",
     "table-out-of-bounds", "indirect-call-to-null", "bad-signature", "integer-overflow",
     "integer-division-by-zero", "bad-conversion-to-integer", "unreachable-code",
-    "allocation-too-large", "guest-fault", "runtime-error"})
+    "allocation-too-large", "cannot-block-sync-task", "cannot-resume-thread", "guest-fault", "runtime-error"})
 RUNTIME_PHASES = frozenset({"instantiate", "export-lookup", "call-and-postreturn"})
 CURRENTNESS_REASONS = frozenset({
     "admission-authority-busy", "admission-authority-poisoned", "admission-control-busy",

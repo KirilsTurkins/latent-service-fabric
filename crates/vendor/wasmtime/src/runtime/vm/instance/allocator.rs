@@ -1,4 +1,5 @@
 use crate::prelude::*;
+use crate::runtime::native_memory::NativeMap;
 use crate::runtime::vm::imports::Imports;
 use crate::runtime::vm::instance::{Instance, InstanceHandle};
 use crate::runtime::vm::memory::Memory;
@@ -325,8 +326,9 @@ impl dyn InstanceAllocator + '_ {
         let num_defined_memories = module.num_defined_memories();
         let num_defined_tables = module.num_defined_tables();
 
-        let memories = TryPrimaryMap::with_capacity(num_defined_memories)?;
-        let tables = TryPrimaryMap::with_capacity(num_defined_tables)?;
+        let memory = request.store.native_memory();
+        let memories = NativeMap::with_capacity(num_defined_memories, memory.clone())?;
+        let tables = NativeMap::with_capacity(num_defined_tables, memory)?;
 
         // Note that incrementing the instance count here must be done just
         // before creation of `DeallocateOnDrop`. This is required to ensure
@@ -356,8 +358,8 @@ impl dyn InstanceAllocator + '_ {
 
         struct DeallocateOnDrop<'a> {
             run_deallocate: bool,
-            memories: TryPrimaryMap<DefinedMemoryIndex, (MemoryAllocationIndex, Memory)>,
-            tables: TryPrimaryMap<DefinedTableIndex, (TableAllocationIndex, Table)>,
+            memories: NativeMap<DefinedMemoryIndex, (MemoryAllocationIndex, Memory)>,
+            tables: NativeMap<DefinedTableIndex, (TableAllocationIndex, Table)>,
             allocator: &'a (dyn InstanceAllocator + 'a),
         }
 
@@ -403,7 +405,7 @@ impl dyn InstanceAllocator + '_ {
     async fn allocate_memories(
         &self,
         request: &mut InstanceAllocationRequest<'_, '_>,
-        memories: &mut TryPrimaryMap<DefinedMemoryIndex, (MemoryAllocationIndex, Memory)>,
+        memories: &mut NativeMap<DefinedMemoryIndex, (MemoryAllocationIndex, Memory)>,
     ) -> Result<()> {
         let module = request.runtime_info.env_module();
 
@@ -434,7 +436,7 @@ impl dyn InstanceAllocator + '_ {
     /// `Self::allocate_memories`.
     unsafe fn deallocate_memories(
         &self,
-        memories: &mut TryPrimaryMap<DefinedMemoryIndex, (MemoryAllocationIndex, Memory)>,
+        memories: &mut NativeMap<DefinedMemoryIndex, (MemoryAllocationIndex, Memory)>,
     ) {
         for (memory_index, (allocation_index, memory)) in mem::take(memories) {
             // Because deallocating memory is infallible, we don't need to worry
@@ -456,7 +458,7 @@ impl dyn InstanceAllocator + '_ {
     async fn allocate_tables(
         &self,
         request: &mut InstanceAllocationRequest<'_, '_>,
-        tables: &mut TryPrimaryMap<DefinedTableIndex, (TableAllocationIndex, Table)>,
+        tables: &mut NativeMap<DefinedTableIndex, (TableAllocationIndex, Table)>,
     ) -> Result<()> {
         let module = request.runtime_info.env_module();
 
@@ -485,7 +487,7 @@ impl dyn InstanceAllocator + '_ {
     /// `Self::allocate_tables`.
     unsafe fn deallocate_tables(
         &self,
-        tables: &mut TryPrimaryMap<DefinedTableIndex, (TableAllocationIndex, Table)>,
+        tables: &mut NativeMap<DefinedTableIndex, (TableAllocationIndex, Table)>,
     ) {
         for (table_index, (allocation_index, table)) in mem::take(tables) {
             // SAFETY: the tables here were allocated from this allocator per
