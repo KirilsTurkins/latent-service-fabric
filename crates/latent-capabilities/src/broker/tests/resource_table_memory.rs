@@ -78,6 +78,7 @@ fn resource_table_native_backing_refusal_preserves_live_owners_and_closed_sessio
     let before = fixture.broker.snapshot();
     let held_bytes = request.budget.memory_bytes - BYTES + 1;
     let mut held = control.budget.reserve_host_memory(held_bytes).unwrap();
+    let padding = vec![0u8; held_bytes as usize].into_boxed_slice();
     held.confirm();
     let error = table.reserve_native_backing(BYTES).unwrap_err();
     assert_eq!(error.code, PlatformErrorCode::ResourceExhausted);
@@ -91,6 +92,7 @@ fn resource_table_native_backing_refusal_preserves_live_owners_and_closed_sessio
             .peak_memory_bytes,
         held_bytes
     );
+    drop(padding);
     drop(held);
     let native = table.reserve_native_backing(BYTES).unwrap().unwrap();
     assert!(native.is_from_budget(&control.budget));
