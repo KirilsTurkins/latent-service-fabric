@@ -110,6 +110,13 @@ impl TrackingLimiter {
         }
     }
 
+    fn discard_pending_memory_growth(&mut self) {
+        if let Some(pending) = self.pending_memory_growth.take() {
+            self.current_memory_bytes = self.current_memory_bytes.saturating_sub(pending.bytes);
+            self.peak_memory_bytes = pending.previous_peak_memory_bytes;
+        }
+    }
+
     #[cfg(test)]
     fn current_memory_bytes(&self) -> usize {
         self.current_memory_bytes
@@ -161,11 +168,16 @@ impl ResourceLimiter for TrackingLimiter {
         Ok(allowed)
     }
 
+    fn memory_allocated(&mut self) {
+        self.confirm_memory_growth();
+    }
+
+    fn memory_allocation_failed(&mut self) {
+        self.discard_pending_memory_growth();
+    }
+
     fn memory_grow_failed(&mut self, error: wasmtime::Error) -> wasmtime::Result<()> {
-        if let Some(pending) = self.pending_memory_growth.take() {
-            self.current_memory_bytes = self.current_memory_bytes.saturating_sub(pending.bytes);
-            self.peak_memory_bytes = pending.previous_peak_memory_bytes;
-        }
+        self.discard_pending_memory_growth();
         self.limits.memory_grow_failed(error)
     }
 
@@ -486,6 +498,8 @@ mod tests {
 
 #[cfg(test)]
 mod native_func_refs_tests;
+#[cfg(test)]
+mod native_linear_memory_tests;
 #[cfg(test)]
 mod native_registry_tests;
 #[cfg(test)]

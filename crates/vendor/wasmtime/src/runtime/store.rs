@@ -341,6 +341,22 @@ impl StoreResourceLimiter<'_> {
         }
     }
 
+    pub(crate) fn memory_allocated(&mut self) {
+        match self {
+            Self::Sync(s) => s.memory_allocated(),
+            #[cfg(feature = "async")]
+            Self::Async(s) => s.memory_allocated(),
+        }
+    }
+
+    pub(crate) fn memory_allocation_failed(&mut self) {
+        match self {
+            Self::Sync(s) => s.memory_allocation_failed(),
+            #[cfg(feature = "async")]
+            Self::Async(s) => s.memory_allocation_failed(),
+        }
+    }
+
     pub(crate) fn memory_grow_failed(&mut self, error: crate::Error) -> Result<()> {
         match self {
             Self::Sync(s) => s.memory_grow_failed(error),

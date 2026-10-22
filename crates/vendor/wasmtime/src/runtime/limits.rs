@@ -159,6 +159,17 @@ pub trait ResourceLimiter: Send {
         maximum: Option<usize>,
     ) -> Result<bool>;
 
+    /// Confirms that a permitted initial linear-memory allocation or growth
+    /// succeeded. Called after the actual accessible bytes exist, before later
+    /// instance initialization can allocate native storage. The default keeps
+    /// existing embeddings unchanged; this notification cannot refuse success.
+    fn memory_allocated(&mut self) {}
+
+    /// Releases a pending initial-memory admission when its allocation failed.
+    /// The original allocation error is propagated unchanged. Already confirmed
+    /// memory is unaffected; growth failures use `memory_grow_failed` instead.
+    fn memory_allocation_failed(&mut self) {}
+
     /// Notifies the resource limiter that growing a linear memory, permitted by
     /// the `memory_growing` method, has failed.
     ///
@@ -274,6 +285,12 @@ pub trait ResourceLimiterAsync: Send {
         desired: usize,
         maximum: Option<usize>,
     ) -> Result<bool>;
+
+    /// Identical to [`ResourceLimiter::memory_allocated`].
+    fn memory_allocated(&mut self) {}
+
+    /// Identical to [`ResourceLimiter::memory_allocation_failed`].
+    fn memory_allocation_failed(&mut self) {}
 
     /// Identical to [`ResourceLimiter::memory_grow_failed`]
     fn memory_grow_failed(&mut self, error: crate::Error) -> Result<()> {

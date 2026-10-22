@@ -243,13 +243,28 @@ impl Memory {
         engine: &Engine,
         creator: &dyn RuntimeMemoryCreator,
         memory_image: Option<&Arc<MemoryImage>>,
-        limiter: Option<&mut StoreResourceLimiter<'_>>,
+        mut limiter: Option<&mut StoreResourceLimiter<'_>>,
         kind: MemoryKind,
     ) -> Result<Self> {
-        let (minimum, maximum) = Self::limit_new(ty, limiter).await?;
+        let (minimum, maximum) = Self::limit_new(ty, limiter.as_deref_mut())
+            .await
+            .inspect_err(|_| {
+                if let Some(limiter) = limiter.as_deref_mut() {
+                    limiter.memory_allocation_failed();
+                }
+            })?;
         let tunables = engine.tunables();
         let memory_tunables = MemoryTunables::new(tunables, kind);
-        let allocation = creator.new_memory(ty, &memory_tunables, minimum, maximum)?;
+        let allocation = creator
+            .new_memory(ty, &memory_tunables, minimum, maximum)
+            .inspect_err(|_| {
+                if let Some(limiter) = limiter.as_deref_mut() {
+                    limiter.memory_allocation_failed();
+                }
+            })?;
+        if let Some(limiter) = limiter {
+            limiter.memory_allocated();
+        }
 
         let memory = LocalMemory::new(ty, &memory_tunables, allocation, memory_image)?;
         Ok(if ty.shared {
@@ -267,10 +282,24 @@ impl Memory {
         base: MemoryBase,
         base_capacity: usize,
         memory_image: MemoryImageSlot,
-        limiter: Option<&mut StoreResourceLimiter<'_>>,
+        mut limiter: Option<&mut StoreResourceLimiter<'_>>,
     ) -> Result<Self> {
-        let (minimum, maximum) = Self::limit_new(ty, limiter).await?;
-        let pooled_memory = StaticMemory::new(base, base_capacity, minimum, maximum)?;
+        let (minimum, maximum) = Self::limit_new(ty, limiter.as_deref_mut())
+            .await
+            .inspect_err(|_| {
+                if let Some(limiter) = limiter.as_deref_mut() {
+                    limiter.memory_allocation_failed();
+                }
+            })?;
+        let pooled_memory =
+            StaticMemory::new(base, base_capacity, minimum, maximum).inspect_err(|_| {
+                if let Some(limiter) = limiter.as_deref_mut() {
+                    limiter.memory_allocation_failed();
+                }
+            })?;
+        if let Some(limiter) = limiter {
+            limiter.memory_allocated();
+        }
         let allocation = try_new::<Box<_>>(pooled_memory)?;
 
         // Configure some defaults a bit differently for this memory within the
@@ -706,6 +735,9 @@ impl LocalMemory {
 
         match result {
             Ok(()) => {
+                if let Some(limiter) = limiter {
+                    limiter.memory_allocated();
+                }
                 // On successful growth double-check that the base pointer
                 // didn't move if it shouldn't have.
                 if required_to_not_move_memory {
