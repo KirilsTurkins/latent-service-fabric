@@ -52,7 +52,7 @@ MATERIALS = (
     'tools/dev_workflow/process.py', 'tools/c_guest/__init__.py',
     'tools/build_process_signals.py', 'tools/guest_runtime_profiles.py',
     'tools/install_guest_bindgen.py', '.github/workflows/c-thread-runtime.yml',
-    fixture.FIXTURE + 'main.c', fixture.FIXTURE + 'world.wit',
+    fixture.FIXTURE + 'main.c', fixture.FIXTURE + 'synchronization.c', fixture.FIXTURE + 'world.wit',
 )
 
 
@@ -205,12 +205,13 @@ def qualify(prepared, output):
         artifact = compiler.build(application, output / 'build', native['capsule_contracts'],
                                   native['package'], 'https://github.com/KirilsTurkins/latent-service-fabric')
         record['build'] = build_evidence(artifact, source)
-        stage = 'signed-seventeen-case-c-thread-programme'
+        stage = 'signed-original-seventeen-and-three-synchronization-programme'
         record['node'] = node.run(artifact, native, output / 'node')
         require(record['node']['status'] == 'passed'
                 and record['node']['programme']['status'] == 'passed'
-                and len(record['node']['programme']['outcomes']) == 17,
-                'c-thread-all-seventeen-original-outcomes')
+                and record['node']['programme']['originalSeventeenOutcomePrefix'] == 17
+                and len(record['node']['programme']['outcomes']) == 20,
+                'c-thread-all-seventeen-original-and-three-synchronization-outcomes')
         stage = 'unchanged-source-tools-products-and-original-build'
         require(time.monotonic() - started <= 1100
                 and source_identity(ROOT) == source_proof['consumerNativeSource']
@@ -218,7 +219,7 @@ def qualify(prepared, output):
                 and materials() == record['materials']
                 and inventory(snapshot(application)) == source
                 and build_evidence(artifact, source) == record['build'], 'c-thread-final-source-product-and-build-fence')
-        record.update(status='passed', observedCases=17)
+        record.update(status='passed', observedCases=20)
         write_json(output / 'qualification.json', record)
         return record
     except BaseException as error:

@@ -115,6 +115,8 @@ static void observed_result(probe_string_t *result, unsigned children) {
     probe_string_dup(result, output);
 }
 
+#include "synchronization.c"
+
 bool exports_examples_c_thread_runtime_api_greet(probe_string_t *input,
                                                 probe_string_t *result, probe_string_t *error) {
     volatile unsigned root_frame = 0x744;
@@ -125,7 +127,10 @@ bool exports_examples_c_thread_runtime_api_greet(probe_string_t *input,
     require(pthread_setspecific(key, (void *)(uintptr_t)77) == 0);
     local = 70; errno = 23;
     unsigned children = 1;
-    if (mode(input, "pthread") || mode(input, "cancel") || mode(input, "deadline")
+    if (mode(input, "sync-pthread") || mode(input, "sync-mixed")) {
+        children = 2;
+        synchronized_children(mode(input, "sync-mixed"));
+    } else if (mode(input, "pthread") || mode(input, "cancel") || mode(input, "deadline")
             || mode(input, "callback-trap") || mode(input, "root-trap") || mode(input, "invalid")) {
         hold = mode(input, "cancel") || mode(input, "deadline");
         callback_trap = mode(input, "callback-trap");

@@ -311,6 +311,23 @@ class CThreadRuntime(unittest.TestCase):
         with self.assertRaises(ValueError):
             fixture.observation('joined:2:2:2:1:1:3:2:6:1048576', True)
 
+    def test_synchronization_observation_requires_both_real_waiters_without_relaxing_original_join(self):
+        value = 'joined:2:2:2:2:2:3:2:6:1048576'
+        row = fixture.observation(value, 2, synchronized=True)
+        self.assertEqual((row['waits'], row['parkedTasks']), (2, 2))
+        self.assertFalse(row['waitForPollPendingClaimed'])
+        with self.assertRaises(ValueError):
+            fixture.observation(value, 2)
+        for bad in ('joined:2:2:2:1:1:3:2:6:1048576', 'joined:2:2:2:2:1:3:2:6:1048576',
+                    'joined:2:2:2:2:2:3:2:5:1048576', 'joined:2:2:2:2:2:3:2:6:0'):
+            with self.subTest(bad=bad), self.assertRaises(ValueError):
+                fixture.observation(bad, 2, synchronized=True)
+        for invalid in ('yes', 1, None):
+            with self.subTest(invalid=invalid), self.assertRaises(ValueError):
+                fixture.observation(value, 2, synchronized=invalid)
+        with self.assertRaises(ValueError):
+            fixture.observation('joined:1:1:1:2:2:2:1:4:1048576', 1, synchronized=True)
+
     def test_child_entry_requires_exact_current_native_and_child_events_and_five_owners(self):
         revision = {'publicationId': 'publication:sha256:' + '1' * 64,
                     'releaseDigest': 'sha256:' + '2' * 64,
