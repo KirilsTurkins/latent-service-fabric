@@ -13,7 +13,7 @@
       "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
       "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
     },
-    "name": "Original ledger, actual codec table Store registry FuncRefs resource ownership and closed diagnostics",
+    "name": "Original ledger codec table Store registry FuncRefs resource context ownership and diagnostics",
     "runs-on": "ubuntu-24.04",
     "steps": [
       {
@@ -55,7 +55,7 @@
       },
       {
         "id": "own-native-memory",
-        "name": "Execute ninety-seven source-bound controls with the ordinary native host",
+        "name": "Execute one hundred fourteen source-bound controls with the ordinary native host",
         "run": "python3 -B tools/qualify_host_codec_native.py --source-commit \"${{ github.sha }}\" --output \"$RUNNER_TEMP/host-codec-memory\""
       },
       {
@@ -74,7 +74,7 @@
   },
   "jobId": "native",
   "kind": "job",
-  "reviewReason": "Preserve92 prior controls and append5 escaped resource-substitution owners, with same original grants, five products and22recipe materials; no unsupported whole-memory claim.",
+  "reviewReason": "Append retained-context original-memory controls to the unchanged103-prefix programme; authenticate the exact original memory placeholder block while retaining whole-tree and all other upstream guards.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/host-codec-memory.yml"
 }

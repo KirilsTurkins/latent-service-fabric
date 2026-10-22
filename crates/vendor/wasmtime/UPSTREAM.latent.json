@@ -4,7 +4,7 @@
   "registryArchive": "https://static.crates.io/crates/wasmtime/wasmtime-48.0.7.crate",
   "registrySha256": "12300d040e8bea7e7ccde75b9919d27ebba47a217a64b09ba058ae8d3b4290b6",
   "license": "Apache-2.0 WITH LLVM-exception",
-  "nativeCohort": "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-memory-v5",
+  "nativeCohort": "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-memory-v7",
   "originalFiles": [
     {
       "path": ".cargo_vcs_info.json",

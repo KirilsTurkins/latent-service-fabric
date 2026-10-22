@@ -166,9 +166,19 @@ impl AuditCapabilityContext {
                 return Err(invalid());
             }
         }
+        // Recognition of this existing explicit V6 port is descriptive only.
+        // Keep the default ABI, installed provider and independent grant checks
+        // unchanged; no other V6 interface or native operation is admitted here.
+        let native_threads = self.capability == "latent:runtime-native/threads@0.1.0"
+            && latent_core::PHASE3_HOST_ABI_V6
+                .interface(&self.capability)
+                .is_some()
+            && self.resource_class == AuditCapabilityResourceClass::Context
+            && self.operation == "start";
         if latent_core::PHASE3_HOST_ABI_CURRENT
             .interface(&self.capability)
             .is_none()
+            && !native_threads
             && !(self.resource_class == AuditCapabilityResourceClass::State
                 && matches!(
                     self.capability.as_str(),
@@ -179,6 +189,7 @@ impl AuditCapabilityContext {
         }
         codec::token(&self.operation, 64)?;
         let expected = match self.resource_class {
+            AuditCapabilityResourceClass::Context if native_threads => "latent:runtime-native/",
             AuditCapabilityResourceClass::Context => "latent:context/",
             AuditCapabilityResourceClass::Clock
                 if self.capability == "latent:runtime/activation@0.1.0" =>
