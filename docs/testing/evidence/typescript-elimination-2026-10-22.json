@@ -1,0 +1,294 @@
+{
+  "status": "owning-success-eight-runtime-slices-verified",
+  "source": "57f98dbfea9d1d9e5327c363a60b9aa98f6b668a",
+  "run": 39699135077,
+  "job": 119563781269,
+  "artifact": 12392541123,
+  "bytes": 17682789,
+  "sha256": "18a604735cf92777466e9c4f02eb2712dda7f49271d992967f9ae95ddee2e408",
+  "members": 284,
+  "expandedBytes": 55250145,
+  "outerConclusion": "success",
+  "runtimeSlicesVerified": 8,
+  "normalGuestBuilds": 2,
+  "buildCommands": 40,
+  "outerCommands": 4,
+  "verifiedStreams": 88,
+  "gitMaterials": 191,
+  "recipeRowsPerBuild": 110,
+  "capturedSourceRowsPerBuild": 63,
+  "regeneratedTemplateRowsPerBuild": 58,
+  "onlyRootSourceChanged": true,
+  "libraryBytesChanged": false,
+  "variants": {
+    "eliminated": {
+      "build": {
+        "sha256": "sha256:e593fc1dc046166837e02689859dde8243d9f5d367c7a47600086120df115aa3",
+        "bytes": 12473675
+      },
+      "compilerWitness": {
+        "rootEdgeSelected": false,
+        "callbackSource": "sha256:dd13a6b49f4787b3e5c2b63c8d18b8677b1a30bc4b699d3a631b1556477668da",
+        "librarySource": "sha256:2b2d23810963de03021b487d8709962c29d6cd2c697edc2ec12ab72347951f5d",
+        "callbackBytesInBundle": 0,
+        "callbackModuleRetained": false,
+        "scope": "one-exact-esbuild-application-module",
+        "fullComponentEngineApiAbsentClaimed": false,
+        "arbitraryApiClassification": "unknown",
+        "runtimeExecutionQualified": false
+      },
+      "outcomes": [
+        {
+          "mode": "catch",
+          "seed": 7,
+          "alternate": 42,
+          "decoded": [
+            {
+              "ok": "elimination|typescript|seed=7|alternate=42|refused=0|fresh=1"
+            }
+          ],
+          "consumption": {
+            "blobReadBytes": "0",
+            "blobWriteBytes": "0",
+            "childCalls": 0,
+            "cpuFuel": "3480674",
+            "effectCount": 0,
+            "logBytes": "0",
+            "outboundRequests": 0,
+            "peakMemoryBytes": "9502720",
+            "stateReadBytes": "0",
+            "stateWriteBytes": "0",
+            "wallTimeMicros": "43990318"
+          },
+          "nativeRefusalRequired": false
+        },
+        {
+          "mode": "catch",
+          "seed": 11,
+          "alternate": 62,
+          "decoded": [
+            {
+              "ok": "elimination|typescript|seed=11|alternate=62|refused=0|fresh=1"
+            }
+          ],
+          "consumption": {
+            "blobReadBytes": "0",
+            "blobWriteBytes": "0",
+            "childCalls": 0,
+            "cpuFuel": "3495411",
+            "effectCount": 0,
+            "logBytes": "0",
+            "outboundRequests": 0,
+            "peakMemoryBytes": "9502720",
+            "stateReadBytes": "0",
+            "stateWriteBytes": "0",
+            "wallTimeMicros": "12062"
+          },
+          "nativeRefusalRequired": false
+        },
+        {
+          "mode": "uncaught",
+          "seed": 13,
+          "alternate": null,
+          "decoded": null,
+          "consumption": {
+            "blobReadBytes": "0",
+            "blobWriteBytes": "0",
+            "childCalls": 0,
+            "cpuFuel": "1805415",
+            "effectCount": 0,
+            "logBytes": "0",
+            "outboundRequests": 0,
+            "peakMemoryBytes": "9502720",
+            "stateReadBytes": "0",
+            "stateWriteBytes": "0",
+            "wallTimeMicros": "7823"
+          },
+          "nativeRefusalRequired": false
+        },
+        {
+          "mode": "catch",
+          "seed": 19,
+          "alternate": 102,
+          "decoded": [
+            {
+              "ok": "elimination|typescript|seed=19|alternate=102|refused=0|fresh=1"
+            }
+          ],
+          "consumption": {
+            "blobReadBytes": "0",
+            "blobWriteBytes": "0",
+            "childCalls": 0,
+            "cpuFuel": "3509999",
+            "effectCount": 0,
+            "logBytes": "0",
+            "outboundRequests": 0,
+            "peakMemoryBytes": "9502720",
+            "stateReadBytes": "0",
+            "stateWriteBytes": "0",
+            "wallTimeMicros": "15722"
+          },
+          "nativeRefusalRequired": false
+        }
+      ],
+      "physicalRetirements": 4,
+      "providerCountersZeroPerRetirement": 18,
+      "cleanReapedNode": true,
+      "peerRequests": 0
+    },
+    "reached": {
+      "build": {
+        "sha256": "sha256:95d8802fc5de6875e6ac29819935a2eabe5a5fc484603c4cdb6bec1e12648850",
+        "bytes": 12479622
+      },
+      "compilerWitness": {
+        "rootEdgeSelected": true,
+        "callbackSource": "sha256:dd13a6b49f4787b3e5c2b63c8d18b8677b1a30bc4b699d3a631b1556477668da",
+        "librarySource": "sha256:2b2d23810963de03021b487d8709962c29d6cd2c697edc2ec12ab72347951f5d",
+        "callbackBytesInBundle": 144,
+        "callbackModuleRetained": true,
+        "scope": "one-exact-esbuild-application-module",
+        "fullComponentEngineApiAbsentClaimed": false,
+        "arbitraryApiClassification": "unknown",
+        "runtimeExecutionQualified": false
+      },
+      "outcomes": [
+        {
+          "mode": "catch",
+          "seed": 7,
+          "alternate": 42,
+          "decoded": [
+            {
+              "ok": "elimination|typescript|seed=7|alternate=42|refused=1|fresh=1"
+            }
+          ],
+          "consumption": {
+            "blobReadBytes": "0",
+            "blobWriteBytes": "0",
+            "childCalls": 0,
+            "cpuFuel": "3622888",
+            "effectCount": 0,
+            "logBytes": "0",
+            "outboundRequests": 0,
+            "peakMemoryBytes": "9502720",
+            "stateReadBytes": "0",
+            "stateWriteBytes": "0",
+            "wallTimeMicros": "43899349"
+          },
+          "nativeRefusalRequired": true
+        },
+        {
+          "mode": "catch",
+          "seed": 11,
+          "alternate": 62,
+          "decoded": [
+            {
+              "ok": "elimination|typescript|seed=11|alternate=62|refused=1|fresh=1"
+            }
+          ],
+          "consumption": {
+            "blobReadBytes": "0",
+            "blobWriteBytes": "0",
+            "childCalls": 0,
+            "cpuFuel": "3637625",
+            "effectCount": 0,
+            "logBytes": "0",
+            "outboundRequests": 0,
+            "peakMemoryBytes": "9502720",
+            "stateReadBytes": "0",
+            "stateWriteBytes": "0",
+            "wallTimeMicros": "11062"
+          },
+          "nativeRefusalRequired": true
+        },
+        {
+          "mode": "uncaught",
+          "seed": 13,
+          "alternate": null,
+          "decoded": null,
+          "consumption": {
+            "blobReadBytes": "0",
+            "blobWriteBytes": "0",
+            "childCalls": 0,
+            "cpuFuel": "1869379",
+            "effectCount": 0,
+            "logBytes": "0",
+            "outboundRequests": 0,
+            "peakMemoryBytes": "9502720",
+            "stateReadBytes": "0",
+            "stateWriteBytes": "0",
+            "wallTimeMicros": "9208"
+          },
+          "nativeRefusalRequired": false
+        },
+        {
+          "mode": "catch",
+          "seed": 19,
+          "alternate": 102,
+          "decoded": [
+            {
+              "ok": "elimination|typescript|seed=19|alternate=102|refused=1|fresh=1"
+            }
+          ],
+          "consumption": {
+            "blobReadBytes": "0",
+            "blobWriteBytes": "0",
+            "childCalls": 0,
+            "cpuFuel": "3652213",
+            "effectCount": 0,
+            "logBytes": "0",
+            "outboundRequests": 0,
+            "peakMemoryBytes": "9502720",
+            "stateReadBytes": "0",
+            "stateWriteBytes": "0",
+            "wallTimeMicros": "11841"
+          },
+          "nativeRefusalRequired": true
+        }
+      ],
+      "physicalRetirements": 4,
+      "providerCountersZeroPerRetirement": 18,
+      "cleanReapedNode": true,
+      "peerRequests": 0
+    }
+  },
+  "finalSourceProductsFenceObserved": true,
+  "finalExecutionReportsEmitted": true,
+  "wholeQualifierPassed": true,
+  "wholeTicketQualified": false,
+  "compilerPayloadsRetained": false,
+  "schemaVersion": "latent.typescript.elimination.observation.v1",
+  "mergedExecutedMaterialsByteExact": 191,
+  "currentSourceIsNativeCompilationClaim": false,
+  "previousAttempts": [
+    {
+      "source": "0c1d11d14ba2057d2188bf500d1b6d81a08c8b2f",
+      "run": 39695563334,
+      "conclusion": "failure",
+      "stage": "ordinary-typescript-typecheck",
+      "actualRuntimeCalls": 0
+    },
+    {
+      "source": "4109d63e3d31483a7579690477acdf845a80a0eb",
+      "run": 39696684411,
+      "job": 119555653541,
+      "artifact": 12391730669,
+      "bytes": 17677708,
+      "sha256": "c4203859d5344dc1bb4f402f29a8f8801933c3b48cad0251054062b758f8516c",
+      "members": 281,
+      "expandedBytes": 55235305,
+      "outerConclusion": "failure",
+      "controllerError": "exclusive-progress-file-written-twice",
+      "runtimeSlicesVerified": 8,
+      "finalSourceProductsFenceObserved": false,
+      "finalExecutionReportsEmitted": false,
+      "wholeQualifierPassed": false
+    }
+  ],
+  "nativeProducts": {
+    "threeProductSource": "f244b81f14abad5d4dc4984cb842aaf1d9076e23",
+    "twoProductSource": "f6251df89851de98cb869784d095ad5cc2e5b385",
+    "rebuilt": false,
+    "javascriptEngineRebuilt": false
+  }
+}

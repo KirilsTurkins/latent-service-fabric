@@ -23,7 +23,7 @@ fn success(id: &str, payload: &[u8]) -> proto::InvokeResponse {
         route_generation: 1,
         consumption: Some(proto::BudgetConsumption::default()),
         result: Some(proto::invoke_response::Result::Success(proto::Success {
-            payload: payload.to_vec(),
+            payload: payload.to_vec().into(),
             media_type: MEDIA.into(),
             ..Default::default()
         })),

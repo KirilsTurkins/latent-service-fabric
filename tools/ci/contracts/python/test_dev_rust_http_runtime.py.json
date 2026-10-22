@@ -1,127 +1,30 @@
 {
-  "cases": [
-    "InstalledRustHttpRuntime.test_changed_original_receipt_cannot_publish_the_prepared_copy",
-    "InstalledRustHttpRuntime.test_complete_declarations_select_and_partial_declarations_preserve_normal_builder_refusals",
-    "InstalledRustHttpRuntime.test_complete_tool_inventory_binds_the_runtime_and_every_selected_recipe_file",
-    "InstalledRustHttpRuntime.test_default_and_other_language_recipes_do_not_acquire_the_runtime",
-    "InstalledRustHttpRuntime.test_only_seven_public_inputs_are_copied_with_original_receipts_and_staged_tool_checks",
-    "InstalledRustHttpRuntime.test_prepared_tool_or_source_refusal_happens_before_any_copy",
-    "InstalledRustHttpRuntime.test_selected_recipe_contains_the_exact_consumer_closure_without_checkout_imports",
-    "InstalledRustHttpRuntime.test_source_change_during_the_reader_is_refused_without_selecting_an_adapter",
-    "InstalledRustHttpRuntime.test_world_selection_uses_the_exact_package_version_and_explicit_world"
-  ],
-  "guards": {
-    "InstalledRustHttpRuntime.test_changed_original_receipt_cannot_publish_the_prepared_copy": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:515ff0efcf13b6193b7037b7f9d239c6bf7ae9a87a6d42f60af3fef3e2152ad4",
-        "class:setup-sha256:5c56f4d879efcf7f4d48dbb05784c911eff0d981cdf6783fb3ed2831ab7e3279"
-      ],
-      "skipSites": []
-    },
-    "InstalledRustHttpRuntime.test_complete_declarations_select_and_partial_declarations_preserve_normal_builder_refusals": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:515ff0efcf13b6193b7037b7f9d239c6bf7ae9a87a6d42f60af3fef3e2152ad4",
-        "class:setup-sha256:5c56f4d879efcf7f4d48dbb05784c911eff0d981cdf6783fb3ed2831ab7e3279"
-      ],
-      "skipSites": []
-    },
-    "InstalledRustHttpRuntime.test_complete_tool_inventory_binds_the_runtime_and_every_selected_recipe_file": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:515ff0efcf13b6193b7037b7f9d239c6bf7ae9a87a6d42f60af3fef3e2152ad4",
-        "class:setup-sha256:5c56f4d879efcf7f4d48dbb05784c911eff0d981cdf6783fb3ed2831ab7e3279"
-      ],
-      "skipSites": []
-    },
-    "InstalledRustHttpRuntime.test_default_and_other_language_recipes_do_not_acquire_the_runtime": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:515ff0efcf13b6193b7037b7f9d239c6bf7ae9a87a6d42f60af3fef3e2152ad4",
-        "class:setup-sha256:5c56f4d879efcf7f4d48dbb05784c911eff0d981cdf6783fb3ed2831ab7e3279"
-      ],
-      "skipSites": []
-    },
-    "InstalledRustHttpRuntime.test_only_seven_public_inputs_are_copied_with_original_receipts_and_staged_tool_checks": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:515ff0efcf13b6193b7037b7f9d239c6bf7ae9a87a6d42f60af3fef3e2152ad4",
-        "class:setup-sha256:5c56f4d879efcf7f4d48dbb05784c911eff0d981cdf6783fb3ed2831ab7e3279"
-      ],
-      "skipSites": []
-    },
-    "InstalledRustHttpRuntime.test_prepared_tool_or_source_refusal_happens_before_any_copy": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:515ff0efcf13b6193b7037b7f9d239c6bf7ae9a87a6d42f60af3fef3e2152ad4",
-        "class:setup-sha256:5c56f4d879efcf7f4d48dbb05784c911eff0d981cdf6783fb3ed2831ab7e3279"
-      ],
-      "skipSites": []
-    },
-    "InstalledRustHttpRuntime.test_selected_recipe_contains_the_exact_consumer_closure_without_checkout_imports": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:515ff0efcf13b6193b7037b7f9d239c6bf7ae9a87a6d42f60af3fef3e2152ad4",
-        "class:setup-sha256:5c56f4d879efcf7f4d48dbb05784c911eff0d981cdf6783fb3ed2831ab7e3279"
-      ],
-      "skipSites": []
-    },
-    "InstalledRustHttpRuntime.test_source_change_during_the_reader_is_refused_without_selecting_an_adapter": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:515ff0efcf13b6193b7037b7f9d239c6bf7ae9a87a6d42f60af3fef3e2152ad4",
-        "class:setup-sha256:5c56f4d879efcf7f4d48dbb05784c911eff0d981cdf6783fb3ed2831ab7e3279"
-      ],
-      "skipSites": []
-    },
-    "InstalledRustHttpRuntime.test_world_selection_uses_the_exact_package_version_and_explicit_world": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:515ff0efcf13b6193b7037b7f9d239c6bf7ae9a87a6d42f60af3fef3e2152ad4",
-        "class:setup-sha256:5c56f4d879efcf7f4d48dbb05784c911eff0d981cdf6783fb3ed2831ab7e3279"
-      ],
-      "skipSites": []
-    }
+  "schemaVersion":"latent.ci.contracts.v2",
+  "kind":"python",
+  "reviewReason":"Reviewed fixture-only source repair: stage the real authenticated Wasmtime dependency required by the current workspace; preserve every original method, decorator, skip and refusal. Replace fixed historical helper counts with exact current staged identities.",
+  "module":"tools/tests/test_dev_rust_http_runtime.py",
+  "cases":["InstalledRustHttpRuntime.test_changed_original_receipt_cannot_publish_the_prepared_copy","InstalledRustHttpRuntime.test_complete_declarations_select_and_partial_declarations_preserve_normal_builder_refusals","InstalledRustHttpRuntime.test_complete_tool_inventory_binds_the_runtime_and_every_selected_recipe_file","InstalledRustHttpRuntime.test_default_and_other_language_recipes_do_not_acquire_the_runtime","InstalledRustHttpRuntime.test_only_seven_public_inputs_are_copied_with_original_receipts_and_staged_tool_checks","InstalledRustHttpRuntime.test_prepared_tool_or_source_refusal_happens_before_any_copy","InstalledRustHttpRuntime.test_selected_recipe_contains_the_exact_consumer_closure_without_checkout_imports","InstalledRustHttpRuntime.test_source_change_during_the_reader_is_refused_without_selecting_an_adapter","InstalledRustHttpRuntime.test_world_selection_uses_the_exact_package_version_and_explicit_world"],
+  "guards":{
+    "InstalledRustHttpRuntime.test_only_seven_public_inputs_are_copied_with_original_receipts_and_staged_tool_checks":
+      "77f6bbfd8808b9ff3c74c0893db7dd479d56a5fa8547a90bb8ed83f8bdf323de",
+    "InstalledRustHttpRuntime.test_prepared_tool_or_source_refusal_happens_before_any_copy":
+      "77f6bbfd8808b9ff3c74c0893db7dd479d56a5fa8547a90bb8ed83f8bdf323de",
+    "InstalledRustHttpRuntime.test_changed_original_receipt_cannot_publish_the_prepared_copy":
+      "77f6bbfd8808b9ff3c74c0893db7dd479d56a5fa8547a90bb8ed83f8bdf323de",
+    "InstalledRustHttpRuntime.test_selected_recipe_contains_the_exact_consumer_closure_without_checkout_imports":
+      "77f6bbfd8808b9ff3c74c0893db7dd479d56a5fa8547a90bb8ed83f8bdf323de",
+    "InstalledRustHttpRuntime.test_default_and_other_language_recipes_do_not_acquire_the_runtime":
+      "77f6bbfd8808b9ff3c74c0893db7dd479d56a5fa8547a90bb8ed83f8bdf323de",
+    "InstalledRustHttpRuntime.test_world_selection_uses_the_exact_package_version_and_explicit_world":
+      "77f6bbfd8808b9ff3c74c0893db7dd479d56a5fa8547a90bb8ed83f8bdf323de",
+    "InstalledRustHttpRuntime.test_complete_declarations_select_and_partial_declarations_preserve_normal_builder_refusals":
+      "77f6bbfd8808b9ff3c74c0893db7dd479d56a5fa8547a90bb8ed83f8bdf323de",
+    "InstalledRustHttpRuntime.test_source_change_during_the_reader_is_refused_without_selecting_an_adapter":
+      "77f6bbfd8808b9ff3c74c0893db7dd479d56a5fa8547a90bb8ed83f8bdf323de",
+    "InstalledRustHttpRuntime.test_complete_tool_inventory_binds_the_runtime_and_every_selected_recipe_file":
+      "77f6bbfd8808b9ff3c74c0893db7dd479d56a5fa8547a90bb8ed83f8bdf323de"
   },
-  "kind": "python",
-  "module": "tools/tests/test_dev_rust_http_runtime.py",
-  "reviewReason": "Review nine installed Rust HTTP staging, source-world, inventory and tamper controls without rebuilding tools",
-  "schemaVersion": "latent.ci.contracts.v1"
+  "guardDefinitions":{
+    "77f6bbfd8808b9ff3c74c0893db7dd479d56a5fa8547a90bb8ed83f8bdf323de":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:77ba5a1cd28d2e9ad4eb7169ebb6b41b1655d256c72ab86cd0e0dfcc630e3647","class:setup-sha256:5c56f4d879efcf7f4d48dbb05784c911eff0d981cdf6783fb3ed2831ab7e3279"]}
+  }
 }
