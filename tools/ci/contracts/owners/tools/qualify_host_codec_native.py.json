@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_host_codec_native.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Append four actual registry-memory controls after the unchanged 81-control prefix; retain all original commands and exact outcomes.",
+  "reviewReason": "Append five planned actual FuncRefs controls after the exact85 prefix; retain22 materials and all strict outcomes.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "f239f6ba70bbe38d01be927e4e572720e2c8680c0943f92a3b2cd39027a25c89"
+  "sha256": "49e7f80620c1cb2d548985508e618a0eb550cfbec6f46c53839d5d1677366be8"
 }
