@@ -317,6 +317,7 @@ impl HostState {
         if accounting.budget().profile().supports_descendants() {
             limiter.budget = Some(accounting.budget().clone());
         }
+        let capabilities = capabilities::HostCapabilities::new(None, accounting.budget());
         Self {
             context,
             runtime: None,
@@ -333,7 +334,7 @@ impl HostState {
             #[cfg(feature = "development-clock-fixture")]
             development_clock_readings: config.development_clock_readings,
             host_call_timing: HostCallTiming::default(),
-            capabilities: capabilities::HostCapabilities::default(),
+            capabilities,
             transaction: transaction::Access::default(),
         }
     }
