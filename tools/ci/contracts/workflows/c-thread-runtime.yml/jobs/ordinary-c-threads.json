@@ -6,7 +6,7 @@
     "env": {
       "PYTHONDONTWRITEBYTECODE": "1"
     },
-    "name": "One captured C component and seventeen signed lifecycle cases",
+    "name": "One captured C component and twenty signed lifecycle and synchronization cases",
     "runs-on": "ubuntu-24.04",
     "steps": [
       {
@@ -49,6 +49,10 @@
         }
       },
       {
+        "name": "Compile production synchronization source and execute thirteen serialized source controls",
+        "run": "python3 -B tools/c_sync_source_controls.py --zig \"$(command -v zig)\" --node \"$(command -v node)\" --output \"$RUNNER_TEMP/c-sync-source\""
+      },
+      {
         "name": "Install only normal captured C compiler prerequisites",
         "run": "python3 -B tools/install_guest_bindgen.py \"$RUNNER_TEMP/c-thread-bindgen\"\necho \"$RUNNER_TEMP/c-thread-bindgen\" >> \"$GITHUB_PATH\"\nsudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
       },
@@ -62,7 +66,7 @@
         "uses": "actions/upload-artifact",
         "with": {
           "name": "c-thread-ready-runtime-${{ github.sha }}",
-          "path": "${{ runner.temp }}/c-thread-runtime/*.json\n${{ runner.temp }}/c-thread-runtime/build/*.json\n${{ runner.temp }}/c-thread-runtime/build/component.wasm\n${{ runner.temp }}/c-thread-runtime/application/src/main.c\n${{ runner.temp }}/c-thread-runtime/application/wit/**\n${{ runner.temp }}/c-thread-runtime/build/wit/**\n${{ runner.temp }}/c-thread-runtime/build/logs/*.txt\n${{ runner.temp }}/c-thread-runtime/node/*.json\n${{ runner.temp }}/c-thread-runtime/node/*.stdout\n${{ runner.temp }}/c-thread-runtime/node/*.stderr\n${{ runner.temp }}/c-thread-runtime/node/controls/*.json\n${{ runner.temp }}/c-thread-runtime/node/commands/logs/*.txt\n${{ runner.temp }}/c-thread-runtime/node/commands/*.json\n",
+          "path": "${{ runner.temp }}/c-thread-runtime/*.json\n${{ runner.temp }}/c-thread-runtime/build/*.json\n${{ runner.temp }}/c-thread-runtime/build/component.wasm\n${{ runner.temp }}/c-thread-runtime/application/src/main.c\n${{ runner.temp }}/c-thread-runtime/application/src/synchronization.c\n${{ runner.temp }}/c-thread-runtime/application/wit/**\n${{ runner.temp }}/c-thread-runtime/build/wit/**\n${{ runner.temp }}/c-thread-runtime/build/logs/*.txt\n${{ runner.temp }}/c-thread-runtime/node/*.json\n${{ runner.temp }}/c-thread-runtime/node/*.stdout\n${{ runner.temp }}/c-thread-runtime/node/*.stderr\n${{ runner.temp }}/c-thread-runtime/node/controls/*.json\n${{ runner.temp }}/c-thread-runtime/node/commands/logs/*.txt\n${{ runner.temp }}/c-thread-runtime/node/commands/*.json\n${{ runner.temp }}/c-sync-source/*.json\n${{ runner.temp }}/c-sync-source/*.txt\n${{ runner.temp }}/c-sync-source/*.h\n${{ runner.temp }}/c-sync-source/*.o\n${{ runner.temp }}/c-sync-source/*.wasm\n",
           "retention-days": 7
         }
       }
@@ -71,7 +75,7 @@
   },
   "jobId": "ordinary-c-threads",
   "kind": "job",
-  "reviewReason": "Retain existing bounded public CLI control results, timings and original read-only failure diagnostics before the unchanged C audit predicate; no command, quota or oracle changes",
+  "reviewReason": "Retain every original C17 build/authentication/control command and its identity and limits; add one bounded thirteen-case serialized production-source runner and three appended signed synchronization/fresh cases to one component, retaining bounded source artifacts.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/c-thread-runtime.yml"
 }

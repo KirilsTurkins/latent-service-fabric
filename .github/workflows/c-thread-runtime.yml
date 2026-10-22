@@ -2,7 +2,7 @@ name: Ready-aware ordinary C owned thread lifecycle
 
 on:
   push:
-    branches: ['feat/c-thread-runtime-consumer-20261021']
+    branches: ['feat/c-thread-runtime-consumer-20261021', 'feat/c-owned-sync-20261022']
     paths:
       - '.github/workflows/c-thread-runtime.yml'
       - 'tools/host_codec_linear_memory_native_products.py'
@@ -33,6 +33,10 @@ on:
       - 'sdk/c-guest/runtime/tls-keys.c'
       - 'sdk/c-guest/runtime/threads.c'
       - 'sdk/c-guest/runtime/template-copy.c'
+      - 'sdk/c-guest/runtime/synchronization.c'
+      - 'tools/c_sync_source_controls.py'
+      - 'tools/tests/fixtures/c-sync-reference.c'
+      - 'tools/tests/fixtures/c-sync-reference.cjs'
       - 'docs/testing/evidence/c-thread-native-rustfmt-2026-10-21.json'
       - 'tools/tests/test_c_threading_profile.py'
       - 'tools/tests/test_c_threading_compatibility.py'
@@ -54,7 +58,7 @@ concurrency:
 
 jobs:
   ordinary-c-threads:
-    name: One captured C component and seventeen signed lifecycle cases
+    name: One captured C component and twenty signed lifecycle and synchronization cases
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     env:
@@ -91,6 +95,11 @@ jobs:
       - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
         with:
           version: 1.254.0
+      - name: Compile production synchronization source and execute thirteen serialized source controls
+        run: >-
+          python3 -B tools/c_sync_source_controls.py
+          --zig "$(command -v zig)" --node "$(command -v node)"
+          --output "$RUNNER_TEMP/c-sync-source"
       - name: Install only normal captured C compiler prerequisites
         run: |
           python3 -B tools/install_guest_bindgen.py "$RUNNER_TEMP/c-thread-bindgen"
@@ -110,6 +119,7 @@ jobs:
             ${{ runner.temp }}/c-thread-runtime/build/*.json
             ${{ runner.temp }}/c-thread-runtime/build/component.wasm
             ${{ runner.temp }}/c-thread-runtime/application/src/main.c
+            ${{ runner.temp }}/c-thread-runtime/application/src/synchronization.c
             ${{ runner.temp }}/c-thread-runtime/application/wit/**
             ${{ runner.temp }}/c-thread-runtime/build/wit/**
             ${{ runner.temp }}/c-thread-runtime/build/logs/*.txt
@@ -119,4 +129,9 @@ jobs:
             ${{ runner.temp }}/c-thread-runtime/node/controls/*.json
             ${{ runner.temp }}/c-thread-runtime/node/commands/logs/*.txt
             ${{ runner.temp }}/c-thread-runtime/node/commands/*.json
+            ${{ runner.temp }}/c-sync-source/*.json
+            ${{ runner.temp }}/c-sync-source/*.txt
+            ${{ runner.temp }}/c-sync-source/*.h
+            ${{ runner.temp }}/c-sync-source/*.o
+            ${{ runner.temp }}/c-sync-source/*.wasm
           retention-days: 7

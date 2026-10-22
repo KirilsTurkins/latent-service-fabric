@@ -144,6 +144,28 @@ host profile's runtime result. Mutex/condition variables, CPU checkpoints,
 preemption, arbitrary C++ dynamic TLS, shared-memory atomics and broad library
 compatibility remain outside this finite slice.
 
+## Prepared ordinary synchronization extension
+
+The selected source now supplies normal, recursive and error-checking pthread
+mutexes, plain/recursive C11 mutexes, and untimed condition waits with signal
+and broadcast. A contended call acquires its original broker Wait before
+publishing a waiter on its admitted C stack. Canonical suspension parks only
+that caller; notification defers its continuation. Condition wait retains the
+same Wait through mutex reacquisition. Join uses the same suspension mechanism
+and checks actual TLS and final frame completion before releasing backing.
+
+The prepared owning programme preserves its original seventeen outcomes, then
+adds pthread synchronization, mixed pthread/C11 synchronization and a fresh
+ordinary invocation through the same captured component. The producer must
+observe both the root join and consumer condition wait while an independently
+eligible producer runs. These three additional outcomes have not executed.
+Thirteen serialized source controls and a compiled fixture object are separate
+source evidence; they do not qualify canonical scheduling or physical cleanup.
+
+Timed waits, robust/process-shared mutexes, ordinary exit/cancellation unwind,
+compiled CPU checkpoints, shared-memory atomics and broad library compatibility
+remain required before broader support or issue #744 completion.
+
 
 ## Authenticated native producer observation
 
