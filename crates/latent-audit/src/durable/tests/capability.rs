@@ -1,4 +1,5 @@
 use super::*;
+use crate::Phase2AuditEventKind;
 use latent_core::{DeploymentId, ReleaseDigest, RevisionId, RouteGeneration};
 
 fn required() -> AuditOperationAttempt {
