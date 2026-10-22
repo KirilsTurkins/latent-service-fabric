@@ -158,7 +158,6 @@ async fn direct_host_tls_validates_peer_transfers_and_retires_original_charges()
         .unwrap()
         .unwrap();
     assert_eq!(control.budget.host_memory_bytes(), control_session_bytes);
-    drop(stream);
     drop(original);
     drop(session);
     fixture.clean().await;
