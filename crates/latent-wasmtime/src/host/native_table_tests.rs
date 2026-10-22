@@ -227,6 +227,8 @@ fn actual_original_element_and_table_count_caps_still_refuse_without_extra_owner
         .tables(1)
         .trap_on_grow_failure(true)
         .build();
+    // Instance/table counts are cached when the limiter is installed.
+    store.limiter(|data| data.limiter.as_mut().unwrap());
     assert!(fixed(&mut store, 5).is_err());
     assert_eq!(budget.host_memory_bytes(), 0);
     // A failed instance can consume Wasmtime's original count allowance; use a
@@ -238,9 +240,15 @@ fn actual_original_element_and_table_count_caps_still_refuse_without_extra_owner
         .tables(1)
         .trap_on_grow_failure(true)
         .build();
-    fixed(&mut store, 4).unwrap();
-    let retained = 4 * POINTER + OVERHEAD;
-    assert!(fixed(&mut store, 1).is_err());
+    // Instance/table counts are cached when the limiter is installed.
+    store.limiter(|data| data.limiter.as_mut().unwrap());
+    // The original count cap applies to module instantiation. Host-created
+    // Table::new values use dummy instances and do not bump those counters.
+    let module = table_module(store.engine());
+    wasmtime::Instance::new(&mut store, &module, &[]).unwrap();
+    let retained = 2 * POINTER + OVERHEAD;
+    let error = wasmtime::Instance::new(&mut store, &module, &[]).unwrap_err();
+    assert!(error.to_string().contains("table count too high at 2"));
     assert_eq!(budget.host_memory_bytes(), retained);
     drop(store);
     assert_eq!(budget.host_memory_bytes(), 0);
