@@ -35,7 +35,7 @@ impl proto::invocation_service_server::InvocationService for Service {
         let result = if request.payload == b"declared" {
             proto::invoke_response::Result::DeclaredError(proto::DeclaredError {
                 code: "domain-failure".into(),
-                payload: b"typed failure".to_vec(),
+                payload: b"typed failure".to_vec().into(),
                 ..Default::default()
             })
         } else if request.payload == b"platform" {
@@ -46,9 +46,9 @@ impl proto::invocation_service_server::InvocationService for Service {
         } else {
             proto::invoke_response::Result::Success(proto::Success {
                 payload: if request.payload == b"oversize" {
-                    vec![1; 4096]
+                    vec![1; 4096].into()
                 } else {
-                    request.payload.clone()
+                    request.payload.clone().into()
                 },
                 media_type: "application/octet-stream".into(),
                 ..Default::default()
