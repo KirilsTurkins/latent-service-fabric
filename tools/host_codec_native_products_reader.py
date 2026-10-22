@@ -52,7 +52,9 @@ def _producer_contract(raw, groups, count):
             'codec-reader-control-identities')
         names.extend(cases); stages.append(stage)
     require(len(stages) == len(set(stages)) == groups and len(names) == len(set(names)) == count,
-        'codec-reader-exact-sixty-one-controls' if count == 61 else 'codec-reader-exact-eighty-one-controls')
+        'codec-reader-exact-sixty-one-controls' if count == 61
+        else 'codec-reader-exact-ninety-two-controls' if count == 92
+        else 'codec-reader-exact-eighty-one-controls')
     return controls, recipe
 
 
@@ -108,6 +110,7 @@ class FrozenHostCodecProducts(FrozenNativeProducts):
         commands = record['commands']
         require(type(commands) is list and len(commands) == len(self.stages) == self.command_count,
             'codec-reader-all-thirty-one-commands' if self.command_count == 31
+            else 'codec-reader-all-forty-three-commands' if self.command_count == 43
             else 'codec-reader-all-thirty-seven-commands')
         require(type(commands[2]) is dict and type(commands[2].get('argv')) is list
             and len(commands[2]['argv']) > 2, 'codec-reader-original-host-build-command')
