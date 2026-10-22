@@ -53,7 +53,9 @@ def aliases(header: str) -> str:
 
 
 def generate(run: Callable[..., str], source: Path, world: str, destination: Path,
-             platform: Path | None = PLATFORM_WIT) -> tuple[Path, dict]:
+             platform: Path | None = PLATFORM_WIT, *, sync_core_abi: bool = False) -> tuple[Path, dict]:
+    if type(sync_core_abi) is not bool:
+        raise ValueError("C binding ABI selection must be a boolean")
     regular_tree(source, ".wit")
     destination.mkdir(parents=True, exist_ok=False)
     staged, generated = destination / "wit", destination / "bindings"
@@ -64,7 +66,8 @@ def generate(run: Callable[..., str], source: Path, world: str, destination: Pat
             copy_wit_tree(package, staged / "deps" / package.name)
     generated.mkdir()
     run("wit-bindgen", "c", str(staged), "--world", world,
-        "--rename-world", "probe", "--out-dir", str(generated))
+        "--rename-world", "probe", "--out-dir", str(generated),
+        *(("--async=-all",) if sync_core_abi else ()))
     names = {path.name for path in generated.iterdir()}
     if names != {"probe.h", "probe.c", "probe_component_type.o"}:
         raise ValueError("unexpected generated C binding outputs")
@@ -73,6 +76,9 @@ def generate(run: Callable[..., str], source: Path, world: str, destination: Pat
     lock = {"formatVersion": 1, "world": world,
             "generator": run("wit-bindgen", "--version").strip(),
             "outputs": {name: digest((generated / name).read_bytes()) for name in sorted(names)}}
+    if sync_core_abi:
+        lock["bindingAbi"] = "sync-core-explicit-async-wit-v1"
+        lock["asyncFilter"] = "-all"
     return generated, lock
 
 

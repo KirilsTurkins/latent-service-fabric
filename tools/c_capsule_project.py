@@ -17,7 +17,7 @@ def sdk_inputs(root: Path, *, threading: bool = False) -> dict[str, bytes]:
     for path in ("Cargo.toml", "tools/toolchain.toml", "LICENSE", "NOTICE"):
         vendor[path] = read_file(root / path)
     if threading:
-        for path in ('thread-abi.h', 'thread-abi.json', 'threads.c', 'tls-keys.c'):
+        for path in ('thread-abi.h', 'thread-abi.json', 'threads.c', 'tls-keys.c', 'template-copy.c'):
             vendor['sdk/c-guest/runtime/' + path] = read_file(root / 'sdk/c-guest/runtime' / path)
     return vendor
 
@@ -100,7 +100,7 @@ def validate(files: dict[str, bytes]) -> tuple[dict, dict, dict]:
     if project.get('threadingProfile', 'single-threaded') != 'single-threaded':
         from tools.c_guest import threading
         if threading.selected(project) and not all('vendor/lsf/sdk/c-guest/runtime/' + name in files
-                                                 for name in ('thread-abi.h', 'thread-abi.json', 'threads.c', 'tls-keys.c')):
+                                                 for name in ('thread-abi.h', 'thread-abi.json', 'threads.c', 'tls-keys.c', 'template-copy.c')):
             raise ValueError('c-threading-profile-requires-captured-runtime')
     if not isinstance(project["name"], str) or not re.fullmatch(r"[a-z][a-z0-9]*(?:-[a-z0-9]+)*", project["name"]) or len(project["name"]) > 64:
         raise ValueError("invalid C capsule name")

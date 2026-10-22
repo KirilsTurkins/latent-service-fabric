@@ -82,8 +82,10 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
         threaded = project.get('threadingProfile', 'single-threaded') != 'single-threaded'
         if threaded:
             from tools.c_guest import threading
+            from tools.c_guest import threading_compatibility
         source_inputs = inventory(files)
-        recipe_files = {path: read_file(ROOT / path) for path in (*RECIPE, *(threading.RECIPE if threaded else ()))}
+        recipe_files = {path: read_file(ROOT / path) for path in (*RECIPE,
+            *((*threading.RECIPE, *threading_compatibility.RECIPE) if threaded else ()))}
         recipe_inputs = inventory(recipe_files)
         (output / "source-inputs.json").write_bytes(source_inputs)
         (output / "recipe-inputs.json").write_bytes(recipe_inputs)
@@ -162,11 +164,21 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             surface = read_json(derived / "surface.json")
             recipe_inputs = guest_compatibility_build.capture_host_recipe(output, recipe_files, recipe_inputs, surface)
             stage = "compatibility"
-            guest_compatibility_build.inspect(commands, compiler.paths["wasm-tools"], output, surface,
-                host_abi_profile=guest_compatibility_build.declared_host_abi(surface))
+            if threaded:
+                threading_compatibility.inspect(commands, compiler.paths['wasm-tools'], output, surface,
+                    profile=project['threadingProfile'], proof=compiler.threading_result,
+                    transformer=paths['contracts-tool'])
+                data = read_file(output / threading_compatibility.NAME, 65536)
+                materials.append({'name': 'c-threading-compatibility', 'digest': digest(data), 'size': len(data)})
+            else:
+                guest_compatibility_build.inspect(commands, compiler.paths["wasm-tools"], output, surface,
+                    host_abi_profile=guest_compatibility_build.declared_host_abi(surface))
             package_inputs(output, project, surface, {**package_files, **resources.sources}, component,
                            additional_resources=resources.rows,
-                           **({'threading_model': 'cooperative'} if threaded else {}))
+                           **({'threading_model': 'cooperative', 'additional_assets': (
+                               (threading_compatibility.NAME, 'asset', threading_compatibility.MEDIA),
+                               ('compatibility-inspection.json', 'asset', 'application/vnd.latent.guest.compatibility.inspection.v1+json'))}
+                              if threaded else {}))
             if packager is not None:
                 stage = "package"
                 commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package", *packaging_arguments(files))
