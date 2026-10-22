@@ -1,0 +1,62 @@
+{
+  "cases": [
+    "TypedTrapOrigin.test_actual_controller_import_and_all_loaded_runtime_helpers_are_source_bound",
+    "TypedTrapOrigin.test_actual_five_call_diagnostic_origin_is_accepted_without_qualification_claim",
+    "TypedTrapOrigin.test_foreign_or_failed_source_run_job_or_artifact_is_refused",
+    "TypedTrapOrigin.test_modified_archive_bytes_are_refused_before_any_extraction_or_output"
+  ],
+  "guards": {
+    "TypedTrapOrigin.test_actual_controller_import_and_all_loaded_runtime_helpers_are_source_bound": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ab175300f66c530645c2649aac9711c95e7a5be66c72fd51c0b4f8f0b25914ba",
+        "class:setup-sha256:4a715d4dbeb6b4ccca7d2cb9a9c3f83180f436c4be7075f58de2a41b2b23d6c0"
+      ],
+      "skipSites": []
+    },
+    "TypedTrapOrigin.test_actual_five_call_diagnostic_origin_is_accepted_without_qualification_claim": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ab175300f66c530645c2649aac9711c95e7a5be66c72fd51c0b4f8f0b25914ba",
+        "class:setup-sha256:4a715d4dbeb6b4ccca7d2cb9a9c3f83180f436c4be7075f58de2a41b2b23d6c0"
+      ],
+      "skipSites": []
+    },
+    "TypedTrapOrigin.test_foreign_or_failed_source_run_job_or_artifact_is_refused": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ab175300f66c530645c2649aac9711c95e7a5be66c72fd51c0b4f8f0b25914ba",
+        "class:setup-sha256:4a715d4dbeb6b4ccca7d2cb9a9c3f83180f436c4be7075f58de2a41b2b23d6c0"
+      ],
+      "skipSites": []
+    },
+    "TypedTrapOrigin.test_modified_archive_bytes_are_refused_before_any_extraction_or_output": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ab175300f66c530645c2649aac9711c95e7a5be66c72fd51c0b4f8f0b25914ba",
+        "class:setup-sha256:4a715d4dbeb6b4ccca7d2cb9a9c3f83180f436c4be7075f58de2a41b2b23d6c0"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_c_thread_typed_trap.py",
+  "reviewReason": "Root-reviewed retained f7 component diagnostic with separately authenticated de0 v2 products: exactly two calls, original build/source receipts immutable, real raw/audit/physical/provider observations before predicates, qualification false; no guest/native build.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

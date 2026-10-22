@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/diagnose_c_thread_typed_trap.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Root-reviewed retained f7 component diagnostic with separately authenticated de0 v2 products: exactly two calls, original build/source receipts immutable, real raw/audit/physical/provider observations before predicates, qualification false; no guest/native build.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "6f6019ef34703c63ebd99b83b9590853c0bf049fa6c58212472a9dc80c833b7f"
+}

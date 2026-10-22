@@ -1,0 +1,72 @@
+name: Retained C typed trap diagnostic
+
+on:
+  push:
+    branches: ['diag/c-thread-typed-trap-20261022']
+    paths:
+      - '.github/workflows/c-thread-typed-trap-diagnostic.yml'
+      - 'tools/c_thread_minimal_inputs.py'
+      - 'tools/diagnose_c_thread_typed_trap.py'
+      - 'tools/host_codec_table_store_native_products.py'
+      - 'tools/host_codec_table_store_native_products_reader.py'
+      - 'tools/tests/test_c_thread_typed_trap.py'
+      - 'tools/tests/test_host_codec_table_store_native_products.py'
+      - 'tools/tests/test_host_codec_table_store_native_products_reader.py'
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: c-thread-typed-trap-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  retained-typed-trap:
+    name: Two retained C observations with closed native diagnostics
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - name: Fetch exact producer, model and original guest source objects
+        run: |
+          git fetch --no-tags --depth=1 origin de0aed36f0b135d6d88fb536484e60aee978f218
+          git fetch --no-tags --depth=1 origin 050b9e71ba04a4bdc559f4a7fa48d6bd94c2ff38
+          git fetch --no-tags --depth=1 origin 7b6365ee39dea9770591a931b96711965f8a1aaf
+          git fetch --no-tags --depth=1 origin f7ba4962be60365bdf9061cc1cacbabfc7c169d0
+      - name: Check fixed origins and bounded diagnostic refusals
+        run: |
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 -B -m unittest tools.tests.test_host_codec_native_products_reader tools.tests.test_host_codec_table_store_native_products_reader tools.tests.test_host_codec_table_store_native_products tools.tests.test_c_thread_typed_trap -v
+      - name: Authenticate five immutable v2 native products
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/host_codec_table_store_native_products.py --output "$RUNNER_TEMP/c-typed-native"
+      - name: Repackage, sign and observe exactly two retained component calls
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/diagnose_c_thread_typed_trap.py --prepared "$RUNNER_TEMP/c-typed-native" --output "$RUNNER_TEMP/c-thread-typed-trap"
+      - name: Retain bounded source, original build and actual public observations
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: c-thread-typed-trap-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/c-thread-typed-trap/*.json
+            ${{ runner.temp }}/c-thread-typed-trap/*.txt
+            ${{ runner.temp }}/c-thread-typed-trap/controls/*.json
+            ${{ runner.temp }}/c-thread-typed-trap/commands/logs/*.txt
+            ${{ runner.temp }}/c-thread-typed-trap/original/artifact.zip
+            ${{ runner.temp }}/c-thread-typed-trap/original/contents/*.json
+            ${{ runner.temp }}/c-thread-typed-trap/original/contents/build/*.json
+            ${{ runner.temp }}/c-thread-typed-trap/original/contents/build/component.wasm
+            ${{ runner.temp }}/c-thread-typed-trap/original/contents/build/wit/**
+            ${{ runner.temp }}/c-thread-typed-trap/original/contents/build/package/manifest.json
+          retention-days: 7

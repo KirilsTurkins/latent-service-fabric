@@ -1,0 +1,64 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "env": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "name": "Two retained C observations with closed native diagnostics",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "name": "Fetch exact producer, model and original guest source objects",
+        "run": "git fetch --no-tags --depth=1 origin de0aed36f0b135d6d88fb536484e60aee978f218\ngit fetch --no-tags --depth=1 origin 050b9e71ba04a4bdc559f4a7fa48d6bd94c2ff38\ngit fetch --no-tags --depth=1 origin 7b6365ee39dea9770591a931b96711965f8a1aaf\ngit fetch --no-tags --depth=1 origin f7ba4962be60365bdf9061cc1cacbabfc7c169d0\n"
+      },
+      {
+        "name": "Check fixed origins and bounded diagnostic refusals",
+        "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 -B -m unittest tools.tests.test_host_codec_native_products_reader tools.tests.test_host_codec_table_store_native_products_reader tools.tests.test_host_codec_table_store_native_products tools.tests.test_c_thread_typed_trap -v\n"
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Authenticate five immutable v2 native products",
+        "run": "python3 -B tools/host_codec_table_store_native_products.py --output \"$RUNNER_TEMP/c-typed-native\""
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Repackage, sign and observe exactly two retained component calls",
+        "run": "python3 -B tools/diagnose_c_thread_typed_trap.py --prepared \"$RUNNER_TEMP/c-typed-native\" --output \"$RUNNER_TEMP/c-thread-typed-trap\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain bounded source, original build and actual public observations",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "name": "c-thread-typed-trap-${{ github.sha }}",
+          "path": "${{ runner.temp }}/c-thread-typed-trap/*.json\n${{ runner.temp }}/c-thread-typed-trap/*.txt\n${{ runner.temp }}/c-thread-typed-trap/controls/*.json\n${{ runner.temp }}/c-thread-typed-trap/commands/logs/*.txt\n${{ runner.temp }}/c-thread-typed-trap/original/artifact.zip\n${{ runner.temp }}/c-thread-typed-trap/original/contents/*.json\n${{ runner.temp }}/c-thread-typed-trap/original/contents/build/*.json\n${{ runner.temp }}/c-thread-typed-trap/original/contents/build/component.wasm\n${{ runner.temp }}/c-thread-typed-trap/original/contents/build/wit/**\n${{ runner.temp }}/c-thread-typed-trap/original/contents/build/package/manifest.json\n",
+          "retention-days": 7
+        }
+      }
+    ],
+    "timeout-minutes": 20
+  },
+  "jobId": "retained-typed-trap",
+  "kind": "job",
+  "reviewReason": "Root-reviewed retained f7 component diagnostic with separately authenticated de0 v2 products: exactly two calls, original build/source receipts immutable, real raw/audit/physical/provider observations before predicates, qualification false; no guest/native build.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/c-thread-typed-trap-diagnostic.yml"
+}

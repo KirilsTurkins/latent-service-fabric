@@ -1,0 +1,166 @@
+{
+  "run": {
+    "id": 39695554239,
+    "head_sha": "f7ba4962be60365bdf9061cc1cacbabfc7c169d0",
+    "head_branch": "diag/c-thread-minimal-20261022",
+    "event": "push",
+    "path": ".github/workflows/c-thread-minimal-diagnostic.yml",
+    "status": "completed",
+    "conclusion": "success",
+    "repository": {
+      "id": 1337591365
+    },
+    "head_repository": {
+      "id": 1337591365
+    }
+  },
+  "job": {
+    "id": 119551926292,
+    "run_id": 39695554239,
+    "head_sha": "f7ba4962be60365bdf9061cc1cacbabfc7c169d0",
+    "status": "completed",
+    "conclusion": "success",
+    "steps": [
+      {
+        "name": "Set up job",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 1,
+        "started_at": "2026-10-21T23:49:40Z",
+        "completed_at": "2026-10-21T23:49:44Z"
+      },
+      {
+        "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 2,
+        "started_at": "2026-10-21T23:49:44Z",
+        "completed_at": "2026-10-21T23:49:55Z"
+      },
+      {
+        "name": "Run actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 3,
+        "started_at": "2026-10-21T23:49:55Z",
+        "completed_at": "2026-10-21T23:50:04Z"
+      },
+      {
+        "name": "Fetch exact unchanged native source object",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 4,
+        "started_at": "2026-10-21T23:50:04Z",
+        "completed_at": "2026-10-21T23:50:05Z"
+      },
+      {
+        "name": "Check source-only minimal and original diagnostic controls",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 5,
+        "started_at": "2026-10-21T23:50:05Z",
+        "completed_at": "2026-10-21T23:50:09Z"
+      },
+      {
+        "name": "Authenticate all five unchanged native products",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 6,
+        "started_at": "2026-10-21T23:50:09Z",
+        "completed_at": "2026-10-21T23:51:12Z"
+      },
+      {
+        "name": "Run mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 7,
+        "started_at": "2026-10-21T23:51:12Z",
+        "completed_at": "2026-10-21T23:53:41Z"
+      },
+      {
+        "name": "Run bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 8,
+        "started_at": "2026-10-21T23:53:41Z",
+        "completed_at": "2026-10-21T23:53:42Z"
+      },
+      {
+        "name": "Install only normal captured C compiler prerequisites",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 9,
+        "started_at": "2026-10-21T23:53:42Z",
+        "completed_at": "2026-10-21T23:53:51Z"
+      },
+      {
+        "name": "Build one diagnostic component and observe exactly five calls",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 10,
+        "started_at": "2026-10-21T23:53:51Z",
+        "completed_at": "2026-10-21T23:54:41Z"
+      },
+      {
+        "name": "Retain bounded public source, build, call and cleanup observations",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 11,
+        "started_at": "2026-10-21T23:54:41Z",
+        "completed_at": "2026-10-21T23:54:42Z"
+      },
+      {
+        "name": "Post Run mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 20,
+        "started_at": "2026-10-21T23:54:42Z",
+        "completed_at": "2026-10-21T23:54:42Z"
+      },
+      {
+        "name": "Post Run actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 21,
+        "started_at": "2026-10-21T23:54:42Z",
+        "completed_at": "2026-10-21T23:54:43Z"
+      },
+      {
+        "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 22,
+        "started_at": "2026-10-21T23:54:43Z",
+        "completed_at": "2026-10-21T23:54:43Z"
+      },
+      {
+        "name": "Complete job",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 23,
+        "started_at": "2026-10-21T23:54:43Z",
+        "completed_at": "2026-10-21T23:54:43Z"
+      }
+    ]
+  },
+  "artifact": {
+    "id": 12391505627,
+    "node_id": "MDg6QXJ0aWZhY3QxMjM5MTUwNTYyNw==",
+    "name": "c-thread-minimal-f7ba4962be60365bdf9061cc1cacbabfc7c169d0",
+    "size_in_bytes": 1696526,
+    "url": "https://api.github.com/repos/KirilsTurkins/latent-service-fabric/actions/artifacts/12391505627",
+    "archive_download_url": "https://api.github.com/repos/KirilsTurkins/latent-service-fabric/actions/artifacts/12391505627/zip",
+    "expired": false,
+    "digest": "sha256:e41251d21290594b11df86013a5706e0a38bf4872834f734505bd0cd975b1690",
+    "created_at": "2026-10-21T23:54:42Z",
+    "updated_at": "2026-10-21T23:54:42Z",
+    "expires_at": "2026-10-28T23:54:41Z",
+    "workflow_run": {
+      "id": 39695554239,
+      "repository_id": 1337591365,
+      "head_repository_id": 1337591365,
+      "head_branch": "diag/c-thread-minimal-20261022",
+      "head_sha": "f7ba4962be60365bdf9061cc1cacbabfc7c169d0"
+    }
+  }
+}

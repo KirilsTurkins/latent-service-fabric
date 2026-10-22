@@ -1,0 +1,37 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "c-thread-typed-trap-${{ github.ref }}"
+    },
+    "name": "Retained C typed trap diagnostic",
+    "on": {
+      "push": {
+        "branches": [
+          "diag/c-thread-typed-trap-20261022"
+        ],
+        "paths": [
+          ".github/workflows/c-thread-typed-trap-diagnostic.yml",
+          "tools/c_thread_minimal_inputs.py",
+          "tools/diagnose_c_thread_typed_trap.py",
+          "tools/host_codec_table_store_native_products.py",
+          "tools/host_codec_table_store_native_products_reader.py",
+          "tools/tests/test_c_thread_typed_trap.py",
+          "tools/tests/test_host_codec_table_store_native_products.py",
+          "tools/tests/test_host_codec_table_store_native_products_reader.py"
+        ]
+      }
+    },
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "retained-typed-trap"
+  ],
+  "reviewReason": "Root-reviewed retained f7 component diagnostic with separately authenticated de0 v2 products: exactly two calls, original build/source receipts immutable, real raw/audit/physical/provider observations before predicates, qualification false; no guest/native build.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/c-thread-typed-trap-diagnostic.yml"
+}
