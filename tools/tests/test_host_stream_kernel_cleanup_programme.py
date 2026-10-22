@@ -36,6 +36,8 @@ class CleanupProgrammeSource(unittest.TestCase):
                       'check(2u, -1, -EOPNOTSUPP, 1u, 1)',
                       'check(3u, -1, 0, 1u, 2)',
                       'check(REFCOUNT_SATURATED, 0, -EOVERFLOW, REFCOUNT_SATURATED, 0)',
+                      'check(0xffffffffu, 0, -EIO, 0xffffffffu, 0)',
+                      'check(0x80000000u, 0, -EIO, 0x80000000u, 0)',
                       'check(0u, 0, -EIO, 0u, 0)', 'destructor_calls != 1'):
             self.assertIn(token,text)
         for token in ('lsf_device_finish(', 'kobject_put(', 'acpi_dev_put(', 'malloc(', 'free('):

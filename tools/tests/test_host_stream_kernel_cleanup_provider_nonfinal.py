@@ -14,6 +14,8 @@ class CleanupProviderNonfinalSource(unittest.TestCase):
         self.assertIn('return -EOPNOTSUPP', text)
         self.assertIn('return -EOVERFLOW', text)
         self.assertIn('return -EIO', text)
+        self.assertIn('if ((int)val < 0)', text)
+        self.assertLess(text.index('REFCOUNT_SATURATED'), text.index('(int)val < 0'))
         self.assertFalse(source.preimages()['actualAtomicExecution'])
 
     def test_callback_retains_real_borrow_on_failure_and_clears_after_success(self):
@@ -36,6 +38,8 @@ class CleanupProviderNonfinalSource(unittest.TestCase):
             while True:
                 if observed == saturated:
                     return 'overflow', value, False
+                if observed & 0x80000000:
+                    return 'invalid', value, False
                 if observed == 1:
                     return 'unsupported', value, False
                 new = (observed - 1) & 0xffffffff
@@ -54,6 +58,8 @@ class CleanupProviderNonfinalSource(unittest.TestCase):
         self.assertEqual(put(3, 1), ('consumed', 1, True))
         self.assertEqual(put(0), ('invalid', 0, False))
         self.assertEqual(put(saturated), ('overflow', saturated, False))
+        self.assertEqual(put(0xffffffff), ('invalid', 0xffffffff, False))
+        self.assertEqual(put(0x80000000), ('invalid', 0x80000000, False))
         # An external get after our read-of-one does not retrospectively
         # consume our retained borrow. Get-before-read permits normal 2->1.
         self.assertEqual(put(1)[2], False)

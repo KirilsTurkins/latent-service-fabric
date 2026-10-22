@@ -82,6 +82,8 @@ int main(void)
     /* A get before the actual observation permits normal real nonfinal put. */
     if (lsf_cleanup_provider_ref_put_nonfinal(&ref) ||
         atomic_read(&ref.refs) != 1u || destructor_calls) return 12;
+    if (!check(0xffffffffu, 0, -EIO, 0xffffffffu, 0)) return 13;
+    if (!check(0x80000000u, 0, -EIO, 0x80000000u, 0)) return 14;
     return 0;
 }
 ''').encode()

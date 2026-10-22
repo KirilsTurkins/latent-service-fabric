@@ -54,7 +54,8 @@ def atomic_nonfinal():
     text = replace(definition('refcount_dec_not_one'), 'bool refcount_dec_not_one(refcount_t *r)',
         'static int lsf_cleanup_provider_ref_put_nonfinal(refcount_t *r)')
     text = replace(text, '\t\tif (unlikely(val == REFCOUNT_SATURATED))\n\t\t\treturn true;\n',
-        '\t\tif (unlikely(val == REFCOUNT_SATURATED))\n\t\t\treturn -EOVERFLOW;\n')
+        '\t\tif (unlikely(val == REFCOUNT_SATURATED))\n\t\t\treturn -EOVERFLOW;\n'
+        '\t\tif ((int)val < 0)\n\t\t\treturn -EIO;\n')
     text = replace(text, '\t\tif (val == 1)\n\t\t\treturn false;\n',
         '\t\tif (val == 1)\n\t\t\treturn -EOPNOTSUPP;\n')
     text = replace(text, '\t\tif (new > val) {\n'

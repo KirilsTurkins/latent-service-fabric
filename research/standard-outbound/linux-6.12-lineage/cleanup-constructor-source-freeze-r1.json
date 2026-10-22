@@ -401,8 +401,8 @@
       "sha256": "941f5700873e4d541088db2103f61d18b965af5b8a08f1e15e816aed679f922c"
     },
     "tools/host_stream_kernel_cleanup_atomic_control.py": {
-      "bytes": 3587,
-      "sha256": "7f18cd596c91ca9e6fe8fde2014dbd7feb12b2b0a35910eb90b500ccde6e17fb"
+      "bytes": 3717,
+      "sha256": "c5accd10e7a592eb1456eb5d9bd189dc56288f1709d9834bf7e874312edea49c"
     },
     "tools/host_stream_kernel_cleanup_audit.py": {
       "bytes": 9543,
@@ -477,8 +477,8 @@
       "sha256": "2c9bff0125c5b7c81129a2cddd71f356c8a8ef0b71c6d30c606afc8ce10b5a3e"
     },
     "tools/host_stream_kernel_cleanup_provider_nonfinal.py": {
-      "bytes": 7249,
-      "sha256": "c533c51bdaa498e362a3056daa89100767065d9c90582bf95972deaab78f3266"
+      "bytes": 7303,
+      "sha256": "ff2d4a1304eef22fe4044d2d225561f1778b98e79e4b869fb0709db534305a23"
     },
     "tools/host_stream_kernel_cleanup_provider_operation.py": {
       "bytes": 6514,
@@ -661,8 +661,8 @@
       "sha256": "2fc97e9e57050cc26cde9db64ffa3638f618f0d10b8273489d46f5efdc7dc3f9"
     },
     "tools/tests/test_host_stream_kernel_cleanup_programme.py": {
-      "bytes": 4186,
-      "sha256": "51b7e1ab19c8f12d09f062d7bce3b553451cafe5e5c0ad346aae5debfec477ce"
+      "bytes": 4324,
+      "sha256": "e043cbd6b2c24ed2a65d95916ea2636cee37c8ddfc0519f4ecc44e257a7fcf55"
     },
     "tools/tests/test_host_stream_kernel_cleanup_provider_birth.py": {
       "bytes": 3476,
@@ -677,8 +677,8 @@
       "sha256": "9b977e509215fea6e668b56b0f8b3f58fb40f2a4da9040721795064835ba8f7d"
     },
     "tools/tests/test_host_stream_kernel_cleanup_provider_nonfinal.py": {
-      "bytes": 3239,
-      "sha256": "a36856dff7477f30241b52d37d2ba3a21d8f53110d135250ffce7ab1d74fc13a"
+      "bytes": 3615,
+      "sha256": "37a3acd0437ece534517b321a7b96007ea5c66d7baddd067be5a5659c3004b86"
     },
     "tools/tests/test_host_stream_kernel_cleanup_provider_operation.py": {
       "bytes": 5827,
@@ -2065,8 +2065,8 @@
       "sha256": "e136709a7628fce196e88af1caf8498a99689b0cdb293747a6c91262a4fc65ff"
     },
     "net/factory-cleanup-provider-nonfinal.c": {
-      "bytes": 353,
-      "sha256": "1ba1996d6360a343341dd0f4a80e1345bc551c5175a457f2465639c638fdeb5e"
+      "bytes": 389,
+      "sha256": "883b2f7b6c7c2e5e6616daf2ea85a44c63037f38b219591bb9b07f7ba441bd5e"
     },
     "kernel/taskstats.c": {
       "bytes": 16746,
