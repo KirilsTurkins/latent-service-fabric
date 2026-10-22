@@ -61,6 +61,20 @@ pub struct Control {
     pub budget: ActivationBudget,
     pub probe: Arc<Probe>,
 }
+impl Control {
+    pub fn native_session_bytes(&self) -> u64 {
+        let bytes = self.budget.host_memory_bytes();
+        assert!(bytes > 0);
+        assert_eq!(self.budget.outstanding_reservations(), 4);
+        bytes
+    }
+
+    pub fn assert_native_settled(&self) {
+        assert_eq!(self.budget.host_memory_bytes(), 0);
+        assert_eq!(self.budget.outstanding_reservations(), 0);
+    }
+}
+
 impl ExecutionCancellation for Control {
     fn activation_id(&self) -> &ActivationId {
         &self.id

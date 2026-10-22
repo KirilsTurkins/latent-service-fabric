@@ -227,6 +227,7 @@ fn catalog_contention_preserves_configured_and_confirmed_generations_until_expli
     };
     let (session, execution) =
         invocation.block_on(physical::session(&node, &artifacts, endpoint.clone()));
+    let session_bytes = session_native_bytes(&execution.budget);
     let owner = node.providers.as_ref().unwrap();
     let lifecycle = owner.streams.as_ref().unwrap().clone();
     let catalog = owner.stream_catalog.as_ref().unwrap().clone();
@@ -311,7 +312,8 @@ fn catalog_contention_preserves_configured_and_confirmed_generations_until_expli
     assert_eq!(lifecycle.status().unwrap().usage.owners, 1);
     assert!(execution.budget.host_memory_bytes() > 0);
     drop(stream);
-    assert_eq!(execution.budget.host_memory_bytes(), 0);
+    assert_eq!(execution.budget.host_memory_bytes(), session_bytes);
+    assert_eq!(execution.budget.outstanding_reservations(), 4);
     let recovered = invocation
         .block_on(node.publish_outbound_stream_bindings(&fixture.guard))
         .unwrap();
@@ -327,6 +329,8 @@ fn catalog_contention_preserves_configured_and_confirmed_generations_until_expli
     drop(lifecycle);
     fixture.untouched_peer();
     clean(node, &invocation);
+    assert_eq!(execution.budget.host_memory_bytes(), 0);
+    assert_eq!(execution.budget.outstanding_reservations(), 0);
     control.shutdown_timeout(Duration::from_secs(5));
     invocation.shutdown_timeout(Duration::from_secs(5));
 }
@@ -385,13 +389,82 @@ fn foreign_protected_guard_and_static_owner_change_cannot_rotate_or_publish() {
     invocation.shutdown_timeout(Duration::from_secs(5));
 }
 
+fn session_native_bytes(budget: &latent_core::ActivationBudget) -> u64 {
+    let bytes = budget.host_memory_bytes();
+    assert!(bytes > 0);
+    assert_eq!(budget.outstanding_reservations(), 4);
+    bytes
+}
+
+fn assert_closed_peer(peer: &mut impl std::io::Read) {
+    let mut byte = [0];
+    match peer.read(&mut byte) {
+        Ok(0) => {}
+        Err(error) if error.kind() == std::io::ErrorKind::ConnectionReset => {}
+        other => panic!("actual peer closure expected: {other:?}"),
+    }
+}
+
+async fn connect_control_stream(
+    lifecycle: &latent_streams::StreamLifecycle,
+    session: &latent_capabilities::broker::CapabilitySession,
+    endpoint: latent_policy::capability::StreamEndpoint,
+) -> Box<dyn latent_capabilities::broker::network::OutboundStream> {
+    use latent_capabilities::broker::network::{OutboundStreamInvoker, StreamConnectRequest};
+    lifecycle
+        .start(
+            session,
+            StreamConnectRequest {
+                endpoint,
+                timeout_millis: None,
+            },
+        )
+        .unwrap()
+        .await
+        .unwrap()
+}
+
+type UnpolledRead = latent_core::BoxFuture<
+    'static,
+    Result<Option<latent_capabilities::broker::io::IoOutputChunk>, latent_streams::StreamError>,
+>;
+
+async fn bounded_unpolled_read_setup(
+    stream: &dyn latent_capabilities::broker::network::OutboundStream,
+    budget: &latent_core::ActivationBudget,
+) -> Result<UnpolledRead, latent_streams::StreamError> {
+    let before_read_bytes = budget.host_memory_bytes();
+    let before_read_owners = budget.outstanding_reservations();
+    let mut last_error = None;
+    // The maintenance authority scan can briefly hold the session's
+    // nonblocking bookkeeping lock. Refused setup has not dispatched I/O.
+    for _ in 0..16 {
+        match stream.read(16 * 1024, None) {
+            Ok(pending) => return Ok(pending),
+            Err(error) => {
+                assert_eq!(error.code, latent_streams::StreamErrorCode::Exhausted);
+                assert_eq!(error.accepted_prefix_bytes, 0);
+                assert!(!error.may_have_applied);
+                assert_eq!(budget.host_memory_bytes(), before_read_bytes);
+                assert_eq!(budget.outstanding_reservations(), before_read_owners);
+                let observed = stream.inspect();
+                assert_eq!(observed.accepted_write_bytes, 0);
+                assert_eq!(observed.delivered_read_bytes, 0);
+                assert!(!observed.application_write_attempted);
+                last_error = Some(error);
+                tokio::time::sleep(Duration::from_millis(10)).await;
+            }
+        }
+    }
+    Err(last_error.expect("the nonempty bounded loop attempted admission"))
+}
+
 #[test]
 fn explicit_drain_retires_current_owner_and_requires_a_normal_restart_for_fresh_work() {
     use latent_capabilities::broker::network::{OutboundStreamInvoker, StreamConnectRequest};
     use latent_policy::capability::{StreamEndpoint, StreamTransport};
     use std::{
         future::{poll_fn, Future},
-        io::Read,
         task::Poll,
     };
     let fixture = Fixture::new();
@@ -404,6 +477,7 @@ fn explicit_drain_retires_current_owner_and_requires_a_normal_restart_for_fresh_
     };
     let (session, execution) =
         invocation.block_on(physical::session(&node, &artifacts, endpoint.clone()));
+    let session_bytes = session_native_bytes(&execution.budget);
     let lifecycle = node
         .providers
         .as_ref()
@@ -413,48 +487,19 @@ fn explicit_drain_retires_current_owner_and_requires_a_normal_restart_for_fresh_
         .unwrap()
         .clone();
     let pools = node.providers.as_ref().unwrap().pools.clone();
-    let stream = invocation
-        .block_on(
-            lifecycle
-                .start(
-                    &session,
-                    StreamConnectRequest {
-                        endpoint: endpoint.clone(),
-                        timeout_millis: None,
-                    },
-                )
-                .unwrap(),
-        )
-        .unwrap();
+    let stream = invocation.block_on(connect_control_stream(
+        &lifecycle,
+        &session,
+        endpoint.clone(),
+    ));
     let (mut peer, _) = fixture.listener.accept().unwrap();
     peer.set_read_timeout(Some(Duration::from_secs(1))).unwrap();
-    let before_read_bytes = execution.budget.host_memory_bytes();
-    let before_read_owners = execution.budget.outstanding_reservations();
-    let pending = invocation.block_on(async {
-        // The maintenance authority scan can briefly hold the session's
-        // nonblocking bookkeeping lock. Refused setup has not dispatched I/O.
-        for _ in 0..16 {
-            match stream.read(16 * 1024, None) {
-                Ok(pending) => return pending,
-                Err(error) => {
-                    assert_eq!(error.code, latent_streams::StreamErrorCode::Exhausted);
-                    assert_eq!(error.accepted_prefix_bytes, 0);
-                    assert!(!error.may_have_applied);
-                    assert_eq!(execution.budget.host_memory_bytes(), before_read_bytes);
-                    assert_eq!(
-                        execution.budget.outstanding_reservations(),
-                        before_read_owners
-                    );
-                    let observed = stream.inspect();
-                    assert_eq!(observed.accepted_write_bytes, 0);
-                    assert_eq!(observed.delivered_read_bytes, 0);
-                    assert!(!observed.application_write_attempted);
-                    tokio::time::sleep(Duration::from_millis(10)).await;
-                }
-            }
-        }
-        panic!("read setup remained exhausted under its original unchanged bounds")
-    });
+    let pending = invocation
+        .block_on(bounded_unpolled_read_setup(
+            stream.as_ref(),
+            &execution.budget,
+        ))
+        .expect("read setup remained exhausted under its original unchanged bounds");
     assert_eq!(lifecycle.status().unwrap().usage.connections, 1);
     assert_eq!(lifecycle.status().unwrap().usage.pending_operations, 1);
     let charged = execution.budget.host_memory_bytes();
@@ -482,12 +527,7 @@ fn explicit_drain_retires_current_owner_and_requires_a_normal_restart_for_fresh_
         invocation.block_on(pending).err().unwrap().code,
         latent_streams::StreamErrorCode::Revoked
     );
-    let mut byte = [0];
-    match peer.read(&mut byte) {
-        Ok(0) => {}
-        Err(error) if error.kind() == std::io::ErrorKind::ConnectionReset => {}
-        other => panic!("actual peer closure expected: {other:?}"),
-    }
+    assert_closed_peer(&mut peer);
     assert_eq!(lifecycle.status().unwrap().usage.connections, 0);
     assert_eq!(lifecycle.status().unwrap().usage.owners, 1);
     assert!(execution.budget.host_memory_bytes() > 0);
@@ -497,7 +537,8 @@ fn explicit_drain_retires_current_owner_and_requires_a_normal_restart_for_fresh_
     assert!(result.stream.stopped);
     assert!(result.stream.current_generation_retired);
     assert_eq!(result.stream.usage.owners, 0);
-    assert_eq!(execution.budget.host_memory_bytes(), 0);
+    assert_eq!(execution.budget.host_memory_bytes(), session_bytes);
+    assert_eq!(execution.budget.outstanding_reservations(), 4);
     assert_eq!(pools.snapshot().unwrap().running_requests, 0);
     drop(session);
     drop(lifecycle);
@@ -510,6 +551,8 @@ fn explicit_drain_retires_current_owner_and_requires_a_normal_restart_for_fresh_
         .is_err());
     fixture.untouched_peer();
     clean(node, &invocation);
+    assert_eq!(execution.budget.host_memory_bytes(), 0);
+    assert_eq!(execution.budget.outstanding_reservations(), 0);
     control.shutdown_timeout(Duration::from_secs(5));
     invocation.shutdown_timeout(Duration::from_secs(5));
 }

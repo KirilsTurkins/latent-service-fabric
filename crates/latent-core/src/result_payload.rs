@@ -18,6 +18,9 @@ struct Accounted {
     // Rust drops fields in declaration order: storage disappears before refund.
     bytes: Vec<u8>,
     memory: RefCell<HostMemoryReservation>,
+    // Original returned bytes are execution/result ownership, unlike a dead
+    // Arc header's physical-memory-only guard. Bytes clones share this owner.
+    _accounting: ActivationBudget,
 }
 // Locked bytes1.12.1 src/bytes.rs::Owned<T> adds one AtomicUsize to T.
 // Bound that field, either field ordering's alignment padding, and the same
@@ -59,11 +62,11 @@ impl ResultPayload {
         let capacity = bytes.capacity();
         // Bind the fields before a possible refusal so even failure destroys
         // actual storage before its original reservation.
-        let mut owner = Accounted {
-            bytes,
-            memory: RefCell::new(memory),
-        };
-        let memory = owner.memory.get_mut();
+        // Tuple fields also drop in order: a refused binding must destroy the
+        // actual Vec before its original memory guard, without borrowing an
+        // ordinary owner from a budget which has not yet been validated.
+        let mut source = (bytes, RefCell::new(memory));
+        let memory = source.1.get_mut();
         if !memory.is_from_budget(budget) {
             return Err(BudgetError::InvalidAccountingOperation {
                 dimension: BudgetDimension::MemoryBytes,
@@ -76,7 +79,11 @@ impl ResultPayload {
         // Excess temporary/old-capacity storage has already been destroyed.
         memory.shrink(needed);
         Ok(Self {
-            bytes: Bytes::from_owner(owner),
+            bytes: Bytes::from_owner(Accounted {
+                bytes: source.0,
+                memory: source.1,
+                _accounting: budget.clone(),
+            }),
             capacity,
         })
     }

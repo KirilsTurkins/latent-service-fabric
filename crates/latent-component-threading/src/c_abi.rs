@@ -7,8 +7,8 @@ use wasm_encoder::{ConstExpr, ExportSection, GlobalSection, GlobalType};
 const INITIALIZE: &str = "_initialize";
 const INITIALIZE_BODY: &str = "__lsf_c_canonical_initialize_body";
 const REALLOC: &str = "cabi_realloc";
-const GUARD: i32 = 4096;
-const HIGH: i32 = GUARD + 65_536;
+const GUARD: i32 = c_root::SYSTEM_STACK_LOW as i32;
+const HIGH: i32 = c_root::SYSTEM_STACK_HIGH as i32;
 const MAX_EDGES: usize = 65_536;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -302,27 +302,36 @@ impl Abi {
                 index += 1;
             }
         }
-        let mut pending = vec![self.init, self.realloc, self.post];
-        while let Some(index) = pending.pop() {
-            if !self.closure.insert(index) {
-                continue;
+        for root in [self.init, self.realloc, self.post] {
+            let mut pending = vec![root];
+            let mut visited = BTreeSet::new();
+            while let Some(index) = pending.pop() {
+                if !visited.insert(index) {
+                    continue;
+                }
+                self.closure.insert(index);
+                if index == self.tls_get {
+                    if root == self.realloc {
+                        return Err("c-abi-live-realloc-tls-alias-not-qualified");
+                    }
+                    continue;
+                }
+                // System stack helpers do not consult context slots. Original
+                // init/post TLS access remains outside all live C frames.
+                if index == self.stack_get || index == self.stack_set {
+                    continue;
+                }
+                if index < self.base.imported_functions {
+                    return Err("c-abi-system-host-or-thread-import");
+                }
+                let targets = calls
+                    .get(&index)
+                    .ok_or("c-abi-system-indirect-or-invalid-target")?;
+                if targets.contains(&u32::MAX) {
+                    return Err("c-abi-system-indirect-or-reference-call");
+                }
+                pending.extend(targets.iter().copied());
             }
-            // These exact helpers alone may use the original root SP/TLS
-            // during a private System scope. This preserves a real errno path
-            // on allocator failure; no TSS/context/host function is allowed.
-            if index == self.stack_get || index == self.stack_set || index == self.tls_get {
-                continue;
-            }
-            if index < self.base.imported_functions {
-                return Err("c-abi-system-host-or-thread-import");
-            }
-            let targets = calls
-                .get(&index)
-                .ok_or("c-abi-system-indirect-or-invalid-target")?;
-            if targets.contains(&u32::MAX) {
-                return Err("c-abi-system-indirect-or-reference-call");
-            }
-            pending.extend(targets.iter().copied());
         }
         Ok(())
     }
@@ -351,24 +360,22 @@ impl Abi {
         let sig = self.signature(function);
         let mut body = Function::new(sig.results.iter().map(|t| (1, *t)));
         self.mode_closed(&mut body);
+        body.instruction(&Instruction::GlobalGet(self.root_lifecycle));
         if function == self.realloc {
-            // Host import result lowering inside a live root/child keeps its
-            // current private stack; never switch it to the System stack.
-            body.instruction(&Instruction::GlobalGet(self.root_lifecycle))
-                .instruction(&Instruction::I32Const(1))
-                .instruction(&Instruction::I32Eq)
-                .instruction(&Instruction::If(BlockType::Empty));
-            self.forward(&mut body, function);
-            body.instruction(&Instruction::Return)
-                .instruction(&Instruction::End);
-        }
-        body.instruction(&Instruction::GlobalGet(self.root_lifecycle))
-            .instruction(&Instruction::I32Const(if function == self.post {
+            // Canonical realloc clears context slots, including when called
+            // while a root/child frame is suspended in a host import. Both
+            // input allocation (0) and live allocation (1) use the distinct
+            // original-memory System stack. No current context is borrowed.
+            body.instruction(&Instruction::I32Const(1))
+                .instruction(&Instruction::I32GtU);
+        } else {
+            body.instruction(&Instruction::I32Const(if function == self.post {
                 2
             } else {
                 0
             }))
             .instruction(&Instruction::I32Ne);
+        }
         reject(&mut body);
         body.instruction(&Instruction::GlobalGet(if function == self.init {
             self.initialized
@@ -696,8 +703,12 @@ pub(crate) mod tests {
         ) -> Result<(), reencode::Error<Self::Error>> {
             reencode::utils::parse_code_section(self, out, reader)?;
             let mut init = Function::new([]);
-            init.instruction(&Instruction::Call(self.first - 1))
-                .instruction(&Instruction::End);
+            init.instruction(&Instruction::Call(self.first - 1));
+            if self.variant == 4 {
+                init.instruction(&Instruction::GlobalGet(1))
+                    .instruction(&Instruction::Drop);
+            }
+            init.instruction(&Instruction::End);
             out.function(&init);
             let mut alloc = Function::new([]);
             alloc
@@ -750,6 +761,10 @@ pub(crate) mod tests {
                 .instruction(&Instruction::End);
             out.function(&alloc);
             let mut post = Function::new([]);
+            if self.variant == 5 {
+                post.instruction(&Instruction::GlobalGet(1))
+                    .instruction(&Instruction::Drop);
+            }
             post.instruction(&Instruction::LocalGet(0))
                 .instruction(&Instruction::Drop)
                 .instruction(&Instruction::End);
@@ -811,15 +826,138 @@ pub(crate) mod tests {
 
     #[test]
     fn c_system_errno_tls_path_preserves_original_root_storage() {
-        let original = fixture(2);
+        let original = fixture(4);
         let (output, receipt) =
             transform_c_canonical_abi(&original, Sha256::digest(&original).into(), "run").unwrap();
         assert!(receipt.system_scope_reads_tls);
-        assert_eq!(receipt.root.template.original_template_start, 131072);
+        assert_eq!(receipt.root.template.original_template_start, 196608);
         assert_eq!(
             verify_c_canonical_abi(&original, &output, "run").unwrap(),
             receipt
         );
+    }
+
+    fn operators(input: &[u8], function: u32) -> Vec<Operator<'_>> {
+        let imported = plan(input).unwrap().imported_functions;
+        Parser::new(0)
+            .parse_all(input)
+            .filter_map(|payload| match payload.unwrap() {
+                Payload::CodeSectionEntry(body) => Some(body),
+                _ => None,
+            })
+            .nth((function - imported) as usize)
+            .unwrap()
+            .get_operators_reader()
+            .unwrap()
+            .into_iter()
+            .collect::<Result<Vec<_>, _>>()
+            .unwrap()
+    }
+
+    #[test]
+    fn c_system_stack_disjoint_reservation_and_zero_context_realloc_scope() {
+        let original = fixture(0);
+        let (output, receipt) =
+            transform_c_canonical_abi(&original, Sha256::digest(&original).into(), "run").unwrap();
+        assert_eq!(plan(&original).unwrap().stack_initial, 135168);
+        assert_eq!(
+            (receipt.root.root_stack_low, receipt.root.root_stack_high),
+            (4096, 69632)
+        );
+        assert_eq!((GUARD, HIGH), (69632, 135168));
+        let memories = |input: &[u8]| {
+            Parser::new(0)
+                .parse_all(input)
+                .filter_map(|payload| match payload.unwrap() {
+                    Payload::MemorySection(reader) => {
+                        Some(reader.into_iter().collect::<Result<Vec<_>, _>>().unwrap())
+                    }
+                    _ => None,
+                })
+                .collect::<Vec<_>>()
+        };
+        assert_eq!(memories(&original), memories(&output));
+        let globals = Parser::new(0)
+            .parse_all(&original)
+            .find_map(|payload| match payload.unwrap() {
+                Payload::GlobalSection(reader) => Some(reader.count()),
+                _ => None,
+            })
+            .unwrap();
+        let scope = globals + 1; // root lifecycle follows the original globals
+        let ops = operators(&output, receipt.realloc_wrapper);
+        // The real old regression bypassed System scope for lifecycle=1.
+        // There must now be exactly one allocator call, enclosed in System
+        // scope, with no early Return or context intrinsic at this boundary.
+        let call = ops
+            .iter()
+            .position(|op| matches!(op, Operator::Call { .. }))
+            .unwrap();
+        assert_eq!(
+            ops.iter()
+                .filter(|op| matches!(op, Operator::Call { .. }))
+                .count(),
+            1
+        );
+        assert!(!ops.iter().any(|op| matches!(op, Operator::Return)));
+        assert!(ops[..call].windows(2).any(|pair| matches!(pair,
+            [Operator::I32Const { value: 1 }, Operator::GlobalSet { global_index }] if *global_index == scope)));
+        assert!(ops[call..].windows(2).any(|pair| matches!(pair,
+            [Operator::I32Const { value: 0 }, Operator::GlobalSet { global_index }] if *global_index == scope)));
+        assert!(ops[..call].iter().any(|op| matches!(op, Operator::I32GtU)));
+        // In the actual emitted stack helper, a System call returns the
+        // reserved global SP before any zeroed context lookup. The private
+        // root/child record is untouched along that complete early branch.
+        let get = plan(&original).unwrap();
+        let helper = operators(&output, get.imported_functions + get.function_count + 2);
+        let returns = helper
+            .iter()
+            .position(|op| matches!(op, Operator::Return))
+            .unwrap();
+        let context = helper.iter().position(|op| matches!(op, Operator::Call { function_index } if *function_index == get.context_get)).unwrap();
+        assert!(returns < context);
+        assert!(
+            matches!(&helper[..returns], [Operator::GlobalGet { global_index }, Operator::If { .. }, Operator::GlobalGet { .. }] if *global_index == scope)
+        );
+        assert_eq!(
+            verify_c_canonical_abi(&original, &output, "run").unwrap(),
+            receipt
+        );
+    }
+
+    #[test]
+    fn c_system_stack_rejects_aliases_and_live_realloc_tls() {
+        // The former single reservation cannot silently host both stacks.
+        let aliased = c_root::tests::fixture(69632, false, false);
+        assert_eq!(
+            c_root::transform_c_root_bootstrap(&aliased, Sha256::digest(&aliased).into(), "run")
+                .unwrap_err(),
+            "c-root-exact-guard-and-usable-stack-layout"
+        );
+        let occupied = c_root::tests::fixture(HIGH, true, false);
+        assert_eq!(
+            c_root::transform_c_root_bootstrap(&occupied, Sha256::digest(&occupied).into(), "run")
+                .unwrap_err(),
+            "c-root-original-active-data-overlaps-guard-or-stack"
+        );
+        let allocator_tls = fixture(2);
+        assert_eq!(
+            transform_c_canonical_abi(&allocator_tls, Sha256::digest(&allocator_tls).into(), "run")
+                .unwrap_err(),
+            "c-abi-live-realloc-tls-alias-not-qualified"
+        );
+        // TLS remains available to the authentic non-live initializer and
+        // post-return closures; its presence there cannot hide allocator TLS.
+        for variant in [4, 5] {
+            let input = fixture(variant);
+            let (output, receipt) =
+                transform_c_canonical_abi(&input, Sha256::digest(&input).into(), "run").unwrap();
+            assert!(receipt.system_scope_reads_tls);
+            assert_eq!(
+                verify_c_canonical_abi(&input, &output, "run").unwrap(),
+                receipt
+            );
+        }
     }
 
     #[test]

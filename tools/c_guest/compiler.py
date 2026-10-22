@@ -217,7 +217,11 @@ class Compiler:
             thread_flags = ['-matomics', '-mbulk-memory', '-pthread', '-fno-lto']
             for family in ('wasm-wasi-musl', 'generic-musl'):
                 thread_flags.extend(['-isystem', str(self.paths['zig'].parent / 'lib/libc/include' / family)])
-            command[command.index('-Wl,-z,stack-size=65536')] = '-Wl,-z,stack-size=69632'
+            # One authenticated original-memory reservation: 4KiB guard,
+            # 64KiB private root stack, then 64KiB canonical System stack.
+            # Canonical realloc clears context slots and cannot borrow a
+            # root/child frame suspended during host result lowering.
+            command[command.index('-Wl,-z,stack-size=65536')] = '-Wl,-z,stack-size=135168'
             command.extend([*thread_flags, *('-Wl,--export=' + name for name in threading.EXPORTS)])
         for directory in include_directories:
             command.extend(["-I", str(directory)])

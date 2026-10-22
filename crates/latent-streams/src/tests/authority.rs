@@ -150,6 +150,7 @@ async fn genuine_http_only_authority_denies_opaque_bytes_before_dns_and_contact(
     let f = Fixture::new(configuration);
     let http = http_provider(&f);
     let (session, control) = http_session(&f, &http);
+    let control_session_bytes = control.native_session_bytes();
     let invocation = f.provider.start(
         &session,
         StreamConnectRequest {
@@ -167,7 +168,7 @@ async fn genuine_http_only_authority_denies_opaque_bytes_before_dns_and_contact(
         control.budget.snapshot_at(Instant::now()).outbound_requests,
         0
     );
-    assert_eq!(control.budget.host_memory_bytes(), 0);
+    assert_eq!(control.budget.host_memory_bytes(), control_session_bytes);
     assert_eq!(f.provider.usage().unwrap().owners, 0);
     assert_eq!(f.pools.snapshot().unwrap().connections, 0);
     assert_eq!(
@@ -196,6 +197,8 @@ async fn genuine_http_only_authority_denies_opaque_bytes_before_dns_and_contact(
     drop(session);
     drop(http);
     f.clean().await;
+    drop(f);
+    control.assert_native_settled();
 }
 
 async fn typed_get(http: &HttpProvider, session: &CapabilitySession, listener: TcpListener) {

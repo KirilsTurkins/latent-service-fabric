@@ -3,8 +3,15 @@ use super::{
 };
 
 impl ParentReservation {
-    fn retire(&mut self, state: &AccountingState, grant: &ResourceBudget) {
-        if let Some(cumulative) = self.cumulative.take() {
+    fn settle_cumulative(&self, state: &AccountingState, grant: &ResourceBudget) {
+        // Take once, then release this mutex before following child -> parent
+        // accounting locks or dropping the ordinary parent reservation owner.
+        let cumulative = self
+            .cumulative
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .take();
+        if let Some(cumulative) = cumulative {
             if self.accepted {
                 let mut used = state.consumption.clone();
                 if state
@@ -27,6 +34,8 @@ impl ParentReservation {
                 let _ = cumulative.refund();
             }
         }
+    }
+    fn retire_memory(&mut self, state: &AccountingState) {
         debug_assert_eq!(state.child_reserved_memory, 0);
         debug_assert_eq!(state.child_observed_memory, 0);
         debug_assert_eq!(state.host_reserved_memory, 0);
@@ -36,9 +45,15 @@ impl ParentReservation {
 }
 impl Drop for ParentReservation {
     fn drop(&mut self) {
-        // Only a never-admitted preparation can reach this fallback with a
-        // reservation. Real child ledgers retire through their final Arc below.
-        if let Some(cumulative) = self.cumulative.take() {
+        // A never-admitted preparation may still own this fallback group.
+        // Accepted cumulative groups settle at the final ordinary owner;
+        // physical memory/capacity retires only with the final Inner Arc.
+        if let Some(cumulative) = self
+            .cumulative
+            .get_mut()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .take()
+        {
             if self.accepted {
                 let _ = cumulative.commit();
             } else {
@@ -46,6 +61,18 @@ impl Drop for ParentReservation {
             }
         }
         self.release_memory(0);
+    }
+}
+impl ActivationBudgetInner {
+    pub(in crate::budget) fn settle_parent_cumulative(&self) {
+        if let Some(parent) = self
+            .lineage
+            .get()
+            .and_then(|lineage| lineage.parent.as_ref())
+        {
+            let state = self.lock_state();
+            parent.settle_cumulative(&state, &self.granted);
+        }
     }
 }
 impl Drop for ActivationBudgetInner {
@@ -59,7 +86,8 @@ impl Drop for ActivationBudgetInner {
             .get_mut()
             .and_then(|lineage| lineage.parent.as_mut())
         {
-            parent.retire(state, &self.granted);
+            parent.settle_cumulative(state, &self.granted);
+            parent.retire_memory(state);
         }
     }
 }
