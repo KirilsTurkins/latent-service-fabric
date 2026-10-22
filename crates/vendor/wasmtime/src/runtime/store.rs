@@ -801,8 +801,8 @@ impl<T> Store<T> {
             gc_store: None,
             #[cfg(feature = "gc")]
             gc_data: Default::default(),
-            modules: ModuleRegistry::new(memory)?,
-            func_refs: FuncRefs::default(),
+            modules: ModuleRegistry::new(memory.clone())?,
+            func_refs: FuncRefs::new(memory)?,
             host_globals: TryPrimaryMap::new(),
             instance_count: 0,
             instance_limit: crate::DEFAULT_INSTANCE_LIMIT,
