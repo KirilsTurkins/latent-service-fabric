@@ -280,7 +280,7 @@ def run(output: Path, rust_bin: Path, owned_sysroot: Path, context_tool: Path, *
             record['targetCargoConfiguration'] = target_arguments
             raw = guard.compile(commands, paths['cargo'], [
                 'build', '--locked', '--release', '--lib', '--target', 'wasm32-unknown-unknown',
-                '--message-format=json', *target_arguments], work)
+                '--message-format=json', '--verbose', '--verbose', *target_arguments], work)
             prepared.check()
             executable_outputs = builder.RustExecutableOutputs(temporary / 'target', output, approval.identity)
             core_path = emitted_core(raw, work, temporary / 'target', project['name'].replace('-', '_'))
