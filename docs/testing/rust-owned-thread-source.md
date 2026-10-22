@@ -91,8 +91,11 @@ owners until the real post-return cleanup returns. Async drain and TLS finish
 remain in the public export; the final detached postlude is still System-only.
 Original allocator/post-return bodies are retained, not replaced with models.
 Their complete private graph and callback behavior are not yet authenticated.
-This new mechanism and its four encoded controls have not yet been compiled or
-executed by the earlier run.
+Run `39845781774` at `e54b298b241050f5ce3badc63d39b30a968b4df7`
+compiled this new utility and passed all 70 source mechanism controls, including
+the four new encoded cases. It rebuilt the selected std and completed normal
+capture, then refused the original source/CAS archive's 32MiB expanded bound
+before application compilation. It did not execute an application or guest.
 
 The workflow's explicit default-false `application-diagnostic` input compiles
 one ordinary captured `futures-executor 0.3.31` application using its default
@@ -107,6 +110,16 @@ compiler-distribution guards remain: cross-job installation metadata can differ,
 so this joint job builds the selected sysroot with its actual compiler rather
 than claiming automatic artifact reuse.
 
+The original normal capture includes the complete native dependency closure,
+including host packages. Its unique source/CAS exceeds 32MiB expanded even
+though the observed partial archive compresses to 6,658,554 bytes. The diagnostic
+therefore explicitly permits at most 128MiB expanded source/CAS in its one
+32MiB gzip archive; the 4MiB individual-file and 32,768-entry bounds remain.
+It retains the complete accepted lock and source/CAS byte inventory before
+compression or an expanded-size refusal, and full digests before compression.
+This preserves every original captured path and leaves the outer 128MiB cap
+unchanged. It does not authorize larger compiler products or runtime enablement.
+
 Beyond those actual compiler inputs, validation consists of source/preimage controls and metadata typechecks
 with explicit public-wrapper/ABI ports. Earlier native source controls exercise
 the actual registry, wait, TLS and lifecycle bodies with explicit reference
@@ -117,8 +130,8 @@ captured executor refusal paths. Metadata typechecking supplements those cases.
 
 Before any supported runtime claim, the remaining minimum delivery is:
 
-1. Compile the new ordinary-root/canonical-cleanup utility route and inspect an
-   actual captured default ThreadPool application's emitted graph.
+1. Compile and inspect an actual captured default ThreadPool application's
+   emitted graph through the compiled ordinary-root/canonical-cleanup utility.
 2. Execute the normal captured target-side executor/std route with its complete
    original capture/patch identities; source integration alone is insufficient.
 3. Authenticate the final private pool bridge callsites, table/callback targets,

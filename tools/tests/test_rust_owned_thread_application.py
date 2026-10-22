@@ -32,6 +32,7 @@ class OwnedThreadApplication(unittest.TestCase):
                     emitted_core(raw(*rows), work, target, 'ordinary')
 
     def test_source_archive_retains_hidden_cargo_and_cas_bytes_without_compiler_outputs(self):
+        from tools.rust_capsule_project import digest
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory).resolve(); app = root / 'app'; app.mkdir()
             contents = {'Cargo.toml': b'[package]\nname="ordinary"\n',
@@ -45,9 +46,20 @@ class OwnedThreadApplication(unittest.TestCase):
             with tarfile.open(output, 'r:gz') as archive:
                 actual = {member.name: archive.extractfile(member).read() for member in archive}
             self.assertEqual(actual, contents)
+            retained = json.loads((root / 'source.tar.gz.files.json').read_text())
+            self.assertTrue(retained['digestsComplete'])
+            self.assertEqual(retained['expandedBytes'], sum(map(len, contents.values())))
+            self.assertEqual(retained['files'], [
+                {'path': name, 'size': len(raw), 'digest': digest(raw)}
+                for name, raw in sorted(contents.items())])
             (app / 'too-large').write_bytes(b'x' * (4 * 1024 * 1024 + 1))
             with self.assertRaises(ValueError):
                 source_archive(app, root / 'refused.tar.gz')
+            refused = json.loads((root / 'refused.tar.gz.sizes.json').read_text())
+            self.assertFalse(refused['digestsComplete'])
+            self.assertEqual(refused['expandedBytes'], sum(map(len, contents.values())) + 4 * 1024 * 1024 + 1)
+            self.assertEqual(next(row['size'] for row in refused['files'] if row['path'] == 'too-large'),
+                             4 * 1024 * 1024 + 1)
 
 
 if __name__ == '__main__':

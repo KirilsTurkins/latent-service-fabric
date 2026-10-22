@@ -7,6 +7,7 @@ it never writes BUILD-COMPLETE or packages, signs, invokes or enables a runtime.
 from __future__ import annotations
 
 from pathlib import Path
+import io
 import shutil
 import tarfile
 import tempfile
@@ -35,6 +36,8 @@ RECIPE = tuple(dict.fromkeys(('tools/compile_rust_owned_thread_application.py',
     *builder.RECIPE, *standard.source_build_inputs(standard.THREAD), *fixture.RECIPE,
     *sdk_files())))
 MAX_CORE = 8 * 1024 * 1024
+MAX_EXPANDED_SOURCE = 128 * 1024 * 1024
+MAX_SOURCE_ARCHIVE = 32 * 1024 * 1024
 
 
 def emitted_core(raw: bytes, work: Path, target: Path, name: str) -> Path:
@@ -67,24 +70,44 @@ def emitted_core(raw: bytes, work: Path, target: Path, name: str) -> Path:
 
 def source_archive(app: Path, output: Path):
     """Retain the actual normal source/capture/CAS, without compiler outputs."""
-    count, total = 0, 0
+    paths, rows, total = [], [], 0
+    for path in sorted(app.rglob('*')):
+        relative = path.relative_to(app)
+        if relative.parts[0] == 'target':
+            continue
+        checked_path(path)
+        if path.is_dir():
+            continue
+        size = path.stat().st_size
+        total += size
+        paths.append(path)
+        rows.append({'path': relative.as_posix(), 'size': size})
+        require(len(rows) <= 32768, 'rust-thread-app-retained-source-entry-bound')
+    # Keep the complete byte inventory even when expanded-source refusal is
+    # necessary. The accepted lock is retained separately before this call.
+    manifest = {'files': rows, 'expandedBytes': total, 'digestsComplete': False}
+    write_json(output.with_name(output.name + '.sizes.json'), manifest)
+    require(total <= MAX_EXPANDED_SOURCE
+            and all(row['size'] <= 4 * 1024 * 1024 for row in rows),
+            'rust-thread-app-retained-source-bound')
+    for path, row in zip(paths, rows, strict=True):
+        raw = read_file(path, 4 * 1024 * 1024)
+        require(len(raw) == row['size'], 'rust-thread-app-archive-source-mutated')
+        row['digest'] = digest(raw)
+    manifest['digestsComplete'] = True
+    write_json(output.with_name(output.name + '.files.json'), manifest)
     with tarfile.open(output, 'w:gz') as archive:
-        for path in sorted(app.rglob('*')):
-            relative = path.relative_to(app)
-            if relative.parts[0] == 'target':
-                continue
-            checked_path(path)
-            if path.is_dir():
-                continue
-            count += 1
+        for path, row in zip(paths, rows, strict=True):
             raw = read_file(path, 4 * 1024 * 1024)
-            total += len(raw)
-            require(count <= 32768 and total <= 32 * 1024 * 1024,
-                    'rust-thread-app-retained-source-bound')
-            archive.add(path, arcname=relative.as_posix(), recursive=False)
-            require(output.stat().st_size <= 32 * 1024 * 1024,
+            require(len(raw) == row['size'] and digest(raw) == row['digest'],
+                    'rust-thread-app-archive-source-mutated')
+            info = archive.gettarinfo(path, arcname=row['path'])
+            require(info.isfile() and info.size == len(raw),
+                    'rust-thread-app-archive-source-mutated')
+            archive.addfile(info, io.BytesIO(raw))
+            require(output.stat().st_size <= MAX_SOURCE_ARCHIVE,
                     'rust-thread-app-source-archive-bound')
-    return file_identity(output, 'application-source-and-capture.tar.gz', 32 * 1024 * 1024)
+    return file_identity(output, 'application-source-and-capture.tar.gz', MAX_SOURCE_ARCHIVE)
 
 
 def run(output: Path, rust_bin: Path, owned_sysroot: Path, context_tool: Path, *, deadline: float):
@@ -141,6 +164,8 @@ def run(output: Path, rust_bin: Path, owned_sysroot: Path, context_tool: Path, *
                     and captured['ordinaryThreadPoolQualified'] is False,
                     'rust-thread-app-original-capture-receipt')
             (output / 'source-inputs.json').write_bytes(source)
+            (output / 'accepted-dependencies.lock.json').write_bytes(verified.lock_bytes)
+            (output / 'accepted-dependencies.json').write_bytes(verified.manifest_bytes)
             record['retainedOriginalSource'] = source_archive(app, output / 'application-source-and-capture.tar.gz')
             work = temporary / 'compiler/source'
             work.mkdir(parents=True)
