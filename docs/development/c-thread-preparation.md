@@ -5,7 +5,7 @@ execution result yet and does not complete #744. The default C project and the
 existing Rust context40 profile keep their selection and serialized settings.
 
 The C project must explicitly name `threadingProfile`. The normal captured C
-builder owns the four runtime files, the two runtime WIT imports, linked-libc
+builder owns the six runtime files, the two runtime WIT imports, linked-libc
 mode, guarded stack layout, derivation and ordinary component encoder. The
 existing `capsule_contracts` executable performs the two bounded derive/bind
 operations. Its original two-argument WIT operation is unchanged. Static
@@ -44,7 +44,7 @@ non-Ok host result traps. Detach follows both settlements and has no following
 C or host calls. The host's existing finalization guard remains strict, and
 its separate physical stack/metadata owners survive until Store destruction.
 
-The installed C recipe stages the optional helper and the four exact runtime
+The installed C recipe stages the optional helper and the six exact runtime
 sources in its normal inventory. `tools/c_capsule.py new ... --threading-profile
 c-context144-sync-cooperative-v1` captures those sources into the project's
 existing SDK lock. The installed `tools/dev_guest_recipe.py` uses the same
