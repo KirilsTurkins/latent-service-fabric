@@ -429,3 +429,52 @@ remain unfinished. Sealed image/layout/BTF, installed final-free production
 and real node/operator/provider conformance are still required. No kernel is
 linked, booted or installed, no SDK native products are built, and actual
 registration, complete allocation closure and all production gates remain false.
+
+## Compiled recipient, notification and security source extension
+
+The exclusive `--recipient` profile retains all thirteen earlier profiles and
+their complete job bodies, floors and bounds. Its
+[owning run](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39709818544)
+passed on source `1625510fc6b6bcd32505511729ea355cae226b38`. The
+[public observation](evidence/kernel-device-recipient-objects-compiled-2026-10-22.json)
+binds all 184 CRC-checked archive members, 283 Git materials, 105 complete
+maintained inputs, 189 complete definitions and 189 reproduced derived outputs.
+Twenty-four guides are historical context; all 259 executable, data and contract
+materials and all 132 source-freeze identities match the exercised source.
+Derived source is bound by digest tables; the artifact contains the objects,
+configuration, receipts and bounded diagnostics, not all derived C/H files.
+
+Actual Kbuild compiled 56 unlinked x86 objects and checked 243 defined GLOBAL
+functions (196 private, 47 original), preserving the 48-object/201-function
+floor. All 166 exact selected source/controller tests and 61 completed, cleaned
+commands passed. The original 4,309-symbol configuration changes only
+`CONFIG_LSF_STREAM_FACTORY` from `n` to `y`. SELinux, Netlabel, audit, XFRM,
+ACPI, epoll, io_uring, tracing and original RCU options remain enabled;
+PREEMPT_RT must already be disabled. No configuration is weakened to pass.
+
+The first attempt remains a failed, retained 41-member/25-object observation.
+The recipe selected standalone `wait.o`, but the maintained scheduler includes
+`wait.c` in `build_utility.c`. The corrected target preserves the same private
+function checks and every original/private C body. Its complete original
+Makefile, containing unit and scheduler header are authenticated from the same
+archive before build; no header prologue is invented. The generic extra-source
+cap stays 32. The previous fixed paths, thirteen recipient paths and three
+containing-unit inputs retain the original 4 MiB file/16 MiB aggregate bounds.
+
+The source now propagates original PCI/generation ownership through real sender
+admission, irreversible queue transfer, independent receive WORK, known wait/
+poll/epoll callbacks and the actual SIGIO permission/signal paths. Device-domain
+SELinux AVC, SID/cache, audit and final-return children use the original bank;
+unknown producers and uncertain retirement refuse or quarantine. Supplemental
+sender, receive, signal, drain and poison controls use explicit serialized
+kernel doubles. They do not execute Linux callbacks or qualify physical RCU.
+
+The original 512 KiB bank, 192 KiB infrastructure tail, 256 records, 64 owners
+and TCP/DNS 96/64 KiB allowances are unchanged. Normal factory selection stays
+`NULL`. Generation-bound cleanup resumption, complete callback/instrumentation
+closure, physical shared queues, bootstrap and failed-open original ownership,
+the remaining device/DMA/RX/neighbour/DNS/deferred graph, sealed image/layout/BTF
+and installed final-free/node/operator conformance remain required. No kernel
+is linked, booted or installed and no SDK native products are built. Actual
+recipient/RCU execution, complete allocation closure and all production gates
+remain false.
