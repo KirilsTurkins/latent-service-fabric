@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Guest-local private linkage for the captured executor port, not a host WIT.
 //! Matching selected std definitions exist; final private graph is unqualified.
+use core::convert::TryFrom;
 use std::io;
 
 pub(crate) const PENDING: u32 = 0;
