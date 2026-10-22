@@ -27,7 +27,7 @@ class Projection(unittest.TestCase):
         method = source.split('pub const fn wire_name(self)')[1].split('/// Parses')[0]
         names = {part.split('"')[0] for part in method.split('=> "')[1:]}
         self.assertEqual(names, diagnostics.TRAP_KINDS)
-        self.assertEqual(len(names), 13)
+        self.assertEqual(len(names), 14)
         for kind in names:
             result = failure()
             code = 'guest-runtime-error' if kind == 'runtime-error' else 'guest-trap'
@@ -47,6 +47,8 @@ class Projection(unittest.TestCase):
     def test_malformed_duplicate_and_contradictory_trap_kinds_do_not_expose_input(self):
         for fields in ({'kind': 'private-token'}, {'kind': True}, {'kind': []},
                        {'kind': 'runtime-error'}, {'kind': 'stack-overflow', 'phase': 'instantiate'},
+                       {'kind': 'cannot-block-sync-task', 'phase': 'call-and-postreturn'},
+                       {'kind': 'cannot-block-sync-task '}, {'kind': 'CannotBlockSyncTask'},
                        {'kind': 'unreachable-code', 'private': 'private-secret'},
                        {'kind': 'unreachable-code', 'phase': None}):
             result = failure()

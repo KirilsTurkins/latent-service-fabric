@@ -18,6 +18,7 @@ pub enum GuestTrapKind {
     BadConversionToInteger,
     UnreachableCode,
     AllocationTooLarge,
+    CannotBlockSyncTask,
     GuestFault,
     RuntimeError,
 }
@@ -36,6 +37,7 @@ impl GuestTrapKind {
         Self::BadConversionToInteger,
         Self::UnreachableCode,
         Self::AllocationTooLarge,
+        Self::CannotBlockSyncTask,
         Self::GuestFault,
         Self::RuntimeError,
     ];
@@ -58,6 +60,7 @@ impl GuestTrapKind {
             Self::BadConversionToInteger => "bad-conversion-to-integer",
             Self::UnreachableCode => "unreachable-code",
             Self::AllocationTooLarge => "allocation-too-large",
+            Self::CannotBlockSyncTask => "cannot-block-sync-task",
             Self::GuestFault => "guest-fault",
             Self::RuntimeError => "runtime-error",
         }
@@ -89,7 +92,7 @@ mod tests {
             assert!(names.insert(name));
             assert_eq!(GuestTrapKind::from_wire_name(name), Some(*kind));
         }
-        assert_eq!(names.len(), 13);
+        assert_eq!(names.len(), 14);
     }
 
     #[test]
@@ -103,6 +106,8 @@ mod tests {
             "runtime-error ",
             "unreachable-code\n",
             "unreachable-code /private/request secret-token",
+            "cannot-block-sync-task ",
+            "CannotBlockSyncTask",
             "runt\u{0456}me-error",
         ] {
             assert_eq!(GuestTrapKind::from_wire_name(value), None);
