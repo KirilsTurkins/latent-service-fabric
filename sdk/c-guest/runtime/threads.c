@@ -288,3 +288,6 @@ void __lsf_c_root_finish(struct lsf_c_thread *root) {
      * stack/metadata owners remain charged independently through StoreDrop.
      */
 }
+
+/* Shares the private current-thread and original-ledger operations above. */
+#include "synchronization.c"
