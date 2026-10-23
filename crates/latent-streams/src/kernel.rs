@@ -2,6 +2,9 @@
 //! assertion or socket-buffer snapshot. No current Linux profile is qualified.
 use crate::{error, StreamError, StreamErrorCode};
 
+#[cfg(all(target_os = "linux", any(test, feature = "development-outbound")))]
+pub(crate) mod native;
+
 #[derive(Clone, Copy)]
 pub(crate) enum Mode {
     // Historical library semantics only; never selected by normal installation.

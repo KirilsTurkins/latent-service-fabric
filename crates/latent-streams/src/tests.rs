@@ -9,7 +9,7 @@ mod currentness;
 #[cfg(target_os = "linux")]
 mod dns;
 #[cfg(unix)]
-mod fixture;
+pub(crate) mod fixture;
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 mod kernel;
 #[cfg(unix)]
@@ -23,7 +23,7 @@ mod tls;
 #[cfg(unix)]
 mod uncertainty;
 
-fn config() -> StreamProviderConfig {
+pub(crate) fn config() -> StreamProviderConfig {
     StreamProviderConfig {
         format_version: 1,
         profile: latent_capabilities::broker::network::STREAM_PROFILE.into(),

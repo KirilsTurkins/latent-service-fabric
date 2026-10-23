@@ -2165,6 +2165,7 @@ dependencies = [
  "latent-routing",
  "latent-rustls-outbound",
  "rcgen",
+ "rustix",
  "rustls",
  "serde",
  "serde_json",

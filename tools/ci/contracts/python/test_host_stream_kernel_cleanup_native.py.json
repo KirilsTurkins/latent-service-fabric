@@ -1,0 +1,101 @@
+{
+  "cases": [
+    "CleanupNativeSource.test_both_status_snapshots_hold_original_locks_and_no_free_certificate",
+    "CleanupNativeSource.test_candidate_projection_changes_only_one_exact_body",
+    "CleanupNativeSource.test_exact_ten_real_descriptor_controls_have_no_ignored_case",
+    "CleanupNativeSource.test_full_dispatch_authenticates_real_role_before_request_reads",
+    "CleanupNativeSource.test_missing_failed_ignored_or_extra_outcome_refuses",
+    "CleanupNativeSource.test_pending_and_one_expiry_precede_real_unlocked_constructor",
+    "CleanupNativeSource.test_safe_native_source_prepays_before_open_and_retains_on_failed_transfer"
+  ],
+  "guards": {
+    "CleanupNativeSource.test_both_status_snapshots_hold_original_locks_and_no_free_certificate": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b65072ed7650e7f38be635337c7f25463b5782efb8f37351de14d0d033b9ae02",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CleanupNativeSource.test_candidate_projection_changes_only_one_exact_body": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b65072ed7650e7f38be635337c7f25463b5782efb8f37351de14d0d033b9ae02",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CleanupNativeSource.test_exact_ten_real_descriptor_controls_have_no_ignored_case": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b65072ed7650e7f38be635337c7f25463b5782efb8f37351de14d0d033b9ae02",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CleanupNativeSource.test_full_dispatch_authenticates_real_role_before_request_reads": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b65072ed7650e7f38be635337c7f25463b5782efb8f37351de14d0d033b9ae02",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CleanupNativeSource.test_missing_failed_ignored_or_extra_outcome_refuses": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b65072ed7650e7f38be635337c7f25463b5782efb8f37351de14d0d033b9ae02",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CleanupNativeSource.test_pending_and_one_expiry_precede_real_unlocked_constructor": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b65072ed7650e7f38be635337c7f25463b5782efb8f37351de14d0d033b9ae02",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CleanupNativeSource.test_safe_native_source_prepays_before_open_and_retains_on_failed_transfer": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b65072ed7650e7f38be635337c7f25463b5782efb8f37351de14d0d033b9ae02",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_host_stream_kernel_cleanup_native.py",
+  "reviewReason": "Actual affine native factory descriptor ownership and real pending/ready constructor routing; add ten Linux descriptor/quarantine controls and seven source/collector controls. Preserve all original thirty stream cases and their witnesses; cardinality becomes forty. Normal constructor selection remains zero, production socket consumer NULL, full Linux/Root final-free unqualified.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

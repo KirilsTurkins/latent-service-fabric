@@ -37,7 +37,7 @@ class HostStreamKernelReference(unittest.TestCase):
         return ("\n".join("test " + case + " ... ok" for case in sorted(self.expected())) + "\n"
                 + "\n".join("KERNEL_OWNER_OBSERVATION " + json.dumps(row) for row in rows) + "\n"
                 + "\n".join("KERNEL_QUARANTINE_OBSERVATION " + json.dumps(row) for row in (self.failed() if failed is None else failed))
-                + "\ntest result: ok. 30 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.1s\n").encode()
+                + "\ntest result: ok. 40 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.1s\n").encode()
 
     def test_exact_kernel_tail_witness_keeps_all_physical_qualification_false(self):
         rows = self.rows()
@@ -63,7 +63,7 @@ class HostStreamKernelReference(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "tail-witness"):
             reference.outcomes(self.output(rows), self.expected())
         raw = self.output(self.rows())
-        for changed in (raw.replace(b"30 passed", b"29 passed"), raw.replace(b"0 filtered", b"1 filtered"),
+        for changed in (raw.replace(b"40 passed", b"39 passed"), raw.replace(b"0 filtered", b"1 filtered"),
                         raw.replace(reference.provider.KERNEL_CASE.encode(), b"unknown"), raw + b"x" * 65536):
             with self.assertRaises(ValueError): reference.outcomes(changed, self.expected())
 
