@@ -4,5 +4,5 @@
   "reviewBoundary": "committed-fingerprint",
   "reviewReason": "Add isolated bounded real kernel constructor image and exact physical child observations; preserve production refusal and Root final-free gate",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "31138e3a92712f5f5a608cc5ce053575484d4bf014ffb3d1fa9839e8f6fdf3f7"
+  "sha256": "bccbe888c61312ad74c81b59e9e44cf1347e0df6c229e4a7791c760693578b56"
 }

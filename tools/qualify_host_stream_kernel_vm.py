@@ -173,7 +173,7 @@ def run(archive, output):
         require(sum(row['bytes'] for row in receipt['firmware'].values())<=1024*1024,
                 'constructor-vm-firmware-byte-bound')
         commands.run('qemu-version',tool_paths['qemu-system-x86_64'],'--version')
-        stage = 'isolated-constructor-vm' 
+        stage = 'isolated-constructor-vm'
         old_limit = commands.command_seconds
         commands.command_seconds = image.VM_SECONDS
         try:
