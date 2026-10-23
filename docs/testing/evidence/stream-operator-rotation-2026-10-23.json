@@ -1,0 +1,331 @@
+{
+  "schemaVersion": "latent.stream-operator.rotation-published-observation.v1",
+  "issue": 739,
+  "wholeIssueAcceptance": false,
+  "owning": {
+    "sourceRevision": "580e7d9184ee98e78295221862553a77587486ec",
+    "workflow": ".github/workflows/stream-operator-rotation.yml",
+    "run": 39951229985,
+    "job": 120405911635,
+    "event": "push",
+    "conclusion": "success",
+    "focusedSourceControls": {
+      "rotation": 9,
+      "affectedPreparation": 8
+    },
+    "artifact": {
+      "id": 12500029411,
+      "bytes": 25777236,
+      "sha256": "sha256:84c96a79ccd6b4b6ff76bfdeba47d7f1a8f4a7613b73818baf36526bc40cbff1"
+    },
+    "retainedResult": {
+      "bytes": 10135,
+      "sha256": "sha256:d07139dcb91792792a334ecd6ffeeb616f217295f8bdaa0481481e2c23514db7"
+    }
+  },
+  "independentVerification": {
+    "members": 156,
+    "expandedBytes": 58417230,
+    "frontendRows": 154,
+    "helperSourceAndResourceRows": 106,
+    "consumerRecipeRows": 20,
+    "frozenNodeSourceRows": 6
+  },
+  "observation": {
+    "schemaVersion": "latent.stream-operator.rotation-observation.v1",
+    "status": "passed",
+    "consumerSourceRevision": "580e7d9184ee98e78295221862553a77587486ec",
+    "configurationChecksOnly": true,
+    "nodeStarted": false,
+    "providerInstalled": false,
+    "providerReadiness": "not-observed",
+    "executionPermission": false,
+    "providerRotationPerformed": false,
+    "liveFileReplaced": false,
+    "baseEpochOrigin": "supplied-protected-file-not-live-provider-observation",
+    "streamInvocationAttempted": false,
+    "nodeRebuilt": false,
+    "guestCompiled": false,
+    "wholeIssue739Acceptance": false,
+    "outcomes": [
+      {
+        "case": "complete-original-protected-baseline",
+        "exitCode": 0,
+        "protectedCredentialFile": true
+      },
+      {
+        "case": "actual-packaged-rotation-closed-profile-refusal",
+        "exitCode": 1,
+        "code": "stream-operator-node-check-rejected-prepared-file-retained",
+        "uncertain": false,
+        "privateCandidateRetained": true,
+        "onlyEpochAndLimitsChanged": true,
+        "existingAuthorityAndCredentialsPreserved": true
+      },
+      {
+        "case": "direct-candidate-public-node-refusal",
+        "exitCode": 2,
+        "publicFailure": {
+          "stage": "configuration",
+          "code": "invalid-argument"
+        }
+      },
+      {
+        "case": "existing-candidate-no-overwrite",
+        "exitCode": 1,
+        "code": "stream-operator-output-not-new-or-unavailable",
+        "uncertain": false,
+        "privateCandidateUnchanged": true
+      },
+      {
+        "case": "stale-supplied-base-epoch",
+        "exitCode": 1,
+        "code": "stream-operator-rotation-base-epoch-mismatch",
+        "uncertain": false,
+        "outputCreated": false
+      },
+      {
+        "case": "foreign-provider-identity",
+        "exitCode": 1,
+        "code": "stream-operator-rotation-provider-mismatch",
+        "uncertain": false,
+        "outputCreated": false
+      },
+      {
+        "case": "overbroad-transfer-limit",
+        "exitCode": 1,
+        "code": "stream-operator-configuration-invalid",
+        "uncertain": false,
+        "outputCreated": false
+      },
+      {
+        "case": "hardlinked-private-rotation-record",
+        "exitCode": 1,
+        "code": "single-link-regular-file-required",
+        "uncertain": false,
+        "outputCreated": false
+      }
+    ],
+    "nodeOrigin": {
+      "schemaVersion": "latent.audit.two-native-hosts.v1",
+      "compiledSource": "277c8104499d414053573bce066b5e9091e74a20",
+      "producerRun": 39931902934,
+      "producerJob": 120341964917,
+      "artifact": {
+        "id": 12492391812,
+        "size_in_bytes": 56326844,
+        "digest": "sha256:dd8ca4d94042dd6512bfab9127d9fe4b87507c786bbabeb397bcd1fce4892322"
+      },
+      "products": {
+        "latent": {
+          "sha256": "sha256:9f4db9594b1e9a5e6cf1d8dbedcb6f830748368b3ca1e8ec5bc635559694f116",
+          "bytes": 72212720
+        },
+        "latentd": {
+          "sha256": "sha256:28739f4d9ac7ae3c3507011b97620c21e932b53d57584379bcd57856dbe9a0fd",
+          "bytes": 193434168
+        }
+      },
+      "signedGuestQualification": false,
+      "guestSourceCompiled": false,
+      "currentDevelopmentNativeCompilationClaimed": false,
+      "compositeNativeTupleCreated": false
+    },
+    "frontendOrigin": {
+      "compiledFrontendSource": "580e7d9184ee98e78295221862553a77587486ec",
+      "sameJobFrontendPackaged": true,
+      "buildSmokeRealLatentd": false,
+      "buildReceipt": {
+        "sha256": "sha256:5ec4402b759b33f54594c7ec356f6041b3b0562de2950edfca19a8caa8f5f2ce",
+        "bytes": 27468
+      },
+      "frontend": {
+        "sha256": "sha256:d58cd0fc91afaa0f7024366e8d1b9fda6c2a6e1228c918fa85f1be30a3849cf6",
+        "bytes": 3047264
+      },
+      "helper": {
+        "sha256": "sha256:9530413e0bd4f5acb069e18798ec491398db0eff7b5c85b1cc59c493af1817c3",
+        "bytes": 264064
+      },
+      "fileInventoryRows": 154,
+      "canonicalResources": [
+        {
+          "path": "schemas/node-providers.schema.json",
+          "sha256": "sha256:5baf4438819e2282c94347dd04c7f2b00d527da16df6751dece8a403c36a9c48",
+          "size": 14437
+        },
+        {
+          "path": "schemas/outbound-stream-provider.schema.json",
+          "sha256": "sha256:6aae040fb7bc79e92ab61ff912bbefd8ebde2b7a497b60cdfe3ea4c8a796d185",
+          "size": 3695
+        },
+        {
+          "path": "schemas/outbound-stream-rotation.schema.json",
+          "sha256": "sha256:7db95fd07ed914d3fd538215300b9c48694b77fa60050f3e1e8d7854a576a351",
+          "size": 1347
+        },
+        {
+          "path": "schemas/dev-composition-input.schema.json",
+          "sha256": "sha256:b12ad0f9b4fd89105c1d9002eefd608932992fdde18c40c5ebb6e81403ff38b1",
+          "size": 10965
+        },
+        {
+          "path": "schemas/static-site-budget.schema.json",
+          "sha256": "sha256:64f43e465f875650958c2f563427b5c3f024f487f808eaa90742ec23f2e9eaa8",
+          "size": 5786
+        },
+        {
+          "path": "contracts/dev/composition-support-v1.json",
+          "sha256": "sha256:75bd5e9c24ad0b1aedd6ecba2ae8a9f71bd73a0922420aab2e3b1ae72d0a264e",
+          "size": 16199
+        },
+        {
+          "path": "contracts/http/browser-response-ownership-v1.json",
+          "sha256": "sha256:b00795bf709c37d153af0bd6d445415ba6bd2fb47310b4c47ee1c3d2d951e2a3",
+          "size": 5873
+        }
+      ],
+      "publisherAuthenticationClaimed": false
+    },
+    "consumerRecipe": {
+      ".github/workflows/stream-operator-rotation.yml": {
+        "sha256": "sha256:75c5f1c94530ddccba25f7a2784f5fdf7b5f661f82e9dd486d2dbd69055c77cf",
+        "bytes": 2720
+      },
+      "tools/qualify_stream_operator_rotation.py": {
+        "sha256": "sha256:13f3f72e5a7fa82288924c37a5eac707166da17bd63d4e5ef145c983422d4ff4",
+        "bytes": 13439
+      },
+      "tools/outbound_stream_operator.py": {
+        "sha256": "sha256:806a3bcd71b20673e3d46cd9f2d70b1ddd7b82557336b1d83a1f56caf62dae9a",
+        "bytes": 30134
+      },
+      "schemas/outbound-stream-rotation.schema.json": {
+        "sha256": "sha256:7db95fd07ed914d3fd538215300b9c48694b77fa60050f3e1e8d7854a576a351",
+        "bytes": 1347
+      },
+      "schemas/node-providers.schema.json": {
+        "sha256": "sha256:5baf4438819e2282c94347dd04c7f2b00d527da16df6751dece8a403c36a9c48",
+        "bytes": 14437
+      },
+      "schemas/outbound-stream-provider.schema.json": {
+        "sha256": "sha256:6aae040fb7bc79e92ab61ff912bbefd8ebde2b7a497b60cdfe3ea4c8a796d185",
+        "bytes": 3695
+      },
+      "tools/tests/test_outbound_stream_rotation.py": {
+        "sha256": "sha256:221256fa94f114f2e737da7a17a593cfbd48bb0f1eb4c58563e0f67e2657d86c",
+        "bytes": 10786
+      },
+      "tools/build_dev_frontend.py": {
+        "sha256": "sha256:165daad9ebb3599f058f657308bb1ade434b5dd4975e4198ce2eab56c0b08445",
+        "bytes": 21823
+      },
+      "tools/dev-frontend-linux.lock": {
+        "sha256": "sha256:d30fa9219687d2176809eb2ba8045418a4f8a538a7afc48dec8efe77d26ac1d0",
+        "bytes": 1003
+      },
+      "tools/dev_frontend_linux.py": {
+        "sha256": "sha256:a91041422c87d62337ec91ab3103ae9c4db9ab503bf1fc49a3f05efed6608789",
+        "bytes": 7174
+      },
+      "tools/dev_distribution.py": {
+        "sha256": "sha256:254acc717646b889e6ad6065135bfe6e44400e6032a503b19f51cd572aca779b",
+        "bytes": 5727
+      },
+      "tools/audit_memory_native_products.py": {
+        "sha256": "sha256:17dc81827028c5fc42cd1a40bddb0b81341a265508a0d5b085caebc75db57ef5",
+        "bytes": 15702
+      },
+      "tools/qualify_stream_operator_node.py": {
+        "sha256": "sha256:e0bcf8850590cae5dc1c75f2a5c08238d3c40fd380a6b022dd3cfd1da37e7343",
+        "bytes": 13151
+      },
+      "tools/qualify_audit_node_startup.py": {
+        "sha256": "sha256:75762ad01783d60f3c0bbe5ace4b908687ebe4d5f6dc859ad09a7f8337219776",
+        "bytes": 11861
+      },
+      "tools/dev_workflow/paths.py": {
+        "sha256": "sha256:6758044322e58c687c73d8302c0fab82a07d9680ed647a3a52f2a34f60d0da59",
+        "bytes": 6758
+      },
+      "tools/dev_workflow/process.py": {
+        "sha256": "sha256:5e104ad042a7cdac6ff374d1fe42deddd47ab4c22d293b16b0a6902ceaf9d43d",
+        "bytes": 4470
+      },
+      "tools/dev_workflow/common.py": {
+        "sha256": "sha256:f398999c39fc80606ca3ec0d47db5a9e32debe96367a87a9aa72b70089f13a28",
+        "bytes": 3129
+      },
+      "tools/build_process.py": {
+        "sha256": "sha256:c387ba86b28f6db9f2c092c3fba3005a356b69105df19ec6c46c6c5aff69e849",
+        "bytes": 9063
+      },
+      "tools/build_process_linux.py": {
+        "sha256": "sha256:e3d45b83b7dfe213135491b8a094925179b884df11615ea0dcb64af6451d08ce",
+        "bytes": 3853
+      },
+      "tools/build_process_signals.py": {
+        "sha256": "sha256:96dddca07cc20b77b0b6b93a3524c047877a4fcdd7442fe8c635024ade13cdb2",
+        "bytes": 3012
+      }
+    },
+    "sourceContract": {
+      "compiledNodeSource": "277c8104499d414053573bce066b5e9091e74a20",
+      "files": {
+        "apps/latentd/Cargo.toml": {
+          "sha256": "sha256:ab9e10830bacae2adf747488bd77a90e3bdc0c9e0fdb81e81ef1145aa83c405a",
+          "bytes": 3979
+        },
+        "apps/latentd/src/command.rs": {
+          "sha256": "sha256:d5525562f7acf987136e320eedaa3a03da3f3e9453ba320a8aa257508a4f717b",
+          "bytes": 4571
+        },
+        "apps/latentd/src/config/derive.rs": {
+          "sha256": "sha256:6e9d5b27d4205175d73347a0af91e4863d3f026e87957ee73711c94880444323",
+          "bytes": 8851
+        },
+        "apps/latentd/src/config/providers.rs": {
+          "sha256": "sha256:a0c76daffe0bbdf779e6efb7ee594b0f5bf92c9a8b468fa49c8fdf053259b4fd",
+          "bytes": 16467
+        },
+        "apps/latentd/src/config/providers/streams.rs": {
+          "sha256": "sha256:d8b6d0fd90b63999afbf9090abc3c40535790486209c3d0aaccd4c4c58daf6d6",
+          "bytes": 3074
+        },
+        "tools/qualify_audit_node_startup.py": {
+          "sha256": "sha256:75762ad01783d60f3c0bbe5ace4b908687ebe4d5f6dc859ad09a7f8337219776",
+          "bytes": 11861
+        }
+      },
+      "deriveChecksDevelopmentStreamFeature": true,
+      "publicFailure": {
+        "exitCode": 2,
+        "stage": "configuration",
+        "code": "invalid-argument"
+      },
+      "privateFieldDiagnosticDisclosed": false,
+      "attribution": "frozen-source gate plus successful complete baseline and isolated stream addition"
+    },
+    "productVerificationMillis": 103186,
+    "outsideCheckout": true,
+    "pythonOnChildPath": false,
+    "privateCandidatePreservedUntilOwnerTeardown": true,
+    "privateInputsPublished": false,
+    "productsAndConsumerSourceUnchanged": true,
+    "elapsedMillis": 105578
+  },
+  "qualification": {
+    "currentFrontendPackaged": true,
+    "newCommandUsesActual277Node": true,
+    "genericFrontendBuildSmokeUsesRealNode": false,
+    "nodeStartupQualified": false,
+    "providerInstallationQualified": false,
+    "liveFileReplacementPerformed": false,
+    "liveProviderRotationQualified": false,
+    "liveEpochCurrentnessObserved": false,
+    "streamIoOrPhysicalRetirementQualified": false,
+    "productionEnabled": false,
+    "wholeAcceptanceCriterionClosed": false,
+    "privateInputsPublished": false
+  }
+}
