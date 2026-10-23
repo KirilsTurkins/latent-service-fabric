@@ -208,6 +208,23 @@ fn ordinary(args: &[String], guarded: bool, panic: bool) -> Result<(), Box<dyn s
 }
 fn run() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<_> = std::env::args().skip(1).take(12).collect();
+    if args
+        .first()
+        .is_some_and(|value| value == "--emit-private-dispatch-controls")
+    {
+        if args.len() != 2 {
+            return Err("usage: rust-context --emit-private-dispatch-controls FRESH_OUTPUT".into());
+        }
+        return write(
+            Path::new(&args[1]),
+            &latent_component_threading::rust_objects::emitted_dispatch_controls()?,
+        );
+    }
+    if args.first().is_some_and(|value| {
+        value == "--authenticated-original-core" || value == "--authenticated-normal-component"
+    }) {
+        return authenticated(&args);
+    }
     if args.first().is_some_and(|value| value == "--ordinary-core") {
         return ordinary(&args, false, false);
     }
@@ -285,6 +302,79 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     let output = Path::new(&args[2]);
     fs::create_dir(output)?;
     write(&output.join("core.wasm"), &derived)?;
+    write(&output.join("receipt.json"), json.as_bytes())
+}
+
+// Explicit compiler/proof diagnostic. It does not select an engine or bypass
+// the normal builder's closed runtime qualification gate.
+fn authenticated(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
+    use sha2::Digest;
+    let component = args[0] == "--authenticated-normal-component";
+    if args.len() != if component { 5 } else { 4 } {
+        return Err("usage: rust-context --authenticated-original-core ORIGINAL sha256:DIGEST FRESH_OUTPUT | --authenticated-normal-component ORIGINAL sha256:DIGEST NORMAL_COMPONENT FRESH_OUTPUT".into());
+    }
+    let original = read(&args[1])?;
+    let original_digest: [u8; 32] = sha2::Sha256::digest(&original).into();
+    if original_digest != preimage(&args[2])? {
+        return Err("original-core-preimage".into());
+    }
+    let (bytes, digest, head, recipe, catalogue, graph) = if component {
+        let normal = read(&args[3])?;
+        let wrapped = latent_component_threading::rust_component::attach_rust_original_core(
+            &original, &normal,
+        )?;
+        let proof = latent_component_threading::rust_component::verify_embedded_rust_original_core(
+            &wrapped,
+        )?;
+        (
+            wrapped,
+            proof.component_digest,
+            proof.catalogue_origin_head,
+            proof.catalogue_origin_recipe,
+            proof.catalogue_body_digest,
+            true,
+        )
+    } else {
+        let (derived, proof) = latent_component_threading::rust_objects::derive_source_core(
+            &original,
+            "examples:greeting/api@1.0.0#greet",
+            "cabi_post_examples:greeting/api@1.0.0#greet",
+        )?;
+        (
+            derived,
+            proof.derived_digest,
+            proof.catalogue_origin_head,
+            proof.catalogue_origin_recipe,
+            proof.catalogue_body_digest,
+            false,
+        )
+    };
+    let json = format!(
+        concat!(
+            "{{\n  \"schemaVersion\":\"latent.rust.authenticated-original-source.v1\",\n",
+            "  \"originalDigest\":\"sha256:{}\",\n  \"derivedDigest\":\"sha256:{}\",\n",
+            "  \"catalogueOriginHead\":\"{}\",\n  \"catalogueOriginRecipe\":\"{}\",\n",
+            "  \"catalogueBodyDigest\":\"{}\",\n  \"originalObjectGraphAuthenticated\":true,\n",
+            "  \"actualComponentGraphAuthenticated\":{},\n  \"canonicalCreationEnabled\":false,\n",
+            "  \"standardRuntimeQualified\":false,\n  \"schedulingCheckpointsInstalled\":false\n}}\n"
+        ),
+        hex(&original_digest),
+        hex(&digest),
+        head,
+        recipe,
+        catalogue,
+        graph
+    );
+    let output = Path::new(&args[if component { 4 } else { 3 }]);
+    fs::create_dir(output)?;
+    write(
+        &output.join(if component {
+            "component.wasm"
+        } else {
+            "core.wasm"
+        }),
+        &bytes,
+    )?;
     write(&output.join("receipt.json"), json.as_bytes())
 }
 fn main() {

@@ -120,6 +120,23 @@ console.log(JSON.stringify({node:process.versions.node, outcomes}));
 """
 
 
+DISPATCH_SCRIPT = r"""
+const fs = require('fs');
+const instance = new WebAssembly.Instance(new WebAssembly.Module(fs.readFileSync(process.argv[2]))).exports;
+const cases = [['strict',0,107],['strict',1,null],['release',0,107],
+               ['release',1,17],['ordinary',0,null],['ordinary',1,17]];
+const outcomes = [];
+for (const [method,pointer,expected] of cases) {
+  let value=null, trapped=false;
+  try { value=instance[method](7,pointer); }
+  catch(e) {if (!(e instanceof WebAssembly.RuntimeError)) throw e;trapped=true;}
+  if (trapped!==(expected===null) || value!==expected) throw new Error('dispatch mismatch:'+method+':'+pointer);
+  outcomes.push({method,pointer,value,trapped});
+}
+console.log(JSON.stringify({node:process.versions.node,outcomes}));
+"""
+
+
 def run(commands, tool: Path, output: Path) -> dict:
     output.mkdir(exist_ok=False)
     source, script = output / 'original-control.wasm', output / 'engine-controls.cjs'
@@ -137,6 +154,18 @@ def run(commands, tool: Path, output: Path) -> dict:
     require(result.get('node') == '24.19.0' and result.get('outcomes') ==
             [{'mode': value, 'trapped': value not in (0, 4)} for value in range(12)],
             'rust-guard-controls-exact-engine-outcomes')
+    dispatch, dispatch_script = output / 'private-dispatch.wasm', output / 'private-dispatch.cjs'
+    commands.run('private-dispatch-actual-native-emission', tool,
+                 '--emit-private-dispatch-controls', dispatch)
+    dispatch_script.write_text(DISPATCH_SCRIPT, encoding='utf-8', newline='\n')
+    dispatch_raw = commands.run('private-dispatch-emitted-helper-engine', node, dispatch_script, dispatch)
+    require(len(dispatch_raw) <= 8192, 'rust-dispatch-controls-output-bound')
+    dispatch_result = json.loads(dispatch_raw)
+    require(dispatch_result.get('node') == '24.19.0' and dispatch_result.get('outcomes') == [
+        {'method': method, 'pointer': pointer, 'value': value, 'trapped': value is None}
+        for method, pointer, value in [('strict', 0, 107), ('strict', 1, None),
+            ('release', 0, 107), ('release', 1, 17), ('ordinary', 0, None), ('ordinary', 1, 17)]],
+        'rust-dispatch-controls-exact-engine-outcomes')
     receipt = json.loads(read_file(output / 'derived/receipt.json'))
     require(receipt['canonicalResultGuardInstalled'] is True
             and receipt['canonicalStaticResultArea'] == 512
@@ -149,7 +178,8 @@ def run(commands, tool: Path, output: Path) -> dict:
     record = {'schemaVersion': 'latent.rust.emitted-result-guard-controls.v1',
               'originalDigest': digest(read_file(source)),
               'emittedDigest': digest(read_file(output / 'derived/core.wasm')),
-              'engine': result, 'actualCapturedRustGuestExecuted': False,
+              'engine': result, 'privateDispatchEngine': dispatch_result,
+              'actualCapturedRustGuestExecuted': False,
               'canonicalHostQualified': False, 'ordinaryThreadPoolQualified': False}
     write_json(output / 'engine-result.json', record)
     return record

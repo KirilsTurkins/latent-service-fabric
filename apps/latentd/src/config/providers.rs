@@ -169,8 +169,11 @@ pub(super) fn derive(
     providers.validate_http_streaming_installations()?;
     if let Some(runtime) = &providers.activation_runtime {
         if runtime.native_threads
-            && config.engine.threading_profile
-                != super::model::EngineThreadingProfile::CContext144SyncCooperativeV1
+            && !matches!(
+                config.engine.threading_profile,
+                super::model::EngineThreadingProfile::CContext144SyncCooperativeV1
+                    | super::model::EngineThreadingProfile::RustContext40SyncCooperativeV1
+            )
         {
             return Err(invalid("providers.activationRuntime.nativeThreads.profile"));
         }

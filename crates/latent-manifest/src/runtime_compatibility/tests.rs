@@ -41,6 +41,15 @@ fn cooperative_c_is_a_distinct_trusted_profile_and_default_fingerprint_is_stable
     assert!(ordinary.check_capsule(&manifest).is_err());
     selected.check_capsule(&manifest).unwrap();
     assert!(host().with_c_cooperative_context().is_err());
+    let rust = ordinary.clone().with_rust_cooperative_context().unwrap();
+    assert_ne!(rust.digest(), ordinary.digest());
+    assert_ne!(rust.digest(), selected.digest());
+    rust.check_capsule(&manifest).unwrap();
+    assert!(rust.clone().with_c_cooperative_context().is_err());
+    assert!(selected.clone().with_rust_cooperative_context().is_err());
+    manifest.execution.threading = crate::ThreadingModel::SingleThreaded;
+    assert!(rust.check_capsule(&manifest).is_err());
+    assert!(host().with_rust_cooperative_context().is_err());
 }
 
 #[test]
