@@ -7501,7 +7501,8 @@
         "host::streaming_http::table::shared::tests::native_streaming_shared_arc_concurrent_last_clones_drop_payload_once_before_refund",
         "host::streaming_http::table::shared::tests::native_streaming_shared_arc_payload_unwind_still_retires_its_original_owner",
         "host::blob::table::tests::blob_table_native_backing_retains_unused_slots_and_actual_values_until_drop",
-        "component_threading::tests::rust_sync_private_dispatch_executes_production_helper_and_preserves_source_fallback"
+        "component_threading::tests::rust_sync_private_dispatch_executes_production_helper_and_preserves_source_fallback",
+        "rust_thread_fault::tests::rust_thread_fault_visits_only_eight_numeric_original_frames_for_authenticated_rust"
       ],
       "expectedIgnored": [
         "cache::measurement::cache_lookup_collector",
@@ -7514,7 +7515,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 476,
+      "minimumCases": 477,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [

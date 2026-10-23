@@ -1,0 +1,31 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "rust-thread-fault-${{ github.ref }}"
+    },
+    "name": "Numeric original Rust ThreadPool fault diagnostic",
+    "on": {
+      "push": {
+        "branches": [
+          "diag/rust-thread-frames-20261023"
+        ],
+        "paths": [
+          ".github/workflows/rust-thread-fault-diagnostic.yml"
+        ]
+      },
+      "workflow_dispatch": null
+    },
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "diagnostic"
+  ],
+  "reviewReason": "Finite off-default numeric fault diagnostic; one authentic trap control and one rebuilt node, four original helpers and unchanged guest retained; no qualification or timing equivalence claim.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/rust-thread-fault-diagnostic.yml"
+}
