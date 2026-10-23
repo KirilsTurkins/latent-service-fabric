@@ -9,7 +9,7 @@
     "on": {
       "push": {
         "branches": [
-          "feat/stream-kernel-vm-qualification-20261023"
+          "feat/kernel-root-final-free-20261023"
         ],
         "paths": [
           ".github/workflows/stream-kernel-constructor-vm.yml",
@@ -28,6 +28,11 @@
           "tools/tests/test_host_stream_kernel_task_identity_geometry.py",
           "tools/host_stream_kernel_provider_task_reference.py",
           "tools/tests/test_host_stream_kernel_provider_task_reference.py",
+          "tools/host_stream_kernel_root_final_free.py",
+          "tools/tests/test_host_stream_kernel_root_final_free.py",
+          "tools/tests/test_kernel_root_final_free_vm.py",
+          "tools/tests/fixtures/host_stream_kernel_root_final_free.json",
+          "research/standard-outbound/linux-6.12-lineage/factory-cleanup-root-final-free.c",
           "research/standard-outbound/linux-6.12-lineage/constructor-vm-init.c"
         ]
       },
@@ -40,7 +45,7 @@
   "requiredJobs": [
     "constructor-vm"
   ],
-  "reviewReason": "Consume the original provider association Task reference exactly once after original stop_put; preserve early-exit protection, existing stop states and final-return assertions; append four source controls.",
+  "reviewReason": "Preserve the prior 33 controls and caps, append seven collector and three physical-marker controls, and select the one reviewed Root qualification branch.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/stream-kernel-constructor-vm.yml"
 }

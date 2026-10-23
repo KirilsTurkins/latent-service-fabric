@@ -92,9 +92,19 @@ virtual extent and prepays 24 additional pointer bytes through original
 sizeof-based admission. The original two compiler jobs, command/VM deadlines
 and 512 MiB/two-vCPU VM bounds remain.
 
-This result qualifies child retirement for this selected candidate. The FD
-still holds the Root/backing at the positive observation; later FD close
-deliberately retains the bank. Physical Root final-free, native node/ledger
+This historical result qualifies child retirement for this selected candidate.
+At source `000860`, the FD still held the Root/backing at the positive
+observation and later FD close deliberately retained the bank. The newer
+source adds an outside collector at actual final FD release only for an already
+retired constructor-only graph. It validates every original owner/record and
+physical page, closes the immutable IRQ hint before Request return, withdraws
+the original global bank views, returns the original order-7 bank and then drops
+the original actor references. The successful child receipt does not qualify
+this newer physical return. Late close with unfinished children, uncertainty,
+any historical application birth or device construction still retains the bank.
+Opened/generation state and permanent observer seals remain sticky; no reopen,
+static bootstrap refund, new authority or native release certificate is added.
+Physical Root final-free, native node/ledger
 integration, complete allocation and bootstrap closure, compiler implicit
 input attestation, cancellation/pressure qualification and production
 installation remain separate requirements. No whole milestone ticket closes.

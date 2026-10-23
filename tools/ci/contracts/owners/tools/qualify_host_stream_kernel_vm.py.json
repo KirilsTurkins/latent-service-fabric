@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_host_stream_kernel_vm.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Consume the original provider association Task reference exactly once after original stop_put; preserve early-exit protection, existing stop states and final-return assertions; append four source controls.",
+  "reviewReason": "Bind the new collector recipe, original headers and strict outside physical-return observation in the single isolated owning campaign.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "486904885e73e40287d3fea2ba2cba7c68d46426ec2f8f0e55bcb258fb2b8b18"
+  "sha256": "b3e28b6893062c8a6a59d0c3b5bdb6dfa4a3b4592aeb4fbda5706722b7e81abb"
 }

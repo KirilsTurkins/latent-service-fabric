@@ -198,6 +198,8 @@ int main(void)
     } while (1);
     snapshot("child-retired-root-held", status);
     check(close(fd) == 0, "descriptor-close");
-    finish(1, "actual-child-retirement-root-final-free-unqualified");
+    /* PID1 observes only close returning. The outside host controller must
+     * independently require the kernel's post-physical-return observation. */
+    finish(1, "actual-child-retirement-root-release-check");
     return 1;
 }
