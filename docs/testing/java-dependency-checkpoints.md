@@ -28,6 +28,41 @@ retaining every original instruction. Unselected classes, class initializers and
 `@Unmanaged` methods retain their exclusions. This model control initializes no
 application class and remains separate from reference-JDK and signed execution.
 
+The maintained compiler additionally checks the final resolved caller closure of
+the SDK's `Activation.checkpoint` before async classification and coroutine
+transformation. A direct or transitive call from `<clinit>`, a method marked
+`@Unmanaged`, or a class marked `@Unmanaged` is refused with a fixed #741
+diagnostic. Managed shared helpers keep their checkpoints. The exact pinned
+private `Fiber.start()V` is the managed-entry boundary: it installs the current
+Fiber before running its callback, so its callers are outside that new context.
+The boundary requires its resolved body to match the original Fiber body parsed
+directly from the same authenticated compiler JAR, with the same method flags
+and the pinned production `PreOptimizingClassHolderSource` pass, bounded
+instruction operands, phi inputs and normal control flow. The pinned body's
+operandless NOPs retain their exact type, position and count. Empty,
+altered, exceptional or unknown instruction bodies cannot establish that proof.
+Other methods and overloads receive no such exemption. The independent walk
+allows at most 65,536 methods and 262,144 combined call-site/caller-edge visits;
+incomplete metadata or an exceeded bound refuses compilation. Direct loops in
+`@Unmanaged` classes are also excluded from instrumentation.
+
+The separate `Java checkpoint context compiler control` workflow runs original
+and corrected TeaVM classes on the JVM with the existing fifteen locked model JARs, including the core compiler's declared
+runtime dependencies for the real dependency analyzer.
+Its controls include real completion-time dependency analysis adding a late
+unsafe path, pinned call-graph/IR cases and managed-entry positives. It compiles
+no guest/native component and supplies no runtime or whole-criterion proof.
+[Run 39999341426](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39999341426/job/120571063369)
+passed both original and corrected modes at source `91c596a89dca0404db176b9a72887f1d5237dad9`.
+Its [compiler receipt](evidence/java-checkpoint-context-compiler-2026-10-23.json)
+retains all fifteen locked identities, both exact terminals, the three-class
+same-JAR overlay, 1,874 unchanged entries including the original Fiber class,
+and five earlier failed campaigns. The actual pinned entry positive and
+unknown-instruction self-refusal remain mandatory; no failed result is relabelled.
+The existing compatibility report maps an observed unsupported-context refusal
+to `missing-runtime-port`; bounded or unresolved analysis remains
+`unresolved-behavior`. All findings retain source/compiler binding and no authority.
+
 The programme uses the maintained Maven capture/review and offline Java build.
 When no verified compiler cache is supplied, its existing unsigned greeting
 warm-up compiles first: two components are compiled in total, only one of which

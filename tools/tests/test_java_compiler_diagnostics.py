@@ -52,6 +52,30 @@ class JavaCompilerDiagnostics(unittest.TestCase):
             'Method java.lang.Class.secret$token()I was not found', 'library reached unsupported operation')))
         self.assertEqual((found, omitted), ([], 0))
 
+    def test_owned_checkpoint_refusals_classify_only_the_finite_reason_without_private_graph_names(self):
+        for reason, classification in (('nonsuspendable-context', 'missing-runtime-port'),
+                ('analysis-bound', 'unresolved-behavior'), ('unresolved', 'unresolved-behavior')):
+            text = 'latent.java.checkpoint-context.v1 java-checkpoint-'+reason+'-741'
+            with self.subTest(reason=reason):
+                found, omitted = self.observe(text+'\n'+text)
+                self.assertEqual(omitted, 0)
+                self.assertEqual(len(found), 1)
+                self.assertEqual(found[0]['classification'], classification)
+                self.assertEqual(found[0]['operation'], 'java-runtime-checkpoint-context')
+                self.assertEqual(found[0]['ownerIssue'], 741)
+                self.assertEqual(found[0]['sourceDigest'], digest(self.SOURCE))
+                self.assertNotIn('symbol', found[0])
+                self.assertNotIn('packageDigest', found[0])
+
+    def test_unknown_or_decorated_checkpoint_messages_preserve_unknown_diagnostics(self):
+        owned = 'latent.java.checkpoint-context.v1 java-checkpoint-nonsuspendable-context-741'
+        for text in (owned+' private.Caller.method', 'prefix '+owned, owned+'?token=private',
+                owned.replace('-741', '-679'), owned.replace('nonsuspendable-context', 'future-context'),
+                owned.replace('context.v1', 'context.v2'),
+                'java.lang.IllegalStateException: java-checkpoint-nonsuspendable-context-741',
+                'java-checkpoint-nonsuspendable-context-741'):
+            with self.subTest(text=text): self.assertEqual(self.observe(text), ([], 0))
+
     def test_duplicate_omission_and_log_bounds_remain_explicit(self):
         text = '\n'.join('Class java.runtime.Missing' + str(n) + ' was not found' for n in range(70))
         found, omitted = self.observe(text + '\n' + text)
