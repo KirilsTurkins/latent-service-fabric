@@ -1,0 +1,36 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "java-checkpoint-gc-${{ github.ref }}"
+    },
+    "name": "Java parked continuation GC witnesses",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/java-checkpoint-gc-current-20261023"
+        ],
+        "paths": [
+          "tools/fixtures/java-checkpoint-gc/**",
+          "tools/java_checkpoint_gc_*.py",
+          "tools/qualify_java_checkpoint_gc.py",
+          "tools/tests/test_java_checkpoint_gc.py",
+          "sdk/java-guest/fibers/conformance/compiler/GcReferenceControl.java",
+          ".github/workflows/java-checkpoint-gc.yml"
+        ]
+      },
+      "workflow_dispatch": null
+    },
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "gc-roots"
+  ],
+  "reviewReason": "Add a finite two-phase parked-continuation GC witness with exact public fixture, four signed two-tenant GC/fresh calls, two zero-work denials, real locked collector/weak-reference controls and closed24-file8MiB C custody; preserve original six-case programme and limits, separate native193 provenance, no native rebuild or whole-ticket claim.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/java-checkpoint-gc.yml"
+}

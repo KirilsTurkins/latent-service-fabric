@@ -1,0 +1,188 @@
+package dev.latent.app;
+
+import dev.latent.guest.Result;
+import java.lang.ref.WeakReference;
+import org.apache.commons.lang3.concurrent.AtomicSafeInitializer;
+import org.apache.commons.lang3.concurrent.ConcurrentException;
+
+/** Two observed collections with each logical caller retaining ordinary Java roots. */
+public final class Capsule {
+    private static int invocation;
+    private static final ThreadLocal<Cell> local = new ThreadLocal<>();
+    private static volatile boolean childParked;
+    private static volatile boolean rootCollected;
+    private static volatile boolean readerReady;
+    private static volatile boolean childCollected;
+    private static volatile Throwable childFailure;
+    private static int initializations;
+    private static int rootPhase;
+    private static volatile int childPhase;
+
+    private static final class Cell {
+        final int value;
+        Cell(int value) { this.value = value; }
+    }
+
+    private static final class Held {
+        final int[] numbers;
+        final Object[] references;
+        final Throwable error;
+        final Cell token;
+        Held(int[] numbers, Object[] references, Throwable error, Cell token) {
+            this.numbers = numbers;
+            this.references = references;
+            this.error = error;
+            this.token = token;
+        }
+    }
+
+    private static void require(boolean value) {
+        if (!value) throw new IllegalStateException("checkpoint-gc-observable");
+    }
+
+    private static WeakReference<Object> discarded() {
+        Object temporary = new Object();
+        WeakReference<Object> witness = new WeakReference<>(temporary);
+        require(witness.get() == temporary);
+        return witness;
+    }
+
+    private static void collectOnce() {
+        // The referent was really present in the completed helper frame. Any
+        // automatic collection after that frame returned also occurs inside
+        // this same parked-sibling phase. Never clear the witness manually.
+        WeakReference<Object> witness = discarded();
+        System.gc();
+        require(witness.get() == null);
+    }
+
+    public Result<String, String> greet(String mode) {
+        try { return checked(mode); }
+        catch (Throwable error) {
+            // Fixed numeric phases only; an error never satisfies an ok case.
+            return Result.err("checkpoint-gc-failure|root=" + rootPhase
+                + "|child=" + childPhase + "|child-failed=" + (childFailure != null));
+        }
+    }
+
+    private Result<String, String> checked(String mode) throws InterruptedException, ConcurrentException {
+        rootPhase = 1;
+        require(++invocation == 1 && !childParked && !rootCollected && !readerReady
+            && !childCollected && childFailure == null && local.get() == null);
+        if (mode.equals("fresh")) return Result.ok("checkpoint-gc|fresh=1");
+        require(mode.equals("gc"));
+        Object gate = new Object();
+        int[] numbers = {19, 23};
+        Cell token = new Cell(31);
+        Object[] references = {token};
+        Throwable retainedError;
+        try { throw new IllegalArgumentException("root-gc-error"); }
+        catch (IllegalArgumentException error) { retainedError = error; }
+        WeakReference<int[]> numbersWitness = new WeakReference<>(numbers);
+        WeakReference<Object[]> referencesWitness = new WeakReference<>(references);
+        WeakReference<Throwable> errorWitness = new WeakReference<>(retainedError);
+        WeakReference<Cell> tokenWitness = new WeakReference<>(token);
+        Cell rootLocal = new Cell(19);
+        local.set(rootLocal);
+
+        AtomicSafeInitializer<Held> initializer = new AtomicSafeInitializer<>() {
+            @Override protected Held initialize() {
+                childPhase = 1;
+                require(local.get() == null);
+                Cell childLocal = new Cell(20);
+                local.set(childLocal);
+                initializations++;
+                int[] childNumbers = {20, 22};
+                Cell childToken = new Cell(32);
+                Object[] childReferences = {childToken};
+                Throwable childError;
+                try { throw new IllegalArgumentException("child-gc-error"); }
+                catch (IllegalArgumentException error) { childError = error; }
+                WeakReference<int[]> childNumbersWitness = new WeakReference<>(childNumbers);
+                WeakReference<Object[]> childReferencesWitness = new WeakReference<>(childReferences);
+                WeakReference<Throwable> childErrorWitness = new WeakReference<>(childError);
+                WeakReference<Cell> childTokenWitness = new WeakReference<>(childToken);
+                try {
+                    synchronized (gate) {
+                        childPhase = 2;
+                        childParked = true;
+                        gate.notifyAll();
+                        // Root cannot reacquire this monitor until wait has
+                        // released it. All child locals remain live below.
+                        while (!rootCollected) gate.wait();
+                    }
+                    childPhase = 3;
+                    require(childNumbersWitness.get() == childNumbers
+                        && childReferencesWitness.get() == childReferences
+                        && childErrorWitness.get() == childError
+                        && childTokenWitness.get() == childToken);
+                    require(childNumbers[0] + childNumbers[1] == 42
+                        && childReferences[0] == childToken && childToken.value == 32
+                        && childError instanceof IllegalArgumentException
+                        && childError.getMessage().equals("child-gc-error")
+                        && local.get() == childLocal && childLocal.value == 20);
+                    while (!readerReady) { }
+                    childPhase = 4;
+                    // readerReady is set immediately before root enters the
+                    // unchanged dependency get(), with no application yield.
+                    // This caller runs when that contended dependency yields.
+                    collectOnce();
+                    childCollected = true;
+                    childPhase = 5;
+                    require(childNumbersWitness.get() == childNumbers
+                        && childReferencesWitness.get() == childReferences
+                        && childErrorWitness.get() == childError
+                        && childTokenWitness.get() == childToken
+                        && local.get() == childLocal);
+                    return new Held(childNumbers, childReferences, childError, childToken);
+                } catch (InterruptedException error) { throw new IllegalStateException(error); }
+            }
+        };
+        Thread child = new Thread(() -> {
+            try {
+                Held value = initializer.get();
+                require(value.numbers[0] + value.numbers[1] == 42
+                    && value.references[0] == value.token && value.token.value == 32
+                    && local.get().value == 20);
+                childPhase = 6;
+            } catch (Throwable error) {
+                childFailure = error;
+                synchronized (gate) { gate.notifyAll(); }
+            }
+        });
+        rootPhase = 2;
+        child.start();
+        synchronized (gate) {
+            while (!childParked && childFailure == null) gate.wait();
+            require(childFailure == null && childParked && !rootCollected && !childCollected);
+            rootPhase = 3;
+            collectOnce();
+            require(numbersWitness.get() == numbers && referencesWitness.get() == references
+                && errorWitness.get() == retainedError && tokenWitness.get() == token
+                && numbers[0] + numbers[1] == 42 && references[0] == token && token.value == 31
+                && local.get() == rootLocal && rootLocal.value == 19);
+            rootCollected = true;
+            gate.notifyAll();
+        }
+        rootPhase = 4;
+        readerReady = true;
+        Held value = initializer.get();
+        rootPhase = 5;
+        child.join();
+        require(!child.isAlive() && childFailure == null && rootCollected && childCollected
+            && initializations == 1 && value == initializer.get());
+        require(numbersWitness.get() == numbers && referencesWitness.get() == references
+            && errorWitness.get() == retainedError && tokenWitness.get() == token
+            && numbers[0] + numbers[1] == 42 && references[0] == token && token.value == 31
+            && retainedError instanceof IllegalArgumentException
+            && retainedError.getMessage().equals("root-gc-error")
+            && local.get() == rootLocal && rootLocal.value == 19);
+        require(value.numbers[0] + value.numbers[1] == 42
+            && value.references[0] == value.token && value.token.value == 32
+            && value.error instanceof IllegalArgumentException
+            && value.error.getMessage().equals("child-gc-error"));
+        rootPhase = 6;
+        return Result.ok("checkpoint-gc|collections=root:child|arrays=42:42|references=31:32"
+            + "|errors=root:child|locals=19:20|initializations=1|fresh=1");
+    }
+}
