@@ -74,7 +74,7 @@ def _compiler(value):
 def _producer(working, attempt, descriptor):
     from tools.build_snapshot import canonical
     from tools.guest_dependency_inputs import capture_source
-    from tools.rust_capsule_build import RECIPE
+    from tools.rust_capsule_build import selected_recipe
     from tools.rust_capsule_project import inventory
 
     raw = paths.read(attempt, 'tool-inventory.json', tool_inventory.MAX_DOCUMENT)
@@ -89,7 +89,7 @@ def _producer(working, attempt, descriptor):
     output = descriptor['build']['outputRoot'] + '/'
     recipe_raw = paths.read(working, output + 'recipe-inputs.json', MAX_METADATA)
     recipe = decode(recipe_raw, MAX_METADATA)
-    names = set(RECIPE) | {'examples/echo-contract/capsule.json', 'examples/echo-contract/deployment.json'}
+    names = set(selected_recipe()) | {'examples/echo-contract/capsule.json', 'examples/echo-contract/deployment.json'}
     members(recipe, names)
     for name, row in recipe.items():
         paths.relative(name)

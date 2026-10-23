@@ -27,7 +27,7 @@ from tools.java_replay_materials import git_source_identity
 from tools.phase2_operator_process import require
 from tools.phase3_resource_identity import file_identity
 from tools.qualify_rust_capsules import source_identity
-from tools.rust_capsule_build import Commands, RECIPE, build
+from tools.rust_capsule_build import Commands, selected_recipe, build
 from tools.rust_capsule_project import ROOT, canonical, digest, fresh, inventory, read_file, read_json, snapshot, write_json
 
 MATERIALS = ('tools/qualify_rust_wasi_http_inputs.py', 'tools/rust_wasi_http_fixture.py',
@@ -120,7 +120,7 @@ def qualify(native_directory: Path, output: Path):
     binaries = products.native_products(native_directory)
     for path in binaries.values():
         path.chmod(0o700)
-    materials = {name: file_identity(ROOT / name) for name in dict.fromkeys((*RECIPE, *MATERIALS,
+    materials = {name: file_identity(ROOT / name) for name in dict.fromkeys((*selected_recipe(ROOT), *MATERIALS,
         'examples/echo-contract/capsule.json', 'examples/echo-contract/deployment.json'))}
     commands = Commands(ROOT, output, build_environment(output), deadline_seconds=1100, command_seconds=600)
     paths, tools = resolve_tools(tomllib.loads(read_file(ROOT / 'tools/toolchain.toml').decode()), ROOT, commands.environment)

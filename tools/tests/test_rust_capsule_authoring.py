@@ -169,7 +169,7 @@ class RustProjectTests(unittest.TestCase):
                     *(host_bytes.PROVIDER + "/" + name for name in verified["files"])}
         self.assertEqual(set(materials), expected)
         self.assertEqual(len(materials), 45)
-        self.assertTrue(expected <= set(build.RECIPE))
+        self.assertTrue(expected <= set(build.selected_recipe()))
         self.assertTrue(expected <= set(application.RECIPE))
         self.assertTrue(set(project.PROJECTION_RECIPE) <= set(git_capture.MATERIALS))
         vendor = project.sdk_files()
