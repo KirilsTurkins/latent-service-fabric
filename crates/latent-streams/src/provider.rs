@@ -92,10 +92,14 @@ impl StreamProvider {
         )?;
         let owner =
             crate::kernel::native::start(pools, &provider.inner.installed, deadline).await?;
+        if Instant::now() >= deadline {
+            drop(owner);
+            return Err(error(StreamErrorCode::Timeout));
+        }
         *provider
             .inner
             .native
-            .lock()
+            .try_lock()
             .map_err(crate::snapshot_lock_error)? = Some(owner);
         Ok(provider)
     }
