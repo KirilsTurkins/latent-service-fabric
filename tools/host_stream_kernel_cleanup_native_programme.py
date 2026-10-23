@@ -14,6 +14,7 @@ from tools import host_stream_kernel_task_identity_geometry as task_identity_geo
 from tools import host_stream_kernel_provider_task_reference as task_reference
 from tools import host_stream_kernel_root_final_free as root_final_free
 from tools import host_stream_kernel_late_fd_final_free as late_fd_final_free
+from tools import host_stream_kernel_no_begin_root_final_free as no_begin_final_free
 
 ROOT = prior.ROOT
 baseline = prior.baseline
@@ -255,7 +256,7 @@ def compose(base, originals, config):
     root_final_free.authenticate_headers(originals)
     selected = task_reference.transform(task_identity_geometry.transform(vmap_fit.transform(vmap_extent.transform(
         stack_alignment.transform(failure_observation.transform(repaired))))))
-    return late_fd_final_free.transform(root_final_free.transform(selected))
+    return no_begin_final_free.transform(late_fd_final_free.transform(root_final_free.transform(selected)))
 
 
 def qualification_projection(outputs, config):
@@ -283,7 +284,9 @@ def local_freeze():
             Path(stack_alignment.__file__), Path(vmap_extent.__file__), Path(vmap_fit.__file__),
             Path(task_identity_geometry.__file__), Path(task_reference.__file__),
             Path(root_final_free.__file__), root_final_free.FIXTURE,
-            Path(late_fd_final_free.__file__), late_fd_final_free.FIXTURE, change.FIXTURE,
+            Path(late_fd_final_free.__file__), late_fd_final_free.FIXTURE,
+            Path(no_begin_final_free.__file__), no_begin_final_free.FIXTURE,
+            change.OWNED/'factory-cleanup-no-begin-root-final-free.c', change.FIXTURE,
             change.OWNED/'factory-cleanup-native-bootstrap.c'):
         result[path.relative_to(ROOT).as_posix()] = baseline.objects.identity(path)
     return result
