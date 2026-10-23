@@ -6,6 +6,7 @@
     "env": {
       "PYTHONDONTWRITEBYTECODE": "1"
     },
+    "if": "github.event_name == 'workflow_dispatch' && inputs.programme == 'fresh'",
     "name": "Two observed collections with both Java continuations retaining roots",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -70,7 +71,7 @@
   },
   "jobId": "gc-roots",
   "kind": "job",
-  "reviewReason": "Add a finite two-phase parked-continuation GC witness with exact public fixture, four signed two-tenant GC/fresh calls, two zero-work denials, real locked collector/weak-reference controls and closed24-file8MiB C custody; preserve original six-case programme and limits, separate native193 provenance, no native rebuild or whole-ticket claim.",
+  "reviewReason": "Authenticate and run the unchanged GC programme on its retained a5c component; no guest/native compilation.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-checkpoint-gc.yml"
 }

@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_java_checkpoint_gc.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Require actual independent weak-observer static-root registration alongside real root and child collector callgraphs; the two parked-phase weak clears and full GC IR controls remain mandatory.",
+  "reviewReason": "Authenticate and run the unchanged GC programme on its retained a5c component; no guest/native compilation.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "5c0cbfd8192590e3c2471bcb3d6fba522d911de50930ad90055862624d7a783c"
+  "sha256": "2111697405ea1704e1749564701c29552a4a97522dca08fc9b658e2bfb256769"
 }

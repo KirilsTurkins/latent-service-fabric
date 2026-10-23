@@ -34,10 +34,27 @@ turn the Java specification's best-effort `System.gc()` into a universal guarant
 The focused owning programme requires four signed calls (GC and fresh state in
 each of two tenants), two zero-work grant denials and the maintained per-call
 physical idle/provider-zero checks and clean node/zero-contact peer shutdown.
-It compiles one unsigned compiler warm-up and one fresh target component using
-the existing five native193 products without rebuilding them. The original target
+The original producer compiled one unsigned compiler warm-up and one fresh target
+component using the existing five native193 products without rebuilding them. The original target
 64 MiB linear memory, one-billion fuel, 4 MiB Java heap and activation limits are
 unchanged. Only activation and the two clock contracts are granted.
 
 Whole scheduler, memory accounting, timer/executor and socket qualification remain
 open. No #741 acceptance criterion is marked complete from this source proposal.
+
+
+The first GC producer (`a5c4385`, run `39960502389`) completed the reference and
+real compiler controls, component and all twenty-four C captures. Its reader then
+rejected TeaVM's actual `TEAVM_FIELD(..., TeaVM_Reference, object) = NULL` spelling;
+no signed runtime case ran. That failure stays retained. The corrected reader
+continues to require reachable mark/sweep and weak-field clearing.
+
+The default continuation authenticates the original whole 106-member archive,
+302 original Git preimages, unchanged compiled inputs and separate current
+controller identities. It restores only five missing package files against the
+original package-input digests: three WIT files generated from the unchanged
+source template, and two resource files extracted from the same pinned Commons
+JAR. It runs the unchanged four signed cases and two denials, with zero guest or
+native compilations. The original fresh programme remains an explicit manual
+selection. Reference/control results retain their original failed-job origin;
+only new signed results can establish the component's collection witnesses.

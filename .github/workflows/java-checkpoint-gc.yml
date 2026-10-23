@@ -6,10 +6,20 @@ on:
       - 'tools/fixtures/java-checkpoint-gc/**'
       - 'tools/java_checkpoint_gc_*.py'
       - 'tools/qualify_java_checkpoint_gc.py'
+      - 'tools/qualify_java_checkpoint_gc_retained.py'
+      - 'tools/fixtures/java-checkpoint-gc-retained-a5c.json'
+      - 'tools/tests/test_java_checkpoint_gc_retained.py'
       - 'tools/tests/test_java_checkpoint_gc.py'
       - 'sdk/java-guest/fibers/conformance/compiler/GcReferenceControl.java'
       - '.github/workflows/java-checkpoint-gc.yml'
   workflow_dispatch:
+    inputs:
+      programme:
+        description: Retained runtime only, or the original fresh compiler programme
+        type: choice
+        required: true
+        default: retained
+        options: [retained, fresh]
 permissions:
   contents: read
   actions: read
@@ -18,6 +28,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   gc-roots:
+    if: github.event_name == 'workflow_dispatch' && inputs.programme == 'fresh'
     name: Two observed collections with both Java continuations retaining roots
     runs-on: ubuntu-24.04
     timeout-minutes: 45
@@ -98,3 +109,56 @@ jobs:
             ${{ runner.temp }}/java-gc-roots/node/commands/logs/**
             ${{ runner.temp }}/java-gc-roots/node/examples-controls/**
             ${{ runner.temp }}/java-gc-roots/node/foreign-controls/**
+  retained-gc-roots:
+    name: Four signed cases and two denials on the authenticated a5c component
+    if: github.event_name == 'push' || inputs.programme == 'retained'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - name: Fetch both immutable producer sources without rebuilding
+        run: |
+          git fetch --no-tags --depth=1 origin a5c4385300f26c3a883b50d77a03e0719d918873
+          git fetch --no-tags --depth=1 origin b422af24d86344ac7abb8b8fa56c3782aab63915
+      - name: Install maintained Python dependencies and check retained reader boundaries
+        run: |
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 -B -m unittest tools.tests.test_java_checkpoint_gc tools.tests.test_java_checkpoint_gc_retained -v
+      - name: Authenticate the five existing 193-control native products
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/rust_thread_native_products.py --output "$RUNNER_TEMP/java-gc-native"
+      - name: Authenticate the completed a5c build and run the unchanged signed programme
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 -B tools/qualify_java_checkpoint_gc_retained.py \
+            --native "$RUNNER_TEMP/java-gc-native" \
+            --output "$RUNNER_TEMP/java-gc-retained"
+      - name: Retain original failed provenance and new actual runtime evidence without keys
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: java-checkpoint-gc-retained-${{ github.sha }}
+          retention-days: 3
+          if-no-files-found: warn
+          path: |
+            ${{ runner.temp }}/java-gc-native/*.json
+            ${{ runner.temp }}/java-gc-retained/*.json
+            ${{ runner.temp }}/java-gc-retained/retained/retrieval.json
+            ${{ runner.temp }}/java-gc-retained/retained/original/java-gc-roots/FAILED.json
+            ${{ runner.temp }}/java-gc-retained/retained/original/java-gc-roots/controls/controls.json
+            ${{ runner.temp }}/java-gc-retained/retained/original/java-gc-roots/build/*.json
+            ${{ runner.temp }}/java-gc-retained/retained/original/java-gc-roots/build/component.wasm
+            ${{ runner.temp }}/java-gc-retained/retained/original/java-gc-roots/build/gc-root-generated/**
+            ${{ runner.temp }}/java-gc-retained/node/*.json
+            ${{ runner.temp }}/java-gc-retained/node/commands/logs/**
+            ${{ runner.temp }}/java-gc-retained/node/examples-controls/**
+            ${{ runner.temp }}/java-gc-retained/node/foreign-controls/**

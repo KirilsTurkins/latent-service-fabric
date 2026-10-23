@@ -67,7 +67,7 @@ def generated_mechanism(directory):
     collector_names=set().union(*graphs.values())
     collector_bodies=[functions[name] for name in sorted(collector_names)
         if owners[name]=='c/o/t/r/GC.c']
-    require(any(re.search(r'->object\s*=\s*NULL\s*;',body) for body in collector_bodies),
+    require(any(re.search(r'TEAVM_FIELD\(teavm_local_[0-9]+,\s*TeaVM_Reference,\s*object\)\s*=\s*NULL\s*;',body) for body in collector_bodies),
         'java-gc-actual-reachable-unmarked-weak-referent-clear')
     root=texts[names[0]]
     registry=re.search(r'static void\*\* teavm_gc_localStaticRoots_dla_Capsule_Cls'

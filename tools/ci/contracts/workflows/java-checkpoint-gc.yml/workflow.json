@@ -15,12 +15,28 @@
           "tools/fixtures/java-checkpoint-gc/**",
           "tools/java_checkpoint_gc_*.py",
           "tools/qualify_java_checkpoint_gc.py",
+          "tools/qualify_java_checkpoint_gc_retained.py",
+          "tools/fixtures/java-checkpoint-gc-retained-a5c.json",
+          "tools/tests/test_java_checkpoint_gc_retained.py",
           "tools/tests/test_java_checkpoint_gc.py",
           "sdk/java-guest/fibers/conformance/compiler/GcReferenceControl.java",
           ".github/workflows/java-checkpoint-gc.yml"
         ]
       },
-      "workflow_dispatch": null
+      "workflow_dispatch": {
+        "inputs": {
+          "programme": {
+            "default": "retained",
+            "description": "Retained runtime only, or the original fresh compiler programme",
+            "options": [
+              "retained",
+              "fresh"
+            ],
+            "required": true,
+            "type": "choice"
+          }
+        }
+      }
     },
     "permissions": {
       "actions": "read",
@@ -28,9 +44,10 @@
     }
   },
   "requiredJobs": [
-    "gc-roots"
+    "gc-roots",
+    "retained-gc-roots"
   ],
-  "reviewReason": "Add a finite two-phase parked-continuation GC witness with exact public fixture, four signed two-tenant GC/fresh calls, two zero-work denials, real locked collector/weak-reference controls and closed24-file8MiB C custody; preserve original six-case programme and limits, separate native193 provenance, no native rebuild or whole-ticket claim.",
+  "reviewReason": "Authenticate and run the unchanged GC programme on its retained a5c component; no guest/native compilation.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-checkpoint-gc.yml"
 }

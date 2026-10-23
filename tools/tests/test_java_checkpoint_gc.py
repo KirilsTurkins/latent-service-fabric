@@ -83,7 +83,7 @@ class JavaCheckpointGcTests(unittest.TestCase):
         # Synthetic text exercises the controller gate only, never GC evidence.
         bodies={
             'c/o/t/r/GC.c':'void meth_otr_GC_collectGarbageImpl() {\n'
-                'meth_otr_GC_mark(); reference->object = NULL; meth_otr_GC_sweep();\n}\n'
+                'meth_otr_GC_mark(); TEAVM_FIELD(teavm_local_1, TeaVM_Reference, object) = NULL; meth_otr_GC_sweep();\n}\n'
                 'void meth_otr_GC_mark() {\n}\nvoid meth_otr_GC_sweep() {\n}\n',
             'c/j/l/r/WeakReference.c':'teavm_reference_init(); teavm_reference_get();',
             'c/j/l/System.c':'void meth_jl_System_gc() {\nmeth_otr_GC_collectGarbageImpl();\n}\n',
@@ -105,7 +105,7 @@ class JavaCheckpointGcTests(unittest.TestCase):
                     ('c/j/l/r/WeakReference.c','teavm_reference_get()'),
                     ('c/j/l/System.c','meth_otr_GC_collectGarbageImpl();'),
                     ('c/d/l/a/Capsule@d1.c','meth_otr_Fiber_pop()'),
-                    ('c/o/t/r/GC.c','reference->object = NULL;'),
+                    ('c/o/t/r/GC.c','TEAVM_FIELD(teavm_local_1, TeaVM_Reference, object) = NULL;'),
                     ('c/d/l/a/Capsule.c','&sfld_dla_Capsule_observers'),
                     ('c/d/l/a/Capsule.c','teavm_registerStaticGcRoots(')):
                 (root/name).write_text(bodies[name].replace(needle,'omitted'))
