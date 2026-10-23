@@ -20,6 +20,8 @@
           "tools/tests/test_host_stream_kernel_constructor_failure.py",
           "tools/host_stream_kernel_stack_alignment.py",
           "tools/tests/test_host_stream_kernel_stack_alignment.py",
+          "tools/host_stream_kernel_vmap_extent.py",
+          "tools/tests/test_host_stream_kernel_vmap_extent.py",
           "research/standard-outbound/linux-6.12-lineage/constructor-vm-init.c"
         ]
       },
@@ -32,7 +34,7 @@
   "requiredJobs": [
     "constructor-vm"
   ],
-  "reviewReason": "Trigger the reviewed alignment source repair and require its four controls alongside all fifteen original controls; retain existing build, VM and failure bounds.",
+  "reviewReason": "Trigger reviewed bounded original-tree extent selection and require its three controls alongside all nineteen originals; retain actual VM evidence bounds.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/stream-kernel-constructor-vm.yml"
 }

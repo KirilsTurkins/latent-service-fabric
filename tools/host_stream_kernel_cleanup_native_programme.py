@@ -8,6 +8,7 @@ from tools import host_stream_kernel_cleanup_constructor_programme as prior
 from tools import host_stream_kernel_cleanup_native as change
 from tools import host_stream_kernel_constructor_failure as failure_observation
 from tools import host_stream_kernel_stack_alignment as stack_alignment
+from tools import host_stream_kernel_vmap_extent as vmap_extent
 
 ROOT = prior.ROOT
 baseline = prior.baseline
@@ -243,7 +244,7 @@ def compose(base, originals, config):
         sum(parent.get(name) != raw for name, raw in result.items()) == 6,
         'cleanup-native-exact-six-source-delta')
     repaired = repair_task_geometry(diagnose_prebirth_refusals(initialize_observers(repair_sidcache(result))))
-    return stack_alignment.transform(failure_observation.transform(repaired))
+    return vmap_extent.transform(stack_alignment.transform(failure_observation.transform(repaired)))
 
 
 def qualification_projection(outputs, config):
@@ -268,7 +269,7 @@ def qualification_projection(outputs, config):
 def local_freeze():
     result = prior.local_freeze()
     for path in (Path(__file__), Path(change.__file__), Path(failure_observation.__file__),
-            Path(stack_alignment.__file__), change.FIXTURE,
+            Path(stack_alignment.__file__), Path(vmap_extent.__file__), change.FIXTURE,
             change.OWNED/'factory-cleanup-native-bootstrap.c'):
         result[path.relative_to(ROOT).as_posix()] = baseline.objects.identity(path)
     return result

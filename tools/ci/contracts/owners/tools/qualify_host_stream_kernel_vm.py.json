@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_host_stream_kernel_vm.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Capture the bounded first-extent alignment repair as an exact owning compiler recipe input; four physical pages and original bank ceilings preserved, virtual reservation explicitly 20 to 32 KiB.",
+  "reviewReason": "Freeze bounded VMALLOC-domain extent selection as an exact compiler recipe input; mapping, physical bank, virtual span and execution caps unchanged.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "67bd32de10c518c0c91eb89b8f4d0e40a2e99cced05096d155a881480b675714"
+  "sha256": "34d7a378d3bbdf06d2c4a986603a347885ae48eb908b07eb01c942463e1c84a7"
 }

@@ -12,6 +12,8 @@ on:
       - 'tools/tests/test_host_stream_kernel_constructor_failure.py'
       - 'tools/host_stream_kernel_stack_alignment.py'
       - 'tools/tests/test_host_stream_kernel_stack_alignment.py'
+      - 'tools/host_stream_kernel_vmap_extent.py'
+      - 'tools/tests/test_host_stream_kernel_vmap_extent.py'
       - 'research/standard-outbound/linux-6.12-lineage/constructor-vm-init.c'
 permissions:
   contents: read
@@ -38,7 +40,8 @@ jobs:
           tools.tests.test_host_stream_kernel_vm_image
           tools.tests.test_host_stream_kernel_cleanup_native
           tools.tests.test_host_stream_kernel_constructor_failure
-          tools.tests.test_host_stream_kernel_stack_alignment -v
+          tools.tests.test_host_stream_kernel_stack_alignment
+          tools.tests.test_host_stream_kernel_vmap_extent -v
       - name: Install upstream compiler and isolated emulator prerequisites
         run: |
           sudo timeout --signal=TERM --kill-after=30s 180s apt-get update
