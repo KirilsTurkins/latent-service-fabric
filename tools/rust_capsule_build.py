@@ -78,9 +78,17 @@ STANDARD_RECIPE = (
     'tools/captured_compiler_isolation.py',
 )
 RECIPE += STANDARD_RECIPE + PROJECTION_RECIPE
-RECIPE += tuple(host_projection_inputs())
 RECIPE += ("tools/application_dependencies.py", "tools/application_dependency_store.py", "tools/application_dependency_tools.py",
            "tools/application_dependency_approval.py", "tools/rust_application_dependencies.py", "tools/captured_compiler_isolation.py")
+
+
+def selected_recipe(root: Path | None = None) -> tuple[str, ...]:
+    """Resolve Rust-only host decision inputs at explicit Rust selection time.
+
+    Other builders import Commands/package_inputs from this module without
+    selecting Rust or needing a host Cargo manifest or bytes source closure.
+    """
+    return tuple(dict.fromkeys((*RECIPE, *host_projection_inputs(ROOT if root is None else root))))
 
 
 RUST_ENVIRONMENT_SCALARS = ('LC_ALL', 'LANG', 'TZ', 'CARGO_NET_OFFLINE', 'CARGO_INCREMENTAL',
@@ -507,7 +515,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
         raise ValueError('explicit Rust logging profile requires its owned prepared standard runtime only')
     source_inputs = inventory(files)
     recipe_files = {name: read_file(ROOT / name)
-                    for name in dict.fromkeys((*RECIPE, *standard.source_build_inputs(runtime_profile)))}
+                    for name in dict.fromkeys((*selected_recipe(), *standard.source_build_inputs(runtime_profile)))}
     if http_runtime is not None:
         from tools import rust_wasi_http_inputs as http_inputs
         recipe_files.update(http_inputs.consumer_files())

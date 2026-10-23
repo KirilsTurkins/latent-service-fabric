@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/rust_wasi_http_inputs.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Authenticate encoder metadata without requiring removed component type bytes inside executable core",
+  "reviewReason": "Use explicitly selected authenticated Rust116-file recipe in every actual producer and consumer; preserve exact45 host decision inputs, all existing cases and refusal guards. The six PrivateRequestViewer fixtures only switch from static recipe names to explicit selected recipe names; no runner, skip or fixture behavior is disabled.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "16aa085533525f6fc2c8531a21a5e9dcfa4def25475d6d9488d34326490f76b1"
+  "sha256": "33640b215a9e4e7774caf3e8c4a0c4d648e6c4cce31ea8254f2523baa9c95697"
 }

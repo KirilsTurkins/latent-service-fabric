@@ -28,12 +28,13 @@ from tools.phase3_resource_identity import file_identity
 from tools.qualify_rust_capsules import inputs
 from tools.qualify_rust_git_components import COMPANIONS, prepared_inputs
 from tools.run_rust_capsule_workflow import run
-from tools.rust_capsule_build import Commands, RECIPE
+from tools.rust_capsule_build import Commands, selected_recipe
 from tools.rust_capsule_project import ROOT, create, fresh, inventory, read_file, read_json, snapshot, write_json, host_projection_inputs
 
 MATERIALS = ('tools/qualify_rust_dependency_matrix.py', 'tools/rust_dependency_matrix.py',
              'tools/run_rust_capsule_workflow.py', 'tools/qualify_rust_git_components.py')
 SEEDS = ('examples/echo-contract/capsule.json', 'examples/echo-contract/deployment.json')
+RECIPE = selected_recipe()
 
 
 def stage_recipe(output: Path) -> dict:
