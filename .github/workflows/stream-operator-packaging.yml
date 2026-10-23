@@ -1,0 +1,54 @@
+name: Stream operator frontend packaging
+
+on:
+  push:
+    branches: ['feat/stream-operator-lifecycle-20261023']
+    paths: ['.github/workflows/stream-operator-packaging.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: stream-operator-packaging-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend:
+    name: Stream operator frontend (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            lock: tools/dev-frontend-linux.lock
+          - os: windows-2025
+            lock: tools/dev-frontend-windows.lock
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - name: Install exact hashed frontend and schema-validator inputs
+        run: python -m pip install --require-hashes -r "${{ matrix.lock }}"
+      - name: Exercise protected preparation and isolated frontend source boundaries
+        run: python -B -m unittest tools.tests.test_outbound_stream_preparation tools.tests.test_outbound_stream_operator tools.tests.test_dev_frontend_preflight_packaging
+      - name: Build frozen frontend and execute outside-checkout smoke checks
+        run: python tools/build_dev_frontend.py --output target/stream-operator-frontend
+      - name: Retain actual frontend products and existing source/license inventories
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: stream-operator-frontend-${{ matrix.os }}-${{ github.sha }}
+          path: |
+            target/stream-operator-frontend/build.json
+            target/stream-operator-frontend/helper.pyz
+            target/stream-operator-frontend/python-inventory.json
+            target/stream-operator-frontend/licenses/
+            target/stream-operator-frontend/dist/
+          if-no-files-found: error
+          retention-days: 7
