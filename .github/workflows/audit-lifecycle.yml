@@ -33,7 +33,7 @@ jobs:
       - name: Install the repository-pinned Rust toolchain
         run: rustup toolchain install 1.97.1 --profile minimal --component rustfmt --component clippy
       - name: Prepare and format exact CLI and owner integration
-        run: python3 .github/audit-lifecycle-candidate.py prepare
+        run: python3 .github/audit-lifecycle-refine.py
       - name: Publish immutable candidate blobs without moving a branch
         env:
           GH_TOKEN: ${{ github.token }}
