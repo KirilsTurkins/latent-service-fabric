@@ -1,0 +1,31 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "audit-signed-retirement-${{ github.ref }}"
+    },
+    "name": "Connected Audit signed retirement",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/audit-signed-retirement-20261023"
+        ],
+        "paths": [
+          ".github/workflows/audit-signed-runtime.yml"
+        ]
+      },
+      "workflow_dispatch": {}
+    },
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "audit-signed"
+  ],
+  "reviewReason": "One bounded three-case signed Audit consumer with fixed277hosts, three193helpers and capturedC36guest; no host/std/app/guest rebuild or historical programme replay.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/audit-signed-runtime.yml"
+}

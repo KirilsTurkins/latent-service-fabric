@@ -1,0 +1,62 @@
+{
+  "cases": [
+    "AuditSignedRuntimeTests.test_original_bank_keeps_live_broker_metadata_visible_and_requires_other_transient_zero",
+    "AuditSignedRuntimeTests.test_prebuild_failure_retains_result_without_retrieval_or_rebuild",
+    "AuditSignedRuntimeTests.test_required_pair_binds_current_revision_real_provider_and_same_durable_attempt_despite_optional_loss",
+    "AuditSignedRuntimeTests.test_stricter_policy_changes_only_original_random_require_audit_and_does_not_alias_input"
+  ],
+  "guards": {
+    "AuditSignedRuntimeTests.test_original_bank_keeps_live_broker_metadata_visible_and_requires_other_transient_zero": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bf59dc0ecc153b116905756254a06d6887a6354da9e7399c7d220d7a819ad650",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "AuditSignedRuntimeTests.test_prebuild_failure_retains_result_without_retrieval_or_rebuild": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bf59dc0ecc153b116905756254a06d6887a6354da9e7399c7d220d7a819ad650",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "AuditSignedRuntimeTests.test_required_pair_binds_current_revision_real_provider_and_same_durable_attempt_despite_optional_loss": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bf59dc0ecc153b116905756254a06d6887a6354da9e7399c7d220d7a819ad650",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "AuditSignedRuntimeTests.test_stricter_policy_changes_only_original_random_require_audit_and_does_not_alias_input": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bf59dc0ecc153b116905756254a06d6887a6354da9e7399c7d220d7a819ad650",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_audit_signed_runtime.py",
+  "reviewReason": "Preserve visible original broker subset, exact Audit transient retirement, authority-preserving stricter Random rule and durable required pair identity despite optional loss, plus retained prebuild refusal.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

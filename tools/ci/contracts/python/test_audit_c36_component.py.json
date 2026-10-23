@@ -1,0 +1,62 @@
+{
+  "cases": [
+    "AuditC36ComponentTests.test_changed_origin_or_failed_original_job_cannot_authorize_guest_reuse",
+    "AuditC36ComponentTests.test_exact_original_capture_contains_one_component_and_complete_packaged_source",
+    "AuditC36ComponentTests.test_foreign_archive_is_rejected_before_creating_any_build_file",
+    "AuditC36ComponentTests.test_missing_original_source_or_replaced_component_refuses_before_build_evidence"
+  ],
+  "guards": {
+    "AuditC36ComponentTests.test_changed_origin_or_failed_original_job_cannot_authorize_guest_reuse": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ed8f984c6f65b03570cc94128286ff881e720d8e7343b3a1ce84a7de40fb7409",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "AuditC36ComponentTests.test_exact_original_capture_contains_one_component_and_complete_packaged_source": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ed8f984c6f65b03570cc94128286ff881e720d8e7343b3a1ce84a7de40fb7409",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "AuditC36ComponentTests.test_foreign_archive_is_rejected_before_creating_any_build_file": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ed8f984c6f65b03570cc94128286ff881e720d8e7343b3a1ce84a7de40fb7409",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "AuditC36ComponentTests.test_missing_original_source_or_replaced_component_refuses_before_build_evidence": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ed8f984c6f65b03570cc94128286ff881e720d8e7343b3a1ce84a7de40fb7409",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_audit_c36_component.py",
+  "reviewReason": "Reject changed or failed original C36 origin, changed whole archive and missing source/package/component before guest reuse.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
