@@ -129,8 +129,13 @@ Use the same arguments with `revoke` to publish a durable deny at the last
 confirmed owned policy generation. The helper neither deletes another owner's
 record nor refunds physical resources; inspect actual node usage and retirement
 after revocation. Use `inspect --deployment NAME` for the bounded existing
-capability inspection RPC. Unavailable counters remain unavailable, and the
-inspection response grants no execution permission.
+capability inspection RPC. It selects the exact stream contract and provider
+profile, and refuses a deployment whose returned publication differs from the
+protected owner, including a missing publication. Binding generations and
+changed/revoked/unavailable states remain descriptive diagnostics, even when
+they differ from the saved provider descriptor. Empty results and unavailable
+counters remain unavailable; inspection grants no execution permission or
+readiness and changes no local owner or remote grant.
 
 Each mutation records its original intent and operation identity in protected
 state before dispatch. An uncertain response or transport exception retains
