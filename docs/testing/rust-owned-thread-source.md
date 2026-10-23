@@ -168,7 +168,48 @@ are retained. This supplies original object inputs, not whole private-body,
 canonical ABI, checkpoint or runtime qualification. Every such gate remains
 false; no component or guest was signed or executed.
 
-Beyond those actual compiler inputs, validation consists of source/preimage controls and metadata typechecks
+Run [39877020838](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39877020838)
+at `28059f343bbd954e3e6614c5a24593897cc0c294` passed the rebuilt context
+utility, all 72 source mechanism cases, all 12 actual Rust-emitted wrapper
+engine outcomes, strict same-job std and the original captured application.
+Its explicit std/application source-prefix remaps remove temporary source-path
+bytes from the observed original private graph. Complete original-body and
+relocation observations cover 469 function and 756 data definitions; five
+private callback targets leave the ordinary table, and six checked owner
+dispatches preserve the genuine Source fallback. These observations remain
+source evidence until the immutable native catalogue and final component graph
+independently authenticate them.
+
+The original core is 262,436 bytes,
+`sha256:583e2353a8405db569e61cb3269b3643aff39374c1e2d83cc970cc033604edec`;
+the validated guarded core is 248,043 bytes,
+`sha256:ba2014e3f4d14c428b93c100a011afbb2f7995436e858108292dbbd70a720519`.
+Actual original linker memory reserves Root `[26,256, 1,074,832)` and a distinct
+64KiB System stack `[1,074,832, 1,140,368)` within 1,179,648 initial bytes.
+The original static result area is 25,544, disjoint from all 756 observed
+private data ranges. Result tag/pointer/length are captured before accepted-work
+drain and checked afterward; nonempty results must remain in original heap
+memory. Canonical allocation failure reaches the source-bound `panic_fmt`
+function 531, mapped to 532 by public preparation. Its installed System-only
+trap precedes the original prologue/TLS/hook path; normal Root instructions
+remain under the existing reencoder. The emitted controls prove that System
+panic invokes no hook/context lookup and that normal Root panic retains its
+hook. Failure/trap establishes no successful cleanup or refund.
+
+The sole retained ZIP is 52,246,859 bytes,
+`sha256:76e11dc5d099d353d027b5e946ec7624f5c7bc90110f4844fc9aff387f2afdc6`.
+All 87 files (109,770,851 expanded bytes), 85 manifest rows, 217 exact Git
+inputs (2,338,817 bytes), 7,094 source/CAS paths (102,991,172 bytes) and 8,977
+accepted file references were independently checked. The compiler-distribution
+identity is `sha256:16017bec70a8df1c23e841a42b08f8719f18d59f5f18310647bb61ed0d4201ca`;
+its same-job sysroot identity is
+`sha256:8b2b96e015168624bb2fd0b5f26eebf7b06496ba60d8f3d2968a32f2687086b4`.
+The prior `ec11ecf` run's canonical indirect-path refusal remains recorded;
+its distribution receipt is not reused. Normal builder, native catalogue,
+canonical-body, checkpoint and runtime qualification flags remain false.
+No normal component, signed Rust guest or runtime ThreadPool was executed.
+
+Other validation includes source/preimage controls and metadata typechecks
 with explicit public-wrapper/ABI ports. Earlier native source controls exercise
 the actual registry, wait, TLS and lifecycle bodies with explicit reference
 boundaries; they do not execute an actual canonical Rust child, rebuilt std,
@@ -178,8 +219,9 @@ captured executor refusal paths. Metadata typechecking supplements those cases.
 
 Before any supported runtime claim, the remaining minimum delivery is:
 
-1. Compile and inspect an actual captured default ThreadPool application's
-   emitted graph through the compiled ordinary-root/canonical-cleanup utility.
+1. Bind the immutable host-owned original-object catalogue and recompute the
+   complete normal component graph, including the distinct Rust40 cooperative
+   ABI and exact ready handoffs.
 2. Execute the normal captured target-side executor/std route with its complete
    original capture/patch identities; source integration alone is insufficient.
 3. Authenticate the final private pool bridge callsites, table/callback targets,
