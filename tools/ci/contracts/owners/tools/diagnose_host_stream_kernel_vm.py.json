@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/diagnose_host_stream_kernel_vm.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Observe only numeric BEGIN refusal on the exact retained failed556 linked kernel; replace only fixed initramfs init, no kernel rebuild or qualification claims. Three additive offline origin and archive controls; same VM resource limits.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "2d01cfbb497af8bc36d41a6549dce05a7ffc66d8335070eb51220d5930014e2c"
+}

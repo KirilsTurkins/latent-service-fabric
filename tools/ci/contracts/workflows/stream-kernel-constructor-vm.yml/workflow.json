@@ -1,0 +1,46 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "stream-kernel-constructor-vm-${{ github.ref }}"
+    },
+    "name": "Stream actual constructor VM",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/stream-kernel-vm-qualification-20261023"
+        ],
+        "paths": [
+          ".github/workflows/stream-kernel-constructor-vm.yml",
+          "tools/qualify_host_stream_kernel_vm.py",
+          "tools/host_stream_kernel_vm_image.py",
+          "tools/tests/test_host_stream_kernel_vm_image.py",
+          "tools/host_stream_kernel_constructor_failure.py",
+          "tools/tests/test_host_stream_kernel_constructor_failure.py",
+          "tools/host_stream_kernel_stack_alignment.py",
+          "tools/tests/test_host_stream_kernel_stack_alignment.py",
+          "tools/host_stream_kernel_vmap_extent.py",
+          "tools/tests/test_host_stream_kernel_vmap_extent.py",
+          "tools/host_stream_kernel_vmap_fit.py",
+          "tools/tests/test_host_stream_kernel_vmap_fit.py",
+          "tools/host_stream_kernel_task_identity_geometry.py",
+          "tools/tests/test_host_stream_kernel_task_identity_geometry.py",
+          "tools/host_stream_kernel_provider_task_reference.py",
+          "tools/tests/test_host_stream_kernel_provider_task_reference.py",
+          "research/standard-outbound/linux-6.12-lineage/constructor-vm-init.c"
+        ]
+      },
+      "workflow_dispatch": null
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "constructor-vm"
+  ],
+  "reviewReason": "Consume the original provider association Task reference exactly once after original stop_put; preserve early-exit protection, existing stop states and final-return assertions; append four source controls.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/stream-kernel-constructor-vm.yml"
+}
