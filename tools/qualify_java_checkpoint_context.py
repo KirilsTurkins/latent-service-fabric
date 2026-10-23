@@ -30,9 +30,13 @@ from tools.rust_capsule_project import ROOT, fresh, read_file, write_json
 
 SDK = ROOT/'sdk/java-guest'
 CONTROL = SDK/'fibers/conformance/compiler/CheckpointContextControl.java'
-NAMES = frozenset(('teavm-classlib', 'teavm-core', 'teavm-extension-spi', 'teavm-interop',
+# Include the core POM's complete runtime closure for the real dependency analyzer,
+# including extension-spi's API/util dependencies, not only javac's model surface.
+NAMES = frozenset(('teavm-classlib', 'teavm-core', 'teavm-extension-apis',
+    'teavm-extension-spi', 'teavm-extension-spi-util', 'teavm-interop', 'teavm-metaprogramming-api',
     'teavm-platform', 'teavm-relocated-libs-asm', 'teavm-relocated-libs-asm-analysis',
-    'teavm-relocated-libs-asm-commons', 'teavm-relocated-libs-asm-tree', 'teavm-relocated-libs-hppc'))
+    'teavm-relocated-libs-asm-commons', 'teavm-relocated-libs-asm-tree', 'teavm-relocated-libs-asm-util',
+    'teavm-relocated-libs-hppc', 'teavm-relocated-libs-rhino'))
 EXPECTED = (';direct;multihop;shared;virtual;class-unmanaged;managed-cycle;pinned-managed-entry;altered-entry-negatives;'
     'unresolved;bound;real-late-completion')
 

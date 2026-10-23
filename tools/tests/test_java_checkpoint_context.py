@@ -40,7 +40,14 @@ class CheckpointContext(unittest.TestCase):
         lock = json.loads((probe.SDK/'feasibility/dependencies.lock.json').read_bytes())
         rows = probe.selected(lock)
         self.assertEqual({Path(row['path']).parts[-3] for row in rows}, probe.NAMES)
-        self.assertEqual(len(rows), 10)
+        self.assertEqual(len(rows), 15)
+        analyzer_dependencies = {'teavm-extension-apis', 'teavm-extension-spi-util',
+            'teavm-metaprogramming-api', 'teavm-relocated-libs-asm-util', 'teavm-relocated-libs-rhino'}
+        self.assertTrue(analyzer_dependencies <= {Path(row['path']).parts[-3] for row in rows})
+        for name in sorted(analyzer_dependencies):
+            changed = copy.deepcopy(lock)
+            changed['artifacts'] = [r for r in changed['artifacts'] if Path(r['path']).parts[-3] != name]
+            with self.subTest(missing_analyzer_runtime=name), self.assertRaises(ValueError): probe.selected(changed)
         for mutation in ('digest', 'missing', 'registry'):
             changed = copy.deepcopy(lock)
             if mutation == 'digest': changed['artifacts'][0]['sha256'] = '0'*64

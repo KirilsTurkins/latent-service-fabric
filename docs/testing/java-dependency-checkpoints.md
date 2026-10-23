@@ -46,7 +46,8 @@ incomplete metadata or an exceeded bound refuses compilation. Direct loops in
 `@Unmanaged` classes are also excluded from instrumentation.
 
 The separate `Java checkpoint context compiler control` workflow runs original
-and corrected TeaVM classes on the JVM with the existing ten locked model JARs.
+and corrected TeaVM classes on the JVM with the existing fifteen locked model JARs, including the core compiler's declared
+runtime dependencies for the real dependency analyzer.
 Its controls include real completion-time dependency analysis adding a late
 unsafe path, pinned call-graph/IR cases and managed-entry positives. It compiles
 no guest/native component and supplies no runtime or whole-criterion proof.
