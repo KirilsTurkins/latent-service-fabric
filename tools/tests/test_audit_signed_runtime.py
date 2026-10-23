@@ -130,6 +130,8 @@ class AuditSignedRuntimeTests(unittest.TestCase):
         client = Client()
         with tempfile.TemporaryDirectory() as temporary:
             output = Path(temporary)
+            (output / 'invocation-audit-required-random.json').write_bytes(
+                b'{"startedAtUnixMillis":"1792751916337"}')
             owner.retain_required_failure(client, {'name': 'c-thread-runtime'}, output)
             record = json.loads((output / 'required-failure-observation.json').read_bytes())
             self.assertFalse(record['successClaimed'])
@@ -137,6 +139,7 @@ class AuditSignedRuntimeTests(unittest.TestCase):
             self.assertEqual(record['reads'], [{'kind': 'audit', 'captured': False, 'errorType': 'ValueError'},
                                               {'kind': 'usage', 'captured': True}])
             self.assertEqual([args[:2] for args, _ in client.calls], [('audit', 'query'), ('capability', 'list')])
+            self.assertEqual(client.calls[0][0][-2:], ('--from-unix-millis', '1792751916336'))
             self.assertTrue(all(0 < kwargs['timeout'] <= 5 for _, kwargs in client.calls))
             self.assertEqual(client.deadline > owner.time.monotonic(), True)
 

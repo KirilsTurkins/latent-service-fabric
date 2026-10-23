@@ -165,8 +165,12 @@ def retain_required_failure(client, target, output):
     """Two existing read-only controls; never retry or replace the failed call."""
     evidence = {'diagnosticOnly': True, 'successClaimed': False, 'reads': []}
     deadline = min(client.deadline, time.monotonic() + 10)
+    invocation = read_json(output / 'invocation-audit-required-random.json')
+    started = integer(invocation['startedAtUnixMillis'])
+    require(started > 0, 'audit-signed-failure-original-invocation-time')
     commands = (
-        ('audit', ('audit', 'query', '--scope', 'tenant', '--page-size', '64')),
+        ('audit', ('audit', 'query', '--scope', 'tenant', '--page-size', '64',
+                   '--from-unix-millis', str(started - 1))),
         ('usage', ('capability', 'list', '--deployment', target['name'], '--include-node-usage')))
     for label, command in commands:
         try:

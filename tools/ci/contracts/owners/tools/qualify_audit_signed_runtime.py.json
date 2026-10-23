@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_audit_signed_runtime.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Retain two bounded existing read-only controls after the genuine required-call failure without replacing it",
+  "reviewReason": "Filter the same bounded diagnostic Audit page by the original recorded invocation time after actual byte-limit truncation",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "d39bcdd8ea03e018461ad784c60c0afc4e3985f1ab6b92cb99ad26e5cf57a208"
+  "sha256": "4fd68dba0ad452c46ccd2f636d3db13d8df8abf19a5e22b284dea2277d969e55"
 }
