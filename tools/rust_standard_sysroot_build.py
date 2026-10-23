@@ -45,7 +45,7 @@ def recipe(*, threads=False):
         return RECIPE
     # Existing isolated standard-profile recipes do not carry thread sources.
     from tools import rust_standard_thread_profile as thread_profile
-    return tuple(dict.fromkeys((*RECIPE, *thread_profile.RECIPE)))
+    return tuple(dict.fromkeys((*RECIPE, 'tools/rust_thread_path_remap.py', *thread_profile.RECIPE)))
 
 
 def emitted_libraries(data: bytes, target: Path) -> dict[str, dict]:
@@ -127,6 +127,12 @@ def build(archive: Path, output: Path, rust_bin: Path, *, logging=False, entropy
                 CARGO_NET_OFFLINE='true', RUSTUP_AUTO_INSTALL='0', RUSTC=str(tools['rustc']),
                 CARGO_TARGET_DIR=str(target), CARGO_INCREMENTAL='0', RUSTC_BOOTSTRAP='1',
                 RUSTFLAGS=FLAGS)
+            if threads:
+                from tools.rust_thread_path_remap import standard_flags
+                encoded_flags, path_remap = standard_flags(library, FLAGS)
+                # Preserve each actual argument even if the source has spaces.
+                environment.pop('RUSTFLAGS')
+                environment['CARGO_ENCODED_RUSTFLAGS'] = '\x1f'.join(encoded_flags)
             commands = Commands(library, output, environment, deadline_seconds=600, command_seconds=180)
             version = commands.run('compiler-version', tools['rustc'], '--version', '--verbose').decode()
             require(f'release: {clock.RUST}\n' in version and f'commit-hash: {clock.RUST_COMMIT}\n' in version,
@@ -166,6 +172,8 @@ def build(archive: Path, output: Path, rust_bin: Path, *, logging=False, entropy
                     'logical thread/TLS/sync/timer/default-reactor/checkpoint and native retirement qualification']}
             if threads:
                 # This is an owned compiler input, never runtime qualification.
+                value['threadSourcePathRemap'] = path_remap
+                value['rustEncodedFlags'] = encoded_flags
                 value['standardThreads'] = thread_profile.PROFILE
                 value['standardThreadSourceSelected'] = True
                 value['standardThreadRuntimeQualified'] = False

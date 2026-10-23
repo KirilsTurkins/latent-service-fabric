@@ -74,7 +74,8 @@ class StandardThreadSource(unittest.TestCase):
         with patch('builtins.__import__', side_effect=isolated_import):
             self.assertIs(build.recipe(), build.RECIPE)
         self.assertIs(build.recipe(), build.RECIPE)
-        self.assertEqual(set(build.recipe(threads=True)), {*build.RECIPE, *profile.RECIPE})
+        self.assertEqual(set(build.recipe(threads=True)),
+                         {*build.RECIPE, 'tools/rust_thread_path_remap.py', *profile.RECIPE})
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             for flags in ({'threads': True, 'logging': True},

@@ -1,0 +1,40 @@
+{
+  "schemaVersion": "lsf.kernel-cleanup-constructor-wait-source.v1",
+  "upstreamCommit": "7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+  "source": {},
+  "parentDerived": {
+    "include/net/lsf_stream_cleanup_provider_executor.h": {
+      "bytes": 4972,
+      "sha256": "fcd868be07841d5d0887ef196d07aee3558f9cf697a82a4d303063ee0605a74a"
+    },
+    "net/factory.c": {
+      "bytes": 33331,
+      "sha256": "80c4087a32d4569f5f838c431048099b3719018cce6b4efb4c6c3d8590ad1ef2"
+    },
+    "net/factory-cleanup-provider-queue.c": {
+      "bytes": 11883,
+      "sha256": "7a66f003e5caddc772cbfc3436c727d72d4e427a78501b2187e4efa68c2affb4"
+    },
+    "net/acpi-cleanup-provider-queue.c": {
+      "bytes": 3261,
+      "sha256": "e136709a7628fce196e88af1caf8498a99689b0cdb293747a6c91262a4fc65ff"
+    },
+    "kernel/lsf-cleanup-provider-executor.c": {
+      "bytes": 34849,
+      "sha256": "5a19df6a7e045497be036a350e275f20050a2ae944b755dcc381330c94a0eda0"
+    },
+    "kernel/lsf-cleanup-provider-queue.c": {
+      "bytes": 2412,
+      "sha256": "3f672d406f831aaaf04fcfe6e5827dc3280013f4c058f065f5bc2e6390db8514"
+    },
+    "kernel/lsf-cleanup-provider-initialize.c": {
+      "bytes": 2068,
+      "sha256": "36b4dc2b261c5f56e3f1f87f140aaf71445f2a89aa0e1a63dc0d054bdbdf8d3e"
+    }
+  },
+  "actualLinuxExecution": false,
+  "initialBirthBounded": false,
+  "consumerSelected": false,
+  "completeAllocationClosure": false,
+  "productionInstallation": false
+}
