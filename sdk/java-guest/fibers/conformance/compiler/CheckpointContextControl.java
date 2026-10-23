@@ -113,8 +113,8 @@ public final class CheckpointContextControl {
                 .getCodeSource().getLocation().toURI()).toRealPath();
         try (var provider = org.teavm.parsing.resource.ResourceProvider.ofClassPath(
                 java.util.List.of(jar.toFile()))) {
-            var source = new org.teavm.parsing.resource.ResourceBytecodeClassHolderSource(
-                    provider, new ReferenceCache());
+            var source = new PreOptimizingClassHolderSource(
+                    new org.teavm.parsing.resource.ResourceBytecodeClassHolderSource(provider, new ReferenceCache()));
             var cls = source.get("org.teavm.runtime.Fiber");
             require(cls != null, "actual-pinned-fiber-class-reader");
             return ModelUtils.copyClass(cls);

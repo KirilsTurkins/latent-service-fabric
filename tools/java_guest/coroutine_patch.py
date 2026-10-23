@@ -193,8 +193,10 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
             try (org.teavm.parsing.resource.ResourceProvider provider =
                     org.teavm.parsing.resource.ResourceProvider.ofClassPath(
                             Collections.singletonList(jar.toFile()))) {
-                ClassReader pinned = new org.teavm.parsing.resource.ResourceBytecodeClassHolderSource(
-                        provider, new org.teavm.model.ReferenceCache()).get(Fiber.class.getName());
+                // Match TeaVMTool's pinned nonincremental production source pass.
+                ClassReader pinned = new org.teavm.model.PreOptimizingClassHolderSource(
+                        new org.teavm.parsing.resource.ResourceBytecodeClassHolderSource(
+                                provider, new org.teavm.model.ReferenceCache())).get(Fiber.class.getName());
                 MethodReader expected = pinned == null ? null : pinned.getMethod(method.getDescriptor());
                 if (expected == null || expected.getLevel() != org.teavm.model.AccessLevel.PRIVATE
                         || expected.hasModifier(ElementModifier.STATIC)) {
@@ -312,11 +314,11 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
             if (!left.getMethod().equals(right.getMethod()) || left.getType() != right.getType()
                     || !sameFiberVariable(left.getInstance(), right.getInstance())
                     || !sameFiberVariable(left.getReceiver(), right.getReceiver())
-                    || left.getArguments().length != right.getArguments().length) {
+                    || left.getArguments().size() != right.getArguments().size()) {
                 return false;
             }
-            for (int index = 0; index < left.getArguments().length; ++index) {
-                if (!sameFiberVariable(left.getArguments()[index], right.getArguments()[index])) {
+            for (int index = 0; index < left.getArguments().size(); ++index) {
+                if (!sameFiberVariable(left.getArguments().get(index), right.getArguments().get(index))) {
                     return false;
                 }
             }

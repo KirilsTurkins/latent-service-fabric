@@ -37,7 +37,8 @@ private `Fiber.start()V` is the managed-entry boundary: it installs the current
 Fiber before running its callback, so its callers are outside that new context.
 The boundary requires its resolved body to match the original Fiber body parsed
 directly from the same authenticated compiler JAR, with the same method flags
-and bounded instruction operands, phi inputs and normal control flow. Empty,
+and the pinned production `PreOptimizingClassHolderSource` pass, bounded
+instruction operands, phi inputs and normal control flow. Empty,
 altered, exceptional or unknown instruction bodies cannot establish that proof.
 Other methods and overloads receive no such exemption. The independent walk
 allows at most 65,536 methods and 262,144 combined call-site/caller-edge visits;
