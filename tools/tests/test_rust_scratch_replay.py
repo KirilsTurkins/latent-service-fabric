@@ -101,6 +101,14 @@ class RustScratchReplay(unittest.TestCase):
         for name, identity in expected.items():
             job = copy.deepcopy(model['jobs'][name])
             self.assertEqual(job.pop('if'), "${{ github.event_name != 'workflow_dispatch' || !inputs.replay-scratch-refusals }}")
+            if name == 'standard-entropy':
+                # #1377 selects the already installed exact toolchain for this
+                # source control. All original commands and nine job bodies
+                # remain pinned after removing only that reviewed environment.
+                steps = [step for step in job['steps'] if step.get('name') ==
+                    'Test exact entropy source, ordinary transitive capture and retirement controls']
+                self.assertEqual(len(steps), 1)
+                self.assertEqual(steps[0].pop('env'), {'RUSTUP_TOOLCHAIN': '1.97.1'})
             self.assertEqual(hashlib.sha256(json.dumps(job, sort_keys=True, separators=(',', ':')).encode()).hexdigest(), identity)
         child = model['jobs']['scratch-replay']
         self.assertEqual(child['timeout-minutes'], 20)
