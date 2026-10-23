@@ -50,7 +50,8 @@ async fn page_lease_follows_unpolled_body_and_transport_retained_bytes() {
         .wait()
         .await
         .unwrap();
-    let (_, _, _, lease) = page.into_parts();
+    let lease = page.response_lease();
+    drop(page);
     let mut response = http::Response::new(Body::new(OneFrame(Some(Bytes::from_static(
         b"bounded-response",
     )))));

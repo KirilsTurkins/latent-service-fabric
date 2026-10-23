@@ -9,6 +9,7 @@ use super::{
     },
     AuditLimits, Result,
 };
+use latent_core::node_metadata::NodeMetadataLease;
 use serde::{Deserialize, Serialize};
 use std::{fs, path::Path};
 
@@ -57,9 +58,19 @@ pub(super) struct Store {
     pub unknown: u64,
     pub unhealthy: bool,
     pub previous_session_loss_unknown: bool,
+    // Actual entries, captured pending record, path and filesystem owner drop first.
+    _native: NodeMetadataLease,
 }
 impl Store {
     pub fn open(path: &Path, limits: AuditLimits) -> Result<Self> {
+        Self::open_with_metadata(path, limits, NodeMetadataLease::default(), false)
+    }
+    pub(super) fn open_with_metadata(
+        path: &Path,
+        limits: AuditLimits,
+        native: NodeMetadataLease,
+        funded: bool,
+    ) -> Result<Self> {
         let limits = limits.validate()?;
         if limits.maximum_metadata_bytes < 128 * 1024 + limits.maximum_records * 1536 {
             return Err(capacity());
@@ -147,12 +158,17 @@ impl Store {
         let mut store = Self {
             root,
             head,
-            entries: Vec::new(),
+            entries: if funded {
+                Vec::with_capacity(limits.maximum_records)
+            } else {
+                Vec::new()
+            },
             limits,
             pending: None,
             unknown: 0,
             unhealthy: false,
             previous_session_loss_unknown: mode.sessions > 0,
+            _native: native,
         };
         store.scan()?;
         mode.initialized = true;
@@ -439,3 +455,29 @@ fn cut(point: u8) -> Result<()> {
 }
 #[cfg(test)]
 thread_local! {pub(super) static FAIL:std::cell::Cell<u8>=const{std::cell::Cell::new(0)};}
+
+// Closed Store scratch bound: at most three typed record images (including
+// retained pending + validation clone), three16KiB serialized/read buffers,
+// eight bounded4096-byte paths, and8KiB small HEAD/INTENT/codec bookkeeping.
+// Names/Entry rows are separately charged below; worker operations are serial.
+const _: () = assert!(std::mem::size_of::<AuditStoredRecord>() <= 4096);
+const _: () =
+    assert!(3 * (16384 + 256 * 128 + 4096) + 3 * 16384 + 8 * (4096 + 64) + 8192 <= 256 * 1024);
+
+/// Preflight the exact fixed backing and conservative bounded row payloads
+/// before opening/reloading the journal. No actor/tenant name supplies a grant.
+pub(super) fn native_memory_bytes(limits: AuditLimits) -> Result<usize> {
+    let row = std::mem::size_of::<Entry>()
+        .checked_add(2 * std::mem::size_of::<String>())
+        // scope/actor maximum512-byte tokens; digest/name maximum64 bytes.
+        // Each real string allocation has its own64-byte bookkeeping allowance.
+        .and_then(|bytes| bytes.checked_add(2 * (512 + 64) + 2 * (64 + 64)))
+        .ok_or_else(capacity)?;
+    row.checked_mul(limits.maximum_records)
+        // Serial Store startup/append scratch: three decoded bounded record
+        // images, input/output buffers, filesystem paths and HEAD/INTENT copies.
+        // The decoder separately limits256 nodes/8levels/32-element arrays.
+        .and_then(|bytes| bytes.checked_add(256 * 1024))
+        .and_then(|bytes| bytes.checked_add(2 * 64))
+        .ok_or_else(capacity)
+}

@@ -172,3 +172,7 @@ pub(super) fn coverage(value: domain::AuditPageCoverage) -> proto::AuditQueryCov
         previous_session_loss_unknown: value.previous_session_loss_unknown,
     }
 }
+
+// The original page owner prepays this exact inline response-element ceiling
+// before decoding any record. A layout change cannot silently exceed it.
+const _: () = assert!(std::mem::size_of::<proto::Phase2AuditRecord>() <= 4096);

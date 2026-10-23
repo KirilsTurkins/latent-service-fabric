@@ -1,14 +1,14 @@
 use super::{
-    closed, codec, error, invalid, store, ticket, unavailable, Arc, AtomicBool, AtomicU64,
-    AuditAppendTicket, AuditBeginTicket, AuditHandle, AuditOperationAttempt,
-    AuditOperationConclusion, AuditOperationResult, AuditReason, AuditRecordData, Finish, Ordering,
-    Pending, Result,
+    closed, codec, error, invalid, store, ticket, unavailable, AtomicBool, AtomicU64,
+    AuditAppendTicket, AuditArc, AuditBeginTicket, AuditCallMemory, AuditHandle,
+    AuditOperationAttempt, AuditOperationConclusion, AuditOperationResult, AuditOwned, AuditReason,
+    AuditRecordData, Finish, Heap, Ordering, Pending, Result,
 };
 pub struct AuditCriticalReservation {
-    pending: Option<Arc<Pending>>,
+    pending: Option<AuditArc<Pending>>,
 }
 pub struct AuditAttempt {
-    pending: Option<Arc<Pending>>,
+    pending: Option<AuditArc<Pending>>,
 }
 impl AuditHandle {
     /// Reserve on an existing bounded control worker, outside runtime fences.
@@ -17,8 +17,10 @@ impl AuditHandle {
         &self,
         attempt: &AuditOperationAttempt,
     ) -> Result<AuditCriticalReservation> {
+        let memory = self.control_memory()?;
+        let _scratch = memory.codec_scratch(self.shared.limits.maximum_record_bytes)?;
         codec::attempt(attempt)?;
-        self.reserve_critical_locked(attempt, self.shared.control_lock()?)
+        self.reserve_critical_locked(attempt, memory, self.shared.control_lock()?)
     }
 
     /// Reject-only shape and complete-envelope size validation. Does not reserve
@@ -28,31 +30,60 @@ impl AuditHandle {
         attempt: &AuditOperationAttempt,
         conclusion: &AuditOperationConclusion,
     ) -> Result<()> {
+        let memory = self.control_memory()?;
+        self.preflight_conclusion_with_memory(attempt, conclusion, &memory)
+    }
+    pub fn preflight_conclusion_with_memory(
+        &self,
+        attempt: &AuditOperationAttempt,
+        conclusion: &AuditOperationConclusion,
+        memory: &AuditCallMemory,
+    ) -> Result<()> {
+        let _scratch = memory.codec_scratch(self.shared.limits.maximum_record_bytes)?;
+        let part = memory.prepare_owned(AuditCallMemory::owned_heap_bound(
+            self.shared.limits.maximum_record_bytes,
+        )?)?;
         codec::attempt(attempt)?;
         codec::conclusion(conclusion)?;
         codec::capability_pair(attempt, conclusion)?;
         let conclusion = codec::normalize(conclusion, self.shared.limits.maximum_record_bytes)?;
-        codec::envelope(
-            &attempt.scope,
-            &attempt.actor,
-            AuditRecordData::Outcome {
-                attempt_sequence: u64::MAX,
-                conclusion,
-            },
-            self.shared.limits.maximum_record_bytes,
-        )
+        let heap = conclusion.heap_bytes()?;
+        let conclusion = AuditOwned::new(conclusion, part, heap);
+        conclusion.with_value(|conclusion| {
+            codec::envelope(
+                &attempt.scope,
+                &attempt.actor,
+                AuditRecordData::Outcome {
+                    attempt_sequence: u64::MAX,
+                    conclusion,
+                },
+                self.shared.limits.maximum_record_bytes,
+            )
+        })
     }
     pub fn try_reserve_critical(
         &self,
         attempt: &AuditOperationAttempt,
     ) -> Result<AuditCriticalReservation> {
+        let memory = self.control_memory()?;
+        let _scratch = memory.codec_scratch(self.shared.limits.maximum_record_bytes)?;
         codec::attempt(attempt)?;
-        self.reserve_critical_locked(attempt, self.shared.lock()?)
+        self.reserve_critical_locked(attempt, memory, self.shared.lock()?)
     }
 
+    pub fn try_reserve_critical_with_memory(
+        &self,
+        attempt: &AuditOperationAttempt,
+        memory: &AuditCallMemory,
+    ) -> Result<AuditCriticalReservation> {
+        let _scratch = memory.codec_scratch(self.shared.limits.maximum_record_bytes)?;
+        codec::attempt(attempt)?;
+        self.reserve_critical_locked(attempt, memory.clone(), self.shared.lock()?)
+    }
     fn reserve_critical_locked(
         &self,
         attempt: &AuditOperationAttempt,
+        memory: AuditCallMemory,
         mut s: std::sync::MutexGuard<'_, super::State>,
     ) -> Result<AuditCriticalReservation> {
         self.shared.queue_room(&s, 16384)?;
@@ -63,6 +94,9 @@ impl AuditHandle {
             ));
         }
         self.shared.record_room(&s, 2)?;
+        let prepared = memory.prepare_arc::<Pending>(AuditCallMemory::owned_heap_bound(
+            self.shared.limits.maximum_record_bytes,
+        )?)?;
         let attempt = codec::normalize(attempt, self.shared.limits.maximum_record_bytes)?;
         codec::envelope(
             &attempt.scope,
@@ -70,16 +104,21 @@ impl AuditHandle {
             AuditRecordData::Attempt(attempt.clone()),
             self.shared.limits.maximum_record_bytes,
         )?;
-        let pending = Arc::new(Pending {
-            shared: Arc::downgrade(&self.shared),
-            attempt,
-            sequence: AtomicU64::new(0),
-            started: AtomicBool::new(false),
-            abandoned: AtomicBool::new(false),
-            finishing: AtomicBool::new(false),
-            recovered: false,
-            begun: AtomicBool::new(false),
-        });
+        let heap = attempt.heap_bytes()?;
+        let pending = prepared.allocate(
+            Pending {
+                shared: self.shared.downgrade(),
+                attempt,
+                sequence: AtomicU64::new(0),
+                started: AtomicBool::new(false),
+                abandoned: AtomicBool::new(false),
+                finishing: AtomicBool::new(false),
+                memory,
+                recovered: false,
+                begun: AtomicBool::new(false),
+            },
+            heap,
+        );
         s.reserved_records += 2;
         s.reserved_bytes += 2 * self.shared.limits.maximum_record_bytes;
         s.queued_bytes += 16384;
@@ -93,6 +132,8 @@ impl AuditHandle {
         sequence: u64,
         conclusion: AuditOperationConclusion,
     ) -> Result<AuditAppendTicket> {
+        let memory = self.control_memory()?;
+        let _scratch = memory.codec_scratch(self.shared.limits.maximum_record_bytes)?;
         codec::conclusion(&conclusion)?;
         let p = {
             let s = self.shared.control_lock()?;
@@ -111,7 +152,13 @@ impl AuditHandle {
 impl AuditCriticalReservation {
     pub fn begin(mut self) -> AuditBeginTicket {
         let pending = self.pending.take().expect("affine reservation");
-        let (reply, ticket) = ticket::channel();
+        let (reply, ticket) = match ticket::channel(&pending.memory) {
+            Ok(channel) => channel,
+            Err(error) => {
+                abandon(&pending);
+                return AuditBeginTicket(ticket::failed(error));
+            }
+        };
         if let Some(shared) = pending.shared.upgrade() {
             let mut s = shared
                 .state
@@ -140,7 +187,7 @@ impl Drop for AuditCriticalReservation {
     }
 }
 impl AuditAttempt {
-    pub(super) fn new(pending: Arc<Pending>) -> Self {
+    pub(super) fn new(pending: AuditArc<Pending>) -> Self {
         Self {
             pending: Some(pending),
         }
@@ -161,12 +208,19 @@ impl AuditAttempt {
             || s.summary.recovery_pending
             || p.finishing.load(Ordering::Acquire)
             || p.sequence.load(Ordering::Acquire) == 0
-            || !s.pending.as_ref().is_some_and(|o| Arc::ptr_eq(o, p))
+            || !s.pending.as_ref().is_some_and(|o| AuditArc::ptr_eq(o, p))
         {
             return Err(unavailable());
         }
         p.started.store(true, Ordering::Release);
         Ok(())
+    }
+    pub fn finish_owned(
+        mut self,
+        conclusion: AuditOwned<AuditOperationConclusion>,
+    ) -> AuditAppendTicket {
+        let pending = self.pending.take().expect("affine attempt");
+        conclusion.with_value(|conclusion| finish(pending, conclusion))
     }
     #[must_use]
     pub fn finish(mut self, conclusion: AuditOperationConclusion) -> AuditAppendTicket {
@@ -180,7 +234,7 @@ impl Drop for AuditAttempt {
         }
     }
 }
-fn abandon(p: &Arc<Pending>) {
+fn abandon(p: &AuditArc<Pending>) {
     if let Some(s) = p.shared.upgrade() {
         // The worker checks abandonment under this mutex before waiting.
         // Publish under the same fence so notification cannot precede wait.
@@ -199,20 +253,30 @@ fn abandon(p: &Arc<Pending>) {
     clippy::needless_pass_by_value,
     reason = "Consume the terminal owner and caller conclusion while normalizing the queued record and handling abandonment"
 )]
-fn finish(p: Arc<Pending>, conclusion: AuditOperationConclusion) -> AuditAppendTicket {
-    let (reply, ticket) = ticket::channel();
+fn finish(p: AuditArc<Pending>, conclusion: AuditOperationConclusion) -> AuditAppendTicket {
+    let (reply, ticket) = match ticket::channel(&p.memory) {
+        Ok(channel) => channel,
+        Err(error) => {
+            abandon(&p);
+            return AuditAppendTicket(ticket::failed(error));
+        }
+    };
     let result = (|| {
-        codec::conclusion(&conclusion)?;
         let shared = p.shared.upgrade().ok_or_else(closed)?;
+        let _scratch = p.memory.codec_scratch(shared.limits.maximum_record_bytes)?;
+        codec::conclusion(&conclusion)?;
         codec::capability_pair(&p.attempt, &conclusion)?;
         let mut s = shared.state.lock().map_err(|_| unavailable())?;
         if s.summary.recovery_pending
             || s.finish.is_some()
-            || !s.pending.as_ref().is_some_and(|o| Arc::ptr_eq(o, &p))
+            || !s.pending.as_ref().is_some_and(|o| AuditArc::ptr_eq(o, &p))
             || p.finishing.load(Ordering::Acquire)
         {
             return Err(unavailable());
         }
+        let part = p.memory.prepare_owned(AuditCallMemory::owned_heap_bound(
+            shared.limits.maximum_record_bytes,
+        )?)?;
         let conclusion = codec::normalize(&conclusion, shared.limits.maximum_record_bytes)?;
         codec::envelope(
             &p.attempt.scope,
@@ -224,9 +288,10 @@ fn finish(p: Arc<Pending>, conclusion: AuditOperationConclusion) -> AuditAppendT
             shared.limits.maximum_record_bytes,
         )?;
         p.finishing.store(true, Ordering::Release);
+        let heap = conclusion.heap_bytes()?;
         s.finish = Some(Finish {
             pending: p.clone(),
-            conclusion,
+            conclusion: AuditOwned::new(conclusion, part, heap),
             reply,
         });
         drop(s);
@@ -237,13 +302,14 @@ fn finish(p: Arc<Pending>, conclusion: AuditOperationConclusion) -> AuditAppendT
     // ticket while the abandoned pending row retains its terminal allowance.
     if let Err(error) = result {
         abandon(&p);
-        let (r, t) = ticket::channel();
-        r.send(Err(error));
-        return AuditAppendTicket(t);
+        return AuditAppendTicket(ticket::failed(error));
     }
     AuditAppendTicket(ticket)
 }
-pub(super) fn abandoned(p: &Pending) -> AuditOperationConclusion {
+pub(super) fn abandoned(p: &Pending) -> Result<AuditOwned<AuditOperationConclusion>> {
+    let part = p
+        .memory
+        .prepare_owned(AuditCallMemory::owned_heap_bound(16384)?)?;
     let started = p.started.load(Ordering::Acquire);
     let mut identities = p.attempt.identities.clone();
     if let Some(context) = &mut identities.capability {
@@ -253,7 +319,7 @@ pub(super) fn abandoned(p: &Pending) -> AuditOperationConclusion {
             super::super::AuditProviderOutcome::NotStarted
         });
     }
-    AuditOperationConclusion {
+    let conclusion = AuditOperationConclusion {
         canary_decision: None,
         result: if started {
             AuditOperationResult::Unknown
@@ -269,5 +335,7 @@ pub(super) fn abandoned(p: &Pending) -> AuditOperationConclusion {
         identities,
         replay: p.attempt.replay,
         occurred_at_unix_millis: store::now(),
-    }
+    };
+    let heap = conclusion.heap_bytes()?;
+    Ok(AuditOwned::new(conclusion, part, heap))
 }

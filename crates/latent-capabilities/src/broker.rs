@@ -73,7 +73,7 @@ struct Inner {
     clock: Arc<dyn ActivationClock>,
     live: RwLock<bool>,
     limits: CapabilityBrokerLimits,
-    counters: Arc<Counters>,
+    counters: Counters,
     sessions: Mutex<Vec<session::RegistryEntry>>,
     pool_diagnostics: std::sync::OnceLock<Weak<pools::Inner>>,
     stream_diagnostics: std::sync::OnceLock<Weak<dyn network::OutboundStreamInvoker>>,
@@ -100,7 +100,7 @@ impl ActivationCapabilityBroker {
                 clock,
                 live: RwLock::new(true),
                 limits,
-                counters: Arc::new(Counters::new(limits)),
+                counters: Counters::new(limits),
                 pool_registered: std::sync::atomic::AtomicBool::new(false),
                 sessions: Mutex::new(
                     std::iter::repeat_with(session::RegistryEntry::default)

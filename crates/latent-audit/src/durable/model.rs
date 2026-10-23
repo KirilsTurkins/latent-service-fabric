@@ -28,9 +28,15 @@ enum ScopeWire {
 }
 impl Serialize for AuditScope {
     fn serialize<S: serde::Serializer>(&self, s: S) -> std::result::Result<S::Ok, S::Error> {
+        #[derive(Serialize)]
+        #[serde(tag = "kind", content = "tenant", rename_all = "kebab-case")]
+        enum BorrowedScope<'a> {
+            Tenant(&'a str),
+            Node,
+        }
         match self {
-            Self::Tenant(t) => ScopeWire::Tenant(t.0.clone()),
-            Self::Node => ScopeWire::Node,
+            Self::Tenant(t) => BorrowedScope::Tenant(&t.0),
+            Self::Node => BorrowedScope::Node,
         }
         .serialize(s)
     }
@@ -524,6 +530,11 @@ pub struct AuditPageCoverage {
 }
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct AuditSnapshot {
+    pub node_metadata_maximum_bytes: usize,
+    pub node_metadata_reserved_bytes: usize,
+    pub node_metadata_fixed_reserved_bytes: usize,
+    pub node_metadata_transient_reserved_bytes: usize,
+    pub node_metadata_quarantined_reserved_bytes: usize,
     pub retained_records: usize,
     pub retained_bytes: usize,
     pub reserved_records: usize,

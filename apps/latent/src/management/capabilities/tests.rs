@@ -153,6 +153,18 @@ fn usage_reports_only_fixed_owner_counters_and_preserves_unavailable() {
             ("audit_queued_bytes".into(), 16 * 1024),
             ("audit_stage_bytes".into(), 68 * 1024),
             ("audit_recovery_pending".into(), 1),
+            ("broker_metadata_bytes".into(), 0),
+            ("audit_node_metadata_maximum_bytes".into(), 8 * 1024 * 1024),
+            ("audit_node_metadata_reserved_bytes".into(), 10 * 1024),
+            ("audit_node_metadata_fixed_reserved_bytes".into(), 8 * 1024),
+            (
+                "audit_node_metadata_transient_reserved_bytes".into(),
+                2 * 1024,
+            ),
+            (
+                "audit_node_metadata_quarantined_reserved_bytes".into(),
+                4 * 1024,
+            ),
         ]),
         unavailable: vec!["provider-io-no-retained-pool-owner".into()],
     };
@@ -162,6 +174,32 @@ fn usage_reports_only_fixed_owner_counters_and_preserves_unavailable() {
     assert_eq!(data["counters"]["audit_queued_bytes"], "16384");
     assert_eq!(data["counters"]["audit_stage_bytes"], "69632");
     assert_eq!(data["counters"]["audit_recovery_pending"], "1");
+    assert_eq!(data["counters"]["broker_metadata_bytes"], "0");
+    assert_eq!(
+        data["counters"]["audit_node_metadata_maximum_bytes"],
+        "8388608"
+    );
+    assert_eq!(
+        data["counters"]["audit_node_metadata_reserved_bytes"],
+        "10240"
+    );
+    assert_eq!(
+        data["counters"]["audit_node_metadata_fixed_reserved_bytes"],
+        "8192"
+    );
+    assert_eq!(
+        data["counters"]["audit_node_metadata_transient_reserved_bytes"],
+        "2048"
+    );
+    assert_eq!(
+        data["counters"]["audit_node_metadata_quarantined_reserved_bytes"],
+        "4096"
+    );
+    let mut unknown_node = usage.clone();
+    unknown_node
+        .counters
+        .insert("audit_node_metadata_foreign_bytes".into(), 0);
+    assert!(projection::checked(&unknown_node, 4096).is_err());
     assert_eq!(
         data["unavailable"],
         json!(["provider-io-no-retained-pool-owner"])

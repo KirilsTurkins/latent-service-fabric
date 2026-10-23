@@ -195,7 +195,12 @@ pub(super) fn node_usage(value: &domain::NodeUsage) -> proto::CapabilityResource
             reserved_bytes,
             query_owners,
             query_bytes,
-            stage_bytes
+            stage_bytes,
+            node_metadata_maximum_bytes,
+            node_metadata_reserved_bytes,
+            node_metadata_fixed_reserved_bytes,
+            node_metadata_transient_reserved_bytes,
+            node_metadata_quarantined_reserved_bytes
         );
     } else {
         result.unavailable.push("audit-owner-not-configured".into());
@@ -254,6 +259,11 @@ mod tests {
             audit: Some(latent_audit::AuditSnapshot {
                 queued_bytes: 16 * 1024,
                 stage_bytes: 68 * 1024,
+                node_metadata_maximum_bytes: 8 * 1024 * 1024,
+                node_metadata_reserved_bytes: 10 * 1024,
+                node_metadata_fixed_reserved_bytes: 8 * 1024,
+                node_metadata_transient_reserved_bytes: 2 * 1024,
+                node_metadata_quarantined_reserved_bytes: 4 * 1024,
                 recovery_pending: true,
                 ..Default::default()
             }),
@@ -272,12 +282,37 @@ mod tests {
         assert_eq!(encoded.counters["audit_queued_bytes"], 16 * 1024);
         assert_eq!(encoded.counters["audit_stage_bytes"], 68 * 1024);
         assert_eq!(encoded.counters["audit_recovery_pending"], 1);
+        assert_eq!(encoded.counters["broker_metadata_bytes"], 0);
+        assert_eq!(
+            encoded.counters["audit_node_metadata_maximum_bytes"],
+            8 * 1024 * 1024
+        );
+        assert_eq!(
+            encoded.counters["audit_node_metadata_reserved_bytes"],
+            10 * 1024
+        );
+        assert_eq!(
+            encoded.counters["audit_node_metadata_fixed_reserved_bytes"],
+            8 * 1024
+        );
+        assert_eq!(
+            encoded.counters["audit_node_metadata_transient_reserved_bytes"],
+            2 * 1024
+        );
+        assert_eq!(
+            encoded.counters["audit_node_metadata_quarantined_reserved_bytes"],
+            4 * 1024
+        );
         usage.audit = Some(latent_audit::AuditSnapshot::default());
         let idle = node_usage(&usage);
         for name in [
             "audit_queued_bytes",
             "audit_stage_bytes",
             "audit_recovery_pending",
+            "audit_node_metadata_reserved_bytes",
+            "audit_node_metadata_fixed_reserved_bytes",
+            "audit_node_metadata_transient_reserved_bytes",
+            "audit_node_metadata_quarantined_reserved_bytes",
         ] {
             assert_eq!(idle.counters[name], 0);
         }

@@ -1,11 +1,12 @@
 use super::{
-    critical, increment, Arc, AuditAttempt, AuditOperationConclusion, AuditPage, AuditRecordData,
-    Command, DurableAuditAck, Finish, Ordering, Pending, Reply, Result, Shared, State, Store,
+    critical, increment, AuditArc, AuditAttempt, AuditOperationConclusion, AuditOwned, AuditPage,
+    AuditRecordData, Command, Finish, Heap, Ordering, OwnedDurableAuditAck, PageData, Pending,
+    Reply, Result, Shared, SharedOwner, State, Store,
 };
 enum Work {
     Command(Command),
     Finish(Finish),
-    Abandon(Arc<Pending>),
+    Abandon(AuditArc<Pending>),
     Stop,
 }
 enum Completion {
@@ -20,7 +21,7 @@ impl Completion {
         }
     }
 }
-pub(super) fn run(shared: Arc<Shared>, mut store: Store) {
+pub(super) fn run(shared: SharedOwner<Shared>, mut store: Store) {
     loop {
         let work = {
             let mut s = shared
@@ -92,9 +93,19 @@ pub(super) fn run(shared: Arc<Shared>, mut store: Store) {
                 let result = complete(&shared, &mut store, &f.pending, f.conclusion);
                 f.reply.send(result);
             }
-            Work::Abandon(p) => {
-                let _ = complete(&shared, &mut store, &p, critical::abandoned(&p));
-            }
+            Work::Abandon(p) => match critical::abandoned(&p) {
+                Ok(conclusion) => {
+                    let _ = complete(&shared, &mut store, &p, conclusion);
+                }
+                Err(_) => {
+                    store.unhealthy = true;
+                    let mut state = shared
+                        .state
+                        .lock()
+                        .unwrap_or_else(std::sync::PoisonError::into_inner);
+                    update(&mut state, &store);
+                }
+            },
             Work::Command(command) => {
                 let cost = command.cost();
                 let completion = execute_command(&shared, &mut store, command);
@@ -121,11 +132,13 @@ fn execute_command(shared: &Shared, store: &mut Store, command: Command) -> Opti
     match command {
         Command::Observe(o) => {
             let was_unhealthy = store.unhealthy;
-            let result = store.append(
-                o.scope.clone(),
-                o.actor.clone(),
-                AuditRecordData::Observation(o),
-            );
+            let result = o.with_value(|o| {
+                store.append(
+                    o.scope.clone(),
+                    o.actor.clone(),
+                    AuditRecordData::Observation(o),
+                )
+            });
             let mut s = shared
                 .state
                 .lock()
@@ -162,14 +175,33 @@ fn execute_command(shared: &Shared, store: &mut Store, command: Command) -> Opti
                 result.map(|_| AuditAttempt::new(p)),
             ))
         }
-        Command::Query(q, deadline, lease, reply) => {
+        Command::Query(q, deadline, lease, prepared, reply) => {
             let result = store
-                .query(&q, deadline, shared.dropped.load(Ordering::Relaxed))
-                .map(|(records, coverage, next)| AuditPage {
-                    records,
-                    coverage,
-                    next,
-                    lease,
+                .query_with_custody(
+                    &q,
+                    deadline,
+                    shared.dropped.load(Ordering::Relaxed),
+                    |bytes| {
+                        lease
+                            .0
+                            .prepare_record(bytes, shared.limits.maximum_record_bytes)
+                    },
+                )
+                .map(|(records, coverage, next)| {
+                    let data = PageData {
+                        records,
+                        coverage,
+                        next,
+                        metadata: shared.metadata.clone(),
+                        lease,
+                    };
+                    AuditPage {
+                        data: if let Some(prepared) = prepared {
+                            prepared.allocate(data)
+                        } else {
+                            SharedOwner::unaccounted(data)
+                        },
+                    }
                 });
             drop(q);
             if result
@@ -192,16 +224,24 @@ fn complete(
     shared: &Shared,
     store: &mut Store,
     p: &Pending,
-    conclusion: AuditOperationConclusion,
-) -> Result<DurableAuditAck> {
-    let result = store.append(
-        p.attempt.scope.clone(),
-        p.attempt.actor.clone(),
-        AuditRecordData::Outcome {
-            attempt_sequence: p.sequence.load(Ordering::Acquire),
-            conclusion,
-        },
-    );
+    conclusion: AuditOwned<AuditOperationConclusion>,
+) -> Result<OwnedDurableAuditAck> {
+    let ack_part = p.memory.prepare_owned(512)?;
+    let result = conclusion
+        .with_value(|conclusion| {
+            store.append(
+                p.attempt.scope.clone(),
+                p.attempt.actor.clone(),
+                AuditRecordData::Outcome {
+                    attempt_sequence: p.sequence.load(Ordering::Acquire),
+                    conclusion,
+                },
+            )
+        })
+        .and_then(|ack| {
+            let heap = ack.heap_bytes()?;
+            Ok(OwnedDurableAuditAck(AuditOwned::new(ack, ack_part, heap)))
+        });
     let mut s = shared
         .state
         .lock()
