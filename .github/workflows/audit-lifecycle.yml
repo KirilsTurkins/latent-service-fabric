@@ -32,8 +32,13 @@ jobs:
         run: rustup toolchain install 1.97.1 --profile minimal --component rustfmt --component clippy
       - name: Prepare exact bounded wiring candidates
         run: python3 .github/audit-lifecycle-candidate.py prepare
-      - name: Format candidate Rust files
-        run: cargo +1.97.1 fmt --all
+      - name: Format only the first-party candidate Rust files
+        run: |
+          rustup run 1.97.1 rustfmt --edition 2021 --config skip_children=true \
+            crates/latent-wire/src/management/capabilities/conversion.rs \
+            apps/latent/src/management/phase2/projection/capability.rs \
+            apps/latent/src/error/details.rs apps/latent/src/error.rs \
+            apps/latent/src/error/audit_tests.rs
       - name: Publish immutable candidate blobs without moving a branch
         env:
           GH_TOKEN: ${{ github.token }}
