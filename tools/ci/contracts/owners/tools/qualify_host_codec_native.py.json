@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_host_codec_native.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Retain all177 controls and add eleven handle and copied-buffer controls; capture the authenticated host bytes recipe",
+  "reviewReason": "Authenticate the fixed bytes owner source explicitly before native build after shared imports become lazy",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "ffa2914f6201cd154e1aad104b344163a10bf7702de019b542c7f06a825f1cff"
+  "sha256": "684733c172dd6daf12b611cf80f74564054bf95bc74312f70eedfe4013c58375"
 }
