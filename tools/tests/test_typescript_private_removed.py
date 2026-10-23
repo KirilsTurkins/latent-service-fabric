@@ -26,8 +26,9 @@ class PrivateRemovedInputs(unittest.TestCase):
 
     def test_fixed_members_keep_cancelled_guest_and_separate_host_origins(self):
         value = inputs.fixture()
-        self.assertEqual(len(value['members']),67)
-        self.assertEqual(sum(r['bytes'] for r in value['members'].values()),63463957)
+        self.assertEqual(len(value['members']),72)
+        self.assertEqual(sum(r['bytes'] for r in value['members'].values()),63468397)
+        self.assertTrue(all(name+'/deployment.json' in value['members'] for name in value['buildDirectories'].values()))
         self.assertFalse(value['wholeProducerQualified'])
         self.assertFalse(value['wholeArchiveDigestVerified'])
         self.assertNotEqual(inputs.SOURCE,consumer.native.SOURCE)
@@ -51,7 +52,7 @@ class PrivateRemovedInputs(unittest.TestCase):
         class Archive:
             def infolist(self):return rows
             def getinfo(self,name):return next(r for r in rows if r.filename==name)
-        self.assertEqual(len(inputs.preflight(Archive())),67)
+        self.assertEqual(len(inputs.preflight(Archive())),72)
         rows.append(rows[0])
         with self.assertRaises(WorkflowError):inputs.preflight(Archive())
         rows.pop();rows[0].file_size+=1

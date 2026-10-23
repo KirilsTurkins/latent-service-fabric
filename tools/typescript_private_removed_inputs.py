@@ -19,7 +19,8 @@ from tools.phase3_resource_identity import file_identity
 from tools.rust_capsule_project import ROOT, fresh, read_json, write_json
 
 FIXTURE = ROOT/'tools/tests/fixtures/typescript_private_removed_inputs.json'
-FIXTURE_SHA256 = '08187e6029ca518c3e10df85a06b858ad03d69bcd6d4b3c3ba897c1e64675bfa'
+FIXTURE_SHA256 = '581863dbabb0821ad5602b3cbca8a7dc8d1bba846ec9b7f3efb8b2118910337c'
+FIXTURE_BYTES = 15088
 SOURCE = 'a8cd4fbb71d7766e886ab518542ca398237debb6'
 MAX_EXPANDED = 64*1024**2
 MAX_TRANSFER = 128*1024**2
@@ -37,10 +38,10 @@ class BoundedRanges(Ranges):
 
 def fixture():
     raw = FIXTURE.read_bytes()
-    require(len(raw) == 14148 and hashlib.sha256(raw).hexdigest() == FIXTURE_SHA256,
+    require(len(raw) == FIXTURE_BYTES and hashlib.sha256(raw).hexdigest() == FIXTURE_SHA256,
         'ts-private-removed-fixed-input-contract')
     value = json.loads(raw)
-    require(value['source'] == SOURCE and len(value['members']) == 67 and
+    require(value['source'] == SOURCE and len(value['members']) == 72 and
         sum(row['bytes'] for row in value['members'].values()) <= MAX_EXPANDED,
         'ts-private-removed-fixed-members')
     return value
@@ -125,6 +126,14 @@ def historical(value, capture, qualification, snapshot):
     return rows
 
 
+def original_deployment(directory, marker):
+    deployment = read_json(directory/'deployment.json'); manifest = read_json(directory/'capsule.json')
+    require(deployment['metadata']['tenant'] == manifest['metadata']['tenant'] == 'examples'
+        and deployment['spec']['service'] == manifest['metadata']['name']
+        and deployment['spec']['release'] == marker['componentDigest']
+        and deployment['spec']['grants'] == [], 'ts-private-removed-original-deployment-association')
+
+
 def verify_prepared(root):
     root = Path(root).resolve(strict=True); value = fixture()
     materials = {**value['members'],**{n:r['identity'] for n,r in value['reconstructed'].items()}}
@@ -156,6 +165,7 @@ def verify_prepared(root):
         require(set(inventory) == set(names) and all(
             file_identity(directory/n,MAX_EXPANDED) == {'sha256':r['digest'],'bytes':r['size']}
             for n,r in inventory.items()), 'ts-private-removed-original-package-layers')
+        original_deployment(directory,marker)
         builds[template] = directory
     return builds,dict(guestSource=SOURCE,producerRun=value['run'],producerJob=value['job'],
         producerCancelled=True,wholeProducerQualified=False,wholeArchiveDigestVerified=False,
@@ -190,7 +200,7 @@ def prepare(output):
         'ts-private-removed-selected-acquisition-bound')
     recovery = reconstruct(output); _,proof = verify_prepared(output)
     record = {**proof,'schemaVersion':'lsf.typescript-private-removed-acquisition.v1',
-        'archive':artifact['id'],'officialArchiveDigest':artifact['digest'],'selectedMembersCrcVerified':67,
+        'archive':artifact['id'],'officialArchiveDigest':artifact['digest'],'selectedMembersCrcVerified':72,
         'rangeBytes':remote.transferred,'rangeRequests':remote.requests,'staticLayerReconstruction':recovery}
     write_json(output/'retrieval.json',record); return record
 
