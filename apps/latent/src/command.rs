@@ -75,6 +75,9 @@ fn execute(cli: &Cli) -> i32 {
     let result = match cli.validate() {
         Err(failure) => failure.into(),
         Ok(()) => match &cli.command {
+            Command::Audit(command) if command.is_local() => {
+                crate::audit_maintenance::execute(cli, command)
+            }
             Command::Package(command) => crate::package::execute(cli, command),
             Command::Validate(command) => cli
                 .manifest_profile()
@@ -237,7 +240,7 @@ fn name(command: &Command) -> &'static str {
         Command::Package(command) => command.name(),
         Command::Validate(V::Capsule(_)) => "validate capsule",
         Command::Validate(V::Deployment(_)) => "validate deployment",
-        Command::Audit(_) => "audit query",
+        Command::Audit(command) => command.name(),
         Command::Rollout(command) => match command {
             args::rollout::RolloutCommand::Start(_) => "rollout start",
             args::rollout::RolloutCommand::Get(_) => "rollout get",
