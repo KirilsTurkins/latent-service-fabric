@@ -226,22 +226,25 @@ fn complete(
     p: &Pending,
     conclusion: AuditOwned<AuditOperationConclusion>,
 ) -> Result<OwnedDurableAuditAck> {
-    let ack_part = p.memory.prepare_owned(512)?;
-    let result = conclusion
-        .with_value(|conclusion| {
-            store.append(
-                p.attempt.scope.clone(),
-                p.attempt.actor.clone(),
-                AuditRecordData::Outcome {
-                    attempt_sequence: p.sequence.load(Ordering::Acquire),
-                    conclusion,
-                },
-            )
-        })
-        .and_then(|ack| {
-            let heap = ack.heap_bytes()?;
-            Ok(OwnedDurableAuditAck(AuditOwned::new(ack, ack_part, heap)))
-        });
+    // Acknowledgement admission is part of the same fallible terminal attempt.
+    // Even refusal before append must run the original finishing/abandon repair.
+    let result = p.memory.prepare_owned(512).and_then(|ack_part| {
+        conclusion
+            .with_value(|conclusion| {
+                store.append(
+                    p.attempt.scope.clone(),
+                    p.attempt.actor.clone(),
+                    AuditRecordData::Outcome {
+                        attempt_sequence: p.sequence.load(Ordering::Acquire),
+                        conclusion,
+                    },
+                )
+            })
+            .and_then(|ack| {
+                let heap = ack.heap_bytes()?;
+                Ok(OwnedDurableAuditAck(AuditOwned::new(ack, ack_part, heap)))
+            })
+    });
     let mut s = shared
         .state
         .lock()
@@ -268,4 +271,134 @@ fn update(s: &mut State, store: &Store) {
     s.summary.unknown_outcomes = store.unknown;
     s.summary.recovery_pending = store.unhealthy;
     s.summary.stage_bytes = if store.unhealthy { 68 * 1024 } else { 0 };
+}
+
+#[cfg(all(test, unix))]
+mod tests {
+    use super::*;
+    use crate::durable::{
+        memory::AuditCallMemory,
+        tests::{attempt, conclusion, Directory},
+        worker::{control_tests, AtomicBool, AtomicU64},
+    };
+    use latent_core::node_metadata::NodeMetadataOwner;
+
+    // Fill only unallocated Part capacity through the real admission API.
+    // No future storage is confirmed and no reservation/peak is fabricated.
+    fn fill_pending_capacity(
+        memory: &AuditCallMemory,
+        envelope: usize,
+    ) -> crate::durable::memory::Part {
+        let (mut low, mut high) = (0, envelope);
+        for _ in 0..32 {
+            if low == high {
+                break;
+            }
+            let middle = low + (high - low).div_ceil(2);
+            match memory.prepare_owned(middle) {
+                Ok(probe) => {
+                    drop(probe);
+                    low = middle;
+                }
+                Err(_) => high = middle - 1,
+            }
+        }
+        assert_eq!(low, high);
+        memory.prepare_owned(low).unwrap()
+    }
+
+    #[test]
+    fn ack_admission_refusal_repairs_original_pending_finish_and_actual_abandon_drains() {
+        let directory = Directory::new();
+        let limits = crate::AuditLimits {
+            maximum_records: 32,
+            ..Default::default()
+        };
+        // Existing legacy Store fixture isolates the worker's terminal-error
+        // mechanism; the failed ack uses the real original node reservation.
+        let (mut store, shared, handle) =
+            control_tests::deferred_journal(&directory.0.join("audit"), limits);
+        let owner = NodeMetadataOwner::new(8 * 1024 * 1024).unwrap();
+        let baseline = owner.occupied_bytes();
+        let envelope = AuditCallMemory::envelope_bytes(limits.maximum_record_bytes).unwrap();
+        let memory = AuditCallMemory::node(&owner, envelope).unwrap();
+        let prepared = memory
+            .prepare_arc::<Pending>(
+                AuditCallMemory::owned_heap_bound(limits.maximum_record_bytes).unwrap(),
+            )
+            .unwrap();
+        let record = attempt();
+        store
+            .append(
+                record.scope.clone(),
+                record.actor.clone(),
+                AuditRecordData::Attempt(record.clone()),
+            )
+            .unwrap();
+        let heap = record.heap_bytes().unwrap();
+        let pending = prepared.allocate(
+            Pending {
+                shared: shared.downgrade(),
+                attempt: record,
+                sequence: AtomicU64::new(1),
+                started: AtomicBool::new(false),
+                abandoned: AtomicBool::new(false),
+                finishing: AtomicBool::new(true),
+                memory: memory.clone(),
+                recovered: false,
+                begun: AtomicBool::new(true),
+            },
+            heap,
+        );
+        {
+            let mut state = shared.state.lock().unwrap();
+            update(&mut state, &store);
+            state.pending = Some(pending.clone());
+            state.reserved_records = 1;
+            state.reserved_bytes = limits.maximum_record_bytes;
+        }
+        let part = memory
+            .prepare_owned(AuditCallMemory::owned_heap_bound(limits.maximum_record_bytes).unwrap())
+            .unwrap();
+        let terminal = conclusion();
+        let terminal_heap = terminal.heap_bytes().unwrap();
+        let terminal = AuditOwned::new(terminal, part, terminal_heap);
+        let padding = fill_pending_capacity(&memory, envelope);
+        assert!(memory.prepare_owned(1).is_err());
+        let before = handle.snapshot();
+        let original = owner.snapshot();
+        let failure = complete(&shared, &mut store, &pending, terminal)
+            .err()
+            .unwrap();
+        assert_eq!(
+            failure.code,
+            latent_core::PlatformErrorCode::ResourceExhausted
+        );
+        assert_eq!(handle.snapshot(), before);
+        assert_eq!(owner.snapshot(), original);
+        assert!(!store.unhealthy);
+        assert!(!pending.finishing.load(Ordering::Acquire));
+        assert!(pending.abandoned.load(Ordering::Acquire));
+        {
+            let state = shared.state.lock().unwrap();
+            assert!(AuditArc::ptr_eq(state.pending.as_ref().unwrap(), &pending));
+            assert_eq!(state.reserved_records, 1);
+            assert_eq!(state.reserved_bytes, limits.maximum_record_bytes);
+        }
+        drop(padding);
+        handle.close();
+        run(shared.clone(), store);
+        let final_state = handle.snapshot();
+        assert_eq!(final_state.retained_records, 2);
+        assert_eq!(final_state.next_sequence, 3);
+        assert_eq!(final_state.pending_attempts, 0);
+        assert_eq!(final_state.reserved_records, 0);
+        assert_eq!(final_state.reserved_bytes, 0);
+        assert!(!final_state.recovery_pending);
+        drop(pending);
+        drop(memory);
+        drop(handle);
+        drop(shared);
+        assert_eq!(owner.occupied_bytes(), baseline);
+    }
 }

@@ -364,7 +364,10 @@ fn query_notification_follows_command_retirement_with_response_lease_still_live(
     assert_eq!(handle.snapshot().queued_bytes, 0);
 }
 
-fn deferred_journal(path: &Path, limits: AuditLimits) -> (Store, SharedOwner<Shared>, AuditHandle) {
+pub(super) fn deferred_journal(
+    path: &Path,
+    limits: AuditLimits,
+) -> (Store, SharedOwner<Shared>, AuditHandle) {
     let store = Store::open(path, limits).unwrap();
     let (records, bytes, next) = store.summary();
     let shared = SharedOwner::unaccounted(Shared {
