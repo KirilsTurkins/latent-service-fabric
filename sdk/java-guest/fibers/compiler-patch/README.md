@@ -60,3 +60,29 @@ exact private JAR loaded (`2e36303865fe91c639bf42b992c12d149d329ed1f64f71291b42d
 Its next clang stage failed on an integer GC-root argument in `TimeZone.c`.
 That separate generated-code failure does not invalidate the observed IR result;
 it still means no component or signed Java invocation was produced.
+
+
+The monitor continuation correction also pins the unmodified `AsyncMethodFinder.java`
+from TeaVM 0.15.0, SHA-256
+`510b04fa6db5c0a47dc9656643bb3b1af0a104ed66cfb32786b88f93bbb4740d`.
+Its original `find()` computes monitor support before discovering annotation roots;
+the original helper scans the still-empty async-method set and therefore disables
+monitor-only propagation and `MonitorEnterInstruction` splitting. Actual signed
+checkpoint run `39948129626` retained generated C showing the child immediately
+executing the protected body after a contended asynchronous monitor call, without
+a suspension guard or resume state. The six-case programme failed; its ordinary
+dependency case succeeded separately.
+
+The private compiler now derives monitor support from the original dependency
+analysis's actual reachable `Thread.start()` before root propagation. All other
+annotation, monitor, caller and overridden-family discovery remains unchanged.
+Only the finder and its two existing companion classes join the exact private JAR
+replacement set; every other entry stays byte-identical. The real original/fixed
+JVM control uses TeaVM `ClassHolder`, `Program`, `DefaultCallGraph` and coroutine
+transformation, with finite explicit reachable inputs. It checks monitor-only and
+already asynchronous callers, suspension guards, caller/family propagation, the
+no-`Thread.start` negative and an unrelated method. It does not qualify arbitrary
+class-initializer or unmanaged monitor suspension. The actual compiler classloader
+must prove all eleven replacement classes before a component can be accepted.
+Actual six-case signed execution remains required; source and synthetic IR controls
+alone are insufficient.

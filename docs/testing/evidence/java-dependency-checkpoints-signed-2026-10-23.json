@@ -1,0 +1,194 @@
+{
+  "schemaVersion": "latent.java.dependency-checkpoints.public-actual.v1",
+  "issue": 741,
+  "status": "qualified-finite-programme",
+  "fullTicketQualification": false,
+  "garbageCollectionObserved": false,
+  "origin": {
+    "source": "2ea9ef407f64634bd2b4b92fac2fbc7e84b5e50f",
+    "run": 39951552847,
+    "job": 120406973356,
+    "artifact": 12500398393,
+    "jobUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39951552847/job/120406973356",
+    "archive": {
+      "sha256": "sha256:3699844fce5eef947a9748ae946768e679bcb9e088f9834533a14e0018960177",
+      "bytes": 1308170
+    },
+    "archiveMembers": 235,
+    "expandedBytes": 7012418,
+    "allCrcPassed": true
+  },
+  "qualificationRecord": {
+    "artifactMember": "java-checkpoints/qualified.json",
+    "sha256": "sha256:c9079ae62fcc48335a42701ae141e4efe0179362b6b94802ff3ef8e06cfd4e0c",
+    "bytes": 434621
+  },
+  "component": {
+    "sha256": "sha256:ca098c10ae06ec039dfc20df4a5112ebb2929126f8e6cbdae94498059d381e99",
+    "bytes": 1701305
+  },
+  "verification": {
+    "status": "passed",
+    "source": "2ea9ef407f64634bd2b4b92fac2fbc7e84b5e50f",
+    "gitMaterials": 99,
+    "recipeInputs": 74,
+    "vendorSdkInputs": 205,
+    "uniqueGitBlobsChecked": 301,
+    "component": {
+      "sha256": "sha256:ca098c10ae06ec039dfc20df4a5112ebb2929126f8e6cbdae94498059d381e99",
+      "bytes": 1701305
+    },
+    "originalAndFixedRealMonitorControls": true,
+    "loadedReplacementClasses": 11,
+    "unchangedCompilerJarEntries": 1866,
+    "actualChildMonitorGuardAndResumeState": true,
+    "cases": [
+      {
+        "tenant": "examples",
+        "mode": "dependency",
+        "result": "checkpoint|dependency=42|initializations=1|locals=root:child|error=retained|fresh=1",
+        "cpuFuel": 10365326,
+        "peakMemoryBytes": 9346310
+      },
+      {
+        "tenant": "foreign",
+        "mode": "monitor",
+        "result": "checkpoint|monitor=42|initializations=1|locals=root:child|error=retained|fresh=1",
+        "cpuFuel": 10298606,
+        "peakMemoryBytes": 9346303
+      },
+      {
+        "tenant": "examples",
+        "mode": "monitor",
+        "result": "checkpoint|monitor=42|initializations=1|locals=root:child|error=retained|fresh=1",
+        "cpuFuel": 10622398,
+        "peakMemoryBytes": 9346289
+      },
+      {
+        "tenant": "foreign",
+        "mode": "dependency",
+        "result": "checkpoint|dependency=42|initializations=1|locals=root:child|error=retained|fresh=1",
+        "cpuFuel": 10436718,
+        "peakMemoryBytes": 9346324
+      },
+      {
+        "tenant": "examples",
+        "mode": "fresh",
+        "result": "checkpoint|fresh=1",
+        "cpuFuel": 4969160,
+        "peakMemoryBytes": 9346274
+      },
+      {
+        "tenant": "foreign",
+        "mode": "fresh",
+        "result": "checkpoint|fresh=1",
+        "cpuFuel": 4969160,
+        "peakMemoryBytes": 9346288
+      }
+    ],
+    "preEntryGrantDenials": 2,
+    "physicalAfterEachCase": 6,
+    "activeProviderCounterDimensions": 18,
+    "physicalAfterDelete": true,
+    "cleanReapedNode": true,
+    "zeroContactClosedReapedPeer": true,
+    "osConsistency": "non-atomic-finite-scan",
+    "rssIsRetirementProof": false,
+    "nativeProductsBuilt": 0,
+    "guestComponentsCompiled": 2,
+    "targetComponentsCompiled": 1,
+    "fullTicketQualification": false,
+    "garbageCollectionObserved": false
+  },
+  "compiler": {
+    "upstreamAsyncFinderSourceSha256": "510b04fa6db5c0a47dc9656643bb3b1af0a104ed66cfb32786b88f93bbb4740d",
+    "correctedAsyncFinderSourceSha256": "e63b458f73cb76ec2e1869bcd1a16df0b80c269422c372fc23398290d95e95c9",
+    "originalCoreJarSha256": "501ca5eae7a835cd6278c822685f32800fa0818e3f42204afc9b558408c943df",
+    "replacementCoreJarSha256": "a116f152d6de5877bd4baad13a3267993dacbc7159a4d484af57ffb63f7da4e3",
+    "sourceInputsUnchanged": true,
+    "originalAndCorrectedMonitorControlLogs": [
+      "java-checkpoints/build/compiler-logs/19-java-coroutine-monitor-original-control.log",
+      "java-checkpoints/build/compiler-logs/21-java-coroutine-monitor-corrected-control.log"
+    ],
+    "actualChildC": "java-checkpoints/build/checkpoint-generated/c/d/l/a/Capsule.c",
+    "newMonitorResumeState": 1,
+    "generatedContextFiles": 16
+  },
+  "dependency": {
+    "coordinate": "org.apache.commons:commons-lang3:3.14.0",
+    "originalDigest": "sha256:7b96bf3ee68949abb5bc465559ac270e0551596fa34523fddf890ec418dde13c",
+    "selectedJar": {
+      "sha256": "sha256:9948b2564eb3fd0fc0408b567b607f04e68a2a3bf7631a1faa64083022363514",
+      "bytes": 1515328
+    },
+    "applicationYieldInserted": false,
+    "applicationExecutorInjected": false,
+    "librarySourceModified": false,
+    "sameSelectedClasspathForIrAndComponent": true
+  },
+  "bounds": {
+    "linearMemoryBytes": 67108864,
+    "cpuFuel": 1000000000,
+    "javaHeapBytes": 4194304,
+    "activationOwners": {
+      "tasks": 8,
+      "executors": 2,
+      "queuedWork": 8,
+      "waits": 16,
+      "timers": 8,
+      "results": 8,
+      "nativeOwners": 8
+    },
+    "imports": [
+      "latent:clock/monotonic@0.1.0",
+      "latent:clock/wall@0.1.0",
+      "latent:runtime/activation@0.1.0"
+    ],
+    "networkCapabilityGranted": false,
+    "heapOrOwnerLimitsRaised": false
+  },
+  "nativeOrigin": {
+    "source": "b422af24d86344ac7abb8b8fa56c3782aab63915",
+    "run": 39884205952,
+    "job": 120188455407,
+    "artifact": 12472447074,
+    "products": 5,
+    "producerControls": 193,
+    "nativeProductsBuilt": 0
+  },
+  "preservedFailedCampaigns": [
+    {
+      "source": "8a9ba9c81c530c12d77e5f83bb35f241daef0c3b",
+      "run": 39942772275,
+      "job": 120377998414,
+      "artifact": 12496393313,
+      "actualDependencyCasePassed": true,
+      "monitorCase": "guest-trap-unreachable"
+    },
+    {
+      "source": "590341b4ca56e4d9ce9da517a7846553d82647ea",
+      "run": 39945102130,
+      "job": 120385725025,
+      "artifact": 12497558119,
+      "actualDependencyCasePassed": true,
+      "monitorCase": "guest-trap-unreachable"
+    },
+    {
+      "source": "031ccc3003f115415246be8caf489b24dc2ee958",
+      "run": 39948129626,
+      "job": 120395717096,
+      "artifact": 12499845154,
+      "actualDependencyCasePassed": true,
+      "monitorCase": "guest-trap-unreachable",
+      "generatedContextFiles": 16,
+      "componentByteIdenticalToPriorFailure": true
+    }
+  ],
+  "remaining": [
+    "Actual collection and retained GC-root witness",
+    "Full scheduler and non-suspendable-region coverage",
+    "Active/parked/native memory costs and complete accounting",
+    "Socket integration",
+    "Whole issue #741 qualification"
+  ]
+}

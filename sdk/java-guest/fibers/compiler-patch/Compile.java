@@ -7,14 +7,14 @@ import javax.tools.ToolProvider;
 /** Compile only the captured, reviewed TeaVM class against checked original JARs. */
 public final class Compile {
     public static void main(String[] args) throws Exception {
-        if (args.length != 6) throw new IllegalArgumentException("coroutine-patch-arguments");
+        if (args.length != 8) throw new IllegalArgumentException("coroutine-patch-arguments");
         Path source = Path.of(args[0]), control = Path.of(args[1]), output = Path.of(args[2]);
         Files.createDirectory(output);
         var compiler = ToolProvider.getSystemJavaCompiler();
         if (compiler == null) throw new IllegalStateException("coroutine-patch-jdk-required");
         var options = new ArrayList<>(List.of("-proc:none", "--release", "11", "-g:none",
                 "-encoding", "UTF-8", "-classpath", args[3], "-d", output.toString(),
-                source.toString(), control.toString(), args[4], args[5]));
+                source.toString(), control.toString(), args[4], args[5], args[6], args[7]));
         if (compiler.run(null, null, null, options.toArray(new String[0])) != 0) {
             throw new IllegalStateException("coroutine-patch-compile-failed");
         }

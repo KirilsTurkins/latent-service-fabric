@@ -659,6 +659,12 @@ class PinnedCoroutinePhiRepair(unittest.TestCase):
         self.assertIn('processBlock(program.basicBlockAt(i), i == basicBlockCount ? 0 : i);', corrected)
         self.assertIn('livenessAnalysis.liveOut(originalIndex);', corrected)
         self.assertNotIn('livenessAnalysis.liveOut(block.getIndex());', corrected)
+        async_raw=read_file(campaign.ROOT/'sdk/java-guest/fibers/compiler-patch/AsyncMethodFinder.java')
+        fixed=patch.corrected_async_source(async_raw)
+        self.assertEqual(fixed.decode().replace(patch.ASYNC_AFTER,patch.ASYNC_BEFORE),async_raw.decode())
+        self.assertIn('Thread.class, "start", void.class)',fixed.decode())
+        with self.assertRaises(ValueError):patch.corrected_async_source(async_raw+b' ')
+
 
 
     def test_real_pinned_inventory_and_process_boundary_stage_private_patch_only(self):
@@ -669,7 +675,7 @@ class PinnedCoroutinePhiRepair(unittest.TestCase):
             (sdk/'tools/dependencies.py').write_bytes(read_file(campaign.ROOT/'sdk/java-guest/tools/dependencies.py'))
             sources=sdk/'fibers/compiler-patch';sources.mkdir(parents=True)
             for name in ('CoroutineTransformation.java','Compile.java','Check.java',
-                         'TypeInferer.java','ArrayTypeCheck.java'):
+                         'TypeInferer.java','ArrayTypeCheck.java','AsyncMethodFinder.java','MonitorAsyncControl.java'):
                 (sources/name).write_bytes(read_file(campaign.ROOT/'sdk/java-guest/fibers/compiler-patch'/name))
             cache=root/'files-2.1';base=cache/'org.teavm/teavm-core/0.15.0/pinned';base.mkdir(parents=True)
             core=base/'teavm-core-0.15.0.jar'
@@ -713,19 +719,21 @@ class PinnedCoroutinePhiRepair(unittest.TestCase):
                         path=classes/name;path.parent.mkdir(parents=True,exist_ok=True)
                         path.write_bytes(b'\xca\xfe\xba\xbecompiled')
                     return ''
-                mode='original' if stage=='java-coroutine-original-control' else 'corrected'
+                mode='original' if stage.endswith('original-control') else 'corrected'
                 self.assertEqual(args[-1],mode)
                 self.assertEqual(args[0],'-cp')
                 expected=core if mode=='original' else project/'compiler-patch/teavm-core-patched.jar'
                 self.assertTrue(args[1].startswith(str(expected)))
-                return json.dumps({'schemaVersion':'latent.java.coroutine-phi-control.v1','mode':mode,'passed':True})
+                schema='latent.java.monitor-async-control.v1' if '-monitor-' in stage else 'latent.java.coroutine-phi-control.v1'
+                return json.dumps({'schemaVersion':schema,'mode':mode,'passed':True})
             compiler=SimpleNamespace(sdk=sdk,dependency_cache=cache,run=run,directory=root/'compiler-logs')
             compiler.directory.mkdir()
             receipt=patch.stage(compiler,project,root)
             from tools.java_capsule_build import retain_logs
             retain_logs(compiler.directory,root)
             self.assertEqual([call[0] for call in calls],['java-coroutine-patch',
-                'java-coroutine-original-control','java-coroutine-corrected-control'])
+                'java-coroutine-original-control','java-coroutine-monitor-original-control',
+                'java-coroutine-corrected-control','java-coroutine-monitor-corrected-control'])
             self.assertEqual(core.read_bytes(),raw)
             self.assertEqual(receipt['checkedCompilerJars'],[{'coordinate':
                 'org/teavm/teavm-core/0.15.0/teavm-core-0.15.0.jar','sha256':sha,'bytes':len(raw)},
