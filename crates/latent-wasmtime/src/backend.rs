@@ -626,6 +626,10 @@ impl WasmtimeBackend {
             Some(scope) => crate::native_stacks::scoped(scope, call)?.await,
             None => call.await,
         };
+        #[cfg(feature = "rust-thread-trap-diagnostic")]
+        if let Err(error) = &call_result {
+            crate::rust_thread_fault::record(&runtime.threading, error);
+        }
         // Wasmtime 47's safe dynamic call completes canonical ABI post-return
         // before resolving, including propagation of post-return traps.
         let component_post_return_started = Instant::now();

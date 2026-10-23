@@ -1,0 +1,81 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "env": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_INCREMENTAL": "0",
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "name": "One diagnostic node, one trap control and the unchanged original guest",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "dtolnay/rust-toolchain"
+      },
+      {
+        "uses": "Swatinem/rust-cache",
+        "with": {
+          "cache-all-crates": false,
+          "cache-bin": false,
+          "cache-on-failure": false,
+          "cache-targets": true,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "save-if": false,
+          "shared-key": "host-correctness"
+        }
+      },
+      {
+        "name": "Fetch only immutable original source events",
+        "run": "git fetch --no-tags --depth=1 origin b422af24d86344ac7abb8b8fa56c3782aab63915\ngit fetch --no-tags --depth=1 origin 28059f343bbd954e3e6614c5a24593897cc0c294\n"
+      },
+      {
+        "name": "Locked Python dependencies and finite numeric extraction control",
+        "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 -B -m unittest tools.tests.test_rust_thread_fault_frames tools.tests.test_rust_thread_runtime -v\n"
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Verify immutable native origin and retain the same compiler inputs",
+        "run": "python3 -B tools/rust_thread_native_products.py --output \"$RUNNER_TEMP/rust193-native\"\npython3 -B tools/rust_thread_compiler_materials.py --output \"$RUNNER_TEMP/rust28059-materials\"\n"
+      },
+      {
+        "name": "Build only the explicit diagnostic node and execute the original guest",
+        "run": "python3 -B tools/diagnose_rust_thread_fault.py --source-commit \"${{ github.sha }}\" --prepared \"$RUNNER_TEMP/rust193-native\" --compiler-materials \"$RUNNER_TEMP/rust28059-materials\" --output \"$RUNNER_TEMP/rust-thread-fault\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain source, diagnostic node, real command logs and numeric-only fault rows",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "error",
+          "name": "rust-thread-fault-${{ github.sha }}",
+          "path": "${{ runner.temp }}/rust-thread-fault/**\n${{ runner.temp }}/rust193-native/retrieval.json\n${{ runner.temp }}/rust193-native/native-products.json\n${{ runner.temp }}/rust193-native/source-inputs.json\n${{ runner.temp }}/rust28059-materials/retrieval.json\n",
+          "retention-days": 7
+        }
+      }
+    ],
+    "timeout-minutes": 25
+  },
+  "jobId": "diagnostic",
+  "kind": "job",
+  "reviewReason": "Finite off-default numeric fault diagnostic; one authentic trap control and one rebuilt node, four original helpers and unchanged guest retained; no qualification or timing equivalence claim.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/rust-thread-fault-diagnostic.yml"
+}

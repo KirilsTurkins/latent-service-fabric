@@ -15,6 +15,7 @@ path = "src/lib_root.rs"
 # Explicit developer artifact only. Ordinary node builds reject these inputs.
 development-test-node = ["latent-wasmtime/development-clock-fixture"]
 development-outbound-streams = ["latent-streams/development-outbound"]
+rust-thread-trap-diagnostic = ["latent-wasmtime/rust-thread-trap-diagnostic"]
 
 [lints]
 workspace = true

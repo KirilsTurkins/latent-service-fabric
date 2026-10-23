@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/diagnose_rust_thread_fault.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Finite off-default numeric fault diagnostic; one authentic trap control and one rebuilt node, four original helpers and unchanged guest retained; no qualification or timing equivalence claim.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "023df20f6e8c73a7153f2d237c5f6b281d379b4fc87d7e729c6aabd002032c90"
+}

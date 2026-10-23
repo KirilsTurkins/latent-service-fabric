@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_rust_thread_runtime.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Finite signed Rust consumer owner source fingerprint",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "5cd52a224281f31745a113fead031b55b121213c008bed77b812409d38ce2482"
+}
