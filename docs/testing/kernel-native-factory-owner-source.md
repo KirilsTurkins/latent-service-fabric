@@ -47,10 +47,20 @@ immutable physical-provider role reaches the full creator. Ordinary and legacy
 requests preserve their original paths. Version 1 socket operations require
 real readiness and still have no selected production consumer.
 
-Focused controls cover real ordinary Linux descriptor ownership, quota refusal,
+The [verified Linux receipt](evidence/kernel-native-factory-owner-linux-2026-10-23.json)
+records ten registered and executed controls, zero failures or ignored cases,
+and the original thirty stream cases filtered for this focused programme. Run
+39885802954 tested source `abd96e62028e60e3e54b5d6597b3209001dadb5f`
+with Rust 1.97.1. Its sole artifact passed archive CRC, digest and all 36 Git
+source-material checks. The receipt preserves the earlier compile failure and
+nine-pass/one-failure attempt as failures. The final test fix retries only the
+original transient capability-busy inspection result within the test deadline.
+The composed development CI repair preserves all owning input bytes.
+
+These controls cover real ordinary Linux descriptor ownership, quota refusal,
 failed open, post-open failure, timeout, abandoned waiters, close, cleanup
-capacity refusal and constructor/cleanup panic. The source controls and local
-Windows library check do not qualify the Linux descriptor programme or custom
-kernel execution. Full link/boot, actual constructor and cancellation, complete
+capacity refusal and constructor/cleanup panic. This programme does not execute
+the custom kernel or its constructor; its opened files are ordinary Linux test
+descriptors. Full link/boot, actual constructor and cancellation, complete
 bootstrap geometry, all physical child returns, Root final-free, deadline
 execution bounds and production enablement remain separate required evidence.

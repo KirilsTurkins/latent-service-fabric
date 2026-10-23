@@ -138,6 +138,8 @@ pub enum EngineThreadingProfile {
     SingleThreaded,
     #[serde(rename = "c-context144-sync-cooperative-v1")]
     CContext144SyncCooperativeV1,
+    #[serde(rename = "rust-context40-sync-cooperative-v1")]
+    RustContext40SyncCooperativeV1,
 }
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Eq)]

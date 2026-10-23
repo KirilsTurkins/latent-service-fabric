@@ -12,10 +12,48 @@ fn descriptor(file: &File) -> PathBuf {
     PathBuf::from(format!("/proc/self/fd/{}", file.as_raw_fd()))
 }
 
+fn is_snapshot_busy(failure: &latent_core::PlatformError) -> bool {
+    failure.code == latent_core::PlatformErrorCode::ResourceExhausted
+        && failure.message == "capability-busy"
+}
+
+async fn stable_snapshot(
+    pools: &ProviderPools,
+) -> latent_capabilities::broker::pools::ProviderPoolSnapshot {
+    tokio::time::timeout(Duration::from_secs(5), async {
+        loop {
+            match pools.snapshot() {
+                Ok(snapshot) => return snapshot,
+                Err(failure) if is_snapshot_busy(&failure) => {
+                    tokio::time::sleep(Duration::from_millis(1)).await;
+                }
+                Err(failure) => panic!("unexpected pool inspection error: {failure:?}"),
+            }
+        }
+    })
+    .await
+    .expect("original bookkeeping must release within this test deadline")
+}
+
+fn blocking_snapshot(
+    pools: &ProviderPools,
+) -> latent_capabilities::broker::pools::ProviderPoolSnapshot {
+    let expires = Instant::now() + Duration::from_secs(1);
+    loop {
+        match pools.snapshot() {
+            Ok(snapshot) => return snapshot,
+            Err(failure) if is_snapshot_busy(&failure) && Instant::now() < expires => {
+                std::thread::sleep(Duration::from_millis(1));
+            }
+            Err(failure) => panic!("original blocking-job inspection failed: {failure:?}"),
+        }
+    }
+}
+
 async fn quarantined(pools: &ProviderPools) {
     tokio::time::timeout(Duration::from_secs(5), async {
         loop {
-            if pools.snapshot().unwrap().failed_cleanup == 1 {
+            if stable_snapshot(pools).await.failed_cleanup == 1 {
                 break;
             }
             tokio::time::sleep(Duration::from_millis(1)).await;
@@ -48,7 +86,7 @@ async fn exhausted_node_allowance_refuses_before_any_open() {
     while let Ok(charge) = fixture.pools.reserve_protocol_metadata(1024 * 1024) {
         holds.push(charge);
     }
-    let before = fixture.pools.snapshot().unwrap();
+    let before = stable_snapshot(&fixture.pools).await;
     let flag = Arc::clone(&entered);
     assert!(
         start_with(
@@ -65,14 +103,14 @@ async fn exhausted_node_allowance_refuses_before_any_open() {
         .is_err()
     );
     assert!(!entered.load(Ordering::Acquire));
-    assert_eq!(fixture.pools.snapshot().unwrap(), before);
+    assert_eq!(stable_snapshot(&fixture.pools).await, before);
     drop(holds);
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn possible_failed_open_retains_original_node_charge() {
     let fixture = Fixture::new(config());
-    let before = fixture.pools.snapshot().unwrap();
+    let before = stable_snapshot(&fixture.pools).await;
     let inspect = Arc::clone(&fixture.pools);
     assert!(
         start_with(
@@ -80,7 +118,7 @@ async fn possible_failed_open_retains_original_node_charge() {
             &fixture.provider.inner.installed,
             Instant::now() + Duration::from_secs(5),
             move || {
-                let admitted = inspect.snapshot().unwrap();
+                let admitted = blocking_snapshot(&inspect);
                 assert!(admitted.metadata_bytes >= before.metadata_bytes + 1024 * 1024);
                 assert_eq!(admitted.connections, before.connections + 1);
                 Err(error(StreamErrorCode::Unsupported))
@@ -91,7 +129,7 @@ async fn possible_failed_open_retains_original_node_charge() {
         .is_err()
     );
     quarantined(&fixture.pools).await;
-    let retained = fixture.pools.snapshot().unwrap();
+    let retained = stable_snapshot(&fixture.pools).await;
     assert_eq!(retained.connections, before.connections + 1);
     assert!(retained.metadata_bytes >= before.metadata_bytes + 1024 * 1024);
 }
@@ -103,7 +141,7 @@ async fn postopen_failure_closes_real_fd_without_refunding_backing() {
     let path = directory.path().join("postopen-owner");
     let original = path.clone();
     let (send, receive) = tokio::sync::oneshot::channel();
-    let before = fixture.pools.snapshot().unwrap();
+    let before = stable_snapshot(&fixture.pools).await;
     assert!(
         start_with(
             Arc::clone(&fixture.pools),
@@ -126,7 +164,7 @@ async fn postopen_failure_closes_real_fd_without_refunding_backing() {
         std::fs::read_link(link).ok(),
         Some(directory.path().join("postopen-owner"))
     );
-    let retained = fixture.pools.snapshot().unwrap();
+    let retained = stable_snapshot(&fixture.pools).await;
     assert_eq!(retained.connections, 1);
     assert!(retained.metadata_bytes >= before.metadata_bytes + 1024 * 1024);
 }
@@ -138,7 +176,7 @@ async fn ready_owner_drop_closes_on_original_worker_and_retains_capacity() {
     let path = directory.path().join("ready-owner");
     let original = path.clone();
     let (send, receive) = tokio::sync::oneshot::channel();
-    let before = fixture.pools.snapshot().unwrap();
+    let before = stable_snapshot(&fixture.pools).await;
     let owner = start_with(
         Arc::clone(&fixture.pools),
         &fixture.provider.inner.installed,
@@ -153,11 +191,11 @@ async fn ready_owner_drop_closes_on_original_worker_and_retains_capacity() {
     .unwrap();
     let link = receive.await.unwrap();
     assert_eq!(std::fs::read_link(&link).unwrap(), original);
-    assert_eq!(fixture.pools.snapshot().unwrap().failed_cleanup, 0);
+    assert_eq!(stable_snapshot(&fixture.pools).await.failed_cleanup, 0);
     drop(owner);
     quarantined(&fixture.pools).await;
     assert_ne!(std::fs::read_link(link).ok(), Some(original));
-    let retained = fixture.pools.snapshot().unwrap();
+    let retained = stable_snapshot(&fixture.pools).await;
     assert_eq!(retained.connections, 1);
     assert!(retained.metadata_bytes >= before.metadata_bytes + 1024 * 1024);
 }
@@ -193,11 +231,11 @@ async fn abandoned_waiter_cannot_drop_running_job_or_late_returned_owner() {
         Ok(_) => panic!("the logical result waiter was cancelled"),
     }
     assert_eq!(std::fs::read_link(&link).unwrap(), original);
-    assert_eq!(fixture.pools.snapshot().unwrap().connections, 1);
+    assert_eq!(stable_snapshot(&fixture.pools).await.connections, 1);
     release.send(()).unwrap();
     quarantined(&fixture.pools).await;
     assert_ne!(std::fs::read_link(link).ok(), Some(original));
-    assert_eq!(fixture.pools.snapshot().unwrap().connections, 1);
+    assert_eq!(stable_snapshot(&fixture.pools).await.connections, 1);
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -232,7 +270,7 @@ async fn unavailable_cleanup_slot_keeps_fd_and_backing_without_inline_close() {
     drop(owner);
     quarantined(&fixture.pools).await;
     assert_eq!(std::fs::read_link(link).unwrap(), original);
-    assert_eq!(fixture.pools.snapshot().unwrap().connections, 1);
+    assert_eq!(stable_snapshot(&fixture.pools).await.connections, 1);
     drop(cleanup_holds);
 }
 
@@ -266,7 +304,7 @@ async fn cleanup_panic_keeps_original_connection_after_lost_unit_result() {
     assert!(job.wait().await.is_err());
     quarantined(&fixture.pools).await;
     assert_eq!(std::fs::read_link(link).unwrap(), original);
-    assert_eq!(fixture.pools.snapshot().unwrap().connections, 1);
+    assert_eq!(stable_snapshot(&fixture.pools).await.connections, 1);
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -299,11 +337,11 @@ async fn original_deadline_does_not_refund_a_blocked_native_constructor() {
         Ok(_) => panic!("the physical constructor remains blocked"),
     }
     assert_eq!(std::fs::read_link(&link).unwrap(), original);
-    assert_eq!(fixture.pools.snapshot().unwrap().connections, 1);
+    assert_eq!(stable_snapshot(&fixture.pools).await.connections, 1);
     release.send(()).unwrap();
     quarantined(&fixture.pools).await;
     assert_ne!(std::fs::read_link(link).ok(), Some(original));
-    assert_eq!(fixture.pools.snapshot().unwrap().connections, 1);
+    assert_eq!(stable_snapshot(&fixture.pools).await.connections, 1);
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -330,5 +368,5 @@ async fn constructor_panic_retains_prepaid_backing_and_closes_real_fd() {
     let link = receive.await.unwrap();
     quarantined(&fixture.pools).await;
     assert_ne!(std::fs::read_link(link).ok(), Some(original));
-    assert_eq!(fixture.pools.snapshot().unwrap().connections, 1);
+    assert_eq!(stable_snapshot(&fixture.pools).await.connections, 1);
 }

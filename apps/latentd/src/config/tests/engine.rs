@@ -42,6 +42,18 @@ fn c_threading_engine_input_is_closed_and_default_input_remains_unselected() {
             .threading_profile,
         crate::config::model::EngineThreadingProfile::CContext144SyncCooperativeV1
     );
+    let source = document().replacen(
+        '{',
+        "{\"engine\":{\"threadingProfile\":\"rust-context40-sync-cooperative-v1\"},",
+        1,
+    );
+    assert_eq!(
+        input::decode(source.as_bytes())
+            .unwrap()
+            .engine
+            .threading_profile,
+        crate::config::model::EngineThreadingProfile::RustContext40SyncCooperativeV1
+    );
     let source = document().replacen('{', "{\"engine\":{\"threadingProfile\":\"single-threaded\",\"threadingProfile\":\"single-threaded\"},", 1);
     assert!(input::decode(source.as_bytes()).is_err());
 }

@@ -71,8 +71,8 @@ class CleanupNativeSource(unittest.TestCase):
     def test_exact_ten_real_descriptor_controls_have_no_ignored_case(self):
         path = native.ROOT/'crates/latent-streams/src/kernel/native/tests.rs'
         text = path.read_text()
-        names = set(native.PREFIX+name for name in re.findall(r'\b(?:async )?fn ([a-z0-9_]+)\(',text)
-            if name not in ('descriptor','quarantined'))
+        names = set(native.PREFIX+name for name in re.findall(
+            r'#\[(?:tokio::test[^\n]*|test)\]\s*(?:async )?fn ([a-z0-9_]+)\(',text))
         self.assertEqual(names,native.CASES)
         self.assertEqual(len(names),10)
         self.assertNotIn('#[ignore',text)

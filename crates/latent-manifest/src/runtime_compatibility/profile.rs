@@ -18,6 +18,7 @@ pub struct RuntimeCompatibilityProfile {
     maximum_fuel: u64,
     renderer: Option<crate::RendererRequirement>,
     c_cooperative_context: bool,
+    rust_cooperative_context: bool,
     digest: [u8; 32],
 }
 
@@ -64,6 +65,7 @@ impl RuntimeCompatibilityProfile {
             maximum_fuel,
             renderer: None,
             c_cooperative_context: false,
+            rust_cooperative_context: false,
             digest: [0; 32],
         };
         profile.digest = profile.fingerprint();
@@ -78,10 +80,29 @@ impl RuntimeCompatibilityProfile {
     /// Trusted adapter fact only. The final-byte C proof and actual runtime
     /// grants are independently required by the selected Wasmtime backend.
     pub fn with_c_cooperative_context(mut self) -> Result<Self, PlatformError> {
-        if self.version.as_ref() != "48.0.7" || self.renderer.is_some() {
+        if self.version.as_ref() != "48.0.7"
+            || self.renderer.is_some()
+            || self.rust_cooperative_context
+        {
             return Err(incompatible("c-cooperative-context-profile-incompatible"));
         }
         self.c_cooperative_context = true;
+        self.digest = self.fingerprint();
+        Ok(self)
+    }
+
+    /// Distinct trusted Rust sync adapter fact. Original-object/component
+    /// authentication and actual runtime grants remain independent checks.
+    pub fn with_rust_cooperative_context(mut self) -> Result<Self, PlatformError> {
+        if self.version.as_ref() != "48.0.7"
+            || self.renderer.is_some()
+            || self.c_cooperative_context
+        {
+            return Err(incompatible(
+                "rust-cooperative-context-profile-incompatible",
+            ));
+        }
+        self.rust_cooperative_context = true;
         self.digest = self.fingerprint();
         Ok(self)
     }
@@ -161,7 +182,7 @@ impl RuntimeCompatibilityProfile {
         {
             return Err(incompatible("runtime-cpu-incompatible"));
         }
-        let supported_threading = if self.c_cooperative_context {
+        let supported_threading = if self.c_cooperative_context || self.rust_cooperative_context {
             manifest.execution.threading == ThreadingModel::Cooperative
         } else {
             matches!(
@@ -217,6 +238,9 @@ impl RuntimeCompatibilityProfile {
         }
         if self.c_cooperative_context {
             hash.update(b"c-context144-sync-cooperative-v1\0");
+        }
+        if self.rust_cooperative_context {
+            hash.update(b"rust-context40-sync-cooperative-v1\0");
         }
         hash.finalize().into()
     }

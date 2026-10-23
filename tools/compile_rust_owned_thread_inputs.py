@@ -29,7 +29,13 @@ CRATE = 'crates/latent-component-threading/'
 CRATE_SOURCES = tuple(CRATE + 'src/' + name for name in (
     'lib.rs', 'thread_entry.rs', 'root.rs', 'public_root.rs', 'admission.rs', 'component.rs',
     'c_abi.rs', 'c_component.rs', 'c_context.rs', 'c_lifecycle.rs',
-    'c_preimage.rs', 'c_root.rs', 'c_template.rs', 'bin/c-context.rs', 'bin/rust-context.rs'))
+    'c_preimage.rs', 'c_root.rs', 'c_template.rs', 'bin/c-context.rs', 'bin/rust-context.rs',
+    'rust_objects.rs', 'rust_component.rs', 'rust_catalogue.rs',
+    'rust_catalogue/original-body-image.bin', 'rust_catalogue/origin.json',
+    'rust_catalogue/normal-component-shell.bin', 'rust_catalogue/original-wit-metadata.bin',
+    'rust_catalogue/adapted-wit-metadata.bin',
+    'rust_catalogue/original-producers.bin', 'rust_catalogue/encoded-producers.bin',
+    'rust_catalogue/reviewed-original-core.wasm', 'rust_catalogue/reviewed-normal-component.wasm'))
 RECIPE = tuple(dict.fromkeys((
     'tools/compile_rust_owned_thread_inputs.py', WORKFLOW, '.cargo/config.toml',
     'tools/requirements.lock', 'tools/qualify_rust_standard_clocks.py',
@@ -178,9 +184,9 @@ def run(output, rust_bin, expected_head, *, application_diagnostic=False):
             summary['stage'] = 'source-mechanism-controls'
             controls = commands.run('owned-core-source-mechanism-controls', tools['cargo'], 'test', '--locked',
                 '--package', 'latent-component-threading', '--lib', '--', '--test-threads=1')
-            require(b'test result: ok. 72 passed; 0 failed; 0 ignored;' in controls,
+            require(b'test result: ok. 76 passed; 0 failed; 0 ignored;' in controls,
                     'rust-thread-inputs-exact-source-mechanism-controls')
-            summary['sourceMechanismControlsPassed'] = 72
+            summary['sourceMechanismControlsPassed'] = 76
             summary['stage'] = 'emitted-result-guard-engine-controls'
             summary['emittedResultGuardControls'] = result_controls.run(
                 commands, copied, output / 'result-guard-controls')
