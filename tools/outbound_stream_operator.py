@@ -64,13 +64,18 @@ def configure(settings, installation, bindings, *, development_profile=False):
     require(isinstance(settings, dict) and isinstance(installation, dict)
             and isinstance(bindings, list) and 0 < len(bindings) <= 16,
             "stream-operator-configuration-shape")
+    require(all(isinstance(settings.get(key), dict) for key in
+                ("budgetProfile", "audit", "capabilityPolicies")), "stream-operator-required-node-owners")
     require(settings.get("budgetProfile", {}).get("mode") == "phase3"
             and settings.get("audit", {}).get("mode") == "durable"
             and settings.get("capabilityPolicies", {}).get("formatVersion") == 1,
             "stream-operator-required-node-owners")
     result = copy.deepcopy(settings)
     providers = result.setdefault("providers", {"formatVersion": 1, "bindings": []})
-    require("outboundStreams" not in providers and isinstance(providers.get("bindings"), list),
+    require(isinstance(providers, dict) and "outboundStreams" not in providers
+            and isinstance(providers.get("bindings"), list)
+            and all(isinstance(binding, dict) and isinstance(binding.get("name"), str)
+                    for binding in providers["bindings"]),
             "stream-operator-installed-provider-needs-owner-rotation")
     selected = copy.deepcopy(installation)
     pending = [(selected, 0)]
@@ -115,12 +120,10 @@ def configure(settings, installation, bindings, *, development_profile=False):
     for destination in configuration["destinations"]:
         require(isinstance(destination, dict) and "endpoint" in destination, "stream-operator-destination-shape")
         endpoint(destination["endpoint"])
-    import json
     import jsonschema
     from referencing import Registry, Resource
-    source = Path(__file__).resolve().parents[1] / "schemas"
-    schema = json.loads((source / "node-providers.schema.json").read_text(encoding="utf-8"))
-    stream_schema = json.loads((source / "outbound-stream-provider.schema.json").read_text(encoding="utf-8"))
+    schema = _schema_document("node-providers.schema.json")
+    stream_schema = _schema_document("outbound-stream-provider.schema.json")
     registry = Registry().with_resource(stream_schema["$id"], Resource.from_contents(stream_schema))
     try:
         jsonschema.Draft202012Validator(schema, registry=registry).validate(providers)
@@ -128,6 +131,59 @@ def configure(settings, installation, bindings, *, development_profile=False):
         raise DevError("stream-operator-configuration-invalid") from None
     require(len(encode(result)) <= 65536, "stream-operator-node-configuration-byte-bound")
     return result
+
+
+
+def _schema_document(name):
+    from importlib import resources
+    from tools.dev_workflow.common import decode
+    try:
+        selected = resources.files("tools.dev_workflow").joinpath("data/schemas/" + name)
+        if not selected.is_file():
+            require(Path(__file__).is_file(), "stream-operator-schema-not-packaged")
+            selected = Path(__file__).resolve().parents[1] / "schemas" / name
+        with selected.open("rb") as source:
+            value = decode(source.read(65537), 65536, maximum_items=4096)
+        require(isinstance(value, dict), "stream-operator-schema-shape")
+        return value
+    except OSError:
+        raise DevError("stream-operator-schema-not-packaged") from None
+
+
+def prepare_configuration(base_config, installation_record, output, node, *, development_profile=False):
+    """Write one new protected input and ask the selected real node to check it.
+
+    A rejected or interrupted check leaves the prepared file for owner review.
+    It never starts a node, grants authority, replaces an input, or retries.
+    """
+    from tools.dev_workflow import process
+    from tools.dev_workflow.common import decode
+    require(development_profile is True, "stream-operator-development-profile-required")
+    output = Path(output).absolute()
+    node = Path(node).absolute()
+    node_identity = paths.digest_file(node.parent, node.name, 256 * 1024 * 1024)
+    require(node_identity[1] > 0, "stream-operator-node-binary-empty")
+    paths.private_root(output.parent)
+    selected = decode(_private_read(installation_record), 65536, maximum_items=4096)
+    members(selected, {"installation", "bindings"})
+    settings = decode(_private_read(base_config), 65536, maximum_items=4096)
+    raw = encode(configure(settings, selected["installation"], selected["bindings"],
+                           development_profile=True))
+    try:
+        paths.write_new(output, raw)
+    except OSError:
+        raise DevError("stream-operator-output-not-new-or-unavailable") from None
+    # Never return a node's stdout/stderr: it may contain private input details.
+    # The existing process owner bounds both pipes, time and descendant cleanup.
+    result = process.run([str(node), "check-config", "--config", str(output)],
+                         output.parent, timeout=30, maximum=65536)
+    require(paths.digest_file(node.parent, node.name, 256 * 1024 * 1024) == node_identity,
+            "stream-operator-node-binary-changed")
+    require(_private_read(output) == raw, "stream-operator-prepared-configuration-changed")
+    require(result.returncode == 0, "stream-operator-node-check-rejected-prepared-file-retained")
+    return {"outcome": "prepared-configuration-check-accepted", "configurationDigest": digest(raw),
+            "nodeBinary": {"sha256": node_identity[0], "size": node_identity[1]},
+            "executionPermission": False, "providerReadiness": "not-observed"}
 
 
 def _token(value):
@@ -350,15 +406,37 @@ def main(argv=None):
     from tools.dev_workflow.client import Client
     from tools.dev_workflow.common import decode
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=("grant", "revoke", "recover", "inspect", "adopt"))
-    parser.add_argument("--cli", type=Path, required=True)
-    parser.add_argument("--client-config", type=Path, required=True)
-    parser.add_argument("--state-dir", type=Path, required=True)
-    parser.add_argument("--specification", type=Path, required=True)
+    parser.add_argument("command", choices=("grant", "revoke", "recover", "inspect", "adopt", "prepare"))
+    parser.add_argument("--cli", type=Path)
+    parser.add_argument("--client-config", type=Path)
+    parser.add_argument("--state-dir", type=Path)
+    parser.add_argument("--specification", type=Path)
     parser.add_argument("--deployment")
     parser.add_argument("--provider-record", type=Path)
+    parser.add_argument("--node", type=Path)
+    parser.add_argument("--base-config", type=Path)
+    parser.add_argument("--installation-record", type=Path)
+    parser.add_argument("--output", type=Path)
+    parser.add_argument("--development-profile", action="store_true")
     args = parser.parse_args(argv)
     try:
+        preparing = args.command == "prepare"
+        policy_arguments = (args.cli, args.client_config, args.state_dir, args.specification)
+        prepare_arguments = (args.node, args.base_config, args.installation_record, args.output)
+        require(all(value is not None for value in (prepare_arguments if preparing else policy_arguments))
+                and all(value is None for value in (policy_arguments if preparing else prepare_arguments)),
+                "stream-operator-command-arguments")
+        require(preparing or not args.development_profile, "stream-operator-development-flag-only-for-prepare")
+        if preparing:
+            require(args.deployment is None and args.provider_record is None,
+                    "stream-operator-command-arguments")
+            with owned_cancellation():
+                result = prepare_configuration(args.base_config, args.installation_record,
+                                               args.output, args.node,
+                                               development_profile=args.development_profile)
+            print(json.dumps({"schemaVersion": "latent.outbound-stream.operator.result.v1",
+                             "command": args.command, "status": "completed", "result": result}))
+            return 0
         source = args.specification.absolute()
         specification = decode(_private_read(source), 65536)
         members(specification, {"node", "tenant", "provider", "consumer", "publication", "principal",
@@ -384,7 +462,8 @@ def main(argv=None):
         print(json.dumps({"schemaVersion": "latent.outbound-stream.operator.result.v1",
                          "command": args.command, "status": "completed", "result": result}))
         return 0
-    except DevError as error:
+    except (DevError, OSError) as failure:
+        error = failure if isinstance(failure, DevError) else DevError("stream-operator-file-unavailable-or-unsafe")
         print(json.dumps({"schemaVersion": "latent.outbound-stream.operator.result.v1",
                          "command": args.command, "status": "failed", "code": error.code,
                          "uncertain": error.uncertain}), file=sys.stderr)
