@@ -52,6 +52,13 @@ runtime dependencies for the real dependency analyzer.
 Its controls include real completion-time dependency analysis adding a late
 unsafe path, pinned call-graph/IR cases and managed-entry positives. It compiles
 no guest/native component and supplies no runtime or whole-criterion proof.
+[Run 39999341426](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39999341426/job/120571063369)
+passed both original and corrected modes at source `91c596a89dca0404db176b9a72887f1d5237dad9`.
+Its [compiler receipt](evidence/java-checkpoint-context-compiler-2026-10-23.json)
+retains all fifteen locked identities, both exact terminals, the three-class
+same-JAR overlay, 1,874 unchanged entries including the original Fiber class,
+and five earlier failed campaigns. The actual pinned entry positive and
+unknown-instruction self-refusal remain mandatory; no failed result is relabelled.
 The existing compatibility report maps an observed unsupported-context refusal
 to `missing-runtime-port`; bounded or unresolved analysis remains
 `unresolved-behavior`. All findings retain source/compiler binding and no authority.
