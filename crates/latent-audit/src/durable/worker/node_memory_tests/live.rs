@@ -363,7 +363,15 @@ fn funded_pending_read_only_views_share_actual_graph_through_teardown_and_last_c
         .begin()
         .blocking_wait()
         .unwrap();
-    node.idle();
+    // Begin has published its durable attempt, while this live Pending is
+    // intentionally retained. The idle fence requires no Pending and cannot
+    // describe this state; prove the exact paid live terminal reservation.
+    let live = node.handle.snapshot();
+    assert_eq!(live.pending_attempts, 1);
+    assert_eq!(live.reserved_records, 1);
+    assert_eq!(live.retained_records, 1);
+    assert_eq!(live.queued_operations, 0);
+    assert_eq!(live.queued_bytes, 0);
     let before = owner.snapshot();
     let views = node.handle.pending_attempts().unwrap();
     assert_eq!(views.len(), 1);
