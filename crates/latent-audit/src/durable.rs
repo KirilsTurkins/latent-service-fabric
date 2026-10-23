@@ -1,5 +1,6 @@
 //! Bounded local durability. Records describe decisions; they confer no authority.
 mod codec;
+mod diagnostics;
 mod limits;
 mod memory;
 mod model;
@@ -20,7 +21,7 @@ fn error(code: PlatformErrorCode, reason: &'static str) -> PlatformError {
         code,
         message: reason.into(),
         retryable: false,
-        details: Vec::new(),
+        details: diagnostics::details(reason),
     }
 }
 fn invalid() -> PlatformError {
