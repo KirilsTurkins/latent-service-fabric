@@ -31,6 +31,7 @@ def recipe_inputs():
         'tools/host_stream_kernel_stack_alignment.py',
         'tools/host_stream_kernel_vmap_extent.py',
         'tools/host_stream_kernel_vmap_fit.py',
+        'tools/host_stream_kernel_task_identity_geometry.py',
         'tools/qualify_host_stream_kernel_objects.py',
         'tools/owned_test_process.py', 'tools/build_observation.py',
         'tools/dev_workflow/paths.py', WORKFLOW, PROBE)
