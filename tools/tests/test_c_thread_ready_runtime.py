@@ -29,6 +29,39 @@ class CThreadReadyRuntime(unittest.TestCase):
             compiler.assert_not_called()
             node.assert_not_called()
 
+    def test_pre_call_audit_idle_requires_real_zero_samples_and_bounds_nonquiescent_work(self):
+        from tools import c_thread_runtime_node as node
+        from tools.phase2_operator_process import WorkflowError
+        names = ('audit_queued_operations', 'audit_queued_bytes', 'audit_reserved_records',
+                 'audit_reserved_bytes', 'audit_pending_attempts', 'audit_query_owners',
+                 'audit_query_bytes', 'audit_recovery_pending', 'audit_closed')
+        zero = {'nodeUsage': {'counters': dict.fromkeys(names, 0)}}
+        busy = {'nodeUsage': {'counters': {**zero['nodeUsage']['counters'], 'audit_query_owners': 1}}}
+        output = Path('/unused-private-output')
+        with patch.object(node, 'usage', side_effect=[busy, zero]) as sample, \
+                patch.object(node, 'write_json') as write, patch.object(node.time, 'sleep') as sleep:
+            self.assertIs(node.wait_audit_idle(object(), 'target', output, 'activation'), zero)
+            self.assertEqual(sample.call_count, 2)
+            self.assertEqual(write.call_count, 3)
+            self.assertIs(write.call_args.args[1], zero)
+            self.assertEqual(write.call_args.args[0].name, 'audit-before-activation.json')
+            sleep.assert_called_once_with(0.01)
+        with patch.object(node, 'usage', return_value=busy) as sample, \
+                patch.object(node, 'write_json') as write, patch.object(node.time, 'sleep') as sleep:
+            with self.assertRaisesRegex(ValueError, 'precall-audit-idle-premise'):
+                node.wait_audit_idle(object(), 'target', output, 'activation')
+            self.assertEqual((sample.call_count, write.call_count, sleep.call_count), (16, 16, 15))
+            self.assertTrue(all(call.args[0].name != 'audit-before-activation.json'
+                                for call in write.call_args_list))
+        for field in ('audit_closed', 'audit_recovery_pending'):
+            bad = {'nodeUsage': {'counters': {**zero['nodeUsage']['counters'], field: 1}}}
+            with self.subTest(field=field), patch.object(node, 'usage', return_value=bad) as sample, \
+                    patch.object(node, 'write_json'), patch.object(node.time, 'sleep') as sleep:
+                with self.assertRaisesRegex(WorkflowError, 'precall-audit-live'):
+                    node.wait_audit_idle(object(), 'target', output, 'activation')
+                sample.assert_called_once()
+                sleep.assert_not_called()
+
     def test_seventeen_outcomes_oracles_caps_and_default_assert_current_are_unchanged(self):
         original = subprocess.check_output(['git', 'show', ORIGINAL + ':tools/qualify_c_thread_runtime.py'],
                                            cwd=qualification.ROOT).decode()
@@ -101,13 +134,18 @@ if products is not None and products.SOURCE == 'f5351a9331ed954c49ae83f2f4004e0f
         child = function(current_node, 'child_entry')
         self.assertEqual(hashlib.sha256(helper.encode()).hexdigest(), '994d4f544302a7f5d8b7025df68bbdab32cf0d6070dabcb0be1e94dbf35ef8c5')
         self.assertEqual(hashlib.sha256(child.encode()).hexdigest(), '44db0ed2e9927c641646b898e684edbe247c7a79f991a818371cf77a77afcc8c')
-        projected = current_node.replace(helper + '\n\n', '').replace(child, function(original_node.decode(), 'child_entry'))
+        idle = function(current_node, 'wait_audit_idle')
+        self.assertEqual(hashlib.sha256(idle.encode()).hexdigest(),
+                         '7666d1a10c9f560446ad6cf52b9c712f8636683921194646feba2a2606658bc7')
+        projected = project_once(current_node, idle + '\n\n', '')
+        projected = projected.replace(helper + '\n\n', '').replace(child, function(original_node.decode(), 'child_entry'))
         projected = projected.replace(
             '        witness = child_entry(inventory, pages, process.authoring_activation,\n'
             '            expected_revision=revision, positive_only=True)\n',
             '        witness = child_entry(inventory, pages, process.authoring_activation, expected_revision=revision)\n')
         projected = projected.replace("    require(settings['audit'] == {'mode': 'durable', 'records': 1024, 'diskBytes': 16 * 1024 * 1024,\n            'queuedOperations': 8, 'queryOwners': 2}, 'c-thread-original-diagnostic-audit-envelope')\n    # Nine original pre-hold provider calls can offer 18 optional observations.\n    # Each holds 16 KiB through journal completion; one serialized query needs 4 KiB.\n    # This is a finite test-environment envelope, not a durable/lossless guarantee.\n    settings['audit']['queuedOperations'] = (9 * 2 * 16384 + 4096) // 4096\n", '')
-        projected = projected.replace("    if mode in ('cancel', 'deadline'):\n        audit_before = usage(client, target, idle=True)\n        write_json(output / ('audit-before-' + activation + '.json'), audit_before)\n        counters = audit_before['nodeUsage']['counters']\n        require(all(integer(counters[name]) == 0 for name in ('audit_queued_operations',\n            'audit_queued_bytes', 'audit_reserved_records', 'audit_reserved_bytes', 'audit_pending_attempts',\n            'audit_query_owners', 'audit_query_bytes', 'audit_recovery_pending', 'audit_closed')),\n            'c-thread-precall-audit-idle-premise')\n", '')
+        projected = project_once(projected, "    if mode in ('cancel', 'deadline'):\n"
+            "        wait_audit_idle(client, target, output, activation)\n", '')
         self.assertEqual(retained, projected.encode())
         self.assertIn('tools/host_codec_linear_memory_native_products.py', qualification.MATERIALS)
         self.assertIn('tools/host_codec_linear_memory_native_products_reader.py', qualification.MATERIALS)
