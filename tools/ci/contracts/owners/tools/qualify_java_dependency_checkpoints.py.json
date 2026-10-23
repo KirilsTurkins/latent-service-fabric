@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_java_dependency_checkpoints.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Add one bounded unchanged Commons AtomicSafeInitializer dependency-loop qualification with actual maintained-plugin IR controls and six signed two-tenant calls. Preserve original Java budgets, clocks/runtime-only grants, prior suites and separate 193-control native provenance; unsigned compiler warm-up counted separately, no native rebuild or whole-ticket/GC qualification claim.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "a0c9935f9194bc9a5bda57ad4b2baa5bca4cb2bef5b129737c333cbf0c7086a4"
+}

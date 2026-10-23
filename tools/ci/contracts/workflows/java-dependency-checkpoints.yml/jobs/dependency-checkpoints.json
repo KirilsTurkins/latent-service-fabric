@@ -1,0 +1,76 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "env": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "name": "One captured Commons loop with actual Java sibling progress",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "name": "Fetch the immutable native producer source without rebuilding",
+        "run": "git fetch --no-tags --depth=1 origin b422af24d86344ac7abb8b8fa56c3782aab63915"
+      },
+      {
+        "uses": "actions/setup-java",
+        "with": {
+          "distribution": "temurin",
+          "java-version": "25.0.4+101.0.LTS"
+        }
+      },
+      {
+        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "name": "Install the maintained exact compiler tools and focused controller checks",
+        "run": "set -euo pipefail\npython3 -m pip install --requirement tools/requirements.lock\npython3 -B -m unittest tools.tests.test_java_dependency_checkpoints -v\ncurl --fail --location --retry 3 --max-time 180 \\\n  https://services.gradle.org/distributions/gradle-9.1.0-bin.zip -o \"$RUNNER_TEMP/gradle.zip\"\necho \"a17ddd85a26b6a7f5ddb71ff8b05fc5104c0202c6e64782429790c933686c806  $RUNNER_TEMP/gradle.zip\" | sha256sum --check --strict\nunzip -q \"$RUNNER_TEMP/gradle.zip\" -d \"$RUNNER_TEMP\"\necho \"$RUNNER_TEMP/gradle-9.1.0/bin\" >> \"$GITHUB_PATH\"\ntimeout --signal=KILL 180s curl --fail --location \\\n  --retry 3 --retry-all-errors --retry-delay 1 --max-time 60 \\\n  https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \\\n  -o \"$RUNNER_TEMP/wasi-sdk.tar.gz\"\necho \"87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171  $RUNNER_TEMP/wasi-sdk.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/wasi-sdk.tar.gz\" -C \"$RUNNER_TEMP\"\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/java-bindgen\"\necho \"$RUNNER_TEMP/java-bindgen\" >> \"$GITHUB_PATH\"\n",
+        "shell": "bash"
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Authenticate the five existing 193-control native products",
+        "run": "python3 -B tools/rust_thread_native_products.py --output \"$RUNNER_TEMP/java-checkpoint-native\""
+      },
+      {
+        "name": "Reference and actual compiler IR controls then one fresh signed checkpoint target",
+        "run": "python3 -B tools/qualify_java_dependency_checkpoints.py \\\n  --native \"$RUNNER_TEMP/java-checkpoint-native\" \\\n  --wasi-sdk \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\" \\\n  --output \"$RUNNER_TEMP/java-checkpoints\"\n"
+      },
+      {
+        "if": "always()",
+        "name": "Retain bounded source compiler and actual runtime evidence without keys",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "java-dependency-checkpoints-${{ github.sha }}",
+          "path": "${{ runner.temp }}/java-checkpoint-native/*.json\n${{ runner.temp }}/java-checkpoints/*.json\n${{ runner.temp }}/java-checkpoints/commands/logs/**\n${{ runner.temp }}/java-checkpoints/controls/controls.json\n${{ runner.temp }}/java-checkpoints/controls/reference-commands.json\n${{ runner.temp }}/java-checkpoints/controls/reference-commands/logs/**\n${{ runner.temp }}/java-checkpoints/project/candidate.json\n${{ runner.temp }}/java-checkpoints/project/receipts/*.json\n${{ runner.temp }}/java-checkpoints/project/application/java-dependencies.json\n${{ runner.temp }}/java-checkpoints/project/application/latent.dependencies*.json\n${{ runner.temp }}/java-checkpoints/compiler/compiler-cache-selection.json\n${{ runner.temp }}/java-checkpoints/compiler/compiler-acquisition/*.json\n${{ runner.temp }}/java-checkpoints/build/*.json\n${{ runner.temp }}/java-checkpoints/build/component.wasm\n${{ runner.temp }}/java-checkpoints/build/compiler-logs/*-java-to-c.log\n${{ runner.temp }}/java-checkpoints/build/compiler-logs/*-java-coroutine-*.log\n${{ runner.temp }}/java-checkpoints/build/compiler-logs/*-c-to-wasm.log\n${{ runner.temp }}/java-checkpoints/node/*.json\n${{ runner.temp }}/java-checkpoints/node/commands/logs/**\n${{ runner.temp }}/java-checkpoints/node/examples-controls/**\n${{ runner.temp }}/java-checkpoints/node/foreign-controls/**\n",
+          "retention-days": 3
+        }
+      }
+    ],
+    "timeout-minutes": 45
+  },
+  "jobId": "dependency-checkpoints",
+  "kind": "job",
+  "reviewReason": "Add one bounded unchanged Commons AtomicSafeInitializer dependency-loop qualification with actual maintained-plugin IR controls and six signed two-tenant calls. Preserve original Java budgets, clocks/runtime-only grants, prior suites and separate 193-control native provenance; unsigned compiler warm-up counted separately, no native rebuild or whole-ticket/GC qualification claim. Reference processes use15s maximum,60s total; every real outcome remains required.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/java-dependency-checkpoints.yml"
+}
