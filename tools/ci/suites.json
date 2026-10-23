@@ -1316,7 +1316,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-audit/Cargo.toml",
-      "minimumCases": 68,
+      "minimumCases": 69,
       "mode": "libtest",
       "package": "latent-audit",
       "platforms": [
