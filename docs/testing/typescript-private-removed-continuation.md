@@ -29,7 +29,16 @@ permits at most three attempts of the same range, with two/eight-second backoff.
 Failed attempts remain charged to both limits and share the original 30-second
 request deadline; other HTTP errors propagate immediately. This follows the
 [Azure error contract](https://learn.microsoft.com/en-us/rest/api/storageservices/common-rest-api-error-codes).
-The remaining hosted programme must
-still produce thirty actual invocations, three removed-package cases and clean
-physical shutdown. Source checks and package verification do not qualify those
-runtime outcomes. Full ticket qualification and release publication remain false.
+The [hosted programme](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39932466967/job/120343827553)
+passed all ten controls, then signed the retained packages and executed thirty
+actual invocations, including three fresh removed-package cases. All invocation
+processes were reaped; the node shut down cleanly and was reaped. Nine provider
+idle observations had all eighteen active counters at zero; retained node
+infrastructure counters are separate. Twenty-five idle inventory observations
+and two active cancellation/disconnect observations met the original bounds.
+
+The [verified receipt](evidence/typescript-private-removed-signed-2026-10-23.json)
+binds the source, eleven consumer materials, separate guest/native origins and
+the complete 274-member runtime artifact. Earlier failed attempts remain recorded.
+No guest or native compilation ran. Full ticket qualification and release
+publication remain false.
