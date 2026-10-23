@@ -1,0 +1,96 @@
+{
+  "schemaVersion": "lsf.kernel-cleanup-audit-source.v1",
+  "upstreamCommit": "7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+  "archiveSha256": "e09b6727e5c521253f0d41694900b9c38fb7604db7d35238a8197aa9f7de2428",
+  "source": {
+    "kernel/auditsc.c": {
+      "bytes": 83704,
+      "sha256": "1363781adb28b18e88768179c5b2d9d45c651bb2bad6eef26c33741bbd5117ec"
+    }
+  },
+  "sections": {
+    "audit_filter_task": {
+      "source": "kernel/auditsc.c",
+      "text": "static enum audit_state audit_filter_task(struct task_struct *tsk, char **key)\n{\n\tstruct audit_entry *e;\n\tenum audit_state   state;\n\n\trcu_read_lock();\n\tlist_for_each_entry_rcu(e, &audit_filter_list[AUDIT_FILTER_TASK], list) {\n\t\tif (audit_filter_rules(tsk, &e->rule, NULL, NULL,\n\t\t\t\t       &state, true)) {\n\t\t\tif (state == AUDIT_STATE_RECORD)\n\t\t\t\t*key = kstrdup(e->rule.filterkey, GFP_ATOMIC);\n\t\t\trcu_read_unlock();\n\t\t\treturn state;\n\t\t}\n\t}\n\trcu_read_unlock();\n\treturn AUDIT_STATE_BUILD;\n}\n",
+      "bytes": 488,
+      "sha256": "3dc6e343e7eb6f9c1d7deb8f95695c547548328210ecd5cd978d1f00ba4a6676"
+    },
+    "audit_alloc_context": {
+      "source": "kernel/auditsc.c",
+      "text": "static inline struct audit_context *audit_alloc_context(enum audit_state state)\n{\n\tstruct audit_context *context;\n\n\tcontext = kzalloc(sizeof(*context), GFP_KERNEL);\n\tif (!context)\n\t\treturn NULL;\n\tcontext->context = AUDIT_CTX_UNUSED;\n\tcontext->state = state;\n\tcontext->prio = state == AUDIT_STATE_RECORD ? ~0ULL : 0;\n\tINIT_LIST_HEAD(&context->killed_trees);\n\tINIT_LIST_HEAD(&context->names_list);\n\tcontext->fds[0] = -1;\n\tcontext->return_valid = AUDITSC_INVALID;\n\treturn context;\n}\n",
+      "bytes": 480,
+      "sha256": "b3ba29b928ee88223401373cda144eb0a9021f8e7eb061018c5d5aaee627de84"
+    },
+    "audit_alloc": {
+      "source": "kernel/auditsc.c",
+      "text": "int audit_alloc(struct task_struct *tsk)\n{\n\tstruct audit_context *context;\n\tenum audit_state     state;\n\tchar *key = NULL;\n\n\tif (likely(!audit_ever_enabled))\n\t\treturn 0;\n\n\tstate = audit_filter_task(tsk, &key);\n\tif (state == AUDIT_STATE_DISABLED) {\n\t\tclear_task_syscall_work(tsk, SYSCALL_AUDIT);\n\t\treturn 0;\n\t}\n\n\tcontext = audit_alloc_context(state);\n\tif (!context) {\n\t\tkfree(key);\n\t\taudit_log_lost(\"out of memory in audit_alloc\");\n\t\treturn -ENOMEM;\n\t}\n\tcontext->filterkey = key;\n\n\taudit_set_context(tsk, context);\n\tset_task_syscall_work(tsk, SYSCALL_AUDIT);\n\treturn 0;\n}\n",
+      "bytes": 571,
+      "sha256": "bc1aa09f22ed8cad2d97605dcd146745c4af9efc320b94db23c1ee8549ff96d7"
+    },
+    "audit_free_context": {
+      "source": "kernel/auditsc.c",
+      "text": "static inline void audit_free_context(struct audit_context *context)\n{\n\t/* resetting is extra work, but it is likely just noise */\n\taudit_reset_context(context);\n\taudit_proctitle_free(context);\n\tfree_tree_refs(context);\n\tkfree(context->filterkey);\n\tkfree(context);\n}\n",
+      "bytes": 267,
+      "sha256": "e626b1094e7206ba107f410e35602533c94d5e74f3d4ec2e043321a293c104df"
+    },
+    "audit_free": {
+      "source": "kernel/auditsc.c",
+      "text": "void __audit_free(struct task_struct *tsk)\n{\n\tstruct audit_context *context = tsk->audit_context;\n\n\tif (!context)\n\t\treturn;\n\n\t/* this may generate CONFIG_CHANGE records */\n\tif (!list_empty(&context->killed_trees))\n\t\taudit_kill_trees(context);\n\n\t/* We are called either by do_exit() or the fork() error handling code;\n\t * in the former case tsk == current and in the latter tsk is a\n\t * random task_struct that doesn't have any meaningful data we\n\t * need to log via audit_log_exit().\n\t */\n\tif (tsk == current && !context->dummy) {\n\t\tcontext->return_valid = AUDITSC_INVALID;\n\t\tcontext->return_code = 0;\n\t\tif (context->context == AUDIT_CTX_SYSCALL) {\n\t\t\taudit_filter_syscall(tsk, context);\n\t\t\taudit_filter_inodes(tsk, context);\n\t\t\tif (context->current_state == AUDIT_STATE_RECORD)\n\t\t\t\taudit_log_exit();\n\t\t} else if (context->context == AUDIT_CTX_URING) {\n\t\t\t/* TODO: verify this case is real and valid */\n\t\t\taudit_filter_uring(tsk, context);\n\t\t\taudit_filter_inodes(tsk, context);\n\t\t\tif (context->current_state == AUDIT_STATE_RECORD)\n\t\t\t\taudit_log_uring(context);\n\t\t}\n\t}\n\n\taudit_set_context(tsk, NULL);\n\taudit_free_context(context);\n}\n",
+      "bytes": 1132,
+      "sha256": "3f42b9db56b95407f8d4d2d46c6d71624db9f581953de2bd0d5f6731783fb5b5"
+    },
+    "audit_reset_context": {
+      "source": "kernel/auditsc.c",
+      "text": "static void audit_reset_context(struct audit_context *ctx)\n{\n\tif (!ctx)\n\t\treturn;\n\n\t/* if ctx is non-null, reset the \"ctx->context\" regardless */\n\tctx->context = AUDIT_CTX_UNUSED;\n\tif (ctx->dummy)\n\t\treturn;\n\n\t/*\n\t * NOTE: It shouldn't matter in what order we release the fields, so\n\t *       release them in the order in which they appear in the struct;\n\t *       this gives us some hope of quickly making sure we are\n\t *       resetting the audit_context properly.\n\t *\n\t *       Other things worth mentioning:\n\t *       - we don't reset \"dummy\"\n\t *       - we don't reset \"state\", we do reset \"current_state\"\n\t *       - we preserve \"filterkey\" if \"state\" is AUDIT_STATE_RECORD\n\t *       - much of this is likely overkill, but play it safe for now\n\t *       - we really need to work on improving the audit_context struct\n\t */\n\n\tctx->current_state = ctx->state;\n\tctx->serial = 0;\n\tctx->major = 0;\n\tctx->uring_op = 0;\n\tctx->ctime = (struct timespec64){ .tv_sec = 0, .tv_nsec = 0 };\n\tmemset(ctx->argv, 0, sizeof(ctx->argv));\n\tctx->return_code = 0;\n\tctx->prio = (ctx->state == AUDIT_STATE_RECORD ? ~0ULL : 0);\n\tctx->return_valid = AUDITSC_INVALID;\n\taudit_free_names(ctx);\n\tif (ctx->state != AUDIT_STATE_RECORD) {\n\t\tkfree(ctx->filterkey);\n\t\tctx->filterkey = NULL;\n\t}\n\taudit_free_aux(ctx);\n\tkfree(ctx->sockaddr);\n\tctx->sockaddr = NULL;\n\tctx->sockaddr_len = 0;\n\tctx->ppid = 0;\n\tctx->uid = ctx->euid = ctx->suid = ctx->fsuid = KUIDT_INIT(0);\n\tctx->gid = ctx->egid = ctx->sgid = ctx->fsgid = KGIDT_INIT(0);\n\tctx->personality = 0;\n\tctx->arch = 0;\n\tctx->target_pid = 0;\n\tctx->target_auid = ctx->target_uid = KUIDT_INIT(0);\n\tctx->target_sessionid = 0;\n\tctx->target_sid = 0;\n\tctx->target_comm[0] = '\\0';\n\tunroll_tree_refs(ctx, NULL, 0);\n\tWARN_ON(!list_empty(&ctx->killed_trees));\n\taudit_free_module(ctx);\n\tctx->fds[0] = -1;\n\tctx->type = 0; /* reset last for audit_free_*() */\n}\n",
+      "bytes": 1866,
+      "sha256": "ca6d1b4bf99f328f2993922913fe7fb5e06225e1343efa50e8c06916c6d441b8"
+    },
+    "audit_getname": {
+      "source": "kernel/auditsc.c",
+      "text": "void __audit_getname(struct filename *name)\n{\n\tstruct audit_context *context = audit_context();\n\tstruct audit_names *n;\n\n\tif (context->context == AUDIT_CTX_UNUSED)\n\t\treturn;\n\n\tn = audit_alloc_name(context, AUDIT_TYPE_UNKNOWN);\n\tif (!n)\n\t\treturn;\n\n\tn->name = name;\n\tn->name_len = AUDIT_NAME_FULL;\n\tname->aname = n;\n\tatomic_inc(&name->refcnt);\n}\n",
+      "bytes": 344,
+      "sha256": "428a4723bd8da7e4a573a905258b4642f4bff2a86c453bdbea003c52cb279394"
+    },
+    "audit_inode": {
+      "source": "kernel/auditsc.c",
+      "text": "void __audit_inode(struct filename *name, const struct dentry *dentry,\n\t\t   unsigned int flags)\n{\n\tstruct audit_context *context = audit_context();\n\tstruct inode *inode = d_backing_inode(dentry);\n\tstruct audit_names *n;\n\tbool parent = flags & AUDIT_INODE_PARENT;\n\tstruct audit_entry *e;\n\tstruct list_head *list = &audit_filter_list[AUDIT_FILTER_FS];\n\tint i;\n\n\tif (context->context == AUDIT_CTX_UNUSED)\n\t\treturn;\n\n\trcu_read_lock();\n\tlist_for_each_entry_rcu(e, list, list) {\n\t\tfor (i = 0; i < e->rule.field_count; i++) {\n\t\t\tstruct audit_field *f = &e->rule.fields[i];\n\n\t\t\tif (f->type == AUDIT_FSTYPE\n\t\t\t    && audit_comparator(inode->i_sb->s_magic,\n\t\t\t\t\t\tf->op, f->val)\n\t\t\t    && e->rule.action == AUDIT_NEVER) {\n\t\t\t\trcu_read_unlock();\n\t\t\t\treturn;\n\t\t\t}\n\t\t}\n\t}\n\trcu_read_unlock();\n\n\tif (!name)\n\t\tgoto out_alloc;\n\n\t/*\n\t * If we have a pointer to an audit_names entry already, then we can\n\t * just use it directly if the type is correct.\n\t */\n\tn = name->aname;\n\tif (n) {\n\t\tif (parent) {\n\t\t\tif (n->type == AUDIT_TYPE_PARENT ||\n\t\t\t    n->type == AUDIT_TYPE_UNKNOWN)\n\t\t\t\tgoto out;\n\t\t} else {\n\t\t\tif (n->type != AUDIT_TYPE_PARENT)\n\t\t\t\tgoto out;\n\t\t}\n\t}\n\n\tlist_for_each_entry_reverse(n, &context->names_list, list) {\n\t\tif (n->ino) {\n\t\t\t/* valid inode number, use that for the comparison */\n\t\t\tif (n->ino != inode->i_ino ||\n\t\t\t    n->dev != inode->i_sb->s_dev)\n\t\t\t\tcontinue;\n\t\t} else if (n->name) {\n\t\t\t/* inode number has not been set, check the name */\n\t\t\tif (strcmp(n->name->name, name->name))\n\t\t\t\tcontinue;\n\t\t} else\n\t\t\t/* no inode and no name (?!) ... this is odd ... */\n\t\t\tcontinue;\n\n\t\t/* match the correct record type */\n\t\tif (parent) {\n\t\t\tif (n->type == AUDIT_TYPE_PARENT ||\n\t\t\t    n->type == AUDIT_TYPE_UNKNOWN)\n\t\t\t\tgoto out;\n\t\t} else {\n\t\t\tif (n->type != AUDIT_TYPE_PARENT)\n\t\t\t\tgoto out;\n\t\t}\n\t}\n\nout_alloc:\n\t/* unable to find an entry with both a matching name and type */\n\tn = audit_alloc_name(context, AUDIT_TYPE_UNKNOWN);\n\tif (!n)\n\t\treturn;\n\tif (name) {\n\t\tn->name = name;\n\t\tatomic_inc(&name->refcnt);\n\t}\n\nout:\n\tif (parent) {\n\t\tn->name_len = n->name ? parent_len(n->name->name) : AUDIT_NAME_FULL;\n\t\tn->type = AUDIT_TYPE_PARENT;\n\t\tif (flags & AUDIT_INODE_HIDDEN)\n\t\t\tn->hidden = true;\n\t} else {\n\t\tn->name_len = AUDIT_NAME_FULL;\n\t\tn->type = AUDIT_TYPE_NORMAL;\n\t}\n\thandle_path(dentry);\n\taudit_copy_inode(n, dentry, inode, flags & AUDIT_INODE_NOEVAL);\n}\n",
+      "bytes": 2345,
+      "sha256": "6ece04dc32dc26ff71290748992e2e45e0a583fe2beb2836a823736da69963c0"
+    },
+    "audit_inode_child": {
+      "source": "kernel/auditsc.c",
+      "text": "void __audit_inode_child(struct inode *parent,\n\t\t\t const struct dentry *dentry,\n\t\t\t const unsigned char type)\n{\n\tstruct audit_context *context = audit_context();\n\tstruct inode *inode = d_backing_inode(dentry);\n\tconst struct qstr *dname = &dentry->d_name;\n\tstruct audit_names *n, *found_parent = NULL, *found_child = NULL;\n\tstruct audit_entry *e;\n\tstruct list_head *list = &audit_filter_list[AUDIT_FILTER_FS];\n\tint i;\n\n\tif (context->context == AUDIT_CTX_UNUSED)\n\t\treturn;\n\n\trcu_read_lock();\n\tlist_for_each_entry_rcu(e, list, list) {\n\t\tfor (i = 0; i < e->rule.field_count; i++) {\n\t\t\tstruct audit_field *f = &e->rule.fields[i];\n\n\t\t\tif (f->type == AUDIT_FSTYPE\n\t\t\t    && audit_comparator(parent->i_sb->s_magic,\n\t\t\t\t\t\tf->op, f->val)\n\t\t\t    && e->rule.action == AUDIT_NEVER) {\n\t\t\t\trcu_read_unlock();\n\t\t\t\treturn;\n\t\t\t}\n\t\t}\n\t}\n\trcu_read_unlock();\n\n\tif (inode)\n\t\thandle_one(inode);\n\n\t/* look for a parent entry first */\n\tlist_for_each_entry(n, &context->names_list, list) {\n\t\tif (!n->name ||\n\t\t    (n->type != AUDIT_TYPE_PARENT &&\n\t\t     n->type != AUDIT_TYPE_UNKNOWN))\n\t\t\tcontinue;\n\n\t\tif (n->ino == parent->i_ino && n->dev == parent->i_sb->s_dev &&\n\t\t    !audit_compare_dname_path(dname,\n\t\t\t\t\t      n->name->name, n->name_len)) {\n\t\t\tif (n->type == AUDIT_TYPE_UNKNOWN)\n\t\t\t\tn->type = AUDIT_TYPE_PARENT;\n\t\t\tfound_parent = n;\n\t\t\tbreak;\n\t\t}\n\t}\n\n\tcond_resched();\n\n\t/* is there a matching child entry? */\n\tlist_for_each_entry(n, &context->names_list, list) {\n\t\t/* can only match entries that have a name */\n\t\tif (!n->name ||\n\t\t    (n->type != type && n->type != AUDIT_TYPE_UNKNOWN))\n\t\t\tcontinue;\n\n\t\tif (!strcmp(dname->name, n->name->name) ||\n\t\t    !audit_compare_dname_path(dname, n->name->name,\n\t\t\t\t\t\tfound_parent ?\n\t\t\t\t\t\tfound_parent->name_len :\n\t\t\t\t\t\tAUDIT_NAME_FULL)) {\n\t\t\tif (n->type == AUDIT_TYPE_UNKNOWN)\n\t\t\t\tn->type = type;\n\t\t\tfound_child = n;\n\t\t\tbreak;\n\t\t}\n\t}\n\n\tif (!found_parent) {\n\t\t/* create a new, \"anonymous\" parent record */\n\t\tn = audit_alloc_name(context, AUDIT_TYPE_PARENT);\n\t\tif (!n)\n\t\t\treturn;\n\t\taudit_copy_inode(n, NULL, parent, 0);\n\t}\n\n\tif (!found_child) {\n\t\tfound_child = audit_alloc_name(context, type);\n\t\tif (!found_child)\n\t\t\treturn;\n\n\t\t/* Re-use the name belonging to the slot for a matching parent\n\t\t * directory. All names for this context are relinquished in\n\t\t * audit_free_names() */\n\t\tif (found_parent) {\n\t\t\tfound_child->name = found_parent->name;\n\t\t\tfound_child->name_len = AUDIT_NAME_FULL;\n\t\t\tatomic_inc(&found_child->name->refcnt);\n\t\t}\n\t}\n\n\tif (inode)\n\t\taudit_copy_inode(found_child, dentry, inode, 0);\n\telse\n\t\tfound_child->ino = AUDIT_INO_UNSET;\n}\n",
+      "bytes": 2567,
+      "sha256": "f0790034bc6d183cde447717c22d29b0c8d70bf8781f93c36e64d571c3c6dcaf"
+    }
+  },
+  "parentDerived": {
+    "include/net/lsf_stream_cleanup_descendants.h": {
+      "bytes": 1956,
+      "sha256": "52ec8446ee4552d0124ae41d7db0ab768d3d9e25c2df483bd24c8bdb96c13c65"
+    },
+    "net/device-prepaid.h": {
+      "bytes": 13004,
+      "sha256": "4c5c9d4250f36ce848d325771aff7cff94381dedaf9fbe82071c988554a4e256"
+    },
+    "net/factory-cleanup-descendants.c": {
+      "bytes": 12566,
+      "sha256": "82a3db07949cff7869ca2e6f39a0b54eaf0c965d1d1b93eb06dbda50ea3a639a"
+    },
+    "kernel/lsf-cleanup-descendants.c": {
+      "bytes": 5407,
+      "sha256": "c68d5b8fda5241fb1a4a1a8e1d46ae67a8aa9e936ad07672321980693b2b7ee2"
+    },
+    "kernel/lsf-cleanup-constructor.c": {
+      "bytes": 18390,
+      "sha256": "7a381ef464845a934ecc4e86b1d17c67c81dd7173172b0b5670a23d72a7a2c5f"
+    }
+  },
+  "taskCreated": false,
+  "executorReady": false,
+  "runtimeAuditContextTransitionsQualified": false,
+  "bootstrapQualified": false,
+  "fullConstructorClosure": false,
+  "completeAllocationClosure": false,
+  "productionInstallation": false
+}

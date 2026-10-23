@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "lsf.kernel-cleanup-association-source.v1",
+  "upstreamCommit": "7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+  "source": {
+    "kernel/kthread.c": {
+      "bytes": 43615,
+      "sha256": "1b2d9794c6a3f5c4eb1b1f9e1e3b01bd0bf98de4d5ee67fe24efd4aa749e662f",
+      "gitBlob": "9bb36897b6c62d46a2f7f7af51b86ff545e3eecf"
+    }
+  },
+  "sections": {
+    "worker_constructor": {
+      "source": "kernel/kthread.c",
+      "prefix": "static __printf(3, 0) struct kthread_worker *\n__kthread_create_worker(",
+      "text": "static __printf(3, 0) struct kthread_worker *\n__kthread_create_worker(int cpu, unsigned int flags,\n\t\t\tconst char namefmt[], va_list args)\n{\n\tstruct kthread_worker *worker;\n\tstruct task_struct *task;\n\tint node = NUMA_NO_NODE;\n\n\tworker = kzalloc(sizeof(*worker), GFP_KERNEL);\n\tif (!worker)\n\t\treturn ERR_PTR(-ENOMEM);\n\n\tkthread_init_worker(worker);\n\n\tif (cpu >= 0)\n\t\tnode = cpu_to_node(cpu);\n\n\ttask = __kthread_create_on_node(kthread_worker_fn, worker,\n\t\t\t\t\t\tnode, namefmt, args);\n\tif (IS_ERR(task))\n\t\tgoto fail_task;\n\n\tif (cpu >= 0)\n\t\tkthread_bind(task, cpu);\n\n\tworker->flags = flags;\n\tworker->task = task;\n\twake_up_process(task);\n\treturn worker;\n\nfail_task:\n\tkfree(worker);\n\treturn ERR_CAST(task);\n}\n",
+      "bytes": 699,
+      "sha256": "bd24107181d8691bd78c6f39baf65d5b735e630742c32f8568bcf7f643b46cc6"
+    }
+  },
+  "parentDerived": {
+    "net/factory.c": {
+      "bytes": 32475,
+      "sha256": "10e62976fbd40111ad20d20ce6760ebe61121ccff2c96ece82125f7a4f8b1462"
+    },
+    "net/factory-device.c": {
+      "bytes": 8890,
+      "sha256": "44597a8bd436df63a93d96586fc5dc904de731f75f852c727f76b9147416a013"
+    },
+    "kernel/kthread.c": {
+      "bytes": 45762,
+      "sha256": "8d905ca1c9fb26b377877212e69a18ee47ae5757dd6f93cc637ffc5f80a83123"
+    },
+    "kernel/lsf-cleanup-worker.c": {
+      "bytes": 3788,
+      "sha256": "96aaa841f6be24a4949b37aead28d885147287495beb03c6cc523a1be9c7b0dd"
+    }
+  },
+  "taskCreated": false,
+  "executorReady": false,
+  "factoryCallsFullWorkerCreate": false,
+  "pendingConsumerCallsFullClone": false,
+  "observerClosure": false,
+  "bootstrapQualified": false,
+  "fullConstructorClosure": false,
+  "completeAllocationClosure": false,
+  "productionInstallation": false
+}
