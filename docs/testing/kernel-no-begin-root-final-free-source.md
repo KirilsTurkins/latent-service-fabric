@@ -1,10 +1,11 @@
-# Initial-only Root return source candidate
+# Initial-only Root physical return
 
-This source stage extends the qualified late-close implementation at
-`7baad1341327ccd36c625e3e545faf0f1306a78e` for a successful factory open whose
-final VFS release occurs without BEGIN. The owning programme now includes this
-candidate; it has not been compiled or run. Actual no-BEGIN physical return remains
-unqualified. Failed open without a successful file/VFS release is excluded.
+The [owning campaign](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40036590425/job/120697476339)
+passed at `0f1e453448bc10a7d2c60453ab69140283834182`: a successful factory open
+whose final VFS release occurs without BEGIN physically returns its original
+Root bank and four actor references. The [public receipt](evidence/kernel-no-begin-root-physical-return-2026-10-24.json)
+binds the actual source, images, commands and raw observations. Failed open
+without a successful file/VFS release remains excluded.
 
 The final file handoff captures a strictly initial-only candidate before
 changing opened1 to opened2 and clearing private_data. Stack-local route3 may
@@ -49,20 +50,41 @@ charge or native quota is refunded and production selection remains closed.
 
 Focused source controls interpret the actual C predicates, reject every
 noninitial Root/record/embedded-route member, bind the owned derivation recipes
-and restore all five parent outputs by exact inverse projection. These checks
-do not execute Linux or certify physical free. A future reviewed qualification
-must use a fresh real open/no-BEGIN/final-close case, retain its actual opened
-snapshot, and observe the existing post-physical kernel marker. Close return,
-zero counters and a synthetic child-retired snapshot cannot supply that proof.
+and restore all five parent outputs by exact inverse projection. Source checks
+alone do not execute Linux or certify physical free. The actual fresh no-BEGIN
+boot retained this opened snapshot and required the post-physical kernel marker:
 
-The owning campaign links one candidate kernel, builds three fixed PID1 images
-and starts three fresh isolated VMs: child-retired fast close, pending-child
-late close and initial-only no-BEGIN close. It retains all old60 Python source
-controls and22 actual hosted C parser controls, adding10 NoBEGIN source controls
-and7 observer/budget controls. No local kernel or VM replay accompanies this
-source change. All three boots use the same kernel image,512MiB/twoCPU/no host
-disk/no network profile. Each command remains capped at90seconds; one shared
-monotonic180second deadline includes all three boots and their observation
-work. The three90second maxima are not additive. The original earlier deadline
-and command cap are preserved when smaller, and both are restored on exit.
+```text
+LSFVM1 snapshot=opened state=0 error=0 field0=0 field1=0 field2=0 field3=0 field4=0 field5=0 field6=2 field7=0 field8=0 field9=0
+[    2.339616] LSFVM1 physical-return=constructor-root-bank-and-actor-refs
+LSFVM1 result=PASS stage=actual-no-begin-descriptor-close-returned
+```
+
+The snapshot has only backing and Root LIVE. PID1's terminal reports close
+returning; the separate kernel marker follows actual page return and all four
+original actor puts. The host requires that marker exactly once and preserves
+the raw serial identity. Kernel and PID1 UART delivery order are checked
+independently. No BEGIN, READY or child-retirement snapshot is manufactured.
+Close return and zero counters provide no substitute for the physical marker.
+
+The campaign linked one kernel in 705.307 seconds, built three fixed PID1 images
+and passed three fresh isolated boots: child-retired fast close in 3.199 seconds,
+pending-child late close in 3.256 seconds and no-BEGIN close in 3.170 seconds. All 77
+mandatory Python controls and 22 actual compiled C parser controls passed; all 16
+commands returned zero with descendant cleanup. Independent cached verification
+authenticated 55 archive members, 294 committed Git materials, six reviewed
+derived changes, 320 unchanged outputs, all three init/CPIO pairs and raw boots.
+Security also passed. No campaign was replayed for this receipt update.
+
+All three boots use the same kernel image with 512 MiB, two CPUs, no host disks
+and no network. Each command remains capped at 90 seconds; one shared monotonic
+deadline of 180 seconds includes all three boots and their observation work. Actual aggregate
+time was 9.632 seconds. The three command maxima are not additive. Smaller original
+deadline/command limits remain binding, and both limits are restored on exit.
 Aggregate expiry refuses success even if the final process returned normally.
+
+This completes the initial-only constructor prerequisite, advancing #738
+criteria 4/6. Unknown failed/uncertain births, application/device-used banks,
+general cancellation reclamation, native quota release, complete allocation and
+bootstrap closure, installed stream qualification and production enablement
+remain open. No whole acceptance criterion or ticket is closed by this receipt.
