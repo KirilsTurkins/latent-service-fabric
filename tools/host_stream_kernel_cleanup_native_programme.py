@@ -11,6 +11,7 @@ from tools import host_stream_kernel_stack_alignment as stack_alignment
 from tools import host_stream_kernel_vmap_extent as vmap_extent
 from tools import host_stream_kernel_vmap_fit as vmap_fit
 from tools import host_stream_kernel_task_identity_geometry as task_identity_geometry
+from tools import host_stream_kernel_provider_task_reference as task_reference
 
 ROOT = prior.ROOT
 baseline = prior.baseline
@@ -246,8 +247,8 @@ def compose(base, originals, config):
         sum(parent.get(name) != raw for name, raw in result.items()) == 6,
         'cleanup-native-exact-six-source-delta')
     repaired = repair_task_geometry(diagnose_prebirth_refusals(initialize_observers(repair_sidcache(result))))
-    return task_identity_geometry.transform(vmap_fit.transform(vmap_extent.transform(
-        stack_alignment.transform(failure_observation.transform(repaired)))))
+    return task_reference.transform(task_identity_geometry.transform(vmap_fit.transform(vmap_extent.transform(
+        stack_alignment.transform(failure_observation.transform(repaired))))))
 
 
 def qualification_projection(outputs, config):
@@ -273,7 +274,7 @@ def local_freeze():
     result = prior.local_freeze()
     for path in (Path(__file__), Path(change.__file__), Path(failure_observation.__file__),
             Path(stack_alignment.__file__), Path(vmap_extent.__file__), Path(vmap_fit.__file__),
-            Path(task_identity_geometry.__file__), change.FIXTURE,
+            Path(task_identity_geometry.__file__), Path(task_reference.__file__), change.FIXTURE,
             change.OWNED/'factory-cleanup-native-bootstrap.c'):
         result[path.relative_to(ROOT).as_posix()] = baseline.objects.identity(path)
     return result

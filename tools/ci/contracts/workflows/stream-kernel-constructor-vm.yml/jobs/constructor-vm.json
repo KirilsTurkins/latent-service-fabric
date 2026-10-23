@@ -24,7 +24,7 @@
       },
       {
         "name": "Check image boundaries and current native source projection",
-        "run": "python3 -B -m unittest tools.tests.test_host_stream_kernel_vm_image tools.tests.test_host_stream_kernel_cleanup_native tools.tests.test_host_stream_kernel_constructor_failure tools.tests.test_host_stream_kernel_stack_alignment tools.tests.test_host_stream_kernel_vmap_extent tools.tests.test_host_stream_kernel_vmap_fit tools.tests.test_host_stream_kernel_task_identity_geometry -v"
+        "run": "python3 -B -m unittest tools.tests.test_host_stream_kernel_vm_image tools.tests.test_host_stream_kernel_cleanup_native tools.tests.test_host_stream_kernel_constructor_failure tools.tests.test_host_stream_kernel_stack_alignment tools.tests.test_host_stream_kernel_vmap_extent tools.tests.test_host_stream_kernel_vmap_fit tools.tests.test_host_stream_kernel_task_identity_geometry tools.tests.test_host_stream_kernel_provider_task_reference -v"
       },
       {
         "name": "Install upstream compiler and isolated emulator prerequisites",
@@ -55,7 +55,7 @@
   },
   "jobId": "constructor-vm",
   "kind": "job",
-  "reviewReason": "Bind physical Task identity to its original boot-selected birth geometry before locks; preserve published lifecycle3 and append three source controls.",
+  "reviewReason": "Consume the original provider association Task reference exactly once after original stop_put; preserve early-exit protection, existing stop states and final-return assertions; append four source controls.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/stream-kernel-constructor-vm.yml"
 }
