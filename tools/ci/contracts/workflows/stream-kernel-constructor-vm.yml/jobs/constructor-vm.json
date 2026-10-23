@@ -24,7 +24,7 @@
       },
       {
         "name": "Check image boundaries and current native source projection",
-        "run": "python3 -B -m unittest tools.tests.test_host_stream_kernel_vm_image tools.tests.test_host_stream_kernel_cleanup_native tools.tests.test_host_stream_kernel_constructor_failure -v"
+        "run": "python3 -B -m unittest tools.tests.test_host_stream_kernel_vm_image tools.tests.test_host_stream_kernel_cleanup_native tools.tests.test_host_stream_kernel_constructor_failure tools.tests.test_host_stream_kernel_stack_alignment -v"
       },
       {
         "name": "Install upstream compiler and isolated emulator prerequisites",
@@ -55,7 +55,7 @@
   },
   "jobId": "constructor-vm",
   "kind": "job",
-  "reviewReason": "Preserve all eleven native/image controls, require the four new numeric-observation source controls before the same bounded kernel link/VM steps, and retain every original failure artifact.",
+  "reviewReason": "Require four new arithmetic and whole-envelope controls without removing any original source or image control.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/stream-kernel-constructor-vm.yml"
 }

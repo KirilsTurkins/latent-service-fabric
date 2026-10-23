@@ -18,6 +18,8 @@
           "tools/tests/test_host_stream_kernel_vm_image.py",
           "tools/host_stream_kernel_constructor_failure.py",
           "tools/tests/test_host_stream_kernel_constructor_failure.py",
+          "tools/host_stream_kernel_stack_alignment.py",
+          "tools/tests/test_host_stream_kernel_stack_alignment.py",
           "research/standard-outbound/linux-6.12-lineage/constructor-vm-init.c"
         ]
       },
@@ -30,7 +32,7 @@
   "requiredJobs": [
     "constructor-vm"
   ],
-  "reviewReason": "Keep all eleven original native/image controls required and add four bounded failure-observation source controls before the same unchanged kernel build/VM programme; capture new source/test path changes.",
+  "reviewReason": "Trigger the reviewed alignment source repair and require its four controls alongside all fifteen original controls; retain existing build, VM and failure bounds.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/stream-kernel-constructor-vm.yml"
 }
