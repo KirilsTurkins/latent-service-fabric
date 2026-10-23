@@ -66,8 +66,12 @@ impl AuditRuntime {
                 // exists before providers, and can exist without providers.
                 // The later broker can reuse only this exact owner AND ceiling;
                 // a different broker limit refuses instead of widening either.
+                // AuditLimits.maximum_metadata_bytes remains the separately
+                // derived journal policy; reducing retained records cannot
+                // silently replace the original whole-node/broker allowance.
                 let metadata = latent_core::node_metadata::NodeMetadataOwner::new(
-                    limits.maximum_metadata_bytes,
+                    latent_capabilities::broker::CapabilityBrokerLimits::default()
+                        .maximum_metadata_bytes,
                 )
                 .map_err(|_| {
                     failure(
@@ -87,7 +91,7 @@ impl AuditRuntime {
                             )
                         })?;
                 let (handle, worker) =
-                    DirectoryPhase2AuditJournal::open_with_node_metadata(root, limits, metadata)?;
+                    DirectoryPhase2AuditJournal::open_with_node_bank(root, limits, metadata)?;
                 Ok(Some(Self {
                     handle,
                     worker: worker_owner.allocate(Mutex::new(Some(worker))),

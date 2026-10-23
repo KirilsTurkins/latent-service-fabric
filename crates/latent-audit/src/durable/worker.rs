@@ -231,6 +231,21 @@ impl DirectoryPhase2AuditJournal {
         limits: AuditLimits,
         metadata: NodeMetadataOwner,
     ) -> Result<(AuditHandle, AuditWorker)> {
+        let limits = limits.validate()?;
+        if metadata.maximum_bytes() != limits.maximum_metadata_bytes {
+            return Err(invalid());
+        }
+        Self::open_with_node_bank(path, limits, metadata)
+    }
+    /// Use the original whole-node bank without turning the journal's derived
+    /// per-journal metadata policy into a new physical node allowance. The
+    /// broker must independently bind this same bank and its exact ceiling.
+    /// All fixed journal backing is still admitted before filesystem mutation.
+    pub fn open_with_node_bank(
+        path: impl AsRef<Path>,
+        limits: AuditLimits,
+        metadata: NodeMetadataOwner,
+    ) -> Result<(AuditHandle, AuditWorker)> {
         Self::open_inner(path.as_ref(), limits, Some(metadata))
     }
     fn open_inner(
@@ -239,19 +254,10 @@ impl DirectoryPhase2AuditJournal {
         metadata: Option<NodeMetadataOwner>,
     ) -> Result<(AuditHandle, AuditWorker)> {
         let limits = limits.validate()?;
-        if metadata
-            .as_ref()
-            .is_some_and(|owner| owner.maximum_bytes() != limits.maximum_metadata_bytes)
-        {
-            return Err(invalid());
-        }
         let prepared = metadata
             .as_ref()
             .map(|owner| {
                 let extra = StoreMemory::bytes(limits)?;
-                if extra > limits.maximum_metadata_bytes {
-                    return Err(capacity());
-                }
                 SharedOwner::<Shared>::prepare_fixed(owner, extra).map_err(|_| capacity())
             })
             .transpose()?;
@@ -780,3 +786,6 @@ impl StoreMemory {
             .ok_or_else(capacity)
     }
 }
+
+#[cfg(all(test, unix))]
+mod node_bank_policy_tests;

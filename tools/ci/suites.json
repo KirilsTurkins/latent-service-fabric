@@ -1308,7 +1308,8 @@
         "durable::worker::node_memory_tests::live::activation_audit_custody_never_moves_to_equal_foreign_budget_or_persistent_node_history",
         "durable::worker::node_memory_tests::live::funded_observation_capacity_refusal_preserves_original_state_and_lossy_drop_counter",
         "durable::worker::node_memory_tests::live::funded_pending_read_only_views_share_actual_graph_through_teardown_and_last_clone",
-        "durable::worker::run::tests::ack_admission_refusal_repairs_original_pending_finish_and_actual_abandon_drains"
+        "durable::worker::run::tests::ack_admission_refusal_repairs_original_pending_finish_and_actual_abandon_drains",
+        "durable::worker::node_bank_policy_tests::original_node_bank_keeps_its_ceiling_across_derived_journal_policies_and_prebirth_refusal"
       ],
       "expectedIgnored": [],
       "id": "latent-audit.lib.latent-audit",

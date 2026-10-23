@@ -62,6 +62,7 @@ pub(super) struct Store {
     _native: NodeMetadataLease,
 }
 impl Store {
+    #[cfg(test)]
     pub fn open(path: &Path, limits: AuditLimits) -> Result<Self> {
         Self::open_with_metadata(path, limits, NodeMetadataLease::default(), false)
     }
