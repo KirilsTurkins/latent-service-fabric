@@ -15,9 +15,11 @@ use std::sync::{
 };
 
 pub(in crate::broker) mod native_backing;
+pub(in crate::broker) mod native_handle;
 mod shared;
 pub(in crate::broker) type SessionCoreOwner = shared::Shared<SessionCore>;
 pub(in crate::broker) type StatsOwner = shared::Shared<Stats>;
+pub(in crate::broker) type HandleEntryOwner = shared::Shared<HandleEntry>;
 
 mod pending;
 pub(super) use pending::PendingBinding;
@@ -87,9 +89,11 @@ pub(super) struct HandleEntry {
     _metadata: Charge,
     _slot: Charge,
     lifetime: HandleLifetime,
+    // All owned resource text drops before this original payload refund.
+    _native_owned: Option<latent_core::HostMemoryReservation>,
 }
 pub(super) struct SessionState {
-    pub slots: Vec<Option<Arc<HandleEntry>>>,
+    pub slots: Vec<Option<HandleEntryOwner>>,
 }
 impl SessionCore {
     pub(super) fn observe_diagnostic(
@@ -338,7 +342,7 @@ impl ActivationCapabilityBroker {
             4096 + size_of::<super::metrics::SessionUsage>()
                 + size_of::<super::network::NetworkUsage>()
                 + self.inner.limits.maximum_handles_per_session
-                    * std::mem::size_of::<Option<Arc<HandleEntry>>>(),
+                    * std::mem::size_of::<Option<HandleEntryOwner>>(),
         )?;
         let stats_metadata = self.inner.counters.acquire(Kind::Metadata, 512)?;
         // Complete original-memory preparation before either Arc, identity
@@ -654,11 +658,12 @@ impl CapabilitySession {
         let charge = self.core.owner.counters.acquire(Kind::Handle, 1)?;
         let metadata = self.core.owner.counters.acquire(Kind::Metadata, 8192)?;
         let decision = self.core.decision(index, operation, resource, 0, 0)?;
+        let native = native_handle::Prepared::reserve(&self.core.budget, operation, resource)?;
         let id = GuestCapabilityHandle {
             slot: u16::try_from(slot).map_err(|_| capacity())?,
             incarnation: next_incarnation()?,
         };
-        let row = Arc::new(HandleEntry {
+        let row = native.allocate(HandleEntry {
             id,
             binding: index,
             operation: checked_text(operation)?,
@@ -669,6 +674,7 @@ impl CapabilitySession {
                 stats: self.core.stats.clone(),
                 counted: AtomicBool::new(false),
             },
+            _native_owned: None,
         });
         self.core.plan.with_routes(&mut || {
             self.core.owner.policies.with_current_dependencies(
@@ -678,7 +684,7 @@ impl CapabilitySession {
                     self.core.check()?;
                     row.lifetime.counted.store(true, Ordering::Release);
                     self.core.stats.handles.fetch_add(1, Ordering::AcqRel);
-                    state.slots[slot] = Some(Arc::clone(&row));
+                    state.slots[slot] = Some(row.clone());
                     Ok(())
                 },
             )
@@ -712,7 +718,7 @@ impl CapabilitySession {
     pub(super) fn row(
         &self,
         handle: GuestCapabilityHandle,
-    ) -> Result<Arc<HandleEntry>, PlatformError> {
+    ) -> Result<HandleEntryOwner, PlatformError> {
         let state = self.core.state.try_lock().map_err(|_| busy())?;
         self.core.check()?;
         state

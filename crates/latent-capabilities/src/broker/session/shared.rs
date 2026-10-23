@@ -31,7 +31,7 @@ impl Drop for Billing {
     }
 }
 
-// Only SessionCore and Stats are shipping payloads.
+// Only SessionCore, Stats and HandleEntry are shipping payloads.
 // Field order is essential: each physical Arc/Weak drops before its billing
 // clone. Weak owns header capacity, never a strong reference to the payload.
 #[derive(Debug)]
@@ -101,7 +101,7 @@ impl<T> Shared<T> {
 }
 impl<T> Prepared<T> {
     pub(in crate::broker) fn allocate(self, value: T) -> Shared<T> {
-        // Legacy profiles retain their original two payload Arcs; no auxiliary
+        // Legacy profiles retain their original payload Arc; no auxiliary
         // billing allocation or native reservation is invented for them.
         let billing = Billing(
             self.allocation

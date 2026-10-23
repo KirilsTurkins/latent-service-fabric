@@ -170,8 +170,13 @@ fn original_session_native_real_provider_call_keeps_closed_session_backing_until
     let (request, control) =
         super::resource_table_memory::selected(&fixture, BudgetProfile::Phase3);
     let session = fixture.session(&request, &control);
-    let native_bytes = control.budget.host_memory_bytes();
+    let native_before_handle = control.budget.host_memory_bytes();
     let handle = session.bind(CAP, "read", resource()).unwrap();
+    let native_bytes = control.budget.host_memory_bytes();
+    assert_eq!(
+        native_bytes,
+        native_before_handle + super::handle_native_memory::row_bytes()
+    );
     let mut call = session
         .dispatch(handle, "read", resource(), b"input", output(), |call| call)
         .unwrap();
@@ -180,7 +185,7 @@ fn original_session_native_real_provider_call_keeps_closed_session_backing_until
     assert!(!observer.is_quiescent());
     assert_eq!(observer.live_calls(), 1);
     assert_eq!(fixture.broker.snapshot().sessions, 1);
-    assert_eq!(control.budget.host_memory_bytes(), native_bytes);
+    assert_eq!(control.budget.host_memory_bytes(), native_bytes + 5 + 64);
     assert_eq!(
         call.recheck_authority().unwrap_err().code,
         PlatformErrorCode::Cancelled
@@ -204,8 +209,13 @@ fn original_session_native_real_provider_result_keeps_original_owner_after_scope
     let (request, control) =
         super::resource_table_memory::selected(&fixture, BudgetProfile::Phase3);
     let session = fixture.session(&request, &control);
-    let native_bytes = control.budget.host_memory_bytes();
+    let native_before_handle = control.budget.host_memory_bytes();
     let handle = session.bind(CAP, "read", resource()).unwrap();
+    let native_bytes = control.budget.host_memory_bytes();
+    assert_eq!(
+        native_bytes,
+        native_before_handle + super::handle_native_memory::row_bytes()
+    );
     let response = session
         .dispatch(handle, "read", resource(), b"input", output(), |call| {
             call.complete(b"retained")
@@ -217,7 +227,7 @@ fn original_session_native_real_provider_result_keeps_original_owner_after_scope
     assert_eq!(response.bytes(), b"retained");
     assert_eq!(observer.retained_results(), 1);
     assert!(!observer.is_quiescent());
-    assert_eq!(control.budget.host_memory_bytes(), native_bytes);
+    assert_eq!(control.budget.host_memory_bytes(), native_bytes + 8 + 64);
     drop(observer);
     std::thread::spawn(move || drop(response)).join().unwrap();
     assert_eq!(fixture.broker.snapshot().sessions, 0);
