@@ -1,8 +1,11 @@
 # Original final-FD custody and late Root collection
 
 This source extends the constructor-only Root collector to an actual final FD
-release while its original children are still retiring. It supplies no new
-Linux execution result, native quota refund or production selection.
+release while its original children are still retiring. The
+[2026-10-24 receipt](evidence/kernel-late-fd-root-physical-return-2026-10-24.json)
+records actual Linux execution of the successful READY-before-close case.
+Native quota refund, fresh/no-BEGIN or failed-birth reclamation, and production
+selection remain unqualified.
 
 After the existing FD close and cache scans finish, the actual file and its
 immutable credential authenticate a one-way `factory.opened` transition from
@@ -34,7 +37,7 @@ authenticate whole parent identities and retain exact inverse projections.
 They do not execute Linux. The predecessor's terminal guards remain required;
 fresh/no-BEGIN and unknown failed births do not gain a reclamation shortcut.
 
-The prepared owning programme links one image and boots it twice, each with a
+The owning programme linked one image and booted it twice, each with a
 90-second limit inside the original 180-second aggregate VM envelope. The old
 fast mode and parser remain required. Late mode must observe a typed live
 Request at actual handoff, then the shared physical return and distinct outside
@@ -50,6 +53,24 @@ The second static init image also runs 22 finite controls through the exact
 same pure C parser leaf on the hosted builder before any guest setup. That
 explicit control entry has no device, mount, reboot or guest failure path.
 Seven new UART/source controller tests preserve raw identities and refusal
-cases. No local compiler/kernel/VM was run and no new actual campaign result
-is claimed here. The compiled tree's original printk implementation is pinned
-and rechecked after the build.
+cases. The compiled tree's original printk implementation was pinned and
+rechecked after the build. No local compiler/kernel/VM was run.
+
+[Owning run 40031894507](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40031894507/job/120681892795)
+passed at source `7baad1341327ccd36c625e3e545faf0f1306a78e`: all 60 source and
+observation controls and all 22 actual compiled parser cases passed. The full
+link took 708.633 seconds; fast and late fresh boots took 3.495 and 3.387 seconds.
+The fast boot retained the actual child-retired/two-live-Root snapshot before
+physical return. The late boot observed READY, a typed LIVE Request at FD
+handoff, and physical return through original kthreadd; it supplies no late
+child snapshot. All 45 artifact members passed CRC verification, all 288 bound
+Git materials matched, and all 13 owned commands completed with zero exit and
+clean descendants. Five reviewed derived files changed and 320 retained their
+previous qualified identities.
+
+The [already-retired Root receipt](evidence/kernel-constructor-root-physical-return-2026-10-23.json)
+and [child-only receipt](evidence/kernel-constructor-vm-child-retirement-2026-10-23.json)
+retain their original scopes and failure histories. This finite late-close
+result advances issue #738 partially; native integration, whole allocation and
+bootstrap bounds, application/device-used or general cancellation reclamation,
+and production enablement remain open.
