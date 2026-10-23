@@ -18,7 +18,7 @@ on:
         description: Retained runtime only, or the original fresh compiler programme
         type: choice
         required: true
-        default: retained
+        default: fresh
         options: [retained, fresh]
 permissions:
   contents: read
@@ -28,7 +28,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   gc-roots:
-    if: github.event_name == 'workflow_dispatch' && inputs.programme == 'fresh'
+    if: github.event_name == 'push' || inputs.programme == 'fresh'
     name: Two observed collections with both Java continuations retaining roots
     runs-on: ubuntu-24.04
     timeout-minutes: 45
@@ -111,7 +111,7 @@ jobs:
             ${{ runner.temp }}/java-gc-roots/node/foreign-controls/**
   retained-gc-roots:
     name: Four signed cases and two denials on the authenticated a5c component
-    if: github.event_name == 'push' || inputs.programme == 'retained'
+    if: github.event_name == 'workflow_dispatch' && inputs.programme == 'retained'
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     env:

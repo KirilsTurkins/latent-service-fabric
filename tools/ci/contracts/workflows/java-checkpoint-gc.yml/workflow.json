@@ -26,7 +26,7 @@
       "workflow_dispatch": {
         "inputs": {
           "programme": {
-            "default": "retained",
+            "default": "fresh",
             "description": "Retained runtime only, or the original fresh compiler programme",
             "options": [
               "retained",
@@ -47,7 +47,7 @@
     "gc-roots",
     "retained-gc-roots"
   ],
-  "reviewReason": "Authenticate and run the unchanged GC programme on its retained a5c component; no guest/native compilation.",
+  "reviewReason": "Run the reviewed failure-only GC fixture diagnosis as one fresh target; retain the strict historical component reader as manual only.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-checkpoint-gc.yml"
 }

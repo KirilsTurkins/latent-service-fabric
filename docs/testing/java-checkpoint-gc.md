@@ -49,12 +49,27 @@ rejected TeaVM's actual `TEAVM_FIELD(..., TeaVM_Reference, object) = NULL` spell
 no signed runtime case ran. That failure stays retained. The corrected reader
 continues to require reachable mark/sweep and weak-field clearing.
 
-The default continuation authenticates the original whole 106-member archive,
+The retained-only continuation authenticates the original whole 106-member archive,
 302 original Git preimages, unchanged compiled inputs and separate current
 controller identities. It restores only five missing package files against the
 original package-input digests: three WIT files generated from the unchanged
 source template, and two resource files extracted from the same pinned Commons
 JAR. It runs the unchanged four signed cases and two denials, with zero guest or
-native compilations. The original fresh programme remains an explicit manual
-selection. Reference/control results retain their original failed-job origin;
+native compilations. The retained selection keeps its exact compiled-input/source bridge and refuses
+changed inputs; it cannot relabel this historical component as a newer build. Reference/control results retain their original failed-job origin;
 only new signed results can establish the component's collection witnesses.
+
+
+The retained-only attempt (`6b72fccc`, run `39966347038`) passed authentication,
+package recovery and both grant denials, then its first GC call trapped after
+about five seconds. No signed GC case passed. A failed root check could leave the
+accepted child waiting; a child initializer exception could leave Commons'
+factory claimed before its result was published, masking the original error.
+The next fresh fixture records finite collector/victim/own-root phases and
+completes only these failure paths: abort/notify/join for a failed root, or a
+recorded child failure followed by normal null publication and child settlement.
+The existing child-failure guard rejects that null before any result use or
+success. Collection flags, weak-clear witnesses, success strings and budgets
+remain unchanged. This is diagnostic error completion, with no underlying GC
+runtime fix claimed. The push-owned programme now selects the fresh compiler
+job (one maintained unsigned warm-up plus one target; zero native builds).
