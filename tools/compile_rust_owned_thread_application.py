@@ -2,7 +2,8 @@
 
 The production component selector remains closed. This explicit compiler-only
 programme reuses its original capture, Prepared, isolation and approval pieces;
-it never writes BUILD-COMPLETE or packages, signs, invokes or enables a runtime.
+it retains compiler/source proof output without writing BUILD-COMPLETE or
+signing, invoking or enabling a runtime.
 """
 from __future__ import annotations
 
@@ -377,6 +378,9 @@ def run(output: Path, rust_bin: Path, owned_sysroot: Path, context_tool: Path, *
                     and receipt['privateExecutorGraphAuthenticated'] is False
                     and receipt['canonicalAbiBodiesAuthenticated'] is False
                     and receipt['standardRuntimeQualified'] is False, 'rust-thread-app-source-only-receipt')
+            record['stage'] = 'native-original-catalogue-and-normal-component-proof'
+            record['nativeNormalSourceProof'] = native_normal_proof(
+                commands, context_tool, paths['wasm-tools'], output)
             closure.check_unchanged()
             executable_outputs.check_unchanged()
             guard.check_unchanged(environment)
@@ -397,7 +401,7 @@ def run(output: Path, rust_bin: Path, owned_sysroot: Path, context_tool: Path, *
                     and inventory({name: read_file(builder.ROOT / name) for name in RECIPE}) == recipe
                     and time.monotonic() < deadline,
                     'rust-thread-app-final-source-or-deadline')
-            record.update(status='observed-core-only-graph-unqualified', stage='complete',
+            record.update(status='observed-authenticated-component-source-runtime-unqualified', stage='complete',
                           commands=commands.records, actualApplicationCoreCompiled=True)
             write_json(output / 'observation.json', record)
             return record
@@ -406,3 +410,48 @@ def run(output: Path, rust_bin: Path, owned_sysroot: Path, context_tool: Path, *
                       commands=[] if commands is None else commands.records)
         write_json(output / 'FAILED.json', record)
         raise
+
+
+def native_normal_proof(commands, context_tool, wasm_tools, output):
+    """Compare independent source/native derivations, then authenticate normal output.
+
+    This finite compiler diagnostic cannot select the closed normal builder or
+    turn source authentication into a signed ordinary-guest execution claim.
+    """
+    original = read_file(output / 'raw-core.wasm', MAX_CORE)
+    commands.run('native-original-catalogue', context_tool,
+                 '--authenticated-original-core', output / 'raw-core.wasm', digest(original),
+                 output / 'native-original')
+    source_adapted = component.adapt_original_public_wit(read_file(output / 'derived/core.wasm', MAX_CORE))
+    (output / 'source-adapted-core.wasm').write_bytes(source_adapted)
+    require(read_file(output / 'native-original/core.wasm', MAX_CORE) == source_adapted,
+            'rust-thread-app-independent-native-derivation-drift')
+    commands.run('normal-component-encode', wasm_tools, 'component', 'new',
+                 output / 'native-original/core.wasm', '-o', output / 'normal-component.wasm')
+    commands.run('native-normal-component-proof', context_tool,
+                 '--authenticated-normal-component', output / 'raw-core.wasm', digest(original),
+                 output / 'normal-component.wasm', output / 'native-normal')
+    commands.run('validate-native-normal-component', wasm_tools, 'validate',
+                 output / 'native-normal/component.wasm',
+                 '--features', 'cm-async,cm-async-stackful,cm-more-async-builtins')
+    receipt = decode_json(read_file(output / 'native-normal/receipt.json'))
+    catalogue = decode_json(read_file(builder.ROOT /
+        'crates/latent-component-threading/src/rust_catalogue/origin.json'))
+    result = file_identity(output / 'native-normal/component.wasm', 'authenticated-normal-component',
+                           2 * 1024 * 1024)
+    require(receipt['schemaVersion'] == 'latent.rust.authenticated-original-source.v1'
+            and receipt['originalDigest'] == digest(original)
+            and receipt['derivedDigest'] == result['digest']
+            and receipt['catalogueOriginHead'] == catalogue['origin']['head']
+            and receipt['catalogueOriginRecipe'] == catalogue['origin']['sourceRecipeDigest']
+            and receipt['catalogueBodyDigest'] == catalogue['originalBodyImageDigest']
+            and receipt['originalObjectGraphAuthenticated'] is True
+            and receipt['actualComponentGraphAuthenticated'] is True
+            and receipt['canonicalCreationEnabled'] is False
+            and receipt['standardRuntimeQualified'] is False
+            and receipt['schedulingCheckpointsInstalled'] is False,
+            'rust-thread-app-native-normal-source-only-receipt')
+    return {'component': result, 'catalogueOriginHead': receipt['catalogueOriginHead'],
+            'originalObjectGraphAuthenticated': True,
+            'actualComponentGraphAuthenticated': True,
+            'actualGuestExecuted': False, 'standardRuntimeQualified': False}

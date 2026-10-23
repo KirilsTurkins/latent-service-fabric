@@ -75,14 +75,18 @@
         "root::tests::canonical_post_return_keeps_root_context_until_actual_cleanup_returns",
         "root::tests::canonical_cleanup_names_and_actual_exports_are_required",
         "c_abi::tests::c_system_stack_disjoint_reservation_and_zero_context_realloc_scope",
-        "c_abi::tests::c_system_stack_rejects_aliases_and_live_realloc_tls"
+        "c_abi::tests::c_system_stack_rejects_aliases_and_live_realloc_tls",
+        "rust_objects::tests::rust_original_catalogue_checks_complete_bodies_and_every_real_global_import_referent",
+        "rust_objects::tests::rust_original_derivation_closes_private_owner_dispatch_result_area_and_system_failure",
+        "rust_component::tests::rust_normal_component_recomputes_original_graph_and_rejects_envelope_or_main_changes",
+        "rust_component::tests::rust_normal_preimage_never_authorizes_forged_or_duplicate_original_material"
       ],
       "expectedIgnored": [],
       "id": "latent-component-threading.lib.latent-component-threading",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-component-threading/Cargo.toml",
-      "minimumCases": 72,
+      "minimumCases": 76,
       "mode": "libtest",
       "package": "latent-component-threading",
       "platforms": [

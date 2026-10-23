@@ -119,9 +119,16 @@ fn install_stack_accounting(
         // It installs no native-thread provider and creates no extra limit.
         runtime.owned_native_stacks = true;
     }
-    if config.engine.threading_profile
-        == super::model::EngineThreadingProfile::CContext144SyncCooperativeV1
-    {
+    let selected = match config.engine.threading_profile {
+        super::model::EngineThreadingProfile::SingleThreaded => None,
+        super::model::EngineThreadingProfile::CContext144SyncCooperativeV1 => {
+            Some(latent_wasmtime::NativeThreadProfile::CContext144SyncCooperativeV1)
+        }
+        super::model::EngineThreadingProfile::RustContext40SyncCooperativeV1 => {
+            Some(latent_wasmtime::NativeThreadProfile::RustContext40SyncCooperativeV1)
+        }
+    };
+    if let Some(selected) = selected {
         let installation = config
             .providers
             .as_ref()
@@ -132,8 +139,7 @@ fn install_stack_accounting(
         }
         runtime.owned_native_stacks = true;
         runtime.owned_native_threads = true;
-        runtime.native_thread_profile =
-            latent_wasmtime::NativeThreadProfile::CContext144SyncCooperativeV1;
+        runtime.native_thread_profile = selected;
     }
     Ok(())
 }

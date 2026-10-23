@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_host_codec_native.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Authenticate the fixed bytes owner source explicitly before native build after shared imports become lazy",
+  "reviewReason": "Bind the reviewed and actually passed193-control producer to its committed LF bytes; the prior fingerprint described only a Windows CRLF worktree, without changing source or coverage.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "684733c172dd6daf12b611cf80f74564054bf95bc74312f70eedfe4013c58375"
+  "sha256": "165497353226b386a9cc66e198b06e556248b672a91edbdba52c040b56603d5c"
 }

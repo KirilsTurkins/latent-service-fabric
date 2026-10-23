@@ -105,6 +105,9 @@ impl WasmtimeConfig {
                     super::NativeThreadProfile::CContext144SyncCooperativeV1 => {
                         "sync-cooperative-c-abi-v1"
                     }
+                    super::NativeThreadProfile::RustContext40SyncCooperativeV1 => {
+                        "sync-cooperative-rust-abi-v1"
+                    }
                 }
                 .into(),
             );

@@ -843,7 +843,9 @@ jobs:
             1d5062ee63c0d5ff202d47e21793f6fb9bb8a21a \
             597ef2bc0db168d4aee1c2416c38f9a8b9fef9e8 \
             ce8c04a7d9fdf3be79e16b2f9a26803b97a7e3e1 \
-            b606b1402961593dd918722a66fe293bfab9b319
+            b606b1402961593dd918722a66fe293bfab9b319 \
+            c802283a5546620f071bd02ec01c410696893c5b \
+            b422af24d86344ac7abb8b8fa56c3782aab63915
       - name: Install Python validator dependencies
         run: python -m pip install --requirement tools/requirements.lock
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1

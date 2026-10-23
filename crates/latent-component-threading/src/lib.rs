@@ -37,6 +37,8 @@ pub mod c_preimage;
 pub mod c_root;
 pub mod c_template;
 mod component;
+pub mod rust_component;
+pub mod rust_objects;
 pub use component::{CComponentRoutingReceipt, verify_c_component_routing};
 pub use component::{ComponentRoutingReceipt, verify_component_routing};
 

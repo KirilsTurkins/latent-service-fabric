@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/compile_rust_owned_thread_inputs.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Retain exact actual72 source controls after the two reviewed C System-stack cases entered development; no control is skipped and the owning compiler programme remains closed.",
+  "reviewReason": "Retain all76 exact source controls and the complete source-bound async WIT and native original-component verifier inputs",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "d33787520d272226c307564894fc1cd943bcecff2cbb844ae50a67deedd6e15a"
+  "sha256": "94ef135cea2ed9ce3fd6ce706260c90f13fb13ce83ab35ee1c967abe6e120e4e"
 }

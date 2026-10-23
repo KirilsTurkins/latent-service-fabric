@@ -4,6 +4,16 @@
     {
       "boundary": "runtime",
       "expectedCases": [
+        "kernel::native::tests::abandoned_waiter_cannot_drop_running_job_or_late_returned_owner",
+        "kernel::native::tests::cleanup_panic_keeps_original_connection_after_lost_unit_result",
+        "kernel::native::tests::constructor_panic_retains_prepaid_backing_and_closes_real_fd",
+        "kernel::native::tests::exhausted_node_allowance_refuses_before_any_open",
+        "kernel::native::tests::fixed_wire_rejects_wrong_expiry_error_and_unknown_phase",
+        "kernel::native::tests::original_deadline_does_not_refund_a_blocked_native_constructor",
+        "kernel::native::tests::possible_failed_open_retains_original_node_charge",
+        "kernel::native::tests::postopen_failure_closes_real_fd_without_refunding_backing",
+        "kernel::native::tests::ready_owner_drop_closes_on_original_worker_and_retains_capacity",
+        "kernel::native::tests::unavailable_cleanup_slot_keeps_fd_and_backing_without_inline_close",
         "tests::authority::genuine_http_only_authority_denies_opaque_bytes_before_dns_and_contact",
         "tests::currentness::a_policy_change_while_readable_is_pending_is_checked_before_syscall",
         "tests::currentness::provider_retirement_wakes_pending_read_without_early_refund",
@@ -40,7 +50,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-streams/Cargo.toml",
-      "minimumCases": 30,
+      "minimumCases": 40,
       "mode": "libtest",
       "package": "latent-streams",
       "platforms": [
