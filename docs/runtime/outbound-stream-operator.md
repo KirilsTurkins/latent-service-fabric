@@ -191,6 +191,18 @@ current generation and actual startup provider descriptors; previous status
 lines are historical evidence, not confirmation of the new process's catalog.
 Ordinary default builds allocate no reload owner and register no stream signals.
 
+The [source-bound packaging observation](../testing/evidence/stream-operator-packaging-2026-10-23.json)
+records the actual Linux and Windows frozen frontend checks on source
+`380c7df8f26ec3f0f6e54d616e8d08b80cb5cc73`: Linux passed all 38 source controls;
+Windows passed 37 and retained one existing POSIX-only skip. Both actual
+packaged preparation/refusal smoke cases passed outside the checkout, with the
+explicit Python process double and no real `latentd` or provider readiness claim.
+The first Linux native-library inventory failure remains recorded; the corrected
+inventory accepts only original pinned-wheel RECORD hash/size members, preserving
+unknown-owner refusal. Both complete artifacts, file inventories and 105 helper
+source/schema materials per platform were independently authenticated. These
+observations do not enable production or complete any whole #739 criterion.
+
 Host TLS credential rotation, actual signed standard-library workflows, and the
 complete operator acceptance matrix remain separate required observations for
 [#739](https://github.com/KirilsTurkins/latent-service-fabric/issues/739).
