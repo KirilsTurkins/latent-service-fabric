@@ -86,6 +86,8 @@ class CheckpointContext(unittest.TestCase):
         control = probe.CONTROL.read_text()
         self.assertIn('new PreciseDependencyAnalyzer(', control)
         self.assertIn('agent.submitMethod(bridge, program(HELPER));', control)
+        self.assertIn('for (String name : inputs.source.getClassNames()) analyzer.linkClass(name);', control)
+        self.assertIn('!agent.getReachableMethods().contains(CHECKPOINT)', control)
         self.assertLess(control.index('analyzer.processDependencies();'),
             control.index('new AsyncMethodFinder(analyzer.getCallGraph(), analyzer).find(linked);'))
         self.assertIn('getVirtualCallSite()', control)

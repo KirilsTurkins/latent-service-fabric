@@ -241,6 +241,9 @@ public final class CheckpointContextControl {
         boolean completed;
         LateBody(MethodReference bridge) { this.bridge = bridge; }
         @Override public void completing(DependencyAgent agent) {
+            // Classes must already be linked, but these method edges must be new.
+            require(!agent.getReachableMethods().contains(HELPER)
+                    && !agent.getReachableMethods().contains(CHECKPOINT), "real-edges-not-reached-before-completion");
             // Real supported completion-time replacement adds an actual analyzer edge.
             agent.submitMethod(bridge, program(HELPER));
             completed = true;
@@ -263,6 +266,10 @@ public final class CheckpointContextControl {
         var late = new LateBody(bridge);
         analyzer.addDependencyListener(late);
         analyzer.initDependencies();
+        // The pinned analyzer forbids first linking a class during completing().
+        // Register only these five fixture owners; do not reach helper/checkpoint methods.
+        require(inputs.source.getClassNames().size() == 5, "finite-late-fixture-classes");
+        for (String name : inputs.source.getClassNames()) analyzer.linkClass(name);
         analyzer.linkMethod(initializer).use();
         analyzer.processDependencies();
         require(late.completed && diagnostics.getSevereProblems().isEmpty(), "real-completion-analysis-finished");
