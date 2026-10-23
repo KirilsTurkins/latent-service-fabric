@@ -11,6 +11,77 @@ from collections import deque
 from tools import rust_thread_object_graph as graph
 
 
+def observe_system_panic_trap(core: bytes, original_graph: dict, post_export: str,
+                              realloc_export: str) -> dict:
+    """Bind one original core panic_fmt and prove the remaining System closure.
+
+    This source observation does not authenticate a host catalogue. Runtime
+    consumers must recompute from their immutable original expectations; guest
+    indices, symbols, hashes and this JSON never select an admitted body.
+    """
+    try:
+        graph.require(original_graph['coreDigest'] == graph.digest(core)
+                      and not original_graph['failures'] and not original_graph['unresolvedReferents']
+                      and not original_graph['instructionDecodeFailures'],
+                      'rust-system-panic-original-graph-not-closed')
+        signatures, imports, bodies = graph.code(core)
+        rows = [row for row in original_graph['matchedBindings']
+                if row['kind'] == 0 and row['bodyMatched']
+                and row['object'].split('/')[0].startswith('libcore-')
+                and row['object'].split('/')[0].endswith('.rlib')
+                and row['originalSymbol'].endswith('_4core9panicking9panic_fmt')]
+        graph.require(len(rows) == 1, 'rust-system-panic-original-source-binding')
+        selected = rows[0]
+        function = selected['actual']
+        graph.require(len(imports) <= function < len(signatures)
+                      and signatures[function] == ((0x7f, 0x7f, 0x7f), ()),
+                      'rust-system-panic-original-signature')
+        body = bodies[function - len(imports)]
+        # The authentic object body has real relocation spans. The complete
+        # original graph has already checked each final referent; its object
+        # hash must not be mistaken for the relocated linked body's hash.
+        graph.require(len(selected['sourceBodyDigest']) == 64
+                      and selected['sourceBytes'] == len(body),
+                      'rust-system-panic-original-body-binding')
+        _, _, exports = graph.memory_table(core)
+        roots = [exports[name] for name in (post_export, realloc_export)]
+        graph.require(all(kind == 0 for kind, _ in roots), 'rust-system-panic-canonical-export')
+        lifecycle = {index for name, (kind, index) in exports.items()
+                     if kind == 0 and name.startswith('__lsf_rust_')}
+        pending = [index for _, index in roots]
+        visited, operators = set(), 0
+        while pending:
+            index = pending.pop()
+            if index in visited:
+                continue
+            graph.require(len(visited) < graph.MAX_NODES, 'rust-system-panic-function-bound')
+            visited.add(index)
+            if index == function:
+                continue  # Only the installed, exact System trap stops traversal.
+            graph.require(len(imports) <= index < len(signatures) and index not in lifecycle,
+                          'rust-system-panic-remaining-import-or-lifecycle')
+            for _, op, args in graph.bounded_instructions(
+                    bodies[index - len(imports)], graph.MAX_RELOCATIONS - operators):
+                operators += 1
+                graph.require(op not in (17, 18, 19, 20, 21, 210),
+                              'rust-system-panic-remaining-indirect-or-callback')
+                if op == 16:
+                    pending.append(args[0])
+                    graph.require(len(pending) <= graph.MAX_RELOCATIONS,
+                                  'rust-system-panic-worklist-bound')
+        graph.require(function in visited, 'rust-system-panic-not-in-canonical-closure')
+        return {'schemaVersion': 'latent.rust.canonical-system-panic-source.v1',
+                'coreDigest': graph.digest(core), 'originalFunction': function,
+                'originalSymbol': selected['originalSymbol'], 'originalObject': selected['object'],
+                'originalObjectBodyDigest': 'sha256:' + selected['sourceBodyDigest'],
+                'linkedOriginalBodyDigest': graph.digest(body), 'remainingClosureFunctions': len(visited),
+                'remainingClosureOperators': operators, 'failureIsTrapNotCleanup': True,
+                'trustedSourceCatalogueAuthenticated': False, 'systemPanicTrapInstalled': False,
+                'canonicalAbiBodiesAuthenticated': False, 'actualGuestExecuted': False}
+    except (IndexError, KeyError, TypeError, AttributeError) as error:
+        raise ValueError('rust-system-panic-original-binding-or-shape') from error
+
+
 def select_wit_result(wit: dict, world: str, public_export: str) -> dict:
     """Bind the finite layout to one real parsed WIT world/public function."""
     try:

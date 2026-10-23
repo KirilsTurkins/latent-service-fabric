@@ -352,17 +352,28 @@ def run(output: Path, rust_bin: Path, owned_sysroot: Path, context_tool: Path, *
             result_observation = results.observe_canonical_result(
                 core, fixture.PUBLIC, fixture.POST, original_graph, source_result)
             write_json(output / 'canonical-result-source.json', result_observation)
+            panic_observation = results.observe_system_panic_trap(
+                core, original_graph, fixture.POST, 'cabi_realloc')
+            _, sealed_imports, sealed_bodies = objects.code(sealed)
+            require(digest(sealed_bodies[panic_observation['originalFunction'] - len(sealed_imports)])
+                    == panic_observation['linkedOriginalBodyDigest'], 'rust-thread-app-panic-body-sealing-drift')
+            write_json(output / 'canonical-system-panic-source.json', panic_observation)
             record['stage'] = 'actual-guarded-owned-core-transform'
-            commands.run('ordinary-owned-core', context_tool, '--guarded-ordinary-core',
+            commands.run('ordinary-owned-core', context_tool, '--guarded-ordinary-core-panic',
                 output / 'callback-isolated-core.wasm', digest(sealed), fixture.PUBLIC, fixture.POST,
                 'cabi_realloc', str(result_observation['staticResultArea']),
-                str(result_observation['originalHeapLow']), output / 'derived')
+                str(result_observation['originalHeapLow']),
+                str(panic_observation['originalFunction']), panic_observation['linkedOriginalBodyDigest'],
+                output / 'derived')
             commands.run('validate-derived-core', paths['wasm-tools'], 'validate', output / 'derived/core.wasm',
                 '--features', 'cm-async,cm-async-stackful,cm-more-async-builtins')
             receipt = decode_json(read_file(output / 'derived/receipt.json'))
             require(receipt['originalDigest'] == digest(sealed)
                     and receipt['canonicalResultGuardInstalled'] is True
                     and receipt['canonicalStaticResultArea'] == result_observation['staticResultArea']
+                    and receipt['canonicalSystemPanicOriginalFunction'] == panic_observation['originalFunction']
+                    and receipt['canonicalSystemPanicTrapFunction'] == panic_observation['originalFunction'] +
+                        int(receipt['nativeAdmissionImportInserted'])
                     and receipt['privateExecutorGraphAuthenticated'] is False
                     and receipt['canonicalAbiBodiesAuthenticated'] is False
                     and receipt['standardRuntimeQualified'] is False, 'rust-thread-app-source-only-receipt')

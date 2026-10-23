@@ -39,6 +39,36 @@ def fixture(*, area=512, length_offset=8, deallocator=2):
 
 
 class CanonicalResults(unittest.TestCase):
+    def test_original_panic_binding_never_exempts_other_import_or_callback_paths(self):
+        from tools import rust_thread_guard_controls as guard_controls
+        # Encoded mechanism fixture only. This is not an authentic std object
+        # or host catalogue; every resulting qualification flag stays false.
+        core = guard_controls.fixture()
+        _, imports, bodies = graph.code(core)
+        panic = bodies[12-len(imports)]
+        original = {'coreDigest': graph.digest(core), 'failures': [], 'unresolvedReferents': [],
+                    'instructionDecodeFailures': [], 'matchedBindings': [{
+                        'kind': 0, 'bodyMatched': True, 'actual': 12,
+                        'object': 'libcore-encoded-fixture.rlib/control.o',
+                        'originalSymbol': 'encoded_fixture_4core9panicking9panic_fmt',
+                        'sourceBodyDigest': graph.digest(panic)[7:], 'sourceBytes': len(panic)}]}
+        observed = result.observe_system_panic_trap(core, original, guard_controls.POST, 'cabi_realloc')
+        self.assertEqual(observed['originalFunction'], 12)
+        self.assertEqual(observed['linkedOriginalBodyDigest'], graph.digest(panic))
+        self.assertFalse(observed['trustedSourceCatalogueAuthenticated'])
+        for field, value, reason in [('actual', 13, 'original-signature'),
+                                     ('sourceBytes', len(panic)+1, 'original-body-binding'),
+                                     ('object', 'untrusted-other.rlib/control.o', 'original-source-binding')]:
+            changed = copy.deepcopy(original)
+            changed['matchedBindings'][0][field] = value
+            with self.subTest(field=field), self.assertRaisesRegex(ValueError, reason):
+                result.observe_system_panic_trap(core, changed, guard_controls.POST, 'cabi_realloc')
+        # A direct context import outside the exact panic body still refuses.
+        changed = core.replace(b'\0\x20\0\x1a\x0b', b'\0\x10\0\x1a\x0b', 1)
+        changed_graph = {**original, 'coreDigest': graph.digest(changed)}
+        with self.assertRaisesRegex(ValueError, 'remaining-import-or-lifecycle'):
+            result.observe_system_panic_trap(changed, changed_graph, guard_controls.POST, 'cabi_realloc')
+
     def test_structured_exits_require_one_static_area_and_reject_branch_or_dynamic_bypass(self):
         constant = b'\x41' + paths.signed(512)
         body = b'\0\x41\x01\x04\x40' + constant + b'\x0f\x05' + constant + b'\x0f\x0b\0\x0b'

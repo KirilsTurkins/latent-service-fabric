@@ -1,9 +1,9 @@
 //! Explicit owned Rust compiler mechanism; no runtime feature is enabled here.
 use latent_component_threading::{
-    CanonicalResultGuard, MAX_BYTES, prepare_owned_public_root,
+    CanonicalResultGuard, CanonicalSystemPanicTrap, MAX_BYTES, prepare_owned_public_root,
     transform_owned_canonical_root_bootstrap, transform_owned_guarded_canonical_root_bootstrap,
-    transform_owned_root_bootstrap, transform_owned_thread_admission, transform_owned_thread_entry,
-    verify_component_routing,
+    transform_owned_guarded_canonical_root_with_system_panic_trap, transform_owned_root_bootstrap,
+    transform_owned_thread_admission, transform_owned_thread_entry, verify_component_routing,
 };
 use std::{
     fs,
@@ -47,15 +47,87 @@ fn write(path: &Path, raw: &[u8]) -> Result<(), Box<dyn std::error::Error>> {
         .write_all(raw)?;
     Ok(())
 }
-fn ordinary(args: &[String], guarded: bool) -> Result<(), Box<dyn std::error::Error>> {
-    if args.len() != if guarded { 9 } else { 7 } {
+fn function_body_digest(raw: &[u8], selected: u32) -> Result<[u8; 32], Box<dyn std::error::Error>> {
+    let mut index = 0;
+    for payload in wasmparser::Parser::new(0).parse_all(raw) {
+        match payload? {
+            wasmparser::Payload::ImportSection(reader) => {
+                for import in reader.into_imports() {
+                    if matches!(
+                        import?.ty,
+                        wasmparser::TypeRef::Func(_) | wasmparser::TypeRef::FuncExact(_)
+                    ) {
+                        index += 1;
+                    }
+                }
+            }
+            wasmparser::Payload::CodeSectionEntry(body) => {
+                if index == selected {
+                    use sha2::Digest;
+                    let range = body.range();
+                    return Ok(sha2::Sha256::digest(
+                        raw.get(range.start as usize..range.end as usize)
+                            .ok_or("panic-body-range")?,
+                    )
+                    .into());
+                }
+                index += 1;
+            }
+            _ => {}
+        }
+    }
+    Err("panic-body-defined-function-missing".into())
+}
+fn ordinary(args: &[String], guarded: bool, panic: bool) -> Result<(), Box<dyn std::error::Error>> {
+    if args.len()
+        != if panic {
+            11
+        } else if guarded {
+            9
+        } else {
+            7
+        }
+    {
         return Err("usage: rust-context --ordinary-core INPUT sha256:DIGEST PUBLIC_EXPORT POST_RETURN_OR_DASH REALLOC_OR_DASH FRESH_OUTPUT | --guarded-ordinary-core INPUT sha256:DIGEST PUBLIC_EXPORT POST_RETURN REALLOC STATIC_AREA ORIGINAL_HEAP_LOW FRESH_OUTPUT".into());
     }
     let expected = preimage(&args[2])?;
     let raw = read(&args[1])?;
+    let original_panic = if panic {
+        let index = args[8].parse::<u32>()?;
+        if function_body_digest(&raw, index)? != preimage(&args[9])? {
+            return Err("panic-original-body-preimage".into());
+        }
+        Some(index)
+    } else {
+        None
+    };
     let (prepared, public) = prepare_owned_public_root(&raw, expected, &args[3])?;
     let (threaded, thread) = transform_owned_thread_entry(&prepared, public.derived_digest)?;
-    let (rooted, root) = if guarded {
+    let (rooted, root) = if let Some(original_index) = original_panic {
+        // Public preparation inserts at most this one function import. Thread
+        // lowering appends helpers and preserves all existing function indices.
+        let function = original_index
+            .checked_add(u32::from(
+                public.native_import_inserted && original_index >= public.native_admission_import,
+            ))
+            .ok_or("panic-function-remap-overflow")?;
+        let body_digest = function_body_digest(&threaded, function)?;
+        transform_owned_guarded_canonical_root_with_system_panic_trap(
+            &threaded,
+            thread.stack.derived_digest,
+            &thread,
+            &args[4],
+            &args[5],
+            CanonicalResultGuard {
+                static_area: args[6].parse()?,
+                original_heap_low: args[7].parse()?,
+            },
+            CanonicalSystemPanicTrap {
+                function,
+                body_digest,
+            },
+        )?
+    } else if guarded {
         transform_owned_guarded_canonical_root_bootstrap(
             &threaded,
             thread.stack.derived_digest,
@@ -91,6 +163,7 @@ fn ordinary(args: &[String], guarded: bool) -> Result<(), Box<dyn std::error::Er
             "  \"canonicalSystemStackLow\":{},\n  \"canonicalSystemStackHigh\":{},\n",
             "  \"canonicalSystemScopeGlobal\":{},\n  \"canonicalSystemClosureFunctions\":{},\n",
             "  \"canonicalStaticResultArea\":{},\n  \"canonicalResultGuardInstalled\":{},\n",
+            "  \"canonicalSystemPanicTrapFunction\":{},\n  \"canonicalSystemPanicOriginalFunction\":{},\n",
             "  \"canonicalResultAreaAuthenticated\":false,\n",
             "  \"privateExecutorGraphAuthenticated\":false,\n",
             "  \"canonicalAbiBodiesAuthenticated\":false,\n",
@@ -117,22 +190,38 @@ fn ordinary(args: &[String], guarded: bool) -> Result<(), Box<dyn std::error::Er
         root.canonical_system_closure_functions,
         number(root.canonical_result_area),
         root.canonical_result_guard_installed,
+        number(root.canonical_system_panic_trap),
+        number(original_panic),
     );
-    let output = Path::new(&args[if guarded { 8 } else { 6 }]);
+    let output = Path::new(
+        &args[if panic {
+            10
+        } else if guarded {
+            8
+        } else {
+            6
+        }],
+    );
     fs::create_dir(output)?;
     write(&output.join("core.wasm"), &derived)?;
     write(&output.join("receipt.json"), json.as_bytes())
 }
 fn run() -> Result<(), Box<dyn std::error::Error>> {
-    let args: Vec<_> = std::env::args().skip(1).take(10).collect();
+    let args: Vec<_> = std::env::args().skip(1).take(12).collect();
     if args.first().is_some_and(|value| value == "--ordinary-core") {
-        return ordinary(&args, false);
+        return ordinary(&args, false, false);
     }
     if args
         .first()
         .is_some_and(|value| value == "--guarded-ordinary-core")
     {
-        return ordinary(&args, true);
+        return ordinary(&args, true, false);
+    }
+    if args
+        .first()
+        .is_some_and(|value| value == "--guarded-ordinary-core-panic")
+    {
+        return ordinary(&args, true, true);
     }
     if args.len() != 3 {
         return Err("usage: rust-context INPUT sha256:DIGEST FRESH_OUTPUT | --verify-component INPUT FRESH_RECEIPT".into());
