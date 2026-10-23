@@ -29,10 +29,11 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          show-progress: false
       - name: Install the repository-pinned Rust toolchain
         run: rustup toolchain install 1.97.1 --profile minimal --component rustfmt --component clippy
-      - name: Prepare and format bounded owner-integration candidates
-        run: python3 .github/audit-lifecycle-refine.py
+      - name: Format bounded first-party files
+        run: python3 .github/audit-lifecycle-candidate.py prepare
       - name: Publish immutable candidate blobs without moving a branch
         env:
           GH_TOKEN: ${{ github.token }}
@@ -43,10 +44,10 @@ jobs:
           set -euo pipefail
           cargo +1.97.1 test -p latent-audit --lib --all-features --locked > "$RUNNER_TEMP/audit-rust.log" 2>&1 || { tail -100 "$RUNNER_TEMP/audit-rust.log"; exit 1; }
           tail -10 "$RUNNER_TEMP/audit-rust.log"
-      - name: Check the audit library with strict Clippy
+      - name: Check the audit library with strict Clippy independently of dependency lints
         shell: bash
         run: |
-          cargo +1.97.1 clippy -p latent-audit --all-targets --all-features --locked -- -D warnings > "$RUNNER_TEMP/audit-clippy.log" 2>&1 || { tail -220 "$RUNNER_TEMP/audit-clippy.log"; exit 1; }
+          cargo +1.97.1 clippy -p latent-audit --no-deps --all-targets --all-features --locked -- -D warnings > "$RUNNER_TEMP/audit-clippy.log" 2>&1 || { tail -240 "$RUNNER_TEMP/audit-clippy.log"; exit 1; }
           tail -8 "$RUNNER_TEMP/audit-clippy.log"
       - name: Exercise maintained static release tooling
         shell: bash

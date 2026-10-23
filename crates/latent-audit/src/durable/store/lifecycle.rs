@@ -3,15 +3,18 @@
 mod model;
 mod rollover;
 mod storage;
-mod transfer;
-#[cfg(all(test, unix))]
+#[cfg(all(test, target_os = "linux"))]
 mod tests;
+mod transfer;
 
 use super::{codec, corrupt, io, AuditLimits, AuditQueryRequest, Mode, Result, Store};
 use latent_core::PlatformErrorCode;
-use std::{path::Path, time::{Duration, Instant}};
 pub(super) use model::EpochLink;
 pub use model::{AuditArchiveCoverage, AuditRolloverReceipt, AuditTransferReceipt};
+use std::{
+    path::Path,
+    time::{Duration, Instant},
+};
 
 /// All maintenance is synchronous and holds the actual filesystem owners until
 /// I/O returns. A deadline does not pretend a blocked physical owner has stopped.
@@ -46,6 +49,10 @@ impl AuditMaintenance {
 
     /// Transfer the oldest local archive into one explicit operator-held target.
     /// Local capacity is released only after the target is durably verified.
+    #[expect(
+        clippy::too_many_arguments,
+        reason = "Stopped-owner transfer requires exact original archive, destination and operation selectors"
+    )]
     pub fn transfer(
         journal: &Path,
         custody: &Path,
@@ -58,8 +65,18 @@ impl AuditMaintenance {
         let deadline = Deadline::new(timeout)?;
         identity(epoch)?;
         identity(operation_id)?;
-        if !codec::hex(expected_seal, 64) { return Err(super::super::invalid()); }
-        transfer::run(journal, custody, destination, epoch, expected_seal, operation_id, deadline)
+        if !codec::hex(expected_seal, 64) {
+            return Err(super::super::invalid());
+        }
+        transfer::run(
+            journal,
+            custody,
+            destination,
+            epoch,
+            expected_seal,
+            operation_id,
+            deadline,
+        )
     }
 
     /// Verify a single explicitly selected archive, without changing its bytes.
@@ -71,7 +88,9 @@ impl AuditMaintenance {
         let deadline = Deadline::new(timeout)?;
         identity(expected_epoch)?;
         let (store, seal) = storage::archive(archive, deadline)?;
-        if seal.epoch != expected_epoch { return Err(super::super::invalid()); }
+        if seal.epoch != expected_epoch {
+            return Err(super::super::invalid());
+        }
         deadline.check()?;
         let _owner = store;
         seal.coverage()
@@ -89,23 +108,38 @@ impl AuditMaintenance {
         identity(expected_epoch)?;
         validate_query(query)?;
         let (store, seal) = storage::archive(archive, deadline)?;
-        if seal.epoch != expected_epoch { return Err(super::super::invalid()); }
-        let (records, coverage, next_cursor) = store.query_with_custody(
-            query, deadline.0, 0, |_| Ok(()),
-        )?;
+        if seal.epoch != expected_epoch {
+            return Err(super::super::invalid());
+        }
+        let (records, coverage, next_cursor) =
+            store.query_with_custody(query, deadline.0, 0, |_| Ok(()))?;
         deadline.check()?;
-        Ok(AuditArchivePage { records, coverage, next_cursor, archive: seal.coverage()? })
+        Ok(AuditArchivePage {
+            records,
+            coverage,
+            next_cursor,
+            archive: seal.coverage()?,
+        })
     }
 }
 
 fn validate_query(query: &AuditQueryRequest) -> Result<()> {
     codec::scope(&query.scope)?;
-    if let Some(actor) = &query.filter.actor { codec::token(actor, 512)?; }
-    if query.limit == 0 || query.limit > 128
+    if let Some(actor) = &query.filter.actor {
+        codec::token(actor, 512)?;
+    }
+    if query.limit == 0
+        || query.limit > 128
         || !(32768..=262144).contains(&query.maximum_bytes)
         || query.cursor.as_ref().is_some_and(|c| c.0.len() > 256)
-        || query.filter.from_unix_millis.zip(query.filter.to_unix_millis).is_some_and(|(a,b)| a > b)
-    { return Err(super::super::invalid()); }
+        || query
+            .filter
+            .from_unix_millis
+            .zip(query.filter.to_unix_millis)
+            .is_some_and(|(a, b)| a > b)
+    {
+        return Err(super::super::invalid());
+    }
     Ok(())
 }
 
@@ -113,14 +147,25 @@ fn validate_query(query: &AuditQueryRequest) -> Result<()> {
 struct Deadline(Instant);
 impl Deadline {
     fn new(timeout: Duration) -> Result<Self> {
+        if !cfg!(target_os = "linux") {
+            return Err(failure(
+                PlatformErrorCode::IncompatibleContract,
+                "audit-maintenance-platform-unsupported",
+            ));
+        }
         if timeout.is_zero() || timeout > Duration::from_secs(120) {
             return Err(super::super::invalid());
         }
-        Ok(Self(Instant::now().checked_add(timeout).ok_or_else(corrupt)?))
+        Ok(Self(
+            Instant::now().checked_add(timeout).ok_or_else(corrupt)?,
+        ))
     }
     fn check(self) -> Result<()> {
         if Instant::now() >= self.0 {
-            return Err(failure(PlatformErrorCode::DeadlineExceeded, "audit-maintenance-deadline"));
+            return Err(failure(
+                PlatformErrorCode::DeadlineExceeded,
+                "audit-maintenance-deadline",
+            ));
         }
         Ok(())
     }
@@ -129,7 +174,9 @@ fn failure(code: PlatformErrorCode, reason: &'static str) -> latent_core::Platfo
     super::super::error(code, reason)
 }
 fn identity(value: &str) -> Result<()> {
-    if !codec::hex(value, 32) { return Err(super::super::invalid()); }
+    if !codec::hex(value, 32) {
+        return Err(super::super::invalid());
+    }
     Ok(())
 }
 fn archive_limits() -> Result<AuditLimits> {
@@ -138,7 +185,8 @@ fn archive_limits() -> Result<AuditLimits> {
         maximum_disk_bytes: 256 * 1024 * 1024,
         maximum_metadata_bytes: 32 * 1024 * 1024,
         ..AuditLimits::default()
-    }.validate()
+    }
+    .validate()
 }
 
 pub(super) fn epoch_state(mode: &Mode) -> Result<(u64, String, u64)> {
@@ -149,8 +197,14 @@ pub(super) fn epoch_state(mode: &Mode) -> Result<(u64, String, u64)> {
         (1, None) => Ok((1, "0".repeat(64), 0)),
         (2, Some(link)) => {
             link.validate(&mode.epoch)?;
-            if !mode.initialized { return Err(corrupt()); }
-            Ok((link.first_sequence, link.previous_head.clone(), link.unknown_outcomes_before))
+            if !mode.initialized {
+                return Err(corrupt());
+            }
+            Ok((
+                link.first_sequence,
+                link.previous_head.clone(),
+                link.unknown_outcomes_before,
+            ))
         }
         _ => Err(corrupt()),
     }
@@ -158,19 +212,35 @@ pub(super) fn epoch_state(mode: &Mode) -> Result<(u64, String, u64)> {
 
 pub(super) fn guard_open(root: &io::Root) -> Result<()> {
     if io::present(&root.path.join("ROLLOVER"))? || io::present(&root.path.join("TRANSFER"))? {
-        return Err(failure(PlatformErrorCode::Unavailable, "audit-maintenance-resume-required"));
+        return Err(failure(
+            PlatformErrorCode::Unavailable,
+            "audit-maintenance-resume-required",
+        ));
     }
     Ok(())
 }
 
 #[cfg(test)]
 thread_local! { static FAIL: std::cell::Cell<u8> = const { std::cell::Cell::new(0) }; }
-#[cfg_attr(not(test), expect(clippy::unnecessary_wraps, reason = "Production cutpoints are fallible only in interruption qualification"))]
+#[cfg_attr(
+    not(test),
+    expect(
+        clippy::unnecessary_wraps,
+        reason = "Production cutpoints are fallible only in interruption qualification"
+    )
+)]
 fn cut(point: u8) -> Result<()> {
     #[cfg(not(test))]
     let _ = point;
     #[cfg(test)]
-    if FAIL.with(|f| { if f.get() == point { f.set(0); true } else { false } }) {
+    if FAIL.with(|f| {
+        if f.get() == point {
+            f.set(0);
+            true
+        } else {
+            false
+        }
+    }) {
         return Err(super::super::unavailable());
     }
     Ok(())

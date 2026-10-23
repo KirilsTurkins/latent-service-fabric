@@ -13,6 +13,10 @@ pub use memory::{
     AuditBox, AuditBoxPreparation, AuditCallMemory, AuditOwned, AuditValuePreparation,
 };
 pub use model::*;
+pub use store::lifecycle::{
+    AuditArchiveCoverage, AuditArchivePage, AuditMaintenance, AuditRolloverReceipt,
+    AuditTransferReceipt,
+};
 pub use ticket::{AuditAppendTicket, AuditBeginTicket, AuditQueryTicket};
 pub use worker::*;
 type Result<T> = std::result::Result<T, PlatformError>;
