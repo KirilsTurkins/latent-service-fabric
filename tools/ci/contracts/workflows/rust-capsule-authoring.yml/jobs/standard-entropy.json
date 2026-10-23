@@ -51,6 +51,9 @@
         }
       },
       {
+        "env": {
+          "RUSTUP_TOOLCHAIN": "1.97.1"
+        },
         "name": "Test exact entropy source, ordinary transitive capture and retirement controls",
         "run": "python3 -m unittest tools.tests.test_rust_standard_entropy tools.tests.test_rust_standard_entropy_campaign"
       },
@@ -74,7 +77,7 @@
   },
   "jobId": "standard-entropy",
   "kind": "job",
-  "reviewReason": "Fix actual scratch offline-cache miss with bounded owned-manifest locked data-only fetch and unchanged source/ offline compile; add exact historical38 normal replay20min, preserve all9 original job bodies/default execution.",
+  "reviewReason": "Select the already installed exact1.97.1 compiler for the native entropy reference test. Prevent implicit rust-toolchain component installation conflicts; all13controls and actual sysroot/signed programmes remain unchanged.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-capsule-authoring.yml"
 }
