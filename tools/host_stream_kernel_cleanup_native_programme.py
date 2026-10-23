@@ -15,13 +15,45 @@ source_names = prior.source_names
 source_fixture_configuration = prior.source_fixture_configuration
 
 
+def repair_sidcache(outputs):
+    """Remove only the byte-identical application block cloned with Root drain.
+
+    The historical cleanup transform copied from the first cache-size #if,
+    including the original callbacks before the device-specific detach block.
+    Keep frozen historical derivations intact; repair their exact final output
+    here without changing the ordinary, PCI or Root retirement bodies.
+    """
+    name = 'security/selinux/ss/lsf_sidcache_private.c'
+    raw = outputs[name]
+    require(len(raw) == 7701 and hashlib.sha256(raw).hexdigest() ==
+        'cf50d5c92b204410d2239b220873cf7df81f438f3953f4bf7f03cdce993d695f',
+        'cleanup-native-sidcache-duplicate-preimage')
+    text = raw.decode()
+    ordinary = (change.OWNED/'sidcache-private.c').read_text()
+    ordinary = ordinary[ordinary.index('#if CONFIG_SECURITY_SELINUX_SID2STR_CACHE_SIZE > 0\n'):]
+    require(text.count(ordinary) == 2, 'cleanup-native-two-identical-sidcache-blocks')
+    duplicate = text.rindex(ordinary)
+    repaired = text[:duplicate] + text[duplicate+len(ordinary):]
+    for symbol in ('lsf_prepaid_sidcache_callback', 'lsf_prepaid_sidcache_retire',
+            'lsf_prepaid_sidcache_destroy'):
+        require(repaired.count('static ' + ('bool ' if symbol.endswith('destroy') else 'void ') +
+            symbol + '(') == 1, 'cleanup-native-single-sidcache-callback')
+    for symbol in ('lsf_prepaid_sidcache_detach', 'lsf_prepaid_device_sidcache_detach',
+            'lsf_prepaid_cleanup_sidcache_detach'):
+        require(repaired.count('void ' + symbol + '(') == 2,
+            'cleanup-native-both-sidcache-profile-branches')
+    result = dict(outputs)
+    result[name] = repaired.encode()
+    return result
+
+
 def compose(base, originals, config):
     parent = prior.compose(base, originals, config)
     result = change.transform(parent, {})
     require(len(parent) == 322 and len(result) == 323 and
         sum(parent.get(name) != raw for name, raw in result.items()) == 6,
         'cleanup-native-exact-six-source-delta')
-    return result
+    return repair_sidcache(result)
 
 
 def qualification_projection(outputs, config):
