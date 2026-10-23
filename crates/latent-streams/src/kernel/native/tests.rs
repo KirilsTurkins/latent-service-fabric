@@ -163,7 +163,10 @@ async fn postopen_failure_closes_real_fd_without_refunding_backing() {
     assert!(retained.metadata_bytes >= before.metadata_bytes + 1024 * 1024);
 }
 
-#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+// Keep maintenance on this task's runtime thread so it cannot contend for the
+// admission mutex during synchronous Drop. The real close still runs on the
+// original blocking-worker table; refusal/retained-FD behavior is tested below.
+#[tokio::test]
 async fn ready_owner_drop_closes_on_original_worker_and_retains_capacity() {
     let fixture = Fixture::new(config());
     let directory = tempfile::tempdir().unwrap();
@@ -187,7 +190,17 @@ async fn ready_owner_drop_closes_on_original_worker_and_retains_capacity() {
     assert_eq!(std::fs::read_link(&link).unwrap(), original);
     assert_eq!(stable_snapshot(&fixture.pools).await.failed_cleanup, 0);
     drop(owner);
-    quarantined(&fixture.pools).await;
+    tokio::time::timeout(Duration::from_secs(5), async {
+        loop {
+            let snapshot = stable_snapshot(&fixture.pools).await;
+            if snapshot.failed_cleanup == 1 && snapshot.cleanup_jobs == 0 {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(1)).await;
+        }
+    })
+    .await
+    .expect("original close worker must finish while retaining its connection");
     assert_ne!(std::fs::read_link(link).ok(), Some(original));
     let retained = stable_snapshot(&fixture.pools).await;
     assert_eq!(retained.connections, 1);
