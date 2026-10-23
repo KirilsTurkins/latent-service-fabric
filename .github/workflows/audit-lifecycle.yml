@@ -5,76 +5,139 @@ on:
   push:
     branches: ['feat/audit-journal-lifecycle-990']
 
+# Temporary branch-only candidate builder. It creates immutable Git blobs;
+# it never commits, updates a ref, opens a PR, or writes another branch.
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: audit-lifecycle-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  prepare:
-    name: Prepare pinned offline native qualification inputs
+  qualify:
+    if: github.repository == 'KirilsTurkins/latent-service-fabric' && github.ref == 'refs/heads/feat/audit-journal-lifecycle-990'
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 25
+    env:
+      CARGO_BUILD_JOBS: 2
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_DEV_DEBUG: 0
+      CARGO_PROFILE_TEST_DEBUG: 0
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Install the repository-pinned minimal Rust toolchain
+      - name: Install the repository-pinned Rust toolchain
         run: rustup toolchain install 1.97.1 --profile minimal --component rustfmt --component clippy
-      - name: Retain bounded tracked native source
+      - name: Prepare exact bounded wiring candidates
         shell: bash
         run: |
           set -euo pipefail
           python3 - <<'PY'
-          import os
-          import pathlib
-          import subprocess
-          import tarfile
-          roots = {'.cargo', '.github', 'api', 'apps', 'contracts', 'crates', 'tools', 'docs', 'adr', 'sdk', 'wit', 'proto', 'schemas', 'examples', 'tests'}
-          paths = [pathlib.Path(os.fsdecode(p)) for p in subprocess.check_output(['git', 'ls-files', '-z']).split(b'\0') if p]
-          paths = [p for p in paths if len(p.parts) == 1 or p.parts[0] in roots or p.as_posix() == 'benchmarks/phase1/cases.json']
-          if len(paths) > 100000 or sum(p.lstat().st_size for p in paths) > 256 * 1024 * 1024:
-              raise SystemExit('native source exceeds finite snapshot allowance')
-          out = pathlib.Path(os.environ['RUNNER_TEMP']) / 'audit-native-source.tar.gz'
-          with tarfile.open(out, 'w:gz') as archive:
-              for path in paths:
-                  archive.add(path, recursive=False)
+          import json
+          from pathlib import Path
+          def replace(name, before, after):
+              path = Path(name)
+              text = path.read_text()
+              if after in text:
+                  return
+              if text.count(before) != 1:
+                  raise SystemExit('candidate-context-mismatch:' + name)
+              path.write_text(text.replace(before, after))
+          wire = 'crates/latent-wire/src/management/capabilities/conversion.rs'
+          replace(wire, 'if let Some(audit) = value.audit {', '''if let Some(audit) = value.audit {
+                  result.counters.insert(
+                      "audit_previous_session_loss_unknown".into(),
+                      u64::from(audit.previous_session_loss_unknown),
+                  );''')
+          replace(wire, '            dropped_observations,\n            unavailable_events,', '            retained_records,\n            retained_bytes,\n            unknown_outcomes,\n            dropped_observations,\n            unavailable_events,')
+          replace(wire, '                queued_bytes: 16 * 1024,', '                retained_records: 4096,\n                retained_bytes: 4_299_161,\n                unknown_outcomes: 2,\n                previous_session_loss_unknown: true,\n                queued_bytes: 16 * 1024,')
+          replace(wire, '        assert_eq!(encoded.counters["audit_queued_operations"], 0);', '''        assert_eq!(encoded.counters["audit_retained_records"], 4096);
+                  assert_eq!(encoded.counters["audit_retained_bytes"], 4_299_161);
+                  assert_eq!(encoded.counters["audit_unknown_outcomes"], 2);
+                  assert_eq!(encoded.counters["audit_previous_session_loss_unknown"], 1);
+                  assert_eq!(encoded.counters["audit_queued_operations"], 0);''')
+          projection = 'apps/latent/src/management/phase2/projection/capability.rs'
+          replace(projection, '            "capture_dropped"\n                | "closed"', '            "capture_dropped"\n                | "retained_records"\n                | "retained_bytes"\n                | "unknown_outcomes"\n                | "previous_session_loss_unknown"\n                | "closed"')
+          details = 'apps/latent/src/error/details.rs'
+          replace(details, '    Some(match kind {', '''    Some(match kind {
+                  "audit-journal" => &[("reason", Known(&[
+                      "audit-capacity", "audit-critical-pending", "audit-busy",
+                      "audit-unavailable", "audit-closed", "audit-corrupt",
+                  ]))],''')
+          replace('apps/latent/src/error.rs', 'mod details;', 'mod details;\n#[cfg(test)]\nmod audit_tests;')
+          path = Path('tools/ci/suites.json')
+          data = json.loads(path.read_text())
+          additions = {
+              ('latent-audit', 'lib'): [
+                  'durable::diagnostics::tests::known_reason_survives_without_claiming_mutation_disposition',
+                  'durable::diagnostics::tests::unrecognized_text_is_not_a_public_diagnostic'],
+              ('latent', 'bin'): [
+                  'error::audit_tests::audit_reasons_are_closed_and_never_disclose_peer_text',
+                  'error::audit_tests::audit_diagnostics_preserve_known_rejection_and_transport_uncertainty'],
+          }
+          for (package, kind), cases in additions.items():
+              rows = [row for row in data['suites'] if row.get('package') == package and row.get('kind') == kind]
+              if len(rows) != 1:
+                  raise SystemExit('ambiguous-suite-owner:' + package)
+              row = rows[0]
+              added = set(cases) - set(row['expectedCases'])
+              row['expectedCases'] = sorted(set(row['expectedCases']) | set(cases))
+              row['minimumCases'] += len(added)
+              print('REGISTERED', row['id'], sorted(added))
+          path.write_text(json.dumps(data, indent=2) + '\n')
           PY
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: audit-native-source-${{ github.sha }}
-          path: ${{ runner.temp }}/audit-native-source.tar.gz
-          if-no-files-found: error
-          retention-days: 7
-      - name: Retain bounded pinned native dependency closure
+      - name: Format candidate Rust files
+        run: cargo +1.97.1 fmt --all
+      - name: Publish immutable candidate blobs without moving a branch
+        env:
+          GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
-          out="$RUNNER_TEMP/audit-native-inputs"
-          mkdir -p "$out/evidence"
-          cargo +1.97.1 vendor --locked --versioned-dirs "$out/vendor" > "$out/evidence/vendor-config.toml"
-          git rev-parse HEAD > "$out/evidence/source-sha.txt"
-          sha256sum Cargo.lock > "$out/evidence/cargo-lock-sha256.txt"
-          test "$(du -sm "$out/vendor" | cut -f1)" -le 2048
-          tar -czf "$RUNNER_TEMP/audit-native-vendor.tar.gz" -C "$out" vendor evidence
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: audit-native-vendor-${{ github.sha }}
-          path: ${{ runner.temp }}/audit-native-vendor.tar.gz
-          if-no-files-found: error
-          retention-days: 7
-      - name: Retain matching Linux compiler for offline qualification
+          python3 - <<'PY'
+          import base64, json, os, subprocess, urllib.request
+          from pathlib import Path
+          allowed = {
+              'crates/latent-wire/src/management/capabilities/conversion.rs',
+              'apps/latent/src/management/phase2/projection/capability.rs',
+              'apps/latent/src/error/details.rs', 'apps/latent/src/error.rs',
+              'apps/latent/src/error/audit_tests.rs', 'tools/ci/suites.json',
+          }
+          changed = set(subprocess.check_output(['git', 'diff', '--name-only'], text=True).splitlines())
+          if not changed <= allowed:
+              raise SystemExit('unexpected-candidate-change:' + repr(sorted(changed - allowed)))
+          receipt = {'source': os.environ['GITHUB_SHA'], 'files': {}}
+          for name in sorted(changed):
+              raw = Path(name).read_bytes()
+              if len(raw) > 2 * 1024 * 1024:
+                  raise SystemExit('candidate-byte-bound')
+              body = json.dumps({'content': base64.b64encode(raw).decode(), 'encoding': 'base64'}).encode()
+              request = urllib.request.Request('https://api.github.com/repos/KirilsTurkins/latent-service-fabric/git/blobs', data=body,
+                  headers={'Authorization': 'Bearer ' + os.environ['GH_TOKEN'], 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json'}, method='POST')
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  receipt['files'][name] = json.load(response)['sha']
+          Path(os.environ['RUNNER_TEMP'], 'audit-candidates.json').write_text(json.dumps(receipt, indent=2) + '\n')
+          print('AUDIT_CANDIDATES=' + json.dumps(receipt, sort_keys=True))
+          PY
+      - name: Exercise native durable audit and CLI diagnostics
         shell: bash
         run: |
           set -euo pipefail
-          toolchain="$(dirname "$(dirname "$(rustup which --toolchain 1.97.1 rustc)")")"
-          test "$(du -sm "$toolchain" | cut -f1)" -le 2048
-          tar -czf "$RUNNER_TEMP/audit-native-toolchain.tar.gz" -C "$toolchain" bin lib libexec
+          cargo +1.97.1 test -p latent-audit --lib --all-features --locked > "$RUNNER_TEMP/audit-rust.log" 2>&1 || { tail -100 "$RUNNER_TEMP/audit-rust.log"; exit 1; }
+          tail -8 "$RUNNER_TEMP/audit-rust.log"
+          cargo +1.97.1 test -p latent --bin latent error::audit_tests --locked > "$RUNNER_TEMP/audit-cli.log" 2>&1 || { tail -100 "$RUNNER_TEMP/audit-cli.log"; exit 1; }
+          tail -8 "$RUNNER_TEMP/audit-cli.log"
+          cargo +1.97.1 test -p latent-wire --lib audit_byte_ownership_and_recovery_remain_visible_after_record_refund --locked > "$RUNNER_TEMP/audit-wire.log" 2>&1 || { tail -100 "$RUNNER_TEMP/audit-wire.log"; exit 1; }
+          tail -8 "$RUNNER_TEMP/audit-wire.log"
+      - name: Exercise maintained static release tooling
+        shell: bash
+        run: node --test tools/static-release/*.test.mjs > "$RUNNER_TEMP/audit-node.log" 2>&1 || { tail -100 "$RUNNER_TEMP/audit-node.log"; exit 1; }
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
         with:
-          name: audit-native-toolchain-${{ github.sha }}
-          path: ${{ runner.temp }}/audit-native-toolchain.tar.gz
-          if-no-files-found: error
+          name: audit-candidates-${{ github.sha }}
+          path: ${{ runner.temp }}/audit-*
+          if-no-files-found: warn
           retention-days: 7
