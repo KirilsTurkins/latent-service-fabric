@@ -32,9 +32,9 @@ jobs:
           import pathlib
           import subprocess
           import tarfile
-          roots = {'.cargo', '.github', 'api', 'apps', 'crates', 'tools', 'docs', 'adr', 'sdk', 'wit', 'proto', 'schemas', 'examples', 'tests'}
+          roots = {'.cargo', '.github', 'api', 'apps', 'contracts', 'crates', 'tools', 'docs', 'adr', 'sdk', 'wit', 'proto', 'schemas', 'examples', 'tests'}
           paths = [pathlib.Path(os.fsdecode(p)) for p in subprocess.check_output(['git', 'ls-files', '-z']).split(b'\0') if p]
-          paths = [p for p in paths if len(p.parts) == 1 or p.parts[0] in roots]
+          paths = [p for p in paths if len(p.parts) == 1 or p.parts[0] in roots or p.as_posix() == 'benchmarks/phase1/cases.json']
           if len(paths) > 100000 or sum(p.lstat().st_size for p in paths) > 256 * 1024 * 1024:
               raise SystemExit('native source exceeds finite snapshot allowance')
           out = pathlib.Path(os.environ['RUNNER_TEMP']) / 'audit-native-source.tar.gz'
