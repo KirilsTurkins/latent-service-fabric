@@ -1,0 +1,332 @@
+{
+  "schemaVersion": "lsf.kernel-constructor-vm-compiled-observation.v1",
+  "status": "PASS-WITH-EXPLICIT-ROOT-FINAL-FREE-AND-PRODUCTION-GATES",
+  "source": "000860214497535901b1aee49ea8f58e4823be2d",
+  "run": 39997758059,
+  "job": 120565620433,
+  "jobUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39997758059/job/120565620433",
+  "artifact": {
+    "id": 12521213560,
+    "bytes": 15008888,
+    "sha256": "ad9a18bb3f71f4bc1baa81cfb9aed83dfe8335268fc523bd3d3ea1614685e53b",
+    "crcVerifiedMembers": 33
+  },
+  "verifiedGitMaterials": 277,
+  "qualificationReceipt": {
+    "bytes": 198939,
+    "sha256": "a815213f3ed4811c12ccf4e8c92ad998428e69463ea84232b2d5b36dd4e25b8b"
+  },
+  "upstreamCommit": "7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+  "archive": {
+    "bytes": 148686048,
+    "sha256": "e09b6727e5c521253f0d41694900b9c38fb7604db7d35238a8197aa9f7de2428"
+  },
+  "sourceControllerChecks": {
+    "passed": 33,
+    "failed": 0,
+    "logSha256": "eac6a0ab3fc2c435f7f17eb17c6f612a580277a2282927bb0bef4a45d1b7fe8a"
+  },
+  "kernelImage": {
+    "bytes": 13759488,
+    "sha256": "9b4bbc87ba1e20463172f539e969ecb2757094d55aef41746f6fe9242c3bcf05",
+    "bootProtocol": 527,
+    "x86_64": true
+  },
+  "init": {
+    "bytes": 799432,
+    "sha256": "48bf238a6c8929a51a08046489ef03bd73b5a0b82e36d1cf542d3c1254a8dc8f",
+    "loadSegments": 4,
+    "staticX86_64": true,
+    "sourceSha256": "6fb0232f7ccd9aa0aa57f9e84921d501eb8d4dfba489133e22696a0bd99525b5"
+  },
+  "initramfs": {
+    "bytes": 800256,
+    "sha256": "e0511c79f2510d0c72f90a0e07c83fdbaebde249140d03d5eded2252191a04bf",
+    "initSha256": "48bf238a6c8929a51a08046489ef03bd73b5a0b82e36d1cf542d3c1254a8dc8f"
+  },
+  "configuration": {
+    "bytes": 143192,
+    "sha256": "1b9152e00c4ef645dda8318f804aaae17acbabf4bd4d1b065c7205faabaef2b3",
+    "requiredOptions": [
+      "CONFIG_64BIT",
+      "CONFIG_X86_64",
+      "CONFIG_BLK_DEV_INITRD",
+      "CONFIG_BINFMT_ELF",
+      "CONFIG_DEVTMPFS",
+      "CONFIG_PROC_FS",
+      "CONFIG_SYSFS",
+      "CONFIG_SERIAL_8250",
+      "CONFIG_SERIAL_8250_CONSOLE",
+      "CONFIG_PCI",
+      "CONFIG_ACPI",
+      "CONFIG_LSF_STREAM_FACTORY"
+    ],
+    "configurationMutated": false
+  },
+  "sourceFixtureConfiguration": {
+    "actual": {
+      "bytes": 143192,
+      "sha256": "1b9152e00c4ef645dda8318f804aaae17acbabf4bd4d1b065c7205faabaef2b3"
+    },
+    "sourceFixture": {
+      "bytes": 143192,
+      "sha256": "b2bcccd5507f3f3a673690b660a2321870b57a3c77e72ce8532975f3c4752176"
+    },
+    "difference": {
+      "symbol": "CONFIG_RUSTC_VERSION",
+      "actual": 109900,
+      "sourceFixture": 109901,
+      "reason": "Rust kernel code is unselected; all other config bytes remain exact."
+    },
+    "actualConfigurationMutated": false,
+    "rustKernelSelected": false,
+    "allOtherConfigurationBytesExact": true
+  },
+  "candidateProjection": {
+    "schemaVersion": "lsf.kernel-cleanup-native-candidate-projection.v1",
+    "sourceDifference": {
+      "net/factory-private.h": {
+        "preimage": {
+          "bytes": 5468,
+          "sha256": "de95bf8ba08437594521011cd0002abf57b07b26879ff372fbd8c023ca7f2a00"
+        },
+        "postimage": {
+          "bytes": 5468,
+          "sha256": "b584e66111f650534d476367e10ffc83b2726d23ee0b217adc7698b2bf2922af"
+        }
+      }
+    },
+    "configuration": {
+      "bytes": 143192,
+      "sha256": "1b9152e00c4ef645dda8318f804aaae17acbabf4bd4d1b065c7205faabaef2b3"
+    },
+    "configurationDifference": {},
+    "normalConstructorPredicate": 0,
+    "candidateConstructorPredicate": 1,
+    "productionSocketConsumerSelected": false,
+    "finalFreeCertificate": false,
+    "completeAllocationClosure": false,
+    "productionInstallation": false
+  },
+  "reviewedDerivedOutputs": [
+    {
+      "path": "include/net/lsf_stream_cleanup_provider_executor.h",
+      "bytes": 5920,
+      "sha256": "dc0d82ffc320c4c8535f64f91a92928e2f4a47877b66462d99698949178f6f1d"
+    },
+    {
+      "path": "kernel/workqueue.c",
+      "bytes": 236785,
+      "sha256": "821c22c7eba2a713e9c541dc445b3c2decbbfcb07d557e315e96df8876c64b75"
+    },
+    {
+      "path": "net/factory-cleanup-provider-retirement.c",
+      "bytes": 9448,
+      "sha256": "cbc042c5983f9a5f453cb4e6fb5f39dc066feed3341badba3739265b29ebfa91"
+    },
+    {
+      "path": "kernel/lsf-cleanup-constructor.c",
+      "bytes": 22012,
+      "sha256": "afe74699da90c2a33025849920e83b26661aa593ebdae8bf20e492def44cde2c"
+    }
+  ],
+  "serial": {
+    "snapshots": {
+      "opened": {
+        "state": 0,
+        "error": 0,
+        "fields": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          2,
+          0,
+          0,
+          0
+        ]
+      },
+      "ready": {
+        "state": 2,
+        "error": 0,
+        "fields": [
+          3,
+          0,
+          0,
+          1,
+          1,
+          0,
+          17,
+          0,
+          0,
+          0
+        ]
+      },
+      "child-retired-root-held": {
+        "state": 4,
+        "error": 0,
+        "fields": [
+          8,
+          5,
+          0,
+          2,
+          0,
+          1,
+          2,
+          0,
+          1,
+          1
+        ]
+      }
+    },
+    "rootFinalFree": false,
+    "bytes": 24237,
+    "sha256": "24b2512320689a4b45f1794aaa0978e49190a0d12458e0487c982cef55299181"
+  },
+  "commandResults": [
+    {
+      "stage": "compile-static-constructor-init",
+      "exitCode": 0,
+      "completed": true,
+      "descendantsCleaned": true,
+      "elapsedMillis": 3031.26452500004
+    },
+    {
+      "stage": "extract-authenticated-source",
+      "exitCode": 0,
+      "completed": true,
+      "descendantsCleaned": true,
+      "elapsedMillis": 9227.72441799998
+    },
+    {
+      "stage": "compiler-identity",
+      "exitCode": 0,
+      "completed": true,
+      "descendantsCleaned": true,
+      "elapsedMillis": 39.29796200003466
+    },
+    {
+      "stage": "original-defconfig",
+      "exitCode": 0,
+      "completed": true,
+      "descendantsCleaned": true,
+      "elapsedMillis": 11558.326738999995
+    },
+    {
+      "stage": "resolve-selected-config",
+      "exitCode": 0,
+      "completed": true,
+      "descendantsCleaned": true,
+      "elapsedMillis": 1448.0101330000252
+    },
+    {
+      "stage": "link-complete-candidate-kernel",
+      "exitCode": 0,
+      "completed": true,
+      "descendantsCleaned": true,
+      "elapsedMillis": 710509.15395
+    },
+    {
+      "stage": "create-constructor-initramfs",
+      "exitCode": 0,
+      "completed": true,
+      "descendantsCleaned": true,
+      "elapsedMillis": 40.0385569998889
+    },
+    {
+      "stage": "qemu-version",
+      "exitCode": 0,
+      "completed": true,
+      "descendantsCleaned": true,
+      "elapsedMillis": 86.66674799997054
+    },
+    {
+      "stage": "boot-isolated-real-constructor",
+      "exitCode": 0,
+      "completed": true,
+      "descendantsCleaned": true,
+      "elapsedMillis": 3288.3039270000154
+    }
+  ],
+  "bounds": {
+    "compilerJobs": 2,
+    "totalCommandSeconds": 2400,
+    "individualCommandSeconds": 1800,
+    "vmSeconds": 180,
+    "vmMemoryMiB": 512,
+    "vmCpus": 2,
+    "childRetirementSeconds": 20,
+    "physicalBankBytes": 524288,
+    "infrastructureBytes": 196608,
+    "stackPhysicalPages": 4,
+    "stackVirtualEnvelopeBytes": [
+      20480,
+      32768
+    ],
+    "additionalPrepaidPointerBytes": 24,
+    "selectorWorkUnits": 64
+  },
+  "claims": {
+    "kernelLinked": true,
+    "kernelBooted": true,
+    "actualLinuxExecution": true,
+    "actualTaskControlChildRetirement": true,
+    "rootStillHeldAtObservation": true,
+    "actualNativeLedger": false,
+    "nativeNodeIntegration": false,
+    "rootFinalFree": false,
+    "consumerSelected": false,
+    "completeAllocationClosure": false,
+    "wholeInfrastructureFitQualified": false,
+    "initialBirthBounded": false,
+    "compilerImplicitInputsAttested": false,
+    "productionInstallation": false
+  },
+  "failedAttemptsPreserved": [
+    {
+      "source": "de37c60cd94d6f5df33646756f94b8d121026291",
+      "run": 39942984426,
+      "job": 120378716550,
+      "status": "FAILED",
+      "observed": "BEGIN errno95 after actual link/boot; finer constructor edge unobserved."
+    },
+    {
+      "sourcePrefix": "505a08",
+      "run": 39952819576,
+      "job": 120411223415,
+      "status": "FAILED",
+      "observed": "CARVE_EXTENT site15 detail1: original THREAD_ALIGN admission refused; no raw address observed."
+    },
+    {
+      "sourcePrefix": "2460f7",
+      "run": 39958642065,
+      "job": 120430713152,
+      "status": "FAILED",
+      "observed": "CARVE_EXTENT site15 detail1: added PAGE alignment admission refused; global-first source flaw identified without claiming observed raw address1."
+    },
+    {
+      "sourcePrefix": "e518a469",
+      "run": 39962755484,
+      "job": 120444648216,
+      "status": "FAILED",
+      "observed": "CARVE_EXTENT site15 detail5: selected extent could not leave required nonempty right remainder; too-small versus exact-fit unobserved."
+    },
+    {
+      "sourcePrefix": "740addb7",
+      "run": 39968983817,
+      "job": 120466302768,
+      "status": "FAILED",
+      "observed": "READY lifecycle7 violated unchanged published-worker lifecycle3 assertion; close not reached. Source-bound static/dynamic Task geometry mismatch repaired next."
+    },
+    {
+      "source": "489a10d973402e565f50228013ead6b5e6f70b3c",
+      "run": 39992267572,
+      "job": 120546733331,
+      "status": "FAILED",
+      "observed": "READY lifecycle3 passed. CLOSE reached STACK_RETURNED7/finalNONE0 but not Task retirement within20s. Actual Task usage count unobserved; independently proven unmatched association reference repaired next."
+    }
+  ],
+  "scope": "One exact selected x86 isolated constructor: full maintained kernel link/boot, protected BEGIN/readiness/refusals/CLOSE, actual original private Task/request/Control/children retirement; two original live Root/backing records remain held by FD. Subsequent descriptor close does not provide a physical bank-return certificate. No pressure/cancellation or other language runtime qualification is claimed."
+}
