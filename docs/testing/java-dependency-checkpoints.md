@@ -1,7 +1,10 @@
 # Java published dependency checkpoints
 
 This focused programme addresses part of #741's compiler scheduling requirement.
-It is prepared source, with no new runtime qualification yet.
+[Run 39951552847](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39951552847/job/120406973356)
+passed the six signed cases on source `2ea9ef407f64634bd2b4b92fac2fbc7e84b5e50f`.
+The [verified receipt](evidence/java-dependency-checkpoints-signed-2026-10-23.json)
+binds the source, compiler controls, generated C, component and runtime observations.
 
 The fixture calls unchanged Commons Lang 3.14.0 `AtomicSafeInitializer.get()`.
 The original Maven archive digest is
@@ -52,3 +55,13 @@ follow-up corrects the pinned compiler's premature empty-set monitor discovery,
 requires real original/fixed IR controls and all eleven actual loaded replacement
 classes, and checks the emitted child guard before the same six signed cases.
 No failed campaign is relabelled as qualified, and no case or original limit is waived.
+
+The successful follow-up ran both original and corrected monitor IR controls,
+verified eleven loaded replacement classes and 1,866 unchanged compiler JAR
+entries, and retained the real child monitor guard and resume state. All six
+signed dependency, monitor and fresh-state calls passed across both tenants.
+Both missing-runtime-grant calls were refused with zero guest fuel and memory.
+Each successful call had eighteen zero active provider counters and physical
+idle observations; deletion, clean node shutdown and the zero-contact peer
+completed. The OS observations are finite scans; RSS is not a retirement proof.
+The original limits, fixture assertions and three failed campaigns remain intact.
