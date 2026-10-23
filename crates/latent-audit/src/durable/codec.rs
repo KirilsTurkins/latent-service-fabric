@@ -638,10 +638,12 @@ pub(super) fn decode<T: DeserializeOwned>(bytes: &[u8], maximum: usize) -> Resul
         return Err(corrupt());
     }
     let mut nodes = 256;
+    let mut heap = 0;
     let mut d = serde_json::Deserializer::from_slice(bytes);
     Scan {
         depth: 0,
         nodes: &mut nodes,
+        heap: &mut heap,
     }
     .deserialize(&mut d)
     .map_err(|_| corrupt())?;
@@ -651,9 +653,32 @@ pub(super) fn decode<T: DeserializeOwned>(bytes: &[u8], maximum: usize) -> Resul
 pub(super) fn normalize<T: Serialize + DeserializeOwned>(v: &T, maximum: usize) -> Result<T> {
     decode(&encode(v, maximum)?, maximum)
 }
+/// A conservative upper bound for the typed graph before its allocation.
+/// Every JSON key and value string is counted, although typed struct keys and
+/// enum names are borrowed/discarded. Each actual policy Vec has at most eight
+/// <=64-byte elements; count that maximum for *every* scanned sequence.
+/// Existing depth/node/string/array bounds apply in this same borrowed scan.
+pub(super) fn owned_graph_bound(bytes: &[u8], maximum: usize) -> Result<usize> {
+    if bytes.len() > maximum {
+        return Err(corrupt());
+    }
+    let mut nodes = 256;
+    let mut heap = 0;
+    let mut decoder = serde_json::Deserializer::from_slice(bytes);
+    Scan {
+        depth: 0,
+        nodes: &mut nodes,
+        heap: &mut heap,
+    }
+    .deserialize(&mut decoder)
+    .map_err(|_| corrupt())?;
+    decoder.end().map_err(|_| corrupt())?;
+    Ok(heap)
+}
 struct Scan<'a> {
     depth: usize,
     nodes: &'a mut usize,
+    heap: &'a mut usize,
 }
 impl<'de> DeserializeSeed<'de> for Scan<'_> {
     type Value = ();
@@ -683,15 +708,24 @@ impl<'de> Visitor<'de> for Scan<'_> {
         if s.len() > 512 {
             Err(E::custom("audit string limit"))
         } else {
+            *self.heap = self
+                .heap
+                .checked_add(s.len() + 64)
+                .ok_or_else(|| E::custom("audit heap overflow"))?;
             Ok(())
         }
     }
     fn visit_seq<A: SeqAccess<'de>>(self, mut a: A) -> std::result::Result<(), A::Error> {
+        *self.heap = self
+            .heap
+            .checked_add(8 * 64 + 64)
+            .ok_or_else(|| serde::de::Error::custom("audit heap overflow"))?;
         let mut count = 0;
         while a
             .next_element_seed(Scan {
                 depth: self.depth + 1,
                 nodes: self.nodes,
+                heap: self.heap,
             })?
             .is_some()
         {
@@ -707,12 +741,14 @@ impl<'de> Visitor<'de> for Scan<'_> {
             .next_key_seed(Scan {
                 depth: self.depth + 1,
                 nodes: self.nodes,
+                heap: self.heap,
             })?
             .is_some()
         {
             a.next_value_seed(Scan {
                 depth: self.depth + 1,
                 nodes: self.nodes,
+                heap: self.heap,
             })?;
         }
         Ok(())

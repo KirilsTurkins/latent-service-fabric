@@ -165,18 +165,18 @@ pub async fn reconcile_release_audit(
 ) -> Result<(), PlatformError> {
     for pending in audit.pending_attempts()? {
         let conclusion = if matches!(
-            pending.attempt.action,
+            pending.attempt().action,
             AuditControlAction::Publish
                 | AuditControlAction::Revoke
                 | AuditControlAction::Retire
                 | AuditControlAction::RenewEvidence
         ) {
-            lookup(repository, &pending.attempt, pending.attempt.replay).await?
+            lookup(repository, pending.attempt(), pending.attempt().replay).await?
         } else {
             unknown()
         };
         audit
-            .reconcile(pending.sequence, conclusion)?
+            .reconcile(pending.sequence(), conclusion)?
             .wait()
             .await?;
     }

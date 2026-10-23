@@ -10,6 +10,90 @@ use latent_audit::{
 use latent_core::{ArtifactBlobDigest, PrincipalKind};
 use latent_policy::capability::ResourceTarget;
 
+// The original audit schema bounds every copied source before allocation.
+// This checks borrowed authority data; names never construct a budget owner.
+pub(super) fn preflight(
+    core: &SessionCore,
+    index: usize,
+    operation: &str,
+) -> Result<(), PlatformError> {
+    let binding = core.plan.bindings.get(index).ok_or_else(denied)?;
+    let target = &core.plan.target;
+    let token = |text: &str, maximum: usize| -> Result<(), PlatformError> {
+        if text.is_empty()
+            || text.len() > maximum
+            || text.chars().any(char::is_control)
+            || text.trim() != text
+        {
+            Err(denied())
+        } else {
+            Ok(())
+        }
+    };
+    token(&target.tenant.0, 512)?;
+    token(&core.principal.subject, 512)?;
+    for text in [
+        &core.activation_id.0,
+        &core.root_activation_id.0,
+        &target.service.0,
+        &binding.provider.profile,
+    ] {
+        token(text, 128)?;
+    }
+    if let Some(parent) = &core.parent_activation_id {
+        token(&parent.0, 128)?;
+    }
+    token(&target.revision.0, 256)?;
+    if let Some(deployment) = &target.deployment {
+        token(&deployment.0, 256)?;
+    }
+    token(operation, 64)?;
+    token(&binding.provider.capability, 128)?;
+    if target.release.0.len() != 71 || binding.provider.digest.len() != 71 {
+        return Err(denied());
+    }
+    if !matches!(
+        core.principal.kind,
+        PrincipalKind::User
+            | PrincipalKind::Service
+            | PrincipalKind::Node
+            | PrincipalKind::Trigger
+            | PrincipalKind::Administrator
+    ) {
+        return Err(denied());
+    }
+    let revision = binding.policies.binding_revision();
+    token(revision.id, 128)?;
+    if revision.digest.len() != 71 || revision.revision == 0 {
+        return Err(denied());
+    }
+    let mut count = 0;
+    for revision in binding.policies.policy_revisions() {
+        count += 1;
+        if count > 8 {
+            return Err(denied());
+        }
+        token(revision.id, 128)?;
+        if revision.digest.len() != 71 || revision.revision == 0 {
+            return Err(denied());
+        }
+    }
+    if count == 0 {
+        return Err(denied());
+    }
+    Ok(())
+}
+fn operation_id(id: u64) -> String {
+    const HEX: &[u8; 16] = b"0123456789abcdef";
+    let mut text = *b"capability-0000000000000000";
+    for index in 0..16 {
+        text[11 + index] = HEX[((id >> (4 * (15 - index))) & 15) as usize];
+    }
+    std::str::from_utf8(&text)
+        .expect("ASCII operation identity")
+        .to_owned()
+}
+
 pub(super) fn attempt(
     core: &SessionCore,
     index: usize,
@@ -28,6 +112,12 @@ pub(super) fn attempt(
             id: value.id.into(), revision: value.revision, digest: value.digest.parse().map_err(|_| denied())?,
         })
     };
+    preflight(core, index, operation)?;
+    let count = binding.policies.policy_revisions().count();
+    let mut policies = Vec::with_capacity(count);
+    for source in binding.policies.policy_revisions() {
+        policies.push(revision(source)?);
+    }
     let context = AuditCapabilityContext {
         activation: core.activation_id.0.clone(),
         parent_activation: core.parent_activation_id.as_ref().map(|id| id.0.clone()),
@@ -35,11 +125,7 @@ pub(super) fn attempt(
         service: target.service.0.clone(),
         binding_definition_digest: binding.definition_digest.clone().ok_or_else(denied)?,
         binding: revision(binding.policies.binding_revision())?,
-        policies: binding
-            .policies
-            .policy_revisions()
-            .map(revision)
-            .collect::<Result<_, _>>()?,
+        policies,
         provider_profile: provider.profile.clone(),
         provider_configuration_digest: provider.digest.parse().map_err(|_| denied())?,
         provider_configuration_epoch: provider.epoch,
@@ -68,7 +154,7 @@ pub(super) fn attempt(
             },
             subject: core.principal.subject.clone(),
         },
-        operation_id: format!("capability-{id:016x}"),
+        operation_id: operation_id(id),
         request_digest: digest,
         preview_receipt_digest: None,
         action: AuditControlAction::CapabilityCall,
@@ -241,7 +327,15 @@ pub(in crate::broker) fn request_digest(
         part(&typed.0);
     }
     let hash = digest.finalize();
-    format!("sha256:{:x}", latent_core::digest::HexDigest(hash))
+    const HEX: &[u8; 16] = b"0123456789abcdef";
+    let mut text = [b'0'; 71];
+    text[..7].copy_from_slice(b"sha256:");
+    for (index, byte) in hash.iter().enumerate() {
+        text[7 + index * 2] = HEX[usize::from(byte >> 4)];
+        text[8 + index * 2] = HEX[usize::from(byte & 15)];
+    }
+    std::str::from_utf8(&text)
+        .expect("ASCII digest")
         .parse()
         .expect("SHA-256 digest")
 }

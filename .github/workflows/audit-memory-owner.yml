@@ -1,0 +1,56 @@
+name: Connected Audit original memory ownership
+on:
+  push:
+    branches: ['feat/audit-owner-memory-20261023']
+    paths: ['.github/workflows/audit-memory-owner.yml']
+  workflow_dispatch: {}
+permissions:
+  contents: read
+concurrency:
+  group: audit-memory-owner-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  audit-owner:
+    name: Twenty-five original audit payload and node owner controls
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      CARGO_BUILD_JOBS: '2'
+      CARGO_INCREMENTAL: '0'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
+      - name: Install locked Python dependencies
+        run: python3 -m pip install -r tools/requirements.lock
+      - name: Refuse altered controls or discarded prebuild failures
+        run: python3 -B -m unittest tools.tests.test_audit_memory_programme -v
+      - name: Execute only the selected audit owner controls and compile changed consumers
+        run: >-
+          python3 -B tools/qualify_audit_memory.py
+          --source-commit "${{ github.sha }}"
+          --output "$RUNNER_TEMP/audit-memory-owner"
+      - name: Retain exact source inputs and bounded actual compiler/control failures
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: audit-memory-owner-${{ github.sha }}
+          path: ${{ runner.temp }}/audit-memory-owner/
+          if-no-files-found: error
+          retention-days: 7

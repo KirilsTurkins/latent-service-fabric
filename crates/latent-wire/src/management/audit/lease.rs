@@ -76,10 +76,28 @@ impl HttpBody for LeasedBody {
         match inner.as_mut().poll_frame(cx) {
             Poll::Ready(Some(Ok(frame))) => Poll::Ready(Some(Ok(match frame.into_data() {
                 Ok(bytes) => Frame::data(match &self.lease {
-                    Some(lease) => Bytes::from_owner(LeasedBytes {
-                        bytes,
-                        _lease: lease.clone(),
-                    }),
+                    Some(lease) => {
+                        let native = match lease.reserve_frame_metadata() {
+                            Ok(native) => native,
+                            Err(_) => {
+                                // Current frame storage must retire while the
+                                // existing page owner still holds its charge.
+                                drop(bytes);
+                                self.finish();
+                                return Poll::Ready(Some(Err(Status::resource_exhausted(
+                                    "audit frame native capacity",
+                                ))));
+                            }
+                        };
+                        Bytes::from_owner_with_retirement(
+                            bytes,
+                            FrameRetirement {
+                                _lease: lease.clone(),
+                                _native: native,
+                            },
+                            |_| {},
+                        )
+                    }
                     None => bytes,
                 }),
                 Err(trailers) => trailers,
@@ -105,12 +123,10 @@ impl Drop for LeasedBody {
         self.finish();
     }
 }
-struct LeasedBytes {
-    bytes: Bytes,
+// The original Bytes owner Box has already deallocated before this retirement
+// payload is dropped. Actual byte payload and paid page graph precede refund.
+struct FrameRetirement {
     _lease: AuditResponseLease,
+    _native: Option<latent_core::node_metadata::NodeMetadataReservation>,
 }
-impl AsRef<[u8]> for LeasedBytes {
-    fn as_ref(&self) -> &[u8] {
-        &self.bytes
-    }
-}
+const _: () = assert!(std::mem::size_of::<FrameRetirement>() <= 128);

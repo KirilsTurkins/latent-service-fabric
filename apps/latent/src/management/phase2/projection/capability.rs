@@ -261,6 +261,11 @@ fn usage_key(scope: &str, key: &str) -> bool {
                 | "query_bytes"
                 | "recovery_pending"
                 | "stage_bytes"
+                | "node_metadata_maximum_bytes"
+                | "node_metadata_reserved_bytes"
+                | "node_metadata_fixed_reserved_bytes"
+                | "node_metadata_transient_reserved_bytes"
+                | "node_metadata_quarantined_reserved_bytes"
         );
     }
     if let Some(suffix) = key.strip_prefix("stream_") {

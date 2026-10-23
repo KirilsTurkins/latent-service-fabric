@@ -100,7 +100,7 @@ async fn managed_deployment_reconciles_before_generic_fallback_without_rollout_w
         .wait()
         .await
         .unwrap();
-    let (records, _, _, lease) = page.into_parts();
+    let records = page.records();
     let conclusion = records
         .iter()
         .find_map(|record| match &record.data {
@@ -113,8 +113,7 @@ async fn managed_deployment_reconciles_before_generic_fallback_without_rollout_w
         .unwrap();
     assert_eq!(conclusion.result, AuditOperationResult::Committed);
     assert_eq!(conclusion.receipt_digest.as_ref(), Some(&expected));
-    drop(records);
-    drop(lease);
+    drop(page);
     assert!(reopened
         .audit
         .as_ref()

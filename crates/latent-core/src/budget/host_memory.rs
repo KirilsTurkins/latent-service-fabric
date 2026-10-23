@@ -169,6 +169,23 @@ impl HostMemoryReservation {
         }
     }
 
+    /// Retire an observed allocation only after its physical storage is gone.
+    /// Its original envelope capacity remains reserved for later owned copies;
+    /// this creates no allowance and cannot lower the monotonic memory peak.
+    pub fn retire_confirmed_bytes(&mut self, bytes: u64) {
+        assert!(
+            bytes <= self.confirmed_bytes,
+            "native retirement exceeds confirmed physical storage"
+        );
+        if bytes == 0 {
+            return;
+        }
+        let mut state = self.budget.lock_state();
+        state.host_observed_memory -= bytes;
+        self.budget.propagate_memory(bytes, false);
+        self.confirmed_bytes -= bytes;
+    }
+
     pub fn confirm(&mut self) {
         self.confirm_bytes(self.bytes);
     }
@@ -349,6 +366,50 @@ mod tests {
         memory.shrink(20); // pending lifting capacity was not needed
         memory.confirm();
         assert_eq!(budget.snapshot_at(Instant::now()).peak_memory_bytes, 20);
+        drop(memory);
+        assert_eq!(budget.host_memory_bytes(), 0);
+        assert_eq!(budget.outstanding_reservations(), 0);
+    }
+    #[test]
+    fn original_native_envelope_reuses_only_retired_storage_without_refunding_capacity() {
+        let budget = budget();
+        let mut memory = budget.reserve_host_memory(900).unwrap();
+        memory.confirm_bytes(600);
+        memory.retire_confirmed_bytes(400);
+        assert_eq!(memory.bytes(), 900);
+        assert_eq!(memory.confirmed_bytes, 200);
+        assert_eq!(budget.host_memory_bytes(), 900);
+        assert_eq!(budget.outstanding_reservations(), 1);
+        assert!(budget.reserve_host_memory(101).is_err());
+        assert_eq!(budget.snapshot_at(Instant::now()).peak_memory_bytes, 600);
+        // A later terminal copy is admitted within the SAME original envelope.
+        // The remaining live200 overlaps its newly allocated500, not old600.
+        memory.confirm_bytes(700);
+        assert_eq!(budget.snapshot_at(Instant::now()).peak_memory_bytes, 700);
+        memory.retire_confirmed_bytes(700);
+        assert_eq!(budget.host_memory_bytes(), 900);
+        assert_eq!(memory.confirmed_bytes, 0);
+        assert!(budget.reserve_runtime_memory(101).is_err());
+        drop(memory);
+        assert_eq!(budget.host_memory_bytes(), 0);
+        assert_eq!(budget.outstanding_reservations(), 0);
+        assert_eq!(budget.snapshot_at(Instant::now()).peak_memory_bytes, 700);
+    }
+
+    #[test]
+    fn native_envelope_refuses_unobserved_retirement_before_mutating_original_ledger() {
+        let budget = budget();
+        let mut memory = budget.reserve_host_memory(900).unwrap();
+        memory.confirm_bytes(100);
+        let rejected = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            memory.retire_confirmed_bytes(101);
+        }));
+        assert!(rejected.is_err());
+        assert_eq!(memory.confirmed_bytes, 100);
+        assert_eq!(budget.host_memory_bytes(), 900);
+        assert_eq!(budget.outstanding_reservations(), 1);
+        assert_eq!(budget.snapshot_at(Instant::now()).peak_memory_bytes, 100);
+        memory.retire_confirmed_bytes(100);
         drop(memory);
         assert_eq!(budget.host_memory_bytes(), 0);
         assert_eq!(budget.outstanding_reservations(), 0);

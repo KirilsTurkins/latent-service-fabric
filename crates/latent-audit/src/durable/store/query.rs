@@ -4,15 +4,29 @@ use super::{
 };
 use std::time::Instant;
 impl Store {
-    #[expect(
-        clippy::too_many_lines,
-        reason = "The bounded cursor scan keeps its deadline, continuation and page ownership decisions together"
-    )]
+    #[cfg(test)]
     pub fn query(
         &self,
         q: &AuditQueryRequest,
         deadline: Instant,
         dropped: u64,
+    ) -> Result<(
+        Vec<AuditStoredRecord>,
+        AuditPageCoverage,
+        Option<AuditCursor>,
+    )> {
+        self.query_with_custody(q, deadline, dropped, |_| Ok(()))
+    }
+    #[expect(
+        clippy::too_many_lines,
+        reason = "The bounded cursor scan keeps its deadline, continuation and page ownership decisions together"
+    )]
+    pub fn query_with_custody(
+        &self,
+        q: &AuditQueryRequest,
+        deadline: Instant,
+        dropped: u64,
+        mut prepare_record: impl FnMut(&[u8]) -> Result<()>,
     ) -> Result<(
         Vec<AuditStoredRecord>,
         AuditPageCoverage,
@@ -92,6 +106,10 @@ impl Store {
                 if bytes.len() != e.bytes || codec::digest(&bytes) != e.digest {
                     return Err(corrupt());
                 }
+                // Original node capacity precedes typed graph/vector birth and
+                // every later trusted adapter copy. The original page limit
+                // remains a separate, unchanged logical subset.
+                prepare_record(&bytes)?;
                 let record = codec::decode(&bytes, self.limits.maximum_record_bytes)?;
                 codec::record(&record)?;
                 #[cfg(test)]
