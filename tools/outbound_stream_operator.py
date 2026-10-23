@@ -456,11 +456,22 @@ class StreamOperator:
         with state.lock(self.root, "stream-operator.lock"):
             self._owned()
             result = self.client.call("capability", "list", "--deployment", deployment,
-                "--provider", self.owner["provider"]["id"], "--include-node-usage", "--page-size", "1")
+                "--provider", PROFILE, "--contract-prefix", CAPABILITY,
+                "--include-node-usage", "--page-size", "1")
             value = successful(result)
+            revision = value.get("revision")
             require(value.get("executionPermission") is False
-                    and value.get("revision", {}).get("deploymentId") == deployment,
+                    and isinstance(revision, dict) and revision.get("deploymentId") == deployment,
                     "stream-operator-inspection-is-not-authority")
+            require(revision.get("publicationId") == self.owner["publication"],
+                    "stream-operator-inspection-publication-changed")
+            capabilities = value.get("capabilities")
+            require(isinstance(capabilities, list) and len(capabilities) <= 1
+                    and all(isinstance(entry, dict) and entry.get("id") == CAPABILITY
+                            and entry.get("contract") == CAPABILITY and entry.get("provider") == PROFILE
+                            and isinstance(entry.get("inspection"), dict)
+                            and entry["inspection"].get("providerProfile") == PROFILE
+                            for entry in capabilities), "stream-operator-inspection-scope-changed")
             return value
 
 
