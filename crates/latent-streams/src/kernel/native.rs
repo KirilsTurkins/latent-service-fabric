@@ -123,6 +123,7 @@ where
             let resource = attempt.resource.take().expect("original resource");
             let reservation = attempt.reservation.take().expect("original reservation");
             attempt.entered = false; // Both original owners move together below.
+            drop(attempt); // Explicit affine handoff; no captured guard fields remain.
             let connection = match reservation.connected_retaining_on_error(resource) {
                 Ok(connection) => connection,
                 Err((failure, reservation, mut resource)) => {
