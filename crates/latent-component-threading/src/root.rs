@@ -31,6 +31,7 @@ pub struct RootReceipt {
     pub canonical_system_closure_functions: u32,
     pub canonical_result_area: Option<u32>,
     pub canonical_result_guard_installed: bool,
+    pub canonical_system_panic_trap: Option<u32>,
     pub post_return_function: Option<u32>,
     pub original_post_return_body: Option<u32>,
     pub realloc_function: Option<u32>,
@@ -46,6 +47,15 @@ pub struct RootReceipt {
 pub struct CanonicalResultGuard {
     pub static_area: u32,
     pub original_heap_low: u32,
+}
+
+/// An exact current-input body binding for a source-authenticated panic_fmt.
+/// The source catalogue/compiler proof must authenticate the ORIGINAL panic
+/// body and referents first; a caller-supplied index/digest is no authority.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct CanonicalSystemPanicTrap {
+    pub function: u32,
+    pub body_digest: [u8; 32],
 }
 
 struct Root {
@@ -69,6 +79,7 @@ struct Root {
     post_return: Option<(u32, u32, Vec<ValType>)>,
     realloc: Option<(u32, u32)>,
     result_guard: Option<CanonicalResultGuard>,
+    system_panic_trap: Option<CanonicalSystemPanicTrap>,
 }
 
 fn value(ty: wasmparser::ValType) -> Result<ValType, &'static str> {
@@ -86,6 +97,7 @@ fn inspect(
     thread: &ThreadEntryReceipt,
     post_return: Option<&str>,
     realloc: Option<&str>,
+    system_panic_trap: Option<CanonicalSystemPanicTrap>,
 ) -> Result<Root, &'static str> {
     let base = plan(input)?;
     let mut types = Vec::new();
@@ -331,6 +343,7 @@ fn inspect(
         high,
         system_scope: canonical.then_some(globals + 1),
         result_guard: None,
+        system_panic_trap,
         canonical_closure: BTreeSet::new(),
         realloc: match realloc {
             None => None,
@@ -367,6 +380,62 @@ fn inspect(
             }
         },
     };
+    if let Some(trap) = system_panic_trap {
+        let original_index = trap
+            .function
+            .checked_sub(imported)
+            .ok_or("rust-root-system-panic-must-be-defined")?;
+        let ty = *functions
+            .get(original_index as usize)
+            .ok_or("rust-root-system-panic-function-index")?;
+        let ty = types
+            .get(ty as usize)
+            .ok_or("rust-root-system-panic-type-index")?;
+        if !canonical
+            || ty.params() != [wasmparser::ValType::I32; 3]
+            || !ty.results().is_empty()
+            || [
+                root.root,
+                root.boot,
+                root.finish,
+                root.reap,
+                root.get,
+                root.set,
+            ]
+            .contains(&trap.function)
+            || root
+                .realloc
+                .is_some_and(|(function, _)| function == trap.function)
+            || root
+                .post_return
+                .as_ref()
+                .is_some_and(|(function, _, _)| *function == trap.function)
+        {
+            return Err("rust-root-system-panic-target-or-signature");
+        }
+        let mut index = imported;
+        let mut matched = false;
+        for payload in Parser::new(0).parse_all(input) {
+            if let Payload::CodeSectionEntry(body) =
+                payload.map_err(|_| "rust-root-system-panic-body-parse")?
+            {
+                if index == trap.function {
+                    let range = body.range();
+                    let raw = input
+                        .get(range.start as usize..range.end as usize)
+                        .ok_or("rust-root-system-panic-body-range")?;
+                    if <[u8; 32]>::from(Sha256::digest(raw)) != trap.body_digest {
+                        return Err("rust-root-system-panic-body-preimage");
+                    }
+                    matched = true;
+                }
+                index += 1;
+            }
+        }
+        if !matched {
+            return Err("rust-root-system-panic-body-missing");
+        }
+    }
     root.canonical_system_closure(input)?;
     Ok(root)
 }
@@ -445,6 +514,15 @@ impl Root {
             // These exact helpers were independently byte-checked above. Their
             // new System branch returns before any context lookup/intrinsic.
             if index == self.get || index == self.set {
+                continue;
+            }
+            // The exact selected body gets an unconditional System-only trap
+            // prefix before any original prologue, TLS or callback. This is a
+            // failure/quarantine path, never cleanup or owner settlement.
+            if self
+                .system_panic_trap
+                .is_some_and(|trap| trap.function == index)
+            {
                 continue;
             }
             if index < self.base.imported_functions {
@@ -839,6 +917,19 @@ impl Reencode for RewriteRoot {
         let index = self.plan.base.imported_functions + self.next;
         self.next += 1;
         let mut function = self.new_function_with_parsed_locals(&body)?;
+        if self
+            .plan
+            .system_panic_trap
+            .is_some_and(|trap| trap.function == index)
+        {
+            function
+                .instruction(&Instruction::GlobalGet(self.plan.system_scope.ok_or(
+                    reencode::Error::UserError("rust-root-system-panic-scope-missing"),
+                )?))
+                .instruction(&Instruction::If(BlockType::Empty))
+                .instruction(&Instruction::Unreachable)
+                .instruction(&Instruction::End);
+        }
         if index == self.plan.get || index == self.plan.set {
             self.plan
                 .bootstrap_stack_access(&mut function, index == self.plan.set);
@@ -905,7 +996,7 @@ pub fn transform_owned_root_bootstrap(
     expected_preimage: [u8; 32],
     thread: &ThreadEntryReceipt,
 ) -> Result<(Vec<u8>, RootReceipt), &'static str> {
-    transform(input, expected_preimage, thread, None, None, None)
+    transform(input, expected_preimage, thread, None, None, None, None)
 }
 
 /// Preserve original physical Store ownership through canonical cleanup, with
@@ -923,7 +1014,15 @@ pub fn transform_owned_canonical_root_bootstrap(
     {
         return Err("rust-root-explicit-canonical-export-name");
     }
-    transform(input, expected_preimage, thread, post_return, realloc, None)
+    transform(
+        input,
+        expected_preimage,
+        thread,
+        post_return,
+        realloc,
+        None,
+        None,
+    )
 }
 
 /// Install the dynamic result guard after the owning compiler has proved the
@@ -950,6 +1049,35 @@ pub fn transform_owned_guarded_canonical_root_bootstrap(
         Some(post_return),
         Some(realloc),
         Some(guard),
+        None,
+    )
+}
+
+/// Apply the independently authenticated panic_fmt binding in addition to the
+/// result guard. Normal Root panic instructions retain their original body.
+pub fn transform_owned_guarded_canonical_root_with_system_panic_trap(
+    input: &[u8],
+    expected_preimage: [u8; 32],
+    thread: &ThreadEntryReceipt,
+    post_return: &str,
+    realloc: &str,
+    guard: CanonicalResultGuard,
+    panic_trap: CanonicalSystemPanicTrap,
+) -> Result<(Vec<u8>, RootReceipt), &'static str> {
+    if !post_return.starts_with("cabi_post_")
+        || post_return.len() > 768
+        || realloc != "cabi_realloc"
+    {
+        return Err("rust-root-explicit-canonical-export-name");
+    }
+    transform(
+        input,
+        expected_preimage,
+        thread,
+        Some(post_return),
+        Some(realloc),
+        Some(guard),
+        Some(panic_trap),
     )
 }
 
@@ -960,12 +1088,13 @@ fn transform(
     post_return: Option<&str>,
     realloc: Option<&str>,
     result_guard: Option<CanonicalResultGuard>,
+    system_panic_trap: Option<CanonicalSystemPanicTrap>,
 ) -> Result<(Vec<u8>, RootReceipt), &'static str> {
     let original_digest = Sha256::digest(input).into();
     if original_digest != expected_preimage || original_digest != thread.stack.derived_digest {
         return Err("rust-root-thread-transform-preimage-mismatch");
     }
-    let mut root = inspect(input, thread, post_return, realloc)?;
+    let mut root = inspect(input, thread, post_return, realloc, system_panic_trap)?;
     if let Some(guard) = result_guard {
         if root.results != [ValType::I32]
             || root
@@ -1001,6 +1130,7 @@ fn transform(
         canonical_system_closure_functions: root.canonical_closure.len() as u32,
         canonical_result_area: result_guard.map(|guard| guard.static_area),
         canonical_result_guard_installed: result_guard.is_some(),
+        canonical_system_panic_trap: system_panic_trap.map(|trap| trap.function),
         post_return_function: root.post_return.as_ref().map(|(function, _, _)| *function),
         original_post_return_body: root.post_return.as_ref().map(|_| root.cloned + 1),
         realloc_function: root.realloc.map(|(function, _)| function),

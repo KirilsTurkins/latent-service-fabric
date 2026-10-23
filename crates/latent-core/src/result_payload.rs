@@ -1,6 +1,6 @@
 //! Immutable returned bytes retain their original memory owner through clones.
 //! Input Payload remains Vec. Only completed result ownership uses this type.
-use std::{cell::RefCell, fmt, ops::Deref};
+use std::{fmt, ops::Deref};
 
 use bytes::Bytes;
 
@@ -17,26 +17,27 @@ pub struct ResultPayload {
 struct Accounted {
     // Rust drops fields in declaration order: storage disappears before refund.
     bytes: Vec<u8>,
-    memory: RefCell<HostMemoryReservation>,
     // Original returned bytes are execution/result ownership, unlike a dead
     // Arc header's physical-memory-only guard. Bytes clones share this owner.
     _accounting: ActivationBudget,
 }
-// Locked bytes1.12.1 src/bytes.rs::Owned<T> adds one AtomicUsize to T.
+// The pinned bytes1.12.1 OwnedRetiring<T,R> adds one AtomicUsize and
+// Option<HostMemoryReservation> to Accounted, without a second allocation.
 // Bound that field, either field ordering's alignment padding, and the same
 // conservative allocator bookkeeping escrow used by original native owners.
 // The escrow covers both the original Vec's allocation metadata and the new
 // owner's Box metadata. This is a capacity bound, not an RSS measurement.
 const OWNER_ESCROW_BYTES: usize = 256;
-const OWNER_LAYOUT_BOUND: usize =
-    size_of::<Accounted>() + size_of::<usize>() + 2 * align_of::<Accounted>() + 64;
+const OWNER_LAYOUT_BOUND: usize = size_of::<Accounted>()
+    + size_of::<Option<HostMemoryReservation>>()
+    + size_of::<usize>()
+    + 2 * align_of::<Accounted>()
+    + 2 * align_of::<HostMemoryReservation>()
+    + 64;
 const _: () = assert!(OWNER_LAYOUT_BOUND + 64 <= OWNER_ESCROW_BYTES);
 
 impl AsRef<[u8]> for Accounted {
     fn as_ref(&self) -> &[u8] {
-        // Bytes::from_owner calls this once after its real owner Box exists.
-        // The returned immutable view never accesses this RefCell again.
-        self.memory.borrow_mut().confirm();
         &self.bytes
     }
 }
@@ -65,8 +66,8 @@ impl ResultPayload {
         // Tuple fields also drop in order: a refused binding must destroy the
         // actual Vec before its original memory guard, without borrowing an
         // ordinary owner from a budget which has not yet been validated.
-        let mut source = (bytes, RefCell::new(memory));
-        let memory = source.1.get_mut();
+        let mut source = (bytes, memory);
+        let memory = &mut source.1;
         if !memory.is_from_budget(budget) {
             return Err(BudgetError::InvalidAccountingOperation {
                 dimension: BudgetDimension::MemoryBytes,
@@ -79,11 +80,14 @@ impl ResultPayload {
         // Excess temporary/old-capacity storage has already been destroyed.
         memory.shrink(needed);
         Ok(Self {
-            bytes: Bytes::from_owner(Accounted {
-                bytes: source.0,
-                memory: source.1,
-                _accounting: budget.clone(),
-            }),
+            bytes: Bytes::from_owner_with_retirement(
+                Accounted {
+                    bytes: source.0,
+                    _accounting: budget.clone(),
+                },
+                source.1,
+                HostMemoryReservation::confirm,
+            ),
             capacity,
         })
     }

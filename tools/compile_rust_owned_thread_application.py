@@ -28,7 +28,7 @@ from tools.guest_dependency_inputs import capture_source
 from tools.rust_application_dependencies import configure
 from tools.rust_capsule_project import (
     canonical, checked_path, decode_json, digest, fresh, inventory, read_file, snapshot, write_json,
-    sdk_files,
+    sdk_files, host_projection_inputs,
 )
 
 RECIPE = tuple(dict.fromkeys(('tools/compile_rust_owned_thread_application.py',
@@ -38,7 +38,7 @@ RECIPE = tuple(dict.fromkeys(('tools/compile_rust_owned_thread_application.py',
     'tools/rust_thread_object_graph.py', 'tools/rust_thread_callback_paths.py',
     'tools/rust_thread_canonical_results.py',
     *builder.RECIPE, *standard.source_build_inputs(standard.THREAD), *fixture.RECIPE,
-    *sdk_files())))
+    *sdk_files(), *host_projection_inputs())))
 MAX_CORE = 8 * 1024 * 1024
 MAX_EXPANDED_SOURCE = 128 * 1024 * 1024
 MAX_SOURCE_ARCHIVE = 32 * 1024 * 1024
@@ -174,6 +174,7 @@ def run(output: Path, rust_bin: Path, owned_sysroot: Path, context_tool: Path, *
               'standardRuntimeQualified': False, 'normalBuildComplete': False}
     commands = None
     try:
+        host_projection = host_projection_inputs()
         rust_bin, context_tool = checked_path(rust_bin), checked_path(context_tool)
         prepared = standard.Prepared(owned_sysroot, rust_bin / 'rustc', standard.THREAD)
         try:
@@ -351,17 +352,28 @@ def run(output: Path, rust_bin: Path, owned_sysroot: Path, context_tool: Path, *
             result_observation = results.observe_canonical_result(
                 core, fixture.PUBLIC, fixture.POST, original_graph, source_result)
             write_json(output / 'canonical-result-source.json', result_observation)
+            panic_observation = results.observe_system_panic_trap(
+                core, original_graph, fixture.POST, 'cabi_realloc')
+            _, sealed_imports, sealed_bodies = objects.code(sealed)
+            require(digest(sealed_bodies[panic_observation['originalFunction'] - len(sealed_imports)])
+                    == panic_observation['linkedOriginalBodyDigest'], 'rust-thread-app-panic-body-sealing-drift')
+            write_json(output / 'canonical-system-panic-source.json', panic_observation)
             record['stage'] = 'actual-guarded-owned-core-transform'
-            commands.run('ordinary-owned-core', context_tool, '--guarded-ordinary-core',
+            commands.run('ordinary-owned-core', context_tool, '--guarded-ordinary-core-panic',
                 output / 'callback-isolated-core.wasm', digest(sealed), fixture.PUBLIC, fixture.POST,
                 'cabi_realloc', str(result_observation['staticResultArea']),
-                str(result_observation['originalHeapLow']), output / 'derived')
+                str(result_observation['originalHeapLow']),
+                str(panic_observation['originalFunction']), panic_observation['linkedOriginalBodyDigest'],
+                output / 'derived')
             commands.run('validate-derived-core', paths['wasm-tools'], 'validate', output / 'derived/core.wasm',
                 '--features', 'cm-async,cm-async-stackful,cm-more-async-builtins')
             receipt = decode_json(read_file(output / 'derived/receipt.json'))
             require(receipt['originalDigest'] == digest(sealed)
                     and receipt['canonicalResultGuardInstalled'] is True
                     and receipt['canonicalStaticResultArea'] == result_observation['staticResultArea']
+                    and receipt['canonicalSystemPanicOriginalFunction'] == panic_observation['originalFunction']
+                    and receipt['canonicalSystemPanicTrapFunction'] == panic_observation['originalFunction'] +
+                        int(receipt['nativeAdmissionImportInserted'])
                     and receipt['privateExecutorGraphAuthenticated'] is False
                     and receipt['canonicalAbiBodiesAuthenticated'] is False
                     and receipt['standardRuntimeQualified'] is False, 'rust-thread-app-source-only-receipt')
@@ -381,6 +393,7 @@ def run(output: Path, rust_bin: Path, owned_sysroot: Path, context_tool: Path, *
             observed.check_unchanged()
             require(inventory(snapshot(app)) == source
                     and compiled_source == files
+                    and host_projection_inputs() == host_projection
                     and inventory({name: read_file(builder.ROOT / name) for name in RECIPE}) == recipe
                     and time.monotonic() < deadline,
                     'rust-thread-app-final-source-or-deadline')

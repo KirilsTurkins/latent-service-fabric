@@ -113,6 +113,9 @@ class RustProjectTests(unittest.TestCase):
         prefix = 'wasmtime = { path = "crates/vendor/wasmtime", '
         self.assertEqual(original.count(prefix), 1)
         expected = original[original.index("[workspace.package]"):].replace(prefix, "wasmtime = { ", 1)
+        host_patch = '[patch.crates-io]\nbytes = { path = "crates/vendor/bytes" }\n\n'
+        self.assertEqual(expected.count(host_patch), 1)
+        expected = expected.replace(host_patch, "", 1)
         vendor = project.sdk_files()
         self.assertEqual(vendor["Cargo.toml"].split(b"[workspace.package]", 1)[1],
                          expected.split("[workspace.package]", 1)[1].encode())
@@ -129,6 +132,66 @@ class RustProjectTests(unittest.TestCase):
                 changed if selected == path else read_text(selected, *args, **kwargs)), \
                 self.assertRaisesRegex(ValueError, "selection not maintained"):
             project.sdk_files()
+
+    def test_host_bytes_projection_authenticates_only_the_exact_host_patch(self):
+        from tools import result_owner_bytes as host_bytes
+        from tools.security_common import SecurityError
+
+        vendor = project.sdk_files()
+        for raw in (vendor["Cargo.toml"], self.inputs["Cargo.toml"]):
+            self.assertNotIn("patch", tomllib.loads(raw.decode()))
+        self.assertFalse(any(name.startswith(host_bytes.PROVIDER + "/") for name in vendor))
+        with patch.object(host_bytes, "verify", side_effect=SecurityError("changed-source")), \
+                self.assertRaisesRegex(ValueError, "host bytes source"):
+            project.sdk_files()
+        path = project.ROOT / "Cargo.toml"
+        original, read_text = path.read_text(), Path.read_text
+        for changed in (original.replace('path = "crates/vendor/bytes"', 'path = "foreign/provider"'),
+                original.replace('[patch.crates-io]\n', '[patch.crates-io]\nforeign = { path = "escape" }\n')):
+            self.assertNotEqual(changed, original)
+            with self.subTest(manifest=changed), patch.object(Path, "read_text", lambda selected, *a, **kw:
+                    changed if selected == path else read_text(selected, *a, **kw)), \
+                    self.assertRaisesRegex(ValueError, "selection not maintained"):
+                project.sdk_files()
+        files = self.files()
+        files["Cargo.toml"] += b'\n[patch.crates-io]\nbytes = { path = "crates/vendor/bytes" }\n'
+        with self.assertRaisesRegex(ValueError, "patches"):
+            build.validate_project(files)
+
+    def test_host_projection_materials_are_separate_exact_and_reject_changed_capture(self):
+        from tools import result_owner_bytes as host_bytes
+        from tools import compile_rust_owned_thread_application as application
+        from tools import qualify_rust_git_dependencies as git_capture
+
+        materials = project.host_projection_inputs()
+        verified = host_bytes.verify(project.ROOT)
+        expected = {*project.PROJECTION_RECIPE, "Cargo.toml", "Cargo.lock",
+                    *(host_bytes.PROVIDER + "/" + name for name in verified["files"])}
+        self.assertEqual(set(materials), expected)
+        self.assertEqual(len(materials), 45)
+        self.assertTrue(expected <= set(build.RECIPE))
+        self.assertTrue(expected <= set(application.RECIPE))
+        self.assertTrue(set(project.PROJECTION_RECIPE) <= set(git_capture.MATERIALS))
+        vendor = project.sdk_files()
+        self.assertFalse(any(name.startswith(host_bytes.PROVIDER + "/") for name in vendor))
+        read = project.read_file
+        selected = host_bytes.PROVIDER + "/src/bytes.rs"
+        def changed(path, *args):
+            raw = read(path, *args)
+            return raw + b"changed" if path == project.ROOT / selected else raw
+        with patch.object(project, "read_file", side_effect=changed), \
+                self.assertRaisesRegex(ValueError, "projection inputs changed"):
+            project.host_projection_inputs()
+        def changed_manifest(path, *args):
+            raw = read(path, *args)
+            return raw.replace(b'crates/vendor/bytes', b'crates/vendor/other') if path == project.ROOT / "Cargo.toml" else raw
+        with patch.object(project, "read_file", side_effect=changed_manifest), \
+                self.assertRaisesRegex(ValueError, "projection selection changed"):
+            project.host_projection_inputs()
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "Cargo.toml").write_text("[workspace]\nmembers = []\n")
+            self.assertEqual(project.host_projection_inputs(root), {})
 
     def test_edited_sdk_does_not_satisfy_the_original_source_lock(self):
         files = self.files()
