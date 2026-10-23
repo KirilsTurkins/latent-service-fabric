@@ -135,6 +135,17 @@ enum Value {
 fn fields(kind: &str) -> Option<&'static [(&'static str, Value)]> {
     use Value::{Known, Unsigned};
     Some(match kind {
+        "audit-journal" => &[(
+            "reason",
+            Known(&[
+                "audit-capacity",
+                "audit-critical-pending",
+                "audit-busy",
+                "audit-unavailable",
+                "audit-closed",
+                "audit-corrupt",
+            ]),
+        )],
         "cell-pool.all-quarantined" => &[("quarantined", Unsigned)],
         "cell-pool.unsupported-operation" => &[("operation", Known(OPERATIONS))],
         "cell-pool.sequence-exhausted" => &[("scope", Known(&["phase0"]))],

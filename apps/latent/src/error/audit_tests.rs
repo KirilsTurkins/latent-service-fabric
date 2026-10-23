@@ -60,7 +60,10 @@ fn audit_diagnostics_preserve_known_rejection_and_transport_uncertainty() {
         let failure = Failure::from_status(&status);
         assert_eq!(failure.outcome_known, known);
         assert!(failure.request_dispatched);
-        assert_eq!(failure.error["details"][0]["fields"]["reason"], "audit-capacity");
+        assert_eq!(
+            failure.error["details"][0]["fields"]["reason"],
+            "audit-capacity"
+        );
         assert!(!failure.error.to_string().contains("private"));
     }
     // A bare transport resource error is not the producer's typed rejection.
