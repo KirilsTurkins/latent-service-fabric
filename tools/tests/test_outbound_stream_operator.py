@@ -23,15 +23,28 @@ class PolicyRpc:
         self.calls = []
         self.uncertain = self.throws = False
         self.inspect_authority = False
+        self.inspection = {
+            "capabilities": [{"id": stream.CAPABILITY, "contract": stream.CAPABILITY,
+                "provider": stream.PROFILE, "operations": list(stream.OPERATIONS),
+                "inspection": {"definitionDigest": None,
+                    "providerBinding": {"id": "stream-installed", "revision": "1", "digest": "sha256:" + "c" * 64},
+                    "policies": [{"id": "stream-allow", "revision": "1", "digest": "sha256:" + "d" * 64}],
+                    "providerProfile": stream.PROFILE, "providerConfigurationDigest": "sha256:" + "a" * 64,
+                    "providerConfigurationEpoch": "1", "state": "configured-current"}}],
+            "revision": {"deploymentId": "mail-deployment", "revisionId": "revision-v1:sha256:" + "e" * 64,
+                "componentDigest": "sha256:" + "f" * 64,
+                "publicationId": "publication-v1:sha256:" + "b" * 64,
+                "routeGeneration": "1", "catalogTransaction": "1"},
+            "nextPageToken": None, "state": "compiled-plan",
+            "tenantUsage": {"scope": "tenant", "counters": {}, "unavailable": []},
+            "nodeUsage": {"scope": "node", "counters": {}, "unavailable": ["outbound-stream-inspection-unavailable"]}}
 
     def call(self, *arguments):
         args = list(map(str, arguments))
         self.calls.append(args)
         result = {"outcomeKnown": True, "category": "success", "data": {}}
         if args[0] == "capability":
-            result["data"] = {"executionPermission": self.inspect_authority,
-                "revision": {"deploymentId": args[args.index("--deployment") + 1]},
-                "nodeUsage": {"scope": "node", "counters": {}, "unavailable": ["outbound-stream-inspection-unavailable"]}}
+            result["data"] = {**copy.deepcopy(self.inspection), "executionPermission": self.inspect_authority}
             return result
         if args[1] == "operation":
             operation = args[args.index("--operation-id") + 1]
@@ -220,6 +233,67 @@ class StreamOperator(unittest.TestCase):
         self.client.inspect_authority = True
         with self.assertRaises(DevError):
             operator.inspect("mail-deployment")
+        self.assertEqual(len(self.mutations()), 0)
+
+    def test_inspection_selects_exact_profile_contract_and_one_page_without_state_mutation(self):
+        operator = self.operator()
+        before = {path.name: path.read_bytes() for path in self.operator_root.iterdir() if path.is_file()}
+        result = operator.inspect("mail-deployment")
+        self.assertEqual(self.client.calls, [["capability", "list", "--deployment", "mail-deployment",
+            "--provider", stream.PROFILE, "--contract-prefix", stream.CAPABILITY,
+            "--include-node-usage", "--page-size", "1"]])
+        self.assertEqual(result, {**self.client.inspection, "executionPermission": False})
+        self.assertEqual(len(result["capabilities"]), 1)
+        self.assertEqual({path.name: path.read_bytes() for path in self.operator_root.iterdir() if path.is_file()}, before)
+
+    def test_inspection_rejects_reused_deployment_with_missing_or_foreign_publication(self):
+        operator = self.operator()
+        self.client.inspection["revision"]["deploymentId"] = "foreign-deployment"
+        with self.assertRaisesRegex(DevError, "inspection-is-not-authority"):
+            operator.inspect("mail-deployment")
+        self.client.inspection["revision"]["deploymentId"] = "mail-deployment"
+        for publication in (None, "publication-v1:sha256:" + "c" * 64):
+            self.client.inspection["revision"]["publicationId"] = publication
+            with self.assertRaisesRegex(DevError, "inspection-publication-changed"):
+                operator.inspect("mail-deployment")
+        del self.client.inspection["revision"]["publicationId"]
+        with self.assertRaisesRegex(DevError, "inspection-publication-changed"):
+            operator.inspect("mail-deployment")
+        self.assertEqual(len(self.mutations()), 0)
+
+    def test_inspection_rejects_foreign_contract_profile_and_oversized_page(self):
+        operator = self.operator()
+        original = copy.deepcopy(self.client.inspection["capabilities"])
+        for field, value in (("id", stream.CAPABILITY + "/alternate"),
+                             ("contract", stream.CAPABILITY + "/alternate"), ("provider", "foreign-profile")):
+            self.client.inspection["capabilities"] = copy.deepcopy(original)
+            self.client.inspection["capabilities"][0][field] = value
+            with self.assertRaisesRegex(DevError, "inspection-scope-changed"):
+                operator.inspect("mail-deployment")
+        self.client.inspection["capabilities"] = copy.deepcopy(original)
+        self.client.inspection["capabilities"][0]["inspection"]["providerProfile"] = "foreign-profile"
+        with self.assertRaisesRegex(DevError, "inspection-scope-changed"):
+            operator.inspect("mail-deployment")
+        for entries in (original * 2, None, [None]):
+            self.client.inspection["capabilities"] = entries
+            with self.assertRaisesRegex(DevError, "inspection-scope-changed"):
+                operator.inspect("mail-deployment")
+        self.assertEqual(len(self.mutations()), 0)
+
+    def test_inspection_preserves_empty_unavailable_and_changed_generation_diagnostics(self):
+        operator = self.operator()
+        for binding_state in ("policy-changed-or-revoked", "provider-unavailable", "publication-unavailable",
+                              "route-changed-or-unavailable", "inspection-indeterminate"):
+            binding = self.client.inspection["capabilities"][0]["inspection"]
+            binding.update(state=binding_state, providerConfigurationEpoch="2",
+                           providerConfigurationDigest="sha256:" + "c" * 64)
+            self.client.inspection["nodeUsage"]["counters"] = {"stream_owners": "3", "stream_retired_generations": "1"}
+            self.assertEqual(operator.inspect("mail-deployment"),
+                             {**self.client.inspection, "executionPermission": False})
+        self.client.inspection.update(capabilities=[], state="binding-plan-unavailable")
+        self.assertEqual(operator.inspect("mail-deployment"),
+                         {**self.client.inspection, "executionPermission": False})
+        self.assertEqual(operator.owner["provider"]["configurationEpoch"], "1")
         self.assertEqual(len(self.mutations()), 0)
 
     def test_explicit_new_descriptor_adoption_keeps_exact_owner_and_applies_no_mutation(self):
