@@ -11,9 +11,11 @@ from tools.phase2_operator_process import WorkflowError
 
 class PrivateRemovedInputs(unittest.TestCase):
     def test_transfer_limits_refuse_before_request_and_preserve_last_allowed_read(self):
+        from contextlib import nullcontext
         from unittest.mock import patch
-        reader=inputs.BoundedRanges('unused-no-network',inputs.MAX_TRANSFER+1)
-        with patch.object(inputs.Ranges,'read',return_value=b'x') as read:
+        reader=inputs.BoundedRanges('https://fixture.invalid/archive',inputs.MAX_TRANSFER+1)
+        response=SimpleNamespace(status=206,headers={'Content-Range':f'bytes 0-0/{reader.size}'},read=lambda n:b'x')
+        with patch.object(inputs.urllib.request,'urlopen',return_value=nullcontext(response)) as read:
             reader.requests=inputs.MAX_REQUESTS
             with self.assertRaises(WorkflowError):reader.read(1)
             read.assert_not_called()
@@ -22,7 +24,54 @@ class PrivateRemovedInputs(unittest.TestCase):
             read.assert_not_called()
             reader.transferred-=1
             self.assertEqual(reader.read(1),b'x')
-            read.assert_called_once_with(1)
+            read.assert_called_once()
+
+    def test_server_busy_retries_same_range_with_failed_attempts_still_charged(self):
+        from contextlib import nullcontext
+        from unittest.mock import patch
+        reader=inputs.BoundedRanges('https://fixture.invalid/archive',3)
+        busy=inputs.urllib.error.HTTPError(reader.url,503,'Egress is over the account limit.',{},None)
+        response=SimpleNamespace(status=206,headers={'Content-Range':'bytes 0-2/3'},read=lambda n:b'abc')
+        with patch.object(inputs.urllib.request,'urlopen',side_effect=[busy,busy,nullcontext(response)]) as read, \
+                patch.object(inputs.time,'sleep') as sleep,patch.object(inputs.time,'monotonic',return_value=10):
+            self.assertEqual(reader.read(3),b'abc')
+            self.assertEqual([call.args[0].get_header('Range') for call in read.call_args_list],['bytes=0-2']*3)
+            self.assertEqual([call.args[0] for call in sleep.call_args_list],[2,8])
+            self.assertEqual((reader.requests,reader.transferred,reader.position),(3,9,3))
+        reader=inputs.BoundedRanges('https://fixture.invalid/archive',3)
+        with patch.object(inputs.urllib.request,'urlopen',side_effect=busy) as read, \
+                patch.object(inputs.time,'sleep') as sleep,patch.object(inputs.time,'monotonic',return_value=10):
+            with self.assertRaises(inputs.urllib.error.HTTPError):reader.read(3)
+            self.assertEqual(read.call_count,3)
+            self.assertEqual((reader.requests,reader.transferred,reader.position),(3,9,0))
+
+    def test_server_busy_retry_refuses_before_caps_or_original_deadline(self):
+        from unittest.mock import patch
+        for requests,transferred in [(inputs.MAX_REQUESTS-1,0),(0,inputs.MAX_TRANSFER-1)]:
+            reader=inputs.BoundedRanges('https://fixture.invalid/archive',1)
+            reader.requests=requests;reader.transferred=transferred
+            busy=inputs.urllib.error.HTTPError(reader.url,503,'busy',{'x-ms-error-code':'ServerBusy'},None)
+            with patch.object(inputs.urllib.request,'urlopen',side_effect=busy) as read, \
+                    patch.object(inputs.time,'sleep') as sleep:
+                with self.assertRaises(WorkflowError):reader.read(1)
+                self.assertEqual(read.call_count,1);sleep.assert_not_called()
+                self.assertEqual((reader.requests,reader.transferred,reader.position),(requests+1,transferred+1,0))
+        reader=inputs.BoundedRanges('https://fixture.invalid/archive',1)
+        with patch.object(inputs.urllib.request,'urlopen',side_effect=busy) as read, \
+                patch.object(inputs.time,'sleep') as sleep,patch.object(inputs.time,'monotonic',side_effect=[0,0,29]):
+            with self.assertRaises(WorkflowError):reader.read(1)
+            self.assertEqual(read.call_count,1);sleep.assert_not_called()
+
+    def test_forbidden_and_unclassified_service_unavailable_never_retry(self):
+        from unittest.mock import patch
+        for code in (403,503):
+            reader=inputs.BoundedRanges('https://fixture.invalid/archive',1)
+            error=inputs.urllib.error.HTTPError(reader.url,code,'unclassified',{},None)
+            with patch.object(inputs.urllib.request,'urlopen',side_effect=error) as read, \
+                    patch.object(inputs.time,'sleep') as sleep:
+                with self.assertRaises(inputs.urllib.error.HTTPError):reader.read(1)
+                self.assertEqual(read.call_count,1);sleep.assert_not_called()
+                self.assertEqual((reader.requests,reader.transferred,reader.position),(1,1,0))
 
     def test_fixed_members_keep_cancelled_guest_and_separate_host_origins(self):
         value = inputs.fixture()

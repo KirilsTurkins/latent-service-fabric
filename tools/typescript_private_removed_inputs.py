@@ -8,6 +8,7 @@ from pathlib import Path, PurePosixPath
 import stat
 import subprocess
 import sys
+import time
 import urllib.error
 import urllib.request
 import zipfile
@@ -28,12 +29,48 @@ MAX_REQUESTS = 512
 
 
 class BoundedRanges(Ranges):
-    """Enforce this reader's original transfer ceiling before actual I/O."""
+    """Charge every attempt; retry only Azure ServerBusy within one deadline."""
     def read(self, count=-1):
-        actual = self.size-self.position if count == -1 else min(count,self.size-self.position)
-        require(not actual or (self.requests < MAX_REQUESTS and
-            actual <= MAX_TRANSFER-self.transferred), 'ts-private-removed-selected-acquisition-bound')
-        return super().read(count)
+        if count == -1:
+            count = self.size-self.position
+        require(0 <= count <= 8*1024**2, 'java-replay-range-bound')
+        count = min(count,self.size-self.position)
+        if not count:
+            return b''
+        expires = time.monotonic()+30
+        for attempt in range(3):
+            require(self.requests < MAX_REQUESTS and count <= MAX_TRANSFER-self.transferred,
+                'ts-private-removed-selected-acquisition-bound')
+            remaining = expires-time.monotonic()
+            delay = (0,2,8)[attempt]
+            require(remaining > delay, 'ts-private-removed-range-deadline')
+            if delay:
+                time.sleep(delay)
+                remaining = expires-time.monotonic()
+                require(remaining > 0, 'ts-private-removed-range-deadline')
+            # A refused/partial remote attempt consumes the SAME original
+            # requested-byte/request ceilings; no refund on HTTP failure.
+            self.requests += 1
+            self.transferred += count
+            end = self.position+count-1
+            request = urllib.request.Request(self.url,
+                headers={'Range':f'bytes={self.position}-{end}'})
+            try:
+                with urllib.request.urlopen(request,timeout=remaining) as response:
+                    require(response.status == 206 and response.headers['Content-Range'] ==
+                        f'bytes {self.position}-{end}/{self.size}', 'java-replay-range-response')
+                    raw = response.read(count+1)
+            except urllib.error.HTTPError as error:
+                busy = error.code == 503 and ((error.headers or {}).get('x-ms-error-code') == 'ServerBusy'
+                    or error.reason == 'Egress is over the account limit.')
+                if not busy or attempt == 2:
+                    raise
+                error.close()
+                continue
+            require(time.monotonic() < expires, 'ts-private-removed-range-deadline')
+            require(len(raw) == count, 'java-replay-range-length')
+            self.position += count
+            return raw
 
 
 def fixture():

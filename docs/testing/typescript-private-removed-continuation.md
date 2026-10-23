@@ -21,9 +21,14 @@ package inventory. The five original deployment files retain their examples
 tenant, exact service/component association and empty grants before signing.
 No component, capture, generator, deployment or build marker changes.
 
-Seven focused controls check provenance refusal, archive bounds, static-layer
+Ten focused controls check provenance refusal, archive bounds, static-layer
 recovery and required physical retirement. Acquisition streams one MiB at a time
 and refuses before any request exceeding the original 512-request/128-MiB limits.
+Only Azure's transient `503 ServerBusy` (including its exact egress-limit reason)
+permits at most three attempts of the same range, with two/eight-second backoff.
+Failed attempts remain charged to both limits and share the original 30-second
+request deadline; other HTTP errors propagate immediately. This follows the
+[Azure error contract](https://learn.microsoft.com/en-us/rest/api/storageservices/common-rest-api-error-codes).
 The remaining hosted programme must
 still produce thirty actual invocations, three removed-package cases and clean
 physical shutdown. Source checks and package verification do not qualify those
