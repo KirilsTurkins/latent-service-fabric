@@ -89,8 +89,9 @@ static void snapshot(const char *name, const unsigned char bytes[DIAGNOSTIC_BYTE
 static int terminal(const unsigned char bytes[DIAGNOSTIC_BYTES])
 {
     /* Source-derived expectations for actual Task/Control/child retirement.
-     * One real Root remains held by this FD. This is NOT Root final-free. */
-    static const uint64_t fields[] = {8, 5, 0, 2, 0, 1, 1, 0, 1, 1};
+     * The original backing view and real Root remain held by this FD.
+     * Both are LIVE records; this is NOT Root final-free. */
+    static const uint64_t fields[] = {8, 5, 0, 2, 0, 1, 2, 0, 1, 1};
     if (little(bytes + 8, 4) != CLOSED || little(bytes + 12, 4))
         return 0;
     for (unsigned int i = 0; i < 10; ++i)

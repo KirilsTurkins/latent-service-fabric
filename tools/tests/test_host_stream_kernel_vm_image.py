@@ -22,7 +22,7 @@ class KernelConstructorVmImages(unittest.TestCase):
             return (f'LSFVM1 snapshot={name} state={state} error=0'
                     + ''.join(f' field{index}={value}' for index, value in enumerate(fields)))
         rows = ['LSFVM1 boot=constructor-only production-sockets=disabled',
-                snapshot('opened', 0, [0]*6+[1, 0, 0, 0]),
+                snapshot('opened', 0, [0]*6+[2, 0, 0, 0]),
                 snapshot('ready', 2, [3, 0, 1, 1, 1, 0, 10, 0, 0, 0]),
                 snapshot('child-retired-root-held', 4, owner.TERMINAL_FIELDS),
                 'LSFVM1 result=PASS stage=actual-child-retirement-root-final-free-unqualified']

@@ -24,7 +24,7 @@ REQUIRED_CONFIG = (
     'CONFIG_SERIAL_8250', 'CONFIG_SERIAL_8250_CONSOLE', 'CONFIG_PCI',
     'CONFIG_ACPI', 'CONFIG_LSF_STREAM_FACTORY',
 )
-TERMINAL_FIELDS = (8, 5, 0, 2, 0, 1, 1, 0, 1, 1)
+TERMINAL_FIELDS = (8, 5, 0, 2, 0, 1, 2, 0, 1, 1)
 
 
 def require(condition, reason):
@@ -101,8 +101,8 @@ def serial_observation(raw: bytes) -> dict:
     require(snapshots['opened']['state'] == 0 and snapshots['opened']['error'] == 0
             and snapshots['ready']['state'] == 2 and snapshots['ready']['error'] == 0,
             'actual-ready-transition')
-    require(snapshots['opened']['fields'] == [0, 0, 0, 0, 0, 0, 1, 0, 0, 0],
-            'only-original-root-before-birth')
+    require(snapshots['opened']['fields'] == [0, 0, 0, 0, 0, 0, 2, 0, 0, 0],
+            'only-original-backing-and-root-before-birth')
     active = snapshots['ready']['fields']
     require(active[0:2] == [3, 0] and active[2] in (0, 1) and active[3] == 1
             and 1 <= active[4] <= 256 and active[5] == 0
