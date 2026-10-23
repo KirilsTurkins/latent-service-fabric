@@ -99,12 +99,27 @@ source adds an outside collector at actual final FD release only for an already
 retired constructor-only graph. It validates every original owner/record and
 physical page, closes the immutable IRQ hint before Request return, withdraws
 the original global bank views, returns the original order-7 bank and then drops
-the original actor references. The successful child receipt does not qualify
+the original actor references. The historical child receipt does not qualify
 this newer physical return. Late close with unfinished children, uncertainty,
 any historical application birth or device construction still retains the bank.
 Opened/generation state and permanent observer seals remain sticky; no reopen,
 static bootstrap refund, new authority or native release certificate is added.
-Physical Root final-free, native node/ledger
-integration, complete allocation and bootstrap closure, compiler implicit
-input attestation, cancellation/pressure qualification and production
-installation remain separate requirements. No whole milestone ticket closes.
+
+The separate [physical return observation](evidence/kernel-constructor-root-physical-return-2026-10-23.json)
+records actual [run40023871153/job120655010480](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40023871153/job/120655010480)
+at source `eef89f053e7729c314235471a5ec984b0541a474`. All 43 mandatory controls
+passed. The full kernel linked in 728.028 seconds; the VM passed in 3.242 seconds.
+After the unchanged child-retired snapshot still held two live Root/backing
+records, the kernel emitted its unique fixed observation after actual page
+return and all four original actor reference puts. The host checked its order
+and raw serial identity; PID1 reported only its descriptor-close check.
+Independent verification authenticated all 33 archive members, 282 Git inputs,
+five reviewed derived outputs and both original compiled page headers; the
+other 319 derived files match the earlier qualified constructor.
+
+This qualifies physical return only for the already-retired successful
+constructor graph. Native quota release, application/device-used graphs,
+eventual late-close/cancellation reclamation, native node integration, complete
+allocation and bootstrap closure, compiler implicit input attestation and
+production installation remain separate requirements. No whole milestone
+ticket closes.
