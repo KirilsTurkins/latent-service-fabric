@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_java_checkpoint_gc.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Add a finite two-phase parked-continuation GC witness with exact public fixture, four signed two-tenant GC/fresh calls, two zero-work denials, real locked collector/weak-reference controls and closed24-file8MiB C custody; preserve original six-case programme and limits, separate native193 provenance, no native rebuild or whole-ticket claim.",
+  "reviewReason": "Follow actual fixed generated root and anonymous child callgraphs through legitimate collector helper inlining to real mark, weak-referent null store and sweep; preserve strict two runtime weak-clear witnesses and full real-IR chain.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "4cde7a73a73a1b7e989790bdc29013c689300088df1fd35ad1212c9824cdb23b"
+  "sha256": "1579b1091070267db5ef36eac18ee389431beb56ca8ac20198ed983f8d3714a9"
 }

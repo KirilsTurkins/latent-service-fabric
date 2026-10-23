@@ -82,22 +82,27 @@ class JavaCheckpointGcTests(unittest.TestCase):
     def test_generated_mechanism_refuses_missing_collector_getter_or_child_resume(self):
         # Synthetic text exercises the controller gate only, never GC evidence.
         bodies={
-            'c/o/t/r/GC.c':'void teavm_gc_collectFull() { GC_mark(); GC_processReferences(); GC_sweep(); }',
+            'c/o/t/r/GC.c':'void meth_otr_GC_collectGarbageImpl() {\n'
+                'meth_otr_GC_mark(); reference->object = NULL; meth_otr_GC_sweep();\n}\n'
+                'void meth_otr_GC_mark() {\n}\nvoid meth_otr_GC_sweep() {\n}\n',
             'c/j/l/r/WeakReference.c':'teavm_reference_init(); teavm_reference_get();',
-            'c/j/l/System.c':'teavm_gc_collectFull();',
-            'c/d/l/a/Capsule.c':'WeakReference_get(); Capsule_collectOnce(); '
-                'meth_otr_Fiber_isSuspending(); meth_otr_Fiber_push(); meth_otr_Fiber_pop();',
-            'c/d/l/a/Capsule@d1.c':'Capsule_1_initialize(); WeakReference_get(); Capsule_collectOnce(); '
-                'meth_otr_Fiber_isSuspending(); meth_otr_Fiber_push(); meth_otr_Fiber_pop();'}
+            'c/j/l/System.c':'void meth_jl_System_gc() {\nmeth_otr_GC_collectGarbageImpl();\n}\n',
+            'c/d/l/a/Capsule.c':'void meth_dla_Capsule_checked() {\n'
+                'WeakReference_get(); meth_jl_System_gc(); '
+                'meth_otr_Fiber_isSuspending(); meth_otr_Fiber_push(); meth_otr_Fiber_pop();\n}\n',
+            'c/d/l/a/Capsule@d1.c':'void meth_dla_Capsule_1_initialize() {\n'
+                'WeakReference_get(); meth_jl_System_gc(); '
+                'meth_otr_Fiber_isSuspending(); meth_otr_Fiber_push(); meth_otr_Fiber_pop();\n}\n'}
         with tempfile.TemporaryDirectory() as temporary:
             root=Path(temporary)
             for name,body in bodies.items():
                 path=root/name;path.parent.mkdir(parents=True,exist_ok=True);path.write_text(body)
             self.assertFalse(generated_mechanism(root)['runtimeCollectionObserved'])
-            for name,needle in (('c/o/t/r/GC.c','void teavm_gc_collectFull()'),
+            for name,needle in (('c/o/t/r/GC.c','meth_otr_GC_mark();'),
                     ('c/j/l/r/WeakReference.c','teavm_reference_get()'),
-                    ('c/j/l/System.c','teavm_gc_collectFull()'),
-                    ('c/d/l/a/Capsule@d1.c','meth_otr_Fiber_pop()')):
+                    ('c/j/l/System.c','meth_otr_GC_collectGarbageImpl();'),
+                    ('c/d/l/a/Capsule@d1.c','meth_otr_Fiber_pop()'),
+                    ('c/o/t/r/GC.c','reference->object = NULL;')):
                 (root/name).write_text(bodies[name].replace(needle,'omitted'))
                 with self.subTest(name=name),self.assertRaises(WorkflowError):generated_mechanism(root)
                 (root/name).write_text(bodies[name])

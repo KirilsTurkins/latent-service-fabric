@@ -37,27 +37,48 @@ MATERIALS=tuple(sorted(set((*RECIPE,fixture.SOURCE,fixture.REFERENCE,fixture.CON
 
 
 def generated_mechanism(directory):
-    """Require real selected generated bodies; runtime weak clears remain separate."""
-    def text(name):return read_file(directory/name,1024**2).decode('utf-8')
-    collector=text('c/o/t/r/GC.c');weak=text('c/j/l/r/WeakReference.c')
-    system=text('c/j/l/System.c');root=text('c/d/l/a/Capsule.c')
-    child=text('c/d/l/a/Capsule@d1.c')
-    full=r'(?:teavm_gc_collectFull|meth_otr_GC_collectGarbageFull)'
-    require(re.search(r'void\s+'+full+r'\s*\([^;{}]*\)\s*\{',collector) is not None
-        and all(name in collector for name in ('GC_mark(', 'GC_processReferences(', 'GC_sweep('))
-        and re.search(full+r'\s*\(',system) is not None
-        and 'teavm_reference_init(' in weak and 'teavm_reference_get(' in weak,
-        'java-gc-actual-standard-collector-and-weak-getter-bodies')
-    collection_call=r'(?:Capsule_collectOnce|meth_jl_System_gc(?:LowLevel)?|'+full+r')\s*\('
-    require('WeakReference_get(' in root and 'WeakReference_get(' in child
-        and 'Capsule_1_initialize(' in child
-        and all(re.search(collection_call,body) is not None for body in (root,child))
-        and all('meth_otr_Fiber_isSuspending' in body and 'meth_otr_Fiber_push' in body
-            and 'meth_otr_Fiber_pop' in body for body in (root,child)),
-        'java-gc-actual-root-child-collector-and-continuation-bodies')
-    return {'standardFullCollectorBody':True,'realMarkWeakClearSweepControlRequired':True,
-        'standardGcDelegateCallsFullCollector':True,'actualLowlevelWeakInitAndGet':True,
-        'rootAndAnonymousChildContinuationBodies':True,'runtimeCollectionObserved':False}
+    """Follow actual fixed generated functions, including legitimate helper inlining."""
+    names=('c/d/l/a/Capsule.c','c/d/l/a/Capsule@d1.c','c/j/l/System.c','c/o/t/r/GC.c')
+    texts={name:read_file(directory/name,1024**2).decode('utf-8').replace('\r\n','\n') for name in names}
+    functions={};owners={}
+    definition=re.compile(r'(?m)^[A-Za-z_][A-Za-z0-9_* ]{0,256}\b'
+        r'((?:meth_[A-Za-z0-9_]+|teavm_gc_collectFull))\s*\([^;{}\n]{0,2048}\)\s*\{')
+    for name,text in texts.items():
+        for match in definition.finditer(text):
+            symbol=match[1];end=text.find('\n}\n',match.end())
+            require(end>=0 and symbol not in functions and len(functions)<2048,
+                'java-gc-generated-function-shape')
+            functions[symbol]=text[match.end():end];owners[symbol]=name
+    calls={name:set(re.findall(r'\b(meth_[A-Za-z0-9_]+|teavm_gc_collectFull)\s*\(',body))
+        for name,body in functions.items()}
+    def reachable(start):
+        seen=set();pending={start}
+        for _ in range(2049):
+            if not pending:return seen
+            name=pending.pop()
+            if name in seen:continue
+            seen.add(name);pending.update((calls.get(name,set())&functions.keys())-seen)
+        require(False,'java-gc-generated-callgraph-bound')
+    entries=('meth_dla_Capsule_checked','meth_dla_Capsule_1_initialize')
+    graphs={name:reachable(name) for name in entries}
+    required={'meth_otr_GC_mark','meth_otr_GC_sweep'}
+    require(all(name in functions and required<=graph for name,graph in graphs.items()),
+        'java-gc-actual-root-child-path-to-mark-and-sweep')
+    collector_names=set().union(*graphs.values())
+    collector_bodies=[functions[name] for name in sorted(collector_names)
+        if owners[name]=='c/o/t/r/GC.c']
+    require(any(re.search(r'->object\s*=\s*NULL\s*;',body) for body in collector_bodies),
+        'java-gc-actual-reachable-unmarked-weak-referent-clear')
+    weak=read_file(directory/'c/j/l/r/WeakReference.c',1024**2).decode('utf-8')
+    require('teavm_reference_init(' in weak and 'teavm_reference_get(' in weak,
+        'java-gc-actual-lowlevel-weak-init-and-get')
+    require(all('WeakReference_get(' in texts[name] and all(token in texts[name]
+        for token in ('meth_otr_Fiber_isSuspending','meth_otr_Fiber_push','meth_otr_Fiber_pop'))
+        for name in names[:2]),'java-gc-actual-root-and-child-continuation-bodies')
+    return {'rootAndChildCollectorPaths':{name:sorted(graph) for name,graph in graphs.items()},
+        'actualReachableMarkAndSweep':True,'actualReachableWeakReferentNullStore':True,
+        'actualLowlevelWeakInitAndGet':True,'rootAndAnonymousChildContinuationBodies':True,
+        'realFullGcIrChainRequired':True,'runtimeCollectionObserved':False}
 
 
 def build_evidence(artifact):
