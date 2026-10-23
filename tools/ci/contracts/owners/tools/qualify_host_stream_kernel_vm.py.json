@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_host_stream_kernel_vm.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Freeze bounded VMALLOC-domain extent selection as an exact compiler recipe input; mapping, physical bank, virtual span and execution caps unchanged.",
+  "reviewReason": "Reviewed bounded augmented extent fit selection and four new source controls; original limits and prior controls retained.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "34d7a378d3bbdf06d2c4a986603a347885ae48eb908b07eb01c942463e1c84a7"
+  "sha256": "9cb9871e109ebbd611c6e7fc02259a6ab542f34f659c3a592a66f1c3be7c441c"
 }

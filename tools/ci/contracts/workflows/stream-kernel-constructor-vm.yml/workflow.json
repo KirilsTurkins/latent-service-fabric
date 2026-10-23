@@ -22,6 +22,8 @@
           "tools/tests/test_host_stream_kernel_stack_alignment.py",
           "tools/host_stream_kernel_vmap_extent.py",
           "tools/tests/test_host_stream_kernel_vmap_extent.py",
+          "tools/host_stream_kernel_vmap_fit.py",
+          "tools/tests/test_host_stream_kernel_vmap_fit.py",
           "research/standard-outbound/linux-6.12-lineage/constructor-vm-init.c"
         ]
       },
@@ -34,7 +36,7 @@
   "requiredJobs": [
     "constructor-vm"
   ],
-  "reviewReason": "Trigger reviewed bounded original-tree extent selection and require its three controls alongside all nineteen originals; retain actual VM evidence bounds.",
+  "reviewReason": "Reviewed bounded augmented extent fit selection and four new source controls; original limits and prior controls retained.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/stream-kernel-constructor-vm.yml"
 }
