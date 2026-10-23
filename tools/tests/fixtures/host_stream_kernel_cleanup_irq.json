@@ -1,0 +1,107 @@
+{
+  "schemaVersion": "lsf.kernel-cleanup-irq-source.v1",
+  "upstreamCommit": "7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+  "archiveSha256": "e09b6727e5c521253f0d41694900b9c38fb7604db7d35238a8197aa9f7de2428",
+  "source": {
+    "kernel/irq_work.c": {
+      "bytes": 8082,
+      "sha256": "1bd76f8cbe51ca540d91733555706f579be7b2da41f4cf7fc19617e1a252b66a"
+    },
+    "include/linux/irq_work.h": {
+      "bytes": 2087,
+      "sha256": "f1e6eeae80beabe461d3522f2ba773c8ae449388d6fcf7b3d0fcdf84ebf3cc14"
+    },
+    "arch/x86/kernel/irq_work.c": {
+      "bytes": 698,
+      "sha256": "757eb32c1ffb58711efb313245af340fc80eeab9f06341e90070808dbcbc4b4a"
+    },
+    "arch/x86/include/asm/irq_work.h": {
+      "bytes": 358,
+      "sha256": "34af2349372fccd1663eb646e4e8d12d9cba52829ca35afe047f4f4e0f553745"
+    },
+    "kernel/smp.c": {
+      "bytes": 32070,
+      "sha256": "aad2db703a7f9ad174898abb527a4c04b7a0acc8f7f758e2011d3cad5e8ad366"
+    }
+  },
+  "sections": {
+    "claim": {
+      "source": "kernel/irq_work.c",
+      "text": "static bool irq_work_claim(struct irq_work *work)\n{\n\tint oflags;\n\n\toflags = atomic_fetch_or(IRQ_WORK_CLAIMED | CSD_TYPE_IRQ_WORK, &work->node.a_flags);\n\t/*\n\t * If the work is already pending, no need to raise the IPI.\n\t * The pairing smp_mb() in irq_work_single() makes sure\n\t * everything we did before is visible.\n\t */\n\tif (oflags & IRQ_WORK_PENDING)\n\t\treturn false;\n\treturn true;\n}\n",
+      "bytes": 385,
+      "sha256": "f37025b10f43dc889f6ae3d642b608a2ede2d90137522a4c964df3a08318bfeb"
+    },
+    "local": {
+      "source": "kernel/irq_work.c",
+      "text": "static void __irq_work_queue_local(struct irq_work *work)\n{\n\tstruct llist_head *list;\n\tbool rt_lazy_work = false;\n\tbool lazy_work = false;\n\tint work_flags;\n\n\twork_flags = atomic_read(&work->node.a_flags);\n\tif (work_flags & IRQ_WORK_LAZY)\n\t\tlazy_work = true;\n\telse if (IS_ENABLED(CONFIG_PREEMPT_RT) &&\n\t\t !(work_flags & IRQ_WORK_HARD_IRQ))\n\t\trt_lazy_work = true;\n\n\tif (lazy_work || rt_lazy_work)\n\t\tlist = this_cpu_ptr(&lazy_list);\n\telse\n\t\tlist = this_cpu_ptr(&raised_list);\n\n\tif (!llist_add(&work->node.llist, list))\n\t\treturn;\n\n\t/* If the work is \"lazy\", handle it from next tick if any */\n\tif (!lazy_work || tick_nohz_tick_stopped())\n\t\tirq_work_raise(work);\n}\n",
+      "bytes": 660,
+      "sha256": "40ea67444d0543a958ade33966708b065e14958889bb1b2fcc067d216b4436c9"
+    },
+    "queue": {
+      "source": "kernel/irq_work.c",
+      "text": "bool irq_work_queue(struct irq_work *work)\n{\n\t/* Only queue if not already pending */\n\tif (!irq_work_claim(work))\n\t\treturn false;\n\n\t/* Queue the entry and raise the IPI if needed. */\n\tpreempt_disable();\n\t__irq_work_queue_local(work);\n\tpreempt_enable();\n\n\treturn true;\n}\n",
+      "bytes": 270,
+      "sha256": "10f9163679e4ae408a686a284e039f621771572c33f73a80dfd52ffed772f8c7"
+    },
+    "single": {
+      "source": "kernel/irq_work.c",
+      "text": "void irq_work_single(void *arg)\n{\n\tstruct irq_work *work = arg;\n\tint flags;\n\n\t/*\n\t * Clear the PENDING bit, after this point the @work can be re-used.\n\t * The PENDING bit acts as a lock, and we own it, so we can clear it\n\t * without atomic ops.\n\t */\n\tflags = atomic_read(&work->node.a_flags);\n\tflags &= ~IRQ_WORK_PENDING;\n\tatomic_set(&work->node.a_flags, flags);\n\n\t/*\n\t * See irq_work_claim().\n\t */\n\tsmp_mb();\n\n\tlockdep_irq_work_enter(flags);\n\twork->func(work);\n\tlockdep_irq_work_exit(flags);\n\n\t/*\n\t * Clear the BUSY bit, if set, and return to the free state if no-one\n\t * else claimed it meanwhile.\n\t */\n\t(void)atomic_cmpxchg(&work->node.a_flags, flags, flags & ~IRQ_WORK_BUSY);\n\n\tif ((IS_ENABLED(CONFIG_PREEMPT_RT) && !irq_work_is_hard(work)) ||\n\t    !arch_irq_work_has_interrupt())\n\t\trcuwait_wake_up(&work->irqwait);\n}\n",
+      "bytes": 822,
+      "sha256": "36fb2aea60736576717b7b736e910a4afab24bc55ac6e4a6584105cae3736c64"
+    },
+    "sync": {
+      "source": "kernel/irq_work.c",
+      "text": "void irq_work_sync(struct irq_work *work)\n{\n\tlockdep_assert_irqs_enabled();\n\tmight_sleep();\n\n\tif ((IS_ENABLED(CONFIG_PREEMPT_RT) && !irq_work_is_hard(work)) ||\n\t    !arch_irq_work_has_interrupt()) {\n\t\trcuwait_wait_event(&work->irqwait, !irq_work_is_busy(work),\n\t\t\t\t   TASK_UNINTERRUPTIBLE);\n\t\t/*\n\t\t * Ensure irq_work_single() does not access @work\n\t\t * after removing IRQ_WORK_BUSY. It is always\n\t\t * accessed within a RCU-read section.\n\t\t */\n\t\tsynchronize_rcu();\n\t\treturn;\n\t}\n\n\twhile (irq_work_is_busy(work))\n\t\tcpu_relax();\n}\n",
+      "bytes": 527,
+      "sha256": "c55b6c181649e1011ee1688016ed6d5dd3baa50121c46a40510e7fd80c404b9a"
+    },
+    "dying": {
+      "source": "kernel/smp.c",
+      "text": "int smpcfd_dying_cpu(unsigned int cpu)\n{\n\t/*\n\t * The IPIs for the smp-call-function callbacks queued by other\n\t * CPUs might arrive late, either due to hardware latencies or\n\t * because this CPU disabled interrupts (inside stop-machine)\n\t * before the IPIs were sent. So flush out any pending callbacks\n\t * explicitly (without waiting for the IPIs to arrive), to\n\t * ensure that the outgoing CPU doesn't go offline with work\n\t * still pending.\n\t */\n\t__flush_smp_call_function_queue(false);\n\tirq_work_run();\n\treturn 0;\n}\n",
+      "bytes": 520,
+      "sha256": "bbed8073ff163eef70ef30e1565035c37941b3f10eeaaaf624bf375751711303"
+    },
+    "prepare": {
+      "source": "kernel/smp.c",
+      "text": "int smpcfd_prepare_cpu(unsigned int cpu)\n{\n\tstruct call_function_data *cfd = &per_cpu(cfd_data, cpu);\n\n\tif (!zalloc_cpumask_var_node(&cfd->cpumask, GFP_KERNEL,\n\t\t\t\t     cpu_to_node(cpu)))\n\t\treturn -ENOMEM;\n\tif (!zalloc_cpumask_var_node(&cfd->cpumask_ipi, GFP_KERNEL,\n\t\t\t\t     cpu_to_node(cpu))) {\n\t\tfree_cpumask_var(cfd->cpumask);\n\t\treturn -ENOMEM;\n\t}\n\tcfd->csd = alloc_percpu(call_single_data_t);\n\tif (!cfd->csd) {\n\t\tfree_cpumask_var(cfd->cpumask);\n\t\tfree_cpumask_var(cfd->cpumask_ipi);\n\t\treturn -ENOMEM;\n\t}\n\n\treturn 0;\n}\n",
+      "bytes": 523,
+      "sha256": "fb2ce877a63ea379d26b6e170671ba7de2b6c6c05f4f5ff87fcaf6922455ad2a"
+    },
+    "raise": {
+      "source": "arch/x86/kernel/irq_work.c",
+      "text": "void arch_irq_work_raise(void)\n{\n\tif (!arch_irq_work_has_interrupt())\n\t\treturn;\n\n\t__apic_send_IPI_self(IRQ_WORK_VECTOR);\n\tapic_wait_icr_idle();\n}\n",
+      "bytes": 146,
+      "sha256": "63fc8f010ad3604fd5cb53b9227861ac259ed41687645ba5dbeed1df52201141"
+    }
+  },
+  "parentDerived": {
+    "net/factory.c": {
+      "bytes": 31605,
+      "sha256": "ff0485b5eace5da6eea45038ddf98783e64d4bab8c835796a0b76fdb833ef6c8"
+    },
+    "kernel/kthread.c": {
+      "bytes": 44910,
+      "sha256": "f3a2308b4219c1b19fc80cbfa5cb5ceaea72cd219366157fe645dad79f2c4f9a"
+    },
+    "kernel/lsf-cleanup-worker.c": {
+      "bytes": 3756,
+      "sha256": "b5bd041585129a62a18ee677ad9ff36ef02894cd0840ca4674cf0595b4c67246"
+    },
+    "mm/lsf-cleanup-stack-retire.c": {
+      "bytes": 6254,
+      "sha256": "806c409d42768770baade09193059d0827f441197bab546a36b55ece06409181"
+    },
+    "include/net/lsf_stream_cleanup_lifecycle.h": {
+      "bytes": 3165,
+      "sha256": "25f10bec56a80c0590477070baa933b4b64e22c959f30ccc833ba937a38594ca"
+    }
+  },
+  "irqHandoffSourceImplemented": true,
+  "taskCreated": false,
+  "executorReady": false,
+  "actualNmiExecution": false,
+  "cpuHotplugQualified": false,
+  "irqBootstrapOwnerQualified": false,
+  "completeAllocationClosure": false,
+  "productionInstallation": false
+}

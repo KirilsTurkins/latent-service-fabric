@@ -1,0 +1,281 @@
+{
+  "schemaVersion": "lsf.kernel-cleanup-observer-source.v1",
+  "upstreamCommit": "7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+  "source": {
+    "kernel/tracepoint.c": {
+      "bytes": 21928,
+      "sha256": "9bae80e0eb52fb7b342220b7d8ebe78b5b094823cb2f23bc9d84e93ec270a25e",
+      "gitBlob": "4cee42ed5fc8d597988201bd8c4d78ca308375ab",
+      "api": "https://api.github.com/repos/gregkh/linux/contents/kernel/tracepoint.c?ref=7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+      "downloadUrl": "https://raw.githubusercontent.com/gregkh/linux/7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e/kernel/tracepoint.c"
+    },
+    "include/linux/tracepoint.h": {
+      "bytes": 19510,
+      "sha256": "3fd991d4107e3cc5d1d78c63572ba82b44fb553790cb6fa7540068693093a515",
+      "gitBlob": "93a9f3070b481a7f30535d8f9cb5f8f0ba88b006",
+      "api": "https://api.github.com/repos/gregkh/linux/contents/include/linux/tracepoint.h?ref=7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+      "downloadUrl": "https://raw.githubusercontent.com/gregkh/linux/7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e/include/linux/tracepoint.h"
+    },
+    "drivers/connector/cn_proc.c": {
+      "bytes": 13154,
+      "sha256": "103be309ede3613aca78825fa18d681107399b951cd2f7f7fb8ff57d2072bfaf",
+      "gitBlob": "44b19e69617632bf4951d8da1e514f9c0c689d4b",
+      "api": "https://api.github.com/repos/gregkh/linux/contents/drivers/connector/cn_proc.c?ref=7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+      "downloadUrl": "https://raw.githubusercontent.com/gregkh/linux/7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e/drivers/connector/cn_proc.c"
+    },
+    "drivers/connector/connector.c": {
+      "bytes": 7521,
+      "sha256": "6558752da50d18fe83ea351707cd2eb58babd64e4c4e33196750765336c89719",
+      "gitBlob": "4028e8eeba821e99fde750d9119067854d240294",
+      "api": "https://api.github.com/repos/gregkh/linux/contents/drivers/connector/connector.c?ref=7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+      "downloadUrl": "https://raw.githubusercontent.com/gregkh/linux/7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e/drivers/connector/connector.c"
+    },
+    "kernel/kprobes.c": {
+      "bytes": 76494,
+      "sha256": "d2b87e5979441dbafa6cae4978444c5ca1059f6242955c42bc7f2098cf7b933e",
+      "gitBlob": "7d0a378b2e44bdad388fcc20a92d409d53060c2f",
+      "api": "https://api.github.com/repos/gregkh/linux/contents/kernel/kprobes.c?ref=7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+      "downloadUrl": "https://raw.githubusercontent.com/gregkh/linux/7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e/kernel/kprobes.c"
+    },
+    "kernel/trace/rethook.c": {
+      "bytes": 9682,
+      "sha256": "e2396a408328618d929d65c55165728fbfff41a4b9e71902b73c13765141ae68",
+      "gitBlob": "30d22494688150dc600aec1bc4453d378f737e70",
+      "api": "https://api.github.com/repos/gregkh/linux/contents/kernel/trace/rethook.c?ref=7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+      "downloadUrl": "https://raw.githubusercontent.com/gregkh/linux/7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e/kernel/trace/rethook.c"
+    },
+    "include/linux/rethook.h": {
+      "bytes": 3223,
+      "sha256": "3b705968074b6b29a48c3590ce49bdaef6523b22256d6a808a2792f1e0f3e989",
+      "gitBlob": "ba60962805f6d74b1f8468421b85b1d3be1f951d",
+      "api": "https://api.github.com/repos/gregkh/linux/contents/include/linux/rethook.h?ref=7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+      "downloadUrl": "https://raw.githubusercontent.com/gregkh/linux/7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e/include/linux/rethook.h"
+    },
+    "arch/x86/kernel/kprobes/core.c": {
+      "bytes": 32783,
+      "sha256": "227a2361c491996c1f98e37fd268720d0daf0f0c09eab2a9894d6b4d9d9b7f29",
+      "gitBlob": "72e6a45e7ec24490f53c5b82fa8fdffebec96f75",
+      "api": "https://api.github.com/repos/gregkh/linux/contents/arch/x86/kernel/kprobes/core.c?ref=7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+      "downloadUrl": "https://raw.githubusercontent.com/gregkh/linux/7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e/arch/x86/kernel/kprobes/core.c"
+    },
+    "arch/x86/kernel/kprobes/opt.c": {
+      "bytes": 14910,
+      "sha256": "e853067b6f3d4bac9f5381736317a4a37bf5b75edb589773bc03cabef2ae7d4e",
+      "gitBlob": "36d6809c6c9e1a74d879285bd835958087c1a5ee",
+      "api": "https://api.github.com/repos/gregkh/linux/contents/arch/x86/kernel/kprobes/opt.c?ref=7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+      "downloadUrl": "https://raw.githubusercontent.com/gregkh/linux/7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e/arch/x86/kernel/kprobes/opt.c"
+    },
+    "include/linux/netlink.h": {
+      "bytes": 10922,
+      "sha256": "184020962f610b0d030329de9c6fd0ad164fb70baf6123ff62473c9bc1911029",
+      "gitBlob": "b332c2048c75576cd265a2f7940d8cab715beacd",
+      "api": "https://api.github.com/repos/gregkh/linux/contents/include/linux/netlink.h?ref=7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+      "downloadUrl": "https://raw.githubusercontent.com/gregkh/linux/7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e/include/linux/netlink.h"
+    },
+    "include/linux/connector.h": {
+      "bytes": 4111,
+      "sha256": "9bc092f90191af214b42b90e630ef559817341cdb59c8fb4928441fc17eadc21",
+      "gitBlob": "70bc1160f3d8dea00c5540d569425a3521b205e2",
+      "api": "https://api.github.com/repos/gregkh/linux/contents/include/linux/connector.h?ref=7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+      "downloadUrl": "https://raw.githubusercontent.com/gregkh/linux/7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e/include/linux/connector.h"
+    },
+    "include/uapi/linux/connector.h": {
+      "bytes": 2267,
+      "sha256": "baf377aa9333e06705fddbcf44ff8bfd9a40ab4fbe982773494599ce143603c4",
+      "gitBlob": "5ae131c3f1454b188b3378ca1c9fb6d4503d8fe7",
+      "api": "https://api.github.com/repos/gregkh/linux/contents/include/uapi/linux/connector.h?ref=7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+      "downloadUrl": "https://raw.githubusercontent.com/gregkh/linux/7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e/include/uapi/linux/connector.h"
+    },
+    "include/linux/objpool.h": {
+      "bytes": 9815,
+      "sha256": "d12ad94edbf5395d8d0cd8943eb7fdba37b759a4f76c1002d920715d78b48bd3",
+      "gitBlob": "cb1758eaa2d38438b73182c22e2329def7b0c499",
+      "api": "https://api.github.com/repos/gregkh/linux/contents/include/linux/objpool.h?ref=7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+      "downloadUrl": "https://raw.githubusercontent.com/gregkh/linux/7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e/include/linux/objpool.h"
+    },
+    "selected.config": {
+      "bytes": 143192,
+      "sha256": "b2bcccd5507f3f3a673690b660a2321870b57a3c77e72ce8532975f3c4752176"
+    }
+  },
+  "sections": {
+    "trace_add": {
+      "source": "kernel/tracepoint.c",
+      "prefix": "static int tracepoint_add_func(",
+      "text": "static int tracepoint_add_func(struct tracepoint *tp,\n\t\t\t       struct tracepoint_func *func, int prio,\n\t\t\t       bool warn)\n{\n\tstruct tracepoint_func *old, *tp_funcs;\n\tint ret;\n\n\tif (tp->regfunc && !static_key_enabled(&tp->key)) {\n\t\tret = tp->regfunc();\n\t\tif (ret < 0)\n\t\t\treturn ret;\n\t}\n\n\ttp_funcs = rcu_dereference_protected(tp->funcs,\n\t\t\tlockdep_is_held(&tracepoints_mutex));\n\told = func_add(&tp_funcs, func, prio);\n\tif (IS_ERR(old)) {\n\t\tif (tp->unregfunc && !static_key_enabled(&tp->key))\n\t\t\ttp->unregfunc();\n\t\tWARN_ON_ONCE(warn && PTR_ERR(old) != -ENOMEM);\n\t\treturn PTR_ERR(old);\n\t}\n\n\t/*\n\t * rcu_assign_pointer has as smp_store_release() which makes sure\n\t * that the new probe callbacks array is consistent before setting\n\t * a pointer to it.  This array is referenced by __DO_TRACE from\n\t * include/linux/tracepoint.h using rcu_dereference_sched().\n\t */\n\tswitch (nr_func_state(tp_funcs)) {\n\tcase TP_FUNC_1:\t\t/* 0->1 */\n\t\t/*\n\t\t * Make sure new static func never uses old data after a\n\t\t * 1->0->1 transition sequence.\n\t\t */\n\t\ttp_rcu_cond_sync(TP_TRANSITION_SYNC_1_0_1);\n\t\t/* Set static call to first function */\n\t\ttracepoint_update_call(tp, tp_funcs);\n\t\t/* Both iterator and static call handle NULL tp->funcs */\n\t\trcu_assign_pointer(tp->funcs, tp_funcs);\n\t\tstatic_key_enable(&tp->key);\n\t\tbreak;\n\tcase TP_FUNC_2:\t\t/* 1->2 */\n\t\t/* Set iterator static call */\n\t\ttracepoint_update_call(tp, tp_funcs);\n\t\t/*\n\t\t * Iterator callback installed before updating tp->funcs.\n\t\t * Requires ordering between RCU assign/dereference and\n\t\t * static call update/call.\n\t\t */\n\t\tfallthrough;\n\tcase TP_FUNC_N:\t\t/* N->N+1 (N>1) */\n\t\trcu_assign_pointer(tp->funcs, tp_funcs);\n\t\t/*\n\t\t * Make sure static func never uses incorrect data after a\n\t\t * N->...->2->1 (N>1) transition sequence.\n\t\t */\n\t\tif (tp_funcs[0].data != old[0].data)\n\t\t\ttp_rcu_get_state(TP_TRANSITION_SYNC_N_2_1);\n\t\tbreak;\n\tdefault:\n\t\tWARN_ON_ONCE(1);\n\t\tbreak;\n\t}\n\n\trelease_probes(old);\n\treturn 0;\n}\n",
+      "bytes": 1946,
+      "sha256": "a0abe826b0ea00a2f75175ad42666b4ab5ff10c345a45e4cc75c5ac23658e0a0"
+    },
+    "trace_remove": {
+      "source": "kernel/tracepoint.c",
+      "prefix": "static int tracepoint_remove_func(",
+      "text": "static int tracepoint_remove_func(struct tracepoint *tp,\n\t\tstruct tracepoint_func *func)\n{\n\tstruct tracepoint_func *old, *tp_funcs;\n\n\ttp_funcs = rcu_dereference_protected(tp->funcs,\n\t\t\tlockdep_is_held(&tracepoints_mutex));\n\told = func_remove(&tp_funcs, func);\n\tif (WARN_ON_ONCE(IS_ERR(old)))\n\t\treturn PTR_ERR(old);\n\n\tif (tp_funcs == old)\n\t\t/* Failed allocating new tp_funcs, replaced func with stub */\n\t\treturn 0;\n\n\tswitch (nr_func_state(tp_funcs)) {\n\tcase TP_FUNC_0:\t\t/* 1->0 */\n\t\t/* Removed last function */\n\t\tif (tp->unregfunc && static_key_enabled(&tp->key))\n\t\t\ttp->unregfunc();\n\n\t\tstatic_key_disable(&tp->key);\n\t\t/* Set iterator static call */\n\t\ttracepoint_update_call(tp, tp_funcs);\n\t\t/* Both iterator and static call handle NULL tp->funcs */\n\t\trcu_assign_pointer(tp->funcs, NULL);\n\t\t/*\n\t\t * Make sure new static func never uses old data after a\n\t\t * 1->0->1 transition sequence.\n\t\t */\n\t\ttp_rcu_get_state(TP_TRANSITION_SYNC_1_0_1);\n\t\tbreak;\n\tcase TP_FUNC_1:\t\t/* 2->1 */\n\t\trcu_assign_pointer(tp->funcs, tp_funcs);\n\t\t/*\n\t\t * Make sure static func never uses incorrect data after a\n\t\t * N->...->2->1 (N>2) transition sequence. If the first\n\t\t * element's data has changed, then force the synchronization\n\t\t * to prevent current readers that have loaded the old data\n\t\t * from calling the new function.\n\t\t */\n\t\tif (tp_funcs[0].data != old[0].data)\n\t\t\ttp_rcu_get_state(TP_TRANSITION_SYNC_N_2_1);\n\t\ttp_rcu_cond_sync(TP_TRANSITION_SYNC_N_2_1);\n\t\t/* Set static call to first function */\n\t\ttracepoint_update_call(tp, tp_funcs);\n\t\tbreak;\n\tcase TP_FUNC_2:\t\t/* N->N-1 (N>2) */\n\t\tfallthrough;\n\tcase TP_FUNC_N:\n\t\trcu_assign_pointer(tp->funcs, tp_funcs);\n\t\t/*\n\t\t * Make sure static func never uses incorrect data after a\n\t\t * N->...->2->1 (N>2) transition sequence.\n\t\t */\n\t\tif (tp_funcs[0].data != old[0].data)\n\t\t\ttp_rcu_get_state(TP_TRANSITION_SYNC_N_2_1);\n\t\tbreak;\n\tdefault:\n\t\tWARN_ON_ONCE(1);\n\t\tbreak;\n\t}\n\trelease_probes(old);\n\treturn 0;\n}\n",
+      "bytes": 1934,
+      "sha256": "06d97ace51214f31f5002dc89e846f1d7ea9de0c82eb57c667c233ddca0fc8b0"
+    },
+    "module_coming": {
+      "source": "kernel/tracepoint.c",
+      "prefix": "static int tracepoint_module_coming(",
+      "text": "static int tracepoint_module_coming(struct module *mod)\n{\n\tstruct tp_module *tp_mod;\n\n\tif (!mod->num_tracepoints)\n\t\treturn 0;\n\n\t/*\n\t * We skip modules that taint the kernel, especially those with different\n\t * module headers (for forced load), to make sure we don't cause a crash.\n\t * Staging, out-of-tree, unsigned GPL, and test modules are fine.\n\t */\n\tif (trace_module_has_bad_taint(mod))\n\t\treturn 0;\n\n\ttp_mod = kmalloc(sizeof(struct tp_module), GFP_KERNEL);\n\tif (!tp_mod)\n\t\treturn -ENOMEM;\n\ttp_mod->mod = mod;\n\n\tmutex_lock(&tracepoint_module_list_mutex);\n\tlist_add_tail(&tp_mod->list, &tracepoint_module_list);\n\tblocking_notifier_call_chain(&tracepoint_notify_list,\n\t\t\tMODULE_STATE_COMING, tp_mod);\n\tmutex_unlock(&tracepoint_module_list_mutex);\n\treturn 0;\n}\n",
+      "bytes": 761,
+      "sha256": "fce19b7cf3deb4e7fda89e819c85ce3221568d0283a2687fc30ba08349d6bc7c"
+    },
+    "trace_sync": {
+      "source": "include/linux/tracepoint.h",
+      "prefix": "static inline void tracepoint_synchronize_unregister(void)\n{\n\tsynchronize_srcu",
+      "text": "static inline void tracepoint_synchronize_unregister(void)\n{\n\tsynchronize_srcu(&tracepoint_srcu);\n\tsynchronize_rcu();\n}\n",
+      "bytes": 120,
+      "sha256": "5e0a2b61edbb973d17ca2c844306bc1b70d76bec2ab78c41e836f5cb973ff851"
+    },
+    "register_kprobe": {
+      "source": "kernel/kprobes.c",
+      "prefix": "int register_kprobe(",
+      "text": "int register_kprobe(struct kprobe *p)\n{\n\tint ret;\n\tstruct kprobe *old_p;\n\tstruct module *probed_mod;\n\tkprobe_opcode_t *addr;\n\tbool on_func_entry;\n\n\t/* Adjust probe address from symbol */\n\taddr = _kprobe_addr(p->addr, p->symbol_name, p->offset, &on_func_entry);\n\tif (IS_ERR(addr))\n\t\treturn PTR_ERR(addr);\n\tp->addr = addr;\n\n\tret = warn_kprobe_rereg(p);\n\tif (ret)\n\t\treturn ret;\n\n\t/* User can pass only KPROBE_FLAG_DISABLED to register_kprobe */\n\tp->flags &= KPROBE_FLAG_DISABLED;\n\tp->nmissed = 0;\n\tINIT_LIST_HEAD(&p->list);\n\n\tret = check_kprobe_address_safe(p, &probed_mod);\n\tif (ret)\n\t\treturn ret;\n\n\tmutex_lock(&kprobe_mutex);\n\n\tif (on_func_entry)\n\t\tp->flags |= KPROBE_FLAG_ON_FUNC_ENTRY;\n\n\told_p = get_kprobe(p->addr);\n\tif (old_p) {\n\t\t/* Since this may unoptimize 'old_p', locking 'text_mutex'. */\n\t\tret = register_aggr_kprobe(old_p, p);\n\t\tgoto out;\n\t}\n\n\tcpus_read_lock();\n\t/* Prevent text modification */\n\tmutex_lock(&text_mutex);\n\tret = prepare_kprobe(p);\n\tmutex_unlock(&text_mutex);\n\tcpus_read_unlock();\n\tif (ret)\n\t\tgoto out;\n\n\tINIT_HLIST_NODE(&p->hlist);\n\thlist_add_head_rcu(&p->hlist,\n\t\t       &kprobe_table[hash_ptr(p->addr, KPROBE_HASH_BITS)]);\n\n\tif (!kprobes_all_disarmed && !kprobe_disabled(p)) {\n\t\tret = arm_kprobe(p);\n\t\tif (ret) {\n\t\t\thlist_del_rcu(&p->hlist);\n\t\t\tsynchronize_rcu();\n\t\t\tgoto out;\n\t\t}\n\t}\n\n\t/* Try to optimize kprobe */\n\ttry_to_optimize_kprobe(p);\nout:\n\tmutex_unlock(&kprobe_mutex);\n\n\tif (probed_mod)\n\t\tmodule_put(probed_mod);\n\n\treturn ret;\n}\n",
+      "bytes": 1466,
+      "sha256": "d055827bc515802c56b728e008d3478aa0f1425e85582f054d8215fd8c73d677"
+    },
+    "register_kretprobe": {
+      "source": "kernel/kprobes.c",
+      "prefix": "int register_kretprobe(struct kretprobe *rp)\n{\n\tint ret;",
+      "text": "int register_kretprobe(struct kretprobe *rp)\n{\n\tint ret;\n\tint i;\n\tvoid *addr;\n\n\tret = kprobe_on_func_entry(rp->kp.addr, rp->kp.symbol_name, rp->kp.offset);\n\tif (ret)\n\t\treturn ret;\n\n\t/* If only 'rp->kp.addr' is specified, check reregistering kprobes */\n\tif (rp->kp.addr && warn_kprobe_rereg(&rp->kp))\n\t\treturn -EINVAL;\n\n\tif (kretprobe_blacklist_size) {\n\t\taddr = kprobe_addr(&rp->kp);\n\t\tif (IS_ERR(addr))\n\t\t\treturn PTR_ERR(addr);\n\n\t\tfor (i = 0; kretprobe_blacklist[i].name != NULL; i++) {\n\t\t\tif (kretprobe_blacklist[i].addr == addr)\n\t\t\t\treturn -EINVAL;\n\t\t}\n\t}\n\n\tif (rp->data_size > KRETPROBE_MAX_DATA_SIZE)\n\t\treturn -E2BIG;\n\n\trp->kp.pre_handler = pre_handler_kretprobe;\n\trp->kp.post_handler = NULL;\n\n\t/* Pre-allocate memory for max kretprobe instances */\n\tif (rp->maxactive <= 0)\n\t\trp->maxactive = max_t(unsigned int, 10, 2*num_possible_cpus());\n\n#ifdef CONFIG_KRETPROBE_ON_RETHOOK\n\trp->rh = rethook_alloc((void *)rp, kretprobe_rethook_handler,\n\t\t\t\tsizeof(struct kretprobe_instance) +\n\t\t\t\trp->data_size, rp->maxactive);\n\tif (IS_ERR(rp->rh))\n\t\treturn PTR_ERR(rp->rh);\n\n\trp->nmissed = 0;\n\t/* Establish function entry probe point */\n\tret = register_kprobe(&rp->kp);\n\tif (ret != 0) {\n\t\trethook_free(rp->rh);\n\t\trp->rh = NULL;\n\t}\n#else\t/* !CONFIG_KRETPROBE_ON_RETHOOK */\n\trp->rph = kzalloc(sizeof(struct kretprobe_holder), GFP_KERNEL);\n\tif (!rp->rph)\n\t\treturn -ENOMEM;\n\n\tif (objpool_init(&rp->rph->pool, rp->maxactive, rp->data_size +\n\t\t\tsizeof(struct kretprobe_instance), GFP_KERNEL,\n\t\t\trp->rph, kretprobe_init_inst, kretprobe_fini_pool)) {\n\t\tkfree(rp->rph);\n\t\trp->rph = NULL;\n\t\treturn -ENOMEM;\n\t}\n\trcu_assign_pointer(rp->rph->rp, rp);\n\trp->nmissed = 0;\n\t/* Establish function entry probe point */\n\tret = register_kprobe(&rp->kp);\n\tif (ret != 0)\n\t\tfree_rp_inst(rp);\n#endif\n\treturn ret;\n}\n",
+      "bytes": 1781,
+      "sha256": "13ecf82651d7f9696c1054980a76283aa808831ce5e2323dab11987b426c8cd8"
+    },
+    "unregister_kprobes": {
+      "source": "kernel/kprobes.c",
+      "prefix": "void unregister_kprobes(",
+      "text": "void unregister_kprobes(struct kprobe **kps, int num)\n{\n\tint i;\n\n\tif (num <= 0)\n\t\treturn;\n\tmutex_lock(&kprobe_mutex);\n\tfor (i = 0; i < num; i++)\n\t\tif (__unregister_kprobe_top(kps[i]) < 0)\n\t\t\tkps[i]->addr = NULL;\n\tmutex_unlock(&kprobe_mutex);\n\n\tsynchronize_rcu();\n\tfor (i = 0; i < num; i++)\n\t\tif (kps[i]->addr)\n\t\t\t__unregister_kprobe_bottom(kps[i]);\n}\n",
+      "bytes": 351,
+      "sha256": "993d29794c335e5e5baab8ff14f8baf9ff4abe929373e681a0da33654ac7033c"
+    },
+    "unregister_kretprobes": {
+      "source": "kernel/kprobes.c",
+      "prefix": "void unregister_kretprobes(struct kretprobe **rps, int num)\n{\n\tint i;",
+      "text": "void unregister_kretprobes(struct kretprobe **rps, int num)\n{\n\tint i;\n\n\tif (num <= 0)\n\t\treturn;\n\tmutex_lock(&kprobe_mutex);\n\tfor (i = 0; i < num; i++) {\n\t\tif (__unregister_kprobe_top(&rps[i]->kp) < 0)\n\t\t\trps[i]->kp.addr = NULL;\n#ifdef CONFIG_KRETPROBE_ON_RETHOOK\n\t\trethook_free(rps[i]->rh);\n#else\n\t\trcu_assign_pointer(rps[i]->rph->rp, NULL);\n#endif\n\t}\n\tmutex_unlock(&kprobe_mutex);\n\n\tsynchronize_rcu();\n\tfor (i = 0; i < num; i++) {\n\t\tif (rps[i]->kp.addr) {\n\t\t\t__unregister_kprobe_bottom(&rps[i]->kp);\n#ifndef CONFIG_KRETPROBE_ON_RETHOOK\n\t\t\tfree_rp_inst(rps[i]);\n#endif\n\t\t}\n\t}\n}\n",
+      "bytes": 578,
+      "sha256": "eb59ba56909b9ca386caa025934a6c5fadbf2cc0815b069118adcde41f3804f7"
+    },
+    "unregister_top": {
+      "source": "kernel/kprobes.c",
+      "prefix": "static int __unregister_kprobe_top(",
+      "text": "static int __unregister_kprobe_top(struct kprobe *p)\n{\n\tstruct kprobe *ap, *list_p;\n\n\t/* Disable kprobe. This will disarm it if needed. */\n\tap = __disable_kprobe(p);\n\tif (IS_ERR(ap))\n\t\treturn PTR_ERR(ap);\n\n\tif (ap == p)\n\t\t/*\n\t\t * This probe is an independent(and non-optimized) kprobe\n\t\t * (not an aggrprobe). Remove from the hash list.\n\t\t */\n\t\tgoto disarmed;\n\n\t/* Following process expects this probe is an aggrprobe */\n\tWARN_ON(!kprobe_aggrprobe(ap));\n\n\tif (list_is_singular(&ap->list) && kprobe_disarmed(ap))\n\t\t/*\n\t\t * !disarmed could be happen if the probe is under delayed\n\t\t * unoptimizing.\n\t\t */\n\t\tgoto disarmed;\n\telse {\n\t\t/* If disabling probe has special handlers, update aggrprobe */\n\t\tif (p->post_handler && !kprobe_gone(p)) {\n\t\t\tlist_for_each_entry(list_p, &ap->list, list) {\n\t\t\t\tif ((list_p != p) && (list_p->post_handler))\n\t\t\t\t\tgoto noclean;\n\t\t\t}\n\t\t\t/*\n\t\t\t * For the kprobe-on-ftrace case, we keep the\n\t\t\t * post_handler setting to identify this aggrprobe\n\t\t\t * armed with kprobe_ipmodify_ops.\n\t\t\t */\n\t\t\tif (!kprobe_ftrace(ap))\n\t\t\t\tap->post_handler = NULL;\n\t\t}\nnoclean:\n\t\t/*\n\t\t * Remove from the aggrprobe: this path will do nothing in\n\t\t * __unregister_kprobe_bottom().\n\t\t */\n\t\tlist_del_rcu(&p->list);\n\t\tif (!kprobe_disabled(ap) && !kprobes_all_disarmed)\n\t\t\t/*\n\t\t\t * Try to optimize this probe again, because post\n\t\t\t * handler may have been changed.\n\t\t\t */\n\t\t\toptimize_kprobe(ap);\n\t}\n\treturn 0;\n\ndisarmed:\n\thlist_del_rcu(&ap->hlist);\n\treturn 0;\n}\n",
+      "bytes": 1463,
+      "sha256": "5cd25da01523fdec85d9557ef395ec7752dca70af4ace49a026e81ed789bc181"
+    },
+    "unregister_bottom": {
+      "source": "kernel/kprobes.c",
+      "prefix": "static void __unregister_kprobe_bottom(",
+      "text": "static void __unregister_kprobe_bottom(struct kprobe *p)\n{\n\tstruct kprobe *ap;\n\n\tif (list_empty(&p->list))\n\t\t/* This is an independent kprobe */\n\t\tarch_remove_kprobe(p);\n\telse if (list_is_singular(&p->list)) {\n\t\t/* This is the last child of an aggrprobe */\n\t\tap = list_entry(p->list.next, struct kprobe, list);\n\t\tlist_del(&p->list);\n\t\tfree_aggr_kprobe(ap);\n\t}\n\t/* Otherwise, do nothing. */\n}\n",
+      "bytes": 392,
+      "sha256": "34fd22f163c89eb1bf1a4767852faf3b33eb15fa4f66888fd3d2390d2dcb4019"
+    },
+    "optimizer": {
+      "source": "kernel/kprobes.c",
+      "prefix": "static void kprobe_optimizer(struct work_struct *work)\n{",
+      "text": "static void kprobe_optimizer(struct work_struct *work)\n{\n\tmutex_lock(&kprobe_mutex);\n\tcpus_read_lock();\n\tmutex_lock(&text_mutex);\n\n\t/*\n\t * Step 1: Unoptimize kprobes and collect cleaned (unused and disarmed)\n\t * kprobes before waiting for quiesence period.\n\t */\n\tdo_unoptimize_kprobes();\n\n\t/*\n\t * Step 2: Wait for quiesence period to ensure all potentially\n\t * preempted tasks to have normally scheduled. Because optprobe\n\t * may modify multiple instructions, there is a chance that Nth\n\t * instruction is preempted. In that case, such tasks can return\n\t * to 2nd-Nth byte of jump instruction. This wait is for avoiding it.\n\t * Note that on non-preemptive kernel, this is transparently converted\n\t * to synchronoze_sched() to wait for all interrupts to have completed.\n\t */\n\tsynchronize_rcu_tasks();\n\n\t/* Step 3: Optimize kprobes after quiesence period */\n\tdo_optimize_kprobes();\n\n\t/* Step 4: Free cleaned kprobes after quiesence period */\n\tdo_free_cleaned_kprobes();\n\n\tmutex_unlock(&text_mutex);\n\tcpus_read_unlock();\n\n\t/* Step 5: Kick optimizer again if needed */\n\tif (!list_empty(&optimizing_list) || !list_empty(&unoptimizing_list))\n\t\tkick_kprobe_optimizer();\n\n\tmutex_unlock(&kprobe_mutex);\n}\n",
+      "bytes": 1196,
+      "sha256": "1e7173a8ae4ee3c3eb2c946224f07c21e8a6a6821b75e7a80fe8230bc4ad0e4c"
+    },
+    "wait_optimizer": {
+      "source": "kernel/kprobes.c",
+      "prefix": "void wait_for_kprobe_optimizer(",
+      "text": "void wait_for_kprobe_optimizer(void)\n{\n\tmutex_lock(&kprobe_mutex);\n\n\twhile (!list_empty(&optimizing_list) || !list_empty(&unoptimizing_list)) {\n\t\tmutex_unlock(&kprobe_mutex);\n\n\t\t/* This will also make 'optimizing_work' execute immmediately */\n\t\tflush_delayed_work(&optimizing_work);\n\t\t/* 'optimizing_work' might not have been queued yet, relax */\n\t\tcpu_relax();\n\n\t\tmutex_lock(&kprobe_mutex);\n\t}\n\n\tmutex_unlock(&kprobe_mutex);\n}\n",
+      "bytes": 428,
+      "sha256": "4568ec3aa7d9ba386f723db905515914bae90a63b251f7a7f19e67be2fa6e3e0"
+    },
+    "rethook_free": {
+      "source": "kernel/trace/rethook.c",
+      "prefix": "void rethook_free(",
+      "text": "void rethook_free(struct rethook *rh)\n{\n\trethook_stop(rh);\n\n\tcall_rcu(&rh->rcu, rethook_free_rcu);\n}\n",
+      "bytes": 101,
+      "sha256": "0736d54ea3d51ec189195186d33e3ea70a34206a18447e5739ac800d5c0eafd4"
+    },
+    "rethook_stop": {
+      "source": "kernel/trace/rethook.c",
+      "prefix": "void rethook_stop(",
+      "text": "void rethook_stop(struct rethook *rh)\n{\n\trcu_assign_pointer(rh->handler, NULL);\n}\n",
+      "bytes": 82,
+      "sha256": "fc22c29047b53a9609cd18c10025fa8d075311573f40fb888e8a93a245369ef5"
+    },
+    "rethook_trampoline": {
+      "source": "kernel/trace/rethook.c",
+      "prefix": "unsigned long rethook_trampoline_handler(",
+      "text": "unsigned long rethook_trampoline_handler(struct pt_regs *regs,\n\t\t\t\t\t unsigned long frame)\n{\n\tstruct llist_node *first, *node = NULL;\n\tunsigned long correct_ret_addr;\n\trethook_handler_t handler;\n\tstruct rethook_node *rhn;\n\n\tcorrect_ret_addr = __rethook_find_ret_addr(current, &node);\n\tif (!correct_ret_addr) {\n\t\tpr_err(\"rethook: Return address not found! Maybe there is a bug in the kernel\\n\");\n\t\tBUG_ON(1);\n\t}\n\n\tinstruction_pointer_set(regs, correct_ret_addr);\n\n\t/*\n\t * These loops must be protected from rethook_free_rcu() because those\n\t * are accessing 'rhn->rethook'.\n\t */\n\tpreempt_disable_notrace();\n\n\t/*\n\t * Run the handler on the shadow stack. Do not unlink the list here because\n\t * stackdump inside the handlers needs to decode it.\n\t */\n\tfirst = current->rethooks.first;\n\twhile (first) {\n\t\trhn = container_of(first, struct rethook_node, llist);\n\t\tif (WARN_ON_ONCE(rhn->frame != frame))\n\t\t\tbreak;\n\t\thandler = rethook_get_handler(rhn->rethook);\n\t\tif (handler)\n\t\t\thandler(rhn, rhn->rethook->data,\n\t\t\t\tcorrect_ret_addr, regs);\n\n\t\tif (first == node)\n\t\t\tbreak;\n\t\tfirst = first->next;\n\t}\n\n\t/* Fixup registers for returning to correct address. */\n\tarch_rethook_fixup_return(regs, correct_ret_addr);\n\n\t/* Unlink used shadow stack */\n\tfirst = current->rethooks.first;\n\tcurrent->rethooks.first = node->next;\n\tnode->next = NULL;\n\n\twhile (first) {\n\t\trhn = container_of(first, struct rethook_node, llist);\n\t\tfirst = first->next;\n\t\trethook_recycle(rhn);\n\t}\n\tpreempt_enable_notrace();\n\n\treturn correct_ret_addr;\n}\n",
+      "bytes": 1507,
+      "sha256": "be79250eeda3b5090e6e394b6584f89f58554cae526748e9b5fea0c034417153"
+    },
+    "arch_remove": {
+      "source": "arch/x86/kernel/kprobes/core.c",
+      "prefix": "void arch_remove_kprobe(",
+      "text": "void arch_remove_kprobe(struct kprobe *p)\n{\n\tif (p->ainsn.insn) {\n\t\t/* Record the perf event before freeing the slot */\n\t\tperf_event_text_poke(p->ainsn.insn, p->ainsn.insn,\n\t\t\t\t     p->ainsn.tp_len, NULL, 0);\n\t\tfree_insn_slot(p->ainsn.insn, p->ainsn.boostable);\n\t\tp->ainsn.insn = NULL;\n\t}\n}\n",
+      "bytes": 291,
+      "sha256": "631b213f1a930541cd69a0d6c6475173681c97819a8d33499fa16a4f45178908"
+    },
+    "arch_disarm": {
+      "source": "arch/x86/kernel/kprobes/core.c",
+      "prefix": "void arch_disarm_kprobe(",
+      "text": "void arch_disarm_kprobe(struct kprobe *p)\n{\n\tu8 int3 = INT3_INSN_OPCODE;\n\n\tperf_event_text_poke(p->addr, &int3, 1, &p->opcode, 1);\n\ttext_poke(p->addr, &p->opcode, 1);\n\ttext_poke_sync();\n}\n",
+      "bytes": 188,
+      "sha256": "6d8f2e6a2c7b062a71b72b1e771b68c8bb80856b09be48faa4de239117f963a2"
+    },
+    "arch_unopt": {
+      "source": "arch/x86/kernel/kprobes/opt.c",
+      "prefix": "void arch_unoptimize_kprobe(",
+      "text": "void arch_unoptimize_kprobe(struct optimized_kprobe *op)\n{\n\tu8 new[JMP32_INSN_SIZE] = { INT3_INSN_OPCODE, };\n\tu8 old[JMP32_INSN_SIZE];\n\tu8 *addr = op->kp.addr;\n\n\tmemcpy(old, op->kp.addr, JMP32_INSN_SIZE);\n\tmemcpy(new + INT3_INSN_SIZE,\n\t       op->optinsn.copied_insn,\n\t       JMP32_INSN_SIZE - INT3_INSN_SIZE);\n\n\ttext_poke(addr, new, INT3_INSN_SIZE);\n\ttext_poke_sync();\n\ttext_poke(addr + INT3_INSN_SIZE,\n\t\t  new + INT3_INSN_SIZE,\n\t\t  JMP32_INSN_SIZE - INT3_INSN_SIZE);\n\ttext_poke_sync();\n\n\tperf_event_text_poke(op->kp.addr, old, JMP32_INSN_SIZE, new, JMP32_INSN_SIZE);\n}\n",
+      "bytes": 571,
+      "sha256": "11091ea539cbe7224819bace925a2f6eaa01fc1772e2cbf0d1b749380c45eee4"
+    },
+    "connector_ctl": {
+      "source": "drivers/connector/cn_proc.c",
+      "prefix": "static void cn_proc_mcast_ctl(",
+      "text": "static void cn_proc_mcast_ctl(struct cn_msg *msg,\n\t\t\t      struct netlink_skb_parms *nsp)\n{\n\tenum proc_cn_mcast_op mc_op = 0, prev_mc_op = 0;\n\tstruct proc_input *pinput = NULL;\n\tenum proc_cn_event ev_type = 0;\n\tint err = 0, initial = 0;\n\tstruct sock *sk = NULL;\n\n\t/* \n\t * Events are reported with respect to the initial pid\n\t * and user namespaces so ignore requestors from\n\t * other namespaces.\n\t */\n\tif ((current_user_ns() != &init_user_ns) ||\n\t    !task_is_in_init_pid_ns(current))\n\t\treturn;\n\n\tif (msg->len == sizeof(*pinput)) {\n\t\tpinput = (struct proc_input *)msg->data;\n\t\tmc_op = pinput->mcast_op;\n\t\tev_type = pinput->event_type;\n\t} else if (msg->len == sizeof(mc_op)) {\n\t\tmc_op = *((enum proc_cn_mcast_op *)msg->data);\n\t\tev_type = PROC_EVENT_ALL;\n\t} else {\n\t\treturn;\n\t}\n\n\tev_type = valid_event((enum proc_cn_event)ev_type);\n\n\tif (ev_type == PROC_EVENT_NONE)\n\t\tev_type = PROC_EVENT_ALL;\n\n\tif (nsp->sk) {\n\t\tsk = nsp->sk;\n\t\tif (sk->sk_user_data == NULL) {\n\t\t\tsk->sk_user_data = kzalloc(sizeof(struct proc_input),\n\t\t\t\t\t\t   GFP_KERNEL);\n\t\t\tif (sk->sk_user_data == NULL) {\n\t\t\t\terr = ENOMEM;\n\t\t\t\tgoto out;\n\t\t\t}\n\t\t\tinitial = 1;\n\t\t} else {\n\t\t\tprev_mc_op =\n\t\t\t((struct proc_input *)(sk->sk_user_data))->mcast_op;\n\t\t}\n\t\t((struct proc_input *)(sk->sk_user_data))->event_type =\n\t\t\tev_type;\n\t\t((struct proc_input *)(sk->sk_user_data))->mcast_op = mc_op;\n\t}\n\n\tswitch (mc_op) {\n\tcase PROC_CN_MCAST_LISTEN:\n\t\tif (initial || (prev_mc_op != PROC_CN_MCAST_LISTEN))\n\t\t\tatomic_inc(&proc_event_num_listeners);\n\t\tbreak;\n\tcase PROC_CN_MCAST_IGNORE:\n\t\tif (!initial && (prev_mc_op != PROC_CN_MCAST_IGNORE))\n\t\t\tatomic_dec(&proc_event_num_listeners);\n\t\t((struct proc_input *)(sk->sk_user_data))->event_type =\n\t\t\tPROC_EVENT_NONE;\n\t\tbreak;\n\tdefault:\n\t\terr = EINVAL;\n\t\tbreak;\n\t}\n\nout:\n\tcn_proc_ack(err, msg->seq, msg->ack);\n}\n",
+      "bytes": 1800,
+      "sha256": "f3d886d2b174cf716961503e1ad2bcee16c67bb41396b274609ae5d72f6568fb"
+    },
+    "connector_ack": {
+      "source": "drivers/connector/cn_proc.c",
+      "prefix": "static void cn_proc_ack(",
+      "text": "static void cn_proc_ack(int err, int rcvd_seq, int rcvd_ack)\n{\n\tstruct cn_msg *msg;\n\tstruct proc_event *ev;\n\t__u8 buffer[CN_PROC_MSG_SIZE] __aligned(8);\n\n\tif (atomic_read(&proc_event_num_listeners) < 1)\n\t\treturn;\n\n\tmsg = buffer_to_cn_msg(buffer);\n\tev = (struct proc_event *)msg->data;\n\tmemset(&ev->event_data, 0, sizeof(ev->event_data));\n\tmsg->seq = rcvd_seq;\n\tev->timestamp_ns = ktime_get_ns();\n\tev->cpu = -1;\n\tev->what = PROC_EVENT_NONE;\n\tev->event_data.ack.err = err;\n\tmemcpy(&msg->id, &cn_proc_event_id, sizeof(msg->id));\n\tmsg->ack = rcvd_ack + 1;\n\tmsg->len = sizeof(*ev);\n\tmsg->flags = 0; /* not used */\n\tsend_msg(msg);\n}\n",
+      "bytes": 627,
+      "sha256": "3e8c551943c7e13752b55ec3133611d6f557469e67225167df34ad9d07406405"
+    },
+    "connector_send": {
+      "source": "drivers/connector/connector.c",
+      "prefix": "int cn_netlink_send_mult(",
+      "text": "int cn_netlink_send_mult(struct cn_msg *msg, u16 len, u32 portid, u32 __group,\n\t\t\t gfp_t gfp_mask, netlink_filter_fn filter,\n\t\t\t void *filter_data)\n{\n\tstruct cn_callback_entry *__cbq;\n\tunsigned int size;\n\tstruct sk_buff *skb;\n\tstruct nlmsghdr *nlh;\n\tstruct cn_msg *data;\n\tstruct cn_dev *dev = &cdev;\n\tu32 group = 0;\n\tint found = 0;\n\n\tif (portid || __group) {\n\t\tgroup = __group;\n\t} else {\n\t\tspin_lock_bh(&dev->cbdev->queue_lock);\n\t\tlist_for_each_entry(__cbq, &dev->cbdev->queue_list,\n\t\t\t\t    callback_entry) {\n\t\t\tif (cn_cb_equal(&__cbq->id.id, &msg->id)) {\n\t\t\t\tfound = 1;\n\t\t\t\tgroup = __cbq->group;\n\t\t\t\tbreak;\n\t\t\t}\n\t\t}\n\t\tspin_unlock_bh(&dev->cbdev->queue_lock);\n\n\t\tif (!found)\n\t\t\treturn -ENODEV;\n\t}\n\n\tif (!portid && !netlink_has_listeners(dev->nls, group))\n\t\treturn -ESRCH;\n\n\tsize = sizeof(*msg) + len;\n\n\tskb = nlmsg_new(size, gfp_mask);\n\tif (!skb)\n\t\treturn -ENOMEM;\n\n\tnlh = nlmsg_put(skb, 0, msg->seq, NLMSG_DONE, size, 0);\n\tif (!nlh) {\n\t\tkfree_skb(skb);\n\t\treturn -EMSGSIZE;\n\t}\n\n\tdata = nlmsg_data(nlh);\n\n\tmemcpy(data, msg, size);\n\n\tNETLINK_CB(skb).dst_group = group;\n\n\tif (group)\n\t\treturn netlink_broadcast_filtered(dev->nls, skb, portid, group,\n\t\t\t\t\t\t  gfp_mask, filter,\n\t\t\t\t\t\t  (void *)filter_data);\n\treturn netlink_unicast(dev->nls, skb, portid,\n\t\t\t!gfpflags_allow_blocking(gfp_mask));\n}\n",
+      "bytes": 1291,
+      "sha256": "e0af981826fa1c9e9aa73a04ccb799d77eb49cf6c62c35b87336c61d0657f8be"
+    }
+  },
+  "parentDerived": {
+    "net/factory.c": {
+      "bytes": 32555,
+      "sha256": "b3621351d70913d410a5896edf92a83aa602fda8d9f0a6a26997b3b2debce869"
+    }
+  },
+  "selected": {
+    "CONFIG_TRACEPOINTS": "y",
+    "CONFIG_PROC_EVENTS": "y",
+    "CONFIG_KPROBES": "y",
+    "CONFIG_KRETPROBES": "y",
+    "CONFIG_OPTPROBES": "y",
+    "CONFIG_KRETPROBE_ON_RETHOOK": "y",
+    "CONFIG_RETHOOK": "y",
+    "CONFIG_MODULES": "y"
+  },
+  "sealExecuted": false,
+  "factoryCallsObserverEnter": false,
+  "factoryCallsFullWorkerCreate": false,
+  "pendingConsumerCallsFullClone": false,
+  "taskCreated": false,
+  "executorReady": false,
+  "actualIrqExecution": false,
+  "actualRcuExecution": false,
+  "physicalBackingReturned": false,
+  "nativeLedgerQualified": false,
+  "observerClosure": false,
+  "bootstrapQualified": false,
+  "fullConstructorClosure": false,
+  "completeAllocationClosure": false,
+  "productionInstallation": false
+}

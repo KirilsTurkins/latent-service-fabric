@@ -1,0 +1,345 @@
+{
+  "schemaVersion": "lsf.kernel-cleanup-cgroup-source.v1",
+  "upstreamCommit": "7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+  "source": {
+    "kernel/cgroup/cpuset.c": {
+      "bytes": 125836,
+      "sha256": "c41ba8a0fa500498cf1b76ac3329c3bd71a32b6ef18280202bcd056bc7a2e535",
+      "gitBlob": "5991a9a354aad86f50f9b86d920ddeb05a5c239f"
+    },
+    "kernel/sched/core.c": {
+      "bytes": 279839,
+      "sha256": "42f85b5a8c6b4cf05a5da435f48b7293e6d82fc7adeae3926f165cfd26e6a402",
+      "gitBlob": "719186283bf91be14d53f7255ac916b4f9eb7a4e"
+    },
+    "kernel/sched/cpuacct.c": {
+      "bytes": 8248,
+      "sha256": "1532695d0ba297d8a24b900f4750f0e23a53d819b9445e8a8a6233050e898448",
+      "gitBlob": "0de9dda099496fddb804f6ebb5a7fa0f275a72e5",
+      "api": "https://api.github.com/repos/gregkh/linux/contents/kernel/sched/cpuacct.c?ref=7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+      "downloadUrl": "https://raw.githubusercontent.com/gregkh/linux/7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e/kernel/sched/cpuacct.c"
+    },
+    "block/blk-cgroup.c": {
+      "bytes": 59605,
+      "sha256": "062616cdc03d1b8da53a870685d857fc889a8c28ec008e4ead263f3ac57d197c",
+      "gitBlob": "d89da7e067f4289698236b6eb60c28c584f76c25",
+      "api": "https://api.github.com/repos/gregkh/linux/contents/block/blk-cgroup.c?ref=7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+      "downloadUrl": "https://raw.githubusercontent.com/gregkh/linux/7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e/block/blk-cgroup.c"
+    },
+    "security/device_cgroup.c": {
+      "bytes": 22308,
+      "sha256": "91a865bb52217bd3dacb2b561cdd432de1bafb4959dbd7b7104cef3fdb055a63",
+      "gitBlob": "dc4df7475081cd8993892c74ba72b9da1acf6ae0",
+      "api": "https://api.github.com/repos/gregkh/linux/contents/security/device_cgroup.c?ref=7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+      "downloadUrl": "https://raw.githubusercontent.com/gregkh/linux/7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e/security/device_cgroup.c"
+    },
+    "kernel/cgroup/legacy_freezer.c": {
+      "bytes": 12624,
+      "sha256": "bd43b25d3636723ceafff43e84c126334db0ba0b1b456097b2071be547e54b69",
+      "gitBlob": "c37888b7d25afdaed08eec111f51c841431cf4bb",
+      "api": "https://api.github.com/repos/gregkh/linux/contents/kernel/cgroup/legacy_freezer.c?ref=7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+      "downloadUrl": "https://raw.githubusercontent.com/gregkh/linux/7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e/kernel/cgroup/legacy_freezer.c"
+    },
+    "net/core/netclassid_cgroup.c": {
+      "bytes": 3443,
+      "sha256": "6b609dcc6d0a4b000406424b88c3dde0cfbe88a96822a8fb9bf3d09157eea07a",
+      "gitBlob": "d22f0919821e931fbdedf5a8a7a2998d59d73978",
+      "api": "https://api.github.com/repos/gregkh/linux/contents/net/core/netclassid_cgroup.c?ref=7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+      "downloadUrl": "https://raw.githubusercontent.com/gregkh/linux/7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e/net/core/netclassid_cgroup.c"
+    },
+    "kernel/events/core.c": {
+      "bytes": 354517,
+      "sha256": "900a1e67c291a8491fca3a9243a31dbb7d4645a73a9b2d1e9226222ac6ba9813",
+      "gitBlob": "6c9c3bfc0da2726fd16caf03a85ea6725981d2fc"
+    },
+    "net/core/netprio_cgroup.c": {
+      "bytes": 6594,
+      "sha256": "33b8df1607aca28d10e3aa9e5112c31c8dd3df9644cf2be632772b7096a07ebb",
+      "gitBlob": "8456dfbe2eb40b371901c1e753acf8513262ac41",
+      "api": "https://api.github.com/repos/gregkh/linux/contents/net/core/netprio_cgroup.c?ref=7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+      "downloadUrl": "https://raw.githubusercontent.com/gregkh/linux/7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e/net/core/netprio_cgroup.c"
+    },
+    "mm/hugetlb_cgroup.c": {
+      "bytes": 24349,
+      "sha256": "014306cc4a3c95fc93018f69c11da7361d5baea06faa6962de1aa3b84b440e28",
+      "gitBlob": "e716c4671a1595366e876d51fd34faf3f91fa81d",
+      "api": "https://api.github.com/repos/gregkh/linux/contents/mm/hugetlb_cgroup.c?ref=7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+      "downloadUrl": "https://raw.githubusercontent.com/gregkh/linux/7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e/mm/hugetlb_cgroup.c"
+    },
+    "kernel/cgroup/pids.c": {
+      "bytes": 11985,
+      "sha256": "ac7cc88499875818cf2f1453c2d0e8066f39f69cafaa80e5d1403fa82e6f1e63",
+      "gitBlob": "5b64c8dde5eb288ae037602d6e1a8f398f39962b"
+    },
+    "kernel/cgroup/rdma.c": {
+      "bytes": 15144,
+      "sha256": "f0f5f48b5c9c546e5ef0e629e4278cc40361568295f4cf7b9226c5365786629a",
+      "gitBlob": "d544a747f3954d14651730cacc03f771aa6145e0",
+      "api": "https://api.github.com/repos/gregkh/linux/contents/kernel/cgroup/rdma.c?ref=7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+      "downloadUrl": "https://raw.githubusercontent.com/gregkh/linux/7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e/kernel/cgroup/rdma.c"
+    },
+    "kernel/cgroup/misc.c": {
+      "bytes": 11404,
+      "sha256": "7fa663ab3fa258ffdeaa354bea7aa286d4c3e4dbe1beb25313cc12926e55f60c",
+      "gitBlob": "0e26068995a6cec9319d95be8d4c77ea49f4f06e",
+      "api": "https://api.github.com/repos/gregkh/linux/contents/kernel/cgroup/misc.c?ref=7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+      "downloadUrl": "https://raw.githubusercontent.com/gregkh/linux/7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e/kernel/cgroup/misc.c"
+    },
+    "kernel/cgroup/debug.c": {
+      "bytes": 8409,
+      "sha256": "0d0f2b5e95d7c7ba558b1f4e37cb730f7ff933686c0b7ccb39ceb62fc0cb68c4",
+      "gitBlob": "80aa3f027ac3b1a5592d7b272f23efb35a8b0b3a",
+      "api": "https://api.github.com/repos/gregkh/linux/contents/kernel/cgroup/debug.c?ref=7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+      "downloadUrl": "https://raw.githubusercontent.com/gregkh/linux/7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e/kernel/cgroup/debug.c"
+    },
+    "kernel/cgroup/cgroup.c": {
+      "bytes": 195044,
+      "sha256": "f8abe4bae2e1680147ea5cd72e43f3e60df1070b1cd8eccc55b9eb0ec5dff0dc",
+      "gitBlob": "ce012aca272a5d5884bae2edbcd9ac9d514ca8ef"
+    },
+    "include/linux/cgroup.h": {
+      "bytes": 27005,
+      "sha256": "295eefd27a5cc88a30c75cddc35765bb35cc16092489b19e43589658f30f9c93",
+      "gitBlob": "2a510dbbfe623e46ea711640638b0b7997bc778b",
+      "api": "https://api.github.com/repos/gregkh/linux/contents/include/linux/cgroup.h?ref=7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+      "downloadUrl": "https://raw.githubusercontent.com/gregkh/linux/7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e/include/linux/cgroup.h"
+    },
+    "include/linux/cgroup_subsys.h": {
+      "bytes": 1259,
+      "sha256": "6bfb6da107b4f67e8bfc86002ac8066c3c41141dc9e3804c1ee9cabdbfdd2c9c",
+      "gitBlob": "445235487230739c5c0ac0d581f5b5930f97c238",
+      "api": "https://api.github.com/repos/gregkh/linux/contents/include/linux/cgroup_subsys.h?ref=7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+      "downloadUrl": "https://raw.githubusercontent.com/gregkh/linux/7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e/include/linux/cgroup_subsys.h"
+    },
+    "selected.config": {
+      "bytes": 143192,
+      "sha256": "b2bcccd5507f3f3a673690b660a2321870b57a3c77e72ce8532975f3c4752176",
+      "artifactSource": "0694cb4092c76c2bbb65546bd20acb6e09a17707",
+      "runId": 39735038465,
+      "artifactId": 12406663268
+    }
+  },
+  "registrations": {
+    "cpuset": {
+      "source": "kernel/cgroup/cpuset.c",
+      "text": "struct cgroup_subsys cpuset_cgrp_subsys = {\n\t.css_alloc\t= cpuset_css_alloc,\n\t.css_online\t= cpuset_css_online,\n\t.css_offline\t= cpuset_css_offline,\n\t.css_killed\t= cpuset_css_killed,\n\t.css_free\t= cpuset_css_free,\n\t.can_attach\t= cpuset_can_attach,\n\t.cancel_attach\t= cpuset_cancel_attach,\n\t.attach\t\t= cpuset_attach,\n\t.post_attach\t= cpuset_post_attach,\n\t.bind\t\t= cpuset_bind,\n\t.can_fork\t= cpuset_can_fork,\n\t.cancel_fork\t= cpuset_cancel_fork,\n\t.fork\t\t= cpuset_fork,\n#ifdef CONFIG_CPUSETS_V1\n\t.legacy_cftypes\t= cpuset1_files,\n#endif\n\t.dfl_cftypes\t= dfl_files,\n\t.early_init\t= true,\n\t.threaded\t= true,\n};",
+      "bytes": 594,
+      "sha256": "622259e78fdd9547f0b0cd3769424beb50cadc385d0332e57add05a262309e95",
+      "selectedConfig": "CONFIG_CPUSETS",
+      "taskHooks": {
+        "can_fork": "cpuset_can_fork",
+        "cancel_fork": "cpuset_cancel_fork",
+        "fork": "cpuset_fork"
+      }
+    },
+    "cpu": {
+      "source": "kernel/sched/core.c",
+      "text": "struct cgroup_subsys cpu_cgrp_subsys = {\n\t.css_alloc\t= cpu_cgroup_css_alloc,\n\t.css_online\t= cpu_cgroup_css_online,\n\t.css_offline\t= cpu_cgroup_css_offline,\n\t.css_released\t= cpu_cgroup_css_released,\n\t.css_free\t= cpu_cgroup_css_free,\n\t.css_extra_stat_show = cpu_extra_stat_show,\n\t.css_local_stat_show = cpu_local_stat_show,\n\t.can_attach\t= cpu_cgroup_can_attach,\n\t.attach\t\t= cpu_cgroup_attach,\n\t.cancel_attach\t= cpu_cgroup_cancel_attach,\n\t.legacy_cftypes\t= cpu_legacy_files,\n\t.dfl_cftypes\t= cpu_files,\n\t.early_init\t= true,\n\t.threaded\t= true,\n};",
+      "bytes": 540,
+      "sha256": "eeaef6b9223e67ee51ad2d0d6cae49bb42170a37514ca65a6c1e27645cf26733",
+      "selectedConfig": "CONFIG_CGROUP_SCHED",
+      "taskHooks": {}
+    },
+    "cpuacct": {
+      "source": "kernel/sched/cpuacct.c",
+      "text": "struct cgroup_subsys cpuacct_cgrp_subsys = {\n\t.css_alloc\t= cpuacct_css_alloc,\n\t.css_free\t= cpuacct_css_free,\n\t.legacy_cftypes\t= files,\n\t.early_init\t= true,\n};",
+      "bytes": 158,
+      "sha256": "d790db9c2bcc1a2eae89e9a59f0a4220f76c1330053b37ab9138e71f244c3a3e",
+      "selectedConfig": "CONFIG_CGROUP_CPUACCT",
+      "taskHooks": {}
+    },
+    "io": {
+      "source": "block/blk-cgroup.c",
+      "text": "struct cgroup_subsys io_cgrp_subsys = {\n\t.css_alloc = blkcg_css_alloc,\n\t.css_online = blkcg_css_online,\n\t.css_offline = blkcg_css_offline,\n\t.css_free = blkcg_css_free,\n\t.css_rstat_flush = blkcg_rstat_flush,\n\t.dfl_cftypes = blkcg_files,\n\t.legacy_cftypes = blkcg_legacy_files,\n\t.legacy_name = \"blkio\",\n\t.exit = blkcg_exit,\n#ifdef CONFIG_MEMCG\n\t/*\n\t * This ensures that, if available, memcg is automatically enabled\n\t * together on the default hierarchy so that the owner cgroup can\n\t * be retrieved from writeback pages.\n\t */\n\t.depends_on = 1 << memory_cgrp_id,\n#endif\n};",
+      "bytes": 569,
+      "sha256": "e720f6966b33e7d27a337466e1fc4610dd76fa0a5099595d6372e8aa1d11de4f",
+      "selectedConfig": "CONFIG_BLK_CGROUP",
+      "taskHooks": {
+        "exit": "blkcg_exit"
+      }
+    },
+    "devices": {
+      "source": "security/device_cgroup.c",
+      "text": "struct cgroup_subsys devices_cgrp_subsys = {\n\t.css_alloc = devcgroup_css_alloc,\n\t.css_free = devcgroup_css_free,\n\t.css_online = devcgroup_online,\n\t.css_offline = devcgroup_offline,\n\t.legacy_cftypes = dev_cgroup_files,\n};",
+      "bytes": 220,
+      "sha256": "ae16296e2bd4eaeb9aa60a6b450ca01ee06385392e7f8dea56f97e5bfa1f9ae4",
+      "selectedConfig": "CONFIG_CGROUP_DEVICE",
+      "taskHooks": {}
+    },
+    "freezer": {
+      "source": "kernel/cgroup/legacy_freezer.c",
+      "text": "struct cgroup_subsys freezer_cgrp_subsys = {\n\t.css_alloc\t= freezer_css_alloc,\n\t.css_online\t= freezer_css_online,\n\t.css_offline\t= freezer_css_offline,\n\t.css_free\t= freezer_css_free,\n\t.attach\t\t= freezer_attach,\n\t.fork\t\t= freezer_fork,\n\t.legacy_cftypes\t= files,\n};",
+      "bytes": 261,
+      "sha256": "1973cfe94ee9076e416919f819794123b6bba5eaf2c851cc7fa920a79ba75216",
+      "selectedConfig": "CONFIG_CGROUP_FREEZER",
+      "taskHooks": {
+        "fork": "freezer_fork"
+      }
+    },
+    "net_cls": {
+      "source": "net/core/netclassid_cgroup.c",
+      "text": "struct cgroup_subsys net_cls_cgrp_subsys = {\n\t.css_alloc\t\t= cgrp_css_alloc,\n\t.css_online\t\t= cgrp_css_online,\n\t.css_free\t\t= cgrp_css_free,\n\t.attach\t\t\t= cgrp_attach,\n\t.legacy_cftypes\t\t= ss_files,\n};",
+      "bytes": 196,
+      "sha256": "e95d4eb342d0d548b42f8a81b255b9b53d65247f25c68dbb7723d4e9cf4e56bf",
+      "selectedConfig": "CONFIG_CGROUP_NET_CLASSID",
+      "taskHooks": {}
+    },
+    "perf_event": {
+      "source": "kernel/events/core.c",
+      "text": "struct cgroup_subsys perf_event_cgrp_subsys = {\n\t.css_alloc\t= perf_cgroup_css_alloc,\n\t.css_free\t= perf_cgroup_css_free,\n\t.css_online\t= perf_cgroup_css_online,\n\t.attach\t\t= perf_cgroup_attach,\n\t/*\n\t * Implicitly enable on dfl hierarchy so that perf events can\n\t * always be filtered by cgroup2 path as long as perf_event\n\t * controller is not mounted on a legacy hierarchy.\n\t */\n\t.implicit_on_dfl = true,\n\t.threaded\t= true,\n};",
+      "bytes": 424,
+      "sha256": "f9ea804dea7096ab69c71b5c6c639ce6d66f04e552f6f3bc232d0942d653be44",
+      "selectedConfig": "CONFIG_CGROUP_PERF",
+      "taskHooks": {}
+    },
+    "net_prio": {
+      "source": "net/core/netprio_cgroup.c",
+      "text": "struct cgroup_subsys net_prio_cgrp_subsys = {\n\t.css_alloc\t= cgrp_css_alloc,\n\t.css_online\t= cgrp_css_online,\n\t.css_free\t= cgrp_css_free,\n\t.attach\t\t= net_prio_attach,\n\t.legacy_cftypes\t= ss_files,\n};",
+      "bytes": 196,
+      "sha256": "a2ba1385663f05d3e9419a6a201148ac90a09fa169ee9cd46239ae924ab34682",
+      "selectedConfig": "CONFIG_CGROUP_NET_PRIO",
+      "taskHooks": {}
+    },
+    "hugetlb": {
+      "source": "mm/hugetlb_cgroup.c",
+      "text": "struct cgroup_subsys hugetlb_cgrp_subsys = {\n\t.css_alloc\t= hugetlb_cgroup_css_alloc,\n\t.css_offline\t= hugetlb_cgroup_css_offline,\n\t.css_free\t= hugetlb_cgroup_css_free,\n\t.dfl_cftypes\t= hugetlb_files,\n\t.legacy_cftypes\t= hugetlb_files,\n};",
+      "bytes": 234,
+      "sha256": "a42c837b4bd40e46145fe166e82f7400393456a2b53863c32e03fb291397da37",
+      "selectedConfig": "CONFIG_CGROUP_HUGETLB",
+      "taskHooks": {}
+    },
+    "pids": {
+      "source": "kernel/cgroup/pids.c",
+      "text": "struct cgroup_subsys pids_cgrp_subsys = {\n\t.css_alloc\t= pids_css_alloc,\n\t.css_free\t= pids_css_free,\n\t.can_attach \t= pids_can_attach,\n\t.cancel_attach \t= pids_cancel_attach,\n\t.can_fork\t= pids_can_fork,\n\t.cancel_fork\t= pids_cancel_fork,\n\t.release\t= pids_release,\n\t.legacy_cftypes = pids_files_legacy,\n\t.dfl_cftypes\t= pids_files,\n\t.threaded\t= true,\n};",
+      "bytes": 347,
+      "sha256": "181602f52b01238d2e06e1a46756ad14d2fc2f7028897ee7345a78e2189e1f6e",
+      "selectedConfig": "CONFIG_CGROUP_PIDS",
+      "taskHooks": {
+        "can_fork": "pids_can_fork",
+        "cancel_fork": "pids_cancel_fork",
+        "release": "pids_release"
+      }
+    },
+    "rdma": {
+      "source": "kernel/cgroup/rdma.c",
+      "text": "struct cgroup_subsys rdma_cgrp_subsys = {\n\t.css_alloc\t= rdmacg_css_alloc,\n\t.css_free\t= rdmacg_css_free,\n\t.css_offline\t= rdmacg_css_offline,\n\t.legacy_cftypes\t= rdmacg_files,\n\t.dfl_cftypes\t= rdmacg_files,\n};",
+      "bytes": 205,
+      "sha256": "fe6c13832d7f6bd38327a6dcf82fcb8d9a256b609a9c40a9a96039870d7c83b5",
+      "selectedConfig": "CONFIG_CGROUP_RDMA",
+      "taskHooks": {}
+    },
+    "misc": {
+      "source": "kernel/cgroup/misc.c",
+      "text": "struct cgroup_subsys misc_cgrp_subsys = {\n\t.css_alloc = misc_cg_alloc,\n\t.css_free = misc_cg_free,\n\t.legacy_cftypes = misc_cg_files,\n\t.dfl_cftypes = misc_cg_files,\n};",
+      "bytes": 165,
+      "sha256": "51ae926b93cb17cbe40013b7bb652bd252d27e38af11ab2083c0a77b67674051",
+      "selectedConfig": "CONFIG_CGROUP_MISC",
+      "taskHooks": {}
+    },
+    "debug": {
+      "source": "kernel/cgroup/debug.c",
+      "text": "struct cgroup_subsys debug_cgrp_subsys = {\n\t.css_alloc\t= debug_css_alloc,\n\t.css_free\t= debug_css_free,\n\t.legacy_cftypes\t= debug_legacy_files,\n};",
+      "bytes": 144,
+      "sha256": "75ef499b0b714975f2668a2aec156f1653279181a8d610eef1b4ab01fc72b288",
+      "selectedConfig": "CONFIG_CGROUP_DEBUG",
+      "taskHooks": {}
+    }
+  },
+  "sections": {
+    "cgroup_can_fork": {
+      "source": "kernel/cgroup/cgroup.c",
+      "text": "int cgroup_can_fork(struct task_struct *child, struct kernel_clone_args *kargs)\n{\n\tstruct cgroup_subsys *ss;\n\tint i, j, ret;\n\n\tret = cgroup_css_set_fork(kargs);\n\tif (ret)\n\t\treturn ret;\n\n\tdo_each_subsys_mask(ss, i, have_canfork_callback) {\n\t\tret = ss->can_fork(child, kargs->cset);\n\t\tif (ret)\n\t\t\tgoto out_revert;\n\t} while_each_subsys_mask();\n\n\treturn 0;\n\nout_revert:\n\tfor_each_subsys(ss, j) {\n\t\tif (j >= i)\n\t\t\tbreak;\n\t\tif (ss->cancel_fork)\n\t\t\tss->cancel_fork(child, kargs->cset);\n\t}\n\n\tcgroup_css_set_put_fork(kargs);\n\n\treturn ret;\n}\n",
+      "bytes": 532,
+      "sha256": "ce69bf35d2b8881da61b415c6f7a5fccf7ada119ad1fd13dea7856340374bd0a"
+    },
+    "cgroup_css_set_fork": {
+      "source": "kernel/cgroup/cgroup.c",
+      "text": "static int cgroup_css_set_fork(struct kernel_clone_args *kargs)\n\t__acquires(&cgroup_mutex) __acquires(&cgroup_threadgroup_rwsem)\n{\n\tint ret;\n\tstruct cgroup *dst_cgrp = NULL;\n\tstruct css_set *cset;\n\tstruct super_block *sb;\n\tstruct file *f;\n\n\tif (kargs->flags & CLONE_INTO_CGROUP)\n\t\tcgroup_lock();\n\n\tcgroup_threadgroup_change_begin(current);\n\n\tspin_lock_irq(&css_set_lock);\n\tcset = task_css_set(current);\n\tget_css_set(cset);\n\tif (kargs->cgrp)\n\t\tkargs->kill_seq = kargs->cgrp->kill_seq;\n\telse\n\t\tkargs->kill_seq = cset->dfl_cgrp->kill_seq;\n\tspin_unlock_irq(&css_set_lock);\n\n\tif (!(kargs->flags & CLONE_INTO_CGROUP)) {\n\t\tkargs->cset = cset;\n\t\treturn 0;\n\t}\n\n\tf = fget_raw(kargs->cgroup);\n\tif (!f) {\n\t\tret = -EBADF;\n\t\tgoto err;\n\t}\n\tsb = f->f_path.dentry->d_sb;\n\n\tdst_cgrp = cgroup_get_from_file(f);\n\tif (IS_ERR(dst_cgrp)) {\n\t\tret = PTR_ERR(dst_cgrp);\n\t\tdst_cgrp = NULL;\n\t\tgoto err;\n\t}\n\n\tif (cgroup_is_dead(dst_cgrp)) {\n\t\tret = -ENODEV;\n\t\tgoto err;\n\t}\n\n\t/*\n\t * Verify that we the target cgroup is writable for us. This is\n\t * usually done by the vfs layer but since we're not going through\n\t * the vfs layer here we need to do it \"manually\".\n\t */\n\tret = cgroup_may_write(dst_cgrp, sb);\n\tif (ret)\n\t\tgoto err;\n\n\t/*\n\t * Spawning a task directly into a cgroup works by passing a file\n\t * descriptor to the target cgroup directory. This can even be an O_PATH\n\t * file descriptor. But it can never be a cgroup.procs file descriptor.\n\t * This was done on purpose so spawning into a cgroup could be\n\t * conceptualized as an atomic\n\t *\n\t *   fd = openat(dfd_cgroup, \"cgroup.procs\", ...);\n\t *   write(fd, <child-pid>, ...);\n\t *\n\t * sequence, i.e. it's a shorthand for the caller opening and writing\n\t * cgroup.procs of the cgroup indicated by @dfd_cgroup. This allows us\n\t * to always use the caller's credentials.\n\t */\n\tret = cgroup_attach_permissions(cset->dfl_cgrp, dst_cgrp, sb,\n\t\t\t\t\t!(kargs->flags & CLONE_THREAD),\n\t\t\t\t\tcurrent->nsproxy->cgroup_ns);\n\tif (ret)\n\t\tgoto err;\n\n\tkargs->cset = find_css_set(cset, dst_cgrp);\n\tif (!kargs->cset) {\n\t\tret = -ENOMEM;\n\t\tgoto err;\n\t}\n\n\tput_css_set(cset);\n\tfput(f);\n\tkargs->cgrp = dst_cgrp;\n\treturn ret;\n\nerr:\n\tcgroup_threadgroup_change_end(current);\n\tcgroup_unlock();\n\tif (f)\n\t\tfput(f);\n\tif (dst_cgrp)\n\t\tcgroup_put(dst_cgrp);\n\tput_css_set(cset);\n\tif (kargs->cset)\n\t\tput_css_set(kargs->cset);\n\treturn ret;\n}\n",
+      "bytes": 2331,
+      "sha256": "5e53efab799d83101b1cee63434484defb9b5f1bf32f355b49265dcf70a326ae"
+    },
+    "cgroup_css_set_put_fork": {
+      "source": "kernel/cgroup/cgroup.c",
+      "text": "static void cgroup_css_set_put_fork(struct kernel_clone_args *kargs)\n\t__releases(&cgroup_threadgroup_rwsem) __releases(&cgroup_mutex)\n{\n\tstruct cgroup *cgrp = kargs->cgrp;\n\tstruct css_set *cset = kargs->cset;\n\n\tcgroup_threadgroup_change_end(current);\n\n\tif (cset) {\n\t\tput_css_set(cset);\n\t\tkargs->cset = NULL;\n\t}\n\n\tif (kargs->flags & CLONE_INTO_CGROUP) {\n\t\tcgroup_unlock();\n\t\tif (cgrp) {\n\t\t\tcgroup_put(cgrp);\n\t\t\tkargs->cgrp = NULL;\n\t\t}\n\t}\n}\n",
+      "bytes": 439,
+      "sha256": "d0865d135448b8b2392a7eaf9fd59c1b8bc777f6577fc39d769235011c37bb13"
+    },
+    "cpuset_can_fork": {
+      "source": "kernel/cgroup/cpuset.c",
+      "text": "int cpuset_can_fork(struct task_struct *task, struct css_set *cset)\n{\n\tstruct cpuset *cs = css_cs(cset->subsys[cpuset_cgrp_id]);\n\tbool same_cs;\n\tint ret;\n\n\trcu_read_lock();\n\tsame_cs = (cs == task_cs(current));\n\trcu_read_unlock();\n\n\tif (same_cs)\n\t\treturn 0;\n\n\tlockdep_assert_held(&cgroup_mutex);\n\tmutex_lock(&cpuset_mutex);\n\n\t/* Check to see if task is allowed in the cpuset */\n\tret = cpuset_can_attach_check(cs);\n\tif (ret)\n\t\tgoto out_unlock;\n\n\tret = task_can_attach(task);\n\tif (ret)\n\t\tgoto out_unlock;\n\n\tret = security_task_setscheduler(task);\n\tif (ret)\n\t\tgoto out_unlock;\n\n\t/*\n\t * Mark attach is in progress.  This makes validate_change() fail\n\t * changes which zero cpus/mems_allowed.\n\t */\n\tcs->attach_in_progress++;\nout_unlock:\n\tmutex_unlock(&cpuset_mutex);\n\treturn ret;\n}\n",
+      "bytes": 776,
+      "sha256": "177055c0dc8625fabc92cd786fd1b2fbaafc148ad1f30b9b9ea76cb1823e9e0f"
+    },
+    "cpuset_cancel_fork": {
+      "source": "kernel/cgroup/cpuset.c",
+      "text": "void cpuset_cancel_fork(struct task_struct *task, struct css_set *cset)\n{\n\tstruct cpuset *cs = css_cs(cset->subsys[cpuset_cgrp_id]);\n\tbool same_cs;\n\n\trcu_read_lock();\n\tsame_cs = (cs == task_cs(current));\n\trcu_read_unlock();\n\n\tif (same_cs)\n\t\treturn;\n\n\tdec_attach_in_progress(cs);\n}\n",
+      "bytes": 281,
+      "sha256": "25ead25d8300a342fea2b9fce1bd3a32f54de58e78dab785d288bbec18e9cf92"
+    },
+    "cpuset_fork": {
+      "source": "kernel/cgroup/cpuset.c",
+      "text": "void cpuset_fork(struct task_struct *task)\n{\n\tstruct cpuset *cs;\n\tbool same_cs;\n\n\trcu_read_lock();\n\tcs = task_cs(task);\n\tsame_cs = (cs == task_cs(current));\n\trcu_read_unlock();\n\n\tif (same_cs) {\n\t\tif (cs == &top_cpuset)\n\t\t\treturn;\n\n\t\tset_cpus_allowed_ptr(task, current->cpus_ptr);\n\t\ttask->mems_allowed = current->mems_allowed;\n\t\treturn;\n\t}\n\n\t/* CLONE_INTO_CGROUP */\n\tmutex_lock(&cpuset_mutex);\n\tguarantee_online_mems(cs, &cpuset_attach_nodemask_to);\n\tcpuset_attach_task(cs, task);\n\n\tdec_attach_in_progress_locked(cs);\n\tmutex_unlock(&cpuset_mutex);\n}\n",
+      "bytes": 549,
+      "sha256": "d4ea23897bf93227a75c3b4cf0c5229e54458b0bbcbc38cea067d9ea11814e56"
+    },
+    "pids_can_fork": {
+      "source": "kernel/cgroup/pids.c",
+      "text": "static int pids_can_fork(struct task_struct *task, struct css_set *cset)\n{\n\tstruct pids_cgroup *pids, *pids_over_limit;\n\tint err;\n\n\tpids = css_pids(cset->subsys[pids_cgrp_id]);\n\terr = pids_try_charge(pids, 1, &pids_over_limit);\n\tif (err)\n\t\tpids_event(pids, pids_over_limit);\n\n\treturn err;\n}\n",
+      "bytes": 291,
+      "sha256": "e9d5fc1a106c3c8721dd4ffd6f655ac999c87b747fcb24241bcb6090158db5b7"
+    },
+    "pids_cancel_fork": {
+      "source": "kernel/cgroup/pids.c",
+      "text": "static void pids_cancel_fork(struct task_struct *task, struct css_set *cset)\n{\n\tstruct pids_cgroup *pids;\n\n\tpids = css_pids(cset->subsys[pids_cgrp_id]);\n\tpids_uncharge(pids, 1);\n}\n",
+      "bytes": 180,
+      "sha256": "5aae2a40723eb31677b7cd48c354b6567614498bfe0abf84f0c97e2e5a601545"
+    },
+    "pids_release": {
+      "source": "kernel/cgroup/pids.c",
+      "text": "static void pids_release(struct task_struct *task)\n{\n\tstruct pids_cgroup *pids = css_pids(task_css(task, pids_cgrp_id));\n\n\tpids_uncharge(pids, 1);\n}\n",
+      "bytes": 149,
+      "sha256": "d24a512c6f8bd266ab61cba125660cbeadb66c0301865125e91a91dc7dcc5ad8"
+    },
+    "pids_try_charge": {
+      "source": "kernel/cgroup/pids.c",
+      "text": "static int pids_try_charge(struct pids_cgroup *pids, int num, struct pids_cgroup **fail)\n{\n\tstruct pids_cgroup *p, *q;\n\n\tfor (p = pids; parent_pids(p); p = parent_pids(p)) {\n\t\tint64_t new = atomic64_add_return(num, &p->counter);\n\t\tint64_t limit = atomic64_read(&p->limit);\n\n\t\t/*\n\t\t * Since new is capped to the maximum number of pid_t, if\n\t\t * p->limit is %PIDS_MAX then we know that this test will never\n\t\t * fail.\n\t\t */\n\t\tif (new > limit) {\n\t\t\t*fail = p;\n\t\t\tgoto revert;\n\t\t}\n\t\t/*\n\t\t * Not technically accurate if we go over limit somewhere up\n\t\t * the hierarchy, but that's tolerable for the watermark.\n\t\t */\n\t\tpids_update_watermark(p, new);\n\t}\n\n\treturn 0;\n\nrevert:\n\tfor (q = pids; q != p; q = parent_pids(q))\n\t\tpids_cancel(q, num);\n\tpids_cancel(p, num);\n\n\treturn -EAGAIN;\n}\n",
+      "bytes": 777,
+      "sha256": "c2589a274615a0335c0d61bd7f28e0ac47a10a349267f7c08cfb271dea71986e"
+    },
+    "freezer_fork": {
+      "source": "kernel/cgroup/legacy_freezer.c",
+      "text": "static void freezer_fork(struct task_struct *task)\n{\n\tstruct freezer *freezer;\n\n\t/*\n\t * The root cgroup is non-freezable, so we can skip locking the\n\t * freezer.  This is safe regardless of race with task migration.\n\t * If we didn't race or won, skipping is obviously the right thing\n\t * to do.  If we lost and root is the new cgroup, noop is still the\n\t * right thing to do.\n\t */\n\tif (task_css_is_root(task, freezer_cgrp_id))\n\t\treturn;\n\n\tmutex_lock(&freezer_mutex);\n\trcu_read_lock();\n\n\tfreezer = task_freezer(task);\n\tif (freezer->state & CGROUP_FREEZING)\n\t\tfreeze_task(task);\n\n\trcu_read_unlock();\n\tmutex_unlock(&freezer_mutex);\n}\n",
+      "bytes": 631,
+      "sha256": "b79c9842a15c768b3d1888e05d199b4aa7d116882988db03d57daffddc529814"
+    },
+    "blkcg_exit": {
+      "source": "block/blk-cgroup.c",
+      "text": "static void blkcg_exit(struct task_struct *tsk)\n{\n\tif (tsk->throttle_disk)\n\t\tput_disk(tsk->throttle_disk);\n\ttsk->throttle_disk = NULL;\n}\n",
+      "bytes": 137,
+      "sha256": "9b97a9165042ed80918a2030a9801c0e6ff8db204d2cd3455df21f64c8f60305"
+    },
+    "cgroup_kthread_ready": {
+      "source": "include/linux/cgroup.h",
+      "text": "static inline void cgroup_kthread_ready(void)\n{\n\t/*\n\t * This kthread finished initialization.  The creator should have\n\t * set PF_NO_SETAFFINITY if this kthread should stay in the root.\n\t */\n\tcurrent->no_cgroup_migration = 0;\n}\n",
+      "bytes": 228,
+      "sha256": "50281ea25406577c841e5db74f108504edb4318fb05c8354927cd0d4d69d2c65"
+    }
+  },
+  "parentDerived": {
+    "kernel/lsf-cleanup-constructor.c": {
+      "bytes": 18794,
+      "sha256": "a20816397ed49b90cac5589ba8fea07b71ebf30e4857bf9a79ef7fa81d6c7a43"
+    }
+  },
+  "taskCreated": false,
+  "executorReady": false,
+  "actualCgroupExecution": false,
+  "bootstrapQualified": false,
+  "observerClosure": false,
+  "fullConstructorClosure": false,
+  "completeAllocationClosure": false,
+  "productionInstallation": false,
+  "unsupportedOperations": [
+    "Construct private cleanup worker outside the actual pinned init_css_set"
+  ]
+}

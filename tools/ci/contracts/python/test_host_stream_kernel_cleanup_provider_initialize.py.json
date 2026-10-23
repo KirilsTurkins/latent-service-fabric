@@ -1,0 +1,101 @@
+{
+  "cases": [
+    "CleanupProviderInitializeSource.test_actual_pool_initializer_uses_only_paid_attrs",
+    "CleanupProviderInitializeSource.test_actual_task_association_precedes_bind_attach_and_wake",
+    "CleanupProviderInitializeSource.test_charged_alignment_inside_same_original_record_for_every_residue",
+    "CleanupProviderInitializeSource.test_exact_role_function_and_actual_birth_before_pair_acceptance",
+    "CleanupProviderInitializeSource.test_fixed_empty_ida_routes_real_inline_zero_branch",
+    "CleanupProviderInitializeSource.test_real_pending_completion_and_last_request_access",
+    "CleanupProviderInitializeSource.test_source_pin_and_qualification_stays_closed"
+  ],
+  "guards": {
+    "CleanupProviderInitializeSource.test_actual_pool_initializer_uses_only_paid_attrs": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:fcabb01cab4aef0f3d68d59fa32cf0d6c2dc6a27517920906ebb291301899403",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CleanupProviderInitializeSource.test_actual_task_association_precedes_bind_attach_and_wake": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:fcabb01cab4aef0f3d68d59fa32cf0d6c2dc6a27517920906ebb291301899403",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CleanupProviderInitializeSource.test_charged_alignment_inside_same_original_record_for_every_residue": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:fcabb01cab4aef0f3d68d59fa32cf0d6c2dc6a27517920906ebb291301899403",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CleanupProviderInitializeSource.test_exact_role_function_and_actual_birth_before_pair_acceptance": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:fcabb01cab4aef0f3d68d59fa32cf0d6c2dc6a27517920906ebb291301899403",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CleanupProviderInitializeSource.test_fixed_empty_ida_routes_real_inline_zero_branch": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:fcabb01cab4aef0f3d68d59fa32cf0d6c2dc6a27517920906ebb291301899403",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CleanupProviderInitializeSource.test_real_pending_completion_and_last_request_access": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:fcabb01cab4aef0f3d68d59fa32cf0d6c2dc6a27517920906ebb291301899403",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CleanupProviderInitializeSource.test_source_pin_and_qualification_stays_closed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:fcabb01cab4aef0f3d68d59fa32cf0d6c2dc6a27517920906ebb291301899403",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_host_stream_kernel_cleanup_provider_initialize.py",
+  "reviewReason": "Additive reviewed finite cleanup constructor source controls and one 24-object hosted geometry/atomic programme; original four-object recipe and all earlier cases retained; no kernel link/boot, consumer selection or runtime/native qualification.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

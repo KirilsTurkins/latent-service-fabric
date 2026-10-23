@@ -1,0 +1,191 @@
+{
+  "schemaVersion": "lsf.kernel-cleanup-lifecycle-source.v1",
+  "upstreamCommit": "7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+  "parentExecutedSource": "0694cb4092c76c2bbb65546bd20acb6e09a17707",
+  "source": {
+    "kernel/fork.c": {
+      "bytes": 87199,
+      "sha256": "a3c798d12392a4a519eb398f8937c0d5cac6d0875daaad87b07c2a13e77e021c"
+    },
+    "kernel/kthread.c": {
+      "bytes": 43615,
+      "sha256": "1b2d9794c6a3f5c4eb1b1f9e1e3b01bd0bf98de4d5ee67fe24efd4aa749e662f"
+    },
+    "kernel/exit.c": {
+      "bytes": 50076,
+      "sha256": "540a565afcc467ad1d148018170724937164805773b0621f8fb0efef62ee97b0"
+    },
+    "kernel/sched/core.c": {
+      "bytes": 279839,
+      "sha256": "42f85b5a8c6b4cf05a5da435f48b7293e6d82fc7adeae3926f165cfd26e6a402"
+    },
+    "include/linux/sched/task.h": {
+      "bytes": 6756,
+      "sha256": "ee19639668eb7e96fd077c7dcb557e850b1e24a93231c62905c3484d5a96f38d"
+    },
+    "include/linux/sched/task_stack.h": {
+      "bytes": 3032,
+      "sha256": "57323641cc01aff14a12272d4af6c30bd97f3bbf4d14ba615ea0e5ade53eaa24"
+    },
+    "include/linux/kthread.h": {
+      "bytes": 7169,
+      "sha256": "8912cbbd1e401babd60f3d799bc25a873f8abf51cf84bdc8ec4d220b463bd916"
+    },
+    "arch/x86/mm/tlb.c": {
+      "bytes": 41529,
+      "sha256": "9f2298069204bb8efbdaeb5a376f7d3458e20adffbe34a3456610c6a814c37df"
+    },
+    "arch/x86/kernel/process.c": {
+      "bytes": 26949,
+      "sha256": "dd5e215d048e0d2940d2dccd0fef55ea0eb59a23051f5b2ed2b1c2dc26f3fc61"
+    },
+    "arch/x86/kernel/fpu/init.c": {
+      "bytes": 5666,
+      "sha256": "73ab6b4e6688b220b1314d7dcfb76496e91e1c7aa15f9ac7738caf76bd5cd4ed"
+    },
+    "mm/vmalloc.c": {
+      "bytes": 139333,
+      "sha256": "351e940965d3b2d0b0c44a970f596787613cb87dace7c6790e9c948c51246188"
+    }
+  },
+  "sections": {
+    "dup_task_struct": {
+      "source": "kernel/fork.c",
+      "prefix": "static struct task_struct *dup_task_struct(",
+      "text": "static struct task_struct *dup_task_struct(struct task_struct *orig, int node)\n{\n\tstruct task_struct *tsk;\n\tint err;\n\n\tif (node == NUMA_NO_NODE)\n\t\tnode = tsk_fork_get_node(orig);\n\ttsk = alloc_task_struct_node(node);\n\tif (!tsk)\n\t\treturn NULL;\n\n\terr = arch_dup_task_struct(tsk, orig);\n\tif (err)\n\t\tgoto free_tsk;\n\n\terr = alloc_thread_stack_node(tsk, node);\n\tif (err)\n\t\tgoto free_tsk;\n\n#ifdef CONFIG_THREAD_INFO_IN_TASK\n\trefcount_set(&tsk->stack_refcount, 1);\n#endif\n\taccount_kernel_stack(tsk, 1);\n\n\terr = scs_prepare(tsk, node);\n\tif (err)\n\t\tgoto free_stack;\n\n#ifdef CONFIG_SECCOMP\n\t/*\n\t * We must handle setting up seccomp filters once we're under\n\t * the sighand lock in case orig has changed between now and\n\t * then. Until then, filter must be NULL to avoid messing up\n\t * the usage counts on the error path calling free_task.\n\t */\n\ttsk->seccomp.filter = NULL;\n#endif\n\n\tsetup_thread_stack(tsk, orig);\n\tclear_user_return_notifier(tsk);\n\tclear_tsk_need_resched(tsk);\n\tset_task_stack_end_magic(tsk);\n\tclear_syscall_work_syscall_user_dispatch(tsk);\n\n#ifdef CONFIG_STACKPROTECTOR\n\ttsk->stack_canary = get_random_canary();\n#endif\n\tif (orig->cpus_ptr == &orig->cpus_mask)\n\t\ttsk->cpus_ptr = &tsk->cpus_mask;\n\tdup_user_cpus_ptr(tsk, orig, node);\n\n\t/*\n\t * One for the user space visible state that goes away when reaped.\n\t * One for the scheduler.\n\t */\n\trefcount_set(&tsk->rcu_users, 2);\n\t/* One for the rcu users */\n\trefcount_set(&tsk->usage, 1);\n#ifdef CONFIG_BLK_DEV_IO_TRACE\n\ttsk->btrace_seq = 0;\n#endif\n\ttsk->splice_pipe = NULL;\n\ttsk->task_frag.page = NULL;\n\ttsk->wake_q.next = NULL;\n\ttsk->worker_private = NULL;\n\n\tkcov_task_init(tsk);\n\tkmsan_task_create(tsk);\n\tkmap_local_fork(tsk);\n\n#ifdef CONFIG_FAULT_INJECTION\n\ttsk->fail_nth = 0;\n#endif\n\n#ifdef CONFIG_BLK_CGROUP\n\ttsk->throttle_disk = NULL;\n\ttsk->use_memdelay = 0;\n#endif\n\n#ifdef CONFIG_ARCH_HAS_CPU_PASID\n\ttsk->pasid_activated = 0;\n#endif\n\n#ifdef CONFIG_MEMCG\n\ttsk->active_memcg = NULL;\n#endif\n\n#ifdef CONFIG_CPU_SUP_INTEL\n\ttsk->reported_split_lock = 0;\n#endif\n\n#ifdef CONFIG_SCHED_MM_CID\n\ttsk->mm_cid = -1;\n\ttsk->last_mm_cid = -1;\n\ttsk->mm_cid_active = 0;\n\ttsk->migrate_from_cpu = -1;\n#endif\n\n#ifdef CONFIG_BPF_SYSCALL\n\tRCU_INIT_POINTER(tsk->bpf_storage, NULL);\n\ttsk->bpf_ctx = NULL;\n#endif\n\treturn tsk;\n\nfree_stack:\n\texit_task_stack_account(tsk);\n\tfree_thread_stack(tsk);\nfree_tsk:\n\tfree_task_struct(tsk);\n\treturn NULL;\n}\n",
+      "bytes": 2375,
+      "sha256": "63357e51d075351b652090d39b3f7a706c6f31b765daf7b161647deb1411ce5b"
+    },
+    "free_task_struct": {
+      "source": "kernel/fork.c",
+      "prefix": "static inline void free_task_struct(",
+      "text": "static inline void free_task_struct(struct task_struct *tsk)\n{\n\tkmem_cache_free(task_struct_cachep, tsk);\n}\n",
+      "bytes": 108,
+      "sha256": "02eb1cfdef8fc2f39e8e46ae514abf4cc87f18827ca31af7bf41ceb4420790bc"
+    },
+    "release_task_stack": {
+      "source": "kernel/fork.c",
+      "prefix": "static void release_task_stack(",
+      "text": "static void release_task_stack(struct task_struct *tsk)\n{\n\tif (WARN_ON(READ_ONCE(tsk->__state) != TASK_DEAD))\n\t\treturn;  /* Better to leak the stack than to free prematurely */\n\n\tfree_thread_stack(tsk);\n}\n",
+      "bytes": 205,
+      "sha256": "d0c733dd1490a15e4152e16609949fd9caea1feb5bbeaa534157af140a32c8aa"
+    },
+    "free_task": {
+      "source": "kernel/fork.c",
+      "prefix": "void free_task(struct task_struct *tsk)",
+      "text": "void free_task(struct task_struct *tsk)\n{\n#ifdef CONFIG_SECCOMP\n\tWARN_ON_ONCE(tsk->seccomp.filter);\n#endif\n\trelease_user_cpus_ptr(tsk);\n\tscs_release(tsk);\n\n#ifndef CONFIG_THREAD_INFO_IN_TASK\n\t/*\n\t * The task is finally done with both the stack and thread_info,\n\t * so free both.\n\t */\n\trelease_task_stack(tsk);\n#else\n\t/*\n\t * If the task had a separate stack allocation, it should be gone\n\t * by now.\n\t */\n\tWARN_ON_ONCE(refcount_read(&tsk->stack_refcount) != 0);\n#endif\n\trt_mutex_debug_task_free(tsk);\n\tftrace_graph_exit_task(tsk);\n\tarch_release_task_struct(tsk);\n\tif (tsk->flags & PF_KTHREAD)\n\t\tfree_kthread_struct(tsk);\n\tbpf_task_storage_free(tsk);\n\tfree_task_struct(tsk);\n}\n",
+      "bytes": 675,
+      "sha256": "96fce28ceabbbe78da4aacbc3ab8f63bf70a495f6e4d92a0577c5b814af8a720"
+    },
+    "set_kthread_struct": {
+      "source": "kernel/kthread.c",
+      "prefix": "bool set_kthread_struct(",
+      "text": "bool set_kthread_struct(struct task_struct *p)\n{\n\tstruct kthread *kthread;\n\n\tif (WARN_ON_ONCE(to_kthread(p)))\n\t\treturn false;\n\n\tkthread = kzalloc(sizeof(*kthread), GFP_KERNEL);\n\tif (!kthread)\n\t\treturn false;\n\n\tinit_completion(&kthread->exited);\n\tinit_completion(&kthread->parked);\n\tp->vfork_done = &kthread->exited;\n\n\tp->worker_private = kthread;\n\treturn true;\n}\n",
+      "bytes": 363,
+      "sha256": "87661833dcd965516f67af13dd0bccd49dc8b9a9a301a075af504c1aa68b7c1d"
+    },
+    "free_kthread_struct": {
+      "source": "kernel/kthread.c",
+      "prefix": "void free_kthread_struct(",
+      "text": "void free_kthread_struct(struct task_struct *k)\n{\n\tstruct kthread *kthread;\n\n\t/*\n\t * Can be NULL if kmalloc() in set_kthread_struct() failed.\n\t */\n\tkthread = to_kthread(k);\n\tif (!kthread)\n\t\treturn;\n\n#ifdef CONFIG_BLK_CGROUP\n\tWARN_ON_ONCE(kthread->blkcg_css);\n#endif\n\tk->worker_private = NULL;\n\tkfree(kthread->full_name);\n\tkfree(kthread);\n}\n",
+      "bytes": 340,
+      "sha256": "5737d893afbd35647e7ca8d31ff43386dbe7968cfdfcfdffa4f9867ad897522d"
+    },
+    "kthreadd": {
+      "source": "kernel/kthread.c",
+      "prefix": "int kthreadd(void *unused)",
+      "text": "int kthreadd(void *unused)\n{\n\tstruct task_struct *tsk = current;\n\n\t/* Setup a clean context for our children to inherit. */\n\tset_task_comm(tsk, \"kthreadd\");\n\tignore_signals(tsk);\n\tset_cpus_allowed_ptr(tsk, housekeeping_cpumask(HK_TYPE_KTHREAD));\n\tset_mems_allowed(node_states[N_MEMORY]);\n\n\tcurrent->flags |= PF_NOFREEZE;\n\tcgroup_init_kthreadd();\n\n\tfor (;;) {\n\t\tset_current_state(TASK_INTERRUPTIBLE);\n\t\tif (list_empty(&kthread_create_list))\n\t\t\tschedule();\n\t\t__set_current_state(TASK_RUNNING);\n\n\t\tspin_lock(&kthread_create_lock);\n\t\twhile (!list_empty(&kthread_create_list)) {\n\t\t\tstruct kthread_create_info *create;\n\n\t\t\tcreate = list_entry(kthread_create_list.next,\n\t\t\t\t\t    struct kthread_create_info, list);\n\t\t\tlist_del_init(&create->list);\n\t\t\tspin_unlock(&kthread_create_lock);\n\n\t\t\tcreate_kthread(create);\n\n\t\t\tspin_lock(&kthread_create_lock);\n\t\t}\n\t\tspin_unlock(&kthread_create_lock);\n\t}\n\n\treturn 0;\n}\n",
+      "bytes": 901,
+      "sha256": "53870e943d932812a89ebbbbb8512cb158f2cb8bf17176b8bfe6ebabf248003f"
+    },
+    "kthread_stop": {
+      "source": "kernel/kthread.c",
+      "prefix": "int kthread_stop(struct task_struct *k)",
+      "text": "int kthread_stop(struct task_struct *k)\n{\n\tstruct kthread *kthread;\n\tint ret;\n\n\ttrace_sched_kthread_stop(k);\n\n\tget_task_struct(k);\n\tkthread = to_kthread(k);\n\tset_bit(KTHREAD_SHOULD_STOP, &kthread->flags);\n\tkthread_unpark(k);\n\tset_tsk_thread_flag(k, TIF_NOTIFY_SIGNAL);\n\twake_up_process(k);\n\twait_for_completion(&kthread->exited);\n\tret = kthread->result;\n\tput_task_struct(k);\n\n\ttrace_sched_kthread_stop_ret(ret);\n\treturn ret;\n}\n",
+      "bytes": 427,
+      "sha256": "7d6e106e9168fc433520305d905d376ade49485313d22afb944eed51979c0060"
+    },
+    "finish_task_switch": {
+      "source": "kernel/sched/core.c",
+      "prefix": "static struct rq *finish_task_switch(",
+      "text": "static struct rq *finish_task_switch(struct task_struct *prev)\n\t__releases(rq->lock)\n{\n\tstruct rq *rq = this_rq();\n\tstruct mm_struct *mm = rq->prev_mm;\n\tunsigned int prev_state;\n\n\t/*\n\t * The previous task will have left us with a preempt_count of 2\n\t * because it left us after:\n\t *\n\t *\tschedule()\n\t *\t  preempt_disable();\t\t\t// 1\n\t *\t  __schedule()\n\t *\t    raw_spin_lock_irq(&rq->lock)\t// 2\n\t *\n\t * Also, see FORK_PREEMPT_COUNT.\n\t */\n\tif (WARN_ONCE(preempt_count() != 2*PREEMPT_DISABLE_OFFSET,\n\t\t      \"corrupted preempt_count: %s/%d/0x%x\\n\",\n\t\t      current->comm, current->pid, preempt_count()))\n\t\tpreempt_count_set(FORK_PREEMPT_COUNT);\n\n\trq->prev_mm = NULL;\n\n\t/*\n\t * A task struct has one reference for the use as \"current\".\n\t * If a task dies, then it sets TASK_DEAD in tsk->state and calls\n\t * schedule one last time. The schedule call will never return, and\n\t * the scheduled task must drop that reference.\n\t *\n\t * We must observe prev->state before clearing prev->on_cpu (in\n\t * finish_task), otherwise a concurrent wakeup can get prev\n\t * running on another CPU and we could rave with its RUNNING -> DEAD\n\t * transition, resulting in a double drop.\n\t */\n\tprev_state = READ_ONCE(prev->__state);\n\tvtime_task_switch(prev);\n\tperf_event_task_sched_in(prev, current);\n\tfinish_task(prev);\n\ttick_nohz_task_switch();\n\tfinish_lock_switch(rq);\n\tfinish_arch_post_lock_switch();\n\tkcov_finish_switch(current);\n\t/*\n\t * kmap_local_sched_out() is invoked with rq::lock held and\n\t * interrupts disabled. There is no requirement for that, but the\n\t * sched out code does not have an interrupt enabled section.\n\t * Restoring the maps on sched in does not require interrupts being\n\t * disabled either.\n\t */\n\tkmap_local_sched_in();\n\n\t/*\n\t * Any cached block-layer timestamp (plug->cur_ktime) is stale now,\n\t * invalidate it.\n\t */\n\tblk_plug_invalidate_ts();\n\n\tfire_sched_in_preempt_notifiers(current);\n\t/*\n\t * When switching through a kernel thread, the loop in\n\t * membarrier_{private,global}_expedited() may have observed that\n\t * kernel thread and not issued an IPI. It is therefore possible to\n\t * schedule between user->kernel->user threads without passing though\n\t * switch_mm(). Membarrier requires a barrier after storing to\n\t * rq->curr, before returning to userspace, so provide them here:\n\t *\n\t * - a full memory barrier for {PRIVATE,GLOBAL}_EXPEDITED, implicitly\n\t *   provided by mmdrop_lazy_tlb(),\n\t * - a sync_core for SYNC_CORE.\n\t */\n\tif (mm) {\n\t\tmembarrier_mm_sync_core_before_usermode(mm);\n\t\tmmdrop_lazy_tlb_sched(mm);\n\t}\n\n\tif (unlikely(prev_state == TASK_DEAD)) {\n\t\tif (prev->sched_class->task_dead)\n\t\t\tprev->sched_class->task_dead(prev);\n\n\t\t/* Task is done with its stack. */\n\t\tput_task_stack(prev);\n\n\t\tput_task_struct_rcu_user(prev);\n\t}\n\n\treturn rq;\n}\n",
+      "bytes": 2758,
+      "sha256": "455845ffbd375d365037ed876bd9755b3ab6d0b9a6a9c18b47374dc1d9a03bc1"
+    },
+    "delayed_put_task_struct": {
+      "source": "kernel/exit.c",
+      "prefix": "static void delayed_put_task_struct(",
+      "text": "static void delayed_put_task_struct(struct rcu_head *rhp)\n{\n\tstruct task_struct *tsk = container_of(rhp, struct task_struct, rcu);\n\n\tkprobe_flush_task(tsk);\n\trethook_flush_task(tsk);\n\tperf_event_delayed_put(tsk);\n\ttrace_sched_process_free(tsk);\n\tput_task_struct(tsk);\n}\n",
+      "bytes": 270,
+      "sha256": "5eb4edd2bbe5d54c268229e7d16b5ea5b28be7e92780a0b7fb4c9f14aa900415"
+    },
+    "put_task_struct_rcu_user": {
+      "source": "kernel/exit.c",
+      "prefix": "void put_task_struct_rcu_user(",
+      "text": "void put_task_struct_rcu_user(struct task_struct *task)\n{\n\tif (refcount_dec_and_test(&task->rcu_users))\n\t\tcall_rcu(&task->rcu, delayed_put_task_struct);\n}\n",
+      "bytes": 155,
+      "sha256": "cfad36e91f053f0ca0236368af441ae2348f1918f80ae54d83c2c87bc8284521"
+    },
+    "arch_dup_task_struct": {
+      "source": "arch/x86/kernel/process.c",
+      "prefix": "int arch_dup_task_struct(",
+      "text": "int arch_dup_task_struct(struct task_struct *dst, struct task_struct *src)\n{\n\t/* init_task is not dynamically sized (incomplete FPU state) */\n\tif (unlikely(src == &init_task))\n\t\tmemcpy_and_pad(dst, arch_task_struct_size, src, sizeof(init_task), 0);\n\telse\n\t\tmemcpy(dst, src, arch_task_struct_size);\n\n#ifdef CONFIG_VM86\n\tdst->thread.vm86 = NULL;\n#endif\n\t/* Drop the copied pointer to current's fpstate */\n\tdst->thread.fpu.fpstate = NULL;\n\n\treturn 0;\n}\n",
+      "bytes": 450,
+      "sha256": "92bb8ff3cf2fa829c0e7958c316daefa7eeb0cca639233cadb632a14cdf02279"
+    },
+    "flush_tlb_kernel_range": {
+      "source": "arch/x86/mm/tlb.c",
+      "prefix": "void flush_tlb_kernel_range(",
+      "text": "void flush_tlb_kernel_range(unsigned long start, unsigned long end)\n{\n\t/* Balance as user space task's flush, a bit conservative */\n\tif (end == TLB_FLUSH_ALL ||\n\t    (end - start) > tlb_single_page_flush_ceiling << PAGE_SHIFT) {\n\t\ton_each_cpu(do_flush_tlb_all, NULL, 1);\n\t} else {\n\t\tstruct flush_tlb_info *info;\n\n\t\tpreempt_disable();\n\t\tinfo = get_flush_tlb_info(NULL, start, end, 0, false,\n\t\t\t\t\t  TLB_GENERATION_INVALID);\n\n\t\ton_each_cpu(do_kernel_range_flush, info, 1);\n\n\t\tput_flush_tlb_info();\n\t\tpreempt_enable();\n\t}\n}\n",
+      "bytes": 520,
+      "sha256": "380752f8c53f54296a459a3b0dae5ac39e388d299930bedb2089ad24a822078f"
+    },
+    "dup_user_cpus_ptr": {
+      "source": "kernel/sched/core.c",
+      "prefix": "int dup_user_cpus_ptr(",
+      "text": "int dup_user_cpus_ptr(struct task_struct *dst, struct task_struct *src,\n\t\t      int node)\n{\n\tcpumask_t *user_mask;\n\tunsigned long flags;\n\n\t/*\n\t * Always clear dst->user_cpus_ptr first as their user_cpus_ptr's\n\t * may differ by now due to racing.\n\t */\n\tdst->user_cpus_ptr = NULL;\n\n\t/*\n\t * This check is racy and losing the race is a valid situation.\n\t * It is not worth the extra overhead of taking the pi_lock on\n\t * every fork/clone.\n\t */\n\tif (data_race(!src->user_cpus_ptr))\n\t\treturn 0;\n\n\tuser_mask = alloc_user_cpus_ptr(node);\n\tif (!user_mask)\n\t\treturn -ENOMEM;\n\n\t/*\n\t * Use pi_lock to protect content of user_cpus_ptr\n\t *\n\t * Though unlikely, user_cpus_ptr can be reset to NULL by a concurrent\n\t * do_set_cpus_allowed().\n\t */\n\traw_spin_lock_irqsave(&src->pi_lock, flags);\n\tif (src->user_cpus_ptr) {\n\t\tswap(dst->user_cpus_ptr, user_mask);\n\t\tcpumask_copy(dst->user_cpus_ptr, src->user_cpus_ptr);\n\t}\n\traw_spin_unlock_irqrestore(&src->pi_lock, flags);\n\n\tif (unlikely(user_mask))\n\t\tkfree(user_mask);\n\n\treturn 0;\n}\n",
+      "bytes": 1013,
+      "sha256": "d1ceeadd70c6d41fe471c0dd3430abe26f0084eb9b1836a49b7df5a931f4e443"
+    }
+  },
+  "parentDerived": {
+    "net/device-prepaid.h": {
+      "bytes": 11594,
+      "sha256": "73265d2cf3bd16e264617f58123affb09b441f4d79841610e5efefaea37549dd"
+    },
+    "net/factory-device.c": {
+      "bytes": 8611,
+      "sha256": "7ccdc9219d05e8c218f729321dd86ebcbe362f3fcb7dfc997541889d10144fd5"
+    },
+    "net/factory.c": {
+      "bytes": 31485,
+      "sha256": "8e18c2f05035831f410d2e84ae222c86f780a41c0627b0ed87250a0ea31e9161"
+    },
+    "kernel/fork.c": {
+      "bytes": 87353,
+      "sha256": "adb568ac1f8e33a8ecbd93f15fe3a62f03a9370de8e0a07318501d4a126cdf20"
+    },
+    "kernel/kthread.c": {
+      "bytes": 44399,
+      "sha256": "ebf2691dc17a2bfa3bc23022647f08f627cb30b004abc5fe8abb4df8dce0e236"
+    },
+    "kernel/lsf-cleanup-worker.c": {
+      "bytes": 3698,
+      "sha256": "362edf673c928b8174afd971d904eb1fb762f2632a2c5970d8efc8c68ab23780"
+    },
+    "mm/vmalloc.c": {
+      "bytes": 139581,
+      "sha256": "6de6b6ec8a52f769af96c3bedfc67f63d89036ffba49b84d42432a2995703073"
+    },
+    "mm/lsf-cleanup-stack.c": {
+      "bytes": 13463,
+      "sha256": "c42ff3bb249c2de864bdbff0a1964d9feef65b1f0dff47e1996e90b210951546"
+    }
+  },
+  "runtimeStackHandoffSourceImplemented": true,
+  "taskCreated": false,
+  "executorReady": false,
+  "runningTaskStackRetirementExecuted": false,
+  "completeAllocationClosure": false,
+  "productionInstallation": false
+}

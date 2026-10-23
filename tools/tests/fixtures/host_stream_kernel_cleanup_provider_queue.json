@@ -1,0 +1,114 @@
+{
+  "schemaVersion": "lsf.kernel-cleanup-provider-queue-source.v1",
+  "upstreamCommit": "7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+  "source": {
+    "kernel/workqueue.c": {
+      "bytes": 232477,
+      "sha256": "c11039f7fda141a8861e1ca9e8a9de64c75c04a3a4fdebfe7073171f3fa6d3ed",
+      "gitBlob": "d1ce5aeb012fbcaca825ff2458640964967d48f2"
+    },
+    "kernel/kthread.c": {
+      "bytes": 43615,
+      "sha256": "1b2d9794c6a3f5c4eb1b1f9e1e3b01bd0bf98de4d5ee67fe24efd4aa749e662f",
+      "gitBlob": "9bb36897b6c62d46a2f7f7af51b86ff545e3eecf"
+    },
+    "drivers/acpi/osl.c": {
+      "bytes": 41382,
+      "sha256": "fcd2f82051c0328e373a45784054b1600679f89acfba0ebbc1602c205424aeef",
+      "gitBlob": "6537644faf381c61cec792958bf188a3d7ba11a6"
+    },
+    "selected.config": {
+      "bytes": 143192,
+      "sha256": "b2bcccd5507f3f3a673690b660a2321870b57a3c77e72ce8532975f3c4752176"
+    }
+  },
+  "sections": {
+    "acpi_os_terminate": {
+      "source": "drivers/acpi/osl.c",
+      "text": "acpi_status acpi_os_terminate(void)\n{\n\tif (acpi_irq_handler) {\n\t\tacpi_os_remove_interrupt_handler(acpi_gbl_FADT.sci_interrupt,\n\t\t\t\t\t\t acpi_irq_handler);\n\t}\n\n\tacpi_os_unmap_generic_address(&acpi_gbl_FADT.xgpe1_block);\n\tacpi_os_unmap_generic_address(&acpi_gbl_FADT.xgpe0_block);\n\tacpi_gbl_xgpe0_block_logical_address = 0UL;\n\tacpi_gbl_xgpe1_block_logical_address = 0UL;\n\n\tacpi_os_unmap_generic_address(&acpi_gbl_FADT.xpm1b_event_block);\n\tacpi_os_unmap_generic_address(&acpi_gbl_FADT.xpm1a_event_block);\n\n\tif (acpi_gbl_FADT.flags & ACPI_FADT_RESET_REGISTER)\n\t\tacpi_os_unmap_generic_address(&acpi_gbl_FADT.reset_register);\n\n\tdestroy_workqueue(kacpid_wq);\n\tdestroy_workqueue(kacpi_notify_wq);\n\tdestroy_workqueue(kacpi_hotplug_wq);\n\n\treturn AE_OK;\n}\n",
+      "bytes": 743,
+      "sha256": "02f8a2872895fb92457f88d75cfc0c8855ddfa78501497b53728c2da41ea06fd"
+    },
+    "kthread_flush_work": {
+      "source": "kernel/kthread.c",
+      "text": "void kthread_flush_work(struct kthread_work *work)\n{\n\tstruct kthread_flush_work fwork = {\n\t\tKTHREAD_WORK_INIT(fwork.work, kthread_flush_work_fn),\n\t\tCOMPLETION_INITIALIZER_ONSTACK(fwork.done),\n\t};\n\tstruct kthread_worker *worker;\n\tbool noop = false;\n\n\tworker = work->worker;\n\tif (!worker)\n\t\treturn;\n\n\traw_spin_lock_irq(&worker->lock);\n\t/* Work must not be used with >1 worker, see kthread_queue_work(). */\n\tWARN_ON_ONCE(work->worker != worker);\n\n\tif (!list_empty(&work->node))\n\t\tkthread_insert_work(worker, &fwork.work, work->node.next);\n\telse if (worker->current_work == work)\n\t\tkthread_insert_work(worker, &fwork.work,\n\t\t\t\t    worker->work_list.next);\n\telse\n\t\tnoop = true;\n\n\traw_spin_unlock_irq(&worker->lock);\n\n\tif (!noop)\n\t\twait_for_completion(&fwork.done);\n}\n",
+      "bytes": 762,
+      "sha256": "2ae82587f233e040c76c7178d28f37e4fcf5e239dd441fada6741af8d8dcebe2"
+    },
+    "kthread_worker_fn": {
+      "source": "kernel/kthread.c",
+      "text": "int kthread_worker_fn(void *worker_ptr)\n{\n\tstruct kthread_worker *worker = worker_ptr;\n\tstruct kthread_work *work;\n\n\t/*\n\t * FIXME: Update the check and remove the assignment when all kthread\n\t * worker users are created using kthread_create_worker*() functions.\n\t */\n\tWARN_ON(worker->task && worker->task != current);\n\tworker->task = current;\n\n\tif (worker->flags & KTW_FREEZABLE)\n\t\tset_freezable();\n\nrepeat:\n\tset_current_state(TASK_INTERRUPTIBLE);\t/* mb paired w/ kthread_stop */\n\n\tif (kthread_should_stop()) {\n\t\t__set_current_state(TASK_RUNNING);\n\t\traw_spin_lock_irq(&worker->lock);\n\t\tworker->task = NULL;\n\t\traw_spin_unlock_irq(&worker->lock);\n\t\treturn 0;\n\t}\n\n\twork = NULL;\n\traw_spin_lock_irq(&worker->lock);\n\tif (!list_empty(&worker->work_list)) {\n\t\twork = list_first_entry(&worker->work_list,\n\t\t\t\t\tstruct kthread_work, node);\n\t\tlist_del_init(&work->node);\n\t}\n\tworker->current_work = work;\n\traw_spin_unlock_irq(&worker->lock);\n\n\tif (work) {\n\t\tkthread_work_func_t func = work->func;\n\t\t__set_current_state(TASK_RUNNING);\n\t\ttrace_sched_kthread_work_execute_start(work);\n\t\twork->func(work);\n\t\t/*\n\t\t * Avoid dereferencing work after this point.  The trace\n\t\t * event only cares about the address.\n\t\t */\n\t\ttrace_sched_kthread_work_execute_end(work, func);\n\t} else if (!freezing(current)) {\n\t\tschedule();\n\t} else {\n\t\t/*\n\t\t * Handle the case where the current remains\n\t\t * TASK_INTERRUPTIBLE. try_to_freeze() expects\n\t\t * the current to be TASK_RUNNING.\n\t\t */\n\t\t__set_current_state(TASK_RUNNING);\n\t}\n\n\ttry_to_freeze();\n\tcond_resched();\n\tgoto repeat;\n}\n",
+      "bytes": 1546,
+      "sha256": "960946b5cb9c08863c9d1f7586ec4e291f96ddce0e5e9705c68794356edd28b8"
+    }
+  },
+  "parentDerived": {
+    "include/net/lsf_stream_cleanup_provider_executor.h": {
+      "bytes": 3089,
+      "sha256": "a737bbaca585fd74ce7968ed69feb61e81439f61b0c192498532b06d55f1b705"
+    },
+    "net/factory-device.c": {
+      "bytes": 9344,
+      "sha256": "081567e765042c0748df208297ebf2d8a9f278cef73e45e9d09b5a27fcf0efc4"
+    },
+    "net/factory.c": {
+      "bytes": 32963,
+      "sha256": "b76237eb97f7d5672764eea39f612996c377b536cbe6bd84d1fd023ceaa26a32"
+    },
+    "net/factory-cleanup-provider-initialize.c": {
+      "bytes": 4966,
+      "sha256": "ca8120e10676a33a99e6524173ed3c9ca08e924fb7885ecd00c51b35b30548ac"
+    },
+    "net/factory-cleanup-provider-retirement.c": {
+      "bytes": 7651,
+      "sha256": "8445628d1bb7c998ff2486b512cb61e1ec78c25d2eed80c8df49259a1267e4d5"
+    },
+    "net/factory-cleanup-descendants.c": {
+      "bytes": 12783,
+      "sha256": "9128485348a685eb79fb41393910c8797b57bbfecb09508e6a79bb899de8b7a8"
+    },
+    "net/factory-cleanup-constructor.c": {
+      "bytes": 9010,
+      "sha256": "9951f55405cf7cd375b094acaae98ac9ffcdba845dc12e4903caf9fc7e93180b"
+    },
+    "net/factory-device-firmware.c": {
+      "bytes": 15688,
+      "sha256": "11f812ae3be05ea652cc67db4280aaf5a7c317c7524c193451f9cd13f4a7a8cc"
+    },
+    "net/factory-cleanup-observer.c": {
+      "bytes": 2456,
+      "sha256": "07788155761062087390a100659892683ed23bc46449dd12105005f141e4fa29"
+    },
+    "kernel/lsf-cleanup-close.c": {
+      "bytes": 2050,
+      "sha256": "8bc730e799816e3e31cd381d96283abcf150e3becc9771a91bd8558822c69b2e"
+    },
+    "kernel/lsf-cleanup-provider-initialize.c": {
+      "bytes": 1776,
+      "sha256": "93f43b06f841bd6694dcbdd34b747cb1762d21b5537f9d3848db916d36e5eefe"
+    },
+    "kernel/kthread.c": {
+      "bytes": 46341,
+      "sha256": "8b9071042a9a1931b0585f0f7f5ac18953e71e47df3629e36bd7baeb35f288bc"
+    },
+    "kernel/lsf-cleanup-provider-executor.c": {
+      "bytes": 22110,
+      "sha256": "ac18125832a6341ac75c4e6ac63887c28806373fe1406e08f672871e003125fe"
+    },
+    "kernel/workqueue.c": {
+      "bytes": 236315,
+      "sha256": "dfd750fb7e07e6604edb4bccc298b50f54cab8f878210e2fe163c0b31af21ae5"
+    },
+    "drivers/acpi/osl.c": {
+      "bytes": 41777,
+      "sha256": "f7e3fe0ae63d8bd89e5520c082d7a356a427d670c4d741f08f3c01b63f7a0a91"
+    }
+  },
+  "taskCreated": false,
+  "queueLifetimeExecuted": false,
+  "physicalRetirementQualified": false,
+  "compiledGeometryFits": false,
+  "consumerSelected": false,
+  "actualRcuExecution": false,
+  "productionInstallation": false
+}
