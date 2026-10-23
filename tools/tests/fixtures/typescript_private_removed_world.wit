@@ -1,0 +1,9 @@
+package examples:greeting@1.0.0;
+
+interface api {
+    greet: func(name: string) -> result<string, string>;
+}
+
+world service {
+    export api;
+}

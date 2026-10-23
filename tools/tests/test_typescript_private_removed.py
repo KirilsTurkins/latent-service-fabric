@@ -85,14 +85,28 @@ class PrivateRemovedInputs(unittest.TestCase):
         self.assertNotIn('npm-private-dependencies/node-2/workflow.json',value['members'])
 
     def test_original_static_layer_recovery_preserves_package_hash(self):
+        from unittest.mock import patch
+        # This unit control supplies the exact public historical bytes. The
+        # owning acquisition campaign separately fetches the immutable source;
+        # ordinary shallow CI must not need that entire historical Git object.
+        raw = (Path(__file__).parent/'fixtures/typescript_private_removed_world.wit').read_bytes()
         with tempfile.TemporaryDirectory() as temporary:
-            root=Path(temporary);proof=inputs.reconstruct(root)
             name='npm-private-dependencies/build-2/wit/world.wit'
+            root=Path(temporary)
+            row=inputs.fixture()['reconstructed'][name]
+            with patch.object(inputs.subprocess,'check_output',return_value=raw) as read:
+                proof=inputs.reconstruct(root)
+                read.assert_called_once_with(['git','show',inputs.SOURCE+':'+row['gitPath']],
+                    cwd=inputs.ROOT,timeout=30)
+                with self.assertRaises(FileExistsError):inputs.reconstruct(root)
             self.assertEqual(inputs.file_identity(root/name),inputs.fixture()['reconstructed'][name]['identity'])
             self.assertEqual((root/name).stat().st_size,144)
             self.assertTrue(proof[name]['artifactMemberAbsent'])
             self.assertFalse(proof[name]['componentRebuilt'])
-            with self.assertRaises(FileExistsError):inputs.reconstruct(root)
+            with patch.object(inputs.subprocess,'check_output',return_value=raw+b'\n'), \
+                    self.assertRaisesRegex(WorkflowError,'original-static-layer'):
+                inputs.reconstruct(root/'tampered')
+            self.assertFalse((root/'tampered').exists())
 
     def test_archive_preflight_rejects_duplicate_wrong_size_and_symlink(self):
         value=inputs.fixture()
