@@ -184,6 +184,8 @@ async fn kernel_occupancy_retains_original_io_request_scope_and_memory() {
     let setup = Setup::new(single());
     let (session, control) = kernel_session(&setup, "kernel-original-owner");
     let observer = session.observer();
+    // The dispatched Work additionally owns its prepaid closed handle row.
+    let before_call = control.budget.host_memory_bytes();
     let call = setup.call(&session).await;
     let scope = Arc::new(session.reserve_stream().unwrap());
     let (request, _) = setup.fixture.request("kernel-original-owner");
@@ -194,6 +196,7 @@ async fn kernel_occupancy_retains_original_io_request_scope_and_memory() {
     )
     .unwrap();
     let before = control.budget.host_memory_bytes();
+    assert!(before > before_call);
     let mut original = call
         .reserve_stream_kernel_ownership(&scope, 98_304)
         .unwrap();
@@ -203,7 +206,8 @@ async fn kernel_occupancy_retains_original_io_request_scope_and_memory() {
     assert_eq!(control.budget.host_memory_bytes(), before + 98_304);
     assert!(!observer.is_quiescent());
     drop(original);
-    assert_eq!(control.budget.host_memory_bytes(), before - core_payload);
+    // Final I/O retirement destroys both Work's handle row and Core payload.
+    assert_eq!(control.budget.host_memory_bytes(), before_call - core_payload);
     assert_eq!(control.budget.outstanding_reservations(), 3);
     assert!(observer.is_quiescent());
     drop(observer);
@@ -239,9 +243,12 @@ async fn kernel_occupancy_rejects_foreign_scope_and_nonoriginal_allowance() {
 async fn stopped_kernel_occupancy_fails_checkpoint_without_refunding_owner() {
     let setup = Setup::new(single());
     let (session, control) = kernel_session(&setup, "kernel-owner-stopped");
+    // The dispatched Work additionally owns its prepaid closed handle row.
+    let before_call = control.budget.host_memory_bytes();
     let call = setup.call(&session).await;
     let scope = Arc::new(session.reserve_stream().unwrap());
     let before = control.budget.host_memory_bytes();
+    assert!(before > before_call);
     let owner = call
         .reserve_stream_kernel_ownership(&scope, 65_536)
         .unwrap();
@@ -251,7 +258,8 @@ async fn stopped_kernel_occupancy_fails_checkpoint_without_refunding_owner() {
     assert_eq!(setup.pools.snapshot().unwrap().running_requests, 1);
     assert_eq!(control.budget.host_memory_bytes(), before + 65_536);
     drop(owner);
-    assert_eq!(control.budget.host_memory_bytes(), before);
+    // Session remains live; the completed Work's handle storage has retired.
+    assert_eq!(control.budget.host_memory_bytes(), before_call);
     drop(session);
     clean(&setup.pools).await;
 }
