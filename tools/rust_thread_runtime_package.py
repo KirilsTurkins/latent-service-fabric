@@ -30,8 +30,11 @@ COMPONENT_SHA = 'sha256:74247ff2b0aeb0a1c2f6fb3fbf3fef31bb0c427b724c58d675e0b73b
 WRAPPED = {'bytes': 513571,
            'sha256': 'sha256:ad9c8ab801a5552bcd6b01bac58e5717200625e45413009f18855c5596189a27'}
 PROFILE = 'rust-context40-sync-cooperative-v1'
-IMPORTS = ('latent:runtime/activation@0.1.0', 'latent:runtime-native/threads@0.1.0',
-           'latent:clock/monotonic@0.1.0', 'latent:clock/wall@0.1.0')
+SOURCE_IMPORTS = ('latent:runtime/activation@0.1.0', 'latent:runtime-native/threads@0.1.0',
+                  'latent:clock/monotonic@0.1.0', 'latent:clock/wall@0.1.0')
+# The actual authenticated normal encoder envelope contains these three imports.
+# Its source-declared but unused wall function has no retained Core reference.
+IMPORTS = SOURCE_IMPORTS[:3]
 ORIGINAL_WIT = b'''package examples:greeting@1.0.0;
 
 interface api {
@@ -124,6 +127,7 @@ def prepare(artifact: Path, native: dict, output: Path, commands: Commands) -> d
     (output / 'retained-compiler-observation.json').write_bytes(prior_raw)
     (output / 'source-inputs.json').write_bytes(read_file(artifact / 'source-inputs.json', 16 * 1024))
     projected = ORIGINAL_WIT.replace(b'greet: func(', b'greet: async func(', 1)
+    projected = projected.replace(b'    import latent:clock/wall@0.1.0;\n', b'', 1)
     source = {**files, 'wit/world.wit': projected}
     # Code/CAS/compiler capture stays original. This separately signed operator
     # policy pays genuine original linear memory and all native stack mappings.
@@ -148,6 +152,8 @@ def prepare(artifact: Path, native: dict, output: Path, commands: Commands) -> d
         'compilerSource': SOURCE, 'compilerRun': str(RUN), 'retainedCompilerMaterials': identities,
         'originalSourceDigest': digest(inventory(files)), 'projectedPublicWitDigest': digest(projected),
         'originalPublicWitDigest': digest(ORIGINAL_WIT), 'publicEffect': 'async',
+        'originalDeclaredImports': list(SOURCE_IMPORTS), 'finalRequiredImports': list(IMPORTS),
+        'sourceDeclaredImportsOmittedBecauseAbsentFromAuthenticatedComponent': [SOURCE_IMPORTS[3]],
         'coreAbi': 'ordinary-synchronous', 'selectedHostProfile': PROFILE,
         'originalLimits': json.loads(files['capsule-project.json'])['limits'],
         'qualificationLimits': project['limits'], 'componentDigest': digest(component),

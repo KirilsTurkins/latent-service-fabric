@@ -36,7 +36,6 @@ PROVIDERS = {
         ['register', 'park', 'wake', 'settle', 'observe', 'timer-start', 'timer-next', 'timer-stop'], 'clock'),
     IMPORTS[1]: ('rust-native', 'conservative-native-total-starts-v1', ['start'], 'context'),
     IMPORTS[2]: ('clockMonotonic', 'activation-monotonic-v1', ['now-nanos'], 'clock'),
-    IMPORTS[3]: ('clockWall', 'activation-wall-v1', ['now-unix-millis'], 'clock'),
 }
 CASES = (('pools', 'pools-cold', 0, 'ordinary-default-pools:42'),
          ('pools', 'pools-hot', 0, 'ordinary-default-pools:42'),
@@ -47,11 +46,11 @@ CASES = (('pools', 'pools-cold', 0, 'ordinary-default-pools:42'),
 
 def configure(settings, capsule):
     imports = capsule.get('imports')
-    require(type(imports) is list and len(imports) == 4
+    require(type(imports) is list and len(imports) == 3
             and all(type(row) is dict and set(row) == {'contract', 'optional'}
                     and row['optional'] is False for row in imports)
             and {row['contract'] for row in imports} == set(IMPORTS),
-            'rust-thread-four-original-declared-imports')
+            'rust-thread-three-actual-component-imports')
     require(capsule['execution']['threading'] == 'cooperative'
             and capsule['execution']['limits']['memoryBytes'] == 32 * 1024 * 1024
             and capsule['execution']['limits']['wallTimeLimitMillis'] == 5000,
@@ -68,14 +67,14 @@ def configure(settings, capsule):
             'rust-thread-unmodified-provider-base')
     providers['activationRuntime'] = {'identity': {'id': 'rust-activation', 'tenant': 'examples',
         'service': HOST, 'epoch': 1}, 'limits': dict(LIMITS), 'nativeThreads': True}
-    for name in ('clockMonotonic', 'clockWall'):
+    for name in ('clockMonotonic',):
         providers[name] = {'identity': {'id': name, 'tenant': 'examples', 'service': CLOCK_HOST, 'epoch': 1}}
     for capability, (identity, _, _, _) in PROVIDERS.items():
         providers['bindings'].append({'name': identity, 'tenant': 'examples',
             'consumerService': 'examples/' + SERVICE,
             'providerService': HOST if capability in IMPORTS[:2] else CLOCK_HOST,
             'contract': capability, 'providerBinding': identity + '-installed'})
-    require(len(providers['bindings']) == 5, 'rust-thread-original-plus-four-bindings')
+    require(len(providers['bindings']) == 4, 'rust-thread-original-plus-three-bindings')
     return settings
 
 
@@ -199,8 +198,11 @@ def run(artifact: Path, native: dict, output: Path):
                         and row['response']['data']['resolvedRevision'] == revision
                         and revision['releaseDigest'] == component['sha256'],
                         'rust-thread-reaped-known-current-signed-invocation')
-                require(row['exitCode'] == code and row['decoded'] == [{'err' if code else 'ok': result}],
-                        'rust-thread-exact-original-default-pool-or-error-result')
+                matched = row['exitCode'] == code and row['decoded'] == [{'err' if code else 'ok': result}]
+                if not matched:
+                    from tools.capsule_invocation_diagnostics import capture
+                    capture(client, row)
+                require(matched, 'rust-thread-exact-original-default-pool-or-error-result')
                 consumption = row['response']['data']['consumption']
                 require(0 < integer(consumption['cpuFuel']) <= 100000000
                         and 0 < integer(consumption['peakMemoryBytes']) <= 32 * 1024 * 1024

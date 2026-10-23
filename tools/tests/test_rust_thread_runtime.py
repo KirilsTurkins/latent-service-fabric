@@ -31,11 +31,18 @@ class RustThreadRuntimeTests(unittest.TestCase):
                 'limits': {'memoryBytes': 33554432, 'wallTimeLimitMillis': 5000}}}
         configured = node.configure(copy.deepcopy(settings), capsule)
         self.assertEqual(configured['engine']['threadingProfile'], package.PROFILE)
-        self.assertEqual(len(configured['providers']['bindings']), 5)
+        # Preserve all four original source declarations as evidence, while the
+        # authenticated final component (and its least-authority policy) has three.
+        self.assertEqual(len(package.SOURCE_IMPORTS), 4)
+        self.assertTrue(all(('import ' + name + ';').encode() in package.ORIGINAL_WIT
+                            for name in package.SOURCE_IMPORTS))
+        self.assertEqual(len(configured['providers']['bindings']), 4)
         self.assertEqual(configured['providers']['activationRuntime']['limits'], node.LIMITS)
         self.assertEqual(set(node.PROVIDERS), set(package.IMPORTS))
         runtime = configured['providers']['activationRuntime']['identity']
-        for name in ('clockMonotonic', 'clockWall'):
+        self.assertNotIn('clockWall', configured['providers'])
+        self.assertNotIn(package.SOURCE_IMPORTS[3], node.PROVIDERS)
+        for name in ('clockMonotonic',):
             clock = configured['providers'][name]['identity']
             self.assertNotEqual((runtime['tenant'], runtime['service']), (clock['tenant'], clock['service']))
             binding = next(row for row in configured['providers']['bindings'] if row['name'] == name)
@@ -47,7 +54,11 @@ class RustThreadRuntimeTests(unittest.TestCase):
                 node.configure(copy.deepcopy(settings), changed)
         changed = copy.deepcopy(capsule)
         changed['imports'].pop()
-        with self.assertRaisesRegex(WorkflowError, 'four-original-declared-imports'):
+        with self.assertRaisesRegex(WorkflowError, 'three-actual-component-imports'):
+            node.configure(copy.deepcopy(settings), changed)
+        changed = copy.deepcopy(capsule)
+        changed['imports'].append({'contract': package.SOURCE_IMPORTS[3], 'optional': False})
+        with self.assertRaisesRegex(WorkflowError, 'three-actual-component-imports'):
             node.configure(copy.deepcopy(settings), changed)
         configured = copy.deepcopy(settings)
         configured['cells'][0]['capacity'] = 2
