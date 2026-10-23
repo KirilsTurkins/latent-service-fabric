@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/build_dev_frontend.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Retain exact project LICENSE and NOTICE in the frontend payload and its existing file inventory; preserve all build, isolation and test obligations.",
+  "reviewReason": "Package exact stream operator and two canonical provider schemas with five pinned validator dependencies, existing license/product inventory, explicit specification data, and actual frozen outside-checkout prepare/refusal smoke using a labeled Python process double; no real node/provider/readiness claim or Rust/C/compiler rebuild.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "75ef4a11f8dffe1e88b690762d7e07f8e2e16991a476c3180c8cda96d60b3d78"
+  "sha256": "67c667fbd98cf0441b8fba8233c248f174632cadaa6c4621124a597d851af46d"
 }

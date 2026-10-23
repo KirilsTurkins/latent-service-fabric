@@ -1,0 +1,35 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "typescript-private-removed-${{ github.ref }}"
+    },
+    "name": "TypeScript remaining captured private removal",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/typescript-private-removed-continuation-20261023"
+        ],
+        "paths": [
+          ".github/workflows/typescript-private-removed.yml",
+          "tools/typescript_private_removed_inputs.py",
+          "tools/qualify_typescript_private_removed.py",
+          "tools/tests/test_typescript_private_removed.py",
+          "tools/tests/fixtures/typescript_private_removed_inputs.json"
+        ]
+      },
+      "workflow_dispatch": null
+    },
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "removed-phase"
+  ],
+  "reviewReason": "Continue only the unfinished private npm removal with original completed a8 guest packages and a separately authenticated 193-control native host. Preserve original cancelled producer and three prior runtime origins; no compiler/SDK rebuild or retest, no fabricated normal qualification. Six additive provenance/archive/static-layer/retirement controls; exact fixed member hashes and conservative production scope.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/typescript-private-removed.yml"
+}
