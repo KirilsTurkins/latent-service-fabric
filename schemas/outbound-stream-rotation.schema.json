@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.dev/schemas/outbound-stream-rotation.schema.json",
+  "title": "Protected stream rotation candidate input",
+  "description": "Changes only a supplied configuration file's provider epoch and limits. Its expected epoch is not live node currentness, provider readiness, authority or permission to replace a live file.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["formatVersion", "provider", "expectedEpoch", "newEpoch", "limits"],
+  "properties": {
+    "formatVersion": {"type": "integer", "const": 1},
+    "provider": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "tenant", "service"],
+      "properties": {
+        "id": {"$ref": "https://latent.dev/schemas/node-providers.schema.json#/$defs/leaf"},
+        "tenant": {"$ref": "https://latent.dev/schemas/node-providers.schema.json#/$defs/token"},
+        "service": {"$ref": "https://latent.dev/schemas/node-providers.schema.json#/$defs/token"}
+      }
+    },
+    "expectedEpoch": {"type": "integer", "minimum": 1, "maximum": 18446744073709551615},
+    "newEpoch": {"type": "integer", "minimum": 1, "maximum": 18446744073709551615},
+    "limits": {"$ref": "https://latent.dev/schemas/outbound-stream-provider.schema.json#/properties/limits"}
+  }
+}

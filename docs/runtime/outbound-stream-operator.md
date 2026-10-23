@@ -159,6 +159,43 @@ force retirement: accepted sessions are never
 migrated, and their physical charges remain until cleanup. Repeating the same
 epoch is rejected without another rotation.
 
+Use `latent-dev stream-operator prepare-rotation` to construct a new private
+candidate for that existing reload rule. Keep the rotation record private and
+set `formatVersion` to `1`, `provider` to the exact `{id, tenant, service}` from
+the base file, `expectedEpoch` to that file's epoch, `newEpoch` to a strictly
+newer positive `u64`, and `limits` to all three original bounded limit fields.
+The [closed record schema](../../schemas/outbound-stream-rotation.schema.json)
+reuses the canonical provider identity and limits. For example:
+
+```json
+{
+  "formatVersion": 1,
+  "provider": {"id": "streams", "tenant": "examples", "service": "stream-host"},
+  "expectedEpoch": 1,
+  "newEpoch": 2,
+  "limits": {"maximumTransferBytes": 32768, "idleTimeoutMillis": 500, "absoluteTimeoutMillis": 4000}
+}
+```
+
+```sh
+latent-dev stream-operator prepare-rotation \
+  --node /path/to/latentd --base-config /private/node/config.json \
+  --rotation-record /private/operator/rotation.json \
+  --output /private/operator/rotation-candidate.json --development-profile
+```
+
+Only epoch and limits change in the candidate; all other configuration fields,
+credentials, destinations, DNS/address constraints and bindings stay exact.
+The command uses the same protected-input, create-only output, selected-binary
+identity, bounded `check-config` and redacted failure rules as initial preparation.
+A refused or uncertain check retains the private candidate. It never replaces
+the live file, sends a signal, rotates sessions or changes grants.
+`expectedEpoch` checks only the supplied file; it does not observe the live
+provider generation. Separately confirm the actual node owner's currentness
+before applying a reviewed candidate through its existing protected reload path.
+The development flag grants no installation or production override. The ordinary
+node's compiled-profile refusal remains a refusal, not readiness.
+
 The bounded `stream-control` status line distinguishes `configuredGeneration`
 from `installedBindingGeneration`. The first identifies the actual stream
 manager; the second identifies the last confirmed catalog publication. If

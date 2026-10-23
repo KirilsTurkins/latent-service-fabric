@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/build_dev_frontend.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Package exact stream operator and two canonical provider schemas with five pinned validator dependencies, existing license/product inventory, explicit specification data, and actual frozen outside-checkout prepare/refusal smoke using a labeled Python process double; no real node/provider/readiness claim or Rust/C/compiler rebuild.",
+  "reviewReason": "Add only canonical rotation record resource to the existing frozen frontend/helper packaging; all original dependencies, inventory, licensing, process bounds and smoke controls remain intact.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "67c667fbd98cf0441b8fba8233c248f174632cadaa6c4621124a597d851af46d"
+  "sha256": "165daad9ebb3599f058f657308bb1ade434b5dd4975e4198ce2eab56c0b08445"
 }

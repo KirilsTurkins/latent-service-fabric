@@ -1,0 +1,62 @@
+name: Protected stream rotation frontend
+
+on:
+  push:
+    branches: ['feat/stream-operator-rotation-20261023']
+    paths:
+      - '.github/workflows/stream-operator-rotation.yml'
+      - 'tools/outbound_stream_operator.py'
+      - 'tools/build_dev_frontend.py'
+      - 'tools/qualify_stream_operator_rotation.py'
+      - 'tools/tests/test_outbound_stream_rotation.py'
+      - 'schemas/outbound-stream-rotation.schema.json'
+      - 'schemas/node-providers.schema.json'
+      - 'schemas/outbound-stream-provider.schema.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: stream-operator-rotation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rotation:
+    name: Packaged rotation candidate and actual277 configuration checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - name: Install only exact frontend inputs
+        run: python -m pip install --require-hashes -r tools/dev-frontend-linux.lock
+      - name: Exercise new rotation and affected shared preparation controls
+        run: python -B -m unittest tools.tests.test_outbound_stream_rotation tools.tests.test_outbound_stream_preparation.StreamPreparation
+      - name: Build only the current frozen Python frontend
+        run: python -B tools/build_dev_frontend.py --output target/stream-rotation-frontend
+      - name: Fetch the existing node's immutable source closure
+        run: git fetch --depth=1 origin 277c8104499d414053573bce066b5e9091e74a20
+      - name: Observe the actual packaged command with the authenticated original node
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python -B tools/qualify_stream_operator_rotation.py --frontend-root target/stream-rotation-frontend --output target/stream-rotation-node-check
+      - name: Retain only frontend products and redacted public outcomes
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: stream-operator-rotation-${{ github.sha }}
+          path: |
+            target/stream-rotation-frontend/build.json
+            target/stream-rotation-frontend/helper.pyz
+            target/stream-rotation-frontend/python-inventory.json
+            target/stream-rotation-frontend/licenses/
+            target/stream-rotation-frontend/dist/
+            target/stream-rotation-node-check/result.json
+          if-no-files-found: error
+          retention-days: 7
