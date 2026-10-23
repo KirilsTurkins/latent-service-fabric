@@ -348,6 +348,89 @@ class StreamOperator(unittest.TestCase):
         self.assertEqual(operator.owner, before)
         self.assertEqual(len(self.mutations()), 2)
 
+    def test_type_changed_policy_reads_refuse_adoption_and_mutation_without_state_changes(self):
+        operator = self.operator()
+        operator.grant()
+        replacement = {**self.options["provider"], "configurationEpoch": "2",
+                       "configurationDigest": "sha256:" + "c" * 64}
+        original = copy.deepcopy(self.client.records)
+        for kind, change in (
+                ("provider-binding", lambda value: value.update(revoked=0)),
+                ("provider-binding", lambda value: value["document"].update(configurationEpoch=True)),
+                ("policy", lambda value: value["document"]["rules"][0].update(requireAudit=1)),
+                ("policy", lambda value: value["document"]["rules"][0]["ceiling"].update(operations=128.0))):
+            identifier = self.options["binding_id" if kind == "provider-binding" else "policy_id"]
+            self.client.records = copy.deepcopy(original)
+            change(self.client.records[kind + ":" + identifier])
+            for action in (lambda: operator.adopt_provider(replacement),
+                           operator.grant if kind == "provider-binding" else operator.revoke):
+                with self.subTest(kind=kind, changed=self.client.records[kind + ":" + identifier], action=action):
+                    before = {path.name: path.read_bytes() for path in self.operator_root.iterdir() if path.is_file()}
+                    owner = copy.deepcopy(operator.owner)
+                    self.client.calls.clear()
+                    with self.assertRaisesRegex(DevError, "policy-changed"):
+                        action()
+                    self.assertEqual(operator.owner, owner)
+                    self.assertEqual(self.mutations(), [])
+                    self.assertEqual({path.name: path.read_bytes() for path in self.operator_root.iterdir()
+                                      if path.is_file()}, before)
+
+    def test_malformed_retained_policy_cannot_match_missing_or_malformed_live_fields(self):
+        operator = self.operator()
+        operator.grant()
+        original = operator._records()
+        key = "provider-binding:" + self.options["binding_id"]
+        replacement = {**self.options["provider"], "configurationEpoch": "2",
+                       "configurationDigest": "sha256:" + "c" * 64}
+        for previous in (None, [], {}, {"receipt": None, "document": original[key]["document"]},
+                         {"receipt": original[key]["receipt"], "document": None},
+                         {"receipt": {field: value for field, value in original[key]["receipt"].items()
+                                      if field != "revoked"}, "document": original[key]["document"]},
+                         {"receipt": {**original[key]["receipt"], "revoked": 0},
+                          "document": original[key]["document"]}):
+            records = {**original, key: previous}
+            state.atomic(self.operator_root, "stream-policy-receipts.json", records)
+            self.client.records[key].pop("revoked", None)
+            for action in (operator.grant, lambda: operator.adopt_provider(replacement)):
+                with self.subTest(previous=previous, action=action):
+                    before = {path.name: path.read_bytes() for path in self.operator_root.iterdir() if path.is_file()}
+                    self.client.calls.clear()
+                    with self.assertRaisesRegex(DevError, "policy-changed"):
+                        action()
+                    self.assertEqual(self.mutations(), [])
+                    self.assertEqual({path.name: path.read_bytes() for path in self.operator_root.iterdir()
+                                      if path.is_file()}, before)
+
+    def test_same_owned_policy_rejects_wrong_stamp_types_in_both_records(self):
+        operator = self.operator()
+        operator.grant()
+        previous = operator._records()["provider-binding:" + self.options["binding_id"]]
+        current = self.client.records["provider-binding:" + self.options["binding_id"]]
+        self.assertTrue(stream._same_owned_policy(current, previous))
+        for field in stream.STAMP_FIELDS:
+            for value in (None, False, 0, 1, {}, []):
+                if type(value) is type(previous["receipt"][field]):
+                    continue
+                with self.subTest(field=field, value=value):
+                    altered = {**previous, "receipt": {**previous["receipt"], field: value}}
+                    self.assertFalse(stream._same_owned_policy({**current, field: value}, altered))
+                    self.assertFalse(stream._same_owned_policy(current, altered))
+                    self.assertFalse(stream._same_owned_policy({**current, field: value}, previous))
+
+    def test_apply_compares_requested_document_without_bool_number_idempotence(self):
+        operator = self.operator()
+        operator.grant()
+        key = "provider-binding:" + self.options["binding_id"]
+        requested = copy.deepcopy(self.client.records[key]["document"])
+        requested["configurationEpoch"] = True
+        self.client.calls.clear()
+        # This internal seam isolates the requested-document comparison; public
+        # grant construction continues to supply the original integer epoch.
+        operator._apply("provider-binding", self.options["binding_id"], requested)
+        self.assertEqual(len(self.mutations()), 1)
+        self.assertIs(self.client.records[key]["document"]["configurationEpoch"], True)
+        self.assertEqual(self.client.records[key]["generation"], "2")
+
 
 class StreamConfiguration(unittest.TestCase):
     def setUp(self):

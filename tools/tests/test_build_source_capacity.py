@@ -66,7 +66,7 @@ class SourceCapacityTests(unittest.TestCase):
             source, inventory, cache, _ = source_fixture(Path(temporary))
             rows = json.loads(inventory)
             maximum = SnapshotLimits().max_entries
-            self.assertEqual(maximum, 8448)
+            self.assertEqual(maximum, 8704)
             rows.extend({"path": f"tools/ci/contracts/fixture-{index}.json",
                          "digest": digest(b"fixture"), "size": 7, "mode": 420}
                         for index in range(maximum - len(rows)))
@@ -77,6 +77,68 @@ class SourceCapacityTests(unittest.TestCase):
                 ManifestReader(source, canonical([*rows, rows[-1]]), cache)
             with self.assertRaisesRegex(SnapshotError, "duplicate captured source inventory path"):
                 ManifestReader(source, canonical([*rows[:-1], rows[0]]), cache)
+
+    def test_current_committed_selection_passes_preflight_without_running_archive(self):
+        from unittest.mock import patch
+        from tools import build_snapshot
+
+        class ArchiveBoundary(Exception):
+            pass
+
+        root = Path(__file__).resolve().parents[2]
+        revision = git(root, "rev-parse", "HEAD")
+        original_run = build_snapshot.run_bounded
+
+        def before_archive(command, **arguments):
+            if command[1] == "archive":
+                raise ArchiveBoundary()
+            return original_run(command, **arguments)
+
+        with tempfile.TemporaryDirectory() as temporary:
+            target = Path(temporary)
+            with patch.object(build_snapshot, "run_bounded", side_effect=before_archive) as run:
+                with self.assertRaises(ArchiveBoundary):
+                    with capture_source(root, revision, target):
+                        self.fail("the archive boundary must stop source capture")
+                self.assertEqual([call.args[0][1] for call in run.call_args_list],
+                                 ["rev-parse", "ls-tree", "archive"])
+            self.assertEqual(list(target.iterdir()), [])
+
+    def test_tree_full_file_ceiling_passes_but_one_over_refuses_before_archive(self):
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        from tools import build_snapshot
+
+        class ArchiveBoundary(Exception):
+            pass
+
+        revision = "a" * 40
+        maximum = SnapshotLimits().max_entries
+        for count in (maximum, maximum + 1):
+            listing = b"".join(f"100644 blob {'b' * 40}\ttools/part-{index}.py\0".encode()
+                               for index in range(count))
+
+            def source_commands(command, **arguments):
+                if command[1] == "rev-parse":
+                    return SimpleNamespace(stdout=(revision + "\n").encode())
+                if command[1] == "ls-tree":
+                    return SimpleNamespace(stdout=listing)
+                self.assertEqual(command[1], "archive")
+                raise ArchiveBoundary()
+
+            with self.subTest(count=count), tempfile.TemporaryDirectory() as temporary:
+                target = Path(temporary)
+                with patch.object(build_snapshot, "run_bounded", side_effect=source_commands) as run:
+                    expected = ArchiveBoundary if count == maximum else SnapshotError
+                    with self.assertRaises(expected) as raised:
+                        with capture_source(target, revision, target):
+                            self.fail("the archive boundary must stop source capture")
+                    commands = [call.args[0][1] for call in run.call_args_list]
+                    self.assertEqual(commands, ["rev-parse", "ls-tree", "archive"] if count == maximum
+                                     else ["rev-parse", "ls-tree"])
+                    if count > maximum:
+                        self.assertEqual(str(raised.exception), "source tree entry limit exceeded")
+                self.assertEqual(list(target.iterdir()), [])
 
 
 if __name__ == "__main__":
