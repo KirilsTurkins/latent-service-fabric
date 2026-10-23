@@ -1,20 +1,19 @@
 #[cfg(any(test, feature = "development-outbound"))]
 use crate::StreamResolution;
 use crate::{
-    StreamError, StreamErrorCode, StreamProviderConfig,
     connection::{self, Connection, Socket},
-    error,
+    error, StreamError, StreamErrorCode, StreamProviderConfig,
 };
 use latent_capabilities::broker::{
-    CapabilitySession, ProviderReference,
     network::{OutboundStreamInvoker, StreamConnectRequest, StreamInvocation},
     pools::{InstalledProvider, ProviderClient, ProviderMetadata, ProviderPools},
+    CapabilitySession, ProviderReference,
 };
 #[cfg(any(test, feature = "development-outbound"))]
 use latent_capabilities::broker::{
-    ProviderBudgetRequirement, ProviderConfiguration,
     network::{STREAM_CAPABILITY, STREAM_PROFILE},
     pools::ProviderSetup,
+    ProviderBudgetRequirement, ProviderConfiguration,
 };
 #[cfg(any(test, feature = "development-outbound"))]
 use latent_core::BudgetDimension;

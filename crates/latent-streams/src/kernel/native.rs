@@ -1,7 +1,7 @@
 //! Affine owner for the actual qualification factory descriptor. The original
 //! node backing and maintenance connection survive every possible kernel entry.
 //! Neither descriptor close nor a successful constructor is final retirement.
-use crate::{StreamError, StreamErrorCode, error};
+use crate::{error, StreamError, StreamErrorCode};
 use latent_capabilities::broker::pools::{
     ConnectionReservation, InstalledProvider, PooledConnection, ProviderPools, StreamKernelBacking,
 };
