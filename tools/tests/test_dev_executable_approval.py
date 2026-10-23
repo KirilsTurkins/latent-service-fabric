@@ -353,7 +353,7 @@ class PrivateRequestViewer(unittest.TestCase):
         (self.original / captures.MANIFEST).write_bytes(canonical(manifest))
         (self.original / captures.LOCK).write_bytes(canonical(captures.capture(self.original)))
         self.value = maintained()
-        names = set(rust_capsule_build.RECIPE) | {'examples/echo-contract/capsule.json', 'examples/echo-contract/deployment.json'}
+        names = set(rust_capsule_build.selected_recipe()) | {'examples/echo-contract/capsule.json', 'examples/echo-contract/deployment.json'}
         files = {name: (rust_capsule_project.ROOT / name).read_bytes() for name in names}
         self.recipe_raw = rust_capsule_project.inventory(files)
         entries = [{'path': 'recipe/' + name, 'sha256': common.digest(raw), 'size': len(raw)} for name, raw in sorted(files.items())]

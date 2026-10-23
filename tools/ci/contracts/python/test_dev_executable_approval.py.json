@@ -172,7 +172,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:69b3d7e03cc44465fcc64bc25a53d89d1a9298c360a6fb1a62172b8bd519d900",
-        "class:setup-sha256:febc914673f2ec5d4e6d4404fe004eddaaaa40d17984cabfcf626253efe26700"
+        "class:setup-sha256:96d5c3120490d80de02f98388a67c7dcdce4ad9211e6117819739350ec2eda4a"
       ],
       "skipSites": []
     },
@@ -184,7 +184,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:69b3d7e03cc44465fcc64bc25a53d89d1a9298c360a6fb1a62172b8bd519d900",
-        "class:setup-sha256:febc914673f2ec5d4e6d4404fe004eddaaaa40d17984cabfcf626253efe26700"
+        "class:setup-sha256:96d5c3120490d80de02f98388a67c7dcdce4ad9211e6117819739350ec2eda4a"
       ],
       "skipSites": []
     },
@@ -196,7 +196,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:69b3d7e03cc44465fcc64bc25a53d89d1a9298c360a6fb1a62172b8bd519d900",
-        "class:setup-sha256:febc914673f2ec5d4e6d4404fe004eddaaaa40d17984cabfcf626253efe26700"
+        "class:setup-sha256:96d5c3120490d80de02f98388a67c7dcdce4ad9211e6117819739350ec2eda4a"
       ],
       "skipSites": []
     },
@@ -208,7 +208,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:69b3d7e03cc44465fcc64bc25a53d89d1a9298c360a6fb1a62172b8bd519d900",
-        "class:setup-sha256:febc914673f2ec5d4e6d4404fe004eddaaaa40d17984cabfcf626253efe26700"
+        "class:setup-sha256:96d5c3120490d80de02f98388a67c7dcdce4ad9211e6117819739350ec2eda4a"
       ],
       "skipSites": []
     },
@@ -220,7 +220,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:69b3d7e03cc44465fcc64bc25a53d89d1a9298c360a6fb1a62172b8bd519d900",
-        "class:setup-sha256:febc914673f2ec5d4e6d4404fe004eddaaaa40d17984cabfcf626253efe26700"
+        "class:setup-sha256:96d5c3120490d80de02f98388a67c7dcdce4ad9211e6117819739350ec2eda4a"
       ],
       "skipSites": []
     },
@@ -232,13 +232,13 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:69b3d7e03cc44465fcc64bc25a53d89d1a9298c360a6fb1a62172b8bd519d900",
-        "class:setup-sha256:febc914673f2ec5d4e6d4404fe004eddaaaa40d17984cabfcf626253efe26700"
+        "class:setup-sha256:96d5c3120490d80de02f98388a67c7dcdce4ad9211e6117819739350ec2eda4a"
       ],
       "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_dev_executable_approval.py",
-  "reviewReason": "Preserve distinct source and explicit Rust approval selection; add captured-transfer and observed-postbuild recheck controls without changing prior cases or skips.",
+  "reviewReason": "Use explicitly selected authenticated Rust116-file recipe in every actual producer and consumer; preserve exact45 host decision inputs, all existing cases and refusal guards. The six PrivateRequestViewer fixtures only switch from static recipe names to explicit selected recipe names; no runner, skip or fixture behavior is disabled.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
