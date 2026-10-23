@@ -661,7 +661,9 @@ class PinnedCoroutinePhiRepair(unittest.TestCase):
         self.assertNotIn('livenessAnalysis.liveOut(block.getIndex());', corrected)
         async_raw=read_file(campaign.ROOT/'sdk/java-guest/fibers/compiler-patch/AsyncMethodFinder.java')
         fixed=patch.corrected_async_source(async_raw)
-        self.assertEqual(fixed.decode().replace(patch.ASYNC_AFTER,patch.ASYNC_BEFORE),async_raw.decode())
+        reversed_source = fixed.decode().replace(patch.CHECKPOINT_VALIDATION, '').replace(
+            patch.CHECKPOINT_FIND_AFTER, patch.CHECKPOINT_FIND_BEFORE).replace(patch.ASYNC_AFTER,patch.ASYNC_BEFORE)
+        self.assertEqual(reversed_source,async_raw.decode())
         self.assertIn('Thread.class, "start", void.class)',fixed.decode())
         with self.assertRaises(ValueError):patch.corrected_async_source(async_raw+b' ')
 

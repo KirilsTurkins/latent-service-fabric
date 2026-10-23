@@ -88,6 +88,7 @@ public final class RuntimePlugin implements TeaVMPlugin {
                 }
             }
             if (!applicationClasses.contains(cls.getName()) || method.getName().equals("<clinit>")
+                    || cls.getAnnotations().get("org.teavm.interop.Unmanaged") != null
                     || method.getAnnotations().get("org.teavm.interop.Unmanaged") != null) continue;
             var loops = new LoopGraph(ProgramUtils.buildControlFlowGraph(program));
             var headers = new HashSet<Integer>();
