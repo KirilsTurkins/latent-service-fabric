@@ -35,8 +35,8 @@ jobs:
           tools.tests.test_host_stream_kernel_cleanup_native -v
       - name: Install upstream compiler and isolated emulator prerequisites
         run: |
-          sudo apt-get update
-          sudo apt-get install --yes gcc make flex bison bc libelf-dev libssl-dev binutils qemu-system-x86 seabios
+          sudo timeout --signal=TERM --kill-after=30s 180s apt-get update
+          sudo timeout --signal=TERM --kill-after=30s 900s apt-get install --yes --no-install-recommends gcc make flex bison bc libelf-dev libssl-dev binutils qemu-system-x86 seabios
       - name: Acquire exact official maintained source archive
         shell: bash
         run: |
