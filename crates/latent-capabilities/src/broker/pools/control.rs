@@ -1,6 +1,6 @@
 use super::{
-    Arc, AtomicUsize, Charge, Inner, Kind, Mutex, Notify, Ordering, PlatformError, PoolCall,
-    PooledConnection, ProviderPools, busy, capacity, denied,
+    busy, capacity, denied, Arc, AtomicUsize, Charge, Inner, Kind, Mutex, Notify, Ordering,
+    PlatformError, PoolCall, PooledConnection, ProviderPools,
 };
 use std::{future::Future, pin::Pin, sync::TryLockError, time::Duration, time::Instant};
 use tokio::{sync::oneshot, task::JoinHandle};

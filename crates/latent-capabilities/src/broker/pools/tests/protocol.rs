@@ -207,7 +207,10 @@ async fn kernel_occupancy_retains_original_io_request_scope_and_memory() {
     assert!(!observer.is_quiescent());
     drop(original);
     // Final I/O retirement destroys both Work's handle row and Core payload.
-    assert_eq!(control.budget.host_memory_bytes(), before_call - core_payload);
+    assert_eq!(
+        control.budget.host_memory_bytes(),
+        before_call - core_payload
+    );
     assert_eq!(control.budget.outstanding_reservations(), 3);
     assert!(observer.is_quiescent());
     drop(observer);
