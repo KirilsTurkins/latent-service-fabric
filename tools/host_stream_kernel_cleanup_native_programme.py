@@ -47,13 +47,47 @@ def repair_sidcache(outputs):
     return result
 
 
+def initialize_observers(outputs):
+    """Run the existing complete seal transaction before any backing birth.
+
+    The frozen source helper used to be defined without an actual call site.
+    Only never-born backing paths may undo these original subsystem seals;
+    post-birth refusal/close retains them with the actual Root graph.
+    """
+    name = 'net/factory.c'
+    raw = outputs[name]
+    require(len(raw) == 34043 and hashlib.sha256(raw).hexdigest() ==
+        '65847a51bff14b04664fba9db0b6d20ffb5c30708e2528f93bc1eb539f379d75',
+        'cleanup-native-observer-open-preimage')
+    text = change.replace(raw.decode(),
+        '    error = lsf_factory_device_uevent_bank_enter();\n'
+        '    if (error)\n        goto out;\n',
+        '    error = lsf_cleanup_observers_prebank_enter();\n'
+        '    if (error)\n        goto out;\n'
+        '    error = lsf_factory_device_uevent_bank_enter();\n'
+        '    if (error) {\n'
+        '        if (lsf_cleanup_observers_prebank_rollback())\n'
+        '            WRITE_ONCE(factory.uncertain, 1);\n'
+        '        goto out;\n    }\n')
+    text = change.replace(text,
+        '        lsf_factory_device_uevent_bank_allocation_failed();\n'
+        '        error = -ENOMEM;\n',
+        '        lsf_factory_device_uevent_bank_allocation_failed();\n'
+        '        if (lsf_cleanup_observers_prebank_rollback())\n'
+        '            WRITE_ONCE(factory.uncertain, 1);\n'
+        '        error = -ENOMEM;\n')
+    result = dict(outputs)
+    result[name] = text.encode()
+    return result
+
+
 def compose(base, originals, config):
     parent = prior.compose(base, originals, config)
     result = change.transform(parent, {})
     require(len(parent) == 322 and len(result) == 323 and
         sum(parent.get(name) != raw for name, raw in result.items()) == 6,
         'cleanup-native-exact-six-source-delta')
-    return repair_sidcache(result)
+    return initialize_observers(repair_sidcache(result))
 
 
 def qualification_projection(outputs, config):
