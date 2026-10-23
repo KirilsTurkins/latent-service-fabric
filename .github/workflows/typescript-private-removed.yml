@@ -1,0 +1,67 @@
+name: TypeScript remaining captured private removal
+on:
+  push:
+    branches: ['feat/typescript-private-removed-continuation-20261023']
+    paths:
+      - '.github/workflows/typescript-private-removed.yml'
+      - 'tools/typescript_private_removed_inputs.py'
+      - 'tools/qualify_typescript_private_removed.py'
+      - 'tools/tests/test_typescript_private_removed.py'
+      - 'tools/tests/fixtures/typescript_private_removed_inputs.json'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: typescript-private-removed-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  removed-phase:
+    name: One captured removed package on a separately authenticated 193-control host
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - name: Fetch the two immutable compiled origins before source verification
+        run: |
+          git fetch --no-tags --depth=1 origin a8cd4fbb71d7766e886ab518542ca398237debb6
+          git fetch --no-tags --depth=1 origin b422af24d86344ac7abb8b8fa56c3782aab63915
+      - name: Install locked evidence readers and check bounded provenance controls
+        run: |
+          python3 -m pip install -r tools/requirements.lock
+          python3 -B -m unittest tools.tests.test_typescript_private_removed -v
+      - name: Acquire only five completed guest packages and three historical outcomes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/typescript_private_removed_inputs.py --output "$RUNNER_TEMP/typescript-removed-guests"
+      - name: Authenticate the separate five native products without rebuilding
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/rust_thread_native_products.py --output "$RUNNER_TEMP/typescript-removed-native"
+      - name: Sign and run only the remaining removed private package
+        run: |
+          python3 -B tools/qualify_typescript_private_removed.py \
+            --guests "$RUNNER_TEMP/typescript-removed-guests" \
+            --native "$RUNNER_TEMP/typescript-removed-native" \
+            --output "$RUNNER_TEMP/typescript-removed-runtime"
+      - name: Retain original input identities and actual remaining outcomes
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: typescript-private-removed-${{ github.sha }}
+          retention-days: 3
+          if-no-files-found: warn
+          path: |
+            ${{ runner.temp }}/typescript-removed-guests/retrieval.json
+            ${{ runner.temp }}/typescript-removed-native/*.json
+            ${{ runner.temp }}/typescript-removed-runtime/*.json
+            ${{ runner.temp }}/typescript-removed-runtime/commands/logs/**
+            ${{ runner.temp }}/typescript-removed-runtime/node/workflow.json
+            ${{ runner.temp }}/typescript-removed-runtime/node/FAILED.json
+            ${{ runner.temp }}/typescript-removed-runtime/node/controls/**

@@ -246,27 +246,7 @@ fn usage_key(scope: &str, key: &str) -> bool {
         );
     }
     if let Some(suffix) = key.strip_prefix("audit_") {
-        return matches!(
-            suffix,
-            "capture_dropped"
-                | "closed"
-                | "dropped_observations"
-                | "unavailable_events"
-                | "pending_attempts"
-                | "queued_operations"
-                | "queued_bytes"
-                | "reserved_records"
-                | "reserved_bytes"
-                | "query_owners"
-                | "query_bytes"
-                | "recovery_pending"
-                | "stage_bytes"
-                | "node_metadata_maximum_bytes"
-                | "node_metadata_reserved_bytes"
-                | "node_metadata_fixed_reserved_bytes"
-                | "node_metadata_transient_reserved_bytes"
-                | "node_metadata_quarantined_reserved_bytes"
-        );
+        return audit_usage_key(suffix);
     }
     if let Some(suffix) = key.strip_prefix("stream_") {
         return matches!(
@@ -284,6 +264,30 @@ fn usage_key(scope: &str, key: &str) -> bool {
         );
     }
     false
+}
+
+fn audit_usage_key(suffix: &str) -> bool {
+    matches!(
+        suffix,
+        "capture_dropped"
+            | "closed"
+            | "dropped_observations"
+            | "unavailable_events"
+            | "pending_attempts"
+            | "queued_operations"
+            | "queued_bytes"
+            | "reserved_records"
+            | "reserved_bytes"
+            | "query_owners"
+            | "query_bytes"
+            | "recovery_pending"
+            | "stage_bytes"
+            | "node_metadata_maximum_bytes"
+            | "node_metadata_reserved_bytes"
+            | "node_metadata_fixed_reserved_bytes"
+            | "node_metadata_transient_reserved_bytes"
+            | "node_metadata_quarantined_reserved_bytes"
+    )
 }
 
 impl Project for proto::ListCapabilitiesResponse {
