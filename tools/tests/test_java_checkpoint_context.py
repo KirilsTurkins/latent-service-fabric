@@ -32,6 +32,7 @@ class CheckpointContext(unittest.TestCase):
         self.assertIn('!pinnedFiberEntry(method)', fixed)
         self.assertIn('!jar.equals(finderJar)', fixed)
         self.assertIn('first.getClass() != second.getClass()', fixed)
+        self.assertIn('first instanceof org.teavm.model.instructions.EmptyInstruction', fixed)
         self.assertIn('!block.readTryCatchBlocks().isEmpty()', fixed)
         with self.assertRaisesRegex(ValueError, 'unreviewed-teavm-async-finder-source'):
             coroutine_patch.corrected_async_source(raw+b'\n')

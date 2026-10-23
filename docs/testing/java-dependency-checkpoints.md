@@ -38,7 +38,8 @@ Fiber before running its callback, so its callers are outside that new context.
 The boundary requires its resolved body to match the original Fiber body parsed
 directly from the same authenticated compiler JAR, with the same method flags
 and the pinned production `PreOptimizingClassHolderSource` pass, bounded
-instruction operands, phi inputs and normal control flow. Empty,
+instruction operands, phi inputs and normal control flow. The pinned body's
+operandless NOPs retain their exact type, position and count. Empty,
 altered, exceptional or unknown instruction bodies cannot establish that proof.
 Other methods and overloads receive no such exemption. The independent walk
 allows at most 65,536 methods and 262,144 combined call-site/caller-edge visits;

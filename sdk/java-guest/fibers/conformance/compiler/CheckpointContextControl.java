@@ -241,6 +241,27 @@ public final class CheckpointContextControl {
                 new AnnotationHolder("org.teavm.interop.Unmanaged"));
         if (corrected) diagnosePinnedEntry(entry, entryMethod);
         find(entry, corrected, null);
+        boolean replacedNop = false;
+        outer: for (var block : entryMethod.getProgram().getBasicBlocks()) for (var instruction : block) {
+            if (instruction instanceof EmptyInstruction) {
+                var unknown = new NullConstantInstruction();
+                unknown.setReceiver(entryMethod.getProgram().variableAt(0));
+                if (corrected) {
+                    var compare = AsyncMethodFinder.class.getDeclaredMethod(
+                            "sameFiberInstruction", Instruction.class, Instruction.class);
+                    compare.setAccessible(true);
+                    require(Boolean.FALSE.equals(compare.invoke(new AsyncMethodFinder(entry.graph, entry),
+                            unknown, unknown)), "unknown-opcode-self-comparison-refused");
+                }
+                instruction.replace(unknown);
+                replacedNop = true;
+                break outer;
+            }
+        }
+        require(replacedNop, "actual-pinned-nop-replaced-by-unsupported-opcode");
+        find(entry, corrected, "java-checkpoint-unresolved-741");
+        entry.source.putClassHolder(ModelUtils.copyClass(pinned));
+        entryMethod = entry.source.get(managedEntry.getClassName()).getMethod(managedEntry.getDescriptor());
         entryMethod.setProgram(program(null));
         find(entry, corrected, "java-checkpoint-unresolved-741");
         entry.source.putClassHolder(ModelUtils.copyClass(pinned));

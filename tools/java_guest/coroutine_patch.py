@@ -292,7 +292,11 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
         if (first.getClass() != second.getClass()) {
             return false;
         }
-        if (first instanceof org.teavm.model.instructions.GetFieldInstruction) {
+        if (first instanceof org.teavm.model.instructions.EmptyInstruction) {
+            // The pinned preoptimized body retains operandless NOPs. Their
+            // concrete type, position and count remain part of exact equality.
+            return true;
+        } else if (first instanceof org.teavm.model.instructions.GetFieldInstruction) {
             org.teavm.model.instructions.GetFieldInstruction left =
                     (org.teavm.model.instructions.GetFieldInstruction) first;
             org.teavm.model.instructions.GetFieldInstruction right =
