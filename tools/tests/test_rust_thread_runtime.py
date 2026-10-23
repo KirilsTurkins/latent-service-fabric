@@ -34,6 +34,12 @@ class RustThreadRuntimeTests(unittest.TestCase):
         self.assertEqual(len(configured['providers']['bindings']), 5)
         self.assertEqual(configured['providers']['activationRuntime']['limits'], node.LIMITS)
         self.assertEqual(set(node.PROVIDERS), set(package.IMPORTS))
+        runtime = configured['providers']['activationRuntime']['identity']
+        for name in ('clockMonotonic', 'clockWall'):
+            clock = configured['providers'][name]['identity']
+            self.assertNotEqual((runtime['tenant'], runtime['service']), (clock['tenant'], clock['service']))
+            binding = next(row for row in configured['providers']['bindings'] if row['name'] == name)
+            self.assertEqual(binding['providerService'], clock['service'])
         for field, value in (('memoryBytes', 4194304), ('wallTimeLimitMillis', 1000)):
             changed = copy.deepcopy(capsule)
             changed['execution']['limits'][field] = value

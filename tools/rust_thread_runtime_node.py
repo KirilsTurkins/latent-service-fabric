@@ -28,6 +28,7 @@ from tools.sdk_provider_scenario import start_provider
 
 SERVICE = 'ordinary-thread-inputs'
 HOST = 'rust-thread-runtime-host'
+CLOCK_HOST = 'rust-thread-clock-host'
 LIMITS = {'tasks': 8, 'executors': 2, 'queuedWork': 8, 'waits': 16,
           'timers': 8, 'results': 8, 'nativeOwners': 8}
 PROVIDERS = {
@@ -68,10 +69,11 @@ def configure(settings, capsule):
     providers['activationRuntime'] = {'identity': {'id': 'rust-activation', 'tenant': 'examples',
         'service': HOST, 'epoch': 1}, 'limits': dict(LIMITS), 'nativeThreads': True}
     for name in ('clockMonotonic', 'clockWall'):
-        providers[name] = {'identity': {'id': name, 'tenant': 'examples', 'service': HOST, 'epoch': 1}}
+        providers[name] = {'identity': {'id': name, 'tenant': 'examples', 'service': CLOCK_HOST, 'epoch': 1}}
     for capability, (identity, _, _, _) in PROVIDERS.items():
         providers['bindings'].append({'name': identity, 'tenant': 'examples',
-            'consumerService': 'examples/' + SERVICE, 'providerService': HOST,
+            'consumerService': 'examples/' + SERVICE,
+            'providerService': HOST if capability in IMPORTS[:2] else CLOCK_HOST,
             'contract': capability, 'providerBinding': identity + '-installed'})
     require(len(providers['bindings']) == 5, 'rust-thread-original-plus-four-bindings')
     return settings
@@ -81,7 +83,8 @@ def install(client, node, target):
     grants = []
     for capability, (identity, profile, operations, resource) in PROVIDERS.items():
         rows = [row for row in node.startup_record['providers'] if row['capability'] == capability]
-        require(len(rows) == 1 and rows[0]['tenant'] == 'examples' and rows[0]['service'] == HOST
+        expected_service = HOST if capability in IMPORTS[:2] else CLOCK_HOST
+        require(len(rows) == 1 and rows[0]['tenant'] == 'examples' and rows[0]['service'] == expected_service
                 and rows[0]['profile'] == profile and rows[0]['configurationEpoch'] == '1',
                 'rust-thread-exact-installed-provider-descriptor')
         descriptor = rows[0]
