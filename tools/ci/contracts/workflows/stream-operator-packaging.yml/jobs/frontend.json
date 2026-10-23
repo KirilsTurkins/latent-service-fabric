@@ -24,7 +24,7 @@
       },
       {
         "name": "Exercise protected preparation and isolated frontend source boundaries",
-        "run": "python -B -m unittest tools.tests.test_outbound_stream_preparation tools.tests.test_outbound_stream_operator tools.tests.test_dev_frontend_preflight_packaging"
+        "run": "python -B -m unittest tools.tests.test_outbound_stream_preparation tools.tests.test_outbound_stream_operator tools.tests.test_dev_frontend_preflight_packaging tools.tests.test_dev_frontend_native_wheel"
       },
       {
         "name": "Build frozen frontend and execute outside-checkout smoke checks",
@@ -61,7 +61,7 @@
   },
   "jobId": "frontend",
   "kind": "job",
-  "reviewReason": "Bounded 12-minute two-platform frontend packaging retains actual products, helper, canonical schemas and existing inventories; focused controls plus outside-checkout smoke, no Rust/C/node/guest rebuilds.",
+  "reviewReason": "Add four causal pinned-wheel attribution controls to the existing preserved 34 operator/frontend controls after the actual Linux owner-unknown failure. Preserve two platforms, deadline, all existing smoke checks, permissions, artifacts and commands.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/stream-operator-packaging.yml"
 }
