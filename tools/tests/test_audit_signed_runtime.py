@@ -72,7 +72,13 @@ class AuditSignedRuntimeTests(unittest.TestCase):
 
     def test_required_pair_binds_current_revision_real_provider_and_same_durable_attempt_despite_optional_loss(self):
         pages, activation, revision, provider = pair_model()
-        result = owner.critical_pair(pages, activation, revision, provider)
+        authority = {'binding': {'id': 'random-installed', 'revision': '10'},
+            'policy': {'id': 'random-allow', 'revision': '12'}}
+        for row in pages[0]['data']['records']:
+            event = next(iter(row['data'].values()))
+            event['identities']['capability']['binding']['revision'] = '10'
+            event['identities']['capability']['policies'][0]['revision'] = '12'
+        result = owner.critical_pair(pages, activation, revision, provider, authority)
         self.assertTrue(result['requiredAudit'])
         self.assertFalse(result['optionalCaptureLosslessnessClaimed'])
         self.assertTrue(result['coverage']['optionalObservationLossReported'])
@@ -95,7 +101,22 @@ class AuditSignedRuntimeTests(unittest.TestCase):
             else:
                 outcome['identities']['revision'] = 'foreign'
             with self.subTest(mutation=mutation), self.assertRaises(WorkflowError):
-                owner.critical_pair(changed, activation, revision, provider)
+                owner.critical_pair(changed, activation, revision, provider, authority)
+
+    def test_observed_policy_generation_binds_exact_document_and_rejects_guess_or_foreign_owner(self):
+        document = {'formatVersion': 1, 'tenant': 'examples', 'rules': []}
+        value = {'category': 'success', 'outcomeKnown': True, 'requestDispatched': True,
+            'data': {'policy': {'tenant': 'examples', 'id': 'random-allow', 'recordKind': 'policy',
+                'revoked': False, 'document': document, 'generation': '11'}}}
+        self.assertEqual(owner.policy_record(value, 'random-allow', 'policy', document),
+                         {'id': 'random-allow', 'revision': '11'})
+        for key, changed_value in (('generation', '01'), ('generation', '18446744073709551616'),
+                ('generation', 11), ('revoked', True), ('id', 'foreign'), ('recordKind', 'provider-binding'),
+                ('document', {'rules': ['foreign']})):
+            changed = copy.deepcopy(value)
+            changed['data']['policy'][key] = changed_value
+            with self.subTest(key=key, value=changed_value), self.assertRaises(WorkflowError):
+                owner.policy_record(changed, 'random-allow', 'policy', document)
 
     def test_prebuild_failure_retains_result_without_retrieval_or_rebuild(self):
         with tempfile.TemporaryDirectory() as temporary, patch.object(owner.sys, 'platform', 'linux'), \

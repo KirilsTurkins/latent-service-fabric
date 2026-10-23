@@ -82,7 +82,19 @@ def required_random_policy(value):
     return selected
 
 
-def critical_pair(pages, activation, revision, provider):
+def policy_record(value, identity, kind, document):
+    current = value.get('data', {}).get('policy', {})
+    generation = current.get('generation')
+    require(value.get('category') == 'success' and value.get('outcomeKnown') is True
+        and value.get('requestDispatched') is True and current.get('tenant') == 'examples'
+        and current.get('id') == identity and current.get('recordKind') == kind
+        and current.get('revoked') is False and current.get('document') == document
+        and type(generation) is str and re.fullmatch('[1-9][0-9]{0,19}', generation)
+        and int(generation) < 2**64, 'audit-signed-observed-original-policy-generation')
+    return {'id': identity, 'revision': generation}
+
+
+def critical_pair(pages, activation, revision, provider, authority):
     coverage = original.positive_audit_coverage(pages)
     attempts, outcomes = [], []
     for page in pages:
@@ -102,9 +114,10 @@ def critical_pair(pages, activation, revision, provider):
                     and context.get('operation') == 'bytes'
                     and context.get('providerConfigurationDigest') == provider['configurationDigest']
                     and integer(context['providerConfigurationEpoch']) == integer(provider['configurationEpoch'])
-                    and context.get('binding', {}).get('id') == 'random-installed'
-                    and integer(context['binding']['revision']) == 1
-                    and any(policy['id'] == 'random-allow' and integer(policy['revision']) == 2
+                    and context.get('binding', {}).get('id') == authority['binding']['id']
+                    and context['binding']['revision'] == authority['binding']['revision']
+                    and any(policy['id'] == authority['policy']['id']
+                            and policy['revision'] == authority['policy']['revision']
                             for policy in context.get('policies', [])), 'audit-signed-required-original-policy-and-provider')
                 require(identities.get('publicationId') == revision['publicationId']
                     and identities.get('componentDigest') == revision['releaseDigest']
@@ -158,12 +171,20 @@ def programme(client, node, probe, source, target, output):
     first_bank = bank_observation(original.wait_audit_idle(client, target, output, 'audit-after-baseline'))
     require(first_bank['fixed_reserved_bytes'] == baseline_bank['fixed_reserved_bytes'],
             'audit-signed-baseline-original-bank-fixed-owner')
-    selected = required_random_policy(read_json(client.directory / 'random-policy.json'))
+    original_policy = read_json(client.directory / 'random-policy.json')
+    binding = policy_record(client.call('policy', '--kind', 'provider-binding', 'get', '--id', 'random-installed'),
+        'random-installed', 'provider-binding', read_json(client.directory / 'random-binding.json'))
+    previous = policy_record(client.call('policy', 'get', '--id', 'random-allow'),
+        'random-allow', 'policy', original_policy)
+    selected = required_random_policy(original_policy)
     path = client.directory / 'random-required-policy.json'
     write_json(path, selected)
     update = client.call('policy', 'apply', '--id', 'random-allow', '--file', path,
-        '--operation-id', 'require-random-audit', '--expected-generation', '1')
-    require(update['outcomeKnown'] is True, 'audit-signed-known-stricter-policy')
+        '--operation-id', 'require-random-audit', '--expected-generation', previous['revision'])
+    current = policy_record(update, 'random-allow', 'policy', selected)
+    require(integer(current['revision']) > integer(previous['revision'])
+        and update['data']['receipt']['generation'] == current['revision'], 'audit-signed-known-stricter-policy')
+    authority = {'binding': binding, 'policy': current}
     target = deploy(client, source / 'deployment.json', target['publication'],
                     generation=str(target['generation']), grants=grants)
     before_required = bank_observation(original.wait_audit_idle(client, target, output, 'audit-before-required'))
@@ -172,7 +193,7 @@ def programme(client, node, probe, source, target, output):
     providers = [row for row in node.startup_record['providers'] if row['capability'] == RANDOM]
     require(len(providers) == 1, 'audit-signed-one-actual-random-provider')
     pair = critical_pair(pair_pages(client, output, 'audit-required-random'),
-                         'audit-required-random', revision, providers[0])
+                         'audit-required-random', revision, providers[0], authority)
     after_required = bank_observation(original.wait_audit_idle(client, target, output, 'audit-after-required'))
     require(after_required['fixed_reserved_bytes'] == before_required['fixed_reserved_bytes'],
             'audit-signed-required-call-and-query-original-bank-fixed-owner')
@@ -181,7 +202,7 @@ def programme(client, node, probe, source, target, output):
     require(after_fresh['fixed_reserved_bytes'] == before_required['fixed_reserved_bytes'],
             'audit-signed-fresh-original-bank-fixed-owner')
     return target, {'outcomes': [first, second, third], 'requiredPolicy': selected,
-        'requiredPolicyUpdate': update, 'requiredPair': pair, 'originalBank': baseline_bank,
+        'requiredPolicyUpdate': update, 'requiredAuthority': authority, 'requiredPair': pair, 'originalBank': baseline_bank,
         'afterBaselineBank': first_bank, 'beforeRequiredBank': before_required,
         'afterRequiredBank': after_required, 'afterFreshBank': after_fresh,
         'originalProviderAndPhysicalRetirementAssertionsPreserved': True,
