@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/rust_thread_native_products.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Finite signed Rust consumer owner source fingerprint",
+  "reviewReason": "Bind committed canonical LF consumer owner bytes independently of Windows worktree newline conversion",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "6ede47d670f986a954b25d0f47e32400eb2264efaed1719424b446db77096789"
+  "sha256": "f9fa3c290d9975f8f77a7882f04051c6cefc34b0a41075bb819acf473cb03310"
 }
