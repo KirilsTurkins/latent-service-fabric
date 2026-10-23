@@ -1,0 +1,36 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "typescript-borrow-release-${{ github.ref }}"
+    },
+    "name": "TypeScript canonical borrow release controls",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/typescript-borrow-release-source-20261024"
+        ],
+        "paths": [
+          ".github/workflows/typescript-borrow-release.yml",
+          "tools/qualify_typescript_borrow_release.py",
+          "tools/typescript_borrow_splicer_inputs.py",
+          "tools/typescript_guest/**",
+          "tools/tests/test_typescript_import_cancellation.py",
+          "tools/tests/test_typescript_borrow_controls.py",
+          "sdk/typescript-guest/activation/**"
+        ]
+      },
+      "workflow_dispatch": null
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "native-controls"
+  ],
+  "reviewReason": "One explicitly owned source-build programme for the bounded TypeScript borrow primitive; no production, whole-cost or signed-P3 qualification inferred",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/typescript-borrow-release.yml"
+}

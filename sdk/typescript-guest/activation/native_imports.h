@@ -14,6 +14,9 @@
 namespace lsf::typescript::activation {
 
 class Imports final {
+#ifdef LSF_TYPESCRIPT_BORROW_CONTROLS
+  friend struct ImportBorrowControls;
+#endif
   struct Record {
     // Accounting is per record so multiple parked imports cannot overwrite
     // another import's running/lifting state.
@@ -125,7 +128,10 @@ class Imports final {
     auto* link = &observers_;
     size_t visited = 0;
     while (*link) {
-      if (++visited > observer_count_) { stopped_ = true; return invalid(cx, "borrow-list"); }
+      if (++visited > observer_count_) {
+        failed_observer_completion_ = stopped_ = true;
+        return invalid(cx, "borrow-list");
+      }
       if ((*link)->matchesOriginal(cx, id, owner)) break;
       link = &(*link)->following;
     }

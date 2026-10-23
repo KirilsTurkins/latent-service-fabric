@@ -1,0 +1,49 @@
+{
+  "cases": [
+    "BorrowControlEvidenceTests.test_native_refusal_cannot_report_zero_owners_or_unexercised_ack",
+    "BorrowControlEvidenceTests.test_normal_completion_cannot_hide_retention_or_change_abi",
+    "BorrowControlEvidenceTests.test_six_source_cases_must_actually_run_without_any_skip"
+  ],
+  "guards": {
+    "BorrowControlEvidenceTests.test_native_refusal_cannot_report_zero_owners_or_unexercised_ack": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f215d836c497c87fab1afc22ddbe664ba0847e4e21f1f9ac055d24ebc5dd1caf",
+        "class:setup-sha256:ded68e4d05810f58f5d0ec4f1ebe7106b30d55eeada73f7ba8cd9805862a9b3b"
+      ],
+      "skipSites": []
+    },
+    "BorrowControlEvidenceTests.test_normal_completion_cannot_hide_retention_or_change_abi": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f215d836c497c87fab1afc22ddbe664ba0847e4e21f1f9ac055d24ebc5dd1caf",
+        "class:setup-sha256:ded68e4d05810f58f5d0ec4f1ebe7106b30d55eeada73f7ba8cd9805862a9b3b"
+      ],
+      "skipSites": []
+    },
+    "BorrowControlEvidenceTests.test_six_source_cases_must_actually_run_without_any_skip": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f215d836c497c87fab1afc22ddbe664ba0847e4e21f1f9ac055d24ebc5dd1caf",
+        "class:setup-sha256:ded68e4d05810f58f5d0ec4f1ebe7106b30d55eeada73f7ba8cd9805862a9b3b"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_typescript_borrow_controls.py",
+  "reviewReason": "Three additive owning-evidence refusal cases; preserve all prior Python cases and guards; no native or signed execution claim",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

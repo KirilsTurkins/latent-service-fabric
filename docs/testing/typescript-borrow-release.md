@@ -10,7 +10,7 @@ applications cannot enable the mechanism through project configuration.
 
 1. The original JavaScript result Promise rejects immediately when the existing
    cancellation path requests cancellation. This timing is unchanged.
-2. The optional `borrowReleased` Promise resolves only after the original
+2. The optional `borrowReleased` Promise resolves only after any created
    canonical subtask becomes terminal and drops, original work accounting
    completes, the import record/captures/buffers are destroyed, and the original
    and observer retirement acknowledgements succeed. A blocked cancellation
@@ -24,7 +24,9 @@ applications cannot enable the mechanism through project configuration.
 The private wrapper receives an opaque native handle for the exact reserved
 record, owner token, root generation, manager and context. It exposes separate
 logical-result, cancellation and release operations to a selected compiler-owned
-module. No numeric record id or new authority is exposed to application code.
+module. The selected wrapper/public API exposes no numeric record id or new
+authority to application code. The existing internal bridge still receives
+compiler-lexical numeric ids.
 Repeated calls reuse the original observer; foreign, stale and malformed
 identities refuse. Released handles still check the current admitted root epoch.
 
@@ -68,21 +70,35 @@ host-side test mechanism when the owned compiler parser is unavailable. The
 production compiler has no such fallback. Pinned-parser execution remains
 required for owning qualification.
 
-Three real-SpiderMonkey native controls are staged in
+Eleven real-SpiderMonkey native controls are staged in
 `sdk/typescript-guest/activation/tests/native_imports.cpp`: blocked cancellation
 through actual fixture subtask drop, foreign/unregistered/released foreign-epoch
-handles, and Native admission denial before the optional node and Promise.
-They have not been compiled or executed for this foundation. Their canonical
+handles, Native admission denial, observer Promise admission failure, bounded-list
+refusal, five exact owner-acknowledgement refusals, and the existing cancellation
+baseline. They have not been compiled or executed for this foundation. Their canonical
 intrinsics are explicit diagnostic doubles, rather than signed host evidence.
 
-Before qualification, the owning hosted recipe must compile the selected native
-engine, run the native controls plus owner-acknowledgement refusal/drop-order
-controls, measure actual ABI sizes, and run the pinned-parser controls. A
+The staged owning recipe is `tools/qualify_typescript_borrow_release.py`. It
+requires the normal locked public compiler, an unchanged sealed source splicer
+accepted by the existing source/SDK/recipe validators, and pinned maintained
+build tools. It requires all six pinned-parser controls to pass without skips,
+builds the normal Promise library once and the import engine once, then compiles
+one diagnostic core against those same headers/library. Pinned Node's
+`node:wasi` executes the eleven cases with no preopened directories. Test-only
+C++ instrumentation observes destruction before refund; failure cases assert
+the exact retained-owner set instead of claiming quiescence. The same wasm32
+compilation measures current and pinned pre-feature manager sizes, unchanged
+record storage and observer storage. No build has been launched for this recipe.
+
+A
 separately reviewed signed TypeScript campaign must hold a real canonical borrow
 at a controlled cancellation barrier, prove release remains pending while the
 logical result rejects and a sibling progresses, then observe actual drop before
 consuming close. Root trap/deadline cases must retain or quarantine outstanding
-physical owners; fresh success follows measured cleanup. LogicalReference
+physical owners; fresh success follows measured cleanup. At borrow acknowledgement
+the same real connection/socket owner must remain live until consuming close;
+actual read `IoCall`/`IoTransfer` counts are recorded, including genuine earlier
+retirement, rather than assuming an extra held transfer. LogicalReference
 development evidence must remain distinct from production provider qualification.
 
 No Node socket module, production enablement, complete #745 acceptance criterion,
