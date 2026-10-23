@@ -141,28 +141,56 @@ class JavaHttpPhaseCampaign(unittest.TestCase):
             with self.assertRaises(WorkflowError): campaign.selected_clients(value)
 
     def test_full_native_and_auxiliary_source_fence_rejects_extra_wit_before_build(self):
-        materials = {'.cargo/managed-guest.toml': campaign.file_identity(campaign.ROOT/'.cargo/managed-guest.toml')}
-        for directory in ('wit', 'schemas', 'examples/echo-contract/wit'):
-            observed = campaign.inventory(campaign.ROOT/directory)
-            materials.update({directory+'/'+row['path']: {key: row[key] for key in ('sha256', 'bytes')}
-                for row in observed['files']})
-        record = {'source': campaign.source_identity(campaign.ROOT), 'materials': materials}
-        with patch.object(campaign, 'read_json', return_value=record):
+        # The historical producer's fence deliberately requires 107 inputs.
+        # Synthetic controller inputs keep that positive case independent of
+        # today's growing schema inventory; they are not native evidence.
+        directories = {
+            'wit': ['base/package.wit', 'other/package.wit'],
+            'schemas': [f'fixture-{index:03}.schema.json' for index in range(103)],
+            'examples/echo-contract/wit': ['world.wit'],
+        }
+        identity = {'sha256': 'sha256:'+'a'*64, 'bytes': 1}
+        fixtures = {campaign.ROOT/name: {'files': [dict(path=path, **identity) for path in paths]}
+                    for name, paths in directories.items()}
+        limits = {campaign.ROOT/name: (files, size) for name, files, size in (
+            ('wit', 2048, 8*1024**2), ('schemas', 256, 4*1024**2),
+            ('examples/echo-contract/wit', 128, 1024**2))}
+        materials = {'.cargo/managed-guest.toml': identity}
+        for directory, paths in directories.items():
+            materials.update({directory+'/'+path: identity for path in paths})
+        self.assertEqual(len(materials), 107)
+        record = {'source': {'scope': 'synthetic-controller-source'}, 'materials': materials}
+
+        def inventory(path, **kwargs):
+            maximum_files, maximum_bytes = limits[path]
+            self.assertEqual(kwargs, {'maximum_files': maximum_files,
+                'maximum_bytes': maximum_bytes, 'deadline': 130.0})
+            return copy.deepcopy(fixtures[path])
+
+        with patch.object(campaign, 'read_json', return_value=record), \
+                patch.object(campaign, 'source_identity', return_value=record['source']), \
+                patch.object(campaign, 'file_identity', return_value=identity) as managed, \
+                patch.object(campaign.time, 'monotonic', return_value=100.0), \
+                patch.object(campaign, 'inventory', side_effect=inventory):
             self.assertTrue(campaign.native_source(Path('prepared'))['equalToCompiledProducer'])
+            managed.assert_called_once_with(campaign.ROOT/'.cargo/managed-guest.toml')
             with patch.object(campaign, 'source_identity', return_value={'unreviewed': 'native-source'}), \
                     self.assertRaisesRegex(WorkflowError, 'native-production-source-drift'):
                 campaign.native_source(Path('prepared'))
-            original = campaign.inventory
-            def changed(path, **kwargs):
-                value = original(path, **kwargs)
-                if path == campaign.ROOT/'wit':
-                    value['files'].append({'path': 'unqualified/package.wit',
-                        'sha256': 'sha256:'+'0'*64, 'bytes': 1})
-                return value
-            with patch.object(campaign, 'source_identity', return_value=record['source']), \
-                    patch.object(campaign, 'inventory', side_effect=changed), self.assertRaisesRegex(
-                        WorkflowError, 'auxiliary-input-drift'):
-                campaign.native_source(Path('prepared'))
+            for mutation in ('extra-wit', 'extra-schema', 'missing', 'digest'):
+                def changed(path, **kwargs):
+                    value = inventory(path, **kwargs)
+                    if path == campaign.ROOT/('wit' if mutation == 'extra-wit' else 'schemas'):
+                        if mutation.startswith('extra-'):
+                            value['files'].append(dict(path='unqualified/extra', **identity))
+                        elif mutation == 'missing':
+                            value['files'].pop()
+                        else:
+                            value['files'][0]['sha256'] = 'sha256:'+'b'*64
+                    return value
+                with self.subTest(mutation=mutation), patch.object(campaign, 'inventory', side_effect=changed), \
+                        self.assertRaisesRegex(WorkflowError, 'auxiliary-input-drift'):
+                    campaign.native_source(Path('prepared'))
         original_error = WorkflowError('source-refused-before-build')
         with patch.object(campaign, 'verify_prepared'), patch.object(campaign, 'native_source',
                 side_effect=original_error), patch.object(campaign, 'execute') as execute:
