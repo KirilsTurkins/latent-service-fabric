@@ -8,6 +8,32 @@ from tools.compile_rust_owned_thread_application import emitted_core, source_arc
 
 
 class OwnedThreadApplication(unittest.TestCase):
+    def test_native_derivation_disagreement_stops_before_normal_encoding_or_proof_claims(self):
+        from tools.compile_rust_owned_thread_application import native_normal_proof
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory)
+            (output / 'raw-core.wasm').write_bytes(b'original captured compiler output')
+            (output / 'derived').mkdir()
+            original = (Path(__file__).resolve().parents[2] /
+                'crates/latent-component-threading/src/rust_catalogue/reviewed-original-core.wasm').read_bytes()
+            (output / 'derived/core.wasm').write_bytes(original)
+
+            class Commands:
+                calls = []
+
+                def run(self, *args):
+                    self.calls.append(args)
+                    if len(self.calls) != 1:
+                        raise AssertionError('normal encoding must not start after disagreement')
+                    (output / 'native-original').mkdir()
+                    (output / 'native-original/core.wasm').write_bytes(b'different native derivation')
+
+            commands = Commands()
+            with self.assertRaisesRegex(ValueError, 'independent-native-derivation-drift'):
+                native_normal_proof(commands, 'context-tool', 'wasm-tools', output)
+            self.assertEqual(len(commands.calls), 1)
+            self.assertFalse((output / 'native-normal').exists())
+
     def test_executor_object_requires_the_actual_captured_package_manifest_and_target_emission(self):
         from tools.compile_rust_owned_thread_application import emitted_executor
         from tools.rust_capsule_project import digest

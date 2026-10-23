@@ -1,0 +1,163 @@
+{
+  "schemaVersion": "latent.rust.trusted-original-catalogue.v1",
+  "origin": {
+    "run": 39877020838,
+    "head": "28059f343bbd954e3e6614c5a24593897cc0c294",
+    "artifact": 12469845581,
+    "artifactZipSha256": "76e11dc5d099d353d027b5e946ec7624f5c7bc90110f4844fc9aff387f2afdc6",
+    "compilerDistributionDigest": "sha256:16017bec70a8df1c23e841a42b08f8719f18d59f5f18310647bb61ed0d4201ca",
+    "sysrootIdentity": "sha256:8b2b96e015168624bb2fd0b5f26eebf7b06496ba60d8f3d2968a32f2687086b4",
+    "sourceRecipeDigest": "sha256:83e448b26a5fd718f7d93d7c425d19b3286e19ac41510e000cd9c69885856b35",
+    "originRawCoreDigest": "sha256:583e2353a8405db569e61cb3269b3643aff39374c1e2d83cc970cc033604edec",
+    "sourceProfile": "lsf-rust-std-owned-thread-built-source-v1",
+    "compilerRust": "1.97.1",
+    "compilerCommit": "8bab26f4f68e0e26f0bb7960be334d5b520ea452",
+    "threadSourcePathRemap": {
+      "sourceRoot": "/tmp/lsf-rust-clock-std-z79y0c6j/library",
+      "mappedRoot": "/lsf/rust/library",
+      "argument": "--remap-path-prefix=/tmp/lsf-rust-clock-std-z79y0c6j/library=/lsf/rust/library"
+    },
+    "owningStatus": "passed-original-app-and-guarded-core-compile; 72-source-and-12-emitted-guard-controls",
+    "newApplicationStackGeometryClaimed": true,
+    "actualOriginalLinkerLayout": {
+      "stackLow": 26256,
+      "stackHigh": 1140368,
+      "activeDataHigh": 25544,
+      "initialMemoryBytes": 1179648
+    },
+    "actualGuestExecuted": false
+  },
+  "originalBodyImageDigest": "sha256:0e583a4f40eac6933d78354a1432817a1a02a023425d29540b7bd2f7255ec2e0",
+  "originalBodyImageBytes": 175996,
+  "libraries": [
+    {
+      "label": "libcore-93c73edb509ba1e1.rlib",
+      "digest": "sha256:f66985a0d26ea3c21cbe2def1ed8ef627bc6a7acbe11e94f100d208e60502bcf",
+      "bytes": 42306796
+    },
+    {
+      "label": "librustc_std_workspace_core-2155af6deccea071.rlib",
+      "digest": "sha256:5d25365ec3544c1b5d8d74565749666af8c60ec2138b9fa5a0b0b8b6759c369f",
+      "bytes": 8644
+    },
+    {
+      "label": "libcompiler_builtins-0a427c9baea88edc.rlib",
+      "digest": "sha256:66f265cbe47d83ffc4757de22f2a6feb869d4982e6192ec2a3ec10b42d6afbef",
+      "bytes": 3569196
+    },
+    {
+      "label": "liblibc-13c8a116298a3717.rlib",
+      "digest": "sha256:a54a05a8dc3953b5028bff16a88e68b066ac3ec35e84820b0624ab93ad50d278",
+      "bytes": 30998
+    },
+    {
+      "label": "libcfg_if-c89258830776edbb.rlib",
+      "digest": "sha256:c50ebd872c39642c040cbf55e67d1fb3d7b650e0f13dc7bb276fc2dad9508656",
+      "bytes": 8324
+    },
+    {
+      "label": "libdlmalloc-78e40b265d7c7471.rlib",
+      "digest": "sha256:ab53c4c070578c1b76ef655e8e58000eb623a6b9f644b07e5d4577997a3b2e87",
+      "bytes": 445696
+    },
+    {
+      "label": "libunwind-b1660e821c42324b.rlib",
+      "digest": "sha256:104442fa55ea5263e3aaa9362f771882fa3e7901724947884aa31ec5749b5bfd",
+      "bytes": 17806
+    },
+    {
+      "label": "librustc_demangle-36611d0700866548.rlib",
+      "digest": "sha256:3a214c8cd524daf2d69d52272d7e13e9e006bded9593bece7978930322addd35",
+      "bytes": 316046
+    },
+    {
+      "label": "libpanic_abort-f135c3a08b9cddd2.rlib",
+      "digest": "sha256:0debe40192c81d8fe8b45b5655234a5923c063a2bf136a0fd151c8eae92e4a11",
+      "bytes": 7762
+    },
+    {
+      "label": "librustc_std_workspace_alloc-509bc7cd45824e5d.rlib",
+      "digest": "sha256:cb6395689f21944a9001a7f1e8262810ff1c3fc257e84d571ca3302b7449c51d",
+      "bytes": 4880
+    },
+    {
+      "label": "libhashbrown-0a531973ae5c1204.rlib",
+      "digest": "sha256:4787ca04cf7787dcd92d63900a58d8cadb0193997ce8605a4283ecf77a62b107",
+      "bytes": 1697010
+    },
+    {
+      "label": "liballoc-b59d09930bc4c66c.rlib",
+      "digest": "sha256:923042d711fa2eb649df270906f8fefd8f2280d988b37b2346517dfe818f05fb",
+      "bytes": 7254690
+    },
+    {
+      "label": "libstd_detect-426e1e971f3c6043.rlib",
+      "digest": "sha256:41e94ade56648a27cb30383dae3c0f687dfa03ad8aab88dc140dcc018c284092",
+      "bytes": 222372
+    },
+    {
+      "label": "libstd.rlib",
+      "digest": "sha256:34b3998b937ce594a680daca58c66c5ffbe82812bdd10c20819fcace897dd080",
+      "bytes": 9222662
+    },
+    {
+      "label": "captured-futures-executor.rlib",
+      "digest": "sha256:29b13d59800bb5fec1fc7caf88ae7388817e945d1c924a48ea3b9fab342fcc9c",
+      "bytes": 301150
+    }
+  ],
+  "generationGrantsAuthority": false,
+  "runtimeQualified": false,
+  "nodeCount": 1225,
+  "referenceCount": 5325,
+  "normalComponentEnvelope": {
+    "tool": "wasm-tools",
+    "version": "1.254.0",
+    "toolSha256": "3b91b4a168490b9290dd742d1ed4708c588083c81181c651376457db926599dd",
+    "componentDigest": "sha256:74247ff2b0aeb0a1c2f6fb3fbf3fef31bb0c427b724c58d675e0b73be5c74dd5",
+    "componentBytes": 251090,
+    "derivedCoreDigest": "sha256:e3ee64a72d7a75e229a4f07edf58b3e4907ae4e1e974609fc51c2fae4e5f91fd",
+    "actualGuestExecuted": false,
+    "nativeVerifierExecuted": false,
+    "files": [
+      {
+        "name": "normal-component-shell.bin",
+        "bytes": 4422,
+        "digest": "sha256:9764efdf4970070a220cb38229face5dae6a4a7e6c995df4e52d5f93ea2900ca"
+      },
+      {
+        "name": "original-wit-metadata.bin",
+        "bytes": 1420,
+        "digest": "sha256:556d1bc3d01ae7464035014638eae013f5abe3cf0415cc648ba12011b51212d9"
+      },
+      {
+        "name": "original-producers.bin",
+        "bytes": 61,
+        "digest": "sha256:481d56af9d9f23b7f94c4150f8085f48f9b05f177a0318cad370736cdbc5792f"
+      },
+      {
+        "name": "encoded-producers.bin",
+        "bytes": 107,
+        "digest": "sha256:26a5a9f7c8a21d15974656d9a48fcc1eed8c8d926f0b3297b5e1a1efafe5bb78"
+      },
+      {
+        "name": "adapted-wit-metadata.bin",
+        "bytes": 1420,
+        "digest": "sha256:48282a8476bc01df993efdd01f51360a2d9244a2b3c096f5d1130be853a47925"
+      }
+    ],
+    "originalSyncCoreDigest": "sha256:ba2014e3f4d14c428b93c100a011afbb2f7995436e858108292dbbd70a720519",
+    "publicEffect": "explicit-async-WIT-ordinary-synchronous-core-ABI",
+    "metadataAdaptation": {
+      "originalBytes": 1420,
+      "adaptedBytes": 1420,
+      "changedOffset": 1244,
+      "originalByte": 64,
+      "adaptedByte": 67,
+      "adaptedDigest": "sha256:48282a8476bc01df993efdd01f51360a2d9244a2b3c096f5d1130be853a47925",
+      "completeParsedGraphDifference": "only examples:greeting/api@1.0.0#greet async flag",
+      "instructionDataImportExportsChanged": false,
+      "hostSyncTaskSemanticsChanged": false
+    }
+  }
+}

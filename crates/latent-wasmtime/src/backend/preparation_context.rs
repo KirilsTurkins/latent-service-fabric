@@ -365,9 +365,10 @@ impl PreparationContext {
     ) -> Result<(), PlatformError> {
         let manifest = &artifact.manifest;
         let compatible_threading = match self.config.selected_thread_profile() {
-            Some(crate::NativeThreadProfile::CContext144SyncCooperativeV1) => {
-                manifest.execution.threading == ThreadingModel::Cooperative
-            }
+            Some(
+                crate::NativeThreadProfile::CContext144SyncCooperativeV1
+                | crate::NativeThreadProfile::RustContext40SyncCooperativeV1,
+            ) => manifest.execution.threading == ThreadingModel::Cooperative,
             _ => matches!(
                 manifest.execution.threading,
                 ThreadingModel::SingleThreaded | ThreadingModel::Reentrant
