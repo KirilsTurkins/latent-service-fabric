@@ -42,3 +42,13 @@ observations; the node and zero-contact observation peer must be clean/reaped.
 Full scheduler coverage, collected GC-root proof, active/parked/native memory
 costs, complete accounting, non-suspendable regions beyond these exclusions,
 socket integration and whole #741 completion remain open.
+
+
+The first three focused campaigns preserved a real monitor failure. The unchanged
+dependency loop returned 42, but the monitor case trapped. The third campaign
+retained eight exact adapted C/header pairs and reproduced the byte-identical
+second component. It showed a missing child monitor suspension boundary. The
+follow-up corrects the pinned compiler's premature empty-set monitor discovery,
+requires real original/fixed IR controls and all eleven actual loaded replacement
+classes, and checks the emitted child guard before the same six signed cases.
+No failed campaign is relabelled as qualified, and no case or original limit is waived.

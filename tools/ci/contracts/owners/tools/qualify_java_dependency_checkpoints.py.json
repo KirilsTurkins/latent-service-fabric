@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_java_dependency_checkpoints.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Retain a fixed public diagnostic generated-C projection after the original clang attempt; preserve all six signed outcomes, original limits and native origin.",
+  "reviewReason": "Require the exact monitor finder correction, actual original/fixed IR controls, eleven loaded replacement classes and emitted child suspension guard before the unchanged six signed outcomes.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "41c2a64ed02c42b9a6b55ad6f8c8d13e62362c83778f9a6beb6445f31376cc9d"
+  "sha256": "70b7d4c8c912888651cdb8e2cb8e0c1a78b908468373b74388d9a91ad5f08b03"
 }

@@ -1,6 +1,7 @@
 """One fresh captured-JAR checkpoint component on separately authenticated native products."""
 from __future__ import annotations
 import argparse
+import re
 from pathlib import Path
 import subprocess
 import sys
@@ -15,11 +16,12 @@ from tools.build_observation import build_environment
 from tools.java_capsule_build import RECIPE, FIBER_IO_PROFILE, build
 from tools.java_dependency_checkpoint_node import execute
 from tools.java_guest.c_failure_context import CHECKPOINT_SOURCES
+from tools.java_guest.coroutine_patch import PATCH_CLASSES, ASYNC_CLASSES, ASYNC_SOURCE_SHA256
 from tools.java_standard_http_library import compiler_cache
 from tools.phase2_operator_process import require
 from tools.phase3_resource_identity import file_identity, source_identity
 from tools.rust_capsule_build import Commands
-from tools.rust_capsule_project import ROOT, fresh, inventory, read_json, snapshot, write_json
+from tools.rust_capsule_project import ROOT, fresh, inventory, read_file, read_json, snapshot, write_json
 
 MATERIALS=tuple(sorted(set((*RECIPE,fixture.SOURCE,fixture.REFERENCE,fixture.CONTROL,
     'tools/java_dependency_checkpoint_fixture.py','tools/java_dependency_checkpoint_node.py',
@@ -64,8 +66,27 @@ def build_evidence(artifact):
         and context['bytes']==sum(row['bytes'] for row in context['files'].values())<=8*1024**2
         and all(file_identity(artifact/'checkpoint-generated'/name,1024**2)==row
             for name,row in context['files'].items()), 'java-checkpoint-actual-generated-context-before-runtime')
+    compiler=read_json(artifact/'bindings.json')['coroutineCompiler']
+    require(set(compiler['replacedClasses'])==set(PATCH_CLASSES)
+        and set(ASYNC_CLASSES)<=set(compiler['loadedCompiler']['loadedClasses'])
+        and compiler['loadedCompiler']['loadedClasses']=={
+            name:row['replacementSha256'] for name,row in compiler['replacedClasses'].items()}
+        and compiler['upstreamAsyncFinderSourceSha256']==ASYNC_SOURCE_SHA256
+        and all(compiler[key] is True for key in ('realOriginalMonitorBoundaryDefectObserved',
+            'realCorrectedMonitorOnlyAndMixedBoundariesPreserved',
+            'realCorrectedMonitorCallerAndFamilyClosurePreserved',
+            'realNoThreadStartAndUnrelatedMethodNegativesPreserved','originalInputsUnchanged')),
+        'java-checkpoint-real-original-fixed-monitor-controls-and-loaded-classes')
+    generated=read_file(artifact/'checkpoint-generated/c/d/l/a/Capsule.c',1024**2).decode('utf-8')
+    start=generated.index('void meth_dla_Capsule_lambda_checked_0(')
+    end=generated.index('\n}\n',start)
+    child=generated[start:end]
+    entries=list(re.finditer(r'meth_jl_Object_monitorEnter\([^;\n]{1,256}\)',child))
+    require(len(entries)==1 and 'meth_otr_Fiber_isSuspending' in child[entries[0].end():entries[0].end()+256],
+        'java-checkpoint-actual-child-monitor-suspension-boundary')
     return {'component':component,'documents':documents,'classpath':classpath,
-        'runtimeProfile':profile,'heapBytes':4194304,'generatedCContext':context,'signedQualification':False}
+        'runtimeProfile':profile,'heapBytes':4194304,'generatedCContext':context,
+        'monitorCompiler':compiler,'actualChildMonitorBoundary':True,'signedQualification':False}
 
 
 def qualify(native_directory,wasi_sdk,output,*,read_only_cache=None):

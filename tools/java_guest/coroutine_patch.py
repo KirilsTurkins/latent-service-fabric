@@ -63,13 +63,48 @@ COROUTINE_CLASSES = frozenset(CLASS_ROOT + name for name in (
     'CoroutineTransformation.class', 'CoroutineTransformation$1.class',
     'CoroutineTransformation$SplittingBackend.class'))
 TYPE_ROOT = 'org/teavm/model/util/'
+ASYNC_SOURCE_SHA256 = '510b04fa6db5c0a47dc9656643bb3b1af0a104ed66cfb32786b88f93bbb4740d'
+ASYNC_CLASSES = frozenset(TYPE_ROOT + name for name in (
+    'AsyncMethodFinder.class', 'AsyncMethodFinder$CallStack.class',
+    'AsyncMethodFinder$AsyncInstructionReader.class'))
+MONITOR_CONTROL = 'org/teavm/dependency/MonitorAsyncControl.class'
+MONITOR_CONTROLS = frozenset((MONITOR_CONTROL, 'org/teavm/dependency/MonitorAsyncControl$Inputs.class'))
+ASYNC_BEFORE = '''    private boolean findAsyncMethods() {
+        boolean result = false;
+        loop: for (String clsName : classSource.getClassNames()) {
+            ClassReader cls = classSource.get(clsName);
+            for (MethodReader method : cls.getMethods()) {
+                if (!asyncMethods.contains(method.getReference()) || method.getProgram() == null) {
+                    continue;
+                }
+                if (hasMonitor(method)) {
+                    result = true;
+                    break loop;
+                }
+            }
+        }
+        boolean hasThreads = dependency.getReachableMethods().contains(new MethodReference(
+                Thread.class, "start", void.class));
+        return result && hasThreads;
+    }
+
+'''
+ASYNC_AFTER = '''    private boolean findAsyncMethods() {
+        // Monitor entry can suspend whenever a real Java Thread.start is reachable.
+        // At this point asyncMethods is still empty: annotation roots are added
+        // by find() afterwards, so scanning it here cannot discover contention.
+        return dependency.getReachableMethods().contains(new MethodReference(
+                Thread.class, "start", void.class));
+    }
+'''
+
 TYPE_CLASSES = frozenset(TYPE_ROOT + name for name in (
     'TypeInferer.class', 'TypeInferer$1.class', 'TypeInferer$2.class',
     'TypeInferer$InferenceKind.class', 'TypeInferer$InferenceType.class'))
-PATCH_CLASSES = COROUTINE_CLASSES | TYPE_CLASSES
+PATCH_CLASSES = COROUTINE_CLASSES | TYPE_CLASSES | ASYNC_CLASSES
 CONTROL = CLASS_ROOT + 'Check.class'
 ARRAY_CONTROL = TYPE_ROOT + 'ArrayTypeCheck.class'
-CONTROLS = frozenset((CONTROL, ARRAY_CONTROL))
+CONTROLS = frozenset((CONTROL, ARRAY_CONTROL)) | MONITOR_CONTROLS
 MAX_JAR_BYTES = 64 * 1024 * 1024
 RELOCATED_IMPORTS = ('IntHashSet', 'IntIntHashMap', 'IntSet')
 
@@ -104,6 +139,15 @@ def corrected_type_source(raw: bytes) -> bytes:
         raise ValueError('unreviewed-teavm-type-seed')
     return source.replace(TYPE_SEED_BEFORE, TYPE_SEED_AFTER).replace(
         TYPE_ELEMENT_BEFORE, TYPE_ELEMENT_AFTER).encode('utf-8')
+
+
+def corrected_async_source(raw: bytes) -> bytes:
+    if hashlib.sha256(raw).hexdigest() != ASYNC_SOURCE_SHA256:
+        raise ValueError('unreviewed-teavm-async-finder-source')
+    source = raw.decode('utf-8')
+    if source.count(ASYNC_BEFORE) != 1:
+        raise ValueError('unreviewed-teavm-async-finder-preimage')
+    return source.replace(ASYNC_BEFORE, ASYNC_AFTER).encode('utf-8')
 
 
 def checked_jars(compiler, project: Path) -> list[Path]:
@@ -169,7 +213,9 @@ def jar_entries(path: Path) -> dict[str, bytes]:
     if ({name for name in result if name.startswith(CLASS_ROOT + 'CoroutineTransformation')
             and name.endswith('.class')} != COROUTINE_CLASSES
             or {name for name in result if name.startswith(TYPE_ROOT + 'TypeInferer')
-                and name.endswith('.class')} != TYPE_CLASSES):
+                and name.endswith('.class')} != TYPE_CLASSES
+            or {name for name in result if name.startswith(TYPE_ROOT + 'AsyncMethodFinder')
+                and name.endswith('.class')} != ASYNC_CLASSES):
         raise ValueError('coroutine-patch-class-closure')
     return result
 
@@ -287,11 +333,16 @@ def stage(compiler, project: Path, destination: Path) -> dict:
     corrected_types = corrected_type_source(type_raw); type_source.write_bytes(corrected_types)
     array_control = folder / 'ArrayTypeCheck.java'
     array_control.write_bytes(read_file(sdk / 'ArrayTypeCheck.java'))
+    async_raw = read_file(sdk / 'AsyncMethodFinder.java')
+    async_source = folder / 'AsyncMethodFinder.java'
+    corrected_async = corrected_async_source(async_raw); async_source.write_bytes(corrected_async)
+    monitor_control = folder / 'MonitorAsyncControl.java'
+    monitor_control.write_bytes(read_file(sdk / 'MonitorAsyncControl.java'))
     # Compiler.run provides the original process, output and remaining-time bounds.
     classes = folder / 'classes'
     read_file(sdk / 'Compile.java')
     compiler.run('java-coroutine-patch', 'java', sdk / 'Compile.java', source, control, classes,
-                 os.pathsep.join(map(str, jars)), type_source, array_control)
+                 os.pathsep.join(map(str, jars)), type_source, array_control, async_source, monitor_control)
     replacement = folder / 'teavm-core-patched.jar'
     receipt = replace_jar(original[0], classes, replacement)
     for mode, selected in (('original', original[0]), ('corrected', replacement)):
@@ -301,6 +352,11 @@ def stage(compiler, project: Path, destination: Path) -> dict:
         if json.loads(observed) != {'schemaVersion': 'latent.java.coroutine-phi-control.v1',
                 'mode': mode, 'passed': True}:
             raise ValueError('coroutine-patch-real-ir-control')
+        monitor = compiler.run('java-coroutine-monitor-' + mode + '-control', 'java', '-cp', classpath,
+            'org.teavm.dependency.MonitorAsyncControl', mode)
+        if json.loads(monitor) != {'schemaVersion': 'latent.java.monitor-async-control.v1',
+                'mode': mode, 'passed': True}:
+            raise ValueError('coroutine-patch-real-monitor-async-control')
     if identities != jar_identities(compiler.dependency_cache, checked_jars(compiler, project)):
         raise ValueError('coroutine-patch-original-input-mutated')
     build = project / 'build.gradle'; script = read_file(build).decode('utf-8')
@@ -376,6 +432,12 @@ tasks.named('generateC') {
         realOriginalPrimitiveArrayRootDefectObserved=True,
         realCorrectedArrayTypesAndReferenceRootsPreserved=True,
         realCorrectedRestoredArrayPrimitiveTypePreserved=True,
+        upstreamAsyncFinderSourceSha256=ASYNC_SOURCE_SHA256,
+        correctedAsyncFinderSourceSha256=hashlib.sha256(corrected_async).hexdigest(),
+        realOriginalMonitorBoundaryDefectObserved=True,
+        realCorrectedMonitorOnlyAndMixedBoundariesPreserved=True,
+        realCorrectedMonitorCallerAndFamilyClosurePreserved=True,
+        realNoThreadStartAndUnrelatedMethodNegativesPreserved=True,
         originalInputsUnchanged=True, checkedCompilerJars=identities,
         publishedHppcRelocation='org.teavm.hppc',
         originalBuildscriptClasspath=[jar_identities(compiler.dependency_cache, [path])[0]
