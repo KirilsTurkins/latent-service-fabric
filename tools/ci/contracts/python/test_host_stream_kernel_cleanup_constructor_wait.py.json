@@ -1,0 +1,75 @@
+{
+  "cases": [
+    "CleanupConstructorWaitSource.test_birth_completion_is_paid_and_no_unbounded_completion_fallback",
+    "CleanupConstructorWaitSource.test_late_completer_retains_complete_graph_before_reader_drop",
+    "CleanupConstructorWaitSource.test_original_open_publication_and_static_geometry_remain_explicit",
+    "CleanupConstructorWaitSource.test_readiness_budget_only_narrows_and_timeout_closes_without_refund",
+    "CleanupConstructorWaitSource.test_termination_condition_reauthenticates_under_actual_lifetime_mutex"
+  ],
+  "guards": {
+    "CleanupConstructorWaitSource.test_birth_completion_is_paid_and_no_unbounded_completion_fallback": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:fb37196e4554b65b72455e0c1ca39653572caf2c2a310ee25765fa9d75cd66e3",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CleanupConstructorWaitSource.test_late_completer_retains_complete_graph_before_reader_drop": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:fb37196e4554b65b72455e0c1ca39653572caf2c2a310ee25765fa9d75cd66e3",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CleanupConstructorWaitSource.test_original_open_publication_and_static_geometry_remain_explicit": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:fb37196e4554b65b72455e0c1ca39653572caf2c2a310ee25765fa9d75cd66e3",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CleanupConstructorWaitSource.test_readiness_budget_only_narrows_and_timeout_closes_without_refund": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:fb37196e4554b65b72455e0c1ca39653572caf2c2a310ee25765fa9d75cd66e3",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CleanupConstructorWaitSource.test_termination_condition_reauthenticates_under_actual_lifetime_mutex": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:fb37196e4554b65b72455e0c1ca39653572caf2c2a310ee25765fa9d75cd66e3",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_host_stream_kernel_cleanup_constructor_wait.py",
+  "reviewReason": "Additive retained paid constructor completion/deadline source controls and four changed defining-object geometry programme only. Preserve old24-object/native-atomic programmes and all prior cases. Full consumer, public IoCall integration and wall-clock bounds stay unqualified.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
