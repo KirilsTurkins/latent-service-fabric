@@ -1,0 +1,75 @@
+{
+  "schemaVersion": "lsf.kernel-cleanup-security-source.v1",
+  "upstreamCommit": "7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+  "archiveSha256": "e09b6727e5c521253f0d41694900b9c38fb7604db7d35238a8197aa9f7de2428",
+  "source": {
+    "security/selinux/hooks.c": {
+      "bytes": 204597,
+      "sha256": "6079b88f15ca1966b640753e35edc291139fe925fca37e5c54d0a2d6e36d8370"
+    }
+  },
+  "sections": {
+    "selinux_task_alloc": {
+      "source": "security/selinux/hooks.c",
+      "text": "static int selinux_task_alloc(struct task_struct *task,\n\t\t\t      unsigned long clone_flags)\n{\n\tu32 sid = current_sid();\n\n\treturn avc_has_perm(sid, sid, SECCLASS_PROCESS, PROCESS__FORK, NULL);\n}\n",
+      "bytes": 194,
+      "sha256": "7b839769e5241c9b949504732f752fe610779e87da739758472f2af1ee9ac9c9"
+    },
+    "selinux_blob_sizes": {
+      "source": "security/selinux/hooks.c",
+      "text": "struct lsm_blob_sizes selinux_blob_sizes __ro_after_init = {\n\t.lbs_cred = sizeof(struct task_security_struct),\n\t.lbs_file = sizeof(struct file_security_struct),\n\t.lbs_backing_file = sizeof(struct backing_file_security_struct),\n\t.lbs_inode = sizeof(struct inode_security_struct),\n\t.lbs_ipc = sizeof(struct ipc_security_struct),\n\t.lbs_key = sizeof(struct key_security_struct),\n\t.lbs_msg_msg = sizeof(struct msg_security_struct),\n#ifdef CONFIG_PERF_EVENTS\n\t.lbs_perf_event = sizeof(struct perf_event_security_struct),\n#endif\n\t.lbs_sock = sizeof(struct sk_security_struct),\n\t.lbs_superblock = sizeof(struct superblock_security_struct),\n\t.lbs_xattr_count = SELINUX_INODE_INIT_XATTRS,\n\t.lbs_tun_dev = sizeof(struct tun_security_struct),\n\t.lbs_ib = sizeof(struct ib_security_struct),\n};",
+      "bytes": 779,
+      "sha256": "82daf7f50051a5195872753b7c75dca46e08c155f1446dac0e2a6b06d6b2c019"
+    }
+  },
+  "parentDerived": {
+    "net/device-owner-carrier.h": {
+      "bytes": 3315,
+      "sha256": "28f823f7754e51566eaac4fe3df3b15a3759094ba16c1b73e26b25f3aa025bef"
+    },
+    "net/device-prepaid.h": {
+      "bytes": 12328,
+      "sha256": "e15eebae0259f4f7f3ad382d152fcbe51b67b9cc3ae6c28e6a77f581c7c4f732"
+    },
+    "net/factory-device-security.c": {
+      "bytes": 14608,
+      "sha256": "5589225957007982dc1ea621aa95c133726ce0414a30806de73306ebc7d3a7d5"
+    },
+    "net/factory.c": {
+      "bytes": 32105,
+      "sha256": "9cff0885b994c13b4ae4beb8a256473aa6a792b0128f910875b3b13894b6d074"
+    },
+    "security/selinux/hooks.c": {
+      "bytes": 208614,
+      "sha256": "949623ff388175e886a874ce25d2f9b44f5017c4393f25925d749326eaf11f14"
+    },
+    "security/selinux/lsf_avc_private.c": {
+      "bytes": 9554,
+      "sha256": "3eda56f621bcbcb63fe614758452adcf144b307919bebd821d88dff330fbf8bf"
+    },
+    "security/selinux/ss/lsf_audit_string_private.c": {
+      "bytes": 2702,
+      "sha256": "30cbe743a330e576e49577703ffc7a98a2c500c02039d200dd06d44169b4e35e"
+    },
+    "security/selinux/ss/lsf_sidcache_private.c": {
+      "bytes": 3947,
+      "sha256": "1b05902dcef2c8613bb52c39512cb38337228d6f030128eb6f0d23e86ff0c676"
+    },
+    "include/net/lsf_stream_avc_private.h": {
+      "bytes": 712,
+      "sha256": "d7d34f1d4946637af72f87faed1becb1e3fe75be107772cafaa9d0cca052a519"
+    },
+    "net/factory-avc.c": {
+      "bytes": 5445,
+      "sha256": "bb8b1944d5151bb5d871546bfe7ecce59e8d10685898ada0d38c471a8ea961bc"
+    }
+  },
+  "taskCreated": false,
+  "executorReady": false,
+  "enabledAuditTaskClosure": false,
+  "perfInheritanceClosure": false,
+  "bootstrapQualified": false,
+  "fullConstructorClosure": false,
+  "completeAllocationClosure": false,
+  "productionInstallation": false
+}

@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/rust_capsule_build.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Bind the deterministic selected-thread application remap together with the authenticated SDK host Cargo projection decision and source closure; all runtime qualification gates remain separate.",
+  "reviewReason": "Compose deterministic selected-thread remap with lazy Rust-only recipe resolution, preserving the exact45 authenticated host decision materials and complete selected source closure.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "0cb78ba0672e8f938b50d8266d271325ba6199c05e8de0b44e9f601f6fa06229"
+  "sha256": "8fbcb10eb7e7b2a2fc39834f0b94600fad2364c9b326bcc9db030418cf891b61"
 }

@@ -1,0 +1,101 @@
+{
+  "cases": [
+    "CleanupCloseSource.test_born_request_survives_close_but_closed_admission_cannot_claim_task",
+    "CleanupCloseSource.test_creator_error_and_success_release_after_last_request_access",
+    "CleanupCloseSource.test_interrupted_opener_and_result_copy_before_release",
+    "CleanupCloseSource.test_normal_close_and_expected_open_error_keep_authentic_drains",
+    "CleanupCloseSource.test_real_stop_flush_and_no_execution_claim",
+    "CleanupCloseSource.test_request_waits_for_real_returned_birth_and_irq_epilogue",
+    "CleanupCloseSource.test_stop_reference_and_no_task_access_after_stopped"
+  ],
+  "guards": {
+    "CleanupCloseSource.test_born_request_survives_close_but_closed_admission_cannot_claim_task": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:15b0b21455e8401a227ca5ca5012ffb445d6f39b13030a09ef5239791648ef9a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CleanupCloseSource.test_creator_error_and_success_release_after_last_request_access": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:15b0b21455e8401a227ca5ca5012ffb445d6f39b13030a09ef5239791648ef9a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CleanupCloseSource.test_interrupted_opener_and_result_copy_before_release": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:15b0b21455e8401a227ca5ca5012ffb445d6f39b13030a09ef5239791648ef9a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CleanupCloseSource.test_normal_close_and_expected_open_error_keep_authentic_drains": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:15b0b21455e8401a227ca5ca5012ffb445d6f39b13030a09ef5239791648ef9a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CleanupCloseSource.test_real_stop_flush_and_no_execution_claim": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:15b0b21455e8401a227ca5ca5012ffb445d6f39b13030a09ef5239791648ef9a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CleanupCloseSource.test_request_waits_for_real_returned_birth_and_irq_epilogue": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:15b0b21455e8401a227ca5ca5012ffb445d6f39b13030a09ef5239791648ef9a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CleanupCloseSource.test_stop_reference_and_no_task_access_after_stopped": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:15b0b21455e8401a227ca5ca5012ffb445d6f39b13030a09ef5239791648ef9a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_host_stream_kernel_cleanup_close.py",
+  "reviewReason": "Additive reviewed finite cleanup constructor source controls and one 24-object hosted geometry/atomic programme; original four-object recipe and all earlier cases retained; no kernel link/boot, consumer selection or runtime/native qualification.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

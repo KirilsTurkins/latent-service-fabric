@@ -1,0 +1,98 @@
+name: Stream maintained finite cleanup lifecycle source programme
+on:
+  push:
+    branches: ['feat/stream-kernel-cleanup-constructors-20261022']
+    paths:
+      - '.github/workflows/stream-kernel-cleanup-lifecycle.yml'
+      - 'tools/qualify_host_stream_kernel_cleanup_lifecycle.py'
+      - 'tools/host_stream_kernel_cleanup_*.py'
+      - 'tools/tests/test_host_stream_kernel_cleanup_*.py'
+      - 'tools/tests/fixtures/host_stream_kernel_cleanup_*.json'
+      - 'research/standard-outbound/linux-6.12-lineage/*cleanup*'
+permissions:
+  contents: read
+concurrency:
+  group: stream-kernel-cleanup-lifecycle-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  cleanup-lifecycle:
+    name: Finite actual layout and native atomic source controls
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - name: Install existing locked recipe dependencies
+        run: python3 -m pip install -r tools/requirements.lock
+      - name: Check new writer retirement and programme source controls
+        run: >-
+          python3 -B -m unittest
+          tools.tests.test_host_stream_kernel_cleanup_provider_queue
+          tools.tests.test_host_stream_kernel_cleanup_provider_nonfinal
+          tools.tests.test_host_stream_kernel_cleanup_exit_observer
+          tools.tests.test_host_stream_kernel_cleanup_programme -v
+      - name: Install normal upstream object prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes gcc make flex bison bc libelf-dev libssl-dev binutils
+      - name: Acquire exact official maintained source archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --proto '=https' --tlsv1.2 --max-time 180 \
+            https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.12.113.tar.xz \
+            --output "$RUNNER_TEMP/linux-6.12.113.tar.xz"
+          echo "e09b6727e5c521253f0d41694900b9c38fb7604db7d35238a8197aa9f7de2428  $RUNNER_TEMP/linux-6.12.113.tar.xz" | sha256sum --check --strict
+      - name: Run one finite source geometry and atomic programme
+        run: >-
+          python3 -B tools/qualify_host_stream_kernel_cleanup_lifecycle.py
+          --archive "$RUNNER_TEMP/linux-6.12.113.tar.xz"
+          --output "$RUNNER_TEMP/stream-kernel-cleanup-lifecycle"
+      - name: Retain bounded actual measurements and failure evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: stream-kernel-cleanup-lifecycle-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/stream-kernel-cleanup-lifecycle/qualification.json
+            ${{ runner.temp }}/stream-kernel-cleanup-lifecycle/FAILED.json
+            ${{ runner.temp }}/stream-kernel-cleanup-lifecycle/selection.json
+            ${{ runner.temp }}/stream-kernel-cleanup-lifecycle/commands.json
+            ${{ runner.temp }}/stream-kernel-cleanup-lifecycle/baseline.config
+            ${{ runner.temp }}/stream-kernel-cleanup-lifecycle/selected.config
+            ${{ runner.temp }}/stream-kernel-cleanup-lifecycle/source-fixture.config
+            ${{ runner.temp }}/stream-kernel-cleanup-lifecycle/atomic-control.c
+            ${{ runner.temp }}/stream-kernel-cleanup-lifecycle/atomic-control
+            ${{ runner.temp }}/stream-kernel-cleanup-lifecycle/geometry/*.bin
+            ${{ runner.temp }}/stream-kernel-cleanup-lifecycle/commands/logs/*.txt
+            ${{ runner.temp }}/stream-kernel-cleanup-lifecycle/objects/include/generated/autoconf.h
+            ${{ runner.temp }}/stream-kernel-cleanup-lifecycle/objects/net/factory.o
+            ${{ runner.temp }}/stream-kernel-cleanup-lifecycle/objects/kernel/fork.o
+            ${{ runner.temp }}/stream-kernel-cleanup-lifecycle/objects/kernel/kthread.o
+            ${{ runner.temp }}/stream-kernel-cleanup-lifecycle/objects/kernel/cred.o
+            ${{ runner.temp }}/stream-kernel-cleanup-lifecycle/objects/kernel/pid.o
+            ${{ runner.temp }}/stream-kernel-cleanup-lifecycle/objects/kernel/events/core.o
+            ${{ runner.temp }}/stream-kernel-cleanup-lifecycle/objects/kernel/auditsc.o
+            ${{ runner.temp }}/stream-kernel-cleanup-lifecycle/objects/kernel/cgroup/cgroup.o
+            ${{ runner.temp }}/stream-kernel-cleanup-lifecycle/objects/kernel/tracepoint.o
+            ${{ runner.temp }}/stream-kernel-cleanup-lifecycle/objects/kernel/kprobes.o
+            ${{ runner.temp }}/stream-kernel-cleanup-lifecycle/objects/kernel/module/kmod.o
+            ${{ runner.temp }}/stream-kernel-cleanup-lifecycle/objects/kernel/umh.o
+            ${{ runner.temp }}/stream-kernel-cleanup-lifecycle/objects/kernel/workqueue.o
+            ${{ runner.temp }}/stream-kernel-cleanup-lifecycle/objects/kernel/taskstats.o
+            ${{ runner.temp }}/stream-kernel-cleanup-lifecycle/objects/kernel/acct.o
+            ${{ runner.temp }}/stream-kernel-cleanup-lifecycle/objects/mm/vmalloc.o
+            ${{ runner.temp }}/stream-kernel-cleanup-lifecycle/objects/mm/mempolicy.o
+            ${{ runner.temp }}/stream-kernel-cleanup-lifecycle/objects/block/blk-ioc.o
+            ${{ runner.temp }}/stream-kernel-cleanup-lifecycle/objects/security/security.o
+            ${{ runner.temp }}/stream-kernel-cleanup-lifecycle/objects/security/selinux/hooks.o
+            ${{ runner.temp }}/stream-kernel-cleanup-lifecycle/objects/drivers/acpi/osl.o
+            ${{ runner.temp }}/stream-kernel-cleanup-lifecycle/objects/drivers/connector/cn_proc.o
+            ${{ runner.temp }}/stream-kernel-cleanup-lifecycle/objects/lib/idr.o
+            ${{ runner.temp }}/stream-kernel-cleanup-lifecycle/objects/lib/radix-tree.o
+          if-no-files-found: warn
+          retention-days: 3

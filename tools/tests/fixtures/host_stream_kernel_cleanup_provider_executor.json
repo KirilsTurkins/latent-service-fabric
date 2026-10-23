@@ -1,0 +1,100 @@
+{
+  "schemaVersion": "lsf.kernel-cleanup-provider-executor-source.v1",
+  "upstreamCommit": "7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+  "source": {
+    "kernel/workqueue.c": {
+      "bytes": 232477,
+      "sha256": "c11039f7fda141a8861e1ca9e8a9de64c75c04a3a4fdebfe7073171f3fa6d3ed",
+      "gitBlob": "d1ce5aeb012fbcaca825ff2458640964967d48f2",
+      "api": "https://api.github.com/repos/gregkh/linux/contents/kernel/workqueue.c?ref=7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+      "downloadUrl": "https://raw.githubusercontent.com/gregkh/linux/7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e/kernel/workqueue.c"
+    },
+    "kernel/workqueue_internal.h": {
+      "bytes": 2580,
+      "sha256": "43ed1f3000247d02b8c2999cb70e34c26e88bfc2fb795f024508cb92aac9d48e",
+      "gitBlob": "f6275944ada776814787ac5a1cfa01f891bfe934",
+      "api": "https://api.github.com/repos/gregkh/linux/contents/kernel/workqueue_internal.h?ref=7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+      "downloadUrl": "https://raw.githubusercontent.com/gregkh/linux/7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e/kernel/workqueue_internal.h"
+    },
+    "include/linux/workqueue.h": {
+      "bytes": 30844,
+      "sha256": "4b4bca77fe85b8e1b5f783ae41046358ba6c6565d6463e3228eb4b057e972546",
+      "gitBlob": "915af6ef4359ddf6579e661b0a3510f7abd7bf51",
+      "api": "https://api.github.com/repos/gregkh/linux/contents/include/linux/workqueue.h?ref=7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+      "downloadUrl": "https://raw.githubusercontent.com/gregkh/linux/7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e/include/linux/workqueue.h"
+    },
+    "drivers/acpi/osl.c": {
+      "bytes": 41382,
+      "sha256": "fcd2f82051c0328e373a45784054b1600679f89acfba0ebbc1602c205424aeef",
+      "gitBlob": "6537644faf381c61cec792958bf188a3d7ba11a6",
+      "api": "https://api.github.com/repos/gregkh/linux/contents/drivers/acpi/osl.c?ref=7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+      "downloadUrl": "https://raw.githubusercontent.com/gregkh/linux/7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e/drivers/acpi/osl.c"
+    },
+    "selected.config": {
+      "bytes": 143192,
+      "sha256": "b2bcccd5507f3f3a673690b660a2321870b57a3c77e72ce8532975f3c4752176"
+    }
+  },
+  "sections": {
+    "put_pwq": {
+      "source": "kernel/workqueue.c",
+      "prefix": "static void put_pwq(struct pool_workqueue *pwq)\n",
+      "text": "static void put_pwq(struct pool_workqueue *pwq)\n{\n\tlockdep_assert_held(&pwq->pool->lock);\n\tif (likely(--pwq->refcnt))\n\t\treturn;\n\t/*\n\t * @pwq can't be released under pool->lock, bounce to a dedicated\n\t * kthread_worker to avoid A-A deadlocks.\n\t */\n\tkthread_queue_work(pwq_release_worker, &pwq->release_work);\n}\n",
+      "bytes": 310,
+      "sha256": "5ce8f7a83df26930263e25f87ba2dcd305ce29b5174c65af14247845b2654f29"
+    },
+    "worker_thread": {
+      "source": "kernel/workqueue.c",
+      "prefix": "static int worker_thread(void *__worker)\n",
+      "text": "static int worker_thread(void *__worker)\n{\n\tstruct worker *worker = __worker;\n\tstruct worker_pool *pool = worker->pool;\n\n\t/* tell the scheduler that this is a workqueue worker */\n\tset_pf_worker(true);\nwoke_up:\n\traw_spin_lock_irq(&pool->lock);\n\n\t/* am I supposed to die? */\n\tif (unlikely(worker->flags & WORKER_DIE)) {\n\t\traw_spin_unlock_irq(&pool->lock);\n\t\tset_pf_worker(false);\n\t\t/*\n\t\t * The worker is dead and PF_WQ_WORKER is cleared, worker->pool\n\t\t * shouldn't be accessed, reset it to NULL in case otherwise.\n\t\t */\n\t\tworker->pool = NULL;\n\t\tida_free(&pool->worker_ida, worker->id);\n\t\treturn 0;\n\t}\n\n\tworker_leave_idle(worker);\nrecheck:\n\t/* no more worker necessary? */\n\tif (!need_more_worker(pool))\n\t\tgoto sleep;\n\n\t/* do we need to manage? */\n\tif (unlikely(!may_start_working(pool)) && manage_workers(worker))\n\t\tgoto recheck;\n\n\t/*\n\t * ->scheduled list can only be filled while a worker is\n\t * preparing to process a work or actually processing it.\n\t * Make sure nobody diddled with it while I was sleeping.\n\t */\n\tWARN_ON_ONCE(!list_empty(&worker->scheduled));\n\n\t/*\n\t * Finish PREP stage.  We're guaranteed to have at least one idle\n\t * worker or that someone else has already assumed the manager\n\t * role.  This is where @worker starts participating in concurrency\n\t * management if applicable and concurrency management is restored\n\t * after being rebound.  See rebind_workers() for details.\n\t */\n\tworker_clr_flags(worker, WORKER_PREP | WORKER_REBOUND);\n\n\tdo {\n\t\tstruct work_struct *work =\n\t\t\tlist_first_entry(&pool->worklist,\n\t\t\t\t\t struct work_struct, entry);\n\n\t\tif (assign_work(work, worker, NULL))\n\t\t\tprocess_scheduled_works(worker);\n\t} while (keep_working(pool));\n\n\tworker_set_flags(worker, WORKER_PREP);\nsleep:\n\t/*\n\t * pool->lock is held and there's no work to process and no need to\n\t * manage, sleep.  Workers are woken up only while holding\n\t * pool->lock or from local cpu, so setting the current state\n\t * before releasing pool->lock is enough to prevent losing any\n\t * event.\n\t */\n\tworker_enter_idle(worker);\n\t__set_current_state(TASK_IDLE);\n\traw_spin_unlock_irq(&pool->lock);\n\tschedule();\n\tgoto woke_up;\n}\n",
+      "bytes": 2121,
+      "sha256": "7a1af1ff39b3696cfb992c37a820e5a6a0bc1dd1a8e059ae32e76a060bd0fcbc"
+    },
+    "get_unbound_pool": {
+      "source": "kernel/workqueue.c",
+      "prefix": "static struct worker_pool *get_unbound_pool(",
+      "text": "static struct worker_pool *get_unbound_pool(const struct workqueue_attrs *attrs)\n{\n\tstruct wq_pod_type *pt = &wq_pod_types[WQ_AFFN_NUMA];\n\tu32 hash = wqattrs_hash(attrs);\n\tstruct worker_pool *pool;\n\tint pod, node = NUMA_NO_NODE;\n\n\tlockdep_assert_held(&wq_pool_mutex);\n\n\t/* do we already have a matching pool? */\n\thash_for_each_possible(unbound_pool_hash, pool, hash_node, hash) {\n\t\tif (wqattrs_equal(pool->attrs, attrs)) {\n\t\t\tpool->refcnt++;\n\t\t\treturn pool;\n\t\t}\n\t}\n\n\t/* If __pod_cpumask is contained inside a NUMA pod, that's our node */\n\tfor (pod = 0; pod < pt->nr_pods; pod++) {\n\t\tif (cpumask_subset(attrs->__pod_cpumask, pt->pod_cpus[pod])) {\n\t\t\tnode = pt->pod_node[pod];\n\t\t\tbreak;\n\t\t}\n\t}\n\n\t/* nope, create a new one */\n\tpool = kzalloc_node(sizeof(*pool), GFP_KERNEL, node);\n\tif (!pool || init_worker_pool(pool) < 0)\n\t\tgoto fail;\n\n\tpool->node = node;\n\tcopy_workqueue_attrs(pool->attrs, attrs);\n\twqattrs_clear_for_pool(pool->attrs);\n\n\tif (worker_pool_assign_id(pool) < 0)\n\t\tgoto fail;\n\n\t/* create and start the initial worker */\n\tif (wq_online && !create_worker(pool))\n\t\tgoto fail;\n\n\t/* install */\n\thash_add(unbound_pool_hash, &pool->hash_node, hash);\n\n\treturn pool;\nfail:\n\tif (pool)\n\t\tput_unbound_pool(pool);\n\treturn NULL;\n}\n",
+      "bytes": 1228,
+      "sha256": "bba9735961b9a54125c50fcee96234e703c4cf4602ea3f4b4ae6739aae5546be"
+    },
+    "apply_prepare": {
+      "source": "kernel/workqueue.c",
+      "prefix": "static struct apply_wqattrs_ctx *\napply_wqattrs_prepare(",
+      "text": "static struct apply_wqattrs_ctx *\napply_wqattrs_prepare(struct workqueue_struct *wq,\n\t\t      const struct workqueue_attrs *attrs,\n\t\t      const cpumask_var_t unbound_cpumask)\n{\n\tstruct apply_wqattrs_ctx *ctx;\n\tstruct workqueue_attrs *new_attrs;\n\tint cpu;\n\n\tlockdep_assert_held(&wq_pool_mutex);\n\n\tif (WARN_ON(attrs->affn_scope < 0 ||\n\t\t    attrs->affn_scope >= WQ_AFFN_NR_TYPES))\n\t\treturn ERR_PTR(-EINVAL);\n\n\tctx = kzalloc(struct_size(ctx, pwq_tbl, nr_cpu_ids), GFP_KERNEL);\n\n\tnew_attrs = alloc_workqueue_attrs();\n\tif (!ctx || !new_attrs)\n\t\tgoto out_free;\n\n\t/*\n\t * If something goes wrong during CPU up/down, we'll fall back to\n\t * the default pwq covering whole @attrs->cpumask.  Always create\n\t * it even if we don't use it immediately.\n\t */\n\tcopy_workqueue_attrs(new_attrs, attrs);\n\twqattrs_actualize_cpumask(new_attrs, unbound_cpumask);\n\tcpumask_copy(new_attrs->__pod_cpumask, new_attrs->cpumask);\n\tctx->dfl_pwq = alloc_unbound_pwq(wq, new_attrs);\n\tif (!ctx->dfl_pwq)\n\t\tgoto out_free;\n\n\tfor_each_possible_cpu(cpu) {\n\t\tif (new_attrs->ordered) {\n\t\t\tctx->dfl_pwq->refcnt++;\n\t\t\tctx->pwq_tbl[cpu] = ctx->dfl_pwq;\n\t\t} else {\n\t\t\twq_calc_pod_cpumask(new_attrs, cpu);\n\t\t\tctx->pwq_tbl[cpu] = alloc_unbound_pwq(wq, new_attrs);\n\t\t\tif (!ctx->pwq_tbl[cpu])\n\t\t\t\tgoto out_free;\n\t\t}\n\t}\n\n\t/* save the user configured attrs and sanitize it. */\n\tcopy_workqueue_attrs(new_attrs, attrs);\n\tcpumask_and(new_attrs->cpumask, new_attrs->cpumask, cpu_possible_mask);\n\tcpumask_copy(new_attrs->__pod_cpumask, new_attrs->cpumask);\n\tctx->attrs = new_attrs;\n\n\t/*\n\t * For initialized ordered workqueues, there should only be one pwq\n\t * (dfl_pwq). Set the plugged flag of ctx->dfl_pwq to suspend execution\n\t * of newly queued work items until execution of older work items in\n\t * the old pwq's have completed.\n\t */\n\tif ((wq->flags & __WQ_ORDERED) && !list_empty(&wq->pwqs))\n\t\tctx->dfl_pwq->plugged = true;\n\n\tctx->wq = wq;\n\treturn ctx;\n\nout_free:\n\tfree_workqueue_attrs(new_attrs);\n\tapply_wqattrs_cleanup(ctx);\n\treturn ERR_PTR(-ENOMEM);\n}\n",
+      "bytes": 2006,
+      "sha256": "ee917a3bb759230111196e4c9930ae4df45f2531d859ff3cbd8935d79c3ed14d"
+    }
+  },
+  "parentDerived": {
+    "net/factory.c": {
+      "bytes": 32720,
+      "sha256": "ef1b6675e187bb7f51f2aa4d45e8e14750ad57444c4b3018e11580591e2ead99"
+    },
+    "net/factory-device.c": {
+      "bytes": 9240,
+      "sha256": "e0b5ea42d906aa084145fc68bc01841f002c85b10de57963e4efdb6838436eba"
+    },
+    "net/device-prepaid.h": {
+      "bytes": 13444,
+      "sha256": "c253757dfe199e6e9e1ca4907c2071040f2b47b1d6cd4a0431528047d0a94631"
+    },
+    "kernel/workqueue.c": {
+      "bytes": 232831,
+      "sha256": "ae7e1eda36cb353cd894f59451841e859a4804bb860201b243e6c40242e4b518"
+    },
+    "drivers/acpi/osl.c": {
+      "bytes": 41723,
+      "sha256": "48eafe6d7ac695eac000eec18e53a6965847c9b11f00fe5b6bf26fb0dba9fb5b"
+    }
+  },
+  "providerCreated": false,
+  "taskCreated": false,
+  "queueMigrationExecuted": false,
+  "queueLifetimeRegistered": false,
+  "physicalRetirementQualified": false,
+  "constructorFunctionGuardWidened": false,
+  "bootstrapQualified": false,
+  "fullConstructorClosure": false,
+  "completeAllocationClosure": false,
+  "productionInstallation": false
+}

@@ -37,7 +37,7 @@ RECIPE = tuple(dict.fromkeys(('tools/compile_rust_owned_thread_application.py',
     'tools/toolchain-smoke/examples/tutorial_greeting/world.wit',
     'tools/rust_thread_object_graph.py', 'tools/rust_thread_callback_paths.py',
     'tools/rust_thread_canonical_results.py',
-    *builder.RECIPE, *standard.source_build_inputs(standard.THREAD), *fixture.RECIPE,
+    *builder.selected_recipe(), *standard.source_build_inputs(standard.THREAD), *fixture.RECIPE,
     *sdk_files(), *host_projection_inputs())))
 MAX_CORE = 8 * 1024 * 1024
 MAX_EXPANDED_SOURCE = 128 * 1024 * 1024

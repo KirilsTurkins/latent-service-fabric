@@ -1,0 +1,87 @@
+{
+  "schemaVersion": "lsf.kernel-cleanup-provider-nonfinal-source.v1",
+  "upstreamCommit": "7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+  "source": {
+    "drivers/base/core.c": {
+      "bytes": 149978,
+      "sha256": "421c6bb5c72073659d19a02108ded0400b015837737d0e1f98a04af830c784bb",
+      "gitBlob": "a6134a5e5e110d5876dda2868787d7b77572a657"
+    },
+    "lib/kobject.c": {
+      "bytes": 28433,
+      "sha256": "0161a3faaa770cf7a724f94773104a5ab33c5dbafe525729276360cd8120d4ab",
+      "gitBlob": "72fa20f405f1520a63dd50d9aa37f6609306eb3e"
+    },
+    "include/linux/kref.h": {
+      "bytes": 3155,
+      "sha256": "2b61168bda14afedf4a56f7688ddc29eff393ceb42001b0d21461e12600035e7",
+      "gitBlob": "d32e21a2538c292452db99b915b1bb6c3ab15e53"
+    },
+    "include/linux/refcount.h": {
+      "bytes": 12114,
+      "sha256": "0b8f96e34e9e2da4944f6fc2946cd3bac655b0ea65613bd43a04d8abe466cab3",
+      "gitBlob": "35f039ecb2725618ca098e3515c6e19e2aece3ee"
+    },
+    "lib/refcount.c": {
+      "bytes": 4884,
+      "sha256": "d35f23e0b0e7b5c1348009c7bb0dddfdd5826cb26d0fdb35ddef2ba19e34b1e8",
+      "gitBlob": "a207a8f22b3ca35890671e51c480266d89e4d8d6"
+    },
+    "include/acpi/acpi_bus.h": {
+      "bytes": 29941,
+      "sha256": "5155c7c72e435b83d30671c1aedf25b0c7a6883941c282114ec1857a61c0d0d1",
+      "gitBlob": "2aa34fcc10a157500f87e1de520fea436285f85a"
+    }
+  },
+  "sections": {
+    "put_device": {
+      "source": "drivers/base/core.c",
+      "text": "void put_device(struct device *dev)\n{\n\t/* might_sleep(); */\n\tif (dev)\n\t\tkobject_put(&dev->kobj);\n}\n",
+      "bytes": 99,
+      "sha256": "fa52af1f6386b55d9e93e3acce803bf25db84db23fcdd361e475ceeb63d48147"
+    },
+    "kobject_put": {
+      "source": "lib/kobject.c",
+      "text": "void kobject_put(struct kobject *kobj)\n{\n\tif (kobj) {\n\t\tif (!kobj->state_initialized)\n\t\t\tWARN(1, KERN_WARNING\n\t\t\t\t\"kobject: '%s' (%p): is not initialized, yet kobject_put() is being called.\\n\",\n\t\t\t     kobject_name(kobj), kobj);\n\t\tkref_put(&kobj->kref, kobject_release);\n\t}\n}\n",
+      "bytes": 276,
+      "sha256": "8cc537c41fe28ea0e0c3aec74440323cddda70661f77ca500f9377b2f5a0c679"
+    },
+    "kref_put": {
+      "source": "include/linux/kref.h",
+      "text": "static inline int kref_put(struct kref *kref, void (*release)(struct kref *kref))\n{\n\tif (refcount_dec_and_test(&kref->refcount)) {\n\t\trelease(kref);\n\t\treturn 1;\n\t}\n\treturn 0;\n}\n",
+      "bytes": 176,
+      "sha256": "ed6ef93d900633a271b3f8a78d65ab5a90581cc549d1a8f2331305c3637a4510"
+    },
+    "refcount_dec_not_one": {
+      "source": "lib/refcount.c",
+      "text": "bool refcount_dec_not_one(refcount_t *r)\n{\n\tunsigned int new, val = atomic_read(&r->refs);\n\n\tdo {\n\t\tif (unlikely(val == REFCOUNT_SATURATED))\n\t\t\treturn true;\n\n\t\tif (val == 1)\n\t\t\treturn false;\n\n\t\tnew = val - 1;\n\t\tif (new > val) {\n\t\t\tWARN_ONCE(new > val, \"refcount_t: underflow; use-after-free.\\n\");\n\t\t\treturn true;\n\t\t}\n\n\t} while (!atomic_try_cmpxchg_release(&r->refs, &val, new));\n\n\treturn true;\n}\n",
+      "bytes": 396,
+      "sha256": "d142cd31fb2a41f163c64977da0cdf15ff70fa2bca8f322732013ee5874687a4"
+    },
+    "acpi_dev_put": {
+      "source": "include/acpi/acpi_bus.h",
+      "text": "static inline void acpi_dev_put(struct acpi_device *adev)\n{\n\tif (adev)\n\t\tput_device(&adev->dev);\n}\n",
+      "bytes": 99,
+      "sha256": "30688997c18a2287a741f69b01e3a70359eb6dfcc4f2028f17520e2ff5646b9e"
+    }
+  },
+  "parentDerived": {
+    "net/factory-device-firmware.c": {
+      "bytes": 15752,
+      "sha256": "c7ba86cb360988134f78d7304f79a80cf1e618486d79aa94b355a1a577e54918"
+    },
+    "net/factory.c": {
+      "bytes": 33007,
+      "sha256": "30ff4b53b9043c8e1405e0eafdd5bbb46513ec296b7b9e4bb6f7828873fe73e2"
+    },
+    "include/net/lsf_stream_device_firmware.h": {
+      "bytes": 1640,
+      "sha256": "6d295c3f655985538c1c0822d7ed0c305e33d604457b7fdb31954d6060ced7f7"
+    }
+  },
+  "actualAtomicExecution": false,
+  "actualCompanionPut": false,
+  "providerQualified": false,
+  "nativeCapacityRefunded": false,
+  "productionInstallation": false
+}

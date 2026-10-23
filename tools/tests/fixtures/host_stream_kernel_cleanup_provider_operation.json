@@ -1,0 +1,64 @@
+{
+  "schemaVersion": "lsf.kernel-cleanup-provider-operation-source.v1",
+  "upstreamCommit": "7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+  "source": {
+    "kernel/workqueue.c": {
+      "bytes": 232477,
+      "sha256": "c11039f7fda141a8861e1ca9e8a9de64c75c04a3a4fdebfe7073171f3fa6d3ed",
+      "gitBlob": "d1ce5aeb012fbcaca825ff2458640964967d48f2",
+      "api": "https://api.github.com/repos/gregkh/linux/contents/kernel/workqueue.c?ref=7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+      "downloadUrl": "https://raw.githubusercontent.com/gregkh/linux/7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e/kernel/workqueue.c"
+    },
+    "kernel/workqueue_internal.h": {
+      "bytes": 2580,
+      "sha256": "43ed1f3000247d02b8c2999cb70e34c26e88bfc2fb795f024508cb92aac9d48e",
+      "gitBlob": "f6275944ada776814787ac5a1cfa01f891bfe934",
+      "api": "https://api.github.com/repos/gregkh/linux/contents/kernel/workqueue_internal.h?ref=7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+      "downloadUrl": "https://raw.githubusercontent.com/gregkh/linux/7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e/kernel/workqueue_internal.h"
+    },
+    "selected.config": {
+      "bytes": 143192,
+      "sha256": "b2bcccd5507f3f3a673690b660a2321870b57a3c77e72ce8532975f3c4752176"
+    }
+  },
+  "sections": {
+    "process_one_work": {
+      "source": "kernel/workqueue.c",
+      "prefix": "static void process_one_work(",
+      "text": "static void process_one_work(struct worker *worker, struct work_struct *work)\n__releases(&pool->lock)\n__acquires(&pool->lock)\n{\n\tstruct pool_workqueue *pwq = get_work_pwq(work);\n\tstruct worker_pool *pool = worker->pool;\n\tunsigned long work_data;\n\tint lockdep_start_depth, rcu_start_depth;\n\tbool bh_draining = pool->flags & POOL_BH_DRAINING;\n#ifdef CONFIG_LOCKDEP\n\t/*\n\t * It is permissible to free the struct work_struct from\n\t * inside the function that is called from it, this we need to\n\t * take into account for lockdep too.  To avoid bogus \"held\n\t * lock freed\" warnings as well as problems when looking into\n\t * work->lockdep_map, make a copy and use that here.\n\t */\n\tstruct lockdep_map lockdep_map;\n\n\tlockdep_copy_map(&lockdep_map, &work->lockdep_map);\n#endif\n\t/* ensure we're on the correct CPU */\n\tWARN_ON_ONCE(!(pool->flags & POOL_DISASSOCIATED) &&\n\t\t     raw_smp_processor_id() != pool->cpu);\n\n\t/* claim and dequeue */\n\tdebug_work_deactivate(work);\n\thash_add(pool->busy_hash, &worker->hentry, (unsigned long)work);\n\tworker->current_work = work;\n\tworker->current_func = work->func;\n\tworker->current_pwq = pwq;\n\tif (worker->task)\n\t\tworker->current_at = worker->task->se.sum_exec_runtime;\n\twork_data = *work_data_bits(work);\n\tworker->current_color = get_work_color(work_data);\n\n\t/*\n\t * Record wq name for cmdline and debug reporting, may get\n\t * overridden through set_worker_desc().\n\t */\n\tstrscpy(worker->desc, pwq->wq->name, WORKER_DESC_LEN);\n\n\tlist_del_init(&work->entry);\n\n\t/*\n\t * CPU intensive works don't participate in concurrency management.\n\t * They're the scheduler's responsibility.  This takes @worker out\n\t * of concurrency management and the next code block will chain\n\t * execution of the pending work items.\n\t */\n\tif (unlikely(pwq->wq->flags & WQ_CPU_INTENSIVE))\n\t\tworker_set_flags(worker, WORKER_CPU_INTENSIVE);\n\n\t/*\n\t * Kick @pool if necessary. It's always noop for per-cpu worker pools\n\t * since nr_running would always be >= 1 at this point. This is used to\n\t * chain execution of the pending work items for WORKER_NOT_RUNNING\n\t * workers such as the UNBOUND and CPU_INTENSIVE ones.\n\t */\n\tkick_pool(pool);\n\n\t/*\n\t * Record the last pool and clear PENDING which should be the last\n\t * update to @work.  Also, do this inside @pool->lock so that\n\t * PENDING and queued state changes happen together while IRQ is\n\t * disabled.\n\t */\n\tset_work_pool_and_clear_pending(work, pool->id, pool_offq_flags(pool));\n\n\tpwq->stats[PWQ_STAT_STARTED]++;\n\traw_spin_unlock_irq(&pool->lock);\n\n\trcu_start_depth = rcu_preempt_depth();\n\tlockdep_start_depth = lockdep_depth(current);\n\t/* see drain_dead_softirq_workfn() */\n\tif (!bh_draining)\n\t\tlock_map_acquire(pwq->wq->lockdep_map);\n\tlock_map_acquire(&lockdep_map);\n\t/*\n\t * Strictly speaking we should mark the invariant state without holding\n\t * any locks, that is, before these two lock_map_acquire()'s.\n\t *\n\t * However, that would result in:\n\t *\n\t *   A(W1)\n\t *   WFC(C)\n\t *\t\tA(W1)\n\t *\t\tC(C)\n\t *\n\t * Which would create W1->C->W1 dependencies, even though there is no\n\t * actual deadlock possible. There are two solutions, using a\n\t * read-recursive acquire on the work(queue) 'locks', but this will then\n\t * hit the lockdep limitation on recursive locks, or simply discard\n\t * these locks.\n\t *\n\t * AFAICT there is no possible deadlock scenario between the\n\t * flush_work() and complete() primitives (except for single-threaded\n\t * workqueues), so hiding them isn't a problem.\n\t */\n\tlockdep_invariant_state(true);\n\ttrace_workqueue_execute_start(work);\n\tworker->current_func(work);\n\t/*\n\t * While we must be careful to not use \"work\" after this, the trace\n\t * point will only record its address.\n\t */\n\ttrace_workqueue_execute_end(work, worker->current_func);\n\tpwq->stats[PWQ_STAT_COMPLETED]++;\n\tlock_map_release(&lockdep_map);\n\tif (!bh_draining)\n\t\tlock_map_release(pwq->wq->lockdep_map);\n\n\tif (unlikely((worker->task && in_atomic()) ||\n\t\t     lockdep_depth(current) != lockdep_start_depth ||\n\t\t     rcu_preempt_depth() != rcu_start_depth)) {\n\t\tpr_err(\"BUG: workqueue leaked atomic, lock or RCU: %s[%d]\\n\"\n\t\t       \"     preempt=0x%08x lock=%d->%d RCU=%d->%d workfn=%ps\\n\",\n\t\t       current->comm, task_pid_nr(current), preempt_count(),\n\t\t       lockdep_start_depth, lockdep_depth(current),\n\t\t       rcu_start_depth, rcu_preempt_depth(),\n\t\t       worker->current_func);\n\t\tdebug_show_held_locks(current);\n\t\tdump_stack();\n\t}\n\n\t/*\n\t * The following prevents a kworker from hogging CPU on !PREEMPTION\n\t * kernels, where a requeueing work item waiting for something to\n\t * happen could deadlock with stop_machine as such work item could\n\t * indefinitely requeue itself while all other CPUs are trapped in\n\t * stop_machine. At the same time, report a quiescent RCU state so\n\t * the same condition doesn't freeze RCU.\n\t */\n\tif (worker->task)\n\t\tcond_resched();\n\n\traw_spin_lock_irq(&pool->lock);\n\n\t/*\n\t * In addition to %WQ_CPU_INTENSIVE, @worker may also have been marked\n\t * CPU intensive by wq_worker_tick() if @work hogged CPU longer than\n\t * wq_cpu_intensive_thresh_us. Clear it.\n\t */\n\tworker_clr_flags(worker, WORKER_CPU_INTENSIVE);\n\n\t/* tag the worker for identification in schedule() */\n\tworker->last_func = worker->current_func;\n\n\t/* we're done with it, release */\n\thash_del(&worker->hentry);\n\tworker->current_work = NULL;\n\tworker->current_func = NULL;\n\tworker->current_pwq = NULL;\n\tworker->current_color = INT_MAX;\n\n\t/* must be the last step, see the function comment */\n\tpwq_dec_nr_in_flight(pwq, work_data);\n}\n",
+      "bytes": 5463,
+      "sha256": "ff28559561b543b3e70cd02b89ca4972db89369cd9e3a77419c3f1c419c3a3c9"
+    }
+  },
+  "parentDerived": {
+    "net/factory.c": {
+      "bytes": 32617,
+      "sha256": "2df8c97b384192c362f5194ada54880f12aabb54ead0f4b2105d09fd03196c7b"
+    },
+    "net/factory-device.c": {
+      "bytes": 9004,
+      "sha256": "65a42d815aa07c0355968d34c588e50c098cb672aa4eb17d398d1a1a75e6fe38"
+    },
+    "net/device-prepaid.h": {
+      "bytes": 13252,
+      "sha256": "980db733e8afb1f3ebf6607ea0989a6901290b131088107a0d145b5b971bf969"
+    },
+    "net/factory-cleanup-worker-operations.c": {
+      "bytes": 1629,
+      "sha256": "be8daff484fcf600a1821676b6d20401c8e48e6222ad4e8d77420eb79c10ff22"
+    },
+    "net/factory-device-firmware.c": {
+      "bytes": 15688,
+      "sha256": "11f812ae3be05ea652cc67db4280aaf5a7c317c7524c193451f9cd13f4a7a8cc"
+    }
+  },
+  "physicalRoleBound": false,
+  "dispatchExecuted": false,
+  "providerCreated": false,
+  "factoryCallsFullWorkerCreate": false,
+  "pendingConsumerCallsFullClone": false,
+  "bootstrapQualified": false,
+  "fullConstructorClosure": false,
+  "completeAllocationClosure": false,
+  "productionInstallation": false
+}

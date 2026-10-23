@@ -1,0 +1,96 @@
+{
+  "schemaVersion": "lsf.kernel-cleanup-provider-retirement-source.v1",
+  "upstreamCommit": "7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+  "source": {
+    "kernel/workqueue.c": {
+      "bytes": 232477,
+      "sha256": "c11039f7fda141a8861e1ca9e8a9de64c75c04a3a4fdebfe7073171f3fa6d3ed",
+      "gitBlob": "d1ce5aeb012fbcaca825ff2458640964967d48f2"
+    },
+    "kernel/kthread.c": {
+      "bytes": 43615,
+      "sha256": "1b2d9794c6a3f5c4eb1b1f9e1e3b01bd0bf98de4d5ee67fe24efd4aa749e662f",
+      "gitBlob": "9bb36897b6c62d46a2f7f7af51b86ff545e3eecf"
+    }
+  },
+  "sections": {
+    "reap_dying_workers": {
+      "source": "kernel/workqueue.c",
+      "text": "static void reap_dying_workers(struct list_head *cull_list)\n{\n\tstruct worker *worker, *tmp;\n\n\tlist_for_each_entry_safe(worker, tmp, cull_list, entry) {\n\t\tlist_del_init(&worker->entry);\n\t\tkthread_stop_put(worker->task);\n\t\tkfree(worker);\n\t}\n}\n",
+      "bytes": 241,
+      "sha256": "f97d97f8482ad5bbdaa69d65792a5325ad53b4e2dfbaa174cbc21ba9df3a53ab"
+    },
+    "free_workqueue_attrs": {
+      "source": "kernel/workqueue.c",
+      "text": "void free_workqueue_attrs(struct workqueue_attrs *attrs)\n{\n\tif (attrs) {\n\t\tfree_cpumask_var(attrs->cpumask);\n\t\tfree_cpumask_var(attrs->__pod_cpumask);\n\t\tkfree(attrs);\n\t}\n}\n",
+      "bytes": 172,
+      "sha256": "2c4215041b26cf0b1cbbbfff195d63cc4af6334120659056cc54b4dd15d1e3e2"
+    },
+    "rcu_free_pool": {
+      "source": "kernel/workqueue.c",
+      "text": "static void rcu_free_pool(struct rcu_head *rcu)\n{\n\tstruct worker_pool *pool = container_of(rcu, struct worker_pool, rcu);\n\n\tida_destroy(&pool->worker_ida);\n\tfree_workqueue_attrs(pool->attrs);\n\tkfree(pool);\n}\n",
+      "bytes": 208,
+      "sha256": "2e338f2a3281c7ee30f334cca17eaa2cfdddec344f4db1c5daf7cc2747ac68da"
+    },
+    "put_unbound_pool": {
+      "source": "kernel/workqueue.c",
+      "text": "static void put_unbound_pool(struct worker_pool *pool)\n{\n\tstruct worker *worker;\n\tLIST_HEAD(cull_list);\n\n\tlockdep_assert_held(&wq_pool_mutex);\n\n\tif (--pool->refcnt)\n\t\treturn;\n\n\t/* sanity checks */\n\tif (WARN_ON(!(pool->cpu < 0)) ||\n\t    WARN_ON(!list_empty(&pool->worklist)))\n\t\treturn;\n\n\t/* release id and unhash */\n\tif (pool->id >= 0)\n\t\tidr_remove(&worker_pool_idr, pool->id);\n\thash_del(&pool->hash_node);\n\n\t/*\n\t * Become the manager and destroy all workers.  This prevents\n\t * @pool's workers from blocking on attach_mutex.  We're the last\n\t * manager and @pool gets freed with the flag set.\n\t *\n\t * Having a concurrent manager is quite unlikely to happen as we can\n\t * only get here with\n\t *   pwq->refcnt == pool->refcnt == 0\n\t * which implies no work queued to the pool, which implies no worker can\n\t * become the manager. However a worker could have taken the role of\n\t * manager before the refcnts dropped to 0, since maybe_create_worker()\n\t * drops pool->lock\n\t */\n\twhile (true) {\n\t\trcuwait_wait_event(&manager_wait,\n\t\t\t\t   !(pool->flags & POOL_MANAGER_ACTIVE),\n\t\t\t\t   TASK_UNINTERRUPTIBLE);\n\n\t\tmutex_lock(&wq_pool_attach_mutex);\n\t\traw_spin_lock_irq(&pool->lock);\n\t\tif (!(pool->flags & POOL_MANAGER_ACTIVE)) {\n\t\t\tpool->flags |= POOL_MANAGER_ACTIVE;\n\t\t\tbreak;\n\t\t}\n\t\traw_spin_unlock_irq(&pool->lock);\n\t\tmutex_unlock(&wq_pool_attach_mutex);\n\t}\n\n\twhile ((worker = first_idle_worker(pool)))\n\t\tset_worker_dying(worker, &cull_list);\n\tWARN_ON(pool->nr_workers || pool->nr_idle);\n\traw_spin_unlock_irq(&pool->lock);\n\n\tdetach_dying_workers(&cull_list);\n\n\tmutex_unlock(&wq_pool_attach_mutex);\n\n\treap_dying_workers(&cull_list);\n\n\t/* shut down the timers */\n\tdel_timer_sync(&pool->idle_timer);\n\tcancel_work_sync(&pool->idle_cull_work);\n\tdel_timer_sync(&pool->mayday_timer);\n\n\t/* RCU protected to allow dereferences from get_work_pool() */\n\tcall_rcu(&pool->rcu, rcu_free_pool);\n}\n",
+      "bytes": 1872,
+      "sha256": "55657004d5456150e7933f17672eae9ff5bb45e09c02d532517995960c6d9b1c"
+    },
+    "pwq_release_workfn": {
+      "source": "kernel/workqueue.c",
+      "text": "static void pwq_release_workfn(struct kthread_work *work)\n{\n\tstruct pool_workqueue *pwq = container_of(work, struct pool_workqueue,\n\t\t\t\t\t\t  release_work);\n\tstruct workqueue_struct *wq = pwq->wq;\n\tstruct worker_pool *pool = pwq->pool;\n\tbool is_last = false;\n\n\t/*\n\t * When @pwq is not linked, it doesn't hold any reference to the\n\t * @wq, and @wq is invalid to access.\n\t */\n\tif (!list_empty(&pwq->pwqs_node)) {\n\t\tmutex_lock(&wq->mutex);\n\t\tlist_del_rcu(&pwq->pwqs_node);\n\t\tis_last = list_empty(&wq->pwqs);\n\n\t\t/*\n\t\t * For ordered workqueue with a plugged dfl_pwq, restart it now.\n\t\t */\n\t\tif (!is_last && (wq->flags & __WQ_ORDERED))\n\t\t\tunplug_oldest_pwq(wq);\n\n\t\tmutex_unlock(&wq->mutex);\n\t}\n\n\tif (wq->flags & WQ_UNBOUND) {\n\t\tmutex_lock(&wq_pool_mutex);\n\t\tput_unbound_pool(pool);\n\t\tmutex_unlock(&wq_pool_mutex);\n\t}\n\n\tif (!list_empty(&pwq->pending_node)) {\n\t\tstruct wq_node_nr_active *nna =\n\t\t\twq_node_nr_active(pwq->wq, pwq->pool->node);\n\n\t\traw_spin_lock_irq(&nna->lock);\n\t\tlist_del_init(&pwq->pending_node);\n\t\traw_spin_unlock_irq(&nna->lock);\n\t}\n\n\tkfree_rcu(pwq, rcu);\n\n\t/*\n\t * If we're the last pwq going away, @wq is already dead and no one\n\t * is gonna access it anymore.  Schedule RCU free.\n\t */\n\tif (is_last) {\n\t\twq_unregister_lockdep(wq);\n\t\tcall_rcu(&wq->rcu, rcu_free_wq);\n\t}\n}\n",
+      "bytes": 1280,
+      "sha256": "2dc584b4afef77273aa6fa6452c34c260de198a9a4c54628f66dbebbab61a350"
+    },
+    "put_pwq": {
+      "source": "kernel/workqueue.c",
+      "text": "static void put_pwq(struct pool_workqueue *pwq)\n{\n\tlockdep_assert_held(&pwq->pool->lock);\n\tif (likely(--pwq->refcnt))\n\t\treturn;\n\t/*\n\t * @pwq can't be released under pool->lock, bounce to a dedicated\n\t * kthread_worker to avoid A-A deadlocks.\n\t */\n\tkthread_queue_work(pwq_release_worker, &pwq->release_work);\n}\n",
+      "bytes": 310,
+      "sha256": "5ce8f7a83df26930263e25f87ba2dcd305ce29b5174c65af14247845b2654f29"
+    },
+    "kthread_worker_fn": {
+      "source": "kernel/kthread.c",
+      "text": "int kthread_worker_fn(void *worker_ptr)\n{\n\tstruct kthread_worker *worker = worker_ptr;\n\tstruct kthread_work *work;\n\n\t/*\n\t * FIXME: Update the check and remove the assignment when all kthread\n\t * worker users are created using kthread_create_worker*() functions.\n\t */\n\tWARN_ON(worker->task && worker->task != current);\n\tworker->task = current;\n\n\tif (worker->flags & KTW_FREEZABLE)\n\t\tset_freezable();\n\nrepeat:\n\tset_current_state(TASK_INTERRUPTIBLE);\t/* mb paired w/ kthread_stop */\n\n\tif (kthread_should_stop()) {\n\t\t__set_current_state(TASK_RUNNING);\n\t\traw_spin_lock_irq(&worker->lock);\n\t\tworker->task = NULL;\n\t\traw_spin_unlock_irq(&worker->lock);\n\t\treturn 0;\n\t}\n\n\twork = NULL;\n\traw_spin_lock_irq(&worker->lock);\n\tif (!list_empty(&worker->work_list)) {\n\t\twork = list_first_entry(&worker->work_list,\n\t\t\t\t\tstruct kthread_work, node);\n\t\tlist_del_init(&work->node);\n\t}\n\tworker->current_work = work;\n\traw_spin_unlock_irq(&worker->lock);\n\n\tif (work) {\n\t\tkthread_work_func_t func = work->func;\n\t\t__set_current_state(TASK_RUNNING);\n\t\ttrace_sched_kthread_work_execute_start(work);\n\t\twork->func(work);\n\t\t/*\n\t\t * Avoid dereferencing work after this point.  The trace\n\t\t * event only cares about the address.\n\t\t */\n\t\ttrace_sched_kthread_work_execute_end(work, func);\n\t} else if (!freezing(current)) {\n\t\tschedule();\n\t} else {\n\t\t/*\n\t\t * Handle the case where the current remains\n\t\t * TASK_INTERRUPTIBLE. try_to_freeze() expects\n\t\t * the current to be TASK_RUNNING.\n\t\t */\n\t\t__set_current_state(TASK_RUNNING);\n\t}\n\n\ttry_to_freeze();\n\tcond_resched();\n\tgoto repeat;\n}\n",
+      "bytes": 1546,
+      "sha256": "960946b5cb9c08863c9d1f7586ec4e291f96ddce0e5e9705c68794356edd28b8"
+    }
+  },
+  "parentDerived": {
+    "include/net/lsf_stream_cleanup_provider_executor.h": {
+      "bytes": 2480,
+      "sha256": "8f9ce629ae58e712a00c809ba6f4bf0843bde9ce6584111117b86bcba27df9e7"
+    },
+    "net/factory-device.c": {
+      "bytes": 9293,
+      "sha256": "c2c41ddce07560a7d4e8b1e2962da3871205f9ae6abe8ef8620d3b8a4458285c"
+    },
+    "net/factory.c": {
+      "bytes": 32914,
+      "sha256": "edf9db98c5f3af9807de452a4036fa40d5516ad58d2dad4a10b6e9e13bc37c07"
+    },
+    "net/factory-cleanup-provider-initialize.c": {
+      "bytes": 4937,
+      "sha256": "9dbe70147807352fbd57662f6d4c9d14c2c3ae2fa85edffe78367794138c0271"
+    },
+    "net/factory-cleanup-close.c": {
+      "bytes": 10700,
+      "sha256": "0296e463ca28594a8516f2b06b0d4f2cc42a90ea20fc78e675f7f44a72bf0925"
+    },
+    "kernel/workqueue.c": {
+      "bytes": 233591,
+      "sha256": "58c552b7d507e95906088968530b49fb1827ccc5e2e3c202a6c0ed2e88de47af"
+    },
+    "kernel/lsf-cleanup-provider-executor.c": {
+      "bytes": 22110,
+      "sha256": "ac18125832a6341ac75c4e6ac63887c28806373fe1406e08f672871e003125fe"
+    }
+  },
+  "taskCreated": false,
+  "queueLifetimeRegistered": false,
+  "physicalRetirementQualified": false,
+  "actualRcuExecution": false,
+  "fullConstructorClosure": false,
+  "productionInstallation": false
+}
