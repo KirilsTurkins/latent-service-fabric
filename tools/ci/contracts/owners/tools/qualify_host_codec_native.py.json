@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_host_codec_native.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve188 exact controls and append5 authentic Rust graph and real Wasmtime dispatch controls without rebuilding the captured guest",
+  "reviewReason": "Bind the reviewed and actually passed193-control producer to its committed LF bytes; the prior fingerprint described only a Windows CRLF worktree, without changing source or coverage.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "fe7a40d306c6a67aa511fc679e0322f70965e570aad65f35500a188b13a2fd5d"
+  "sha256": "165497353226b386a9cc66e198b06e556248b672a91edbdba52c040b56603d5c"
 }
