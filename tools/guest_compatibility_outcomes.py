@@ -67,6 +67,22 @@ def from_build(source, descriptor, receipt):
             if material['name'] == 'automatic-compiler-patches':
                 raw = paths.read(source, str(parent / 'compiler-patches.json').replace('\\', '/'), 4 * 1024 * 1024)
                 require(digest(raw) == material['digest'], 'compatibility-outcomes-stale-patch')
+        from tools.guest_compatibility_context_build import JAVA_COMPILER_PATCH_NAMES, java_compiler_materials
+        if any(row['kind'] == 'patch' and row['name'] in JAVA_COMPILER_PATCH_NAMES
+               for row in selected['materials']):
+            bindings = [row for row in selected['materials'] if row['name'] == 'generated-bindings']
+            raw = paths.read(source, str(parent / 'bindings.json').replace('\\', '/'), 4 * 1024 * 1024)
+            require(len(bindings) == 1 and digest(raw) == bindings[0]['digest'],
+                    'compatibility-outcomes-stale-java-compiler')
+            recipes = [row for row in selected['materials'] if row['name'] == 'build-recipe']
+            recipe = paths.read(source, str(parent / 'recipe-inputs.json').replace('\\', '/'), 8 * 1024 * 1024)
+            require(len(recipes) == 1 and digest(recipe) == recipes[0]['digest'],
+                    'compatibility-outcomes-stale-java-compiler-recipe')
+            expected = java_compiler_materials(decode(raw, 4 * 1024 * 1024),
+                runtime['profile'], recipes[0]['digest'])
+            require(selected['language'] == 'java' and len(expected) == 4
+                    and all(row in selected['materials'] for row in expected),
+                    'compatibility-outcomes-detached-java-compiler')
         capture.context, capture.context_state = selected, 'observed'
     except (ValueError, OSError, TypeError, KeyError):
         capture.context_state = 'invalid-present'
