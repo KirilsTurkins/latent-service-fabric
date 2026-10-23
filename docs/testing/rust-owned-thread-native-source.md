@@ -39,3 +39,15 @@ the production private-dispatch emitter. Its six cases include a genuine Source
 fallback and unauthorized pointer/table traps. A native build or these tiny
 mechanism outcomes do not establish ordinary Rust guest progress, signed
 runtime qualification, checkpoints or completion of #743/#689 AC3.
+
+The native programme actually passed at
+[`b422af24d86344ac7abb8b8fa56c3782aab63915`](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39884205952).
+Its sole artifact, `12472447074`, is 70,987,235 compressed bytes with SHA-256
+`5a4c0f0cc2ebf8f307ad7d657323ed4c53afc61cd9bb2bc318d564e9b23a4e58`.
+Independent retained verification checked the complete 191-file archive/CRC,
+all 3,700 original Git source inputs (33,785,427 bytes), all 150 auxiliary
+materials, 91 exact successful command records, all 182 log-stream hashes,
+the exact listed/passing 193 cases and all five emitted product identities.
+The additive `rust_thread_native_products.py` reader freezes that completed
+origin and retains the historical 188-control reader unchanged. Neither
+receipt records a signed Rust guest invocation.
