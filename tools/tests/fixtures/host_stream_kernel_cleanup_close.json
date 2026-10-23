@@ -1,0 +1,95 @@
+{
+  "schemaVersion": "lsf.kernel-cleanup-close-source.v1",
+  "upstreamCommit": "7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+  "source": {
+    "kernel/kthread.c": {
+      "bytes": 43615,
+      "sha256": "1b2d9794c6a3f5c4eb1b1f9e1e3b01bd0bf98de4d5ee67fe24efd4aa749e662f"
+    }
+  },
+  "sections": {
+    "destroy_worker": {
+      "source": "kernel/kthread.c",
+      "prefix": "void kthread_destroy_worker(",
+      "text": "void kthread_destroy_worker(struct kthread_worker *worker)\n{\n\tstruct task_struct *task;\n\n\ttask = worker->task;\n\tif (WARN_ON(!task))\n\t\treturn;\n\n\tkthread_flush_worker(worker);\n\tkthread_stop(task);\n\tWARN_ON(!list_empty(&worker->delayed_work_list));\n\tWARN_ON(!list_empty(&worker->work_list));\n\tkfree(worker);\n}\n",
+      "bytes": 307,
+      "sha256": "2e619f9e85025ac76dbc3cbfea90a9265222d127bd7b7ac80d42b356f23f5823"
+    },
+    "flush_worker": {
+      "source": "kernel/kthread.c",
+      "prefix": "void kthread_flush_worker(",
+      "text": "void kthread_flush_worker(struct kthread_worker *worker)\n{\n\tstruct kthread_flush_work fwork = {\n\t\tKTHREAD_WORK_INIT(fwork.work, kthread_flush_work_fn),\n\t\tCOMPLETION_INITIALIZER_ONSTACK(fwork.done),\n\t};\n\n\tkthread_queue_work(worker, &fwork.work);\n\twait_for_completion(&fwork.done);\n}\n",
+      "bytes": 282,
+      "sha256": "b3efc69596975c2ca2fa9a52f76aeb7889e4af994755f584e1047502ddd3efee"
+    },
+    "stop": {
+      "source": "kernel/kthread.c",
+      "prefix": "int kthread_stop(",
+      "text": "int kthread_stop(struct task_struct *k)\n{\n\tstruct kthread *kthread;\n\tint ret;\n\n\ttrace_sched_kthread_stop(k);\n\n\tget_task_struct(k);\n\tkthread = to_kthread(k);\n\tset_bit(KTHREAD_SHOULD_STOP, &kthread->flags);\n\tkthread_unpark(k);\n\tset_tsk_thread_flag(k, TIF_NOTIFY_SIGNAL);\n\twake_up_process(k);\n\twait_for_completion(&kthread->exited);\n\tret = kthread->result;\n\tput_task_struct(k);\n\n\ttrace_sched_kthread_stop_ret(ret);\n\treturn ret;\n}\n",
+      "bytes": 427,
+      "sha256": "7d6e106e9168fc433520305d905d376ade49485313d22afb944eed51979c0060"
+    }
+  },
+  "parentDerived": {
+    "net/factory.c": {
+      "bytes": 32564,
+      "sha256": "10c954c0b76df4f0a2522e5080bb3854c8b4bd9f94011d724cc4a7f3ef0b64f0"
+    },
+    "net/factory-device.c": {
+      "bytes": 8917,
+      "sha256": "22a2e6f279732fc313f8ab2ee5c0ba3155dd0d1c25c2218eb984367fa7fcc153"
+    },
+    "net/factory-cleanup-task.c": {
+      "bytes": 7845,
+      "sha256": "ae39d552e786e8df1c8bb18d46b238a3e66d8ab7c48a108f9c7eeb2d660a29f5"
+    },
+    "kernel/kthread.c": {
+      "bytes": 45847,
+      "sha256": "e6370490721fdccbc55e8ae8001b2ed52c13e016c85dd5a3273bcd81613d9ea3"
+    },
+    "kernel/lsf-cleanup-association.c": {
+      "bytes": 2784,
+      "sha256": "3be098202e3bc9971fe14b8931cda32aeb91b5f37ca2dcf099f0be0d533c3c37"
+    },
+    "kernel/lsf-cleanup-clone-args.c": {
+      "bytes": 2991,
+      "sha256": "74f00b0d293ebd1fddf1c4f98031cef2c515f6b09e73fc70249e66726d45cd65"
+    },
+    "net/factory-cleanup-clone.c": {
+      "bytes": 1607,
+      "sha256": "07daf500cce62c1890cc981d9d0eb11fa5a42771950f5ec9c8c66ffb6a2e2bb1"
+    }
+  },
+  "taskCreated": false,
+  "executorReady": false,
+  "factoryCallsFullWorkerCreate": false,
+  "pendingConsumerCallsFullClone": false,
+  "actualWorkerStop": false,
+  "actualIrqExecution": false,
+  "actualRcuExecution": false,
+  "observerClosure": false,
+  "bootstrapQualified": false,
+  "fullConstructorClosure": false,
+  "completeAllocationClosure": false,
+  "productionInstallation": false,
+  "parentSections": {
+    "worker_create": {
+      "source": "kernel/lsf-cleanup-association.c",
+      "text": "int lsf_prepaid_cleanup_worker_create_full(void)\n{\n    DECLARE_COMPLETION_ONSTACK(done);\n    struct lsf_cleanup_request *owned;\n    struct lsf_cleanup_task_source source;\n    struct task_struct *task;\n    unsigned long task_bytes, alignment;\n    void *address;\n    int error;\n    /* Do not silently omit enabled allocation/lock instrumentation. Its\n     * private creation path is an explicit remaining profile boundary. */\n    if (IS_ENABLED(CONFIG_DEBUG_LOCK_ALLOC))\n        return -EOPNOTSUPP;\n    error = lsf_prepaid_cleanup_task_geometry(&task_bytes, &alignment);\n    if (error)\n        return error;\n    error = lsf_factory_cleanup_task_reserve(sizeof(*owned), task_bytes, alignment,\n        &source, &address);\n    if (error)\n        return error;\n    owned = address;\n    owned->source = source;\n    __kthread_init_worker(&owned->worker, \"lsf/firmware-cleanup\", &owned->lock_key);\n    memcpy(owned->name, \"lsf/firmware-cleanup\", sizeof(owned->name));\n    owned->create.full_name = owned->name;\n    owned->create.threadfn = kthread_worker_fn;\n    owned->create.data = &owned->worker;\n    owned->create.node = NUMA_NO_NODE;\n    owned->create.done = &done;\n    spin_lock(&kthread_create_lock);\n    if (lsf_cleanup_pending) {\n        spin_unlock(&kthread_create_lock);\n        return -EBUSY;\n    }\n    WRITE_ONCE(lsf_cleanup_pending, owned);\n    spin_unlock(&kthread_create_lock);\n    wake_up_process(kthreadd_task);\n    /* Preserve the actual original create/complete ownership handshake.\n     * Interrupting the opener never releases or reuses pending request memory. */\n    if (unlikely(wait_for_completion_killable(&done))) {\n        if (xchg(&owned->create.done, NULL))\n            return -EINTR;\n        wait_for_completion(&done);\n    }\n    task = owned->create.result;\n    if (IS_ERR(task))\n        return PTR_ERR(task);\n    /* The REAL running entry completed this result. Bind only its\n     * actual born Task to the already-charged original worker. The\n     * full pending consumer remains disconnected until all active\n     * observer/bootstrap gates are closed; no executor is claimed. */\n    if (!lsf_factory_cleanup_worker_associate(source, owned, &owned->worker, task))\n        return -EIO;\n    wake_up_process(task);\n    return 0;\n}\n",
+      "bytes": 2254,
+      "sha256": "1d4d83e7a0d194cbb9aefe3d20175bc389733c775505ab0a832bb6852113816e"
+    },
+    "factory_open": {
+      "source": "net/factory.c",
+      "text": "static int lsf_factory_open(struct inode *inode, struct file *file)\n{\n    int error = -EOPNOTSUPP;\n    (void)inode;\n    /* Check BEFORE any candidate backing allocation or reference ownership.\n     * Root credentials alone cannot assert closure or activate this backend. */\n    if (!lsf_factory_selected_consumer())\n        return error;\n    if (lsf_prepaid_cleanup_irq_bootstrap_bytes() >\n        LSF_BOOTSTRAP_CEILING - sizeof(factory) - sizeof(lsf_device_uevent_taps) -\n            LSF_BACKING_BYTES - 2u * sizeof(void *))\n        return -EOPNOTSUPP;\n    if (!ns_capable(&init_user_ns, CAP_SYS_ADMIN))\n        return -EPERM;\n    if (!current->nsproxy || current->nsproxy->net_ns != &init_net)\n        return -EOPNOTSUPP;\n    mutex_lock(&factory_lock);\n    if (factory.opened || READ_ONCE(factory.uncertain)) {\n        error = -EBUSY;\n        goto out;\n    }\n    error = lsf_factory_device_uevent_bank_enter();\n    if (error)\n        goto out;\n    /* Never alloc_pages_exact: its transient rounded allocation could exceed\n     * the charged extent. No retry, lower-order or generic allocator fallback. */\n    factory.pages = alloc_pages(GFP_KERNEL | __GFP_ZERO | __GFP_NORETRY,\n                                LSF_BACKING_ORDER);\n    if (!factory.pages) {\n        lsf_factory_device_uevent_bank_allocation_failed();\n        error = -ENOMEM;\n        goto out;\n    }\n    if (!lsf_prepaid_initialize(&factory.pool)) {\n        WRITE_ONCE(factory.uncertain, 1);\n        goto out;\n    }\n    factory.mm = current->mm;\n    mmgrab(factory.mm);\n    factory.tgid = get_pid(task_tgid(current));\n    factory.cred = get_current_cred();\n    factory.net = get_net(current->nsproxy->net_ns);\n    factory.opened = 1;\n    error = lsf_factory_device_initialize();\n    if (error)\n        goto out;\n    error = lsf_prepaid_cleanup_worker_create();\n    if (error) {\n        WRITE_ONCE(factory.uncertain, 1);\n        goto out;\n    }\n    file->private_data = &factory;\n    error = 0;\nout:\n    mutex_unlock(&factory_lock);\n    return error;\n}\n",
+      "bytes": 2019,
+      "sha256": "892a7f08853fae4c42f9cc7542b68d61cac3a0b393677586d81691801fddbe0a"
+    },
+    "factory_release": {
+      "source": "net/factory.c",
+      "text": "static int lsf_factory_release(struct inode *inode, struct file *file)\n{\n    unsigned int i;\n    unsigned long flags;\n    (void)inode;\n    (void)file;\n    mutex_lock(&factory_lock);\n    spin_lock_irqsave(&pool_lock, flags);\n    factory.pool.stopped = 1;\n    WRITE_ONCE(factory.uncertain, 1);\n    for (i = 0; i < LSF_FACTORY_CONTEXTS; ++i)\n        factory.pool.contexts[i].closed = 1;\n    if (factory.device)\n        (void)lsf_device_close(&factory.pool, factory.device->key);\n    spin_unlock_irqrestore(&pool_lock, flags);\n    /* A finite scan detaches only this original context's published cache\n     * births under the original cache lock. Real callbacks still own them.\n     * Genuine late descendants may be born after this scan; they stay charged\n     * and cannot make this an acknowledgement of complete retirement. */\n    for (i = 0; i < LSF_FACTORY_CONTEXTS; ++i) {\n        lsf_prepaid_netport_drain(&factory.contexts[i]);\n        lsf_prepaid_sidcache_drain(&factory.contexts[i]);\n    }\n#ifdef LSF_STREAM_AVC_SOURCE\n    for (i = 0; i < LSF_FACTORY_CONTEXTS; ++i)\n        lsf_prepaid_avc_drain(&factory.contexts[i]);\n#endif\n#ifdef LSF_STREAM_ROUTE_CACHE_SOURCE\n    for (i = 0; i < LSF_FACTORY_CONTEXTS; ++i)\n        lsf_prepaid_route_cache_drain(&factory.contexts[i]);\n#endif\n    lsf_prepaid_device_sidcache_drain();\n    lsf_prepaid_cleanup_sidcache_drain();\n#ifdef LSF_STREAM_AVC_SOURCE\n    lsf_prepaid_device_avc_drain();\n    lsf_prepaid_cleanup_avc_drain();\n#endif\n    /* Device cache scans, like application scans, leave actual RCU\n     * callbacks and any legitimate late descendants charged. No single\n     * pass is complete retirement or an acknowledgement of backing. */\n    /* Closing a descriptor is not final-free. No __free_pages, object release,\n     * owner recycling, reference refund or reopen is justified here. Original\n     * node backing and occupancy must stay in bounded native quarantine. */\n    mutex_unlock(&factory_lock);\n    return 0;\n}\n",
+      "bytes": 1974,
+      "sha256": "b49311ead94680da59b0b62a36053fad5eed9fcd1fbcd467fc0c8e50ab3330df"
+    }
+  }
+}

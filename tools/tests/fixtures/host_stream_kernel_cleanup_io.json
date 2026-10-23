@@ -1,0 +1,87 @@
+{
+  "schemaVersion": "lsf.kernel-cleanup-io-source.v1",
+  "upstreamCommit": "7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+  "sourceProtocol": "exact-official-upstream-git-blobs-plus-actual-selected-config",
+  "source": {
+    "block/blk-ioc.c": {
+      "bytes": 10664,
+      "sha256": "96626dfe781ce2361dda237defc44302ce423baffa4a1188db06d604f0e7d45f",
+      "gitBlob": "25dd4db11121bf5490fb0be64dc9681a6983af29",
+      "api": "https://api.github.com/repos/gregkh/linux/contents/block/blk-ioc.c?ref=7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+      "downloadUrl": "https://raw.githubusercontent.com/gregkh/linux/7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e/block/blk-ioc.c"
+    },
+    "include/linux/iocontext.h": {
+      "bytes": 4255,
+      "sha256": "42fee24cedeab234b602a3b1c8905885ff765f2ae356167a72ae537567b8d3e5",
+      "gitBlob": "14f7eaf1b4437c4db64218f6720be961db09cc25",
+      "api": "https://api.github.com/repos/gregkh/linux/contents/include/linux/iocontext.h?ref=7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+      "downloadUrl": "https://raw.githubusercontent.com/gregkh/linux/7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e/include/linux/iocontext.h"
+    },
+    "selected.config": {
+      "bytes": 143192,
+      "sha256": "b2bcccd5507f3f3a673690b660a2321870b57a3c77e72ce8532975f3c4752176",
+      "artifactSource": "0694cb4092c76c2bbb65546bd20acb6e09a17707",
+      "runId": 39735038465,
+      "artifactId": 12406663268
+    }
+  },
+  "sections": {
+    "alloc_io_context": {
+      "source": "block/blk-ioc.c",
+      "text": "static struct io_context *alloc_io_context(gfp_t gfp_flags, int node)\n{\n\tstruct io_context *ioc;\n\n\tioc = kmem_cache_alloc_node(iocontext_cachep, gfp_flags | __GFP_ZERO,\n\t\t\t\t    node);\n\tif (unlikely(!ioc))\n\t\treturn NULL;\n\n\tatomic_long_set(&ioc->refcount, 1);\n\tatomic_set(&ioc->active_ref, 1);\n#ifdef CONFIG_BLK_ICQ\n\tspin_lock_init(&ioc->lock);\n\tINIT_RADIX_TREE(&ioc->icq_tree, GFP_ATOMIC);\n\tINIT_HLIST_HEAD(&ioc->icq_list);\n\tINIT_WORK(&ioc->release_work, ioc_release_fn);\n#endif\n\tioc->ioprio = IOPRIO_DEFAULT;\n\n\treturn ioc;\n}\n",
+      "bytes": 525,
+      "sha256": "a97c2d4447ffc83c8d88a53ca9698fd0fab7303567150d2271e15a7d46f7747c"
+    },
+    "copy_io": {
+      "source": "block/blk-ioc.c",
+      "text": "int __copy_io(unsigned long clone_flags, struct task_struct *tsk)\n{\n\tstruct io_context *ioc = current->io_context;\n\n\t/*\n\t * Share io context with parent, if CLONE_IO is set\n\t */\n\tif (clone_flags & CLONE_IO) {\n\t\tatomic_inc(&ioc->active_ref);\n\t\ttsk->io_context = ioc;\n\t} else if (ioprio_valid(ioc->ioprio)) {\n\t\ttsk->io_context = alloc_io_context(GFP_KERNEL, NUMA_NO_NODE);\n\t\tif (!tsk->io_context)\n\t\t\treturn -ENOMEM;\n\t\ttsk->io_context->ioprio = ioc->ioprio;\n\t}\n\n\treturn 0;\n}\n",
+      "bytes": 472,
+      "sha256": "6d987eb4fb767fb50090f9b1298eba7c722f1fca01fa90cad29bc490dc1529fc"
+    },
+    "put_io_context": {
+      "source": "block/blk-ioc.c",
+      "text": "void put_io_context(struct io_context *ioc)\n{\n\tBUG_ON(atomic_long_read(&ioc->refcount) <= 0);\n\tif (atomic_long_dec_and_test(&ioc->refcount) && !ioc_delay_free(ioc))\n\t\tkmem_cache_free(iocontext_cachep, ioc);\n}\n",
+      "bytes": 209,
+      "sha256": "caeb46c14b3faa786c79713db5ce720b9ab0e9ff1699e1aa10087b465398624c"
+    },
+    "set_task_ioprio": {
+      "source": "block/blk-ioc.c",
+      "text": "int set_task_ioprio(struct task_struct *task, int ioprio)\n{\n\tint err;\n\tconst struct cred *cred = current_cred(), *tcred;\n\n\trcu_read_lock();\n\ttcred = __task_cred(task);\n\tif (!uid_eq(tcred->uid, cred->euid) &&\n\t    !uid_eq(tcred->uid, cred->uid) && !capable(CAP_SYS_NICE)) {\n\t\trcu_read_unlock();\n\t\treturn -EPERM;\n\t}\n\trcu_read_unlock();\n\n\terr = security_task_setioprio(task, ioprio);\n\tif (err)\n\t\treturn err;\n\n\ttask_lock(task);\n\tif (unlikely(!task->io_context)) {\n\t\tstruct io_context *ioc;\n\n\t\ttask_unlock(task);\n\n\t\tioc = alloc_io_context(GFP_ATOMIC, NUMA_NO_NODE);\n\t\tif (!ioc)\n\t\t\treturn -ENOMEM;\n\n\t\ttask_lock(task);\n\t\tif (task->flags & PF_EXITING) {\n\t\t\tkmem_cache_free(iocontext_cachep, ioc);\n\t\t\tgoto out;\n\t\t}\n\t\tif (task->io_context)\n\t\t\tkmem_cache_free(iocontext_cachep, ioc);\n\t\telse\n\t\t\ttask->io_context = ioc;\n\t}\n\ttask->io_context->ioprio = ioprio;\nout:\n\ttask_unlock(task);\n\treturn 0;\n}\n",
+      "bytes": 884,
+      "sha256": "6df13b6a735ca2b53a5137598e8f54093497774485ed360beddea0620e1c66cc"
+    }
+  },
+  "parentDerived": {
+    "net/factory.c": {
+      "bytes": 32404,
+      "sha256": "0039a173aaccd364645554ced3cc5162464c826e5cc04303c98fcbe7d27f04aa"
+    },
+    "include/net/lsf_stream_cleanup_descendants.h": {
+      "bytes": 2014,
+      "sha256": "a481a37a1c65463f6166e72f64a0ef944a893de38439390ebaaf950306372744"
+    },
+    "net/device-prepaid.h": {
+      "bytes": 13168,
+      "sha256": "79581645a064a66c8e0aa059d0d2da386523229e9ba3e50062136a9060b849ca"
+    },
+    "net/factory-cleanup-descendants.c": {
+      "bytes": 12712,
+      "sha256": "11273fa73edd772305f3dfdc13936f5c91a52703260eb70e261b51c514be230f"
+    },
+    "kernel/lsf-cleanup-descendants.c": {
+      "bytes": 5660,
+      "sha256": "ce083971cddd446c5cf9286549bc9d82996098cf1b031fb6f9f726f13d2165b3"
+    },
+    "kernel/lsf-cleanup-constructor.c": {
+      "bytes": 18659,
+      "sha256": "1baad447593b2df98ccaf360a90435021e33a1e5157a6440dbfead95c6111e68"
+    }
+  },
+  "taskCreated": false,
+  "executorReady": false,
+  "runtimeIoExecution": false,
+  "bootstrapQualified": false,
+  "fullConstructorClosure": false,
+  "completeAllocationClosure": false,
+  "productionInstallation": false
+}

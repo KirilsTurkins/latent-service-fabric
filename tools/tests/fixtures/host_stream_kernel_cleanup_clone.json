@@ -1,0 +1,61 @@
+{
+  "schemaVersion": "lsf.kernel-cleanup-clone-source.v1",
+  "upstreamCommit": "7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+  "archiveSha256": "e09b6727e5c521253f0d41694900b9c38fb7604db7d35238a8197aa9f7de2428",
+  "source": {
+    "kernel/fork.c": {
+      "bytes": 87199,
+      "sha256": "a3c798d12392a4a519eb398f8937c0d5cac6d0875daaad87b07c2a13e77e021c"
+    },
+    "kernel/kthread.c": {
+      "bytes": 43615,
+      "sha256": "1b2d9794c6a3f5c4eb1b1f9e1e3b01bd0bf98de4d5ee67fe24efd4aa749e662f"
+    }
+  },
+  "sections": {
+    "kernel_clone": {
+      "source": "kernel/fork.c",
+      "text": "pid_t kernel_clone(struct kernel_clone_args *args)\n{\n\tu64 clone_flags = args->flags;\n\tstruct completion vfork;\n\tstruct pid *pid;\n\tstruct task_struct *p;\n\tint trace = 0;\n\tpid_t nr;\n\n\t/*\n\t * For legacy clone() calls, CLONE_PIDFD uses the parent_tid argument\n\t * to return the pidfd. Hence, CLONE_PIDFD and CLONE_PARENT_SETTID are\n\t * mutually exclusive. With clone3() CLONE_PIDFD has grown a separate\n\t * field in struct clone_args and it still doesn't make sense to have\n\t * them both point at the same memory location. Performing this check\n\t * here has the advantage that we don't need to have a separate helper\n\t * to check for legacy clone().\n\t */\n\tif ((clone_flags & CLONE_PIDFD) &&\n\t    (clone_flags & CLONE_PARENT_SETTID) &&\n\t    (args->pidfd == args->parent_tid))\n\t\treturn -EINVAL;\n\n\t/*\n\t * Determine whether and which event to report to ptracer.  When\n\t * called from kernel_thread or CLONE_UNTRACED is explicitly\n\t * requested, no event is reported; otherwise, report if the event\n\t * for the type of forking is enabled.\n\t */\n\tif (!(clone_flags & CLONE_UNTRACED)) {\n\t\tif (clone_flags & CLONE_VFORK)\n\t\t\ttrace = PTRACE_EVENT_VFORK;\n\t\telse if (args->exit_signal != SIGCHLD)\n\t\t\ttrace = PTRACE_EVENT_CLONE;\n\t\telse\n\t\t\ttrace = PTRACE_EVENT_FORK;\n\n\t\tif (likely(!ptrace_event_enabled(current, trace)))\n\t\t\ttrace = 0;\n\t}\n\n\tp = copy_process(NULL, trace, NUMA_NO_NODE, args);\n\tadd_latent_entropy();\n\n\tif (IS_ERR(p))\n\t\treturn PTR_ERR(p);\n\n\t/*\n\t * Do this prior waking up the new thread - the thread pointer\n\t * might get invalid after that point, if the thread exits quickly.\n\t */\n\ttrace_sched_process_fork(current, p);\n\n\tpid = get_task_pid(p, PIDTYPE_PID);\n\tnr = pid_vnr(pid);\n\n\tif (clone_flags & CLONE_PARENT_SETTID)\n\t\tput_user(nr, args->parent_tid);\n\n\tif (clone_flags & CLONE_VFORK) {\n\t\tp->vfork_done = &vfork;\n\t\tinit_completion(&vfork);\n\t\tget_task_struct(p);\n\t}\n\n\tif (IS_ENABLED(CONFIG_LRU_GEN_WALKS_MMU) && !(clone_flags & CLONE_VM)) {\n\t\t/* lock the task to synchronize with memcg migration */\n\t\ttask_lock(p);\n\t\tlru_gen_add_mm(p->mm);\n\t\ttask_unlock(p);\n\t}\n\n\twake_up_new_task(p);\n\n\t/* forking complete and child started to run, tell ptracer */\n\tif (unlikely(trace))\n\t\tptrace_event_pid(trace, pid);\n\n\tif (clone_flags & CLONE_VFORK) {\n\t\tif (!wait_for_vfork_done(p, &vfork))\n\t\t\tptrace_event_pid(PTRACE_EVENT_VFORK_DONE, pid);\n\t}\n\n\tput_pid(pid);\n\treturn nr;\n}\n",
+      "bytes": 2355,
+      "sha256": "b9844c3a29c1d1c78f04ce395dfb9b19d46b0a040328439714065a900c872836"
+    },
+    "kernel_thread": {
+      "source": "kernel/fork.c",
+      "text": "pid_t kernel_thread(int (*fn)(void *), void *arg, const char *name,\n\t\t    unsigned long flags)\n{\n\tstruct kernel_clone_args args = {\n\t\t.flags\t\t= ((lower_32_bits(flags) | CLONE_VM |\n\t\t\t\t    CLONE_UNTRACED) & ~CSIGNAL),\n\t\t.exit_signal\t= (lower_32_bits(flags) & CSIGNAL),\n\t\t.fn\t\t= fn,\n\t\t.fn_arg\t\t= arg,\n\t\t.name\t\t= name,\n\t\t.kthread\t= 1,\n\t};\n\n\treturn kernel_clone(&args);\n}\n",
+      "bytes": 368,
+      "sha256": "4cfdeb7e76f49ae352f0a4e7e47afd4fc210c1d283e4279eb7662fd621c73601"
+    },
+    "create_kthread": {
+      "source": "kernel/kthread.c",
+      "text": "static void create_kthread(struct kthread_create_info *create)\n{\n\tint pid;\n\n#ifdef CONFIG_NUMA\n\tcurrent->pref_node_fork = create->node;\n#endif\n\t/* We want our own signal handler (we take no signals by default). */\n\tpid = kernel_thread(kthread, create, create->full_name,\n\t\t\t    CLONE_FS | CLONE_FILES | SIGCHLD);\n\tif (pid < 0) {\n\t\t/* Release the structure when caller killed by a fatal signal. */\n\t\tstruct completion *done = xchg(&create->done, NULL);\n\n\t\tkfree(create->full_name);\n\t\tif (!done) {\n\t\t\tkfree(create);\n\t\t\treturn;\n\t\t}\n\t\tcreate->result = ERR_PTR(pid);\n\t\tcomplete(done);\n\t}\n}\n",
+      "bytes": 585,
+      "sha256": "2d25e0717577f05c4ee59cd58ba0825822fbd9591f53fe85c8c88e0b7da35c49"
+    }
+  },
+  "parentDerived": {
+    "net/factory.c": {
+      "bytes": 32327,
+      "sha256": "1aef2b9361175a7fe2a6bdba8ed745a060ca6a9bbe55b2f5402e19f33c0ad030"
+    },
+    "kernel/kthread.c": {
+      "bytes": 45684,
+      "sha256": "0589defad3beb71a60ac92779067645fa52035b48c610e0c76f433ed9c3d0078"
+    },
+    "kernel/fork.c": {
+      "bytes": 88439,
+      "sha256": "fccee56ef6954f50722250abeb256ce8f2b03c259f464942274a2556cd236417"
+    },
+    "kernel/lsf-cleanup-constructor.c": {
+      "bytes": 18526,
+      "sha256": "35d5f26a438496dabeea8bf69bf4f61fba6c1c46c9b185e92f36bcd802e17e85"
+    }
+  },
+  "taskCreated": false,
+  "executorReady": false,
+  "pendingConsumerCallsFullClone": false,
+  "observerClosure": false,
+  "bootstrapQualified": false,
+  "fullConstructorClosure": false,
+  "completeAllocationClosure": false,
+  "productionInstallation": false
+}

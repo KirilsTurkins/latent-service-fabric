@@ -7,3 +7,39 @@
 *.gz binary
 *.gz.part-* binary
 /tools/intellij.cmd text eol=crlf
+
+# Exact byte-pinned cleanup source/provenance; preserve reviewed CRLF bytes.
+/research/standard-outbound/linux-6.12-lineage/connector-cleanup-observer.c -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+/research/standard-outbound/linux-6.12-lineage/tracepoint-cleanup-observer.c -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+/tools/ci/contracts/owners/tools/qualify_host_stream_kernel_cleanup_lifecycle.py.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+/tools/ci/contracts/python/test_host_stream_kernel_cleanup_association.py.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+/tools/ci/contracts/python/test_host_stream_kernel_cleanup_audit.py.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+/tools/ci/contracts/python/test_host_stream_kernel_cleanup_cgroup.py.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+/tools/ci/contracts/python/test_host_stream_kernel_cleanup_clone.py.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+/tools/ci/contracts/python/test_host_stream_kernel_cleanup_close.py.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+/tools/ci/contracts/python/test_host_stream_kernel_cleanup_constructor.py.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+/tools/ci/contracts/python/test_host_stream_kernel_cleanup_descendants.py.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+/tools/ci/contracts/python/test_host_stream_kernel_cleanup_entry.py.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+/tools/ci/contracts/python/test_host_stream_kernel_cleanup_exit_observer.py.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+/tools/ci/contracts/python/test_host_stream_kernel_cleanup_io.py.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+/tools/ci/contracts/python/test_host_stream_kernel_cleanup_irq.py.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+/tools/ci/contracts/python/test_host_stream_kernel_cleanup_lifecycle.py.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+/tools/ci/contracts/python/test_host_stream_kernel_cleanup_observer.py.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+/tools/ci/contracts/python/test_host_stream_kernel_cleanup_perf.py.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+/tools/ci/contracts/python/test_host_stream_kernel_cleanup_pid.py.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+/tools/ci/contracts/python/test_host_stream_kernel_cleanup_programme.py.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+/tools/ci/contracts/python/test_host_stream_kernel_cleanup_provider_birth.py.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+/tools/ci/contracts/python/test_host_stream_kernel_cleanup_provider_executor.py.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+/tools/ci/contracts/python/test_host_stream_kernel_cleanup_provider_initialize.py.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+/tools/ci/contracts/python/test_host_stream_kernel_cleanup_provider_nonfinal.py.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+/tools/ci/contracts/python/test_host_stream_kernel_cleanup_provider_operation.py.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+/tools/ci/contracts/python/test_host_stream_kernel_cleanup_provider_queue.py.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+/tools/ci/contracts/python/test_host_stream_kernel_cleanup_provider_retirement.py.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+/tools/ci/contracts/python/test_host_stream_kernel_cleanup_security.py.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+/tools/ci/contracts/python/test_host_stream_kernel_cleanup_worker_operations.py.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+/tools/ci/contracts/workflows/stream-kernel-cleanup-lifecycle.yml/jobs/cleanup-lifecycle.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+/tools/ci/contracts/workflows/stream-kernel-cleanup-lifecycle.yml/workflow.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+/tools/host_stream_kernel_cleanup_close.py -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+/tools/host_stream_kernel_cleanup_observer.py -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+/tools/tests/fixtures/host_stream_kernel_cleanup_provider_executor.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+/tools/tests/fixtures/host_stream_kernel_cleanup_provider_operation.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

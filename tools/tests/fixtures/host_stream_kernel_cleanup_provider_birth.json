@@ -1,0 +1,86 @@
+{
+  "schemaVersion": "lsf.kernel-cleanup-provider-birth-source.v1",
+  "upstreamCommit": "7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+  "source": {
+    "kernel/workqueue.c": {
+      "bytes": 232477,
+      "sha256": "c11039f7fda141a8861e1ca9e8a9de64c75c04a3a4fdebfe7073171f3fa6d3ed",
+      "gitBlob": "d1ce5aeb012fbcaca825ff2458640964967d48f2"
+    },
+    "lib/idr.c": {
+      "bytes": 17997,
+      "sha256": "a5f5799202aebdcfad0d266c241a18da3f43a04cf04bdd63f37c7536087cc4b8",
+      "gitBlob": "aad464c36369f0b76fa36bb1c6686610d3377b51"
+    },
+    "lib/radix-tree.c": {
+      "bytes": 44109,
+      "sha256": "71b4e536fcdc6bc52857bdb255f06d4b303e9e5e9c3d63f621ef1e91d103421e",
+      "gitBlob": "976b9bd02a1b5d237ca9a1dde529670cf047ed7f"
+    },
+    "lib/xarray.c": {
+      "bytes": 61079,
+      "sha256": "b35b4f31434c62d4dfb08a65b5df8074cc55011d6814d4980b6444f8234ecf7a",
+      "gitBlob": "1c9be078d7d8b50ebed66f3d86f18dac600a7084"
+    }
+  },
+  "sections": {
+    "worker_pool_assign_id": {
+      "source": "kernel/workqueue.c",
+      "text": "static int worker_pool_assign_id(struct worker_pool *pool)\n{\n\tint ret;\n\n\tlockdep_assert_held(&wq_pool_mutex);\n\n\tret = idr_alloc(&worker_pool_idr, pool, 0, WORK_OFFQ_POOL_NONE,\n\t\t\tGFP_KERNEL);\n\tif (ret >= 0) {\n\t\tpool->id = ret;\n\t\treturn 0;\n\t}\n\treturn ret;\n}\n",
+      "bytes": 257,
+      "sha256": "cb807346d0c618e2840da56e79f8388c61a64e1fc2f2cb3953f1ba4c28854ae4"
+    },
+    "idr_alloc": {
+      "source": "lib/idr.c",
+      "text": "int idr_alloc(struct idr *idr, void *ptr, int start, int end, gfp_t gfp)\n{\n\tu32 id = start;\n\tint ret;\n\n\tif (WARN_ON_ONCE(start < 0))\n\t\treturn -EINVAL;\n\n\tret = idr_alloc_u32(idr, ptr, &id, end > 0 ? end - 1 : INT_MAX, gfp);\n\tif (ret)\n\t\treturn ret;\n\n\treturn id;\n}\n",
+      "bytes": 262,
+      "sha256": "01651069eca48f9a7f431c6c18603aeeade7e4d8370ed28c08c2acc48c4ab627"
+    },
+    "idr_alloc_u32": {
+      "source": "lib/idr.c",
+      "text": "int idr_alloc_u32(struct idr *idr, void *ptr, u32 *nextid,\n\t\t\tunsigned long max, gfp_t gfp)\n{\n\tstruct radix_tree_iter iter;\n\tvoid __rcu **slot;\n\tunsigned int base = idr->idr_base;\n\tunsigned int id = *nextid;\n\n\tif (WARN_ON_ONCE(!(idr->idr_rt.xa_flags & ROOT_IS_IDR)))\n\t\tidr->idr_rt.xa_flags |= IDR_RT_MARKER;\n\tif (max < base)\n\t\treturn -ENOSPC;\n\n\tid = (id < base) ? 0 : id - base;\n\tradix_tree_iter_init(&iter, id);\n\tslot = idr_get_free(&idr->idr_rt, &iter, gfp, max - base);\n\tif (IS_ERR(slot))\n\t\treturn PTR_ERR(slot);\n\n\t*nextid = iter.index + base;\n\t/* there is a memory barrier inside radix_tree_iter_replace() */\n\tradix_tree_iter_replace(&idr->idr_rt, &iter, slot, ptr);\n\tradix_tree_iter_tag_clear(&idr->idr_rt, &iter, IDR_FREE);\n\n\treturn 0;\n}\n",
+      "bytes": 744,
+      "sha256": "a407bcb6bdbfbd405f1669f41f9f7cccd1fc14c8d10e3bb90ebd0bc20c936187"
+    },
+    "idr_get_free": {
+      "source": "lib/radix-tree.c",
+      "text": "void __rcu **idr_get_free(struct radix_tree_root *root,\n\t\t\t      struct radix_tree_iter *iter, gfp_t gfp,\n\t\t\t      unsigned long max)\n{\n\tstruct radix_tree_node *node = NULL, *child;\n\tvoid __rcu **slot = (void __rcu **)&root->xa_head;\n\tunsigned long maxindex, start = iter->next_index;\n\tunsigned int shift, offset = 0;\n\n grow:\n\tshift = radix_tree_load_root(root, &child, &maxindex);\n\tif (!radix_tree_tagged(root, IDR_FREE))\n\t\tstart = max(start, maxindex + 1);\n\tif (start > max)\n\t\treturn ERR_PTR(-ENOSPC);\n\n\tif (start > maxindex) {\n\t\tint error = radix_tree_extend(root, gfp, start, shift);\n\t\tif (error < 0)\n\t\t\treturn ERR_PTR(error);\n\t\tshift = error;\n\t\tchild = rcu_dereference_raw(root->xa_head);\n\t}\n\tif (start == 0 && shift == 0)\n\t\tshift = RADIX_TREE_MAP_SHIFT;\n\n\twhile (shift) {\n\t\tshift -= RADIX_TREE_MAP_SHIFT;\n\t\tif (child == NULL) {\n\t\t\t/* Have to add a child node.  */\n\t\t\tchild = radix_tree_node_alloc(gfp, node, root, shift,\n\t\t\t\t\t\t\toffset, 0, 0);\n\t\t\tif (!child)\n\t\t\t\treturn ERR_PTR(-ENOMEM);\n\t\t\tall_tag_set(child, IDR_FREE);\n\t\t\trcu_assign_pointer(*slot, node_to_entry(child));\n\t\t\tif (node)\n\t\t\t\tnode->count++;\n\t\t} else if (!radix_tree_is_internal_node(child))\n\t\t\tbreak;\n\n\t\tnode = entry_to_node(child);\n\t\toffset = radix_tree_descend(node, &child, start);\n\t\tif (!tag_get(node, IDR_FREE, offset)) {\n\t\t\toffset = radix_tree_find_next_bit(node, IDR_FREE,\n\t\t\t\t\t\t\toffset + 1);\n\t\t\tstart = next_index(start, node, offset);\n\t\t\tif (start > max || start == 0)\n\t\t\t\treturn ERR_PTR(-ENOSPC);\n\t\t\twhile (offset == RADIX_TREE_MAP_SIZE) {\n\t\t\t\toffset = node->offset + 1;\n\t\t\t\tnode = node->parent;\n\t\t\t\tif (!node)\n\t\t\t\t\tgoto grow;\n\t\t\t\tshift = node->shift;\n\t\t\t}\n\t\t\tchild = rcu_dereference_raw(node->slots[offset]);\n\t\t}\n\t\tslot = &node->slots[offset];\n\t}\n\n\titer->index = start;\n\tif (node)\n\t\titer->next_index = 1 + min(max, (start | node_maxindex(node)));\n\telse\n\t\titer->next_index = 1;\n\titer->node = node;\n\tset_iter_tags(iter, node, offset, IDR_FREE);\n\n\treturn slot;\n}\n",
+      "bytes": 1940,
+      "sha256": "6c8f7892357b2b592e295d5f5c24e2e82905595d63e9b4a6850e0960b4ed6c9f"
+    },
+    "radix_tree_extend": {
+      "source": "lib/radix-tree.c",
+      "text": "static int radix_tree_extend(struct radix_tree_root *root, gfp_t gfp,\n\t\t\t\tunsigned long index, unsigned int shift)\n{\n\tvoid *entry;\n\tunsigned int maxshift;\n\tint tag;\n\n\t/* Figure out what the shift should be.  */\n\tmaxshift = shift;\n\twhile (index > shift_maxindex(maxshift))\n\t\tmaxshift += RADIX_TREE_MAP_SHIFT;\n\n\tentry = rcu_dereference_raw(root->xa_head);\n\tif (!entry && (!is_idr(root) || root_tag_get(root, IDR_FREE)))\n\t\tgoto out;\n\n\tdo {\n\t\tstruct radix_tree_node *node = radix_tree_node_alloc(gfp, NULL,\n\t\t\t\t\t\t\troot, shift, 0, 1, 0);\n\t\tif (!node)\n\t\t\treturn -ENOMEM;\n\n\t\tif (is_idr(root)) {\n\t\t\tall_tag_set(node, IDR_FREE);\n\t\t\tif (!root_tag_get(root, IDR_FREE)) {\n\t\t\t\ttag_clear(node, IDR_FREE, 0);\n\t\t\t\troot_tag_set(root, IDR_FREE);\n\t\t\t}\n\t\t} else {\n\t\t\t/* Propagate the aggregated tag info to the new child */\n\t\t\tfor (tag = 0; tag < RADIX_TREE_MAX_TAGS; tag++) {\n\t\t\t\tif (root_tag_get(root, tag))\n\t\t\t\t\ttag_set(node, tag, 0);\n\t\t\t}\n\t\t}\n\n\t\tBUG_ON(shift > BITS_PER_LONG);\n\t\tif (radix_tree_is_internal_node(entry)) {\n\t\t\tentry_to_node(entry)->parent = node;\n\t\t} else if (xa_is_value(entry)) {\n\t\t\t/* Moving a value entry root->xa_head to a node */\n\t\t\tnode->nr_values = 1;\n\t\t}\n\t\t/*\n\t\t * entry was already in the radix tree, so we do not need\n\t\t * rcu_assign_pointer here\n\t\t */\n\t\tnode->slots[0] = (void __rcu *)entry;\n\t\tentry = node_to_entry(node);\n\t\trcu_assign_pointer(root->xa_head, entry);\n\t\tshift += RADIX_TREE_MAP_SHIFT;\n\t} while (shift <= maxshift);\nout:\n\treturn maxshift + RADIX_TREE_MAP_SHIFT;\n}\n",
+      "bytes": 1488,
+      "sha256": "cf774cfa5f2b22c55e21238ea4f224875dcc0991e49ab4f7f1c35734c51e3497"
+    }
+  },
+  "parentDerived": {
+    "include/net/lsf_stream_cleanup_provider_executor.h": {
+      "bytes": 1477,
+      "sha256": "50c79afdc0db50f5a173c1fc5b584d0e007f5e088d31ac95d702c133a4f62c4c"
+    },
+    "net/factory.c": {
+      "bytes": 32821,
+      "sha256": "db6dd6cbdecd9f8c686648d1c5e64ebc09c4a45d5807c28f3e7621b7b2d49408"
+    },
+    "kernel/lsf-cleanup-provider-executor.c": {
+      "bytes": 16492,
+      "sha256": "cf556cf7b44ce2cadeb18a95cb0ba604b2b57547b3f502decbee87cffb0e5743"
+    },
+    "lib/idr.c": {
+      "bytes": 19846,
+      "sha256": "943187d1e24eb433514113c43796e15587c582465fd2850596a9f90361b60aac"
+    },
+    "lib/radix-tree.c": {
+      "bytes": 49660,
+      "sha256": "28768eec010ef4c3cd23e959bd6c6c4d1555afd86f3b6ea684109f4a9fc209b7"
+    }
+  },
+  "taskCreated": false,
+  "poolCreated": false,
+  "poolIdrAllocationExecuted": false,
+  "actualRcuExecution": false,
+  "fullConstructorClosure": false,
+  "productionInstallation": false
+}

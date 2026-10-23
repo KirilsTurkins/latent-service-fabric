@@ -1,0 +1,110 @@
+{
+  "schemaVersion": "lsf.kernel-cleanup-provider-initialize-source.v1",
+  "upstreamCommit": "7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+  "source": {
+    "kernel/workqueue.c": {
+      "bytes": 232477,
+      "sha256": "c11039f7fda141a8861e1ca9e8a9de64c75c04a3a4fdebfe7073171f3fa6d3ed",
+      "gitBlob": "d1ce5aeb012fbcaca825ff2458640964967d48f2"
+    },
+    "lib/idr.c": {
+      "bytes": 17997,
+      "sha256": "a5f5799202aebdcfad0d266c241a18da3f43a04cf04bdd63f37c7536087cc4b8",
+      "gitBlob": "aad464c36369f0b76fa36bb1c6686610d3377b51"
+    },
+    "lib/xarray.c": {
+      "bytes": 61079,
+      "sha256": "b35b4f31434c62d4dfb08a65b5df8074cc55011d6814d4980b6444f8234ecf7a",
+      "gitBlob": "1c9be078d7d8b50ebed66f3d86f18dac600a7084"
+    },
+    "include/linux/cpumask.h": {
+      "bytes": 38196,
+      "sha256": "1fbc7481dba56feea8408bab211081bf8fc59cc681e6efb907ec671e90a18cd4",
+      "gitBlob": "9278a50d514f9b49f66f4e2d9f6126394e1ecadb"
+    },
+    "selected.config": {
+      "bytes": 143192,
+      "sha256": "b2bcccd5507f3f3a673690b660a2321870b57a3c77e72ce8532975f3c4752176"
+    }
+  },
+  "sections": {
+    "init_worker_pool": {
+      "source": "kernel/workqueue.c",
+      "text": "static int init_worker_pool(struct worker_pool *pool)\n{\n\traw_spin_lock_init(&pool->lock);\n\tpool->id = -1;\n\tpool->cpu = -1;\n\tpool->node = NUMA_NO_NODE;\n\tpool->flags |= POOL_DISASSOCIATED;\n\tpool->watchdog_ts = jiffies;\n\tINIT_LIST_HEAD(&pool->worklist);\n\tINIT_LIST_HEAD(&pool->idle_list);\n\thash_init(pool->busy_hash);\n\n\ttimer_setup(&pool->idle_timer, idle_worker_timeout, TIMER_DEFERRABLE);\n\tINIT_WORK(&pool->idle_cull_work, idle_cull_fn);\n\n\ttimer_setup(&pool->mayday_timer, pool_mayday_timeout, 0);\n\n\tINIT_LIST_HEAD(&pool->workers);\n\n\tida_init(&pool->worker_ida);\n\tINIT_HLIST_NODE(&pool->hash_node);\n\tpool->refcnt = 1;\n\n\t/* shouldn't fail above this point */\n\tpool->attrs = alloc_workqueue_attrs();\n\tif (!pool->attrs)\n\t\treturn -ENOMEM;\n\n\twqattrs_clear_for_pool(pool->attrs);\n\n\treturn 0;\n}\n",
+      "bytes": 787,
+      "sha256": "39f668619b4f01e9e2d710bd71d407fca06c1e03d8bfad9ef1fd601bad8d5705"
+    },
+    "alloc_worker": {
+      "source": "kernel/workqueue.c",
+      "text": "static struct worker *alloc_worker(int node)\n{\n\tstruct worker *worker;\n\n\tworker = kzalloc_node(sizeof(*worker), GFP_KERNEL, node);\n\tif (worker) {\n\t\tINIT_LIST_HEAD(&worker->entry);\n\t\tINIT_LIST_HEAD(&worker->scheduled);\n\t\tINIT_LIST_HEAD(&worker->node);\n\t\t/* on creation a worker is in !idle && prep state */\n\t\tworker->flags = WORKER_PREP;\n\t}\n\treturn worker;\n}\n",
+      "bytes": 358,
+      "sha256": "c7b8be703b5d61e69f507475d8d7009d0bd8c7b4794b351001b4a4a7bdc18c67"
+    },
+    "create_worker": {
+      "source": "kernel/workqueue.c",
+      "text": "static struct worker *create_worker(struct worker_pool *pool)\n{\n\tstruct worker *worker;\n\tint id;\n\n\t/* ID is needed to determine kthread name */\n\tid = ida_alloc(&pool->worker_ida, GFP_KERNEL);\n\tif (id < 0) {\n\t\tpr_err_once(\"workqueue: Failed to allocate a worker ID: %pe\\n\",\n\t\t\t    ERR_PTR(id));\n\t\treturn NULL;\n\t}\n\n\tworker = alloc_worker(pool->node);\n\tif (!worker) {\n\t\tpr_err_once(\"workqueue: Failed to allocate a worker\\n\");\n\t\tgoto fail;\n\t}\n\n\tworker->id = id;\n\n\tif (!(pool->flags & POOL_BH)) {\n\t\tchar id_buf[WORKER_ID_LEN];\n\n\t\tformat_worker_id(id_buf, sizeof(id_buf), worker, pool);\n\t\tworker->task = kthread_create_on_node(worker_thread, worker,\n\t\t\t\t\t\t      pool->node, \"%s\", id_buf);\n\t\tif (IS_ERR(worker->task)) {\n\t\t\tif (PTR_ERR(worker->task) == -EINTR) {\n\t\t\t\tpr_err(\"workqueue: Interrupted when creating a worker thread \\\"%s\\\"\\n\",\n\t\t\t\t       id_buf);\n\t\t\t} else {\n\t\t\t\tpr_err_once(\"workqueue: Failed to create a worker thread: %pe\",\n\t\t\t\t\t    worker->task);\n\t\t\t}\n\t\t\tgoto fail;\n\t\t}\n\n\t\tset_user_nice(worker->task, pool->attrs->nice);\n\t\tkthread_bind_mask(worker->task, pool_allowed_cpus(pool));\n\t}\n\n\t/* successful, attach the worker to the pool */\n\tworker_attach_to_pool(worker, pool);\n\n\t/* start the newly created worker */\n\traw_spin_lock_irq(&pool->lock);\n\n\tworker->pool->nr_workers++;\n\tworker_enter_idle(worker);\n\n\t/*\n\t * @worker is waiting on a completion in kthread() and will trigger hung\n\t * check if not woken up soon. As kick_pool() is noop if @pool is empty,\n\t * wake it up explicitly.\n\t */\n\tif (worker->task)\n\t\twake_up_process(worker->task);\n\n\traw_spin_unlock_irq(&pool->lock);\n\n\treturn worker;\n\nfail:\n\tida_free(&pool->worker_ida, id);\n\tkfree(worker);\n\treturn NULL;\n}\n",
+      "bytes": 1674,
+      "sha256": "d2f75553f26c71ccb5369d8a43f9875e900a2551b53d6b566bf714b67a29f5c3"
+    },
+    "ida_alloc_range": {
+      "source": "lib/idr.c",
+      "text": "int ida_alloc_range(struct ida *ida, unsigned int min, unsigned int max,\n\t\t\tgfp_t gfp)\n{\n\tXA_STATE(xas, &ida->xa, min / IDA_BITMAP_BITS);\n\tunsigned bit = min % IDA_BITMAP_BITS;\n\tunsigned long flags;\n\tstruct ida_bitmap *bitmap, *alloc = NULL;\n\n\tif ((int)min < 0)\n\t\treturn -ENOSPC;\n\n\tif ((int)max < 0)\n\t\tmax = INT_MAX;\n\nretry:\n\txas_lock_irqsave(&xas, flags);\nnext:\n\tbitmap = xas_find_marked(&xas, max / IDA_BITMAP_BITS, XA_FREE_MARK);\n\tif (xas.xa_index > min / IDA_BITMAP_BITS)\n\t\tbit = 0;\n\tif (xas.xa_index * IDA_BITMAP_BITS + bit > max)\n\t\tgoto nospc;\n\n\tif (xa_is_value(bitmap)) {\n\t\tunsigned long tmp = xa_to_value(bitmap);\n\n\t\tif (bit < BITS_PER_XA_VALUE) {\n\t\t\tbit = find_next_zero_bit(&tmp, BITS_PER_XA_VALUE, bit);\n\t\t\tif (xas.xa_index * IDA_BITMAP_BITS + bit > max)\n\t\t\t\tgoto nospc;\n\t\t\tif (bit < BITS_PER_XA_VALUE) {\n\t\t\t\ttmp |= 1UL << bit;\n\t\t\t\txas_store(&xas, xa_mk_value(tmp));\n\t\t\t\tgoto out;\n\t\t\t}\n\t\t}\n\t\tbitmap = alloc;\n\t\tif (!bitmap)\n\t\t\tbitmap = kzalloc(sizeof(*bitmap), GFP_NOWAIT);\n\t\tif (!bitmap)\n\t\t\tgoto alloc;\n\t\tbitmap->bitmap[0] = tmp;\n\t\txas_store(&xas, bitmap);\n\t\tif (xas_error(&xas)) {\n\t\t\tbitmap->bitmap[0] = 0;\n\t\t\tgoto out;\n\t\t}\n\t}\n\n\tif (bitmap) {\n\t\tbit = find_next_zero_bit(bitmap->bitmap, IDA_BITMAP_BITS, bit);\n\t\tif (xas.xa_index * IDA_BITMAP_BITS + bit > max)\n\t\t\tgoto nospc;\n\t\tif (bit == IDA_BITMAP_BITS)\n\t\t\tgoto next;\n\n\t\t__set_bit(bit, bitmap->bitmap);\n\t\tif (bitmap_full(bitmap->bitmap, IDA_BITMAP_BITS))\n\t\t\txas_clear_mark(&xas, XA_FREE_MARK);\n\t} else {\n\t\tif (bit < BITS_PER_XA_VALUE) {\n\t\t\tbitmap = xa_mk_value(1UL << bit);\n\t\t} else {\n\t\t\tbitmap = alloc;\n\t\t\tif (!bitmap)\n\t\t\t\tbitmap = kzalloc(sizeof(*bitmap), GFP_NOWAIT);\n\t\t\tif (!bitmap)\n\t\t\t\tgoto alloc;\n\t\t\t__set_bit(bit, bitmap->bitmap);\n\t\t}\n\t\txas_store(&xas, bitmap);\n\t}\nout:\n\txas_unlock_irqrestore(&xas, flags);\n\tif (xas_nomem(&xas, gfp)) {\n\t\txas.xa_index = min / IDA_BITMAP_BITS;\n\t\tbit = min % IDA_BITMAP_BITS;\n\t\tgoto retry;\n\t}\n\tif (bitmap != alloc)\n\t\tkfree(alloc);\n\tif (xas_error(&xas))\n\t\treturn xas_error(&xas);\n\treturn xas.xa_index * IDA_BITMAP_BITS + bit;\nalloc:\n\txas_unlock_irqrestore(&xas, flags);\n\talloc = kzalloc(sizeof(*bitmap), gfp);\n\tif (!alloc)\n\t\treturn -ENOMEM;\n\txas_set(&xas, min / IDA_BITMAP_BITS);\n\tbit = min % IDA_BITMAP_BITS;\n\tgoto retry;\nnospc:\n\txas_unlock_irqrestore(&xas, flags);\n\tkfree(alloc);\n\treturn -ENOSPC;\n}\n",
+      "bytes": 2300,
+      "sha256": "63de6e1b99e6842077565a34f3d2a5134776f75029d8a791186bb146ac701246"
+    },
+    "xas_create": {
+      "source": "lib/xarray.c",
+      "text": "static void *xas_create(struct xa_state *xas, bool allow_root)\n{\n\tstruct xarray *xa = xas->xa;\n\tvoid *entry;\n\tvoid __rcu **slot;\n\tstruct xa_node *node = xas->xa_node;\n\tint shift;\n\tunsigned int order = xas->xa_shift;\n\n\tif (xas_top(node)) {\n\t\tentry = xa_head_locked(xa);\n\t\txas->xa_node = NULL;\n\t\tif (!entry && xa_zero_busy(xa))\n\t\t\tentry = XA_ZERO_ENTRY;\n\t\tshift = xas_expand(xas, entry);\n\t\tif (shift < 0)\n\t\t\treturn NULL;\n\t\tif (!shift && !allow_root)\n\t\t\tshift = XA_CHUNK_SHIFT;\n\t\tentry = xa_head_locked(xa);\n\t\tslot = &xa->xa_head;\n\t} else if (xas_error(xas)) {\n\t\treturn NULL;\n\t} else if (node) {\n\t\tunsigned int offset = xas->xa_offset;\n\n\t\tshift = node->shift;\n\t\tentry = xa_entry_locked(xa, node, offset);\n\t\tslot = &node->slots[offset];\n\t} else {\n\t\tshift = 0;\n\t\tentry = xa_head_locked(xa);\n\t\tslot = &xa->xa_head;\n\t}\n\n\twhile (shift > order) {\n\t\tshift -= XA_CHUNK_SHIFT;\n\t\tif (!entry) {\n\t\t\tnode = xas_alloc(xas, shift);\n\t\t\tif (!node)\n\t\t\t\tbreak;\n\t\t\tif (xa_track_free(xa))\n\t\t\t\tnode_mark_all(node, XA_FREE_MARK);\n\t\t\trcu_assign_pointer(*slot, xa_mk_node(node));\n\t\t} else if (xa_is_node(entry)) {\n\t\t\tnode = xa_to_node(entry);\n\t\t} else {\n\t\t\tbreak;\n\t\t}\n\t\tentry = xas_descend(xas, node);\n\t\tslot = &node->slots[xas->xa_offset];\n\t}\n\n\treturn entry;\n}\n",
+      "bytes": 1234,
+      "sha256": "09fd176624e62fa9d00a48155984a44b27b8e0491c5a9e2b83375cb73c21f361"
+    },
+    "xas_expand": {
+      "source": "lib/xarray.c",
+      "text": "static int xas_expand(struct xa_state *xas, void *head)\n{\n\tstruct xarray *xa = xas->xa;\n\tstruct xa_node *node = NULL;\n\tunsigned int shift = 0;\n\tunsigned long max = xas_max(xas);\n\n\tif (!head) {\n\t\tif (max == 0)\n\t\t\treturn 0;\n\t\twhile ((max >> shift) >= XA_CHUNK_SIZE)\n\t\t\tshift += XA_CHUNK_SHIFT;\n\t\treturn shift + XA_CHUNK_SHIFT;\n\t} else if (xa_is_node(head)) {\n\t\tnode = xa_to_node(head);\n\t\tshift = node->shift + XA_CHUNK_SHIFT;\n\t}\n\txas->xa_node = NULL;\n\n\twhile (max > max_index(head)) {\n\t\txa_mark_t mark = 0;\n\n\t\tXA_NODE_BUG_ON(node, shift > BITS_PER_LONG);\n\t\tnode = xas_alloc(xas, shift);\n\t\tif (!node)\n\t\t\treturn -ENOMEM;\n\n\t\tnode->count = 1;\n\t\tif (xa_is_value(head))\n\t\t\tnode->nr_values = 1;\n\t\tRCU_INIT_POINTER(node->slots[0], head);\n\n\t\t/* Propagate the aggregated mark info to the new child */\n\t\tfor (;;) {\n\t\t\tif (xa_track_free(xa) && mark == XA_FREE_MARK) {\n\t\t\t\tnode_mark_all(node, XA_FREE_MARK);\n\t\t\t\tif (!xa_marked(xa, XA_FREE_MARK)) {\n\t\t\t\t\tnode_clear_mark(node, 0, XA_FREE_MARK);\n\t\t\t\t\txa_mark_set(xa, XA_FREE_MARK);\n\t\t\t\t}\n\t\t\t} else if (xa_marked(xa, mark)) {\n\t\t\t\tnode_set_mark(node, 0, mark);\n\t\t\t}\n\t\t\tif (mark == XA_MARK_MAX)\n\t\t\t\tbreak;\n\t\t\tmark_inc(mark);\n\t\t}\n\n\t\t/*\n\t\t * Now that the new node is fully initialised, we can add\n\t\t * it to the tree\n\t\t */\n\t\tif (xa_is_node(head)) {\n\t\t\txa_to_node(head)->offset = 0;\n\t\t\trcu_assign_pointer(xa_to_node(head)->parent, node);\n\t\t}\n\t\thead = xa_mk_node(node);\n\t\trcu_assign_pointer(xa->xa_head, head);\n\t\txas_update(xas, node);\n\n\t\tshift += XA_CHUNK_SHIFT;\n\t}\n\n\txas->xa_node = node;\n\treturn shift;\n}\n",
+      "bytes": 1532,
+      "sha256": "70cd84b6a1effa64ab506ba2cc8ea2e4d9f9153fdd0fe6ff0219d17cde0475a8"
+    },
+    "xas_store": {
+      "source": "lib/xarray.c",
+      "text": "void *xas_store(struct xa_state *xas, void *entry)\n{\n\tstruct xa_node *node;\n\tvoid __rcu **slot = &xas->xa->xa_head;\n\tunsigned int offset, max;\n\tint count = 0;\n\tint values = 0;\n\tvoid *first, *next;\n\tbool value = xa_is_value(entry);\n\n\tif (entry) {\n\t\tbool allow_root = !xa_is_node(entry) && !xa_is_zero(entry);\n\t\tfirst = xas_create(xas, allow_root);\n\t} else {\n\t\tfirst = xas_load(xas);\n\t}\n\n\tif (xas_invalid(xas))\n\t\treturn first;\n\tnode = xas->xa_node;\n\tif (node && (xas->xa_shift < node->shift))\n\t\txas->xa_sibs = 0;\n\tif ((first == entry) && !xas->xa_sibs)\n\t\treturn first;\n\n\tnext = first;\n\toffset = xas->xa_offset;\n\tmax = xas->xa_offset + xas->xa_sibs;\n\tif (node) {\n\t\tslot = &node->slots[offset];\n\t\tif (xas->xa_sibs)\n\t\t\txas_squash_marks(xas);\n\t}\n\tif (!entry)\n\t\txas_init_marks(xas);\n\n\tfor (;;) {\n\t\t/*\n\t\t * Must clear the marks before setting the entry to NULL,\n\t\t * otherwise xas_for_each_marked may find a NULL entry and\n\t\t * stop early.  rcu_assign_pointer contains a release barrier\n\t\t * so the mark clearing will appear to happen before the\n\t\t * entry is set to NULL.\n\t\t */\n\t\trcu_assign_pointer(*slot, entry);\n\t\tif (xa_is_node(next) && (!node || node->shift))\n\t\t\txas_free_nodes(xas, xa_to_node(next));\n\t\tif (!node)\n\t\t\tbreak;\n\t\tcount += !next - !entry;\n\t\tvalues += !xa_is_value(first) - !value;\n\t\tif (entry) {\n\t\t\tif (offset == max)\n\t\t\t\tbreak;\n\t\t\tif (!xa_is_sibling(entry))\n\t\t\t\tentry = xa_mk_sibling(xas->xa_offset);\n\t\t} else {\n\t\t\tif (offset == XA_CHUNK_MASK)\n\t\t\t\tbreak;\n\t\t}\n\t\tnext = xa_entry_locked(xas->xa, node, ++offset);\n\t\tif (!xa_is_sibling(next)) {\n\t\t\tif (!entry && (offset > max))\n\t\t\t\tbreak;\n\t\t\tfirst = next;\n\t\t}\n\t\tslot++;\n\t}\n\n\tupdate_node(xas, node, count, values);\n\treturn first;\n}\n",
+      "bytes": 1687,
+      "sha256": "05eaedb124d9dceb3680009ec524b6e9447a87b5eff52322cc425010a4aed02e"
+    }
+  },
+  "parentDerived": {
+    "net/factory-cleanup-provider-executor.c": {
+      "bytes": 8954,
+      "sha256": "6f54e74d281a84051816efceb33fb22d667b78e6cf879f1465a22b88b0f0e39b"
+    },
+    "include/net/lsf_stream_cleanup_provider_executor.h": {
+      "bytes": 2055,
+      "sha256": "1404a52135e2a98b397411b6c600dcec2e4461a4e685b93ba0ed021c66e743a1"
+    },
+    "net/factory.c": {
+      "bytes": 32865,
+      "sha256": "103e9cc87f07db551a250b7608df882835e2f65716761de20e9636904d851df1"
+    },
+    "kernel/kthread.c": {
+      "bytes": 46202,
+      "sha256": "43d83d0b81b9cf81724b4dbc8908bf849f67682ed9fe9169211c9dbefd670334"
+    },
+    "kernel/lsf-cleanup-clone-args.c": {
+      "bytes": 3387,
+      "sha256": "63b2f6139c9c6c1c6752e4269cb61e47ef1db47828d3d120cc2cea420e38b634"
+    },
+    "kernel/lsf-cleanup-entry.c": {
+      "bytes": 2802,
+      "sha256": "caf862ec5da89bdeffcee6b8f1df303a859ea9efd6f934660810bcad22d14392"
+    },
+    "kernel/lsf-cleanup-provider-executor.c": {
+      "bytes": 17687,
+      "sha256": "8e2073d502fdf15c9723aed67c4c1859d1126782807168dac22a882cffe7fe3b"
+    }
+  },
+  "taskCreated": false,
+  "poolCreated": false,
+  "queueLifetimeRegistered": false,
+  "actualRcuExecution": false,
+  "fullConstructorClosure": false,
+  "productionInstallation": false
+}

@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "lsf.kernel-cleanup-entry-source.v1",
+  "upstreamCommit": "7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+  "source": {
+    "kernel/kthread.c": {
+      "bytes": 43615,
+      "sha256": "1b2d9794c6a3f5c4eb1b1f9e1e3b01bd0bf98de4d5ee67fe24efd4aa749e662f"
+    }
+  },
+  "sections": {
+    "kthread": {
+      "source": "kernel/kthread.c",
+      "text": "static int kthread(void *_create)\n{\n\tstatic const struct sched_param param = { .sched_priority = 0 };\n\t/* Copy data: it's on kthread's stack */\n\tstruct kthread_create_info *create = _create;\n\tint (*threadfn)(void *data) = create->threadfn;\n\tvoid *data = create->data;\n\tstruct completion *done;\n\tstruct kthread *self;\n\tint ret;\n\n\tself = to_kthread(current);\n\n\t/* Release the structure when caller killed by a fatal signal. */\n\tdone = xchg(&create->done, NULL);\n\tif (!done) {\n\t\tkfree(create->full_name);\n\t\tkfree(create);\n\t\tkthread_exit(-EINTR);\n\t}\n\n\tself->full_name = create->full_name;\n\tself->threadfn = threadfn;\n\tself->data = data;\n\n\t/*\n\t * The new thread inherited kthreadd's priority and CPU mask. Reset\n\t * back to default in case they have been changed.\n\t */\n\tsched_setscheduler_nocheck(current, SCHED_NORMAL, &param);\n\tset_cpus_allowed_ptr(current, housekeeping_cpumask(HK_TYPE_KTHREAD));\n\n\t/* OK, tell user we're spawned, wait for stop or wakeup */\n\t__set_current_state(TASK_UNINTERRUPTIBLE);\n\tcreate->result = current;\n\t/*\n\t * Thread is going to call schedule(), do not preempt it,\n\t * or the creator may spend more time in wait_task_inactive().\n\t */\n\tpreempt_disable();\n\tcomplete(done);\n\tschedule_preempt_disabled();\n\tpreempt_enable();\n\n\tret = -EINTR;\n\tif (!test_bit(KTHREAD_SHOULD_STOP, &self->flags)) {\n\t\tcgroup_kthread_ready();\n\t\t__kthread_parkme(self);\n\t\tret = threadfn(data);\n\t}\n\tkthread_exit(ret);\n}\n",
+      "bytes": 1415,
+      "sha256": "cc0d217601f57886154b1f815af2959bbb24a8abc9ee4575b18ab5fe79e74ddc"
+    },
+    "create_kthread": {
+      "source": "kernel/kthread.c",
+      "text": "static void create_kthread(struct kthread_create_info *create)\n{\n\tint pid;\n\n#ifdef CONFIG_NUMA\n\tcurrent->pref_node_fork = create->node;\n#endif\n\t/* We want our own signal handler (we take no signals by default). */\n\tpid = kernel_thread(kthread, create, create->full_name,\n\t\t\t    CLONE_FS | CLONE_FILES | SIGCHLD);\n\tif (pid < 0) {\n\t\t/* Release the structure when caller killed by a fatal signal. */\n\t\tstruct completion *done = xchg(&create->done, NULL);\n\n\t\tkfree(create->full_name);\n\t\tif (!done) {\n\t\t\tkfree(create);\n\t\t\treturn;\n\t\t}\n\t\tcreate->result = ERR_PTR(pid);\n\t\tcomplete(done);\n\t}\n}\n",
+      "bytes": 585,
+      "sha256": "2d25e0717577f05c4ee59cd58ba0825822fbd9591f53fe85c8c88e0b7da35c49"
+    }
+  },
+  "parentDerived": {
+    "net/factory-device.c": {
+      "bytes": 8766,
+      "sha256": "faa3c1e70d6674f703b251dcb871a39aceabaa2565e89d17432b24636d2a1a29"
+    },
+    "net/factory.c": {
+      "bytes": 31570,
+      "sha256": "5bf32aab4e00b50b4ae03bb22e6ddae69298fb3d7c10b21ea9d6ffe4a11bba24"
+    },
+    "kernel/kthread.c": {
+      "bytes": 44879,
+      "sha256": "6d37124e41fef69b70ff4259cdefb0698ff0d21f2031a8b63a34f7e30ff949ae"
+    },
+    "include/net/lsf_stream_cleanup_lifecycle.h": {
+      "bytes": 3061,
+      "sha256": "8541d5fc1066cc55f9857155be624fa5a24c444162ad4c52bce3e6f688967e85"
+    }
+  },
+  "entrySourceImplemented": true,
+  "taskCreated": false,
+  "executorReady": false,
+  "fullConstructorClosure": false,
+  "productionInstallation": false
+}

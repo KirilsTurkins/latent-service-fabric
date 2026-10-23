@@ -1,0 +1,135 @@
+{
+  "schemaVersion": "lsf.kernel-cleanup-worker-operations-source.v1",
+  "upstreamCommit": "7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+  "source": {
+    "kernel/module/kmod.c": {
+      "bytes": 4880,
+      "sha256": "0662fc474100bac0cd38c487dac680c0191f01f9180d50bb7db89524d2493092",
+      "gitBlob": "25f25381251281a390b273cd8a734c92b960113a",
+      "api": "https://api.github.com/repos/gregkh/linux/contents/kernel/module/kmod.c?ref=7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+      "downloadUrl": "https://raw.githubusercontent.com/gregkh/linux/7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e/kernel/module/kmod.c"
+    },
+    "include/linux/module.h": {
+      "bytes": 28222,
+      "sha256": "972e8336c0e0f04fc69b1bae9c12597046628dfb08ed480095db28836a41f233",
+      "gitBlob": "1cb6f80e1b48596adbc96f2523f8b8819cebccc9",
+      "api": "https://api.github.com/repos/gregkh/linux/contents/include/linux/module.h?ref=7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+      "downloadUrl": "https://raw.githubusercontent.com/gregkh/linux/7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e/include/linux/module.h"
+    },
+    "include/linux/kmod.h": {
+      "bytes": 1045,
+      "sha256": "28be64ad90b5d62b1dbad620e6dbda2443277d9474dd1420142cd3a9ce638013",
+      "gitBlob": "68f69362d427caaaefc2565127a7a4158433e5f5",
+      "api": "https://api.github.com/repos/gregkh/linux/contents/include/linux/kmod.h?ref=7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+      "downloadUrl": "https://raw.githubusercontent.com/gregkh/linux/7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e/include/linux/kmod.h"
+    },
+    "kernel/umh.c": {
+      "bytes": 15604,
+      "sha256": "3c3730cd09109f6f53a5deda6412d51ae7a869a2f0916f3d5ea35a5e9de8128e",
+      "gitBlob": "be92342707773127284d9a8588e6c06268b49139",
+      "api": "https://api.github.com/repos/gregkh/linux/contents/kernel/umh.c?ref=7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+      "downloadUrl": "https://raw.githubusercontent.com/gregkh/linux/7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e/kernel/umh.c"
+    },
+    "include/linux/preempt.h": {
+      "bytes": 16128,
+      "sha256": "c10fe586cd48f44503abfafa3e257560fd34a2d68cdb7cfeb9674ee59e244b6d",
+      "gitBlob": "ce76f1a45722529832a5eaefc077356cc0124c9f",
+      "api": "https://api.github.com/repos/gregkh/linux/contents/include/linux/preempt.h?ref=7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+      "downloadUrl": "https://raw.githubusercontent.com/gregkh/linux/7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e/include/linux/preempt.h"
+    },
+    "include/linux/umh.h": {
+      "bytes": 1862,
+      "sha256": "f0002537741ab5b124ec980051f2d91c459cf79452e89e1b1684108104f053d5",
+      "gitBlob": "daa6a7048c11ec729c8e47fcf5b511f54c74843d",
+      "api": "https://api.github.com/repos/gregkh/linux/contents/include/linux/umh.h?ref=7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+      "downloadUrl": "https://raw.githubusercontent.com/gregkh/linux/7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e/include/linux/umh.h"
+    },
+    "selected.config": {
+      "bytes": 143192,
+      "sha256": "b2bcccd5507f3f3a673690b660a2321870b57a3c77e72ce8532975f3c4752176"
+    }
+  },
+  "sections": {
+    "request_module": {
+      "source": "kernel/module/kmod.c",
+      "prefix": "int __request_module(",
+      "text": "int __request_module(bool wait, const char *fmt, ...)\n{\n\tva_list args;\n\tchar module_name[MODULE_NAME_LEN];\n\tint ret, dup_ret;\n\n\t/*\n\t * We don't allow synchronous module loading from async.  Module\n\t * init may invoke async_synchronize_full() which will end up\n\t * waiting for this task which already is waiting for the module\n\t * loading to complete, leading to a deadlock.\n\t */\n\tWARN_ON_ONCE(wait && current_is_async());\n\n\tif (!modprobe_path[0])\n\t\treturn -ENOENT;\n\n\tva_start(args, fmt);\n\tret = vsnprintf(module_name, MODULE_NAME_LEN, fmt, args);\n\tva_end(args);\n\tif (ret >= MODULE_NAME_LEN)\n\t\treturn -ENAMETOOLONG;\n\n\tret = security_kernel_module_request(module_name);\n\tif (ret)\n\t\treturn ret;\n\n\tret = down_timeout(&kmod_concurrent_max, MAX_KMOD_ALL_BUSY_TIMEOUT * HZ);\n\tif (ret) {\n\t\tpr_warn_ratelimited(\"request_module: modprobe %s cannot be processed, kmod busy with %d threads for more than %d seconds now\",\n\t\t\t\t    module_name, MAX_KMOD_CONCURRENT, MAX_KMOD_ALL_BUSY_TIMEOUT);\n\t\treturn ret;\n\t}\n\n\ttrace_module_request(module_name, wait, _RET_IP_);\n\n\tif (kmod_dup_request_exists_wait(module_name, wait, &dup_ret)) {\n\t\tret = dup_ret;\n\t\tgoto out;\n\t}\n\n\tret = call_modprobe(module_name, wait ? UMH_WAIT_PROC : UMH_WAIT_EXEC);\n\nout:\n\tup(&kmod_concurrent_max);\n\n\treturn ret;\n}\n",
+      "bytes": 1271,
+      "sha256": "07c6598b1fdd7a8fb94f4e88da1fb85c96a82f316a11ec5681ac599e45a1aba3"
+    },
+    "call_modprobe": {
+      "source": "kernel/module/kmod.c",
+      "prefix": "static int call_modprobe(",
+      "text": "static int call_modprobe(char *orig_module_name, int wait)\n{\n\tstruct subprocess_info *info;\n\tstatic char *envp[] = {\n\t\t\"HOME=/\",\n\t\t\"TERM=linux\",\n\t\t\"PATH=/sbin:/usr/sbin:/bin:/usr/bin\",\n\t\tNULL\n\t};\n\tchar *module_name;\n\tint ret;\n\n\tchar **argv = kmalloc(sizeof(char *[5]), GFP_KERNEL);\n\tif (!argv)\n\t\tgoto out;\n\n\tmodule_name = kstrdup(orig_module_name, GFP_KERNEL);\n\tif (!module_name)\n\t\tgoto free_argv;\n\n\targv[0] = modprobe_path;\n\targv[1] = \"-q\";\n\targv[2] = \"--\";\n\targv[3] = module_name;\t/* check free_modprobe_argv() */\n\targv[4] = NULL;\n\n\tinfo = call_usermodehelper_setup(modprobe_path, argv, envp, GFP_KERNEL,\n\t\t\t\t\t NULL, free_modprobe_argv, NULL);\n\tif (!info)\n\t\tgoto free_module_name;\n\n\tret = call_usermodehelper_exec(info, wait | UMH_KILLABLE);\n\tkmod_dup_request_announce(orig_module_name, ret);\n\treturn ret;\n\nfree_module_name:\n\tkfree(module_name);\nfree_argv:\n\tkfree(argv);\nout:\n\tkmod_dup_request_announce(orig_module_name, -ENOMEM);\n\treturn -ENOMEM;\n}\n",
+      "bytes": 952,
+      "sha256": "253137d6ee4d11a8397b1089b8a07a39e885d7b5369af4db78b4cc5954def3f5"
+    },
+    "helper": {
+      "source": "kernel/umh.c",
+      "prefix": "int call_usermodehelper(",
+      "text": "int call_usermodehelper(const char *path, char **argv, char **envp, int wait)\n{\n\tstruct subprocess_info *info;\n\tgfp_t gfp_mask = (wait == UMH_NO_WAIT) ? GFP_ATOMIC : GFP_KERNEL;\n\n\tinfo = call_usermodehelper_setup(path, argv, envp, gfp_mask,\n\t\t\t\t\t NULL, NULL, NULL);\n\tif (info == NULL)\n\t\treturn -ENOMEM;\n\n\treturn call_usermodehelper_exec(info, wait);\n}\n",
+      "bytes": 352,
+      "sha256": "3b6fb947453510032814862d8c0ef708ff0c07dd71df7b0458e1e327875e4467"
+    },
+    "setup": {
+      "source": "kernel/umh.c",
+      "prefix": "struct subprocess_info *call_usermodehelper_setup(",
+      "text": "struct subprocess_info *call_usermodehelper_setup(const char *path, char **argv,\n\t\tchar **envp, gfp_t gfp_mask,\n\t\tint (*init)(struct subprocess_info *info, struct cred *new),\n\t\tvoid (*cleanup)(struct subprocess_info *info),\n\t\tvoid *data)\n{\n\tstruct subprocess_info *sub_info;\n\tsub_info = kzalloc(sizeof(struct subprocess_info), gfp_mask);\n\tif (!sub_info)\n\t\tgoto out;\n\n\tINIT_WORK(&sub_info->work, call_usermodehelper_exec_work);\n\n#ifdef CONFIG_STATIC_USERMODEHELPER\n\tsub_info->path = CONFIG_STATIC_USERMODEHELPER_PATH;\n#else\n\tsub_info->path = path;\n#endif\n\tsub_info->argv = argv;\n\tsub_info->envp = envp;\n\n\tsub_info->cleanup = cleanup;\n\tsub_info->init = init;\n\tsub_info->data = data;\n  out:\n\treturn sub_info;\n}\n",
+      "bytes": 708,
+      "sha256": "582eda2c82d94b508e73bef0b72a066aec0a7fa93675326f21cd43609af46c7a"
+    },
+    "exec": {
+      "source": "kernel/umh.c",
+      "prefix": "int call_usermodehelper_exec(",
+      "text": "int call_usermodehelper_exec(struct subprocess_info *sub_info, int wait)\n{\n\tunsigned int state = TASK_UNINTERRUPTIBLE;\n\tDECLARE_COMPLETION_ONSTACK(done);\n\tint retval = 0;\n\n\tif (!sub_info->path) {\n\t\tcall_usermodehelper_freeinfo(sub_info);\n\t\treturn -EINVAL;\n\t}\n\thelper_lock();\n\tif (usermodehelper_disabled) {\n\t\tretval = -EBUSY;\n\t\tgoto out;\n\t}\n\n\t/*\n\t * If there is no binary for us to call, then just return and get out of\n\t * here.  This allows us to set STATIC_USERMODEHELPER_PATH to \"\" and\n\t * disable all call_usermodehelper() calls.\n\t */\n\tif (strlen(sub_info->path) == 0)\n\t\tgoto out;\n\n\t/*\n\t * Set the completion pointer only if there is a waiter.\n\t * This makes it possible to use umh_complete to free\n\t * the data structure in case of UMH_NO_WAIT.\n\t */\n\tsub_info->complete = (wait == UMH_NO_WAIT) ? NULL : &done;\n\tsub_info->wait = wait;\n\n\tqueue_work(system_unbound_wq, &sub_info->work);\n\tif (wait == UMH_NO_WAIT)\t/* task has freed sub_info */\n\t\tgoto unlock;\n\n\tif (wait & UMH_FREEZABLE)\n\t\tstate |= TASK_FREEZABLE;\n\n\tif (wait & UMH_KILLABLE) {\n\t\tretval = wait_for_completion_state(&done, state | TASK_KILLABLE);\n\t\tif (!retval)\n\t\t\tgoto wait_done;\n\n\t\t/* umh_complete() will see NULL and free sub_info */\n\t\tif (xchg(&sub_info->complete, NULL))\n\t\t\tgoto unlock;\n\n\t\t/*\n\t\t * fallthrough; in case of -ERESTARTSYS now do uninterruptible\n\t\t * wait_for_completion_state(). Since umh_complete() shall call\n\t\t * complete() in a moment if xchg() above returned NULL, this\n\t\t * uninterruptible wait_for_completion_state() will not block\n\t\t * SIGKILL'ed processes for long.\n\t\t */\n\t}\n\twait_for_completion_state(&done, state);\n\nwait_done:\n\tretval = sub_info->retval;\nout:\n\tcall_usermodehelper_freeinfo(sub_info);\nunlock:\n\thelper_unlock();\n\treturn retval;\n}\n",
+      "bytes": 1740,
+      "sha256": "2eb4e1c4d4ee8e9b116c8da3638eaabe4ec768031b12d0f1fd596c3feaeb3f2b"
+    },
+    "freeinfo": {
+      "source": "kernel/umh.c",
+      "prefix": "static void call_usermodehelper_freeinfo(",
+      "text": "static void call_usermodehelper_freeinfo(struct subprocess_info *info)\n{\n\tif (info->cleanup)\n\t\t(*info->cleanup)(info);\n\tkfree(info);\n}\n",
+      "bytes": 135,
+      "sha256": "823d87ea05c77522c1227408fb51969b4eb22c0c7f1c866551c90d2965e45107"
+    },
+    "exec_work": {
+      "source": "kernel/umh.c",
+      "prefix": "static void call_usermodehelper_exec_work(",
+      "text": "static void call_usermodehelper_exec_work(struct work_struct *work)\n{\n\tstruct subprocess_info *sub_info =\n\t\tcontainer_of(work, struct subprocess_info, work);\n\n\tif (sub_info->wait & UMH_WAIT_PROC) {\n\t\tcall_usermodehelper_exec_sync(sub_info);\n\t} else {\n\t\tpid_t pid;\n\t\t/*\n\t\t * Use CLONE_PARENT to reparent it to kthreadd; we do not\n\t\t * want to pollute current->children, and we need a parent\n\t\t * that always ignores SIGCHLD to ensure auto-reaping.\n\t\t */\n\t\tpid = user_mode_thread(call_usermodehelper_exec_async, sub_info,\n\t\t\t\t       CLONE_PARENT | SIGCHLD);\n\t\tif (pid < 0) {\n\t\t\tsub_info->retval = pid;\n\t\t\tumh_complete(sub_info);\n\t\t}\n\t}\n}\n",
+      "bytes": 636,
+      "sha256": "76873f50c81f715942af6044bd61b95a2367577b891676760c141f01bbd8d775"
+    },
+    "exec_sync": {
+      "source": "kernel/umh.c",
+      "prefix": "static void call_usermodehelper_exec_sync(",
+      "text": "static void call_usermodehelper_exec_sync(struct subprocess_info *sub_info)\n{\n\tpid_t pid;\n\n\t/* If SIGCLD is ignored do_wait won't populate the status. */\n\tkernel_sigaction(SIGCHLD, SIG_DFL);\n\tpid = user_mode_thread(call_usermodehelper_exec_async, sub_info, SIGCHLD);\n\tif (pid < 0)\n\t\tsub_info->retval = pid;\n\telse\n\t\tkernel_wait(pid, &sub_info->retval);\n\n\t/* Restore default kernel sig handler */\n\tkernel_sigaction(SIGCHLD, SIG_IGN);\n\tumh_complete(sub_info);\n}\n",
+      "bytes": 459,
+      "sha256": "209702055816e78836bfdd23bffe46d120956820a367f5f9fae47919bfc59a86"
+    },
+    "exec_async": {
+      "source": "kernel/umh.c",
+      "prefix": "static int call_usermodehelper_exec_async(",
+      "text": "static int call_usermodehelper_exec_async(void *data)\n{\n\tstruct subprocess_info *sub_info = data;\n\tstruct cred *new;\n\tint retval;\n\n\tspin_lock_irq(&current->sighand->siglock);\n\tflush_signal_handlers(current, 1);\n\tspin_unlock_irq(&current->sighand->siglock);\n\n\t/*\n\t * Initial kernel threads share ther FS with init, in order to\n\t * get the init root directory. But we've now created a new\n\t * thread that is going to execve a user process and has its own\n\t * 'struct fs_struct'. Reset umask to the default.\n\t */\n\tcurrent->fs->umask = 0022;\n\n\t/*\n\t * Our parent (unbound workqueue) runs with elevated scheduling\n\t * priority. Avoid propagating that into the userspace child.\n\t */\n\tset_user_nice(current, 0);\n\n\tretval = -ENOMEM;\n\tnew = prepare_kernel_cred(current);\n\tif (!new)\n\t\tgoto out;\n\n\tspin_lock(&umh_sysctl_lock);\n\tnew->cap_bset = cap_intersect(usermodehelper_bset, new->cap_bset);\n\tnew->cap_inheritable = cap_intersect(usermodehelper_inheritable,\n\t\t\t\t\t     new->cap_inheritable);\n\tspin_unlock(&umh_sysctl_lock);\n\n\tif (sub_info->init) {\n\t\tretval = sub_info->init(sub_info, new);\n\t\tif (retval) {\n\t\t\tabort_creds(new);\n\t\t\tgoto out;\n\t\t}\n\t}\n\n\tcommit_creds(new);\n\n\twait_for_initramfs();\n\tretval = kernel_execve(sub_info->path,\n\t\t\t       (const char *const *)sub_info->argv,\n\t\t\t       (const char *const *)sub_info->envp);\nout:\n\tsub_info->retval = retval;\n\t/*\n\t * call_usermodehelper_exec_sync() will call umh_complete\n\t * if UHM_WAIT_PROC.\n\t */\n\tif (!(sub_info->wait & UMH_WAIT_PROC))\n\t\tumh_complete(sub_info);\n\tif (!retval)\n\t\treturn 0;\n\tdo_exit(0);\n}\n",
+      "bytes": 1547,
+      "sha256": "a3421cc1c5a719a847e9204040ed5935ba1cae8267d39d77412dd48e320ec879"
+    }
+  },
+  "parentDerived": {
+    "net/factory.c": {
+      "bytes": 32516,
+      "sha256": "0e24ddae52cf5b3da0c89e77cda9c4873564dcfeb437156f157722fce16b4fab"
+    }
+  },
+  "operationExecuted": false,
+  "factoryCallsFullWorkerCreate": false,
+  "pendingConsumerCallsFullClone": false,
+  "taskCreated": false,
+  "executorReady": false,
+  "foreignInfoCleanupQualified": false,
+  "publishedWorkerLsmQualified": false,
+  "observerClosure": false,
+  "bootstrapQualified": false,
+  "fullConstructorClosure": false,
+  "completeAllocationClosure": false,
+  "productionInstallation": false
+}
