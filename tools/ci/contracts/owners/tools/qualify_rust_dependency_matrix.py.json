@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_dependency_matrix.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve reviewed physical result-owner retirement, authenticate the exact host-only bytes source and upstream advisory identity, project only original registry guest inputs, and retain exact before/after source decision fences; all previous cases, limits and execution guards preserved.",
+  "reviewReason": "Defer authenticated45-file host projection inputs until explicit Rust recipe selection, preserving the exact selected116-file recipe and original post-build byte fences; foreign staged builders import only shared Commands without reading Rust host source.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "23656ecf92f4f2318c9c482294d71df8b2ec2307753eacfe1aca15e5ab021fdc"
+  "sha256": "f57d80706ae02e00a89b167535c8d095d86daa518f5056f1fec52e65ee0ee0a5"
 }

@@ -60,13 +60,13 @@ def source_files(root=ROOT) -> dict[str, bytes]:
     Consumer-only forwarding/projection/composition sources are bound separately
     by consumer_files; changes there cannot relabel an existing adapter build.
     """
-    from tools.rust_capsule_build import RECIPE as build_helpers
+    from tools.rust_capsule_build import selected_recipe
     root = checked_path(root)
     profile.validate_assets(root)
     files = {'sdk/wasi-http-runtime/' + name: body
         for name, body in snapshot(root / 'sdk/wasi-http-runtime').items()}
     require(1 <= len(files) <= 128, 'runtime-source-file-bound')
-    for name in dict.fromkeys((*RECIPE, *SHARED, *build_helpers)):
+    for name in dict.fromkeys((*RECIPE, *SHARED, *selected_recipe(root))):
         files[name] = read_file(root / name, MAX_SOURCE)
     require(len(files) <= 256 and sum(map(len, files.values())) <= MAX_SOURCE,
         'runtime-recipe-bound')
