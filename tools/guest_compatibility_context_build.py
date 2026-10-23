@@ -6,13 +6,61 @@ from pathlib import Path
 from tools import guest_compatibility as compatibility
 from tools import guest_compatibility_context as context
 from tools import guest_emitted_code, guest_runtime_receipts
-from tools.dev_workflow.common import decode, digest, encode, require
+from tools.dev_workflow.common import decode, digest, encode, require, sha
 from tools.rust_capsule_project import inventory, read_file, write_json
 
 # Rust's shared Commands/package_inputs module is imported by every owner, so
 # its runtime receipt dependency belongs in their common captured closure too.
 RECIPE = ('tools/guest_compatibility_context.py', 'tools/guest_compatibility_context_build.py',
           'tools/guest_runtime_receipts.py', 'tools/guest_emitted_code.py')
+
+
+JAVA_COMPILER_PATCH = 'java-teavm-coroutine-compiler'
+JAVA_COMPILER_PATCH_NAMES = frozenset((JAVA_COMPILER_PATCH, 'java-teavm-coroutine-source',
+    'java-teavm-array-root-source', 'java-teavm-monitor-source'))
+
+
+def java_compiler_materials(bindings, profile, recipe):
+    """Project the bound compiler owner's receipt, never certify an API."""
+    require(isinstance(bindings, dict), 'compatibility-context-java-bindings')
+    if 'coroutineCompiler' not in bindings:
+        return []  # Historical/base builds have no selected coroutine patch.
+    patch = bindings['coroutineCompiler']
+    require(isinstance(patch, dict)
+            and patch.get('schemaVersion') == 'latent.java.coroutine-compiler-patch.v1',
+            'compatibility-context-java-compiler-receipt')
+    classes = patch.get('replacedClasses')
+    require(isinstance(classes, dict) and 0 < len(classes) <= 32,
+            'compatibility-context-java-compiler-classes')
+    expected = {}
+    for name, row in classes.items():
+        require(isinstance(row, dict) and all(isinstance(row.get(key), str)
+                for key in ('originalSha256', 'replacementSha256')),
+                'compatibility-context-java-compiler-class')
+        sha('sha256:' + row['originalSha256'])
+        sha('sha256:' + row['replacementSha256'])
+        expected[name] = row['replacementSha256']
+    loaded = patch.get('loadedCompiler')
+    require(isinstance(loaded, dict) and loaded.get('selectedOwnedReplacement') is True and loaded == {
+        'schemaVersion': 'latent.java.coroutine-compiler-load.v1',
+        'selectedOwnedReplacement': True,
+        'replacementJarSha256': patch['replacementJarSha256'],
+        'loadedJarSha256': patch['replacementJarSha256'],
+        'codeSourceKind': loaded.get('codeSourceKind'), 'loadedClasses': expected}
+        and loaded['codeSourceKind'] in {'owned-replacement', 'byte-identical-copy'},
+        'compatibility-context-java-compiler-load')
+    # Hash the complete already-bound owner receipt, including loaded classes.
+    # Only fixed names and digests enter the public context/presentation.
+    transformation = digest(encode({'recipeDigest': recipe, 'receipt': patch}))
+    pairs = ((JAVA_COMPILER_PATCH, 'originalJarSha256', 'replacementJarSha256'),
+        ('java-teavm-coroutine-source', 'upstreamSourceSha256', 'correctedSourceSha256'),
+        ('java-teavm-array-root-source', 'upstreamTypeSourceSha256', 'correctedTypeSourceSha256'),
+        ('java-teavm-monitor-source', 'upstreamAsyncFinderSourceSha256', 'correctedAsyncFinderSourceSha256'))
+    require(all(isinstance(patch.get(key), str) for _, original, selected in pairs
+                for key in (original, selected)), 'compatibility-context-java-compiler-identities')
+    return [context.material('patch', name, 'sha256:' + patch[selected], profile=profile,
+        original='sha256:' + patch[original], transformation=transformation)
+        for name, original, selected in pairs]
 
 
 def dependency_materials(files, source_inputs, language):
@@ -99,6 +147,14 @@ def finish(output: Path, files: dict[str, bytes], source_inputs: bytes,
                     original=transform['originalDigest'], transformation=digest(encode(transform))))
         # A compiler receipt identifies selection. Even a "qualified" string
         # cannot establish this component's reachability or runtime behavior.
+    if report['language'] == 'java' and 'generated-bindings' in captured:
+        _, bindings = bound_receipt('bindings.json', 'generated-bindings', 4 * 1024 * 1024)
+        require(isinstance(bindings, dict), 'compatibility-context-java-bindings')
+        if 'coroutineCompiler' in bindings:
+            recipe = captured.get('build-recipe')
+            require(recipe is not None and selected['state'] == 'selected-unqualified',
+                    'compatibility-context-java-compiler-runtime-required')
+            retained.extend(java_compiler_materials(bindings, selected['profile'], recipe['digest']))
     patches_path = output / 'compiler-patches.json'
     if patches_path.exists():
         raw, patches = bound_receipt('compiler-patches.json', 'automatic-compiler-patches', 4 * 1024 * 1024)
