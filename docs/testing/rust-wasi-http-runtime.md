@@ -1,10 +1,13 @@
 # Selected Rust WASI HTTP runtime
 
 This source implements a selected backend for the six external WASI 0.2.12
-interfaces observed from ordinary, unchanged Waki and Golem clients. Its first
-owning workflow compiles the adapter and exercises bounded fields/options
-controls. **The adapter and compiler integration have not yet passed a signed
-client programme.** Compilation alone does not qualify #689 or #743.
+interfaces observed from ordinary, unchanged Waki and Golem clients. The
+[actual signed programme](evidence/rust-wasi-http-signed-2026-10-21.json) passed
+64 attempts: 52 ordinary cases, one queued holder and 11 pre-entry refusals.
+It reuses the original authenticated component, backend and native products.
+The separate [nine-attempt limits programme](evidence/rust-wasi-http-limits-2026-10-22.json)
+now supplies individual signed memory, Task and Timer differentials with matched
+fresh reuse. These finite results do not close #689 or #743.
 
 The upstream files are complete originals from
 [`wasip2 1.0.4+wasi-0.2.12`](https://crates.io/crates/wasip2/1.0.4+wasi-0.2.12).
@@ -104,9 +107,12 @@ pinned composer. Only the internal blocking operations and private drain are
 projected; every original application core byte must survive. Final WASI/private
 imports or undeclared authority fail the build before packaging.
 
-The pending qualification must exercise actual signed two-client/developer-crate
-calls, real provider errors and denials, partial I/O, cancellation, uncertain
-POST without replay, lifecycle retirement, physical owners and fresh tenant reuse.
+The signed finite programme exercises two unchanged clients and varied captured
+developer-crate coordinates, real errors and independent authority denials,
+partial I/O, cancellation, uncertain POST without replay, lifecycle retirement,
+physical owners and fresh cross-tenant reuse. Each public case retains its own
+original values and SHA/byte identity; the aggregate stays within its original
+256 KiB bound.
 The historical [compiler-only observation](rust-wasi-http-inputs.md) remains
 separately attributable and retains its original compatibility failure.
 
@@ -117,8 +123,9 @@ call; the diagnostic is not qualification. The Component Model's
 [concurrency contract](https://github.com/WebAssembly/component-model/blob/main/design/mvp/Concurrency.md)
 distinguishes a function's async effect from its Core ABI. Generator-only controls
 verify the explicit contract and unchanged ordinary source bodies. The installed
-finite programme now proves real execution of that contract; the complete signed
-runtime matrix remains pending.
+finite installed programme and the signed 64-attempt programme now prove real
+execution of that contract. The separate [individual limits programme](rust-wasi-http-limits.md)
+now supplies signed memory/Task/Timer differentials and matched fresh calls.
 
 The `8e6ce8d` installed owning attempt compiled one genuine installed-entry
 component with all 32 normal compiler/composition commands passing. Its
@@ -131,8 +138,25 @@ and adds the actual packager identity. The corrected installed attempt passed al
 attempts using the retained native and backend products. No host or backend
 was rebuilt. The original 155 qualifier materials, 245 assembly inputs and 116
 Rust recipe inputs remain bound to `ed4fdcbb...`. Current development preserves
-all 155 qualifier and 116 Rust recipe bytes; five Java/.NET assembly
-helpers outside the selected Rust compiler recipe differ, listed in the observation. The historical installed inventory
+all 155 qualifier and 116 Rust recipe bytes at the #1314 integration; five
+Java/.NET assembly helpers outside the selected Rust compiler recipe differ,
+listed in that observation. The later 64-attempt integration retains all 30
+executed replay materials. Its original compiler recipe remains attributed to
+88b: a separate Go-only profile-list addition changes one current helper, and
+the strict runtime reader has its explicit later source identity. The historical installed inventory
 and compiler statements have not been rewritten as a current assembly.
 The original [failure observation](evidence/rust-wasi-http-installed-packaging-failure-2026-10-21.json)
 remains failed.
+
+
+The 64-attempt result retains the earlier failed pressure and reader runs. Waki
+returns the precise resource error; Golem's exact pressure trap has eight charged
+outbound starts and eight accepted TCP connections, with seven parsed complete
+responses and one exact preparse close. Both pass physical/provider retirement
+and fresh opposite-client reuse. The limiting owner and trap instruction remain
+unknown. Peak memory below 16 MiB and positive Task/Wait/Timer ownership do not
+prove individual memory, Task or Timer exhaustion. The separate nine-attempt
+limits programme supplies those three differentials with their own positive,
+physical/provider retirement and fresh gates. Its memory public detail remains
+empty and its Timer instruction remains unknown; no blanket runtime or
+scheduler qualification is inferred.

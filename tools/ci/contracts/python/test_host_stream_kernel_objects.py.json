@@ -48,6 +48,20 @@
     "KernelPacketObjectSelection.test_packet_receipt_cannot_claim_kernel_packet_dma_or_final_free_execution",
     "KernelPacketObjectSelection.test_twenty_seven_objects_retain_all_eighty_seven_and_add_twelve_real_functions",
     "KernelPacketObjectSelection.test_unknown_mixed_and_local_packet_profiles_refuse_before_archive_or_build",
+    "KernelRecipientObjectSelection.test_13_anchored_same_archive_inputs_authenticate_full105_before_any_derive",
+    "KernelRecipientObjectSelection.test_56_objects_preserve_all_48_201_and_require_243_distinct_globals",
+    "KernelRecipientObjectSelection.test_closed_recipient_mode_rejects_mixed_unknown_and_local_before_source_read",
+    "KernelRecipientObjectSelection.test_entire_new_fixture_context_restores_on_failure_and_refuses_mutable_recipe",
+    "KernelRecipientObjectSelection.test_new_job_is_exclusive_preserves_old13_and_retains_all56_original_bounds",
+    "KernelRecipientObjectSelection.test_original_enabled_wait_tracing_and_non_rt_configs_are_required_without_override",
+    "KernelRecipientObjectSelection.test_wait_uses_authenticated_maintained_containing_tu_without_invented_prologue",
+    "KernelRegistrationObjectSelection.test_config_requires_original_security_and_closed_callback_profile_without_overrides",
+    "KernelRegistrationObjectSelection.test_exclusive_workflow_has_original_bounds_all48_artifacts_and_closed_env_not_shell_inputs",
+    "KernelRegistrationObjectSelection.test_fixture_context_authenticates_once_returns_fresh_nested_copies_and_restores_functions",
+    "KernelRegistrationObjectSelection.test_fixture_context_restores_on_original_failure_and_refuses_source_drift",
+    "KernelRegistrationObjectSelection.test_forty_eight_objects_preserve_all_37_145_and_require_201_actual_globals",
+    "KernelRegistrationObjectSelection.test_mixed_unknown_and_local_registration_refuse_before_acquisition",
+    "KernelRegistrationObjectSelection.test_twenty_fixed_same_archive_paths_authenticate_full92_and_preserve_read_bounds",
     "KernelRouteCacheObjectSelection.test_all_eight_previous_profiles_retain_their_exact_symbol_oracles",
     "KernelRouteCacheObjectSelection.test_all_eight_prior_job_bodies_remain_exact_with_only_closed_cache_exclusion",
     "KernelRouteCacheObjectSelection.test_cache_keeps_same_twenty_four_targets_and_all_eighty_one_original_functions",
@@ -641,6 +655,174 @@
       ],
       "skipSites": []
     },
+    "KernelRecipientObjectSelection.test_13_anchored_same_archive_inputs_authenticate_full105_before_any_derive": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelRecipientObjectSelection.test_56_objects_preserve_all_48_201_and_require_243_distinct_globals": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelRecipientObjectSelection.test_closed_recipient_mode_rejects_mixed_unknown_and_local_before_source_read": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelRecipientObjectSelection.test_entire_new_fixture_context_restores_on_failure_and_refuses_mutable_recipe": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelRecipientObjectSelection.test_new_job_is_exclusive_preserves_old13_and_retains_all56_original_bounds": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelRecipientObjectSelection.test_original_enabled_wait_tracing_and_non_rt_configs_are_required_without_override": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelRecipientObjectSelection.test_wait_uses_authenticated_maintained_containing_tu_without_invented_prologue": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelRegistrationObjectSelection.test_config_requires_original_security_and_closed_callback_profile_without_overrides": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelRegistrationObjectSelection.test_exclusive_workflow_has_original_bounds_all48_artifacts_and_closed_env_not_shell_inputs": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelRegistrationObjectSelection.test_fixture_context_authenticates_once_returns_fresh_nested_copies_and_restores_functions": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelRegistrationObjectSelection.test_fixture_context_restores_on_original_failure_and_refuses_source_drift": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelRegistrationObjectSelection.test_forty_eight_objects_preserve_all_37_145_and_require_201_actual_globals": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelRegistrationObjectSelection.test_mixed_unknown_and_local_registration_refuse_before_acquisition": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KernelRegistrationObjectSelection.test_twenty_fixed_same_archive_paths_authenticate_full92_and_preserve_read_bounds": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "KernelRouteCacheObjectSelection.test_all_eight_previous_profiles_retain_their_exact_symbol_oracles": {
       "bases": [
         "unittest.TestCase"
@@ -824,6 +1006,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_host_stream_kernel_objects.py",
-  "reviewReason": "Reviewed cached ACPI reference and prepaid cleanup continuation source; exclusive37object compile preserves all prior profiles cases commands security and bounds; no runtime installed or shared-queue physical qualification",
+  "reviewReason": "Correct the owning target to the exact maintained scheduler containing translation unit; authenticate its three complete original files, preserve all56 objects243 oracles and existing bodies/configuration/bounds, and retain the original failed standalone-wait attempt.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

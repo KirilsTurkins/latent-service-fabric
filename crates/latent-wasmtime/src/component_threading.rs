@@ -8,6 +8,7 @@ use latent_executor::PreparedComponent;
 
 pub(crate) const PROFILE: &str = "rust-context40-sole-consumer-one-task-start-v1";
 pub(crate) const C_PROFILE: &str = "c-context144-sync-cooperative-v1";
+pub(crate) const RUST_SYNC_PROFILE: &str = "rust-context40-sync-cooperative-v1";
 pub(crate) const METADATA: &str = "component-thread-authentication";
 
 #[derive(Debug)]
@@ -15,6 +16,7 @@ pub(crate) enum Authentication {
     Disabled,
     Verified([u8; 32]),
     CVerified([u8; 32]),
+    RustSyncVerified([u8; 32]),
 }
 
 impl Authentication {
@@ -48,6 +50,14 @@ impl Authentication {
                     .map_err(|_| invalid())?;
             return Ok(Self::CVerified(receipt.component_digest));
         }
+        if profile == crate::NativeThreadProfile::RustContext40SyncCooperativeV1 {
+            let receipt =
+                latent_component_threading::rust_component::verify_embedded_rust_original_core(
+                    bytes,
+                )
+                .map_err(|_| invalid())?;
+            return Ok(Self::RustSyncVerified(receipt.component_digest));
+        }
         let receipt =
             latent_component_threading::verify_component_routing(bytes).map_err(|_| invalid())?;
         Ok(Self::Verified(receipt.component_digest))
@@ -56,7 +66,9 @@ impl Authentication {
     pub(crate) fn retained_bytes(&self) -> usize {
         match self {
             Self::Disabled => 0,
-            Self::Verified(_) | Self::CVerified(_) => std::mem::size_of::<Self>(),
+            Self::Verified(_) | Self::CVerified(_) | Self::RustSyncVerified(_) => {
+                std::mem::size_of::<Self>()
+            }
         }
     }
 
@@ -103,6 +115,18 @@ impl Authentication {
                     Err(invalid())
                 }
             }
+            (
+                Self::RustSyncVerified(digest),
+                Some(crate::NativeThreadProfile::RustContext40SyncCooperativeV1),
+                Some(profile),
+            ) if profile == RUST_SYNC_PROFILE => {
+                let expected = format!("sha256:{:x}", latent_core::digest::HexDigest(digest));
+                if descriptor.metadata.get("component-digest") == Some(&expected) {
+                    Ok(())
+                } else {
+                    Err(invalid())
+                }
+            }
             _ => Err(invalid()),
         }
     }
@@ -120,6 +144,9 @@ impl Authentication {
                 Some(crate::NativeThreadProfile::RustContext40SoleConsumerOneTaskStartV1)
             }
             Some(C_PROFILE) => Some(crate::NativeThreadProfile::CContext144SyncCooperativeV1),
+            Some(RUST_SYNC_PROFILE) => {
+                Some(crate::NativeThreadProfile::RustContext40SyncCooperativeV1)
+            }
             _ => return Err(invalid()),
         };
         self.check_profile(selected, descriptor)
@@ -139,6 +166,38 @@ mod tests {
     use super::*;
     use latent_core::{Metadata, ReleaseDigest};
     use latent_executor::PreparationKey;
+
+    #[test]
+    fn rust_sync_private_dispatch_executes_production_helper_and_preserves_source_fallback() {
+        let raw = latent_component_threading::rust_objects::emitted_dispatch_controls().unwrap();
+        let mut config = wasmtime::Config::new();
+        config.consume_fuel(true);
+        let engine = wasmtime::Engine::new(&config).unwrap();
+        let module = wasmtime::Module::new(&engine, raw).unwrap();
+        let mut store = wasmtime::Store::new(&engine, ());
+        store.set_fuel(10_000).unwrap();
+        let instance = wasmtime::Instance::new(&mut store, &module, &[]).unwrap();
+        for (name, pointer, expected) in [
+            ("strict", 0, Some(107)),
+            ("strict", 1, None),
+            ("release", 0, Some(107)),
+            ("release", 1, Some(17)),
+            ("ordinary", 0, None),
+            ("ordinary", 1, Some(17)),
+        ] {
+            let function = instance
+                .get_typed_func::<(i32, i32), i32>(&mut store, name)
+                .unwrap();
+            let result = function.call(&mut store, (7, pointer));
+            match expected {
+                Some(value) => assert_eq!(result.unwrap(), value),
+                None => assert_eq!(
+                    result.unwrap_err().downcast_ref::<wasmtime::Trap>(),
+                    Some(&wasmtime::Trap::UnreachableCodeReached)
+                ),
+            }
+        }
+    }
 
     fn descriptor() -> PreparedComponent {
         PreparedComponent {
@@ -164,23 +223,28 @@ mod tests {
 
     #[test]
     fn c_profile_requires_prepaid_work_before_reading_proof_and_never_grants_from_data() {
-        let profile = Some(crate::NativeThreadProfile::CContext144SyncCooperativeV1);
-        let work = latent_component_threading::c_preimage::C_VERIFICATION_WORK_BYTES;
-        assert_eq!(work, 48 * 1024 * 1024);
-        for prepaid in [0, work - 1] {
+        for selected in [
+            crate::NativeThreadProfile::CContext144SyncCooperativeV1,
+            crate::NativeThreadProfile::RustContext40SyncCooperativeV1,
+        ] {
+            let profile = Some(selected);
+            let work = latent_component_threading::c_preimage::C_VERIFICATION_WORK_BYTES;
+            assert_eq!(work, 48 * 1024 * 1024);
+            for prepaid in [0, work - 1] {
+                assert_eq!(
+                    Authentication::verify_profile(profile, b"invalid", prepaid)
+                        .unwrap_err()
+                        .code,
+                    PlatformErrorCode::ResourceExhausted
+                );
+            }
             assert_eq!(
-                Authentication::verify_profile(profile, b"invalid", prepaid)
+                Authentication::verify_profile(profile, b"invalid", work)
                     .unwrap_err()
                     .code,
-                PlatformErrorCode::ResourceExhausted
+                PlatformErrorCode::CorruptArtifact
             );
         }
-        assert_eq!(
-            Authentication::verify_profile(profile, b"invalid", work)
-                .unwrap_err()
-                .code,
-            PlatformErrorCode::CorruptArtifact
-        );
         assert!(matches!(
             Authentication::verify_profile(None, b"invalid", 0),
             Ok(Authentication::Disabled)
@@ -208,6 +272,29 @@ mod tests {
             .is_err());
         original.metadata.insert(METADATA.into(), PROFILE.into());
         assert!(proof.check_before_instantiation(&original).is_err());
+        let rust = Authentication::RustSyncVerified([0x11; 32]);
+        original
+            .metadata
+            .insert(METADATA.into(), RUST_SYNC_PROFILE.into());
+        rust.check_profile(
+            Some(crate::NativeThreadProfile::RustContext40SyncCooperativeV1),
+            &original,
+        )
+        .unwrap();
+        rust.check_before_instantiation(&original).unwrap();
+        for wrong in [
+            None,
+            Some(crate::NativeThreadProfile::CContext144SyncCooperativeV1),
+            Some(crate::NativeThreadProfile::RustContext40SoleConsumerOneTaskStartV1),
+        ] {
+            assert!(rust.check_profile(wrong, &original).is_err());
+        }
+        assert!(proof
+            .check_profile(
+                Some(crate::NativeThreadProfile::RustContext40SyncCooperativeV1),
+                &original
+            )
+            .is_err());
     }
 
     #[test]

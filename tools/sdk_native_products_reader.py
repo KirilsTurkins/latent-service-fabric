@@ -50,7 +50,7 @@ class FrozenNativeProducts:
             and type(branch) is str and re.fullmatch(r'[A-Za-z0-9._/-]{1,128}', branch)
             and type(event) is str and event in ('push', 'workflow_dispatch')
             and type(include_protocol) is bool
-            and type(stages) is tuple and 0 < len(stages) <= 64
+            and type(stages) is tuple and self._valid_stages(stages)
             and len(set(stages)) == len(stages)
             and all(type(stage) is str and re.fullmatch(r'[a-z0-9-]{1,80}', stage) for stage in stages),
             'sdk-native-frozen-configuration')
@@ -60,6 +60,11 @@ class FrozenNativeProducts:
         # Own detached data so callers cannot mutate the original pin dictionaries.
         self.artifact, self.receipts = copy.deepcopy(artifact), copy.deepcopy(receipts)
         self._pins()
+
+    def _valid_stages(self, stages):
+        """Historical readers retain their original finite stage-count bound."""
+        return 0 < len(stages) <= 64
+
     def validate_record(self, record, snapshot, native, materials):
         require(type(record) is dict and set(record) == {'schemaVersion', 'status', 'sourceRevision', 'source',
             'materials', 'compiler', 'products', 'commands', 'profile', 'signedQualification',
@@ -87,6 +92,7 @@ class FrozenNativeProducts:
 
     def _git_materials(self):
         """One bounded Git batch binds all actual auxiliary compile-input trees."""
+        recipe = self._material_recipe()
         trees = {'wit': (2048, 8*1024**2), 'schemas': (256, 4*1024**2),
                  'examples/echo-contract/wit': (128, 1024**2)}
         # Historical tuples retain exactly their original auxiliary tree set.
@@ -94,7 +100,7 @@ class FrozenNativeProducts:
         if self.include_protocol:
             trees['api/proto'] = (128, 1024**2)
         raw = subprocess.check_output(['git', 'ls-tree', '-rz', self.source, '--',
-            *MATERIALS, *trees], cwd=ROOT, timeout=30)
+            *recipe, *trees], cwd=ROOT, timeout=30)
         require(len(raw) <= 1024**2, 'sdk-native-material-tree-bound')
         entries, counts, sizes = [], dict.fromkeys(trees, 0), dict.fromkeys(trees, 0)
         for item in raw.rstrip(b'\0').split(b'\0'):
@@ -104,12 +110,12 @@ class FrozenNativeProducts:
             require(mode in ('100644', '100755') and kind == 'blob'
                 and PurePosixPath(name).as_posix() == name and '..' not in PurePosixPath(name).parts
                 and not PurePosixPath(name).is_absolute(), 'sdk-native-material-regular')
-            require(name in MATERIALS or any(name.startswith(tree+'/') for tree in trees),
+            require(name in recipe or any(name.startswith(tree+'/') for tree in trees),
                 'sdk-native-material-scope')
             entries.append((name, oid))
         names = [name for name, _ in entries]
-        require(set(MATERIALS) <= set(names) and len(names) == len(set(names))
-            and 0 < len(names) <= len(MATERIALS)+sum(cap[0] for cap in trees.values()),
+        require(set(recipe) <= set(names) and len(names) == len(set(names))
+            and 0 < len(names) <= len(recipe)+sum(cap[0] for cap in trees.values()),
             'sdk-native-material-file-bound')
         data = subprocess.run(['git', 'cat-file', '--batch'],
             input=''.join(oid+'\n' for _, oid in entries).encode(), stdout=subprocess.PIPE,
@@ -122,7 +128,7 @@ class FrozenNativeProducts:
             require(len(header) == 3 and header[:2] == [oid, 'blob'],
                 'sdk-native-material-Git-header')
             size = int(header[2]);position = line+1
-            maximum = 1024**2 if name in MATERIALS else next(
+            maximum = 1024**2 if name in recipe else next(
                 cap[1] for tree, cap in trees.items() if name.startswith(tree+'/'))
             require(0 < size <= maximum and position+size < len(data),
                 'sdk-native-material-Git-bound')
@@ -139,6 +145,12 @@ class FrozenNativeProducts:
             position += size+1
         require(position == len(data) and all(counts.values()), 'sdk-native-material-complete')
         return dict(sorted(result.items()))
+
+    def _material_recipe(self):
+        return MATERIALS
+
+    def _producer_origin(self):
+        return WORKFLOW, 'Build and retain five source-bound native products', 'sdk-native-products-'
 
     def _pins(self):
         require(type(self.artifact) is dict and set(self.artifact) == {'id', 'size_in_bytes', 'digest'}
@@ -181,17 +193,18 @@ class FrozenNativeProducts:
 
     def _official_artifact(self):
         self._pins()
+        workflow, job_name, prefix = self._producer_origin()
         run, job = api(f'actions/runs/{self.run}'), api(f'actions/jobs/{self.job}')
-        require(run['id'] == self.run and run['head_sha'] == self.source and run['path'] == WORKFLOW
+        require(run['id'] == self.run and run['head_sha'] == self.source and run['path'] == workflow
             and run['event'] == self.event and run['head_branch'] == self.branch
             and run['status'] == 'completed' and run['conclusion'] == 'success'
             and job['id'] == self.job and job['run_id'] == self.run and job['head_sha'] == self.source
-            and job['name'] == 'Build and retain five source-bound native products'
+            and job['name'] == job_name
             and job['status'] == 'completed' and job['conclusion'] == 'success',
             'sdk-native-official-producer')
         listing = api(f'actions/runs/{self.run}/artifacts?per_page=100')
         require(listing['total_count'] == len(listing['artifacts']) <= 100, 'sdk-native-artifact-pages')
-        selected = [a for a in listing['artifacts'] if a['name'] == 'sdk-native-products-' + self.source]
+        selected = [a for a in listing['artifacts'] if a['name'] == prefix + self.source]
         require(len(selected) == 1, 'sdk-native-unique-artifact')
         artifact = selected[0]
         require(type(artifact['id']) is int and artifact['id'] > 0 and not artifact['expired']

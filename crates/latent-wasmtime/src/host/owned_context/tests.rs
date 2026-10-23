@@ -259,3 +259,138 @@ fn context_strings(value: &ActivationHostContext) -> [&String; 11] {
         value.metadata.get("metadata").unwrap(),
     ]
 }
+
+fn context_budget(
+    memory_bytes: u64,
+    profile: latent_core::BudgetProfile,
+) -> latent_core::ActivationBudget {
+    use latent_core::{ActivationBudget, ClockSample, EffectiveActivationBudget};
+    let mut limits = fixture::request().budget;
+    limits.memory_bytes = memory_bytes;
+    let grant = EffectiveActivationBudget::admit_profile_at(
+        profile,
+        &limits,
+        &limits,
+        &limits,
+        None,
+        ClockSample::new(1000, std::time::Instant::now()),
+    )
+    .unwrap();
+    ActivationBudget::with_profile(grant, profile).unwrap()
+}
+
+#[test]
+fn retained_context_uses_original_memory_until_drop_and_rolls_back_refused_admission() {
+    use latent_core::BudgetProfile;
+    let charge = super::retained_charge(&web_request()).unwrap();
+    for profile in [BudgetProfile::Phase3, BudgetProfile::Phase4] {
+        let request = web_request();
+        let budget = context_budget(charge, profile);
+        let context =
+            ActivationHostContext::from_request_accounted(request, Some(456), &budget).unwrap();
+        assert_eq!(context.deadline_unix_millis, Some(456));
+        assert!(context
+            ._context_memory
+            .as_ref()
+            .unwrap()
+            .is_from_budget(&budget));
+        assert_eq!(budget.host_memory_bytes(), charge);
+        assert_eq!(budget.outstanding_reservations(), 1);
+        assert_eq!(
+            budget
+                .snapshot_at(std::time::Instant::now())
+                .peak_memory_bytes,
+            charge
+        );
+        assert!(budget.reserve_host_memory(1).is_err());
+        assert!(budget.reserve_runtime_memory(1).is_err());
+        drop(context);
+        assert_eq!(budget.host_memory_bytes(), 0);
+        assert_eq!(budget.outstanding_reservations(), 0);
+        assert_eq!(
+            budget
+                .snapshot_at(std::time::Instant::now())
+                .peak_memory_bytes,
+            charge
+        );
+    }
+    let budget = context_budget(charge - 1, BudgetProfile::Phase3);
+    let error =
+        ActivationHostContext::from_request_accounted(web_request(), None, &budget).unwrap_err();
+    assert_eq!(
+        error.code,
+        latent_core::PlatformErrorCode::ResourceExhausted
+    );
+    assert_eq!(budget.host_memory_bytes(), 0);
+    assert_eq!(budget.outstanding_reservations(), 0);
+    assert_eq!(
+        budget
+            .snapshot_at(std::time::Instant::now())
+            .peak_memory_bytes,
+        0
+    );
+}
+
+#[test]
+fn retained_context_bound_excludes_discarded_scaffolding_and_caller_web_identity() {
+    let mut request = web_request();
+    let baseline = super::retained_charge(&request).unwrap();
+    request
+        .cell
+        .metadata
+        .insert("discarded".into(), "x".repeat(8192));
+    request
+        .prepared
+        .metadata
+        .insert("discarded".into(), "x".repeat(8192));
+    request.activation.input_media_type = "x".repeat(8192);
+    request.activation.target.tenant.0 = "x".repeat(8192);
+    request
+        .activation
+        .metadata
+        .insert(crate::host::web_identity::KEY.into(), "x".repeat(8192));
+    assert_eq!(super::retained_charge(&request).unwrap(), baseline);
+    request.activation.principal.subject = surplus("subject");
+    assert_eq!(super::retained_charge(&request).unwrap(), baseline);
+    let budget = context_budget(baseline, latent_core::BudgetProfile::Phase3);
+    let context = ActivationHostContext::from_request_accounted(request, None, &budget).unwrap();
+    assert_eq!(context.principal.subject.capacity(), "subject".len());
+    assert_eq!(budget.host_memory_bytes(), baseline);
+    drop(context);
+    assert_eq!(budget.outstanding_reservations(), 0);
+
+    let mut request = fixture::request();
+    for values in [
+        &mut request.activation.principal.claims,
+        &mut request.activation.trace.baggage,
+        &mut request.activation.metadata,
+    ] {
+        values.clear();
+        values.insert("temporary".into(), "removed".into());
+        values.remove("temporary");
+        assert!(values.is_empty());
+    }
+    let charge = super::retained_charge(&request).unwrap();
+    let budget = context_budget(charge, latent_core::BudgetProfile::Phase3);
+    let context = ActivationHostContext::from_request_accounted(request, None, &budget).unwrap();
+    assert!(context.principal.claims.is_empty());
+    assert!(context.baggage.is_empty());
+    assert!(context.metadata.is_empty());
+    drop(context);
+    assert_eq!(budget.host_memory_bytes(), 0);
+    assert_eq!(budget.outstanding_reservations(), 0);
+}
+
+#[test]
+fn retained_context_keeps_legacy_profile_unaccounted_and_arithmetic_checked() {
+    let budget = context_budget(1, latent_core::BudgetProfile::Phase1);
+    let context =
+        ActivationHostContext::from_request_accounted(fixture::request(), None, &budget).unwrap();
+    assert!(context._context_memory.is_none());
+    assert_eq!(budget.host_memory_bytes(), 0);
+    assert_eq!(budget.outstanding_reservations(), 0);
+    let mut bytes = u64::MAX;
+    assert!(super::add(&mut bytes, 1).is_err());
+    assert_eq!(bytes, u64::MAX);
+    assert!(super::add_string(&mut 0, usize::MAX).is_err());
+}

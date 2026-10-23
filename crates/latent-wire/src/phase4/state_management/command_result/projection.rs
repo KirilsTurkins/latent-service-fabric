@@ -52,7 +52,7 @@ fn retained(
     use t::command_inspection::RetainedResult as R;
     Ok(match result.outcome() {
         Outcome::Committed => R::Success(i::Success {
-            payload: value.bytes.clone(),
+            payload: (value.bytes.clone()).into(),
             media_type: value.media_type.clone(),
             metadata: value.metadata.iter().cloned().collect(),
             committed_state_version: Some(super::super::response::hex(
@@ -63,7 +63,7 @@ fn retained(
         Outcome::Rejected => R::BusinessRejection(i::DeclaredError {
             code: result.code().ok_or_else(invalid)?.into(),
             message: String::new(),
-            payload: value.bytes.clone(),
+            payload: (value.bytes.clone()).into(),
             media_type: value.media_type.clone(),
             metadata: value.metadata.iter().cloned().collect(),
         }),

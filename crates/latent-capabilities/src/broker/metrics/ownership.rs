@@ -1,6 +1,5 @@
 use super::{CapabilitySession, MetricActivationLimits, MetricError};
-use crate::broker::session::SessionCore;
-use std::sync::Arc;
+use crate::broker::session::SessionCoreOwner;
 
 #[derive(Clone, Copy, Default)]
 struct SeriesUse {
@@ -15,7 +14,7 @@ pub(in crate::broker) struct SessionUsage {
     series: [SeriesUse; 32],
 }
 pub(super) struct Reservation {
-    core: Arc<SessionCore>,
+    core: SessionCoreOwner,
     slot: usize,
     bytes: usize,
     committed: bool,

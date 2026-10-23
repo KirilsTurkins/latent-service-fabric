@@ -1,0 +1,88 @@
+{
+  "cases": [
+    "CleanupProviderOperationSource.test_actual_source_and_unselected_extent",
+    "CleanupProviderOperationSource.test_complete_original_dispatch_projects_exactly",
+    "CleanupProviderOperationSource.test_only_authenticated_dispatch_tuple_is_operation_authority",
+    "CleanupProviderOperationSource.test_physical_binding_is_before_claim_and_not_generic_function_admission",
+    "CleanupProviderOperationSource.test_physical_identity_is_retained_read_only_not_admission",
+    "CleanupProviderOperationSource.test_snapshot_derives_actual_same_task_fields_after_full_birth"
+  ],
+  "guards": {
+    "CleanupProviderOperationSource.test_actual_source_and_unselected_extent": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bb865f35c6f987d0ed1b31f2befb3788f9142f423ac76e09a66ca490d3722e83",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CleanupProviderOperationSource.test_complete_original_dispatch_projects_exactly": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bb865f35c6f987d0ed1b31f2befb3788f9142f423ac76e09a66ca490d3722e83",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CleanupProviderOperationSource.test_only_authenticated_dispatch_tuple_is_operation_authority": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bb865f35c6f987d0ed1b31f2befb3788f9142f423ac76e09a66ca490d3722e83",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CleanupProviderOperationSource.test_physical_binding_is_before_claim_and_not_generic_function_admission": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bb865f35c6f987d0ed1b31f2befb3788f9142f423ac76e09a66ca490d3722e83",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CleanupProviderOperationSource.test_physical_identity_is_retained_read_only_not_admission": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bb865f35c6f987d0ed1b31f2befb3788f9142f423ac76e09a66ca490d3722e83",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CleanupProviderOperationSource.test_snapshot_derives_actual_same_task_fields_after_full_birth": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bb865f35c6f987d0ed1b31f2befb3788f9142f423ac76e09a66ca490d3722e83",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_host_stream_kernel_cleanup_provider_operation.py",
+  "reviewReason": "Additive reviewed finite cleanup constructor source controls and one 24-object hosted geometry/atomic programme; original four-object recipe and all earlier cases retained; no kernel link/boot, consumer selection or runtime/native qualification.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

@@ -1,0 +1,101 @@
+{
+  "cases": [
+    "KernelDeviceCoreSource.test_both_actual_core_metadata_frees_are_authenticated_separately",
+    "KernelDeviceCoreSource.test_cleanup_tail_follows_all_original_name_parent_and_type_release",
+    "KernelDeviceCoreSource.test_missing_unknown_drifted_duplicate_and_crlf_definitions_refuse",
+    "KernelDeviceCoreSource.test_new_input_definition_membership_and_enabled_production_flags_refuse",
+    "KernelDeviceCoreSource.test_original_whole_members_definitions_and_closed_gates_are_preserved",
+    "KernelDeviceCoreSource.test_private_allocator_rejects_another_producer_instead_of_generic_rewrite",
+    "KernelDeviceCoreSource.test_private_allocator_reverses_to_complete_original_initialization"
+  ],
+  "guards": {
+    "KernelDeviceCoreSource.test_both_actual_core_metadata_frees_are_authenticated_separately": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c60c82e82b4efe02ccc2900420653783d8a2946ff7bcd7bb66cb7bc97a85ef48",
+        "class:setup-sha256:f460539b5ea7ea59c90baf71608b8158b9b4dbabb6c2971112d9f930bce64e17"
+      ],
+      "skipSites": []
+    },
+    "KernelDeviceCoreSource.test_cleanup_tail_follows_all_original_name_parent_and_type_release": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c60c82e82b4efe02ccc2900420653783d8a2946ff7bcd7bb66cb7bc97a85ef48",
+        "class:setup-sha256:f460539b5ea7ea59c90baf71608b8158b9b4dbabb6c2971112d9f930bce64e17"
+      ],
+      "skipSites": []
+    },
+    "KernelDeviceCoreSource.test_missing_unknown_drifted_duplicate_and_crlf_definitions_refuse": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c60c82e82b4efe02ccc2900420653783d8a2946ff7bcd7bb66cb7bc97a85ef48",
+        "class:setup-sha256:f460539b5ea7ea59c90baf71608b8158b9b4dbabb6c2971112d9f930bce64e17"
+      ],
+      "skipSites": []
+    },
+    "KernelDeviceCoreSource.test_new_input_definition_membership_and_enabled_production_flags_refuse": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c60c82e82b4efe02ccc2900420653783d8a2946ff7bcd7bb66cb7bc97a85ef48",
+        "class:setup-sha256:f460539b5ea7ea59c90baf71608b8158b9b4dbabb6c2971112d9f930bce64e17"
+      ],
+      "skipSites": []
+    },
+    "KernelDeviceCoreSource.test_original_whole_members_definitions_and_closed_gates_are_preserved": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c60c82e82b4efe02ccc2900420653783d8a2946ff7bcd7bb66cb7bc97a85ef48",
+        "class:setup-sha256:f460539b5ea7ea59c90baf71608b8158b9b4dbabb6c2971112d9f930bce64e17"
+      ],
+      "skipSites": []
+    },
+    "KernelDeviceCoreSource.test_private_allocator_rejects_another_producer_instead_of_generic_rewrite": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c60c82e82b4efe02ccc2900420653783d8a2946ff7bcd7bb66cb7bc97a85ef48",
+        "class:setup-sha256:f460539b5ea7ea59c90baf71608b8158b9b4dbabb6c2971112d9f930bce64e17"
+      ],
+      "skipSites": []
+    },
+    "KernelDeviceCoreSource.test_private_allocator_reverses_to_complete_original_initialization": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c60c82e82b4efe02ccc2900420653783d8a2946ff7bcd7bb66cb7bc97a85ef48",
+        "class:setup-sha256:f460539b5ea7ea59c90baf71608b8158b9b4dbabb6c2971112d9f930bce64e17"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_host_stream_kernel_device_core.py",
+  "reviewReason": "Reviewed grouped uninstalled PCI registration sysfs IDR and uevent consumers; exclusive48object/201function compile retains all prior profiles commands cases security and original bounds; no runtime physical closure link boot or installation qualification",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

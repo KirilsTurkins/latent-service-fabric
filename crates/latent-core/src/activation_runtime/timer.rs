@@ -1,21 +1,21 @@
 //! Invocation-local timer readiness. No background worker or callback is
 //! created. A maintained language scheduler consumes each readiness result.
+use super::shared::Shared;
 use super::{error, ActivationRuntime, OwnerKind, RuntimeOwner, RuntimeToken};
-use crate::{HostMemoryReservation, PlatformError, PlatformErrorCode};
-use std::sync::{Arc, Mutex};
+use crate::{PlatformError, PlatformErrorCode};
+use std::sync::Mutex;
 use std::time::Duration;
 use std::time::Instant;
 
 #[derive(Debug, Clone)]
 pub struct RuntimeTimer {
-    inner: Arc<Inner>,
+    inner: Shared<Inner>,
 }
 #[derive(Debug)]
 struct Inner {
     runtime: ActivationRuntime,
     schedule: Mutex<Schedule>,
     owner: RuntimeOwner,
-    allocation: HostMemoryReservation,
 }
 #[derive(Debug)]
 struct Schedule {
@@ -29,7 +29,7 @@ struct Schedule {
 /// clears only its registration; the physical timer still owns its reservation.
 #[derive(Debug)]
 pub struct TimerWait {
-    inner: Arc<Inner>,
+    inner: Shared<Inner>,
     requested: Instant,
     _owner: RuntimeOwner,
 }
@@ -50,15 +50,9 @@ impl RuntimeTimer {
                 "runtime-timer-period",
             ));
         }
-        let allocation = runtime
-            .inner
-            .budget
-            .reserve_host_memory(
-                (std::mem::size_of::<Inner>() + 2 * std::mem::size_of::<usize>() + 64) as u64,
-            )
-            .map_err(|failure| failure.to_platform_error())?;
+        let allocation = Shared::<Inner>::reserve(&runtime.inner.budget)?;
         let owner = runtime.register(OwnerKind::Timer, continuation)?;
-        let mut inner = Arc::new(Inner {
+        let inner = allocation.allocate(Inner {
             runtime: runtime.clone(),
             schedule: Mutex::new(Schedule {
                 next: Some(first),
@@ -67,12 +61,7 @@ impl RuntimeTimer {
                 closed: false,
             }),
             owner,
-            allocation,
         });
-        Arc::get_mut(&mut inner)
-            .expect("fresh timer")
-            .allocation
-            .confirm();
         Ok(Self { inner })
     }
     #[must_use]
@@ -102,7 +91,7 @@ impl RuntimeTimer {
             .register(OwnerKind::Wait, Some(self.token()))?;
         schedule.waiting = true;
         Ok(TimerWait {
-            inner: Arc::clone(&self.inner),
+            inner: self.inner.clone(),
             requested,
             _owner: owner,
         })

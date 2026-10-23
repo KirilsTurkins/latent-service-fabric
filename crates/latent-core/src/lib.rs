@@ -17,6 +17,7 @@ pub mod identity;
 pub mod ids;
 pub mod lifecycle;
 pub mod native_capacity;
+pub mod node_metadata;
 pub mod publication;
 #[cfg(feature = "test-support")]
 pub mod test_support;
@@ -56,6 +57,9 @@ pub type BoxFuture<'a, T> = Pin<Box<dyn Future<Output = T> + Send + 'a>>;
 
 /// Opaque binary payload crossing an architectural boundary.
 pub type Payload = Vec<u8>;
+
+mod result_payload;
+pub use result_payload::ResultPayload;
 
 /// Extensible key/value metadata carried across subsystem boundaries.
 pub type Metadata = std::collections::BTreeMap<String, String>;

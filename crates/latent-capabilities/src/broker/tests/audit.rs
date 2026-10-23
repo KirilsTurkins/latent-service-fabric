@@ -438,3 +438,77 @@ async fn terminal_io_audit_releases_no_retained_buffer_or_activation_ownership()
     assert_eq!(io.snapshot().result_bytes, 0);
     assert!(observer.is_quiescent());
 }
+
+#[tokio::test]
+async fn required_audit_native_refusal_precedes_dispatch_and_preserves_all_original_owners() {
+    let journal = Journal::new(8);
+    let fixture = Fixture::audited(
+        CapabilityBrokerLimits::default(),
+        journal.handle.clone(),
+        true,
+        false,
+    );
+    let (request, control) =
+        super::resource_table_memory::selected(&fixture, latent_core::BudgetProfile::Phase3);
+    let session = fixture.session(&request, &control);
+    let handle = session.bind(CAP, "read", resource()).unwrap();
+    let baseline = control.budget.host_memory_bytes();
+    let guards = control.budget.outstanding_reservations();
+    let pending = control
+        .budget
+        .reserve_host_memory(request.budget.memory_bytes - baseline)
+        .unwrap();
+    // This is pending capacity, not an invented observation of allocated bytes.
+    let before = fixture.broker.snapshot();
+    let audit_before = journal.handle.snapshot();
+    let used = control.budget.snapshot_at(Instant::now());
+    let remaining = control.budget.remaining_at(Instant::now());
+    let mut dispatched = false;
+    let failure = session
+        .dispatch_audited(
+            handle,
+            "read",
+            resource(),
+            &[],
+            output().with_charge(BudgetDimension::LogBytes, 8).unwrap(),
+            |_call| {
+                dispatched = true;
+            },
+        )
+        .await
+        .err()
+        .unwrap();
+    assert_eq!(failure.code, PlatformErrorCode::ResourceExhausted);
+    assert!(!dispatched);
+    assert_eq!(fixture.broker.snapshot(), before);
+    assert_eq!(journal.handle.snapshot(), audit_before);
+    assert_eq!(
+        control.budget.host_memory_bytes(),
+        request.budget.memory_bytes
+    );
+    assert_eq!(control.budget.outstanding_reservations(), guards + 1);
+    assert_eq!(
+        control.budget.snapshot_at(Instant::now()).log_bytes,
+        used.log_bytes
+    );
+    assert_eq!(
+        control.budget.snapshot_at(Instant::now()).cpu_fuel,
+        used.cpu_fuel
+    );
+    assert_eq!(
+        control.budget.snapshot_at(Instant::now()).peak_memory_bytes,
+        used.peak_memory_bytes
+    );
+    assert_eq!(
+        control.budget.remaining_at(Instant::now()).log_bytes,
+        remaining.log_bytes
+    );
+    assert_eq!(audit_before.next_sequence, 1);
+    assert_eq!(audit_before.retained_records, 0);
+    drop(pending);
+    assert_eq!(control.budget.host_memory_bytes(), baseline);
+    drop(session);
+    drop(fixture);
+    assert_eq!(control.budget.host_memory_bytes(), 0);
+    assert_eq!(control.budget.outstanding_reservations(), 0);
+}

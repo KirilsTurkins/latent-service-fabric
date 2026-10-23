@@ -1,0 +1,72 @@
+{
+  "schemaVersion": "latent.sdk.host-codec.native-observation.v1",
+  "status": "passed",
+  "sourceRevision": "7b6365ee39dea9770591a931b96711965f8a1aaf",
+  "run": 39685022895,
+  "job": 119516764302,
+  "artifact": {
+    "id": 12386352515,
+    "size_in_bytes": 70254520,
+    "digest": "sha256:b7d9dc739e310e759494c83d8cebf07996b53d99f3f7be06db5145ae663ccaff"
+  },
+  "workflow": ".github/workflows/host-codec-memory.yml",
+  "event": "push",
+  "branch": "feat/host-codec-memory-736-20261021",
+  "archive": {
+    "members": 71,
+    "expandedBytes": 324411197,
+    "wholeArchiveSha256AndCrcVerified": true
+  },
+  "receipts": {
+    "native-products.json": {
+      "sha256": "sha256:23cf17c9b55fb7bf5b3e26bee996b0c03e07c0349ded357f1b47a52cc3c418bc",
+      "bytes": 60551
+    },
+    "source-inputs.json": {
+      "sha256": "sha256:8db715c73cbfe525965cdb99269a32756d5583897c89f90d7d450b50ab78409a",
+      "bytes": 24572
+    }
+  },
+  "compiledNativeSource": {
+    "sha256": "sha256:a61075291fe00fb41437b43927421f8fcf23b6ec69c132b43699a932ec16840a",
+    "files": 3593,
+    "bytes": 31214050,
+    "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+    "hermetic": false,
+    "implicitCompilerInputs": "not-attested"
+  },
+  "auxiliaryMaterials": 148,
+  "controlCount": 61,
+  "commandCount": 31,
+  "logStreams": 62,
+  "products": {
+    "latent": {
+      "sha256": "sha256:3078508857a78d1ef82744f93392d728f40acffc09af58fa6437c2bda62a7312",
+      "bytes": 72401160
+    },
+    "latentd": {
+      "sha256": "sha256:308b9fe85eee58d8e133e0e5a4d34e7aa9cfbf1b357f30a110d8d728003846c8",
+      "bytes": 189400168
+    },
+    "examples/package": {
+      "sha256": "sha256:2bfb0aa5e777347d1b65b8bb8d4daf250c7dd5ac9bc63f479bbc54bc9b7df590",
+      "bytes": 21160208
+    },
+    "examples/capsule_contracts": {
+      "sha256": "sha256:767213831572225dc3a72fee85a153c11f270402aa65093d4798f88877001f46",
+      "bytes": 13854408
+    },
+    "examples/capsule_authoring": {
+      "sha256": "sha256:91d9b426b7814a012f8030602c02e906aad89283343e699e5cf9e5ace91d0ac9",
+      "bytes": 27416456
+    }
+  },
+  "nativeCohort": "wasmtime-48.0.7-latent-dynamic-value-memory-v1",
+  "profile": "normal-managed-guest-default-features",
+  "signedQualification": false,
+  "guestSourceCompiled": false,
+  "guestJavaScriptEngineCompiled": false,
+  "historicalReceiptRewritten": false,
+  "oldFrozenReadersUnchanged": true,
+  "scope": "Normal five-product native cohort and focused controls only; C17 guest qualification remains pending."
+}

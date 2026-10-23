@@ -30,12 +30,22 @@ PROFILE = 'lsf-rust-std-clock-built-source-v1'
 LOGGING_PROFILE = 'lsf-rust-std-clock-logging-built-source-v1'
 ENTROPY_PROFILE = 'lsf-rust-std-clock-entropy-built-source-v1'
 LOGGING_ENTROPY_PROFILE = 'lsf-rust-std-clock-logging-entropy-built-source-v1'
+THREAD_PROFILE = 'lsf-rust-std-owned-thread-built-source-v1'
 FLAGS = '-Cpanic=abort -Cembed-bitcode=yes -Zforce-unstable-if-unmarked'
 MAX_ARTIFACT_BYTES = 64 * 1024 * 1024
 RECIPE = ('tools/rust_standard_sysroot_build.py', *source.RECIPE,
           'tools/rust_capsule_build.py', 'tools/build_observation.py',
           'tools/build_process.py', 'tools/build_process_linux.py', 'tools/build_process_signals.py',
           'tools/captured_compiler_isolation.py')
+
+
+def recipe(*, threads=False):
+    require(type(threads) is bool, 'rust-thread-selection-invalid')
+    if not threads:
+        return RECIPE
+    # Existing isolated standard-profile recipes do not carry thread sources.
+    from tools import rust_standard_thread_profile as thread_profile
+    return tuple(dict.fromkeys((*RECIPE, 'tools/rust_thread_path_remap.py', *thread_profile.RECIPE)))
 
 
 def emitted_libraries(data: bytes, target: Path) -> dict[str, dict]:
@@ -83,19 +93,25 @@ def emitted_libraries(data: bytes, target: Path) -> dict[str, dict]:
     return result
 
 
-def build(archive: Path, output: Path, rust_bin: Path, *, logging=False, entropy=False):
+def build(archive: Path, output: Path, rust_bin: Path, *, logging=False, entropy=False, threads=False):
     require(type(logging) is bool, 'rust-stdio-selection-invalid')
     require(type(entropy) is bool, 'rust-entropy-selection-invalid')
-    profile = (LOGGING_ENTROPY_PROFILE if logging else ENTROPY_PROFILE) if entropy else (LOGGING_PROFILE if logging else PROFILE)
+    require(type(threads) is bool and not (threads and (logging or entropy)),
+            'rust-thread-first-profile-closed-facilities-only')
+    profile = THREAD_PROFILE if threads else ((LOGGING_ENTROPY_PROFILE if logging else ENTROPY_PROFILE) if entropy else (LOGGING_PROFILE if logging else PROFILE))
     archive, rust_bin = checked_path(archive), checked_path(rust_bin)
     original, modes = source.library(archive)
-    inputs = {n: read_file(ROOT / n) for n in dict.fromkeys(RECIPE)}
+    inputs = {n: read_file(ROOT / n) for n in dict.fromkeys(recipe(threads=threads))}
     selected = dict(original)
     selected.update(clock.overlay({n: original[n] for n in clock.ORIGINALS},
                                   inputs['sdk/rust-standard-runtime/clock.rs']))
     selected.update(stdio.selected(original, inputs, logging=logging))
     if entropy:
         selected.update(random_profile.overlay({name: original[name] for name in random_profile.ORIGINALS}, inputs))
+    if threads:
+        from tools import rust_standard_thread_profile as thread_profile
+        source.tls.tool_pins(inputs)
+        selected.update(thread_profile.complete_overlay(original, inputs))
     output = fresh(output)
     try:
         with tempfile.TemporaryDirectory(prefix='lsf-rust-clock-std-') as directory:
@@ -111,6 +127,12 @@ def build(archive: Path, output: Path, rust_bin: Path, *, logging=False, entropy
                 CARGO_NET_OFFLINE='true', RUSTUP_AUTO_INSTALL='0', RUSTC=str(tools['rustc']),
                 CARGO_TARGET_DIR=str(target), CARGO_INCREMENTAL='0', RUSTC_BOOTSTRAP='1',
                 RUSTFLAGS=FLAGS)
+            if threads:
+                from tools.rust_thread_path_remap import standard_flags
+                encoded_flags, path_remap = standard_flags(library, FLAGS)
+                # Preserve each actual argument even if the source has spaces.
+                environment.pop('RUSTFLAGS')
+                environment['CARGO_ENCODED_RUSTFLAGS'] = '\x1f'.join(encoded_flags)
             commands = Commands(library, output, environment, deadline_seconds=600, command_seconds=180)
             version = commands.run('compiler-version', tools['rustc'], '--version', '--verbose').decode()
             require(f'release: {clock.RUST}\n' in version and f'commit-hash: {clock.RUST_COMMIT}\n' in version,
@@ -148,6 +170,13 @@ def build(archive: Path, output: Path, rust_bin: Path, *, logging=False, entropy
                 'remainingGates': ['isolated tool trust and immutable distribution provisioning',
                     'ordinary signed guest clock qualification and default builder integration',
                     'logical thread/TLS/sync/timer/default-reactor/checkpoint and native retirement qualification']}
+            if threads:
+                # This is an owned compiler input, never runtime qualification.
+                value['threadSourcePathRemap'] = path_remap
+                value['rustEncodedFlags'] = encoded_flags
+                value['standardThreads'] = thread_profile.PROFILE
+                value['standardThreadSourceSelected'] = True
+                value['standardThreadRuntimeQualified'] = False
             value['identity'] = digest(encode(value))
             write_json(output / 'std-sysroot-build.json', value)
             return value
@@ -164,9 +193,10 @@ def main(argv=None):
     parser.add_argument('--rust-bin', type=Path, required=True)
     parser.add_argument('--logging', action='store_true', help='Explicit typed LOG PAL; no provider or grant is installed')
     parser.add_argument('--entropy', action='store_true', help='Explicit typed RANDOM PAL; no provider or grant is installed')
+    parser.add_argument('--threads', action='store_true', help='Explicit owned cooperative std thread/TLS/sync source; signed runtime remains unqualified')
     args = parser.parse_args(argv)
     try:
-        value = build(args.source_archive, args.output, args.rust_bin, logging=args.logging, entropy=args.entropy)
+        value = build(args.source_archive, args.output, args.rust_bin, logging=args.logging, entropy=args.entropy, threads=args.threads)
         print(json.dumps({'profile': value['profile'], 'identity': value['identity'],
                           'libraries': len(value['libraries']), 'qualification': value['qualification']}))
         return 0

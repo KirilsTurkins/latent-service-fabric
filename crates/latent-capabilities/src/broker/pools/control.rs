@@ -43,6 +43,18 @@ pub enum CleanupResult<T: Send + 'static> {
     Retained(PooledConnection<T>),
 }
 pub type CleanupFuture<'a> = Pin<Box<dyn Future<Output = bool> + Send + 'a>>;
+
+// This is the original connection owner, not another retention table or charge.
+// It must be armed before a blocking close is submitted: a panic, dropped result
+// waiter or runtime submission unwind cannot turn descriptor close into refund.
+struct QuarantinedConnection<T: Send + 'static>(Option<PooledConnection<T>>);
+impl<T: Send + 'static> Drop for QuarantinedConnection<T> {
+    fn drop(&mut self) {
+        if let Some(connection) = self.0.take() {
+            connection.quarantine();
+        }
+    }
+}
 struct JobCharge {
     _metadata: Charge,
     _work: Charge,
@@ -206,6 +218,70 @@ impl ProviderPools {
                 CleanupResult::Retained(connection)
             }
         })
+    }
+    /// Close a physical facade on the existing finite blocking-worker table,
+    /// including during drain, and retain its original owner unconditionally.
+    /// There is no caller-supplied retirement boolean. A lost unit-result waiter
+    /// cannot destroy the retained resource. Failed admission returns the exact
+    /// connection, so the caller can quarantine it without running close inline.
+    #[expect(
+        clippy::type_complexity,
+        reason = "failed admission returns the unchanged affine physical owner"
+    )]
+    pub fn cleanup_blocking_quarantined<T, F>(
+        &self,
+        connection: PooledConnection<T>,
+        close: F,
+    ) -> Result<ProviderJob<()>, (PlatformError, PooledConnection<T>)>
+    where
+        T: Send + 'static,
+        F: FnOnce(&mut T) + Send + 'static,
+    {
+        if !connection.belongs_to(&self.inner) {
+            return Err((denied(), connection));
+        }
+        let mut tasks = match self.inner.control.tasks.try_lock() {
+            Ok(tasks) => tasks,
+            Err(TryLockError::WouldBlock) => return Err((busy(), connection)),
+            Err(TryLockError::Poisoned(_)) => {
+                return Err((
+                    super::super::error(
+                        latent_core::PlatformErrorCode::Unavailable,
+                        "provider-control-owner-poisoned",
+                    ),
+                    connection,
+                ));
+            }
+        };
+        let Some(slot) = tasks.iter().position(Option::is_none) else {
+            return Err((capacity(), connection));
+        };
+        // Same original cleanup quota and metadata ceiling as async cleanup.
+        // It remains available after node/provider admission has been closed.
+        let charge = match charge(
+            &self.inner,
+            Kind::Cleanup,
+            std::mem::size_of::<QuarantinedConnection<T>>()
+                .saturating_add(std::mem::size_of::<F>()),
+        ) {
+            Ok(charge) => charge,
+            Err(error) => return Err((error, connection)),
+        };
+        let mut retained = QuarantinedConnection(Some(connection));
+        let (send, result) = oneshot::channel();
+        tasks[slot] = Some(self.inner.control.handle.spawn_blocking(move || {
+            let _charge = charge;
+            close(
+                retained
+                    .0
+                    .as_mut()
+                    .expect("original cleanup owner")
+                    .resource(),
+            );
+            drop(retained); // Actual close returned; capacity is STILL retained.
+            let _ = send.send(());
+        }));
+        Ok(ProviderJob { result })
     }
     fn spawn_inner<F, T>(
         &self,

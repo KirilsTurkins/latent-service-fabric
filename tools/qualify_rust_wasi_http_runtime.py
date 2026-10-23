@@ -28,7 +28,7 @@ from tools.phase2_operator_process import require
 from tools.phase3_resource_identity import file_identity
 from tools.qualify_rust_capsules import source_identity
 from tools.qualify_rust_wasi_http_inputs import execution_request
-from tools.rust_capsule_build import RECIPE, build
+from tools.rust_capsule_build import selected_recipe, build
 from tools.rust_capsule_project import ROOT, canonical, digest, fresh, inventory, read_file, read_json, snapshot, write_json
 from tools.rust_wasi_http_profile import AUTHORITY, PROFILE
 from tools.dotnet_guest.internal_io import core_modules
@@ -203,7 +203,7 @@ def qualify(native_directory,adapter_directory,output,*,retained_backend=None):
         additional=current_backend.MATERIALS
     (adapter_directory/'component-composer/wac').chmod(0o700)
     prepared=runtime.Prepared(adapter_directory,tools['rustc'],tools['wasm-tools'])
-    names=dict.fromkeys((*RECIPE,*MATERIALS,*additional,*runtime.consumer_files()))
+    names=dict.fromkeys((*selected_recipe(ROOT),*MATERIALS,*additional,*runtime.consumer_files()))
     materials={name:file_identity(ROOT/name) for name in names}
     native_files={name:file_identity(path,512*1024**2) for name,path in binaries.items()}
     record={'schemaVersion':'latent.rust.wasi-http.runtime-qualification.v1','status':'incomplete',

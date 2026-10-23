@@ -86,7 +86,7 @@ impl ExecutionBackend for FaultBackend {
                     error: DeclaredError {
                         code: "expected-domain-error".to_owned(),
                         message: "declared failure".to_owned(),
-                        payload: Vec::new(),
+                        payload: (Vec::new()).into(),
                         media_type: "application/octet-stream".to_owned(),
                         metadata: Metadata::new(),
                     },
@@ -114,7 +114,7 @@ impl ExecutionBackend for FaultBackend {
                 Mode::PlatformFailure => Err(injected_error(Code::Unavailable)),
                 Mode::Success | Mode::CleanupFailure | Mode::Blocked => {
                     Ok(GuestOutcome::Returned {
-                        output: request.activation.input,
+                        output: (request.activation.input).into(),
                         output_media_type: "application/octet-stream".to_owned(),
                         consumption,
                     })

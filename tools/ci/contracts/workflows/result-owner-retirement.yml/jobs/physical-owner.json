@@ -1,0 +1,36 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "name": "Actual owner allocation and final-clone retirement",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "dtolnay/rust-toolchain"
+      },
+      {
+        "name": "Compile only the std-only bytes crate and allocator observer",
+        "run": "rustc --edition=2021 --crate-name=bytes --crate-type=rlib --cfg 'feature=\"std\"' \\\n  crates/vendor/bytes/src/lib.rs -o \"$RUNNER_TEMP/libbytes.rlib\"\nrustc --edition=2021 --test crates/vendor/bytes/tests/test_owner_retirement.rs \\\n  --extern \"bytes=$RUNNER_TEMP/libbytes.rlib\" -o \"$RUNNER_TEMP/result-owner-tests\"\n",
+        "shell": "bash"
+      },
+      {
+        "name": "Observe actual allocation frees through clones, copies, races and unwind",
+        "run": "\"$RUNNER_TEMP/result-owner-tests\" --test-threads=1",
+        "shell": "bash"
+      }
+    ],
+    "timeout-minutes": 5
+  },
+  "jobId": "physical-owner",
+  "kind": "job",
+  "reviewReason": "Compile only the pinned std-only bytes source and exact physical-owner regression; preserve workspace checks and original bounds.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/result-owner-retirement.yml"
+}

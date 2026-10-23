@@ -1,0 +1,39 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "rust-owned-thread-inputs-${{ github.ref }}"
+    },
+    "name": "Owned Rust thread compiler inputs",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/rust-standard-thread-runtime-20261022"
+        ],
+        "paths": [
+          ".github/workflows/rust-owned-thread-inputs.yml",
+          "tools/compile_rust_owned_thread_inputs.py"
+        ]
+      },
+      "workflow_dispatch": {
+        "inputs": {
+          "application-diagnostic": {
+            "default": false,
+            "description": "Compile one captured ordinary ThreadPool application core; graph remains unqualified",
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "compiler-inputs"
+  ],
+  "reviewReason": "Expose closed default-false compiler-only ordinary ThreadPool application diagnostic selector",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/rust-owned-thread-inputs.yml"
+}

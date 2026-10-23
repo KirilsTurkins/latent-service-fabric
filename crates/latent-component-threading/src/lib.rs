@@ -23,7 +23,13 @@ pub use thread_entry::{ThreadEntryReceipt, transform_owned_thread_entry};
 mod admission;
 pub use admission::{AdmissionReceipt, transform_owned_thread_admission};
 mod root;
-pub use root::{RootReceipt, transform_owned_root_bootstrap};
+pub use root::{
+    CanonicalResultGuard, CanonicalSystemPanicTrap, RootReceipt,
+    transform_owned_canonical_root_bootstrap, transform_owned_guarded_canonical_root_bootstrap,
+    transform_owned_guarded_canonical_root_with_system_panic_trap, transform_owned_root_bootstrap,
+};
+mod public_root;
+pub use public_root::{PublicRootReceipt, prepare_owned_public_root};
 pub mod c_abi;
 pub mod c_context;
 pub mod c_lifecycle;
@@ -31,6 +37,8 @@ pub mod c_preimage;
 pub mod c_root;
 pub mod c_template;
 mod component;
+pub mod rust_component;
+pub mod rust_objects;
 pub use component::{CComponentRoutingReceipt, verify_c_component_routing};
 pub use component::{ComponentRoutingReceipt, verify_component_routing};
 

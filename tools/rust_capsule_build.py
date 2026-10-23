@@ -15,7 +15,8 @@ import tomllib
 from tools.build_observation import build_environment, file_identity, public_repository, resolve_tools
 from tools.build_process import BuildProcessError, run_bounded_result
 from tools.rust_capsule_project import (ROOT, canonical, checked_path, digest, fresh,
-                                        inventory, decode_json, read_file, read_json, snapshot, write_json)
+                                        inventory, decode_json, read_file, read_json, snapshot, write_json,
+                                        PROJECTION_RECIPE, host_projection_inputs)
 from tools.stage_runtime_wit import copy_wit_tree, dependencies
 from tools import guest_authoring_frontend, guest_compatibility_build, guest_resources
 
@@ -52,6 +53,10 @@ STANDARD_RECIPE = (
     'sdk/rust-standard-runtime/thread-abi.json',
     'wit/platform/activation-runtime/package.wit',
     'rust-toolchain.toml',
+    'tools/host_codec_wasmtime.py',
+    'crates/vendor/wasmtime/UPSTREAM.latent.json',
+    'crates/vendor/wasmtime/latent-dynamic-memory.patch',
+    'crates/vendor/wasmtime/README.latent.md',
     'tools/rust_standard_logging_profile.py',
     'sdk/rust-standard-runtime/stdio_closed.rs',
     'sdk/rust-standard-runtime/stdio_logging.rs',
@@ -72,9 +77,18 @@ STANDARD_RECIPE = (
     'tools/build_process_signals.py',
     'tools/captured_compiler_isolation.py',
 )
-RECIPE += STANDARD_RECIPE
+RECIPE += STANDARD_RECIPE + PROJECTION_RECIPE
 RECIPE += ("tools/application_dependencies.py", "tools/application_dependency_store.py", "tools/application_dependency_tools.py",
            "tools/application_dependency_approval.py", "tools/rust_application_dependencies.py", "tools/captured_compiler_isolation.py")
+
+
+def selected_recipe(root: Path | None = None) -> tuple[str, ...]:
+    """Resolve Rust-only host decision inputs at explicit Rust selection time.
+
+    Other builders import Commands/package_inputs from this module without
+    selecting Rust or needing a host Cargo manifest or bytes source closure.
+    """
+    return tuple(dict.fromkeys((*RECIPE, *host_projection_inputs(ROOT if root is None else root))))
 
 
 RUST_ENVIRONMENT_SCALARS = ('LC_ALL', 'LANG', 'TZ', 'CARGO_NET_OFFLINE', 'CARGO_INCREMENTAL',
@@ -501,7 +515,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
         raise ValueError('explicit Rust logging profile requires its owned prepared standard runtime only')
     source_inputs = inventory(files)
     recipe_files = {name: read_file(ROOT / name)
-                    for name in dict.fromkeys((*RECIPE, *standard.source_build_inputs(runtime_profile)))}
+                    for name in dict.fromkeys((*selected_recipe(), *standard.source_build_inputs(runtime_profile)))}
     if http_runtime is not None:
         from tools import rust_wasi_http_inputs as http_inputs
         recipe_files.update(http_inputs.consumer_files())
@@ -509,6 +523,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
     # implicit dependency hidden outside the observation.
     for name in ("examples/echo-contract/capsule.json", "examples/echo-contract/deployment.json"):
         recipe_files[name] = read_file(ROOT / name)
+    host_projection = host_projection_inputs()
+    recipe_files.update(host_projection)
     recipe_inputs = inventory(recipe_files)
     output = fresh(output)
     commands = None
@@ -530,6 +546,10 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 environment.update(CARGO_NET_OFFLINE="true", RUSTUP_AUTO_INSTALL="0")
             paths, materials = resolve_tools(pins["toolchain"], work, environment, installed=rust_bin)
             prepared_runtime = standard.Prepared(standard_runtime, paths['rustc'], runtime_profile) if standard_runtime is not None else None
+            thread_component = None
+            if standard.has_threads(runtime_profile):
+                from tools import rust_owned_thread_component
+                thread_component = rust_owned_thread_component.select(prepared_runtime, paths['rustc'])
             prepared_http = http_inputs.Prepared(http_runtime, paths['rustc'], paths['wasm-tools']) if http_runtime is not None else None
             bindgen_path = shutil.which("wit-bindgen", path=environment.get("PATH"))
             if bindgen_path is None:
@@ -588,6 +608,9 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     approval = approve_execution(verified, isolation, executable_recipe, executable_approval)
                 from tools.rust_standard_entropy_profile import verify_capture
                 verify_capture(verified, runtime_profile)
+                if standard.has_threads(runtime_profile):
+                    from tools.rust_standard_thread_capture import verify_capture as verify_thread_capture
+                    verify_thread_capture(verified, runtime_profile)
                 closure = prepare(observed.dependency_root, work, output, "rust", execution_approval=approval)
                 adapted_manifest, cargo_inputs = configure_application(closure, work, Path(environment["CARGO_HOME"]))
                 isolation.protect_inputs(work)
@@ -602,7 +625,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             compile_arguments = ["build", "--locked", "--release", "--lib", "--target", "wasm32-unknown-unknown", *diagnostics]
             if prepared_runtime is not None:
                 prepared_runtime.check()
-                compile_arguments.extend(prepared_runtime.arguments())
+                compile_arguments.extend(prepared_runtime.arguments(source_root=work)
+                    if standard.has_threads(runtime_profile) else prepared_runtime.arguments())
             if closure is not None:
                 selection = closure.lock["selection"]
                 if selection.get("features"):
@@ -620,7 +644,10 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 prepared_runtime.check()
             module = temporary / "target/wasm32-unknown-unknown/release" / (project["name"].replace("-", "_") + ".wasm")
             stage = "component"
-            componentize(commands, paths["wasm-tools"], module, output, digest(source_inputs))
+            if thread_component is not None:
+                thread_component.componentize(commands, paths['wasm-tools'], module, output, digest(source_inputs))
+            else:
+                componentize(commands, paths["wasm-tools"], module, output, digest(source_inputs))
             commands.run("validate", paths["wasm-tools"], "validate", output / "component.wasm", "--features", "cm-async,cm-async-stackful,cm-more-async-builtins")
             component = read_file(output / "component.wasm", 64 * 1024 * 1024)
             stage = "contracts"
@@ -638,6 +665,9 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 compose_http(commands, paths, output/'component.wasm', surface, prepared_http,
                     work, isolation=isolation, environment_guard=environment_guard)
                 component = read_file(output/'component.wasm', 64*1024*1024)
+            if thread_component is not None:
+                # Check the final bytes after every optional composition.
+                thread_component.verify_final(component, surface)
             if standard.has_entropy(runtime_profile) and 'latent:random/random@0.1.0' not in surface['imports']:
                 raise ValueError('standard entropy requires explicit original-world RANDOM declaration')
             if standard.has_logging(runtime_profile) and standard.LOG not in surface['imports']:
@@ -646,7 +676,9 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             stage = "compatibility"
             guest_compatibility_build.inspect(commands, paths["wasm-tools"], output, surface,
                 host_abi_profile=guest_compatibility_build.declared_host_abi(surface))
-            package_inputs(output, project, surface, files, component)
+            package_inputs(output, project, surface, files, component,
+                **({'threading_model': 'cooperative', 'additional_assets': thread_component.assets()}
+                   if thread_component is not None else {}))
             if packager is not None:
                 stage = "package"
                 commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package", *packaging_arguments(files))
@@ -665,16 +697,21 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             observed.check_unchanged()
             if captured_files != files:
                 raise ValueError("project changed during the observed build")
-            if inventory({name: read_file(ROOT / name) for name in recipe_files}) != recipe_inputs:
+            if (host_projection_inputs() != host_projection
+                    or inventory({name: read_file(ROOT / name) for name in recipe_files}) != recipe_inputs):
                 raise ValueError("authoring recipe changed during the build")
             for material in materials:
                 if file_identity(paths[material["name"]], material["name"]) != material:
                     raise ValueError("tool binary changed during the build")
             if prepared_runtime is not None:
                 prepared_runtime.check()
+                if thread_component is not None:
+                    thread_component.check()
                 standard_inputs = prepared_runtime.material()
                 (output / 'rust-standard-runtime.json').write_bytes(standard_inputs)
                 materials.append({'name': 'rust-standard-runtime', 'digest': digest(standard_inputs), 'size': len(standard_inputs)})
+                if thread_component is not None:
+                    materials.extend(thread_component.materials(output))
             if prepared_http is not None:
                 prepared_http.check()
                 for name in ('rust-http-runtime.json', 'rust-http-composition.json',

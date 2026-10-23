@@ -24,10 +24,14 @@ struct Payload {
     bytes: Vec<u8>,
     observer: InvocationInputObserver,
     dropped: Arc<AtomicBool>,
+    memory: Option<(latent_core::ActivationBudget, u64)>,
 }
 
 impl Drop for Payload {
     fn drop(&mut self) {
+        if let Some((budget, charge)) = &self.memory {
+            assert_eq!(budget.host_memory_bytes(), *charge);
+        }
         let snapshot = self.observer.snapshot();
         assert_eq!(snapshot.live_raw_owners, 1);
         assert_eq!(
@@ -57,7 +61,9 @@ fn actual_owned_field_is_destroyed_before_its_raw_guard_refunds() {
                 bytes,
                 observer: observer.clone(),
                 dropped: dropped.clone(),
+                memory: None,
             },
+            memory: None,
             observation: guard,
         };
         raw.release(reason);
@@ -191,4 +197,76 @@ fn error_before_guest_dispatch_releases_input_without_inventing_guest_start() {
         .records
         .iter()
         .any(|record| record.phase == InvocationInputPhase::GuestCallStart));
+}
+
+#[test]
+fn raw_input_admits_actual_spare_capacity_until_storage_destruction_and_refunds_refusal() {
+    use latent_core::{
+        ActivationBudget, BudgetProfile, ClockSample, EffectiveActivationBudget, ResourceBudget,
+    };
+    use std::time::Instant;
+    let limits = ResourceBudget {
+        cpu_fuel: 1_000_000_000,
+        memory_bytes: 4096,
+        wall_time_limit_millis: Some(120_000),
+        child_calls: 0,
+        outbound_requests: 0,
+        state_read_bytes: 0,
+        state_write_bytes: 0,
+        blob_read_bytes: 0,
+        blob_write_bytes: 0,
+        log_bytes: 0,
+        effect_count: 0,
+    };
+    let grant = EffectiveActivationBudget::admit_profile_at(
+        BudgetProfile::Phase3,
+        &limits,
+        &limits,
+        &limits,
+        None,
+        ClockSample::new(1000, Instant::now()),
+    )
+    .unwrap();
+    let budget = ActivationBudget::with_profile(grant, BudgetProfile::Phase3).unwrap();
+    let (observer, observation) = session();
+    let trace = observation.trace();
+    let mut bytes = Vec::with_capacity(1024);
+    bytes.extend_from_slice(b"[7]");
+    let raw = RawInvocationInput::new_accounted(bytes, Some(&trace), &budget).unwrap();
+    let charge = budget.host_memory_bytes();
+    assert_eq!(charge, 1024 + 64);
+    assert_eq!(budget.snapshot_at(Instant::now()).peak_memory_bytes, charge);
+    assert!(budget.reserve_runtime_memory(4096 - charge + 1).is_err());
+    let dropped = Arc::new(AtomicBool::new(false));
+    let raw = RawInvocationInput {
+        bytes: Payload {
+            bytes: raw.bytes,
+            observer: observer.clone(),
+            dropped: dropped.clone(),
+            memory: Some((budget.clone(), charge)),
+        },
+        memory: raw.memory,
+        observation: raw.observation,
+    };
+    raw.release(InvocationInputDropReason::BeforeGuestCall);
+    assert!(dropped.load(Ordering::Acquire));
+    assert_eq!(budget.host_memory_bytes(), 0);
+    assert_eq!(budget.outstanding_reservations(), 0);
+    assert_eq!(observer.snapshot().live_raw_owners, 0);
+    drop(observation);
+    let (observer, observation) = session();
+    let trace = observation.trace();
+    let mut spare = Vec::with_capacity(8192);
+    spare.extend_from_slice(b"[7]");
+    let error = match RawInvocationInput::new_accounted(spare, Some(&trace), &budget) {
+        Err(e) => e,
+        Ok(_) => panic!("hidden retained capacity must refuse"),
+    };
+    assert!(error
+        .details
+        .iter()
+        .any(|d| d.fields.get("dimension").map(String::as_str) == Some("memory-bytes")));
+    assert_eq!(observer.snapshot().live_raw_owners, 0);
+    assert_eq!(budget.host_memory_bytes(), 0);
+    assert_eq!(budget.outstanding_reservations(), 0);
 }

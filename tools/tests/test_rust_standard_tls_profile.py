@@ -63,10 +63,44 @@ class StandardTlsSource(unittest.TestCase):
         inputs = self.recipe(); profile.tool_pins(inputs)
         for name, before, after in (('rust-toolchain.toml', b'1.97.1', b'1.97.2'),
                                    ('Cargo.toml', b'=48.0.7', b'=48.0.8'),
-                                   ('Cargo.toml', b'=0.62.0', b'=0.63.0'),
-                                   ('Cargo.lock', profile.PINS['wasmtime'][1].encode(), b'0' * 64)):
+                                   ('Cargo.toml', b'=0.62.0', b'=0.63.0')):
             altered = dict(inputs); self.assertIn(before, altered[name]); altered[name] = altered[name].replace(before, after)
             with self.subTest(name=name), self.assertRaises(DevError): profile.tool_pins(altered)
+        # Keep the original exact registry-checksum adverse independently of the
+        # current explicitly authenticated local-fork selection.
+        legacy = dict(inputs)
+        needle = b'path = "crates/vendor/wasmtime", '
+        self.assertEqual(legacy['Cargo.toml'].count(needle), 1)
+        legacy['Cargo.toml'] = legacy['Cargo.toml'].replace(needle, b'', 1)
+        needle = b'name = "wasmtime"\nversion = "48.0.7"\n'
+        self.assertEqual(legacy['Cargo.lock'].count(needle), 1)
+        legacy['Cargo.lock'] = legacy['Cargo.lock'].replace(needle, needle +
+            b'source = "registry+https://github.com/rust-lang/crates.io-index"\nchecksum = "' +
+            profile.PINS['wasmtime'][1].encode() + b'"\n', 1)
+        self.assertEqual(profile.tool_pins(legacy)['wasmtime']['archiveDigest'],
+                         'sha256:' + profile.PINS['wasmtime'][1])
+        legacy['Cargo.lock'] = legacy['Cargo.lock'].replace(
+            profile.PINS['wasmtime'][1].encode(), b'0' * 64)
+        with self.assertRaises(DevError): profile.tool_pins(legacy)
+
+    def test_local_engine_requires_exact_fork_source_and_retains_distinct_cohort_identity(self):
+        from unittest.mock import patch
+        inputs = self.recipe()
+        pins = profile.tool_pins(inputs)['wasmtime']
+        self.assertEqual(pins['sourceKind'], 'authenticated-local-fork')
+        self.assertEqual(pins['nativeCohort'], profile.codec_wasmtime.COHORT)
+        self.assertEqual(pins['sourceRecordDigest'], 'sha256:' + profile.codec_wasmtime.RECORD_SHA256)
+        self.assertNotIn('archiveDigest', pins)
+        with patch.object(profile.codec_wasmtime, 'verify', side_effect=ValueError('tampered')):
+            with self.assertRaisesRegex(DevError, 'local-engine-source'): profile.tool_pins(inputs)
+        for name in ('Cargo.lock', *profile.FORK_RECIPE):
+            altered = dict(inputs); altered[name] += b'\n'
+            with self.subTest(name=name), self.assertRaisesRegex(DevError, 'local-engine-input'):
+                profile.tool_pins(altered)
+        altered = dict(inputs)
+        altered['Cargo.toml'] = altered['Cargo.toml'].replace(
+            b'path = "crates/vendor/wasmtime"', b'path = "foreign/wasmtime"', 1)
+        with self.assertRaisesRegex(DevError, 'local-engine-selection'): profile.tool_pins(altered)
 
     def test_runtime_wit_change_invalidates_the_observed_canonical_abi_contract(self):
         inputs = self.recipe(); inputs['wit/platform/activation-runtime/package.wit'] += b'\n'

@@ -11,7 +11,7 @@ pub async fn reconcile_capability_audit(
     deadline: Instant,
 ) -> Result<(), PlatformError> {
     for pending in audit.pending_attempts()? {
-        if pending.attempt.action != latent_audit::AuditControlAction::CapabilityCall {
+        if pending.attempt().action != latent_audit::AuditControlAction::CapabilityCall {
             continue;
         }
         if Instant::now() >= deadline {
@@ -20,7 +20,7 @@ pub async fn reconcile_capability_audit(
                 "capability-audit-recovery-deadline",
             ));
         }
-        let mut identities = pending.attempt.identities;
+        let mut identities = pending.attempt().identities.clone();
         identities
             .capability
             .as_mut()
@@ -35,7 +35,7 @@ pub async fn reconcile_capability_audit(
             replay: false,
             occurred_at_unix_millis: now(),
         };
-        let ticket = audit.reconcile(pending.sequence, conclusion)?;
+        let ticket = audit.reconcile(pending.sequence(), conclusion)?;
         tokio::time::timeout_at(deadline.into(), ticket.wait())
             .await
             .map_err(|_| {

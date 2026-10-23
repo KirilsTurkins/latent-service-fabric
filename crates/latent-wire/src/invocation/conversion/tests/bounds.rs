@@ -117,6 +117,74 @@ fn public_errors_redact_only_platform_diagnostics_and_keep_safe_detail_values() 
     );
 }
 
+#[test]
+fn typed_memory_and_fuel_details_keep_only_the_matching_closed_dimension() {
+    for (kind, dimension, opposite) in [
+        ("activation.memory-exhausted", "memory-bytes", "cpu-fuel"),
+        ("activation.fuel-exhausted", "cpu-fuel", "memory-bytes"),
+    ] {
+        let detail = |value: &str| ErrorDetail {
+            kind: kind.into(),
+            fields: Metadata::from([
+                ("dimension".into(), value.into()),
+                ("cell_id".into(), "private-cell-identity".into()),
+                ("reason".into(), "/private/backend/path".into()),
+            ]),
+        };
+        let error = |value| PlatformError {
+            code: PlatformErrorCode::ResourceExhausted,
+            message: "private backend allocation text".into(),
+            retryable: false,
+            details: vec![detail(value)],
+        };
+        let limits = InvocationLimits {
+            max_platform_error_details: 1,
+            max_platform_error_fields: 1,
+            ..Default::default()
+        };
+        let public = public_platform_error(error(dimension), &limits);
+        assert_eq!(public.code, PlatformErrorCode::ResourceExhausted);
+        assert!(!public.retryable);
+        assert_eq!(
+            public.details,
+            vec![ErrorDetail {
+                kind: kind.into(),
+                fields: Metadata::from([("dimension".into(), dimension.into())])
+            }]
+        );
+        assert!(!format!("{public:?}").contains("private"));
+        for invalid in [
+            opposite,
+            "",
+            "MemoryBytes",
+            "memory-bytes\n",
+            "/private/backend/path",
+        ] {
+            assert!(public_platform_error(error(invalid), &limits)
+                .details
+                .is_empty());
+        }
+        for limits in [
+            InvocationLimits {
+                max_platform_error_details: 0,
+                ..Default::default()
+            },
+            InvocationLimits {
+                max_platform_error_fields: 0,
+                ..Default::default()
+            },
+            InvocationLimits {
+                max_string_bytes: dimension.len() - 1,
+                ..Default::default()
+            },
+        ] {
+            assert!(public_platform_error(error(dimension), &limits)
+                .details
+                .is_empty());
+        }
+    }
+}
+
 fn error_detail_resource() -> proto::ErrorDetail {
     proto::ErrorDetail {
         kind: "resource.limit".into(),
@@ -219,8 +287,9 @@ fn omitted_response_fields_and_spare_capacity_are_bounded_before_conversion() {
     else {
         unreachable!()
     };
-    error.payload = Vec::with_capacity(65);
-    error.payload.push(1);
+    let mut sparse_payload = Vec::with_capacity(65);
+    sparse_payload.push(1);
+    error.payload = sparse_payload.into();
     let small = InvocationLimits {
         max_payload_bytes: 64,
         ..InvocationLimits::default()

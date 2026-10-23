@@ -1,19 +1,16 @@
 //! One bounded row owner across pre-publication clock currentness contention.
 use super::{
-    next_incarnation, CapabilitySession, GuestCapabilityHandle, HandleEntry, HandleLifetime,
-    SessionCore,
+    next_incarnation, CapabilitySession, GuestCapabilityHandle, HandleEntry, HandleEntryOwner,
+    HandleLifetime, SessionCoreOwner,
 };
 use crate::broker::{busy, capacity, denied, stopped, HostClock, Kind, PlatformError};
 use latent_policy::capability::{ResourceRequest, ResourceTarget};
-use std::sync::{
-    atomic::{AtomicBool, Ordering},
-    Arc,
-};
+use std::sync::atomic::{AtomicBool, Ordering};
 
 pub(in crate::broker) struct PendingBinding {
-    core: Arc<SessionCore>,
+    core: SessionCoreOwner,
     clock: HostClock,
-    row: Option<Arc<HandleEntry>>,
+    row: Option<HandleEntryOwner>,
     entered: bool,
     observed: bool,
 }
@@ -21,7 +18,7 @@ pub(in crate::broker) struct PendingBinding {
 impl PendingBinding {
     pub(in crate::broker) fn new(session: &CapabilitySession, clock: HostClock) -> Self {
         Self {
-            core: Arc::clone(&session.core),
+            core: session.core.clone(),
             clock,
             row: None,
             entered: false,
@@ -73,6 +70,11 @@ impl PendingBinding {
         if self.row.is_none() {
             let charge = core.owner.counters.acquire(Kind::Handle, 1)?;
             let metadata = core.owner.counters.acquire(Kind::Metadata, 8192)?;
+            let native = super::native_handle::Prepared::reserve(
+                &core.budget,
+                self.clock.operation(),
+                ResourceTarget::Clock,
+            )?;
             let id = GuestCapabilityHandle {
                 slot: u16::try_from(slot).map_err(|_| capacity())?,
                 incarnation: next_incarnation()?,
@@ -80,7 +82,7 @@ impl PendingBinding {
             // This retained row is a physical per-session owner even before
             // publication. Charge it once; no handle is usable until the fence.
             core.stats.handles.fetch_add(1, Ordering::AcqRel);
-            self.row = Some(Arc::new(HandleEntry {
+            self.row = Some(native.allocate(HandleEntry {
                 id,
                 binding: index,
                 operation: self.clock.operation().into(),
@@ -88,9 +90,10 @@ impl PendingBinding {
                 _metadata: metadata,
                 _slot: charge,
                 lifetime: HandleLifetime {
-                    stats: Arc::clone(&core.stats),
+                    stats: core.stats.clone(),
                     counted: AtomicBool::new(true),
                 },
+                _native_owned: None,
             }));
         }
         let row = self.row.as_ref().expect("pending clock row");
@@ -106,7 +109,7 @@ impl PendingBinding {
                     }
                     self.entered = true;
                     core.check()?;
-                    state.slots[slot] = Some(Arc::clone(row));
+                    state.slots[slot] = Some(row.clone());
                     Ok(())
                 },
             )
@@ -154,7 +157,7 @@ impl Drop for PendingBinding {
                 if let Some(slot) = state.slots.get_mut(usize::from(row.id.slot)) {
                     if slot
                         .as_ref()
-                        .is_some_and(|current| Arc::ptr_eq(current, row))
+                        .is_some_and(|current| HandleEntryOwner::ptr_eq(current, row))
                     {
                         *slot = None;
                     }

@@ -20,7 +20,9 @@
           "feat/stream-kernel-route-cache-20261021",
           "feat/stream-kernel-packet-prefix-20261021",
           "feat/stream-kernel-device-closure-20261021",
-          "feat/stream-kernel-device-setup-20261021"
+          "feat/stream-kernel-device-setup-20261021",
+          "feat/stream-kernel-device-registration-20261021",
+          "feat/stream-kernel-device-recipient-20261022"
         ],
         "paths": [
           ".github/workflows/stream-kernel-objects.yml",
@@ -41,6 +43,26 @@
           "tools/tests/fixtures/host_stream_kernel_device.json",
           "tools/host_stream_kernel_device_firmware.py",
           "tools/tests/fixtures/host_stream_kernel_device_firmware.json",
+          "tools/host_stream_kernel_device_core.py",
+          "tools/tests/fixtures/host_stream_kernel_device_core.json",
+          "tools/host_stream_kernel_device_capabilities.py",
+          "tools/tests/fixtures/host_stream_kernel_device_capabilities.json",
+          "tools/host_stream_kernel_device_registration.py",
+          "tools/tests/fixtures/host_stream_kernel_device_registration.json",
+          "tools/host_stream_kernel_device_sysfs.py",
+          "tools/tests/fixtures/host_stream_kernel_device_sysfs.json",
+          "tools/host_stream_kernel_device_uevent.py",
+          "tools/tests/fixtures/host_stream_kernel_device_uevent.json",
+          "tools/host_stream_kernel_device_uevent_delivery.py",
+          "tools/host_stream_kernel_device_recipient.py",
+          "tools/tests/fixtures/host_stream_kernel_device_recipient.json",
+          "tools/host_stream_kernel_device_security.py",
+          "tools/tests/fixtures/host_stream_kernel_device_security.json",
+          "tools/host_stream_kernel_device_notifications.py",
+          "tools/tests/fixtures/host_stream_kernel_device_notifications.json",
+          "tools/host_stream_kernel_device_delivery.py",
+          "tools/tests/fixtures/host_stream_kernel_device_delivery.json",
+          "tools/tests/fixtures/host_stream_kernel_device_uevent_delivery.json",
           "research/standard-outbound/linux-6.12-lineage/**"
         ]
       },
@@ -86,6 +108,16 @@
             "description": "Compile the closed copied-TCP linear packet source profile",
             "type": "boolean"
           },
+          "recipient": {
+            "default": false,
+            "description": "Compile the closed recipient signal security and notification source-only profile",
+            "type": "boolean"
+          },
+          "registration": {
+            "default": false,
+            "description": "Compile the closed registration sysfs IDR and uevent source-only profile",
+            "type": "boolean"
+          },
           "route": {
             "default": false,
             "description": "Compile the closed IPv4 route source profile with original reference owners",
@@ -117,12 +149,14 @@
     "netlabel-objects",
     "netport-objects",
     "packet-objects",
+    "recipient-objects",
+    "registration-objects",
     "route-cache-objects",
     "route-objects",
     "selected-objects",
     "sidcache-objects"
   ],
-  "reviewReason": "Reviewed cached ACPI reference and prepaid cleanup continuation source; exclusive37object compile preserves all prior profiles cases commands security and bounds; no runtime installed or shared-queue physical qualification",
+  "reviewReason": "Reviewed grouped recipient signal and mandatory security source; one exclusive object-only lane retains every historical command, case, configuration and physical qualification boundary.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/stream-kernel-objects.yml"
 }

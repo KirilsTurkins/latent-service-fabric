@@ -5,6 +5,8 @@ use latent_core::{ActivationPhase, ActivationTerminalState, BudgetConsumption, M
 
 use super::*;
 
+#[path = "tests/accounted_declared_result.rs"]
+mod accounted_declared_result;
 #[path = "tests/broker_lineage.rs"]
 mod broker_lineage;
 #[path = "tests/staging.rs"]
@@ -32,7 +34,7 @@ fn legal_history_and_terminal_status_publish_complete_declared_outcomes() {
         error: latent_core::DeclaredError {
             code: "domain".to_owned(),
             message: "declared".to_owned(),
-            payload: b"[1,2,3]".to_vec(),
+            payload: (b"[1,2,3]".to_vec()).into(),
             media_type: "test".to_owned(),
             metadata: Metadata::from([("meaning".to_owned(), "preserved".to_owned())]),
         },
@@ -379,7 +381,7 @@ fn immediate_success_payload_is_not_retained_but_oversized_declared_payload_is_r
     let owner = journal.begin(&input).expect("owner");
     let mut success = outcome();
     if let ActivationOutcome::Succeeded(success) = &mut success {
-        success.output = vec![0; 128 * 1024];
+        success.output = vec![0; 128 * 1024].into();
     }
     owner
         .validate_terminal(&success)
@@ -388,7 +390,7 @@ fn immediate_success_payload_is_not_retained_but_oversized_declared_payload_is_r
         error: latent_core::DeclaredError {
             code: "domain".to_owned(),
             message: "large".to_owned(),
-            payload: vec![0; 128 * 1024],
+            payload: (vec![0; 128 * 1024]).into(),
             media_type: "test".to_owned(),
             metadata: Metadata::new(),
         },

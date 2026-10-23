@@ -51,18 +51,18 @@ pub async fn reconcile_deployment_audit(
     let pending = crate::audit::pending::read(audit, expires).await?;
     for pending in pending {
         if !matches!(
-            pending.attempt.action,
+            pending.attempt().action,
             AuditControlAction::DeploymentApply | AuditControlAction::DeploymentDelete
         ) {
             continue;
         }
         check_deadline(expires)?;
-        let terminal = if pending.attempt.expected_state_version.is_some() {
-            lookup(repository, &pending.attempt, expires).await?
+        let terminal = if pending.attempt().expected_state_version.is_some() {
+            lookup(repository, pending.attempt(), expires).await?
         } else {
-            mapping::conclusion(&pending.attempt, None)
+            mapping::conclusion(pending.attempt(), None)
         };
-        let wait = crate::audit::pending::reconcile(audit, pending.sequence, &terminal, expires)
+        let wait = crate::audit::pending::reconcile(audit, pending.sequence(), &terminal, expires)
             .await?
             .wait();
         tokio::time::timeout_at(expires.into(), wait)

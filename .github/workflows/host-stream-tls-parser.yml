@@ -130,6 +130,7 @@ jobs:
           name: host-tls-provider-reference-${{ github.sha }}
           path: |
             ${{ runner.temp }}/host-tls-provider-reference/receipt.json
+            ${{ runner.temp }}/host-tls-provider-reference/cargo.stdout.log
             ${{ runner.temp }}/host-tls-provider-reference/cargo.stderr.log
             ${{ runner.temp }}/host-tls-provider-reference/tests.stdout.log
             ${{ runner.temp }}/host-tls-provider-reference/tests.stderr.log

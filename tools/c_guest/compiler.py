@@ -60,6 +60,7 @@ class Compiler:
         self.closed_filesystem = closed_filesystem.prepare(self.paths['zig'], self.sdk)
         self.materials.update(self.closed_filesystem.materials)
         self.threading_inputs = {}
+        self.threading_clock_inputs = {}
         if threading_tool is not None:
             from tools.c_guest import threading
             if not threading_tool.is_absolute() or threading_tool.is_symlink() or not threading_tool.is_file():
@@ -67,7 +68,8 @@ class Compiler:
             self.paths['c-threading-transformer'] = threading_tool.resolve(strict=True)
             self.materials['c-threading-transformer'] = file_identity(threading_tool, 'c-threading-transformer')
             self.threading_inputs = threading.libc_inputs(self.paths['zig'])
-            self.materials.update({name: file_identity(path, name, 8192) for name, path in self.threading_inputs.items()})
+            self.materials.update({name: file_identity(path, threading.libc_material_name(name), 32768)
+                                   for name, path in self.threading_inputs.items()})
 
     def run(self, tool: str, *arguments: str) -> str:
         remaining = self.deadline - time.monotonic()
@@ -88,6 +90,19 @@ class Compiler:
                              max_output_bytes=4 * 1024 * 1024)
         return result.stdout.decode("utf-8")
 
+    def select_threading_clock_inputs(self) -> None:
+        from tools.c_guest import threading
+        inputs = threading.clock_libc_inputs(self.paths['zig'])
+        identities = {name: file_identity(path, threading.clock_libc_material_name(name), 32768)
+                      for name, path in inputs.items()}
+        if self.threading_clock_inputs:
+            if inputs != self.threading_clock_inputs or any(
+                    self.materials[name] != identity for name, identity in identities.items()):
+                raise ValueError('c-threading-libc-clock-input-changed')
+        else:
+            self.threading_clock_inputs = inputs
+            self.materials.update(identities)
+
     def check_unchanged(self) -> None:
         self.closed_filesystem.check_unchanged()
         if self.threading_inputs:
@@ -95,8 +110,15 @@ class Compiler:
             if threading.libc_inputs(self.paths['zig']) != self.threading_inputs:
                 raise ValueError('c-threading-libc-input-changed')
         for name, path in self.threading_inputs.items():
-            if file_identity(path, name, 8192) != self.materials[name]:
+            if file_identity(path, threading.libc_material_name(name), 32768) != self.materials[name]:
                 raise ValueError('c-threading-libc-input-changed')
+        if getattr(self, 'threading_clock_inputs', None):
+            from tools.c_guest import threading
+            if threading.clock_libc_inputs(self.paths['zig']) != self.threading_clock_inputs:
+                raise ValueError('c-threading-libc-clock-input-changed')
+            for name, path in self.threading_clock_inputs.items():
+                if file_identity(path, threading.clock_libc_material_name(name), 32768) != self.materials[name]:
+                    raise ValueError('c-threading-libc-clock-input-changed')
         for name, path in self.paths.items():
             if file_identity(path, name) != self.materials[name]:
                 raise ValueError("C compiler tool changed during build")
@@ -192,15 +214,21 @@ class Compiler:
             raise ValueError("invalid or oversized C source")
         if isinstance(memory_bytes, bool) or memory_bytes < 2 * 1024 * 1024 or memory_bytes > 64 * 1024 * 1024 or memory_bytes % 65536:
             raise ValueError("C memory ceiling must be page-aligned and between 2 and 64 MiB")
-        generated, lock = generate(self.run, wit_source, world, destination, self.platform)
+        generated, lock = generate(self.run, wit_source, world, destination, self.platform,
+                                   sync_core_abi=threaded)
         public = None
         if threaded:
             graph = json.loads(self.run('wasm-tools', 'component', 'wit', '--json', str(destination / 'wit')))
             public = threading.public_export(graph)
             runtime = self.sdk / 'runtime'
-            sources = [*sources, runtime / 'threads.c', runtime / 'tls-keys.c']
+            sources = [*sources, runtime / 'threads.c', runtime / 'tls-keys.c', runtime / 'template-copy.c']
             include_directories = (*include_directories, runtime)
-            defines = (*defines, 'LSF_C_LINKED_LIBC=1')
+            timed_clock = runtime_profile in {standard_facilities.PROFILE, standard_facilities.COMBINED_PROFILE}
+            if timed_clock:
+                self.select_threading_clock_inputs()
+                defines = threading.linked_defines(defines, timed_clock=True)
+            else:
+                defines = threading.linked_defines(defines)
         self.validate_static_libraries(static_libraries, destination)
         core, component = destination / "core.wasm", destination / "component.wasm"
         command = ["cc", "-std=" + language_standard, "-target", "wasm32-wasi", "-O2",
@@ -210,10 +238,16 @@ class Compiler:
                    "-I", str(self.sdk / "include"), *map(str, sources)]
         thread_flags = []
         if threaded:
-            thread_flags = ['-matomics', '-mbulk-memory', '-pthread']
+            # The post-link template-copy body is deliberately opaque to its
+            # callers; LTO could propagate its temporary refusal into them.
+            thread_flags = ['-matomics', '-mbulk-memory', '-pthread', '-fno-lto']
             for family in ('wasm-wasi-musl', 'generic-musl'):
                 thread_flags.extend(['-isystem', str(self.paths['zig'].parent / 'lib/libc/include' / family)])
-            command[command.index('-Wl,-z,stack-size=65536')] = '-Wl,-z,stack-size=69632'
+            # One authenticated original-memory reservation: 4KiB guard,
+            # 64KiB private root stack, then 64KiB canonical System stack.
+            # Canonical realloc clears context slots and cannot borrow a
+            # root/child frame suspended during host result lowering.
+            command[command.index('-Wl,-z,stack-size=65536')] = '-Wl,-z,stack-size=135168'
             command.extend([*thread_flags, *('-Wl,--export=' + name for name in threading.EXPORTS)])
         for directory in include_directories:
             command.extend(["-I", str(directory)])
@@ -282,6 +316,11 @@ class Compiler:
             if threading.public_export(final) != public:
                 raise ValueError('c-threading-final-public-contract-changed')
             lock['threadingProfile'] = threading_profile
+            self.threading_result = {'originalCore': core,
+                'derivedCore': destination / 'c-threading/derived.wasm',
+                'unboundComponent': destination / 'component.wasm',
+                'derivation': destination / 'c-threading/derivation.json',
+                'publicExport': public, 'finalComponent': component}
         self.check_unchanged()
         return component, lock
 

@@ -26,13 +26,13 @@
     },
     "provider-configuration": {
       "path": "apps/latentd/src/config/providers.rs",
-      "digest": "sha256:046f4db8ac19171e371036d31930165b29a138c0793dd8f9a3bb2e50d9e59478",
-      "commit": "20a8b5df7d56ec4dc2eeaa94d70d84fa5bc71435"
+      "digest": "sha256:a0c76daffe0bbdf779e6efb7ee594b0f5bf92c9a8b468fa49c8fdf053259b4fd",
+      "commit": "fe7575f80f315cbddae27354af31a9e05c7f2de8"
     },
     "node-composition": {
       "path": "apps/latentd/src/config/runtime.rs",
-      "digest": "sha256:439a1879d288e2658b4b95865d6e58bab548e40cc618c0b6e9a8c5b991f70be9",
-      "commit": "8473afecac55bbf6d67b411b7d7b73820991b289"
+      "digest": "sha256:e109b3d21fba6f506977ca098227c77705c77a33b2d2dc3c04a490b0640deabf",
+      "commit": "fe7575f80f315cbddae27354af31a9e05c7f2de8"
     },
     "sealed-web-projection": {
       "path": "crates/latent-artifacts/src/local_repository/web/projection/metadata.rs",
@@ -66,8 +66,8 @@
     },
     "resource-budget": {
       "path": "crates/latent-core/src/budget.rs",
-      "digest": "sha256:757867aaca42a8ecad35318a04099d7f89047e31ee33b27daf91841537817499",
-      "commit": "cbef28330f87de778141017cfedf1faa32bb520a"
+      "digest": "sha256:0aff3848359ad62e6e06be1e3f4fca36374d45d65cfc613871314c3aacd9eba7",
+      "commit": "880b0ffc2621633d5a10cecce39463c4e68f6780"
     },
     "publication-identity": {
       "path": "crates/latent-core/src/publication.rs",
@@ -91,8 +91,8 @@
     },
     "structural-engine-profile": {
       "path": "crates/latent-wasmtime/src/config/profile.rs",
-      "digest": "sha256:61890362902278d1dd68fa114f183f6e3aeb1622c0a0f0b0dd1fe87941abcd99",
-      "commit": "20a8b5df7d56ec4dc2eeaa94d70d84fa5bc71435"
+      "digest": "sha256:72a63962813b7efb2f8d77766633278bd4dc615e0084bdf4e33daa4702016a67",
+      "commit": "fe7575f80f315cbddae27354af31a9e05c7f2de8"
     },
     "ready-inspection": {
       "path": "crates/latent-wasmtime/src/backend/readiness/ownership.rs",

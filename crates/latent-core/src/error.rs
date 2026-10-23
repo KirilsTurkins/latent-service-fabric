@@ -112,7 +112,7 @@ pub struct ErrorDetail {
 pub struct DeclaredError {
     pub code: String,
     pub message: String,
-    pub payload: Vec<u8>,
+    pub payload: crate::ResultPayload,
     pub media_type: String,
     pub metadata: Metadata,
 }

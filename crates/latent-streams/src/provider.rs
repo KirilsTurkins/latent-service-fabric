@@ -37,6 +37,8 @@ pub(crate) struct Inner {
     pub resolvers: Vec<Option<Resolver>>,
     pub tls: Vec<Option<Arc<crate::tls::InstalledTls>>>,
     pub connections: Mutex<[Weak<Connection>; 32]>,
+    #[cfg(all(target_os = "linux", any(test, feature = "development-outbound")))]
+    native: Mutex<Option<crate::kernel::native::NativeOwner>>,
     _configuration: ProviderMetadata,
 }
 #[cfg(any(test, feature = "development-outbound"))]
@@ -67,6 +69,39 @@ impl TlsInstallMode {
 }
 
 impl StreamProvider {
+    /// Actual descriptor/constructor experiment for an isolated candidate image.
+    /// It retains unproved kernel retirement and cannot enable normal install.
+    #[cfg(all(target_os = "linux", any(test, feature = "development-outbound")))]
+    pub async fn install_kernel_constructor_for_qualification(
+        pools: Arc<ProviderPools>,
+        logical_id: &str,
+        epoch: u64,
+        expected_epoch: u64,
+        config: StreamProviderConfig,
+        deadline: Instant,
+    ) -> Result<Self, StreamError> {
+        let provider = Self::install_with_modes(
+            Arc::clone(&pools),
+            logical_id,
+            epoch,
+            expected_epoch,
+            config,
+            TlsInstallMode::Qualified,
+            crate::kernel::Mode::RetainUnproved,
+        )?;
+        let owner =
+            crate::kernel::native::start(pools, &provider.inner.installed, deadline).await?;
+        if Instant::now() >= deadline {
+            drop(owner);
+            return Err(error(StreamErrorCode::Timeout));
+        }
+        *provider
+            .inner
+            .native
+            .try_lock()
+            .map_err(crate::snapshot_lock_error)? = Some(owner);
+        Ok(provider)
+    }
     /// Normal installation refuses before protected inputs, resolver/socket
     /// allocation or provider publication until an actual platform is qualified.
     pub fn install(
@@ -284,6 +319,8 @@ impl StreamProvider {
                 resolvers,
                 tls,
                 connections: Mutex::new(std::array::from_fn(|_| Weak::new())),
+                #[cfg(target_os = "linux")]
+                native: Mutex::new(None),
                 _configuration: configuration,
             }),
         })
@@ -296,6 +333,16 @@ impl StreamProvider {
     /// not release charges held by a pending operation or retained chunk.
     pub fn retire(&self) {
         self.inner.installed.retire();
+        #[cfg(all(target_os = "linux", any(test, feature = "development-outbound")))]
+        {
+            let owner = self
+                .inner
+                .native
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .take();
+            drop(owner);
+        }
         for index in 0..32 {
             let connection = self
                 .inner

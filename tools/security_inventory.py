@@ -7,7 +7,7 @@ import re
 import tomllib
 from urllib.parse import urlsplit
 
-from tools.security_common import POLICY, decode_json, digest, read_file, require, tracked_paths
+from tools.security_common import POLICY, SecurityError, decode_json, digest, read_file, require, tracked_paths
 from tools.security_sdk_graphs import c_packages, go_packages, legacy_c_tree, legacy_manifest, maven_packages, nuget_packages
 
 MANIFEST_NAMES = frozenset({
@@ -43,6 +43,11 @@ def is_manifest(path: str) -> bool:
 
 def cargo_inventory(repo: Path, entry: dict) -> tuple[set[str], dict]:
     manifest = tomllib.loads(read_file(repo, entry["path"]).decode())
+    if entry["path"] == "Cargo.toml" and "bytes" in manifest.get("patch", {}).get("crates-io", {}):
+        from tools.result_owner_bytes import verify
+        # A missing whole vendor directory cannot hide a still-selected host
+        # fork behind the historical optional-directory inventory rule.
+        verify(repo)
     payload = read_file(repo, entry["lock"])
     lock = tomllib.loads(payload.decode())
     packages = lock.get("package", [])
@@ -69,6 +74,33 @@ def cargo_inventory(repo: Path, entry: dict) -> tuple[set[str], dict]:
                 "unreviewed-cargo-registry-or-git-source")
     return covered, {"path": entry["path"], "coverage": "RustSec", "lock": entry["lock"],
                      "lock_sha256": digest(payload), "packages": len(packages), "members": len(members)}
+
+
+def wasmtime_inventory(repo: Path, entry: dict, paths: list[str]) -> tuple[set[str], dict]:
+    """Inventory the authenticated fork without treating its archive lock as a build root."""
+    from tools import host_codec_wasmtime as bounded
+    manifest, lock = bounded.PROVIDER + "/Cargo.toml", bounded.PROVIDER + "/Cargo.lock"
+    require(entry == {"path": manifest, "kind": "bounded-wasmtime", "lock": lock,
+                      "absent_when_directory_missing": bounded.PROVIDER},
+            "unreviewed-bounded-wasmtime-inventory")
+    try:
+        checked = bounded.verify(repo)
+    except (ValueError, OSError, KeyError, TypeError) as error:
+        raise SecurityError("unreviewed-bounded-wasmtime-source") from error
+    expected = {bounded.PROVIDER + "/" + name for name in checked["files"]}
+    require({path for path in paths if path.startswith(bounded.PROVIDER + "/")} == expected,
+            "partial-or-unreviewed-bounded-wasmtime-source")
+    return {manifest, lock}, {
+        "path": manifest, "coverage": "OSV-authenticated-upstream-origin", "packages": 1,
+        "name": checked["package"], "version": checked["version"],
+        "recordSha256": checked["recordSha256"], "nativeCohort": checked["nativeCohort"],
+        "upstreamArchiveSha256": checked["upstreamSha256"], "patchSha256": checked["patchSha256"],
+        "buildLock": "Cargo.lock", "upstreamSourceLock": lock,
+        "upstreamSourceLockSha256": checked["files"]["Cargo.lock"]["sha256"],
+        "boundary": "The exact maintained source keeps its upstream advisory coordinate. "
+                    "The root Cargo.lock selects actual build dependencies; the vendored lock is "
+                    "unchanged upstream provenance. RustSec still audits every tracked lock intact."
+    }
 
 
 def reviewed_npm_derivation(repo: Path, entry: dict, manifest: dict, owner: dict) -> bool:
@@ -245,6 +277,19 @@ def inventory(repo: Path, policy: Path = POLICY) -> tuple[list[Package], list[di
             origin, record = inventory_record(repo, entry, paths)
             packages.append(Package("crates.io", origin["name"], origin["version"], path))
             covered.update({path, entry["lock"]})
+            records.append(record)
+            continue
+        if entry["kind"] == "bounded-wasmtime":
+            cargo_paths, record = wasmtime_inventory(repo, entry, paths)
+            packages.append(Package("crates.io", record["name"], record["version"], path))
+            covered.update(cargo_paths)
+            records.append(record)
+            continue
+        if entry["kind"] == "bounded-bytes":
+            from tools.security_result_bytes import inventory_record
+            origin, record = inventory_record(repo, entry, paths)
+            packages.append(Package("crates.io", origin["name"], origin["version"], path))
+            covered.add(path)
             records.append(record)
             continue
         if entry["kind"] == "npm":

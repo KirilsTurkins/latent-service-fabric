@@ -1,0 +1,235 @@
+{
+  "schemaVersion": "latent.host-codec.registry-native-evidence.v1",
+  "status": "passed",
+  "ownerIssues": [
+    736,
+    745
+  ],
+  "diagnosticSupportIssue": 679,
+  "scope": "Original-memory ownership for Store-local ModuleRegistry indices and sparse secondary module maps, retaining the previous 81 native control names.",
+  "sourceRevision": "48a6532d8e1f23e7abd8e47d2e75a4dcaf5216f9",
+  "nativeCohort": "wasmtime-48.0.7-latent-value-table-store-registry-memory-v3",
+  "profile": "normal-managed-guest-default-features",
+  "origin": {
+    "repository": "KirilsTurkins/latent-service-fabric",
+    "workflow": ".github/workflows/host-codec-memory.yml",
+    "event": "push",
+    "run": 39705847409,
+    "job": 119585581021,
+    "artifact": 12394952986,
+    "artifactName": "host-codec-memory-48a6532d8e1f23e7abd8e47d2e75a4dcaf5216f9",
+    "archiveBytes": 70375146,
+    "archiveSha256": "sha256:4e9e75597f0698dce0590bbd490bdddede6c98c2f5115bbbaf248260fc103d29",
+    "archiveMembers": 87,
+    "expandedBytes": 325060355,
+    "receiptMember": "native-products.json",
+    "receiptBytes": 70897,
+    "receiptSha256": "sha256:aad3aa777f05cdacb36948b365e523c5d7846fa9b4aad193d856c79dad31a754"
+  },
+  "source": {
+    "sha256": "sha256:41cd38adcf95f13b7b610729122e03a15b225da82508e3fdb9ba0e2005a23fce",
+    "files": 3611,
+    "bytes": 31394700,
+    "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+    "hermetic": false,
+    "implicitCompilerInputs": "not-attested"
+  },
+  "recipeAndAuxiliaryMaterials": 148,
+  "compiler": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "controlCount": 85,
+  "commandCount": 39,
+  "verifiedLogStreamHashes": 78,
+  "ignoredControls": 0,
+  "controlGroups": {
+    "original-host-memory": 6,
+    "result-owner": 4,
+    "result-wire": 4,
+    "result-capacity": 1,
+    "actual-host-codec": 9,
+    "actual-dynamic-allocation-hook": 6,
+    "raw-input-lifetime": 4,
+    "result-lifetime": 2,
+    "original-accounting": 20,
+    "child-capacity": 1,
+    "c-public-async-type": 1,
+    "c-public-sync-abi": 1,
+    "journal-result-retirement": 1,
+    "ordinary-backend": 1,
+    "actual-native-table-owner": 9,
+    "actual-native-store-owner": 10,
+    "closed-guest-trap-diagnostics": 1,
+    "actual-native-registry-owner": 4
+  },
+  "controls": {
+    "original-host-memory": [
+      "budget::descendants::tests::host_memory_resize_confirms_parent_peak_and_retains_terminal_child_capacity",
+      "budget::host_memory::tests::actual_native_owner_keeps_capacity_after_terminal_report_and_settles_once",
+      "budget::host_memory::tests::failed_pending_replacement_refunds_only_unallocated_capacity",
+      "budget::host_memory::tests::growing_overlap_competes_before_allocation_and_shrink_keeps_peak",
+      "budget::host_memory::tests::native_and_linear_memory_compete_before_allocation_and_failed_preparations_roll_back",
+      "budget::host_memory::tests::partial_confirmation_keeps_pending_capacity_without_inventing_allocated_peak"
+    ],
+    "result-owner": [
+      "result_payload::tests::a_foreign_reservation_cannot_certify_the_original_budget",
+      "result_payload::tests::accounted_payload_clone_and_transport_hold_the_same_bytes_and_charge",
+      "result_payload::tests::legacy_constructor_preserves_capacity_and_comparison",
+      "result_payload::tests::owner_allocation_refusal_releases_original_storage_and_charge"
+    ],
+    "result-wire": [
+      "result_messages::tests::external_sliced_wire_backing_is_copied_before_capacity_validation",
+      "result_messages::tests::original_generated_results_cross_encode_defaults_and_all_fields",
+      "result_messages::tests::original_generated_results_repeated_singular_unknown_and_malformed_fields",
+      "result_messages::tests::result_message_local_clones_capacity_clear_and_transport_keep_original_owner"
+    ],
+    "result-capacity": [
+      "phase4::bounds::result_capacity_tests::result_payload_capacity_is_checked_without_trusting_only_length"
+    ],
+    "actual-host-codec": [
+      "values::tests::host_memory::host_codec_actual_malformed_string_lift_keeps_the_original_envelope",
+      "values::tests::host_memory::host_codec_actual_pending_call_cancellation_keeps_envelope_until_native_drop",
+      "values::tests::host_memory::host_codec_encoder_refuses_original_memory_without_losing_live_values",
+      "values::tests::host_memory::host_codec_failed_and_abandoned_lifts_keep_conservative_capacity_attribution",
+      "values::tests::host_memory::host_codec_input_uses_original_memory_and_drops_values_before_refund",
+      "values::tests::host_memory::host_codec_original_refusal_cannot_retry_the_legacy_allocator",
+      "values::tests::host_memory::host_codec_rejection_oracle_preserves_original_typed_error_precedence",
+      "values::tests::host_memory::host_codec_scalar_and_numeric_stack_formatting_keep_original_bytes_and_small_peak",
+      "values::tests::host_memory::host_codec_tiny_dynamic_string_and_declared_result_preserve_normal_64mib_profile"
+    ],
+    "actual-dynamic-allocation-hook": [
+      "values::tests::dynamic_memory::actual_dynamic_declared_tiny_result_fits_original_one_mib_without_maximum_escrow",
+      "values::tests::dynamic_memory::actual_lift_refusal_retains_original_memory_bytes_error_and_does_not_allocate_string",
+      "values::tests::dynamic_memory::actual_nested_names_flags_and_variant_box_hold_original_memory_until_values_die",
+      "values::tests::dynamic_memory::actual_parameter_copy_refunds_and_cancelled_post_return_cannot_credit_a_new_result",
+      "values::tests::dynamic_memory::actual_partial_failed_lift_reports_only_allocated_tree_and_retires_after_native_unwind",
+      "values::tests::dynamic_memory::actual_utf8_utf16_latin1_prepass_preserves_exact_original_fuel_and_capacity"
+    ],
+    "raw-input-lifetime": [
+      "backend::input::tests::actual_owned_field_is_destroyed_before_its_raw_guard_refunds",
+      "backend::input::tests::completion_abandonment_and_poll_unwind_retire_after_actual_future_destruction",
+      "backend::input::tests::error_before_guest_dispatch_releases_input_without_inventing_guest_start",
+      "backend::input::tests::raw_input_admits_actual_spare_capacity_until_storage_destruction_and_refunds_refusal"
+    ],
+    "result-lifetime": [
+      "backend::result_lifetime_tests::native_errors_release_while_the_actual_cleanup_helper_still_owns_runtime_and_permit",
+      "backend::result_lifetime_tests::successful_classification_and_unwind_keep_the_same_final_drop_order"
+    ],
+    "original-accounting": [
+      "host::accounting::tests::deadlines::legacy_precise_token_is_validated_without_extending_its_unix_projection",
+      "host::accounting::tests::deadlines::relative_ceiling_after_a_wall_jump_preserves_the_managers_grant_projection",
+      "host::accounting::tests::deadlines::shared_ledger_keeps_submillisecond_deadline_without_a_second_deadline_token",
+      "host::accounting::tests::deadlines::token_only_deadline_survives_a_forward_wall_jump",
+      "host::accounting::tests::diagnostic::execution_hook_records_the_precise_deadline_and_the_actual_expiry_check_sample",
+      "host::accounting::tests::failed_growth_does_not_charge_a_provisional_memory_peak",
+      "host::accounting::tests::fallback_is_one_local_ledger_per_invocation_and_uses_one_sample",
+      "host::accounting::tests::invalid_owners_grants_and_runtime_counter_increases_fail_closed",
+      "host::accounting::tests::legacy_deadline_token_is_used_without_renewing_its_relative_grant",
+      "host::accounting::tests::log_reservations_refund_and_terminal_reports_cannot_overwrite_host_charges",
+      "host::accounting::tests::original_clock_sample_and_tighter_request_deadline_survive_wall_adjustment",
+      "host::accounting::tests::phase3_managed_execution_keeps_original_ledger_and_rejects_unmanaged_opt_in",
+      "host::accounting::tests::runtime_observation::competing_fuel_charge_cannot_publish_the_failed_observations_memory_peak",
+      "host::accounting::tests::runtime_observation::concurrent_child_admission_requires_native_fuel_reconciliation_before_next_host_call",
+      "host::accounting::tests::runtime_observation::finalized_ledger_cannot_advance_either_local_watermark_even_for_zero_fuel",
+      "host::accounting::tests::runtime_observation::invalid_native_observations_leave_both_watermarks_and_ledger_unchanged",
+      "host::accounting::tests::runtime_observation::native_fuel_adjustments_do_not_double_charge_child_work_or_refunds",
+      "host::accounting::tests::runtime_observation::repeated_lower_memory_observations_keep_the_confirmed_peak_and_log_reservation",
+      "host::accounting::tests::shares_the_original_ledger_and_charges_only_new_fuel_deltas",
+      "host::accounting::tests::stricter_cancellation_monotonic_deadline_is_retained_with_a_supplied_ledger"
+    ],
+    "child-capacity": [
+      "activation_manager::local_service::result::tests::result_transfer_counts_unused_capacity_and_bounds_metadata_traversal"
+    ],
+    "c-public-async-type": [
+      "component::c::tests::c_public_lift_requires_declared_async_type_with_original_sync_core_abi"
+    ],
+    "c-public-sync-abi": [
+      "component::c::tests::c_declared_async_effect_does_not_enable_callback_or_async_core_abi"
+    ],
+    "journal-result-retirement": [
+      "journal::tests::accounted_declared_result::bounded_journal_copy_preserves_declared_error_and_retires_child_only_after_last_source_drop"
+    ],
+    "ordinary-backend": [
+      "backend::readiness::tests::invocation::ordinary_backend_codec_reports_original_peak_and_result_outlives_store_cleanup"
+    ],
+    "actual-native-table-owner": [
+      "host::native_table_tests::actual_typescript_fixed_tables_debit_original_memory_and_outlive_limiter_destruction",
+      "host::native_table_tests::actual_table_refusal_keeps_exact_original_memory_error_and_no_retained_owner",
+      "host::native_table_tests::actual_dynamic_table_growth_pays_exact_old_new_overlap_and_keeps_function_cells",
+      "host::native_table_tests::actual_dynamic_table_refused_replacement_keeps_original_cells_capacity_and_owner",
+      "host::native_table_tests::actual_tiny_and_zero_tables_do_not_reserve_declared_maximum_capacity",
+      "host::native_table_tests::actual_preceding_linear_allocation_is_confirmed_before_table_memory_admission",
+      "host::native_table_tests::actual_original_element_and_table_count_caps_still_refuse_without_extra_owners",
+      "host::native_table_tests::actual_pooled_table_slot_keeps_owner_through_user_data_then_real_flush",
+      "host::native_table_tests::actual_batched_pool_table_keeps_original_owner_until_decommit_queue_destruction"
+    ],
+    "actual-native-store-owner": [
+      "host::native_store_tests::actual_store_box_refusal_preserves_original_error_and_exactly_once_data_drop",
+      "host::native_store_tests::actual_dummy_instance_refusal_rolls_back_box_map_factory_and_user_data",
+      "host::native_store_tests::actual_store_core_and_component_owners_outlive_user_data_until_physical_cleanup",
+      "host::native_store_tests::actual_into_data_frees_inner_and_factory_before_returning_once_owned_data",
+      "host::native_store_tests::actual_user_data_unwind_cannot_refund_the_still_allocated_store",
+      "host::native_store_tests::actual_instance_map_overlap_refusal_preserves_prior_instance_and_fresh_reuse",
+      "host::native_store_tests::actual_passive_segment_backing_remains_owned_until_guest_elem_drop",
+      "host::native_store_tests::actual_tiny_component_still_fits_original_one_mib_and_one_billion_fuel",
+      "host::native_store_tests::actual_cancelled_lift_preserves_store_owners_and_cannot_credit_another_live_store",
+      "host::native_store_tests::actual_factory_arc_layout_includes_overalignment_and_both_pinned_counters"
+    ],
+    "closed-guest-trap-diagnostics": [
+      "containment::tests::backend_trap_labels_match_the_public_closed_classification"
+    ],
+    "actual-native-registry-owner": [
+      "host::native_registry_tests::actual_registry_all_four_preparation_refusals_preserve_prior_modules_and_fresh_retry",
+      "host::native_registry_tests::actual_registry_duplicate_module_has_no_new_registry_backing",
+      "host::native_registry_tests::actual_registry_foreign_engine_refusal_precedes_all_registry_admission",
+      "host::native_registry_tests::actual_registry_component_sparse_module_indices_preserve_both_original_results"
+    ]
+  },
+  "products": {
+    "latent": {
+      "sha256": "sha256:75015a6c571f0718a4d188205f8711fba16f6ae51494f9fa6db1cff2f0d9a884",
+      "bytes": 72401240
+    },
+    "latentd": {
+      "sha256": "sha256:3f550bedcf96d40c99a294366046fb3e3288d784afa0dec916ae1e8ad0780f1b",
+      "bytes": 189991848
+    },
+    "examples/package": {
+      "sha256": "sha256:08d9c1a4560c55f5afe4b00b5e8dde6a675507c357c083be4461d6a41c6a6c0c",
+      "bytes": 21160192
+    },
+    "examples/capsule_contracts": {
+      "sha256": "sha256:ba58dd1ee4a9caef78000a356500772caa62f852d15b4ba4d595f5f1bf36f574",
+      "bytes": 13854408
+    },
+    "examples/capsule_authoring": {
+      "sha256": "sha256:091775aece7de4fdc68e20ebbda1c4b875be22857068b2855a5e19e80c044a00",
+      "bytes": 27416424
+    }
+  },
+  "priorEvidence": [
+    "host-codec-original-memory-native-2026-10-22.json",
+    "host-codec-table-store-native-2026-10-22.json"
+  ],
+  "signedQualification": false,
+  "guestJavaScriptEngineCompiled": false,
+  "guestSourceCompiled": false,
+  "historicalReceiptRewritten": false,
+  "claimBoundaries": [
+    "All 85 named controls executed at this exact revision; the original 81 case names remain the prefix, not a claim of unchanged production or test bodies.",
+    "Three Store-local ordered registry indices and sparse secondary maps reserve replacement backing before publishing edges, include spare capacity and old/new overlap, and preserve existing entries on refusal.",
+    "Duplicate registration adds no registry allocation; foreign Engine rejection precedes registration; real sparse module lookup, guest calls and closed backtrace lookup remain valid.",
+    "Shared Engine code metadata remains outside this Store-local slice.",
+    "Shared CI at merge source d0c8bc256425d58b7a5ceff80ba75aeacbb57a3a found a separate backend aggregate-report double charge; this successful native tuple does not claim that failing shared runtime integration test passed.",
+    "Later report-boundary corrections receive their own CI evidence; this immutable archive is not reinterpreted as an execution of a later composed source.",
+    "This unsigned native programme does not rebuild or qualify guest source, a JavaScript engine, the transport closure or the whole SDK cost criterion."
+  ],
+  "remainingOutsideSlice": [
+    "FuncRefs backing and host functions",
+    "Concurrent-task queues and allocations",
+    "Hostcall backing",
+    "Request-context transitive allocations",
+    "Legacy Phase0 framing",
+    "Serialized controller/transport frames"
+  ],
+  "wholeIssue736Complete": false,
+  "wholeTypeScriptCostCriterionComplete": false
+}

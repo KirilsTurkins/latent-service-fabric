@@ -11,8 +11,15 @@ use latent_policy::capability::{
 };
 use std::sync::{
     atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering},
-    Arc, Mutex, Weak,
+    Arc, Mutex,
 };
+
+pub(in crate::broker) mod native_backing;
+pub(in crate::broker) mod native_handle;
+mod shared;
+pub(in crate::broker) type SessionCoreOwner = shared::Shared<SessionCore>;
+pub(in crate::broker) type StatsOwner = shared::Shared<Stats>;
+pub(in crate::broker) type HandleEntryOwner = shared::Shared<HandleEntry>;
 
 mod pending;
 pub(super) use pending::PendingBinding;
@@ -43,11 +50,13 @@ pub(super) struct Stats {
     pub results: AtomicUsize,
     pub buffer_bytes: AtomicUsize,
     _metadata: Charge,
+    // Tenant String drops before its own native backing guard.
+    _native_owned: Option<latent_core::HostMemoryReservation>,
 }
 #[derive(Default, Clone)]
 pub(super) struct RegistryEntry {
-    pub core: Weak<SessionCore>,
-    pub stats: Weak<Stats>,
+    pub core: shared::SharedWeak<SessionCore>,
+    pub stats: shared::SharedWeak<Stats>,
 }
 impl RegistryEntry {
     fn reusable(&self) -> bool {
@@ -62,7 +71,7 @@ impl RegistryEntry {
     }
 }
 struct HandleLifetime {
-    stats: Arc<Stats>,
+    stats: StatsOwner,
     counted: AtomicBool,
 }
 impl Drop for HandleLifetime {
@@ -80,9 +89,11 @@ pub(super) struct HandleEntry {
     _metadata: Charge,
     _slot: Charge,
     lifetime: HandleLifetime,
+    // All owned resource text drops before this original payload refund.
+    _native_owned: Option<latent_core::HostMemoryReservation>,
 }
 pub(super) struct SessionState {
-    pub slots: Vec<Option<Arc<HandleEntry>>>,
+    pub slots: Vec<Option<HandleEntryOwner>>,
 }
 impl SessionCore {
     pub(super) fn observe_diagnostic(
@@ -105,7 +116,7 @@ pub(super) struct SessionCore {
     pub budget: ActivationBudget,
     pub deadline: latent_core::EffectiveDeadline,
     pub probe: Arc<dyn ExecutionCancellationProbe>,
-    pub stats: Arc<Stats>,
+    pub stats: StatsOwner,
     pub state: Mutex<SessionState>,
     pub random_bytes: AtomicUsize,
     pub metrics: Mutex<super::metrics::SessionUsage>,
@@ -113,10 +124,12 @@ pub(super) struct SessionCore {
     web_context: bool,
     _metadata: Charge,
     _slot: Charge,
+    // All copied identity Strings and the slot Vec drop before refund.
+    _native_owned: Option<latent_core::HostMemoryReservation>,
 }
 /// Affine activation lifetime. It is never retained by a prepared component.
 pub struct CapabilitySession {
-    pub(super) core: Arc<SessionCore>,
+    pub(super) core: SessionCoreOwner,
     // Only the original Store owner closes the scope. A short internal view
     // borrows an already-owned operation; it cannot reopen or prolong authority.
     close_on_drop: bool,
@@ -124,15 +137,30 @@ pub struct CapabilitySession {
 /// Store-owned resource-table backing storage, independent of provider permits.
 /// It counts as a retained host handle until actual table destruction.
 pub struct SessionResourceTableReservation {
-    core: Arc<SessionCore>,
+    core: SessionCoreOwner,
     _metadata: Charge,
     _slot: Charge,
 }
 impl SessionResourceTableReservation {
+    /// Prepay table backing from this table's original activation ledger.
+    /// The broker metadata reservation is a separate node/session bound.
+    /// Retain the returned guard until the allocation is actually destroyed.
+    /// Phase1 keeps its existing accounting and returns no native reservation.
+    pub fn reserve_native_backing(
+        &self,
+        bytes: u64,
+    ) -> Result<Option<latent_core::HostMemoryReservation>, PlatformError> {
+        if !self.core.budget.profile().supports_descendants() {
+            return Ok(None);
+        }
+        self.with_session(|session| session.reserve_host_memory(bytes))
+            .map(Some)
+    }
+
     /// Re-enter only the original sealed session. Every new provider operation
     /// still requires current admission and a guarded policy/audit dispatch.
     pub fn with_session<T>(&self, inspect: impl FnOnce(&CapabilitySession) -> T) -> T {
-        CapabilitySession::with_work_scope(Arc::clone(&self.core), inspect)
+        CapabilitySession::with_work_scope(self.core.clone(), inspect)
     }
 }
 
@@ -144,7 +172,7 @@ impl Drop for SessionResourceTableReservation {
 /// Compact tenant-scoped accounting only; no plan, provider or guest Store.
 #[derive(Clone)]
 pub struct CapabilitySessionObserver {
-    stats: Arc<Stats>,
+    stats: StatsOwner,
 }
 impl CapabilitySessionObserver {
     #[must_use]
@@ -269,6 +297,10 @@ pub(super) fn imports_match(
 }
 
 impl ActivationCapabilityBroker {
+    #[expect(
+        clippy::too_many_lines,
+        reason = "original admission, prepaid backing and registry publication form one closed boundary"
+    )]
     pub fn open_session(
         &self,
         plan: Arc<CompiledCapabilityPlan>,
@@ -310,10 +342,28 @@ impl ActivationCapabilityBroker {
             4096 + size_of::<super::metrics::SessionUsage>()
                 + size_of::<super::network::NetworkUsage>()
                 + self.inner.limits.maximum_handles_per_session
-                    * std::mem::size_of::<Option<Arc<HandleEntry>>>(),
+                    * std::mem::size_of::<Option<HandleEntryOwner>>(),
         )?;
         let stats_metadata = self.inner.counters.acquire(Kind::Metadata, 512)?;
-        let stats = Arc::new(Stats {
+        // Complete original-memory preparation before either Arc, identity
+        // String or slot Vec allocation; no new authority is published here.
+        let native_backing::Prepared {
+            core: core_backing,
+            stats: stats_backing,
+            core_payload,
+            stats_payload,
+        } = native_backing::Prepared::reserve(
+            budget,
+            request,
+            &plan.target.tenant.0,
+            self.inner.limits.maximum_handles_per_session,
+        )?;
+        let mut slots = Vec::new();
+        slots
+            .try_reserve_exact(self.inner.limits.maximum_handles_per_session)
+            .map_err(|_| capacity())?;
+        slots.resize_with(self.inner.limits.maximum_handles_per_session, || None);
+        let mut stats = Stats {
             tenant: plan.target.tenant.clone(),
             closed: AtomicBool::new(false),
             handles: AtomicUsize::new(0),
@@ -322,8 +372,13 @@ impl ActivationCapabilityBroker {
             results: AtomicUsize::new(0),
             buffer_bytes: AtomicUsize::new(0),
             _metadata: stats_metadata,
-        });
-        let core = Arc::new(SessionCore {
+            _native_owned: stats_payload,
+        };
+        if let Some(memory) = &mut stats._native_owned {
+            memory.confirm();
+        }
+        let stats = stats_backing.allocate(stats);
+        let mut core = SessionCore {
             owner: Arc::clone(&self.inner),
             plan,
             activation_id: ActivationId(checked_text(&request.activation.activation_id.0)?),
@@ -351,18 +406,19 @@ impl ActivationCapabilityBroker {
             metrics: Mutex::new(super::metrics::SessionUsage::default()),
             network: super::network::NetworkUsage::default(),
             web_context: publication.web_projection().is_some(),
-            state: Mutex::new(SessionState {
-                slots: (0..self.inner.limits.maximum_handles_per_session)
-                    .map(|_| None)
-                    .collect(),
-            }),
+            state: Mutex::new(SessionState { slots }),
             _metadata: metadata,
             _slot: slot,
-        });
+            _native_owned: core_payload,
+        };
+        if let Some(memory) = &mut core._native_owned {
+            memory.confirm();
+        }
+        let core = core_backing.allocate(core);
         core.check()?;
         sessions[index] = RegistryEntry {
-            core: Arc::downgrade(&core),
-            stats: Arc::downgrade(&core.stats),
+            core: core.downgrade(),
+            stats: core.stats.downgrade(),
         };
         Ok(CapabilitySession {
             core,
@@ -492,14 +548,14 @@ impl CapabilitySession {
         let metadata = self.core.owner.counters.acquire(Kind::Metadata, bytes)?;
         self.core.stats.handles.fetch_add(1, Ordering::AcqRel);
         Ok(SessionResourceTableReservation {
-            core: Arc::clone(&self.core),
+            core: self.core.clone(),
             _metadata: metadata,
             _slot: slot,
         })
     }
 
     pub(super) fn with_work_scope<T>(
-        core: Arc<SessionCore>,
+        core: SessionCoreOwner,
         inspect: impl FnOnce(&Self) -> T,
     ) -> T {
         inspect(&Self {
@@ -538,7 +594,7 @@ impl CapabilitySession {
     #[must_use]
     pub fn observer(&self) -> CapabilitySessionObserver {
         CapabilitySessionObserver {
-            stats: Arc::clone(&self.core.stats),
+            stats: self.core.stats.clone(),
         }
     }
     pub fn bind(
@@ -602,11 +658,12 @@ impl CapabilitySession {
         let charge = self.core.owner.counters.acquire(Kind::Handle, 1)?;
         let metadata = self.core.owner.counters.acquire(Kind::Metadata, 8192)?;
         let decision = self.core.decision(index, operation, resource, 0, 0)?;
+        let native = native_handle::Prepared::reserve(&self.core.budget, operation, resource)?;
         let id = GuestCapabilityHandle {
             slot: u16::try_from(slot).map_err(|_| capacity())?,
             incarnation: next_incarnation()?,
         };
-        let row = Arc::new(HandleEntry {
+        let row = native.allocate(HandleEntry {
             id,
             binding: index,
             operation: checked_text(operation)?,
@@ -614,9 +671,10 @@ impl CapabilitySession {
             _metadata: metadata,
             _slot: charge,
             lifetime: HandleLifetime {
-                stats: Arc::clone(&self.core.stats),
+                stats: self.core.stats.clone(),
                 counted: AtomicBool::new(false),
             },
+            _native_owned: None,
         });
         self.core.plan.with_routes(&mut || {
             self.core.owner.policies.with_current_dependencies(
@@ -626,7 +684,7 @@ impl CapabilitySession {
                     self.core.check()?;
                     row.lifetime.counted.store(true, Ordering::Release);
                     self.core.stats.handles.fetch_add(1, Ordering::AcqRel);
-                    state.slots[slot] = Some(Arc::clone(&row));
+                    state.slots[slot] = Some(row.clone());
                     Ok(())
                 },
             )
@@ -660,7 +718,7 @@ impl CapabilitySession {
     pub(super) fn row(
         &self,
         handle: GuestCapabilityHandle,
-    ) -> Result<Arc<HandleEntry>, PlatformError> {
+    ) -> Result<HandleEntryOwner, PlatformError> {
         let state = self.core.state.try_lock().map_err(|_| busy())?;
         self.core.check()?;
         state

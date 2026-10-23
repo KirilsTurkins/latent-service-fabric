@@ -92,6 +92,13 @@ def rustsec(repo: Path, scratch: Path, tools: Path) -> tuple[list[Finding], dict
         findings.extend(current)
         locks.append({"path": MANIFEST, "coverage": "authenticated-upstream-advisory-coordinate",
                       "notBuildLock": True, "origin": checked, **record})
+    from tools.security_result_bytes import MANIFEST as BYTES_MANIFEST, origin as bytes_origin
+    checked = bytes_origin(repo, tracked)
+    if checked is not None:
+        current, record = audit_lock(advisory_lock(checked), BYTES_MANIFEST, binary, database, identity, scratch)
+        findings.extend(current)
+        locks.append({"path": BYTES_MANIFEST, "coverage": "authenticated-upstream-advisory-coordinate",
+                      "notBuildLock": True, "origin": checked, **record})
     return findings, {"database": identity, "locks": locks}
 
 

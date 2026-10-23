@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_wasi_http_inputs.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "One explicit twenty-minute ordinary Rust compiler-input observation using the exact authenticated Wasmtime48.0.7 products; no host build, HTTP backend/signing/dispatch or lifecycle pass claim. All existing jobs/commands/guards remain unchanged.",
+  "reviewReason": "Use explicitly selected authenticated Rust116-file recipe in every actual producer and consumer; preserve exact45 host decision inputs, all existing cases and refusal guards. The six PrivateRequestViewer fixtures only switch from static recipe names to explicit selected recipe names; no runner, skip or fixture behavior is disabled.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "fc6d6873d665fb02d76287491060b67f6761437eeef8d6c99850953bd5248a0e"
+  "sha256": "0e5478f04ead2c638931b682eac93e4a2a49a5aa4dfcd54299ecb15dfade0304"
 }

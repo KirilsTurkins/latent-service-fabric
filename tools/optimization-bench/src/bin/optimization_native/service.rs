@@ -144,7 +144,7 @@ pub(super) fn completed(
             id,
             started,
             proto::invoke_response::Result::Success(proto::Success {
-                payload,
+                payload: payload.into(),
                 media_type: MEDIA_TYPE.to_owned(),
                 ..proto::Success::default()
             }),

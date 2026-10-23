@@ -11,7 +11,7 @@ fn fixture(bytes: usize, duplicate: bool, rejected: bool) -> (Request, t::Invoke
     let result = if rejected {
         let body = i::DeclaredError {
             code: "account-blocked".into(),
-            payload: vec![b'a'; bytes],
+            payload: (vec![b'a'; bytes]).into(),
             media_type: "application/octet-stream".into(),
             ..Default::default()
         };
@@ -22,7 +22,7 @@ fn fixture(bytes: usize, duplicate: bool, rejected: bool) -> (Request, t::Invoke
         command.outcome = t::CommandOutcome::Committed as i32;
         command.application_state_committed = true;
         let body = i::Success {
-            payload: vec![b'a'; bytes],
+            payload: (vec![b'a'; bytes]).into(),
             media_type: "application/octet-stream".into(),
             committed_state_version: Some("03".repeat(32)),
             effect_ids: vec!["effect".into()],
@@ -145,9 +145,15 @@ fn legacy_equal_duplicate_bodies_remain_valid_and_malformed_duplicates_reject() 
             .as_mut()
             .unwrap()
         {
-            t::command_inspection::RetainedResult::Success(body) => body.payload.push(b'b'),
+            t::command_inspection::RetainedResult::Success(body) => {
+                let mut bytes = body.payload.as_ref().to_vec();
+                bytes.push(b'b');
+                body.payload = bytes.into();
+            }
             t::command_inspection::RetainedResult::BusinessRejection(body) => {
-                body.payload.push(b'b')
+                let mut bytes = body.payload.as_ref().to_vec();
+                bytes.push(b'b');
+                body.payload = bytes.into();
             }
             _ => unreachable!(),
         }

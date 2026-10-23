@@ -1,4 +1,4 @@
-use super::session::{HandleEntry, SessionCore, Stats};
+use super::session::{HandleEntryOwner, SessionCoreOwner, StatsOwner};
 use super::{
     busy, capacity, denied, error, stopped, CapabilitySession, Charge, GuestCapabilityHandle, Kind,
     PlatformError,
@@ -10,7 +10,8 @@ use std::{
     sync::{atomic::Ordering, Arc},
     time::{Duration, Instant},
 };
-use zeroize::Zeroizing;
+pub(super) mod native_buffer;
+use native_buffer::NativeBuffer;
 
 mod pending;
 pub(super) use pending::PendingWork;
@@ -112,7 +113,7 @@ impl CapabilityCallCost {
 }
 
 struct WorkLifetime {
-    stats: Arc<Stats>,
+    stats: StatsOwner,
     active: bool,
     buffer_bytes: usize,
     _slot: Charge,
@@ -128,13 +129,13 @@ impl Drop for WorkLifetime {
     }
 }
 struct Work {
-    audit: Option<Box<super::audit::CallAudit>>,
+    audit: Option<super::audit::CallAuditOwner>,
     required_audit: bool,
     input_size: usize,
     pending_budget: Option<BudgetReservationGroup>,
-    input: Zeroizing<Vec<u8>>,
-    row: Arc<HandleEntry>,
-    session: Arc<SessionCore>,
+    input: NativeBuffer,
+    row: HandleEntryOwner,
+    session: SessionCoreOwner,
     id: u64,
     deadline: Instant,
     maximum_output_bytes: usize,
@@ -150,8 +151,8 @@ impl Work {
         self.recheck_authority(true)
     }
     fn recheck_authority(&mut self, require_audit: bool) -> Result<(), PlatformError> {
-        let core = Arc::clone(&self.session);
-        let row = Arc::clone(&self.row);
+        let core = self.session.clone();
+        let row = self.row.clone();
         let live = core.owner.live.try_read().map_err(|_| busy())?;
         let binding = &core.plan.bindings[row.binding];
         let installed = binding.provider.live.try_read().map_err(|_| busy())?;
@@ -163,7 +164,7 @@ impl Work {
                     .slots
                     .get(usize::from(row.id.wire_parts().0))
                     .and_then(Option::as_ref)
-                    .is_none_or(|current| !Arc::ptr_eq(current, &row)))
+                    .is_none_or(|current| !HandleEntryOwner::ptr_eq(current, &row)))
         {
             return Err(denied());
         }
@@ -217,7 +218,7 @@ pub struct CapabilityDispatch {
     _lookup: Option<LookupOwner>,
 }
 struct LookupOwner {
-    core: Arc<SessionCore>,
+    core: SessionCoreOwner,
     id: GuestCapabilityHandle,
 }
 impl Drop for LookupOwner {
@@ -250,7 +251,7 @@ impl CapabilityDispatch {
 /// Bytes and their original activation/handle/buffer ownership are inseparable.
 /// All response bytes are zeroed before their reservation is released.
 struct ResultLifetime {
-    stats: Arc<Stats>,
+    stats: StatsOwner,
     buffer_bytes: usize,
 }
 impl Drop for ResultLifetime {
@@ -262,11 +263,11 @@ impl Drop for ResultLifetime {
     }
 }
 pub struct OwnedCapabilityResponse {
-    audit: Option<Box<super::audit::CallAudit>>,
+    audit: Option<super::audit::CallAuditOwner>,
     deadline: Instant,
-    bytes: Zeroizing<Vec<u8>>,
-    pub(super) session: Arc<SessionCore>,
-    _row: Arc<HandleEntry>,
+    bytes: NativeBuffer,
+    pub(super) session: SessionCoreOwner,
+    _row: HandleEntryOwner,
     id: u64,
     _bytes: Charge,
     _metadata: Charge,
@@ -311,13 +312,13 @@ impl ProviderCall {
     pub(super) fn stream_budget(&self) -> Option<super::CapabilityStreamBudget> {
         self.work.as_ref().expect("affine call").stream_budget
     }
-    pub(super) fn session_core(&self) -> Arc<SessionCore> {
-        Arc::clone(&self.work.as_ref().expect("affine call").session)
+    pub(super) fn session_core(&self) -> SessionCoreOwner {
+        self.work.as_ref().expect("affine call").session.clone()
     }
-    pub(super) fn take_audit(&mut self) -> Option<Box<super::audit::CallAudit>> {
+    pub(super) fn take_audit(&mut self) -> Option<super::audit::CallAuditOwner> {
         self.work.as_mut().expect("affine call").audit.take()
     }
-    pub(super) fn restore_audit(&mut self, audit: Box<super::audit::CallAudit>) {
+    pub(super) fn restore_audit(&mut self, audit: super::audit::CallAuditOwner) {
         let work = self.work.as_mut().expect("affine call");
         debug_assert!(work.audit.is_none());
         work.audit = Some(audit);
@@ -506,8 +507,8 @@ impl ProviderCall {
     pub fn is_cancelled(&self) -> bool {
         self.check().is_err()
     }
-    pub(super) fn same_session(&self, session: &Arc<SessionCore>) -> bool {
-        Arc::ptr_eq(&self.work.as_ref().expect("affine call").session, session)
+    pub(super) fn same_session(&self, session: &SessionCoreOwner) -> bool {
+        SessionCoreOwner::ptr_eq(&self.work.as_ref().expect("affine call").session, session)
     }
     #[must_use]
     pub fn maximum_output_bytes(&self) -> usize {
@@ -541,7 +542,7 @@ impl ProviderCall {
         {
             return Err(capacity());
         }
-        let data = Zeroizing::new(bytes.to_vec());
+        let data = NativeBuffer::copy(self.budget_accounting(), bytes)?;
         let Work {
             audit,
             required_audit: _,
@@ -564,7 +565,7 @@ impl ProviderCall {
         drop(input_bytes);
         session.stats.results.fetch_add(1, Ordering::AcqRel);
         let result_lifetime = ResultLifetime {
-            stats: Arc::clone(&session.stats),
+            stats: session.stats.clone(),
             buffer_bytes: maximum_output_bytes,
         };
         lifetime.buffer_bytes = input_size;
@@ -595,7 +596,7 @@ impl CapabilitySession {
     ) -> Result<CapabilityDispatch, PlatformError> {
         let handle = self.bind(capability, operation, resource)?;
         let lookup = LookupOwner {
-            core: Arc::clone(&self.core),
+            core: self.core.clone(),
             id: handle,
         };
         let call = self.start_call(handle, operation, resource, input, cost, true)?;
@@ -664,7 +665,7 @@ impl CapabilitySession {
             drop(failure);
             error(code, "capability-provider-failed")
         })?;
-        if !Arc::ptr_eq(&response.session, &self.core) || response.id != id {
+        if !SessionCoreOwner::ptr_eq(&response.session, &self.core) || response.id != id {
             return Err(denied());
         }
         response.finish_audit().await;
@@ -703,7 +704,7 @@ impl CapabilitySession {
             .slots
             .get(usize::from(handle.wire_parts().0))
             .and_then(Option::as_ref)
-            .is_none_or(|current| !Arc::ptr_eq(current, &row))
+            .is_none_or(|current| !HandleEntryOwner::ptr_eq(current, &row))
         {
             return Err(denied());
         }
@@ -761,29 +762,30 @@ impl CapabilitySession {
         }
         cost.validate_minimum(operation, &binding.provider.minimum_call_charges)?;
         let budget_reservation = cost.reserve(&self.core.budget)?;
+        let input = NativeBuffer::copy(&self.core.budget, input)?;
+        let prepared = if cost.typed_input_bytes != 0 && cost.typed_request_digest.is_none() {
+            if let Some(configuration) = &self.core.owner.audit {
+                configuration.note_dropped();
+            }
+            None // Optional diagnostics cannot assert a digest of omitted typed inputs.
+        } else {
+            super::audit::CallAudit::prepare(&self.core, row.binding, operation, required_audit)?
+        };
         let id = super::session::next_incarnation()?;
-        let audit = if self.core.owner.audit.is_some() || required_audit {
-            if cost.typed_input_bytes != 0 && cost.typed_request_digest.is_none() {
-                if let Some(configuration) = &self.core.owner.audit {
-                    configuration.note_dropped();
-                }
-                None // Optional diagnostics must never assert a digest of omitted typed inputs.
-            } else {
-                super::audit::CallAudit::prepare(
-                    &self.core,
-                    row.binding,
+        let audit = if let Some(prepared) = prepared {
+            prepared.capture(
+                &self.core,
+                row.binding,
+                operation,
+                resource,
+                super::audit::request_digest(
                     operation,
                     resource,
-                    super::audit::request_digest(
-                        operation,
-                        resource,
-                        input,
-                        cost.typed_request_digest,
-                    ),
-                    required_audit,
-                    id,
-                )?
-            }
+                    &input,
+                    cost.typed_request_digest,
+                ),
+                id,
+            )?
         } else {
             None
         };
@@ -792,9 +794,9 @@ impl CapabilitySession {
             required_audit,
             input_size,
             pending_budget: budget_reservation,
-            input: Zeroizing::new(input.to_vec()),
-            row: Arc::clone(&row),
-            session: Arc::clone(&self.core),
+            input,
+            row: row.clone(),
+            session: self.core.clone(),
             id,
             deadline: self.core.owner.clock.monotonic_now(),
             maximum_output_bytes: cost.maximum_output_bytes,
@@ -804,7 +806,7 @@ impl CapabilitySession {
             result,
             metadata,
             lifetime: WorkLifetime {
-                stats: Arc::clone(&self.core.stats),
+                stats: self.core.stats.clone(),
                 active: false,
                 buffer_bytes: input_size + cost.maximum_output_bytes,
                 _slot: call_slot,

@@ -78,6 +78,10 @@ impl WasmtimeConfig {
                 .to_owned(),
             ),
             ("value-codec".to_owned(), "canonical-json-v1".to_owned()),
+            (
+                "dynamic-value-memory".to_owned(),
+                wasmtime::component::DYNAMIC_VALUE_MEMORY_COHORT.to_owned(),
+            ),
         ]);
         self.include_resource_policy(&mut fields);
         self.include_engine_policy(&mut fields);
@@ -100,6 +104,9 @@ impl WasmtimeConfig {
                     }
                     super::NativeThreadProfile::CContext144SyncCooperativeV1 => {
                         "sync-cooperative-c-abi-v1"
+                    }
+                    super::NativeThreadProfile::RustContext40SyncCooperativeV1 => {
+                        "sync-cooperative-rust-abi-v1"
                     }
                 }
                 .into(),

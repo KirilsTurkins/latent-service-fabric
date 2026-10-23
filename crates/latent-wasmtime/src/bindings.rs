@@ -37,9 +37,7 @@ pub(crate) fn install_context_log_clock(linker: &mut Linker<HostState>) -> wasmt
             "declared linker registrations do not match the active host ABI profile",
         ));
     }
-    latent::context::context::add_to_linker::<HostState, HasSelf<HostState>>(linker, |state| {
-        state
-    })?;
+    crate::host::context::install(linker)?;
     latent::log::log::add_to_linker::<HostState, HasSelf<HostState>>(linker, |state| state)?;
     crate::host::clock::install(linker)
 }

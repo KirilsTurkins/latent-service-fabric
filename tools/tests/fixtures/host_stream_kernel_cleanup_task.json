@@ -1,0 +1,101 @@
+{
+  "schemaVersion": "lsf.kernel-cleanup-task-prefix.v1",
+  "upstreamCommit": "7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+  "archiveSha256": "e09b6727e5c521253f0d41694900b9c38fb7604db7d35238a8197aa9f7de2428",
+  "parentSource": "334f95cd0627e4f02dd54d3ae07fa33d6417ff93",
+  "source": {
+    "kernel/fork.c": {
+      "bytes": 87199,
+      "sha256": "a3c798d12392a4a519eb398f8937c0d5cac6d0875daaad87b07c2a13e77e021c",
+      "gitBlob": "c0ecb097aa1d25acd4b0c14dd2dcb41e39b18cc6"
+    },
+    "kernel/kthread.c": {
+      "bytes": 43615,
+      "sha256": "1b2d9794c6a3f5c4eb1b1f9e1e3b01bd0bf98de4d5ee67fe24efd4aa749e662f",
+      "gitBlob": "9bb36897b6c62d46a2f7f7af51b86ff545e3eecf"
+    },
+    "arch/x86/kernel/process.c": {
+      "bytes": 26949,
+      "sha256": "dd5e215d048e0d2940d2dccd0fef55ea0eb59a23051f5b2ed2b1c2dc26f3fc61",
+      "gitBlob": "4c9c98c5deabdacdfab61c56b8e669f7357730f9"
+    },
+    "include/linux/sched/task.h": {
+      "bytes": 6756,
+      "sha256": "ee19639668eb7e96fd077c7dcb557e850b1e24a93231c62905c3484d5a96f38d",
+      "gitBlob": "ca1db4b92c3244de87033dd481c50c4bb8242a26"
+    },
+    "arch/x86/include/asm/page_64_types.h": {
+      "bytes": 3144,
+      "sha256": "0fabfb5b6c79bbd8909e2f69192b56889265438a80b2f2b79768a860ef8ad7d0",
+      "gitBlob": "06ef25411d622b9137a5c74e6930d5492ccec6b8"
+    },
+    "include/linux/kthread.h": {
+      "bytes": 7169,
+      "sha256": "8912cbbd1e401babd60f3d799bc25a873f8abf51cf84bdc8ec4d220b463bd916",
+      "gitBlob": "b11f53c1ba2e6f7f2ad88ba503177535085bbdb5"
+    }
+  },
+  "parentDerived": {
+    "net/factory.c": {
+      "bytes": 31002,
+      "sha256": "d08b85c746490b86ca5c0d127b065cff5e0c8901afc1500c3f854f9145787203"
+    },
+    "net/factory-device.c": {
+      "bytes": 8405,
+      "sha256": "97d73b80e12b8f1afba00ab2dfff5dc3f4bf61ff01c8f87615e4256079633798"
+    },
+    "net/device-prepaid.h": {
+      "bytes": 11386,
+      "sha256": "376a0620f841ea4e72a19594bdb849484351cdbead2ee46f0a016b44857fa781"
+    }
+  },
+  "sections": {
+    "dup_task_struct": {
+      "source": "kernel/fork.c",
+      "prefix": "static struct task_struct *dup_task_struct(struct task_struct *orig, int node)\n",
+      "text": "static struct task_struct *dup_task_struct(struct task_struct *orig, int node)\n{\n\tstruct task_struct *tsk;\n\tint err;\n\n\tif (node == NUMA_NO_NODE)\n\t\tnode = tsk_fork_get_node(orig);\n\ttsk = alloc_task_struct_node(node);\n\tif (!tsk)\n\t\treturn NULL;\n\n\terr = arch_dup_task_struct(tsk, orig);\n\tif (err)\n\t\tgoto free_tsk;\n\n\terr = alloc_thread_stack_node(tsk, node);\n\tif (err)\n\t\tgoto free_tsk;\n\n#ifdef CONFIG_THREAD_INFO_IN_TASK\n\trefcount_set(&tsk->stack_refcount, 1);\n#endif\n\taccount_kernel_stack(tsk, 1);\n\n\terr = scs_prepare(tsk, node);\n\tif (err)\n\t\tgoto free_stack;\n\n#ifdef CONFIG_SECCOMP\n\t/*\n\t * We must handle setting up seccomp filters once we're under\n\t * the sighand lock in case orig has changed between now and\n\t * then. Until then, filter must be NULL to avoid messing up\n\t * the usage counts on the error path calling free_task.\n\t */\n\ttsk->seccomp.filter = NULL;\n#endif\n\n\tsetup_thread_stack(tsk, orig);\n\tclear_user_return_notifier(tsk);\n\tclear_tsk_need_resched(tsk);\n\tset_task_stack_end_magic(tsk);\n\tclear_syscall_work_syscall_user_dispatch(tsk);\n\n#ifdef CONFIG_STACKPROTECTOR\n\ttsk->stack_canary = get_random_canary();\n#endif\n\tif (orig->cpus_ptr == &orig->cpus_mask)\n\t\ttsk->cpus_ptr = &tsk->cpus_mask;\n\tdup_user_cpus_ptr(tsk, orig, node);\n\n\t/*\n\t * One for the user space visible state that goes away when reaped.\n\t * One for the scheduler.\n\t */\n\trefcount_set(&tsk->rcu_users, 2);\n\t/* One for the rcu users */\n\trefcount_set(&tsk->usage, 1);\n#ifdef CONFIG_BLK_DEV_IO_TRACE\n\ttsk->btrace_seq = 0;\n#endif\n\ttsk->splice_pipe = NULL;\n\ttsk->task_frag.page = NULL;\n\ttsk->wake_q.next = NULL;\n\ttsk->worker_private = NULL;\n\n\tkcov_task_init(tsk);\n\tkmsan_task_create(tsk);\n\tkmap_local_fork(tsk);\n\n#ifdef CONFIG_FAULT_INJECTION\n\ttsk->fail_nth = 0;\n#endif\n\n#ifdef CONFIG_BLK_CGROUP\n\ttsk->throttle_disk = NULL;\n\ttsk->use_memdelay = 0;\n#endif\n\n#ifdef CONFIG_ARCH_HAS_CPU_PASID\n\ttsk->pasid_activated = 0;\n#endif\n\n#ifdef CONFIG_MEMCG\n\ttsk->active_memcg = NULL;\n#endif\n\n#ifdef CONFIG_CPU_SUP_INTEL\n\ttsk->reported_split_lock = 0;\n#endif\n\n#ifdef CONFIG_SCHED_MM_CID\n\ttsk->mm_cid = -1;\n\ttsk->last_mm_cid = -1;\n\ttsk->mm_cid_active = 0;\n\ttsk->migrate_from_cpu = -1;\n#endif\n\n#ifdef CONFIG_BPF_SYSCALL\n\tRCU_INIT_POINTER(tsk->bpf_storage, NULL);\n\ttsk->bpf_ctx = NULL;\n#endif\n\treturn tsk;\n\nfree_stack:\n\texit_task_stack_account(tsk);\n\tfree_thread_stack(tsk);\nfree_tsk:\n\tfree_task_struct(tsk);\n\treturn NULL;\n}\n",
+      "bytes": 2375,
+      "sha256": "63357e51d075351b652090d39b3f7a706c6f31b765daf7b161647deb1411ce5b"
+    },
+    "arch_dup_task_struct": {
+      "source": "arch/x86/kernel/process.c",
+      "prefix": "int arch_dup_task_struct(struct task_struct *dst, struct task_struct *src)\n",
+      "text": "int arch_dup_task_struct(struct task_struct *dst, struct task_struct *src)\n{\n\t/* init_task is not dynamically sized (incomplete FPU state) */\n\tif (unlikely(src == &init_task))\n\t\tmemcpy_and_pad(dst, arch_task_struct_size, src, sizeof(init_task), 0);\n\telse\n\t\tmemcpy(dst, src, arch_task_struct_size);\n\n#ifdef CONFIG_VM86\n\tdst->thread.vm86 = NULL;\n#endif\n\t/* Drop the copied pointer to current's fpstate */\n\tdst->thread.fpu.fpstate = NULL;\n\n\treturn 0;\n}\n",
+      "bytes": 450,
+      "sha256": "92bb8ff3cf2fa829c0e7958c316daefa7eeb0cca639233cadb632a14cdf02279"
+    },
+    "kthread_worker_fn": {
+      "source": "kernel/kthread.c",
+      "prefix": "int kthread_worker_fn(void *worker_ptr)\n",
+      "text": "int kthread_worker_fn(void *worker_ptr)\n{\n\tstruct kthread_worker *worker = worker_ptr;\n\tstruct kthread_work *work;\n\n\t/*\n\t * FIXME: Update the check and remove the assignment when all kthread\n\t * worker users are created using kthread_create_worker*() functions.\n\t */\n\tWARN_ON(worker->task && worker->task != current);\n\tworker->task = current;\n\n\tif (worker->flags & KTW_FREEZABLE)\n\t\tset_freezable();\n\nrepeat:\n\tset_current_state(TASK_INTERRUPTIBLE);\t/* mb paired w/ kthread_stop */\n\n\tif (kthread_should_stop()) {\n\t\t__set_current_state(TASK_RUNNING);\n\t\traw_spin_lock_irq(&worker->lock);\n\t\tworker->task = NULL;\n\t\traw_spin_unlock_irq(&worker->lock);\n\t\treturn 0;\n\t}\n\n\twork = NULL;\n\traw_spin_lock_irq(&worker->lock);\n\tif (!list_empty(&worker->work_list)) {\n\t\twork = list_first_entry(&worker->work_list,\n\t\t\t\t\tstruct kthread_work, node);\n\t\tlist_del_init(&work->node);\n\t}\n\tworker->current_work = work;\n\traw_spin_unlock_irq(&worker->lock);\n\n\tif (work) {\n\t\tkthread_work_func_t func = work->func;\n\t\t__set_current_state(TASK_RUNNING);\n\t\ttrace_sched_kthread_work_execute_start(work);\n\t\twork->func(work);\n\t\t/*\n\t\t * Avoid dereferencing work after this point.  The trace\n\t\t * event only cares about the address.\n\t\t */\n\t\ttrace_sched_kthread_work_execute_end(work, func);\n\t} else if (!freezing(current)) {\n\t\tschedule();\n\t} else {\n\t\t/*\n\t\t * Handle the case where the current remains\n\t\t * TASK_INTERRUPTIBLE. try_to_freeze() expects\n\t\t * the current to be TASK_RUNNING.\n\t\t */\n\t\t__set_current_state(TASK_RUNNING);\n\t}\n\n\ttry_to_freeze();\n\tcond_resched();\n\tgoto repeat;\n}\n",
+      "bytes": 1546,
+      "sha256": "960946b5cb9c08863c9d1f7586ec4e291f96ddce0e5e9705c68794356edd28b8"
+    },
+    "kthread_stop": {
+      "source": "kernel/kthread.c",
+      "prefix": "int kthread_stop(struct task_struct *k)\n",
+      "text": "int kthread_stop(struct task_struct *k)\n{\n\tstruct kthread *kthread;\n\tint ret;\n\n\ttrace_sched_kthread_stop(k);\n\n\tget_task_struct(k);\n\tkthread = to_kthread(k);\n\tset_bit(KTHREAD_SHOULD_STOP, &kthread->flags);\n\tkthread_unpark(k);\n\tset_tsk_thread_flag(k, TIF_NOTIFY_SIGNAL);\n\twake_up_process(k);\n\twait_for_completion(&kthread->exited);\n\tret = kthread->result;\n\tput_task_struct(k);\n\n\ttrace_sched_kthread_stop_ret(ret);\n\treturn ret;\n}\n",
+      "bytes": 427,
+      "sha256": "7d6e106e9168fc433520305d905d376ade49485313d22afb944eed51979c0060"
+    },
+    "kthreadd": {
+      "source": "kernel/kthread.c",
+      "prefix": "int kthreadd(void *unused)\n",
+      "text": "int kthreadd(void *unused)\n{\n\tstruct task_struct *tsk = current;\n\n\t/* Setup a clean context for our children to inherit. */\n\tset_task_comm(tsk, \"kthreadd\");\n\tignore_signals(tsk);\n\tset_cpus_allowed_ptr(tsk, housekeeping_cpumask(HK_TYPE_KTHREAD));\n\tset_mems_allowed(node_states[N_MEMORY]);\n\n\tcurrent->flags |= PF_NOFREEZE;\n\tcgroup_init_kthreadd();\n\n\tfor (;;) {\n\t\tset_current_state(TASK_INTERRUPTIBLE);\n\t\tif (list_empty(&kthread_create_list))\n\t\t\tschedule();\n\t\t__set_current_state(TASK_RUNNING);\n\n\t\tspin_lock(&kthread_create_lock);\n\t\twhile (!list_empty(&kthread_create_list)) {\n\t\t\tstruct kthread_create_info *create;\n\n\t\t\tcreate = list_entry(kthread_create_list.next,\n\t\t\t\t\t    struct kthread_create_info, list);\n\t\t\tlist_del_init(&create->list);\n\t\t\tspin_unlock(&kthread_create_lock);\n\n\t\t\tcreate_kthread(create);\n\n\t\t\tspin_lock(&kthread_create_lock);\n\t\t}\n\t\tspin_unlock(&kthread_create_lock);\n\t}\n\n\treturn 0;\n}\n",
+      "bytes": 901,
+      "sha256": "53870e943d932812a89ebbbbb8512cb158f2cb8bf17176b8bfe6ebabf248003f"
+    },
+    "__kthread_create_worker": {
+      "source": "kernel/kthread.c",
+      "prefix": "static __printf(3, 0) struct kthread_worker *\n__kthread_create_worker(",
+      "text": "static __printf(3, 0) struct kthread_worker *\n__kthread_create_worker(int cpu, unsigned int flags,\n\t\t\tconst char namefmt[], va_list args)\n{\n\tstruct kthread_worker *worker;\n\tstruct task_struct *task;\n\tint node = NUMA_NO_NODE;\n\n\tworker = kzalloc(sizeof(*worker), GFP_KERNEL);\n\tif (!worker)\n\t\treturn ERR_PTR(-ENOMEM);\n\n\tkthread_init_worker(worker);\n\n\tif (cpu >= 0)\n\t\tnode = cpu_to_node(cpu);\n\n\ttask = __kthread_create_on_node(kthread_worker_fn, worker,\n\t\t\t\t\t\tnode, namefmt, args);\n\tif (IS_ERR(task))\n\t\tgoto fail_task;\n\n\tif (cpu >= 0)\n\t\tkthread_bind(task, cpu);\n\n\tworker->flags = flags;\n\tworker->task = task;\n\twake_up_process(task);\n\treturn worker;\n\nfail_task:\n\tkfree(worker);\n\treturn ERR_CAST(task);\n}\n",
+      "bytes": 699,
+      "sha256": "bd24107181d8691bd78c6f39baf65d5b735e630742c32f8568bcf7f643b46cc6"
+    }
+  },
+  "taskCreated": false,
+  "executorReady": false,
+  "stackOwnerImplemented": false,
+  "completeAllocationClosure": false,
+  "productionInstallation": false
+}

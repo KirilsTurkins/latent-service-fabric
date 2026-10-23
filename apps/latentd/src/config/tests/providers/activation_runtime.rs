@@ -134,6 +134,30 @@ fn protected_c_profile_reaches_normal_node_settings_without_raising_any_limits()
         settings.wasmtime.maximum_concurrent_preparations,
         before.wasmtime.maximum_concurrent_preparations
     );
+    selected["engine"]["threadingProfile"] = "rust-context40-sync-cooperative-v1".into();
+    let rust = derive(&selected).unwrap();
+    assert_eq!(
+        rust.wasmtime.native_thread_profile,
+        latent_wasmtime::NativeThreadProfile::RustContext40SyncCooperativeV1
+    );
+    assert_eq!(
+        rust.wasmtime.activation_runtime,
+        settings.wasmtime.activation_runtime
+    );
+    assert_eq!(
+        rust.wasmtime.maximum_memory_bytes,
+        settings.wasmtime.maximum_memory_bytes
+    );
+    assert_eq!(rust.wasmtime.maximum_fuel, settings.wasmtime.maximum_fuel);
+    assert_eq!(
+        rust.wasmtime.prepared_cache_maximum_source_bytes,
+        settings.wasmtime.prepared_cache_maximum_source_bytes
+    );
+    assert!(rust
+        .admission
+        .cell_classes
+        .values()
+        .all(|cell| cell.threading_models == selected_models));
     selected.as_object_mut().unwrap().remove("engine");
     assert!(derive(&selected).is_err());
     assert!(!uncreated.exists());
@@ -197,6 +221,16 @@ fn cooperative_admission_requires_the_selected_c_profile_and_exact_store_owner_l
         }
         assert!(crate::config::policy::admission(&selected, &capacity, &wrong).is_err());
     }
+    value["engine"]["threadingProfile"] = "rust-context40-sync-cooperative-v1".into();
+    let selected_rust = decode(&value);
+    assert!(crate::config::policy::admission(&selected_rust, &capacity, &runtime).is_err());
+    runtime.native_thread_profile = NativeThreadProfile::RustContext40SyncCooperativeV1;
+    let rust = crate::config::policy::admission(&selected_rust, &capacity, &runtime).unwrap();
+    assert!(rust
+        .cell_classes
+        .values()
+        .all(|cell| cell.threading_models == vec![ThreadingModel::Cooperative]));
+    assert!(crate::config::policy::admission(&selected, &capacity, &runtime).is_err());
     value["providers"]["activationRuntime"]["nativeThreads"] = false.into();
     assert!(crate::config::policy::admission(&decode(&value), &capacity, &runtime).is_err());
 }

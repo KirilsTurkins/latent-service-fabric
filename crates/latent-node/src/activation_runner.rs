@@ -626,7 +626,7 @@ pub(crate) fn map_execution_outcome(
             metadata.insert("cell-id".to_owned(), bounded_cell_id);
             metadata.insert("cell-disposition".to_owned(), disposition.to_owned());
             ActivationOutcome::Succeeded(ActivationSuccess {
-                output,
+                output: (output).into(),
                 output_media_type,
                 consumption,
                 committed_state_version: None,
@@ -676,10 +676,12 @@ pub(crate) fn map_execution_outcome(
             }
             GuestInterruptionKind::DeadlineExceeded => failure(deadline_error(), consumption),
             GuestInterruptionKind::FuelExhausted | GuestInterruptionKind::MemoryExhausted => {
-                let (detail_kind, message) = match kind {
-                    GuestInterruptionKind::FuelExhausted => ("activation.fuel-exhausted", reason),
+                let (detail_kind, dimension, message) = match kind {
+                    GuestInterruptionKind::FuelExhausted => {
+                        ("activation.fuel-exhausted", "cpu-fuel", reason)
+                    }
                     GuestInterruptionKind::MemoryExhausted => {
-                        ("activation.memory-exhausted", reason)
+                        ("activation.memory-exhausted", "memory-bytes", reason)
                     }
                     GuestInterruptionKind::Cancelled | GuestInterruptionKind::DeadlineExceeded => {
                         unreachable!()
@@ -687,6 +689,9 @@ pub(crate) fn map_execution_outcome(
                 };
                 let mut fields = Metadata::new();
                 fields.insert("cell_id".to_owned(), bounded_cell_id);
+                // A closed producer-owned dimension survives public redaction;
+                // private cell identity and backend reason remain private.
+                fields.insert("dimension".to_owned(), dimension.to_owned());
                 failure(
                     PlatformError {
                         code: PlatformErrorCode::ResourceExhausted,
@@ -970,6 +975,64 @@ mod tests {
     use super::*;
 
     #[test]
+    fn typed_memory_and_fuel_interruptions_keep_public_dimensions_and_operator_reasons() {
+        use latent_core::diagnostic::{ActivationDiagnostic, DiagnosticReason};
+        for (kind, label, dimension, expected_reason) in [
+            (
+                GuestInterruptionKind::MemoryExhausted,
+                "activation.memory-exhausted",
+                "memory-bytes",
+                DiagnosticReason::GuestMemoryExhausted,
+            ),
+            (
+                GuestInterruptionKind::FuelExhausted,
+                "activation.fuel-exhausted",
+                "cpu-fuel",
+                DiagnosticReason::GuestFuelExhausted,
+            ),
+        ] {
+            let consumption = BudgetConsumption {
+                cpu_fuel: 158,
+                peak_memory_bytes: 5088,
+                ..Default::default()
+            };
+            let outcome = map_execution_outcome(
+                Ok(GuestOutcome::Interrupted {
+                    kind,
+                    reason: "private backend allocation text".into(),
+                    consumption: consumption.clone(),
+                }),
+                "private-cell-identity",
+                "released",
+            );
+            let ActivationOutcome::Failed {
+                terminal_state,
+                error,
+                consumption: actual,
+            } = outcome
+            else {
+                panic!("typed exhaustion must remain failed")
+            };
+            assert_eq!(terminal_state, ActivationTerminalState::ResourceExhausted);
+            assert_eq!(actual, consumption);
+            assert_eq!(error.code, PlatformErrorCode::ResourceExhausted);
+            assert!(!error.retryable);
+            assert_eq!(error.details[0].kind, label);
+            assert_eq!(
+                error.details[0].fields,
+                Metadata::from([
+                    ("cell_id".into(), "private-cell-identity".into()),
+                    ("dimension".into(), dimension.into()),
+                ])
+            );
+            assert_eq!(
+                ActivationDiagnostic::from_error(&error).unwrap().reason,
+                expected_reason
+            );
+        }
+    }
+
+    #[test]
     fn early_and_running_cancellation_use_the_same_terminal_error_shape() {
         let early = cancellation_failure(Some("same cancellation".to_owned()));
         let running = map_execution_outcome(
@@ -1004,7 +1067,7 @@ mod tests {
         let declared = latent_core::DeclaredError {
             code: "guest.invalid-input".to_owned(),
             message: "the guest rejected the supplied value".to_owned(),
-            payload: br#"{"field":"name"}"#.to_vec(),
+            payload: (br#"{"field":"name"}"#.to_vec()).into(),
             media_type: "application/json".to_owned(),
             metadata: Metadata::from([("field".to_owned(), "name".to_owned())]),
         };

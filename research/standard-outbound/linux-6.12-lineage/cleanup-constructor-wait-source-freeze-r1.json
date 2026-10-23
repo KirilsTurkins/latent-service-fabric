@@ -1,0 +1,117 @@
+{
+  "schemaVersion": "lsf.cleanup-constructor-wait-source-freeze.v1",
+  "status": "UNSELECTED-RETAINED-PAID-CONSTRUCTOR-SOURCE",
+  "previousMergedSource": "28453351265cac7cb243156fa1b2d4cf9930aa22",
+  "parentFreeze": {
+    "bytes": 87989,
+    "sha256": "3849c13a8c7b739a923a0c406d9f084a7004dd1617bd152b6a6531c60c2343f7"
+  },
+  "source": {
+    ".github/workflows/stream-kernel-cleanup-constructor.yml": {
+      "bytes": 4137,
+      "sha256": "37fb62369756ebe104423e612db3016424d1df9edf105cd52a28d5d1bbbd97dd"
+    },
+    "docs/testing/kernel-cleanup-constructor-wait-source.md": {
+      "bytes": 3379,
+      "sha256": "ff302bfb9420a0bed1630ff7c9993077e8585a27f99af65e4087107e8a16bfe7"
+    },
+    "research/standard-outbound/linux-6.12-lineage/acpi-cleanup-provider-constructor.c": {
+      "bytes": 2161,
+      "sha256": "74f00103d786f6da257501124fbc63787703aa5c83ecf583a47e5d1e3134ddfa"
+    },
+    "research/standard-outbound/linux-6.12-lineage/factory-cleanup-provider-constructor.c": {
+      "bytes": 1222,
+      "sha256": "079a9402f44f80fba43e37b26518231fa7110403278d40ffdcb5a4e1a3db5e5d"
+    },
+    "research/standard-outbound/linux-6.12-lineage/kthread-cleanup-provider-constructor.c": {
+      "bytes": 3158,
+      "sha256": "65b1bffaa6fd348413f9f85457eaf1745e08d49d7c5f8ae99290f3e1dd82cf35"
+    },
+    "research/standard-outbound/linux-6.12-lineage/workqueue-cleanup-provider-constructor.c": {
+      "bytes": 5088,
+      "sha256": "7e8bc598ede06bc23a4104fb5f625da59fc6f33a6c813a6cccd2241c164d076b"
+    },
+    "tools/ci/contracts/owners/tools/qualify_host_stream_kernel_cleanup_constructor.py.json": {
+      "bytes": 657,
+      "sha256": "b00bdd2e24bc338288f4510720333e1793f4212050faba314b01cbb5c008c2f6"
+    },
+    "tools/ci/contracts/python/test_host_stream_kernel_cleanup_constructor_programme.py.json": {
+      "bytes": 2226,
+      "sha256": "85e4a2c3284a128641ed900d94c2cbabb0801c5122bee6900cfc178de7094a91"
+    },
+    "tools/ci/contracts/python/test_host_stream_kernel_cleanup_constructor_wait.py.json": {
+      "bytes": 3323,
+      "sha256": "b2faa6cd60a07f21e60ac13b2bfe3e38f568c7a57b82f1d2576aecb7ec1bd0ff"
+    },
+    "tools/ci/contracts/workflows/stream-kernel-cleanup-constructor.yml/jobs/cleanup-constructor.json": {
+      "bytes": 3735,
+      "sha256": "c9d9ad2cacc077a63c79fbb97d11eaf8200a149dee7b0c565cbe75412f079d9c"
+    },
+    "tools/ci/contracts/workflows/stream-kernel-cleanup-constructor.yml/workflow.json": {
+      "bytes": 1670,
+      "sha256": "f26cf12db327318f7341e76e602fe118f4e1f1a4f70a44261427e26960034ab8"
+    },
+    "tools/host_stream_kernel_cleanup_constructor_programme.py": {
+      "bytes": 4928,
+      "sha256": "c31c68d8964c607a67932b7474d2464d3cec2102acda928ba9488274fd42c644"
+    },
+    "tools/host_stream_kernel_cleanup_constructor_wait.py": {
+      "bytes": 12749,
+      "sha256": "20a2811a78d9cb7ebcee323db9830bff27be18af9c9e794ee4d32dc48b87e23e"
+    },
+    "tools/qualify_host_stream_kernel_cleanup_constructor.py": {
+      "bytes": 13491,
+      "sha256": "03a53f327f861ba5e4f1e5c6ba9438ab993b5256fc944a67ed1380ab3afcf1a2"
+    },
+    "tools/tests/fixtures/host_stream_kernel_cleanup_constructor_wait.json": {
+      "bytes": 1438,
+      "sha256": "03dcdeb090255a915b7b1f0a4cebf07c4a9e5185454856ec10ab54c718578073"
+    },
+    "tools/tests/test_host_stream_kernel_cleanup_constructor_programme.py": {
+      "bytes": 3224,
+      "sha256": "6db992773703cf26c08ab3a248337291c0e4fa928727587d79687038c7a2ca07"
+    },
+    "tools/tests/test_host_stream_kernel_cleanup_constructor_wait.py": {
+      "bytes": 5290,
+      "sha256": "98a2cefd1f330f824b982785fc12de4484dbed74c1c362adf26730bbc89475f0"
+    }
+  },
+  "derivedDelta": {
+    "net/factory.c": {
+      "bytes": 33606,
+      "sha256": "139324450e407e2b57541b104af5c978c379baca4ef682ae0afc95332c0f8321"
+    },
+    "include/net/lsf_stream_cleanup_provider_executor.h": {
+      "bytes": 5671,
+      "sha256": "a4ef10311ee079c3e385dfd72b260bd1627b12dbd8709d2a1c69f282d9325764"
+    },
+    "kernel/lsf-cleanup-provider-executor.c": {
+      "bytes": 41785,
+      "sha256": "bf5c4a1dbb7ec9785f9fc350c4d4e26dbd972fb07f096687d09a94c9ef684814"
+    },
+    "kernel/lsf-cleanup-provider-initialize.c": {
+      "bytes": 3359,
+      "sha256": "5d30d0318cebaf47177f0475f65639abf1a6d02c179a4c4955034481b0a7ffac"
+    },
+    "net/factory-cleanup-provider-queue.c": {
+      "bytes": 13106,
+      "sha256": "0bd264db30a39117019c8b8d5af442a980a7fe415b325838f0910444cd205ce7"
+    },
+    "kernel/lsf-cleanup-provider-queue.c": {
+      "bytes": 2698,
+      "sha256": "e32e8124f41628cbe29153e64d1a8afa80f9657b5fc9d05db1f733cafa5cf5f4"
+    },
+    "net/acpi-cleanup-provider-queue.c": {
+      "bytes": 4759,
+      "sha256": "a0abb43ff6cf71d23c419ab22c8a85bee2ab33644184184a12f171a8b86c7a32"
+    }
+  },
+  "unchangedDerived": 315,
+  "initialBirthBounded": false,
+  "publicIoCallIntegrated": false,
+  "actualLinuxExecution": false,
+  "consumerSelected": false,
+  "completeAllocationClosure": false,
+  "productionInstallation": false,
+  "owningProgrammeTrigger": "exact-feature-push-after-manual-dispatch-404"
+}

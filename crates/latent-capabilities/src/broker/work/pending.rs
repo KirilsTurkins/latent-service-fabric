@@ -1,21 +1,21 @@
 //! One set of refundable reservations and one audit owner across clock admission.
+use super::NativeBuffer;
 use super::{CapabilityCallCost, ProviderCall, Work, WorkLifetime};
 use crate::broker::{
     busy, capacity, denied, error,
-    session::{HandleEntry, SessionCore},
+    session::{HandleEntryOwner, SessionCoreOwner},
     CapabilitySession, GuestCapabilityHandle, HostClock, Kind,
 };
 use latent_core::{BudgetDimension, PlatformError, PlatformErrorCode};
 use latent_policy::capability::ResourceTarget;
 use std::{
-    sync::{atomic::Ordering, Arc},
+    sync::atomic::Ordering,
     time::{Duration, Instant},
 };
-use zeroize::Zeroizing;
 
 pub(in crate::broker) struct PendingWork {
-    core: Arc<SessionCore>,
-    row: Arc<HandleEntry>,
+    core: SessionCoreOwner,
+    row: HandleEntryOwner,
     clock: HostClock,
     work: Option<Work>,
     entered: bool,
@@ -28,7 +28,7 @@ impl PendingWork {
         clock: HostClock,
     ) -> Result<Self, PlatformError> {
         Ok(Self {
-            core: Arc::clone(&session.core),
+            core: session.core.clone(),
             row: session.row(handle)?,
             clock,
             work: None,
@@ -62,7 +62,7 @@ impl PendingWork {
                 .slots
                 .get(usize::from(row.id.wire_parts().0))
                 .and_then(Option::as_ref)
-                .is_none_or(|current| !Arc::ptr_eq(current, row))
+                .is_none_or(|current| !HandleEntryOwner::ptr_eq(current, row))
         {
             return Err(denied());
         }
@@ -146,8 +146,8 @@ impl PendingWork {
     }
 
     fn reserve(
-        core: &Arc<SessionCore>,
-        row: &Arc<HandleEntry>,
+        core: &SessionCoreOwner,
+        row: &HandleEntryOwner,
         clock: HostClock,
         cost: CapabilityCallCost,
         deadline: Instant,
@@ -165,9 +165,11 @@ impl PendingWork {
             },
         )?;
         let pending_budget = cost.reserve(&core.budget)?;
+        let prepared =
+            crate::broker::audit::CallAudit::prepare(core, row.binding, clock.operation(), false)?;
         let id = crate::broker::session::next_incarnation()?;
-        let audit = if core.owner.audit.is_some() {
-            crate::broker::audit::CallAudit::prepare(
+        let audit = if let Some(prepared) = prepared {
+            prepared.capture(
                 core,
                 row.binding,
                 clock.operation(),
@@ -178,7 +180,6 @@ impl PendingWork {
                     &[],
                     None,
                 ),
-                false,
                 id,
             )?
         } else {
@@ -189,9 +190,9 @@ impl PendingWork {
             required_audit: false,
             input_size: 0,
             pending_budget,
-            input: Zeroizing::new(Vec::new()),
-            row: Arc::clone(row),
-            session: Arc::clone(core),
+            input: NativeBuffer::empty(),
+            row: row.clone(),
+            session: core.clone(),
             id,
             deadline,
             maximum_output_bytes: 8,
@@ -201,7 +202,7 @@ impl PendingWork {
             result,
             metadata,
             lifetime: WorkLifetime {
-                stats: Arc::clone(&core.stats),
+                stats: core.stats.clone(),
                 active: false,
                 buffer_bytes: 8,
                 _slot: call_slot,

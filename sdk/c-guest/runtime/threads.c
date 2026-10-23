@@ -2,6 +2,9 @@
  * Unselected source infrastructure: exact final-byte bootstrap/admission and
  * component routing verification are required before any engine can run it.
  */
+#if LSF_C_TIMED_CLOCK && !defined(_POSIX_C_SOURCE)
+#define _POSIX_C_SOURCE 200809L
+#endif
 #include <errno.h>
 #include <pthread.h>
 #include <threads.h>
@@ -102,10 +105,6 @@ int __lsf_c_root_initialize(struct lsf_c_thread *root,uint32_t extent) {
     root->canonical_id=lsf_c_thread_index();return 0;
 }
 
-__attribute__((export_name("__lsf_c_template_copy")))
-void __lsf_c_template_copy(void *destination) {
-    (void)destination;__builtin_trap();
-}
 static int ensure_template(struct lsf_c_thread *root) {
     if (root->initial_template!=NULL) return 0;
     require(token_live(root->task) && token_live(root->context_owner));
@@ -206,9 +205,10 @@ int pthread_equal(pthread_t a,pthread_t b) { return a==b; }
 thrd_t thrd_current(void) { return (thrd_t)(uintptr_t)current(); }
 int thrd_equal(thrd_t a,thrd_t b) { return a==b; }
 
-static int join(pthread_t identity,unsigned api,struct lsf_c_thread **out) {
-    struct lsf_c_thread *caller=current(),*thread=find(identity);
-    if (thread==NULL) return ESRCH;
+/* Shares the private current-thread and original-ledger operations above. */
+#include "synchronization.c"
+
+static int join_claim(struct lsf_c_thread *caller,struct lsf_c_thread *thread,unsigned api) {
     if (thread==caller) return EDEADLK;
     if (thread->api==LSF_C_ROOT || thread->api!=api || thread->joined || thread->joiner) return EINVAL;
     /* Follow only registry-owned identities, before acquiring a Wait or
@@ -223,19 +223,30 @@ static int join(pthread_t identity,unsigned api,struct lsf_c_thread **out) {
         require(next==NULL || find((pthread_t)(uintptr_t)next)==next);
         dependency=next;
     }
-    require(caller->waiting_for==NULL);
-    struct lsf_c_token wait={0};int error=acquire(LSF_C_WAIT,&caller->task,&wait);
+    require(caller->waiting_for==NULL);return 0;
+}
+static int join(pthread_t identity,unsigned api,struct lsf_c_thread **out) {
+    struct lsf_c_thread *caller=current(),*thread=find(identity);
+    if (thread==NULL) return ESRCH;
+    int error=join_claim(caller,thread,api);
     if (error) return error;
-    thread->joiner=(uint32_t)(uintptr_t)caller;caller->waiting_for=thread;
-    while (thread->phase!=LSF_C_FRAMES_EXITED) {
-        park(caller->task);(void)lsf_c_thread_switch(thread->canonical_id);wake(caller->task);
-        require(current()==caller);
-    }
+    struct sync_wait wait;
+    error=sync_begin(&wait);
+    if (error) return error;
+    /* Admission may await. Another caller or a dependency can change during
+     * that call, so validate the exclusive claim and cycle again before any
+     * pointer to this admitted stack waiter becomes visible.
+     */
+    error=join_claim(caller,thread,api);
+    if (error) { sync_end(&wait);return error; }
+    thread->joiner=(uint32_t)(uintptr_t)&wait;caller->waiting_for=thread;
+    if (thread->phase!=LSF_C_FRAMES_EXITED) sync_await(&wait);
+    require(current()==caller && thread->phase==LSF_C_FRAMES_EXITED);
     require(thread->tls_finished==1 && thread->sp==thread->high);
     /* Only final translated C/TLS frame completion permits logical retirement.
      * Engine stack/metadata reservations remain owned until actual StoreDrop.
      */
-    thread->joined=1;caller->waiting_for=NULL;settle(&wait);
+    thread->joined=1;thread->joiner=0;caller->waiting_for=NULL;sync_end(&wait);
     free(thread->tls_allocation);thread->tls_allocation=NULL;
     free(thread->stack_allocation);thread->stack_allocation=NULL;
     settle(&thread->context_owner);settle(&thread->task);settle(&thread->result_owner);
@@ -269,6 +280,12 @@ void __lsf_c_thread_body(struct lsf_c_thread *thread) {
     require(lsf_c_tls_finish()==0);thread->tls_finished=1;
     /* Keep phase RUNNING through the actual final C epilogue. Only the fixed
      * stackless entry validates restored SP, marks FRAMES_EXITED and detaches.
+     */
+    if (thread->joiner) sync_notify((struct sync_wait *)(uintptr_t)thread->joiner);
+    /* resume-later only enqueues the waiter: it cannot switch inline. There
+     * is no awaiting host call or user callback after this notification,
+     * through the actual C epilogue and fixed stackless entry. Join must still
+     * verify FRAMES_EXITED, restored SP and TLS before releasing anything.
      */
 }
 

@@ -1,0 +1,114 @@
+{
+  "schemaVersion": "latent.rust.wasi-http.reserved-header-reader-failure.v1",
+  "source": "88b3c9c1d305eb8e308a7187600f782163bc6131",
+  "run": 39623507324,
+  "job": 119302796812,
+  "outerConclusion": "failure",
+  "artifact": {
+    "id": 12356057824,
+    "name": "rust-wasi-http-runtime-88b3c9c1d305eb8e308a7187600f782163bc6131",
+    "size_in_bytes": 13216354,
+    "digest": "sha256:4982b44e3eb97f4cad2eb6e00e6e38dbc955d72df4fc86491ed0039e3f738732"
+  },
+  "members": 420,
+  "expandedBytes": 42784311,
+  "originalFailure": "rust-http-real-forbidden-header-not-transport-or-permission",
+  "secondaryFailure": "fixture-size while serializing FAILED.json over original262144byte bound",
+  "actualInvocation": {
+    "activation": "examples-reserved-auth",
+    "exitCode": 0,
+    "startedAtUnixMillis": "1792595921485",
+    "elapsedNanos": "10795387",
+    "decoded": [
+      {
+        "ok": "fresh:waki:library-error:{\"debug\":\"HeaderError::Forbidden\",\"debugBytes\":22,\"display\":\"HeaderError::Forbidden\",\"displayBytes\":22,\"phase\":\"send\",\"public\":{\"serdeJsonError\":false,\"typedWasiErrorCode\":null},\"truncated\":false}"
+      }
+    ],
+    "response": {
+      "category": "success",
+      "command": "invoke",
+      "data": {
+        "activationId": "examples-reserved-auth",
+        "committedStateVersion": null,
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "46954",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 0,
+          "peakMemoryBytes": "7884040",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "3078"
+        },
+        "effectIds": [],
+        "metadata": {
+          "cell-disposition": "released",
+          "cell-id": "operator-workflow-test:phase0:standard:00000000"
+        },
+        "payload": {
+          "byteLength": "256",
+          "data": "W3sib2siOiJmcmVzaDp3YWtpOmxpYnJhcnktZXJyb3I6e1wiZGVidWdcIjpcIkhlYWRlckVycm9yOjpGb3JiaWRkZW5cIixcImRlYnVnQnl0ZXNcIjoyMixcImRpc3BsYXlcIjpcIkhlYWRlckVycm9yOjpGb3JiaWRkZW5cIixcImRpc3BsYXlCeXRlc1wiOjIyLFwicGhhc2VcIjpcInNlbmRcIixcInB1YmxpY1wiOntcInNlcmRlSnNvbkVycm9yXCI6ZmFsc2UsXCJ0eXBlZFdhc2lFcnJvckNvZGVcIjpudWxsfSxcInRydW5jYXRlZFwiOmZhbHNlfSJ9XQ==",
+          "encoding": "base64",
+          "mediaType": "application/vnd.latent.wit-values.v1+json"
+        },
+        "resolvedRevision": {
+          "publicationId": "publication:sha256:8cee61f3b9c5706b7a9c676dc661f198f87c25cdadcca6ab792c0328a64a4097",
+          "releaseDigest": "sha256:51c0ff8e1cd93ae504a8f14d861fb8ac862b4cf6bdab2d22074183c1e692eb4f",
+          "revisionId": "revision-v1:sha256:0348f0208940abeb175c0a390ad6f0dc1a6cd7a868effecd39c7bfb45af7b075",
+          "routeGeneration": "13"
+        }
+      },
+      "error": null,
+      "outcomeKnown": true,
+      "requestDispatched": true,
+      "schemaVersion": "latent.cli.result.v1"
+    },
+    "processReaped": true
+  },
+  "actualInvocationIdentity": {
+    "sha256": "sha256:f7a334ee69d002af9a2d685d3b4876163cc56261ef912eb8d009ed95e8b0cc64",
+    "bytes": 1783
+  },
+  "passedCaseFiles": {
+    "case-examples-http404.json": {
+      "sha256": "sha256:31a311c597973f4d3237a74fe7d3d4353ecdf8c364c6914626fd2f0abd3c28cf",
+      "bytes": 27136
+    },
+    "case-examples-http500.json": {
+      "sha256": "sha256:30059e4ea69fe56e2d5b465c906ec5ffaf10d2258545f80dac155479d84a3918",
+      "bytes": 30475
+    },
+    "case-examples-json.json": {
+      "sha256": "sha256:3f628ebb72a04dffaf8df1000e6324d91b60010829e762009159f7bb1e4788b4",
+      "bytes": 18628
+    },
+    "case-examples-post.json": {
+      "sha256": "sha256:a4a4e4c02c9c23338cbc7f96e48f71a602701204baf62019ec32a52a962ab80f",
+      "bytes": 23769
+    },
+    "case-foreign-http404.json": {
+      "sha256": "sha256:de339673ceb9d9658fd32aeb841e8973c259d480a509dbcee2ddd457ae2e58df",
+      "bytes": 28799
+    },
+    "case-foreign-http500.json": {
+      "sha256": "sha256:8d94b5ac015d7e5f32f054496fa7a8028422e0b280416183e813b2836c66c560",
+      "bytes": 32138
+    },
+    "case-foreign-json.json": {
+      "sha256": "sha256:3a94d86d9ee378864e36ebf8c510c2dcfbd3a905b5a946d0af8e1fde84d34694",
+      "bytes": 20295
+    },
+    "case-foreign-post.json": {
+      "sha256": "sha256:6cf18810255e557c4941ca76abb21552780c187fe1af525f20ccd33e3d8c04d8",
+      "bytes": 25450
+    }
+  },
+  "noFull64Qualification": true,
+  "reservedHeaderPeerFinalRetained": false,
+  "outboundRequests": 0,
+  "sourcePath": "waki::Request::send -> HeaderMap TryFrom -> Headers::from_list -> actual HeaderError::Forbidden before outgoing request/handle",
+  "proposedChange": "Exact display/debug HeaderError::Forbidden and typedWasiErrorCode None; Golem original predicate unchanged. Compact only aggregate by digest references; individual original records retained unchanged."
+}

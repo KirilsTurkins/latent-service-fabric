@@ -76,6 +76,123 @@ class RustProjectTests(unittest.TestCase):
             with patch.object(project, "ROOT", root), self.assertRaisesRegex(ValueError, "lock drift"):
                 project.locked_dependencies("my-project")
 
+    def test_original_registry_lock_requires_the_exact_authenticated_host_upstream(self):
+        from tools import host_codec_wasmtime as codec_wasmtime
+
+        path = project.ROOT / "tools/rust_capsule.lock"
+        original = path.read_text()
+        expected = original.replace('name = "latent-capsule-template"', 'name = "my-project"').encode()
+        self.assertEqual(project.locked_dependencies("my-project"), expected)
+        with patch.object(codec_wasmtime, "verify", side_effect=ValueError("tampered-host-fork")), \
+                self.assertRaisesRegex(ValueError, "tampered-host-fork"):
+            project.locked_dependencies("my-project")
+
+        read_text = Path.read_text
+        checksum = "12300d040e8bea7e7ccde75b9919d27ebba47a217a64b09ba058ae8d3b4290b6"
+        self.assertEqual(original.count(checksum), 1)
+        changed = original.replace(checksum, "0" * 64)
+        with patch.object(Path, "read_text", lambda selected, *args, **kwargs:
+                changed if selected == path else read_text(selected, *args, **kwargs)), \
+                self.assertRaisesRegex(ValueError, "lock drift"):
+            project.locked_dependencies("my-project")
+        authoritative = project.ROOT / "Cargo.lock"
+        raw = authoritative.read_text()
+        local = 'name = "wasmtime"\nversion = "48.0.7"\n'
+        self.assertEqual(raw.count(local), 1)
+        replaced = raw.replace(local, 'name = "wasmtime"\nversion = "48.0.6"\n')
+        with patch.object(Path, "read_text", lambda selected, *args, **kwargs:
+                replaced if selected == authoritative else read_text(selected, *args, **kwargs)), \
+                self.assertRaisesRegex(ValueError, "lock drift"):
+            project.locked_dependencies("my-project")
+
+    def test_standalone_sdk_projects_only_the_authenticated_host_fork_to_original_registry(self):
+        from tools import host_codec_wasmtime as codec_wasmtime
+
+        path = project.ROOT / "Cargo.toml"
+        original = path.read_text()
+        prefix = 'wasmtime = { path = "crates/vendor/wasmtime", '
+        self.assertEqual(original.count(prefix), 1)
+        expected = original[original.index("[workspace.package]"):].replace(prefix, "wasmtime = { ", 1)
+        host_patch = '[patch.crates-io]\nbytes = { path = "crates/vendor/bytes" }\n\n'
+        self.assertEqual(expected.count(host_patch), 1)
+        expected = expected.replace(host_patch, "", 1)
+        vendor = project.sdk_files()
+        self.assertEqual(vendor["Cargo.toml"].split(b"[workspace.package]", 1)[1],
+                         expected.split("[workspace.package]", 1)[1].encode())
+        selected = {key: value for key, value in codec_wasmtime.DEPENDENCY.items() if key != "path"}
+        for raw in (vendor["Cargo.toml"], self.inputs["Cargo.toml"]):
+            self.assertEqual(tomllib.loads(raw.decode())["workspace"]["dependencies"]["wasmtime"], selected)
+        self.assertFalse(any(name.startswith(codec_wasmtime.PROVIDER + "/") for name in vendor))
+        with patch.object(codec_wasmtime, "verify", side_effect=ValueError("tampered-host-fork")), \
+                self.assertRaisesRegex(ValueError, "tampered-host-fork"):
+            project.sdk_files()
+        changed = original.replace(prefix, 'wasmtime = { path = "foreign/provider", ', 1)
+        read_text = Path.read_text
+        with patch.object(Path, "read_text", lambda selected, *args, **kwargs:
+                changed if selected == path else read_text(selected, *args, **kwargs)), \
+                self.assertRaisesRegex(ValueError, "selection not maintained"):
+            project.sdk_files()
+
+    def test_host_bytes_projection_authenticates_only_the_exact_host_patch(self):
+        from tools import result_owner_bytes as host_bytes
+        from tools.security_common import SecurityError
+
+        vendor = project.sdk_files()
+        for raw in (vendor["Cargo.toml"], self.inputs["Cargo.toml"]):
+            self.assertNotIn("patch", tomllib.loads(raw.decode()))
+        self.assertFalse(any(name.startswith(host_bytes.PROVIDER + "/") for name in vendor))
+        with patch.object(host_bytes, "verify", side_effect=SecurityError("changed-source")), \
+                self.assertRaisesRegex(ValueError, "host bytes source"):
+            project.sdk_files()
+        path = project.ROOT / "Cargo.toml"
+        original, read_text = path.read_text(), Path.read_text
+        for changed in (original.replace('path = "crates/vendor/bytes"', 'path = "foreign/provider"'),
+                original.replace('[patch.crates-io]\n', '[patch.crates-io]\nforeign = { path = "escape" }\n')):
+            self.assertNotEqual(changed, original)
+            with self.subTest(manifest=changed), patch.object(Path, "read_text", lambda selected, *a, **kw:
+                    changed if selected == path else read_text(selected, *a, **kw)), \
+                    self.assertRaisesRegex(ValueError, "selection not maintained"):
+                project.sdk_files()
+        files = self.files()
+        files["Cargo.toml"] += b'\n[patch.crates-io]\nbytes = { path = "crates/vendor/bytes" }\n'
+        with self.assertRaisesRegex(ValueError, "patches"):
+            build.validate_project(files)
+
+    def test_host_projection_materials_are_separate_exact_and_reject_changed_capture(self):
+        from tools import result_owner_bytes as host_bytes
+        from tools import compile_rust_owned_thread_application as application
+        from tools import qualify_rust_git_dependencies as git_capture
+
+        materials = project.host_projection_inputs()
+        verified = host_bytes.verify(project.ROOT)
+        expected = {*project.PROJECTION_RECIPE, "Cargo.toml", "Cargo.lock",
+                    *(host_bytes.PROVIDER + "/" + name for name in verified["files"])}
+        self.assertEqual(set(materials), expected)
+        self.assertEqual(len(materials), 45)
+        self.assertTrue(expected <= set(build.selected_recipe()))
+        self.assertTrue(expected <= set(application.RECIPE))
+        self.assertTrue(set(project.PROJECTION_RECIPE) <= set(git_capture.MATERIALS))
+        vendor = project.sdk_files()
+        self.assertFalse(any(name.startswith(host_bytes.PROVIDER + "/") for name in vendor))
+        read = project.read_file
+        selected = host_bytes.PROVIDER + "/src/bytes.rs"
+        def changed(path, *args):
+            raw = read(path, *args)
+            return raw + b"changed" if path == project.ROOT / selected else raw
+        with patch.object(project, "read_file", side_effect=changed), \
+                self.assertRaisesRegex(ValueError, "projection inputs changed"):
+            project.host_projection_inputs()
+        def changed_manifest(path, *args):
+            raw = read(path, *args)
+            return raw.replace(b'crates/vendor/bytes', b'crates/vendor/other') if path == project.ROOT / "Cargo.toml" else raw
+        with patch.object(project, "read_file", side_effect=changed_manifest), \
+                self.assertRaisesRegex(ValueError, "projection selection changed"):
+            project.host_projection_inputs()
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "Cargo.toml").write_text("[workspace]\nmembers = []\n")
+            self.assertEqual(project.host_projection_inputs(root), {})
+
     def test_edited_sdk_does_not_satisfy_the_original_source_lock(self):
         files = self.files()
         files["vendor/lsf/sdk/rust-guest/src/blob.rs"] += b"\n// edited\n"

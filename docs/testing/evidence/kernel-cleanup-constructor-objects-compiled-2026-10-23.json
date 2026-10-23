@@ -1,0 +1,192 @@
+{
+  "schemaVersion": "lsf.kernel-cleanup-constructor-compiled-observation.v1",
+  "status": "PASS-WITH-EXPLICIT-UNSELECTED-RUNTIME-GATES",
+  "source": "7ad12307ffd6c9c75a3a143c87ad1a00b1cc2d1f",
+  "upstreamCommit": "7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+  "run": 39878178140,
+  "job": 120168850128,
+  "jobUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39878178140/job/120168850128",
+  "artifact": {
+    "id": 12469322838,
+    "bytes": 364144,
+    "sha256": "14b5e97ac4c32555ad2e7910c285fe5b66b3cc6095a60c7ed435d602d931af84",
+    "crcVerifiedMembers": 41
+  },
+  "verifiedGitMaterials": 263,
+  "baselineSourceFreeze": 205,
+  "currentSourceFreeze": 225,
+  "originalSelectedInputs": 82,
+  "derivedFiles": 322,
+  "changedDerived": 7,
+  "unchangedDerived": 315,
+  "compiledObjects": 4,
+  "requiredGlobalFunctionChecks": 109,
+  "compileOnlyGeometrySections": 4,
+  "completedCleanedCommands": 13,
+  "hostedSourceControls": 8,
+  "sourceFreeze": {
+    "path": "research/standard-outbound/linux-6.12-lineage/cleanup-constructor-wait-source-freeze-r1.json",
+    "bytes": 5065,
+    "sha256": "5813b7e03fb170cd2774a9e4ca8c553e6a118f4b51344584ba8ad2f75de19c19"
+  },
+  "configuration": {
+    "symbols": 4309,
+    "onlyBaselineToSelectedChange": "CONFIG_LSF_STREAM_FACTORY",
+    "actual": {
+      "bytes": 143192,
+      "sha256": "1b9152e00c4ef645dda8318f804aaae17acbabf4bd4d1b065c7205faabaef2b3"
+    },
+    "sourceFixture": {
+      "bytes": 143192,
+      "sha256": "b2bcccd5507f3f3a673690b660a2321870b57a3c77e72ce8532975f3c4752176"
+    },
+    "fixtureProjection": {
+      "actual": {
+        "bytes": 143192,
+        "sha256": "1b9152e00c4ef645dda8318f804aaae17acbabf4bd4d1b065c7205faabaef2b3"
+      },
+      "sourceFixture": {
+        "bytes": 143192,
+        "sha256": "b2bcccd5507f3f3a673690b660a2321870b57a3c77e72ce8532975f3c4752176"
+      },
+      "difference": {
+        "symbol": "CONFIG_RUSTC_VERSION",
+        "actual": 109900,
+        "sourceFixture": 109901,
+        "reason": "Rust kernel code is unselected; all other config bytes remain exact."
+      },
+      "actualConfigurationMutated": false,
+      "rustKernelSelected": false,
+      "allOtherConfigurationBytesExact": true
+    },
+    "generatedAutoconf": {
+      "bytes": 57396,
+      "sha256": "8de69096fe3614af89edbc74dbf3fdd41ff66877d46a0e14aa63ed3b5f5cdb35"
+    },
+    "rustKernelSelected": false
+  },
+  "objects": {
+    "net/factory.o": {
+      "bytes": 257472,
+      "sha256": "9f887667a4b839fcdaee15bb4946efef6136cbe636bf0aff4c446046be7a2c4d",
+      "requiredGlobalFunctions": 96,
+      "definedGlobalFunctions": 188
+    },
+    "kernel/kthread.o": {
+      "bytes": 74464,
+      "sha256": "0e74efcd35606caee7431f427c0bd9546e64d46cfd5513dc1be54a5e6375225b",
+      "requiredGlobalFunctions": 7,
+      "definedGlobalFunctions": 65
+    },
+    "kernel/workqueue.o": {
+      "bytes": 208032,
+      "sha256": "95b23a2bfa8915dc0a0c5fc1748448291b97ec74e40ae6fbdd8bf185dec6e03b",
+      "requiredGlobalFunctions": 5,
+      "definedGlobalFunctions": 91
+    },
+    "drivers/acpi/osl.o": {
+      "bytes": 52096,
+      "sha256": "73b12026e456302ab2e5ff0a44c27a0eb99607d3142e9d85b50f78ba71c46b30",
+      "requiredGlobalFunctions": 1,
+      "definedGlobalFunctions": 63
+    }
+  },
+  "geometry": {
+    "net/factory.o": {
+      "backingBytes": 524288,
+      "infrastructureBytes": 196608,
+      "bootstrapCeiling": 1048576,
+      "allocationSlots": 256,
+      "factoryBytes": 37144,
+      "deviceStateBytes": 288,
+      "poolBytes": 36888,
+      "staticMetadataBytes": 37176,
+      "firmwareBytes": 128,
+      "factoryFixedBytes": 37176
+    },
+    "kernel/kthread.o": {
+      "requestBytes": 240,
+      "requestAlignment": 8,
+      "workerBytes": 56,
+      "lockClassKeyBytes": 0,
+      "irqHintBytes": 96
+    },
+    "kernel/workqueue.o": {
+      "poolBytes": 792,
+      "poolAlignment": 8,
+      "workerBytes": 168,
+      "workerAlignment": 8,
+      "pwqBytes": 512,
+      "pwqAlignment": 256,
+      "attrsBytes": 40,
+      "attrsAlignment": 8,
+      "controlBytes": 344,
+      "controlAlignment": 8,
+      "contextMaximumBytes": 552,
+      "contextAlignment": 8,
+      "cpuMaximum": 64,
+      "birthCompletionBytes": 32,
+      "constructorExpiryBytes": 8
+    },
+    "drivers/acpi/osl.o": {
+      "lifetimeMutexBytes": 32,
+      "registrationBytes": 8,
+      "adapterLockBytes": 4,
+      "adapterLiveBytes": 1,
+      "constructorWaitqueueBytes": 24
+    }
+  },
+  "fitting": {
+    "providerRecordBytes": {
+      "pool": 832,
+      "worker": 192,
+      "pwq": 768,
+      "attrs": 64,
+      "control": 384,
+      "context": 576
+    },
+    "providerRecordTotal": 2816,
+    "providerRecords": 6,
+    "providerRecordSubgraphFits": true,
+    "bootstrapAddedWaitqueueBytes": 24,
+    "birthCompletionBytes": 32,
+    "constructorExpiryBytes": 8,
+    "completeBootstrapRemeasured": false,
+    "wholeInfrastructureFitQualified": false,
+    "initialBirthBounded": false,
+    "publicIoCallIntegrated": false,
+    "actualLinuxExecution": false,
+    "consumerSelected": false,
+    "completeAllocationClosure": false,
+    "productionInstallation": false
+  },
+  "priorProgramme": {
+    "run": 39874235766,
+    "source": "136f60f73f38b2640e7714ace4a43e3e600a6cc8",
+    "old24ObjectsRerun": false,
+    "oldAtomicRerun": false,
+    "sourceUnchanged": true
+  },
+  "paidInitialCompletionSourceImplemented": true,
+  "initialBirthBounded": false,
+  "publicIoCallIntegrated": false,
+  "actualLinuxExecution": false,
+  "kernelLinked": false,
+  "kernelBooted": false,
+  "actualNativeLedger": false,
+  "actualRcuExecution": false,
+  "actualIrqExecution": false,
+  "wholeInfrastructureFitQualified": false,
+  "completeBootstrapRemeasured": false,
+  "fullConstructorClosure": false,
+  "consumerSelected": false,
+  "completeAllocationClosure": false,
+  "productionInstallation": false,
+  "limitations": [
+    "Four defining objects compile; no Linux constructor/cancellation/termination or physical-final-free path executed.",
+    "Paid late-completer quarantine retains the complete graph; it is not a retirement acknowledgement.",
+    "Synchronous mutex and copy_process execution timing remains unqualified.",
+    "Existing factory calls the refusing constructor; full begin/wait APIs have no public IoCall/FD caller.",
+    "Only the six-record subgraph and new waitqueue storage are measured; whole bootstrap/infrastructure is not requalified."
+  ]
+}

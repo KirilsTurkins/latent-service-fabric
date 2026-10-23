@@ -10,6 +10,10 @@ const RECORD: i32 = 16;
 const RECORD_BYTES: i32 = 144;
 const GUARD_BYTES: u32 = 4096;
 const STACK_HIGH: u32 = GUARD_BYTES + 65_536;
+// Both stacks are paid by the original linker reservation. The canonical
+// allocator cannot borrow the live root stack when context slots are zero.
+pub(super) const SYSTEM_STACK_LOW: u32 = STACK_HIGH;
+pub(super) const SYSTEM_STACK_HIGH: u32 = SYSTEM_STACK_LOW + 65_536;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CRootReceipt {
@@ -65,8 +69,8 @@ fn inspect(input: &[u8], export: &str, start: u32, extent: u32) -> Result<Root, 
         return Err("c-root-explicit-public-export-name");
     }
     let base = plan(input)?;
-    if base.stack_initial != STACK_HIGH
-        || start < STACK_HIGH
+    if base.stack_initial != SYSTEM_STACK_HIGH
+        || start < SYSTEM_STACK_HIGH
         || base.imported_functions + base.function_count >= MAX_FUNCTIONS
     {
         return Err("c-root-exact-guard-and-usable-stack-layout");
@@ -194,7 +198,7 @@ fn inspect(input: &[u8], export: &str, start: u32, extent: u32) -> Result<Root, 
                         if !matches!(ops.read(), Ok(Operator::End)) || !ops.eof() {
                             return Err("c-root-single-constant-active-offset");
                         }
-                        if !row.data.is_empty() && begin < STACK_HIGH {
+                        if !row.data.is_empty() && begin < SYSTEM_STACK_HIGH {
                             return Err("c-root-original-active-data-overlaps-guard-or-stack");
                         }
                     }
@@ -313,7 +317,7 @@ impl Root {
         body.instruction(&Instruction::Call(self.base.context_get));
         reject(&mut body);
         body.instruction(&Instruction::GlobalGet(self.base.stack_global))
-            .instruction(&Instruction::I32Const(STACK_HIGH as i32))
+            .instruction(&Instruction::I32Const(SYSTEM_STACK_HIGH as i32))
             .instruction(&Instruction::I32Ne);
         reject(&mut body);
         // All memory and overlap bounds were proved from the final original
@@ -759,10 +763,10 @@ pub(crate) mod tests {
         let mut globals = GlobalSection::new();
         for (value, mutable) in [
             (stack_high, true),
-            (131072, false),
-            (131104, false),
+            (196608, false),
+            (196640, false),
             (0, false),
-            (131104, false),
+            (196640, false),
         ] {
             globals.global(
                 GlobalType {
@@ -863,7 +867,7 @@ pub(crate) mod tests {
         let mut data = DataSection::new();
         data.active(
             0,
-            &ConstExpr::i32_const(if low_data { RECORD } else { 131072 }),
+            &ConstExpr::i32_const(if low_data { RECORD } else { 196608 }),
             [7],
         );
         module.section(&data);
@@ -881,7 +885,7 @@ pub(crate) mod tests {
 
     #[test]
     fn guarded_root_chain_preserves_original_bodies_and_never_enables_a_component() {
-        let input = fixture(STACK_HIGH as i32, false, false);
+        let input = fixture(SYSTEM_STACK_HIGH as i32, false, false);
         let (output, receipt) =
             transform_c_root_bootstrap(&input, Sha256::digest(&input).into(), "run").unwrap();
         assert_eq!(
@@ -909,7 +913,7 @@ pub(crate) mod tests {
 
     #[test]
     fn fixed_root_settles_only_its_two_logical_tokens_after_c_frames_and_before_detach() {
-        let input = fixture(STACK_HIGH as i32, false, false);
+        let input = fixture(SYSTEM_STACK_HIGH as i32, false, false);
         let (child, template) = stages(&input);
         let root = inspect(
             &child,
@@ -980,7 +984,7 @@ pub(crate) mod tests {
 
     #[test]
     fn root_logical_retirement_refuses_missing_or_wrong_typed_settle_import() {
-        let original = fixture(STACK_HIGH as i32, false, false);
+        let original = fixture(SYSTEM_STACK_HIGH as i32, false, false);
         let at = original
             .windows(6)
             .position(|bytes| bytes == b"settle")
@@ -1011,13 +1015,13 @@ pub(crate) mod tests {
                 "c-root-exact-guard-and-usable-stack-layout",
             ),
             (
-                STACK_HIGH as i32,
+                SYSTEM_STACK_HIGH as i32,
                 true,
                 false,
                 "c-root-original-active-data-overlaps-guard-or-stack",
             ),
             (
-                STACK_HIGH as i32,
+                SYSTEM_STACK_HIGH as i32,
                 false,
                 true,
                 "c-root-support-signature-alias-or-constructor",
@@ -1034,7 +1038,7 @@ pub(crate) mod tests {
 
     #[test]
     fn changed_original_body_is_not_covered_by_a_fixed_root_wrapper_proof() {
-        let input = fixture(STACK_HIGH as i32, false, false);
+        let input = fixture(SYSTEM_STACK_HIGH as i32, false, false);
         let (mut output, _) =
             transform_c_root_bootstrap(&input, Sha256::digest(&input).into(), "run").unwrap();
         let (child, template) = stages(&input);
@@ -1064,7 +1068,7 @@ pub(crate) mod tests {
 
     #[test]
     fn root_chain_requires_one_original_preimage_and_an_explicit_public_export() {
-        let input = fixture(STACK_HIGH as i32, false, false);
+        let input = fixture(SYSTEM_STACK_HIGH as i32, false, false);
         assert_eq!(
             transform_c_root_bootstrap(&input, [0; 32], "run").unwrap_err(),
             "c-template-original-preimage-mismatch"

@@ -28,12 +28,13 @@ from tools.phase3_resource_identity import file_identity
 from tools.qualify_rust_capsules import inputs
 from tools.qualify_rust_git_components import COMPANIONS, prepared_inputs
 from tools.run_rust_capsule_workflow import run
-from tools.rust_capsule_build import Commands, RECIPE
-from tools.rust_capsule_project import ROOT, create, fresh, inventory, read_file, read_json, snapshot, write_json
+from tools.rust_capsule_build import Commands, selected_recipe
+from tools.rust_capsule_project import ROOT, create, fresh, inventory, read_file, read_json, snapshot, write_json, host_projection_inputs
 
 MATERIALS = ('tools/qualify_rust_dependency_matrix.py', 'tools/rust_dependency_matrix.py',
              'tools/run_rust_capsule_workflow.py', 'tools/qualify_rust_git_components.py')
 SEEDS = ('examples/echo-contract/capsule.json', 'examples/echo-contract/deployment.json')
+RECIPE = selected_recipe()
 
 
 def stage_recipe(output: Path) -> dict:
@@ -42,6 +43,7 @@ def stage_recipe(output: Path) -> dict:
     The SDK/compiler lock remains mandatory inside each ordinary application.
     No production package-eligibility catalogue is invented or substituted.
     """
+    host_projection = host_projection_inputs()
     names = sorted({*RECIPE, *SEEDS})
     require(len(names) <= 256, 'matrix-recipe-file-bound')
     files = {name: read_file(ROOT / name, 1024 * 1024) for name in names}
@@ -53,7 +55,10 @@ def stage_recipe(output: Path) -> dict:
         destination.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
         destination.write_bytes(raw)
     observed = snapshot(output)
-    require(observed == files and not {'Cargo.lock', 'Cargo.toml'} & observed.keys()
+    require(observed == files
+            and {name: observed.get(name) for name in host_projection} == host_projection
+            and {'Cargo.lock', 'Cargo.toml'} & observed.keys()
+            == {'Cargo.lock', 'Cargo.toml'} & host_projection.keys()
             and all(name in {'tools/__init__.py', *RECIPE, *SEEDS} for name in observed),
             'matrix-minimal-recipe-unexpected-input')
     return {'files': json.loads(inventory(files)), 'identity': digest(inventory(files)),

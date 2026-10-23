@@ -4,7 +4,7 @@ use latent_core::{BudgetConsumption, Metadata};
 
 fn success(size: usize) -> ActivationOutcome {
     ActivationOutcome::Succeeded(ActivationSuccess {
-        output: vec![b' '; size],
+        output: (vec![b' '; size]).into(),
         output_media_type: http::VALUE_MEDIA_TYPE.into(),
         consumption: BudgetConsumption::default(),
         committed_state_version: None,

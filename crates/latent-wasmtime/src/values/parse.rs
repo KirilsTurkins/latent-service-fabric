@@ -72,6 +72,13 @@ fn parse_error(error: &serde_json::Error) -> PlatformError {
 /// Lexical accounting runs before serde can allocate escaped-string scratch or
 /// recursively construct containers. Grammar and duplicate checking follow below.
 pub(super) fn preflight(bytes: &[u8], limits: ValueCodecLimits) -> Result<(), PlatformError> {
+    preflight_nodes(bytes, limits).map(|_| ())
+}
+
+pub(super) fn preflight_nodes(
+    bytes: &[u8],
+    limits: ValueCodecLimits,
+) -> Result<usize, PlatformError> {
     if bytes.len() > limits.max_input_bytes {
         return Err(limit());
     }
@@ -137,7 +144,7 @@ pub(super) fn preflight(bytes: &[u8], limits: ValueCodecLimits) -> Result<(), Pl
     if depth != 0 {
         return Err(invalid_input());
     }
-    Ok(())
+    Ok(nodes)
 }
 
 fn scan_string(bytes: &[u8], index: &mut usize, maximum: usize) -> Result<(), PlatformError> {

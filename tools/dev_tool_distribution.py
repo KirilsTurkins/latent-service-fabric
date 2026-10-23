@@ -117,7 +117,8 @@ def recipe(payload: Path, language: str, *, rust_http_runtime: bool = False) -> 
             'rust-http-runtime-requires-rust-builder')
     owner = {"rust": rust_capsule_build, "c": c_capsule_build, "java": java_capsule_build,
              "dotnet": dotnet_build, "go": go_capsule_build, "typescript": typescript_build}[language]
-    names = {*owner.RECIPE, *FRONTEND_DEPENDENCY_RECIPE, *AUTHORING_FRONTEND_RECIPE,
+    selected_recipe = owner.selected_recipe(ROOT) if language == "rust" else owner.RECIPE
+    names = {*selected_recipe, *FRONTEND_DEPENDENCY_RECIPE, *AUTHORING_FRONTEND_RECIPE,
              "tools/dev_guest_recipe.py", "tools/dev_guest_tools.py",
              "tools/dev_workflow/__init__.py", "tools/dev_workflow/common.py", "tools/dev_workflow/paths.py",
              "tools/dev_workflow/transaction_binding.py",
@@ -129,7 +130,9 @@ def recipe(payload: Path, language: str, *, rust_http_runtime: bool = False) -> 
         names.add('tools/dev_rust_http_runtime.py')
     if language == "c":
         from tools.c_guest.threading import RECIPE as C_THREADING_RECIPE
+        from tools.c_guest.threading_compatibility import RECIPE as C_THREADING_COMPATIBILITY_RECIPE
         names.update(C_THREADING_RECIPE)
+        names.update(C_THREADING_COMPATIBILITY_RECIPE)
         names.update(c_capsule_project.authoring_inputs(ROOT))
     if language in {"java", "dotnet", "go", "typescript"}:
         names.add("tools/dev_managed_tools.py")

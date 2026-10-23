@@ -1,12 +1,16 @@
 //! Bounded local durability. Records describe decisions; they confer no authority.
 mod codec;
 mod limits;
+mod memory;
 mod model;
 mod store;
 mod ticket;
 mod worker;
 use latent_core::{PlatformError, PlatformErrorCode};
 pub use limits::*;
+pub use memory::{
+    AuditBox, AuditBoxPreparation, AuditCallMemory, AuditOwned, AuditValuePreparation,
+};
 pub use model::*;
 pub use ticket::{AuditAppendTicket, AuditBeginTicket, AuditQueryTicket};
 pub use worker::*;

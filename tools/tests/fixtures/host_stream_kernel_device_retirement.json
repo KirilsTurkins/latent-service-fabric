@@ -1,0 +1,107 @@
+{
+  "schemaVersion": "lsf.kernel-device-retirement-derived-preimages.v1",
+  "parentObjectSourceCommit": "1625510fc6b6bcd32505511729ea355cae226b38",
+  "parentDerivedDigestTableSha256": "ab4199d3ec24d87e68754b6567ddc90bd1f8b41f046c8b5db719e5cac9c03dc3",
+  "selectedWholeDerivedFiles": {
+    "net/factory-device-firmware.c": {
+      "bytes": 13921,
+      "sha256": "c27f9d5c95722591aba5369467a4e74b466e25fc59c00abe5334b0b38374987a"
+    },
+    "net/factory-device-core.c": {
+      "bytes": 11814,
+      "sha256": "49eea2c8d96439402f88dc56d01d860468bb26097652b071609320186b721eaf"
+    },
+    "net/factory-device-registration.c": {
+      "bytes": 12642,
+      "sha256": "0ffcc92e40f1f1b76479a3a70f7d9e68088508eaa6eddff38b1cb770be4733c2"
+    },
+    "net/factory-device-sysfs.c": {
+      "bytes": 4182,
+      "sha256": "a7d3f85a4a85a4c05d5f450edcfe4a9bfda0a122f0d094e405c738afc1f4c36d"
+    },
+    "net/factory-device-uevent.c": {
+      "bytes": 11460,
+      "sha256": "9f316aeb28a3b85cb7e056b6f90790389359d94fd2bec85f79f8bad43b6d2806"
+    },
+    "net/factory-device-recipient.c": {
+      "bytes": 13082,
+      "sha256": "00e8317c4939939ed13e07a8384917cd6d7cfb60d208add249d7dfe83f5ed5be"
+    },
+    "net/factory.c": {
+      "bytes": 30207,
+      "sha256": "8c48cfeb9fa6f5436ddbb4ebc699abf84314f0b8fd5609196a665c47ddb439d5"
+    }
+  },
+  "sections": {
+    "static void lsf_factory_device_firmware_schedule(void)\n": {
+      "source": "net/factory-device-firmware.c",
+      "bytes": 1252,
+      "sha256": "1db3adb2b82ec2dc2b79f1cf70ffae357d2bb18f79640aad8c475a1413fc9562",
+      "text": "static void lsf_factory_device_firmware_schedule(void)\n{\n    struct lsf_factory_device_firmware *owned;\n    struct work_struct *work = NULL;\n    unsigned long flags;\n    spin_lock_irqsave(&pool_lock, flags);\n    if (!factory.device || !factory.device->firmware.slot)\n        goto out;\n    owned = lsf_factory_device_firmware_locked();\n    if (!owned)\n        goto poison;\n    if (factory.device->constructor_active || !owned->retirement || owned->queued || owned->returned ||\n        (owned->core_initialized && !owned->core_tail_complete))\n        goto out;\n    if (lsf_factory_device_registration_pending_locked())\n        goto out;\n    if (!lsf_device_queue(&factory.pool, factory.device->key,\n            factory.device->firmware, LSF_DEVICE_ACPI_REFERENCE))\n        goto poison;\n    owned->queued = 1;\n    work = &owned->work;\n    spin_unlock_irqrestore(&pool_lock, flags);\n    /* Exact original ordered queue. One preallocated work record, no retry.\n     * A stopped/unavailable queue retains BOTH physical reference and parent. */\n    if (lsf_prepaid_acpi_queue_reference_put(work))\n        return;\n    spin_lock_irqsave(&pool_lock, flags);\npoison:\n    lsf_factory_device_firmware_poison();\nout:\n    spin_unlock_irqrestore(&pool_lock, flags);\n}\n"
+    },
+    "void lsf_factory_device_firmware_constructor_leave(void)\n": {
+      "source": "net/factory-device-firmware.c",
+      "bytes": 652,
+      "sha256": "46b05a1a199b882d6c4d08ffd4c2b2196f3506be7553e7bf54eaed2bd91f178c",
+      "text": "void lsf_factory_device_firmware_constructor_leave(void)\n{\n    unsigned long flags;\n    /* Caller has ALREADY unlocked factory_lock; no final put can be queued by\n     * setup-failure return until this exact constructor-active fence clears. */\n    spin_lock_irqsave(&pool_lock, flags);\n    if (!factory.device || !factory.device->constructor_active ||\n        factory.device->constructor_task) {\n        lsf_factory_device_firmware_poison();\n        spin_unlock_irqrestore(&pool_lock, flags);\n        return;\n    }\n    factory.device->constructor_active = 0;\n    spin_unlock_irqrestore(&pool_lock, flags);\n    lsf_factory_device_firmware_schedule();\n}\n"
+    },
+    "int lsf_factory_device_firmware_retire(const void *address)\n": {
+      "source": "net/factory-device-firmware.c",
+      "bytes": 901,
+      "sha256": "8efd43843eed138dfc6ebea947ecbf21191ebe5e81a7bc679d773599cac30509",
+      "text": "int lsf_factory_device_firmware_retire(const void *address)\n{\n    struct lsf_factory_device_firmware *owned;\n    struct lsf_prepaid_ticket pci;\n    unsigned long flags;\n    int result;\n    spin_lock_irqsave(&pool_lock, flags);\n    result = lsf_factory_device_firmware_pci(address, &pci);\n    if (!result)\n        goto out;\n    if (result < 0)\n        goto poison;\n    result = 0;\n    if (!factory.device->firmware.slot)\n        goto out;\n    owned = lsf_factory_device_firmware_for_pci(address, pci);\n    if (!owned)\n        goto poison;\n    if (owned->returned)\n        goto out;\n    if (owned->retirement)\n        goto poison;\n    owned->retirement = 1;\n    spin_unlock_irqrestore(&pool_lock, flags);\n    lsf_factory_device_firmware_schedule();\n    return 1;\npoison:\n    lsf_factory_device_firmware_poison();\n    result = -1;\nout:\n    spin_unlock_irqrestore(&pool_lock, flags);\n    return result;\n}\n"
+    },
+    "void lsf_factory_device_core_tail_finish(const void *kobject)\n": {
+      "source": "net/factory-device-core.c",
+      "bytes": 1629,
+      "sha256": "a7deb7766b509f14c318d8f8162fbc7757f4c58786aa7c3a3f829ef008d158fb",
+      "text": "void lsf_factory_device_core_tail_finish(const void *kobject)\n{\n    struct lsf_factory_device_firmware *owned;\n    struct lsf_prepaid_ticket pci;\n    const void *address;\n    unsigned long flags;\n    spin_lock_irqsave(&pool_lock, flags);\n    /* Revoke the EXACT current callback borrow before every later\n     * validation/error/queue path. The original bank retains this\n     * state even if a poisoned record can no longer be looked up.\n     * A foreign task never clears the real callback task borrow. */\n    if (!factory.device || factory.device->core_tail_task != current)\n        goto poison;\n    factory.device->core_tail_task = NULL;\n    if (lsf_factory_device_core_parent(kobject,\n            offsetof(struct pci_dev, dev) + offsetof(struct device, kobj), &pci, &address) != 1 ||\n        !(owned = lsf_factory_device_firmware_for_pci(address, pci)) ||\n        !owned->core_initialized || !owned->core_tail_active || !owned->retirement ||\n        owned->queued || owned->returned || owned->core_tail_complete)\n        goto poison;\n    if (!lsf_factory_device_core_child_retired(owned))\n        goto poison;\n    /* No kobject/device dereference: original type release may have logically\n     * freed them. Exact parent birth and the prepaid descriptor retain storage.\n     * All original core/name/parent cleanup has now returned without our locks. */\n    owned->core_tail_active = 0;\n    owned->core_tail_complete = 1;\n    spin_unlock_irqrestore(&pool_lock, flags);\n    lsf_factory_device_firmware_schedule();\n    return;\npoison:\n    lsf_factory_device_firmware_poison();\n    spin_unlock_irqrestore(&pool_lock, flags);\n}\n"
+    },
+    "int lsf_factory_device_registration_return_finish(struct lsf_device_registration_source source)\n": {
+      "source": "net/factory-device-registration.c",
+      "bytes": 721,
+      "sha256": "031cc6f78d4832f193a0a9a78d4eaccd8d51dcdc8dbb2e2b5d31fe499c10b7d6",
+      "text": "int lsf_factory_device_registration_return_finish(struct lsf_device_registration_source source)\n{\n    struct lsf_prepaid_ticket ticket = {source.slot, source.generation};\n    unsigned long flags;\n    int result = 0;\n    spin_lock_irqsave(&pool_lock, flags);\n    if (!lsf_device_registration_kind(source.kind) ||\n        !lsf_factory_device_registration_record_locked(source, LSF_PREPAID_QUEUED) ||\n        !lsf_device_finish(&factory.pool, factory.device->key, ticket, source.kind))\n        goto poison;\n    result = 1;\n    goto out;\npoison:\n    lsf_factory_device_firmware_poison();\nout:\n    spin_unlock_irqrestore(&pool_lock, flags);\n    if (result)\n        lsf_factory_device_firmware_schedule();\n    return result;\n}\n"
+    },
+    "int lsf_factory_device_sysfs_release(struct lsf_device_registration_source source,\n": {
+      "source": "net/factory-device-sysfs.c",
+      "bytes": 1320,
+      "sha256": "ebb09a85bb2e514e2cf16c2323adc279a1be6e256a709ed1d2605d1cc16680fd",
+      "text": "int lsf_factory_device_sysfs_release(struct lsf_device_registration_source source,\n    const void *address, unsigned int kind)\n{\n    struct lsf_device_registration_source member;\n    struct lsf_prepaid_ticket ticket;\n    unsigned long flags;\n    int result = -1;\n    spin_lock_irqsave(&pool_lock, flags);\n    if ((source.kind != LSF_DEVICE_PCI && source.kind != LSF_DEVICE_KERNFS_NODE) ||\n        (!lsf_factory_device_registration_record_locked(source, LSF_PREPAID_PUBLISHED) &&\n         !lsf_factory_device_registration_record_locked(source, LSF_PREPAID_QUEUED)) ||\n        (kind != LSF_DEVICE_KERNFS_NAME && kind != LSF_DEVICE_KERNFS_NODE) ||\n        lsf_factory_device_registration_lookup_locked(address, kind, &member) != 1 ||\n        source.pci_slot != member.pci_slot || source.pci_generation != member.pci_generation)\n        goto poison;\n    ticket = (struct lsf_prepaid_ticket){member.slot, member.generation};\n    if (!lsf_device_queue(&factory.pool, factory.device->key, ticket, kind) ||\n        !lsf_device_finish(&factory.pool, factory.device->key, ticket, kind))\n        goto poison;\n    result = 1;\n    goto out;\npoison:\n    lsf_factory_device_firmware_poison();\nout:\n    spin_unlock_irqrestore(&pool_lock, flags);\n    if (result == 1)\n        lsf_factory_device_firmware_schedule();\n    return result;\n}\n"
+    },
+    "int lsf_factory_device_uevent_return(const void *address, unsigned int kind)\n": {
+      "source": "net/factory-device-uevent.c",
+      "bytes": 824,
+      "sha256": "702e842689f2f9dd3de11412d09f0b8eae81d7d86a4e55f92009eee91bd97e49",
+      "text": "int lsf_factory_device_uevent_return(const void *address, unsigned int kind)\n{\n    struct lsf_device_registration_source source;\n    struct lsf_prepaid_ticket ticket;\n    unsigned long flags;\n    int result;\n    spin_lock_irqsave(&pool_lock, flags);\n    result = lsf_factory_device_uevent_lookup_locked(address, kind, &source);\n    if (result == 1) {\n        ticket = (struct lsf_prepaid_ticket){source.slot, source.generation};\n        if (!lsf_device_queue(&factory.pool, factory.device->key, ticket, kind) ||\n            !lsf_device_finish(&factory.pool, factory.device->key, ticket, kind)) {\n            lsf_factory_device_firmware_poison();\n            result = -1;\n        }\n    }\n    spin_unlock_irqrestore(&pool_lock, flags);\n    if (result == 1)\n        lsf_factory_device_firmware_schedule();\n    return result;\n}\n"
+    },
+    "int lsf_factory_device_recipient_finish(struct lsf_device_registration_source source)\n": {
+      "source": "net/factory-device-recipient.c",
+      "bytes": 917,
+      "sha256": "9e6791e22771db62ead8e0c4f0f6c817f21ee5ee06e5df643c5913c021864c54",
+      "text": "int lsf_factory_device_recipient_finish(struct lsf_device_registration_source source)\n{\n    struct lsf_prepaid_ticket ticket = {source.slot, source.generation};\n    unsigned long flags;\n    int result = -1;\n    spin_lock_irqsave(&pool_lock, flags);\n    if (!lsf_factory_device_recipient_current_locked(source, NULL) ||\n        !lsf_device_queue(&factory.pool, factory.device->key, ticket, LSF_DEVICE_RECIPIENT_WORK) ||\n        !lsf_device_finish(&factory.pool, factory.device->key, ticket, LSF_DEVICE_RECIPIENT_WORK))\n        goto poison;\n    result = 1;\n    goto out;\npoison:\n    lsf_factory_device_firmware_poison();\nout:\n    spin_unlock_irqrestore(&pool_lock, flags);\n    /* This call must be at the real tail, outside original recipient/sighand\n     * locks as well as pool_lock. Source wiring must not move it earlier. */\n    if (result == 1)\n        lsf_factory_device_firmware_schedule();\n    return result;\n}\n"
+    },
+    "static void lsf_factory_device_recipient_signal_callback(struct rcu_head *head)\n": {
+      "source": "net/factory-device-recipient.c",
+      "bytes": 1230,
+      "sha256": "428cb1c7715481ac6b04d0b514efb3af556491af5c7fb6a5bc67baa183c13168",
+      "text": "static void lsf_factory_device_recipient_signal_callback(struct rcu_head *head)\n{\n    const struct lsf_device_recipient_signal *owned;\n    struct lsf_device_registration_source source;\n    struct lsf_prepaid_ticket ticket;\n    unsigned long flags, value = (unsigned long)head;\n    const void *address;\n    int result = -1;\n    spin_lock_irqsave(&pool_lock, flags);\n    if (value < offsetof(struct lsf_device_recipient_signal, retire))\n        goto poison;\n    address = (const void *)(value - offsetof(struct lsf_device_recipient_signal, retire));\n    if (lsf_factory_device_recipient_lookup_locked(address,\n            LSF_DEVICE_RECIPIENT_SIGQUEUE, LSF_PREPAID_QUEUED, &source) != 1)\n        goto poison;\n    owned = source.address;\n    if (!lsf_factory_device_recipient_same_source(source, owned->birth))\n        goto poison;\n    ticket = (struct lsf_prepaid_ticket){source.slot, source.generation};\n    if (!lsf_device_finish(&factory.pool, factory.device->key, ticket, LSF_DEVICE_RECIPIENT_SIGQUEUE))\n        goto poison;\n    result = 1;\n    goto out;\npoison:\n    lsf_factory_device_firmware_poison();\nout:\n    spin_unlock_irqrestore(&pool_lock, flags);\n    if (result == 1)\n        lsf_factory_device_firmware_schedule();\n}\n"
+    },
+    "int lsf_factory_blob_finish(struct lsf_factory_blob copy, unsigned int kind)\n": {
+      "source": "net/factory.c",
+      "bytes": 856,
+      "sha256": "04dd679b37200b47272bbd807025c4ec3988d7fca493f9a230f4e09df2316dc1",
+      "text": "int lsf_factory_blob_finish(struct lsf_factory_blob copy, unsigned int kind)\n{\n    struct lsf_factory_context *context;\n    unsigned long flags;\n    int result = 0;\n    spin_lock_irqsave(&pool_lock, flags);\n    if (!lsf_factory_blob_shape(copy)) {\n        lsf_factory_device_firmware_poison();\n        spin_unlock_irqrestore(&pool_lock, flags);\n        return 0;\n    }\n    if (copy.domain == LSF_FACTORY_OWNER_DEVICE) {\n        result = lsf_factory_device_security_finish_locked(copy, kind);\n        spin_unlock_irqrestore(&pool_lock, flags);\n        return result;\n    }\n    context = lsf_factory_context_current(copy.context);\n    if (context)\n        result = lsf_prepaid_blob_finish(&factory.pool, context->key, copy.ticket, kind);\n    if (!result)\n        factory.pool.poisoned = 1;\n    spin_unlock_irqrestore(&pool_lock, flags);\n    return result;\n}\n"
+    },
+    "int lsf_factory_sidcache_destroy(const void *address)\n": {
+      "source": "net/factory.c",
+      "bytes": 951,
+      "sha256": "adf4675c92df95ea0c95de21219ecd821d70e3a25713b6ff12dd369ab14874cf",
+      "text": "int lsf_factory_sidcache_destroy(const void *address)\n{\n    struct lsf_factory_blob copy;\n    unsigned long flags;\n    int result;\n    spin_lock_irqsave(&pool_lock, flags);\n    result = lsf_factory_blob_lookup_locked(address, LSF_PREPAID_SIDCACHE, &copy);\n    if (result == 1 && copy.domain == LSF_FACTORY_OWNER_DEVICE) {\n        result = (lsf_factory_device_security_queue_locked(copy) == 1 && lsf_factory_device_security_finish_locked(copy, LSF_PREPAID_SIDCACHE) ? 1 : -1);\n        spin_unlock_irqrestore(&pool_lock, flags);\n        return result;\n    }\n    if (result == 1 &&\n        (!lsf_prepaid_record_queue(&factory.pool, copy.context->key,\n                                    copy.ticket, LSF_PREPAID_SIDCACHE) ||\n         !lsf_prepaid_blob_finish(&factory.pool, copy.context->key,\n                                   copy.ticket, LSF_PREPAID_SIDCACHE)))\n        result = -1;\n    spin_unlock_irqrestore(&pool_lock, flags);\n    return result;\n}\n"
+    }
+  },
+  "kernelRuntimeExecuted": false,
+  "physicalQueueQualified": false,
+  "productionInstallation": false,
+  "completeAllocationClosure": false
+}

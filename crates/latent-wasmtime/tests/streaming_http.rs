@@ -48,6 +48,7 @@ async fn guest_reads_before_full_body_and_store_drop_closes_the_stream() {
         }
     });
     let f = Fixture::new(port, "/allowed").await;
+    let mut previous: Option<latent_core::ActivationBudget> = None;
     for _ in 0..3 {
         let (request, control) = f.request("same-cell-stream", 0);
         let report = tokio::time::timeout(
@@ -68,6 +69,11 @@ async fn guest_reads_before_full_body_and_store_drop_closes_the_stream() {
             serde_json::from_slice::<serde_json::Value>(&output).unwrap(),
             serde_json::json!([4200])
         );
+        if let Some(previous) = &previous {
+            // Replacing the actual reusable registry slot retires the old headers.
+            assert_eq!(previous.host_memory_bytes(), 0);
+            assert_eq!(previous.outstanding_reservations(), 0);
+        }
         let final_budget = control
             .budget
             .finalize_at(Some(&consumption), Instant::now());
@@ -76,6 +82,16 @@ async fn guest_reads_before_full_body_and_store_drop_closes_the_stream() {
         assert_eq!(report.cleanup, ExecutionCleanup::Reusable);
         f.idle();
         assert_eq!(f.io.snapshot(), IoSnapshot::default());
+        // Store/table/provider payloads have retired. The real broker registry
+        // still owns its two physical Weak headers, alongside returned bytes.
+        let output_bytes = output.capacity() as u64 + 256;
+        let retained_headers = control.budget.host_memory_bytes() - output_bytes;
+        assert!(retained_headers > 0);
+        assert_eq!(control.budget.outstanding_reservations(), 3);
+        drop(output);
+        assert_eq!(control.budget.host_memory_bytes(), retained_headers);
+        assert_eq!(control.budget.outstanding_reservations(), 2);
+        previous = Some(control.budget.clone());
     }
     server.await.unwrap();
     assert!(f
@@ -84,6 +100,10 @@ async fn guest_reads_before_full_body_and_store_drop_closes_the_stream() {
         .await
         .unwrap()
         .is_clean());
+    drop(f);
+    let last = previous.unwrap();
+    assert_eq!(last.host_memory_bytes(), 0);
+    assert_eq!(last.outstanding_reservations(), 0);
 }
 #[tokio::test]
 async fn resource_guest_drains_chunks_and_trailers_then_reclaims_all_owners() {

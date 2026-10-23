@@ -158,6 +158,18 @@ def locked_dependencies(name: str) -> bytes:
         if package["name"] == name:
             raise ValueError("project name collides with a dependency")
         original = packages.get((package["name"], package["version"], package.get("source")))
+        if original is None and package["name"] == "wasmtime":
+            from tools import host_codec_wasmtime as codec_wasmtime
+
+            # Standalone guest projects keep the original registry lock bytes.
+            # The host's maintained fork may stand for that exact upstream only
+            # after its complete reviewed source and original archive authenticate.
+            local = packages.get((codec_wasmtime.NAME, codec_wasmtime.VERSION, None))
+            if (local is not None and "checksum" not in local
+                    and package["version"] == codec_wasmtime.VERSION
+                    and package.get("source") == "registry+https://github.com/rust-lang/crates.io-index"
+                    and package.get("checksum") == codec_wasmtime.verify(ROOT)["upstreamSha256"]):
+                continue
         if original is None or original.get("checksum") != package.get("checksum"):
             raise ValueError("standalone lock drift: regenerate and review tools/rust_capsule.lock")
     needle = f'name = "{template}"'
@@ -166,15 +178,85 @@ def locked_dependencies(name: str) -> bytes:
     return raw.replace(needle, f'name = "{name}"').encode()
 
 
+PROJECTION_RECIPE = ("tools/result_owner_bytes.py", "tools/security_common.py")
+
+
+def host_projection_inputs(root: Path | None = None) -> dict[str, bytes]:
+    """Separate host-only decision materials; never copied into a guest SDK."""
+    root = ROOT if root is None else root
+    manifest = read_file(root / "Cargo.toml")
+    if not tomllib.loads(manifest.decode()).get("patch"):
+        return {}
+    from tools import result_owner_bytes as host_bytes
+    from tools.security_common import SecurityError
+
+    try:
+        verified = host_bytes.verify(root)
+    except SecurityError as error:
+        raise ValueError("host bytes source not maintained") from error
+    names = (*PROJECTION_RECIPE, "Cargo.toml", "Cargo.lock",
+             *(host_bytes.PROVIDER + "/" + name for name in verified["files"]))
+    files = {name: read_file(root / name) for name in names}
+    if files["Cargo.toml"] != manifest:
+        raise ValueError("host bytes projection inputs changed")
+    captured = tomllib.loads(manifest.decode())
+    if (captured.get("patch") != {"crates-io": host_bytes.HOST_PATCH}
+            or captured["workspace"]["dependencies"]["bytes"] != "=" + host_bytes.VERSION
+            or host_bytes.PROVIDER not in captured["workspace"]["exclude"]):
+        raise ValueError("host bytes projection selection changed")
+    # Authenticate the actual captured bytes too, closing a verify/read race.
+    for name, expected in verified["files"].items():
+        raw = files[host_bytes.PROVIDER + "/" + name]
+        if name == "UPSTREAM.json":
+            raw = raw.replace(b"\r\n", b"\n")
+        if {"bytes": len(raw), "sha256": hashlib.sha256(raw).hexdigest()} != expected:
+            raise ValueError("host bytes projection inputs changed")
+    if [row for row in tomllib.loads(files["Cargo.lock"].decode())["package"]
+            if row["name"] == "bytes"] != [{"name": "bytes", "version": host_bytes.VERSION}]:
+        raise ValueError("host bytes projection lock changed")
+    return files
+
+
 def sdk_files() -> dict[str, bytes]:
     files = {}
     for directory in SDK_DIRECTORIES:
         files.update({directory + "/" + path: data for path, data in snapshot(ROOT / directory).items()})
-    root = tomllib.loads((ROOT / "Cargo.toml").read_text())
     original = (ROOT / "Cargo.toml").read_text()
-    # Keep the authoritative inheritance tables byte-for-byte. Only workspace
-    # membership changes in this isolated, vendored SDK workspace.
+    root = tomllib.loads(original)
+    # Keep inheritance byte-for-byte, except the named host-only forks:
+    # standalone SDK metadata resolves every target, including the bindings'
+    # native target. That target keeps the original authenticated registry crate.
     tables = original[original.index("[workspace.package]"):]
+    selected = root["workspace"]["dependencies"].get("wasmtime")
+    if isinstance(selected, dict) and "path" in selected:
+        from tools import host_codec_wasmtime as codec_wasmtime
+
+        if selected != codec_wasmtime.DEPENDENCY:
+            raise ValueError("host Wasmtime selection not maintained")
+        codec_wasmtime.verify(ROOT)
+        prefix = 'wasmtime = { path = "crates/vendor/wasmtime", '
+        if tables.count(prefix) != 1:
+            raise ValueError("host Wasmtime registry projection drift")
+        tables = tables.replace(prefix, "wasmtime = { ", 1)
+        expected = {key: value for key, value in selected.items() if key != "path"}
+        if tomllib.loads(tables)["workspace"]["dependencies"]["wasmtime"] != expected:
+            raise ValueError("host Wasmtime registry projection drift")
+    if root.get("patch"):
+        from tools import result_owner_bytes as host_bytes
+        from tools.security_common import SecurityError
+
+        if root["patch"] != {"crates-io": host_bytes.HOST_PATCH}:
+            raise ValueError("host bytes selection not maintained")
+        try:
+            host_bytes.verify(ROOT)
+        except SecurityError as error:
+            raise ValueError("host bytes source not maintained") from error
+        # The standalone SDK uses the original registry bytes, not the host's
+        # allocation-retirement extension or an uncaptured local patch path.
+        block = '[patch.crates-io]\nbytes = { path = "crates/vendor/bytes" }\n\n'
+        if tables.count(block) != 1:
+            raise ValueError("host bytes registry projection drift")
+        tables = tables.replace(block, "", 1)
     files["Cargo.toml"] = ("[workspace]\nresolver = \"2\"\nmembers = [\"sdk/rust-guest\", \"sdk/rust-standard-stdio\", \"crates/latent-component-bindings\"]\n\n" + tables).encode()
     for name in ("rust-toolchain.toml", "LICENSE", "NOTICE"):
         files[name] = read_file(ROOT / name)
@@ -290,6 +372,25 @@ panic = "abort"
         else:
             binding_source = binding_source.replace(opening, opening + ' with: { ' + mapping + ' },', 1)
         files['src/lib.rs'] = binding_source.encode()
+    if standard.has_threads(selected_runtime):
+        # Explicit compiler/runtime dependencies; no grant or limit changes.
+        marker = b'world service {'
+        current_world = files['wit/world.wit']
+        if current_world.count(marker) != 1:
+            raise ValueError('maintained thread template world shape changed')
+        imports = ('latent:runtime/activation@0.1.0', 'latent:runtime-native/threads@0.1.0',
+                   'latent:clock/monotonic@0.1.0', 'latent:clock/wall@0.1.0')
+        additions = ''.join('\n    import ' + name + ';' for name in imports).encode()
+        files['wit/world.wit'] = current_world.replace(marker, marker + additions, 1)
+        for package in ('activation-runtime', 'native-runtime', 'clock'):
+            files['wit/deps/' + package + '/package.wit'] = read_file(ROOT / 'wit/platform' / package / 'package.wit')
+        # The ordinary bindings must include the interfaces declared by this
+        # profile. This changes generator configuration, not the user's APIs.
+        opening = 'wit_bindgen::generate!({'
+        binding_source = files['src/lib.rs'].decode()
+        if binding_source.count(opening) != 1 or 'generate_all' in binding_source:
+            raise ValueError('maintained thread template binding shape changed')
+        files['src/lib.rs'] = binding_source.replace(opening, opening + ' generate_all,', 1).encode()
     files["capsule-project.json"] = json.dumps(project, indent=2).encode() + b"\n"
     if template == "transactional-aggregate":
         from tools.transaction_guest_project import augment

@@ -344,6 +344,263 @@ mod tests {
     use std::borrow::Cow;
     use wasm_encoder::{CustomSection, ProducersField, ProducersSection};
 
+    fn public_lift_graph(async_type: bool) -> Graph<'static> {
+        Graph {
+            cores: vec![],
+            main: 0,
+            shim: 0,
+            fixup: 0,
+            raw_import: 0,
+            native_import: 0,
+            c: Some(CBoundary {
+                start_module: 0,
+                start_instances: 1,
+                root: 11,
+                initialize: 12,
+                realloc: 13,
+                post: 14,
+                lifted: false,
+                function_types: vec![Some(async_type)],
+            }),
+            signatures: vec![],
+            funcs: vec![
+                Value::MainFunc(11),
+                Value::MainFunc(13),
+                Value::MainFunc(14),
+            ],
+            tables: vec![],
+            memories: vec![Value::MainMemory(0)],
+            instances: vec![],
+            component_instances: vec![],
+            component_funcs: vec![],
+            native_imports: 0,
+            main_instances: vec![],
+            shim_instances: 0,
+            fixup_instances: vec![],
+            main_imports: vec![],
+            raw_table: None,
+            native_memory: None,
+            denied_uses: vec![],
+            raw_alias: false,
+        }
+    }
+    fn public_lift(options: Vec<CanonicalOption>) -> CanonicalFunction {
+        CanonicalFunction::Lift {
+            core_func_index: 0,
+            type_index: 0,
+            options: options.into(),
+        }
+    }
+    fn sync_abi_options() -> Vec<CanonicalOption> {
+        vec![
+            CanonicalOption::Memory(0),
+            CanonicalOption::Realloc(1),
+            CanonicalOption::PostReturn(2),
+            CanonicalOption::UTF8,
+        ]
+    }
+    #[test]
+    fn c_public_lift_requires_declared_async_type_with_original_sync_core_abi() {
+        let mut sync = public_lift_graph(false);
+        assert_eq!(
+            sync.canonical(public_lift(sync_abi_options())).unwrap_err(),
+            "c-component-single-owned-async-type-sync-abi-lift-after-initialize"
+        );
+        assert!(!sync.c.as_ref().unwrap().lifted);
+        let mut declared_async = public_lift_graph(true);
+        declared_async
+            .canonical(public_lift(sync_abi_options()))
+            .unwrap();
+        assert!(declared_async.c.as_ref().unwrap().lifted);
+        assert_eq!(declared_async.component_funcs, vec![false]);
+        assert!(
+            declared_async
+                .canonical(public_lift(sync_abi_options()))
+                .is_err()
+        );
+    }
+    #[test]
+    fn c_declared_async_effect_does_not_enable_callback_or_async_core_abi() {
+        for forbidden in [CanonicalOption::Async, CanonicalOption::Callback(0)] {
+            let mut graph = public_lift_graph(true);
+            let mut options = sync_abi_options();
+            options.push(forbidden);
+            assert_eq!(
+                graph.canonical(public_lift(options)).unwrap_err(),
+                "c-component-owned-sync-canonical-options"
+            );
+            assert!(!graph.c.as_ref().unwrap().lifted);
+            assert_eq!(
+                graph.options(&[forbidden]).unwrap_err(),
+                "c-component-async-callback-abi-not-selected"
+            );
+        }
+    }
+
+    #[test]
+    fn c_ready_handoff_canonical_requires_ready_aware_promote() {
+        let mut selected = public_lift_graph(true);
+        selected
+            .canonical(CanonicalFunction::ThreadYieldThenPromote)
+            .unwrap();
+        assert_eq!(selected.funcs.last(), Some(&Value::CThreadPromote));
+        let mut old_resume = public_lift_graph(true);
+        old_resume
+            .canonical(CanonicalFunction::ThreadYieldThenResume)
+            .unwrap();
+        assert_eq!(old_resume.funcs.last(), Some(&Value::Other));
+        let mut original_rust = public_lift_graph(true);
+        original_rust.c = None;
+        original_rust
+            .canonical(CanonicalFunction::ThreadYieldThenPromote)
+            .unwrap();
+        assert_eq!(original_rust.funcs.last(), Some(&Value::Other));
+    }
+    fn handoff_graph(name: &str, target: Value) -> Graph<'static> {
+        let mut graph = public_lift_graph(true);
+        graph.c.as_mut().unwrap().lifted = true;
+        graph.cores = vec![Core {
+            bytes: &[],
+            types: vec![],
+            functions: vec![],
+            exports: BTreeMap::new(),
+            imports: vec![
+                Import {
+                    module: "$root".into(),
+                    name: NEW.into(),
+                    function_type: 0,
+                },
+                Import {
+                    module: NATIVE.into(),
+                    name: "start".into(),
+                    function_type: 0,
+                },
+                Import {
+                    module: "$root".into(),
+                    name: name.into(),
+                    function_type: 0,
+                },
+            ],
+            bodies: vec![],
+            local_table: None,
+            imported_table: None,
+            element: None,
+            unsupported_helper_sections: false,
+            nonfunction_imports: false,
+        }];
+        graph.main_instances = vec![0];
+        graph.shim_instances = 1;
+        graph.fixup_instances = vec![1];
+        graph.native_imports = 1;
+        graph.raw_table = Some(Value::MainTable(0));
+        graph.native_memory = Some(Value::MainMemory(0));
+        graph.signatures = vec![
+            Signature {
+                params: vec![],
+                results: vec![]
+            };
+            2
+        ];
+        graph.raw_import = 0;
+        graph.native_import = 1;
+        graph.main_imports = vec![Value::Shim(0), Value::Shim(1), target];
+        graph.instances = vec![
+            CoreInstance {
+                kind: 0,
+                arguments: BTreeMap::new(),
+                exports: BTreeMap::from([
+                    ("0".into(), Value::Raw),
+                    ("1".into(), Value::Native),
+                    ("$imports".into(), Value::ShimTable),
+                ]),
+            },
+            CoreInstance {
+                kind: 3,
+                arguments: BTreeMap::from([("".into(), 0)]),
+                exports: BTreeMap::new(),
+            },
+        ];
+        graph
+    }
+    #[test]
+    fn c_ready_handoff_final_graph_refuses_resume_or_mismatched_target() {
+        assert_eq!(
+            handoff_graph("[thread-yield-then-promote]", Value::CThreadPromote).finish(),
+            Ok((0, 1))
+        );
+        assert_eq!(
+            handoff_graph("[thread-yield-then-resume]", Value::CThreadPromote).finish(),
+            Err("c-component-unknown-root-intrinsic")
+        );
+        for foreign in [Value::Other, Value::Native, Value::CThreadIndex] {
+            assert_eq!(
+                handoff_graph("[thread-yield-then-promote]", foreign).finish(),
+                Err("c-component-canonical-context-route")
+            );
+        }
+    }
+
+    #[test]
+    fn c_wait_canonical_functions_keep_suspend_and_deferred_resume_distinct() {
+        for (function, expected) in [
+            (CanonicalFunction::ThreadSuspend, Value::CThreadSuspend),
+            (
+                CanonicalFunction::ThreadResumeLater,
+                Value::CThreadResumeLater,
+            ),
+            (CanonicalFunction::ThreadSuspendThenResume, Value::Other),
+            (CanonicalFunction::ThreadSuspendThenPromote, Value::Other),
+            (CanonicalFunction::ThreadYield, Value::Other),
+        ] {
+            let mut selected = public_lift_graph(true);
+            selected.canonical(function).unwrap();
+            assert_eq!(selected.funcs.last(), Some(&expected));
+        }
+        // Extending the selected C proof cannot silently extend Rust's proof.
+        let mut original_rust = public_lift_graph(true);
+        original_rust.c = None;
+        original_rust
+            .canonical(CanonicalFunction::ThreadSuspend)
+            .unwrap();
+        assert_eq!(original_rust.funcs.last(), Some(&Value::Other));
+    }
+
+    #[test]
+    fn c_wait_final_graph_requires_the_exact_canonical_wake_target() {
+        for (name, expected) in [
+            ("[thread-suspend]", Value::CThreadSuspend),
+            ("[thread-resume-later]", Value::CThreadResumeLater),
+        ] {
+            assert_eq!(handoff_graph(name, expected).finish(), Ok((0, 1)));
+            for foreign in [
+                Value::Other,
+                Value::Native,
+                Value::CThreadPromote,
+                Value::CThreadIndex,
+                if expected == Value::CThreadSuspend {
+                    Value::CThreadResumeLater
+                } else {
+                    Value::CThreadSuspend
+                },
+            ] {
+                assert_eq!(
+                    handoff_graph(name, foreign).finish(),
+                    Err("c-component-canonical-context-route")
+                );
+            }
+        }
+        for forbidden in [
+            "[thread-suspend-then-resume]",
+            "[thread-suspend-then-promote]",
+            "[thread-yield]",
+        ] {
+            assert_eq!(
+                handoff_graph(forbidden, Value::CThreadSuspend).finish(),
+                Err("c-component-unknown-root-intrinsic")
+            );
+        }
+    }
+
     fn metadata(version: &str, name: &str, marker: &[u8]) -> Vec<u8> {
         metadata_with_generator(version, name, marker, false)
     }

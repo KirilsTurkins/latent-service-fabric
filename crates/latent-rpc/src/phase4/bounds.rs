@@ -38,6 +38,16 @@ impl Budget {
         }
         self.charge(value.capacity())
     }
+    pub(super) fn result_payload(
+        &mut self,
+        value: &latent_core::ResultPayload,
+        maximum: usize,
+    ) -> Result<(), ValidationError> {
+        if value.len() > maximum {
+            return Err(ValidationError::Capacity);
+        }
+        self.charge(value.capacity())
+    }
     pub(super) fn opaque(&mut self, value: &Vec<u8>) -> Result<(), ValidationError> {
         self.bytes(value, 256)?;
         if value.is_empty() {
@@ -118,4 +128,22 @@ pub(super) fn digest(value: &str) -> Result<(), ValidationError> {
         return Err(ValidationError::Shape);
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod result_capacity_tests {
+    use super::*;
+    #[test]
+    fn result_payload_capacity_is_checked_without_trusting_only_length() {
+        let mut bytes = Vec::with_capacity(512);
+        bytes.push(42);
+        let payload: latent_core::ResultPayload = bytes.into();
+        let mut budget = Budget::new::<()>(16).unwrap();
+        assert_eq!(
+            budget.result_payload(&payload, 1),
+            Err(ValidationError::Capacity)
+        );
+        let compact: latent_core::ResultPayload = vec![42].into();
+        assert!(budget.result_payload(&compact, 1).is_ok());
+    }
 }

@@ -154,7 +154,8 @@ class CompiledResources(unittest.TestCase):
         compiler.isolation = SimpleNamespace(receipt={}, observe_inputs=lambda path: [])
         compiler.validate_static_libraries = lambda *args: None; compiler.check_unchanged = lambda: None
         calls = []; compiler.run = lambda *args: calls.append(args) or ''
-        def generate(run, wit, world, destination, platform):
+        def generate(run, wit, world, destination, platform, *, sync_core_abi=False):
+            self.assertFalse(sync_core_abi)
             destination.mkdir(); return destination, {}
         with patch('tools.c_guest.compiler.generate', generate):
             compiler.compile([source], self.root / 'wit', 'service', self.root / 'compiled',

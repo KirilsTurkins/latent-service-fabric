@@ -287,8 +287,6 @@ dependencies = [
 [[package]]
 name = "bytes"
 version = "1.12.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fc652a48c352aef3ea3aed32080501cf3ef6ed5da78602a020c991775b0aff04"
 
 [[package]]
 name = "cap-fs-ext"
@@ -1687,6 +1685,7 @@ dependencies = [
 name = "latent-core"
 version = "0.1.0-alpha.5"
 dependencies = [
+ "bytes",
  "tempfile",
  "tokio",
 ]
@@ -2166,6 +2165,7 @@ dependencies = [
  "latent-routing",
  "latent-rustls-outbound",
  "rcgen",
+ "rustix",
  "rustls",
  "serde",
  "serde_json",
@@ -4142,8 +4142,6 @@ dependencies = [
 [[package]]
 name = "wasmtime"
 version = "48.0.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "12300d040e8bea7e7ccde75b9919d27ebba47a217a64b09ba058ae8d3b4290b6"
 dependencies = [
  "addr2line",
  "async-trait",

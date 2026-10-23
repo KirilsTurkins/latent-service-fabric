@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_c_canonical_abi.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Select only original linked WASI libc TLS errno after actual duplicate-symbol refusal; bind four exact libc source/header preimages, preserve standalone fallback output and all layout/System/OOM and workflow gates.",
+  "reviewReason": "Compose the reviewed C17 sync Core binding selection and both captured included C runtime units, template-copy.c and synchronization.c, without altering prior ABI controls or qualification claims.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "3c398591f5c021ed19556aa8df315d60bfbe030000f23de4c3070fcaf61aa224"
+  "sha256": "6dce1573a4de2fa81253738456e2669b48e73ae0ffd171710598815b99d58538"
 }

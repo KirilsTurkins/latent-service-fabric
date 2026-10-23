@@ -332,7 +332,7 @@ impl invocation::invocation_service_server::InvocationService for Service {
                 })
             } else {
                 invocation::invoke_response::Result::Success(invocation::Success {
-                    payload: request.payload,
+                    payload: request.payload.into(),
                     metadata: request.metadata,
                     committed_state_version: Some(String::new()),
                     ..Default::default()

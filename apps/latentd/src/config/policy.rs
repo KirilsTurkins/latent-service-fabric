@@ -125,9 +125,16 @@ fn threading_models(
     wasmtime: &latent_wasmtime::WasmtimeConfig,
 ) -> Result<Vec<ThreadingModel>, PlatformError> {
     let models = vec![ThreadingModel::SingleThreaded, ThreadingModel::Reentrant];
-    if config.engine.threading_profile
-        == super::model::EngineThreadingProfile::CContext144SyncCooperativeV1
-    {
+    let selected = match config.engine.threading_profile {
+        super::model::EngineThreadingProfile::SingleThreaded => None,
+        super::model::EngineThreadingProfile::CContext144SyncCooperativeV1 => {
+            Some(latent_wasmtime::NativeThreadProfile::CContext144SyncCooperativeV1)
+        }
+        super::model::EngineThreadingProfile::RustContext40SyncCooperativeV1 => {
+            Some(latent_wasmtime::NativeThreadProfile::RustContext40SyncCooperativeV1)
+        }
+    };
+    if let Some(selected) = selected {
         let installation = config
             .providers
             .as_ref()
@@ -139,13 +146,12 @@ fn threading_models(
         if !installation.native_threads
             || !wasmtime.owned_native_threads
             || !wasmtime.owned_native_stacks
-            || wasmtime.native_thread_profile
-                != latent_wasmtime::NativeThreadProfile::CContext144SyncCooperativeV1
+            || wasmtime.native_thread_profile != selected
             || wasmtime.activation_runtime != Some(installation.runtime_limits())
         {
             return Err(invalid("admission.threadingProfile.runtime"));
         }
-        // The selected C verifier accepts only Cooperative manifests. Do not
+        // Both selected sync verifiers accept only Cooperative manifests. Do not
         // advertise the ordinary models on this differently configured engine.
         return Ok(vec![ThreadingModel::Cooperative]);
     }

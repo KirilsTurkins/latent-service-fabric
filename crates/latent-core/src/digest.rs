@@ -64,6 +64,13 @@ macro_rules! artifact_digest {
                 &self.0
             }
 
+            /// Physical text capacity retained by this original owner. This
+            /// read-only observation grants no allocation or digest authority.
+            #[must_use]
+            pub fn heap_capacity_bytes(&self) -> usize {
+                self.0.capacity()
+            }
+
             /// Returns the owned canonical digest text.
             #[must_use]
             pub fn into_string(self) -> String {

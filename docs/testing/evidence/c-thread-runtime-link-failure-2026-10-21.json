@@ -1,0 +1,179 @@
+{
+  "schemaVersion": "latent.c.thread-runtime.preflight-failure.v1",
+  "source": "eaccf7289f94a6204d27634e1337024fc4999345",
+  "run": 39586182661,
+  "job": 119175535082,
+  "artifact": {
+    "id": 12340500510,
+    "bytes": 20429,
+    "sha256": "sha256:f6ce2afaa2602cd35f5d23ccd63f95a1bf4cd15578a10ca0f3ee8e258af230a1",
+    "members": 33
+  },
+  "owningOutcome": "failure",
+  "stage": "compile",
+  "actualError": "duplicate symbol: pthread_setspecific (libc.a/pthread_setspecific.o and tls-keys.o)",
+  "componentProduced": false,
+  "signedGuestExecuted": false,
+  "archiveExtractionMapRetained": false,
+  "correction": "Selected source compiler routes the exact eight key/TSS functions to private charged-PAL symbols. Original precompiled libc, errno, standard application bodies and all seventeen runtime oracles remain unchanged.",
+  "sourceOnlyPreprocessorControl": {
+    "qualification": false,
+    "noLink": true,
+    "noObjectCompilation": true,
+    "commands": [
+      {
+        "label": "old-ordinary",
+        "exitCode": 0,
+        "stdoutSha256": "71d4ea5695d9ea8970c2f79328f5dafe8ff3af2880455f6dcc4bc22294015840",
+        "definitions": []
+      },
+      {
+        "label": "selected-ordinary",
+        "exitCode": 0,
+        "stdoutSha256": "fb9b6e2668002d2a160a6313f41ff9c063ae895a86254e192d0579519f4570c4",
+        "definitions": [
+          "LSF_C_LINKED_LIBC=1",
+          "pthread_key_create=__lsf_c_pthread_key_create",
+          "pthread_key_delete=__lsf_c_pthread_key_delete",
+          "pthread_getspecific=__lsf_c_pthread_getspecific",
+          "pthread_setspecific=__lsf_c_pthread_setspecific",
+          "tss_create=__lsf_c_tss_create",
+          "tss_delete=__lsf_c_tss_delete",
+          "tss_get=__lsf_c_tss_get",
+          "tss_set=__lsf_c_tss_set"
+        ]
+      },
+      {
+        "label": "selected-pal",
+        "exitCode": 0,
+        "stdoutSha256": "dcbdc122015c5ad174bbc58df0446b43017b1288fd88c9c02b38afb502d664a5",
+        "definitions": [
+          "LSF_C_LINKED_LIBC=1",
+          "pthread_key_create=__lsf_c_pthread_key_create",
+          "pthread_key_delete=__lsf_c_pthread_key_delete",
+          "pthread_getspecific=__lsf_c_pthread_getspecific",
+          "pthread_setspecific=__lsf_c_pthread_setspecific",
+          "tss_create=__lsf_c_tss_create",
+          "tss_delete=__lsf_c_tss_delete",
+          "tss_get=__lsf_c_tss_get",
+          "tss_set=__lsf_c_tss_set"
+        ]
+      }
+    ],
+    "originalLibc": [
+      {
+        "path": "lib/libc/include/wasm-wasi-musl/pthread.h",
+        "sha256": "sha256:21b1fd90de05919d0718109f16fa1408a0750dcf65f63cc661c506f07e8e1ca1"
+      },
+      {
+        "path": "lib/libc/include/generic-musl/threads.h",
+        "sha256": "sha256:402b75ff71dd5051ebf8744fe7e09a9e43740b9798e6c02701929c852972a2fc"
+      },
+      {
+        "path": "lib/libc/musl/src/thread/pthread_setspecific.c",
+        "sha256": "sha256:e588f3345a6c8d636fae1b0832827474c74c171fa3dd7861b2a3e5cbe87b5520"
+      },
+      {
+        "path": "lib/libc/musl/src/thread/pthread_getspecific.c",
+        "sha256": "sha256:5b0e9479040a4a891d021daf202dfab5def79233ec948558eaa3c36fd0203cf7"
+      },
+      {
+        "path": "lib/libc/musl/src/thread/tss_set.c",
+        "sha256": "sha256:2dbc898eadabcd478ce8028a0b450e47f02f454d5d66de220805dbd45adcce23"
+      },
+      {
+        "path": "lib/libc/wasi/libc-top-half/musl/src/thread/pthread_key_create.c",
+        "sha256": "sha256:96b57e03ae683118bcb004b08b6d42db8990d4abf3731781ec3bfd65d0b0b4ba"
+      },
+      {
+        "path": "lib/libc/include/wasm-wasi-musl/errno.h",
+        "sha256": "sha256:844d1aa7a14734acde284e3109db63e29511540f6c9ccfefe46e455fd5b3ab40"
+      },
+      {
+        "path": "lib/libc/include/wasm-wasi-musl/__errno.h",
+        "sha256": "sha256:b9ce417c2b172bf982d8ef0236adfe442f54e7d0d344e75104cbcede88a9d7e2"
+      },
+      {
+        "path": "lib/libc/wasi/libc-bottom-half/cloudlibc/src/libc/errno/errno.c",
+        "sha256": "sha256:eeecab4885f9dba3df77a2c81c1960f1f84779a2b16f0b2aceb1d83af1d47aa3"
+      },
+      {
+        "path": "lib/libc/wasi/libc-bottom-half/sources/__errno_location.c",
+        "sha256": "sha256:fb6d59a8ca5b99dc0799db259a7b35e7403818469f6cbf6a6ec1178fec98f702"
+      }
+    ]
+  },
+  "runtimeQualification": false,
+  "subsequentBindingFailure": {
+    "source": "9a5fe499e225da41ca828d908c41d62b66cf42c3",
+    "run": 39590217692,
+    "job": 119189013507,
+    "artifact": {
+      "id": 12341946387,
+      "bytes": 25155,
+      "sha256": "sha256:716fbf425e03559bb204df3eb1091631eebccb04ceb1b40ce153e3a80596ee40",
+      "members": 39
+    },
+    "owningOutcome": "failure",
+    "actualError": "capsule contract generation failed: c-preimage-finite-nested-component",
+    "normalCLinkSucceeded": true,
+    "coreDerivationSucceeded": true,
+    "normalComponentizationSucceeded": true,
+    "originalOrFinalComponentBytesRetained": false,
+    "signedGuestExecuted": false,
+    "interpretation": "The finite proof reader refused nested component encoding. This failed run retained no component bytes; the historical889 generator graph is separate shape evidence, not the missing C17 graph.",
+    "correction": "One nested component with aggregate structural bounds plus raw non-container preflight before any typed reader; awaiting the corrected native producer and a fresh ordinary C programme."
+  },
+  "subsequentCompatibilityFailure": {
+    "source": "baf41898e4a531f974950b0ef87d7c59e11e8540",
+    "run": 39606172348,
+    "job": 119242806544,
+    "artifact": {
+      "id": 12348354558,
+      "bytes": 1525105,
+      "sha256": "sha256:b8b5f8e2a4cf3e24ba018a8a1ba6d6f6e1f7c217f1d5ca10af93fe5366b5de11",
+      "members": 56,
+      "expandedBytes": 5749962
+    },
+    "owningOutcome": "failure",
+    "failedStage": "compatibility",
+    "actualComponentDigest": "sha256:5b55579f29409cf957d382c38e53b65771a600c7637f06a18285b4e684e877b8",
+    "baseHostAbiProfile": "lsf-host-abi-phase3-v5",
+    "actualFinding": {
+      "classification": "unknown-import",
+      "operation": "latent:runtime-native/threads@0.1.0"
+    },
+    "normalCLinkSucceeded": true,
+    "fullCoreDerivationSucceeded": true,
+    "fullComponentProofBindingSucceeded": true,
+    "wasmValidationSucceeded": true,
+    "contractGenerationSucceeded": true,
+    "signedGuestExecuted": false,
+    "runtimeQualification": false,
+    "correctionStatus": "source-only selected compiler/runtime profile supplement under review; original base inspection and ABI retained"
+  },
+  "subsequentPackagingFailure": {
+    "source": "f7fffd1a9c220e2efa564efec8840b6328c33ba1",
+    "run": 39617751987,
+    "job": 119283025642,
+    "artifact": {
+      "id": 12353882166,
+      "bytes": 1529771,
+      "sha256": "sha256:6a3c3e1363f90ad8b937189b05dd6137d4506d9c7fe4b51db4337c44e15e5797",
+      "members": 65,
+      "expandedBytes": 5758007
+    },
+    "owningOutcome": "failure",
+    "failedStage": "package",
+    "exactStderr": "unverified-native-thread-component",
+    "priorCommandsSucceeded": 22,
+    "normalCLinkSucceeded": true,
+    "fullComponentProofBindingSucceeded": true,
+    "originalBaseInspectionPreserved": true,
+    "selectedCompatibilitySupplementRecomputed": true,
+    "componentDigest": "sha256:7994eb43b13ad0af48aee081232fee33d05596ab82fc3933610bb59b51148fdf",
+    "signedGuestExecuted": false,
+    "runtimeQualification": false,
+    "correctionStatus": "Full verified C proof recognition in descriptive packaging; original Rust proof and independent host selection/grant unchanged. A new source-bound canonical native producer is pending."
+  }
+}

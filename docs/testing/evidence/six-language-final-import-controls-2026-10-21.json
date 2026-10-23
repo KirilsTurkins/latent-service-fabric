@@ -1,0 +1,1030 @@
+{
+  "schemaVersion": "latent.final-import.controls.v1",
+  "status": "passed",
+  "scope": "final-component-inspector-only",
+  "authority": "none",
+  "guestComponentsCompiled": 0,
+  "guestInvocations": 0,
+  "packagesSigned": 0,
+  "runtimeQualification": false,
+  "validatorFeatures": "cm-threading,cm-async-stackful,cm-more-async-builtins",
+  "source": {
+    "tools/tests/fixtures/final-import-components.json": {
+      "sha256": "sha256:9689933202188f9421692404c1056895f9019ef81055ffa9c8a865030d1e8ac2",
+      "bytes": 5970
+    },
+    "tools/qualify_guest_final_imports.py": {
+      "sha256": "sha256:f8062ff967d09a2a21aadd320d68eeb1dabef12e2394418b4485f7f42c03a31e",
+      "bytes": 9300
+    },
+    "tools/guest_final_import_control.py": {
+      "sha256": "sha256:703ecd72962807464b5874fea8f883a4c2c1c1f7b8f6a980d1b4ef7bf489c30e",
+      "bytes": 4670
+    },
+    "tools/guest_compatibility.py": {
+      "sha256": "sha256:cc9752af131ee1e0ec5f0308a0ae658380a083cf53a29c5a41eb6e6c2e49f112",
+      "bytes": 14702
+    },
+    "tools/guest_compatibility_build.py": {
+      "sha256": "sha256:67339aedb2de99b7de7675ac51e69aa6d7de4c5f1f26e0d773ca315cfca24840",
+      "bytes": 18286
+    },
+    "tools/guest_emitted_code.py": {
+      "sha256": "sha256:211c7ef2b359b2ec2e2227cae1e4212b57c020dc4f02649302c976e0eb85dbbd",
+      "bytes": 20181
+    },
+    "tools/dev_workflow/common.py": {
+      "sha256": "sha256:f398999c39fc80606ca3ec0d47db5a9e32debe96367a87a9aa72b70089f13a28",
+      "bytes": 3129
+    },
+    "tools/rust_capsule_build.py": {
+      "sha256": "sha256:d417a0c8c4dd7bf6ebaf71d5aba6e7ac1c77011b04dd2b572fc7417174de6d00",
+      "bytes": 47290
+    },
+    "tools/rust_capsule_project.py": {
+      "sha256": "sha256:216da6ad5b821381bde28e42e13b8b6ef47ff3faf93b539e0166c880d6fc2360",
+      "bytes": 14549
+    },
+    "wit/host-abi-phase3-v4.json": {
+      "sha256": "sha256:3cfbd9bf55248f972d53598cc71ceccf068aa9234de4e1fce488d458271a937d",
+      "bytes": 4523
+    },
+    "wit/host-abi-phase3-v5.json": {
+      "sha256": "sha256:3a8bf03ff4a688c049a16c08eb9e9649a022a82dc90d4c4187d15567934c3be8",
+      "bytes": 5197
+    },
+    "wit/host-abi-phase3-v7.json": {
+      "sha256": "sha256:c9c88ebe54f6a3e931c15943b87b01fe553a5420f403ed8bc15fe41c137687cf",
+      "bytes": 5882
+    },
+    "wit/host-abi-phase4-v1.json": {
+      "sha256": "sha256:e8d67cb2ca7f696296a28684d59f6663788888e8e0c06f2aafe1eab34f4f0403",
+      "bytes": 2559
+    },
+    "tools/application_dependencies.py": {
+      "sha256": "sha256:4582e588d2c28a87c3c1c8acdd713d3f22fb3c65764e450e483ffb15dae33e5f",
+      "bytes": 28732
+    },
+    "tools/application_dependency_store.py": {
+      "sha256": "sha256:ac8bd16090cbbd2a3696bd21fd269bbba7abfd9357049ed002f3bb4975e931ed",
+      "bytes": 12139
+    },
+    "tools/build_observation.py": {
+      "sha256": "sha256:c9fe0843aabb9a026b2005134b121bf2e53abc909a2da3e5e5fe90fdc3096db0",
+      "bytes": 7868
+    },
+    "tools/build_process.py": {
+      "sha256": "sha256:86a5f8465c7afdf3bbdd70972f0799187e550fd4c56d0235f9bb951ce6b033a2",
+      "bytes": 9063
+    },
+    "tools/build_process_linux.py": {
+      "sha256": "sha256:e3d45b83b7dfe213135491b8a094925179b884df11615ea0dcb64af6451d08ce",
+      "bytes": 3853
+    },
+    "tools/build_process_signals.py": {
+      "sha256": "sha256:96dddca07cc20b77b0b6b93a3524c047877a4fcdd7442fe8c635024ade13cdb2",
+      "bytes": 3012
+    },
+    "tools/build_process_windows.py": {
+      "sha256": "sha256:3de6d1a259112579d0da53b90614233fd27d57daf3cf75582d9ac774f13b31fd",
+      "bytes": 7409
+    },
+    "tools/build_snapshot.py": {
+      "sha256": "sha256:172c556c2d8918d09f97d6163b64c3ffe1dda79d2f0fe72675fd223b533f5284",
+      "bytes": 12918
+    },
+    "tools/dev_workflow/__init__.py": {
+      "sha256": "sha256:83994d5549a6b1de4ef471c2e8fa9db700b731807f8e9b806c71b9bcf594eaf2",
+      "bytes": 98
+    },
+    "tools/dev_workflow/dependencies.py": {
+      "sha256": "sha256:6c2b1e343e05d10b43fead70d017193dedd6d0a7bde7db0a4c110d3d51a67b7b",
+      "bytes": 6022
+    },
+    "tools/dev_workflow/paths.py": {
+      "sha256": "sha256:6758044322e58c687c73d8302c0fab82a07d9680ed647a3a52f2a34f60d0da59",
+      "bytes": 6758
+    },
+    "tools/guest_authoring_frontend.py": {
+      "sha256": "sha256:50fb4567e172a9a8b8b72ce4b964912f980d1406979267b5d59e3545fad869c7",
+      "bytes": 9578
+    },
+    "tools/guest_compatibility_context.py": {
+      "sha256": "sha256:a4b73020b14a2db16c437d92d80f0790989cffbcb7d82d49eed20858cff77037",
+      "bytes": 8129
+    },
+    "tools/guest_compatibility_context_build.py": {
+      "sha256": "sha256:8307d07c3c13dba0b83802de5f7d5ad379e53f0d48f5e3c20bb0f78c35b7509d",
+      "bytes": 8747
+    },
+    "tools/guest_resources.py": {
+      "sha256": "sha256:558e9c937b9b7113fe5f51d035c4f56695cc8a3db30b0f378c7d926e76111814",
+      "bytes": 18098
+    },
+    "tools/guest_runtime_receipts.py": {
+      "sha256": "sha256:09b8cea1c5c864eac01f67bed66fe3c09afab5a3ee71238385781ca5b6fbfd1f",
+      "bytes": 12510
+    },
+    "tools/phase2_operator_process.py": {
+      "sha256": "sha256:ea7951f5005a39c98991070b9a62e3debba05855b95a7845af9977293849b857",
+      "bytes": 15212
+    },
+    "tools/phase3_resource_identity.py": {
+      "sha256": "sha256:ca979a245b623bd588fe6ce32aec1de3a45a00e8bb0d6e49c6554417051327b0",
+      "bytes": 3354
+    },
+    "tools/phase3_resource_profile.py": {
+      "sha256": "sha256:633a3eb3e639014ef221cf5180a533ea595cca32a761d53fe2d4e305d658a818",
+      "bytes": 9743
+    },
+    "tools/stage_runtime_wit.py": {
+      "sha256": "sha256:a44bcfc7054c8a63a43e3b9ad6428e7d4ac1bb551420020bc29015c9333b9828",
+      "bytes": 4194
+    },
+    "tools/transaction_guest_project.py": {
+      "sha256": "sha256:8f70d19a6181e3d078d42944d0957f5512ab7a4b426befaffbb73b2cec874f39",
+      "bytes": 10287
+    },
+    "docs/testing/evidence/c-closed-filesystem-signed-2026-10-20.json": {
+      "sha256": "sha256:2ce6b9687f972df101bb8306fc03f9030bed92294c0eb5ba1402819517859f31",
+      "bytes": 12298
+    },
+    "docs/testing/evidence/rust-wasi-http-signed-2026-10-21.json": {
+      "sha256": "sha256:928969c9825b9f61cdc662354a98cb94c0f00011219e2b1bde6c3459c138d7a0",
+      "bytes": 13114
+    },
+    "docs/testing/evidence/go-queued-work-signed-2026-10-21.json": {
+      "sha256": "sha256:b6ae64db9b0f295c415d2ce874068605c67c8939daad03743c8eb5335a25d0ee",
+      "bytes": 32792
+    },
+    "docs/testing/evidence/typescript-activation-owned-stack-signed-2026-10-21.json": {
+      "sha256": "sha256:ce922321636123376e2265faba19f5ee3ee8a5071a4e26cb784480106b47fd3f",
+      "bytes": 346861
+    },
+    "docs/testing/evidence/java-compiler-observations-signed-2026-10-21.json": {
+      "sha256": "sha256:06e161401174108347b02f3e35f6fe55012a5303c22e5bb08168dbda0d3e6a80",
+      "bytes": 78822
+    },
+    "docs/testing/evidence/dotnet-compiler-observations-signed-2026-10-21.json": {
+      "sha256": "sha256:1bb4e5894fd2f477dc33780dced78f803ab055c77c7af100eaecf5a4dd865abe",
+      "bytes": 77766
+    }
+  },
+  "cases": [
+    {
+      "language": "c",
+      "origin": {
+        "evidence": "docs/testing/evidence/c-closed-filesystem-signed-2026-10-20.json",
+        "evidenceIdentity": {
+          "sha256": "sha256:2ce6b9687f972df101bb8306fc03f9030bed92294c0eb5ba1402819517859f31",
+          "bytes": 12298
+        },
+        "source": "6578570a34fd7c7fa42be1205303731b0203dae3",
+        "run": 39362851384,
+        "job": 118432795119,
+        "artifact": {
+          "id": 12237909871,
+          "bytes": 504101,
+          "sha256": "sha256:b8afd276629489be19a812dfc654e46a67b2998b8f69baa44b60a32ff3152cba"
+        }
+      },
+      "original": {
+        "component.wasm": {
+          "sha256": "sha256:880f839d13d202f7954a1e72f5e02d7259ea8b8c867cfc05167156cc78b102e1",
+          "bytes": 864021
+        },
+        "capsule.json": {
+          "sha256": "sha256:42cc8792d40b229322feb7d8d2bf473e715e27f224536f7b90e38bf3c1ad684a",
+          "bytes": 1036
+        }
+      },
+      "originalInspectionPassed": true,
+      "completeOriginalPrefixExact": true,
+      "appendedBytes": 64,
+      "mutatedComponent": {
+        "sha256": "sha256:45c491eca2321c5d2b9b6ee3a91f2e1459e590db34a3fe147c47d0a74c13fa4e",
+        "bytes": 864085
+      },
+      "hostAbiProfile": "lsf-host-abi-phase3-v4",
+      "unknownInterface": "diagnostic:unknown/final-import@0.1.0",
+      "refusal": {
+        "componentDigest": "sha256:45c491eca2321c5d2b9b6ee3a91f2e1459e590db34a3fe147c47d0a74c13fa4e",
+        "hostAbiDigest": "sha256:4413194663dea86eb471981cbd8f37e4d7f77c093ef685333457357cc5a1b0b4",
+        "imports": [
+          "diagnostic:unknown/final-import@0.1.0"
+        ],
+        "findings": [
+          {
+            "classification": "surface-mismatch",
+            "phase": "link",
+            "evidence": "final-component"
+          },
+          {
+            "classification": "unknown-import",
+            "phase": "link",
+            "evidence": "final-component",
+            "operation": "diagnostic:unknown/final-import@0.1.0"
+          },
+          {
+            "classification": "unresolved-behavior",
+            "phase": "invocation",
+            "evidence": "not-evaluated"
+          }
+        ]
+      },
+      "runtimeOutcome": "not-executed"
+    },
+    {
+      "language": "rust",
+      "origin": {
+        "evidence": "docs/testing/evidence/rust-wasi-http-signed-2026-10-21.json",
+        "evidenceIdentity": {
+          "sha256": "sha256:928969c9825b9f61cdc662354a98cb94c0f00011219e2b1bde6c3459c138d7a0",
+          "bytes": 13114
+        },
+        "source": "407cac236c337b4cfae6d855d499717fd9ddce95",
+        "run": 39668260882,
+        "job": 119458961583,
+        "artifact": {
+          "id": 12378817614,
+          "sha256": "sha256:d1e368ed13a377774e33c4aaa77458396a48c7d6ea5993ac03769e4f558f6ae8",
+          "bytes": 3365582,
+          "members": 815,
+          "expandedBytes": 13668740
+        },
+        "actualCompilerSource": "88b3c9c1d305eb8e308a7187600f782163bc6131",
+        "actualCompilerRun": 39623507324,
+        "retainedOriginalRuntimeFailuresReclassified": false
+      },
+      "original": {
+        "component.wasm": {
+          "sha256": "sha256:51c0ff8e1cd93ae504a8f14d861fb8ac862b4cf6bdab2d22074183c1e692eb4f",
+          "bytes": 934498
+        },
+        "capsule.json": {
+          "sha256": "sha256:f68b9e7b6ecf9e3855f896f2fa0b3bb14ae1726de2dd53371588f0520aea3350",
+          "bytes": 1306
+        }
+      },
+      "originalInspectionPassed": true,
+      "completeOriginalPrefixExact": true,
+      "appendedBytes": 64,
+      "mutatedComponent": {
+        "sha256": "sha256:c54020bb8f875393f0f3741dd9efd95ca94fe869444551d04a9951011794cd4d",
+        "bytes": 934562
+      },
+      "hostAbiProfile": "lsf-host-abi-phase3-v5",
+      "unknownInterface": "diagnostic:unknown/final-import@0.1.0",
+      "refusal": {
+        "componentDigest": "sha256:c54020bb8f875393f0f3741dd9efd95ca94fe869444551d04a9951011794cd4d",
+        "hostAbiDigest": "sha256:59bdd8b3234de80a50d6798736a593d43d15c04930fda742ba3efbb2d5cf95db",
+        "imports": [
+          "diagnostic:unknown/final-import@0.1.0",
+          "latent:clock/monotonic@0.1.0",
+          "latent:http/streaming@0.3.0",
+          "latent:runtime/activation@0.1.0"
+        ],
+        "findings": [
+          {
+            "classification": "surface-mismatch",
+            "phase": "link",
+            "evidence": "final-component"
+          },
+          {
+            "classification": "unknown-import",
+            "phase": "link",
+            "evidence": "final-component",
+            "operation": "diagnostic:unknown/final-import@0.1.0"
+          },
+          {
+            "classification": "unresolved-behavior",
+            "phase": "invocation",
+            "evidence": "not-evaluated"
+          }
+        ],
+        "hostAbiProfile": "lsf-host-abi-phase3-v5"
+      },
+      "runtimeOutcome": "not-executed"
+    },
+    {
+      "language": "go",
+      "origin": {
+        "evidence": "docs/testing/evidence/go-queued-work-signed-2026-10-21.json",
+        "evidenceIdentity": {
+          "sha256": "sha256:b6ae64db9b0f295c415d2ce874068605c67c8939daad03743c8eb5335a25d0ee",
+          "bytes": 32792
+        },
+        "source": "d889f0d3ec911c43375ac0679528c3303bad95fb",
+        "run": 39663672168,
+        "job": 119442944970,
+        "artifact": 12375268701
+      },
+      "original": {
+        "component.wasm": {
+          "sha256": "sha256:3346a5d79a7cabca7ad125acd5db26363fafd5c39d2d5e710c38c346037e2d3f",
+          "bytes": 3219953
+        },
+        "capsule.json": {
+          "sha256": "sha256:2aa929fcba635351e9b878b979dadeec427d08d29d14b0357a17ea8ae2f37d49",
+          "bytes": 1469
+        }
+      },
+      "originalInspectionPassed": true,
+      "completeOriginalPrefixExact": true,
+      "appendedBytes": 64,
+      "mutatedComponent": {
+        "sha256": "sha256:daaa7657fd7708f2d264f70ed5bf6945c691452f2c616ab878536db102cfe5c0",
+        "bytes": 3220017
+      },
+      "hostAbiProfile": "lsf-host-abi-phase3-v5",
+      "unknownInterface": "diagnostic:unknown/final-import@0.1.0",
+      "refusal": {
+        "componentDigest": "sha256:daaa7657fd7708f2d264f70ed5bf6945c691452f2c616ab878536db102cfe5c0",
+        "hostAbiDigest": "sha256:59bdd8b3234de80a50d6798736a593d43d15c04930fda742ba3efbb2d5cf95db",
+        "imports": [
+          "diagnostic:unknown/final-import@0.1.0",
+          "latent:clock/monotonic@0.1.0",
+          "latent:clock/wall@0.1.0",
+          "latent:log/log@0.1.0",
+          "latent:random/random@0.1.0",
+          "latent:runtime/activation@0.1.0"
+        ],
+        "findings": [
+          {
+            "classification": "surface-mismatch",
+            "phase": "link",
+            "evidence": "final-component"
+          },
+          {
+            "classification": "unknown-import",
+            "phase": "link",
+            "evidence": "final-component",
+            "operation": "diagnostic:unknown/final-import@0.1.0"
+          },
+          {
+            "classification": "unresolved-behavior",
+            "phase": "invocation",
+            "evidence": "not-evaluated"
+          }
+        ],
+        "hostAbiProfile": "lsf-host-abi-phase3-v5"
+      },
+      "runtimeOutcome": "not-executed"
+    },
+    {
+      "language": "typescript",
+      "origin": {
+        "evidence": "docs/testing/evidence/typescript-activation-owned-stack-signed-2026-10-21.json",
+        "evidenceIdentity": {
+          "sha256": "sha256:ce922321636123376e2265faba19f5ee3ee8a5071a4e26cb784480106b47fd3f",
+          "bytes": 346861
+        },
+        "source": "85d7a036b4baf53b917cd353d4888ea6ff5f6d1c",
+        "run": 39603465482,
+        "job": 119233562662,
+        "artifact": {
+          "id": 12347677033,
+          "bytes": 241573,
+          "sha256": "sha256:f57e29885cfa45f2ea4538ed4b254abf15e5202ffe6559d908cfc4f5e88fa833",
+          "crcMembers": 234
+        },
+        "componentCompilerOrigin": {
+          "source": "63224663df622426a8a657355fb6ccc6294215ee",
+          "run": 39561770610,
+          "job": 119094482153,
+          "artifact": 12328935407,
+          "archiveBytes": 8806047,
+          "archiveDigest": "sha256:544655acf815a0fe85a0da4174fb4cca948fcfa119c08088d1ab4b229f816313",
+          "crcMembers": 327
+        }
+      },
+      "original": {
+        "component.wasm": {
+          "sha256": "sha256:27c0a75bf794e49ba6062b9ec09129cfc51ac78b6274c43959cc7e8ecb46e693",
+          "bytes": 12410038
+        },
+        "capsule.json": {
+          "sha256": "sha256:884eb9cee017fb66f8eb7f255e5b4b53862e82909581e3c23d7b248d70dd913f",
+          "bytes": 1419
+        }
+      },
+      "originalInspectionPassed": true,
+      "completeOriginalPrefixExact": true,
+      "appendedBytes": 64,
+      "mutatedComponent": {
+        "sha256": "sha256:13e41623b3c8d0d9878afeacbaa07fd4358ee4273573014e5babcaf731e9eda2",
+        "bytes": 12410102
+      },
+      "hostAbiProfile": "lsf-host-abi-phase3-v5",
+      "unknownInterface": "diagnostic:unknown/final-import@0.1.0",
+      "refusal": {
+        "componentDigest": "sha256:13e41623b3c8d0d9878afeacbaa07fd4358ee4273573014e5babcaf731e9eda2",
+        "hostAbiDigest": "sha256:59bdd8b3234de80a50d6798736a593d43d15c04930fda742ba3efbb2d5cf95db",
+        "imports": [
+          "diagnostic:unknown/final-import@0.1.0",
+          "latent:clock/monotonic@0.1.0",
+          "latent:clock/wall@0.1.0",
+          "latent:http/streaming@0.3.0",
+          "latent:runtime/activation@0.1.0"
+        ],
+        "findings": [
+          {
+            "classification": "surface-mismatch",
+            "phase": "link",
+            "evidence": "final-component"
+          },
+          {
+            "classification": "unknown-import",
+            "phase": "link",
+            "evidence": "final-component",
+            "operation": "diagnostic:unknown/final-import@0.1.0"
+          },
+          {
+            "classification": "unresolved-behavior",
+            "phase": "invocation",
+            "evidence": "not-evaluated"
+          }
+        ],
+        "hostAbiProfile": "lsf-host-abi-phase3-v5"
+      },
+      "runtimeOutcome": "not-executed"
+    },
+    {
+      "language": "java",
+      "origin": {
+        "evidence": "docs/testing/evidence/java-compiler-observations-signed-2026-10-21.json",
+        "evidenceIdentity": {
+          "sha256": "sha256:06e161401174108347b02f3e35f6fe55012a5303c22e5bb08168dbda0d3e6a80",
+          "bytes": 78822
+        },
+        "source": null,
+        "run": null,
+        "job": null,
+        "artifact": null
+      },
+      "original": {
+        "component.wasm": {
+          "sha256": "sha256:ba0b292c5354cd38a661b66e61c2f43a88b76b24b725ef115f2ffa94da5cfd1a",
+          "bytes": 1533590
+        },
+        "capsule.json": {
+          "sha256": "sha256:684d36e3ef9a2bc53169f586bb1a4c9fe8c3064d5b31e7e2c1e285495a6a2abf",
+          "bytes": 1301
+        }
+      },
+      "originalInspectionPassed": true,
+      "completeOriginalPrefixExact": true,
+      "appendedBytes": 64,
+      "mutatedComponent": {
+        "sha256": "sha256:fee80c0b4e320b9664e9252b06e2f0993a59b1f7f5130f7110190b1bd666ef6e",
+        "bytes": 1533654
+      },
+      "hostAbiProfile": "lsf-host-abi-phase3-v5",
+      "unknownInterface": "diagnostic:unknown/final-import@0.1.0",
+      "refusal": {
+        "componentDigest": "sha256:fee80c0b4e320b9664e9252b06e2f0993a59b1f7f5130f7110190b1bd666ef6e",
+        "hostAbiDigest": "sha256:59bdd8b3234de80a50d6798736a593d43d15c04930fda742ba3efbb2d5cf95db",
+        "imports": [
+          "diagnostic:unknown/final-import@0.1.0",
+          "latent:clock/monotonic@0.1.0",
+          "latent:clock/wall@0.1.0",
+          "latent:runtime/activation@0.1.0"
+        ],
+        "findings": [
+          {
+            "classification": "surface-mismatch",
+            "phase": "link",
+            "evidence": "final-component"
+          },
+          {
+            "classification": "unknown-import",
+            "phase": "link",
+            "evidence": "final-component",
+            "operation": "diagnostic:unknown/final-import@0.1.0"
+          },
+          {
+            "classification": "unresolved-behavior",
+            "phase": "invocation",
+            "evidence": "not-evaluated"
+          }
+        ],
+        "hostAbiProfile": "lsf-host-abi-phase3-v5"
+      },
+      "runtimeOutcome": "not-executed"
+    },
+    {
+      "language": "dotnet",
+      "origin": {
+        "evidence": "docs/testing/evidence/dotnet-compiler-observations-signed-2026-10-21.json",
+        "evidenceIdentity": {
+          "sha256": "sha256:1bb4e5894fd2f477dc33780dced78f803ab055c77c7af100eaecf5a4dd865abe",
+          "bytes": 77766
+        },
+        "source": null,
+        "run": null,
+        "job": null,
+        "artifact": null
+      },
+      "original": {
+        "component.wasm": {
+          "sha256": "sha256:a7c13d1435dc7a715b6d6fb6e4b9c8d51adb07e68d06623ed74090b4e8064662",
+          "bytes": 2528118
+        },
+        "capsule.json": {
+          "sha256": "sha256:3b393529d0c582f1b4dfa8d3537b2e5803e8a894f68cc700eef76d8bb6e81caf",
+          "bytes": 1387
+        }
+      },
+      "originalInspectionPassed": true,
+      "completeOriginalPrefixExact": true,
+      "appendedBytes": 64,
+      "mutatedComponent": {
+        "sha256": "sha256:dc3d11a355873c6df3bc3a2009dd53b620d1b0a8376f951b6440cc3970b2825b",
+        "bytes": 2528182
+      },
+      "hostAbiProfile": "lsf-host-abi-phase3-v5",
+      "unknownInterface": "diagnostic:unknown/final-import@0.1.0",
+      "refusal": {
+        "componentDigest": "sha256:dc3d11a355873c6df3bc3a2009dd53b620d1b0a8376f951b6440cc3970b2825b",
+        "hostAbiDigest": "sha256:59bdd8b3234de80a50d6798736a593d43d15c04930fda742ba3efbb2d5cf95db",
+        "imports": [
+          "diagnostic:unknown/final-import@0.1.0",
+          "latent:clock/monotonic@0.1.0",
+          "latent:clock/wall@0.1.0",
+          "latent:random/random@0.1.0",
+          "latent:runtime/activation@0.1.0"
+        ],
+        "findings": [
+          {
+            "classification": "surface-mismatch",
+            "phase": "link",
+            "evidence": "final-component"
+          },
+          {
+            "classification": "unknown-import",
+            "phase": "link",
+            "evidence": "final-component",
+            "operation": "diagnostic:unknown/final-import@0.1.0"
+          },
+          {
+            "classification": "unresolved-behavior",
+            "phase": "invocation",
+            "evidence": "not-evaluated"
+          }
+        ],
+        "hostAbiProfile": "lsf-host-abi-phase3-v5"
+      },
+      "runtimeOutcome": "not-executed"
+    }
+  ],
+  "commands": [
+    {
+      "stage": "pinned-validator-version",
+      "exitCode": 0,
+      "seconds": 0.228647
+    },
+    {
+      "stage": "assemble-declaration-only-template",
+      "exitCode": 0,
+      "seconds": 0.204062
+    },
+    {
+      "stage": "c-validate-original",
+      "exitCode": 0,
+      "seconds": 0.208248
+    },
+    {
+      "stage": "compatibility-final-wit",
+      "exitCode": 0,
+      "seconds": 0.199223
+    },
+    {
+      "stage": "c-validate-appended-import",
+      "exitCode": 0,
+      "seconds": 0.208001
+    },
+    {
+      "stage": "c-appended-callable-type",
+      "exitCode": 0,
+      "seconds": 0.197623
+    },
+    {
+      "stage": "compatibility-final-wit",
+      "exitCode": 0,
+      "seconds": 0.236588
+    },
+    {
+      "stage": "rust-validate-original",
+      "exitCode": 0,
+      "seconds": 0.22496
+    },
+    {
+      "stage": "compatibility-final-wit",
+      "exitCode": 0,
+      "seconds": 0.205068
+    },
+    {
+      "stage": "rust-validate-appended-import",
+      "exitCode": 0,
+      "seconds": 0.207362
+    },
+    {
+      "stage": "rust-appended-callable-type",
+      "exitCode": 0,
+      "seconds": 0.220043
+    },
+    {
+      "stage": "compatibility-final-wit",
+      "exitCode": 0,
+      "seconds": 0.203591
+    },
+    {
+      "stage": "go-validate-original",
+      "exitCode": 0,
+      "seconds": 0.217868
+    },
+    {
+      "stage": "compatibility-final-wit",
+      "exitCode": 0,
+      "seconds": 0.216481
+    },
+    {
+      "stage": "go-validate-appended-import",
+      "exitCode": 0,
+      "seconds": 0.244
+    },
+    {
+      "stage": "go-appended-callable-type",
+      "exitCode": 0,
+      "seconds": 0.21621
+    },
+    {
+      "stage": "compatibility-final-wit",
+      "exitCode": 0,
+      "seconds": 0.203729
+    },
+    {
+      "stage": "typescript-validate-original",
+      "exitCode": 0,
+      "seconds": 0.236458
+    },
+    {
+      "stage": "compatibility-final-wit",
+      "exitCode": 0,
+      "seconds": 0.21738
+    },
+    {
+      "stage": "typescript-validate-appended-import",
+      "exitCode": 0,
+      "seconds": 0.237763
+    },
+    {
+      "stage": "typescript-appended-callable-type",
+      "exitCode": 0,
+      "seconds": 0.215592
+    },
+    {
+      "stage": "compatibility-final-wit",
+      "exitCode": 0,
+      "seconds": 0.214196
+    },
+    {
+      "stage": "java-validate-original",
+      "exitCode": 0,
+      "seconds": 0.211926
+    },
+    {
+      "stage": "compatibility-final-wit",
+      "exitCode": 0,
+      "seconds": 0.203778
+    },
+    {
+      "stage": "java-validate-appended-import",
+      "exitCode": 0,
+      "seconds": 0.206594
+    },
+    {
+      "stage": "java-appended-callable-type",
+      "exitCode": 0,
+      "seconds": 0.225511
+    },
+    {
+      "stage": "compatibility-final-wit",
+      "exitCode": 0,
+      "seconds": 0.22901
+    },
+    {
+      "stage": "dotnet-validate-original",
+      "exitCode": 0,
+      "seconds": 0.217483
+    },
+    {
+      "stage": "compatibility-final-wit",
+      "exitCode": 0,
+      "seconds": 0.216872
+    },
+    {
+      "stage": "dotnet-validate-appended-import",
+      "exitCode": 0,
+      "seconds": 0.229638
+    },
+    {
+      "stage": "dotnet-appended-callable-type",
+      "exitCode": 0,
+      "seconds": 0.204534
+    },
+    {
+      "stage": "compatibility-final-wit",
+      "exitCode": 0,
+      "seconds": 0.224553
+    }
+  ],
+  "wasmTools": {
+    "sha256": "sha256:3b91b4a168490b9290dd742d1ed4708c588083c81181c651376457db926599dd",
+    "bytes": 16783360
+  },
+  "observation": {
+    "platform": "win32",
+    "python": "3.13.5",
+    "recordedUtc": "2026-10-21T21:06:40.104088+00:00",
+    "sourceBase": "db0c7c74685921fca8d593eefa0ec6c17ae07869",
+    "changedSourceBoundByMaterialHashes": true,
+    "hostedCampaign": false,
+    "fullTicketQualification": false,
+    "compilerInspectionsOnly": true
+  },
+  "retainedDiagnostics": {
+    "logs/00-pinned-validator-version.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "logs/00-pinned-validator-version.stdout.txt": {
+      "sha256": "sha256:94755b443dd70abf2f614900bdf6b4b04c60bf70aa0b54204acd2e6a18eec06a",
+      "bytes": 19
+    },
+    "logs/01-assemble-declaration-only-template.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "logs/01-assemble-declaration-only-template.stdout.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "logs/02-c-validate-original.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "logs/02-c-validate-original.stdout.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "logs/03-compatibility-final-wit.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "logs/03-compatibility-final-wit.stdout.txt": {
+      "sha256": "sha256:12ad4730dad90ff94a904470ca8bb9df3ea36a1006fb521c2c9e2a3e2d974aae",
+      "bytes": 1006
+    },
+    "logs/04-c-validate-appended-import.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "logs/04-c-validate-appended-import.stdout.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "logs/05-c-appended-callable-type.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "logs/05-c-appended-callable-type.stdout.txt": {
+      "sha256": "sha256:67bbe525b506b37ccfde5775788c1450d8133c5377d87e9f812816fd6551ff71",
+      "bytes": 1460
+    },
+    "logs/06-compatibility-final-wit.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "logs/06-compatibility-final-wit.stdout.txt": {
+      "sha256": "sha256:67bbe525b506b37ccfde5775788c1450d8133c5377d87e9f812816fd6551ff71",
+      "bytes": 1460
+    },
+    "logs/07-rust-validate-original.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "logs/07-rust-validate-original.stdout.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "logs/08-compatibility-final-wit.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "logs/08-compatibility-final-wit.stdout.txt": {
+      "sha256": "sha256:bb70dfecde5a365b0a9b9b237725bf196cfd818114c668f61f0a08ccf331826c",
+      "bytes": 13448
+    },
+    "logs/09-rust-validate-appended-import.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "logs/09-rust-validate-appended-import.stdout.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "logs/10-rust-appended-callable-type.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "logs/10-rust-appended-callable-type.stdout.txt": {
+      "sha256": "sha256:9497f20e5714d0381dc15ccb886931133cd74c832c8ea16b186965ff4ec19aeb",
+      "bytes": 13896
+    },
+    "logs/11-compatibility-final-wit.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "logs/11-compatibility-final-wit.stdout.txt": {
+      "sha256": "sha256:9497f20e5714d0381dc15ccb886931133cd74c832c8ea16b186965ff4ec19aeb",
+      "bytes": 13896
+    },
+    "logs/12-go-validate-original.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "logs/12-go-validate-original.stdout.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "logs/13-compatibility-final-wit.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "logs/13-compatibility-final-wit.stdout.txt": {
+      "sha256": "sha256:df01cd735211ca736a51a7d7abf8ca15c983af1feb538107a25cdddb7c5dcbe4",
+      "bytes": 10083
+    },
+    "logs/14-go-validate-appended-import.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "logs/14-go-validate-appended-import.stdout.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "logs/15-go-appended-callable-type.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "logs/15-go-appended-callable-type.stdout.txt": {
+      "sha256": "sha256:ce36244007a5326b4bdfd9b2c6df3174563d1a4da7111197a9d004209df22659",
+      "bytes": 10531
+    },
+    "logs/16-compatibility-final-wit.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "logs/16-compatibility-final-wit.stdout.txt": {
+      "sha256": "sha256:ce36244007a5326b4bdfd9b2c6df3174563d1a4da7111197a9d004209df22659",
+      "bytes": 10531
+    },
+    "logs/17-typescript-validate-original.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "logs/17-typescript-validate-original.stdout.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "logs/18-compatibility-final-wit.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "logs/18-compatibility-final-wit.stdout.txt": {
+      "sha256": "sha256:7f504e75d01fd955d75c49a5ab2b7222e90a53cd0ffe866413dedc6bf5789f62",
+      "bytes": 15713
+    },
+    "logs/19-typescript-validate-appended-import.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "logs/19-typescript-validate-appended-import.stdout.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "logs/20-typescript-appended-callable-type.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "logs/20-typescript-appended-callable-type.stdout.txt": {
+      "sha256": "sha256:cca46265ca9967c23339c4f0ec1f141e5a7af5b501109eb852487210de749820",
+      "bytes": 16161
+    },
+    "logs/21-compatibility-final-wit.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "logs/21-compatibility-final-wit.stdout.txt": {
+      "sha256": "sha256:cca46265ca9967c23339c4f0ec1f141e5a7af5b501109eb852487210de749820",
+      "bytes": 16161
+    },
+    "logs/22-java-validate-original.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "logs/22-java-validate-original.stdout.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "logs/23-compatibility-final-wit.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "logs/23-compatibility-final-wit.stdout.txt": {
+      "sha256": "sha256:f9cef739bc27178029fbea40a30ce55208bb5d4ca631ea51c1de3ed933ee7dd5",
+      "bytes": 9599
+    },
+    "logs/24-java-validate-appended-import.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "logs/24-java-validate-appended-import.stdout.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "logs/25-java-appended-callable-type.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "logs/25-java-appended-callable-type.stdout.txt": {
+      "sha256": "sha256:8c792ddb84b396e75fb811f64c7b1c9ba732fb01d1b31ac5780898b1044cc7ce",
+      "bytes": 10047
+    },
+    "logs/26-compatibility-final-wit.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "logs/26-compatibility-final-wit.stdout.txt": {
+      "sha256": "sha256:8c792ddb84b396e75fb811f64c7b1c9ba732fb01d1b31ac5780898b1044cc7ce",
+      "bytes": 10047
+    },
+    "logs/27-dotnet-validate-original.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "logs/27-dotnet-validate-original.stdout.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "logs/28-compatibility-final-wit.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "logs/28-compatibility-final-wit.stdout.txt": {
+      "sha256": "sha256:cea57f5cc920dd28916db47665629498696420436ea7f3f16c812cbdc106eb7b",
+      "bytes": 6937
+    },
+    "logs/29-dotnet-validate-appended-import.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "logs/29-dotnet-validate-appended-import.stdout.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "logs/30-dotnet-appended-callable-type.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "logs/30-dotnet-appended-callable-type.stdout.txt": {
+      "sha256": "sha256:45f1e5fd667023a6f3f9155e11cf2dc673292c9c6d2872ffdaff1d38a145201e",
+      "bytes": 7385
+    },
+    "logs/31-compatibility-final-wit.stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "logs/31-compatibility-final-wit.stdout.txt": {
+      "sha256": "sha256:45f1e5fd667023a6f3f9155e11cf2dc673292c9c6d2872ffdaff1d38a145201e",
+      "bytes": 7385
+    }
+  },
+  "earlierControlFailures": [
+    {
+      "attempt": "final-import-six-r1",
+      "stage": "c-appended-callable-type",
+      "cause": "Pinned WIT JSON omits result for a zero-result function; the original assertion expected a null result.",
+      "fixedBy": "Require the exact emitted freestanding touch function with empty params and no result key.",
+      "runtimeExecuted": false
+    },
+    {
+      "attempt": "final-import-six-r2",
+      "stage": "typescript-validate-original",
+      "cause": "The component uses subtask.cancel, requiring cm-more-async-builtins.",
+      "fixedBy": "Select the existing maintained Rust/Java async validation feature alongside the C threading features for both original and changed binaries.",
+      "runtimeExecuted": false
+    }
+  ]
+}

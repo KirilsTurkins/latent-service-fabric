@@ -28,16 +28,20 @@ async fn closure(socket: &mut tokio::net::TcpStream) {
         other => panic!("expected actual TCP retirement, got {other:?}"),
     }
 }
-async fn clean(fixture: &Fixture, control: &Control) {
+async fn clean(fixture: Fixture, control: &Control) {
     fixture.idle();
     assert_eq!(fixture.io.snapshot(), IoSnapshot::default());
-    assert_eq!(control.budget.host_memory_bytes(), 0);
+    assert!(control.budget.host_memory_bytes() > 0);
+    assert_eq!(control.budget.outstanding_reservations(), 2);
     let snapshot = fixture
         .pools
         .shutdown(Instant::now() + Duration::from_secs(2))
         .await
         .unwrap();
     assert!(snapshot.is_clean(), "{snapshot:?}");
+    drop(fixture);
+    assert_eq!(control.budget.host_memory_bytes(), 0);
+    assert_eq!(control.budget.outstanding_reservations(), 0);
 }
 
 #[tokio::test]
@@ -55,6 +59,7 @@ async fn canonical_guest_reads_partial_chunks_eof_and_reuses_no_authenticated_so
         }
     });
     let fixture = Fixture::new(port).await;
+    let mut previous: Option<latent_core::ActivationBudget> = None;
     for _ in 0..3 {
         let (request, control) = fixture.request("same-cell-stream", 0);
         let report = fixture.backend.invoke_contained(request, &control).await;
@@ -70,6 +75,11 @@ async fn canonical_guest_reads_partial_chunks_eof_and_reuses_no_authenticated_so
             serde_json::from_slice::<serde_json::Value>(&output).unwrap(),
             serde_json::json!([4])
         );
+        if let Some(previous) = &previous {
+            // Replacing the actual reusable registry slot retires the old headers.
+            assert_eq!(previous.host_memory_bytes(), 0);
+            assert_eq!(previous.outstanding_reservations(), 0);
+        }
         let final_budget = control
             .budget
             .finalize_at(Some(&consumption), Instant::now());
@@ -78,7 +88,14 @@ async fn canonical_guest_reads_partial_chunks_eof_and_reuses_no_authenticated_so
         assert_eq!(report.cleanup, ExecutionCleanup::Reusable);
         fixture.idle();
         assert_eq!(fixture.io.snapshot(), IoSnapshot::default());
-        assert_eq!(control.budget.host_memory_bytes(), 0);
+        let output_bytes = output.capacity() as u64 + 256;
+        let retained_headers = control.budget.host_memory_bytes() - output_bytes;
+        assert!(retained_headers > 0);
+        assert_eq!(control.budget.outstanding_reservations(), 3);
+        drop(output);
+        assert_eq!(control.budget.host_memory_bytes(), retained_headers);
+        assert_eq!(control.budget.outstanding_reservations(), 2);
+        previous = Some(control.budget.clone());
         assert_eq!(fixture.pools.snapshot().unwrap().connections, 0);
     }
     peer.await.unwrap();
@@ -88,6 +105,10 @@ async fn canonical_guest_reads_partial_chunks_eof_and_reuses_no_authenticated_so
         .await
         .unwrap()
         .is_clean());
+    drop(fixture);
+    let last = previous.unwrap();
+    assert_eq!(last.host_memory_bytes(), 0);
+    assert_eq!(last.outstanding_reservations(), 0);
 }
 
 #[tokio::test]
@@ -126,7 +147,7 @@ async fn traps_wrong_kind_stale_resources_and_oversized_write_retire_actual_owne
         }
         assert_eq!(report.cleanup, ExecutionCleanup::Reusable);
         peer.await.unwrap();
-        clean(&fixture, &control).await;
+        clean(fixture, &control).await;
     }
 }
 
@@ -146,8 +167,7 @@ async fn cancelling_a_suspended_canonical_read_closes_socket_before_reuse() {
     });
     let fixture = Fixture::new(port).await;
     let (request, control) = fixture.request("cancel-read", 2);
-    let invocation = fixture.backend.invoke_contained(request, &control);
-    tokio::pin!(invocation);
+    let mut invocation = Box::pin(fixture.backend.invoke_contained(request, &control));
     tokio::select! { _ = &mut invocation => panic!("read must wait for further peer bytes"), _ = received => {} }
     control.probe.0.store(true, Ordering::Release);
     let report = tokio::time::timeout(Duration::from_secs(2), &mut invocation)
@@ -156,7 +176,8 @@ async fn cancelling_a_suspended_canonical_read_closes_socket_before_reuse() {
     assert!(!matches!(report.outcome, Ok(GuestOutcome::Returned { .. })));
     assert_eq!(report.cleanup, ExecutionCleanup::Reusable);
     peer.await.unwrap();
-    clean(&fixture, &control).await;
+    drop(invocation);
+    clean(fixture, &control).await;
 }
 
 #[tokio::test]
@@ -188,8 +209,7 @@ async fn revoking_a_policy_during_canonical_read_closes_the_real_socket() {
     });
     let fixture = Fixture::new(port).await;
     let (request, control) = fixture.request("revoked-read", 2);
-    let invocation = fixture.backend.invoke_contained(request, &control);
-    tokio::pin!(invocation);
+    let mut invocation = Box::pin(fixture.backend.invoke_contained(request, &control));
     tokio::select! { _ = &mut invocation => panic!("read must wait"), _ = received => {} }
     fixture
         .policies
@@ -213,7 +233,8 @@ async fn revoking_a_policy_during_canonical_read_closes_the_real_socket() {
     assert!(!matches!(report.outcome, Ok(GuestOutcome::Returned { .. })));
     assert_eq!(report.cleanup, ExecutionCleanup::Reusable);
     peer.await.unwrap();
-    clean(&fixture, &control).await;
+    drop(invocation);
+    clean(fixture, &control).await;
 }
 
 #[test]

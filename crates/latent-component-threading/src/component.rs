@@ -300,7 +300,9 @@ enum Value {
     CContextGet,
     CContextSet,
     CThreadIndex,
-    CThreadYield,
+    CThreadPromote,
+    CThreadSuspend,
+    CThreadResumeLater,
     Other,
 }
 #[derive(Clone)]
@@ -610,7 +612,9 @@ impl<'a> Graph<'a> {
                     slot: 1,
                 } => Some(Value::CContextSet),
                 CanonicalFunction::ThreadIndex => Some(Value::CThreadIndex),
-                CanonicalFunction::ThreadYieldThenResume => Some(Value::CThreadYield),
+                CanonicalFunction::ThreadYieldThenPromote => Some(Value::CThreadPromote),
+                CanonicalFunction::ThreadSuspend => Some(Value::CThreadSuspend),
+                CanonicalFunction::ThreadResumeLater => Some(Value::CThreadResumeLater),
                 _ => None,
             };
             if let Some(value) = builtin {
@@ -631,9 +635,11 @@ impl<'a> Graph<'a> {
                     if c.lifted
                         || Self::indexed(&self.funcs, core_func_index)? != Value::MainFunc(c.root)
                         || c.start_instances != 1
-                        || c.function_types.get(type_index as usize) != Some(&Some(false))
+                        || c.function_types.get(type_index as usize) != Some(&Some(true))
                     {
-                        return Err("c-component-single-owned-sync-lift-after-initialize");
+                        return Err(
+                            "c-component-single-owned-async-type-sync-abi-lift-after-initialize",
+                        );
                     }
                     let mut memory = 0;
                     let mut realloc = 0;
@@ -962,7 +968,9 @@ impl<'a> Graph<'a> {
                         "[context-get-1]" => Value::CContextGet,
                         "[context-set-1]" => Value::CContextSet,
                         "[thread-index]" => Value::CThreadIndex,
-                        "[thread-yield-then-resume]" => Value::CThreadYield,
+                        "[thread-yield-then-promote]" => Value::CThreadPromote,
+                        "[thread-suspend]" => Value::CThreadSuspend,
+                        "[thread-resume-later]" => Value::CThreadResumeLater,
                         NEW => continue,
                         _ => return Err("c-component-unknown-root-intrinsic"),
                     };

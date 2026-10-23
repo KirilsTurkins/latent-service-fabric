@@ -1,0 +1,409 @@
+{
+  "schemaVersion": "lsf.kernel-cleanup-lifecycle-compiled-observation.v1",
+  "status": "PASS-WITH-EXPLICIT-UNSELECTED-RUNTIME-GATES",
+  "source": "136f60f73f38b2640e7714ace4a43e3e600a6cc8",
+  "upstreamCommit": "7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+  "run": 39874235766,
+  "job": 120155805516,
+  "jobUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39874235766/job/120155805516",
+  "artifact": {
+    "id": 12468076317,
+    "bytes": 826839,
+    "sha256": "ac1265a0ee0df0cbf4edc75bc2df264468c856cd2174ec8d20527f1b31b7a0ee",
+    "crcVerifiedMembers": 146
+  },
+  "verifiedGitMaterials": 254,
+  "baselineSourceFreeze": 201,
+  "currentStageSourceFreeze": 217,
+  "originalSelectedInputs": 82,
+  "derivedFiles": 322,
+  "constructorSourceStages": 24,
+  "compiledObjects": 24,
+  "requiredGlobalFunctionChecks": 111,
+  "globalFunctionCounts": {
+    "net/factory.o": 186,
+    "kernel/fork.o": 65,
+    "kernel/kthread.o": 65,
+    "mm/vmalloc.o": 68,
+    "kernel/pid.o": 32,
+    "kernel/cred.o": 20,
+    "security/security.o": 716,
+    "security/selinux/hooks.o": 11,
+    "kernel/events/core.o": 82,
+    "kernel/auditsc.o": 40,
+    "mm/mempolicy.o": 46,
+    "block/blk-ioc.o": 6,
+    "kernel/cgroup/cgroup.o": 140,
+    "kernel/tracepoint.o": 15,
+    "drivers/connector/cn_proc.o": 11,
+    "kernel/kprobes.o": 32,
+    "kernel/module/kmod.o": 1,
+    "kernel/umh.o": 8,
+    "kernel/workqueue.o": 86,
+    "drivers/acpi/osl.o": 62,
+    "lib/idr.o": 15,
+    "lib/radix-tree.o": 32,
+    "kernel/taskstats.o": 5,
+    "kernel/acct.o": 8
+  },
+  "compileOnlyGeometrySections": 17,
+  "completedCleanedCommands": 48,
+  "hostedSourceControls": 19,
+  "sourceFreeze": {
+    "path": "research/standard-outbound/linux-6.12-lineage/cleanup-constructor-source-freeze-r1.json",
+    "bytes": 87989,
+    "sha256": "3849c13a8c7b739a923a0c406d9f084a7004dd1617bd152b6a6531c60c2343f7"
+  },
+  "configuration": {
+    "symbols": 4309,
+    "onlyBaselineToSelectedChange": "CONFIG_LSF_STREAM_FACTORY",
+    "actual": {
+      "bytes": 143192,
+      "sha256": "1b9152e00c4ef645dda8318f804aaae17acbabf4bd4d1b065c7205faabaef2b3"
+    },
+    "sourceFixture": {
+      "bytes": 143192,
+      "sha256": "b2bcccd5507f3f3a673690b660a2321870b57a3c77e72ce8532975f3c4752176"
+    },
+    "fixtureProjection": {
+      "actual": {
+        "bytes": 143192,
+        "sha256": "1b9152e00c4ef645dda8318f804aaae17acbabf4bd4d1b065c7205faabaef2b3"
+      },
+      "sourceFixture": {
+        "bytes": 143192,
+        "sha256": "b2bcccd5507f3f3a673690b660a2321870b57a3c77e72ce8532975f3c4752176"
+      },
+      "difference": {
+        "symbol": "CONFIG_RUSTC_VERSION",
+        "actual": 109900,
+        "sourceFixture": 109901,
+        "reason": "Rust kernel code is unselected; all other config bytes remain exact."
+      },
+      "actualConfigurationMutated": false,
+      "rustKernelSelected": false,
+      "allOtherConfigurationBytesExact": true
+    },
+    "generatedAutoconf": {
+      "bytes": 57396,
+      "sha256": "8de69096fe3614af89edbc74dbf3fdd41ff66877d46a0e14aa63ed3b5f5cdb35"
+    },
+    "rustKernelSelected": false
+  },
+  "objects": {
+    "net/factory.o": {
+      "bytes": 256040,
+      "sha256": "3f5f17c66eb7c15e105ecb937c2701c5799cb13b3d7e0b862bb588e035a334cc",
+      "requiredGlobalFunctions": 94,
+      "definedGlobalFunctions": 186
+    },
+    "kernel/fork.o": {
+      "bytes": 108928,
+      "sha256": "4222cd449c96d3e1e0fd64f300a6542c2af1013171770433775d14f574562784",
+      "requiredGlobalFunctions": 5,
+      "definedGlobalFunctions": 65
+    },
+    "kernel/kthread.o": {
+      "bytes": 73696,
+      "sha256": "f4f9577f43f45c6e1f17b61e9b03caecefcf96a65b2d9cfc45e297308c83ba68",
+      "requiredGlobalFunctions": 5,
+      "definedGlobalFunctions": 65
+    },
+    "mm/vmalloc.o": {
+      "bytes": 149472,
+      "sha256": "dc643712f8d9816821c660c66eabea0bb0f140a7720f3f239526dc40d565450a",
+      "requiredGlobalFunctions": 7,
+      "definedGlobalFunctions": 68
+    },
+    "kernel/pid.o": {
+      "bytes": 29536,
+      "sha256": "b47ccf2bd4cb4029d6c88d562ca2fc65f927e783385b26e08fe5fc743fa0112c",
+      "requiredGlobalFunctions": 0,
+      "definedGlobalFunctions": 32
+    },
+    "kernel/cred.o": {
+      "bytes": 20912,
+      "sha256": "06359b520d1914e53d175247cc387b9334aef4a880877dbe71578daf9ad4c6b3",
+      "requiredGlobalFunctions": 0,
+      "definedGlobalFunctions": 20
+    },
+    "security/security.o": {
+      "bytes": 419824,
+      "sha256": "43136fd868c34344770d6d553913ac8705e7833b03bca90c4a75404cc6e4de2c",
+      "requiredGlobalFunctions": 0,
+      "definedGlobalFunctions": 716
+    },
+    "security/selinux/hooks.o": {
+      "bytes": 175288,
+      "sha256": "3f100d7a1f24e3009f56904dbadd70de49c8f2cb1beb948ccc8394fe4ebf3017",
+      "requiredGlobalFunctions": 0,
+      "definedGlobalFunctions": 11
+    },
+    "kernel/events/core.o": {
+      "bytes": 249448,
+      "sha256": "ee75e46cdc02c27ea106393fc43bdeebba55f9cd96dc194eb13624a6dfaf7368",
+      "requiredGlobalFunctions": 0,
+      "definedGlobalFunctions": 82
+    },
+    "kernel/auditsc.o": {
+      "bytes": 61616,
+      "sha256": "a3225d426137b93946b273c48c096b9d50e56aa151c61609a89c7c63afaf79ca",
+      "requiredGlobalFunctions": 0,
+      "definedGlobalFunctions": 40
+    },
+    "mm/mempolicy.o": {
+      "bytes": 74000,
+      "sha256": "8def4762ae2fe864032cadea995406303c116cb1522103ad5532c27387a011fd",
+      "requiredGlobalFunctions": 0,
+      "definedGlobalFunctions": 46
+    },
+    "block/blk-ioc.o": {
+      "bytes": 8152,
+      "sha256": "af27fe8324b31d97844e799be2c954afa4504c43296c50f3e1af34466cc42e77",
+      "requiredGlobalFunctions": 0,
+      "definedGlobalFunctions": 6
+    },
+    "kernel/cgroup/cgroup.o": {
+      "bytes": 222000,
+      "sha256": "213f42436417144ae1726f6408eed4d4147efe1261eabb018a76f77fba94adf2",
+      "requiredGlobalFunctions": 0,
+      "definedGlobalFunctions": 140
+    },
+    "kernel/tracepoint.o": {
+      "bytes": 25856,
+      "sha256": "8c07c944b010e06791ea77cb5d2e01ae14326d009b8c99d22cea32fb7dc0b9c4",
+      "requiredGlobalFunctions": 0,
+      "definedGlobalFunctions": 15
+    },
+    "drivers/connector/cn_proc.o": {
+      "bytes": 14672,
+      "sha256": "e964d6a906b7d802624301c11f79d138395bd33525531ed02f10742af4f5b760",
+      "requiredGlobalFunctions": 0,
+      "definedGlobalFunctions": 11
+    },
+    "kernel/kprobes.o": {
+      "bytes": 68968,
+      "sha256": "c2a2798175195b767706ee0a5b1945b2c704c6a01e59fd0e18381d96775a4c2a",
+      "requiredGlobalFunctions": 0,
+      "definedGlobalFunctions": 32
+    },
+    "kernel/module/kmod.o": {
+      "bytes": 7184,
+      "sha256": "5cb692d640dfaa898f23836e20b9a7f2d3babe7de5ceea376a8e6a4106aeec20",
+      "requiredGlobalFunctions": 0,
+      "definedGlobalFunctions": 1
+    },
+    "kernel/umh.o": {
+      "bytes": 15944,
+      "sha256": "12ab71f60f42c3196c60b090b0af1abc7ccd6978d59731e21c19c71fda70d387",
+      "requiredGlobalFunctions": 0,
+      "definedGlobalFunctions": 8
+    },
+    "kernel/workqueue.o": {
+      "bytes": 204000,
+      "sha256": "372084b8f086ae55a23b0411001e43f8087adf40801a254a2b4a9f06f5ae8582",
+      "requiredGlobalFunctions": 0,
+      "definedGlobalFunctions": 86
+    },
+    "drivers/acpi/osl.o": {
+      "bytes": 50432,
+      "sha256": "a4eb5626ec005b28e71bddfcf48856e0dff4ce1bf669e93f9be071e7d1b4e50c",
+      "requiredGlobalFunctions": 0,
+      "definedGlobalFunctions": 62
+    },
+    "lib/idr.o": {
+      "bytes": 18728,
+      "sha256": "66a7cee44b76a3b0e26b5952d928359e64b1414600859bcb7d2dbf0c2ff0a23c",
+      "requiredGlobalFunctions": 0,
+      "definedGlobalFunctions": 15
+    },
+    "lib/radix-tree.o": {
+      "bytes": 34064,
+      "sha256": "286e583ebbdca2d6c57e582171b87ddfa36e097386fac2ef4b38e6dd738efb53",
+      "requiredGlobalFunctions": 0,
+      "definedGlobalFunctions": 32
+    },
+    "kernel/taskstats.o": {
+      "bytes": 18912,
+      "sha256": "1aba4340f1703a758943e8f6d7c43a0479779ba406d86370cc17f996d52eacaf",
+      "requiredGlobalFunctions": 0,
+      "definedGlobalFunctions": 5
+    },
+    "kernel/acct.o": {
+      "bytes": 18672,
+      "sha256": "9a4254fb0eb3b81391f60b11572900b446c420cc6a4b0092a45511100ac407d2",
+      "requiredGlobalFunctions": 0,
+      "definedGlobalFunctions": 8
+    }
+  },
+  "geometry": {
+    "net/factory.o": {
+      "backingBytes": 524288,
+      "infrastructureBytes": 196608,
+      "bootstrapCeiling": 1048576,
+      "allocationSlots": 256,
+      "factoryBytes": 37144,
+      "deviceStateBytes": 288,
+      "poolBytes": 36888,
+      "staticMetadataBytes": 37176,
+      "firmwareBytes": 128,
+      "factoryFixedBytes": 37176
+    },
+    "kernel/fork.o": {
+      "taskStructBaseBytes": 7360,
+      "cacheLineBytes": 64,
+      "taskAlignment": 64,
+      "stackBytes": 16384,
+      "stackAlignment": 16384,
+      "pageBytes": 4096,
+      "sighandBytes": 2096,
+      "signalBytes": 1088,
+      "delayBytes": 144
+    },
+    "kernel/kthread.o": {
+      "requestBytes": 240,
+      "requestAlignment": 8,
+      "workerBytes": 56,
+      "lockClassKeyBytes": 0,
+      "irqHintBytes": 96
+    },
+    "mm/vmalloc.o": {
+      "mappingMetadataBytes": 304,
+      "mappingAlignment": 8,
+      "stackRecordBytes": 20783,
+      "stackPayloadBytes": 16384,
+      "guardBytes": 4096,
+      "bankAlignmentSlack": 4095,
+      "vmStructBytes": 72,
+      "vaDescriptorBytes": 72,
+      "leafSlots": 5
+    },
+    "kernel/pid.o": {
+      "pidBytes": 128
+    },
+    "kernel/cred.o": {
+      "credBytes": 184
+    },
+    "kernel/auditsc.o": {
+      "auditContextBytes": 1008,
+      "auditKeyBytes": 257
+    },
+    "mm/mempolicy.o": {
+      "mpolBytes": 32
+    },
+    "block/blk-ioc.o": {
+      "ioBytes": 16
+    },
+    "kernel/tracepoint.o": {
+      "tracepointSealBytes": 12
+    },
+    "drivers/connector/cn_proc.o": {
+      "connectorSealBytes": 40
+    },
+    "kernel/kprobes.o": {
+      "kprobeSealBytes": 16
+    },
+    "kernel/workqueue.o": {
+      "poolBytes": 792,
+      "poolAlignment": 8,
+      "workerBytes": 168,
+      "workerAlignment": 8,
+      "pwqBytes": 512,
+      "pwqAlignment": 256,
+      "attrsBytes": 40,
+      "attrsAlignment": 8,
+      "controlBytes": 296,
+      "controlAlignment": 8,
+      "contextMaximumBytes": 552,
+      "contextAlignment": 8,
+      "cpuMaximum": 64
+    },
+    "drivers/acpi/osl.o": {
+      "lifetimeMutexBytes": 32,
+      "registrationBytes": 8,
+      "adapterLockBytes": 4,
+      "adapterLiveBytes": 1
+    },
+    "lib/radix-tree.o": {
+      "nodeBytes": 576
+    },
+    "kernel/taskstats.o": {
+      "taskstatsSealBytes": 48
+    },
+    "kernel/acct.o": {
+      "acctSealBytes": 12
+    }
+  },
+  "fitting": {
+    "providerRecordBytes": {
+      "pool": 832,
+      "worker": 192,
+      "pwq": 768,
+      "attrs": 64,
+      "control": 320,
+      "context": 576
+    },
+    "providerRecordTotal": 2752,
+    "providerRecords": 6,
+    "maximumProviderCpuSlots": 64,
+    "bootstrapBytesIncludingBank": 561733,
+    "fixedSubgraphsFit": true,
+    "runtimeArchTaskBytesKnown": false,
+    "runtimeLsmCompositeBytesKnown": false,
+    "wholeInfrastructureFitQualified": false,
+    "actualRuntimeGeometryExecuted": false,
+    "actualNativeLedger": false,
+    "consumerSelected": false,
+    "productionInstallation": false
+  },
+  "atomicControl": {
+    "source": {
+      "bytes": 3700,
+      "sha256": "cfe8026bc45f1eb614eb3a4bcbdd6e8829f27f5e713bb9a342f95874db940c3a"
+    },
+    "executable": {
+      "bytes": 16184,
+      "sha256": "99e69e1bdd2a0922ff1910eea7bf56aa1df35ed360295133b5b025e9e411881f"
+    },
+    "passed": true,
+    "compilerAtomicsExecuted": true,
+    "deterministicInterleavings": true,
+    "actualLinuxAtomicExecution": false,
+    "deviceDestructorExecuted": false,
+    "nativeCapacityRefunded": false,
+    "finiteCheckpoints": 14
+  },
+  "historicalFailures": [
+    {
+      "run": 39872161435,
+      "source": "c22c40700ed6bd0415dae63f9519487b9e3ae513",
+      "stage": "complete-source-composition",
+      "retainedAsFailure": true
+    },
+    {
+      "run": 39873344452,
+      "source": "b722288ad10e623a864d5c7cb58a5a23ee1d1f4b",
+      "stage": "24-affected-objects",
+      "retainedAsFailure": true
+    }
+  ],
+  "kernelLinked": false,
+  "kernelBooted": false,
+  "taskCreated": false,
+  "actualLinuxAtomicExecution": false,
+  "actualRcuExecution": false,
+  "actualIrqExecution": false,
+  "actualNativeLedger": false,
+  "wholeInfrastructureFitQualified": false,
+  "consumerSelected": false,
+  "productionInstallation": false,
+  "fullConstructorClosure": false,
+  "completeAllocationClosure": false,
+  "constructorDeadlineAndCancellationQualified": false,
+  "limitations": [
+    "The atomic control uses native compiler atomics with deterministic interference, not Linux/device execution.",
+    "Only constant provider/bootstrap subgraphs fit; runtime extended Task and LSM composite sizes remain unknown.",
+    "Actual retained constructor cancellation/quarantine and releasing factoryLock across original queue waits remain required.",
+    "No physical provider, IRQ, RCU, stack or native backing retirement is qualified."
+  ]
+}

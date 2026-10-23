@@ -2,7 +2,7 @@ use super::*;
 use std::sync::{atomic::AtomicBool, Barrier};
 
 #[derive(Default)]
-struct Signal(
+pub(super) struct Signal(
     AtomicBool,
     std::sync::Mutex<Option<std::task::Waker>>,
     AtomicBool,
@@ -30,7 +30,7 @@ impl BudgetCancellationProbe for Signal {
         }
     }
 }
-fn request(fuel: u64, memory: u64, calls: u32) -> ResourceBudget {
+pub(super) fn request(fuel: u64, memory: u64, calls: u32) -> ResourceBudget {
     ResourceBudget {
         cpu_fuel: fuel,
         memory_bytes: memory,
@@ -45,7 +45,7 @@ fn request(fuel: u64, memory: u64, calls: u32) -> ResourceBudget {
         effect_count: 0,
     }
 }
-fn root(limits: DelegationLimits) -> (ActivationBudget, Arc<Signal>, ClockSample) {
+pub(super) fn root(limits: DelegationLimits) -> (ActivationBudget, Arc<Signal>, ClockSample) {
     let sample = ClockSample::new(1000, Instant::now());
     let requested = request(1000, 1000, 32);
     let grant = EffectiveActivationBudget::admit_profile_at(
@@ -62,14 +62,14 @@ fn root(limits: DelegationLimits) -> (ActivationBudget, Arc<Signal>, ClockSample
     budget.enable_descendants(limits, signal.clone()).unwrap();
     (budget, signal, sample)
 }
-fn reserve(
+pub(super) fn reserve(
     parent: &ActivationBudget,
     requested: &ResourceBudget,
     sample: ClockSample,
 ) -> Result<ChildBudgetDelegation, PlatformError> {
     parent.delegate_at(requested, requested, parent.granted(), None, sample)
 }
-fn accept(pending: ChildBudgetDelegation, sample: ClockSample) -> ChildBudgetOwner {
+pub(super) fn accept(pending: ChildBudgetDelegation, sample: ClockSample) -> ChildBudgetOwner {
     let grant = pending.grant();
     pending
         .accept(&grant, Arc::new(Signal::default()), sample.monotonic())
@@ -572,4 +572,47 @@ fn retained_completion_keeps_original_cancelled_and_terminal_ancestor_fences() {
         drop(ledger);
         assert_eq!(parent.outstanding_reservations(), 0);
     }
+}
+
+#[test]
+fn host_memory_resize_confirms_parent_peak_and_retains_terminal_child_capacity() {
+    let (parent, _, sample) = root(DelegationLimits::default());
+    parent.observe_peak_memory(100).unwrap();
+    let child = accept(
+        reserve(&parent, &request(100, 600, 0), sample).unwrap(),
+        sample,
+    );
+    let mut memory = child.accounting().reserve_host_memory(100).unwrap();
+    memory.confirm();
+    assert_eq!(
+        parent.snapshot_at(sample.monotonic()).peak_memory_bytes,
+        200
+    );
+    memory.grow(200).unwrap();
+    assert_eq!(
+        parent.snapshot_at(sample.monotonic()).peak_memory_bytes,
+        200
+    );
+    memory.confirm();
+    assert_eq!(
+        parent.snapshot_at(sample.monotonic()).peak_memory_bytes,
+        400
+    );
+    memory.shrink(200);
+    assert_eq!(
+        parent.snapshot_at(sample.monotonic()).peak_memory_bytes,
+        400
+    );
+    assert_eq!(child.accounting().host_memory_bytes(), 200);
+    let terminal = child.finish(None, sample.monotonic());
+    assert_eq!(terminal.consumption().peak_memory_bytes, 300);
+    assert!(memory.grow(1).is_err());
+    assert_eq!(parent.descendant_snapshot().unwrap().live_descendants, 1);
+    drop(memory);
+    assert_eq!(parent.descendant_snapshot().unwrap().live_descendants, 0);
+    assert_eq!(
+        parent.snapshot_at(sample.monotonic()).peak_memory_bytes,
+        400
+    );
+    assert_eq!(parent.outstanding_reservations(), 0);
 }

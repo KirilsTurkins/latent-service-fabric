@@ -13,6 +13,7 @@ pub(crate) struct SignaturePlan {
     pub static_lift_bytes: usize,
     pub per_fuel_lift_multiplier: usize,
     pub maximum_lift_bytes: usize,
+    pub has_dynamic_values: bool,
 }
 
 pub(crate) fn validate_signature(
@@ -37,6 +38,7 @@ pub(crate) fn validate_host_signature(
         remaining: limits.max_type_nodes,
         largest_element: NODE_BYTES,
         resources,
+        has_dynamic_values: false,
     };
     let mut fixed = NODE_BYTES;
     for ty in types {
@@ -74,6 +76,7 @@ pub(crate) fn validate_host_signature(
         static_lift_bytes: fixed,
         per_fuel_lift_multiplier: multiplier,
         maximum_lift_bytes: maximum,
+        has_dynamic_values: state.has_dynamic_values,
     })
 }
 
@@ -82,6 +85,7 @@ struct SchemaBudget<'a> {
     limits: ValueCodecLimits,
     remaining: usize,
     largest_element: usize,
+    has_dynamic_values: bool,
 }
 
 impl SchemaBudget<'_> {
@@ -124,9 +128,12 @@ impl SchemaBudget<'_> {
             | Type::U64
             | Type::Float32
             | Type::Float64
-            | Type::Char
-            | Type::String => {}
+            | Type::Char => {}
+            Type::String => {
+                self.has_dynamic_values = true;
+            }
             Type::List(list) => {
+                self.has_dynamic_values = true;
                 let element = self.inline(&list.ty(), depth + 1)?;
                 self.largest_element = self.largest_element.max(element);
             }

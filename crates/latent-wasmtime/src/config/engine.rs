@@ -29,6 +29,8 @@ pub enum NativeThreadProfile {
     RustContext40SoleConsumerOneTaskStartV1,
     #[serde(rename = "c-context144-sync-cooperative-v1")]
     CContext144SyncCooperativeV1,
+    #[serde(rename = "rust-context40-sync-cooperative-v1")]
+    RustContext40SyncCooperativeV1,
 }
 impl NativeThreadProfile {
     #[must_use]
@@ -36,6 +38,7 @@ impl NativeThreadProfile {
         match self {
             Self::RustContext40SoleConsumerOneTaskStartV1 => crate::component_threading::PROFILE,
             Self::CContext144SyncCooperativeV1 => crate::component_threading::C_PROFILE,
+            Self::RustContext40SyncCooperativeV1 => crate::component_threading::RUST_SYNC_PROFILE,
         }
     }
     pub(crate) const fn verification_bytes(self) -> usize {
@@ -43,6 +46,9 @@ impl NativeThreadProfile {
             Self::RustContext40SoleConsumerOneTaskStartV1 => 0,
             Self::CContext144SyncCooperativeV1 => {
                 latent_component_threading::c_preimage::C_VERIFICATION_WORK_BYTES
+            }
+            Self::RustContext40SyncCooperativeV1 => {
+                latent_component_threading::rust_component::RUST_VERIFICATION_WORK_BYTES
             }
         }
     }
@@ -173,6 +179,19 @@ mod tests {
         let mut expected = rust_json;
         expected["nativeThreadProfile"] = crate::component_threading::C_PROFILE.into();
         assert_eq!(serde_json::to_value(&c).unwrap(), expected);
+        config.native_thread_profile = NativeThreadProfile::RustContext40SyncCooperativeV1;
+        let rust_sync = CompilerEngineSettings::from_config(&config);
+        rust_sync.validate_compiler().unwrap();
+        expected["nativeThreadProfile"] = crate::component_threading::RUST_SYNC_PROFILE.into();
+        assert_eq!(serde_json::to_value(&rust_sync).unwrap(), expected);
+        assert_eq!(
+            rust_sync.native_thread_profile(),
+            Some(NativeThreadProfile::RustContext40SyncCooperativeV1)
+        );
+        assert_eq!(
+            NativeThreadProfile::RustContext40SyncCooperativeV1.verification_bytes(),
+            48 * 1024 * 1024
+        );
         config.owned_native_threads = false;
         assert!(config.validate().is_err());
     }

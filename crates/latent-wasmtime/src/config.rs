@@ -269,8 +269,11 @@ impl WasmtimeConfig {
         {
             return Err(invalid_config());
         }
-        if self.native_thread_profile == NativeThreadProfile::CContext144SyncCooperativeV1
-            && self.angular_renderer
+        if matches!(
+            self.native_thread_profile,
+            NativeThreadProfile::CContext144SyncCooperativeV1
+                | NativeThreadProfile::RustContext40SyncCooperativeV1
+        ) && self.angular_renderer
         {
             return Err(invalid_config());
         }

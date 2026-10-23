@@ -790,6 +790,12 @@ print('selected-recipe-imports-owned')
             with self.subTest(language=language):
                 staged = self.stage(language)
                 self.assertEqual((staged / 'tools/rust_standard_logging_inputs.py').is_file(), language == 'rust')
+                from tools.rust_capsule_project import host_projection_inputs
+                if language == 'rust':
+                    self.assertTrue(all((staged / name).is_file() for name in host_projection_inputs()))
+                else:
+                    self.assertFalse((staged / 'tools/result_owner_bytes.py').exists())
+                    self.assertFalse((staged / 'crates/vendor/bytes').exists())
                 result = self.load(staged, module)
                 self.assertEqual(result.returncode, 0, result.stderr.decode("utf-8", "replace")[:4096])
                 self.assertEqual(result.stdout.decode("ascii").splitlines(), ["selected-recipe-imports-owned"])
