@@ -123,3 +123,10 @@ eventual late-close/cancellation reclamation, native node integration, complete
 allocation and bootstrap closure, compiler implicit input attestation and
 production installation remain separate requirements. No whole milestone
 ticket closes.
+
+The subsequent [late-FD source and observation programme](kernel-late-fd-root-source.md)
+transfers original final-file custody to permanent kthreadd while children may
+still be pending. Its exact terminal guards and one-birth refusal remain; new
+kernel transition/event observations are required before claiming actual late
+reclamation. The preceding physical receipt remains attributed to its original
+already-retired case.

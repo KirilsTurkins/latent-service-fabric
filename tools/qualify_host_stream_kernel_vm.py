@@ -11,13 +11,14 @@ if __package__ in (None, ''):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from tools import host_stream_kernel_cleanup_native_programme as programme
 from tools import host_stream_kernel_vm_image as image
+from tools import host_stream_kernel_late_fd_vm as late
 
 baseline = programme.baseline
 objects = baseline.objects
 paths = baseline.paths
 require = baseline.require
 ROOT = programme.ROOT
-BRANCH = 'feat/kernel-root-final-free-20261023'
+BRANCH = 'feat/stream-kernel-late-fd-final-free-20261023'
 WORKFLOW = '.github/workflows/stream-kernel-constructor-vm.yml'
 PROBE = 'research/standard-outbound/linux-6.12-lineage/constructor-vm-init.c'
 
@@ -34,6 +35,12 @@ def recipe_inputs():
         'tools/host_stream_kernel_task_identity_geometry.py',
         'tools/host_stream_kernel_provider_task_reference.py',
         'tools/host_stream_kernel_root_final_free.py',
+        'tools/host_stream_kernel_late_fd_final_free.py',
+        'tools/host_stream_kernel_late_fd_vm.py',
+        'tools/tests/test_host_stream_kernel_late_fd_final_free.py',
+        'tools/tests/test_kernel_late_fd_vm.py',
+        'tools/tests/fixtures/host_stream_kernel_late_fd_final_free.json',
+        'research/standard-outbound/linux-6.12-lineage/factory-cleanup-late-fd-final-free.c',
         'tools/tests/fixtures/host_stream_kernel_root_final_free.json',
         'tools/tests/test_host_stream_kernel_root_final_free.py',
         'tools/tests/test_kernel_root_final_free_vm.py',
@@ -85,6 +92,7 @@ def run(archive, output):
         recipeInputs=recipe, localSourceFreeze=local, observedTools=tool_pins,
         kernelLinked=False, kernelBooted=False, actualLinuxExecution=False,
         actualNativeLedger=False, nativeNodeIntegration=False, rootFinalFree=False,
+        actualLateFdCollection=False,
         consumerSelected=False, completeAllocationClosure=False,
         wholeInfrastructureFitQualified=False, initialBirthBounded=False,
         compilerImplicitInputsAttested=False, productionInstallation=False)
@@ -93,6 +101,15 @@ def run(archive, output):
         stage = 'captured-static-pid1'
         init, receipt['init'] = image.build_init(commands,tool_paths['gcc'],
             paths.read(ROOT,PROBE,64*1024),output)
+        late_output = output/'late'
+        late_output.mkdir()
+        late_init, receipt['lateInit'] = image.build_init(commands,tool_paths['gcc'],
+            late.late_probe_source(paths.read(ROOT,PROBE,64*1024)),late_output,mode='late')
+        stage = 'actual-compiled-log-parser-controls'
+        controls = commands.run('check-actual-compiled-kmsg-parser',late_init,'--kmsg-control')
+        require(controls == late.COMPILED_CONTROLS, 'constructor-vm-actual-kmsg-controls')
+        receipt['compiledLogParserControls'] = dict(passed=22,failed=0,
+            bytes=len(controls),sha256=hashlib.sha256(controls).hexdigest())
         stage = 'extract'
         commands.run('extract-authenticated-source',tools['tar'],'--extract','--xz',
             '--file',str(archive),'--directory',str(source_root),'--no-same-owner','--no-same-permissions')
@@ -111,6 +128,8 @@ def run(archive, output):
                 original_inputs[name] = paths.read(tree,name,baseline.maintained.MAX_FILE)
         require(sum(map(len,original_inputs.values())) <= baseline.maintained.MAX_SELECTED,
             'constructor-vm-selected-byte-bound')
+        receipt['compiledKernelLogSource'] = late.authenticate_printk(
+            original_inputs['kernel/printk/printk.c'])
         for name,suffix in (('net/Kconfig',objects.KCONFIG),('net/Makefile',objects.MAKEFILE)):
             raw = original_inputs[name]
             require(objects.SELECTED.encode() not in raw,'constructor-vm-private-config-present')
@@ -169,6 +188,8 @@ def run(archive, output):
         require(generator.is_file(), 'constructor-vm-upstream-initramfs-generator-missing')
         receipt['initramfsGenerator'] = tool_identity(generator)
         initramfs, receipt['initramfs'] = image.build_initramfs(commands,generator,init,output)
+        late_initramfs, receipt['lateInitramfs'] = image.build_initramfs(
+            commands,generator,late_init,late_output,mode='late')
         firmware = output/'firmware'
         firmware.mkdir()
         receipt['firmware'] = {}
@@ -186,24 +207,35 @@ def run(archive, output):
         commands.run('qemu-version',tool_paths['qemu-system-x86_64'],'--version')
         stage = 'isolated-constructor-vm'
         old_limit = commands.command_seconds
-        commands.command_seconds = image.VM_SECONDS
+        require(late.BOOT_SECONDS * 2 == image.VM_SECONDS, 'constructor-vm-aggregate-boot-bound')
+        commands.command_seconds = late.BOOT_SECONDS
         try:
             serial = commands.run('boot-isolated-real-constructor',
                 *image.boot_argv(tool_paths['qemu-system-x86_64'],kernel,initramfs,firmware))
+            observation = image.root_physical_serial_observation(serial)
+            receipt['fastSerial'] = observation
+            stage = 'isolated-late-fd-vm'
+            late_serial = commands.run('boot-isolated-late-fd-constructor',
+                *image.boot_argv(tool_paths['qemu-system-x86_64'],kernel,late_initramfs,firmware))
+            late_observation = late.serial_observation(late_serial)
         finally:
             commands.command_seconds = old_limit
-        observation = image.root_physical_serial_observation(serial)
         receipt.update(kernelBooted=True,actualLinuxExecution=True,
             actualTaskControlChildRetirement=True,rootHeldAtChildRetirementSnapshot=True,
             rootStillHeldAtObservation=False,rootFinalFree=observation['rootFinalFree'],
             vm=dict(accelerator='tcg-multi',cpus=image.VM_CPUS,memoryMiB=image.VM_MEMORY_MIB,
                 externalNetwork=False,hostDrives=False,hostInstallation=False,
                 watchdogExpiryIsSuccess=False),
-            serial=observation)
+            serial=observation,lateSerial=late_observation,actualLateFdCollection=True,
+            vmBoots=dict(fastSeconds=late.BOOT_SECONDS,lateSeconds=late.BOOT_SECONDS,
+                aggregateMaximumSeconds=image.VM_SECONDS,sameKernelImage=True))
         stage = 'final-input-and-image-recheck'
         require(objects.identity(archive) == archive_identity,'constructor-vm-archive-drift')
         require(all(objects.identity(tree/name) == bound for name,bound in receipt['derived'].items()),
                 'constructor-vm-derived-source-drift')
+        require(late.authenticate_printk(paths.read(tree,'kernel/printk/printk.c',
+            baseline.maintained.MAX_FILE)) == receipt['compiledKernelLogSource'],
+            'constructor-vm-compiled-printk-source-drift')
         require(all(objects.identity(ROOT/name) == bound for name,bound in frozen.items())
             and programme.local_freeze() == local and recipe_inputs() == recipe,
                 'constructor-vm-local-source-drift')
@@ -214,6 +246,11 @@ def run(archive, output):
             and objects.identity(initramfs)=={key:receipt['initramfs'][key] for key in ('bytes','sha256')}
             and tool_identity(generator)==receipt['initramfsGenerator'],
                 'constructor-vm-image-drift')
+        require(image.init_elf(paths.read(late_output,late_init.name,image.MAX_INIT))['sha256'] ==
+            receipt['lateInit']['sha256'] and objects.identity(late_initramfs) ==
+            {key:receipt['lateInitramfs'][key] for key in ('bytes','sha256')} and
+            paths.read(late_output,'constructor-init.c',64*1024) ==
+            late.late_probe_source(paths.read(ROOT,PROBE,64*1024)), 'constructor-vm-late-image-drift')
         require(all(objects.identity(firmware/name)==bound for name,bound in receipt['firmware'].items()),
                 'constructor-vm-firmware-drift')
         receipt['status'] = 'passed'

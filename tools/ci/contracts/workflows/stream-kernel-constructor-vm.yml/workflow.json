@@ -9,7 +9,7 @@
     "on": {
       "push": {
         "branches": [
-          "feat/kernel-root-final-free-20261023"
+          "feat/stream-kernel-late-fd-final-free-20261023"
         ],
         "paths": [
           ".github/workflows/stream-kernel-constructor-vm.yml",
@@ -29,6 +29,13 @@
           "tools/host_stream_kernel_provider_task_reference.py",
           "tools/tests/test_host_stream_kernel_provider_task_reference.py",
           "tools/host_stream_kernel_root_final_free.py",
+          "tools/host_stream_kernel_late_fd_final_free.py",
+          "tools/host_stream_kernel_late_fd_vm.py",
+          "tools/host_stream_kernel_cleanup_native_programme.py",
+          "tools/tests/test_host_stream_kernel_late_fd_final_free.py",
+          "tools/tests/test_kernel_late_fd_vm.py",
+          "tools/tests/fixtures/host_stream_kernel_late_fd_final_free.json",
+          "research/standard-outbound/linux-6.12-lineage/factory-cleanup-late-fd-final-free.c",
           "tools/tests/test_host_stream_kernel_root_final_free.py",
           "tools/tests/test_kernel_root_final_free_vm.py",
           "tools/tests/fixtures/host_stream_kernel_root_final_free.json",
@@ -45,7 +52,7 @@
   "requiredJobs": [
     "constructor-vm"
   ],
-  "reviewReason": "Preserve the prior 33 controls and caps, append seven collector and three physical-marker controls, and select the one reviewed Root qualification branch.",
+  "reviewReason": "Qualify only the owned late-FD branch while retaining all prior required jobs and immutable resource/security gates.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/stream-kernel-constructor-vm.yml"
 }

@@ -1,0 +1,140 @@
+{
+  "cases": [
+    "LateFdRootSource.test_actual_attempt_guard_is_once_then_original_sticky_quarantine_without_new_owner",
+    "LateFdRootSource.test_actual_cheap_pending_excludes_in_progress_poison_and_disappeared_owner",
+    "LateFdRootSource.test_actual_final_file_custody_guard_accepts_closed_pending_without_ready_invention",
+    "LateFdRootSource.test_actual_final_guard_handles_consumed_private_reason_without_empty_list_extraction",
+    "LateFdRootSource.test_actual_stack_routing_defers_pending_handoff_and_markers_bind_typed_request",
+    "LateFdRootSource.test_both_original_sleep_predicates_and_request_first_dispatch_keep_create_lock_outside",
+    "LateFdRootSource.test_common_take_preserves_all_original_terminal_lineage_irq_page_and_ref_guards",
+    "LateFdRootSource.test_final_file_handoff_follows_every_cache_scan_and_retains_fast_collector",
+    "LateFdRootSource.test_outside_marker_follows_physical_put_and_uses_only_pre_copied_success",
+    "LateFdRootSource.test_whole_parent_identities_and_function_edits_fail_closed"
+  ],
+  "guards": {
+    "LateFdRootSource.test_actual_attempt_guard_is_once_then_original_sticky_quarantine_without_new_owner": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f846159fec5cec959c4dd9257934a4985fc4d24a1c38a96c7bbe8a18fcebd346",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "LateFdRootSource.test_actual_cheap_pending_excludes_in_progress_poison_and_disappeared_owner": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f846159fec5cec959c4dd9257934a4985fc4d24a1c38a96c7bbe8a18fcebd346",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "LateFdRootSource.test_actual_final_file_custody_guard_accepts_closed_pending_without_ready_invention": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f846159fec5cec959c4dd9257934a4985fc4d24a1c38a96c7bbe8a18fcebd346",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "LateFdRootSource.test_actual_final_guard_handles_consumed_private_reason_without_empty_list_extraction": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f846159fec5cec959c4dd9257934a4985fc4d24a1c38a96c7bbe8a18fcebd346",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "LateFdRootSource.test_actual_stack_routing_defers_pending_handoff_and_markers_bind_typed_request": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f846159fec5cec959c4dd9257934a4985fc4d24a1c38a96c7bbe8a18fcebd346",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "LateFdRootSource.test_both_original_sleep_predicates_and_request_first_dispatch_keep_create_lock_outside": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f846159fec5cec959c4dd9257934a4985fc4d24a1c38a96c7bbe8a18fcebd346",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "LateFdRootSource.test_common_take_preserves_all_original_terminal_lineage_irq_page_and_ref_guards": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f846159fec5cec959c4dd9257934a4985fc4d24a1c38a96c7bbe8a18fcebd346",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "LateFdRootSource.test_final_file_handoff_follows_every_cache_scan_and_retains_fast_collector": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f846159fec5cec959c4dd9257934a4985fc4d24a1c38a96c7bbe8a18fcebd346",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "LateFdRootSource.test_outside_marker_follows_physical_put_and_uses_only_pre_copied_success": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f846159fec5cec959c4dd9257934a4985fc4d24a1c38a96c7bbe8a18fcebd346",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "LateFdRootSource.test_whole_parent_identities_and_function_edits_fail_closed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f846159fec5cec959c4dd9257934a4985fc4d24a1c38a96c7bbe8a18fcebd346",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_host_stream_kernel_late_fd_final_free.py",
+  "reviewReason": "Retain all eight source controls and bind stack-local pending routing, typed Request witness and post-physical outside marker to actual source.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

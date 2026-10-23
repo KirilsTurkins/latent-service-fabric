@@ -2,7 +2,7 @@ name: Stream actual constructor VM
 on:
   workflow_dispatch:
   push:
-    branches: ['feat/kernel-root-final-free-20261023']
+    branches: ['feat/stream-kernel-late-fd-final-free-20261023']
     paths:
       - '.github/workflows/stream-kernel-constructor-vm.yml'
       - 'tools/qualify_host_stream_kernel_vm.py'
@@ -21,6 +21,13 @@ on:
       - 'tools/host_stream_kernel_provider_task_reference.py'
       - 'tools/tests/test_host_stream_kernel_provider_task_reference.py'
       - 'tools/host_stream_kernel_root_final_free.py'
+      - 'tools/host_stream_kernel_late_fd_final_free.py'
+      - 'tools/host_stream_kernel_late_fd_vm.py'
+      - 'tools/host_stream_kernel_cleanup_native_programme.py'
+      - 'tools/tests/test_host_stream_kernel_late_fd_final_free.py'
+      - 'tools/tests/test_kernel_late_fd_vm.py'
+      - 'tools/tests/fixtures/host_stream_kernel_late_fd_final_free.json'
+      - 'research/standard-outbound/linux-6.12-lineage/factory-cleanup-late-fd-final-free.c'
       - 'tools/tests/test_host_stream_kernel_root_final_free.py'
       - 'tools/tests/test_kernel_root_final_free_vm.py'
       - 'tools/tests/fixtures/host_stream_kernel_root_final_free.json'
@@ -57,6 +64,8 @@ jobs:
           tools.tests.test_host_stream_kernel_task_identity_geometry
           tools.tests.test_host_stream_kernel_provider_task_reference
           tools.tests.test_host_stream_kernel_root_final_free
+          tools.tests.test_host_stream_kernel_late_fd_final_free
+          tools.tests.test_kernel_late_fd_vm
           tools.tests.test_kernel_root_final_free_vm -v
       - name: Install upstream compiler and isolated emulator prerequisites
         run: |
@@ -93,6 +102,10 @@ jobs:
             ${{ runner.temp }}/stream-kernel-constructor-vm/constructor-init.c
             ${{ runner.temp }}/stream-kernel-constructor-vm/constructor-initramfs.list
             ${{ runner.temp }}/stream-kernel-constructor-vm/constructor-initramfs.cpio
+            ${{ runner.temp }}/stream-kernel-constructor-vm/late/constructor-init
+            ${{ runner.temp }}/stream-kernel-constructor-vm/late/constructor-init.c
+            ${{ runner.temp }}/stream-kernel-constructor-vm/late/constructor-initramfs.list
+            ${{ runner.temp }}/stream-kernel-constructor-vm/late/constructor-initramfs.cpio
             ${{ runner.temp }}/stream-kernel-constructor-vm/firmware/*
             ${{ runner.temp }}/stream-kernel-constructor-vm/commands/logs/*.txt
             ${{ runner.temp }}/stream-kernel-constructor-vm/objects/include/generated/autoconf.h
