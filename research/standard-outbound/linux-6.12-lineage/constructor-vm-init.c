@@ -142,7 +142,19 @@ int main(void)
     check(memcmp(before, status, sizeof(status)) == 0, "foreign-request-preserves-original");
     expiry = now_ns() + 20000000000u;
     request(bytes, BEGIN, expiry);
-    check(write(fd, bytes, sizeof(bytes)) == (ssize_t)sizeof(bytes), "full-constructor-begin");
+    ssize_t admitted = write(fd, bytes, sizeof(bytes));
+    if (admitted != (ssize_t)sizeof(bytes)) {
+        int admission_error = errno;
+        /* Numeric refusal evidence only. An early refusal may preserve the
+         * original zero expiry, so do not apply observe's post-BEGIN check. */
+        ssize_t observed = read(fd, status, sizeof(status));
+        printf("LSFVM1 begin-refusal result=%jd errno=%u diagnostic-bytes=%jd\n",
+               (intmax_t)admitted, (unsigned)admission_error, (intmax_t)observed);
+        if (observed == (ssize_t)sizeof(status) && little(status, 4) == MAGIC &&
+            little(status + 4, 4) == VERSION)
+            snapshot("begin-refused", status);
+        finish(0, "full-constructor-begin");
+    }
     observe(fd, status);
     for (unsigned int attempt = 0; little(status + 8, 4) == PENDING && attempt < 16; ++attempt) {
         check(now_ns() < expiry, "pending-expiry");

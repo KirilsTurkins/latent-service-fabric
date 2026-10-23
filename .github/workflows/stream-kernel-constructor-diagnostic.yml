@@ -1,0 +1,52 @@
+name: Retained kernel constructor numeric refusal
+on:
+  push:
+    branches: ['feat/stream-kernel-vm-qualification-20261023']
+    paths: ['.github/workflows/stream-kernel-constructor-diagnostic.yml']
+  workflow_dispatch: {}
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: kernel-constructor-numeric-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  numeric-refusal:
+    name: Same linked image with one bounded numeric PID1 probe
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - name: Install existing locked recipe dependencies
+        run: python3 -m pip install -r tools/requirements.lock
+      - name: Refuse changed failure origins or unrelated initramfs bytes
+        run: python3 -B -m unittest tools.tests.test_kernel_vm_numeric -v
+      - name: Install only static probe compiler and isolated emulator
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes gcc qemu-system-x86
+      - name: Observe numeric BEGIN refusal on the unchanged linked kernel
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          python3 -B tools/diagnose_host_stream_kernel_vm.py
+          --output "$RUNNER_TEMP/stream-kernel-numeric"
+      - name: Retain bounded numeric observations and original failure identity
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: stream-kernel-numeric-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/stream-kernel-numeric/numeric-diagnostic.json
+            ${{ runner.temp }}/stream-kernel-numeric/retained-image-origin.json
+            ${{ runner.temp }}/stream-kernel-numeric/constructor-init.c
+            ${{ runner.temp }}/stream-kernel-numeric/commands/logs/*.txt
+          if-no-files-found: error
+          retention-days: 3
