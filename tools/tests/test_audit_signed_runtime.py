@@ -118,6 +118,28 @@ class AuditSignedRuntimeTests(unittest.TestCase):
             with self.subTest(key=key, value=changed_value), self.assertRaises(WorkflowError):
                 owner.policy_record(changed, 'random-allow', 'policy', document)
 
+    def test_failed_required_call_observes_only_bounded_readonly_controls_without_success_or_retry(self):
+        class Client:
+            deadline = owner.time.monotonic() + 30
+            calls = []
+            def call(self, *args, **kwargs):
+                self.calls.append((args, kwargs))
+                if args[:2] == ('audit', 'query'):
+                    raise ValueError('retained-original-read-failure')
+                return {'category': 'success', 'data': {'nodeUsage': {'counters': {}}}}
+        client = Client()
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)
+            owner.retain_required_failure(client, {'name': 'c-thread-runtime'}, output)
+            record = json.loads((output / 'required-failure-observation.json').read_bytes())
+            self.assertFalse(record['successClaimed'])
+            self.assertTrue(record['diagnosticOnly'])
+            self.assertEqual(record['reads'], [{'kind': 'audit', 'captured': False, 'errorType': 'ValueError'},
+                                              {'kind': 'usage', 'captured': True}])
+            self.assertEqual([args[:2] for args, _ in client.calls], [('audit', 'query'), ('capability', 'list')])
+            self.assertTrue(all(0 < kwargs['timeout'] <= 5 for _, kwargs in client.calls))
+            self.assertEqual(client.deadline > owner.time.monotonic(), True)
+
     def test_prebuild_failure_retains_result_without_retrieval_or_rebuild(self):
         with tempfile.TemporaryDirectory() as temporary, patch.object(owner.sys, 'platform', 'linux'), \
                 patch.object(owner.subprocess, 'check_output', return_value=b'a' * 40 + b'\n'), \

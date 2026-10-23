@@ -161,6 +161,26 @@ def pair_pages(client, output, activation):
     raise ValueError('audit-signed-required-audit-page-bound')
 
 
+def retain_required_failure(client, target, output):
+    """Two existing read-only controls; never retry or replace the failed call."""
+    evidence = {'diagnosticOnly': True, 'successClaimed': False, 'reads': []}
+    deadline = min(client.deadline, time.monotonic() + 10)
+    commands = (
+        ('audit', ('audit', 'query', '--scope', 'tenant', '--page-size', '64')),
+        ('usage', ('capability', 'list', '--deployment', target['name'], '--include-node-usage')))
+    for label, command in commands:
+        try:
+            remaining = deadline - time.monotonic()
+            require(remaining > 0, 'audit-signed-failure-observation-deadline')
+            value = client.call(*command, codes=(0, 2, 3, 4, 5, 6, 130), timeout=min(5, remaining))
+            require(len(json.dumps(value).encode()) <= 262144, 'audit-signed-failure-observation-size')
+            write_json(output / ('required-failure-' + label + '.json'), value)
+            evidence['reads'].append({'kind': label, 'captured': True})
+        except Exception as error:
+            evidence['reads'].append({'kind': label, 'captured': False, 'errorType': type(error).__name__})
+    write_json(output / 'required-failure-observation.json', evidence)
+
+
 def programme(client, node, probe, source, target, output):
     grants = timed.install(client, node, target)
     target = deploy(client, source / 'deployment.json', target['publication'],
@@ -189,7 +209,14 @@ def programme(client, node, probe, source, target, output):
                     generation=str(target['generation']), grants=grants)
     before_required = bank_observation(original.wait_audit_idle(client, target, output, 'audit-before-required'))
     revision = original.selected_revision(client, target)
-    second = timed.invoke_timed(client, probe, target, output, 'timed-sleep', 'audit-required-random')
+    try:
+        second = timed.invoke_timed(client, probe, target, output, 'timed-sleep', 'audit-required-random')
+    except BaseException:
+        try:
+            retain_required_failure(client, target, output)
+        except BaseException:
+            pass
+        raise
     providers = [row for row in node.startup_record['providers'] if row['capability'] == RANDOM]
     require(len(providers) == 1, 'audit-signed-one-actual-random-provider')
     pair = critical_pair(pair_pages(client, output, 'audit-required-random'),

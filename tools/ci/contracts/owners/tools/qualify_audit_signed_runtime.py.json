@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_audit_signed_runtime.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Bind original observed policy generations instead of assuming per-object revisions",
+  "reviewReason": "Retain two bounded existing read-only controls after the genuine required-call failure without replacing it",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "ef73230fea2847d23cdf570b122c075c02a8d6f53934f67d864dd462299ef219"
+  "sha256": "d39bcdd8ea03e018461ad784c60c0afc4e3985f1ab6b92cb99ad26e5cf57a208"
 }
