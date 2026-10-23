@@ -125,14 +125,35 @@ mod tests {
             }),
             MAX_FRAMES
         );
-        assert!(frames.iter().flatten().all(|frame| frame.function == 0
-            && frame.module_offset.is_some()
-            && frame.function_offset.is_some()));
+        for (observed, source) in frames.iter().zip(original.frames()) {
+            assert_eq!(source.func_index(), 0);
+            // Wasmtime may have no instruction mapping for an individual
+            // frame. Preserve its actual Options, never invent an address.
+            assert_eq!(
+                *observed,
+                Some(Frame {
+                    function: source.func_index(),
+                    module_offset: source.module_offset(),
+                    function_offset: source.func_offset(),
+                })
+            );
+        }
         let mut output = std::io::Cursor::new([0_u8; 1024]);
         emit(&proof, &error, &mut output);
         let used = usize::try_from(output.position()).unwrap();
         let text = std::str::from_utf8(&output.get_ref()[..used]).unwrap();
         assert_eq!(text.lines().count(), MAX_FRAMES);
+        for (line, (ordinal, source)) in text.lines().zip(original.frames().iter().enumerate()) {
+            assert_eq!(
+                line,
+                format!(
+                    "LSF-RUST40-FAULT:{ordinal}:{}:{}:{}",
+                    source.func_index(),
+                    source.module_offset().unwrap_or(usize::MAX),
+                    source.func_offset().unwrap_or(usize::MAX)
+                )
+            );
+        }
         assert!(text.lines().enumerate().all(|(ordinal, line)| {
             let prefix = format!("LSF-RUST40-FAULT:{ordinal}:");
             line.strip_prefix(&prefix).is_some_and(|numbers| {
