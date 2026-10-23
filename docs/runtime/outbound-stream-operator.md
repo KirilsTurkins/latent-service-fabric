@@ -148,6 +148,35 @@ operator review. Changing the publication, endpoint, provider identity or privat
 client configuration fails closed under the existing owner. A new provider
 generation must be adopted explicitly as described below.
 
+For management bearer replacement, keep the original client file available and
+byte exact, even if its token has expired. Prepare a separate protected CLI
+configuration that changes only the selected profile's token. Run the existing
+frontend with the original specification and state:
+
+```sh
+latent-dev stream-operator adopt-client \
+  --cli /path/to/latent --client-config /private/client/original.json \
+  --replacement-client-config /private/client/replacement.json \
+  --state-dir /private/operator/state --specification /private/operator/stream.json
+```
+
+The same default/single profile, endpoint, tenant, timeouts, limits and all other
+profiles must remain exact. Adoption requires no pending original operation and
+both confirmed owned grant receipts. Using only the replacement credentials,
+the selected CLI reads the exact node and both original policy records; their
+full documents and stamps must match. Node inspection requires administrator
+credentials with the existing trusted node-operator claim, as does usage
+inspection. The native CLI validates its complete configuration before these
+read-only RPCs. An unavailable/denied/uncertain read or a changed protected
+input, owner, journal or receipt refuses the handoff without replacing state.
+
+Only the private owner's credential-file digest changes. Use the replacement
+file as `--client-config` on subsequent commands; the original file no longer
+matches that owner. No token or file path is copied into state or public output.
+Adoption sends no grant mutation, replays no pending request and grants no new
+authority. It neither revokes the old token nor rotates TLS credentials or a
+live stream provider; those remain separate administrator/node-owner actions.
+
 The owning Linux x86-64 node built with `development-outbound-streams` supports
 protected reload. Keep the same owned configuration path and change only the
 stream limits and a strictly newer `identity.epoch`. Every other field remains

@@ -19,7 +19,7 @@ if __package__ in {None, ""}:
 
 from tools.dev_workflow import journal, paths, policy_operations, state
 from tools.dev_workflow.client import successful
-from tools.dev_workflow.common import DevError, digest, encode, members, require, sha
+from tools.dev_workflow.common import MAX_DOCUMENT, DevError, decode, digest, encode, members, require, sha
 
 
 CAPABILITY = "latent:network/streams@0.1.0"
@@ -292,6 +292,50 @@ def descriptor(value, tenant):
     return dict(value)
 
 
+def _client_adoption_document(raw, tenant):
+    """Resolve the same default/single profile as the native CLI, without output.
+
+    The replacement CLI still validates the complete native configuration before
+    its first read RPC. This finite local view only permits one token to change.
+    """
+    value = decode(raw, 65536, maximum_items=4096)
+    members(value, {"formatVersion", "profiles"}, {"defaultProfile"})
+    profiles = value["profiles"]
+    require(type(value["formatVersion"]) is int and value["formatVersion"] == 1
+            and isinstance(profiles, list) and 1 <= len(profiles) <= 16,
+            "stream-operator-client-profile-shape")
+    names = set()
+    for profile in profiles:
+        members(profile, {"name", "endpoint", "tenant", "token"},
+                {"connectTimeoutMillis", "rpcTimeoutMillis", "limits"})
+        name, token = profile["name"], profile["token"]
+        require(isinstance(name, str) and re.fullmatch(r"[A-Za-z0-9_.-]{1,64}", name)
+                and name not in names and isinstance(token, str)
+                and re.fullmatch(r"[A-Za-z0-9_-]{32,256}", token),
+                "stream-operator-client-profile-shape")
+        names.add(name)
+        for field in ("endpoint", "tenant"):
+            require(isinstance(profile[field], str), "stream-operator-client-profile-shape")
+        for field in ("connectTimeoutMillis", "rpcTimeoutMillis"):
+            require(field not in profile or type(profile[field]) is int
+                    and 1 <= profile[field] <= 300000, "stream-operator-client-profile-shape")
+        if "limits" in profile:
+            bounds = {"maximumComponentBytes": 64 * 1024 * 1024,
+                      "maximumPayloadBytes": 1024 * 1024, "maximumResponseBytes": 16 * 1024 * 1024}
+            limits = members(profile["limits"], set(), set(bounds))
+            require(all(type(number) is int and 1 <= number <= bounds[field]
+                        for field, number in limits.items()), "stream-operator-client-profile-shape")
+    selected = value.get("defaultProfile")
+    require(selected is None or isinstance(selected, str) and selected in names,
+            "stream-operator-client-profile-selection")
+    require(selected is not None or len(profiles) == 1, "stream-operator-client-profile-selection")
+    index = next(i for i, profile in enumerate(profiles) if selected is None or profile["name"] == selected)
+    require(profiles[index]["tenant"] == tenant, "stream-operator-client-tenant-changed")
+    masked = copy.deepcopy(value)
+    masked["profiles"][index]["token"] = None
+    return masked, profiles[index]["token"]
+
+
 class StreamOperator:
     """One private owner, exact publication/destination, and a durable journal."""
 
@@ -451,6 +495,67 @@ class StreamOperator:
             return {"provider": replacement, "executionPermission": False,
                     "outcome": "descriptor-adopted-binding-grant-still-required"}
 
+    def adopt_client(self, replacement):
+        """Authenticate one token-only replacement; never replay a mutation."""
+        with state.lock(self.root, "stream-operator.lock"):
+            names = ("stream-operator-owner.json", "operations.json", "stream-policy-receipts.json")
+
+            def snapshot():
+                return {name: _private_read(self.root / name, MAX_DOCUMENT)
+                        if (self.root / name).exists() else None for name in names}
+
+            before = snapshot()
+            self._owned()
+            require(self.journal.read()["pending"] is None,
+                    "recover-original-operation-before-client-adoption")
+            require(Path(replacement.binary).absolute() == Path(self.client.binary).absolute()
+                    and Path(replacement.directory).absolute() == Path(self.client.directory).absolute()
+                    and replacement.deadline == self.client.deadline
+                    and Path(replacement.config).absolute() != Path(self.client.config).absolute(),
+                    "stream-operator-client-owner-changed")
+            original = _private_read(self.client.config)
+            candidate = _private_read(replacement.config)
+            old, old_token = _client_adoption_document(original, self.owner["tenant"])
+            new, new_token = _client_adoption_document(candidate, self.owner["tenant"])
+            require(old == new and old_token != new_token, "stream-operator-client-token-only-replacement")
+            records = self._records()
+            for kind, field in (("provider-binding", "bindingId"), ("policy", "policyId")):
+                previous = records.get(kind + ":" + self.owner[field])
+                require(isinstance(previous, dict) and isinstance(previous.get("receipt"), dict)
+                        and isinstance(previous.get("document"), dict)
+                        and all(stamp in previous["receipt"] for stamp in STAMP_FIELDS),
+                        "stream-operator-no-owned-grant")
+
+            def read(*arguments):
+                observed = replacement.call(*arguments)
+                require(isinstance(observed, dict) and type(observed.get("outcomeKnown")) is bool
+                        and isinstance(observed.get("category"), str) and isinstance(observed.get("data"), dict),
+                        "stream-operator-client-observation-unavailable")
+                return successful(observed)
+
+            observed = read("node", "get", self.owner["node"])
+            inventory = observed.get("inventory")
+            require(isinstance(inventory, dict) and isinstance(inventory.get("node"), dict)
+                    and inventory["node"].get("id") == self.owner["node"],
+                    "stream-operator-client-node-changed")
+            for kind, field in (("provider-binding", "bindingId"), ("policy", "policyId")):
+                observed = read("policy", "--kind", kind, "get", "--id", self.owner[field])
+                current = observed.get("policy")
+                previous = records[kind + ":" + self.owner[field]]
+                require(isinstance(current, dict)
+                        and all(type(current.get(stamp)) is type(previous["receipt"][stamp])
+                                and current.get(stamp) == previous["receipt"][stamp] for stamp in STAMP_FIELDS)
+                        and encode(current.get("document")) == encode(previous["document"]),
+                        "stream-operator-policy-changed")
+            self._owned()
+            require(snapshot() == before, "stream-operator-client-adoption-state-changed")
+            require(_private_read(self.client.config) == original and _private_read(replacement.config) == candidate,
+                    "stream-operator-client-adoption-input-changed")
+            owner = {**self.owner, "clientConfigurationDigest": digest(candidate)}
+            state.atomic(self.root, "stream-operator-owner.json", owner)
+            self.owner, self.client = owner, replacement
+            return {"executionPermission": False, "outcome": "client-token-adopted-original-grants-retained"}
+
     def inspect(self, deployment):
         _token(deployment)
         with state.lock(self.root, "stream-operator.lock"):
@@ -484,13 +589,14 @@ def main(argv=None):
     from tools.dev_workflow.client import Client
     from tools.dev_workflow.common import decode
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=("grant", "revoke", "recover", "inspect", "adopt", "prepare", "prepare-rotation"))
+    parser.add_argument("command", choices=("grant", "revoke", "recover", "inspect", "adopt", "adopt-client", "prepare", "prepare-rotation"))
     parser.add_argument("--cli", type=Path)
     parser.add_argument("--client-config", type=Path)
     parser.add_argument("--state-dir", type=Path)
     parser.add_argument("--specification", type=Path)
     parser.add_argument("--deployment")
     parser.add_argument("--provider-record", type=Path)
+    parser.add_argument("--replacement-client-config", type=Path)
     parser.add_argument("--node", type=Path)
     parser.add_argument("--base-config", type=Path)
     parser.add_argument("--installation-record", type=Path)
@@ -499,6 +605,8 @@ def main(argv=None):
     parser.add_argument("--development-profile", action="store_true")
     args = parser.parse_args(argv)
     try:
+        require((args.command == "adopt-client") == (args.replacement_client_config is not None),
+                "stream-operator-replacement-client-only-for-adoption")
         preparing = args.command in {"prepare", "prepare-rotation"}
         rotating = args.command == "prepare-rotation"
         policy_arguments = (args.cli, args.client_config, args.state_dir, args.specification)
@@ -540,6 +648,10 @@ def main(argv=None):
                 result = operator.inspect(args.deployment)
             elif args.command == "adopt":
                 result = operator.adopt_provider(decode(_private_read(args.provider_record.absolute()), 65536))
+            elif args.command == "adopt-client":
+                replacement = Client(client.binary, args.replacement_client_config.absolute(), root,
+                                     deadline=client.deadline)
+                result = operator.adopt_client(replacement)
             else:
                 result = getattr(operator, args.command)()
         print(json.dumps({"schemaVersion": "latent.outbound-stream.operator.result.v1",
