@@ -188,12 +188,16 @@ async fn ready_owner_drop_closes_on_original_worker_and_retains_capacity() {
     .unwrap();
     let link = receive.await.unwrap();
     assert_eq!(std::fs::read_link(&link).unwrap(), original);
-    assert_eq!(stable_snapshot(&fixture.pools).await.failed_cleanup, 0);
+    let ready = stable_snapshot(&fixture.pools).await;
+    assert_eq!(ready.failed_cleanup, 0);
+    assert_eq!(ready.cleanup_jobs, before.cleanup_jobs + 1);
     drop(owner);
     tokio::time::timeout(Duration::from_secs(5), async {
         loop {
             let snapshot = stable_snapshot(&fixture.pools).await;
-            if snapshot.failed_cleanup == 1 && snapshot.cleanup_jobs == 0 {
+            // The quarantined connection retains its original maintenance
+            // permit; only the additional physical close job must retire.
+            if snapshot.failed_cleanup == 1 && snapshot.cleanup_jobs == ready.cleanup_jobs {
                 break;
             }
             tokio::time::sleep(Duration::from_millis(1)).await;

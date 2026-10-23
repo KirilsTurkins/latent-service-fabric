@@ -1,0 +1,121 @@
+{
+  "schemaVersion": "latent.stream-operator.packaging-observation.v1",
+  "observedDate": "2026-10-23",
+  "sourceCommit": "380c7df8f26ec3f0f6e54d616e8d08b80cb5cc73",
+  "pullRequest": 1378,
+  "qualification": "packaged-operator-files-and-process-only",
+  "owningRun": {
+    "id": 39938568296,
+    "workflow": ".github/workflows/stream-operator-packaging.yml",
+    "event": "push",
+    "conclusion": "success",
+    "url": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39938568296"
+  },
+  "securityRun": {
+    "id": 39938575388,
+    "conclusion": "success",
+    "scope": "selected source/workflow/secrets and fail-closed canaries; unchanged dependency advisories were not rerun"
+  },
+  "platforms": [
+    {
+      "target": "linux-x86_64",
+      "job": 120364086172,
+      "jobUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39938568296/job/120364086172",
+      "sourceCommit": "380c7df8f26ec3f0f6e54d616e8d08b80cb5cc73",
+      "sourceDirty": false,
+      "controls": {
+        "discovered": 38,
+        "passed": 38,
+        "skipped": 0,
+        "skipScope": null
+      },
+      "artifact": {
+        "artifactId": 12494847186,
+        "artifactBytes": 25761049,
+        "artifactSha256": "955f0ebbd0195f244e6959f3dcb891e185da700a30d2a4358855fc08a5db1b1d",
+        "crcMembers": 154,
+        "expandedBytes": 58401986,
+        "fileInventoryRows": 153,
+        "helperMembers": 107,
+        "gitAuthenticatedHelperMaterials": 105
+      },
+      "frontendSha256": "sha256:f2ba2bd3ada199e468f0a33990c6ecf925c6189a5c3226c580f32ee3a278fa71",
+      "helperSha256": "sha256:bae5ffc6676a3fb97f3595f7d6803a66dc0907943eba476c4c1b23eb0045dfb4",
+      "actualSmoke": {
+        "cases": [
+          "prepared",
+          "refused-input-retained"
+        ],
+        "node": "explicit-python-configuration-check-double",
+        "outsideCheckout": true,
+        "passed": true,
+        "providerReadiness": "not-observed",
+        "qualification": "packaged-operator-files-and-process-only",
+        "realLatentd": false
+      }
+    },
+    {
+      "target": "windows-x86_64",
+      "job": 120364086506,
+      "jobUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39938568296/job/120364086506",
+      "sourceCommit": "380c7df8f26ec3f0f6e54d616e8d08b80cb5cc73",
+      "sourceDirty": false,
+      "controls": {
+        "discovered": 38,
+        "passed": 37,
+        "skipped": 1,
+        "skipScope": "existing POSIX file-mode case on Windows"
+      },
+      "artifact": {
+        "artifactId": 12494424703,
+        "artifactBytes": 11224376,
+        "artifactSha256": "695be61d43b18c3c05db346f27c49792b7763d1425c233eb6fbfc1390955ba59",
+        "crcMembers": 141,
+        "expandedBytes": 22858276,
+        "fileInventoryRows": 140,
+        "helperMembers": 107,
+        "gitAuthenticatedHelperMaterials": 105
+      },
+      "frontendSha256": "sha256:224629b7eee85aaa772b74520f881ff6624a39e8b71082494f8a342630f2e49c",
+      "helperSha256": "sha256:bae5ffc6676a3fb97f3595f7d6803a66dc0907943eba476c4c1b23eb0045dfb4",
+      "actualSmoke": {
+        "cases": [
+          "prepared",
+          "refused-input-retained"
+        ],
+        "node": "explicit-python-configuration-check-double",
+        "outsideCheckout": true,
+        "passed": true,
+        "providerReadiness": "not-observed",
+        "qualification": "packaged-operator-files-and-process-only",
+        "realLatentd": false
+      }
+    }
+  ],
+  "linuxNativeInventory": {
+    "libraries": 54,
+    "distroPackages": 7,
+    "additionalOwner": "rpds-py==2026.5.1",
+    "nativeBytes": 993000,
+    "nativeSha256": "468c739430353307b503963292eaf7ddda3b3c7bcf063db9f2f397bbf7287661",
+    "originalPinnedWheelSha256": "b1b964e3ab599e718dc46c018d104b1ebc007cbc6567d827c94a687fca56d77e",
+    "attribution": "exact same-version pinned/licensed wheel RECORD SHA256 and byte-size member; no general directory exception"
+  },
+  "preservedFirstFailure": {
+    "sourceCommit": "c4fc1e0fc28a7198fc467ba4b301234204401c7a",
+    "run": 39937010501,
+    "linuxConclusion": "failure",
+    "windowsConclusion": "success",
+    "linuxFailure": "frontend-native-library-owner-unknown after frozen construction and process-double preparation smoke",
+    "details": "https://github.com/KirilsTurkins/latent-service-fabric/pull/1378#issuecomment-6362654076"
+  },
+  "limitsOfEvidence": {
+    "realLatentd": false,
+    "providerReadiness": "not-observed",
+    "executionPermission": false,
+    "controlledPeerConformance": false,
+    "standardApiStreamInvocation": false,
+    "productionInstallationEnabled": false,
+    "wholeIssue739Acceptance": false
+  }
+}

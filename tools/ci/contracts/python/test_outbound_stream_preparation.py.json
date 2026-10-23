@@ -1,0 +1,114 @@
+{
+  "cases": [
+    "StreamPreparation.test_changed_prepared_input_and_interrupted_check_never_become_accepted",
+    "StreamPreparation.test_cli_prepare_requires_separate_explicit_arguments_and_redacts_process_output",
+    "StreamPreparation.test_existing_output_and_missing_opt_in_refuse_before_subprocess_or_write",
+    "StreamPreparation.test_linked_and_malformed_private_inputs_fail_before_output_creation",
+    "StreamPreparation.test_missing_packaged_schema_refuses_without_checkout_fallback_or_process_dispatch",
+    "StreamPreparation.test_packaged_frontend_route_uses_canonical_schemas_outside_checkout_without_state",
+    "StreamPreparation.test_preparation_preserves_protected_inputs_and_invokes_only_check_config_once",
+    "StreamPreparation.test_rejected_real_node_check_retains_input_without_fallback_or_output_disclosure"
+  ],
+  "guards": {
+    "StreamPreparation.test_changed_prepared_input_and_interrupted_check_never_become_accepted": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:85116a31fd51c4de4f41335eb442496b66aadc4797f09f89497af0cfc7445cf3",
+        "class:setup-sha256:5adcb8947b08079ed0e2e5f5f28d0a086aada335df741c4a064cfd62e1c0dfc3"
+      ],
+      "skipSites": []
+    },
+    "StreamPreparation.test_cli_prepare_requires_separate_explicit_arguments_and_redacts_process_output": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:85116a31fd51c4de4f41335eb442496b66aadc4797f09f89497af0cfc7445cf3",
+        "class:setup-sha256:5adcb8947b08079ed0e2e5f5f28d0a086aada335df741c4a064cfd62e1c0dfc3"
+      ],
+      "skipSites": []
+    },
+    "StreamPreparation.test_existing_output_and_missing_opt_in_refuse_before_subprocess_or_write": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:85116a31fd51c4de4f41335eb442496b66aadc4797f09f89497af0cfc7445cf3",
+        "class:setup-sha256:5adcb8947b08079ed0e2e5f5f28d0a086aada335df741c4a064cfd62e1c0dfc3"
+      ],
+      "skipSites": []
+    },
+    "StreamPreparation.test_linked_and_malformed_private_inputs_fail_before_output_creation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:85116a31fd51c4de4f41335eb442496b66aadc4797f09f89497af0cfc7445cf3",
+        "class:setup-sha256:5adcb8947b08079ed0e2e5f5f28d0a086aada335df741c4a064cfd62e1c0dfc3"
+      ],
+      "skipSites": []
+    },
+    "StreamPreparation.test_missing_packaged_schema_refuses_without_checkout_fallback_or_process_dispatch": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:85116a31fd51c4de4f41335eb442496b66aadc4797f09f89497af0cfc7445cf3",
+        "class:setup-sha256:5adcb8947b08079ed0e2e5f5f28d0a086aada335df741c4a064cfd62e1c0dfc3"
+      ],
+      "skipSites": []
+    },
+    "StreamPreparation.test_packaged_frontend_route_uses_canonical_schemas_outside_checkout_without_state": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:85116a31fd51c4de4f41335eb442496b66aadc4797f09f89497af0cfc7445cf3",
+        "class:setup-sha256:5adcb8947b08079ed0e2e5f5f28d0a086aada335df741c4a064cfd62e1c0dfc3"
+      ],
+      "skipSites": []
+    },
+    "StreamPreparation.test_preparation_preserves_protected_inputs_and_invokes_only_check_config_once": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:85116a31fd51c4de4f41335eb442496b66aadc4797f09f89497af0cfc7445cf3",
+        "class:setup-sha256:5adcb8947b08079ed0e2e5f5f28d0a086aada335df741c4a064cfd62e1c0dfc3"
+      ],
+      "skipSites": []
+    },
+    "StreamPreparation.test_rejected_real_node_check_retains_input_without_fallback_or_output_disclosure": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:85116a31fd51c4de4f41335eb442496b66aadc4797f09f89497af0cfc7445cf3",
+        "class:setup-sha256:5adcb8947b08079ed0e2e5f5f28d0a086aada335df741c4a064cfd62e1c0dfc3"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_outbound_stream_preparation.py",
+  "reviewReason": "Eight additive protected preparation and isolated frontend source-archive controls bind original inputs, node identity, exact check-config dispatch, refusal retention, no overwrite/fallback, replacement detection, malformed/link rejection, canonical packaged schemas and redacted outcomes; original cases and skip guards unchanged.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
