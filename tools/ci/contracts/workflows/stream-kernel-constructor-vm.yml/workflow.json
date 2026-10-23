@@ -16,6 +16,8 @@
           "tools/qualify_host_stream_kernel_vm.py",
           "tools/host_stream_kernel_vm_image.py",
           "tools/tests/test_host_stream_kernel_vm_image.py",
+          "tools/host_stream_kernel_constructor_failure.py",
+          "tools/tests/test_host_stream_kernel_constructor_failure.py",
           "research/standard-outbound/linux-6.12-lineage/constructor-vm-init.c"
         ]
       },
@@ -28,7 +30,7 @@
   "requiredJobs": [
     "constructor-vm"
   ],
-  "reviewReason": "Add isolated bounded real kernel constructor image and exact physical child observations; preserve production refusal and Root final-free gate",
+  "reviewReason": "Keep all eleven original native/image controls required and add four bounded failure-observation source controls before the same unchanged kernel build/VM programme; capture new source/test path changes.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/stream-kernel-constructor-vm.yml"
 }

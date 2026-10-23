@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_host_stream_kernel_vm.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Add isolated bounded real kernel constructor image and exact physical child observations; preserve production refusal and Root final-free gate",
+  "reviewReason": "Capture the reviewed observation transform as an exact compiler recipe input; no VM bounds, original errno, ownership, ordinary selection or production consumer changes.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "bccbe888c61312ad74c81b59e9e44cf1347e0df6c229e4a7791c760693578b56"
+  "sha256": "319b310a0204b11baba7ca07f285a33ee15bce8db635d007b125d338d2ce2ade"
 }

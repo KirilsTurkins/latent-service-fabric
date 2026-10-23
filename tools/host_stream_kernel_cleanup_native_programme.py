@@ -6,6 +6,7 @@ from pathlib import Path
 import hashlib
 from tools import host_stream_kernel_cleanup_constructor_programme as prior
 from tools import host_stream_kernel_cleanup_native as change
+from tools import host_stream_kernel_constructor_failure as failure_observation
 
 ROOT = prior.ROOT
 baseline = prior.baseline
@@ -240,7 +241,8 @@ def compose(base, originals, config):
     require(len(parent) == 322 and len(result) == 323 and
         sum(parent.get(name) != raw for name, raw in result.items()) == 6,
         'cleanup-native-exact-six-source-delta')
-    return repair_task_geometry(diagnose_prebirth_refusals(initialize_observers(repair_sidcache(result))))
+    repaired = repair_task_geometry(diagnose_prebirth_refusals(initialize_observers(repair_sidcache(result))))
+    return failure_observation.transform(repaired)
 
 
 def qualification_projection(outputs, config):
@@ -264,7 +266,7 @@ def qualification_projection(outputs, config):
 
 def local_freeze():
     result = prior.local_freeze()
-    for path in (Path(__file__), Path(change.__file__), change.FIXTURE,
+    for path in (Path(__file__), Path(change.__file__), Path(failure_observation.__file__), change.FIXTURE,
             change.OWNED/'factory-cleanup-native-bootstrap.c'):
         result[path.relative_to(ROOT).as_posix()] = baseline.objects.identity(path)
     return result

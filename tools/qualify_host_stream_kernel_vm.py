@@ -27,6 +27,7 @@ def recipe_inputs():
         'tools/host_stream_kernel_vm_image.py',
         'tools/host_stream_kernel_cleanup_native_programme.py',
         'tools/host_stream_kernel_cleanup_native.py',
+        'tools/host_stream_kernel_constructor_failure.py',
         'tools/qualify_host_stream_kernel_objects.py',
         'tools/owned_test_process.py', 'tools/build_observation.py',
         'tools/dev_workflow/paths.py', WORKFLOW, PROBE)
