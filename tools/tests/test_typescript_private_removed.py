@@ -32,7 +32,7 @@ class PrivateRemovedInputs(unittest.TestCase):
 
     def test_archive_preflight_rejects_duplicate_wrong_size_and_symlink(self):
         value=inputs.fixture()
-        rows=[SimpleNamespace(filename=value['zipPrefix']+n,file_size=r['bytes'],flag_bits=0,
+        rows=[SimpleNamespace(filename=value['zipPrefix']+n,file_size=r['bytes'],compress_size=r['bytes'],flag_bits=0,
             external_attr=0,is_dir=lambda:False) for n,r in value['members'].items()]
         class Archive:
             def infolist(self):return rows
@@ -42,7 +42,9 @@ class PrivateRemovedInputs(unittest.TestCase):
         with self.assertRaises(WorkflowError):inputs.preflight(Archive())
         rows.pop();rows[0].file_size+=1
         with self.assertRaises(WorkflowError):inputs.preflight(Archive())
-        rows[0].file_size-=1;rows[0].external_attr=0o120777<<16
+        rows[0].file_size-=1;rows[0].compress_size+=65537
+        with self.assertRaises(WorkflowError):inputs.preflight(Archive())
+        rows[0].compress_size-=65537;rows[0].external_attr=0o120777<<16
         with self.assertRaises(WorkflowError):inputs.preflight(Archive())
 
     def test_origin_requires_original_cancelled_job_not_manufactured_success(self):

@@ -56,16 +56,21 @@ def origin(artifact, job, run):
 def preflight(archive):
     value = fixture(); rows = archive.infolist(); names = [row.filename for row in rows]
     require(len(names) == len(set(names)) <= 10000, 'ts-private-removed-archive-index')
-    selected = {}
+    selected = {}; compressed = 0
     for name, expected in value['members'].items():
         path = PurePosixPath(name)
         require(path.as_posix() == name and not path.is_absolute() and
             all(part not in ('','.','..') for part in name.split('/')) and
             ':' not in name and '\\' not in name, 'ts-private-removed-regular-member-path')
         row = archive.getinfo(value['zipPrefix']+name)
-        require(row.file_size == expected['bytes'] and not row.is_dir() and
+        require(row.file_size == expected['bytes'] and
+            0 <= row.compress_size <= expected['bytes']+65536 and not row.is_dir() and
             not row.flag_bits & 1 and stat.S_IFMT(row.external_attr >> 16) in (0, stat.S_IFREG),
             'ts-private-removed-fixed-member-preflight')
+        compressed += row.compress_size
+        # Reserve eight MiB of the original128MiB transfer bound for the
+        # central index and per-member headers before opening any payload.
+        require(compressed <= 120*1024**2, 'ts-private-removed-compressed-acquisition-bound')
         selected[name] = row
     return selected
 

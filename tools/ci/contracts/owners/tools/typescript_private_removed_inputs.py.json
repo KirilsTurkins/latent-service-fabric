@@ -4,5 +4,5 @@
   "reviewBoundary": "committed-fingerprint",
   "reviewReason": "Continue only the unfinished private npm removal with original completed a8 guest packages and a separately authenticated 193-control native host. Preserve original cancelled producer and three prior runtime origins; no compiler/SDK rebuild or retest, no fabricated normal qualification. Six additive provenance/archive/static-layer/retirement controls; exact fixed member hashes and conservative production scope.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "1c39195757608db6894619d66fe25a97bd546d1721bcbdf0ffd59a0c2a176ac3"
+  "sha256": "7c7a406cffacc2a485a8dce6b0fc597ada2c70c1ca0f8209333164310145a17e"
 }
