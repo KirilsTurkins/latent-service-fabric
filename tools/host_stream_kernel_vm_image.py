@@ -184,15 +184,17 @@ def boot_argv(qemu: Path, kernel: Path, initramfs: Path, firmware: Path) -> tupl
             '-append', 'console=ttyS0 panic=1 rdinit=/init')
 
 
-def build_init(commands, compiler: Path, source: bytes, output: Path) -> tuple[Path, dict]:
+def build_init(commands, compiler: Path, source: bytes, output: Path, *, mode='fast') -> tuple[Path, dict]:
     """Compile one captured static PID1; retain real diagnostics on failure."""
     from tools.dev_workflow import paths
     require(type(source) is bytes and 0 < len(source) <= 64 * 1024, 'init-source-bound')
     require(compiler.is_absolute() and output.is_absolute(), 'init-build-absolute-inputs')
+    require(mode in ('fast', 'late'), 'init-closed-observation-mode')
     copied, target = output/'constructor-init.c', output/'constructor-init'
     paths.write_new(copied, source)
     require(not target.exists(), 'init-build-destination-exists')
-    commands.run('compile-static-constructor-init', compiler, '-std=c11', '-Os',
+    stage = 'compile-static-constructor-init' if mode == 'fast' else 'compile-static-late-fd-init'
+    commands.run(stage, compiler, '-std=c11', '-Os',
                  '-Wall', '-Wextra', '-Werror', '-static', '-no-pie', '-fno-ident',
                  '-ffile-prefix-map='+str(output)+'=.', '-Wl,--build-id=none',
                  '-Wl,-z,noexecstack', '-o', target, copied)
@@ -201,15 +203,17 @@ def build_init(commands, compiler: Path, source: bytes, output: Path) -> tuple[P
     return target, {**init_elf(raw), 'sourceSha256': hashlib.sha256(source).hexdigest()}
 
 
-def build_initramfs(commands, generator: Path, init: Path, output: Path) -> tuple[Path, dict]:
+def build_initramfs(commands, generator: Path, init: Path, output: Path, *, mode='fast') -> tuple[Path, dict]:
     """Use the authenticated kernel's own generator, with no shell or CPIO tool."""
     from tools.dev_workflow import paths
     require(generator.is_absolute() and output.is_absolute(), 'initramfs-absolute-inputs')
+    require(mode in ('fast', 'late'), 'initramfs-closed-observation-mode')
     before = paths.read(init.parent, init.name, MAX_INIT)
     init_elf(before)
     spec = output/'constructor-initramfs.list'
     paths.write_new(spec, initramfs_spec(init))
-    raw = commands.run('create-constructor-initramfs', generator, '-t', '0', spec)
+    stage = 'create-constructor-initramfs' if mode == 'fast' else 'create-late-fd-initramfs'
+    raw = commands.run(stage, generator, '-t', '0', spec)
     require(0 < len(raw) <= MAX_INITRAMFS and raw.startswith(b'070701'), 'initramfs-newc-bound')
     require(paths.read(init.parent, init.name, MAX_INIT) == before, 'initramfs-init-drift')
     archive = output/'constructor-initramfs.cpio'

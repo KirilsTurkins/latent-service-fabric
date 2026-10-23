@@ -71,10 +71,43 @@ class LateFdRootSource(unittest.TestCase):
             with self.subTest(member=member, bad=bad):
                 self.assertTrue(condition(predicate, {member:bad}))
         self.assertNotIn('bootstrap_state', body)
-        self.assertNotIn('cleanup_request_returned', body)
+        self.assertIn('returned = factory.device->cleanup_request_returned', body)
         self.assertNotIn('current_cred()', body)
         self.assertLess(body.index('factory.opened = 2u'), body.index('file->private_data = NULL'))
         self.assertNotIn('factory.opened = 0', helpers())
+
+    def test_actual_stack_routing_defers_pending_handoff_and_markers_bind_typed_request(self):
+        body = function(helpers(), 'static int lsf_cleanup_root_fd_handoff_locked(')
+        ternary = re.search(r'result = (returned) \? (1) : (2);', body)
+        self.assertIsNotNone(ternary)
+        for returned, expected in ((0, 2), (1, 1)):
+            actual = int(ternary[2] if condition(ternary[1], {'returned':returned}) else ternary[3])
+            self.assertEqual(actual, expected)
+        guard = re.search(r'if \((returned > 1u)\)', body)[1]
+        self.assertTrue(condition(guard, {'returned':2}))
+        marker_guard = re.search(r'        observed_pending = (.*?);', body, re.S)[1]
+        marker_guard = marker_guard.replace('request->phase', 'request_phase')
+        marker_guard = marker_guard.replace('lsf_cleanup_request_identity_locked(source)', 'identity')
+        for request, phase, identity, expected in ((1,1,1,True),(0,1,1,False),
+                (1,2,1,False),(1,1,0,False)):
+            self.assertEqual(condition(marker_guard, dict(request=request, request_phase=phase,
+                identity=identity, LSF_PREPAID_LIVE=1)), expected)
+        self.assertIn('LSF_DEVICE_CLEANUP_REQUEST', body)
+        self.assertLess(body.index('factory.opened = 2u'), body.index('fd-handoff=original-root'))
+        self.assertLess(body.index('spin_unlock_irqrestore'), body.index('fd-handoff=original-root'))
+        release = function(source.factory(original_outputs()['net/factory.c'].decode()),
+            'static int lsf_factory_release(')
+        self.assertIn('if (transferred == 1)\n'
+            '        (void)lsf_cleanup_root_release_take_locked(&release)', release)
+        self.assertIn('if (transferred)\n        wake_up_process(kthreadd_task)', release)
+
+    def test_outside_marker_follows_physical_put_and_uses_only_pre_copied_success(self):
+        body = function(helpers(), 'void lsf_factory_cleanup_root_drain(')
+        at = body.index('lsf_cleanup_root_release_physical(release)')
+        self.assertLess(body.index('physically_taken = release.pages != NULL'), at)
+        self.assertLess(at, body.index('outside-collector=kthreadd-root-bank-and-actor-refs'))
+        for forbidden in ('factory.device', 'factory.pages', 'release.pages', 'file->', 'task->'):
+            self.assertNotIn(forbidden, body[at:])
 
     def test_actual_cheap_pending_excludes_in_progress_poison_and_disappeared_owner(self):
         body = function(helpers(), 'static int lsf_cleanup_root_pending_locked(')

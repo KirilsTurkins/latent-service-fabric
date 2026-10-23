@@ -58,7 +58,7 @@ def factory(original):
         '    /* Actual final VFS custody transfers AFTER the last FD cache/Root\n'
         '     * use. This never authorizes a physical return by itself. */\n'
         '    transferred = lsf_cleanup_root_fd_handoff_locked(file);\n'
-        '    if (transferred)\n'
+        '    if (transferred == 1)\n'
         '        (void)lsf_cleanup_root_release_take_locked(&release);\n')
     body.edit('    lsf_cleanup_root_release_physical(release);\n    return 0;\n',
         '    lsf_cleanup_root_release_physical(release);\n'

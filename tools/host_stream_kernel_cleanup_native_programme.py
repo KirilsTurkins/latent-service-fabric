@@ -23,7 +23,7 @@ source_fixture_configuration = prior.source_fixture_configuration
 
 
 def source_names():
-    return prior.source_names() | set(root_final_free.preimages()['headers'])
+    return prior.source_names() | set(root_final_free.preimages()['headers']) | {'kernel/printk/printk.c'}
 
 
 def repair_sidcache(outputs):
