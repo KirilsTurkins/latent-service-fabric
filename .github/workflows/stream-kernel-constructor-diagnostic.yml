@@ -47,6 +47,6 @@ jobs:
             ${{ runner.temp }}/stream-kernel-numeric/numeric-diagnostic.json
             ${{ runner.temp }}/stream-kernel-numeric/retained-image-origin.json
             ${{ runner.temp }}/stream-kernel-numeric/constructor-init.c
-            ${{ runner.temp }}/stream-kernel-numeric/commands/logs/*.txt
+            ${{ runner.temp }}/stream-kernel-numeric/logs/*.txt
           if-no-files-found: error
           retention-days: 3
