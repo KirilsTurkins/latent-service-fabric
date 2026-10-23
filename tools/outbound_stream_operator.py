@@ -120,17 +120,65 @@ def configure(settings, installation, bindings, *, development_profile=False):
     for destination in configuration["destinations"]:
         require(isinstance(destination, dict) and "endpoint" in destination, "stream-operator-destination-shape")
         endpoint(destination["endpoint"])
-    import jsonschema
-    from referencing import Registry, Resource
-    schema = _schema_document("node-providers.schema.json")
-    stream_schema = _schema_document("outbound-stream-provider.schema.json")
-    registry = Registry().with_resource(stream_schema["$id"], Resource.from_contents(stream_schema))
-    try:
-        jsonschema.Draft202012Validator(schema, registry=registry).validate(providers)
-    except jsonschema.ValidationError:
-        raise DevError("stream-operator-configuration-invalid") from None
+    _validate_schema(providers, "node-providers.schema.json")
     require(len(encode(result)) <= 65536, "stream-operator-node-configuration-byte-bound")
     return result
+
+
+def rotate_configuration(settings, rotation, *, development_profile=False):
+    """Prepare only the epoch/limits change accepted by the protected reload owner.
+
+    The epoch belongs to this supplied file; live currentness still requires the
+    actual node owner. This neither replaces that file nor rotates any provider.
+    """
+    require(development_profile is True, "stream-operator-development-profile-required")
+    _validate_schema(rotation, "outbound-stream-rotation.schema.json")
+    require(type(rotation["formatVersion"]) is int, "stream-operator-integer-input-required")
+    require(isinstance(settings, dict)
+            and all(isinstance(settings.get(key), dict) for key in
+                    ("budgetProfile", "audit", "capabilityPolicies", "providers")),
+            "stream-operator-required-node-owners")
+    require(settings["budgetProfile"].get("mode") == "phase3"
+            and settings["audit"].get("mode") == "durable"
+            and settings["capabilityPolicies"].get("formatVersion") == 1,
+            "stream-operator-required-node-owners")
+    providers = settings["providers"]
+    installed = providers.get("outboundStreams")
+    require(isinstance(installed, dict), "stream-operator-rotation-installation-required")
+    _validate_schema(providers, "node-providers.schema.json")
+    identity = installed["identity"]
+    for epoch in (identity["epoch"], rotation["expectedEpoch"], rotation["newEpoch"]):
+        require(type(epoch) is int and 1 <= epoch <= 18446744073709551615,
+                "stream-operator-rotation-epoch")
+    require(rotation["provider"] == {key: identity[key] for key in ("id", "tenant", "service")},
+            "stream-operator-rotation-provider-mismatch")
+    require(rotation["expectedEpoch"] == identity["epoch"], "stream-operator-rotation-base-epoch-mismatch")
+    require(rotation["newEpoch"] > identity["epoch"], "stream-operator-rotation-epoch-not-newer")
+    for limits in (installed["configuration"]["limits"], rotation["limits"]):
+        require(all(type(value) is int for value in limits.values()), "stream-operator-integer-input-required")
+        require(limits["idleTimeoutMillis"] <= limits["absoluteTimeoutMillis"],
+                "stream-operator-rotation-deadlines")
+    for destination in installed["configuration"]["destinations"]:
+        endpoint(destination["endpoint"])
+    result = copy.deepcopy(settings)
+    selected = result["providers"]["outboundStreams"]
+    selected["identity"]["epoch"] = rotation["newEpoch"]
+    selected["configuration"]["limits"] = copy.deepcopy(rotation["limits"])
+    require(len(encode(result)) <= 65536, "stream-operator-node-configuration-byte-bound")
+    return result
+
+
+def _validate_schema(value, name):
+    import jsonschema
+    from referencing import Registry, Resource
+    registry = Registry()
+    for resource in ("node-providers.schema.json", "outbound-stream-provider.schema.json"):
+        schema = _schema_document(resource)
+        registry = registry.with_resource(schema["$id"], Resource.from_contents(schema))
+    try:
+        jsonschema.Draft202012Validator(_schema_document(name), registry=registry).validate(value)
+    except jsonschema.ValidationError:
+        raise DevError("stream-operator-configuration-invalid") from None
 
 
 
@@ -156,7 +204,6 @@ def prepare_configuration(base_config, installation_record, output, node, *, dev
     A rejected or interrupted check leaves the prepared file for owner review.
     It never starts a node, grants authority, replaces an input, or retries.
     """
-    from tools.dev_workflow import process
     from tools.dev_workflow.common import decode
     require(development_profile is True, "stream-operator-development-profile-required")
     output = Path(output).absolute()
@@ -169,6 +216,26 @@ def prepare_configuration(base_config, installation_record, output, node, *, dev
     settings = decode(_private_read(base_config), 65536, maximum_items=4096)
     raw = encode(configure(settings, selected["installation"], selected["bindings"],
                            development_profile=True))
+    return _write_and_check_configuration(output, node, node_identity, raw)
+
+
+def prepare_rotation_configuration(base_config, rotation_record, output, node, *, development_profile=False):
+    from tools.dev_workflow.common import decode
+    require(development_profile is True, "stream-operator-development-profile-required")
+    output = Path(output).absolute()
+    node = Path(node).absolute()
+    node_identity = paths.digest_file(node.parent, node.name, 256 * 1024 * 1024)
+    require(node_identity[1] > 0, "stream-operator-node-binary-empty")
+    paths.private_root(output.parent)
+    rotation = decode(_private_read(rotation_record), 65536, maximum_items=4096)
+    settings = decode(_private_read(base_config), 65536, maximum_items=4096)
+    raw = encode(rotate_configuration(settings, rotation, development_profile=True))
+    result = _write_and_check_configuration(output, node, node_identity, raw)
+    return {**result, "outcome": "prepared-rotation-configuration-check-accepted"}
+
+
+def _write_and_check_configuration(output, node, node_identity, raw):
+    from tools.dev_workflow import process
     try:
         paths.write_new(output, raw)
     except OSError:
@@ -406,7 +473,7 @@ def main(argv=None):
     from tools.dev_workflow.client import Client
     from tools.dev_workflow.common import decode
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=("grant", "revoke", "recover", "inspect", "adopt", "prepare"))
+    parser.add_argument("command", choices=("grant", "revoke", "recover", "inspect", "adopt", "prepare", "prepare-rotation"))
     parser.add_argument("--cli", type=Path)
     parser.add_argument("--client-config", type=Path)
     parser.add_argument("--state-dir", type=Path)
@@ -416,24 +483,29 @@ def main(argv=None):
     parser.add_argument("--node", type=Path)
     parser.add_argument("--base-config", type=Path)
     parser.add_argument("--installation-record", type=Path)
+    parser.add_argument("--rotation-record", type=Path)
     parser.add_argument("--output", type=Path)
     parser.add_argument("--development-profile", action="store_true")
     args = parser.parse_args(argv)
     try:
-        preparing = args.command == "prepare"
+        preparing = args.command in {"prepare", "prepare-rotation"}
+        rotating = args.command == "prepare-rotation"
         policy_arguments = (args.cli, args.client_config, args.state_dir, args.specification)
-        prepare_arguments = (args.node, args.base_config, args.installation_record, args.output)
+        prepare_arguments = (args.node, args.base_config,
+                             args.rotation_record if rotating else args.installation_record, args.output)
         require(all(value is not None for value in (prepare_arguments if preparing else policy_arguments))
                 and all(value is None for value in (policy_arguments if preparing else prepare_arguments)),
+                "stream-operator-command-arguments")
+        require((args.installation_record if rotating else args.rotation_record) is None,
                 "stream-operator-command-arguments")
         require(preparing or not args.development_profile, "stream-operator-development-flag-only-for-prepare")
         if preparing:
             require(args.deployment is None and args.provider_record is None,
                     "stream-operator-command-arguments")
             with owned_cancellation():
-                result = prepare_configuration(args.base_config, args.installation_record,
-                                               args.output, args.node,
-                                               development_profile=args.development_profile)
+                prepare = prepare_rotation_configuration if rotating else prepare_configuration
+                result = prepare(args.base_config, prepare_arguments[2], args.output, args.node,
+                                 development_profile=args.development_profile)
             print(json.dumps({"schemaVersion": "latent.outbound-stream.operator.result.v1",
                              "command": args.command, "status": "completed", "result": result}))
             return 0
