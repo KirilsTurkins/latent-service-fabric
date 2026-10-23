@@ -100,6 +100,10 @@ class Prepared:
         require(value.get('rustFlags') == built.FLAGS and value.get('qualification') == 'built-source-only'
                 and value.get('installedCompilerChanged') is False,
                 'rust-standard-runtime-build-profile')
+        if has_threads(profile):
+            from tools.rust_thread_path_remap import verify_standard_receipt
+            verify_standard_receipt(value.get('threadSourcePathRemap'),
+                                    value.get('rustEncodedFlags'), built.FLAGS)
         self.libraries = value.get('libraries')
         require(isinstance(self.libraries, dict) and 5 <= len(self.libraries) <= 64,
                 'rust-standard-runtime-library-count')
@@ -133,11 +137,14 @@ class Prepared:
         current = Prepared(self.path, self.rustc, self.profile)
         require(current.raw == self.raw, 'rust-standard-runtime-receipt-mutated')
 
-    def arguments(self):
+    def arguments(self, *, source_root=None):
         # Target-only Cargo config leaves host build scripts/macros on the
         # original compiler's host sysroot. It is not ambient RUSTFLAGS.
         flags = ['--sysroot=' + str(self.root)]
         if has_threads(self.profile):
+            from tools.rust_thread_path_remap import source_mapping, APPLICATION
+            require(isinstance(source_root, Path), 'rust-thread-actual-application-source-required')
+            flags.append(source_mapping(source_root, APPLICATION)['argument'])
             # The selected bootstrap requires a non-null linker-owned low
             # bound. Keep the real stack after static data; do not invent or
             # relax a zero-address stack/context sentinel after linking.

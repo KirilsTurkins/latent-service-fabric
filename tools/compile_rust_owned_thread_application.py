@@ -17,6 +17,8 @@ import sys
 from tools import rust_owned_thread_fixture as fixture, rust_standard_logging_inputs as standard
 from tools import rust_capsule_build as builder, rust_owned_thread_component as component
 from tools import rust_standard_thread_capture as port
+from tools import rust_thread_object_graph as objects, rust_thread_callback_paths as callbacks
+from tools import rust_thread_canonical_results as results
 from tools.application_dependencies import prepare, verify_inputs
 from tools.application_dependency_approval import approve, request
 from tools.build_observation import build_environment, file_identity, resolve_tools
@@ -33,6 +35,8 @@ RECIPE = tuple(dict.fromkeys(('tools/compile_rust_owned_thread_application.py',
     'tools/install_guest_bindgen.py', 'tools/toolchain.toml',
     'tools/toolchain-smoke/examples/tutorial_greeting/component.rs',
     'tools/toolchain-smoke/examples/tutorial_greeting/world.wit',
+    'tools/rust_thread_object_graph.py', 'tools/rust_thread_callback_paths.py',
+    'tools/rust_thread_canonical_results.py',
     *builder.selected_recipe(), *standard.source_build_inputs(standard.THREAD), *fixture.RECIPE,
     *sdk_files(), *host_projection_inputs())))
 MAX_CORE = 8 * 1024 * 1024
@@ -277,7 +281,9 @@ def run(output: Path, rust_bin: Path, owned_sysroot: Path, context_tool: Path, *
             record['bindingDigest'] = builder.binding_check(work, pins, commands, paths['wit-bindgen'])
             record['stage'] = 'one-isolated-offline-original-compile'
             prepared.check()
-            target_arguments = prepared.arguments()
+            from tools.rust_thread_path_remap import source_mapping, APPLICATION
+            record['applicationSourcePathRemap'] = source_mapping(work, APPLICATION)
+            target_arguments = prepared.arguments(source_root=work)
             record['targetCargoConfiguration'] = target_arguments
             raw = guard.compile(commands, paths['cargo'], [
                 'build', '--locked', '--release', '--lib', '--target', 'wasm32-unknown-unknown',
@@ -301,12 +307,73 @@ def run(output: Path, rust_bin: Path, owned_sysroot: Path, context_tool: Path, *
             record['originalCore'] = file_identity(output / 'raw-core.wasm', 'original-core', MAX_CORE)
             record['stage'] = 'actual-owned-core-transform'
             commands.run('validate-original-core', paths['wasm-tools'], 'validate', output / 'raw-core.wasm')
-            commands.run('ordinary-owned-core', context_tool, '--ordinary-core', output / 'raw-core.wasm',
-                digest(core), fixture.PUBLIC, fixture.POST, 'cabi_realloc', output / 'derived')
+            record['stage'] = 'live-original-object-and-canonical-observation'
+            # These are the actual same-job Prepared libraries and the emitted
+            # Cargo package object, not a caller-selected source/hash catalogue.
+            libraries = tuple(objects.Library(name, read_file(prepared.directory / name,
+                objects.MAX_LIBRARY_BYTES), row['digest']) for name, row in prepared.libraries.items())
+            executor_object = read_file(output / 'captured-futures-executor.rlib', MAX_EXECUTOR_OBJECT)
+            libraries += (objects.Library('captured-futures-executor.rlib', executor_object,
+                                          executor_identity['digest']),)
+            extra_roots = []
+            for label, raw in objects.archive(executor_object):
+                for node in objects.object_nodes(raw, 'captured-futures-executor.rlib/' + label)[0]:
+                    if node['kind'] == 0 and node['name'].endswith((
+                            '_10ThreadPool3new', '_10ThreadPool14spawn_admitted', '_4Pool12admit_future')):
+                        require(len(extra_roots) < 3, 'rust-thread-app-original-default-pool-entry-bound')
+                        extra_roots.append(('captured-futures-executor.rlib', node['name']))
+            extra_roots = tuple(extra_roots)
+            require(len(extra_roots) == 3, 'rust-thread-app-original-default-pool-entry-roles')
+            _, _, exports = objects.memory_table(core)
+            roots = tuple(name for name, (kind, _) in exports.items()
+                          if kind == 0 and name.startswith('__lsf_rust_'))
+            original_graph = objects.observe_objects(core, libraries, roots, extra_roots)
+            require(not original_graph['failures'] and not original_graph['unresolvedReferents']
+                    and not original_graph['instructionDecodeFailures'],
+                    'rust-thread-app-original-object-closure-refused')
+            write_json(output / 'original-object-graph.json', original_graph)
+            std_names = [name for name, row in prepared.libraries.items() if row['crate'] == 'std']
+            require(len(std_names) == 1, 'rust-thread-app-one-original-std-library')
+            targets, sites, callback_roles = callbacks.derive_plan(core, original_graph,
+                std_library=std_names[0], executor_library='captured-futures-executor.rlib')
+            write_json(output / 'callback-original-roles.json', callback_roles)
+            sealed, isolation_receipt = callbacks.seal_callback_paths(core, digest(core), targets, sites)
+            (output / 'callback-isolated-core.wasm').write_bytes(sealed)
+            write_json(output / 'callback-isolation.json', isolation_receipt)
+            source_wit_raw = commands.run('original-source-wit-graph', paths['wasm-tools'],
+                'component', 'wit', work / 'wit', '--json')
+            emitted_wit_raw = commands.run('original-emitted-wit-graph', paths['wasm-tools'],
+                'component', 'wit', output / 'raw-core.wasm', '--json')
+            (output / 'original-source-wit.json').write_bytes(source_wit_raw)
+            (output / 'original-emitted-wit.json').write_bytes(emitted_wit_raw)
+            source_result = results.select_wit_result(decode_json(source_wit_raw), project['world'], fixture.PUBLIC)
+            emitted_result = results.select_wit_result(decode_json(emitted_wit_raw), project['world'], fixture.PUBLIC)
+            require(source_result == emitted_result, 'rust-thread-app-original-result-layout-drift')
+            result_observation = results.observe_canonical_result(
+                core, fixture.PUBLIC, fixture.POST, original_graph, source_result)
+            write_json(output / 'canonical-result-source.json', result_observation)
+            panic_observation = results.observe_system_panic_trap(
+                core, original_graph, fixture.POST, 'cabi_realloc')
+            _, sealed_imports, sealed_bodies = objects.code(sealed)
+            require(digest(sealed_bodies[panic_observation['originalFunction'] - len(sealed_imports)])
+                    == panic_observation['linkedOriginalBodyDigest'], 'rust-thread-app-panic-body-sealing-drift')
+            write_json(output / 'canonical-system-panic-source.json', panic_observation)
+            record['stage'] = 'actual-guarded-owned-core-transform'
+            commands.run('ordinary-owned-core', context_tool, '--guarded-ordinary-core-panic',
+                output / 'callback-isolated-core.wasm', digest(sealed), fixture.PUBLIC, fixture.POST,
+                'cabi_realloc', str(result_observation['staticResultArea']),
+                str(result_observation['originalHeapLow']),
+                str(panic_observation['originalFunction']), panic_observation['linkedOriginalBodyDigest'],
+                output / 'derived')
             commands.run('validate-derived-core', paths['wasm-tools'], 'validate', output / 'derived/core.wasm',
                 '--features', 'cm-async,cm-async-stackful,cm-more-async-builtins')
             receipt = decode_json(read_file(output / 'derived/receipt.json'))
-            require(receipt['originalDigest'] == digest(core)
+            require(receipt['originalDigest'] == digest(sealed)
+                    and receipt['canonicalResultGuardInstalled'] is True
+                    and receipt['canonicalStaticResultArea'] == result_observation['staticResultArea']
+                    and receipt['canonicalSystemPanicOriginalFunction'] == panic_observation['originalFunction']
+                    and receipt['canonicalSystemPanicTrapFunction'] == panic_observation['originalFunction'] +
+                        int(receipt['nativeAdmissionImportInserted'])
                     and receipt['privateExecutorGraphAuthenticated'] is False
                     and receipt['canonicalAbiBodiesAuthenticated'] is False
                     and receipt['standardRuntimeQualified'] is False, 'rust-thread-app-source-only-receipt')
@@ -315,6 +382,10 @@ def run(output: Path, rust_bin: Path, owned_sysroot: Path, context_tool: Path, *
             guard.check_unchanged(environment)
             isolation.check_unchanged()
             prepared.check()
+            require(all(objects.digest(read_file(prepared.directory / item.label,
+                                objects.MAX_LIBRARY_BYTES)) == item.expected_digest for item in libraries[:-1])
+                    and digest(read_file(output / 'captured-futures-executor.rlib', MAX_EXECUTOR_OBJECT))
+                        == executor_identity['digest'], 'rust-thread-app-original-objects-mutated')
             compiled_source = snapshot(work, exclude=('dependencies', 'application-vendor'))
             require(compiled_source.get('Cargo.toml') == adapted,
                     'rust-thread-app-adapted-manifest-mutated')
