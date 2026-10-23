@@ -1,0 +1,225 @@
+"""Package one retained original ThreadPool compiler event for signed execution.
+
+No application compiler is invoked. The original 67-file application snapshot
+and full source/CAS archive remain bound to event 28059. The finite qualification
+policy changes only the public WIT effect and invocation memory/time envelope;
+neither change is presented as original compiler input or runtime authority.
+"""
+from __future__ import annotations
+
+import json
+from pathlib import Path, PurePosixPath
+import tarfile
+import time
+
+from tools.phase2_operator_process import require
+from tools.phase3_resource_identity import file_identity
+from tools.rust_capsule_build import BUILD_TYPE, Commands, package_inputs, selected_recipe
+from tools.rust_capsule_project import ROOT, digest, fresh, inventory, read_file, read_json, write_json
+from tools.rust_thread_callback_paths import section, unsigned
+
+SOURCE = '28059f343bbd954e3e6614c5a24593897cc0c294'
+RUN = 39877020838
+PINS = {
+    'application-source-and-capture.tar.gz': (20761985, 'c6d9ef4e2eb48af53b7685065e406dd5ff8403c5b003c45383680c6afb68a085'),
+    'source-inputs.json': (9204, '645f05410a943a1383462ce2eef5a30145c1f6953de74154b3e0b5c62174057e'),
+    'raw-core.wasm': (262436, '583e2353a8405db569e61cb3269b3643aff39374c1e2d83cc970cc033604edec'),
+    'observation.json': (4522, '8bbcc074c19d458230e14681f4be429848e6e156e327d8370f2c452cf00f35a2'),
+}
+COMPONENT_SHA = 'sha256:74247ff2b0aeb0a1c2f6fb3fbf3fef31bb0c427b724c58d675e0b73be5c74dd5'
+WRAPPED = {'bytes': 513571,
+           'sha256': 'sha256:ad9c8ab801a5552bcd6b01bac58e5717200625e45413009f18855c5596189a27'}
+PROFILE = 'rust-context40-sync-cooperative-v1'
+SOURCE_IMPORTS = ('latent:runtime/activation@0.1.0', 'latent:runtime-native/threads@0.1.0',
+                  'latent:clock/monotonic@0.1.0', 'latent:clock/wall@0.1.0')
+# The actual authenticated normal encoder envelope contains these three imports.
+# Its source-declared but unused wall function has no retained Core reference.
+IMPORTS = SOURCE_IMPORTS[:3]
+ORIGINAL_WIT = b'''package examples:greeting@1.0.0;
+
+interface api {
+    greet: func(name: string) -> result<string, string>;
+}
+
+world service {
+    import latent:runtime/activation@0.1.0;
+    import latent:runtime-native/threads@0.1.0;
+    import latent:clock/monotonic@0.1.0;
+    import latent:clock/wall@0.1.0;
+    export api;
+}
+'''
+
+
+def original_files(artifact: Path) -> tuple[dict[str, bytes], dict]:
+    """Authenticate a finite retained snapshot without materializing its CAS."""
+    identities = {}
+    for name, (size, sha) in PINS.items():
+        actual = file_identity(artifact / name, 32 * 1024 * 1024)
+        require(actual == {'bytes': size, 'sha256': 'sha256:' + sha},
+                'rust-thread-exact-retained-compiler-material')
+        identities[name] = actual
+    expected = read_json(artifact / 'source-inputs.json', 16 * 1024)
+    require(type(expected) is dict and len(expected) == 67
+            and all(type(name) is str and not PurePosixPath(name).is_absolute()
+                    and '..' not in PurePosixPath(name).parts for name in expected),
+            'rust-thread-original-snapshot-shape')
+    files, seen, total = {}, set(), 0
+    with tarfile.open(artifact / 'application-source-and-capture.tar.gz', 'r:gz') as archive:
+        for ordinal, member in enumerate(archive):
+            require(ordinal < 7094 and member.isfile() and 0 <= member.size <= 4 * 1024 * 1024
+                    and member.name not in seen, 'rust-thread-original-archive-shape')
+            seen.add(member.name)
+            total += member.size
+            require(total <= 128 * 1024 * 1024, 'rust-thread-original-archive-expanded-bound')
+            if member.name in expected:
+                payload = archive.extractfile(member).read(member.size + 1)
+                require({'size': len(payload), 'digest': digest(payload)} == expected[member.name],
+                        'rust-thread-original-snapshot-file')
+                files[member.name] = payload
+    require(len(seen) == 7094 and total == 102991172 and set(files) == set(expected)
+            and inventory(files) == read_file(artifact / 'source-inputs.json', 16 * 1024),
+            'rust-thread-complete-original-application-snapshot')
+    require(files.get('wit/world.wit') == ORIGINAL_WIT, 'rust-thread-exact-original-public-wit')
+    return files, identities
+
+
+def wrap_original(original: bytes, component: bytes) -> bytes:
+    """Untrusted preimage framing only; the selected native host recomputes it."""
+    require(digest(original) == 'sha256:' + PINS['raw-core.wasm'][1]
+            and digest(component) == COMPONENT_SHA and len(component) == 251090,
+            'rust-thread-original-component-pair')
+    name = b'latent-rust-original-core-v1'
+    payload = unsigned(len(name)) + name + b'LSFRPR01' + len(original).to_bytes(4, 'little') + original
+    wrapped = component + section(0, payload)
+    require({'bytes': len(wrapped), 'sha256': digest(wrapped)} == WRAPPED,
+            'rust-thread-exact-qualified-component-framing')
+    return wrapped
+
+
+def prepare(artifact: Path, native: dict, output: Path, commands: Commands) -> dict:
+    output = fresh(output)
+    assembly_started = int(time.time())
+    files, identities = original_files(artifact)
+    prior_raw = read_file(artifact / 'observation.json', 16 * 1024)
+    prior = json.loads(prior_raw)
+    require(prior['actualApplicationCoreCompiled'] is True and prior['normalBuildComplete'] is False
+            and prior['normalComponentGateRefused'] is True
+            and prior['capture']['sourceDigest'] == digest(inventory(files))
+            and prior['originalCore']['digest'] == 'sha256:' + PINS['raw-core.wasm'][1],
+            'rust-thread-retained-original-compiler-observation')
+    recipe_names = tuple(dict.fromkeys((*selected_recipe(),
+        '.github/workflows/rust-thread-runtime.yml', 'tools/rust_thread_native_products.py',
+        'tools/rust_thread_compiler_materials.py', 'tools/rust_thread_runtime_package.py',
+        'tools/rust_thread_runtime_node.py', 'tools/qualify_rust_thread_runtime.py',
+        'tools/rust_thread_callback_paths.py', 'tools/rust_thread_object_graph.py')))
+    require(len(recipe_names) <= 256, 'rust-thread-retained-assembly-recipe-count')
+    recipe = inventory({name: read_file(ROOT / name, 4 * 1024 * 1024) for name in recipe_names})
+    (output / 'recipe-inputs.json').write_bytes(recipe)
+    project = json.loads(files['capsule-project.json'])
+    require(project['name'] == 'ordinary-thread-inputs'
+            and project['service'] == 'examples/ordinary-thread-inputs'
+            and project['limits']['memoryBytes'] == 4194304
+            and project['limits']['wallTimeLimitMillis'] == 1000,
+            'rust-thread-original-project-budget')
+    (output / 'original-project.json').write_bytes(files['capsule-project.json'])
+    (output / 'original-world.wit').write_bytes(files['wit/world.wit'])
+    (output / 'retained-compiler-observation.json').write_bytes(prior_raw)
+    (output / 'source-inputs.json').write_bytes(read_file(artifact / 'source-inputs.json', 16 * 1024))
+    projected = ORIGINAL_WIT.replace(b'greet: func(', b'greet: async func(', 1)
+    projected = projected.replace(b'    import latent:clock/wall@0.1.0;\n', b'', 1)
+    source = {**files, 'wit/world.wit': projected}
+    # Code/CAS/compiler capture stays original. This separately signed operator
+    # policy pays genuine original linear memory and all native stack mappings.
+    project['limits'].update(memoryBytes=32 * 1024 * 1024, wallTimeLimitMillis=5000)
+    wit_input = output / 'wit-inputs.json'
+    write_json(wit_input, {'world': project['world'], 'sources': [
+        {'path': name, 'content': data.decode()} for name, data in sorted(source.items())
+        if name.startswith('wit/') and name.endswith('.wit')]})
+    contracts = output / 'contracts'
+    commands.run('retained-thread-contracts', native['capsule_contracts'], wit_input, contracts)
+    for name in ('contracts.json', 'wit-lock.json', 'surface.json'):
+        (output / name).write_bytes(read_file(contracts / name, 4 * 1024 * 1024))
+    surface = read_json(output / 'surface.json')
+    require(set(surface['imports']) == set(IMPORTS)
+            and surface['exports'] == ['examples:greeting/api@1.0.0'],
+            'rust-thread-exact-projected-contract-surface')
+    base = ROOT / 'crates/latent-component-threading/src/rust_catalogue'
+    component = wrap_original(read_file(artifact / 'raw-core.wasm', 1024 * 1024),
+                              read_file(base / 'reviewed-normal-component.wasm', 2 * 1024 * 1024))
+    (output / 'component.wasm').write_bytes(component)
+    record = {'schemaVersion': 'latent.rust.thread-runtime.projection.v1',
+        'compilerSource': SOURCE, 'compilerRun': str(RUN), 'retainedCompilerMaterials': identities,
+        'originalSourceDigest': digest(inventory(files)), 'projectedPublicWitDigest': digest(projected),
+        'originalPublicWitDigest': digest(ORIGINAL_WIT), 'publicEffect': 'async',
+        'originalDeclaredImports': list(SOURCE_IMPORTS), 'finalRequiredImports': list(IMPORTS),
+        'sourceDeclaredImportsOmittedBecauseAbsentFromAuthenticatedComponent': [SOURCE_IMPORTS[3]],
+        'coreAbi': 'ordinary-synchronous', 'selectedHostProfile': PROFILE,
+        'originalLimits': json.loads(files['capsule-project.json'])['limits'],
+        'qualificationLimits': project['limits'], 'componentDigest': digest(component),
+        'applicationRecompiled': False, 'guestCodeReplaced': False,
+        'assemblyMode': 'retained-compiler-and-component-inputs-with-current-contracts-and-package-assembly',
+        'retainedToolIdentitiesInvokedByThisAssembly': False,
+        'originalCompilerObservationRewritten': False, 'normalRustBuilderRouteOpened': False,
+        'nativeHostMustRecomputeOriginalGraph': True, 'actualGuestExecuted': False,
+        'ordinaryThreadPoolQualified': False}
+    write_json(output / 'qualification-projection.json', record)
+    package_inputs(output, project, surface, source, component, threading_model='cooperative',
+        additional_assets=(('qualification-projection.json', 'asset', 'application/vnd.latent.rust-thread-projection.v1+json'),
+            ('original-project.json', 'asset', 'application/json'), ('original-world.wit', 'asset', 'application/wasm-wit'),
+            ('retained-compiler-observation.json', 'asset', 'application/json')))
+    package_files = {'package-source.json': read_file(output / 'package-source.json')}
+    for layer in read_json(output / 'package-source.json')['layers']:
+        package_files[layer['source']] = read_file(output / layer['source'], 4 * 1024 * 1024)
+    package_inventory = inventory(package_files)
+    (output / 'package-inputs.json').write_bytes(package_inventory)
+    tool_identities = {name: file_identity(native[name]) for name in ('capsule_contracts', 'package')}
+    commands.run('retained-thread-package-assembly', native['package'], 'build',
+                 output / 'package-source.json', output, output / 'package')
+    commands.run('retained-thread-package-inspection', native['package'], 'inspect', output / 'package')
+    require(recipe == inventory({name: read_file(ROOT / name, 4 * 1024 * 1024) for name in recipe_names})
+            and tool_identities == {name: file_identity(native[name]) for name in tool_identities}
+            and package_inventory == inventory({name: read_file(output / name, 4 * 1024 * 1024)
+                                                for name in package_files}),
+            'rust-thread-retained-assembly-inputs-still-exact')
+    materials = [{'name': name, 'digest': digest(data), 'size': len(data)} for name, data in (
+        ('source-snapshot', read_file(output / 'source-inputs.json')), ('build-recipe', recipe),
+        ('toolchain-config', files['rust-toolchain.toml']), ('dependency-lock', files['Cargo.lock']),
+        ('package-inputs', package_inventory), ('retained-compiler-observation', prior_raw),
+        ('qualification-projection', read_file(output / 'qualification-projection.json')),
+        ('normal-component-origin', read_file(base / 'origin.json', 65536)))]
+    materials.append({'name': 'retained-source-and-cas-capture',
+        'digest': identities['application-source-and-capture.tar.gz']['sha256'],
+        'size': identities['application-source-and-capture.tar.gz']['bytes']})
+    # These are genuine original compiler-event tool identities, explicitly
+    # reused inputs. The projection says none was invoked by this assembly.
+    required = {'cargo', 'rustc', 'wasm-tools', 'wit-bindgen'}
+    retained_tools = [row for row in prior['tools'] if row['name'] in required]
+    require({row['name'] for row in retained_tools} == required and len(retained_tools) == 4,
+            'rust-thread-retained-original-tool-identities')
+    materials.extend(retained_tools)
+    for name, identity in tool_identities.items():
+        materials.append({'name': 'contracts-tool' if name == 'capsule_contracts' else 'packager',
+                          'digest': identity['sha256'], 'size': identity['bytes']})
+    assembly_finished = int(time.time())
+    require(0 <= assembly_finished - assembly_started <= 600,
+            'rust-thread-retained-assembly-clock-bound')
+    # This is a NEW observation of actual retained-input package assembly.
+    # Original compile status/commands/timestamps remain in their bound asset.
+    observation = {'formatVersion': 1, 'buildType': BUILD_TYPE,
+        'source': {'repository': 'https://github.com/KirilsTurkins/latent-service-fabric',
+            'revision': digest(inventory(files))[7:], 'snapshotDigest': digest(inventory(files)),
+            'repositoryTrust': 'operator-asserted', 'capture': 'explicit-input-files'},
+        'componentDigest': digest(component), 'componentSize': len(component),
+        'materials': sorted(materials, key=lambda item: item['name']),
+        'parameters': {'cargoPackage': project['name'], 'manifestPath': 'Cargo.toml', 'crateType': 'cdylib',
+            'target': 'wasm32-unknown-unknown', 'profile': 'release', 'locked': True, 'incremental': False},
+        'startedAt': assembly_started, 'finishedAt': assembly_finished, 'reproducibility': 'not-checked',
+        'hermetic': False, 'dependencyCompleteness': 'declared-inputs-incomplete'}
+    write_json(output / 'build-observation.json', observation)
+    write_json(output / 'BUILD-COMPLETE.json', {'formatVersion': 1,
+        'observationDigest': digest(read_file(output / 'build-observation.json')),
+        'sourceDigest': digest(inventory(files)), 'componentDigest': digest(component),
+        'packageAssembled': True, 'applicationRecompiled': False, 'retainedCompilerSource': SOURCE,
+        'normalRustBuilderRouteOpened': False, 'commands': commands.records})
+    return record

@@ -1,0 +1,31 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "rust-original-thread-runtime-${{ github.ref }}"
+    },
+    "name": "Signed original Rust default ThreadPool progress",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/rust-thread-runtime-20261023"
+        ],
+        "paths": [
+          ".github/workflows/rust-thread-runtime.yml"
+        ]
+      },
+      "workflow_dispatch": null
+    },
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "signed-default-pools"
+  ],
+  "reviewReason": "One narrow initial publication and manual finite signed Rust ThreadPool consumer; compiler history is reused unchanged",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/rust-thread-runtime.yml"
+}

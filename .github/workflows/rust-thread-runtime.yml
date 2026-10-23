@@ -1,0 +1,65 @@
+name: Signed original Rust default ThreadPool progress
+
+on:
+  push:
+    branches: ['feat/rust-thread-runtime-20261023']
+    paths: ['.github/workflows/rust-thread-runtime.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: rust-original-thread-runtime-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  signed-default-pools:
+    name: One original Rust component and five signed default ThreadPool calls
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - name: Fetch the two exact original compiler and native source events
+        run: |
+          git fetch --no-tags --depth=1 origin b422af24d86344ac7abb8b8fa56c3782aab63915
+          git fetch --no-tags --depth=1 origin 28059f343bbd954e3e6614c5a24593897cc0c294
+      - name: Install locked Python dependencies and check finite replay and policy refusals
+        run: |
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 -B -m unittest tools.tests.test_rust_thread_runtime -v
+      - name: Authenticate five exact native products and the complete 193-control origin
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/rust_thread_native_products.py --output "$RUNNER_TEMP/rust193-native"
+      - name: Retain only four original compiler members with exact preimage pins
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/rust_thread_compiler_materials.py --output "$RUNNER_TEMP/rust28059-materials"
+      - name: Sign one retained component and run all five ordinary public calls
+        run: >-
+          python3 -B tools/qualify_rust_thread_runtime.py
+          --prepared "$RUNNER_TEMP/rust193-native"
+          --compiler-materials "$RUNNER_TEMP/rust28059-materials"
+          --output "$RUNNER_TEMP/rust-thread-runtime"
+      - name: Retain bounded public signing, invocation and physical retirement evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: rust-thread-runtime-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/rust-thread-runtime/**
+            ${{ runner.temp }}/rust193-native/retrieval.json
+            ${{ runner.temp }}/rust193-native/native-products.json
+            ${{ runner.temp }}/rust193-native/source-inputs.json
+            ${{ runner.temp }}/rust28059-materials/retrieval.json
+          if-no-files-found: error
+          retention-days: 7
