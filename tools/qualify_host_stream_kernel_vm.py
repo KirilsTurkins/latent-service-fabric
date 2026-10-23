@@ -1,4 +1,4 @@
-"""One linked isolated constructor VM; physical Root final-free stays unqualified."""
+"""One linked isolated constructor VM; require original physical Root return."""
 import argparse
 import hashlib
 import json
@@ -17,7 +17,7 @@ objects = baseline.objects
 paths = baseline.paths
 require = baseline.require
 ROOT = programme.ROOT
-BRANCH = 'feat/stream-kernel-vm-qualification-20261023'
+BRANCH = 'feat/kernel-root-final-free-20261023'
 WORKFLOW = '.github/workflows/stream-kernel-constructor-vm.yml'
 PROBE = 'research/standard-outbound/linux-6.12-lineage/constructor-vm-init.c'
 
@@ -33,6 +33,11 @@ def recipe_inputs():
         'tools/host_stream_kernel_vmap_fit.py',
         'tools/host_stream_kernel_task_identity_geometry.py',
         'tools/host_stream_kernel_provider_task_reference.py',
+        'tools/host_stream_kernel_root_final_free.py',
+        'tools/tests/fixtures/host_stream_kernel_root_final_free.json',
+        'tools/tests/test_host_stream_kernel_root_final_free.py',
+        'tools/tests/test_kernel_root_final_free_vm.py',
+        'research/standard-outbound/linux-6.12-lineage/factory-cleanup-root-final-free.c',
         'tools/qualify_host_stream_kernel_objects.py',
         'tools/owned_test_process.py', 'tools/build_observation.py',
         'tools/dev_workflow/paths.py', WORKFLOW, PROBE)
@@ -187,9 +192,10 @@ def run(archive, output):
                 *image.boot_argv(tool_paths['qemu-system-x86_64'],kernel,initramfs,firmware))
         finally:
             commands.command_seconds = old_limit
-        observation = image.serial_observation(serial)
+        observation = image.root_physical_serial_observation(serial)
         receipt.update(kernelBooted=True,actualLinuxExecution=True,
-            actualTaskControlChildRetirement=True,rootStillHeldAtObservation=True,
+            actualTaskControlChildRetirement=True,rootHeldAtChildRetirementSnapshot=True,
+            rootStillHeldAtObservation=False,rootFinalFree=observation['rootFinalFree'],
             vm=dict(accelerator='tcg-multi',cpus=image.VM_CPUS,memoryMiB=image.VM_MEMORY_MIB,
                 externalNetwork=False,hostDrives=False,hostInstallation=False,
                 watchdogExpiryIsSuccess=False),

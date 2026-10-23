@@ -25,6 +25,8 @@ REQUIRED_CONFIG = (
     'CONFIG_ACPI', 'CONFIG_LSF_STREAM_FACTORY',
 )
 TERMINAL_FIELDS = (8, 5, 0, 2, 0, 1, 2, 0, 1, 1)
+PHYSICAL_MARKER = b'LSFVM1 physical-return=constructor-root-bank-and-actor-refs'
+ROOT_RELEASE_CHECK = b'LSFVM1 result=PASS stage=actual-child-retirement-root-release-check'
 
 
 def require(condition, reason):
@@ -112,6 +114,37 @@ def serial_observation(raw: bytes) -> dict:
             dict(state=4, error=0, fields=list(TERMINAL_FIELDS)), 'actual-child-terminal-counters')
     return dict(snapshots=snapshots, rootFinalFree=False,
                 bytes=len(raw), sha256=hashlib.sha256(raw).hexdigest())
+
+
+def root_physical_serial_observation(raw: bytes) -> dict:
+    """Require actual kernel return after the original Root-held observation.
+
+    PID1 close success and logical record counters provide no physical proof.
+    The fixed kernel marker is emitted only after the original pages/ref puts.
+    This uses the unchanged historical child parser, preserving all its bounds
+    and refusal checks; normalized bytes are never the recorded raw identity.
+    """
+    require(type(raw) is bytes and 0 < len(raw) <= MAX_SERIAL, 'serial-bound')
+    lines = raw.splitlines()
+    pattern = rb'(?:\[[ ]{0,10}[0-9]{1,10}\.[0-9]{6}\] )?' + re.escape(PHYSICAL_MARKER)
+    matches = [index for index, line in enumerate(lines) if re.fullmatch(pattern, line)]
+    require(len(matches) == 1 and raw.count(PHYSICAL_MARKER) == 1,
+        'unique-actual-kernel-physical-return')
+    child = [index for index, line in enumerate(lines)
+        if line.startswith(b'LSFVM1 snapshot=child-retired-root-held ')]
+    terminal = [index for index, line in enumerate(lines) if line == ROOT_RELEASE_CHECK]
+    require(len(child) == len(terminal) == 1 and child[0] < matches[0] < terminal[0],
+        'actual-physical-return-order')
+    historical_terminal = b'LSFVM1 result=PASS stage=actual-child-retirement-root-final-free-unqualified'
+    normalized = b'\n'.join(historical_terminal if line == ROOT_RELEASE_CHECK else line
+        for index, line in enumerate(lines) if index != matches[0]) + b'\n'
+    observation = serial_observation(normalized)
+    return {**observation, 'rootFinalFree': True,
+        'physicalReturn': {'marker':PHYSICAL_MARKER.decode(), 'kernelObservations':1,
+            'afterChildRetirementRootHeld':True, 'beforePid1ReleaseCheck':True,
+            'nativeQuotaRelease':False, 'productionInstallation':False},
+        'pid1TerminalStage':'actual-child-retirement-root-release-check',
+        'bytes':len(raw), 'sha256':hashlib.sha256(raw).hexdigest()}
 
 
 def check_boot_configuration(raw: bytes, parse_config) -> dict:
