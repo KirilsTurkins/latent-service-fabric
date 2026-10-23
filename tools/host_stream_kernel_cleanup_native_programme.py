@@ -192,13 +192,55 @@ int lsf_factory_cleanup_prebirth_refused(unsigned int site, unsigned long bytes,
     return result
 
 
+def repair_task_geometry(outputs):
+    """Use the original x86 boot-selected FPU tail, not its static maximum.
+
+    Linux6.12.113 fpu__init_task_struct_size subtracts the static register
+    storage and adds fpu_kernel_cfg.default_size. The ordinary task slab and
+    arch_dup_task_struct use that exact arch_task_struct_size, which can be
+    smaller than sizeof(task_struct). Retain an exact equality check here.
+    """
+    name = 'kernel/lsf-cleanup-task.c'
+    text = outputs[name].decode()
+    old = change.function(text, 'int lsf_prepaid_cleanup_task_geometry(')
+    expected = '''int lsf_prepaid_cleanup_task_geometry(unsigned long *bytes, unsigned long *alignment)
+{
+    unsigned long actual_bytes = arch_task_struct_size;
+    unsigned long actual_alignment = max_t(int, L1_CACHE_BYTES, ARCH_MIN_TASKALIGN);
+    if (!bytes || !alignment || actual_bytes < sizeof(struct task_struct) ||
+        actual_bytes > LSF_FACTORY_INFRA_BYTES || !actual_alignment ||
+        actual_alignment > 64u || (actual_alignment & (actual_alignment - 1u)))
+        return lsf_factory_cleanup_prebirth_refused(LSF_REFUSE_TASK_GEOMETRY,
+            actual_bytes, actual_alignment);
+    *bytes = actual_bytes;
+    *alignment = actual_alignment;
+    return 0;
+}
+'''
+    require(old == expected, 'cleanup-native-dynamic-task-geometry-preimage')
+    new = change.replace(old,
+        '    unsigned long actual_bytes = arch_task_struct_size;\n',
+        '    unsigned long actual_bytes = arch_task_struct_size;\n'
+        '    unsigned long expected_bytes = sizeof(struct task_struct) -\n'
+        '        sizeof(current->thread.fpu.__fpstate.regs) + fpu_kernel_cfg.default_size;\n')
+    new = change.replace(new,
+        '    if (!bytes || !alignment || actual_bytes < sizeof(struct task_struct) ||\n',
+        '    if (!bytes || !alignment || !fpu_kernel_cfg.default_size ||\n'
+        '        actual_bytes != expected_bytes ||\n')
+    result = dict(outputs)
+    result[name] = ('#include <asm/fpu/types.h>\n' + change.replace(text, old, new)).encode()
+    require([key for key in result if result[key] != outputs[key]] == [name],
+        'cleanup-native-only-dynamic-task-geometry-delta')
+    return result
+
+
 def compose(base, originals, config):
     parent = prior.compose(base, originals, config)
     result = change.transform(parent, {})
     require(len(parent) == 322 and len(result) == 323 and
         sum(parent.get(name) != raw for name, raw in result.items()) == 6,
         'cleanup-native-exact-six-source-delta')
-    return diagnose_prebirth_refusals(initialize_observers(repair_sidcache(result)))
+    return repair_task_geometry(diagnose_prebirth_refusals(initialize_observers(repair_sidcache(result))))
 
 
 def qualification_projection(outputs, config):
