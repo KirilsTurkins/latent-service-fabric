@@ -48,6 +48,13 @@ configuration identity. Runtime selection remains unqualified; absent runtime
 observations, unknown reachability and initialization, and unproven worker drain
 remain visible. This separate sidecar does not replace the packaged v1 report.
 
+Java activation builds also display the selected TeaVM compiler JAR and its
+coroutine, array-root and monitor source corrections, with separate original
+and transformed digests. These come from the bound generated-bindings receipt
+and must match its loaded JAR and replacement classes. Invocation diagnostics
+recheck that receipt and the recipe before using the projection. These identities
+describe the compiler selection; API compatibility remains unknown.
+
 The context also retains dependency identities from the exact captured source
 inventory. It displays each retained dependency's original archive and selected
 tree digests, and its captured version when the resolver recorded a bounded
