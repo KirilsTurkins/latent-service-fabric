@@ -10,7 +10,8 @@ use std::{
     sync::{atomic::Ordering, Arc},
     time::{Duration, Instant},
 };
-use zeroize::Zeroizing;
+pub(super) mod native_buffer;
+use native_buffer::NativeBuffer;
 
 mod pending;
 pub(super) use pending::PendingWork;
@@ -132,7 +133,7 @@ struct Work {
     required_audit: bool,
     input_size: usize,
     pending_budget: Option<BudgetReservationGroup>,
-    input: Zeroizing<Vec<u8>>,
+    input: NativeBuffer,
     row: HandleEntryOwner,
     session: SessionCoreOwner,
     id: u64,
@@ -264,7 +265,7 @@ impl Drop for ResultLifetime {
 pub struct OwnedCapabilityResponse {
     audit: Option<Box<super::audit::CallAudit>>,
     deadline: Instant,
-    bytes: Zeroizing<Vec<u8>>,
+    bytes: NativeBuffer,
     pub(super) session: SessionCoreOwner,
     _row: HandleEntryOwner,
     id: u64,
@@ -541,7 +542,7 @@ impl ProviderCall {
         {
             return Err(capacity());
         }
-        let data = Zeroizing::new(bytes.to_vec());
+        let data = NativeBuffer::copy(self.budget_accounting(), bytes)?;
         let Work {
             audit,
             required_audit: _,
@@ -761,6 +762,7 @@ impl CapabilitySession {
         }
         cost.validate_minimum(operation, &binding.provider.minimum_call_charges)?;
         let budget_reservation = cost.reserve(&self.core.budget)?;
+        let input = NativeBuffer::copy(&self.core.budget, input)?;
         let id = super::session::next_incarnation()?;
         let audit = if self.core.owner.audit.is_some() || required_audit {
             if cost.typed_input_bytes != 0 && cost.typed_request_digest.is_none() {
@@ -777,7 +779,7 @@ impl CapabilitySession {
                     super::audit::request_digest(
                         operation,
                         resource,
-                        input,
+                        &input,
                         cost.typed_request_digest,
                     ),
                     required_audit,
@@ -792,7 +794,7 @@ impl CapabilitySession {
             required_audit,
             input_size,
             pending_budget: budget_reservation,
-            input: Zeroizing::new(input.to_vec()),
+            input,
             row: row.clone(),
             session: self.core.clone(),
             id,

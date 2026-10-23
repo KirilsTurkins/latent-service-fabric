@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_host_codec_native.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve all177 controls and add six original handle ownership controls without changing limits",
+  "reviewReason": "Retain all177 controls and add eleven handle and copied-buffer controls; capture the authenticated host bytes recipe",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "e595ba85d751a0b351b0862bb4667310738cbff241fc107b2daae59d44b3a7d1"
+  "sha256": "ffa2914f6201cd154e1aad104b344163a10bf7702de019b542c7f06a825f1cff"
 }

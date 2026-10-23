@@ -1,4 +1,5 @@
 //! One set of refundable reservations and one audit owner across clock admission.
+use super::NativeBuffer;
 use super::{CapabilityCallCost, ProviderCall, Work, WorkLifetime};
 use crate::broker::{
     busy, capacity, denied, error,
@@ -11,7 +12,6 @@ use std::{
     sync::atomic::Ordering,
     time::{Duration, Instant},
 };
-use zeroize::Zeroizing;
 
 pub(in crate::broker) struct PendingWork {
     core: SessionCoreOwner,
@@ -189,7 +189,7 @@ impl PendingWork {
             required_audit: false,
             input_size: 0,
             pending_budget,
-            input: Zeroizing::new(Vec::new()),
+            input: NativeBuffer::empty(),
             row: row.clone(),
             session: core.clone(),
             id,

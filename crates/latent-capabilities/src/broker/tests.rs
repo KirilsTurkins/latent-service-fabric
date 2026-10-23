@@ -5,6 +5,7 @@ use std::{sync::atomic::Ordering, time::Duration};
 pub(super) mod fixture;
 use fixture::*;
 mod audit;
+mod buffer_native_memory;
 mod clocks;
 mod diagnostics;
 mod handle_native_memory;
