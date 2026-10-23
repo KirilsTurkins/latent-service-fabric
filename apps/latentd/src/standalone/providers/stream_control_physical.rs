@@ -41,6 +41,23 @@ const OPERATIONS: [&str; 8] = [
     "chunk-bytes",
 ];
 
+pub(super) fn wait_for_audit_retirement(
+    budget: &ActivationBudget,
+    session_bytes: u64,
+    invocation: &Runtime,
+) {
+    // Dropping the stream enqueues its required audit conclusion. Its original
+    // activation capacity stays charged until the actual worker retires it.
+    invocation.block_on(async {
+        let deadline = Instant::now() + Duration::from_secs(5);
+        while budget.host_memory_bytes() != session_bytes || budget.outstanding_reservations() != 4
+        {
+            assert!(Instant::now() < deadline, "audit memory did not retire");
+            tokio::time::sleep(Duration::from_millis(10)).await;
+        }
+    });
+}
+
 pub(super) struct Control {
     id: ActivationId,
     pub budget: ActivationBudget,

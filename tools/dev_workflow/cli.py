@@ -18,6 +18,8 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--state-root", type=Path, help="private controller state outside project sources")
     result.add_argument("--editor-diagnostics", action="store_true", help="also print mapped compiler locations to stderr")
     commands = result.add_subparsers(dest="group", required=True)
+    stream = commands.add_parser("stream-operator", help="explicit protected stream administration; no implicit grants")
+    stream.add_argument("arguments", nargs=argparse.REMAINDER)
     dev = commands.add_parser("dev").add_subparsers(dest="command", required=True)
     doctor = dev.add_parser("doctor", help="read-only prerequisite observation; executes no project recipe")
     doctor.add_argument("--workspace", help="inspect the selected node identity, filesystem and actual profile")
@@ -372,6 +374,11 @@ def emit(result: dict) -> None:
 def main(argv: list[str] | None = None) -> int:
     args = parser().parse_args(argv)
     try:
+        if args.group == "stream-operator":
+            require(args.state_root is None and not args.editor_diagnostics,
+                    "stream-operator-explicit-private-arguments-required")
+            from tools.outbound_stream_operator import main as stream_operator
+            return stream_operator(args.arguments)
         result = dispatch(args)
         if args.command == "preflight" and args.output == "human":
             from .preflight import human

@@ -319,6 +319,8 @@ jobs:
           name: rust-git-prepared-${{ github.sha }}
           path: ${{ runner.temp }}/rust-entropy-prepared
       - name: Test exact entropy source, ordinary transitive capture and retirement controls
+        env:
+          RUSTUP_TOOLCHAIN: 1.97.1
         run: python3 -m unittest tools.tests.test_rust_standard_entropy tools.tests.test_rust_standard_entropy_campaign
       - name: Build owned entropy std and execute ordinary signed libraries
         run: >-

@@ -4,7 +4,8 @@ The stream installation remains explicitly gated by the development build
 features and the architecture/security prerequisite in
 [#737](https://github.com/KirilsTurkins/latent-service-fabric/issues/737).
 The ordinary default node refuses this installation. The helper enables no
-production profile and installs no socket or process.
+production profile and installs no socket or daemon. Preparation runs only the
+selected node's bounded configuration check.
 
 `tools.outbound_stream_operator.configure()` prepares a closed node input for
 an explicitly selected development profile. It preserves existing credentials,
@@ -13,6 +14,67 @@ the original 64 KiB node input bound, and refuses an input overwrite of an
 already configured stream provider. Save this input in an owned protected file
 and run the actual node's `check-config` before startup; schema validation is
 not a substitute for the node's platform, permission or feature checks.
+
+The `latent-dev stream-operator prepare` command performs that protected preparation and invokes
+one actual `latentd check-config` using the selected node binary. Put the
+installation and its consumer bindings in a private `installation.json`:
+
+```json
+{
+  "installation": {
+    "identity": {"id": "streams", "tenant": "examples", "service": "stream-host", "epoch": 1},
+    "configuration": {
+      "formatVersion": 1,
+      "profile": "lsf-outbound-streams-v1",
+      "destinations": [{
+        "endpoint": {"host": "127.0.0.1", "port": 32123, "transport": "tcp"},
+        "addresses": {"networks": ["127.0.0.1/32"], "specialAddresses": ["127.0.0.1"]},
+        "resolution": {"kind": "static", "addresses": ["127.0.0.1"]}
+      }],
+      "limits": {"maximumTransferBytes": 65536, "idleTimeoutMillis": 1000, "absoluteTimeoutMillis": 5000}
+    }
+  },
+  "bindings": [{"name": "mail-stream", "tenant": "examples", "consumerService": "examples/mail", "providerService": "stream-host", "contract": "latent:network/streams@0.1.0", "providerBinding": "stream-installed"}]
+}
+```
+
+Use an existing protected base node configuration with the Phase 3 budget,
+durable audit and capability-policy owners described in the
+[standalone reference](../reference/standalone-streams.md). Its credentials and
+all existing HTTP providers and bindings are preserved. The output's parent
+must already be private, and the output must not exist:
+
+```sh
+latent-dev stream-operator prepare \
+  --node /path/to/latentd --base-config /private/node/base.json \
+  --installation-record /private/node/installation.json \
+  --output /private/node/prepared.json --development-profile
+```
+
+The frozen developer frontend includes this operator, both canonical provider
+schemas and its locked schema-validator dependencies, using the existing
+frontend file, license and provenance inventory. Contributors can invoke the
+same owner with `python3.13 -m tools.outbound_stream_operator`.
+
+The output is a new protected file. Preparation never overwrites a running
+configuration or starts a node. The selected node performs its own platform,
+protected-input and feature checks, with no profile fallback. A refused or
+interrupted check returns failure and retains the file for private owner
+review; retrying requires a separately named new output. The command invokes
+no provider mutation or grant RPC. It bounds the check to 30 seconds and 64 KiB
+per output stream through the existing process owner, rechecks the prepared
+bytes afterwards, and emits no node output or input paths. It binds the selected
+node executable (at most 256 MiB) by its actual SHA-256 and byte size before and
+after that one check; a changed executable fails explicitly. This executable
+identity does not attest its source, version, publisher or installation. An accepted check
+reports `providerReadiness: "not-observed"` and `executionPermission: false`:
+it establishes neither actual installation nor a working stream. Current
+kernel/provider qualification gates still prevent production enablement. The
+frontend packaging campaign exercises the actual frozen command outside the
+checkout with private files and an explicit Python configuration-check process
+double, including refused-check retention. That packaging observation is not
+real `latentd` installation or controlled-peer stream qualification; its receipt
+keeps `realLatentd: false` and `providerReadiness: "not-observed"`.
 
 For an already installed provider, put this specification in a private
 directory. Use the actual provider descriptor from the node startup record and
@@ -128,6 +190,18 @@ and interrupt a pending control operation. Restart uses the protected file's
 current generation and actual startup provider descriptors; previous status
 lines are historical evidence, not confirmation of the new process's catalog.
 Ordinary default builds allocate no reload owner and register no stream signals.
+
+The [source-bound packaging observation](../testing/evidence/stream-operator-packaging-2026-10-23.json)
+records the actual Linux and Windows frozen frontend checks on source
+`380c7df8f26ec3f0f6e54d616e8d08b80cb5cc73`: Linux passed all 38 source controls;
+Windows passed 37 and retained one existing POSIX-only skip. Both actual
+packaged preparation/refusal smoke cases passed outside the checkout, with the
+explicit Python process double and no real `latentd` or provider readiness claim.
+The first Linux native-library inventory failure remains recorded; the corrected
+inventory accepts only original pinned-wheel RECORD hash/size members, preserving
+unknown-owner refusal. Both complete artifacts, file inventories and 105 helper
+source/schema materials per platform were independently authenticated. These
+observations do not enable production or complete any whole #739 criterion.
 
 Host TLS credential rotation, actual signed standard-library workflows, and the
 complete operator acceptance matrix remain separate required observations for
