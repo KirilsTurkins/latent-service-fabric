@@ -3,7 +3,11 @@ name: Actual stream operator node configuration checks
 on:
   push:
     branches: ['feat/stream-operator-node-refusal-20261023']
-    paths: ['.github/workflows/stream-operator-node-check.yml']
+    paths:
+      - '.github/workflows/stream-operator-node-check.yml'
+      - 'tools/qualify_stream_operator_node.py'
+      - 'tools/stream_operator_frontend_products.py'
+      - 'tools/tests/test_stream_operator_node.py'
   workflow_dispatch:
 
 permissions:

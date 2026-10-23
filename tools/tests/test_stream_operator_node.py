@@ -46,6 +46,26 @@ class StreamOperatorNode(unittest.TestCase):
             reader._pins()
         with self.assertRaisesRegex(WorkflowError, 'exact-receipt-preimage'):
             products.manifest(FIXTURE.read_bytes() + b' ')
+        for raw in (FIXTURE.read_bytes(), bytes(products.ARTIFACT['size_in_bytes'])):
+            with self.assertRaisesRegex(WorkflowError, 'exact-whole-archive-preimage'):
+                products.sealed_archive(raw)
+        class BoundedRanges:
+            """Explicit range double enforces the unchanged per-request bound."""
+            def __init__(self, missing_tail):
+                self.counts, self.position, self.missing_tail = [], None, missing_tail
+            def seek(self, offset):
+                self.position = offset
+            def read(self, count):
+                assert 0 < count <= 8 * 1024**2
+                self.counts.append(count)
+                return bytes(count - int(self.missing_tail and len(self.counts) == 4))
+        for missing_tail in (False, True):
+            remote = BoundedRanges(missing_tail)
+            reason = 'whole-archive-chunk' if missing_tail else 'exact-whole-archive-preimage'
+            with self.assertRaisesRegex(WorkflowError, reason):
+                products.acquire_archive(remote)
+            self.assertEqual(remote.position, 0)
+            self.assertEqual(remote.counts, [8388608, 8388608, 8388608, 595225])
 
     def test_closed_frontend_index_requires_exact_members_sizes_compression_and_regular_files(self):
         reader = products.FrozenOperatorFrontend()

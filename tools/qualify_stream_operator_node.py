@@ -99,7 +99,8 @@ def qualify(native_input, frontend_input, output):
         'providerReadiness': 'not-observed', 'executionPermission': False,
         'socketInvocationAttempted': False, 'nativeRebuilt': False, 'guestCompiled': False,
         'wholeIssue739Acceptance': False, 'outcomes': []}
-    deadline = time.monotonic() + 240
+    started = time.monotonic()
+    deadline = started + 240
     stage = 'verify-inputs'
     try:
         if native_input is None:
@@ -107,9 +108,10 @@ def qualify(native_input, frontend_input, output):
             native.prepare(native_input)
         if frontend_input is None:
             frontend_input = output / 'frontend-origin'
-            FRONTEND.prepare(frontend_input)
+            record['frontendAcquisition'] = FRONTEND.prepare(frontend_input)['retrieval']
         record['nodeOrigin'] = native.verify_prepared(native_input)
         record['frontendOrigin'] = FRONTEND.verify_prepared(frontend_input)
+        record['productAcquisitionAndVerificationMillis'] = int((time.monotonic() - started) * 1000)
         record['sourceContract'] = source_contract()
         record['consumerRecipe'] = {name: file_identity(ROOT / name) for name in RECIPE}
         node = native.native_products(native_input)['latentd']
@@ -214,6 +216,7 @@ def qualify(native_input, frontend_input, output):
         record['failureCode'] = error.code if isinstance(error, DevError) else 'bounded-programme-failed'
         raise
     finally:
+        record['elapsedMillis'] = int((time.monotonic() - started) * 1000)
         write_json(output / 'result.json', record)
 
 

@@ -1,10 +1,12 @@
 """One immutable Linux operator frontend; independent from native277 origins."""
 from pathlib import Path, PurePosixPath
 import hashlib
+import io
 import json
 import os
 import stat
 import sys
+import zipfile
 
 if __package__ in {None, ''}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -60,6 +62,25 @@ def manifest(raw):
             and smoke.get('realLatentd') is False and smoke.get('providerReadiness') == 'not-observed',
             'operator-frontend-original-smoke-is-process-double')
     return value
+
+
+def sealed_archive(raw):
+    require(type(raw) is bytes and len(raw) == ARTIFACT['size_in_bytes']
+            and 'sha256:' + hashlib.sha256(raw).hexdigest() == ARTIFACT['digest'],
+            'operator-frontend-exact-whole-archive-preimage')
+    return zipfile.ZipFile(io.BytesIO(raw))
+
+
+def acquire_archive(remote):
+    remote.seek(0)
+    chunks, remaining = [], ARTIFACT['size_in_bytes']
+    while remaining:
+        count = min(8 * 1024**2, remaining)
+        raw = remote.read(count)
+        require(type(raw) is bytes and len(raw) == count, 'operator-frontend-whole-archive-chunk')
+        chunks.append(raw)
+        remaining -= count
+    return sealed_archive(b''.join(chunks))
 
 
 class FrozenOperatorFrontend(FrozenNativeProducts):
@@ -151,12 +172,17 @@ class FrozenOperatorFrontend(FrozenNativeProducts):
         require(sys.platform == 'linux', 'operator-frontend-linux-required')
         artifact = self._official_artifact()
         output = fresh(output)
-        with _official_archive(artifact) as (archive, remote):
-            self.extract(archive, output)
+        with _official_archive(artifact) as (_, remote):
+            # Every sealed file is needed by this packaged frontend. Four reads
+            # within the unchanged 8MiB per-read bound avoid hundreds of HTTP
+            # header/member requests; global byte/request caps remain intact.
+            with acquire_archive(remote) as archive:
+                self.extract(archive, output)
             result = self.verify_prepared(output)
             self.frontend(output).chmod(0o700)
             result['retrieval'] = {'wholeArchiveRetained': False,
-                'archiveDigestVerification': 'official-metadata-only-every-selected-member-hash-verified',
+                'archiveDigestVerification': 'exact-whole-archive-and-every-member-sha256',
+                'wholeArchiveSha256Verified': True, 'wholeArchiveBytes': ARTIFACT['size_in_bytes'],
                 'rangeBytes': remote.transferred, 'rangeRequests': remote.requests}
         write_json(output / 'retrieval.json', result)
         return result
