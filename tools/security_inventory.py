@@ -43,6 +43,11 @@ def is_manifest(path: str) -> bool:
 
 def cargo_inventory(repo: Path, entry: dict) -> tuple[set[str], dict]:
     manifest = tomllib.loads(read_file(repo, entry["path"]).decode())
+    if entry["path"] == "Cargo.toml" and "bytes" in manifest.get("patch", {}).get("crates-io", {}):
+        from tools.result_owner_bytes import verify
+        # A missing whole vendor directory cannot hide a still-selected host
+        # fork behind the historical optional-directory inventory rule.
+        verify(repo)
     payload = read_file(repo, entry["lock"])
     lock = tomllib.loads(payload.decode())
     packages = lock.get("package", [])
@@ -278,6 +283,13 @@ def inventory(repo: Path, policy: Path = POLICY) -> tuple[list[Package], list[di
             cargo_paths, record = wasmtime_inventory(repo, entry, paths)
             packages.append(Package("crates.io", record["name"], record["version"], path))
             covered.update(cargo_paths)
+            records.append(record)
+            continue
+        if entry["kind"] == "bounded-bytes":
+            from tools.security_result_bytes import inventory_record
+            origin, record = inventory_record(repo, entry, paths)
+            packages.append(Package("crates.io", origin["name"], origin["version"], path))
+            covered.add(path)
             records.append(record)
             continue
         if entry["kind"] == "npm":

@@ -25,7 +25,7 @@ from tools.check_rust_capsule_ownership import check as ownership
 from tools.phase3_resource_identity import file_identity, inventory as directory_identity, source_identity
 from tools.run_rust_capsule_workflow import run as node_workflow
 from tools.rust_capsule_build import Commands, build
-from tools.rust_capsule_project import ROOT, TEMPLATES, create, digest, fresh, read_file, read_json, write_json
+from tools.rust_capsule_project import ROOT, TEMPLATES, create, digest, fresh, read_file, read_json, write_json, host_projection_inputs
 
 HELPERS = ("rust_capsule.py", "rust_capsule_project.py", "rust_capsule_build.py", "qualify_rust_capsules.py",
     "run_rust_capsule_workflow.py", "rust_capsule_cases.py", "rust_capsule_node.py", "check_rust_capsule_ownership.py",
@@ -78,10 +78,14 @@ def inputs(language="rust"):
                     'dotnet_application_dependencies.py', 'dotnet_registry_tls.py', 'dotnet_dependency_fixture.py', 'dotnet_dependency_recovery.py',
                     'dotnet_resource_fixture.py', 'dotnet_guest/resources.py', 'guest_resources.py',
                     "../.cargo/managed-guest.toml")
-    return {"runtime": source_identity(ROOT), "sdk": directory_identity(ROOT / f"sdk/{language}-guest"),
+    host_projection = host_projection_inputs() if language == "rust" else {}
+    selected = {"runtime": source_identity(ROOT), "sdk": directory_identity(ROOT / f"sdk/{language}-guest"),
             "wit": directory_identity(ROOT / "wit/platform"), "schemas": directory_identity(ROOT / "schemas"),
             "guide": file_identity(ROOT / f"docs/component-development/{language}-authoring.md"),
             "helpers": {name: file_identity(ROOT / "tools" / name, 1024 * 1024) for name in helpers}}
+    if host_projection:
+        selected["hostProjection"] = {name: file_identity(ROOT / name, 1024 * 1024) for name in host_projection}
+    return selected
 
 
 def guide(output: Path, environment: dict[str, str], language="rust"):

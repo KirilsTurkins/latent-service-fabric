@@ -19,7 +19,7 @@ from tools.application_dependency_store import DependencyError, read_bytes, regu
 from tools.build_observation import build_environment, file_identity
 from tools.build_process import run_bounded
 from tools.build_snapshot import canonical, digest
-from tools.rust_capsule_project import ROOT, create, fresh, snapshot
+from tools.rust_capsule_project import ROOT, create, fresh, snapshot, PROJECTION_RECIPE, host_projection_inputs
 
 PACKAGE = 'unicode-xid'
 REPOSITORY = 'https://github.com/unicode-rs/unicode-xid'
@@ -32,7 +32,8 @@ CACHE_TAG = (b'Signature: 8a477f597d28d172789f06886806bc55\n'
 MATERIALS = ('tools/qualify_rust_git_dependencies.py', 'tools/cargo_native_authoring.py',
              'tools/rust_application_dependencies.py', 'tools/rust_dependency_authoring.py',
              'tools/application_dependencies.py', 'tools/application_dependency_store.py',
-             'tools/rust_capsule_project.py', 'tools/build_process.py', 'tools/build_observation.py')
+             'tools/rust_capsule_project.py', 'tools/build_process.py', 'tools/build_observation.py',
+             *PROJECTION_RECIPE)
 
 
 def require(condition, reason):
@@ -104,7 +105,9 @@ def offline(project: Path, output: Path, cargo: Path, version: str, revision: st
 def qualify(output: Path, cargo: Path) -> dict:
     output, cargo = fresh(output), cargo.resolve(strict=True)
     stage = 'create'
-    materials = {name: file_identity(ROOT / name, name) for name in MATERIALS}
+    host_projection = host_projection_inputs()
+    material_names = tuple(dict.fromkeys((*MATERIALS, *host_projection)))
+    materials = {name: file_identity(ROOT / name, name) for name in material_names}
     tools = {name: file_identity(path, name) for name, path in {
         'cargo': cargo, 'rustc': cargo.parent / ('rustc.exe' if os.name == 'nt' else 'rustc')}.items()}
     try:
@@ -157,7 +160,9 @@ def qualify(output: Path, cargo: Path) -> dict:
             (output / f'phase-{index}.json').write_bytes(canonical(phase) + b'\n')
             phases.append(phase)
             previous = accepted
-        require(materials == {name: file_identity(ROOT / name, name) for name in MATERIALS}, 'Git-qualification-recipe-mutated')
+        require(host_projection_inputs() == host_projection
+                and materials == {name: file_identity(ROOT / name, name) for name in material_names},
+                'Git-qualification-recipe-mutated')
         require(tools == {name: file_identity(cargo if name == 'cargo' else cargo.parent / ('rustc.exe' if os.name == 'nt' else 'rustc'), name)
                           for name in tools}, 'Git-qualification-tools-mutated')
         result = {'formatVersion': 1, 'status': 'passed', 'scope': 'actual native Git authoring/capture/review/offline metadata',
