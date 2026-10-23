@@ -203,6 +203,19 @@ unknown-owner refusal. Both complete artifacts, file inventories and 105 helper
 source/schema materials per platform were independently authenticated. These
 observations do not enable production or complete any whole #739 criterion.
 
+The later [actual-node configuration observation](../testing/evidence/stream-operator-actual-node-2026-10-23.json)
+reuses that exact Linux frontend with the separately authenticated node built on
+`277c8104499d414053573bce066b5e9091e74a20`. All eight configuration cases passed:
+the complete protected baseline was accepted, the explicit stream addition was
+refused with the private candidate retained, and existing-output and unsafe-input
+checks failed closed. The public node diagnostic is only
+`configuration: invalid-argument`; attribution to the compiled feature gate depends on the
+frozen source and successful baseline. The first acquisition deadline failure
+remains recorded. Four bounded reads of the same sealed frontend archive reduced
+the complete program to 100.3 seconds without raising its 240-second budget.
+This observation starts no node or provider, invokes no socket, and establishes
+neither installation nor readiness.
+
 Host TLS credential rotation, actual signed standard-library workflows, and the
 complete operator acceptance matrix remain separate required observations for
 [#739](https://github.com/KirilsTurkins/latent-service-fabric/issues/739).
