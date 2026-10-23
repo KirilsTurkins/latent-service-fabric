@@ -76,5 +76,36 @@ class JavaDependencyCheckpointTests(unittest.TestCase):
             with self.assertRaises((ValueError,FileNotFoundError,WorkflowError)):
                 build_evidence(directory)
 
+        # Synthetic files exercise custody/refusal only; they are never actual
+        # generated C or compiler/runtime qualification evidence.
+        from types import SimpleNamespace
+        from tools.java_guest import c_failure_context as context
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary).resolve();source=root/'compiled';output=root/'evidence';output.mkdir()
+            java=source/'project/src/main/java/dev/latent/app/Capsule.java'
+            java.parent.mkdir(parents=True);java.write_bytes((fixture.ROOT/fixture.SOURCE).read_bytes())
+            generated=source/'project/build/teavm-c/c'
+            for name in context.CHECKPOINT_SOURCES:
+                path=generated/name;path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(b'/* fixed mechanism */\n')
+            compiler=SimpleNamespace(records=[{'stage':'c-to-wasm','exitCode':0}])
+            context.retain_component_inputs(compiler,source,output,context.CHECKPOINT_SOURCES)
+            import json
+            record=json.loads((output/'checkpoint-generated.json').read_bytes())
+            self.assertFalse(record['qualification'])
+            self.assertEqual(set(record['files']),set(context.CHECKPOINT_SOURCES))
+            for name in context.CHECKPOINT_SOURCES:
+                self.assertEqual((output/'checkpoint-generated'/name).read_bytes(),(generated/name).read_bytes())
+            for refusal in ('source','file-bound','aggregate-bound'):
+                refused=root/refusal;refused.mkdir()
+                if refusal=='source':java.write_bytes(b'foreign Java source')
+                else:
+                    java.write_bytes((fixture.ROOT/fixture.SOURCE).read_bytes())
+                    size=context.CHECKPOINT_MAX_FILE+(1 if refusal=='file-bound' else 0)
+                    for name in context.CHECKPOINT_SOURCES:
+                        (generated/name).write_bytes(b'x'*size)
+                context.retain_component_inputs(compiler,source,refused,context.CHECKPOINT_SOURCES)
+                self.assertTrue((refused/'checkpoint-generated-refused.json').is_file())
+                self.assertFalse((refused/'checkpoint-generated').exists())
+
 
 if __name__=='__main__':unittest.main()

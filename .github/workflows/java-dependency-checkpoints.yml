@@ -90,6 +90,7 @@ jobs:
             ${{ runner.temp }}/java-checkpoints/compiler/compiler-acquisition/*.json
             ${{ runner.temp }}/java-checkpoints/build/*.json
             ${{ runner.temp }}/java-checkpoints/build/component.wasm
+            ${{ runner.temp }}/java-checkpoints/build/checkpoint-generated/**
             ${{ runner.temp }}/java-checkpoints/build/compiler-logs/*-java-to-c.log
             ${{ runner.temp }}/java-checkpoints/build/compiler-logs/*-java-coroutine-*.log
             ${{ runner.temp }}/java-checkpoints/build/compiler-logs/*-c-to-wasm.log

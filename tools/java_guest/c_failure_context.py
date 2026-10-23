@@ -10,6 +10,14 @@ from tools.rust_capsule_project import digest
 
 FIXTURE_SOURCES = ('c/d/l/a/Capsule.c', 'c/j/u/z/GZIPInputStream.c')
 PHASE_FIXTURE_SOURCES = (*FIXTURE_SOURCES, 'c/j/u/TimeZone.c')
+CHECKPOINT_CLASSES = ('c/d/l/a/Capsule', 'c/j/l/Object', 'c/j/l/Thread', 'c/o/t/r/Fiber',
+    'c/d/l/g/r/Activation', 'c/o/a/c/l/c/AtomicSafeInitializer', 'c/o/t/r/EventQueue',
+    'c/d/l/g/r/Monitors')
+CHECKPOINT_SOURCES = tuple(name + suffix for name in CHECKPOINT_CLASSES for suffix in ('.c', '.h'))
+CHECKPOINT_JAVA = 'sha256:2fe6c39a15d8e230838ae709599055cdba156bd8d9058f472c1dc5be469a88e8'
+CHECKPOINT_MAX_FILE = 1024 * 1024
+CHECKPOINT_MAX_BYTES = 8 * 1024 * 1024
+
 MAX_FILE = 4 * 1024 * 1024
 MAX_CONTEXT = 128 * 1024
 SCHEMA = 'latent.java.public-fixture-c-context.v1'
@@ -22,7 +30,7 @@ DECLARATION = re.compile(r'\s*(?:(?:volatile|const|unsigned|signed|struct)\s+)*'
 
 
 def selection(selected: tuple[str, ...]) -> None:
-    if type(selected) is not tuple or selected not in ((), FIXTURE_SOURCES, PHASE_FIXTURE_SOURCES):
+    if type(selected) is not tuple or selected not in ((), FIXTURE_SOURCES, PHASE_FIXTURE_SOURCES, CHECKPOINT_SOURCES):
         raise ValueError('java-c-failure-context-selection-invalid')
 
 
@@ -142,12 +150,54 @@ def run(compiler, generated: Path, selected: tuple[str, ...], *arguments) -> str
 
 
 def retain_component_inputs(compiler, source: Path, output: Path, selected: tuple[str, ...]) -> None:
-    """Only failed public phase-fixture assembly retains two fixed Wasm inputs.
+    """Retain only explicitly selected fixed public compiler outputs.
 
-    This runs before the existing owned temporary directory is removed. It
-    neither extends its lifetime nor changes the original assembly exception.
-    Raw Wasm has its own explicit output bounds; the 16 MiB log cap is unchanged.
+    Runs before the owned temporary cleanup without replacing an original
+    exception. Historical phase selection retains only failed assembly inputs;
+    the byte-exact checkpoint fixture retains eight adapted C/header pairs.
+    The separate output bounds never extend the original 16 MiB log cap.
     """
+    if type(selected) is tuple and selected == CHECKPOINT_SOURCES:
+        try:
+            # Only this byte-exact public diagnostic fixture can select the
+            # closed eight-class projection. The read occurs after adapt and
+            # the real clang attempt, before the original temporary cleanup.
+            if compiler is None or not any(row.get('stage') == 'c-to-wasm' for row in compiler.records):
+                raise ValueError('checkpoint-generated-before-adapt')
+            fixture = paths.read(source, 'project/src/main/java/dev/latent/app/Capsule.java', CHECKPOINT_MAX_FILE)
+            if digest(fixture) != CHECKPOINT_JAVA:
+                raise ValueError('checkpoint-generated-fixture-mismatch')
+            generated = source / 'project/build/teavm-c/c'
+            payloads, total = {}, 0
+            for name in CHECKPOINT_SOURCES:
+                raw = paths.read(generated, name, CHECKPOINT_MAX_FILE)
+                total += len(raw)
+                if total > CHECKPOINT_MAX_BYTES or b'\0' in raw:
+                    raise ValueError('checkpoint-generated-byte-bound')
+                raw.decode('utf-8')
+                payloads[name] = raw
+            # Publish nothing until every fixed source and bound is checked.
+            target = output / 'checkpoint-generated'
+            target.mkdir()
+            for name, raw in payloads.items():
+                destination = target / name
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                paths.write_new(destination, raw)
+            paths.write_new(output / 'checkpoint-generated.json', encoded({
+                'schemaVersion': 'latent.java.checkpoint-generated-c.v1', 'status': 'retained',
+                'qualification': False, 'publicFixtureOnly': True, 'afterPlatformAdapt': True,
+                'fixtureDigest': CHECKPOINT_JAVA, 'capture': 'after-original-clang-attempt-before-temporary-cleanup',
+                'files': {name: {'sha256': digest(raw), 'bytes': len(raw)} for name, raw in payloads.items()},
+                'fileLimitBytes': CHECKPOINT_MAX_FILE, 'totalLimitBytes': CHECKPOINT_MAX_BYTES,
+                'bytes': total, 'compilerAcceptanceChanged': False, 'logLimitBytesUnchanged': 16*1024*1024}))
+        except BaseException:
+            try:
+                paths.write_new(output / 'checkpoint-generated-refused.json', encoded({
+                    'schemaVersion': 'latent.java.checkpoint-generated-c.v1', 'status': 'unavailable',
+                    'qualification': False, 'reason': 'fixed-public-generated-inputs-unavailable-or-unsafe'}))
+            except BaseException:
+                pass
+        return
     try:
         if type(selected) is not tuple or selected != PHASE_FIXTURE_SOURCES or compiler is None:
             return

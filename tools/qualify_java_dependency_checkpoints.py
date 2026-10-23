@@ -14,6 +14,7 @@ from tools.application_dependencies import verify_inputs
 from tools.build_observation import build_environment
 from tools.java_capsule_build import RECIPE, FIBER_IO_PROFILE, build
 from tools.java_dependency_checkpoint_node import execute
+from tools.java_guest.c_failure_context import CHECKPOINT_SOURCES
 from tools.java_standard_http_library import compiler_cache
 from tools.phase2_operator_process import require
 from tools.phase3_resource_identity import file_identity, source_identity
@@ -56,8 +57,15 @@ def build_evidence(artifact):
     require(len(classpath['artifacts'])==1 and classpath['artifacts'][0]['id']==fixture.COORDINATE
         and classpath['artifacts'][0]['originalDigest']==fixture.JAR,
         'java-checkpoint-exact-compiled-captured-jar')
+    context=read_json(artifact/'checkpoint-generated.json')
+    require(context['status']=='retained' and context['qualification'] is False
+        and set(context['files'])==set(CHECKPOINT_SOURCES)
+        and context['totalLimitBytes']==8*1024**2 and context['fileLimitBytes']==1024**2
+        and context['bytes']==sum(row['bytes'] for row in context['files'].values())<=8*1024**2
+        and all(file_identity(artifact/'checkpoint-generated'/name,1024**2)==row
+            for name,row in context['files'].items()), 'java-checkpoint-actual-generated-context-before-runtime')
     return {'component':component,'documents':documents,'classpath':classpath,
-        'runtimeProfile':profile,'heapBytes':4194304,'signedQualification':False}
+        'runtimeProfile':profile,'heapBytes':4194304,'generatedCContext':context,'signedQualification':False}
 
 
 def qualify(native_directory,wasi_sdk,output,*,read_only_cache=None):
@@ -94,7 +102,8 @@ def qualify(native_directory,wasi_sdk,output,*,read_only_cache=None):
         require(remaining>60,'java-checkpoint-reserved-runtime-deadline')
         artifact=build(app,output/'build',native['capsule_contracts'],native['package'],
             'https://github.com/KirilsTurkins/latent-service-fabric',wasi_sdk,
-            timeout=remaining,read_only_cache=cache,runtime_profile=FIBER_IO_PROFILE)
+            timeout=remaining,read_only_cache=cache,runtime_profile=FIBER_IO_PROFILE,
+            failure_contexts=CHECKPOINT_SOURCES)
         record['guestComponentsCompiled']+=1;record['targetComponentsCompiled']=1
         record['build']=build_evidence(artifact)
         require(record['build']['classpath']==record['capture']['selected']
