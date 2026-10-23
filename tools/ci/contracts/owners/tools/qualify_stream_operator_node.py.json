@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_stream_operator_node.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Actual277 check-config and actual380 frozen frontend consumer with distinct immutable origins, complete original baseline, protected private refusal inputs, bounded process owner, no node startup or product rebuild.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "9c544873a8831ba80d3a8cfa5c1f32d3ccd7b231447862cab93a59858825dda9"
+}
