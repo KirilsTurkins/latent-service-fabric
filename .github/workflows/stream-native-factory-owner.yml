@@ -1,4 +1,6 @@
 name: Stream native factory descriptor ownership
+# Exact feature push is the owning entry while this workflow is absent from
+# the default branch's manual-dispatch registry; release remains untouched.
 on:
   workflow_dispatch:
   push:
