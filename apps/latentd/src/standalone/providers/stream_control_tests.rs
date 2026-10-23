@@ -312,6 +312,7 @@ fn catalog_contention_preserves_configured_and_confirmed_generations_until_expli
     assert_eq!(lifecycle.status().unwrap().usage.owners, 1);
     assert!(execution.budget.host_memory_bytes() > 0);
     drop(stream);
+    physical::wait_for_audit_retirement(&execution.budget, session_bytes, &invocation);
     assert_eq!(execution.budget.host_memory_bytes(), session_bytes);
     assert_eq!(execution.budget.outstanding_reservations(), 4);
     let recovered = invocation
@@ -540,6 +541,7 @@ fn explicit_drain_retires_current_owner_and_requires_a_normal_restart_for_fresh_
     assert!(result.stream.stopped);
     assert!(result.stream.current_generation_retired);
     assert_eq!(result.stream.usage.owners, 0);
+    physical::wait_for_audit_retirement(&execution.budget, session_bytes, &invocation);
     assert_eq!(execution.budget.host_memory_bytes(), session_bytes);
     assert_eq!(execution.budget.outstanding_reservations(), 4);
     assert_eq!(pools.snapshot().unwrap().running_requests, 0);
