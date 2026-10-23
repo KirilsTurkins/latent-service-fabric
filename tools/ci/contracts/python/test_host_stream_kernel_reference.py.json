@@ -16,7 +16,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:b9c8032017803fa9e72692b5dc07dec434a4aecb287e543c7ad23c0a4f3a4de7",
-        "class:setup-sha256:8d2bb20a3dfa63b855ac214a115adc97269751d5c28942668c203726b7cec1b6"
+        "class:setup-sha256:0088c7953b4b6745a0937d32da740aeec7e5218c406500df4c3b249fb74914cc"
       ],
       "skipSites": []
     },
@@ -28,7 +28,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:b9c8032017803fa9e72692b5dc07dec434a4aecb287e543c7ad23c0a4f3a4de7",
-        "class:setup-sha256:8d2bb20a3dfa63b855ac214a115adc97269751d5c28942668c203726b7cec1b6"
+        "class:setup-sha256:0088c7953b4b6745a0937d32da740aeec7e5218c406500df4c3b249fb74914cc"
       ],
       "skipSites": []
     },
@@ -40,7 +40,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:b9c8032017803fa9e72692b5dc07dec434a4aecb287e543c7ad23c0a4f3a4de7",
-        "class:setup-sha256:8d2bb20a3dfa63b855ac214a115adc97269751d5c28942668c203726b7cec1b6"
+        "class:setup-sha256:0088c7953b4b6745a0937d32da740aeec7e5218c406500df4c3b249fb74914cc"
       ],
       "skipSites": []
     },
@@ -52,7 +52,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:b9c8032017803fa9e72692b5dc07dec434a4aecb287e543c7ad23c0a4f3a4de7",
-        "class:setup-sha256:8d2bb20a3dfa63b855ac214a115adc97269751d5c28942668c203726b7cec1b6"
+        "class:setup-sha256:0088c7953b4b6745a0937d32da740aeec7e5218c406500df4c3b249fb74914cc"
       ],
       "skipSites": []
     },
@@ -64,7 +64,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:b9c8032017803fa9e72692b5dc07dec434a4aecb287e543c7ad23c0a4f3a4de7",
-        "class:setup-sha256:8d2bb20a3dfa63b855ac214a115adc97269751d5c28942668c203726b7cec1b6"
+        "class:setup-sha256:0088c7953b4b6745a0937d32da740aeec7e5218c406500df4c3b249fb74914cc"
       ],
       "skipSites": []
     },
@@ -76,13 +76,13 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:b9c8032017803fa9e72692b5dc07dec434a4aecb287e543c7ad23c0a4f3a4de7",
-        "class:setup-sha256:8d2bb20a3dfa63b855ac214a115adc97269751d5c28942668c203726b7cec1b6"
+        "class:setup-sha256:0088c7953b4b6745a0937d32da740aeec7e5218c406500df4c3b249fb74914cc"
       ],
       "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_host_stream_kernel_reference.py",
-  "reviewReason": "explicit fixture review: extend data-only evidence from 4 FD-only rows and 1 case to old+retained 8 rows, 4 failed-owner rows and all 30 cases; no skip, setup, decorator or base removal",
+  "reviewReason": "Actual affine native factory descriptor ownership and real pending/ready constructor routing; add ten Linux descriptor/quarantine controls and seven source/collector controls. Preserve all original thirty stream cases and their witnesses; cardinality becomes forty. Normal constructor selection remains zero, production socket consumer NULL, full Linux/Root final-free unqualified. Exact non-test output fixture success total30→40; no skip, decorator, base or module setup changes.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
