@@ -27,12 +27,21 @@ These are focused native controls and a shipping consumer compile check. They
 do not execute a signed guest, replace the immutable 193-control host tuple or
 qualify opaque transport caches, private allocator/OS stack caches, every
 instantaneous serde allocation peak, or complete runtime/whole-cost closure.
-Broader CI separately found a reduced-record node startup failure: the old
-standalone path incorrectly used the derived journal metadata policy as the
-whole-node bank ceiling. The repair keeps the existing broker 8 MiB bank and
+Broader CI separately found reduced-record node startup failures. Source review
+found that the old standalone path incorrectly used the derived journal metadata
+policy as the whole-node bank ceiling. The historical jobs did not retain raw
+node stderr, so their precise terminal branch remains unobserved. The repair keeps the existing broker 8 MiB bank and
 journal policy distinct, preserves the old strict journal-only API, and admits
 all physical fixed backing against the original node bank before filesystem
 mutation. A valid journal schema does not grant physical readiness: an oversized
-fixed journal must refuse within that unchanged bank. The separate current-host
-startup campaign is pending; the 25-control observation retains its original
-pre-repair source identity and does not claim node startup success.
+fixed journal must refuse within that unchanged bank. The [separate actual startup campaign](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39931902934/job/120341964917)
+passed its exact bank control and all five boundaries on
+`277c8104499d414053573bce066b5e9091e74a20`: provider nodes with two, 1,024 and
+default 4,096 records, audit without providers, and an oversized 16,384-record
+journal's exact capacity refusal before journal birth. Each successful node
+served a read-only query and joined/reaped cleanly. The [startup observation](evidence/audit-node-startup-2026-10-23.json)
+retains both current CLI/node identities, all 3,712 captured source files and 158
+materials; independent verification checked every command, stream, outcome and
+product byte. These two hosts are available for subsequent signed qualification
+without rebuilding them. The later catalogue-only correction changes no native
+source byte. The 25-control observation keeps its separate earlier source.
