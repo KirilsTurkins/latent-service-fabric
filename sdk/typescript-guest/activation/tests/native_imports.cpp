@@ -43,6 +43,7 @@ bool defer_cancel = false, refuse_stop = false, refuse_native_ack = false, refus
 unsigned starts = 0, stops = 0, drops = 0, set_drops = 0, waits_entered = 0;
 unsigned callback_entries = 0, native_admissions = 0, native_acknowledgements = 0;
 unsigned host_calls = 0;
+unsigned cancel_requests = 0;
 bool host_in_gc = false, in_gc = false;
 uint64_t observed_period = 0;
 
@@ -161,6 +162,7 @@ bool latent_runtime_activation_timer_stop(latent_runtime_activation_token_t* tim
 }
 jobs_subtask_status_t jobs_subtask_cancel(jobs_subtask_t handle) {
   note_host();
+  ++cancel_requests;
   if (!handle || handle >= next_wait || !waits[handle].live) return 15;
   auto& wait = waits[handle]; wait.cancel_requested = true;
   if (wait.state != JOBS_SUBTASK_RETURNED && !defer_cancel)
@@ -368,7 +370,77 @@ int main(int argc, char** argv) {
     if (!jobs.beginRoot(cx)) return 9;
     JS::RootedValue output(cx);
     const char* selected = argv[1];
-    if (!std::strcmp(selected,"missing-import-record-reports-and-preserves-error")) {
+    if (!std::strcmp(selected,"borrow-observer-blocked-cancel-awaits-actual-drop")) {
+      // Real SpiderMonkey Promises/accounting; canonical intrinsics below are
+      // explicit fixture doubles. Signed Component Model evidence is separate.
+      uint32_t id=0;
+      JS::RootedObject handle(cx),again(cx),original(cx),released(cx),repeated(cx);
+      if(!imports.reserve(cx,4,0,ImportRawResult::I32,JS::HandleValueArray::empty(),id))return 10;
+      const auto admitted=native_admissions;
+      if(!imports.watchBorrow(cx,id,&handle))return 10;
+      const auto observed_admissions=native_admissions;
+      if(!imports.watchBorrow(cx,id,&again) || again.get()!=handle.get() ||
+         native_admissions!=observed_admissions || observed_admissions<admitted+2)return 10;
+      auto* result=static_cast<uint32_t*>(imports.resultBuffer(id));
+      if(!result || !imports.beginLowering(cx,id))return 10;
+      const auto wait_id=next_wait++;
+      waits[wait_id]={true,false,false,JOBS_SUBTASK_STARTED,0,nullptr,result};
+      ++counts[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_WAIT];
+      if(!imports.started(cx,id,(wait_id<<4)|JOBS_SUBTASK_STARTED,&original) ||
+         !imports.observeBorrow(cx,handle,false,&released))return 10;
+      defer_cancel=true;
+      if(!imports.observeBorrow(cx,handle,true,&repeated) || repeated.get()!=released.get() ||
+         !imports.observeBorrow(cx,handle,true,&repeated) ||
+         !imports.liftCompleted(cx,id))return 10; // original generated finally
+      const bool held=JS::GetPromiseState(original)==JS::PromiseState::Rejected &&
+        JS::GetPromiseState(released)==JS::PromiseState::Pending &&
+        cancel_requests==1 && drops==0 && waits[wait_id].live && waits[wait_id].imported_result==result &&
+        counts[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_RESULT]==1 && imports.hasPending();
+      if(!readiness.dispatch(cx,true) || !imports.turn(cx))return 10;
+      status=held && drops==1 && cancel_requests==1 && !imports.hasPending() &&
+        JS::GetPromiseState(released)==JS::PromiseState::Fulfilled &&
+        imports.observeBorrow(cx,handle,true,&repeated) && repeated.get()==released.get() && cancel_requests==1 ? 0:1;
+      defer_cancel=false;
+    } else if (!std::strcmp(selected,"borrow-observer-rejects-foreign-and-unregistered-handles")) {
+      uint32_t id=0;
+      JS::RootedObject handle(cx),promise(cx),plain(cx,JS_NewPlainObject(cx));
+      if(!plain || !imports.reserve(cx,0,0,ImportRawResult::None,JS::HandleValueArray::empty(),id) ||
+         !imports.watchBorrow(cx,id,&handle))return 10;
+      bool refused=!imports.observeBorrow(cx,plain,true,&promise) && JS_IsExceptionPending(cx);
+      JS_ClearPendingException(cx);
+      Imports foreign(jobs,native,readiness);
+      refused=refused && !foreign.observeBorrow(cx,handle,true,&promise) && JS_IsExceptionPending(cx);
+      JS_ClearPendingException(cx);
+      NativeOwner control_owner;
+      if(!native.beforeAllocate(cx,control_owner))return 10;
+      {
+        ImportBorrowObserver forged(cx,id,Token{jobs.generation(),999});
+        if(!forged.initialize(cx,&imports,id,Token{jobs.generation(),999}))return 10;
+        refused=refused && !imports.observeBorrow(cx,forged.handle,true,&promise) && JS_IsExceptionPending(cx);
+        JS_ClearPendingException(cx);
+      }
+      {
+        // A branded but released handle from another epoch must fail BEFORE
+        // the released fast path, even with this exact manager and context.
+        ImportBorrowObserver stale(cx,id,Token{jobs.generation()+1,999});
+        if(!stale.initialize(cx,&imports,id,Token{jobs.generation()+1,999}) ||
+           !ImportBorrowObserver::acknowledge(cx,stale.handle))return 10;
+        refused=refused && !imports.observeBorrow(cx,stale.handle,false,&promise) && JS_IsExceptionPending(cx);
+        JS_ClearPendingException(cx);
+      }
+      if(!native.acknowledgeRetirement(cx,control_owner))return 10;
+      status=refused && cancel_requests==0 && imports.cancel(cx,id) ? 0:1;
+    } else if (!std::strcmp(selected,"borrow-observer-native-denial-precedes-node-and-Promise")) {
+      uint32_t id=0;JS::RootedObject handle(cx);
+      if(!imports.reserve(cx,0,0,ImportRawResult::None,JS::HandleValueArray::empty(),id))return 10;
+      const auto admitted=native_admissions;
+      limits[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_NATIVE]=counts[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_NATIVE];
+      const bool refused=!imports.watchBorrow(cx,id,&handle) && JS_IsExceptionPending(cx) &&
+        !handle && native_admissions==admitted && next_wait==1 && imports.hasPending();
+      JS_ClearPendingException(cx);
+      limits[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_NATIVE]=8;
+      status=refused && imports.cancelAll(cx) && !imports.hasPending() ? 0:1;
+    } else if (!std::strcmp(selected,"missing-import-record-reports-and-preserves-error")) {
       void* buffer = nullptr;
       JS::RootedObject promise(cx);
       bool reported = !imports.beginLowering(cx,999) && JS_IsExceptionPending(cx);

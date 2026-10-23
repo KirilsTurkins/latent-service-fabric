@@ -278,6 +278,13 @@ bool lift_import_value(JSContext* cx, uint32_t id, JS::MutableHandleValue value)
 }
 bool finish_import(JSContext* cx, uint32_t id) { return imports.liftCompleted(cx, id); }
 bool cancel_import(JSContext* cx, uint32_t id) { return imports.cancel(cx, id); }
+bool watch_import_borrow(JSContext* cx, uint32_t id, JS::MutableHandleObject handle) {
+  return imports.watchBorrow(cx, id, handle);
+}
+bool observe_import_borrow(JSContext* cx, JS::HandleObject handle, bool cancel,
+                           JS::MutableHandleObject promise) {
+  return imports.observeBorrow(cx, handle, cancel, promise);
+}
 
 void observe_result_retirement(JSContext* cx) {
   // The original post_call has released lowering buffers and the call's native

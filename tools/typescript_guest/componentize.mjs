@@ -8,6 +8,7 @@ import { coreIntegerLowering } from './signed64.mjs';
 import { explicitResourceOwners } from './resources.mjs';
 import { selectedSourceSplicer } from './source_splicer.mjs';
 import { lazySyncImportWaiters, retireGeneratedTaskSlots, applicationRealmImportPromises, fuseNativeImportAwaits, directIdleTaskSlots, inlineNativeTaskMeta } from './async_waiters.mjs';
+import { borrowReleaseHandoff } from './import_cancellation.mjs';
 
 const [compiler, witPath, sourcePath, output, world = 'capsule', engine, selectionPath, sourceSplicer, bindingParser] = process.argv.slice(2);
 const prepareImport = witPath === '--source-import-adapter';
@@ -100,6 +101,7 @@ const result = await componentize({
       generatedBindings = directIdleTaskSlots(generatedBindings);
       generatedBindings = fuseNativeImportAwaits(generatedBindings, parseBindings);
       generatedBindings = inlineNativeTaskMeta(generatedBindings, parseBindings);
+      generatedBindings = borrowReleaseHandoff(generatedBindings, parseBindings);
       generatedBindings = applicationRealmImportPromises(generatedBindings);
     }
     return generatedBindings;

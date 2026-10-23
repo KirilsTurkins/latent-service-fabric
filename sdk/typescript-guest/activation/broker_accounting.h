@@ -68,6 +68,11 @@ public:
     return true;
   }
 
+  // Read the already admitted root epoch without registering an owner or
+  // reopening admission. It remains valid for accepted child work after the
+  // root settles; beginRoot cannot replace a live or closed root.
+  uint64_t generation() const { return root_.generation; }
+
   bool beginRoot(JSContext* cx) {
     if (root_live_ || root_closed_ || !effects_allowed_ || !effects_allowed_(cx))
       return failure(cx, "root-entry", LATENT_RUNTIME_ACTIVATION_ERROR_INVALID_STATE);
