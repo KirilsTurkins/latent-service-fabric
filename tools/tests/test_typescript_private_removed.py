@@ -10,6 +10,20 @@ from tools.phase2_operator_process import WorkflowError
 
 
 class PrivateRemovedInputs(unittest.TestCase):
+    def test_transfer_limits_refuse_before_request_and_preserve_last_allowed_read(self):
+        from unittest.mock import patch
+        reader=inputs.BoundedRanges('unused-no-network',inputs.MAX_TRANSFER+1)
+        with patch.object(inputs.Ranges,'read',return_value=b'x') as read:
+            reader.requests=inputs.MAX_REQUESTS
+            with self.assertRaises(WorkflowError):reader.read(1)
+            read.assert_not_called()
+            reader.requests=inputs.MAX_REQUESTS-1;reader.transferred=inputs.MAX_TRANSFER
+            with self.assertRaises(WorkflowError):reader.read(1)
+            read.assert_not_called()
+            reader.transferred-=1
+            self.assertEqual(reader.read(1),b'x')
+            read.assert_called_once_with(1)
+
     def test_fixed_members_keep_cancelled_guest_and_separate_host_origins(self):
         value = inputs.fixture()
         self.assertEqual(len(value['members']),67)

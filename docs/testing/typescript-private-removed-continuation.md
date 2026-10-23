@@ -19,8 +19,10 @@ digest as metadata. A 144-byte public WIT layer omitted by the old upload is
 recovered from the exact original Git blob and checked against the original
 package inventory. No component, capture, generator or build marker changes.
 
-Six focused controls check provenance refusal, archive bounds, static-layer
-recovery and required physical retirement. The remaining hosted programme must
+Seven focused controls check provenance refusal, archive bounds, static-layer
+recovery and required physical retirement. Acquisition streams one MiB at a time
+and refuses before any request exceeding the original 512-request/128-MiB limits.
+The remaining hosted programme must
 still produce thirty actual invocations, three removed-package cases and clean
 physical shutdown. Source checks and package verification do not qualify those
 runtime outcomes. Full ticket qualification and release publication remain false.

@@ -22,6 +22,17 @@ FIXTURE = ROOT/'tools/tests/fixtures/typescript_private_removed_inputs.json'
 FIXTURE_SHA256 = '08187e6029ca518c3e10df85a06b858ad03d69bcd6d4b3c3ba897c1e64675bfa'
 SOURCE = 'a8cd4fbb71d7766e886ab518542ca398237debb6'
 MAX_EXPANDED = 64*1024**2
+MAX_TRANSFER = 128*1024**2
+MAX_REQUESTS = 512
+
+
+class BoundedRanges(Ranges):
+    """Enforce this reader's original transfer ceiling before actual I/O."""
+    def read(self, count=-1):
+        actual = self.size-self.position if count == -1 else min(count,self.size-self.position)
+        require(not actual or (self.requests < MAX_REQUESTS and
+            actual <= MAX_TRANSFER-self.transferred), 'ts-private-removed-selected-acquisition-bound')
+        return super().read(count)
 
 
 def fixture():
@@ -163,19 +174,19 @@ def prepare(output):
         require(error.code == 302, 'ts-private-removed-download-redirect'); url = error.headers['Location']
     else: raise ValueError('ts-private-removed-download-redirect-required')
     require(url.startswith('https://'), 'ts-private-removed-download-https')
-    remote = Ranges(url,artifact['size_in_bytes'])
+    remote = BoundedRanges(url,artifact['size_in_bytes'])
     with zipfile.ZipFile(remote) as archive:
         selected = preflight(archive)
         for name,row in selected.items():
             path = output/name;path.parent.mkdir(mode=0o700,parents=True,exist_ok=True)
             with archive.open(row) as source,path.open('xb') as target:
                 count = 0
-                while raw := source.read(65536):
+                while raw := source.read(1024**2):
                     count += len(raw); require(count <= row.file_size, 'ts-private-removed-extract-bound')
                     target.write(raw)
             require(count == row.file_size and file_identity(path,MAX_EXPANDED) == value['members'][name],
                 'ts-private-removed-selected-member-hash-and-crc')
-    require(remote.transferred <= 128*1024**2 and remote.requests <= 512,
+    require(remote.transferred <= MAX_TRANSFER and remote.requests <= MAX_REQUESTS,
         'ts-private-removed-selected-acquisition-bound')
     recovery = reconstruct(output); _,proof = verify_prepared(output)
     record = {**proof,'schemaVersion':'lsf.typescript-private-removed-acquisition.v1',
