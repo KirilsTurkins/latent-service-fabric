@@ -42,7 +42,10 @@ class SnapshotError(RuntimeError):
 # The current selected tree includes the authenticated Wasmtime source and
 # exceeds 64 MiB. Retain every selected compiler input within fixed 72 MiB
 # source / 80 MiB archive caps; activation/runtime budgets are independent.
-MAX_SOURCE_FILES = 8192
+# The 2026-10-23 selection has 8,295 files after the retained kernel evidence
+# and ownership-local contracts were added. This finite metadata allowance is
+# shared by capture and Cargo attribution; no selected input is dropped.
+MAX_SOURCE_FILES = 8448
 
 
 @dataclass(frozen=True)

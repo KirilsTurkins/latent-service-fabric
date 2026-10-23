@@ -1,0 +1,177 @@
+{
+  "schemaVersion": "latent.host-codec.handle-buffer-native-evidence.v1",
+  "ownerIssues": [
+    736,
+    745,
+    744
+  ],
+  "status": "passed",
+  "sourceRevision": "c802283a5546620f071bd02ec01c410696893c5b",
+  "scope": "original-copied-Work-input-and-OwnedCapabilityResponse-byte-buffers-and-original-HandleEntry-row-and-every-owned-resource-text-copy-and-pending-clock-row-followed-by-ordinary-physical-native-only-accounting-retention-separate-from-last-ordinary-owner-cumulative-child-retirement-and-original-sealed-session-Core-and-Stats-strong-and-weak-Arc-backing-including-both-private-billing-Arcs-owned-identity-text-and-fixed-handle-slots-and-selected-C-canonical-realloc-private-System-stack-routing-and-ordinary-runtime-and-timer-strong-and-weak-Arc-backing-including-private-billing-Arc-and-ordinary-host-blob-fixed-Vec-and-streaming-HTTP-fixed-Vec-and-two-private-Shared-Arc-storage-shapes-and-three-retained-capability-directory-backings-and-six-closed-context-reply-buffers-and-concrete-callback-future-box-and-retained-activation-context-and-linear-allocation-notifications-codec-table-and-selected-Store-instance-buffer-registry-FuncRefs-container-resource-substitutions-original-memory-and-selected-c-public-async-type-sync-core-admission-and-authenticated-c-ready-handoff-and-closed-guest-trap-diagnostics-and-exact-native-thread-audit-codec-and-CLI-projection; direct-Core-HostFunc-construction, shared-preparation-closures, concurrent-task, other-hostcall-values-custom-Lower-shared-interior-error-owned-copies-and-opaque-accessor-scheduler-frames, request ingress and discarded scaffolding and other hostcall copies, shared broker and compiled-plan preparation and transitive provider payload/transport/queue graphs, legacy framing and serialized controller frames excluded",
+  "profile": "normal-managed-guest-default-features",
+  "nativeCohort": "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-retained-capability-directories-blob-streaming-shared-tables-runtime-timer-strong-weak-session-core-stats-c-canonical-system-stack-native-only-cumulative-retirement-physical-result-owner-box-handle-owned-text-call-buffers-memory-v15",
+  "wasmtimeAllocationCohort": "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-memory-v9",
+  "source": {
+    "sha256": "sha256:24f88d02076087679302db0fd3bbf38b192c8fc10dada21d1e877126b9e42a2b",
+    "files": 3688,
+    "bytes": 32174433,
+    "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+    "hermetic": false,
+    "implicitCompilerInputs": "not-attested"
+  },
+  "compiler": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "products": {
+    "latent": {
+      "sha256": "sha256:4e851cdaedfce479ea1ed2fd81e7de997b071b131e6fff5079afb1516a376809",
+      "bytes": 72381520
+    },
+    "latentd": {
+      "sha256": "sha256:aad849519019d73504a9e23723e77c47d5c6a7e4374d102280b7ec5efb07befb",
+      "bytes": 190202968
+    },
+    "examples/package": {
+      "sha256": "sha256:0d16aff7c67b2f8a05636cf6100a1a951f69cc62b6def4e16a21b72923c52c18",
+      "bytes": 21173448
+    },
+    "examples/capsule_contracts": {
+      "sha256": "sha256:e8631a046fcc132754e6eb4f7f070321b7a9c55d20f3bcc5687ae7f4bd7f971d",
+      "bytes": 13868208
+    },
+    "examples/capsule_authoring": {
+      "sha256": "sha256:73de8d6b892f930453b8703b729b55bafb5df74b686af5cb32cb8be7dbb0b5de",
+      "bytes": 27429216
+    }
+  },
+  "origin": {
+    "repository": "KirilsTurkins/latent-service-fabric",
+    "workflow": ".github/workflows/host-codec-memory.yml",
+    "event": "workflow_dispatch",
+    "branch": "feat/handle-entry-current-20261023",
+    "run": 39878219065,
+    "job": 120168986663,
+    "runUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39878219065",
+    "artifact": 12469896595,
+    "artifactName": "host-codec-memory-c802283a5546620f071bd02ec01c410696893c5b",
+    "archiveBytes": 70542067,
+    "archiveSha256": "sha256:5f19c381de636fa22a7a5aa529f3da8ba574eea8fcd0b1cb1e6e895ed6e2c52f",
+    "archiveMembers": 179,
+    "expandedBytes": 325490205,
+    "receipts": {
+      "native-products.json": {
+        "bytes": 128565,
+        "sha256": "sha256:7930e19a6a61f15ebff9409337885c92b7de5c706eed9b6deea58a176752efeb"
+      },
+      "source-inputs.json": {
+        "bytes": 24881,
+        "sha256": "sha256:fc56f740d5110eb945864e9c696e7350b9e58b8b2c7f3ed2ae32f3d486fc5f3b"
+      }
+    }
+  },
+  "recipeAndAuxiliaryMaterials": 150,
+  "literalRecipeEntries": 24,
+  "controlCount": 188,
+  "commandCount": 85,
+  "verifiedLogStreamHashes": 170,
+  "ignoredControls": 0,
+  "controlGroups": {
+    "original-host-memory": 6,
+    "result-owner": 4,
+    "result-wire": 4,
+    "result-capacity": 1,
+    "actual-host-codec": 9,
+    "actual-dynamic-allocation-hook": 6,
+    "raw-input-lifetime": 4,
+    "result-lifetime": 2,
+    "original-accounting": 20,
+    "child-capacity": 1,
+    "c-public-async-type": 1,
+    "c-public-sync-abi": 1,
+    "journal-result-retirement": 1,
+    "ordinary-backend": 1,
+    "actual-native-table-owner": 9,
+    "actual-native-store-owner": 10,
+    "closed-guest-trap-diagnostics": 1,
+    "actual-native-registry-owner": 4,
+    "actual-native-funcrefs-owner": 5,
+    "c-ready-handoff": 2,
+    "resource-substitutions": 5,
+    "actual-linear-allocation-notifications": 3,
+    "native-thread-audit-codec": 3,
+    "retained-activation-context": 11,
+    "actual-host-future-owner": 5,
+    "c-canonical-wait-routes": 2,
+    "actual-owned-context-reply": 5,
+    "cli-native-thread-audit-projection": 2,
+    "actual-retained-capability-directory": 5,
+    "actual-streaming-table-shared-owner": 10,
+    "actual-blob-table-owner": 1,
+    "original-session-table-native-owner": 2,
+    "actual-runtime-timer-strong-weak-owner": 17,
+    "original-session-native-owner": 6,
+    "original-session-optional-shared-owner": 1,
+    "c-canonical-private-system-stack": 2,
+    "actual-native-only-cumulative-retirement": 5,
+    "original-handle-owned-text": 1,
+    "original-handle-native-owner": 3,
+    "original-pending-clock-handle-native-owner": 2,
+    "original-call-native-buffer-owner": 5
+  },
+  "newControlGroups": {
+    "original-handle-owned-text": [
+      "broker::session::native_handle::tests::original_handle_native_all_shipping_owned_text_shapes_include_nested_copies"
+    ],
+    "original-handle-native-owner": [
+      "broker::tests::handle_native_memory::original_handle_native_backing_is_distinct_from_logical_metadata_and_legacy",
+      "broker::tests::handle_native_memory::original_handle_native_refusal_precedes_allocation_and_preserves_admission",
+      "broker::tests::handle_native_memory::original_handle_last_shared_drops_keep_text_headers_and_stats_paid_after_session_close"
+    ],
+    "original-pending-clock-handle-native-owner": [
+      "broker::tests::clocks::original_pending_clock_handle_native_row_is_one_paid_owner_before_publication",
+      "broker::tests::clocks::original_pending_clock_handle_native_refusal_does_not_publish_or_count_a_row"
+    ],
+    "original-call-native-buffer-owner": [
+      "broker::tests::buffer_native_memory::original_call_native_buffer_capacity_empty_legacy_and_budget_identity_are_closed",
+      "broker::tests::buffer_native_memory::original_call_native_input_refusal_precedes_dispatch_and_preserves_each_counter",
+      "broker::tests::buffer_native_memory::original_call_native_reply_refusal_requires_simultaneous_live_input_capacity",
+      "broker::tests::buffer_native_memory::original_call_native_reply_stays_on_original_budget_after_close_and_cross_thread_drop",
+      "broker::tests::buffer_native_memory::original_call_native_buffer_unwind_returns_only_its_original_physical_charge"
+    ]
+  },
+  "prior177Prefix": {
+    "sourceRevision": "b606b1402961593dd918722a66fe293bfab9b319",
+    "run": 39869241256,
+    "job": 120139175577,
+    "groups": 37,
+    "controls": 177,
+    "exactSelectorsAndCommandPrefixPreserved": true,
+    "observation": "host-codec-retirement-native-2026-10-23.json"
+  },
+  "verification": {
+    "wholeArchiveDigestAndAll179MemberCrcAndIdentitiesVerified": true,
+    "all85ExactArgumentsAnd170LogIdentitiesVerified": true,
+    "all188DiscoveredAndSuccessfulNamesVerified": true,
+    "allNativeAnd150AuxiliaryIdentitiesEqualExecutedPhysicalSource": true,
+    "allFiveProductIdentitiesVerified": true,
+    "liveSuccessfulOfficialRunJobArtifactVerified": true,
+    "immutableMaintainedReader": "tools/host_codec_handle_buffer_native_products.py"
+  },
+  "completedSlice": {
+    "handleRows": "Normal and pending-clock HandleEntry births prepay the original shared row, Arc headers, private billing owner and every owned resource text copy before allocation. Real final strong/weak storage retirement releases only the original memory ledger.",
+    "copiedBuffers": "Work input and OwnedCapabilityResponse copies prepay their original Vec capacities before allocation. Simultaneously live input and output are charged together; zeroing and actual backing deallocation precede memory refund, including closed-session, cross-thread and unwind paths.",
+    "physicalResultBox": "The selected local Bytes owner-box fork is authenticated before the normal native build; the separate real allocator observation is retained in the result-owner retirement guide."
+  },
+  "claimBoundary": {
+    "signedGuestQualification": false,
+    "guestSourceCompiled": false,
+    "whole736CostCriteriaComplete": false,
+    "whole745CostCriteriaComplete": false,
+    "whole744RuntimeComplete": false,
+    "hermeticCompilerInputsAttested": false,
+    "remainingWork": [
+      "Audit/journal ownership including queued and persisted metadata, replies and tickets.",
+      "Transitive typed provider payload, transport, queue, request ingress and other hostcall copies.",
+      "Shared broker and compiled-plan preparation.",
+      "Complete activation retirement, pressure/recurrence and broader signed language/runtime qualification."
+    ]
+  }
+}

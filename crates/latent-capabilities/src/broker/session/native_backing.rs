@@ -1,9 +1,9 @@
 //! The closed allocations made by open_session, on its original budget.
-use super::{HandleEntry, SessionCore, SessionCoreOwner, Stats, StatsOwner};
+use super::{HandleEntryOwner, SessionCore, SessionCoreOwner, Stats, StatsOwner};
 use crate::broker::{capacity, invalid, token};
 use latent_core::{ActivationBudget, HostMemoryReservation, PlatformError};
 use latent_executor::ExecutionRequest;
-use std::{alloc::Layout, sync::Arc};
+use std::alloc::Layout;
 
 const ALLOCATION_BOOKKEEPING: usize = 64;
 
@@ -49,7 +49,7 @@ pub(in crate::broker) fn payload_bytes(
             return Err(invalid());
         }
     }
-    let mut core = Layout::array::<Option<Arc<HandleEntry>>>(slots)
+    let mut core = Layout::array::<Option<HandleEntryOwner>>(slots)
         .map_err(|_| capacity())?
         .size()
         .checked_add(ALLOCATION_BOOKKEEPING)
