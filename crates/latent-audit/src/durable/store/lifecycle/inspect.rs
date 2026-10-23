@@ -1,4 +1,7 @@
-use super::{codec, corrupt, guard_open, io, storage, AuditArchiveCoverage, AuditMaintenance, Deadline, Result};
+use super::{
+    codec, corrupt, guard_open, io, storage, AuditArchiveCoverage, AuditMaintenance, Deadline,
+    Result,
+};
 use std::{path::Path, time::Duration};
 
 /// A verified observation of the active epoch under exclusive filesystem
@@ -40,7 +43,10 @@ impl AuditMaintenance {
         guard_open(&root)?;
         let (store, mode) = storage::active(root, deadline)?;
         let status = AuditJournalStatus {
-            journal_id: mode.lineage.as_ref().map_or_else(|| mode.epoch.clone(), |link| link.journal_id.clone()),
+            journal_id: mode
+                .lineage
+                .as_ref()
+                .map_or_else(|| mode.epoch.clone(), |link| link.journal_id.clone()),
             epoch: mode.epoch,
             retained_floor: store.first_sequence,
             high_watermark: store.head.next_sequence - 1,
@@ -50,7 +56,10 @@ impl AuditMaintenance {
             retained_bytes: store.head.bytes,
             pending_attempts: usize::from(store.pending.is_some()),
             unknown_outcomes: store.unknown,
-            previous_epoch: mode.lineage.as_ref().map(|link| link.previous_epoch.clone()),
+            previous_epoch: mode
+                .lineage
+                .as_ref()
+                .map(|link| link.previous_epoch.clone()),
             previous_seal: mode.lineage.as_ref().map(|link| link.previous_seal.clone()),
         };
         deadline.check()?;
@@ -66,24 +75,35 @@ impl AuditMaintenance {
         timeout: Duration,
     ) -> Result<AuditCustodyStatus> {
         let deadline = Deadline::new(timeout)?;
-        if !codec::hex(expected_journal_id, 32) { return Err(super::super::super::invalid()); }
+        if !codec::hex(expected_journal_id, 32) {
+            return Err(super::super::super::invalid());
+        }
         deadline.check()?;
         let root = storage::existing_root(archives)?;
         let custody = storage::read_custody(&root)?;
-        if custody.journal_id != expected_journal_id { return Err(corrupt()); }
+        if custody.journal_id != expected_journal_id {
+            return Err(corrupt());
+        }
         storage::verify_custody(&root, &custody, deadline)?;
         let mut selected = Vec::with_capacity(custody.archives.len());
         for entry in &custody.archives {
             deadline.check()?;
-            let seal: super::model::Seal = storage::canonical(&root.path.join(&entry.epoch).join("SEAL"), 4096)?;
-            if seal.entry()? != *entry { return Err(corrupt()); }
+            let seal: super::model::Seal =
+                storage::canonical(&root.path.join(&entry.epoch).join("SEAL"), 4096)?;
+            if seal.entry()? != *entry {
+                return Err(corrupt());
+            }
             selected.push(seal.coverage()?);
         }
         // Keep the real custody lock until every selected descriptor is read.
         io::directory(&root.path)?;
         deadline.check()?;
-        Ok(AuditCustodyStatus { journal_id: custody.journal_id, custody_id: custody.custody_id,
-            archives: selected, transferred_through: custody.transferred_through,
-            transferred_head: custody.transferred_head })
+        Ok(AuditCustodyStatus {
+            journal_id: custody.journal_id,
+            custody_id: custody.custody_id,
+            archives: selected,
+            transferred_through: custody.transferred_through,
+            transferred_head: custody.transferred_head,
+        })
     }
 }

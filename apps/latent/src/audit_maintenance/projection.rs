@@ -1,5 +1,7 @@
-use latent_audit::{AuditArchiveCoverage, AuditArchivePage, AuditCustodyStatus, AuditJournalStatus,
-    AuditPageStop, AuditRolloverReceipt, AuditTransferReceipt};
+use latent_audit::{
+    AuditArchiveCoverage, AuditArchivePage, AuditCustodyStatus, AuditJournalStatus, AuditPageStop,
+    AuditRolloverReceipt, AuditTransferReceipt,
+};
 use latent_core::{PlatformError, PlatformErrorCode};
 use serde_json::{json, Value};
 
@@ -49,8 +51,10 @@ pub(super) fn page(value: AuditArchivePage) -> Result<Value, PlatformError> {
         records.push(encoded);
     }
     let stop = match value.coverage.stop {
-        AuditPageStop::End => "end", AuditPageStop::PageLimit => "page-limit",
-        AuditPageStop::ByteLimit => "byte-limit", AuditPageStop::ScanLimit => "scan-limit",
+        AuditPageStop::End => "end",
+        AuditPageStop::RecordLimit => "record-limit",
+        AuditPageStop::ByteLimit => "byte-limit",
+        AuditPageStop::ScanLimit => "scan-limit",
     };
     Ok(json!({"archive":coverage(value.archive),"records":records,
         "recordFormat":"latent.audit.stored-record.decimal-counters.v1",
@@ -65,15 +69,32 @@ pub(super) fn page(value: AuditArchivePage) -> Result<Value, PlatformError> {
 /// every unsigned numeric field to a decimal string, including formatVersion.
 /// This is an explicitly named format, not a lossy copy of the RPC projection.
 fn decimal_counters(value: &mut Value, depth: usize) -> Result<(), PlatformError> {
-    if depth > 16 { return Err(invalid()); }
+    if depth > 16 {
+        return Err(invalid());
+    }
     match value {
-        Value::Number(number) => { *value = Value::String(number.as_u64().ok_or_else(invalid)?.to_string()); }
-        Value::Object(fields) => for value in fields.values_mut() { decimal_counters(value, depth + 1)?; },
-        Value::Array(values) => for value in values { decimal_counters(value, depth + 1)?; },
+        Value::Number(number) => {
+            *value = Value::String(number.as_u64().ok_or_else(invalid)?.to_string());
+        }
+        Value::Object(fields) => {
+            for value in fields.values_mut() {
+                decimal_counters(value, depth + 1)?;
+            }
+        }
+        Value::Array(values) => {
+            for value in values {
+                decimal_counters(value, depth + 1)?;
+            }
+        }
         _ => {}
     }
     Ok(())
 }
 fn invalid() -> PlatformError {
-    PlatformError { code: PlatformErrorCode::CorruptArtifact, message: "audit-corrupt".into(), retryable: false, details: Vec::new() }
+    PlatformError {
+        code: PlatformErrorCode::CorruptArtifact,
+        message: "audit-corrupt".into(),
+        retryable: false,
+        details: Vec::new(),
+    }
 }

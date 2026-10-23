@@ -1,5 +1,7 @@
 //! Exclusive stopped-owner maintenance. No worker, replay or ordinary audit
 //! reservation is created here. Archive custody is separate from mutation authority.
+mod inspect;
+pub use inspect::{AuditCustodyStatus, AuditJournalStatus};
 mod model;
 mod rollover;
 mod storage;
@@ -49,10 +51,6 @@ impl AuditMaintenance {
 
     /// Transfer the oldest local archive into one explicit operator-held target.
     /// Local capacity is released only after the target is durably verified.
-    #[expect(
-        clippy::too_many_arguments,
-        reason = "Stopped-owner transfer requires exact original archive, destination and operation selectors"
-    )]
     pub fn transfer(
         journal: &Path,
         custody: &Path,
@@ -153,7 +151,7 @@ impl Deadline {
                 "audit-maintenance-platform-unsupported",
             ));
         }
-        if timeout.is_zero() || timeout > Duration::from_secs(120) {
+        if timeout.is_zero() || timeout > Duration::from_mins(2) {
             return Err(super::super::invalid());
         }
         Ok(Self(

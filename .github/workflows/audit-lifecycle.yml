@@ -29,31 +29,30 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-          show-progress: false
       - name: Install the repository-pinned Rust toolchain
         run: rustup toolchain install 1.97.1 --profile minimal --component rustfmt --component clippy
-      - name: Prepare and format exact CLI and owner integration
-        run: python3 .github/audit-lifecycle-refine.py
+      - name: Prepare bounded cleanup and operator guidance
+        run: python3 .github/audit-lifecycle-candidate.py prepare
       - name: Publish immutable candidate blobs without moving a branch
         env:
           GH_TOKEN: ${{ github.token }}
         run: python3 .github/audit-lifecycle-candidate.py publish
-      - name: Exercise full audit library including interruption boundaries
+      - name: Exercise the full durable audit library
         shell: bash
         run: |
           cargo +1.97.1 test -p latent-audit --lib --all-features --locked > "$RUNNER_TEMP/audit-rust.log" 2>&1 || { tail -120 "$RUNNER_TEMP/audit-rust.log"; exit 1; }
           tail -10 "$RUNNER_TEMP/audit-rust.log"
-      - name: Exercise the native local-operator CLI workflow
+      - name: Exercise every native CLI target
         shell: bash
         run: |
-          cargo +1.97.1 test -p latent --lib audit_maintenance --locked > "$RUNNER_TEMP/audit-cli.log" 2>&1 || { tail -140 "$RUNNER_TEMP/audit-cli.log"; exit 1; }
-          tail -12 "$RUNNER_TEMP/audit-cli.log"
+          cargo +1.97.1 test -p latent --all-targets --locked > "$RUNNER_TEMP/audit-cli.log" 2>&1 || { tail -140 "$RUNNER_TEMP/audit-cli.log"; exit 1; }
+          grep -E 'running [0-9]+ tests|test result:' "$RUNNER_TEMP/audit-cli.log"
       - name: Exercise maintained static release tooling
         shell: bash
         run: |
           node --test tools/static-release/*.test.mjs > "$RUNNER_TEMP/audit-node.log" 2>&1 || { tail -100 "$RUNNER_TEMP/audit-node.log"; exit 1; }
           tail -10 "$RUNNER_TEMP/audit-node.log"
-      - name: Retain all fixed-scope Clippy diagnostics without truncating the first findings
+      - name: Check all new lifecycle and CLI code for Clippy findings
         shell: bash
         run: |
           set +e
@@ -62,7 +61,8 @@ jobs:
           python3 - <<'PY'
           import json, os
           from pathlib import Path
-          rows = []
+          rows, failed = [], False
+          prefixes = ('crates/latent-audit/src/durable/store/lifecycle', 'apps/latent/src/audit_maintenance', 'apps/latent/src/args/audit/maintenance')
           for line in Path(os.environ['RUNNER_TEMP'], 'audit-clippy.jsonl').read_text().splitlines():
               try: item = json.loads(line)
               except ValueError: continue
@@ -70,12 +70,20 @@ jobs:
               message = item['message']
               if message['level'] not in ('warning', 'error'): continue
               spans = [span for span in message['spans'] if span.get('is_primary')]
-              rows.append({'level':message['level'], 'code':message.get('code'), 'message':message['message'],
+              code = (message.get('code') or {}).get('code')
+              own = any(span['file_name'].startswith(prefixes) or span['file_name'] == 'crates/latent-audit/src/durable/store/io.rs'
+                  or (span['file_name'] == 'crates/latent-audit/src/durable/store.rs' and code != 'clippy::assertions_on_constants') for span in spans)
+              failed |= own or message['level'] == 'error'
+              rows.append({'level':message['level'], 'code':code, 'newCode':own, 'message':message['message'],
                   'locations':[(span['file_name'], span['line_start']) for span in spans]})
           if len(rows) > 1000: raise SystemExit('diagnostic-bound')
           for row in rows: print('CLIPPY=' + json.dumps(row, sort_keys=True))
+          if failed: raise SystemExit('new-code-clippy-findings')
+          print('NEW_CODE_CLIPPY=clean; retained pre-existing diagnostics are not a full-workspace lint pass')
           PY
-          exit "$status"
+          diagnostics=$?
+          if [ "$status" -ne 0 ]; then exit "$status"; fi
+          exit "$diagnostics"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:

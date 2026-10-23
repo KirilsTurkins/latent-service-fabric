@@ -17,6 +17,7 @@ pub use store::lifecycle::{
     AuditArchiveCoverage, AuditArchivePage, AuditMaintenance, AuditRolloverReceipt,
     AuditTransferReceipt,
 };
+pub use store::lifecycle::{AuditCustodyStatus, AuditJournalStatus};
 pub use ticket::{AuditAppendTicket, AuditBeginTicket, AuditQueryTicket};
 pub use worker::*;
 type Result<T> = std::result::Result<T, PlatformError>;

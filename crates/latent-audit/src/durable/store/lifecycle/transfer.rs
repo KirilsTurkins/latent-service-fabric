@@ -59,11 +59,6 @@ impl Transfer {
         Ok(())
     }
 }
-
-#[expect(
-    clippy::too_many_arguments,
-    reason = "Every exact original operation selector is required for stopped-owner recovery"
-)]
 pub(super) fn run(
     journal: &Path,
     custody: &Path,

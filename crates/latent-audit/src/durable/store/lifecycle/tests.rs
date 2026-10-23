@@ -15,7 +15,7 @@ use std::{
 
 const TIMEOUT: Duration = Duration::from_secs(10);
 struct Fixture {
-    _directory: Directory,
+    directory: Directory,
     root: PathBuf,
     custody: PathBuf,
 }
@@ -25,7 +25,7 @@ impl Fixture {
         Self {
             root: directory.0.join("active"),
             custody: directory.0.join("archives"),
-            _directory: directory,
+            directory,
         }
     }
     fn fill(&self, unknown: bool) -> String {
@@ -39,7 +39,7 @@ impl Fixture {
             .epoch
     }
     fn destination(&self) -> PathBuf {
-        self._directory.0.join("operator-custody")
+        self.directory.0.join("operator-custody")
     }
     fn roll(&self, operation: u64) -> AuditRolloverReceipt {
         AuditMaintenance::rollover(
@@ -88,7 +88,7 @@ fn pair(store: &mut Store, unknown: bool) {
 fn query() -> AuditQueryRequest {
     AuditQueryRequest {
         scope: AuditScope::Tenant(TenantId("test".into())),
-        filter: Default::default(),
+        filter: crate::AuditFilter::default(),
         cursor: None,
         limit: 1,
         maximum_bytes: 32768,
@@ -396,7 +396,7 @@ fn transfer_cutpoints_keep_custody_until_the_destination_is_reverified() {
         if point != 26 {
             assert!(Store::open(&fixture.root, small()).is_err());
             let before = history(&fixture.custody);
-            let unavailable = fixture._directory.0.join("unmounted-archive");
+            let unavailable = fixture.directory.0.join("unmounted-archive");
             fs::rename(&destination, &unavailable).unwrap();
             assert!(AuditMaintenance::transfer(
                 &fixture.root,
@@ -425,7 +425,7 @@ fn transfer_cutpoints_keep_custody_until_the_destination_is_reverified() {
         assert_eq!(acknowledged(&destination), original);
         assert!(!fixture.custody.join(&epoch).exists());
         assert!(!fixture.root.join("TRANSFER").exists());
-        let changed = fixture._directory.0.join("another-target");
+        let changed = fixture.directory.0.join("another-target");
         assert!(AuditMaintenance::transfer(
             &fixture.root,
             &fixture.custody,
@@ -514,7 +514,7 @@ fn private_path_and_archive_identity_checks_preserve_all_source_bytes() {
     )
     .is_err());
     assert!(!fixture.root.join("nested").exists());
-    let target = fixture._directory.0.join("external");
+    let target = fixture.directory.0.join("external");
     fs::create_dir(&target).unwrap();
     std::os::unix::fs::symlink(&target, &fixture.custody).unwrap();
     assert!(AuditMaintenance::rollover(
@@ -533,7 +533,7 @@ fn private_path_and_archive_identity_checks_preserve_all_source_bytes() {
     fs::set_permissions(&archive, fs::Permissions::from_mode(0o755)).unwrap();
     assert!(AuditMaintenance::verify_archive(&archive, &epoch, TIMEOUT).is_err());
     fs::set_permissions(&archive, fs::Permissions::from_mode(0o700)).unwrap();
-    let alias = fixture._directory.0.join("hardlink");
+    let alias = fixture.directory.0.join("hardlink");
     fs::hard_link(archive.join("records/r-0000000000000001"), &alias).unwrap();
     assert!(AuditMaintenance::verify_archive(&archive, &epoch, TIMEOUT).is_err());
     fs::remove_file(alias).unwrap();
@@ -587,7 +587,7 @@ fn maintenance_deadlines_and_closed_input_bounds_precede_filesystem_mutation() {
         &fixture.custody,
         &epoch,
         &"a".repeat(32),
-        Deadline(Instant::now() - TIMEOUT)
+        Deadline(Instant::now().checked_sub(TIMEOUT).unwrap())
     )
     .is_err());
     assert_eq!(history(&fixture.root), before);
