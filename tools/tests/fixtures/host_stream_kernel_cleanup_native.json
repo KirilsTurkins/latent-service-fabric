@@ -1,0 +1,31 @@
+{
+  "schemaVersion": "lsf.kernel-cleanup-native-source.v1",
+  "upstreamCommit": "7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+  "source": {},
+  "parentDerived": {
+    "net/factory-private.h": {
+      "bytes": 5388,
+      "sha256": "428213984538caf52d6dcede7ac9d8e3abfd5611ec44e9449ff48d3440720c6b"
+    },
+    "net/factory-device.c": {
+      "bytes": 9539,
+      "sha256": "ea34ec0766dae58aed49baba41d038b04c46a2861d873a1c734324d6299184d8"
+    },
+    "net/factory.c": {
+      "bytes": 33606,
+      "sha256": "139324450e407e2b57541b104af5c978c379baca4ef682ae0afc95332c0f8321"
+    },
+    "kernel/kthread.c": {
+      "bytes": 46381,
+      "sha256": "2a2d8a47ecb43101f98796ce5c69c0148c7b96eb53204bdafe5c7615baaca78d"
+    },
+    "include/net/lsf_stream_cleanup_provider_executor.h": {
+      "bytes": 5671,
+      "sha256": "a4ef10311ee079c3e385dfd72b260bd1627b12dbd8709d2a1c69f282d9325764"
+    }
+  },
+  "actualLinuxExecution": false,
+  "consumerSelected": false,
+  "completeAllocationClosure": false,
+  "productionInstallation": false
+}

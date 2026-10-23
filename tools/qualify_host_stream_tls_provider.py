@@ -58,7 +58,7 @@ def suite_contract(root: Path) -> dict:
     if len(matches) != 1:
         raise ValueError("tls-provider-reference-suite-owner")
     row = matches[0]
-    if (row["minimumCases"] != 30 or len(row["expectedCases"]) != 30
+    if (row["minimumCases"] != 40 or len(row["expectedCases"]) != 40
             or not (TLS_CASES | ACCOUNTING_CASES | KERNEL_RETIREMENT_CASES | {DENIAL, KERNEL_CASE}) <= set(row["expectedCases"])
             or row["expectedIgnored"] or row["ignoredLeaves"] or row["timeoutSeconds"] != 900):
         raise ValueError("tls-provider-reference-suite-contract")
@@ -168,7 +168,7 @@ def main() -> int:
     parser.add_argument("--source-commit", default=os.environ.get("GITHUB_SHA"))
     args = parser.parse_args()
     qualify(provider.ROOT, args.output, args.source_commit)
-    print("Actual bounded TLS provider: 30 cases passed; accounting remains unqualified")
+    print("Actual bounded TLS provider: 40 cases passed; accounting remains unqualified")
     return 0
 
 
