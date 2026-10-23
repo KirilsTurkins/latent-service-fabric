@@ -44,6 +44,18 @@ waitqueue, and retains their source/configuration identities. Its eight source
 controls do not execute Linux constructor races or physical retirement. The
 earlier 24-object/native atomic programme is unchanged and is not rerun.
 
+The [actual owning job](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39878178140/job/120168850128)
+passed on `7ad12307ffd6c9c75a3a143c87ad1a00b1cc2d1f`: four unlinked x86
+objects, 109 required GLOBAL functions, four geometry sections and 13 completed
+commands with descendant cleanup. Independent verification authenticated all 41
+CRC members, 263 Git materials, 82 whole current-stage inputs and 322 derived
+files (seven changed; 315 unchanged). Control is 344 bytes, charged as 384 bytes
+inside the same record; its completion is 32 bytes and expiry eight bytes. The
+six-record total is 2,816 bytes. The new provider static waitqueue is 24 bytes,
+included in the original bootstrap-size calculation. These are measured fixed
+subgraphs; whole bootstrap/infrastructure fitting is not requalified. See the
+[compiled observation](evidence/kernel-cleanup-constructor-objects-compiled-2026-10-23.json).
+
 Synchronous mutex acquisition, allocation/constructor execution and the complete
 wall-clock birth bound remain unqualified. Initial completion storage ownership
 does not establish that bound. Actual positive, timeout/signal/late-completer,
