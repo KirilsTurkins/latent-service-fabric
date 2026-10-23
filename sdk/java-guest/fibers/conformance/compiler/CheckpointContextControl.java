@@ -121,6 +121,54 @@ public final class CheckpointContextControl {
         }
     }
 
+    private static void diagnosePinnedEntry(Inputs inputs, MethodReader actual) throws Exception {
+        var finder = new AsyncMethodFinder(inputs.graph, inputs);
+        var proof = AsyncMethodFinder.class.getDeclaredMethod("pinnedFiberEntry", MethodReader.class);
+        proof.setAccessible(true);
+        if (Boolean.TRUE.equals(proof.invoke(finder, actual))) return;
+        // Failure-only JVM diagnostics for this owned pinned method, never app IR.
+        var baseline = pinnedFiber().getMethod(actual.getDescriptor());
+        boolean flags = actual.getLevel() == baseline.getLevel();
+        for (ElementModifier modifier : ElementModifier.values()) {
+            flags &= actual.hasModifier(modifier) == baseline.hasModifier(modifier);
+        }
+        var bounded = AsyncMethodFinder.class.getDeclaredMethod("boundedFiberEntryBody", ProgramReader.class);
+        var body = AsyncMethodFinder.class.getDeclaredMethod("sameFiberEntryBody", ProgramReader.class, ProgramReader.class);
+        var instruction = AsyncMethodFinder.class.getDeclaredMethod("sameFiberInstruction", Instruction.class, Instruction.class);
+        bounded.setAccessible(true);
+        body.setAccessible(true);
+        instruction.setAccessible(true);
+        var checked = bounded.invoke(finder, actual.getProgram());
+        if (!(checked instanceof Program program)) {
+            System.err.println("PINNED_ENTRY_PROOF_FAILURE flags=" + flags + ";bounded=false");
+            return;
+        }
+        var opcodes = new java.util.TreeMap<String, Integer>();
+        int count = 0;
+        for (var block : program.getBasicBlocks()) for (var insn : block) {
+            require(++count <= 256, "owned-proof-diagnostic-instruction-bound");
+            var name = insn.getClass().getName();
+            require(name.startsWith("org.teavm.model.instructions.")
+                    && name.substring(29).matches("[A-Za-z]{1,64}"), "owned-proof-diagnostic-opcode");
+            String match;
+            try {
+                match = Boolean.TRUE.equals(instruction.invoke(finder, insn, insn)) ? "equal" : "refused";
+            } catch (java.lang.reflect.InvocationTargetException failure) {
+                match = failure.getCause() instanceof NullPointerException ? "null-operand" : "exception";
+            }
+            opcodes.merge(name.substring(29) + ":" + match, 1, Integer::sum);
+        }
+        String comparison;
+        try {
+            comparison = "self=" + body.invoke(finder, program, program)
+                    + ";baseline=" + body.invoke(finder, baseline.getProgram(), program);
+        } catch (java.lang.reflect.InvocationTargetException failure) {
+            comparison = failure.getCause() instanceof NullPointerException ? "null-operand" : "exception";
+        }
+        System.err.println("PINNED_ENTRY_PROOF_FAILURE flags=" + flags
+                + ";bounded=true;" + comparison + ";opcodes=" + opcodes);
+    }
+
     private static void graphControls(boolean corrected) throws Exception {
         for (int kind = 0; kind < 4; ++kind) {
             var inputs = new Inputs();
@@ -191,6 +239,7 @@ public final class CheckpointContextControl {
         entry.caller(bootstrap, managedEntry);
         entry.source.get(bootstrap.getClassName()).getAnnotations().add(
                 new AnnotationHolder("org.teavm.interop.Unmanaged"));
+        if (corrected) diagnosePinnedEntry(entry, entryMethod);
         find(entry, corrected, null);
         entryMethod.setProgram(program(null));
         find(entry, corrected, "java-checkpoint-unresolved-741");
