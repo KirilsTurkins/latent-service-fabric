@@ -28,6 +28,12 @@ static uint64_t expiry;
 #if LSF_VM_LATE_FD != 0 && LSF_VM_LATE_FD != 1
 #error Invalid isolated constructor observation mode
 #endif
+#ifndef LSF_VM_NO_BEGIN
+#define LSF_VM_NO_BEGIN 0
+#endif
+#if (LSF_VM_NO_BEGIN != 0 && LSF_VM_NO_BEGIN != 1) || (LSF_VM_NO_BEGIN && LSF_VM_LATE_FD)
+#error Invalid isolated no-BEGIN observation mode
+#endif
 
 static void finish(int success, const char *stage)
 {
@@ -322,6 +328,13 @@ int main(int argc, char **argv)
     snapshot("opened", before);
     check(little(before + 8, 4) == 0 && little(before + 12, 4) == 0,
           "open-is-not-ready");
+#if LSF_VM_NO_BEGIN
+    check(close(fd) == 0, "no-begin-descriptor-close");
+    /* Only close returning is observed here. The host requires the actual
+     * kernel post-physical-return marker, never a synthetic child snapshot. */
+    finish(1, "actual-no-begin-descriptor-close-returned");
+    return 1; /* No fallthrough to BEGIN even if finish were ever changed. */
+#endif
     second = open(device, O_RDWR | O_CLOEXEC);
     check(second == -1 && errno == EBUSY, "second-open-refused");
     request(bytes, BEGIN, now_ns() + 20000000000u);

@@ -2,8 +2,8 @@
 
 This source stage extends the qualified late-close implementation at
 `7baad1341327ccd36c625e3e545faf0f1306a78e` for a successful factory open whose
-final VFS release occurs without BEGIN. It has not been integrated into the
-owning programme, compiled or run. Actual no-BEGIN physical return remains
+final VFS release occurs without BEGIN. The owning programme now includes this
+candidate; it has not been compiled or run. Actual no-BEGIN physical return remains
 unqualified. Failed open without a successful file/VFS release is excluded.
 
 The final file handoff captures a strictly initial-only candidate before
@@ -54,3 +54,15 @@ do not execute Linux or certify physical free. A future reviewed qualification
 must use a fresh real open/no-BEGIN/final-close case, retain its actual opened
 snapshot, and observe the existing post-physical kernel marker. Close return,
 zero counters and a synthetic child-retired snapshot cannot supply that proof.
+
+The owning campaign links one candidate kernel, builds three fixed PID1 images
+and starts three fresh isolated VMs: child-retired fast close, pending-child
+late close and initial-only no-BEGIN close. It retains all old60 Python source
+controls and22 actual hosted C parser controls, adding10 NoBEGIN source controls
+and7 observer/budget controls. No local kernel or VM replay accompanies this
+source change. All three boots use the same kernel image,512MiB/twoCPU/no host
+disk/no network profile. Each command remains capped at90seconds; one shared
+monotonic180second deadline includes all three boots and their observation
+work. The three90second maxima are not additive. The original earlier deadline
+and command cap are preserved when smaller, and both are restored on exit.
+Aggregate expiry refuses success even if the final process returned normally.

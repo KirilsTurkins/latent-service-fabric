@@ -9,7 +9,7 @@
     "on": {
       "push": {
         "branches": [
-          "feat/stream-kernel-late-fd-final-free-20261023"
+          "feat/kernel-no-begin-root-final-free-20261024"
         ],
         "paths": [
           ".github/workflows/stream-kernel-constructor-vm.yml",
@@ -31,6 +31,12 @@
           "tools/host_stream_kernel_root_final_free.py",
           "tools/host_stream_kernel_late_fd_final_free.py",
           "tools/host_stream_kernel_late_fd_vm.py",
+          "tools/host_stream_kernel_no_begin_root_final_free.py",
+          "tools/host_stream_kernel_no_begin_vm.py",
+          "tools/tests/test_host_stream_kernel_no_begin_root_final_free.py",
+          "tools/tests/test_kernel_no_begin_vm.py",
+          "tools/tests/fixtures/host_stream_kernel_no_begin_root_final_free.json",
+          "research/standard-outbound/linux-6.12-lineage/factory-cleanup-no-begin-root-final-free.c",
           "tools/host_stream_kernel_cleanup_native_programme.py",
           "tools/tests/test_host_stream_kernel_late_fd_final_free.py",
           "tools/tests/test_kernel_late_fd_vm.py",
@@ -52,7 +58,7 @@
   "requiredJobs": [
     "constructor-vm"
   ],
-  "reviewReason": "Qualify only the owned late-FD branch while retaining all prior required jobs and immutable resource/security gates.",
+  "reviewReason": "Retain all60 previous Python and22 compiled C controls; add10 initial-only source and7 observer/budget cases, three fresh initramfs products from one kernel and one shared180-second VM deadline.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/stream-kernel-constructor-vm.yml"
 }
