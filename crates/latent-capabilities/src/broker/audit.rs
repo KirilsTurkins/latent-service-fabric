@@ -4,9 +4,9 @@ mod recovery;
 use super::{denied, error, session::SessionCore, ActivationCapabilityBroker, PlatformError};
 pub(super) use capture::request_digest;
 use latent_audit::{
-    AuditAttempt, AuditHandle, AuditIdentities, AuditObservation, AuditOperationAttempt,
-    AuditOperationConclusion, AuditOperationResult, AuditOutcome, AuditProviderOutcome,
-    AuditReason, Phase2AuditEventKind,
+    AuditAttempt, AuditBox, AuditBoxPreparation, AuditCallMemory, AuditHandle, AuditIdentities,
+    AuditObservation, AuditOperationAttempt, AuditOperationConclusion, AuditOperationResult,
+    AuditOutcome, AuditOwned, AuditProviderOutcome, AuditReason, Phase2AuditEventKind,
 };
 use latent_core::PlatformErrorCode;
 pub use recovery::reconcile_capability_audit;
@@ -104,6 +104,17 @@ pub(super) fn observe_grant(
         configuration.note_dropped();
         return;
     };
+    let Ok(memory) = configuration.handle.prepare_call_memory(&core.budget) else {
+        configuration.note_dropped();
+        return;
+    };
+    let Ok(prepared) =
+        AuditCallMemory::owned_heap_bound(configuration.handle.limits().maximum_record_bytes)
+            .and_then(|bound| memory.prepare_value::<AuditOperationAttempt>(bound))
+    else {
+        configuration.note_dropped();
+        return;
+    };
     let Ok(mut record) = capture::attempt(
         core,
         index,
@@ -139,16 +150,18 @@ pub(super) fn observe_grant(
             },
         ),
     };
-    let _ = configuration.handle.try_capture(&AuditObservation {
-        scope: record.scope,
-        actor: record.actor,
-        identities: record.identities,
-        kind,
-        outcome,
-        reason,
-        cache_kind: None,
-        occurred_at_unix_millis: now(),
-    });
+    let Ok(heap) = record.retained_heap_bytes() else {
+        configuration.note_dropped();
+        return;
+    };
+    let record = prepared.allocate(record, heap);
+    let Ok(event) = record.into_observation(kind, outcome, reason, now()) else {
+        configuration.note_dropped();
+        return;
+    };
+    let _ = configuration
+        .handle
+        .try_capture_with_memory(&event, &memory);
 }
 impl ActivationCapabilityBroker {
     /// Configure the shared journal before installing providers/plans/sessions.
@@ -161,6 +174,14 @@ impl ActivationCapabilityBroker {
         let owner = Arc::get_mut(&mut self.inner).ok_or_else(denied)?;
         if owner.audit.is_some() {
             return Err(denied());
+        }
+        if let Some(native) = handle.node_metadata_owner() {
+            if !owner.counters.is_pristine() {
+                return Err(denied());
+            }
+            // Exact ceiling equality is checked inside with_native. Retain the
+            // actual original journal/bootstrap bank, never recreate its grant.
+            owner.counters = super::Counters::with_native(owner.limits, native)?;
         }
         owner.audit = Some(Configuration {
             handle,
@@ -182,8 +203,15 @@ impl ActivationCapabilityBroker {
     }
 }
 
+pub(super) type CallAuditOwner = AuditBox<CallAudit>;
+pub(super) struct CallAuditPreparation {
+    memory: AuditCallMemory,
+    boxed: AuditBoxPreparation<CallAudit>,
+    required: bool,
+}
 pub(super) struct CallAudit {
     handle: AuditHandle,
+    memory: AuditCallMemory,
     record: AuditOperationAttempt,
     attempt: Option<AuditAttempt>,
     required: bool,
@@ -197,11 +225,8 @@ impl CallAudit {
         core: &SessionCore,
         binding: usize,
         operation: &str,
-        resource: latent_policy::capability::ResourceTarget<'_>,
-        digest: latent_core::ArtifactBlobDigest,
         required: bool,
-        id: u64,
-    ) -> Result<Option<Box<Self>>, PlatformError> {
+    ) -> Result<Option<CallAuditPreparation>, PlatformError> {
         let Some(configuration) = &core.owner.audit else {
             return if required {
                 Err(error(
@@ -215,33 +240,26 @@ impl CallAudit {
         if !required && !configuration.observations {
             return Ok(None);
         }
-        let record =
-            match capture::attempt(core, binding, operation, resource, digest, required, id) {
-                Ok(record) => record,
-                Err(failure) if required => return Err(failure),
-                Err(_) => {
-                    let _ = configuration.dropped.fetch_update(
-                        std::sync::atomic::Ordering::Relaxed,
-                        std::sync::atomic::Ordering::Relaxed,
-                        |v| Some(v.saturating_add(1)),
-                    );
-                    return Ok(None);
-                }
-            };
-        Ok(Some(Box::new(Self {
-            handle: configuration.handle.clone(),
-            record,
-            attempt: None,
-            required,
-            observations: configuration.observations,
-            outcome: AuditProviderOutcome::NotStarted,
-            durability: if required {
-                CapabilityAuditDurability::OutcomeUnknown
-            } else {
-                CapabilityAuditDurability::NotRequired
-            },
-            finished: false,
-        })))
+        let prepared = (|| {
+            let memory = configuration.handle.prepare_call_memory(&core.budget)?;
+            let boxed = memory.prepare_box::<Self>(AuditCallMemory::owned_heap_bound(
+                configuration.handle.limits().maximum_record_bytes,
+            )?)?;
+            capture::preflight(core, binding, operation)?;
+            Ok(CallAuditPreparation {
+                memory,
+                boxed,
+                required,
+            })
+        })();
+        match prepared {
+            Ok(prepared) => Ok(Some(prepared)),
+            Err(failure) if required => Err(failure),
+            Err(_) => {
+                configuration.note_dropped();
+                Ok(None)
+            }
+        }
     }
     pub async fn begin(
         &mut self,
@@ -273,12 +291,16 @@ impl CallAudit {
             {
                 continue;
             }
-            self.handle
-                .preflight_conclusion(&self.record, &self.conclusion(outcome))?;
+            let conclusion = self.conclusion(outcome)?;
+            self.handle.preflight_conclusion_with_memory(
+                &self.record,
+                &conclusion,
+                &self.memory,
+            )?;
         }
         let ticket = self
             .handle
-            .try_reserve_critical(&self.record)?
+            .try_reserve_critical_with_memory(&self.record, &self.memory)?
             .begin()
             .wait();
         tokio::pin!(ticket);
@@ -333,27 +355,21 @@ impl CallAudit {
     pub fn durability(&self) -> CapabilityAuditDurability {
         self.durability
     }
-    fn conclusion(&self, outcome: AuditProviderOutcome) -> AuditOperationConclusion {
+    fn conclusion(
+        &self,
+        outcome: AuditProviderOutcome,
+    ) -> Result<AuditOwned<AuditOperationConclusion>, PlatformError> {
+        let prepared = self.memory.prepare_value::<AuditOperationConclusion>(
+            AuditCallMemory::owned_heap_bound(self.handle.limits().maximum_record_bytes)?,
+        )?;
         let mut identities = self.record.identities.clone();
         identities
             .capability
             .as_mut()
             .expect("captured context")
             .provider_outcome = Some(outcome);
-        let (result, reason) = match outcome {
-            AuditProviderOutcome::NotStarted => {
-                (AuditOperationResult::NotStarted, AuditReason::NotStarted)
-            }
-            AuditProviderOutcome::Unknown => (
-                AuditOperationResult::Unknown,
-                AuditReason::MutationUncertain,
-            ),
-            AuditProviderOutcome::Rejected => {
-                (AuditOperationResult::Rejected, AuditReason::Rejected)
-            }
-            _ => (AuditOperationResult::Committed, AuditReason::Committed),
-        };
-        AuditOperationConclusion {
+        let (result, reason) = outcome_fields(outcome);
+        let conclusion = AuditOperationConclusion {
             canary_decision: None,
             result,
             reason,
@@ -361,16 +377,24 @@ impl CallAudit {
             identities,
             replay: false,
             occurred_at_unix_millis: now(),
-        }
+        };
+        let heap = conclusion.retained_heap_bytes()?;
+        Ok(prepared.allocate(conclusion, heap))
     }
     pub async fn finish(&mut self, deadline: Instant) -> CapabilityAuditDurability {
         if self.finished {
             return self.durability;
         }
         self.finished = true;
-        let conclusion = self.conclusion(self.outcome);
+        let Ok(conclusion) = self.conclusion(self.outcome) else {
+            if self.observations && !self.required {
+                self.handle.note_dropped_capture();
+            }
+            drop(self.attempt.take());
+            return self.durability;
+        };
         if let Some(attempt) = self.attempt.take() {
-            let ticket = attempt.finish(conclusion).wait();
+            let ticket = attempt.finish_owned(conclusion).wait();
             self.durability = match tokio::time::timeout_at(deadline.into(), ticket).await {
                 Ok(Ok(ack)) => CapabilityAuditDurability::Durable {
                     sequence: ack.sequence,
@@ -378,14 +402,22 @@ impl CallAudit {
                 _ => CapabilityAuditDurability::OutcomeUnknown,
             };
         } else if self.observations && !self.required {
-            self.observe(conclusion.identities);
+            self.observe(&conclusion.identities);
         }
         self.durability
     }
-    fn observe(&self, identities: AuditIdentities) {
-        let _ = self.handle.try_capture(&AuditObservation {
+    fn observe(&self, identities: &AuditIdentities) {
+        let Ok(prepared) =
+            AuditCallMemory::owned_heap_bound(self.handle.limits().maximum_record_bytes)
+                .and_then(|bound| self.memory.prepare_value::<AuditObservation>(bound))
+        else {
+            self.handle.note_dropped_capture();
+            return;
+        };
+        let event = AuditObservation {
             scope: self.record.scope.clone(),
             actor: self.record.actor.clone(),
+            identities: identities.clone(),
             kind: Phase2AuditEventKind::CapabilityProviderOutcome,
             outcome: match self.outcome {
                 AuditProviderOutcome::Rejected | AuditProviderOutcome::NotStarted => {
@@ -394,11 +426,68 @@ impl CallAudit {
                 AuditProviderOutcome::Unknown => AuditOutcome::Failed,
                 _ => AuditOutcome::Succeeded,
             },
-            identities,
-            reason: self.conclusion(self.outcome).reason,
+            reason: outcome_fields(self.outcome).1,
             cache_kind: None,
             occurred_at_unix_millis: now(),
-        });
+        };
+        let Ok(heap) = event.retained_heap_bytes() else {
+            self.handle.note_dropped_capture();
+            return;
+        };
+        let event = prepared.allocate(event, heap);
+        let _ = self.handle.try_capture_with_memory(&event, &self.memory);
+    }
+}
+impl CallAuditPreparation {
+    pub fn capture(
+        self,
+        core: &SessionCore,
+        binding: usize,
+        operation: &str,
+        resource: latent_policy::capability::ResourceTarget<'_>,
+        digest: latent_core::ArtifactBlobDigest,
+        id: u64,
+    ) -> Result<Option<CallAuditOwner>, PlatformError> {
+        let configuration = core
+            .owner
+            .audit
+            .as_ref()
+            .expect("prepared immutable audit owner");
+        let record = match capture::attempt(
+            core,
+            binding,
+            operation,
+            resource,
+            digest,
+            self.required,
+            id,
+        ) {
+            Ok(record) => record,
+            Err(failure) if self.required => return Err(failure),
+            Err(_) => {
+                configuration.note_dropped();
+                return Ok(None);
+            }
+        };
+        let heap = record.retained_heap_bytes()?;
+        Ok(Some(self.boxed.allocate(
+            CallAudit {
+                handle: configuration.handle.clone(),
+                memory: self.memory,
+                record,
+                attempt: None,
+                required: self.required,
+                observations: configuration.observations,
+                outcome: AuditProviderOutcome::NotStarted,
+                durability: if self.required {
+                    CapabilityAuditDurability::OutcomeUnknown
+                } else {
+                    CapabilityAuditDurability::NotRequired
+                },
+                finished: false,
+            },
+            heap,
+        )))
     }
 }
 impl Drop for CallAudit {
@@ -406,16 +495,35 @@ impl Drop for CallAudit {
         if self.finished {
             return;
         }
-        let conclusion = self.conclusion(self.outcome);
+        let Ok(conclusion) = self.conclusion(self.outcome) else {
+            if self.observations && !self.required {
+                self.handle.note_dropped_capture();
+            }
+            return;
+        };
         if let Some(attempt) = self.attempt.take() {
             // The worker owns a prepaid terminal record after enqueue. Dropping
             // its acknowledgement future cannot remove accepted provider work.
-            drop(attempt.finish(conclusion));
+            drop(attempt.finish_owned(conclusion));
         } else if self.observations && !self.required {
-            self.observe(conclusion.identities);
+            self.observe(&conclusion.identities);
         }
     }
 }
+fn outcome_fields(outcome: AuditProviderOutcome) -> (AuditOperationResult, AuditReason) {
+    match outcome {
+        AuditProviderOutcome::NotStarted => {
+            (AuditOperationResult::NotStarted, AuditReason::NotStarted)
+        }
+        AuditProviderOutcome::Unknown => (
+            AuditOperationResult::Unknown,
+            AuditReason::MutationUncertain,
+        ),
+        AuditProviderOutcome::Rejected => (AuditOperationResult::Rejected, AuditReason::Rejected),
+        _ => (AuditOperationResult::Committed, AuditReason::Committed),
+    }
+}
+
 fn now() -> u64 {
     latent_core::ClockSample::system_now().unix_millis()
 }

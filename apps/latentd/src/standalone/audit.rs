@@ -1,17 +1,17 @@
 //! One actual durable worker, retained across waiter cancellation and join timeout.
 use latent_audit::{AuditHandle, AuditLimits, AuditWorker, DirectoryPhase2AuditJournal};
-use latent_core::{PlatformError, PlatformErrorCode};
+use latent_core::{node_metadata::NodeMetadataArc, PlatformError, PlatformErrorCode};
 use serde::Serialize;
 use std::{
     path::PathBuf,
-    sync::{Arc, Mutex},
+    sync::Mutex,
     time::{Duration, Instant},
 };
 use tokio::runtime::Handle;
 
 pub(super) struct AuditRuntime {
     handle: AuditHandle,
-    worker: Arc<Mutex<Option<AuditWorker>>>,
+    worker: NodeMetadataArc<Mutex<Option<AuditWorker>>>,
     runtime: Handle,
 }
 
@@ -62,10 +62,39 @@ impl AuditRuntime {
                         )),
                     };
                 };
-                let (handle, worker) = DirectoryPhase2AuditJournal::open(root, limits)?;
+                // This is the single original node metadata allowance. Audit
+                // exists before providers, and can exist without providers.
+                // The later broker can reuse only this exact owner AND ceiling;
+                // a different broker limit refuses instead of widening either.
+                // AuditLimits.maximum_metadata_bytes remains the separately
+                // derived journal policy; reducing retained records cannot
+                // silently replace the original whole-node/broker allowance.
+                let metadata = latent_core::node_metadata::NodeMetadataOwner::new(
+                    latent_capabilities::broker::CapabilityBrokerLimits::default()
+                        .maximum_metadata_bytes,
+                )
+                .map_err(|_| {
+                    failure(
+                        PlatformErrorCode::ResourceExhausted,
+                        "audit-native-capacity",
+                    )
+                })?;
+                // Pay the real outer shared worker/header before the journal
+                // allocates or starts its worker. This same owner survives a
+                // cancelled shutdown waiter and a retained join timeout.
+                let worker_owner =
+                    NodeMetadataArc::<Mutex<Option<AuditWorker>>>::prepare_fixed(&metadata, 0)
+                        .map_err(|_| {
+                            failure(
+                                PlatformErrorCode::ResourceExhausted,
+                                "audit-native-capacity",
+                            )
+                        })?;
+                let (handle, worker) =
+                    DirectoryPhase2AuditJournal::open_with_node_bank(root, limits, metadata)?;
                 Ok(Some(Self {
                     handle,
-                    worker: Arc::new(Mutex::new(Some(worker))),
+                    worker: worker_owner.allocate(Mutex::new(Some(worker))),
                     runtime: worker_runtime,
                 }))
             })
@@ -84,7 +113,7 @@ impl AuditRuntime {
     pub(super) fn retirement_observer(&self) -> Self {
         Self {
             handle: self.handle(),
-            worker: Arc::clone(&self.worker),
+            worker: self.worker.clone(),
             runtime: self.runtime.clone(),
         }
     }
@@ -99,7 +128,7 @@ impl AuditRuntime {
                 "audit-shutdown-deadline-invalid",
             )
         })?;
-        let owner = Arc::clone(&self.worker);
+        let owner = self.worker.clone();
         let joined = self
             .runtime
             .spawn_blocking(move || {
