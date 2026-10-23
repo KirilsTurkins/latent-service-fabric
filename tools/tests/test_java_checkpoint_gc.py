@@ -89,7 +89,10 @@ class JavaCheckpointGcTests(unittest.TestCase):
             'c/j/l/System.c':'void meth_jl_System_gc() {\nmeth_otr_GC_collectGarbageImpl();\n}\n',
             'c/d/l/a/Capsule.c':'void meth_dla_Capsule_checked() {\n'
                 'WeakReference_get(); meth_jl_System_gc(); '
-                'meth_otr_Fiber_isSuspending(); meth_otr_Fiber_push(); meth_otr_Fiber_pop();\n}\n',
+                'meth_otr_Fiber_isSuspending(); meth_otr_Fiber_push(); meth_otr_Fiber_pop();\n}\n'
+                'static void** teavm_gc_localStaticRoots_dla_Capsule_Cls[1] = {\n'
+                '(void**) &sfld_dla_Capsule_observers\n};\n'
+                'teavm_registerStaticGcRoots(teavm_gc_localStaticRoots_dla_Capsule_Cls, 1);\n',
             'c/d/l/a/Capsule@d1.c':'void meth_dla_Capsule_1_initialize() {\n'
                 'WeakReference_get(); meth_jl_System_gc(); '
                 'meth_otr_Fiber_isSuspending(); meth_otr_Fiber_push(); meth_otr_Fiber_pop();\n}\n'}
@@ -102,7 +105,9 @@ class JavaCheckpointGcTests(unittest.TestCase):
                     ('c/j/l/r/WeakReference.c','teavm_reference_get()'),
                     ('c/j/l/System.c','meth_otr_GC_collectGarbageImpl();'),
                     ('c/d/l/a/Capsule@d1.c','meth_otr_Fiber_pop()'),
-                    ('c/o/t/r/GC.c','reference->object = NULL;')):
+                    ('c/o/t/r/GC.c','reference->object = NULL;'),
+                    ('c/d/l/a/Capsule.c','&sfld_dla_Capsule_observers'),
+                    ('c/d/l/a/Capsule.c','teavm_registerStaticGcRoots(')):
                 (root/name).write_text(bodies[name].replace(needle,'omitted'))
                 with self.subTest(name=name),self.assertRaises(WorkflowError):generated_mechanism(root)
                 (root/name).write_text(bodies[name])

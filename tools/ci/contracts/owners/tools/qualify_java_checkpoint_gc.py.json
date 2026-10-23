@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_java_checkpoint_gc.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Follow actual fixed generated root and anonymous child callgraphs through legitimate collector helper inlining to real mark, weak-referent null store and sweep; preserve strict two runtime weak-clear witnesses and full real-IR chain.",
+  "reviewReason": "Require actual independent weak-observer static-root registration alongside real root and child collector callgraphs; the two parked-phase weak clears and full GC IR controls remain mandatory.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "1579b1091070267db5ef36eac18ee389431beb56ca8ac20198ed983f8d3714a9"
+  "sha256": "5c0cbfd8192590e3c2471bcb3d6fba522d911de50930ad90055862624d7a783c"
 }

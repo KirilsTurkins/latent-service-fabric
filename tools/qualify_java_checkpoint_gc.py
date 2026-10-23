@@ -69,6 +69,12 @@ def generated_mechanism(directory):
         if owners[name]=='c/o/t/r/GC.c']
     require(any(re.search(r'->object\s*=\s*NULL\s*;',body) for body in collector_bodies),
         'java-gc-actual-reachable-unmarked-weak-referent-clear')
+    root=texts[names[0]]
+    registry=re.search(r'static void\*\* teavm_gc_localStaticRoots_dla_Capsule_Cls'
+        r'\[([1-9][0-9]{0,2})\]\s*=\s*\{([^}]{0,4096})\};',root)
+    require(registry is not None and '&sfld_dla_Capsule_observers' in registry[2]
+        and re.search(r'teavm_registerStaticGcRoots\(teavm_gc_localStaticRoots_dla_Capsule_Cls,\s*'
+            +registry[1]+r'\);',root) is not None,'java-gc-independent-weak-observer-static-root')
     weak=read_file(directory/'c/j/l/r/WeakReference.c',1024**2).decode('utf-8')
     require('teavm_reference_init(' in weak and 'teavm_reference_get(' in weak,
         'java-gc-actual-lowlevel-weak-init-and-get')
@@ -78,6 +84,7 @@ def generated_mechanism(directory):
     return {'rootAndChildCollectorPaths':{name:sorted(graph) for name,graph in graphs.items()},
         'actualReachableMarkAndSweep':True,'actualReachableWeakReferentNullStore':True,
         'actualLowlevelWeakInitAndGet':True,'rootAndAnonymousChildContinuationBodies':True,
+        'independentWeakObserversStaticallyRegistered':True,
         'realFullGcIrChainRequired':True,'runtimeCollectionObserved':False}
 
 

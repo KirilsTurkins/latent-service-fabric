@@ -74,6 +74,9 @@ public final class GcReferenceControl {
         require(bodyCalls.containsAll(Set.of(gc("mark", ValueType.VOID),
             gc("processReferences", ValueType.VOID), gc("sweep", ValueType.VOID))),
             "real-mark-reference-processing-and-sweep");
+        require(calls(method(collector, "mark", ValueType.VOID)).containsAll(Set.of(
+            gc("markFromStaticFields", ValueType.VOID), gc("markFromStack", ValueType.VOID))),
+            "real-independent-static-observers-and-caller-stack-roots");
         var references = method(collector, "processReferences", ValueType.VOID);
         require(calls(references).contains(gc("isMarked", ValueType.object("org.teavm.runtime.RuntimeObject"),
             ValueType.BOOLEAN)), "weak-clearing-reads-real-mark-status");

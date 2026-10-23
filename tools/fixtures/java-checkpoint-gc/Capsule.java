@@ -14,6 +14,9 @@ public final class Capsule {
     private static volatile boolean readerReady;
     private static volatile boolean childCollected;
     private static volatile Throwable childFailure;
+    // Observer objects are rooted independently of either victim continuation.
+    // Weak referents remain owned only by the original caller locals/graphs.
+    private static WeakReference<?>[] observers;
     private static int initializations;
     private static int rootPhase;
     private static volatile int childPhase;
@@ -56,6 +59,19 @@ public final class Capsule {
         require(witness.get() == null);
     }
 
+    private static void retainedObservers(boolean rootVictim) {
+        require(observers != null && observers.length == 10);
+        int first = rootVictim ? 0 : 4;
+        // Read only this phase's parked victim, and only AFTER collection.
+        // No victim referent is transferred into the collector beforehand.
+        for (int index = first; index < first + 4; index++) {
+            WeakReference<?> observer = observers[index];
+            require(observer != null && observer.get() != null);
+        }
+        WeakReference<?> tls = observers[rootVictim ? 8 : 9];
+        require(tls != null && tls.get() != null);
+    }
+
     public Result<String, String> greet(String mode) {
         try { return checked(mode); }
         catch (Throwable error) {
@@ -68,7 +84,7 @@ public final class Capsule {
     private Result<String, String> checked(String mode) throws InterruptedException, ConcurrentException {
         rootPhase = 1;
         require(++invocation == 1 && !childParked && !rootCollected && !readerReady
-            && !childCollected && childFailure == null && local.get() == null);
+            && !childCollected && childFailure == null && observers == null && local.get() == null);
         if (mode.equals("fresh")) return Result.ok("checkpoint-gc|fresh=1");
         require(mode.equals("gc"));
         Object gate = new Object();
@@ -82,15 +98,17 @@ public final class Capsule {
         WeakReference<Object[]> referencesWitness = new WeakReference<>(references);
         WeakReference<Throwable> errorWitness = new WeakReference<>(retainedError);
         WeakReference<Cell> tokenWitness = new WeakReference<>(token);
-        Cell rootLocal = new Cell(19);
-        local.set(rootLocal);
+        local.set(new Cell(19));
+        WeakReference<Cell> rootTlsWitness = new WeakReference<>(local.get());
+        observers = new WeakReference<?>[] {numbersWitness, referencesWitness, errorWitness,
+            tokenWitness, null, null, null, null, rootTlsWitness, null};
 
         AtomicSafeInitializer<Held> initializer = new AtomicSafeInitializer<>() {
             @Override protected Held initialize() {
                 childPhase = 1;
                 require(local.get() == null);
-                Cell childLocal = new Cell(20);
-                local.set(childLocal);
+                local.set(new Cell(20));
+                WeakReference<Cell> childTlsWitness = new WeakReference<>(local.get());
                 initializations++;
                 int[] childNumbers = {20, 22};
                 Cell childToken = new Cell(32);
@@ -102,6 +120,11 @@ public final class Capsule {
                 WeakReference<Object[]> childReferencesWitness = new WeakReference<>(childReferences);
                 WeakReference<Throwable> childErrorWitness = new WeakReference<>(childError);
                 WeakReference<Cell> childTokenWitness = new WeakReference<>(childToken);
+                observers[4] = childNumbersWitness;
+                observers[5] = childReferencesWitness;
+                observers[6] = childErrorWitness;
+                observers[7] = childTokenWitness;
+                observers[9] = childTlsWitness;
                 try {
                     synchronized (gate) {
                         childPhase = 2;
@@ -120,20 +143,21 @@ public final class Capsule {
                         && childReferences[0] == childToken && childToken.value == 32
                         && childError instanceof IllegalArgumentException
                         && childError.getMessage().equals("child-gc-error")
-                        && local.get() == childLocal && childLocal.value == 20);
+                        && local.get() == childTlsWitness.get() && local.get().value == 20);
                     while (!readerReady) { }
                     childPhase = 4;
                     // readerReady is set immediately before root enters the
                     // unchanged dependency get(), with no application yield.
                     // This caller runs when that contended dependency yields.
                     collectOnce();
+                    retainedObservers(true);
                     childCollected = true;
                     childPhase = 5;
                     require(childNumbersWitness.get() == childNumbers
                         && childReferencesWitness.get() == childReferences
                         && childErrorWitness.get() == childError
                         && childTokenWitness.get() == childToken
-                        && local.get() == childLocal);
+                        && local.get() == childTlsWitness.get() && local.get().value == 20);
                     return new Held(childNumbers, childReferences, childError, childToken);
                 } catch (InterruptedException error) { throw new IllegalStateException(error); }
             }
@@ -157,10 +181,11 @@ public final class Capsule {
             require(childFailure == null && childParked && !rootCollected && !childCollected);
             rootPhase = 3;
             collectOnce();
+            retainedObservers(false);
             require(numbersWitness.get() == numbers && referencesWitness.get() == references
                 && errorWitness.get() == retainedError && tokenWitness.get() == token
                 && numbers[0] + numbers[1] == 42 && references[0] == token && token.value == 31
-                && local.get() == rootLocal && rootLocal.value == 19);
+                && local.get() == rootTlsWitness.get() && local.get().value == 19);
             rootCollected = true;
             gate.notifyAll();
         }
@@ -176,7 +201,7 @@ public final class Capsule {
             && numbers[0] + numbers[1] == 42 && references[0] == token && token.value == 31
             && retainedError instanceof IllegalArgumentException
             && retainedError.getMessage().equals("root-gc-error")
-            && local.get() == rootLocal && rootLocal.value == 19);
+            && local.get() == rootTlsWitness.get() && local.get().value == 19);
         require(value.numbers[0] + value.numbers[1] == 42
             && value.references[0] == value.token && value.token.value == 32
             && value.error instanceof IllegalArgumentException

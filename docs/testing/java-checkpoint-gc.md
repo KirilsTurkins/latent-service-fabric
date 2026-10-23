@@ -11,7 +11,11 @@ monitor after the wait releases ownership and requests one collection. A newly
 allocated orphan must have disappeared through its WeakReference. Child resumes,
 then requests a second collection while root is parked in the unchanged dependency
 call. Both callers check retained identities, contents, exceptions and ThreadLocal
-state after resumption. There are no manual weak clears, collection retries,
+state after resumption. An independent activation-local static array strongly
+roots only ten weak observers, with its actual generated static-root registration
+required. Each collector reads the parked victim through that registry only
+after collection. The two ThreadLocal values have no duplicate strong caller
+locals; weak observers and `local.get()` check their identities and values. There are no manual weak clears, collection retries,
 allocation-pressure loops, custom executors or larger heap grants.
 
 `System.gc()` alone cannot satisfy this programme. Both weak-clear witnesses must
