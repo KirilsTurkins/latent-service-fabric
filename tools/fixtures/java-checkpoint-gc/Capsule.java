@@ -13,6 +13,7 @@ public final class Capsule {
     private static volatile boolean rootCollected;
     private static volatile boolean readerReady;
     private static volatile boolean childCollected;
+    private static volatile boolean aborted;
     private static volatile Throwable childFailure;
     // Observer objects are rooted independently of either victim continuation.
     // Weak referents remain owned only by the original caller locals/graphs.
@@ -84,7 +85,7 @@ public final class Capsule {
     private Result<String, String> checked(String mode) throws InterruptedException, ConcurrentException {
         rootPhase = 1;
         require(++invocation == 1 && !childParked && !rootCollected && !readerReady
-            && !childCollected && childFailure == null && observers == null && local.get() == null);
+            && !childCollected && !aborted && childFailure == null && observers == null && local.get() == null);
         if (mode.equals("fresh")) return Result.ok("checkpoint-gc|fresh=1");
         require(mode.equals("gc"));
         Object gate = new Object();
@@ -132,9 +133,10 @@ public final class Capsule {
                         gate.notifyAll();
                         // Root cannot reacquire this monitor until wait has
                         // released it. All child locals remain live below.
-                        while (!rootCollected) gate.wait();
+                        while (!rootCollected && !aborted) gate.wait();
                     }
                     childPhase = 3;
+                    require(!aborted);
                     require(childNumbersWitness.get() == childNumbers
                         && childReferencesWitness.get() == childReferences
                         && childErrorWitness.get() == childError
@@ -144,70 +146,98 @@ public final class Capsule {
                         && childError instanceof IllegalArgumentException
                         && childError.getMessage().equals("child-gc-error")
                         && local.get() == childTlsWitness.get() && local.get().value == 20);
-                    while (!readerReady) { }
-                    childPhase = 4;
+                    while (!readerReady && !aborted) { }
+                    require(!aborted);
+                    childPhase = 40;
                     // readerReady is set immediately before root enters the
                     // unchanged dependency get(), with no application yield.
                     // This caller runs when that contended dependency yields.
                     collectOnce();
+                    childPhase = 41;
                     retainedObservers(true);
                     childCollected = true;
-                    childPhase = 5;
+                    childPhase = 42;
                     require(childNumbersWitness.get() == childNumbers
                         && childReferencesWitness.get() == childReferences
                         && childErrorWitness.get() == childError
                         && childTokenWitness.get() == childToken
                         && local.get() == childTlsWitness.get() && local.get().value == 20);
+                    childPhase = 5;
                     return new Held(childNumbers, childReferences, childError, childToken);
-                } catch (InterruptedException error) { throw new IllegalStateException(error); }
+                } catch (Throwable original) {
+                    // Commons publishes null as an initialized result (its
+                    // sentinel is NO_INIT). Record failure before normal return
+                    // so the other caller can leave get() and reject it below.
+                    childFailure = original;
+                    return null;
+                }
             }
         };
         Thread child = new Thread(() -> {
             try {
                 Held value = initializer.get();
+                if (childFailure != null) {
+                    synchronized (gate) { gate.notifyAll(); }
+                    return;
+                }
                 require(value.numbers[0] + value.numbers[1] == 42
                     && value.references[0] == value.token && value.token.value == 32
                     && local.get().value == 20);
                 childPhase = 6;
             } catch (Throwable error) {
-                childFailure = error;
+                if (childFailure == null) childFailure = error;
                 synchronized (gate) { gate.notifyAll(); }
             }
         });
         rootPhase = 2;
         child.start();
-        synchronized (gate) {
-            while (!childParked && childFailure == null) gate.wait();
-            require(childFailure == null && childParked && !rootCollected && !childCollected);
-            rootPhase = 3;
-            collectOnce();
-            retainedObservers(false);
+        try {
+            synchronized (gate) {
+                while (!childParked && childFailure == null) gate.wait();
+                require(childFailure == null && childParked && !rootCollected && !childCollected);
+                rootPhase = 30;
+                collectOnce();
+                rootPhase = 31;
+                retainedObservers(false);
+                rootPhase = 32;
+                require(numbersWitness.get() == numbers && referencesWitness.get() == references
+                    && errorWitness.get() == retainedError && tokenWitness.get() == token
+                    && numbers[0] + numbers[1] == 42 && references[0] == token && token.value == 31
+                    && local.get() == rootTlsWitness.get() && local.get().value == 19);
+                rootCollected = true;
+                gate.notifyAll();
+            }
+            rootPhase = 4;
+            readerReady = true;
+            Held value = initializer.get();
+            rootPhase = 5;
+            child.join();
+            require(!child.isAlive() && childFailure == null && rootCollected && childCollected
+                && initializations == 1 && value == initializer.get());
+            rootPhase = 50;
             require(numbersWitness.get() == numbers && referencesWitness.get() == references
                 && errorWitness.get() == retainedError && tokenWitness.get() == token
                 && numbers[0] + numbers[1] == 42 && references[0] == token && token.value == 31
+                && retainedError instanceof IllegalArgumentException
+                && retainedError.getMessage().equals("root-gc-error")
                 && local.get() == rootTlsWitness.get() && local.get().value == 19);
-            rootCollected = true;
-            gate.notifyAll();
+            rootPhase = 51;
+            require(value.numbers[0] + value.numbers[1] == 42
+                && value.references[0] == value.token && value.token.value == 32
+                && value.error instanceof IllegalArgumentException
+                && value.error.getMessage().equals("child-gc-error"));
+            rootPhase = 6;
+            return Result.ok("checkpoint-gc|collections=root:child|arrays=42:42|references=31:32"
+                + "|errors=root:child|locals=19:20|initializations=1|fresh=1");
+        } catch (Throwable original) {
+            // A failed root assertion must not leave the already accepted child
+            // waiting for a success flag that will never be set. Preserve the
+            // original failure and both collection flags; this is not success.
+            aborted = true;
+            synchronized (gate) { gate.notifyAll(); }
+            try { child.join(); }
+            catch (Throwable cleanup) { original.addSuppressed(cleanup); }
+            throw original;
         }
-        rootPhase = 4;
-        readerReady = true;
-        Held value = initializer.get();
-        rootPhase = 5;
-        child.join();
-        require(!child.isAlive() && childFailure == null && rootCollected && childCollected
-            && initializations == 1 && value == initializer.get());
-        require(numbersWitness.get() == numbers && referencesWitness.get() == references
-            && errorWitness.get() == retainedError && tokenWitness.get() == token
-            && numbers[0] + numbers[1] == 42 && references[0] == token && token.value == 31
-            && retainedError instanceof IllegalArgumentException
-            && retainedError.getMessage().equals("root-gc-error")
-            && local.get() == rootTlsWitness.get() && local.get().value == 19);
-        require(value.numbers[0] + value.numbers[1] == 42
-            && value.references[0] == value.token && value.token.value == 32
-            && value.error instanceof IllegalArgumentException
-            && value.error.getMessage().equals("child-gc-error"));
-        rootPhase = 6;
-        return Result.ok("checkpoint-gc|collections=root:child|arrays=42:42|references=31:32"
-            + "|errors=root:child|locals=19:20|initializations=1|fresh=1");
     }
 }

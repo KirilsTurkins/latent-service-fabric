@@ -18,7 +18,7 @@ CHECKPOINT_JAVA = 'sha256:2fe6c39a15d8e230838ae709599055cdba156bd8d9058f472c1dc5
 GC_ROOT_CLASSES = (*CHECKPOINT_CLASSES, 'c/d/l/a/Capsule@d1', 'c/o/t/r/GC',
     'c/j/l/r/WeakReference', 'c/j/l/System')
 GC_ROOT_SOURCES = tuple(name + suffix for name in GC_ROOT_CLASSES for suffix in ('.c', '.h'))
-GC_ROOT_JAVA = 'sha256:14b485d1b980e1fd7f3d5828754bdf9e5e33319f3b549175672046635c7ac18d'
+GC_ROOT_JAVA = 'sha256:e6fa160c97a9c448db7af2fb78b81af95b5a360d79b3470084650813724ec7b0'
 CHECKPOINT_MAX_FILE = 1024 * 1024
 CHECKPOINT_MAX_BYTES = 8 * 1024 * 1024
 
