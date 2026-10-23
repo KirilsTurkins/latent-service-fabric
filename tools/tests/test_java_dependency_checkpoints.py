@@ -54,6 +54,8 @@ class JavaDependencyCheckpointTests(unittest.TestCase):
             with self.assertRaises(WorkflowError):invoke(bad)
         bad=copy.deepcopy(row);bad['decoded']=[{'ok':'fake-completed-task'}]
         with self.assertRaises(WorkflowError):invoke(bad)
+        bad=copy.deepcopy(row);bad['decoded']=[{'err':'checkpoint-failure|root=8|error=monitor-state|child=7|child-error=none'}]
+        with self.assertRaises(WorkflowError):invoke(bad)
         bad=copy.deepcopy(row);bad['response']['outcomeKnown']=False
         with self.assertRaises(WorkflowError):invoke(bad)
         bad=copy.deepcopy(row);bad['response']['data']['resolvedRevision']={'releaseDigest':'foreign'}
