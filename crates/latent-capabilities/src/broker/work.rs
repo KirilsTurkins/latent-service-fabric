@@ -1,4 +1,4 @@
-use super::session::{HandleEntry, SessionCoreOwner, StatsOwner};
+use super::session::{HandleEntryOwner, SessionCoreOwner, StatsOwner};
 use super::{
     busy, capacity, denied, error, stopped, CapabilitySession, Charge, GuestCapabilityHandle, Kind,
     PlatformError,
@@ -10,7 +10,8 @@ use std::{
     sync::{atomic::Ordering, Arc},
     time::{Duration, Instant},
 };
-use zeroize::Zeroizing;
+pub(super) mod native_buffer;
+use native_buffer::NativeBuffer;
 
 mod pending;
 pub(super) use pending::PendingWork;
@@ -132,8 +133,8 @@ struct Work {
     required_audit: bool,
     input_size: usize,
     pending_budget: Option<BudgetReservationGroup>,
-    input: Zeroizing<Vec<u8>>,
-    row: Arc<HandleEntry>,
+    input: NativeBuffer,
+    row: HandleEntryOwner,
     session: SessionCoreOwner,
     id: u64,
     deadline: Instant,
@@ -151,7 +152,7 @@ impl Work {
     }
     fn recheck_authority(&mut self, require_audit: bool) -> Result<(), PlatformError> {
         let core = self.session.clone();
-        let row = Arc::clone(&self.row);
+        let row = self.row.clone();
         let live = core.owner.live.try_read().map_err(|_| busy())?;
         let binding = &core.plan.bindings[row.binding];
         let installed = binding.provider.live.try_read().map_err(|_| busy())?;
@@ -163,7 +164,7 @@ impl Work {
                     .slots
                     .get(usize::from(row.id.wire_parts().0))
                     .and_then(Option::as_ref)
-                    .is_none_or(|current| !Arc::ptr_eq(current, &row)))
+                    .is_none_or(|current| !HandleEntryOwner::ptr_eq(current, &row)))
         {
             return Err(denied());
         }
@@ -264,9 +265,9 @@ impl Drop for ResultLifetime {
 pub struct OwnedCapabilityResponse {
     audit: Option<Box<super::audit::CallAudit>>,
     deadline: Instant,
-    bytes: Zeroizing<Vec<u8>>,
+    bytes: NativeBuffer,
     pub(super) session: SessionCoreOwner,
-    _row: Arc<HandleEntry>,
+    _row: HandleEntryOwner,
     id: u64,
     _bytes: Charge,
     _metadata: Charge,
@@ -541,7 +542,7 @@ impl ProviderCall {
         {
             return Err(capacity());
         }
-        let data = Zeroizing::new(bytes.to_vec());
+        let data = NativeBuffer::copy(self.budget_accounting(), bytes)?;
         let Work {
             audit,
             required_audit: _,
@@ -703,7 +704,7 @@ impl CapabilitySession {
             .slots
             .get(usize::from(handle.wire_parts().0))
             .and_then(Option::as_ref)
-            .is_none_or(|current| !Arc::ptr_eq(current, &row))
+            .is_none_or(|current| !HandleEntryOwner::ptr_eq(current, &row))
         {
             return Err(denied());
         }
@@ -761,6 +762,7 @@ impl CapabilitySession {
         }
         cost.validate_minimum(operation, &binding.provider.minimum_call_charges)?;
         let budget_reservation = cost.reserve(&self.core.budget)?;
+        let input = NativeBuffer::copy(&self.core.budget, input)?;
         let id = super::session::next_incarnation()?;
         let audit = if self.core.owner.audit.is_some() || required_audit {
             if cost.typed_input_bytes != 0 && cost.typed_request_digest.is_none() {
@@ -777,7 +779,7 @@ impl CapabilitySession {
                     super::audit::request_digest(
                         operation,
                         resource,
-                        input,
+                        &input,
                         cost.typed_request_digest,
                     ),
                     required_audit,
@@ -792,8 +794,8 @@ impl CapabilitySession {
             required_audit,
             input_size,
             pending_budget: budget_reservation,
-            input: Zeroizing::new(input.to_vec()),
-            row: Arc::clone(&row),
+            input,
+            row: row.clone(),
             session: self.core.clone(),
             id,
             deadline: self.core.owner.clock.monotonic_now(),

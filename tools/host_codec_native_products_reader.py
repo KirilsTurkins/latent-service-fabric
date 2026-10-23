@@ -21,7 +21,7 @@ SCOPE = ('ordinary-host-codec-original-memory-and-selected-c-public-async-type-s
     'legacy framing and serialized transport controller frames excluded')
 
 
-def _producer_contract(raw, groups, count, *, extra_control=None):
+def _producer_contract(raw, groups, count, *, extra_control=None, recipe_count=22):
     """Read literal data from the frozen Git producer, without importing it."""
     require(type(raw) is bytes and 0 < len(raw) <= 128 * 1024, 'codec-reader-producer-source-bound')
     wanted = {}
@@ -35,7 +35,7 @@ def _producer_contract(raw, groups, count, *, extra_control=None):
         'codec-reader-original-five-products')
     controls, recipe = wanted['CONTROLS'], wanted['RECIPE']
     require(type(controls) is tuple and len(controls) == groups
-        and type(recipe) is tuple and len(recipe) == len(set(recipe)) == 22
+        and type(recipe) is tuple and len(recipe) == len(set(recipe)) == recipe_count
         and WORKFLOW in recipe and 'tools/qualify_host_codec_native.py' in recipe
         and all(type(name) is str and re.fullmatch(r'[A-Za-z0-9_./-]{1,256}', name)
             and not PurePosixPath(name).is_absolute() and '..' not in PurePosixPath(name).parts
@@ -73,7 +73,7 @@ class FrozenHostCodecProducts(FrozenNativeProducts):
     def _producer_contract(self, raw):
         return producer_contract(raw)
 
-    def __init__(self, *, source, run, job, artifact, receipts, branch):
+    def __init__(self, *, source, run, job, artifact, receipts, branch, event='push'):
         require(type(source) is str and re.fullmatch(r'[0-9a-f]{40}', source),
             'codec-reader-explicit-frozen-source')
         raw = subprocess.check_output(['git', 'show', source + ':tools/qualify_host_codec_native.py'],
@@ -82,7 +82,7 @@ class FrozenHostCodecProducts(FrozenNativeProducts):
         stages = ('source-revision', 'rust-version', 'normal-host-build',
             *(stage + suffix for stage, _, _, _ in self.controls for suffix in ('-list', '-run')))
         super().__init__(source=source, run=run, job=job, artifact=artifact, receipts=receipts,
-            branch=branch, stages=stages, include_protocol=True)
+            branch=branch, stages=stages, event=event, include_protocol=True)
 
     def _material_recipe(self):
         return self.recipe
