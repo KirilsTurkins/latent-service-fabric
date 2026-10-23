@@ -88,20 +88,18 @@ async fn exhausted_node_allowance_refuses_before_any_open() {
     }
     let before = stable_snapshot(&fixture.pools).await;
     let flag = Arc::clone(&entered);
-    assert!(
-        start_with(
-            Arc::clone(&fixture.pools),
-            &fixture.provider.inner.installed,
-            Instant::now() + Duration::from_secs(5),
-            move || {
-                flag.store(true, Ordering::Release);
-                File::open("/dev/null").map_err(|_| error(StreamErrorCode::IoFailed))
-            },
-            |_, _| Ok(())
-        )
-        .await
-        .is_err()
-    );
+    assert!(start_with(
+        Arc::clone(&fixture.pools),
+        &fixture.provider.inner.installed,
+        Instant::now() + Duration::from_secs(5),
+        move || {
+            flag.store(true, Ordering::Release);
+            File::open("/dev/null").map_err(|_| error(StreamErrorCode::IoFailed))
+        },
+        |_, _| Ok(())
+    )
+    .await
+    .is_err());
     assert!(!entered.load(Ordering::Acquire));
     assert_eq!(stable_snapshot(&fixture.pools).await, before);
     drop(holds);
@@ -112,22 +110,20 @@ async fn possible_failed_open_retains_original_node_charge() {
     let fixture = Fixture::new(config());
     let before = stable_snapshot(&fixture.pools).await;
     let inspect = Arc::clone(&fixture.pools);
-    assert!(
-        start_with(
-            Arc::clone(&fixture.pools),
-            &fixture.provider.inner.installed,
-            Instant::now() + Duration::from_secs(5),
-            move || {
-                let admitted = blocking_snapshot(&inspect);
-                assert!(admitted.metadata_bytes >= before.metadata_bytes + 1024 * 1024);
-                assert_eq!(admitted.connections, before.connections + 1);
-                Err(error(StreamErrorCode::Unsupported))
-            },
-            |_, _| panic!("failed open cannot initialize")
-        )
-        .await
-        .is_err()
-    );
+    assert!(start_with(
+        Arc::clone(&fixture.pools),
+        &fixture.provider.inner.installed,
+        Instant::now() + Duration::from_secs(5),
+        move || {
+            let admitted = blocking_snapshot(&inspect);
+            assert!(admitted.metadata_bytes >= before.metadata_bytes + 1024 * 1024);
+            assert_eq!(admitted.connections, before.connections + 1);
+            Err(error(StreamErrorCode::Unsupported))
+        },
+        |_, _| panic!("failed open cannot initialize")
+    )
+    .await
+    .is_err());
     quarantined(&fixture.pools).await;
     let retained = stable_snapshot(&fixture.pools).await;
     assert_eq!(retained.connections, before.connections + 1);
@@ -142,22 +138,20 @@ async fn postopen_failure_closes_real_fd_without_refunding_backing() {
     let original = path.clone();
     let (send, receive) = tokio::sync::oneshot::channel();
     let before = stable_snapshot(&fixture.pools).await;
-    assert!(
-        start_with(
-            Arc::clone(&fixture.pools),
-            &fixture.provider.inner.installed,
-            Instant::now() + Duration::from_secs(5),
-            move || { File::create(path).map_err(|_| error(StreamErrorCode::IoFailed)) },
-            move |file, _| {
-                let link = descriptor(file);
-                assert_eq!(std::fs::read_link(&link).unwrap(), original);
-                send.send(link).unwrap();
-                Err(error(StreamErrorCode::Unsupported))
-            }
-        )
-        .await
-        .is_err()
-    );
+    assert!(start_with(
+        Arc::clone(&fixture.pools),
+        &fixture.provider.inner.installed,
+        Instant::now() + Duration::from_secs(5),
+        move || { File::create(path).map_err(|_| error(StreamErrorCode::IoFailed)) },
+        move |file, _| {
+            let link = descriptor(file);
+            assert_eq!(std::fs::read_link(&link).unwrap(), original);
+            send.send(link).unwrap();
+            Err(error(StreamErrorCode::Unsupported))
+        }
+    )
+    .await
+    .is_err());
     let link = receive.await.unwrap();
     quarantined(&fixture.pools).await;
     assert_ne!(
@@ -351,20 +345,18 @@ async fn constructor_panic_retains_prepaid_backing_and_closes_real_fd() {
     let path = directory.path().join("constructor-panic-owner");
     let original = path.clone();
     let (send, receive) = tokio::sync::oneshot::channel();
-    assert!(
-        start_with(
-            Arc::clone(&fixture.pools),
-            &fixture.provider.inner.installed,
-            Instant::now() + Duration::from_secs(5),
-            move || File::create(path).map_err(|_| error(StreamErrorCode::IoFailed)),
-            move |file, _| {
-                send.send(descriptor(file)).unwrap();
-                panic!("constructor unwound after actual open");
-            }
-        )
-        .await
-        .is_err()
-    );
+    assert!(start_with(
+        Arc::clone(&fixture.pools),
+        &fixture.provider.inner.installed,
+        Instant::now() + Duration::from_secs(5),
+        move || File::create(path).map_err(|_| error(StreamErrorCode::IoFailed)),
+        move |file, _| {
+            send.send(descriptor(file)).unwrap();
+            panic!("constructor unwound after actual open");
+        }
+    )
+    .await
+    .is_err());
     let link = receive.await.unwrap();
     quarantined(&fixture.pools).await;
     assert_ne!(std::fs::read_link(link).ok(), Some(original));
