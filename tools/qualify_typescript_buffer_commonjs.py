@@ -69,6 +69,29 @@ def typecheck_layout_evidence(artifact, original):
     return identity
 
 
+def standard_type_evidence(artifact, project):
+    from tools.application_dependencies import verify_inputs
+    from tools.typescript_guest import standard_global_types as types
+    provider = types.select(verify_inputs(project, 'typescript'))
+    require(provider is not None, 'cjs-original-standard-type-provider')
+    _runtime, _clock, expected = types.compose(provider, read_file(ROOT/types.RUNTIME), read_file(ROOT/types.CLOCK))
+    require(canonical(read_json(artifact/types.RECEIPT,65536)) == canonical(expected), 'cjs-standard-type-view-source-binding')
+    bindings = read_json(artifact/'bindings.json')['files']
+    for name, value in expected['derived'].items():
+        rows = [row for row in bindings if row['path'] == name]
+        require(canonical(rows) == canonical([{'path':name,'sha256':value['digest'],'bytes':value['size']}]),
+                'cjs-actual-generated-standard-type-view')
+    identity = file_identity(artifact/types.RECEIPT,65536)
+    rows = [row for row in read_json(artifact/'build-observation.json')['materials']
+            if row['name'] == 'typescript-standard-global-types']
+    require(canonical(rows) == canonical([{'name':'typescript-standard-global-types','digest':identity['sha256'],'size':identity['bytes']}]),
+            'cjs-standard-type-view-material-binding')
+    layers = [row for row in read_json(artifact/'package-source.json')['layers'] if row['source'] == types.RECEIPT]
+    require(layers == [{'path':types.RECEIPT,'source':types.RECEIPT,'role':'asset',
+        'mediaType':'application/vnd.latent.typescript.standard-global-types.v1+json'}], 'cjs-standard-type-view-signed-asset')
+    return identity
+
+
 def qualify(project, output, tools, engine, splicer, prepared_native):
     project, output, tools, engine, splicer, prepared_native = (
         Path(path).resolve() for path in (project, output, tools, engine, splicer, prepared_native))
@@ -106,6 +129,7 @@ def qualify(project, output, tools, engine, splicer, prepared_native):
         build_evidence(artifact)
         actual_dependencies = dependency_build_evidence(artifact, original_dependencies, source)
         actual_layout = typecheck_layout_evidence(artifact, original_dependencies)
+        actual_types = standard_type_evidence(artifact, project)
         stage = 'six-signed-published-commonjs-cases'
         observed = execute(artifact, binaries, output/'node', cases=fixture.CASES, scope=fixture.SCOPE)
         require(host.verify_prepared(prepared_native) == original_native
@@ -116,12 +140,14 @@ def qualify(project, output, tools, engine, splicer, prepared_native):
                 'cjs-build-dependency-evidence-unchanged')
         require(typecheck_layout_evidence(artifact, original_dependencies) == actual_layout,
                 'cjs-typecheck-layout-evidence-unchanged')
+        require(standard_type_evidence(artifact, project) == actual_types, 'cjs-standard-type-view-unchanged')
         require([row['case'] for row in observed['cases']] == list(fixture.CASES), 'cjs-six-actual-cases')
         result = {'schemaVersion': 'latent.typescript.published-commonjs-buffer.v1', 'status': 'passed',
             'fullTicketQualification': False, 'runtimeProfile': IMPORT_PROFILE,
             'sourceIdentityDigest': digest(source), 'publishedInputs': original_dependencies,
             'dependencyBuildEvidence': actual_dependencies,
             'typecheckModuleLayout': actual_layout,
+            'standardGlobalTypes': actual_types,
             'component': file_identity(artifact/'component.wasm'),
             'build': file_identity(artifact/'BUILD-COMPLETE.json'),
             'execution': file_identity(output/'node/qualification.json'),

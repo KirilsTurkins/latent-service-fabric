@@ -67,7 +67,7 @@ def project(directory):
              section='devDependencies' if name.startswith('@types/') else 'dependencies')
     # Original normal npm lock, including the exact ordinary declaration closure.
     # Never regenerate wildcard transitive versions during this programme.
-    (app/'package-lock.json').write_bytes(read_file(ROOT/FIXTURE/'package-lock.json'))
+    (app/'package-lock.json').write_bytes(read_file(ROOT/FIXTURE/'application-native-lock.json'))
     return app
 
 
@@ -101,7 +101,7 @@ def validate_graph(native, graph):
 
 
 def provenance(app):
-    require(read_file(app/'package-lock.json') == read_file(ROOT/FIXTURE/'package-lock.json'),
+    require(read_file(app/'package-lock.json') == read_file(ROOT/FIXTURE/'application-native-lock.json'),
             'cjs-frozen-original-native-lock')
     accepted = verify_inputs(app, 'typescript')
     require(accepted is not None and not accepted.lock['transformations'], 'cjs-reviewed-unmodified-closure')

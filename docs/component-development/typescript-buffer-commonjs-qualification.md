@@ -64,12 +64,50 @@ namespace control must execute on the actual Linux owning host; local Windows
 source/argv controls do not establish that result. Current repaired compilation
 remains pending.
 
+The second attempt, [run40060051114](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40060051114),
+passed the actual Linux read-only namespace/link control and authenticated the
+current compiler inputs. Its strict TSC stage then reported duplicate or
+incompatible AbortController, AbortSignal and performance declarations from
+the finite SDK and ordinary Node types. It reached no bundle, component or
+signed invocation. Artifact12547375686 (7,086,862 bytes,
+SHA256 `5c95486ceaf90512d6d09dd9558e5f376bb30729cd1211dbc933f4efa38f2ac4`)
+retains those diagnostics; neither failed attempt is reported as a pass.
+
+The repaired compiler composes a selected declaration view from the complete,
+verified captured standard Node type provider. It rejects missing, multiple,
+ambiguous entrypoint or unfamiliar constructor forms. It preserves the finite
+instance/timer declarations and uses the exact captured Node constructor and
+conditional value types, with an explicit Node type reference. Performance
+retains its finite instance interface and refers to the exact captured
+`node:perf_hooks` type. These are compile-time declarations, not new runtime
+APIs or globals. Node itself types direct AbortSignal construction even though
+that operation throws Illegalconstructor; the runtime constructor is unchanged.
+Without that provider, generated declaration bytes and standalone Iterable
+`AbortSignal.any` typing remain unchanged. No SDK input among the 41 engine
+inputs is edited or relabelled.
+
+The normal retained `typescript-standard-global-types.json` asset/material
+binds the original SDK and provider identities, exact derived declarations,
+selection reason and unchanged runtime scope. The actual generated binding
+inventory must match those derived bytes before a signed claim. Failed attempts
+may retain this unknown selection, which supplies no successful compilation or
+runtime evidence. The helper ships through the maintained recipe/distribution
+path. No dependency source is patched and strict checking remains enabled.
+
+The native npm lock stored in the repository is an application data fixture,
+`application-native-lock.json`, rather than a resolver project in the probe
+directory. Normal authoring copies its unchanged bytes to the outside project's
+real `package-lock.json`. This repairs exact manifest inventory coverage without
+an exclusion, scanner/policy change, altered package or suppressed advisory.
+
 `typescript-buffer-commonjs.yml` captures first, then authenticates the same
 existing five-product host. After the typed-result source merge, the retry uses
 the shared exact current OWN engine/splicer selector: producer source
-`9d07a6dfa3ebb77aa75eb1b5899cb9360e26728d`, run40056035407,
-artifact12546161304 (196,485,292 bytes,
-SHA256 `b4f21ecfb457adf9bb206c4c0b3ec36cbfd786f0da9e2ea2d8ca9d9e9a676123`).
+`be356d28f93267dc34078ce137d49ed28c28bf47`, run40062945676,
+artifact12547924676 (196,485,322 bytes,
+SHA256 `5b89337277d467076a42d45e301b0b17f1e535c0c58a4ef3cc8bb8ba615d2cfc`).
+This producer includes the shared existing-import function-identity repair;
+the earlier 9d07 input remains bound to its original failed CommonJS attempt.
 Its native/unit prerequisites passed; it explicitly supplies no canonical,
 signed Component Model or physical-provider qualification. Original raw
 receipts/logs, product identities and immutable source recipes are verified

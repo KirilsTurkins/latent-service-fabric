@@ -30,7 +30,7 @@ class PublishedCommonJsBufferControls(unittest.TestCase):
             self.assertEqual(selected['limits']['effectCount'], 0)
             self.assertEqual(selected['world'], fixture.WORLD)
             self.assertEqual(files['src/main.ts'], read_file(ROOT/fixture.FIXTURE/'main.ts'))
-            self.assertEqual(files['package-lock.json'], read_file(ROOT/fixture.FIXTURE/'package-lock.json'))
+            self.assertEqual(files['package-lock.json'], read_file(ROOT/fixture.FIXTURE/'application-native-lock.json'))
             self.assertEqual(lock['template']['sourceDigest'], digest(files['src/main.ts']))
             declaration = read_json(app/'package.json')
             self.assertEqual(declaration['devDependencies'], {'@types/buffer-xor': '2.0.2'})
@@ -61,7 +61,7 @@ class PublishedCommonJsBufferControls(unittest.TestCase):
             fixture.verify_probe(snapshot(app))
 
     def test_real_normal_capture_projection_binds_versions_integrity_edges_and_profile(self):
-        native = read_json(ROOT/fixture.FIXTURE/'package-lock.json')
+        native = read_json(ROOT/fixture.FIXTURE/'application-native-lock.json')
         observed = read_json(ROOT/fixture.FIXTURE/'capture-reference.json')
         fixture.validate_graph(native, observed)
         mutations = (

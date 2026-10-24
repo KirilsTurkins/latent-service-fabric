@@ -15,6 +15,9 @@ on:
       - 'tools/typescript_guest/compiler.py'
       - 'tools/captured_compiler_isolation.py'
       - 'tools/tests/test_typescript_module_layout.py'
+      - 'tools/typescript_guest/standard_global_types.py'
+      - 'tools/tests/test_typescript_standard_global_types.py'
+      - 'tools/tests/fixtures/npm-types-node-26.6.5.*'
       - 'sdk/typescript-guest/probes/node-buffer-commonjs/**'
       - 'tools/tests/test_typescript_buffer_commonjs.py'
   workflow_dispatch:
@@ -51,11 +54,11 @@ jobs:
       - name: Fetch immutable normal host source for unchanged receipt verification
         run: |
           git fetch --no-tags --depth=1 origin 77bf0e3f3b68e17342b6146abd6f2de34a3efa00
-          git fetch --no-tags --depth=1 origin 9d07a6dfa3ebb77aa75eb1b5899cb9360e26728d
+          git fetch --no-tags --depth=1 origin be356d28f93267dc34078ce137d49ed28c28bf47
       - name: Check published input binding and normal capture/material boundaries
         run: |
           python3 -m pip install --requirement tools/requirements.lock
-          python3 -B -m unittest tools.tests.test_typescript_buffer_commonjs -v
+          python3 -B -m unittest tools.tests.test_typescript_buffer_commonjs tools.tests.test_typescript_standard_global_types -v
       - name: Install the normal compiler isolation boundary
         run: |
           sudo apt-get update

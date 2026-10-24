@@ -131,6 +131,7 @@ class TypecheckModuleAlias(unittest.TestCase):
             root = Path(temporary); workspace, selected = closure(root)
             isolated, tool = boundary(root, workspace)
             compiler = Compiler.__new__(Compiler)
+            compiler.runtime_profile = IMPORT_PROFILE
             compiler.application_modules, compiler.isolation = None, isolated
             compiler.commands = SimpleNamespace(root=selected.work, environment={}, run=lambda stage, *args: (stage, args))
             compiler.prepare_application_modules(selected)

@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/typescript_buffer_commonjs_fixture.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Retain original verified module-tree identity and byte/file counts for actual typecheck alias attribution",
+  "reviewReason": "Use unchanged native lock bytes from explicitly named application data fixture; real external native lock path unchanged",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "5bd8144b8d7c7ce8309d912a5b296112d18eb102839e11585fb2c2fc8e90efc1"
+  "sha256": "dcd98f2cd3985d66b026fe286414cce5ae267b4f1e02ce72aadd1680a894cb3f"
 }

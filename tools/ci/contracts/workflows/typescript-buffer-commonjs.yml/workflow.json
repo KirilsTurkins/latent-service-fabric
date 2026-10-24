@@ -23,6 +23,9 @@
           "tools/typescript_guest/compiler.py",
           "tools/captured_compiler_isolation.py",
           "tools/tests/test_typescript_module_layout.py",
+          "tools/typescript_guest/standard_global_types.py",
+          "tools/tests/test_typescript_standard_global_types.py",
+          "tools/tests/fixtures/npm-types-node-26.6.5.*",
           "sdk/typescript-guest/probes/node-buffer-commonjs/**",
           "tools/tests/test_typescript_buffer_commonjs.py"
         ]
@@ -36,7 +39,7 @@
   "requiredJobs": [
     "signed-commonjs-buffer"
   ],
-  "reviewReason": "Retain original five controls and normal source capture; add required actual declaration namespace and current compiler-input selector",
+  "reviewReason": "Require new captured standard-global declaration controls and keep original signed/namespace/runtime budgets",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-buffer-commonjs.yml"
 }

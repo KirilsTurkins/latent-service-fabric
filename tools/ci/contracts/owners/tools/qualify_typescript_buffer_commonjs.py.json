@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_typescript_buffer_commonjs.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Bind exact readonly typecheck alias and normal materials; retain failed history while selecting only source-matched compiler inputs",
+  "reviewReason": "Require exact original/captured/derived standard type view, generated binding identities and normal signed material before CommonJS claim",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "67a9f0f64d42f6f482e43da5dd37a1ab89490af9c63b95dc2bd4a68ffb6c3334"
+  "sha256": "094cac0e56de67afa0dec5538e1ac271184c9c5341a169332b0ef89c1240a0bf"
 }

@@ -37,11 +37,11 @@
       },
       {
         "name": "Fetch immutable normal host source for unchanged receipt verification",
-        "run": "git fetch --no-tags --depth=1 origin 77bf0e3f3b68e17342b6146abd6f2de34a3efa00\ngit fetch --no-tags --depth=1 origin 9d07a6dfa3ebb77aa75eb1b5899cb9360e26728d\n"
+        "run": "git fetch --no-tags --depth=1 origin 77bf0e3f3b68e17342b6146abd6f2de34a3efa00\ngit fetch --no-tags --depth=1 origin be356d28f93267dc34078ce137d49ed28c28bf47\n"
       },
       {
         "name": "Check published input binding and normal capture/material boundaries",
-        "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 -B -m unittest tools.tests.test_typescript_buffer_commonjs -v\n"
+        "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 -B -m unittest tools.tests.test_typescript_buffer_commonjs tools.tests.test_typescript_standard_global_types -v\n"
       },
       {
         "name": "Install the normal compiler isolation boundary",
@@ -96,7 +96,7 @@
   },
   "jobId": "signed-commonjs-buffer",
   "kind": "job",
-  "reviewReason": "Retain compiler-input authentication operation; select exact current OWN prerequisites and add mandatory readonly namespace controls with no removed test or budget change",
+  "reviewReason": "Use the exact corrected successful OWN be356 producer through the unchanged shared selector; preserve all fourteen mandatory source controls and six signed cases.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-buffer-commonjs.yml"
 }
