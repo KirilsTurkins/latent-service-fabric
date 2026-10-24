@@ -5,6 +5,12 @@ BACKEND = 'tools/typescript_guest/node_buffer.mjs'
 RESOLVER = 'tools/typescript_guest/buffer_builtin.mjs'
 
 
+def verify_captured_declaration(selection: dict | None, expected: bytes, read_captured) -> None:
+    """Legacy unselected captures need no new file; selected inputs stay exact."""
+    if selection is not None and read_captured() != expected:
+        raise ValueError('captured TypeScript buffer declarations differ from the selected backend')
+
+
 def check_selection(observation: dict, backend_digest: str) -> dict | None:
     selected = observation.get('standardBufferModules', [])
     if selected not in ([], ['node:buffer']):

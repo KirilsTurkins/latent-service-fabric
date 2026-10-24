@@ -79,12 +79,16 @@ and emits `typescript-buffer-selection.json`. Both module spellings use the same
 maintained declaration file during typechecking. Recipe capture and isolated
 compiler staging include the source, resolver, profile reader and declarations.
 Application configuration cannot choose or replace this backend.
+Unselected legacy SDK captures need no new declaration file. Only an actual
+Buffer selection requires the captured declaration to match the maintained
+recipe bytes; a selected missing/stale declaration refuses.
 
-Seven focused controllers cover actual Node **24.19.0** reference parity and
+Eight focused controllers cover actual Node **24.19.0** reference parity and
 source integration: copy and
 view lifetime/overlap, codecs and invalid UTF-8, truncated write/fill/concat,
 integer/endian/BigInt behavior, range/pre-encoding capacity refusal, the real
-resolver alias identity, and strict profile/material selection. An initial
+resolver alias identity, strict profile/material selection, and selected versus
+unselected legacy declaration capture. An initial
 non-ASCII base64 discrepancy was corrected to the observed low-byte parsing;
 its affected codec control passes. These are host reference controls, not
 signed runtime or complete original-budget accounting qualification.

@@ -336,8 +336,6 @@ class Compiler:
                 (directory/'console-runtime-globals.d.ts').write_bytes(declaration)
         from tools.typescript_guest import buffer_profile
         buffer_declaration = read_file(ROOT/buffer_profile.DECLARATION)
-        if read_file(work/'vendor/lsf'/buffer_profile.DECLARATION) != buffer_declaration:
-            raise ValueError('captured TypeScript buffer declarations differ from the selected backend')
         for directory in (generated, second):
             (directory/'buffer-runtime.d.ts').write_bytes(buffer_declaration)
         first_identity = tree_identity(generated)
@@ -392,6 +390,8 @@ class Compiler:
                     self.tools / "node_modules/acorn/dist/acorn.mjs")
         bundled = json.loads(read_file(output / 'application.mjs.inputs.json', 8 * 1024 * 1024))
         buffer_selection = buffer_profile.check_selection(bundled, digest(read_file(ROOT/buffer_profile.BACKEND)))
+        buffer_profile.verify_captured_declaration(buffer_selection, buffer_declaration,
+            lambda: read_file(work/'vendor/lsf'/buffer_profile.DECLARATION))
         if buffer_selection is not None:
             write_json(output/'typescript-buffer-selection.json', buffer_selection)
         if bundled['standardEntropyProfile'] != entropy_configuration['standardEntropyProfile']:

@@ -147,6 +147,31 @@ assert.equal(globalThis.Buffer,N);assert.notEqual(B,N);
             with self.assertRaises(ValueError):
                 buffer_profile.check_selection(changed, digest)
 
+    def test_unselected_legacy_capture_does_not_require_new_buffer_declaration(self):
+        import tempfile
+        expected = (ROOT/buffer_profile.DECLARATION).read_bytes()
+        selection = {'profile': buffer_profile.PROFILE}
+        with tempfile.TemporaryDirectory() as temporary:
+            captured = Path(temporary)/'buffer.d.ts'
+            reads = []
+
+            def read_captured():
+                reads.append(True)
+                return captured.read_bytes()
+
+            buffer_profile.verify_captured_declaration(None, expected, read_captured)
+            self.assertEqual(reads, [], 'an unselected legacy project must not read a new SDK file')
+            with self.assertRaises(FileNotFoundError):
+                buffer_profile.verify_captured_declaration(selection, expected, read_captured)
+            captured.write_bytes(expected)
+            buffer_profile.verify_captured_declaration(selection, expected, read_captured)
+            captured.write_bytes(expected + b'// stale capture\n')
+            with self.assertRaisesRegex(ValueError, 'captured TypeScript buffer declarations differ'):
+                buffer_profile.verify_captured_declaration(selection, expected, read_captured)
+            captured.unlink()
+            buffer_profile.verify_captured_declaration(None, expected, read_captured)
+            self.assertEqual(len(reads), 3)
+
 
 if __name__ == '__main__':
     unittest.main()
