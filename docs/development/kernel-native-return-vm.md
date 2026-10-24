@@ -7,6 +7,11 @@ the historical 294-material comparison included two newly captured C sources.
 All historical entries were unchanged; the current set has 296 entries. The
 reviewed correction binds and retains those two additional entries separately
 while preserving the exact historical digest and final full-set recheck.
+The second run at `de408ae48f28` passed that corrected 294+2 boundary and the
+nineteen Rust/native-build/twelve C prerequisites again. It stopped before
+Kconfig, linking or VM because Kbuild's CC argument concatenated a Path rather
+than its string spelling. The one-line conversion preserves the exact selected
+lexical tool path and flags. Both failed attempts remain failed observations.
 The observation implementation has not yet executed against a fresh kernel.
 The historical image has no observation ioctl and is never relabelled as this
 image. Normal installation remains Unsupported; native backing stays quarantined.

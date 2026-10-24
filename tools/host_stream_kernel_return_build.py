@@ -82,7 +82,7 @@ def build(commands, tools, archive, output, receipt):
         require(objects.SELECTED.encode() not in raw,'constructor-vm-private-config-present')
         (tree/name).write_bytes(raw+suffix.encode())
     build = output/'objects'
-    common = [tools['make'],'O='+str(build),'ARCH=x86_64','CC='+tools['gcc']]
+    common = [tools['make'],'O='+str(build),'ARCH=x86_64','CC='+str(tools['gcc'])]
     commands.run('compiler-identity',tools['gcc'],'--version')
     commands.run('original-defconfig',*common,'x86_64_defconfig')
     before_raw = (build/'.config').read_bytes()
