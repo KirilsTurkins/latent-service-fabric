@@ -37,7 +37,11 @@ class JavaPublicWinEH(unittest.TestCase):
             target = root / name
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes((ROOT / source).read_bytes())
-        for name in ('all.c', 'c/d/l/a/Capsule.c', 'c/d/l/a/Capsule.h'):
+        # These three literal escaped basenames are present in the retained
+        # actual38f Capsule.c includes; ordinary synthetic names missed them.
+        for name in ('all.c', 'c/d/l/a/Capsule.c', 'c/d/l/a/Capsule.h',
+                'c/j/u/WeakHashMap@dEntry.h', 'c/d/l/a/Capsule@drun@dlambda@d_1_0.h',
+                'c/j/l/Object@dMonitor.h'):
             target = root / 'build/project/build/teavm-c/c' / name
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(b'/* bounded source fixture, never compiled */\n')
@@ -133,6 +137,13 @@ class JavaPublicWinEH(unittest.TestCase):
             root = Path(temporary).resolve()
             compiler = self.populate(root)
             source = self.admit(compiler)
+            generated = compiler.public_wineh['inputs']['trees']['generated']
+            self.assertTrue({'c/j/u/WeakHashMap@dEntry.h',
+                'c/d/l/a/Capsule@drun@dlambda@d_1_0.h', 'c/j/l/Object@dMonitor.h'} <= set(generated))
+            with self.assertRaisesRegex(ValueError, 'nonportable project path'):
+                observer.snapshot(root / 'build/project/build/teavm-c/c')
+            with self.assertRaisesRegex(ValueError, 'absolute-owned-path-required'):
+                observer.generated_inventory(root / 'build/project/build/teavm-c/c/..')
             originals = canonical(compiler.records)
             receipt = (compiler.directory / '0-c-to-wasm.command.json').read_bytes()
             with patch.object(observer, 'hosted_source', return_value=source), \
@@ -158,7 +169,8 @@ class JavaPublicWinEH(unittest.TestCase):
                  'generated-c.json', 'public-wineh.json'})
 
     def test_changed_real_materials_or_command_receipt_refuse_before_execution(self):
-        for kind in ('generated', 'header', 'binding', 'environment', 'tool', 'receipt', 'java', 'wit', 'core'):
+        for kind in ('generated', 'header', 'binding', 'environment', 'tool', 'receipt', 'java', 'wit',
+                     'core', 'unsafe-name', 'directory-link', 'generated-target', 'binding-target'):
             with self.subTest(kind=kind), tempfile.TemporaryDirectory() as temporary:
                 root = Path(temporary).resolve()
                 compiler = self.populate(root)
@@ -176,12 +188,39 @@ class JavaPublicWinEH(unittest.TestCase):
                     def changed():
                         raise ValueError('original compiler closure changed')
                     compiler.check_unchanged = changed
+                elif kind == 'unsafe-name':
+                    (root / 'build/project/build/teavm-c/c/unadmitted!header.h').write_bytes(b'unknown name')
+                elif kind == 'directory-link':
+                    original = root / 'outside-generated'
+                    original.mkdir()
+                    (original / 'secret.h').write_bytes(b'must never follow this link')
+                    link = root / 'build/project/build/teavm-c/c/linked'
+                    if os.name == 'nt':
+                        # An actual junction/reparse traversal on Windows does
+                        # not require the unavailable symlink privilege.
+                        import _winapi
+                        _winapi.CreateJunction(str(original), str(link))
+                    else:
+                        link.symlink_to(original, target_is_directory=True)
+                elif kind in {'generated-target', 'binding-target'}:
+                    parent = (root / 'build/project/build/teavm-c/c' if kind == 'generated-target'
+                              else root / 'build/bindings')
+                    header = parent / 'target/changed.h'
+                    header.parent.mkdir()
+                    header.write_bytes(b'must be identified or refused, never ignored')
                 with patch.object(observer, 'hosted_source', return_value=source), \
                         patch.object(observer, 'run_bounded_result') as execute:
                     observer.retain(compiler, root)
                 execute.assert_not_called()
                 result = json.loads((root / 'build/component-inputs/public-wineh.json').read_bytes())
                 self.assertEqual(result['status'], 'incomplete')
+                self.assertIn(result['refusalStage'], ('command-receipt', 'original-capture', 'pre-replay-identity'))
+                if kind == 'unsafe-name':
+                    self.assertEqual(result['reason'], 'generated-path')
+                elif kind == 'generated-target':
+                    self.assertEqual(result['reason'], 'original-inputs-changed')
+                elif kind == 'binding-target':
+                    self.assertEqual(result['reason'], 'bindings-root-exclusion')
 
     def test_admission_and_bounded_capture_failures_preserve_original_exception(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -195,6 +234,8 @@ class JavaPublicWinEH(unittest.TestCase):
             self.assertIs(caught.exception, original)
             original_run.assert_called_once_with('c-to-wasm', 'clang', *command[1:], cwd=None)
             self.assertIsNone(compiler.public_wineh)
+            self.assertEqual(compiler.public_wineh_refusal,
+                {'refusalStage': 'admission-host', 'reason': 'unavailable-or-unsafe'})
         for reason in ('command-output-limit', 'command-deadline', 'process-cleanup'):
             with self.subTest(reason=reason), tempfile.TemporaryDirectory() as temporary:
                 root = Path(temporary).resolve()
@@ -211,6 +252,7 @@ class JavaPublicWinEH(unittest.TestCase):
                 self.assertIs(caught.exception, original)
                 result = json.loads((root / 'build/component-inputs/public-wineh.json').read_bytes())
                 self.assertEqual((result['status'], result['reason']), ('incomplete', reason))
+                self.assertEqual(result['refusalStage'], 'replay')
 
 
 if __name__ == '__main__':

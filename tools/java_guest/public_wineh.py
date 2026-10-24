@@ -11,6 +11,7 @@ import os
 from pathlib import Path
 import re
 import shutil
+import stat
 
 from tools.build_process import BuildProcessError, MAX_OUTPUT_BYTES, run_bounded_result
 from tools.dev_workflow import paths
@@ -26,6 +27,63 @@ TIMEOUT = 600
 RESULT = 'public-wineh.json'
 MAINTAINED = ('tools/java_guest/public_wineh.py', 'tools/java_guest/wineh_ir.py',
               'tools/qualify_java_fibers.py')
+REFUSALS = {name: name for name in (
+    'public-source-set', 'public-source-identity', 'public-extra-classpath',
+    'original-command', 'hosted-source-context', 'hosted-source-git', 'hosted-source-head',
+    'original-command-count', 'original-command-receipt', 'original-public-capture',
+    'original-public-products-changed', 'original-inputs-changed', 'diagnostic-inputs-changed',
+    'diagnostic-original-products-changed', 'diagnostic-exit-or-stdout',
+    'generated-entry-limit', 'generated-path', 'generated-byte-limit',
+    'bindings-root-exclusion',
+    'file-byte-limit', 'source-file-unavailable-or-unsafe', 'single-link-regular-file-required',
+    'reparse-point-rejected', 'reparse-or-file-type-rejected', 'windows-protected-open-failed',
+    'absolute-owned-path-required', 'source-path-traversal', 'source-changed-during-read', 'command-output-limit',
+    'command-deadline', 'process-cleanup', 'process-ownership', 'command-exit')}
+REFUSALS.update({
+    'Java SDK changed during build': 'sdk-changed',
+    'Java compiler distribution changed during build': 'tools-changed',
+    'Java compiler changed during build': 'tool-changed',
+    'project entry limit exceeded': 'bindings-entry-limit',
+    'project source byte limit exceeded': 'bindings-byte-limit',
+    'nonportable project path': 'bindings-path',
+})
+
+
+def refusal(error: Exception) -> str:
+    # Only literal closed codes leave this helper, never a tool/path message.
+    value = error.args[0] if len(error.args) == 1 else None
+    return REFUSALS.get(value, 'unavailable-or-unsafe') if type(value) is str else 'unavailable-or-unsafe'
+
+
+def generated_inventory(root: Path) -> dict:
+    """TeaVM's literal @ escapes, with the original independent tree bounds.
+
+    Do not broaden the shared Rust portable-source reader. Anchored readers
+    reject linked/nonregular files and symlink/reparse ancestors independently
+    of this private name grammar.
+    """
+    result, entries, total = {}, 0, 0
+    pending = [paths.absolute(root)]
+    while pending:
+        parent = pending.pop()
+        with paths.directory(parent):
+            for child in parent.iterdir():
+                entries += 1
+                if entries > 4096:
+                    raise ValueError('generated-entry-limit')
+                if child.name in {'.', '..'} or not re.fullmatch(r'[A-Za-z0-9._@-]+', child.name):
+                    raise ValueError('generated-path')
+                relative = child.relative_to(root).as_posix()
+                paths.relative(relative)
+                if stat.S_ISDIR(child.lstat().st_mode):
+                    pending.append(child)
+                    continue
+                checksum, size = paths.digest_file(root, relative, 4 * 1024 * 1024)
+                total += size
+                if total > 32 * 1024 * 1024:
+                    raise ValueError('generated-byte-limit')
+                result[relative] = {'digest': checksum, 'size': size}
+    return dict(sorted(result.items()))
 
 
 def public_sources(output: Path) -> None:
@@ -65,11 +123,21 @@ def expected_command(compiler: Compiler, output: Path) -> list[str]:
 def input_identity(compiler: Compiler, output: Path) -> dict:
     public_sources(output)
     compiler.check_unchanged()  # Original exact SDK/tool closure validator.
-    # Reuse the original finite source reader: each tree <=4096 entries/32MiB,
-    # each file <=4MiB, no symlinks; SDK/runtime inputs are checked above too.
-    roots = {'generated': output / 'build/project/build/teavm-c/c',
-             'bindings': output / 'build/bindings'}
-    trees = {name: json.loads(inventory(snapshot(root))) for name, root in roots.items()}
+    binding_root = output / 'build/bindings'
+    # The shared Rust reader omits these project-only root names. A compiler
+    # input closure must instead refuse their presence, never silently omit a
+    # potential included header. Leave the shared reader unchanged.
+    with paths.directory(binding_root):
+        for name in ('.git', 'target', 'dependency-inputs'):
+            try:
+                (binding_root / name).lstat()
+            except FileNotFoundError:
+                continue
+            raise ValueError('bindings-root-exclusion')
+    # Both trees keep <=4096 entries/32MiB/4MiB per file. Only the private
+    # generated tree admits TeaVM's @ escapes; binding/Rust rules stay exact.
+    trees = {'generated': generated_inventory(output / 'build/project/build/teavm-c/c'),
+             'bindings': json.loads(inventory(snapshot(binding_root)))}
     return {'trees': trees, 'toolInventoryDigest': digest(compiler.compiler_inputs),
             'sdkDigest': digest(inventory(compiler.original_sdk)),
             'environmentDigest': digest(canonical(compiler.environment))}
@@ -103,6 +171,7 @@ class PublicWinEHCompiler(Compiler):
         if stage == 'c-to-wasm':
             # A rejected observation must not stop or modify the ordinary run.
             self.public_wineh = None
+            phase = 'admission-command'
             try:
                 output = self.directory.parent
                 command = [str(self.paths.get(tool, Path(tool))), *map(str, arguments)]
@@ -110,10 +179,13 @@ class PublicWinEHCompiler(Compiler):
                         or self.directory != output / 'compiler'
                         or command != expected_command(self, output)):
                     raise ValueError('original-command')
-                self.public_wineh = {'command': command, 'source': hosted_source(self),
-                                     'inputs': input_identity(self, output)}
-            except Exception:
-                pass
+                phase = 'admission-host'
+                source = hosted_source(self)
+                phase = 'admission-materials'
+                inputs = input_identity(self, output)
+                self.public_wineh = {'command': command, 'source': source, 'inputs': inputs}
+            except Exception as error:
+                self.public_wineh_refusal = {'refusalStage': phase, 'reason': refusal(error)}
         return super().run(stage, tool, *arguments, cwd=cwd)
 
 
@@ -124,6 +196,7 @@ def retain(compiler: Compiler | None, output: Path) -> None:
               'originalLogLimitBytes': 16 * 1024 * 1024, 'timeoutSeconds': TIMEOUT,
               'combinedOutputLimitBytes': MAX_OUTPUT_BYTES, 'rawIRRetained': False}
     target = output / 'build/component-inputs'
+    phase = 'selection'
     try:
         if not isinstance(compiler, PublicWinEHCompiler):
             return
@@ -135,7 +208,10 @@ def retain(compiler: Compiler | None, output: Path) -> None:
         report['status'] = 'incomplete'
         admitted = getattr(compiler, 'public_wineh', None)
         if admitted is None:
-            raise ValueError('pre-clang-admission-unavailable')
+            report.update(getattr(compiler, 'public_wineh_refusal',
+                {'refusalStage': 'admission', 'reason': 'unavailable-or-unsafe'}))
+            return
+        phase = 'command-receipt'
         selected = [(index, row) for index, row in enumerate(compiler.records)
                     if row.get('stage') == 'c-to-wasm']
         if len(selected) != 1:
@@ -148,6 +224,7 @@ def retain(compiler: Compiler | None, output: Path) -> None:
                 or original['command'] != expected_command(compiler, output)):
             raise ValueError('original-command-receipt')
         # Normal bounded capture must already have authenticated the Wasm pair.
+        phase = 'original-capture'
         capture = json.loads(paths.read(target, 'record.json', 64 * 1024))
         if (capture.get('status') != 'retained' or capture.get('fixtureSourceDigest') != JAVA
                 or capture.get('fixtureWitDigest') != WIT or capture.get('qualification') is not False):
@@ -157,6 +234,7 @@ def retain(compiler: Compiler | None, output: Path) -> None:
             for name, maximum in LIMITS.items()}
         if original_pair != capture.get('inputs'):
             raise ValueError('original-public-products-changed')
+        phase = 'pre-replay-identity'
         if (admitted['source'] != hosted_source(compiler)
                 or admitted['inputs'] != input_identity(compiler, output)):
             raise ValueError('original-inputs-changed')
@@ -165,11 +243,13 @@ def retain(compiler: Compiler | None, output: Path) -> None:
         command = [*original['command'][:-1], str(diagnostic / 'core.wasm'), *PRINT_FLAGS]
         report.update(source=admitted['source'], originalCommand=original,
             originalInputDigest=digest(canonical(admitted['inputs'])), diagnosticCommand=command)
+        phase = 'replay'
         result = run_bounded_result(command, compiler.directory, compiler.environment,
             timeout_seconds=TIMEOUT, max_output_bytes=MAX_OUTPUT_BYTES)
         # Hash each channel separately: stdout/stderr interleaving is not known.
         report.update(exitCode=result.returncode, stdoutDigest=digest(result.stdout),
                       stdoutBytes=len(result.stdout))
+        phase = 'post-replay-identity'
         if (admitted['source'] != hosted_source(compiler)
                 or admitted['inputs'] != input_identity(compiler, output)):
             raise ValueError('diagnostic-inputs-changed')
@@ -177,14 +257,17 @@ def retain(compiler: Compiler | None, output: Path) -> None:
                 paths.digest_file(output / 'build', name, maximum)))
                 for name, maximum in LIMITS.items()}:
             raise ValueError('diagnostic-original-products-changed')
+        phase = 'parser'
         report['observation'] = observe(result.stderr)
         if result.returncode != 0 or result.stdout:
             raise ValueError('diagnostic-exit-or-stdout')
         report['status'] = report['observation']['status']
+        if report['status'] == 'incomplete':
+            report.update(refusalStage=phase, reason='print-incomplete')
     except BuildProcessError as error:
-        report.update(status='incomplete', reason=error.reason)
-    except Exception:
-        report.update(status='incomplete', reason='bounded-public-observation-unavailable-or-unsafe')
+        report.update(status='incomplete', refusalStage=phase, reason=refusal(error))
+    except Exception as error:
+        report.update(status='incomplete', refusalStage=phase, reason=refusal(error))
     finally:
         try:
             # No raw IR, alternate Wasm output or complete input tree is

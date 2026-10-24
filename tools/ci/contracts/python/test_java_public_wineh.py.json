@@ -7,41 +7,17 @@
     "JavaPublicWinEH.test_synthetic_pinned_print_text_is_counted_and_unknown_formats_refuse"
   ],
   "guards": {
-    "JavaPublicWinEH.test_admission_and_bounded_capture_failures_preserve_original_exception": {
+    "JavaPublicWinEH.test_synthetic_pinned_print_text_is_counted_and_unknown_formats_refuse": {
       "bases": [
         "unittest.TestCase"
       ],
       "classDecorators": [],
       "decorators": [],
+      "skipSites": [],
       "fixtureGuards": [
         "module:setup-sha256:ac992e0db845ad61f83ff8a51b4a419d28b753a7b90c7630b2afcd89a63b9a69",
-        "class:setup-sha256:3631d9c21a41d5753883270220741169a79b5046cbcc632005e5fb07d1539a7c"
-      ],
-      "skipSites": []
-    },
-    "JavaPublicWinEH.test_changed_real_materials_or_command_receipt_refuse_before_execution": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:ac992e0db845ad61f83ff8a51b4a419d28b753a7b90c7630b2afcd89a63b9a69",
-        "class:setup-sha256:3631d9c21a41d5753883270220741169a79b5046cbcc632005e5fb07d1539a7c"
-      ],
-      "skipSites": []
-    },
-    "JavaPublicWinEH.test_real_admission_replay_uses_original_argv_and_separate_output_only": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:ac992e0db845ad61f83ff8a51b4a419d28b753a7b90c7630b2afcd89a63b9a69",
-        "class:setup-sha256:3631d9c21a41d5753883270220741169a79b5046cbcc632005e5fb07d1539a7c"
-      ],
-      "skipSites": []
+        "class:setup-sha256:d2496e11f7f6ba99e0381afdbfc876cd11ee34aad4576f9f11745a545870e69e"
+      ]
     },
     "JavaPublicWinEH.test_real_hosted_context_guards_and_named_source_identities": {
       "bases": [
@@ -49,27 +25,51 @@
       ],
       "classDecorators": [],
       "decorators": [],
+      "skipSites": [],
       "fixtureGuards": [
         "module:setup-sha256:ac992e0db845ad61f83ff8a51b4a419d28b753a7b90c7630b2afcd89a63b9a69",
-        "class:setup-sha256:3631d9c21a41d5753883270220741169a79b5046cbcc632005e5fb07d1539a7c"
-      ],
-      "skipSites": []
+        "class:setup-sha256:d2496e11f7f6ba99e0381afdbfc876cd11ee34aad4576f9f11745a545870e69e"
+      ]
     },
-    "JavaPublicWinEH.test_synthetic_pinned_print_text_is_counted_and_unknown_formats_refuse": {
+    "JavaPublicWinEH.test_real_admission_replay_uses_original_argv_and_separate_output_only": {
       "bases": [
         "unittest.TestCase"
       ],
       "classDecorators": [],
       "decorators": [],
+      "skipSites": [],
       "fixtureGuards": [
         "module:setup-sha256:ac992e0db845ad61f83ff8a51b4a419d28b753a7b90c7630b2afcd89a63b9a69",
-        "class:setup-sha256:3631d9c21a41d5753883270220741169a79b5046cbcc632005e5fb07d1539a7c"
+        "class:setup-sha256:d2496e11f7f6ba99e0381afdbfc876cd11ee34aad4576f9f11745a545870e69e"
+      ]
+    },
+    "JavaPublicWinEH.test_changed_real_materials_or_command_receipt_refuse_before_execution": {
+      "bases": [
+        "unittest.TestCase"
       ],
-      "skipSites": []
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ac992e0db845ad61f83ff8a51b4a419d28b753a7b90c7630b2afcd89a63b9a69",
+        "class:setup-sha256:d2496e11f7f6ba99e0381afdbfc876cd11ee34aad4576f9f11745a545870e69e"
+      ]
+    },
+    "JavaPublicWinEH.test_admission_and_bounded_capture_failures_preserve_original_exception": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ac992e0db845ad61f83ff8a51b4a419d28b753a7b90c7630b2afcd89a63b9a69",
+        "class:setup-sha256:d2496e11f7f6ba99e0381afdbfc876cd11ee34aad4576f9f11745a545870e69e"
+      ]
     }
   },
   "kind": "python",
   "module": "tools/tests/test_java_public_wineh.py",
-  "reviewReason": "Add five bounded observer/parser controls with synthetic LLVM text explicitly labelled, real hosted environment predicates and named source identity changes; replaces only an uncommitted new four-case proposal, no historical test changed.",
+  "reviewReason": "Preserve all five cases and skip/decorator/module guards; update only the actual fixture helper hash for three authenticated TeaVM @-escaped header names, with real traversal/reparse refusal controls.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
