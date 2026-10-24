@@ -42,6 +42,17 @@ Buffer selection grants no I/O or provider permission.
 | Profile ceilings | 1MiB Buffer/4Mi-code-unit string limits and unsupported API refusal |
 | Relative fixture | Repository-owned ordinary relative import only |
 
+The first owning attempt, run 40048148626 at `612f1697`, remains failed. It compiled,
+packaged and admitted the component, then completed the first six signed cases
+and their physical-retirement checks. The profile-ceilings invocation exhausted
+the original 1,000,000,000 fuel budget before returning its typed result. It
+included a UTF8 length preflight over 349,526 Euro code units; no exact guest PC
+was retained. The implementation and budgets are unchanged.
+The finite encoded-size negative now uses UTF16LE's exact 2×code-unit length,
+which the maintained backend checks before allocation without scanning. Fast
+large-UTF8 preflight is not qualified by this programme; neither are all eight
+cases until a subsequent owning run actually passes.
+
 After every actual result the normal node observations must report no active
 physical owners or invocation-cleanup slots. Deployment deletion and a clean
 reaped node shutdown are also mandatory. This proves only the reported

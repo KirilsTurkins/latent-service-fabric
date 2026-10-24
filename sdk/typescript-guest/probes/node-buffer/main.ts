@@ -86,7 +86,7 @@ export const api: typeof Contract = {
       case 6: {
         check(kMaxLength === 1048576 && kStringMaxLength === 4194304, 'profile-ceilings');
         refuses(() => Named.alloc(kMaxLength + 1), 'ERR_OUT_OF_RANGE');
-        refuses(() => Named.from('€'.repeat(Math.floor(kMaxLength / 3) + 1)), 'ERR_OUT_OF_RANGE');
+        refuses(() => Named.from('x'.repeat(Math.floor(kMaxLength / 2) + 1), 'utf16le'), 'ERR_OUT_OF_RANGE');
         refuses(() => Named.from('x'.repeat(kStringMaxLength + 1)), 'ERR_OUT_OF_RANGE');
         refuses(() => Named.from('x', 'made-up' as 'utf8'), 'ERR_UNKNOWN_ENCODING');
         const unavailable = Named.alloc(1) as unknown as {readFloatLE(): unknown};
