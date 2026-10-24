@@ -209,6 +209,14 @@ pub fn splice_with_async(
     block=source[start:end]
     block=block.replace(b'(*impt_name).clone()',b'native_name.clone()')
     source=source[:start]+block+source[end:]
+    source=replace_once(source,
+        b'''            let import_fn_fid = if let Some(existing) = module
+                .imports
+                .get_func((*impt_specifier).clone(), native_name.clone())
+            {''',
+        b'''            let import_fn_fid = if let Some(existing) = lsf_async_splice::import_function(
+                module, &((*impt_specifier).clone(), native_name.clone()))?
+            {''','stable-existing-import-function-identity')
     source=replace_once(source,b'            // create the native JS binding function\n',
         b'''            if let Some(descriptor)=descriptor {
                 let bigint=get_export_fid(module,&coreabi_from_bigint64);

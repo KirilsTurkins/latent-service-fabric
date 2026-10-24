@@ -76,6 +76,8 @@ class Compiler:
         from tools.typescript_guest.activation_engine import engine_input_paths
         selection(runtime_profile)
         self.runtime_profile = runtime_profile
+        self.application_modules = None
+        self.standard_global_provider = self.standard_global_types_receipt = None
         self.engine, self.engine_original, self.engine_before = None, None, None
         self.engine_metadata = None
         self.runtime_observation = None
@@ -181,8 +183,24 @@ class Compiler:
     def run(self, stage, tool, *arguments):
         if self.isolation is None:
             return self.commands.run(stage, tool, *arguments)
+        if stage == 'typecheck' and self.application_modules is not None:
+            return self.commands.run(stage, *self.isolation.wrap(Path(tool), [str(value) for value in arguments],
+                self.commands.root, self.commands.environment, typecheck_node_modules=True))
         return self.commands.run(stage, *self.isolation.wrap(Path(tool), [str(value) for value in arguments],
                                                            self.commands.root, self.commands.environment))
+
+    def prepare_application_modules(self, closure):
+        from tools.typescript_application_dependencies import bundle_configuration
+        if self.isolation is None or self.application_modules is not None:
+            raise ValueError('captured-typescript-module-layout-requires-fresh-isolation')
+        if closure.work.resolve(strict=True) != self.commands.root.resolve(strict=True):
+            raise ValueError('captured-typescript-module-layout-project-mismatch')
+        self.isolation.select_typecheck_node_modules(closure)
+        self.application_modules = bundle_configuration(closure)
+        from tools.typescript_guest.runtime_profile import NATIVE_PROFILES
+        if self.runtime_profile in NATIVE_PROFILES:
+            from tools.typescript_guest import standard_global_types
+            self.standard_global_provider = standard_global_types.select(closure)
 
     def identity(self, tools=None):
         # npm's .bin links are launch conveniences, never compiler inputs: use
@@ -301,6 +319,20 @@ class Compiler:
         # Preserve raw generated declarations separately from the reviewed
         # compiler spelling projection and compare both independent outputs.
         write_json(output / "raw-generated-bindings.json", tree_identity(generated))
+        runtime_declaration = clock_declaration = None
+        if self.runtime_profile in runtime.NATIVE_PROFILES:
+            from tools.typescript_guest import standard_global_types
+            runtime_declaration = read_file(ROOT/standard_global_types.RUNTIME)
+            if self.runtime_profile in runtime.CLOCK_PROFILES:
+                clock_declaration = read_file(ROOT/standard_global_types.CLOCK)
+            runtime_declaration, clock_declaration, self.standard_global_types_receipt = standard_global_types.compose(
+                self.standard_global_provider, runtime_declaration, clock_declaration)
+            if self.standard_global_types_receipt is not None:
+                write_json(output/standard_global_types.RECEIPT, self.standard_global_types_receipt)
+                # Retain attempted declarations even when the strict TSC stage
+                # fails. This unknown selection is never successful build proof.
+                if self.commands.output != output:
+                    write_json(self.commands.output/standard_global_types.RECEIPT, self.standard_global_types_receipt)
         for directory in (generated, second):
             for path in sorted(directory.rglob("*.d.ts")):
                 original = path.read_text(encoding="utf-8")
@@ -308,11 +340,9 @@ class Compiler:
                 if adapted != original:
                     path.write_text(adapted, encoding="utf-8")
             if self.runtime_profile in runtime.NATIVE_PROFILES:
-                (directory/'activation-runtime-globals.d.ts').write_bytes(
-                    read_file(ROOT/'sdk/typescript-guest/activation/runtime-globals.d.ts'))
+                (directory/'activation-runtime-globals.d.ts').write_bytes(runtime_declaration)
                 if self.runtime_profile in runtime.CLOCK_PROFILES:
-                    (directory/'clock-runtime-globals.d.ts').write_bytes(
-                        read_file(ROOT/'sdk/typescript-guest/activation/clock-globals.d.ts'))
+                    (directory/'clock-runtime-globals.d.ts').write_bytes(clock_declaration)
         imports = import_identities(binding_graph, binding_world)
         from tools.typescript_guest import fetch_profile
         from tools.typescript_guest import console_profile
@@ -355,8 +385,9 @@ class Compiler:
         config = {"compilerOptions": {"target": "ES2022", "module": "ESNext", "moduleResolution": "Bundler",
                   "strict": True, "noEmit": True, "lib": ["ES2022"], "types": [], "paths": paths},
                   "include": ["src/**/*.ts", "generated/**/*.d.ts"]}
+        if application_modules != self.application_modules:
+            raise ValueError('captured-typescript-module-layout-not-prepared')
         if application_modules is not None:
-            config["compilerOptions"]["paths"]["*"] = ["./" + application_modules["moduleRoot"] + "/*"]
             config["compilerOptions"]["customConditions"] = application_modules["conditions"]
         write_json(work / "tsconfig.json", config)
         command.run("typecheck", self.node, self.tsc, "--project", work / "tsconfig.json")

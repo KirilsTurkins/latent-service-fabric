@@ -15,7 +15,7 @@ from tools.rust_capsule_project import (ROOT, checked_path, digest, fresh, inven
     read_file, read_json, snapshot, write_json)
 from tools.typescript_guest.compiler import Compiler
 from tools.typescript_guest.project import validate
-from tools.typescript_guest import buffer_profile, runtime_profile as runtime
+from tools.typescript_guest import buffer_profile, standard_global_types, runtime_profile as runtime
 from tools.application_dependencies import prepare
 from tools.typescript_application_dependencies import source_snapshot, bundle_configuration
 
@@ -64,6 +64,7 @@ RECIPE += ('tools/typescript_guest/console.mjs', 'tools/typescript_guest/console
            'tools/typescript_guest/activation_module.mjs', 'sdk/typescript-guest/capabilities/console-globals.d.ts')
 RECIPE += ('tools/typescript_guest/node_buffer.mjs', 'tools/typescript_guest/buffer_builtin.mjs',
            'tools/typescript_guest/buffer_profile.py', 'sdk/typescript-guest/runtime/buffer.d.ts')
+RECIPE += ('tools/typescript_guest/standard_global_types.py',)
 
 
 def runtime_package_sources(original: dict[str, bytes], selected: dict,
@@ -166,6 +167,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             compiler_paths = {"node": compiler.node, "wasm-tools": compiler.wasm}
             materials.extend(file_identity(path, name) for name, path in compiler_paths.items())
             paths.update(compiler_paths)
+            if closure is not None:
+                compiler.prepare_application_modules(closure)
             if compiler.isolation is not None:
                 write_json(output / "compiler-containment.json", compiler.isolation.receipt)
             stage = "compile"
@@ -209,6 +212,10 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 temporary/'compiled', output, digest(read_file(ROOT/buffer_profile.BACKEND)))
             runtime_assets += buffer_assets
             runtime_materials.extend(buffer_materials)
+            type_assets, type_materials = standard_global_types.retain(
+                temporary/'compiled', output, compiler.standard_global_types_receipt)
+            runtime_assets += type_assets
+            runtime_materials.extend(type_materials)
             if closure is not None:
                 (output / "bundle-selected-inputs.json").write_bytes(read_file(temporary / "compiled/application.mjs.inputs.json", 8 * 1024 * 1024))
                 (output / "application.mjs.map").write_bytes(read_file(temporary / "compiled/application.mjs.map", 32 * 1024 * 1024))
