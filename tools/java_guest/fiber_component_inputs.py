@@ -9,6 +9,33 @@ JAVA = 'sha256:6a2f7a5a13b3295761b0f18989e47cc7ff106a7c9546c559492247fcd36430c8'
 WIT = 'sha256:14c7bb47a7634153b4dcf39473a31f7f87f971f8c90a602b378be498dc938236'
 LIMITS = {'core.wasm': 64*1024*1024, 'closed-runtime.wasm': 4*1024*1024}
 SCHEMA = 'latent.java.public-fixture-component-inputs.v1'
+GENERATED_C = 'build/project/build/teavm-c/c/c/d/l/a/Capsule.c'
+GENERATED_C_LIMIT = 4*1024*1024
+
+
+def retain_generated_c(output: Path, target: Path) -> None:
+    """Optional exact Clang input; its refusal cannot poison the Wasm pair."""
+    record = {
+        'schemaVersion': 'latent.java.public-fixture-generated-c.v1',
+        'status': 'unavailable', 'qualification': False, 'publicFixtureOnly': True,
+        'normalPublicFiberOnly': True, 'compilerAcceptanceChanged': False,
+        'sourcePath': GENERATED_C, 'maximumBytes': GENERATED_C_LIMIT,
+        'reason': 'fixed-normal-public-generated-c-unavailable-or-unsafe',
+    }
+    try:
+        raw = paths.read(output, GENERATED_C, GENERATED_C_LIMIT)
+        raw.decode('utf-8')
+        if not raw or b'\0' in raw:
+            raise ValueError('normal-public-generated-c-text')
+        paths.write_new(target/'Capsule.c', raw)
+        record.update(status='retained', sha256=digest(raw), bytes=len(raw))
+        del record['reason']
+    except BaseException:
+        pass
+    try:
+        paths.write_new(target/'generated-c.json', encoded(record))
+    except BaseException:
+        pass
 
 
 def retain(compiler, output: Path) -> None:
@@ -55,6 +82,7 @@ def retain(compiler, output: Path) -> None:
             'inputs': {name: {'sha256': digest(value), 'bytes': len(value)} for name, value in raw.items()},
             'limits': LIMITS, 'logLimitBytesUnchanged': 16*1024*1024,
             'compilerAcceptanceChanged': False}))
+        retain_generated_c(output, target)
     except BaseException:
         try:
             target.mkdir(exist_ok=True)

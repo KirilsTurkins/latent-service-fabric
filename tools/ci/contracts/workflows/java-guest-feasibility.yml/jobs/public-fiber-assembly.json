@@ -1,0 +1,76 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "env": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "if": "${{ github.event_name == 'workflow_dispatch' && inputs.public_fiber_assembly }}",
+    "name": "Fixed public Java fiber assembly inputs only",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "env": {
+          "JAVA_HTTP_SPI": "${{ inputs.java_http_spi }}",
+          "PUBLIC_FIBER_ASSEMBLY": "${{ inputs.public_fiber_assembly }}",
+          "QUALIFY_SCRATCH_REFUSALS": "${{ inputs.qualify-scratch-refusals }}"
+        },
+        "id": "public-fiber-mode",
+        "name": "Require the sole public assembly mode before any acquisition",
+        "run": "python3 - <<'PY'\nimport os\nif (os.environ['PUBLIC_FIBER_ASSEMBLY'] != 'true'\n        or os.environ['QUALIFY_SCRATCH_REFUSALS'] != 'false'\n        or os.environ['JAVA_HTTP_SPI'] != 'false'):\n    raise SystemExit('only the fixed public fiber assembly mode may be selected')\nPY\n"
+      },
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "actions/setup-java",
+        "with": {
+          "distribution": "temurin",
+          "java-version": "25.0.4+101.0.LTS"
+        }
+      },
+      {
+        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "name": "Install only the same pinned normal public component compiler",
+        "run": "set -euo pipefail\npython3 -m pip install --requirement tools/requirements.lock\npython3 -B -m unittest tools.tests.test_java_normal_fiber_component_inputs -v\ncurl --fail --location --retry 3 --max-time 180 \\\n  https://services.gradle.org/distributions/gradle-9.1.0-bin.zip \\\n  -o \"$RUNNER_TEMP/gradle.zip\"\necho \"a17ddd85a26b6a7f5ddb71ff8b05fc5104c0202c6e64782429790c933686c806  $RUNNER_TEMP/gradle.zip\" | sha256sum --check\nunzip -q \"$RUNNER_TEMP/gradle.zip\" -d \"$RUNNER_TEMP\"\necho \"$RUNNER_TEMP/gradle-9.1.0/bin\" >> \"$GITHUB_PATH\"\ncurl --fail --location --max-time 180 \\\n  https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \\\n  -o \"$RUNNER_TEMP/wasi-sdk.tar.gz\"\necho \"87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171  $RUNNER_TEMP/wasi-sdk.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/wasi-sdk.tar.gz\" -C \"$RUNNER_TEMP\"\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/java-bindgen\"\necho \"$RUNNER_TEMP/java-bindgen\" >> \"$GITHUB_PATH\"\n",
+        "shell": "bash"
+      },
+      {
+        "name": "Prepare only the unchanged public fibers and original JDK controls",
+        "run": "python3 tools/qualify_java_fibers.py --output \"$RUNNER_TEMP/java-activation-fibers\" --wasi-sdk \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\""
+      },
+      {
+        "if": "${{ always() && steps.public-fiber-mode.outcome == 'success' }}",
+        "name": "Retain only fixed public assembly evidence and original failure",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "java-public-fiber-assembly-${{ github.sha }}",
+          "path": "${{ runner.temp }}/java-activation-fibers/FIBERS-COMPILE.json\n${{ runner.temp }}/java-activation-fibers/compiler/*.command.json\n${{ runner.temp }}/java-activation-fibers/compiler/*.log\n${{ runner.temp }}/java-activation-fibers/build/runtime-profile.json\n${{ runner.temp }}/java-activation-fibers/build/component-inputs/**\n",
+          "retention-days": 3
+        }
+      }
+    ],
+    "timeout-minutes": 35
+  },
+  "jobId": "public-fiber-assembly",
+  "kind": "job",
+  "reviewReason": "Build only the original exact public fiber fixture with unchanged compiler tools and limits; retain bounded assembly evidence without component execution.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/java-guest-feasibility.yml"
+}

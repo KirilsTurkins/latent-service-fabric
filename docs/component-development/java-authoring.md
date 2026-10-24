@@ -184,10 +184,23 @@ The maintained normal compiler template explicitly selects TeaVM C `BALANCED`
 Its inlining strategy limits accumulated complexity to 300 rather than 3000 and
 restricts nontrivial inlining to once-used callees. Clang remains at `-O2`; the
 original public source, coroutine transformations and component-parser limits
-remain unchanged. The source-selected policy reduces inlining growth risk; an
-actual build must establish whether it resolves the oversized-function boundary.
+remain unchanged. The [BALANCED build](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40101238993)
+reduced the same `pools` body to 13,993,280 bytes but still failed the unchanged
+7,654,321-byte limit. This policy has not repaired the assembly boundary.
 Captured SDK hashes bind this setting, so older compiler receipts do not qualify
 builds with the changed template.
+
+For this exact public source/WIT only, a failed component assembly also attempts
+to retain its generated `c/d/l/a/Capsule.c` Clang input under an independent
+4-MiB ceiling. `generated-c.json` records its identity or a closed unavailable
+status. Missing, oversized or unsafe C never removes the two existing bounded
+Wasm captures or changes the original compiler failure. This separates the
+available C input from final Wasm growth without accepting an oversized function.
+The existing Java authoring workflow's default-false `public_fiber_assembly`
+manual selector runs only the original public fiber preparation command and its
+JDK/compiler controls; it refuses combinations with either other optional mode
+before acquisition. Default authoring CI coverage remains intact. This path
+provides compiler evidence, not component execution or runtime qualification.
 
 `--read-only-cache /path/to/modules-2` selects a verified immutable Gradle
 dependency cache. Gradle writes locks and updates to the build's private home.

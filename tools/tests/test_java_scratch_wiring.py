@@ -17,7 +17,21 @@ def model():
 
 class JavaScratchWiring(unittest.TestCase):
     def test_original_normal_parent_and_dependency_programmes_remain_exact(self):
-        jobs = model()['jobs']
+        workflow = model()
+        public = workflow['on']['workflow_dispatch']['inputs'].pop('public_fiber_assembly')
+        self.assertEqual(public['type'], 'boolean');self.assertIs(public['default'], False)
+        assembly = workflow['jobs'].pop('public-fiber-assembly')
+        self.assertEqual(assembly['if'],
+            "${{ github.event_name == 'workflow_dispatch' && inputs.public_fiber_assembly }}")
+        self.assertEqual(workflow['jobs']['compiler-component']['if'],
+            "${{ (github.event_name != 'workflow_dispatch' || !inputs.java_http_spi) && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_assembly) }}")
+        workflow['jobs']['compiler-component']['if'] = "${{ github.event_name != 'workflow_dispatch' || !inputs.java_http_spi }}"
+        for name, clause in (
+                ('dependency-ingestion', " && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_assembly)"),
+                ('http-public-spi', ' && !inputs.public_fiber_assembly')):
+            self.assertEqual(workflow['jobs'][name]['if'].count(clause), 1)
+            workflow['jobs'][name]['if'] = workflow['jobs'][name]['if'].replace(clause, '', 1)
+        jobs = workflow['jobs']
         parent = dict(jobs['compiler-component'])
         self.assertEqual(parent['timeout-minutes'], 55)
         self.assertEqual(parent.pop('if'),

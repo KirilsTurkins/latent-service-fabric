@@ -47,6 +47,11 @@
             "description": "Separate optional Java public ConnectionFactory programme",
             "type": "boolean"
           },
+          "public_fiber_assembly": {
+            "default": false,
+            "description": "Build only the fixed public fiber assembly inputs without component execution",
+            "type": "boolean"
+          },
           "qualify-scratch-refusals": {
             "default": false,
             "description": "Run the unchanged normal Java prerequisite and separate filesystem refusal packet",
@@ -63,10 +68,11 @@
     "compiler-component",
     "dependency-ingestion",
     "http-public-spi",
+    "public-fiber-assembly",
     "resource-conformance",
     "scratch-refusals"
   ],
-  "reviewReason": "Add defaultfalse manual-only identical SPI entry on existing dispatchable Java workflow, retain original focused lane and every default/PR job command/guard/bound.",
+  "reviewReason": "Add an explicit default-false manual public-fiber assembly selector while preserving default CI coverage.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-guest-feasibility.yml"
 }
