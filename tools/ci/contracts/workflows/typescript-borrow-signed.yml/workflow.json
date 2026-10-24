@@ -25,6 +25,10 @@
           "crates/latent-wasmtime/src/containment.rs",
           "crates/latent-wasmtime/src/lib.rs",
           "crates/latent-wasmtime/src/development_trap_observer.rs",
+          "crates/latent-wasmtime/src/config.rs",
+          "crates/latent-wasmtime/src/config/engine.rs",
+          "crates/latent-wasmtime/src/config/profile.rs",
+          "crates/latent-wasmtime/tests/local_service/fixture.rs",
           "crates/latent-wasmtime/tests/typescript_import_borrow_release*",
           "crates/latent-wasmtime/tests/typescript_import_borrow_release/**",
           "crates/latent-wasmtime/tests/local_service/packages.rs"
@@ -38,7 +42,7 @@
   "requiredJobs": [
     "signed-borrow"
   ],
-  "reviewReason": "Add only the four exact feature-gated numeric observer source inputs to the existing owning push trigger; jobs, commands, authority and limits remain unchanged.",
+  "reviewReason": "Add only the four exact factory-time frame-capture configuration and fixture inputs; default/production frame capture remains disabled and owning commands/limits are unchanged.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-borrow-signed.yml"
 }

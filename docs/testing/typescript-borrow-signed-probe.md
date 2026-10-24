@@ -180,3 +180,23 @@ The harness limits its JSON to8KiB. Three targeted hosted observer controls
 and the owning host build share the original1800-second aggregate budget;
 the programme's4500-second cap and six signed case assertions remain unchanged.
 This source diagnostic has not run and establishes no new runtime pass.
+
+Run`40067787470` passed all three actual observer controls, including the real
+20-frame core trap/truncation control. Its first signed normal case still
+failed with `unreachable-code`; the observer correctly reported a missing
+backtrace. The node's existing `wasm_backtrace_max_frames(None)` setting
+explicitly disables original Wasmtime backtraces. Artifact`12550680287` is
+retained as failed (21,003,952 bytes, SHA256
+`fca22578bfab1245b322525c2812c0ac0c78740cd414ea040f46421617ec7c69`).
+
+The corrected source adds an explicit factory-time test-host selection of
+`Some(16)`. Default and production configuration remain `None`; the false
+setting is absent from serialized compiler settings, while the selected test
+profile has a distinct authenticated compatibility value. Only the dedicated
+signed fixture selects it, and the separate RAII observer still requires
+explicit arming. Counts describe observed frames only: sixteen observed frames
+are marked as potentially truncated, never a complete original stack. The
+updated third hosted control checks the actual project default has no trace
+and the selected project configuration captures at most sixteen numeric frames.
+No production capability, compiler engine product, resource limit or signed
+case assertion changes. The corrected factory-time selection has not run.

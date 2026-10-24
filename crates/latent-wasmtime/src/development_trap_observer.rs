@@ -27,8 +27,9 @@ pub struct DevelopmentTrapSnapshot {
     pub ambiguous: bool,
     pub trap_kind: Option<&'static str>,
     pub missing_backtrace: bool,
-    pub truncated: bool,
-    pub total_frames: usize,
+    pub may_be_truncated: bool,
+    pub observed_frames: usize,
+    pub engine_frame_cap: Option<usize>,
     pub frames: [Option<DevelopmentTrapFrame>; MAX_FRAMES],
 }
 
@@ -42,6 +43,7 @@ struct State {
 pub(crate) struct DevelopmentTrapObserver {
     enabled: AtomicBool,
     state: Mutex<State>,
+    engine_frame_cap: Option<usize>,
 }
 
 /// An explicit test-harness opt-in. Dropping it disables further observation.
@@ -56,7 +58,17 @@ fn refused() -> PlatformError {
 }
 
 impl DevelopmentTrapObserver {
+    pub(crate) fn for_engine_configuration(enabled: bool) -> Self {
+        Self {
+            engine_frame_cap: enabled.then_some(MAX_FRAMES),
+            ..Self::default()
+        }
+    }
+
     pub(crate) fn arm(&self) -> Result<DevelopmentTrapGuard<'_>, PlatformError> {
+        if self.engine_frame_cap != Some(MAX_FRAMES) {
+            return Err(refused());
+        }
         let mut state = self.state.lock().map_err(|_| refused())?;
         if state.armed_once {
             return Err(refused());
@@ -82,6 +94,7 @@ impl DevelopmentTrapObserver {
             observed.ambiguous = true;
             return; // Never replace the first original error.
         }
+        observed.engine_frame_cap = self.engine_frame_cap;
         observed.trap_kind = error
             .downcast_ref::<Trap>()
             .map(crate::containment::development_trap_label);
@@ -90,8 +103,9 @@ impl DevelopmentTrapObserver {
             return;
         };
         let frames = backtrace.frames();
-        observed.total_frames = frames.len();
-        observed.truncated = frames.len() > MAX_FRAMES;
+        observed.observed_frames = frames.len();
+        observed.may_be_truncated = frames.len() > MAX_FRAMES
+            || self.engine_frame_cap.is_some_and(|cap| frames.len() >= cap);
         let mut modules: [Option<&Module>; MAX_FRAMES] = [None; MAX_FRAMES];
         let mut module_count = 0;
         for (index, frame) in frames.iter().take(MAX_FRAMES).enumerate() {
@@ -137,7 +151,10 @@ mod tests {
 
     #[test]
     fn disabled_capture_is_empty_and_second_arm_is_refused_even_after_drop() {
-        let observer = DevelopmentTrapObserver::default();
+        let disabled = DevelopmentTrapObserver::default();
+        disabled.capture(&wasmtime::Error::msg("unretained private text"));
+        assert!(disabled.arm().is_err());
+        let observer = DevelopmentTrapObserver::for_engine_configuration(true);
         observer.capture(&wasmtime::Error::msg("unretained private text"));
         let guard = observer.arm().unwrap();
         assert_eq!(
@@ -151,7 +168,7 @@ mod tests {
 
     #[test]
     fn first_error_is_not_replaced_and_guard_drop_stops_capture() {
-        let observer = DevelopmentTrapObserver::default();
+        let observer = DevelopmentTrapObserver::for_engine_configuration(true);
         let guard = observer.arm().unwrap();
         observer.capture(&Trap::UnreachableCodeReached.into());
         let first = guard.snapshot().unwrap();
@@ -197,16 +214,47 @@ mod tests {
             code.function(&body);
         }
         wasm.section(&code);
-        let observer = DevelopmentTrapObserver::default();
+        let bytes = wasm.finish();
+        let mut selected = crate::WasmtimeConfig::default();
+        let original_settings = serde_json::to_value(
+            crate::config::CompilerEngineSettings::from_config(&selected),
+        )
+        .unwrap();
+        assert!(original_settings
+            .get("developmentNumericTrapObservation")
+            .is_none());
+        let original_profile = selected.configuration_digest(crate::config::DispatchMode::Generic);
+        {
+            let engine = selected.runtime_engine().unwrap();
+            let module = Module::new(&engine, &bytes).unwrap();
+            let mut store = wasmtime::Store::new(&engine, ());
+            store.set_fuel(1_000_000).unwrap();
+            store.set_epoch_deadline(1_000);
+            let instance = wasmtime::Instance::new(&mut store, &module, &[]).unwrap();
+            let function = instance
+                .get_typed_func::<(), ()>(&mut store, "run")
+                .unwrap();
+            let error = function.call(&mut store, ()).unwrap_err();
+            assert!(error.downcast_ref::<WasmBacktrace>().is_none());
+        }
+        selected.development_numeric_trap_observation = true;
+        let selected_settings = serde_json::to_value(
+            crate::config::CompilerEngineSettings::from_config(&selected),
+        )
+        .unwrap();
+        assert_eq!(selected_settings["developmentNumericTrapObservation"], true);
+        assert_ne!(
+            selected.configuration_digest(crate::config::DispatchMode::Generic),
+            original_profile
+        );
+        let observer = DevelopmentTrapObserver::for_engine_configuration(true);
         let guard = observer.arm().unwrap();
         {
-            let mut config = wasmtime::Config::new();
-            config
-                .wasm_backtrace(true)
-                .cranelift_opt_level(wasmtime::OptLevel::None);
-            let engine = wasmtime::Engine::new(&config).unwrap();
-            let module = Module::new(&engine, wasm.finish()).unwrap();
+            let engine = selected.runtime_engine().unwrap();
+            let module = Module::new(&engine, &bytes).unwrap();
             let mut store = wasmtime::Store::new(&engine, ());
+            store.set_fuel(1_000_000).unwrap();
+            store.set_epoch_deadline(1_000);
             let instance = wasmtime::Instance::new(&mut store, &module, &[]).unwrap();
             let function = instance
                 .get_typed_func::<(), ()>(&mut store, "run")
@@ -217,8 +265,9 @@ mod tests {
         let value = guard.snapshot().unwrap();
         assert_eq!(value.observed_errors, 1);
         assert_eq!(value.trap_kind, Some("unreachable-code"));
-        assert!(!value.missing_backtrace && !value.ambiguous && value.truncated);
-        assert_eq!(value.total_frames, 20);
+        assert!(!value.missing_backtrace && !value.ambiguous && value.may_be_truncated);
+        assert_eq!(value.observed_frames, 16);
+        assert_eq!(value.engine_frame_cap, Some(16));
         assert_eq!(value.frames.iter().flatten().count(), MAX_FRAMES);
         for frame in value.frames.iter().flatten() {
             assert_eq!(frame.module, 0);

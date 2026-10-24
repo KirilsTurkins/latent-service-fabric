@@ -1,5 +1,5 @@
 //! SOURCE-ONLY signed probe. No execution or physical-kernel certificate yet.
-#![cfg(all(target_os = "linux", target_arch = "x86_64"))]
+#![cfg(all(feature = "development-test-host", target_os = "linux", target_arch = "x86_64"))]
 #[path = "local_service/component.rs"]
 #[allow(dead_code)]
 mod component;
@@ -234,7 +234,7 @@ async fn configured(root: &Path, port: u16) -> Fixture {
             .unwrap();
     }
     // EXACT existing TypeScript runtime ceilings; no new quota.
-    let f = Fixture::with_runtime_outbound_streams(
+    let f = Fixture::with_runtime_outbound_streams_and_numeric_trap_observation(
         (catalog, caller, callee),
         latent_core::activation_runtime::RuntimeLimits {
             tasks: 16,

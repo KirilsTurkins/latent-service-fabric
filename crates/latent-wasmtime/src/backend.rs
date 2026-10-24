@@ -205,7 +205,7 @@ impl SharedRuntime {
             preparation_observer,
             invocation_input_observer: InvocationInputObserver::new(),
             #[cfg(feature = "development-test-host")]
-            development_trap_observer: crate::development_trap_observer::DevelopmentTrapObserver::default(),
+            development_trap_observer: crate::development_trap_observer::DevelopmentTrapObserver::for_engine_configuration(config.development_numeric_trap_observation),
             preparation_context,
             compiler,
         })
