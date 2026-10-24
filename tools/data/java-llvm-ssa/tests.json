@@ -1,0 +1,73 @@
+{
+  "schemaVersion": "latent.java.llvm-sjlj-regression-set.v1",
+  "llvmCommit": "222fc11f2b8f25f6a0f4976272ef1bb7bf49521d",
+  "wasmTests": [
+    {
+      "path": "llvm/test/CodeGen/WebAssembly/lower-em-ehsjlj-multi-return.ll",
+      "gitBlob": "ae7ad64ffe57ca835905726b4e59f4c2805b9a9c",
+      "bytes": 1816
+    },
+    {
+      "path": "llvm/test/CodeGen/WebAssembly/lower-em-ehsjlj-options.ll",
+      "gitBlob": "2c4d52937d944ed48942a6583fec4267f18258cf",
+      "bytes": 2804
+    },
+    {
+      "path": "llvm/test/CodeGen/WebAssembly/lower-em-ehsjlj.ll",
+      "gitBlob": "32942cd92e684f880188fdce1d34e4d854071302",
+      "bytes": 10113
+    },
+    {
+      "path": "llvm/test/CodeGen/WebAssembly/lower-em-sjlj-alias.ll",
+      "gitBlob": "79ae16191d6b3cdd017c5ccfca7e8ad38edd83ac",
+      "bytes": 996
+    },
+    {
+      "path": "llvm/test/CodeGen/WebAssembly/lower-em-sjlj-debuginfo.ll",
+      "gitBlob": "fec9836a1607c5be1d52ab96a5f47716851f01df",
+      "bytes": 1958
+    },
+    {
+      "path": "llvm/test/CodeGen/WebAssembly/lower-em-sjlj-indirect-setjmp.ll",
+      "gitBlob": "48f35c549cb7daa3b2285adac430726421618304",
+      "bytes": 770
+    },
+    {
+      "path": "llvm/test/CodeGen/WebAssembly/lower-em-sjlj-sret.ll",
+      "gitBlob": "027e883e2da67b5b6d5f0ae669b484ec64cb0763",
+      "bytes": 919
+    },
+    {
+      "path": "llvm/test/CodeGen/WebAssembly/lower-em-sjlj.ll",
+      "gitBlob": "b584342adc91fc95039bc1fdc66c229bb49218ba",
+      "bytes": 11446
+    },
+    {
+      "path": "llvm/test/CodeGen/WebAssembly/lower-wasm-ehsjlj-phi.ll",
+      "gitBlob": "97f6d797a63bd8bc52d0bd144a08f2bbc24b6ed7",
+      "bytes": 5631
+    },
+    {
+      "path": "llvm/test/CodeGen/WebAssembly/lower-wasm-ehsjlj.ll",
+      "gitBlob": "b4c93c49a97c26da0ccb6e0fe6480d3160494e49",
+      "bytes": 12465
+    },
+    {
+      "path": "llvm/test/CodeGen/WebAssembly/lower-wasm-sjlj.ll",
+      "gitBlob": "82c04e24b72f13bd3dea76f38d108f1915793eb7",
+      "bytes": 5619
+    },
+    {
+      "path": "llvm/test/CodeGen/WebAssembly/wasm-eh-em-sjlj-error.ll",
+      "gitBlob": "35637a996e3ab9699f2015320e496690b5e267cd",
+      "bytes": 1976
+    },
+    {
+      "path": "llvm/test/CodeGen/WebAssembly/wasm-eh-sjlj-setjmp-within-catch.ll",
+      "gitBlob": "f0d622ad333c38040cc3b55fcc5ebd2addc8ebce",
+      "bytes": 2640
+    }
+  ],
+  "crossPass": "llvm/test/CodeGen/WebAssembly/lower-wasm-ehsjlj-phi.ll",
+  "note": "All 13 original SjLj lit files remain mandatory; the original dedicated PHI regression additionally traverses actual SjLj, WinEH, verifier and instruction selection. No component-size or runtime claim."
+}
