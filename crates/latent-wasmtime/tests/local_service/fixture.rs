@@ -437,7 +437,10 @@ impl Fixture {
             None,
             Some(provided),
             Arc::new(SyntheticFixtureLoad),
-            None,
+            Some(RuntimeIdentities {
+                tenant: TenantId("tests".into()),
+                ..RuntimeIdentities::default()
+            }),
             Some((
                 latent_core::activation_runtime::RuntimeLimits {
                     tasks: 16,

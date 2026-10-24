@@ -153,19 +153,19 @@ async fn configured(root: &Path, caller: &Variant, ordinary: &Variant) -> Fixtur
     let mut uploads = vec![signers.upload_for_tenant(
         &caller_bundle,
         &caller.observation,
-        &TenantId("tenant-a".into()),
+        &TenantId("tests".into()),
     )];
     if caller_bundle.layout().digest() != ordinary_bundle.layout().digest() {
         uploads.push(signers.upload_for_tenant(
             &ordinary_bundle,
             &ordinary.observation,
-            &TenantId("tenant-a".into()),
+            &TenantId("tests".into()),
         ));
     }
     let catalog = package::catalog(root, signers.policy, Some(MEMORY));
     for upload in uploads {
         catalog
-            .admit_package(&TenantId("tenant-a".into()), upload, &mut |_| Ok(()))
+            .admit_package(&TenantId("tests".into()), upload, &mut |_| Ok(()))
             .await
             .unwrap();
     }

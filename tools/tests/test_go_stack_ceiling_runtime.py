@@ -36,7 +36,7 @@ def controlled_rows():
         p = dict(callerPublication='init-pub' if init else 'ordinary-pub',ordinaryPublication='ordinary-pub',
             callerRelease='sha256:'+('b' if init else 'a')*64,ordinaryRelease='sha256:'+'a'*64,
             scopes=[{'services':['caller'],'publications':['init-pub' if init else 'ordinary-pub'],'principalKind':'user','principal':'alice'},
-                {'services':['callee'],'publications':['ordinary-pub'],'principalKind':'service','principal':'service:8:tenant-a:6:caller'},
+                {'services':['callee'],'publications':['ordinary-pub'],'principalKind':'service','principal':'service:5:tests:6:caller'},
                 {'services':['caller'],'publications':['ordinary-pub'],'principalKind':'user','principal':'alice'}],
             grants=[{'capability':cap,'policy':'sdk-runtime-policy-'+str(i),'operations':[],'constraints':{}}
                 for i,cap in enumerate(['latent:runtime/activation@0.1.0','latent:clock/monotonic@0.1.0','latent:clock/wall@0.1.0','latent:random/random@0.1.0'])],
@@ -79,6 +79,9 @@ class StackProgramme(unittest.TestCase):
     def test_actual_reader_requires_seven_attempts_and_preserves_bounded_truncation(self):
         rows = controlled_rows();value = oracle.read(encoded(rows))
         self.assertEqual(len(value['cases']),7)
+        wrong_tenant = copy.deepcopy(rows)
+        [v for k,v in wrong_tenant if k == 'POLICIES'][0]['scopes'][1]['principal'] = 'service:8:tenant-a:6:caller'
+        with self.assertRaises(ValueError):oracle.read(encoded(wrong_tenant))
         # Recursive callers may be cut after16 frames; a positively retained
         # private cap leaf still proves its own original frame, never the tail.
         for kind,item in rows:
@@ -138,6 +141,10 @@ class StackProgramme(unittest.TestCase):
                         build.reset_mock()
                         with self.assertRaises(ValueError):compile_variant(app,variant,root/'not-built',root/'not-a-tool')
                         build.assert_not_called()
+                    changed=copy.deepcopy(document);changed['tenant']='tenant-a';p.write_text(json.dumps(changed))
+                    build.reset_mock()
+                    with self.assertRaises(ValueError):compile_variant(app,variant,root/'not-built',root/'not-a-tool')
+                    build.assert_not_called()
                     p.write_text(json.dumps(document))
                 self.assertEqual(fixture.verify(app,variant)['limits']['cpuFuel'],1000000000)
 

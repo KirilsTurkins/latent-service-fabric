@@ -30,7 +30,7 @@ def create(path: Path, variant: str):
     raw = source(variant)
     app = create_project(path,'greeting',name='go-stack-'+variant,runtime_profile=PROFILE)
     project = json.loads((app/'capsule-project.json').read_bytes())
-    project.update(tenant='tenant-a',service='caller',world='tests:caller/service@1.0.0',limits=LIMITS)
+    project.update(tenant='tests',service='caller',world='tests:caller/service@1.0.0',limits=LIMITS)
     (app/'capsule-project.json').write_text(json.dumps(project,indent=2)+'\n',encoding='utf-8',newline='\n')
     (app/'src/main.go').write_bytes(raw)
     (app/'wit/world.wit').write_bytes(read_file(ROOT/FIXTURE/'world.wit'))
@@ -43,7 +43,7 @@ def verify(app: Path, variant: str):
     project,_,_ = validate(files)
     if (files['src/main.go'] != source(variant) or files['wit/world.wit'] != read_file(ROOT/FIXTURE/'world.wit')
             or project['runtimeProfile'] != PROFILE or project['world'] != 'tests:caller/service@1.0.0'
-            or project['tenant'] != 'tenant-a' or project['service'] != 'caller'
+            or project['tenant'] != 'tests' or project['service'] != 'caller'
             or project['name'] != 'go-stack-'+variant or project['version'] != '1.0.0'
             or {name for name in files if name.startswith('src/')} != {'src/main.go'}
             or json.dumps(project['limits'],sort_keys=True,separators=(',',':')) != json.dumps(LIMITS,sort_keys=True,separators=(',',':'))):

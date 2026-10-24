@@ -127,3 +127,14 @@ reference completed, but no signed attempt executed. The original failed run
 and artifact12554755854 remain failure evidence. Retaining a deployment clone
 for that diagnostic fixes the harness ownership error; runtime qualification
 remains pending the same seven-attempt owning programme.
+
+The second owning attempt, source `7fdc0ced18a7e1c71ff16836ab52a92489ec49e6`
+([run40079647085](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40079647085)),
+compiled the native harness but normal packaging rejected the first manifest
+before admission or guest execution: the fixture tenant `tenant-a` disagreed
+with its `tests:caller` world/export namespace. The corrected closed programme
+uses tenant `tests` consistently in the captured project, signing/admission,
+and its explicit native fixture identities. Original shared fixture defaults
+remain `tenant-a`; package namespace validation remains unchanged. Artifact
+12555111269 and its failed result remain history. No runtime case is credited
+from either failed attempt.

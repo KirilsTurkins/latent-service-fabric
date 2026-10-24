@@ -87,7 +87,7 @@ def read(raw):
         require(p['ordinaryRelease'] == variants[0]['componentDigest']
             and p['callerRelease'] == variants[1 if i == 2 else 0]['componentDigest'],'actual-admitted-releases')
         expected_scopes = [{'services':['caller'],'publications':[p['callerPublication']],'principalKind':'user','principal':'alice'},
-            {'services':['callee'],'publications':[p['ordinaryPublication']],'principalKind':'service','principal':'service:8:tenant-a:6:caller'},
+            {'services':['callee'],'publications':[p['ordinaryPublication']],'principalKind':'service','principal':'service:5:tests:6:caller'},
             {'services':['caller'],'publications':[p['ordinaryPublication']],'principalKind':'user','principal':'alice'}]
         require(exact(p['scopes'],expected_scopes),'closed-preauthorized-scopes')
         capabilities = ['latent:runtime/activation@0.1.0','latent:clock/monotonic@0.1.0','latent:clock/wall@0.1.0','latent:random/random@0.1.0']
