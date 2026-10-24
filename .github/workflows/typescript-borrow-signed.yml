@@ -11,6 +11,8 @@ on:
       - 'tools/typescript_guest/compiler.py'
       - 'tools/typescript_guest/runtime_profile.py'
       - 'tools/typescript_guest/componentize.mjs'
+      - 'tools/typescript_guest/async_waiters.mjs'
+      - 'tools/tests/test_typescript_native_carrier_scheduling.py'
       - 'tools/tests/test_typescript_borrow*.py'
       - 'sdk/typescript-guest/probes/borrow-release/**'
       - 'crates/latent-wasmtime/src/backend.rs'

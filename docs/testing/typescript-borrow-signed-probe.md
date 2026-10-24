@@ -1,8 +1,9 @@
-# TypeScript signed borrow-release probe: source integration stage
+# TypeScript signed borrow-release probe: qualification in progress
 
 This source packet adds a closed compiler diagnostic, finite canonical read
-wrapper, real component composer and signed host harness. None has been built
-or executed together. It is partial #745 work, with no Node socket, whole-cost,
+wrapper, real component composer and signed host harness. Guest/host compilation
+and composition have executed, but the first signed case remains failed. It is
+partial #745 work, with no Node socket, whole-cost,
 kernel-retirement or production-enablement claim.
 
 The internal `Compiler.compile(..., diagnostic_profile=...)` selector accepts
@@ -20,8 +21,8 @@ aliases the gate's original resource types. It preserves raw compiler bytes and
 observation separately from the composed signing observation. The maintained
 cryptographic package admission machinery signs/admit the actual composed
 bytes. No JSON resource-handle adoption is used. Pinned encoder API source was
-inspected; actual encoder compilation, validation and component linking remain
-unexecuted.
+inspected and the actual encoder/composer compiled in the retained owning
+attempts. This construction does not establish a passing signed runtime case.
 
 The gate forwards seven operations and wraps one read. `entered()==1` requires
 an actually started inner host read, nonzero child handle, waitable join and
@@ -51,6 +52,15 @@ traps with ordinary Unreachable. The host requires the receipt's original
 closed `activation.guest-trap-kind=integer-division-by-zero`, so a generic
 GuestTrap or lost JS assertion cannot masquerade as the intended abrupt Wasm
 root trap. This pure diagnostic adds no network authority, owner or quota.
+
+The actual in-process signed fixture admits 10,000,000,000 fuel per activation.
+The compiler-generated project template separately declares 1,000,000,000, but
+this programme builds its signed package and requests through the managed language fixture budget instead. The node maximum is also ten billion. This
+harness changes the outbound allowance to eight and the mode 2 root deadline to
+1500 ms; it does not override fuel. Its existing result assertion checks positive
+fuel consumption without recording a numeric observed value or establishing
+execution under the project limit of one billion. This clarification preserves
+the existing admitted cap and all runtime assertions.
 
 The second control connection uses the same endpoint grant and original limits.
 Its read, buffers, transfer and closure are recorded separately. Every dispatch,
@@ -240,4 +250,44 @@ operation. The canonical Borrow drop arm decrements the original borrow scope
 without invoking the connection destructor. The original owned connection and
 physical socket are consumed only by the existing close operation. Both
 immediate and callback completion use the same cleanup; all case assertions,
-resource identities, grants and budgets remain unchanged. This repair has not run.
+resource identities, grants and budgets remain unchanged. Its actual failed
+programme outcome is retained below.
+
+Run`40072765467` executed that gate-borrow repair and passed the three actual
+observer library controls. Its first signed normal case still failed: the real
+peer timed out waiting for `norm`, and the complete eight-frame numeric trace
+again reached the engine's event-loop error/secondary stdio abort. No signed
+case passed. Failed artifact`12552092444` remains retained (21,005,727 bytes,
+SHA256`386e3c5d8e25d97943ddaca1d612fd213711e264fa556464398cc136b6bf3749`).
+
+The retained actual bindings reveal a separate scheduling obstruction. Both
+Gate and original CAP native read/write wrappers use generated component
+namespace1. A synthetic JCO Task keeps that namespace's execution slot until
+its read exits, while the peer cannot complete that read until the sibling
+write sends the original protocol marker. Changing only the imported write
+interface would not fix this cycle. The exact first private JavaScript failure
+was not observed; this source cycle is consistent with the real peer timeout.
+
+The compiler correction projects away only the fully recognized surrogate JCO
+Task for an actual native-import wrapper. It retains original typed lowering,
+the genuine native Promise await, typed lifting and WIT errors, delivery markers
+and original `finally finish(id)`. Original C++ Task/Record, canonical subtask,
+borrow, captured arguments, buffers and result owners remain under their
+unchanged admission/retirement checks. No early Task exit or borrow
+acknowledgement replaces them. Application exports, callbacks, ordinary sync
+imports and unselected source retain their original generated machinery.
+Unknown task, callback, non-null return-memory, post-return or reachable typed
+helper duties refuse compilation rather than being discarded.
+
+Four captured-source controls demonstrate same-namespace sibling native start
+while the first carrier remains pending, exact typed success/error/rejection
+and finally behavior, lazy/unselected bytes, unchanged ambient metadata and
+closed-shape refusals. All fourteen native wrappers from the failed carrier
+accept the projection and retain the selected borrow handoff. These host-only
+controls model bridge behavior; they do not establish real owner retirement.
+The corrected frontend still requires all six actual signed activations under
+the original peer barriers and eight-call bound. No general concurrent-import,
+standard socket/module, complete accounting or whole-ticket qualification is
+claimed before that actual evidence. The separate canonical fixture's old
+task-entry placement guard also needs an explicit source review for this new
+shape; no permissive fallback is installed.

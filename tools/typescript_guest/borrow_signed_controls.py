@@ -42,6 +42,7 @@ RECIPE = tuple(dict.fromkeys((*COMPILER_RECIPE, *profile.RECIPE,
     'crates/latent-wasmtime/tests/guest_sdk/package.rs',
     'crates/latent-packaging/tests/fixtures/host.rs',
     'tools/tests/test_typescript_borrow_probe_profile.py',
+    'tools/tests/test_typescript_native_carrier_scheduling.py',
     'tools/tests/test_typescript_borrow_signed_inputs.py')))
 
 
@@ -150,6 +151,17 @@ def qualify(tools, material_directory, output):
         require(controls == {'testsRun':5,'skipped':0,'failures':0,'errors':0}
                 and all(type(value) is int for value in controls.values()), 'borrow-signed-all-five-controls-no-skips')
         record['sourceControls'] = controls
+        parser = tools/'node_modules/acorn/dist/acorn.mjs'
+        require(parser.is_file() and not parser.is_symlink(), 'borrow-signed-pinned-carrier-parser-required')
+        carrier_program = program.replace('tools.tests.test_typescript_borrow_probe_profile',
+                                          'tools.tests.test_typescript_native_carrier_scheduling')
+        carrier_controls = json.loads(run('native-carrier-source-controls', sys.executable, '-c', carrier_program,
+            env={**environment, 'LSF_TYPESCRIPT_ACORN': str(parser)}))
+        require(carrier_controls == {'testsRun':4,'skipped':0,'failures':0,'errors':0}
+                and all(type(value) is int for value in carrier_controls.values()),
+                'borrow-signed-all-four-carrier-controls-no-skips')
+        record['nativeCarrierSourceControls'] = carrier_controls
+        record['nativeCarrierParser'] = file_identity(parser)
         stage = 'actual-successful-normal-inputs'
         original_inputs = inputs.verify(material_directory, run)
         record['originalPrerequisites'] = original_inputs

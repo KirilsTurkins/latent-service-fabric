@@ -19,6 +19,8 @@
           "tools/typescript_guest/compiler.py",
           "tools/typescript_guest/runtime_profile.py",
           "tools/typescript_guest/componentize.mjs",
+          "tools/typescript_guest/async_waiters.mjs",
+          "tools/tests/test_typescript_native_carrier_scheduling.py",
           "tools/tests/test_typescript_borrow*.py",
           "sdk/typescript-guest/probes/borrow-release/**",
           "crates/latent-wasmtime/src/backend.rs",
@@ -42,7 +44,7 @@
   "requiredJobs": [
     "signed-borrow"
   ],
-  "reviewReason": "Add only the four exact factory-time frame-capture configuration and fixture inputs; default/production frame capture remains disabled and owning commands/limits are unchanged.",
+  "reviewReason": "Reviewed additive exact push triggers for native-carrier projection source and its four source controls; original job, bounds and six signed oracles retained.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-borrow-signed.yml"
 }
