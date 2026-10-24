@@ -24,8 +24,9 @@ instruction to delete history.
 This profile causes node downtime. Schedule it before both audit headroom and
 publication-evidence freshness become critical. Stopping a node or changing an
 epoch does not extend evidence validity. After maintenance, normal authorization,
-verification, freshness and route preconditions remain mandatory. A stale signed
-publication can still correctly return HTTP 403.
+verification, freshness and route preconditions remain mandatory. Signed validity
+expiry can return HTTP 403; a stale verification proof is a distinct currentness
+failure and currently maps to HTTP 503. Neither response permits serving content.
 
 ## Authorization
 
@@ -278,14 +279,23 @@ missing receipts without automatic replay.
 
 `tools/static_audit_lifecycle.py` is the bounded real Linux node plus CLI fixture
 invoked by the maintained static-site workflow. It uses an actual signed static
-package, 32-record epochs, a 1 MiB record-byte allowance and a 30-second evidence
+package, 32-record epochs, a 1 MiB record-byte allowance and a 30-second proof
 freshness policy. It exercises two epoch transitions and three node starts,
 record exhaustion with spare byte/filesystem space, partial GET/HEAD progress,
-expired-evidence HTTP 403, renewed HTTP success, byte-for-byte archive verification,
+proof-freshness denial, renewed HTTP success, byte-for-byte archive verification,
 original receipt recovery, epoch-bound cursors and explicit custody transfer.
+
+The negative freshness check requires an exact native `signature-stale-proof`
+preparation refusal, the unchanged route and audit sequence, and empty GET/HEAD
+HTTP 503 responses. A generic 503, busy authority, capacity refusal, unknown
+operation outcome or committed receipt cannot satisfy it. This preserves the
+current `StateConflict` classification of stale positive proofs rather than
+changing production errors to fit the reporter's HTTP 403 observation. Signed
+signature/key/policy expiry is separately `PermissionDenied`; it is not the
+30-second maximum-proof-age condition exercised by this fixture.
+
 The fixture records commands and observations and only sets its passed result
 after all assertions complete. It is not a simulated multi-day production soak.
-
 Source coverage is not an execution result. Qualification requires the matching
 source/profile, completed fixture report and green repository CI. Failed or
 interrupted runs must not be presented as a completed lifecycle qualification.

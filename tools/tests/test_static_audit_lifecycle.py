@@ -133,6 +133,85 @@ class AuditLifecycleHelperTests(unittest.TestCase):
             call.assert_not_called()
         self.assertEqual(client.trace, [])
 
+    def test_expiry_requires_exact_native_reason_and_never_replays_or_serves_bytes(self):
+        cases = ('valid', 'unknown', 'generic-conflict', 'busy', 'capacity', 'transport',
+                 'receipt', 'audit-ack', 'changed-route', 'changed-journal', 'served-content')
+        for case in cases:
+            with self.subTest(case=case):
+                campaign = Campaign.__new__(Campaign)
+                campaign.client_root = self.root / case
+                campaign.client_root.mkdir(mode=0o700)
+                campaign.hosts, campaign.node = {'csr': 'docs.test'}, object()
+                campaign.sequence, campaign.last_renewed_at = 0, 0
+                current = {'trigger': {'generation': '7', 'manifest': {'identity': 'original'}},
+                           'stateVersion': '11', 'durability': 'confirmed'}
+                valid = {'category': 'platform-failure', 'outcomeKnown': True, 'requestDispatched': True,
+                         'data': {}, 'error': {'code': 'state-conflict', 'details': [
+                             {'kind': 'admission.currentness', 'fields': {'reason': 'signature-stale-proof'}}]}}
+                if case == 'unknown':
+                    valid['outcomeKnown'] = False
+                elif case == 'generic-conflict':
+                    valid['error']['details'] = []
+                elif case == 'busy':
+                    valid['error']['details'][0]['fields']['reason'] = 'admission-authority-busy'
+                elif case == 'capacity':
+                    valid['error']['code'] = 'resource-exhausted'
+                elif case == 'transport':
+                    valid['category'] = 'transport-failure'
+                elif case == 'receipt':
+                    valid['data']['receipt'] = {'operationId': 'possibly-committed'}
+                elif case == 'audit-ack':
+                    valid['data']['auditAck'] = {'status': 'outcome-unknown', 'attemptSequence': '32'}
+                calls, samples = [], []
+
+                def call(*argv, **options):
+                    calls.append((argv, options))
+                    if argv[:2] == ('trigger', 'get'):
+                        value = json.loads(json.dumps(current))
+                        if case == 'changed-route' and len(calls) > 1:
+                            value['trigger']['generation'] = '8'
+                        return {'data': value}
+                    self.assertEqual(argv[:2], ('trigger', 'apply'))
+                    self.assertEqual(options['codes'], (4,))
+                    self.assertEqual(argv[argv.index('--expected-generation') + 1], '7')
+                    self.assertEqual(argv[argv.index('--expected-state-version') + 1], '11')
+                    self.assertEqual(json.loads(Path(argv[2]).read_text()), current['trigger']['manifest'])
+                    return valid
+
+                def sample():
+                    samples.append(1)
+                    return {}, {'audit_next_sequence': '34' if case == 'changed-journal' and len(samples) > 1 else '33',
+                                'audit_retained_records': '32', 'audit_retained_bytes': '4096'}
+
+                campaign.sample = sample
+                campaign.client = SimpleNamespace(call=call, cancellation=self.cancellation,
+                                                   deadline=time.monotonic() + 10)
+                output = (b'forbidden-content' if case == 'served-content' else b'', {})
+                with patch('tools.static_audit_lifecycle.http_response', return_value=output) as http:
+                    if case == 'valid':
+                        result = campaign.expire()
+                        self.assertEqual((result['GET'], result['HEAD']), (503, 503))
+                        self.assertEqual(result['reason'], 'signature-stale-proof')
+                        self.assertEqual(result['platformCode'], 'state-conflict')
+                        self.assertTrue(result['probe']['routeUnchanged'] and result['probe']['journalUnchanged'])
+                        self.assertEqual(result['probe']['expectedGeneration'], '7')
+                        self.assertEqual(result['probe']['expectedStateVersion'], '11')
+                        self.assertEqual([item.kwargs['method'] for item in http.call_args_list], ['GET', 'HEAD'])
+                        self.assertTrue(all(item.kwargs['expected'] == 503 for item in http.call_args_list))
+                    else:
+                        with self.assertRaises(WorkflowError):
+                            campaign.expire()
+                        if case != 'served-content':
+                            http.assert_not_called()
+                dispatched = [argv for argv, _ in calls if argv[:2] == ('trigger', 'apply')]
+                self.assertEqual(len(dispatched), 1)
+                self.assertEqual(campaign.sequence, 1)
+                if case == 'valid':
+                    self.assertEqual(result['probe']['operationId'],
+                                     dispatched[0][dispatched[0].index('--operation-id') + 1])
+                    self.assertEqual(len(calls), 3)
+                    self.assertEqual(len(samples), 2)
+
 
 if __name__ == '__main__':
     unittest.main()

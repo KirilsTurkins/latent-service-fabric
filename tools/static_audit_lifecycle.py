@@ -303,11 +303,39 @@ class Campaign:
             self.client.cancellation.check()
             require(time.monotonic() < self.client.deadline, 'audit-fixture-expiry-deadline')
             time.sleep(max(0.0, min(0.1, until - time.monotonic())))
+        # A stale positive proof is StateConflict in latent-signing, not an
+        # expired signature (PermissionDenied). HTTP maps the former to 503.
+        # Do not qualify an arbitrary 503 as freshness enforcement: demand the
+        # exact native pre-audit preparation failure and unchanged route/epoch.
+        _, audit_before = self.sample()
+        before = self.client.call('trigger', 'get', 'audit-get')['data']
+        operation = self.next_id('expired-probe')
+        manifest = self.client_root / (operation + '.json')
+        write_json(manifest, before['trigger']['manifest'])
+        generation, version = before['trigger']['generation'], before['stateVersion']
+        refused = self.client.call('trigger', 'apply', manifest, '--operation-id', operation,
+            '--expected-generation', generation, '--expected-state-version', version, codes=(4,))
+        reasons = [item.get('fields', {}).get('reason') for item in refused.get('error', {}).get('details', [])
+                   if item.get('kind') == 'admission.currentness']
+        require(refused['category'] == 'platform-failure' and refused['outcomeKnown'] is True
+                and refused['error']['code'] == 'state-conflict' and reasons == ['signature-stale-proof']
+                and refused['data'].get('auditAck') is None and refused['data'].get('receipt') is None,
+                'audit-fixture-expiry-cause-not-established')
+        require(self.client.call('trigger', 'get', 'audit-get')['data'] == before,
+                'audit-fixture-expiry-probe-changed-route')
+        _, audit_after = self.sample()
+        require(all(audit_before[key] == audit_after[key] for key in
+                    ('audit_next_sequence', 'audit_retained_records', 'audit_retained_bytes')),
+                'audit-fixture-expiry-probe-changed-journal')
         for method in ('GET', 'HEAD'):
             body, _ = http_response(self.client, self.node, self.hosts['csr'], '/orders/42', method=method,
-                                   headers={'Accept': 'text/html'}, expected=403)
+                                   headers={'Accept': 'text/html'}, expected=503)
             require(not body, 'audit-fixture-expired-content-served')
-        return {'proofAgeSeconds': 30, 'GET': 403, 'HEAD': 403, 'clock': 'actual-system-clock'}
+        return {'proofAgeSeconds': 30, 'GET': 503, 'HEAD': 503, 'clock': 'actual-system-clock',
+                'reason': 'signature-stale-proof', 'platformCode': 'state-conflict',
+                'probe': {'operationId': operation, 'expectedGeneration': generation,
+                          'expectedStateVersion': version, 'outcomeKnown': True,
+                          'routeUnchanged': True, 'journalUnchanged': True}}
 
     def seal(self, full):
         with self.offline():
