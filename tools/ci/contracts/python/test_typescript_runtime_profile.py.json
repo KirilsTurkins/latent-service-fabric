@@ -107,7 +107,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:ab015571a14a49521c6c7f02a555893cdbcedcf02acc1bd29c9650f275f51fe1",
-        "class:setup-sha256:b8201bcc4f1de242c917aad8e733f1c95e3db42659de15639de82d74f85967c3"
+        "class:setup-sha256:90131676533858c46f35d957ed670e70b97d54e1f42e5cdc797384b1b34a2a68"
       ],
       "skipSites": []
     },
@@ -119,7 +119,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:ab015571a14a49521c6c7f02a555893cdbcedcf02acc1bd29c9650f275f51fe1",
-        "class:setup-sha256:b8201bcc4f1de242c917aad8e733f1c95e3db42659de15639de82d74f85967c3"
+        "class:setup-sha256:90131676533858c46f35d957ed670e70b97d54e1f42e5cdc797384b1b34a2a68"
       ],
       "skipSites": []
     },
@@ -131,7 +131,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:ab015571a14a49521c6c7f02a555893cdbcedcf02acc1bd29c9650f275f51fe1",
-        "class:setup-sha256:b8201bcc4f1de242c917aad8e733f1c95e3db42659de15639de82d74f85967c3"
+        "class:setup-sha256:90131676533858c46f35d957ed670e70b97d54e1f42e5cdc797384b1b34a2a68"
       ],
       "skipSites": []
     },
@@ -486,6 +486,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_typescript_runtime_profile.py",
-  "reviewReason": "Actual CI repair: bind historical e611 clock input assertions to the three exact retained original headers after the reviewed tracking-lifetime fix. Preserve the complete original engine receipt, all cases, digests and sizes, graph/adversarial checks, and every no-skip execution guard; current sources remain required for every unchanged input. No production qualification or source pin changes.",
+  "reviewReason": "Explicitly review only the three clock fixture helper hashes: freeze all original receipt-bound SDK bytes; preserve every case, assertion, decorator and skip condition",
   "schemaVersion": "latent.ci.contracts.v1"
 }
