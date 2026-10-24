@@ -15,7 +15,7 @@ from tools.rust_capsule_project import (ROOT, checked_path, digest, fresh, inven
     read_file, read_json, snapshot, write_json)
 from tools.typescript_guest.compiler import Compiler
 from tools.typescript_guest.project import validate
-from tools.typescript_guest import runtime_profile as runtime
+from tools.typescript_guest import buffer_profile, runtime_profile as runtime
 from tools.application_dependencies import prepare
 from tools.typescript_application_dependencies import source_snapshot, bundle_configuration
 
@@ -205,6 +205,10 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                                       'digest': digest(entropy_selection), 'size': len(entropy_selection)})
             runtime_assets += (('typescript-entropy-selection.json', 'asset',
                                 'application/vnd.latent.typescript.entropy-selection.v1+json'),)
+            buffer_assets, buffer_materials = buffer_profile.retain_selection(
+                temporary/'compiled', output, digest(read_file(ROOT/buffer_profile.BACKEND)))
+            runtime_assets += buffer_assets
+            runtime_materials.extend(buffer_materials)
             if closure is not None:
                 (output / "bundle-selected-inputs.json").write_bytes(read_file(temporary / "compiled/application.mjs.inputs.json", 8 * 1024 * 1024))
                 (output / "application.mjs.map").write_bytes(read_file(temporary / "compiled/application.mjs.map", 32 * 1024 * 1024))

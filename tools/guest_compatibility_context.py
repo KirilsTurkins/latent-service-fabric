@@ -10,6 +10,27 @@ SCHEMA = "lsf.guest.compatibility.context.v1"
 MAX_BYTES = 65536
 MAX_MATERIALS = 64
 KINDS = {"sdk", "compiler", "runtime", "patch", "build-tool", "generated", "dependency"}
+BUFFER_PROFILE = 'lsf-node-buffer-v1'
+BUFFER_MATERIALS = ('typescript-standard-buffer', 'typescript-standard-buffer-backend',
+                    'typescript-standard-buffer-declaration')
+
+
+def buffer_module(value):
+    """A complete fixed API-level subgroup; package names never select it."""
+    rows = {row['name']: row for row in value['materials']
+            if row['kind'] == 'runtime' and row['name'] in BUFFER_MATERIALS}
+    if not rows:
+        return None
+    require(value['language'] == 'typescript' and set(rows) == set(BUFFER_MATERIALS)
+            and all(row.get('profile') == BUFFER_PROFILE for row in rows.values()),
+            'compatibility-context-buffer-module-group')
+    owner = value['standardRuntime']
+    require(owner.get('state') == 'selected-unqualified'
+            and owner.get('receiptName') == 'standard-runtime-selection.json' and owner.get('ownerIssue') == 745,
+            'compatibility-context-buffer-module-owner')
+    recipes = [row for row in value['materials'] if row['kind'] == 'compiler' and row['name'] == 'build-recipe']
+    require(len(recipes) == 1, 'compatibility-context-buffer-module-recipe')
+    return {**rows, 'build-recipe': recipes[0]}
 
 
 def version_token(value):
@@ -91,6 +112,7 @@ def validate(value, *, report=None, source=None, component=None, expected_materi
         key = item['kind'], item['name']
         require(key not in seen, 'compatibility-context-duplicate-material')
         seen.add(key)
+    buffer_module(value)
     if selection['state'] == 'selected-unqualified':
         require(any(item['kind'] == 'runtime' and item['digest'] == selection['receiptDigest']
                     and item.get('profile') == selection['profile'] for item in value['materials']),
@@ -130,7 +152,16 @@ def present(value):
             f"{owner}"
             "Reachability and initialization remain unknown; worker drain remains unproven.\n"
             "Use the ordinary captured dependency/profile workflow; review grants separately.\n")
+    module = buffer_module(value)
+    if module is not None:
+        text += ('SELECTED runtime module: buffer, node:buffer; profile ' + BUFFER_PROFILE
+                 + '; qualification unknown; authority none; receipt ' + module[BUFFER_MATERIALS[0]]['digest']
+                 + '; backend ' + module[BUFFER_MATERIALS[1]]['digest']
+                 + '; declaration ' + module[BUFFER_MATERIALS[2]]['digest']
+                 + '; recipe ' + module['build-recipe']['digest'] + '.\n')
     for row in value['materials']:
+        if module is not None and row['kind'] == 'runtime' and row['name'] in BUFFER_MATERIALS:
+            continue
         transformed = row['kind'] == 'generated' and {'originalDigest', 'transformDigest'} <= row.keys()
         if row['kind'] not in {'runtime', 'patch', 'dependency'} and not transformed:
             continue

@@ -53,6 +53,7 @@ def from_build(source, descriptor, receipt):
         selected = context.read(paths.read(source, name, context.MAX_BYTES), report=report,
                                 source=digest(original_source), component=capture.component)
         runtime = selected['standardRuntime']
+        owner = None
         if runtime['state'] == 'selected-unqualified':
             owner_runtime = runtime.get('receiptName') == 'standard-runtime-selection.json'
             raw = paths.read(source, str(parent / runtime.get('receiptName', 'runtime-profile.json')).replace('\\', '/'),
@@ -67,7 +68,18 @@ def from_build(source, descriptor, receipt):
             if material['name'] == 'automatic-compiler-patches':
                 raw = paths.read(source, str(parent / 'compiler-patches.json').replace('\\', '/'), 4 * 1024 * 1024)
                 require(digest(raw) == material['digest'], 'compatibility-outcomes-stale-patch')
-        from tools.guest_compatibility_context_build import JAVA_COMPILER_PATCH_NAMES, java_compiler_materials
+        from tools.guest_compatibility_context_build import (JAVA_COMPILER_PATCH_NAMES, java_compiler_materials,
+                                                            typescript_buffer_materials, typescript_buffer_owner)
+        buffer = context.buffer_module(selected)
+        if buffer is not None:
+            typescript_buffer_owner(owner, buffer[context.BUFFER_MATERIALS[0]]['digest'], buffer['build-recipe']['digest'])
+            raw = paths.read(source, str(parent / 'typescript-buffer-selection.json').replace('\\', '/'), 65536)
+            require(digest(raw) == buffer[context.BUFFER_MATERIALS[0]]['digest'],
+                    'compatibility-outcomes-stale-buffer-receipt')
+            recipe = paths.read(source, str(parent / 'recipe-inputs.json').replace('\\', '/'), 8 * 1024 * 1024)
+            require(digest(recipe) == buffer['build-recipe']['digest'], 'compatibility-outcomes-stale-buffer-recipe')
+            expected = typescript_buffer_materials(raw, recipe, original_source)
+            require(all(buffer[row['name']] == row for row in expected), 'compatibility-outcomes-detached-buffer-module')
         if any(row['kind'] == 'patch' and row['name'] in JAVA_COMPILER_PATCH_NAMES
                for row in selected['materials']):
             bindings = [row for row in selected['materials'] if row['name'] == 'generated-bindings']
