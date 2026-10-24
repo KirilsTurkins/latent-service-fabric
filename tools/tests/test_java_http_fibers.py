@@ -590,7 +590,8 @@ class PinnedCoroutinePhiRepair(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root=Path(temporary); original=root/'original.jar'; classes=root/'classes'; classes.mkdir()
             rows={name:b'old-'+name.encode() for name in patch.PATCH_CLASSES}
-            rows.update({'META-INF/MANIFEST.MF':b'Manifest-Version: 1.0\n', 'unrelated/Class.class':b'unchanged'})
+            rows.update({'META-INF/MANIFEST.MF':b'Manifest-Version: 1.0\n', 'unrelated/Class.class':b'unchanged',
+                patch.CODEGEN_ROOT+'CodeGeneratorUtil.class':b'actual locked-JAR unrelated prefixed-class fixture'})
             with zipfile.ZipFile(original,'w') as jar:
                 for name,raw in rows.items():jar.writestr(name,raw)
             original_bytes=original.read_bytes()
@@ -598,7 +599,7 @@ class PinnedCoroutinePhiRepair(unittest.TestCase):
                 path=classes/name;path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(b'\xca\xfe\xba\xbecompiled-'+name.encode())
             target=root/'replacement.jar'; receipt=patch.replace_jar(original,classes,target)
             self.assertEqual(original.read_bytes(),original_bytes)
-            self.assertEqual(receipt['unchangedEntries'],2)
+            self.assertEqual(receipt['unchangedEntries'],3)
             self.assertEqual(set(receipt['replacedClasses']),patch.PATCH_CLASSES)
             observed=patch.jar_entries(target)
             for name,raw in rows.items():

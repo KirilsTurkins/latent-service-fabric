@@ -567,7 +567,8 @@ def jar_entries(path: Path) -> dict[str, bytes]:
     for prefix, expected in ((CODEGEN_ROOT + 'CodeGenerator', {CODEGEN_ROOT + 'CodeGenerator.class'}),
                              (INLINE_ROOT + 'LowLevelInliningFilterFactory',
                               {INLINE_ROOT + 'LowLevelInliningFilterFactory.class'})):
-        if {name for name in result if name.startswith(prefix) and name.endswith('.class')} != expected:
+        if {name for name in result if name == prefix + '.class'
+                or name.startswith(prefix + '$') and name.endswith('.class')} != expected:
             raise ValueError('coroutine-patch-method-class-closure')
     return result
 
