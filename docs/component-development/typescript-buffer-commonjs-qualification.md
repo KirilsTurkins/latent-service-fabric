@@ -1,9 +1,22 @@
 # Published CommonJS Buffer programme
 
-The first actual owning attempt failed during normal strict typechecking.
-Esbuild, componentization and six signed invocations have not run. The successful
-repository-owned eight-case Buffer programme retains its separate
+The unchanged published `buffer-xor@2.0.2` and transitive `safe-buffer@5.2.1`
+passed actual strict TSC, bundling, componentization and six signed invocations
+in [run40065465604](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40065465604),
+tested at `178c4bbe8c2667f1860f79b2429ce49abf03c0ac`.
+The [public receipt](../evidence/typescript-buffer-commonjs-signed-178c4bb/receipt.json)
+binds original archives, captured declarations, actual bundle inputs, the signed
+component, typed responses and physical activation retirement. The separate
+repository-owned eight-case Buffer programme retains its original
 [source-bound evidence](typescript-buffer-qualification.md).
+
+The owning run executed fourteen source controls, including the actual Linux
+read-only typecheck namespace. All 26 normal build commands exited zero. The
+captured application inventory has 104 entries: 103 files are retained raw;
+artifact upload omits the creator-bound 9-byte `.gitignore` (`/target/` plus
+newline), whose original recipe source and hash remain recorded. All five
+original SRI-bound package archives and their 155-file selected tree are retained
+in the content-addressed inputs. No engine or SpiderMonkey rebuild was needed.
 
 The unchanged published `buffer-xor@2.0.2` implementation imports
 `safe-buffer@5.2.1`, which imports bare `buffer` and selects its modern Buffer
@@ -60,9 +73,9 @@ are retained in compiler containment and normal build materials, then rechecked.
 TypeScript keeps `types: []`, fixed builtin/WIT bindings and strict checking;
 its native package declaration, exports and `@types` resolution supplies the
 library types. Esbuild keeps the existing original captured paths. The new
-namespace control must execute on the actual Linux owning host; local Windows
-source/argv controls do not establish that result. Current repaired compilation
-remains pending.
+namespace control executed successfully on the actual Linux owning host before
+the successful strict compilation. Local Windows source/argv controls remain
+source evidence only.
 
 The second attempt, [run40060051114](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40060051114),
 passed the actual Linux read-only namespace/link control and authenticated the
@@ -138,3 +151,12 @@ explicitly removed after module loading; this is source-reference evidence
 only. Whole #745 acceptance, two ordinary HTTP clients, Socket/Duplex,
 backpressure, typed-result disposal and destroy/cancel/unref ownership remain
 separate requirements.
+
+The six actual responses returned their exact `buffer:<case>:pass|fresh=1`
+values with zero effects, outbound requests, child calls and log bytes. After
+each response the recorded activation owners, cleanup slots, quota reservations
+and active/quarantined cells were zero; deployment deletion and clean reaped
+node shutdown also passed. These are the reported finite observations. The OS
+scan marks `rendererHeapBytes` and `allocatorRetainedBytes` unavailable; an
+invocation peak or process RSS does not establish complete guest/native heap,
+GC or stack accounting. AC5/AC7 and the whole runtime ticket remain open.

@@ -1,0 +1,713 @@
+{
+  "schemaVersion": "latent.typescript.published-commonjs-buffer-public-receipt.v1",
+  "status": "passed",
+  "fullTicketQualification": false,
+  "testedCommit": "178c4bbe8c2667f1860f79b2429ce49abf03c0ac",
+  "owning": {
+    "run": 40065465604,
+    "job": 120787672142,
+    "event": "push",
+    "branch": "feat/typescript-buffer-commonjs-20261024",
+    "conclusion": "success",
+    "url": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40065465604"
+  },
+  "artifact": {
+    "id": 12548384595,
+    "name": "typescript-buffer-commonjs-178c4bbe8c2667f1860f79b2429ce49abf03c0ac",
+    "sha256": "sha256:d2c8778745423897c8545df227b179dff46c2c8f28d59a31f05b5134416c8cb8",
+    "bytes": 19226583,
+    "crcVerifiedMembers": 524
+  },
+  "scope": {
+    "bufferProfile": "lsf-node-buffer-v1",
+    "runtimeProfile": "spidermonkey-activation-promises-clocks-imports-v1",
+    "componentBuilds": 1,
+    "signedInvocations": 6,
+    "unchangedPublishedRuntimeDependencies": [
+      "buffer-xor@2.0.2",
+      "safe-buffer@5.2.1"
+    ],
+    "declarationProvider": "captured @types/node@26.6.5 compile-time only; not a Node runtime API claim",
+    "relativeDependency": "not-used",
+    "globalBufferInstalled": false,
+    "newBufferAuthority": "none",
+    "limits": {
+      "cpuFuel": 1000000000,
+      "memoryBytes": 134217728,
+      "wallTimeLimitMillis": 120000,
+      "childCalls": 0,
+      "outboundRequests": 0,
+      "stateReadBytes": 0,
+      "stateWriteBytes": 0,
+      "blobReadBytes": 0,
+      "blobWriteBytes": 0,
+      "logBytes": 0,
+      "effectCount": 0
+    },
+    "snapshotEligible": false,
+    "qualifiesCompleteRuntimeOrIssue": false
+  },
+  "failedHistory": [
+    {
+      "run": 40056689387,
+      "job": 120761103324,
+      "head": "4efe08777eff36bfeecbb717df81f8ee8868d6e5",
+      "conclusion": "failure",
+      "stage": "strict-typecheck",
+      "diagnostics": [
+        "TS7016 published XOR declarations not discovered",
+        "TS7017 absence check accessed undeclared global property"
+      ],
+      "artifact": 12544874329,
+      "artifactBytes": 6814267,
+      "artifactSha256": "sha256:f71be80cf831680437b1cc98aa2f97825f155b54cf7e6cc02f6982dff96affde",
+      "signedCases": 0
+    },
+    {
+      "run": 40060051114,
+      "job": 120771384579,
+      "head": "c51195d452819473ed4d901ae8b5b52eb4b0c181",
+      "conclusion": "failure",
+      "stage": "strict-typecheck",
+      "diagnostics": [
+        "duplicate AbortController",
+        "incompatible AbortSignal and performance declarations"
+      ],
+      "artifact": 12547375686,
+      "artifactBytes": 7086862,
+      "artifactSha256": "sha256:5c95486ceaf90512d6d09dd9558e5f376bb30729cd1211dbc933f4efa38f2ac4",
+      "actualLinuxReadonlyNamespaceControl": "passed",
+      "signedCases": 0
+    },
+    {
+      "run": 40065076865,
+      "job": 120786491761,
+      "head": "db5162e45d2a774ac51048a4ae58886eaa887d7c",
+      "conclusion": "failure",
+      "stage": "componentize",
+      "diagnostics": [
+        "probe exported typescriptBuffer; WIT world requires api"
+      ],
+      "actualStrictTypecheck": "passed",
+      "actualBundle": "passed",
+      "artifact": 12549132039,
+      "artifactBytes": 7089835,
+      "artifactSha256": "sha256:6c0af5d8e87fb9f339b27db637f3ee200152cc34a23a2516b6ba5f92790feed4",
+      "signedCases": 0
+    }
+  ],
+  "compilerInputProducer": {
+    "producerHead": "be356d28f93267dc34078ce137d49ed28c28bf47",
+    "producerRun": 40062945676,
+    "producerJob": 120780152060,
+    "producerScope": "fresh-normal-compiler-engine-unit-native-ABI-prerequisites",
+    "originalReceipt": {
+      "sha256": "sha256:3a2666398d557131bccbbbacc78b83c5b800007d02485c98ecea82c794519f11",
+      "bytes": 1162751
+    },
+    "engineProducts": {
+      "engine.wasm": {
+        "sha256": "sha256:eaee1ba5370800975af7de751cf1cf51361a54074b517e6f2739ad743a0ed4d0",
+        "bytes": 10162602
+      },
+      "engine-input.json": {
+        "sha256": "sha256:cd0efa356440a502f442a459a0d880c663fa82e16c935242e939019c2167ae8a",
+        "bytes": 8954
+      },
+      "engine-build.json": {
+        "sha256": "sha256:9a7f02fdb08b7ef95c05f6833e0dc69cec4cb21f79b814f36e5eca4fb0bb0731",
+        "bytes": 70374
+      },
+      "engine-compilation.json": {
+        "sha256": "sha256:59a5f59174d800f86cc30b71e7e55ad74b50e04ee3e3f23b971f5c59e977708d",
+        "bytes": 70256
+      },
+      "source-derivation.json": {
+        "sha256": "sha256:090959a87f0b930fc857b731d6dc8cead92335ed3e090941e984086efd871e80",
+        "bytes": 1242526
+      }
+    },
+    "engineRebuilt": false,
+    "libraryRebuilt": false,
+    "producerCanonicalQualification": false,
+    "splicerInputDigest": "sha256:a97aca135fb2e6e5a386290a04256b077ea55c259007014f9774bdea5ed92f84",
+    "splicerFiles": 22
+  },
+  "nativeHost": {
+    "compiledSource": "77bf0e3f3b68e17342b6146abd6f2de34a3efa00",
+    "compiledTree": "54c337824b6751f5c21d768db8959852a73f9a88",
+    "producerRun": 39420914927,
+    "producerJob": 118621322461,
+    "producerReceipt": {
+      "sha256": "sha256:7dd05e38371c73ffc9e5e5bf490b2f8ffe5931686a181e508257e7118c778dca",
+      "bytes": 20590
+    },
+    "sourceSnapshot": {
+      "sha256": "sha256:c95bc1e98167eda62fb1c9327c2a1a4b95283159da49a399997fc9b2a75050cc",
+      "bytes": 18936
+    },
+    "products": {
+      "latent": {
+        "sha256": "sha256:09115a0fade44cbdb07b24e620113b4d60df024699637debf6abaf71a46c22ef",
+        "bytes": 68817496
+      },
+      "latentd": {
+        "sha256": "sha256:a3eea6329a38bcb6039aad1ad8f33f43bc5e358a28778d6b0d7093ac1b67e33c",
+        "bytes": 185124376
+      },
+      "examples/package": {
+        "sha256": "sha256:a4d61582a2afc62ffe7bda584741d8782d1986da90db5f6464c980495bdc00f7",
+        "bytes": 17739624
+      },
+      "examples/capsule_contracts": {
+        "sha256": "sha256:6a2e8fe3a02586092f0a59760106edc8b7613eae1e8286baa769c04a755e0152",
+        "bytes": 7239064
+      },
+      "examples/capsule_authoring": {
+        "sha256": "sha256:6e9bc1afdd65e41adf6a954ec8dc8045e9777017a54c287066ae533a22d410b7",
+        "bytes": 24005328
+      }
+    }
+  },
+  "inputBindings": {
+    "sourceIdentityDigest": "sha256:9f72aaf43fcdf3e041226da3a2ad546dd5a3bd98941c471020bf587ef315cfb9",
+    "publishedInputs": {
+      "packages": {
+        "@types/buffer-xor": {
+          "integrity": "sha512-OqdCua7QCTupPnJgmyGJUpxWgbuOi0IMIVslXTSePS2o+qDrDB6f2Pg44zRyqhUA5GbFAf39U8z0+mH4WG0fLQ==",
+          "version": "2.0.2"
+        },
+        "@types/node": {
+          "integrity": "sha512-uMzsv9stDdofIZBx4UGh4Z9ZgXnGC9seRDscilBcTHAeOFk67MZg/k9bWVfO+bk4qZmG+l52hRnLwUiH2LnJTg==",
+          "version": "26.6.5"
+        },
+        "buffer-xor": {
+          "integrity": "sha512-eHslX0bin3GB+Lx2p7lEYRShRewuNZL3fUl4qlVJGGiwoPGftmt8JQgk2Y9Ji5/01TnVDo33E5b5O3vUB1HdqQ==",
+          "version": "2.0.2"
+        },
+        "safe-buffer": {
+          "integrity": "sha512-rp3So07KcdmmKbGvgaNxQSJr7bGVSVk5S9Eq1F+ppbRo70+YeaDxkw5Dd8NPN+GD6bjnYm2VuPuCXmpuYvmCXQ==",
+          "version": "5.2.1"
+        },
+        "undici-types": {
+          "integrity": "sha512-KTDyRTYX8sWmKXAikPHHSyc63CRPETMctyjKFupcC6OBLXT3xsN0e9aF7m+mIXutFWpUXuedtowG7iLOzp0kQg==",
+          "version": "8.9.0"
+        }
+      },
+      "inputIdentity": "sha256:bd91af09546bba9c9dab59c58e1b27334fb8f089d65e081f5101d245d53ab3f1",
+      "manifestDigest": "sha256:106a19765dacea514b067fe97c4dbc03a7a80f38f9a92cb4577223b20c154e60",
+      "nativeLock": "sha256:bd1ba7ff12261b301c10e5257f2e0c5978c7a7fbab8bebb39c2d2ffb83aa46b7",
+      "resolvedGraph": "sha256:14bd69c8f9823fcd8ac550d9daeab0e1136db6df8c9c7a91dd73a6d5df27634a",
+      "acceptedLock": "sha256:b1176cd7ae8adc8ebd2e1046ad2f7dae8033200ad098edfd23ffdc67280bc396",
+      "moduleTree": {
+        "mount": "dependencies/npm/node_modules",
+        "digest": "sha256:c20b94e3a7e484d25d2e52b830c52c8ce684d7bcdf7204f61019be2c62e7ff34",
+        "files": 155,
+        "bytes": 2707595
+      },
+      "originalSources": {
+        "buffer-xor/index.js": "sha256:90b18bf55895b87dfd6b697f800b37860e58b5a1ab83b53cc066774bc43a90e5",
+        "buffer-xor/inplace.js": "sha256:95aa853ae1b6d2952b96e8c3425007cbae5b25e50f25228838724f0c5b23700b",
+        "safe-buffer/index.js": "sha256:184d5c4a83512e3f49d4d5b52f7073f601f933bad11f1fbb3ad364ca5e6478e1"
+      },
+      "transformations": [],
+      "conditions": [],
+      "publishedInplace": "source-observed-only; no ordinary published subpath declaration",
+      "runtimeGlobalBuffer": "not-installed",
+      "runtimeQualification": "pending"
+    },
+    "originalArchives": [
+      {
+        "name": "@types/buffer-xor",
+        "version": "2.0.2",
+        "sha256": "sha256:09b105fe25242c1f5b349cfa9ed7558e8d2d2e75f9993e91aed20b53765ccf87",
+        "bytes": 1591,
+        "integrity": "sha512-OqdCua7QCTupPnJgmyGJUpxWgbuOi0IMIVslXTSePS2o+qDrDB6f2Pg44zRyqhUA5GbFAf39U8z0+mH4WG0fLQ==",
+        "originalFiles": 4
+      },
+      {
+        "name": "@types/node",
+        "version": "26.6.5",
+        "sha256": "sha256:e4e47dac860469aa5aa79043a6b83396299d9cd6ee23b30fcb2074625ac8dbdf",
+        "bytes": 471079,
+        "integrity": "sha512-uMzsv9stDdofIZBx4UGh4Z9ZgXnGC9seRDscilBcTHAeOFk67MZg/k9bWVfO+bk4qZmG+l52hRnLwUiH2LnJTg==",
+        "originalFiles": 92
+      },
+      {
+        "name": "buffer-xor",
+        "version": "2.0.2",
+        "sha256": "sha256:e216954085d89e28122cf163010fc50d9f55473349693d9b8583fd0dca08c8b3",
+        "bytes": 1856,
+        "integrity": "sha512-eHslX0bin3GB+Lx2p7lEYRShRewuNZL3fUl4qlVJGGiwoPGftmt8JQgk2Y9Ji5/01TnVDo33E5b5O3vUB1HdqQ==",
+        "originalFiles": 5
+      },
+      {
+        "name": "safe-buffer",
+        "version": "5.2.1",
+        "sha256": "sha256:5d181804516c4a693a384272a7bd0e42d17e0d4b301ccfbe408669ccafdcb3e8",
+        "bytes": 9972,
+        "integrity": "sha512-rp3So07KcdmmKbGvgaNxQSJr7bGVSVk5S9Eq1F+ppbRo70+YeaDxkw5Dd8NPN+GD6bjnYm2VuPuCXmpuYvmCXQ==",
+        "originalFiles": 5
+      },
+      {
+        "name": "undici-types",
+        "version": "8.9.0",
+        "sha256": "sha256:3a587851ccbf1021b20eac8a38eb819d7e2a1ab77aa477cb24cae5473a3e78c6",
+        "bytes": 29764,
+        "integrity": "sha512-KTDyRTYX8sWmKXAikPHHSyc63CRPETMctyjKFupcC6OBLXT3xsN0e9aF7m+mIXutFWpUXuedtowG7iLOzp0kQg==",
+        "originalFiles": 48
+      }
+    ],
+    "originalArchiveMembersMatchSelectedTree": true,
+    "selectedTreeFiles": 155,
+    "verifiedCasObjects": 163,
+    "gitRecipeInputs": 118,
+    "capturedApplicationInventory": {
+      "count": 104,
+      "rawRetainedFiles": 103,
+      "creatorBoundNotRawRetained": [
+        {
+          "path": ".gitignore",
+          "bytes": 9,
+          "sha256": "sha256:306fd52e74fca6746e12acc750f232de15e71da917756a1270d74c91f5eb7368",
+          "content": "/target/ followed by newline",
+          "creator": "tools/typescript_guest/project.py",
+          "reason": "upload artifact default omits hidden file"
+        }
+      ]
+    },
+    "packageInputs": 14,
+    "dependencyBuildEvidence": {
+      "application-dependencies.json": {
+        "sha256": "sha256:e5a9b4a1f3b64fecad9b073efd42add92f497b86fd53b06ae7a90014a2cdb072",
+        "bytes": 26871
+      },
+      "npm-inputs.json": {
+        "sha256": "sha256:136a91e6cbf5552aa8f280b601f145c883cde26d6722be11a12b01a2387fa8ae",
+        "bytes": 558
+      },
+      "bundle-selected-inputs.json": {
+        "sha256": "sha256:ff4e47da79eb66c433fbd6035c133d3ddbdbf23a00b854ecb6d2eea00695f431",
+        "bytes": 4233
+      }
+    },
+    "typecheckModuleLayout": {
+      "sha256": "sha256:fb76e20fada00b0d4116a73e298d7f5d08ea77f6fef3f2cbdb53b29753fb829d",
+      "bytes": 975316
+    },
+    "standardGlobalTypes": {
+      "sha256": "sha256:25ae46abd21d62479d751c8273ac5342b8420aa8844d3ae450a326814c39fef2",
+      "bytes": 4318
+    },
+    "selectedTypeReceiptQualification": "unknown selection; actual strict TSC succeeds in this separate owning programme",
+    "reproducibility": "not-checked",
+    "hermetic": false,
+    "dependencyCompleteness": "declared-inputs-incomplete"
+  },
+  "component": {
+    "sha256": "sha256:5cacaa0d5548b5a53954ce16c3118c33098bbd1f2376df1065362366031de943",
+    "bytes": 12254209
+  },
+  "normalCommands": [
+    {
+      "stage": "contracts",
+      "exitCode": 0,
+      "seconds": 0.014925
+    },
+    {
+      "stage": "node-version",
+      "exitCode": 0,
+      "seconds": 0.014767
+    },
+    {
+      "stage": "wasm-tools-version",
+      "exitCode": 0,
+      "seconds": 0.014212
+    },
+    {
+      "stage": "prepare-compiler-adapter",
+      "exitCode": 0,
+      "seconds": 0.168497
+    },
+    {
+      "stage": "canonical-wit",
+      "exitCode": 0,
+      "seconds": 0.01493
+    },
+    {
+      "stage": "authoritative-types",
+      "exitCode": 0,
+      "seconds": 0.014352
+    },
+    {
+      "stage": "selected-runtime-types",
+      "exitCode": 0,
+      "seconds": 0.014312
+    },
+    {
+      "stage": "selected-activation-types",
+      "exitCode": 0,
+      "seconds": 0.014469
+    },
+    {
+      "stage": "selected-clock-types",
+      "exitCode": 0,
+      "seconds": 0.014333
+    },
+    {
+      "stage": "selected-runtime-wit",
+      "exitCode": 0,
+      "seconds": 0.014389
+    },
+    {
+      "stage": "projected-types",
+      "exitCode": 0,
+      "seconds": 0.014368
+    },
+    {
+      "stage": "generate-types",
+      "exitCode": 0,
+      "seconds": 0.228911
+    },
+    {
+      "stage": "regenerate-types",
+      "exitCode": 0,
+      "seconds": 0.228214
+    },
+    {
+      "stage": "typecheck",
+      "exitCode": 0,
+      "seconds": 0.227888
+    },
+    {
+      "stage": "bundle",
+      "exitCode": 0,
+      "seconds": 0.116113
+    },
+    {
+      "stage": "componentize",
+      "exitCode": 0,
+      "seconds": 7.991992
+    },
+    {
+      "stage": "strip-projection",
+      "exitCode": 0,
+      "seconds": 0.026447
+    },
+    {
+      "stage": "restore-authoritative-contract",
+      "exitCode": 0,
+      "seconds": 0.026221
+    },
+    {
+      "stage": "compose",
+      "exitCode": 0,
+      "seconds": 0.117161
+    },
+    {
+      "stage": "validate",
+      "exitCode": 0,
+      "seconds": 0.069109
+    },
+    {
+      "stage": "surface",
+      "exitCode": 0,
+      "seconds": 0.024768
+    },
+    {
+      "stage": "final-runtime-types",
+      "exitCode": 0,
+      "seconds": 0.02488
+    },
+    {
+      "stage": "selected-runtime-contracts",
+      "exitCode": 0,
+      "seconds": 0.014291
+    },
+    {
+      "stage": "compatibility-final-wit",
+      "exitCode": 0,
+      "seconds": 0.02472
+    },
+    {
+      "stage": "package",
+      "exitCode": 0,
+      "seconds": 2.681876
+    },
+    {
+      "stage": "inspect",
+      "exitCode": 0,
+      "seconds": 1.497958
+    }
+  ],
+  "executedSourceControls": [
+    {
+      "method": "test_executor_preserves_eight_case_default_and_refuses_unknown_programmes_before_io",
+      "qualified": "tools.tests.test_typescript_buffer_commonjs.PublishedCommonJsBufferControls.test_executor_preserves_eight_case_default_and_refuses_unknown_programmes_before_io"
+    },
+    {
+      "method": "test_normal_build_failure_cannot_reach_signing_or_invocation",
+      "qualified": "tools.tests.test_typescript_buffer_commonjs.PublishedCommonJsBufferControls.test_normal_build_failure_cannot_reach_signing_or_invocation"
+    },
+    {
+      "method": "test_normal_project_captures_unchanged_lock_and_keeps_original_limits",
+      "qualified": "tools.tests.test_typescript_buffer_commonjs.PublishedCommonJsBufferControls.test_normal_project_captures_unchanged_lock_and_keeps_original_limits"
+    },
+    {
+      "method": "test_real_normal_capture_projection_binds_versions_integrity_edges_and_profile",
+      "qualified": "tools.tests.test_typescript_buffer_commonjs.PublishedCommonJsBufferControls.test_real_normal_capture_projection_binds_versions_integrity_edges_and_profile"
+    },
+    {
+      "method": "test_retained_build_documents_reject_changed_closure_source_and_bundle_inputs",
+      "qualified": "tools.tests.test_typescript_buffer_commonjs.PublishedCommonJsBufferControls.test_retained_build_documents_reject_changed_closure_source_and_bundle_inputs"
+    },
+    {
+      "method": "test_default_bytes_and_standalone_iterable_contract_are_unchanged",
+      "qualified": "tools.tests.test_typescript_standard_global_types.StandardGlobalTypes.test_default_bytes_and_standalone_iterable_contract_are_unchanged"
+    },
+    {
+      "method": "test_normal_retention_rejects_forgery_and_distributed_recipe_contains_helper",
+      "qualified": "tools.tests.test_typescript_standard_global_types.StandardGlobalTypes.test_normal_retention_rejects_forgery_and_distributed_recipe_contains_helper"
+    },
+    {
+      "method": "test_partial_multiple_mutated_and_unreviewed_shapes_fail_explicitly",
+      "qualified": "tools.tests.test_typescript_standard_global_types.StandardGlobalTypes.test_partial_multiple_mutated_and_unreviewed_shapes_fail_explicitly"
+    },
+    {
+      "method": "test_published_provider_composes_source_bound_types_without_runtime_changes",
+      "qualified": "tools.tests.test_typescript_standard_global_types.StandardGlobalTypes.test_published_provider_composes_source_bound_types_without_runtime_changes"
+    },
+    {
+      "method": "test_actual_capture_registers_one_exact_phase_only_readonly_view",
+      "qualified": "tools.tests.test_typescript_module_layout.TypecheckModuleAlias.test_actual_capture_registers_one_exact_phase_only_readonly_view"
+    },
+    {
+      "method": "test_compiler_opts_in_only_for_typecheck_and_requires_normal_preparation",
+      "qualified": "tools.tests.test_typescript_module_layout.TypecheckModuleAlias.test_compiler_opts_in_only_for_typecheck_and_requires_normal_preparation"
+    },
+    {
+      "method": "test_real_closure_mutation_destination_collision_and_escape_are_refused",
+      "qualified": "tools.tests.test_typescript_module_layout.TypecheckModuleAlias.test_real_closure_mutation_destination_collision_and_escape_are_refused"
+    },
+    {
+      "method": "test_unselected_command_default_is_exact_and_unregistered_alias_is_refused",
+      "qualified": "tools.tests.test_typescript_module_layout.TypecheckModuleAlias.test_unselected_command_default_is_exact_and_unregistered_alias_is_refused"
+    },
+    {
+      "method": "test_real_namespace_exposes_original_bytes_only_during_readonly_typecheck",
+      "qualified": "tools.tests.test_typescript_module_layout.TypecheckModuleNamespace.test_real_namespace_exposes_original_bytes_only_during_readonly_typecheck"
+    }
+  ],
+  "cases": [
+    {
+      "case": "published-equal-xor",
+      "result": "buffer:0:pass|fresh=1",
+      "cpuFuel": "14166042",
+      "peakMemoryBytes": "9508088",
+      "response": {
+        "sha256": "sha256:ea68f67c1ab97b10181871ffd2837a5223e11d9c22607c4a8491172297eec49d",
+        "bytes": 1260
+      },
+      "retirement": {
+        "sha256": "sha256:e52115034b35eedb1f711ade5f740798a15aa23bdcf4ef334e8dc99b5dc76918",
+        "bytes": 8178
+      }
+    },
+    {
+      "case": "published-max-unequal-xor",
+      "result": "buffer:1:pass|fresh=1",
+      "cpuFuel": "14588504",
+      "peakMemoryBytes": "9508088",
+      "response": {
+        "sha256": "sha256:eadb325afd8a876b823de5996270e4d0f3e60a742be76bc9bcb3760b4c2710dc",
+        "bytes": 1266
+      },
+      "retirement": {
+        "sha256": "sha256:5a0879390f3966a845f8af3ce49ea039ac95c0d3e53dae9f5846b1f2f39c1894",
+        "bytes": 8183
+      }
+    },
+    {
+      "case": "published-empty-xor",
+      "result": "buffer:2:pass|fresh=1",
+      "cpuFuel": "14567105",
+      "peakMemoryBytes": "9508088",
+      "response": {
+        "sha256": "sha256:5162c6956069e68f68fd53e66506f56b387f6855edda4871a75ac7a445c7dda0",
+        "bytes": 1254
+      },
+      "retirement": {
+        "sha256": "sha256:1ac93fbe1cf85140d2a10117d26eb4e5481361f9e54367f68a0ff4dfe4f87845",
+        "bytes": 8178
+      }
+    },
+    {
+      "case": "published-fresh-output",
+      "result": "buffer:3:pass|fresh=1",
+      "cpuFuel": "15082042",
+      "peakMemoryBytes": "9508088",
+      "response": {
+        "sha256": "sha256:68b7d96c6579254393a7831b14a51ba8c890757bbea18fe0bc7ab010949237b4",
+        "bytes": 1260
+      },
+      "retirement": {
+        "sha256": "sha256:7f7bdce662cdb155629c47dc124f63d8d52391f05c606c90049117ab6e2b7654",
+        "bytes": 8180
+      }
+    },
+    {
+      "case": "published-codec-inputs",
+      "result": "buffer:4:pass|fresh=1",
+      "cpuFuel": "14842822",
+      "peakMemoryBytes": "9508088",
+      "response": {
+        "sha256": "sha256:9060d10d8bb7dfef1855e9fd1779b3700e4cfe7b01bf15670281de4e98e86afa",
+        "bytes": 1260
+      },
+      "retirement": {
+        "sha256": "sha256:861c263a87d0e93567ef2f8a22d01480563a482b529d5c3ae3e85d63a76cad8c",
+        "bytes": 8181
+      }
+    },
+    {
+      "case": "published-constructor-identity",
+      "result": "buffer:5:pass|fresh=1",
+      "cpuFuel": "13829796",
+      "peakMemoryBytes": "9508088",
+      "response": {
+        "sha256": "sha256:e22c3b7b7218925423f262a6acb067ac535d9fc3c8662b691901ba2e0e32cec0",
+        "bytes": 1276
+      },
+      "retirement": {
+        "sha256": "sha256:f3d10e4bcdc23eed30da2291717c8c17649e7e4cb9ee03747fb717f7dfa51a72",
+        "bytes": 8189
+      }
+    }
+  ],
+  "retirement": {
+    "afterEveryActualResponse": "zero activation-scoped topology owners, invocation-cleanup slots, cell activity/quarantine/queue and quota reservations",
+    "afterDeleteDormantDeployments": 0,
+    "standaloneShutdownClean": true,
+    "standaloneProcessReaped": true,
+    "cleanupDriverJoined": true,
+    "osMeasurementConsistency": "non-atomic-finite-scan",
+    "unavailable": {
+      "rendererHeapBytes": "guest-JS-allocator-not-exported",
+      "allocatorRetainedBytes": "RSS-is-not-an-allocator-retention-counter"
+    },
+    "fullGuestNativeHeapGCStackAccounting": "unqualified",
+    "invocationClientProcessesReaped": true
+  },
+  "retainedMembers": {
+    "typescript-buffer/qualification.json": {
+      "sha256": "sha256:fcb147df9a47c24187ed6e8713aa6c30c00b2f7462d77cf6fcefc8abde813b6f",
+      "bytes": 4105
+    },
+    "typescript-buffer/published-inputs.json": {
+      "sha256": "sha256:c076ffcd87c2bc4e04affeaa52427db7b85648a3ffa40fdce442817fe9e41391",
+      "bytes": 2098
+    },
+    "typescript-buffer/native-inputs.json": {
+      "sha256": "sha256:cfa81ceb0a4e291406e90c4195458adfa9cb846488f365f5161d8457d4bb5e8b",
+      "bytes": 2530
+    },
+    "typescript-buffer/build/BUILD-COMPLETE.json": {
+      "sha256": "sha256:1fd08a801a97451b7db86b4e2b805f4e4395d1640c9f80087571460a377a5b59",
+      "bytes": 2941
+    },
+    "typescript-buffer/build/build-observation.json": {
+      "sha256": "sha256:d51f6d325f63ec8a3dd65097073fd23223d1916efa244370cc972430a17fe89d",
+      "bytes": 4850
+    },
+    "typescript-buffer/build/source-inputs.json": {
+      "sha256": "sha256:9f72aaf43fcdf3e041226da3a2ad546dd5a3bd98941c471020bf587ef315cfb9",
+      "bytes": 15573
+    },
+    "typescript-buffer/build/recipe-inputs.json": {
+      "sha256": "sha256:e34b3fed422a86de10e31550846c367b6b3f17b36c69eb5a3597e71c14638623",
+      "bytes": 16449
+    },
+    "typescript-buffer/build/package-inputs.json": {
+      "sha256": "sha256:1ab6db8edc31b326c6a6c912583fffedf9303ed267c42784be458e923ae5dba2",
+      "bytes": 1731
+    },
+    "typescript-buffer/build/compiler-inputs.json": {
+      "sha256": "sha256:a0dfc7bc5fdfdcc7054c5d511086efbb9753a5976254c06c335f52f6c7ed318f",
+      "bytes": 924304
+    },
+    "typescript-buffer/build/compiler-containment.json": {
+      "sha256": "sha256:fb76e20fada00b0d4116a73e298d7f5d08ea77f6fef3f2cbdb53b29753fb829d",
+      "bytes": 975316
+    },
+    "typescript-buffer/build/bindings.json": {
+      "sha256": "sha256:7eea15251afd18a27224f51b6029c25ad924c1bf1d36446a3053865d76be287b",
+      "bytes": 970
+    },
+    "typescript-buffer/build/bundle-selected-inputs.json": {
+      "sha256": "sha256:ff4e47da79eb66c433fbd6035c133d3ddbdbf23a00b854ecb6d2eea00695f431",
+      "bytes": 4233
+    },
+    "typescript-buffer/build/application-dependencies.json": {
+      "sha256": "sha256:e5a9b4a1f3b64fecad9b073efd42add92f497b86fd53b06ae7a90014a2cdb072",
+      "bytes": 26871
+    },
+    "typescript-buffer/build/npm-inputs.json": {
+      "sha256": "sha256:136a91e6cbf5552aa8f280b601f145c883cde26d6722be11a12b01a2387fa8ae",
+      "bytes": 558
+    },
+    "typescript-buffer/build/typescript-buffer-selection.json": {
+      "sha256": "sha256:6be1444dc9844ab895bb5a0d9db8e010ec28b58e67cec51f2bd891f9ff782a90",
+      "bytes": 534
+    },
+    "typescript-buffer/build/typescript-standard-global-types.json": {
+      "sha256": "sha256:25ae46abd21d62479d751c8273ac5342b8420aa8844d3ae450a326814c39fef2",
+      "bytes": 4318
+    },
+    "typescript-buffer/build/package-source.json": {
+      "sha256": "sha256:37f462e14fd56ac68f60b4197bd6d95b6f4e6f6f1f0726fe5a72e425fdaf222e",
+      "bytes": 2533
+    },
+    "typescript-buffer/build/compatibility-context.json": {
+      "sha256": "sha256:ca459d450c9d17f7ae5dc5b09d70fe84f27c0437bc61fdd7eb034659f111c985",
+      "bytes": 8091
+    },
+    "typescript-buffer/node/qualification.json": {
+      "sha256": "sha256:f3e7a3f809cfdada97c2944cf40190f28a4a5e290899c043762645a5aa749eb1",
+      "bytes": 33069
+    },
+    "typescript-buffer/node/node-stderr.txt": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "typescript-buffer-compiler/ACQUIRED.json": {
+      "sha256": "sha256:6cf751f6cca7511ea273ecd8a98a7657d88be4b640a89bbdc07284f7f1422457",
+      "bytes": 9706
+    },
+    "typescript-buffer-compiler/NORMAL-CHECKED.json": {
+      "sha256": "sha256:1f790df902d48e07c8b3f3d3c9e104cb9d57d37a3150b7b3ff0c200fca3397f9",
+      "bytes": 35380
+    },
+    "typescript-buffer-compiler/products/engine/engine-input.json": {
+      "sha256": "sha256:cd0efa356440a502f442a459a0d880c663fa82e16c935242e939019c2167ae8a",
+      "bytes": 8954
+    },
+    "typescript-buffer-compiler/products/splicer/splicer-input.json": {
+      "sha256": "sha256:a97aca135fb2e6e5a386290a04256b077ea55c259007014f9774bdea5ed92f84",
+      "bytes": 5242
+    },
+    "typescript-buffer-commonjs-capture/capture.json": {
+      "sha256": "sha256:c076ffcd87c2bc4e04affeaa52427db7b85648a3ffa40fdce442817fe9e41391",
+      "bytes": 2098
+    }
+  },
+  "remainingAcceptance": [
+    "published-inplace-subpath-types-and-execution",
+    "two-HTTP-clients",
+    "node-net-Socket",
+    "Duplex-backpressure",
+    "typed-result-disposal",
+    "destroy-cancel-unref-root-lifecycle",
+    "complete-guest-native-heap-GC-stack-accounting",
+    "full-issue745-qualification"
+  ]
+}
