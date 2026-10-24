@@ -33,7 +33,7 @@ class TypeScriptNodeNet(unittest.TestCase):
             else:
                 # Mechanism fallback only. Production and owning qualification
                 # require the normal pinned compiler parser, without fallback.
-                code += "const scope={};vm.runInNewContext(process.binding('natives')['internal/deps/acorn/acorn/dist/acorn'],scope);const {parse}=scope.acorn;\n"
+                code += "const {parse}=(()=>{const scope={};vm.runInNewContext(process.binding('natives')['internal/deps/acorn/acorn/dist/acorn'],scope);return scope.acorn;})();\n"
             code += self.captured_source()
         code += """
 const deferred=()=>{let resolve,reject;const promise=new Promise((a,b)=>{resolve=a;reject=b});return {promise,resolve,reject}};

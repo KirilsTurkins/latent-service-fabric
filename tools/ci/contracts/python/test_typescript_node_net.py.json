@@ -65,7 +65,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:e9cf45c6932ce524675c24e90ba035a9d89562d3afa459b0adc243a40344ff3d",
-        "class:setup-sha256:16bebc7fe985a94f8fb570166eb6068526677808a38b809b4ad9f06195bbc006",
+        "class:setup-sha256:8e682a1f743cf71c11e7c7ddb9d0ab24bba0e76667c16aa320cd927aaa46bf64",
         "class:skip:self.skipTest('Node required for host-only Socket controls')"
       ],
       "skipSites": []
@@ -78,7 +78,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:e9cf45c6932ce524675c24e90ba035a9d89562d3afa459b0adc243a40344ff3d",
-        "class:setup-sha256:16bebc7fe985a94f8fb570166eb6068526677808a38b809b4ad9f06195bbc006",
+        "class:setup-sha256:8e682a1f743cf71c11e7c7ddb9d0ab24bba0e76667c16aa320cd927aaa46bf64",
         "class:skip:self.skipTest('Node required for host-only Socket controls')"
       ],
       "skipSites": []
@@ -91,7 +91,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:e9cf45c6932ce524675c24e90ba035a9d89562d3afa459b0adc243a40344ff3d",
-        "class:setup-sha256:16bebc7fe985a94f8fb570166eb6068526677808a38b809b4ad9f06195bbc006",
+        "class:setup-sha256:8e682a1f743cf71c11e7c7ddb9d0ab24bba0e76667c16aa320cd927aaa46bf64",
         "class:skip:self.skipTest('Node required for host-only Socket controls')"
       ],
       "skipSites": []
@@ -104,7 +104,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:e9cf45c6932ce524675c24e90ba035a9d89562d3afa459b0adc243a40344ff3d",
-        "class:setup-sha256:16bebc7fe985a94f8fb570166eb6068526677808a38b809b4ad9f06195bbc006",
+        "class:setup-sha256:8e682a1f743cf71c11e7c7ddb9d0ab24bba0e76667c16aa320cd927aaa46bf64",
         "class:skip:self.skipTest('Node required for host-only Socket controls')"
       ],
       "skipSites": []
@@ -117,7 +117,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:e9cf45c6932ce524675c24e90ba035a9d89562d3afa459b0adc243a40344ff3d",
-        "class:setup-sha256:16bebc7fe985a94f8fb570166eb6068526677808a38b809b4ad9f06195bbc006",
+        "class:setup-sha256:8e682a1f743cf71c11e7c7ddb9d0ab24bba0e76667c16aa320cd927aaa46bf64",
         "class:skip:self.skipTest('Node required for host-only Socket controls')"
       ],
       "skipSites": [
@@ -133,7 +133,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:e9cf45c6932ce524675c24e90ba035a9d89562d3afa459b0adc243a40344ff3d",
-        "class:setup-sha256:16bebc7fe985a94f8fb570166eb6068526677808a38b809b4ad9f06195bbc006",
+        "class:setup-sha256:8e682a1f743cf71c11e7c7ddb9d0ab24bba0e76667c16aa320cd927aaa46bf64",
         "class:skip:self.skipTest('Node required for host-only Socket controls')"
       ],
       "skipSites": []
@@ -146,7 +146,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:e9cf45c6932ce524675c24e90ba035a9d89562d3afa459b0adc243a40344ff3d",
-        "class:setup-sha256:16bebc7fe985a94f8fb570166eb6068526677808a38b809b4ad9f06195bbc006",
+        "class:setup-sha256:8e682a1f743cf71c11e7c7ddb9d0ab24bba0e76667c16aa320cd927aaa46bf64",
         "class:skip:self.skipTest('Node required for host-only Socket controls')"
       ],
       "skipSites": []
@@ -159,7 +159,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:e9cf45c6932ce524675c24e90ba035a9d89562d3afa459b0adc243a40344ff3d",
-        "class:setup-sha256:16bebc7fe985a94f8fb570166eb6068526677808a38b809b4ad9f06195bbc006",
+        "class:setup-sha256:8e682a1f743cf71c11e7c7ddb9d0ab24bba0e76667c16aa320cd927aaa46bf64",
         "class:skip:self.skipTest('Node required for host-only Socket controls')"
       ],
       "skipSites": []
@@ -172,7 +172,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:e9cf45c6932ce524675c24e90ba035a9d89562d3afa459b0adc243a40344ff3d",
-        "class:setup-sha256:16bebc7fe985a94f8fb570166eb6068526677808a38b809b4ad9f06195bbc006",
+        "class:setup-sha256:8e682a1f743cf71c11e7c7ddb9d0ab24bba0e76667c16aa320cd927aaa46bf64",
         "class:skip:self.skipTest('Node required for host-only Socket controls')"
       ],
       "skipSites": []
@@ -185,7 +185,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:e9cf45c6932ce524675c24e90ba035a9d89562d3afa459b0adc243a40344ff3d",
-        "class:setup-sha256:16bebc7fe985a94f8fb570166eb6068526677808a38b809b4ad9f06195bbc006",
+        "class:setup-sha256:8e682a1f743cf71c11e7c7ddb9d0ab24bba0e76667c16aa320cd927aaa46bf64",
         "class:skip:self.skipTest('Node required for host-only Socket controls')"
       ],
       "skipSites": []
@@ -198,7 +198,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:e9cf45c6932ce524675c24e90ba035a9d89562d3afa459b0adc243a40344ff3d",
-        "class:setup-sha256:16bebc7fe985a94f8fb570166eb6068526677808a38b809b4ad9f06195bbc006",
+        "class:setup-sha256:8e682a1f743cf71c11e7c7ddb9d0ab24bba0e76667c16aa320cd927aaa46bf64",
         "class:skip:self.skipTest('Node required for host-only Socket controls')"
       ],
       "skipSites": [
@@ -214,7 +214,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:e9cf45c6932ce524675c24e90ba035a9d89562d3afa459b0adc243a40344ff3d",
-        "class:setup-sha256:16bebc7fe985a94f8fb570166eb6068526677808a38b809b4ad9f06195bbc006",
+        "class:setup-sha256:8e682a1f743cf71c11e7c7ddb9d0ab24bba0e76667c16aa320cd927aaa46bf64",
         "class:skip:self.skipTest('Node required for host-only Socket controls')"
       ],
       "skipSites": []
@@ -227,7 +227,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:e9cf45c6932ce524675c24e90ba035a9d89562d3afa459b0adc243a40344ff3d",
-        "class:setup-sha256:16bebc7fe985a94f8fb570166eb6068526677808a38b809b4ad9f06195bbc006",
+        "class:setup-sha256:8e682a1f743cf71c11e7c7ddb9d0ab24bba0e76667c16aa320cd927aaa46bf64",
         "class:skip:self.skipTest('Node required for host-only Socket controls')"
       ],
       "skipSites": []
@@ -240,7 +240,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:e9cf45c6932ce524675c24e90ba035a9d89562d3afa459b0adc243a40344ff3d",
-        "class:setup-sha256:16bebc7fe985a94f8fb570166eb6068526677808a38b809b4ad9f06195bbc006",
+        "class:setup-sha256:8e682a1f743cf71c11e7c7ddb9d0ab24bba0e76667c16aa320cd927aaa46bf64",
         "class:skip:self.skipTest('Node required for host-only Socket controls')"
       ],
       "skipSites": []
@@ -253,7 +253,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:e9cf45c6932ce524675c24e90ba035a9d89562d3afa459b0adc243a40344ff3d",
-        "class:setup-sha256:16bebc7fe985a94f8fb570166eb6068526677808a38b809b4ad9f06195bbc006",
+        "class:setup-sha256:8e682a1f743cf71c11e7c7ddb9d0ab24bba0e76667c16aa320cd927aaa46bf64",
         "class:skip:self.skipTest('Node required for host-only Socket controls')"
       ],
       "skipSites": []
@@ -266,7 +266,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:e9cf45c6932ce524675c24e90ba035a9d89562d3afa459b0adc243a40344ff3d",
-        "class:setup-sha256:16bebc7fe985a94f8fb570166eb6068526677808a38b809b4ad9f06195bbc006",
+        "class:setup-sha256:8e682a1f743cf71c11e7c7ddb9d0ab24bba0e76667c16aa320cd927aaa46bf64",
         "class:skip:self.skipTest('Node required for host-only Socket controls')"
       ],
       "skipSites": []
@@ -274,6 +274,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_typescript_node_net.py",
-  "reviewReason": "Add two authentic-initializer ACK controls; old cases unchanged after removing only the new helper/two cases. Successful read/copy skips redundant ACK await only after observed success; failure cleanup still waits original ACK. Physical Task-limit benefit remains unknown.",
+  "reviewReason": "Isolate the fallback parser scope after actual generic CI identifier collisions; all nineteen cases, assertions, skips and execution guards remain unchanged except the reviewed helper fingerprint.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
