@@ -181,6 +181,12 @@ class JavaSpiManualWorkflow(unittest.TestCase):
             "${{ (github.event_name != 'workflow_dispatch' || !inputs.qualify-scratch-refusals) && (github.event_name != 'workflow_dispatch' || !inputs.java_http_spi) }}")
         selected['jobs']['dependency-ingestion']['if'] = old['jobs']['dependency-ingestion']['if']
         steps = selected['jobs']['compiler-component']['steps']
+        retained = next(step for step in steps if step.get('name') ==
+            'Retain diagnostics, generated source and component candidates')
+        added = '${{ runner.temp }}/java-activation-fibers/build/component-inputs/**'
+        self.assertEqual(retained['with']['path'].splitlines().count(added), 1)
+        self.assertNotIn(added, str(old))
+        retained['with']['path'] = retained['with']['path'].replace(added + '\n', '', 1)
         index = next(i for i, step in enumerate(steps) if step.get('name') ==
             'Export only exact normal public prerequisites for the separate Java scratch packet')
         qualified = next(i for i, step in enumerate(steps) if step.get('name') ==
