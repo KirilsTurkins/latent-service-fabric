@@ -1,0 +1,1625 @@
+{
+  "schemaVersion": "latent.go.stack-ceiling.signed-observation.v1",
+  "sourceRevision": "f7df6c1b6da0026b1fc0ab3653f2342f4edf77fd",
+  "sourceDigest": "sha256:02b703649ba81103f1758aa0257722d47a5072cbe34aa3474c95e989beab0cfa",
+  "status": "passed",
+  "profile": "go-component-activation-v7",
+  "effectiveBudget": {
+    "cpuFuel": 1000000000,
+    "memoryBytes": 67108864,
+    "wallTimeLimitMillis": 120000,
+    "childCalls": 0,
+    "outboundRequests": 0,
+    "stateReadBytes": 0,
+    "stateWriteBytes": 0,
+    "blobReadBytes": 0,
+    "blobWriteBytes": 0,
+    "logBytes": 0,
+    "effectCount": 0
+  },
+  "runtimeLimits": {
+    "tasks": 16,
+    "executors": 2,
+    "queuedWork": 16,
+    "waits": 4,
+    "timers": 2,
+    "results": 2,
+    "native": 2
+  },
+  "wholeGoCostQualification": false,
+  "kernelRetirementQualified": false,
+  "testHostFeature": "development-test-host",
+  "nativeCompiler": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "nativePackagingTools": [
+    {
+      "name": "contracts-tool",
+      "digest": "sha256:66d003d4c02f800241dbbcf4bf3e49a92afb3e1986238d246f29dacad00047d3",
+      "size": 137999112
+    },
+    {
+      "name": "packager",
+      "digest": "sha256:ec7f13d0d4c218c5b79dbc1d643d2bbb996151e209b3e3c2e22d40989bafe279",
+      "size": 147569848
+    }
+  ],
+  "placementReference": {
+    "compilerFrameBytes": 22184,
+    "arrayStackOffset": 24,
+    "checksumCopyStackOffset": 8216,
+    "arrayBytes": 8192,
+    "referenceExecuted": false,
+    "finalComponentProofFromReferenceAlone": false,
+    "sourceDigest": "sha256:aec1cc9e6d1642642494532125af566407e7c115b7d95920936da9d1fe8d8d80",
+    "diagnosticsDigest": "sha256:6e88d55d4663a42d3216c870efab0d09f22509c5c499149d849e682d206f216d",
+    "compiler": {
+      "name": "go",
+      "digest": "sha256:5f5eb6d0b2fb6aa0bb5d5f8c5f1c944e0de955c925f0111af92a9d8f79680b5b",
+      "size": 17164222
+    },
+    "commands": [
+      {
+        "stage": "compiler-version",
+        "exitCode": 0,
+        "seconds": 0.016739
+      },
+      {
+        "stage": "compile-only",
+        "exitCode": 0,
+        "seconds": 2.541856
+      }
+    ]
+  },
+  "normalBuilds": [
+    {
+      "name": "go-stack-ordinary",
+      "variant": "ordinary",
+      "sourceDigest": "sha256:abd8ccc3167c40ce914904564705380bbe26a1cc27c142d9643ded00f9692c2e",
+      "sourceInputsDigest": "sha256:4ecb2fe916d47304a4f65605c2a5ffb2181e0f1ef314468dc2249b3b11c3a2b2",
+      "sourceInputs": 112,
+      "limits": {
+        "cpuFuel": 1000000000,
+        "memoryBytes": 67108864,
+        "wallTimeLimitMillis": 120000,
+        "childCalls": 0,
+        "outboundRequests": 0,
+        "stateReadBytes": 0,
+        "stateWriteBytes": 0,
+        "blobReadBytes": 0,
+        "blobWriteBytes": 0,
+        "logBytes": 0,
+        "effectCount": 0
+      },
+      "buildComplete": {
+        "formatVersion": 1,
+        "packageAssembled": true,
+        "observationDigest": "sha256:19690f9bf4342a26ec2bc50a5ba797f7bca0cae05d633497ff66cc0731194515",
+        "sourceDigest": "sha256:4ecb2fe916d47304a4f65605c2a5ffb2181e0f1ef314468dc2249b3b11c3a2b2",
+        "componentDigest": "sha256:d5005a1d26841d826bdc134d39695b6387e5482a4f9fb8dce659d2137d275983",
+        "sdkBindingDigest": "sha256:5c3032e88fdc36b54843a9dc1c5e587c2d3cdbb89f562da8b9710d816173d842",
+        "buildSeconds": 14.915251,
+        "commands": [
+          {
+            "stage": "go-version",
+            "exitCode": 0,
+            "seconds": 0.016001
+          },
+          {
+            "stage": "generator-version",
+            "exitCode": 0,
+            "seconds": 0.016035
+          },
+          {
+            "stage": "validator-version",
+            "exitCode": 0,
+            "seconds": 0.015446
+          },
+          {
+            "stage": "go-root",
+            "exitCode": 0,
+            "seconds": 0.015169
+          },
+          {
+            "stage": "checkpoint-parser-host",
+            "exitCode": 0,
+            "seconds": 0.016055
+          },
+          {
+            "stage": "checkpoint-parser-controls",
+            "exitCode": 0,
+            "seconds": 8.063233
+          },
+          {
+            "stage": "checkpoint-parser-build",
+            "exitCode": 0,
+            "seconds": 0.199668
+          },
+          {
+            "stage": "typed-bindings",
+            "exitCode": 0,
+            "seconds": 0.02561
+          },
+          {
+            "stage": "typed-bindings",
+            "exitCode": 0,
+            "seconds": 0.025181
+          },
+          {
+            "stage": "locked-module-download",
+            "exitCode": 0,
+            "seconds": 0.186841
+          },
+          {
+            "stage": "vendor-locked-module",
+            "exitCode": 0,
+            "seconds": 0.025491
+          },
+          {
+            "stage": "checkpoint-selected-packages",
+            "exitCode": 0,
+            "seconds": 0.076404
+          },
+          {
+            "stage": "checkpoint-parser",
+            "exitCode": 0,
+            "seconds": 0.015237
+          },
+          {
+            "stage": "closed-runtime",
+            "exitCode": 0,
+            "seconds": 0.015225
+          },
+          {
+            "stage": "component-build",
+            "exitCode": 0,
+            "seconds": 3.615359
+          },
+          {
+            "stage": "component-validate",
+            "exitCode": 0,
+            "seconds": 0.028334
+          },
+          {
+            "stage": "component-wit",
+            "exitCode": 0,
+            "seconds": 0.015169
+          },
+          {
+            "stage": "contracts",
+            "exitCode": 0,
+            "seconds": 0.015358
+          },
+          {
+            "stage": "compatibility-final-wit",
+            "exitCode": 0,
+            "seconds": 0.015393
+          },
+          {
+            "stage": "package",
+            "exitCode": 0,
+            "seconds": 0.824342
+          },
+          {
+            "stage": "inspect",
+            "exitCode": 0,
+            "seconds": 0.572075
+          }
+        ]
+      }
+    },
+    {
+      "name": "go-stack-initializer-cap",
+      "variant": "initializer-cap",
+      "sourceDigest": "sha256:6bfd661d1a5a9784f77ab6eefed1f1197f759d5f7fec3ab7a573b64c78ce6264",
+      "sourceInputsDigest": "sha256:fcf8c461b2354e4bfd2ad41bded2f235f1f698ef13a4b17c0562e6717fad6bed",
+      "sourceInputs": 112,
+      "limits": {
+        "cpuFuel": 1000000000,
+        "memoryBytes": 67108864,
+        "wallTimeLimitMillis": 120000,
+        "childCalls": 0,
+        "outboundRequests": 0,
+        "stateReadBytes": 0,
+        "stateWriteBytes": 0,
+        "blobReadBytes": 0,
+        "blobWriteBytes": 0,
+        "logBytes": 0,
+        "effectCount": 0
+      },
+      "buildComplete": {
+        "formatVersion": 1,
+        "packageAssembled": true,
+        "observationDigest": "sha256:96ced4fb64909cc1c37b05c4e726a9042ec873512e008aeb39053c90a1ae2c13",
+        "sourceDigest": "sha256:fcf8c461b2354e4bfd2ad41bded2f235f1f698ef13a4b17c0562e6717fad6bed",
+        "componentDigest": "sha256:14524727537959d5831b6bc3691db2ff3271a148649010a030cf69c26e40a397",
+        "sdkBindingDigest": "sha256:5c3032e88fdc36b54843a9dc1c5e587c2d3cdbb89f562da8b9710d816173d842",
+        "buildSeconds": 15.149383,
+        "commands": [
+          {
+            "stage": "go-version",
+            "exitCode": 0,
+            "seconds": 0.016298
+          },
+          {
+            "stage": "generator-version",
+            "exitCode": 0,
+            "seconds": 0.016209
+          },
+          {
+            "stage": "validator-version",
+            "exitCode": 0,
+            "seconds": 0.015235
+          },
+          {
+            "stage": "go-root",
+            "exitCode": 0,
+            "seconds": 0.015392
+          },
+          {
+            "stage": "checkpoint-parser-host",
+            "exitCode": 0,
+            "seconds": 0.015376
+          },
+          {
+            "stage": "checkpoint-parser-controls",
+            "exitCode": 0,
+            "seconds": 8.013063
+          },
+          {
+            "stage": "checkpoint-parser-build",
+            "exitCode": 0,
+            "seconds": 0.209017
+          },
+          {
+            "stage": "typed-bindings",
+            "exitCode": 0,
+            "seconds": 0.025668
+          },
+          {
+            "stage": "typed-bindings",
+            "exitCode": 0,
+            "seconds": 0.025478
+          },
+          {
+            "stage": "locked-module-download",
+            "exitCode": 0,
+            "seconds": 0.05578
+          },
+          {
+            "stage": "vendor-locked-module",
+            "exitCode": 0,
+            "seconds": 0.025585
+          },
+          {
+            "stage": "checkpoint-selected-packages",
+            "exitCode": 0,
+            "seconds": 0.078652
+          },
+          {
+            "stage": "checkpoint-parser",
+            "exitCode": 0,
+            "seconds": 0.015415
+          },
+          {
+            "stage": "closed-runtime",
+            "exitCode": 0,
+            "seconds": 0.015318
+          },
+          {
+            "stage": "component-build",
+            "exitCode": 0,
+            "seconds": 3.690151
+          },
+          {
+            "stage": "component-validate",
+            "exitCode": 0,
+            "seconds": 0.0257
+          },
+          {
+            "stage": "component-wit",
+            "exitCode": 0,
+            "seconds": 0.015333
+          },
+          {
+            "stage": "contracts",
+            "exitCode": 0,
+            "seconds": 0.015424
+          },
+          {
+            "stage": "compatibility-final-wit",
+            "exitCode": 0,
+            "seconds": 0.015135
+          },
+          {
+            "stage": "package",
+            "exitCode": 0,
+            "seconds": 1.096931
+          },
+          {
+            "stage": "inspect",
+            "exitCode": 0,
+            "seconds": 0.582325
+          }
+        ]
+      }
+    }
+  ],
+  "observations": {
+    "variants": [
+      {
+        "budget": {
+          "blobReadBytes": 0,
+          "blobWriteBytes": 0,
+          "childCalls": 0,
+          "cpuFuel": 1000000000,
+          "effectCount": 0,
+          "logBytes": 0,
+          "memoryBytes": 67108864,
+          "outboundRequests": 0,
+          "stateReadBytes": 0,
+          "stateWriteBytes": 0,
+          "wallTimeLimitMillis": 120000
+        },
+        "componentDigest": "sha256:d5005a1d26841d826bdc134d39695b6387e5482a4f9fb8dce659d2137d275983",
+        "initializerCap": false,
+        "mapping": {
+          "componentDigest": "sha256:d5005a1d26841d826bdc134d39695b6387e5482a4f9fb8dce659d2137d275983",
+          "coreModuleBytes": 2606839,
+          "coreModuleComponentOffset": 747,
+          "coreModuleDigest": "sha256:dd39dd5caef990bc89e9b5d1455f356a36b27ef291264cfb365c3fa598986ba4",
+          "functions": [
+            {
+              "bodyDigest": "sha256:5e4824380bd0d5aa1b3cbf87be55d9e9f8916295976cb8b6d4d00a3241169866",
+              "callsCapLeaf": 0,
+              "checksumCopyAfterRecursiveCall": false,
+              "end": 691866,
+              "index": 704,
+              "memoryCopies": 0,
+              "memoryFills": 0,
+              "name": "runtime.lsfStackLimitExceeded",
+              "selfCalls": 0,
+              "start": 691793
+            },
+            {
+              "bodyDigest": "sha256:a47b2515536701b5b5ec71c09cce855a35d0a465d18534be06082ef391584b67",
+              "callsCapLeaf": 1,
+              "checksumCopyAfterRecursiveCall": false,
+              "end": 947040,
+              "index": 950,
+              "memoryCopies": 0,
+              "memoryFills": 0,
+              "name": "runtime.stackalloc",
+              "selfCalls": 0,
+              "start": 944264
+            },
+            {
+              "bodyDigest": "sha256:6eb473526b4a1c88dec72667295ab6698cc77e0085386017a5f3f5e3c8cbcc4a",
+              "callsCapLeaf": 1,
+              "checksumCopyAfterRecursiveCall": false,
+              "end": 957234,
+              "index": 957,
+              "memoryCopies": 0,
+              "memoryFills": 1,
+              "name": "runtime.copystack",
+              "selfCalls": 0,
+              "start": 954668
+            },
+            {
+              "bodyDigest": "sha256:04ee1d74d5bbf2c7f0422a80ace52cbf456620d1f25adc18104635bb77edf3d9",
+              "callsCapLeaf": 1,
+              "checksumCopyAfterRecursiveCall": false,
+              "end": 966023,
+              "index": 958,
+              "memoryCopies": 2,
+              "memoryFills": 0,
+              "name": "runtime.newstack",
+              "selfCalls": 0,
+              "start": 957236
+            },
+            {
+              "bodyDigest": "sha256:6955fd8e69612cf61244074138290b8fb02ed1f2ca7ef6ea7b4e4af60011c6d4",
+              "callsCapLeaf": 0,
+              "checksumCopyAfterRecursiveCall": true,
+              "end": 1604814,
+              "index": 1735,
+              "memoryCopies": 1,
+              "memoryFills": 2,
+              "name": "wit_component_export_tests_caller_api.stackFrame",
+              "selfCalls": 1,
+              "start": 1603923
+            }
+          ],
+          "numericCapIdentityUnambiguous": true,
+          "staticModuleIndex": 0
+        },
+        "name": "go-stack-ordinary",
+        "sourceDigest": "sha256:abd8ccc3167c40ce914904564705380bbe26a1cc27c142d9643ded00f9692c2e",
+        "sourceInputsDigest": "sha256:4ecb2fe916d47304a4f65605c2a5ffb2181e0f1ef314468dc2249b3b11c3a2b2"
+      },
+      {
+        "budget": {
+          "blobReadBytes": 0,
+          "blobWriteBytes": 0,
+          "childCalls": 0,
+          "cpuFuel": 1000000000,
+          "effectCount": 0,
+          "logBytes": 0,
+          "memoryBytes": 67108864,
+          "outboundRequests": 0,
+          "stateReadBytes": 0,
+          "stateWriteBytes": 0,
+          "wallTimeLimitMillis": 120000
+        },
+        "componentDigest": "sha256:14524727537959d5831b6bc3691db2ff3271a148649010a030cf69c26e40a397",
+        "initializerCap": true,
+        "mapping": {
+          "componentDigest": "sha256:14524727537959d5831b6bc3691db2ff3271a148649010a030cf69c26e40a397",
+          "coreModuleBytes": 2606839,
+          "coreModuleComponentOffset": 747,
+          "coreModuleDigest": "sha256:41603944df792d53455fdb3b8dab050c0ad8e8bfbaa4364d08873e45b052ab55",
+          "functions": [
+            {
+              "bodyDigest": "sha256:5e4824380bd0d5aa1b3cbf87be55d9e9f8916295976cb8b6d4d00a3241169866",
+              "callsCapLeaf": 0,
+              "checksumCopyAfterRecursiveCall": false,
+              "end": 691866,
+              "index": 704,
+              "memoryCopies": 0,
+              "memoryFills": 0,
+              "name": "runtime.lsfStackLimitExceeded",
+              "selfCalls": 0,
+              "start": 691793
+            },
+            {
+              "bodyDigest": "sha256:a47b2515536701b5b5ec71c09cce855a35d0a465d18534be06082ef391584b67",
+              "callsCapLeaf": 1,
+              "checksumCopyAfterRecursiveCall": false,
+              "end": 947040,
+              "index": 950,
+              "memoryCopies": 0,
+              "memoryFills": 0,
+              "name": "runtime.stackalloc",
+              "selfCalls": 0,
+              "start": 944264
+            },
+            {
+              "bodyDigest": "sha256:6eb473526b4a1c88dec72667295ab6698cc77e0085386017a5f3f5e3c8cbcc4a",
+              "callsCapLeaf": 1,
+              "checksumCopyAfterRecursiveCall": false,
+              "end": 957234,
+              "index": 957,
+              "memoryCopies": 0,
+              "memoryFills": 1,
+              "name": "runtime.copystack",
+              "selfCalls": 0,
+              "start": 954668
+            },
+            {
+              "bodyDigest": "sha256:04ee1d74d5bbf2c7f0422a80ace52cbf456620d1f25adc18104635bb77edf3d9",
+              "callsCapLeaf": 1,
+              "checksumCopyAfterRecursiveCall": false,
+              "end": 966023,
+              "index": 958,
+              "memoryCopies": 2,
+              "memoryFills": 0,
+              "name": "runtime.newstack",
+              "selfCalls": 0,
+              "start": 957236
+            },
+            {
+              "bodyDigest": "sha256:6955fd8e69612cf61244074138290b8fb02ed1f2ca7ef6ea7b4e4af60011c6d4",
+              "callsCapLeaf": 0,
+              "checksumCopyAfterRecursiveCall": true,
+              "end": 1604814,
+              "index": 1735,
+              "memoryCopies": 1,
+              "memoryFills": 2,
+              "name": "wit_component_export_tests_caller_api.stackFrame",
+              "selfCalls": 1,
+              "start": 1603923
+            }
+          ],
+          "numericCapIdentityUnambiguous": true,
+          "staticModuleIndex": 0
+        },
+        "name": "go-stack-initializer-cap",
+        "sourceDigest": "sha256:6bfd661d1a5a9784f77ab6eefed1f1197f759d5f7fec3ab7a573b64c78ce6264",
+        "sourceInputsDigest": "sha256:fcf8c461b2354e4bfd2ad41bded2f235f1f698ef13a4b17c0562e6717fad6bed"
+      }
+    ],
+    "policies": [
+      {
+        "callerPublication": "publication:sha256:94ba4a2aec9c640a262d8ef4d8073a20b50f9d39405980db8ea21607c30c4e64",
+        "callerRelease": "sha256:d5005a1d26841d826bdc134d39695b6387e5482a4f9fb8dce659d2137d275983",
+        "effectivePackageBudget": {
+          "blobReadBytes": 0,
+          "blobWriteBytes": 0,
+          "childCalls": 0,
+          "cpuFuel": 1000000000,
+          "effectCount": 0,
+          "logBytes": 0,
+          "memoryBytes": 67108864,
+          "outboundRequests": 0,
+          "stateReadBytes": 0,
+          "stateWriteBytes": 0,
+          "wallTimeLimitMillis": 120000
+        },
+        "factoryFuelUpperCeiling": 10000000000,
+        "factoryMemoryUpperCeiling": 67108864,
+        "grants": [
+          {
+            "capability": "latent:runtime/activation@0.1.0",
+            "constraints": {},
+            "operations": [],
+            "policy": "sdk-runtime-policy-0"
+          },
+          {
+            "capability": "latent:clock/monotonic@0.1.0",
+            "constraints": {},
+            "operations": [],
+            "policy": "sdk-runtime-policy-1"
+          },
+          {
+            "capability": "latent:clock/wall@0.1.0",
+            "constraints": {},
+            "operations": [],
+            "policy": "sdk-runtime-policy-2"
+          },
+          {
+            "capability": "latent:random/random@0.1.0",
+            "constraints": {},
+            "operations": [],
+            "policy": "sdk-runtime-policy-3"
+          }
+        ],
+        "ordinaryPublication": "publication:sha256:94ba4a2aec9c640a262d8ef4d8073a20b50f9d39405980db8ea21607c30c4e64",
+        "ordinaryRelease": "sha256:d5005a1d26841d826bdc134d39695b6387e5482a4f9fb8dce659d2137d275983",
+        "runtimeLimits": {
+          "executors": 2,
+          "native": 2,
+          "queuedWork": 16,
+          "results": 2,
+          "tasks": 16,
+          "timers": 2,
+          "waits": 4
+        },
+        "scopes": [
+          {
+            "principal": "alice",
+            "principalKind": "user",
+            "publications": [
+              "publication:sha256:94ba4a2aec9c640a262d8ef4d8073a20b50f9d39405980db8ea21607c30c4e64"
+            ],
+            "services": [
+              "caller"
+            ]
+          },
+          {
+            "principal": "service:5:tests:6:caller",
+            "principalKind": "service",
+            "publications": [
+              "publication:sha256:94ba4a2aec9c640a262d8ef4d8073a20b50f9d39405980db8ea21607c30c4e64"
+            ],
+            "services": [
+              "callee"
+            ]
+          },
+          {
+            "principal": "alice",
+            "principalKind": "user",
+            "publications": [
+              "publication:sha256:94ba4a2aec9c640a262d8ef4d8073a20b50f9d39405980db8ea21607c30c4e64"
+            ],
+            "services": [
+              "caller"
+            ]
+          }
+        ]
+      },
+      {
+        "callerPublication": "publication:sha256:94ba4a2aec9c640a262d8ef4d8073a20b50f9d39405980db8ea21607c30c4e64",
+        "callerRelease": "sha256:d5005a1d26841d826bdc134d39695b6387e5482a4f9fb8dce659d2137d275983",
+        "effectivePackageBudget": {
+          "blobReadBytes": 0,
+          "blobWriteBytes": 0,
+          "childCalls": 0,
+          "cpuFuel": 1000000000,
+          "effectCount": 0,
+          "logBytes": 0,
+          "memoryBytes": 67108864,
+          "outboundRequests": 0,
+          "stateReadBytes": 0,
+          "stateWriteBytes": 0,
+          "wallTimeLimitMillis": 120000
+        },
+        "factoryFuelUpperCeiling": 10000000000,
+        "factoryMemoryUpperCeiling": 67108864,
+        "grants": [
+          {
+            "capability": "latent:runtime/activation@0.1.0",
+            "constraints": {},
+            "operations": [],
+            "policy": "sdk-runtime-policy-0"
+          },
+          {
+            "capability": "latent:clock/monotonic@0.1.0",
+            "constraints": {},
+            "operations": [],
+            "policy": "sdk-runtime-policy-1"
+          },
+          {
+            "capability": "latent:clock/wall@0.1.0",
+            "constraints": {},
+            "operations": [],
+            "policy": "sdk-runtime-policy-2"
+          },
+          {
+            "capability": "latent:random/random@0.1.0",
+            "constraints": {},
+            "operations": [],
+            "policy": "sdk-runtime-policy-3"
+          }
+        ],
+        "ordinaryPublication": "publication:sha256:94ba4a2aec9c640a262d8ef4d8073a20b50f9d39405980db8ea21607c30c4e64",
+        "ordinaryRelease": "sha256:d5005a1d26841d826bdc134d39695b6387e5482a4f9fb8dce659d2137d275983",
+        "runtimeLimits": {
+          "executors": 2,
+          "native": 2,
+          "queuedWork": 16,
+          "results": 2,
+          "tasks": 16,
+          "timers": 2,
+          "waits": 4
+        },
+        "scopes": [
+          {
+            "principal": "alice",
+            "principalKind": "user",
+            "publications": [
+              "publication:sha256:94ba4a2aec9c640a262d8ef4d8073a20b50f9d39405980db8ea21607c30c4e64"
+            ],
+            "services": [
+              "caller"
+            ]
+          },
+          {
+            "principal": "service:5:tests:6:caller",
+            "principalKind": "service",
+            "publications": [
+              "publication:sha256:94ba4a2aec9c640a262d8ef4d8073a20b50f9d39405980db8ea21607c30c4e64"
+            ],
+            "services": [
+              "callee"
+            ]
+          },
+          {
+            "principal": "alice",
+            "principalKind": "user",
+            "publications": [
+              "publication:sha256:94ba4a2aec9c640a262d8ef4d8073a20b50f9d39405980db8ea21607c30c4e64"
+            ],
+            "services": [
+              "caller"
+            ]
+          }
+        ]
+      },
+      {
+        "callerPublication": "publication:sha256:95e47791069b1d7ef3c634af0882e283e642bcdf6d8fae333b1995b08022ce30",
+        "callerRelease": "sha256:14524727537959d5831b6bc3691db2ff3271a148649010a030cf69c26e40a397",
+        "effectivePackageBudget": {
+          "blobReadBytes": 0,
+          "blobWriteBytes": 0,
+          "childCalls": 0,
+          "cpuFuel": 1000000000,
+          "effectCount": 0,
+          "logBytes": 0,
+          "memoryBytes": 67108864,
+          "outboundRequests": 0,
+          "stateReadBytes": 0,
+          "stateWriteBytes": 0,
+          "wallTimeLimitMillis": 120000
+        },
+        "factoryFuelUpperCeiling": 10000000000,
+        "factoryMemoryUpperCeiling": 67108864,
+        "grants": [
+          {
+            "capability": "latent:runtime/activation@0.1.0",
+            "constraints": {},
+            "operations": [],
+            "policy": "sdk-runtime-policy-0"
+          },
+          {
+            "capability": "latent:clock/monotonic@0.1.0",
+            "constraints": {},
+            "operations": [],
+            "policy": "sdk-runtime-policy-1"
+          },
+          {
+            "capability": "latent:clock/wall@0.1.0",
+            "constraints": {},
+            "operations": [],
+            "policy": "sdk-runtime-policy-2"
+          },
+          {
+            "capability": "latent:random/random@0.1.0",
+            "constraints": {},
+            "operations": [],
+            "policy": "sdk-runtime-policy-3"
+          }
+        ],
+        "ordinaryPublication": "publication:sha256:94ba4a2aec9c640a262d8ef4d8073a20b50f9d39405980db8ea21607c30c4e64",
+        "ordinaryRelease": "sha256:d5005a1d26841d826bdc134d39695b6387e5482a4f9fb8dce659d2137d275983",
+        "runtimeLimits": {
+          "executors": 2,
+          "native": 2,
+          "queuedWork": 16,
+          "results": 2,
+          "tasks": 16,
+          "timers": 2,
+          "waits": 4
+        },
+        "scopes": [
+          {
+            "principal": "alice",
+            "principalKind": "user",
+            "publications": [
+              "publication:sha256:95e47791069b1d7ef3c634af0882e283e642bcdf6d8fae333b1995b08022ce30"
+            ],
+            "services": [
+              "caller"
+            ]
+          },
+          {
+            "principal": "service:5:tests:6:caller",
+            "principalKind": "service",
+            "publications": [
+              "publication:sha256:94ba4a2aec9c640a262d8ef4d8073a20b50f9d39405980db8ea21607c30c4e64"
+            ],
+            "services": [
+              "callee"
+            ]
+          },
+          {
+            "principal": "alice",
+            "principalKind": "user",
+            "publications": [
+              "publication:sha256:94ba4a2aec9c640a262d8ef4d8073a20b50f9d39405980db8ea21607c30c4e64"
+            ],
+            "services": [
+              "caller"
+            ]
+          }
+        ]
+      }
+    ],
+    "factories": [
+      {
+        "observerReset": false,
+        "scenario": "growth"
+      },
+      {
+        "observerReset": false,
+        "scenario": "raised-limit"
+      },
+      {
+        "observerReset": false,
+        "scenario": "initializer"
+      }
+    ],
+    "cases": [
+      {
+        "cap": false,
+        "case": "below-cap-GC",
+        "cpuFuel": 40063437,
+        "effectiveRequestBudget": {
+          "blobReadBytes": 0,
+          "blobWriteBytes": 0,
+          "childCalls": 0,
+          "cpuFuel": 1000000000,
+          "effectCount": 0,
+          "logBytes": 0,
+          "memoryBytes": 67108864,
+          "outboundRequests": 0,
+          "stateReadBytes": 0,
+          "stateWriteBytes": 0,
+          "wallTimeLimitMillis": 120000
+        },
+        "mode": 0,
+        "numericObservation": null,
+        "outboundRequests": 0,
+        "peakMemoryBytes": 4331559,
+        "reportedEffectCount": 0,
+        "resolvedPublication": "publication:sha256:94ba4a2aec9c640a262d8ef4d8073a20b50f9d39405980db8ea21607c30c4e64",
+        "resolvedRelease": "sha256:d5005a1d26841d826bdc134d39695b6387e5482a4f9fb8dce659d2137d275983",
+        "result": {
+          "GC": 1,
+          "beforeGC": 0,
+          "beforeStack": 262144,
+          "checksum": 17756160,
+          "fresh": 1,
+          "liveStack": 655360,
+          "typedResult": "stack|fresh=1|init=3133440|checksum=17756160|before=262144|live=655360|beforeGC=0|gc=1"
+        },
+        "variant": "go-stack-ordinary"
+      },
+      {
+        "cap": true,
+        "case": "growth-cap",
+        "cpuFuel": 45928940,
+        "effectiveRequestBudget": {
+          "blobReadBytes": 0,
+          "blobWriteBytes": 0,
+          "childCalls": 0,
+          "cpuFuel": 1000000000,
+          "effectCount": 0,
+          "logBytes": 0,
+          "memoryBytes": 67108864,
+          "outboundRequests": 0,
+          "stateReadBytes": 0,
+          "stateWriteBytes": 0,
+          "wallTimeLimitMillis": 120000
+        },
+        "mode": 1,
+        "numericObservation": {
+          "ambiguous": false,
+          "engineFrameCap": 16,
+          "frames": [
+            {
+              "function": 1392,
+              "functionOffset": 7,
+              "module": 0,
+              "moduleOffset": 1296136
+            },
+            {
+              "function": 704,
+              "functionOffset": 45,
+              "module": 0,
+              "moduleOffset": 692585
+            },
+            {
+              "function": 958,
+              "functionOffset": 3366,
+              "module": 0,
+              "moduleOffset": 961349
+            },
+            {
+              "function": 1397,
+              "functionOffset": 292,
+              "module": 0,
+              "moduleOffset": 1296662
+            },
+            {
+              "function": 1398,
+              "functionOffset": 13,
+              "module": 0,
+              "moduleOffset": 1296692
+            },
+            {
+              "function": 1735,
+              "functionOffset": 126,
+              "module": 0,
+              "moduleOffset": 1604796
+            },
+            {
+              "function": 1735,
+              "functionOffset": 628,
+              "module": 0,
+              "moduleOffset": 1605298
+            },
+            {
+              "function": 1438,
+              "functionOffset": 45,
+              "module": 0,
+              "moduleOffset": 1305331
+            },
+            {
+              "function": 1745,
+              "functionOffset": 73,
+              "module": 0,
+              "moduleOffset": 1609050
+            },
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "mayBeTruncated": false,
+          "missingBacktrace": false,
+          "observedErrors": 1,
+          "observedFrames": 9,
+          "trapKind": "unreachable-code"
+        },
+        "outboundRequests": 0,
+        "peakMemoryBytes": 5379208,
+        "reportedEffectCount": 0,
+        "resolvedPublication": "publication:sha256:94ba4a2aec9c640a262d8ef4d8073a20b50f9d39405980db8ea21607c30c4e64",
+        "resolvedRelease": "sha256:d5005a1d26841d826bdc134d39695b6387e5482a4f9fb8dce659d2137d275983",
+        "result": {
+          "attribution": "actual-private-v7-cap-frame",
+          "code": "GuestTrap"
+        },
+        "variant": "go-stack-ordinary"
+      },
+      {
+        "cap": false,
+        "case": "fresh-after-growth",
+        "cpuFuel": 40061902,
+        "effectiveRequestBudget": {
+          "blobReadBytes": 0,
+          "blobWriteBytes": 0,
+          "childCalls": 0,
+          "cpuFuel": 1000000000,
+          "effectCount": 0,
+          "logBytes": 0,
+          "memoryBytes": 67108864,
+          "outboundRequests": 0,
+          "stateReadBytes": 0,
+          "stateWriteBytes": 0,
+          "wallTimeLimitMillis": 120000
+        },
+        "mode": 0,
+        "numericObservation": null,
+        "outboundRequests": 0,
+        "peakMemoryBytes": 4331595,
+        "reportedEffectCount": 0,
+        "resolvedPublication": "publication:sha256:94ba4a2aec9c640a262d8ef4d8073a20b50f9d39405980db8ea21607c30c4e64",
+        "resolvedRelease": "sha256:d5005a1d26841d826bdc134d39695b6387e5482a4f9fb8dce659d2137d275983",
+        "result": {
+          "GC": 1,
+          "beforeGC": 0,
+          "beforeStack": 262144,
+          "checksum": 17756160,
+          "fresh": 1,
+          "liveStack": 655360,
+          "typedResult": "stack|fresh=1|init=3133440|checksum=17756160|before=262144|live=655360|beforeGC=0|gc=1"
+        },
+        "variant": "go-stack-ordinary"
+      },
+      {
+        "cap": true,
+        "case": "raised-limit-cap",
+        "cpuFuel": 45922564,
+        "effectiveRequestBudget": {
+          "blobReadBytes": 0,
+          "blobWriteBytes": 0,
+          "childCalls": 0,
+          "cpuFuel": 1000000000,
+          "effectCount": 0,
+          "logBytes": 0,
+          "memoryBytes": 67108864,
+          "outboundRequests": 0,
+          "stateReadBytes": 0,
+          "stateWriteBytes": 0,
+          "wallTimeLimitMillis": 120000
+        },
+        "mode": 2,
+        "numericObservation": {
+          "ambiguous": false,
+          "engineFrameCap": 16,
+          "frames": [
+            {
+              "function": 1392,
+              "functionOffset": 7,
+              "module": 0,
+              "moduleOffset": 1296136
+            },
+            {
+              "function": 704,
+              "functionOffset": 45,
+              "module": 0,
+              "moduleOffset": 692585
+            },
+            {
+              "function": 958,
+              "functionOffset": 3366,
+              "module": 0,
+              "moduleOffset": 961349
+            },
+            {
+              "function": 1397,
+              "functionOffset": 292,
+              "module": 0,
+              "moduleOffset": 1296662
+            },
+            {
+              "function": 1398,
+              "functionOffset": 13,
+              "module": 0,
+              "moduleOffset": 1296692
+            },
+            {
+              "function": 1735,
+              "functionOffset": 126,
+              "module": 0,
+              "moduleOffset": 1604796
+            },
+            {
+              "function": 1735,
+              "functionOffset": 628,
+              "module": 0,
+              "moduleOffset": 1605298
+            },
+            {
+              "function": 1438,
+              "functionOffset": 45,
+              "module": 0,
+              "moduleOffset": 1305331
+            },
+            {
+              "function": 1745,
+              "functionOffset": 73,
+              "module": 0,
+              "moduleOffset": 1609050
+            },
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "mayBeTruncated": false,
+          "missingBacktrace": false,
+          "observedErrors": 1,
+          "observedFrames": 9,
+          "trapKind": "unreachable-code"
+        },
+        "outboundRequests": 0,
+        "peakMemoryBytes": 5379244,
+        "reportedEffectCount": 0,
+        "resolvedPublication": "publication:sha256:94ba4a2aec9c640a262d8ef4d8073a20b50f9d39405980db8ea21607c30c4e64",
+        "resolvedRelease": "sha256:d5005a1d26841d826bdc134d39695b6387e5482a4f9fb8dce659d2137d275983",
+        "result": {
+          "attribution": "actual-private-v7-cap-frame",
+          "code": "GuestTrap"
+        },
+        "variant": "go-stack-ordinary"
+      },
+      {
+        "cap": false,
+        "case": "fresh-after-raised-limit",
+        "cpuFuel": 40051601,
+        "effectiveRequestBudget": {
+          "blobReadBytes": 0,
+          "blobWriteBytes": 0,
+          "childCalls": 0,
+          "cpuFuel": 1000000000,
+          "effectCount": 0,
+          "logBytes": 0,
+          "memoryBytes": 67108864,
+          "outboundRequests": 0,
+          "stateReadBytes": 0,
+          "stateWriteBytes": 0,
+          "wallTimeLimitMillis": 120000
+        },
+        "mode": 0,
+        "numericObservation": null,
+        "outboundRequests": 0,
+        "peakMemoryBytes": 4331631,
+        "reportedEffectCount": 0,
+        "resolvedPublication": "publication:sha256:94ba4a2aec9c640a262d8ef4d8073a20b50f9d39405980db8ea21607c30c4e64",
+        "resolvedRelease": "sha256:d5005a1d26841d826bdc134d39695b6387e5482a4f9fb8dce659d2137d275983",
+        "result": {
+          "GC": 1,
+          "beforeGC": 0,
+          "beforeStack": 262144,
+          "checksum": 17756160,
+          "fresh": 1,
+          "liveStack": 655360,
+          "typedResult": "stack|fresh=1|init=3133440|checksum=17756160|before=262144|live=655360|beforeGC=0|gc=1"
+        },
+        "variant": "go-stack-ordinary"
+      },
+      {
+        "cap": true,
+        "case": "initializer-cap",
+        "cpuFuel": 41307445,
+        "effectiveRequestBudget": {
+          "blobReadBytes": 0,
+          "blobWriteBytes": 0,
+          "childCalls": 0,
+          "cpuFuel": 1000000000,
+          "effectCount": 0,
+          "logBytes": 0,
+          "memoryBytes": 67108864,
+          "outboundRequests": 0,
+          "stateReadBytes": 0,
+          "stateWriteBytes": 0,
+          "wallTimeLimitMillis": 120000
+        },
+        "mode": 0,
+        "numericObservation": {
+          "ambiguous": false,
+          "engineFrameCap": 16,
+          "frames": [
+            {
+              "function": 1392,
+              "functionOffset": 7,
+              "module": 0,
+              "moduleOffset": 1296136
+            },
+            {
+              "function": 704,
+              "functionOffset": 45,
+              "module": 0,
+              "moduleOffset": 692585
+            },
+            {
+              "function": 958,
+              "functionOffset": 3366,
+              "module": 0,
+              "moduleOffset": 961349
+            },
+            {
+              "function": 1397,
+              "functionOffset": 292,
+              "module": 0,
+              "moduleOffset": 1296662
+            },
+            {
+              "function": 1398,
+              "functionOffset": 13,
+              "module": 0,
+              "moduleOffset": 1296692
+            },
+            {
+              "function": 1735,
+              "functionOffset": 126,
+              "module": 0,
+              "moduleOffset": 1604796
+            },
+            {
+              "function": 1735,
+              "functionOffset": 628,
+              "module": 0,
+              "moduleOffset": 1605298
+            },
+            {
+              "function": 1438,
+              "functionOffset": 45,
+              "module": 0,
+              "moduleOffset": 1305331
+            },
+            {
+              "function": 1745,
+              "functionOffset": 73,
+              "module": 0,
+              "moduleOffset": 1609050
+            },
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "mayBeTruncated": false,
+          "missingBacktrace": false,
+          "observedErrors": 1,
+          "observedFrames": 9,
+          "trapKind": "unreachable-code"
+        },
+        "outboundRequests": 0,
+        "peakMemoryBytes": 5379238,
+        "reportedEffectCount": 0,
+        "resolvedPublication": "publication:sha256:95e47791069b1d7ef3c634af0882e283e642bcdf6d8fae333b1995b08022ce30",
+        "resolvedRelease": "sha256:14524727537959d5831b6bc3691db2ff3271a148649010a030cf69c26e40a397",
+        "result": {
+          "attribution": "actual-private-v7-cap-frame",
+          "code": "GuestTrap"
+        },
+        "variant": "go-stack-initializer-cap"
+      },
+      {
+        "cap": false,
+        "case": "fresh-after-initializer",
+        "cpuFuel": 40057459,
+        "effectiveRequestBudget": {
+          "blobReadBytes": 0,
+          "blobWriteBytes": 0,
+          "childCalls": 0,
+          "cpuFuel": 1000000000,
+          "effectCount": 0,
+          "logBytes": 0,
+          "memoryBytes": 67108864,
+          "outboundRequests": 0,
+          "stateReadBytes": 0,
+          "stateWriteBytes": 0,
+          "wallTimeLimitMillis": 120000
+        },
+        "mode": 0,
+        "numericObservation": null,
+        "outboundRequests": 0,
+        "peakMemoryBytes": 4331625,
+        "reportedEffectCount": 0,
+        "resolvedPublication": "publication:sha256:94ba4a2aec9c640a262d8ef4d8073a20b50f9d39405980db8ea21607c30c4e64",
+        "resolvedRelease": "sha256:d5005a1d26841d826bdc134d39695b6387e5482a4f9fb8dce659d2137d275983",
+        "result": {
+          "GC": 1,
+          "beforeGC": 0,
+          "beforeStack": 262144,
+          "checksum": 17756160,
+          "fresh": 1,
+          "liveStack": 655360,
+          "typedResult": "stack|fresh=1|init=3133440|checksum=17756160|before=262144|live=655360|beforeGC=0|gc=1"
+        },
+        "variant": "go-stack-ordinary"
+      }
+    ],
+    "owners": [
+      {
+        "case": "below-cap-GC",
+        "instances": 0,
+        "kernelRetirementQualified": false,
+        "newStores": 1,
+        "reservations": 0,
+        "reservedFuel": 0,
+        "reservedMemory": 0,
+        "stores": 0
+      },
+      {
+        "case": "growth-cap",
+        "instances": 0,
+        "kernelRetirementQualified": false,
+        "newStores": 1,
+        "reservations": 0,
+        "reservedFuel": 0,
+        "reservedMemory": 0,
+        "stores": 0
+      },
+      {
+        "case": "fresh-after-growth",
+        "instances": 0,
+        "kernelRetirementQualified": false,
+        "newStores": 1,
+        "reservations": 0,
+        "reservedFuel": 0,
+        "reservedMemory": 0,
+        "stores": 0
+      },
+      {
+        "case": "raised-limit-cap",
+        "instances": 0,
+        "kernelRetirementQualified": false,
+        "newStores": 1,
+        "reservations": 0,
+        "reservedFuel": 0,
+        "reservedMemory": 0,
+        "stores": 0
+      },
+      {
+        "case": "fresh-after-raised-limit",
+        "instances": 0,
+        "kernelRetirementQualified": false,
+        "newStores": 1,
+        "reservations": 0,
+        "reservedFuel": 0,
+        "reservedMemory": 0,
+        "stores": 0
+      },
+      {
+        "case": "initializer-cap",
+        "instances": 0,
+        "kernelRetirementQualified": false,
+        "newStores": 1,
+        "reservations": 0,
+        "reservedFuel": 0,
+        "reservedMemory": 0,
+        "stores": 0
+      },
+      {
+        "case": "fresh-after-initializer",
+        "instances": 0,
+        "kernelRetirementQualified": false,
+        "newStores": 1,
+        "reservations": 0,
+        "reservedFuel": 0,
+        "reservedMemory": 0,
+        "stores": 0
+      }
+    ],
+    "repoint": {
+      "newPublication": "publication:sha256:94ba4a2aec9c640a262d8ef4d8073a20b50f9d39405980db8ea21607c30c4e64",
+      "newRelease": "sha256:d5005a1d26841d826bdc134d39695b6387e5482a4f9fb8dce659d2137d275983",
+      "oldPublication": "publication:sha256:95e47791069b1d7ef3c634af0882e283e642bcdf6d8fae333b1995b08022ce30",
+      "oldRelease": "sha256:14524727537959d5831b6bc3691db2ff3271a148649010a030cf69c26e40a397",
+      "originalOwnersZeroBeforeChange": true,
+      "retryFailedInitializer": false,
+      "sameBackend": true
+    },
+    "completion": {
+      "attempts": 7,
+      "capFrames": 3,
+      "components": 2,
+      "effectiveFuel": 1000000000,
+      "effectiveMemory": 67108864,
+      "factories": 3,
+      "freshAfterFailures": 3,
+      "kernelRetirementQualified": false,
+      "observerReset": false,
+      "queuedWork": 16,
+      "wholeGoCostQualification": false
+    }
+  },
+  "sourceUnchanged": true,
+  "commands": [
+    {
+      "label": "rustc",
+      "seconds": 0.067402,
+      "exitCode": 0,
+      "stdoutDigest": "sha256:4ad84f16acc2f3bdcfbc7b0788f1e74a4e649b962154a585b8f8d0b28eb0dd06",
+      "stderrDigest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "contracts",
+      "seconds": 62.221478,
+      "exitCode": 0,
+      "stdoutDigest": "sha256:ee646495e1fa59ed4c99d95db15e897e6e410c8ecdd38c53f88cc3d857e6ce6c",
+      "stderrDigest": "sha256:3eb2f9be90807bb963e5ce62c3ca7cce0c59a5fa24bcf32b04efe6a1f88fa6f5"
+    },
+    {
+      "label": "build-ordinary",
+      "seconds": 15.236548,
+      "exitCode": 0,
+      "stdoutDigest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrDigest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "build-initializer-cap",
+      "seconds": 15.465012,
+      "exitCode": 0,
+      "stdoutDigest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrDigest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "cargo",
+      "seconds": 282.64547,
+      "exitCode": 0,
+      "stdoutDigest": "sha256:dfaba8e7af18d37fbcd9e0fede7d8f745e5301db7ec6e280fbee5a8356f146fb",
+      "stderrDigest": "sha256:1c7bac753c451afb52bfe64de46981467e7e3e15167f20d287110e41863cbaf4"
+    },
+    {
+      "label": "list",
+      "seconds": 0.041695,
+      "exitCode": 0,
+      "stdoutDigest": "sha256:68f20a9d19b4d10ceb29c28a5640d7681f5c63e5832e41fe639d6cc65ecedf78",
+      "stderrDigest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "ignored",
+      "seconds": 0.040337,
+      "exitCode": 0,
+      "stdoutDigest": "sha256:68f20a9d19b4d10ceb29c28a5640d7681f5c63e5832e41fe639d6cc65ecedf78",
+      "stderrDigest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "native",
+      "seconds": 46.666221,
+      "exitCode": 0,
+      "stdoutDigest": "sha256:32ea0dff7df899d1c6eda014e55ea74b75bac16964ffbf2fb47d85ea55835628",
+      "stderrDigest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "nativeExecutableDigest": "sha256:70d0ba502bc6203dab5bd233566593d217ff1bb2668edf228b8c91a5d69f087f",
+  "rawQualificationSchema": "latent.go.stack-ceiling.runtime.v1",
+  "run": {
+    "id": 40087350864,
+    "job": 120852883384,
+    "event": "push",
+    "conclusion": "success",
+    "url": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40087350864"
+  },
+  "artifact": {
+    "id": 12557342920,
+    "bytes": 4336364,
+    "sha256": "ced0b991fdca512f2dd98e677488eae88f1bf8dc004250c2cd50feca90e796a6",
+    "crcVerifiedMembers": 405,
+    "selectedRetainedMemberIdentities": [
+      {
+        "name": "receipt.json",
+        "bytes": 44458,
+        "sha256": "efc64f60fe9a18875554a5be2d5695ae6e7fcb1263cd40e4d0dc8e1f5dcaee85"
+      },
+      {
+        "name": "native-inputs.json",
+        "bytes": 1068226,
+        "sha256": "02b703649ba81103f1758aa0257722d47a5072cbe34aa3474c95e989beab0cfa"
+      },
+      {
+        "name": "native.stdout.log",
+        "bytes": 20630,
+        "sha256": "32ea0dff7df899d1c6eda014e55ea74b75bac16964ffbf2fb47d85ea55835628"
+      },
+      {
+        "name": "native.stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "cargo.stdout.log",
+        "bytes": 310035,
+        "sha256": "dfaba8e7af18d37fbcd9e0fede7d8f745e5301db7ec6e280fbee5a8356f146fb"
+      },
+      {
+        "name": "cargo.stderr.log",
+        "bytes": 14143,
+        "sha256": "1c7bac753c451afb52bfe64de46981467e7e3e15167f20d287110e41863cbaf4"
+      },
+      {
+        "name": "contracts.stdout.log",
+        "bytes": 81701,
+        "sha256": "ee646495e1fa59ed4c99d95db15e897e6e410c8ecdd38c53f88cc3d857e6ce6c"
+      },
+      {
+        "name": "contracts.stderr.log",
+        "bytes": 4389,
+        "sha256": "3eb2f9be90807bb963e5ce62c3ca7cce0c59a5fa24bcf32b04efe6a1f88fa6f5"
+      },
+      {
+        "name": "reference/logs/01-compile-only.stdout.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "reference/logs/01-compile-only.stderr.txt",
+        "bytes": 38513,
+        "sha256": "6e88d55d4663a42d3216c870efab0d09f22509c5c499149d849e682d206f216d"
+      },
+      {
+        "name": "reference/project/main.go",
+        "bytes": 854,
+        "sha256": "aec1cc9e6d1642642494532125af566407e7c115b7d95920936da9d1fe8d8d80"
+      },
+      {
+        "name": "reference/not-executed.wasm",
+        "bytes": 1974549,
+        "sha256": "4bc8d7f52314e550cee5599e5b4c757c88f5b6e3dac4b6374cecb52299152db2"
+      },
+      {
+        "name": "go-stack-ordinary/component.wasm",
+        "bytes": 2614044,
+        "sha256": "d5005a1d26841d826bdc134d39695b6387e5482a4f9fb8dce659d2137d275983"
+      },
+      {
+        "name": "go-stack-ordinary/BUILD-COMPLETE.json",
+        "bytes": 2487,
+        "sha256": "08fd4db64472e0e6dd20e32bd9f9e47c859e83c4f720c4b2da53967f98a5ec3b"
+      },
+      {
+        "name": "go-stack-ordinary/build-observation.json",
+        "bytes": 3016,
+        "sha256": "19690f9bf4342a26ec2bc50a5ba797f7bca0cae05d633497ff66cc0731194515"
+      },
+      {
+        "name": "go-stack-ordinary/source-inputs.json",
+        "bytes": 16522,
+        "sha256": "4ecb2fe916d47304a4f65605c2a5ffb2181e0f1ef314468dc2249b3b11c3a2b2"
+      },
+      {
+        "name": "go-stack-ordinary/recipe-inputs.json",
+        "bytes": 8197,
+        "sha256": "43ce05f497bc8934d78ac9729f6e0c4444ed036f02defc2ec0682ec09802553f"
+      },
+      {
+        "name": "go-stack-ordinary/standard-runtime-selection.json",
+        "bytes": 3038,
+        "sha256": "4d55d7aed174f0bbe23e8499c560cf54eee4f198105ee8ff255194f7e18b79af"
+      },
+      {
+        "name": "go-stack-ordinary/go-runtime-transformations.json",
+        "bytes": 9027,
+        "sha256": "d6a5bd5a81f719df8354fcd77f88300921ac40608249ae0aba3e13dc66c2bfea"
+      },
+      {
+        "name": "go-stack-ordinary/package/manifest.json",
+        "bytes": 2757,
+        "sha256": "0e971da6e2d619ef72bdf67ccf0c66a8868c1de7ae9e4981d470a9160d942e7b"
+      },
+      {
+        "name": "go-stack-ordinary/package/layers/component.wasm",
+        "bytes": 2614044,
+        "sha256": "d5005a1d26841d826bdc134d39695b6387e5482a4f9fb8dce659d2137d275983"
+      },
+      {
+        "name": "go-stack-ordinary/package/layers/capsule.json",
+        "bytes": 1021,
+        "sha256": "89f3a020191d3a668da963b84d0fed7bf3672c8d83a2082018731bdcce6cd5a4"
+      },
+      {
+        "name": "go-stack-initializer-cap/component.wasm",
+        "bytes": 2614044,
+        "sha256": "14524727537959d5831b6bc3691db2ff3271a148649010a030cf69c26e40a397"
+      },
+      {
+        "name": "go-stack-initializer-cap/BUILD-COMPLETE.json",
+        "bytes": 2485,
+        "sha256": "29ab655e48f84ab556661ddf3a0096c5596bef10911b0503de0f0d9c7e0a4df3"
+      },
+      {
+        "name": "go-stack-initializer-cap/build-observation.json",
+        "bytes": 3023,
+        "sha256": "96ced4fb64909cc1c37b05c4e726a9042ec873512e008aeb39053c90a1ae2c13"
+      },
+      {
+        "name": "go-stack-initializer-cap/source-inputs.json",
+        "bytes": 16522,
+        "sha256": "fcf8c461b2354e4bfd2ad41bded2f235f1f698ef13a4b17c0562e6717fad6bed"
+      },
+      {
+        "name": "go-stack-initializer-cap/recipe-inputs.json",
+        "bytes": 8197,
+        "sha256": "43ce05f497bc8934d78ac9729f6e0c4444ed036f02defc2ec0682ec09802553f"
+      },
+      {
+        "name": "go-stack-initializer-cap/standard-runtime-selection.json",
+        "bytes": 3038,
+        "sha256": "f028c158a403172fe4a4c0020a9deac3af7252e585ece445350bb57703fe1388"
+      },
+      {
+        "name": "go-stack-initializer-cap/go-runtime-transformations.json",
+        "bytes": 9027,
+        "sha256": "956d8d6b98dc19742c9abe180e8765392498adf69077851fe1c11a57779508cb"
+      },
+      {
+        "name": "go-stack-initializer-cap/package/manifest.json",
+        "bytes": 2757,
+        "sha256": "a3c4634ed5da7f5c0da44947c788a74f27dbf70085bbde10a6219c1f5b00467f"
+      },
+      {
+        "name": "go-stack-initializer-cap/package/layers/component.wasm",
+        "bytes": 2614044,
+        "sha256": "14524727537959d5831b6bc3691db2ff3271a148649010a030cf69c26e40a397"
+      },
+      {
+        "name": "go-stack-initializer-cap/package/layers/capsule.json",
+        "bytes": 1021,
+        "sha256": "db5fd36ca584b1af19c0f760639eb3a9fe95dcb6f568fa7800586b924a3641b9"
+      }
+    ]
+  },
+  "sourceInventory": {
+    "member": {
+      "name": "native-inputs.json",
+      "bytes": 1068226,
+      "sha256": "02b703649ba81103f1758aa0257722d47a5072cbe34aa3474c95e989beab0cfa"
+    },
+    "exactGitMaterials": 6425,
+    "comparisonRevision": "f7df6c1b6da0026b1fc0ab3653f2342f4edf77fd",
+    "digest": "sha256:02b703649ba81103f1758aa0257722d47a5072cbe34aa3474c95e989beab0cfa"
+  },
+  "sourceControls": {
+    "actualOwningPassed": 4,
+    "names": [
+      "test_actual_reader_requires_seven_attempts_and_preserves_bounded_truncation",
+      "test_generic_trap_wrong_leaf_grant_budget_and_retirement_are_refused",
+      "test_missing_duplicate_unknown_float_and_unexecuted_case_cannot_qualify",
+      "test_normal_capture_and_actual_compile_facade_reject_detached_inputs_first"
+    ]
+  },
+  "limitsScope": {
+    "perSingleGoStackBytes": 1048576,
+    "effectivePackageAndRequestFuel": 1000000000,
+    "factoryGlobalFuelUpperCeiling": 10000000000,
+    "effectiveMemoryBytes": 67108864,
+    "wallTimeLimitMillis": 120000,
+    "v6QueuedWorkBaseline": 16,
+    "earlierV5NetworkingQueuedWorkUnchanged": 2
+  },
+  "limitations": [
+    "This is the finite v7 single-stack and seven-attempt signed in-process qualification; it does not complete #742 criterion5 or the whole ticket.",
+    "Actual cap attribution requires the original numeric private-function frame and source-bound embedding origin; generic GuestTrap alone never qualifies.",
+    "Each captured cap trace had nine frames and was not truncated; the observer remains bounded to sixteen frames and was not reset.",
+    "Store/instance/reservation retirement is user-space evidence, not kernel final-free qualification.",
+    "Normal build observations retain hermetic=false, reproducibility=not-checked and dependencyCompleteness=declared-inputs-incomplete.",
+    "Source-matched native tool/executable digests are observations; native executable bytes are not retained in this artifact.",
+    "Signing/admission used the in-process maintained fixture, not released standalone operator delivery.",
+    "The 22184-byte compile-only reference was not executed and alone is not final component proof.",
+    "Reported peak memory and Go StackInuse are observations, not independent aggregate stack/heap/GC/native retained-byte upper bounds.",
+    "All seven earlier owning runs remain failed historical observations; the passing eighth run does not relabel them."
+  ]
+}

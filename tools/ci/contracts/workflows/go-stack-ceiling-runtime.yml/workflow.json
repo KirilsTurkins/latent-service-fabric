@@ -1,0 +1,27 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "go-stack-ceiling-runtime-${{ github.ref }}"
+    },
+    "name": "Signed Go v7 stack ceiling and initializer retirement",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/go-stack-ceiling-v7-20261024"
+        ]
+      },
+      "workflow_dispatch": null
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "runtime"
+  ],
+  "reviewReason": "One owning two-component seven-attempt Go v7 lane, inherited pins and deadlines, mandatory four new controls and retained evidence",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/go-stack-ceiling-runtime.yml"
+}
