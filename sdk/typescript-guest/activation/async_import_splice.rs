@@ -46,9 +46,10 @@ pub fn validate_disposer_table_append(module:&Module<'_>)->Result<()> {
     Ok(())
 }
 
-// Resolve the original compiler-produced resource import identity, never a
-// resource-name suffix, integer type ID or guessed function-table position.
-fn resource_drop_function(module:&Module<'_>,key:&(String,String))->Result<Option<FunctionID>> {
+// Resolve the original compiler-produced import identity, never a mixed import
+// ordinal, resource-name suffix or guessed function-table position. Both the
+// normal binding and the resource disposer must use this stable Functions ID.
+pub fn import_function(module:&Module<'_>,key:&(String,String))->Result<Option<FunctionID>> {
     let mut selected=None;
     // Wirm 5's imports.get_func returns a mixed import-section ordinal. Calls
     // require the stable Functions index, especially after new imports append
@@ -59,7 +60,7 @@ fn resource_drop_function(module:&Module<'_>,key:&(String,String))->Result<Optio
         let FuncKind::Import(import)=function.kind() else {continue;};
         let original=module.imports.get(import.import_id);
         if original.module.as_ref()==key.0.as_str() && original.name.as_ref()==key.1.as_str() {
-            anyhow::ensure!(selected.is_none(),"unique-original-resource-drop-function-required");
+            anyhow::ensure!(selected.is_none(),"unique-original-import-function-required");
             selected=Some(id);
         }
     }
@@ -84,7 +85,7 @@ pub fn resource_disposer(module:&mut Module<'_>, descriptor:&Descriptor,
                     anyhow::ensure!(matches!(signature.params.as_slice(),[CoreTy::I32]) && signature.ret.is_none()
                         && !signature.retptr && !signature.paramptr && signature.retsize==0,
                         "exact-original-resource-drop-signature-required");
-                    let function=if let Some(function)=resource_drop_function(module,key)? {
+                    let function=if let Some(function)=import_function(module,key)? {
                         function
                     } else {
                         let ty=module.types.add_func_type(&[DataType::I32],&[]);
@@ -429,6 +430,20 @@ mod tests {
         for _ in 0..2 {
             disposers.push(resource_disposer(&mut module,&actual_owned_descriptor(),&[original_drop_import()]).unwrap());
         }
+        // A later ordinary synchronous binding sees the drop import that the
+        // first async disposer inserted. Its mixed import ordinal differs from
+        // the stable Functions ID because the original module has locals.
+        let (namespace,name,_,_)=original_drop_import();
+        let key=(namespace.clone(),name.clone());
+        let normal_import=import_function(&module,&key).unwrap().unwrap();
+        assert_ne!(module.imports.get_func(namespace,name).unwrap(),normal_import);
+        let count=module.num_import_func();
+        assert_eq!(import_function(&module,&key).unwrap(),Some(normal_import));
+        assert_eq!(module.num_import_func(),count);
+        let mut normal_binding=FunctionBuilder::new(&[],&[]);
+        normal_binding.i32_const(7);
+        normal_binding.call(normal_import);
+        disposers.push(normal_binding.finish_module(&mut module));
         for fid in disposers {
             let function=module.functions.get(fid).unwrap_local().unwrap();
             let calls=function.body.instructions.get_ops().iter().filter_map(|op|match op {
@@ -456,7 +471,7 @@ mod tests {
                 }
             }
         }
-        assert_eq!(calls,2);
+        assert_eq!(calls,3);
     }
     #[test]
     fn missing_ambiguous_or_wrong_signature_drop_mapping_is_refused() {
