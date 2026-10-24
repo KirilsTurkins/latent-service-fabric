@@ -12,5 +12,6 @@ if __name__=='__main__':
     parser.add_argument('--output',required=True,type=Path)
     parser.add_argument('--tools',required=True,type=Path)
     parser.add_argument('--prepared-products',required=True,type=Path)
+    parser.add_argument('--profile',choices=('canonical-own','late-backing'),default='canonical-own')
     args=parser.parse_args()
-    print(json.dumps(build(args.output,args.tools,args.prepared_products)))
+    print(json.dumps(build(args.output,args.tools,args.prepared_products,profile=args.profile)))

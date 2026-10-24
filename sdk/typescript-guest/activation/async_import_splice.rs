@@ -67,6 +67,17 @@ pub fn import_function(module:&Module<'_>,key:&(String,String))->Result<Option<F
     Ok(selected)
 }
 
+fn backing_free(module:&Module<'_>)->Result<FunctionID> {
+    let id=exported(module,"lsf_import_free_backing")?;
+    let function=module.functions.get_fn_by_id(id).context("original-backing-free-function-required")?;
+    anyhow::ensure!(!module.functions.is_deleted(id) && matches!(function.kind(),FuncKind::Local(_)),
+        "original-local-backing-free-required");
+    let ty=module.types.get(function.get_type_id()).context("original-backing-free-type-required")?;
+    anyhow::ensure!(ty.params()?.as_slice()==[DataType::I32] && ty.results()?.is_empty(),
+        "original-backing-free-signature-required");
+    Ok(id)
+}
+
 pub fn resource_disposer(module:&mut Module<'_>, descriptor:&Descriptor,
     imports:&[(String,String,CoreFn,Option<i32>)])->Result<FunctionID> {
     let mut drops=std::collections::BTreeMap::new();
@@ -96,22 +107,35 @@ pub fn resource_disposer(module:&mut Module<'_>, descriptor:&Descriptor,
                 ResourceDisposal::Variant{cases,..} => for case in cases {
                     supported &= resolve(module,case,imports,drops)?;
                 },
-                ResourceDisposal::List{stride,elements,..} => {
-                    anyhow::ensure!(*stride>0,"owned-list-element-must-have-storage");
+                ResourceDisposal::List{stride,align,elements,..} => {
+                    anyhow::ensure!(align.is_power_of_two(),"canonical-list-alignment-required");
+                    anyhow::ensure!(*stride>0 || elements.is_empty(),"zero-stride-result-cannot-own-children");
                     supported &= resolve(module,elements,imports,drops)?;
                 },
+                ResourceDisposal::String{..} => {},
                 _ => supported=false,
             }
         }
         Ok(supported)
     }
     let supported=resolve(module,&descriptor.disposal,imports,&mut drops)?;
+    fn has_backing(plan:&[ResourceDisposal])->bool {
+        plan.iter().any(|node|match node {
+            ResourceDisposal::String{..} | ResourceDisposal::List{..}=>true,
+            ResourceDisposal::Variant{cases,..}=>cases.iter().any(|case|has_backing(case)),
+            _=>false,
+        })
+    }
+    let free=if has_backing(&descriptor.disposal) {
+        Some(backing_free(module)?)
+    } else {None};
     let mut function=FunctionBuilder::new(&[DataType::I32],&[DataType::I32]);
     let base=LocalID(0);
     if supported {
-        // Validate active tags/list address arithmetic before the first drop.
-        disposal_walk(&mut function,&descriptor.disposal,base,&drops,true);
-        disposal_walk(&mut function,&descriptor.disposal,base,&drops,false);
+        // No destructor/free occurs until the COMPLETE active tree validates.
+        fixed_range(&mut function,base,0,u64::from(descriptor.result_bytes));
+        disposal_walk(&mut function,&descriptor.disposal,base,&drops,free,true);
+        disposal_walk(&mut function,&descriptor.disposal,base,&drops,free,false);
     }
     function.i32_const(i32::from(supported));
     Ok(function.finish_module(module))
@@ -120,15 +144,26 @@ pub fn resource_disposer(module:&mut Module<'_>, descriptor:&Descriptor,
 fn refuse(function:&mut FunctionBuilder<'_>) {
     function.i32_const(0);function.return_stmt();
 }
+fn fixed_range(function:&mut FunctionBuilder<'_>,base:LocalID,offset:u64,bytes:u64) {
+    function.local_get(base);function.i64_extend_i32_u();
+    function.i64_const(i64::try_from(offset+bytes).expect("canonical-fixed-range-width"));
+    function.i64_add();
+    function.inject(Operator::MemorySize{mem:0});function.i64_extend_i32_u();
+    function.i64_const(65536);function.i64_mul();function.i64_gt_u();
+    function.if_stmt(BlockType::Empty);refuse(function);function.end();
+}
 fn disposal_walk(function:&mut FunctionBuilder<'_>,plan:&[ResourceDisposal],base:LocalID,
-    drops:&std::collections::BTreeMap<(String,String),FunctionID>,validate:bool) {
+    drops:&std::collections::BTreeMap<(String,String),FunctionID>,free:Option<FunctionID>,validate:bool) {
     for node in plan {
         match node {
-            ResourceDisposal::Own{offset,drop_import:Some(key),..} => if !validate {
+            ResourceDisposal::Own{offset,drop_import:Some(key),..} => if validate {
+                fixed_range(function,base,u64::from(*offset),4);
+            } else {
                 function.local_get(base);function.i32_load(memory(u64::from(*offset)));
                 function.call(drops[key]);
             },
             ResourceDisposal::Variant{offset,tag_bytes,cases} => {
+                if validate {fixed_range(function,base,u64::from(*offset),u64::from(*tag_bytes));}
                 let tag=function.add_local(DataType::I32);
                 function.local_get(base);
                 match tag_bytes {
@@ -145,38 +180,69 @@ fn disposal_walk(function:&mut FunctionBuilder<'_>,plan:&[ResourceDisposal],base
                 for (index,case) in cases.iter().enumerate() {
                     function.local_get(tag);function.i32_const(index as i32);function.i32_eq();
                     function.if_stmt(BlockType::Empty);
-                    disposal_walk(function,case,base,drops,validate);function.end();
+                    disposal_walk(function,case,base,drops,free,validate);function.end();
                 }
             },
-            ResourceDisposal::List{offset,stride,elements} => {
+            ResourceDisposal::String{offset} => {
+                backing_walk(function,base,*offset,1,1,&[],drops,free,validate);
+            },
+            ResourceDisposal::List{offset,stride,align,elements} => {
+                backing_walk(function,base,*offset,*stride,*align,elements,drops,free,validate);
+            },
+            _ => refuse(function),
+        }
+    }
+}
+
+fn backing_walk(function:&mut FunctionBuilder<'_>,base:LocalID,offset:u32,stride:u32,align:u32,
+    elements:&[ResourceDisposal],drops:&std::collections::BTreeMap<(String,String),FunctionID>,
+    free:Option<FunctionID>,validate:bool) {
+                if validate {fixed_range(function,base,u64::from(offset),8);}
                 let pointer=function.add_local(DataType::I32);
                 let length=function.add_local(DataType::I32);
-                let index=function.add_local(DataType::I32);
-                let element=function.add_local(DataType::I32);
-                function.local_get(base);function.i32_load(memory(u64::from(*offset)));function.local_set(pointer);
-                function.local_get(base);function.i32_load(memory(u64::from(*offset)+4));function.local_set(length);
+                function.local_get(base);function.i32_load(memory(u64::from(offset)));function.local_set(pointer);
+                function.local_get(base);function.i32_load(memory(u64::from(offset)+4));function.local_set(length);
                 if validate {
+                    // A fresh zero-byte canonical allocation is exactly null.
+                    function.local_get(length);function.i32_eqz();
+                    function.i32_const(i32::from(stride==0));function.i32_or();
+                    function.if_stmt(BlockType::Empty);
+                    function.local_get(pointer);function.if_stmt(BlockType::Empty);
+                    refuse(function);function.end();
+                    function.inject(Operator::Else);
+                    function.local_get(pointer);function.i32_eqz();
+                    function.if_stmt(BlockType::Empty);refuse(function);function.end();
+                    function.local_get(pointer);function.i32_const((align-1) as i32);function.i32_and();
+                    function.if_stmt(BlockType::Empty);refuse(function);function.end();
                     function.local_get(pointer);function.i64_extend_i32_u();
                     function.local_get(length);function.i64_extend_i32_u();
-                    function.i64_const(i64::from(*stride));function.i64_mul();function.i64_add();
+                    function.i64_const(i64::from(stride));function.i64_mul();function.i64_add();
                     function.inject(Operator::MemorySize{mem:0});function.i64_extend_i32_u();
                     function.i64_const(65536);function.i64_mul();function.i64_gt_u();
                     function.if_stmt(BlockType::Empty);refuse(function);function.end();
+                    function.end();
                 }
+                // Scalar/zero-stride lists never need a length-driven loop.
+                if !elements.is_empty() {
+                let index=function.add_local(DataType::I32);
+                let element=function.add_local(DataType::I32);
                 function.i32_const(0);function.local_set(index);
                 function.inject(Operator::Block{blockty:wirm::wasmparser::BlockType::Empty});
                 function.inject(Operator::Loop{blockty:wirm::wasmparser::BlockType::Empty});
                 function.local_get(index);function.local_get(length);function.i32_ge_u();
                 function.inject(Operator::BrIf{relative_depth:1});
-                function.local_get(pointer);function.local_get(index);function.i32_const(*stride as i32);
+                function.local_get(pointer);function.local_get(index);function.i32_const(stride as i32);
                 function.i32_mul();function.i32_add();function.local_set(element);
-                disposal_walk(function,elements,element,drops,validate);
+                disposal_walk(function,elements,element,drops,free,validate);
                 function.local_get(index);function.i32_const(1);function.i32_add();function.local_set(index);
                 function.inject(Operator::Br{relative_depth:0});function.end();function.end();
-            },
-            _ => refuse(function),
-        }
-    }
+                }
+                if !validate && stride>0 {
+                    // All children finish BEFORE their original backing block.
+                    function.local_get(length);function.if_stmt(BlockType::Empty);
+                    function.local_get(pointer);function.call(free.expect("resolved-original-backing-free"));
+                    function.end();
+                }
 }
 
 pub fn import_getter_pointer(module:&Module<'_>, getter:FunctionID, sample:FunctionID)
@@ -335,7 +401,7 @@ pub fn synthesize(module:&mut Module<'_>,original:&CoreFn,descriptor:&Descriptor
 mod tests {
     use super::*;
     use std::borrow::Cow;
-    use wasm_encoder::{CodeSection, ConstExpr, ElementSection, Elements, Function,
+    use wasm_encoder::{CodeSection, ConstExpr, DataSection, ElementSection, Elements, ExportSection, ExportKind, Function,
         FunctionSection, GlobalSection, GlobalType, Instruction, MemorySection, MemoryType, RefType, TableSection,
         TableType, TypeSection, ValType};
 
@@ -400,19 +466,177 @@ mod tests {
     }
 
     fn actual_owned_descriptor()->Descriptor {
+        actual_owned_shape("connection")
+    }
+    fn actual_owned_shape(result:&str)->Descriptor {
         let mut resolve=wit_parser::Resolve::default();
+        let text=format!("package tests:imports@1.0.0; interface io {{ resource connection; connect: async func()->{result}; }} world guest {{ import io; }}");
         let package=resolve.push_str(std::path::Path::new("owned.wit"),
-            "package tests:imports@1.0.0; interface io { resource connection; connect: async func()->connection; } world guest { import io; }").unwrap();
+            &text).unwrap();
         let world=resolve.select_world(&[package],Some("guest")).unwrap();
         let interface=resolve.worlds[world].imports.values().find_map(|item|match item {
             wit_parser::WorldItem::Interface{id,..}=>Some(*id),_=>None,
         }).unwrap();
         let mut sizes=wit_parser::SizeAlign::default();sizes.fill(&resolve);
         let mut descriptor=crate::lsf_async::descriptor(&resolve,&resolve.interfaces[interface].functions["connect"],&sizes);
-        let ResourceDisposal::Own{resource,..}=&descriptor.disposal[0] else {panic!()};
-        descriptor.bind_resource_drops(&std::collections::BTreeMap::from([(*resource,
+        let resource=resolve.interfaces[interface].types["connection"];
+        descriptor.bind_resource_drops(&std::collections::BTreeMap::from([(resource,
             ("tests:imports/io@1.0.0".to_owned(),"[resource-drop]connection".to_owned()))]));
         descriptor
+    }
+    fn backing_fixture(wrong_signature:bool)->Vec<u8> {
+        let mut module=wasm_encoder::Module::new();
+        let mut types=TypeSection::new();
+        types.ty().function([ValType::I32],if wrong_signature {vec![ValType::I32]}else {vec![]});
+        module.section(&types);
+        let mut functions=FunctionSection::new();functions.function(0);module.section(&functions);
+        let mut memory=MemorySection::new();
+        memory.memory(MemoryType{minimum:1,maximum:Some(1),memory64:false,shared:false,page_size_log2:None});
+        module.section(&memory);
+        let mut exports=ExportSection::new();exports.export("lsf_import_free_backing",ExportKind::Func,0);
+        module.section(&exports);
+        let mut code=CodeSection::new();let mut free=Function::new([]);
+        if wrong_signature {free.instruction(&Instruction::I32Const(0));}
+        free.instruction(&Instruction::End);code.function(&free);module.section(&code);
+        module.finish()
+    }
+    fn actual_backing_descriptor(result:&str)->Descriptor {
+        let mut resolve=wit_parser::Resolve::default();
+        let text=format!("package tests:imports@1.0.0; world guest {{ import call: async func()->{result}; }}");
+        let package=resolve.push_str(std::path::Path::new("backing.wit"),&text).unwrap();
+        let world=resolve.select_world(&[package],Some("guest")).unwrap();
+        let function=resolve.worlds[world].imports.values().find_map(|item|match item {
+            wit_parser::WorldItem::Function(function)=>Some(function),_=>None,
+        }).unwrap();
+        let mut sizes=wit_parser::SizeAlign::default();sizes.fill(&resolve);
+        crate::lsf_async::descriptor(&resolve,function,&sizes)
+    }
+    #[test]
+    fn actual_backing_disposer_encodes_preflight_and_original_free_call_targets() {
+        for result in ["string","list<u16>","list<option<string>>","list<tuple<>>"] {
+            let bytes=backing_fixture(false);
+            let mut module=Module::parse(&bytes,false,false).unwrap();
+            let id=resource_disposer(&mut module,&actual_backing_descriptor(result),&[]).unwrap();
+            let local=module.functions.get(id).unwrap_local().unwrap();
+            let ops=local.body.instructions.get_ops();
+            let calls=ops.iter().enumerate().filter_map(|(index,op)|match op {
+                Operator::Call{function_index}=>Some((index,*function_index)),_=>None,
+            }).collect::<Vec<_>>();
+            if result=="list<tuple<>>" {
+                assert!(calls.is_empty());
+                assert!(!ops.iter().any(|op|matches!(op,Operator::Loop{..})));
+            } else {
+                let first=calls.first().unwrap().0;
+                assert!(ops[..first].iter().any(|op|matches!(op,Operator::I64GtU)));
+                assert!(ops[..first].iter().any(|op|matches!(op,Operator::Return)));
+                assert!(calls.iter().all(|(_,target)|*target==0));
+                if result=="list<u16>" {
+                    assert!(!ops.iter().any(|op|matches!(op,Operator::Loop{..})));
+                }
+            }
+            let encoded=module.encode().unwrap();
+            wirm::wasmparser::Validator::new().validate_all(&encoded).unwrap();
+            let reparsed=Module::parse(&encoded,false,false).unwrap();
+            let original=backing_free(&reparsed).unwrap();
+            for function in reparsed.functions.iter() {
+                let FuncKind::Local(local)=function.kind() else {continue;};
+                for op in local.body.instructions.get_ops().iter() {
+                    if let Operator::Call{function_index}=op {
+                        assert_eq!(FunctionID(*function_index),original);
+                    }
+                }
+            }
+        }
+        // The owning programme MUST request and validate this exact fixture
+        // set. Other unit-test callers need not create filesystem products.
+        if let Some(output)=std::env::var_os("LSF_BACKING_CORE_CONTROLS") {
+            emit_backing_controls(std::path::Path::new(&output));
+        }
+    }
+    fn control_fixture(data:&[u8])->Vec<u8> {
+        let mut module=wasm_encoder::Module::new();
+        let mut types=TypeSection::new();types.ty().function([ValType::I32],[]);module.section(&types);
+        let mut functions=FunctionSection::new();functions.function(0);module.section(&functions);
+        let mut memory=MemorySection::new();
+        memory.memory(MemoryType{minimum:1,maximum:Some(1),memory64:false,shared:false,page_size_log2:None});
+        module.section(&memory);
+        let mut globals=GlobalSection::new();
+        globals.global(GlobalType{val_type:ValType::I32,mutable:true,shared:false},&ConstExpr::i32_const(0));
+        module.section(&globals);
+        let mut exports=ExportSection::new();
+        exports.export("lsf_import_free_backing",ExportKind::Func,0)
+            .export("free-returns",ExportKind::Global,0);
+        module.section(&exports);
+        // This is a control-flow double, NOT an allocator. Real allocator
+        // return evidence comes only from the separately built component.
+        let mut code=CodeSection::new();let mut free=Function::new([]);
+        free.instruction(&Instruction::GlobalGet(0)).instruction(&Instruction::I32Const(1))
+            .instruction(&Instruction::I32Add).instruction(&Instruction::GlobalSet(0))
+            .instruction(&Instruction::End);
+        code.function(&free);module.section(&code);
+        let mut section=DataSection::new();section.active(0,&ConstExpr::i32_const(0),data.iter().copied());
+        module.section(&section);module.finish()
+    }
+    fn emit_backing_controls(output:&std::path::Path) {
+        use std::io::Write;
+        assert!(!output.exists(),"fresh-backing-control-output-required");
+        assert!(!output.parent().unwrap().symlink_metadata().unwrap().file_type().is_symlink());
+        std::fs::create_dir(output).unwrap();
+        let names=["invalid-active-tag","overflowing-list-range","misaligned-list",
+            "zero-size-nonzero-pointer","valid-empty-string","valid-zero-stride-list",
+            "nested-invalid-after-valid-child","own-trap-before-container-free"];
+        let mut manifest=Vec::new();
+        for (which,name) in names.into_iter().enumerate() {
+            let mut data=vec![0_u8;512];
+            fn word(data:&mut [u8],offset:usize,value:u32) {
+                data[offset..offset+4].copy_from_slice(&value.to_le_bytes());
+            }
+            let descriptor=match which {
+                0=>{word(&mut data,32,2);actual_backing_descriptor("option<string>")},
+                1=>{word(&mut data,32,0xfffffff0);word(&mut data,36,0x7fffffff);actual_backing_descriptor("list<u16>")},
+                2=>{word(&mut data,32,129);word(&mut data,36,1);actual_backing_descriptor("list<u16>")},
+                3=>{word(&mut data,32,128);actual_backing_descriptor("string")},
+                4=>actual_backing_descriptor("string"),
+                5=>{word(&mut data,36,u32::MAX);actual_backing_descriptor("list<tuple<>>")},
+                6=>{
+                    word(&mut data,32,128);word(&mut data,36,2);
+                    word(&mut data,128,256);word(&mut data,132,1);
+                    word(&mut data,136,60000);word(&mut data,140,10000);
+                    actual_backing_descriptor("list<string>")
+                },
+                7=>{
+                    word(&mut data,32,128);word(&mut data,36,1);word(&mut data,128,7);
+                    actual_owned_shape("list<connection>")
+                },_=>unreachable!(),
+            };
+            let bytes=control_fixture(&data);
+            let mut module=Module::parse(&bytes,false,false).unwrap();
+            let imports=if which==7 {vec![original_drop_import()]}else {Vec::new()};
+            let id=resource_disposer(&mut module,&descriptor,&imports).unwrap();
+            module.exports.add_export_func("dispose".to_owned(),*id);
+            let encoded=module.encode().unwrap();
+            assert!(encoded.len()<=65536);
+            wirm::wasmparser::Validator::new().validate_all(&encoded).unwrap();
+            let file=format!("{which:02}-{name}.wasm");
+            std::fs::OpenOptions::new().write(true).create_new(true).open(output.join(&file))
+                .unwrap().write_all(&encoded).unwrap();
+            manifest.push(serde_json::json!({"case":name,"file":file,"bytes":encoded.len(),
+                "argument":32,"expectedReturn":if which==7 {None}else {Some(u32::from(matches!(which,4|5)))},
+                "expectedTrap":which==7,"expectedDoubleFreeReturns":0,
+                "allocatorEvidence":false}));
+        }
+        let manifest=serde_json::to_vec(&manifest).unwrap();assert!(manifest.len()<=32768);
+        std::fs::OpenOptions::new().write(true).create_new(true).open(output.join("manifest.json"))
+            .unwrap().write_all(&manifest).unwrap();
+    }
+    #[test]
+    fn wrong_or_missing_original_backing_free_refuses_before_disposer_emission() {
+        for bytes in [backing_fixture(true),fixture(532,532,false,false)] {
+            let mut module=Module::parse(&bytes,false,false).unwrap();
+            let count=module.functions.iter().count();
+            assert!(resource_disposer(&mut module,&actual_backing_descriptor("string"),&[]).is_err());
+            assert_eq!(module.functions.iter().count(),count);
+        }
     }
     fn original_drop_import()->(String,String,CoreFn,Option<i32>) {
         ("tests:imports/io@1.0.0".to_owned(),"[resource-drop]connection".to_owned(),

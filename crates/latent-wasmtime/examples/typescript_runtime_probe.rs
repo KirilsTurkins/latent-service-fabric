@@ -9,6 +9,8 @@ use std::{
 use wasmtime::component::{Component, Linker, Val};
 use wasmtime::{Config, Engine, Store, StoreLimits, StoreLimitsBuilder};
 
+#[path = "typescript_runtime_probe/backing_controls.rs"]
+mod backing_controls;
 #[path = "typescript_runtime_probe/owned_results.rs"]
 mod owned_results;
 #[path = "typescript_runtime_probe/service_memory.rs"]
@@ -29,7 +31,10 @@ async fn main() -> wasmtime::Result<()> {
         .ok_or_else(|| wasmtime::Error::msg("component path required"))?;
     let mut config = Config::new();
     config.wasm_component_model_async(true).consume_fuel(true);
-    if std::env::args().nth(3).as_deref() == Some("sdk-owned-results") {
+    if matches!(
+        std::env::args().nth(3).as_deref(),
+        Some("sdk-owned-results" | "sdk-late-backing")
+    ) {
         config.wasm_component_model_more_async_builtins(true);
     }
     config.wasm_backtrace_max_frames(std::num::NonZeroUsize::new(128));
@@ -41,6 +46,9 @@ async fn main() -> wasmtime::Result<()> {
     });
     println!("diagnostic compiler optimization: {optimization}");
     let engine = Engine::new(&config)?;
+    if std::env::args().nth(3).as_deref() == Some("sdk-backing-core") {
+        return backing_controls::run(&engine, std::path::Path::new(&path));
+    }
     let started = Instant::now();
     let component = Component::from_file(&engine, path)?;
     println!(
@@ -55,6 +63,7 @@ async fn main() -> wasmtime::Result<()> {
     }
     match std::env::args().nth(3).as_deref() {
         Some("sdk-owned-results") => return owned_results::run(&engine, &component).await,
+        Some("sdk-late-backing") => return owned_results::run_backing(&engine, &component).await,
         Some("sdk-service-memory") => return service_memory::run(&engine, &component, true).await,
         Some("sdk-callee-memory") => return service_memory::run(&engine, &component, false).await,
         Some("sdk-dotnet-secrets") => return sdk_dotnet_secrets(&engine, &component).await,
@@ -159,7 +168,9 @@ async fn main() -> wasmtime::Result<()> {
             Val::S64(value)
         );
     }
-    println!("TypeScript async and signed scalar boundaries passed; signed admission and SDK qualification remain required");
+    println!(
+        "TypeScript async and signed scalar boundaries passed; signed admission and SDK qualification remain required"
+    );
     Ok(())
 }
 

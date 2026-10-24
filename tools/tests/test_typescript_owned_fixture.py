@@ -56,6 +56,33 @@ for(const changed of [source.replace('await task.enter()','task.enter()'),
 }
 """)
 
+    def test_backing_fixture_captures_only_readonly_count_and_closed_fourth_import(self):
+        self.javascript(r"""
+const backing=captured.replaceAll('import_latent_http_streaming_0_3_0$open','import_tests_owned_result_provider_1_0_0$backing');
+const input=inlineNativeTaskMeta(fuseNativeImportAwaits(directIdleTaskSlots(prefixMaterial.source+[...selected,backing].join('\n')),parse),parse);
+const transformed=ownedResultFixtureBindings(input,parse,true);
+assert.equal((transformed.match(/const carrier=\$/g)||[]).length,4);
+assert.equal((transformed.match(/carrier.then\(/g)||[]).length,4);
+assert.equal((transformed.match(/backingFreeCount\(\)\{return __lsfImports.backingFreeCount\(\);\}/g)||[]).length,1);
+assert(!ownedResultFixtureBindings(source,parse).includes('__lsfImports.backingFreeCount'));
+assert.throws(()=>ownedResultFixtureBindings(input,parse,1),/shape-drift/);
+assert.throws(()=>ownedResultFixtureBindings(source,parse,true),/shape-drift/);
+parse(transformed,{ecmaVersion:'latest',sourceType:'module'});
+""")
+        with tempfile.TemporaryDirectory() as temporary:
+            output=Path(temporary)/'fixture'
+            record=fixture.prepare(output,backing=True)
+            self.assertEqual(record['cases'],list(fixture.CASE_NAMES))
+            self.assertEqual(record['backingCases'],list(fixture.BACKING_CASE_NAMES))
+            self.assertEqual(len(record['cases']),11)
+            self.assertEqual(len(record['backingCases']),8)
+            self.assertIn('backing-run:async func', (output/'world.wit').read_text())
+            self.assertIn('list<tuple<>>',(output/'world.wit').read_text())
+            self.assertIn(b'ownedResultFixtureBindings(generatedBindings, parseBindings, true)',
+                          (output/'recipe/componentize.mjs').read_bytes())
+            application=(output/'application.js').read_text()
+            self.javascript('parse('+json.dumps(application)+",{ecmaVersion:'latest',sourceType:'module'});")
+
     def test_fixture_frontend_is_separate_and_normal_inputs_stay_identical(self):
         from unittest.mock import patch
         normal=ROOT/'tools/typescript_guest/componentize.mjs';before=normal.read_bytes()

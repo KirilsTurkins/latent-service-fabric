@@ -12,6 +12,30 @@ CASE_NAMES = (
     'pending-cancel-no-result', 'destructor-refusal-quarantine',
     'distinct-resource-types', 'nested-inactive-none',
 )
+BACKING_CASE_NAMES = (
+    'ordinary-empty-list', 'cancelled-empty-list', 'cancelled-nested-backing',
+    'cancelled-empty-nested-and-zero-stride', 'ordinary-empty-nested-values',
+    'cancelled-mixed-own-and-backing', 'cancelled-active-error-string',
+    'mixed-destructor-refusal-count-unobserved',
+)
+BACKING_RUN = '''
+async backingRun(which){
+ const before=backingFreeCount();
+ if(which===0||which===4){
+  const op=start('backing',which,0);const value=await op.promise;
+  if(which===0){if(value.length!==0)throw Error('expected-empty-list');}
+  else if(value.length!==1||value[0].label!==''||value[0].data.length!==0||
+          value[0].zero.length!==2||value[0].zero.some(item=>item.length!==0)||value[0].payload!==undefined)
+    throw Error('expected-nested-empty-values');
+  await op.borrowReleased;
+ }else{
+  if(!Number.isInteger(which)||which<1||which>7)throw Error('unknown-backing-case');
+  await cancelled('backing',which);
+  if(which===7)throw Error('destructor-refusal-was-not-a-trap');
+ }
+ return [true,backingFreeCount()-before];
+}
+'''
 WIT = '''package tests:owned-result@1.0.0;
 interface provider {
   resource connection;
@@ -61,13 +85,23 @@ def frontend_files()->tuple[str,...]:
     return names
 
 
-def prepare(output: Path) -> dict:
+def prepare(output: Path, *, backing: bool = False) -> dict:
     """Derive a separate fixture frontend; normal compiler bytes stay intact."""
     output.mkdir(exist_ok=False)
-    (output/'world.wit').write_text(WIT)
+    if type(backing) is not bool:raise ValueError('owned-fixture-backing-mode-must-be-boolean')
+    world, application = WIT, APPLICATION
+    if backing:
+        world=world.replace('  resource chunk;\n',
+            '  resource chunk;\n  record cell {label:string,data:list<u16>,zero:list<tuple<>>,payload:option<connection>}\n'
+            '  backing: async func(mode:u32)->result<list<cell>,string>;\n',1)
+        world=world.replace('interface api {run:async func(which:u32)->bool;}',
+            'interface api {run:async func(which:u32)->bool;backing-run:async func(which:u32)->tuple<bool,u32>;}')
+        application=application.replace("import {start,dispose}","import {start,dispose,backingFreeCount}",1)
+        application=application.replace('\n}};\n','\n},'+BACKING_RUN+'};\n',1)
+    (output/'world.wit').write_text(world)
     dependencies=output/'deps';dependencies.mkdir()
     for name in ('activation-runtime','clock'):shutil.copytree(ROOT/'wit/platform'/name,dependencies/name)
-    (output/'application.js').write_text(APPLICATION)
+    (output/'application.js').write_text(application)
     recipe=output/'recipe';recipe.mkdir()
     names=frontend_files()
     for name in names:shutil.copyfile(ROOT/'tools/typescript_guest'/name,recipe/name)
@@ -76,12 +110,14 @@ def prepare(output: Path) -> dict:
     call=b'      generatedBindings = borrowReleaseHandoff(generatedBindings, parseBindings);'
     if raw.count(anchor)!=1 or raw.count(call)!=1:raise ValueError('owned-fixture-normal-frontend-drift')
     derived=raw.replace(anchor,anchor+b"\nimport {ownedResultFixtureBindings} from './owned_result_fixture.mjs';",1)
-    derived=derived.replace(call,b'      generatedBindings = ownedResultFixtureBindings(generatedBindings, parseBindings);',1)
+    derived=derived.replace(call,b'      generatedBindings = ownedResultFixtureBindings(generatedBindings, parseBindings'+
+                            (b', true' if backing else b'')+b');',1)
     path.write_bytes(derived)
     record={'scope':'compiler-only-owned-result-fixture','normalFrontend':file_identity(ROOT/'tools/typescript_guest/componentize.mjs'),
             'fixtureFrontend':file_identity(path),'world':file_identity(output/'world.wit'),
             'application':file_identity(output/'application.js'),'cases':list(CASE_NAMES),
             'fixtureRecipe':{name:file_identity(recipe/name) for name in names},
             'runtimePumpPatched':False,'canonicalIntrinsicsMocked':False,'signedExecution':False}
+    if backing:record['backingCases']=list(BACKING_CASE_NAMES)
     write_json(output/'fixture.json',record)
     return record

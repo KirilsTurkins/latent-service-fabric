@@ -16,17 +16,21 @@ from tools.typescript_guest.owned_result_component import compile_fixture,select
 from tools.typescript_guest.owned_result_fixture import CASE_NAMES,frontend_files
 from tools.typescript_guest import splicer_build
 from tools.typescript_guest import borrow_signed_inputs
+from tools.typescript_guest import late_backing_evidence
+from tools.typescript_guest.owned_result_controls import emitted_backing_controls
 
 OWNER_SOURCE=borrow_signed_inputs.HEAD
 ALLOCATIONS=(1,2,2,2,1,0,2,0,1,2,0)
 IMPORTS=(1,2,2,2,2,1,2,1,1,2,1)
 MEMORY=128*1024**2
 FUEL=1_000_000_000
-SOURCE_MODULES=('tools.tests.test_typescript_owned_fixture','tools.tests.test_typescript_owned_component')
+SOURCE_MODULES=('tools.tests.test_typescript_owned_fixture','tools.tests.test_typescript_owned_component',
+                'tools.tests.test_typescript_late_backing_evidence')
 RECIPE=(
     'tools/qualify_typescript_owned_component.py','tools/typescript_guest/owned_component_controls.py',
     'tools/typescript_guest/owned_result_component.py','tools/typescript_guest/owned_result_fixture.py',
     'tools/typescript_guest/owned_result_fixture.mjs','tools/typescript_guest/compiler.py',
+    'tools/typescript_guest/late_backing_evidence.py','tools/tests/test_typescript_late_backing_evidence.py',
     'tools/typescript_guest/componentize.mjs','tools/typescript_guest/async_waiters.mjs',
     'tools/typescript_guest/import_cancellation.mjs','tools/typescript_guest/resources.mjs',
     'tools/typescript_guest/signed64.mjs','tools/typescript_guest/source_splicer.mjs',
@@ -50,6 +54,7 @@ RECIPE=(
     'crates/latent-wasmtime/examples/typescript_runtime_probe.rs',
     'crates/latent-wasmtime/examples/typescript_runtime_probe/owned_results.rs',
     'crates/latent-wasmtime/examples/typescript_runtime_probe/owned_results_runtime.rs',
+    'crates/latent-wasmtime/examples/typescript_runtime_probe/backing_controls.rs',
     'Cargo.toml','Cargo.lock','rust-toolchain.toml','crates/latent-wasmtime/Cargo.toml',
     '.github/workflows/typescript-owned-component.yml',
     *splicer_build.recipe_paths(),
@@ -118,7 +123,9 @@ def rows(raw:bytes)->list[dict]:
     return result
 
 
-def build(output:Path,tools:Path,prepared:Path)->dict:
+def build(output:Path,tools:Path,prepared:Path,*,profile:str='canonical-own')->dict:
+    require(profile in ('canonical-own','late-backing'),'canonical-own-closed-profile')
+    late=profile=='late-backing'
     require(sys.platform=='linux' and sys.version_info[:3]==(3,13,5),'canonical-own-pinned-linux-python')
     tools=tools.resolve(strict=True);prepared=prepared.resolve(strict=True);output=output.resolve()
     require(all(output!=path and path not in output.parents and output not in path.parents
@@ -136,7 +143,7 @@ def build(output:Path,tools:Path,prepared:Path)->dict:
         'scope':'actual-canonical-resource-drops-and-same-store-capacity-one-payload-reuse',
         'qualification':'unknown','apiSupport':'not-evaluated','signedExecution':False,
         'physicalProviderQualified':False,'wholeCostQualification':False,
-        'canonicalTableNumericIndexObserved':False,'nestedBackingStorageQualified':False,
+        'canonicalTableNumericIndexObserved':False,'nestedBackingStorageQualified':False,'selectedProfile':profile,
         'limits':{'overallSecondsIncludingSetup':900,'commandSeconds':600,'perCaseSeconds':20,
                   'aggregateLinearMemoryBytes':MEMORY,'fuelPerStore':FUEL,'rustJobs':2},
         'setupElapsedSeconds':setup,'recipe':recipe}
@@ -162,14 +169,14 @@ def build(output:Path,tools:Path,prepared:Path)->dict:
             result=json.loads(commands.run('canonical-source-controls',sys.executable,'-c',
                 "import sys;sys.path.insert(0,"+repr(str(ROOT))+");"+program))
         finally:commands.command_seconds=original_seconds
-        require(result=={'testsRun':6,'skipped':0,'failures':0,'errors':0},'canonical-own-all-six-source-controls-required')
+        require(result=={'testsRun':10,'skipped':0,'failures':0,'errors':0},'canonical-own-all-ten-source-controls-required')
         record['sourceControls']=result
         def producer_git(label,*argv):
             require(argv[0]=='git','canonical-own-read-only-producer-git')
             return commands.run(label,'git','-C',ROOT,*argv[1:])
         record['qualifiedInput']=borrow_signed_inputs.verify(prepared,producer_git)
         stage='normal-component-construction'
-        component,record['componentBuild']=compile_fixture(prepared,OWNER_SOURCE,tools,output,commands)
+        component,record['componentBuild']=compile_fixture(prepared,OWNER_SOURCE,tools,output,commands,backing=late)
         stage='normal-original-locked-probe-build'
         lock=file_identity(ROOT/'Cargo.lock')
         commands.run('canonical-probe-build','cargo','build','--locked','--manifest-path',ROOT/'Cargo.toml',
@@ -180,6 +187,24 @@ def build(output:Path,tools:Path,prepared:Path)->dict:
         stage='actual-eleven-canonical-cases'
         raw=commands.run('canonical-own-cases',probe,component,'none','sdk-owned-results')
         record['rows']=rows(raw);record['rawObservation']={'bytes':len(raw),'sha256':digest(raw)}
+        if late:
+            stage='actual-eight-emitted-core-controls'
+            emitted=emitted_backing_controls(prepared/'backing-core-controls')
+            original_seconds=commands.command_seconds
+            try:
+                commands.command_seconds=min(original_seconds,60)
+                core_raw=commands.run('actual-backing-core-controls',probe,prepared/'backing-core-controls',
+                                      'none','sdk-backing-core')
+            finally:commands.command_seconds=original_seconds
+            record['backingCoreRows']=late_backing_evidence.core_rows(core_raw,emitted)
+            record['emittedBackingControls']=emitted
+            record['rawBackingCoreObservation']={'bytes':len(core_raw),'sha256':digest(core_raw)}
+            stage='actual-eight-late-backing-cases'
+            backing_raw=commands.run('actual-late-backing-cases',probe,component,'none','sdk-late-backing')
+            record['backingRows']=late_backing_evidence.backing_rows(backing_raw)
+            record['rawBackingObservation']={'bytes':len(backing_raw),'sha256':digest(backing_raw)}
+            require(emitted==emitted_backing_controls(prepared/'backing-core-controls'),
+                    'canonical-own-emitted-input-mutated')
         stage='final-integrity'
         require(record['probe']==file_identity(probe,256*1024**2),'canonical-own-probe-mutated')
         require(record['componentBuild']['component']==file_identity(component,64*1024**2),'canonical-own-component-mutated')
@@ -195,10 +220,12 @@ def build(output:Path,tools:Path,prepared:Path)->dict:
         deadline.finish();record.update(status='passed',commands=commands.records,
             canonicalOwnComponentExecuted=True,actualCanonicalResourceDropExecuted=True,
             sameStorePayloadCapacityReuseExecuted=True,
+            completeUnliftedResultBackingCleanupExecuted=late,
             limitations=['Standalone explicit runtime/clock/provider diagnostic hosts are not signed node admission.',
                 'Original import Result and matched Native tokens are checked before Store Drop; unrelated managed Native and Task lifetimes are reported separately.',
                 'Capacity-one payload reuse does not observe the guest canonical table numeric slot.',
-                'Backing allocation release, provider physical close and whole native/runtime cost remain unqualified.'])
+                ('Only complete, unlifted host-lowered result backing is checked; delivered/partial-lower/parameter storage, provider physical close and whole cost remain unqualified.'
+                 if late else 'Backing allocation release, provider physical close and whole native/runtime cost remain unqualified.')])
         write_json(output/'CANONICAL-OWN.json',record);deadline.finish();return record
     except BaseException as error:
         (output/'CANONICAL-OWN.json').unlink(missing_ok=True)

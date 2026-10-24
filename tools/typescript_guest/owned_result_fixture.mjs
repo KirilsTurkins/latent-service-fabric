@@ -8,13 +8,16 @@ export const ownFixtureSelection = Object.freeze([
   Object.freeze({binding:'import_tests_owned_result_provider_1_0_0$nested',alias:'nested'}),
 ]);
 
-export function ownedResultFixtureBindings(source,parse) {
+export function ownedResultFixtureBindings(source,parse,backing=false) {
   const fail=()=>{throw Error('owned-result-fixture-binding-shape-drift');};
+  if(typeof backing!=='boolean')fail();
+  const selection=backing ? [...ownFixtureSelection,
+    {binding:'import_tests_owned_result_provider_1_0_0$backing',alias:'backing'}] : ownFixtureSelection;
   if(source.includes('__ownedFixture')||source.includes('tests:owned-result/control@1.0.0'))fail();
-  source=borrowReleaseHandoff(source,parse,ownFixtureSelection);
+  source=borrowReleaseHandoff(source,parse,selection);
   const tree=parse(source,{ecmaVersion:'latest',sourceType:'module'});
   const edits=[];
-  for(const {binding,alias} of ownFixtureSelection) {
+  for(const {binding,alias} of selection) {
     const functions=tree.body.filter(node=>node.type==='FunctionDeclaration'&&node.id?.name===binding);
     if(functions.length!==1)fail();
     const fn=functions[0];
@@ -62,8 +65,9 @@ export function ownedResultFixtureBindings(source,parse) {
 let __ownedFixtureContext=null;
 defineBuiltinModule('tests:owned-result/control@1.0.0',{
   dispose(value){value[symbolDispose]();},
+  ${backing ? 'backingFreeCount(){return __lsfImports.backingFreeCount();},' : ''}
   start(alias,mode,cancelMode){
-    if(!['connection','chunk','nested'].includes(alias)||![0,1,2].includes(cancelMode)||!Number.isInteger(mode)||mode<0||mode>5)throw Error('owned-fixture-closed-input');
+    if(!${JSON.stringify(selection.map(item=>item.alias))}.includes(alias)||![0,1,2].includes(cancelMode)||!Number.isInteger(mode)||mode<0||mode>(alias==='backing'?7:5))throw Error('owned-fixture-closed-input');
     const context={alias,cancelMode,operation:null};
     __ownedFixtureContext=context;
     const operation=__lsfBorrowCalls[alias](mode);
