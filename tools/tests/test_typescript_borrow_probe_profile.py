@@ -75,3 +75,24 @@ assert.throws(()=>config({borrowProbeProfile:profile,runtimeProfile:'spidermonke
 assert.throws(()=>binding('unaltered',()=>{},'other'));
 """.replace('MODULE', repr(module))
         subprocess.run([node, '--input-type=module', '-e', script], check=True, timeout=20)
+
+    def test_readonly_pre_wizer_capture_preserves_original_sync_result_and_refuses_mutation(self):
+        node = shutil.which('node')
+        if not node: self.skipTest('Node required for host-only diagnostic capture')
+        module = (ROOT/'tools/typescript_guest/borrow_probe.mjs').as_uri()
+        script = """
+import assert from 'node:assert/strict';
+const {borrowProbeSpliceCapture:capture,borrowProbeProfile:profile}=await import(MODULE);
+assert.equal(capture(undefined,()=>{throw Error('must stay lazy');}),undefined);
+assert.throws(()=>capture('unknown',()=>{}),/selection/);
+const core=new Uint8Array([0,97,115,109,1,0,0,0]);
+const original={wasm:core,jsBindings:'original bindings',imports:[],exports:[]};
+const writes=[];const tap=capture(profile,(name,value)=>writes.push([name,value]));
+assert.equal(tap(original),original);assert.equal(writes[0][1],core);
+assert.deepEqual(writes.map(row=>row[0]),['pre-wizer.wasm','pre-wizer-raw-bindings.js','pre-wizer-splice.json']);
+assert.equal(JSON.parse(writes[2][1]).signedExecution,false);
+assert.throws(()=>tap({...original,imports:new Array(513)}),/shape-or-bound/);
+assert.throws(()=>tap({...original,wasm:new Uint8Array(64*1024*1024+1)}),/shape-or-bound/);
+assert.throws(()=>capture(profile,()=>{core[0]=1;})(original),/mutated/);
+""".replace('MODULE',repr(module))
+        subprocess.run([node,'--input-type=module','-e',script],check=True,timeout=20)

@@ -69,7 +69,7 @@ owners drain before the next fresh activation. The logical reference provider
 cannot certify kernel physical retirement. Raw future typed-result cleanup
 records must also be retained by the actual engine campaign.
 
-Four host-only profile controls and four input-refusal controls pass without skips. Existing rustfmt
+Five host-only profile controls and four input-refusal controls pass across the retained focused runs. Existing rustfmt
 parsed the two new Rust files; this is not Rust typechecking or signed evidence.
 The prepared `BORROW-COMPILE.json` input contract and retained OWN qualification
 receipt bind the exact `latent.typescript.owned-result-prerequisites.v1` native
@@ -103,3 +103,20 @@ raw parser graph and still rejects nonvoid drift and invalid type references.
 No guest/host compilation or signed case passed in that failed attempt. Its
 620,180-byte artifact `12546483197` remains failed and retained (SHA256
 `02c0b6d5824e65abc29fcb09c0d2c73353e35882bc69989baa10af408c6ae78d`).
+
+The third attempt, [run40061029424/job120774360900](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40061029424/job/120774360900),
+passed actual WIT normalization, typechecking and bundling. Component generation
+then failed in 1.206 seconds: Wizer rejected the source-spliced core with
+`expected i32 but nothing on stack` at offset `0x880e2a`. The outer read gate had
+not been compiled and no signed case executed. Its retained failed artifact is
+`12546449437` (660,849 bytes, SHA256
+`635ace9c2bd8eda158bcc6c0acdf75284e9e862595b703f1441adceb79cd36a5`).
+
+The closed diagnostic now retains the actual pre-Wizer core (maximum64MiB), raw
+and transformed generated bindings (maximum8MiB each), and bounded splice
+metadata (maximum1MiB). The exact original synchronous source-splicer call,
+receiver and arguments remain intact; its result object identity, core bytes
+and imports/exports are checked unchanged by the read-only tap. Default
+compilation has no tap. The next attempt collects the missing carrier for the
+actual validator failure; these captures do not establish a runtime pass or
+authorize an engine-envelope reissue.

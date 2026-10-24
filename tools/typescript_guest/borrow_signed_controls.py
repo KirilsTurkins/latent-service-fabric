@@ -143,8 +143,8 @@ def qualify(tools, material_directory, output):
         program = ("import unittest,json,sys;s=unittest.defaultTestLoader.loadTestsFromName('tools.tests.test_typescript_borrow_probe_profile');"
             "r=unittest.TextTestRunner(verbosity=2).run(s);print(json.dumps(dict(testsRun=r.testsRun,skipped=len(r.skipped),failures=len(r.failures),errors=len(r.errors))));sys.exit(0 if r.wasSuccessful() else 1)")
         controls = json.loads(run('source-controls',sys.executable,'-c',program))
-        require(controls == {'testsRun':4,'skipped':0,'failures':0,'errors':0}
-                and all(type(value) is int for value in controls.values()), 'borrow-signed-all-four-controls-no-skips')
+        require(controls == {'testsRun':5,'skipped':0,'failures':0,'errors':0}
+                and all(type(value) is int for value in controls.values()), 'borrow-signed-all-five-controls-no-skips')
         record['sourceControls'] = controls
         stage = 'actual-successful-normal-inputs'
         original_inputs = inputs.verify(material_directory, run)
