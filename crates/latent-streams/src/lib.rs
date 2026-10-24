@@ -27,6 +27,10 @@ pub struct StreamUsage {
     pub pending_operations: usize,
     pub retained_chunks: usize,
     pub accepted_write_bytes: u64,
+    /// Cumulative ORIGINAL IoTransfer input credit, not peer-delivered bytes.
+    /// Development observation only; this adds no owner, counter or authority.
+    #[cfg(any(test, feature = "development-outbound"))]
+    pub input_budget_bytes: u64,
     pub delivered_read_bytes: u64,
     pub retired: bool,
 }
