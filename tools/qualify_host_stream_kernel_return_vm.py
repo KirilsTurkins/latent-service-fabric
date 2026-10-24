@@ -232,8 +232,8 @@ def qualify(output, revision):
         native.require(kernel_build.programme.local_freeze() == receipt['localSourceFreeze']
             and kernel_build.historical.recipe_inputs() == receipt['recipeInputs']
             and all(kernel_build.objects.identity(ROOT/name) == bound
-                for name,bound in receipt['historicalKernelProducerMaterials'].items()),
-            'return-original-294-materials-mutated')
+                for name,bound in receipt['compiledKernelProducerMaterials'].items()),
+            'return-complete-kernel-materials-mutated')
         native.require(kernel_build.tool_identity(kernel_output/'objects/vmlinux',512*1024**2)
             == receipt['linkedVmlinux']
             and kernel_build.objects.identity(kernel_output/'objects/include/generated/autoconf.h')

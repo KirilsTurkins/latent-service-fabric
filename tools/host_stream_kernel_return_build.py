@@ -11,6 +11,25 @@ baseline, objects, paths = historical.baseline, historical.objects, historical.p
 require, tool_identity = historical.require, historical.tool_identity
 ROOT = historical.ROOT
 late = historical.late
+ADDITIONAL_MATERIALS = frozenset((
+    'research/standard-outbound/linux-6.12-lineage/native-constructor-vm-init.c',
+    'research/standard-outbound/linux-6.12-lineage/factory-retirement-observation.c',
+))
+
+
+def partition_materials(materials, source_before):
+    """Retain the complete current set and authenticate the historical subset."""
+    require(ADDITIONAL_MATERIALS <= materials.keys(), 'return-additional-materials-missing')
+    additional = {name:materials[name] for name in sorted(ADDITIONAL_MATERIALS)}
+    for name,bound in additional.items():
+        require(source_before.get(name) == {'size':bound['bytes'],'digest':'sha256:'+bound['sha256']},
+            'return-additional-material-not-source-bound')
+    original = {name:bound for name,bound in materials.items() if name not in ADDITIONAL_MATERIALS}
+    canonical = json.dumps(original,sort_keys=True,separators=(',',':')).encode()
+    public = historical_materials.public_receipt()
+    require(len(original) == 294 and hashlib.sha256(canonical).hexdigest() ==
+        public['sourceBinding']['canonicalInventorySha256'],'return-original-294-materials')
+    return original,additional
 
 
 def build(commands, tools, archive, output, receipt):
@@ -43,11 +62,10 @@ def build(commands, tools, archive, output, receipt):
         for name,bound in group.items():
             require(name not in materials or materials[name] == bound,'return-conflicting-old-material')
             materials[name] = bound
-    canonical = json.dumps(materials,sort_keys=True,separators=(',',':')).encode()
-    public = historical_materials.public_receipt()
-    require(len(materials) == 294 and hashlib.sha256(canonical).hexdigest() ==
-        public['sourceBinding']['canonicalInventorySha256'],'return-original-294-materials')
-    receipt['historicalKernelProducerMaterials'] = materials
+    original,additional = partition_materials(materials,receipt['sourceBefore'])
+    receipt['historicalKernelProducerMaterials'] = original
+    receipt['additionalKernelProducerMaterials'] = additional
+    receipt['compiledKernelProducerMaterials'] = materials
     receipt['localSourceFreeze'],receipt['recipeInputs'] = local,recipe
     original_inputs = {**old_originals,**originals}
     # Fixed stage names read from this same fully authenticated private

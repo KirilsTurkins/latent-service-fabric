@@ -1,9 +1,15 @@
 # Authenticated native Root-return observation programme
 
-This is a new source-only programme for #738. The observation implementation and
-this producer have not been compiled or executed together. The historical image
-has no observation ioctl and is never relabelled as this image. Normal provider
-installation remains Unsupported; all native backing stays quarantined.
+This is a new programme for #738. The first owning run at `eff7adf1d1ef` passed
+all nineteen Rust controls, the static native example build and twelve compiled
+C controls. It failed before kernel configuration/link or VM execution because
+the historical 294-material comparison included two newly captured C sources.
+All historical entries were unchanged; the current set has 296 entries. The
+reviewed correction binds and retains those two additional entries separately
+while preserving the exact historical digest and final full-set recheck.
+The observation implementation has not yet executed against a fresh kernel.
+The historical image has no observation ioctl and is never relabelled as this
+image. Normal installation remains Unsupported; native backing stays quarantined.
 
 The explicit `kernel_return_observation_vm` example invokes only
 `install_kernel_return_observation_for_qualification`. It observes the actual
