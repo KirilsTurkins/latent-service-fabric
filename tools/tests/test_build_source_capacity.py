@@ -24,6 +24,15 @@ class SourceCapacityTests(unittest.TestCase):
         revision = git(root, "rev-parse", "HEAD")
         selected = set(git(root, "ls-tree", "-r", "--name-only", revision,
                            "--", *SOURCE_ALLOWLIST).splitlines())
+        sizes = git(root, "ls-tree", "-r", "-l", revision,
+                    "--", *SOURCE_ALLOWLIST).splitlines()
+        selected_bytes = sum(int(row.split("\t", 1)[0].split()[-1]) for row in sizes)
+        limits = SnapshotLimits()
+        print(f"SOURCE_CAPTURE_CAPACITY revision={revision} files={len(selected)} "
+              f"bytes={selected_bytes} file_limit={limits.max_entries} "
+              f"byte_limit={limits.max_total_bytes}", flush=True)
+        self.assertLessEqual(len(selected), limits.max_entries)
+        self.assertLessEqual(selected_bytes, limits.max_total_bytes)
         with tempfile.TemporaryDirectory() as temporary:
             target = Path(temporary)
             cache = target / "cargo-cache"
@@ -31,6 +40,7 @@ class SourceCapacityTests(unittest.TestCase):
             with capture_source(root, revision, target) as captured:
                 rows = json.loads(captured.inventory)
                 self.assertEqual({row["path"] for row in rows}, selected)
+                self.assertEqual(sum(row["size"] for row in rows), selected_bytes)
                 self.assertIn("tools/ci/history/commands-v1.json", selected)
                 self.assertTrue(any(name.startswith("tools/ci/contracts/") for name in selected))
                 check_captured_inputs(captured.root, captured.inventory)
@@ -139,6 +149,48 @@ class SourceCapacityTests(unittest.TestCase):
                     if count > maximum:
                         self.assertEqual(str(raised.exception), "source tree entry limit exceeded")
                 self.assertEqual(list(target.iterdir()), [])
+
+    def test_capture_byte_allowances_are_fixed_and_reject_one_over(self):
+        from dataclasses import replace
+
+        limits = SnapshotLimits()
+        self.assertEqual(limits.max_total_bytes, 80 * 1024 * 1024)
+        self.assertEqual(limits.max_archive_bytes, 88 * 1024 * 1024)
+        self.assertEqual(limits.max_file_bytes, 4 * 1024 * 1024)
+        self.assertEqual(limits.max_directories, 4096)
+        limits.validate()
+        for name in limits.__dataclass_fields__:
+            with self.subTest(field=name):
+                for value in (0, True, getattr(limits, name) + 1):
+                    with self.assertRaisesRegex(SnapshotError, "invalid source capture limits"):
+                        replace(limits, **{name: value}).validate()
+
+    def test_archive_and_content_byte_limits_are_enforced_independently(self):
+        from dataclasses import replace
+        import tarfile
+        from tools.build_snapshot import extract_archive
+        from tools.tests.test_build_snapshot import archive
+
+        encoded = archive([("tools/first.py", b"ab", tarfile.REGTYPE),
+                           ("tools/second.py", b"cde", tarfile.REGTYPE)])
+        limits = SnapshotLimits(max_total_bytes=5, max_file_bytes=3,
+                                max_archive_bytes=len(encoded))
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            rows = json.loads(extract_archive(encoded, root / "exact", limits))
+            self.assertEqual(sum(row["size"] for row in rows), 5)
+            for field, value, reason in (
+                ("max_total_bytes", 4, "captured source total limit exceeded"),
+                ("max_file_bytes", 2, "captured source file limit exceeded"),
+                ("max_archive_bytes", len(encoded) - 1, "source archive byte limit exceeded"),
+            ):
+                with self.subTest(field=field):
+                    destination = root / field
+                    with self.assertRaisesRegex(SnapshotError, reason):
+                        extract_archive(encoded, destination, replace(limits, **{field: value}))
+                    self.assertFalse((destination / "tools/second.py").exists())
+                    if field == "max_archive_bytes":
+                        self.assertFalse(destination.exists())
 
 
 if __name__ == "__main__":
