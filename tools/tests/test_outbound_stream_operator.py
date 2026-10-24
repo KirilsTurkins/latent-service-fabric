@@ -315,6 +315,79 @@ class StreamOperator(unittest.TestCase):
         self.assertEqual(binding["document"]["configurationEpoch"], 2)
         self.assertEqual(self.client.records["policy:stream-allow"]["document"], operator._policy("allow"))
 
+    def test_provider_adoption_refuses_mid_read_private_state_replacement_without_overwrite(self):
+        operator = self.operator()
+        operator.grant()
+        owner = copy.deepcopy(operator.owner)
+        names = ("stream-operator-owner.json", "operations.json", "stream-policy-receipts.json")
+        before = {name: (self.operator_root / name).read_bytes() for name in names}
+        replacement = {**self.options["provider"], "configurationEpoch": "2",
+                       "configurationDigest": "sha256:" + "c" * 64}
+        original_call = self.client.call
+        for name in names:
+            for selected_read in (1, 2):
+                self.client.calls.clear()
+                reads = 0
+
+                def observed(*arguments):
+                    nonlocal reads
+                    result = original_call(*arguments)
+                    reads += 1
+                    if reads == selected_read:
+                        (self.operator_root / name).write_bytes(before[name] + b" ")
+                    return result
+
+                self.client.call = observed
+                try:
+                    with self.subTest(name=name, selected_read=selected_read), \
+                            self.assertRaisesRegex(DevError, "provider-adoption-state-changed"):
+                        operator.adopt_provider(replacement)
+                    expected = {**before, name: before[name] + b" "}
+                    self.assertEqual({item: (self.operator_root / item).read_bytes() for item in names}, expected)
+                    self.assertEqual(operator.owner, owner)
+                    self.assertEqual(self.mutations(), [])
+                finally:
+                    self.client.call = original_call
+                    for item, raw in before.items():
+                        (self.operator_root / item).write_bytes(raw)
+
+    def test_provider_adoption_refuses_mid_read_client_replacement_without_owner_update(self):
+        operator = self.operator()
+        operator.grant()
+        owner = copy.deepcopy(operator.owner)
+        names = ("stream-operator-owner.json", "operations.json", "stream-policy-receipts.json")
+        before = {name: (self.operator_root / name).read_bytes() for name in names}
+        original_config = self.config.read_bytes()
+        replacement = {**self.options["provider"], "configurationEpoch": "2",
+                       "configurationDigest": "sha256:" + "c" * 64}
+        original_call = self.client.call
+        for selected_read in (1, 2):
+            self.client.calls.clear()
+            reads = 0
+
+            def observed(*arguments):
+                nonlocal reads
+                result = original_call(*arguments)
+                reads += 1
+                if reads == selected_read:
+                    self.config.write_bytes(original_config + b" ")
+                return result
+
+            self.client.call = observed
+            try:
+                with self.subTest(selected_read=selected_read), \
+                        self.assertRaisesRegex(DevError, "client-identity-changed"):
+                    operator.adopt_provider(replacement)
+                self.assertEqual(self.config.read_bytes(), original_config + b" ")
+                self.assertEqual({name: (self.operator_root / name).read_bytes() for name in names}, before)
+                self.assertEqual(operator.owner, owner)
+                self.assertEqual(self.mutations(), [])
+            finally:
+                self.client.call = original_call
+                self.config.write_bytes(original_config)
+                for name, raw in before.items():
+                    (self.operator_root / name).write_bytes(raw)
+
     def test_adoption_rejects_same_stale_foreign_or_unsupported_provider_without_mutation(self):
         operator = self.operator()
         operator.grant()
