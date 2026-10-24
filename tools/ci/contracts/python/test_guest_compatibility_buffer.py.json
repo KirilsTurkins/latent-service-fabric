@@ -1,0 +1,88 @@
+{
+  "cases": [
+    "BufferCompatibility.test_bound_module_renders_both_aliases_and_stays_unqualified",
+    "BufferCompatibility.test_bound_receipt_and_strict_json_types_cannot_drift",
+    "BufferCompatibility.test_complete_module_and_recipe_survive_existing_material_cap",
+    "BufferCompatibility.test_outcome_reader_rechecks_files_and_freshly_rehashed_context",
+    "BufferCompatibility.test_recipe_backend_and_captured_declaration_must_match",
+    "BufferCompatibility.test_unselected_legacy_capture_keeps_generic_output_without_declarations"
+  ],
+  "guards": {
+    "BufferCompatibility.test_bound_module_renders_both_aliases_and_stays_unqualified": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ee75c598b176543d73cab69e3f11106be8d64b2608d9b0ab5ec22b80a78a1e5b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "BufferCompatibility.test_bound_receipt_and_strict_json_types_cannot_drift": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ee75c598b176543d73cab69e3f11106be8d64b2608d9b0ab5ec22b80a78a1e5b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "BufferCompatibility.test_complete_module_and_recipe_survive_existing_material_cap": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ee75c598b176543d73cab69e3f11106be8d64b2608d9b0ab5ec22b80a78a1e5b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "BufferCompatibility.test_outcome_reader_rechecks_files_and_freshly_rehashed_context": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ee75c598b176543d73cab69e3f11106be8d64b2608d9b0ab5ec22b80a78a1e5b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "BufferCompatibility.test_recipe_backend_and_captured_declaration_must_match": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ee75c598b176543d73cab69e3f11106be8d64b2608d9b0ab5ec22b80a78a1e5b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "BufferCompatibility.test_unselected_legacy_capture_keeps_generic_output_without_declarations": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ee75c598b176543d73cab69e3f11106be8d64b2608d9b0ab5ec22b80a78a1e5b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_guest_compatibility_buffer.py",
+  "reviewReason": "New unpublished six-case source module: real owner receipt fixture replaces provisional source-only setup; no existing committed cases or guards change.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

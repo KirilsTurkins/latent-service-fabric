@@ -55,6 +55,16 @@ and must match its loaded JAR and replacement classes. Invocation diagnostics
 recheck that receipt and the recipe before using the projection. These identities
 describe the compiler selection; API compatibility remains unknown.
 
+Selected TypeScript `buffer`/`node:buffer` builds also present the finite
+`lsf-node-buffer-v1` module profile as **SELECTED**, with qualification unknown
+and authority none. Its complete receipt/backend/declaration subgroup binds the
+selected sidecar to the recorded authoring recipe and captured SDK declaration.
+Invocation readers recheck those same identities against the original owner's
+`toolAndCompilerInputs` receipt and recipe entries before applying the context.
+This records module selection independently of package identity; it neither
+certifies an unchanged npm dependency nor installs a grant or global Buffer.
+Unselected captures retain the ordinary generic presentation.
+
 The context also retains dependency identities from the exact captured source
 inventory. It displays each retained dependency's original archive and selected
 tree digests, and its captured version when the resolver recorded a bounded
