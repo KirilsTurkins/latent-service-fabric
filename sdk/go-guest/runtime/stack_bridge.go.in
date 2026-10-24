@@ -1,0 +1,12 @@
+// Explicit v7 bounds each allocated logical Go stack independently of the
+// application's debug.SetMaxStack setting. Lower original settings still win.
+// Pool/cache spans and old+new copy storage retain the original Store charge;
+// this ceiling neither replaces nor increases its aggregate memory budget.
+const lsfMaximumStackBytes = uintptr(1048576)
+
+// Keep one private source-bound refusal frame for future actual qualification.
+// A generic GuestTrap alone is NOT evidence that this branch was reached.
+// No printing, allocation, import or attempted cleanup is safe at this boundary.
+//go:nosplit
+//go:noinline
+func lsfStackLimitExceeded() { abort() }

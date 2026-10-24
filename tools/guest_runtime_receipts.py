@@ -176,7 +176,7 @@ def verify_build(value, language, files, source_inputs, component, materials):
         project = decode(files['capsule-project.json'], MAX_BYTES) if 'capsule-project.json' in files else {}
         if 'runtimeProfile' in project:
             selected = project['runtimeProfile']
-            require(selected in {PROFILES['go'], 'go-component-activation-v1', 'go-component-activation-v2', 'go-component-activation-v3', 'go-component-activation-v4', 'go-component-activation-v5', 'go-component-activation-v6'}, 'go-runtime-profile-not-installed')
+            require(selected in {PROFILES['go'], 'go-component-activation-v1', 'go-component-activation-v2', 'go-component-activation-v3', 'go-component-activation-v4', 'go-component-activation-v5', 'go-component-activation-v6', 'go-component-activation-v7'}, 'go-runtime-profile-not-installed')
             require(graph is None or selected == profile, 'go-project-and-captured-runtime-profile-disagree')
             profile = selected
     return validate(value, language=language, source=digest(source_inputs), component=digest(component),
