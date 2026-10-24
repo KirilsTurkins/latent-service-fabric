@@ -51,7 +51,7 @@
       },
       {
         "name": "Check owning-evidence refusal controls",
-        "run": "python3 -m unittest tools.tests.test_typescript_borrow_controls -v"
+        "run": "python3 -m unittest tools.tests.test_typescript_borrow_controls tools.tests.test_typescript_borrow_splicer_inputs -v"
       },
       {
         "env": {
@@ -88,7 +88,7 @@
   },
   "jobId": "native-controls",
   "kind": "job",
-  "reviewReason": "One normal library and import engine build, frozen splicer validation, eleven native controls and exact source/attempt/deadline evidence",
+  "reviewReason": "Preserve all original owning controls and add the three receipt-selection/refusal controls before acquisition; no extra source/library/engine build",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-borrow-release.yml"
 }

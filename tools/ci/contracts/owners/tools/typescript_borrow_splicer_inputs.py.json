@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/typescript_borrow_splicer_inputs.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Authenticate only the frozen successful source-splicer job/archive; preserve unchanged source/SDK/recipe validators and never acquire old engines or native hosts",
+  "reviewReason": "Retain the four required completed-build receipts from the same authenticated frozen archive, preserving original member bounds and unchanged normal source/SDK/recipe validation",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "fae75e4d622f20656dee0e6496fc2819dc5398f4d61dd25594513da4a01f93a9"
+  "sha256": "42d211acb9d6bc67231d23e32aa990b6fa3a7f43fbb3337acef92e42100aad5f"
 }

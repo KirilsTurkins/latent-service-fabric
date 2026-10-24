@@ -10,6 +10,7 @@ on:
       - 'tools/typescript_guest/**'
       - 'tools/tests/test_typescript_import_cancellation.py'
       - 'tools/tests/test_typescript_borrow_controls.py'
+      - 'tools/tests/test_typescript_borrow_splicer_inputs.py'
       - 'sdk/typescript-guest/activation/**'
   workflow_dispatch:
 
@@ -50,7 +51,7 @@ jobs:
       - name: Make the pinned pre-feature ABI baseline available in shallow checkout
         run: git fetch --no-tags --depth=1 origin 5e465f8c534ee31d407dbb9720fdec35cb9da71d
       - name: Check owning-evidence refusal controls
-        run: python3 -m unittest tools.tests.test_typescript_borrow_controls -v
+        run: python3 -m unittest tools.tests.test_typescript_borrow_controls tools.tests.test_typescript_borrow_splicer_inputs -v
       - name: Authenticate and acquire only the unchanged source splicer
         env:
           GH_TOKEN: ${{ github.token }}
