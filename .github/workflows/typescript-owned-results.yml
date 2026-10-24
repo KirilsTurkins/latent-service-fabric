@@ -79,6 +79,7 @@ jobs:
             ${{ runner.temp }}/typescript-own-controls/*.o
             ${{ runner.temp }}/typescript-own-controls/control-includes/**
             ${{ runner.temp }}/typescript-own-controls/lifecycle-includes/**
+            ${{ runner.temp }}/typescript-own-controls/backing-core-controls/**
             ${{ runner.temp }}/typescript-own-controls/library-inputs/*.json
             ${{ runner.temp }}/typescript-own-controls/library-inputs/library/*.json
             ${{ runner.temp }}/typescript-own-controls/splicer/*.json
