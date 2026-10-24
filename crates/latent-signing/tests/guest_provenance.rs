@@ -310,6 +310,22 @@ fn java_requires_separate_source_bound_builder_approval() {
 fn java_recipe_and_every_observed_compiler_input_are_closed() {
     let original = serde_json::to_value(java()).unwrap();
     decode_build_observation(&serde_json::to_vec(&original).unwrap(), Default::default()).unwrap();
+    let mut size_optimized = original.clone();
+    size_optimized["parameters"]["optimization"] = "Oz".into();
+    decode_build_observation(
+        &serde_json::to_vec(&size_optimized).unwrap(),
+        Default::default(),
+    )
+    .unwrap();
+    for optimization in ["O0", "O1", "Os", "O3", "oz", "OZ", "-Oz", ""] {
+        let mut changed = original.clone();
+        changed["parameters"]["optimization"] = optimization.into();
+        assert!(decode_build_observation(
+            &serde_json::to_vec(&changed).unwrap(),
+            Default::default()
+        )
+        .is_err());
+    }
     for material in original["materials"].as_array().unwrap() {
         let mut changed = original.clone();
         changed["materials"]

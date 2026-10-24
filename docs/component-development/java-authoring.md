@@ -182,9 +182,9 @@ GC, signed-execution or complete standard-library qualification.
 The maintained normal compiler template explicitly selects TeaVM C `BALANCED`
 (`ADVANCED` internally), replacing the plugin's implicit C `AGGRESSIVE` default.
 Its inlining strategy limits accumulated complexity to 300 rather than 3000 and
-restricts nontrivial inlining to once-used callees. Clang remains at `-O2`; the
-original public source, coroutine transformations and component-parser limits
-remain unchanged. The [BALANCED build](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40101238993)
+restricts nontrivial inlining to once-used callees. That attempt kept Clang at
+`-O2`, the original public source, coroutine transformations and component-parser
+limits. The [BALANCED build](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40101238993)
 reduced the same `pools` body to 13,993,280 bytes but still failed the unchanged
 7,654,321-byte limit. This policy has not repaired the assembly boundary.
 Captured SDK hashes bind this setting, so older compiler receipts do not qualify
@@ -201,6 +201,17 @@ manual selector runs only the original public fiber preparation command and its
 JDK/compiler controls; it refuses combinations with either other optional mode
 before acquisition. Default authoring CI coverage remains intact. This path
 provides compiler evidence, not component execution or runtime qualification.
+
+The native C backend now selects `-Oz` only for either explicit activation runtime
+profile; nonactivation builds keep `-O2` and unknown profiles still refuse. This
+source-bound candidate prioritizes the hard function-size ceiling. It keeps the
+original SjLj/standard exception handling, ABI and execution limits; its effect
+on the unchanged public fixture still requires a fresh measured build.
+Java provenance recognizes only `O2` and `Oz` as maintained optimization values.
+Its existing six fields identify the optimization, not an activation-profile
+qualification: profile selection remains in the producer and separate runtime,
+builder, source and operator gates remain required. Old receipts retain their
+original compiler inputs and cannot qualify this changed backend policy.
 
 `--read-only-cache /path/to/modules-2` selects a verified immutable Gradle
 dependency cache. Gradle writes locks and updates to the build's private home.

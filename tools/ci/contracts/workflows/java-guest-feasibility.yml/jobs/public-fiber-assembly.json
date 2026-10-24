@@ -61,7 +61,7 @@
         "with": {
           "if-no-files-found": "warn",
           "name": "java-public-fiber-assembly-${{ github.sha }}",
-          "path": "${{ runner.temp }}/java-activation-fibers/FIBERS-COMPILE.json\n${{ runner.temp }}/java-activation-fibers/compiler/*.command.json\n${{ runner.temp }}/java-activation-fibers/compiler/*.log\n${{ runner.temp }}/java-activation-fibers/build/runtime-profile.json\n${{ runner.temp }}/java-activation-fibers/build/component-inputs/**\n",
+          "path": "${{ runner.temp }}/java-activation-fibers/FIBERS-COMPILE.json\n${{ runner.temp }}/java-activation-fibers/compiler/*.command.json\n${{ runner.temp }}/java-activation-fibers/compiler/*.log\n${{ runner.temp }}/java-activation-fibers/build/runtime-profile.json\n${{ runner.temp }}/java-activation-fibers/build/component.wasm\n${{ runner.temp }}/java-activation-fibers/build/component-inputs/**\n",
           "retention-days": 3
         }
       }
@@ -70,7 +70,7 @@
   },
   "jobId": "public-fiber-assembly",
   "kind": "job",
-  "reviewReason": "Build only the original exact public fiber fixture with unchanged compiler tools and limits; retain bounded assembly evidence without component execution.",
+  "reviewReason": "Retain the one bounded successful public component to measure its embedded function sizes; preserve the exact compiler command, all failures and original default CI coverage.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-guest-feasibility.yml"
 }

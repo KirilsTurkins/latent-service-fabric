@@ -1003,4 +1003,5 @@ jobs:
             ${{ runner.temp }}/java-activation-fibers/compiler/*.command.json
             ${{ runner.temp }}/java-activation-fibers/compiler/*.log
             ${{ runner.temp }}/java-activation-fibers/build/runtime-profile.json
+            ${{ runner.temp }}/java-activation-fibers/build/component.wasm
             ${{ runner.temp }}/java-activation-fibers/build/component-inputs/**
