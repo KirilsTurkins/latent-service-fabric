@@ -481,6 +481,13 @@ class StreamOperator:
         receipt; adoption neither rotates a provider nor grants authority.
         """
         with state.lock(self.root, "stream-operator.lock"):
+            names = ("stream-operator-owner.json", "operations.json", "stream-policy-receipts.json")
+
+            def snapshot():
+                return {name: _private_read(self.root / name, MAX_DOCUMENT)
+                        if (self.root / name).exists() else None for name in names}
+
+            before = snapshot()
             self._owned()
             require(self.journal.read()["pending"] is None,
                     "recover-original-operation-before-provider-adoption")
@@ -500,6 +507,8 @@ class StreamOperator:
                 require(observed.get("outcomeKnown") is True and observed.get("category") == "success"
                         and _same_owned_policy(current, expected),
                         "stream-operator-policy-changed")
+            self._owned()
+            require(snapshot() == before, "stream-operator-provider-adoption-state-changed")
             owner = {**self.owner, "provider": replacement}
             state.atomic(self.root, "stream-operator-owner.json", owner)
             self.owner = owner
