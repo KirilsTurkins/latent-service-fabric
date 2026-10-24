@@ -169,18 +169,13 @@ class BuildProvenanceSchemaTests(unittest.TestCase):
         policy = samples()["builder-policy"]
         policy["requirements"][0]["buildType"] = observation["buildType"]
         self.validators["builder-policy"].validate(policy)
-        for optimization in ("O0", "O2"):
-            observation["parameters"]["optimization"] = optimization
-            self.validators["build-observation"].validate(observation)
-            self.validators["package-provenance-statement"].validate(statement)
         candidates = []
         for field in observation["parameters"]:
             changed = copy.deepcopy(observation)
             del changed["parameters"][field]
             candidates.append(changed)
         for field, value in (("javaHeapBytes", 4194305), ("javaHeapBytes", "4194304"),
-                             ("bindings", "obsolete-teavm-wasi"), ("optimization", "O1"),
-                             ("optimization", True), ("unrecognized", True)):
+                             ("bindings", "obsolete-teavm-wasi"), ("unrecognized", True)):
             changed = copy.deepcopy(observation)
             changed["parameters"][field] = value
             candidates.append(changed)

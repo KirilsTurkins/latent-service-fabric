@@ -191,27 +191,13 @@ JDK/compiler controls; it refuses combinations with either other optional mode
 before acquisition. Default authoring CI coverage remains intact. This path
 provides compiler evidence, not component execution or runtime qualification.
 
-The compiler retains TeaVM C `FULL`. Only the existing explicitly selected
-`teavm-activation-fibers-v1` and `teavm-activation-fibers-io-v1` profiles select
-Clang `-O0`, avoiding ordinary scalar promotion before Wasm SjLj lowering.
-Other Java builds retain `-O2`. This policy is a compiler repair candidate;
-assembly, stack usage, fuel cost and runtime behavior require fresh evidence.
-Existing volatile reference spills, EH/SjLj, the 64-KiB C stack and 64-MiB
-linear maximum remain unchanged. Earlier [BALANCED](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40101238993)
+The compiler retains the current development defaults: TeaVM C `FULL` and
+Clang `-O2`. Earlier [BALANCED](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40101238993)
 and [activation `Oz`](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40109009991)
 experiments did not repair the size boundary: the same public `pools` body was
 13,993,280 and 14,367,528 bytes respectively. Those policy and provenance-value
 experiments are withdrawn. Their failed histories remain separately attributed;
 the retained capture programme does not establish a compiler or runtime fix.
-
-The Java build observation records the actual `O0` or `O2` choice. Both closed
-Java provenance schemas and the native validator recognize those two values;
-all other recipe and material requirements remain intact. The existing six-field
-recipe has no runtime-profile field, so the maintained source-bound builder
-controls profile selection. Recognizing `O0` grants no new runtime authority.
-Older native CLIs continue to accept existing `O2` recipes and correctly refuse
-new `O0` recipes until updated; do not bypass that refusal. The validator's new
-Rust control has not yet been compiled or executed for this candidate.
 
 Only that manual public-fiber job additionally selects `--observe-public-wineh`.
 The optional observer snapshots the admitted generated C, headers, bindings,
@@ -270,6 +256,18 @@ this pass. This measurement does not establish an exclusive end-to-end cause,
 a safe compiler repair or Java execution qualification. The
 [retained evidence](../evidence/java-public-wineh-ea252/receipt.json) binds the
 source, original module, commands, finite limits and complete scalar counts.
+
+A subsequent [selected-fiber `-O0` attempt](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40129296830)
+used identical generated C and changed only the Clang optimization argument.
+Its ten hosted source controls passed, but component assembly still refused
+`pools`: 9,904,105 bytes at `0x1b343`, above the unchanged 7,654,321-byte limit.
+WinEH preparation added 638,994 stores (379 PHIs times 1,686 invoke sites);
+volatile counts again stayed unchanged across that pass. The smaller expansion
+did not establish a compiler repair. The candidate `O0` policy, provenance enum
+and added candidate test are withdrawn; the original `FULL`/`-O2` compiler and
+`O2`-only Java provenance validation remain intact. The [failed-attempt receipt](../evidence/java-fiber-o0-a464/receipt.json)
+binds its historical source and actual failure. No runtime qualification or
+additional compiler trial follows from this measurement.
 
 `--read-only-cache /path/to/modules-2` selects a verified immutable Gradle
 dependency cache. Gradle writes locks and updates to the build's private home.

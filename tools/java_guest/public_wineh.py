@@ -17,7 +17,7 @@ from types import SimpleNamespace
 
 from tools.build_process import BuildProcessError, MAX_OUTPUT_BYTES, run_bounded_result
 from tools.dev_workflow import paths
-from tools.java_guest.compiler import Compiler, _c_optimization, sdk_snapshot, tool_inventory
+from tools.java_guest.compiler import Compiler, sdk_snapshot, tool_inventory
 from tools.java_guest.fiber_component_inputs import JAVA, WIT, LIMITS
 from tools.java_guest.wineh_ir import FUNCTION, KEYS, MAX_SAMPLES, MAX_LINE
 from tools.rust_capsule_project import ROOT, canonical, digest, inventory, snapshot
@@ -119,7 +119,7 @@ def expected_command(compiler: Compiler, output: Path) -> list[str]:
     destination = output / 'build'
     generated = destination / 'project/build/teavm-c/c'
     return list(map(str, (compiler.paths['clang'], '-target', 'wasm32-wasip1',
-        '-std=c11', '-' + _c_optimization(True), '-DLSF_JAVA_ACTIVATION_PROFILE=1', '-DLSF_TEAVM_WASM=1',
+        '-std=c11', '-O2', '-DLSF_JAVA_ACTIVATION_PROFILE=1', '-DLSF_TEAVM_WASM=1',
         '-DTEAVM_CUSTOM_LOG=1', '-mllvm', '-wasm-enable-sjlj', '-lsetjmp', '-mllvm',
         '-wasm-use-legacy-eh=false', '-mexec-model=reactor', '-Wl,--no-entry',
         '-Wl,--export-memory', '-Wl,-z,stack-size=65536', '-Wl,--max-memory=67108864',
