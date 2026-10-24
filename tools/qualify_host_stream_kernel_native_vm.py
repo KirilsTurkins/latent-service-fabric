@@ -73,9 +73,13 @@ def qualify(output, revision):
     output = fresh(output)
     before = source_inputs(ROOT)
     write_json(output/'native-source-inputs.json',before)
-    tools = {name:Path(shutil.which(name) or '').resolve() for name in ('gcc','rustc','cargo','qemu-system-x86_64')}
+    # Preserve argv[0] for rustup's rustc/cargo launchers; resolving the link
+    # before execution would invoke the toolchain manager instead. Hash the
+    # regular targets separately and recheck both links and bytes after use.
+    tools = {name:Path(shutil.which(name) or '').absolute() for name in ('gcc','rustc','cargo','qemu-system-x86_64')}
     native.require(all(path.is_file() for path in tools.values()), 'normal-host-tools-required')
-    tool_pins = {name:native.identity(read_file(path,256*1024**2)) for name,path in tools.items()}
+    tool_targets = {name:path.resolve() for name,path in tools.items()}
+    tool_pins = {name:native.identity(read_file(path,256*1024**2)) for name,path in tool_targets.items()}
     command_root = output/'commands'; command_root.mkdir()
     environment.update(CARGO_BUILD_JOBS='2',CARGO_INCREMENTAL='0',
         CARGO_TARGET_DIR=str(output/'native-target'),CARGO_ENCODED_RUSTFLAGS='\x1f'.join(FLAGS),
@@ -86,8 +90,10 @@ def qualify(output, revision):
     receipt = {'schemaVersion':'lsf.native-constructor-kernel-join.v1','status':'in-progress',
         'sourceRevision':revision,'kernelRebuilt':False,'wholeNodeExecuted':False,
         'nativeQuotaReleased':False,'productionInstallation':False,'completeAllocationClosure':False,
-        'hostTlsQualified':False,'wholeCostQualification':False,'freshVmBoots':1,
+        'hostTlsQualified':False,'wholeCostQualification':False,'freshVmBoots':0,
         'staticCompilerFlags':list(FLAGS),'sourceBefore':before,'observedTools':tool_pins,
+        'observedToolPaths':{name:{'launcher':str(tools[name]),'regularTarget':str(path)}
+            for name,path in tool_targets.items()},
         'hermetic':False,'compilerImplicitInputsAttested':False,
         'reproducibility':'not-checked'}
     stage = 'immutable-kernel-input'
@@ -128,6 +134,7 @@ def qualify(output, revision):
         finally:
             commands.command_seconds,commands.deadline = previous_seconds,previous_deadline
         receipt['observations'] = native.serial_observation(serial)
+        receipt['freshVmBoots'] = 1
         stage = 'final-exact-material-recheck'
         native.require(source_inputs(ROOT) == before, 'native-source-mutated')
         native.require(read_file(native_init,image.MAX_INIT) == child_raw
@@ -141,7 +148,8 @@ def qualify(output, revision):
         for name,bound in original['firmware'].items():
             native.require(native.identity(read_file(kernel/'firmware'/name,1024**2)) == bound,
                 'executed-firmware-mutated')
-        native.require({name:native.identity(read_file(path,256*1024**2)) for name,path in tools.items()}
+        native.require({name:path.resolve() for name,path in tools.items()} == tool_targets
+            and {name:native.identity(read_file(path,256*1024**2)) for name,path in tool_targets.items()}
             == tool_pins, 'observed-tools-mutated')
         native.require(time.monotonic() < commands.deadline,'programme-expiry-never-success')
         artifacts.require_source(ROOT,revision,environment)
