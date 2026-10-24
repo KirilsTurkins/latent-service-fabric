@@ -10,6 +10,7 @@ use latent_wire::invocation::ActivationCleanupHandle;
 use crate::config::{topology as capacity, NodeSettings};
 use crate::standalone::transport::{TransportHandle, TransportSnapshot};
 
+mod audit;
 mod catalog;
 mod optional;
 
@@ -25,6 +26,7 @@ pub(in crate::standalone) struct TopologySource {
     rollouts: Option<latent_rollout::RolloutHandle>,
     policies: Option<latent_policy::capability::PolicyControlHandle>,
     catalog: Option<Arc<latent_artifacts::DirectoryArtifactRepository>>,
+    audit: Option<latent_audit::AuditHandle>,
 }
 
 impl TopologySource {
@@ -67,6 +69,7 @@ impl TopologySource {
             rollouts: None,
             policies: None,
             catalog: None,
+            audit: None,
         }
     }
 
@@ -82,6 +85,13 @@ impl TopologySource {
         catalog: Arc<latent_artifacts::DirectoryArtifactRepository>,
     ) -> Self {
         self.catalog = Some(catalog);
+        self
+    }
+    pub(in crate::standalone) fn with_audit(
+        mut self,
+        audit: Option<latent_audit::AuditHandle>,
+    ) -> Self {
+        self.audit = audit;
         self
     }
     pub(in crate::standalone) fn with_http(
@@ -114,6 +124,18 @@ impl TopologySource {
         }
         Ok(true)
     }
+    fn audit_rows(&self, writer: &mut NodeTopologyWriter<'_>) -> Result<bool, PlatformError> {
+        if writer.remaining() == 0 {
+            return Ok(false);
+        }
+        let entries: [NodeTopologyEntry; capacity::AUDIT_ROWS] = [audit::entry(self.audit.as_ref())];
+        for entry in entries {
+            if !writer.push(&entry)? {
+                return Ok(false);
+            }
+        }
+        Ok(true)
+    }
 }
 
 impl NodeTopologySource for TopologySource {
@@ -126,7 +148,7 @@ impl NodeTopologySource for TopologySource {
                 }
             }
         }
-        if !self.http_rows(writer)? {
+        if !self.audit_rows(writer)? || !self.http_rows(writer)? {
             return Ok(false);
         }
         // All five possible classes form a fixed bound, including disabled ones.
