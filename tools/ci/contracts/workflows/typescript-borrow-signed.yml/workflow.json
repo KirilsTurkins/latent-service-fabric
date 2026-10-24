@@ -17,6 +17,7 @@
           "tools/typescript_guest/borrow_*.py",
           "tools/typescript_guest/borrow_probe.mjs",
           "tools/typescript_guest/compiler.py",
+          "tools/typescript_guest/runtime_profile.py",
           "tools/typescript_guest/componentize.mjs",
           "tools/tests/test_typescript_borrow*.py",
           "sdk/typescript-guest/probes/borrow-release/**",
@@ -33,7 +34,7 @@
   "requiredJobs": [
     "signed-borrow"
   ],
-  "reviewReason": "Add one finite development feature campaign for one fixed component and six signed borrow-release logical-reference outcomes, preserving original limits and all existing workflows.",
+  "reviewReason": "Add only the exact runtime graph-reader source path so its actual omitted-void-result repair automatically triggers this existing bounded owning campaign; all jobs, commands, limits and authority remain unchanged.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-borrow-signed.yml"
 }

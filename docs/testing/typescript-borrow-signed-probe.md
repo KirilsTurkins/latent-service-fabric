@@ -93,3 +93,13 @@ sibling isolation directory while its compiler cwd was `prepared/project`.
 The fix uses the existing `prepared` parent for both project and build. The
 normal isolation guard is unchanged; this failed attempt establishes no
 canonical or signed runtime pass and remains retained.
+
+The next attempt, [run40059928567/job120771018412](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40059928567/job/120771018412),
+passed the workspace guard and reached the actual pinned WIT parser. It failed
+on the diagnostic's void function because that parser omits a void `result`
+field and the graph normalizer indexed it unconditionally. The repair treats
+omission as the existing explicit empty result; a regression uses the retained
+raw parser graph and still rejects nonvoid drift and invalid type references.
+No guest/host compilation or signed case passed in that failed attempt. Its
+620,180-byte artifact `12546483197` remains failed and retained (SHA256
+`02c0b6d5824e65abc29fcb09c0d2c73353e35882bc69989baa10af408c6ae78d`).

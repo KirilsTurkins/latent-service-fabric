@@ -12,6 +12,7 @@
     "TypeScriptCompiledGraphTests.test_complete_activation_surface_keeps_original_strict_graph_comparison",
     "TypeScriptCompiledGraphTests.test_private_pruning_never_ignores_http_ownership_clock_export_or_extra_import",
     "TypeScriptCompiledGraphTests.test_pruned_activation_keeps_all_eight_signatures_and_three_types_mandatory",
+    "TypeScriptRuntimeProfileTests.test_actual_borrow_void_graph_preserves_omitted_result_without_hiding_type_drift",
     "TypeScriptRuntimeProfileTests.test_actual_component_synthetic_root_keeps_versioned_interfaces_and_types",
     "TypeScriptRuntimeProfileTests.test_actual_parser_nested_record_change_rejected",
     "TypeScriptRuntimeProfileTests.test_actual_parser_relocation_preserves_full_public_contract",
@@ -107,7 +108,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:ab015571a14a49521c6c7f02a555893cdbcedcf02acc1bd29c9650f275f51fe1",
-        "class:setup-sha256:b8201bcc4f1de242c917aad8e733f1c95e3db42659de15639de82d74f85967c3"
+        "class:setup-sha256:90131676533858c46f35d957ed670e70b97d54e1f42e5cdc797384b1b34a2a68"
       ],
       "skipSites": []
     },
@@ -119,7 +120,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:ab015571a14a49521c6c7f02a555893cdbcedcf02acc1bd29c9650f275f51fe1",
-        "class:setup-sha256:b8201bcc4f1de242c917aad8e733f1c95e3db42659de15639de82d74f85967c3"
+        "class:setup-sha256:90131676533858c46f35d957ed670e70b97d54e1f42e5cdc797384b1b34a2a68"
       ],
       "skipSites": []
     },
@@ -131,7 +132,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:ab015571a14a49521c6c7f02a555893cdbcedcf02acc1bd29c9650f275f51fe1",
-        "class:setup-sha256:b8201bcc4f1de242c917aad8e733f1c95e3db42659de15639de82d74f85967c3"
+        "class:setup-sha256:90131676533858c46f35d957ed670e70b97d54e1f42e5cdc797384b1b34a2a68"
       ],
       "skipSites": []
     },
@@ -180,6 +181,18 @@
       "fixtureGuards": [
         "module:setup-sha256:ab015571a14a49521c6c7f02a555893cdbcedcf02acc1bd29c9650f275f51fe1",
         "class:setup-sha256:ca85bd3439a6b39962009e3916cada959f00790c8f45cd01602f5cea5951bdf5"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptRuntimeProfileTests.test_actual_borrow_void_graph_preserves_omitted_result_without_hiding_type_drift": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ab015571a14a49521c6c7f02a555893cdbcedcf02acc1bd29c9650f275f51fe1",
+        "class:setup-sha256:e99beb7adcce801658107d55096372be8d7111dd955f84ed123ef7890ba7d835"
       ],
       "skipSites": []
     },
@@ -486,6 +499,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_typescript_runtime_profile.py",
-  "reviewReason": "Actual CI repair: bind historical e611 clock input assertions to the three exact retained original headers after the reviewed tracking-lifetime fix. Preserve the complete original engine receipt, all cases, digests and sizes, graph/adversarial checks, and every no-skip execution guard; current sources remain required for every unchanged input. No production qualification or source pin changes.",
+  "reviewReason": "Add one regression from actual failed pinned-parser WIT stdout: omitted void result equals explicit None while nonvoid drift and invalid type references still fail; all prior cases and live frozen-clock guards remain intact.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

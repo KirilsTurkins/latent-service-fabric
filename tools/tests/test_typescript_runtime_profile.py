@@ -439,14 +439,10 @@ class TypeScriptClockCompiledGraphTests(unittest.TestCase):
         value = json.loads(path.read_bytes())
         self.assertEqual(value['parser'], 'wasm-tools1.254.0')
         self.assertEqual(value['source'], 'e61134ed5e075b898e1385abe785663884787f72')
-        historical = {
-            'sdk/typescript-guest/activation/native_job_queue.h',
-            'sdk/typescript-guest/activation/promise_records.h',
-            'sdk/typescript-guest/activation/reaction_records.h',
-        }
+        # This compiled receipt belongs to its immutable source revision.
+        # Current SDK changes must not rewrite or invalidate historical inputs.
         for row in value['engineInput']['sdkInputs']:
-            source_path = (path.parent/'original-sdk-e611'/Path(row['path']).name
-                           if row['path'] in historical else ROOT/row['path'])
+            source_path = path.parent/'original-sdk-e611'/Path(row['path']).name
             raw = source_path.read_bytes()
             self.assertEqual(len(raw), row['size'])
             self.assertEqual(runtime.digest(raw), row['digest'])

@@ -9,6 +9,7 @@ on:
       - 'tools/typescript_guest/borrow_*.py'
       - 'tools/typescript_guest/borrow_probe.mjs'
       - 'tools/typescript_guest/compiler.py'
+      - 'tools/typescript_guest/runtime_profile.py'
       - 'tools/typescript_guest/componentize.mjs'
       - 'tools/tests/test_typescript_borrow*.py'
       - 'sdk/typescript-guest/probes/borrow-release/**'
