@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_host_stream_kernel_native_vm.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "First actual Rust constructor/kernel join in one isolated VM. Preserve the original ten descriptor-owner cases and old branch; the new closed branch owns its new job. No runtime/provider/capacity or previous test obligation is removed.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "cf8d73ae19bd9f64d0e1ae3e7a33e128d9133c44171dabf470f18f7a057c584b"
+}

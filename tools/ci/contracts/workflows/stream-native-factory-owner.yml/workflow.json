@@ -9,13 +9,19 @@
     "on": {
       "push": {
         "branches": [
-          "feat/stream-kernel-native-factory-owner-20261023"
+          "feat/stream-kernel-native-factory-owner-20261023",
+          "feat/kernel-native-constructor-vm-20261024"
         ],
         "paths": [
           ".github/workflows/stream-native-factory-owner.yml",
           "crates/latent-streams/**",
           "crates/latent-capabilities/src/broker/pools/control.rs",
-          "tools/qualify_host_stream_native.py"
+          "tools/qualify_host_stream_native.py",
+          "tools/qualify_host_stream_kernel_native_vm.py",
+          "tools/host_stream_kernel_native_vm.py",
+          "tools/host_stream_kernel_native_vm_inputs.py",
+          "tools/tests/test_kernel_native_constructor_vm.py",
+          "research/standard-outbound/linux-6.12-lineage/native-constructor-vm-init.c"
         ]
       },
       "workflow_dispatch": null
@@ -25,9 +31,10 @@
     }
   },
   "requiredJobs": [
+    "native-kernel-vm",
     "native-owner"
   ],
-  "reviewReason": "Actual affine native factory descriptor ownership and real pending/ready constructor routing; add ten Linux descriptor/quarantine controls and seven source/collector controls. Preserve all original thirty stream cases and their witnesses; cardinality becomes forty. Normal constructor selection remains zero, production socket consumer NULL, full Linux/Root final-free unqualified.",
+  "reviewReason": "First actual Rust constructor/kernel join in one isolated VM. Preserve the original ten descriptor-owner cases and old branch; the new closed branch owns its new job. No runtime/provider/capacity or previous test obligation is removed.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/stream-native-factory-owner.yml"
 }

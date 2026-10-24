@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "latent.ci.suite-fragment.v1",
+  "suites": [
+    {
+      "boundary": "runtime",
+      "expectedCases": [],
+      "expectedIgnored": [],
+      "id": "latent-streams.example.kernel-constructor-vm",
+      "ignoredLeaves": [],
+      "kind": "example",
+      "manifest": "crates/latent-streams/Cargo.toml",
+      "minimumCases": 0,
+      "mode": "compile-only",
+      "package": "latent-streams",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned normal Rust compiler and successful owned Cargo inventory",
+        "development-outbound feature; actual constructor execution only inside isolated VM"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "examples/kernel_constructor_vm.rs",
+      "target": "kernel_constructor_vm",
+      "timeoutSeconds": 900
+    }
+  ]
+}
