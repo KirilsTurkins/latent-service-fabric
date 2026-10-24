@@ -21,6 +21,13 @@ from tools.rust_capsule_project import ROOT, canonical, digest, inventory, read_
 from tools.stage_runtime_wit import copy_wit_tree, dependencies
 
 
+def _c_optimization(activation_profile: bool) -> str:
+    """Avoid optimizer SSA promotion before Wasm SjLj in the selected fibers."""
+    if type(activation_profile) is not bool:
+        raise ValueError("Java activation profile requires an explicit boolean selection")
+    return "O0" if activation_profile else "O2"
+
+
 def source_module(path: Path):
     """Load this captured SDK helper, never a prior project's module cache.
 
@@ -222,6 +229,20 @@ class Compiler:
             # __init__ can fail before the caller receives the Compiler. Keep
             # each command's bounded exit/cleanup record beside its log anyway.
             write_json(self.directory / (str(len(self.records) - 1) + "-" + stage + ".command.json"), record)
+
+    def compile_c(self, generated: Path, destination: Path, *, activation_profile: bool,
+                  failure_contexts: tuple[str, ...] = ()):
+        """Compile through the original C owner with the selected profile policy."""
+        core = destination / "core.wasm"
+        return c_failure_context.run(self, generated, failure_contexts, "-target", "wasm32-wasip1", "-std=c11", "-" + _c_optimization(activation_profile),
+                 *(["-DLSF_JAVA_ACTIVATION_PROFILE=1"] if activation_profile else []),
+                 "-DLSF_TEAVM_WASM=1", "-DTEAVM_CUSTOM_LOG=1", "-mllvm", "-wasm-enable-sjlj", "-lsetjmp",
+                 "-mllvm", "-wasm-use-legacy-eh=false", "-mexec-model=reactor", "-Wl,--no-entry",
+                 "-Wl,--export-memory", "-Wl,-z,stack-size=65536", "-Wl,--max-memory=67108864",
+                 "-include", self.sdk / "runtime/native.h",
+                 "-I", destination / "bindings", "-I", self.sdk / "runtime", "-iquote", generated,
+                 generated / "all.c", destination / "bindings/bridge.c", self.sdk / "feasibility/platform.c",
+                 destination / "bindings/probe.c", destination / "bindings/probe_component_type.o", "-o", core)
 
     def compile(self, sources: Path, wit: Path, world: str, destination: Path, *,
                 application_classpath: tuple[Path, ...] = (), application_resources: Path | None = None,
@@ -443,15 +464,8 @@ class Compiler:
         adapt = source_module(self.sdk / "tools/teavm_platform.py").adapt
         adaptation = adapt(generated)
         core, component = destination / "core.wasm", destination / "component.wasm"
-        c_failure_context.run(self, generated, failure_contexts, "-target", "wasm32-wasip1", "-std=c11", "-O2",
-                 *(["-DLSF_JAVA_ACTIVATION_PROFILE=1"] if activation_profile else []),
-                 "-DLSF_TEAVM_WASM=1", "-DTEAVM_CUSTOM_LOG=1", "-mllvm", "-wasm-enable-sjlj", "-lsetjmp",
-                 "-mllvm", "-wasm-use-legacy-eh=false", "-mexec-model=reactor", "-Wl,--no-entry",
-                 "-Wl,--export-memory", "-Wl,-z,stack-size=65536", "-Wl,--max-memory=67108864",
-                 "-include", self.sdk / "runtime/native.h",
-                 "-I", destination / "bindings", "-I", self.sdk / "runtime", "-iquote", generated,
-                 generated / "all.c", destination / "bindings/bridge.c", self.sdk / "feasibility/platform.c",
-                 destination / "bindings/probe.c", destination / "bindings/probe_component_type.o", "-o", core)
+        self.compile_c(generated, destination, activation_profile=activation_profile,
+                       failure_contexts=failure_contexts)
         adapter = destination / "closed-runtime.wasm"
         self.run("closed-runtime", "wasm-tools", "component", "embed", staged, self.sdk / "feasibility/closed-runtime.wat",
                  "--world", "runtime-support", "-o", adapter)

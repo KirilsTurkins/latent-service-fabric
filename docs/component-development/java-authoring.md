@@ -191,13 +191,27 @@ JDK/compiler controls; it refuses combinations with either other optional mode
 before acquisition. Default authoring CI coverage remains intact. This path
 provides compiler evidence, not component execution or runtime qualification.
 
-The compiler retains the current development defaults: TeaVM C `FULL` and
-Clang `-O2`. Earlier [BALANCED](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40101238993)
+The compiler retains TeaVM C `FULL`. Only the existing explicitly selected
+`teavm-activation-fibers-v1` and `teavm-activation-fibers-io-v1` profiles select
+Clang `-O0`, avoiding ordinary scalar promotion before Wasm SjLj lowering.
+Other Java builds retain `-O2`. This policy is a compiler repair candidate;
+assembly, stack usage, fuel cost and runtime behavior require fresh evidence.
+Existing volatile reference spills, EH/SjLj, the 64-KiB C stack and 64-MiB
+linear maximum remain unchanged. Earlier [BALANCED](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40101238993)
 and [activation `Oz`](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40109009991)
 experiments did not repair the size boundary: the same public `pools` body was
 13,993,280 and 14,367,528 bytes respectively. Those policy and provenance-value
 experiments are withdrawn. Their failed histories remain separately attributed;
 the retained capture programme does not establish a compiler or runtime fix.
+
+The Java build observation records the actual `O0` or `O2` choice. Both closed
+Java provenance schemas and the native validator recognize those two values;
+all other recipe and material requirements remain intact. The existing six-field
+recipe has no runtime-profile field, so the maintained source-bound builder
+controls profile selection. Recognizing `O0` grants no new runtime authority.
+Older native CLIs continue to accept existing `O2` recipes and correctly refuse
+new `O0` recipes until updated; do not bypass that refusal. The validator's new
+Rust control has not yet been compiled or executed for this candidate.
 
 Only that manual public-fiber job additionally selects `--observe-public-wineh`.
 The optional observer snapshots the admitted generated C, headers, bindings,

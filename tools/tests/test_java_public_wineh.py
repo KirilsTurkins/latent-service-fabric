@@ -209,7 +209,7 @@ class JavaPublicWinEH(unittest.TestCase):
     def test_changed_real_materials_or_command_receipt_refuse_before_execution(self):
         for kind in ('generated', 'header', 'binding', 'environment', 'tool', 'receipt', 'java', 'wit',
                      'core', 'unsafe-name', 'directory-link', 'generated-target', 'binding-target',
-                     'after-incomplete'):
+                     'optimizer', 'after-incomplete'):
             with self.subTest(kind=kind), tempfile.TemporaryDirectory() as temporary:
                 root = Path(temporary).resolve()
                 compiler = self.populate(root)
@@ -221,6 +221,10 @@ class JavaPublicWinEH(unittest.TestCase):
                     'core': 'build/core.wasm'}
                 if kind in selected:
                     (root / selected[kind]).write_bytes(b'changed-after-original-clang')
+                elif kind == 'optimizer':
+                    row = compiler.records[0]
+                    row['command'][row['command'].index('-O0')] = '-O2'
+                    (compiler.directory / '0-c-to-wasm.command.json').write_bytes(canonical(row))
                 elif kind == 'environment':
                     compiler.environment['PATH'] = 'changed'
                 elif kind == 'tool':

@@ -59,6 +59,40 @@ class AuthoringSelection(unittest.TestCase):
             name.removeprefix('wit/'): raw for name, raw in self.before.items() if name.startswith('wit/')})
         return observations
 
+    def test_actual_c_command_boundary_preserves_nonfiber_policy_and_original_limits(self):
+        from types import SimpleNamespace
+        from tools.java_guest import c_failure_context
+        compiler = SimpleNamespace(sdk=self.root / 'sdk')
+        generated, destination = self.root / 'generated', self.root / 'build'
+        # Fixed original command recipe, with the one selected-fiber policy
+        # change. Execute the real command constructor, never a model of it.
+        expected = ['-target', 'wasm32-wasip1', '-std=c11', '-O0',
+            '-DLSF_JAVA_ACTIVATION_PROFILE=1', '-DLSF_TEAVM_WASM=1', '-DTEAVM_CUSTOM_LOG=1',
+            '-mllvm', '-wasm-enable-sjlj', '-lsetjmp', '-mllvm', '-wasm-use-legacy-eh=false',
+            '-mexec-model=reactor', '-Wl,--no-entry', '-Wl,--export-memory',
+            '-Wl,-z,stack-size=65536', '-Wl,--max-memory=67108864', '-include',
+            compiler.sdk / 'runtime/native.h', '-I', destination / 'bindings',
+            '-I', compiler.sdk / 'runtime', '-iquote', generated,
+            generated / 'all.c', destination / 'bindings/bridge.c',
+            compiler.sdk / 'feasibility/platform.c', destination / 'bindings/probe.c',
+            destination / 'bindings/probe_component_type.o', '-o', destination / 'core.wasm']
+        marker = object()
+        with patch.object(c_failure_context, 'run', return_value=marker) as owned:
+            self.assertIs(Compiler.compile_c(compiler, generated, destination,
+                activation_profile=True), marker)
+        owned.assert_called_once_with(compiler, generated, (), *expected)
+        normal = [value for value in expected if value != '-DLSF_JAVA_ACTIVATION_PROFILE=1']
+        normal[normal.index('-O0')] = '-O2'
+        with patch.object(c_failure_context, 'run', return_value=marker) as owned:
+            self.assertIs(Compiler.compile_c(compiler, generated, destination,
+                activation_profile=False), marker)
+        owned.assert_called_once_with(compiler, generated, (), *normal)
+        for invalid in (None, 0, 1, 'true', []):
+            with self.subTest(invalid=invalid), patch.object(c_failure_context, 'run') as owned:
+                with self.assertRaisesRegex(ValueError, 'explicit boolean'):
+                    Compiler.compile_c(compiler, generated, destination, activation_profile=invalid)
+                owned.assert_not_called()
+
     def test_default_builder_never_selects_activation_or_rewrites_application(self):
         result = self.inspect_compile_boundary()
         self.assertEqual(result['compile'], {'application_classpath': ()})
