@@ -27,9 +27,9 @@ function child(args) {
 test('npm consumes the exact prepared ip-address, Undici, brace-expansion and HTTP cache bundles', () => {
   const source = JSON.parse(fs.readFileSync(path.join(root, 'toolchain/source.json')));
   const lock = JSON.parse(fs.readFileSync(path.join(root, 'toolchain/package-lock.json')));
-  assert.equal(source.profile, 'npm-11.19.1-lsf-bundle-v4');
+  assert.equal(source.profile, 'npm-11.19.1-lsf-bundle-v5');
   assert.deepEqual(Object.fromEntries(source.patches.map(pin => [pin.name, pin.version])), {
-    'ip-address': '10.7.2', undici: '6.28.1', 'brace-expansion': '5.0.12', 'http-cache-semantics': '4.3.0',
+    'ip-address': '10.7.4', undici: '6.29.1', 'brace-expansion': '5.0.12', 'http-cache-semantics': '4.3.0',
     'postcss-selector-parser': '7.1.6',
   });
   for (const pin of source.patches) {

@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "profile": "npm-11.19.1-lsf-bundle-v4",
+  "profile": "npm-11.19.1-lsf-bundle-v5",
   "base": {
     "name": "npm",
     "version": "11.19.1",
@@ -10,14 +10,14 @@
     {
       "name": "ip-address",
       "from": "10.5.0",
-      "version": "10.7.2",
-      "integrity": "sha512-7H/2gFSIitxc0hG3nOI1glS8QLo/EHBFFLk8vEUjXY/xu0AdL8jZ9U1IzO2PUm0d2D/ofQcAifb0g6OBkt8U7w=="
+      "version": "10.7.4",
+      "integrity": "sha512-DWBMKyeM25D70nrIiTkgQth59/G+naKOTep6huF9j+GmeK3DMD60Zvxg5d5qQnz+38AHgou6ean2LECX+lrKDg=="
     },
     {
       "name": "undici",
       "from": "6.28.0",
-      "version": "6.28.1",
-      "integrity": "sha512-zWpdTVD54H48CIybL0rWQ3ukpb9d23wM7eH5RtfdmeP70cWHNjtfo7P4vZX+5CoDcO53J4Pu5uXp7lNfjc6DRA=="
+      "version": "6.29.1",
+      "integrity": "sha512-EvRlUt/QqAEvXdQeRMYUfwOQsfzpDztykrG2owGEE/rBOBoYv9uF39ZzsNDh4lTFHhTr2XOZjKkYgueD12ZmGA=="
     },
     {
       "name": "http-cache-semantics",

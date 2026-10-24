@@ -57,7 +57,7 @@ class PreparationTests(unittest.TestCase):
                      ('package/node_modules/cssesc/package.json', {'name': 'cssesc', 'version': '3.0.0'}),
                      ('package/node_modules/util-deprecate/package.json', {'name': 'util-deprecate', 'version': '1.0.2'})]
         self.patches = []
-        for name, old, new in [('ip-address', '10.5.0', '10.7.2'), ('undici', '6.28.0', '6.28.1'),
+        for name, old, new in [('ip-address', '10.5.0', '10.7.4'), ('undici', '6.28.0', '6.29.1'),
                                ('http-cache-semantics', '4.2.0', '4.3.0'),
                                ('postcss-selector-parser', '7.1.4', '7.1.6'),
                                ('brace-expansion', '5.0.9', '5.0.12')]:
