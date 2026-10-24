@@ -57,7 +57,21 @@ for(const changed of [source.replace('await task.enter()','task.enter()'),
 """)
 
     def test_fixture_frontend_is_separate_and_normal_inputs_stay_identical(self):
+        from unittest.mock import patch
         normal=ROOT/'tools/typescript_guest/componentize.mjs';before=normal.read_bytes()
+        # Exercise the actual closed copy selector against both reviewed
+        # frontend import forms without executing the compiler or SDK.
+        helper=b" from './borrow_probe.mjs';"
+        imports=(b'import { borrowProbeBindings, borrowProbeProfile }'+helper,
+                 b'import { borrowProbeBindings, borrowProbeProfile, borrowProbeSpliceCapture }'+helper)
+        for selected in imports:
+            with patch.object(fixture,'read_file',return_value=selected):
+                self.assertEqual(fixture.frontend_files().count('borrow_probe.mjs'),1)
+        for selected in (imports[0]+b'\n'+imports[1],imports[0]+b'\n'+imports[0],
+                         b'import { unreviewed }'+helper):
+            with patch.object(fixture,'read_file',return_value=selected):
+                with self.assertRaisesRegex(ValueError,'owned-fixture-normal-borrow-helper-import-drift'):
+                    fixture.frontend_files()
         with tempfile.TemporaryDirectory() as temporary:
             output=Path(temporary)/'fixture';record=fixture.prepare(output)
             self.assertEqual(normal.read_bytes(),before)

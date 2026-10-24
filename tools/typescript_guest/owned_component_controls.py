@@ -17,7 +17,7 @@ from tools.typescript_guest.owned_result_fixture import CASE_NAMES,frontend_file
 from tools.typescript_guest import splicer_build
 from tools.typescript_guest import borrow_signed_inputs
 
-OWNER_SOURCE='9d07a6dfa3ebb77aa75eb1b5899cb9360e26728d'
+OWNER_SOURCE=borrow_signed_inputs.HEAD
 ALLOCATIONS=(1,2,2,2,1,0,2,0,1,2,0)
 IMPORTS=(1,2,2,2,2,1,2,1,1,2,1)
 MEMORY=128*1024**2
@@ -31,6 +31,13 @@ RECIPE=(
     'tools/typescript_guest/import_cancellation.mjs','tools/typescript_guest/resources.mjs',
     'tools/typescript_guest/signed64.mjs','tools/typescript_guest/source_splicer.mjs',
     'tools/typescript_guest/runtime_profile.py','tools/typescript_guest/import_profile.py',
+    'tools/typescript_guest/build.py','tools/typescript_guest/bundle.mjs',
+    'tools/typescript_guest/borrow_probe_profile.py',
+    'sdk/typescript-guest/probes/borrow-release/outer.wit',
+    'sdk/typescript-guest/probes/borrow-release/main.ts',
+    'sdk/typescript-guest/probes/borrow-release/world.wit',
+    'sdk/typescript-guest/probes/borrow-release/gate.wit',
+    'sdk/typescript-guest/probes/borrow-release/private.d.ts',
     'tools/typescript_guest/splicer_input.py','tools/typescript_guest/native_build.py',
     'tools/typescript_guest/owned_result_controls.py','tools/typescript_guest/probe.py',
     'tools/typescript_guest/borrow_signed_inputs.py','tools/java_replay_materials.py',

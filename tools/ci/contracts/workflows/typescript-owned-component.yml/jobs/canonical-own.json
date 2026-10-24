@@ -51,7 +51,7 @@
       },
       {
         "name": "Make the exact successful producer source available for immutable checks",
-        "run": "git fetch --no-tags --depth=1 origin 9d07a6dfa3ebb77aa75eb1b5899cb9360e26728d"
+        "run": "git fetch --no-tags --depth=1 origin be356d28f93267dc34078ce137d49ed28c28bf47"
       },
       {
         "name": "Install normal isolated compiler prerequisites",

@@ -50,9 +50,13 @@ def frontend_files()->tuple[str,...]:
     names=('componentize.mjs','signed64.mjs','resources.mjs','source_splicer.mjs',
            'async_waiters.mjs','import_cancellation.mjs','owned_result_fixture.mjs')
     raw=read_file(ROOT/'tools/typescript_guest/componentize.mjs')
-    optional=b"import { borrowProbeBindings, borrowProbeProfile } from './borrow_probe.mjs';"
+    optional=(
+        b"import { borrowProbeBindings, borrowProbeProfile } from './borrow_probe.mjs';",
+        b"import { borrowProbeBindings, borrowProbeProfile, borrowProbeSpliceCapture } from './borrow_probe.mjs';",
+    )
     if b"from './borrow_probe.mjs'" in raw:
-        if raw.count(optional)!=1:raise ValueError('owned-fixture-normal-borrow-helper-import-drift')
+        if sum(raw.count(value) for value in optional)!=1 or raw.count(b"from './borrow_probe.mjs'")!=1:
+            raise ValueError('owned-fixture-normal-borrow-helper-import-drift')
         names+=('borrow_probe.mjs',)
     return names
 
