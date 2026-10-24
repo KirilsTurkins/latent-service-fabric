@@ -166,6 +166,19 @@ class JavaSpiManualWorkflow(unittest.TestCase):
         old = yaml.safe_load(subprocess.check_output(['git', 'show',
             'aa56bdebad8c12f20acce4ec4ecfeca73cf554be:'+name], cwd=ROOT, text=True))
         selected = yaml.safe_load((ROOT/name).read_text())
+        public = selected[True]['workflow_dispatch']['inputs'].pop('public_fiber_assembly')
+        self.assertEqual(public['type'], 'boolean');self.assertIs(public['default'], False)
+        assembly = selected['jobs'].pop('public-fiber-assembly')
+        self.assertEqual(assembly['if'],
+            "${{ github.event_name == 'workflow_dispatch' && inputs.public_fiber_assembly }}")
+        self.assertEqual(selected['jobs']['compiler-component']['if'],
+            "${{ (github.event_name != 'workflow_dispatch' || !inputs.java_http_spi) && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_assembly) }}")
+        selected['jobs']['compiler-component']['if'] = "${{ github.event_name != 'workflow_dispatch' || !inputs.java_http_spi }}"
+        for name, clause in (
+                ('dependency-ingestion', " && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_assembly)"),
+                ('http-public-spi', ' && !inputs.public_fiber_assembly')):
+            self.assertEqual(selected['jobs'][name]['if'].count(clause), 1)
+            selected['jobs'][name]['if'] = selected['jobs'][name]['if'].replace(clause, '', 1)
         flag = selected[True]['workflow_dispatch']['inputs'].pop('java_http_spi')
         self.assertEqual(flag['type'], 'boolean');self.assertIs(flag['default'], False)
         job = selected['jobs'].pop('http-public-spi')

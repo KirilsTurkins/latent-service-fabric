@@ -174,9 +174,30 @@ reference-resolution and class-initialization passes before exact comparison;
 unknown instructions and changed class identities still refuse. The actual
 normal authoring build passed CTarget generation and core compilation, then
 refused component assembly at the unchanged function-body size limit of
-7,654,321 bytes. Its core inputs were not retained, so the offending function
-is not yet identified. This is a compiler boundary result, not Java runtime,
+7,654,321 bytes. A later [retained normal build](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40097935402)
+identified `meth_dla_Capsule_pools` at 15,264,587 bytes; the closed runtime adapter
+had no oversized function. These are compiler boundary results, not Java runtime,
 GC, signed-execution or complete standard-library qualification.
+
+For this exact public source/WIT only, a failed component assembly also attempts
+to retain its generated `c/d/l/a/Capsule.c` Clang input under an independent
+4-MiB ceiling. `generated-c.json` records its identity or a closed unavailable
+status. Missing, oversized or unsafe C never removes the two existing bounded
+Wasm captures or changes the original compiler failure. This separates the
+available C input from final Wasm growth without accepting an oversized function.
+The existing Java authoring workflow's default-false `public_fiber_assembly`
+manual selector runs only the original public fiber preparation command and its
+JDK/compiler controls; it refuses combinations with either other optional mode
+before acquisition. Default authoring CI coverage remains intact. This path
+provides compiler evidence, not component execution or runtime qualification.
+
+The compiler retains the current development defaults: TeaVM C `FULL` and
+Clang `-O2`. Earlier [BALANCED](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40101238993)
+and [activation `Oz`](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40109009991)
+experiments did not repair the size boundary: the same public `pools` body was
+13,993,280 and 14,367,528 bytes respectively. Those policy and provenance-value
+experiments are withdrawn. Their failed histories remain separately attributed;
+the retained capture programme does not establish a compiler or runtime fix.
 
 `--read-only-cache /path/to/modules-2` selects a verified immutable Gradle
 dependency cache. Gradle writes locks and updates to the build's private home.

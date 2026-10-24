@@ -36,12 +36,48 @@ class NormalFiberComponentInputs(unittest.TestCase):
             self.assertEqual(record['fixtureWitDigest'],digest((root/'wit/service.wit').read_bytes()))
             self.assertEqual(record['limits'],{'core.wasm':64*1024*1024,'closed-runtime.wasm':4*1024*1024})
             self.assertEqual(record['logLimitBytesUnchanged'],16*1024*1024)
-            self.assertEqual(set(path.name for path in target.iterdir()),{*raw,'record.json'})
+            self.assertEqual(set(path.name for path in target.iterdir()),{*raw,'record.json','generated-c.json'})
+            self.assertEqual(json.loads((target/'generated-c.json').read_bytes())['status'],'unavailable')
             for name,value in raw.items():
                 self.assertEqual((target/name).read_bytes(),value)
                 self.assertEqual((root/'build'/name).read_bytes(),value)
                 self.assertEqual(record['inputs'][name],{'sha256':digest(value),'bytes':len(value)})
             self.assertEqual(compiler.records,[{'stage':'component-new','exitCode':1}])
+
+    def test_optional_exact_generated_c_and_c_only_refusals_preserve_both_wasm_inputs(self):
+        for kind in ('valid','missing','oversized','hardlink','empty','nul','encoding','write'):
+            with self.subTest(kind=kind),tempfile.TemporaryDirectory() as temporary:
+                root=Path(temporary).resolve();raw=self.populate(root)
+                source=root/capture.GENERATED_C;source.parent.mkdir(parents=True)
+                text=b'void meth_dla_Capsule_pools(void) { return; }\n'
+                if kind=='oversized':
+                    with source.open('wb') as stream:stream.truncate(4*1024*1024+1)
+                elif kind=='hardlink':
+                    original=root/'linked-input.c';original.write_bytes(text);os.link(original,source)
+                elif kind!='missing':
+                    source.write_bytes({'empty':b'','nul':b'\0','encoding':b'\xff'}.get(kind,text))
+                write=capture.paths.write_new
+                def selected_write(path,value):
+                    if kind=='write' and path.name=='Capsule.c':raise OSError('C-only write refusal')
+                    return write(path,value)
+                compiler=SimpleNamespace(records=[{'stage':'component-new','exitCode':1}])
+                with patch.object(capture.paths,'write_new',side_effect=selected_write):
+                    capture.retain(compiler,root)
+                target=root/'build/component-inputs'
+                for name,value in raw.items():self.assertEqual((target/name).read_bytes(),value)
+                record=json.loads((target/'record.json').read_bytes())
+                self.assertEqual(record['status'],'retained');self.assertFalse(record['qualification'])
+                observed=json.loads((target/'generated-c.json').read_bytes())
+                self.assertEqual(observed['maximumBytes'],4*1024*1024)
+                self.assertFalse(observed['qualification']);self.assertFalse(observed['compilerAcceptanceChanged'])
+                if kind=='valid':
+                    self.assertEqual((target/'Capsule.c').read_bytes(),text)
+                    self.assertEqual((observed['status'],observed['bytes'],observed['sha256']),
+                        ('retained',len(text),digest(text)))
+                else:
+                    self.assertFalse((target/'Capsule.c').exists())
+                    self.assertEqual(observed['status'],'unavailable')
+                self.assertEqual(compiler.records,[{'stage':'component-new','exitCode':1}])
 
     def test_other_stages_changed_sources_unsafe_pairs_and_capture_failures_preserve_original_failure(self):
         with tempfile.TemporaryDirectory() as temporary:
