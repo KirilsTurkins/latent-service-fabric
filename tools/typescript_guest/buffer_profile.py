@@ -28,3 +28,35 @@ def check_selection(observation: dict, backend_digest: str) -> dict | None:
             'unsafeAllocation': 'zero-filled', 'globalBufferInstalled': False,
             'nativeStorage': False, 'authority': 'none', 'qualification': 'unknown',
             'apiSupport': 'finite-source-subset; signed qualification not run'}
+
+
+def validate_selection(selected, backend_digest: str):
+    """Compare parsed JSON values with exact JSON types, independent of layout."""
+    import json
+    expected = check_selection({'standardBufferModules': ['node:buffer'],
+        'standardBufferProfile': PROFILE, 'standardBufferBackendDigest': backend_digest}, backend_digest)
+    canonical = lambda value: json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False)
+    if canonical(selected) != canonical(expected):
+        raise ValueError('typescript-standard-buffer-retained-selection-drift')
+    return selected
+
+
+def retain_selection(compiled, output, backend_digest: str):
+    """Promote only an actually selected module into normal package evidence.
+
+    The compiler writes this private result after real bundler selection. An
+    unselected old project neither needs a declaration nor acquires this asset.
+    The normal build binds the returned material into its signed observation.
+    """
+    import json
+    from tools.rust_capsule_project import digest, read_file
+
+    name = 'typescript-buffer-selection.json'
+    path = compiled / name
+    if not path.exists():
+        return (), []
+    raw = read_file(path, 65536)
+    validate_selection(json.loads(raw), backend_digest)
+    (output / name).write_bytes(raw)
+    return ((name, 'asset', 'application/vnd.latent.typescript.buffer-selection.v1+json'),), [
+        {'name': 'typescript-standard-buffer', 'digest': digest(raw), 'size': len(raw)}]
