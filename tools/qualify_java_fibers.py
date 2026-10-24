@@ -386,6 +386,7 @@ def prepare(output: Path, wasi_sdk: Path, *, gradle="gradle", offline_cache: Pat
               "status": "running", "nodeExecution": "not-run", "sourceDigest": digest(source.read_bytes()),
               "fixture": fixture}
     report["recipeInputs"] = before
+    compiler = None
     try:
         compiler = Compiler(output / "compiler", wasi_sdk, gradle=gradle, offline_cache=offline_cache,
                             read_only_cache=read_only_cache, timeout=1200)
@@ -436,6 +437,12 @@ def prepare(output: Path, wasi_sdk: Path, *, gradle="gradle", offline_cache: Pat
         (output / "compiler-inputs.json").write_bytes(compiler.compiler_inputs)
         report["status"] = "component-built-unqualified"
     except BaseException as error:
+        if fixture == "threads":
+            try:
+                from tools.java_guest.fiber_component_inputs import retain
+                retain(compiler, output)
+            except BaseException:
+                pass  # Failure-only retention must preserve the original compiler exception.
         report.update(status="failed", reason=str(error))
         raise
     finally:

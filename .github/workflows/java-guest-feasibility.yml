@@ -488,6 +488,7 @@ jobs:
             ${{ runner.temp }}/java-activation-fibers/src/**
             ${{ runner.temp }}/java-activation-fibers/wit/**
             ${{ runner.temp }}/java-activation-fibers/build/runtime-profile.json
+            ${{ runner.temp }}/java-activation-fibers/build/component-inputs/**
             ${{ runner.temp }}/java-activation-fibers/build/component.wasm
             ${{ runner.temp }}/java-activation-fibers/signed-runtime.log
             ${{ runner.temp }}/java-fiber-io/FIBERS-COMPILE.json
