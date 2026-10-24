@@ -503,13 +503,15 @@ def run(args):
             stop(client, node)
             shutdown = stopped_record(node)
             node = None
+            from tools.static_audit_lifecycle import qualify as qualify_audit_lifecycle
+            lifecycle = qualify_audit_lifecycle(client, args, directory / 'audit-lifecycle', configure)
             require(tree_inventory(args.fixture, client, maximum_entries=2048) == original, 'static-fixture-mutated')
             return bounded_receipt({'schemaVersion': 'latent.static.workflow.v1', 'passed': True,
                 'identity': identity, 'publications': publications, 'packageDigests': {n: r['packageDigest'] for n, r in records.items()},
                 'ociExactDigestRoundtrip': True, 'browserA': browser_a, 'cutover': handoff, 'browserB': browser_b,
                 'rollback': rollback, 'revokedConditionalDenied': True, 'revokedRollbackDenied': True,
                 'foreignPublicationDenied': True, 'before': before, 'dormant': dormant, 'after': after,
-                'audit': audit_receipt, 'routeReconciliation': reconciliation,
+                'audit': audit_receipt, 'routeReconciliation': reconciliation, 'auditLifecycle': lifecycle,
                 'errorDocumentLifecycle': error_lifecycle,
                 'corruptErrorDocument': corrupt_error,
                 'unconfiguredErrorResponses': unconfigured_wire,
