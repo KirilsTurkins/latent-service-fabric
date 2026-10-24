@@ -7277,6 +7277,9 @@
         "containment::tests::memory_precedes_fuel_and_guest_trap_classification",
         "containment::tests::runtime_error_kind_does_not_forward_untyped_engine_context",
         "containment::tests::typed_capability_failure_retains_only_its_closed_code",
+        "development_trap_observer::tests::actual_backtrace_is_bounded_numeric_and_does_not_retain_runtime_owners",
+        "development_trap_observer::tests::disabled_capture_is_empty_and_second_arm_is_refused_even_after_drop",
+        "development_trap_observer::tests::first_error_is_not_replaced_and_guard_drop_stops_capture",
         "factory::tests::busy_shutdown_preserves_backend_epoch_progress_until_last_owner_drop",
         "factory::tests::explicit_ticker_stop_wakes_a_long_interval_and_is_idempotent",
         "factory::tests::input_observer_is_shared_without_retaining_factory_or_workers",
@@ -7540,7 +7543,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 476,
+      "minimumCases": 479,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [

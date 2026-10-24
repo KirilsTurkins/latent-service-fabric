@@ -67,8 +67,7 @@ def overlay_sources(root: Path, output: Path) -> tuple[dict, list[tuple[Path, Pa
     engine = originals[PATHS[1]].decode()
     require(engine.count('WasmBacktraceDetails::Disable') == 1, 'go-entry-frame-details-preimage')
     changed = {PATHS[0]: containment[:offset]+OBSERVER+containment[offset:],
-        PATHS[1]: host.once(engine, 'wasm_backtrace_max_frames(None)',
-                           'wasm_backtrace_max_frames(std::num::NonZeroUsize::new(32))')}
+        PATHS[1]: host.private_backtrace_source(engine)}
     identities, overlays = {}, []
     for name in PATHS:
         private = output/Path(name).name

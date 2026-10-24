@@ -80,7 +80,11 @@ connection, and the pending ordinary read before peer release. The typed quota
 result reports may-have-applied=false and Close succeeded; forced short OS writes
 or alternate uncertain/close-refusal outcomes are not inferred from this run.
 Peak recorded memory was5,538,617B and maximum fuel115,401,237, within the unchanged
-64MiB/1billion budgets. All four peer hashes/EOF, fresh states, user-space owner
+64MiB/10billion admitted budgets. The existing Go fixture selects10billion fuel;
+the strict protocol reader separately requires observed consumption no higher
+than1billion. The earlier public1billion cap label was incorrect: this is a
+documentation correction, with raw rows/source/digests unchanged and no rerun.
+All four peer hashes/EOF, fresh states, user-space owner
 retirements and clean logical-provider stop passed. The reported effect counter
 was zero while real TCP bytes were observed; it is not evidence of zero wire effects.
 Normal signed admission used the existing in-process fixture, not a released

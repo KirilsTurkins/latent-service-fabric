@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/diagnose_go_timer_failure.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Replace the inline diagnostic preflight with its exact digest-pinned stdlib-only script and direct-testable function. Preserve the hosted Linux gate, unchanged setpriv sequence and three readonly Rust overlays, all preflight refusal checks, original runtime/terminal behavior and diagnostic bounds. Authenticate the selected helper before command construction and retain its digest in the unchanged supporting-input receipt and post-run mutation guard. No scanner waiver or native proof is claimed.",
+  "reviewReason": "Accept exactly one legacy or current reviewed backtrace call and retain the existing 32-frame private diagnostic cap",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "ad854f03e6eeae3d17fa010eef0b366dd979ddc5355924fc90378b006312c126"
+  "sha256": "2b1c9ac5211edf18ab38fe8fad5360949d88280d8bb457f0fc2b51ced224d1c3"
 }

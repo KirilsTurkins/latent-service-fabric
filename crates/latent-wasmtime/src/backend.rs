@@ -205,7 +205,10 @@ impl SharedRuntime {
             preparation_observer,
             invocation_input_observer: InvocationInputObserver::new(),
             #[cfg(feature = "development-test-host")]
-            development_trap_observer: crate::development_trap_observer::DevelopmentTrapObserver::for_engine_configuration(config.development_numeric_trap_observation),
+            development_trap_observer:
+                crate::development_trap_observer::DevelopmentTrapObserver::for_engine_configuration(
+                    config.development_numeric_trap_observation,
+                ),
             preparation_context,
             compiler,
         })
@@ -248,7 +251,9 @@ impl WasmtimeBackend {
     }
     /// Explicitly arm one fixed numeric original-error record for a test harness.
     #[cfg(feature = "development-test-host")]
-    pub fn arm_development_trap_observation(&self) -> Result<crate::DevelopmentTrapGuard<'_>, PlatformError> {
+    pub fn arm_development_trap_observation(
+        &self,
+    ) -> Result<crate::DevelopmentTrapGuard<'_>, PlatformError> {
         self.shared.development_trap_observer.arm()
     }
 

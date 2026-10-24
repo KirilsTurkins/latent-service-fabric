@@ -134,7 +134,8 @@ impl CompilerEngineSettings {
         engine_config.memory_init_cow(self.copy_on_write_images);
         engine_config.wasm_backtrace_details(WasmBacktraceDetails::Disable);
         #[cfg(feature = "development-test-host")]
-        let backtrace_limit = self.development_numeric_trap_observation
+        let backtrace_limit = self
+            .development_numeric_trap_observation
             .then(|| std::num::NonZeroUsize::new(16).expect("fixed positive test frame cap"));
         #[cfg(not(feature = "development-test-host"))]
         let backtrace_limit = None;

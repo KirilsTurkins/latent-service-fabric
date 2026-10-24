@@ -54,7 +54,9 @@ pub use config::{
 };
 pub use containment::RuntimeResourceSnapshot;
 #[cfg(feature = "development-test-host")]
-pub use development_trap_observer::{DevelopmentTrapFrame, DevelopmentTrapGuard, DevelopmentTrapSnapshot};
+pub use development_trap_observer::{
+    DevelopmentTrapFrame, DevelopmentTrapGuard, DevelopmentTrapSnapshot,
+};
 pub use factory::WasmtimeComponentEngineFactory;
 pub use host::policy::ContextExposurePolicy;
 pub use host::{BoundedLogSink, CapturedLog, LogSinkError, StructuredLogSink};
