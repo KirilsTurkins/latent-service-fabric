@@ -104,11 +104,17 @@ def grants(client, node, publication):
     return result
 
 
-def execute(artifact, native, output):
+def execute(artifact, native, output, *, cases=fixture.CASES, scope=None):
+    if cases != fixture.CASES or scope is not None:
+        from tools.typescript_buffer_commonjs_fixture import CASES, SCOPE
+        require(cases == CASES and scope == SCOPE, 'buffer-closed-qualification-programme')
     output = fresh(output)
     result = {'schemaVersion': 'latent.typescript.buffer-runtime.v1', 'status': 'in-progress',
         'fullTicketQualification': False, 'unchangedPublishedDependency': 'not-run',
         'relativeDependency': 'repository-fixture-only', 'cases': []}
+    if scope is not None:
+        result.update(unchangedPublishedDependency='selected-captured-commonjs',
+            relativeDependency='not-used', publishedCommonJsQualification='pending')
     stage = 'normal-package-evidence'
     try:
         original = build_evidence(artifact)
@@ -141,7 +147,7 @@ def execute(artifact, native, output):
             target = deploy(client, source/'deployment.json', publication, grants=grants(client, node, publication))
             require(target['service'] == SERVICE and target['budget']['outboundRequests'] == 0,
                 'buffer-original-service-and-zero-outbound-budget')
-            for mode, name in enumerate(fixture.CASES):
+            for mode, name in enumerate(cases):
                 stage = name
                 row = call(client, target, 'typescript-buffer', 'run', [mode], 'buffer-'+name)
                 require_result(row, 'buffer:'+str(mode)+':pass|fresh=1', 0)
@@ -158,6 +164,8 @@ def execute(artifact, native, output):
             require(result['shutdown']['reaped'] and result['shutdown']['record']['clean'], 'buffer-node-clean-shutdown')
         require(build_evidence(artifact) == original, 'buffer-built-inputs-unchanged')
         result.update(status='passed', build=original, runtimeProfile=IMPORT_PROFILE, bufferProfile=buffer_profile.PROFILE)
+        if scope is not None:
+            result['publishedCommonJsQualification'] = 'six-case-subset-passed'
         write_json(output/'qualification.json', result)
         return result
     except BaseException:
