@@ -219,12 +219,39 @@ where
     let started = Instant::now();
     let mut call = match authorize(state, operation) {
         Ok(call) => call,
-        Err(error) => return Completion::new(Err(convert(error)), None),
+        Err(error) => {
+            #[cfg(feature = "development-test-host")]
+            observe_borrow_registration_refusal(state, operation, &error);
+            return Completion::new(Err(convert(error)), None);
+        }
     };
     let result = table(state).and_then(execute);
+    #[cfg(feature = "development-test-host")]
+    if let Err(error) = &result {
+        observe_borrow_registration_refusal(state, operation, error);
+    }
     let _ = call.record_provider_outcome(AuditProviderOutcome::HostCompleted);
     state.record_host_call(started);
     Completion::new(result.map_err(convert), Some(call))
+}
+
+#[cfg(feature = "development-test-host")]
+fn observe_borrow_registration_refusal(
+    state: &mut HostState,
+    operation: &str,
+    error: &PlatformError,
+) {
+    if operation != "register" || state.development_borrow_admission.is_none() {
+        return;
+    }
+    let runtime = state.runtime.as_ref().map(|table| table.runtime.snapshot());
+    let remaining = state.accounting.budget().remaining_at(Instant::now());
+    let granted = state.accounting.budget().granted();
+    state
+        .development_borrow_admission
+        .as_mut()
+        .expect("selected original HostState")
+        .refused(error, runtime, state.runtime_limits, granted, &remaining);
 }
 
 #[expect(
@@ -233,12 +260,18 @@ where
 )]
 pub(crate) fn install(linker: &mut Linker<HostState>) -> wasmtime::Result<()> {
     macro_rules! sync {
-        ($name:literal, $args:pat, $ty:ty, $execute:expr) => {
+        ($name:literal, $args:pat, $ty:ty, $execute:expr $(, $register_kind:expr)?) => {
             linker
                 .instance(CAPABILITY)?
                 .func_wrap_async($name, |mut store, $args: $ty| {
                     Box::new(async move {
                         super::service::checkpoint(&mut store)?;
+                        #[cfg(feature = "development-test-host")]
+                        {
+                            $(if let Some(observer) = &mut store.data_mut().development_borrow_admission {
+                                observer.prepare_register(owner_kind($register_kind));
+                            })?
+                        }
                         let result = synchronous(store.data_mut(), $name, $execute);
                         super::service::synchronize(&mut store)?;
                         Ok((result,))
@@ -260,7 +293,8 @@ pub(crate) fn install(linker: &mut Linker<HostState>) -> wasmtime::Result<()> {
                 generation: value.generation,
                 id: value.id,
             })
-        }
+        },
+        kind
     );
     sync!("park", (owner,), (wit::Token,), |table| {
         table.runtime.park(token(owner))?;

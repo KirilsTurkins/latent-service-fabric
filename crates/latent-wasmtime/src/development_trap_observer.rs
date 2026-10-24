@@ -31,6 +31,8 @@ pub struct DevelopmentTrapSnapshot {
     pub observed_frames: usize,
     pub engine_frame_cap: Option<usize>,
     pub frames: [Option<DevelopmentTrapFrame>; MAX_FRAMES],
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub borrow_admission_refusal: Option<crate::DevelopmentBorrowAdmissionSnapshot>,
 }
 
 #[derive(Default)]
@@ -58,6 +60,30 @@ fn refused() -> PlatformError {
 }
 
 impl DevelopmentTrapObserver {
+    pub(crate) fn capture_borrow_admission(
+        &self,
+        snapshot: Option<crate::DevelopmentBorrowAdmissionSnapshot>,
+    ) {
+        let Some(snapshot) = snapshot else {
+            return;
+        };
+        if !self.enabled.load(Ordering::Acquire) {
+            return;
+        }
+        let Ok(mut state) = self.state.lock() else {
+            return;
+        };
+        if !self.enabled.load(Ordering::Acquire) {
+            return;
+        }
+        if let Some(first) = &mut state.observation.borrow_admission_refusal {
+            first.ambiguous = true;
+            first.refusals = first.refusals.saturating_add(snapshot.refusals);
+        } else {
+            state.observation.borrow_admission_refusal = Some(snapshot);
+        }
+    }
+
     pub(crate) fn for_engine_configuration(enabled: bool) -> Self {
         Self {
             engine_frame_cap: enabled.then_some(MAX_FRAMES),

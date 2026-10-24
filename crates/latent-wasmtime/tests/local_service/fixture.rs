@@ -331,6 +331,7 @@ impl Fixture {
             #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
             None,
             false,
+            false,
         )
         .await
         .unwrap()
@@ -357,6 +358,7 @@ impl Fixture {
             None,
             None,
             None,
+            false,
             false,
         )
         .await
@@ -413,6 +415,39 @@ impl Fixture {
         )
         .await
     }
+    /// Explicit factory-time numeric capture for the signed borrow diagnostic only.
+    #[cfg(all(
+        feature = "development-test-host",
+        target_os = "linux",
+        target_arch = "x86_64"
+    ))]
+    pub async fn with_runtime_outbound_streams_and_numeric_trap_observation(
+        provided: (
+            Arc<DirectoryArtifactRepository>,
+            latent_packaging::PackageBundle,
+            latent_packaging::PackageBundle,
+        ),
+        limits: latent_core::activation_runtime::RuntimeLimits,
+        configuration: latent_streams::StreamProviderConfig,
+    ) -> Self {
+        Self::try_with_packages_and_load(
+            1,
+            false,
+            true,
+            None,
+            Some(provided),
+            Arc::new(SyntheticFixtureLoad),
+            None,
+            Some((limits, 120_000, None)),
+            None,
+            None,
+            Some(Box::new(configuration)),
+            true,
+            false,
+        )
+        .await
+        .unwrap()
+    }
     /// Closed Go v7 test programme: retain the actual v6 queue16 baseline and
     /// explicitly configure the shared numeric observer before factory creation.
     /// The normal package/deployment/request supply the effective1b fuel budget;
@@ -458,6 +493,7 @@ impl Fixture {
             None,
             None,
             true,
+            true,
         )
         .await
         .unwrap()
@@ -501,6 +537,7 @@ impl Fixture {
             #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
             outbound_streams,
             false,
+            false,
         )
         .await
         .unwrap()
@@ -532,6 +569,7 @@ impl Fixture {
         #[cfg(all(target_os = "linux", target_arch = "x86_64"))] outbound_streams: Option<
             Box<latent_streams::StreamProviderConfig>,
         >,
+        numeric_capture: bool,
         go_stack_ceiling: bool,
     ) -> Result<Self, PlatformError> {
         #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
@@ -622,10 +660,13 @@ impl Fixture {
         };
         #[cfg(feature = "development-test-host")]
         {
-            config.development_numeric_trap_observation = go_stack_ceiling;
+            config.development_numeric_trap_observation = numeric_capture;
         }
         #[cfg(not(feature = "development-test-host"))]
-        assert!(!go_stack_ceiling);
+        assert!(
+            !numeric_capture && !go_stack_ceiling,
+            "numeric observation requires the test-host feature"
+        );
         if owned_native_threads {
             // Same finite 4 MiB activation grant; this WAT mechanism needs no
             // language stack. Keep explicit native stacks below that ceiling.

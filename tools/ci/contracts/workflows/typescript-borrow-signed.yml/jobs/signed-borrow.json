@@ -1,0 +1,86 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "env": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "name": "One fresh component and six actual signed borrow activations",
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    },
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "name": "Start the aggregate setup and programme clock",
+        "run": "python3 -c 'import os,time;open(os.environ[\"GITHUB_ENV\"],\"a\").write(\"LSF_BORROW_SIGNED_STARTED_NS=\"+str(time.time_ns())+\"\\n\")'"
+      },
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "actions/setup-node",
+        "with": {
+          "node-version": "24.19.0",
+          "package-manager-cache": false
+        }
+      },
+      {
+        "uses": "dtolnay/rust-toolchain"
+      },
+      {
+        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "name": "Install locked Python controls and normal compiler isolation",
+        "run": "python3 -m pip install --requirement tools/requirements.lock\nsudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
+      },
+      {
+        "name": "Fetch only the eventual immutable successful producer source",
+        "run": "git fetch --no-tags --depth=1 origin 6d834e502beea33fbae9347fbaf23ff8c37223b3"
+      },
+      {
+        "name": "Install the normal locked public compiler and pinned parser",
+        "run": "python3 tools/typescript_capsule.py install-tools \"$RUNNER_TEMP/typescript-borrow-signed-tools\""
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Authenticate fresh prerequisites compile once and execute signed cases",
+        "run": "python3 tools/qualify_typescript_borrow_signed.py \\\n  --tools \"$RUNNER_TEMP/typescript-borrow-signed-tools\" \\\n  --inputs \"$RUNNER_TEMP/typescript-borrow-signed-inputs\" \\\n  --output \"$RUNNER_TEMP/typescript-borrow-signed\"\n"
+      },
+      {
+        "if": "always()",
+        "name": "Retain original input identities compiler observations signed cases and failures",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "typescript-borrow-signed-${{ github.sha }}",
+          "path": "${{ runner.temp }}/typescript-borrow-signed-inputs/ACQUIRED.json\n${{ runner.temp }}/typescript-borrow-signed-inputs/products/OWN-RESULTS.json\n${{ runner.temp }}/typescript-borrow-signed/*.json\n${{ runner.temp }}/typescript-borrow-signed/commands/**\n${{ runner.temp }}/typescript-borrow-signed/prepared/BORROW-COMPILE.json\n${{ runner.temp }}/typescript-borrow-signed/prepared/compiler-inputs.json\n${{ runner.temp }}/typescript-borrow-signed/prepared/engine-qualification/**\n${{ runner.temp }}/typescript-borrow-signed/prepared/src/**\n${{ runner.temp }}/typescript-borrow-signed/prepared/wit/**\n${{ runner.temp }}/typescript-borrow-signed/prepared/build/*.json\n${{ runner.temp }}/typescript-borrow-signed/prepared/build/*.wasm\n${{ runner.temp }}/typescript-borrow-signed/prepared/build/*.js\n${{ runner.temp }}/typescript-borrow-signed/prepared/build/*.mjs\n${{ runner.temp }}/typescript-borrow-signed/prepared/build/*.wit\n",
+          "retention-days": 7
+        }
+      }
+    ],
+    "timeout-minutes": 75
+  },
+  "jobId": "signed-borrow",
+  "kind": "job",
+  "reviewReason": "Reviewed exact late-backing6d immutable producer source fetch and shared reader; all signed cases, commands, authority and finite bounds retained.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/typescript-borrow-signed.yml"
+}
