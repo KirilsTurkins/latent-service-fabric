@@ -35,8 +35,14 @@ SOURCE_MODULES=(
     'tools.tests.test_typescript_native_await','tools.tests.test_typescript_native_task_meta',
     'tools.tests.test_typescript_owned_result_source','tools.tests.test_typescript_import_cancellation',
     'tools.tests.test_typescript_owned_library','tools.tests.test_typescript_owned_controls',
+    'tools.tests.test_typescript_import_backing_source',
 )
-SOURCE_CASES=29
+SOURCE_CASES=32
+BACKING_CORE_CASES=(
+    'invalid-active-tag','overflowing-list-range','misaligned-list',
+    'zero-size-nonzero-pointer','valid-empty-string','valid-zero-stride-list',
+    'nested-invalid-after-valid-child','own-trap-before-container-free',
+)
 RECIPE=(
     'tools/qualify_typescript_owned_results.py','tools/typescript_guest/owned_result_controls.py',
     'tools/typescript_guest/owned_result_library.py','tools/typescript_guest/borrow_controls.py',
@@ -59,6 +65,7 @@ RECIPE=(
     'tools/tests/fixtures/typescript_normal_library_validation.json',
     'tools/tests/fixtures/typescript_native_open_binding.json',
     'tools/tests/fixtures/typescript_native_task_state.json',
+    'tools/tests/fixtures/typescript_import_backing_embedding.json',
 )
 
 
@@ -96,11 +103,40 @@ def rust_cases(raw:bytes)->list[str]:
     for module,file in [('lsf_async','async_import_descriptor.rs'),('lsf_async_splice','async_import_splice.rs')]:
         source=read_file(ROOT/'sdk/typescript-guest/activation'/file).decode()
         expected += [module+'::tests::'+name for name in re.findall(r'#\[test\]\s+fn ([a-zA-Z0-9_]+)\(',source)]
-    require(len(expected)==13 and len(names)==len(set(names))==13 and set(names)==set(expected),
-            'own-controls-all-thirteen-actual-rust-tests-required')
-    require(re.search(r'test result: ok\. 13 passed; 0 failed; 0 ignored;',raw.decode()) is not None,
+    require(len(expected)==17 and len(names)==len(set(names))==17 and set(names)==set(expected),
+            'own-controls-all-seventeen-actual-rust-tests-required')
+    require(re.search(r'test result: ok\. 17 passed; 0 failed; 0 ignored;',raw.decode()) is not None,
             'own-controls-rust-summary-or-skips')
     return names
+
+
+def emitted_backing_controls(directory:Path)->dict:
+    """Require the real Rust-emitted closure, never synthesize missing files."""
+    require(directory.is_dir() and not directory.is_symlink(),'backing-core-emission-required')
+    raw=read_file(directory/'manifest.json',32768)
+    rows=json.loads(raw)
+    require(type(rows) is list and len(rows)==8,'backing-core-exact-emitted-set')
+    names={'manifest.json'};modules=[]
+    for which,(name,row) in enumerate(zip(BACKING_CORE_CASES,rows,strict=True)):
+        file=f'{which:02}-{name}.wasm';names.add(file)
+        require(type(row) is dict and set(row)=={'case','file','bytes','argument','expectedReturn',
+                'expectedTrap','expectedDoubleFreeReturns','allocatorEvidence'}
+                and row['case']==name and row['file']==file
+                and type(row['argument']) is int and row['argument']==32
+                and (row['expectedReturn'] is None or type(row['expectedReturn']) is int)
+                and row['expectedReturn']==(None if which==7 else int(which in (4,5)))
+                and row['expectedTrap'] is (which==7)
+                and type(row['expectedDoubleFreeReturns']) is int and row['expectedDoubleFreeReturns']==0
+                and row['allocatorEvidence'] is False,'backing-core-emitted-contract')
+        path=directory/file
+        require(path.is_file() and not path.is_symlink(),'backing-core-original-file-required')
+        body=read_file(path,65536)
+        require(body.startswith(b'\0asm') and type(row['bytes']) is int and row['bytes']==len(body),
+                'backing-core-actual-emitted-module')
+        modules.append({'case':name,'file':file,**file_identity(path,65536)})
+    require({path.name for path in directory.iterdir()}==names,'backing-core-no-extra-products')
+    return {'manifest':file_identity(directory/'manifest.json',32768),'modules':modules,
+            'allocatorEvidence':False,'executed':False}
 
 
 def native_case(row:dict,case:str)->dict:
@@ -226,11 +262,14 @@ def build(output:Path,tools:Path,*,wasm_tools='wasm-tools',bindgen='wit-bindgen'
             '--tools',tools,seconds=900,cwd=ROOT)
         record['splicer']=native_build.source_splicer(splicer)
         stage='actual-rust-unit-tests'
-        rust_env=dict(environment,CARGO_HOME=str(splicer/'cargo-home'),CARGO_TARGET_DIR=str(splicer/'target'))
+        emitted=output/'backing-core-controls'
+        rust_env=dict(environment,CARGO_HOME=str(splicer/'cargo-home'),CARGO_TARGET_DIR=str(splicer/'target'),
+                      LSF_BACKING_CORE_CONTROLS=str(emitted))
         raw=run('actual-rust-units','cargo','test','--locked','--color','never','--lib','--package',
             'spidermonkey-embedding-splicer','lsf_async','--','--nocapture',seconds=600,
             cwd=splicer/'source'/('ComponentizeJS-'+activation_engine.COMPONENTIZE_TREE),env=rust_env)
         record['actualRustCases']=rust_cases(raw)
+        record['emittedBackingControls']=emitted_backing_controls(emitted)
         stage='fresh-normal-engine'
         engine=output/'engine'
         run('fresh-engine',sys.executable,ROOT/'tools/build_typescript_native_engine.py','--output',engine,

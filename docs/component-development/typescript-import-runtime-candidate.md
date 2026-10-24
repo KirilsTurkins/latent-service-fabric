@@ -30,17 +30,21 @@ OWN-result campaign below have now executed this path. Canonical resource
 destruction alone does not certify physical provider close, native quota reuse,
 production support or completion of the SDK ticket.
 
-The separate `typescript-owned-results.yml` programme builds one fresh normal
-source splicer and engine and executes all 13 maintained Rust descriptor /
+The current source revision of `typescript-owned-results.yml` requires one fresh normal
+source splicer and engine and all 17 maintained Rust descriptor /
 disposer tests and 13 real SpiderMonkey manager diagnostics. It retains all 11
 borrow controls and adds cancellation through real JS `finally` and the
 resolved-carrier/public-lift race. Six affected lifecycle C++ controls also run
 with explicit opaque-JS headers and canonical/broker doubles, including immediate
 handle-zero disposal and delayed/no-result retirement. Those references do not
-execute JavaScript; delayed cases retain their original readiness-set owner. All 29 Python controls must pass without
+execute JavaScript; delayed cases retain their original readiness-set owner. All 32 Python controls must pass without
 skips using the normal pinned compiler parser. The actual Wasm32 diagnostic
 measures the new Record size against the immutable pre-OWN header; it does
 not reuse the historical borrow ABI claim.
+This revision is not yet executed; the historical receipts below retain their
+original 29/13 inventories. The same Rust tests must also emit eight bounded
+core modules before the programme spends the fresh engine build. Their
+counter-double frees test actual emitted control flow, not allocator release.
 
 This first programme authenticates one fixed completed low-level library,
 restores only its original headers and supporting objects, and requires the
@@ -95,6 +99,57 @@ Store. This does not observe or certify reuse of a numeric guest resource-table
 index. Provider resources/destructors are explicit finite test hosts, not real
 sockets. Signed admission, nested string/list backing release, physical provider
 retirement and complete engine/GC/native cost remain unqualified.
+
+The next source-only backing repair covers a complete host-lowered import
+result that was cancelled before typed JS lifting. Its original allocator is
+outside the embedding's temporary exported-return free list. The generated
+disposer validates every disposal-relevant active tag, descriptor range and checked 64-bit
+pointer/length calculation before the first destructor or free. It releases
+nested children before their containing list through a private bridge to the
+original `cabi_free`/`JS_free`. The record is already quarantined before this
+callback; a trap after partial progress retains that quarantine and cannot
+replay earlier actions. A partially constructed host lowering is not walked.
+
+Fresh zero-byte canonical realloc requests return null without allocation;
+they never use realloc-to-zero as a free operation. Empty backing requires
+that null contract and performs no free. The direct emitted-core controls also
+cover a zero-stride descriptor with no storage/OWN children and no length-driven
+iteration. Zero-stride normal components remain unsupported and unqualified:
+the pinned normal component validator rejects empty tuples, records and flags.
+The actual backing fixture uses valid empty `list<u8>` values instead.
+Normal delivery of empty lists and nested empty strings/lists is an explicit
+component prerequisite because this allocator correction also affects normal
+canonical lowering.
+
+The compiler-private read-only observation increments only after the original
+free returns. Its fixed scalar layout is eight bytes, as asserted by the
+successful fresh C++ build. The new
+private JS getter's storage and overall engine cost remain unmeasured. No
+Record or manager fields, release authority, refunds or settlement decisions
+depend on this observation. Only the derived diagnostic fixture exposes its
+scalar value; the normal application receives no getter or free API.
+
+The existing canonical workflow has two closed profiles. `canonical-own`
+retains the eleven original cases. After a newly qualified normal producer
+and exact shared input pin are available, `late-backing` additionally requires
+eight actual emitted-core controls and eight backing component cases from
+one extended fixture using that same engine/splicer. All setup, compilation
+and execution still share 900 seconds, with the original 128 MiB, fuel and
+case limits. Successful cancellation reads actual free-return counts before
+Store teardown. A destructor refusal has no observed post-trap count; its
+parent-free exclusion is inferred from verified emitted order and the actual
+trap. There is no reopened root or synthetic zero count.
+
+The [first late-backing campaign](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40084273482)
+passed all fourteen source controls and the normal fresh-input validators,
+then refused the fixture's empty tuple during normal component construction.
+No component or emitted-core runtime case ran. That failed receipt is preserved;
+the valid empty-list fixture correction changes no SDK or emitted-core inputs.
+
+The backing runtime campaign remains unqualified. It does not
+free normal delivered/partially lifted values, parameters, captured buffers,
+GC allocations or partially lowered results, and does not certify OS or linear
+memory shrink, physical provider close or completion of the SDK ticket.
 
 The programme retains a single 900-second setup/acquisition/build/execution
 bound, a 600-second command maximum, 20 seconds per case, 128 MiB aggregate
