@@ -1,0 +1,839 @@
+{
+  "schemaVersion": "latent.java.public-wineh-evidence.v1",
+  "scope": "Fixed ordinary public Capsule.pools compiler measurement; no compiler repair or Java runtime qualification",
+  "sourceCommit": "ea252414ef2d392c8f20656fbc80de1ed57c32ed",
+  "sourceTree": "a741ff957313650f740873910963ecd2ddb15793",
+  "workflow": {
+    "path": ".github/workflows/java-guest-feasibility.yml",
+    "event": "workflow_dispatch",
+    "branch": "feat/java-public-wineh-observer-20261024",
+    "run": 40125799067,
+    "job": 120966807254,
+    "url": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40125799067",
+    "inputs": {
+      "public_fiber_assembly": true,
+      "java_http_spi": false,
+      "qualify-scratch-refusals": false
+    },
+    "overallConclusion": "failure",
+    "originalFailure": "component-new: function body size count exceeds limit of7654321 at0xa571"
+  },
+  "artifact": {
+    "id": 12573067262,
+    "bytes": 813745,
+    "sha256": "adb3c44fe315f6060c2a295b11ebf54e2b554ac3cd7aa5b3eb4f0fb9b122cffa",
+    "crcMembers": 84
+  },
+  "originalInputs": {
+    "compilerAcceptanceChanged": false,
+    "failedStage": "component-new",
+    "fixtureSourceDigest": "sha256:6a2f7a5a13b3295761b0f18989e47cc7ff106a7c9546c559492247fcd36430c8",
+    "fixtureWitDigest": "sha256:14c7bb47a7634153b4dcf39473a31f7f87f971f8c90a602b378be498dc938236",
+    "inputs": {
+      "closed-runtime.wasm": {
+        "bytes": 773,
+        "sha256": "sha256:c3eca145a81bc22a1519d6e42da9c6665c5e5c2c5edf69fa68a34d5d4b10ef36"
+      },
+      "core.wasm": {
+        "bytes": 21343025,
+        "sha256": "sha256:2affb0479e5e7998b80545556254e354e34e99dad882d5ef8b027c81c3f64cdf"
+      }
+    },
+    "limits": {
+      "closed-runtime.wasm": 4194304,
+      "core.wasm": 67108864
+    },
+    "logLimitBytesUnchanged": 16777216,
+    "normalPublicFiberOnly": true,
+    "publicFixtureOnly": true,
+    "qualification": false,
+    "schemaVersion": "latent.java.public-fixture-component-inputs.v1",
+    "status": "retained"
+  },
+  "originalC": {
+    "bytes": 733980,
+    "sha256": "e8ac2e599bf4777f0abefbaeeebd3f8b34dc00e45b4d45a5327ba4affc7a8e22"
+  },
+  "originalCompiler": {
+    "teaVMCOptimization": "FULL",
+    "clangOptimization": "O2",
+    "stage": "c-to-wasm",
+    "exitCode": 0,
+    "seconds": 176.231187,
+    "bodyBytes": 15264587,
+    "bodyStart": 42353,
+    "bodyEnd": 15306940,
+    "bodyIdentitySource": "Previously inspected byte-identical retained original core; this run reauthenticated the whole core identity."
+  },
+  "measurement": {
+    "status": "observed",
+    "function": "meth_dla_Capsule_pools",
+    "pass": "win-eh-prepare",
+    "source": "pinned-llvm-text-only",
+    "snapshots": {
+      "after": {
+        "alloca": 1650,
+        "blocks": 2634,
+        "catchswitch": 1,
+        "instructions": 1913670,
+        "invoke": 1151,
+        "load": 5073,
+        "phi": 214755,
+        "phiIncoming": 894019,
+        "store": 1685865,
+        "volatileLoad": 2145,
+        "volatileStore": 2586
+      },
+      "before": {
+        "alloca": 190,
+        "blocks": 2633,
+        "catchswitch": 1,
+        "instructions": 231750,
+        "invoke": 1151,
+        "load": 3613,
+        "phi": 216215,
+        "phiIncoming": 2574479,
+        "store": 5405,
+        "volatileLoad": 2145,
+        "volatileStore": 2586
+      }
+    },
+    "delta": {
+      "alloca": 1460,
+      "blocks": 1,
+      "catchswitch": 0,
+      "instructions": 1681920,
+      "invoke": 0,
+      "load": 1460,
+      "phi": -1460,
+      "phiIncoming": -1680460,
+      "store": 1680460,
+      "volatileLoad": 0,
+      "volatileStore": 0
+    },
+    "prefixOnly": false,
+    "stderrBytes": 140717621,
+    "stderrDigest": "sha256:6d013ffc17336943158cb8cfc2a98b356839c4d609a7e2ecb24f07801320c2c6",
+    "stdoutBytes": 0,
+    "stdoutDigest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "childExitCode": 0,
+    "pipeEOFComplete": true,
+    "postReplayIdentitiesVerified": true,
+    "diagnosticCommandDigest": "sha256:5c82af467e62fba56868f0cdf6dbc94042d5ab9906cf094793c739673924e7c0",
+    "qualification": false
+  },
+  "limits": {
+    "diagnosticRawTransitBytes": 268435456,
+    "outerCombinedCaptureBytes": 83886080,
+    "normalLogBytes": 16777216,
+    "outerCommandSeconds": 600,
+    "jobMinutes": 35,
+    "lineBytes": 262144,
+    "summaryBytes": 65536,
+    "samplesBytes": 16384,
+    "rawIRRetained": false,
+    "productionParserLimitChanged": false,
+    "compilerAcceptanceChanged": false
+  },
+  "hostedSourceControls": {
+    "passed": 10,
+    "skipped": 0,
+    "seconds": 8.075,
+    "names": [
+      "test_fixed_normal_public_sources_and_only_failed_assembly_pair_are_retained",
+      "test_optional_exact_generated_c_and_c_only_refusals_preserve_both_wasm_inputs",
+      "test_other_stages_changed_sources_unsafe_pairs_and_capture_failures_preserve_original_failure",
+      "test_actual_owned_pipe_collector_and_abort_cleanup",
+      "test_admission_and_bounded_capture_failures_preserve_original_exception",
+      "test_changed_real_materials_or_command_receipt_refuse_before_execution",
+      "test_real_admission_replay_uses_original_argv_and_separate_output_only",
+      "test_real_hosted_context_guards_and_named_source_identities",
+      "test_sealed_ticket_checks_actual_files_and_rejects_retargeting",
+      "test_synthetic_pinned_print_text_is_counted_and_unknown_formats_refuse"
+    ]
+  },
+  "jobLog": {
+    "bytes": 52711,
+    "sha256": "2f47710a602069fa166335acf7c49986058d7fc787ccf0bf630cb96cdd679f38"
+  },
+  "immutableRecipeInputs": {
+    "tools/qualify_java_fibers.py": "sha256:c6b54e83f0630dc4d7dcfb3aadc96559d676f56a7c50c181d1d1dbe711295b8b",
+    "tools/java_guest/async_imports.py": "sha256:f84c40987c2bd71e4662281ceb07eb70e6082b9be19b409522db83dedaa8dbe1",
+    "tools/java_guest/bindings.py": "sha256:b31a4f19f4bd8bef828d4b98eadd1323b6b4b63433101a175643af012e9a0a4a",
+    "tools/java_guest/c.py": "sha256:d7cbbfe591989e746d4090f075585a7389007a313958c3d048efb0184715b02b",
+    "tools/java_guest/c_failure_context.py": "sha256:84230acc9f4795716f7939f9d96bcc27d859ba86b2d2ec248568fca8e00186a1",
+    "tools/java_guest/class_origin.py": "sha256:7662513e7b61c5720e23e13a5c1dfc7aacc1706b9201a86d89078b0b37a17fae",
+    "tools/java_guest/compiler.py": "sha256:ece99fb112e72288830b4b7ad7095f973925cbfac4f447dbfb070cf5345cc4b0",
+    "tools/java_guest/compiler_diagnostics.py": "sha256:d7481f8e1d07275c2330f51f80e7853a934457474ea7b6d0775b0c1aed652b5a",
+    "tools/java_guest/coroutine_patch.py": "sha256:1e11f1a5cf659091d65a9ca49e74ad005919d863783bc0ca04661dcfb64d2e29",
+    "tools/java_guest/facilities.py": "sha256:8d101f290af12114d1eb251937e38fd47a9499ad44c40acfe6258de4af34f033",
+    "tools/java_guest/fiber_component_inputs.py": "sha256:1996fd5c0823483b667b97c3bf5c3f7c9856e2cb11da6d3a06d29c41191c7b46",
+    "tools/java_guest/filesystem.py": "sha256:e0d8d6dfdeda7afdaa39205e16f82ee92f19d57577268ddaae5a32d3d4eab605",
+    "tools/java_guest/java.py": "sha256:c4bcb4d37a97a80ecfe386df402c9b532db392a45b31516ccf92a6bb33447dea",
+    "tools/java_guest/lock.py": "sha256:13e0e47d807a020c202902634c5f2bef1fe5342afdacd2d017c674982ab2f52c",
+    "tools/java_guest/model.py": "sha256:945c4bc3428ddd887e6dd14679af56bf8f8a32788459f8374cfc0dc113c3a2e9",
+    "tools/java_guest/public_wineh.py": "sha256:2694da2f1c7a49df735f72edee25f16eec9ced6b650768a4be151c5527fb103b",
+    "tools/java_guest/reachability.py": "sha256:001cca01fe5a7541faf82241f9df7446a426cb943e19782502060f45b5005418",
+    "tools/java_guest/resources.py": "sha256:77389b62f5f820e03a81ef852105ab122087c381954d06283f79b7da394918c1",
+    "tools/java_guest/sdk.py": "sha256:f1561266c21b51beb2ac8de6c24319af313d0a9fd186c124ca06500c226e67e8",
+    "tools/java_guest/surface.py": "sha256:3952a3f65038661ab8121d7b81312c99df5de26407355f39593a1eed7186d530",
+    "tools/java_guest/wineh_filter.py": "sha256:38a20b24febd66ccb2361650cb411b35a50cf40283c82173b8f3242d8dbf8677",
+    "tools/java_guest/wineh_ir.py": "sha256:dbce7ab10915f60054cdf3bfe4d361f7167d01ba601acbcd16d05278f85d99b3",
+    "tools/java_fiber_library_inputs.py": "sha256:ca8755ef2323acc275344ab9365f4c0e0505684f5cf6f49243647787c08ebc5a",
+    "tools/stage_runtime_wit.py": "sha256:a44bcfc7054c8a63a43e3b9ad6428e7d4ac1bb551420020bc29015c9333b9828",
+    "tools/rust_capsule_project.py": "sha256:584331e9da177b9443738916047a2a7bb076b86de6348105baa04514ede0be36",
+    "tools/build_observation.py": "sha256:c9fe0843aabb9a026b2005134b121bf2e53abc909a2da3e5e5fe90fdc3096db0",
+    "tools/build_process.py": "sha256:63a232cb41d047eeb3c2c3b5226a01a6922e3e71b8066ae362b1f8aae7d90f4d",
+    "tools/build_process_linux.py": "sha256:e3d45b83b7dfe213135491b8a094925179b884df11615ea0dcb64af6451d08ce",
+    "tools/build_process_windows.py": "sha256:3de6d1a259112579d0da53b90614233fd27d57daf3cf75582d9ac774f13b31fd",
+    "tools/java_capsule.py": "sha256:c73ed8a032629bbc5f4406f4256eb6fc260d58162bcb04a1b8b1c9d9a4bffa4f",
+    "tools/java_capsule_project.py": "sha256:b1ba19f44a5c26d5b3b4003a50b50a9cf6909a119a3a3daafeadd51417de22af",
+    "tools/java_capsule_build.py": "sha256:f8c6abb189a144bb5c96559f3b792ce18256700d1420109c48c67794eb5fbf02",
+    "tools/application_dependencies.py": "sha256:4582e588d2c28a87c3c1c8acdd713d3f22fb3c65764e450e483ffb15dae33e5f",
+    "tools/application_dependency_store.py": "sha256:ac8bd16090cbbd2a3696bd21fd269bbba7abfd9357049ed002f3bb4975e931ed",
+    "tools/application_dependency_tools.py": "sha256:4b4b26044e185269feed5344cd333a0dbffec76927b7ca9ad779fefb33aa94f9",
+    "tools/java_application_dependencies.py": "sha256:6438526019b4c05f050005ddd3bf5e2065d1abdc4cbfa0925aa409eaa69205e7",
+    "tools/java_dependency_resolution.py": "sha256:897b2875d055112238c3bc332e5b3fa1d9a79050e00a30ad31377d821c9aeca6",
+    "tools/java_registry_tls.py": "sha256:d8fa000fda17467271c2c4bbb74a10d6c6f9c675b9c06a2d6c7e3c139b597709",
+    "tools/java_resource_artifacts.py": "sha256:a4de04801a5af4dbead4c98e48890d2e5e6d48aba820c8550e692d15f9cae463",
+    "tools/java_dependency_authoring.py": "sha256:76e01f6d22c25a6b715586467952c1400d258f5e526c591968ff49faa91fed32",
+    "tools/toolchain.toml": "sha256:ccbf00ab487b1b3cbeb799a59280ea1fb97784805032b7b3f52e8211c588f4e4",
+    "tools/dev_workflow/paths.py": "sha256:6758044322e58c687c73d8302c0fab82a07d9680ed647a3a52f2a34f60d0da59",
+    "tools/dev_workflow/windows.py": "sha256:88f584e03e560395027f5d59a8358dbf57ce3daf64c68d56f5af2a98cee5f473",
+    "tools/rust_capsule_build.py": "sha256:8fbcb10eb7e7b2a2fc39834f0b94600fad2364c9b326bcc9db030418cf891b61",
+    "tools/build_process_signals.py": "sha256:96dddca07cc20b77b0b6b93a3524c047877a4fcdd7442fe8c635024ade13cdb2",
+    "tools/build_snapshot.py": "sha256:547003a6c84fa757deaa2a2b83668534ea3d77273de6fa660bc56ea624a31f64",
+    "examples/echo-contract/capsule.json": "sha256:92a55f1185902458d3e5418ab464ce651a12779fc90bf5ab3433e2eb2a5ca85d",
+    "examples/echo-contract/deployment.json": "sha256:2f14e5feb3eabfb56c4ec5e445f5fa02c42aa8f201828b78812ea399b36f9f3a",
+    "tools/transaction_guest_project.py": "sha256:8f70d19a6181e3d078d42944d0957f5512ab7a4b426befaffbb73b2cec874f39",
+    "tools/dev_workflow/common.py": "sha256:f398999c39fc80606ca3ec0d47db5a9e32debe96367a87a9aa72b70089f13a28",
+    "tools/dev_workflow/transaction_binding.py": "sha256:d758bd2b904f9ff53d61398afe4910230d457afc1f14748080a3930f06cf38aa",
+    "tools/guest_compatibility.py": "sha256:4aec014811e7863917659306f30e1da3f5c56624479810c9b060769f9cd5727e",
+    "tools/guest_compatibility_build.py": "sha256:67339aedb2de99b7de7675ac51e69aa6d7de4c5f1f26e0d773ca315cfca24840",
+    "wit/host-abi-phase3-v4.json": "sha256:3cfbd9bf55248f972d53598cc71ceccf068aa9234de4e1fce488d458271a937d",
+    "wit/host-abi-phase4-v1.json": "sha256:e8d67cb2ca7f696296a28684d59f6663788888e8e0c06f2aafe1eab34f4f0403",
+    "sdk/profile/transaction-requirements-v1.json": "sha256:9bb389824b6a2d3015727b5c17de25a51505339d0a4f6cf46199ffe520881cd5",
+    "tools/guest_compatibility_context.py": "sha256:bb0d9a0cd5aca5dd380bbba164e2532fefc9d5deae81d5d7d920ceac388f8d18",
+    "tools/guest_compatibility_context_build.py": "sha256:a2faddbf904d92b054081cd64af278249bec8d16df46821bf5d5200ffb22ce6a",
+    "tools/guest_runtime_receipts.py": "sha256:a6010a4c1a767779eec5a6bef7907cd12f6f95ce91dc9c32d18283f08436672e",
+    "tools/guest_emitted_code.py": "sha256:211c7ef2b359b2ec2e2227cae1e4212b57c020dc4f02649302c976e0eb85dbbd",
+    "tools/guest_resources.py": "sha256:558e9c937b9b7113fe5f51d035c4f56695cc8a3db30b0f378c7d926e76111814",
+    "tools/guest_dependency_inputs.py": "sha256:0d12177e8343aaa7a051d8baa19e15b0fa122b7ea26cb7aa92dead89e980baca",
+    "tools/application_dependency_approval.py": "sha256:70126c2b142a74f4fe169ceff32642008b843d668c66b7c5addac66dc1e14209",
+    "tools/dev_workflow/__init__.py": "sha256:83994d5549a6b1de4ef471c2e8fa9db700b731807f8e9b806c71b9bcf594eaf2",
+    "tools/dev_workflow/project.py": "sha256:0867f8ded6f515b2ed6fb3a76d78fed77141bcfcce931227aa201930d2e19137",
+    "tools/dev_workflow/dependencies.py": "sha256:6c2b1e343e05d10b43fead70d017193dedd6d0a7bde7db0a4c110d3d51a67b7b",
+    "tools/dev_workflow/snapshot.py": "sha256:c8c3967d3a067c19748e657889362f694683445e61c2ee1fd9ff4e3d5a39acbe",
+    "tools/dev_workflow/resource_inputs.py": "sha256:aa847812a09cd13558277a8d4a07888f96ee70375651a7f7802b7102c9090aaf",
+    "tools/dev_workflow/state.py": "sha256:19ae59fbd3b94e9ddff4565a4da98ff04308448e7f660ecadb20f123d2f3626e",
+    "tools/guest_authoring_frontend.py": "sha256:50fb4567e172a9a8b8b72ce4b964912f980d1406979267b5d59e3545fad869c7",
+    "tools/java_server_source.py": "sha256:1fdc82d40b7ec550b3330eee99f0e9f002e9c8e6c6ef02194999f1182c1366e4",
+    "tools/java_server_project.py": "sha256:b600a1516901f5f49f65b44ffd7a93c484af9a18c0127427a3add38ad3586904",
+    "tools/server_source.py": "sha256:4f9c5aceaab9bd8bf55dc1cc8b689fba4b8700656f22be80476532e696b4fd95",
+    "wit/platform/web/package.wit": "sha256:3ad4d3e122c839115891ba9b69c9b790245a64ecb00690e23270623ac94b1450",
+    "wit/platform/context/package.wit": "sha256:9b5d08ce6d4f698ea43b17aaf879e196e2e8d64610fabc2b626ad40560daadc1",
+    "tools/java_generator_authoring.py": "sha256:606df780f777ea41d7b611fb96a8d057066870b91a4da5142e26c63c5fa4f80f",
+    "tools/java_http_client.py": "sha256:c05dcb7a76db093ff101f0e9f130b6c93bbc44dc3e3c771ee60565df8f3a9b17",
+    "tools/captured_compiler_isolation.py": "sha256:4ec520b256b5200ffaa9f86045dabcbd8cd018f05d8cd7fa98968dc410d7b99c",
+    "tools/java_annotation_processors.py": "sha256:8b527db2d2f9b71d75a7760515eaa416955464786b7f50dc20517f6f0125ee7a"
+  },
+  "maintainedSources": {
+    "tools/java_guest/public_wineh.py": {
+      "bytes": 28523,
+      "sha256": "sha256:2694da2f1c7a49df735f72edee25f16eec9ced6b650768a4be151c5527fb103b"
+    },
+    "tools/java_guest/wineh_filter.py": {
+      "bytes": 7692,
+      "sha256": "sha256:38a20b24febd66ccb2361650cb411b35a50cf40283c82173b8f3242d8dbf8677"
+    },
+    "tools/java_guest/wineh_ir.py": {
+      "bytes": 7840,
+      "sha256": "sha256:dbce7ab10915f60054cdf3bfe4d361f7167d01ba601acbcd16d05278f85d99b3"
+    },
+    "tools/qualify_java_fibers.py": {
+      "bytes": 34029,
+      "sha256": "sha256:c6b54e83f0630dc4d7dcfb3aadc96559d676f56a7c50c181d1d1dbe711295b8b"
+    }
+  },
+  "commands": [
+    {
+      "path": "compiler/0-java-version.command.json",
+      "stage": "java-version",
+      "exitCode": 0,
+      "seconds": 0.02389
+    },
+    {
+      "path": "compiler/1-gradle-version.command.json",
+      "stage": "gradle-version",
+      "exitCode": 0,
+      "seconds": 0.340407
+    },
+    {
+      "path": "compiler/10-reference-jdk-1.command.json",
+      "stage": "reference-jdk-1",
+      "exitCode": 0,
+      "seconds": 0.113996
+    },
+    {
+      "path": "compiler/11-reference-jdk-2.command.json",
+      "stage": "reference-jdk-2",
+      "exitCode": 0,
+      "seconds": 0.113927
+    },
+    {
+      "path": "compiler/12-completable-reference-compile.command.json",
+      "stage": "completable-reference-compile",
+      "exitCode": 0,
+      "seconds": 0.564147
+    },
+    {
+      "path": "compiler/13-completable-reference-run.command.json",
+      "stage": "completable-reference-run",
+      "exitCode": 0,
+      "seconds": 0.053835
+    },
+    {
+      "path": "compiler/14-completable-executor-reference-run.command.json",
+      "stage": "completable-executor-reference-run",
+      "exitCode": 0,
+      "seconds": 0.043298
+    },
+    {
+      "path": "compiler/15-completable-source-compile.command.json",
+      "stage": "completable-source-compile",
+      "exitCode": 0,
+      "seconds": 0.797258
+    },
+    {
+      "path": "compiler/16-completable-source-run.command.json",
+      "stage": "completable-source-run",
+      "exitCode": 0,
+      "seconds": 0.084104
+    },
+    {
+      "path": "compiler/17-completable-executor-source-run.command.json",
+      "stage": "completable-executor-source-run",
+      "exitCode": 0,
+      "seconds": 0.043353
+    },
+    {
+      "path": "compiler/18-completable-executor-owners-run.command.json",
+      "stage": "completable-executor-owners-run",
+      "exitCode": 0,
+      "seconds": 0.043425
+    },
+    {
+      "path": "compiler/19-completable-executor-uncertain-run.command.json",
+      "stage": "completable-executor-uncertain-run",
+      "exitCode": 0,
+      "seconds": 5.039828
+    },
+    {
+      "path": "compiler/2-clang-version.command.json",
+      "stage": "clang-version",
+      "exitCode": 0,
+      "seconds": 0.012844
+    },
+    {
+      "path": "compiler/20-activation-profile-wit.command.json",
+      "stage": "activation-profile-wit",
+      "exitCode": 0,
+      "seconds": 0.012827
+    },
+    {
+      "path": "compiler/21-wit-graph.command.json",
+      "stage": "wit-graph",
+      "exitCode": 0,
+      "seconds": 0.012693
+    },
+    {
+      "path": "compiler/22-wit-bindings.command.json",
+      "stage": "wit-bindings",
+      "exitCode": 0,
+      "seconds": 0.012661
+    },
+    {
+      "path": "compiler/23-bindings-metadata.command.json",
+      "stage": "bindings-metadata",
+      "exitCode": 0,
+      "seconds": 0.012756
+    },
+    {
+      "path": "compiler/24-wit-graph.command.json",
+      "stage": "wit-graph",
+      "exitCode": 0,
+      "seconds": 0.01274
+    },
+    {
+      "path": "compiler/25-wit-bindings.command.json",
+      "stage": "wit-bindings",
+      "exitCode": 0,
+      "seconds": 0.012811
+    },
+    {
+      "path": "compiler/26-bindings-metadata.command.json",
+      "stage": "bindings-metadata",
+      "exitCode": 0,
+      "seconds": 0.01266
+    },
+    {
+      "path": "compiler/27-java-source-origins.command.json",
+      "stage": "java-source-origins",
+      "exitCode": 0,
+      "seconds": 0.598261
+    },
+    {
+      "path": "compiler/28-java-owned-classes.command.json",
+      "stage": "java-owned-classes",
+      "exitCode": 0,
+      "seconds": 11.069094
+    },
+    {
+      "path": "compiler/29-java-coroutine-patch.command.json",
+      "stage": "java-coroutine-patch",
+      "exitCode": 0,
+      "seconds": 0.876863
+    },
+    {
+      "path": "compiler/3-wit-bindgen-version.command.json",
+      "stage": "wit-bindgen-version",
+      "exitCode": 0,
+      "seconds": 0.012675
+    },
+    {
+      "path": "compiler/30-java-coroutine-original-control.command.json",
+      "stage": "java-coroutine-original-control",
+      "exitCode": 0,
+      "seconds": 0.094126
+    },
+    {
+      "path": "compiler/31-java-coroutine-monitor-original-control.command.json",
+      "stage": "java-coroutine-monitor-original-control",
+      "exitCode": 0,
+      "seconds": 0.084022
+    },
+    {
+      "path": "compiler/32-java-coroutine-corrected-control.command.json",
+      "stage": "java-coroutine-corrected-control",
+      "exitCode": 0,
+      "seconds": 0.093869
+    },
+    {
+      "path": "compiler/33-java-coroutine-monitor-corrected-control.command.json",
+      "stage": "java-coroutine-monitor-corrected-control",
+      "exitCode": 0,
+      "seconds": 0.083955
+    },
+    {
+      "path": "compiler/34-java-to-c.command.json",
+      "stage": "java-to-c",
+      "exitCode": 0,
+      "seconds": 10.759797
+    },
+    {
+      "path": "compiler/35-c-to-wasm.command.json",
+      "stage": "c-to-wasm",
+      "exitCode": 0,
+      "seconds": 176.231187
+    },
+    {
+      "path": "compiler/36-closed-runtime.command.json",
+      "stage": "closed-runtime",
+      "exitCode": 0,
+      "seconds": 0.013057
+    },
+    {
+      "path": "compiler/37-component-new.command.json",
+      "stage": "component-new",
+      "exitCode": 1,
+      "seconds": 0.023105
+    },
+    {
+      "path": "compiler/4-wasm-tools-version.command.json",
+      "stage": "wasm-tools-version",
+      "exitCode": 0,
+      "seconds": 0.012545
+    },
+    {
+      "path": "compiler/5-wit-graph.command.json",
+      "stage": "wit-graph",
+      "exitCode": 0,
+      "seconds": 0.013011
+    },
+    {
+      "path": "compiler/6-wit-bindings.command.json",
+      "stage": "wit-bindings",
+      "exitCode": 0,
+      "seconds": 0.012598
+    },
+    {
+      "path": "compiler/7-bindings-metadata.command.json",
+      "stage": "bindings-metadata",
+      "exitCode": 0,
+      "seconds": 0.012443
+    },
+    {
+      "path": "compiler/8-reference-jdk-compile.command.json",
+      "stage": "reference-jdk-compile",
+      "exitCode": 0,
+      "seconds": 0.514886
+    },
+    {
+      "path": "compiler/9-reference-jdk-0.command.json",
+      "stage": "reference-jdk-0",
+      "exitCode": 0,
+      "seconds": 0.113914
+    }
+  ],
+  "retainedMembers": {
+    "FIBERS-COMPILE.json": {
+      "bytes": 12344,
+      "sha256": "c79a9ba0e0f7feae2c2862dad52360f5f8c0b77b54b43206423b80d419a3c8fd"
+    },
+    "compiler/0-java-version.command.json": {
+      "bytes": 187,
+      "sha256": "49bcf9e26532d9d4922f1fdfae53e7e53c241c5e1a26912a6b52b1ff5b40720b"
+    },
+    "compiler/0-java-version.log": {
+      "bytes": 201,
+      "sha256": "dc52985e291a871cd813e0ec48efca3a22da113e8faae9101f126c3d6b16ce36"
+    },
+    "compiler/1-gradle-version.command.json": {
+      "bytes": 163,
+      "sha256": "cf39ea4e134fbcbd801749c2de95e28ece4173bb205de91b40de52341bafaae9"
+    },
+    "compiler/1-gradle-version.log": {
+      "bytes": 806,
+      "sha256": "23dbdfcf47bece482ed891afa796d00ff6c97ea7b8ffebe27bb26c989dbb0a93"
+    },
+    "compiler/10-reference-jdk-1.log": {
+      "bytes": 13,
+      "sha256": "fdf2e0802b6ef92c6fa71955aa4ef252f4af6c420fe8e5a4679f3a7b7e2a22f6"
+    },
+    "compiler/10-reference-jdk-1.command.json": {
+      "bytes": 266,
+      "sha256": "72e7d007f778bc556a0d37381ff251b57cd0f82f44c2694d10b189af20eb1696"
+    },
+    "compiler/11-reference-jdk-2.command.json": {
+      "bytes": 266,
+      "sha256": "71b1ac2c60578ad129700e4fde9c91faf0d8da43686d80831893caf6a2169b98"
+    },
+    "compiler/11-reference-jdk-2.log": {
+      "bytes": 13,
+      "sha256": "fdf2e0802b6ef92c6fa71955aa4ef252f4af6c420fe8e5a4679f3a7b7e2a22f6"
+    },
+    "compiler/12-completable-reference-compile.command.json": {
+      "bytes": 640,
+      "sha256": "5f64c68ca713b9c8e9dcc7803473219d4874c040d5094e761d4fed7c44218634"
+    },
+    "compiler/12-completable-reference-compile.log": {
+      "bytes": 1,
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    "compiler/13-completable-reference-run.command.json": {
+      "bytes": 333,
+      "sha256": "68263d0446f3f58d70bbbf62ddd79a951a405db082b42093e813826703fe629b"
+    },
+    "compiler/13-completable-reference-run.log": {
+      "bytes": 55,
+      "sha256": "dde87e351ce9c1f242332571a8b11ee53cce09ae623b61a0ebaacc2ff44c7b3b"
+    },
+    "compiler/14-completable-executor-reference-run.command.json": {
+      "bytes": 358,
+      "sha256": "857fa1f73bb569d991f25d07f7bdde4f11ff069c6dbb7392d844966daf918971"
+    },
+    "compiler/14-completable-executor-reference-run.log": {
+      "bytes": 1075,
+      "sha256": "925d0730fbc2f7775d197d7c8306491908547ced0cd1c841d5a55b5e527d705e"
+    },
+    "compiler/15-completable-source-compile.command.json": {
+      "bytes": 2159,
+      "sha256": "4d817d1aff56f718ed9113e7dc2e41c05c44d7e64813ffc42edb91c9edd82edb"
+    },
+    "compiler/15-completable-source-compile.log": {
+      "bytes": 1,
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    "compiler/16-completable-source-run.command.json": {
+      "bytes": 317,
+      "sha256": "10322eca548ffa203de6a2974da5b17b8c8e371a1bd9c780fb245def6a796ee8"
+    },
+    "compiler/16-completable-source-run.log": {
+      "bytes": 123,
+      "sha256": "18fc0518a14e7f1ba47ccf2440b296e25161d75e81d0f1235d6bfb8de79e9f41"
+    },
+    "compiler/17-completable-executor-source-run.command.json": {
+      "bytes": 353,
+      "sha256": "d5e02d588b0b1d83ae659c52b075f28d1122936173cdbf8253f3c20282902eff"
+    },
+    "compiler/17-completable-executor-source-run.log": {
+      "bytes": 1075,
+      "sha256": "925d0730fbc2f7775d197d7c8306491908547ced0cd1c841d5a55b5e527d705e"
+    },
+    "compiler/18-completable-executor-owners-run.command.json": {
+      "bytes": 354,
+      "sha256": "097ffcbbfcc1950898b8deadb1d4eed1d045027d35c5df20360ebc3c3743890c"
+    },
+    "compiler/18-completable-executor-owners-run.log": {
+      "bytes": 66,
+      "sha256": "f17873cf9129c18438f1e12ae9cc73ee4f530ff28e98fad693d80aafb945f697"
+    },
+    "compiler/19-completable-executor-uncertain-run.command.json": {
+      "bytes": 356,
+      "sha256": "f860acf6bc092be979682f0c79f61a51205618300f235b7663edda706c6a9c18"
+    },
+    "compiler/19-completable-executor-uncertain-run.log": {
+      "bytes": 133,
+      "sha256": "3edd51a31be86a9d8274387ac8af9511f13ce6fa04e5390ff5b58b92d0f182f8"
+    },
+    "compiler/2-clang-version.command.json": {
+      "bytes": 178,
+      "sha256": "2ff52868e398b45f7c183cdc43a37c75be091cb848f4ce41b6d2937802b68434"
+    },
+    "compiler/20-activation-profile-wit.command.json": {
+      "bytes": 251,
+      "sha256": "56c69dc1d9e52dac349462563b5b30496b18cd3a318167a44f738eedbe00f587"
+    },
+    "compiler/2-clang-version.log": {
+      "bytes": 313,
+      "sha256": "d3fa6f2e2ec1f904a494f0913372a855747f86af3961bcf5360dadf05b5eb488"
+    },
+    "compiler/20-activation-profile-wit.log": {
+      "bytes": 10938,
+      "sha256": "f97649dda7bf85e06db8c8eeb346114d56ca3093b55282b02358b4b405606ae9"
+    },
+    "compiler/21-wit-graph.command.json": {
+      "bytes": 238,
+      "sha256": "0a667d2157d4dd099272a3c11a1001d9a990112e14d5e896dfb49baf2e997d88"
+    },
+    "compiler/21-wit-graph.log": {
+      "bytes": 10938,
+      "sha256": "f97649dda7bf85e06db8c8eeb346114d56ca3093b55282b02358b4b405606ae9"
+    },
+    "compiler/22-wit-bindings.command.json": {
+      "bytes": 435,
+      "sha256": "198b3d027d9989b39b024af6a0fa3242eb3e687e4942267ee7d3d0d6baa895e0"
+    },
+    "compiler/22-wit-bindings.log": {
+      "bytes": 265,
+      "sha256": "b2380b29e9851adac71a2f8b74630f38bf2a05a3e6f2a9767e9b24d91f502f2b"
+    },
+    "compiler/23-bindings-metadata.command.json": {
+      "bytes": 260,
+      "sha256": "1daf8fed51965b1078e265e2810c433fa537e13a31313e1533224a57a3f69227"
+    },
+    "compiler/23-bindings-metadata.log": {
+      "bytes": 2276,
+      "sha256": "9b32f1bf90ec37d58b164e26703bbae8a84849bc70649c5ccd518d26e0d18497"
+    },
+    "compiler/24-wit-graph.command.json": {
+      "bytes": 237,
+      "sha256": "fe7a4513dc6ca6d00c3b0decd8730c3ee369d0553345c5709c41066a31e9f35d"
+    },
+    "compiler/24-wit-graph.log": {
+      "bytes": 10938,
+      "sha256": "f97649dda7bf85e06db8c8eeb346114d56ca3093b55282b02358b4b405606ae9"
+    },
+    "compiler/25-wit-bindings.command.json": {
+      "bytes": 441,
+      "sha256": "a44e3a47d29f24a9cdcd01de6202b0796ae7e0c456a418b4b39de1385f9f143e"
+    },
+    "compiler/25-wit-bindings.log": {
+      "bytes": 283,
+      "sha256": "49663e14ae3c1d6b151e104525a4a2c10ad844c90ad48ae17fe8a98e86f90ad1"
+    },
+    "compiler/26-bindings-metadata.command.json": {
+      "bytes": 265,
+      "sha256": "73b443637e0386de38221252fdb6af676c9ea221128e06c71e966cc1c6fbc93f"
+    },
+    "compiler/26-bindings-metadata.log": {
+      "bytes": 2276,
+      "sha256": "9b32f1bf90ec37d58b164e26703bbae8a84849bc70649c5ccd518d26e0d18497"
+    },
+    "compiler/27-java-source-origins.command.json": {
+      "bytes": 356,
+      "sha256": "57d0ff88304c23fdc343de4435e87bf0d100f4f7df3b9eef8b862c709d92f6a6"
+    },
+    "compiler/27-java-source-origins.log": {
+      "bytes": 113,
+      "sha256": "6b2f3640a203af9efa2553e10c262fc80ae7806c89fc0303a146ca6e33605758"
+    },
+    "compiler/28-java-owned-classes.command.json": {
+      "bytes": 185,
+      "sha256": "79343e2fcb13f923c351893f786b227413ca3f647819e7a663be4a27eb1638e6"
+    },
+    "compiler/28-java-owned-classes.log": {
+      "bytes": 535,
+      "sha256": "0fd649a29ee033e4e46fd7e82922b05ee93b0712c9636f6b39e465b5cbfbd7f0"
+    },
+    "compiler/29-java-coroutine-patch.command.json": {
+      "bytes": 6394,
+      "sha256": "8ef39d1b3b3325226823eb23681283e969f888c5eaa4b0b375b16eb0cce769d0"
+    },
+    "compiler/29-java-coroutine-patch.log": {
+      "bytes": 1,
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    "compiler/3-wit-bindgen-version.command.json": {
+      "bytes": 169,
+      "sha256": "46ac9cb6302be5c78c02cbd5a96cb40646f717d0803c612b58f6f607e0113645"
+    },
+    "compiler/30-java-coroutine-original-control.command.json": {
+      "bytes": 5733,
+      "sha256": "3713fe4850bc3c5b8224f3a30d8d7e58b45d04a6b1db36cab0ec8816a105b656"
+    },
+    "compiler/3-wit-bindgen-version.log": {
+      "bytes": 24,
+      "sha256": "54a3b7f07a7f22e6db46237d76553a5024aa175f6e8966d2db7111e653d9cf42"
+    },
+    "compiler/30-java-coroutine-original-control.log": {
+      "bytes": 90,
+      "sha256": "01c538693a3632d25520419458df49878381435cf3447bbbf057656177ec326f"
+    },
+    "compiler/31-java-coroutine-monitor-original-control.command.json": {
+      "bytes": 5739,
+      "sha256": "c708bf2d36d35832b8e5defe385c8a1c017fbf58e984d1110c4a45809ffb406c"
+    },
+    "compiler/31-java-coroutine-monitor-original-control.log": {
+      "bytes": 90,
+      "sha256": "51845c53fd413c79c1c4e61c01fee793d8425ef808a2fd09d4f9bd3d34d85795"
+    },
+    "compiler/32-java-coroutine-corrected-control.command.json": {
+      "bytes": 5648,
+      "sha256": "45ba0acda3fb8dbf12b7c443b978bcc7c439874ffe665708d8110ffb8420d14a"
+    },
+    "compiler/32-java-coroutine-corrected-control.log": {
+      "bytes": 91,
+      "sha256": "4828f5d55aa6bab7d28b8266afd76eaca05911722b3338c1d23abc56c65b7d51"
+    },
+    "compiler/33-java-coroutine-monitor-corrected-control.command.json": {
+      "bytes": 5654,
+      "sha256": "a7ea216cc2cc24890c6e204f88116bca00aaa86b26e284609b81eaa890c64d37"
+    },
+    "compiler/33-java-coroutine-monitor-corrected-control.log": {
+      "bytes": 91,
+      "sha256": "36ae283936a6b418b41521d8b079dfcea962b00da32322146ab4bbc64b99ab53"
+    },
+    "compiler/34-java-to-c.command.json": {
+      "bytes": 178,
+      "sha256": "7e0d22ee2a882a6c3e7529ba82524daede30f588d35095e26f5c39c8cc6471a0"
+    },
+    "compiler/34-java-to-c.log": {
+      "bytes": 921,
+      "sha256": "667e3a9b9fe6d970c417510e2460fedcfdec8f3449b40ec197bd861cbf491cdf"
+    },
+    "compiler/35-c-to-wasm.command.json": {
+      "bytes": 1479,
+      "sha256": "9708062f7fb35d94477907fba41d704a61c5aaff8d16ec6c9f7092a87c40be55"
+    },
+    "compiler/35-c-to-wasm.log": {
+      "bytes": 215852,
+      "sha256": "ab20042fa1c07da8ffd8ab40f3c93a1d0d849772025185c7a4c8ef76f23e4d5a"
+    },
+    "compiler/36-closed-runtime.command.json": {
+      "bytes": 474,
+      "sha256": "805ea4a0d7ab758744e04cc6a31653c45f5791b004b5c4806b160d952f98b389"
+    },
+    "compiler/36-closed-runtime.log": {
+      "bytes": 1,
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    "compiler/37-component-new.command.json": {
+      "bytes": 437,
+      "sha256": "645386e106aadd7cfb05c7512464e75862c949ebf94c44475d767dc52918a03e"
+    },
+    "compiler/4-wasm-tools-version.command.json": {
+      "bytes": 158,
+      "sha256": "2cc5f72c41740bd4ab84e3fe86523aff034f55cd9e6a1764b527af2b4769e38d"
+    },
+    "compiler/37-component-new.log": {
+      "bytes": 207,
+      "sha256": "66f8c08c25725ee66f1ce601b2df62899f9fb1d4f19bfc253ce81cab65849a0c"
+    },
+    "compiler/4-wasm-tools-version.log": {
+      "bytes": 43,
+      "sha256": "a9d05a8e1e1fd8ceb59716d851f535e44be83f11d8a2d6ff21b95fb6aafa39df"
+    },
+    "compiler/5-wit-graph.command.json": {
+      "bytes": 255,
+      "sha256": "879ee5c8a35407d96856f2cbe82ec47ec449010d2c29557596d6fa90318cd741"
+    },
+    "compiler/5-wit-graph.log": {
+      "bytes": 41883,
+      "sha256": "5d5d27b6acbdb5d606bd21ac1a48355b6b9bcfe3b675ec3217279615cdec895a"
+    },
+    "compiler/6-wit-bindings.command.json": {
+      "bytes": 470,
+      "sha256": "a0207e3808b09e2b7bc2162d56e0795599c6d589c19ecb0b7b5bff6b3c7738db"
+    },
+    "compiler/6-wit-bindings.log": {
+      "bytes": 316,
+      "sha256": "22cb0473aa4525ba49d259e05c9b7d56aa268d11b8fa3e474dd30eec81c23f31"
+    },
+    "compiler/7-bindings-metadata.command.json": {
+      "bytes": 277,
+      "sha256": "96ce4e612ed157c200f9b04b7c69bf6345fae2dc237c7ccd0c04b9b4914936e4"
+    },
+    "compiler/7-bindings-metadata.log": {
+      "bytes": 8431,
+      "sha256": "16ad67914b30acd8ddc8f7336d9e9e20d2be36f535756bb2dc329a2ab34b371b"
+    },
+    "compiler/8-reference-jdk-compile.command.json": {
+      "bytes": 427,
+      "sha256": "3730de54841021fcee1fb6ec34d6b8a83bc681753416fdae29a972a773378205"
+    },
+    "compiler/8-reference-jdk-compile.log": {
+      "bytes": 1,
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    "compiler/9-reference-jdk-0.command.json": {
+      "bytes": 266,
+      "sha256": "2438866376ebb5183f83dbf5a42048d74b1c7ac31763068831c9c8d8b5d5def3"
+    },
+    "compiler/9-reference-jdk-0.log": {
+      "bytes": 13,
+      "sha256": "fdf2e0802b6ef92c6fa71955aa4ef252f4af6c420fe8e5a4679f3a7b7e2a22f6"
+    },
+    "build/runtime-profile.json": {
+      "bytes": 525,
+      "sha256": "2784c7cff8b5e7969077225c73249f33a1994b783dee9402d6c195565c1e544c"
+    },
+    "build/component-inputs/Capsule.c": {
+      "bytes": 733980,
+      "sha256": "e8ac2e599bf4777f0abefbaeeebd3f8b34dc00e45b4d45a5327ba4affc7a8e22"
+    },
+    "build/component-inputs/closed-runtime.wasm": {
+      "bytes": 773,
+      "sha256": "c3eca145a81bc22a1519d6e42da9c6665c5e5c2c5edf69fa68a34d5d4b10ef36"
+    },
+    "build/component-inputs/core.wasm": {
+      "bytes": 21343025,
+      "sha256": "2affb0479e5e7998b80545556254e354e34e99dad882d5ef8b027c81c3f64cdf"
+    },
+    "build/component-inputs/generated-c.json": {
+      "bytes": 376,
+      "sha256": "3f3bd3cbc804f952bea1e3edbc64d3ed9774324e08c3c44a067d2f9d9fa0a57c"
+    },
+    "build/component-inputs/public-wineh.json": {
+      "bytes": 8206,
+      "sha256": "7a1eea819f679918dca4b10774ba436ba899384b3b5586217c2fbd5c51da612b"
+    },
+    "build/component-inputs/record.json": {
+      "bytes": 756,
+      "sha256": "a3ee497b991eff56bca283941758db9b9655bc4f96bb1c85f8cd36c5c27370dc"
+    }
+  },
+  "interpretation": {
+    "observed": "WinEH preparation removed1460 PHIs with1680460 incoming edges and added1680460 stores plus1460 allocas and1460 loads. Volatile store/load counts were unchanged across this pass.",
+    "limits": "This attributes expansion across one compiler pass for one fixed ordinary public function. It does not establish exclusive end-to-end cause or a semantics-preserving repair."
+  },
+  "claims": {
+    "measurementObserved": true,
+    "compilerSizeRepair": false,
+    "componentAssemblyPassed": false,
+    "javaGuestExecution": false,
+    "javaRuntimeQualification": false,
+    "wholeIssue741": false,
+    "productionEnablement": false
+  }
+}

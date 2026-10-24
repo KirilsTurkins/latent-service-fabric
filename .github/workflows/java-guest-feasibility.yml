@@ -975,7 +975,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 -m pip install --requirement tools/requirements.lock
-          python3 -B -m unittest tools.tests.test_java_normal_fiber_component_inputs -v
+          python3 -B -m unittest tools.tests.test_java_normal_fiber_component_inputs tools.tests.test_java_public_wineh -v
           curl --fail --location --retry 3 --max-time 180 \
             https://services.gradle.org/distributions/gradle-9.1.0-bin.zip \
             -o "$RUNNER_TEMP/gradle.zip"
@@ -990,7 +990,7 @@ jobs:
           python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/java-bindgen"
           echo "$RUNNER_TEMP/java-bindgen" >> "$GITHUB_PATH"
       - name: Prepare only the unchanged public fibers and original JDK controls
-        run: python3 tools/qualify_java_fibers.py --output "$RUNNER_TEMP/java-activation-fibers" --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
+        run: python3 tools/qualify_java_fibers.py --output "$RUNNER_TEMP/java-activation-fibers" --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux" --observe-public-wineh
       - name: Retain only fixed public assembly evidence and original failure
         if: ${{ always() && steps.public-fiber-mode.outcome == 'success' }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
