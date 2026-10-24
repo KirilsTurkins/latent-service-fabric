@@ -65,7 +65,10 @@ export function createNodeNetModule(transport, Buffer, snapshotActive, target = 
     return Buffer.from(data);
   }
   class Socket {
-    #token; #listeners = new Map(); #writes = []; #writeTask; #readTask; #connectTask; #destroyTask;
+    #token; #listeners = new Map(); #writes = [];
+    #readBusy = false; #writeBusy = false; #connectBusy = false; #chunk;
+    #progressing = false; #stopReady = false; #closeStarted = false; #nativeClosed = false;
+    #cleanupFailed = false; #notificationQueued = false; #notificationDone = false;
     #connecting = false; #connected = false; #destroyed = false; #closed = false;
     #ending = false; #finished = false; #eof = false; #flowing = false; #buffered;
     #needDrain = false; #error; #bytesRead = 0; #bytesWritten = 0; #queued = 0;
@@ -83,11 +86,45 @@ export function createNodeNetModule(transport, Buffer, snapshotActive, target = 
     #emit(name, ...args) {
       const rows = this.#listeners.get(name);
       if (!rows?.length) { if (name === 'error') throw args[0]; return false; }
-      for (const row of rows.slice()) {
-        if (row.once) this.removeListener(name, row.listener);
-        Reflect.apply(row.listener, this, args);
+      const held = this.#token && !this.#notificationDone;
+      if (held) transport.enterTail(this.#token);
+      try {
+        for (const row of rows.slice()) {
+          if (row.once) this.removeListener(name, row.listener);
+          Reflect.apply(row.listener, this, args);
+        }
+        return true;
+      } finally {
+        // A synchronous emit error caught by the application is not poison.
+        if (held) transport.leaveTail(this.#token);
       }
-      return true;
+    }
+    #user(callback, args) {
+      const held = this.#token && !this.#notificationDone;
+      if (held) transport.enterTail(this.#token);
+      try { return Reflect.apply(callback, undefined, args); }
+      finally { if (held) transport.leaveTail(this.#token); }
+    }
+    #owned(callback) {
+      const held = this.#token && !this.#notificationDone;
+      if (held) transport.enterTail(this.#token);
+      try { return Reflect.apply(callback, this, []); }
+      catch (cause) { if (held) transport.poison(this.#token, cause); throw cause; }
+      finally { if (held) transport.leaveTail(this.#token); }
+    }
+    #queuedUser(callback, args, writeRecord) {
+      const held = this.#token && !this.#notificationDone;
+      if (held) transport.enterTail(this.#token);
+      try {
+        queue(() => {
+          try { this.#user(callback, args); }
+          catch (cause) { if (held) transport.poison(this.#token, cause); throw cause; }
+          finally {
+            if (writeRecord) --queuedRecords;
+            if (held) transport.leaveTail(this.#token);
+          }
+        });
+      } catch (cause) { if (held) transport.poison(this.#token, cause); throw cause; }
     }
     on(name, listener) { return this.#add(name, listener, false); }
     addListener(name, listener) { return this.on(name, listener); }
@@ -118,26 +155,33 @@ export function createNodeNetModule(transport, Buffer, snapshotActive, target = 
         throw error('ERR_SOCKET_CLOSED', 'connect');
       const [request, listener] = destination(args);
       if (listener) this.once('connect', listener);
-      this.#token = transport.reserve(); // Finite port reservation BEFORE CAP connect.
-      this.#connecting = true; this.#remotePort = request.port;
-      const operation = transport.connect(this.#token, request);
-      this.#connectTask = (async () => {
-        try { await operation.promise; await operation.borrowSettlement; operation.assertBorrowReleased(); }
-        catch (cause) { if (!this.#destroyed) this.destroy(error('ERR_LSF_CONNECT_FAILED', 'connect', cause)); return; }
-        if (this.#destroyed) return;
-        this.#connecting = false; this.#connected = true; this.#touch();
-        // User callbacks execute outside native-error translation. A thrown
-        // callback remains its original unhandled failure, never a fake I/O error.
-        this.#emit('connect'); this.#emit('ready');
-        this.#pumpWrites(); this.#pumpReads();
-      })();
+      this.#token = transport.reserve(this.#afterTail, this); // BEFORE CAP connect.
+      this.#connecting = true; this.#connectBusy = true; this.#remotePort = request.port;
+      let failed = false, cause;
+      try { transport.connect(this.#token, request, this.#onConnect, this); }
+      catch (value) { failed = true; cause = value; }
+      if (failed) { this.#connectBusy = false; this.destroy(error('ERR_LSF_CONNECT_FAILED', 'connect', cause)); }
       return this;
+    }
+    #onConnect(record) {
+      this.#connectBusy = false;
+      if (record.borrowFailed || record.logicalFailed) {
+        if (!this.#destroyed) this.destroy(error('ERR_LSF_CONNECT_FAILED', 'connect',
+          record.borrowFailed ? record.borrowFault : record.logicalFault));
+        return;
+      }
+      if (this.#destroyed) return;
+      this.#connecting = false; this.#connected = true; this.#touch();
+      // Outside all native translators. The join retains this entire tail.
+      this.#emit('connect'); this.#emit('ready');
     }
     #touch() {
       if (this.#timer !== undefined) { clearTimer(this.#timer); this.#timer = undefined; }
-      if (this.#timeout && !this.#destroyed) this.#timer = setTimer(() => {
-        this.#timer = undefined; if (!this.#destroyed) this.#emit('timeout');
-      }, this.#timeout);
+      if (this.#timeout && !this.#destroyed)
+        this.#timer = setTimer(() => this.#owned(this.#onTimeout), this.#timeout);
+    }
+    #onTimeout() {
+      this.#timer = undefined; if (!this.#destroyed) this.#emit('timeout');
     }
     setTimeout(milliseconds, callback) {
       if (!Number.isInteger(milliseconds) || milliseconds < 0 || milliseconds > 2147483647 ||
@@ -150,49 +194,72 @@ export function createNodeNetModule(transport, Buffer, snapshotActive, target = 
     pause() { this.#flowing = false; return this; }
     resume() {
       this.#flowing = true;
-      queue(() => {
-        if (this.#destroyed || !this.#flowing) return;
-        if (this.#buffered !== undefined) { const bytes = this.#buffered; this.#buffered = undefined; this.#emit('data', bytes); }
-        this.#pumpReads();
-      });
+      queue(() => this.#owned(this.#onResume));
       return this;
     }
+    #onResume() {
+      if (this.#destroyed || !this.#flowing) return;
+      if (this.#buffered !== undefined) { const bytes = this.#buffered; this.#buffered = undefined; this.#emit('data', bytes); }
+      this.#progress();
+    }
     #pumpReads() {
-      if (this.#readTask || !this.#connected || !this.#flowing || this.#eof || this.#destroyed) return;
-      this.#readTask = (async () => {
-        try {
-          while (this.#flowing && !this.#destroyed && !this.#eof) {
-            let chunk, copy, copied, readAckObserved = false, copyAckObserved = false;
-            try {
-              const operation = transport.read(this.#token, windowBytes, undefined);
-              try {
-                chunk = await operation.promise; await operation.borrowSettlement; operation.assertBorrowReleased(); readAckObserved = true;
-                if (chunk !== undefined && !this.#destroyed) {
-                  copied = transport.chunkBytes(this.#token, chunk);
-                  const raw = await copied.promise; await copied.borrowSettlement; copied.assertBorrowReleased(); copyAckObserved = true;
-                  copy = Buffer.from(raw); // Copy BEFORE owned chunk disposal.
-                }
-              } finally {
-                if (!readAckObserved) { await operation.borrowSettlement; operation.assertBorrowReleased(); }
-                if (copied && !copyAckObserved) { await copied.borrowSettlement; copied.assertBorrowReleased(); }
-                if (chunk !== undefined) transport.disposeChunk(this.#token, chunk);
-              }
-            } catch (cause) {
-              if (!this.#destroyed) this.destroy(error('EIO', 'read', cause, 0, this.#writeAttempted));
-              return;
-            }
-            if (this.#destroyed) break;
-            if (chunk === undefined) {
-              this.#eof = true; this.#emit('end');
-              if (!this.#halfOpen && !this.#ending) this.end();
-              break;
-            }
-            if (copy.length === 0) { this.destroy(error('ERR_LSF_ZERO_READ', 'read')); return; }
-            this.#bytesRead += copy.length; this.#touch();
-            if (this.#flowing) this.#emit('data', copy); else this.#buffered = copy;
-          }
-        } finally { this.#readTask = undefined; this.#maybeClose(); }
-      })();
+      if (this.#readBusy || !this.#connected || !this.#flowing || this.#eof || this.#destroyed) return;
+      this.#readBusy = true;
+      let failed = false, cause;
+      try { transport.read(this.#token, windowBytes, undefined, this.#onRead, this); }
+      catch (value) { failed = true; cause = value; }
+      if (failed) { this.#readBusy = false; this.destroy(error('EIO', 'read', cause, 0, this.#writeAttempted)); }
+    }
+    #onRead(record) {
+      if (record.borrowFailed || record.logicalFailed) {
+        this.#readBusy = false;
+        if (!this.#destroyed) this.destroy(error('EIO', 'read',
+          record.borrowFailed ? record.borrowFault : record.logicalFault, 0, this.#writeAttempted));
+        return;
+      }
+      const chunk = record.value;
+      if (chunk === undefined) {
+        this.#readBusy = false;
+        if (this.#destroyed) return;
+        this.#eof = true; this.#emit('end');
+        if (!this.#halfOpen && !this.#ending && !this.#destroyed) this.end();
+        this.#maybeClose(); return;
+      }
+      this.#chunk = chunk;
+      if (this.#destroyed) {
+        transport.disposeChunk(this.#token, chunk); this.#chunk = undefined; this.#readBusy = false; return;
+      }
+      let failed = false, cause;
+      // The completed read tail plus copy plus sibling write stay within three.
+      try { transport.chunkBytes(this.#token, chunk, this.#onCopy, this); }
+      catch (value) { failed = true; cause = value; }
+      if (failed) {
+        try { transport.disposeChunk(this.#token, chunk); this.#chunk = undefined; }
+        catch (value) { cause = value; }
+        this.#readBusy = false; this.destroy(error('EIO', 'read', cause, 0, this.#writeAttempted));
+      }
+    }
+    #onCopy(record) {
+      let failed = record.borrowFailed || record.logicalFailed;
+      let cause = record.borrowFailed ? record.borrowFault : record.logicalFault, copy;
+      if (!failed) {
+        try { copy = Buffer.from(record.value); } // Actual ACK, then owned copy.
+        catch (value) { failed = true; cause = value; }
+      }
+      if (!record.borrowFailed) {
+        try { transport.disposeChunk(this.#token, this.#chunk); this.#chunk = undefined; }
+        catch (value) { failed = true; cause = value; }
+      }
+      this.#readBusy = false;
+      if (failed) {
+        if (!this.#destroyed) this.destroy(error('EIO', 'read', cause, 0, this.#writeAttempted));
+        return;
+      }
+      if (this.#destroyed) return;
+      if (copy.length === 0) { this.destroy(error('ERR_LSF_ZERO_READ', 'read')); return; }
+      this.#bytesRead += copy.length; this.#touch();
+      if (this.#flowing) this.#emit('data', copy); else this.#buffered = copy;
+      // The after-tail hook, not a worker await/loop, starts the next read.
     }
     write(data, encoding, callback) {
       if (typeof encoding === 'function') { callback = encoding; encoding = undefined; }
@@ -204,75 +271,117 @@ export function createNodeNetModule(transport, Buffer, snapshotActive, target = 
       if (queuedRecords >= maxQueuedRecords) throw error('ERR_LSF_RESOURCE_EXHAUSTED', 'write');
       const bytes = copyBytes(data, encoding);
       if (bytes.length > maxQueuedBytes - queuedBytes) throw error('ERR_LSF_RESOURCE_EXHAUSTED', 'write');
-      this.#writes.push({bytes, callback}); ++queuedRecords; queuedBytes += bytes.length; this.#queued += bytes.length;
+      this.#writes.push({bytes, callback, offset: 0, maximum: 0, needsReady: false}); ++queuedRecords; queuedBytes += bytes.length; this.#queued += bytes.length;
       const accepted = this.#queued < this.#highWaterMark;
       if (!accepted) this.#needDrain = true;
-      this.#pumpWrites(); return accepted;
+      this.#progress(); return accepted;
+    }
+    #removeWrite(item) {
+      if (this.#writes[0] !== item) throw error('ERR_LSF_WRITE_RECORD', 'write');
+      this.#writes.shift(); queuedBytes -= item.bytes.length; this.#queued -= item.bytes.length;
+    }
+    #finishWrite(item, failed, cause) {
+      if (failed && !cause) {
+        const native = cause;
+        cause = error('EIO', 'write', native, item.offset, true); cause.cause = native;
+      }
+      this.#removeWrite(item);
+      if (failed || item.bytes.length === 0) {
+        if (item.callback) this.#queuedUser(item.callback, failed ? [cause] : [], true);
+        else --queuedRecords;
+      } else {
+        --queuedRecords;
+        if (item.callback) this.#user(item.callback, []);
+      }
+      if (failed) this.destroy(cause);
     }
     #pumpWrites() {
-      if (this.#writeTask || !this.#connected || this.#destroyed || !this.#writes.length && !this.#ending) return;
-      // The empty-write path may finish synchronously. Do not overwrite its
-      // finally with an already-completed Promise and permanently latch the pump.
-      this.#writeTask = true;
-      const worker = (async () => {
-        try {
-          while (this.#writes.length && !this.#destroyed) {
-            const item = this.#writes[0]; let offset = 0, failed;
-            try {
-              while (offset < item.bytes.length && !this.#destroyed) {
-                const portion = item.bytes.subarray(offset, Math.min(offset + windowBytes, item.bytes.length));
-                this.#writeAttempted = true;
-                const operation = transport.write(this.#token, portion, undefined);
-                let count;
-                try { count = await operation.promise; }
-                catch (cause) {
-                  if (cause?.payload && (!Number.isInteger(cause.payload.acceptedPrefixBytes) ||
-                      cause.payload.acceptedPrefixBytes < 0 || cause.payload.acceptedPrefixBytes > portion.length))
-                    {
-                      const failure = error('ERR_LSF_INVALID_WRITE_ERROR', 'write', undefined, offset, true);
-                      failure.cause = cause; throw failure;
-                    }
-                  const failure = error('EIO', 'write', cause, offset, true);
-                  this.#bytesWritten += failure.acceptedPrefixBytes - offset;
-                  throw failure;
-                }
-                finally { await operation.borrowSettlement; operation.assertBorrowReleased(); }
-                if (!Number.isInteger(count) || count < 0 || count > portion.length)
-                  throw error('ERR_LSF_INVALID_WRITE_COUNT', 'write', undefined, offset, true);
-                if (count === 0) {
-                  const ready = transport.ready(this.#token);
-                  let hint;
-                  try { hint = await ready.promise; } finally { await ready.borrowSettlement; ready.assertBorrowReleased(); }
-                  if (!hint || hint.writable !== true) throw error('ERR_LSF_NOT_WRITABLE', 'write');
-                  continue; // The unaccepted suffix is a fresh charged call, never replayed bytes.
-                }
-                offset += count; this.#bytesWritten += count; this.#touch();
-              }
-            } catch (cause) { failed = cause; }
-            if (this.#destroyed) break; // Destroy owns the one pending callback.
-            this.#writes.shift(); --queuedRecords; queuedBytes -= item.bytes.length; this.#queued -= item.bytes.length;
-            if (failed) {
-              if (item.callback) queue(() => item.callback(failed));
-              this.destroy(failed); return;
-            }
-            if (item.callback) {
-              if (item.bytes.length === 0) queue(() => item.callback());
-              else item.callback();
-            }
-          }
-          if (!this.#destroyed && !this.#writes.length) {
-            if (this.#needDrain) { this.#needDrain = false; this.#emit('drain'); }
-            if (this.#ending && !this.#finished) {
-              try {
-                const operation = transport.shutdown(this.#token);
-                try { await operation.promise; } finally { await operation.borrowSettlement; operation.assertBorrowReleased(); }
-              } catch (cause) { this.destroy(error('EIO', 'shutdown', cause)); return; }
-              this.#finished = true; this.#emit('finish');
-            }
-          }
-        } finally { this.#writeTask = undefined; this.#maybeClose(); }
-      })();
-      if (this.#writeTask !== undefined) this.#writeTask = worker;
+      if (this.#writeBusy || !this.#connected || this.#destroyed) return;
+      // Only the finite queued zero-byte records can complete synchronously.
+      // Their callbacks retain their record/tail until the existing job returns.
+      while (this.#writes.length && this.#writes[0].bytes.length === 0) {
+        this.#finishWrite(this.#writes[0], false);
+        if (this.#destroyed) return;
+      }
+      if (!this.#writes.length && this.#needDrain) {
+        this.#needDrain = false; this.#emit('drain');
+        if (this.#destroyed) return;
+        // A drain listener may enqueue/end. Its tail has now returned.
+        while (this.#writes.length && this.#writes[0].bytes.length === 0)
+          this.#finishWrite(this.#writes[0], false);
+      }
+      if (!this.#writes.length) {
+        if (this.#ending && !this.#finished) {
+          this.#writeBusy = true; let failed = false, cause;
+          try { transport.shutdown(this.#token, this.#onShutdown, this); }
+          catch (value) { failed = true; cause = value; }
+          if (failed) { this.#writeBusy = false; this.destroy(error('EIO', 'shutdown', cause)); }
+        }
+        return;
+      }
+      const item = this.#writes[0]; this.#writeBusy = true;
+      let failed = false, cause;
+      try {
+        if (item.needsReady) transport.ready(this.#token, this.#onReady, this);
+        else {
+          const portion = item.bytes.subarray(item.offset, Math.min(item.offset + windowBytes, item.bytes.length));
+          item.maximum = portion.length; this.#writeAttempted = true;
+          transport.write(this.#token, portion, undefined, this.#onWrite, this);
+        }
+      } catch (value) { failed = true; cause = value; }
+      if (failed) { this.#writeBusy = false; this.#finishWrite(item, true, cause); }
+    }
+    #onWrite(record) {
+      const item = this.#writes[0]; this.#writeBusy = false;
+      if (!item) throw error('ERR_LSF_WRITE_RECORD', 'write');
+      let failed = record.logicalFailed, cause;
+      if (record.logicalFailed) {
+        const native = record.logicalFault;
+        if (native?.payload && (!Number.isInteger(native.payload.acceptedPrefixBytes) ||
+            native.payload.acceptedPrefixBytes < 0 || native.payload.acceptedPrefixBytes > item.maximum)) {
+          cause = error('ERR_LSF_INVALID_WRITE_ERROR', 'write', undefined, item.offset, true); cause.cause = native;
+        } else {
+          cause = error('EIO', 'write', native, item.offset, true);
+          this.#bytesWritten += cause.acceptedPrefixBytes - item.offset;
+        }
+      } else if (!record.borrowFailed) {
+        const count = record.value;
+        if (!Number.isInteger(count) || count < 0 || count > item.maximum) {
+          failed = true; cause = error('ERR_LSF_INVALID_WRITE_COUNT', 'write', undefined, item.offset, true);
+        } else if (count === 0) item.needsReady = true;
+        else { item.offset += count; this.#bytesWritten += count; this.#touch(); }
+      }
+      if (record.borrowFailed) {
+        // Explicit failure survives even reject(undefined). finishWrite wraps
+        // only falsey values; nonfalsey native ACK fault identity stays original.
+        failed = true; cause = record.borrowFault;
+      }
+      if (this.#destroyed) return; // Destroy owns pending callback completion.
+      if (failed) { this.#finishWrite(item, true, cause); return; }
+      if (item.offset === item.bytes.length) this.#finishWrite(item, false);
+    }
+    #onReady(record) {
+      this.#writeBusy = false;
+      if (this.#destroyed) return;
+      const item = this.#writes[0];
+      if (!item) throw error('ERR_LSF_WRITE_RECORD', 'write');
+      if (record.borrowFailed || record.logicalFailed) {
+        this.#finishWrite(item, true, record.borrowFailed ? record.borrowFault : record.logicalFault); return;
+      }
+      if (!record.value || record.value.writable !== true) {
+        this.#finishWrite(item, true, error('ERR_LSF_NOT_WRITABLE', 'write')); return;
+      }
+      item.needsReady = false;
+    }
+    #onShutdown(record) {
+      this.#writeBusy = false;
+      if (record.borrowFailed || record.logicalFailed) {
+        if (!this.#destroyed) this.destroy(error('EIO', 'shutdown',
+          record.borrowFailed ? record.borrowFault : record.logicalFault));
+        return;
+      }
+      if (this.#destroyed) return;
+      this.#finished = true; this.#emit('finish'); this.#maybeClose();
     }
     end(data, encoding, callback) {
       if (typeof data === 'function') { callback = data; data = undefined; encoding = undefined; }
@@ -280,38 +389,78 @@ export function createNodeNetModule(transport, Buffer, snapshotActive, target = 
       if (!this.#token || this.#destroyed) throw error('ERR_SOCKET_CLOSED', 'end');
       if (callback !== undefined) this.once('finish', callback);
       if (data !== undefined) this.write(data, encoding);
-      this.#ending = true; this.#pumpWrites(); return this;
+      this.#ending = true; this.#progress(); return this;
     }
     #maybeClose() { if (this.#eof && this.#finished && !this.#destroyed) this.destroy(); }
+    #afterTail() { this.#progress(true); }
+    #progress(afterTail = false) {
+      if (this.#progressing || this.#notificationDone ||
+          !afterTail && this.#token && !transport.canProgress(this.#token)) return;
+      this.#progressing = true;
+      try {
+        if (this.#destroyed) {
+          if (this.#stopReady && !this.#closeStarted && !this.#cleanupFailed) {
+            this.#closeStarted = true; let failed = false, cause;
+            try { transport.close(this.#token, this.#onClose, this); }
+            catch (value) { failed = true; cause = value; }
+            if (failed) this.#cleanupFailure(cause);
+          }
+          if (this.#nativeClosed || this.#cleanupFailed) this.#notifyClose();
+          return;
+        }
+        this.#pumpWrites(); this.#pumpReads();
+      } finally { this.#progressing = false; }
+    }
+    #flushWrites() {
+      const pending = this.#writes.splice(0);
+      for (const item of pending) {
+        queuedBytes -= item.bytes.length; this.#queued -= item.bytes.length;
+        if (item.callback) this.#queuedUser(item.callback,
+          [this.#error || error('ERR_STREAM_DESTROYED', 'write')], true);
+        else --queuedRecords;
+      }
+      this.#buffered = undefined;
+    }
+    #cleanupFailure(cause) {
+      this.#cleanupFailed = true;
+      this.#error ||= error('ERR_LSF_CLEANUP_FAILED', 'close', cause, 0, this.#writeAttempted);
+    }
+    #onStopped(result) {
+      if (result.failed) this.#cleanupFailure(result.fault);
+      else this.#stopReady = true;
+      this.#flushWrites();
+      // Its queued callbacks/tails precede consuming close. The transport's
+      // fixed after-tail hook resumes, without a worker Promise or queued pump.
+    }
+    #onClose(record) {
+      if (record.borrowFailed || record.logicalFailed) this.#cleanupFailure(
+        record.borrowFailed ? record.borrowFault : record.logicalFault);
+      else { this.#nativeClosed = true; this.#closed = true; }
+    }
+    #notifyClose() {
+      if (this.#notificationQueued) return;
+      this.#notificationQueued = true;
+      queue(() => {
+        try {
+          if (this.#error) this.#emit('error', this.#error);
+          this.#emit('close', this.#error !== undefined);
+        } catch (cause) { if (this.#token) transport.poison(this.#token, cause); throw cause; }
+        finally {
+          if (this.#token) transport.finishNotification(this.#token);
+          this.#notificationDone = true;
+        }
+      });
+    }
     destroy(cause) {
       if (this.#destroyed) return this;
       this.#destroyed = true; this.#connected = false; this.#connecting = false; this.#error = cause;
       if (this.#timer !== undefined) { clearTimer(this.#timer); this.#timer = undefined; }
-      this.#destroyTask = (async () => {
-        try {
-          if (this.#token) {
-            await transport.stop(this.#token);
-            // These actual workers dispose any already-arrived chunk in finally.
-            if (this.#connectTask) await this.#connectTask;
-            if (this.#readTask) await this.#readTask;
-            if (this.#writeTask) await this.#writeTask;
-            await transport.close(this.#token);
-          }
-          this.#closed = true;
-        } catch (failure) { this.#error ||= error('ERR_LSF_CLEANUP_FAILED', 'close', failure, 0, this.#writeAttempted); }
-        finally {
-          const pending = this.#writes.splice(0);
-          for (const item of pending) {
-            --queuedRecords; queuedBytes -= item.bytes.length; this.#queued -= item.bytes.length;
-            if (item.callback) queue(() => item.callback(this.#error || error('ERR_STREAM_DESTROYED', 'write')));
-          }
-          this.#buffered = undefined;
-          queue(() => {
-            if (this.#error) this.#emit('error', this.#error);
-            this.#emit('close', this.#error !== undefined);
-          });
-        }
-      })();
+      if (!this.#token) { this.#closed = true; this.#notifyClose(); return this; }
+      transport.holdNotification(this.#token);
+      let failed = false, failure;
+      try { transport.stop(this.#token, this.#onStopped, this); }
+      catch (value) { failed = true; failure = value; }
+      if (failed) { this.#cleanupFailure(failure); this.#flushWrites(); this.#progress(); }
       return this;
     }
     get connecting() { return this.#connecting; }

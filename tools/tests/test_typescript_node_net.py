@@ -40,6 +40,10 @@ const deferred=()=>{let resolve,reject;const promise=new Promise((a,b)=>{resolve
 const turn=()=>new Promise(resolve=>setTimeout(resolve,0));
 const target=()=>({Promise,Error,Uint8Array,queueMicrotask,setTimeout,clearTimeout});
 const settled=value=>({promise:Promise.resolve(value),borrowReleased:Promise.resolve(),cancel(){return Promise.resolve()}});
+// Host-control convenience only; production Socket uses fixed callbacks, not
+// these Promise adapters around the private stop/close protocol.
+const stopped=(transport,token)=>new Promise((yes,no)=>transport.stop(token,result=>result.failed?no(result.fault):yes()));
+const consumed=(transport,token)=>new Promise((yes,no)=>transport.close(token,result=>result.borrowFailed?no(result.borrowFault):result.logicalFailed?no(result.logicalFault):yes()));
 function fixture(overrides={}) {
  const calls=[],connection={},t=target();let drops=0;
  const native={connect:()=>{calls.push('connect');return settled(connection)},
@@ -86,7 +90,7 @@ const content={Promise,Error,TextEncoder,TextDecoder,Uint8Array,queueMicrotask,s
 content.__lsfAsyncImportBridge={reserve(){const id=++sequence;records.set(id,{id,ack:deferred(),handle:Object.freeze({id})});return id},
  watchBorrow(id){return records.get(id).handle},lift(value){return value},delivered(id,value){return value},
  finish(id){const r=records.get(id);r.finished=true;events.push('finish:'+r.kind);if(!['read','chunkBytes'].includes(r.kind)&&!faultMode)r.ack.resolve()},
- borrowReleased(handle){if(faultMode==='setup')throw originalFault;return records.get(handle.id).ack.promise},cancelBorrow(handle){events.push('cancel:'+records.get(handle.id).kind);return records.get(handle.id).ack.promise}};
+ borrowReleased(handle){if(faultMode==='setup')throw originalFault;return records.get(handle.id).ack.promise},cancelBorrow(handle){const r=records.get(handle.id);events.push('cancel:'+r.kind);if(faultMode==='distinct-cancel'){r.cancelAck??=deferred();return r.cancelAck.promise}return r.ack.promise}};
 function result(kind,id){const r=records.get(id);r.kind=kind;events.push('start:'+kind);r.ptr=128+id*64;new Uint8Array(memory.buffer,r.ptr,64).fill(0);return r.ptr}
 const bindings=[memory,(_p,_old,_align,n)=>{const p=allocated;allocated+=n;return p},
  id=>{const p=result('connect',id);view.setInt32(p+4,7,true);return Promise.resolve(p)},
@@ -109,9 +113,15 @@ vm.runInContext(`const originalIndexOf=Array.prototype.indexOf;Array.prototype.i
 vm.runInContext(script,context,{timeout:3000});
 const original=modules.get(NET_PRIVATE),facade={};
 for(const name of Object.keys(original))facade[name]=(...args)=>{
- const value=Reflect.apply(original[name],original,args);
- if(!Object.hasOwn(ackGets,name))return value;
- return Object.freeze({promise:value.promise,cancel:value.cancel,get borrowSettlement(){const actual=value.borrowSettlement;ackGets[name].push(actual);events.push('await-view:'+name);return actual},assertBorrowReleased:value.assertBorrowReleased});
+ if(Object.hasOwn(ackGets,name)) {
+  const index=name==='read'?3:2,callback=args[index];
+  if(typeof callback==='function')args[index]=function(record){
+   ackGets[name].push(record);events.push('joined:'+name);
+   assert(record.logicalDone&&(record.borrowDone||record.borrowFailed));
+   return Reflect.apply(callback,this,[record]);
+  };
+ }
+ return Reflect.apply(original[name],original,args);
 };
 const net=createNodeNetModule(Object.freeze(facade),Buffer,()=>false,content);
 return {net,original,records,events,ackGets,originalFault,armFault(){context.__faultArm=true},get drops(){return drops}};
@@ -151,8 +161,9 @@ for(const failureKind of ['read','chunkBytes']) {
  const pending=[...f.records.values()].find(r=>r.kind===failureKind);assert(pending?.finished);
  assert.equal(reported,undefined);assert.equal(f.drops,0);
  assert.equal([...f.records.values()].filter(r=>r.kind==='close').length,0);
- assert.equal(f.ackGets[failureKind].length,1);
+ assert.equal(f.ackGets[failureKind].length,0);
  pending.ack.resolve();await closed.promise;
+ assert.equal(f.ackGets[failureKind].length,1);
  assert.equal(reported.code,'EIO');assert.equal(reported.syscall,'read');
  assert.equal(f.drops,failureKind==='chunkBytes'?1:0);f.original.assertEmpty();
  assert([...f.records.values()].every(r=>r.finished));
@@ -182,7 +193,7 @@ for(const mode of ['ack-error','ack-undefined','setup','identity','intrinsic','u
  assert.equal(threw,true);let repeated=false;
  try{op.assertBorrowReleased()}catch(error){repeated=true;assert.equal(error,fault)}assert.equal(repeated,true);
  assert.throws(f.original.assertEmpty,/unclosed/);
- await assert.rejects(f.original.stop(token),/close-state/);
+ await assert.rejects(stopped(f.original,token),error=>error===fault);
  assert.equal([...f.records.values()].filter(r=>r.kind==='close').length,0);assert.equal(f.drops,0);
 }
 for(const failedKind of ['read','chunkBytes']) {
@@ -218,12 +229,171 @@ const native={connect(){return {promise:Promise.resolve({}),get borrowReleased()
 const transport=createNodeNetTransport(native,t,()=>({})),token=transport.reserve(),op=transport.connect(token,{});
 assert.equal(reactions,2); // Logical observer + original ACK observer; no sink.
 await op.promise;let observed=false;op.borrowSettlement.then(()=>observed=true);await turn();assert.equal(observed,false);
-ack.resolve();await op.borrowSettlement;op.assertBorrowReleased();await transport.stop(token);await transport.close(token);transport.assertEmpty();
+ack.resolve();await op.borrowSettlement;op.assertBorrowReleased();await stopped(transport,token);await consumed(transport,token);transport.assertEmpty();
 setup=true;P.resolve=function(){++mutators;throw Error('application resolver mutation')};
 const failed=transport.connect(transport.reserve(),{});await failed.promise;await failed.borrowSettlement;
 assert.throws(failed.assertBorrowReleased,error=>error===originalFault);assert.equal(mutators,0);
 assert.throws(transport.assertEmpty,/unclosed/);
 P.resolve=oldResolve;
+""")
+
+    def test_falsey_write_ack_fault_is_failure_and_nonfalsey_identity_is_original(self):
+        self.javascript(r"""
+for(const stage of ['write','ready'])for(const reason of [undefined,false,0,'',null,Error('original-ACK-fault')]) {
+ const failed=()=>({promise:Promise.resolve(stage==='write'?1:{writable:true}),borrowReleased:Promise.reject(reason),cancel(){return Promise.resolve()}});
+ const f=fixture(stage==='write'?{write:failed}:{write:()=>settled(0),ready:failed});
+ const done=deferred(),socket=f.net.connect(12345,'127.0.0.1');let callbackError,eventError;
+ socket.on('error',value=>{eventError=value}).once('close',done.resolve);
+ socket.once('connect',()=>socket.write('x',value=>{callbackError=value}));await done.promise;
+ if(reason){assert.equal(callbackError,reason);assert.equal(eventError,reason)}
+ else {assert.equal(callbackError.code,'EIO');assert(Object.hasOwn(callbackError,'cause'));assert.equal(callbackError.cause,reason);assert.equal(eventError,callbackError)}
+ assert.equal(f.calls.includes('close'),false);assert.throws(f.transport.assertEmpty,/unclosed/);
+}
+""")
+
+    def test_callback_join_user_throws_escape_original_and_caught_emit_is_not_poison(self):
+        self.javascript(r"""
+for(const event of ['connect','data','write','finish','drain','end','timeout']) {
+ const fault=event==='end'?undefined:Object.freeze({originalUserFault:event});let observed=false,original;
+ const capture=value=>{observed=true;original=value};process.once('unhandledRejection',capture);process.once('uncaughtException',capture);
+ const held=deferred(),ack=deferred();let read=0,f;
+ f=fixture({read:()=>event==='data'?settled(read++?undefined:f.chunk):event==='end'?settled(undefined):
+   {promise:held.promise,borrowReleased:ack.promise,cancel(){return ack.promise}}});
+ const socket=new f.net.Socket({highWaterMark:1});let translated=false;
+ socket.on('error',()=>{translated=true});
+ if(event==='timeout'){socket.once('connect',()=>socket.setTimeout(1));socket.on('timeout',()=>{socket.destroy();throw fault})}
+ else if(event==='write')socket.once('connect',()=>socket.write('x',()=>{throw fault}));
+ else if(event==='finish'||event==='drain') {
+  socket.on(event,()=>{throw fault});socket.once('connect',()=>event==='finish'?socket.end('x'):socket.write('xx'));
+ } else socket.on(event,()=>{throw fault});
+ if(event==='data'||event==='end')socket.resume();
+ socket.connect(12345,'127.0.0.1');
+ for(let i=0;i<32&&!observed;++i)await turn();
+ assert.equal(observed,true,event);assert.equal(original,fault);assert.equal(translated,false);
+ assert.equal(f.calls.includes('close'),false);assert.throws(f.transport.assertEmpty,/unclosed/);
+ process.removeListener('unhandledRejection',capture);process.removeListener('uncaughtException',capture);
+}
+// A buffered resume job has its OWN tail, beyond the nested data listener.
+{
+ const held=deferred(),started=deferred(),fault={bufferedResumeFault:true};let f,read=0,seen=false,original;
+ const capture=value=>{seen=true;original=value};process.once('uncaughtException',capture);
+ f=fixture({read(){if(read++)return settled(undefined);started.resolve();return {promise:held.promise,borrowReleased:Promise.resolve(),cancel(){return Promise.resolve()}}}});
+ const socket=f.net.connect(12345,'127.0.0.1');socket.on('error',()=>assert.fail('user throw cannot become EIO'));
+ socket.on('data',()=>{socket.destroy();throw fault});await started.promise;socket.pause();held.resolve(f.chunk);
+ for(let i=0;i<16&&f.drops===0;++i)await turn();assert.equal(f.drops,1);assert.equal(seen,false);
+ socket.resume();for(let i=0;i<32&&!seen;++i)await turn();assert.equal(seen,true);assert.equal(original,fault);
+ assert.equal(f.calls.includes('close'),false);assert.throws(f.transport.assertEmpty,/unclosed/);process.removeListener('uncaughtException',capture);
+}
+const f=fixture(),done=deferred(),socket=f.net.connect(12345,'127.0.0.1'),fault={caught:true};
+socket.on('error',done.reject).once('close',done.resolve);
+socket.on('ready',()=>{throw fault});socket.once('timeout',()=>{
+ let caught=false;try{socket.emit('ready')}catch(value){caught=true;assert.equal(value,fault)}assert(caught);
+ socket.removeAllListeners('ready');socket.end();
+});
+socket.once('connect',()=>socket.emit('timeout'));socket.resume();await done.promise;f.transport.assertEmpty();
+// A top-level synchronous emit caught by its caller is not permanent poison.
+const g=fixture(),other=new g.net.Socket();other.on('timeout',()=>{throw fault});
+assert.throws(()=>other.emit('timeout'),value=>value===fault);g.transport.assertEmpty();
+""")
+
+    def test_actual_initializer_join_retains_reentrant_and_distinct_cancel_notification_tails(self):
+        self.javascript(self.captured_ack_fixture() + r"""
+const syntax=parse(createNodeNetModule.toString(),{ecmaVersion:'latest',sourceType:'module'});
+let workers=0,awaits=0;
+function walk(node){if(!node||typeof node!=='object')return;if(node.async)++workers;if(node.type==='AwaitExpression')++awaits;
+ for(const value of Object.values(node)){if(Array.isArray(value))value.forEach(walk);else if(value&&typeof value==='object')walk(value)}}
+walk(syntax);assert.equal(workers,0);assert.equal(awaits,0); // No private worker fanout; no physical Task claim.
+for(const event of ['connect','data','finish']) {
+ const f=await ackFixture(undefined,event==='finish'?'distinct-cancel':undefined),done=deferred();
+ const socket=f.net.connect(12345,'127.0.0.1');let tail=false;
+ socket.on('error',done.reject).once('close',()=>{
+  assert.equal(tail,true);assert.throws(f.original.assertEmpty,/unclosed/);done.resolve();
+ });
+ socket.once(event,()=>{
+  assert.equal(socket.destroy(),socket);
+  assert.equal([...f.records.values()].filter(r=>r.kind==='close').length,0);
+  assert.throws(f.original.assertEmpty,/unclosed/);f.events.push('listener-tail:'+event);tail=true;
+ });
+ if(event==='finish')socket.once('connect',()=>socket.end('q'));
+ socket.on('data',()=>{});
+ if(event==='finish') {
+  for(let i=0;i<16&&![...f.records.values()].some(r=>r.kind==='connect');++i)await turn();
+  [...f.records.values()].find(r=>r.kind==='connect').ack.resolve();
+  for(let i=0;i<16&&![...f.records.values()].some(r=>r.kind==='write');++i)await turn();
+  [...f.records.values()].find(r=>r.kind==='write').ack.resolve();
+  for(let i=0;i<16&&![...f.records.values()].some(r=>r.kind==='shutdown');++i)await turn();
+  [...f.records.values()].find(r=>r.kind==='shutdown').ack.resolve();
+ }
+ if(event==='data'||event==='finish') {
+  for(let i=0;i<16&&![...f.records.values()].some(r=>r.kind==='read');++i)await turn();
+  const read=[...f.records.values()].find(r=>r.kind==='read');assert(read?.finished);
+  read.ack.resolve();
+  if(event==='data') {
+   for(let i=0;i<16&&![...f.records.values()].some(r=>r.kind==='chunkBytes');++i)await turn();
+   [...f.records.values()].find(r=>r.kind==='chunkBytes').ack.resolve();
+  } else {
+   for(let i=0;i<16&&!read.cancelAck;++i)await turn();assert(read.cancelAck);
+   await turn();assert.equal([...f.records.values()].filter(r=>r.kind==='close').length,0);
+   read.cancelAck.resolve();
+   for(let i=0;i<16&&![...f.records.values()].some(r=>r.kind==='close');++i)await turn();
+   const close=[...f.records.values()].find(r=>r.kind==='close');assert(close?.finished);close.ack.resolve();
+  }
+ }
+ await done.promise;await turn();f.original.assertEmpty();
+ assert(f.events.indexOf('start:close')>f.events.indexOf('listener-tail:'+event));
+ assert.equal(f.drops,event==='connect'?0:1);
+}
+""", parser=True)
+
+    def test_real_node_reference_empty_write_and_reentrant_close_observables(self):
+        self.javascript(r"""
+const real=await import('node:net');
+async function reference(mode) {
+ const events=[],server=real.createServer(peer=>{
+  peer.on('error',()=>{});peer.on('data',()=>{});peer.on('end',()=>peer.end());
+  if(mode==='data')peer.write('A');
+ });
+ await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+ const socket=new real.Socket(),done=deferred();
+ socket.on('error',done.reject).once('close',()=>{events.push('close');done.resolve()});
+ const destroy=()=>{assert.equal(socket.destroy(),socket);events.push('destroy-return');events.push('listener-tail')};
+ try {
+  if(mode==='data')socket.once('data',destroy);
+  if(mode==='finish')socket.once('finish',destroy);
+  socket.once('connect',()=>{
+   events.push('connect');
+   if(mode==='connect')destroy();
+   else if(mode==='finish')socket.end('x');
+   else if(mode==='empty') {
+    socket.once('finish',()=>events.push('finish'));
+    socket.write('',()=>{events.push('empty-callback');socket.end('x',()=>events.push('end-callback'))});
+    events.push('write-return');
+   }
+  });
+  socket.resume();socket.connect(server.address().port,'127.0.0.1');events.push('connect-return');
+  await done.promise;
+  assert(events.indexOf('connect-return')<events.indexOf('connect'));
+  if(mode==='empty') {
+   assert(events.indexOf('write-return')<events.indexOf('empty-callback'));
+   assert(events.indexOf('finish')<events.indexOf('close'));assert(events.indexOf('end-callback')<events.indexOf('close'));
+  } else assert(events.indexOf('listener-tail')<events.indexOf('close'));
+ } finally {socket.destroy();await new Promise(resolve=>server.close(resolve))}
+}
+for(const mode of ['empty','connect','data','finish'])await reference(mode);
+// The finite guest module promises these SAME observable partial orders.
+const f=fixture(),events=[],done=deferred(),socket=f.net.connect(12345,'127.0.0.1');events.push('connect-return');
+socket.on('error',done.reject).once('close',()=>{events.push('close');done.resolve()});
+socket.once('connect',()=>{events.push('connect');socket.write('',()=>{events.push('empty-callback');socket.end('x',()=>events.push('end-callback'))});events.push('write-return')});
+socket.once('finish',()=>events.push('finish'));socket.resume();await done.promise;
+for(const [before,after] of [['connect-return','connect'],['write-return','empty-callback'],['finish','close'],['end-callback','close']])
+ assert(events.indexOf(before)>=0&&events.indexOf(before)<events.indexOf(after));
+f.transport.assertEmpty();
+// The selected port's finite16 bound also retains queued empty callback records.
+const g=fixture(),connected=deferred(),closed=deferred(),limited=g.net.connect(12345,'127.0.0.1');
+limited.on('error',closed.reject).once('connect',connected.resolve).once('close',closed.resolve);await connected.promise;
+let callbacks=0;for(let i=0;i<16;++i)limited.write('',()=>{++callbacks});
+assert.throws(()=>limited.write('',()=>{}),/RESOURCE_EXHAUSTED/);assert.equal(callbacks,0);
+await turn();assert.equal(callbacks,16);limited.resume();limited.end();await closed.promise;g.transport.assertEmpty();
 """)
 
     def test_held_read_allows_sibling_partial_write_copy_then_normal_close(self):
@@ -280,7 +450,7 @@ assert.throws(()=>Object.defineProperty(f.t,'__lsfNodeNetRootCheck',{value:()=>{
 assert.throws(()=>{f.transport.assertEmpty=()=>{}},TypeError);
 const old=Array.prototype.splice;Array.prototype.splice=()=>[];
 try {assert.throws(f.transport.assertEmpty,/unclosed/)} finally {Array.prototype.splice=old}
-for(const token of [one,two]){const op=f.transport.connect(token,{});await op.promise;await op.borrowSettlement;op.assertBorrowReleased();await f.transport.stop(token);await f.transport.close(token)}
+for(const token of [one,two]){const op=f.transport.connect(token,{});await op.promise;await op.borrowSettlement;op.assertBorrowReleased();await stopped(f.transport,token);await consumed(f.transport,token)}
 f.transport.assertEmpty();assert.throws(()=>f.transport.connect(one,{}),/retired/);
 """)
 

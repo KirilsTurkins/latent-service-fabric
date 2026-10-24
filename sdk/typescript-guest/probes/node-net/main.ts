@@ -72,7 +72,7 @@ export const api = {
           reject(new Error('node-net:real-peer-permit')); return;
         }
         permitted = true;
-        control.pause(); // No second control read consumes the original8 cap.
+        control.pause(); // Keep the finite protocol to one control read; OutboundRequests8 counts connects, not WIT calls.
         if (mode === 1) {
           control.destroy();
           primary.write('s', error => {

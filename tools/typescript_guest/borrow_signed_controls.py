@@ -447,8 +447,8 @@ def qualify_node_net(tools, material_directory, output, prepared_native):
         program="import unittest,json,sys;s=unittest.defaultTestLoader.loadTestsFromName('tools.tests.test_typescript_node_net');r=unittest.TextTestRunner(verbosity=2).run(s);print(json.dumps(dict(testsRun=r.testsRun,skipped=len(r.skipped),failures=len(r.failures),errors=len(r.errors))));sys.exit(0 if r.wasSuccessful() else 1)"
         controls=json.loads(run('normal-source-controls',sys.executable,'-c',program,
             env={**environment,'LSF_TYPESCRIPT_FRONTEND':str(tools)},seconds=60))
-        require(controls=={'testsRun':21,'skipped':0,'failures':0,'errors':0}
-                and all(type(v) is int for v in controls.values()),'node-net-all-twenty-one-no-skips')
+        require(controls=={'testsRun':25,'skipped':0,'failures':0,'errors':0}
+                and all(type(v) is int for v in controls.values()),'node-net-all-twenty-five-no-skips')
         record['sourceControls']=controls
         stage='one-normal-build-and-package'
         artifact=build(source,prepared/'typescript-node-net-service',binaries['capsule_contracts'],binaries['package'],
