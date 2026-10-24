@@ -25,15 +25,15 @@ Normal typed returns and intentional WIT error returns transfer ownership only
 after their complete value or error object has been constructed. An unexpected
 partial lift, unsupported disposal mapping or failed/partial destructor leaves
 the record quarantined with its original owners; cleanup cannot replay drops
-or report a refund. These are source-stage changes. A fresh compiler/engine
-build and actual component cancellation controls are still required. Canonical
+or report a refund. The bounded native prerequisite campaign has built the changed compiler and
+engine. Actual canonical component cancellation controls remain required. Canonical
 resource destruction alone does not certify physical provider close, native
 quota reuse, production support or completion of the SDK ticket.
 
 The separate `typescript-owned-results.yml` programme builds one fresh normal
-source splicer and engine before executing all 13 maintained Rust descriptor /
+source splicer and engine and executes all 13 maintained Rust descriptor /
 disposer tests and 13 real SpiderMonkey manager diagnostics. It retains all 11
-borrow controls and adds cancellation through generated `finally` and the
+borrow controls and adds cancellation through real JS `finally` and the
 resolved-carrier/public-lift race. Six affected lifecycle C++ controls also run
 with explicit opaque-JS headers and canonical/broker doubles, including immediate
 handle-zero disposal and delayed/no-result retirement. Those references do not
@@ -51,8 +51,12 @@ subtracts setup time from its monotonic deadline. Splicer, Rust tests, engine
 and C++ compile/link retain their narrower 900, 600, 1200 and shared 120-second
 ceilings. Those maxima are not additive permissions to exceed the job bound.
 
-No OWN programme has run yet. The C++ broker and canonical intrinsics are
-explicit diagnostic doubles. Actual canonical OWN component disposal, resource
+The [native prerequisite receipt](../testing/typescript-owned-result-native-evidence.json)
+records 29 Python controls, 13 Rust tests, 13 real SpiderMonkey manager cases and
+six lifecycle references, all passed. Wasm32 Record size is 256 bytes against
+the immutable 248-byte baseline (+8), with 8-byte alignment; manager size remains
+112 bytes and the observer is 72 bytes. These are relative layout measurements.
+The C++ broker and canonical intrinsics are explicit diagnostic doubles. Actual canonical OWN component disposal, resource
 table reuse, signed execution, provider physical retirement and whole-cost
 qualification remain unexecuted obligations after these prerequisites.
 
