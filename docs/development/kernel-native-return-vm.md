@@ -12,6 +12,16 @@ nineteen Rust/native-build/twelve C prerequisites again. It stopped before
 Kconfig, linking or VM because Kbuild's CC argument concatenated a Path rather
 than its string spelling. The one-line conversion preserves the exact selected
 lexical tool path and flags. Both failed attempts remain failed observations.
+The third run at `01e065225400` resolved the real kernel configuration, then
+refused the historical data-fixture compiler probe. The normal native compiler
+is pinned to Rust1.97.1, while that old kernel programme used a Rust1.99 probe.
+The actual configuration differs only in three unselected Rust compiler probes:
+version109701 versus109900, LLVM220106 versus230101, and an absent suspicious
+runtime-symbol-definitions probe. The new producer pins the complete actual
+configuration and projects only these three fields into DATA-ONLY historical
+source-fixture bytes. Actual Kbuild config and all active options/hooks remain
+unchanged; CONFIG_RUST stays unselected. All other config bytes must match the
+audited configuration exactly, and every actual/projection identity is retained.
 The observation implementation has not yet executed against a fresh kernel.
 The historical image has no observation ioctl and is never relabelled as this
 image. Normal installation remains Unsupported; native backing stays quarantined.

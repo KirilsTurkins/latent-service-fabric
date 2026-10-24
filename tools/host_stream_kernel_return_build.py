@@ -100,7 +100,12 @@ def build(commands, tools, archive, output, receipt):
     # This generated exact selected config is also independently pinned in
     # the authenticated provider source fixture, never a copied local file.
     receipt['stage'] = 'complete-source-composition'
-    fixture_config,receipt['sourceFixtureConfiguration'] = programme.source_fixture_configuration(final)
+    canonical,compiler_probes = source.compiler_probe_projection(final)
+    fixture_config,historical_projection = programme.source_fixture_configuration(canonical)
+    receipt['sourceFixtureConfiguration'] = {'actual':objects.identity(output/'selected.config'),
+        'sourceFixture':source.identity(fixture_config),'unselectedCompilerProbeProjection':compiler_probes,
+        'historicalDataOnlyProjection':historical_projection,'actualConfigurationMutated':False,
+        'rustKernelSelected':False,'allOtherConfigurationBytesExact':True}
     # Retain both real selected bytes and the explicit data-only fixture
     # projection. The actual Kbuild configuration is NEVER rewritten.
     (output/'source-fixture.config').write_bytes(fixture_config)
