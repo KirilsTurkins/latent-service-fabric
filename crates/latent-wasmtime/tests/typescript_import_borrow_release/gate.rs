@@ -18,7 +18,8 @@
 //!
 //! Bounds: ONE read for the lifetime of this instance, no resets; ONE child
 //! subtask and ONE waitable set; THREE i32 globals; ONE fixed 64-KiB page, one
-//! fixed 16-byte result at offset64, no memory growth or successful realloc.
+//! fixed 16-byte result at offset64 and four-byte incoming-borrow slot at32,
+//! no memory growth or successful realloc.
 //! The read result has no strings/lists: result<option<own<chunk>>,stream-error>
 //! flattens to four i32 values for async task.return (MAX_FLAT_PARAMS). The
 //! canonical memory discriminants are byte loads, not padding-dependent words.
@@ -29,11 +30,13 @@
 //! records2 but deliberately keeps the real inner read alive. Only a real
 //! write-after-logical-rejection handshake allows the peer to release that read.
 //! Its terminal callback drops any owned chunk when cancelling, drops the actual
-//! child and set, then task.cancel/EXIT. Normal completion task.returns the exact
+//! child and set, drops this gate's incoming connection BORROW handle, then
+//! task.cancel/EXIT. Normal completion task.returns the exact
 //! real result. State3 means this finite child cleanup ran; it proves neither
 //! provider IoCall/IoTransfer/socket retirement nor kernel final free. Errors,
 //! unexpected events/statuses, second reads and deadline expiry are failures.
-//! This file has not been compiled or executed; signed qualification is separate.
+//! Earlier signed attempts failed; this incoming-borrow cleanup is unqualified
+//! until the unchanged signed programme passes.
 use wasm_encoder::*;
 
 #[path = "../../../latent-packaging/tests/fixtures/host.rs"]
@@ -47,6 +50,7 @@ const OPS: [&str; 8] = ["connect", "read", "write", "ready", "inspect", "shutdow
 const TYPES: [&str; 11] = ["connection", "chunk", "transport", "state", "interest",
     "shutdown-mode", "error-code", "stream-error", "observation", "connect-request", "readiness"];
 const RESULT: i32 = 64;
+const INCOMING_BORROW: i32 = 32;
 const PHASE: u32 = 0;
 const CHILD: u32 = 1;
 const SET: u32 = 2;
@@ -101,23 +105,24 @@ pub fn bytes() -> Vec<u8> {
     canon.waitable_set_drop(); // 6
     canon.task_return(Some(ComponentValType::Type(16)), [CanonicalOption::Memory(0)]); // 7
     canon.task_cancel(); // 8
+    canon.resource_drop(1); // 9: imported connection; borrowed handle only
     component.section(&canon);
     component.section(&ModuleSection(&worker())); // module1
     let mut instances = InstanceSection::new();
-    instances.export_items(["read", "drop-chunk", "new", "join", "drop-child", "drop-set", "return", "cancel"]
+    instances.export_items(["read", "drop-chunk", "new", "join", "drop-child", "drop-set", "return", "cancel", "drop-connection-borrow"]
         .into_iter().enumerate().map(|(i, name)| (name, ExportKind::Func, u32::try_from(i + 1).unwrap())));
     instances.instantiate(1, [("io", ModuleArg::Instance(1)), ("memory", ModuleArg::Instance(0))]); // core instance2
     component.section(&instances);
     let mut aliases = ComponentAliasSection::new();
     for name in ["read", "callback", "entered", "intentional-trap"] {
         aliases.alias(Alias::CoreInstanceExport { instance: 2, kind: ExportKind::Func, name });
-    } // corefunc9,10,11,12
+    } // corefunc10,11,12,13
     component.section(&aliases);
     let mut canon = CanonicalFunctionSection::new();
-    canon.lift(9, 17, [CanonicalOption::Memory(0), CanonicalOption::Realloc(0),
-        CanonicalOption::Async, CanonicalOption::Callback(10)]); // componentfunc8
-    canon.lift(11, 18, []); // componentfunc9
-    canon.lift(12, 19, []); // componentfunc10
+    canon.lift(10, 17, [CanonicalOption::Memory(0), CanonicalOption::Realloc(0),
+        CanonicalOption::Async, CanonicalOption::Callback(11)]); // componentfunc8
+    canon.lift(12, 18, []); // componentfunc9
+    canon.lift(13, 19, []); // componentfunc10
     component.section(&canon);
     let mut instances = ComponentInstanceSection::new();
     let exports = TYPES.into_iter().enumerate().map(|(i, name)|
@@ -181,13 +186,13 @@ fn worker() -> Module {
     module.section(&types);
     let mut imports = ImportSection::new();
     for (name, ty) in [("read", 0), ("drop-chunk", 1), ("new", 2), ("join", 3),
-        ("drop-child", 1), ("drop-set", 1), ("return", 4), ("cancel", 5)] {
+        ("drop-child", 1), ("drop-set", 1), ("return", 4), ("cancel", 5), ("drop-connection-borrow", 1)] {
         imports.import("io", name, EntityType::Function(ty));
     }
     imports.import("memory", "memory", EntityType::Memory(memory_type()));
     module.section(&imports);
     let mut functions = FunctionSection::new();
-    for ty in [6, 7, 2, 2, 5] { functions.function(ty); } // prefix8, callback9, entered10, finish11, trap12
+    for ty in [6, 7, 2, 2, 5] { functions.function(ty); } // prefix9, callback10, entered11, finish12, trap13
     module.section(&functions);
     let mut globals = GlobalSection::new();
     for _ in 0..3 {
@@ -195,7 +200,7 @@ fn worker() -> Module {
     }
     module.section(&globals);
     let mut exports = ExportSection::new();
-    for (name, index) in [("read", 8), ("callback", 9), ("entered", 10), ("intentional-trap", 12)] { exports.export(name, ExportKind::Func, index); }
+    for (name, index) in [("read", 9), ("callback", 10), ("entered", 11), ("intentional-trap", 13)] { exports.export(name, ExportKind::Func, index); }
     module.section(&exports);
     let mut code = CodeSection::new();
     code.function(&prefix()); code.function(&callback());
@@ -216,11 +221,14 @@ fn worker() -> Module {
 fn prefix() -> Function {
     let mut body = Function::new([(1, ValType::I32)]); // local4 is packed status
     insist(&mut body, [Instruction::GlobalGet(PHASE), Instruction::I32Eqz]);
+    // Retain only the exact canonically lowered input borrow, not its owner.
+    emit(&mut body, [Instruction::I32Const(INCOMING_BORROW), Instruction::LocalGet(0),
+        Instruction::I32Store(mem(0))]);
     emit(&mut body, [Instruction::LocalGet(0), Instruction::LocalGet(1), Instruction::LocalGet(2),
         Instruction::LocalGet(3), Instruction::I32Const(RESULT), Instruction::Call(0), Instruction::LocalSet(4)]);
     // Immediate normal completion is forwarded but cannot establish entered1.
     emit(&mut body, [Instruction::LocalGet(4), Instruction::I32Const(2), Instruction::I32Eq,
-        Instruction::If(BlockType::Empty), Instruction::Call(11), Instruction::Return, Instruction::End]);
+        Instruction::If(BlockType::Empty), Instruction::Call(12), Instruction::Return, Instruction::End]);
     insist(&mut body, [Instruction::LocalGet(4), Instruction::I32Const(15), Instruction::I32And,
         Instruction::I32Const(1), Instruction::I32Eq]);
     emit(&mut body, [Instruction::LocalGet(4), Instruction::I32Const(4), Instruction::I32ShrU, Instruction::GlobalSet(CHILD)]);
@@ -247,7 +255,7 @@ fn callback() -> Function {
     insist(&mut body, [Instruction::LocalGet(0), Instruction::I32Const(1), Instruction::I32Eq]);
     insist(&mut body, [Instruction::LocalGet(1), Instruction::GlobalGet(CHILD), Instruction::I32Eq]);
     insist(&mut body, [Instruction::LocalGet(2), Instruction::I32Const(2), Instruction::I32Eq]);
-    emit(&mut body, [Instruction::Call(11), Instruction::End]); body
+    emit(&mut body, [Instruction::Call(12), Instruction::End]); body
 }
 
 fn finish() -> Function {
@@ -262,8 +270,14 @@ fn finish() -> Function {
     emit(&mut body, [Instruction::GlobalGet(CHILD), Instruction::If(BlockType::Empty),
         Instruction::GlobalGet(CHILD), Instruction::I32Const(0), Instruction::Call(3),
         Instruction::GlobalGet(CHILD), Instruction::Call(4),
-        Instruction::GlobalGet(SET), Instruction::Call(5), Instruction::End,
-        Instruction::I32Const(3), Instruction::GlobalSet(PHASE),
+        Instruction::GlobalGet(SET), Instruction::Call(5), Instruction::End]);
+    // The nested host borrow is retired. Now drop this component's incoming
+    // BORROW entry before task.return/cancel validates the original scope.
+    // resource.drop's Borrow arm decrements borrow_count with NO destructor;
+    // the original owned connection/socket remains held by the TS caller.
+    emit(&mut body, [Instruction::I32Const(INCOMING_BORROW), Instruction::I32Load(mem(0)),
+        Instruction::Call(8), Instruction::I32Const(INCOMING_BORROW), Instruction::I32Const(0),
+        Instruction::I32Store(mem(0)), Instruction::I32Const(3), Instruction::GlobalSet(PHASE),
         Instruction::LocalGet(0), Instruction::If(BlockType::Empty), Instruction::Call(7), Instruction::Else]);
     // Original flat result: discriminant; option tag or error code; chunk handle
     // or accepted-prefix; zero padding arm or may-have-applied boolean.

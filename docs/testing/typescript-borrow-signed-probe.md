@@ -221,3 +221,23 @@ it cannot establish a passing case. A native trap or drain failure may still
 bypass this catch and fail the programme. Production compiler/runtime behavior,
 the six case assertions and all existing limits remain unchanged. This source
 diagnostic has not run.
+
+Run`40070989799` passed the three observer controls. The bounded JavaScript
+catch avoided the secondary stdio abort, but the signed normal case still
+failed. Its complete two-frame trace points to the gate's `task.return` call:
+worker function11 at offset108, reached from callback9 at94. The original peer
+also timed out waiting for `norm`; the underlying earlier JavaScript reason
+remains unknown. Artifact`12550899528` remains failed and retained (21,005,470
+bytes, SHA256`d0a661458118e46d8b71f268b0ecb40cd8816a4748b9b9bd423dd04d39ba10bc`).
+
+The hand-written gate omitted disposal of its own incoming
+`borrow<connection>` handle. Dropping its nested host subtask does not remove
+that separate gate-local borrow entry; Wasmtime validates that all such entries
+are gone before `task.return` or `task.cancel` can complete. The repair retains
+that exact input handle in a fixed four-byte slot in the existing64KiB page
+and drops it after the real nested child/set retire and before either terminal
+operation. The canonical Borrow drop arm decrements the original borrow scope
+without invoking the connection destructor. The original owned connection and
+physical socket are consumed only by the existing close operation. Both
+immediate and callback completion use the same cleanup; all case assertions,
+resource identities, grants and budgets remain unchanged. This repair has not run.
