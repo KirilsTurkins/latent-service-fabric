@@ -1,4 +1,4 @@
-# Go v7 single-stack ceiling (source only)
+# Go v7 single-stack ceiling
 
 The explicitly selected `go-component-activation-v7` adds a fixed 1,048,576-byte
 ceiling to each dynamic logical Go stack, including initial/adaptive stacks,
@@ -42,8 +42,8 @@ selection receipt and the strict signer's closed profile set all name v7.
 The original Go source and derived runtime output digests are recorded by the
 existing compiler transformation inventory; captured SDK and recipe inputs
 remain bound to their normal signed observation. Installed historical signers
-cannot be relabelled v7: actual future qualification needs a signer built from
-the new maintained closed-profile source.
+cannot be relabelled v7: the qualifying campaign built its signer from
+the maintained closed-profile source.
 
 Six focused source controls exercise the complete original/inverse derivation,
 source/bridge refusal, actual overlay writer routing, incomplete-profile
@@ -57,7 +57,7 @@ three stack guards with their Wasm-runtime bridge. Existing queue/managed select
 unknown-profile refusals by testing v8. These controls run no Go compiler or
 guest and establish no actual stack-exhaustion result.
 
-The prepared owning programme builds TWO fresh normal v7 components: one
+The owning programme builds TWO fresh normal v7 components: one
 ordinary source with a depth2 initializer, and one closed depth96 initializer
 variant. Real module initialization precedes the exported function, so request
 mode cannot safely select initialization behavior in one immutable component.
@@ -111,12 +111,59 @@ older recursive frames is retained honestly; the positive cap leaf itself must
 be among the original at-most16 captured frames. Generic
 `GuestTrap`, fuel exhaustion, memory exhaustion or an unrecognised frame is not
 cap evidence. That observer and concrete mapping must be reviewed before a
-campaign; neither is claimed executed by this source slice.
+campaign. The eighth campaign below executed both the mapping and observer.
 
-This is partial #742 criterion5 source preparation. Actual compiler, component,
-signed runtime/initialization refusal, provenance decoding and retirement
-qualification remain pending. It does not complete independent aggregate/native
+This is partial #742 criterion5 qualification. The eighth campaign below
+passed the normal compiler/component/package and strict provenance paths,
+three attributed stack-cap refusals, four successful invocations and original
+user-space owner retirement. It does not complete independent aggregate/native
 cost accounting, production provider/kernel requirements or the whole ticket.
+
+
+The eighth owning campaign, source `f7df6c1b6da0026b1fc0ab3653f2342f4edf77fd`,
+[run40087350864](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40087350864),
+passed all seven signed attempts. The [public receipt](../testing/evidence/go-stack-ceiling-signed-2026-10-24.json)
+retains the exact original observations, both normal build records, the numeric
+mappings, policy/publication identities and selected raw artifact member hashes.
+Artifact12557342920 is 4,336,364 bytes, SHA256
+`ced0b991fdca512f2dd98e677488eae88f1bf8dc004250c2cd50feca90e796a6`;
+all405 ZIP CRCs and6425 immutable Git input identities were checked.
+
+| Actual attempt | Fuel consumed | Observed peak bytes | Result |
+| --- | ---: | ---: | --- |
+| below-cap-GC | 40,063,437 | 4,331,559 | checksum/GC/fresh success |
+| growth-cap | 45,928,940 | 5,379,208 | exact private-cap frame |
+| fresh-after-growth | 40,061,902 | 4,331,595 | checksum/GC/fresh success |
+| raised-limit-cap | 45,922,564 | 5,379,244 | exact private-cap frame |
+| fresh-after-raised-limit | 40,051,601 | 4,331,631 | checksum/GC/fresh success |
+| initializer-cap | 41,307,445 | 5,379,238 | exact private-cap frame |
+| fresh-after-initializer | 40,057,459 | 4,331,625 | checksum/GC/fresh success |
+
+Both2614044-byte components passed21 normal build commands including real
+package/inspect; the source-matched native programme passed8 commands and its
+four mandatory source controls. Each cap trace retained nine untruncated
+numeric frames; private function704 at original offset692585 maps through its
+actual module origin747 into its unique core-local body. Each successful
+invocation observed StackInuse262144 to655360, GC0 to1, checksum17756160 and
+fresh=1. Each of seven attempts created one fresh Store and returned Store,
+instance, reservation, reserved-fuel and reserved-memory counts to zero.
+The initializer failure was followed by an ordinary validated publication
+repoint on the same backend, then a fresh successful Store; no failed initializer
+was retried or observer reset.
+
+The admitted package and matching effective request limits were1 billion fuel,
+64MiB and120 seconds; the existing global/factory upper fuel ceiling remained
+10 billion. Task16/Executor2/Queue16/Wait4/Timer2/Result2/Native2 were unchanged
+from the v6 baseline, including its prepaid queue owners. Every attempt reported
+zero outbound requests and effects. The four successful invocations and three
+cap refusals qualify this finite slice only. Build observations explicitly keep
+nonhermetic, reproducibility-not-checked and incomplete-declared-dependency
+labels. Native executable bytes were not retained; in-process signing/admission,
+user-space retirement and observed memory are not standalone operator delivery,
+kernel final-free or whole Go/native cost qualification.
+
+All preceding failures below remain history with their original source and
+artifact identities; their pending statements describe the state at that attempt.
 
 First owning attempt: source `3c30f9c0634d60864928085b6630bd638775ad1b`,
 [run40078401724](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40078401724),
