@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/build_process.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Reviewed measured source-capture transport repair: fixed80MiB maximum supports the fixed72MiB source plus8MiB archive framing; caller-specific smaller bounds, cancellation, deadlines and cleanup remain unchanged.",
+  "reviewReason": "Clarify the unchanged fixed80MiB archive transport cap after exact976e archive source75,529,037B exceeded72MiB; the separately bounded source cap is73MiB. This process helper changes only a comment: all AST, caller-specific bounds, cancellation, deadlines, ownership and cleanup remain unchanged.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "c387ba86b28f6db9f2c092c3fba3005a356b69105df19ec6c46c6c5aff69e849"
+  "sha256": "63a232cb41d047eeb3c2c3b5226a01a6922e3e71b8066ae362b1f8aae7d90f4d"
 }

@@ -29,7 +29,10 @@ mod limits;
 mod maintenance;
 pub use admission::{PoolAdmission, PoolCall, PoolReady};
 pub use client::{ConnectionReservation, PooledConnection, ProviderClient};
-pub use control::{CleanupFuture, CleanupResult, ProviderJob};
+pub use control::{
+    CleanupFuture, CleanupResult, ProviderJob, StreamKernelCloseJob, StreamKernelCloseObservation,
+    StreamKernelCloseReceipt,
+};
 use limits::{Charge, Kind, Quotas};
 pub use limits::{ProviderPoolLimits, ProviderPoolSnapshot};
 pub use maintenance::{MaintenanceRequest, ProviderMaintenance};

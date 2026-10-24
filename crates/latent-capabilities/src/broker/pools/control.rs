@@ -28,6 +28,46 @@ impl Control {
 pub struct ProviderJob<T> {
     result: oneshot::Receiver<T>,
 }
+/// A close-request observation only. No variant certifies backing retirement,
+/// releases a connection, or permits provider installation.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum StreamKernelCloseObservation {
+    NotAttempted,
+    RequestAccepted,
+    Uncertain,
+}
+
+/// Fixed, affine observation storage retains the ORIGINAL cleanup work and
+/// metadata charge through buffering and delivery. It carries no refund token.
+pub struct StreamKernelCloseReceipt {
+    observation: StreamKernelCloseObservation,
+    _billing: CloseBilling,
+}
+impl StreamKernelCloseReceipt {
+    pub fn observation(&self) -> StreamKernelCloseObservation {
+        self.observation
+    }
+}
+
+/// One existing cleanup channel, not another observer task or registry.
+pub struct StreamKernelCloseJob {
+    result: oneshot::Receiver<StreamKernelCloseReceipt>,
+    _billing: CloseBilling,
+}
+impl StreamKernelCloseJob {
+    pub async fn wait(mut self) -> Result<StreamKernelCloseReceipt, PlatformError> {
+        let observed = (&mut self.result).await;
+        // Destroy the receiving channel half BEFORE exposing the charged value.
+        // Holding a completed future cannot retain unpaid channel storage.
+        drop(self);
+        observed.map_err(|_| {
+            super::super::error(
+                latent_core::PlatformErrorCode::Internal,
+                "provider-job-failed",
+            )
+        })
+    }
+}
 impl<T> ProviderJob<T> {
     pub async fn wait(self) -> Result<T, PlatformError> {
         self.result.await.map_err(|_| {
@@ -59,6 +99,87 @@ struct JobCharge {
     _metadata: Charge,
     _work: Charge,
     changed: Arc<Notify>,
+}
+
+const CLOSE_SHARED_METADATA: usize = 4096;
+
+// ONE carrier for the SAME original JobCharge. Only worker, receiver and receipt
+// can own guards (maximum three); no Weak/raw Arc/public Clone can escape.
+// Match the existing session Billing pattern: EVERY strong guard uses into_inner
+// so the carrier/header is deallocated BEFORE the returned affine charge drops.
+struct CloseBilling(Option<Arc<JobCharge>>);
+impl CloseBilling {
+    fn new(charge: JobCharge) -> Self {
+        Self(Some(Arc::new(charge)))
+    }
+    fn share(&self) -> Self {
+        Self(Some(Arc::clone(
+            self.0.as_ref().expect("live close billing"),
+        )))
+    }
+}
+impl Drop for CloseBilling {
+    fn drop(&mut self) {
+        if let Some(charge) = self.0.take() {
+            drop(Arc::into_inner(charge));
+        }
+    }
+}
+
+#[cfg(test)]
+pub(super) struct ClosePublicationBarrier {
+    pub(super) published: std::sync::mpsc::SyncSender<()>,
+    pub(super) resume: std::sync::mpsc::Receiver<()>,
+}
+
+// Drop order is custody: quarantine the connection, destroy callback/sender,
+// then release worker billing LAST. Capture this WHOLE value via run(), never
+// its individual fields, so closure precision cannot split this ordering.
+struct StreamCloseWorker<T: Send + 'static, F> {
+    retained: QuarantinedConnection<T>,
+    close: Option<F>,
+    sender: Option<oneshot::Sender<StreamKernelCloseReceipt>>,
+    #[cfg(test)]
+    after_send: Option<ClosePublicationBarrier>,
+    billing: CloseBilling,
+}
+impl<T, F> StreamCloseWorker<T, F>
+where
+    T: Send + 'static,
+    F: FnOnce(&mut T) -> StreamKernelCloseObservation + Send + 'static,
+{
+    fn run(mut self) {
+        let observation = self.close.take().expect("one physical close")(
+            self.retained
+                .0
+                .as_mut()
+                .expect("original cleanup owner")
+                .resource(),
+        );
+        drop(std::mem::replace(
+            &mut self.retained,
+            QuarantinedConnection(None),
+        )); // Original owner is quarantined BEFORE publication.
+        let receipt = StreamKernelCloseReceipt {
+            observation,
+            _billing: self.billing.share(),
+        };
+        // Worker billing remains live even if send wakes a fast receiver which
+        // consumes/drops BOTH its channel half and receipt before send returns.
+        let _ = self
+            .sender
+            .take()
+            .expect("one close publication")
+            .send(receipt);
+        #[cfg(test)]
+        if let Some(barrier) = self.after_send.take() {
+            barrier.published.send(()).expect("publication observer");
+            barrier
+                .resume
+                .recv_timeout(Duration::from_secs(2))
+                .expect("bounded worker-tail release");
+        }
+    }
 }
 impl Drop for JobCharge {
     fn drop(&mut self) {
@@ -282,6 +403,107 @@ impl ProviderPools {
             let _ = send.send(());
         }));
         Ok(ProviderJob { result })
+    }
+    /// The same physical/quarantine operation with one fixed stream-close
+    /// observation. Accepted CLOSE is data, never a retirement assertion.
+    /// Existing general cleanup and ProviderJob behavior remain unchanged.
+    pub fn cleanup_stream_kernel_blocking_quarantined<T, F>(
+        &self,
+        connection: PooledConnection<T>,
+        close: F,
+    ) -> Result<StreamKernelCloseJob, (PlatformError, PooledConnection<T>)>
+    where
+        T: Send + 'static,
+        F: FnOnce(&mut T) -> StreamKernelCloseObservation + Send + 'static,
+    {
+        #[cfg(test)]
+        {
+            self.cleanup_stream_kernel_inner(connection, close, None)
+        }
+        #[cfg(not(test))]
+        {
+            self.cleanup_stream_kernel_inner(connection, close)
+        }
+    }
+
+    #[cfg(test)]
+    pub(super) fn cleanup_stream_kernel_with_publication_barrier<T, F>(
+        &self,
+        connection: PooledConnection<T>,
+        close: F,
+        barrier: ClosePublicationBarrier,
+    ) -> Result<StreamKernelCloseJob, (PlatformError, PooledConnection<T>)>
+    where
+        T: Send + 'static,
+        F: FnOnce(&mut T) -> StreamKernelCloseObservation + Send + 'static,
+    {
+        self.cleanup_stream_kernel_inner(connection, close, Some(barrier))
+    }
+
+    fn cleanup_stream_kernel_inner<T, F>(
+        &self,
+        connection: PooledConnection<T>,
+        close: F,
+        #[cfg(test)] after_send: Option<ClosePublicationBarrier>,
+    ) -> Result<StreamKernelCloseJob, (PlatformError, PooledConnection<T>)>
+    where
+        T: Send + 'static,
+        F: FnOnce(&mut T) -> StreamKernelCloseObservation + Send + 'static,
+    {
+        if !connection.belongs_to(&self.inner) {
+            return Err((denied(), connection));
+        }
+        let mut tasks = match self.inner.control.tasks.try_lock() {
+            Ok(tasks) => tasks,
+            Err(TryLockError::WouldBlock) => return Err((busy(), connection)),
+            Err(TryLockError::Poisoned(_)) => {
+                return Err((
+                    super::super::error(
+                        latent_core::PlatformErrorCode::Unavailable,
+                        "provider-control-owner-poisoned",
+                    ),
+                    connection,
+                ));
+            }
+        };
+        let Some(slot) = tasks.iter().position(Option::is_none) else {
+            return Err((capacity(), connection));
+        };
+        // Reserve BEFORE carrier/channel/task. Original quotas and job overhead,
+        // plus fixed carrier padding and the actual compiled closed-state sizes.
+        let charge = match charge(
+            &self.inner,
+            Kind::Cleanup,
+            std::mem::size_of::<StreamCloseWorker<T, F>>()
+                .saturating_add(std::mem::size_of::<StreamKernelCloseReceipt>())
+                .saturating_add(std::mem::size_of::<StreamKernelCloseJob>())
+                .saturating_add(CLOSE_SHARED_METADATA),
+        ) {
+            Ok(charge) => charge,
+            Err(error) => return Err((error, connection)),
+        };
+        let retained = QuarantinedConnection(Some(connection));
+        let billing = CloseBilling::new(charge);
+        let (send, result) = oneshot::channel();
+        let job = StreamKernelCloseJob {
+            result,
+            _billing: billing.share(),
+        };
+        let worker = StreamCloseWorker {
+            retained,
+            close: Some(close),
+            sender: Some(send),
+            #[cfg(test)]
+            after_send,
+            billing,
+        };
+        tasks[slot] = Some(
+            self.inner
+                .control
+                .handle
+                .spawn_blocking(move || worker.run()),
+        );
+        Ok(job)
     }
     fn spawn_inner<F, T>(
         &self,
