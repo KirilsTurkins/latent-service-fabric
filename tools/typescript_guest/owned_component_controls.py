@@ -186,7 +186,8 @@ def build(output:Path,tools:Path,prepared:Path,*,profile:str='canonical-own')->d
         probe=output/'cargo-target/debug/examples/typescript_runtime_probe'
         record['probe']=file_identity(probe,256*1024**2)
         stage='actual-eleven-canonical-cases'
-        raw=commands.run('canonical-own-cases',probe,component,'none','sdk-owned-results')
+        raw=commands.run('canonical-own-cases',probe,component,'none','sdk-owned-results',
+                         *(['late-backing'] if late else []))
         record['rows']=rows(raw);record['rawObservation']={'bytes':len(raw),'sha256':digest(raw)}
         if late:
             stage='actual-eight-emitted-core-controls'

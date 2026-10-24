@@ -97,12 +97,16 @@ frees the fixture payload; that teardown is not successful task cleanup.
 Five cases free and reuse a capacity-one host payload slot within the same
 Store. This does not observe or certify reuse of a numeric guest resource-table
 index. Provider resources/destructors are explicit finite test hosts, not real
-sockets. Signed admission, nested string/list backing release, physical provider
-retirement and complete engine/GC/native cost remain unqualified.
+sockets. That original eleven-case campaign left signed admission, nested
+string/list backing release, physical provider retirement and complete
+engine/GC/native cost unqualified.
 
-The next source-only backing repair covers a complete host-lowered import
-result that was cancelled before typed JS lifting. Its original allocator is
-outside the embedding's temporary exported-return free list. The generated
+The [late-backing campaign](../testing/typescript-late-backing-evidence.json)
+passed fourteen source controls, all eleven original canonical cases, eight
+actual emitted-core controls and eight backing cases using one extended
+fixture and the same freshly qualified engine/splicer. This bounded repair
+covers a complete host-lowered import result cancelled before typed JS lifting.
+Its original allocator is outside the embedding's temporary exported-return free list. The generated
 disposer validates every disposal-relevant active tag, descriptor range and checked 64-bit
 pointer/length calculation before the first destructor or free. It releases
 nested children before their containing list through a private bridge to the
@@ -111,33 +115,56 @@ callback; a trap after partial progress retains that quarantine and cannot
 replay earlier actions. A partially constructed host lowering is not walked.
 
 Fresh zero-byte canonical realloc requests return null without allocation;
-they never use realloc-to-zero as a free operation. Empty and zero-stride
-backing requires that null contract and performs no free. A zero-stride list
-with no storage/OWN children performs no length-driven disposal iteration.
+they never use realloc-to-zero as a free operation. Empty backing requires
+that null contract and performs no free. The direct emitted-core controls also
+cover a zero-stride descriptor with no storage/OWN children and no length-driven
+iteration. Zero-stride normal components remain unsupported and unqualified:
+the pinned normal component validator rejects empty tuples, records and flags.
+The actual backing fixture uses valid empty `list<u8>` values instead.
 Normal delivery of empty lists and nested empty strings/lists is an explicit
 component prerequisite because this allocator correction also affects normal
 canonical lowering.
 
 The compiler-private read-only observation increments only after the original
-free returns. Its fixed scalar layout is expected to be eight bytes and is
-asserted by the fresh C++ build; that build has not executed yet. The new
+free returns. Its fixed scalar layout is eight bytes, as asserted by the
+successful fresh C++ build. The new
 private JS getter's storage and overall engine cost remain unmeasured. No
 Record or manager fields, release authority, refunds or settlement decisions
 depend on this observation. Only the derived diagnostic fixture exposes its
 scalar value; the normal application receives no getter or free API.
 
 The existing canonical workflow has two closed profiles. `canonical-own`
-retains the eleven original cases. After a newly qualified normal producer
-and exact shared input pin are available, `late-backing` additionally requires
-eight actual emitted-core controls and eight backing component cases from
-one extended fixture using that same engine/splicer. All setup, compilation
+retains the eleven original cases. `late-backing` additionally requires eight
+actual emitted-core controls and eight backing component cases from one
+extended fixture using that same engine/splicer. The successful campaign used
+the exact 62 products from the completed fresh normal producer; it rebuilt
+neither the engine, source splicer nor low-level library. All setup, compilation
 and execution still share 900 seconds, with the original 128 MiB, fuel and
 case limits. Successful cancellation reads actual free-return counts before
 Store teardown. A destructor refusal has no observed post-trap count; its
 parent-free exclusion is inferred from verified emitted order and the actual
 trap. There is no reopened root or synthetic zero count.
 
-This source repair and its new campaign are not yet qualified. It does not
+The [first late-backing campaign](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40084273482)
+passed all fourteen source controls and the normal fresh-input validators,
+then refused the fixture's empty tuple during normal component construction.
+No component or emitted-core runtime case ran. That failed receipt is preserved;
+the valid empty-list fixture correction changes no SDK or emitted-core inputs.
+Later retained attempts found host digest-formatting and extended-fixture
+linker-registration errors before any runtime case row. Their narrow harness
+corrections preserve all oracles; the final campaign passed all 27 cases.
+
+Successful cancellation observed original allocator free-return counts
+`0, 5, 1, 3, 1` for the five cancelled nontrapping backing cases. The two
+ordinary-delivery cases observed zero and qualify their empty-value ABI only.
+Successful cases retired the matched original Native/Result tokens before
+Store drop while reporting two unrelated managed Native owners separately.
+The destructor refusal retained its matched two Native/one Result owners;
+its post-trap allocator count remains unobserved. Observed maxima were
+9,502,720 linear-memory bytes and 37,019,582 fuel per Store. Setup plus recorded
+command time was 375.58 seconds under the unchanged 900-second campaign bound.
+
+This qualifies only complete, unlifted host-lowered result cleanup. It does not
 free normal delivered/partially lifted values, parameters, captured buffers,
 GC allocations or partially lowered results, and does not certify OS or linear
 memory shrink, physical provider close or completion of the SDK ticket.
@@ -145,9 +172,10 @@ memory shrink, physical provider close or completion of the SDK ticket.
 The programme retains a single 900-second setup/acquisition/build/execution
 bound, a 600-second command maximum, 20 seconds per case, 128 MiB aggregate
 linear memory per Store, one billion fuel per Store and two Rust build jobs.
-Observed maxima were 9,502,720 linear-memory bytes and 114,212,625 fuel. These are
-bounded diagnostic observations, not whole-runtime cost accounting. The public
-receipt retains the actual failed selection, Wasm validation, host API,
+The original eleven-case campaign observed maxima of 9,502,720 linear-memory
+bytes and 114,212,625 fuel. These are bounded diagnostic observations, not
+whole-runtime cost accounting. Its public receipt retains the actual failed
+selection, Wasm validation, host API,
 feature-selection and synchronous-fixture-declaration history alongside the
 successful rows. It does not close AC5, AC7 or #745.
 

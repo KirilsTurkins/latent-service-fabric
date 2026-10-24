@@ -14,7 +14,7 @@ CASE_NAMES = (
 )
 BACKING_CASE_NAMES = (
     'ordinary-empty-list', 'cancelled-empty-list', 'cancelled-nested-backing',
-    'cancelled-empty-nested-and-zero-stride', 'ordinary-empty-nested-values',
+    'cancelled-empty-nested-values', 'ordinary-empty-nested-values',
     'cancelled-mixed-own-and-backing', 'cancelled-active-error-string',
     'mixed-destructor-refusal-count-unobserved',
 )
@@ -25,7 +25,7 @@ async backingRun(which){
   const op=start('backing',which,0);const value=await op.promise;
   if(which===0){if(value.length!==0)throw Error('expected-empty-list');}
   else if(value.length!==1||value[0].label!==''||value[0].data.length!==0||
-          value[0].zero.length!==2||value[0].zero.some(item=>item.length!==0)||value[0].payload!==undefined)
+          value[0].zero.length!==0||value[0].payload!==undefined)
     throw Error('expected-nested-empty-values');
   await op.borrowReleased;
  }else{
@@ -92,7 +92,7 @@ def prepare(output: Path, *, backing: bool = False) -> dict:
     world, application = WIT, APPLICATION
     if backing:
         world=world.replace('  resource chunk;\n',
-            '  resource chunk;\n  record cell {label:string,data:list<u16>,zero:list<tuple<>>,payload:option<connection>}\n'
+            '  resource chunk;\n  record cell {label:string,data:list<u16>,zero:list<u8>,payload:option<connection>}\n'
             '  backing: async func(mode:u32)->result<list<cell>,string>;\n',1)
         world=world.replace('interface api {run:async func(which:u32)->bool;}',
             'interface api {run:async func(which:u32)->bool;backing-run:async func(which:u32)->tuple<bool,u32>;}')
@@ -118,6 +118,10 @@ def prepare(output: Path, *, backing: bool = False) -> dict:
             'application':file_identity(output/'application.js'),'cases':list(CASE_NAMES),
             'fixtureRecipe':{name:file_identity(recipe/name) for name in names},
             'runtimePumpPatched':False,'canonicalIntrinsicsMocked':False,'signedExecution':False}
-    if backing:record['backingCases']=list(BACKING_CASE_NAMES)
+    if backing:
+        # The pinned normal component validator rejects empty tuple/record/flags.
+        # Keep raw zero-stride emitted-Core controls separate from valid WIT.
+        record.update(backingCases=list(BACKING_CASE_NAMES),
+                      zeroStrideNormalComponentSupported=False, zeroStrideNormalComponentQualified=False)
     write_json(output/'fixture.json',record)
     return record

@@ -82,7 +82,10 @@ parse(transformed,{ecmaVersion:'latest',sourceType:'module'});
             self.assertEqual(len(record['cases']),11)
             self.assertEqual(len(record['backingCases']),8)
             self.assertIn('backing-run:async func', (output/'world.wit').read_text())
-            self.assertIn('list<tuple<>>',(output/'world.wit').read_text())
+            self.assertIn('zero:list<u8>',(output/'world.wit').read_text())
+            self.assertNotIn('tuple<>',(output/'world.wit').read_text())
+            self.assertFalse(record['zeroStrideNormalComponentSupported'])
+            self.assertFalse(record['zeroStrideNormalComponentQualified'])
             self.assertIn(b'ownedResultFixtureBindings(generatedBindings, parseBindings, true)',
                           (output/'recipe/componentize.mjs').read_bytes())
             application=(output/'application.js').read_text()

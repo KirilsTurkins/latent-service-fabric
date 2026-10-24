@@ -29,6 +29,18 @@ async fn main() -> wasmtime::Result<()> {
     let path = std::env::args()
         .nth(1)
         .ok_or_else(|| wasmtime::Error::msg("component path required"))?;
+    let owned_backing = if std::env::args().nth(3).as_deref() == Some("sdk-owned-results") {
+        let mut extra = std::env::args().skip(4);
+        let backing = match extra.next().as_deref() {
+            None => false,
+            Some("late-backing") => true,
+            _ => wasmtime::bail!("unsupported canonical fixture selection"),
+        };
+        wasmtime::ensure!(extra.next().is_none(), "extra canonical fixture argument");
+        backing
+    } else {
+        false
+    };
     let mut config = Config::new();
     config.wasm_component_model_async(true).consume_fuel(true);
     if matches!(
@@ -62,7 +74,9 @@ async fn main() -> wasmtime::Result<()> {
         return sdk_blob(&engine, &component).await;
     }
     match std::env::args().nth(3).as_deref() {
-        Some("sdk-owned-results") => return owned_results::run(&engine, &component).await,
+        Some("sdk-owned-results") => {
+            return owned_results::run(&engine, &component, owned_backing).await;
+        }
         Some("sdk-late-backing") => return owned_results::run_backing(&engine, &component).await,
         Some("sdk-service-memory") => return service_memory::run(&engine, &component, true).await,
         Some("sdk-callee-memory") => return service_memory::run(&engine, &component, false).await,

@@ -27,7 +27,7 @@ struct Chunk;
 struct BackingCell {
     label: String,
     data: Vec<u16>,
-    zero: Vec<()>,
+    zero: Vec<u8>,
     payload: Option<Resource<Connection>>,
 }
 #[derive(Clone, Default, Debug)]
@@ -320,7 +320,7 @@ fn install(linker: &mut Linker<State>, backing: bool) -> wasmtime::Result<()> {
                         BackingCell {
                             label: "left".into(),
                             data: vec![1, 2],
-                            zero: vec![(), ()],
+                            zero: Vec::new(),
                             payload: None,
                         },
                         BackingCell {
@@ -333,7 +333,7 @@ fn install(linker: &mut Linker<State>, backing: bool) -> wasmtime::Result<()> {
                     3 | 4 => Ok(vec![BackingCell {
                         label: String::new(),
                         data: Vec::new(),
-                        zero: vec![(), ()],
+                        zero: Vec::new(),
                         payload: None,
                     }]),
                     5 | 7 => access
@@ -342,7 +342,7 @@ fn install(linker: &mut Linker<State>, backing: bool) -> wasmtime::Result<()> {
                             vec![BackingCell {
                                 label: "owned".into(),
                                 data: vec![7],
-                                zero: vec![()],
+                                zero: Vec::new(),
                                 payload: Some(Resource::<Connection>::new_own(rep)),
                             }]
                         })
@@ -357,9 +357,13 @@ fn install(linker: &mut Linker<State>, backing: bool) -> wasmtime::Result<()> {
     Ok(())
 }
 
-pub(super) async fn run(engine: &Engine, component: &Component) -> wasmtime::Result<()> {
+pub(super) async fn run(
+    engine: &Engine,
+    component: &Component,
+    backing: bool,
+) -> wasmtime::Result<()> {
     let mut linker = Linker::new(engine);
-    install(&mut linker, false)?;
+    install(&mut linker, backing)?;
     let expected = [1_u32, 2, 2, 2, 1, 0, 2, 0, 1, 2, 0];
     let expected_imports = [1_usize, 2, 2, 2, 2, 1, 2, 1, 1, 2, 1];
     for (which, allocations) in expected.into_iter().enumerate() {
