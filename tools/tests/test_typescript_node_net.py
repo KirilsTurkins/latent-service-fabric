@@ -74,6 +74,83 @@ async function capturedInitializer() {{
 }}
 """
 
+    def captured_ack_fixture(self):
+        # Actual authenticated initializer and typed wrappers, with explicitly
+        # doubled core operations/bridge ACKs; never native Task qualification.
+        return r"""
+async function ackFixture(failureKind) {
+const {script}=await capturedInitializer(),modules=new Map(),memory={buffer:new ArrayBuffer(65536)},view=new DataView(memory.buffer);
+let sequence=0,allocated=16000,reads=0,drops=0;const records=new Map(),events=[],ackGets={read:[],chunkBytes:[]};
+const content={Promise,Error,TextEncoder,TextDecoder,Uint8Array,queueMicrotask,setTimeout,clearTimeout};
+content.__lsfAsyncImportBridge={reserve(){const id=++sequence;records.set(id,{id,ack:deferred(),handle:Object.freeze({id})});return id},
+ watchBorrow(id){return records.get(id).handle},lift(value){return value},delivered(id,value){return value},
+ finish(id){const r=records.get(id);r.finished=true;events.push('finish:'+r.kind);if(!['read','chunkBytes'].includes(r.kind))r.ack.resolve()},
+ borrowReleased(handle){return records.get(handle.id).ack.promise},cancelBorrow(handle){events.push('cancel:'+records.get(handle.id).kind);return records.get(handle.id).ack.promise}};
+function result(kind,id){const r=records.get(id);r.kind=kind;events.push('start:'+kind);r.ptr=128+id*64;new Uint8Array(memory.buffer,r.ptr,64).fill(0);return r.ptr}
+const bindings=[memory,(_p,_old,_align,n)=>{const p=allocated;allocated+=n;return p},
+ id=>{const p=result('connect',id);view.setInt32(p+4,7,true);return Promise.resolve(p)},
+ id=>{const p=result('read',id);assert.equal(reads++,0);view.setUint8(p+4,1);view.setInt32(p+8,11,true);return failureKind==='read'?Promise.reject(Error('original-read-failure')):Promise.resolve(p)},
+ (id,_handle,_bytes,n)=>{const p=result('write',id);view.setUint32(p+4,n,true);return Promise.resolve(p)},
+ ()=>{throw Error('no readiness call in this profile')},
+ id=>{const p=result('chunkBytes',id);view.setUint32(p+4,14000,true);view.setUint32(p+8,2,true);new Uint8Array(memory.buffer,14000,2).set([65,66]);return failureKind==='chunkBytes'?Promise.reject(Error('original-copy-failure')):Promise.resolve(p)},
+ ()=>{throw Error('no inspect call')},
+ id=>{const p=result('shutdown',id);view.setUint8(p+8,2);return Promise.resolve(p)},
+ id=>{const p=result('close',id);view.setUint8(p+8,5);return Promise.resolve(p)},
+ ...Array(10).fill(()=>0),()=>{throw Error('no connection destructor')},()=>{++drops;events.push('drop:chunk')}];
+assert.equal(bindings.length,22);
+vm.runInNewContext(script,{contentGlobal:content,$bindings:bindings,defineBuiltinModule(name,value){modules.set(name,value)},TextEncoder,TextDecoder,console},{timeout:3000});
+const original=modules.get(NET_PRIVATE),facade={};
+for(const name of Object.keys(original))facade[name]=(...args)=>{
+ const value=Reflect.apply(original[name],original,args);
+ if(!Object.hasOwn(ackGets,name))return value;
+ return Object.freeze({promise:value.promise,cancel:value.cancel,get borrowReleased(){const actual=value.borrowReleased;ackGets[name].push(actual);events.push('await-view:'+name);return actual}});
+};
+const net=createNodeNetModule(Object.freeze(facade),Buffer,()=>false,content);
+return {net,original,records,events,ackGets,get drops(){return drops}};
+}
+"""
+
+    def test_captured_read_and_copy_ack_are_awaited_once_after_success(self):
+        self.javascript(self.captured_ack_fixture() + r"""
+const f=await ackFixture(),closed=deferred();let data;
+const socket=f.net.connect(12345,'127.0.0.1');
+socket.on('error',closed.reject).once('close',closed.resolve).on('data',bytes=>{data=bytes.toString();socket.pause();socket.destroy()});
+for(let i=0;i<16&&![...f.records.values()].some(r=>r.kind==='read');++i)await turn();
+const read=[...f.records.values()].find(r=>r.kind==='read');assert(read?.finished);
+assert.equal(data,undefined);assert.equal(f.drops,0);assert.equal(f.ackGets.chunkBytes.length,0);
+read.ack.resolve();
+for(let i=0;i<16&&![...f.records.values()].some(r=>r.kind==='chunkBytes');++i)await turn();
+const copy=[...f.records.values()].find(r=>r.kind==='chunkBytes');assert(copy?.finished);
+assert.equal(data,undefined);assert.equal(f.drops,0);
+copy.ack.resolve();await closed.promise;
+assert.equal(data,'AB');assert.equal(f.drops,1);f.original.assertEmpty();
+assert.equal(f.ackGets.read.length,1);assert.equal(f.ackGets.chunkBytes.length,1);
+assert([...f.records.values()].every(r=>r.finished));
+""", parser=True)
+
+    def test_captured_failed_read_or_copy_still_waits_original_ack_before_cleanup(self):
+        self.javascript(self.captured_ack_fixture() + r"""
+for(const failureKind of ['read','chunkBytes']) {
+ const f=await ackFixture(failureKind),closed=deferred();let reported;
+ const socket=f.net.connect(12345,'127.0.0.1');
+ socket.on('error',cause=>{reported=cause}).once('close',closed.resolve).on('data',()=>assert.fail('failed operation cannot deliver'));
+ for(let i=0;i<16&&![...f.records.values()].some(r=>r.kind==='read');++i)await turn();
+ const read=[...f.records.values()].find(r=>r.kind==='read');assert(read?.finished);
+ if(failureKind==='chunkBytes') {
+  read.ack.resolve();
+  for(let i=0;i<16&&![...f.records.values()].some(r=>r.kind==='chunkBytes');++i)await turn();
+ }
+ const pending=[...f.records.values()].find(r=>r.kind===failureKind);assert(pending?.finished);
+ assert.equal(reported,undefined);assert.equal(f.drops,0);
+ assert.equal([...f.records.values()].filter(r=>r.kind==='close').length,0);
+ assert.equal(f.ackGets[failureKind].length,1);
+ pending.ack.resolve();await closed.promise;
+ assert.equal(reported.code,'EIO');assert.equal(reported.syscall,'read');
+ assert.equal(f.drops,failureKind==='chunkBytes'?1:0);f.original.assertEmpty();
+ assert([...f.records.values()].every(r=>r.finished));
+}
+""", parser=True)
+
     def test_held_read_allows_sibling_partial_write_copy_then_normal_close(self):
         self.javascript(r"""
 const held=deferred(),ack=deferred(),started=deferred(),bytes=new Uint8Array([65,66]);

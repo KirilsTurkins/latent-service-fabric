@@ -162,19 +162,19 @@ export function createNodeNetModule(transport, Buffer, snapshotActive, target = 
       this.#readTask = (async () => {
         try {
           while (this.#flowing && !this.#destroyed && !this.#eof) {
-            let chunk, copy, copied;
+            let chunk, copy, copied, readAckObserved = false, copyAckObserved = false;
             try {
               const operation = transport.read(this.#token, windowBytes, undefined);
               try {
-                chunk = await operation.promise; await operation.borrowReleased;
+                chunk = await operation.promise; await operation.borrowReleased; readAckObserved = true;
                 if (chunk !== undefined && !this.#destroyed) {
                   copied = transport.chunkBytes(this.#token, chunk);
-                  const raw = await copied.promise; await copied.borrowReleased;
+                  const raw = await copied.promise; await copied.borrowReleased; copyAckObserved = true;
                   copy = Buffer.from(raw); // Copy BEFORE owned chunk disposal.
                 }
               } finally {
-                await operation.borrowReleased;
-                if (copied) await copied.borrowReleased;
+                if (!readAckObserved) await operation.borrowReleased;
+                if (copied && !copyAckObserved) await copied.borrowReleased;
                 if (chunk !== undefined) transport.disposeChunk(this.#token, chunk);
               }
             } catch (cause) {
