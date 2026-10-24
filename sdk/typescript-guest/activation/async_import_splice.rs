@@ -5,6 +5,7 @@ use wirm::ir::function::FunctionBuilder;
 use wirm::ir::id::{FunctionID, GlobalID, LocalID};
 use wirm::ir::module::Module;
 use wirm::ir::module::module_globals::GlobalKind;
+use wirm::ir::module::module_functions::FuncKind;
 use wirm::ir::types::{BlockType, ElementItems, ElementKind, InitInstr, Value};
 use wirm::module_builder::AddLocal;
 use wirm::opcode::Inject;
@@ -47,6 +48,24 @@ pub fn validate_disposer_table_append(module:&Module<'_>)->Result<()> {
 
 // Resolve the original compiler-produced resource import identity, never a
 // resource-name suffix, integer type ID or guessed function-table position.
+fn resource_drop_function(module:&Module<'_>,key:&(String,String))->Result<Option<FunctionID>> {
+    let mut selected=None;
+    // Wirm 5's imports.get_func returns a mixed import-section ordinal. Calls
+    // require the stable Functions index, especially after new imports append
+    // behind the original local functions. Follow the actual import_id link.
+    for (index,function) in module.functions.iter().enumerate() {
+        let id=FunctionID(u32::try_from(index)?);
+        if module.functions.is_deleted(id) {continue;}
+        let FuncKind::Import(import)=function.kind() else {continue;};
+        let original=module.imports.get(import.import_id);
+        if original.module.as_ref()==key.0.as_str() && original.name.as_ref()==key.1.as_str() {
+            anyhow::ensure!(selected.is_none(),"unique-original-resource-drop-function-required");
+            selected=Some(id);
+        }
+    }
+    Ok(selected)
+}
+
 pub fn resource_disposer(module:&mut Module<'_>, descriptor:&Descriptor,
     imports:&[(String,String,CoreFn,Option<i32>)])->Result<FunctionID> {
     let mut drops=std::collections::BTreeMap::new();
@@ -65,7 +84,7 @@ pub fn resource_disposer(module:&mut Module<'_>, descriptor:&Descriptor,
                     anyhow::ensure!(matches!(signature.params.as_slice(),[CoreTy::I32]) && signature.ret.is_none()
                         && !signature.retptr && !signature.paramptr && signature.retsize==0,
                         "exact-original-resource-drop-signature-required");
-                    let function=if let Some(function)=module.imports.get_func(name.clone(),field.clone()) {
+                    let function=if let Some(function)=resource_drop_function(module,key)? {
                         function
                     } else {
                         let ty=module.types.add_func_type(&[DataType::I32],&[]);
@@ -402,15 +421,42 @@ mod tests {
     fn actual_own_disposer_calls_only_the_exact_original_drop_import() {
         let bytes=fixture(532,532,false,false);
         let mut module=Module::parse(&bytes,false,false).unwrap();
-        let fid=resource_disposer(&mut module,&actual_owned_descriptor(),&[original_drop_import()]).unwrap();
-        let drop=module.imports.get_func("tests:imports/io@1.0.0".to_owned(),"[resource-drop]connection".to_owned()).unwrap();
-        let function=module.functions.get(fid).unwrap_local().unwrap();
-        let calls=function.body.instructions.get_ops().iter().filter_map(|op|match op {
-            Operator::Call{function_index}=>Some(*function_index),_=>None,
-        }).collect::<Vec<_>>();
-        assert_eq!(calls,vec![*drop]);
+        // Same field/signature in a different namespace cannot supply a drop.
+        // Existing locals also make import ordinals differ from stable IDs.
+        let ty=module.types.add_func_type(&[DataType::I32],&[]);
+        module.add_import_func("other:imports/io@1.0.0".to_owned(),"[resource-drop]connection".to_owned(),ty);
+        let mut disposers=Vec::new();
+        for _ in 0..2 {
+            disposers.push(resource_disposer(&mut module,&actual_owned_descriptor(),&[original_drop_import()]).unwrap());
+        }
+        for fid in disposers {
+            let function=module.functions.get(fid).unwrap_local().unwrap();
+            let calls=function.body.instructions.get_ops().iter().filter_map(|op|match op {
+                Operator::Call{function_index}=>Some(*function_index),_=>None,
+            }).collect::<Vec<_>>();
+            assert_eq!(calls.len(),1);
+            let FuncKind::Import(import)=module.functions.get_kind(FunctionID(calls[0])) else {panic!("drop must target imported function")};
+            let target=module.imports.get(import.import_id);
+            assert_eq!((target.module.as_ref(),target.name.as_ref()),("tests:imports/io@1.0.0","[resource-drop]connection"));
+        }
         let encoded=module.encode().unwrap();
         wirm::wasmparser::Validator::new().validate_all(&encoded).unwrap();
+        // Authenticate the actual encoded targets after Wirm remaps IDs, not
+        // an assumed pre-encode numeric import ordinal.
+        let reparsed=Module::parse(&encoded,false,false).unwrap();
+        let mut calls=0;
+        for function in reparsed.functions.iter() {
+            let FuncKind::Local(local)=function.kind() else {continue;};
+            for op in local.body.instructions.get_ops().iter() {
+                if let Operator::Call{function_index}=op {
+                    let FuncKind::Import(import)=reparsed.functions.get_kind(FunctionID(*function_index)) else {panic!("encoded drop must target original import")};
+                    let target=reparsed.imports.get(import.import_id);
+                    assert_eq!((target.module.as_ref(),target.name.as_ref()),("tests:imports/io@1.0.0","[resource-drop]connection"));
+                    calls+=1;
+                }
+            }
+        }
+        assert_eq!(calls,2);
     }
     #[test]
     fn missing_ambiguous_or_wrong_signature_drop_mapping_is_refused() {
