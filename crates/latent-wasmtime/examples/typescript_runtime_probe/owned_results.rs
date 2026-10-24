@@ -121,11 +121,11 @@ fn install(linker:&mut Linker<State>)->wasmtime::Result<()> {
         store.data_mut().destroy(Kind::Chunk,rep))?;
     provider.func_wrap_concurrent("take-connection",|access,(mode,):(u32,)| {
         Box::pin(async move {
-            let counter=access.with(|store|store.data().counts.clone());
+            let counter=access.with(|mut store|store.data_mut().counts.clone());
             let _pending=Pending::new(counter);
             if mode==1 {tokio::task::yield_now().await;}
             if mode==4 {
-                access.with(|store|store.data().counts.lock().unwrap().pending_mode_starts+=1);
+                access.with(|mut store|store.data_mut().counts.lock().unwrap().pending_mode_starts+=1);
                 std::future::pending::<()>().await;
             }
             let value=match mode {
@@ -137,7 +137,7 @@ fn install(linker:&mut Linker<State>)->wasmtime::Result<()> {
     })?;
     provider.func_wrap_concurrent("take-chunk",|access,(mode,):(u32,)| {
         Box::pin(async move {
-            let counter=access.with(|store|store.data().counts.clone());let _pending=Pending::new(counter);
+            let counter=access.with(|mut store|store.data_mut().counts.clone());let _pending=Pending::new(counter);
             if mode==1 {tokio::task::yield_now().await;}
             let value=access.with(|mut store|store.data_mut().allocate(Kind::Chunk))
                 .map(|rep|Some(Resource::<Chunk>::new_own(rep)));Ok((value,))
@@ -145,7 +145,7 @@ fn install(linker:&mut Linker<State>)->wasmtime::Result<()> {
     })?;
     provider.func_wrap_concurrent("nested",|access,(mode,):(u32,)| {
         Box::pin(async move {
-            let counter=access.with(|store|store.data().counts.clone());let _pending=Pending::new(counter);
+            let counter=access.with(|mut store|store.data_mut().counts.clone());let _pending=Pending::new(counter);
             let value=if mode==2 {Ok(vec![None])} else {
                 access.with(|mut store|store.data_mut().allocate(Kind::Connection))
                     .map(|rep|vec![Some(Resource::<Connection>::new_own(rep))])
