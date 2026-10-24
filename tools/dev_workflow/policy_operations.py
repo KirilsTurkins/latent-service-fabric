@@ -1,7 +1,27 @@
 """Confirm scoped test policy mutations through retained public receipts."""
 from __future__ import annotations
 
-from .common import require, sha
+import re
+
+from .common import encode, require, sha
+
+
+STAMP_FIELDS = ("tenant", "id", "recordKind", "generation", "contentDigest", "revoked")
+
+
+def _generation(value, *, zero=False):
+    return (type(value) is str and re.fullmatch(r"0|[1-9][0-9]{0,19}", value) is not None
+            and int(value) <= 18446744073709551615 and (zero or value != "0"))
+
+
+def _same_policy(current, receipt, document):
+    return (isinstance(current, dict) and isinstance(receipt, dict)
+            and isinstance(document, dict) and isinstance(current.get("document"), dict)
+            and all(type(receipt.get(field)) is (bool if field == "revoked" else str)
+                    and type(current.get(field)) is type(receipt[field])
+                    and current[field] == receipt[field] for field in STAMP_FIELDS)
+            and _generation(receipt["generation"])
+            and encode(current["document"]) == encode(document))
 
 
 def settle(root, operation: dict, result: dict) -> None:
@@ -25,10 +45,8 @@ def apply(root, client, journal, policy_id: str, kind: str, document: dict) -> s
             "test-policy-observation-unavailable")
     if key in records:
         existing = observed["data"].get("policy")
-        require(observed["category"] == "success" and isinstance(existing, dict)
-                and all(existing.get(name) == records[key].get(name)
-                        for name in ("tenant", "id", "recordKind", "generation", "contentDigest", "revoked"))
-                and existing.get("document") == document, "test-policy-changed-no-overwrite")
+        require(observed["category"] == "success" and _same_policy(existing, records[key], document),
+                "test-policy-changed-no-overwrite")
         return policy_id
     require(observed["category"] == "not-found", "test-policy-not-owned-no-overwrite")
     state.atomic(root, "selected-test-policy.json", document)
@@ -52,12 +70,10 @@ def confirm(operation: dict, result: dict) -> None:
             and receipt.get("recordKind") == intent["recordKind"]
             and receipt.get("revoked") is False, "confirmed-policy-scope-mismatch")
     generation = receipt.get("generation")
-    require(isinstance(generation, str) and generation.isdecimal()
+    require(_generation(generation) and _generation(intent["expectedGeneration"], zero=True)
             and int(generation) > int(intent["expectedGeneration"]), "confirmed-policy-generation")
     sha(receipt.get("contentDigest"))
-    require(all(policy.get(key) == receipt.get(key)
-                for key in ("tenant", "id", "recordKind", "generation", "contentDigest", "revoked"))
-            and policy.get("document") == intent["document"], "original-policy-changed-no-replay")
+    require(_same_policy(policy, receipt, intent["document"]), "original-policy-changed-no-replay")
 
 
 def lookup(client, operation: str) -> dict:
