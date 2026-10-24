@@ -153,7 +153,10 @@ class TypeScriptAuthoringTests(unittest.TestCase):
                 self.assertEqual(lock["template"]["sourceDigest"], project.digest(files["src/main.ts"]))
                 self.assertEqual(
                     sorted(path for path in files if path.startswith("vendor/lsf/sdk/typescript-guest/runtime/")),
-                    ["vendor/lsf/sdk/typescript-guest/runtime/text.ts"])
+                    ["vendor/lsf/sdk/typescript-guest/runtime/buffer.d.ts",
+                     "vendor/lsf/sdk/typescript-guest/runtime/text.ts"])
+                self.assertEqual(files["vendor/lsf/sdk/typescript-guest/runtime/buffer.d.ts"],
+                                 (project.ROOT / "sdk/typescript-guest/runtime/buffer.d.ts").read_bytes())
                 self.assertFalse(any("tests/model" in path for path in files))
                 files["src/main.ts"] += b"\n// application edit\n"
                 files["wit/world.wit"] += b"\n// contract edit\n"
