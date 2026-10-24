@@ -5,20 +5,15 @@ use latent_audit::{AuditHandle, AuditLimits, AuditSnapshot};
 use super::{count, Metadata, NodeTopologyEntry, ResourceOwnership};
 
 pub(super) fn entry(handle: Option<&AuditHandle>) -> NodeTopologyEntry {
-    let mut attributes = Metadata::new();
-    attributes.insert("profile".into(), "audit-capacity-v1".into());
-    if let Some(handle) = handle {
-        match handle.snapshot() {
-            Ok(snapshot) => attributes = measurements(handle.limits(), snapshot),
-            Err(_) => {
-                // Failure to acquire the owner's bounded snapshot is not zero
-                // usage, nor proof that storage is healthy or mutations stopped.
-                attributes.insert("measurementStatus".into(), "unavailable".into());
-            }
-        }
-    } else {
-        attributes.insert("measurementStatus".into(), "not-configured".into());
-    }
+    let attributes = handle.map_or_else(
+        || {
+            let mut attributes = Metadata::new();
+            attributes.insert("profile".into(), "audit-capacity-v1".into());
+            attributes.insert("measurementStatus".into(), "not-configured".into());
+            attributes
+        },
+        |handle| measurements(handle.limits(), handle.snapshot()),
+    );
     NodeTopologyEntry {
         name: "audit-journal".into(),
         kind: "store".into(),
@@ -48,10 +43,7 @@ pub(super) fn measurements(limits: AuditLimits, snapshot: AuditSnapshot) -> Meta
         ("audit_retained_bytes", count(snapshot.retained_bytes)),
         ("audit_reserved_records", count(snapshot.reserved_records)),
         ("audit_reserved_bytes", count(snapshot.reserved_bytes)),
-        (
-            "audit_queued_operations",
-            count(snapshot.queued_operations),
-        ),
+        ("audit_queued_operations", count(snapshot.queued_operations)),
         ("audit_queued_bytes", count(snapshot.queued_bytes)),
         ("audit_pending_attempts", count(snapshot.pending_attempts)),
         ("audit_query_owners", count(snapshot.query_owners)),
@@ -76,10 +68,7 @@ pub(super) fn measurements(limits: AuditLimits, snapshot: AuditSnapshot) -> Meta
         ),
         ("audit_next_sequence", snapshot.next_sequence),
         ("audit_unknown_outcomes", snapshot.unknown_outcomes),
-        (
-            "audit_dropped_observations",
-            snapshot.dropped_observations,
-        ),
+        ("audit_dropped_observations", snapshot.dropped_observations),
         ("audit_unavailable_events", snapshot.unavailable_events),
         (
             "audit_previous_session_loss_unknown",
