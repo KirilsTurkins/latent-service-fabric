@@ -13,8 +13,8 @@ export function createNodeNetTransport(calls, target, inspect) {
   const includes = (values, value) => apply(arrays.includes, values, [value]);
   const some = (values, predicate) => apply(arrays.some, values, [predicate]);
   const define = Object.defineProperty, descriptor = Object.getOwnPropertyDescriptor;
-  const P = target.Promise, then = P.prototype.then;
-  const resolve = value => apply(P.resolve, P, [value]);
+  const P = target.Promise, then = P.prototype.then, promiseResolve = P.resolve;
+  const resolve = value => apply(promiseResolve, P, [value]);
   const react = (promise, yes, no) => apply(then, promise, [yes, no]);
   const dispose = Symbol.dispose || Symbol.for('dispose');
   const slots = []; // Explicit two-Socket port ceiling, not an activation ledger.
@@ -44,8 +44,20 @@ export function createNodeNetTransport(calls, target, inspect) {
   function start(item, kind, args, borrowed) {
     if (item.unknown || item.pending.length >= 3 || item.closing && kind !== 'close')
       throw failure('operation-state');
-    const record = {kind, borrowed, logicalDone: false, borrowDone: false};
+    const record = {kind, borrowed, logicalDone: false, borrowDone: false,
+      borrowFailed: false, borrowFault: undefined};
     push(item.pending, record); // Retain state before the original native start.
+    const borrowFailure = error => {
+      item.unknown = true;
+      record.borrowFault = error; record.borrowFailed = true;
+    };
+    record.assertBorrowReleased = () => {
+      if (record.borrowFailed) throw record.borrowFault;
+      if (!record.borrowDone) {
+        borrowFailure(failure('borrow-release-unconfirmed'));
+        throw record.borrowFault;
+      }
+    };
     let original;
     try { original = apply(calls[kind], undefined, args); }
     catch (error) { item.unknown = true; throw error; }
@@ -64,24 +76,25 @@ export function createNodeNetTransport(calls, target, inspect) {
       throw error;
     });
     try {
-      record.borrowReleased = react(original.borrowReleased, () => {
-        record.borrowDone = true;
-        collected(item, record);
-      }, error => { item.unknown = true; throw error; });
+      // This Promise certifies observation completion, never release by itself.
+      // Save failures without creating an unused rejecting sink reaction.
+      record.borrowSettlement = react(original.borrowReleased, () => {
+        try { record.borrowDone = true; collected(item, record); }
+        catch (error) { borrowFailure(error); }
+      }, borrowFailure);
     } catch (error) {
-      // No handle is NOT a release acknowledgement. Keep this reservation.
-      item.unknown = true;
-      record.borrowReleased = react(resolve(), () => { throw error; });
+      // No handle/observer is NOT a release acknowledgement. Keep the owner
+      // and exact original fault; every consumer must assert after observation.
+      borrowFailure(error);
+      try { record.borrowSettlement = resolve(); }
+      catch { throw error; }
     }
-    // Observe internal acknowledgement failures even before destroy is called.
-    // The state remains poisoned; the public operation retains its own result.
-    react(record.borrowReleased, undefined, () => undefined);
     record.cancel = () => {
       try { return original.cancel(); }
       catch (error) { item.unknown = true; throw error; }
     };
-    return freeze({promise: record.promise, borrowReleased: record.borrowReleased,
-      cancel: record.cancel});
+    return freeze({promise: record.promise, borrowSettlement: record.borrowSettlement,
+      assertBorrowReleased: record.assertBorrowReleased, cancel: record.cancel});
   }
   const checkRoot = () => { if (slots.length) throw failure('unclosed-sockets'); };
   define(target, rootKey, {value: checkRoot, writable: false, configurable: false});
@@ -169,7 +182,10 @@ export function createNodeNetTransport(calls, target, inspect) {
       if (cancellationError !== undefined) throw cancellationError;
       for (let index = 0; index < pending.length; ++index) {
         try { await pending[index].promise; } catch { /* Original caller observes it. */ }
-        try { await cancellations[index]; await pending[index].borrowReleased; }
+        try {
+          await cancellations[index]; await pending[index].borrowSettlement;
+          pending[index].assertBorrowReleased();
+        }
         catch (error) { item.unknown = true; throw error; }
       }
       if (item.unknown || item.pending.length) throw failure('close-acknowledgement');
@@ -188,7 +204,7 @@ export function createNodeNetTransport(calls, target, inspect) {
       }
       const operation = start(item, 'close', [item.connection]);
       await operation.promise;
-      await operation.borrowReleased;
+      await operation.borrowSettlement; operation.assertBorrowReleased();
       if (!item.closed || item.unknown) throw failure('close-not-confirmed');
     },
   });

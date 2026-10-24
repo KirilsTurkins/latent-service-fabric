@@ -122,7 +122,7 @@ export function createNodeNetModule(transport, Buffer, snapshotActive, target = 
       this.#connecting = true; this.#remotePort = request.port;
       const operation = transport.connect(this.#token, request);
       this.#connectTask = (async () => {
-        try { await operation.promise; await operation.borrowReleased; }
+        try { await operation.promise; await operation.borrowSettlement; operation.assertBorrowReleased(); }
         catch (cause) { if (!this.#destroyed) this.destroy(error('ERR_LSF_CONNECT_FAILED', 'connect', cause)); return; }
         if (this.#destroyed) return;
         this.#connecting = false; this.#connected = true; this.#touch();
@@ -166,15 +166,15 @@ export function createNodeNetModule(transport, Buffer, snapshotActive, target = 
             try {
               const operation = transport.read(this.#token, windowBytes, undefined);
               try {
-                chunk = await operation.promise; await operation.borrowReleased; readAckObserved = true;
+                chunk = await operation.promise; await operation.borrowSettlement; operation.assertBorrowReleased(); readAckObserved = true;
                 if (chunk !== undefined && !this.#destroyed) {
                   copied = transport.chunkBytes(this.#token, chunk);
-                  const raw = await copied.promise; await copied.borrowReleased; copyAckObserved = true;
+                  const raw = await copied.promise; await copied.borrowSettlement; copied.assertBorrowReleased(); copyAckObserved = true;
                   copy = Buffer.from(raw); // Copy BEFORE owned chunk disposal.
                 }
               } finally {
-                if (!readAckObserved) await operation.borrowReleased;
-                if (copied && !copyAckObserved) await copied.borrowReleased;
+                if (!readAckObserved) { await operation.borrowSettlement; operation.assertBorrowReleased(); }
+                if (copied && !copyAckObserved) { await copied.borrowSettlement; copied.assertBorrowReleased(); }
                 if (chunk !== undefined) transport.disposeChunk(this.#token, chunk);
               }
             } catch (cause) {
@@ -236,13 +236,13 @@ export function createNodeNetModule(transport, Buffer, snapshotActive, target = 
                   this.#bytesWritten += failure.acceptedPrefixBytes - offset;
                   throw failure;
                 }
-                finally { await operation.borrowReleased; }
+                finally { await operation.borrowSettlement; operation.assertBorrowReleased(); }
                 if (!Number.isInteger(count) || count < 0 || count > portion.length)
                   throw error('ERR_LSF_INVALID_WRITE_COUNT', 'write', undefined, offset, true);
                 if (count === 0) {
                   const ready = transport.ready(this.#token);
                   let hint;
-                  try { hint = await ready.promise; } finally { await ready.borrowReleased; }
+                  try { hint = await ready.promise; } finally { await ready.borrowSettlement; ready.assertBorrowReleased(); }
                   if (!hint || hint.writable !== true) throw error('ERR_LSF_NOT_WRITABLE', 'write');
                   continue; // The unaccepted suffix is a fresh charged call, never replayed bytes.
                 }
@@ -265,7 +265,7 @@ export function createNodeNetModule(transport, Buffer, snapshotActive, target = 
             if (this.#ending && !this.#finished) {
               try {
                 const operation = transport.shutdown(this.#token);
-                try { await operation.promise; } finally { await operation.borrowReleased; }
+                try { await operation.promise; } finally { await operation.borrowSettlement; operation.assertBorrowReleased(); }
               } catch (cause) { this.destroy(error('EIO', 'shutdown', cause)); return; }
               this.#finished = true; this.#emit('finish');
             }

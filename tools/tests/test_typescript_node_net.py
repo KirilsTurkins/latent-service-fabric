@@ -78,14 +78,15 @@ async function capturedInitializer() {{
         # Actual authenticated initializer and typed wrappers, with explicitly
         # doubled core operations/bridge ACKs; never native Task qualification.
         return r"""
-async function ackFixture(failureKind) {
+async function ackFixture(failureKind, faultMode) {
 const {script}=await capturedInitializer(),modules=new Map(),memory={buffer:new ArrayBuffer(65536)},view=new DataView(memory.buffer);
 let sequence=0,allocated=16000,reads=0,drops=0;const records=new Map(),events=[],ackGets={read:[],chunkBytes:[]};
+const originalFault=Object.freeze({originalFault:true});
 const content={Promise,Error,TextEncoder,TextDecoder,Uint8Array,queueMicrotask,setTimeout,clearTimeout};
 content.__lsfAsyncImportBridge={reserve(){const id=++sequence;records.set(id,{id,ack:deferred(),handle:Object.freeze({id})});return id},
  watchBorrow(id){return records.get(id).handle},lift(value){return value},delivered(id,value){return value},
- finish(id){const r=records.get(id);r.finished=true;events.push('finish:'+r.kind);if(!['read','chunkBytes'].includes(r.kind))r.ack.resolve()},
- borrowReleased(handle){return records.get(handle.id).ack.promise},cancelBorrow(handle){events.push('cancel:'+records.get(handle.id).kind);return records.get(handle.id).ack.promise}};
+ finish(id){const r=records.get(id);r.finished=true;events.push('finish:'+r.kind);if(!['read','chunkBytes'].includes(r.kind)&&!faultMode)r.ack.resolve()},
+ borrowReleased(handle){if(faultMode==='setup')throw originalFault;return records.get(handle.id).ack.promise},cancelBorrow(handle){events.push('cancel:'+records.get(handle.id).kind);return records.get(handle.id).ack.promise}};
 function result(kind,id){const r=records.get(id);r.kind=kind;events.push('start:'+kind);r.ptr=128+id*64;new Uint8Array(memory.buffer,r.ptr,64).fill(0);return r.ptr}
 const bindings=[memory,(_p,_old,_align,n)=>{const p=allocated;allocated+=n;return p},
  id=>{const p=result('connect',id);view.setInt32(p+4,7,true);return Promise.resolve(p)},
@@ -98,15 +99,22 @@ const bindings=[memory,(_p,_old,_align,n)=>{const p=allocated;allocated+=n;retur
  id=>{const p=result('close',id);view.setUint8(p+8,5);return Promise.resolve(p)},
  ...Array(10).fill(()=>0),()=>{throw Error('no connection destructor')},()=>{++drops;events.push('drop:chunk')}];
 assert.equal(bindings.length,22);
-vm.runInNewContext(script,{contentGlobal:content,$bindings:bindings,defineBuiltinModule(name,value){modules.set(name,value)},TextEncoder,TextDecoder,console},{timeout:3000});
+const context=vm.createContext({contentGlobal:content,$bindings:bindings,defineBuiltinModule(name,value){modules.set(name,value)},TextEncoder,TextDecoder,console,__faultArm:false,__faultMode:faultMode,__originalFault:originalFault});
+// Test-only intrinsic fault injection BEFORE the authentic factory captures it;
+// arm only after logical connect. No application mutation/physical-cost claim.
+vm.runInContext(`const originalIndexOf=Array.prototype.indexOf;Array.prototype.indexOf=function(...args){
+ if(globalThis.__faultArm){if(globalThis.__faultMode==='identity')return -1;if(globalThis.__faultMode==='intrinsic')throw globalThis.__originalFault;}
+ return Reflect.apply(originalIndexOf,this,args);
+};`,context);
+vm.runInContext(script,context,{timeout:3000});
 const original=modules.get(NET_PRIVATE),facade={};
 for(const name of Object.keys(original))facade[name]=(...args)=>{
  const value=Reflect.apply(original[name],original,args);
  if(!Object.hasOwn(ackGets,name))return value;
- return Object.freeze({promise:value.promise,cancel:value.cancel,get borrowReleased(){const actual=value.borrowReleased;ackGets[name].push(actual);events.push('await-view:'+name);return actual}});
+ return Object.freeze({promise:value.promise,cancel:value.cancel,get borrowSettlement(){const actual=value.borrowSettlement;ackGets[name].push(actual);events.push('await-view:'+name);return actual},assertBorrowReleased:value.assertBorrowReleased});
 };
 const net=createNodeNetModule(Object.freeze(facade),Buffer,()=>false,content);
-return {net,original,records,events,ackGets,get drops(){return drops}};
+return {net,original,records,events,ackGets,originalFault,armFault(){context.__faultArm=true},get drops(){return drops}};
 }
 """
 
@@ -150,6 +158,73 @@ for(const failureKind of ['read','chunkBytes']) {
  assert([...f.records.values()].every(r=>r.finished));
 }
 """, parser=True)
+
+    def test_actual_ack_observation_faults_never_certify_release_or_empty_registry(self):
+        self.javascript(self.captured_ack_fixture() + r"""
+for(const mode of ['ack-error','ack-undefined','setup','identity','intrinsic','unconfirmed']) {
+ const f=await ackFixture(undefined,mode),token=f.original.reserve();
+ const op=f.original.connect(token,{host:'127.0.0.1',port:12345,transport:'tcp',timeoutMillis:undefined});
+ await op.promise;const record=[...f.records.values()].find(r=>r.kind==='connect');assert(record?.finished);
+ let fault;
+ if(mode==='unconfirmed') {
+  try{op.assertBorrowReleased();assert.fail('early assertion must refuse')}catch(error){fault=error}
+  assert.match(fault.message,/borrow-release-unconfirmed/);
+ }
+ if(mode==='identity'||mode==='intrinsic')f.armFault();
+ if(mode==='ack-error')record.ack.reject(f.originalFault);
+ else if(mode==='ack-undefined')record.ack.reject(undefined);
+ else record.ack.resolve();
+ await op.borrowSettlement; // Observation completion is deliberately NOT proof.
+ let threw=false;
+ try{op.assertBorrowReleased()}catch(error){threw=true;if(mode==='identity')assert.match(error.message,/operation-registry-identity/);
+  else if(mode==='unconfirmed')assert.equal(error,fault);
+  else assert.equal(error,mode==='ack-undefined'?undefined:f.originalFault);fault=error;}
+ assert.equal(threw,true);let repeated=false;
+ try{op.assertBorrowReleased()}catch(error){repeated=true;assert.equal(error,fault)}assert.equal(repeated,true);
+ assert.throws(f.original.assertEmpty,/unclosed/);
+ await assert.rejects(f.original.stop(token),/close-state/);
+ assert.equal([...f.records.values()].filter(r=>r.kind==='close').length,0);assert.equal(f.drops,0);
+}
+for(const failedKind of ['read','chunkBytes']) {
+ const f=await ackFixture(undefined,'ack-held'),closed=deferred();let error,delivered=false;
+ const socket=f.net.connect(12345,'127.0.0.1');
+ socket.on('error',value=>{error=value}).once('close',closed.resolve).on('data',()=>{delivered=true});
+ for(let i=0;i<16&&![...f.records.values()].some(r=>r.kind==='connect');++i)await turn();
+ [...f.records.values()].find(r=>r.kind==='connect').ack.resolve();
+ for(let i=0;i<16&&![...f.records.values()].some(r=>r.kind==='read');++i)await turn();
+ const read=[...f.records.values()].find(r=>r.kind==='read');assert(read?.finished);
+ if(failedKind==='chunkBytes') {
+  read.ack.resolve();
+  for(let i=0;i<16&&![...f.records.values()].some(r=>r.kind==='chunkBytes');++i)await turn();
+ }
+ const failed=[...f.records.values()].find(r=>r.kind===failedKind);assert(failed?.finished);
+ assert.equal(delivered,false);assert.equal(f.drops,0);
+ failed.ack.reject(f.originalFault);await closed.promise;
+ assert.equal(error.code,'EIO');assert.equal(error.cause,f.originalFault);
+ assert.equal(delivered,false);assert.equal(f.drops,0);
+ assert.equal([...f.records.values()].filter(r=>r.kind==='close').length,0);
+ assert.throws(f.original.assertEmpty,/unclosed/);
+}
+""", parser=True)
+
+    def test_one_ack_observer_removes_unused_reaction_and_captures_setup_resolver(self):
+        self.javascript(r"""
+const P=vm.runInNewContext('Promise'),oldThen=P.prototype.then,oldResolve=P.resolve;
+let reactions=0,mutators=0;P.prototype.then=function(...args){++reactions;return Reflect.apply(oldThen,this,args)};
+const t={Promise:P},ack=deferred(),originalFault=Object.freeze({originalFault:true});
+let setup=false;
+const native={connect(){return {promise:Promise.resolve({}),get borrowReleased(){if(setup)throw originalFault;return ack.promise},cancel(){return ack.promise}}},
+ close:()=>settled({})};
+const transport=createNodeNetTransport(native,t,()=>({})),token=transport.reserve(),op=transport.connect(token,{});
+assert.equal(reactions,2); // Logical observer + original ACK observer; no sink.
+await op.promise;let observed=false;op.borrowSettlement.then(()=>observed=true);await turn();assert.equal(observed,false);
+ack.resolve();await op.borrowSettlement;op.assertBorrowReleased();await transport.stop(token);await transport.close(token);transport.assertEmpty();
+setup=true;P.resolve=function(){++mutators;throw Error('application resolver mutation')};
+const failed=transport.connect(transport.reserve(),{});await failed.promise;await failed.borrowSettlement;
+assert.throws(failed.assertBorrowReleased,error=>error===originalFault);assert.equal(mutators,0);
+assert.throws(transport.assertEmpty,/unclosed/);
+P.resolve=oldResolve;
+""")
 
     def test_held_read_allows_sibling_partial_write_copy_then_normal_close(self):
         self.javascript(r"""
@@ -205,7 +280,7 @@ assert.throws(()=>Object.defineProperty(f.t,'__lsfNodeNetRootCheck',{value:()=>{
 assert.throws(()=>{f.transport.assertEmpty=()=>{}},TypeError);
 const old=Array.prototype.splice;Array.prototype.splice=()=>[];
 try {assert.throws(f.transport.assertEmpty,/unclosed/)} finally {Array.prototype.splice=old}
-for(const token of [one,two]){const op=f.transport.connect(token,{});await op.promise;await op.borrowReleased;await f.transport.stop(token);await f.transport.close(token)}
+for(const token of [one,two]){const op=f.transport.connect(token,{});await op.promise;await op.borrowSettlement;op.assertBorrowReleased();await f.transport.stop(token);await f.transport.close(token)}
 f.transport.assertEmpty();assert.throws(()=>f.transport.connect(one,{}),/retired/);
 """)
 

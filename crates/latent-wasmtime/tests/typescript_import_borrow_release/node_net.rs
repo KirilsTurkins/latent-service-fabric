@@ -257,6 +257,27 @@ pub(super) async fn run() {
             assert!(raw.len() <= 8192);
             println!("TYPESCRIPT_NODE_NET_ORIGINAL_ERROR {raw}");
         }
+        if diagnostic.borrow_admission_refusal.is_some() {
+            // Failure-only projection of existing receipt/provider facts. This
+            // does not identify the denied native operation or qualify a case.
+            let original = match &receipt.outcome {
+                ActivationOutcome::Failed {
+                    error, consumption, ..
+                } => json!({
+                    "status":"failed","publicCode":error.code.wire_code(),
+                    "outboundRequests":consumption.outbound_requests,
+                    "cpuFuel":consumption.cpu_fuel,"peakMemoryBytes":consumption.peak_memory_bytes}),
+                ActivationOutcome::Succeeded(success) => json!({
+                    "status":"succeeded","outboundRequests":success.consumption.outbound_requests,
+                    "cpuFuel":success.consumption.cpu_fuel,"peakMemoryBytes":success.consumption.peak_memory_bytes}),
+                _ => json!({"status":"other"}),
+            };
+            let raw = serde_json::to_string(&json!({"case":label,"mode":mode,"index":index,
+                "originalReceipt":original,"postRoot":sample(&f,"node-net-refusal-post-root")}))
+            .unwrap();
+            assert!(raw.len() <= 8192);
+            println!("TYPESCRIPT_NODE_NET_REFUSAL_CONTEXT {raw}");
+        }
         // A quota refusal must not masquerade as the deliberately unclosed root.
         assert!(
             diagnostic.borrow_admission_refusal.is_none(),
