@@ -3,7 +3,7 @@ use super::*;
 
 const MAIN: &[u8] = include_bytes!("../../../../sdk/typescript-guest/probes/node-net/main.ts");
 const WIT: &[u8] = include_bytes!("../../../../sdk/typescript-guest/probes/node-net/world.wit");
-const CONTRACT: &str = "tests:typescript-node-net/api@1.0.0";
+const CONTRACT: &str = "tenant-a:typescript-node-net/api@1.0.0";
 
 async fn configured_socket(root: &Path, port: u16) -> (Fixture, latent_core::ResourceBudget) {
     let prepared =

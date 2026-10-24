@@ -416,10 +416,17 @@ class NodeNetOwningControls(unittest.TestCase):
             self.assertEqual(value['limits'], owner.NET_LIMITS)
             self.assertEqual(value['limits']['cpuFuel'], 1_000_000_000)
             self.assertEqual(value['limits']['outboundRequests'], 8)
+            self.assertEqual(value['world'].split(':',1)[0],value['tenant'])
+            self.assertTrue(files['wit/world.wit'].decode().startswith('package '+value['tenant']+':'))
             self.assertEqual({name for name in files if name.startswith(('src/', 'wit/'))}, set(owner.NET_INPUTS))
             for name, path in owner.NET_INPUTS.items():
                 self.assertEqual(files[name], read_file(ROOT/path))
             sdk = snapshot(source/'vendor')
+            wrong_scope=dict(value,world='tests:typescript-node-net/service@1.0.0')
+            (source/'capsule-project.json').write_text(json.dumps(wrong_scope),encoding='utf-8')
+            with self.assertRaisesRegex(WorkflowError,'exact-normal-project'):
+                owner.verify_node_net_project(source)
+            (source/'capsule-project.json').write_bytes(files['capsule-project.json'])
             altered = dict(value, limits={**value['limits'], 'cpuFuel':10_000_000_000})
             (source/'capsule-project.json').write_text(json.dumps(altered), encoding='utf-8')
             with self.assertRaisesRegex(WorkflowError, 'exact-normal-project'):

@@ -1,4 +1,4 @@
-package tests:typescript-node-net@1.0.0;
+package tenant-a:typescript-node-net@1.0.0;
 
 interface api {
     run: async func(mode: u32, port: u16) -> string;

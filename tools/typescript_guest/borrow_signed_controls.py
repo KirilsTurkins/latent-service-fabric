@@ -264,7 +264,7 @@ def qualify(tools, material_directory, output, *, programme='borrow', prepared_n
 
 
 NET_PREFIX = 'sdk/typescript-guest/probes/node-net/'
-NET_WORLD = 'tests:typescript-node-net/service@1.0.0'
+NET_WORLD = 'tenant-a:typescript-node-net/service@1.0.0'
 NET_TEST = 'signed_normal_node_net_socket_uses_original_stream_owners_and_close_events'
 NET_INPUTS = {'src/main.ts': NET_PREFIX+'main.ts', 'wit/world.wit': NET_PREFIX+'world.wit',
               'wit/deps/network/package.wit': 'wit/platform/network/package.wit'}
