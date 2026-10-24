@@ -1,8 +1,9 @@
 # Ordinary Go large-write and transfer-quota programme
 
-This prepared source programme has not executed. It is a separate four-call
-qualification of the maintained declared-stream Go port; the original twelve
-signed TCP cases and their qualifier remain unchanged.
+The [owning run40071151473/job120804661224](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40071151473/job/120804661224)
+passed all four actual signed calls at source7b66a1def834b2676b1eb3dd24677419b9e1d7f8.
+This is a separate qualification of the maintained declared-stream Go port;
+the original twelve signed TCP cases and their qualifier remain unchanged.
 
 One normal Go1.27.3/v5 component uses ordinary net.DialTimeout, net.Conn.Write,
 io.Copy, io.LimitReader and io.ReadFull. No supplied Conn, transport, host handle,
@@ -61,7 +62,27 @@ remote effects from effect-counter fields or a returned prefix. It supplies no
 kernel final-free certificate, production-provider enablement, typed-HTTP grant
 widening, independent stack/GC/native-cost completion or whole #742 acceptance.
 
-The future owning lane must execute four finite protocol-reader controls with
-zero skipped cases, compile this component once, build only its targeted native
-harness and execute its one mandatory ignored test explicitly. Source preparation,
-reference hashes and parser controls alone establish no signed guest result.
+The owning lane executed all four finite protocol-reader controls without skips,
+compiled this component once and built only its targeted native harness. Its one
+mandatory ignored test executed explicitly: one passed, zero failed/ignored/filtered.
+
+The [retained observation](../testing/evidence/go-write-progress-signed-2026-10-24.json)
+binds artifact12551690794 (1,334,718B, SHA25690c0aec3eb157e762471ab90aa1e58b3ef33e27e6494a01d377ba51043238787),
+all56 CRC/member identities, all6,413 exact Git inputs (58,856,376B) and the actual
+3,368,448-byte component (SHA25614ca488737e1dc989f6cfe3484e1cad5a48e2248a13bf83346c5ab23ec98cac9).
+Seventeen compiler command output pairs are retained. Native executable bytes
+are not retained; their digest is the original successful controller observation.
+The raw strict protocol reader reproduces all receipt rows.
+
+Actual accepted/peer byte counts were49,189 /40,973 /1,048,576 /49,189.
+The quota row records exactly1MiB original input credit, one live activation and
+connection, and the pending ordinary read before peer release. The typed quota
+result reports may-have-applied=false and Close succeeded; forced short OS writes
+or alternate uncertain/close-refusal outcomes are not inferred from this run.
+Peak recorded memory was5,538,617B and maximum fuel115,401,237, within the unchanged
+64MiB/1billion budgets. All four peer hashes/EOF, fresh states, user-space owner
+retirements and clean logical-provider stop passed. The reported effect counter
+was zero while real TCP bytes were observed; it is not evidence of zero wire effects.
+Normal signed admission used the existing in-process fixture, not a released
+standalone builder qualification. This first owning campaign passed without a
+retry; #1228 historical native-reference evidence retains its separate attribution.
