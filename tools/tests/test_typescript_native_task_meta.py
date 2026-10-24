@@ -15,15 +15,20 @@ class TypeScriptNativeTaskMetaTests(unittest.TestCase):
         parser = os.environ.get('LSF_TYPESCRIPT_ACORN')
         if parser is None and os.environ.get('LSF_TYPESCRIPT_FRONTEND'):
             parser = str(Path(os.environ['LSF_TYPESCRIPT_FRONTEND'])/'node_modules/acorn/dist/acorn.mjs')
-        if node is None or parser is None:
-            self.skipTest('Node and captured Acorn are required for actual generated metadata controls')
-        self.assertTrue(Path(parser).is_file())
+        if node is None:
+            self.skipTest('Node is required for source-only generated binding controls')
+        if parser is not None:
+            self.assertTrue(Path(parser).is_file())
         imports = "import assert from 'node:assert/strict';\nimport vm from 'node:vm';\nimport {readFile} from 'node:fs/promises';\nimport {createHash} from 'node:crypto';\n"
-        imports += f"import {{parse}} from {json.dumps(Path(parser).as_uri())};\n"
+        if parser is not None:
+            imports += f"import {{parse}} from {json.dumps(Path(parser).as_uri())};\n"
+        else:
+            # Host source controls only, never a production/compiler fallback.
+            imports += "const parserScope={};const parserSource=process.binding('natives')['internal/deps/acorn/acorn/dist/acorn'];assert.equal(typeof parserSource,'string');vm.runInNewContext(parserSource,parserScope);const {parse}=parserScope.acorn;\n"
         imports += f"import {{directIdleTaskSlots,fuseNativeImportAwaits,inlineNativeTaskMeta}} from {json.dumps((ROOT/'tools/typescript_guest/async_waiters.mjs').as_uri())};\n"
         imports += f"const prefixMaterial=JSON.parse(await readFile(new URL({json.dumps((ROOT/'tools/tests/fixtures/typescript_native_task_state.json').as_uri())}),'utf8'));\n"
         imports += f"const bindingMaterial=JSON.parse(await readFile(new URL({json.dumps((ROOT/'tools/tests/fixtures/typescript_native_open_binding.json').as_uri())}),'utf8'));\n"
-        imports += "const prefix=prefixMaterial.source,binding=bindingMaterial.source;assert.equal(createHash('sha256').update(prefix).digest('hex'),prefixMaterial.prefixSha256);assert.equal(createHash('sha256').update(binding).digest('hex'),bindingMaterial.sourceSha256);\n"
+        imports += "const prefix=prefixMaterial.source;let binding=bindingMaterial.source;assert.equal(createHash('sha256').update(prefix).digest('hex'),prefixMaterial.prefixSha256);assert.equal(createHash('sha256').update(binding).digest('hex'),bindingMaterial.sourceSha256);binding=binding.replace('\\n  try {','\\n  /* lsf-owned-result-transfer:wit-result */\\n  try {');\n"
         imports += "const original=fuseNativeImportAwaits(directIdleTaskSlots(prefix+binding),parse);\n"
         result = subprocess.run([node, '--input-type=module', '-e', imports+source],
                                 capture_output=True, text=True, timeout=20)
@@ -34,7 +39,7 @@ class TypeScriptNativeTaskMetaTests(unittest.TestCase):
 async function execute(source,mode) {
  const events=[],pending=Promise.withResolvers(),reason={owned:true};let allocation=1024,ctx,runtime;
  const memory=new WebAssembly.Memory({initial:1}),view=new DataView(memory.buffer);
- const bridge={reserve(...args){events.push(['reserve',...args.slice(0,3)]);return 7;},
+ const bridge={delivered(_id,value){return value;},reserve(...args){events.push(['reserve',...args.slice(0,3)]);return 7;},
   lift(id){events.push(['lift',id]);assert.equal(runtime.meta(),null);if(mode==='lift-failure')throw reason;return 512;},
   finish(id){events.push(['finish',id]);assert.equal(runtime.meta(),null);}};
  const native=(...args)=>{events.push(['native',...args]);assert(runtime.meta()?.taskID);return pending.promise;};
@@ -66,7 +71,7 @@ for(const mode of ['success','native-failure','typed-failure','lift-failure']) {
 async function execute(source) {
  const pending=Promise.withResolvers();let calls=0,ctx,runtime,allocation=1024;
  const memory=new WebAssembly.Memory({initial:1}),view=new DataView(memory.buffer);
- const bridge={reserve(){return 7;},lift(){assert.equal(runtime.meta(),null);return 512;},finish(){assert.equal(runtime.meta(),null);}};
+ const bridge={delivered(_id,value){return value;},reserve(){return 7;},lift(){assert.equal(runtime.meta(),null);return 512;},finish(){assert.equal(runtime.meta(),null);}};
  ctx=vm.createContext({$bindings:[memory,(_p,_o,_a,n)=>{const p=allocation;allocation+=n;return p;},()=>{calls++;assert(runtime.state().isExclusivelyLocked());return pending.promise;},...Array(10).fill(null)],
   contentGlobal:{TextEncoder,TextDecoder,Promise,__lsfAsyncImportBridge:bridge},defineBuiltinModule(){}});
  runtime=vm.runInContext(source+';({invoke:import_latent_http_streaming_0_3_0$open,meta:()=>CURRENT_TASK_META[1],state:()=>getOrCreateAsyncState(1)});',ctx);

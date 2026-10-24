@@ -26,6 +26,11 @@ struct ImportBorrowControls {
   static const void* record(Imports& imports,uint32_t id) {return imports.find(id);}
   static Token recordOwner(Imports& imports,uint32_t id) {return imports.find(id)->record_owner.token;}
   static size_t recordBytes() {return sizeof(Imports::Record);}
+#ifdef LSF_TYPESCRIPT_OWNED_RESULT_CONTROLS
+  static size_t baselineRecordBytes() {return sizeof(BorrowBaselineImports::Record);}
+  static size_t recordAlignment() {return alignof(Imports::Record);}
+  static size_t baselineRecordAlignment() {return alignof(BorrowBaselineImports::Record);}
+#endif
   static ImportBorrowObserver* observer(JSContext* cx,Imports& imports,uint32_t id) {
     auto* item=imports.find(id);if(!item)return nullptr;
     std::unique_ptr<ImportBorrowObserver>* link=nullptr;
@@ -66,6 +71,7 @@ bool closed = false, effects = true, set_live = false, immediate_return = false;
 bool compiler_phase = false;
 bool block_import = false;
 unsigned imported_starts = 0, imported_lifts = 0;
+unsigned imported_finishes = 0, imported_disposals = 0;
 bool defer_cancel = false, refuse_stop = false, refuse_native_ack = false, refuse_task_ack = false;
 unsigned starts = 0, stops = 0, drops = 0, set_drops = 0, waits_entered = 0;
 unsigned callback_entries = 0, native_admissions = 0, native_acknowledgements = 0;
@@ -284,11 +290,14 @@ static PromiseRecords* promise_records;
 static ReactionRecords* reaction_records;
 static Timers* timer_runtime;
 static Imports* import_runtime;
+// Scalar-only fixture: no canonical resource handle is produced or dropped.
+static bool scalar_disposer(uint32_t) { ++imported_disposals; return true; }
 static bool imported_global(JSContext* cx,unsigned argc,JS::Value* vp) {
   auto args=JS::CallArgsFromVp(argc,vp);uint32_t id=0;
   if(!import_runtime->reserve(cx,4,0,ImportRawResult::I32,JS::HandleValueArray::empty(),id))return false;
   auto* result=static_cast<uint32_t*>(import_runtime->resultBuffer(id));
-  if(!result || !import_runtime->beginLowering(cx,id))return false;
+  if(!result || !import_runtime->setDisposer(cx,id,scalar_disposer,4) ||
+     !import_runtime->beginLowering(cx,id))return false;
   const auto wait_id=next_wait++;
   if(wait_id>=waits.size())return false;
   waits[wait_id]={true,false,false,JOBS_SUBTASK_STARTED,0,nullptr,result};
@@ -303,7 +312,28 @@ static bool lift_imported(JSContext* cx,unsigned argc,JS::Value* vp) {
   const auto id=static_cast<uint32_t>(args[0].toInt32());
   if(!import_runtime->liftValue(cx,id,args.rval()))return false;
   ++imported_lifts;
-  return import_runtime->liftCompleted(cx,id);
+  return import_runtime->delivered(cx,id) && import_runtime->liftCompleted(cx,id);
+}
+// Fixture-only entry for the real manager's retired-finally no-op. Snapshot
+// every diagnostic owner/drop/ACK counter around EACH actual native call.
+static bool finish_imported(JSContext* cx,unsigned argc,JS::Value* vp) {
+  auto args=JS::CallArgsFromVp(argc,vp);
+  if(argc!=1 || !args[0].isInt32())return false;
+  const auto id=static_cast<uint32_t>(args[0].toInt32());
+  const auto owners_before=counts;
+  const auto drops_before=drops,acks_before=native_acknowledgements;
+  const auto disposals_before=imported_disposals;
+  const auto admissions_before=native_admissions,calls_before=host_calls;
+  const auto pending_before=import_runtime->hasPending();
+  if(!import_runtime->liftCompleted(cx,id))return false;
+  if(counts!=owners_before || drops!=drops_before || imported_disposals!=disposals_before ||
+     native_acknowledgements!=acks_before ||
+     native_admissions!=admissions_before || host_calls!=calls_before ||
+     import_runtime->hasPending()!=pending_before) {
+    JS_ReportErrorASCII(cx,"diagnostic-retired-finish-changed-native-ownership");return false;
+  }
+  ++imported_finishes;
+  args.rval().setUndefined();return true;
 }
 static bool release_imported(JSContext*,unsigned argc,JS::Value* vp) {
   auto args=JS::CallArgsFromVp(argc,vp);block_import=false;args.rval().setUndefined();return true;
@@ -483,7 +513,8 @@ static bool borrow_refusal(JSContext* cx,BrokerAccounting& jobs,BrokerPromiseAcc
            held.liftCompleted(cx,id))return false;
       } else {
         auto* result=static_cast<uint32_t*>(held.resultBuffer(id));
-        if(!result || !held.parameterBuffer(id) || !held.beginLowering(cx,id))return false;
+        if(!result || !held.parameterBuffer(id) || !held.setDisposer(cx,id,scalar_disposer,4) ||
+           !held.beginLowering(cx,id))return false;
         const auto wait_id=next_wait++;
         if(wait_id>=waits.size())return false;
         waits[wait_id]={true,false,false,JOBS_SUBTASK_STARTED,0,nullptr,result};
@@ -566,6 +597,7 @@ int main(int argc, char** argv) {
         !JS_DefineFunction(cx, global, "rootDone", root_done, 0, 0) ||
         !JS_DefineFunction(cx, global, "ordinaryImported", imported_global, 0, 0) ||
         !JS_DefineFunction(cx, global, "liftImported", lift_imported, 1, 0) ||
+        !JS_DefineFunction(cx, global, "finishImported", finish_imported, 1, 0) ||
         !JS_DefineFunction(cx, global, "releaseImported", release_imported, 0, 0)) return 8;
     if (!jobs.beginRoot(cx)) return 9;
     JS::RootedValue output(cx);
@@ -594,7 +626,8 @@ int main(int argc, char** argv) {
       if(!imports.watchBorrow(cx,id,&again) || again.get()!=handle.get() ||
          native_admissions!=observed_admissions || observed_admissions<admitted+2)return 10;
       auto* result=static_cast<uint32_t*>(imports.resultBuffer(id));
-      if(!result || !imports.beginLowering(cx,id))return 10;
+      if(!result || !imports.setDisposer(cx,id,scalar_disposer,4) ||
+         !imports.beginLowering(cx,id))return 10;
       const auto wait_id=next_wait++;
       waits[wait_id]={true,false,false,JOBS_SUBTASK_STARTED,0,nullptr,result};
       ++counts[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_WAIT];
@@ -698,6 +731,40 @@ int main(int argc, char** argv) {
       const bool retained=counts[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_RESULT]==1 &&
                           counts[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_WAIT]==1;
       status=retained && shared_drain(cx,queue,timers,imports,readiness) && imported_lifts==0?0:1;
+    } else if (!std::strcmp(selected,"retired-import-finally-preserves-cancellation-no-double-ack")) {
+      // Default non-deferred cancellation retires the real import record before
+      // the rejected Promise's genuine async finally is allowed to execute.
+      if(!evaluate(cx,"globalThis.cancelMessage='';globalThis.root=(async()=>{try{await ordinaryImported();}finally{finishImported(1);finishImported(1);}})().catch(error=>{cancelMessage=String(error);rootDone();});",&output))return 10;
+      if(!imports.cancel(cx,1))return 10;
+      const bool retired_before_finally=!imports.hasPending() && imported_finishes==0 &&
+          imported_starts==1 && imported_lifts==0 && drops==1 &&
+          counts[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_WAIT]==0 &&
+          counts[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_RESULT]==0;
+      status=retired_before_finally && shared_drain(cx,queue,timers,imports,readiness) &&
+          imported_finishes==2 && imported_lifts==0 && drops==1 &&
+          expect(cx,"cancelMessage==='activation-runtime-import-cancelled'")?0:1;
+    } else if (!std::strcmp(selected,"resolved-carrier-cancel-preserves-public-rejection-and-fresh-reuse")) {
+      if(!evaluate(cx,"globalThis.cancelMessage='';globalThis.freshAnswer=0;globalThis.root=(async()=>{try{try{globalThis.carrier=ordinaryImported();const id=await carrier;liftImported(id);}finally{finishImported(1);finishImported(1);}}catch(error){cancelMessage=String(error);}globalThis.carrier=null;freshAnswer=liftImported(await ordinaryImported());rootDone();})();",&output))return 10;
+      JS::RootedValue carrier_value(cx);
+      if(!JS_GetProperty(cx,global,"carrier",&carrier_value) || !carrier_value.isObject())return 10;
+      JS::RootedObject carrier(cx,&carrier_value.toObject());
+      // Advance the actual import's readiness and carrier resolution, but do
+      // not run any queued JS reaction/typed lift before real cancellation.
+      if(!readiness.dispatch(cx,true) || !imports.turn(cx))return 10;
+      const bool resolved_before_cancel=JS::GetPromiseState(carrier)==JS::PromiseState::Fulfilled &&
+          imported_lifts==0 && imported_finishes==0 && imported_disposals==0 &&
+          counts[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_RESULT]==1;
+      if(!imports.cancel(cx,1))return 10;
+      const bool retired_before_lift=JS::GetPromiseState(carrier)==JS::PromiseState::Fulfilled &&
+          !imports.hasPending() && imported_finishes==0 && imported_disposals==1 &&
+          imported_lifts==0 && drops==1 && counts[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_RESULT]==0 &&
+          counts[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_WAIT]==0;
+      status=resolved_before_cancel && retired_before_lift &&
+          shared_drain(cx,queue,timers,imports,readiness) && imported_starts==2 &&
+          imported_lifts==1 && imported_finishes==2 && imported_disposals==1 && drops==2 &&
+          !imports.hasPending() && counts[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_RESULT]==0 &&
+          counts[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_WAIT]==0 &&
+          expect(cx,"cancelMessage==='activation-runtime-import-cancelled'&&freshAnswer===42")?0:1;
     } else if (!std::strcmp(selected,"typed-import-lift-finally-preserves-original-error")) {
       if(!evaluate(cx,"globalThis.message='';globalThis.root=ordinaryImported().then(id=>{try{const value=liftImported(id);if(value===42)throw new Error('original lift consumer failure');}finally{}}).catch(error=>{message=error.message;rootDone();});",&output))return 10;
       status=shared_drain(cx,queue,timers,imports,readiness) && imported_lifts==1 &&
@@ -896,7 +963,22 @@ int main(int argc, char** argv) {
 #endif
     if(total)status=1;
     if (timers.hasPending() || imports.hasPending() || !queue.empty() || set_live || host_in_gc) status = 1;
-#ifdef LSF_TYPESCRIPT_BORROW_CONTROLS
+#if defined(LSF_TYPESCRIPT_OWNED_RESULT_CONTROLS)
+    std::printf("{\"case\":\"%s\",\"status\":%d,\"owners\":%u,\"expectedQuarantine\":%s,"
+                "\"subtaskDrops\":%u,\"cancelRequests\":%u,\"exactAckRefusals\":%u,"
+                "\"recordDestroyed\":%s,\"observerDestroyed\":%s,\"dropOrderValid\":%s,"
+                "\"managerBytes\":%zu,\"baselineManagerBytes\":%zu,\"recordBytes\":%zu,"
+                "\"baselineRecordBytes\":%zu,\"recordAlignment\":%zu,\"baselineRecordAlignment\":%zu,"
+                "\"observerBytes\":%zu,\"importStarts\":%u,\"importLifts\":%u,\"importFinishes\":%u,"
+                "\"importDisposals\":%u,\"nativeAdmissions\":%u,\"nativeAcknowledgements\":%u,\"hostcallInGC\":%s}\n",
+        selected,status,total,expected_quarantine?"true":"false",drops,cancel_requests,exact_refusals,
+        record_destroyed?"true":"false",observer_destroyed?"true":"false",drop_order_valid?"true":"false",
+        sizeof(Imports),sizeof(BorrowBaselineImports),ImportBorrowControls::recordBytes(),
+        ImportBorrowControls::baselineRecordBytes(),ImportBorrowControls::recordAlignment(),
+        ImportBorrowControls::baselineRecordAlignment(),sizeof(ImportBorrowObserver),
+        imported_starts,imported_lifts,imported_finishes,imported_disposals,
+        native_admissions,native_acknowledgements,host_in_gc?"true":"false");
+#elif defined(LSF_TYPESCRIPT_BORROW_CONTROLS)
     std::printf("{\"case\":\"%s\",\"status\":%d,\"owners\":%u,\"expectedQuarantine\":%s,"
                 "\"subtaskDrops\":%u,\"cancelRequests\":%u,\"exactAckRefusals\":%u,"
                 "\"recordDestroyed\":%s,\"observerDestroyed\":%s,\"dropOrderValid\":%s,"

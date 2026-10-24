@@ -133,7 +133,8 @@ export function directIdleTaskSlots(source) {
 export function fuseNativeImportAwaits(source, parse) {
   const fail = () => { throw new Error('selected-runtime-native-await-shape-drift'); };
   let tree;
-  try { tree = parse(source, {ecmaVersion: 'latest', sourceType: 'module'}); }
+  const comments = [];
+  try { tree = parse(source, {ecmaVersion: 'latest', sourceType: 'module', onComment: comments}); }
   catch { fail(); }
   const entries = [];
   function walk(node, parents = []) {
@@ -203,6 +204,68 @@ export function fuseNativeImportAwaits(source, parse) {
       node.finalizer.body[0].expression.arguments.length === 1 &&
       identifier(node.finalizer.body[0].expression.arguments[0], '__lsfImportId'));
     if (reservations.length !== 1 || finalizers.length !== 1) fail();
+    // The compiler identifies ErrHandling, then this closed AST check matches
+    // the original FunctionBindgen Return instruction. Evaluate the complete
+    // return/error object BEFORE transferring ownership; arbitrary exceptions
+    // during lifting remain unmarked and quarantine the native record.
+    const markers = comments.filter(comment => comment.start >= fn.start && comment.end <= fn.end &&
+      comment.value.trim().startsWith('lsf-owned-result-transfer:'));
+    if (markers.length !== 1) fail();
+    const mode = markers[0].value.trim();
+    const body = finalizers[0].node.block.body;
+    const text = node => source.slice(node.start, node.end);
+    const taskCall = (node, name) => node?.type === 'ExpressionStatement' &&
+      node.expression.type === 'CallExpression' && node.expression.callee.type === 'MemberExpression' &&
+      !node.expression.callee.computed && identifier(node.expression.callee.object, 'task') &&
+      identifier(node.expression.callee.property, name) ? node.expression : null;
+    const resolve = taskCall(body.at(-3), 'resolve');
+    const exit = taskCall(body.at(-2), 'exit');
+    const returned = body.at(-1);
+    const transfer = node => `__lsfImports.delivered(__lsfImportId, ${text(node)})`;
+    if (mode === 'lsf-owned-result-transfer:wit-result') {
+      const declared = body.at(-5);
+      const resolved = taskCall(body.at(-4), 'resolve');
+      const exited = taskCall(body.at(-3), 'exit');
+      const branch = body.at(-2);
+      const value = node => node?.type === 'MemberExpression' && !node.computed &&
+        identifier(node.object, 'retCopy') && identifier(node.property, 'val');
+      const test = branch?.test;
+      const tag = test?.right;
+      const kind = test?.left;
+      const thrown = branch?.consequent?.body?.[0];
+      if (declared?.type !== 'VariableDeclaration' || declared.kind !== 'const' ||
+          declared.declarations.length !== 1 || !identifier(declared.declarations[0].id, 'retCopy') ||
+          !resolved || resolved.arguments.length !== 1 || resolved.arguments[0].type !== 'ArrayExpression' ||
+          resolved.arguments[0].elements.length !== 1 || !value(resolved.arguments[0].elements[0]) ||
+          !exited || exited.arguments.length !== 0 || returned.type !== 'ReturnStatement' || !value(returned.argument) ||
+          branch?.type !== 'IfStatement' || branch.alternate || branch.consequent.type !== 'BlockStatement' ||
+          branch.consequent.body.length !== 1 || test?.type !== 'LogicalExpression' || test.operator !== '&&' ||
+          kind?.type !== 'BinaryExpression' || kind.operator !== '===' || kind.left.type !== 'UnaryExpression' ||
+          kind.left.operator !== 'typeof' || !identifier(kind.left.argument, 'retCopy') ||
+          kind.right.type !== 'Literal' || kind.right.value !== 'object' ||
+          tag?.type !== 'BinaryExpression' || tag.operator !== '===' || tag.left.type !== 'MemberExpression' ||
+          tag.left.computed || !identifier(tag.left.object, 'retCopy') || !identifier(tag.left.property, 'tag') ||
+          tag.right.type !== 'Literal' || tag.right.value !== 'err' || thrown?.type !== 'ThrowStatement' ||
+          thrown.argument.type !== 'NewExpression' || !identifier(thrown.argument.callee, 'ComponentError') ||
+          thrown.argument.arguments.length !== 1 || !value(thrown.argument.arguments[0])) fail();
+      edits.push({start: thrown.argument.start, end: thrown.argument.end, text: transfer(thrown.argument)});
+      edits.push({start: returned.argument.start, end: returned.argument.end, text: transfer(returned.argument)});
+    } else if (mode === 'lsf-owned-result-transfer:value') {
+      if (returned?.type === 'ReturnStatement' && returned.argument) {
+        if (!resolve || resolve.arguments.length !== 1 || resolve.arguments[0].type !== 'ArrayExpression' ||
+            resolve.arguments[0].elements.length !== 1 || !resolve.arguments[0].elements[0] ||
+            text(resolve.arguments[0].elements[0]) !== text(returned.argument) || !exit || exit.arguments.length !== 0) fail();
+        edits.push({start: returned.argument.start, end: returned.argument.end, text: transfer(returned.argument)});
+      } else {
+        const resolved = taskCall(body.at(-2), 'resolve');
+        const exited = taskCall(returned, 'exit');
+        if (!resolved || resolved.arguments.length !== 1 || resolved.arguments[0].type !== 'ArrayExpression' ||
+            resolved.arguments[0].elements.length !== 1 || !identifier(resolved.arguments[0].elements[0], 'ret') ||
+            !exited || exited.arguments.length !== 0) fail();
+        edits.push({start: returned.end, end: returned.end,
+          text: '\n__lsfImports.delivered(__lsfImportId, undefined);'});
+      }
+    } else fail();
     edits.push({start: arrow.start, end: arrow.end,
       text: `(...lowered) => ${source.slice(native.start, native.end)}`});
     edits.push({start: awaited.start, end: awaited.end,

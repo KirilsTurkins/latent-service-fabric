@@ -1,0 +1,98 @@
+name: TypeScript owned result native prerequisites
+
+on:
+  push:
+    branches: ['feat/typescript-owned-result-disposal-compose-20261024']
+    paths:
+      - '.github/workflows/typescript-owned-results.yml'
+      - 'tools/qualify_typescript_owned_results.py'
+      - 'tools/typescript_guest/**'
+      - 'tools/tests/test_typescript_*owned*.py'
+      - 'tools/tests/test_typescript_native_await.py'
+      - 'tools/tests/test_typescript_native_task_meta.py'
+      - 'tools/tests/test_typescript_import_cancellation.py'
+      - 'sdk/typescript-guest/activation/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: typescript-owned-results-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  native-prerequisites:
+    name: Fresh normal OWN compiler engine and actual native controls
+    runs-on: ubuntu-24.04
+    # Covers checkout, setup, all commands and artifact retention together.
+    timeout-minutes: 90
+    permissions:
+      contents: read
+      actions: read
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - name: Start the aggregate setup and programme clock
+        run: python3 -c 'import os,time;open(os.environ["GITHUB_ENV"],"a").write("LSF_OWN_CAMPAIGN_STARTED_NS="+str(time.time_ns())+"\n")'
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.19.0
+          package-manager-cache: false
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+        with:
+          targets: wasm32-wasip1
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - name: Install locked Python controls
+        run: python3 -m pip install --requirement tools/requirements.lock
+      - name: Make the immutable pre-OWN ABI baseline available
+        run: git fetch --no-tags --depth=1 origin 17b2558bf08f2221657a5d2866b00218fb597d9e
+      - name: Install the normal pinned bindings generator
+        run: python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/typescript-own-bindgen"
+      - name: Install the normal locked public compiler and parser
+        run: python3 tools/typescript_capsule.py install-tools "$RUNNER_TEMP/typescript-own-tools"
+      - name: Reconstruct normal library and build fresh compiler engine and native controls
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 tools/qualify_typescript_owned_results.py \
+            --tools "$RUNNER_TEMP/typescript-own-tools" \
+            --wit-bindgen "$RUNNER_TEMP/typescript-own-bindgen/wit-bindgen" \
+            --output "$RUNNER_TEMP/typescript-own-controls"
+      - name: Retain actual fresh products source identities native rows and failures
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: typescript-own-controls-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/typescript-own-controls/*.json
+            ${{ runner.temp }}/typescript-own-controls/*.log
+            ${{ runner.temp }}/typescript-own-controls/*.wasm
+            ${{ runner.temp }}/typescript-own-controls/*.o
+            ${{ runner.temp }}/typescript-own-controls/control-includes/**
+            ${{ runner.temp }}/typescript-own-controls/lifecycle-includes/**
+            ${{ runner.temp }}/typescript-own-controls/library-inputs/*.json
+            ${{ runner.temp }}/typescript-own-controls/library-inputs/library/*.json
+            ${{ runner.temp }}/typescript-own-controls/splicer/*.json
+            ${{ runner.temp }}/typescript-own-controls/splicer/*.log
+            ${{ runner.temp }}/typescript-own-controls/splicer/splicer/**
+            ${{ runner.temp }}/typescript-own-controls/engine/*.json
+            ${{ runner.temp }}/typescript-own-controls/engine/*.log
+            ${{ runner.temp }}/typescript-own-controls/engine/*.wasm
+            ${{ runner.temp }}/typescript-own-controls/engine/spidermonkey/**
+            ${{ runner.temp }}/typescript-own-controls/engine/jobs-generated/**
+            ${{ runner.temp }}/typescript-own-controls/engine/clocks-generated/**
+            ${{ runner.temp }}/typescript-own-controls/normal-support/*.json
+            ${{ runner.temp }}/typescript-own-controls/normal-support/*.o
+            ${{ runner.temp }}/typescript-own-controls/normal-support/rust-staticlib/**
+            ${{ runner.temp }}/typescript-own-controls/normal-support/target/wasm32-wasip1/release/librust_staticlib.a
+          if-no-files-found: warn
+          retention-days: 7

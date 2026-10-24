@@ -17,6 +17,8 @@ class Imports final {
 #ifdef LSF_TYPESCRIPT_BORROW_CONTROLS
   friend struct ImportBorrowControls;
 #endif
+  enum class Disposition { Unproduced, Produced, Lifting, Delivered, Disposed, Quarantined };
+  using ResourceDisposer = bool (*)(uint32_t);
   struct Record {
     // Accounting is per record so multiple parked imports cannot overwrite
     // another import's running/lifting state.
@@ -31,7 +33,8 @@ class Imports final {
     size_t parameter_size = 0;
     uint32_t id = 0;
     bool promise_settled = false;
-    bool result_consumed = false;
+    Disposition disposition = Disposition::Unproduced;
+    ResourceDisposer disposer = nullptr;
     ImportRawResult raw_kind = ImportRawResult::None;
     std::unique_ptr<Record> following;
     JSContext* cx;
@@ -160,6 +163,23 @@ class Imports final {
     item.promise_settled = true;
     return true;
   }
+  bool cancelRecord(JSContext* cx, Record& item) {
+    if (!item.lifecycle.cancel(cx)) return false;
+    if (!item.lifecycle.hasReturnedResult()) return true;
+    if (item.disposition == Disposition::Unproduced) item.disposition = Disposition::Produced;
+    if (item.disposition != Disposition::Produced || !item.disposer)
+      return invalid(cx,"resource-disposal-state");
+    // A drop may remove its canonical handle before its destructor traps. Mark
+    // non-retryable and retain every owner BEFORE entering the first intrinsic.
+    item.disposition = Disposition::Quarantined;
+    const bool was_stopped = stopped_;
+    stopped_ = true;
+    if (!item.disposer(static_cast<uint32_t>(reinterpret_cast<uintptr_t>(item.result))))
+      return invalid(cx,"resource-disposal-refused");
+    item.disposition = Disposition::Disposed;
+    stopped_ = was_stopped;
+    return item.lifecycle.discardCompleted(cx);
+  }
 public:
   Imports(BrokerAccounting& jobs, BrokerPromiseAccounting& native, ReadinessSet& readiness)
       : jobs_(jobs), native_(native), readiness_(readiness) {}
@@ -227,8 +247,16 @@ public:
   }
   bool beginLowering(JSContext* cx, uint32_t id) {
     auto* item = find(id);
-    if (!item) return invalid(cx, "lower-record");
+    if (!item || !item->disposer) return invalid(cx, "lower-record");
     return item->lifecycle.beginLowering(cx);
+  }
+  bool setDisposer(JSContext* cx,uint32_t id,ResourceDisposer disposer,uint32_t result_bytes) {
+    auto* item=find(id);
+    if (!item || !disposer || item->disposer || item->result_size!=result_bytes ||
+        item->lifecycle.phase()!=ImportLifecycle::Phase::Reserved)
+      return invalid(cx,"resource-disposer-registration");
+    item->disposer=disposer;
+    return true;
   }
   bool started(JSContext* cx, uint32_t id, jobs_subtask_status_t status, JS::MutableHandleObject promise) {
     auto* item = find(id);
@@ -246,7 +274,7 @@ public:
         phase = item->lifecycle.phase();
       }
       if (phase == ImportLifecycle::Phase::Cancelled) {
-        if (!rejectCancelled(cx, *item) || !item->lifecycle.cancel(cx)) return quarantineBorrow(cx, *item);
+        if (!rejectCancelled(cx, *item) || !cancelRecord(cx, *item)) return quarantineBorrow(cx, *item);
         return collect(cx);
       }
       if (phase != ImportLifecycle::Phase::Returned || item->promise_settled) continue;
@@ -262,31 +290,67 @@ public:
     auto* item = find(id);
     if (!item || !item->promise_settled) return invalid(cx, "lift-record");
     if (!item->lifecycle.beginLifting(cx)) return false;
+    if (item->disposition != Disposition::Unproduced && item->disposition != Disposition::Produced)
+      return invalid(cx,"result-transfer");
+    item->disposition = Disposition::Lifting;
     buffer = item->result;
     return true;
   }
   bool liftValue(JSContext* cx, uint32_t id, JS::MutableHandleValue value) {
     auto* item = find(id);
     void* buffer = nullptr;
-    if (!item) return invalid(cx, "lift-record");
+    if (!item) {
+      if (id != 0 && (next_id_ == 0 || id < next_id_)) {
+        // The private carrier may resolve before cancellation retires its
+        // record. Preserve the same logical rejection when its queued typed
+        // lift finally runs. This also rejects private duplicate retired lifts;
+        // it returns no value and performs no retirement or acknowledgement.
+        if (JS_IsExceptionPending(cx)) return false;
+        JS::RootedString message(cx, JS_NewStringCopyZ(cx, "activation-runtime-import-cancelled"));
+        if (!message) return false;
+        JS::RootedValue reason(cx, JS::StringValue(message));
+        JS_SetPendingException(cx, reason);
+        return false;
+      }
+      return invalid(cx, "lift-record");
+    }
     if (!beginLifting(cx,id,buffer)) return false;
     return lift_raw_import(cx,buffer,item->result_size,item->raw_kind,value);
   }
   bool liftCompleted(JSContext* cx, uint32_t id) {
     auto* item = find(id);
-    if (!item) return invalid(cx, "finish-record");
+    if (!item) {
+      // A cancelled record can physically retire before its rejected Promise's
+      // generated finally executes. IDs are monotonic and never reused. This
+      // terminal no-op performs no drop, settlement, ACK or quarantine reset.
+      if (id != 0 && (next_id_ == 0 || id < next_id_)) return true;
+      return invalid(cx, "finish-record");
+    }
     if(item->lifecycle.phase()!=ImportLifecycle::Phase::Lifting) {
-      if (!item->lifecycle.cancel(cx)) return quarantineBorrow(cx, *item);
+      if (!cancelRecord(cx,*item)) return quarantineBorrow(cx,*item);
       return collect(cx);
     }
+    if (item->disposition != Disposition::Delivered) {
+      item->disposition=Disposition::Quarantined;
+      stopped_=true;
+      (void)invalid(cx,"partial-typed-lift");
+      return quarantineBorrow(cx,*item);
+    }
     if (!item->lifecycle.liftCompleted(cx)) return quarantineBorrow(cx, *item);
-    item->result_consumed = true;
     return collect(cx);
+  }
+  bool delivered(JSContext* cx,uint32_t id) {
+    auto* item=find(id);
+    if (!item || item->lifecycle.phase()!=ImportLifecycle::Phase::Lifting ||
+        item->disposition!=Disposition::Lifting)
+      return invalid(cx,"typed-delivery");
+    item->disposition=Disposition::Delivered;
+    return true;
   }
   bool cancel(JSContext* cx, uint32_t id) {
     auto* item = find(id);
     if (!item) return invalid(cx, "cancel-record");
-    return rejectCancelled(cx, *item) && item->lifecycle.cancel(cx) && collect(cx);
+    return rejectCancelled(cx, *item) && cancelRecord(cx, *item) && collect(cx);
   }
   bool watchBorrow(JSContext* cx, uint32_t id, JS::MutableHandleObject handle) {
     auto* item = find(id);
@@ -369,7 +433,7 @@ public:
   bool cancelAll(JSContext* cx) {
     stopped_ = true;
     for (auto* item = records_.get(); item; item = item->following.get())
-      if (!item->lifecycle.cancel(cx)) return quarantineBorrow(cx, *item);
+      if (!cancelRecord(cx, *item)) return quarantineBorrow(cx, *item);
     return collect(cx) && !hasPending();
   }
   bool hasPending() const {
