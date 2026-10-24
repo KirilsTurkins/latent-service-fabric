@@ -167,6 +167,17 @@ build and its first signed execution attempt are recorded in
 [Java activation fibers](../runtime/java-activation-fibers.md); that invocation
 failed and does not establish complete CompletableFuture execution support.
 
+The [normal checkpoint compiler repair evidence](../testing/java-checkpoint-normal-source-evidence.json)
+binds the original and corrected JVM controls and the actual CTarget build.
+The pinned private `Fiber.start()` baseline now receives TeaVM's original
+reference-resolution and class-initialization passes before exact comparison;
+unknown instructions and changed class identities still refuse. The actual
+normal authoring build passed CTarget generation and core compilation, then
+refused component assembly at the unchanged function-body size limit of
+7,654,321 bytes. Its core inputs were not retained, so the offending function
+is not yet identified. This is a compiler boundary result, not Java runtime,
+GC, signed-execution or complete standard-library qualification.
+
 `--read-only-cache /path/to/modules-2` selects a verified immutable Gradle
 dependency cache. Gradle writes locks and updates to the build's private home.
 Choose one cache mode per build. Profile selection does not change invocation

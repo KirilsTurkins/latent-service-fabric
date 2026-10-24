@@ -176,9 +176,10 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
         // Never resolve this baseline through an application classpath. Both
         // host classes must come from the same authenticated compiler JAR,
         // whose nonreplacement entries the owned compiler recipe preserves.
+        int stage = 1;
         try {
             if (Fiber.class.getClassLoader() != AsyncMethodFinder.class.getClassLoader()) {
-                return false;
+                return fiberEntryRefusal(stage);
             }
             java.nio.file.Path jar = java.nio.file.Path.of(Fiber.class.getProtectionDomain()
                     .getCodeSource().getLocation().toURI()).toRealPath();
@@ -186,36 +187,65 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
                     .getProtectionDomain().getCodeSource().getLocation().toURI()).toRealPath();
             if (!jar.equals(finderJar) || !java.nio.file.Files.isRegularFile(jar,
                     java.nio.file.LinkOption.NOFOLLOW_LINKS) || java.nio.file.Files.size(jar) > 67108864) {
-                return false;
+                return fiberEntryRefusal(stage);
             }
+            stage = 2;
             try (java.util.zip.ZipFile zip = new java.util.zip.ZipFile(jar.toFile())) {
                 java.util.zip.ZipEntry entry = zip.getEntry("org/teavm/runtime/Fiber.class");
                 if (entry == null || entry.getSize() <= 0 || entry.getSize() > 131072) {
-                    return false;
+                    return fiberEntryRefusal(stage);
                 }
             }
             try (org.teavm.parsing.resource.ResourceProvider provider =
                     org.teavm.parsing.resource.ResourceProvider.ofClassPath(
                             Collections.singletonList(jar.toFile()))) {
                 // Match TeaVMTool's pinned nonincremental production source pass.
-                ClassReader pinned = new org.teavm.model.PreOptimizingClassHolderSource(
+                org.teavm.model.ClassHolderSource pinnedSource = new org.teavm.model.PreOptimizingClassHolderSource(
                         new org.teavm.parsing.resource.ResourceBytecodeClassHolderSource(
-                                provider, new org.teavm.model.ReferenceCache())).get(Fiber.class.getName());
-                MethodReader expected = pinned == null ? null : pinned.getMethod(method.getDescriptor());
+                                provider, new org.teavm.model.ReferenceCache()));
+                org.teavm.model.ClassHolder pinned = pinnedSource.get(Fiber.class.getName());
+                org.teavm.model.MethodHolder expected = pinned == null ? null : pinned.getMethod(method.getDescriptor());
+                stage = 3;
                 if (expected == null || expected.getLevel() != org.teavm.model.AccessLevel.PRIVATE
                         || expected.hasModifier(ElementModifier.STATIC)) {
-                    return false;
+                    return fiberEntryRefusal(stage);
                 }
                 for (ElementModifier modifier : ElementModifier.values()) {
                     if (method.hasModifier(modifier) != expected.hasModifier(modifier)) {
-                        return false;
+                        return fiberEntryRefusal(stage);
                     }
                 }
-                return sameFiberEntryBody(expected.getProgram(), method.getProgram());
+                stage = 2;
+                // DependencyClassSource's pinned normal program-supplier pass.
+                // Resolve only against this same authenticated compiler JAR,
+                // never dependency/application class sources or host resources.
+                org.teavm.diagnostics.AccumulationDiagnostics diagnostics =
+                        new org.teavm.diagnostics.AccumulationDiagnostics();
+                org.teavm.dependency.ReferenceResolver resolver = new org.teavm.dependency.ReferenceResolver(
+                        pinnedSource, new String[] { org.teavm.interop.Platforms.C,
+                                org.teavm.interop.Platforms.LOW_LEVEL, org.teavm.interop.Platforms.OWN_GC }, diagnostics);
+                org.teavm.model.Program program = expected.getProgram();
+                if (program == null) {
+                    return fiberEntryRefusal(stage);
+                }
+                resolver.use(expected.getReference());
+                resolver.resolve(expected, program);
+                if (!diagnostics.getSevereProblems().isEmpty()) {
+                    return fiberEntryRefusal(stage);
+                }
+                new org.teavm.model.transformation.ClassInitInsertion(pinnedSource).apply(expected, program);
+                stage = 4;
+                return sameFiberEntryBody(program, method.getProgram()) || fiberEntryRefusal(stage);
             }
         } catch (Exception failure) {
-            return false; // Unavailable or changed proof cannot establish a context boundary.
+            return fiberEntryRefusal(stage); // Unavailable proof cannot establish a context boundary.
         }
+    }
+
+    private boolean fiberEntryRefusal(int stage) {
+        // Four fixed compiler-owned categories; no paths, names, IR or exception text.
+        System.err.println("latent.java.checkpoint-entry.v1 " + stage);
+        return false;
     }
 
     private org.teavm.model.Program boundedFiberEntryBody(ProgramReader program) {
@@ -300,6 +330,9 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
             // The pinned preoptimized body retains operandless NOPs. Their
             // concrete type, position and count remain part of exact equality.
             return true;
+        } else if (first instanceof org.teavm.model.instructions.InitClassInstruction) {
+            return ((org.teavm.model.instructions.InitClassInstruction) first).getClassName().equals(
+                    ((org.teavm.model.instructions.InitClassInstruction) second).getClassName());
         } else if (first instanceof org.teavm.model.instructions.GetFieldInstruction) {
             org.teavm.model.instructions.GetFieldInstruction left =
                     (org.teavm.model.instructions.GetFieldInstruction) first;

@@ -1,0 +1,322 @@
+{
+  "schemaVersion": "latent.java.checkpoint-normal-source-evidence.v1",
+  "status": "jvm-and-ctarget-core-compilation-passed-later-assembly-refused",
+  "scope": "normal-compiler checkpoint boundary proof; no guest/runtime or GC qualification",
+  "sourceHeads": {
+    "jvm": "03f9846a0097a8b7f2a601b9e6c1b65d66332afc",
+    "normalAuthoring": "a01b0566b5286106da56206e3df878103572ebbc",
+    "normalIncludesReviewedSecurityTip": "e794703682617c75d6f7eda59c0da24b169f3cd7"
+  },
+  "repair": "Apply the original ReferenceResolver and ClassInitInsertion passes to the same-JAR authenticated private Fiber baseline; compare InitClass identity exactly and preserve all other guards and unknown-instruction refusals.",
+  "compilerSources": {
+    "sdk/java-guest/fibers/compiler/dev/latent/guest/runtime/compiler/ContinuationProgram.java": {
+      "sha256": "sha256:fc7253b0e968b1d9d961a14f72ae3a7a1d32ffdd61eb3d9be4e9c3e16c79b278",
+      "bytes": 873
+    },
+    "sdk/java-guest/fibers/compiler/dev/latent/guest/runtime/compiler/MonitorContinuations.java": {
+      "sha256": "sha256:4820f3b9a4a76c22b6c6110488c98f7094fae05f4d4c628513206491b057a587",
+      "bytes": 10375
+    },
+    "sdk/java-guest/fibers/compiler/dev/latent/guest/runtime/compiler/RuntimePlugin.java": {
+      "sha256": "sha256:b1bf408e2ad9ea8b7f26e15c4512934db21d1114bcf0a3a45f2615d72618ba18",
+      "bytes": 12822
+    },
+    "sdk/java-guest/fibers/compiler/dev/latent/guest/runtime/compiler/RuntimeSubstitution.java": {
+      "sha256": "sha256:7f5c0b54e8ec17ac62f79224914105da4085cb8f73792c025cb27786240006f4",
+      "bytes": 1334
+    },
+    "sdk/java-guest/fibers/compiler/dev/latent/guest/runtime/compiler/SleepContinuations.java": {
+      "sha256": "sha256:ff3318393a22fac68998cf7ba6e219e71f454e6e5bf53162ae583f07a5609161",
+      "bytes": 9183
+    },
+    "sdk/java-guest/fibers/compiler/dev/latent/guest/runtime/compiler/StandardTimerMethods.java": {
+      "sha256": "sha256:5673a2bd563b1727ccbebe0fcefbb7b02eb05a481f0b1288580b22b70db9a125",
+      "bytes": 3328
+    },
+    "sdk/java-guest/fibers/compiler/dev/latent/guest/runtime/compiler/SynchronizedMethods.java": {
+      "sha256": "sha256:c8942a70c5f6b0dd789474f7238eb0db2e2dce9ff02561d52c6e9d4b858f202e",
+      "bytes": 3528
+    },
+    "sdk/java-guest/fibers/compiler/dev/latent/guest/runtime/compiler/ThrowableInitialization.java": {
+      "sha256": "sha256:e8e69c388a711c5630c0adc8b4f10e2ab913f27dacb5bc524ab1ac67e23bbc98",
+      "bytes": 3945
+    },
+    "sdk/java-guest/fibers/compiler/dev/latent/guest/runtime/compiler/TimeUnitMethods.java": {
+      "sha256": "sha256:33f89cb353b7a2a01049d883094872a5d8ff60e6ee48bef39da42f45221a9e81",
+      "bytes": 4229
+    },
+    "sdk/java-guest/fibers/compiler/dev/latent/guest/runtime/compiler/WaitContinuations.java": {
+      "sha256": "sha256:e0f0c8a78d0b51b46c9d671c93e085717750934af415aa9a46d18e710c3b64f8",
+      "bytes": 7510
+    },
+    "sdk/java-guest/fibers/conformance/compiler/CheckpointContextControl.java": {
+      "sha256": "sha256:95e877f778eb1d84010c5f06d061431cba7b798f2d5160896742db97d8824a00",
+      "bytes": 23873
+    },
+    "sdk/java-guest/fibers/compiler-patch/AsyncMethodFinder.java": {
+      "sha256": "sha256:510b04fa6db5c0a47dc9656643bb3b1af0a104ed66cfb32786b88f93bbb4740d",
+      "bytes": 10518
+    },
+    "tools/java_guest/coroutine_patch.py": {
+      "sha256": "sha256:1e11f1a5cf659091d65a9ca49e74ad005919d863783bc0ca04661dcfb64d2e29",
+      "bytes": 46481
+    },
+    "tools/qualify_java_checkpoint_context.py": {
+      "sha256": "sha256:fdb163f77496270a4f1003a48ce0e9deeb803d7c72e177078e7ae2c2d5910590",
+      "bytes": 9488
+    },
+    "sdk/java-guest/feasibility/dependencies.lock.json": {
+      "sha256": "sha256:4fa10515cc8e0471acdc44a4f9f3edd85bd2ad7536ca6217e4da8fb7e03351f4",
+      "bytes": 16525
+    },
+    "sdk/java-guest/feasibility/gradle/verification-metadata.xml": {
+      "sha256": "sha256:2e333bdd477b54277c43a60f8629da89420e246f19ec6430ccb957ab7df11a30",
+      "bytes": 46640
+    }
+  },
+  "compilerSourcesIdenticalAcrossQualifiedHeads": true,
+  "jvm": {
+    "run": 40084461400,
+    "job": 120844425097,
+    "url": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40084461400",
+    "artifactId": 12556935148,
+    "archive": {
+      "bytes": 5848,
+      "sha256": "sha256:729ab35710ebb237be5f4767c4893497adc2ac451a90455a798ff50e2c93cf07"
+    },
+    "safeCRCmembers": 12,
+    "controls": [
+      {
+        "mode": "original",
+        "result": "CHECKPOINT_CONTEXT_CONTROL PASS original;direct;multihop;shared;virtual;class-unmanaged;managed-cycle;pinned-managed-entry;altered-entry-negatives;unresolved;bound;real-late-completion"
+      },
+      {
+        "mode": "corrected",
+        "result": "CHECKPOINT_CONTEXT_CONTROL PASS corrected;direct;multihop;shared;virtual;class-unmanaged;managed-cycle;pinned-managed-entry;altered-entry-negatives;unresolved;bound;real-late-completion"
+      }
+    ],
+    "commands": [
+      {
+        "stage": "checkpoint-context-jdk",
+        "exitCode": 0,
+        "seconds": 0.035814
+      },
+      {
+        "stage": "checkpoint-context-control-compile",
+        "exitCode": 0,
+        "seconds": 1.380675
+      },
+      {
+        "stage": "checkpoint-context-finder-compile",
+        "exitCode": 0,
+        "seconds": 0.995038
+      },
+      {
+        "stage": "checkpoint-context-original",
+        "exitCode": 0,
+        "seconds": 0.29907
+      },
+      {
+        "stage": "checkpoint-context-corrected",
+        "exitCode": 0,
+        "seconds": 0.514231
+      }
+    ],
+    "finderClasses": {
+      "org/teavm/model/util/AsyncMethodFinder$AsyncInstructionReader.class": {
+        "sha256": "sha256:431c8acd31088ea13c486b93d9296d269ac5129a3c080f3dcb34d9a5eb24d366",
+        "bytes": 448
+      },
+      "org/teavm/model/util/AsyncMethodFinder$CallStack.class": {
+        "sha256": "sha256:fb1554aa18b867d4f9f17ca1686c77bf24d6ee9381d207fed6fbba8e08f21aee",
+        "bytes": 1278
+      },
+      "org/teavm/model/util/AsyncMethodFinder.class": {
+        "sha256": "sha256:7823b57b5f81d77b8fd9bfec9bd4d0660ff863115c38011175c61b30723fdb73",
+        "bytes": 18074
+      }
+    },
+    "correctedSource": {
+      "sha256": "sha256:da41b8ba83adc2d681568ffb6febcceced1df90a18c56d6488770695e517cff9",
+      "bytes": 28910
+    },
+    "compilerOverlay": {
+      "originalCore": {
+        "sha256": "sha256:501ca5eae7a835cd6278c822685f32800fa0818e3f42204afc9b558408c943df",
+        "bytes": 2956367
+      },
+      "selectedCore": {
+        "sha256": "sha256:381498ebfc4264207d172a9ad9da81ebf13a12eceaac7ec022488189e4524a51",
+        "bytes": 2937035
+      },
+      "replacedClasses": [
+        "org/teavm/model/util/AsyncMethodFinder$AsyncInstructionReader.class",
+        "org/teavm/model/util/AsyncMethodFinder$CallStack.class",
+        "org/teavm/model/util/AsyncMethodFinder.class"
+      ],
+      "unchangedEntries": 1874,
+      "unchangedFiberClass": {
+        "bytes": 9799,
+        "sha256": "88c9972155df3fad727253caf68f7359534a0639386571b2eb5680fa17fee605"
+      }
+    },
+    "rawMembers": {
+      "result.json": {
+        "bytes": 8115,
+        "sha256": "sha256:e7904cdf1d7964f40ee167b75cb2edbae6956b878d6d3e512ceaada675f32e81"
+      },
+      "commands.json": {
+        "bytes": 491,
+        "sha256": "sha256:d20108f1fbb5ebe3664f5ede6879c966a3b513be7965252fb216155da021d751"
+      },
+      "commands/logs/00-checkpoint-context-jdk.stderr.txt": {
+        "bytes": 0,
+        "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "commands/logs/00-checkpoint-context-jdk.stdout.txt": {
+        "bytes": 190,
+        "sha256": "sha256:2ea09eaf7b3c2db5256b076f18d3758d1f2a5746384c9f6b58a2c5d244864971"
+      },
+      "commands/logs/01-checkpoint-context-control-compile.stderr.txt": {
+        "bytes": 0,
+        "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "commands/logs/01-checkpoint-context-control-compile.stdout.txt": {
+        "bytes": 0,
+        "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "commands/logs/02-checkpoint-context-finder-compile.stderr.txt": {
+        "bytes": 0,
+        "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "commands/logs/02-checkpoint-context-finder-compile.stdout.txt": {
+        "bytes": 0,
+        "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "commands/logs/03-checkpoint-context-original.stderr.txt": {
+        "bytes": 0,
+        "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "commands/logs/03-checkpoint-context-original.stdout.txt": {
+        "bytes": 185,
+        "sha256": "sha256:b9bee004fa279d8c787544d7610905305732cae5c0ea324a81bc676fcba8c31a"
+      },
+      "commands/logs/04-checkpoint-context-corrected.stderr.txt": {
+        "bytes": 1662,
+        "sha256": "sha256:41cd82ce5c60f00ff0deff71c9b759756d5908b331d9a2e59798d1e9c302ea41"
+      },
+      "commands/logs/04-checkpoint-context-corrected.stdout.txt": {
+        "bytes": 186,
+        "sha256": "sha256:24a8bd1f1cf672b53a547847d227d48c1baa1d0bc84cb685adbbd7dbf74d2bb6"
+      }
+    }
+  },
+  "normalAuthoring": {
+    "run": 40085305589,
+    "job": 120846917980,
+    "url": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40085305589",
+    "artifactId": 12557665357,
+    "archive": {
+      "bytes": 70890754,
+      "sha256": "sha256:2cd22266ce2b20bbd1d6269d470fa326966721b2a2121815c349196974f28cd5"
+    },
+    "safeCRCmembers": 3828,
+    "stages": {
+      "java-to-c": {
+        "exitCode": 0,
+        "seconds": 16.943616
+      },
+      "c-to-wasm": {
+        "exitCode": 0,
+        "seconds": 227.527646
+      },
+      "closed-runtime": {
+        "exitCode": 0,
+        "seconds": 0.01485
+      },
+      "component-new": {
+        "exitCode": 1,
+        "seconds": 0.035187
+      }
+    },
+    "actualCompilerLoader": {
+      "sourceKind": "byte-identical-copy",
+      "sourceSha256": "c72cb5b6b7798e8193002e5e1f72c6d79358efcb91c8c7aaaab87a72b030233c",
+      "expectedSha256": "c72cb5b6b7798e8193002e5e1f72c6d79358efcb91c8c7aaaab87a72b030233c"
+    },
+    "rawMembers": {
+      "java-activation-fibers/compiler/34-java-to-c.command.json": {
+        "bytes": 178,
+        "sha256": "sha256:eb97fb152182539ee571ff6c1bcf44b22128c7a8bd6833cf433f7aeafb4f0207"
+      },
+      "java-activation-fibers/compiler/34-java-to-c.log": {
+        "bytes": 921,
+        "sha256": "sha256:baea588c455d74cf63e9a8a9bb0e9932e2aeae80d67cd536379920245a226d1e"
+      },
+      "java-activation-fibers/compiler/35-c-to-wasm.command.json": {
+        "bytes": 1479,
+        "sha256": "sha256:9e59788f1f90958e40eaf8b9b4856592cffb09d95eb591e9a45e8aef45bb5772"
+      },
+      "java-activation-fibers/compiler/35-c-to-wasm.log": {
+        "bytes": 215852,
+        "sha256": "sha256:ab20042fa1c07da8ffd8ab40f3c93a1d0d849772025185c7a4c8ef76f23e4d5a"
+      },
+      "java-activation-fibers/compiler/36-closed-runtime.command.json": {
+        "bytes": 473,
+        "sha256": "sha256:31311e5fb88cfb3addbce0e41779be4f983474c21db2a7074378488cfd2e6e64"
+      },
+      "java-activation-fibers/compiler/36-closed-runtime.log": {
+        "bytes": 1,
+        "sha256": "sha256:01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      },
+      "java-activation-fibers/compiler/37-component-new.command.json": {
+        "bytes": 437,
+        "sha256": "sha256:e23390f14c801625c5d268236ffe7f04b806161693c1b5fb0d1c6ad195eb09d7"
+      },
+      "java-activation-fibers/compiler/37-component-new.log": {
+        "bytes": 207,
+        "sha256": "sha256:66f8c08c25725ee66f1ce601b2df62899f9fb1d4f19bfc253ce81cab65849a0c"
+      },
+      "java-activation-fibers/src/Capsule.java": {
+        "bytes": 12668,
+        "sha256": "sha256:6a2f7a5a13b3295761b0f18989e47cc7ff106a7c9546c559492247fcd36430c8"
+      },
+      "java-activation-fibers/wit/service.wit": {
+        "bytes": 340,
+        "sha256": "sha256:14c7bb47a7634153b4dcf39473a31f7f87f971f8c90a602b378be498dc938236"
+      },
+      "java-activation-fibers/build/runtime-profile.json": {
+        "bytes": 525,
+        "sha256": "sha256:2784c7cff8b5e7969077225c73249f33a1994b783dee9402d6c195565c1e544c"
+      }
+    },
+    "failedStage": "component-new",
+    "failure": "function body size count exceeds limit of 7654321 (at offset 0xa571)",
+    "coreOrAdapterRetained": false,
+    "offendingFunctionIdentity": null
+  },
+  "fixedParserLimit": {
+    "version": "wasm-tools 1.254.0",
+    "name": "MAX_WASM_FUNCTION_SIZE",
+    "value": 7654321,
+    "source": "https://raw.githubusercontent.com/bytecodealliance/wasm-tools/v1.254.0/crates/wasmparser/src/limits.rs",
+    "sourceMaterial": {
+      "bytes": 4336,
+      "sha256": "sha256:b14e783dfcbf2e56967f68b5e8d89a0d50216027220cd7926e20840e878f22b7"
+    },
+    "limitChanged": false
+  },
+  "qualification": {
+    "originalAndCorrectedJvmControlsPassed": true,
+    "actualNormalCTargetPassed": true,
+    "actualCoreCompilationPassed": true,
+    "normalAuthoringCompleted": false,
+    "componentBuilt": false,
+    "guestExecutionQualified": false,
+    "gcOrNativeRuntimeQualified": false,
+    "signedExecutionQualified": false,
+    "fullJavaStandardLibraryQualified": false,
+    "ticketClosed": false
+  },
+  "remaining": "Retain the two bounded fixed-public assembly inputs before identifying the oversized function. No runtime or GC investigation, parser-limit increase or complete #741 closure is claimed."
+}
