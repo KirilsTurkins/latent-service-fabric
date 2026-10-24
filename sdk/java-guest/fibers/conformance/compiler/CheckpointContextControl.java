@@ -117,6 +117,23 @@ public final class CheckpointContextControl {
                     new org.teavm.parsing.resource.ResourceBytecodeClassHolderSource(provider, new ReferenceCache()));
             var cls = source.get("org.teavm.runtime.Fiber");
             require(cls != null, "actual-pinned-fiber-class-reader");
+            var entry = cls.getMethod(new MethodDescriptor("start", ValueType.VOID));
+            require(entry != null && entry.getProgram() != null, "actual-pinned-private-entry-program");
+            var diagnostics = new AccumulationDiagnostics();
+            var resolver = new ReferenceResolver(source, new String[] { org.teavm.interop.Platforms.C,
+                    org.teavm.interop.Platforms.LOW_LEVEL, org.teavm.interop.Platforms.OWN_GC }, diagnostics);
+            resolver.use(entry.getReference());
+            resolver.resolve(entry, entry.getProgram());
+            require(diagnostics.getSevereProblems().isEmpty(), "original-normal-entry-resolution");
+            new org.teavm.model.transformation.ClassInitInsertion(source).apply(entry, entry.getProgram());
+            int initializations = 0;
+            for (var block : entry.getProgram().getBasicBlocks()) for (var instruction : block) {
+                if (instruction instanceof InitClassInstruction init) {
+                    require(init.getClassName().equals("org.teavm.runtime.Fiber"), "normal-entry-init-class-identity");
+                    initializations++;
+                }
+            }
+            require(initializations == 1, "original-normal-entry-class-init-inserted");
             return ModelUtils.copyClass(cls);
         }
     }
@@ -241,6 +258,17 @@ public final class CheckpointContextControl {
                 new AnnotationHolder("org.teavm.interop.Unmanaged"));
         if (corrected) diagnosePinnedEntry(entry, entryMethod);
         find(entry, corrected, null);
+        boolean wrongInitialization = false;
+        for (var block : entryMethod.getProgram().getBasicBlocks()) for (var instruction : block) {
+            if (instruction instanceof InitClassInstruction init) {
+                init.setClassName("java.lang.Object");
+                wrongInitialization = true;
+            }
+        }
+        require(wrongInitialization, "actual-normal-entry-init-class-mutated");
+        find(entry, corrected, "java-checkpoint-unresolved-741");
+        entry.source.putClassHolder(ModelUtils.copyClass(pinned));
+        entryMethod = entry.source.get(managedEntry.getClassName()).getMethod(managedEntry.getDescriptor());
         boolean replacedNop = false;
         outer: for (var block : entryMethod.getProgram().getBasicBlocks()) for (var instruction : block) {
             if (instruction instanceof EmptyInstruction) {
