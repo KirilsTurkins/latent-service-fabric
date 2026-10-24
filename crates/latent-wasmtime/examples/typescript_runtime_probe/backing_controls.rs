@@ -22,7 +22,10 @@ struct State {
 pub(super) fn run(engine: &Engine, directory: &Path) -> wasmtime::Result<()> {
     let manifest = std::fs::read(directory.join("manifest.json"))?;
     wasmtime::ensure!(manifest.len() <= 32768, "backing-core-manifest-bound");
-    let manifest_sha = format!("{:x}", Sha256::digest(&manifest));
+    let manifest_sha = Sha256::digest(&manifest)
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect::<String>();
     let rows: Vec<serde_json::Value> = serde_json::from_slice(&manifest)?;
     wasmtime::ensure!(rows.len() == CASES.len(), "backing-core-exact-case-set");
     let mut actual = std::fs::read_dir(directory)?
@@ -71,7 +74,10 @@ pub(super) fn run(engine: &Engine, directory: &Path) -> wasmtime::Result<()> {
             "backing-core-exact-module-bound"
         );
         let bytes = std::fs::read(path)?;
-        let sha = format!("{:x}", Sha256::digest(&bytes));
+        let sha = Sha256::digest(&bytes)
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect::<String>();
         let module = Module::new(engine, &bytes)?;
         let mut linker = Linker::<State>::new(engine);
         linker.func_wrap(
