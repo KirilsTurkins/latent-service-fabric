@@ -199,6 +199,23 @@ experiments did not repair the size boundary: the same public `pools` body was
 experiments are withdrawn. Their failed histories remain separately attributed;
 the retained capture programme does not establish a compiler or runtime fix.
 
+Only that manual public-fiber job additionally selects `--observe-public-wineh`.
+The optional observer snapshots the admitted generated C, headers, bindings,
+SDK, tools and the three maintained observer/qualifier files before the unchanged
+normal Clang command. After an authenticated
+component-assembly failure, it rechecks those inputs and the original command
+receipt, then requests LLVM's before/after `win-eh-prepare` prints for only
+`meth_dla_Capsule_pools`, using a separate output path. It keeps the original
+600-second command bound and the existing combined 80-MiB process-output ceiling.
+The returned text is parsed only after owned process cleanup, under a 256-KiB
+line limit; only fixed numeric counts, hashes and at most 16 KiB of scalar
+samples enter `component-inputs/public-wineh.json`. Raw IR and the diagnostic
+Wasm are not uploaded. Missing or changed inputs, overflow, an incomplete print
+or an unknown format report incomplete; an earlier failure is not applicable.
+The original compiler product, exception and 16-MiB log cap remain unchanged.
+This source observer has not yet produced an actual LLVM pass attribution and
+does not establish a size repair or Java execution qualification.
+
 `--read-only-cache /path/to/modules-2` selects a verified immutable Gradle
 dependency cache. Gradle writes locks and updates to the build's private home.
 Choose one cache mode per build. Profile selection does not change invocation
