@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "latent.ci.suite-fragment.v1",
+  "suites": [
+    {
+      "boundary": "runtime",
+      "expectedCases": [
+        "signed_go_large_writes_copy_and_transfer_quota_preserve_exact_peer_prefix_and_fresh_state"
+      ],
+      "expectedIgnored": [
+        "signed_go_large_writes_copy_and_transfer_quota_preserve_exact_peer_prefix_and_fresh_state"
+      ],
+      "id": "latent-wasmtime.test.go_write_progress_runtime",
+      "ignoredLeaves": [
+        "signed_go_large_writes_copy_and_transfer_quota_preserve_exact_peer_prefix_and_fresh_state"
+      ],
+      "kind": "test",
+      "manifest": "crates/latent-wasmtime/Cargo.toml",
+      "minimumCases": 1,
+      "mode": "libtest",
+      "package": "latent-wasmtime",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "one normal compiler-built Go progress fixture and original stream owner profile",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "tests/go_write_progress_runtime.rs",
+      "target": "go_write_progress_runtime",
+      "timeoutSeconds": 300
+    }
+  ]
+}
