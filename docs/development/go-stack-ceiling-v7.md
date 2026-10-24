@@ -152,3 +152,16 @@ native fixture checks that every original CLI content layer is unchanged when
 it adds its existing policy-required embedded SBOM through the normal library;
 only the generated package-input receipt and added SBOM differ. Signing/admission
 remains an in-process test operation, not released standalone operator delivery.
+
+The fourth attempt, source `45710aab2d31dbbd8c7171717223cc5b373b48fd`
+([run40082039137](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40082039137)),
+completed both normal CLI package builds/inspection and strict observation
+decoding, then the unique-module mapper refused the expected recursion symbol.
+The actual Go name section spells it
+`wit_component_export_tests_caller_api.stackFrame`; the source-only expectation
+had used a slash instead of the emitted underscore. All four other required
+runtime symbols were present. The correction binds that exact emitted literal
+in the mapper and strict reader, with no normalization or fallback. Artifact
+12555289147 and the failed result remain history; no signed runtime attempt
+executed. The unique-module, guard-call, body-range and cap-frame predicates
+remain mandatory.

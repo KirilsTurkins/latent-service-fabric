@@ -16,7 +16,7 @@ EXPECTED = (
 )
 RUNTIME = {'tasks':16,'executors':2,'queuedWork':16,'waits':4,'timers':2,'results':2,'native':2}
 FUNCTIONS = ('runtime.lsfStackLimitExceeded','runtime.stackalloc','runtime.copystack',
-    'runtime.newstack','wit_component/export_tests_caller_api.stackFrame')
+    'runtime.newstack','wit_component_export_tests_caller_api.stackFrame')
 
 
 def require(condition, reason):

@@ -10,7 +10,7 @@ const REQUIRED: [&str; 5] = [
     "runtime.stackalloc",
     "runtime.copystack",
     "runtime.newstack",
-    "wit_component/export_tests_caller_api.stackFrame",
+    "wit_component_export_tests_caller_api.stackFrame",
 ];
 
 #[derive(Clone, Serialize)]

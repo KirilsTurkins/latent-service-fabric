@@ -17,7 +17,7 @@ def controlled_rows():
     rows = []
     for variant,initial,d in [('go-stack-ordinary',False,'a'),('go-stack-initializer-cap',True,'b')]:
         names = ['runtime.lsfStackLimitExceeded','runtime.stackalloc','runtime.copystack',
-            'runtime.newstack','wit_component/export_tests_caller_api.stackFrame']
+            'runtime.newstack','wit_component_export_tests_caller_api.stackFrame']
         functions = [dict(name=name,index=100+i,start=1000+100*i,end=1100+100*i,
             bodyDigest='sha256:'+'c'*64,callsCapLeaf=int(0<i<4),selfCalls=int(i==4),
             memoryFills=int(i==4),memoryCopies=int(i==4),checksumCopyAfterRecursiveCall=i==4)
@@ -82,6 +82,9 @@ class StackProgramme(unittest.TestCase):
         wrong_tenant = copy.deepcopy(rows)
         [v for k,v in wrong_tenant if k == 'POLICIES'][0]['scopes'][1]['principal'] = 'service:8:tenant-a:6:caller'
         with self.assertRaises(ValueError):oracle.read(encoded(wrong_tenant))
+        wrong_name = copy.deepcopy(rows)
+        wrong_name[0][1]['mapping']['functions'][4]['name'] = 'wit_component/export_tests_caller_api.stackFrame'
+        with self.assertRaises(ValueError):oracle.read(encoded(wrong_name))
         # Recursive callers may be cut after16 frames; a positively retained
         # private cap leaf still proves its own original frame, never the tail.
         for kind,item in rows:
