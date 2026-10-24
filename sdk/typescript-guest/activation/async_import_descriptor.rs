@@ -1,6 +1,6 @@
 // Compiled into the separately derived pinned source-owned splicer. This
 // internal descriptor does not change its public WIT or certify runtime APIs.
-use wit_parser::{Function, SizeAlign, Type, TypeDefKind, Int};
+use wit_parser::{Function, SizeAlign, Type, TypeDefKind, TypeId, Handle, Int};
 use wit_parser::abi::{AbiVariant, WasmType};
 
 #[derive(Clone, Debug)]
@@ -11,6 +11,73 @@ pub struct Descriptor {
     pub asynchronous_params: Vec<WasmType>,
     pub indirect_params: bool,
     pub writes: Vec<MemoryWrite>,
+    pub disposal: Vec<ResourceDisposal>,
+}
+
+// Only canonical OWN slots are disposed. Strings/list backing allocations keep
+// their original allocator lifetime; this plan makes no transitive heap claim.
+#[derive(Clone, Debug)]
+pub enum ResourceDisposal {
+    Own { offset: u32, resource: TypeId, drop_import: Option<(String, String)> },
+    Variant { offset: u32, tag_bytes: u32, cases: Vec<Vec<ResourceDisposal>> },
+    List { offset: u32, stride: u32, elements: Vec<ResourceDisposal> },
+    Unsupported,
+}
+
+impl Descriptor {
+    pub fn bind_resource_drops(&mut self, imports: &std::collections::BTreeMap<TypeId,(String,String)>) {
+        fn bind(plan:&mut [ResourceDisposal], imports:&std::collections::BTreeMap<TypeId,(String,String)>) {
+            for node in plan {
+                match node {
+                    ResourceDisposal::Own{resource,drop_import,..} => *drop_import=imports.get(resource).cloned(),
+                    ResourceDisposal::Variant{cases,..} => for case in cases {bind(case,imports);},
+                    ResourceDisposal::List{elements,..} => bind(elements,imports),
+                    ResourceDisposal::Unsupported => {},
+                }
+            }
+        }
+        bind(&mut self.disposal,imports);
+    }
+}
+
+fn resource_disposal(resolve:&wit_parser::Resolve,sizes:&SizeAlign,ty:Type,offset:u32)
+    ->Vec<ResourceDisposal> {
+    fn variant(resolve:&wit_parser::Resolve,sizes:&SizeAlign,tag:Int,cases:Vec<Option<Type>>,offset:u32)
+        ->Vec<ResourceDisposal> {
+        let payload=sizes.payload_offset(tag,cases.iter().map(Option::as_ref)).size_wasm32() as u32;
+        let cases=cases.into_iter().map(|ty|ty.map(|ty|resource_disposal(resolve,sizes,ty,offset+payload))
+            .unwrap_or_default()).collect::<Vec<_>>();
+        if cases.iter().all(Vec::is_empty) {return Vec::new();}
+        let tag_bytes=match tag {Int::U8=>1,Int::U16=>2,Int::U32=>4,Int::U64=>8};
+        vec![ResourceDisposal::Variant{offset,tag_bytes,cases}]
+    }
+    match ty {
+        Type::Id(id) => match &resolve.types[id].kind {
+            TypeDefKind::Type(ty) => resource_disposal(resolve,sizes,*ty,offset),
+            TypeDefKind::Handle(Handle::Own(resource)) => vec![ResourceDisposal::Own{
+                offset,resource:js_component_bindgen::dealias(resolve,*resource),drop_import:None}],
+            TypeDefKind::Handle(Handle::Borrow(_)) => vec![ResourceDisposal::Unsupported],
+            TypeDefKind::Record(record) => sizes.field_offsets(record.fields.iter().map(|field|&field.ty))
+                .into_iter().flat_map(|(at,ty)|resource_disposal(resolve,sizes,*ty,offset+at.size_wasm32() as u32)).collect(),
+            TypeDefKind::Tuple(tuple) => sizes.field_offsets(tuple.types.iter())
+                .into_iter().flat_map(|(at,ty)|resource_disposal(resolve,sizes,*ty,offset+at.size_wasm32() as u32)).collect(),
+            TypeDefKind::List(ty) => {
+                let elements=resource_disposal(resolve,sizes,*ty,0);
+                if elements.is_empty() {Vec::new()} else {
+                    vec![ResourceDisposal::List{offset,stride:sizes.size(ty).size_wasm32() as u32,elements}]
+                }
+            },
+            TypeDefKind::Variant(value) => variant(resolve,sizes,value.tag(),value.cases.iter().map(|case|case.ty).collect(),offset),
+            TypeDefKind::Option(ty) => variant(resolve,sizes,Int::U8,vec![None,Some(*ty)],offset),
+            TypeDefKind::Result(value) => variant(resolve,sizes,Int::U8,vec![value.ok,value.err],offset),
+            TypeDefKind::Enum(_) | TypeDefKind::Flags(_) => Vec::new(),
+            _ => vec![ResourceDisposal::Unsupported],
+        },
+        Type::Bool | Type::U8 | Type::S8 | Type::U16 | Type::S16 |
+        Type::U32 | Type::S32 | Type::U64 | Type::S64 | Type::Char |
+        Type::F32 | Type::F64 | Type::String => Vec::new(),
+        _ => vec![ResourceDisposal::Unsupported],
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -123,7 +190,8 @@ pub fn descriptor(resolve: &wit_parser::Resolve, function: &Function, sizes: &Si
     }
     Descriptor { result_bytes, parameter_bytes, raw_result,
                  asynchronous_params:asynchronous.params,
-                 indirect_params:asynchronous.indirect_params,writes }
+                 indirect_params:asynchronous.indirect_params,writes,
+                 disposal:function.result.map(|ty|resource_disposal(resolve,sizes,ty,0)).unwrap_or_default() }
 }
 
 #[cfg(test)]
@@ -134,7 +202,9 @@ mod tests {
         let package=resolve.push_str(std::path::Path::new("actual.wit"),wit).unwrap();
         let world=resolve.select_world(&[package],Some("guest")).unwrap();
         let function=resolve.worlds[world].imports.values().find_map(|item|match item {
-            wit_parser::WorldItem::Function(function)=>Some(function),_=>None,
+            wit_parser::WorldItem::Function(function)=>Some(function),
+            wit_parser::WorldItem::Interface{id,..}=>resolve.interfaces[*id].functions.values().next(),
+            _=>None,
         }).unwrap();
         let mut sizes=SizeAlign::default();sizes.fill(&resolve);
         descriptor(&resolve,function,&sizes)
@@ -186,5 +256,38 @@ mod tests {
         assert!(value.indirect_params);assert_eq!(value.parameter_bytes,32);
         assert_eq!((value.raw_result,value.result_bytes),(5,12));
         assert!(matches!(value.writes[4],MemoryWrite::Variant{tag_argument:4,tag_offset:16,tag_bytes:1,..}));
+    }
+    #[test]
+    fn actual_own_result_is_bound_to_original_resource_identity() {
+        let mut value=actual("package tests:imports@1.0.0; interface io { resource connection; connect: async func()->result<connection,u32>; } world guest { import io; }");
+        let resource=match &value.disposal[0] {
+            ResourceDisposal::Variant{offset:0,tag_bytes:1,cases} => {
+                assert!(cases[1].is_empty());
+                match &cases[0][0] {
+                    ResourceDisposal::Own{offset:4,resource,drop_import:None}=>*resource,
+                    _=>panic!("exact-own-payload-offset-required"),
+                }
+            },_=>panic!("exact-result-tag-required"),
+        };
+        let key=("tests:imports/io@1.0.0".to_owned(),"[resource-drop]connection".to_owned());
+        value.bind_resource_drops(&std::collections::BTreeMap::from([(resource,key.clone())]));
+        match &value.disposal[0] {
+            ResourceDisposal::Variant{cases,..}=>assert!(matches!(&cases[0][0],
+                ResourceDisposal::Own{drop_import:Some(actual),..} if actual==&key)),
+            _=>panic!(),
+        }
+    }
+    #[test]
+    fn actual_nested_owned_list_walk_keeps_backing_storage_separate() {
+        let value=actual("package tests:imports@1.0.0; interface io { resource chunk; record item { label:string, payload:option<chunk> } read: async func()->list<item>; } world guest { import io; }");
+        match &value.disposal[0] {
+            ResourceDisposal::List{offset:0,stride:16,elements}=>match &elements[0] {
+                ResourceDisposal::Variant{offset:8,tag_bytes:1,cases}=> {
+                    assert!(cases[0].is_empty());
+                    assert!(matches!(&cases[1][0],ResourceDisposal::Own{offset:12,..}));
+                    assert_eq!(elements.len(),1); // label storage is not a resource
+                },_=>panic!(),
+            },_=>panic!("exact-owned-list-layout-required"),
+        }
     }
 }

@@ -34,6 +34,13 @@ bool finish(JSContext* cx,unsigned argc,JS::Value* vp) {
   if(!identity(cx,args,id)||!finish_import(cx,id))return false;
   args.rval().setUndefined();return true;
 }
+bool delivered(JSContext* cx,unsigned argc,JS::Value* vp) {
+  auto args=JS::CallArgsFromVp(argc,vp);uint32_t id=0;
+  if(argc!=2) {JS_ReportErrorASCII(cx,"activation-runtime-import-delivery-shape-invalid");return false;}
+  if(!args[0].isNumber() || !JS::ToUint32(cx,args[0],&id) || id==0 ||
+     args[0].toNumber()!=static_cast<double>(id) || !mark_import_delivered(cx,id))return false;
+  args.rval().set(args[1]);return true;
+}
 bool cancel(JSContext* cx,unsigned argc,JS::Value* vp) {
   auto args=JS::CallArgsFromVp(argc,vp);uint32_t id=0;
   if(!identity(cx,args,id)||!cancel_import(cx,id))return false;
@@ -66,6 +73,7 @@ bool install_import_bridge(JSContext* cx,JS::HandleObject global) {
   if(!bridge || !JS_DefineFunction(cx,bridge,"reserve",reserve,3,0) ||
      !JS_DefineFunction(cx,bridge,"lift",lift,1,0) ||
      !JS_DefineFunction(cx,bridge,"finish",finish,1,0) ||
+     !JS_DefineFunction(cx,bridge,"delivered",delivered,2,0) ||
      !JS_DefineFunction(cx,bridge,"cancel",cancel,1,0) ||
      !JS_DefineFunction(cx,bridge,"watchBorrow",watchBorrow,1,0) ||
      !JS_DefineFunction(cx,bridge,"borrowReleased",borrowReleased,1,0) ||

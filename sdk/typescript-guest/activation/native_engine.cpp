@@ -277,6 +277,11 @@ bool lift_import_value(JSContext* cx, uint32_t id, JS::MutableHandleValue value)
   return imports.liftValue(cx,id,value);
 }
 bool finish_import(JSContext* cx, uint32_t id) { return imports.liftCompleted(cx, id); }
+bool set_import_disposer(JSContext* cx,uint32_t id,uint32_t pointer,uint32_t result_bytes) {
+  return imports.setDisposer(cx,id,
+      reinterpret_cast<bool(*)(uint32_t)>(static_cast<uintptr_t>(pointer)),result_bytes);
+}
+bool mark_import_delivered(JSContext* cx,uint32_t id) { return imports.delivered(cx,id); }
 bool cancel_import(JSContext* cx, uint32_t id) { return imports.cancel(cx, id); }
 bool watch_import_borrow(JSContext* cx, uint32_t id, JS::MutableHandleObject handle) {
   return imports.watchBorrow(cx, id, handle);

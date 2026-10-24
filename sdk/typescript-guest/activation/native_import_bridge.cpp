@@ -5,6 +5,10 @@
 #include "jsapi.h"
 
 extern "C" {
+__attribute__((export_name("lsf_import_set_disposer"))) bool
+lsf_import_set_disposer(JSContext* cx,uint32_t id,uint32_t pointer,uint32_t result_bytes) {
+  return lsf::typescript::activation::set_import_disposer(cx,id,pointer,result_bytes);
+}
 __attribute__((export_name("lsf_import_result_buffer"))) uint32_t
 lsf_import_result_buffer(uint32_t id) {
   return static_cast<uint32_t>(reinterpret_cast<uintptr_t>(lsf::typescript::activation::import_result_buffer(id)));

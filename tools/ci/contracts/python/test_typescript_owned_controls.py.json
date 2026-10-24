@@ -1,0 +1,88 @@
+{
+  "cases": [
+    "TypeScriptOwnedControlsTests.test_actual_rust_source_inventory_requires_all_thirteen_successes",
+    "TypeScriptOwnedControlsTests.test_exact_source_inventory_rejects_skips_missing_and_extra_cases",
+    "TypeScriptOwnedControlsTests.test_monotonic_deadline_clips_every_stage_and_refuses_late_success",
+    "TypeScriptOwnedControlsTests.test_native_evidence_requires_new_record_abi_and_real_cancel_counters",
+    "TypeScriptOwnedControlsTests.test_native_refusal_evidence_cannot_turn_retained_owners_into_refund",
+    "TypeScriptOwnedControlsTests.test_workflow_requires_same_source_and_owning_workflow_head"
+  ],
+  "guards": {
+    "TypeScriptOwnedControlsTests.test_actual_rust_source_inventory_requires_all_thirteen_successes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9012dadbfef5ab083be978437c0bce09505a4abedffd495facf27193da0ccbdf",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptOwnedControlsTests.test_exact_source_inventory_rejects_skips_missing_and_extra_cases": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9012dadbfef5ab083be978437c0bce09505a4abedffd495facf27193da0ccbdf",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptOwnedControlsTests.test_monotonic_deadline_clips_every_stage_and_refuses_late_success": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9012dadbfef5ab083be978437c0bce09505a4abedffd495facf27193da0ccbdf",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptOwnedControlsTests.test_native_evidence_requires_new_record_abi_and_real_cancel_counters": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9012dadbfef5ab083be978437c0bce09505a4abedffd495facf27193da0ccbdf",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptOwnedControlsTests.test_native_refusal_evidence_cannot_turn_retained_owners_into_refund": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9012dadbfef5ab083be978437c0bce09505a4abedffd495facf27193da0ccbdf",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptOwnedControlsTests.test_workflow_requires_same_source_and_owning_workflow_head": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9012dadbfef5ab083be978437c0bce09505a4abedffd495facf27193da0ccbdf",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_typescript_owned_controls.py",
+  "reviewReason": "Reviewed OWN-result owning evidence controls: exact inventories, native ABI/cancellation/refusal evidence, workflow head authentication and aggregate setup/monotonic deadline refusal; no native build is represented by these source controls.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

@@ -13,6 +13,55 @@ Typed result lifting finishes before canonical subtask drop and physical
 result/capture retirement. Asynchronous cancellation retains the original
 handle, stable buffers and owners while the host reports `BLOCKED`.
 
+The source candidate now distinguishes canonical result ownership from subtask
+retirement. Cancelling before typed lifting retains an actual returned outcome
+until a compiler-generated walk drops its imported `own<resource>` handles
+through their original canonical resource-drop imports. The walk follows only
+active variants and checked list element ranges. It does not free string or
+list backing allocations and makes no transitive heap-release claim. A terminal
+cancellation with no returned outcome never reads the result buffer.
+
+Normal typed returns and intentional WIT error returns transfer ownership only
+after their complete value or error object has been constructed. An unexpected
+partial lift, unsupported disposal mapping or failed/partial destructor leaves
+the record quarantined with its original owners; cleanup cannot replay drops
+or report a refund. These are source-stage changes. A fresh compiler/engine
+build and actual component cancellation controls are still required. Canonical
+resource destruction alone does not certify physical provider close, native
+quota reuse, production support or completion of the SDK ticket.
+
+The separate `typescript-owned-results.yml` programme builds one fresh normal
+source splicer and engine before executing all 13 maintained Rust descriptor /
+disposer tests and 13 real SpiderMonkey manager diagnostics. It retains all 11
+borrow controls and adds cancellation through generated `finally` and the
+resolved-carrier/public-lift race. Six affected lifecycle C++ controls also run
+with explicit opaque-JS headers and canonical/broker doubles, including immediate
+handle-zero disposal and delayed/no-result retirement. Those references do not
+execute JavaScript; delayed cases retain their original readiness-set owner. All 29 Python controls must pass without
+skips using the normal pinned compiler parser. The actual Wasm32 diagnostic
+measures the new Record size against the immutable pre-OWN header; it does
+not reuse the historical borrow ABI claim.
+
+This first programme authenticates one fixed completed low-level library,
+restores only its original headers and supporting objects, and requires the
+same normal library validator before building the changed compiler or engine.
+It preserves the original receipts and source pins. It has no Mach fallback.
+Checkout/setup and all stages share a 90-minute job bound; the programme also
+subtracts setup time from its monotonic deadline. Splicer, Rust tests, engine
+and C++ compile/link retain their narrower 900, 600, 1200 and shared 120-second
+ceilings. Those maxima are not additive permissions to exceed the job bound.
+
+No OWN programme has run yet. The C++ broker and canonical intrinsics are
+explicit diagnostic doubles. Actual canonical OWN component disposal, resource
+table reuse, signed execution, provider physical retirement and whole-cost
+qualification remain unexecuted obligations after these prerequisites.
+
+If a private carrier has resolved before cancellation retires its record, its
+queued typed lift rejects with the original cancellation string. Private
+duplicate lifts of any already retired identity also reject with that string;
+they return no value and perform no drop or acknowledgement. Zero and future
+identities retain the internal invalid-record diagnostic.
+
 The engine requests the existing activation interface and both clock
 interfaces. Recognition, compiler selection and reading a clock grant no
 authority: each interface still needs ordinary installation, policy and grants.

@@ -13,8 +13,8 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:9d5cdfbd57da631b4198345af65aa9f90e69762c89d0e868eaa5901c835a52e2",
-        "class:setup-sha256:be3668530b8d9a247def83813fcca58ca7baa563e14c1559cd3f5b32e66a8bd1",
-        "class:skip:self.skipTest('Node and captured Acorn are required for actual generated metadata controls')"
+        "class:setup-sha256:eb1f595371b9b48fb98cb49526f185940d60efdba9717fd665d7a57fee2b5a53",
+        "class:skip:self.skipTest('Node is required for source-only generated binding controls')"
       ],
       "skipSites": []
     },
@@ -26,8 +26,8 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:9d5cdfbd57da631b4198345af65aa9f90e69762c89d0e868eaa5901c835a52e2",
-        "class:setup-sha256:be3668530b8d9a247def83813fcca58ca7baa563e14c1559cd3f5b32e66a8bd1",
-        "class:skip:self.skipTest('Node and captured Acorn are required for actual generated metadata controls')"
+        "class:setup-sha256:eb1f595371b9b48fb98cb49526f185940d60efdba9717fd665d7a57fee2b5a53",
+        "class:skip:self.skipTest('Node is required for source-only generated binding controls')"
       ],
       "skipSites": []
     },
@@ -39,14 +39,14 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:9d5cdfbd57da631b4198345af65aa9f90e69762c89d0e868eaa5901c835a52e2",
-        "class:setup-sha256:be3668530b8d9a247def83813fcca58ca7baa563e14c1559cd3f5b32e66a8bd1",
-        "class:skip:self.skipTest('Node and captured Acorn are required for actual generated metadata controls')"
+        "class:setup-sha256:eb1f595371b9b48fb98cb49526f185940d60efdba9717fd665d7a57fee2b5a53",
+        "class:skip:self.skipTest('Node is required for source-only generated binding controls')"
       ],
       "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_typescript_native_task_meta.py",
-  "reviewReason": "Authenticate generated native metadata inline control and retain original owning controls",
+  "reviewReason": "Reviewed source-only OWN-result disposal controls; preserve all existing cases, authenticate original compiler bindings, and allow only host-test Node Acorn fallback while actual owning execution continues to require its pinned compiler parser.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
