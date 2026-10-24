@@ -18,13 +18,17 @@ function matchesCurrent(current, row, generation) {
 function expected(row) { return row.attempts.findLast(attempt => attempt.status === 'confirmed')?.receipt.objectGeneration; }
 
 export async function reconcile(client, journal, save, maximumWrites = 16) {
-  let writes = 0, stage = journal.rows.some(row => row.attempts.some(attempt => attempt.status === 'pending')) ? 'uncertain' : 'failed';
+  const hasPending = () => journal.rows.some(row => row.attempts.some(attempt => attempt.status === 'pending'));
+  let writes = 0, auditCapacity = null, stage = hasPending() ? 'uncertain' : 'failed';
   requireValue(Number.isInteger(maximumWrites) && maximumWrites >= 0 && maximumWrites <= 64, 'write-bound');
   const finish = async (status, reason, complete = false) => {
+    // Failure on an earlier row cannot hide a later original pending operation.
+    // No preflight, authorization change or epoch transition proves nonexecution.
+    if (hasPending()) { status = 'uncertain'; complete = false; }
     journal.status = status; journal.reason = reason;
     await save(journal);
     return {schemaVersion: 'latent.static.route-result.v1', id: journal.id, status, reason,
-      observedComplete: complete, writes, routes: journal.rows.map(row => ({id: row.desired.metadata.name,
+      observedComplete: complete, writes, auditCapacity, routes: journal.rows.map(row => ({id: row.desired.metadata.name,
         generation: expected(row) ?? null, pendingOperation: row.attempts.findLast(attempt => attempt.status === 'pending')?.id ?? null,
         operations: row.attempts.map(operationSummary)}))};
   };
@@ -63,6 +67,17 @@ export async function reconcile(client, journal, save, maximumWrites = 16) {
         if (current.manifest && sameManifest(current.manifest, row.desired)) { done = true; continue; }
         if (writes >= maximumWrites) return finish('partial', 'write-budget-reached');
         requireValue(row.attempts.length < 4, 'conflict-attempt-bound');
+        const report = await client.auditPreflight(journal.intent.routes.length);
+        requireValue(report?.schemaVersion === 'latent.static.audit-headroom.v1' && report.advisory === true
+          && report.reservation === false && report.executionPermission === false
+          && ['headroom-observed', 'warning', 'blocked', 'unavailable'].includes(report.status), 'audit-preflight-invalid');
+        auditCapacity = report; journal.auditCapacity = report; await save(journal);
+        if (!['headroom-observed', 'warning'].includes(report.status)) {
+          return finish(journal.rows.some(value => expected(value)) ? 'partial' : 'failed',
+            report.status === 'blocked' ? 'audit-preflight-blocked' : 'audit-preflight-unavailable');
+        }
+        // The snapshot is advisory, not a reservation or an authorization lease.
+        // The actual guarded mutation below may still be rejected or uncertain.
         const attempt = {id: 'route-' + randomUUID(), generation: current.generation, stateVersion: current.stateVersion, status: 'pending'};
         row.attempts.push(attempt);
         journal.status = 'applying'; await save(journal);
