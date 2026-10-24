@@ -148,3 +148,16 @@ input envelope and splicer identities are retained unchanged. The9d native
 prerequisite success and failed consumer histories are preserved. A new signed
 consumer attempt is pending; no signed or physical pass follows from these
 native prerequisites.
+
+The corrected-input consumer, [run40064672126/job120785297271](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40064672126/job/120785297271),
+passed Wizer and component construction, then failed the unchanged final public
+type-graph check. Normal component emission omitted three unused aliases from
+the diagnostic gate interface: `transport`, `state` and `error-code`. The gate
+fixture now imports only its eight used resource/value aliases. Every function,
+parameter, result and original resource identity remains unchanged; the compiler
+comparison is unchanged. Read-only projection of the retained parser graphs
+accepts exactly this removal and still rejects async-kind, ownership, extra
+function and missing-resource changes. This is host-only source evidence; a
+fresh component and all signed cases remain unqualified. The failed artifact
+`12548434613` remains retained (20,510,712 bytes, SHA256
+`68f525f35b0017fe41cdef856ffdeb5a8e127a7f2d341bf9fad2536772df7515`).

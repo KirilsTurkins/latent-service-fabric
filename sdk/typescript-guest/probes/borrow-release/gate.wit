@@ -2,8 +2,8 @@ package tests:typescript-import-borrow-gate@1.0.0;
 
 // Preserve the original host's resource and value-type identities.
 interface streams {
-    use latent:network/streams@0.1.0.{connection, chunk, transport, state, interest,
-        shutdown-mode, error-code, stream-error, observation, connect-request, readiness};
+    use latent:network/streams@0.1.0.{connection, chunk, interest, shutdown-mode,
+        stream-error, observation, connect-request, readiness};
     connect: async func(request: connect-request) -> result<connection, stream-error>;
     read: async func(source: borrow<connection>, maximum-bytes: u32, timeout-millis: option<u32>) -> result<option<chunk>, stream-error>;
     write: async func(target: borrow<connection>, bytes: list<u8>, timeout-millis: option<u32>) -> result<u32, stream-error>;
