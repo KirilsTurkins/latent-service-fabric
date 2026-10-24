@@ -139,7 +139,7 @@ class Compiler:
             self.tools = staged
             self.recipe = isolated_workspace / "compiler-recipe"
             self.recipe.mkdir()
-            for name in ("bundle.mjs", "componentize.mjs", "signed64.mjs", "resources.mjs", "source_splicer.mjs", "async_waiters.mjs", "import_cancellation.mjs", "fetch.mjs", "console.mjs", "activation_module.mjs", "entropy.mjs", "clock_app.mjs", "node_buffer.mjs", "buffer_builtin.mjs"):
+            for name in ("bundle.mjs", "componentize.mjs", "signed64.mjs", "resources.mjs", "source_splicer.mjs", "async_waiters.mjs", "import_cancellation.mjs", "borrow_probe.mjs", "fetch.mjs", "console.mjs", "activation_module.mjs", "entropy.mjs", "clock_app.mjs", "node_buffer.mjs", "buffer_builtin.mjs"):
                 (self.recipe / name).write_bytes(read_file(ROOT / "tools/typescript_guest" / name))
         modules = self.tools / "node_modules"
         self.jco = modules / "@bytecodealliance/jco/dist/jco.js"
@@ -224,8 +224,14 @@ class Compiler:
                 raise ValueError("compiler dependency closure limit")
         return {"files": rows, "bytes": total}
 
-    def compile(self, work: Path, world: str, output: Path, *, application_modules: dict | None = None):
+    def compile(self, work: Path, world: str, output: Path, *, application_modules: dict | None = None,
+                diagnostic_profile: str | None = None):
         from tools.typescript_guest import runtime_profile as runtime
+        from tools.typescript_guest import borrow_probe_profile
+        borrow_probe = borrow_probe_profile.validate(diagnostic_profile, work, world,
+                                                     self.runtime_profile, application_modules)
+        if application_modules is not None and 'borrowProbeProfile' in application_modules:
+            raise ValueError('application-cannot-select-private-borrow-probe')
         output.mkdir()
         command, wasm = self, self.wasm
         source = work / "wit"
@@ -344,6 +350,11 @@ class Compiler:
                 if self.runtime_profile in runtime.CLOCK_PROFILES:
                     (directory/'clock-runtime-globals.d.ts').write_bytes(clock_declaration)
         imports = import_identities(binding_graph, binding_world)
+        if borrow_probe:
+            if set(imports) != {borrow_probe_profile.ORIGINAL, borrow_probe_profile.GATE, borrow_probe_profile.DIAGNOSTIC}:
+                raise ValueError('compiler-owned-borrow-probe-import-graph')
+            for directory in (generated, second):
+                borrow_probe_profile.declarations(directory)
         from tools.typescript_guest import fetch_profile
         from tools.typescript_guest import console_profile
         if fetch_profile.selected(self.runtime_profile, imports):
@@ -413,6 +424,8 @@ class Compiler:
                                                               'component', 'wit', contract, '--json')))
         entropy_configuration = entropy_profile.configuration(
             {**configured, **(console_configuration or {})}, application_graph, application_world, standard_random)
+        if borrow_probe:
+            entropy_configuration['borrowProbeProfile'] = borrow_probe_profile.PROFILE
         write_json(bundle_configuration, entropy_configuration)
         if self.isolation is not None:
             self.isolation.protect_inputs(work)
@@ -444,6 +457,8 @@ class Compiler:
         if self.source_splicer is not None:
             arguments.extend((self.source_splicer/'spidermonkey-embedding-splicer.js',
                               self.tools/'node_modules/acorn/dist/acorn.mjs'))
+        if borrow_probe:
+            arguments.append(borrow_probe_profile.PROFILE)
         command.run("componentize", self.node, self.recipe / "componentize.mjs", *arguments)
         bare, embedded, component = (output / name for name in ("bare.wasm", "embedded.wasm", "component.wasm"))
         command.run("strip-projection", wasm, "strip", "--delete", "^component-type", output / "core.wasm", "-o", bare)

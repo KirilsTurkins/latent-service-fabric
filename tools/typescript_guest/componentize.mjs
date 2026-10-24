@@ -1,6 +1,7 @@
 // Checksum-pinned compiler adapter: expose core output and normalize the
 // maintained generator's signed i64 lowering to the embedding's core ABI.
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { basename, dirname, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -9,8 +10,9 @@ import { explicitResourceOwners } from './resources.mjs';
 import { selectedSourceSplicer } from './source_splicer.mjs';
 import { lazySyncImportWaiters, retireGeneratedTaskSlots, applicationRealmImportPromises, fuseNativeImportAwaits, directIdleTaskSlots, inlineNativeTaskMeta } from './async_waiters.mjs';
 import { borrowReleaseHandoff } from './import_cancellation.mjs';
+import { borrowProbeBindings, borrowProbeProfile, borrowProbeSpliceCapture } from './borrow_probe.mjs';
 
-const [compiler, witPath, sourcePath, output, world = 'capsule', engine, selectionPath, sourceSplicer, bindingParser] = process.argv.slice(2);
+const [compiler, witPath, sourcePath, output, world = 'capsule', engine, selectionPath, sourceSplicer, bindingParser, diagnosticProfile] = process.argv.slice(2);
 const prepareImport = witPath === '--source-import-adapter';
 const importProfile = 'spidermonkey-activation-promises-clocks-imports-v1';
 const useImportAdapter = prepareImport || !!sourceSplicer;
@@ -37,6 +39,23 @@ if (useImportAdapter) {
       "\n  if (!opts.lsfSplicer || typeof opts.lsfSplicer !== 'object' || typeof opts.lsfSplicer.spliceBindings !== 'function' || typeof opts.lsfSplicer.stubWasi !== 'function') throw new Error('source-built-splicer-callable-export-required');" +
       '\n  const splicer = opts.lsfSplicer;');
 }
+// Exact pinned public adapter shape (SHA256 e58ef4f3...994e559). Do not
+// wrap or make asynchronous its original synchronous spliceBindings API.
+const spliceAnchor = `  let { wasm, jsBindings, exports, imports } = splicer.spliceBindings(
+    await readFile(engine),
+    [...features],
+    witWorld,
+    maybeWindowsPath(witPath),
+    worldName,
+    false,
+  );`;
+if (adapted.split(spliceAnchor).length !== 2) throw new Error('compiler-splice-tap-shape-drift');
+adapted = adapted.replace(spliceAnchor,
+  spliceAnchor.replace('let { wasm, jsBindings, exports, imports } =', 'const lsfSpliceResult =') +
+  `
+  if (opts.lsfSpliceTap !== undefined && opts.lsfSpliceTap(lsfSpliceResult) !== lsfSpliceResult)
+    throw new Error('compiler-splice-tap-result-identity');
+  let { wasm, jsBindings, exports, imports } = lsfSpliceResult;`);
 const path = join(dirname(compiler), useImportAdapter ? 'componentize.lsf-import-v1.mjs' : 'componentize.lsf-core-v2.mjs');
 try {
   await writeFile(path, adapted, { flag: 'wx' });
@@ -87,11 +106,16 @@ if (selectedSplicer) {
   ({parse: parseBindings} = await import(pathToFileURL(bindingParser)));
   if (typeof parseBindings !== 'function') throw new Error('source-owned-binding-parser-required');
 }
+if (diagnosticProfile !== undefined && (!selectedSplicer || diagnosticProfile !== borrowProbeProfile)) {
+  throw new Error('compiler-owned-borrow-probe-runtime');
+}
 const result = await componentize({
   sourcePath, sourceName: basename(sourcePath),
   witPath, worldName: world, enableAot: false, env: compilerEnv,
   ...(engine ? { engine } : {}),
   ...(selectedSplicer ? {lsfSplicer:selectedSplicer} : {}),
+  lsfSpliceTap: borrowProbeSpliceCapture(diagnosticProfile,
+    (name, value) => writeFileSync(join(output,name),value,{flag:'wx'})),
   lsfBindings(source) {
     generatedBindings = explicitResourceOwners(coreIntegerLowering(source));
     if (selectedEngine) {
@@ -102,7 +126,13 @@ const result = await componentize({
       generatedBindings = fuseNativeImportAwaits(generatedBindings, parseBindings);
       generatedBindings = inlineNativeTaskMeta(generatedBindings, parseBindings);
       generatedBindings = borrowReleaseHandoff(generatedBindings, parseBindings);
+      generatedBindings = borrowProbeBindings(generatedBindings, parseBindings, diagnosticProfile);
       generatedBindings = applicationRealmImportPromises(generatedBindings);
+    }
+    if (diagnosticProfile === borrowProbeProfile) {
+      if (Buffer.byteLength(generatedBindings,'utf8') > 8 * 1024 * 1024)
+        throw new Error('compiler-owned-borrow-generated-bindings-bound');
+      writeFileSync(join(output,'pre-wizer-bindings.js'),generatedBindings,{flag:'wx'});
     }
     return generatedBindings;
   },

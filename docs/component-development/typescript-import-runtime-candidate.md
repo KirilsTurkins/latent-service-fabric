@@ -25,10 +25,10 @@ Normal typed returns and intentional WIT error returns transfer ownership only
 after their complete value or error object has been constructed. An unexpected
 partial lift, unsupported disposal mapping or failed/partial destructor leaves
 the record quarantined with its original owners; cleanup cannot replay drops
-or report a refund. The bounded native prerequisite campaign has built the changed compiler and
-engine. Actual canonical component cancellation controls remain required. Canonical
-resource destruction alone does not certify physical provider close, native
-quota reuse, production support or completion of the SDK ticket.
+or report a refund. The native prerequisite campaign and the finite canonical
+OWN-result campaign below have now executed this path. Canonical resource
+destruction alone does not certify physical provider close, native quota reuse,
+production support or completion of the SDK ticket.
 
 The separate `typescript-owned-results.yml` programme builds one fresh normal
 source splicer and engine and executes all 13 maintained Rust descriptor /
@@ -56,9 +56,54 @@ records 29 Python controls, 13 Rust tests, 13 real SpiderMonkey manager cases an
 six lifecycle references, all passed. Wasm32 Record size is 256 bytes against
 the immutable 248-byte baseline (+8), with 8-byte alignment; manager size remains
 112 bytes and the observer is 72 bytes. These are relative layout measurements.
-The C++ broker and canonical intrinsics are explicit diagnostic doubles. Actual canonical OWN component disposal, resource
-table reuse, signed execution, provider physical retirement and whole-cost
-qualification remain unexecuted obligations after these prerequisites.
+The C++ broker and canonical intrinsics in that historical native receipt are
+explicit diagnostic doubles. The separate
+[canonical OWN-result receipt](../testing/typescript-owned-result-canonical-evidence.json)
+records the subsequent actual Component Model execution at
+`8d7a4a08c94d30fea79f23085e1c8fce47609252` in
+[owning run 40068264975](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40068264975/job/120795973560).
+All six source controls and eleven real cases passed, including delivered OWN
+results, immediate and delayed returned cancellation, active/inactive nested
+values, intentional WIT errors, two distinct resource types, a genuinely started
+pending provider future, destructor refusal and fresh payload reuse.
+
+This campaign consumes the fixed normal producer
+`be356d28f93267dc34078ce137d49ed28c28bf47`: one fresh source splicer and engine,
+29 source controls, 13 Rust tests, 13 manager cases and six lifecycle references.
+The shared existing-import resolver follows the original imported function's
+stable FunctionID instead of reusing a mixed import-list ordinal. Its compiled
+regression validates the later ordinary caller after Wasm encoding/reparsing.
+The canonical campaign reuses these exact validated products and source-bound
+receipts; it builds no SDK engine or low-level library.
+
+The fixture declares its actual asynchronous root export as `async func` and
+uses the maintained `Func.call_async` implementation. Its diagnostic mode
+enables the existing cancellation builtins used by the normal activation
+profile. Other diagnostic modes retain their configuration. The independent
+compiled-world comparison and the real delayed case remain required; an
+ordinary-value projection is not treated as proof of a suspending root.
+
+The ten non-refusal cases check the original imported Result and matched Native
+owners before Store destruction. They report two unrelated managed Native
+owners separately. The refusal case observes one actual canonical destructor
+attempt, retains its live payload and the matched original two Native/one
+Result owners, and preserves the wider quarantine snapshot. Later Store teardown
+frees the fixture payload; that teardown is not successful task cleanup.
+
+Five cases free and reuse a capacity-one host payload slot within the same
+Store. This does not observe or certify reuse of a numeric guest resource-table
+index. Provider resources/destructors are explicit finite test hosts, not real
+sockets. Signed admission, nested string/list backing release, physical provider
+retirement and complete engine/GC/native cost remain unqualified.
+
+The programme retains a single 900-second setup/acquisition/build/execution
+bound, a 600-second command maximum, 20 seconds per case, 128 MiB aggregate
+linear memory per Store, one billion fuel per Store and two Rust build jobs.
+Observed maxima were 9,502,720 linear-memory bytes and 114,212,625 fuel. These are
+bounded diagnostic observations, not whole-runtime cost accounting. The public
+receipt retains the actual failed selection, Wasm validation, host API,
+feature-selection and synchronous-fixture-declaration history alongside the
+successful rows. It does not close AC5, AC7 or #745.
 
 If a private carrier has resolved before cancellation retires its record, its
 queued typed lift rejects with the original cancellation string. Private

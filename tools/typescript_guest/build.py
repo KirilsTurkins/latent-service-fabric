@@ -34,6 +34,8 @@ RECIPE = ("tools/typescript_capsule.py", "tools/typescript_guest/project.py", "t
 RECIPE += ("tools/application_dependencies.py", "tools/application_dependency_store.py", "tools/application_dependency_tools.py",
            "tools/application_dependency_approval.py", "tools/typescript_application_dependencies.py",
            "tools/typescript_dependency_authoring.py", "tools/npm_lock_authoring.py", "tools/typescript_registry_tls.py", "tools/captured_compiler_isolation.py")
+from tools.typescript_guest import borrow_probe_profile
+RECIPE += borrow_probe_profile.RECIPE
 RECIPE += guest_compatibility_build.RECIPE
 RECIPE += guest_compatibility_context_build.RECIPE
 RECIPE += ('tools/guest_runtime_receipts.py',)

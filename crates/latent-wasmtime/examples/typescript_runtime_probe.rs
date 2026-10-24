@@ -11,6 +11,8 @@ use wasmtime::{Config, Engine, Store, StoreLimits, StoreLimitsBuilder};
 
 #[path = "typescript_runtime_probe/service_memory.rs"]
 mod service_memory;
+#[path = "typescript_runtime_probe/owned_results.rs"]
+mod owned_results;
 
 struct Pending(Arc<AtomicUsize>);
 
@@ -27,6 +29,9 @@ async fn main() -> wasmtime::Result<()> {
         .ok_or_else(|| wasmtime::Error::msg("component path required"))?;
     let mut config = Config::new();
     config.wasm_component_model_async(true).consume_fuel(true);
+    if std::env::args().nth(3).as_deref() == Some("sdk-owned-results") {
+        config.wasm_component_model_more_async_builtins(true);
+    }
     config.wasm_backtrace_max_frames(std::num::NonZeroUsize::new(128));
     let optimization = std::env::args().nth(2).unwrap_or_else(|| "speed".into());
     config.cranelift_opt_level(match optimization.as_str() {
@@ -49,6 +54,7 @@ async fn main() -> wasmtime::Result<()> {
         return sdk_blob(&engine, &component).await;
     }
     match std::env::args().nth(3).as_deref() {
+        Some("sdk-owned-results") => return owned_results::run(&engine, &component).await,
         Some("sdk-service-memory") => return service_memory::run(&engine, &component, true).await,
         Some("sdk-callee-memory") => return service_memory::run(&engine, &component, false).await,
         Some("sdk-dotnet-secrets") => return sdk_dotnet_secrets(&engine, &component).await,
