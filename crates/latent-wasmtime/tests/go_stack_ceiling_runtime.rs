@@ -74,7 +74,22 @@ fn load(name: &'static str, initializer_cap: bool) -> Variant {
     let app = path.parent().unwrap().join("applications").join(name);
     assert_eq!(std::fs::read(app.join("src/main.go")).unwrap(), expected);
     assert_eq!(std::fs::read(app.join("wit/world.wit")).unwrap(), WORLD);
+    // The normal Go builder actually ran its source-matched package CLI. Its
+    // bare package is checked before the existing native fixture adds its
+    // policy-required embedded SBOM through the normal packaging library.
+    let cli_bundle = latent_packaging::read_package_directory(
+        &path.join("package"),
+        latent_packaging::PackagingLimits::default(),
+    )
+    .unwrap();
     let bundle = package::bundle(&path);
+    assert!(cli_bundle.sbom().is_none() && bundle.sbom().is_some());
+    assert_eq!(bundle.layers().len(), cli_bundle.layers().len() + 1);
+    for layer in cli_bundle.layers() {
+        if layer.path() != latent_packaging::BUILD_INPUTS_PATH {
+            assert_eq!(bundle.blob(layer.path()).unwrap(), layer.bytes());
+        }
+    }
     let observation = package::observation(name);
     assert_eq!(observation.build_type, GO_CAPSULE_BUILD_TYPE);
     let BuildRecipe::GoCapsule(recipe) = &observation.parameters else {

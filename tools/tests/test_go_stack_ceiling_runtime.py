@@ -127,11 +127,12 @@ class StackProgramme(unittest.TestCase):
                 original = (app/'src/main.go').read_bytes()
                 self.assertIn(b'initializerDepth uint32 = '+(b'2' if variant=='ordinary' else b'96'),original)
                 with patch('tools.go_capsule_build.build') as build:
-                    compile_variant(app,variant,root/'not-built',root/'not-a-tool');build.assert_called_once()
+                    compile_variant(app,variant,root/'not-built',root/'not-a-tool',root/'not-a-packager');build.assert_called_once_with(app,root/'not-built',root/'not-a-tool',root/'not-a-packager',
+                        'https://github.com/KirilsTurkins/latent-service-fabric')
                     for path,value in [('src/main.go',original+b'\n'),('src/cheat.go',b'package export_tests_caller_api\n')]:
                         selected=app/path;prior=selected.read_bytes() if selected.exists() else None
                         selected.write_bytes(value);build.reset_mock()
-                        with self.assertRaises(ValueError):compile_variant(app,variant,root/'not-built',root/'not-a-tool')
+                        with self.assertRaises(ValueError):compile_variant(app,variant,root/'not-built',root/'not-a-tool',root/'not-a-packager')
                         build.assert_not_called()
                         if prior is None:selected.unlink()
                         else:selected.write_bytes(prior)
@@ -139,11 +140,11 @@ class StackProgramme(unittest.TestCase):
                     for value in (10000000000,1000000000.0,True):
                         changed=copy.deepcopy(document);changed['limits']['cpuFuel']=value;p.write_text(json.dumps(changed))
                         build.reset_mock()
-                        with self.assertRaises(ValueError):compile_variant(app,variant,root/'not-built',root/'not-a-tool')
+                        with self.assertRaises(ValueError):compile_variant(app,variant,root/'not-built',root/'not-a-tool',root/'not-a-packager')
                         build.assert_not_called()
                     changed=copy.deepcopy(document);changed['tenant']='tenant-a';p.write_text(json.dumps(changed))
                     build.reset_mock()
-                    with self.assertRaises(ValueError):compile_variant(app,variant,root/'not-built',root/'not-a-tool')
+                    with self.assertRaises(ValueError):compile_variant(app,variant,root/'not-built',root/'not-a-tool',root/'not-a-packager')
                     build.assert_not_called()
                     p.write_text(json.dumps(document))
                 self.assertEqual(fixture.verify(app,variant)['limits']['cpuFuel'],1000000000)

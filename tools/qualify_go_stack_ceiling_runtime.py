@@ -65,7 +65,8 @@ def placement(raw):
         'arrayBytes':8192,'referenceExecuted':False,'finalComponentProofFromReferenceAlone':False}
 
 
-def contracts_product(raw,root):
+def contracts_product(raw,root,name='capsule_contracts'):
+    oracle.require(name in ('capsule_contracts','package'),'closed-packaging-product')
     oracle.require(len(raw) <= 16*1024*1024,'contracts-inventory-bound')
     selected = []; finished = False; links = set()
     for line in raw.splitlines():
@@ -81,22 +82,22 @@ def contracts_product(raw,root):
                 oracle.require(len(links) <= 256,'contracts-link-count')
         elif value.get('reason') == 'compiler-artifact':
             target = value.get('target',{})
-            if target.get('kind') != ['example'] or target.get('name') != 'capsule_contracts': continue
+            if target.get('kind') != ['example'] or target.get('name') != name: continue
             oracle.require(Path(value['manifest_path']).resolve() == root/'crates/latent-packaging/Cargo.toml'
-                and Path(target['src_path']).resolve() == root/'crates/latent-packaging/examples/capsule_contracts.rs'
+                and Path(target['src_path']).resolve() == root/('crates/latent-packaging/examples/'+name+'.rs')
                 and value['profile']['test'] is False,'contracts-owner')
             path = Path(value['executable'])
             oracle.require(path.is_absolute() and not path.is_symlink() and path.is_file()
-                and path.resolve() == root/'target/debug/examples/capsule_contracts','contracts-executable')
+                and path.resolve() == root/('target/debug/examples/'+name),'contracts-executable')
             selected.append(path.resolve())
     oracle.require(finished and len(selected) == 1,'one-current-contracts-product')
     return artifacts.Artifact(selected[0],root/'crates/latent-packaging',tuple(sorted(links)))
 
 
-def compile_variant(app,variant,output,contracts):
+def compile_variant(app,variant,output,contracts,packager):
     from tools.go_capsule_build import build
     before = fixture.verify(app,variant)
-    build(app,output,contracts,None,'https://github.com/KirilsTurkins/latent-service-fabric')
+    build(app,output,contracts,packager,'https://github.com/KirilsTurkins/latent-service-fabric')
     oracle.require(before == fixture.verify(app,variant),'application-changed-during-build')
 
 
@@ -133,11 +134,14 @@ def qualify(root,output,revision):
         version = command(['rustc','--version'],'rustc',30,4096).decode().strip()
         oracle.require(version.startswith('rustc 1.97.1 '),'source-matched-native-Rust-toolchain')
         record['nativeCompiler'] = version
-        raw = command(['cargo','build','--locked','-p','latent-packaging','--example','capsule_contracts',
+        raw = command(['cargo','build','--locked','-p','latent-packaging','--example','capsule_contracts','--example','package',
             '--message-format=json'],'contracts',1200,16*1024*1024)
         product = contracts_product(raw,root)
+        packager = contracts_product(raw,root,'package')
         environment = artifacts.cargo_environment(root,product,environment,target=root/'target')
         contracts_identity = file_identity(product.executable,'contracts-tool')
+        packager_identity = file_identity(packager.executable,'packager')
+        record['nativePackagingTools'] = [contracts_identity,packager_identity]
         reference = output/'reference';reference.mkdir()
         project = reference/'project';project.mkdir()
         (project/'main.go').write_bytes(fixture.reference_source())
@@ -160,10 +164,13 @@ def qualify(root,output,revision):
             captured = fixture.verify(app,variant)
             command([sys.executable,'-B',root/'tools/qualify_go_stack_ceiling_runtime.py',
                 '--compile-variant',variant,'--project',app,'--output',output/name,
-                '--contracts-tool',product.executable],'build-'+variant,900,1024*1024)
+                '--contracts-tool',product.executable,'--packager-tool',packager.executable],'build-'+variant,900,1024*1024)
             oracle.require(captured == fixture.verify(app,variant),'captured-variant-changed')
             complete = read_json(output/name/'BUILD-COMPLETE.json')
-            oracle.require(complete['packageAssembled'] is False,'normal-package-source-required')
+            oracle.require(complete['packageAssembled'] is True,'actual-normal-package-required')
+            oracle.require(all(row['exitCode'] == 0 for row in complete['commands'])
+                and all(sum(row['stage'] == stage for row in complete['commands']) == 1
+                    for stage in ('package','inspect')),'actual-normal-package-and-inspect')
             oracle.require(complete['sourceDigest'] == captured['sourceInputsDigest']
                 and complete['componentDigest'] == digest(read_file(output/name/'component.wasm',16*1024*1024)),
                 'normal-build-source-and-component-binding')
@@ -172,9 +179,13 @@ def qualify(root,output,revision):
                 and observation['parameters']['runtime'] == fixture.PROFILE,'normal-v7-observation-binding')
             oracle.require([m for m in observation['materials'] if m['name'] == 'go']
                 == [record['placementReference']['compiler']],'same-pinned-Go-reference-and-component-compiler')
+            oracle.require([m for m in observation['materials'] if m['name'] == 'packager'] == [packager_identity]
+                and [m for m in observation['materials'] if m['name'] == 'contracts-tool'] == [contracts_identity],
+                'actual-source-matched-packaging-materials')
             variants.append({'name':name,**captured,'buildComplete':complete})
         record['normalBuilds'] = variants
-        oracle.require(file_identity(product.executable,'contracts-tool') == contracts_identity,'contracts-product-changed')
+        oracle.require(file_identity(product.executable,'contracts-tool') == contracts_identity
+            and file_identity(packager.executable,'packager') == packager_identity,'packaging-product-changed')
         command(['cargo','test','--locked','-p','latent-wasmtime','--features','development-test-host',
             '--test','go_stack_ceiling_runtime','--no-run','--message-format=json'],'cargo',1200,16*1024*1024)
         suite, = [s for s in registry.load(root/'tools/ci/suites.json')['suites'] if s['id'] == SUITE]
@@ -210,10 +221,11 @@ if __name__ == '__main__':
     p.add_argument('--compile-variant',choices=fixture.VARIANTS)
     p.add_argument('--project',type=Path)
     p.add_argument('--contracts-tool',type=Path)
+    p.add_argument('--packager-tool',type=Path)
     a = p.parse_args()
     if a.compile_variant:
-        if a.project is None or a.contracts_tool is None: p.error('compile variant needs owned project/contracts tool')
-        compile_variant(a.project,a.compile_variant,a.output,a.contracts_tool)
+        if a.project is None or a.contracts_tool is None or a.packager_tool is None: p.error('compile variant needs owned project/contracts/packager tools')
+        compile_variant(a.project,a.compile_variant,a.output,a.contracts_tool,a.packager_tool)
     else:
-        if a.project is not None or a.contracts_tool is not None: p.error('programme creates its own normal projects/products')
+        if a.project is not None or a.contracts_tool is not None or a.packager_tool is not None: p.error('programme creates its own normal projects/products')
         print(json.dumps(qualify(ROOT,a.output.resolve(),a.source_commit)))

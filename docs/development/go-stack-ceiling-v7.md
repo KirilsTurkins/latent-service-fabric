@@ -4,7 +4,7 @@ The explicitly selected `go-component-activation-v7` adds a fixed 1,048,576-byte
 ceiling to each dynamic logical Go stack, including initial/adaptive stacks,
 growth and direct GC-forced copies. It inherits v6 Task/QueuedWork and managed
 maintenance ownership. The normal default remains `go-component-async-v1`;
-v1–v6 derive their original runtime overlays. No new owner, reservation, native
+v1 through v6 derive their original runtime overlays. No new owner, reservation, native
 worker, byte counter, result queue, allocation or refund is introduced.
 
 The compiler authenticates the complete original Go1.27.3
@@ -138,3 +138,17 @@ and its explicit native fixture identities. Original shared fixture defaults
 remain `tenant-a`; package namespace validation remains unchanged. Artifact
 12555111269 and its failed result remain history. No runtime case is credited
 from either failed attempt.
+
+The third attempt, source `67b233b1bafdf44943499b19b42d536b837e8f75`
+([run40080836178](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40080836178)),
+passed normal package construction, then the strict GoCapsule observation decoder
+refused `MalformedProvenance`: builds selected no packager, so their observation
+correctly lacked its mandatory `packager` material. No signed attempt executed.
+Artifact12554499179 remains failed history. The corrected owning driver freshly
+builds both normal packaging CLI products from the current source, runs real
+package and inspect commands for both Go builds, and requires completed normal
+package output. It preserves the strict decoder and all existing caps. The
+native fixture checks that every original CLI content layer is unchanged when
+it adds its existing policy-required embedded SBOM through the normal library;
+only the generated package-input receipt and added SBOM differ. Signing/admission
+remains an in-process test operation, not released standalone operator delivery.
