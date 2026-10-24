@@ -98,8 +98,15 @@ An interrupted transition remains recoverable from its original durable marker.
 
 ## Planning before exhaustion
 
-The maintained `tools/static-release/audit-headroom.mjs` calculator consumes an
-explicit node-scoped usage snapshot and the actual audit configuration:
+Use the maintained [route-set preflight](static-route-sets.md#preflight-audit-capacity-before-renewal)
+to obtain current authenticated node-inventory counters before evidence renewal.
+It returns a machine-readable advisory report without dispatching a mutation or
+writing a recovery journal. Planning retains that report, and apply samples again
+before each new route dispatch. None of these reads reserves future capacity.
+
+For an explicitly retained usage snapshot, the bounded
+`tools/static-release/audit-headroom.mjs` calculator also accepts the actual audit
+configuration and produces JSON or human-readable output:
 
 ```sh
 node tools/static-release/audit-headroom.mjs \
@@ -130,9 +137,11 @@ warning record because the calculation is read-only. There is no new guest
 observer, tenant-labelled metric, timer or collector.
 
 The stopped-owner `status` command below gives verified active-epoch facts, but
-is not a live reservation. A complete live renewal preflight integration and
-real-node sustained-renewal qualification remain separate delivery checks for
-issue #990; this guide does not claim those checks have passed.
+is not a live reservation. A full journal with spare byte capacity still requires
+maintenance; increasing byte or filesystem allowances cannot create record slots.
+Use the recovery journal to distinguish a refusal before dispatch from a rejected
+operation or an outcome that remains unknown. An audit reason alone never grants
+permission to replay a mutation.
 
 ## Executable stopped-owner workflow
 
@@ -250,12 +259,12 @@ external destination remains mounted or intact later.
 | Corrupt/missing/foreign/symlinked history | Preserve all files and diagnose integrity. No destructive cleanup or automatic archive repair is performed. |
 | Deadline or lost response | Outcome is not established by the missing reply. Wait for the physical owner to exit, then resume the original operation. |
 
-The implementation qualifies interruption after marker publication, record copy,
-seal, archive publication, custody-index sync, partial record release, new head,
-new mode and final marker removal. Restart either reopens the valid completed
-epoch or refuses admission until the original exclusive transition resumes.
-A sealed copy with missing bytes is corruption, not an opportunity to reconstruct
-history silently from whichever other copy happens to be available.
+Interruption tests cover marker publication, record copy, seal, archive
+publication, custody-index sync, partial record release, new head, new mode and
+final marker removal. Restart either reopens the valid completed epoch or refuses
+admission until the original exclusive transition resumes. A sealed copy with
+missing bytes is corruption, not an opportunity to reconstruct history silently
+from whichever other copy happens to be available.
 
 ## Qualification boundary
 
@@ -263,10 +272,22 @@ The library regression suite covers multiple epochs, preserved acknowledged
 bytes, full-record capacity, finite custody, verified transfer, corruption,
 pending/unknown attempts, live ownership, original-operation recovery and
 cross-epoch cursors. Native CLI regressions exercise the local grammar and
-explicit history workflow. These are bounded executed fixtures, not a multi-day
-production soak.
+explicit history workflow. The maintained route tests additionally cover capacity
+preflight, known rejection before GET and between GET/HEAD, lost responses and
+missing receipts without automatic replay.
 
-Issue #990 is not complete until the maintained live preflight, signed static
-renewal/GET/HEAD sequence, real Linux node plus CLI multi-epoch fixture, negative
-freshness-expiry denial and repository-wide CI are also qualified. Reported
-alpha.4/alpha.5 incident facts must remain separate from new execution evidence.
+`tools/static_audit_lifecycle.py` is the bounded real Linux node plus CLI fixture
+invoked by the maintained static-site workflow. It uses an actual signed static
+package, 32-record epochs, a 1 MiB record-byte allowance and a 30-second evidence
+freshness policy. It exercises two epoch transitions and three node starts,
+record exhaustion with spare byte/filesystem space, partial GET/HEAD progress,
+expired-evidence HTTP 403, renewed HTTP success, byte-for-byte archive verification,
+original receipt recovery, epoch-bound cursors and explicit custody transfer.
+The fixture records commands and observations and only sets its passed result
+after all assertions complete. It is not a simulated multi-day production soak.
+
+Source coverage is not an execution result. Qualification requires the matching
+source/profile, completed fixture report and green repository CI. Failed or
+interrupted runs must not be presented as a completed lifecycle qualification.
+Keep the report-derived alpha.4 incident and alpha.5 source review separate from
+new test observations; neither establishes a newly executed alpha.5 soak.

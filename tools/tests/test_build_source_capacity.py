@@ -152,10 +152,13 @@ class SourceCapacityTests(unittest.TestCase):
 
     def test_capture_byte_allowances_are_fixed_and_reject_one_over(self):
         from dataclasses import replace
+        from unittest.mock import patch
+        from tools import build_process
 
         limits = SnapshotLimits()
         self.assertEqual(limits.max_total_bytes, 80 * 1024 * 1024)
         self.assertEqual(limits.max_archive_bytes, 88 * 1024 * 1024)
+        self.assertEqual(limits.max_archive_bytes, build_process.MAX_OUTPUT_BYTES)
         self.assertEqual(limits.max_file_bytes, 4 * 1024 * 1024)
         self.assertEqual(limits.max_directories, 4096)
         limits.validate()
@@ -164,6 +167,15 @@ class SourceCapacityTests(unittest.TestCase):
                 for value in (0, True, getattr(limits, name) + 1):
                     with self.assertRaisesRegex(SnapshotError, "invalid source capture limits"):
                         replace(limits, **{name: value}).validate()
+        # Exercise admission itself without spawning or allocating an archive.
+        # Python-version and process-ownership checks have separate tests.
+        with patch.object(build_process.sys, "version_info", (3, 13)):
+            self.assertEqual(build_process._validate(["git"], Path.cwd(), {}, 30,
+                                                     limits.max_archive_bytes), ["git"])
+            with self.assertRaisesRegex(build_process.BuildProcessError,
+                                        "command-output-limit-invalid"):
+                build_process._validate(["git"], Path.cwd(), {}, 30,
+                                        limits.max_archive_bytes + 1)
 
     def test_archive_and_content_byte_limits_are_enforced_independently(self):
         from dataclasses import replace

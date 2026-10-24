@@ -58,7 +58,12 @@ fn audit_reasons_survive_management_without_private_fields_or_dispositions() {
 #[test]
 fn unknown_audit_reasons_and_missing_reasons_are_not_public_diagnostics() {
     let limits = ManagementLimits::default();
-    for reason in ["", "audit-capacity/private", "/private/audit", "audit-invalid"] {
+    for reason in [
+        "",
+        "audit-capacity/private",
+        "/private/audit",
+        "audit-invalid",
+    ] {
         let status = platform_status(
             failure(PlatformErrorCode::ResourceExhausted, vec![audit(reason)]),
             &limits,

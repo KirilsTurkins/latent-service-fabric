@@ -109,9 +109,7 @@ impl PublicDetail {
         match self {
             Self::PublicationAmbiguous => 4 * 128 + 64,
             Self::Release(value) => value.retained_cost(),
-            Self::Audit(reason) => {
-                4 * 128 + "audit-journal".len() + "reason".len() + reason.len()
-            }
+            Self::Audit(reason) => 4 * 128 + "audit-journal".len() + "reason".len() + reason.len(),
             Self::Catalog(reason) => {
                 4 * 128 + "deployment-catalog".len() + "reason".len() + reason.len()
             }
