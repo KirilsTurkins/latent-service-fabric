@@ -320,7 +320,7 @@ fn validate_recipe(build_type: &str, parameters: &BuildRecipe) -> SignatureResul
                 && p.entry_point == "dev.latent.app.Capsule"
                 && p.target == "wasm32-wasip1"
                 && p.bindings == "lsf-java-wit-v1"
-                && matches!(p.optimization.as_str(), "O2" | "Oz")
+                && p.optimization == "O2"
                 && p.java_heap_bytes == 4_194_304
         }
         _ => false,

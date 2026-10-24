@@ -166,11 +166,6 @@ class BuildProvenanceSchemaTests(unittest.TestCase):
         statement = samples()["package-provenance-statement"]
         statement["predicate"]["observation"] = observation
         self.validators["package-provenance-statement"].validate(statement)
-        size_optimized = copy.deepcopy(observation)
-        size_optimized["parameters"]["optimization"] = "Oz"
-        self.validators["build-observation"].validate(size_optimized)
-        statement["predicate"]["observation"] = size_optimized
-        self.validators["package-provenance-statement"].validate(statement)
         policy = samples()["builder-policy"]
         policy["requirements"][0]["buildType"] = observation["buildType"]
         self.validators["builder-policy"].validate(policy)
@@ -183,10 +178,6 @@ class BuildProvenanceSchemaTests(unittest.TestCase):
                              ("bindings", "obsolete-teavm-wasi"), ("unrecognized", True)):
             changed = copy.deepcopy(observation)
             changed["parameters"][field] = value
-            candidates.append(changed)
-        for optimization in ("O0", "O1", "Os", "O3", "oz", "OZ", "-Oz", ""):
-            changed = copy.deepcopy(observation)
-            changed["parameters"]["optimization"] = optimization
             candidates.append(changed)
         for index in range(len(names)):
             changed = copy.deepcopy(observation)

@@ -38,7 +38,5 @@ teavm {
         minHeapSize = 1
         maxHeapSize = 4
         obfuscated = false
-        // Bound Java-to-C inlining growth; Clang still optimizes the generated C with -O2.
-        optimization = org.teavm.gradle.api.OptimizationLevel.BALANCED
     }
 }

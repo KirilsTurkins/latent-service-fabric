@@ -197,13 +197,8 @@ The SDK records the exact original and adapted generated C files containing
 TeaVM 0.15 exception spill pointers. It qualifies each saved pointer itself as
 volatile so optimized setjmp/longjmp exception handling preserves Java
 references through catch and finally blocks. Scalar spills, application Java
-bytes and compiler JARs are unchanged by that adaptation. Unexpected spill
-declarations fail before generated files are changed. The current native C
-policy selects `-Oz` for the two explicit activation profiles to prioritize the
-component function-size ceiling; nonactivation builds retain `-O2`. No ABI,
-SjLj/standard exception handling or execution/parser limit changes. This backend
-policy requires fresh source-bound component and runtime evidence; recognizing
-its `Oz` provenance value does not qualify an activation profile.
+bytes, compiler JARs and the maintained `-O2` optimization level are unchanged.
+Unexpected spill declarations fail before generated files are changed.
 
 ## Reproduce and inspect
 

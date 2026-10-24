@@ -21,9 +21,6 @@ from tools.rust_capsule_project import ROOT, canonical, digest, inventory, read_
 from tools.stage_runtime_wit import copy_wit_tree, dependencies
 
 
-ACTIVATION_C_OPTIMIZATION = "Oz"
-
-
 def source_module(path: Path):
     """Load this captured SDK helper, never a prior project's module cache.
 
@@ -446,8 +443,7 @@ class Compiler:
         adapt = source_module(self.sdk / "tools/teavm_platform.py").adapt
         adaptation = adapt(generated)
         core, component = destination / "core.wasm", destination / "component.wasm"
-        c_failure_context.run(self, generated, failure_contexts, "-target", "wasm32-wasip1", "-std=c11",
-                 "-" + ACTIVATION_C_OPTIMIZATION if activation_profile else "-O2",
+        c_failure_context.run(self, generated, failure_contexts, "-target", "wasm32-wasip1", "-std=c11", "-O2",
                  *(["-DLSF_JAVA_ACTIVATION_PROFILE=1"] if activation_profile else []),
                  "-DLSF_TEAVM_WASM=1", "-DTEAVM_CUSTOM_LOG=1", "-mllvm", "-wasm-enable-sjlj", "-lsetjmp",
                  "-mllvm", "-wasm-use-legacy-eh=false", "-mexec-model=reactor", "-Wl,--no-entry",

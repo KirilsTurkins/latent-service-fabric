@@ -13,7 +13,7 @@ from tools.build_process import BuildProcessError
 from tools import (guest_compatibility_build, guest_resources, guest_dependency_inputs,
                    guest_authoring_frontend, java_http_client, java_server_source, server_source)
 from tools.java_capsule_project import validate
-from tools.java_guest.compiler import ACTIVATION_C_OPTIMIZATION, Compiler
+from tools.java_guest.compiler import Compiler
 from tools.java_guest import compiler_diagnostics, c_failure_context
 from tools.java_guest import resources as java_resources
 from tools.application_dependencies import prepare, verify_inputs
@@ -338,9 +338,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                                "repositoryTrust": "operator-asserted", "capture": "explicit-input-files"},
                     "componentDigest": digest(component), "componentSize": len(component), "materials": sorted(materials, key=lambda row: row["name"]),
                     "parameters": {"compiler": "teavm-c", "entryPoint": "dev.latent.app.Capsule", "target": "wasm32-wasip1",
-                                   "bindings": "lsf-java-wit-v1",
-                                   "optimization": ACTIVATION_C_OPTIMIZATION if runtime_profile in ACTIVATION_PROFILES else "O2",
-                                   "javaHeapBytes": 4_194_304},
+                                   "bindings": "lsf-java-wit-v1", "optimization": "O2", "javaHeapBytes": 4_194_304},
                     "startedAt": started, "finishedAt": finished, "reproducibility": "not-checked", "hermetic": False,
                     "dependencyCompleteness": "declared-inputs-incomplete"})
                 guest_compatibility_context_build.finish(output, files, source_inputs, component, materials)

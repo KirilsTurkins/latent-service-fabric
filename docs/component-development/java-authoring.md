@@ -179,17 +179,6 @@ identified `meth_dla_Capsule_pools` at 15,264,587 bytes; the closed runtime adap
 had no oversized function. These are compiler boundary results, not Java runtime,
 GC, signed-execution or complete standard-library qualification.
 
-The maintained normal compiler template explicitly selects TeaVM C `BALANCED`
-(`ADVANCED` internally), replacing the plugin's implicit C `AGGRESSIVE` default.
-Its inlining strategy limits accumulated complexity to 300 rather than 3000 and
-restricts nontrivial inlining to once-used callees. That attempt kept Clang at
-`-O2`, the original public source, coroutine transformations and component-parser
-limits. The [BALANCED build](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40101238993)
-reduced the same `pools` body to 13,993,280 bytes but still failed the unchanged
-7,654,321-byte limit. This policy has not repaired the assembly boundary.
-Captured SDK hashes bind this setting, so older compiler receipts do not qualify
-builds with the changed template.
-
 For this exact public source/WIT only, a failed component assembly also attempts
 to retain its generated `c/d/l/a/Capsule.c` Clang input under an independent
 4-MiB ceiling. `generated-c.json` records its identity or a closed unavailable
@@ -202,16 +191,13 @@ JDK/compiler controls; it refuses combinations with either other optional mode
 before acquisition. Default authoring CI coverage remains intact. This path
 provides compiler evidence, not component execution or runtime qualification.
 
-The native C backend now selects `-Oz` only for either explicit activation runtime
-profile; nonactivation builds keep `-O2` and unknown profiles still refuse. This
-source-bound candidate prioritizes the hard function-size ceiling. It keeps the
-original SjLj/standard exception handling, ABI and execution limits; its effect
-on the unchanged public fixture still requires a fresh measured build.
-Java provenance recognizes only `O2` and `Oz` as maintained optimization values.
-Its existing six fields identify the optimization, not an activation-profile
-qualification: profile selection remains in the producer and separate runtime,
-builder, source and operator gates remain required. Old receipts retain their
-original compiler inputs and cannot qualify this changed backend policy.
+The compiler retains the current development defaults: TeaVM C `FULL` and
+Clang `-O2`. Earlier [BALANCED](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40101238993)
+and [activation `Oz`](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40109009991)
+experiments did not repair the size boundary: the same public `pools` body was
+13,993,280 and 14,367,528 bytes respectively. Those policy and provenance-value
+experiments are withdrawn. Their failed histories remain separately attributed;
+the retained capture programme does not establish a compiler or runtime fix.
 
 `--read-only-cache /path/to/modules-2` selects a verified immutable Gradle
 dependency cache. Gradle writes locks and updates to the build's private home.
