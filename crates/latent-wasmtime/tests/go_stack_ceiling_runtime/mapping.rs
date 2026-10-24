@@ -254,7 +254,8 @@ pub fn require_cap(mapping: &Mapping, snapshot: &latent_wasmtime::DevelopmentTra
     assert_eq!(
         matches.len(),
         1,
-        "actual private cap frame, never generic GuestTrap"
+        "actual private cap frame, never generic GuestTrap; numeric={}",
+        serde_json::to_string(snapshot).unwrap()
     );
     // Truncation of older recursive frames is explicitly preserved. The
     // required cap leaf itself must occur among the retained original frames.

@@ -180,3 +180,18 @@ binding metadata grant no extra lifecycle credit: no callee is deployed or
 invoked, and both real publications still pass ordinary admission. The later
 caller repoint remains an ordinary validated deployment update. Artifact
 12555674832 and the failed result remain history; no signed request executed.
+
+The sixth attempt, source `898fd5109375c8117216425abc36c752c151eef9`
+([run40084311879](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40084311879)),
+completed the first actual signed below-cap recursion/GC/checksum case:
+40,058,530 fuel, 4,331,564 observed peak bytes, StackInuse 262,144 to 655,360,
+NumGC 0 to 1 and checksum 17,756,160. Its original Store, instance, reservation,
+reserved fuel and memory counts returned to zero. The following growth case
+returned an unreachable-code GuestTrap with a bounded, nonmissing, unambiguous
+backtrace, but the required private-cap function/body match was absent. That
+negative is not cap evidence; its exact numeric frames were not retained by the
+old assertion. Artifact 12556956038 and this failed programme remain history.
+The unchanged exact-leaf assertion now includes only the existing at most 16
+numeric-frame snapshot in its failure message. It adds no success path, frame
+limit, guest diagnostic operation, runtime owner or mapper fallback. Cap and
+full seven-attempt qualification remain unknown pending the actual trace.
