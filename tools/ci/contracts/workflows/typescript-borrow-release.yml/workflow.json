@@ -21,6 +21,7 @@
           "tools/tests/test_typescript_borrow_controls.py",
           "tools/tests/test_typescript_borrow_splicer_inputs.py",
           "tools/tests/test_typescript_borrow_retry_inputs.py",
+          "tools/tests/test_typescript_borrow_support.py",
           "sdk/typescript-guest/activation/**"
         ]
       },
@@ -33,7 +34,7 @@
   "requiredJobs": [
     "native-controls"
   ],
-  "reviewReason": "Replace repeated source builds with exact failed-producer completed products; retain all native cases, old failure, source validators and aggregate120-second diagnostic cap",
+  "reviewReason": "Add the two maintained-support source guard test path; same authenticated producer/branch/permissions and no libJS or engine rebuild",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-borrow-release.yml"
 }

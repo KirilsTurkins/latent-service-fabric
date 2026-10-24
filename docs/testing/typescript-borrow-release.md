@@ -1,8 +1,9 @@
-# TypeScript import borrow release: source foundation
+# TypeScript import borrow release: source foundation and native controls
 
 This #745 foundation adds a compiler-private, opt-in acknowledgement for one
-original asynchronous canonical import. Its native implementation and signed
-Component Model behavior are **not yet qualified**. The compiler-owned
+original asynchronous canonical import. Eleven real-SpiderMonkey native diagnostic
+cases now pass with explicit canonical/broker fixture doubles; signed Component
+Model behavior remains **unqualified**. The compiler-owned
 selection is empty, so ordinary generated bindings remain byte-identical and
 applications cannot enable the mechanism through project configuration.
 
@@ -43,9 +44,10 @@ Original completion failures retain the paid node in quarantine. On successful
 completion, the node and persistent root are destroyed before refunding their
 Native owner. A refusal of that final refund retains the owner in the existing
 scalar failure holder and cannot resolve the observer. The manager adds a fixed
-pointer, size counter and failure flag even when unused; the actual ABI size
-delta and total runtime cost have not been measured. This is not whole-cost
-acceptance evidence.
+pointer, size counter and failure flag even when unused. The measured wasm32
+manager is 112 bytes versus 96 before this feature (+16); the unchanged record is
+248 bytes and optional observer storage is 72 bytes. These ABI measurements do
+not establish total runtime cost or whole-cost acceptance.
 
 The AST transform accepts only selected generated async declarations with the
 reviewed reservation, carrier and finally graph. Arming occurs first inside the
@@ -53,7 +55,8 @@ original try block, so observer admission refusal still executes the original
 finally. The bridge must be the actual unique top-level const declaration.
 Changed or ambiguous shapes fail closed. The native header is part of the
 engine source identity; the JS helper is part of compiler staging and the build
-recipe. Existing engine products cannot stand in for a fresh source-bound engine.
+recipe. An existing source product is reusable only when the unchanged normal
+source/SDK/recipe validators accept every selected byte.
 
 ## Current controls and remaining owning evidence
 
@@ -75,8 +78,11 @@ Eleven real-SpiderMonkey native controls are staged in
 through actual fixture subtask drop, foreign/unregistered/released foreign-epoch
 handles, Native admission denial, observer Promise admission failure, bounded-list
 refusal, five exact owner-acknowledgement refusals, and the existing cancellation
-baseline. They have not been compiled or executed for this foundation. Their canonical
-intrinsics are explicit diagnostic doubles, rather than signed host evidence.
+baseline. All eleven passed in [owning40050239109](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40050239109),
+with all six pinned-parser controls and no skips. The [public native diagnostic
+receipt](typescript-borrow-release-native-evidence.json) records exact source,
+artifact, cases, retained-owner counts and measured ABI. Canonical/broker
+intrinsics remain explicit diagnostic doubles, rather than signed host evidence.
 
 The original owning campaign at commit
 `e2dfcf6d1b48b650fee585e83cd15720bf7f745c`, run `40042939576`, built the
@@ -93,6 +99,23 @@ source mismatch rather than rebuilding or rewriting old receipts. Only the
 normal pinned WASI SDK 30 toolchain is acquired for the diagnostic retry. The
 normal library and engine are never rebuilt by this recipe.
 
+The first bounded retry, run `40047503071`, compiled the diagnostic in 1.8 seconds
+but failed its link because the standalone recipe omitted the maintained Rust
+encoding/hook and WASI support closure. It ran no native case. The support-link
+repair adds only the pinned Starling four-crate staticlib template with its
+original Cargo.lock (`--locked`, Rust 1.97.1, wasm32-wasip1), unchanged panic/oom
+wrapper source, and normal WASI signal/process-clock/getpid archives. Its
+separate support-build deadline is 300 seconds; the producer's normal staticlib build
+took 15.56 seconds. Source, lock, compiler, libraries and wrapper identities are retained
+and rechecked. No substitute symbols or engine/libJS rebuild is permitted.
+
+Run `40049437805` built that support successfully and compiled, linked and
+validated the diagnostic. It then failed the 64 MiB carrier bound: 139,270,923 of
+148,560,386 bytes were DWARF debug sections. Artifact `12542384282` retains the
+failed raw carrier. The successful diagnostic link uses `--strip-debug`; executable
+sections, the 64 MiB/120-second bounds and all eleven cases remain unchanged.
+No native case ran in that failed campaign.
+
 Diagnostic compilation uses `-O0`; the diagnostic link explicitly disables
 ThinLTO optimization. Their separate phase receipts share **one aggregate
 120-second deadline**, preserving the same finite bound and all eleven cases,
@@ -100,8 +123,9 @@ ABI, admission, ownership and drop assertions. Pinned Node's `node:wasi`
 executes the diagnostic with no preopened directories. These fixture intrinsics
 are not signed canonical behavior. All six pinned-parser controls must pass
 without skips before diagnostic compilation. Actual wasm32 manager, record and
-observer sizes remain unknown until that retry succeeds; no whole-cost claim
-follows from those measurements.
+observer sizes are recorded in the native receipt; no whole-cost claim follows
+from those measurements. The successful run rebuilt neither libJS nor the engine;
+all earlier failed runs remain failed and retained.
 
 A separately reviewed signed TypeScript campaign must hold a real canonical borrow
 at a controlled cancellation barrier, prove release remains pending while the
