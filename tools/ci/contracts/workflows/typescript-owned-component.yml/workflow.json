@@ -1,0 +1,39 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "typescript-canonical-own-${{ github.ref }}"
+    },
+    "name": "TypeScript canonical OWN diagnostic",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/typescript-owned-canonical-source-20261024"
+        ],
+        "paths": [
+          ".github/workflows/typescript-owned-component.yml",
+          "tools/qualify_typescript_owned_component.py",
+          "tools/typescript_guest/owned_component_controls.py",
+          "tools/typescript_guest/owned_result_component.py",
+          "tools/typescript_guest/owned_result_fixture.*",
+          "tools/typescript_guest/borrow_signed_inputs.py",
+          "tools/tests/test_typescript_owned_component.py",
+          "tools/tests/test_typescript_owned_fixture.py",
+          "crates/latent-wasmtime/examples/typescript_runtime_probe*",
+          "crates/latent-wasmtime/examples/typescript_runtime_probe/**"
+        ]
+      },
+      "workflow_dispatch": null
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "canonical-own"
+  ],
+  "reviewReason": "One separate finite canonical diagnostic from authenticated successful fresh inputs; original workflows remain intact, setup/acquisition/build/execution share900 seconds and signed/provider/full-cost gates remain unqualified.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/typescript-owned-component.yml"
+}

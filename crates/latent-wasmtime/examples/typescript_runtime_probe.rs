@@ -11,6 +11,8 @@ use wasmtime::{Config, Engine, Store, StoreLimits, StoreLimitsBuilder};
 
 #[path = "typescript_runtime_probe/service_memory.rs"]
 mod service_memory;
+#[path = "typescript_runtime_probe/owned_results.rs"]
+mod owned_results;
 
 struct Pending(Arc<AtomicUsize>);
 
@@ -49,6 +51,7 @@ async fn main() -> wasmtime::Result<()> {
         return sdk_blob(&engine, &component).await;
     }
     match std::env::args().nth(3).as_deref() {
+        Some("sdk-owned-results") => return owned_results::run(&engine, &component).await,
         Some("sdk-service-memory") => return service_memory::run(&engine, &component, true).await,
         Some("sdk-callee-memory") => return service_memory::run(&engine, &component, false).await,
         Some("sdk-dotnet-secrets") => return sdk_dotnet_secrets(&engine, &component).await,

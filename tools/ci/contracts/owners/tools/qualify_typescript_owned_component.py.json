@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_typescript_owned_component.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "New bounded canonical diagnostic CLI delegates to reviewed normal validators and explicit actual resource/payload/owner oracles; no signed or whole-cost claim.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "a69f6fad347460817c8153ee3b297b16b66b8cf76897bbc2fe0656f0e4aafd1b"
+}
