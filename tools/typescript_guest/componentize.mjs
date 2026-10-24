@@ -9,8 +9,9 @@ import { explicitResourceOwners } from './resources.mjs';
 import { selectedSourceSplicer } from './source_splicer.mjs';
 import { lazySyncImportWaiters, retireGeneratedTaskSlots, applicationRealmImportPromises, fuseNativeImportAwaits, directIdleTaskSlots, inlineNativeTaskMeta } from './async_waiters.mjs';
 import { borrowReleaseHandoff } from './import_cancellation.mjs';
+import { borrowProbeBindings, borrowProbeProfile } from './borrow_probe.mjs';
 
-const [compiler, witPath, sourcePath, output, world = 'capsule', engine, selectionPath, sourceSplicer, bindingParser] = process.argv.slice(2);
+const [compiler, witPath, sourcePath, output, world = 'capsule', engine, selectionPath, sourceSplicer, bindingParser, diagnosticProfile] = process.argv.slice(2);
 const prepareImport = witPath === '--source-import-adapter';
 const importProfile = 'spidermonkey-activation-promises-clocks-imports-v1';
 const useImportAdapter = prepareImport || !!sourceSplicer;
@@ -87,6 +88,9 @@ if (selectedSplicer) {
   ({parse: parseBindings} = await import(pathToFileURL(bindingParser)));
   if (typeof parseBindings !== 'function') throw new Error('source-owned-binding-parser-required');
 }
+if (diagnosticProfile !== undefined && (!selectedSplicer || diagnosticProfile !== borrowProbeProfile)) {
+  throw new Error('compiler-owned-borrow-probe-runtime');
+}
 const result = await componentize({
   sourcePath, sourceName: basename(sourcePath),
   witPath, worldName: world, enableAot: false, env: compilerEnv,
@@ -102,6 +106,7 @@ const result = await componentize({
       generatedBindings = fuseNativeImportAwaits(generatedBindings, parseBindings);
       generatedBindings = inlineNativeTaskMeta(generatedBindings, parseBindings);
       generatedBindings = borrowReleaseHandoff(generatedBindings, parseBindings);
+      generatedBindings = borrowProbeBindings(generatedBindings, parseBindings, diagnosticProfile);
       generatedBindings = applicationRealmImportPromises(generatedBindings);
     }
     return generatedBindings;

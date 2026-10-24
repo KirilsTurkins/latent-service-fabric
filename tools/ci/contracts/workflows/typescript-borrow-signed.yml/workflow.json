@@ -1,0 +1,39 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "typescript-borrow-signed-${{ github.ref }}"
+    },
+    "name": "TypeScript signed canonical borrow release",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/typescript-borrow-release-probe-20261024"
+        ],
+        "paths": [
+          ".github/workflows/typescript-borrow-signed.yml",
+          "tools/qualify_typescript_borrow_signed.py",
+          "tools/typescript_guest/borrow_*.py",
+          "tools/typescript_guest/borrow_probe.mjs",
+          "tools/typescript_guest/compiler.py",
+          "tools/typescript_guest/componentize.mjs",
+          "tools/tests/test_typescript_borrow*.py",
+          "sdk/typescript-guest/probes/borrow-release/**",
+          "crates/latent-wasmtime/tests/typescript_import_borrow_release*",
+          "crates/latent-wasmtime/tests/typescript_import_borrow_release/**",
+          "crates/latent-wasmtime/tests/local_service/packages.rs"
+        ]
+      }
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "signed-borrow"
+  ],
+  "reviewReason": "Add one finite development feature campaign for one fixed component and six signed borrow-release logical-reference outcomes, preserving original limits and all existing workflows.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/typescript-borrow-signed.yml"
+}

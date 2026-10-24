@@ -5,6 +5,7 @@ import { pathToFileURL } from 'node:url';
 import { createHash } from 'node:crypto';
 import { activationModule } from './activation_module.mjs';
 import { bufferBuiltin, BUFFER_PROFILE } from './buffer_builtin.mjs';
+import { borrowProbeConfiguration, borrowProbeBuiltin } from './borrow_probe.mjs';
 
 const [esbuildPath, projectPath, input, output, importsPath, configurationPath, parserPath] = process.argv.slice(2);
 const { build } = await import(pathToFileURL(esbuildPath));
@@ -17,6 +18,7 @@ const bufferSource = await readFile(new URL('./node_buffer.mjs', import.meta.url
 const bufferBackend = bufferBuiltin(bufferSource);
 const bufferDigest = 'sha256:' + createHash('sha256').update(bufferSource).digest('hex');
 const captured = !!configuration.moduleRoot;
+const borrowProbe = borrowProbeConfiguration(configuration, imports);
 const phaseFetch = configuration.standardFetchProfile === 'lsf-fetch-phase-buffered-v2';
 const standardFetch = phaseFetch || configuration.standardFetchProfile === 'lsf-fetch-buffered-v1';
 const fetchInterface = phaseFetch ? 'latent:http/phase-timing@0.4.0' : 'latent:http/streaming@0.3.0';
@@ -104,6 +106,10 @@ const result = await build({
     builder.onResolve({ filter: /.*/ }, args => {
       if (args.kind === 'dynamic-import' || args.kind.startsWith('require') && !captured) {
         return { errors: [{ text: 'dynamic module loading or uncaptured CommonJS is unsupported' }] };
+      }
+      if (args.path === borrowProbeBuiltin) {
+        return borrowProbe ? {path: args.path, external: true} :
+          {errors: [{text: 'compiler-owned-borrow-probe-not-selected'}]};
       }
       if (imports.has(args.path)) return { path: args.path, external: true };
       const ownedBuffer = bufferBackend.resolve(args.path);
