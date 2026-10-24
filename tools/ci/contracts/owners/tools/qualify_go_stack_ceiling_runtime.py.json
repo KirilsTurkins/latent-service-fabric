@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_go_stack_ceiling_runtime.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Two normal v7 source builds, authenticated native Rust version/current contracts-signer and exact seven-attempt mapped-cap programme",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "5b5e3bd738e48188f8c8bc69f20d8f7f15d7e37f9f591fb601668ab0fb0846cc"
+}
