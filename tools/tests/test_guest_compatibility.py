@@ -51,6 +51,46 @@ class CompatibilityReport(unittest.TestCase):
         self.assertEqual([item["classification"] for item in report["findings"]], list(classes))
         self.assertEqual(c.read(encode(report)), report)
 
+    def test_present_retains_each_closed_resource_without_changing_machine_findings(self):
+        for language in c.LANGUAGES:
+            for evidence in ("actual-component", "native-reference"):
+                rendered = set()
+                for resource in c.RESOURCES:
+                    report = sample([c.finding("resource-exhausted", "invocation", evidence,
+                                              resource=resource)], language=language)
+                    before = encode(report)
+                    parsed = c.read(before)
+                    text = c.present(parsed)
+                    self.assertIn(" Resource: " + resource + ".", text)
+                    rendered.add(text)
+                    self.assertEqual(encode(parsed), before)
+                    self.assertEqual(encode(report), before)
+                    self.assertEqual((report["status"], report["authority"]), ("blocked", "none"))
+                self.assertEqual(len(rendered), len(c.RESOURCES))
+
+    def test_present_omitted_resource_is_unchanged_and_invalid_labels_or_classes_refuse(self):
+        plain = sample([c.finding("resource-exhausted", "invocation", "actual-component",
+                                  operation="timer-queue-task")])
+        expected = ("Compatibility: blocked (rust, lsf-host-abi-phase3-v4).\n"
+                    "resource-exhausted [invocation; actual-component]: The named activation "
+                    "resource limit was exhausted. Operation: timer-queue-task.\n"
+                    "Selected observations only; package membership, runtime authority and retry safety "
+                    "are not inferred.\n")
+        self.assertEqual(c.present(plain), expected)
+        valid = sample([c.finding("resource-exhausted", "invocation", "actual-component", resource="tasks")])
+        for resource in ("unknown", "task", "private-resource", "C:/private/file", False, 0, []):
+            changed = copy.deepcopy(valid)
+            changed["findings"][0]["resource"] = resource
+            changed["identity"] = digest(encode({k: v for k, v in changed.items() if k != "identity"}))
+            with self.assertRaisesRegex(DevError, "compatibility-resource"):
+                c.present(changed)
+        for classification in set(c.CLASSIFICATIONS) - {"resource-exhausted"}:
+            changed = copy.deepcopy(valid)
+            changed["findings"][0]["classification"] = classification
+            changed["identity"] = digest(encode({k: v for k, v in changed.items() if k != "identity"}))
+            with self.assertRaisesRegex(DevError, "compatibility-resource-class"):
+                c.present(changed)
+
     def test_unknown_and_extension_are_not_success(self):
         for classification in ("unresolved-behavior", "optional-extension", "lifecycle-unproven"):
             self.assertEqual(sample([c.finding(classification, "invocation", "model")])["status"], "incomplete")
