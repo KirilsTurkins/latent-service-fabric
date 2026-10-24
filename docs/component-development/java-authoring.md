@@ -174,9 +174,20 @@ reference-resolution and class-initialization passes before exact comparison;
 unknown instructions and changed class identities still refuse. The actual
 normal authoring build passed CTarget generation and core compilation, then
 refused component assembly at the unchanged function-body size limit of
-7,654,321 bytes. Its core inputs were not retained, so the offending function
-is not yet identified. This is a compiler boundary result, not Java runtime,
+7,654,321 bytes. A later [retained normal build](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40097935402)
+identified `meth_dla_Capsule_pools` at 15,264,587 bytes; the closed runtime adapter
+had no oversized function. These are compiler boundary results, not Java runtime,
 GC, signed-execution or complete standard-library qualification.
+
+The maintained normal compiler template explicitly selects TeaVM C `BALANCED`
+(`ADVANCED` internally), replacing the plugin's implicit C `AGGRESSIVE` default.
+Its inlining strategy limits accumulated complexity to 300 rather than 3000 and
+restricts nontrivial inlining to once-used callees. Clang remains at `-O2`; the
+original public source, coroutine transformations and component-parser limits
+remain unchanged. The source-selected policy reduces inlining growth risk; an
+actual build must establish whether it resolves the oversized-function boundary.
+Captured SDK hashes bind this setting, so older compiler receipts do not qualify
+builds with the changed template.
 
 `--read-only-cache /path/to/modules-2` selects a verified immutable Gradle
 dependency cache. Gradle writes locks and updates to the build's private home.
