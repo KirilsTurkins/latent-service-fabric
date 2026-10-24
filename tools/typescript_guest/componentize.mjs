@@ -8,7 +8,7 @@ import { pathToFileURL } from 'node:url';
 import { coreIntegerLowering } from './signed64.mjs';
 import { explicitResourceOwners } from './resources.mjs';
 import { selectedSourceSplicer } from './source_splicer.mjs';
-import { lazySyncImportWaiters, retireGeneratedTaskSlots, applicationRealmImportPromises, fuseNativeImportAwaits, directIdleTaskSlots, inlineNativeTaskMeta } from './async_waiters.mjs';
+import { lazySyncImportWaiters, retireGeneratedTaskSlots, applicationRealmImportPromises, fuseNativeImportAwaits, directIdleTaskSlots, nativeCarrierImports } from './async_waiters.mjs';
 import { borrowReleaseHandoff } from './import_cancellation.mjs';
 import { borrowProbeBindings, borrowProbeProfile, borrowProbeSpliceCapture } from './borrow_probe.mjs';
 
@@ -124,7 +124,7 @@ const result = await componentize({
     if (selectedSplicer) {
       generatedBindings = directIdleTaskSlots(generatedBindings);
       generatedBindings = fuseNativeImportAwaits(generatedBindings, parseBindings);
-      generatedBindings = inlineNativeTaskMeta(generatedBindings, parseBindings);
+      generatedBindings = nativeCarrierImports(generatedBindings, parseBindings);
       generatedBindings = borrowReleaseHandoff(generatedBindings, parseBindings);
       generatedBindings = borrowProbeBindings(generatedBindings, parseBindings, diagnosticProfile);
       generatedBindings = applicationRealmImportPromises(generatedBindings);

@@ -14,13 +14,14 @@ pub struct Descriptor {
     pub disposal: Vec<ResourceDisposal>,
 }
 
-// Only canonical OWN slots are disposed. Strings/list backing allocations keep
-// their original allocator lifetime; this plan makes no transitive heap claim.
+// Complete, unlifted host-lowered results own their canonical backing tree.
+// Delivered/partially lifted JS values and parameter storage are not covered.
 #[derive(Clone, Debug)]
 pub enum ResourceDisposal {
     Own { offset: u32, resource: TypeId, drop_import: Option<(String, String)> },
+    String { offset: u32 },
     Variant { offset: u32, tag_bytes: u32, cases: Vec<Vec<ResourceDisposal>> },
-    List { offset: u32, stride: u32, elements: Vec<ResourceDisposal> },
+    List { offset: u32, stride: u32, align: u32, elements: Vec<ResourceDisposal> },
     Unsupported,
 }
 
@@ -32,7 +33,7 @@ impl Descriptor {
                     ResourceDisposal::Own{resource,drop_import,..} => *drop_import=imports.get(resource).cloned(),
                     ResourceDisposal::Variant{cases,..} => for case in cases {bind(case,imports);},
                     ResourceDisposal::List{elements,..} => bind(elements,imports),
-                    ResourceDisposal::Unsupported => {},
+                    ResourceDisposal::String{..} | ResourceDisposal::Unsupported => {},
                 }
             }
         }
@@ -42,42 +43,60 @@ impl Descriptor {
 
 fn resource_disposal(resolve:&wit_parser::Resolve,sizes:&SizeAlign,ty:Type,offset:u32)
     ->Vec<ResourceDisposal> {
-    fn variant(resolve:&wit_parser::Resolve,sizes:&SizeAlign,tag:Int,cases:Vec<Option<Type>>,offset:u32)
+    fn at(offset:u32,relative:usize)->u32 {
+        offset.checked_add(u32::try_from(relative).expect("canonical-disposal-offset-width"))
+            .expect("canonical-disposal-offset-overflow")
+    }
+    fn variant(resolve:&wit_parser::Resolve,sizes:&SizeAlign,tag:Int,cases:Vec<Option<Type>>,offset:u32,
+        visiting:&mut std::collections::BTreeSet<TypeId>)
         ->Vec<ResourceDisposal> {
-        let payload=sizes.payload_offset(tag,cases.iter().map(Option::as_ref)).size_wasm32() as u32;
-        let cases=cases.into_iter().map(|ty|ty.map(|ty|resource_disposal(resolve,sizes,ty,offset+payload))
+        let payload=at(offset,sizes.payload_offset(tag,cases.iter().map(Option::as_ref)).size_wasm32());
+        let cases=cases.into_iter().map(|ty|ty.map(|ty|walk(resolve,sizes,ty,payload,visiting))
             .unwrap_or_default()).collect::<Vec<_>>();
         if cases.iter().all(Vec::is_empty) {return Vec::new();}
         let tag_bytes=match tag {Int::U8=>1,Int::U16=>2,Int::U32=>4,Int::U64=>8};
         vec![ResourceDisposal::Variant{offset,tag_bytes,cases}]
     }
-    match ty {
-        Type::Id(id) => match &resolve.types[id].kind {
-            TypeDefKind::Type(ty) => resource_disposal(resolve,sizes,*ty,offset),
+    fn walk(resolve:&wit_parser::Resolve,sizes:&SizeAlign,ty:Type,offset:u32,
+        visiting:&mut std::collections::BTreeSet<TypeId>)->Vec<ResourceDisposal> {
+      match ty {
+        Type::Id(id) => {
+          // The parser's resolved type DAG supplies the only static depth.
+          // Refuse cycles rather than growing a guest-controlled recursion.
+          assert!(visiting.insert(id),"recursive-canonical-result-type");
+          let plan=match &resolve.types[id].kind {
+            TypeDefKind::Type(ty) => walk(resolve,sizes,*ty,offset,visiting),
             TypeDefKind::Handle(Handle::Own(resource)) => vec![ResourceDisposal::Own{
                 offset,resource:js_component_bindgen::dealias(resolve,*resource),drop_import:None}],
             TypeDefKind::Handle(Handle::Borrow(_)) => vec![ResourceDisposal::Unsupported],
             TypeDefKind::Record(record) => sizes.field_offsets(record.fields.iter().map(|field|&field.ty))
-                .into_iter().flat_map(|(at,ty)|resource_disposal(resolve,sizes,*ty,offset+at.size_wasm32() as u32)).collect(),
+                .into_iter().flat_map(|(relative,ty)|walk(resolve,sizes,*ty,at(offset,relative.size_wasm32()),visiting)).collect(),
             TypeDefKind::Tuple(tuple) => sizes.field_offsets(tuple.types.iter())
-                .into_iter().flat_map(|(at,ty)|resource_disposal(resolve,sizes,*ty,offset+at.size_wasm32() as u32)).collect(),
+                .into_iter().flat_map(|(relative,ty)|walk(resolve,sizes,*ty,at(offset,relative.size_wasm32()),visiting)).collect(),
             TypeDefKind::List(ty) => {
-                let elements=resource_disposal(resolve,sizes,*ty,0);
-                if elements.is_empty() {Vec::new()} else {
-                    vec![ResourceDisposal::List{offset,stride:sizes.size(ty).size_wasm32() as u32,elements}]
-                }
+                let elements=walk(resolve,sizes,*ty,0,visiting);
+                let stride=u32::try_from(sizes.size(ty).size_wasm32()).expect("canonical-list-stride-width");
+                let align=u32::try_from(sizes.align(ty).align_wasm32()).expect("canonical-list-align-width");
+                assert!(stride>0 || elements.is_empty(),"zero-stride-result-cannot-own-children");
+                vec![ResourceDisposal::List{offset,stride,align,elements}]
             },
-            TypeDefKind::Variant(value) => variant(resolve,sizes,value.tag(),value.cases.iter().map(|case|case.ty).collect(),offset),
-            TypeDefKind::Option(ty) => variant(resolve,sizes,Int::U8,vec![None,Some(*ty)],offset),
-            TypeDefKind::Result(value) => variant(resolve,sizes,Int::U8,vec![value.ok,value.err],offset),
+            TypeDefKind::Variant(value) => variant(resolve,sizes,value.tag(),value.cases.iter().map(|case|case.ty).collect(),offset,visiting),
+            TypeDefKind::Option(ty) => variant(resolve,sizes,Int::U8,vec![None,Some(*ty)],offset,visiting),
+            TypeDefKind::Result(value) => variant(resolve,sizes,Int::U8,vec![value.ok,value.err],offset,visiting),
             TypeDefKind::Enum(_) | TypeDefKind::Flags(_) => Vec::new(),
             _ => vec![ResourceDisposal::Unsupported],
+          };
+          visiting.remove(&id);
+          plan
         },
+        Type::String => vec![ResourceDisposal::String{offset}],
         Type::Bool | Type::U8 | Type::S8 | Type::U16 | Type::S16 |
         Type::U32 | Type::S32 | Type::U64 | Type::S64 | Type::Char |
-        Type::F32 | Type::F64 | Type::String => Vec::new(),
+        Type::F32 | Type::F64 => Vec::new(),
         _ => vec![ResourceDisposal::Unsupported],
+      }
     }
+    walk(resolve,sizes,ty,offset,&mut std::collections::BTreeSet::new())
 }
 
 #[derive(Clone, Debug)]
@@ -281,13 +300,35 @@ mod tests {
     fn actual_nested_owned_list_walk_keeps_backing_storage_separate() {
         let value=actual("package tests:imports@1.0.0; interface io { resource chunk; record item { label:string, payload:option<chunk> } read: async func()->list<item>; } world guest { import io; }");
         match &value.disposal[0] {
-            ResourceDisposal::List{offset:0,stride:16,elements}=>match &elements[0] {
+            ResourceDisposal::List{offset:0,stride:16,align:4,elements}=> {
+              assert!(matches!(elements[0],ResourceDisposal::String{offset:0}));
+              match &elements[1] {
                 ResourceDisposal::Variant{offset:8,tag_bytes:1,cases}=> {
                     assert!(cases[0].is_empty());
                     assert!(matches!(&cases[1][0],ResourceDisposal::Own{offset:12,..}));
-                    assert_eq!(elements.len(),1); // label storage is not a resource
+                    assert_eq!(elements.len(),2); // label backing and OWN stay distinct
                 },_=>panic!(),
+              }
             },_=>panic!("exact-owned-list-layout-required"),
+        }
+    }
+    #[test]
+    fn actual_plain_and_zero_stride_lists_keep_backing_without_element_work() {
+        let plain=actual("package tests:imports@1.0.0; world guest { import call: async func()->list<u16>; }");
+        assert!(matches!(&plain.disposal[0],ResourceDisposal::List{offset:0,stride:2,align:2,elements} if elements.is_empty()));
+        let zero=actual("package tests:imports@1.0.0; world guest { import call: async func()->list<tuple<>>; }");
+        assert!(matches!(&zero.disposal[0],ResourceDisposal::List{offset:0,stride:0,align:1,elements} if elements.is_empty()));
+    }
+    #[test]
+    fn actual_nested_string_variant_uses_original_active_payload_offsets() {
+        let value=actual("package tests:imports@1.0.0; world guest { import call: async func()->list<option<string>>; }");
+        match &value.disposal[0] {
+            ResourceDisposal::List{stride:12,align:4,elements,..}=>match &elements[0] {
+                ResourceDisposal::Variant{offset:0,tag_bytes:1,cases}=> {
+                    assert!(cases[0].is_empty());
+                    assert!(matches!(cases[1].as_slice(),[ResourceDisposal::String{offset:4}]));
+                },_=>panic!("original-option-layout-required"),
+            },_=>panic!("original-list-layout-required"),
         }
     }
 }

@@ -12,6 +12,8 @@ mod component_threading;
 mod config;
 mod containment;
 #[cfg(feature = "development-test-host")]
+mod development_borrow_admission;
+#[cfg(feature = "development-test-host")]
 mod development_trap_observer;
 mod factory;
 mod host;
@@ -53,6 +55,8 @@ pub use config::{
     GENERIC_BACKEND_ID, WASMTIME_VERSION,
 };
 pub use containment::RuntimeResourceSnapshot;
+#[cfg(feature = "development-test-host")]
+pub use development_borrow_admission::DevelopmentBorrowAdmissionSnapshot;
 #[cfg(feature = "development-test-host")]
 pub use development_trap_observer::{
     DevelopmentTrapFrame, DevelopmentTrapGuard, DevelopmentTrapSnapshot,

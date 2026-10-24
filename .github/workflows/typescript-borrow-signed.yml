@@ -1,0 +1,106 @@
+name: TypeScript signed canonical borrow release
+
+on:
+  push:
+    branches: ['feat/typescript-borrow-release-probe-20261024']
+    paths:
+      - '.github/workflows/typescript-borrow-signed.yml'
+      - 'tools/qualify_typescript_borrow_signed.py'
+      - 'tools/typescript_guest/borrow_*.py'
+      - 'tools/typescript_guest/borrow_probe.mjs'
+      - 'tools/typescript_guest/compiler.py'
+      - 'tools/typescript_guest/runtime_profile.py'
+      - 'tools/typescript_guest/componentize.mjs'
+      - 'tools/typescript_guest/async_waiters.mjs'
+      - 'tools/tests/test_typescript_native_carrier_scheduling.py'
+      - 'tools/tests/test_typescript_borrow*.py'
+      - 'sdk/typescript-guest/probes/borrow-release/**'
+      - 'crates/latent-wasmtime/src/backend.rs'
+      - 'crates/latent-wasmtime/src/containment.rs'
+      - 'crates/latent-wasmtime/src/lib.rs'
+      - 'crates/latent-wasmtime/src/development_trap_observer.rs'
+      - 'crates/latent-wasmtime/src/development_borrow_admission.rs'
+      - 'crates/latent-wasmtime/src/host.rs'
+      - 'crates/latent-wasmtime/src/host/runtime.rs'
+      - 'crates/latent-wasmtime/src/config.rs'
+      - 'crates/latent-wasmtime/src/config/engine.rs'
+      - 'crates/latent-wasmtime/src/config/profile.rs'
+      - 'crates/latent-wasmtime/tests/local_service/fixture.rs'
+      - 'crates/latent-wasmtime/tests/typescript_import_borrow_release*'
+      - 'crates/latent-wasmtime/tests/typescript_import_borrow_release/**'
+      - 'crates/latent-wasmtime/tests/local_service/packages.rs'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: typescript-borrow-signed-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  signed-borrow:
+    name: One fresh component and six actual signed borrow activations
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    permissions:
+      contents: read
+      actions: read
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - name: Start the aggregate setup and programme clock
+        run: python3 -c 'import os,time;open(os.environ["GITHUB_ENV"],"a").write("LSF_BORROW_SIGNED_STARTED_NS="+str(time.time_ns())+"\n")'
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.19.0
+          package-manager-cache: false
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - name: Install locked Python controls and normal compiler isolation
+        run: |
+          python3 -m pip install --requirement tools/requirements.lock
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Fetch only the eventual immutable successful producer source
+        run: git fetch --no-tags --depth=1 origin 6d834e502beea33fbae9347fbaf23ff8c37223b3
+      - name: Install the normal locked public compiler and pinned parser
+        run: python3 tools/typescript_capsule.py install-tools "$RUNNER_TEMP/typescript-borrow-signed-tools"
+      - name: Authenticate fresh prerequisites compile once and execute signed cases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 tools/qualify_typescript_borrow_signed.py \
+            --tools "$RUNNER_TEMP/typescript-borrow-signed-tools" \
+            --inputs "$RUNNER_TEMP/typescript-borrow-signed-inputs" \
+            --output "$RUNNER_TEMP/typescript-borrow-signed"
+      - name: Retain original input identities compiler observations signed cases and failures
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: typescript-borrow-signed-${{ github.sha }}
+          retention-days: 7
+          if-no-files-found: warn
+          path: |
+            ${{ runner.temp }}/typescript-borrow-signed-inputs/ACQUIRED.json
+            ${{ runner.temp }}/typescript-borrow-signed-inputs/products/OWN-RESULTS.json
+            ${{ runner.temp }}/typescript-borrow-signed/*.json
+            ${{ runner.temp }}/typescript-borrow-signed/commands/**
+            ${{ runner.temp }}/typescript-borrow-signed/prepared/BORROW-COMPILE.json
+            ${{ runner.temp }}/typescript-borrow-signed/prepared/compiler-inputs.json
+            ${{ runner.temp }}/typescript-borrow-signed/prepared/engine-qualification/**
+            ${{ runner.temp }}/typescript-borrow-signed/prepared/src/**
+            ${{ runner.temp }}/typescript-borrow-signed/prepared/wit/**
+            ${{ runner.temp }}/typescript-borrow-signed/prepared/build/*.json
+            ${{ runner.temp }}/typescript-borrow-signed/prepared/build/*.wasm
+            ${{ runner.temp }}/typescript-borrow-signed/prepared/build/*.js
+            ${{ runner.temp }}/typescript-borrow-signed/prepared/build/*.mjs
+            ${{ runner.temp }}/typescript-borrow-signed/prepared/build/*.wit

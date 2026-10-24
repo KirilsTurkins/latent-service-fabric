@@ -653,6 +653,16 @@ impl WasmtimeBackend {
         )
         .unwrap_or(u64::MAX);
         let codec_capacity_error = output.finish_lift(call_result.is_ok()).err();
+        #[cfg(feature = "development-test-host")]
+        self.shared
+            .development_trap_observer
+            .capture_borrow_admission(
+                store
+                    .data()
+                    .development_borrow_admission
+                    .as_ref()
+                    .and_then(crate::development_borrow_admission::Observer::snapshot),
+            );
         let lifecycle_error = store
             .data_mut()
             .runtime

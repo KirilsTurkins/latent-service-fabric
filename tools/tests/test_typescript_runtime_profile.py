@@ -214,6 +214,27 @@ class TypeScriptRuntimeProfileTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'engine-owned-activation-interface'):
             runtime.check_application_bindings(actual_graph('derived'), runtime.SELECTED_WORLD)
 
+    def test_actual_borrow_void_graph_preserves_omitted_result_without_hiding_type_drift(self):
+        # Raw pinned wasm-tools1.254.0 stdout from failed signed attempt
+        # 40059928567/job120771018412, artifact12546483197; no runtime pass.
+        raw = (FIXTURES/'borrow-void-function.json').read_bytes()
+        self.assertEqual(hashlib.sha256(raw).hexdigest(), '0a6ebfc7828ccc62bded871f6fcc26b07eba3312d8ddab8861142a0a0b324bf0')
+        graph = json.loads(raw)
+        world = 'tests:typescript-import-borrow-probe/service@1.0.0'
+        identity = 'tests:typescript-import-borrow-gate/diagnostic@1.0.0'
+        actual = runtime.public_graph(graph, world)
+        self.assertIsNone(actual['imports'][identity]['functions']['intentional-trap']['result'])
+        diagnostic = next(row for row in graph['interfaces'] if row['name'] == 'diagnostic')
+        function = diagnostic['functions']['intentional-trap']
+        self.assertNotIn('result', function)
+        function['result'] = None
+        self.assertEqual(actual, runtime.public_graph(graph, world))
+        function['result'] = 'u32'
+        self.assertNotEqual(actual, runtime.public_graph(graph, world))
+        function['result'] = len(graph['types'])
+        with self.assertRaisesRegex(ValueError, 'unknown-type-reference'):
+            runtime.public_graph(graph, world)
+
     def test_actual_component_synthetic_root_keeps_versioned_interfaces_and_types(self):
         value = json.loads((FIXTURES/'actual-component-root.json').read_bytes())
         self.assertEqual(value['parser'], 'wasm-tools1.254.0')

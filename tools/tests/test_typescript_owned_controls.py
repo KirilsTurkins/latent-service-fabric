@@ -10,7 +10,7 @@ class TypeScriptOwnedControlsTests(unittest.TestCase):
     def test_exact_source_inventory_rejects_skips_missing_and_extra_cases(self):
         good={'testsRun':controls.SOURCE_CASES,'skipped':0,'failures':0,'errors':0}
         controls.source_controls(good)
-        for key,value in [('testsRun',28),('testsRun',30),('skipped',1),('errors',1),('failures',1),('testsRun',True)]:
+        for key,value in [('testsRun',28),('testsRun',30),('testsRun',31),('testsRun',33),('skipped',1),('errors',1),('failures',1),('testsRun',True)]:
             with self.assertRaises(ValueError):controls.source_controls(dict(good,**{key:value}))
         with self.assertRaises(ValueError):controls.source_controls(dict(good,extra=0))
 
@@ -20,11 +20,46 @@ class TypeScriptOwnedControlsTests(unittest.TestCase):
         for module,file in [('lsf_async','async_import_descriptor.rs'),('lsf_async_splice','async_import_splice.rs')]:
             raw=(controls.ROOT/'sdk/typescript-guest/activation'/file).read_text()
             names += [module+'::tests::'+name for name in re.findall(r'#\[test\]\s+fn ([a-zA-Z0-9_]+)\(',raw)]
-        log=('\n'.join('test '+name+' ... ok' for name in names)+'\ntest result: ok. 13 passed; 0 failed; 0 ignored;\n').encode()
+        # Keep this original control identity; all original13 plus the new4
+        # compiled source cases must now appear, with no skips/duplicates.
+        self.assertEqual(len(names),17)
+        log=('\n'.join('test '+name+' ... ok' for name in names)+'\ntest result: ok. 17 passed; 0 failed; 0 ignored;\n').encode()
         self.assertEqual(set(controls.rust_cases(log)),set(names))
         for changed in (log.replace(b'... ok',b'... ignored',1),log+('test '+names[0]+' ... ok\n').encode(),
                         log.replace(b'0 ignored',b'1 ignored')):
             with self.assertRaises(ValueError):controls.rust_cases(changed)
+
+    def test_emitted_core_inventory_refuses_missing_extra_or_changed_contract(self):
+        import json
+        from pathlib import Path
+        import tempfile
+        # Metadata parser specimens only. These empty modules do not contain a
+        # disposer and cannot pass the separate actual Wasmtime control runner.
+        with tempfile.TemporaryDirectory() as temporary:
+            directory=Path(temporary)/'emitted'
+            with self.assertRaisesRegex(ValueError,'emission-required'):
+                controls.emitted_backing_controls(directory)
+            directory.mkdir();rows=[]
+            for which,name in enumerate(controls.BACKING_CORE_CASES):
+                file=f'{which:02}-{name}.wasm'
+                (directory/file).write_bytes(b'\0asm\1\0\0\0')
+                rows.append(dict(case=name,file=file,bytes=8,argument=32,
+                    expectedReturn=None if which==7 else int(which in (4,5)),expectedTrap=which==7,
+                    expectedDoubleFreeReturns=0,allocatorEvidence=False))
+            manifest=directory/'manifest.json'
+            manifest.write_text(json.dumps(rows))
+            record=controls.emitted_backing_controls(directory)
+            self.assertEqual(len(record['modules']),8)
+            self.assertFalse(record['executed']);self.assertFalse(record['allocatorEvidence'])
+            for key,value in [('case','unknown'),('file','../escape.wasm'),('expectedReturn',False),
+                              ('allocatorEvidence',True),('bytes',9)]:
+                changed=[dict(row) for row in rows];changed[0][key]=value
+                manifest.write_text(json.dumps(changed))
+                with self.assertRaises(ValueError):controls.emitted_backing_controls(directory)
+            manifest.write_text(json.dumps(rows))
+            (directory/'unexpected.wasm').write_bytes(b'\0asm\1\0\0\0')
+            with self.assertRaisesRegex(ValueError,'extra-products'):
+                controls.emitted_backing_controls(directory)
 
     def test_monotonic_deadline_clips_every_stage_and_refuses_late_success(self):
         with patch.object(controls.time,'monotonic',side_effect=[100,110,149,150,151]):
