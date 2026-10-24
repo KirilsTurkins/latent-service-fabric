@@ -54,6 +54,24 @@ class TypeScriptOwnedResultSourceTests(unittest.TestCase):
         self.assertLess(derived.index(b'lsf_async_splice::validate_disposer_table_append(module)?;'),
                         derived.index(b'for (import_index,(impt_specifier,'))
         self.assertIn(b'checked_add(i32::try_from(imports.len())?)', derived)
+        # The exact existing-import branch now shares the stable Functions-ID
+        # resolver with the disposer. Restore only that lookup to authenticate
+        # the complete original create/reuse fallback, without a lookup model.
+        old = b'''            let import_fn_fid = if let Some(existing) = module
+                .imports
+                .get_func((*impt_specifier).clone(), (*impt_name).clone())
+            {'''
+        new = b'''            let import_fn_fid = if let Some(existing) = lsf_async_splice::import_function(
+                module, &((*impt_specifier).clone(), native_name.clone()))?
+            {'''
+        self.assertEqual(derived.count(new), 1)
+        boundary = b'            // create the native JS binding function\n'
+        original_branch = original[original.index(b'            let import_fn_fid ='):
+                                   original.index(boundary)]
+        derived_branch = derived[derived.index(b'            let import_fn_fid ='):
+                                 derived.index(b'            if let Some(descriptor)=descriptor {')]
+        restored = derived_branch.replace(new, old).replace(b'native_name.clone()', b'(*impt_name).clone()')
+        self.assertEqual(restored, original_branch)
         self.assertTrue(receipt['originalSynchronousSpliceSignatureRetained'])
         self.assertFalse(receipt['actualCompilerExecuted'])
 
