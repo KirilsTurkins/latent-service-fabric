@@ -269,6 +269,14 @@ from whichever other copy happens to be available.
 
 ## Qualification boundary
 
+The publications lane retains `audit-lifecycle-receipt.json` with the complete
+campaign commands, outcomes, acknowledgements, epoch and shutdown observations.
+`static-site-receipt.json` contains a small reference binding its exact filename,
+SHA-256 digest and byte length. Each receipt retains an independent 64 KiB limit;
+no observation is truncated to fit the parent workflow. The explicit
+`--audit-lifecycle-receipt` output refuses existing files and symlinks. These are
+qualification observations, not maintenance authority or permission to replay.
+
 The library regression suite covers multiple epochs, preserved acknowledged
 bytes, full-record capacity, finite custody, verified transfer, corruption,
 pending/unknown attempts, live ownership, original-operation recovery and

@@ -6,7 +6,7 @@
     "env": {
       "PYTHONDONTWRITEBYTECODE": 1
     },
-    "if": "${{ github.event_name != 'workflow_dispatch' || !inputs.java_http_spi }}",
+    "if": "${{ (github.event_name != 'workflow_dispatch' || !inputs.java_http_spi) && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_assembly) }}",
     "name": "Actual Java sources, SDK ownership and enforced node",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -263,7 +263,7 @@
   },
   "jobId": "compiler-component",
   "kind": "job",
-  "reviewReason": "Retain only the bounded normal public fiber assembly inputs and static metadata through one additional exact artifact path; preserve every existing command and coverage obligation.",
+  "reviewReason": "Exclude the unchanged original job only for the explicit manual public-fiber assembly mode.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-guest-feasibility.yml"
 }

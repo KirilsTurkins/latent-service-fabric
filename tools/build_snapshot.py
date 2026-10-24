@@ -39,12 +39,10 @@ class SnapshotError(RuntimeError):
 # The committed tools tree includes ownership-local CI contracts. Keep a
 # fixed, reviewed file budget shared with the downstream attribution reader;
 # directory, per-file, total-byte and archive-byte budgets remain independent.
-# The audit lifecycle qualification exceeded the old 72 MiB source cap after
-# its complete tar had passed the existing 80 MiB transport bound. Raise only
-# the extraction ceiling to 80 MiB; preserve the reviewed subprocess helper and
-# independent 80 MiB archive cap. Framing can reject an archive before its file
-# bytes reach that extraction ceiling. Neither cap grows automatically or omits
-# selected inputs. These are build budgets, not audit or activation allowances.
+# The current selected tree includes the authenticated Wasmtime source and
+# exceeds 72 MiB: revision 976e86c has 75,529,037 archived file bytes.
+# Retain every selected compiler input within fixed 73 MiB source / 80 MiB
+# archive caps; activation/runtime budgets are independent.
 # The 2026-10-23 selection has 8,460 files after the constructor qualification
 # and ownership-local contracts were added. Its next finite 256-file allowance
 # is shared by capture and Cargo attribution; no selected input is dropped.
@@ -56,7 +54,7 @@ class SnapshotLimits:
     max_entries: int = MAX_SOURCE_FILES
     max_directories: int = 4096
     max_file_bytes: int = 4 * 1024 * 1024
-    max_total_bytes: int = 80 * 1024 * 1024
+    max_total_bytes: int = 73 * 1024 * 1024
     max_archive_bytes: int = 80 * 1024 * 1024
 
     def validate(self) -> None:

@@ -213,5 +213,69 @@ class AuditLifecycleHelperTests(unittest.TestCase):
                     self.assertEqual(len(samples), 2)
 
 
+    def test_separate_receipt_is_lossless_private_and_keeps_parent_within_original_bound(self):
+        import hashlib
+        import stat
+        from tools.phase2_operator_process import bounded_receipt
+        from tools.static_audit_lifecycle import retain_receipt
+
+        report = {'schemaVersion': 'latent.static.audit-lifecycle.qualification.v1', 'passed': True,
+            'profile': 'linux-signed-static-32-records-30-second-proof-age', 'multiDaySoak': False,
+            'epochs': ['first', 'second'], 'shutdowns': [{'reaped': True}] * 3,
+            'nextSequence': '71', 'historyComplete': False,
+            'commands': [{'argv': ['web', 'renew-evidence'], 'outcomeKnown': False,
+                          'auditAck': {'status': 'OutcomeUnknown'}, 'receiptDigest': None}],
+            'boundedFixtureEvidence': 'x' * 60000}
+        with self.assertRaisesRegex(WorkflowError, 'receipt-byte-bound'):
+            bounded_receipt({'existingEvidence': 'y' * 55000, 'auditLifecycle': report})
+        path = self.root / 'audit-lifecycle-receipt.json'
+        reference = retain_receipt(report, path)
+        raw = path.read_bytes()
+        self.assertEqual(json.loads(raw), report)
+        self.assertEqual(reference['receiptSha256'], 'sha256:' + hashlib.sha256(raw).hexdigest())
+        self.assertEqual(reference['receiptBytes'], len(raw))
+        self.assertEqual(reference['receiptFile'], path.name)
+        self.assertNotIn(str(self.root), json.dumps(reference))
+        self.assertEqual(stat.S_IMODE(path.stat().st_mode), 0o600)
+        self.assertLessEqual(len(raw), 65536)
+        self.assertLessEqual(len(bounded_receipt(reference).encode()), 1024)
+        self.assertLessEqual(len(bounded_receipt({'existingEvidence': 'y' * 55000,
+                                                'auditLifecycle': reference}).encode()), 65536)
+        self.assertIs(json.loads(raw)['commands'][0]['outcomeKnown'], False)
+
+    def test_separate_receipt_refuses_oversize_and_unqualified_reports_before_creation(self):
+        from tools.static_audit_lifecycle import retain_receipt
+
+        path = self.root / 'audit-lifecycle-receipt.json'
+        for value, reason in (
+            ({'schemaVersion': 'latent.static.audit-lifecycle.qualification.v1',
+              'passed': True, 'payload': '\u00e9' * 40000}, 'receipt-byte-bound'),
+            ({'schemaVersion': 'latent.static.audit-lifecycle.qualification.v1',
+              'passed': False}, 'receipt-not-qualified'),
+            ({'schemaVersion': 'wrong', 'passed': True}, 'receipt-not-qualified'),
+        ):
+            with self.subTest(reason=reason), self.assertRaisesRegex(WorkflowError, reason):
+                retain_receipt(value, path)
+            self.assertFalse(path.exists())
+
+    def test_separate_receipt_never_overwrites_existing_or_linked_evidence(self):
+        from tools.static_audit_lifecycle import retain_receipt
+
+        value = {'schemaVersion': 'latent.static.audit-lifecycle.qualification.v1', 'passed': True,
+            'profile': 'controlled-fixture', 'multiDaySoak': False, 'epochs': [], 'shutdowns': [],
+            'nextSequence': '1', 'historyComplete': False}
+        original = self.record('original.json', b'original-evidence')
+        alias = self.root / 'linked.json'
+        alias.symlink_to(original)
+        dangling = self.root / 'dangling.json'
+        dangling.symlink_to(self.root / 'absent.json')
+        for path in (original, alias, dangling):
+            with self.subTest(path=path.name), self.assertRaises(FileExistsError):
+                retain_receipt(value, path)
+        self.assertEqual(original.read_bytes(), b'original-evidence')
+        self.assertTrue(alias.is_symlink() and dangling.is_symlink())
+        self.assertFalse((self.root / 'absent.json').exists())
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -3,7 +3,8 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "name": "Ten actual descriptor and original node quota controls",
+    "if": "github.ref_name != 'feat/kernel-native-constructor-vm-20261024' && github.ref_name != 'feat/kernel-native-close-20261024'",
+    "name": "Thirteen actual descriptor and original node quota controls",
     "runs-on": "ubuntu-24.04",
     "steps": [
       {
@@ -56,7 +57,7 @@
   },
   "jobId": "native-owner",
   "kind": "job",
-  "reviewReason": "Actual affine native factory descriptor ownership and real pending/ready constructor routing; add ten Linux descriptor/quarantine controls and seven source/collector controls. Preserve all original thirty stream cases and their witnesses; cardinality becomes forty. Normal constructor selection remains zero, production socket consumer NULL, full Linux/Root final-free unqualified.",
+  "reviewReason": "Preserve prior owner commands and exact case obligations; require the fixed CLOSE observation, held receipt charge and original native/quarantine boundaries on closed qualification branches. Add no production gate, refund or ignored case.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/stream-native-factory-owner.yml"
 }

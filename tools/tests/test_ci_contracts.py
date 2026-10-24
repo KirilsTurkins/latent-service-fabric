@@ -882,6 +882,9 @@ class RepositoryMigrationTests(unittest.TestCase):
         java_selector = data['workflowContracts']['.github/workflows/java-guest-feasibility.yml']['on']['workflow_dispatch']['inputs']['java_http_spi']
         self.assertEqual(java_selector['type'], 'boolean')
         self.assertIs(java_selector['default'], False)
+        java_assembly_selector = data['workflowContracts']['.github/workflows/java-guest-feasibility.yml']['on']['workflow_dispatch']['inputs']['public_fiber_assembly']
+        self.assertEqual(java_assembly_selector['type'], 'boolean')
+        self.assertIs(java_assembly_selector['default'], False)
         lane_baseline = contracts.read_json(ROOT / "tools/tests/fixtures/ci_lane_baseline.json")
         for key, original in legacy["after"].items():
             value = dict(original)
@@ -901,7 +904,9 @@ class RepositoryMigrationTests(unittest.TestCase):
                 value['jobIf'] = "${{ github.event_name != 'workflow_dispatch' || !inputs.replay-closed-filesystem }}"
             if value['workflow'] == '.github/workflows/java-guest-feasibility.yml' and value['job'] == 'compiler-component':
                 self.assertEqual(value['jobIf'], 'success()', key)
-                value['jobIf'] = "${{ github.event_name != 'workflow_dispatch' || !inputs.java_http_spi }}"
+                # Only these explicit manual modes exclude the unchanged full
+                # job; default, PR and ordinary dispatch retain every command.
+                value['jobIf'] = "${{ (github.event_name != 'workflow_dispatch' || !inputs.java_http_spi) && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_assembly) }}"
             if value["workflow"] == ".github/workflows/ci.yml" and value["job"] in {"rust", "contracts"}:
                 # Exact commands survive; the reviewed fixed matrix allocates
                 # every obligation to its required, failure-propagating lane.
@@ -985,6 +990,11 @@ class RepositoryMigrationTests(unittest.TestCase):
                 self.assertEqual(value["run"].count(command), 1)
                 self.assertEqual(data["after"][key], dict(value, run=value["run"].replace(
                     command, command + " --standard-console", 1)), key)
+            elif key == '.github/workflows/ci.yml:rust:Qualify signed static sites through OCI and actual browsers':
+                old = '--chrome "$(command -v google-chrome)" > "${RUNNER_TEMP}/phase2-gate/static-site-receipt.json"'
+                new = '--chrome "$(command -v google-chrome)" --audit-lifecycle-receipt "${RUNNER_TEMP}/phase2-gate/audit-lifecycle-receipt.json" > "${RUNNER_TEMP}/phase2-gate/static-site-receipt.json"'
+                self.assertEqual(value["run"].count(old), 1)
+                self.assertEqual(data["after"][key], dict(value, run=value["run"].replace(old, new)), key)
             elif key != reviewed_extension and key not in performance_extensions:
                 self.assertEqual(data["after"][key], value, key)
             else:

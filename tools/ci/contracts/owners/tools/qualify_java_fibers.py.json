@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_java_fibers.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Add failure-only bounded input retention for the exact normal public fiber fixture without changing compiler commands or acceptance.",
+  "reviewReason": "Select optional exact-public-only postfailure LLVM observer only in the existing manual assembly job; default Compiler and original acceptance remain unchanged.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "3fd1dc12183d49c0a2424e6220d7192abf2666e20c4c17a1763cd8fafd2c967b"
+  "sha256": "c6b54e83f0630dc4d7dcfb3aadc96559d676f56a7c50c181d1d1dbe711295b8b"
 }

@@ -365,8 +365,10 @@ def recipe_inputs() -> dict[str, str]:
 
 
 def prepare(output: Path, wasi_sdk: Path, *, gradle="gradle", offline_cache: Path | None = None,
-            read_only_cache: Path | None = None, fixture="threads"):
+            read_only_cache: Path | None = None, fixture="threads", observe_public_wineh=False):
     if fixture not in {"threads", "completable", "timers", "fiber-io", "worker-libraries"}: raise ValueError("unknown Java fiber fixture")
+    if type(observe_public_wineh) is not bool or observe_public_wineh and fixture != 'threads':
+        raise ValueError('WinEH observation requires only the fixed normal public fiber fixture')
     if offline_cache is not None and read_only_cache is not None:
         raise ValueError("Java dependency cache selections are mutually exclusive")
     output = fresh(output)
@@ -388,7 +390,11 @@ def prepare(output: Path, wasi_sdk: Path, *, gradle="gradle", offline_cache: Pat
     report["recipeInputs"] = before
     compiler = None
     try:
-        compiler = Compiler(output / "compiler", wasi_sdk, gradle=gradle, offline_cache=offline_cache,
+        selected_compiler = Compiler
+        if observe_public_wineh:
+            from tools.java_guest.public_wineh import PublicWinEHCompiler
+            selected_compiler = PublicWinEHCompiler
+        compiler = selected_compiler(output / "compiler", wasi_sdk, gradle=gradle, offline_cache=offline_cache,
                             read_only_cache=read_only_cache, timeout=1200)
         library_jars, reference_jars = (), ()
         if fixture == 'worker-libraries':
@@ -443,6 +449,12 @@ def prepare(output: Path, wasi_sdk: Path, *, gradle="gradle", offline_cache: Pat
                 retain(compiler, output)
             except BaseException:
                 pass  # Failure-only retention must preserve the original compiler exception.
+            if observe_public_wineh:
+                try:
+                    from tools.java_guest.public_wineh import retain as retain_wineh
+                    retain_wineh(compiler, output)
+                except BaseException:
+                    pass  # Optional diagnostics cannot replace original failure.
         report.update(status="failed", reason=str(error))
         raise
     finally:
@@ -460,9 +472,12 @@ def main():
     caches.add_argument("--offline-cache", type=Path)
     caches.add_argument("--read-only-cache", type=Path)
     parser.add_argument("--fixture", choices=("threads", "completable", "timers", "fiber-io", "worker-libraries"), default="threads")
+    parser.add_argument('--observe-public-wineh', action='store_true',
+                        help='Optional fixed-public-only postfailure numeric LLVM observation')
     args = parser.parse_args()
     prepare(args.output, args.wasi_sdk, gradle=args.gradle, offline_cache=args.offline_cache,
-            read_only_cache=args.read_only_cache, fixture=args.fixture)
+            read_only_cache=args.read_only_cache, fixture=args.fixture,
+            observe_public_wineh=args.observe_public_wineh)
 
 
 if __name__ == "__main__": main()

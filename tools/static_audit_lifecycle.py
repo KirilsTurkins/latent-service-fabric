@@ -461,3 +461,32 @@ def qualify(parent, args, directory, configure):
         campaign.client.node = None
         if campaign.node is not None:
             campaign.node.close()
+
+
+def retain_receipt(value, path):
+    """Retain the complete bounded campaign, returning a byte-bound reference.
+
+    This is test evidence, not a maintenance receipt or permission to replay.
+    No commands, uncertain outcomes, acknowledgements or shutdown observations
+    are truncated to fit the parent workflow's independent 64 KiB allowance.
+    """
+    from tools.phase2_operator_process import bounded_receipt
+
+    require(value.get('schemaVersion') == 'latent.static.audit-lifecycle.qualification.v1'
+            and value.get('passed') is True, 'audit-fixture-receipt-not-qualified')
+    path = Path(path)
+    require(0 < len(path.name) <= 128 and path.name.endswith('.json')
+            and all(character in 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-_'
+                    for character in path.name), 'audit-fixture-receipt-name')
+    encoded = bounded_receipt(value).encode('utf-8')
+    summary = {'schemaVersion': 'latent.static.audit-lifecycle.reference.v1', 'passed': True,
+        'receiptFile': path.name, 'receiptSha256': 'sha256:' + hashlib.sha256(encoded).hexdigest(),
+        'receiptBytes': len(encoded), 'profile': value['profile'], 'multiDaySoak': value['multiDaySoak'],
+        'sealedEpochs': len(value['epochs']), 'nodeShutdowns': len(value['shutdowns']),
+        'nextSequence': value['nextSequence'], 'historyComplete': value['historyComplete']}
+    require(len(bounded_receipt(summary).encode('utf-8')) <= 1024, 'audit-fixture-reference-bound')
+    # Exclusive creation also refuses dangling symlinks. A failed write cannot
+    # produce a successful reference or overwrite retained qualification evidence.
+    with os.fdopen(os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600), 'wb') as output:
+        output.write(encoded)
+    return summary

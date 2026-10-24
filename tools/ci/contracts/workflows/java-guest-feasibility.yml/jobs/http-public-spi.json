@@ -6,7 +6,7 @@
     "env": {
       "PYTHONDONTWRITEBYTECODE": "1"
     },
-    "if": "${{ github.event_name == 'workflow_dispatch' && inputs.java_http_spi }}",
+    "if": "${{ github.event_name == 'workflow_dispatch' && inputs.java_http_spi && !inputs.public_fiber_assembly }}",
     "name": "Optional Java public ConnectionFactory with isolated default calls",
     "permissions": {
       "actions": "read",
@@ -111,7 +111,7 @@
   },
   "jobId": "http-public-spi",
   "kind": "job",
-  "reviewReason": "Fetch exactly the unchangedaa56 workflow baseline before preservation controls in shallow checkout; retain all originalSPI commands/cases/default guards and identical focused/manual jobs.",
+  "reviewReason": "Exclude the unchanged original job only for the explicit manual public-fiber assembly mode.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-guest-feasibility.yml"
 }
