@@ -1,0 +1,10 @@
+package tests:typescript-node-net@1.0.0;
+
+interface api {
+    run: async func(mode: u32, port: u16) -> string;
+}
+
+world service {
+    import latent:network/streams@0.1.0;
+    export api;
+}

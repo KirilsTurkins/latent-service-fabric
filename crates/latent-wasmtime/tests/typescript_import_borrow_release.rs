@@ -14,6 +14,8 @@ mod composition;
 mod fixture;
 #[path = "typescript_import_borrow_release/gate.rs"]
 mod gate;
+#[path = "typescript_import_borrow_release/node_net.rs"]
+mod node_net;
 #[path = "guest_sdk/package.rs"]
 mod package;
 #[path = "local_service/packages.rs"]
@@ -55,6 +57,12 @@ const WORLD: &[u8] =
 const GATE_WIT: &[u8] =
     include_bytes!("../../../sdk/typescript-guest/probes/borrow-release/gate.wit");
 const PROFILE: &str = "lsf-typescript-borrow-probe-v1";
+
+#[tokio::test]
+#[ignore = "requires one normal built no-Gate Socket package and authenticated unchanged 6d products"]
+async fn signed_normal_node_net_socket_uses_original_stream_owners_and_close_events() {
+    node_net::run().await;
+}
 
 fn read(path: &Path, maximum: usize) -> Vec<u8> {
     assert!(std::fs::symlink_metadata(path)

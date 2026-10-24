@@ -69,7 +69,8 @@ def from_build(source, descriptor, receipt):
                 raw = paths.read(source, str(parent / 'compiler-patches.json').replace('\\', '/'), 4 * 1024 * 1024)
                 require(digest(raw) == material['digest'], 'compatibility-outcomes-stale-patch')
         from tools.guest_compatibility_context_build import (JAVA_COMPILER_PATCH_NAMES, java_compiler_materials,
-                                                            typescript_buffer_materials, typescript_buffer_owner)
+                                                            typescript_buffer_materials, typescript_buffer_owner,
+                                                            typescript_net_materials, typescript_net_owner)
         buffer = context.buffer_module(selected)
         if buffer is not None:
             typescript_buffer_owner(owner, buffer[context.BUFFER_MATERIALS[0]]['digest'], buffer['build-recipe']['digest'])
@@ -80,6 +81,19 @@ def from_build(source, descriptor, receipt):
             require(digest(recipe) == buffer['build-recipe']['digest'], 'compatibility-outcomes-stale-buffer-recipe')
             expected = typescript_buffer_materials(raw, recipe, original_source)
             require(all(buffer[row['name']] == row for row in expected), 'compatibility-outcomes-detached-buffer-module')
+        net = context.net_module(selected)
+        if owner is not None and any(row['name'] == context.NET_MATERIALS[0]
+                                     for row in owner['toolAndCompilerInputs']):
+            require(net is not None, 'compatibility-outcomes-missing-net-module')
+        if net is not None:
+            typescript_net_owner(owner, net[context.NET_MATERIALS[0]]['digest'], net['build-recipe']['digest'])
+            raw = paths.read(source, str(parent / 'typescript-net-selection.json').replace('\\', '/'), 65536)
+            require(digest(raw) == net[context.NET_MATERIALS[0]]['digest'],
+                    'compatibility-outcomes-stale-net-receipt')
+            recipe = paths.read(source, str(parent / 'recipe-inputs.json').replace('\\', '/'), 8 * 1024 * 1024)
+            require(digest(recipe) == net['build-recipe']['digest'], 'compatibility-outcomes-stale-net-recipe')
+            expected = typescript_net_materials(raw, recipe, original_source)
+            require(all(net[row['name']] == row for row in expected), 'compatibility-outcomes-detached-net-module')
         if any(row['kind'] == 'patch' and row['name'] in JAVA_COMPILER_PATCH_NAMES
                for row in selected['materials']):
             bindings = [row for row in selected['materials'] if row['name'] == 'generated-bindings']

@@ -9,7 +9,8 @@
     "on": {
       "push": {
         "branches": [
-          "feat/typescript-borrow-release-probe-20261024"
+          "feat/typescript-borrow-release-probe-20261024",
+          "feat/typescript-node-net-source-20261024"
         ],
         "paths": [
           ".github/workflows/typescript-borrow-signed.yml",
@@ -20,6 +21,20 @@
           "tools/typescript_guest/runtime_profile.py",
           "tools/typescript_guest/componentize.mjs",
           "tools/typescript_guest/async_waiters.mjs",
+          "tools/typescript_guest/node_net*.mjs",
+          "tools/typescript_guest/net_*.mjs",
+          "tools/typescript_guest/net_profile.py",
+          "tools/typescript_guest/build.py",
+          "tools/typescript_guest/bundle.mjs",
+          "tools/typescript_guest/import_cancellation.mjs",
+          "tools/java_phase_native_products.py",
+          "tools/guest_compatibility_context*.py",
+          "tools/guest_compatibility_outcomes.py",
+          "tools/tests/test_typescript_node_net.py",
+          "tools/tests/fixtures/typescript_node_net_generated.json",
+          "sdk/typescript-guest/runtime/net.d.ts",
+          "wit/platform/network/package.wit",
+          "sdk/typescript-guest/probes/node-net/**",
           "tools/tests/test_typescript_native_carrier_scheduling.py",
           "tools/tests/test_typescript_borrow*.py",
           "sdk/typescript-guest/probes/borrow-release/**",
@@ -36,7 +51,8 @@
           "crates/latent-wasmtime/tests/local_service/fixture.rs",
           "crates/latent-wasmtime/tests/typescript_import_borrow_release*",
           "crates/latent-wasmtime/tests/typescript_import_borrow_release/**",
-          "crates/latent-wasmtime/tests/local_service/packages.rs"
+          "crates/latent-wasmtime/tests/local_service/packages.rs",
+          "crates/latent-wasmtime/tests/guest_sdk/package.rs"
         ]
       }
     },
@@ -47,7 +63,7 @@
   "requiredJobs": [
     "signed-borrow"
   ],
-  "reviewReason": "Reviewed additive exact source triggers for fixed cfg-test-host borrow register-refusal observation; original signed job, limits and assertions unchanged.",
+  "reviewReason": "Add finite normal Socket owning branch and exact selected source triggers, including the authoritative network interface; preserve previous branch and all jobs.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-borrow-signed.yml"
 }

@@ -12,6 +12,16 @@ if __name__ == '__main__':
     parser.add_argument('--tools',type=Path,required=True)
     parser.add_argument('--inputs',type=Path,required=True)
     parser.add_argument('--output',type=Path,required=True)
+    parser.add_argument('--programme',choices=('borrow','node-net'),default='borrow')
+    parser.add_argument('--prepared-native',type=Path)
     args=parser.parse_args()
+    if args.programme == 'node-net' and args.prepared_native is None:
+        parser.error('node-net requires the exact prepared native gate')
+    if args.programme == 'borrow' and args.prepared_native is not None:
+        parser.error('native CLI inputs are selected only by the closed node-net programme')
     prepare(args.inputs)
-    print(json.dumps(qualify(args.tools,args.inputs/'products',args.output)))
+    if args.programme == 'node-net':
+        from tools import java_phase_native_products
+        java_phase_native_products.prepare(args.prepared_native)
+    print(json.dumps(qualify(args.tools,args.inputs/'products',args.output,
+        programme=args.programme, prepared_native=args.prepared_native)))
