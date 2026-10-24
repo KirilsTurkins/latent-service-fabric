@@ -231,8 +231,31 @@ correction retains the original inventory bounds and global Rust path rules.
 The [corrective attempt](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40120265783)
 reached real replay but exceeded the then-used 80-MiB full-buffer cap. Both are
 failed/incomplete historical observations; no counters or pass attribution were
-retained. The count-only filter remains source-only until separately exercised.
-It does not establish a compiler-size repair or Java execution qualification.
+retained. The [count-only run](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40125799067)
+completed both prints and owned cleanup, with unchanged postchecks. It observed
+140,717,621 bytes of compiler stderr, no stdout, and a zero compiler exit. All ten
+hosted source controls passed. Its original module remains byte-identical to the
+historical `FULL`/`-O2` failure, and component assembly still refuses the oversized
+15,264,587-byte public `pools` body at the unchanged parser limit.
+
+For that one function, the pass changed these complete IR counts:
+
+| Counter | Before WinEH preparation | After | Change |
+| --- | ---: | ---: | ---: |
+| Instructions | 231,750 | 1,913,670 | +1,681,920 |
+| PHIs | 216,215 | 214,755 | -1,460 |
+| PHI incoming edges | 2,574,479 | 894,019 | -1,680,460 |
+| Stores | 5,405 | 1,685,865 | +1,680,460 |
+| Allocas | 190 | 1,650 | +1,460 |
+| Volatile stores | 2,586 | 2,586 | 0 |
+| Volatile loads | 2,145 | 2,145 | 0 |
+
+The matching removed PHI incoming edges and added stores identify substantial
+expansion during WinEH preparation. The volatile counts did not grow across
+this pass. This measurement does not establish an exclusive end-to-end cause,
+a safe compiler repair or Java execution qualification. The
+[retained evidence](../evidence/java-public-wineh-ea252/receipt.json) binds the
+source, original module, commands, finite limits and complete scalar counts.
 
 `--read-only-cache /path/to/modules-2` selects a verified immutable Gradle
 dependency cache. Gradle writes locks and updates to the build's private home.
