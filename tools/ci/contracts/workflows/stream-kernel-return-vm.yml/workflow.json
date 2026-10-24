@@ -1,0 +1,37 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "stream-kernel-return-vm-${{ github.ref }}"
+    },
+    "name": "Authenticated kernel Root observation",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/kernel-native-return-vm-20261024"
+        ],
+        "paths": [
+          ".github/workflows/stream-kernel-return-vm.yml",
+          "crates/latent-streams/**",
+          "crates/latent-stream-factory-native/**",
+          "crates/latent-capabilities/src/broker/pools/**",
+          "tools/*host_stream_kernel*",
+          "tools/tests/test_kernel_return_observation_vm.py",
+          "tools/tests/fixtures/host_stream_kernel_return_vfs.json",
+          "tools/ci/suites.d/kernel-return-observation-vm.json",
+          "research/standard-outbound/linux-6.12-lineage/**"
+        ]
+      }
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "authenticated-return"
+  ],
+  "reviewReason": "Add bounded source-only authenticated observer qualification: nineteen mandatory native/core/leaf cases and twelve C controls before new kernel acquisition/link; unchanged original cases, source materials, quota quarantine, bounds and production refusal.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/stream-kernel-return-vm.yml"
+}

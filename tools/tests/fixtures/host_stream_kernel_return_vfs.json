@@ -1,0 +1,147 @@
+{
+  "schemaVersion": "lsf.kernel-return-vfs-lifetime-source.v1",
+  "upstreamCommit": "7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+  "originals": {
+    "fs/anon_inodes.c": {
+      "bytes": 10328,
+      "sha256": "240c4cb8438b0d797328d6779659ca3bfc71ad9961e66ecafab3db42143a3641"
+    },
+    "fs/libfs.c": {
+      "bytes": 60749,
+      "sha256": "6fed4bc86ac742a0649b03d61e652a1d146be38f6ca6d3eaee66c20b5f68831a"
+    },
+    "fs/inode.c": {
+      "bytes": 75338,
+      "sha256": "73e256cf70bb0d80e6fee28d969c6fb44ab4c5c7cd92b6f74edff8b5297e7070"
+    },
+    "fs/file_table.c": {
+      "bytes": 15008,
+      "sha256": "853ad4b282453d6091944412fa5eae258e11e53292457b8be812afe4cc15320c"
+    },
+    "fs/dcache.c": {
+      "bytes": 86166,
+      "sha256": "adf8303cb586c20ea8a57c18d792123e2994a775e8ea54ba758dcb728f53cb29"
+    },
+    "security/security.c": {
+      "bytes": 180030,
+      "sha256": "b72fd7f869275b1caf1a98449e92024a779534fb36c77cb88f4ac210e4493055"
+    },
+    "security/selinux/hooks.c": {
+      "bytes": 204597,
+      "sha256": "6079b88f15ca1966b640753e35edc291139fe925fca37e5c54d0a2d6e36d8370"
+    },
+    "security/commoncap.c": {
+      "bytes": 43585,
+      "sha256": "f8dba4df187cd446bc336dfeed000b41bdd0a9afd8b8d985d9c9d502cec587d7"
+    }
+  },
+  "bodies": {
+    "fs/anon_inodes.c": {
+      "struct inode *anon_inode_make_secure_inode(": {
+        "text": "struct inode *anon_inode_make_secure_inode(struct super_block *sb, const char *name,\n\t\t\t\t\t   const struct inode *context_inode)\n{\n\tstruct inode *inode;\n\tint error;\n\n\tinode = alloc_anon_inode(sb);\n\tif (IS_ERR(inode))\n\t\treturn inode;\n\tinode->i_flags &= ~S_PRIVATE;\n\terror =\tsecurity_inode_init_security_anon(inode, &QSTR(name),\n\t\t\t\t\t\t  context_inode);\n\tif (error) {\n\t\tiput(inode);\n\t\treturn ERR_PTR(error);\n\t}\n\treturn inode;\n}\n",
+        "sha256": "be2cbea26ef3ec2f5278b886550d445b0e64ce1a5a0946844f7e9332c705448a"
+      },
+      "static struct file *__anon_inode_getfile(": {
+        "text": "static struct file *__anon_inode_getfile(const char *name,\n\t\t\t\t\t const struct file_operations *fops,\n\t\t\t\t\t void *priv, int flags,\n\t\t\t\t\t const struct inode *context_inode,\n\t\t\t\t\t bool make_inode)\n{\n\tstruct inode *inode;\n\tstruct file *file;\n\n\tif (fops->owner && !try_module_get(fops->owner))\n\t\treturn ERR_PTR(-ENOENT);\n\n\tif (make_inode) {\n\t\tinode =\tanon_inode_make_secure_inode(anon_inode_mnt->mnt_sb,\n\t\t\t\t\t\t     name, context_inode);\n\t\tif (IS_ERR(inode)) {\n\t\t\tfile = ERR_CAST(inode);\n\t\t\tgoto err;\n\t\t}\n\t} else {\n\t\tinode =\tanon_inode_inode;\n\t\tif (IS_ERR(inode)) {\n\t\t\tfile = ERR_PTR(-ENODEV);\n\t\t\tgoto err;\n\t\t}\n\t\t/*\n\t\t * We know the anon_inode inode count is always\n\t\t * greater than zero, so ihold() is safe.\n\t\t */\n\t\tihold(inode);\n\t}\n\n\tfile = alloc_file_pseudo(inode, anon_inode_mnt, name,\n\t\t\t\t flags & (O_ACCMODE | O_NONBLOCK), fops);\n\tif (IS_ERR(file))\n\t\tgoto err_iput;\n\n\tfile->f_mapping = inode->i_mapping;\n\n\tfile->private_data = priv;\n\n\treturn file;\n\nerr_iput:\n\tiput(inode);\nerr:\n\tmodule_put(fops->owner);\n\treturn file;\n}\n",
+        "sha256": "04b6de2ffc0d7f8420d2d145713efb114998dff7fd5f1acf4f8fcf8fb600b906"
+      },
+      "struct file *anon_inode_create_getfile(": {
+        "text": "struct file *anon_inode_create_getfile(const char *name,\n\t\t\t\t       const struct file_operations *fops,\n\t\t\t\t       void *priv, int flags,\n\t\t\t\t       const struct inode *context_inode)\n{\n\treturn __anon_inode_getfile(name, fops, priv, flags,\n\t\t\t\t    context_inode, true);\n}\n",
+        "sha256": "4a12d5050301314550b6ebfa7dc658a6071b067e15f6b469666d1ad3f3ecf9b8"
+      }
+    },
+    "fs/libfs.c": {
+      "struct inode *alloc_anon_inode(": {
+        "text": "struct inode *alloc_anon_inode(struct super_block *s)\n{\n\tstatic const struct address_space_operations anon_aops = {\n\t\t.dirty_folio\t= noop_dirty_folio,\n\t};\n\tstruct inode *inode = new_inode_pseudo(s);\n\n\tif (!inode)\n\t\treturn ERR_PTR(-ENOMEM);\n\n\tinode->i_ino = get_next_ino();\n\tinode->i_mapping->a_ops = &anon_aops;\n\n\t/*\n\t * Mark the inode dirty from the very beginning,\n\t * that way it will never be moved to the dirty\n\t * list because mark_inode_dirty() will think\n\t * that it already _is_ on the dirty list.\n\t */\n\tinode->i_state = I_DIRTY;\n\tinode->i_mode = S_IRUSR | S_IWUSR;\n\tinode->i_uid = current_fsuid();\n\tinode->i_gid = current_fsgid();\n\tinode->i_flags |= S_PRIVATE;\n\tsimple_inode_init_ts(inode);\n\treturn inode;\n}\n",
+        "sha256": "92203e4d1ee0a8c31fa2960f9cec0b41d85cc61e27c9043ee6624f106a25cd2d"
+      }
+    },
+    "fs/inode.c": {
+      "static struct inode *alloc_inode(": {
+        "text": "static struct inode *alloc_inode(struct super_block *sb)\n{\n\tconst struct super_operations *ops = sb->s_op;\n\tstruct inode *inode;\n\n\tif (ops->alloc_inode)\n\t\tinode = ops->alloc_inode(sb);\n\telse\n\t\tinode = alloc_inode_sb(sb, inode_cachep, GFP_KERNEL);\n\n\tif (!inode)\n\t\treturn NULL;\n\n\tif (unlikely(inode_init_always(sb, inode))) {\n\t\tif (ops->destroy_inode) {\n\t\t\tops->destroy_inode(inode);\n\t\t\tif (!ops->free_inode)\n\t\t\t\treturn NULL;\n\t\t}\n\t\tinode->free_inode = ops->free_inode;\n\t\ti_callback(&inode->i_rcu);\n\t\treturn NULL;\n\t}\n\n\treturn inode;\n}\n",
+        "sha256": "0928ddbe8a0eabd87ecc6dfcc000c38e3ab1125bac6c0f94c244ed98df57eeed"
+      },
+      "struct inode *new_inode_pseudo(": {
+        "text": "struct inode *new_inode_pseudo(struct super_block *sb)\n{\n\treturn alloc_inode(sb);\n}\n",
+        "sha256": "e70293266df3fa8db179981c09f960a95039046f8f099ac59308148150129232"
+      },
+      "int inode_init_always_gfp(": {
+        "text": "int inode_init_always_gfp(struct super_block *sb, struct inode *inode, gfp_t gfp)\n{\n\tstatic const struct inode_operations empty_iops;\n\tstatic const struct file_operations no_open_fops = {.open = no_open};\n\tstruct address_space *const mapping = &inode->i_data;\n\n\tinode->i_sb = sb;\n\tinode->i_blkbits = sb->s_blocksize_bits;\n\tinode->i_flags = 0;\n\tinode->i_state = 0;\n\tatomic64_set(&inode->i_sequence, 0);\n\tatomic_set(&inode->i_count, 1);\n\tinode->i_op = &empty_iops;\n\tinode->i_fop = &no_open_fops;\n\tinode->i_ino = 0;\n\tinode->__i_nlink = 1;\n\tinode->i_opflags = 0;\n\tif (sb->s_xattr)\n\t\tinode->i_opflags |= IOP_XATTR;\n\ti_uid_write(inode, 0);\n\ti_gid_write(inode, 0);\n\tatomic_set(&inode->i_writecount, 0);\n\tinode->i_size = 0;\n\tinode->i_write_hint = WRITE_LIFE_NOT_SET;\n\tinode->i_blocks = 0;\n\tinode->i_bytes = 0;\n\tinode->i_generation = 0;\n\tinode->i_pipe = NULL;\n\tinode->i_cdev = NULL;\n\tinode->i_link = NULL;\n\tinode->i_dir_seq = 0;\n\tinode->i_rdev = 0;\n\tinode->dirtied_when = 0;\n\n#ifdef CONFIG_CGROUP_WRITEBACK\n\tinode->i_wb_frn_winner = 0;\n\tinode->i_wb_frn_avg_time = 0;\n\tinode->i_wb_frn_history = 0;\n#endif\n\n\tspin_lock_init(&inode->i_lock);\n\tlockdep_set_class(&inode->i_lock, &sb->s_type->i_lock_key);\n\n\tinit_rwsem(&inode->i_rwsem);\n\tlockdep_set_class(&inode->i_rwsem, &sb->s_type->i_mutex_key);\n\n\tatomic_set(&inode->i_dio_count, 0);\n\n\tmapping->a_ops = &empty_aops;\n\tmapping->host = inode;\n\tmapping->flags = 0;\n\tmapping->wb_err = 0;\n\tatomic_set(&mapping->i_mmap_writable, 0);\n#ifdef CONFIG_READ_ONLY_THP_FOR_FS\n\tatomic_set(&mapping->nr_thps, 0);\n#endif\n\tmapping_set_gfp_mask(mapping, GFP_HIGHUSER_MOVABLE);\n\tmapping->i_private_data = NULL;\n\tmapping->writeback_index = 0;\n\tinit_rwsem(&mapping->invalidate_lock);\n\tlockdep_set_class_and_name(&mapping->invalidate_lock,\n\t\t\t\t   &sb->s_type->invalidate_lock_key,\n\t\t\t\t   \"mapping.invalidate_lock\");\n\tif (sb->s_iflags & SB_I_STABLE_WRITES)\n\t\tmapping_set_stable_writes(mapping);\n\tinode->i_private = NULL;\n\tinode->i_mapping = mapping;\n\tINIT_HLIST_HEAD(&inode->i_dentry);\t/* buggered by rcu freeing */\n#ifdef CONFIG_FS_POSIX_ACL\n\tinode->i_acl = inode->i_default_acl = ACL_NOT_CACHED;\n#endif\n\n#ifdef CONFIG_FSNOTIFY\n\tinode->i_fsnotify_mask = 0;\n#endif\n\tinode->i_flctx = NULL;\n\n\tif (unlikely(security_inode_alloc(inode, gfp)))\n\t\treturn -ENOMEM;\n\n\tthis_cpu_inc(nr_inodes);\n\n\treturn 0;\n}\n",
+        "sha256": "aebc8d3bcd037232f107c55cf9666a6afdfa0cc71eee306319de8f4256370a83"
+      }
+    },
+    "fs/file_table.c": {
+      "static int init_file(": {
+        "text": "static int init_file(struct file *f, int flags, const struct cred *cred)\n{\n\tint error;\n\n\tf->f_cred = get_cred(cred);\n\terror = security_file_alloc(f);\n\tif (unlikely(error)) {\n\t\tput_cred(f->f_cred);\n\t\treturn error;\n\t}\n\n\tspin_lock_init(&f->f_lock);\n\t/*\n\t * Note that f_pos_lock is only used for files raising\n\t * FMODE_ATOMIC_POS and directories. Other files such as pipes\n\t * don't need it and since f_pos_lock is in a union may reuse\n\t * the space for other purposes. They are expected to initialize\n\t * the respective member when opening the file.\n\t */\n\tmutex_init(&f->f_pos_lock);\n\tf->f_flags = flags;\n\tf->f_mode = OPEN_FMODE(flags);\n\t/* f->f_version: 0 */\n\n\t/*\n\t * We're SLAB_TYPESAFE_BY_RCU so initialize f_count last. While\n\t * fget-rcu pattern users need to be able to handle spurious\n\t * refcount bumps we should reinitialize the reused file first.\n\t */\n\tatomic_long_set(&f->f_count, 1);\n\treturn 0;\n}\n",
+        "sha256": "c92f60dad12559f44b87e148738a38550f643a0f9dfc43af7c6bf2e8243b80a0"
+      },
+      "struct file *alloc_empty_file(": {
+        "text": "struct file *alloc_empty_file(int flags, const struct cred *cred)\n{\n\tstatic long old_max;\n\tstruct file *f;\n\tint error;\n\n\t/*\n\t * Privileged users can go above max_files\n\t */\n\tif (get_nr_files() >= files_stat.max_files && !capable(CAP_SYS_ADMIN)) {\n\t\t/*\n\t\t * percpu_counters are inaccurate.  Do an expensive check before\n\t\t * we go and fail.\n\t\t */\n\t\tif (percpu_counter_sum_positive(&nr_files) >= files_stat.max_files)\n\t\t\tgoto over;\n\t}\n\n\tf = kmem_cache_zalloc(filp_cachep, GFP_KERNEL);\n\tif (unlikely(!f))\n\t\treturn ERR_PTR(-ENOMEM);\n\n\terror = init_file(f, flags, cred);\n\tif (unlikely(error)) {\n\t\tkmem_cache_free(filp_cachep, f);\n\t\treturn ERR_PTR(error);\n\t}\n\n\tpercpu_counter_inc(&nr_files);\n\n\treturn f;\n\nover:\n\t/* Ran out of filps - report that */\n\tif (get_nr_files() > old_max) {\n\t\tpr_info(\"VFS: file-max limit %lu reached\\n\", get_max_files());\n\t\told_max = get_nr_files();\n\t}\n\treturn ERR_PTR(-ENFILE);\n}\n",
+        "sha256": "e7f88beb3873b553726c44184af6acab3c3d90e69e1d35fe583ca1591a8b250c"
+      },
+      "static struct file *alloc_file(": {
+        "text": "static struct file *alloc_file(const struct path *path, int flags,\n\t\tconst struct file_operations *fop)\n{\n\tstruct file *file;\n\n\tfile = alloc_empty_file(flags, current_cred());\n\tif (!IS_ERR(file))\n\t\tfile_init_path(file, path, fop);\n\treturn file;\n}\n",
+        "sha256": "ffa9232ed563ee01cf977dcf733b4808e1b5befcad2193978ae0618bef90ee08"
+      },
+      "struct file *alloc_file_pseudo(": {
+        "text": "struct file *alloc_file_pseudo(struct inode *inode, struct vfsmount *mnt,\n\t\t\t       const char *name, int flags,\n\t\t\t       const struct file_operations *fops)\n{\n\tint ret;\n\tstruct path path;\n\tstruct file *file;\n\n\tret = alloc_path_pseudo(name, inode, mnt, &path);\n\tif (ret)\n\t\treturn ERR_PTR(ret);\n\n\tfile = alloc_file(&path, flags, fops);\n\tif (IS_ERR(file)) {\n\t\tihold(inode);\n\t\tpath_put(&path);\n\t}\n\treturn file;\n}\n",
+        "sha256": "39e27147f33349877cebf8d93de831463b041cb468773aea9769739d1674a336"
+      }
+    },
+    "fs/dcache.c": {
+      "static struct dentry *__d_alloc(": {
+        "text": "static struct dentry *__d_alloc(struct super_block *sb, const struct qstr *name)\n{\n\tstruct dentry *dentry;\n\tchar *dname;\n\tint err;\n\n\tdentry = kmem_cache_alloc_lru(dentry_cache, &sb->s_dentry_lru,\n\t\t\t\t      GFP_KERNEL);\n\tif (!dentry)\n\t\treturn NULL;\n\n\t/*\n\t * We guarantee that the inline name is always NUL-terminated.\n\t * This way the memcpy() done by the name switching in rename\n\t * will still always have a NUL at the end, even if we might\n\t * be overwriting an internal NUL character\n\t */\n\tdentry->d_iname[DNAME_INLINE_LEN-1] = 0;\n\tif (unlikely(!name)) {\n\t\tname = &slash_name;\n\t\tdname = dentry->d_iname;\n\t} else if (name->len > DNAME_INLINE_LEN-1) {\n\t\tsize_t size = offsetof(struct external_name, name[1]);\n\t\tstruct external_name *p = kmalloc(size + name->len,\n\t\t\t\t\t\t  GFP_KERNEL_ACCOUNT |\n\t\t\t\t\t\t  __GFP_RECLAIMABLE);\n\t\tif (!p) {\n\t\t\tkmem_cache_free(dentry_cache, dentry); \n\t\t\treturn NULL;\n\t\t}\n\t\tatomic_set(&p->u.count, 1);\n\t\tdname = p->name;\n\t} else  {\n\t\tdname = dentry->d_iname;\n\t}\t\n\n\tdentry->d_name.len = name->len;\n\tdentry->d_name.hash = name->hash;\n\tmemcpy(dname, name->name, name->len);\n\tdname[name->len] = 0;\n\n\t/* Make sure we always see the terminating NUL character */\n\tsmp_store_release(&dentry->d_name.name, dname); /* ^^^ */\n\n\tdentry->d_lockref.count = 1;\n\tdentry->d_flags = 0;\n\tspin_lock_init(&dentry->d_lock);\n\tseqcount_spinlock_init(&dentry->d_seq, &dentry->d_lock);\n\tdentry->d_inode = NULL;\n\tdentry->d_parent = dentry;\n\tdentry->d_sb = sb;\n\tdentry->d_op = NULL;\n\tdentry->d_fsdata = NULL;\n\tINIT_HLIST_BL_NODE(&dentry->d_hash);\n\tINIT_LIST_HEAD(&dentry->d_lru);\n\tINIT_HLIST_HEAD(&dentry->d_children);\n\tINIT_HLIST_NODE(&dentry->d_u.d_alias);\n\tINIT_HLIST_NODE(&dentry->d_sib);\n\td_set_d_op(dentry, dentry->d_sb->s_d_op);\n\n\tif (dentry->d_op && dentry->d_op->d_init) {\n\t\terr = dentry->d_op->d_init(dentry);\n\t\tif (err) {\n\t\t\tif (dname_external(dentry))\n\t\t\t\tkfree(external_name(dentry));\n\t\t\tkmem_cache_free(dentry_cache, dentry);\n\t\t\treturn NULL;\n\t\t}\n\t}\n\n\tthis_cpu_inc(nr_dentry);\n\n\treturn dentry;\n}\n",
+        "sha256": "49632dc7e577b12767760301962fc3f78d948ae662ff30f915b8960f65d0f583"
+      },
+      "struct dentry *d_alloc_pseudo(": {
+        "text": "struct dentry *d_alloc_pseudo(struct super_block *sb, const struct qstr *name)\n{\n\tstatic const struct dentry_operations anon_ops = {\n\t\t.d_dname = simple_dname\n\t};\n\tstruct dentry *dentry = __d_alloc(sb, name);\n\tif (likely(dentry)) {\n\t\tdentry->d_flags |= DCACHE_NORCU;\n\t\tif (!sb->s_d_op)\n\t\t\td_set_d_op(dentry, &anon_ops);\n\t}\n\treturn dentry;\n}\n",
+        "sha256": "f9f7f3f29a46129bc2c8d3c5627088c12db3e5e439f6168b3fdc1529e8917962"
+      }
+    },
+    "security/security.c": {
+      "static int lsm_file_alloc(": {
+        "text": "static int lsm_file_alloc(struct file *file)\n{\n\tif (!lsm_file_cache) {\n\t\tfile->f_security = NULL;\n\t\treturn 0;\n\t}\n\n\tfile->f_security = kmem_cache_zalloc(lsm_file_cache, GFP_KERNEL);\n\tif (file->f_security == NULL)\n\t\treturn -ENOMEM;\n\treturn 0;\n}\n",
+        "sha256": "23b3d8116c51150461e0ed0683dc45f495795e1e6f3d363807180e057a5a7e35"
+      },
+      "static int lsm_inode_alloc(": {
+        "text": "static int lsm_inode_alloc(struct inode *inode, gfp_t gfp)\n{\n\tif (!lsm_inode_cache) {\n\t\tinode->i_security = NULL;\n\t\treturn 0;\n\t}\n\n\tinode->i_security = kmem_cache_zalloc(lsm_inode_cache, gfp);\n\tif (inode->i_security == NULL)\n\t\treturn -ENOMEM;\n\treturn 0;\n}\n",
+        "sha256": "25e3909f7a702fe2544d84c4283c10c0a8dfed1737caf757cc7a661922198423"
+      },
+      "int security_inode_alloc(": {
+        "text": "int security_inode_alloc(struct inode *inode, gfp_t gfp)\n{\n\tint rc = lsm_inode_alloc(inode, gfp);\n\n\tif (unlikely(rc))\n\t\treturn rc;\n\trc = call_int_hook(inode_alloc_security, inode);\n\tif (unlikely(rc))\n\t\tsecurity_inode_free(inode);\n\treturn rc;\n}\n",
+        "sha256": "a67826845173334a1eae4ec3d6c8629298238387017aa51d7660e0cd7aa39689"
+      },
+      "int security_inode_init_security_anon(": {
+        "text": "int security_inode_init_security_anon(struct inode *inode,\n\t\t\t\t      const struct qstr *name,\n\t\t\t\t      const struct inode *context_inode)\n{\n\treturn call_int_hook(inode_init_security_anon, inode, name,\n\t\t\t     context_inode);\n}\n",
+        "sha256": "7a75d67a9a7ae9af5be6d05b27df085fdfbace370b3ae19c0fc421cae687ae55"
+      },
+      "int security_file_alloc(": {
+        "text": "int security_file_alloc(struct file *file)\n{\n\tint rc = lsm_file_alloc(file);\n\n\tif (rc)\n\t\treturn rc;\n\trc = call_int_hook(file_alloc_security, file);\n\tif (unlikely(rc))\n\t\tsecurity_file_free(file);\n\treturn rc;\n}\n",
+        "sha256": "fab45c762b5bd91f2a29b4dd3af8c0bf83afbd41ffdf687f6c127d1d8aa1239d"
+      }
+    },
+    "security/selinux/hooks.c": {
+      "static int selinux_inode_alloc_security(": {
+        "text": "static int selinux_inode_alloc_security(struct inode *inode)\n{\n\tstruct inode_security_struct *isec = selinux_inode(inode);\n\tu32 sid = current_sid();\n\n\tspin_lock_init(&isec->lock);\n\tINIT_LIST_HEAD(&isec->list);\n\tisec->inode = inode;\n\tisec->sid = SECINITSID_UNLABELED;\n\tisec->sclass = SECCLASS_FILE;\n\tisec->task_sid = sid;\n\tisec->initialized = LABEL_INVALID;\n\n\treturn 0;\n}\n",
+        "sha256": "872de8d9532ba59a2fc4e5488d69b50688d7c859de7d31d11be299394489abf4"
+      },
+      "static int selinux_inode_init_security_anon(": {
+        "text": "static int selinux_inode_init_security_anon(struct inode *inode,\n\t\t\t\t\t    const struct qstr *name,\n\t\t\t\t\t    const struct inode *context_inode)\n{\n\tu32 sid = current_sid();\n\tstruct common_audit_data ad;\n\tstruct inode_security_struct *isec;\n\tint rc;\n\n\tif (unlikely(!selinux_initialized()))\n\t\treturn 0;\n\n\tisec = selinux_inode(inode);\n\n\t/*\n\t * We only get here once per ephemeral inode.  The inode has\n\t * been initialized via inode_alloc_security but is otherwise\n\t * untouched.\n\t */\n\n\tif (context_inode) {\n\t\tstruct inode_security_struct *context_isec =\n\t\t\tselinux_inode(context_inode);\n\t\tif (context_isec->initialized != LABEL_INITIALIZED) {\n\t\t\tpr_err(\"SELinux:  context_inode is not initialized\\n\");\n\t\t\treturn -EACCES;\n\t\t}\n\n\t\tisec->sclass = context_isec->sclass;\n\t\tisec->sid = context_isec->sid;\n\t} else {\n\t\tisec->sclass = SECCLASS_ANON_INODE;\n\t\trc = security_transition_sid(\n\t\t\tsid, sid,\n\t\t\tisec->sclass, name, &isec->sid);\n\t\tif (rc)\n\t\t\treturn rc;\n\t}\n\n\tisec->initialized = LABEL_INITIALIZED;\n\t/*\n\t * Now that we've initialized security, check whether we're\n\t * allowed to actually create this type of anonymous inode.\n\t */\n\n\tad.type = LSM_AUDIT_DATA_ANONINODE;\n\tad.u.anonclass = name ? (const char *)name->name : \"?\";\n\n\treturn avc_has_perm(sid,\n\t\t\t    isec->sid,\n\t\t\t    isec->sclass,\n\t\t\t    FILE__CREATE,\n\t\t\t    &ad);\n}\n",
+        "sha256": "089e0c73bbe1637f5dd38b298151337c4826f858f35c0ffffaa31aee2bb906ef"
+      },
+      "static int selinux_file_alloc_security(": {
+        "text": "static int selinux_file_alloc_security(struct file *file)\n{\n\tstruct file_security_struct *fsec = selinux_file(file);\n\tu32 sid = current_sid();\n\n\tfsec->sid = sid;\n\tfsec->fown_sid = sid;\n\n\treturn 0;\n}\n",
+        "sha256": "4d0b8733587122744e5bcfbfab5d052d467a5bc7a34b6b5f709df9c5e9640058"
+      }
+    }
+  },
+  "configuration": {
+    "bytes": 143192,
+    "sha256": "1b9152e00c4ef645dda8318f804aaae17acbabf4bd4d1b065c7205faabaef2b3"
+  },
+  "selinuxHookRegistration": {
+    "prefix": "static struct security_hook_list selinux_hooks[] __ro_after_init = {",
+    "bytes": 13464,
+    "sha256": "ef25e0b21871e4761545eb389e5e59fbfb94de81a587a0382ebf09a2836f6276"
+  }
+}
