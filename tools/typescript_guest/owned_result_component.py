@@ -99,7 +99,7 @@ def compile_fixture(prepared:Path,expected_owner_head:str,tools:Path,output:Path
     compiler.isolation.protect_inputs(fixture)
     compiled=output/'compiled';compiled.mkdir()
     selection=compiled/'selection.json'
-    write_json(selection,{'profile':runtime_profile.IMPORT_PROFILE,'engineInput':compiler.engine_metadata,
+    write_json(selection,{**runtime_profile.selection(runtime_profile.IMPORT_PROFILE),'engineInput':compiler.engine_metadata,
                          'compilerSplicerInput':compiler.source_splicer_metadata})
     graph=semantic(json.loads(compiler.run('own-fixture-types',compiler.wasm,'component','wit',fixture,'--json')))
     compiler.run('own-fixture-componentize',compiler.node,fixture/'recipe/componentize.mjs',compiler.compiler,
