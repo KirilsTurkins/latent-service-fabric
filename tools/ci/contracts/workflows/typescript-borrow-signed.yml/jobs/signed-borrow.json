@@ -51,7 +51,7 @@
       },
       {
         "name": "Fetch only the eventual immutable successful producer source",
-        "run": "git fetch --no-tags --depth=1 origin 9d07a6dfa3ebb77aa75eb1b5899cb9360e26728d"
+        "run": "git fetch --no-tags --depth=1 origin be356d28f93267dc34078ce137d49ed28c28bf47"
       },
       {
         "name": "Install the normal locked public compiler and pinned parser",
@@ -80,7 +80,7 @@
   },
   "jobId": "signed-borrow",
   "kind": "job",
-  "reviewReason": "Reviewed closed source-built probe recipe reuses only authenticated successful normal engine/splicer inputs; no library or engine build and no whole-cost or physical claim.",
+  "reviewReason": "Reviewed immutable prerequisite source fetch update: 9d native prerequisites passed, while actual component consumers failed; replace only its source pin with actual successful correctedbe356. All signed cases, commands, authority and finite bounds remain intact.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-borrow-signed.yml"
 }

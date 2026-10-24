@@ -135,3 +135,16 @@ must produce a fresh normal splicer and engine once, with unchanged normal
 low-level-library validation. This programme will consume only that actual
 successful tuple through normal source/product validators. The old `9d07`
 envelopes are immutable and cannot be reissued for changed source.
+
+The corrected normal prerequisite campaign succeeded at source
+`be356d28f93267dc34078ce137d49ed28c28bf47`, run`40062945676`,
+job`120780152060` (`workflow_dispatch`, fixed import-function-identity branch).
+The reader now pins artifact`12547924676`, 196,485,322 bytes, SHA256
+`5b89337277d467076a42d45e301b0b17f1e535c0c58a4ef3cc8bb8ba615d2cfc`.
+Its one shared cached extraction passed the original normal engine/splicer
+validators with all41 SDK inputs matching that source. The engine bits remain
+identical to9d, honestly rebuilt by the normal programme; its new source-bound
+input envelope and splicer identities are retained unchanged. The9d native
+prerequisite success and failed consumer histories are preserved. A new signed
+consumer attempt is pending; no signed or physical pass follows from these
+native prerequisites.

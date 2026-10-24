@@ -20,11 +20,11 @@ from tools.phase3_resource_identity import file_identity
 from tools.rust_capsule_project import ROOT, read_file, digest, fresh, write_json
 from tools.typescript_guest import activation_engine, native_build, runtime_profile
 
-HEAD = '9d07a6dfa3ebb77aa75eb1b5899cb9360e26728d'
-RUN, JOB = 40056035407, 120759116551
-ARTIFACT = 12546161304
-ARCHIVE_BYTES = 196485292
-ARCHIVE_DIGEST = 'sha256:b4f21ecfb457adf9bb206c4c0b3ec36cbfd786f0da9e2ea2d8ca9d9e9a676123'
+HEAD = 'be356d28f93267dc34078ce137d49ed28c28bf47'
+RUN, JOB = 40062945676, 120780152060
+ARTIFACT = 12547924676
+ARCHIVE_BYTES = 196485322
+ARCHIVE_DIGEST = 'sha256:5b89337277d467076a42d45e301b0b17f1e535c0c58a4ef3cc8bb8ba615d2cfc'
 PREFIX = ''
 MAX_ARCHIVE, MAX_TOTAL, MAX_MEMBERS = 512 * 1024**2, 2 * 1024**3, 1024
 PRODUCTS = ('engine.wasm', 'engine-input.json', 'engine-build.json',
@@ -53,9 +53,9 @@ def pinned():
 def metadata(run, job, artifact):
     pinned()
     require(type(run.get('run_attempt')) is int and run['run_attempt'] == 1
-            and run['id'] == RUN and run['head_sha'] == HEAD and run['event'] == 'push'
+            and run['id'] == RUN and run['head_sha'] == HEAD and run['event'] == 'workflow_dispatch'
             and run['path'] == '.github/workflows/typescript-owned-results.yml'
-            and run['head_branch'] == 'feat/typescript-owned-result-disposal-compose-20261024'
+            and run['head_branch'] == 'fix/typescript-import-function-identity-20261024'
             and run['status'] == 'completed' and run['conclusion'] == 'success',
             'borrow-signed-successful-own-producer')
     require(job['id'] == JOB and job['run_id'] == RUN and job['head_sha'] == HEAD
