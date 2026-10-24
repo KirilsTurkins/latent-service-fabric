@@ -4,9 +4,11 @@ This is the complete crates.io Wasmtime 48.0.7 package, licensed under
 Apache-2.0 WITH LLVM-exception (see the unmodified LICENSE). The original
 archive checksum and all 250 original file identities are recorded in
 UPSTREAM.latent.json. `latent-dynamic-memory.patch` applies to that exact
-original package; it contains twenty-nine changed upstream files and six added
+original package; it contains thirty changed upstream files and six added
 implementation files. Other Wasmtime packages remain at the original locked
-registry versions.
+registry versions. The standalone development lock selects Tokio 1.51.6 for
+RUSTSEC-2026-0386; the immutable upstream inventory retains its original lock
+identity. This dependency-only lock correction changes no Wasmtime runtime source.
 
 The maintained extension is `component::DynamicValueMemory` and
 `Func::call_async_with_memory`. It admits actual allocation capacity in the

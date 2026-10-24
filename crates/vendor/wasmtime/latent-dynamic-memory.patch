@@ -1,3 +1,18 @@
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -1514,9 +1514,9 @@
+ 
+ [[package]]
+ name = "tokio"
+-version = "1.51.1"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "f66bf9585cda4b724d3e78ab34b73fb2bbaba9011b9bfdf69dc836382ea13b8c"
++version = "1.51.6"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "a13e32eacd0222f9658be2ccbd83b718bfd9bfb0d54b5921913c184cb86124a5"
+ dependencies = [
+  "pin-project-lite",
+  "tokio-macros",
 --- a/src/runtime.rs
 +++ b/src/runtime.rs
 @@ -53,6 +53,7 @@

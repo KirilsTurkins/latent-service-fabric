@@ -17,13 +17,17 @@ RECORD_SHA256 = "9b28241a6d818a7728cc06d949881bdd2274a7857cc12f7af79e9bde1ff88fe
 # Explicit reviewed postimages; the remaining original files use the immutable
 # registry inventory. Changing a claimed record or patch cannot authorize bytes.
 POSTIMAGES = {
+    "Cargo.lock": {
+        "sha256": "858dfc32837c4f1e2689cf031be92eff0c6ed3ff01f7721dbf23dac055a45a44",
+        "bytes": 60487
+    },
     "README.latent.md": {
-        "sha256": "872a667d17eee2506c6c24bd1c43fdfb379aa097b406cb2d59015f38a4df6265",
-        "bytes": 11518
+        "sha256": "597f982001871866ce5306a868881e5ae2760076676ca159f1d3eb59c1db5ec2",
+        "bytes": 11731
     },
     "latent-dynamic-memory.patch": {
-        "sha256": "096fb689c9e77a315606370511f008494b1083beb4c2bf6f8dfbe36bd2b3f463",
-        "bytes": 179190
+        "sha256": "1ef5f3b8e5aec2d93c8f4f326a493c9fc0d7d762fe5276c1c43a8020170d3286",
+        "bytes": 179665
     },
     "src/runtime.rs": {
         "sha256": "3290f57919f6dc6b6f797ee55cd62504ce31e91500741501e261f2c7e4eac970",
