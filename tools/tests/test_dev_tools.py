@@ -852,8 +852,27 @@ for language in compatibility.LANGUAGES:
   {'source':digest(b'frontend'),'artifacts':{'component':report['componentDigest']}})
  assert captured.context_state=='observed',language
  assert captured.context==selected,language
-for name in ('tools.guest_compatibility_context_build','tools.guest_emitted_code','tools.typescript_guest.buffer_profile'):
+for name in ('tools.guest_compatibility_context_build','tools.guest_emitted_code','tools.typescript_guest.buffer_profile',
+             'tools.typescript_guest.net_profile','tools.typescript_guest.runtime_profile'):
  importlib.import_module(name)
+# Exercise the actual selected Net lazy reader, not just unselected imports.
+from tools.guest_compatibility_context_build import typescript_net_materials
+from tools.typescript_guest import net_profile
+recipe={};captured={};identities={}
+for part,path in zip(context.NET_PARTS,(net_profile.BACKEND,net_profile.TRANSPORT,net_profile.BINDINGS,
+                                      net_profile.RESOLVER,net_profile.DECLARATION,net_profile.WIT)):
+ row={'digest':digest(part.encode()),'size':1};recipe[path]=row;identities[part]=row['digest']
+ if part in {'declaration','interface'}:captured['vendor/lsf/'+path]=row
+recipe['tools/typescript_guest/net_profile.py']={'digest':digest(b'selector'),'size':1}
+selection=net_profile.selected({'standardNetModules':['node:net'],'standardNetProfile':context.NET_PROFILE,
+                               'standardNetIdentities':identities},identities)
+materials=typescript_net_materials(encode(selection),encode(recipe),encode(captured))
+assert [row['name'] for row in materials]==list(context.NET_MATERIALS)
+assert all(row['profile']==context.NET_PROFILE for row in materials)
+selection['maximumSocketStates']=3
+try:typescript_net_materials(encode(selection),encode(recipe),encode(captured))
+except DevError as error:assert error.code=='compatibility-context-net-selection-drift'
+else:raise AssertionError('rehashed Net selection borrowed another implementation')
 for name,loaded in tuple(sys.modules.items()):
  if name.startswith('tools.') and getattr(loaded,'__file__',None):
   assert str(pathlib.Path(loaded.__file__)).startswith(str(archive)),name
@@ -878,7 +897,8 @@ print('real-helper-runtime-imports-owned')
     def test_missing_captured_outcome_module_cannot_be_imported_from_checkout(self):
         import zipfile
         for missing in ('guest_compatibility_outcomes', 'guest_compatibility_context_build',
-                        'guest_emitted_code', 'typescript_guest/buffer_profile'):
+                        'guest_emitted_code', 'typescript_guest/buffer_profile',
+                        'typescript_guest/net_profile', 'typescript_guest/runtime_profile'):
             with self.subTest(missing=missing):
                 root, helper = self.archive(); incomplete = root / 'incomplete.pyz'
                 with zipfile.ZipFile(helper) as source, zipfile.ZipFile(incomplete, 'x') as target:
