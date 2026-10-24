@@ -419,6 +419,19 @@ fn result(receipt: latent_node::ActivationReceipt, mode: u32, label: &str) {
         ActivationOutcome::Failed {
             error, consumption, ..
         } => {
+            let details: Vec<_> = error
+                .details
+                .iter()
+                .map(|detail| json!({"kind":detail.kind,"fields":detail.fields}))
+                .collect();
+            let diagnostic = json!({"case":label,"mode":mode,"code":error.code.wire_code(),
+                "message":error.message,"details":details});
+            let diagnostic = serde_json::to_string(&diagnostic).unwrap();
+            assert!(
+                diagnostic.len() <= 8192,
+                "bounded public failure diagnostic"
+            );
+            println!("TYPESCRIPT_BORROW_FAILURE {diagnostic}");
             assert_eq!(
                 error.code,
                 if mode == 1 {
@@ -603,6 +616,7 @@ async fn signed_borrow_release_preserves_original_socket_until_consuming_close_a
                 }
             }
         };
+        sample(&f, "actual-root-receipt-before-outcome-assertions");
         result(receipt, mode, label);
         peer.await.unwrap();
         idle(&f, label).await;
