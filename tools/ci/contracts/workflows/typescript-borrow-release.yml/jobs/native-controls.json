@@ -30,6 +30,12 @@
         }
       },
       {
+        "uses": "dtolnay/rust-toolchain",
+        "with": {
+          "targets": "wasm32-wasip1"
+        }
+      },
+      {
         "uses": "bytecodealliance/actions/wasm-tools/setup",
         "with": {
           "version": "1.254.0"
@@ -45,7 +51,7 @@
       },
       {
         "name": "Check owning-evidence refusal controls",
-        "run": "python3 -m unittest tools.tests.test_typescript_borrow_controls tools.tests.test_typescript_borrow_splicer_inputs tools.tests.test_typescript_borrow_retry_inputs -v"
+        "run": "python3 -m unittest tools.tests.test_typescript_borrow_controls tools.tests.test_typescript_borrow_splicer_inputs tools.tests.test_typescript_borrow_retry_inputs tools.tests.test_typescript_borrow_support -v"
       },
       {
         "env": {
@@ -69,7 +75,7 @@
         "with": {
           "if-no-files-found": "warn",
           "name": "typescript-borrow-controls-${{ github.sha }}",
-          "path": "${{ runner.temp }}/typescript-borrow-retry-inputs/acquisition.json\n${{ runner.temp }}/typescript-borrow-retry-inputs/producer.zip\n${{ runner.temp }}/typescript-borrow-controls/*.json\n${{ runner.temp }}/typescript-borrow-controls/*.log\n${{ runner.temp }}/typescript-borrow-controls/*.wasm\n${{ runner.temp }}/typescript-borrow-controls/*.o\n${{ runner.temp }}/typescript-borrow-controls/control-includes/**\n",
+          "path": "${{ runner.temp }}/typescript-borrow-retry-inputs/acquisition.json\n${{ runner.temp }}/typescript-borrow-retry-inputs/producer.zip\n${{ runner.temp }}/typescript-borrow-controls/*.json\n${{ runner.temp }}/typescript-borrow-controls/*.log\n${{ runner.temp }}/typescript-borrow-controls/*.wasm\n${{ runner.temp }}/typescript-borrow-controls/*.o\n${{ runner.temp }}/typescript-borrow-controls/control-includes/**\n${{ runner.temp }}/typescript-borrow-controls/support/*.json\n${{ runner.temp }}/typescript-borrow-controls/support/*.archive\n${{ runner.temp }}/typescript-borrow-controls/support/rust-staticlib/**\n${{ runner.temp }}/typescript-borrow-controls/support/rust-hooks-wrappers.o\n${{ runner.temp }}/typescript-borrow-controls/support/target/wasm32-wasip1/release/librust_staticlib.a\n",
           "retention-days": 7
         }
       }
@@ -78,7 +84,7 @@
   },
   "jobId": "native-controls",
   "kind": "job",
-  "reviewReason": "Explicit reviewed replacement: authenticated failed-producer completed inputs instead of duplicate builds; preserve six pinned-parser and eleven native cases, add four retry guards, no fallback; one aggregate120-second diagnostic compile/link bound",
+  "reviewReason": "Explicit reviewed minimal actual link repair: pinned maintained four-crate support and wrapper plus normal WASI archives; source controls extended by two, all eleven native cases and aggregate120-second compile/link bound preserved",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-borrow-release.yml"
 }

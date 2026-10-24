@@ -42,7 +42,8 @@ REFUSAL_CASES = (
 CASES = NORMAL_CASES + REFUSAL_CASES
 RECIPE = (
     'tools/qualify_typescript_borrow_release.py', 'tools/typescript_guest/borrow_controls.py',
-    'tools/typescript_guest/borrow_controls_wasi.mjs',
+    'tools/typescript_guest/borrow_controls_wasi.mjs', 'tools/typescript_guest/borrow_support.py',
+    'tools/typescript_guest/native_build.py', 'tools/typescript_guest/promise_library.py',
     'tools/tests/test_typescript_import_cancellation.py',
     'sdk/typescript-guest/activation/tests/native_imports.cpp',
     'tools/typescript_guest/import_cancellation.mjs', 'tools/typescript_guest/async_waiters.mjs',
@@ -161,7 +162,7 @@ def build(output: Path, tools: Path, prepared_products: Path, *, wasm_tools='was
               'physicalProviderQualification': 'not-evaluated', 'wholeCostQualification': False,
               'scope': 'source-built-intrinsic-controls-with-fixture-canonical-and-broker-imports',
               'recipe': recipe, 'limits': {'overallSeconds': 4500, 'productReuse': 'frozen completed library and engine; no builds',
-                  'diagnosticCompileAndLinkSeconds': 120, 'diagnosticOptimization': 'O0; diagnostic only',
+                  'diagnosticSupportSeconds': 300, 'diagnosticCompileAndLinkSeconds': 120, 'diagnosticOptimization': 'O0; diagnostic only',
                   'caseSeconds': 20, 'caseCount': len(CASES), 'outputBytesPerCommand': 4 * 1024**2}}
 
     def run(label, *command, seconds=20, cwd=output, env=None):
@@ -238,6 +239,18 @@ def build(output: Path, tools: Path, prepared_products: Path, *, wasm_tools='was
             wasi_archive, promise_library.SOURCES['wasi-sdk'], deadline)
         wasi = promise_library.extract(wasi_archive, output / 'wasi-source',
                                       'wasi-sdk-30.0-x86_64-linux', deadline=deadline)
+        stage = 'maintained-diagnostic-support'
+        from tools.typescript_guest import borrow_support
+        record['supportBuild'] = borrow_support.build(output / 'support', wasi, engine, run, environment)
+        support = record['supportBuild']['products']
+        products.update({
+            'diagnosticRustLibrary': (Path(support['library']), borrow_support.MAX_LIBRARY),
+            'diagnosticRustWrapper': (Path(support['wrapper']), 1024**2),
+            'diagnosticClang': ((wasi / 'bin/clang++').resolve(strict=True), 256 * 1024**2),
+            **{'diagnosticWasi-' + name: (Path(path), 32 * 1024**2)
+               for name, path in support['emulation'].items()},
+        })
+        record['products'] = {name: file_identity(path, maximum) for name, (path, maximum) in products.items()}
         core, object_file = output / 'borrow-controls.wasm', output / 'borrow-controls.o'
         diagnostic_deadline = time.monotonic() + 120
         record['diagnosticPhases'] = []
@@ -257,7 +270,8 @@ def build(output: Path, tools: Path, prepared_products: Path, *, wasm_tools='was
         # The normal library is ThinLTO bitcode. Disable diagnostic link-time
         # optimization explicitly; do not rebuild or alter the production core.
         phase('link-controls', wasi / 'bin/clang++', '-O0', object_file,
-            engine / 'spidermonkey/libspidermonkey.a', '-Wl,--lto-O0', '-Wl,--wrap=_ZdlPv',
+            engine / 'spidermonkey/libspidermonkey.a', Path(support['library']), Path(support['wrapper']),
+            *(Path(path) for path in support['emulation'].values()), '-Wl,--lto-O0', '-Wl,--wrap=_ZdlPv',
             '-Wl,-z,stack-size=8388608', '-Wl,--max-memory=268435456', '-o', core)
         require(time.monotonic() < diagnostic_deadline, 'borrow-controls-diagnostic-final-deadline')
         run('validate-control-core', wasm_tools, 'validate', core)

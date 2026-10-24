@@ -13,6 +13,7 @@ on:
       - 'tools/tests/test_typescript_borrow_controls.py'
       - 'tools/tests/test_typescript_borrow_splicer_inputs.py'
       - 'tools/tests/test_typescript_borrow_retry_inputs.py'
+      - 'tools/tests/test_typescript_borrow_support.py'
       - 'sdk/typescript-guest/activation/**'
   workflow_dispatch:
 
@@ -42,6 +43,9 @@ jobs:
         with:
           node-version: 24.19.0
           package-manager-cache: false
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+        with:
+          targets: wasm32-wasip1
       - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
         with:
           version: 1.254.0
@@ -50,7 +54,7 @@ jobs:
       - name: Make the pinned pre-feature ABI baseline available in shallow checkout
         run: git fetch --no-tags --depth=1 origin 5e465f8c534ee31d407dbb9720fdec35cb9da71d
       - name: Check owning-evidence refusal controls
-        run: python3 -m unittest tools.tests.test_typescript_borrow_controls tools.tests.test_typescript_borrow_splicer_inputs tools.tests.test_typescript_borrow_retry_inputs -v
+        run: python3 -m unittest tools.tests.test_typescript_borrow_controls tools.tests.test_typescript_borrow_splicer_inputs tools.tests.test_typescript_borrow_retry_inputs tools.tests.test_typescript_borrow_support -v
       - name: Authenticate the failed producer and reuse only its completed source products
         env:
           GH_TOKEN: ${{ github.token }}
@@ -76,5 +80,10 @@ jobs:
             ${{ runner.temp }}/typescript-borrow-controls/*.wasm
             ${{ runner.temp }}/typescript-borrow-controls/*.o
             ${{ runner.temp }}/typescript-borrow-controls/control-includes/**
+            ${{ runner.temp }}/typescript-borrow-controls/support/*.json
+            ${{ runner.temp }}/typescript-borrow-controls/support/*.archive
+            ${{ runner.temp }}/typescript-borrow-controls/support/rust-staticlib/**
+            ${{ runner.temp }}/typescript-borrow-controls/support/rust-hooks-wrappers.o
+            ${{ runner.temp }}/typescript-borrow-controls/support/target/wasm32-wasip1/release/librust_staticlib.a
           if-no-files-found: warn
           retention-days: 7

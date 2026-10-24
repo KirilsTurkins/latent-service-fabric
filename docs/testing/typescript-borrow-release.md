@@ -93,6 +93,16 @@ source mismatch rather than rebuilding or rewriting old receipts. Only the
 normal pinned WASI SDK 30 toolchain is acquired for the diagnostic retry. The
 normal library and engine are never rebuilt by this recipe.
 
+The first bounded retry, run `40047503071`, compiled the diagnostic in1.8s
+but failed its link because the standalone recipe omitted the maintained Rust
+encoding/hook and WASI support closure. It ran no native case. The support-link
+repair adds only the pinned Starling four-crate staticlib template with its
+original Cargo.lock (`--locked`, Rust1.97.1, wasm32-wasip1), unchanged panic/oom
+wrapper source, and normal WASI signal/process-clock/getpid archives. Its
+separate support-build deadline is300s; the producer's normal staticlib build
+took15.56s. Source, lock, compiler, libraries and wrapper identities are retained
+and rechecked. No substitute symbols or engine/libJS rebuild is permitted.
+
 Diagnostic compilation uses `-O0`; the diagnostic link explicitly disables
 ThinLTO optimization. Their separate phase receipts share **one aggregate
 120-second deadline**, preserving the same finite bound and all eleven cases,
