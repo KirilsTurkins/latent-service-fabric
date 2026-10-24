@@ -155,6 +155,44 @@ class StreamOperator(unittest.TestCase):
         restarted.grant()
         self.assertEqual(len(self.mutations()), 2)
 
+    def test_malformed_grant_confirmation_retains_original_dispatch_until_exact_recovery(self):
+        original_call = self.client.call
+        for ordinal, field in enumerate(("revoked", "configurationEpoch", "formatVersion")):
+            root = self.root / ("confirmation-" + str(ordinal))
+            paths.new_directory(root)
+            operator = stream.StreamOperator(root, self.client, **self.options)
+            self.client.records.clear();self.client.operations.clear();self.client.calls.clear()
+            owner = copy.deepcopy(operator.owner)
+
+            def malformed(*arguments):
+                result = original_call(*arguments)
+                if "apply" in arguments:
+                    policy = result["data"]["policy"]
+                    if field == "revoked": policy[field] = 0
+                    else: policy["document"][field] = True if field == "configurationEpoch" else 1.0
+                return result
+
+            self.client.call = malformed
+            try:
+                with self.assertRaisesRegex(DevError, "original-policy-changed") as caught:
+                    operator.grant()
+                self.assertTrue(caught.exception.uncertain)
+                pending = (root / "operations.json").read_bytes()
+                self.assertEqual(operator.journal.read()["pending"]["intent"]["recordKind"], "provider-binding")
+                self.assertEqual(operator._records(), {})
+                self.assertEqual(operator.owner, owner)
+                with self.assertRaisesRegex(DevError, "recover-original"):
+                    operator.grant()
+                self.assertEqual((root / "operations.json").read_bytes(), pending)
+                self.assertEqual(len(self.mutations()), 1)
+            finally:
+                self.client.call = original_call
+            operator.recover()
+            self.assertEqual(len(self.mutations()), 1)
+            operator.grant();operator.grant()
+            self.assertEqual(len(self.mutations()), 2)
+            self.assertIsNone(operator.journal.read()["pending"])
+
     def test_revoke_applies_durable_deny_at_owned_policy_generation(self):
         operator = self.operator()
         operator.grant()
