@@ -38,18 +38,25 @@ async fn configured_socket(root: &Path, port: u16) -> (Fixture, latent_core::Res
     assert_eq!(selected["automaticCloseDrain"], false);
     let callee = packages::callee(42);
     let signers = package::Signers::typescript_with_echo_fixture();
-    let caller_upload = signers.upload(&caller, &observed);
+    let tenant = TenantId("tenant-a".into());
+    let caller_manifest: Value =
+        serde_json::from_slice(caller.blob("capsule.json").unwrap()).unwrap();
+    assert_eq!(
+        caller_manifest["metadata"]["tenant"].as_str(),
+        Some(tenant.0.as_str())
+    );
+    let caller_upload = signers.upload_for_tenant(&caller, &observed, &tenant);
     let mut callee_observation = provenance::observation();
     callee_observation.source.repository =
         "https://github.com/KirilsTurkins/latent-service-fabric".into();
     callee_observation.component_digest = packages::release(&callee).0;
     callee_observation.component_size = callee.blob("component.wasm").unwrap().len() as u64;
-    let callee_upload = signers.upload(&callee, &callee_observation);
+    let callee_upload = signers.upload_for_tenant(&callee, &callee_observation, &tenant);
     let release = packages::release(&caller);
     let catalog = package::catalog(root, signers.policy, Some(128 * 1024 * 1024));
     for upload in [caller_upload, callee_upload] {
         catalog
-            .admit_package(&TenantId("tenant-a".into()), upload, &mut |_| Ok(()))
+            .admit_package(&tenant, upload, &mut |_| Ok(()))
             .await
             .unwrap();
     }
