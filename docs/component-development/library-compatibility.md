@@ -65,6 +65,13 @@ This records module selection independently of package identity; it neither
 certifies an unchanged npm dependency nor installs a grant or global Buffer.
 Unselected captures retain the ordinary generic presentation.
 
+Native npm capture accepts one safe original tar root, including published
+type packages whose root is not named `package`. It retains original archive
+bytes and integrity, validates every header and maps the single root only for
+exact comparison with installed files and `package.json`. Mixed roots, unsafe
+paths, path collisions, unsupported entries and original count/byte limits remain
+refused. This capture-format support supplies no compiler or runtime evidence.
+
 The context also retains dependency identities from the exact captured source
 inventory. It displays each retained dependency's original archive and selected
 tree digests, and its captured version when the resolver recorded a bounded
