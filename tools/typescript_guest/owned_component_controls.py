@@ -32,6 +32,7 @@ RECIPE=(
     'tools/typescript_guest/signed64.mjs','tools/typescript_guest/source_splicer.mjs',
     'tools/typescript_guest/runtime_profile.py','tools/typescript_guest/import_profile.py',
     'tools/typescript_guest/build.py','tools/typescript_guest/bundle.mjs',
+    'tools/typescript_guest/standard_global_types.py',
     'tools/typescript_guest/borrow_probe_profile.py',
     'sdk/typescript-guest/probes/borrow-release/outer.wit',
     'sdk/typescript-guest/probes/borrow-release/main.ts',

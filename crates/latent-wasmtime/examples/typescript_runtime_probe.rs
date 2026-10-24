@@ -29,6 +29,9 @@ async fn main() -> wasmtime::Result<()> {
         .ok_or_else(|| wasmtime::Error::msg("component path required"))?;
     let mut config = Config::new();
     config.wasm_component_model_async(true).consume_fuel(true);
+    if std::env::args().nth(3).as_deref() == Some("sdk-owned-results") {
+        config.wasm_component_model_more_async_builtins(true);
+    }
     config.wasm_backtrace_max_frames(std::num::NonZeroUsize::new(128));
     let optimization = std::env::args().nth(2).unwrap_or_else(|| "speed".into());
     config.cranelift_opt_level(match optimization.as_str() {
