@@ -61,6 +61,8 @@ RECIPE += ('tools/typescript_guest/fetch.mjs', 'tools/typescript_guest/fetch_pro
            'sdk/typescript-guest/activation/fetch-globals.d.ts')
 RECIPE += ('tools/typescript_guest/console.mjs', 'tools/typescript_guest/console_profile.py',
            'tools/typescript_guest/activation_module.mjs', 'sdk/typescript-guest/capabilities/console-globals.d.ts')
+RECIPE += ('tools/typescript_guest/node_buffer.mjs', 'tools/typescript_guest/buffer_builtin.mjs',
+           'tools/typescript_guest/buffer_profile.py', 'sdk/typescript-guest/runtime/buffer.d.ts')
 
 
 def runtime_package_sources(original: dict[str, bytes], selected: dict,
