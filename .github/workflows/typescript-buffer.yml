@@ -1,0 +1,99 @@
+name: TypeScript finite Buffer signed qualification
+
+on:
+  push:
+    branches: ['feat/typescript-buffer-runtime-20261024']
+    paths:
+      - '.github/workflows/typescript-buffer.yml'
+      - 'tools/qualify_typescript_buffer.py'
+      - 'tools/typescript_buffer_fixture.py'
+      - 'tools/typescript_borrow_retry_inputs.py'
+      - 'tools/typescript_guest/buffer_profile.py'
+      - 'tools/typescript_guest/build.py'
+      - 'sdk/typescript-guest/probes/node-buffer/**'
+      - 'tools/tests/test_typescript_buffer_qualification.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: typescript-buffer-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  signed-buffer:
+    name: One normally compiled and signed eight-case Buffer component
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.19.0
+          package-manager-cache: false
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - name: Fetch immutable normal host source for unchanged receipt verification
+        run: git fetch --no-tags --depth=1 origin 77bf0e3f3b68e17342b6146abd6f2de34a3efa00
+      - name: Check finite module parity and normal capture/material boundaries
+        run: |
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 -B -m unittest tools.tests.test_typescript_node_buffer tools.tests.test_typescript_buffer_qualification -v
+      - name: Install the normal compiler isolation boundary
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Install only the normal pinned public compiler tools
+        run: python3 tools/typescript_capsule.py install-tools "$RUNNER_TEMP/typescript-buffer-tools"
+      - name: Authenticate existing five-product host without rebuilding
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/java_phase_native_products.py --output "$RUNNER_TEMP/typescript-buffer-native"
+      - name: Authenticate completed engine stage and original source splicer
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/typescript_borrow_retry_inputs.py --output "$RUNNER_TEMP/typescript-buffer-compiler"
+      - name: Compile package sign admit and execute eight finite Buffer cases
+        run: |
+          python3 -B tools/qualify_typescript_buffer.py \
+            --prepared-native "$RUNNER_TEMP/typescript-buffer-native" \
+            --tools "$RUNNER_TEMP/typescript-buffer-tools" \
+            --engine "$RUNNER_TEMP/typescript-buffer-compiler/products/typescript-borrow-controls/engine" \
+            --splicer "$RUNNER_TEMP/typescript-buffer-compiler/products/typescript-borrow-splicer/splicer" \
+            --output "$RUNNER_TEMP/typescript-buffer"
+      - name: Retain actual inputs commands signed receipts and physical retirement
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: typescript-buffer-${{ github.sha }}
+          retention-days: 7
+          if-no-files-found: warn
+          path: |
+            ${{ runner.temp }}/typescript-buffer-native/*.json
+            ${{ runner.temp }}/typescript-buffer-compiler/*.json
+            ${{ runner.temp }}/typescript-buffer-compiler/products/typescript-borrow-controls/engine/*.json
+            ${{ runner.temp }}/typescript-buffer-compiler/products/typescript-borrow-controls/engine/engine.wasm
+            ${{ runner.temp }}/typescript-buffer-compiler/products/typescript-borrow-splicer/splicer/**
+            ${{ runner.temp }}/typescript-buffer/*.json
+            ${{ runner.temp }}/typescript-buffer/application/**
+            ${{ runner.temp }}/typescript-buffer/build/*.json
+            ${{ runner.temp }}/typescript-buffer/build/*.js
+            ${{ runner.temp }}/typescript-buffer/build/*.wit
+            ${{ runner.temp }}/typescript-buffer/build/*.wasm
+            ${{ runner.temp }}/typescript-buffer/build/package/**
+            ${{ runner.temp }}/typescript-buffer/build/logs/**
+            ${{ runner.temp }}/typescript-buffer/node/*.json
+            ${{ runner.temp }}/typescript-buffer/node/node-stderr.txt
+            ${{ runner.temp }}/typescript-buffer/node/controls/**
+            ${{ runner.temp }}/typescript-buffer/node/signed/**

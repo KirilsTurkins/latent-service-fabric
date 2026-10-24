@@ -1,0 +1,37 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "typescript-buffer-${{ github.ref }}"
+    },
+    "name": "TypeScript finite Buffer signed qualification",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/typescript-buffer-runtime-20261024"
+        ],
+        "paths": [
+          ".github/workflows/typescript-buffer.yml",
+          "tools/qualify_typescript_buffer.py",
+          "tools/typescript_buffer_fixture.py",
+          "tools/typescript_borrow_retry_inputs.py",
+          "tools/typescript_guest/buffer_profile.py",
+          "tools/typescript_guest/build.py",
+          "sdk/typescript-guest/probes/node-buffer/**",
+          "tools/tests/test_typescript_buffer_qualification.py"
+        ]
+      },
+      "workflow_dispatch": null
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "signed-buffer"
+  ],
+  "reviewReason": "One bounded normal signed Buffer programme; completed producer inputs remain unknown qualification.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/typescript-buffer.yml"
+}
