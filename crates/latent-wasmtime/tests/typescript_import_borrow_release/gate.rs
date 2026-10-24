@@ -45,10 +45,30 @@ mod host;
 pub const CAP: &str = latent_capabilities::broker::network::STREAM_CAPABILITY;
 pub const GATE_CONTRACT: &str = "tests:typescript-import-borrow-gate/streams@1.0.0";
 pub const DIAGNOSTIC_CONTRACT: &str = "tests:typescript-import-borrow-gate/diagnostic@1.0.0";
-const OPS: [&str; 8] = ["connect", "read", "write", "ready", "inspect", "shutdown", "close", "chunk-bytes"];
+const OPS: [&str; 8] = [
+    "connect",
+    "read",
+    "write",
+    "ready",
+    "inspect",
+    "shutdown",
+    "close",
+    "chunk-bytes",
+];
 // Named exports of the exact original WIT, including all non-resource aliases.
-const TYPES: [&str; 11] = ["connection", "chunk", "transport", "state", "interest",
-    "shutdown-mode", "error-code", "stream-error", "observation", "connect-request", "readiness"];
+const TYPES: [&str; 11] = [
+    "connection",
+    "chunk",
+    "transport",
+    "state",
+    "interest",
+    "shutdown-mode",
+    "error-code",
+    "stream-error",
+    "observation",
+    "connect-request",
+    "readiness",
+];
 const RESULT: i32 = 64;
 const INCOMING_BORROW: i32 = 32;
 const PHASE: u32 = 0;
@@ -67,10 +87,18 @@ pub fn bytes() -> Vec<u8> {
     component.section(&imports);
     let mut aliases = ComponentAliasSection::new();
     for name in OPS {
-        aliases.alias(Alias::InstanceExport { instance: 0, kind: ComponentExportKind::Func, name });
+        aliases.alias(Alias::InstanceExport {
+            instance: 0,
+            kind: ComponentExportKind::Func,
+            name,
+        });
     } // functions0..7
     for name in TYPES {
-        aliases.alias(Alias::InstanceExport { instance: 0, kind: ComponentExportKind::Type, name });
+        aliases.alias(Alias::InstanceExport {
+            instance: 0,
+            kind: ComponentExportKind::Type,
+            name,
+        });
     } // types1..11; connection1, chunk2, stream-error8
     component.section(&aliases);
     let mut types = ComponentTypeSection::new();
@@ -78,60 +106,137 @@ pub fn bytes() -> Vec<u8> {
     types.defined_type().own(2); // 13
     types.defined_type().option(ComponentValType::Type(13)); // 14
     types.defined_type().option(PrimitiveValType::U32); // 15
-    types.defined_type().result(Some(ComponentValType::Type(14)), Some(ComponentValType::Type(8))); // 16
-    types.function().async_(true).params([
-        ("source", ComponentValType::Type(12)),
-        ("maximum-bytes", PrimitiveValType::U32.into()),
-        ("timeout-millis", ComponentValType::Type(15)),
-    ]).result(Some(ComponentValType::Type(16))); // 17
-    types.function().params([] as [(&str, ComponentValType); 0])
+    types.defined_type().result(
+        Some(ComponentValType::Type(14)),
+        Some(ComponentValType::Type(8)),
+    ); // 16
+    types
+        .function()
+        .async_(true)
+        .params([
+            ("source", ComponentValType::Type(12)),
+            ("maximum-bytes", PrimitiveValType::U32.into()),
+            ("timeout-millis", ComponentValType::Type(15)),
+        ])
+        .result(Some(ComponentValType::Type(16))); // 17
+    types
+        .function()
+        .params([] as [(&str, ComponentValType); 0])
         .result(Some(PrimitiveValType::U32.into())); // 18
-    types.function().params([] as [(&str, ComponentValType); 0]).result(None); // 19
+    types
+        .function()
+        .params([] as [(&str, ComponentValType); 0])
+        .result(None); // 19
     component.section(&types);
     component.section(&ModuleSection(&memory())); // module0
     let mut instances = InstanceSection::new();
     instances.instantiate(0, [] as [(&str, ModuleArg); 0]); // core instance0
     component.section(&instances);
     let mut aliases = ComponentAliasSection::new();
-    aliases.alias(Alias::CoreInstanceExport { instance: 0, kind: ExportKind::Memory, name: "memory" });
-    aliases.alias(Alias::CoreInstanceExport { instance: 0, kind: ExportKind::Func, name: "realloc" }); // corefunc0
+    aliases.alias(Alias::CoreInstanceExport {
+        instance: 0,
+        kind: ExportKind::Memory,
+        name: "memory",
+    });
+    aliases.alias(Alias::CoreInstanceExport {
+        instance: 0,
+        kind: ExportKind::Func,
+        name: "realloc",
+    }); // corefunc0
     component.section(&aliases);
     let mut canon = CanonicalFunctionSection::new();
-    canon.lower(1, [CanonicalOption::Memory(0), CanonicalOption::Realloc(0), CanonicalOption::Async]); // 1
+    canon.lower(
+        1,
+        [
+            CanonicalOption::Memory(0),
+            CanonicalOption::Realloc(0),
+            CanonicalOption::Async,
+        ],
+    ); // 1
     canon.resource_drop(2); // 2
     canon.waitable_set_new(); // 3
     canon.waitable_join(); // 4
     canon.subtask_drop(); // 5
     canon.waitable_set_drop(); // 6
-    canon.task_return(Some(ComponentValType::Type(16)), [CanonicalOption::Memory(0)]); // 7
+    canon.task_return(
+        Some(ComponentValType::Type(16)),
+        [CanonicalOption::Memory(0)],
+    ); // 7
     canon.task_cancel(); // 8
     canon.resource_drop(1); // 9: imported connection; borrowed handle only
     component.section(&canon);
     component.section(&ModuleSection(&worker())); // module1
     let mut instances = InstanceSection::new();
-    instances.export_items(["read", "drop-chunk", "new", "join", "drop-child", "drop-set", "return", "cancel", "drop-connection-borrow"]
-        .into_iter().enumerate().map(|(i, name)| (name, ExportKind::Func, u32::try_from(i + 1).unwrap())));
-    instances.instantiate(1, [("io", ModuleArg::Instance(1)), ("memory", ModuleArg::Instance(0))]); // core instance2
+    instances.export_items(
+        [
+            "read",
+            "drop-chunk",
+            "new",
+            "join",
+            "drop-child",
+            "drop-set",
+            "return",
+            "cancel",
+            "drop-connection-borrow",
+        ]
+        .into_iter()
+        .enumerate()
+        .map(|(i, name)| (name, ExportKind::Func, u32::try_from(i + 1).unwrap())),
+    );
+    instances.instantiate(
+        1,
+        [
+            ("io", ModuleArg::Instance(1)),
+            ("memory", ModuleArg::Instance(0)),
+        ],
+    ); // core instance2
     component.section(&instances);
     let mut aliases = ComponentAliasSection::new();
     for name in ["read", "callback", "entered", "intentional-trap"] {
-        aliases.alias(Alias::CoreInstanceExport { instance: 2, kind: ExportKind::Func, name });
+        aliases.alias(Alias::CoreInstanceExport {
+            instance: 2,
+            kind: ExportKind::Func,
+            name,
+        });
     } // corefunc10,11,12,13
     component.section(&aliases);
     let mut canon = CanonicalFunctionSection::new();
-    canon.lift(10, 17, [CanonicalOption::Memory(0), CanonicalOption::Realloc(0),
-        CanonicalOption::Async, CanonicalOption::Callback(11)]); // componentfunc8
+    canon.lift(
+        10,
+        17,
+        [
+            CanonicalOption::Memory(0),
+            CanonicalOption::Realloc(0),
+            CanonicalOption::Async,
+            CanonicalOption::Callback(11),
+        ],
+    ); // componentfunc8
     canon.lift(12, 18, []); // componentfunc9
     canon.lift(13, 19, []); // componentfunc10
     component.section(&canon);
     let mut instances = ComponentInstanceSection::new();
-    let exports = TYPES.into_iter().enumerate().map(|(i, name)|
-        (name, ComponentExportKind::Type, u32::try_from(i + 1).unwrap()))
-        .chain(OPS.into_iter().enumerate().map(|(i, name)|
-            (name, ComponentExportKind::Func, if i == 1 { 8 } else { u32::try_from(i).unwrap() })));
+    let exports = TYPES
+        .into_iter()
+        .enumerate()
+        .map(|(i, name)| {
+            (
+                name,
+                ComponentExportKind::Type,
+                u32::try_from(i + 1).unwrap(),
+            )
+        })
+        .chain(OPS.into_iter().enumerate().map(|(i, name)| {
+            (
+                name,
+                ComponentExportKind::Func,
+                if i == 1 { 8 } else { u32::try_from(i).unwrap() },
+            )
+        }));
     instances.export_items(exports.collect::<Vec<_>>()); // component instance1
-    instances.export_items([("entered", ComponentExportKind::Func, 9),
-        ("intentional-trap", ComponentExportKind::Func, 10)]); // component instance2
+    instances.export_items([
+        ("entered", ComponentExportKind::Func, 9),
+        ("intentional-trap", ComponentExportKind::Func, 10),
+    ]); // component instance2
     component.section(&instances);
     let mut exports = ComponentExportSection::new();
     exports.export(GATE_CONTRACT, ComponentExportKind::Instance, 1, None);
@@ -139,152 +244,438 @@ pub fn bytes() -> Vec<u8> {
     component.section(&exports);
     let bytes = component.finish();
     wasmparser::Validator::new_with_features(wasmparser::WasmFeatures::all())
-        .validate_all(&bytes).unwrap();
+        .validate_all(&bytes)
+        .unwrap();
     bytes
 }
 
 fn memory_type() -> MemoryType {
-    MemoryType { minimum: 1, maximum: Some(1), memory64: false, shared: false, page_size_log2: None }
+    MemoryType {
+        minimum: 1,
+        maximum: Some(1),
+        memory64: false,
+        shared: false,
+        page_size_log2: None,
+    }
 }
 fn emit(body: &mut Function, instructions: impl IntoIterator<Item = Instruction<'static>>) {
-    for instruction in instructions { body.instruction(&instruction); }
+    for instruction in instructions {
+        body.instruction(&instruction);
+    }
 }
-fn mem(offset: u64) -> MemArg { MemArg { offset, align: 2, memory_index: 0 } }
+fn mem(offset: u64) -> MemArg {
+    MemArg {
+        offset,
+        align: 2,
+        memory_index: 0,
+    }
+}
 fn load_byte(offset: u64) -> [Instruction<'static>; 2] {
-    [Instruction::I32Const(RESULT), Instruction::I32Load8U(MemArg { align: 0, ..mem(offset) })]
+    [
+        Instruction::I32Const(RESULT),
+        Instruction::I32Load8U(MemArg {
+            align: 0,
+            ..mem(offset)
+        }),
+    ]
 }
 fn insist(body: &mut Function, condition: impl IntoIterator<Item = Instruction<'static>>) {
     emit(body, condition);
-    emit(body, [Instruction::I32Eqz, Instruction::If(BlockType::Empty), Instruction::Unreachable, Instruction::End]);
+    emit(
+        body,
+        [
+            Instruction::I32Eqz,
+            Instruction::If(BlockType::Empty),
+            Instruction::Unreachable,
+            Instruction::End,
+        ],
+    );
 }
 fn waiting(body: &mut Function) {
-    emit(body, [Instruction::GlobalGet(SET), Instruction::I32Const(4), Instruction::I32Shl,
-        Instruction::I32Const(2), Instruction::I32Or]);
+    emit(
+        body,
+        [
+            Instruction::GlobalGet(SET),
+            Instruction::I32Const(4),
+            Instruction::I32Shl,
+            Instruction::I32Const(2),
+            Instruction::I32Or,
+        ],
+    );
 }
 fn memory() -> Module {
     let mut module = Module::new();
     let mut types = TypeSection::new();
     types.ty().function([ValType::I32; 4], [ValType::I32]);
     module.section(&types);
-    let mut functions = FunctionSection::new(); functions.function(0); module.section(&functions);
-    let mut memories = MemorySection::new(); memories.memory(memory_type()); module.section(&memories);
+    let mut functions = FunctionSection::new();
+    functions.function(0);
+    module.section(&functions);
+    let mut memories = MemorySection::new();
+    memories.memory(memory_type());
+    module.section(&memories);
     let mut exports = ExportSection::new();
-    exports.export("memory", ExportKind::Memory, 0); exports.export("realloc", ExportKind::Func, 0);
+    exports.export("memory", ExportKind::Memory, 0);
+    exports.export("realloc", ExportKind::Func, 0);
     module.section(&exports);
     let mut body = Function::new([]); // This result contains no allocating values.
     emit(&mut body, [Instruction::Unreachable, Instruction::End]);
-    let mut code = CodeSection::new(); code.function(&body); module.section(&code);
+    let mut code = CodeSection::new();
+    code.function(&body);
+    module.section(&code);
     module
 }
 
 fn worker() -> Module {
     let mut module = Module::new();
     let mut types = TypeSection::new();
-    for (params, results) in [(5, 1), (1, 0), (0, 1), (2, 0), (4, 0), (0, 0), (4, 1), (3, 1)] {
-        types.ty().function(vec![ValType::I32; params], vec![ValType::I32; results]);
+    for (params, results) in [
+        (5, 1),
+        (1, 0),
+        (0, 1),
+        (2, 0),
+        (4, 0),
+        (0, 0),
+        (4, 1),
+        (3, 1),
+    ] {
+        types
+            .ty()
+            .function(vec![ValType::I32; params], vec![ValType::I32; results]);
     }
     module.section(&types);
     let mut imports = ImportSection::new();
-    for (name, ty) in [("read", 0), ("drop-chunk", 1), ("new", 2), ("join", 3),
-        ("drop-child", 1), ("drop-set", 1), ("return", 4), ("cancel", 5), ("drop-connection-borrow", 1)] {
+    for (name, ty) in [
+        ("read", 0),
+        ("drop-chunk", 1),
+        ("new", 2),
+        ("join", 3),
+        ("drop-child", 1),
+        ("drop-set", 1),
+        ("return", 4),
+        ("cancel", 5),
+        ("drop-connection-borrow", 1),
+    ] {
         imports.import("io", name, EntityType::Function(ty));
     }
     imports.import("memory", "memory", EntityType::Memory(memory_type()));
     module.section(&imports);
     let mut functions = FunctionSection::new();
-    for ty in [6, 7, 2, 2, 5] { functions.function(ty); } // prefix9, callback10, entered11, finish12, trap13
+    for ty in [6, 7, 2, 2, 5] {
+        functions.function(ty);
+    } // prefix9, callback10, entered11, finish12, trap13
     module.section(&functions);
     let mut globals = GlobalSection::new();
     for _ in 0..3 {
-        globals.global(GlobalType { val_type: ValType::I32, mutable: true, shared: false }, &ConstExpr::i32_const(0));
+        globals.global(
+            GlobalType {
+                val_type: ValType::I32,
+                mutable: true,
+                shared: false,
+            },
+            &ConstExpr::i32_const(0),
+        );
     }
     module.section(&globals);
     let mut exports = ExportSection::new();
-    for (name, index) in [("read", 9), ("callback", 10), ("entered", 11), ("intentional-trap", 13)] { exports.export(name, ExportKind::Func, index); }
+    for (name, index) in [
+        ("read", 9),
+        ("callback", 10),
+        ("entered", 11),
+        ("intentional-trap", 13),
+    ] {
+        exports.export(name, ExportKind::Func, index);
+    }
     module.section(&exports);
     let mut code = CodeSection::new();
-    code.function(&prefix()); code.function(&callback());
+    code.function(&prefix());
+    code.function(&callback());
     let mut entered = Function::new([]);
-    emit(&mut entered, [Instruction::GlobalGet(PHASE), Instruction::End]);
-    code.function(&entered); code.function(&finish());
+    emit(
+        &mut entered,
+        [Instruction::GlobalGet(PHASE), Instruction::End],
+    );
+    code.function(&entered);
+    code.function(&finish());
     let mut intentional_trap = Function::new([]);
     // Wrong phase is ordinary Unreachable and must fail the distinct host check.
-    insist(&mut intentional_trap, [Instruction::GlobalGet(PHASE), Instruction::I32Const(2), Instruction::I32Eq]);
+    insist(
+        &mut intentional_trap,
+        [
+            Instruction::GlobalGet(PHASE),
+            Instruction::I32Const(2),
+            Instruction::I32Eq,
+        ],
+    );
     // Only the exact intentional JS error catch calls this pure diagnostic.
     // No destructor runs here; the same real inner read remains outstanding.
-    emit(&mut intentional_trap, [Instruction::I32Const(1), Instruction::I32Const(0),
-        Instruction::I32DivS, Instruction::Drop, Instruction::Unreachable, Instruction::End]);
-    code.function(&intentional_trap); module.section(&code);
+    emit(
+        &mut intentional_trap,
+        [
+            Instruction::I32Const(1),
+            Instruction::I32Const(0),
+            Instruction::I32DivS,
+            Instruction::Drop,
+            Instruction::Unreachable,
+            Instruction::End,
+        ],
+    );
+    code.function(&intentional_trap);
+    module.section(&code);
     module
 }
 
 fn prefix() -> Function {
     let mut body = Function::new([(1, ValType::I32)]); // local4 is packed status
-    insist(&mut body, [Instruction::GlobalGet(PHASE), Instruction::I32Eqz]);
+    insist(
+        &mut body,
+        [Instruction::GlobalGet(PHASE), Instruction::I32Eqz],
+    );
     // Retain only the exact canonically lowered input borrow, not its owner.
-    emit(&mut body, [Instruction::I32Const(INCOMING_BORROW), Instruction::LocalGet(0),
-        Instruction::I32Store(mem(0))]);
-    emit(&mut body, [Instruction::LocalGet(0), Instruction::LocalGet(1), Instruction::LocalGet(2),
-        Instruction::LocalGet(3), Instruction::I32Const(RESULT), Instruction::Call(0), Instruction::LocalSet(4)]);
+    emit(
+        &mut body,
+        [
+            Instruction::I32Const(INCOMING_BORROW),
+            Instruction::LocalGet(0),
+            Instruction::I32Store(mem(0)),
+        ],
+    );
+    emit(
+        &mut body,
+        [
+            Instruction::LocalGet(0),
+            Instruction::LocalGet(1),
+            Instruction::LocalGet(2),
+            Instruction::LocalGet(3),
+            Instruction::I32Const(RESULT),
+            Instruction::Call(0),
+            Instruction::LocalSet(4),
+        ],
+    );
     // Immediate normal completion is forwarded but cannot establish entered1.
-    emit(&mut body, [Instruction::LocalGet(4), Instruction::I32Const(2), Instruction::I32Eq,
-        Instruction::If(BlockType::Empty), Instruction::Call(12), Instruction::Return, Instruction::End]);
-    insist(&mut body, [Instruction::LocalGet(4), Instruction::I32Const(15), Instruction::I32And,
-        Instruction::I32Const(1), Instruction::I32Eq]);
-    emit(&mut body, [Instruction::LocalGet(4), Instruction::I32Const(4), Instruction::I32ShrU, Instruction::GlobalSet(CHILD)]);
+    emit(
+        &mut body,
+        [
+            Instruction::LocalGet(4),
+            Instruction::I32Const(2),
+            Instruction::I32Eq,
+            Instruction::If(BlockType::Empty),
+            Instruction::Call(12),
+            Instruction::Return,
+            Instruction::End,
+        ],
+    );
+    insist(
+        &mut body,
+        [
+            Instruction::LocalGet(4),
+            Instruction::I32Const(15),
+            Instruction::I32And,
+            Instruction::I32Const(1),
+            Instruction::I32Eq,
+        ],
+    );
+    emit(
+        &mut body,
+        [
+            Instruction::LocalGet(4),
+            Instruction::I32Const(4),
+            Instruction::I32ShrU,
+            Instruction::GlobalSet(CHILD),
+        ],
+    );
     insist(&mut body, [Instruction::GlobalGet(CHILD)]);
-    emit(&mut body, [Instruction::Call(2), Instruction::GlobalSet(SET)]);
+    emit(
+        &mut body,
+        [Instruction::Call(2), Instruction::GlobalSet(SET)],
+    );
     insist(&mut body, [Instruction::GlobalGet(SET)]);
-    insist(&mut body, [Instruction::GlobalGet(SET), Instruction::I32Const(1 << 28), Instruction::I32LtU]);
-    emit(&mut body, [Instruction::GlobalGet(CHILD), Instruction::GlobalGet(SET), Instruction::Call(3),
-        Instruction::I32Const(1), Instruction::GlobalSet(PHASE)]);
+    insist(
+        &mut body,
+        [
+            Instruction::GlobalGet(SET),
+            Instruction::I32Const(1 << 28),
+            Instruction::I32LtU,
+        ],
+    );
+    emit(
+        &mut body,
+        [
+            Instruction::GlobalGet(CHILD),
+            Instruction::GlobalGet(SET),
+            Instruction::Call(3),
+            Instruction::I32Const(1),
+            Instruction::GlobalSet(PHASE),
+        ],
+    );
     // A diagnostic cannot enter until this prefix returned and do_not_enter cleared.
-    waiting(&mut body); emit(&mut body, [Instruction::End]); body
+    waiting(&mut body);
+    emit(&mut body, [Instruction::End]);
+    body
 }
 
 fn callback() -> Function {
     let mut body = Function::new([]);
-    insist(&mut body, [Instruction::GlobalGet(PHASE), Instruction::I32Const(1), Instruction::I32Eq,
-        Instruction::GlobalGet(PHASE), Instruction::I32Const(2), Instruction::I32Eq, Instruction::I32Or]);
-    emit(&mut body, [Instruction::LocalGet(0), Instruction::I32Const(6), Instruction::I32Eq, Instruction::If(BlockType::Empty)]);
-    insist(&mut body, [Instruction::GlobalGet(PHASE), Instruction::I32Const(1), Instruction::I32Eq]);
+    insist(
+        &mut body,
+        [
+            Instruction::GlobalGet(PHASE),
+            Instruction::I32Const(1),
+            Instruction::I32Eq,
+            Instruction::GlobalGet(PHASE),
+            Instruction::I32Const(2),
+            Instruction::I32Eq,
+            Instruction::I32Or,
+        ],
+    );
+    emit(
+        &mut body,
+        [
+            Instruction::LocalGet(0),
+            Instruction::I32Const(6),
+            Instruction::I32Eq,
+            Instruction::If(BlockType::Empty),
+        ],
+    );
+    insist(
+        &mut body,
+        [
+            Instruction::GlobalGet(PHASE),
+            Instruction::I32Const(1),
+            Instruction::I32Eq,
+        ],
+    );
     insist(&mut body, [Instruction::LocalGet(1), Instruction::I32Eqz]);
     insist(&mut body, [Instruction::LocalGet(2), Instruction::I32Eqz]);
-    emit(&mut body, [Instruction::I32Const(2), Instruction::GlobalSet(PHASE)]);
-    waiting(&mut body); emit(&mut body, [Instruction::Return, Instruction::End]);
-    insist(&mut body, [Instruction::LocalGet(0), Instruction::I32Const(1), Instruction::I32Eq]);
-    insist(&mut body, [Instruction::LocalGet(1), Instruction::GlobalGet(CHILD), Instruction::I32Eq]);
-    insist(&mut body, [Instruction::LocalGet(2), Instruction::I32Const(2), Instruction::I32Eq]);
-    emit(&mut body, [Instruction::Call(12), Instruction::End]); body
+    emit(
+        &mut body,
+        [Instruction::I32Const(2), Instruction::GlobalSet(PHASE)],
+    );
+    waiting(&mut body);
+    emit(&mut body, [Instruction::Return, Instruction::End]);
+    insist(
+        &mut body,
+        [
+            Instruction::LocalGet(0),
+            Instruction::I32Const(1),
+            Instruction::I32Eq,
+        ],
+    );
+    insist(
+        &mut body,
+        [
+            Instruction::LocalGet(1),
+            Instruction::GlobalGet(CHILD),
+            Instruction::I32Eq,
+        ],
+    );
+    insist(
+        &mut body,
+        [
+            Instruction::LocalGet(2),
+            Instruction::I32Const(2),
+            Instruction::I32Eq,
+        ],
+    );
+    emit(&mut body, [Instruction::Call(12), Instruction::End]);
+    body
 }
 
 fn finish() -> Function {
     let mut body = Function::new([(1, ValType::I32)]); // local0 cancellation copy
-    emit(&mut body, [Instruction::GlobalGet(PHASE), Instruction::I32Const(2), Instruction::I32Eq, Instruction::LocalSet(0)]);
+    emit(
+        &mut body,
+        [
+            Instruction::GlobalGet(PHASE),
+            Instruction::I32Const(2),
+            Instruction::I32Eq,
+            Instruction::LocalSet(0),
+        ],
+    );
     // On cancelled late success consume the real owned chunk in THIS component.
-    emit(&mut body, [Instruction::LocalGet(0), Instruction::If(BlockType::Empty)]);
-    emit(&mut body, load_byte(0)); emit(&mut body, [Instruction::I32Eqz, Instruction::If(BlockType::Empty)]);
-    emit(&mut body, load_byte(4)); emit(&mut body, [Instruction::If(BlockType::Empty),
-        Instruction::I32Const(RESULT), Instruction::I32Load(mem(8)), Instruction::Call(1),
-        Instruction::End, Instruction::End, Instruction::End]);
-    emit(&mut body, [Instruction::GlobalGet(CHILD), Instruction::If(BlockType::Empty),
-        Instruction::GlobalGet(CHILD), Instruction::I32Const(0), Instruction::Call(3),
-        Instruction::GlobalGet(CHILD), Instruction::Call(4),
-        Instruction::GlobalGet(SET), Instruction::Call(5), Instruction::End]);
+    emit(
+        &mut body,
+        [Instruction::LocalGet(0), Instruction::If(BlockType::Empty)],
+    );
+    emit(&mut body, load_byte(0));
+    emit(
+        &mut body,
+        [Instruction::I32Eqz, Instruction::If(BlockType::Empty)],
+    );
+    emit(&mut body, load_byte(4));
+    emit(
+        &mut body,
+        [
+            Instruction::If(BlockType::Empty),
+            Instruction::I32Const(RESULT),
+            Instruction::I32Load(mem(8)),
+            Instruction::Call(1),
+            Instruction::End,
+            Instruction::End,
+            Instruction::End,
+        ],
+    );
+    emit(
+        &mut body,
+        [
+            Instruction::GlobalGet(CHILD),
+            Instruction::If(BlockType::Empty),
+            Instruction::GlobalGet(CHILD),
+            Instruction::I32Const(0),
+            Instruction::Call(3),
+            Instruction::GlobalGet(CHILD),
+            Instruction::Call(4),
+            Instruction::GlobalGet(SET),
+            Instruction::Call(5),
+            Instruction::End,
+        ],
+    );
     // The nested host borrow is retired. Now drop this component's incoming
     // BORROW entry before task.return/cancel validates the original scope.
     // resource.drop's Borrow arm decrements borrow_count with NO destructor;
     // the original owned connection/socket remains held by the TS caller.
-    emit(&mut body, [Instruction::I32Const(INCOMING_BORROW), Instruction::I32Load(mem(0)),
-        Instruction::Call(8), Instruction::I32Const(INCOMING_BORROW), Instruction::I32Const(0),
-        Instruction::I32Store(mem(0)), Instruction::I32Const(3), Instruction::GlobalSet(PHASE),
-        Instruction::LocalGet(0), Instruction::If(BlockType::Empty), Instruction::Call(7), Instruction::Else]);
+    emit(
+        &mut body,
+        [
+            Instruction::I32Const(INCOMING_BORROW),
+            Instruction::I32Load(mem(0)),
+            Instruction::Call(8),
+            Instruction::I32Const(INCOMING_BORROW),
+            Instruction::I32Const(0),
+            Instruction::I32Store(mem(0)),
+            Instruction::I32Const(3),
+            Instruction::GlobalSet(PHASE),
+            Instruction::LocalGet(0),
+            Instruction::If(BlockType::Empty),
+            Instruction::Call(7),
+            Instruction::Else,
+        ],
+    );
     // Original flat result: discriminant; option tag or error code; chunk handle
     // or accepted-prefix; zero padding arm or may-have-applied boolean.
-    emit(&mut body, load_byte(0)); emit(&mut body, load_byte(4));
-    emit(&mut body, [Instruction::I32Const(RESULT), Instruction::I32Load(mem(8))]);
-    emit(&mut body, load_byte(0)); emit(&mut body, [Instruction::If(BlockType::Result(ValType::I32))]);
-    emit(&mut body, load_byte(12)); emit(&mut body, [Instruction::Else, Instruction::I32Const(0), Instruction::End,
-        Instruction::Call(6), Instruction::End, Instruction::I32Const(0), Instruction::End]);
+    emit(&mut body, load_byte(0));
+    emit(&mut body, load_byte(4));
+    emit(
+        &mut body,
+        [Instruction::I32Const(RESULT), Instruction::I32Load(mem(8))],
+    );
+    emit(&mut body, load_byte(0));
+    emit(
+        &mut body,
+        [Instruction::If(BlockType::Result(ValType::I32))],
+    );
+    emit(&mut body, load_byte(12));
+    emit(
+        &mut body,
+        [
+            Instruction::Else,
+            Instruction::I32Const(0),
+            Instruction::End,
+            Instruction::Call(6),
+            Instruction::End,
+            Instruction::I32Const(0),
+            Instruction::End,
+        ],
+    );
     body
 }

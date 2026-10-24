@@ -414,16 +414,36 @@ impl Fixture {
         .await
     }
     /// Explicit factory-time numeric capture for the signed borrow diagnostic only.
-    #[cfg(all(feature = "development-test-host", target_os = "linux", target_arch = "x86_64"))]
+    #[cfg(all(
+        feature = "development-test-host",
+        target_os = "linux",
+        target_arch = "x86_64"
+    ))]
     pub async fn with_runtime_outbound_streams_and_numeric_trap_observation(
-        provided: (Arc<DirectoryArtifactRepository>, latent_packaging::PackageBundle,
-            latent_packaging::PackageBundle),
+        provided: (
+            Arc<DirectoryArtifactRepository>,
+            latent_packaging::PackageBundle,
+            latent_packaging::PackageBundle,
+        ),
         limits: latent_core::activation_runtime::RuntimeLimits,
         configuration: latent_streams::StreamProviderConfig,
     ) -> Self {
-        Self::try_with_packages_and_load(1, false, true, None, Some(provided),
-            Arc::new(SyntheticFixtureLoad), None, Some((limits, 120_000, None)),
-            None, None, Some(Box::new(configuration)), true).await.unwrap()
+        Self::try_with_packages_and_load(
+            1,
+            false,
+            true,
+            None,
+            Some(provided),
+            Arc::new(SyntheticFixtureLoad),
+            None,
+            Some((limits, 120_000, None)),
+            None,
+            None,
+            Some(Box::new(configuration)),
+            true,
+        )
+        .await
+        .unwrap()
     }
     #[expect(
         clippy::too_many_arguments,
@@ -576,9 +596,14 @@ impl Fixture {
             ..Default::default()
         };
         #[cfg(feature = "development-test-host")]
-        { config.development_numeric_trap_observation = numeric_trap_observation; }
+        {
+            config.development_numeric_trap_observation = numeric_trap_observation;
+        }
         #[cfg(not(feature = "development-test-host"))]
-        assert!(!numeric_trap_observation, "numeric observation requires the test-host feature");
+        assert!(
+            !numeric_trap_observation,
+            "numeric observation requires the test-host feature"
+        );
         if owned_native_threads {
             // Same finite 4 MiB activation grant; this WAT mechanism needs no
             // language stack. Keep explicit native stacks below that ceiling.
