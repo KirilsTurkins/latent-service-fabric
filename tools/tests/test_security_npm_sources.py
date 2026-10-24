@@ -173,7 +173,7 @@ class NpmSourceRepairTests(unittest.TestCase):
             base_files[prefix + "package.json"] = json.dumps(old).encode(), 0o644
             derived.update({prefix + name.removeprefix("package/"): value for name, value in material[pin["name"]].items()})
         raw_inputs["npm"] = tarball(base_files)
-        source = {"schema": 1, "profile": "npm-11.19.1-lsf-bundle-v4", "patches": patches,
+        source = {"schema": 1, "profile": "npm-11.19.1-lsf-bundle-v5", "patches": patches,
                   "libraries": libraries, "repairs": repairs,
                   "base": {"name": "npm", "version": "11.19.1", "integrity": sources.integrity(raw_inputs["npm"])}}
         source_path = root / "website/toolchain/source.json"
