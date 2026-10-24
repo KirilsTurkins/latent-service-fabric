@@ -294,8 +294,10 @@ public static partial class ManagedWorkRuntime
         for (int i = 0; i < MaximumQueued; i++)
             if (queued![i] is { } pending && ReferenceEquals(pending.Item, item))
             {
-                queued[i] = null;
+                // A refused acknowledgement must retain this exact queued owner.
+                // Retention after a terminal trap is not permission to retry it.
                 settle!(pending.Token.Generation, pending.Token.Id);
+                queued[i] = null;
                 if (pending.Owner.Completion is null && !pending.Owner.Root) Release(pending.Owner);
                 return;
             }
@@ -307,8 +309,10 @@ public static partial class ManagedWorkRuntime
         for (int i = 0; i < MaximumQueued; i++)
             if (queued![i] is { } pending && ReferenceEquals(pending.Item, item))
             {
-                queued[i] = null;
+                // A refused acknowledgement must retain this exact queued owner.
+                // Retention after a terminal trap is not permission to retry it.
                 settle!(pending.Token.Generation, pending.Token.Id);
+                queued[i] = null;
                 return;
             }
         throw new InvalidOperationException("managed-work-unregistered-dequeue");

@@ -174,6 +174,8 @@ def present(value: dict) -> str:
         text = f"{item['classification']} [{item['phase']}; {item['evidence']}]: {CLASSIFICATIONS[item['classification']]}"
         if "operation" in item:
             text += " Operation: " + item["operation"] + "."
+        if item["classification"] == "resource-exhausted" and "resource" in item:
+            text += " Resource: " + item["resource"] + "."
         if "ownerIssue" in item:
             text += " Implementation: #" + str(item["ownerIssue"]) + "."
         lines.append(text)
