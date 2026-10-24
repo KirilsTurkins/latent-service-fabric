@@ -32,6 +32,8 @@ RECIPE = tuple(dict.fromkeys((*COMPILER_RECIPE, *profile.RECIPE,
     'crates/latent-wasmtime/Cargo.toml',
     'crates/latent-wasmtime/src/lib.rs', 'crates/latent-wasmtime/src/backend.rs',
     'crates/latent-wasmtime/src/containment.rs', 'crates/latent-wasmtime/src/development_trap_observer.rs',
+    'crates/latent-wasmtime/src/development_borrow_admission.rs', 'crates/latent-wasmtime/src/host.rs',
+    'crates/latent-wasmtime/src/host/runtime.rs',
     'crates/latent-wasmtime/src/config.rs', 'crates/latent-wasmtime/src/config/engine.rs',
     'crates/latent-wasmtime/src/config/profile.rs',
     'crates/latent-wasmtime/tests/typescript_import_borrow_release.rs',
@@ -220,6 +222,15 @@ def qualify(tools, material_directory, output):
             '--','--nocapture','--test-threads=1',seconds=host_remaining)
         require(re.search(r'test result: ok\. 3 passed; 0 failed; 0 ignored;',controls.decode()) is not None,
                 'borrow-signed-three-real-observer-controls')
+        require(time.monotonic() - host_started < 1800, 'borrow-signed-aggregate-host-build-deadline')
+        admission_remaining = 1800 - (time.monotonic() - host_started)
+        require(admission_remaining > 0, 'borrow-signed-aggregate-host-build-deadline')
+        admission_controls = run('host-admission-observer-controls', 'cargo', 'test', '--locked',
+            '-p', 'latent-wasmtime', '--features', 'development-test-host', '--lib',
+            'development_borrow_admission::tests::', '--', '--nocapture', '--test-threads=1',
+            seconds=admission_remaining)
+        require(re.search(r'test result: ok\. 2 passed; 0 failed; 0 ignored;', admission_controls.decode()) is not None,
+                'borrow-signed-two-real-admission-controls')
         require(time.monotonic() - host_started < 1800, 'borrow-signed-aggregate-host-build-deadline')
         stage = 'six-signed-activations'
         signed_env = dict(environment,LSF_GUEST_SDK_LANGUAGE='typescript',LSF_TYPESCRIPT_BORROW_FIXTURE=str(prepared))

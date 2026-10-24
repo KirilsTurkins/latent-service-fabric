@@ -27,6 +27,9 @@
           "crates/latent-wasmtime/src/containment.rs",
           "crates/latent-wasmtime/src/lib.rs",
           "crates/latent-wasmtime/src/development_trap_observer.rs",
+          "crates/latent-wasmtime/src/development_borrow_admission.rs",
+          "crates/latent-wasmtime/src/host.rs",
+          "crates/latent-wasmtime/src/host/runtime.rs",
           "crates/latent-wasmtime/src/config.rs",
           "crates/latent-wasmtime/src/config/engine.rs",
           "crates/latent-wasmtime/src/config/profile.rs",
@@ -44,7 +47,7 @@
   "requiredJobs": [
     "signed-borrow"
   ],
-  "reviewReason": "Reviewed additive exact push triggers for native-carrier projection source and its four source controls; original job, bounds and six signed oracles retained.",
+  "reviewReason": "Reviewed additive exact source triggers for fixed cfg-test-host borrow register-refusal observation; original signed job, limits and assertions unchanged.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-borrow-signed.yml"
 }

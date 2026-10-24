@@ -267,6 +267,8 @@ impl ActivationHostContext {
 }
 
 pub(crate) struct HostState {
+    #[cfg(feature = "development-test-host")]
+    pub(crate) development_borrow_admission: Option<crate::development_borrow_admission::Observer>,
     pub(crate) runtime: Option<runtime::Table>,
     pub(crate) runtime_limits: Option<latent_core::activation_runtime::RuntimeLimits>,
     pub(crate) runtime_stop: Option<Arc<crate::containment::StopControl>>,
@@ -318,7 +320,15 @@ impl HostState {
             limiter.budget = Some(accounting.budget().clone());
         }
         let capabilities = capabilities::HostCapabilities::new(None, accounting.budget());
+        #[cfg(feature = "development-test-host")]
+        let development_borrow_admission =
+            crate::development_borrow_admission::Observer::for_activation(
+                &context.activation_id.0,
+                config.development_numeric_trap_observation,
+            );
         Self {
+            #[cfg(feature = "development-test-host")]
+            development_borrow_admission,
             context,
             runtime: None,
             runtime_limits: config.activation_runtime,

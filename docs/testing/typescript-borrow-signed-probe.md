@@ -291,3 +291,29 @@ standard socket/module, complete accounting or whole-ticket qualification is
 claimed before that actual evidence. The separate canonical fixture's old
 task-entry placement guard also needs an explicit source review for this new
 shape; no permissive fallback is installed.
+
+The carrier correction ran in`40078401585` at`f248e94e6ec`. All four actual
+pinned-parser controls and normal guest/host compilation passed. The first
+normal case reached its real read-started barrier, then returned the original
+bounded diagnostic `normal-write:activation-runtime-task-register-denied:2`.
+The WIT error value2 means resource exhausted. It does not identify whether the
+original Task ceiling, CPU or host-memory admission refused the call; no signed
+case passed. Failed artifact`12554805445` is retained (20,692,320 bytes,
+SHA256`d18a2ead60ea8dfcbbc1d931859fea4d660fa41503f58b8f8ee5b48380117a44`).
+
+A further source-only test-host observation captures the first original host
+registration refusal before error conversion/cleanup, with fixed numeric kind,
+error/cause, actual logical-owner/parked counts, configuration, phase,
+admission-failure count and original granted/remaining CPU and memory. It is
+selected only by the existing private borrow fixture/language flags, existing
+numeric-observer factory opt-in and six exact fixture activation labels. The
+record remains in that same HostState and is copied into its armed backend
+observer before runtime finalization. Later refusals mark ambiguity without
+replacing the original counts. The harness rejects missing, ambiguous or
+foreign-case evidence; its six original outcome and physical-owner oracles
+remain required. No registration, retirement, GC, owner refund, request, grant
+or ceiling changes. Two actual hosted library controls are required under the
+same aggregate host-build deadline; these new controls and this observation
+have not executed yet. The fixed test-host storage size will be measured there;
+production builds have neither the field nor hook, and no whole-cost claim is
+made.

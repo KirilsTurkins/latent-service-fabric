@@ -1,5 +1,9 @@
 //! SOURCE-ONLY signed probe. No execution or physical-kernel certificate yet.
-#![cfg(all(feature = "development-test-host", target_os = "linux", target_arch = "x86_64"))]
+#![cfg(all(
+    feature = "development-test-host",
+    target_os = "linux",
+    target_arch = "x86_64"
+))]
 #[path = "local_service/component.rs"]
 #[allow(dead_code)]
 mod component;
@@ -618,9 +622,62 @@ async fn signed_borrow_release_preserves_original_socket_until_consuming_close_a
             }
         };
         let original_error = trap_observation.snapshot().unwrap();
+        let task_refusal = match &receipt.outcome {
+            ActivationOutcome::Succeeded(success) => {
+                serde_json::from_slice::<Vec<String>>(&success.output)
+                    .unwrap()
+                    .iter()
+                    .any(|value| {
+                        value.starts_with("borrow-probe:diagnostic-failure:")
+                            && value.contains("activation-runtime-task-register-denied:")
+                    })
+            }
+            _ => false,
+        };
+        if let Some(admission) = original_error.borrow_admission_refusal {
+            let diagnostic = serde_json::to_string(&admission).unwrap();
+            assert!(
+                diagnostic.len() <= 2048,
+                "fixed original registration refusal diagnostic"
+            );
+            println!("TYPESCRIPT_BORROW_ADMISSION_REFUSAL {diagnostic}");
+            let expected_case = match label {
+                "normal-copy-dispose" => 0,
+                "logical-cancel-before-borrow-release" => 1,
+                "root-trap-with-held-borrow" => 2,
+                "fresh-after-trap" => 3,
+                "root-deadline-with-held-borrow" => 4,
+                "fresh-after-deadline" => 5,
+                _ => panic!("closed borrow case required"),
+            };
+            assert_eq!(
+                admission.case, expected_case,
+                "same actual original activation required"
+            );
+            assert!(
+                task_refusal,
+                "refusal cannot be attributed to another result"
+            );
+            assert_eq!(admission.refusals, 1, "first original failure required");
+            assert!(
+                !admission.ambiguous,
+                "ambiguous refusal cannot qualify evidence"
+            );
+            assert_eq!(admission.kind, 0, "original Task registration required");
+            assert_eq!(admission.error, 2, "original resource-exhausted required");
+            assert!(
+                admission.runtime_present && admission.limits_present,
+                "missing original runtime counts/config cannot qualify evidence"
+            );
+        } else {
+            assert!(!task_refusal, "original admission refusal record missing");
+        }
         if original_error.observed_errors != 0 {
             let diagnostic = serde_json::to_string(&original_error).unwrap();
-            assert!(diagnostic.len() <= 8192, "fixed numeric original-error diagnostic");
+            assert!(
+                diagnostic.len() <= 8192,
+                "fixed numeric original-error diagnostic"
+            );
             println!("TYPESCRIPT_BORROW_ORIGINAL_ERROR {diagnostic}");
         }
         sample(&f, "actual-root-receipt-before-outcome-assertions");
