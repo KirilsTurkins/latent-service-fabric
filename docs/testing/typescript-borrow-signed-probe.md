@@ -85,3 +85,11 @@ receipt. One shared extraction from its authenticated cached carrier passed the
 unchanged normal engine/splicer validators and immutable producer-source checks.
 Its first failed run remains failed. No new campaign, component/engine build,
 download or publication has occurred in this source review.
+
+The first signed owning attempt, [run40059659439/job120770194309](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40059659439/job/120770194309),
+failed before guest/host compilation with
+`compiler-working-directory-outside-captured-workspace`: the diagnostic used a
+sibling isolation directory while its compiler cwd was `prepared/project`.
+The fix uses the existing `prepared` parent for both project and build. The
+normal isolation guard is unchanged; this failed attempt establishes no
+canonical or signed runtime pass and remains retained.

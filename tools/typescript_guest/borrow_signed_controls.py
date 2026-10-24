@@ -157,7 +157,7 @@ def qualify(tools, material_directory, output):
         captured = {name: read_file(source/name, 256*1024) for name in profile.INPUTS}
         vendor = snapshot(source/'vendor')
         engine, splicer = material_directory/'engine', material_directory/'splicer'
-        isolated = output/'isolated'; isolated.mkdir()
+        isolated = prepared  # The normal captured workspace owns both project and build.
         guest_deadline = time.monotonic()+900
         class CompilerCommands:
             def __init__(self): self.root, self.environment = source, environment
