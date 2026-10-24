@@ -173,14 +173,19 @@ mod selected {
         )
         .await
         .map_err(|_| ())?;
+        println!("LSFRETURNDIAG stage=install-complete");
         let ready = snapshot(&pools, deadline).await?;
-        if Instant::now() >= deadline
-            || factory_descriptors()? != (1, 1)
+        if Instant::now() >= deadline {
+            return Err(());
+        }
+        let ready_descriptors = factory_descriptors()?;
+        if ready_descriptors != (1, 1)
             || ready.connections != 1
             || ready.failed_cleanup != 0
             || ready.cleanup_jobs != baseline.cleanup_jobs + 1
             || ready.metadata_bytes < baseline.metadata_bytes + 1024 * 1024 + 4096
         {
+            emit("ready-rejected", ready, ready_descriptors);
             return Err(());
         }
         emit("ready", ready, (1, 1));

@@ -42,7 +42,13 @@ class KernelReturnObservation(unittest.TestCase):
 
     def test_success_text_or_missing_observer_never_replaces_typed_return_and_original_quarantine(self):
         rows = observations();raw = b'\n'.join(rows+[reader.image.PHYSICAL_MARKER])+b'\n'
-        wrong = [b'\n'.join(rows)+b'\n',raw+reader.image.PHYSICAL_MARKER+b'\n',
+        # Diagnostics have no authority: the same original FAIL still refuses,
+        # even when all success evidence and a bounded scalar diagnostic exist.
+        diagnostic = b'LSFRETURNDIAG stage=mint errno=1 kind=PermissionDenied\n'
+        self.assertTrue(reader.serial_observation(
+            b'LSFRETURNDIAG stage=install-complete\n'+raw)['actualNativeKernelRootReturned'])
+        wrong = [diagnostic+b'LSFRETURN1 result=FAIL stage=native-constructor\n'+raw,
+            diagnostic, b'\n'.join(rows)+b'\n',raw+reader.image.PHYSICAL_MARKER+b'\n',
             raw.replace(b'LSFRETURN1 ',b'LSFNATIVE1 '),
             raw.replace(b'kernelRootReturned=1',b'closeRequestAccepted=1'),
             raw.replace(b'descriptors=1 observerDescriptors=1',b'descriptors=1 observerDescriptors=0'),

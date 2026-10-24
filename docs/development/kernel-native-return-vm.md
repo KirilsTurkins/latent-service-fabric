@@ -22,7 +22,17 @@ configuration and projects only these three fields into DATA-ONLY historical
 source-fixture bytes. Actual Kbuild config and all active options/hooks remain
 unchanged; CONFIG_RUST stays unselected. All other config bytes must match the
 audited configuration exactly, and every actual/projection identity is retained.
-The observation implementation has not yet executed against a fresh kernel.
+The fourth run at `8e473e5e1d05` passed the nineteen Rust and twelve compiled C
+controls, linked the fresh kernel and launched one VM. Its raw serial reported
+`LSFRETURN1 result=FAIL stage=native-constructor` after the baseline snapshot.
+The genuine pending-handoff, physical-return and outside-collector rows followed
+during failure cleanup, but no typed native Root-return result was observed.
+All 26 command exits were zero; the strict serial oracle correctly refused the
+failed child. This failed attempt records one attempted and zero validated boots.
+The next source adds only bounded failure diagnostics (fixed stage, numeric
+errno or closed error code/kind) and a ready-rejection snapshot. It preserves
+every original error, permission/actor check, success predicate and limit; the
+constructor cause remains unknown until those actual observations exist.
 The historical image has no observation ioctl and is never relabelled as this
 image. Normal installation remains Unsupported; native backing stays quarantined.
 

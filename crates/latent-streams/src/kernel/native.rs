@@ -365,7 +365,10 @@ pub(crate) async fn start_with_retirement_observation(
     if Instant::now() >= deadline {
         return Err(deadline_error());
     }
-    let observation = retirement::Owner::reserve(&pools, deadline)?;
+    let observation = retirement::Owner::reserve(&pools, deadline).map_err(|failure| {
+        eprintln!("LSFRETURNDIAG stage=reserve code={:?}", failure.code);
+        failure
+    })?;
     start_real(pools, installed, deadline, Some(observation)).await
 }
 
@@ -376,12 +379,13 @@ async fn start_real(
     deadline: Instant,
     retirement: Option<retirement::Owner>,
 ) -> Result<NativeOwner, StreamError> {
+    let observing = retirement.is_some();
     start_initialized_with(
         pools,
         installed,
         deadline,
         retirement,
-        || {
+        move || {
             rustix::fs::open(
                 c"/dev/lsf-stream-factory",
                 rustix::fs::OFlags::RDWR
@@ -391,14 +395,24 @@ async fn start_real(
                 rustix::fs::Mode::empty(),
             )
             .map(File::from)
-            .map_err(|_| error(StreamErrorCode::Unsupported))
+            .map_err(|failure| {
+                if observing {
+                    eprintln!("LSFRETURNDIAG stage=open errno={}", failure.raw_os_error());
+                }
+                error(StreamErrorCode::Unsupported)
+            })
         },
-        |resource, deadline| {
+        move |resource, deadline| {
             let file = resource
                 .descriptor
                 .as_mut()
                 .expect("actual opened descriptor");
-            let expiry = initialize(file, deadline)?;
+            let expiry = initialize(file, deadline).map_err(|failure| {
+                if observing {
+                    eprintln!("LSFRETURNDIAG stage=initialize code={:?}", failure.code);
+                }
+                failure
+            })?;
             if let Some(observation) = resource.retirement.as_mut() {
                 observation.mint(file, expiry)?;
             }

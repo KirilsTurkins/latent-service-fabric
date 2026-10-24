@@ -50,8 +50,18 @@ impl Owner {
         // Mark the immutable identity before possible entry. This original
         // precharged owner remains in the constructor's physical Attempt.
         self.expiry = Some(expiry);
-        let descriptor = latent_stream_factory_native::mint(original)
-            .map_err(|_| error(StreamErrorCode::Unsupported))?;
+        let descriptor = latent_stream_factory_native::mint(original).map_err(|failure| {
+            let kind = match failure.kind() {
+                std::io::ErrorKind::PermissionDenied => "PermissionDenied",
+                std::io::ErrorKind::Unsupported => "Unsupported",
+                _ => "Other",
+            };
+            eprintln!(
+                "LSFRETURNDIAG stage=mint errno={} kind={kind}",
+                failure.raw_os_error().unwrap_or(0)
+            );
+            error(StreamErrorCode::Unsupported)
+        })?;
         // Infallible ownership transfer BEFORE any later failure/checkpoint.
         self.file = Some(File::from(descriptor));
         if Instant::now() >= self.deadline {
