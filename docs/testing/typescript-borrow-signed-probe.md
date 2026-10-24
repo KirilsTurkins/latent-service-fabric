@@ -200,3 +200,24 @@ updated third hosted control checks the actual project default has no trace
 and the selected project configuration captures at most sixteen numeric frames.
 No production capability, compiler engine product, resource limit or signed
 case assertion changes. The corrected factory-time selection has not run.
+
+The corrected factory-time run`40069351175` passed all three actual observer
+controls and captured sixteen numeric frames at its first signed failure.
+Read-only comparison against the retained final core identifies the leaf as
+`mozalloc_abort`; its callers reach `failed to write formatted output` and the
+no-exceptions system-error abort. All sixteen function-relative offsets agree
+with the same embedded core. The pinned Starling error dumper uses formatted
+stderr output, while this compiler deliberately disables stdio. This is a
+secondary error-reporting failure; the original JavaScript error is unknown.
+Artifact`12549978986` remains failed and retained (21,004,728 bytes, SHA256
+`05b2c8236d74536dad289f1e5687da0901f72559ba9eeb7826760b0eefcd7311`).
+
+The private diagnostic probe now catches JavaScript rejection inside its
+existing async entry body and returns its fixed stage plus original
+`Error.message` or string, bounded to512 code units including its diagnostic
+prefix. It adds no Promise, yield, I/O, resource cleanup, import or grant. The
+unchanged exact host success-output comparison rejects that diagnostic marker;
+it cannot establish a passing case. A native trap or drain failure may still
+bypass this catch and fail the programme. Production compiler/runtime behavior,
+the six case assertions and all existing limits remain unchanged. This source
+diagnostic has not run.
