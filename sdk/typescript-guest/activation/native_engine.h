@@ -33,5 +33,8 @@ bool lift_import(JSContext* cx, uint32_t id, void** result);
 bool lift_import_value(JSContext* cx, uint32_t id, JS::MutableHandleValue value);
 bool finish_import(JSContext* cx, uint32_t id);
 bool cancel_import(JSContext* cx, uint32_t id);
+bool watch_import_borrow(JSContext* cx, uint32_t id, JS::MutableHandleObject handle);
+bool observe_import_borrow(JSContext* cx, JS::HandleObject handle, bool cancel,
+                           JS::MutableHandleObject promise);
 bool install_import_bridge(JSContext* cx,JS::HandleObject global);
 } // namespace lsf::typescript::activation

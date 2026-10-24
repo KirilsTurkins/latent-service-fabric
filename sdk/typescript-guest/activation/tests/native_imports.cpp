@@ -16,10 +16,37 @@
 #include <array>
 #include <cstdio>
 #include <cstring>
+#ifdef LSF_TYPESCRIPT_BORROW_CONTROLS
+// Owning recipe supplies the exact pinned pre-feature header, unmodified.
+#define Imports BorrowBaselineImports
+#include "borrow-baseline-native-imports.h"
+#undef Imports
+namespace lsf::typescript::activation {
+struct ImportBorrowControls {
+  static const void* record(Imports& imports,uint32_t id) {return imports.find(id);}
+  static Token recordOwner(Imports& imports,uint32_t id) {return imports.find(id)->record_owner.token;}
+  static size_t recordBytes() {return sizeof(Imports::Record);}
+  static ImportBorrowObserver* observer(JSContext* cx,Imports& imports,uint32_t id) {
+    auto* item=imports.find(id);if(!item)return nullptr;
+    std::unique_ptr<ImportBorrowObserver>* link=nullptr;
+    return imports.observerLink(cx,id,item->record_owner.token,link)?link->get():nullptr;
+  }
+  static bool refuseCycle(JSContext* cx,Imports& imports,uint32_t id) {
+    auto* item=observer(cx,imports,id);
+    if(!item || imports.observer_count_!=1 || item->following)return false;
+    item->following.reset(item); // deliberate fixture-only invariant corruption
+    std::unique_ptr<ImportBorrowObserver>* ignored=nullptr;
+    const bool refused=!imports.observerLink(cx,0,Token{},ignored);
+    (void)item->following.release(); // restore unique ownership before teardown
+    return refused;
+  }
+};
+}
+#endif
 
 using namespace lsf::typescript::activation;
 namespace {
-struct Owner { bool live = false; uint8_t kind = 0; bool parked = false; };
+struct Owner { bool live = false; uint8_t kind = 0; bool parked = false; bool managed_promise = false; };
 struct Timer { bool live = false; uint64_t period = 0; };
 struct Wait {
   bool live = false, joined = false, cancel_requested = false;
@@ -43,8 +70,28 @@ bool defer_cancel = false, refuse_stop = false, refuse_native_ack = false, refus
 unsigned starts = 0, stops = 0, drops = 0, set_drops = 0, waits_entered = 0;
 unsigned callback_entries = 0, native_admissions = 0, native_acknowledgements = 0;
 unsigned host_calls = 0;
+unsigned cancel_requests = 0;
 bool host_in_gc = false, in_gc = false;
 uint64_t observed_period = 0;
+#ifdef LSF_TYPESCRIPT_BORROW_CONTROLS
+bool admitting_promise=false,expected_quarantine=false,capturing_observer_owner=false;
+std::array<bool,256> expected_retained{};
+uint64_t refuse_owner=0,record_owner_id=0,result_owner_id=0,lowering_owner_id=0,observer_owner_id=0;
+unsigned exact_refusals=0;
+const void* record_address=nullptr;
+const void* observer_address=nullptr;
+bool record_destroyed=false,observer_destroyed=false,drop_order_valid=true;
+void note_deleted(void* pointer) {
+  if(pointer && pointer==record_address)record_destroyed=true;
+  if(pointer && pointer==observer_address)observer_destroyed=true;
+}
+void note_settle(uint64_t id) {
+  if(id && (id==record_owner_id || id==result_owner_id || id==lowering_owner_id))
+    drop_order_valid=drop_order_valid && record_destroyed;
+  if(id && id==observer_owner_id)
+    drop_order_valid=drop_order_valid && record_destroyed && observer_destroyed;
+}
+#endif
 
 bool valid(const latent_runtime_activation_token_t* token) {
   return token && token->generation == 1 && token->id < next_owner && owners[token->id].live;
@@ -84,6 +131,17 @@ void ready(jobs_event_t* event) {
 }
 }
 
+#ifdef LSF_TYPESCRIPT_BORROW_CONTROLS
+// Linker-only observation AFTER all members, including persistent roots, have
+// destructed. Forward to the real selected allocator; never substitute free.
+// The diagnostic compiles with -fno-sized-deallocation and --wrap=_ZdlPv.
+extern "C" void __real__ZdlPv(void*) noexcept;
+extern "C" void __wrap__ZdlPv(void* pointer) noexcept {
+  note_deleted(pointer);
+  __real__ZdlPv(pointer);
+}
+#endif
+
 extern "C" {
 bool latent_runtime_activation_register(latent_runtime_activation_owner_kind_t kind,
     latent_runtime_activation_token_t* parent, latent_runtime_activation_token_t* output,
@@ -95,6 +153,14 @@ bool latent_runtime_activation_register(latent_runtime_activation_owner_kind_t k
     return failed(error, LATENT_RUNTIME_ACTIVATION_ERROR_RESOURCE_EXHAUSTED);
   const auto id = next_owner++;
   owners[id] = {true, kind, false}; ++counts[kind];
+#ifdef LSF_TYPESCRIPT_BORROW_CONTROLS
+  owners[id].managed_promise=admitting_promise;
+  if(capturing_observer_owner && !admitting_promise && kind==LATENT_RUNTIME_ACTIVATION_OWNER_KIND_NATIVE) {
+    if(observer_owner_id)__builtin_trap();
+    observer_owner_id=id;
+    expected_retained[id]=true; // exact admitted node token, before Promise admission can fail
+  }
+#endif
   if (kind == LATENT_RUNTIME_ACTIVATION_OWNER_KIND_NATIVE) ++native_admissions;
   *output = {1, id}; return true;
 }
@@ -114,6 +180,13 @@ bool latent_runtime_activation_settle(latent_runtime_activation_token_t* owner,
                                      latent_runtime_activation_error_t* error) {
   note_host();
   if (!valid(owner)) return failed(error, LATENT_RUNTIME_ACTIVATION_ERROR_INVALID_TOKEN);
+#ifdef LSF_TYPESCRIPT_BORROW_CONTROLS
+  note_settle(owner->id);
+  if(owner->id==refuse_owner) {
+    ++exact_refusals;
+    return failed(error,LATENT_RUNTIME_ACTIVATION_ERROR_UNAVAILABLE);
+  }
+#endif
   auto& actual = owners[owner->id];
   if ((actual.kind == LATENT_RUNTIME_ACTIVATION_OWNER_KIND_NATIVE && refuse_native_ack) ||
       (actual.kind == LATENT_RUNTIME_ACTIVATION_OWNER_KIND_TASK && refuse_task_ack))
@@ -161,6 +234,7 @@ bool latent_runtime_activation_timer_stop(latent_runtime_activation_token_t* tim
 }
 jobs_subtask_status_t jobs_subtask_cancel(jobs_subtask_t handle) {
   note_host();
+  ++cancel_requests;
   if (!handle || handle >= next_wait || !waits[handle].live) return 15;
   auto& wait = waits[handle]; wait.cancel_requested = true;
   if (wait.state != JOBS_SUBTASK_RETURNED && !defer_cancel)
@@ -247,8 +321,15 @@ static bool shared_drain(JSContext* cx,JobQueue& queue,Timers& timers,Imports& i
   return false;
 }
 static bool before_promise(JSContext* cx, void** output) {
-  return promise_records->checkpoint(cx) && reaction_records->checkpoint(cx) &&
+#ifdef LSF_TYPESCRIPT_BORROW_CONTROLS
+  const bool previous=admitting_promise;admitting_promise=true;
+#endif
+  const bool accepted=promise_records->checkpoint(cx) && reaction_records->checkpoint(cx) &&
          promise_records->beforeAllocate(cx, output);
+#ifdef LSF_TYPESCRIPT_BORROW_CONTROLS
+  admitting_promise=previous;
+#endif
+  return accepted;
 }
 static bool before_reaction(JSContext* cx, void** output) {
   return promise_records->checkpoint(cx) && reaction_records->checkpoint(cx) &&
@@ -321,6 +402,127 @@ static bool drain(JSContext* cx, JobQueue& queue, Timers& timers) {
 }
 static void collect(JSContext* cx) { in_gc = true; JS_GC(cx); in_gc = false; }
 
+#ifdef LSF_TYPESCRIPT_BORROW_CONTROLS
+static bool borrow_refusal(JSContext* cx,BrokerAccounting& jobs,BrokerPromiseAccounting& native,
+                           ReadinessSet& readiness,const char* selected) {
+  const bool promise_denied=!std::strcmp(selected,"borrow-refusal-observer-Promise-admission");
+  const bool cycle=!std::strcmp(selected,"borrow-refusal-bounded-cycle");
+  const bool work=!std::strcmp(selected,"borrow-refusal-original-work-ack");
+  Token root;
+  if(!jobs.currentContinuation(root))return false;
+  bool passed=false;
+  {
+    // This manager is physically destroyed before JSContext destruction, while
+    // the exact refused broker tokens remain paid. No fake refund/reset follows.
+    Imports held(jobs,native,readiness);
+    uint32_t id=0;JS::RootedObject handle(cx),original(cx),released(cx);
+    const auto first=next_owner;
+    if(!held.reserve(cx,4,4,ImportRawResult::I32,JS::HandleValueArray::empty(),id))return false;
+    record_address=ImportBorrowControls::record(held,id);
+    record_owner_id=ImportBorrowControls::recordOwner(held,id).id;
+    uint64_t work_owner=0,queued_owner=0;
+    for(uint64_t owner=first;owner<next_owner;++owner) {
+      if(owners[owner].managed_promise)continue;
+      if(owners[owner].kind==LATENT_RUNTIME_ACTIVATION_OWNER_KIND_RESULT) {
+        if(result_owner_id)return false;
+        result_owner_id=owner;
+      }
+      if(owners[owner].kind==LATENT_RUNTIME_ACTIVATION_OWNER_KIND_TASK) {
+        if(work_owner)return false;
+        work_owner=owner;
+      }
+      if(owners[owner].kind==LATENT_RUNTIME_ACTIVATION_OWNER_KIND_QUEUED_WORK) {
+        if(queued_owner)return false;
+        queued_owner=owner;
+      }
+      if(owners[owner].kind==LATENT_RUNTIME_ACTIVATION_OWNER_KIND_NATIVE &&
+         owner!=record_owner_id) {
+        if(lowering_owner_id)return false;
+        lowering_owner_id=owner;
+      }
+    }
+    if(!record_owner_id || !result_owner_id || !lowering_owner_id || !work_owner || !queued_owner)return false;
+    const bool result_ack=!std::strcmp(selected,"borrow-refusal-original-result-ack");
+    const bool native_ack=!std::strcmp(selected,"borrow-refusal-original-native-ack");
+    const bool record_ack=!std::strcmp(selected,"borrow-refusal-original-record-ack");
+    const bool observer_ack=!std::strcmp(selected,"borrow-refusal-observer-owner-ack");
+    if(!(promise_denied || cycle || work || result_ack || native_ack || record_ack || observer_ack))return false;
+    // Derive expectations from known original tokens and the unchanged release
+    // sequence BEFORE inducing refusal. Never bless the observed post-failure
+    // state: both premature refunds and unexpected retained owners must fail.
+    expected_retained.fill(false);
+    if(work)expected_retained[work_owner]=true;
+    if(promise_denied || cycle || work || result_ack)expected_retained[result_owner_id]=true;
+    if(promise_denied || cycle || work || result_ack || native_ack)expected_retained[lowering_owner_id]=true;
+    if(!observer_ack)expected_retained[record_owner_id]=true;
+    // The exact accepted queued token must retire on started()/park or on the
+    // original Reserved-import finally, including either pre-dispatch refusal.
+    expected_retained[queued_owner]=false;
+    const auto admitted=native_admissions;
+    if(promise_denied)limits[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_NATIVE]=
+      counts[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_NATIVE]+1; // node fits; Promise does not
+    // Capture the exact observer owner as the fixture broker admits it, before
+    // watchBorrow allocates the node/root or attempts the managed Promise.
+    capturing_observer_owner=true;
+    const bool watched=held.watchBorrow(cx,id,&handle);
+    capturing_observer_owner=false;
+    limits[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_NATIVE]=8;
+    auto* observer=ImportBorrowControls::observer(cx,held,id);
+    if(!observer || !observer_owner_id || observer->allocation_owner.token.id!=observer_owner_id)return false;
+    observer_address=observer;
+    if(promise_denied) {
+      if(watched || handle || !JS_IsExceptionPending(cx) || native_admissions!=admitted+1 ||
+         !observer->quarantined || observer->handle)return false;
+      // The generated finally still runs. Quarantine prevents a partial
+      // observer/Promise admission failure from becoming a release proof.
+      if(held.liftCompleted(cx,id))return false;
+    } else {
+      if(!watched || !held.observeBorrow(cx,handle,false,&released))return false;
+      if(cycle) {
+        if(!ImportBorrowControls::refuseCycle(cx,held,id) || !JS_IsExceptionPending(cx) ||
+           held.liftCompleted(cx,id))return false;
+      } else {
+        auto* result=static_cast<uint32_t*>(held.resultBuffer(id));
+        if(!result || !held.parameterBuffer(id) || !held.beginLowering(cx,id))return false;
+        const auto wait_id=next_wait++;
+        if(wait_id>=waits.size())return false;
+        waits[wait_id]={true,false,false,JOBS_SUBTASK_STARTED,0,nullptr,result};
+        ++counts[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_WAIT];
+        if(!held.started(cx,id,(wait_id<<4)|JOBS_SUBTASK_STARTED,&original))return false;
+        if(work)refuse_owner=work_owner;
+        else if(result_ack)refuse_owner=result_owner_id;
+        else if(native_ack)refuse_owner=lowering_owner_id;
+        else if(record_ack)refuse_owner=record_owner_id;
+        else if(observer_ack)refuse_owner=observer_owner_id;
+        else return false;
+        if(held.observeBorrow(cx,handle,true,&released) || !JS_IsExceptionPending(cx) ||
+           JS::GetPromiseState(original)!=JS::PromiseState::Rejected || exact_refusals!=1 ||
+           !owners[refuse_owner].live || drops!=1 || cancel_requests!=1)return false;
+        if(work && record_destroyed)return false;
+        if(!work && !record_destroyed)return false;
+        if((refuse_owner==observer_owner_id)!=observer_destroyed)return false;
+      }
+      if(JS::GetPromiseState(released)!=JS::PromiseState::Pending)return false;
+    }
+    const auto calls=host_calls;
+    JS_ClearPendingException(cx);
+    if(held.turn(cx) || !JS_IsExceptionPending(cx) || host_calls!=calls || !held.hasPending())return false;
+    JS_ClearPendingException(cx);
+    refuse_owner=0;
+    if(!readiness.retire(cx))return false;
+    for(uint64_t owner=1;owner<next_owner;++owner)
+      if((owners[owner].live && !owners[owner].managed_promise && owner!=root.id)!=expected_retained[owner])return false;
+    expected_quarantine=true;
+    passed=drop_order_valid;
+  }
+  // The original record and observer have now actually destructed. They still
+  // cannot refund any of the failed/unknown ownership captured above.
+  for(uint64_t owner=1;owner<next_owner;++owner)
+    if((owners[owner].live && !owners[owner].managed_promise && owner!=root.id)!=expected_retained[owner])passed=false;
+  return passed && record_destroyed && observer_destroyed;
+}
+#endif
+
 int main(int argc, char** argv) {
   if (argc != 2) return 2;
   JS::Prefs::set_use_js_microtask_queue(false);
@@ -368,7 +570,89 @@ int main(int argc, char** argv) {
     if (!jobs.beginRoot(cx)) return 9;
     JS::RootedValue output(cx);
     const char* selected = argv[1];
-    if (!std::strcmp(selected,"missing-import-record-reports-and-preserves-error")) {
+#ifdef LSF_TYPESCRIPT_BORROW_CONTROLS
+    if(!std::strncmp(selected,"borrow-refusal-",15)) {
+      status=borrow_refusal(cx,jobs,native,readiness,selected)?0:1;
+    } else
+#endif
+    if (!std::strcmp(selected,"borrow-observer-blocked-cancel-awaits-actual-drop")) {
+      // Real SpiderMonkey Promises/accounting; canonical intrinsics below are
+      // explicit fixture doubles. Signed Component Model evidence is separate.
+      uint32_t id=0;
+      JS::RootedObject handle(cx),again(cx),original(cx),released(cx),repeated(cx);
+      if(!imports.reserve(cx,4,0,ImportRawResult::I32,JS::HandleValueArray::empty(),id))return 10;
+      const auto admitted=native_admissions;
+      if(!imports.watchBorrow(cx,id,&handle))return 10;
+#ifdef LSF_TYPESCRIPT_BORROW_CONTROLS
+      record_address=ImportBorrowControls::record(imports,id);
+      record_owner_id=ImportBorrowControls::recordOwner(imports,id).id;
+      auto* observer=ImportBorrowControls::observer(cx,imports,id);
+      if(!observer)return 10;
+      observer_address=observer;observer_owner_id=observer->allocation_owner.token.id;
+#endif
+      const auto observed_admissions=native_admissions;
+      if(!imports.watchBorrow(cx,id,&again) || again.get()!=handle.get() ||
+         native_admissions!=observed_admissions || observed_admissions<admitted+2)return 10;
+      auto* result=static_cast<uint32_t*>(imports.resultBuffer(id));
+      if(!result || !imports.beginLowering(cx,id))return 10;
+      const auto wait_id=next_wait++;
+      waits[wait_id]={true,false,false,JOBS_SUBTASK_STARTED,0,nullptr,result};
+      ++counts[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_WAIT];
+      if(!imports.started(cx,id,(wait_id<<4)|JOBS_SUBTASK_STARTED,&original) ||
+         !imports.observeBorrow(cx,handle,false,&released))return 10;
+      defer_cancel=true;
+      if(!imports.observeBorrow(cx,handle,true,&repeated) || repeated.get()!=released.get() ||
+         !imports.observeBorrow(cx,handle,true,&repeated) ||
+         !imports.liftCompleted(cx,id))return 10; // original generated finally
+      const bool held=JS::GetPromiseState(original)==JS::PromiseState::Rejected &&
+        JS::GetPromiseState(released)==JS::PromiseState::Pending &&
+        cancel_requests==1 && drops==0 && waits[wait_id].live && waits[wait_id].imported_result==result &&
+        counts[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_RESULT]==1 && imports.hasPending();
+      if(!readiness.dispatch(cx,true) || !imports.turn(cx))return 10;
+      status=held && drops==1 && cancel_requests==1 && !imports.hasPending() &&
+        JS::GetPromiseState(released)==JS::PromiseState::Fulfilled &&
+        imports.observeBorrow(cx,handle,true,&repeated) && repeated.get()==released.get() && cancel_requests==1 ? 0:1;
+      defer_cancel=false;
+    } else if (!std::strcmp(selected,"borrow-observer-rejects-foreign-and-unregistered-handles")) {
+      uint32_t id=0;
+      JS::RootedObject handle(cx),promise(cx),plain(cx,JS_NewPlainObject(cx));
+      if(!plain || !imports.reserve(cx,0,0,ImportRawResult::None,JS::HandleValueArray::empty(),id) ||
+         !imports.watchBorrow(cx,id,&handle))return 10;
+      bool refused=!imports.observeBorrow(cx,plain,true,&promise) && JS_IsExceptionPending(cx);
+      JS_ClearPendingException(cx);
+      Imports foreign(jobs,native,readiness);
+      refused=refused && !foreign.observeBorrow(cx,handle,true,&promise) && JS_IsExceptionPending(cx);
+      JS_ClearPendingException(cx);
+      NativeOwner control_owner;
+      if(!native.beforeAllocate(cx,control_owner))return 10;
+      {
+        ImportBorrowObserver forged(cx,id,Token{jobs.generation(),999});
+        if(!forged.initialize(cx,&imports,id,Token{jobs.generation(),999}))return 10;
+        refused=refused && !imports.observeBorrow(cx,forged.handle,true,&promise) && JS_IsExceptionPending(cx);
+        JS_ClearPendingException(cx);
+      }
+      {
+        // A branded but released handle from another epoch must fail BEFORE
+        // the released fast path, even with this exact manager and context.
+        ImportBorrowObserver stale(cx,id,Token{jobs.generation()+1,999});
+        if(!stale.initialize(cx,&imports,id,Token{jobs.generation()+1,999}) ||
+           !ImportBorrowObserver::acknowledge(cx,stale.handle))return 10;
+        refused=refused && !imports.observeBorrow(cx,stale.handle,false,&promise) && JS_IsExceptionPending(cx);
+        JS_ClearPendingException(cx);
+      }
+      if(!native.acknowledgeRetirement(cx,control_owner))return 10;
+      status=refused && cancel_requests==0 && imports.cancel(cx,id) ? 0:1;
+    } else if (!std::strcmp(selected,"borrow-observer-native-denial-precedes-node-and-Promise")) {
+      uint32_t id=0;JS::RootedObject handle(cx);
+      if(!imports.reserve(cx,0,0,ImportRawResult::None,JS::HandleValueArray::empty(),id))return 10;
+      const auto admitted=native_admissions;
+      limits[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_NATIVE]=counts[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_NATIVE];
+      const bool refused=!imports.watchBorrow(cx,id,&handle) && JS_IsExceptionPending(cx) &&
+        !handle && native_admissions==admitted && next_wait==1 && imports.hasPending();
+      JS_ClearPendingException(cx);
+      limits[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_NATIVE]=8;
+      status=refused && imports.cancelAll(cx) && !imports.hasPending() ? 0:1;
+    } else if (!std::strcmp(selected,"missing-import-record-reports-and-preserves-error")) {
       void* buffer = nullptr;
       JS::RootedObject promise(cx);
       bool reported = !imports.beginLowering(cx,999) && JS_IsExceptionPending(cx);
@@ -603,12 +887,32 @@ int main(int argc, char** argv) {
     if (!reactions.checkpoint(cx) || !promises.checkpoint(cx)) return 11;
     effects = true; compiler_phase = false;
     unsigned total = 0; for (auto count : counts) total += count;
-    if (total || timers.hasPending() || imports.hasPending() || !queue.empty() || set_live || host_in_gc) status = 1;
+#ifdef LSF_TYPESCRIPT_BORROW_CONTROLS
+    if(expected_quarantine) {
+      for(uint64_t owner=1;owner<next_owner;++owner)
+        if(owners[owner].live!=expected_retained[owner])status=1;
+      if(!total || !drop_order_valid)status=1;
+    } else
+#endif
+    if(total)status=1;
+    if (timers.hasPending() || imports.hasPending() || !queue.empty() || set_live || host_in_gc) status = 1;
+#ifdef LSF_TYPESCRIPT_BORROW_CONTROLS
+    std::printf("{\"case\":\"%s\",\"status\":%d,\"owners\":%u,\"expectedQuarantine\":%s,"
+                "\"subtaskDrops\":%u,\"cancelRequests\":%u,\"exactAckRefusals\":%u,"
+                "\"recordDestroyed\":%s,\"observerDestroyed\":%s,\"dropOrderValid\":%s,"
+                "\"managerBytes\":%zu,\"baselineManagerBytes\":%zu,\"fixedManagerDeltaBytes\":%zu,"
+                "\"recordBytes\":%zu,\"observerBytes\":%zu,\"hostcallInGC\":%s}\n",
+        selected,status,total,expected_quarantine?"true":"false",drops,cancel_requests,exact_refusals,
+        record_destroyed?"true":"false",observer_destroyed?"true":"false",drop_order_valid?"true":"false",
+        sizeof(Imports),sizeof(BorrowBaselineImports),sizeof(Imports)-sizeof(BorrowBaselineImports),
+        ImportBorrowControls::recordBytes(),sizeof(ImportBorrowObserver),host_in_gc?"true":"false");
+#else
     std::printf("{\"case\":\"%s\",\"status\":%d,\"owners\":%u,\"starts\":%u,\"stops\":%u,"
                 "\"subtaskDrops\":%u,\"setDrops\":%u,\"idleWaits\":%u,\"nativeAdmissions\":%u,"
                 "\"nativeAcknowledgements\":%u,\"hostcallInGC\":%s}\n",
         selected, status, total, starts, stops, drops, set_drops, waits_entered,
         native_admissions, native_acknowledgements, host_in_gc ? "true" : "false");
+#endif
   }
   JS_DestroyContext(cx); JS_ShutDown(); return status;
 }
