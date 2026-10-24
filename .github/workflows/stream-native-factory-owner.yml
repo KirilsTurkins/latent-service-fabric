@@ -107,6 +107,7 @@ jobs:
             ${{ runner.temp }}/stream-native-kernel-vm/commands.json
             ${{ runner.temp }}/stream-native-kernel-vm/native-source-inputs.json
             ${{ runner.temp }}/stream-native-kernel-vm/native-init
+            ${{ runner.temp }}/stream-native-kernel-vm/native-init.rejected.elf
             ${{ runner.temp }}/stream-native-kernel-vm/constructor-init
             ${{ runner.temp }}/stream-native-kernel-vm/constructor-init.c
             ${{ runner.temp }}/stream-native-kernel-vm/native-constructor-initramfs.cpio

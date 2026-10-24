@@ -4,6 +4,7 @@ import json
 import os
 from pathlib import Path
 import shutil
+import stat
 import sys
 import time
 
@@ -21,6 +22,7 @@ from tools.rust_capsule_project import ROOT, fresh, read_file, write_json
 BRANCH = 'feat/kernel-native-constructor-vm-20261024'
 WORKFLOW = '.github/workflows/stream-native-factory-owner.yml'
 TARGET = 'x86_64-unknown-linux-gnu'
+MAX_REJECTED_NATIVE = 8 * 1024**2  # Forensic retention only, never an image allowance.
 FLAGS = ('-Ctarget-feature=+crt-static','-Crelocation-model=static','-Clink-arg=-no-pie')
 RECIPE = (WORKFLOW, native.SUPERVISOR, native.ORIGINAL, inputs.PUBLIC,
     'tools/qualify_host_stream_kernel_native_vm.py','tools/host_stream_kernel_native_vm.py',
@@ -109,6 +111,19 @@ def qualify(output, revision):
             '-p','latent-streams','--example','kernel_constructor_vm','--features','development-outbound',
             '--release','--target',TARGET,'--message-format=json')
         executable = cargo_product(inventory,ROOT,output/'native-target')
+        candidate = executable.lstat()
+        regular = stat.S_ISREG(candidate.st_mode)
+        receipt['nativeCandidate'] = {'bytes':candidate.st_size,'mode':candidate.st_mode,
+            'fileType':stat.S_IFMT(candidate.st_mode),'regularFile':regular,
+            'symlink':stat.S_ISLNK(candidate.st_mode),'maximumAdmittedBytes':image.MAX_INIT}
+        if regular and image.MAX_INIT < candidate.st_size <= MAX_REJECTED_NATIVE:
+            rejected = read_file(executable,MAX_REJECTED_NATIVE)
+            forensic = output/'native-init.rejected.elf'
+            forensic.write_bytes(rejected)
+            forensic.chmod(0o600)
+            receipt['rejectedNativeProduct'] = {**native.identity(rejected),
+                'path':forensic.name,'maximumForensicBytes':MAX_REJECTED_NATIVE,
+                'admitted':False,'executable':False,'executed':False,'includedInVm':False}
         child_raw = read_file(executable,image.MAX_INIT)
         receipt['nativeInit'] = image.init_elf(child_raw)
         native_init = output/'native-init';native_init.write_bytes(child_raw)

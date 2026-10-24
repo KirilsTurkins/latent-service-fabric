@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_host_stream_kernel_native_vm.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve the actual rustup launcher path for execution and bind its separately resolved regular target before and after the one native/kernel join. The original compiler version, static flags, source/image guards, bounds and all test obligations remain unchanged.",
+  "reviewReason": "Observe the actual compiled candidate type and size before the unchanged 2 MiB admission read, retaining only a regular rejected product up to 8 MiB as nonexecutable forensic data. No image, load, CPIO, compiler, runtime or VM limit is raised; all prior gates and obligations remain.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "b8e53377b0c84226c48acb5f6b9a56f90702957adc2c1e087029b4b6ddb7969d"
+  "sha256": "08f37daf36938ce6d21a10eac74f73adc33c8b43256492620ecd3d5c75649347"
 }
