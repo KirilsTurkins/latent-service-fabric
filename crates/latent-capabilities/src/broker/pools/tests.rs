@@ -9,6 +9,7 @@ use std::{
     net::{TcpListener, TcpStream},
     time::Duration,
 };
+mod close_observation;
 mod control_admission;
 mod deferred;
 pub(super) mod fixture;

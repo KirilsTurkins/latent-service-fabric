@@ -1590,14 +1590,19 @@
         "broker::tests::buffer_native_memory::original_call_native_reply_stays_on_original_budget_after_close_and_cross_thread_drop",
         "broker::ownership::node_metadata_tests::original_node_bank_and_logical_broker_metadata_are_distinct_conserved_observations",
         "broker::ownership::node_metadata_tests::original_metadata_swap_refuses_mismatched_ceiling_and_prior_or_retained_zero_charge",
-        "broker::tests::audit::required_audit_native_refusal_precedes_dispatch_and_preserves_all_original_owners"
+        "broker::tests::audit::required_audit_native_refusal_precedes_dispatch_and_preserves_all_original_owners",
+        "broker::pools::tests::close_observation::abandoned_close_waiter_does_not_release_running_or_quarantined_owner",
+        "broker::pools::tests::close_observation::buffered_and_delivered_close_receipt_keeps_original_cleanup_charge",
+        "broker::pools::tests::close_observation::close_worker_panic_never_publishes_accepted_receipt_or_refunds_connection",
+        "broker::pools::tests::close_observation::held_close_receipt_bounds_new_admission_and_returns_unchanged_owner",
+        "broker::pools::tests::close_observation::published_receipt_drop_cannot_release_live_sender_worker_tail"
       ],
       "expectedIgnored": [],
       "id": "latent-capabilities.lib.latent-capabilities",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-capabilities/Cargo.toml",
-      "minimumCases": 203,
+      "minimumCases": 208,
       "mode": "libtest",
       "package": "latent-capabilities",
       "platforms": [
