@@ -404,3 +404,222 @@ export function inlineNativeTaskMeta(source, parse) {
   parse(source,{ecmaVersion:'latest',sourceType:'module'});
   return source;
 }
+
+// A selected native import already has a real admitted C++ Task/Record and
+// canonical subtask. Its generated synchronous-ABI JCO Task is a surrogate:
+// retaining that task's execution slot until its Promise exits serializes all
+// sibling native imports. Project only the fully recognized surrogate away.
+// Actual typed lowering/lifting and the original native finally remain intact.
+export function nativeCarrierImports(source, parse) {
+  const fail = () => { throw Error('selected-runtime-native-carrier-shape-drift'); };
+  // Retain the existing exact native-helper/metadata-wrapper checks. This is
+  // validation only: the legacy inlined wrapper is never emitted here.
+  inlineNativeTaskMeta(source, parse);
+  let tree;
+  try { tree = parse(source, {ecmaVersion: 'latest', sourceType: 'module'}); }
+  catch { fail(); }
+  const entries = [];
+  function walk(node, parents = []) {
+    if (!node || typeof node !== 'object') return;
+    if (Array.isArray(node)) { for (const child of node) walk(child, parents); return; }
+    if (typeof node.type !== 'string') return;
+    entries.push({node, parents});
+    for (const value of Object.values(node)) {
+      if (value && typeof value === 'object') walk(value, [...parents, node]);
+    }
+  }
+  walk(tree);
+  const identifier = (node, name) => node?.type === 'Identifier' && node.name === name;
+  const helpers = entries.filter(({node}) => node.type === 'VariableDeclarator' &&
+    identifier(node.id, '__lsfAwaitImport'));
+  if (!helpers.length) return source;
+  if (helpers.length > 256) fail();
+  const bridges = tree.body.filter(node => node.type === 'VariableDeclaration' && node.kind === 'const' &&
+    node.declarations.length === 1 && identifier(node.declarations[0].id, '__lsfImports'));
+  const bridge = bridges[0]?.declarations[0]?.init;
+  if (bridges.length !== 1 || bridge?.type !== 'MemberExpression' || bridge.computed ||
+      !identifier(bridge.object, 'contentGlobal') || !identifier(bridge.property, '__lsfAsyncImportBridge')) fail();
+  const text = node => source.slice(node.start, node.end);
+  const normalized = node => JSON.stringify(node, (key, value) =>
+    ['start', 'end', 'loc', 'raw'].includes(key) ? undefined : value);
+  const same = (node, expected) => {
+    const body = parse(`async function __lsfPattern() { ${expected} }`,
+      {ecmaVersion: 'latest', sourceType: 'module'}).body[0].body.body;
+    return body.length === 1 && normalized(node) === normalized(body[0]);
+  };
+  const forbidden = new Set(['getCurrentTask', 'getCurrentTaskMeta', '_getGlobalCurrentTaskMeta',
+    '_clearCurrentTask', 'clearCurrentTask', 'createNewCurrentTask', 'getOrCreateAsyncState',
+    'CURRENT_TASK_META', 'ASYNC_CURRENT_TASK_IDS', 'ASYNC_CURRENT_COMPONENT_IDXS',
+    'ASYNC_TASKS_BY_COMPONENT_IDX', 'AsyncTask', 'AsyncSubtask', 'borrowedHandles',
+    'getParentSubtask', 'createSubtask', 'getLatestSubtask', 'getSubtaskByWaitableRep',
+    'getPostReturnFn', 'setPostReturnFn', 'postReturnFn']);
+  // Follow statically named typed helpers as well as their .bind/.call uses.
+  // A typed helper that still needs JCO task/borrow/post-return state is not a
+  // candidate for this projection, even when the outer wrapper looks familiar.
+  const functions = new Map();
+  const aliases = new Map();
+  const classes = new Map(tree.body.filter(node => node.type === 'ClassDeclaration' && node.id)
+    .map(node => [node.id.name, node]));
+  for (const node of tree.body) {
+    if (node.type !== 'VariableDeclaration') continue;
+    for (const item of node.declarations) {
+      if (item.id.type !== 'Identifier' || !item.init) continue;
+      if (aliases.has(item.id.name)) fail();
+      aliases.set(item.id.name, item.init);
+    }
+  }
+  for (const {node} of entries) {
+    if (node.type === 'FunctionDeclaration' && node.id) {
+      const values = functions.get(node.id.name) ?? [];
+      values.push(node); functions.set(node.id.name, values);
+    } else if (node.type === 'VariableDeclarator' && node.id.type === 'Identifier' &&
+        ['FunctionExpression', 'ArrowFunctionExpression'].includes(node.init?.type)) {
+      const values = functions.get(node.id.name) ?? [];
+      values.push(node.init); functions.set(node.id.name, values);
+    } else if (node.type === 'ClassDeclaration' && node.id) {
+      const constructor = node.body.body.find(item => item.kind === 'constructor');
+      if (constructor) {
+        const values = functions.get(node.id.name) ?? [];
+        values.push(constructor.value); functions.set(node.id.name, values);
+      }
+    }
+  }
+  const edits = [];
+  for (const {parents} of helpers) {
+    const fn = [...parents].reverse().find(node => node.type === 'FunctionDeclaration');
+    if (!fn?.async) fail();
+    const inside = entries.filter(({node}) => node.start >= fn.start && node.end <= fn.end);
+    const outer = fn.body.body.find(node => node.type === 'TryStatement' && node.finalizer);
+    if (!outer) fail();
+    const body = outer.block.body;
+    const declarations = body.filter(node => node.type === 'VariableDeclaration' &&
+      node.declarations.some(item => item.id.type === 'ArrayPattern' &&
+        item.id.elements.some(value => identifier(value, 'task'))));
+    if (declarations.length !== 1) fail();
+    const declaration = declarations[0], index = body.indexOf(declaration);
+    const settings = declaration.declarations[0]?.init?.arguments?.[0];
+    const component = settings?.properties?.find(item => identifier(item.key, 'componentIdx'))?.value;
+    const errorMode = settings?.properties?.find(item => identifier(item.key, 'errHandling'))?.value;
+    if (component?.type !== 'Literal' || !Number.isSafeInteger(component.value) || component.value < 0 ||
+        errorMode?.type !== 'Literal' || !['none', 'throw-result-err'].includes(errorMode.value) ||
+        !same(declaration, `const [task, _wasm_call_currentTaskID] = createNewCurrentTask({
+          componentIdx: ${component.value}, isAsync: false, isManualAsync: true,
+          entryFnName: '__lsfAwaitImport', getCallbackFn: () => null, callbackFnName: null,
+          errHandling: ${JSON.stringify(errorMode.value)}, callingWasmExport: true });`) ||
+        !same(body[index + 1], 'const started = await task.enter();') ||
+        !same(body[index + 2], `if (!started) {
+          _debugLog('[Instruction::AsyncTaskReturn] failed to enter task', {
+            taskID: task.id(), subtaskID: currentSubtask?.id() });
+          throw new Error('failed to enter task'); }`) ||
+        !same(body[index + 3], `if (null !== null) {
+          task.setReturnMemoryIdx(null); task.setReturnMemory(() => null()); }`)) fail();
+    const localEdits = [{start: declaration.start, end: body[index + 3].end, text: ''}];
+    const carriers = body.filter(node => node.type === 'TryStatement' && node.handler && !node.finalizer);
+    if (carriers.length !== 1) fail();
+    const carrier = carriers[0];
+    if (!identifier(carrier.handler.param, 'err') || carrier.block.body.length !== 1 ||
+        normalized(carrier.handler.body) !== normalized(parse(`async function __lsfPattern() {
+          task.setErrored(err); task.reject(err); task.exit(); return task.completionPromise();
+        }`, {ecmaVersion: 'latest', sourceType: 'module'}).body[0].body)) fail();
+    const assignment = carrier.block.body[0]?.expression;
+    const awaitWrapper = assignment?.right?.arguments?.[0];
+    const wrapper = awaitWrapper?.argument;
+    const native = wrapper?.arguments?.[0]?.properties?.[2]?.value?.body;
+    if (assignment?.type !== 'AssignmentExpression' || assignment.operator !== '=' ||
+        !identifier(assignment.left, 'ret') || assignment.right.type !== 'CallExpression' ||
+        text(assignment.right.callee) !== '__lsfImports.lift' ||
+        awaitWrapper?.type !== 'AwaitExpression' || wrapper?.type !== 'CallExpression' ||
+        !identifier(wrapper.callee, '_withGlobalCurrentTaskMetaAsync') ||
+        native?.type !== 'CallExpression' || !identifier(native.callee, '__lsfAwaitImport')) fail();
+    localEdits.push({start: carrier.start, end: carrier.end,
+      text: `ret = __lsfImports.lift(await ${text(native)});`});
+    const taskCall = (node, name) => node?.type === 'ExpressionStatement' &&
+      node.expression.type === 'CallExpression' && node.expression.callee.type === 'MemberExpression' &&
+      !node.expression.callee.computed && identifier(node.expression.callee.object, 'task') &&
+      identifier(node.expression.callee.property, name) ? node.expression : null;
+    const resolves = body.filter(node => taskCall(node, 'resolve'));
+    if (resolves.length !== 1) fail();
+    const resolved = resolves[0], resolve = taskCall(resolved, 'resolve');
+    const exited = body[body.indexOf(resolved) + 1], exit = taskCall(exited, 'exit');
+    if (!exit || exit.arguments.length || resolve.arguments.length !== 1 ||
+        resolve.arguments[0].type !== 'ArrayExpression' || resolve.arguments[0].elements.length !== 1) fail();
+    // Preserve evaluation of the original typed result expression and array.
+    // Only the unreachable surrogate completion observer is omitted.
+    localEdits.push({start: resolved.start, end: resolved.end, text: `void ${text(resolve.arguments[0])};`});
+    localEdits.push({start: exited.start, end: exited.end, text: ''});
+    const removed = node => localEdits.some(edit => node.start >= edit.start && node.end <= edit.end);
+    const remaining = inside.filter(({node}) => !removed(node));
+    for (const {node} of remaining) {
+      if (node.type === 'Identifier' && (forbidden.has(node.name) ||
+          ['task', '_wasm_call_currentTaskID', 'started'].includes(node.name))) fail();
+    }
+    const pending = [...remaining], seen = new Set();
+    while (pending.length) {
+      const {node} = pending.pop();
+      if (node.type === 'Identifier' && forbidden.has(node.name)) fail();
+      if (node.type === 'MemberExpression' && node.computed && node.property.type === 'Literal' &&
+          typeof node.property.value === 'string' && forbidden.has(node.property.value)) fail();
+      // `postReturn: false` is only a generated log label. A callable or
+      // borrowed-handle duty with that name is never silently projected away.
+      if (node.type === 'Identifier' && node.name === 'postReturn') {
+        const property = entries.find(entry => entry.node === node)?.parents.at(-1);
+        if (property?.type !== 'Property' || property.key !== node ||
+            property.value.type !== 'Literal' || property.value.value !== false) fail();
+      }
+      if (node.type === 'Identifier' && aliases.has(node.name)) {
+        const target = aliases.get(node.name);
+        if (!seen.has(target)) {
+          if (seen.size >= 256) fail();
+          seen.add(target);
+          pending.push(...entries.filter(({node: child}) => child.start >= target.start && child.end <= target.end));
+        }
+      }
+      let callee;
+      if (['CallExpression', 'NewExpression'].includes(node.type)) {
+        callee = node.callee;
+        if (callee.type === 'MemberExpression' && !callee.computed &&
+            ['bind', 'call', 'apply'].includes(callee.property.name)) callee = callee.object;
+      }
+      // Also inspect a known typed-table method reached through a maintained
+      // top-level instance (including a bound method alias).
+      if (callee?.type === 'MemberExpression' && !callee.computed &&
+          callee.object.type === 'Identifier') {
+        const instance = aliases.get(callee.object.name);
+        const owner = instance?.type === 'NewExpression' && instance.callee.type === 'Identifier'
+          ? classes.get(instance.callee.name) : undefined;
+        if (owner) {
+          const methods = owner.body.body.filter(method => !method.computed &&
+            method.key.type === 'Identifier' && method.key.name === callee.property.name);
+          if (methods.length !== 1 || methods[0].kind !== 'method') fail();
+          const target = methods[0].value;
+          if (!seen.has(target)) {
+            if (seen.size >= 256) fail();
+            seen.add(target);
+            pending.push(...entries.filter(({node: child}) => child.start >= target.start && child.end <= target.end));
+          }
+        }
+      }
+      // This compiler-local helper was already checked against its exact
+      // original native trampoline, and is local to this selected wrapper.
+      if (callee?.type !== 'Identifier' || callee.name === '__lsfAwaitImport' ||
+          !functions.has(callee.name)) continue;
+      const targets = functions.get(callee.name);
+      if (targets.length !== 1) fail();
+      const target = targets[0];
+      if (seen.has(target)) continue;
+      if (seen.size >= 256) fail();
+      seen.add(target);
+      pending.push(...entries.filter(({node: child}) => child.start >= target.start && child.end <= target.end));
+    }
+    edits.push(...localEdits);
+  }
+  edits.sort((a, b) => b.start - a.start);
+  let previous = source.length;
+  for (const edit of edits) {
+    if (edit.end > previous) fail();
+    source = source.slice(0, edit.start) + edit.text + source.slice(edit.end);
+    previous = edit.start;
+  }
+  parse(source, {ecmaVersion: 'latest', sourceType: 'module'});
+  return source;
+}

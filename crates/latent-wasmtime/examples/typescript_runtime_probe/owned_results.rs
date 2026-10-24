@@ -22,6 +22,14 @@ enum Kind {
 }
 struct Connection;
 struct Chunk;
+#[derive(wasmtime::component::ComponentType, wasmtime::component::Lower)]
+#[component(record)]
+struct BackingCell {
+    label: String,
+    data: Vec<u16>,
+    zero: Vec<u8>,
+    payload: Option<Resource<Connection>>,
+}
 #[derive(Clone, Default, Debug)]
 struct Counts {
     allocations: u32,
@@ -240,7 +248,7 @@ impl ResourceLimiter for State {
         self.limits.table_growing(current, desired, maximum)
     }
 }
-fn install(linker: &mut Linker<State>) -> wasmtime::Result<()> {
+fn install(linker: &mut Linker<State>, backing: bool) -> wasmtime::Result<()> {
     runtime_bridge::install(linker)?;
     let mut provider = linker.instance("tests:owned-result/provider@1.0.0")?;
     provider.resource(
@@ -301,12 +309,61 @@ fn install(linker: &mut Linker<State>) -> wasmtime::Result<()> {
             Ok((value,))
         })
     })?;
+    if backing {
+        provider.func_wrap_concurrent("backing", |access, (mode,): (u32,)| {
+            Box::pin(async move {
+                let counter = access.with(|mut store| store.data_mut().counts.clone());
+                let _pending = Pending::new(counter);
+                let value: Result<Vec<BackingCell>, String> = match mode {
+                    0 | 1 => Ok(Vec::new()),
+                    2 => Ok(vec![
+                        BackingCell {
+                            label: "left".into(),
+                            data: vec![1, 2],
+                            zero: Vec::new(),
+                            payload: None,
+                        },
+                        BackingCell {
+                            label: "right".into(),
+                            data: vec![3],
+                            zero: Vec::new(),
+                            payload: None,
+                        },
+                    ]),
+                    3 | 4 => Ok(vec![BackingCell {
+                        label: String::new(),
+                        data: Vec::new(),
+                        zero: Vec::new(),
+                        payload: None,
+                    }]),
+                    5 | 7 => access
+                        .with(|mut store| store.data_mut().allocate(Kind::Connection))
+                        .map(|rep| {
+                            vec![BackingCell {
+                                label: "owned".into(),
+                                data: vec![7],
+                                zero: Vec::new(),
+                                payload: Some(Resource::<Connection>::new_own(rep)),
+                            }]
+                        })
+                        .map_err(|_| "unexpected-capacity-refusal".to_owned()),
+                    6 => Err("original-error-string".into()),
+                    _ => wasmtime::bail!("backing-probe-mode-outside-closed-set"),
+                };
+                Ok((value,))
+            })
+        })?;
+    }
     Ok(())
 }
 
-pub(super) async fn run(engine: &Engine, component: &Component) -> wasmtime::Result<()> {
+pub(super) async fn run(
+    engine: &Engine,
+    component: &Component,
+    backing: bool,
+) -> wasmtime::Result<()> {
     let mut linker = Linker::new(engine);
-    install(&mut linker)?;
+    install(&mut linker, backing)?;
     let expected = [1_u32, 2, 2, 2, 1, 0, 2, 0, 1, 2, 0];
     let expected_imports = [1_usize, 2, 2, 2, 2, 1, 2, 1, 1, 2, 1];
     for (which, allocations) in expected.into_iter().enumerate() {
@@ -458,6 +515,148 @@ pub(super) async fn run(engine: &Engine, component: &Component) -> wasmtime::Res
             "matchedImportResultOwnersBeforeStoreDrop":matched_result_live,"observedImports":expected_imports[which],
             "runtimeOwnersBeforeStoreDrop":snapshot.owners,"peakLinearMemoryBytes":memory,"fuel":fuel,
             "nestedBackingStorageQualified":false,"physicalProviderQualified":false,"signedExecution":false})
+        );
+    }
+    Ok(())
+}
+
+/// Real host lowering and original allocator free returns. Successful delivery
+/// only checks the changed empty-value ABI; its retained storage is NOT a
+/// cleanup success. A trapping destructor has no post-trap scalar observation.
+pub(super) async fn run_backing(engine: &Engine, component: &Component) -> wasmtime::Result<()> {
+    let mut linker = Linker::new(engine);
+    install(&mut linker, true)?;
+    let expected = [
+        Some(0_u32),
+        Some(0),
+        Some(5),
+        Some(1),
+        Some(0),
+        Some(3),
+        Some(1),
+        None,
+    ];
+    for (which, expected_frees) in expected.into_iter().enumerate() {
+        let refused = which == 7;
+        let allocations = u32::from(which == 5 || refused);
+        let counts = Arc::new(Mutex::new(Counts::default()));
+        let mut store = Store::new(
+            engine,
+            State {
+                runtime: runtime_bridge::runtime()?,
+                owners: Vec::with_capacity(122),
+                limits: StoreLimitsBuilder::new().memory_size(MEMORY).build(),
+                memory: 0,
+                pending_growth: 0,
+                slot: None,
+                next_rep: 1,
+                refuse_drop: refused,
+                counts: counts.clone(),
+                recent_registrations: [None; 4],
+                import_owners: [None; 2],
+                observed_imports: 0,
+                observation_failed: false,
+            },
+        );
+        store.limiter(|state| state);
+        store.set_fuel(FUEL)?;
+        let instance = linker.instantiate_async(&mut store, component).await?;
+        let (_, api) = instance
+            .get_export(&mut store, None, "tests:owned-result/api@1.0.0")
+            .ok_or_else(|| wasmtime::Error::msg("backing-probe-api-missing"))?;
+        let (_, export) = instance
+            .get_export(&mut store, Some(&api), "backing-run")
+            .ok_or_else(|| wasmtime::Error::msg("backing-probe-function-missing"))?;
+        let function = instance
+            .get_func(&mut store, export)
+            .ok_or_else(|| wasmtime::Error::msg("backing-probe-function-missing"))?;
+        let mut output = [Val::Bool(false)];
+        let result = tokio::time::timeout(
+            Duration::from_secs(20),
+            function.call_async(&mut store, &[Val::U32(u32::try_from(which)?)], &mut output),
+        )
+        .await?;
+        let observed_frees = if refused {
+            let error = result.expect_err("actual canonical OWN destructor must trap");
+            wasmtime::ensure!(
+                format!("{error:#}").contains("owned-probe-drop-refusal"),
+                "backing-probe-unexpected-trap"
+            );
+            None
+        } else {
+            result?;
+            let Val::Tuple(values) = &output[0] else {
+                wasmtime::bail!("backing-probe-output-not-tuple")
+            };
+            let [Val::Bool(true), Val::U32(count)] = values.as_slice() else {
+                wasmtime::bail!("backing-probe-invalid-public-result")
+            };
+            wasmtime::ensure!(
+                Some(*count) == expected_frees,
+                "backing-probe-actual-free-returns"
+            );
+            Some(*count)
+        };
+        let before = counts.lock().unwrap().clone();
+        let snapshot = store.data().runtime.snapshot();
+        wasmtime::ensure!(
+            !store.data().observation_failed && store.data().observed_imports == 1,
+            "backing-probe-original-import-observations"
+        );
+        let original = store.data().import_owners[0]
+            .ok_or_else(|| wasmtime::Error::msg("backing-probe-import-unobserved"))?;
+        let held = |token| {
+            store
+                .data()
+                .owners
+                .iter()
+                .any(|owner| owner.token() == token)
+        };
+        let native_live = u32::from(held(original.record)) + u32::from(held(original.buffer));
+        let result_live = u32::from(held(original.result));
+        wasmtime::ensure!(
+            native_live == if refused { 2 } else { 0 } && result_live == u32::from(refused),
+            "backing-probe-original-owners-before-store"
+        );
+        wasmtime::ensure!(
+            refused || snapshot.owners[5] == 0,
+            "backing-probe-result-owner-leak"
+        );
+        wasmtime::ensure!(
+            before.allocations == allocations
+                && before.drops == allocations
+                && before.payload_drops == if refused { 0 } else { allocations }
+                && store.data().slot.is_some() == refused,
+            "backing-probe-real-payload-state"
+        );
+        wasmtime::ensure!(
+            before.future_starts == 1 && before.future_drops == 1,
+            "backing-probe-original-future-retirement"
+        );
+        let memory = store.data().memory;
+        let fuel = FUEL - store.get_fuel()?;
+        drop(store);
+        let after = counts.lock().unwrap().clone();
+        wasmtime::ensure!(
+            after.payload_drops == allocations,
+            "backing-probe-store-teardown-payload"
+        );
+        println!(
+            "{}",
+            serde_json::json!({"schemaVersion":"latent.typescript.late-backing-case.v1",
+            "case":which,"status":"passed","ordinaryDeliveryOnly":matches!(which,0|4),
+            "backingFreeReturnsBeforeStoreDrop":observed_frees,"postTrapFreeCountObserved":false,
+            "parentFreeAfterTrapUnreachableByEmittedOrder":refused,"destructorRefused":refused,
+            "matchedImportNativeOwnersBeforeStoreDrop":native_live,
+            "matchedImportResultOwnersBeforeStoreDrop":result_live,"runtimeOwnersBeforeStoreDrop":snapshot.owners,
+            "allocations":before.allocations,"destructorCalls":before.drops,
+            "payloadDropsBeforeStoreDrop":before.payload_drops,"payloadDropsAfterStoreDrop":after.payload_drops,
+            "futureStarts":before.future_starts,"futureDrops":before.future_drops,
+            "peakLinearMemoryBytes":memory,"fuel":fuel,"observedImports":1,
+            "allocatorBoundaryOnly":true,"osOrLinearMemoryReturnQualified":false,
+            "deliveredStorageCleanupQualified":false,"parametersCleanupQualified":false,
+            "partialLowerCleanupQualified":false,"wholeCostQualification":false,
+            "physicalProviderQualified":false,"signedExecution":false})
         );
     }
     Ok(())

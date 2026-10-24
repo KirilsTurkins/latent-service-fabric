@@ -51,7 +51,7 @@
       },
       {
         "name": "Make the exact successful producer source available for immutable checks",
-        "run": "git fetch --no-tags --depth=1 origin be356d28f93267dc34078ce137d49ed28c28bf47"
+        "run": "git fetch --no-tags --depth=1 origin 6d834e502beea33fbae9347fbaf23ff8c37223b3"
       },
       {
         "name": "Install normal isolated compiler prerequisites",
@@ -69,8 +69,11 @@
         "run": "python3 -c 'import os;from pathlib import Path;from tools.typescript_guest.borrow_signed_inputs import prepare;prepare(Path(os.environ[\"RUNNER_TEMP\"])/\"typescript-own-canonical-inputs\")'"
       },
       {
-        "name": "Run six source controls construct the component and execute all eleven real cases",
-        "run": "python3 tools/qualify_typescript_owned_component.py \\\n  --tools \"$RUNNER_TEMP/typescript-own-canonical-tools\" \\\n  --prepared-products \"$RUNNER_TEMP/typescript-own-canonical-inputs/products\" \\\n  --output \"$RUNNER_TEMP/typescript-own-canonical\"\n"
+        "env": {
+          "LSF_OWN_COMPONENT_PROFILE": "${{ inputs.profile || 'canonical-own' }}"
+        },
+        "name": "Run mandatory source controls and the selected actual component cases",
+        "run": "python3 tools/qualify_typescript_owned_component.py \\\n  --tools \"$RUNNER_TEMP/typescript-own-canonical-tools\" \\\n  --prepared-products \"$RUNNER_TEMP/typescript-own-canonical-inputs/products\" \\\n  --profile \"$LSF_OWN_COMPONENT_PROFILE\" \\\n  --output \"$RUNNER_TEMP/typescript-own-canonical\"\n"
       },
       {
         "if": "always()",
@@ -88,7 +91,7 @@
   },
   "jobId": "canonical-own",
   "kind": "job",
-  "reviewReason": "Review exact pinned setup and normal compiler isolation, fixed successful producer acquisition, six no-skip source controls and eleven actual bounded canonical cases; retain raw observations and original inputs without rebuild fallback.",
+  "reviewReason": "Review exact successful6d native input pin and62-product emitted closure, preserve all existing fixture/evidence cases and guards, and use the closed published native-carrier fixture shape with14 mandatory source controls; no component qualification or quota expansion.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-owned-component.yml"
 }

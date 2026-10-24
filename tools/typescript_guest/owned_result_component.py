@@ -56,6 +56,8 @@ def select_products(prepared:Path,expected_owner_head:str)->dict:
     require(len(units)==1 and units[0].get('returncode')==0
             and units[0].get('stdout')=={'bytes':len(rust),'sha256':digest(rust)},
             'owned-component-original-rust-log-identity')
+    emitted=controls.emitted_backing_controls(prepared/'backing-core-controls')
+    require(receipt.get('emittedBackingControls')==emitted,'owned-component-original-emitted-controls')
     for field,cases,validate in [('nativeRows',controls.NATIVE_CASES,controls.native_case),
                                   ('lifecycleRows',controls.LIFECYCLE_CASES,controls.lifecycle_case)]:
         rows=receipt.get(field,[])
@@ -78,10 +80,11 @@ def select_products(prepared:Path,expected_owner_head:str)->dict:
             'owned-component-original-engine-splicer-pair')
     return {'owningReceipt':{'bytes':len(raw),'sha256':digest(raw)},'sourceCommit':expected_owner_head,
             'engine':receipt['engineProducts'],'splicer':receipt['splicer'],
+            'emittedBackingControls':emitted,
             'classification':'normal-input-and-native-prerequisites-only'}
 
 
-def compile_fixture(prepared:Path,expected_owner_head:str,tools:Path,output:Path,commands)->tuple[Path,dict]:
+def compile_fixture(prepared:Path,expected_owner_head:str,tools:Path,output:Path,commands,*,backing:bool=False)->tuple[Path,dict]:
     """Only called by a later reviewed bounded host programme, never locally."""
     selected=select_products(prepared,expected_owner_head)
     # The original Commands root must be this fresh compiler workspace so the
@@ -95,7 +98,7 @@ def compile_fixture(prepared:Path,expected_owner_head:str,tools:Path,output:Path
         runtime_profile=runtime_profile.IMPORT_PROFILE,
         engine=prepared/'engine/engine.wasm',engine_receipt=prepared/'engine/engine-input.json',
         splicer=prepared/'splicer/splicer',splicer_receipt=prepared/'splicer/splicer-input.json')
-    fixture=output/'fixture';fixture_record=owned_result_fixture.prepare(fixture)
+    fixture=output/'fixture';fixture_record=owned_result_fixture.prepare(fixture,backing=backing)
     compiler.isolation.protect_inputs(fixture)
     compiled=output/'compiled';compiled.mkdir()
     selection=compiled/'selection.json'

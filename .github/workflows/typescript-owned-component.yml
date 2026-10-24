@@ -15,6 +15,12 @@ on:
       - 'crates/latent-wasmtime/examples/typescript_runtime_probe*'
       - 'crates/latent-wasmtime/examples/typescript_runtime_probe/**'
   workflow_dispatch:
+    inputs:
+      profile:
+        description: Closed diagnostic profile using the exact completed normal producer
+        type: choice
+        default: canonical-own
+        options: [canonical-own, late-backing]
 
 permissions:
   contents: read
@@ -53,7 +59,7 @@ jobs:
       - name: Install locked Python controls
         run: python3 -m pip install --requirement tools/requirements.lock
       - name: Make the exact successful producer source available for immutable checks
-        run: git fetch --no-tags --depth=1 origin be356d28f93267dc34078ce137d49ed28c28bf47
+        run: git fetch --no-tags --depth=1 origin 6d834e502beea33fbae9347fbaf23ff8c37223b3
       - name: Install normal isolated compiler prerequisites
         run: |
           sudo apt-get update
@@ -65,11 +71,14 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: python3 -c 'import os;from pathlib import Path;from tools.typescript_guest.borrow_signed_inputs import prepare;prepare(Path(os.environ["RUNNER_TEMP"])/"typescript-own-canonical-inputs")'
-      - name: Run six source controls construct the component and execute all eleven real cases
+      - name: Run mandatory source controls and the selected actual component cases
+        env:
+          LSF_OWN_COMPONENT_PROFILE: ${{ inputs.profile || 'canonical-own' }}
         run: |
           python3 tools/qualify_typescript_owned_component.py \
             --tools "$RUNNER_TEMP/typescript-own-canonical-tools" \
             --prepared-products "$RUNNER_TEMP/typescript-own-canonical-inputs/products" \
+            --profile "$LSF_OWN_COMPONENT_PROFILE" \
             --output "$RUNNER_TEMP/typescript-own-canonical"
       - name: Retain actual component source probe observations and failures
         if: always()
