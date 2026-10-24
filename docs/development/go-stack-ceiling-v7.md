@@ -165,3 +165,18 @@ in the mapper and strict reader, with no normalization or fallback. Artifact
 12555289147 and the failed result remain history; no signed runtime attempt
 executed. The unique-module, guard-call, body-range and cap-frame predicates
 remain mandatory.
+
+The fifth attempt, source `27c4e194ccef6df2ed3201f6b473bd2217a99431`
+([run40083012315](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40083012315)),
+proved both actual emitted module mappings, their three cap calls and ordinary
+recursive stack/copy structure, then failed before a request when the shared
+fixture tried to deploy its unused second-publication role as service `callee`.
+Both normal packages deliberately declare service `caller` for the later
+caller-publication change. The closed Go-only fixture now asserts both actual
+manifest service names, zero child-call budgets and absence of service-invocation
+imports, then deploys only the real caller. Other fixture constructors keep
+their normal callee deployment validation. The existing inert callee scope and
+binding metadata grant no extra lifecycle credit: no callee is deployed or
+invoked, and both real publications still pass ordinary admission. The later
+caller repoint remains an ordinary validated deployment update. Artifact
+12555674832 and the failed result remain history; no signed request executed.

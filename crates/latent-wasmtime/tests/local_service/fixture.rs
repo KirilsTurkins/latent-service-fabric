@@ -784,7 +784,26 @@ impl Fixture {
             .manifest
             .execution
             .resource_budget_ceiling;
-        store.apply(target.clone()).await.unwrap();
+        if go_stack_ceiling {
+            // Both normal publications belong to caller; the second is only
+            // preadmitted for the later caller repoint. There is no callee
+            // service in this closed zero-child programme.
+            for package in [&caller, &callee] {
+                let manifest = JsonManifestCodec::default()
+                    .decode_capsule(package.blob("capsule.json").unwrap())
+                    .unwrap();
+                assert_eq!(manifest.metadata.name, caller_service);
+                assert_eq!(manifest.execution.resource_budget_ceiling.child_calls, 0);
+                assert!(package
+                    .surface()
+                    .unwrap()
+                    .imports()
+                    .iter()
+                    .all(|import| import.as_ref() != SERVICE_INVOCATION_CAPABILITY));
+            }
+        } else {
+            store.apply(target.clone()).await.unwrap();
+        }
         if let Some(other) = &additional_runtime_tenant {
             let mut other_consumer = consumer.clone();
             // Deployment IDs are global; tenant-scoped services still need distinct objects.
