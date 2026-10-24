@@ -9,10 +9,10 @@ use std::{
 use wasmtime::component::{Component, Linker, Val};
 use wasmtime::{Config, Engine, Store, StoreLimits, StoreLimitsBuilder};
 
-#[path = "typescript_runtime_probe/service_memory.rs"]
-mod service_memory;
 #[path = "typescript_runtime_probe/owned_results.rs"]
 mod owned_results;
+#[path = "typescript_runtime_probe/service_memory.rs"]
+mod service_memory;
 
 struct Pending(Arc<AtomicUsize>);
 
