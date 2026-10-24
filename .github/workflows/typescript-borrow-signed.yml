@@ -142,5 +142,5 @@ jobs:
             ${{ runner.temp }}/typescript-borrow-signed/prepared/typescript-node-net-service/*.json
             ${{ runner.temp }}/typescript-borrow-signed/prepared/typescript-node-net-service/*.wasm
             ${{ runner.temp }}/typescript-borrow-signed/prepared/typescript-node-net-service/generated-bindings.js
-            ${{ runner.temp }}/typescript-borrow-signed/prepared/typescript-node-net-service/commands/**
-            ${{ runner.temp }}/typescript-borrow-signed/prepared/typescript-node-net-service/source/**
+            ${{ runner.temp }}/typescript-borrow-signed/prepared/typescript-node-net-service/logs/**
+            ${{ runner.temp }}/typescript-borrow-signed/prepared/typescript-node-net-service/wit/**
