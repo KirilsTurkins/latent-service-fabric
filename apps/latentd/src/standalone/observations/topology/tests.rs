@@ -218,10 +218,16 @@ fn audit_fixture() -> NodeTopologyEntry {
     assert_eq!(row.attributes["audit_reserved_records"], "2");
     assert_eq!(row.attributes["audit_reserved_bytes"], "32768");
     assert_eq!(row.attributes["audit_pending_attempts"], "1");
-    assert_eq!(row.attributes["audit_unknown_outcomes"], u64::MAX.to_string());
+    assert_eq!(
+        row.attributes["audit_unknown_outcomes"],
+        u64::MAX.to_string()
+    );
     assert_eq!(row.attributes["audit_next_sequence"], u64::MAX.to_string());
     assert_eq!(row.attributes["audit_previous_session_loss_unknown"], "1");
-    assert_eq!(row.attributes["audit_node_metadata_quarantined_reserved_bytes"], "4096");
+    assert_eq!(
+        row.attributes["audit_node_metadata_quarantined_reserved_bytes"],
+        "4096"
+    );
     row
 }
 
@@ -323,7 +329,11 @@ fn standalone_capacity_covers_every_optional_topology_row() {
         .expect("bounded old selection");
         assert_eq!(old.topology.entries.len(), 32);
         assert!(old.topology.available && !old.topology.complete);
-        assert!(!old.topology.entries.iter().any(|entry| entry.name == "canary-snapshot-owners"));
+        assert!(!old
+            .topology
+            .entries
+            .iter()
+            .any(|entry| entry.name == "canary-snapshot-owners"));
         assert!(old
             .health
             .reasons

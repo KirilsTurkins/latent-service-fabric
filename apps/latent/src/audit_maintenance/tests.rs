@@ -267,11 +267,11 @@ fn native_operator_workflow_rolls_multiple_epochs_queries_and_transfers_exact_hi
     let retained = custody(&archives, first_epoch);
     assert_eq!(retained["archives"].as_array().unwrap().len(), 1);
     assert_eq!(retained["transferredThrough"], "2");
+    assert_eq!(retained["transferredHistoryAvailability"], "not-observed");
     assert_eq!(
-        retained["transferredHistoryAvailability"],
-        "not-observed"
+        verify(&destination, first_epoch).category,
+        Category::Success
     );
-    assert_eq!(verify(&destination, first_epoch).category, Category::Success);
     assert_eq!(status(&root)["nextSequence"], "5");
 }
 

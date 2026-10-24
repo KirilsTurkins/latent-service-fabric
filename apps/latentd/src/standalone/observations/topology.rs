@@ -128,7 +128,8 @@ impl TopologySource {
         if writer.remaining() == 0 {
             return Ok(false);
         }
-        let entries: [NodeTopologyEntry; capacity::AUDIT_ROWS] = [audit::entry(self.audit.as_ref())];
+        let entries: [NodeTopologyEntry; capacity::AUDIT_ROWS] =
+            [audit::entry(self.audit.as_ref())];
         for entry in entries {
             if !writer.push(&entry)? {
                 return Ok(false);
