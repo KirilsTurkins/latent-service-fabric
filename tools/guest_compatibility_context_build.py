@@ -6,7 +6,7 @@ from pathlib import Path
 from tools import guest_compatibility as compatibility
 from tools import guest_compatibility_context as context
 from tools import guest_emitted_code, guest_runtime_receipts
-from tools.dev_workflow.common import decode, digest, encode, require, sha
+from tools.dev_workflow.common import decode, digest, encode, integer, members, require, sha
 from tools.rust_capsule_project import inventory, read_file, write_json
 
 # Rust's shared Commands/package_inputs module is imported by every owner, so
@@ -93,6 +93,43 @@ def dependency_materials(files, source_inputs, language):
     return retained, omitted
 
 
+def typescript_buffer_materials(receipt: bytes, recipe: bytes, source_inputs: bytes):
+    """Identify a selected owned module, never its execution or authority.
+
+    Read only already-bound inventories. No package lookup, current SDK search,
+    initializer or compiler is needed by either the build or outcome reader.
+    """
+    from tools.typescript_guest import buffer_profile
+    require(buffer_profile.PROFILE == context.BUFFER_PROFILE, 'compatibility-context-buffer-owner-profile')
+    recipe_inputs = decode(recipe, 8 * 1024 * 1024)
+    captured = decode(source_inputs, 8 * 1024 * 1024)
+
+    def entry(document, name):
+        require(isinstance(document, dict) and name in document, 'compatibility-context-buffer-input-missing')
+        row = document[name]
+        members(row, {'digest', 'size'})
+        sha(row['digest']); integer(row['size'], 1, 4 * 1024 * 1024)
+        return row
+
+    backend = entry(recipe_inputs, buffer_profile.BACKEND)
+    declaration = entry(recipe_inputs, buffer_profile.DECLARATION)
+    require(declaration == entry(captured, 'vendor/lsf/' + buffer_profile.DECLARATION),
+            'compatibility-context-buffer-declaration-drift')
+    buffer_profile.validate_selection(decode(receipt, 65536), backend['digest'])
+    identities = (digest(receipt), backend['digest'], declaration['digest'])
+    return [context.material('runtime', name, identity, profile=context.BUFFER_PROFILE)
+            for name, identity in zip(context.BUFFER_MATERIALS, identities)]
+
+
+def typescript_buffer_owner(owner, receipt_digest, recipe_digest):
+    """Rebind module/recipe to the validated original owner's input list."""
+    require(isinstance(owner, dict) and owner.get('schemaVersion') == guest_runtime_receipts.SCHEMA
+            and owner.get('language') == 'typescript', 'compatibility-context-buffer-owner-required')
+    inputs = {row['name']: row['digest'] for row in owner['toolAndCompilerInputs']}
+    require(inputs.get(context.BUFFER_MATERIALS[0]) == receipt_digest
+            and inputs.get('build-recipe') == recipe_digest, 'compatibility-context-buffer-owner-input-drift')
+
+
 def finish(output: Path, files: dict[str, bytes], source_inputs: bytes,
            component: bytes, materials: list[dict]) -> dict:
     report_raw = read_file(output / 'compatibility-report.json', compatibility.MAX_BYTES)
@@ -108,6 +145,8 @@ def finish(output: Path, files: dict[str, bytes], source_inputs: bytes,
         require(isinstance(row, dict) and isinstance(row.get('name'), str) and row['name'] not in captured,
                 'compatibility-context-duplicate-build-material')
         captured[row['name']] = row
+        if report['language'] == 'typescript' and row['name'] == context.BUFFER_MATERIALS[0]:
+            continue  # Project its bound module/source identities below.
         if row['name'] not in {'source-snapshot', 'package-inputs'}:
             kind = 'generated' if row['name'] in {'c-generator-inputs', 'go-generator-inputs',
                 'java-generator-inputs', 'typescript-generator-inputs', 'executable-input-outputs'} else 'compiler'
@@ -120,8 +159,16 @@ def finish(output: Path, files: dict[str, bytes], source_inputs: bytes,
                 'compatibility-context-stale-or-unbound-receipt')
         return raw, decode(raw, maximum)
 
+    buffer_selected = report['language'] == 'typescript' and (context.BUFFER_MATERIALS[0] in captured
+            or (output / 'typescript-buffer-selection.json').exists())
+    if buffer_selected:
+        buffer_raw, _ = bound_receipt('typescript-buffer-selection.json', context.BUFFER_MATERIALS[0], 65536)
+        recipe_raw, _ = bound_receipt('recipe-inputs.json', 'build-recipe', 8 * 1024 * 1024)
+        retained.extend(typescript_buffer_materials(buffer_raw, recipe_raw, source_inputs))
+
     runtime_path = output / 'runtime-profile.json'
     owner_runtime = output / 'standard-runtime-selection.json'
+    validated_owner = None
     if runtime_path.exists() or owner_runtime.exists():
         filename = 'standard-runtime-selection.json' if owner_runtime.exists() else 'runtime-profile.json'
         name = 'standard-runtime-selection' if owner_runtime.exists() else 'runtime-profile'
@@ -132,6 +179,7 @@ def finish(output: Path, files: dict[str, bytes], source_inputs: bytes,
         if owner_runtime.exists():
             guest_runtime_receipts.verify_build(runtime, report['language'], files, source_inputs, component,
                 [row for row in materials if row['name'] != 'standard-runtime-selection'])
+            validated_owner = runtime
         require(isinstance(runtime, dict) and isinstance(runtime.get('profile'), str),
                 'compatibility-context-runtime-receipt')
         profile = compatibility.token(runtime['profile'])
@@ -147,6 +195,8 @@ def finish(output: Path, files: dict[str, bytes], source_inputs: bytes,
                     original=transform['originalDigest'], transformation=digest(encode(transform))))
         # A compiler receipt identifies selection. Even a "qualified" string
         # cannot establish this component's reachability or runtime behavior.
+    if buffer_selected:
+        typescript_buffer_owner(validated_owner, digest(buffer_raw), digest(recipe_raw))
     if report['language'] == 'java' and 'generated-bindings' in captured:
         _, bindings = bound_receipt('bindings.json', 'generated-bindings', 4 * 1024 * 1024)
         require(isinstance(bindings, dict), 'compatibility-context-java-bindings')
@@ -176,7 +226,9 @@ def finish(output: Path, files: dict[str, bytes], source_inputs: bytes,
     # already fills the finite material count. Omission never becomes support.
     dependencies, omitted = dependency_materials(files, source_inputs, report['language'])
     retained.extend(dependencies)
-    retained.sort(key=lambda row: (row['kind'] == 'dependency', row['kind'] not in {'runtime', 'patch'},
+    retained.sort(key=lambda row: (row['kind'] == 'dependency',
+                                   row['kind'] not in {'runtime', 'patch'} and not (
+                                       buffer_selected and row['kind'] == 'compiler' and row['name'] == 'build-recipe'),
                                    row['kind'], row['name']))
     omitted += max(0, len(retained) - context.MAX_MATERIALS)
     value = context.create(report, retained[:context.MAX_MATERIALS], selected, omitted=omitted)
