@@ -7,7 +7,7 @@ let activations = 0;
 function check(value: boolean): void {
   if (!value) throw new Error('published CommonJS Buffer case failed');
 }
-export const typescriptBuffer = {
+export const api = {
   run(mode: number): string {
     activations += 1;
     check(activations === 1);

@@ -73,6 +73,15 @@ signed invocation. Artifact12547375686 (7,086,862 bytes,
 SHA256 `5c95486ceaf90512d6d09dd9558e5f376bb30729cd1211dbc933f4efa38f2ac4`)
 retains those diagnostics; neither failed attempt is reported as a pass.
 
+The third attempt, [run40065076865](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40065076865),
+passed strict TSC and bundling, then failed componentization because the probe
+export was named `typescriptBuffer` while its unchanged WIT world exports
+`api`. Artifact12549132039 (7,089,835 bytes,
+SHA256 `6c0af5d8e87fb9f339b27db637f3ee200152cc34a23a2516b6ba5f92790feed4`)
+retains the original diagnostics. The probe now exports that required `api`
+name; all six case bodies and WIT limits are unchanged. No component, signing
+or guest invocation succeeded in that failed attempt.
+
 The repaired compiler composes a selected declaration view from the complete,
 verified captured standard Node type provider. It rejects missing, multiple,
 ambiguous entrypoint or unfamiliar constructor forms. It preserves the finite
