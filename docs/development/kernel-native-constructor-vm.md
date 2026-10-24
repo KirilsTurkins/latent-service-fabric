@@ -1,12 +1,12 @@
 # Native Rust constructor and maintained-kernel join
 
-This source-only programme joins two previously separate prerequisites for #738:
+This programme joins two previously separate prerequisites for #738:
 the real Rust `StreamProvider::install_kernel_constructor_for_qualification`
 caller and the already qualified constructor kernel. The ten original native
 owner controls use real ordinary Linux test descriptors; the earlier kernel
 programme uses its C wire probe. Neither result alone executes this new join.
-Actual compilation, size fitting and this VM outcome remain unqualified until
-its owning workflow passes.
+Actual static Rust compilation passed, but the new C supervisor, combined image
+size and VM outcome remain unqualified until the owning workflow passes.
 
 The production implementation is unchanged. Normal installation still returns
 Unsupported, host TLS remains unqualified, and the socket consumer remains
@@ -62,11 +62,29 @@ three-boot result keeps its original attribution and is not replayed here.
 The new programme builds only its ordinary source-matched Rust example and C
 supervisor. It uses the installed pinned native Rust target and host GCC with
 explicit static/non-PIE options; no new stdlib/sysroot is selected. Optimized
-stripped output must still pass the original static ET_EXEC/no-interpreter,
-2-MiB executable and 4-MiB load-span checks. If it does not fit, this candidate
-fails; the bounds are not raised. The fixed newc transformation preserves the
+stripped output must pass the static ET_EXEC/no-interpreter/no-write-execute
+grammar. The original PID1 C init retains its 2-MiB file limit and unchanged
+validator. The new separate Rust child has an explicit fixed 3-MiB file partition;
+its validator copies that grammar with only this file limit changed, under an
+exact inverse source control. Both actual loaded spans, including BSS and gaps,
+must additionally sum to at most the original 4-MiB image allowance. The child
+partition is not a general limit knob or an increase to native provider capacity.
+The original image helper and all294 kernel-producing inputs remain byte-identical.
+If either executable or the aggregate does not fit, this candidate fails. The
+fixed newc transformation preserves the
 original console/proc/sys entries, replaces only init, and adds only the native
 executable and temporary directory. The complete initramfs remains at most4MiB.
+
+The first owning attempt stopped before compilation: resolving the rustc launcher
+invoked rustup instead. The corrected launcher check observed the pinned rustc
+1.97.1 and the next two attempts actually built the static Rust example. They
+then failed the earlier candidate's 2-MiB child read before C compilation or VM
+execution. The third attempt retained the regular rejected ET_EXEC as forensic
+data: 2,931,200 file bytes and 2,958,280 loaded-span bytes. It was not admitted or
+executed. These remain failed attempts; their old limits and receipts are not
+rewritten. The subsequent explicit child partition keeps its actual code and
+standard library intact. Fit of the new supervisor and both aggregate bounds
+still requires the actual owning result, rather than the older C init's size.
 
 One fresh VM uses the unchanged two CPUs, 512MiB, isolated TCG, no external
 network/disks and 180-second watchdog. Timeout is never success. The new source

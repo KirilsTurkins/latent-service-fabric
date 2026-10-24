@@ -115,8 +115,8 @@ def qualify(output, revision):
         regular = stat.S_ISREG(candidate.st_mode)
         receipt['nativeCandidate'] = {'bytes':candidate.st_size,'mode':candidate.st_mode,
             'fileType':stat.S_IFMT(candidate.st_mode),'regularFile':regular,
-            'symlink':stat.S_ISLNK(candidate.st_mode),'maximumAdmittedBytes':image.MAX_INIT}
-        if regular and image.MAX_INIT < candidate.st_size <= MAX_REJECTED_NATIVE:
+            'symlink':stat.S_ISLNK(candidate.st_mode),'maximumAdmittedBytes':native.MAX_NATIVE_INIT}
+        if regular and native.MAX_NATIVE_INIT < candidate.st_size <= MAX_REJECTED_NATIVE:
             rejected = read_file(executable,MAX_REJECTED_NATIVE)
             forensic = output/'native-init.rejected.elf'
             forensic.write_bytes(rejected)
@@ -124,8 +124,8 @@ def qualify(output, revision):
             receipt['rejectedNativeProduct'] = {**native.identity(rejected),
                 'path':forensic.name,'maximumForensicBytes':MAX_REJECTED_NATIVE,
                 'admitted':False,'executable':False,'executed':False,'includedInVm':False}
-        child_raw = read_file(executable,image.MAX_INIT)
-        receipt['nativeInit'] = image.init_elf(child_raw)
+        child_raw = read_file(executable,native.MAX_NATIVE_INIT)
+        receipt['nativeInit'] = native.native_elf(child_raw)
         native_init = output/'native-init';native_init.write_bytes(child_raw)
         stage = 'actual-supervisor-and-leaf-controls'
         supervisor_source = native.supervisor_source()
@@ -133,9 +133,11 @@ def qualify(output, revision):
         controls = commands.run('actual-native-kmsg-controls',supervisor,'--native-kmsg-control')
         native.require(controls == native.COMPILED_CONTROLS, 'actual-compiled-parser-cases')
         receipt['compiledParserControls'] = {'passed':12,'failed':0,**native.identity(controls)}
+        supervisor_raw = read_file(supervisor,image.MAX_INIT)
+        receipt['executablePartition'] = native.executable_partition(supervisor_raw,child_raw)
         stage = 'fixed-userspace-image'
         cpio_raw = native.native_initramfs(read_file(kernel/'constructor-initramfs.cpio',image.MAX_INITRAMFS),
-            read_file(kernel/'constructor-init',image.MAX_INIT),read_file(supervisor,image.MAX_INIT),child_raw)
+            read_file(kernel/'constructor-init',image.MAX_INIT),supervisor_raw,child_raw)
         cpio = output/'native-constructor-initramfs.cpio';cpio.write_bytes(cpio_raw)
         receipt['initramfs'] = native.identity(cpio_raw)
         stage = 'one-isolated-native-kernel-join'
@@ -152,7 +154,7 @@ def qualify(output, revision):
         receipt['freshVmBoots'] = 1
         stage = 'final-exact-material-recheck'
         native.require(source_inputs(ROOT) == before, 'native-source-mutated')
-        native.require(read_file(native_init,image.MAX_INIT) == child_raw
+        native.require(read_file(native_init,native.MAX_NATIVE_INIT) == child_raw
             and read_file(cpio,image.MAX_INITRAMFS) == cpio_raw
             and read_file(output/'constructor-init.c',64*1024) == supervisor_source,
             'executed-userspace-image-mutated')

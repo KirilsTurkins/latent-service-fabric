@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_host_stream_kernel_native_vm.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Observe the actual compiled candidate type and size before the unchanged 2 MiB admission read, retaining only a regular rejected product up to 8 MiB as nonexecutable forensic data. No image, load, CPIO, compiler, runtime or VM limit is raised; all prior gates and obligations remain.",
+  "reviewReason": "Partition the separate new Rust child at a fixed 3 MiB file limit while preserving the original PID1 2 MiB validator and all kernel inputs; require the actual two executable load spans together to fit 4 MiB and preserve whole CPIO and VM bounds. Prior candidate failures remain failed, with no code stripping or capacity refund.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "08f37daf36938ce6d21a10eac74f73adc33c8b43256492620ecd3d5c75649347"
+  "sha256": "6329e2375f7e165683fd8da249b9388598e00926e59cb44c28d16719fde0b6cb"
 }

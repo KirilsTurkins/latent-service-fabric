@@ -98,7 +98,45 @@ class NativeConstructorKernelJoin(unittest.TestCase):
         self.assertEqual(entries['tmp'],(0o41777,b''))
         for changed in (original.replace(b'console',b'consoLe',1),original+b'unknown'):
             with self.assertRaises(ValueError):owner.native_initramfs(changed,old,supervisor,native)
-        with self.assertRaises(ValueError):owner.native_initramfs(original,old,supervisor,native+bytes(owner.image.MAX_INIT))
+        with self.assertRaises(ValueError):owner.native_initramfs(original,old,supervisor,native+bytes(owner.MAX_NATIVE_INIT))
+
+    def test_fixed_child_partition_preserves_original_elf_grammar_and_aggregate_budget(self):
+        import inspect
+        import struct
+        inverse = inspect.getsource(owner.native_elf).replace('def native_elf(', 'def init_elf(')
+        inverse = inverse.replace('MAX_NATIVE_INIT','MAX_INIT').replace('image.MAX_INIT_LOAD','MAX_INIT_LOAD')
+        inverse = inverse.replace('image.require(', 'require(')
+        self.assertEqual(inverse,inspect.getsource(owner.image.init_elf))
+        original = static_image()
+        large_child = original+bytes(owner.MAX_NATIVE_INIT-len(original))
+        self.assertEqual(owner.native_elf(large_child)['bytes'],owner.MAX_NATIVE_INIT)
+        with self.assertRaises(ValueError):owner.image.init_elf(large_child)
+        with self.assertRaises(ValueError):owner.native_elf(large_child+b'x')
+        for offset, encoding, value in ((64,'<I',3),(64,'<I',2),(68,'<I',7),
+                (96,'<Q',513),(104,'<Q',owner.image.MAX_INIT_LOAD+1),
+                (24,'<Q',0x900000),(112,'<Q',3),(18,'<H',183),(56,'<H',65)):
+            changed = bytearray(original);struct.pack_into(encoding,changed,offset,value)
+            with self.subTest(offset=offset,value=value),self.assertRaises(ValueError):
+                owner.native_elf(bytes(changed))
+        overlap = bytearray(original);struct.pack_into('<H',overlap,56,2)
+        struct.pack_into('<IIQQQQQQ',overlap,120,1,4,256,0x400100,0,128,128,1)
+        with self.assertRaises(ValueError):owner.native_elf(bytes(overlap))
+        def memory_span(size):
+            raw = bytearray(original);struct.pack_into('<Q',raw,104,size);return bytes(raw)
+        pid1, child = memory_span(1024**2), memory_span(3*1024**2)
+        self.assertEqual(owner.executable_partition(pid1,child)['aggregateLoadSpanBytes'],4*1024**2)
+        with self.assertRaisesRegex(ValueError,'aggregate-executable-load-span'):
+            owner.executable_partition(pid1,memory_span(3*1024**2+1))
+        with self.assertRaisesRegex(ValueError,'aggregate-executable-load-span'):
+            owner.native_initramfs(original_cpio(original),original,pid1,memory_span(3*1024**2+1))
+        gap = bytearray(original);struct.pack_into('<H',gap,56,2)
+        struct.pack_into('<IIQQQQQQ',gap,120,1,4,256,0x700000,0,128,128,1)
+        with self.assertRaisesRegex(ValueError,'aggregate-executable-load-span'):
+            owner.executable_partition(pid1,bytes(gap))
+        big_pid1 = original+bytes(1536*1024-len(original))
+        with self.assertRaisesRegex(ValueError,'unchanged-initramfs-byte-bound'):
+            owner.native_initramfs(original_cpio(original),original,big_pid1,large_child)
+        with self.assertRaises(ValueError):owner.executable_partition(large_child,original)
 
     def test_cargo_product_requires_the_owned_example_source_and_successful_static_profile(self):
         with tempfile.TemporaryDirectory() as directory:

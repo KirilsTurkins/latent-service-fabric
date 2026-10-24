@@ -1,6 +1,7 @@
 """Closed userspace image and actual native/physical UART reader; no refund."""
 import hashlib
 import re
+import struct
 
 from tools import host_stream_kernel_vm_image as image
 from tools.host_stream_kernel_late_fd_vm import HANDOFF, OUTSIDE
@@ -10,6 +11,7 @@ from tools.rust_capsule_project import ROOT, read_file
 EXAMPLE = 'crates/latent-streams/examples/kernel_constructor_vm.rs'
 SUPERVISOR = 'research/standard-outbound/linux-6.12-lineage/native-constructor-vm-init.c'
 ORIGINAL = 'research/standard-outbound/linux-6.12-lineage/constructor-vm-init.c'
+MAX_NATIVE_INIT = 3 * 1024**2  # Fixed new child partition, not the PID1 limit.
 COMPILED_CONTROLS = b'LSFNATIVE1 kmsg-controls=PASS cases=12\n'
 BOOT = b'LSFVM1 boot=native-constructor-only production-sockets=disabled'
 TERMINAL = b'LSFVM1 result=PASS stage=actual-native-constructor-and-kernel-return'
@@ -35,14 +37,72 @@ def supervisor_source(wrapper=None, original=None):
     return wrapper.replace(anchor, original)
 
 
+# Same pure grammar as the immutable PID1 validator, except this fixed child
+# byte partition. A focused inverse control binds every other grammar byte.
+def native_elf(raw: bytes) -> dict:
+    """Reject interpreters, dynamic dependencies, writable code and huge BSS."""
+    image.require(type(raw) is bytes and 64 <= len(raw) <= MAX_NATIVE_INIT, 'init-byte-bound')
+    image.require(raw[:7] == b'\x7fELF\x02\x01\x01', 'init-elf64-little-endian')
+    kind, machine, version, entry, phoff = struct.unpack_from('<HHIQQ', raw, 16)
+    ehsize, phsize, phcount = struct.unpack_from('<HHH', raw, 52)
+    image.require((kind, machine, version, ehsize, phsize) == (2, 62, 1, 64, 56)
+            and 0 < phcount <= 64 and phoff >= 64
+            and phoff + phcount * phsize <= len(raw), 'init-executable-header')
+    spans, executable_entry = [], False
+    for index in range(phcount):
+        ptype, flags, offset, address, _, files, memory, alignment = struct.unpack_from(
+            '<IIQQQQQQ', raw, phoff + index * phsize)
+        image.require(ptype not in (2, 3), 'init-static-only')
+        image.require(not (ptype == 0x6474e551 and flags & 1), 'init-executable-stack')
+        if ptype != 1:
+            continue
+        image.require(files <= memory <= image.MAX_INIT_LOAD and offset + files <= len(raw)
+                and address + memory < 2**64, 'init-load-range')
+        image.require(alignment in (0, 1) or 1 < alignment <= 2 * 1024**2
+                and not alignment & (alignment - 1)
+                and address % alignment == offset % alignment, 'init-load-alignment')
+        image.require(not (flags & 1 and flags & 2), 'init-write-execute')
+        if memory:
+            spans.append((address, address + memory))
+        executable_entry |= bool(flags & 1 and address <= entry < address + files)
+    image.require(bool(spans) and executable_entry
+            and max(end for _, end in spans) - min(start for start, _ in spans) <= image.MAX_INIT_LOAD,
+            'init-finite-entry-image')
+    image.require(all(a_end <= b_start for (_, a_end), (b_start, _) in
+                zip(sorted(spans), sorted(spans)[1:])), 'init-overlapping-loads')
+    return {'bytes': len(raw), 'sha256': hashlib.sha256(raw).hexdigest(),
+            'loadSegments': len(spans), 'staticX86_64': True}
+
+
+def executable_partition(supervisor, native):
+    """Validate both fixed roles, then bound their combined loaded spans."""
+    image.init_elf(supervisor)
+    native_elf(native)
+
+    def span(raw):
+        # Only validated headers enter here: <=64 nonoverlapping finite loads.
+        phoff = struct.unpack_from('<Q', raw, 32)[0]
+        phcount = struct.unpack_from('<H', raw, 56)[0]
+        loads = [struct.unpack_from('<IIQQQQQQ', raw, phoff+index*56)
+                 for index in range(phcount)]
+        ranges = [(row[3],row[3]+row[6]) for row in loads if row[0] == 1 and row[6]]
+        return max(end for _,end in ranges)-min(start for start,_ in ranges)
+
+    pid1_span, native_span = span(supervisor), span(native)
+    aggregate = pid1_span+native_span
+    require(aggregate <= image.MAX_INIT_LOAD, 'aggregate-executable-load-span')
+    return {'pid1MaximumFileBytes':image.MAX_INIT,'nativeMaximumFileBytes':MAX_NATIVE_INIT,
+        'pid1LoadSpanBytes':pid1_span,'nativeLoadSpanBytes':native_span,
+        'aggregateLoadSpanBytes':aggregate,'maximumAggregateLoadSpanBytes':image.MAX_INIT_LOAD}
+
+
 def native_initramfs(original, old_init, supervisor, native):
     """Preserve qualified newc entries; replace init and add only two fixed names.
 
     Reuses the maintained pure replacement reader, never its diagnostic campaign.
     No filesystem extractor or new general-purpose archive writer is exposed.
     """
-    image.init_elf(supervisor)
-    image.init_elf(native)
+    executable_partition(supervisor,native)
     changed = replace_init(original, old_init, supervisor)
     position, headers, inodes = 0, {}, []
     for name in ('dev','dev/console','proc','sys','init','TRAILER!!!'):
