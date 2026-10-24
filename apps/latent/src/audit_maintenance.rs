@@ -62,11 +62,12 @@ pub fn execute(cli: &Cli, command: &AuditCommand) -> Outcome {
 fn maintenance(command: &MaintenanceCommand) -> Result<Value, PlatformError> {
     match command {
         MaintenanceCommand::Status(args) => {
-            AuditMaintenance::status(&args.journal, args.local.timeout()).map(projection::status)
+            AuditMaintenance::status(&args.journal, args.local.timeout())
+                .map(|value| projection::status(&value))
         }
         MaintenanceCommand::Custody(args) => {
             AuditMaintenance::custody_status(&args.archives, &args.journal_id, args.local.timeout())
-                .map(projection::custody)
+                .map(|value| projection::custody(&value))
         }
         MaintenanceCommand::Rollover(args) => AuditMaintenance::rollover(
             &args.journal.journal,
@@ -75,7 +76,7 @@ fn maintenance(command: &MaintenanceCommand) -> Result<Value, PlatformError> {
             &args.operation_id,
             args.journal.local.timeout(),
         )
-        .map(projection::rollover),
+        .map(|value| projection::rollover(&value)),
         MaintenanceCommand::Transfer(args) => AuditMaintenance::transfer(
             &args.journal.journal,
             &args.archives,
@@ -85,14 +86,14 @@ fn maintenance(command: &MaintenanceCommand) -> Result<Value, PlatformError> {
             &args.operation_id,
             args.journal.local.timeout(),
         )
-        .map(projection::transfer),
+        .map(|value| projection::transfer(&value)),
     }
 }
 fn archive(command: &ArchiveCommand, tenant: Option<&str>) -> Result<Value, PlatformError> {
     match command {
         ArchiveCommand::Verify(args) => {
             AuditMaintenance::verify_archive(&args.archive, &args.epoch, args.local.timeout())
-                .map(|coverage| json!({"archive":projection::coverage(coverage),"verified":true}))
+                .map(|coverage| json!({"archive":projection::coverage(&coverage),"verified":true}))
         }
         ArchiveCommand::Query(args) => {
             let scope = match args.scope {

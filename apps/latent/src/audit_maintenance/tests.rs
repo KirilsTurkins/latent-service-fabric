@@ -142,6 +142,81 @@ fn roll(root: &Path, archives: &Path, epoch: &str, operation: &str) -> Value {
     assert_eq!(result.data["recovery"]["operationId"], operation);
     result.data
 }
+fn verify(archive: &Path, epoch: &str) -> Outcome {
+    run(&[
+        "audit",
+        "archive",
+        "verify",
+        "--archive",
+        text(archive),
+        "--epoch",
+        epoch,
+        "--local-operator",
+    ])
+}
+fn query(archive: &Path, epoch: &str, tenant: &str, cursor: Option<&str>) -> Outcome {
+    let mut args = vec![
+        "--tenant",
+        tenant,
+        "audit",
+        "archive",
+        "query",
+        "--archive",
+        text(archive),
+        "--epoch",
+        epoch,
+        "--scope",
+        "tenant",
+        "--page-size",
+        "1",
+        "--local-operator",
+    ];
+    if let Some(cursor) = cursor {
+        args.extend(["--page-token", cursor]);
+    }
+    run(&args)
+}
+fn custody(archives: &Path, journal: &str) -> Value {
+    let result = run(&[
+        "audit",
+        "maintenance",
+        "custody",
+        "--archives",
+        text(archives),
+        "--journal-id",
+        journal,
+        "--local-operator",
+    ]);
+    assert_eq!(result.category, Category::Success);
+    result.data
+}
+fn verify_archive_pages(archives: &Path, first_epoch: &str, second_epoch: &str) {
+    let archive = archives.join(first_epoch);
+    let verified = verify(&archive, first_epoch);
+    assert_eq!(verified.category, Category::Success);
+    assert_eq!(verified.data["archive"]["records"], "2");
+    let page = query(&archive, first_epoch, "test", None);
+    assert_eq!(page.category, Category::Success);
+    assert_eq!(page.data["records"][0]["sequence"], "1");
+    let cursor = page.data["nextPageToken"].as_str().unwrap();
+    let second_page = query(&archive, first_epoch, "test", Some(cursor));
+    assert_eq!(second_page.category, Category::Success);
+    assert_eq!(second_page.data["records"][0]["sequence"], "2");
+    assert!(second_page.data["records"]
+        .to_string()
+        .contains("18446744073709551615"));
+    assert!(second_page.data["nextPageToken"].is_null());
+    let wrong_epoch = query(
+        &archives.join(second_epoch),
+        second_epoch,
+        "test",
+        Some(cursor),
+    );
+    assert_eq!(wrong_epoch.category, Category::PlatformError);
+    let foreign_scope = query(&archive, first_epoch, "another", None);
+    assert_eq!(foreign_scope.category, Category::Success);
+    assert_eq!(foreign_scope.data["records"], json!([]));
+}
 
 #[test]
 fn native_operator_workflow_rolls_multiple_epochs_queries_and_transfers_exact_history() {
@@ -163,110 +238,10 @@ fn native_operator_workflow_rolls_multiple_epochs_queries_and_transfers_exact_hi
     let second_epoch = status(&root)["epoch"].as_str().unwrap().to_owned();
     let second = roll(&root, &archives, &second_epoch, &"2".repeat(32));
     assert_eq!(second["receipt"]["nextSequence"], "5");
-    let archive = archives.join(first_epoch);
-    let verified = run(&[
-        "audit",
-        "archive",
-        "verify",
-        "--archive",
-        text(&archive),
-        "--epoch",
-        first_epoch,
-        "--local-operator",
-    ]);
-    assert_eq!(verified.category, Category::Success);
-    assert_eq!(verified.data["archive"]["records"], "2");
-    let page = run(&[
-        "--tenant",
-        "test",
-        "audit",
-        "archive",
-        "query",
-        "--archive",
-        text(&archive),
-        "--epoch",
-        first_epoch,
-        "--scope",
-        "tenant",
-        "--page-size",
-        "1",
-        "--local-operator",
-    ]);
-    assert_eq!(page.category, Category::Success);
-    assert_eq!(page.data["records"][0]["sequence"], "1");
-    let cursor = page.data["nextPageToken"].as_str().unwrap();
-    let second_page = run(&[
-        "--tenant",
-        "test",
-        "audit",
-        "archive",
-        "query",
-        "--archive",
-        text(&archive),
-        "--epoch",
-        first_epoch,
-        "--scope",
-        "tenant",
-        "--page-size",
-        "1",
-        "--page-token",
-        cursor,
-        "--local-operator",
-    ]);
-    assert_eq!(second_page.category, Category::Success);
-    assert_eq!(second_page.data["records"][0]["sequence"], "2");
-    assert!(second_page.data["records"]
-        .to_string()
-        .contains("18446744073709551615"));
-    assert!(second_page.data["nextPageToken"].is_null());
-    let wrong_epoch = run(&[
-        "--tenant",
-        "test",
-        "audit",
-        "archive",
-        "query",
-        "--archive",
-        text(&archives.join(&second_epoch)),
-        "--epoch",
-        &second_epoch,
-        "--scope",
-        "tenant",
-        "--page-size",
-        "1",
-        "--page-token",
-        cursor,
-        "--local-operator",
-    ]);
-    assert_eq!(wrong_epoch.category, Category::PlatformError);
-    let foreign_scope = run(&[
-        "--tenant",
-        "another",
-        "audit",
-        "archive",
-        "query",
-        "--archive",
-        text(&archive),
-        "--epoch",
-        first_epoch,
-        "--scope",
-        "tenant",
-        "--local-operator",
-    ]);
-    assert_eq!(foreign_scope.category, Category::Success);
-    assert_eq!(foreign_scope.data["records"], json!([]));
-    let custody = run(&[
-        "audit",
-        "maintenance",
-        "custody",
-        "--archives",
-        text(&archives),
-        "--journal-id",
-        first_epoch,
-        "--local-operator",
-    ]);
-    assert_eq!(custody.category, Category::Success);
-    assert_eq!(custody.data["archives"].as_array().unwrap().len(), 2);
-    assert_eq!(custody.data["transferredThrough"], "0");
+    verify_archive_pages(&archives, first_epoch, &second_epoch);
+    let retained = custody(&archives, first_epoch);
+    assert_eq!(retained["archives"].as_array().unwrap().len(), 2);
+    assert_eq!(retained["transferredThrough"], "0");
     let seal = first["receipt"]["archiveSeal"].as_str().unwrap();
     let transfer = run(&[
         "audit",
@@ -288,37 +263,15 @@ fn native_operator_workflow_rolls_multiple_epochs_queries_and_transfers_exact_hi
     ]);
     assert_eq!(transfer.category, Category::Success);
     assert_eq!(transfer.data["receipt"]["transferredThrough"], "2");
-    assert!(!archive.exists());
-    let custody = run(&[
-        "audit",
-        "maintenance",
-        "custody",
-        "--archives",
-        text(&archives),
-        "--journal-id",
-        first_epoch,
-        "--local-operator",
-    ]);
-    assert_eq!(custody.data["archives"].as_array().unwrap().len(), 1);
-    assert_eq!(custody.data["transferredThrough"], "2");
+    assert!(!archives.join(first_epoch).exists());
+    let retained = custody(&archives, first_epoch);
+    assert_eq!(retained["archives"].as_array().unwrap().len(), 1);
+    assert_eq!(retained["transferredThrough"], "2");
     assert_eq!(
-        custody.data["transferredHistoryAvailability"],
+        retained["transferredHistoryAvailability"],
         "not-observed"
     );
-    assert_eq!(
-        run(&[
-            "audit",
-            "archive",
-            "verify",
-            "--archive",
-            text(&destination),
-            "--epoch",
-            first_epoch,
-            "--local-operator"
-        ])
-        .category,
-        Category::Success
-    );
+    assert_eq!(verify(&destination, first_epoch).category, Category::Success);
     assert_eq!(status(&root)["nextSequence"], "5");
 }
 

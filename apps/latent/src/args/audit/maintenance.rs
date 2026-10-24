@@ -125,7 +125,7 @@ pub struct ArchiveQueryArgs {
     pub to_unix_millis: Option<u64>,
     #[arg(long, default_value_t = 128, value_parser = clap::value_parser!(u32).range(1..=128))]
     pub page_size: u32,
-    #[arg(long, default_value_t = 65536, value_parser = clap::value_parser!(u32).range(32768..=262144))]
+    #[arg(long, default_value_t = 65_536, value_parser = clap::value_parser!(u32).range(32_768..=262_144))]
     pub maximum_bytes: u32,
     #[arg(long)]
     pub page_token: Option<String>,
@@ -199,7 +199,7 @@ impl ArchiveCommand {
                     .as_ref()
                     .is_some_and(|token| token.is_empty() || token.len() > 256 || !token.is_ascii())
                     || !(1..=128).contains(&args.page_size)
-                    || !(32768..=262144).contains(&args.maximum_bytes)
+                    || !(32_768..=262_144).contains(&args.maximum_bytes)
                     || args
                         .from_unix_millis
                         .zip(args.to_unix_millis)

@@ -5,7 +5,7 @@ use latent_audit::{
 use latent_core::{PlatformError, PlatformErrorCode};
 use serde_json::{json, Value};
 
-pub(super) fn status(value: AuditJournalStatus) -> Value {
+pub(super) fn status(value: &AuditJournalStatus) -> Value {
     json!({"epoch":value.epoch,"journalId":value.journal_id,
         "retainedFloor":value.retained_floor.to_string(),"highWatermark":value.high_watermark.to_string(),
         "nextSequence":value.next_sequence.to_string(),"headDigest":value.head_digest,
@@ -15,7 +15,7 @@ pub(super) fn status(value: AuditJournalStatus) -> Value {
         "advisory":true,"nextStep":if value.pending_attempts == 0 {"plan-stopped-node-rollover-before-headroom-exhaustion"}
             else {"restart-original-node-and-reconcile-original-operation-without-replay"}})
 }
-pub(super) fn coverage(value: AuditArchiveCoverage) -> Value {
+pub(super) fn coverage(value: &AuditArchiveCoverage) -> Value {
     json!({"journalId":value.journal_id,"epoch":value.epoch,"successorEpoch":value.successor_epoch,
         "operationId":value.operation_id,"retainedFloor":value.first_sequence.to_string(),
         "highWatermark":value.high_watermark.to_string(),"records":value.records.to_string(),
@@ -24,20 +24,20 @@ pub(super) fn coverage(value: AuditArchiveCoverage) -> Value {
         "unknownOutcomes":value.unknown_outcomes.to_string(),"previousSessionLossUnknown":value.previous_session_loss_unknown,
         "historyComplete":false,"coverage":"exactly-one-sealed-epoch"})
 }
-pub(super) fn custody(value: AuditCustodyStatus) -> Value {
+pub(super) fn custody(value: &AuditCustodyStatus) -> Value {
     json!({"journalId":value.journal_id,"custodyId":value.custody_id,
-        "archives":value.archives.into_iter().map(coverage).collect::<Vec<_>>(),
+        "archives":value.archives.iter().map(coverage).collect::<Vec<_>>(),
         "transferredThrough":value.transferred_through.to_string(),"transferredHeadSeal":value.transferred_head,
         "transferredHistoryAvailability":"not-observed","maximumArchives":"4","maximumArchiveRecordBytes":"1073741824",
         "nextStep":"transfer-oldest-archive-before-local-custody-exhaustion"})
 }
-pub(super) fn rollover(value: AuditRolloverReceipt) -> Value {
+pub(super) fn rollover(value: &AuditRolloverReceipt) -> Value {
     json!({"receipt":{"operationId":value.operation_id,"previousEpoch":value.previous_epoch,"epoch":value.epoch,
         "nextSequence":value.next_sequence.to_string(),"archiveSeal":value.archive_seal},
         "durability":"confirmed","alreadyCompleted":value.already_completed,
         "nextStep":"restart-with-audit-enabled-and-recover-original-application-operations-without-replay"})
 }
-pub(super) fn transfer(value: AuditTransferReceipt) -> Value {
+pub(super) fn transfer(value: &AuditTransferReceipt) -> Value {
     json!({"receipt":{"operationId":value.operation_id,"epoch":value.epoch,"archiveSeal":value.archive_seal,
         "transferredThrough":value.transferred_through.to_string(),"destinationDigest":value.destination_digest},
         "durability":"confirmed","externalCustodyResponsibility":"operator",
@@ -56,7 +56,7 @@ pub(super) fn page(value: AuditArchivePage) -> Result<Value, PlatformError> {
         AuditPageStop::ByteLimit => "byte-limit",
         AuditPageStop::ScanLimit => "scan-limit",
     };
-    Ok(json!({"archive":coverage(value.archive),"records":records,
+    Ok(json!({"archive":coverage(&value.archive),"records":records,
         "recordFormat":"latent.audit.stored-record.decimal-counters.v1",
         "coverage":{"epoch":value.coverage.epoch,"retainedFloor":value.coverage.retained_floor.to_string(),
             "highWatermark":value.coverage.high_watermark.to_string(),"scanned":value.coverage.scanned.to_string(),
