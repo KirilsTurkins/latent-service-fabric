@@ -91,8 +91,8 @@
     },
     "structural-engine-profile": {
       "path": "crates/latent-wasmtime/src/config/profile.rs",
-      "digest": "sha256:72a63962813b7efb2f8d77766633278bd4dc615e0084bdf4e33daa4702016a67",
-      "commit": "fe7575f80f315cbddae27354af31a9e05c7f2de8"
+      "digest": "sha256:69c27d7b0e2929bf7d2712fd5c426c42beb09663fa75f716cd57407bbb1f07a3",
+      "commit": "cabb5a4eb1df038e2b378aeb11a950be0c37e358"
     },
     "ready-inspection": {
       "path": "crates/latent-wasmtime/src/backend/readiness/ownership.rs",
