@@ -338,3 +338,18 @@ six case oracles and every runtime limit remain unchanged. It changes no
 product scheduling, ownership, GC or refund behavior. This source change has
 not executed and does not qualify arbitrary nested npm Promise costs under
 the minimum Task16 profile.
+
+
+The next combined-source attempt selects the already successful late-backing
+prerequisite source `6d834e502beea33fbae9347fbaf23ff8c37223b3`, run
+`40077087832`, job `120822677716`, artifact `12553639081` (196,495,650 bytes,
+SHA256 `b009b2ae4b62fd74ecfad43dadfffb51301d94220e090216201d39d7468afd77`).
+The published shared reader and its one previously validated62-file cache
+retain that exact producer's original receipts and products. All41 SDK inputs
+must match the same source under unchanged normal engine/splicer validators.
+Its fresh native prerequisite success is distinct from signed borrow
+qualification, which is still pending. Earlier `be356` failures above retain
+their original source attribution; no older envelope is rebound. The host
+source also incorporates the reviewed Tokio safety update before the next
+signed build. No engine or library rebuild, owner refund or limit increase
+is part of this consumer attempt.

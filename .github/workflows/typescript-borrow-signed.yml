@@ -71,7 +71,7 @@ jobs:
           sudo apt-get install --yes bubblewrap
           sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
       - name: Fetch only the eventual immutable successful producer source
-        run: git fetch --no-tags --depth=1 origin be356d28f93267dc34078ce137d49ed28c28bf47
+        run: git fetch --no-tags --depth=1 origin 6d834e502beea33fbae9347fbaf23ff8c37223b3
       - name: Install the normal locked public compiler and pinned parser
         run: python3 tools/typescript_capsule.py install-tools "$RUNNER_TEMP/typescript-borrow-signed-tools"
       - name: Authenticate fresh prerequisites compile once and execute signed cases

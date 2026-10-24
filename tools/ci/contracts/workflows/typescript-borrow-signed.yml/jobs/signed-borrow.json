@@ -51,7 +51,7 @@
       },
       {
         "name": "Fetch only the eventual immutable successful producer source",
-        "run": "git fetch --no-tags --depth=1 origin be356d28f93267dc34078ce137d49ed28c28bf47"
+        "run": "git fetch --no-tags --depth=1 origin 6d834e502beea33fbae9347fbaf23ff8c37223b3"
       },
       {
         "name": "Install the normal locked public compiler and pinned parser",
@@ -80,7 +80,7 @@
   },
   "jobId": "signed-borrow",
   "kind": "job",
-  "reviewReason": "Reviewed immutable prerequisite source fetch update: 9d native prerequisites passed, while actual component consumers failed; replace only its source pin with actual successful correctedbe356. All signed cases, commands, authority and finite bounds remain intact.",
+  "reviewReason": "Reviewed exact late-backing6d immutable producer source fetch and shared reader; all signed cases, commands, authority and finite bounds retained.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-borrow-signed.yml"
 }
