@@ -1,0 +1,88 @@
+{
+  "cases": [
+    "NativeConstructorKernelJoin.test_actual_reader_accepts_independent_uart_orders_without_inventing_close_race",
+    "NativeConstructorKernelJoin.test_cargo_product_requires_the_owned_example_source_and_successful_static_profile",
+    "NativeConstructorKernelJoin.test_fixed_child_partition_preserves_original_elf_grammar_and_aggregate_budget",
+    "NativeConstructorKernelJoin.test_fixed_cpio_preserves_console_entries_and_contains_exact_two_native_programs",
+    "NativeConstructorKernelJoin.test_fixed_successful_kernel_origin_cannot_select_failed_expired_or_changed_artifacts",
+    "NativeConstructorKernelJoin.test_success_words_or_zero_counters_never_replace_original_retention_and_kernel_return"
+  ],
+  "guards": {
+    "NativeConstructorKernelJoin.test_actual_reader_accepts_independent_uart_orders_without_inventing_close_race": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:87f59926036a63af0c3772afe7ebeac3ee87441badc411f5eb3b59570920c814",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "NativeConstructorKernelJoin.test_cargo_product_requires_the_owned_example_source_and_successful_static_profile": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:87f59926036a63af0c3772afe7ebeac3ee87441badc411f5eb3b59570920c814",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "NativeConstructorKernelJoin.test_fixed_child_partition_preserves_original_elf_grammar_and_aggregate_budget": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:87f59926036a63af0c3772afe7ebeac3ee87441badc411f5eb3b59570920c814",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "NativeConstructorKernelJoin.test_fixed_cpio_preserves_console_entries_and_contains_exact_two_native_programs": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:87f59926036a63af0c3772afe7ebeac3ee87441badc411f5eb3b59570920c814",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "NativeConstructorKernelJoin.test_fixed_successful_kernel_origin_cannot_select_failed_expired_or_changed_artifacts": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:87f59926036a63af0c3772afe7ebeac3ee87441badc411f5eb3b59570920c814",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "NativeConstructorKernelJoin.test_success_words_or_zero_counters_never_replace_original_retention_and_kernel_return": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:87f59926036a63af0c3772afe7ebeac3ee87441badc411f5eb3b59570920c814",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_kernel_native_constructor_vm.py",
+  "reviewReason": "Add one fixed-child ELF grammar inverse and real static/refusal/aggregate controls; preserve all five prior cases, decorators, skips and default PID1 guards. The new child has an explicit 3 MiB file partition under unchanged whole CPIO and added aggregate load bounds.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
