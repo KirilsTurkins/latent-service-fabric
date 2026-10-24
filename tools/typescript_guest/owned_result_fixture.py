@@ -20,7 +20,7 @@ interface provider {
   take-chunk: async func(mode:u32)->result<option<chunk>,u32>;
   nested: async func(mode:u32)->result<list<option<connection>>,u32>;
 }
-interface api {run:func(which:u32)->bool;}
+interface api {run:async func(which:u32)->bool;}
 world capsule {import provider;import latent:runtime/activation@0.1.0;import latent:clock/monotonic@0.1.0;import latent:clock/wall@0.1.0;export api;}
 '''
 APPLICATION = '''import {start,dispose} from 'tests:owned-result/control@1.0.0';
