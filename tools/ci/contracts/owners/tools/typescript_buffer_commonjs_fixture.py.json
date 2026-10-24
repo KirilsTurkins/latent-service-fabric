@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/typescript_buffer_commonjs_fixture.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Add closed captured probe/source/profile and exact original limit refusal to published CommonJS qualification",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "75e28e26533d3b5239882fb6baa2f864017551224dc2c2220b90dbe93e3fc781"
+}

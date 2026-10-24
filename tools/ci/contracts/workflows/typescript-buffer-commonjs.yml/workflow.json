@@ -1,0 +1,38 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "typescript-buffer-commonjs-${{ github.ref }}"
+    },
+    "name": "TypeScript published CommonJS Buffer qualification",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/typescript-buffer-commonjs-20261024"
+        ],
+        "paths": [
+          ".github/workflows/typescript-buffer-commonjs.yml",
+          "tools/qualify_typescript_buffer.py",
+          "tools/qualify_typescript_buffer_commonjs.py",
+          "tools/typescript_buffer_commonjs_fixture.py",
+          "tools/typescript_borrow_retry_inputs.py",
+          "tools/typescript_guest/buffer_profile.py",
+          "tools/typescript_guest/build.py",
+          "sdk/typescript-guest/probes/node-buffer-commonjs/**",
+          "tools/tests/test_typescript_buffer_commonjs.py"
+        ]
+      },
+      "workflow_dispatch": null
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "signed-commonjs-buffer"
+  ],
+  "reviewReason": "Own isolated normal capture, unchanged authenticated compiler/host inputs and six signed published CommonJS cases",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/typescript-buffer-commonjs.yml"
+}
