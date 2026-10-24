@@ -33,6 +33,19 @@ The next source adds only bounded failure diagnostics (fixed stage, numeric
 errno or closed error code/kind) and a ready-rejection snapshot. It preserves
 every original error, permission/actor check, success predicate and limit; the
 constructor cause remains unknown until those actual observations exist.
+The fifth run at `a6931393c093` again linked and booted the same kernel bytes.
+Its new diagnostic was `stage=mint errno=0 kind=PermissionDenied`: the private
+wrapper rejected metadata before issuing the observation ioctl, after genuine
+READY initialization. Exact selected Linux source/configuration explains the
+missing fixture premise: rootfs selects tmpfs, defaults to mode01777, and this
+CPIO contains no root entry. The supervisor had not protected that root before
+the strict wrapper checked it. The next source sets mode0755 on `/` in PID1,
+checks the actual resulting directory type/root uid/mode before any child or
+factory access, and retains all wrapper, device, `/dev`, actor and LSM checks.
+The first existing pure C control additionally refuses writable/sticky root,
+wrong uid and non-directory metadata; all twelve original parser assertions
+remain. This source correction has not yet passed a VM; both failed boots stay
+failed observations, with no authenticated typed native Root-return result.
 The historical image has no observation ioctl and is never relabelled as this
 image. Normal installation remains Unsupported; native backing stays quarantined.
 
