@@ -1,0 +1,311 @@
+{
+  "schemaVersion": "latent.typescript.signed-borrow-public-evidence.v1",
+  "issue": 745,
+  "status": "passed",
+  "scope": "signed-canonical-borrow-release-logical-reference",
+  "qualifiedSource": {
+    "commit": "5b3db73dfcd8b75b8071706fe6205b754fb9e3cd",
+    "tree": "a4d5544223c428214b1e94a7f0eb8c8456c7247c",
+    "branch": "feat/typescript-borrow-release-probe-20261024",
+    "baseBranch": "development"
+  },
+  "owning": {
+    "workflow": ".github/workflows/typescript-borrow-signed.yml",
+    "event": "push",
+    "run": 40085289949,
+    "job": 120846865763,
+    "attempt": 1,
+    "url": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40085289949/job/120846865763",
+    "artifact": 12556494861,
+    "archive": {
+      "bytes": 21073660,
+      "sha256": "sha256:6fbb36b08d4ee7242e29ad97718aa560a99b41218a86b139e08bcd08719fcf55"
+    },
+    "safeCrcMembers": 826,
+    "originalReceipt": {
+      "member": "typescript-borrow-signed/BORROW-SIGNED.json",
+      "bytes": 131030,
+      "sha256": "sha256:9874bde84ecaffb6863fe05b627d8e35cdbe3720acdfb451e8098f871adeb00e"
+    }
+  },
+  "security": {
+    "run": 40085294540,
+    "head": "5b3db73dfcd8b75b8071706fe6205b754fb9e3cd",
+    "conclusion": "success"
+  },
+  "sourceControls": {
+    "testsRun": 5,
+    "skipped": 0,
+    "failures": 0,
+    "errors": 0
+  },
+  "nativeCarrierSourceControls": {
+    "testsRun": 4,
+    "skipped": 0,
+    "failures": 0,
+    "errors": 0
+  },
+  "pinnedParser": {
+    "sha256": "sha256:1cbcbf252a5800e496dc505c706f309a9dd4e1789392e12963c77ae9497ff6f7",
+    "bytes": 232769
+  },
+  "hostedObserverControls": {
+    "numericTestsPassed": 3,
+    "admissionTestsPassed": 2,
+    "observerBytes": 136,
+    "snapshotBytes": 128
+  },
+  "rawEvidence": {
+    "recipeGitBlobsVerified": 153,
+    "zeroExitCommandResultsAndBothChannelHashesVerified": 199,
+    "signedRawRowsExactlyMatchReceipt": true
+  },
+  "normalPrerequisites": {
+    "head": "6d834e502beea33fbae9347fbaf23ff8c37223b3",
+    "run": 40077087832,
+    "job": 120822677716,
+    "engine": {
+      "sha256": "sha256:567bbda2bb31d49833136efed03ef77e06a57f03783b7904c0d50d43f98c069c",
+      "bytes": 10163160
+    },
+    "engineInput": {
+      "sha256": "sha256:db366145b31ee2bd1ba034fdfd60512ff83fa4ddd4a64d4f86c989da941e7dc6",
+      "bytes": 8954
+    },
+    "splicerInputDigest": "sha256:1826ee2dec7dafc3a1e0eb94bb5e49d3a5151eacb20114f76defe6d14f6e81ae",
+    "SDKInputCount": 41,
+    "producerCanonicalQualification": false,
+    "envelopesReissued": false
+  },
+  "composition": {
+    "composedDigest": "sha256:0b52289ec5ddb64f2c89b71cdd32d82d15a00693542fa4f622e863b4d6b791ea",
+    "gateSourceDigest": "sha256:6494ff447b07d69c84a739cd44d2200f5be9d9e0644f777d2de71d71919bb790",
+    "originalCapabilityImports": 1,
+    "rawCompilerProductDigest": "sha256:6112f71ddb2c953f08999c6bc33de7f547a376a9ca9a6862e7ddf1e6cd23463e",
+    "resourceHandleAdoption": false,
+    "signedQualification": "not-inferred-from-source"
+  },
+  "cases": [
+    {
+      "case": "normal-copy-dispose",
+      "consumedOutboundRequests": 1,
+      "kernelRetirementQualified": false,
+      "mode": 3,
+      "plannedNetworkWitDispatches": 5,
+      "productionProviderInstalled": false,
+      "status": "succeeded"
+    },
+    {
+      "case": "logical-cancel-before-borrow-release",
+      "consumedOutboundRequests": 1,
+      "kernelRetirementQualified": false,
+      "mode": 0,
+      "plannedNetworkWitDispatches": 8,
+      "productionProviderInstalled": false,
+      "status": "succeeded"
+    },
+    {
+      "case": "root-trap-with-held-borrow",
+      "consumedOutboundRequests": 2,
+      "kernelRetirementQualified": false,
+      "mode": 1,
+      "plannedNetworkWitDispatches": 8,
+      "productionProviderInstalled": false,
+      "status": "intended-platform-failure"
+    },
+    {
+      "case": "fresh-after-trap",
+      "consumedOutboundRequests": 1,
+      "kernelRetirementQualified": false,
+      "mode": 3,
+      "plannedNetworkWitDispatches": 5,
+      "productionProviderInstalled": false,
+      "status": "succeeded"
+    },
+    {
+      "case": "root-deadline-with-held-borrow",
+      "consumedOutboundRequests": 2,
+      "kernelRetirementQualified": false,
+      "mode": 2,
+      "plannedNetworkWitDispatches": 8,
+      "productionProviderInstalled": false,
+      "status": "intended-platform-failure"
+    },
+    {
+      "case": "fresh-after-deadline",
+      "consumedOutboundRequests": 1,
+      "kernelRetirementQualified": false,
+      "mode": 3,
+      "plannedNetworkWitDispatches": 5,
+      "productionProviderInstalled": false,
+      "status": "succeeded"
+    }
+  ],
+  "ownership": {
+    "actualSampleCount": 18,
+    "allSixRootReceiptSamplesDrained": true,
+    "sameOriginalConnectionLiveAtBorrowAck": true,
+    "postAckPermitReadSeparatelyAdmitted": true,
+    "actualHeldSamples": [
+      {
+        "activeActivations": 1,
+        "io": {
+          "buffers": 2,
+          "calls": 1,
+          "metadataBytes": 6144,
+          "queued": 0,
+          "resultBytes": 0,
+          "running": 1,
+          "stagedBytes": 32,
+          "streams": 1
+        },
+        "kernelRetirementQualified": false,
+        "liveInstances": 1,
+        "liveStores": 1,
+        "poolConnections": 1,
+        "poolRunningRequests": 1,
+        "queuedActivations": 0,
+        "stage": "held-before-release",
+        "stream": {
+          "acceptedWriteBytes": 4,
+          "connections": 1,
+          "deliveredReadBytes": 0,
+          "inputBudgetBytes": 4,
+          "owners": 1,
+          "pendingOperations": 1,
+          "retainedChunks": 1,
+          "retired": false
+        }
+      },
+      {
+        "activeActivations": 1,
+        "io": {
+          "buffers": 2,
+          "calls": 1,
+          "metadataBytes": 6144,
+          "queued": 0,
+          "resultBytes": 0,
+          "running": 1,
+          "stagedBytes": 2,
+          "streams": 1
+        },
+        "kernelRetirementQualified": false,
+        "liveInstances": 1,
+        "liveStores": 1,
+        "poolConnections": 1,
+        "poolRunningRequests": 1,
+        "queuedActivations": 0,
+        "stage": "ack-original-live;new-permit-read-separately-admitted",
+        "stream": {
+          "acceptedWriteBytes": 12,
+          "connections": 1,
+          "deliveredReadBytes": 1,
+          "inputBudgetBytes": 12,
+          "owners": 1,
+          "pendingOperations": 1,
+          "retainedChunks": 1,
+          "retired": false
+        }
+      },
+      {
+        "activeActivations": 1,
+        "io": {
+          "buffers": 4,
+          "calls": 2,
+          "metadataBytes": 12288,
+          "queued": 0,
+          "resultBytes": 0,
+          "running": 2,
+          "stagedBytes": 34,
+          "streams": 2
+        },
+        "kernelRetirementQualified": false,
+        "liveInstances": 1,
+        "liveStores": 1,
+        "poolConnections": 2,
+        "poolRunningRequests": 2,
+        "queuedActivations": 0,
+        "stage": "held-before-release",
+        "stream": {
+          "acceptedWriteBytes": 4,
+          "connections": 2,
+          "deliveredReadBytes": 0,
+          "inputBudgetBytes": 4,
+          "owners": 2,
+          "pendingOperations": 2,
+          "retainedChunks": 2,
+          "retired": false
+        }
+      },
+      {
+        "activeActivations": 1,
+        "io": {
+          "buffers": 4,
+          "calls": 2,
+          "metadataBytes": 12288,
+          "queued": 0,
+          "resultBytes": 0,
+          "running": 2,
+          "stagedBytes": 34,
+          "streams": 2
+        },
+        "kernelRetirementQualified": false,
+        "liveInstances": 1,
+        "liveStores": 1,
+        "poolConnections": 2,
+        "poolRunningRequests": 2,
+        "queuedActivations": 0,
+        "stage": "held-before-release",
+        "stream": {
+          "acceptedWriteBytes": 4,
+          "connections": 2,
+          "deliveredReadBytes": 0,
+          "inputBudgetBytes": 4,
+          "owners": 2,
+          "pendingOperations": 2,
+          "retainedChunks": 2,
+          "retired": false
+        }
+      }
+    ]
+  },
+  "measuredSeconds": {
+    "hostBuild": 216.91183015000001,
+    "signedCases": 48.36719878499997
+  },
+  "limits": {
+    "overallSeconds": 4500,
+    "guestCompileSeconds": 900,
+    "hostBuildSeconds": 1800,
+    "signedTestSeconds": 600,
+    "rustJobs": 2,
+    "outboundRequests": 8,
+    "streamChunks": 4
+  },
+  "admittedFuelPerActivation": 10000000000,
+  "projectTemplateFuel": 1000000000,
+  "fuelThresholdQualified": false,
+  "buildCounts": {
+    "guestComponents": 1,
+    "engines": 0,
+    "libraries": 0
+  },
+  "qualificationBoundaries": {
+    "signedCryptographicAdmissionExecuted": true,
+    "logicalReferenceProvider": true,
+    "sameGeneratedNamespaceSiblingWriteProgressExecuted": true,
+    "lateOwnedBackingTreeCoverageInferredFromThisProgramme": false,
+    "standardNodeSocketModuleQualified": false,
+    "arbitraryNestedNpmPromiseCostQualified": false,
+    "kernelPhysicalRetirementQualified": false,
+    "wholeCostQualified": false,
+    "productionEnabled": false,
+    "wholeIssueCompleted": false
+  },
+  "retainedQuotaFailure": {
+    "run": 40081867123,
+    "head": "90d14ff97e2fa59d2eabb1e66d8acc3bf70a08ea",
+    "artifact": 12555702267,
+    "reason": "Original Task16 ceiling correctly refused fixture write; five redundant fixture-only async send layers subsequently removed without changing runtime admission or any ceiling."
+  }
+}

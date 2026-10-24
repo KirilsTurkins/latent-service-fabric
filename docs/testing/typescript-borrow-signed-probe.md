@@ -1,10 +1,16 @@
-# TypeScript signed borrow-release probe: qualification in progress
+# TypeScript signed borrow-release probe: six logical-reference cases passed
 
-This source packet adds a closed compiler diagnostic, finite canonical read
-wrapper, real component composer and signed host harness. Guest/host compilation
-and composition have executed, but the first signed case remains failed. It is
-partial #745 work, with no Node socket, whole-cost,
-kernel-retirement or production-enablement claim.
+[Run40085289949/job120846865763](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40085289949/job/120846865763)
+passed all six actual signed activations at source `5b3db73dfcd8`. The fixed
+programme compiled one fresh component, reused the qualified normal6d engine
+and splicer, and executed normal read/copy/dispose, cancellation before borrow
+release, a held-read root trap/deadline and fresh admission after both failures.
+The original Task16 and all other limits remain unchanged. Exact-head Security
+also passed. The [public evidence](typescript-borrow-signed-evidence.json) binds
+the original receipt, raw outcomes, source and artifact identities. This is
+partial #745 work; it does not qualify a standard Node socket module, arbitrary
+nested npm Promise costs, whole cost, kernel physical retirement or production
+enablement. All earlier failed attempts below remain failed.
 
 The internal `Compiler.compile(..., diagnostic_profile=...)` selector accepts
 only the exact maintained source/WIT graph and import runtime. It rejects extra
@@ -32,7 +38,7 @@ and waitable set, and invoke canonical task.cancel. Phase3 or borrow release
 never certifies provider IoCall/IoTransfer retirement. The fixture checks the
 actual public `activation-runtime-import-cancelled` rejection without masking
 finally/finish errors. It must use the new OWN-result engine with the actual
-retired-finish/cancel-race fixes after that engine's native prerequisite campaign succeeds.
+retired-finish/cancel-race fixes, now included in the qualified6d prerequisites.
 The historical #1399 engine is explicitly refused as a pass candidate.
 
 The finite signed harness has four semantic cases and fresh successful
@@ -68,16 +74,24 @@ including chunk-bytes and consuming close, fits the original eight requests;
 no quota is raised. A deadline before the actual post-control `held` barrier is
 failure. The original root deadline is never restarted. The provider source has
 separate read/write directions and does not hold its connection mutex across
-readiness waits; actual hosted duplex progress remains unexecuted.
+readiness waits; this programme executed real same-generated-namespace duplex
+progress under its original peer barriers.
 
-At post-ack sampling the original connection/socket and its admitted IoCall and
-IoTransfer must remain live until consuming close. The extra one-byte permit
+At post-ack sampling the original connection/socket remains live until
+consuming close. Its actual IoCall/IoTransfer samples include the separately
+admitted permit read; borrow acknowledgement does not infer retirement of the
+cancelled child or authorize a physical-owner refund. The extra one-byte permit
 read has its own borrow/buffer reservations and is never attributed to the
 cancelled child. Actual counts are logged. Root failure samples either retained
 owners or actual retirement; all actual peer sockets must close and all shared
 owners drain before the next fresh activation. The logical reference provider
 cannot certify kernel physical retirement. Raw future typed-result cleanup
 records must also be retained by the actual engine campaign.
+
+## Retained development and failure history
+
+The following records preserve the source-stage state and failed attempts
+before the successful combined-source run described above.
 
 Five host-only profile controls and four input-refusal controls pass across the retained focused runs. Existing rustfmt
 parsed the two new Rust files; this is not Rust typechecking or signed evidence.
@@ -353,3 +367,25 @@ their original source attribution; no older envelope is rebound. The host
 source also incorporates the reviewed Tokio safety update before the next
 signed build. No engine or library rebuild, owner refund or limit increase
 is part of this consumer attempt.
+
+
+The combined-source run `40085289949` completed all six unchanged signed-case
+oracles. Its raw result channels match the retained receipt: normal and
+cancellation succeeded; the intentional integer-division trap and original
+root deadline occurred only after the held-read barriers; both fresh
+activations succeeded. Eighteen owner samples include a live original
+connection/socket at post-ack sampling and separately admitted permit-read
+owners. All six actual root-receipt samples show shared stream/I/O owners,
+stores, instances, pool requests and activations drained before reuse.
+This logical-reference observation does not certify kernel retirement.
+
+The original five profile controls and four pinned-parser carrier controls
+passed without skips, as did three numeric-observer and two admission-observer
+hosted tests. Host build took216.912 seconds and signed cases48.367 seconds;
+the programme built one component and zero engines/libraries. Authentication
+verified153 exact executed Git recipe blobs and199 zero-exit command result
+records with both raw output-channel hashes. The official successful artifact
+`12556494861` contains826 CRC-verified safe entries,21,073,660 compressed bytes,
+SHA256 `6fbb36b08d4ee7242e29ad97718aa560a99b41218a86b139e08bcd08719fcf55`.
+The5b source includes the reviewed Tokio safety patch. No previous failure or
+native-only prerequisite receipt is relabelled as a signed pass.
