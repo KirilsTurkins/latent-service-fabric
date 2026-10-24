@@ -541,15 +541,17 @@
     "timer": 2,
     "result": 2,
     "native": 2,
-    "cpuFuel": 1000000000,
+    "cpuFuel": 10000000000,
     "memoryBytes": 67108864,
-    "changed": false
+    "changed": false,
+    "fuelScope": "Original in-process Go fixture admission/runtime ceiling: 10 billion; strict protocol reader separately required observed consumption <=1 billion."
   },
   "limitations": [
     "The actual OS accepted full chunks in this run; no deliberately forced short OS write is claimed.",
     "The actual quota refusal retained may-have-applied=false and Close succeeded; other control-reader combinations were not actual runtime outcomes.",
     "Reported effectCount=0 does not mean zero TCP wire effects; each peer independently received the exact reported prefix.",
     "User-space activation/provider retirement is not a kernel final-free certificate.",
-    "Tool and executable digests are recorded observations; native executable bytes were not retained in the artifact."
+    "Tool and executable digests are recorded observations; native executable bytes were not retained in the artifact.",
+    "Fuel-label correction only: the original Go fixture admitted 10 billion fuel, while the strict reader accepted only observations up to 1 billion. Maximum recorded consumption was115401237. Raw qualification, rows and source identities are unchanged; no campaign was rerun."
   ]
 }
