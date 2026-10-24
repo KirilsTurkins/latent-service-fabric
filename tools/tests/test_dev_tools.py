@@ -832,6 +832,28 @@ if sys.argv[2]=='dispatch':
  else:raise AssertionError('original scenario admission fence missing')
 for name in ('tools.guest_compatibility_outcomes','tools.guest_compatibility','tools.guest_compatibility_context','tools.guest_runtime_receipts'):
  importlib.import_module(name)
+from tools import guest_compatibility as compatibility,guest_compatibility_context as context,guest_compatibility_outcomes as outcomes
+from tools.dev_workflow.common import digest,encode,HOST_ABI
+if sys.platform=='win32':
+ # This is a Linux helper: its Windows anchor owner is intentionally absent.
+ # Only fixture file reads use the host path here; Linux exercises the real owner.
+ from tools.dev_workflow import paths
+ def fixture_read(root,name,maximum=262144):
+  raw=(root/name).read_bytes();assert 0<len(raw)<=maximum;return raw
+ paths.read=fixture_read
+for language in compatibility.LANGUAGES:
+ source=pathlib.Path.cwd()/language;output=source/'build';output.mkdir(parents=True)
+ inputs=encode({});(output/'source-inputs.json').write_bytes(inputs)
+ report=compatibility.report(language,digest(inputs),digest(b'component'),HOST_ABI,[],[])
+ selected=context.create(report,[],{'state':'absent'})
+ (output/'compatibility-report.json').write_bytes(encode(report))
+ (output/'compatibility-context.json').write_bytes(encode(selected))
+ captured=outcomes.from_build(source,{'artifacts':{'component':'build/component.wasm'}},
+  {'source':digest(b'frontend'),'artifacts':{'component':report['componentDigest']}})
+ assert captured.context_state=='observed',language
+ assert captured.context==selected,language
+for name in ('tools.guest_compatibility_context_build','tools.guest_emitted_code','tools.typescript_guest.buffer_profile'):
+ importlib.import_module(name)
 for name,loaded in tuple(sys.modules.items()):
  if name.startswith('tools.') and getattr(loaded,'__file__',None):
   assert str(pathlib.Path(loaded.__file__)).startswith(str(archive)),name
@@ -855,14 +877,17 @@ print('real-helper-runtime-imports-owned')
 
     def test_missing_captured_outcome_module_cannot_be_imported_from_checkout(self):
         import zipfile
-        root, helper = self.archive(); incomplete = root / 'incomplete.pyz'
-        with zipfile.ZipFile(helper) as source, zipfile.ZipFile(incomplete, 'x') as target:
-            for row in source.infolist():
-                if row.filename != 'tools/guest_compatibility_outcomes.py':
-                    target.writestr(row, source.read(row.filename))
-        result = self.probe(root, incomplete)
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn(b'guest_compatibility_outcomes', result.stderr)
+        for missing in ('guest_compatibility_outcomes', 'guest_compatibility_context_build',
+                        'guest_emitted_code', 'typescript_guest/buffer_profile'):
+            with self.subTest(missing=missing):
+                root, helper = self.archive(); incomplete = root / 'incomplete.pyz'
+                with zipfile.ZipFile(helper) as source, zipfile.ZipFile(incomplete, 'x') as target:
+                    for row in source.infolist():
+                        if row.filename != 'tools/' + missing + '.py':
+                            target.writestr(row, source.read(row.filename))
+                result = self.probe(root, incomplete)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(missing.split('/')[-1].encode(), result.stderr)
 
 
 if __name__ == "__main__":
