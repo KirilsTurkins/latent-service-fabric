@@ -1,0 +1,101 @@
+{
+  "cases": [
+    "JavaPublicWinEH.test_actual_owned_pipe_collector_and_abort_cleanup",
+    "JavaPublicWinEH.test_admission_and_bounded_capture_failures_preserve_original_exception",
+    "JavaPublicWinEH.test_changed_real_materials_or_command_receipt_refuse_before_execution",
+    "JavaPublicWinEH.test_real_admission_replay_uses_original_argv_and_separate_output_only",
+    "JavaPublicWinEH.test_real_hosted_context_guards_and_named_source_identities",
+    "JavaPublicWinEH.test_sealed_ticket_checks_actual_files_and_rejects_retargeting",
+    "JavaPublicWinEH.test_synthetic_pinned_print_text_is_counted_and_unknown_formats_refuse"
+  ],
+  "guards": {
+    "JavaPublicWinEH.test_synthetic_pinned_print_text_is_counted_and_unknown_formats_refuse": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:586698c104cbc786e35c1bd7bee2ea8d87beadfbbd5d7b2736aa36c46deb9d23",
+        "class:setup-sha256:7ab166febccc0c79d7d6088a8f178d325d7ad7d035d8781cfd12f76242b0558c"
+      ]
+    },
+    "JavaPublicWinEH.test_real_hosted_context_guards_and_named_source_identities": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:586698c104cbc786e35c1bd7bee2ea8d87beadfbbd5d7b2736aa36c46deb9d23",
+        "class:setup-sha256:7ab166febccc0c79d7d6088a8f178d325d7ad7d035d8781cfd12f76242b0558c"
+      ]
+    },
+    "JavaPublicWinEH.test_real_admission_replay_uses_original_argv_and_separate_output_only": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:586698c104cbc786e35c1bd7bee2ea8d87beadfbbd5d7b2736aa36c46deb9d23",
+        "class:setup-sha256:7ab166febccc0c79d7d6088a8f178d325d7ad7d035d8781cfd12f76242b0558c"
+      ]
+    },
+    "JavaPublicWinEH.test_changed_real_materials_or_command_receipt_refuse_before_execution": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:586698c104cbc786e35c1bd7bee2ea8d87beadfbbd5d7b2736aa36c46deb9d23",
+        "class:setup-sha256:7ab166febccc0c79d7d6088a8f178d325d7ad7d035d8781cfd12f76242b0558c"
+      ]
+    },
+    "JavaPublicWinEH.test_sealed_ticket_checks_actual_files_and_rejects_retargeting": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:586698c104cbc786e35c1bd7bee2ea8d87beadfbbd5d7b2736aa36c46deb9d23",
+        "class:setup-sha256:7ab166febccc0c79d7d6088a8f178d325d7ad7d035d8781cfd12f76242b0558c"
+      ]
+    },
+    "JavaPublicWinEH.test_actual_owned_pipe_collector_and_abort_cleanup": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:586698c104cbc786e35c1bd7bee2ea8d87beadfbbd5d7b2736aa36c46deb9d23",
+        "class:setup-sha256:7ab166febccc0c79d7d6088a8f178d325d7ad7d035d8781cfd12f76242b0558c"
+      ]
+    },
+    "JavaPublicWinEH.test_admission_and_bounded_capture_failures_preserve_original_exception": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:586698c104cbc786e35c1bd7bee2ea8d87beadfbbd5d7b2736aa36c46deb9d23",
+        "class:setup-sha256:7ab166febccc0c79d7d6088a8f178d325d7ad7d035d8781cfd12f76242b0558c"
+      ]
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_public_wineh.py",
+  "reviewReason": "Preserve original five cases and every skip/decorator/base guard; reviewed fixture/import helpers now exercise sealed tickets and count-only pipes, adding two actual file/owned-process controls without compiler execution.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

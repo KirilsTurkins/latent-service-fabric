@@ -3,8 +3,8 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "if": "github.ref_name == 'feat/kernel-native-constructor-vm-20261024'",
-    "name": "Actual Rust constructor caller in the qualified isolated kernel",
+    "if": "github.ref_name == 'feat/kernel-native-constructor-vm-20261024' || github.ref_name == 'feat/kernel-native-close-20261024'",
+    "name": "Actual native close observation in the qualified isolated kernel",
     "permissions": {
       "actions": "read",
       "contents": "read"
@@ -68,7 +68,7 @@
   },
   "jobId": "native-kernel-vm",
   "kind": "job",
-  "reviewReason": "Retain only a bounded nonexecutable unadmitted native ELF on pre-VM size refusal; existing command, compiler, image and VM bounds and all source controls remain unchanged.",
+  "reviewReason": "Preserve prior owner commands and exact case obligations; require the fixed CLOSE observation, held receipt charge and original native/quarantine boundaries on closed qualification branches. Add no production gate, refund or ignored case.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/stream-native-factory-owner.yml"
 }

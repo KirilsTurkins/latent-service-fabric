@@ -3,6 +3,7 @@ import argparse
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import stat
 import sys
@@ -11,15 +12,17 @@ import time
 if __package__ in (None, ''):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from tools import ci_rust_artifacts as artifacts
+from tools import ci_suite_inventory as registry
 from tools import host_stream_kernel_native_vm as native
 from tools import host_stream_kernel_native_vm_inputs as inputs
 from tools import host_stream_kernel_vm_image as image
+from tools import qualify_host_stream_native as native_controls
 from tools.build_observation import build_environment
 from tools.qualify_go_network_runtime import source_inputs as original_inputs
 from tools.rust_capsule_build import Commands
 from tools.rust_capsule_project import ROOT, fresh, read_file, write_json
 
-BRANCH = 'feat/kernel-native-constructor-vm-20261024'
+BRANCHES = ('feat/kernel-native-constructor-vm-20261024','feat/kernel-native-close-20261024')
 WORKFLOW = '.github/workflows/stream-native-factory-owner.yml'
 TARGET = 'x86_64-unknown-linux-gnu'
 MAX_REJECTED_NATIVE = 8 * 1024**2  # Forensic retention only, never an image allowance.
@@ -27,7 +30,63 @@ FLAGS = ('-Ctarget-feature=+crt-static','-Crelocation-model=static','-Clink-arg=
 RECIPE = (WORKFLOW, native.SUPERVISOR, native.ORIGINAL, inputs.PUBLIC,
     'tools/qualify_host_stream_kernel_native_vm.py','tools/host_stream_kernel_native_vm.py',
     'tools/host_stream_kernel_native_vm_inputs.py','tools/host_stream_kernel_vm_image.py',
-    'tools/diagnose_host_stream_kernel_vm.py')
+    'tools/diagnose_host_stream_kernel_vm.py','tools/ci/suites.json',
+    'tools/ci/suites.d/outbound-streams.json')
+
+CORE_CLOSE_PREFIX = 'broker::pools::tests::close_observation::'
+CORE_CLOSE_CASES = frozenset(CORE_CLOSE_PREFIX+name for name in (
+    'buffered_and_delivered_close_receipt_keeps_original_cleanup_charge',
+    'abandoned_close_waiter_does_not_release_running_or_quarantined_owner',
+    'close_worker_panic_never_publishes_accepted_receipt_or_refunds_connection',
+    'held_close_receipt_bounds_new_admission_and_returns_unchanged_owner',
+    'published_receipt_drop_cannot_release_live_sender_worker_tail',
+))
+
+
+def owner_controls(commands, cargo, output):
+    """Normal source-matched host controls; never execute native-init on host."""
+    result = {}
+    contracts = registry.load()['suites']
+    target = output/'host-control-target'
+    for label,package,target_name,prefix,cases in (
+            ('native-owner','latent-streams','latent_streams',native_controls.PREFIX,native_controls.CASES),
+            ('close-result','latent-capabilities','latent_capabilities',CORE_CLOSE_PREFIX,CORE_CLOSE_CASES)):
+        contract, = [row for row in contracts if row['package'] == package and row['kind'] == 'lib']
+        native.require({name for name in contract['expectedCases'] if name.startswith(prefix)} == cases
+            and not set(contract['expectedIgnored']) & cases, 'registered-owner-controls')
+        stage = label+'-cargo'
+        commands.run(stage,cargo,'test','--locked','--all-features','-p',package,'--lib',
+            '--no-run','--message-format=json')
+        inventory = commands.output/'logs'/f'{len(commands.records)-1:02d}-{stage}.stdout.txt'
+        suite = artifacts.Suite(f'crates/{package}/Cargo.toml',target_name,'src/lib.rs',prefix,cases,False)
+        executable = artifacts.read_inventory(inventory,ROOT,suite,target=target)
+        previous_environment, previous_seconds = commands.environment,commands.command_seconds
+        commands.environment = artifacts.cargo_environment(ROOT,executable,previous_environment,target=target)
+        try:
+            commands.command_seconds = min(previous_seconds,30)
+            listed = commands.run(label+'-list',executable.executable,prefix,'--list')
+            registered = [name.decode() for name in re.findall(rb'^([a-zA-Z0-9_:]+): test$',listed,re.M)]
+            ignored = commands.run(label+'-ignored',executable.executable,prefix,'--ignored','--list')
+            native.require(len(registered) == len(cases) and set(registered) == cases
+                and not re.search(rb': test$',ignored,re.M), 'exact-unignored-owner-controls')
+            commands.command_seconds = min(previous_seconds,120)
+            raw = commands.run(label+'-tests',executable.executable,prefix,'--show-output','--test-threads=1')
+            actual = [name.decode() for name in re.findall(rb'^test ([a-zA-Z0-9_:]+) \.\.\. ok$',raw,re.M)]
+            totals = re.findall(rb'^test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored; '
+                rb'(\d+) measured; (\d+) filtered out;',raw,re.M)
+            expected = tuple(str(number).encode() for number in
+                (len(cases),0,0,0,contract['minimumCases']-len(cases)))
+            native.require(len(actual) == len(cases) and set(actual) == cases and totals == [expected],
+                'all-fixed-owner-controls-executed')
+            if label == 'native-owner':native_controls.outcomes(raw)
+            result[label] = {'registered':sorted(registered),'executed':sorted(actual),'ignored':[],
+                'stdout':native.identity(raw),'executableSha256':native_controls.provider.digest_file(
+                    executable.executable,1024*1024**2),
+                'executableBytes':executable.executable.stat().st_size,
+                'customKernelOrNativeInitExecuted':False}
+        finally:
+            commands.environment,commands.command_seconds = previous_environment,previous_seconds
+    return result
 
 
 def source_inputs(root):
@@ -66,7 +125,7 @@ def cargo_product(raw, root, target):
 def qualify(output, revision):
     native.require(sys.platform == 'linux' and os.environ.get('GITHUB_ACTIONS') == 'true'
         and os.environ.get('GITHUB_REPOSITORY') == 'KirilsTurkins/latent-service-fabric'
-        and os.environ.get('GITHUB_REF_NAME') == BRANCH
+        and os.environ.get('GITHUB_REF_NAME') in BRANCHES
         and os.environ.get('GITHUB_EVENT_NAME') == 'push', 'one-hosted-owned-push')
     environment = build_environment(output)
     artifacts.require_source(ROOT,revision,environment)
@@ -84,12 +143,9 @@ def qualify(output, revision):
     tool_pins = {name:native.identity(read_file(path,256*1024**2)) for name,path in tool_targets.items()}
     command_root = output/'commands'; command_root.mkdir()
     environment.update(CARGO_BUILD_JOBS='2',CARGO_INCREMENTAL='0',
-        CARGO_TARGET_DIR=str(output/'native-target'),CARGO_ENCODED_RUSTFLAGS='\x1f'.join(FLAGS),
-        CARGO_PROFILE_RELEASE_OPT_LEVEL='z',CARGO_PROFILE_RELEASE_LTO='fat',
-        CARGO_PROFILE_RELEASE_CODEGEN_UNITS='1',CARGO_PROFILE_RELEASE_PANIC='abort',
-        CARGO_PROFILE_RELEASE_STRIP='symbols')
+        CARGO_TARGET_DIR=str(output/'host-control-target'))
     commands = Commands(ROOT,command_root,environment,deadline_seconds=1320,command_seconds=1200)
-    receipt = {'schemaVersion':'lsf.native-constructor-kernel-join.v1','status':'in-progress',
+    receipt = {'schemaVersion':'lsf.native-constructor-close-request.v1','status':'in-progress',
         'sourceRevision':revision,'kernelRebuilt':False,'wholeNodeExecuted':False,
         'nativeQuotaReleased':False,'productionInstallation':False,'completeAllocationClosure':False,
         'hostTlsQualified':False,'wholeCostQualification':False,'freshVmBoots':0,
@@ -107,6 +163,14 @@ def qualify(output, revision):
         receipt['nativeCompiler'] = compiler.decode().strip()
         commands.run('c-compiler-version',tools['gcc'],'--version')
         commands.run('emulator-version',tools['qemu-system-x86_64'],'--version')
+        stage = 'normal-host-owner-controls'
+        receipt['ownerControls'] = owner_controls(commands,tools['cargo'],output)
+        stage = 'normal-static-native-example'
+        environment.update(CARGO_TARGET_DIR=str(output/'native-target'),
+            CARGO_ENCODED_RUSTFLAGS='\x1f'.join(FLAGS),
+            CARGO_PROFILE_RELEASE_OPT_LEVEL='z',CARGO_PROFILE_RELEASE_LTO='fat',
+            CARGO_PROFILE_RELEASE_CODEGEN_UNITS='1',CARGO_PROFILE_RELEASE_PANIC='abort',
+            CARGO_PROFILE_RELEASE_STRIP='symbols')
         inventory = commands.run('build-native-constructor-example',tools['cargo'],'build','--locked',
             '-p','latent-streams','--example','kernel_constructor_vm','--features','development-outbound',
             '--release','--target',TARGET,'--message-format=json')
@@ -171,7 +235,8 @@ def qualify(output, revision):
         native.require(time.monotonic() < commands.deadline,'programme-expiry-never-success')
         artifacts.require_source(ROOT,revision,environment)
         receipt.update(status='passed',sourceAfter=before,sourceUnchanged=True,
-            actualNativeConstructorReady=True,actualKernelRootReturn=True,
+            actualNativeConstructorReady=True,actualNativeCloseRequestAccepted=True,
+            originalReceiptChargeObserved=True,actualKernelRootReturn=True,
             originalNodeCapacityQuarantined=True,vm={'cpus':image.VM_CPUS,
                 'memoryMiB':image.VM_MEMORY_MIB,'seconds':image.VM_SECONDS,
                 'externalNetwork':False,'hostDrives':False,'hostInstallation':False,

@@ -199,6 +199,64 @@ experiments did not repair the size boundary: the same public `pools` body was
 experiments are withdrawn. Their failed histories remain separately attributed;
 the retained capture programme does not establish a compiler or runtime fix.
 
+Only that manual public-fiber job additionally selects `--observe-public-wineh`.
+The optional observer snapshots the admitted generated C, headers, bindings,
+SDK, tools and the maintained observer/filter/qualifier files before the unchanged
+normal Clang command. After an authenticated
+component-assembly failure, it rechecks those inputs and the original command
+receipt, then requests LLVM's before/after `win-eh-prepare` prints for only
+`meth_dla_Capsule_pools`, using a separate output path. A sealed fixed-public
+ticket permits only that exact Clang command, environment and working directory.
+The private count-only filter launches it in the existing owner's process group;
+the original owner still accounts every compiler/linker descendant before a
+summary is returned. Existing process owners, the 600-second outer command bound,
+35-minute job and 80-MiB defensive capture ceiling remain unchanged.
+
+The filter streams at most **256 MiB of combined raw compiler output** through
+the same incremental parser and hashes, without a raw IR file or full buffer.
+This is a separate diagnostic transit budget. Each line is limited to 256 KiB
+before UTF-8 decoding; fixed counters and at most 16 KiB of scalar samples are
+retained. Only a summary of at most 64 KiB reaches the outer capture. The parent
+rechecks identities after owned cleanup, including incomplete summaries.
+`component-inputs/public-wineh.json` cannot report observed unless the child
+exits successfully, both pipes reach EOF, both exact prints complete and the
+postchecks pass. Raw IR, the ticket and diagnostic Wasm are not uploaded. Missing
+or changed inputs, overflow, unknown syntax and incomplete output fail closed;
+an earlier failure is not applicable. Original compiler output, exception and
+the 16-MiB normal log cap remain unchanged; no automatic retry is selected.
+
+The [first attempt](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40117757282)
+refused TeaVM's actual `@`-escaped header names before replay. The private reader
+correction retains the original inventory bounds and global Rust path rules.
+The [corrective attempt](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40120265783)
+reached real replay but exceeded the then-used 80-MiB full-buffer cap. Both are
+failed/incomplete historical observations; no counters or pass attribution were
+retained. The [count-only run](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40125799067)
+completed both prints and owned cleanup, with unchanged postchecks. It observed
+140,717,621 bytes of compiler stderr, no stdout, and a zero compiler exit. All ten
+hosted source controls passed. Its original module remains byte-identical to the
+historical `FULL`/`-O2` failure, and component assembly still refuses the oversized
+15,264,587-byte public `pools` body at the unchanged parser limit.
+
+For that one function, the pass changed these complete IR counts:
+
+| Counter | Before WinEH preparation | After | Change |
+| --- | ---: | ---: | ---: |
+| Instructions | 231,750 | 1,913,670 | +1,681,920 |
+| PHIs | 216,215 | 214,755 | -1,460 |
+| PHI incoming edges | 2,574,479 | 894,019 | -1,680,460 |
+| Stores | 5,405 | 1,685,865 | +1,680,460 |
+| Allocas | 190 | 1,650 | +1,460 |
+| Volatile stores | 2,586 | 2,586 | 0 |
+| Volatile loads | 2,145 | 2,145 | 0 |
+
+The matching removed PHI incoming edges and added stores identify substantial
+expansion during WinEH preparation. The volatile counts did not grow across
+this pass. This measurement does not establish an exclusive end-to-end cause,
+a safe compiler repair or Java execution qualification. The
+[retained evidence](../evidence/java-public-wineh-ea252/receipt.json) binds the
+source, original module, commands, finite limits and complete scalar counts.
+
 `--read-only-cache /path/to/modules-2` selects a verified immutable Gradle
 dependency cache. Gradle writes locks and updates to the build's private home.
 Choose one cache mode per build. Profile selection does not change invocation

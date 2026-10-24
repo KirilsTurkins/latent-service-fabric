@@ -4,6 +4,7 @@
 use crate::{error, StreamError, StreamErrorCode};
 use latent_capabilities::broker::pools::{
     ConnectionReservation, InstalledProvider, PooledConnection, ProviderPools, StreamKernelBacking,
+    StreamKernelCloseJob, StreamKernelCloseObservation,
 };
 use std::{fs::File, sync::Arc, time::Instant};
 
@@ -11,13 +12,21 @@ const MAGIC: u32 = 0x4c53_4646;
 const VERSION: u32 = 2;
 const BEGIN: u32 = 1;
 const WAIT: u32 = 2;
+const CLOSE: u32 = 3;
 const READY: u32 = 2;
+const CLOSED: u32 = 4;
 const FRAME_BYTES: usize = 24;
 
 struct Resource {
     descriptor: Option<File>,
+    bootstrap: Option<ReadyExpiry>,
     _backing: StreamKernelBacking,
 }
+
+/// Created only after the actual BEGIN/WAIT reply validated bootstrap READY.
+/// This is immutable protocol identity, never a physical-retirement proof.
+#[derive(Clone, Copy)]
+struct ReadyExpiry(u64);
 
 /// Must never expose a bare PooledConnection: its ordinary Drop refunds quota.
 pub(crate) struct NativeOwner {
@@ -26,17 +35,32 @@ pub(crate) struct NativeOwner {
 }
 impl Drop for NativeOwner {
     fn drop(&mut self) {
-        if let Some(connection) = self.connection.take() {
-            // close(2) may execute kernel work. It runs only on the original
-            // finite blocking table, never on the guest/logical task's Drop.
-            // The original connection/backing remains quarantined after close.
-            if let Err((_, connection)) = self
-                .pools
-                .cleanup_blocking_quarantined(connection, |resource| {
-                    drop(resource.descriptor.take())
-                })
-            {
+        // Abandoning the observation never cancels its admitted physical work.
+        // It still closes/quarantines on the original finite blocking table.
+        if self.connection.is_some() {
+            drop(self.begin_close());
+        }
+    }
+}
+impl NativeOwner {
+    pub(crate) fn close(mut self) -> Result<StreamKernelCloseJob, StreamError> {
+        self.begin_close()
+    }
+
+    fn begin_close(&mut self) -> Result<StreamKernelCloseJob, StreamError> {
+        let connection = self
+            .connection
+            .take()
+            .ok_or_else(|| error(StreamErrorCode::Unsupported))?;
+        match self
+            .pools
+            .cleanup_stream_kernel_blocking_quarantined(connection, close_resource)
+        {
+            Ok(job) => Ok(job),
+            Err((failure, connection)) => {
+                // No inline close if cleanup cannot be admitted. SAME owner.
                 connection.quarantine();
+                Err(failure.into())
             }
         }
     }
@@ -70,7 +94,7 @@ fn deadline_error() -> StreamError {
 /// The closures are private deterministic seams for real-descriptor ownership
 /// controls. The Linux caller below supplies only the fixed protected path and
 /// protocol; no caller can supply a retirement assertion or alternate device.
-async fn start_with<O, I>(
+async fn start_initialized_with<O, I>(
     pools: Arc<ProviderPools>,
     installed: &InstalledProvider,
     deadline: Instant,
@@ -79,7 +103,7 @@ async fn start_with<O, I>(
 ) -> Result<NativeOwner, StreamError>
 where
     O: FnOnce() -> Result<File, StreamError> + Send + 'static,
-    I: FnOnce(&mut File, Instant) -> Result<(), StreamError> + Send + 'static,
+    I: FnOnce(&mut File, Instant) -> Result<Option<ReadyExpiry>, StreamError> + Send + 'static,
 {
     if Instant::now() >= deadline {
         return Err(deadline_error());
@@ -95,6 +119,7 @@ where
         reservation: Some(reservation),
         resource: Some(Resource {
             descriptor: None,
+            bootstrap: None,
             _backing: backing,
         }),
         entered: false,
@@ -108,12 +133,10 @@ where
             }
             // Arm BEFORE open, including the failing-open path.
             attempt.entered = true;
-            attempt.resource.as_mut().expect("prepaid owner").descriptor = Some(open()?);
-            initialize(
-                attempt
-                    .resource
-                    .as_mut()
-                    .expect("original resource")
+            let resource = attempt.resource.as_mut().expect("prepaid owner");
+            resource.descriptor = Some(open()?);
+            resource.bootstrap = initialize(
+                resource
                     .descriptor
                     .as_mut()
                     .expect("actual opened descriptor"),
@@ -155,6 +178,26 @@ where
     }
 }
 
+// Original real-descriptor ownership controls do not pretend their files spoke
+// the kernel bootstrap protocol. Only Linux initialize can stamp real READY.
+#[cfg(test)]
+async fn start_with<O, I>(
+    pools: Arc<ProviderPools>,
+    installed: &InstalledProvider,
+    deadline: Instant,
+    open: O,
+    initialize: I,
+) -> Result<NativeOwner, StreamError>
+where
+    O: FnOnce() -> Result<File, StreamError> + Send + 'static,
+    I: FnOnce(&mut File, Instant) -> Result<(), StreamError> + Send + 'static,
+{
+    start_initialized_with(pools, installed, deadline, open, move |file, deadline| {
+        initialize(file, deadline).map(|()| None)
+    })
+    .await
+}
+
 fn frame(operation: u32, expiry: u64) -> [u8; FRAME_BYTES] {
     let mut result = [0; FRAME_BYTES];
     result[0..4].copy_from_slice(&MAGIC.to_le_bytes());
@@ -164,7 +207,7 @@ fn frame(operation: u32, expiry: u64) -> [u8; FRAME_BYTES] {
     result
 }
 
-fn status(bytes: &[u8; FRAME_BYTES], expiry: u64) -> Result<u32, StreamError> {
+fn status_phase(bytes: &[u8; FRAME_BYTES], expiry: u64) -> Result<u32, StreamError> {
     let word =
         |offset| u32::from_le_bytes(bytes[offset..offset + 4].try_into().expect("fixed frame"));
     if word(0) != MAGIC
@@ -174,14 +217,53 @@ fn status(bytes: &[u8; FRAME_BYTES], expiry: u64) -> Result<u32, StreamError> {
     {
         return Err(error(StreamErrorCode::Unsupported));
     }
-    match word(8) {
+    Ok(word(8))
+}
+
+fn status(bytes: &[u8; FRAME_BYTES], expiry: u64) -> Result<u32, StreamError> {
+    match status_phase(bytes, expiry)? {
         state @ (1 | READY) => Ok(state),
         _ => Err(error(StreamErrorCode::Unsupported)),
     }
 }
 
+fn close_status(
+    bytes: &[u8; FRAME_BYTES],
+    expiry: ReadyExpiry,
+) -> Result<StreamKernelCloseObservation, StreamError> {
+    match status_phase(bytes, expiry.0)? {
+        CLOSED => Ok(StreamKernelCloseObservation::RequestAccepted),
+        _ => Err(error(StreamErrorCode::Unsupported)),
+    }
+}
+
+fn close_request(file: &mut File, expiry: ReadyExpiry) -> StreamKernelCloseObservation {
+    use std::io::{Read, Write};
+    // Exactly one operation, no retry after a short/uncertain transfer. CLOSE
+    // conserves the original expiry; the kernel permits cleanup after expiry.
+    if !matches!(file.write(&frame(CLOSE, expiry.0)), Ok(FRAME_BYTES)) {
+        return StreamKernelCloseObservation::Uncertain;
+    }
+    let mut reply = [0; FRAME_BYTES];
+    if !matches!(file.read(&mut reply), Ok(FRAME_BYTES)) {
+        return StreamKernelCloseObservation::Uncertain;
+    }
+    close_status(&reply, expiry).unwrap_or(StreamKernelCloseObservation::Uncertain)
+}
+
+fn close_resource(resource: &mut Resource) -> StreamKernelCloseObservation {
+    let observation = match (resource.descriptor.as_mut(), resource.bootstrap) {
+        (Some(file), Some(expiry)) => close_request(file, expiry),
+        _ => StreamKernelCloseObservation::NotAttempted,
+    };
+    drop(resource.descriptor.take());
+    // CLOSED4 is request acceptance only. The original caller ALWAYS moves
+    // this resource/connection/backing into quarantine after returning.
+    observation
+}
+
 #[cfg(target_os = "linux")]
-fn initialize(file: &mut File, deadline: Instant) -> Result<(), StreamError> {
+fn initialize(file: &mut File, deadline: Instant) -> Result<ReadyExpiry, StreamError> {
     use std::io::{Read, Write};
     // Sample MONOTONIC first. The subsequently measured Instant remaining time
     // makes this conversion conservative; no scheduling delay extends expiry.
@@ -225,7 +307,7 @@ fn initialize(file: &mut File, deadline: Instant) -> Result<(), StreamError> {
     if Instant::now() >= deadline {
         return Err(deadline_error());
     }
-    Ok(())
+    Ok(ReadyExpiry(expiry))
 }
 
 #[cfg(target_os = "linux")]
@@ -234,7 +316,7 @@ pub(crate) async fn start(
     installed: &InstalledProvider,
     deadline: Instant,
 ) -> Result<NativeOwner, StreamError> {
-    start_with(
+    start_initialized_with(
         pools,
         installed,
         deadline,
@@ -250,7 +332,7 @@ pub(crate) async fn start(
             .map(File::from)
             .map_err(|_| error(StreamErrorCode::Unsupported))
         },
-        initialize,
+        |file, deadline| initialize(file, deadline).map(Some),
     )
     .await
 }

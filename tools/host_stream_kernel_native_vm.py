@@ -15,7 +15,7 @@ MAX_NATIVE_INIT = 3 * 1024**2  # Fixed new child partition, not the PID1 limit.
 COMPILED_CONTROLS = b'LSFNATIVE1 kmsg-controls=PASS cases=12\n'
 BOOT = b'LSFVM1 boot=native-constructor-only production-sockets=disabled'
 TERMINAL = b'LSFVM1 result=PASS stage=actual-native-constructor-and-kernel-return'
-NATIVE_PASS = (b'LSFNATIVE1 result=PASS constructorReady=1 descriptorClosed=1 '
+NATIVE_PASS = (b'LSFNATIVE1 result=PASS constructorReady=1 closeRequestAccepted=1 descriptorClosed=1 '
                b'backingQuarantined=1 nativeQuotaReleased=0 productionInstalled=0')
 
 
@@ -156,12 +156,12 @@ def serial_observation(raw):
     excluded = set(positions.values())
     rows = [line for i,line in enumerate(lines) if i not in excluded
         and line.startswith((b'LSFVM1 ',b'LSFNATIVE1 '))]
-    require(len(rows) == 6 and rows[0] == BOOT and rows[-1] == TERMINAL
+    require(len(rows) == 7 and rows[0] == BOOT and rows[-1] == TERMINAL
         and rows[-2] == NATIVE_PASS, 'complete-native-pid1-protocol')
     snapshots = {}
     fields = ('connections','failedCleanup','cleanupJobs','pending','running','workers',
               'metadataBytes','controlFailed','descriptors')
-    for name,row in zip(('baseline','ready','quarantined'),rows[1:4]):
+    for name,row in zip(('baseline','ready','close-request-accepted-held','quarantined'),rows[1:5]):
         pattern = rb'LSFNATIVE1 state='+name.encode()+b''.join(
             b' '+field.encode()+rb'=([0-9]{1,20})' for field in fields)
         match = re.fullmatch(pattern,row)
@@ -173,18 +173,26 @@ def serial_observation(raw):
             and value['running'] <= 64 and value['workers'] <= 16
             and value['controlFailed'] == 0, 'original-native-counter-bounds')
         snapshots[name] = value
-    before,ready,after = (snapshots[name] for name in ('baseline','ready','quarantined'))
+    before,ready,held,after = (snapshots[name] for name in
+        ('baseline','ready','close-request-accepted-held','quarantined'))
     require(before['connections'] == before['failedCleanup'] == before['descriptors'] == 0,
         'actual-native-baseline')
     require(ready['connections'] == ready['descriptors'] == 1 and ready['failedCleanup'] == 0
         and ready['cleanupJobs'] == before['cleanupJobs']+1
         and ready['metadataBytes'] >= before['metadataBytes']+1024**2, 'actual-ready-original-owner')
+    require(held['connections'] == held['failedCleanup'] == 1 and held['descriptors'] == 0
+        and held['cleanupJobs'] == ready['cleanupJobs']+1
+        and held['pending'] == held['running'] == held['workers'] == 0
+        and held['metadataBytes'] >= before['metadataBytes']+1024**2,
+        'actual-close-accepted-receipt-charge-held')
     require(after['connections'] == after['failedCleanup'] == 1 and after['descriptors'] == 0
         and after['cleanupJobs'] == ready['cleanupJobs']
         and after['pending'] == after['running'] == after['workers'] == 0
-        and after['metadataBytes'] >= before['metadataBytes']+1024**2, 'original-backing-still-quarantined')
+        and before['metadataBytes']+1024**2 <= after['metadataBytes'] < held['metadataBytes'],
+        'original-backing-still-quarantined')
     return {'snapshots':snapshots,'actualNativeConstructorReady':True,'actualDescriptorClosed':True,
         'actualKernelRootReturn':True,'kernelPostReturnObservations':1,
         'observedPendingFdHandoff':HANDOFF in positions,'observedOutsideCollector':OUTSIDE in positions,
+        'actualNativeCloseRequestAccepted':True,'originalReceiptChargeObserved':True,
         'independentUartOrders':True,'originalNodeCapacityQuarantined':True,'nativeQuotaReleased':False,
         'productionInstallation':False,'completeAllocationClosure':False,**identity(raw)}

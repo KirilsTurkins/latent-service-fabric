@@ -20,6 +20,7 @@ def observations():
     for name, values in (
             ('baseline',[0,0,0,0,0,0,100000,0,0]),
             ('ready',[1,0,1,0,0,0,1300000,0,1]),
+            ('close-request-accepted-held',[1,1,2,0,0,0,1300000,0,0]),
             ('quarantined',[1,1,1,0,0,0,1200000,0,0])):
         rows.append(b'LSFNATIVE1 state='+name.encode()+b''.join(
             b' '+key.encode()+b'='+str(value).encode() for key,value in zip(fields,values)))
@@ -58,6 +59,8 @@ class NativeConstructorKernelJoin(unittest.TestCase):
                 raw = b'\n'.join(rows[:offset]+kernel+rows[offset:])+b'\n'
                 result = owner.serial_observation(raw)
                 self.assertTrue(result['actualNativeConstructorReady'])
+                self.assertTrue(result['actualNativeCloseRequestAccepted'])
+                self.assertTrue(result['originalReceiptChargeObserved'])
                 self.assertTrue(result['originalNodeCapacityQuarantined'])
                 self.assertFalse(result['nativeQuotaReleased'])
                 self.assertEqual(result['observedPendingFdHandoff'],owner.HANDOFF in kernel)
@@ -68,12 +71,18 @@ class NativeConstructorKernelJoin(unittest.TestCase):
             raw.replace(b'nativeQuotaReleased=0',b'nativeQuotaReleased=1'),
             raw.replace(b'state=ready connections=1',b'state=ready connections=0'),
             raw.replace(b'state=quarantined connections=1',b'state=quarantined connections=0'),
+            raw.replace(b'state=close-request-accepted-held connections=1 failedCleanup=1 cleanupJobs=2',
+                b'state=close-request-accepted-held connections=1 failedCleanup=1 cleanupJobs=1'),
+            raw.replace(b'closeRequestAccepted=1',b'closeRequestAccepted=0'),
+            raw.replace(b'metadataBytes=1200000',b'metadataBytes=1300000'),
+            raw.replace(b'state=close-request-accepted-held',b'state=quarantined'),
             raw.replace(b'metadataBytes=1200000',b'metadataBytes=0'),
             raw.replace(b'metadataBytes=1200000',b'metadataBytes=1200000.0'),
             raw.replace(b'descriptors=0\nLSFNATIVE1 result',b'descriptors=1\nLSFNATIVE1 result'),
             raw+b'Kernel panic',raw+bytes(owner.image.MAX_SERIAL),
             b'\n'.join(rows+[owner.OUTSIDE,owner.image.PHYSICAL_MARKER])+b'\n',
             b'\n'.join(rows+[owner.HANDOFF,owner.image.PHYSICAL_MARKER])+b'\n',
+            b'\n'.join(rows[:3]+rows[4:]+[owner.image.PHYSICAL_MARKER])+b'\n',
             b'\n'.join(rows[:-1]+[owner.image.PHYSICAL_MARKER])+b'\n']
         for value in bad:
             with self.subTest(size=len(value)),self.assertRaises(ValueError):owner.serial_observation(value)
