@@ -34,6 +34,8 @@ pub struct Mapping {
     pub component_digest: String,
     pub core_module_digest: String,
     pub core_module_bytes: usize,
+    // Original component-stream origin; function body ranges below stay core-local.
+    pub core_module_component_offset: u64,
     pub static_module_index: usize,
     pub functions: Vec<Function>,
     pub numeric_cap_identity_unambiguous: bool,
@@ -42,6 +44,7 @@ pub struct Mapping {
 struct Module {
     digest: String,
     bytes: usize,
+    component_offset: u64,
     names: BTreeMap<u32, String>,
     bodies: BTreeMap<u32, (u64, u64, Vec<u8>)>,
 }
@@ -50,7 +53,7 @@ fn digest(bytes: &[u8]) -> String {
     latent_artifacts::package::artifact_blob_digest(bytes).into_string()
 }
 
-fn module(raw: &[u8]) -> Module {
+fn module(raw: &[u8], component_offset: u64) -> Module {
     let mut names = BTreeMap::new();
     let mut bodies = BTreeMap::new();
     let mut imported = 0_u32;
@@ -97,6 +100,7 @@ fn module(raw: &[u8]) -> Module {
     Module {
         digest: digest(raw),
         bytes: raw.len(),
+        component_offset,
         names,
         bodies,
     }
@@ -116,7 +120,7 @@ pub fn inspect(component: &[u8]) -> Mapping {
             let start = usize::try_from(unchecked_range.start).unwrap();
             let end = usize::try_from(unchecked_range.end).unwrap();
             assert!(start < end && end <= component.len() && modules.len() < 16);
-            modules.push(module(&component[start..end]));
+            modules.push(module(&component[start..end], unchecked_range.start));
         }
     }
     let candidates: Vec<_> = modules
@@ -211,12 +215,17 @@ pub fn inspect(component: &[u8]) -> Mapping {
     // The observer's module ordinal is first-seen IN THE BACKTRACE, not a
     // static module index. Rule out a numeric function+offset collision with
     // ANY other emitted module before using the one cap frame for attribution.
+    // Component compilation preserves original stream offsets. Compare all
+    // modules in that component coordinate space; retain core-local body/ops.
     let cap_body = &functions[0];
+    let cap_start = module.component_offset.checked_add(cap_body.start).unwrap();
+    let cap_end = module.component_offset.checked_add(cap_body.end).unwrap();
     for (i, other) in modules.iter().enumerate() {
         if i != selected {
             if let Some((start, end, _)) = other.bodies.get(&cap) {
                 assert!(
-                    *end <= cap_body.start || *start >= cap_body.end,
+                    other.component_offset.checked_add(*end).unwrap() <= cap_start
+                        || other.component_offset.checked_add(*start).unwrap() >= cap_end,
                     "ambiguous numeric cap identity across emitted core modules"
                 );
             }
@@ -226,6 +235,7 @@ pub fn inspect(component: &[u8]) -> Mapping {
         component_digest: digest(component),
         core_module_digest: module.digest.clone(),
         core_module_bytes: module.bytes,
+        core_module_component_offset: module.component_offset,
         static_module_index: selected,
         functions,
         numeric_cap_identity_unambiguous: true,
@@ -247,7 +257,9 @@ pub fn require_cap(mapping: &Mapping, snapshot: &latent_wasmtime::DevelopmentTra
             frame.function == cap.index
                 && frame.module_offset.is_some_and(|offset| {
                     u64::try_from(offset)
-                        .is_ok_and(|offset| cap.start <= offset && offset < cap.end)
+                        .ok()
+                        .and_then(|offset| offset.checked_sub(mapping.core_module_component_offset))
+                        .is_some_and(|core_local| cap.start <= core_local && core_local < cap.end)
                 })
         })
         .collect();

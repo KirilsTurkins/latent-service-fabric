@@ -195,3 +195,19 @@ The unchanged exact-leaf assertion now includes only the existing at most 16
 numeric-frame snapshot in its failure message. It adds no success path, frame
 limit, guest diagnostic operation, runtime owner or mapper fallback. Cap and
 full seven-attempt qualification remain unknown pending the actual trace.
+
+The seventh attempt, source `fbab8b7777aebdd7fee98339255d695a37e5c798`
+([run40085853946](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40085853946)),
+retained the original bounded numeric trace. Its nine untruncated frames include
+private-cap function 704 at component-stream offset 692,585. The actual core
+module starts at 747, so its core-local offset 691,838 lies inside the mapped
+private body range [691,793, 691,866). Newstack and recursion frames independently
+show the same embedding-origin delta. The previous checker incorrectly compared
+component-stream positions with core-local ranges. This remains a failed
+programme, not a retroactive pass; artifact 12556973816 and its raw trace remain
+unchanged. The mapper now records each actual bounded module-section origin,
+subtracts that origin with checked arithmetic only for the body comparison, and
+compares other modules in the original component coordinate space. Core-local
+body/operator metadata and raw observed frames remain unchanged. Strict readers
+require a bounded typed origin and refuse legacy unadjusted or forged origins.
+No offset constant, module-ordinal assumption, guard change or fallback is used.

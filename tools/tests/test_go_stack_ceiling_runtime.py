@@ -25,7 +25,7 @@ def controlled_rows():
         rows.append(('VARIANT',dict(name=variant,initializerCap=initial,sourceDigest='sha256:'+'d'*64,
             sourceInputsDigest='sha256:'+'e'*64,componentDigest='sha256:'+d*64,budget=budget,
             mapping=dict(componentDigest='sha256:'+d*64,coreModuleDigest='sha256:'+'f'*64,
-                coreModuleBytes=4096,staticModuleIndex=2,functions=functions,numericCapIdentityUnambiguous=True))))
+                coreModuleBytes=4096,coreModuleComponentOffset=747,staticModuleIndex=2,functions=functions,numericCapIdentityUnambiguous=True))))
     scenarios = [
         ('growth',[('below-cap-GC','go-stack-ordinary',0,False),('growth-cap','go-stack-ordinary',1,True),('fresh-after-growth','go-stack-ordinary',0,False)]),
         ('raised-limit',[('raised-limit-cap','go-stack-ordinary',2,True),('fresh-after-raised-limit','go-stack-ordinary',0,False)]),
@@ -52,7 +52,7 @@ def controlled_rows():
                 result = dict(code='GuestTrap',attribution='actual-private-v7-cap-frame')
                 observation = dict(observedErrors=1,ambiguous=False,trapKind='unreachable-code',
                     missingBacktrace=False,mayBeTruncated=False,observedFrames=1,engineFrameCap=16,
-                    frames=[dict(module=0,function=100,moduleOffset=1001,functionOffset=1)]+[None]*15)
+                    frames=[dict(module=0,function=100,moduleOffset=1748,functionOffset=1)]+[None]*15)
             else:
                 result = dict(typedResult='stack|fresh=1|init=3133440|checksum=17756160|before=131072|live=524288|beforeGC=0|gc=1',
                     fresh=1,beforeStack=131072,liveStack=524288,beforeGC=0,GC=1,checksum=17756160)
@@ -91,11 +91,15 @@ class StackProgramme(unittest.TestCase):
             if kind == 'CASE' and item['cap']:
                 observation = item['numericObservation']
                 observation.update(mayBeTruncated=True,observedFrames=16)
-                observation['frames'][1:] = [dict(module=0,function=104,moduleOffset=1401,functionOffset=1)]*15
+                observation['frames'][1:] = [dict(module=0,function=104,moduleOffset=2148,functionOffset=1)]*15
         self.assertTrue(oracle.read(encoded(rows))['cases'][1]['numericObservation']['mayBeTruncated'])
 
     def test_generic_trap_wrong_leaf_grant_budget_and_retirement_are_refused(self):
         mutations = [
+            ('VARIANT',0,lambda v:v['mapping'].update(coreModuleComponentOffset=0)),
+            ('VARIANT',0,lambda v:v['mapping'].update(coreModuleComponentOffset=747.0)),
+            ('VARIANT',0,lambda v:v['mapping'].update(coreModuleComponentOffset=16*1024*1024)),
+            ('CASE',1,lambda v:v['numericObservation']['frames'][0].update(moduleOffset=1001)),
             ('CASE',1,lambda v:v.update(numericObservation=None)),
             ('CASE',1,lambda v:v['numericObservation']['frames'][0].update(function=999)),
             ('CASE',1,lambda v:v['numericObservation'].update(observedErrors=2)),

@@ -13,7 +13,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:3b84d46707af04b059da1bf0c82a3d2f7c114ec3e8f7984007060e3fe4df3439",
+        "module:setup-sha256:4ba5c4012fd375182604301ca27a4e19133cb3703ab69ebb2ca0164a175c024b",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -25,7 +25,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:3b84d46707af04b059da1bf0c82a3d2f7c114ec3e8f7984007060e3fe4df3439",
+        "module:setup-sha256:4ba5c4012fd375182604301ca27a4e19133cb3703ab69ebb2ca0164a175c024b",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -37,7 +37,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:3b84d46707af04b059da1bf0c82a3d2f7c114ec3e8f7984007060e3fe4df3439",
+        "module:setup-sha256:4ba5c4012fd375182604301ca27a4e19133cb3703ab69ebb2ca0164a175c024b",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -49,7 +49,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:3b84d46707af04b059da1bf0c82a3d2f7c114ec3e8f7984007060e3fe4df3439",
+        "module:setup-sha256:4ba5c4012fd375182604301ca27a4e19133cb3703ab69ebb2ca0164a175c024b",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -57,6 +57,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_go_stack_ceiling_runtime.py",
-  "reviewReason": "Same four required cases and unchanged skips/decorators; controlled recursion symbol now matches exact emitted Go name with underscore, preserving strict unique mapping and cap predicates",
+  "reviewReason": "Same four cases and unchanged skips/decorators; controlled mapping binds a nonzero component origin and rejects legacy unadjusted/forged origin comparisons",
   "schemaVersion": "latent.ci.contracts.v1"
 }

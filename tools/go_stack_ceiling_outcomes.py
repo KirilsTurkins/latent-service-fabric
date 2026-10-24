@@ -60,9 +60,12 @@ def read(raw):
         require(exact({k:value[k] for k in ('name','initializerCap','budget')}, {'name':name,'initializerCap':initial,'budget':LIMITS}),'variant-selection')
         require(all(sha(value[k]) for k in ('sourceDigest','componentDigest','sourceInputsDigest')),'variant-digests')
         m = value['mapping']; mappings[name] = m
-        require(set(m) == {'componentDigest','coreModuleDigest','coreModuleBytes','staticModuleIndex','functions','numericCapIdentityUnambiguous'},'mapping-shape')
+        require(set(m) == {'componentDigest','coreModuleDigest','coreModuleBytes','coreModuleComponentOffset','staticModuleIndex','functions','numericCapIdentityUnambiguous'},'mapping-shape')
         require(m['componentDigest'] == value['componentDigest'] and sha(m['coreModuleDigest']) and
-            integer(m['coreModuleBytes'],8,16*1024*1024) and integer(m['staticModuleIndex'],0,15)
+            integer(m['coreModuleBytes'],8,16*1024*1024)
+            and integer(m['coreModuleComponentOffset'],0,16*1024*1024)
+            and m['coreModuleComponentOffset']+m['coreModuleBytes'] <= 16*1024*1024
+            and integer(m['staticModuleIndex'],0,15)
             and m['numericCapIdentityUnambiguous'] is True,'actual-mapping-binding')
         require(type(m['functions']) is list and len(m['functions']) == 5,'mapping-function-count')
         for f,name in zip(m['functions'],FUNCTIONS):
@@ -119,7 +122,9 @@ def read(raw):
                     and integer(f['function'],0,16383),'numeric-frame-fields')
                 for key in ('moduleOffset','functionOffset'):
                     require(f[key] is None or integer(f[key],0,16*1024*1024),'numeric-offset')
-                if f['function'] == leaf['index'] and type(f['moduleOffset']) is int and leaf['start'] <= f['moduleOffset'] < leaf['end']: matched += 1
+                if (f['function'] == leaf['index'] and type(f['moduleOffset']) is int
+                        and f['moduleOffset'] >= mappings[variant]['coreModuleComponentOffset']
+                        and leaf['start'] <= f['moduleOffset']-mappings[variant]['coreModuleComponentOffset'] < leaf['end']): matched += 1
             require(matched == 1,'dedicated-cap-frame-required')
         else:
             require(actual['numericObservation'] is None,'success-is-not-a-trap')
