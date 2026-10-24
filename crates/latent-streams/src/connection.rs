@@ -684,6 +684,8 @@ impl Connection {
             connections: usize::from(state.socket.is_some()),
             pending_operations: state.pending,
             retained_chunks: self.transfer.outstanding_chunks(),
+            #[cfg(any(test, feature = "development-outbound"))]
+            input_budget_bytes: self.transfer.accepted_input_bytes(),
             accepted_write_bytes: state.accepted_write,
             delivered_read_bytes: state.delivered_read,
             retired: false,
