@@ -39,7 +39,7 @@ class ImportCancellationTests(unittest.TestCase):
 assert(Object.isFrozen(selectedBorrowReleaseImports));assert.equal(selectedBorrowReleaseImports.length,0);
 assert.equal(borrowReleaseHandoff(minimal,()=>{{throw Error('must not parse');}}),minimal);
 const fixture=JSON.parse(await readFile(new URL({json.dumps((ROOT/'tools/tests/fixtures/typescript_native_open_binding.json').as_uri())}),'utf8'));
-const captured=fuseNativeImportAwaits(anchor+'\\n'+fixture.source,parse);
+const captured=fuseNativeImportAwaits(anchor+'\\n'+fixture.source.replace('\\n  try {{','\\n  /* lsf-owned-result-transfer:wit-result */\\n  try {{'),parse);
 const changed=borrowReleaseHandoff(captured,parse,[{{binding:'import_latent_http_streaming_0_3_0$open',alias:'open'}}]);
 assert.equal(changed.split('__lsfBorrowArm(import_latent_http_streaming_0_3_0$open, __lsfImportId);').length,2);
 const oldFn=parse(captured,{{ecmaVersion:'latest',sourceType:'module'}}).body[1];

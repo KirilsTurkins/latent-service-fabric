@@ -180,6 +180,35 @@ def materialize_headers(library_root: Path, target: Path, deadline: float) -> di
     return identities
 
 
+def validated_library(library_root: Path) -> tuple:
+    """Original normal library validation shared by build and owning reuse."""
+    raw_receipt = read_file(library_root/'library-build.json')
+    library = json.loads(raw_receipt)
+    if (library.get('schemaVersion') != 'latent.typescript.promise-library-source-build.v1'
+            or library.get('status') != 'passed' or library.get('scope') != 'intrinsic-hook-library-compile-only'
+            or library.get('qualification') != 'unknown' or library.get('sources') != promise_library.SOURCES
+            or library.get('library',{}).get('path') != 'obj/js/src/build/libjs_static.a'):
+        raise ValueError('typescript-native-successful-original-library-receipt-required')
+    before = file_identity(library_root/library['library']['path'],512*1024**2)
+    if before != {key:library['library'][key] for key in ('bytes','sha256')}:
+        raise ValueError('typescript-native-library-byte-identity')
+    expected_recipe = {'tools/build_typescript_promise_library.py','tools/typescript_guest/promise_library.py',
+        'tools/typescript_guest/promise_engine.py','tools/typescript_guest/activation_engine.py',
+        'sdk/typescript-guest/activation/promise_hooks.h'}
+    if set(library['recipe']) != expected_recipe:
+        raise ValueError('typescript-native-library-recipe-inventory')
+    for name, identity in library['recipe'].items():
+        if file_identity(ROOT/name) != identity:
+            raise ValueError('typescript-native-library-recipe-drift')
+    header = ROOT/'sdk/typescript-guest/activation/promise_hooks.h'
+    exported = library_root/'obj/dist/include/js/ActivationPromiseHooks.h'
+    if promise_library.installed_header_identity(library_root,exported,read_file(header)) != library['exportedHeader']:
+        raise ValueError('typescript-native-original-header-identity')
+    promise_library.recheck_archives(library_root,promise_library.SOURCES,
+        {name:json.loads(read_file(library_root/(name+'-acquisition.json'))) for name in promise_library.SOURCES})
+    return library, raw_receipt, before, header, exported
+
+
 def build(output: Path, library_root: Path, *, bindgen: str = 'wit-bindgen', wasm_tools: str = 'wasm-tools',
           source_splicer_build: Path | None = None) -> dict:
     if sys.platform != 'linux':
@@ -221,30 +250,7 @@ def build(output: Path, library_root: Path, *, bindgen: str = 'wit-bindgen', was
     try:
         if source_splicer_build is not None:
             record['sourceSplicer'] = source_splicer(source_splicer_build)
-        raw_receipt = read_file(library_root/'library-build.json')
-        library = json.loads(raw_receipt)
-        if (library.get('schemaVersion') != 'latent.typescript.promise-library-source-build.v1'
-                or library.get('status') != 'passed' or library.get('scope') != 'intrinsic-hook-library-compile-only'
-                or library.get('qualification') != 'unknown' or library.get('sources') != promise_library.SOURCES
-                or library.get('library',{}).get('path') != 'obj/js/src/build/libjs_static.a'):
-            raise ValueError('typescript-native-successful-original-library-receipt-required')
-        before = file_identity(library_root/library['library']['path'],512*1024**2)
-        if before != {key:library['library'][key] for key in ('bytes','sha256')}:
-            raise ValueError('typescript-native-library-byte-identity')
-        expected_recipe = {'tools/build_typescript_promise_library.py','tools/typescript_guest/promise_library.py',
-            'tools/typescript_guest/promise_engine.py','tools/typescript_guest/activation_engine.py',
-            'sdk/typescript-guest/activation/promise_hooks.h'}
-        if set(library['recipe']) != expected_recipe:
-            raise ValueError('typescript-native-library-recipe-inventory')
-        for name, identity in library['recipe'].items():
-            if file_identity(ROOT/name) != identity:
-                raise ValueError('typescript-native-library-recipe-drift')
-        header = ROOT/'sdk/typescript-guest/activation/promise_hooks.h'
-        exported = library_root/'obj/dist/include/js/ActivationPromiseHooks.h'
-        if promise_library.installed_header_identity(library_root,exported,read_file(header)) != library['exportedHeader']:
-            raise ValueError('typescript-native-original-header-identity')
-        promise_library.recheck_archives(library_root,promise_library.SOURCES,
-            {name:json.loads(read_file(library_root/(name+'-acquisition.json'))) for name in promise_library.SOURCES})
+        library, raw_receipt, before, header, exported = validated_library(library_root)
         record['libraryInput'] = file_identity(library_root/'library-build.json')
         record['libraryProduct'] = before
         stage = 'source-acquisition'
