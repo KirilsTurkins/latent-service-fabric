@@ -17,7 +17,7 @@ import threading
 import time
 from collections.abc import Mapping, Sequence
 
-# Source archives reserve 8 MiB of framing above the 72 MiB file-byte budget.
+# The fixed archive transport cap is independent of the source file-byte cap.
 # Each caller still supplies its independent, bounded output allowance.
 MAX_OUTPUT_BYTES = 80 * 1024 * 1024
 MAX_TIMEOUT_SECONDS = 3600

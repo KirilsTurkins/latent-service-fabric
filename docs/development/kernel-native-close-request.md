@@ -1,6 +1,10 @@
 # Native close request and charged observation
 
-This is source preparation for #738, not an executed close qualification. The
+The [actual close-request observation](../testing/evidence/kernel-native-close-request-2026-10-24.json)
+for #738 passed at source `976e86c71a7dc57e9d9e3c47258e05370d599bf0`,
+[run 40122724709](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40122724709).
+Thirteen native owner controls, five charged-result controls, six Python controls,
+twelve actual compiled C parser controls and one fresh isolated VM passed. The
 earlier [native/kernel join](kernel-native-constructor-vm.md) actually reached
 constructor-bootstrap READY using BEGIN and optional WAIT, then closed its file
 and observed kernel physical return while retaining native capacity. It did not
@@ -13,8 +17,9 @@ on the same protected file, with the same expiry, followed by one exact status
 read. The original kernel actor checks bind mm, thread-group identity, current
 credentials, file credentials and network namespace; they do not require the
 same worker TID. No worker affinity, credential or namespace relaxation is added.
-The next actual VM must establish that the selected worker receives an authentic
-CLOSED reply. Earlier final-file-close success cannot establish this.
+The new actual VM established that the selected worker received the authentic
+CLOSED reply with the original expiry. Earlier final-file-close success alone
+could not establish this.
 
 CLOSED means close-request acceptance. It does not certify completed children,
 Root physical return, native quota release or application transaction rollback.
@@ -61,21 +66,58 @@ delivered receipt ownership, abandoned waiters, unpolled panic, admission satura
 and deterministic receiver/receipt drop while the actual worker is paused after
 publication. Connection quarantine and sender destruction precede the worker's
 last billing guard, including unwind; the whole worker is captured together.
-These Rust controls have not yet compiled or run. The owning controller will
-build source-matched normal host libtest products and require all thirteen native
-plus five result-lifetime cases before the static VM programme. No native-init
-executable runs on the build host. The former thirty stream cases remain outside
-that focused execution and keep their normal suite obligation.
+All eighteen Rust controls compiled and passed using source-matched normal host
+libtest products before the static VM programme; none was ignored. The
+deterministic post-publication barrier proved that dropping the delivered receipt
+cannot release the charge while the sender/worker tail is still live. No
+native-init executable ran on the build host. The former thirty stream cases
+remain outside that focused execution and keep their normal suite obligation.
 
-The new VM protocol must report the actual accepted-close receipt while the
-additional cleanup reservation is still held. Only after explicitly dropping
-that receipt may it compare quarantine against the previous single maintenance
-reservation. Descriptor absence, native connection/backing retention, and the
-genuine kernel physical-return observation remain independent requirements.
+The VM actually reported the accepted-close receipt with descriptor count zero,
+connection/failed-cleanup counts one, cleanup jobs two and metadata 1,260,056 bytes.
+After explicitly dropping that receipt and awaiting the worker tail, cleanup jobs
+returned to one and metadata to 1,120,576 bytes; the connection and original backing
+remained quarantined. Bootstrap READY had cleanup jobs one, metadata 1,251,648
+bytes and one descriptor. The independent genuine kernel markers established
+pending FD handoff, physical bank/actor return and outside collection. Kernel
+marker order and PID1 row order are validated separately; reading a ring-buffer
+event does not impose cross-stream UART delivery order.
 Six Python source/reader controls, twelve actual C parser controls, the existing
 PID1 2-MiB/new-child 3-MiB partitions, 4-MiB aggregate loaded spans and whole CPIO,
 two CPUs, 512 MiB and 180-second watchdog remain mandatory. All 294 immutable
-kernel-producing inputs remain unchanged; no new kernel build is planned.
+kernel-producing inputs remained unchanged; no new kernel was built. The actual
+Rust child was 2,936,064 bytes, aggregate executable load spans 3,707,056 bytes and
+CPIO 3,741,696 bytes. The VM completed in 3.643855 seconds. All 15 bounded commands
+returned zero, and all 6,450 current source materials plus 294 immutable kernel
+materials matched the tested Git blobs (6,673 unique paths).
+
+The preceding run at `95171d5e95e56a2038c92fcc87870b38b6796bf5` failed core-test
+compilation because the new test module lacked its `PlatformErrorCode` import.
+Its thirteen native owner controls passed, but its five core controls, static
+native build, C controls and VM did not run. Adding only that test import produced
+the successful run above. The failed artifact and its exact source remain in the
+public observation; earlier constructor-only failures remain in their original
+receipt. This result does not claim that the full generic CI suite passed.
+
+Two other jobs then exposed validation failures. The TLS selector still required
+forty cases after the three additive native close cases made forty-three. Its
+guard now requires all three exact new names plus every existing TLS/accounting/
+kernel witness, the original 900-second timeout and no ignored cases. Its seven
+source controls passed; this is not a new TLS Rust execution claim.
+
+The runtime-contract source capture exceeded its 72-MiB file-byte allowance by
+31,565 bytes: the exact Git archive contained 8,658 selected files and 75,529,037
+file bytes, including 28 bytes of Git export substitution. The source allowance
+is now 73 MiB; the separate archive transport remains 80 MiB. The actual archive
+was 82,944,000 bytes. No selected input is omitted and no guest runtime limit
+changes. Two existing focused controls passed; the process helper changed only
+its explanatory comment, with identical AST and ownership/cleanup behavior.
+
+These repairs compose six changed Python validation inputs and two owner
+contracts after the qualified `976e86c` source. The remaining 6,444 native source
+inputs and all 294 kernel-producing inputs are unchanged. The public receipt
+records both original and composed identities. The Rust/kernel/C/VM result above
+belongs to `976e86c`; it was not rerun or relabelled as the final composition.
 
 An authenticated native post-free consumption/refund channel is still missing.
 The current final VFS handoff clears file private data, and the collector
