@@ -1,0 +1,37 @@
+{
+  "schemaVersion": "lsf.kernel-retirement-observation-source.v1",
+  "upstreamCommit": "7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+  "historicalKernelSource": "0f1e453448bc10a7d2c60453ab69140283834182",
+  "actualKernelExecution": false,
+  "actualNativeObservation": false,
+  "nativeQuotaRelease": false,
+  "productionInstallation": false,
+  "parentDerived": {
+    "net/factory.c": {
+      "bytes": 34704,
+      "sha256": "b3887811ac0c749d0c2a028fe34ce3957749cca2face541d333f3a21505849d2"
+    },
+    "net/factory-cleanup-root-final-free.c": {
+      "bytes": 13270,
+      "sha256": "46ef4bfddd850eb8824f11c36cfe416bc44ff0d5915e1ba094039ddebc456936"
+    }
+  },
+  "readOnlyLayouts": {
+    "net/factory-device.c": {
+      "bytes": 9636,
+      "sha256": "d16fec35c3961639275c6ec0e3845b8cddbbabc59f501db81aaa0303c676617d"
+    },
+    "net/prepaid.h": {
+      "bytes": 30613,
+      "sha256": "638907b75128eb886c574d43a8adf3110eea5e63ec77dc2b7712c653d23428cb"
+    },
+    "net/route-cache-owner.h": {
+      "bytes": 911,
+      "sha256": "d364beade64d3ea14a7fdfb2ff2088669ad691461aa0ac04acfe3bc4b1618d38"
+    }
+  },
+  "fragment": {
+    "bytes": 11025,
+    "sha256": "e6dd168c77da82c2da8a0706a4b7ce90526c74686a170ad63f29324fef48f98b"
+  }
+}

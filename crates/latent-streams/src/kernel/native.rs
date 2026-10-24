@@ -17,9 +17,12 @@ const READY: u32 = 2;
 const CLOSED: u32 = 4;
 const FRAME_BYTES: usize = 24;
 
+mod retirement;
+
 struct Resource {
     descriptor: Option<File>,
     bootstrap: Option<ReadyExpiry>,
+    retirement: Option<retirement::Owner>,
     _backing: StreamKernelBacking,
 }
 
@@ -45,6 +48,18 @@ impl Drop for NativeOwner {
 impl NativeOwner {
     pub(crate) fn close(mut self) -> Result<StreamKernelCloseJob, StreamError> {
         self.begin_close()
+    }
+
+    pub(crate) fn close_before(
+        mut self,
+        deadline: Instant,
+    ) -> Result<StreamKernelCloseJob, StreamError> {
+        if let Some(connection) = self.connection.as_mut() {
+            if let Some(observation) = connection.resource().retirement.as_mut() {
+                observation.narrow_deadline(deadline);
+            }
+        }
+        self.close()
     }
 
     fn begin_close(&mut self) -> Result<StreamKernelCloseJob, StreamError> {
@@ -79,6 +94,9 @@ impl Drop for Attempt {
             // unsuccessful open can itself have entered the kernel constructor.
             let mut resource = self.resource.take().expect("prepaid original backing");
             drop(resource.descriptor.take());
+            if let Some(observation) = resource.retirement.as_mut() {
+                observation.abandon();
+            }
             self.reservation
                 .take()
                 .expect("original connection reservation")
@@ -98,12 +116,13 @@ async fn start_initialized_with<O, I>(
     pools: Arc<ProviderPools>,
     installed: &InstalledProvider,
     deadline: Instant,
+    retirement: Option<retirement::Owner>,
     open: O,
     initialize: I,
 ) -> Result<NativeOwner, StreamError>
 where
     O: FnOnce() -> Result<File, StreamError> + Send + 'static,
-    I: FnOnce(&mut File, Instant) -> Result<Option<ReadyExpiry>, StreamError> + Send + 'static,
+    I: FnOnce(&mut Resource, Instant) -> Result<Option<ReadyExpiry>, StreamError> + Send + 'static,
 {
     if Instant::now() >= deadline {
         return Err(deadline_error());
@@ -120,6 +139,7 @@ where
         resource: Some(Resource {
             descriptor: None,
             bootstrap: None,
+            retirement,
             _backing: backing,
         }),
         entered: false,
@@ -135,13 +155,8 @@ where
             attempt.entered = true;
             let resource = attempt.resource.as_mut().expect("prepaid owner");
             resource.descriptor = Some(open()?);
-            resource.bootstrap = initialize(
-                resource
-                    .descriptor
-                    .as_mut()
-                    .expect("actual opened descriptor"),
-                deadline,
-            )?;
+            let bootstrap = initialize(resource, deadline)?;
+            resource.bootstrap = bootstrap;
             request.checkpoint()?;
             let resource = attempt.resource.take().expect("original resource");
             let reservation = attempt.reservation.take().expect("original reservation");
@@ -192,9 +207,20 @@ where
     O: FnOnce() -> Result<File, StreamError> + Send + 'static,
     I: FnOnce(&mut File, Instant) -> Result<(), StreamError> + Send + 'static,
 {
-    start_initialized_with(pools, installed, deadline, open, move |file, deadline| {
-        initialize(file, deadline).map(|()| None)
-    })
+    start_initialized_with(
+        pools,
+        installed,
+        deadline,
+        None,
+        open,
+        move |resource, deadline| {
+            initialize(
+                resource.descriptor.as_mut().expect("actual descriptor"),
+                deadline,
+            )
+            .map(|()| None)
+        },
+    )
     .await
 }
 
@@ -257,6 +283,15 @@ fn close_resource(resource: &mut Resource) -> StreamKernelCloseObservation {
         _ => StreamKernelCloseObservation::NotAttempted,
     };
     drop(resource.descriptor.take());
+    if let Some(retirement) = resource.retirement.as_mut() {
+        if observation == StreamKernelCloseObservation::RequestAccepted
+            && retirement.observe_after_original_close()
+        {
+            // This fixed observation still cannot release ANY native owner.
+            return StreamKernelCloseObservation::KernelRootReturned;
+        }
+        retirement.abandon();
+    }
     // CLOSED4 is request acceptance only. The original caller ALWAYS moves
     // this resource/connection/backing into quarantine after returning.
     observation
@@ -316,10 +351,36 @@ pub(crate) async fn start(
     installed: &InstalledProvider,
     deadline: Instant,
 ) -> Result<NativeOwner, StreamError> {
+    start_real(pools, installed, deadline, None).await
+}
+
+/// Explicit qualification consumer for a NEW source-matched observation ABI.
+/// The old constructor path above never tries this ioctl or changes its image.
+#[cfg(target_os = "linux")]
+pub(crate) async fn start_with_retirement_observation(
+    pools: Arc<ProviderPools>,
+    installed: &InstalledProvider,
+    deadline: Instant,
+) -> Result<NativeOwner, StreamError> {
+    if Instant::now() >= deadline {
+        return Err(deadline_error());
+    }
+    let observation = retirement::Owner::reserve(&pools, deadline)?;
+    start_real(pools, installed, deadline, Some(observation)).await
+}
+
+#[cfg(target_os = "linux")]
+async fn start_real(
+    pools: Arc<ProviderPools>,
+    installed: &InstalledProvider,
+    deadline: Instant,
+    retirement: Option<retirement::Owner>,
+) -> Result<NativeOwner, StreamError> {
     start_initialized_with(
         pools,
         installed,
         deadline,
+        retirement,
         || {
             rustix::fs::open(
                 c"/dev/lsf-stream-factory",
@@ -332,7 +393,17 @@ pub(crate) async fn start(
             .map(File::from)
             .map_err(|_| error(StreamErrorCode::Unsupported))
         },
-        |file, deadline| initialize(file, deadline).map(Some),
+        |resource, deadline| {
+            let file = resource
+                .descriptor
+                .as_mut()
+                .expect("actual opened descriptor");
+            let expiry = initialize(file, deadline)?;
+            if let Some(observation) = resource.retirement.as_mut() {
+                observation.mint(file, expiry)?;
+            }
+            Ok(Some(expiry))
+        },
     )
     .await
 }

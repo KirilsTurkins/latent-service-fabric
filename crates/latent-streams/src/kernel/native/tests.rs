@@ -94,6 +94,21 @@ fn close_status_preserves_original_expiry_and_never_accepts_ready_as_retirement(
         wrong[offset] ^= 1;
         assert!(close_status(&wrong, expiry).is_err());
     }
+    // Actual shared ABI decoder, not a custom-kernel or refund claim.
+    let mut returned = [0; retirement::WIRE_BYTES];
+    for (offset, value) in [(0, 0x4c53_4652u32), (4, 1), (8, 1), (16, 63), (20, 1)] {
+        returned[offset..offset + 4].copy_from_slice(&value.to_le_bytes());
+    }
+    for (offset, value) in [(24, 1u64), (32, 2), (40, 123)] {
+        returned[offset..offset + 8].copy_from_slice(&value.to_le_bytes());
+    }
+    assert!(retirement::terminal(&returned, expiry));
+    for offset in [0, 4, 8, 12, 16, 20, 24, 32, 40] {
+        let mut wrong = returned;
+        wrong[offset] ^= 1;
+        assert!(!retirement::terminal(&wrong, expiry));
+    }
+    assert!(!retirement::terminal(&returned, ReadyExpiry(124)));
 }
 
 #[test]
@@ -160,6 +175,7 @@ async fn fixed_file_close_receipt_stays_paid_until_drop_without_refunding_backin
         Arc::clone(&fixture.pools),
         &fixture.provider.inner.installed,
         Instant::now() + Duration::from_secs(5),
+        None,
         move || {
             std::fs::OpenOptions::new()
                 .read(true)
@@ -167,7 +183,8 @@ async fn fixed_file_close_receipt_stays_paid_until_drop_without_refunding_backin
                 .open(path)
                 .map_err(|_| error(StreamErrorCode::IoFailed))
         },
-        move |file, _| {
+        move |resource, _| {
+            let file = resource.descriptor.as_ref().unwrap();
             send.send(descriptor(file)).unwrap();
             Ok(Some(ReadyExpiry(123)))
         },
@@ -212,6 +229,20 @@ async fn fixed_file_close_receipt_stays_paid_until_drop_without_refunding_backin
     assert!(retained.metadata_bytes < held.metadata_bytes);
     assert_eq!(retained.connections, 1);
     assert_eq!(retained.failed_cleanup, 1);
+
+    // An observer attempt is prepaid before entry. This foreign regular file
+    // is refused BEFORE ioctl; abandonment still does not refund its owner.
+    let before_observer = stable_snapshot(&fixture.pools).await;
+    let mut observer =
+        retirement::Owner::reserve(&fixture.pools, Instant::now() + Duration::from_secs(1))
+            .unwrap();
+    let foreign = File::open(directory.path().join("fixed-close-owner")).unwrap();
+    assert!(observer.mint(&foreign, ReadyExpiry(123)).is_err());
+    observer.abandon();
+    let abandoned = stable_snapshot(&fixture.pools).await;
+    assert!(abandoned.metadata_bytes >= before_observer.metadata_bytes + 4096);
+    assert_eq!(abandoned.connections, 1);
+    drop(observer); // Only this BEFORE-ioctl refusal can drop its local metadata.
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
