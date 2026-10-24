@@ -28,21 +28,30 @@ export function ownedResultFixtureBindings(source,parse,backing=false) {
     if(arrow?.type!=='ArrowFunctionExpression'||arrow.async||call?.type!=='CallExpression'||
        call.callee.type!=='Identifier'||call.callee.name!=='$'+binding)fail();
     const body=fn.body.body.find(node=>node.type==='TryStatement')?.block.body;
-    const entries=body?.filter(node=>node.type==='VariableDeclaration').flatMap(node=>node.declarations)
-      .filter(node=>node.id?.name==='started'&&node.init?.type==='AwaitExpression'&&
-        node.init.argument.type==='CallExpression'&&node.init.argument.arguments.length===0&&
-        node.init.argument.callee.type==='MemberExpression'&&!node.init.argument.callee.computed&&
-        node.init.argument.callee.object.type==='Identifier'&&node.init.argument.callee.object.name==='task'&&
-        node.init.argument.callee.property.type==='Identifier'&&node.init.argument.callee.property.name==='enter');
-    const invocations=[];
+    const invocations=[],awaits=[];let legacy=false;
     function walk(node){
       if(!node||typeof node!=='object')return;
       if(Array.isArray(node)){for(const child of node)walk(child);return;}
       if(node.type==='CallExpression'&&node.callee.type==='Identifier'&&node.callee.name==='__lsfAwaitImport')invocations.push(node);
+      if(node.type==='AwaitExpression')awaits.push(node);
+      if(node.type==='CallExpression'&&
+        (node.callee.type==='Identifier'&&['createNewCurrentTask','_withGlobalCurrentTaskMetaAsync'].includes(node.callee.name)||
+         node.callee.type==='MemberExpression'&&node.callee.object.type==='Identifier'&&node.callee.object.name==='task'))legacy=true;
       for(const value of Object.values(node))if(value&&typeof value==='object')walk(value);
     }
     walk(body);
-    if(entries?.length!==1||invocations.length!==1||entries[0].end>=invocations[0].start)fail();
+    const transfers=body?.filter(node=>node.type==='ExpressionStatement'&&
+      node.expression.type==='AssignmentExpression'&&node.expression.operator==='='&&
+      node.expression.left.type==='Identifier'&&node.expression.left.name==='ret'&&
+      node.expression.right.type==='CallExpression'&&node.expression.right.arguments.length===1&&
+      node.expression.right.callee.type==='MemberExpression'&&!node.expression.right.callee.computed&&
+      node.expression.right.callee.object.type==='Identifier'&&node.expression.right.callee.object.name==='__lsfImports'&&
+      node.expression.right.callee.property.type==='Identifier'&&node.expression.right.callee.property.name==='lift');
+    const awaited=transfers?.[0]?.expression.right.arguments[0];
+    const arm=body?.[0]?.expression;
+    if(legacy||transfers?.length!==1||invocations.length!==1||awaits.length!==1||awaited!==awaits[0]||
+       awaited.argument!==invocations[0]||arm?.type!=='CallExpression'||arm.callee.type!=='Identifier'||
+       arm.callee.name!=='__lsfBorrowArm')fail();
     // The ordinary helper returns the REAL native carrier. Register our real
     // reaction before returning it to the metadata await. FIFO Promise jobs
     // place cancellation after actual Returned/lowering and before typed lift.
@@ -51,9 +60,11 @@ export function ownedResultFixtureBindings(source,parse,backing=false) {
     edits.push({start:call.start,end:call.end,text:`{
       const carrier=${actual};
       const context=__ownedFixtureContext;
-      if(!context||context.alias!==${JSON.stringify(alias)}||!context.operation)throw Error('owned-fixture-operation-not-armed');
-      if(context.cancelMode===1)carrier.then(()=>{context.operation.cancel();},()=>{});
-      else if(context.cancelMode===2)context.operation.cancel();
+      if(!context||context.alias!==${JSON.stringify(alias)})throw Error('owned-fixture-operation-not-armed');
+      if(context.cancelMode===1)carrier.then(()=>{
+        if(!context.operation)throw Error('owned-fixture-operation-not-armed');
+        context.operation.cancel();
+      },()=>{});
       return carrier;
     }`});
   }
@@ -72,6 +83,9 @@ defineBuiltinModule('tests:owned-result/control@1.0.0',{
     __ownedFixtureContext=context;
     const operation=__lsfBorrowCalls[alias](mode);
     context.operation=operation;
+    // Native-only entry has already made its actual first host poll before
+    // returning this operation. Cancel on the SAME stack before await/lift.
+    if(cancelMode===2)operation.cancel();
     return operation;
   }
 });

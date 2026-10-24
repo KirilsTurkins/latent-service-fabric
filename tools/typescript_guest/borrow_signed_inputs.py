@@ -20,11 +20,12 @@ from tools.phase3_resource_identity import file_identity
 from tools.rust_capsule_project import ROOT, read_file, digest, fresh, write_json
 from tools.typescript_guest import activation_engine, native_build, runtime_profile
 
-HEAD = 'be356d28f93267dc34078ce137d49ed28c28bf47'
-RUN, JOB = 40062945676, 120780152060
-ARTIFACT = 12547924676
-ARCHIVE_BYTES = 196485322
-ARCHIVE_DIGEST = 'sha256:5b89337277d467076a42d45e301b0b17f1e535c0c58a4ef3cc8bb8ba615d2cfc'
+HEAD = '6d834e502beea33fbae9347fbaf23ff8c37223b3'
+BRANCH = 'feat/typescript-late-backing-disposal-20261024'
+RUN, JOB = 40077087832, 120822677716
+ARTIFACT = 12553639081
+ARCHIVE_BYTES = 196495650
+ARCHIVE_DIGEST = 'sha256:b009b2ae4b62fd74ecfad43dadfffb51301d94220e090216201d39d7468afd77'
 PREFIX = ''
 MAX_ARCHIVE, MAX_TOTAL, MAX_MEMBERS = 512 * 1024**2, 2 * 1024**3, 1024
 PRODUCTS = ('engine.wasm', 'engine-input.json', 'engine-build.json',
@@ -33,6 +34,11 @@ RECEIPT = 'OWN-RESULTS.json'
 SCOPE = 'fresh-normal-compiler-engine-unit-native-ABI-prerequisites'
 FALSE_SCOPE = ('canonicalOwnComponentExecuted', 'tableReuseQualified', 'signedExecution',
                'physicalProviderQualified', 'wholeCostQualification')
+EMITTED_CASES = (
+    'invalid-active-tag', 'overflowing-list-range', 'misaligned-list',
+    'zero-size-nonzero-pointer', 'valid-empty-string', 'valid-zero-stride-list',
+    'nested-invalid-after-valid-child', 'own-trap-before-container-free',
+)
 
 
 def canonical_identity(value):
@@ -55,7 +61,7 @@ def metadata(run, job, artifact):
     require(type(run.get('run_attempt')) is int and run['run_attempt'] == 1
             and run['id'] == RUN and run['head_sha'] == HEAD and run['event'] == 'workflow_dispatch'
             and run['path'] == '.github/workflows/typescript-owned-results.yml'
-            and run['head_branch'] == 'fix/typescript-import-function-identity-20261024'
+            and run['head_branch'] == BRANCH
             and run['status'] == 'completed' and run['conclusion'] == 'success',
             'borrow-signed-successful-own-producer')
     require(job['id'] == JOB and job['run_id'] == RUN and job['head_sha'] == HEAD
@@ -81,13 +87,26 @@ def receipt(value):
             and value.get('machBuildCount') == 0 and type(value.get('machBuildCount')) is int,
             'borrow-signed-original-build-counts')
     require(type(value.get('sourceControls')) is dict
-            and value['sourceControls'] == {'testsRun':29,'skipped':0,'failures':0,'errors':0}
+            and value['sourceControls'] == {'testsRun':32,'skipped':0,'failures':0,'errors':0}
             and all(type(item) is int for item in value['sourceControls'].values()),
             'borrow-signed-original-source-counts')
     rust = value.get('actualRustCases')
-    require(type(rust) is list and len(rust) == 13 and all(type(name) is str
+    require(type(rust) is list and len(rust) == 17 and all(type(name) is str
             and re.fullmatch(r'lsf_async(?:_splice)?::tests::[A-Za-z0-9_]{1,160}',name) is not None for name in rust)
-            and len(set(rust)) == 13, 'borrow-signed-original-rust-counts')
+            and len(set(rust)) == 17, 'borrow-signed-original-rust-counts')
+    emitted=value.get('emittedBackingControls')
+    require(type(emitted) is dict and set(emitted)=={'manifest','modules','allocatorEvidence','executed'}
+            and emitted['allocatorEvidence'] is False and emitted['executed'] is False,
+            'borrow-signed-emission-not-execution')
+    canonical_identity(emitted['manifest'])
+    require(emitted['manifest']['bytes']<=32768 and type(emitted['modules']) is list
+            and len(emitted['modules'])==8,'borrow-signed-exact-eight-emitted-modules')
+    for which,(case,row) in enumerate(zip(EMITTED_CASES,emitted['modules'],strict=True)):
+        require(type(row) is dict and set(row)=={'case','file','bytes','sha256'}
+                and row['case']==case and row['file']==f'{which:02}-{case}.wasm',
+                'borrow-signed-closed-emitted-name')
+        canonical_identity({key:row[key] for key in ('bytes','sha256')})
+        require(row['bytes']<=65536,'borrow-signed-emitted-module-bound')
     for field,count in (('nativeRows',13),('lifecycleRows',6)):
         rows = value.get(field)
         require(type(rows) is list and len(rows) == count
@@ -106,6 +125,38 @@ def receipt(value):
                 and not PurePosixPath(name).is_absolute(), 'borrow-signed-producer-recipe-path')
         canonical_identity(identity)
     return value
+
+
+def emission_manifest(raw,emitted):
+    require({'bytes':len(raw),'sha256':digest(raw)}==emitted['manifest'],
+            'borrow-signed-original-emitted-manifest')
+    rows=json.loads(raw)
+    require(type(rows) is list and len(rows)==8,'borrow-signed-emitted-manifest-count')
+    for which,(case,row) in enumerate(zip(EMITTED_CASES,rows,strict=True)):
+        require(type(row) is dict and set(row)=={'case','file','bytes','argument','expectedReturn',
+                'expectedTrap','expectedDoubleFreeReturns','allocatorEvidence'}
+                and row['case']==case and row['file']==f'{which:02}-{case}.wasm'
+                and type(row['argument']) is int and row['argument']==32
+                and (row['expectedReturn'] is None if which==7 else
+                     type(row['expectedReturn']) is int and row['expectedReturn']==int(which in (4,5)))
+                and row['expectedTrap'] is (which==7)
+                and type(row['expectedDoubleFreeReturns']) is int and row['expectedDoubleFreeReturns']==0
+                and row['allocatorEvidence'] is False
+                and type(row['bytes']) is int and row['bytes']==emitted['modules'][which]['bytes'],
+                'borrow-signed-emitted-manifest-contract')
+
+
+def original_source_controls(carrier,own):
+    rows=[row for row in own['commands'] if row.get('label')=='pinned-source-controls']
+    require(len(rows)==1 and rows[0].get('returncode')==0,'borrow-signed-original-source-command')
+    channels={kind:carrier.read(PREFIX+'pinned-source-controls.'+kind+'.log')
+              for kind in ('stdout','stderr')}
+    for kind,raw in channels.items():
+        require(len(raw)<=1024**2 and rows[0][kind]=={'bytes':len(raw),'sha256':digest(raw)},
+                'borrow-signed-original-source-channel')
+    require(json.loads(channels['stdout'])==own['sourceControls']
+            and len(re.findall(r'^test_[^\n]+ \.\.\. ok$',channels['stderr'].decode(),re.MULTILINE))==32
+            and 'Ran 32 tests' in channels['stderr'].decode(),'borrow-signed-actual-source-thirty-two')
 
 
 def selected(archive):
@@ -143,6 +194,21 @@ def selected(archive):
              *(PREFIX + row['case'] + '.stdout.log' for field in ('nativeRows','lifecycleRows') for row in own[field])}
     require(names <= index.keys() and all(index[name].file_size <= 1024**2 for name in names
             if name.endswith('.stdout.log')), 'borrow-signed-original-raw-evidence-bound')
+    source_channels=[PREFIX+'pinned-source-controls.'+kind+'.log' for kind in ('stdout','stderr')]
+    require(all(name in index and index[name].file_size<=1024**2 for name in source_channels),
+            'borrow-signed-original-source-channel-bound')
+    original_source_controls(archive,own)
+    emitted=own['emittedBackingControls'];manifest_name=PREFIX+'backing-core-controls/manifest.json'
+    emitted_names={manifest_name,*(PREFIX+'backing-core-controls/'+row['file'] for row in emitted['modules'])}
+    require(emitted_names<=index.keys() and index[manifest_name].file_size==emitted['manifest']['bytes'],
+            'borrow-signed-emitted-members-required')
+    emission_manifest(archive.read(index[manifest_name]),emitted)
+    for row in emitted['modules']:
+        item=index[PREFIX+'backing-core-controls/'+row['file']]
+        require(item.file_size==row['bytes'] and item.file_size<=65536,'borrow-signed-original-module-size')
+        raw=archive.read(item)
+        require(raw.startswith(b'\0asm') and digest(raw)==row['sha256'],'borrow-signed-original-emitted-module')
+    names |= emitted_names
     splicer = {name for name in index if name.startswith(PREFIX + 'splicer/') and
                (name[len(PREFIX + 'splicer/'):].startswith('splicer/') or
                 name[len(PREFIX + 'splicer/'):] in ('splicer-input.json', 'splicer-build.json',
@@ -156,6 +222,7 @@ def selected(archive):
         row = index[PREFIX + 'engine/' + product]
         require(row.file_size == identity['bytes'], 'borrow-signed-engine-member-size')
     names |= splicer
+    require(len(names)==62,'borrow-signed-exact-sixty-two-selected-products')
     require(sum(index[name].file_size for name in names) <= 128 * 1024**2,
             'borrow-signed-selected-products-bound')
     require(archive.testzip() is None, 'borrow-signed-all-members-crc')
@@ -189,6 +256,7 @@ def verify(directory, git):
         require(0 < row.file_size <= 4*1024**2
                 and carrier.read(row) == read_file(directory/RECEIPT,4*1024**2),
                 'borrow-signed-original-receipt-bytes-changed')
+        original_source_controls(carrier,receipt(json.loads(carrier.read(row))))
     own = receipt(json.loads(read_file(directory / RECEIPT, 4 * 1024**2)))
     require(git('producer-tree', 'git', 'rev-parse', HEAD + '^{tree}').decode().strip() == own['sourceTree'],
             'borrow-signed-immutable-producer-tree')
@@ -200,6 +268,15 @@ def verify(directory, git):
     require(len(unit_commands) == 1 and unit_commands[0]['returncode'] == 0
             and unit_commands[0]['stdout'] == {'bytes':len(rust),'sha256':digest(rust)},
             'borrow-signed-original-raw-rust-log')
+    names=re.findall(r'^test (lsf_async(?:_splice)?::tests::[A-Za-z0-9_]+) \.\.\. ok$',rust.decode(),re.MULTILINE)
+    require(len(names)==len(set(names))==17 and names==own['actualRustCases']
+            and 'test result: ok. 17 passed; 0 failed; 0 ignored;' in rust.decode(),
+            'borrow-signed-actual-rust-seventeen')
+    emitted=own['emittedBackingControls']
+    emission_manifest(read_file(directory/'backing-core-controls/manifest.json',32768),emitted)
+    for row in emitted['modules']:
+        require(file_identity(directory/'backing-core-controls'/row['file'],65536)==
+                {key:row[key] for key in ('bytes','sha256')},'borrow-signed-original-emitted-product')
     for field in ('nativeRows','lifecycleRows'):
         for row in own[field]:
             require(json.loads(read_file(directory/(row['case']+'.stdout.log'),1024**2)) == row,

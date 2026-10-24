@@ -40,11 +40,11 @@ class LateBackingEvidenceTests(unittest.TestCase):
             with self.assertRaises(ValueError):evidence.backing_rows(channel(changed))
 
     def test_core_parser_binds_loaded_hashes_and_keeps_counter_double_scope(self):
-        modules=[dict(case=name,bytes=8,sha256=f'{index:064x}')
+        modules=[dict(case=name,bytes=8,sha256=f'sha256:{index:064x}')
                  for index,name in enumerate(evidence.BACKING_CORE_CASES)]
-        emitted=dict(executed=False,allocatorEvidence=False,manifest={'sha256':'a'*64},modules=modules)
+        emitted=dict(executed=False,allocatorEvidence=False,manifest={'sha256':'sha256:'+'a'*64},modules=modules)
         rows=[dict(schemaVersion='latent.typescript.backing-core-case.v1',case=entry['case'],index=which,status='passed',
-            moduleBytes=8,moduleSha256=entry['sha256'],manifestSha256='a'*64,
+            moduleBytes=8,moduleSha256=entry['sha256'].removeprefix('sha256:'),manifestSha256='a'*64,
             returned=None if which==7 else int(which in (4,5)),trapped=which==7,doubleFreeReturns=0,
             originalDropCalls=int(which==7),fuel=100,allocatorEvidence=False,guestRootReopened=False)
             for which,entry in enumerate(modules)]

@@ -25,12 +25,13 @@ IMPORTS=(1,2,2,2,2,1,2,1,1,2,1)
 MEMORY=128*1024**2
 FUEL=1_000_000_000
 SOURCE_MODULES=('tools.tests.test_typescript_owned_fixture','tools.tests.test_typescript_owned_component',
-                'tools.tests.test_typescript_late_backing_evidence')
+                'tools.tests.test_typescript_late_backing_evidence','tools.tests.test_typescript_native_carrier_scheduling')
 RECIPE=(
     'tools/qualify_typescript_owned_component.py','tools/typescript_guest/owned_component_controls.py',
     'tools/typescript_guest/owned_result_component.py','tools/typescript_guest/owned_result_fixture.py',
     'tools/typescript_guest/owned_result_fixture.mjs','tools/typescript_guest/compiler.py',
     'tools/typescript_guest/late_backing_evidence.py','tools/tests/test_typescript_late_backing_evidence.py',
+    'tools/tests/test_typescript_native_carrier_scheduling.py',
     'tools/typescript_guest/componentize.mjs','tools/typescript_guest/async_waiters.mjs',
     'tools/typescript_guest/import_cancellation.mjs','tools/typescript_guest/resources.mjs',
     'tools/typescript_guest/signed64.mjs','tools/typescript_guest/source_splicer.mjs',
@@ -169,7 +170,7 @@ def build(output:Path,tools:Path,prepared:Path,*,profile:str='canonical-own')->d
             result=json.loads(commands.run('canonical-source-controls',sys.executable,'-c',
                 "import sys;sys.path.insert(0,"+repr(str(ROOT))+");"+program))
         finally:commands.command_seconds=original_seconds
-        require(result=={'testsRun':10,'skipped':0,'failures':0,'errors':0},'canonical-own-all-ten-source-controls-required')
+        require(result=={'testsRun':14,'skipped':0,'failures':0,'errors':0},'canonical-own-all-fourteen-source-controls-required')
         record['sourceControls']=result
         def producer_git(label,*argv):
             require(argv[0]=='git','canonical-own-read-only-producer-git')

@@ -35,36 +35,41 @@ class TypeScriptOwnedFixtureTests(unittest.TestCase):
         self.assertEqual(result.returncode,0,result.stdout+result.stderr)
 
     def test_actual_captured_shapes_get_only_three_closed_carrier_reactions(self):
-        self.javascript(r"""
-const transformed=ownedResultFixtureBindings(source,parse);
+        self.javascript('const {nativeCarrierImports}=await import('+json.dumps((ROOT/'tools/typescript_guest/async_waiters.mjs').as_uri())+');\n'+r"""
+const native=nativeCarrierImports(fuseNativeImportAwaits(directIdleTaskSlots(prefixMaterial.source+selected.join('\n')),parse),parse);
+const transformed=ownedResultFixtureBindings(native,parse);
 assert.equal((transformed.match(/const carrier=\$/g)||[]).length,3);
 assert.equal((transformed.match(/carrier.then\(/g)||[]).length,3);
 assert.equal((transformed.match(/__lsfImports.delivered\(/g)||[]).length,(source.match(/__lsfImports.delivered\(/g)||[]).length);
-assert.equal((transformed.match(/await task.enter\(\)/g)||[]).length,3);
+assert.equal((transformed.match(/await task.enter\(\)/g)||[]).length,0);
+assert.equal((transformed.match(/await __lsfAwaitImport\(/g)||[]).length,3);
 assert(!transformed.includes('setStatus'));assert(!transformed.includes('pumpHook'));
 parse(transformed,{ecmaVersion:'latest',sourceType:'module'});
 assert.throws(()=>ownedResultFixtureBindings(transformed,parse),/shape-drift/);
+assert.throws(()=>ownedResultFixtureBindings(source,parse),/shape-drift/);
 """)
 
     def test_missing_first_yield_unknown_native_call_and_module_collision_refuse(self):
-        self.javascript("""
-for(const changed of [source.replace('await task.enter()','task.enter()'),
- source.replace('await task.enter()','await other.enter()'),
- source.replace('$'+ownFixtureSelection[0].binding,'$differentNative'),
- source+'\\nconst __ownedFixtureContext=null;',source+"\\nconst reserved='tests:owned-result/control@1.0.0';"]){
+        self.javascript('const {nativeCarrierImports}=await import('+json.dumps((ROOT/'tools/typescript_guest/async_waiters.mjs').as_uri())+');\n'+"""
+const native=nativeCarrierImports(fuseNativeImportAwaits(directIdleTaskSlots(prefixMaterial.source+selected.join('\\n')),parse),parse);
+for(const changed of [native.replace('await __lsfAwaitImport','__lsfAwaitImport'),
+ native.replace('await __lsfAwaitImport','await otherNative'),
+ native.replace('$'+ownFixtureSelection[0].binding,'$differentNative'),
+ native+'\\nconst __ownedFixtureContext=null;',native+"\\nconst reserved='tests:owned-result/control@1.0.0';"]){
  assert.throws(()=>ownedResultFixtureBindings(changed,parse),/shape-drift/);
 }
 """)
 
     def test_backing_fixture_captures_only_readonly_count_and_closed_fourth_import(self):
-        self.javascript(r"""
+        self.javascript('const {nativeCarrierImports}=await import('+json.dumps((ROOT/'tools/typescript_guest/async_waiters.mjs').as_uri())+');\n'+r"""
 const backing=captured.replaceAll('import_latent_http_streaming_0_3_0$open','import_tests_owned_result_provider_1_0_0$backing');
-const input=inlineNativeTaskMeta(fuseNativeImportAwaits(directIdleTaskSlots(prefixMaterial.source+[...selected,backing].join('\n')),parse),parse);
+const input=nativeCarrierImports(fuseNativeImportAwaits(directIdleTaskSlots(prefixMaterial.source+[...selected,backing].join('\n')),parse),parse);
 const transformed=ownedResultFixtureBindings(input,parse,true);
 assert.equal((transformed.match(/const carrier=\$/g)||[]).length,4);
 assert.equal((transformed.match(/carrier.then\(/g)||[]).length,4);
 assert.equal((transformed.match(/backingFreeCount\(\)\{return __lsfImports.backingFreeCount\(\);\}/g)||[]).length,1);
-assert(!ownedResultFixtureBindings(source,parse).includes('__lsfImports.backingFreeCount'));
+const native=nativeCarrierImports(fuseNativeImportAwaits(directIdleTaskSlots(prefixMaterial.source+selected.join('\n')),parse),parse);
+assert(!ownedResultFixtureBindings(native,parse).includes('__lsfImports.backingFreeCount'));
 assert.throws(()=>ownedResultFixtureBindings(input,parse,1),/shape-drift/);
 assert.throws(()=>ownedResultFixtureBindings(source,parse,true),/shape-drift/);
 parse(transformed,{ecmaVersion:'latest',sourceType:'module'});

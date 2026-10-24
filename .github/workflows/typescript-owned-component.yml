@@ -59,7 +59,7 @@ jobs:
       - name: Install locked Python controls
         run: python3 -m pip install --requirement tools/requirements.lock
       - name: Make the exact successful producer source available for immutable checks
-        run: git fetch --no-tags --depth=1 origin be356d28f93267dc34078ce137d49ed28c28bf47
+        run: git fetch --no-tags --depth=1 origin 6d834e502beea33fbae9347fbaf23ff8c37223b3
       - name: Install normal isolated compiler prerequisites
         run: |
           sudo apt-get update

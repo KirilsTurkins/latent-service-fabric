@@ -51,7 +51,7 @@
       },
       {
         "name": "Make the exact successful producer source available for immutable checks",
-        "run": "git fetch --no-tags --depth=1 origin be356d28f93267dc34078ce137d49ed28c28bf47"
+        "run": "git fetch --no-tags --depth=1 origin 6d834e502beea33fbae9347fbaf23ff8c37223b3"
       },
       {
         "name": "Install normal isolated compiler prerequisites",
@@ -91,7 +91,7 @@
   },
   "jobId": "canonical-own",
   "kind": "job",
-  "reviewReason": "Explicitly review replacement of the original six-source/eleven-case step by mandatory10-source controls and strict quoted closed-profile CLI; default retains all11 and late profile adds8 emitted-core plus8 allocator cases under unchanged900s. All other setup commands and required actions remain unchanged.",
+  "reviewReason": "Review exact successful6d native input pin and62-product emitted closure, preserve all existing fixture/evidence cases and guards, and use the closed published native-carrier fixture shape with14 mandatory source controls; no component qualification or quota expansion.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-owned-component.yml"
 }

@@ -32,8 +32,12 @@ def core_rows(raw:bytes,emitted:dict)->list[dict]:
     for which,(name,row,material) in enumerate(zip(BACKING_CORE_CASES,rows,emitted['modules'],strict=True)):
         require(row.get('case')==material['case']==name and type(row.get('index')) is int
                 and row['index']==which and row.get('status')=='passed','backing-core-actual-case-order')
-        require(row.get('moduleBytes')==material['bytes'] and row.get('moduleSha256')==material['sha256']
-                and row.get('manifestSha256')==emitted['manifest']['sha256'],'backing-core-loaded-original-bytes')
+        module_hash=row.get('moduleSha256');manifest_hash=row.get('manifestSha256')
+        require(row.get('moduleBytes')==material['bytes']
+                and type(module_hash) is str and re.fullmatch(r'[0-9a-f]{64}',module_hash) is not None
+                and type(manifest_hash) is str and re.fullmatch(r'[0-9a-f]{64}',manifest_hash) is not None
+                and 'sha256:'+module_hash==material['sha256']
+                and 'sha256:'+manifest_hash==emitted['manifest']['sha256'],'backing-core-loaded-original-bytes')
         require((row.get('returned') is None if which==7 else
                  type(row.get('returned')) is int and row['returned']==int(which in (4,5)))
                 and row.get('trapped') is (which==7)
