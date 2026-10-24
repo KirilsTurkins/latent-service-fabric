@@ -1,0 +1,14 @@
+package examples:go-standard-network@1.0.0;
+
+interface api {
+    run: async func(which: u32, address: string) -> string;
+}
+
+world service {
+    import latent:clock/monotonic@0.1.0;
+    import latent:clock/wall@0.1.0;
+    import latent:random/random@0.1.0;
+    import latent:runtime/activation@0.1.0;
+    import latent:network/streams@0.1.0;
+    export api;
+}

@@ -20,6 +20,9 @@ pub(crate) struct CompilerEngineSettings {
     java_guest: bool,
     #[serde(default, skip_serializing_if = "is_false")]
     activation_import_cancellation: bool,
+    #[cfg(feature = "development-test-host")]
+    #[serde(default, skip_serializing_if = "is_false")]
+    development_numeric_trap_observation: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     native_thread_profile: Option<NativeThreadProfile>,
 }
@@ -73,6 +76,8 @@ impl CompilerEngineSettings {
             copy_on_write_images: config.copy_on_write_images,
             java_guest: config.java_guest,
             activation_import_cancellation: config.activation_runtime.is_some(),
+            #[cfg(feature = "development-test-host")]
+            development_numeric_trap_observation: config.development_numeric_trap_observation,
             native_thread_profile: config
                 .owned_native_threads
                 .then_some(config.native_thread_profile),
@@ -128,7 +133,13 @@ impl CompilerEngineSettings {
         self.memory.apply(engine_config);
         engine_config.memory_init_cow(self.copy_on_write_images);
         engine_config.wasm_backtrace_details(WasmBacktraceDetails::Disable);
-        engine_config.wasm_backtrace_max_frames(None);
+        #[cfg(feature = "development-test-host")]
+        let backtrace_limit = self
+            .development_numeric_trap_observation
+            .then(|| std::num::NonZeroUsize::new(16).expect("fixed positive test frame cap"));
+        #[cfg(not(feature = "development-test-host"))]
+        let backtrace_limit = None;
+        engine_config.wasm_backtrace_max_frames(backtrace_limit);
     }
 
     pub(crate) fn owned_native_threads(&self) -> bool {

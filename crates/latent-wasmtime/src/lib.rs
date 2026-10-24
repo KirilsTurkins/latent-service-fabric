@@ -11,6 +11,8 @@ mod compiler;
 mod component_threading;
 mod config;
 mod containment;
+#[cfg(feature = "development-test-host")]
+mod development_trap_observer;
 mod factory;
 mod host;
 mod invocation_input_observer;
@@ -51,6 +53,10 @@ pub use config::{
     GENERIC_BACKEND_ID, WASMTIME_VERSION,
 };
 pub use containment::RuntimeResourceSnapshot;
+#[cfg(feature = "development-test-host")]
+pub use development_trap_observer::{
+    DevelopmentTrapFrame, DevelopmentTrapGuard, DevelopmentTrapSnapshot,
+};
 pub use factory::WasmtimeComponentEngineFactory;
 pub use host::policy::ContextExposurePolicy;
 pub use host::{BoundedLogSink, CapturedLog, LogSinkError, StructuredLogSink};

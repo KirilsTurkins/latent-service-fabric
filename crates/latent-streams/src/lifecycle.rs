@@ -220,6 +220,10 @@ impl StreamLifecycle {
             usage.pending_operations += u.pending_operations;
             usage.retained_chunks += u.retained_chunks;
             usage.accepted_write_bytes += u.accepted_write_bytes;
+            #[cfg(any(test, feature = "development-outbound"))]
+            {
+                usage.input_budget_bytes += u.input_budget_bytes;
+            }
             usage.delivered_read_bytes += u.delivered_read_bytes;
         }
         Ok(StreamStatus {
