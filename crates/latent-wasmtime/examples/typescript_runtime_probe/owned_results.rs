@@ -27,7 +27,7 @@ struct Chunk;
 struct BackingCell {
     label: String,
     data: Vec<u16>,
-    zero: Vec<()>,
+    zero: Vec<u8>,
     payload: Option<Resource<Connection>>,
 }
 #[derive(Clone, Default, Debug)]
@@ -320,7 +320,7 @@ fn install(linker: &mut Linker<State>, backing: bool) -> wasmtime::Result<()> {
                         BackingCell {
                             label: "left".into(),
                             data: vec![1, 2],
-                            zero: vec![(), ()],
+                            zero: Vec::new(),
                             payload: None,
                         },
                         BackingCell {
@@ -333,7 +333,7 @@ fn install(linker: &mut Linker<State>, backing: bool) -> wasmtime::Result<()> {
                     3 | 4 => Ok(vec![BackingCell {
                         label: String::new(),
                         data: Vec::new(),
-                        zero: vec![(), ()],
+                        zero: Vec::new(),
                         payload: None,
                     }]),
                     5 | 7 => access
@@ -342,7 +342,7 @@ fn install(linker: &mut Linker<State>, backing: bool) -> wasmtime::Result<()> {
                             vec![BackingCell {
                                 label: "owned".into(),
                                 data: vec![7],
-                                zero: vec![()],
+                                zero: Vec::new(),
                                 payload: Some(Resource::<Connection>::new_own(rep)),
                             }]
                         })

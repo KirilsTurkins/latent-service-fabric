@@ -111,16 +111,19 @@ callback; a trap after partial progress retains that quarantine and cannot
 replay earlier actions. A partially constructed host lowering is not walked.
 
 Fresh zero-byte canonical realloc requests return null without allocation;
-they never use realloc-to-zero as a free operation. Empty and zero-stride
-backing requires that null contract and performs no free. A zero-stride list
-with no storage/OWN children performs no length-driven disposal iteration.
+they never use realloc-to-zero as a free operation. Empty backing requires
+that null contract and performs no free. The direct emitted-core controls also
+cover a zero-stride descriptor with no storage/OWN children and no length-driven
+iteration. Zero-stride normal components remain unsupported and unqualified:
+the pinned normal component validator rejects empty tuples, records and flags.
+The actual backing fixture uses valid empty `list<u8>` values instead.
 Normal delivery of empty lists and nested empty strings/lists is an explicit
 component prerequisite because this allocator correction also affects normal
 canonical lowering.
 
 The compiler-private read-only observation increments only after the original
-free returns. Its fixed scalar layout is expected to be eight bytes and is
-asserted by the fresh C++ build; that build has not executed yet. The new
+free returns. Its fixed scalar layout is eight bytes, as asserted by the
+successful fresh C++ build. The new
 private JS getter's storage and overall engine cost remain unmeasured. No
 Record or manager fields, release authority, refunds or settlement decisions
 depend on this observation. Only the derived diagnostic fixture exposes its
@@ -137,7 +140,13 @@ Store teardown. A destructor refusal has no observed post-trap count; its
 parent-free exclusion is inferred from verified emitted order and the actual
 trap. There is no reopened root or synthetic zero count.
 
-This source repair and its new campaign are not yet qualified. It does not
+The [first late-backing campaign](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40084273482)
+passed all fourteen source controls and the normal fresh-input validators,
+then refused the fixture's empty tuple during normal component construction.
+No component or emitted-core runtime case ran. That failed receipt is preserved;
+the valid empty-list fixture correction changes no SDK or emitted-core inputs.
+
+The backing runtime campaign remains unqualified. It does not
 free normal delivered/partially lifted values, parameters, captured buffers,
 GC allocations or partially lowered results, and does not certify OS or linear
 memory shrink, physical provider close or completion of the SDK ticket.
