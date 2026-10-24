@@ -8,9 +8,13 @@ on:
       - 'tools/qualify_typescript_buffer.py'
       - 'tools/qualify_typescript_buffer_commonjs.py'
       - 'tools/typescript_buffer_commonjs_fixture.py'
-      - 'tools/typescript_borrow_retry_inputs.py'
+      - 'tools/prepare_typescript_commonjs_inputs.py'
+      - 'tools/typescript_guest/borrow_signed_inputs.py'
       - 'tools/typescript_guest/buffer_profile.py'
       - 'tools/typescript_guest/build.py'
+      - 'tools/typescript_guest/compiler.py'
+      - 'tools/captured_compiler_isolation.py'
+      - 'tools/tests/test_typescript_module_layout.py'
       - 'sdk/typescript-guest/probes/node-buffer-commonjs/**'
       - 'tools/tests/test_typescript_buffer_commonjs.py'
   workflow_dispatch:
@@ -45,7 +49,9 @@ jobs:
         with:
           version: 1.254.0
       - name: Fetch immutable normal host source for unchanged receipt verification
-        run: git fetch --no-tags --depth=1 origin 77bf0e3f3b68e17342b6146abd6f2de34a3efa00
+        run: |
+          git fetch --no-tags --depth=1 origin 77bf0e3f3b68e17342b6146abd6f2de34a3efa00
+          git fetch --no-tags --depth=1 origin 9d07a6dfa3ebb77aa75eb1b5899cb9360e26728d
       - name: Check published input binding and normal capture/material boundaries
         run: |
           python3 -m pip install --requirement tools/requirements.lock
@@ -55,6 +61,10 @@ jobs:
           sudo apt-get update
           sudo apt-get install --yes bubblewrap
           sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Check real captured module layout and read-only typecheck namespace
+        env:
+          LSF_REQUIRE_COMPILER_ISOLATION: '1'
+        run: python3 -B -m unittest tools.tests.test_typescript_module_layout -v
       - name: Install only the normal pinned public compiler tools
         run: python3 tools/typescript_capsule.py install-tools "$RUNNER_TEMP/typescript-buffer-tools"
       - name: Capture and review the exact native-locked published CommonJS closure
@@ -66,15 +76,15 @@ jobs:
       - name: Authenticate completed engine stage and original source splicer
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 -B tools/typescript_borrow_retry_inputs.py --output "$RUNNER_TEMP/typescript-buffer-compiler"
+        run: python3 -B tools/prepare_typescript_commonjs_inputs.py --output "$RUNNER_TEMP/typescript-buffer-compiler"
       - name: Typecheck compile package sign admit and execute six published cases
         run: |
           python3 -B tools/qualify_typescript_buffer_commonjs.py \
             --project "$RUNNER_TEMP/typescript-buffer-commonjs-capture/application" \
             --prepared-native "$RUNNER_TEMP/typescript-buffer-native" \
             --tools "$RUNNER_TEMP/typescript-buffer-tools" \
-            --engine "$RUNNER_TEMP/typescript-buffer-compiler/products/typescript-borrow-controls/engine" \
-            --splicer "$RUNNER_TEMP/typescript-buffer-compiler/products/typescript-borrow-splicer/splicer" \
+            --engine "$RUNNER_TEMP/typescript-buffer-compiler/products/engine" \
+            --splicer "$RUNNER_TEMP/typescript-buffer-compiler/products/splicer" \
             --output "$RUNNER_TEMP/typescript-buffer"
       - name: Retain actual inputs commands signed receipts and physical retirement
         if: always()
@@ -86,9 +96,7 @@ jobs:
           path: |
             ${{ runner.temp }}/typescript-buffer-native/*.json
             ${{ runner.temp }}/typescript-buffer-compiler/*.json
-            ${{ runner.temp }}/typescript-buffer-compiler/products/typescript-borrow-controls/engine/*.json
-            ${{ runner.temp }}/typescript-buffer-compiler/products/typescript-borrow-controls/engine/engine.wasm
-            ${{ runner.temp }}/typescript-buffer-compiler/products/typescript-borrow-splicer/splicer/**
+            ${{ runner.temp }}/typescript-buffer-compiler/products/**
             ${{ runner.temp }}/typescript-buffer/*.json
             ${{ runner.temp }}/typescript-buffer-commonjs-capture/**
             ${{ runner.temp }}/typescript-buffer/build/*.json

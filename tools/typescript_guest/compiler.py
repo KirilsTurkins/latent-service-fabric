@@ -76,6 +76,7 @@ class Compiler:
         from tools.typescript_guest.activation_engine import engine_input_paths
         selection(runtime_profile)
         self.runtime_profile = runtime_profile
+        self.application_modules = None
         self.engine, self.engine_original, self.engine_before = None, None, None
         self.engine_metadata = None
         self.runtime_observation = None
@@ -181,8 +182,20 @@ class Compiler:
     def run(self, stage, tool, *arguments):
         if self.isolation is None:
             return self.commands.run(stage, tool, *arguments)
+        if stage == 'typecheck' and self.application_modules is not None:
+            return self.commands.run(stage, *self.isolation.wrap(Path(tool), [str(value) for value in arguments],
+                self.commands.root, self.commands.environment, typecheck_node_modules=True))
         return self.commands.run(stage, *self.isolation.wrap(Path(tool), [str(value) for value in arguments],
                                                            self.commands.root, self.commands.environment))
+
+    def prepare_application_modules(self, closure):
+        from tools.typescript_application_dependencies import bundle_configuration
+        if self.isolation is None or self.application_modules is not None:
+            raise ValueError('captured-typescript-module-layout-requires-fresh-isolation')
+        if closure.work.resolve(strict=True) != self.commands.root.resolve(strict=True):
+            raise ValueError('captured-typescript-module-layout-project-mismatch')
+        self.isolation.select_typecheck_node_modules(closure)
+        self.application_modules = bundle_configuration(closure)
 
     def identity(self, tools=None):
         # npm's .bin links are launch conveniences, never compiler inputs: use
@@ -355,8 +368,9 @@ class Compiler:
         config = {"compilerOptions": {"target": "ES2022", "module": "ESNext", "moduleResolution": "Bundler",
                   "strict": True, "noEmit": True, "lib": ["ES2022"], "types": [], "paths": paths},
                   "include": ["src/**/*.ts", "generated/**/*.d.ts"]}
+        if application_modules != self.application_modules:
+            raise ValueError('captured-typescript-module-layout-not-prepared')
         if application_modules is not None:
-            config["compilerOptions"]["paths"]["*"] = ["./" + application_modules["moduleRoot"] + "/*"]
             config["compilerOptions"]["customConditions"] = application_modules["conditions"]
         write_json(work / "tsconfig.json", config)
         command.run("typecheck", self.node, self.tsc, "--project", work / "tsconfig.json")

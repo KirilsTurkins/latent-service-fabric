@@ -37,7 +37,7 @@
       },
       {
         "name": "Fetch immutable normal host source for unchanged receipt verification",
-        "run": "git fetch --no-tags --depth=1 origin 77bf0e3f3b68e17342b6146abd6f2de34a3efa00"
+        "run": "git fetch --no-tags --depth=1 origin 77bf0e3f3b68e17342b6146abd6f2de34a3efa00\ngit fetch --no-tags --depth=1 origin 9d07a6dfa3ebb77aa75eb1b5899cb9360e26728d\n"
       },
       {
         "name": "Check published input binding and normal capture/material boundaries",
@@ -46,6 +46,13 @@
       {
         "name": "Install the normal compiler isolation boundary",
         "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
+      },
+      {
+        "env": {
+          "LSF_REQUIRE_COMPILER_ISOLATION": "1"
+        },
+        "name": "Check real captured module layout and read-only typecheck namespace",
+        "run": "python3 -B -m unittest tools.tests.test_typescript_module_layout -v"
       },
       {
         "name": "Install only the normal pinned public compiler tools",
@@ -67,11 +74,11 @@
           "GH_TOKEN": "${{ github.token }}"
         },
         "name": "Authenticate completed engine stage and original source splicer",
-        "run": "python3 -B tools/typescript_borrow_retry_inputs.py --output \"$RUNNER_TEMP/typescript-buffer-compiler\""
+        "run": "python3 -B tools/prepare_typescript_commonjs_inputs.py --output \"$RUNNER_TEMP/typescript-buffer-compiler\""
       },
       {
         "name": "Typecheck compile package sign admit and execute six published cases",
-        "run": "python3 -B tools/qualify_typescript_buffer_commonjs.py \\\n  --project \"$RUNNER_TEMP/typescript-buffer-commonjs-capture/application\" \\\n  --prepared-native \"$RUNNER_TEMP/typescript-buffer-native\" \\\n  --tools \"$RUNNER_TEMP/typescript-buffer-tools\" \\\n  --engine \"$RUNNER_TEMP/typescript-buffer-compiler/products/typescript-borrow-controls/engine\" \\\n  --splicer \"$RUNNER_TEMP/typescript-buffer-compiler/products/typescript-borrow-splicer/splicer\" \\\n  --output \"$RUNNER_TEMP/typescript-buffer\"\n"
+        "run": "python3 -B tools/qualify_typescript_buffer_commonjs.py \\\n  --project \"$RUNNER_TEMP/typescript-buffer-commonjs-capture/application\" \\\n  --prepared-native \"$RUNNER_TEMP/typescript-buffer-native\" \\\n  --tools \"$RUNNER_TEMP/typescript-buffer-tools\" \\\n  --engine \"$RUNNER_TEMP/typescript-buffer-compiler/products/engine\" \\\n  --splicer \"$RUNNER_TEMP/typescript-buffer-compiler/products/splicer\" \\\n  --output \"$RUNNER_TEMP/typescript-buffer\"\n"
       },
       {
         "if": "always()",
@@ -80,7 +87,7 @@
         "with": {
           "if-no-files-found": "warn",
           "name": "typescript-buffer-commonjs-${{ github.sha }}",
-          "path": "${{ runner.temp }}/typescript-buffer-native/*.json\n${{ runner.temp }}/typescript-buffer-compiler/*.json\n${{ runner.temp }}/typescript-buffer-compiler/products/typescript-borrow-controls/engine/*.json\n${{ runner.temp }}/typescript-buffer-compiler/products/typescript-borrow-controls/engine/engine.wasm\n${{ runner.temp }}/typescript-buffer-compiler/products/typescript-borrow-splicer/splicer/**\n${{ runner.temp }}/typescript-buffer/*.json\n${{ runner.temp }}/typescript-buffer-commonjs-capture/**\n${{ runner.temp }}/typescript-buffer/build/*.json\n${{ runner.temp }}/typescript-buffer/build/*.js\n${{ runner.temp }}/typescript-buffer/build/*.wit\n${{ runner.temp }}/typescript-buffer/build/*.wasm\n${{ runner.temp }}/typescript-buffer/build/package/**\n${{ runner.temp }}/typescript-buffer/build/logs/**\n${{ runner.temp }}/typescript-buffer/node/*.json\n${{ runner.temp }}/typescript-buffer/node/node-stderr.txt\n${{ runner.temp }}/typescript-buffer/node/controls/**\n${{ runner.temp }}/typescript-buffer/node/signed/**\n",
+          "path": "${{ runner.temp }}/typescript-buffer-native/*.json\n${{ runner.temp }}/typescript-buffer-compiler/*.json\n${{ runner.temp }}/typescript-buffer-compiler/products/**\n${{ runner.temp }}/typescript-buffer/*.json\n${{ runner.temp }}/typescript-buffer-commonjs-capture/**\n${{ runner.temp }}/typescript-buffer/build/*.json\n${{ runner.temp }}/typescript-buffer/build/*.js\n${{ runner.temp }}/typescript-buffer/build/*.wit\n${{ runner.temp }}/typescript-buffer/build/*.wasm\n${{ runner.temp }}/typescript-buffer/build/package/**\n${{ runner.temp }}/typescript-buffer/build/logs/**\n${{ runner.temp }}/typescript-buffer/node/*.json\n${{ runner.temp }}/typescript-buffer/node/node-stderr.txt\n${{ runner.temp }}/typescript-buffer/node/controls/**\n${{ runner.temp }}/typescript-buffer/node/signed/**\n",
           "retention-days": 7
         }
       }
@@ -89,7 +96,7 @@
   },
   "jobId": "signed-commonjs-buffer",
   "kind": "job",
-  "reviewReason": "Add one captured compiled signed six-case programme with actual source binding, original limits and physical retirement",
+  "reviewReason": "Retain compiler-input authentication operation; select exact current OWN prerequisites and add mandatory readonly namespace controls with no removed test or budget change",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-buffer-commonjs.yml"
 }

@@ -78,6 +78,12 @@ def distribution(root: Path) -> list[dict]:
     return sorted(rows, key=lambda row: row["path"])
 
 
+def _typecheck_module_tree(root: Path) -> list[dict]:
+    from tools.application_dependency_store import directory_files
+    return [{'path': name, 'digest': digest(data), 'size': len(data)}
+            for name, data in sorted(directory_files(root).items())]
+
+
 class Isolation:
     @staticmethod
     def observe_distribution(root: Path):
@@ -94,6 +100,7 @@ class Isolation:
             raise DependencyError("captured-compiler-isolation-requires-linux-bubblewrap")
         self.workspace = regular_path(workspace).resolve(strict=True)
         self.read_only_inputs: list[Path] = []
+        self._typecheck_modules = None
         self.child_path: Path | None = None
         # Bind discovered host tools to physical files across system bin aliases.
         self.sandbox = regular_path(Path(sandbox).resolve(strict=True))
@@ -144,7 +151,8 @@ class Isolation:
                 selected.append({"distribution": name, "path": path.relative_to(root).as_posix()})
             self.receipt["loaderLibraryDirectories"] = selected
 
-    def wrap(self, tool: Path, arguments: list[str], cwd: Path, environment: dict[str, str]) -> list[str]:
+    def wrap(self, tool: Path, arguments: list[str], cwd: Path, environment: dict[str, str], *,
+             typecheck_node_modules: bool = False) -> list[str]:
         if Path(tool).resolve(strict=True) not in self.tools.values():
             raise DependencyError("compiler-executable-not-captured")
         cwd = regular_path(cwd).resolve(strict=True)
@@ -158,6 +166,12 @@ class Isolation:
             command += ["--ro-bind", str(root), str(root)]
         for root in self.read_only_inputs:
             command += ["--ro-bind", str(root), str(root)]
+        if type(typecheck_node_modules) is not bool:
+            raise DependencyError('compiler-typecheck-alias-selection-invalid')
+        if typecheck_node_modules:
+            self._check_typecheck_modules()
+            source, destination, _before = self._typecheck_modules
+            command += ['--ro-bind', str(source), str(destination)]
         for selected in self.tools.values():
             if any(selected.is_relative_to(root) for root in self.distributions.values()):
                 continue
@@ -205,6 +219,59 @@ class Isolation:
             if root not in self.read_only_inputs:
                 self.read_only_inputs.append(root)
 
+    def select_typecheck_node_modules(self, closure):
+        """One phase-only conventional view of an already verified npm closure.
+
+        This is not an additional-mount API: both paths belong to the same
+        owned project, and the destination is always its empty node_modules.
+        The original captured mount and every untrusted-link refusal remain.
+        """
+        from tools.application_dependencies import Closure
+        from tools.application_dependency_store import path_name
+        if getattr(self, '_typecheck_modules', None) is not None:
+            raise DependencyError('compiler-typecheck-alias-already-selected')
+        if not isinstance(closure, Closure) or closure.lock['language'] != 'typescript':
+            raise DependencyError('compiler-typecheck-requires-verified-typescript-closure')
+        project = regular_path(closure.work).resolve(strict=True)
+        if project == self.workspace or not project.is_relative_to(self.workspace):
+            raise DependencyError('compiler-typecheck-module-root-invalid')
+        closure.check_unchanged()
+        roots = [row for row in closure.lock['artifacts']
+                 if row['metadata'].get('assetType') == 'selected-node-modules']
+        if (len(roots) != 1 or roots[0]['format'] != 'directory'
+                or roots[0]['metadata'].get('ecosystem') != 'npm'):
+            raise DependencyError('compiler-typecheck-module-root-invalid')
+        mount = path_name(roots[0]['mount'])
+        if mount.split('/')[0] not in {'dependencies', 'application-vendor'}:
+            raise DependencyError('compiler-typecheck-module-root-invalid')
+        source = regular_path(project/mount).resolve(strict=True)
+        destination = regular_path(project/'node_modules')
+        if (not source.is_dir() or not source.is_relative_to(project)
+                or source == destination or source.is_relative_to(destination)
+                or destination.is_relative_to(source) or os.path.lexists(destination)):
+            raise DependencyError('compiler-typecheck-alias-path-collision')
+        before = _typecheck_module_tree(source)
+        if before != sorted(roots[0]['files'], key=lambda row: row['path']):
+            raise DependencyError('compiler-typecheck-module-bytes-differ')
+        destination.mkdir(mode=0o700)
+        self.protect_inputs(source)
+        self._typecheck_modules = source, destination, before
+        self.receipt['typeScriptNodeModulesAlias'] = {
+            'phase': 'typecheck', 'access': 'read-only',
+            'source': source.relative_to(self.workspace).as_posix(),
+            'destination': destination.relative_to(self.workspace).as_posix(),
+            'inputIdentity': closure.identity, 'treeDigest': digest(canonical(before)),
+            'files': len(before), 'bytes': sum(row['size'] for row in before)}
+
+    def _check_typecheck_modules(self):
+        if getattr(self, '_typecheck_modules', None) is None:
+            raise DependencyError('compiler-typecheck-alias-not-selected')
+        source, destination, before = self._typecheck_modules
+        regular_path(source); regular_path(destination)
+        if (not destination.is_dir() or any(destination.iterdir())
+                or _typecheck_module_tree(source) != before):
+            raise DependencyError('compiler-typecheck-alias-input-mutated')
+
     def observe_inputs(self, depfile: Path) -> list[dict]:
         rows = []
         for name in dependency_paths(read_bytes(depfile, 2 * 1024 * 1024)):
@@ -226,6 +293,8 @@ class Isolation:
         return rows
 
     def check_unchanged(self):
+        if getattr(self, '_typecheck_modules', None) is not None:
+            self._check_typecheck_modules()
         if self.before != {name: self.observe_distribution(root) for name, root in self.distributions.items()}:
             raise DependencyError("compiler-distribution-or-sysroot-mutated")
         if self.tool_before != {name: file_identity(path, name) for name, path in self.tools.items()}:

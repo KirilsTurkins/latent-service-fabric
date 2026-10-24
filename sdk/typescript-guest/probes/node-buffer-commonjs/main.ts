@@ -41,7 +41,7 @@ export const typescriptBuffer = {
     } else if (mode === 5) {
       check(Object.is(Buffer, BareBuffer) && Object.is(Buffer, SafeBuffer));
       check(Buffer.isBuffer(xor(Buffer.from([9]), Buffer.from([3]))));
-      check(typeof globalThis.Buffer === 'undefined');
+      check(!('Buffer' in globalThis));
     } else {
       throw new RangeError('unknown published CommonJS case');
     }

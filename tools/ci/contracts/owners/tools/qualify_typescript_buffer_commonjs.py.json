@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_typescript_buffer_commonjs.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Require exact maintained six-case source/WIT/profile and all original typed limits in the same captured snapshot before build or host actions",
+  "reviewReason": "Bind exact readonly typecheck alias and normal materials; retain failed history while selecting only source-matched compiler inputs",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "3bc2db307fd781563654cfb345c507fd1faf264f418e1c148b1af2e1bcbd9912"
+  "sha256": "67a9f0f64d42f6f482e43da5dd37a1ab89490af9c63b95dc2bd4a68ffb6c3334"
 }

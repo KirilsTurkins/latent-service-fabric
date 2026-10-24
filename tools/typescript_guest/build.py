@@ -166,6 +166,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             compiler_paths = {"node": compiler.node, "wasm-tools": compiler.wasm}
             materials.extend(file_identity(path, name) for name, path in compiler_paths.items())
             paths.update(compiler_paths)
+            if closure is not None:
+                compiler.prepare_application_modules(closure)
             if compiler.isolation is not None:
                 write_json(output / "compiler-containment.json", compiler.isolation.receipt)
             stage = "compile"

@@ -1,7 +1,7 @@
 # Published CommonJS Buffer programme
 
-This programme is prepared source. Actual strict typechecking, esbuild,
-componentization and six signed invocations have not run. The successful
+The first actual owning attempt failed during normal strict typechecking.
+Esbuild, componentization and six signed invocations have not run. The successful
 repository-owned eight-case Buffer programme retains its separate
 [source-bound evidence](typescript-buffer-qualification.md).
 
@@ -42,14 +42,42 @@ references the ordinary Node declaration closure. The library's `inplace.js`
 source uses the minimum operand length, but that subpath has no published
 declaration in this closure and is not executed or qualified here. No cast,
 `skipLibCheck`, fabricated declaration or ambient runtime Buffer is supplied.
-Compatibility of the real declaration closure with strict normal compilation
-remains an actual hosted result, not an assumption.
+The first attempt, [run40056689387](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40056689387),
+failed with TS7016 (the ordinary XOR declaration was not discovered) and TS7017
+(the absence diagnostic accessed an undeclared global property). Artifact
+`12544874329`, SHA256 `f71be80cf831680437b1cc98aa2f97825f155b54cf7e6cc02f6982dff96affde`,
+retains the actual bounded diagnostics. No bundle, component, signing or
+invocation was reached. The absence check now uses ordinary property-presence
+syntax without a cast or fabricated declaration.
+
+For captured applications, typechecking receives one conventional
+`node_modules` view of the already verified module tree. This is a phase-only
+read-only namespace alias into the same owned build workspace, with an empty
+compiler-owned destination and no physical link or copy. Registration verifies
+the original Closure, exact captured file inventory and path boundaries. Its
+input identity, relative source/destination, tree digest and original counts
+are retained in compiler containment and normal build materials, then rechecked.
+TypeScript keeps `types: []`, fixed builtin/WIT bindings and strict checking;
+its native package declaration, exports and `@types` resolution supplies the
+library types. Esbuild keeps the existing original captured paths. The new
+namespace control must execute on the actual Linux owning host; local Windows
+source/argv controls do not establish that result. Current repaired compilation
+remains pending.
 
 `typescript-buffer-commonjs.yml` captures first, then authenticates the same
-existing five-product host and completed engine/splicer inputs used by the
-finite Buffer programme, without rebuilding either. The original engine
-producer run40042939576 remains failed at its later native diagnostic stage;
-completed compiler inputs do not relabel that run or qualify this consumer.
+existing five-product host. After the typed-result source merge, the retry uses
+the shared exact current OWN engine/splicer selector: producer source
+`9d07a6dfa3ebb77aa75eb1b5899cb9360e26728d`, run40056035407,
+artifact12546161304 (196,485,292 bytes,
+SHA256 `b4f21ecfb457adf9bb206c4c0b3ec36cbfd786f0da9e2ea2d8ca9d9e9a676123`).
+Its native/unit prerequisites passed; it explicitly supplies no canonical,
+signed Component Model or physical-provider qualification. Original raw
+receipts/logs, product identities and immutable source recipes are verified
+before unchanged normal Engine/Compiler/splicer validation against the current
+SDK. The programme rebuilds no engine or SpiderMonkey library. Its original
+failed producer inputs and failed first CommonJS attempt keep their historical
+identities; neither is relabelled as execution of the repaired source.
+
 Normal Compiler validators, budgets, provider bindings and source checks are
 unchanged. Retained evidence must bind the original archives, exact transitive
 edges and selected source bytes to actual bundle inputs, build materials,

@@ -121,6 +121,8 @@ def provenance(app):
         'nativeLock': digest(read_file(app/'package-lock.json')),
         'resolvedGraph': digest(read_file(app/'npm-resolved.lock.json')),
         'acceptedLock': digest(read_file(app/'latent.dependencies.lock.json')),
+        'moduleTree': {'mount': trees[0]['mount'], 'digest': trees[0]['treeDigest'],
+            'files': len(trees[0]['files']), 'bytes': sum(row['size'] for row in trees[0]['files'])},
         'originalSources': SOURCE_FILES, 'transformations': [], 'conditions': [],
         'publishedInplace': 'source-observed-only; no ordinary published subpath declaration',
         'runtimeGlobalBuffer': 'not-installed', 'runtimeQualification': 'pending'}

@@ -2,8 +2,9 @@
 
 No compiler/runtime success is inferred from capture, source controls or a lock.
 Strict normal typechecking precedes componentization, signing and invocation.
-The original compiler-product producer remains failed; only its completed normal
-engine/splicer inputs are reused through their unchanged validators.
+The original failed compiler-product producer retains that status. Retried
+engine/splicer inputs must match the current captured SDK through unchanged
+normal validators; producer status alone supplies no CommonJS qualification.
 """
 from __future__ import annotations
 import argparse
@@ -21,6 +22,7 @@ from tools.qualify_typescript_buffer import PRODUCTS, build_evidence, execute
 from tools.rust_capsule_project import ROOT, digest, fresh, inventory, read_file, read_json, snapshot, write_json
 from tools.typescript_guest.build import build
 from tools.typescript_guest.runtime_profile import IMPORT_PROFILE
+from tools.build_snapshot import canonical
 
 
 def dependency_build_evidence(artifact, original, source):
@@ -50,6 +52,21 @@ def dependency_build_evidence(artifact, original, source):
                 'cjs-normal-dependency-material-binding')
         documents[name] = identity
     return documents
+
+
+def typecheck_layout_evidence(artifact, original):
+    layout = read_json(artifact/'compiler-containment.json')['typeScriptNodeModulesAlias']
+    tree = original['moduleTree']
+    expected = {'phase': 'typecheck', 'access': 'read-only', 'source': 'project/'+tree['mount'],
+        'destination': 'project/node_modules', 'inputIdentity': original['inputIdentity'],
+        'treeDigest': tree['digest'], 'files': tree['files'], 'bytes': tree['bytes']}
+    require(canonical(layout) == canonical(expected), 'cjs-original-readonly-typecheck-layout')
+    identity = file_identity(artifact/'compiler-containment.json', 32*1024**2)
+    matches = [row for row in read_json(artifact/'build-observation.json')['materials']
+               if row['name'] == 'compiler-containment']
+    require(matches == [{'name': 'compiler-containment', 'digest': identity['sha256'], 'size': identity['bytes']}],
+            'cjs-typecheck-layout-material-binding')
+    return identity
 
 
 def qualify(project, output, tools, engine, splicer, prepared_native):
@@ -88,6 +105,7 @@ def qualify(project, output, tools, engine, splicer, prepared_native):
         require(fixture.provenance(project) == original_dependencies, 'cjs-captured-inputs-before-signing')
         build_evidence(artifact)
         actual_dependencies = dependency_build_evidence(artifact, original_dependencies, source)
+        actual_layout = typecheck_layout_evidence(artifact, original_dependencies)
         stage = 'six-signed-published-commonjs-cases'
         observed = execute(artifact, binaries, output/'node', cases=fixture.CASES, scope=fixture.SCOPE)
         require(host.verify_prepared(prepared_native) == original_native
@@ -96,11 +114,14 @@ def qualify(project, output, tools, engine, splicer, prepared_native):
             'cjs-all-original-inputs-unchanged')
         require(dependency_build_evidence(artifact, original_dependencies, source) == actual_dependencies,
                 'cjs-build-dependency-evidence-unchanged')
+        require(typecheck_layout_evidence(artifact, original_dependencies) == actual_layout,
+                'cjs-typecheck-layout-evidence-unchanged')
         require([row['case'] for row in observed['cases']] == list(fixture.CASES), 'cjs-six-actual-cases')
         result = {'schemaVersion': 'latent.typescript.published-commonjs-buffer.v1', 'status': 'passed',
             'fullTicketQualification': False, 'runtimeProfile': IMPORT_PROFILE,
             'sourceIdentityDigest': digest(source), 'publishedInputs': original_dependencies,
             'dependencyBuildEvidence': actual_dependencies,
+            'typecheckModuleLayout': actual_layout,
             'component': file_identity(artifact/'component.wasm'),
             'build': file_identity(artifact/'BUILD-COMPLETE.json'),
             'execution': file_identity(output/'node/qualification.json'),

@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/typescript_buffer_commonjs_fixture.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Add closed captured probe/source/profile and exact original limit refusal to published CommonJS qualification",
+  "reviewReason": "Retain original verified module-tree identity and byte/file counts for actual typecheck alias attribution",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "75e28e26533d3b5239882fb6baa2f864017551224dc2c2220b90dbe93e3fc781"
+  "sha256": "5bd8144b8d7c7ce8309d912a5b296112d18eb102839e11585fb2c2fc8e90efc1"
 }

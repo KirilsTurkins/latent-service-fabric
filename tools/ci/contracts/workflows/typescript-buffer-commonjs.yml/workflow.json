@@ -16,9 +16,13 @@
           "tools/qualify_typescript_buffer.py",
           "tools/qualify_typescript_buffer_commonjs.py",
           "tools/typescript_buffer_commonjs_fixture.py",
-          "tools/typescript_borrow_retry_inputs.py",
+          "tools/prepare_typescript_commonjs_inputs.py",
+          "tools/typescript_guest/borrow_signed_inputs.py",
           "tools/typescript_guest/buffer_profile.py",
           "tools/typescript_guest/build.py",
+          "tools/typescript_guest/compiler.py",
+          "tools/captured_compiler_isolation.py",
+          "tools/tests/test_typescript_module_layout.py",
           "sdk/typescript-guest/probes/node-buffer-commonjs/**",
           "tools/tests/test_typescript_buffer_commonjs.py"
         ]
@@ -32,7 +36,7 @@
   "requiredJobs": [
     "signed-commonjs-buffer"
   ],
-  "reviewReason": "Own isolated normal capture, unchanged authenticated compiler/host inputs and six signed published CommonJS cases",
+  "reviewReason": "Retain original five controls and normal source capture; add required actual declaration namespace and current compiler-input selector",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-buffer-commonjs.yml"
 }
