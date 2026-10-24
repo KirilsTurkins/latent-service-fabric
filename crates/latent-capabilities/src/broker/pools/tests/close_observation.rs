@@ -1,5 +1,6 @@
 //! Actual pool/channel ownership controls, not a kernel retirement model.
 use super::*;
+use latent_core::PlatformErrorCode;
 use std::net::Shutdown;
 
 async fn finished(pools: &ProviderPools) {
