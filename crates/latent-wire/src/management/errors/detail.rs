@@ -7,9 +7,21 @@ const MAX_SOURCE_FIELDS: usize = 32;
 // Fixed protocol words and decimal u64 stamps do not consume caller-name limits.
 const DIAGNOSTIC_STRING_FLOOR: usize = 64;
 
+// These describe the audit owner, not whether a mutation executed. Keep this
+// vocabulary closed at the server boundary as well as in the CLI projection.
+const AUDIT_REASONS: &[&str] = &[
+    "audit-capacity",
+    "audit-critical-pending",
+    "audit-busy",
+    "audit-unavailable",
+    "audit-closed",
+    "audit-corrupt",
+];
+
 pub(super) enum PublicDetail {
     PublicationAmbiguous,
     Release(release::ReleaseDetail),
+    Audit(&'static str),
     Catalog(&'static str),
     Currentness(&'static str),
     Mutation {
@@ -48,6 +60,14 @@ impl PublicDetail {
                 Some(Self::PublicationAmbiguous)
             }
             "release-operation" => release::ReleaseDetail::parse(source).map(Self::Release),
+            "audit-journal" => {
+                let reason = source.fields.get("reason")?;
+                AUDIT_REASONS
+                    .iter()
+                    .copied()
+                    .find(|candidate| *candidate == reason.as_str())
+                    .map(Self::Audit)
+            }
             "admission.currentness" => {
                 let reason = source.fields.get("reason")?;
                 latent_core::error::ADMISSION_CURRENTNESS_REASONS
@@ -89,6 +109,9 @@ impl PublicDetail {
         match self {
             Self::PublicationAmbiguous => 4 * 128 + 64,
             Self::Release(value) => value.retained_cost(),
+            Self::Audit(reason) => {
+                4 * 128 + "audit-journal".len() + "reason".len() + reason.len()
+            }
             Self::Catalog(reason) => {
                 4 * 128 + "deployment-catalog".len() + "reason".len() + reason.len()
             }
@@ -118,6 +141,10 @@ impl PublicDetail {
                 .into(),
             },
             Self::Release(value) => value.into_proto(),
+            Self::Audit(reason) => proto::ErrorDetail {
+                kind: "audit-journal".into(),
+                fields: [("reason".into(), reason.into())].into(),
+            },
             Self::Currentness(reason) => proto::ErrorDetail {
                 kind: "admission.currentness".into(),
                 fields: [("reason".into(), reason.into())].into(),
