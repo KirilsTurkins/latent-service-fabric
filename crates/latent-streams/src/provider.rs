@@ -102,6 +102,39 @@ impl StreamProvider {
             .map_err(crate::snapshot_lock_error)? = Some(owner);
         Ok(provider)
     }
+    /// Observe the same native close that ordinary retirement initiates. This
+    /// qualification-only result means CLOSE request acceptance, never physical
+    /// retirement/refund. Holding it keeps its original cleanup/result charge.
+    #[cfg(all(target_os = "linux", any(test, feature = "development-outbound")))]
+    pub async fn retire_kernel_constructor_for_qualification(
+        &self,
+        deadline: Instant,
+    ) -> Result<latent_capabilities::broker::pools::StreamKernelCloseReceipt, StreamError> {
+        let owner = self
+            .inner
+            .native
+            .try_lock()
+            .map_err(crate::snapshot_lock_error)?
+            .take()
+            .ok_or_else(|| error(StreamErrorCode::Unsupported))?;
+        // The native slot is already empty: normal retirement cannot submit a
+        // duplicate close. It still retires all the original other resources.
+        self.retire();
+        let job = owner.close()?;
+        tokio::select! {
+            biased;
+            () = tokio::time::sleep_until(deadline.into()) => Err(error(StreamErrorCode::Timeout)),
+            result = job.wait() => {
+                let receipt = result?;
+                if Instant::now() >= deadline {
+                    drop(receipt);
+                    Err(error(StreamErrorCode::Timeout))
+                } else {
+                    Ok(receipt)
+                }
+            }
+        }
+    }
     /// Normal installation refuses before protected inputs, resolver/socket
     /// allocation or provider publication until an actual platform is qualified.
     pub fn install(

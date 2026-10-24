@@ -4,16 +4,21 @@ name: Stream native factory descriptor ownership
 on:
   workflow_dispatch:
   push:
-    branches: ['feat/stream-kernel-native-factory-owner-20261023', 'feat/kernel-native-constructor-vm-20261024']
+    branches: ['feat/stream-kernel-native-factory-owner-20261023', 'feat/kernel-native-constructor-vm-20261024', 'feat/kernel-native-close-20261024']
     paths:
       - '.github/workflows/stream-native-factory-owner.yml'
       - 'crates/latent-streams/**'
       - 'crates/latent-capabilities/src/broker/pools/control.rs'
+      - 'crates/latent-capabilities/src/broker/pools.rs'
+      - 'crates/latent-capabilities/src/broker/pools/tests.rs'
+      - 'crates/latent-capabilities/src/broker/pools/tests/close_observation.rs'
       - 'tools/qualify_host_stream_native.py'
       - 'tools/qualify_host_stream_kernel_native_vm.py'
       - 'tools/host_stream_kernel_native_vm.py'
       - 'tools/host_stream_kernel_native_vm_inputs.py'
       - 'tools/tests/test_kernel_native_constructor_vm.py'
+      - 'tools/ci/suites.json'
+      - 'tools/ci/suites.d/outbound-streams.json'
       - 'research/standard-outbound/linux-6.12-lineage/native-constructor-vm-init.c'
 permissions:
   contents: read
@@ -22,8 +27,8 @@ concurrency:
   cancel-in-progress: false
 jobs:
   native-owner:
-    if: github.ref_name != 'feat/kernel-native-constructor-vm-20261024'
-    name: Ten actual descriptor and original node quota controls
+    if: github.ref_name != 'feat/kernel-native-constructor-vm-20261024' && github.ref_name != 'feat/kernel-native-close-20261024'
+    name: Thirteen actual descriptor and original node quota controls
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
@@ -60,8 +65,8 @@ jobs:
           if-no-files-found: warn
           retention-days: 3
   native-kernel-vm:
-    if: github.ref_name == 'feat/kernel-native-constructor-vm-20261024'
-    name: Actual Rust constructor caller in the qualified isolated kernel
+    if: github.ref_name == 'feat/kernel-native-constructor-vm-20261024' || github.ref_name == 'feat/kernel-native-close-20261024'
+    name: Actual native close observation in the qualified isolated kernel
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     permissions:

@@ -13,13 +13,23 @@ from tools import qualify_host_stream_tls_provider as reference
 class BoundedTlsProviderReference(unittest.TestCase):
     def test_real_catalogue_keeps_public_refusal_and_activates_all_four_tls_controls(self):
         row = reference.suite_contract(reference.provider.ROOT)
-        self.assertEqual(len(row["expectedCases"]), 40)
-        self.assertEqual(row["minimumCases"], 40)
+        self.assertEqual(len(row["expectedCases"]), 43)
+        self.assertEqual(row["minimumCases"], 43)
         self.assertEqual(len(reference.TLS_CASES), 4)
         self.assertIn(reference.DENIAL, row["expectedCases"])
         self.assertEqual(row["timeoutSeconds"], 900)
         self.assertEqual(row["expectedIgnored"], [])
         self.assertEqual(row["ignoredLeaves"], [])
+        self.assertEqual(len(reference.NATIVE_CLOSE_CASES), 3)
+        self.assertTrue(reference.NATIVE_CLOSE_CASES <= set(row["expectedCases"]))
+        for missing in reference.NATIVE_CLOSE_CASES:
+            changed = dict(row, expectedCases=[
+                "kernel::native::tests::unknown_close_substitute" if name == missing else name
+                for name in row["expectedCases"]])
+            with self.subTest(missing=missing), \
+                    patch.object(reference.registry, "load", return_value={"suites": [changed]}), \
+                    self.assertRaisesRegex(ValueError, "suite-contract"):
+                reference.suite_contract(reference.provider.ROOT)
 
     def test_maximum_valid_and_last_physical_trust_owner_cases_are_mandatory(self):
         original = reference.suite_contract(reference.provider.ROOT)
@@ -58,7 +68,7 @@ class BoundedTlsProviderReference(unittest.TestCase):
     def test_only_all_exact_named_zero_filtered_successes_are_evidence(self):
         cases = set(reference.suite_contract(reference.provider.ROOT)["expectedCases"])
         raw = ("\n".join("test " + name + " ... ok" for name in sorted(cases))
-               + "\ntest result: ok. 40 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.0s\n").encode()
+               + "\ntest result: ok. 43 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.0s\n").encode()
         self.assertEqual(reference.outcomes(raw, cases), sorted(cases))
         first = sorted(cases)[0].encode()
         for changed in (raw.replace(first, b"unknown"), raw.replace(b" ... ok", b" ... FAILED", 1),

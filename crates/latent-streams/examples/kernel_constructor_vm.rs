@@ -8,7 +8,9 @@ mod selected {
     use latent_artifacts::{DirectoryArtifactRepository, DirectoryArtifactRepositoryConfig};
     use latent_capabilities::broker::{
         io::{IoLimits, IoRuntime},
-        pools::{ProviderPoolLimits, ProviderPoolSnapshot, ProviderPools},
+        pools::{
+            ProviderPoolLimits, ProviderPoolSnapshot, ProviderPools, StreamKernelCloseObservation,
+        },
         ActivationCapabilityBroker, CapabilityBrokerLimits,
     };
     use latent_core::SystemActivationClock;
@@ -177,8 +179,26 @@ mod selected {
             return Err(());
         }
         emit("ready", ready, 1);
-        // Existing retire moves NativeOwner into its original bounded blocking close.
-        provider.retire();
+        // Observe actual authenticated CLOSE3/CLOSED4, not File-close success.
+        // The returned affine receipt STILL owns the additional cleanup charge.
+        let receipt = provider
+            .retire_kernel_constructor_for_qualification(deadline)
+            .await
+            .map_err(|_| ())?;
+        if receipt.observation() != StreamKernelCloseObservation::RequestAccepted {
+            return Err(());
+        }
+        let held = snapshot(&pools, deadline).await?;
+        if factory_descriptors()? != 0
+            || held.connections != 1
+            || held.failed_cleanup != 1
+            || held.cleanup_jobs != ready.cleanup_jobs + 1
+            || held.metadata_bytes < baseline.metadata_bytes + 1024 * 1024
+        {
+            return Err(());
+        }
+        emit("close-request-accepted-held", held, 0);
+        drop(receipt); // Only the observation/job charge returns, never backing.
         drop(provider);
         loop {
             if Instant::now() >= deadline {
@@ -201,7 +221,7 @@ mod selected {
             }
             tokio::time::sleep(Duration::from_millis(1)).await;
         }
-        println!("LSFNATIVE1 result=PASS constructorReady=1 descriptorClosed=1 backingQuarantined=1 nativeQuotaReleased=0 productionInstalled=0");
+        println!("LSFNATIVE1 result=PASS constructorReady=1 closeRequestAccepted=1 descriptorClosed=1 backingQuarantined=1 nativeQuotaReleased=0 productionInstalled=0");
         Ok(())
     }
 

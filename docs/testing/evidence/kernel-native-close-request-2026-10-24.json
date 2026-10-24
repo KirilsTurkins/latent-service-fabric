@@ -1,0 +1,769 @@
+{
+  "schemaVersion": "lsf.native-close-request.observation.v1",
+  "status": "passed",
+  "sourceRevision": "976e86c71a7dc57e9d9e3c47258e05370d599bf0",
+  "kernelRebuilt": false,
+  "wholeNodeExecuted": false,
+  "nativeQuotaReleased": false,
+  "productionInstallation": false,
+  "completeAllocationClosure": false,
+  "hostTlsQualified": false,
+  "wholeCostQualification": false,
+  "freshVmBoots": 1,
+  "staticCompilerFlags": [
+    "-Ctarget-feature=+crt-static",
+    "-Crelocation-model=static",
+    "-Clink-arg=-no-pie"
+  ],
+  "observedTools": {
+    "gcc": {
+      "bytes": 1023032,
+      "sha256": "1b99826121ae6682a634e5efe09bd3e3df58ce58e0b28f849114ab5b89139c26"
+    },
+    "rustc": {
+      "bytes": 21113232,
+      "sha256": "dda7234360b7f578ca8b0ddcb80145646fa61a67c1720a5abc7051b35c9fcb71"
+    },
+    "cargo": {
+      "bytes": 21113232,
+      "sha256": "dda7234360b7f578ca8b0ddcb80145646fa61a67c1720a5abc7051b35c9fcb71"
+    },
+    "qemu-system-x86_64": {
+      "bytes": 26415624,
+      "sha256": "8a35ccba41582fc6c38b9df85fc9e35fa1d42f414d2d7d8090ee9b2f5e7c0854"
+    }
+  },
+  "observedToolPaths": {
+    "gcc": {
+      "launcher": "/usr/bin/gcc",
+      "regularTarget": "/usr/bin/x86_64-linux-gnu-gcc-13"
+    },
+    "rustc": {
+      "launcher": "/home/runner/.cargo/bin/rustc",
+      "regularTarget": "/home/runner/.cargo/bin/rustup"
+    },
+    "cargo": {
+      "launcher": "/home/runner/.cargo/bin/cargo",
+      "regularTarget": "/home/runner/.cargo/bin/rustup"
+    },
+    "qemu-system-x86_64": {
+      "launcher": "/usr/bin/qemu-system-x86_64",
+      "regularTarget": "/usr/bin/qemu-system-x86_64"
+    }
+  },
+  "hermetic": false,
+  "compilerImplicitInputsAttested": false,
+  "reproducibility": "not-checked",
+  "kernelOrigin": {
+    "source": "0f1e453448bc10a7d2c60453ab69140283834182",
+    "run": 40036590425,
+    "job": 120697476339,
+    "artifact": 12538540188,
+    "archive": {
+      "bytes": 17174886,
+      "sha256": "8d5fe3c3fce9ea944f8e11a3bc2a59101e284ba8a9404ac134c51efc18a96875"
+    },
+    "producerStatus": "passed",
+    "kernelRebuilt": false,
+    "originalImage": {
+      "bytes": 13755392,
+      "sha256": "48ccf869602fa1bf973b69258fa78d26442afba46a679153f7ce9199abf1490f",
+      "bootProtocol": 527,
+      "x86_64": true
+    },
+    "nativeQuotaReleased": false,
+    "productionInstallation": false,
+    "completeAllocationClosure": false,
+    "download": {
+      "exitCode": 0,
+      "elapsedMillis": 2359.0373560000016,
+      "captureSeconds": 115,
+      "maximumCleanupSeconds": 5,
+      "supervisedWallSeconds": 120,
+      "wholeArchiveAuthenticated": true
+    }
+  },
+  "nativeCompiler": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "ownerControls": {
+    "native-owner": {
+      "registered": [
+        "kernel::native::tests::abandoned_waiter_cannot_drop_running_job_or_late_returned_owner",
+        "kernel::native::tests::cleanup_panic_keeps_original_connection_after_lost_unit_result",
+        "kernel::native::tests::close_status_preserves_original_expiry_and_never_accepts_ready_as_retirement",
+        "kernel::native::tests::constructor_panic_retains_prepaid_backing_and_closes_real_fd",
+        "kernel::native::tests::exhausted_node_allowance_refuses_before_any_open",
+        "kernel::native::tests::fixed_file_close_receipt_stays_paid_until_drop_without_refunding_backing",
+        "kernel::native::tests::fixed_wire_rejects_wrong_expiry_error_and_unknown_phase",
+        "kernel::native::tests::original_deadline_does_not_refund_a_blocked_native_constructor",
+        "kernel::native::tests::possible_failed_open_retains_original_node_charge",
+        "kernel::native::tests::postopen_failure_closes_real_fd_without_refunding_backing",
+        "kernel::native::tests::ready_owner_drop_closes_on_original_worker_and_retains_capacity",
+        "kernel::native::tests::real_file_close_transfer_keeps_exact_frame_and_refuses_short_or_error_reply",
+        "kernel::native::tests::unavailable_cleanup_slot_keeps_fd_and_backing_without_inline_close"
+      ],
+      "executed": [
+        "kernel::native::tests::abandoned_waiter_cannot_drop_running_job_or_late_returned_owner",
+        "kernel::native::tests::cleanup_panic_keeps_original_connection_after_lost_unit_result",
+        "kernel::native::tests::close_status_preserves_original_expiry_and_never_accepts_ready_as_retirement",
+        "kernel::native::tests::constructor_panic_retains_prepaid_backing_and_closes_real_fd",
+        "kernel::native::tests::exhausted_node_allowance_refuses_before_any_open",
+        "kernel::native::tests::fixed_file_close_receipt_stays_paid_until_drop_without_refunding_backing",
+        "kernel::native::tests::fixed_wire_rejects_wrong_expiry_error_and_unknown_phase",
+        "kernel::native::tests::original_deadline_does_not_refund_a_blocked_native_constructor",
+        "kernel::native::tests::possible_failed_open_retains_original_node_charge",
+        "kernel::native::tests::postopen_failure_closes_real_fd_without_refunding_backing",
+        "kernel::native::tests::ready_owner_drop_closes_on_original_worker_and_retains_capacity",
+        "kernel::native::tests::real_file_close_transfer_keeps_exact_frame_and_refuses_short_or_error_reply",
+        "kernel::native::tests::unavailable_cleanup_slot_keeps_fd_and_backing_without_inline_close"
+      ],
+      "ignored": [],
+      "stdout": {
+        "bytes": 3164,
+        "sha256": "9c413c2cfb517ac5669360385eb50d454c53921fa4509231577c8229022c1bca"
+      },
+      "executableSha256": "c893ad609c4ddc3a9228b5f9311a2815b8d31e0527fc8633bbebd8345ed9e0bd",
+      "executableBytes": 295666008,
+      "customKernelOrNativeInitExecuted": false
+    },
+    "close-result": {
+      "registered": [
+        "broker::pools::tests::close_observation::abandoned_close_waiter_does_not_release_running_or_quarantined_owner",
+        "broker::pools::tests::close_observation::buffered_and_delivered_close_receipt_keeps_original_cleanup_charge",
+        "broker::pools::tests::close_observation::close_worker_panic_never_publishes_accepted_receipt_or_refunds_connection",
+        "broker::pools::tests::close_observation::held_close_receipt_bounds_new_admission_and_returns_unchanged_owner",
+        "broker::pools::tests::close_observation::published_receipt_drop_cannot_release_live_sender_worker_tail"
+      ],
+      "executed": [
+        "broker::pools::tests::close_observation::abandoned_close_waiter_does_not_release_running_or_quarantined_owner",
+        "broker::pools::tests::close_observation::buffered_and_delivered_close_receipt_keeps_original_cleanup_charge",
+        "broker::pools::tests::close_observation::close_worker_panic_never_publishes_accepted_receipt_or_refunds_connection",
+        "broker::pools::tests::close_observation::held_close_receipt_bounds_new_admission_and_returns_unchanged_owner",
+        "broker::pools::tests::close_observation::published_receipt_drop_cannot_release_live_sender_worker_tail"
+      ],
+      "ignored": [],
+      "stdout": {
+        "bytes": 1694,
+        "sha256": "17e0e2e7f4d840977caf9335bfbbee2a0bcb4dba6155c7fa57e8f34728714a5e"
+      },
+      "executableSha256": "9648ba3dd8587a5029250f995a066394ea0fc5f77adf49b1821f1482bcc3be19",
+      "executableBytes": 247763664,
+      "customKernelOrNativeInitExecuted": false
+    }
+  },
+  "nativeCandidate": {
+    "bytes": 2936064,
+    "mode": 33261,
+    "fileType": 32768,
+    "regularFile": true,
+    "symlink": false,
+    "maximumAdmittedBytes": 3145728
+  },
+  "nativeInit": {
+    "bytes": 2936064,
+    "sha256": "bdf23bed7b3681bc2a56608eb28a2e401e60ef59f31d34276059ca13d84f7f87",
+    "loadSegments": 4,
+    "staticX86_64": true
+  },
+  "supervisor": {
+    "bytes": 804248,
+    "sha256": "de04467645ae9fe3300667fd873048e8990bd641b66bd930d8fa7eb2cfae6938",
+    "loadSegments": 4,
+    "staticX86_64": true,
+    "sourceSha256": "a292cb7b9051857e48ca19451363316b759f6aacf7f15ea0c7524d780e41ab13"
+  },
+  "compiledParserControls": {
+    "passed": 12,
+    "failed": 0,
+    "bytes": 39,
+    "sha256": "800bb52a08b8bf285de524ed7cfa012528554ff3b4fae5dc1ae1af2c9bdb7809"
+  },
+  "executablePartition": {
+    "pid1MaximumFileBytes": 2097152,
+    "nativeMaximumFileBytes": 3145728,
+    "pid1LoadSpanBytes": 743912,
+    "nativeLoadSpanBytes": 2963144,
+    "aggregateLoadSpanBytes": 3707056,
+    "maximumAggregateLoadSpanBytes": 4194304
+  },
+  "initramfs": {
+    "bytes": 3741696,
+    "sha256": "475f25bc04528e6f4674e9f47d2fa86bfcfde7ff32ca9454a68eb3bc0c030786"
+  },
+  "observations": {
+    "snapshots": {
+      "baseline": {
+        "connections": 0,
+        "failedCleanup": 0,
+        "cleanupJobs": 0,
+        "pending": 0,
+        "running": 0,
+        "workers": 0,
+        "metadataBytes": 53248,
+        "controlFailed": 0,
+        "descriptors": 0
+      },
+      "ready": {
+        "connections": 1,
+        "failedCleanup": 0,
+        "cleanupJobs": 1,
+        "pending": 0,
+        "running": 0,
+        "workers": 0,
+        "metadataBytes": 1251648,
+        "controlFailed": 0,
+        "descriptors": 1
+      },
+      "close-request-accepted-held": {
+        "connections": 1,
+        "failedCleanup": 1,
+        "cleanupJobs": 2,
+        "pending": 0,
+        "running": 0,
+        "workers": 0,
+        "metadataBytes": 1260056,
+        "controlFailed": 0,
+        "descriptors": 0
+      },
+      "quarantined": {
+        "connections": 1,
+        "failedCleanup": 1,
+        "cleanupJobs": 1,
+        "pending": 0,
+        "running": 0,
+        "workers": 0,
+        "metadataBytes": 1120576,
+        "controlFailed": 0,
+        "descriptors": 0
+      }
+    },
+    "actualNativeConstructorReady": true,
+    "actualDescriptorClosed": true,
+    "actualKernelRootReturn": true,
+    "kernelPostReturnObservations": 1,
+    "observedPendingFdHandoff": true,
+    "observedOutsideCollector": true,
+    "actualNativeCloseRequestAccepted": true,
+    "originalReceiptChargeObserved": true,
+    "independentUartOrders": true,
+    "originalNodeCapacityQuarantined": true,
+    "nativeQuotaReleased": false,
+    "productionInstallation": false,
+    "completeAllocationClosure": false,
+    "bytes": 25322,
+    "sha256": "306678d09eb1f24e26fa7a2c2f54f59cdfb001d5cad598cfae462006f81711ee"
+  },
+  "sourceUnchanged": true,
+  "actualNativeConstructorReady": true,
+  "actualNativeCloseRequestAccepted": true,
+  "originalReceiptChargeObserved": true,
+  "actualKernelRootReturn": true,
+  "originalNodeCapacityQuarantined": true,
+  "vm": {
+    "cpus": 2,
+    "memoryMiB": 512,
+    "seconds": 180,
+    "externalNetwork": false,
+    "hostDrives": false,
+    "hostInstallation": false,
+    "watchdogExpiryIsSuccess": false
+  },
+  "qualification": {
+    "run": 40122724709,
+    "job": 120957573040,
+    "conclusion": "success",
+    "runUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40122724709",
+    "artifact": {
+      "id": 12572026449,
+      "name": "stream-native-kernel-vm-976e86c71a7dc57e9d9e3c47258e05370d599bf0",
+      "size_in_bytes": 21645766,
+      "digest": "sha256:6ef73970797f7ba37d1566e5ed2f598459b241120e0f8c8867506f68733dc623"
+    },
+    "rawReceipt": {
+      "name": "receipt.json",
+      "bytes": 2315247,
+      "sha256": "08e4cb11b445bd050ed9dc28bb4589442118a9145e6c7929d080e64028335134"
+    },
+    "retainedMembers": [
+      {
+        "name": "receipt.json",
+        "bytes": 2315247,
+        "sha256": "08e4cb11b445bd050ed9dc28bb4589442118a9145e6c7929d080e64028335134"
+      },
+      {
+        "name": "commands.json",
+        "bytes": 1362,
+        "sha256": "cca0f8b3c8620f707ed12fbcae271a06ac4b6817fe98a160236478bc7a16b0f9"
+      },
+      {
+        "name": "native-source-inputs.json",
+        "bytes": 1072579,
+        "sha256": "8926a88a408112510c89a23a8c734162f0ffc1f68d843127d87c6f75bd3d50cf"
+      },
+      {
+        "name": "native-init",
+        "bytes": 2936064,
+        "sha256": "bdf23bed7b3681bc2a56608eb28a2e401e60ef59f31d34276059ca13d84f7f87"
+      },
+      {
+        "name": "constructor-init",
+        "bytes": 804248,
+        "sha256": "de04467645ae9fe3300667fd873048e8990bd641b66bd930d8fa7eb2cfae6938"
+      },
+      {
+        "name": "constructor-init.c",
+        "bytes": 24777,
+        "sha256": "a292cb7b9051857e48ca19451363316b759f6aacf7f15ea0c7524d780e41ab13"
+      },
+      {
+        "name": "native-constructor-initramfs.cpio",
+        "bytes": 3741696,
+        "sha256": "475f25bc04528e6f4674e9f47d2fa86bfcfde7ff32ca9454a68eb3bc0c030786"
+      },
+      {
+        "name": "kernel/original-image.zip",
+        "bytes": 17174886,
+        "sha256": "8d5fe3c3fce9ea944f8e11a3bc2a59101e284ba8a9404ac134c51efc18a96875"
+      },
+      {
+        "name": "kernel/origin.json",
+        "bytes": 54736,
+        "sha256": "97bccac360b5a25065a4e3db135289e7cdb20ea86178ef9b2815106e6080ad42"
+      },
+      {
+        "name": "commands/logs/00-rust-compiler-version.stderr.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "commands/logs/00-rust-compiler-version.stdout.txt",
+        "bytes": 36,
+        "sha256": "4ad84f16acc2f3bdcfbc7b0788f1e74a4e649b962154a585b8f8d0b28eb0dd06"
+      },
+      {
+        "name": "commands/logs/01-c-compiler-version.stderr.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "commands/logs/01-c-compiler-version.stdout.txt",
+        "bytes": 246,
+        "sha256": "8497f84b2b8334c413d9c6166bd39d009ba55d2ff60a8f23e66dfa5819c2b048"
+      },
+      {
+        "name": "commands/logs/02-emulator-version.stderr.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "commands/logs/02-emulator-version.stdout.txt",
+        "bytes": 132,
+        "sha256": "8f79ffd97970d85d6833a0ccc87f5d6e7182f8f52101c741dfa2fb6374670b18"
+      },
+      {
+        "name": "commands/logs/03-native-owner-cargo.stderr.txt",
+        "bytes": 13257,
+        "sha256": "12fb96862a9502b4644aaafe24ce83bbd93ae34114b0f5e3d6a392cca9d8005d"
+      },
+      {
+        "name": "commands/logs/03-native-owner-cargo.stdout.txt",
+        "bytes": 187615,
+        "sha256": "f1867bbbb9772fe03040973f4429a960d34d90a00dda3404525d0b8cc9f32dd5"
+      },
+      {
+        "name": "commands/logs/04-native-owner-list.stderr.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "commands/logs/04-native-owner-list.stdout.txt",
+        "bytes": 1222,
+        "sha256": "f0fa6501a9c7c86de22948d52b89f5b6c2de23e7263d241814e66a079a346395"
+      },
+      {
+        "name": "commands/logs/05-native-owner-ignored.stderr.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "commands/logs/05-native-owner-ignored.stdout.txt",
+        "bytes": 22,
+        "sha256": "414c144fa67f1df75f7b14a69af5641637772e81c4c3fa0a171e3228adbb922e"
+      },
+      {
+        "name": "commands/logs/06-native-owner-tests.stderr.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "commands/logs/06-native-owner-tests.stdout.txt",
+        "bytes": 3164,
+        "sha256": "9c413c2cfb517ac5669360385eb50d454c53921fa4509231577c8229022c1bca"
+      },
+      {
+        "name": "commands/logs/07-close-result-cargo.stderr.txt",
+        "bytes": 2656,
+        "sha256": "441d563e4418a67d3fd280da20a1e63611ff5d5f1af3848718be6c869d4caf95"
+      },
+      {
+        "name": "commands/logs/07-close-result-cargo.stdout.txt",
+        "bytes": 111497,
+        "sha256": "bab56721fdb937a79746c74d1001784f49a15db1c710160c00362a275a62f966"
+      },
+      {
+        "name": "commands/logs/08-close-result-list.stderr.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "commands/logs/08-close-result-list.stdout.txt",
+        "bytes": 598,
+        "sha256": "3197d0e4e39a6c1a791f0806c50d83a22acc91ea895a828bd2fc0c4a52d98630"
+      },
+      {
+        "name": "commands/logs/09-close-result-ignored.stderr.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "commands/logs/09-close-result-ignored.stdout.txt",
+        "bytes": 22,
+        "sha256": "414c144fa67f1df75f7b14a69af5641637772e81c4c3fa0a171e3228adbb922e"
+      },
+      {
+        "name": "commands/logs/10-close-result-tests.stderr.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "commands/logs/10-close-result-tests.stdout.txt",
+        "bytes": 1694,
+        "sha256": "17e0e2e7f4d840977caf9335bfbbee2a0bcb4dba6155c7fa57e8f34728714a5e"
+      },
+      {
+        "name": "commands/logs/11-build-native-constructor-example.stderr.txt",
+        "bytes": 7788,
+        "sha256": "0295f90dd56c98265963238eb5370f6f88f4f87a086119f3cd3a521fe244c384"
+      },
+      {
+        "name": "commands/logs/11-build-native-constructor-example.stdout.txt",
+        "bytes": 197886,
+        "sha256": "f931ac6dd08a42ee8b029083ceea77afa184e1c5f09cfc1cbc122821c259655f"
+      },
+      {
+        "name": "commands/logs/12-compile-static-constructor-init.stderr.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "commands/logs/12-compile-static-constructor-init.stdout.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "commands/logs/13-actual-native-kmsg-controls.stderr.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "commands/logs/13-actual-native-kmsg-controls.stdout.txt",
+        "bytes": 39,
+        "sha256": "800bb52a08b8bf285de524ed7cfa012528554ff3b4fae5dc1ae1af2c9bdb7809"
+      },
+      {
+        "name": "commands/logs/14-one-real-native-constructor-vm.stderr.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "commands/logs/14-one-real-native-constructor-vm.stdout.txt",
+        "bytes": 25322,
+        "sha256": "306678d09eb1f24e26fa7a2c2f54f59cdfb001d5cad598cfae462006f81711ee"
+      }
+    ]
+  },
+  "sourceBinding": {
+    "testedGitRevision": "976e86c71a7dc57e9d9e3c47258e05370d599bf0",
+    "nativeSourceMaterials": 6450,
+    "canonicalInventoryEncoding": "UTF-8 JSON, sorted keys, separators comma and colon, no trailing newline",
+    "canonicalInventorySha256": "16a915a07a0af63fe6813218168058bf58213531ac690103cce5140fc63184f8",
+    "kernelProducerMaterials": 294,
+    "kernelCanonicalInventorySha256": "bf955588e9ef359b39def3308fb3dfb368448c2b2bad26047e7f37d318a94c7f",
+    "unionVerifiedGitBlobs": 6673,
+    "allCapturedMaterialsMatchTestedGit": true,
+    "all39ArchiveCRCsChecked": true,
+    "all55KernelArchiveCRCsChecked": true,
+    "guideAndPublicObservationAreNotExecutedInputs": true
+  },
+  "hostedPythonControls": {
+    "passed": 6,
+    "failed": 0,
+    "skipped": 0,
+    "seconds": 0.024,
+    "cases": [
+      "test_actual_reader_accepts_independent_uart_orders_without_inventing_close_race",
+      "test_cargo_product_requires_the_owned_example_source_and_successful_static_profile",
+      "test_fixed_child_partition_preserves_original_elf_grammar_and_aggregate_budget",
+      "test_fixed_cpio_preserves_console_entries_and_contains_exact_two_native_programs",
+      "test_fixed_successful_kernel_origin_cannot_select_failed_expired_or_changed_artifacts",
+      "test_success_words_or_zero_counters_never_replace_original_retention_and_kernel_return"
+    ]
+  },
+  "separateThirteenNativeOwnerJob": "skipped by exclusive selector; the same thirteen cases actually passed inside this VM owning programme",
+  "commands": [
+    {
+      "stage": "rust-compiler-version",
+      "exitCode": 0,
+      "seconds": 0.035771
+    },
+    {
+      "stage": "c-compiler-version",
+      "exitCode": 0,
+      "seconds": 0.01506
+    },
+    {
+      "stage": "emulator-version",
+      "exitCode": 0,
+      "seconds": 0.075671
+    },
+    {
+      "stage": "native-owner-cargo",
+      "exitCode": 0,
+      "seconds": 105.124019
+    },
+    {
+      "stage": "native-owner-list",
+      "exitCode": 0,
+      "seconds": 0.015379
+    },
+    {
+      "stage": "native-owner-ignored",
+      "exitCode": 0,
+      "seconds": 0.015066
+    },
+    {
+      "stage": "native-owner-tests",
+      "exitCode": 0,
+      "seconds": 1.260393
+    },
+    {
+      "stage": "close-result-cargo",
+      "exitCode": 0,
+      "seconds": 70.926402
+    },
+    {
+      "stage": "close-result-list",
+      "exitCode": 0,
+      "seconds": 0.016014
+    },
+    {
+      "stage": "close-result-ignored",
+      "exitCode": 0,
+      "seconds": 0.015557
+    },
+    {
+      "stage": "close-result-tests",
+      "exitCode": 0,
+      "seconds": 0.14693
+    },
+    {
+      "stage": "build-native-constructor-example",
+      "exitCode": 0,
+      "seconds": 104.741979
+    },
+    {
+      "stage": "compile-static-constructor-init",
+      "exitCode": 0,
+      "seconds": 0.298983
+    },
+    {
+      "stage": "actual-native-kmsg-controls",
+      "exitCode": 0,
+      "seconds": 0.015115
+    },
+    {
+      "stage": "one-real-native-constructor-vm",
+      "exitCode": 0,
+      "seconds": 3.643855
+    }
+  ],
+  "rawNativeAndKernelRows": [
+    "LSFVM1 boot=native-constructor-only production-sockets=disabled",
+    "LSFNATIVE1 state=baseline connections=0 failedCleanup=0 cleanupJobs=0 pending=0 running=0 workers=0 metadataBytes=53248 controlFailed=0 descriptors=0",
+    "LSFNATIVE1 state=ready connections=1 failedCleanup=0 cleanupJobs=1 pending=0 running=0 workers=0 metadataBytes=1251648 controlFailed=0 descriptors=1",
+    "[    2.804692] LSFVM1 fd-handoff=original-root opened=2 request=LIVE pending=1",
+    "LSFNATIVE1 state=close-request-accepted-held connections=1 failedCleanup=1 cleanupJobs=2 pending=0 running=0 workers=0 metadataBytes=1260056 controlFailed=0 descriptors=0",
+    "LSFNATIVE1 state=quarantined connections=1 failedCleanup=1 cleanupJobs=1 pending=0 running=0 workers=0 metadataBytes=1120576 controlFailed=0 descriptors=0",
+    "LSFNATIVE1 result=PASS constructorReady=1 closeRequestAccepted=1 descriptorClosed=1 backingQuarantined=1 nativeQuotaReleased=0 productionInstalled=0",
+    "[    2.817002] LSFVM1 physical-return=constructor-root-bank-and-actor-refs",
+    "[    2.817141] LSFVM1 outside-collector=kthreadd-root-bank-and-actor-refs",
+    "LSFVM1 result=PASS stage=actual-native-constructor-and-kernel-return"
+  ],
+  "bootCounterMeaning": "freshVmBoots records validated successful boots. This run launched one VM and validated its serial; a zero field alone is not proof that no launch was attempted.",
+  "bounds": {
+    "pid1MaximumFileBytes": 2097152,
+    "newNativeChildMaximumFileBytes": 3145728,
+    "aggregateExecutableLoadSpanBytes": 4194304,
+    "wholeInitramfsBytes": 4194304,
+    "nativeAndKmsgOverallSeconds": 20,
+    "kmsgRecordBytes": 4096,
+    "kmsgTotalBytes": 65536,
+    "kmsgRecords": 128,
+    "kmsgInterruptions": 128,
+    "programmeSeconds": 1320,
+    "maximumHostCompileCommandSeconds": 1200,
+    "ownerTestSeconds": 120,
+    "ownerListSeconds": 30
+  },
+  "failedHistory": [
+    {
+      "source": "95171d5e95e56a2038c92fcc87870b38b6796bf5",
+      "run": 40121880368,
+      "job": 120955033406,
+      "artifact": {
+        "id": 12571577139,
+        "size_in_bytes": 17871978,
+        "digest": "sha256:acef29f4ba63fa5b66a852d7f2c5f8549e9e6af1a4ac47d055ca3100938fbcec"
+      },
+      "status": "failed",
+      "observedFailure": "E0433: PlatformErrorCode missing from the new core-test module import. Thirteen native owner controls passed; core-test compilation failed. Fixed by adding only the test import.",
+      "nativeOwnerCasesPassed": 13,
+      "coreCasesNotRun": 5,
+      "staticNativeCCompilationOrVmAttempted": false
+    }
+  ],
+  "historicalConstructorOnlyEvidence": "docs/testing/evidence/kernel-native-constructor-join-2026-10-24.json retains the earlier three failed constructor-only attempts and its separate actual successful source; none is relabelled as CLOSE acceptance.",
+  "limitsOfEvidence": [
+    "Actual bootstrap READY and same-expiry CLOSED reply prove accepted CLOSE request, not a native physical-return certificate or refund.",
+    "The charged receipt holds original cleanup reservation through buffering, delivery and abandonment; worker/sender-tail retention is separately exercised by the deterministic native control.",
+    "Kernel Root bank and four actor references physically returned; native connection and backing capacity remain quarantined.",
+    "Normal installation remains Unsupported. No production provider, DNS/TLS exchange, signed component, whole standalone node, complete allocator/kernel/bootstrap or whole-cost qualification is claimed.",
+    "PID1 remains 2 MiB, the separate Rust child uses the already reviewed 3 MiB partition, and aggregate loads and whole CPIO remain 4 MiB.",
+    "Failed/uncertain and application/device-used graphs, general cancellation/pressure qualification, and authenticated native post-free consumption/refund remain open."
+  ],
+  "postQualificationComposition": {
+    "owningSourceRemains": "976e86c71a7dc57e9d9e3c47258e05370d599bf0",
+    "owningProgrammeReplayed": false,
+    "reason": "Fix two observed validation failures without changing the qualified Rust, kernel, C supervisor, wire protocol or VM inputs.",
+    "changedInputsAndContracts": [
+      {
+        "path": "tools/build_process.py",
+        "qualified": {
+          "bytes": 9063,
+          "sha256": "c387ba86b28f6db9f2c092c3fba3005a356b69105df19ec6c46c6c5aff69e849"
+        },
+        "composed": {
+          "bytes": 9063,
+          "sha256": "63a232cb41d047eeb3c2c3b5226a01a6922e3e71b8066ae362b1f8aae7d90f4d"
+        }
+      },
+      {
+        "path": "tools/build_snapshot.py",
+        "qualified": {
+          "bytes": 13220,
+          "sha256": "eb6fecebcc414631320cbd6ba8177acdbfeff71264be823c3e596293d8d6c665"
+        },
+        "composed": {
+          "bytes": 13275,
+          "sha256": "547003a6c84fa757deaa2a2b83668534ea3d77273de6fa660bc56ea624a31f64"
+        }
+      },
+      {
+        "path": "tools/ci/contracts/owners/tools/build_process.py.json",
+        "qualified": {
+          "bytes": 462,
+          "sha256": "2c7382d805579b32e7756c91b850fc21274aa56b23da6c33c9d6307b7ccd9151"
+        },
+        "composed": {
+          "bytes": 546,
+          "sha256": "e256681b276d6a37aa8b79057a24fa89620399f595a4b28830af35f48d84b784"
+        }
+      },
+      {
+        "path": "tools/ci/contracts/owners/tools/qualify_host_stream_tls_provider.py.json",
+        "qualified": {
+          "bytes": 650,
+          "sha256": "268639b9c8f074b5e6e7308f4f0890dda71a4de2021ccb2a71a5a70e41eedf08"
+        },
+        "composed": {
+          "bytes": 494,
+          "sha256": "c12f71fc41b06fe838bd0f8c92be9ce780254cdf15b9917517b08c88c7d59d64"
+        }
+      },
+      {
+        "path": "tools/qualify_host_stream_tls_provider.py",
+        "qualified": {
+          "bytes": 9425,
+          "sha256": "074b68fea3f3e034a1a99c5cc524aa21141acce6a81e479dd965f9335660e5a6"
+        },
+        "composed": {
+          "bytes": 9774,
+          "sha256": "0d3e1062b389e5362ec742ca917eeb8b8afd3d771347d0b45f352674508fc4ba"
+        }
+      },
+      {
+        "path": "tools/tests/test_build_process.py",
+        "qualified": {
+          "bytes": 20505,
+          "sha256": "582f1fc5ad299ba42a3e21aa45933f2be6eda6850057cbfe4189cbf89d9dd70b"
+        },
+        "composed": {
+          "bytes": 20505,
+          "sha256": "c20a49ee285e6fbf2a94cd745fa672c32193cb35142180242b92b9c4210264ee"
+        }
+      },
+      {
+        "path": "tools/tests/test_build_snapshot.py",
+        "qualified": {
+          "bytes": 11261,
+          "sha256": "5d5438691bb98ac7c5fa7e88a0e63bbb0e910d4eb62bd937380f87b5d2d70158"
+        },
+        "composed": {
+          "bytes": 11257,
+          "sha256": "d56738078547639e04ed6b583c5285c1764ccc4c9608224370b3dc2d98d575aa"
+        }
+      },
+      {
+        "path": "tools/tests/test_host_stream_tls_provider_reference.py",
+        "qualified": {
+          "bytes": 7418,
+          "sha256": "2c6c80717e28c1fc997ba421ea54d7d55b3be80f06196cf5cfc621e49c6e0ee7"
+        },
+        "composed": {
+          "bytes": 8101,
+          "sha256": "ee12d8f9f15c2227fe2cb2d853378e58d5dc49585b06afd968d0cff595c802ff"
+        }
+      }
+    ],
+    "nativeSourceInputsUnchanged": 6444,
+    "nativeSourceInputsChanged": 6,
+    "all294KernelProducerMaterialsUnchanged": true,
+    "tlsGuardRepair": {
+      "failedRun": 40122728030,
+      "cause": "Suite cardinality remained forty after three additive native close cases made forty-three.",
+      "requiredCases": 43,
+      "allThreeNewCloseNamesRequired": true,
+      "allPriorWitnessesTimeoutAndNoIgnorePreserved": true,
+      "sourceControlsPassed": 7,
+      "actualTlsRustReplayClaimed": false
+    },
+    "sourceCaptureRepair": {
+      "failedRun": 40122728078,
+      "actualExportedFileBytes": 75529037,
+      "oldSourceLimitBytes": 75497472,
+      "overflowBytes": 31565,
+      "selectedFiles": 8658,
+      "gitBlobBytes": 75529009,
+      "gitExportSubstitutionBytes": 28,
+      "actualGitArchiveBytes": 82944000,
+      "actualGitArchiveSha256": "3b291bce36aa5aa1f44851763851eae24566b6233f44f49d5f14f852e223245e",
+      "newSourceLimitBytes": 76546048,
+      "unchangedArchiveLimitBytes": 83886080,
+      "focusedControlsPassed": 2,
+      "noSelectedInputsOmitted": true,
+      "processHelperAstUnchanged": true,
+      "guestRuntimeLimitsUnchanged": true,
+      "sourceExtractedOrGuestBuildReplayed": false
+    },
+    "fullGenericCiClaimed": false
+  }
+}
