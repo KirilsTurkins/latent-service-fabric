@@ -313,7 +313,28 @@ replacing the original counts. The harness rejects missing, ambiguous or
 foreign-case evidence; its six original outcome and physical-owner oracles
 remain required. No registration, retirement, GC, owner refund, request, grant
 or ceiling changes. Two actual hosted library controls are required under the
-same aggregate host-build deadline; these new controls and this observation
-have not executed yet. The fixed test-host storage size will be measured there;
-production builds have neither the field nor hook, and no whole-cost claim is
-made.
+same aggregate host-build deadline. Run `40081867123` at `90d14ff97e2f`
+passed both new hosted controls and the three existing numeric-observer
+controls, then failed the first signed normal case at the same write. The
+first same-activation refusal was unambiguous: Task registration reached the
+original owner ceiling of16, with15 parked Tasks,12 queued-work owners,
+2 Result owners and41 Native owners. The original cause was
+`runtime-owner-limit`; CPU and memory still had capacity (9,946,782,626 of
+10,000,000,000 fuel remaining and124,231,214 of134,217,728 memory bytes
+remaining). This is a correct quota refusal, not evidence of a stale-owner
+leak or a basis for early refunds. The two fixture-only structures measured
+136 and128 bytes; production builds have neither the field nor hook, and
+no whole-cost claim is made. Failed artifact `12555702267` is retained
+(20,696,904 bytes, SHA256
+`e90af24705f17f858ae21795200f48b50cfb7a7f7b980af0996e23088a31376c`).
+No signed case passed.
+
+The private probe now flattens its five write-helper call sites into their
+existing async entry body. Each still awaits the same real write with the
+same connection, exact bytes and1000ms timeout, then checks the actual written
+length against those bytes. This removes only the tester-created redundant
+async Promise layer; phase markers, peer barriers, eight-dispatch bound, all
+six case oracles and every runtime limit remain unchanged. It changes no
+product scheduling, ownership, GC or refund behavior. This source change has
+not executed and does not qualify arbitrary nested npm Promise costs under
+the minimum Task16 profile.
