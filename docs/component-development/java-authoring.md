@@ -269,6 +269,22 @@ and added candidate test are withdrawn; the original `FULL`/`-O2` compiler and
 binds its historical source and actual failure. No runtime qualification or
 additional compiler trial follows from this measurement.
 
+A subsequent source candidate preserves method boundaries for the two explicit
+activation profiles. The private compiler vetoes TeaVM Java-method inlining,
+then emits `noinline` on ordinary generated Java function definitions. TeaVM
+`FULL` and Clang `-O2` remain selected; ordinary per-method optimization stays
+available. The inliner-coupled devirtualization pass also stops when no inlining
+plan succeeds. Native, imported and backend-intrinsic lowering retain their
+original paths; there are no application or package exceptions.
+
+This candidate requires fresh compiler-only evidence and adds real original/
+corrected compiler controls for the filter and emitted C headers. Those JVM
+controls are source-only until the hosted programme runs. Existing JAR/source
+and loaded-class checks bind the two added compiler classes, and captured SDK
+identities change explicitly. Provenance remains `O2`-only. More call boundaries
+can increase stack, continuation, memory and fuel costs; successful assembly
+will not qualify those runtime properties. All original limits remain in force.
+
 `--read-only-cache /path/to/modules-2` selects a verified immutable Gradle
 dependency cache. Gradle writes locks and updates to the build's private home.
 Choose one cache mode per build. Profile selection does not change invocation

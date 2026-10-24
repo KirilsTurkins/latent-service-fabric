@@ -410,10 +410,23 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
 TYPE_CLASSES = frozenset(TYPE_ROOT + name for name in (
     'TypeInferer.class', 'TypeInferer$1.class', 'TypeInferer$2.class',
     'TypeInferer$InferenceKind.class', 'TypeInferer$InferenceType.class'))
-PATCH_CLASSES = COROUTINE_CLASSES | TYPE_CLASSES | ASYNC_CLASSES
+CODEGEN_ROOT = 'org/teavm/backend/c/generate/'
+INLINE_ROOT = 'org/teavm/backend/lowlevel/analyze/'
+CODEGEN_SOURCE_SHA256 = '3706d5f12c1cc87b69cca832d78cb515780e67a878632937c5c73b71ed81b131'
+INLINE_SOURCE_SHA256 = '0c98606696d4cbe64bf234410dc4477bd9a4ff843fe3522cfaef67dbc03da73e'
+METHOD_CLASSES = frozenset((CODEGEN_ROOT + 'CodeGenerator.class',
+                           INLINE_ROOT + 'LowLevelInliningFilterFactory.class'))
+METHOD_CONTROL = CODEGEN_ROOT + 'MethodGranularityControl'
+METHOD_CONTROLS = frozenset((METHOD_CONTROL + '.class', METHOD_CONTROL + '$HeaderWriter.class'))
+CODEGEN_RELOCATED_IMPORTS = ('IntContainer',)
+NOINLINE_PREFIX = '        writer.print("__attribute__((noinline)) ");\n'
+CODEGEN_ANCHOR = '    public void generateMethod(RegularMethodNode methodNode) {\n'
+INLINE_BEFORE = 'return characteristics.isManaged(methodReference) ? characteristics::isManaged : m -> false;'
+INLINE_AFTER = 'return m -> false;'
+PATCH_CLASSES = COROUTINE_CLASSES | TYPE_CLASSES | ASYNC_CLASSES | METHOD_CLASSES
 CONTROL = CLASS_ROOT + 'Check.class'
 ARRAY_CONTROL = TYPE_ROOT + 'ArrayTypeCheck.class'
-CONTROLS = frozenset((CONTROL, ARRAY_CONTROL)) | MONITOR_CONTROLS
+CONTROLS = frozenset((CONTROL, ARRAY_CONTROL)) | MONITOR_CONTROLS | METHOD_CONTROLS
 MAX_JAR_BYTES = 64 * 1024 * 1024
 RELOCATED_IMPORTS = ('IntHashSet', 'IntIntHashMap', 'IntSet')
 
@@ -462,6 +475,28 @@ def corrected_async_source(raw: bytes) -> bytes:
         CHECKPOINT_FIND_BEFORE, CHECKPOINT_FIND_AFTER).encode('utf-8')
 
 
+def corrected_codegen_source(raw: bytes) -> bytes:
+    if hashlib.sha256(raw).hexdigest() != CODEGEN_SOURCE_SHA256:
+        raise ValueError('unreviewed-teavm-code-generator-source')
+    source = raw.decode('utf-8')
+    if source.count(CODEGEN_ANCHOR) != 1:
+        raise ValueError('unreviewed-teavm-code-generator-signature')
+    source = source.replace(CODEGEN_ANCHOR, CODEGEN_ANCHOR + NOINLINE_PREFIX)
+    before = 'import com.carrotsearch.hppc.IntContainer;'
+    if source.count(before) != 1:
+        raise ValueError('unreviewed-teavm-code-generator-relocation')
+    return source.replace(before, 'import org.teavm.hppc.IntContainer;').encode('utf-8')
+
+
+def corrected_inlining_source(raw: bytes) -> bytes:
+    if hashlib.sha256(raw).hexdigest() != INLINE_SOURCE_SHA256:
+        raise ValueError('unreviewed-teavm-inlining-filter-source')
+    source = raw.decode('utf-8')
+    if source.count(INLINE_BEFORE) != 1:
+        raise ValueError('unreviewed-teavm-inlining-filter-predicate')
+    return source.replace(INLINE_BEFORE, INLINE_AFTER).encode('utf-8')
+
+
 def checked_jars(compiler, project: Path) -> list[Path]:
     from tools.java_guest.compiler import source_module
     module = source_module(compiler.sdk / 'tools/dependencies.py')
@@ -501,7 +536,7 @@ def check_relocated_classes(jars: list[Path]) -> None:
         entries = jar.infolist()
         if len(entries) > 32768 or len({entry.filename for entry in entries}) != len(entries):
             raise ValueError('coroutine-patch-relocated-entries')
-        for name in RELOCATED_IMPORTS:
+        for name in RELOCATED_IMPORTS + CODEGEN_RELOCATED_IMPORTS:
             entry = jar.getinfo('org/teavm/hppc/' + name + '.class')
             if entry.is_dir() or entry.file_size > 1024 * 1024 or not jar.read(entry).startswith(b'\xca\xfe\xba\xbe'):
                 raise ValueError('coroutine-patch-relocated-class')
@@ -529,6 +564,11 @@ def jar_entries(path: Path) -> dict[str, bytes]:
             or {name for name in result if name.startswith(TYPE_ROOT + 'AsyncMethodFinder')
                 and name.endswith('.class')} != ASYNC_CLASSES):
         raise ValueError('coroutine-patch-class-closure')
+    for prefix, expected in ((CODEGEN_ROOT + 'CodeGenerator', {CODEGEN_ROOT + 'CodeGenerator.class'}),
+                             (INLINE_ROOT + 'LowLevelInliningFilterFactory',
+                              {INLINE_ROOT + 'LowLevelInliningFilterFactory.class'})):
+        if {name for name in result if name.startswith(prefix) and name.endswith('.class')} != expected:
+            raise ValueError('coroutine-patch-method-class-closure')
     return result
 
 
@@ -650,11 +690,20 @@ def stage(compiler, project: Path, destination: Path) -> dict:
     corrected_async = corrected_async_source(async_raw); async_source.write_bytes(corrected_async)
     monitor_control = folder / 'MonitorAsyncControl.java'
     monitor_control.write_bytes(read_file(sdk / 'MonitorAsyncControl.java'))
+    codegen_raw = read_file(sdk / 'CodeGenerator.java')
+    codegen_source = folder / 'CodeGenerator.java'
+    corrected_codegen = corrected_codegen_source(codegen_raw); codegen_source.write_bytes(corrected_codegen)
+    inline_raw = read_file(sdk / 'LowLevelInliningFilterFactory.java')
+    inline_source = folder / 'LowLevelInliningFilterFactory.java'
+    corrected_inline = corrected_inlining_source(inline_raw); inline_source.write_bytes(corrected_inline)
+    method_control = folder / 'MethodGranularityControl.java'
+    method_control.write_bytes(read_file(sdk / 'MethodGranularityControl.java'))
     # Compiler.run provides the original process, output and remaining-time bounds.
     classes = folder / 'classes'
     read_file(sdk / 'Compile.java')
     compiler.run('java-coroutine-patch', 'java', sdk / 'Compile.java', source, control, classes,
-                 os.pathsep.join(map(str, jars)), type_source, array_control, async_source, monitor_control)
+                 os.pathsep.join(map(str, jars)), type_source, array_control, async_source, monitor_control,
+                 codegen_source, inline_source, method_control)
     replacement = folder / 'teavm-core-patched.jar'
     receipt = replace_jar(original[0], classes, replacement)
     for mode, selected in (('original', original[0]), ('corrected', replacement)):
@@ -669,6 +718,11 @@ def stage(compiler, project: Path, destination: Path) -> dict:
         if json.loads(monitor) != {'schemaVersion': 'latent.java.monitor-async-control.v1',
                 'mode': mode, 'passed': True}:
             raise ValueError('coroutine-patch-real-monitor-async-control')
+        method = compiler.run('java-coroutine-method-' + mode + '-control', 'java', '-cp', classpath,
+            'org.teavm.backend.c.generate.MethodGranularityControl', mode)
+        if json.loads(method) != {'schemaVersion': 'latent.java.method-granularity-control.v1',
+                'mode': mode, 'passed': True, 'filters': 9, 'headers': 4}:
+            raise ValueError('coroutine-patch-real-method-granularity-control')
     if identities != jar_identities(compiler.dependency_cache, checked_jars(compiler, project)):
         raise ValueError('coroutine-patch-original-input-mutated')
     build = project / 'build.gradle'; script = read_file(build).decode('utf-8')
@@ -750,6 +804,13 @@ tasks.named('generateC') {
         realCorrectedMonitorOnlyAndMixedBoundariesPreserved=True,
         realCorrectedMonitorCallerAndFamilyClosurePreserved=True,
         realNoThreadStartAndUnrelatedMethodNegativesPreserved=True,
+        methodGranularityPolicy='teavm-activation-method-boundaries-v1',
+        upstreamCodeGeneratorSourceSha256=CODEGEN_SOURCE_SHA256,
+        correctedCodeGeneratorSourceSha256=hashlib.sha256(corrected_codegen).hexdigest(),
+        upstreamInliningFilterSourceSha256=INLINE_SOURCE_SHA256,
+        correctedInliningFilterSourceSha256=hashlib.sha256(corrected_inline).hexdigest(),
+        realOriginalManagedInliningObserved=True, realCorrectedMethodInliningVetoObserved=True,
+        realOriginalJavaHeadersObserved=True, realCorrectedJavaNoInlineHeadersObserved=True,
         originalInputsUnchanged=True, checkedCompilerJars=identities,
         publishedHppcRelocation='org.teavm.hppc',
         originalBuildscriptClasspath=[jar_identities(compiler.dependency_cache, [path])[0]

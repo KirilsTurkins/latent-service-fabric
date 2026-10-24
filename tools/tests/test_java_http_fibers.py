@@ -568,6 +568,22 @@ class PinnedCoroutinePhiRepair(unittest.TestCase):
             with self.subTest(size=len(changed)), self.assertRaisesRegex(ValueError, 'unreviewed-teavm-coroutine-source'):
                 patch.corrected_source(changed)
 
+    def test_exact_method_boundaries_transform_only_authenticated_source(self):
+        from tools.java_guest import coroutine_patch as patch
+        root = campaign.ROOT / 'sdk/java-guest/fibers/compiler-patch'
+        codegen = read_file(root / 'CodeGenerator.java')
+        fixed = patch.corrected_codegen_source(codegen)
+        self.assertEqual(fixed.replace(patch.NOINLINE_PREFIX.encode(), b'', 1).replace(
+            b'import org.teavm.hppc.IntContainer;', b'import com.carrotsearch.hppc.IntContainer;'), codegen)
+        factory = read_file(root / 'LowLevelInliningFilterFactory.java')
+        fixed_filter = patch.corrected_inlining_source(factory)
+        self.assertEqual(fixed_filter.replace(patch.INLINE_AFTER.encode(), patch.INLINE_BEFORE.encode(), 1), factory)
+        for source, correct in ((codegen, patch.corrected_codegen_source),
+                                (factory, patch.corrected_inlining_source)):
+            for changed in (source + b' ', b'?' + source[1:]):
+                with self.subTest(correct=correct.__name__), self.assertRaisesRegex(ValueError, 'unreviewed-teavm-'):
+                    correct(changed)
+
     def test_private_jar_replaces_exact_compiled_closure_and_retains_every_other_entry(self):
         import zipfile
         from tools.java_guest import coroutine_patch as patch
@@ -595,7 +611,7 @@ class PinnedCoroutinePhiRepair(unittest.TestCase):
     def test_jar_duplicates_unsafe_members_and_missing_class_refuse(self):
         import warnings,zipfile
         from tools.java_guest import coroutine_patch as patch
-        for invalid in ('duplicate','escape','missing'):
+        for invalid in ('duplicate','escape','missing','unexpected-method-class'):
             with self.subTest(invalid=invalid), tempfile.TemporaryDirectory() as temporary:
                 path=Path(temporary)/'core.jar'
                 with warnings.catch_warnings(), zipfile.ZipFile(path,'w') as jar:
@@ -603,6 +619,7 @@ class PinnedCoroutinePhiRepair(unittest.TestCase):
                     for name in sorted(patch.PATCH_CLASSES):jar.writestr(name,b'original')
                     if invalid=='duplicate':jar.writestr(sorted(patch.PATCH_CLASSES)[0],b'other')
                     elif invalid=='escape':jar.writestr('../outside',b'outside')
+                    elif invalid=='unexpected-method-class':jar.writestr(patch.CODEGEN_ROOT+'CodeGenerator$Unexpected.class',b'other')
                 if invalid=='missing':
                     with zipfile.ZipFile(path,'w') as jar:jar.writestr('some.class',b'other')
                 with self.assertRaises(ValueError):patch.jar_entries(path)
@@ -677,7 +694,8 @@ class PinnedCoroutinePhiRepair(unittest.TestCase):
             (sdk/'tools/dependencies.py').write_bytes(read_file(campaign.ROOT/'sdk/java-guest/tools/dependencies.py'))
             sources=sdk/'fibers/compiler-patch';sources.mkdir(parents=True)
             for name in ('CoroutineTransformation.java','Compile.java','Check.java',
-                         'TypeInferer.java','ArrayTypeCheck.java','AsyncMethodFinder.java','MonitorAsyncControl.java'):
+                         'TypeInferer.java','ArrayTypeCheck.java','AsyncMethodFinder.java','MonitorAsyncControl.java',
+                         'CodeGenerator.java','LowLevelInliningFilterFactory.java','MethodGranularityControl.java'):
                 (sources/name).write_bytes(read_file(campaign.ROOT/'sdk/java-guest/fibers/compiler-patch'/name))
             cache=root/'files-2.1';base=cache/'org.teavm/teavm-core/0.15.0/pinned';base.mkdir(parents=True)
             core=base/'teavm-core-0.15.0.jar'
@@ -688,7 +706,7 @@ class PinnedCoroutinePhiRepair(unittest.TestCase):
             hppc=cache/'org.teavm/teavm-relocated-libs-hppc/0.15.0/pinned/teavm-relocated-libs-hppc-0.15.0.jar'
             hppc.parent.mkdir(parents=True)
             with zipfile.ZipFile(hppc,'w') as jar:
-                for name in patch.RELOCATED_IMPORTS:jar.writestr('org/teavm/hppc/'+name+'.class',b'\xca\xfe\xba\xbeactual-fixture')
+                for name in patch.RELOCATED_IMPORTS+patch.CODEGEN_RELOCATED_IMPORTS:jar.writestr('org/teavm/hppc/'+name+'.class',b'\xca\xfe\xba\xbeactual-fixture')
             hppc_raw=hppc.read_bytes();hppc_sha=hashlib.sha256(hppc_raw).hexdigest()
             project=root/'project';(project/'gradle').mkdir(parents=True)
             (project/'dependencies.lock.json').write_text(json.dumps({'schemaVersion':1,
@@ -726,6 +744,9 @@ class PinnedCoroutinePhiRepair(unittest.TestCase):
                 self.assertEqual(args[0],'-cp')
                 expected=core if mode=='original' else project/'compiler-patch/teavm-core-patched.jar'
                 self.assertTrue(args[1].startswith(str(expected)))
+                if '-method-' in stage:
+                    return json.dumps({'schemaVersion':'latent.java.method-granularity-control.v1',
+                        'mode':mode,'passed':True,'filters':9,'headers':4})
                 schema='latent.java.monitor-async-control.v1' if '-monitor-' in stage else 'latent.java.coroutine-phi-control.v1'
                 return json.dumps({'schemaVersion':schema,'mode':mode,'passed':True})
             compiler=SimpleNamespace(sdk=sdk,dependency_cache=cache,run=run,directory=root/'compiler-logs')
@@ -734,8 +755,8 @@ class PinnedCoroutinePhiRepair(unittest.TestCase):
             from tools.java_capsule_build import retain_logs
             retain_logs(compiler.directory,root)
             self.assertEqual([call[0] for call in calls],['java-coroutine-patch',
-                'java-coroutine-original-control','java-coroutine-monitor-original-control',
-                'java-coroutine-corrected-control','java-coroutine-monitor-corrected-control'])
+                'java-coroutine-original-control','java-coroutine-monitor-original-control','java-coroutine-method-original-control',
+                'java-coroutine-corrected-control','java-coroutine-monitor-corrected-control','java-coroutine-method-corrected-control'])
             self.assertEqual(core.read_bytes(),raw)
             self.assertEqual(receipt['checkedCompilerJars'],[{'coordinate':
                 'org/teavm/teavm-core/0.15.0/teavm-core-0.15.0.jar','sha256':sha,'bytes':len(raw)},
@@ -761,11 +782,12 @@ class PinnedCoroutinePhiRepair(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             jar=Path(temporary)/'teavm-relocated-libs-hppc-0.15.0.jar'
             with self.assertRaisesRegex(ValueError,'relocated-library'):patch.check_relocated_classes([])
-            for invalid in ('missing','unrelocated','malformed'):
+            for invalid in ('missing','unrelocated','malformed','missing-codegen'):
                 with self.subTest(invalid=invalid):
                     with zipfile.ZipFile(jar,'w') as output:
-                        for name in patch.RELOCATED_IMPORTS:
+                        for name in patch.RELOCATED_IMPORTS+patch.CODEGEN_RELOCATED_IMPORTS:
                             if invalid=='missing' and name=='IntSet':continue
+                            if invalid=='missing-codegen' and name=='IntContainer':continue
                             prefix='com/carrotsearch/hppc/' if invalid=='unrelocated' else 'org/teavm/hppc/'
                             output.writestr(prefix+name+'.class',b'not a class' if invalid=='malformed' else b'\xca\xfe\xba\xbevalid')
                     with self.assertRaises((ValueError,KeyError)):patch.check_relocated_classes([jar])
