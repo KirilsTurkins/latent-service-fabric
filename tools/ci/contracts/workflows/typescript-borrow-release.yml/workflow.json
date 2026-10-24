@@ -15,10 +15,12 @@
           ".github/workflows/typescript-borrow-release.yml",
           "tools/qualify_typescript_borrow_release.py",
           "tools/typescript_borrow_splicer_inputs.py",
+          "tools/typescript_borrow_retry_inputs.py",
           "tools/typescript_guest/**",
           "tools/tests/test_typescript_import_cancellation.py",
           "tools/tests/test_typescript_borrow_controls.py",
           "tools/tests/test_typescript_borrow_splicer_inputs.py",
+          "tools/tests/test_typescript_borrow_retry_inputs.py",
           "sdk/typescript-guest/activation/**"
         ]
       },
@@ -31,7 +33,7 @@
   "requiredJobs": [
     "native-controls"
   ],
-  "reviewReason": "Add the exact complete-splicer selection test path; same one-build programme, permissions, trigger branch, bounds and no signed/production claim",
+  "reviewReason": "Replace repeated source builds with exact failed-producer completed products; retain all native cases, old failure, source validators and aggregate120-second diagnostic cap",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-borrow-release.yml"
 }

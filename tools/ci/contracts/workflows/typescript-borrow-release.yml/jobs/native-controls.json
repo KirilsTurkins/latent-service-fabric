@@ -3,7 +3,7 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "name": "One source-built library and engine with native borrow controls",
+    "name": "Frozen completed source inputs and native borrow controls",
     "permissions": {
       "actions": "read",
       "contents": "read"
@@ -30,12 +30,6 @@
         }
       },
       {
-        "uses": "dtolnay/rust-toolchain",
-        "with": {
-          "targets": "wasm32-wasip1"
-        }
-      },
-      {
         "uses": "bytecodealliance/actions/wasm-tools/setup",
         "with": {
           "version": "1.254.0"
@@ -51,26 +45,22 @@
       },
       {
         "name": "Check owning-evidence refusal controls",
-        "run": "python3 -m unittest tools.tests.test_typescript_borrow_controls tools.tests.test_typescript_borrow_splicer_inputs -v"
+        "run": "python3 -m unittest tools.tests.test_typescript_borrow_controls tools.tests.test_typescript_borrow_splicer_inputs tools.tests.test_typescript_borrow_retry_inputs -v"
       },
       {
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
-        "name": "Authenticate and acquire only the unchanged source splicer",
-        "run": "python3 tools/typescript_borrow_splicer_inputs.py --output \"$RUNNER_TEMP/typescript-borrow-splicer\""
+        "name": "Authenticate the failed producer and reuse only its completed source products",
+        "run": "python3 tools/typescript_borrow_retry_inputs.py --output \"$RUNNER_TEMP/typescript-borrow-retry-inputs\""
       },
       {
-        "name": "Install normal SpiderMonkey source build prerequisites",
-        "run": "sudo apt-get update\nsudo apt-get install --yes clang-18 llvm-18 lld-18 autoconf2.13 m4 libffi-dev python3-dev\n"
+        "name": "Install the normal locked public compiler for pinned parser controls",
+        "run": "python3 tools/typescript_capsule.py install-tools \"$RUNNER_TEMP/typescript-borrow-public-tools\""
       },
       {
-        "name": "Install the normal locked public compiler and exact maintained bindgen",
-        "run": "python3 tools/typescript_capsule.py install-tools \"$RUNNER_TEMP/typescript-borrow-public-tools\"\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/typescript-borrow-bindgen-tools\"\n"
-      },
-      {
-        "name": "Build one normal library and import engine then run all native cases",
-        "run": "python3 tools/qualify_typescript_borrow_release.py \\\n  --tools \"$RUNNER_TEMP/typescript-borrow-public-tools\" \\\n  --source-splicer-build \"$RUNNER_TEMP/typescript-borrow-splicer/splicer\" \\\n  --wit-bindgen \"$RUNNER_TEMP/typescript-borrow-bindgen-tools/wit-bindgen\" \\\n  --output \"$RUNNER_TEMP/typescript-borrow-controls\"\n"
+        "name": "Compile and link the diagnostic within one 120 second bound then run all native cases",
+        "run": "python3 tools/qualify_typescript_borrow_release.py \\\n  --tools \"$RUNNER_TEMP/typescript-borrow-public-tools\" \\\n  --prepared-products \"$RUNNER_TEMP/typescript-borrow-retry-inputs/products\" \\\n  --output \"$RUNNER_TEMP/typescript-borrow-controls\"\n"
       },
       {
         "if": "always()",
@@ -79,7 +69,7 @@
         "with": {
           "if-no-files-found": "warn",
           "name": "typescript-borrow-controls-${{ github.sha }}",
-          "path": "${{ runner.temp }}/typescript-borrow-splicer/acquisition.json\n${{ runner.temp }}/typescript-borrow-splicer/splicer.zip\n${{ runner.temp }}/typescript-borrow-splicer/splicer/**\n${{ runner.temp }}/typescript-borrow-controls/*.json\n${{ runner.temp }}/typescript-borrow-controls/*.log\n${{ runner.temp }}/typescript-borrow-controls/*.wasm\n${{ runner.temp }}/typescript-borrow-controls/control-includes/**\n${{ runner.temp }}/typescript-borrow-controls/library/*.json\n${{ runner.temp }}/typescript-borrow-controls/library/*.log\n${{ runner.temp }}/typescript-borrow-controls/library/mozconfig\n${{ runner.temp }}/typescript-borrow-controls/library/licenses/**\n${{ runner.temp }}/typescript-borrow-controls/library/obj/js/src/build/libjs_static.a\n${{ runner.temp }}/typescript-borrow-controls/library/obj/dist/include/**\n${{ runner.temp }}/typescript-borrow-controls/engine/*.json\n${{ runner.temp }}/typescript-borrow-controls/engine/*.log\n${{ runner.temp }}/typescript-borrow-controls/engine/engine.wasm\n${{ runner.temp }}/typescript-borrow-controls/engine/spidermonkey/**\n${{ runner.temp }}/typescript-borrow-controls/engine/jobs-generated/**\n${{ runner.temp }}/typescript-borrow-controls/engine/clocks-generated/**\n${{ runner.temp }}/typescript-borrow-controls/engine/licenses/**\n",
+          "path": "${{ runner.temp }}/typescript-borrow-retry-inputs/acquisition.json\n${{ runner.temp }}/typescript-borrow-retry-inputs/producer.zip\n${{ runner.temp }}/typescript-borrow-controls/*.json\n${{ runner.temp }}/typescript-borrow-controls/*.log\n${{ runner.temp }}/typescript-borrow-controls/*.wasm\n${{ runner.temp }}/typescript-borrow-controls/*.o\n${{ runner.temp }}/typescript-borrow-controls/control-includes/**\n",
           "retention-days": 7
         }
       }
@@ -88,7 +78,7 @@
   },
   "jobId": "native-controls",
   "kind": "job",
-  "reviewReason": "Preserve all original owning controls and add the three receipt-selection/refusal controls before acquisition; no extra source/library/engine build",
+  "reviewReason": "Explicit reviewed replacement: authenticated failed-producer completed inputs instead of duplicate builds; preserve six pinned-parser and eleven native cases, add four retry guards, no fallback; one aggregate120-second diagnostic compile/link bound",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-borrow-release.yml"
 }

@@ -78,20 +78,32 @@ refusal, five exact owner-acknowledgement refusals, and the existing cancellatio
 baseline. They have not been compiled or executed for this foundation. Their canonical
 intrinsics are explicit diagnostic doubles, rather than signed host evidence.
 
-The staged owning recipe is `tools/qualify_typescript_borrow_release.py`. It
-requires the normal locked public compiler, an unchanged sealed source splicer
-accepted by the existing source/SDK/recipe validators, and pinned maintained
-build tools. It requires all six pinned-parser controls to pass without skips,
-builds the normal Promise library once and the import engine once, then compiles
-one diagnostic core against those same headers/library. Pinned Node's
-`node:wasi` executes the eleven cases with no preopened directories. Test-only
-C++ instrumentation observes destruction before refund; failure cases assert
-the exact retained-owner set instead of claiming quiescence. The same wasm32
-compilation measures current and pinned pre-feature manager sizes, unchanged
-record storage and observer storage. No build has been launched for this recipe.
+The original owning campaign at commit
+`e2dfcf6d1b48b650fee585e83cd15720bf7f745c`, run `40042939576`, built the
+normal Promise library and import engine successfully. Its diagnostic C++
+compile/link command exceeded its 120-second deadline. **The campaign failed;
+no native case ran.** Its original failed receipt and completed compiler-input
+receipts remain unchanged. A completed source input has unknown runtime
+qualification.
 
-A
-separately reviewed signed TypeScript campaign must hold a real canonical borrow
+The replacement owning recipe in `tools/qualify_typescript_borrow_release.py`
+requires the fixed authenticated producer artifact, all 41 byte-identical engine
+inputs, and the unchanged normal engine/splicer/source validators. It refuses
+source mismatch rather than rebuilding or rewriting old receipts. Only the
+normal pinned WASI SDK 30 toolchain is acquired for the diagnostic retry. The
+normal library and engine are never rebuilt by this recipe.
+
+Diagnostic compilation uses `-O0`; the diagnostic link explicitly disables
+ThinLTO optimization. Their separate phase receipts share **one aggregate
+120-second deadline**, preserving the same finite bound and all eleven cases,
+ABI, admission, ownership and drop assertions. Pinned Node's `node:wasi`
+executes the diagnostic with no preopened directories. These fixture intrinsics
+are not signed canonical behavior. All six pinned-parser controls must pass
+without skips before diagnostic compilation. Actual wasm32 manager, record and
+observer sizes remain unknown until that retry succeeds; no whole-cost claim
+follows from those measurements.
+
+A separately reviewed signed TypeScript campaign must hold a real canonical borrow
 at a controlled cancellation barrier, prove release remains pending while the
 logical result rejects and a sibling progresses, then observe actual drop before
 consuming close. Root trap/deadline cases must retain or quarantine outstanding

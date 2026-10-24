@@ -1,8 +1,0 @@
-{
-  "kind": "owner",
-  "path": "tools/typescript_borrow_splicer_inputs.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Retain the four required completed-build receipts from the same authenticated frozen archive, preserving original member bounds and unchanged normal source/SDK/recipe validation",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "42d211acb9d6bc67231d23e32aa990b6fa3a7f43fbb3337acef92e42100aad5f"
-}

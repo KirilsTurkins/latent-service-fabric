@@ -48,7 +48,7 @@ RECIPE = (
     'tools/typescript_guest/import_cancellation.mjs', 'tools/typescript_guest/async_waiters.mjs',
     'tools/build_process.py', 'tools/build_process_linux.py',
     'tools/build_observation.py', 'tools/phase3_resource_identity.py',
-    'tools/typescript_borrow_splicer_inputs.py', '.github/workflows/typescript-borrow-release.yml',
+    'tools/typescript_borrow_splicer_inputs.py', 'tools/typescript_borrow_retry_inputs.py', '.github/workflows/typescript-borrow-release.yml',
     'tools/typescript_tracking_replay_inputs.py', 'tools/typescript_fetch_replay_inputs.py',
     'tools/java_replay_materials.py',
     *activation_engine.engine_input_paths('spidermonkey-activation-promises-clocks-imports-v1'),
@@ -121,15 +121,36 @@ def native_control(value: dict, case: str) -> dict:
     return {name: value[name] for name in names}
 
 
-def build(output: Path, tools: Path, source_splicer: Path, *, bindgen='wit-bindgen', wasm_tools='wasm-tools') -> dict:
+def diagnostic_phase(label, arguments, *, run, deadline, output, phases):
+    remaining = min(120, deadline - time.monotonic())
+    require(remaining > 0, 'borrow-controls-diagnostic-aggregate-deadline')
+    began = time.monotonic()
+    phase = {'phase': label, 'maximumSeconds': remaining, 'status': 'in-progress'}
+    phases.append(phase)
+    write_json(output / (label + '.phase-start.json'), dict(phase))
+    try:
+        run(label, *arguments, seconds=min(remaining, deadline - time.monotonic()))
+        require(time.monotonic() < deadline, 'borrow-controls-diagnostic-aggregate-deadline')
+        phase['status'] = 'passed'
+    except BaseException:
+        phase['status'] = 'failed'
+        raise
+    finally:
+        phase['elapsedSeconds'] = time.monotonic() - began
+        write_json(output / (label + '.phase-result.json'), dict(phase))
+
+def build(output: Path, tools: Path, prepared_products: Path, *, wasm_tools='wasm-tools') -> dict:
     require(sys.platform == 'linux' and platform.machine() in {'x86_64', 'AMD64'}, 'borrow-controls-linux-x86-64')
     require(sys.version_info[:3] == (3, 13, 5), 'borrow-controls-pinned-python')
     tools = tools.resolve(strict=True)
-    source_splicer = source_splicer.resolve(strict=True)
+    from tools import typescript_borrow_retry_inputs as retry
+    prepared_products = prepared_products.resolve(strict=True)
+    source_splicer = prepared_products / retry.SPLICER
     output = output.resolve()
     require(output != ROOT and ROOT not in output.parents and output not in tools.parents
             and tools not in output.parents and output != tools and output != source_splicer
-            and source_splicer not in output.parents and output not in source_splicer.parents,
+            and source_splicer not in output.parents and output not in source_splicer.parents
+            and output != prepared_products and output not in prepared_products.parents and prepared_products not in output.parents,
             'borrow-controls-fresh-independent-output')
     output = fresh(output)
     environment = build_environment(output)
@@ -139,8 +160,8 @@ def build(output: Path, tools: Path, source_splicer: Path, *, bindgen='wit-bindg
               'qualification': 'unknown', 'apiSupport': 'not-evaluated', 'signedExecution': 'not-run',
               'physicalProviderQualification': 'not-evaluated', 'wholeCostQualification': False,
               'scope': 'source-built-intrinsic-controls-with-fixture-canonical-and-broker-imports',
-              'recipe': recipe, 'limits': {'overallSeconds': 4500, 'library': 'unchanged normal 3000s/1-job recipe',
-                  'engine': 'unchanged normal 1200s/2-job recipe', 'diagnosticCompileSeconds': 120,
+              'recipe': recipe, 'limits': {'overallSeconds': 4500, 'productReuse': 'frozen completed library and engine; no builds',
+                  'diagnosticCompileAndLinkSeconds': 120, 'diagnosticOptimization': 'O0; diagnostic only',
                   'caseSeconds': 20, 'caseCount': len(CASES), 'outputBytesPerCommand': 4 * 1024**2}}
 
     def run(label, *command, seconds=20, cwd=output, env=None):
@@ -166,8 +187,9 @@ def build(output: Path, tools: Path, source_splicer: Path, *, bindgen='wit-bindg
         require(not run('source-clean', 'git', 'status', '--porcelain', '--untracked-files=normal', cwd=ROOT).strip(),
                 'borrow-controls-committed-source-required')
         record.update(sourceCommit=source_commit, sourceTree=source_tree, workflowOrigin=workflow_origin(source_commit))
-        # Reject incompatible/missing sealed compiler products BEFORE spending a
-        # library build. This is the unchanged normal validator, not a waiver.
+        # Reject source drift before acquiring the fixed diagnostic toolchain.
+        # These unchanged normal validators do not rewrite producer receipts.
+        record['sourceInputReuse'] = retry.validate(prepared_products)
         record['splicer'] = native_build.source_splicer(source_splicer)
         record['publicCompiler'] = splicer_build.compiler_inventory(tools)
         node = shutil.which('node', path=environment['PATH'])
@@ -197,37 +219,47 @@ def build(output: Path, tools: Path, source_splicer: Path, *, bindgen='wit-bindg
         source_controls(json.loads(run('pinned-parser-controls', sys.executable, '-c', program,
                                       seconds=30, cwd=ROOT, env=control_env)))
 
-        stage = 'normal-library-once'
-        require(deadline - time.monotonic() >= 3000, 'borrow-controls-library-deadline-reservation')
-        library = output / 'library'
-        record['libraryBuild'] = promise_library.build(library)
-        require(time.monotonic() < deadline, 'borrow-controls-overall-deadline')
-        stage = 'normal-import-engine-once'
-        require(deadline - time.monotonic() >= 1200, 'borrow-controls-engine-deadline-reservation')
-        engine = output / 'engine'
-        record['engineBuild'] = native_build.build(engine, library, bindgen=bindgen,
-                                                   wasm_tools=wasm_tools, source_splicer_build=source_splicer)
+        stage = 'reused-source-inputs'
+        library = prepared_products / retry.PREFIX / 'library'
+        engine = prepared_products / retry.PREFIX / 'engine'
+        compilation = json.loads(read_file(engine / 'engine-compilation.json', 1024**2))
         products = {
             'libraryReceipt': (library / 'library-build.json', 4 * 1024**2),
             'engineReceipt': (engine / 'engine-compilation.json', 4 * 1024**2),
             'engineInput': (engine / 'engine-input.json', 1024**2),
             'engineCore': (engine / 'engine.wasm', 64 * 1024**2),
             'combinedLibrary': (engine / 'spidermonkey/libspidermonkey.a',
-                                record['engineBuild']['archiveCompositionLimits']['maximumCombinedBytes']),
+                                compilation['archiveCompositionLimits']['maximumCombinedBytes']),
         }
         record['products'] = {name: file_identity(path, maximum) for name, (path, maximum) in products.items()}
-        stage = 'diagnostic-core'
-        wasi = library / 'wasi-source/wasi-sdk-30.0-x86_64-linux'
-        core = output / 'borrow-controls.wasm'
-        run('compile-controls', wasi / 'bin/clang++', '-std=c++20', '-O2', '-fno-sized-deallocation',
+        stage = 'fixed-wasi-toolchain'
+        wasi_archive = output / 'wasi-sdk.archive'
+        record['diagnosticToolchainAcquisition'] = promise_library.acquire(
+            wasi_archive, promise_library.SOURCES['wasi-sdk'], deadline)
+        wasi = promise_library.extract(wasi_archive, output / 'wasi-source',
+                                      'wasi-sdk-30.0-x86_64-linux', deadline=deadline)
+        core, object_file = output / 'borrow-controls.wasm', output / 'borrow-controls.o'
+        diagnostic_deadline = time.monotonic() + 120
+        record['diagnosticPhases'] = []
+        def phase(label, *arguments):
+            diagnostic_phase(label, arguments, run=run, deadline=diagnostic_deadline,
+                             output=output, phases=record['diagnosticPhases'])
+        stage = 'diagnostic-compile'
+        phase('compile-controls', wasi / 'bin/clang++', '-std=c++20', '-O0', '-fno-sized-deallocation',
             '-DSTATIC_JS_API', '-DJS_STANDALONE',
             '-DLSF_TYPESCRIPT_BORROW_CONTROLS=1', '-I' + str(engine / 'spidermonkey/include'),
             '-I' + str(engine / 'jobs-generated'), '-I' + str(engine / 'clocks-generated'),
             '-I' + str(ROOT / 'sdk/typescript-guest/activation'), '-I' + str(includes),
-            '-include', engine / 'spidermonkey/include/js-confdefs.h',
-            ROOT / 'sdk/typescript-guest/activation/tests/native_imports.cpp',
-            engine / 'spidermonkey/libspidermonkey.a', '-Wl,--wrap=_ZdlPv', '-Wl,-z,stack-size=8388608',
-            '-Wl,--max-memory=268435456', '-o', core, seconds=120)
+            '-include', engine / 'spidermonkey/include/js-confdefs.h', '-c',
+            ROOT / 'sdk/typescript-guest/activation/tests/native_imports.cpp', '-o', object_file)
+        record['controlObject'] = file_identity(object_file, 32 * 1024**2)
+        stage = 'diagnostic-link'
+        # The normal library is ThinLTO bitcode. Disable diagnostic link-time
+        # optimization explicitly; do not rebuild or alter the production core.
+        phase('link-controls', wasi / 'bin/clang++', '-O0', object_file,
+            engine / 'spidermonkey/libspidermonkey.a', '-Wl,--lto-O0', '-Wl,--wrap=_ZdlPv',
+            '-Wl,-z,stack-size=8388608', '-Wl,--max-memory=268435456', '-o', core)
+        require(time.monotonic() < diagnostic_deadline, 'borrow-controls-diagnostic-final-deadline')
         run('validate-control-core', wasm_tools, 'validate', core)
         record['controlCore'] = file_identity(core, 64 * 1024**2)
         stage = 'native-controls'
@@ -250,7 +282,11 @@ def build(output: Path, tools: Path, source_splicer: Path, *, bindgen='wit-bindg
                 and not run('final-source-clean', 'git', 'status', '--porcelain', '--untracked-files=normal', cwd=ROOT).strip(),
                 'borrow-controls-source-checkout-changed')
         require(time.monotonic() < deadline, 'borrow-controls-final-deadline')
-        record.update(status='passed', libraryBuildCount=1, engineBuildCount=1,
+        require(record['sourceInputReuse'] == retry.validate(prepared_products), 'borrow-controls-reused-inputs-changed')
+        promise_library.recheck_archives(output, {'wasi-sdk': promise_library.SOURCES['wasi-sdk']},
+            {'wasi-sdk': record['diagnosticToolchainAcquisition']})
+        require(time.monotonic() < deadline, 'borrow-controls-final-reuse-recheck-deadline')
+        record.update(status='passed', libraryBuildCount=0, engineBuildCount=0,
                       limitations=['Fixture intrinsics are not real signed canonical cancellation.',
                                    'Borrow acknowledgement does not establish physical IoCall retirement.',
                                    'ABI size measurements do not establish whole-runtime cost acceptance.'])

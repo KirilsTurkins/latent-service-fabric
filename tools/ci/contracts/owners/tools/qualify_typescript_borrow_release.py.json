@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_typescript_borrow_release.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Reviewed source-only entrypoint for the one-build TypeScript borrow controls; native and signed evidence remain separate",
+  "reviewReason": "Only consume fixed completed source products; no library or engine fallback; unchanged eleven native cases and aggregate120-second compile/link bound",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "21eda0b59373e8c01a94304275c189c9b5c89d67451955c9bb41d3e832637ab7"
+  "sha256": "62b5c7206c7b4b85513cff7e46206bedcbd67ac6d98fbeba2afcada3c51ee1d4"
 }
