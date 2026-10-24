@@ -271,7 +271,7 @@ def build(output: Path, tools: Path, prepared_products: Path, *, wasm_tools='was
         # optimization explicitly; do not rebuild or alter the production core.
         phase('link-controls', wasi / 'bin/clang++', '-O0', object_file,
             engine / 'spidermonkey/libspidermonkey.a', Path(support['library']), Path(support['wrapper']),
-            *(Path(path) for path in support['emulation'].values()), '-Wl,--lto-O0', '-Wl,--wrap=_ZdlPv',
+            *(Path(path) for path in support['emulation'].values()), '-Wl,--lto-O0', '-Wl,--strip-debug', '-Wl,--wrap=_ZdlPv',
             '-Wl,-z,stack-size=8388608', '-Wl,--max-memory=268435456', '-o', core)
         require(time.monotonic() < diagnostic_deadline, 'borrow-controls-diagnostic-final-deadline')
         run('validate-control-core', wasm_tools, 'validate', core)

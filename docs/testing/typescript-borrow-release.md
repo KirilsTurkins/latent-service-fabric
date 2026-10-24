@@ -103,6 +103,13 @@ separate support-build deadline is300s; the producer's normal staticlib build
 took15.56s. Source, lock, compiler, libraries and wrapper identities are retained
 and rechecked. No substitute symbols or engine/libJS rebuild is permitted.
 
+Run `40049437805` built that support successfully and compiled, linked and
+validated the diagnostic. It then failed the64-MiB carrier bound:139,270,923 of
+148,560,386 bytes were DWARF debug sections. Artifact `12542384282` retains the
+failed raw carrier. The next diagnostic link adds `--strip-debug`; executable
+sections, the64-MiB/120-second bounds and all eleven cases remain unchanged.
+No native case has run in that failed campaign.
+
 Diagnostic compilation uses `-O0`; the diagnostic link explicitly disables
 ThinLTO optimization. Their separate phase receipts share **one aggregate
 120-second deadline**, preserving the same finite bound and all eleven cases,
