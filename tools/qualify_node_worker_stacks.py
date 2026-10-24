@@ -20,7 +20,7 @@ from tools.test_run import digest, redact
 
 ROOT = Path(__file__).resolve().parents[1]
 LOCK = "sdk/node-worker-stacks/reference-Cargo.lock"
-LOCK_SHA256 = "7ea26385860428010c61ce075a9d6cfe612160301df44a4bab2538538a66084f"
+LOCK_SHA256 = "e125b91b6a5f16e5f37976e7ddd67cbc263143ddb7f3873b461fe4ee74682c67"
 PROFILE = "apps/latentd/src/worker_stacks.rs"
 TESTS = "apps/latentd/src/worker_stacks/tests.rs"
 STACK, GUARD, AMBIENT = 2 * 1024 * 1024, 64 * 1024, 8 * 1024 * 1024
@@ -41,7 +41,7 @@ INPUTS = (PROFILE, TESTS, LOCK, "Cargo.lock", "Cargo.toml", "rust-toolchain.toml
           "crates/latent-wasmtime/src/config/renderer.rs", "tools/qualify_node_worker_stacks.py")
 MANIFEST = (b'[package]\nname="node-worker-stack-reference"\nversion="0.0.0"\nedition="2021"\n'
             b'[workspace]\nresolver="2"\n[dependencies]\n'
-            b'tokio={version="=1.53.1",default-features=false,features=["macros","rt","sync","time","rt-multi-thread","net","signal","io-util"]}\n')
+            b'tokio={version="=1.53.3",default-features=false,features=["macros","rt","sync","time","rt-multi-thread","net","signal","io-util"]}\n')
 
 
 def read(root: Path, name: str, maximum: int = 4 * 1024 * 1024) -> bytes:
