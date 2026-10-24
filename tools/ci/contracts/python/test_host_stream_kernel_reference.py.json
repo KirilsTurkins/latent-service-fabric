@@ -8,53 +8,17 @@
     "HostStreamKernelReference.test_wrong_platform_or_changed_source_refuses_before_any_build_or_output"
   ],
   "guards": {
-    "HostStreamKernelReference.test_actual_cargo_json_errors_keep_only_bounded_codes_and_primary_source_spans": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:b9c8032017803fa9e72692b5dc07dec434a4aecb287e543c7ad23c0a4f3a4de7",
-        "class:setup-sha256:0088c7953b4b6745a0937d32da740aeec7e5218c406500df4c3b249fb74914cc"
-      ],
-      "skipSites": []
-    },
     "HostStreamKernelReference.test_exact_kernel_tail_witness_keeps_all_physical_qualification_false": {
       "bases": [
         "unittest.TestCase"
       ],
       "classDecorators": [],
       "decorators": [],
+      "skipSites": [],
       "fixtureGuards": [
         "module:setup-sha256:b9c8032017803fa9e72692b5dc07dec434a4aecb287e543c7ad23c0a4f3a4de7",
-        "class:setup-sha256:0088c7953b4b6745a0937d32da740aeec7e5218c406500df4c3b249fb74914cc"
-      ],
-      "skipSites": []
-    },
-    "HostStreamKernelReference.test_fd_absence_or_missing_case_cannot_substitute_for_actual_tail": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:b9c8032017803fa9e72692b5dc07dec434a4aecb287e543c7ad23c0a4f3a4de7",
-        "class:setup-sha256:0088c7953b4b6745a0937d32da740aeec7e5218c406500df4c3b249fb74914cc"
-      ],
-      "skipSites": []
-    },
-    "HostStreamKernelReference.test_refunding_any_corrected_or_failed_original_owner_is_rejected": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:b9c8032017803fa9e72692b5dc07dec434a4aecb287e543c7ad23c0a4f3a4de7",
-        "class:setup-sha256:0088c7953b4b6745a0937d32da740aeec7e5218c406500df4c3b249fb74914cc"
-      ],
-      "skipSites": []
+        "class:setup-sha256:202adbf71e50ed0f7ad0df49aa418da67c94ba4f4195fd9222b9a853a7ac73a2"
+      ]
     },
     "HostStreamKernelReference.test_unknown_private_unbounded_or_forged_retirement_fields_are_rejected": {
       "bases": [
@@ -62,11 +26,23 @@
       ],
       "classDecorators": [],
       "decorators": [],
+      "skipSites": [],
       "fixtureGuards": [
         "module:setup-sha256:b9c8032017803fa9e72692b5dc07dec434a4aecb287e543c7ad23c0a4f3a4de7",
-        "class:setup-sha256:0088c7953b4b6745a0937d32da740aeec7e5218c406500df4c3b249fb74914cc"
+        "class:setup-sha256:202adbf71e50ed0f7ad0df49aa418da67c94ba4f4195fd9222b9a853a7ac73a2"
+      ]
+    },
+    "HostStreamKernelReference.test_fd_absence_or_missing_case_cannot_substitute_for_actual_tail": {
+      "bases": [
+        "unittest.TestCase"
       ],
-      "skipSites": []
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b9c8032017803fa9e72692b5dc07dec434a4aecb287e543c7ad23c0a4f3a4de7",
+        "class:setup-sha256:202adbf71e50ed0f7ad0df49aa418da67c94ba4f4195fd9222b9a853a7ac73a2"
+      ]
     },
     "HostStreamKernelReference.test_wrong_platform_or_changed_source_refuses_before_any_build_or_output": {
       "bases": [
@@ -74,15 +50,39 @@
       ],
       "classDecorators": [],
       "decorators": [],
+      "skipSites": [],
       "fixtureGuards": [
         "module:setup-sha256:b9c8032017803fa9e72692b5dc07dec434a4aecb287e543c7ad23c0a4f3a4de7",
-        "class:setup-sha256:0088c7953b4b6745a0937d32da740aeec7e5218c406500df4c3b249fb74914cc"
+        "class:setup-sha256:202adbf71e50ed0f7ad0df49aa418da67c94ba4f4195fd9222b9a853a7ac73a2"
+      ]
+    },
+    "HostStreamKernelReference.test_actual_cargo_json_errors_keep_only_bounded_codes_and_primary_source_spans": {
+      "bases": [
+        "unittest.TestCase"
       ],
-      "skipSites": []
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b9c8032017803fa9e72692b5dc07dec434a4aecb287e543c7ad23c0a4f3a4de7",
+        "class:setup-sha256:202adbf71e50ed0f7ad0df49aa418da67c94ba4f4195fd9222b9a853a7ac73a2"
+      ]
+    },
+    "HostStreamKernelReference.test_refunding_any_corrected_or_failed_original_owner_is_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b9c8032017803fa9e72692b5dc07dec434a4aecb287e543c7ad23c0a4f3a4de7",
+        "class:setup-sha256:202adbf71e50ed0f7ad0df49aa418da67c94ba4f4195fd9222b9a853a7ac73a2"
+      ]
     }
   },
   "kind": "python",
   "module": "tools/tests/test_host_stream_kernel_reference.py",
-  "reviewReason": "Actual affine native factory descriptor ownership and real pending/ready constructor routing; add ten Linux descriptor/quarantine controls and seven source/collector controls. Preserve all original thirty stream cases and their witnesses; cardinality becomes forty. Normal constructor selection remains zero, production socket consumer NULL, full Linux/Root final-free unqualified. Exact non-test output fixture success total30→40; no skip, decorator, base or module setup changes.",
+  "reviewReason": "Repair actual stale forty-case kernel witness wrapper after three additive native close cases made forty-three. Preserve the original 64KiB output bound, complete exact suite, all physical-owner/refund barriers and all six case/decorator/skip obligations; update only the controlled output fixture class fingerprint.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
