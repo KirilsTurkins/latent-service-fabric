@@ -129,8 +129,13 @@ Use the same arguments with `revoke` to publish a durable deny at the last
 confirmed owned policy generation. The helper neither deletes another owner's
 record nor refunds physical resources; inspect actual node usage and retirement
 after revocation. Use `inspect --deployment NAME` for the bounded existing
-capability inspection RPC. Unavailable counters remain unavailable, and the
-inspection response grants no execution permission.
+capability inspection RPC. It selects the exact stream contract and provider
+profile, and refuses a deployment whose returned publication differs from the
+protected owner, including a missing publication. Binding generations and
+changed/revoked/unavailable states remain descriptive diagnostics, even when
+they differ from the saved provider descriptor. Empty results and unavailable
+counters remain unavailable; inspection grants no execution permission or
+readiness and changes no local owner or remote grant.
 
 Each mutation records its original intent and operation identity in protected
 state before dispatch. An uncertain response or transport exception retains
@@ -142,6 +147,35 @@ record without applying it again; foreign or changed records require explicit
 operator review. Changing the publication, endpoint, provider identity or private
 client configuration fails closed under the existing owner. A new provider
 generation must be adopted explicitly as described below.
+
+For management bearer replacement, keep the original client file available and
+byte exact, even if its token has expired. Prepare a separate protected CLI
+configuration that changes only the selected profile's token. Run the existing
+frontend with the original specification and state:
+
+```sh
+latent-dev stream-operator adopt-client \
+  --cli /path/to/latent --client-config /private/client/original.json \
+  --replacement-client-config /private/client/replacement.json \
+  --state-dir /private/operator/state --specification /private/operator/stream.json
+```
+
+The same default/single profile, endpoint, tenant, timeouts, limits and all other
+profiles must remain exact. Adoption requires no pending original operation and
+both confirmed owned grant receipts. Using only the replacement credentials,
+the selected CLI reads the exact node and both original policy records; their
+full documents and stamps must match. Node inspection requires administrator
+credentials with the existing trusted node-operator claim, as does usage
+inspection. The native CLI validates its complete configuration before these
+read-only RPCs. An unavailable/denied/uncertain read or a changed protected
+input, owner, journal or receipt refuses the handoff without replacing state.
+
+Only the private owner's credential-file digest changes. Use the replacement
+file as `--client-config` on subsequent commands; the original file no longer
+matches that owner. No token or file path is copied into state or public output.
+Adoption sends no grant mutation, replays no pending request and grants no new
+authority. It neither revokes the old token nor rotates TLS credentials or a
+live stream provider; those remain separate administrator/node-owner actions.
 
 The owning Linux x86-64 node built with `development-outbound-streams` supports
 protected reload. Keep the same owned configuration path and change only the
@@ -158,6 +192,43 @@ it never widens that pool or refunds another live owner's charge. All changes
 force retirement: accepted sessions are never
 migrated, and their physical charges remain until cleanup. Repeating the same
 epoch is rejected without another rotation.
+
+Use `latent-dev stream-operator prepare-rotation` to construct a new private
+candidate for that existing reload rule. Keep the rotation record private and
+set `formatVersion` to `1`, `provider` to the exact `{id, tenant, service}` from
+the base file, `expectedEpoch` to that file's epoch, `newEpoch` to a strictly
+newer positive `u64`, and `limits` to all three original bounded limit fields.
+The [closed record schema](../../schemas/outbound-stream-rotation.schema.json)
+reuses the canonical provider identity and limits. For example:
+
+```json
+{
+  "formatVersion": 1,
+  "provider": {"id": "streams", "tenant": "examples", "service": "stream-host"},
+  "expectedEpoch": 1,
+  "newEpoch": 2,
+  "limits": {"maximumTransferBytes": 32768, "idleTimeoutMillis": 500, "absoluteTimeoutMillis": 4000}
+}
+```
+
+```sh
+latent-dev stream-operator prepare-rotation \
+  --node /path/to/latentd --base-config /private/node/config.json \
+  --rotation-record /private/operator/rotation.json \
+  --output /private/operator/rotation-candidate.json --development-profile
+```
+
+Only epoch and limits change in the candidate; all other configuration fields,
+credentials, destinations, DNS/address constraints and bindings stay exact.
+The command uses the same protected-input, create-only output, selected-binary
+identity, bounded `check-config` and redacted failure rules as initial preparation.
+A refused or uncertain check retains the private candidate. It never replaces
+the live file, sends a signal, rotates sessions or changes grants.
+`expectedEpoch` checks only the supplied file; it does not observe the live
+provider generation. Separately confirm the actual node owner's currentness
+before applying a reviewed candidate through its existing protected reload path.
+The development flag grants no installation or production override. The ordinary
+node's compiled-profile refusal remains a refusal, not readiness.
 
 The bounded `stream-control` status line distinguishes `configuredGeneration`
 from `installedBindingGeneration`. The first identifies the actual stream
@@ -202,6 +273,19 @@ inventory accepts only original pinned-wheel RECORD hash/size members, preservin
 unknown-owner refusal. Both complete artifacts, file inventories and 105 helper
 source/schema materials per platform were independently authenticated. These
 observations do not enable production or complete any whole #739 criterion.
+
+The later [actual-node configuration observation](../testing/evidence/stream-operator-actual-node-2026-10-23.json)
+reuses that exact Linux frontend with the separately authenticated node built on
+`277c8104499d414053573bce066b5e9091e74a20`. All eight configuration cases passed:
+the complete protected baseline was accepted, the explicit stream addition was
+refused with the private candidate retained, and existing-output and unsafe-input
+checks failed closed. The public node diagnostic is only
+`configuration: invalid-argument`; attribution to the compiled feature gate depends on the
+frozen source and successful baseline. The first acquisition deadline failure
+remains recorded. Four bounded reads of the same sealed frontend archive reduced
+the complete program to 100.3 seconds without raising its 240-second budget.
+This observation starts no node or provider, invokes no socket, and establishes
+neither installation nor readiness.
 
 Host TLS credential rotation, actual signed standard-library workflows, and the
 complete operator acceptance matrix remain separate required observations for

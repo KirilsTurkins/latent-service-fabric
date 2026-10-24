@@ -4,13 +4,21 @@ import { builtinModules } from 'node:module';
 import { pathToFileURL } from 'node:url';
 import { createHash } from 'node:crypto';
 import { activationModule } from './activation_module.mjs';
+import { bufferBuiltin, BUFFER_PROFILE } from './buffer_builtin.mjs';
+import { borrowProbeConfiguration, borrowProbeBuiltin } from './borrow_probe.mjs';
 
 const [esbuildPath, projectPath, input, output, importsPath, configurationPath, parserPath] = process.argv.slice(2);
 const { build } = await import(pathToFileURL(esbuildPath));
 const project = await realpath(projectPath);
 const imports = new Set(JSON.parse(await readFile(importsPath, 'utf8')));
 const configuration = configurationPath ? JSON.parse(await readFile(configurationPath, 'utf8')) : {};
+if (['standardBufferProfile', 'standardBufferBackendDigest', 'standardBufferModules'].some(name => name in configuration))
+  throw new Error('application-cannot-override-standard-buffer-backend');
+const bufferSource = await readFile(new URL('./node_buffer.mjs', import.meta.url), 'utf8');
+const bufferBackend = bufferBuiltin(bufferSource);
+const bufferDigest = 'sha256:' + createHash('sha256').update(bufferSource).digest('hex');
 const captured = !!configuration.moduleRoot;
+const borrowProbe = borrowProbeConfiguration(configuration, imports);
 const phaseFetch = configuration.standardFetchProfile === 'lsf-fetch-phase-buffered-v2';
 const standardFetch = phaseFetch || configuration.standardFetchProfile === 'lsf-fetch-buffered-v1';
 const fetchInterface = phaseFetch ? 'latent:http/phase-timing@0.4.0' : 'latent:http/streaming@0.3.0';
@@ -99,7 +107,13 @@ const result = await build({
       if (args.kind === 'dynamic-import' || args.kind.startsWith('require') && !captured) {
         return { errors: [{ text: 'dynamic module loading or uncaptured CommonJS is unsupported' }] };
       }
+      if (args.path === borrowProbeBuiltin) {
+        return borrowProbe ? {path: args.path, external: true} :
+          {errors: [{text: 'compiler-owned-borrow-probe-not-selected'}]};
+      }
       if (imports.has(args.path)) return { path: args.path, external: true };
+      const ownedBuffer = bufferBackend.resolve(args.path);
+      if (ownedBuffer) return ownedBuffer;
       if (args.path.startsWith('node:') || builtins.has(args.path)) {
         return { errors: [{ text: 'standard-runtime-module-not-installed:' + args.path + ':' + (configuration.runtimeProfile || 'spidermonkey-public-sync-v1') }] };
       }
@@ -111,6 +125,7 @@ const result = await build({
       }
       return undefined;
     });
+    builder.onLoad({ filter: /.*/, namespace: 'lsf-owned-node-buffer' }, args => bufferBackend.load(args));
     builder.onLoad({ filter: /.*/ }, async args => {
       const path = await realpath(args.path);
       const suffixes = captured ? ['.ts', '.js', '.mjs', '.cjs', '.json', '.txt', '.bin'] : ['.ts', '.js', '.mjs'];
@@ -123,7 +138,14 @@ const result = await build({
 });
 const inputs = [];
 let total = 0;
+if (bufferBackend.selection().length && !Object.hasOwn(result.metafile.inputs, 'lsf-owned-node-buffer:node:buffer'))
+  throw new Error('compiler-owned-buffer-input-missing');
 for (const name of Object.keys(result.metafile.inputs)) {
+  if (name === 'lsf-owned-node-buffer:node:buffer') {
+    if (JSON.stringify(bufferBackend.selection()) !== '["node:buffer"]')
+      throw new Error('compiler-owned-buffer-input-identity');
+    continue; // Authenticated compiler recipe input, not an application capture.
+  }
   const path = await realpath(resolve(project, name));
   if (!insideProject(path)) throw new Error('bundle-input-outside-captured-source');
   const bytes = await readFile(path);
@@ -189,6 +211,8 @@ await writeFile(output + '.inputs.json', JSON.stringify({
   snapshotGuardDigest: 'sha256:' + createHash('sha256').update(guard).digest('hex'),
   standardEntropyProfile: entropyProfile,
   standardEntropyBackendDigest: 'sha256:' + createHash('sha256').update(entropyBackend).digest('hex'),
+  ...(bufferBackend.selection().length ? {standardBufferProfile: BUFFER_PROFILE,
+    standardBufferBackendDigest: bufferDigest, standardBufferModules: bufferBackend.selection()} : {}),
   ...(standardFetch ? {standardFetchProfile: configuration.standardFetchProfile,
     standardFetchBackendDigest: 'sha256:' + createHash('sha256').update(backend).digest('hex')} : {}),
   ...(standardConsole ? {standardConsoleProfile: configuration.standardConsoleProfile,

@@ -362,6 +362,11 @@ fn classify_runtime_failure(
     })
 }
 
+#[cfg(feature = "development-test-host")]
+pub(crate) fn development_trap_label(trap: &Trap) -> &'static str {
+    trap_label(trap)
+}
+
 fn trap_label(trap: &Trap) -> &'static str {
     match trap {
         Trap::StackOverflow => "stack-overflow",

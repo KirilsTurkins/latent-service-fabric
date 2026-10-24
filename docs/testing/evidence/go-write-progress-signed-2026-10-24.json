@@ -1,0 +1,557 @@
+{
+  "schemaVersion": "latent.go.write-progress.signed-observation.v1",
+  "sourceRevision": "7b66a1def834b2676b1eb3dd24677419b9e1d7f8",
+  "run": {
+    "id": 40071151473,
+    "job": 120804661224,
+    "url": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40071151473/job/120804661224",
+    "conclusion": "success"
+  },
+  "artifact": {
+    "id": 12551690794,
+    "bytes": 1334718,
+    "sha256": "90c0aec3eb157e762471ab90aa1e58b3ef33e27e6494a01d377ba51043238787",
+    "all56CRCsVerified": true,
+    "members": [
+      {
+        "name": "cargo.stderr.log",
+        "bytes": 17253,
+        "sha256": "96f27287495f8d5a58409e886676cdff33c85bef972b1bf8a72d72698bea66db"
+      },
+      {
+        "name": "cargo.stdout.log",
+        "bytes": 310091,
+        "sha256": "614ff385db8089101d22053befc5f1fbd81a5cfd46ee90d045ca4534235a685c"
+      },
+      {
+        "name": "fixture/GO-WRITE-PROGRESS-COMPILE.json",
+        "bytes": 1057,
+        "sha256": "ad8e27ad487505dc23273d4462472937f1d10dd3f1843cff042b81def5723755"
+      },
+      {
+        "name": "fixture/build/component.wasm",
+        "bytes": 3368448,
+        "sha256": "14ca488737e1dc989f6cfe3484e1cad5a48e2248a13bf83346c5ab23ec98cac9"
+      },
+      {
+        "name": "fixture/build/component.wit",
+        "bytes": 3132,
+        "sha256": "41d6d900cd0d001076b623016e4f740801317e02b4bf5fed1e70295ef65f1168"
+      },
+      {
+        "name": "fixture/go-runtime-transformations.json",
+        "bytes": 10087,
+        "sha256": "327991ada56c8116b2e040481461ab37f16a22244949e4e8d929550b950afcd6"
+      },
+      {
+        "name": "fixture/logs/00-go-version.stderr.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "fixture/logs/00-go-version.stdout.txt",
+        "bytes": 32,
+        "sha256": "5707bf75dd54b4fdd5ac209444d48c9c4179ebf8510f80e2f7293dfbedc1012b"
+      },
+      {
+        "name": "fixture/logs/01-generator-version.stderr.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "fixture/logs/01-generator-version.stdout.txt",
+        "bytes": 22,
+        "sha256": "514e02ab3233fb815f58fa1142020085204acbd76979d17a411f011906a93307"
+      },
+      {
+        "name": "fixture/logs/02-validator-version.stderr.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "fixture/logs/02-validator-version.stdout.txt",
+        "bytes": 42,
+        "sha256": "f85fc42a5a4fd6614999a2f41e14fd84eae869d81f0b344672b6d3874400375e"
+      },
+      {
+        "name": "fixture/logs/03-go-root.stderr.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "fixture/logs/03-go-root.stdout.txt",
+        "bytes": 57,
+        "sha256": "e489792967006cf991676df465664552222e096973e06deecf9616309cd7fc2f"
+      },
+      {
+        "name": "fixture/logs/04-checkpoint-parser-host.stderr.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "fixture/logs/04-checkpoint-parser-host.stdout.txt",
+        "bytes": 12,
+        "sha256": "c52c38c24a1d6ea7a150d991a07f07a94214b949a497d483b73732bcb2b2693d"
+      },
+      {
+        "name": "fixture/logs/05-checkpoint-parser-controls.stderr.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "fixture/logs/05-checkpoint-parser-controls.stdout.txt",
+        "bytes": 35,
+        "sha256": "00a8108b91ccea195b88e5951f39c6c28b60222af677b4d0667235442ef255c1"
+      },
+      {
+        "name": "fixture/logs/06-checkpoint-parser-build.stderr.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "fixture/logs/06-checkpoint-parser-build.stdout.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "fixture/logs/07-typed-bindings.stderr.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "fixture/logs/07-typed-bindings.stdout.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "fixture/logs/08-typed-bindings.stderr.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "fixture/logs/08-typed-bindings.stdout.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "fixture/logs/09-locked-module-download.stderr.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "fixture/logs/09-locked-module-download.stdout.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "fixture/logs/10-vendor-locked-module.stderr.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "fixture/logs/10-vendor-locked-module.stdout.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "fixture/logs/11-checkpoint-selected-packages.stderr.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "fixture/logs/11-checkpoint-selected-packages.stdout.txt",
+        "bytes": 135863,
+        "sha256": "caf7a487d1cf228454d8c3689329e04b8e6582af8c7acac23469daf4a8130a53"
+      },
+      {
+        "name": "fixture/logs/12-checkpoint-parser.stderr.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "fixture/logs/12-checkpoint-parser.stdout.txt",
+        "bytes": 623,
+        "sha256": "660610d470fe215e580b861b00e0ff35ef0758535d9de46c9f1b479210209a71"
+      },
+      {
+        "name": "fixture/logs/13-closed-runtime.stderr.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "fixture/logs/13-closed-runtime.stdout.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "fixture/logs/14-component-build.stdout.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "fixture/logs/14-component-build.stderr.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "fixture/logs/15-component-validate.stderr.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "fixture/logs/15-component-validate.stdout.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "fixture/logs/16-component-wit.stderr.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "fixture/logs/16-component-wit.stdout.txt",
+        "bytes": 3132,
+        "sha256": "41d6d900cd0d001076b623016e4f740801317e02b4bf5fed1e70295ef65f1168"
+      },
+      {
+        "name": "fixture/src/main.go",
+        "bytes": 3201,
+        "sha256": "9499708e9127f72767216f2e8d181fc12758651e4355ae1bccc7aabacce258fa"
+      },
+      {
+        "name": "fixture/wit/deps/activation-runtime/package.wit",
+        "bytes": 2539,
+        "sha256": "0855e3524edbe15a5d174a825df6034ef41cd87f1330e2fba884ea6e2c58e946"
+      },
+      {
+        "name": "fixture/wit/deps/network/package.wit",
+        "bytes": 1960,
+        "sha256": "735538103dd7ec76609a0bd998d7fcc745dc3127795dcb0171c0de4ee7a8cbb9"
+      },
+      {
+        "name": "fixture/wit/deps/clock/package.wit",
+        "bytes": 139,
+        "sha256": "a009ecd4ad23d581523fe97b66327ebe352ac27c9c72d4e09ecc9bb003c466ea"
+      },
+      {
+        "name": "fixture/wit/deps/random/package.wit",
+        "bytes": 272,
+        "sha256": "c8ceca00269182f27c785fe17bd42eb4776bcde96828e5b5f2786aa15dbedc60"
+      },
+      {
+        "name": "fixture/wit/world.wit",
+        "bytes": 359,
+        "sha256": "3def28f5c95b68309c9a4d3715159110facf661cccb466cf24654328f8529977"
+      },
+      {
+        "name": "ignored.stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "ignored.stdout.log",
+        "bytes": 118,
+        "sha256": "c03bbd96196404c2b0b254f720c77666e44fc7ae51c3c1a427332e0cb41169d8"
+      },
+      {
+        "name": "list.stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "list.stdout.log",
+        "bytes": 118,
+        "sha256": "c03bbd96196404c2b0b254f720c77666e44fc7ae51c3c1a427332e0cb41169d8"
+      },
+      {
+        "name": "native-inputs.json",
+        "bytes": 1066258,
+        "sha256": "0766cf0da849122449abf40f0f642c7c63d99941f90ff502e1d3d672606a982d"
+      },
+      {
+        "name": "native.stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "native.stdout.log",
+        "bytes": 3656,
+        "sha256": "2b3ea725630119e987f7c106817935c91228630be3ed379d30db6f0c6028f8d2"
+      },
+      {
+        "name": "receipt.json",
+        "bytes": 6160,
+        "sha256": "4be6dbec94652877da08f3528acb24d0ea584ead593da7b175c13ddd09818897"
+      },
+      {
+        "name": "rustc.stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "rustc.stdout.log",
+        "bytes": 36,
+        "sha256": "4ad84f16acc2f3bdcfbc7b0788f1e74a4e649b962154a585b8f8d0b28eb0dd06"
+      }
+    ]
+  },
+  "sourceInputs": {
+    "member": "native-inputs.json",
+    "count": 6413,
+    "bytes": 58856376,
+    "digest": "sha256:0766cf0da849122449abf40f0f642c7c63d99941f90ff502e1d3d672606a982d",
+    "allComparedToExactGitRevision": true
+  },
+  "component": {
+    "bytes": 3368448,
+    "profile": "go-component-activation-v5",
+    "sourceUnchanged": true,
+    "sourceDigest": "sha256:9499708e9127f72767216f2e8d181fc12758651e4355ae1bccc7aabacce258fa",
+    "componentDigest": "sha256:14ca488737e1dc989f6cfe3484e1cad5a48e2248a13bf83346c5ab23ec98cac9",
+    "tools": {
+      "go": {
+        "name": "go",
+        "digest": "sha256:5f5eb6d0b2fb6aa0bb5d5f8c5f1c944e0de955c925f0111af92a9d8f79680b5b",
+        "size": 17164222
+      },
+      "componentize-go": {
+        "name": "componentize-go",
+        "digest": "sha256:b41803a645e54845bc8eacef9a69e0eeb8c2c4a9a61964c831ed544e85c137cb",
+        "size": 13330416
+      },
+      "wasm-tools": {
+        "name": "wasm-tools",
+        "digest": "sha256:cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6",
+        "size": 20231696
+      },
+      "go-checkpoints": {
+        "name": "go-checkpoints",
+        "digest": "sha256:cb13ef86a931371de2f837a699703dc89ee55980a9f66875c03137c09ec8efdb",
+        "size": 4817176
+      }
+    },
+    "compilerInputsDigest": "sha256:0e93bd3319aeaca2c77cebcdec58009212239781caa708891725dc59abacb26c"
+  },
+  "rawQualification": {
+    "member": "receipt.json",
+    "bytes": 6160,
+    "sha256": "4be6dbec94652877da08f3528acb24d0ea584ead593da7b175c13ddd09818897"
+  },
+  "nativeStdout": {
+    "member": "native.stdout.log",
+    "bytes": 3656,
+    "sha256": "2b3ea725630119e987f7c106817935c91228630be3ed379d30db6f0c6028f8d2"
+  },
+  "nativeCompiler": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "nativeExecutableDigest": "sha256:6cc4abe16d6c1481e66cc2128b78993fda3e611f7391feffa3216d9c13d8f27c",
+  "nativeExecutableBytesRetained": false,
+  "compilerOutputPairsRetained": 17,
+  "observations": {
+    "cases": [
+      {
+        "acceptedPrefix": null,
+        "case": "large-write",
+        "close": "closed",
+        "cpuFuel": 6670618,
+        "fresh": 1,
+        "kernelRetirementQualified": false,
+        "mayHaveApplied": null,
+        "mode": 0,
+        "n": 49189,
+        "normalProviderInstalled": false,
+        "outboundRequests": 1,
+        "peakMemoryBytes": 3768550,
+        "reportedEffectCount": 0,
+        "result": "write|n=49189|close=closed|fresh=1"
+      },
+      {
+        "acceptedPrefix": null,
+        "case": "ordinary-copy",
+        "close": "closed",
+        "cpuFuel": 5864138,
+        "fresh": 1,
+        "kernelRetirementQualified": false,
+        "mayHaveApplied": null,
+        "mode": 1,
+        "n": 40973,
+        "normalProviderInstalled": false,
+        "outboundRequests": 1,
+        "peakMemoryBytes": 3768562,
+        "reportedEffectCount": 0,
+        "result": "copy|n=40973|close=closed|fresh=1"
+      },
+      {
+        "acceptedPrefix": 1048576,
+        "case": "transfer-quota",
+        "close": "closed",
+        "cpuFuel": 115401237,
+        "fresh": 1,
+        "kernelRetirementQualified": false,
+        "mayHaveApplied": false,
+        "mode": 2,
+        "n": 1048576,
+        "normalProviderInstalled": false,
+        "outboundRequests": 1,
+        "peakMemoryBytes": 5538617,
+        "reportedEffectCount": 0,
+        "result": "quota|accepted=1048576|may-have-applied=false|n=1048576|close=closed|fresh=1"
+      },
+      {
+        "acceptedPrefix": null,
+        "case": "fresh-after-quota",
+        "close": "closed",
+        "cpuFuel": 6700279,
+        "fresh": 1,
+        "kernelRetirementQualified": false,
+        "mayHaveApplied": null,
+        "mode": 0,
+        "n": 49189,
+        "normalProviderInstalled": false,
+        "outboundRequests": 1,
+        "peakMemoryBytes": 3768586,
+        "reportedEffectCount": 0,
+        "result": "write|n=49189|close=closed|fresh=1"
+      }
+    ],
+    "peers": [
+      {
+        "case": "large-write",
+        "peer": {
+          "bytes": 49189,
+          "eof": true,
+          "exactOriginalPattern": true,
+          "sha256": "sha256:a526780036949b0f60ae8e427e750fd8ec4e660d6f1d69301ec320a6d81ff9ad"
+        }
+      },
+      {
+        "case": "ordinary-copy",
+        "peer": {
+          "bytes": 40973,
+          "eof": true,
+          "exactOriginalPattern": true,
+          "sha256": "sha256:4981d9fcd159d73180331f7c00c5cc00ee5ba9c1ad933ca321f3bf685ca2e8f3"
+        }
+      },
+      {
+        "case": "transfer-quota",
+        "peer": {
+          "bytes": 1048576,
+          "eof": true,
+          "exactOriginalPattern": true,
+          "sha256": "sha256:ca6073392ee71dbd1a2d356c3caa233f8f828ae17f8f8ba8570ee3491be128ab"
+        }
+      },
+      {
+        "case": "fresh-after-quota",
+        "peer": {
+          "bytes": 49189,
+          "eof": true,
+          "exactOriginalPattern": true,
+          "sha256": "sha256:a526780036949b0f60ae8e427e750fd8ec4e660d6f1d69301ec320a6d81ff9ad"
+        }
+      }
+    ],
+    "userSpaceOwners": [
+      {
+        "case": "large-write",
+        "instances": 0,
+        "ioOwners": 0,
+        "kernelRetirementQualified": false,
+        "stores": 0,
+        "streamOwners": 0
+      },
+      {
+        "case": "ordinary-copy",
+        "instances": 0,
+        "ioOwners": 0,
+        "kernelRetirementQualified": false,
+        "stores": 0,
+        "streamOwners": 0
+      },
+      {
+        "case": "transfer-quota",
+        "instances": 0,
+        "ioOwners": 0,
+        "kernelRetirementQualified": false,
+        "stores": 0,
+        "streamOwners": 0
+      },
+      {
+        "case": "fresh-after-quota",
+        "instances": 0,
+        "ioOwners": 0,
+        "kernelRetirementQualified": false,
+        "stores": 0,
+        "streamOwners": 0
+      }
+    ],
+    "originalQuota": {
+      "acceptedWriteBytes": 1048576,
+      "activeActivations": 1,
+      "inputBudgetBytes": 1048576,
+      "ioBuffers": 2,
+      "ioStagedBytes": 2,
+      "kernelRetirementQualified": false,
+      "liveConnection": true,
+      "pendingPermitRead": true,
+      "perConnectionInputCap": 1048576,
+      "perStoreTransferCap": 2097152,
+      "stores": 1
+    },
+    "completion": {
+      "cases": 4,
+      "cleanLogicalProviderStop": true,
+      "contacts": 4,
+      "kernelRetirementQualified": false,
+      "normalProviderInstalled": false,
+      "wholeGoNetworkingQualified": false
+    }
+  },
+  "sourceControls": {
+    "executed": 4,
+    "skipped": 0,
+    "scope": "finite protocol/source controls; separate from four actual signed calls"
+  },
+  "scope": {
+    "profile": "go-component-activation-v5",
+    "testHostFeature": "development-test-host",
+    "signedAdmission": "existing in-process package/signing/catalogue/manager fixture; actual freshly emitted component",
+    "standaloneReleasedBuilderQualified": false,
+    "normalProviderInstalled": false,
+    "kernelAccountingQualified": false,
+    "fullGoNetworkingQualified": false,
+    "independentStackGCNativeCostsQualified": false,
+    "alternateShortOSWritesOrUncertainCloseExecuted": false
+  },
+  "history": {
+    "firstOwningCampaign": "passed; no retry or historical failing campaign for this programme",
+    "original12TCPSourcesAndQualifier": "unchanged; not replayed",
+    "priorWriteProgressReference": "#1228 retains its original native protocol-double evidence; this observation adds the four actual signed cases only"
+  },
+  "limits": {
+    "maximumChunkBytes": 16384,
+    "residentChunks": 4,
+    "storeWindowBytes": 65536,
+    "perConnectionInputCreditBytes": 1048576,
+    "perStoreTransferBytes": 2097152,
+    "task": 16,
+    "executor": 2,
+    "queuedWork": 2,
+    "wait": 4,
+    "timer": 2,
+    "result": 2,
+    "native": 2,
+    "cpuFuel": 10000000000,
+    "memoryBytes": 67108864,
+    "changed": false,
+    "fuelScope": "Original in-process Go fixture admission/runtime ceiling: 10 billion; strict protocol reader separately required observed consumption <=1 billion."
+  },
+  "limitations": [
+    "The actual OS accepted full chunks in this run; no deliberately forced short OS write is claimed.",
+    "The actual quota refusal retained may-have-applied=false and Close succeeded; other control-reader combinations were not actual runtime outcomes.",
+    "Reported effectCount=0 does not mean zero TCP wire effects; each peer independently received the exact reported prefix.",
+    "User-space activation/provider retirement is not a kernel final-free certificate.",
+    "Tool and executable digests are recorded observations; native executable bytes were not retained in the artifact.",
+    "Fuel-label correction only: the original Go fixture admitted 10 billion fuel, while the strict reader accepted only observations up to 1 billion. Maximum recorded consumption was115401237. Raw qualification, rows and source identities are unchanged; no campaign was rerun."
+  ]
+}

@@ -1,0 +1,277 @@
+{
+  "schemaVersion": "latent.stream-operator.actual-node-observation.v1",
+  "scope": "actual frozen frontend and node configuration checks only",
+  "issue": 739,
+  "wholeIssueAcceptance": false,
+  "successfulOwningRun": {
+    "sourceRevision": "a7df112a01e4a5c71799c6400fd21fca3a3fbd19",
+    "workflow": ".github/workflows/stream-operator-node-check.yml",
+    "run": 39944368766,
+    "job": 120383272133,
+    "conclusion": "success",
+    "focusedSourceControls": 4,
+    "artifact": {
+      "id": 12498061063,
+      "bytes": 2862,
+      "sha256": "sha256:90f9f043bca3f6da4b50c645f658b3aeb4f0871678fb105db4b81add4cc4f28c"
+    },
+    "retainedResult": {
+      "bytes": 7756,
+      "sha256": "sha256:cf1d81b0f82e233d04bd104a76516f75fb29a29d288e9bed7769985b82c7257e"
+    }
+  },
+  "originalFailure": {
+    "sourceRevision": "cdef1d8b60256db15c3d44a3e5fada430c84ce3e",
+    "run": 39942903049,
+    "job": 120378435675,
+    "status": "failed",
+    "failedStage": "complete-original-baseline",
+    "failureCode": "stream-operator-overall-deadline",
+    "outcomes": [],
+    "nodeCheckStarted": false,
+    "stepElapsedMillis": 319050,
+    "artifact": {
+      "id": 12497785000,
+      "bytes": 2329,
+      "sha256": "sha256:b94ceb01e42b893c3acc006980ac067c328e2a3e2f7eca1fc6482f81fe0afab4"
+    },
+    "cause": "separate member range retrieval exhausted240second budget before first node check",
+    "correction": "same authenticated whole frontend ZIP in four reads within unchanged8MiB per-read and global byte/request caps; exact full archive SHA256 plus every sealed member hash and CRC",
+    "deadlineOrResourceBoundRaised": false
+  },
+  "observation": {
+    "schemaVersion": "latent.stream-operator.actual-node-check.v1",
+    "status": "passed",
+    "consumerSourceRevision": "a7df112a01e4a5c71799c6400fd21fca3a3fbd19",
+    "configurationChecksOnly": true,
+    "nodeStarted": false,
+    "providerInstalled": false,
+    "providerReadiness": "not-observed",
+    "executionPermission": false,
+    "socketInvocationAttempted": false,
+    "nativeRebuilt": false,
+    "guestCompiled": false,
+    "wholeIssue739Acceptance": false,
+    "outcomes": [
+      {
+        "case": "complete-original-baseline",
+        "exitCode": 0,
+        "schemaVersion": "latent.standalone.config-check.v1",
+        "protectedCredentialFile": true
+      },
+      {
+        "case": "actual-packaged-compiled-profile-refusal",
+        "exitCode": 1,
+        "code": "stream-operator-node-check-rejected-prepared-file-retained",
+        "uncertain": false,
+        "privateCandidateRetained": true,
+        "existingProviderAndCredentialsPreserved": true
+      },
+      {
+        "case": "direct-same-candidate-public-node-refusal",
+        "exitCode": 2,
+        "publicFailure": {
+          "stage": "configuration",
+          "code": "invalid-argument"
+        },
+        "privateFieldDiagnosticDisclosed": false
+      },
+      {
+        "case": "existing-private-candidate-no-overwrite",
+        "exitCode": 1,
+        "code": "stream-operator-output-not-new-or-unavailable",
+        "uncertain": false,
+        "privateCandidateUnchanged": true
+      },
+      {
+        "case": "missing-base",
+        "exitCode": 1,
+        "code": "stream-operator-file-unavailable-or-unsafe",
+        "uncertain": false,
+        "outputCreated": false
+      },
+      {
+        "case": "hardlinked-base",
+        "exitCode": 1,
+        "code": "single-link-regular-file-required",
+        "uncertain": false,
+        "outputCreated": false
+      },
+      {
+        "case": "group-readable-base",
+        "exitCode": 1,
+        "code": "stream-operator-file-protection",
+        "uncertain": false,
+        "outputCreated": false
+      },
+      {
+        "case": "malformed-installation",
+        "exitCode": 1,
+        "code": "invalid-json",
+        "uncertain": false,
+        "outputCreated": false
+      }
+    ],
+    "frontendAcquisition": {
+      "wholeArchiveRetained": false,
+      "archiveDigestVerification": "exact-whole-archive-and-every-member-sha256",
+      "wholeArchiveSha256Verified": true,
+      "wholeArchiveBytes": 25761049,
+      "rangeBytes": 25777629,
+      "rangeRequests": 7
+    },
+    "nodeOrigin": {
+      "schemaVersion": "latent.audit.two-native-hosts.v1",
+      "compiledSource": "277c8104499d414053573bce066b5e9091e74a20",
+      "producerRun": 39931902934,
+      "producerJob": 120341964917,
+      "artifact": {
+        "id": 12492391812,
+        "size_in_bytes": 56326844,
+        "digest": "sha256:dd8ca4d94042dd6512bfab9127d9fe4b87507c786bbabeb397bcd1fce4892322"
+      },
+      "products": {
+        "latent": {
+          "sha256": "sha256:9f4db9594b1e9a5e6cf1d8dbedcb6f830748368b3ca1e8ec5bc635559694f116",
+          "bytes": 72212720
+        },
+        "latentd": {
+          "sha256": "sha256:28739f4d9ac7ae3c3507011b97620c21e932b53d57584379bcd57856dbe9a0fd",
+          "bytes": 193434168
+        }
+      },
+      "signedGuestQualification": false,
+      "guestSourceCompiled": false,
+      "currentDevelopmentNativeCompilationClaimed": false,
+      "compositeNativeTupleCreated": false
+    },
+    "frontendOrigin": {
+      "schemaVersion": "latent.stream-operator.frontend-origin.v1",
+      "compiledSource": "380c7df8f26ec3f0f6e54d616e8d08b80cb5cc73",
+      "producerRun": 39938568296,
+      "producerJob": 120364086172,
+      "artifact": {
+        "id": 12494847186,
+        "size_in_bytes": 25761049,
+        "digest": "sha256:955f0ebbd0195f244e6959f3dcb891e185da700a30d2a4358855fc08a5db1b1d"
+      },
+      "frontend": {
+        "bytes": 3045240,
+        "sha256": "sha256:f2ba2bd3ada199e468f0a33990c6ecf925c6189a5c3226c580f32ee3a278fa71"
+      },
+      "fileInventoryRows": 153,
+      "originalPackagingRealLatentd": false,
+      "nativeRebuilt": false,
+      "publisherAuthenticationClaimed": false
+    },
+    "productAcquisitionAndVerificationMillis": 98624,
+    "sourceContract": {
+      "compiledNodeSource": "277c8104499d414053573bce066b5e9091e74a20",
+      "files": {
+        "apps/latentd/Cargo.toml": {
+          "sha256": "sha256:ab9e10830bacae2adf747488bd77a90e3bdc0c9e0fdb81e81ef1145aa83c405a",
+          "bytes": 3979
+        },
+        "apps/latentd/src/command.rs": {
+          "sha256": "sha256:d5525562f7acf987136e320eedaa3a03da3f3e9453ba320a8aa257508a4f717b",
+          "bytes": 4571
+        },
+        "apps/latentd/src/config/derive.rs": {
+          "sha256": "sha256:6e9d5b27d4205175d73347a0af91e4863d3f026e87957ee73711c94880444323",
+          "bytes": 8851
+        },
+        "apps/latentd/src/config/providers.rs": {
+          "sha256": "sha256:a0c76daffe0bbdf779e6efb7ee594b0f5bf92c9a8b468fa49c8fdf053259b4fd",
+          "bytes": 16467
+        },
+        "apps/latentd/src/config/providers/streams.rs": {
+          "sha256": "sha256:d8b6d0fd90b63999afbf9090abc3c40535790486209c3d0aaccd4c4c58daf6d6",
+          "bytes": 3074
+        },
+        "tools/qualify_audit_node_startup.py": {
+          "sha256": "sha256:75762ad01783d60f3c0bbe5ace4b908687ebe4d5f6dc859ad09a7f8337219776",
+          "bytes": 11861
+        }
+      },
+      "deriveChecksDevelopmentStreamFeature": true,
+      "publicFailure": {
+        "exitCode": 2,
+        "stage": "configuration",
+        "code": "invalid-argument"
+      },
+      "privateFieldDiagnosticDisclosed": false,
+      "attribution": "frozen-source gate plus successful complete baseline and isolated stream addition"
+    },
+    "consumerRecipe": {
+      ".github/workflows/stream-operator-node-check.yml": {
+        "sha256": "sha256:1ab29fbd95b7552b3658aa2a1bc584425e30c8913fc7127cf4fb1cb4c3e7fc60",
+        "bytes": 1889
+      },
+      "tools/qualify_stream_operator_node.py": {
+        "sha256": "sha256:e0bcf8850590cae5dc1c75f2a5c08238d3c40fd380a6b022dd3cfd1da37e7343",
+        "bytes": 13151
+      },
+      "tools/stream_operator_frontend_products.py": {
+        "sha256": "sha256:edbbfa2b87f74e974503683e4478ce22cb7cf5a4a0abb3ab2a5fffcd877ebfd1",
+        "bytes": 9978
+      },
+      "tools/audit_memory_native_products.py": {
+        "sha256": "sha256:17dc81827028c5fc42cd1a40bddb0b81341a265508a0d5b085caebc75db57ef5",
+        "bytes": 15702
+      },
+      "tools/tests/test_stream_operator_node.py": {
+        "sha256": "sha256:125bd16ec43954dfc9e2b9261e9956243b94abaa111c59871e92994534bf788c",
+        "bytes": 6134
+      },
+      "tools/tests/fixtures/stream-operator-frontend-380-build.json": {
+        "sha256": "sha256:16c2bdf2d5904a8ba677bbeb0a79c8d4f5b4026a39ad898fd450c2b20b17f742",
+        "bytes": 27123
+      },
+      "tools/qualify_audit_node_startup.py": {
+        "sha256": "sha256:75762ad01783d60f3c0bbe5ace4b908687ebe4d5f6dc859ad09a7f8337219776",
+        "bytes": 11861
+      },
+      "tools/dev_workflow/process.py": {
+        "sha256": "sha256:5e104ad042a7cdac6ff374d1fe42deddd47ab4c22d293b16b0a6902ceaf9d43d",
+        "bytes": 4470
+      },
+      "tools/dev_workflow/paths.py": {
+        "sha256": "sha256:6758044322e58c687c73d8302c0fab82a07d9680ed647a3a52f2a34f60d0da59",
+        "bytes": 6758
+      },
+      "tools/dev_workflow/common.py": {
+        "sha256": "sha256:f398999c39fc80606ca3ec0d47db5a9e32debe96367a87a9aa72b70089f13a28",
+        "bytes": 3129
+      },
+      "tools/build_process.py": {
+        "sha256": "sha256:c387ba86b28f6db9f2c092c3fba3005a356b69105df19ec6c46c6c5aff69e849",
+        "bytes": 9063
+      },
+      "tools/build_process_linux.py": {
+        "sha256": "sha256:e3d45b83b7dfe213135491b8a094925179b884df11615ea0dcb64af6451d08ce",
+        "bytes": 3853
+      },
+      "tools/build_process_signals.py": {
+        "sha256": "sha256:96dddca07cc20b77b0b6b93a3524c047877a4fcdd7442fe8c635024ade13cdb2",
+        "bytes": 3012
+      }
+    },
+    "privateCandidatePreservedUntilOwnerTeardown": true,
+    "privateInputsPublished": false,
+    "nodeStorageCreated": false,
+    "originalProductBytesUnchanged": true,
+    "elapsedMillis": 100256
+  },
+  "qualification": {
+    "original380PackagingUsedRealNode": false,
+    "newObservationUsesActual277Node": true,
+    "nodeStartupQualified": false,
+    "providerInstallationQualified": false,
+    "providerReadinessQualified": false,
+    "socketOrGuestWorkflowQualified": false,
+    "productionEnabled": false,
+    "wholeAcceptanceCriterionClosed": false,
+    "privateInputsPublished": false,
+    "old38ControlsOrWindowsPackagingRepeated": false
+  }
+}

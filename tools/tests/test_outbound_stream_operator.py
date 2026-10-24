@@ -23,15 +23,28 @@ class PolicyRpc:
         self.calls = []
         self.uncertain = self.throws = False
         self.inspect_authority = False
+        self.inspection = {
+            "capabilities": [{"id": stream.CAPABILITY, "contract": stream.CAPABILITY,
+                "provider": stream.PROFILE, "operations": list(stream.OPERATIONS),
+                "inspection": {"definitionDigest": None,
+                    "providerBinding": {"id": "stream-installed", "revision": "1", "digest": "sha256:" + "c" * 64},
+                    "policies": [{"id": "stream-allow", "revision": "1", "digest": "sha256:" + "d" * 64}],
+                    "providerProfile": stream.PROFILE, "providerConfigurationDigest": "sha256:" + "a" * 64,
+                    "providerConfigurationEpoch": "1", "state": "configured-current"}}],
+            "revision": {"deploymentId": "mail-deployment", "revisionId": "revision-v1:sha256:" + "e" * 64,
+                "componentDigest": "sha256:" + "f" * 64,
+                "publicationId": "publication-v1:sha256:" + "b" * 64,
+                "routeGeneration": "1", "catalogTransaction": "1"},
+            "nextPageToken": None, "state": "compiled-plan",
+            "tenantUsage": {"scope": "tenant", "counters": {}, "unavailable": []},
+            "nodeUsage": {"scope": "node", "counters": {}, "unavailable": ["outbound-stream-inspection-unavailable"]}}
 
     def call(self, *arguments):
         args = list(map(str, arguments))
         self.calls.append(args)
         result = {"outcomeKnown": True, "category": "success", "data": {}}
         if args[0] == "capability":
-            result["data"] = {"executionPermission": self.inspect_authority,
-                "revision": {"deploymentId": args[args.index("--deployment") + 1]},
-                "nodeUsage": {"scope": "node", "counters": {}, "unavailable": ["outbound-stream-inspection-unavailable"]}}
+            result["data"] = {**copy.deepcopy(self.inspection), "executionPermission": self.inspect_authority}
             return result
         if args[1] == "operation":
             operation = args[args.index("--operation-id") + 1]
@@ -222,6 +235,67 @@ class StreamOperator(unittest.TestCase):
             operator.inspect("mail-deployment")
         self.assertEqual(len(self.mutations()), 0)
 
+    def test_inspection_selects_exact_profile_contract_and_one_page_without_state_mutation(self):
+        operator = self.operator()
+        before = {path.name: path.read_bytes() for path in self.operator_root.iterdir() if path.is_file()}
+        result = operator.inspect("mail-deployment")
+        self.assertEqual(self.client.calls, [["capability", "list", "--deployment", "mail-deployment",
+            "--provider", stream.PROFILE, "--contract-prefix", stream.CAPABILITY,
+            "--include-node-usage", "--page-size", "1"]])
+        self.assertEqual(result, {**self.client.inspection, "executionPermission": False})
+        self.assertEqual(len(result["capabilities"]), 1)
+        self.assertEqual({path.name: path.read_bytes() for path in self.operator_root.iterdir() if path.is_file()}, before)
+
+    def test_inspection_rejects_reused_deployment_with_missing_or_foreign_publication(self):
+        operator = self.operator()
+        self.client.inspection["revision"]["deploymentId"] = "foreign-deployment"
+        with self.assertRaisesRegex(DevError, "inspection-is-not-authority"):
+            operator.inspect("mail-deployment")
+        self.client.inspection["revision"]["deploymentId"] = "mail-deployment"
+        for publication in (None, "publication-v1:sha256:" + "c" * 64):
+            self.client.inspection["revision"]["publicationId"] = publication
+            with self.assertRaisesRegex(DevError, "inspection-publication-changed"):
+                operator.inspect("mail-deployment")
+        del self.client.inspection["revision"]["publicationId"]
+        with self.assertRaisesRegex(DevError, "inspection-publication-changed"):
+            operator.inspect("mail-deployment")
+        self.assertEqual(len(self.mutations()), 0)
+
+    def test_inspection_rejects_foreign_contract_profile_and_oversized_page(self):
+        operator = self.operator()
+        original = copy.deepcopy(self.client.inspection["capabilities"])
+        for field, value in (("id", stream.CAPABILITY + "/alternate"),
+                             ("contract", stream.CAPABILITY + "/alternate"), ("provider", "foreign-profile")):
+            self.client.inspection["capabilities"] = copy.deepcopy(original)
+            self.client.inspection["capabilities"][0][field] = value
+            with self.assertRaisesRegex(DevError, "inspection-scope-changed"):
+                operator.inspect("mail-deployment")
+        self.client.inspection["capabilities"] = copy.deepcopy(original)
+        self.client.inspection["capabilities"][0]["inspection"]["providerProfile"] = "foreign-profile"
+        with self.assertRaisesRegex(DevError, "inspection-scope-changed"):
+            operator.inspect("mail-deployment")
+        for entries in (original * 2, None, [None]):
+            self.client.inspection["capabilities"] = entries
+            with self.assertRaisesRegex(DevError, "inspection-scope-changed"):
+                operator.inspect("mail-deployment")
+        self.assertEqual(len(self.mutations()), 0)
+
+    def test_inspection_preserves_empty_unavailable_and_changed_generation_diagnostics(self):
+        operator = self.operator()
+        for binding_state in ("policy-changed-or-revoked", "provider-unavailable", "publication-unavailable",
+                              "route-changed-or-unavailable", "inspection-indeterminate"):
+            binding = self.client.inspection["capabilities"][0]["inspection"]
+            binding.update(state=binding_state, providerConfigurationEpoch="2",
+                           providerConfigurationDigest="sha256:" + "c" * 64)
+            self.client.inspection["nodeUsage"]["counters"] = {"stream_owners": "3", "stream_retired_generations": "1"}
+            self.assertEqual(operator.inspect("mail-deployment"),
+                             {**self.client.inspection, "executionPermission": False})
+        self.client.inspection.update(capabilities=[], state="binding-plan-unavailable")
+        self.assertEqual(operator.inspect("mail-deployment"),
+                         {**self.client.inspection, "executionPermission": False})
+        self.assertEqual(operator.owner["provider"]["configurationEpoch"], "1")
+        self.assertEqual(len(self.mutations()), 0)
+
     def test_explicit_new_descriptor_adoption_keeps_exact_owner_and_applies_no_mutation(self):
         operator = self.operator()
         operator.grant()
@@ -240,6 +314,79 @@ class StreamOperator(unittest.TestCase):
         self.assertEqual(binding["generation"], "2")
         self.assertEqual(binding["document"]["configurationEpoch"], 2)
         self.assertEqual(self.client.records["policy:stream-allow"]["document"], operator._policy("allow"))
+
+    def test_provider_adoption_refuses_mid_read_private_state_replacement_without_overwrite(self):
+        operator = self.operator()
+        operator.grant()
+        owner = copy.deepcopy(operator.owner)
+        names = ("stream-operator-owner.json", "operations.json", "stream-policy-receipts.json")
+        before = {name: (self.operator_root / name).read_bytes() for name in names}
+        replacement = {**self.options["provider"], "configurationEpoch": "2",
+                       "configurationDigest": "sha256:" + "c" * 64}
+        original_call = self.client.call
+        for name in names:
+            for selected_read in (1, 2):
+                self.client.calls.clear()
+                reads = 0
+
+                def observed(*arguments):
+                    nonlocal reads
+                    result = original_call(*arguments)
+                    reads += 1
+                    if reads == selected_read:
+                        (self.operator_root / name).write_bytes(before[name] + b" ")
+                    return result
+
+                self.client.call = observed
+                try:
+                    with self.subTest(name=name, selected_read=selected_read), \
+                            self.assertRaisesRegex(DevError, "provider-adoption-state-changed"):
+                        operator.adopt_provider(replacement)
+                    expected = {**before, name: before[name] + b" "}
+                    self.assertEqual({item: (self.operator_root / item).read_bytes() for item in names}, expected)
+                    self.assertEqual(operator.owner, owner)
+                    self.assertEqual(self.mutations(), [])
+                finally:
+                    self.client.call = original_call
+                    for item, raw in before.items():
+                        (self.operator_root / item).write_bytes(raw)
+
+    def test_provider_adoption_refuses_mid_read_client_replacement_without_owner_update(self):
+        operator = self.operator()
+        operator.grant()
+        owner = copy.deepcopy(operator.owner)
+        names = ("stream-operator-owner.json", "operations.json", "stream-policy-receipts.json")
+        before = {name: (self.operator_root / name).read_bytes() for name in names}
+        original_config = self.config.read_bytes()
+        replacement = {**self.options["provider"], "configurationEpoch": "2",
+                       "configurationDigest": "sha256:" + "c" * 64}
+        original_call = self.client.call
+        for selected_read in (1, 2):
+            self.client.calls.clear()
+            reads = 0
+
+            def observed(*arguments):
+                nonlocal reads
+                result = original_call(*arguments)
+                reads += 1
+                if reads == selected_read:
+                    self.config.write_bytes(original_config + b" ")
+                return result
+
+            self.client.call = observed
+            try:
+                with self.subTest(selected_read=selected_read), \
+                        self.assertRaisesRegex(DevError, "client-identity-changed"):
+                    operator.adopt_provider(replacement)
+                self.assertEqual(self.config.read_bytes(), original_config + b" ")
+                self.assertEqual({name: (self.operator_root / name).read_bytes() for name in names}, before)
+                self.assertEqual(operator.owner, owner)
+                self.assertEqual(self.mutations(), [])
+            finally:
+                self.client.call = original_call
+                self.config.write_bytes(original_config)
+                for name, raw in before.items():
+                    (self.operator_root / name).write_bytes(raw)
 
     def test_adoption_rejects_same_stale_foreign_or_unsupported_provider_without_mutation(self):
         operator = self.operator()
@@ -273,6 +420,89 @@ class StreamOperator(unittest.TestCase):
             operator.adopt_provider({**self.options["provider"], "configurationEpoch": "2", "configurationDigest": "sha256:" + "c" * 64})
         self.assertEqual(operator.owner, before)
         self.assertEqual(len(self.mutations()), 2)
+
+    def test_type_changed_policy_reads_refuse_adoption_and_mutation_without_state_changes(self):
+        operator = self.operator()
+        operator.grant()
+        replacement = {**self.options["provider"], "configurationEpoch": "2",
+                       "configurationDigest": "sha256:" + "c" * 64}
+        original = copy.deepcopy(self.client.records)
+        for kind, change in (
+                ("provider-binding", lambda value: value.update(revoked=0)),
+                ("provider-binding", lambda value: value["document"].update(configurationEpoch=True)),
+                ("policy", lambda value: value["document"]["rules"][0].update(requireAudit=1)),
+                ("policy", lambda value: value["document"]["rules"][0]["ceiling"].update(operations=128.0))):
+            identifier = self.options["binding_id" if kind == "provider-binding" else "policy_id"]
+            self.client.records = copy.deepcopy(original)
+            change(self.client.records[kind + ":" + identifier])
+            for action in (lambda: operator.adopt_provider(replacement),
+                           operator.grant if kind == "provider-binding" else operator.revoke):
+                with self.subTest(kind=kind, changed=self.client.records[kind + ":" + identifier], action=action):
+                    before = {path.name: path.read_bytes() for path in self.operator_root.iterdir() if path.is_file()}
+                    owner = copy.deepcopy(operator.owner)
+                    self.client.calls.clear()
+                    with self.assertRaisesRegex(DevError, "policy-changed"):
+                        action()
+                    self.assertEqual(operator.owner, owner)
+                    self.assertEqual(self.mutations(), [])
+                    self.assertEqual({path.name: path.read_bytes() for path in self.operator_root.iterdir()
+                                      if path.is_file()}, before)
+
+    def test_malformed_retained_policy_cannot_match_missing_or_malformed_live_fields(self):
+        operator = self.operator()
+        operator.grant()
+        original = operator._records()
+        key = "provider-binding:" + self.options["binding_id"]
+        replacement = {**self.options["provider"], "configurationEpoch": "2",
+                       "configurationDigest": "sha256:" + "c" * 64}
+        for previous in (None, [], {}, {"receipt": None, "document": original[key]["document"]},
+                         {"receipt": original[key]["receipt"], "document": None},
+                         {"receipt": {field: value for field, value in original[key]["receipt"].items()
+                                      if field != "revoked"}, "document": original[key]["document"]},
+                         {"receipt": {**original[key]["receipt"], "revoked": 0},
+                          "document": original[key]["document"]}):
+            records = {**original, key: previous}
+            state.atomic(self.operator_root, "stream-policy-receipts.json", records)
+            self.client.records[key].pop("revoked", None)
+            for action in (operator.grant, lambda: operator.adopt_provider(replacement)):
+                with self.subTest(previous=previous, action=action):
+                    before = {path.name: path.read_bytes() for path in self.operator_root.iterdir() if path.is_file()}
+                    self.client.calls.clear()
+                    with self.assertRaisesRegex(DevError, "policy-changed"):
+                        action()
+                    self.assertEqual(self.mutations(), [])
+                    self.assertEqual({path.name: path.read_bytes() for path in self.operator_root.iterdir()
+                                      if path.is_file()}, before)
+
+    def test_same_owned_policy_rejects_wrong_stamp_types_in_both_records(self):
+        operator = self.operator()
+        operator.grant()
+        previous = operator._records()["provider-binding:" + self.options["binding_id"]]
+        current = self.client.records["provider-binding:" + self.options["binding_id"]]
+        self.assertTrue(stream._same_owned_policy(current, previous))
+        for field in stream.STAMP_FIELDS:
+            for value in (None, False, 0, 1, {}, []):
+                if type(value) is type(previous["receipt"][field]):
+                    continue
+                with self.subTest(field=field, value=value):
+                    altered = {**previous, "receipt": {**previous["receipt"], field: value}}
+                    self.assertFalse(stream._same_owned_policy({**current, field: value}, altered))
+                    self.assertFalse(stream._same_owned_policy(current, altered))
+                    self.assertFalse(stream._same_owned_policy({**current, field: value}, previous))
+
+    def test_apply_compares_requested_document_without_bool_number_idempotence(self):
+        operator = self.operator()
+        operator.grant()
+        key = "provider-binding:" + self.options["binding_id"]
+        requested = copy.deepcopy(self.client.records[key]["document"])
+        requested["configurationEpoch"] = True
+        self.client.calls.clear()
+        # This internal seam isolates the requested-document comparison; public
+        # grant construction continues to supply the original integer epoch.
+        operator._apply("provider-binding", self.options["binding_id"], requested)
+        self.assertEqual(len(self.mutations()), 1)
+        self.assertIs(self.client.records[key]["document"]["configurationEpoch"], True)
+        self.assertEqual(self.client.records[key]["generation"], "2")
 
 
 class StreamConfiguration(unittest.TestCase):

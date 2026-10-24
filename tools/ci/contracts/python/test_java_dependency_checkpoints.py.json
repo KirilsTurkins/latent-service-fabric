@@ -1,0 +1,75 @@
+{
+  "cases": [
+    "JavaDependencyCheckpointTests.test_configuration_refuses_missing_optional_duplicate_and_network_imports",
+    "JavaDependencyCheckpointTests.test_missing_build_proof_cannot_become_runtime_evidence",
+    "JavaDependencyCheckpointTests.test_original_memory_fuel_and_no_effect_boundaries_remain_required",
+    "JavaDependencyCheckpointTests.test_original_project_has_only_explicit_runtime_clocks_and_unchanged_limits",
+    "JavaDependencyCheckpointTests.test_signed_case_requires_exact_result_identity_known_outcome_and_physical_reap"
+  ],
+  "guards": {
+    "JavaDependencyCheckpointTests.test_configuration_refuses_missing_optional_duplicate_and_network_imports": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4903104ce18d981c7ab831cd2d85daf9a4d508926d65b788bc862961f8c5a95a",
+        "class:setup-sha256:f32e46abdf9e5b8fcd30afb5f6b2663cd7af212432753dff343150d2d4466a62"
+      ],
+      "skipSites": []
+    },
+    "JavaDependencyCheckpointTests.test_missing_build_proof_cannot_become_runtime_evidence": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4903104ce18d981c7ab831cd2d85daf9a4d508926d65b788bc862961f8c5a95a",
+        "class:setup-sha256:f32e46abdf9e5b8fcd30afb5f6b2663cd7af212432753dff343150d2d4466a62"
+      ],
+      "skipSites": []
+    },
+    "JavaDependencyCheckpointTests.test_original_memory_fuel_and_no_effect_boundaries_remain_required": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4903104ce18d981c7ab831cd2d85daf9a4d508926d65b788bc862961f8c5a95a",
+        "class:setup-sha256:f32e46abdf9e5b8fcd30afb5f6b2663cd7af212432753dff343150d2d4466a62"
+      ],
+      "skipSites": []
+    },
+    "JavaDependencyCheckpointTests.test_original_project_has_only_explicit_runtime_clocks_and_unchanged_limits": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4903104ce18d981c7ab831cd2d85daf9a4d508926d65b788bc862961f8c5a95a",
+        "class:setup-sha256:f32e46abdf9e5b8fcd30afb5f6b2663cd7af212432753dff343150d2d4466a62"
+      ],
+      "skipSites": []
+    },
+    "JavaDependencyCheckpointTests.test_signed_case_requires_exact_result_identity_known_outcome_and_physical_reap": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4903104ce18d981c7ab831cd2d85daf9a4d508926d65b788bc862961f8c5a95a",
+        "class:setup-sha256:f32e46abdf9e5b8fcd30afb5f6b2663cd7af212432753dff343150d2d4466a62"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_dependency_checkpoints.py",
+  "reviewReason": "Add one bounded unchanged Commons AtomicSafeInitializer dependency-loop qualification with actual maintained-plugin IR controls and six signed two-tenant calls. Preserve original Java budgets, clocks/runtime-only grants, prior suites and separate 193-control native provenance; unsigned compiler warm-up counted separately, no native rebuild or whole-ticket/GC qualification claim.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

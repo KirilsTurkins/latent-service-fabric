@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/dotnet_managed_work_controls.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Append six actual copied-driver CLR controls; preserve the original Task, timer, Rust wait and cleanup modes.",
+  "reviewReason": "Append two exact production-registry typed-settlement-refusal controls; preserve all fifteen prior cases, normal SDK10.0.100 and existing timer/wait/driver modes.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "4dbac380aaf214be26d82e0ba61c0cd62741bec799049eb32d1c99dd68ff3a1c"
+  "sha256": "ecc3311b39c7e6b3d73c1ba3c458015cd55aac6972dca3aad29b207c741691b9"
 }

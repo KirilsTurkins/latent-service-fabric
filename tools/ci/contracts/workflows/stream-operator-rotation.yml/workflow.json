@@ -1,0 +1,38 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": true,
+      "group": "stream-operator-rotation-${{ github.ref }}"
+    },
+    "name": "Protected stream rotation frontend",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/stream-operator-rotation-20261023"
+        ],
+        "paths": [
+          ".github/workflows/stream-operator-rotation.yml",
+          "tools/outbound_stream_operator.py",
+          "tools/build_dev_frontend.py",
+          "tools/qualify_stream_operator_rotation.py",
+          "tools/tests/test_outbound_stream_rotation.py",
+          "schemas/outbound-stream-rotation.schema.json",
+          "schemas/node-providers.schema.json",
+          "schemas/outbound-stream-provider.schema.json"
+        ]
+      },
+      "workflow_dispatch": null
+    },
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "rotation"
+  ],
+  "reviewReason": "One selectedLinux frontend-only campaign uses currentpackaging and oldauthenticated277node, exactpipinputs andread-onlyActionspermissions; featureinputchanges trigger owningproof without sixcompilers or Windows/native/guest/kernel replay.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/stream-operator-rotation.yml"
+}

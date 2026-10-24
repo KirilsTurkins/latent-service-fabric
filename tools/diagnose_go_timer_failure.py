@@ -156,6 +156,21 @@ def once(text, old, new):
     return text.replace(old, new)
 
 
+
+def backtrace_call(text):
+    # Two reviewed compiler spellings; mixed/duplicate/unknown source refuses.
+    anchors = ('wasm_backtrace_max_frames(None)', 'wasm_backtrace_max_frames(backtrace_limit)')
+    selected = [anchor for anchor in anchors if anchor in text]
+    if len(selected) != 1 or text.count(selected[0]) != 1:
+        raise ValueError('Go-private-frame-observer-source-drift')
+    return selected[0]
+
+
+def private_backtrace_source(text):
+    return once(text, backtrace_call(text),
+                'wasm_backtrace_max_frames(std::num::NonZeroUsize::new(32))')
+
+
 def overlay_sources(root: Path, output: Path) -> tuple[dict, list[tuple[Path, Path]]]:
     originals = {name: (root / name).read_bytes() for name in PATHS}
     changed = {}
@@ -183,8 +198,7 @@ def overlay_sources(root: Path, output: Path) -> tuple[dict, list[tuple[Path, Pa
     changed[PATHS[0]] = text[:offset] + observer + text[offset:]
     text = originals[PATHS[1]].decode()
     text = once(text, 'WasmBacktraceDetails::Disable', 'WasmBacktraceDetails::Enable')
-    changed[PATHS[1]] = once(text, 'wasm_backtrace_max_frames(None)',
-                           'wasm_backtrace_max_frames(std::num::NonZeroUsize::new(32))')
+    changed[PATHS[1]] = private_backtrace_source(text)
     text = originals[PATHS[2]].decode()
     begin = text.index('async fn ' + CASE + '() {')
     end = text.index('\nasync fn prepare_checkpoint_fixture(', begin)

@@ -40,7 +40,7 @@ quiescence. Physical I/O drain follows managed join. Only then are the root and
 metadata owners settled. Dropping a Store or aborting an Exchange is not a
 successful managed join.
 
-`tools/dotnet_managed_work_controls.py` runs fifteen actual CLR Task controls using
+`tools/dotnet_managed_work_controls.py` now runs seventeen actual CLR Task controls using
 the production registry source with explicitly separate test dispatcher and ledger
 ports. They cover native admission refusal, real unwrap-inner completion, queue
 rollback, continuation failure before acceptance, queue removal, required async
@@ -72,3 +72,30 @@ completion, 34 authorized contacts, 30 complete owner retirements and two clean,
 reaped nodes. The native products retain their original `6fd19eab` attribution.
 No post-retired Store callback, unrestricted managed thread, guest timer/queue
 exhaustion or whole Task-runtime qualification is claimed here.
+
+
+Queue removal and enqueue-failure rollback now retain the exact managed queue
+record until the original owner-settlement call returns successfully. A typed
+host settlement error occurs before native token removal and is propagated
+unchanged by the private bridge. A terminal trap can instead occur after a
+successful native settlement; retained managed state is then uncertain and
+must not authorize retry, callback replay, refund or successful root cleanup.
+This ordering change adds no retry loop or owner allowance.
+
+Two added source controls reject the original early-erasure implementation at
+`managed-work-control-queue-token-lost`. The corrected source retains the same
+queued token and original Task owner after the modeled typed refusal, performs
+one settlement attempt and zero control dispatches, and refuses both managed
+join and finalization. The fifteen original controls remain present and pass.
+The read-only queued-token observer exists only in the host test port, never
+in the production copied CoreLib.
+
+The [bounded CLR reference](evidence/dotnet-queued-owner-ack-reference-2026-10-24.json)
+uses the existing SDK10.0.303 installation, changing only the staged test copy's
+global.json SDK value; the normal repository and maintained driver remain
+pinned to10.0.100. All seventeen current controls pass and both original-source
+counterfactual cases fail causally within the existing300-second aggregate and
+120-second command bounds. It uses explicit native-ledger, dispatcher and
+context ports, not the real WASI/CoreLib producer. No new NativeAOT component,
+pinned-driver qualification, signed execution, full cost or whole #746
+acceptance is inferred; historical signed receipts keep their original source.

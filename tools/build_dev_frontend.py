@@ -23,6 +23,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PREFLIGHT_RESOURCES = (
     "schemas/node-providers.schema.json",
     "schemas/outbound-stream-provider.schema.json",
+    "schemas/outbound-stream-rotation.schema.json",
     "schemas/dev-composition-input.schema.json",
     "schemas/static-site-budget.schema.json",
     "contracts/dev/composition-support-v1.json",

@@ -1,0 +1,1134 @@
+{
+  "schemaVersion": "latent.typescript.owned-result-native-evidence.v1",
+  "status": "passed",
+  "scope": "fresh-normal-compiler-engine-unit-native-ABI-prerequisites",
+  "sourceCommit": "9d07a6dfa3ebb77aa75eb1b5899cb9360e26728d",
+  "sourceTree": "283766e1681d7304c48853bc849035dbf6039686",
+  "pullRequest": 1406,
+  "owning": {
+    "run": 40056035407,
+    "job": 120759116551,
+    "event": "push",
+    "workflow": ".github/workflows/typescript-owned-results.yml",
+    "artifact": 12546161304,
+    "artifactBytes": 196485292,
+    "artifactSha256": "sha256:b4f21ecfb457adf9bb206c4c0b3ec36cbfd786f0da9e2ea2d8ca9d9e9a676123",
+    "artifactMembersCRCVerified": 643,
+    "jobStartedAt": "2026-10-24T02:53:18Z",
+    "jobCompletedAt": "2026-10-24T03:08:28Z"
+  },
+  "recipe": {
+    "paths": 80,
+    "canonicalJsonSha256": "sha256:e3a63497e3688875aa56037b22758d49efc51c44f4cc08c4068d3f43bd45734e",
+    "engineSDKInputs": 41,
+    "splicerSDKInputs": 4
+  },
+  "limits": {
+    "overallSeconds": 5400,
+    "splicerSeconds": 900,
+    "rustUnitSeconds": 600,
+    "engineSeconds": 1200,
+    "supportSeconds": 300,
+    "diagnosticCompileAndLinkSeconds": 120,
+    "nativeCaseSeconds": 20,
+    "sourceControlSeconds": 60,
+    "rustJobs": 2,
+    "commandOutputBytes": 4194304
+  },
+  "setupElapsedSeconds": 47.497136911,
+  "diagnosticPhases": [
+    {
+      "phase": "own-compile-controls",
+      "maximumSeconds": 119.99994734200004,
+      "status": "passed",
+      "elapsedSeconds": 3.4974711479999314
+    },
+    {
+      "phase": "own-link-controls",
+      "maximumSeconds": 116.50237882200008,
+      "status": "passed",
+      "elapsedSeconds": 58.55264588700004
+    },
+    {
+      "phase": "own-compile-lifecycle",
+      "maximumSeconds": 57.949261922999995,
+      "status": "passed",
+      "elapsedSeconds": 0.7935338140000567
+    }
+  ],
+  "sourceControls": {
+    "testsRun": 29,
+    "skipped": 0,
+    "failures": 0,
+    "errors": 0,
+    "names": [
+      "tools.tests.test_typescript_native_await.TypeScriptNativeAwaitTests.test_actual_native_open_fuses_existing_await_without_changing_typed_code",
+      "tools.tests.test_typescript_native_await.TypeScriptNativeAwaitTests.test_actual_native_open_preserves_pending_success_and_each_error_retirement",
+      "tools.tests.test_typescript_native_await.TypeScriptNativeAwaitTests.test_native_await_fusion_rejects_unknown_or_partial_private_graph",
+      "tools.tests.test_typescript_native_await.TypeScriptNativeAwaitTests.test_owned_transfer_rejects_unknown_terminal_and_error_branches",
+      "tools.tests.test_typescript_native_await.TypeScriptNativeAwaitTests.test_value_and_void_transfer_follow_original_terminal_task_exit",
+      "tools.tests.test_typescript_native_task_meta.TypeScriptNativeTaskMetaTests.test_actual_open_success_rejection_and_typed_failure_keep_task_meta_and_cleanup",
+      "tools.tests.test_typescript_native_task_meta.TypeScriptNativeTaskMetaTests.test_real_contended_metadata_wait_releases_then_relocks_before_native_carrier",
+      "tools.tests.test_typescript_native_task_meta.TypeScriptNativeTaskMetaTests.test_unknown_wrapper_unfused_calls_and_local_capture_are_refused",
+      "tools.tests.test_typescript_owned_result_source.TypeScriptOwnedResultSourceTests.test_actual_resource_import_namespace_and_sync_export_generator_are_preserved",
+      "tools.tests.test_typescript_owned_result_source.TypeScriptOwnedResultSourceTests.test_actual_splicer_keeps_sync_body_and_contiguous_original_import_bindings",
+      "tools.tests.test_typescript_owned_result_source.TypeScriptOwnedResultSourceTests.test_changed_upstream_source_refuses_before_any_derivation",
+      "tools.tests.test_typescript_import_cancellation.ImportCancellationTests.test_admission_refusal_never_supplies_release_or_starts_native_call",
+      "tools.tests.test_typescript_import_cancellation.ImportCancellationTests.test_changed_or_ambiguous_generated_graph_refuses",
+      "tools.tests.test_typescript_import_cancellation.ImportCancellationTests.test_default_bytes_and_actual_captured_binding_shape",
+      "tools.tests.test_typescript_import_cancellation.ImportCancellationTests.test_logical_rejection_precedes_release_and_default_call_stays_lazy",
+      "tools.tests.test_typescript_import_cancellation.ImportCancellationTests.test_nested_selected_frames_keep_the_original_handles",
+      "tools.tests.test_typescript_import_cancellation.ImportCancellationTests.test_observer_and_handoff_are_bound_by_owned_source_recipes",
+      "tools.tests.test_typescript_owned_library.TypeScriptOwnedLibraryTests.test_archive_reader_accepts_only_identical_original_duplicate_members",
+      "tools.tests.test_typescript_owned_library.TypeScriptOwnedLibraryTests.test_extracted_validator_preserves_every_original_normal_check",
+      "tools.tests.test_typescript_owned_library.TypeScriptOwnedLibraryTests.test_library_paths_refuse_escape_and_unrelated_material",
+      "tools.tests.test_typescript_owned_library.TypeScriptOwnedLibraryTests.test_normal_builder_calls_the_same_upfront_validator_before_acquisition",
+      "tools.tests.test_typescript_owned_library.TypeScriptOwnedLibraryTests.test_own_reconstruction_calls_normal_validation_and_has_no_mach_fallback",
+      "tools.tests.test_typescript_owned_library.TypeScriptOwnedLibraryTests.test_shared_validator_refuses_non_completed_library_receipts",
+      "tools.tests.test_typescript_owned_controls.TypeScriptOwnedControlsTests.test_actual_rust_source_inventory_requires_all_thirteen_successes",
+      "tools.tests.test_typescript_owned_controls.TypeScriptOwnedControlsTests.test_exact_source_inventory_rejects_skips_missing_and_extra_cases",
+      "tools.tests.test_typescript_owned_controls.TypeScriptOwnedControlsTests.test_monotonic_deadline_clips_every_stage_and_refuses_late_success",
+      "tools.tests.test_typescript_owned_controls.TypeScriptOwnedControlsTests.test_native_evidence_requires_new_record_abi_and_real_cancel_counters",
+      "tools.tests.test_typescript_owned_controls.TypeScriptOwnedControlsTests.test_native_refusal_evidence_cannot_turn_retained_owners_into_refund",
+      "tools.tests.test_typescript_owned_controls.TypeScriptOwnedControlsTests.test_workflow_requires_same_source_and_owning_workflow_head"
+    ]
+  },
+  "actualRustCases": [
+    "lsf_async::tests::actual_original_large_indirect_record_unchanged",
+    "lsf_async::tests::actual_nested_optional_and_list_layout",
+    "lsf_async::tests::actual_nested_owned_list_walk_keeps_backing_storage_separate",
+    "lsf_async::tests::actual_five_flat_parameter_record",
+    "lsf_async::tests::actual_original_padding_and_string_pair",
+    "lsf_async::tests::actual_own_result_is_bound_to_original_resource_identity",
+    "lsf_async::tests::actual_variant_payload_bit_layout",
+    "lsf_async_splice::tests::actual_callback_table_geometry_refuses_unfilled_tail_or_ambiguous_initializers",
+    "lsf_async_splice::tests::absent_or_ambiguous_pointer_shapes_are_rejected",
+    "lsf_async::tests::actual_signed_small_result_abi",
+    "lsf_async_splice::tests::actual_table_membership_selects_small_and_large_pointers_without_stack_arithmetic",
+    "lsf_async_splice::tests::actual_own_disposer_calls_only_the_exact_original_drop_import",
+    "lsf_async_splice::tests::missing_ambiguous_or_wrong_signature_drop_mapping_is_refused"
+  ],
+  "nativeRows": [
+    {
+      "case": "borrow-observer-blocked-cancel-awaits-actual-drop",
+      "status": 0,
+      "owners": 0,
+      "expectedQuarantine": false,
+      "subtaskDrops": 1,
+      "cancelRequests": 1,
+      "exactAckRefusals": 0,
+      "recordDestroyed": true,
+      "observerDestroyed": true,
+      "dropOrderValid": true,
+      "managerBytes": 112,
+      "baselineManagerBytes": 112,
+      "recordBytes": 256,
+      "baselineRecordBytes": 248,
+      "recordAlignment": 8,
+      "baselineRecordAlignment": 8,
+      "observerBytes": 72,
+      "importStarts": 0,
+      "importLifts": 0,
+      "importFinishes": 0,
+      "importDisposals": 0,
+      "nativeAdmissions": 6,
+      "nativeAcknowledgements": 6,
+      "hostcallInGC": false
+    },
+    {
+      "case": "borrow-observer-rejects-foreign-and-unregistered-handles",
+      "status": 0,
+      "owners": 0,
+      "expectedQuarantine": false,
+      "subtaskDrops": 0,
+      "cancelRequests": 0,
+      "exactAckRefusals": 0,
+      "recordDestroyed": false,
+      "observerDestroyed": false,
+      "dropOrderValid": true,
+      "managerBytes": 112,
+      "baselineManagerBytes": 112,
+      "recordBytes": 256,
+      "baselineRecordBytes": 248,
+      "recordAlignment": 8,
+      "baselineRecordAlignment": 8,
+      "observerBytes": 72,
+      "importStarts": 0,
+      "importLifts": 0,
+      "importFinishes": 0,
+      "importDisposals": 0,
+      "nativeAdmissions": 8,
+      "nativeAcknowledgements": 8,
+      "hostcallInGC": false
+    },
+    {
+      "case": "borrow-observer-native-denial-precedes-node-and-Promise",
+      "status": 0,
+      "owners": 0,
+      "expectedQuarantine": false,
+      "subtaskDrops": 0,
+      "cancelRequests": 0,
+      "exactAckRefusals": 0,
+      "recordDestroyed": false,
+      "observerDestroyed": false,
+      "dropOrderValid": true,
+      "managerBytes": 112,
+      "baselineManagerBytes": 112,
+      "recordBytes": 256,
+      "baselineRecordBytes": 248,
+      "recordAlignment": 8,
+      "baselineRecordAlignment": 8,
+      "observerBytes": 72,
+      "importStarts": 0,
+      "importLifts": 0,
+      "importFinishes": 0,
+      "importDisposals": 0,
+      "nativeAdmissions": 3,
+      "nativeAcknowledgements": 3,
+      "hostcallInGC": false
+    },
+    {
+      "case": "cancel-keeps-import-buffer-until-terminal",
+      "status": 0,
+      "owners": 0,
+      "expectedQuarantine": false,
+      "subtaskDrops": 1,
+      "cancelRequests": 1,
+      "exactAckRefusals": 0,
+      "recordDestroyed": false,
+      "observerDestroyed": false,
+      "dropOrderValid": true,
+      "managerBytes": 112,
+      "baselineManagerBytes": 112,
+      "recordBytes": 256,
+      "baselineRecordBytes": 248,
+      "recordAlignment": 8,
+      "baselineRecordAlignment": 8,
+      "observerBytes": 72,
+      "importStarts": 1,
+      "importLifts": 0,
+      "importFinishes": 0,
+      "importDisposals": 0,
+      "nativeAdmissions": 6,
+      "nativeAcknowledgements": 6,
+      "hostcallInGC": false
+    },
+    {
+      "case": "borrow-refusal-observer-Promise-admission",
+      "status": 0,
+      "owners": 4,
+      "expectedQuarantine": true,
+      "subtaskDrops": 0,
+      "cancelRequests": 0,
+      "exactAckRefusals": 0,
+      "recordDestroyed": true,
+      "observerDestroyed": true,
+      "dropOrderValid": true,
+      "managerBytes": 112,
+      "baselineManagerBytes": 112,
+      "recordBytes": 256,
+      "baselineRecordBytes": 248,
+      "recordAlignment": 8,
+      "baselineRecordAlignment": 8,
+      "observerBytes": 72,
+      "importStarts": 0,
+      "importLifts": 0,
+      "importFinishes": 0,
+      "importDisposals": 0,
+      "nativeAdmissions": 4,
+      "nativeAcknowledgements": 1,
+      "hostcallInGC": false
+    },
+    {
+      "case": "borrow-refusal-bounded-cycle",
+      "status": 0,
+      "owners": 4,
+      "expectedQuarantine": true,
+      "subtaskDrops": 0,
+      "cancelRequests": 0,
+      "exactAckRefusals": 0,
+      "recordDestroyed": true,
+      "observerDestroyed": true,
+      "dropOrderValid": true,
+      "managerBytes": 112,
+      "baselineManagerBytes": 112,
+      "recordBytes": 256,
+      "baselineRecordBytes": 248,
+      "recordAlignment": 8,
+      "baselineRecordAlignment": 8,
+      "observerBytes": 72,
+      "importStarts": 0,
+      "importLifts": 0,
+      "importFinishes": 0,
+      "importDisposals": 0,
+      "nativeAdmissions": 5,
+      "nativeAcknowledgements": 2,
+      "hostcallInGC": false
+    },
+    {
+      "case": "borrow-refusal-original-work-ack",
+      "status": 0,
+      "owners": 5,
+      "expectedQuarantine": true,
+      "subtaskDrops": 1,
+      "cancelRequests": 1,
+      "exactAckRefusals": 1,
+      "recordDestroyed": true,
+      "observerDestroyed": true,
+      "dropOrderValid": true,
+      "managerBytes": 112,
+      "baselineManagerBytes": 112,
+      "recordBytes": 256,
+      "baselineRecordBytes": 248,
+      "recordAlignment": 8,
+      "baselineRecordAlignment": 8,
+      "observerBytes": 72,
+      "importStarts": 0,
+      "importLifts": 0,
+      "importFinishes": 0,
+      "importDisposals": 0,
+      "nativeAdmissions": 6,
+      "nativeAcknowledgements": 3,
+      "hostcallInGC": false
+    },
+    {
+      "case": "borrow-refusal-original-result-ack",
+      "status": 0,
+      "owners": 4,
+      "expectedQuarantine": true,
+      "subtaskDrops": 1,
+      "cancelRequests": 1,
+      "exactAckRefusals": 1,
+      "recordDestroyed": true,
+      "observerDestroyed": true,
+      "dropOrderValid": true,
+      "managerBytes": 112,
+      "baselineManagerBytes": 112,
+      "recordBytes": 256,
+      "baselineRecordBytes": 248,
+      "recordAlignment": 8,
+      "baselineRecordAlignment": 8,
+      "observerBytes": 72,
+      "importStarts": 0,
+      "importLifts": 0,
+      "importFinishes": 0,
+      "importDisposals": 0,
+      "nativeAdmissions": 6,
+      "nativeAcknowledgements": 3,
+      "hostcallInGC": false
+    },
+    {
+      "case": "borrow-refusal-original-native-ack",
+      "status": 0,
+      "owners": 3,
+      "expectedQuarantine": true,
+      "subtaskDrops": 1,
+      "cancelRequests": 1,
+      "exactAckRefusals": 1,
+      "recordDestroyed": true,
+      "observerDestroyed": true,
+      "dropOrderValid": true,
+      "managerBytes": 112,
+      "baselineManagerBytes": 112,
+      "recordBytes": 256,
+      "baselineRecordBytes": 248,
+      "recordAlignment": 8,
+      "baselineRecordAlignment": 8,
+      "observerBytes": 72,
+      "importStarts": 0,
+      "importLifts": 0,
+      "importFinishes": 0,
+      "importDisposals": 0,
+      "nativeAdmissions": 6,
+      "nativeAcknowledgements": 3,
+      "hostcallInGC": false
+    },
+    {
+      "case": "borrow-refusal-original-record-ack",
+      "status": 0,
+      "owners": 2,
+      "expectedQuarantine": true,
+      "subtaskDrops": 1,
+      "cancelRequests": 1,
+      "exactAckRefusals": 1,
+      "recordDestroyed": true,
+      "observerDestroyed": true,
+      "dropOrderValid": true,
+      "managerBytes": 112,
+      "baselineManagerBytes": 112,
+      "recordBytes": 256,
+      "baselineRecordBytes": 248,
+      "recordAlignment": 8,
+      "baselineRecordAlignment": 8,
+      "observerBytes": 72,
+      "importStarts": 0,
+      "importLifts": 0,
+      "importFinishes": 0,
+      "importDisposals": 0,
+      "nativeAdmissions": 6,
+      "nativeAcknowledgements": 4,
+      "hostcallInGC": false
+    },
+    {
+      "case": "borrow-refusal-observer-owner-ack",
+      "status": 0,
+      "owners": 1,
+      "expectedQuarantine": true,
+      "subtaskDrops": 1,
+      "cancelRequests": 1,
+      "exactAckRefusals": 1,
+      "recordDestroyed": true,
+      "observerDestroyed": true,
+      "dropOrderValid": true,
+      "managerBytes": 112,
+      "baselineManagerBytes": 112,
+      "recordBytes": 256,
+      "baselineRecordBytes": 248,
+      "recordAlignment": 8,
+      "baselineRecordAlignment": 8,
+      "observerBytes": 72,
+      "importStarts": 0,
+      "importLifts": 0,
+      "importFinishes": 0,
+      "importDisposals": 0,
+      "nativeAdmissions": 6,
+      "nativeAcknowledgements": 5,
+      "hostcallInGC": false
+    },
+    {
+      "case": "retired-import-finally-preserves-cancellation-no-double-ack",
+      "status": 0,
+      "owners": 0,
+      "expectedQuarantine": false,
+      "subtaskDrops": 1,
+      "cancelRequests": 1,
+      "exactAckRefusals": 0,
+      "recordDestroyed": false,
+      "observerDestroyed": false,
+      "dropOrderValid": true,
+      "managerBytes": 112,
+      "baselineManagerBytes": 112,
+      "recordBytes": 256,
+      "baselineRecordBytes": 248,
+      "recordAlignment": 8,
+      "baselineRecordAlignment": 8,
+      "observerBytes": 72,
+      "importStarts": 1,
+      "importLifts": 0,
+      "importFinishes": 2,
+      "importDisposals": 0,
+      "nativeAdmissions": 8,
+      "nativeAcknowledgements": 8,
+      "hostcallInGC": false
+    },
+    {
+      "case": "resolved-carrier-cancel-preserves-public-rejection-and-fresh-reuse",
+      "status": 0,
+      "owners": 0,
+      "expectedQuarantine": false,
+      "subtaskDrops": 2,
+      "cancelRequests": 0,
+      "exactAckRefusals": 0,
+      "recordDestroyed": false,
+      "observerDestroyed": false,
+      "dropOrderValid": true,
+      "managerBytes": 112,
+      "baselineManagerBytes": 112,
+      "recordBytes": 256,
+      "baselineRecordBytes": 248,
+      "recordAlignment": 8,
+      "baselineRecordAlignment": 8,
+      "observerBytes": 72,
+      "importStarts": 2,
+      "importLifts": 1,
+      "importFinishes": 2,
+      "importDisposals": 1,
+      "nativeAdmissions": 10,
+      "nativeAcknowledgements": 10,
+      "hostcallInGC": false
+    }
+  ],
+  "lifecycleRows": [
+    {
+      "case": "cancelled-immediate-return-requires-disposal",
+      "status": 0,
+      "subtaskDrops": 0,
+      "joined": 0,
+      "resultOwners": 0,
+      "nativeOwners": 0,
+      "tasks": 0,
+      "idleWaits": 0
+    },
+    {
+      "case": "immediate-result-keeps-lift-storage",
+      "status": 0,
+      "subtaskDrops": 0,
+      "joined": 0,
+      "resultOwners": 0,
+      "nativeOwners": 0,
+      "tasks": 0,
+      "idleWaits": 0
+    },
+    {
+      "case": "typed-result-retains-subtask-through-lifting",
+      "status": 0,
+      "subtaskDrops": 1,
+      "joined": 0,
+      "resultOwners": 0,
+      "nativeOwners": 1,
+      "tasks": 0,
+      "idleWaits": 1
+    },
+    {
+      "case": "blocked-cancel-is-requested-only-once",
+      "status": 0,
+      "subtaskDrops": 1,
+      "joined": 0,
+      "resultOwners": 0,
+      "nativeOwners": 1,
+      "tasks": 0,
+      "idleWaits": 1
+    },
+    {
+      "case": "late-return-after-cancel-never-lifts",
+      "status": 0,
+      "subtaskDrops": 1,
+      "joined": 0,
+      "resultOwners": 0,
+      "nativeOwners": 1,
+      "tasks": 0,
+      "idleWaits": 1
+    },
+    {
+      "case": "terminal-cancel-before-result-drop",
+      "status": 0,
+      "subtaskDrops": 1,
+      "joined": 0,
+      "resultOwners": 0,
+      "nativeOwners": 1,
+      "tasks": 0,
+      "idleWaits": 0
+    }
+  ],
+  "baseline": {
+    "commit": "17b2558bf08f2221657a5d2866b00218fb597d9e",
+    "path": "sdk/typescript-guest/activation/native_imports.h",
+    "bytes": 16898,
+    "sha256": "sha256:43292380b0617b510be818a45c61b56b85037e543f979d493a9ac0c6c90f1601"
+  },
+  "actualWasm32ABI": {
+    "managerBytes": 112,
+    "baselineManagerBytes": 112,
+    "recordBytes": 256,
+    "baselineRecordBytes": 248,
+    "recordAlignment": 8,
+    "baselineRecordAlignment": 8,
+    "observerBytes": 72,
+    "recordDeltaBytes": 8
+  },
+  "freshSplicerBuildCount": 1,
+  "freshEngineBuildCount": 1,
+  "machBuildCount": 0,
+  "libraryReconstruction": {
+    "producer": {
+      "head": "e2dfcf6d1b48b650fee585e83cd15720bf7f745c",
+      "run": 40042939576,
+      "job": 120717969106,
+      "artifact": 12541695434,
+      "conclusion": "failure; completed normal library only"
+    },
+    "producerArchive": {
+      "sha256": "sha256:ee36984b8ba08fe33d37da3e65b6c6a55624487d1206029ff4d5dd2d91851b8c",
+      "bytes": 379457196
+    },
+    "originalLibraryReceipt": {
+      "sha256": "sha256:e5c7e5e5181424c1b813215cca7077ece4d1a7ca9beee4704a9fb42cd58aea6a",
+      "bytes": 6144
+    },
+    "originalLibrary": {
+      "sha256": "sha256:0849794c5e307a27be0df3ae91253db451af6c3135185d7309acd99171ad4d8f",
+      "bytes": 536011284
+    },
+    "normalValidatorPassed": true,
+    "engineReused": false,
+    "receiptReissued": false,
+    "machBuildCount": 0,
+    "firefoxExtracted": false
+  },
+  "engineProducts": {
+    "engine.wasm": {
+      "sha256": "sha256:eaee1ba5370800975af7de751cf1cf51361a54074b517e6f2739ad743a0ed4d0",
+      "bytes": 10162602
+    },
+    "engine-input.json": {
+      "sha256": "sha256:3b4725a50170a6918665ce18e64e3495bcadca185b1759d83354dd38f7cbd16a",
+      "bytes": 8954
+    },
+    "engine-build.json": {
+      "sha256": "sha256:202763b07f21c230e2e749400ed0350ae5716b8a24de3e4374a8420dc5c38193",
+      "bytes": 70374
+    },
+    "engine-compilation.json": {
+      "sha256": "sha256:cf17f3e6eb3912f56f68b0a83ae0ac5fa6490abd9f18bb91e6a4bf16fec4f4b3",
+      "bytes": 70256
+    },
+    "source-derivation.json": {
+      "sha256": "sha256:28424e59736247994f859471c2724cb680d153ee7ddd5ecf84d774b87e88e602",
+      "bytes": 1242526
+    }
+  },
+  "splicer": {
+    "inputDigest": "sha256:5212e4d0f092375b57996a1615e401ffc4b86980cb3f66737d5b3fda3dad9486",
+    "files": [
+      {
+        "path": "interfaces/local-spidermonkey-embedding-splicer-splicer.d.ts",
+        "digest": "sha256:f7453a650b135db6e89df8d159eceeb6d3bff717edf01da6765958c7fc7e3804",
+        "size": 1092
+      },
+      {
+        "path": "interfaces/wasi-cli-environment.d.ts",
+        "digest": "sha256:eeca2d0e2c1eb611cc12522c3a981b6d0bdf788138d13f00e163af78dacbaafd",
+        "size": 113
+      },
+      {
+        "path": "interfaces/wasi-cli-exit.d.ts",
+        "digest": "sha256:720d201b983519e4e2578f1427aa6255e6f8d647d17b930578311636c46ff8a4",
+        "size": 178
+      },
+      {
+        "path": "interfaces/wasi-cli-stderr.d.ts",
+        "digest": "sha256:fb61790b0a25975a561bb4c760367180980c7d5b4253f8e9ef5dc4522838d11b",
+        "size": 164
+      },
+      {
+        "path": "interfaces/wasi-cli-stdin.d.ts",
+        "digest": "sha256:115669b118fa5af84a164b485415049c156c75dccc043a53656a5c3117f2d27b",
+        "size": 159
+      },
+      {
+        "path": "interfaces/wasi-cli-stdout.d.ts",
+        "digest": "sha256:75520c5ee4e20a87b105518c6860240d8739c07f577259f3e82263f5beadf3a2",
+        "size": 164
+      },
+      {
+        "path": "interfaces/wasi-cli-terminal-input.d.ts",
+        "digest": "sha256:6843388ee8347417a03137beb708159820ee51f11e50adb74a43b2125dd8b453",
+        "size": 177
+      },
+      {
+        "path": "interfaces/wasi-cli-terminal-output.d.ts",
+        "digest": "sha256:e48304a744343e6f2ef4a690e2c8052b39fe9ecf3b0ba811e24f5da8de0d2876",
+        "size": 179
+      },
+      {
+        "path": "interfaces/wasi-cli-terminal-stderr.d.ts",
+        "digest": "sha256:24c07a3ff663736b07a937bf96dddab5b2ee8be5b3f274d2189ce6c47150b678",
+        "size": 208
+      },
+      {
+        "path": "interfaces/wasi-cli-terminal-stdin.d.ts",
+        "digest": "sha256:5aa06eb362181e2a521eee0c6fb3ccc62d27adec7340216395eadb73827b2082",
+        "size": 202
+      },
+      {
+        "path": "interfaces/wasi-cli-terminal-stdout.d.ts",
+        "digest": "sha256:d11b2ffbf5937133107a63298221aed819a634d5b679d20393ccf237f3067ddf",
+        "size": 208
+      },
+      {
+        "path": "interfaces/wasi-clocks-monotonic-clock.d.ts",
+        "digest": "sha256:1c626f447ccbf14160eff06443851b55289b480e7c2c70787011cff3a4649aaf",
+        "size": 123
+      },
+      {
+        "path": "interfaces/wasi-clocks-wall-clock.d.ts",
+        "digest": "sha256:7725f813d3548dc260f0d21466cff71c10f24df594002a4c1d93b47f7c0b6d10",
+        "size": 161
+      },
+      {
+        "path": "interfaces/wasi-filesystem-preopens.d.ts",
+        "digest": "sha256:0001080f66118f1a99aa9d3b7b3b29eea61fea089b90e6b69147011bd2e57c66",
+        "size": 195
+      },
+      {
+        "path": "interfaces/wasi-filesystem-types.d.ts",
+        "digest": "sha256:16c4040cbb7284360b987a08aeaa49ed59042defd05a3c9f0c31b5af84ecb08d",
+        "size": 3945
+      },
+      {
+        "path": "interfaces/wasi-io-error.d.ts",
+        "digest": "sha256:0bb03d596597ff171fd0d440687ae69ef08eaa04da6d939d443428cd21f5adff",
+        "size": 159
+      },
+      {
+        "path": "interfaces/wasi-io-streams.d.ts",
+        "digest": "sha256:c0f086a8da948e9341edfd6790da06ea24258543d55ba2747e8a1388f9facdb8",
+        "size": 787
+      },
+      {
+        "path": "interfaces/wasi-random-random.d.ts",
+        "digest": "sha256:25134a69dff32355bddc74502ca72b5b3dba919a6ae7c2712db31043f28fd9aa",
+        "size": 109
+      },
+      {
+        "path": "spidermonkey-embedding-splicer.core.wasm",
+        "digest": "sha256:602a1298cdc81a19185815469d7a03535102917ec96598e453e3a2c92f2046d6",
+        "size": 5583457
+      },
+      {
+        "path": "spidermonkey-embedding-splicer.core2.wasm",
+        "digest": "sha256:30fff64b635b191d59e59b6b2aadf117f3e4c6326db35111f69a19ea1bd42a4e",
+        "size": 22927
+      },
+      {
+        "path": "spidermonkey-embedding-splicer.d.ts",
+        "digest": "sha256:600436fa77f1b95cea8a279b141d60c1030c0c0336ef0319d4045bd95c704319",
+        "size": 2242
+      },
+      {
+        "path": "spidermonkey-embedding-splicer.js",
+        "digest": "sha256:da3a7a497c98d6bed279dea807c591c719a598755da42798fd0292cbdd16492f",
+        "size": 436695
+      }
+    ],
+    "receipts": {
+      "splicer-build.json": {
+        "sha256": "sha256:006810c5d46d162bb5381d9249d94baf58874ec4fe8334c7d274a9343fde152f",
+        "bytes": 3188
+      },
+      "splicer-input.json": {
+        "sha256": "sha256:5212e4d0f092375b57996a1615e401ffc4b86980cb3f66737d5b3fda3dad9486",
+        "bytes": 5242
+      },
+      "source-derivation.json": {
+        "sha256": "sha256:c9e2aeed9bdba1ad4fb62152711b1436f2925909a39c070a5756d5662e11552f",
+        "bytes": 2760
+      },
+      "splicer-compilation.json": {
+        "sha256": "sha256:0dd9c6054bbc9eee297c9317d5915a9fe45bee268e92878f01d9638816254efd",
+        "bytes": 6973
+      },
+      "transpile-receipt.json": {
+        "sha256": "sha256:179980b1c8b5130298eeae14387dd1522dd77e142499ff39c47f647b095b2618",
+        "bytes": 4783
+      }
+    }
+  },
+  "nativeCore": {
+    "sha256": "sha256:688af3c57145395a470e929e6fa948c37ba9b2be6dcc50816f3043a445a53c12",
+    "bytes": 9300509
+  },
+  "lifecycleCore": {
+    "sha256": "sha256:2a6e6e1ade11fb7a2c35fc17150d582dc97bfa7c25433c5755f8c5da19313e33",
+    "bytes": 252852
+  },
+  "commands": [
+    {
+      "label": "source-commit",
+      "returncode": 0,
+      "elapsedSeconds": 0.015750436000004697
+    },
+    {
+      "label": "source-tree",
+      "returncode": 0,
+      "elapsedSeconds": 0.01657727399999942
+    },
+    {
+      "label": "source-clean",
+      "returncode": 0,
+      "elapsedSeconds": 0.4418648300000001
+    },
+    {
+      "label": "node-version",
+      "returncode": 0,
+      "elapsedSeconds": 0.015291267000009157
+    },
+    {
+      "label": "pinned-source-controls",
+      "returncode": 0,
+      "elapsedSeconds": 2.4420886519999954
+    },
+    {
+      "label": "fresh-splicer",
+      "returncode": 0,
+      "elapsedSeconds": 109.97563267800004
+    },
+    {
+      "label": "actual-rust-units",
+      "returncode": 0,
+      "elapsedSeconds": 51.92982822900001
+    },
+    {
+      "label": "fresh-engine",
+      "returncode": 0,
+      "elapsedSeconds": 459.57678293900005
+    },
+    {
+      "label": "support-rustc-path",
+      "returncode": 0,
+      "elapsedSeconds": 0.01512964699998065
+    },
+    {
+      "label": "support-cargo-path",
+      "returncode": 0,
+      "elapsedSeconds": 0.014843451000047025
+    },
+    {
+      "label": "support-rustc-version",
+      "returncode": 0,
+      "elapsedSeconds": 0.01480409700002383
+    },
+    {
+      "label": "support-cargo-version",
+      "returncode": 0,
+      "elapsedSeconds": 0.014679403999934948
+    },
+    {
+      "label": "support-cargo",
+      "returncode": 0,
+      "elapsedSeconds": 12.136999240000023
+    },
+    {
+      "label": "support-wrapper",
+      "returncode": 0,
+      "elapsedSeconds": 0.08575638400009211
+    },
+    {
+      "label": "support-wasi-signal",
+      "returncode": 0,
+      "elapsedSeconds": 0.014920053999958327
+    },
+    {
+      "label": "support-wasi-process-clocks",
+      "returncode": 0,
+      "elapsedSeconds": 0.014781695000010586
+    },
+    {
+      "label": "support-wasi-getpid",
+      "returncode": 0,
+      "elapsedSeconds": 0.014820697999994081
+    },
+    {
+      "label": "pre-own-baseline",
+      "returncode": 0,
+      "elapsedSeconds": 0.015093396999986908
+    },
+    {
+      "label": "own-compile-controls",
+      "returncode": 0,
+      "elapsedSeconds": 3.4972369399999934
+    },
+    {
+      "label": "own-link-controls",
+      "returncode": 0,
+      "elapsedSeconds": 58.55241122799998
+    },
+    {
+      "label": "own-compile-lifecycle",
+      "returncode": 0,
+      "elapsedSeconds": 0.7932569859999603
+    },
+    {
+      "label": "validate-native-core",
+      "returncode": 0,
+      "elapsedSeconds": 0.04639645999998265
+    },
+    {
+      "label": "validate-lifecycle-core",
+      "returncode": 0,
+      "elapsedSeconds": 0.01482447000000775
+    },
+    {
+      "label": "borrow-observer-blocked-cancel-awaits-actual-drop",
+      "returncode": 0,
+      "elapsedSeconds": 0.1684578499999816
+    },
+    {
+      "label": "borrow-observer-rejects-foreign-and-unregistered-handles",
+      "returncode": 0,
+      "elapsedSeconds": 0.15861887599999136
+    },
+    {
+      "label": "borrow-observer-native-denial-precedes-node-and-Promise",
+      "returncode": 0,
+      "elapsedSeconds": 0.16892739900004017
+    },
+    {
+      "label": "cancel-keeps-import-buffer-until-terminal",
+      "returncode": 0,
+      "elapsedSeconds": 0.16717447799999263
+    },
+    {
+      "label": "borrow-refusal-observer-Promise-admission",
+      "returncode": 0,
+      "elapsedSeconds": 0.16046336799990968
+    },
+    {
+      "label": "borrow-refusal-bounded-cycle",
+      "returncode": 0,
+      "elapsedSeconds": 0.16169659199999842
+    },
+    {
+      "label": "borrow-refusal-original-work-ack",
+      "returncode": 0,
+      "elapsedSeconds": 0.1679176999999754
+    },
+    {
+      "label": "borrow-refusal-original-result-ack",
+      "returncode": 0,
+      "elapsedSeconds": 0.16875850300004913
+    },
+    {
+      "label": "borrow-refusal-original-native-ack",
+      "returncode": 0,
+      "elapsedSeconds": 0.16977694299998802
+    },
+    {
+      "label": "borrow-refusal-original-record-ack",
+      "returncode": 0,
+      "elapsedSeconds": 0.16689663800002563
+    },
+    {
+      "label": "borrow-refusal-observer-owner-ack",
+      "returncode": 0,
+      "elapsedSeconds": 0.16789558799996485
+    },
+    {
+      "label": "retired-import-finally-preserves-cancellation-no-double-ack",
+      "returncode": 0,
+      "elapsedSeconds": 0.1680080190000126
+    },
+    {
+      "label": "resolved-carrier-cancel-preserves-public-rejection-and-fresh-reuse",
+      "returncode": 0,
+      "elapsedSeconds": 0.17071094400000675
+    },
+    {
+      "label": "cancelled-immediate-return-requires-disposal",
+      "returncode": 0,
+      "elapsedSeconds": 0.04555388200003563
+    },
+    {
+      "label": "immediate-result-keeps-lift-storage",
+      "returncode": 0,
+      "elapsedSeconds": 0.04543695299992123
+    },
+    {
+      "label": "typed-result-retains-subtask-through-lifting",
+      "returncode": 0,
+      "elapsedSeconds": 0.04562451499998588
+    },
+    {
+      "label": "blocked-cancel-is-requested-only-once",
+      "returncode": 0,
+      "elapsedSeconds": 0.04558772600000793
+    },
+    {
+      "label": "late-return-after-cancel-never-lifts",
+      "returncode": 0,
+      "elapsedSeconds": 0.045642217999898094
+    },
+    {
+      "label": "terminal-cancel-before-result-drop",
+      "returncode": 0,
+      "elapsedSeconds": 0.045691390000001775
+    },
+    {
+      "label": "final-source-commit",
+      "returncode": 0,
+      "elapsedSeconds": 0.015275281000072027
+    },
+    {
+      "label": "final-source-tree",
+      "returncode": 0,
+      "elapsedSeconds": 0.01483354300000883
+    },
+    {
+      "label": "final-source-clean",
+      "returncode": 0,
+      "elapsedSeconds": 0.057073814999967
+    }
+  ],
+  "retainedMembers": {
+    "OWN-RESULTS.json": {
+      "bytes": 1162759,
+      "sha256": "sha256:b77f5c08a081b9078dbab7f834f68a58b383b824a3184ba0346272b3134debfd"
+    },
+    "pinned-source-controls.stderr.log": {
+      "bytes": 6302,
+      "sha256": "sha256:2263aac5f98a895515345a99aaef416a5127d3d3a664bee4860da6acbb360e63"
+    },
+    "actual-rust-units.stdout.log": {
+      "bytes": 1216,
+      "sha256": "sha256:8618d0bf65281e2486641f4457039e10413e9018e853381bdb4873381443363c"
+    },
+    "actual-rust-units.stderr.log": {
+      "bytes": 4441,
+      "sha256": "sha256:64f2993bf3bdb34d1296fd595e8a59c7e5035d87d6ec200a0c9a452ddee717ee"
+    },
+    "borrow-observer-blocked-cancel-awaits-actual-drop.stdout.log": {
+      "bytes": 535,
+      "sha256": "sha256:42f2522d55c1cf6d5e38bfb88935d010b3c3e9aba4c08cf8751a256349a146f1"
+    },
+    "borrow-observer-rejects-foreign-and-unregistered-handles.stdout.log": {
+      "bytes": 544,
+      "sha256": "sha256:f515ed194c693fdd0af9b68346e61b7c32d3b042d8949fb7c0f90d81fbc484e4"
+    },
+    "borrow-observer-native-denial-precedes-node-and-Promise.stdout.log": {
+      "bytes": 543,
+      "sha256": "sha256:11c0c0f8a6daa12d5a47c8978f33e1eca1971c532ba44a6021d0abba85cc15f9"
+    },
+    "cancel-keeps-import-buffer-until-terminal.stdout.log": {
+      "bytes": 529,
+      "sha256": "sha256:eeb5a174557e8c4394a935b4be713850c53948721064105235edb73a88ba3f7a"
+    },
+    "borrow-refusal-observer-Promise-admission.stdout.log": {
+      "bytes": 526,
+      "sha256": "sha256:0acd3f324d07092e1663e9ac696fca1b2fed0c992a684e4860210e9f53a5d199"
+    },
+    "borrow-refusal-bounded-cycle.stdout.log": {
+      "bytes": 513,
+      "sha256": "sha256:ff4d4f2e63d89af80a5c5bbd885f10380be920c755ac647d5e628ff88dd3884a"
+    },
+    "borrow-refusal-original-work-ack.stdout.log": {
+      "bytes": 517,
+      "sha256": "sha256:ea43abd55dab808276e51fdf5fa0b853ddd72afbf4536fb306133d93dcb99843"
+    },
+    "borrow-refusal-original-result-ack.stdout.log": {
+      "bytes": 519,
+      "sha256": "sha256:70fad1374b5444e573e3a1f9172fb218a16b3db1b70566eaefd6cd847ebf97aa"
+    },
+    "borrow-refusal-original-native-ack.stdout.log": {
+      "bytes": 519,
+      "sha256": "sha256:f8cb1dd11ba4193839223cf7ec112b9230233b9baefd5a7f4002d297bcda7a58"
+    },
+    "borrow-refusal-original-record-ack.stdout.log": {
+      "bytes": 519,
+      "sha256": "sha256:d996980c94b2ae61809789e887c5efb263fba1fa9abfd395b4c43bf0e4cbdb66"
+    },
+    "borrow-refusal-observer-owner-ack.stdout.log": {
+      "bytes": 518,
+      "sha256": "sha256:57e220d3cc67d264cc22d03eecb24a86227f25e26ab346330c755a2a711c8629"
+    },
+    "retired-import-finally-preserves-cancellation-no-double-ack.stdout.log": {
+      "bytes": 547,
+      "sha256": "sha256:3fcea42429bb3a0dd1eb29eadb3cefeaec19fa9a58ed01baecb88bc8028273fb"
+    },
+    "resolved-carrier-cancel-preserves-public-rejection-and-fresh-reuse.stdout.log": {
+      "bytes": 556,
+      "sha256": "sha256:5ad07d46472258b86b42e0f4d431b8b1d8b74b8ba32eeb81fd485def3be7828c"
+    },
+    "cancelled-immediate-return-requires-disposal.stdout.log": {
+      "bytes": 153,
+      "sha256": "sha256:2d70571f7e8653e4dc67818b8a745d2ec7c4b479de8f45c79f062f5aaf6d1aa7"
+    },
+    "immediate-result-keeps-lift-storage.stdout.log": {
+      "bytes": 144,
+      "sha256": "sha256:ee7a327fd8dfecf6038bf0afa55271d1cbaee363d378f836f41ee9025b55ca0b"
+    },
+    "typed-result-retains-subtask-through-lifting.stdout.log": {
+      "bytes": 153,
+      "sha256": "sha256:509fc17bad89271d7fe9527a818b362d4da483044db2e2e21d2c61e5bbbcac2e"
+    },
+    "blocked-cancel-is-requested-only-once.stdout.log": {
+      "bytes": 146,
+      "sha256": "sha256:a25da79b71e47c8c65168d4c7ecf9783596fc47525bfd969f02ee247adfc7f6a"
+    },
+    "late-return-after-cancel-never-lifts.stdout.log": {
+      "bytes": 145,
+      "sha256": "sha256:1cbe51a587bdab592996778c362dfbd2e0d80a6c9338e58c32d1467c6454f5f2"
+    },
+    "terminal-cancel-before-result-drop.stdout.log": {
+      "bytes": 143,
+      "sha256": "sha256:c53a43348212ee55d4e8a2ffd75f18138a999af67f32e8ed148c4575e1828b12"
+    },
+    "engine/engine.wasm": {
+      "bytes": 10162602,
+      "sha256": "sha256:eaee1ba5370800975af7de751cf1cf51361a54074b517e6f2739ad743a0ed4d0"
+    },
+    "engine/engine-input.json": {
+      "bytes": 8954,
+      "sha256": "sha256:3b4725a50170a6918665ce18e64e3495bcadca185b1759d83354dd38f7cbd16a"
+    },
+    "engine/engine-build.json": {
+      "bytes": 70374,
+      "sha256": "sha256:202763b07f21c230e2e749400ed0350ae5716b8a24de3e4374a8420dc5c38193"
+    },
+    "engine/engine-compilation.json": {
+      "bytes": 70256,
+      "sha256": "sha256:cf17f3e6eb3912f56f68b0a83ae0ac5fa6490abd9f18bb91e6a4bf16fec4f4b3"
+    },
+    "engine/source-derivation.json": {
+      "bytes": 1242526,
+      "sha256": "sha256:28424e59736247994f859471c2724cb680d153ee7ddd5ecf84d774b87e88e602"
+    },
+    "splicer/splicer-build.json": {
+      "bytes": 3188,
+      "sha256": "sha256:006810c5d46d162bb5381d9249d94baf58874ec4fe8334c7d274a9343fde152f"
+    },
+    "splicer/splicer-input.json": {
+      "bytes": 5242,
+      "sha256": "sha256:5212e4d0f092375b57996a1615e401ffc4b86980cb3f66737d5b3fda3dad9486"
+    },
+    "splicer/source-derivation.json": {
+      "bytes": 2760,
+      "sha256": "sha256:c9e2aeed9bdba1ad4fb62152711b1436f2925909a39c070a5756d5662e11552f"
+    },
+    "splicer/splicer-compilation.json": {
+      "bytes": 6973,
+      "sha256": "sha256:0dd9c6054bbc9eee297c9317d5915a9fe45bee268e92878f01d9638816254efd"
+    },
+    "splicer/transpile-receipt.json": {
+      "bytes": 4783,
+      "sha256": "sha256:179980b1c8b5130298eeae14387dd1522dd77e142499ff39c47f647b095b2618"
+    },
+    "own-controls.wasm": {
+      "bytes": 9300509,
+      "sha256": "sha256:688af3c57145395a470e929e6fa948c37ba9b2be6dcc50816f3043a445a53c12"
+    },
+    "own-lifecycle.wasm": {
+      "bytes": 252852,
+      "sha256": "sha256:2a6e6e1ade11fb7a2c35fc17150d582dc97bfa7c25433c5755f8c5da19313e33"
+    },
+    "control-includes/borrow-baseline-native-imports.h": {
+      "bytes": 16898,
+      "sha256": "sha256:43292380b0617b510be818a45c61b56b85037e543f979d493a9ac0c6c90f1601"
+    },
+    "library-inputs/LIBRARY-RECONSTRUCTION.json": {
+      "bytes": 5742,
+      "sha256": "sha256:88868967c1510b49b50f9da873f6004b9da3cbbeba66b5cac55ef0eaf2c187a6"
+    },
+    "normal-support/SUPPORT.json": {
+      "bytes": 133907,
+      "sha256": "sha256:19b65a849f2ab1e23e83cc8ce0fd912157c8e48b0424b6a1f974b0f61bd3fe42"
+    }
+  },
+  "firstFailedCampaign": {
+    "run": 40054756941,
+    "job": 120755161865,
+    "head": "8274ef4a7c38510ce24864af52df47ae319a4633",
+    "artifact": 12544524545,
+    "artifactSha256": "sha256:39c3da2e5b286f23d3ef7a6fff9321a5851d67f85a8b8ea008901918ce435c57",
+    "rustPassed": 12,
+    "rustFailed": 1,
+    "rustIgnored": 0,
+    "correction": "Resolve the actual stable imported FunctionID through its import_id; the same strengthened test verifies repeated lookup and encoded/reparsed exact original call targets."
+  },
+  "claims": {
+    "compilerGeneratedOwnDisposerExecuted": false,
+    "scalarDisposerDoubleExecuted": true,
+    "canonicalOwnComponentExecuted": false,
+    "tableReuseQualified": false,
+    "signedExecution": false,
+    "physicalProviderQualified": false,
+    "wholeCostQualification": false,
+    "fullTicketClosure": false
+  },
+  "limitations": [
+    "Actual compiler/splicer builds and Rust tests executed; the generated OWN-drop Wasm was inspected/core-validated by the unit test, not executed as a canonical OWN component.",
+    "The 13 SpiderMonkey manager cases use explicit canonical/broker doubles and a scalar disposer callback; the finally scripts are real JavaScript authored for the diagnostic.",
+    "The 6 lifecycle cases additionally use opaque-JS headers. Delayed cases retain the original readiness-set Native owner1; they do not claim all-owner refund.",
+    "The Wasm32 Record delta 8 bytes is a relative compiled layout measurement, not full allocation/capture/host/provider cost.",
+    "Canonical OWN component/table reuse, signed execution, transitive string/list backing allocation release, provider physical retirement and complete SDK acceptance remain open."
+  ]
+}

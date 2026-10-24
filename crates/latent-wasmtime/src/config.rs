@@ -102,6 +102,9 @@ pub struct WasmtimeConfig {
     pub execution_isolation_profile: ExecutionIsolationProfile,
     #[cfg(feature = "development-clock-fixture")]
     pub development_clock_readings: Option<DevelopmentClockReadings>,
+    /// Test-host-only factory-time numeric trap capture, fixed at sixteen frames.
+    #[cfg(feature = "development-test-host")]
+    pub development_numeric_trap_observation: bool,
     /// Explicit installation of the closed Angular profile. Ordinary defaults
     /// never imply support for a JavaScript runtime or an ambient host surface.
     pub angular_renderer: bool,
@@ -197,6 +200,8 @@ impl Default for WasmtimeConfig {
             execution_isolation_profile: ExecutionIsolationProfile::LocalExperimental,
             #[cfg(feature = "development-clock-fixture")]
             development_clock_readings: None,
+            #[cfg(feature = "development-test-host")]
+            development_numeric_trap_observation: false,
             angular_renderer: false,
             java_guest: false,
             transactional_state: false,

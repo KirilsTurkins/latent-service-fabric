@@ -63,13 +63,357 @@ COROUTINE_CLASSES = frozenset(CLASS_ROOT + name for name in (
     'CoroutineTransformation.class', 'CoroutineTransformation$1.class',
     'CoroutineTransformation$SplittingBackend.class'))
 TYPE_ROOT = 'org/teavm/model/util/'
+ASYNC_SOURCE_SHA256 = '510b04fa6db5c0a47dc9656643bb3b1af0a104ed66cfb32786b88f93bbb4740d'
+ASYNC_CLASSES = frozenset(TYPE_ROOT + name for name in (
+    'AsyncMethodFinder.class', 'AsyncMethodFinder$CallStack.class',
+    'AsyncMethodFinder$AsyncInstructionReader.class'))
+MONITOR_CONTROL = 'org/teavm/dependency/MonitorAsyncControl.class'
+MONITOR_CONTROLS = frozenset((MONITOR_CONTROL, 'org/teavm/dependency/MonitorAsyncControl$Inputs.class'))
+ASYNC_BEFORE = '''    private boolean findAsyncMethods() {
+        boolean result = false;
+        loop: for (String clsName : classSource.getClassNames()) {
+            ClassReader cls = classSource.get(clsName);
+            for (MethodReader method : cls.getMethods()) {
+                if (!asyncMethods.contains(method.getReference()) || method.getProgram() == null) {
+                    continue;
+                }
+                if (hasMonitor(method)) {
+                    result = true;
+                    break loop;
+                }
+            }
+        }
+        boolean hasThreads = dependency.getReachableMethods().contains(new MethodReference(
+                Thread.class, "start", void.class));
+        return result && hasThreads;
+    }
+
+'''
+ASYNC_AFTER = '''    private boolean findAsyncMethods() {
+        // Monitor entry can suspend whenever a real Java Thread.start is reachable.
+        // At this point asyncMethods is still empty: annotation roots are added
+        // by find() afterwards, so scanning it here cannot discover contention.
+        return dependency.getReachableMethods().contains(new MethodReference(
+                Thread.class, "start", void.class));
+    }
+'''
+
+CHECKPOINT_FIND_BEFORE = '''        this.classSource = classSource;
+        hasAsyncMethods = findAsyncMethods();'''
+CHECKPOINT_FIND_AFTER = '''        this.classSource = classSource;
+        validateCheckpointCallers();
+        hasAsyncMethods = findAsyncMethods();'''
+CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
+        // CTarget calls find after every dependency completion callback, before
+        // coroutine transformation. This closure deliberately ignores asyncMethods.
+        MethodReference checkpoint = new MethodReference("dev.latent.guest.runtime.Activation",
+                "checkpoint", org.teavm.model.ValueType.VOID);
+        MethodReference managedEntry = new MethodReference(Fiber.class, "start", void.class);
+        if (!dependency.getReachableMethods().contains(checkpoint)) {
+            return;
+        }
+        CallGraphNode root = callGraph.getNode(checkpoint);
+        if (root == null) {
+            System.err.println("latent.java.checkpoint-site.v1 root");
+            throw checkpointRefusal("java-checkpoint-unresolved-741");
+        }
+        Set<MethodReference> visited = new HashSet<>();
+        List<CallGraphNode> pending = new ArrayList<>();
+        visited.add(checkpoint);
+        pending.add(root);
+        int edges = 0;
+        for (int index = 0; index < pending.size(); ++index) {
+            CallGraphNode node = pending.get(index);
+            MethodReference reference = node.getMethod();
+            ClassReader cls = reference == null ? null : classSource.get(reference.getClassName());
+            MethodReader method = cls == null ? null : cls.getMethod(reference.getDescriptor());
+            if (method == null) {
+                System.err.println("latent.java.checkpoint-site.v1 method");
+                throw checkpointRefusal("java-checkpoint-unresolved-741");
+            }
+            if (reference.getName().equals("<clinit>")
+                    || method.getAnnotations().get("org.teavm.interop.Unmanaged") != null
+                    || cls.getAnnotations().get("org.teavm.interop.Unmanaged") != null) {
+                throw checkpointRefusal("java-checkpoint-nonsuspendable-context-741");
+            }
+            // Pinned Fiber.start() installs current=this before runner.run() and
+            // restores its former value afterward. Callers are outside that new
+            // managed context. No other method/overload or async label is a barrier.
+            if (reference.equals(managedEntry)
+                    && method.getLevel() == org.teavm.model.AccessLevel.PRIVATE
+                    && !method.hasModifier(ElementModifier.STATIC)) {
+                if (!pinnedFiberEntry(method)) {
+                    System.err.println("latent.java.checkpoint-site.v1 managed-entry");
+                    throw checkpointRefusal("java-checkpoint-unresolved-741");
+                }
+                continue;
+            }
+            for (CallSite site : node.getCallerCallSites()) {
+                if (++edges > 262144) {
+                    throw checkpointRefusal("java-checkpoint-analysis-bound-741");
+                }
+                for (CallGraphNode caller : site.getCallers()) {
+                    if (++edges > 262144) {
+                        throw checkpointRefusal("java-checkpoint-analysis-bound-741");
+                    }
+                    if (caller == null || caller.getMethod() == null) {
+                        System.err.println("latent.java.checkpoint-site.v1 caller");
+                        throw checkpointRefusal("java-checkpoint-unresolved-741");
+                    }
+                    if (!visited.contains(caller.getMethod())) {
+                        if (pending.size() == 65536) {
+                            throw checkpointRefusal("java-checkpoint-analysis-bound-741");
+                        }
+                        visited.add(caller.getMethod());
+                        pending.add(caller);
+                    }
+                }
+            }
+        }
+    }
+
+    private boolean pinnedFiberEntry(MethodReader method) {
+        // Never resolve this baseline through an application classpath. Both
+        // host classes must come from the same authenticated compiler JAR,
+        // whose nonreplacement entries the owned compiler recipe preserves.
+        int stage = 1;
+        try {
+            if (Fiber.class.getClassLoader() != AsyncMethodFinder.class.getClassLoader()) {
+                return fiberEntryRefusal(stage);
+            }
+            java.nio.file.Path jar = java.nio.file.Path.of(Fiber.class.getProtectionDomain()
+                    .getCodeSource().getLocation().toURI()).toRealPath();
+            java.nio.file.Path finderJar = java.nio.file.Path.of(AsyncMethodFinder.class
+                    .getProtectionDomain().getCodeSource().getLocation().toURI()).toRealPath();
+            if (!jar.equals(finderJar) || !java.nio.file.Files.isRegularFile(jar,
+                    java.nio.file.LinkOption.NOFOLLOW_LINKS) || java.nio.file.Files.size(jar) > 67108864) {
+                return fiberEntryRefusal(stage);
+            }
+            stage = 2;
+            try (java.util.zip.ZipFile zip = new java.util.zip.ZipFile(jar.toFile())) {
+                java.util.zip.ZipEntry entry = zip.getEntry("org/teavm/runtime/Fiber.class");
+                if (entry == null || entry.getSize() <= 0 || entry.getSize() > 131072) {
+                    return fiberEntryRefusal(stage);
+                }
+            }
+            try (org.teavm.parsing.resource.ResourceProvider provider =
+                    org.teavm.parsing.resource.ResourceProvider.ofClassPath(
+                            Collections.singletonList(jar.toFile()))) {
+                // Match TeaVMTool's pinned nonincremental production source pass.
+                org.teavm.model.ClassHolderSource pinnedSource = new org.teavm.model.PreOptimizingClassHolderSource(
+                        new org.teavm.parsing.resource.ResourceBytecodeClassHolderSource(
+                                provider, new org.teavm.model.ReferenceCache()));
+                org.teavm.model.ClassHolder pinned = pinnedSource.get(Fiber.class.getName());
+                org.teavm.model.MethodHolder expected = pinned == null ? null : pinned.getMethod(method.getDescriptor());
+                stage = 3;
+                if (expected == null || expected.getLevel() != org.teavm.model.AccessLevel.PRIVATE
+                        || expected.hasModifier(ElementModifier.STATIC)) {
+                    return fiberEntryRefusal(stage);
+                }
+                for (ElementModifier modifier : ElementModifier.values()) {
+                    if (method.hasModifier(modifier) != expected.hasModifier(modifier)) {
+                        return fiberEntryRefusal(stage);
+                    }
+                }
+                stage = 2;
+                // DependencyClassSource's pinned normal program-supplier pass.
+                // Resolve only against this same authenticated compiler JAR,
+                // never dependency/application class sources or host resources.
+                org.teavm.diagnostics.AccumulationDiagnostics diagnostics =
+                        new org.teavm.diagnostics.AccumulationDiagnostics();
+                org.teavm.dependency.ReferenceResolver resolver = new org.teavm.dependency.ReferenceResolver(
+                        pinnedSource, new String[] { org.teavm.interop.Platforms.C,
+                                org.teavm.interop.Platforms.LOW_LEVEL, org.teavm.interop.Platforms.OWN_GC }, diagnostics);
+                org.teavm.model.Program program = expected.getProgram();
+                if (program == null) {
+                    return fiberEntryRefusal(stage);
+                }
+                resolver.use(expected.getReference());
+                resolver.resolve(expected, program);
+                if (!diagnostics.getSevereProblems().isEmpty()) {
+                    return fiberEntryRefusal(stage);
+                }
+                new org.teavm.model.transformation.ClassInitInsertion(pinnedSource).apply(expected, program);
+                stage = 4;
+                return sameFiberEntryBody(program, method.getProgram()) || fiberEntryRefusal(stage);
+            }
+        } catch (Exception failure) {
+            return fiberEntryRefusal(stage); // Unavailable proof cannot establish a context boundary.
+        }
+    }
+
+    private boolean fiberEntryRefusal(int stage) {
+        // Four fixed compiler-owned categories; no paths, names, IR or exception text.
+        System.err.println("latent.java.checkpoint-entry.v1 " + stage);
+        return false;
+    }
+
+    private org.teavm.model.Program boundedFiberEntryBody(ProgramReader program) {
+        if (program == null || program.variableCount() <= 0 || program.variableCount() > 128
+                || program.basicBlockCount() <= 0 || program.basicBlockCount() > 64) {
+            return null;
+        }
+        int instructions = 0, phis = 0;
+        for (int index = 0; index < program.basicBlockCount(); ++index) {
+            org.teavm.model.BasicBlockReader block = program.basicBlockAt(index);
+            // The pinned private entry has no exceptional control-flow region.
+            // Any added handler or exception receiver must refuse, never disappear
+            // from a pretty-printed body comparison.
+            if (block == null || block.getExceptionVariable() != null || !block.readTryCatchBlocks().isEmpty()) {
+                return null;
+            }
+            for (org.teavm.model.PhiReader phi : block.readPhis()) {
+                if (++phis > 128 || phi.readIncomings().size() > 64) {
+                    return null;
+                }
+            }
+            org.teavm.model.InstructionIterator iterator = block.iterateInstructions();
+            while (iterator.hasNext()) {
+                iterator.next();
+                if (++instructions > 256) {
+                    return null;
+                }
+            }
+        }
+        return org.teavm.model.util.ProgramUtils.copy(program);
+    }
+
+    private boolean sameFiberVariable(VariableReader first, VariableReader second) {
+        return first == null ? second == null : second != null && first.getIndex() == second.getIndex();
+    }
+
+    private boolean sameFiberEntryBody(ProgramReader expectedReader, ProgramReader actualReader) {
+        org.teavm.model.Program expected = boundedFiberEntryBody(expectedReader);
+        org.teavm.model.Program actual = boundedFiberEntryBody(actualReader);
+        if (expected == null || actual == null || expected.variableCount() != actual.variableCount()
+                || expected.basicBlockCount() != actual.basicBlockCount()) {
+            return false;
+        }
+        for (int index = 0; index < expected.basicBlockCount(); ++index) {
+            org.teavm.model.BasicBlock first = expected.basicBlockAt(index), second = actual.basicBlockAt(index);
+            if (first.getPhis().size() != second.getPhis().size()) {
+                return false;
+            }
+            for (int phiIndex = 0; phiIndex < first.getPhis().size(); ++phiIndex) {
+                org.teavm.model.Phi left = first.getPhis().get(phiIndex), right = second.getPhis().get(phiIndex);
+                if (!sameFiberVariable(left.getReceiver(), right.getReceiver())
+                        || left.getIncomings().size() != right.getIncomings().size()) {
+                    return false;
+                }
+                for (int incomingIndex = 0; incomingIndex < left.getIncomings().size(); ++incomingIndex) {
+                    org.teavm.model.Incoming leftIncoming = left.getIncomings().get(incomingIndex);
+                    org.teavm.model.Incoming rightIncoming = right.getIncomings().get(incomingIndex);
+                    if (leftIncoming.getSource().getIndex() != rightIncoming.getSource().getIndex()
+                            || !sameFiberVariable(leftIncoming.getValue(), rightIncoming.getValue())) {
+                        return false;
+                    }
+                }
+            }
+            java.util.Iterator<org.teavm.model.Instruction> left = first.iterator(), right = second.iterator();
+            while (left.hasNext() && right.hasNext()) {
+                if (!sameFiberInstruction(left.next(), right.next())) {
+                    return false;
+                }
+            }
+            if (left.hasNext() || right.hasNext()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean sameFiberInstruction(org.teavm.model.Instruction first, org.teavm.model.Instruction second) {
+        if (first.getClass() != second.getClass()) {
+            return false;
+        }
+        if (first instanceof org.teavm.model.instructions.EmptyInstruction) {
+            // The pinned preoptimized body retains operandless NOPs. Their
+            // concrete type, position and count remain part of exact equality.
+            return true;
+        } else if (first instanceof org.teavm.model.instructions.InitClassInstruction) {
+            return ((org.teavm.model.instructions.InitClassInstruction) first).getClassName().equals(
+                    ((org.teavm.model.instructions.InitClassInstruction) second).getClassName());
+        } else if (first instanceof org.teavm.model.instructions.GetFieldInstruction) {
+            org.teavm.model.instructions.GetFieldInstruction left =
+                    (org.teavm.model.instructions.GetFieldInstruction) first;
+            org.teavm.model.instructions.GetFieldInstruction right =
+                    (org.teavm.model.instructions.GetFieldInstruction) second;
+            return left.getField().equals(right.getField()) && left.getFieldType().equals(right.getFieldType())
+                    && sameFiberVariable(left.getInstance(), right.getInstance())
+                    && sameFiberVariable(left.getReceiver(), right.getReceiver());
+        } else if (first instanceof org.teavm.model.instructions.PutFieldInstruction) {
+            org.teavm.model.instructions.PutFieldInstruction left =
+                    (org.teavm.model.instructions.PutFieldInstruction) first;
+            org.teavm.model.instructions.PutFieldInstruction right =
+                    (org.teavm.model.instructions.PutFieldInstruction) second;
+            return left.getField().equals(right.getField()) && left.getFieldType().equals(right.getFieldType())
+                    && sameFiberVariable(left.getInstance(), right.getInstance())
+                    && sameFiberVariable(left.getValue(), right.getValue());
+        } else if (first instanceof org.teavm.model.instructions.InvokeInstruction) {
+            org.teavm.model.instructions.InvokeInstruction left = (org.teavm.model.instructions.InvokeInstruction) first;
+            org.teavm.model.instructions.InvokeInstruction right = (org.teavm.model.instructions.InvokeInstruction) second;
+            if (!left.getMethod().equals(right.getMethod()) || left.getType() != right.getType()
+                    || !sameFiberVariable(left.getInstance(), right.getInstance())
+                    || !sameFiberVariable(left.getReceiver(), right.getReceiver())
+                    || left.getArguments().size() != right.getArguments().size()) {
+                return false;
+            }
+            for (int index = 0; index < left.getArguments().size(); ++index) {
+                if (!sameFiberVariable(left.getArguments().get(index), right.getArguments().get(index))) {
+                    return false;
+                }
+            }
+            return true;
+        } else if (first instanceof org.teavm.model.instructions.AssignInstruction) {
+            org.teavm.model.instructions.AssignInstruction left = (org.teavm.model.instructions.AssignInstruction) first;
+            org.teavm.model.instructions.AssignInstruction right = (org.teavm.model.instructions.AssignInstruction) second;
+            return sameFiberVariable(left.getAssignee(), right.getAssignee())
+                    && sameFiberVariable(left.getReceiver(), right.getReceiver());
+        } else if (first instanceof org.teavm.model.instructions.IntegerConstantInstruction) {
+            org.teavm.model.instructions.IntegerConstantInstruction left =
+                    (org.teavm.model.instructions.IntegerConstantInstruction) first;
+            org.teavm.model.instructions.IntegerConstantInstruction right =
+                    (org.teavm.model.instructions.IntegerConstantInstruction) second;
+            return left.getConstant() == right.getConstant()
+                    && sameFiberVariable(left.getReceiver(), right.getReceiver());
+        } else if (first instanceof org.teavm.model.instructions.BinaryInstruction) {
+            org.teavm.model.instructions.BinaryInstruction left = (org.teavm.model.instructions.BinaryInstruction) first;
+            org.teavm.model.instructions.BinaryInstruction right = (org.teavm.model.instructions.BinaryInstruction) second;
+            return left.getOperation() == right.getOperation() && left.getOperandType() == right.getOperandType()
+                    && sameFiberVariable(left.getReceiver(), right.getReceiver())
+                    && sameFiberVariable(left.getFirstOperand(), right.getFirstOperand())
+                    && sameFiberVariable(left.getSecondOperand(), right.getSecondOperand());
+        } else if (first instanceof org.teavm.model.instructions.BranchingInstruction) {
+            org.teavm.model.instructions.BranchingInstruction left = (org.teavm.model.instructions.BranchingInstruction) first;
+            org.teavm.model.instructions.BranchingInstruction right = (org.teavm.model.instructions.BranchingInstruction) second;
+            return left.getCondition() == right.getCondition() && sameFiberVariable(left.getOperand(), right.getOperand())
+                    && left.getConsequent().getIndex() == right.getConsequent().getIndex()
+                    && left.getAlternative().getIndex() == right.getAlternative().getIndex();
+        } else if (first instanceof org.teavm.model.instructions.JumpInstruction) {
+            return ((org.teavm.model.instructions.JumpInstruction) first).getTarget().getIndex()
+                    == ((org.teavm.model.instructions.JumpInstruction) second).getTarget().getIndex();
+        } else if (first instanceof org.teavm.model.instructions.ExitInstruction) {
+            return sameFiberVariable(((org.teavm.model.instructions.ExitInstruction) first).getValueToReturn(),
+                    ((org.teavm.model.instructions.ExitInstruction) second).getValueToReturn());
+        }
+        return false; // No unknown instruction or incomplete representation can establish this barrier.
+    }
+
+    private IllegalStateException checkpointRefusal(String reason) {
+        // Static owned reason only: never print application/call-graph details.
+        System.err.println("latent.java.checkpoint-context.v1 " + reason);
+        return new IllegalStateException(reason);
+    }
+
+'''
+
 TYPE_CLASSES = frozenset(TYPE_ROOT + name for name in (
     'TypeInferer.class', 'TypeInferer$1.class', 'TypeInferer$2.class',
     'TypeInferer$InferenceKind.class', 'TypeInferer$InferenceType.class'))
-PATCH_CLASSES = COROUTINE_CLASSES | TYPE_CLASSES
+PATCH_CLASSES = COROUTINE_CLASSES | TYPE_CLASSES | ASYNC_CLASSES
 CONTROL = CLASS_ROOT + 'Check.class'
 ARRAY_CONTROL = TYPE_ROOT + 'ArrayTypeCheck.class'
-CONTROLS = frozenset((CONTROL, ARRAY_CONTROL))
+CONTROLS = frozenset((CONTROL, ARRAY_CONTROL)) | MONITOR_CONTROLS
 MAX_JAR_BYTES = 64 * 1024 * 1024
 RELOCATED_IMPORTS = ('IntHashSet', 'IntIntHashMap', 'IntSet')
 
@@ -104,6 +448,18 @@ def corrected_type_source(raw: bytes) -> bytes:
         raise ValueError('unreviewed-teavm-type-seed')
     return source.replace(TYPE_SEED_BEFORE, TYPE_SEED_AFTER).replace(
         TYPE_ELEMENT_BEFORE, TYPE_ELEMENT_AFTER).encode('utf-8')
+
+
+def corrected_async_source(raw: bytes) -> bytes:
+    if hashlib.sha256(raw).hexdigest() != ASYNC_SOURCE_SHA256:
+        raise ValueError('unreviewed-teavm-async-finder-source')
+    source = raw.decode('utf-8')
+    if source.count(ASYNC_BEFORE) != 1:
+        raise ValueError('unreviewed-teavm-async-finder-preimage')
+    if source.count(CHECKPOINT_FIND_BEFORE) != 1:
+        raise ValueError('unreviewed-teavm-checkpoint-find-preimage')
+    return source.replace(ASYNC_BEFORE, CHECKPOINT_VALIDATION + ASYNC_AFTER).replace(
+        CHECKPOINT_FIND_BEFORE, CHECKPOINT_FIND_AFTER).encode('utf-8')
 
 
 def checked_jars(compiler, project: Path) -> list[Path]:
@@ -169,7 +525,9 @@ def jar_entries(path: Path) -> dict[str, bytes]:
     if ({name for name in result if name.startswith(CLASS_ROOT + 'CoroutineTransformation')
             and name.endswith('.class')} != COROUTINE_CLASSES
             or {name for name in result if name.startswith(TYPE_ROOT + 'TypeInferer')
-                and name.endswith('.class')} != TYPE_CLASSES):
+                and name.endswith('.class')} != TYPE_CLASSES
+            or {name for name in result if name.startswith(TYPE_ROOT + 'AsyncMethodFinder')
+                and name.endswith('.class')} != ASYNC_CLASSES):
         raise ValueError('coroutine-patch-class-closure')
     return result
 
@@ -287,11 +645,16 @@ def stage(compiler, project: Path, destination: Path) -> dict:
     corrected_types = corrected_type_source(type_raw); type_source.write_bytes(corrected_types)
     array_control = folder / 'ArrayTypeCheck.java'
     array_control.write_bytes(read_file(sdk / 'ArrayTypeCheck.java'))
+    async_raw = read_file(sdk / 'AsyncMethodFinder.java')
+    async_source = folder / 'AsyncMethodFinder.java'
+    corrected_async = corrected_async_source(async_raw); async_source.write_bytes(corrected_async)
+    monitor_control = folder / 'MonitorAsyncControl.java'
+    monitor_control.write_bytes(read_file(sdk / 'MonitorAsyncControl.java'))
     # Compiler.run provides the original process, output and remaining-time bounds.
     classes = folder / 'classes'
     read_file(sdk / 'Compile.java')
     compiler.run('java-coroutine-patch', 'java', sdk / 'Compile.java', source, control, classes,
-                 os.pathsep.join(map(str, jars)), type_source, array_control)
+                 os.pathsep.join(map(str, jars)), type_source, array_control, async_source, monitor_control)
     replacement = folder / 'teavm-core-patched.jar'
     receipt = replace_jar(original[0], classes, replacement)
     for mode, selected in (('original', original[0]), ('corrected', replacement)):
@@ -301,6 +664,11 @@ def stage(compiler, project: Path, destination: Path) -> dict:
         if json.loads(observed) != {'schemaVersion': 'latent.java.coroutine-phi-control.v1',
                 'mode': mode, 'passed': True}:
             raise ValueError('coroutine-patch-real-ir-control')
+        monitor = compiler.run('java-coroutine-monitor-' + mode + '-control', 'java', '-cp', classpath,
+            'org.teavm.dependency.MonitorAsyncControl', mode)
+        if json.loads(monitor) != {'schemaVersion': 'latent.java.monitor-async-control.v1',
+                'mode': mode, 'passed': True}:
+            raise ValueError('coroutine-patch-real-monitor-async-control')
     if identities != jar_identities(compiler.dependency_cache, checked_jars(compiler, project)):
         raise ValueError('coroutine-patch-original-input-mutated')
     build = project / 'build.gradle'; script = read_file(build).decode('utf-8')
@@ -376,6 +744,12 @@ tasks.named('generateC') {
         realOriginalPrimitiveArrayRootDefectObserved=True,
         realCorrectedArrayTypesAndReferenceRootsPreserved=True,
         realCorrectedRestoredArrayPrimitiveTypePreserved=True,
+        upstreamAsyncFinderSourceSha256=ASYNC_SOURCE_SHA256,
+        correctedAsyncFinderSourceSha256=hashlib.sha256(corrected_async).hexdigest(),
+        realOriginalMonitorBoundaryDefectObserved=True,
+        realCorrectedMonitorOnlyAndMixedBoundariesPreserved=True,
+        realCorrectedMonitorCallerAndFamilyClosurePreserved=True,
+        realNoThreadStartAndUnrelatedMethodNegativesPreserved=True,
         originalInputsUnchanged=True, checkedCompilerJars=identities,
         publishedHppcRelocation='org.teavm.hppc',
         originalBuildscriptClasspath=[jar_identities(compiler.dependency_cache, [path])[0]

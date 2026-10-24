@@ -1,0 +1,49 @@
+{
+  "cases": [
+    "LateBackingEvidenceTests.test_actual_raw_channel_refuses_missing_duplicate_or_foreign_rows",
+    "LateBackingEvidenceTests.test_core_parser_binds_loaded_hashes_and_keeps_counter_double_scope",
+    "LateBackingEvidenceTests.test_real_backing_parser_requires_before_store_counts_and_truthful_refusal"
+  ],
+  "guards": {
+    "LateBackingEvidenceTests.test_actual_raw_channel_refuses_missing_duplicate_or_foreign_rows": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0a937819004ddbf3c4eb6eaf0e591a7b15ecb32ed9affaf056b4b2de0111bb5b",
+        "class:setup-sha256:75b980cd5547263bd2f89c5f97aefffeca3b7b54f7692ae76160895215f8dc38"
+      ],
+      "skipSites": []
+    },
+    "LateBackingEvidenceTests.test_core_parser_binds_loaded_hashes_and_keeps_counter_double_scope": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0a937819004ddbf3c4eb6eaf0e591a7b15ecb32ed9affaf056b4b2de0111bb5b",
+        "class:setup-sha256:75b980cd5547263bd2f89c5f97aefffeca3b7b54f7692ae76160895215f8dc38"
+      ],
+      "skipSites": []
+    },
+    "LateBackingEvidenceTests.test_real_backing_parser_requires_before_store_counts_and_truthful_refusal": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0a937819004ddbf3c4eb6eaf0e591a7b15ecb32ed9affaf056b4b2de0111bb5b",
+        "class:setup-sha256:75b980cd5547263bd2f89c5f97aefffeca3b7b54f7692ae76160895215f8dc38"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_typescript_late_backing_evidence.py",
+  "reviewReason": "Review exact successful6d native input pin and62-product emitted closure, preserve all existing fixture/evidence cases and guards, and use the closed published native-carrier fixture shape with14 mandatory source controls; no component qualification or quota expansion.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

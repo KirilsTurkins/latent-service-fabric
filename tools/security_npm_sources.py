@@ -145,7 +145,7 @@ def verify_sources(repo: Path, packages: list, configuration: dict, fetch=regist
                 "npm-repair-control-input-drift")
     source = decode_json(read_file(repo, "website/toolchain/source.json"))
     require(set(source) == {"schema", "profile", "base", "patches", "libraries", "repairs"}
-            and source["schema"] == 1 and source["profile"] == "npm-11.19.1-lsf-bundle-v4"
+            and source["schema"] == 1 and source["profile"] == "npm-11.19.1-lsf-bundle-v5"
             and isinstance(source["patches"], list) and len(source["patches"]) == 5
             and isinstance(source["libraries"], list) and len(source["libraries"]) == 1
             and source["libraries"][0]["name"] == "braces", "npm-repair-source-profile")

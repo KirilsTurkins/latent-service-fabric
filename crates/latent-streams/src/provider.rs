@@ -377,6 +377,10 @@ impl StreamProvider {
                 result.pending_operations += usage.pending_operations;
                 result.retained_chunks += usage.retained_chunks;
                 result.accepted_write_bytes += usage.accepted_write_bytes;
+                #[cfg(any(test, feature = "development-outbound"))]
+                {
+                    result.input_budget_bytes += usage.input_budget_bytes;
+                }
                 result.delivered_read_bytes += usage.delivered_read_bytes;
             }
         }

@@ -1,0 +1,411 @@
+{
+  "schemaVersion": "lsf.kernel-constructor-root-physical-return-observation.v1",
+  "status": "passed",
+  "issue": 738,
+  "scope": "Already-retired successful constructor-only Root at actual final FD release; no production stream or native quota qualification.",
+  "source": {
+    "commit": "eef89f053e7729c314235471a5ec984b0541a474",
+    "tree": "150f2345f47d0efa25cea618b3ca58fedcd33f66",
+    "workflow": ".github/workflows/stream-kernel-constructor-vm.yml",
+    "run": 40023871153,
+    "job": 120655010480,
+    "url": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40023871153/job/120655010480",
+    "event": "push",
+    "upstreamCommit": "7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+    "archive": {
+      "bytes": 148686048,
+      "sha256": "e09b6727e5c521253f0d41694900b9c38fb7604db7d35238a8197aa9f7de2428"
+    }
+  },
+  "artifact": {
+    "id": 12531659245,
+    "bytes": 15009987,
+    "sha256": "b9bab76fc0ad77030ffeb25fd1143bf7202b792adc227886a6e6ee452e625054",
+    "allMemberCrcsVerified": 33,
+    "retainedMembers": {
+      "qualification.json": {
+        "bytes": 201587,
+        "sha256": "d6203368933db1aa7cb4a554d5b86651b76e9a4b05612cbdf055ef326e79d8a5"
+      },
+      "selection.json": {
+        "bytes": 198955,
+        "sha256": "1560325eaadc902da34c51bba749fb81f553508a96715f5976fb2d0ade5e9549"
+      },
+      "commands.json": {
+        "bytes": 1473,
+        "sha256": "4cf5fb949f58da968db8529b3434a8ab17324ddf81dba289e6064da0b52863d7"
+      },
+      "commands/logs/08-boot-isolated-real-constructor.stdout.txt": {
+        "bytes": 24304,
+        "sha256": "b046e585a09b4c1a0a4d6b846983cd0a36d6d0d48ca356774e16bb2a3025ccf2"
+      }
+    }
+  },
+  "sourceBinding": {
+    "committedGitMaterials": 282,
+    "allMatchedActualGitBlobs": true,
+    "canonicalInventorySha256": "193d4bf6d4091827205abc9108a352c18f61b284ef06ed92ff2f45685c067bed",
+    "canonicalInventoryEncoding": "UTF-8 JSON, sorted path keys, no whitespace, each value bytes/sha256 without prefix",
+    "recipeInputs": {
+      "tools/qualify_host_stream_kernel_vm.py": {
+        "bytes": 14214,
+        "sha256": "b3e28b6893062c8a6a59d0c3b5bdb6dfa4a3b4592aeb4fbda5706722b7e81abb"
+      },
+      "tools/host_stream_kernel_vm_image.py": {
+        "bytes": 12100,
+        "sha256": "d4f4074eec6c3e32537b0e4f30f7fc5f1910f19883c9f3627174a3863ee33c74"
+      },
+      "tools/host_stream_kernel_cleanup_native_programme.py": {
+        "bytes": 16086,
+        "sha256": "34ad38301814e3317a68699fe2c4c2c38d781ef0514f7de8c4aad043e33d8b05"
+      },
+      "tools/host_stream_kernel_cleanup_native.py": {
+        "bytes": 7860,
+        "sha256": "8b613b300866312b369f6d8baafa334836cd8aaff6a2e2f2dcc8cc69c9c66b1c"
+      },
+      "tools/host_stream_kernel_constructor_failure.py": {
+        "bytes": 21369,
+        "sha256": "2609843f5a4ed010312dc386bc1fec1d4faf6147d1437428b1565c13c63bf4a7"
+      },
+      "tools/host_stream_kernel_stack_alignment.py": {
+        "bytes": 8388,
+        "sha256": "73ef0f4d08680ff4468af30da87627bb3cc6ff2e3b694f5c0287ccf963f1bf61"
+      },
+      "tools/host_stream_kernel_vmap_extent.py": {
+        "bytes": 2776,
+        "sha256": "0df7e0f934e239d02b6bd77ca439e513eb1ad114a728aa38637cad993a877a95"
+      },
+      "tools/host_stream_kernel_vmap_fit.py": {
+        "bytes": 5331,
+        "sha256": "ee18ba8085d3d766ce10a4d6eba37ce8bf0d509fd715084c26e629598becd8cf"
+      },
+      "tools/host_stream_kernel_task_identity_geometry.py": {
+        "bytes": 3328,
+        "sha256": "6d83e121acce4fafd4d42d4afb8520c923c5b9d33d86a1b414b7c44b9afc54ca"
+      },
+      "tools/host_stream_kernel_provider_task_reference.py": {
+        "bytes": 5601,
+        "sha256": "a22595f0d5cacb442a909ffce41c44f3e835bea6e6a6dcfbd8593bed9effa617"
+      },
+      "tools/host_stream_kernel_root_final_free.py": {
+        "bytes": 7565,
+        "sha256": "fc2889ccb37780bad818ec1031a728863d334617ac1fa2ceb045c8d2e2654ab7"
+      },
+      "tools/tests/fixtures/host_stream_kernel_root_final_free.json": {
+        "bytes": 52215,
+        "sha256": "2cc535153d4bd3fb40da2f355a41642cf963e6facc56d3565b038dce2c2bf81c"
+      },
+      "tools/tests/test_host_stream_kernel_root_final_free.py": {
+        "bytes": 14294,
+        "sha256": "339068199c6f9f33c0434547401cf5392b3f071c280100381da00a0b08419503"
+      },
+      "tools/tests/test_kernel_root_final_free_vm.py": {
+        "bytes": 3324,
+        "sha256": "881bac6bb64b16a12c616aadf28f0293c54e61ee5e8302ad63bfa17269565ae9"
+      },
+      "research/standard-outbound/linux-6.12-lineage/factory-cleanup-root-final-free.c": {
+        "bytes": 13111,
+        "sha256": "8740dd04b219187f04d2d4803dcd30ef5a486015239e38b55380b3c1a5504b9e"
+      },
+      "tools/qualify_host_stream_kernel_objects.py": {
+        "bytes": 58085,
+        "sha256": "2a5f32b7797677ceaf8c4f1f0343859b1456ab00a54ff9ee52516b317e0e9cd7"
+      },
+      "tools/owned_test_process.py": {
+        "bytes": 11348,
+        "sha256": "da38e62f58d2dc3cdd0517c2cc4c77f175afde5299a01bfed75488bb9a862283"
+      },
+      "tools/build_observation.py": {
+        "bytes": 7868,
+        "sha256": "c9fe0843aabb9a026b2005134b121bf2e53abc909a2da3e5e5fe90fdc3096db0"
+      },
+      "tools/dev_workflow/paths.py": {
+        "bytes": 6758,
+        "sha256": "6758044322e58c687c73d8302c0fab82a07d9680ed647a3a52f2a34f60d0da59"
+      },
+      ".github/workflows/stream-kernel-constructor-vm.yml": {
+        "bytes": 5537,
+        "sha256": "efaaef09814ade2a99923a24e73e8a21da4c096d2229ecd60deb6c093bb5b38d"
+      },
+      "research/standard-outbound/linux-6.12-lineage/constructor-vm-init.c": {
+        "bytes": 8290,
+        "sha256": "827cfd7c57988a14f21ab7c9e00e2eda25c8bd8db5b3044f06ef62586177e810"
+      }
+    },
+    "wholeSelectedOriginalInputs": 84,
+    "normalDerivedFiles": 324,
+    "allDerivedFilesRecheckedAfterExecution": true,
+    "independentlyComparedReviewedPostimages": {
+      "net/factory.c": {
+        "bytes": 34471,
+        "sha256": "7a82893a0247c6f110b49a9c82697565ca1b3c5bd497abd303c64ce1ba39310a"
+      },
+      "kernel/lsf-cleanup-irq.c": {
+        "bytes": 8745,
+        "sha256": "9e5f2b1d0df8fff2c46081074a7b81877196d98db1405d9220c6aabc76f199ad"
+      },
+      "kernel/lsf-cleanup-close.c": {
+        "bytes": 2382,
+        "sha256": "977a3763171f457022c8bd0ae82d2c64109cf62d087cf461fe5f45ccaf180c27"
+      },
+      "include/net/lsf_stream_cleanup_provider_executor.h": {
+        "bytes": 6087,
+        "sha256": "d28779502d15de4c88413fc4d4144fb431d83d69d9340bc05916c5077e7b189e"
+      },
+      "net/factory-cleanup-root-final-free.c": {
+        "bytes": 13111,
+        "sha256": "8740dd04b219187f04d2d4803dcd30ef5a486015239e38b55380b3c1a5504b9e"
+      }
+    },
+    "compiledOriginalPageHeaders": {
+      "include/linux/mm.h": {
+        "bytes": 132024,
+        "sha256": "a15410bd33802e92e80b973a33dfeb480ddbb36f0fc0f357f9a73d14524ddadb"
+      },
+      "include/linux/page-flags.h": {
+        "bytes": 40361,
+        "sha256": "437ceb6f53dbe3741f971aefcb0871bde388346a0e5a4a78ec7e6736c35a9afe"
+      }
+    },
+    "previousQualifiedConstructorSource": "000860214497535901b1aee49ea8f58e4823be2d",
+    "unchangedPreviouslyQualifiedDerivedFiles": 319,
+    "reviewedDelta": {
+      "changedExistingFiles": 4,
+      "addedCollectorFile": 1
+    }
+  },
+  "sourceControls": {
+    "mandatoryPreviousControls": 33,
+    "newCollectorControls": 7,
+    "newPhysicalObservationControls": 3,
+    "actualPassed": 43,
+    "ignored": 0,
+    "seconds": 0.264,
+    "rawOwningJobLog": {
+      "bytes": 63799,
+      "sha256": "32f3f89e7ba1007db2beb561f30c196c85fa267ca01b83c34393a7324bac4b30"
+    }
+  },
+  "commands": [
+    {
+      "stage": "compile-static-constructor-init",
+      "exitCode": 0,
+      "completed": true,
+      "elapsedMillis": 660.8852549999824,
+      "descendantsCleaned": true
+    },
+    {
+      "stage": "extract-authenticated-source",
+      "exitCode": 0,
+      "completed": true,
+      "elapsedMillis": 9644.53954999999,
+      "descendantsCleaned": true
+    },
+    {
+      "stage": "compiler-identity",
+      "exitCode": 0,
+      "completed": true,
+      "elapsedMillis": 39.80232000003525,
+      "descendantsCleaned": true
+    },
+    {
+      "stage": "original-defconfig",
+      "exitCode": 0,
+      "completed": true,
+      "elapsedMillis": 4265.469678999978,
+      "descendantsCleaned": true
+    },
+    {
+      "stage": "resolve-selected-config",
+      "exitCode": 0,
+      "completed": true,
+      "elapsedMillis": 1448.3506049999733,
+      "descendantsCleaned": true
+    },
+    {
+      "stage": "link-complete-candidate-kernel",
+      "exitCode": 0,
+      "completed": true,
+      "elapsedMillis": 728028.0588690001,
+      "descendantsCleaned": true
+    },
+    {
+      "stage": "create-constructor-initramfs",
+      "exitCode": 0,
+      "completed": true,
+      "elapsedMillis": 39.363347999938014,
+      "descendantsCleaned": true
+    },
+    {
+      "stage": "qemu-version",
+      "exitCode": 0,
+      "completed": true,
+      "elapsedMillis": 86.14532299998245,
+      "descendantsCleaned": true
+    },
+    {
+      "stage": "boot-isolated-real-constructor",
+      "exitCode": 0,
+      "completed": true,
+      "elapsedMillis": 3241.6133970000374,
+      "descendantsCleaned": true
+    }
+  ],
+  "observations": {
+    "rawSerial": {
+      "bytes": 24304,
+      "sha256": "b046e585a09b4c1a0a4d6b846983cd0a36d6d0d48ca356774e16bb2a3025ccf2"
+    },
+    "rows": [
+      "LSFVM1 boot=constructor-only production-sockets=disabled",
+      "LSFVM1 snapshot=opened state=0 error=0 field0=0 field1=0 field2=0 field3=0 field4=0 field5=0 field6=2 field7=0 field8=0 field9=0",
+      "LSFVM1 snapshot=ready state=2 error=0 field0=3 field1=0 field2=0 field3=1 field4=1 field5=0 field6=17 field7=0 field8=0 field9=0",
+      "LSFVM1 snapshot=child-retired-root-held state=4 error=0 field0=8 field1=5 field2=0 field3=2 field4=0 field5=1 field6=2 field7=0 field8=1 field9=1",
+      "[    2.401492] LSFVM1 physical-return=constructor-root-bank-and-actor-refs",
+      "LSFVM1 result=PASS stage=actual-child-retirement-root-release-check"
+    ],
+    "parsed": {
+      "snapshots": {
+        "opened": {
+          "state": 0,
+          "error": 0,
+          "fields": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            2,
+            0,
+            0,
+            0
+          ]
+        },
+        "ready": {
+          "state": 2,
+          "error": 0,
+          "fields": [
+            3,
+            0,
+            0,
+            1,
+            1,
+            0,
+            17,
+            0,
+            0,
+            0
+          ]
+        },
+        "child-retired-root-held": {
+          "state": 4,
+          "error": 0,
+          "fields": [
+            8,
+            5,
+            0,
+            2,
+            0,
+            1,
+            2,
+            0,
+            1,
+            1
+          ]
+        }
+      },
+      "rootFinalFree": true,
+      "bytes": 24304,
+      "sha256": "b046e585a09b4c1a0a4d6b846983cd0a36d6d0d48ca356774e16bb2a3025ccf2",
+      "physicalReturn": {
+        "marker": "LSFVM1 physical-return=constructor-root-bank-and-actor-refs",
+        "kernelObservations": 1,
+        "afterChildRetirementRootHeld": true,
+        "beforePid1ReleaseCheck": true,
+        "nativeQuotaRelease": false,
+        "productionInstallation": false
+      },
+      "pid1TerminalStage": "actual-child-retirement-root-release-check"
+    },
+    "pageReturnBoundary": "Original order-7 __free_pages returned after affine original bank owner and all128page preflight; marker follows original put_net/put_cred/put_pid/mmdrop.",
+    "noCounterSubstitution": "The child snapshot still has two LIVE Root/backing records. Actual physical return is observed through the unique source-bound kernel marker after those original primitives, not by zero counters, close syscall success or reopen refusal."
+  },
+  "images": {
+    "kernel": {
+      "bytes": 13755392,
+      "sha256": "bb8ed13dc7471b822363921d31a78f2409c102977388a40af156961bf02c635d",
+      "bootProtocol": 527,
+      "x86_64": true
+    },
+    "init": {
+      "bytes": 799432,
+      "sha256": "323f529749e96b078a3794526382377a5bf80f996f5fa8910de547692b1b945a",
+      "loadSegments": 4,
+      "staticX86_64": true,
+      "sourceSha256": "827cfd7c57988a14f21ab7c9e00e2eda25c8bd8db5b3044f06ef62586177e810"
+    },
+    "linkedVmlinux": {
+      "bytes": 51890888,
+      "sha256": "81775f41e657f01f149dd788c882bbccfd576d1ed7f2bec5a895852edc3873a4"
+    },
+    "initramfs": {
+      "bytes": 800256,
+      "sha256": "aabb305814ee2a18a6a1708daae8f215d4bde20ac815eae557c9c38a791210f9",
+      "initSha256": "323f529749e96b078a3794526382377a5bf80f996f5fa8910de547692b1b945a"
+    }
+  },
+  "vm": {
+    "accelerator": "tcg-multi",
+    "cpus": 2,
+    "memoryMiB": 512,
+    "externalNetwork": false,
+    "hostDrives": false,
+    "hostInstallation": false,
+    "watchdogExpiryIsSuccess": false
+  },
+  "claims": {
+    "kernelLinked": true,
+    "kernelBooted": true,
+    "actualLinuxExecution": true,
+    "actualTaskControlChildRetirement": true,
+    "rootHeldAtChildRetirementSnapshot": true,
+    "rootStillHeldAtObservation": false,
+    "rootFinalFree": true,
+    "actualNativeLedger": false,
+    "nativeNodeIntegration": false,
+    "consumerSelected": false,
+    "completeAllocationClosure": false,
+    "wholeInfrastructureFitQualified": false,
+    "initialBirthBounded": false,
+    "compilerImplicitInputsAttested": false,
+    "productionInstallation": false
+  },
+  "limits": {
+    "physicalBankBytes": 524288,
+    "infrastructureBytes": 196608,
+    "bootstrapCeilingBytes": 1048576,
+    "allocationRecords": 256,
+    "ownerSlots": 64,
+    "kernelBuildJobs": 2,
+    "vmSeconds": 180,
+    "vmMemoryMiB": 512,
+    "vmCpus": 2,
+    "ceilingsChanged": false
+  },
+  "qualificationBoundary": {
+    "eventualLateCloseOrCancellationReclamation": false,
+    "applicationOrDeviceUsedBankReturn": false,
+    "reopenOrGenerationReset": false,
+    "staticObserverBudgetRefund": false,
+    "nativeQuotaRelease": false,
+    "completeMilestoneCriterion": false,
+    "normalConstructorPredicate": 0,
+    "isolatedConstructorPredicate": 1,
+    "productionSocketConsumerSelected": false
+  },
+  "historicalEvidence": {
+    "childOnlyReceipt": "kernel-constructor-vm-child-retirement-2026-10-23.json",
+    "preservedHistoricalMeaning": "Source000860 qualified child retirement while Root/backing remained held, including later FD close. Its failures and receipt remain unchanged."
+  }
+}

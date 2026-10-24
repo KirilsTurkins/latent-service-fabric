@@ -1,0 +1,676 @@
+{
+  "schemaVersion": "lsf.kernel-late-fd-root-physical-return-observation.v1",
+  "status": "passed",
+  "issue": 738,
+  "scope": "Successful constructor-only READY before final FD release while the original typed Request is still LIVE; eventual original kthreadd physical return in this finite run. No production stream or native quota qualification.",
+  "source": {
+    "commit": "7baad1341327ccd36c625e3e545faf0f1306a78e",
+    "tree": "97a52c3f935bca6a094bd71c8a6a9000047c3e91",
+    "workflow": ".github/workflows/stream-kernel-constructor-vm.yml",
+    "run": 40031894507,
+    "job": 120681892795,
+    "url": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40031894507/job/120681892795",
+    "event": "push",
+    "upstreamCommit": "7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+    "archive": {
+      "bytes": 148686048,
+      "sha256": "e09b6727e5c521253f0d41694900b9c38fb7604db7d35238a8197aa9f7de2428"
+    }
+  },
+  "artifact": {
+    "id": 12536290808,
+    "bytes": 16105137,
+    "sha256": "a9688cc785a0c5e84e73b585e0b8301dde0ecba812731f2743b2647e9f199396",
+    "allMemberCrcsVerified": 45,
+    "retainedMembers": {
+      "qualification.json": {
+        "bytes": 207170,
+        "sha256": "431ed35102a37b544631aca92d669ca65ab5d3fa2cfa70534e044eb115cfd9d7"
+      },
+      "selection.json": {
+        "bytes": 201846,
+        "sha256": "b352049b648bb2020da64f136e9c6da1049757ae3b12b058158cfadf26fc0fde"
+      },
+      "commands.json": {
+        "bytes": 2149,
+        "sha256": "588ba701c6be63612cc433030d092eab5a6854e1169f02aee5f06c44b7b473fc"
+      },
+      "constructor-init.c": {
+        "bytes": 17007,
+        "sha256": "9019c0ec3d3bf8e07205a89f004aac61ad7bd07d9bd270c3ff30b2b42bd76ead"
+      },
+      "late/constructor-init.c": {
+        "bytes": 17032,
+        "sha256": "4c9760995c39753c9b3b35be305dbdf9d5c96a1286c4cefd2f84c99e0abb880d"
+      },
+      "commands/logs/02-check-actual-compiled-kmsg-parser.stdout.txt": {
+        "bytes": 27,
+        "sha256": "d5de15455556d21131676854259f4f986e3a8dc42c22c4f9bfc6870ecf506dcf"
+      },
+      "commands/logs/11-boot-isolated-real-constructor.stdout.txt": {
+        "bytes": 24361,
+        "sha256": "c3f8f70e511fb74dfae9b84a23932ad13ef68222806bbb87f0f98e4b87bb02d0"
+      },
+      "commands/logs/12-boot-isolated-late-fd-constructor.stdout.txt": {
+        "bytes": 24317,
+        "sha256": "bc86a36f75688666d74d8eab8cfa8a40dd01b2832a3af806b5be2bf0ca7fdc14"
+      }
+    }
+  },
+  "sourceBinding": {
+    "committedGitMaterials": 288,
+    "allMatchedActualGitBlobs": true,
+    "canonicalInventorySha256": "a8cfac24077d65ceeebb3d9728650c0336bd82dfdd695398531fdc65cca7b46c",
+    "canonicalInventoryEncoding": "UTF-8 JSON, sorted path keys, no whitespace, each value bytes/sha256 without prefix",
+    "recipeInputs": {
+      "tools/qualify_host_stream_kernel_vm.py": {
+        "bytes": 16927,
+        "sha256": "18b23de83534ed2881eb7acaba43a4008b3926288564852df18733103fee5df1"
+      },
+      "tools/host_stream_kernel_vm_image.py": {
+        "bytes": 12416,
+        "sha256": "0bc5e15486e015a8a952acafbee170803d411bd3ac6936e9dc6b80df85ef33af"
+      },
+      "tools/host_stream_kernel_cleanup_native_programme.py": {
+        "bytes": 16298,
+        "sha256": "4e72f6f1bde456533bc41c0ffc9843b65c74501a24e2ceebeac5d0f7d9830ace"
+      },
+      "tools/host_stream_kernel_cleanup_native.py": {
+        "bytes": 7860,
+        "sha256": "8b613b300866312b369f6d8baafa334836cd8aaff6a2e2f2dcc8cc69c9c66b1c"
+      },
+      "tools/host_stream_kernel_constructor_failure.py": {
+        "bytes": 21369,
+        "sha256": "2609843f5a4ed010312dc386bc1fec1d4faf6147d1437428b1565c13c63bf4a7"
+      },
+      "tools/host_stream_kernel_stack_alignment.py": {
+        "bytes": 8388,
+        "sha256": "73ef0f4d08680ff4468af30da87627bb3cc6ff2e3b694f5c0287ccf963f1bf61"
+      },
+      "tools/host_stream_kernel_vmap_extent.py": {
+        "bytes": 2776,
+        "sha256": "0df7e0f934e239d02b6bd77ca439e513eb1ad114a728aa38637cad993a877a95"
+      },
+      "tools/host_stream_kernel_vmap_fit.py": {
+        "bytes": 5331,
+        "sha256": "ee18ba8085d3d766ce10a4d6eba37ce8bf0d509fd715084c26e629598becd8cf"
+      },
+      "tools/host_stream_kernel_task_identity_geometry.py": {
+        "bytes": 3328,
+        "sha256": "6d83e121acce4fafd4d42d4afb8520c923c5b9d33d86a1b414b7c44b9afc54ca"
+      },
+      "tools/host_stream_kernel_provider_task_reference.py": {
+        "bytes": 5601,
+        "sha256": "a22595f0d5cacb442a909ffce41c44f3e835bea6e6a6dcfbd8593bed9effa617"
+      },
+      "tools/host_stream_kernel_root_final_free.py": {
+        "bytes": 7565,
+        "sha256": "fc2889ccb37780bad818ec1031a728863d334617ac1fa2ceb045c8d2e2654ab7"
+      },
+      "tools/host_stream_kernel_late_fd_final_free.py": {
+        "bytes": 7096,
+        "sha256": "86a1ee7da4e3bc399a2541430007c134ef038cbe0f4c60c1df896afd467a4ece"
+      },
+      "tools/host_stream_kernel_late_fd_vm.py": {
+        "bytes": 4385,
+        "sha256": "e8ebc0a7e61709f7c34b8bab4d818f1cb029b5fec8d8a826f1c78081c791e46b"
+      },
+      "tools/tests/test_host_stream_kernel_late_fd_final_free.py": {
+        "bytes": 14713,
+        "sha256": "0729f2f35b0b51bb9fa7306435790684c8f38ca588a1905f5c71f2941e86fbfa"
+      },
+      "tools/tests/test_kernel_late_fd_vm.py": {
+        "bytes": 7465,
+        "sha256": "64af9920cf88948b1f5c86a4a91923f8cde7349f704e65f0e48824e3bfec35ba"
+      },
+      "tools/tests/fixtures/host_stream_kernel_late_fd_final_free.json": {
+        "bytes": 3796,
+        "sha256": "6083b5e7cb33cd074a6af1babe90dcb6712934bec000307272b06e055534770b"
+      },
+      "research/standard-outbound/linux-6.12-lineage/factory-cleanup-late-fd-final-free.c": {
+        "bytes": 4393,
+        "sha256": "dc2b571a7eddcc1210f2a283380ad902a8e415136a7a8959f16d2cdd8f881d09"
+      },
+      "tools/tests/fixtures/host_stream_kernel_root_final_free.json": {
+        "bytes": 52215,
+        "sha256": "2cc535153d4bd3fb40da2f355a41642cf963e6facc56d3565b038dce2c2bf81c"
+      },
+      "tools/tests/test_host_stream_kernel_root_final_free.py": {
+        "bytes": 14294,
+        "sha256": "339068199c6f9f33c0434547401cf5392b3f071c280100381da00a0b08419503"
+      },
+      "tools/tests/test_kernel_root_final_free_vm.py": {
+        "bytes": 3324,
+        "sha256": "881bac6bb64b16a12c616aadf28f0293c54e61ee5e8302ad63bfa17269565ae9"
+      },
+      "research/standard-outbound/linux-6.12-lineage/factory-cleanup-root-final-free.c": {
+        "bytes": 13111,
+        "sha256": "8740dd04b219187f04d2d4803dcd30ef5a486015239e38b55380b3c1a5504b9e"
+      },
+      "tools/qualify_host_stream_kernel_objects.py": {
+        "bytes": 58085,
+        "sha256": "2a5f32b7797677ceaf8c4f1f0343859b1456ab00a54ff9ee52516b317e0e9cd7"
+      },
+      "tools/owned_test_process.py": {
+        "bytes": 11348,
+        "sha256": "da38e62f58d2dc3cdd0517c2cc4c77f175afde5299a01bfed75488bb9a862283"
+      },
+      "tools/build_observation.py": {
+        "bytes": 7868,
+        "sha256": "c9fe0843aabb9a026b2005134b121bf2e53abc909a2da3e5e5fe90fdc3096db0"
+      },
+      "tools/dev_workflow/paths.py": {
+        "bytes": 6758,
+        "sha256": "6758044322e58c687c73d8302c0fab82a07d9680ed647a3a52f2a34f60d0da59"
+      },
+      ".github/workflows/stream-kernel-constructor-vm.yml": {
+        "bytes": 6459,
+        "sha256": "7eb33debd9e017a873f9466b4dafb48bf3e057bd7ac1a0664ee56cb32ee13c23"
+      },
+      "research/standard-outbound/linux-6.12-lineage/constructor-vm-init.c": {
+        "bytes": 17007,
+        "sha256": "9019c0ec3d3bf8e07205a89f004aac61ad7bd07d9bd270c3ff30b2b42bd76ead"
+      }
+    },
+    "wholeSelectedOriginalInputs": 85,
+    "normalDerivedFiles": 325,
+    "allDerivedFilesRecheckedAfterExecution": true,
+    "independentlyComparedReviewedPostimages": {
+      "net/factory.c": {
+        "bytes": 34684,
+        "sha256": "2334b2f07d553329d1e15815b0b77e87530a446944d765293d7785c8bf13a1e4"
+      },
+      "kernel/kthread.c": {
+        "bytes": 47279,
+        "sha256": "213d22cc2de199b059b2fb7184b76675bec882cadfd732d19783cd210c244425"
+      },
+      "include/net/lsf_stream_cleanup_provider_executor.h": {
+        "bytes": 6174,
+        "sha256": "778ad1e2037a6d4a9aec0100ab45b8d53c2293bbab579098c714d0b36f4219af"
+      },
+      "net/factory-cleanup-root-final-free.c": {
+        "bytes": 12976,
+        "sha256": "ac8d4a23d8c1ed78be47d47a1c956bb673e14cffbee9ede872031a6384df0aab"
+      },
+      "net/factory-cleanup-late-fd-final-free.c": {
+        "bytes": 4393,
+        "sha256": "dc2b571a7eddcc1210f2a283380ad902a8e415136a7a8959f16d2cdd8f881d09"
+      }
+    },
+    "previousQualifiedConstructorSource": "eef89f053e7729c314235471a5ec984b0541a474",
+    "unchangedPreviouslyQualifiedDerivedFiles": 320,
+    "reviewedDelta": {
+      "changedExistingFiles": 4,
+      "addedLateCollectorFile": 1
+    },
+    "compiledOriginalKernelLogSource": {
+      "path": "kernel/printk/printk.c",
+      "bytes": 134075,
+      "sha256": "9c4af5103450e7d42001e7d620ef707e3b1a5e6b518fcdd904de64c2295c8127"
+    }
+  },
+  "sourceControls": {
+    "mandatoryPreviousControls": 43,
+    "newSourceControls": 10,
+    "newLateObservationControls": 7,
+    "actualPassed": 60,
+    "ignored": 0,
+    "allExpectedNamesObservedExactlyOnce": true,
+    "names": [
+      "tools.tests.test_host_stream_kernel_cleanup_native.CleanupNativeSource.test_both_status_snapshots_hold_original_locks_and_no_free_certificate",
+      "tools.tests.test_host_stream_kernel_cleanup_native.CleanupNativeSource.test_candidate_projection_changes_only_one_exact_body",
+      "tools.tests.test_host_stream_kernel_cleanup_native.CleanupNativeSource.test_exact_ten_real_descriptor_controls_have_no_ignored_case",
+      "tools.tests.test_host_stream_kernel_cleanup_native.CleanupNativeSource.test_full_dispatch_authenticates_real_role_before_request_reads",
+      "tools.tests.test_host_stream_kernel_cleanup_native.CleanupNativeSource.test_missing_failed_ignored_or_extra_outcome_refuses",
+      "tools.tests.test_host_stream_kernel_cleanup_native.CleanupNativeSource.test_pending_and_one_expiry_precede_real_unlocked_constructor",
+      "tools.tests.test_host_stream_kernel_cleanup_native.CleanupNativeSource.test_safe_native_source_prepays_before_open_and_retains_on_failed_transfer",
+      "tools.tests.test_host_stream_kernel_constructor_failure.ConstructorFailureSource.test_closed_stage_set_and_short_circuit_stack_guards_keep_real_owners",
+      "tools.tests.test_host_stream_kernel_constructor_failure.ConstructorFailureSource.test_exact_six_preimages_and_closed_normal_candidate_projection",
+      "tools.tests.test_host_stream_kernel_constructor_failure.ConstructorFailureSource.test_one_numeric_terminal_printer_first_failure_and_real_unlock_order",
+      "tools.tests.test_host_stream_kernel_constructor_failure.ConstructorFailureSource.test_original_calls_errno_and_unwind_labels_survive_single_body_wrappers",
+      "tools.tests.test_host_stream_kernel_late_fd_final_free.LateFdRootSource.test_actual_attempt_guard_is_once_then_original_sticky_quarantine_without_new_owner",
+      "tools.tests.test_host_stream_kernel_late_fd_final_free.LateFdRootSource.test_actual_cheap_pending_excludes_in_progress_poison_and_disappeared_owner",
+      "tools.tests.test_host_stream_kernel_late_fd_final_free.LateFdRootSource.test_actual_final_file_custody_guard_accepts_closed_pending_without_ready_invention",
+      "tools.tests.test_host_stream_kernel_late_fd_final_free.LateFdRootSource.test_actual_final_guard_handles_consumed_private_reason_without_empty_list_extraction",
+      "tools.tests.test_host_stream_kernel_late_fd_final_free.LateFdRootSource.test_actual_stack_routing_defers_pending_handoff_and_markers_bind_typed_request",
+      "tools.tests.test_host_stream_kernel_late_fd_final_free.LateFdRootSource.test_both_original_sleep_predicates_and_request_first_dispatch_keep_create_lock_outside",
+      "tools.tests.test_host_stream_kernel_late_fd_final_free.LateFdRootSource.test_common_take_preserves_all_original_terminal_lineage_irq_page_and_ref_guards",
+      "tools.tests.test_host_stream_kernel_late_fd_final_free.LateFdRootSource.test_final_file_handoff_follows_every_cache_scan_and_retains_fast_collector",
+      "tools.tests.test_host_stream_kernel_late_fd_final_free.LateFdRootSource.test_outside_marker_follows_physical_put_and_uses_only_pre_copied_success",
+      "tools.tests.test_host_stream_kernel_late_fd_final_free.LateFdRootSource.test_whole_parent_identities_and_function_edits_fail_closed",
+      "tools.tests.test_host_stream_kernel_provider_task_reference.ProviderTaskReferenceSource.test_actual_consume_guards_refuse_cross_owner_missing_and_double_custody",
+      "tools.tests.test_host_stream_kernel_provider_task_reference.ProviderTaskReferenceSource.test_association_retains_early_exit_and_both_original_stack_return_orders",
+      "tools.tests.test_host_stream_kernel_provider_task_reference.ProviderTaskReferenceSource.test_exact_failed_source_projection_and_actual_kthread_error_propagation",
+      "tools.tests.test_host_stream_kernel_provider_task_reference.ProviderTaskReferenceSource.test_original_foreign_reap_and_last_task_use_worker_finish_order",
+      "tools.tests.test_host_stream_kernel_root_final_free.RootFinalFreeSource.test_actual_page_guard_rejects_partial_tail_free_and_every_original_bad_page_state",
+      "tools.tests.test_host_stream_kernel_root_final_free.RootFinalFreeSource.test_actual_terminal_entry_guards_retain_late_close_incomplete_and_uncertain_graphs",
+      "tools.tests.test_host_stream_kernel_root_final_free.RootFinalFreeSource.test_all_original_owner_slots_and_historical_application_births_refuse",
+      "tools.tests.test_host_stream_kernel_root_final_free.RootFinalFreeSource.test_exact_successful_source_and_all_other_outputs_preserved",
+      "tools.tests.test_host_stream_kernel_root_final_free.RootFinalFreeSource.test_irq_closed_precedes_request_return_and_old_armed_readers_cannot_requeue",
+      "tools.tests.test_host_stream_kernel_root_final_free.RootFinalFreeSource.test_original_generation_parent_chain_and_stored_pool_identity_are_source_bound",
+      "tools.tests.test_host_stream_kernel_root_final_free.RootFinalFreeSource.test_physical_return_and_ref_puts_follow_unpublication_and_real_page_return",
+      "tools.tests.test_host_stream_kernel_stack_alignment.StackAlignmentSource.test_actual_arithmetic_all_residues_exact_boundary_overflow_and_no_mutation",
+      "tools.tests.test_host_stream_kernel_stack_alignment.StackAlignmentSource.test_compiled_505_preimages_only_two_outputs_and_tampering_refuses",
+      "tools.tests.test_host_stream_kernel_stack_alignment.StackAlignmentSource.test_prefix_and_guard_preflight_retirement_all_eight_only_four_pages_mapped",
+      "tools.tests.test_host_stream_kernel_stack_alignment.StackAlignmentSource.test_raw_vm_full_restore_foreign_guard_and_aligned_task_identity",
+      "tools.tests.test_host_stream_kernel_task_identity_geometry.TaskIdentityGeometrySource.test_actual_dynamic_geometry_and_fxsave_minimum_keep_undersize_alignment_refusals",
+      "tools.tests.test_host_stream_kernel_task_identity_geometry.TaskIdentityGeometrySource.test_all_five_original_callers_read_geometry_before_lock_and_task_fields_stay_guarded",
+      "tools.tests.test_host_stream_kernel_task_identity_geometry.TaskIdentityGeometrySource.test_exact_740_source_and_reviewed_inverse_projection_refuse_foreign_inputs",
+      "tools.tests.test_host_stream_kernel_vm_image.KernelConstructorVmImages.test_bzimage_checks_linux_protocol_bits_before_recording_an_image",
+      "tools.tests.test_host_stream_kernel_vm_image.KernelConstructorVmImages.test_real_boot_configuration_is_required_without_rewriting_missing_options",
+      "tools.tests.test_host_stream_kernel_vm_image.KernelConstructorVmImages.test_static_init_rejects_dynamic_writable_code_and_declared_unbacked_ranges",
+      "tools.tests.test_host_stream_kernel_vm_image.KernelConstructorVmImages.test_success_label_cannot_replace_complete_physical_counter_observations",
+      "tools.tests.test_host_stream_kernel_vmap_extent.VmapExtentSource.test_actual_2460_preimage_only_selection_changes_and_foreign_source_refuses",
+      "tools.tests.test_host_stream_kernel_vmap_extent.VmapExtentSource.test_domain_lower_bound_is_one_original_extent_and_never_next_fit",
+      "tools.tests.test_host_stream_kernel_vmap_extent.VmapExtentSource.test_exact_64_visit_boundary_refuses_unfinished_walk_and_cyclic_input",
+      "tools.tests.test_host_stream_kernel_vmap_fit.VmapFitSource.test_actual_shared_arithmetic_all_residues_tail_window_exact_fit_and_overflow",
+      "tools.tests.test_host_stream_kernel_vmap_fit.VmapFitSource.test_augmented_walk_skips_padding_gaps_chooses_one_eligible_original_left_edge",
+      "tools.tests.test_host_stream_kernel_vmap_fit.VmapFitSource.test_exact_e518_preimage_shared_predicate_and_unchanged_mapping_retirement",
+      "tools.tests.test_host_stream_kernel_vmap_fit.VmapFitSource.test_one_combined_64_unit_budget_counts_predicates_and_refuses_cycles",
+      "tools.tests.test_kernel_late_fd_vm.KernelLateFdVm.test_actual_ordered_transitions_preserve_raw_identity_without_synthetic_child_snapshot",
+      "tools.tests.test_kernel_late_fd_vm.KernelLateFdVm.test_actual_prebirth_and_ready_field_refusals_are_retained",
+      "tools.tests.test_kernel_late_fd_vm.KernelLateFdVm.test_hosted_compiled_controls_use_pure_leaf_before_all_guest_side_effects",
+      "tools.tests.test_kernel_late_fd_vm.KernelLateFdVm.test_missing_duplicate_reordered_forged_or_shared_only_witnesses_refuse",
+      "tools.tests.test_kernel_late_fd_vm.KernelLateFdVm.test_only_explicit_late_compile_selector_changes_source_and_both_modes_keep_budget",
+      "tools.tests.test_kernel_late_fd_vm.KernelLateFdVm.test_pid1_completion_may_precede_delayed_kernel_uart_with_independent_orders",
+      "tools.tests.test_kernel_late_fd_vm.KernelLateFdVm.test_real_event_wait_is_nonblocking_bounded_and_never_echoes_kernel_messages",
+      "tools.tests.test_kernel_root_final_free_vm.KernelRootPhysicalObservation.test_exact_unique_kernel_marker_preserves_the_raw_observation_identity",
+      "tools.tests.test_kernel_root_final_free_vm.KernelRootPhysicalObservation.test_missing_duplicate_forged_prefix_early_late_and_bad_child_observations_refuse",
+      "tools.tests.test_kernel_root_final_free_vm.KernelRootPhysicalObservation.test_only_original_kernel_return_emits_marker_and_pid1_cannot_self_certify"
+    ],
+    "rawOwningJobLog": {
+      "bytes": 68643,
+      "sha256": "513014ef7ea5b05e101e222d15889a47626d4f128c37cd2cede61c53353d89dc"
+    }
+  },
+  "compiledParserControls": {
+    "passed": 22,
+    "failed": 0,
+    "bytes": 27,
+    "sha256": "d5de15455556d21131676854259f4f986e3a8dc42c22c4f9bfc6870ecf506dcf",
+    "stdout": "KMSG_CONTROL PASS cases=22\n",
+    "entry": "Same late static init binary, --kmsg-control before guest setup; pure parser leaf, integer return, no mount/device/reboot path."
+  },
+  "commands": [
+    {
+      "stage": "compile-static-constructor-init",
+      "exitCode": 0,
+      "completed": true,
+      "elapsedMillis": 1442.1601729999907,
+      "descendantsCleaned": true
+    },
+    {
+      "stage": "compile-static-late-fd-init",
+      "exitCode": 0,
+      "completed": true,
+      "elapsedMillis": 229.43680899999208,
+      "descendantsCleaned": true
+    },
+    {
+      "stage": "check-actual-compiled-kmsg-parser",
+      "exitCode": 0,
+      "completed": true,
+      "elapsedMillis": 42.513944999996056,
+      "descendantsCleaned": true
+    },
+    {
+      "stage": "extract-authenticated-source",
+      "exitCode": 0,
+      "completed": true,
+      "elapsedMillis": 9528.035767000005,
+      "descendantsCleaned": true
+    },
+    {
+      "stage": "compiler-identity",
+      "exitCode": 0,
+      "completed": true,
+      "elapsedMillis": 38.93675299997312,
+      "descendantsCleaned": true
+    },
+    {
+      "stage": "original-defconfig",
+      "exitCode": 0,
+      "completed": true,
+      "elapsedMillis": 4582.817329999954,
+      "descendantsCleaned": true
+    },
+    {
+      "stage": "resolve-selected-config",
+      "exitCode": 0,
+      "completed": true,
+      "elapsedMillis": 1536.3865090000104,
+      "descendantsCleaned": true
+    },
+    {
+      "stage": "link-complete-candidate-kernel",
+      "exitCode": 0,
+      "completed": true,
+      "elapsedMillis": 708633.2400809999,
+      "descendantsCleaned": true
+    },
+    {
+      "stage": "create-constructor-initramfs",
+      "exitCode": 0,
+      "completed": true,
+      "elapsedMillis": 40.18601600000693,
+      "descendantsCleaned": true
+    },
+    {
+      "stage": "create-late-fd-initramfs",
+      "exitCode": 0,
+      "completed": true,
+      "elapsedMillis": 39.226307000035376,
+      "descendantsCleaned": true
+    },
+    {
+      "stage": "qemu-version",
+      "exitCode": 0,
+      "completed": true,
+      "elapsedMillis": 61.75509400009105,
+      "descendantsCleaned": true
+    },
+    {
+      "stage": "boot-isolated-real-constructor",
+      "exitCode": 0,
+      "completed": true,
+      "elapsedMillis": 3494.884705000004,
+      "descendantsCleaned": true
+    },
+    {
+      "stage": "boot-isolated-late-fd-constructor",
+      "exitCode": 0,
+      "completed": true,
+      "elapsedMillis": 3387.030126999889,
+      "descendantsCleaned": true
+    }
+  ],
+  "observations": {
+    "fast": {
+      "rawSerial": {
+        "bytes": 24361,
+        "sha256": "c3f8f70e511fb74dfae9b84a23932ad13ef68222806bbb87f0f98e4b87bb02d0"
+      },
+      "rows": [
+        "LSFVM1 boot=constructor-only production-sockets=disabled",
+        "LSFVM1 snapshot=opened state=0 error=0 field0=0 field1=0 field2=0 field3=0 field4=0 field5=0 field6=2 field7=0 field8=0 field9=0",
+        "LSFVM1 snapshot=ready state=2 error=0 field0=3 field1=0 field2=0 field3=1 field4=1 field5=0 field6=17 field7=0 field8=0 field9=0",
+        "LSFVM1 snapshot=child-retired-root-held state=4 error=0 field0=8 field1=5 field2=0 field3=2 field4=0 field5=1 field6=2 field7=0 field8=1 field9=1",
+        "[    2.267973] LSFVM1 physical-return=constructor-root-bank-and-actor-refs",
+        "LSFVM1 result=PASS stage=actual-child-retirement-root-release-check"
+      ],
+      "parsed": {
+        "snapshots": {
+          "opened": {
+            "state": 0,
+            "error": 0,
+            "fields": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              2,
+              0,
+              0,
+              0
+            ]
+          },
+          "ready": {
+            "state": 2,
+            "error": 0,
+            "fields": [
+              3,
+              0,
+              0,
+              1,
+              1,
+              0,
+              17,
+              0,
+              0,
+              0
+            ]
+          },
+          "child-retired-root-held": {
+            "state": 4,
+            "error": 0,
+            "fields": [
+              8,
+              5,
+              0,
+              2,
+              0,
+              1,
+              2,
+              0,
+              1,
+              1
+            ]
+          }
+        },
+        "rootFinalFree": true,
+        "bytes": 24361,
+        "sha256": "c3f8f70e511fb74dfae9b84a23932ad13ef68222806bbb87f0f98e4b87bb02d0",
+        "physicalReturn": {
+          "marker": "LSFVM1 physical-return=constructor-root-bank-and-actor-refs",
+          "kernelObservations": 1,
+          "afterChildRetirementRootHeld": true,
+          "beforePid1ReleaseCheck": true,
+          "nativeQuotaRelease": false,
+          "productionInstallation": false
+        },
+        "pid1TerminalStage": "actual-child-retirement-root-release-check"
+      }
+    },
+    "late": {
+      "rawSerial": {
+        "bytes": 24317,
+        "sha256": "bc86a36f75688666d74d8eab8cfa8a40dd01b2832a3af806b5be2bf0ca7fdc14"
+      },
+      "rows": [
+        "LSFVM1 boot=constructor-only production-sockets=disabled",
+        "LSFVM1 snapshot=opened state=0 error=0 field0=0 field1=0 field2=0 field3=0 field4=0 field5=0 field6=2 field7=0 field8=0 field9=0",
+        "LSFVM1 snapshot=ready state=2 error=0 field0=3 field1=0 field2=0 field3=1 field4=1 field5=0 field6=17 field7=0 field8=0 field9=0",
+        "[    2.376826] LSFVM1 fd-handoff=original-root opened=2 request=LIVE pending=1",
+        "[    2.388399] LSFVM1 physical-return=constructor-root-bank-and-actor-refs",
+        "[    2.388691] LSFVM1 outside-collector=kthreadd-root-bank-and-actor-refs",
+        "LSFVM1 result=PASS stage=actual-pending-fd-retirement-root-release-check"
+      ],
+      "parsed": {
+        "snapshots": {
+          "opened": {
+            "state": 0,
+            "error": 0,
+            "fields": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              2,
+              0,
+              0,
+              0
+            ]
+          },
+          "ready": {
+            "state": 2,
+            "error": 0,
+            "fields": [
+              3,
+              0,
+              0,
+              1,
+              1,
+              0,
+              17,
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "rootFinalFree": true,
+        "lateFdCollection": true,
+        "pendingFdHandoff": {
+          "originalRequestLiveAtTransition": true,
+          "requestReturned": false,
+          "originalFdCustodyTransferred": true
+        },
+        "physicalReturn": {
+          "outsideKthreaddCollector": true,
+          "kernelObservations": 3,
+          "kernelMarkersOrdered": true,
+          "independentPid1UartOrder": true,
+          "sourceBoundTerminalGuardsAtTake": true,
+          "nativeQuotaRelease": false,
+          "productionInstallation": false
+        },
+        "bytes": 24317,
+        "sha256": "bc86a36f75688666d74d8eab8cfa8a40dd01b2832a3af806b5be2bf0ca7fdc14"
+      }
+    }
+  },
+  "observationBoundary": {
+    "lateChildRetirementSnapshotFabricated": false,
+    "latePendingProof": "The actual final VFS release validates the original typed Request LIVE and not returned under the pool lock; pending routing skips the FD fast collector even if Request returns before the FD epilogue.",
+    "physicalReturnProof": "Shared marker follows original order-7 __free_pages and put_net/put_cred/put_pid/mmdrop; distinct kthreadd marker follows that helper using a pre-copied success boolean and no Root payload follow.",
+    "uartOrdering": "The four PID1 rows retain their order; all three kernel markers are unique and ordered handoff, shared physical return, outside kthreadd. Kernel marker delivery relative to PID1 terminal is independent; /dev/kmsg ring commitment does not fence UART.",
+    "finiteObservation": "This run reached physical return; timeout, close syscall success, reopen refusal and zero counters are never substitutes."
+  },
+  "images": {
+    "kernel": {
+      "bytes": 13755392,
+      "sha256": "87cb281e5ec0a84eb0bd091baee65cd355845d1b5d96296620db5a7f3c0bdc88",
+      "bootProtocol": 527,
+      "x86_64": true
+    },
+    "init": {
+      "bytes": 799432,
+      "sha256": "323f529749e96b078a3794526382377a5bf80f996f5fa8910de547692b1b945a",
+      "loadSegments": 4,
+      "staticX86_64": true,
+      "sourceSha256": "9019c0ec3d3bf8e07205a89f004aac61ad7bd07d9bd270c3ff30b2b42bd76ead"
+    },
+    "lateInit": {
+      "bytes": 799728,
+      "sha256": "94739bcc2ed255ee7895bdd0d8a9788f3666f9a630a4bc7f2ea96132532a9f25",
+      "loadSegments": 4,
+      "staticX86_64": true,
+      "sourceSha256": "4c9760995c39753c9b3b35be305dbdf9d5c96a1286c4cefd2f84c99e0abb880d"
+    },
+    "linkedVmlinux": {
+      "bytes": 51891320,
+      "sha256": "8a6482105254a04a5fd1d85f696f4a3678379ef2747f658ed149439a1bda28eb"
+    },
+    "initramfs": {
+      "bytes": 800256,
+      "sha256": "aabb305814ee2a18a6a1708daae8f215d4bde20ac815eae557c9c38a791210f9",
+      "initSha256": "323f529749e96b078a3794526382377a5bf80f996f5fa8910de547692b1b945a"
+    },
+    "lateInitramfs": {
+      "bytes": 800768,
+      "sha256": "3edbc97f8d265f77bb88420f78478fc98d4223b8a0606b1d2598e648ca611a35",
+      "initSha256": "94739bcc2ed255ee7895bdd0d8a9788f3666f9a630a4bc7f2ea96132532a9f25"
+    }
+  },
+  "initSourceSelection": {
+    "fast": {
+      "bytes": 17007,
+      "sha256": "9019c0ec3d3bf8e07205a89f004aac61ad7bd07d9bd270c3ff30b2b42bd76ead"
+    },
+    "late": {
+      "bytes": 17032,
+      "sha256": "4c9760995c39753c9b3b35be305dbdf9d5c96a1286c4cefd2f84c99e0abb880d"
+    },
+    "latePrefix": "#define LSF_VM_LATE_FD 1\n",
+    "remainderExactCommittedFastSource": true
+  },
+  "firmware": {
+    "bios-256k.bin": {
+      "bytes": 262144,
+      "sha256": "1a9ea4f17bcfb27bda5728e2c21d9fa074cf7947b9b4910bb28213a735c96735"
+    },
+    "linuxboot_dma.bin": {
+      "bytes": 1536,
+      "sha256": "d2f20622ebfea0a0222005452fd6a7747e1634395ed682272b38e17ad2334512"
+    },
+    "kvmvapic.bin": {
+      "bytes": 9216,
+      "sha256": "8bbe341af0ab06c3008d65b29fb961f21f63a1419297dd4db80632261046cd98"
+    }
+  },
+  "vm": {
+    "accelerator": "tcg-multi",
+    "cpus": 2,
+    "memoryMiB": 512,
+    "externalNetwork": false,
+    "hostDrives": false,
+    "hostInstallation": false,
+    "watchdogExpiryIsSuccess": false
+  },
+  "vmBoots": {
+    "fastSeconds": 90,
+    "lateSeconds": 90,
+    "aggregateMaximumSeconds": 180,
+    "sameKernelImage": true
+  },
+  "claims": {
+    "kernelLinked": true,
+    "kernelBooted": true,
+    "actualLinuxExecution": true,
+    "actualTaskControlChildRetirement": true,
+    "rootHeldAtChildRetirementSnapshot": true,
+    "rootStillHeldAtObservation": false,
+    "rootFinalFree": true,
+    "actualLateFdCollection": true,
+    "actualNativeLedger": false,
+    "nativeNodeIntegration": false,
+    "consumerSelected": false,
+    "completeAllocationClosure": false,
+    "wholeInfrastructureFitQualified": false,
+    "initialBirthBounded": false,
+    "compilerImplicitInputsAttested": false,
+    "productionInstallation": false
+  },
+  "limits": {
+    "physicalBankBytes": 524288,
+    "infrastructureBytes": 196608,
+    "bootstrapCeilingBytes": 1048576,
+    "allocationRecords": 256,
+    "ownerSlots": 64,
+    "kernelBuildJobs": 2,
+    "commandAggregateSeconds": 2400,
+    "oneCommandSeconds": 1800,
+    "vmSeconds": 180,
+    "eachFreshBootSeconds": 90,
+    "vmMemoryMiB": 512,
+    "vmCpus": 2,
+    "eventOverallSeconds": 20,
+    "eventRecordBytes": 4096,
+    "eventTotalBytes": 65536,
+    "eventRecords": 128,
+    "eventInterruptions": 128,
+    "ceilingsChanged": false
+  },
+  "qualificationBoundary": {
+    "freshNoBeginBirthReclamation": false,
+    "unknownFailedBirthReclamation": false,
+    "applicationOrDeviceUsedBankReturn": false,
+    "generalCancellationReclamation": false,
+    "reopenOrGenerationReset": false,
+    "staticObserverBudgetRefund": false,
+    "nativeQuotaRelease": false,
+    "completeMilestoneCriterion": false,
+    "normalConstructorPredicate": 0,
+    "isolatedConstructorPredicate": 1,
+    "productionSocketConsumerSelected": false
+  },
+  "historicalEvidence": {
+    "alreadyRetiredRootReceipt": "kernel-constructor-root-physical-return-2026-10-23.json",
+    "childOnlyReceipt": "kernel-constructor-vm-child-retirement-2026-10-23.json",
+    "preservedHistoricalMeaning": "Source000860 qualified actual child retirement with Root/backing held; sourceeef89f qualified already-retired Root return at final FD release. Those receipts, failure histories and scopes remain unchanged."
+  }
+}

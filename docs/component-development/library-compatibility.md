@@ -48,6 +48,30 @@ configuration identity. Runtime selection remains unqualified; absent runtime
 observations, unknown reachability and initialization, and unproven worker drain
 remain visible. This separate sidecar does not replace the packaged v1 report.
 
+Java activation builds also display the selected TeaVM compiler JAR and its
+coroutine, array-root and monitor source corrections, with separate original
+and transformed digests. These come from the bound generated-bindings receipt
+and must match its loaded JAR and replacement classes. Invocation diagnostics
+recheck that receipt and the recipe before using the projection. These identities
+describe the compiler selection; API compatibility remains unknown.
+
+Selected TypeScript `buffer`/`node:buffer` builds also present the finite
+`lsf-node-buffer-v1` module profile as **SELECTED**, with qualification unknown
+and authority none. Its complete receipt/backend/declaration subgroup binds the
+selected sidecar to the recorded authoring recipe and captured SDK declaration.
+Invocation readers recheck those same identities against the original owner's
+`toolAndCompilerInputs` receipt and recipe entries before applying the context.
+This records module selection independently of package identity; it neither
+certifies an unchanged npm dependency nor installs a grant or global Buffer.
+Unselected captures retain the ordinary generic presentation.
+
+Native npm capture accepts one safe original tar root, including published
+type packages whose root is not named `package`. It retains original archive
+bytes and integrity, validates every header and maps the single root only for
+exact comparison with installed files and `package.json`. Mixed roots, unsafe
+paths, path collisions, unsupported entries and original count/byte limits remain
+refused. This capture-format support supplies no compiler or runtime evidence.
+
 The context also retains dependency identities from the exact captured source
 inventory. It displays each retained dependency's original archive and selected
 tree digests, and its captured version when the resolver recorded a bounded

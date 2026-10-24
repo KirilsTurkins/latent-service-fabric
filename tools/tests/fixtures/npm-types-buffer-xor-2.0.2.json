@@ -1,0 +1,11 @@
+{
+  "formatVersion": 1,
+  "package": "@types/buffer-xor",
+  "version": "2.0.2",
+  "source": "https://registry.npmjs.org/@types/buffer-xor/-/buffer-xor-2.0.2.tgz",
+  "integrity": "sha512-OqdCua7QCTupPnJgmyGJUpxWgbuOi0IMIVslXTSePS2o+qDrDB6f2Pg44zRyqhUA5GbFAf39U8z0+mH4WG0fLQ==",
+  "sha256": "09b105fe25242c1f5b349cfa9ed7558e8d2d2e75f9993e91aed20b53765ccf87",
+  "sizeBytes": 1591,
+  "license": "MIT; original LICENSE retained in archive",
+  "purpose": "Unmodified published data-only archive-root regression; no npm lifecycle, compiler or runtime execution"
+}

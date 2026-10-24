@@ -1,0 +1,12 @@
+package tests:typescript-import-borrow-probe@1.0.0;
+
+interface api {
+    run: async func(mode: u32, port: u16) -> string;
+}
+world service {
+    import latent:network/streams@0.1.0;
+    import latent:runtime/activation@0.1.0;
+    import latent:clock/monotonic@0.1.0;
+    import latent:clock/wall@0.1.0;
+    export api;
+}

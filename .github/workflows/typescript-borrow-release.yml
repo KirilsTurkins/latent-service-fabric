@@ -1,0 +1,89 @@
+name: TypeScript canonical borrow release controls
+
+on:
+  push:
+    branches: ['feat/typescript-borrow-release-source-20261024']
+    paths:
+      - '.github/workflows/typescript-borrow-release.yml'
+      - 'tools/qualify_typescript_borrow_release.py'
+      - 'tools/typescript_borrow_splicer_inputs.py'
+      - 'tools/typescript_borrow_retry_inputs.py'
+      - 'tools/typescript_guest/**'
+      - 'tools/tests/test_typescript_import_cancellation.py'
+      - 'tools/tests/test_typescript_borrow_controls.py'
+      - 'tools/tests/test_typescript_borrow_splicer_inputs.py'
+      - 'tools/tests/test_typescript_borrow_retry_inputs.py'
+      - 'tools/tests/test_typescript_borrow_support.py'
+      - 'sdk/typescript-guest/activation/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: typescript-borrow-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  native-controls:
+    name: Frozen completed source inputs and native borrow controls
+    runs-on: ubuntu-24.04
+    timeout-minutes: 85
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.19.0
+          package-manager-cache: false
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+        with:
+          targets: wasm32-wasip1
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - name: Install locked Python controls
+        run: python3 -m pip install --requirement tools/requirements.lock
+      - name: Make the pinned pre-feature ABI baseline available in shallow checkout
+        run: git fetch --no-tags --depth=1 origin 5e465f8c534ee31d407dbb9720fdec35cb9da71d
+      - name: Check owning-evidence refusal controls
+        run: python3 -m unittest tools.tests.test_typescript_borrow_controls tools.tests.test_typescript_borrow_splicer_inputs tools.tests.test_typescript_borrow_retry_inputs tools.tests.test_typescript_borrow_support -v
+      - name: Authenticate the failed producer and reuse only its completed source products
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 tools/typescript_borrow_retry_inputs.py --output "$RUNNER_TEMP/typescript-borrow-retry-inputs"
+      - name: Install the normal locked public compiler for pinned parser controls
+        run: python3 tools/typescript_capsule.py install-tools "$RUNNER_TEMP/typescript-borrow-public-tools"
+      - name: Compile and link the diagnostic within one 120 second bound then run all native cases
+        run: |
+          python3 tools/qualify_typescript_borrow_release.py \
+            --tools "$RUNNER_TEMP/typescript-borrow-public-tools" \
+            --prepared-products "$RUNNER_TEMP/typescript-borrow-retry-inputs/products" \
+            --output "$RUNNER_TEMP/typescript-borrow-controls"
+      - name: Retain actual products source identities commands and failures
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: typescript-borrow-controls-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/typescript-borrow-retry-inputs/acquisition.json
+            ${{ runner.temp }}/typescript-borrow-retry-inputs/producer.zip
+            ${{ runner.temp }}/typescript-borrow-controls/*.json
+            ${{ runner.temp }}/typescript-borrow-controls/*.log
+            ${{ runner.temp }}/typescript-borrow-controls/*.wasm
+            ${{ runner.temp }}/typescript-borrow-controls/*.o
+            ${{ runner.temp }}/typescript-borrow-controls/control-includes/**
+            ${{ runner.temp }}/typescript-borrow-controls/support/*.json
+            ${{ runner.temp }}/typescript-borrow-controls/support/*.archive
+            ${{ runner.temp }}/typescript-borrow-controls/support/rust-staticlib/**
+            ${{ runner.temp }}/typescript-borrow-controls/support/rust-hooks-wrappers.o
+            ${{ runner.temp }}/typescript-borrow-controls/support/target/wasm32-wasip1/release/librust_staticlib.a
+          if-no-files-found: warn
+          retention-days: 7

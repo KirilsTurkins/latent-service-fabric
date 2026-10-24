@@ -85,6 +85,10 @@ impl WasmtimeConfig {
         ]);
         self.include_resource_policy(&mut fields);
         self.include_engine_policy(&mut fields);
+        #[cfg(feature = "development-test-host")]
+        if self.development_numeric_trap_observation {
+            fields.insert("development-numeric-trap-frames".into(), "16".into());
+        }
         if self.owned_native_stacks {
             fields.insert(
                 "native-stack-accounting".into(),

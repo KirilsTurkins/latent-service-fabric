@@ -1,0 +1,12 @@
+{
+  "formatVersion": 1,
+  "package": "@types/node",
+  "version": "26.6.5",
+  "archive": {
+    "digest": "sha256:e4e47dac860469aa5aa79043a6b83396299d9cd6ee23b30fcb2074625ac8dbdf",
+    "size": 471079
+  },
+  "integrity": "sha512-uMzsv9stDdofIZBx4UGh4Z9ZgXnGC9seRDscilBcTHAeOFk67MZg/k9bWVfO+bk4qZmG+l52hRnLwUiH2LnJTg==",
+  "source": "https://registry.npmjs.org/@types/node/-/node-26.6.5.tgz",
+  "scope": "Unmodified original published data-only declaration regression fixture; normal capture/SRI authenticated. No tools, scripts, compiler or runtime are executed from this archive. Original LICENSE retained inside."
+}

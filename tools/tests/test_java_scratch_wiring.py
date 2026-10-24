@@ -23,6 +23,11 @@ class JavaScratchWiring(unittest.TestCase):
         self.assertEqual(parent.pop('if'),
             "${{ github.event_name != 'workflow_dispatch' || !inputs.java_http_spi }}")
         self.assertEqual(len(parent['steps']), 45)
+        retained = next(step for step in parent['steps'] if step.get('name') ==
+            'Retain diagnostics, generated source and component candidates')
+        added = '${{ runner.temp }}/java-activation-fibers/build/component-inputs/**'
+        self.assertEqual(retained['with']['path'].splitlines().count(added), 1)
+        retained['with']['path'] = retained['with']['path'].replace(added + '\n', '', 1)
         parent['steps'] = [step for step in parent['steps'] if step.get('name') not in {
             'Export only exact normal public prerequisites for the separate Java scratch packet',
             'Retain verified normal Java products without keys or compiler caches'}]

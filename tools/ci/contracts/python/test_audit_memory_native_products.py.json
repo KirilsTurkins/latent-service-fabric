@@ -1,0 +1,62 @@
+{
+  "cases": [
+    "AuditMemoryNativeProductsTests.test_bound_record_rejects_missing_node_build_foreign_product_policy_and_unreaped_outcomes",
+    "AuditMemoryNativeProductsTests.test_changed_receipt_is_rejected_before_any_product_is_selected",
+    "AuditMemoryNativeProductsTests.test_closed_archive_refuses_foreign_missing_linked_or_oversized_material_before_extract",
+    "AuditMemoryNativeProductsTests.test_only_literal_completed_two_host_origin_and_five_stages_can_be_constructed"
+  ],
+  "guards": {
+    "AuditMemoryNativeProductsTests.test_bound_record_rejects_missing_node_build_foreign_product_policy_and_unreaped_outcomes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c8ce6d0cf242946880c0d3e47f5a8efc5fa3e9bd6bbab6421e13b12baf530c06",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "AuditMemoryNativeProductsTests.test_changed_receipt_is_rejected_before_any_product_is_selected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c8ce6d0cf242946880c0d3e47f5a8efc5fa3e9bd6bbab6421e13b12baf530c06",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "AuditMemoryNativeProductsTests.test_closed_archive_refuses_foreign_missing_linked_or_oversized_material_before_extract": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c8ce6d0cf242946880c0d3e47f5a8efc5fa3e9bd6bbab6421e13b12baf530c06",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "AuditMemoryNativeProductsTests.test_only_literal_completed_two_host_origin_and_five_stages_can_be_constructed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c8ce6d0cf242946880c0d3e47f5a8efc5fa3e9bd6bbab6421e13b12baf530c06",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_audit_memory_native_products.py",
+  "reviewReason": "Reject altered completed origin, archive paths/types/caps, command/product/policy/retirement claims and receipt preimages before product selection.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

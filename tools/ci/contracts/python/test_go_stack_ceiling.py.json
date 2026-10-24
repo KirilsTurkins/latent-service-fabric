@@ -1,0 +1,88 @@
+{
+  "cases": [
+    "StackCeiling.test_actual_overlay_routes_only_the_explicit_complete_profile",
+    "StackCeiling.test_any_unreviewed_or_already_derived_source_is_refused",
+    "StackCeiling.test_host_parser_preparation_clears_guest_overlay_and_restores_environment",
+    "StackCeiling.test_incomplete_or_nonboolean_stack_selection_has_no_output",
+    "StackCeiling.test_normal_project_capture_distribution_and_receipt_bind_the_selected_profile",
+    "StackCeiling.test_whole_pinned_source_derivation_is_exactly_three_guards_and_inverts"
+  ],
+  "guards": {
+    "StackCeiling.test_actual_overlay_routes_only_the_explicit_complete_profile": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d42ca78765dbc1c4bc2ea66fd83c0f195f2e195f4b0f97ede7b06e35e6c7e1d6",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "StackCeiling.test_any_unreviewed_or_already_derived_source_is_refused": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d42ca78765dbc1c4bc2ea66fd83c0f195f2e195f4b0f97ede7b06e35e6c7e1d6",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "StackCeiling.test_host_parser_preparation_clears_guest_overlay_and_restores_environment": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d42ca78765dbc1c4bc2ea66fd83c0f195f2e195f4b0f97ede7b06e35e6c7e1d6",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "StackCeiling.test_incomplete_or_nonboolean_stack_selection_has_no_output": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d42ca78765dbc1c4bc2ea66fd83c0f195f2e195f4b0f97ede7b06e35e6c7e1d6",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "StackCeiling.test_normal_project_capture_distribution_and_receipt_bind_the_selected_profile": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d42ca78765dbc1c4bc2ea66fd83c0f195f2e195f4b0f97ede7b06e35e6c7e1d6",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "StackCeiling.test_whole_pinned_source_derivation_is_exactly_three_guards_and_inverts": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d42ca78765dbc1c4bc2ea66fd83c0f195f2e195f4b0f97ede7b06e35e6c7e1d6",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_go_stack_ceiling.py",
+  "reviewReason": "Six meaningful source/preimage/inverse/routing/profile and actual host-parser environment controls; no Go compilation or signed exhaustion claim",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
