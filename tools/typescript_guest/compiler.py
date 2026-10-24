@@ -137,7 +137,7 @@ class Compiler:
             self.tools = staged
             self.recipe = isolated_workspace / "compiler-recipe"
             self.recipe.mkdir()
-            for name in ("bundle.mjs", "componentize.mjs", "signed64.mjs", "resources.mjs", "source_splicer.mjs", "async_waiters.mjs", "import_cancellation.mjs", "fetch.mjs", "console.mjs", "activation_module.mjs", "entropy.mjs", "clock_app.mjs"):
+            for name in ("bundle.mjs", "componentize.mjs", "signed64.mjs", "resources.mjs", "source_splicer.mjs", "async_waiters.mjs", "import_cancellation.mjs", "fetch.mjs", "console.mjs", "activation_module.mjs", "entropy.mjs", "clock_app.mjs", "node_buffer.mjs", "buffer_builtin.mjs"):
                 (self.recipe / name).write_bytes(read_file(ROOT / "tools/typescript_guest" / name))
         modules = self.tools / "node_modules"
         self.jco = modules / "@bytecodealliance/jco/dist/jco.js"
@@ -334,6 +334,10 @@ class Compiler:
             console_configuration = console_profile.configuration({}, application_graph, application_world, standard)
             for directory in (generated, second):
                 (directory/'console-runtime-globals.d.ts').write_bytes(declaration)
+        from tools.typescript_guest import buffer_profile
+        buffer_declaration = read_file(ROOT/buffer_profile.DECLARATION)
+        for directory in (generated, second):
+            (directory/'buffer-runtime.d.ts').write_bytes(buffer_declaration)
         first_identity = tree_identity(generated)
         if first_identity != tree_identity(second):
             raise ValueError("generated binding drift between identical inputs")
@@ -345,6 +349,7 @@ class Compiler:
         missing = [name for name in imports if name not in paths]
         if missing:
             raise ValueError("unsupported or colliding generated WIT import identities: " + ", ".join(missing))
+        paths['buffer'] = paths['node:buffer'] = ['./generated/buffer-runtime.d.ts']
         # Compiler-generated wrappers use stackful calls: asynchronous host WIT
         # still suspends in Wasmtime, never a hidden JavaScript event loop.
         config = {"compilerOptions": {"target": "ES2022", "module": "ESNext", "moduleResolution": "Bundler",
@@ -384,6 +389,11 @@ class Compiler:
                     work, work / "src/main.ts", bundle, allowed, bundle_configuration,
                     self.tools / "node_modules/acorn/dist/acorn.mjs")
         bundled = json.loads(read_file(output / 'application.mjs.inputs.json', 8 * 1024 * 1024))
+        buffer_selection = buffer_profile.check_selection(bundled, digest(read_file(ROOT/buffer_profile.BACKEND)))
+        buffer_profile.verify_captured_declaration(buffer_selection, buffer_declaration,
+            lambda: read_file(work/'vendor/lsf'/buffer_profile.DECLARATION))
+        if buffer_selection is not None:
+            write_json(output/'typescript-buffer-selection.json', buffer_selection)
         if bundled['standardEntropyProfile'] != entropy_configuration['standardEntropyProfile']:
             raise ValueError('typescript-standard-entropy-selection-drift')
         write_json(output / 'typescript-entropy-selection.json', {
