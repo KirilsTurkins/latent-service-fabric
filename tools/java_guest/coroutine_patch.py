@@ -114,6 +114,7 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
         }
         CallGraphNode root = callGraph.getNode(checkpoint);
         if (root == null) {
+            System.err.println("latent.java.checkpoint-site.v1 root");
             throw checkpointRefusal("java-checkpoint-unresolved-741");
         }
         Set<MethodReference> visited = new HashSet<>();
@@ -127,6 +128,7 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
             ClassReader cls = reference == null ? null : classSource.get(reference.getClassName());
             MethodReader method = cls == null ? null : cls.getMethod(reference.getDescriptor());
             if (method == null) {
+                System.err.println("latent.java.checkpoint-site.v1 method");
                 throw checkpointRefusal("java-checkpoint-unresolved-741");
             }
             if (reference.getName().equals("<clinit>")
@@ -141,6 +143,7 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
                     && method.getLevel() == org.teavm.model.AccessLevel.PRIVATE
                     && !method.hasModifier(ElementModifier.STATIC)) {
                 if (!pinnedFiberEntry(method)) {
+                    System.err.println("latent.java.checkpoint-site.v1 managed-entry");
                     throw checkpointRefusal("java-checkpoint-unresolved-741");
                 }
                 continue;
@@ -154,6 +157,7 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
                         throw checkpointRefusal("java-checkpoint-analysis-bound-741");
                     }
                     if (caller == null || caller.getMethod() == null) {
+                        System.err.println("latent.java.checkpoint-site.v1 caller");
                         throw checkpointRefusal("java-checkpoint-unresolved-741");
                     }
                     if (!visited.contains(caller.getMethod())) {
