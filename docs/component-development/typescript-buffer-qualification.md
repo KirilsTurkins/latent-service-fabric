@@ -1,9 +1,15 @@
 # Finite Buffer qualification programme
 
-The source-owned `node:buffer`/`buffer` profile has a separate eight-case signed
-programme. Source controls are not a successful compiler or runtime result.
-Until an owning campaign passes, typechecking, bundling, component execution,
-signed admission and physical activation retirement remain unqualified here.
+The source-owned `node:buffer`/`buffer` profile passed its eight-case signed
+programme in [run 40048747837](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40048747837),
+tested at `2991411db00c1f8162efead077ada79802cdf28b`.
+The [public receipt](../evidence/typescript-buffer-signed-2991411/receipt.json)
+binds actual typechecking, bundling, component execution, signed admission and
+physical activation retirement for these finite cases. It preserves source
+controls, original budgets, raw member identities and failed histories.
+The captured inventory has 100 entries: 99 application files are retained in
+the artifact; its hidden-file default omits the creator-bound 9-byte `.gitignore`
+(`/target/` plus newline), whose hash and recipe source remain recorded.
 
 `tools/qualify_typescript_buffer.py` creates an ordinary captured greeting
 project, replaces its public WIT and sources with the retained Buffer probe,
@@ -50,8 +56,8 @@ included a UTF8 length preflight over 349,526 Euro code units; no exact guest PC
 was retained. The implementation and budgets are unchanged.
 The finite encoded-size negative now uses UTF16LE's exact 2×code-unit length,
 which the maintained backend checks before allocation without scanning. Fast
-large-UTF8 preflight is not qualified by this programme; neither are all eight
-cases until a subsequent owning run actually passes.
+large-UTF8 preflight remains unqualified. The revised eight-case programme
+passed in the subsequent owning run without changing the runtime or budgets.
 
 After every actual result the normal node observations must report no active
 physical owners or invocation-cleanup slots. Deployment deletion and a clean
@@ -60,3 +66,8 @@ activation population. It does not prove socket or returned typed-resource
 disposal, cancellation acknowledgement, Duplex backpressure, destroy/unref
 semantics, or an unchanged published npm client. The relative fixture is not
 published-module evidence. Issue745 remains open for those separate gaps.
+
+The finite OS scan reports `rendererHeapBytes` unavailable because the guest
+allocator is not exported, and `allocatorRetainedBytes` unavailable because RSS
+is not an allocator-retention counter. Complete guest/native heap, GC and stack
+accounting remains unqualified; the recorded invocation peak is not that claim.
