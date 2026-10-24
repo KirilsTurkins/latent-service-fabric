@@ -8,6 +8,14 @@ namespace Lsf.CompilerOwned;
 // ledger. Those have separate exact metadata and signed-execution gates.
 public static partial class ManagedWorkRuntime
 {
+    // Read-only test-port observation; this member is never copied into CoreLib.
+    internal static (ulong Generation, ulong Id)? QueuedTokenForControl(object item)
+    {
+        foreach (var pending in queued!)
+            if (pending is not null && ReferenceEquals(pending.Item, item)) return pending.Token;
+        return null;
+    }
+
     private static partial bool TimerScheduled(object item) => throw new InvalidOperationException("unexpected-control-timer");
     private static partial int TimerCallbacks(object item) => throw new InvalidOperationException("unexpected-control-timer");
     private static partial object? ContextValue(ExecutionContext? context) => null;
