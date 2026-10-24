@@ -120,3 +120,18 @@ and imports/exports are checked unchanged by the read-only tap. Default
 compilation has no tap. The next attempt collects the missing carrier for the
 actual validator failure; these captures do not establish a runtime pass or
 authorize an engine-envelope reissue.
+
+The retained carrier from [run40062189778/job120777895009](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40062189778/job/120777895009)
+confirmed the shared compiler defect; see the [bounded failure evidence](typescript-borrow-splice-failure.json).
+The connection resource-drop wrapper at table slot7386 calls local function104,
+which requires two i32 operands, after supplying only the resource handle. Its
+correct original resource-drop import is function84 with signature `(i32)->()`.
+An existing-import ordinal had been used as a stable function ID after async
+disposal preinserted that import. This correlation uses read-only parsing of the
+actual retained core, not a simulated or executed Wasm result.
+
+The failed source remains failed. A separate source-owned resolver correction
+must produce a fresh normal splicer and engine once, with unchanged normal
+low-level-library validation. This programme will consume only that actual
+successful tuple through normal source/product validators. The old `9d07`
+envelopes are immutable and cannot be reissued for changed source.

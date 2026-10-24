@@ -1,0 +1,64 @@
+{
+  "schemaVersion": "latent.typescript.borrow-splice-failure.v1",
+  "status": "failed",
+  "sourceCommit": "b1de9a3840833e022c991f21673442a1b41314ee",
+  "prerequisiteSource": "9d07a6dfa3ebb77aa75eb1b5899cb9360e26728d",
+  "run": 40062189778,
+  "job": 120777895009,
+  "artifact": {
+    "id": 12548091549,
+    "bytes": 4017767,
+    "sha256": "sha256:2b5b2283470922aa7fb7e82a4d3544dee4338b1070ef532639bffbc0cccbdf85"
+  },
+  "preWizerCore": {
+    "bytes": 10169273,
+    "sha256": "sha256:9db3c1fe487c8d7b07b699e1d87c5dd83ec28b6a292609eb8afd03aefa038c2f"
+  },
+  "failure": {
+    "offset": "0x880e2a",
+    "functionIndex": 12360,
+    "functionSignature": {
+      "params": [
+        "i32",
+        "i32",
+        "i32"
+      ],
+      "results": [
+        "i32"
+      ]
+    },
+    "tableSlot": 7386,
+    "originalTableInitial": 7368,
+    "importWrapperOrdinal": 18,
+    "originalImport": [
+      "latent:network/streams@0.1.0",
+      "[resource-drop]connection"
+    ],
+    "suppliedOperands": 1,
+    "wrongCall": {
+      "functionIndex": 104,
+      "kind": "local",
+      "params": [
+        "i32",
+        "i32"
+      ],
+      "results": [
+        "i32"
+      ]
+    },
+    "correctCall": {
+      "functionIndex": 84,
+      "kind": "original-resource-drop-import",
+      "params": [
+        "i32"
+      ],
+      "results": []
+    }
+  },
+  "analysis": "Read-only bounded module section/body parsing; no local Wasm compilation or execution. Original existing-import ordinal was used as a stable function ID after earlier async disposal preinserted the resource-drop import.",
+  "newSplicerAndEngineRequired": true,
+  "originalPrerequisiteReceiptReissued": false,
+  "signedExecution": false,
+  "physicalProviderQualified": false,
+  "wholeCostQualification": false
+}
