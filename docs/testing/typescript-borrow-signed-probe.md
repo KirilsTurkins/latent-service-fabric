@@ -161,3 +161,22 @@ function and missing-resource changes. This is host-only source evidence; a
 fresh component and all signed cases remain unqualified. The failed artifact
 `12548434613` remains retained (20,510,712 bytes, SHA256
 `68f525f35b0017fe41cdef856ffdeb5a8e127a7f2d341bf9fad2536772df7515`).
+
+Run`40065230510` passed normal component compilation and the Rust host build,
+then failed its first actual signed normal-read case. The diagnostic-only retry
+`40065769804` retained the original public result: `guest-trap`, closed kind
+`unreachable-code`. Its post-root owner sample was empty; that sample does not
+establish that no connection had previously existed. No signed case passed.
+Artifact`12548504655` remains failed and retained (21,000,049 bytes, SHA256
+`d594f200398ec355c5aab4f7d2158261b4ecf284296039d2ac05e1f2101937cd`).
+
+The next source diagnostic is compiled only with `development-test-host` and
+requires the harness to arm one backend-scoped RAII guard. It copies at most
+sixteen numeric Wasmtime frames before the unchanged error classification,
+without retaining an error, module, function name or arbitrary payload. Missing
+backtraces, truncation and additional errors are explicit. The fixed record
+is absent from production builds; disabled captures do not lock or allocate.
+The harness limits its JSON to8KiB. Three targeted hosted observer controls
+and the owning host build share the original1800-second aggregate budget;
+the programme's4500-second cap and six signed case assertions remain unchanged.
+This source diagnostic has not run and establishes no new runtime pass.

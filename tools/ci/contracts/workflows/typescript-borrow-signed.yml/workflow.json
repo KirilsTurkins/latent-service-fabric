@@ -21,6 +21,10 @@
           "tools/typescript_guest/componentize.mjs",
           "tools/tests/test_typescript_borrow*.py",
           "sdk/typescript-guest/probes/borrow-release/**",
+          "crates/latent-wasmtime/src/backend.rs",
+          "crates/latent-wasmtime/src/containment.rs",
+          "crates/latent-wasmtime/src/lib.rs",
+          "crates/latent-wasmtime/src/development_trap_observer.rs",
           "crates/latent-wasmtime/tests/typescript_import_borrow_release*",
           "crates/latent-wasmtime/tests/typescript_import_borrow_release/**",
           "crates/latent-wasmtime/tests/local_service/packages.rs"
@@ -34,7 +38,7 @@
   "requiredJobs": [
     "signed-borrow"
   ],
-  "reviewReason": "Add only the exact runtime graph-reader source path so its actual omitted-void-result repair automatically triggers this existing bounded owning campaign; all jobs, commands, limits and authority remain unchanged.",
+  "reviewReason": "Add only the four exact feature-gated numeric observer source inputs to the existing owning push trigger; jobs, commands, authority and limits remain unchanged.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-borrow-signed.yml"
 }

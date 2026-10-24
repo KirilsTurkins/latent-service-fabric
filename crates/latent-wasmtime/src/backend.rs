@@ -116,6 +116,8 @@ pub(crate) struct SharedRuntime {
     preparation: Arc<PreparationCounters>,
     pub(crate) preparation_observer: PreparationObserver,
     pub(crate) invocation_input_observer: InvocationInputObserver,
+    #[cfg(feature = "development-test-host")]
+    development_trap_observer: crate::development_trap_observer::DevelopmentTrapObserver,
     preparation_context: Arc<PreparationContext>,
 }
 impl SharedRuntime {
@@ -202,6 +204,8 @@ impl SharedRuntime {
             preparation,
             preparation_observer,
             invocation_input_observer: InvocationInputObserver::new(),
+            #[cfg(feature = "development-test-host")]
+            development_trap_observer: crate::development_trap_observer::DevelopmentTrapObserver::default(),
             preparation_context,
             compiler,
         })
@@ -242,6 +246,12 @@ impl WasmtimeBackend {
             .as_ref()
             .map_or_else(Default::default, |pool| pool.observer().snapshot())
     }
+    /// Explicitly arm one fixed numeric original-error record for a test harness.
+    #[cfg(feature = "development-test-host")]
+    pub fn arm_development_trap_observation(&self) -> Result<crate::DevelopmentTrapGuard<'_>, PlatformError> {
+        self.shared.development_trap_observer.arm()
+    }
+
     /// Bounded stage observations that do not retain a runtime owner.
     #[must_use]
     pub fn preparation_observer(&self) -> PreparationObserver {
@@ -663,6 +673,10 @@ impl WasmtimeBackend {
         // bytes, guest linear memory and native stacks still coexist.
         let (consumption, accounting_error) =
             invocation_accounting(&mut store, wall_time_micros, timing);
+        #[cfg(feature = "development-test-host")]
+        if let Err(error) = &call_result {
+            self.shared.development_trap_observer.capture(error);
+        }
         // Capture the execution winner before cleanup signals unfinished child
         // owners. Cleanup cancellation cannot replace an existing trap, resource
         // failure, or bounded lifecycle failure with a different terminal cause.

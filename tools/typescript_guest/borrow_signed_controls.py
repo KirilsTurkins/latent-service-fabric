@@ -30,6 +30,8 @@ RECIPE = tuple(dict.fromkeys((*COMPILER_RECIPE, *profile.RECIPE,
     'tools/typescript_guest/borrow_signed_inputs.py', 'tools/java_replay_materials.py',
     '.github/workflows/typescript-borrow-signed.yml', 'Cargo.toml', 'Cargo.lock', 'rust-toolchain.toml',
     'crates/latent-wasmtime/Cargo.toml',
+    'crates/latent-wasmtime/src/lib.rs', 'crates/latent-wasmtime/src/backend.rs',
+    'crates/latent-wasmtime/src/containment.rs', 'crates/latent-wasmtime/src/development_trap_observer.rs',
     'crates/latent-wasmtime/tests/typescript_import_borrow_release.rs',
     'crates/latent-wasmtime/tests/typescript_import_borrow_release/gate.rs',
     'crates/latent-wasmtime/tests/typescript_import_borrow_release/composition.rs',
@@ -194,8 +196,17 @@ def qualify(tools, material_directory, output):
         write_json(prepared/'BORROW-COMPILE.json', observation)
         record['guestComponentBuildCount'] = 1; record['rawCompile'] = file_identity(prepared/'BORROW-COMPILE.json',16*1024**2)
         stage = 'one-owning-host-build'
+        host_started = time.monotonic()
         run('host-build','cargo','test','--locked','-p','latent-wasmtime','--features','development-test-host',
             '--test',TARGET,'--no-run',seconds=1800)
+        host_remaining = 1800 - (time.monotonic() - host_started)
+        require(host_remaining > 0, 'borrow-signed-aggregate-host-build-deadline')
+        controls = run('host-trap-observer-controls','cargo','test','--locked','-p','latent-wasmtime',
+            '--features','development-test-host','--lib','development_trap_observer::tests::',
+            '--','--nocapture','--test-threads=1',seconds=host_remaining)
+        require(re.search(r'test result: ok\. 3 passed; 0 failed; 0 ignored;',controls.decode()) is not None,
+                'borrow-signed-three-real-observer-controls')
+        require(time.monotonic() - host_started < 1800, 'borrow-signed-aggregate-host-build-deadline')
         stage = 'six-signed-activations'
         signed_env = dict(environment,LSF_GUEST_SDK_LANGUAGE='typescript',LSF_TYPESCRIPT_BORROW_FIXTURE=str(prepared))
         raw = run('signed-borrow','cargo','test','--locked','-p','latent-wasmtime','--features','development-test-host',

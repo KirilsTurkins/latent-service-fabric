@@ -486,6 +486,7 @@ async fn signed_borrow_release_preserves_original_socket_until_consuming_close_a
     let port = listener.local_addr().unwrap().port();
     let directory = tempfile::tempdir().unwrap();
     let mut f = configured(directory.path(), port).await;
+    let trap_observation = f.backend.arm_development_trap_observation().unwrap();
     // Four semantic cases plus a fresh successful activation after each failure.
     for (mode, label) in [
         (3, "normal-copy-dispose"),
@@ -616,6 +617,12 @@ async fn signed_borrow_release_preserves_original_socket_until_consuming_close_a
                 }
             }
         };
+        let original_error = trap_observation.snapshot().unwrap();
+        if original_error.observed_errors != 0 {
+            let diagnostic = serde_json::to_string(&original_error).unwrap();
+            assert!(diagnostic.len() <= 8192, "fixed numeric original-error diagnostic");
+            println!("TYPESCRIPT_BORROW_ORIGINAL_ERROR {diagnostic}");
+        }
         sample(&f, "actual-root-receipt-before-outcome-assertions");
         result(receipt, mode, label);
         peer.await.unwrap();
