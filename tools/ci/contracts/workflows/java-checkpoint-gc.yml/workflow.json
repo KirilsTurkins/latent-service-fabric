@@ -1,0 +1,53 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "java-checkpoint-gc-${{ github.ref }}"
+    },
+    "name": "Java parked continuation GC witnesses",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/java-checkpoint-gc-current-20261023"
+        ],
+        "paths": [
+          "tools/fixtures/java-checkpoint-gc/**",
+          "tools/java_checkpoint_gc_*.py",
+          "tools/qualify_java_checkpoint_gc.py",
+          "tools/qualify_java_checkpoint_gc_retained.py",
+          "tools/fixtures/java-checkpoint-gc-retained-a5c.json",
+          "tools/tests/test_java_checkpoint_gc_retained.py",
+          "tools/tests/test_java_checkpoint_gc.py",
+          "sdk/java-guest/fibers/conformance/compiler/GcReferenceControl.java",
+          ".github/workflows/java-checkpoint-gc.yml"
+        ]
+      },
+      "workflow_dispatch": {
+        "inputs": {
+          "programme": {
+            "default": "fresh",
+            "description": "Retained runtime only, or the original fresh compiler programme",
+            "options": [
+              "retained",
+              "fresh"
+            ],
+            "required": true,
+            "type": "choice"
+          }
+        }
+      }
+    },
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "gc-roots",
+    "retained-gc-roots"
+  ],
+  "reviewReason": "Run the reviewed failure-only GC fixture diagnosis as one fresh target; retain the strict historical component reader as manual only.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/java-checkpoint-gc.yml"
+}
