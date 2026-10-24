@@ -5,7 +5,7 @@
  */
 export type BufferEncoding = 'utf8' | 'utf-8' | 'hex' | 'ascii' | 'latin1' | 'binary' |
   'utf16le' | 'utf-16le' | 'ucs2' | 'ucs-2' | 'base64' | 'base64url';
-export interface Buffer extends Uint8Array {
+export interface Buffer extends Uint8Array<ArrayBuffer> {
   subarray(start?: number, end?: number): Buffer;
   slice(start?: number, end?: number): Buffer;
   toString(encoding?: BufferEncoding, start?: number, end?: number): string;
