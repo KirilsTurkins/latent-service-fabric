@@ -201,20 +201,38 @@ the retained capture programme does not establish a compiler or runtime fix.
 
 Only that manual public-fiber job additionally selects `--observe-public-wineh`.
 The optional observer snapshots the admitted generated C, headers, bindings,
-SDK, tools and the three maintained observer/qualifier files before the unchanged
+SDK, tools and the maintained observer/filter/qualifier files before the unchanged
 normal Clang command. After an authenticated
 component-assembly failure, it rechecks those inputs and the original command
 receipt, then requests LLVM's before/after `win-eh-prepare` prints for only
-`meth_dla_Capsule_pools`, using a separate output path. It keeps the original
-600-second command bound and the existing combined 80-MiB process-output ceiling.
-The returned text is parsed only after owned process cleanup, under a 256-KiB
-line limit; only fixed numeric counts, hashes and at most 16 KiB of scalar
-samples enter `component-inputs/public-wineh.json`. Raw IR and the diagnostic
-Wasm are not uploaded. Missing or changed inputs, overflow, an incomplete print
-or an unknown format report incomplete; an earlier failure is not applicable.
-The original compiler product, exception and 16-MiB log cap remain unchanged.
-This source observer has not yet produced an actual LLVM pass attribution and
-does not establish a size repair or Java execution qualification.
+`meth_dla_Capsule_pools`, using a separate output path. A sealed fixed-public
+ticket permits only that exact Clang command, environment and working directory.
+The private count-only filter launches it in the existing owner's process group;
+the original owner still accounts every compiler/linker descendant before a
+summary is returned. Existing process owners, the 600-second outer command bound,
+35-minute job and 80-MiB defensive capture ceiling remain unchanged.
+
+The filter streams at most **256 MiB of combined raw compiler output** through
+the same incremental parser and hashes, without a raw IR file or full buffer.
+This is a separate diagnostic transit budget. Each line is limited to 256 KiB
+before UTF-8 decoding; fixed counters and at most 16 KiB of scalar samples are
+retained. Only a summary of at most 64 KiB reaches the outer capture. The parent
+rechecks identities after owned cleanup, including incomplete summaries.
+`component-inputs/public-wineh.json` cannot report observed unless the child
+exits successfully, both pipes reach EOF, both exact prints complete and the
+postchecks pass. Raw IR, the ticket and diagnostic Wasm are not uploaded. Missing
+or changed inputs, overflow, unknown syntax and incomplete output fail closed;
+an earlier failure is not applicable. Original compiler output, exception and
+the 16-MiB normal log cap remain unchanged; no automatic retry is selected.
+
+The [first attempt](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40117757282)
+refused TeaVM's actual `@`-escaped header names before replay. The private reader
+correction retains the original inventory bounds and global Rust path rules.
+The [corrective attempt](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40120265783)
+reached real replay but exceeded the then-used 80-MiB full-buffer cap. Both are
+failed/incomplete historical observations; no counters or pass attribution were
+retained. The count-only filter remains source-only until separately exercised.
+It does not establish a compiler-size repair or Java execution qualification.
 
 `--read-only-cache /path/to/modules-2` selects a verified immutable Gradle
 dependency cache. Gradle writes locks and updates to the build's private home.

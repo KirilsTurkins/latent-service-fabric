@@ -3,13 +3,15 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
+import time
 from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
-from tools.build_process import BuildProcessError, MAX_OUTPUT_BYTES
-from tools.java_guest import public_wineh as observer, wineh_ir
+from tools.build_process import BuildProcessError, MAX_OUTPUT_BYTES, run_bounded_result
+from tools.java_guest import public_wineh as observer, wineh_ir, wineh_filter
 from tools.java_guest.compiler import Compiler
 from tools.java_guest.fiber_component_inputs import retain as retain_inputs
 from tools.rust_capsule_project import ROOT, canonical
@@ -57,6 +59,7 @@ class JavaPublicWinEH(unittest.TestCase):
         compiler.environment = {'PATH': 'fixed-test-context'}
         compiler.compiler_inputs = b'original inventory'
         compiler.original_sdk = {'runtime/native.h': b'original sdk input'}
+        compiler.tool_roots = {name: root / ('test-' + name) for name in ('wasi-sdk', 'jdk', 'gradle')}
         compiler.check_unchanged = lambda: None
         compiler.records = []
         return compiler
@@ -69,10 +72,29 @@ class JavaPublicWinEH(unittest.TestCase):
             self.assertEqual(compiler.run('c-to-wasm', 'clang', *command[1:]), 'original result')
         original.assert_called_once_with('c-to-wasm', 'clang', *command[1:], cwd=None)
         row = {'stage': 'c-to-wasm', 'exitCode': 0, 'seconds': 1.25, 'command': command}
-        compiler.records = [row, {'stage': 'component-new', 'exitCode': 1}]
+        failed = {'stage': 'component-new', 'exitCode': 1, 'command': ['wasm-tools',
+            'component', 'new', str(compiler.directory.parent / 'build/core.wasm'), '--adapt',
+            'wasi_snapshot_preview1=' + str(compiler.directory.parent / 'build/closed-runtime.wasm'),
+            '-o', str(compiler.directory.parent / 'build/component.wasm')]}
+        compiler.records = [row, {'stage': 'closed-runtime', 'exitCode': 0}, failed]
         (compiler.directory / '0-c-to-wasm.command.json').write_bytes(canonical(row))
+        (compiler.directory / '2-component-new.command.json').write_bytes(canonical(failed))
         retain_inputs(compiler, compiler.directory.parent)
         return source
+
+    def filter_response(self, root, source, *, incomplete=False):
+        raw = (root / 'build/wineh-observer/request.json').read_bytes()
+        ticket = json.loads(raw)
+        value = {'schemaVersion': observer.FILTER_SCHEMA, 'status': 'incomplete' if incomplete else 'observed',
+            'qualification': False, 'ticketDigest': observer.digest(raw).removeprefix('sha256:'),
+            'sourceCommit': source['revision'], 'diagnosticCommandDigest': observer.digest(canonical(ticket['diagnosticCommand'])),
+            'childStarted': True, 'childExitCode': 0, 'stdoutBytes': 0, 'stdoutDigest': observer.digest(b''),
+            'stderrBytes': len(IR), 'stderrDigest': observer.digest(IR),
+            'rawTransitMaximum': observer.RAW_TRANSIT_BUDGET, 'pipeEOFComplete': True,
+            'observation': wineh_ir.observe(IR)}
+        if incomplete:
+            value.update(reason='print-incomplete', refusalStage='collect')
+        return subprocess.CompletedProcess([], 1 if incomplete else 0, canonical(value), b'')
 
     def test_synthetic_pinned_print_text_is_counted_and_unknown_formats_refuse(self):
         good = wineh_ir.observe(IR)
@@ -85,6 +107,18 @@ class JavaPublicWinEH(unittest.TestCase):
         self.assertEqual(good['snapshots']['after']['volatileStore'], 1)
         self.assertEqual(good['snapshots']['after']['volatileLoad'], 1)
         self.assertLessEqual(len(canonical(good['samples'])), 16 * 1024)
+        for step in (1, 7, 16 * 1024):
+            counter = wineh_ir.Counter()
+            for offset in range(0, len(IR), step):
+                self.assertTrue(counter.feed(IR[offset:offset + step]))
+            self.assertEqual(counter.finish(), good)
+        unicode_prefix = '; split UTF8: é\n'.encode() + IR
+        counter = wineh_ir.Counter()
+        for byte in unicode_prefix:
+            self.assertTrue(counter.feed(bytes([byte])))
+        self.assertEqual(counter.finish()['streamDigest'], observer.digest(unicode_prefix))
+        overlong = b';' + ('é' * (wineh_ir.MAX_LINE // 2)).encode() + b'\n' + IR
+        self.assertEqual(wineh_ir.observe(overlong)['reason'], 'line-limit')
         for invalid in (b'', IR + IR, IR[:-2], IR.replace(b'pools()', b'private()'),
                 IR.replace(b'win-eh-prepare', b'other-pass'), IR.replace(b'alloca', b'unknown'),
                 IR + b'\xff', IR.replace(b'  ret ptr null', b'x' * (256 * 1024 + 1), 1)):
@@ -147,13 +181,17 @@ class JavaPublicWinEH(unittest.TestCase):
             originals = canonical(compiler.records)
             receipt = (compiler.directory / '0-c-to-wasm.command.json').read_bytes()
             with patch.object(observer, 'hosted_source', return_value=source), \
-                    patch.object(observer, 'run_bounded_result', return_value=
-                        subprocess.CompletedProcess([], 0, b'', IR)) as execute:
+                    patch.object(observer, 'run_bounded_result', side_effect=lambda *a, **k:
+                        self.filter_response(root, source)) as execute:
                 observer.retain(compiler, root)
             argv, cwd, environment = execute.call_args.args
-            self.assertEqual(argv[:-7], compiler.records[0]['command'][:-1])
-            self.assertEqual(argv[-6:], list(observer.PRINT_FLAGS))
-            self.assertEqual(argv[-7], str(root / 'build/wineh-observer/core.wasm'))
+            ticket_raw = (root / 'build/wineh-observer/request.json').read_bytes()
+            ticket = json.loads(ticket_raw)
+            self.assertEqual(argv, [str(Path(sys.executable).resolve()), '-I', '-B',
+                str(ROOT / 'tools/java_guest/wineh_filter.py'), str(root), observer.digest(ticket_raw).removeprefix('sha256:')])
+            self.assertEqual(ticket['diagnosticCommand'][:-7], compiler.records[0]['command'][:-1])
+            self.assertEqual(ticket['diagnosticCommand'][-6:], list(observer.PRINT_FLAGS))
+            self.assertEqual(ticket['diagnosticCommand'][-7], str(root / 'build/wineh-observer/core.wasm'))
             self.assertEqual((cwd, environment), (compiler.directory, compiler.environment))
             self.assertEqual(execute.call_args.kwargs,
                 {'timeout_seconds': 600, 'max_output_bytes': MAX_OUTPUT_BYTES})
@@ -170,7 +208,8 @@ class JavaPublicWinEH(unittest.TestCase):
 
     def test_changed_real_materials_or_command_receipt_refuse_before_execution(self):
         for kind in ('generated', 'header', 'binding', 'environment', 'tool', 'receipt', 'java', 'wit',
-                     'core', 'unsafe-name', 'directory-link', 'generated-target', 'binding-target'):
+                     'core', 'unsafe-name', 'directory-link', 'generated-target', 'binding-target',
+                     'after-incomplete'):
             with self.subTest(kind=kind), tempfile.TemporaryDirectory() as temporary:
                 root = Path(temporary).resolve()
                 compiler = self.populate(root)
@@ -208,19 +247,123 @@ class JavaPublicWinEH(unittest.TestCase):
                     header = parent / 'target/changed.h'
                     header.parent.mkdir()
                     header.write_bytes(b'must be identified or refused, never ignored')
+                def incomplete_with_change(*args, **kwargs):
+                    (root / 'build/project/build/teavm-c/c/all.c').write_bytes(b'changed during completed filter')
+                    return self.filter_response(root, source, incomplete=True)
                 with patch.object(observer, 'hosted_source', return_value=source), \
-                        patch.object(observer, 'run_bounded_result') as execute:
+                        patch.object(observer, 'run_bounded_result',
+                            side_effect=incomplete_with_change if kind == 'after-incomplete' else None) as execute:
                     observer.retain(compiler, root)
-                execute.assert_not_called()
+                if kind == 'after-incomplete':
+                    execute.assert_called_once()
+                else:
+                    execute.assert_not_called()
                 result = json.loads((root / 'build/component-inputs/public-wineh.json').read_bytes())
                 self.assertEqual(result['status'], 'incomplete')
-                self.assertIn(result['refusalStage'], ('command-receipt', 'original-capture', 'pre-replay-identity'))
+                self.assertIn(result['refusalStage'], ('command-receipt', 'original-capture',
+                    'pre-replay-identity', 'post-replay-identity'))
                 if kind == 'unsafe-name':
                     self.assertEqual(result['reason'], 'generated-path')
                 elif kind == 'generated-target':
                     self.assertEqual(result['reason'], 'original-inputs-changed')
                 elif kind == 'binding-target':
                     self.assertEqual(result['reason'], 'bindings-root-exclusion')
+                elif kind == 'after-incomplete':
+                    self.assertEqual(result['reason'], 'diagnostic-inputs-changed')
+                    self.assertNotIn('postReplayIdentitiesVerified', result)
+
+    def test_sealed_ticket_checks_actual_files_and_rejects_retargeting(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            compiler = self.populate(root)
+            compiler.tool_roots = {'wasi-sdk': root / 'wasi-sdk-29.0-x86_64-linux',
+                                   'jdk': root / 'jdk', 'gradle': root / 'gradle'}
+            for folder in compiler.tool_roots.values():
+                folder.mkdir()
+                (folder / 'input').write_bytes(b'actual bounded control bytes; never executed')
+            wasi = compiler.tool_roots['wasi-sdk']
+            (wasi / 'bin').mkdir()
+            (wasi / 'bin/clang-21').write_bytes(b'not executable; admission control only')
+            (wasi / 'VERSION').write_text('29.0\nwasi-libc: ac020b86fd44\nllvm: 222fc11f2b8f\n'
+                'llvm-version: 21.1.4\nconfig: f992bcc08219\n', encoding='utf-8')
+            compiler.paths['clang'] = wasi / 'bin/clang-21'
+            compiler.compiler_inputs = observer.tool_inventory(compiler.tool_roots)
+            compiler.original_sdk = observer.sdk_snapshot(ROOT / 'sdk/java-guest')
+            self.admit(compiler)
+            source = {'repository': 'KirilsTurkins/latent-service-fabric', 'revision': 'a' * 40,
+                'event': 'workflow_dispatch', 'workflowRef':
+                'KirilsTurkins/latent-service-fabric/.github/workflows/java-guest-feasibility.yml@refs/heads/test',
+                'maintainedFiles': {name: dict(zip(('sha256', 'bytes'),
+                    observer.paths.digest_file(ROOT, name, 4 * 1024 * 1024))) for name in observer.MAINTAINED}}
+            compiler.public_wineh['source'] = source
+            diagnostic = root / 'build/wineh-observer'
+            diagnostic.mkdir()
+            pair = json.loads((root / 'build/component-inputs/record.json').read_bytes())['inputs']
+            command = [*compiler.records[0]['command'][:-1], str(diagnostic / 'core.wasm'), *observer.PRINT_FLAGS]
+            sealed = observer.write_ticket(compiler, root, compiler.public_wineh,
+                compiler.records[0], 0, pair, command)
+            request = diagnostic / 'request.json'
+            original = request.read_bytes()
+            admitted = observer.load_ticket(root, sealed, compiler.environment)
+            self.assertEqual(admitted['diagnosticCommand'], command)
+            for kind in ('digest', 'extra-argv', 'source', 'successful-assembly', 'tool', 'environment'):
+                with self.subTest(kind=kind):
+                    request.write_bytes(original)
+                    value = json.loads(original)
+                    expected = sealed
+                    environment = dict(compiler.environment)
+                    tool = wasi / 'bin/clang-21'
+                    tool.write_bytes(b'not executable; admission control only')
+                    if kind == 'digest':
+                        request.write_bytes(original + b' ')
+                    elif kind == 'extra-argv':
+                        value['diagnosticCommand'].append('--unreviewed-command')
+                    elif kind == 'source':
+                        value['source']['maintainedFiles'][observer.MAINTAINED[0]]['sha256'] = 'sha256:' + '0' * 64
+                    elif kind == 'successful-assembly':
+                        value['failureCommand']['exitCode'] = 0
+                    elif kind == 'tool':
+                        tool.write_bytes(b'changed tool bytes')
+                    elif kind == 'environment':
+                        environment['EXTRA_UNREVIEWED'] = 'value'
+                    if kind in {'extra-argv', 'source', 'successful-assembly'}:
+                        raw = canonical(value)
+                        request.write_bytes(raw)
+                        expected = observer.digest(raw).removeprefix('sha256:')
+                    with patch.object(wineh_filter.subprocess, 'Popen') as spawn:
+                        with self.assertRaises(ValueError):
+                            observer.load_ticket(root, expected, environment)
+                    spawn.assert_not_called()
+
+    def test_actual_owned_pipe_collector_and_abort_cleanup(self):
+        for mode, reason in (('success', None), ('nonzero', 'child-exit'),
+                ('raw-limit', 'raw-transit-limit'), ('line-limit', 'print-incomplete'),
+                ('deadline', 'filter-deadline'), ('held-pipe', 'pipe-eof')):
+            with self.subTest(mode=mode), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary).resolve()
+                (root / 'control.txt').write_bytes(IR)
+                result = run_bounded_result([sys.executable, '-B',
+                    str(ROOT / 'tools/tests/fixtures/java_wineh_filter_control.py'), str(root), mode],
+                    ROOT, dict(os.environ), timeout_seconds=5, max_output_bytes=64 * 1024)
+                self.assertEqual(result.returncode, 0, result.stderr.decode())
+                self.assertEqual(result.stderr, b'')
+                q = json.loads(result.stdout)
+                if os.name != 'nt':
+                    self.assertEqual(q['leaderGroup'], q['ownerLeaderPid'])
+                    self.assertEqual(q['childGroup'], q['ownerLeaderPid'])
+                if reason is None:
+                    self.assertEqual(q['status'], 'observed')
+                    self.assertTrue(q['pipeEOFComplete'])
+                    self.assertEqual(q['observation'], wineh_ir.observe(IR))
+                else:
+                    self.assertEqual((q['status'], q['reason']), ('incomplete', reason))
+                if mode == 'raw-limit':
+                    self.assertLessEqual(q['stdoutBytes'] + q['stderrBytes'], 128)
+                if mode in {'deadline', 'held-pipe'}:
+                    # Deliberate delayed side effects cannot happen after the
+                    # original owner returned its positive cleanup result.
+                    time.sleep(1.1)
+                    self.assertFalse((root / 'late-side-effect').exists())
 
     def test_admission_and_bounded_capture_failures_preserve_original_exception(self):
         with tempfile.TemporaryDirectory() as temporary:
