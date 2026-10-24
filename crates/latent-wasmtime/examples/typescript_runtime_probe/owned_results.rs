@@ -357,9 +357,13 @@ fn install(linker: &mut Linker<State>, backing: bool) -> wasmtime::Result<()> {
     Ok(())
 }
 
-pub(super) async fn run(engine: &Engine, component: &Component) -> wasmtime::Result<()> {
+pub(super) async fn run(
+    engine: &Engine,
+    component: &Component,
+    backing: bool,
+) -> wasmtime::Result<()> {
     let mut linker = Linker::new(engine);
-    install(&mut linker, false)?;
+    install(&mut linker, backing)?;
     let expected = [1_u32, 2, 2, 2, 1, 0, 2, 0, 1, 2, 0];
     let expected_imports = [1_usize, 2, 2, 2, 2, 1, 2, 1, 1, 2, 1];
     for (which, allocations) in expected.into_iter().enumerate() {
