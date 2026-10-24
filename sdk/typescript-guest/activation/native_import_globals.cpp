@@ -4,8 +4,21 @@
 #include "js/Conversions.h"
 #include "jsapi.h"
 
+// Original allocator observation lives in the fresh embedding translation
+// unit. These link-only getters are not public core/Component Model exports.
+extern "C" uint32_t lsf_import_backing_free_count();
+extern "C" bool lsf_import_backing_free_overflow();
+
 namespace lsf::typescript::activation {
 namespace {
+bool backingFreeCount(JSContext* cx,unsigned argc,JS::Value* vp) {
+  auto args=JS::CallArgsFromVp(argc,vp);
+  if(argc!=0 || lsf_import_backing_free_overflow()) {
+    JS_ReportErrorASCII(cx,"activation-runtime-import-backing-observation-invalid");return false;
+  }
+  args.rval().setNumber(static_cast<double>(lsf_import_backing_free_count()));
+  return true;
+}
 bool reserve(JSContext* cx,unsigned argc,JS::Value* vp) {
   auto args=JS::CallArgsFromVp(argc,vp);
   if(argc<3 || !args[0].isInt32() || !args[1].isInt32() || !args[2].isInt32() ||
@@ -74,6 +87,7 @@ bool install_import_bridge(JSContext* cx,JS::HandleObject global) {
      !JS_DefineFunction(cx,bridge,"lift",lift,1,0) ||
      !JS_DefineFunction(cx,bridge,"finish",finish,1,0) ||
      !JS_DefineFunction(cx,bridge,"delivered",delivered,2,0) ||
+     !JS_DefineFunction(cx,bridge,"backingFreeCount",backingFreeCount,0,0) ||
      !JS_DefineFunction(cx,bridge,"cancel",cancel,1,0) ||
      !JS_DefineFunction(cx,bridge,"watchBorrow",watchBorrow,1,0) ||
      !JS_DefineFunction(cx,bridge,"borrowReleased",borrowReleased,1,0) ||

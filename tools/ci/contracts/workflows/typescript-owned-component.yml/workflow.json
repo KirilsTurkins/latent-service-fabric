@@ -24,7 +24,19 @@
           "crates/latent-wasmtime/examples/typescript_runtime_probe/**"
         ]
       },
-      "workflow_dispatch": null
+      "workflow_dispatch": {
+        "inputs": {
+          "profile": {
+            "default": "canonical-own",
+            "description": "Closed diagnostic profile using the exact completed normal producer",
+            "options": [
+              "canonical-own",
+              "late-backing"
+            ],
+            "type": "choice"
+          }
+        }
+      }
     },
     "permissions": {
       "contents": "read"
@@ -33,7 +45,7 @@
   "requiredJobs": [
     "canonical-own"
   ],
-  "reviewReason": "One separate finite canonical diagnostic from authenticated successful fresh inputs; original workflows remain intact, setup/acquisition/build/execution share900 seconds and signed/provider/full-cost gates remain unqualified.",
+  "reviewReason": "Review late unlifted host-lowered backing disposal only: retain all prior cases, add exact source/metadata controls, strict17 Rust and32 source inventories, and no runtime or full-heap claim.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-owned-component.yml"
 }

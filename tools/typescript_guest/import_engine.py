@@ -16,6 +16,35 @@ SOURCE_PREIMAGES = {
 }
 
 
+def derive_import_backing_embedding(embedding:bytes)->bytes:
+    """Extend the normal authenticated embedding; never patch the Mach library."""
+    if b'lsf_import_free_backing' in embedding:
+        raise ValueError('already-extended-import-backing-embedding')
+    embedding = replace_once(embedding,
+        b'  void *ret = JS_realloc(Runtime.cx, ptr, orig_size, new_size);\n',
+        b'  // Canonical fresh zero-byte values own no backing allocation.\n'
+        b'  if (!ptr && orig_size == 0 && new_size == 0) return nullptr;\n'
+        b'  void *ret = JS_realloc(Runtime.cx, ptr, orig_size, new_size);\n',
+        'canonical-fresh-zero-size-no-allocation')
+    return replace_once(embedding,
+        b'using componentize::embedding::ReportAndClearException;\nusing componentize::embedding::Runtime;\n',
+        b'using componentize::embedding::ReportAndClearException;\nusing componentize::embedding::Runtime;\n\n'
+        b'// Read-only diagnostic observation, never an ownership/refund ledger.\n'
+        b'struct LsfImportBackingFreeObservation { uint32_t returns; bool overflow; };\n'
+        b'static_assert(sizeof(LsfImportBackingFreeObservation) == 8);\n'
+        b'static LsfImportBackingFreeObservation lsf_import_backing_free_observation{};\n'
+        b'uint32_t lsf_import_backing_free_count() { return lsf_import_backing_free_observation.returns; }\n'
+        b'bool lsf_import_backing_free_overflow() { return lsf_import_backing_free_observation.overflow; }\n'
+        b'__attribute__((export_name("lsf_import_free_backing"))) void\n'
+        b'lsf_import_free_backing(void *ptr) {\n'
+        b'  cabi_free(ptr);\n'
+        b'  auto &observation = lsf_import_backing_free_observation;\n'
+        b'  if (observation.returns == 0xffffffffU) observation.overflow = true;\n'
+        b'  else ++observation.returns;\n'
+        b'}\n',
+        'private-original-import-backing-free')
+
+
 def extend_native_import_source(base_source: dict[str,bytes], native: dict[str,bytes]) -> tuple[dict[str,bytes],dict]:
     """Derived private compiler source; original carriers remain immutable."""
     if set(native)!=set(NATIVE_IMPORT_SOURCES):
@@ -35,6 +64,10 @@ def extend_native_import_source(base_source: dict[str,bytes], native: dict[str,b
         b'         lsf::typescript::activation::install_import_bridge(engine->cx(), engine->global());\n',
         'private-import-bridge-before-application')
     result=dict(base_source)
+    # These functions live in the freshly linked embedding translation unit,
+    # sharing the ORIGINAL Runtime.cx/cabi_free/JS_free allocator. The low-level
+    # SpiderMonkey library is unchanged. No public JS free API is installed.
+    result['embedding/embedding.cpp'] = derive_import_backing_embedding(result['embedding/embedding.cpp'])
     result[install]=source
     result.update({'lsf/'+name:raw for name,raw in native.items()})
     return result, {'profile':IMPORT_PROFILE,'originalSource':identity(base_source),'derivedSource':identity(result),
