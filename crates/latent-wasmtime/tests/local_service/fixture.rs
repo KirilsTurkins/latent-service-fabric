@@ -798,7 +798,7 @@ impl Fixture {
             );
             store.apply(other_consumer).await.unwrap();
         }
-        store.apply(consumer).await.unwrap();
+        store.apply(consumer.clone()).await.unwrap();
         let policies = Arc::new(
             PolicyStore::open(
                 &root.path().join("policies"),

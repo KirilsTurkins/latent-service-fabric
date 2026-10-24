@@ -117,3 +117,13 @@ This is partial #742 criterion5 source preparation. Actual compiler, component,
 signed runtime/initialization refusal, provenance decoding and retirement
 qualification remain pending. It does not complete independent aggregate/native
 cost accounting, production provider/kernel requirements or the whole ticket.
+
+First owning attempt: source `3c30f9c0634d60864928085b6630bd638775ad1b`,
+[run40078401724](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40078401724),
+failed while compiling the new native harness: Rust E0382 reported that
+`consumer` had been moved into `store.apply` before its policy/budget diagnostic
+read. Both normal Go component builds and the compile-only stack placement
+reference completed, but no signed attempt executed. The original failed run
+and artifact12554755854 remain failure evidence. Retaining a deployment clone
+for that diagnostic fixes the harness ownership error; runtime qualification
+remains pending the same seven-attempt owning programme.
