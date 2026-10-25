@@ -1,0 +1,18 @@
+{
+  "schemaVersion":"latent.ci.contracts.v2",
+  "kind":"python",
+  "reviewReason":"Reviewed final eight logical cells: six immutable successful source/profile epochs plus current Go baseline/reached/initializer and fixed completed61a .NET builder/newpositive node-only. Exact passive postimages, source/SDK/WIT/materials/native/deadline/original failure gates remain strict. Original cases/skips/decorators preserved; additive bounded controls only.",
+  "module":"tools/tests/test_compatibility_dotnet_retained_node.py",
+  "cases":["RetainedDotnetSourceBoundaries.test_actual_source_layers_are_required_and_normalized_capsule_cannot_replace_original_bytes","RetainedDotnetSourceBoundaries.test_inventory_relation_never_accepts_extra_changed_or_cross_typed_capture_rows","RetainedDotnetSourceBoundaries.test_ordinary_raw_source_entry_still_rejects_hash_pretence_and_changed_libraries_before_shared_join"],
+  "guards":{
+    "RetainedDotnetSourceBoundaries.test_inventory_relation_never_accepts_extra_changed_or_cross_typed_capture_rows":
+      "6bc9421a4d2e7183fcc39958f76686b2fa24a9e99631196436f86e1e6b1aed5d",
+    "RetainedDotnetSourceBoundaries.test_actual_source_layers_are_required_and_normalized_capsule_cannot_replace_original_bytes":
+      "6bc9421a4d2e7183fcc39958f76686b2fa24a9e99631196436f86e1e6b1aed5d",
+    "RetainedDotnetSourceBoundaries.test_ordinary_raw_source_entry_still_rejects_hash_pretence_and_changed_libraries_before_shared_join":
+      "6bc9421a4d2e7183fcc39958f76686b2fa24a9e99631196436f86e1e6b1aed5d"
+  },
+  "guardDefinitions":{
+    "6bc9421a4d2e7183fcc39958f76686b2fa24a9e99631196436f86e1e6b1aed5d":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:43ccf4b6baabd6dee2317367b0b70df2c9ad1da1d2ee70faeec9c762529741ca","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"]}
+  }
+}

@@ -1,7 +1,7 @@
-"""ONLY five named passed cells from two exact source epochs; originals never become current execution.
+"""ONLY six named passed cells from three exact source epochs; originals never become current execution.
 
-Whole archives and original public unions stay immutable. Two exact passive
-observer postimages are explicitly different; current diagnostic reanalysis is
+Whole archives and original public unions stay immutable. Exact passive
+observer postimages and the default-None Go observer callback are explicitly different; current diagnostic reanalysis is
 separate. This module never compiles or invokes a guest.
 """
 from pathlib import Path, PurePosixPath
@@ -120,6 +120,37 @@ for name in ('rust', 'typescript-initializer'):
 PASSIVE['tools/guest_compiler_edges.py']['current'] = {'size': 18746, 'digest': 'sha256:4e3d2a2bc6d96fcd4294bc394e25e49e449607d76f512a1de73d2897dad0eb8f'}
 
 
+THIRD_SOURCE = '61a0be045ca33f44cd2ae1467e272168bccdafb7'
+PINS['c'] = {'source': '61a0be045ca33f44cd2ae1467e272168bccdafb7',
+ 'run': 40229947914,
+ 'job': 121279317395,
+ 'artifact': 12612589311,
+ 'archive': {'bytes': 5464710,
+             'sha256': 'sha256:d6c1fd9cde980742e4f3527eb303a722a6c2649988a04d1b7fe49e75a37f5ef9'},
+ 'members': 391,
+ 'expanded': 20301934,
+ 'admission': {'bytes': 54860,
+               'sha256': 'sha256:2169b917d36c1cdc0ededc82b00d1762a194dbf402bb0db19d1bf9e0645e93fd'},
+ 'qualified': {'bytes': 169247,
+               'sha256': 'sha256:0afaf3615b819b2e9e38b52530f57f07ef871741d245f25aca0a95bb6b7d374e'},
+ 'recipes': {'baseline/recipe-inputs.json': 56,
+             'reached/recipe-inputs.json': 56,
+             'initializer/recipe-inputs.json': 56},
+ 'sources': {'baseline/source-inputs.json': 60,
+             'reached/source-inputs.json': 60,
+             'initializer/source-inputs.json': 60}}
+PINS['c']['nativeSource'] = native.CLIENT_DATA_SOURCE
+PASSIVE_ORIGINALS[THIRD_SOURCE] = {name: dict(row['current']) for name, row in PASSIVE.items()}
+PASSIVE['tools/guest_compiler_edges.py']['current'] = {'size': 19180, 'digest': 'sha256:167de6a71b90f4c2de95440d0578160b3cd5eccce6163ee087c461f0ad436ed8'}
+PASSIVE['tools/guest_api_analysis.py'] = {'original': {'digest': 'sha256:6477141c8897de13cd73a1179ae9350ed0f01baa2ec4aa85442dfb7c8c45daba', 'size': 41055}, 'current': {'size': 65520, 'digest': 'sha256:85c7bb29abddbb3ce909889e58c968be120f7ee41dac9f56e47f74d14df11eb5'}}
+for version in (SOURCE, SECOND_SOURCE, THIRD_SOURCE):
+    PASSIVE_ORIGINALS[version]['tools/guest_api_analysis.py'] = dict(PASSIVE['tools/guest_api_analysis.py']['original'])
+# Only the old Go-queue recipe consumes this unchanged-default builder.
+# The sole code delta is the private callable/None observer after final checks;
+# None preserves original compiler argv and execution, as the source control proves.
+GO_OBSERVER_POSTIMAGE = {'original': {'digest': 'sha256:9a5c5b93c66e894791edfb191428908e31da3342d13f02291ee054bc37bea22e', 'size': 13534}, 'current': {'size': 13815, 'digest': 'sha256:be180b784d9c2a854ef4602904ec5dcb57dbb7cb89ebc79e8537f17740e8f61c'}}
+
+
 def identity(raw):
     return {'bytes': len(raw), 'sha256': 'sha256:' + hashlib.sha256(raw).hexdigest()}
 
@@ -138,7 +169,7 @@ def _origin(cell, run, job, artifact):
         and run['path'] == WORKFLOW and run['event'] == 'push' and run['run_attempt'] == 1
         and run['status'] == 'completed' and run['conclusion'] == 'failure',
         'preserved-cell-original-run')
-    # The overall eight-cell run failed. THESE three individual jobs passed.
+    # The overall eight-cell run failed. THESE fixed individual jobs passed.
     require(job['id'] == pin['job'] and job['run_id'] == original_run and job['head_sha'] == original_source
         and job['name'] == 'Required finite ' + cell + ' compatibility completion'
         and job['status'] == 'completed' and job['conclusion'] == 'success',
@@ -195,6 +226,8 @@ def _input_identity(path):
 def _equivalence(directory, cell):
     """Only these exact recipe differences are passive diagnostic code changes."""
     recipes, captured, changes = {}, {}, {}
+    allowed = dict(PASSIVE)
+    if cell == 'go-queues': allowed['tools/go_capsule_build.py'] = GO_OBSERVER_POSTIMAGE
     for name, count in PINS[cell]['recipes'].items():
         rows = read_json(directory / name, 1024**2)
         require(type(rows) is dict and len(rows) == count, 'preserved-cell-original-recipe-count')
@@ -203,9 +236,10 @@ def _equivalence(directory, cell):
             require(type(expected) is dict and set(expected) == {'digest', 'size'},
                 'preserved-cell-recipe-shape')
             current = _input_identity(ROOT / relative)
-            if relative in PASSIVE:
-                require(expected == PASSIVE_ORIGINALS[PINS[cell]['source']][relative]
-                    and current == PASSIVE[relative]['current'],
+            if relative in allowed:
+                original = (GO_OBSERVER_POSTIMAGE['original'] if relative == 'tools/go_capsule_build.py'
+                    else PASSIVE_ORIGINALS[PINS[cell]['source']][relative])
+                require(expected == original and current == allowed[relative]['current'],
                     'preserved-cell-exact-passive-postimage')
                 changes[relative] = {'original': expected, 'current': current, 'changed': expected != current,
                     'currentDiagnosticsReanalysisRequired': True, 'newRuntimeExecutionClaimed': False}
@@ -213,7 +247,7 @@ def _equivalence(directory, cell):
                 require(current == expected, 'preserved-cell-consumed-recipe-drift')
         recipes[name] = {'files': len(rows), 'inventory': identity(
             (json.dumps(rows, sort_keys=True, separators=(',', ':')) + '\n').encode())}
-    require(set(changes) == set(PASSIVE), 'preserved-cell-closed-passive-delta')
+    require(set(changes) == set(allowed), 'preserved-cell-closed-passive-delta')
     for name, count in PINS[cell]['sources'].items():
         rows = read_json(directory / name, 1024**2)
         require(type(rows) is dict and len(rows) == count, 'preserved-cell-original-source-count')
@@ -322,7 +356,7 @@ def verify_prepared(output):
 
 
 def prepare(output):
-    """One fixed acquisition of five already successful public evidence ZIPs."""
+    """One fixed acquisition of six already successful public evidence ZIPs."""
     output = fresh(Path(output)); archives = fresh(output / 'archives')
     runs = {}
     for cell, pin in PINS.items():

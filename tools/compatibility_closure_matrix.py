@@ -15,15 +15,16 @@ if __package__ in {None, ''}: sys.path.insert(0, str(Path(__file__).resolve().pa
 from tools import compatibility_closure_node as node
 from tools import compatibility_native_products as native
 from tools import guest_api_analysis as api
-from tools.dev_workflow.common import digest, require
+from tools.dev_workflow.common import digest, encode, require
 from tools.phase3_resource_identity import file_identity
 from tools.rust_capsule_project import ROOT, fresh, read_file, read_json, write_json
 
 LANGUAGES = ('c', 'rust', 'go', 'java', 'dotnet', 'typescript')
 CELLS = (*LANGUAGES, 'go-queues', 'typescript-initializer')
-PRESERVED_CELLS = ('java', 'typescript', 'go-queues', 'rust', 'typescript-initializer')
+PRESERVED_CELLS = ('java', 'typescript', 'go-queues', 'rust', 'typescript-initializer', 'c')
 PRESERVED_SOURCES = {cell: ('723ffc6a304737b000af03ddb65499b30e0a25f4'
-    if cell in {'rust', 'typescript-initializer'} else 'cc8b88b18abda6e03fc3097d8af658f5e16022f6') for cell in PRESERVED_CELLS}
+    if cell in {'rust', 'typescript-initializer'} else '61a0be045ca33f44cd2ae1467e272168bccdafb7'
+    if cell == 'c' else 'cc8b88b18abda6e03fc3097d8af658f5e16022f6') for cell in PRESERVED_CELLS}
 MAX_PUBLIC_BYTES = 256 * 1024**2
 MAX_PUBLIC_FILES = 8192
 MAX_PUBLIC_FILE = 64 * 1024**2
@@ -113,6 +114,49 @@ def signed(value, component, expected_count, *, expected=None, kind='api-pair', 
     return {'cases': expected_count, 'componentDigest': component, 'originalTerminalPreserved': True}
 
 
+def retained_dotnet_analysis(value, source_commit):
+    """Preserve fresh normal rows; otherwise only this fixed retained builder."""
+    retained_fields = {'originalFailed', 'originalBuilderStatus', 'builderSourceCommit',
+        'baselineRuntimeSourceCommit', 'nodeSourceCommit', 'currentDiagnosticSourceCommit',
+        'originalOrigin', 'currentCompilerInvocations', 'currentCaptureInvocations', 'currentNativeBuilds',
+        'currentSignedInvocations', 'currentCompilerPair', 'currentPassiveDiagnostics',
+        'currentPassiveRawChannels', 'sourceEquivalence', 'originalBuildCount'}
+    schema = value.get('schemaVersion')
+    if schema == 'latent.compatibility.closure-language.v1':
+        require(not retained_fields.intersection(value), 'compatibility-matrix-mixed-dotnet-owner-modes')
+        return api.validate(value['baseline']['api'])
+    require(schema == 'lsf.compatibility.dotnet-retained-node.v1' and retained_fields <= set(value),
+        'compatibility-matrix-unknown-or-incomplete-dotnet-owner-mode')
+    from tools import compatibility_dotnet_retained_node as retained
+    from tools.compatibility_preserved_diagnostics import CODE
+    original = value['originalFailed']
+    require(retained.identity(json.dumps(original, separators=(',', ':')).encode()) == retained.PINS['FAILED.json']
+        and value['originalBuilderStatus'] == 'failed' and value['builderSourceCommit'] == retained.SOURCE
+        and value['baselineRuntimeSourceCommit'] == retained.SOURCE and value['nodeSourceCommit'] == source_commit
+        and value['currentDiagnosticSourceCommit'] == source_commit
+        and value['originalOrigin'] == {'sourceCommit': retained.SOURCE, 'run': retained.RUN,
+            'job': retained.JOB, 'artifact': retained.ARTIFACT, 'archive': retained.ARCHIVE}
+        and all(value[name] == original[name] for name in ('baseline', 'reached', 'baselineSigned', 'capturePhase'))
+        and value['currentCompilerInvocations'] == value['currentCaptureInvocations'] == value['currentNativeBuilds'] == 0
+        and value['currentSignedInvocations'] == 2, 'compatibility-matrix-exact-retained-dotnet-builder-and-epochs')
+    pair = value['compilerPair']
+    require(pair['identity'] == 'sha256:483866846dff60fee97097da3f34654b583a22038ca7e08dbdc5d0e0c16796f5'
+        and pair['identity'] == digest(encode({key: item for key, item in pair.items() if key != 'identity'}))
+        and value['currentCompilerPair']['calleeJoin'] == pair
+        and value['currentCompilerPair']['builderSourceCommit'] == retained.SOURCE
+        and value['currentCompilerPair']['scope'] == 'fixed61a-authenticated-completed-builder-reclassification',
+        'compatibility-matrix-original-dotnet-callee-differential')
+    current = value['currentPassiveDiagnostics']
+    require(current['cell'] == 'dotnet' and current['sourceCommit'] == source_commit
+        and current['component'] == original['baseline']['component']
+        and current['originalAPIIdentity'] == original['baseline']['api']['identity']
+        and current['originalInputsUnchanged'] is True and current['originalRuntimeSourceRelabeled'] is False
+        and current['compilerInvocations'] == current['guestInvocations'] == 0
+        and current['diagnosticCode'] == {name: file_identity(ROOT / name, 1024**2) for name in CODE},
+        'compatibility-matrix-retained-dotnet-current-passive-analysis')
+    return api.validate(current['currentAPI'])
+
+
 def assemble(records, *, source_commit, root=ROOT, preserved_directory=None, diagnostic_output=None):
     require((preserved_directory is None) == (diagnostic_output is None),
         'compatibility-matrix-preservation-with-current-diagnostics')
@@ -126,7 +170,7 @@ def assemble(records, *, source_commit, root=ROOT, preserved_directory=None, dia
         from tools.compatibility_preserved_diagnostics import diagnose
         verified = retained.verify_prepared(Path(preserved_directory))
         require(set(verified['records']) == set(PRESERVED_CELLS),
-            'compatibility-matrix-exact-five-original-executions')
+            'compatibility-matrix-exact-six-original-executions')
         records = {**records, **verified['records']}
         preservation = verified['sourceEquivalence']
         diagnostic_output = fresh(Path(diagnostic_output))
@@ -145,7 +189,8 @@ def assemble(records, *, source_commit, root=ROOT, preserved_directory=None, dia
             and value['native']['producerRun'] == native.QUALIFIED['run']
             and value['native']['producerJob'] == native.QUALIFIED['job'], 'compatibility-matrix-detached-or-incomplete-owner')
         baseline = value['baseline']
-        analysis = api.validate(diagnostics[cell]['currentAPI'] if cell in diagnostics else baseline['api'])
+        analysis = (retained_dotnet_analysis(value, source_commit) if cell == 'dotnet'
+            else api.validate(diagnostics[cell]['currentAPI'] if cell in diagnostics else baseline['api']))
         require(analysis['state'] == 'observed' and analysis['language'] == language
             and analysis['componentDigest'] == baseline['component']['sha256']
             and value['defaultPresentation']['explicitAnalysisSelector'] is False,

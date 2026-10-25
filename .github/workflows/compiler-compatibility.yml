@@ -279,7 +279,7 @@ jobs:
 
   closure-required:
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/feat/sdk-compatibility-closure-20261025' }}
-    name: Fixed public Go compiler selected-body observation
+    name: Required finite ${{ matrix.cell }} compatibility completion
     runs-on: ubuntu-24.04
     timeout-minutes: ${{ matrix.minutes }}
     strategy:
@@ -289,6 +289,9 @@ jobs:
         include:
         - cell: go
           minutes: 105
+        - cell: dotnet
+          minutes: 70
+          retained: true
     env:
       CELL: ${{ matrix.cell }}
       CARGO_BUILD_JOBS: 2
@@ -305,9 +308,11 @@ jobs:
 
         python3 -m pip install --requirement tools/requirements.lock'
     - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+      if: ${{ matrix.cell == 'go' }}
       with:
         targets: wasm32-unknown-unknown
     - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+      if: ${{ matrix.cell == 'go' }}
       with:
         version: 1.254.0
     - uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2
@@ -315,6 +320,7 @@ jobs:
       with:
         version: 0.16.0
     - name: Install the original normal captured compiler boundary
+      if: ${{ matrix.cell == 'go' }}
       run: 'sudo apt-get update
 
         sudo apt-get install --yes bubblewrap libgdbm6t64 libreadline8t64 libsqlite3-0 liblttng-ust1t64 libtcl8.6
@@ -335,11 +341,11 @@ jobs:
         distribution: temurin
         java-version: 25.0.4+101.0.LTS
     - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
-      if: ${{ contains(fromJSON('["dotnet"]'), matrix.cell) }}
+      if: ${{ contains(fromJSON('["dotnet"]'), matrix.cell) && !matrix.retained }}
       with:
         dotnet-version: 10.0.100
     - name: Authenticate the ordinary official SDK29 compiler for managed cells
-      if: ${{ contains(fromJSON('["java","dotnet"]'), matrix.cell) }}
+      if: ${{ contains(fromJSON('["java","dotnet"]'), matrix.cell) && !matrix.retained }}
       shell: bash
       run: 'set -euo pipefail
 
@@ -370,7 +376,7 @@ jobs:
         python3 -B tools/qualify_compatibility_closure.py --prepare-java-cache --tools "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
         --output "$RUNNER_TEMP/compatibility-java-prerequisite"'
     - name: Install original normal NativeAOT adapters
-      if: ${{ contains(fromJSON('["dotnet"]'), matrix.cell) }}
+      if: ${{ contains(fromJSON('["dotnet"]'), matrix.cell) && !matrix.retained }}
       run: python3 -B tools/dotnet_capsule.py install-tools "$RUNNER_TEMP/compatibility-dotnet-tools" --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
     - name: Install original normal TypeScript tools without an engine build
       if: ${{ contains(fromJSON('["typescript","typescript-initializer"]'), matrix.cell) }}
@@ -428,16 +434,27 @@ jobs:
 
         python3 -B -c ''import os; from pathlib import Path; from tools.typescript_guest.borrow_signed_inputs import
         prepare; prepare(Path(os.environ["RUNNER_TEMP"])/"compatibility-typescript-engine")'''
+    - name: Authenticate the one completed .NET builder and current passive diagnostics
+      if: ${{ matrix.cell == 'dotnet' }}
+      timeout-minutes: 10
+      env:
+        GH_TOKEN: ${{ github.token }}
+      shell: bash
+      run: |
+        set -euo pipefail
+        mkdir "$RUNNER_TEMP/compatibility-dotnet-unused-tools"
+        python3 -B tools/qualify_compatibility_closure.py --cell dotnet --prepare-dotnet-retained \
+          --tools "$RUNNER_TEMP/compatibility-dotnet-unused-tools" --output "$RUNNER_TEMP/compatibility-dotnet-retained"
     - name: Run only the fixed normal capture phase then the fresh1800s compiler and node phase
       shell: bash
       run: "set -euo pipefail\nmkdir \"$RUNNER_TEMP/compatibility-unused-tools\"\ntools=\"$RUNNER_TEMP/compatibility-unused-tools\"\
         \nargs=()\ncase \"$CELL\" in\n  c|rust|go|go-queues) ;;\n  java) tools=\"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\"\
         ; args+=(--read-only-cache \"$RUNNER_TEMP/compatibility-java-prerequisite/compiler/gradle-home/caches/modules-2\"\
-        ) ;;\n  dotnet) tools=\"$RUNNER_TEMP/compatibility-dotnet-tools\" ;;\n  typescript) tools=\"$RUNNER_TEMP/compatibility-typescript-tools\"\
+        ) ;;\n  dotnet) args+=(--retained-dotnet \"$RUNNER_TEMP/compatibility-dotnet-retained/prepared\") ;;\n  typescript) tools=\"$RUNNER_TEMP/compatibility-typescript-tools\"\
         ; args+=(--engine \"$RUNNER_TEMP/compatibility-typescript-engine/products\") ;;\n  typescript-initializer)\
         \ tools=\"$RUNNER_TEMP/compatibility-typescript-tools\" ;;\n  *) exit 2 ;;\nesac\npython3 -B tools/qualify_compatibility_closure.py\
         \ --cell \"$CELL\" --native \"$RUNNER_TEMP/compatibility-native\" --tools \"$tools\" --output \"$RUNNER_TEMP/compatibility-result\"\
-        \ --go-selected-body-only \"${args[@]}\""
+        \ \"${args[@]}\""
     - name: Admit only the bounded public synthetic evidence union including failures
       id: public
       if: always()
@@ -453,7 +470,6 @@ jobs:
         if-no-files-found: error
         path: ${{ runner.temp }}/compatibility-public/**
   closure-matrix:
-    if: false # Diagnostic-only Go observation cannot satisfy the eight-cell matrix.
     needs: closure-required
     runs-on: ubuntu-24.04
     timeout-minutes: 10
@@ -466,10 +482,6 @@ jobs:
         python-version: 3.13.5
     - name: Install only locked readers
       run: python3 -m pip install --requirement tools/requirements.lock
-    - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-      with:
-        name: compatibility-closure-${{ github.sha }}-c
-        path: ${{ runner.temp }}/compatibility-inputs/c
     - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
       with:
         name: compatibility-closure-${{ github.sha }}-go

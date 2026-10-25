@@ -9,7 +9,7 @@
       "CELL": "${{ matrix.cell }}"
     },
     "if": "${{ github.event_name == 'push' && github.ref == 'refs/heads/feat/sdk-compatibility-closure-20261025' }}",
-    "name": "Fixed public Go compiler selected-body observation",
+    "name": "Required finite ${{ matrix.cell }} compatibility completion",
     "runs-on": "ubuntu-24.04",
     "steps": [
       {
@@ -29,12 +29,14 @@
         "run": "git fetch --no-tags --depth=1 origin 17e8e622ecd3307a246196cbb5ca06c0fac37301\npython3 -m pip install --requirement tools/requirements.lock"
       },
       {
+        "if": "${{ matrix.cell == 'go' }}",
         "uses": "dtolnay/rust-toolchain",
         "with": {
           "targets": "wasm32-unknown-unknown"
         }
       },
       {
+        "if": "${{ matrix.cell == 'go' }}",
         "uses": "bytecodealliance/actions/wasm-tools/setup",
         "with": {
           "version": "1.254.0"
@@ -48,6 +50,7 @@
         }
       },
       {
+        "if": "${{ matrix.cell == 'go' }}",
         "name": "Install the original normal captured compiler boundary",
         "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap libgdbm6t64 libreadline8t64 libsqlite3-0 liblttng-ust1t64 libtcl8.6 libtk8.6\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\npython3 -B tools/install_guest_bindgen.py \"$RUNNER_TEMP/compatibility-bindgen\"\necho \"$RUNNER_TEMP/compatibility-bindgen\" >> \"$GITHUB_PATH\""
       },
@@ -67,14 +70,14 @@
         }
       },
       {
-        "if": "${{ contains(fromJSON('[\"dotnet\"]'), matrix.cell) }}",
+        "if": "${{ contains(fromJSON('[\"dotnet\"]'), matrix.cell) && !matrix.retained }}",
         "uses": "actions/setup-dotnet",
         "with": {
           "dotnet-version": "10.0.100"
         }
       },
       {
-        "if": "${{ contains(fromJSON('[\"java\",\"dotnet\"]'), matrix.cell) }}",
+        "if": "${{ contains(fromJSON('[\"java\",\"dotnet\"]'), matrix.cell) && !matrix.retained }}",
         "name": "Authenticate the ordinary official SDK29 compiler for managed cells",
         "run": "set -euo pipefail\ncurl --fail --location --proto '=https' --tlsv1.2 --max-time 180 https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz --output \"$RUNNER_TEMP/compatibility-wasi-sdk.tar.gz\"\necho \"87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171  $RUNNER_TEMP/compatibility-wasi-sdk.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/compatibility-wasi-sdk.tar.gz\" -C \"$RUNNER_TEMP\"",
         "shell": "bash"
@@ -86,7 +89,7 @@
         "shell": "bash"
       },
       {
-        "if": "${{ contains(fromJSON('[\"dotnet\"]'), matrix.cell) }}",
+        "if": "${{ contains(fromJSON('[\"dotnet\"]'), matrix.cell) && !matrix.retained }}",
         "name": "Install original normal NativeAOT adapters",
         "run": "python3 -B tools/dotnet_capsule.py install-tools \"$RUNNER_TEMP/compatibility-dotnet-tools\" --wasi-sdk \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\""
       },
@@ -116,8 +119,18 @@
         "run": "git fetch --no-tags --depth=1 origin 6d834e502beea33fbae9347fbaf23ff8c37223b3\npython3 -B -c 'import os; from pathlib import Path; from tools.typescript_guest.borrow_signed_inputs import prepare; prepare(Path(os.environ[\"RUNNER_TEMP\"])/\"compatibility-typescript-engine\")'"
       },
       {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "if": "${{ matrix.cell == 'dotnet' }}",
+        "name": "Authenticate the one completed .NET builder and current passive diagnostics",
+        "run": "set -euo pipefail\nmkdir \"$RUNNER_TEMP/compatibility-dotnet-unused-tools\"\npython3 -B tools/qualify_compatibility_closure.py --cell dotnet --prepare-dotnet-retained \\\n  --tools \"$RUNNER_TEMP/compatibility-dotnet-unused-tools\" --output \"$RUNNER_TEMP/compatibility-dotnet-retained\"\n",
+        "shell": "bash",
+        "timeout-minutes": 10
+      },
+      {
         "name": "Run only the fixed normal capture phase then the fresh1800s compiler and node phase",
-        "run": "set -euo pipefail\nmkdir \"$RUNNER_TEMP/compatibility-unused-tools\"\ntools=\"$RUNNER_TEMP/compatibility-unused-tools\"\nargs=()\ncase \"$CELL\" in\n  c|rust|go|go-queues) ;;\n  java) tools=\"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\"; args+=(--read-only-cache \"$RUNNER_TEMP/compatibility-java-prerequisite/compiler/gradle-home/caches/modules-2\") ;;\n  dotnet) tools=\"$RUNNER_TEMP/compatibility-dotnet-tools\" ;;\n  typescript) tools=\"$RUNNER_TEMP/compatibility-typescript-tools\"; args+=(--engine \"$RUNNER_TEMP/compatibility-typescript-engine/products\") ;;\n  typescript-initializer) tools=\"$RUNNER_TEMP/compatibility-typescript-tools\" ;;\n  *) exit 2 ;;\nesac\npython3 -B tools/qualify_compatibility_closure.py --cell \"$CELL\" --native \"$RUNNER_TEMP/compatibility-native\" --tools \"$tools\" --output \"$RUNNER_TEMP/compatibility-result\" --go-selected-body-only \"${args[@]}\"",
+        "run": "set -euo pipefail\nmkdir \"$RUNNER_TEMP/compatibility-unused-tools\"\ntools=\"$RUNNER_TEMP/compatibility-unused-tools\"\nargs=()\ncase \"$CELL\" in\n  c|rust|go|go-queues) ;;\n  java) tools=\"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\"; args+=(--read-only-cache \"$RUNNER_TEMP/compatibility-java-prerequisite/compiler/gradle-home/caches/modules-2\") ;;\n  dotnet) args+=(--retained-dotnet \"$RUNNER_TEMP/compatibility-dotnet-retained/prepared\") ;;\n  typescript) tools=\"$RUNNER_TEMP/compatibility-typescript-tools\"; args+=(--engine \"$RUNNER_TEMP/compatibility-typescript-engine/products\") ;;\n  typescript-initializer) tools=\"$RUNNER_TEMP/compatibility-typescript-tools\" ;;\n  *) exit 2 ;;\nesac\npython3 -B tools/qualify_compatibility_closure.py --cell \"$CELL\" --native \"$RUNNER_TEMP/compatibility-native\" --tools \"$tools\" --output \"$RUNNER_TEMP/compatibility-result\" \"${args[@]}\"",
         "shell": "bash"
       },
       {
@@ -144,6 +157,11 @@
           {
             "cell": "go",
             "minutes": 105
+          },
+          {
+            "cell": "dotnet",
+            "minutes": 70,
+            "retained": true
           }
         ]
       },
@@ -153,7 +171,7 @@
   },
   "jobId": "closure-required",
   "kind": "job",
-  "reviewReason": "Reviewed root CI faithful mock-constructor/selected-rustc fixture corrections and ONE Go diagnostic route; all existing case IDs/decorators/skips preserved. Exact module helper setup changes are reviewed source, not a skipped control. Static false disables diagnostic rollup without expression obfuscation.",
+  "reviewReason": "Reviewed final eight logical cells: six immutable successful source/profile epochs plus current Go baseline/reached/initializer and fixed completed61a .NET builder/newpositive node-only. Exact passive postimages, source/SDK/WIT/materials/native/deadline/original failure gates remain strict. Original cases/skips/decorators preserved; additive bounded controls only.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/compiler-compatibility.yml"
 }

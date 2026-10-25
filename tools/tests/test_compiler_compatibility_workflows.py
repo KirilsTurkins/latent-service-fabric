@@ -81,10 +81,11 @@ class CompilerWorkflow(unittest.TestCase):
         job = workflow['jobs']['closure-required']
         self.assertEqual(job['if'], "${{ github.event_name == 'push' && github.ref == 'refs/heads/feat/sdk-compatibility-closure-20261025' }}")
         self.assertEqual(job['strategy'], {'fail-fast': False, 'max-parallel': 4, 'matrix': {
-            'include': [{'cell': 'go', 'minutes': JOB_MINUTES['go']}]}})
+            'include': [{'cell': 'go', 'minutes': JOB_MINUTES['go']},
+                        {'cell': 'dotnet', 'minutes': JOB_MINUTES['dotnet'], 'retained': True}]}})
         active = {row['cell'] for row in job['strategy']['matrix']['include']}
         self.assertEqual(set(PINS), set(PRESERVED_CELLS))
-        self.assertEqual(active, {'go'})
+        self.assertEqual(active | set(PINS), set(CELLS))
         self.assertFalse(active & set(PINS))
         self.assertEqual(job['timeout-minutes'], '${{ matrix.minutes }}')
         self.assertEqual(job['env']['CARGO_BUILD_JOBS'], 2)
@@ -96,7 +97,14 @@ class CompilerWorkflow(unittest.TestCase):
         execute = next(command for command in commands if '--cell "$CELL"' in command)
         self.assertIn('--engine "$RUNNER_TEMP/compatibility-typescript-engine/products"', execute)
         self.assertIn('*) exit 2', execute)
-        self.assertIn('--go-selected-body-only', execute)
+        self.assertNotIn('--go-selected-body-only', execute)
+        self.assertIn('--retained-dotnet', execute)
+        retained = next(step for step in steps if '--prepare-dotnet-retained' in step.get('run', ''))
+        self.assertEqual(retained['env'], {'GH_TOKEN': '${{ github.token }}'})
+        self.assertEqual(retained['timeout-minutes'], 10)
+        for step in steps:
+            if step.get('uses', '').startswith('actions/setup-dotnet@') or 'install-tools' in step.get('run', ''):
+                if 'dotnet' in str(step): self.assertIn('!matrix.retained', step['if'])
         admission = next(step for step in steps if step.get('id') == 'public')
         self.assertEqual(admission['if'], 'always()')
         self.assertIn('compatibility_closure_matrix.py retain', admission['run'])
@@ -104,8 +112,8 @@ class CompilerWorkflow(unittest.TestCase):
         self.assertEqual(steps[-1]['with']['path'], '${{ runner.temp }}/compatibility-public/**')
         rollup = workflow['jobs']['closure-matrix']
         self.assertEqual(rollup['needs'], 'closure-required')
-        self.assertIs(rollup['if'], False)
-        self.assertEqual(len([step for step in rollup['steps'] if 'download-artifact@' in step.get('uses', '')]), 3)
+        self.assertNotIn('if', rollup)
+        self.assertEqual(len([step for step in rollup['steps'] if 'download-artifact@' in step.get('uses', '')]), len(active))
         retained = [step for step in rollup['steps'] if 'compatibility_preserved_cells.py' in step.get('run', '')]
         self.assertEqual(len(retained), 1)
         self.assertEqual(retained[0]['env'], {'GH_TOKEN': '${{ github.token }}'})

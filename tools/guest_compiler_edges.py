@@ -35,7 +35,7 @@ GO_PURE = frozenset(('Arg ArgIntReg ArgFloatReg InitMem SP SB Const8 Const16 Con
     'WasmI64Ne WasmI64LtS WasmI64LtU WasmI64LeS WasmI64LeU WasmI64And WasmI64Or '
     'WasmI64Xor WasmI64Shl WasmI64ShrS WasmI64ShrU WasmI32WrapI64 WasmI64ExtendI32S '
     'I64Load8U I64Load8S I64Load16U I64Load16S I64Load32U I64Load32S I64Load '
-    'I64Store8 I64Store16 I64Store32 I64Store F32Load F64Load F32Store F64Store '
+    'I64Store8 I64Store16 I64Store32 I64Store F32Load F64Load F32Store F64Store LoweredAddr '
     'WasmI64ExtendI32U WasmI64Load WasmI32Load WasmI64Store WasmI32Store').split())
 # Go2aae1000 cmd/compile/internal/ssa/_gen/genericOps.go: MakeResult builds
 # result components with final memory operand. It is not a call; individual
@@ -45,6 +45,8 @@ GO_PURE = frozenset(('Arg ArgIntReg ArgFloatReg InitMem SP SB Const8 Const16 Con
 # WasmOps191-206 also defines the 15 unprefixed scalar memory ops above;
 # these may access memory/trap, but do not themselves make a call. Do not infer
 # this from absence of call:true: LoweredWB can call and stays unknown.
+# WasmOps167 LoweredAddr returns base+symbol+offset. Only explicit scalar-data
+# pointer forms are admitted below; function/opaque address producers stay unknown.
 
 
 @dataclass
@@ -273,6 +275,10 @@ def go_ssa(raw, root):
                 else:
                     block.unknown = True
             if any(atom in opcode for atom in ('Closure', 'InterCall', 'Panic', 'Defer', 'TailCall')):
+                block.unknown = True
+            if opcode == 'LoweredAddr' and re.fullmatch(
+                    r' <\*(?:bool|u?int(?:8|16|32|64)?|float(?:32|64))> '
+                    r'\{[^{}\r\n]{1,192}\}(?: \[-?[0-9]{1,20}\])? v[0-9]+', tail) is None:
                 block.unknown = True
             if 'Call' not in opcode and opcode not in GO_PURE:
                 block.unknown = True

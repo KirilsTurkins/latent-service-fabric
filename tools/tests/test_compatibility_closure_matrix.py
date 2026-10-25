@@ -13,6 +13,21 @@ from tools.rust_capsule_project import write_json
 
 
 class CompatibilityClosureMatrix(unittest.TestCase):
+    def test_normal_dotnet_owner_still_uses_original_validator_and_retained_modes_cannot_be_mixed(self):
+        original_api = {'readerInput': 'normal-dotnet-original-baseline'}
+        normal = {'schemaVersion': 'latent.compatibility.closure-language.v1', 'baseline': {'api': original_api}}
+        # This is a mode-routing control, not a substitute API validation test.
+        with patch.object(matrix.api, 'validate', return_value=original_api) as original_reader:
+            self.assertIs(matrix.retained_dotnet_analysis(normal, 'a' * 40), original_api)
+            original_reader.assert_called_once_with(original_api)
+            original_reader.reset_mock()
+            for row in ({**normal, 'originalFailed': {}}, {**normal, 'currentPassiveRawChannels': {}},
+                        {**normal, 'schemaVersion': 'unknown'},
+                        {**normal, 'schemaVersion': 'lsf.compatibility.dotnet-retained-node.v1'}):
+                with self.subTest(schema=row['schemaVersion']), self.assertRaises(ValueError):
+                    matrix.retained_dotnet_analysis(row, 'a' * 40)
+            original_reader.assert_not_called()
+
     def test_exact_case_results_and_order_cannot_be_replaced_by_a_matching_unknown_trap(self):
         component = digest(b'component'); expected = [{'ok': 'api|c|unsupported'}]
         budget = dict(cpuFuel=100, memoryBytes=100, logBytes=0)

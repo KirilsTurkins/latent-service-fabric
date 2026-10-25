@@ -18,6 +18,26 @@ from tools.rust_capsule_project import snapshot
 
 
 class CompatibilityClosureOwner(unittest.TestCase):
+    def test_retained_dotnet_origin_accepts_only_the_exact_failed_builder_and_original_artifact(self):
+        from tools import compatibility_dotnet_retained_node as retained
+        run = {'id': retained.RUN, 'head_sha': retained.SOURCE,
+            'head_branch': 'feat/sdk-compatibility-closure-20261025',
+            'path': '.github/workflows/compiler-compatibility.yml', 'event': 'push', 'run_attempt': 1,
+            'status': 'completed', 'conclusion': 'failure'}
+        job = {'id': retained.JOB, 'run_id': retained.RUN, 'head_sha': retained.SOURCE,
+            'name': 'Required finite dotnet compatibility completion', 'status': 'completed', 'conclusion': 'failure'}
+        artifact = {'id': retained.ARTIFACT, 'size_in_bytes': retained.ARCHIVE['bytes'],
+            'digest': retained.ARCHIVE['sha256'], 'expired': False,
+            'name': 'compatibility-closure-' + retained.SOURCE + '-dotnet',
+            'workflow_run': {'id': retained.RUN, 'head_sha': retained.SOURCE, 'head_branch': run['head_branch']}}
+        with patch.object(subprocess, 'Popen', side_effect=AssertionError('no-process')):
+            self.assertEqual(owner.retained_dotnet_origin(run, job, artifact)['originalStatus'],
+                             'failed-builder-not-qualified-cell')
+            for changed in ({**run, 'head_sha': 'a' * 40}, {**run, 'conclusion': 'success'}):
+                with self.assertRaises(ValueError): owner.retained_dotnet_origin(changed, job, artifact)
+            with self.assertRaises(ValueError): owner.retained_dotnet_origin(run, {**job, 'conclusion': 'success'}, artifact)
+            with self.assertRaises(ValueError): owner.retained_dotnet_origin(run, job, {**artifact, 'digest': digest(b'foreign')})
+
     def test_fixed_public_go_body_is_bounded_and_observer_is_private_default_none(self):
         from tools import guest_compiler_capture, go_capsule_build
         source = fixture.SOURCES['go']

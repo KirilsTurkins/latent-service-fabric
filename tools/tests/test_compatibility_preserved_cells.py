@@ -58,7 +58,7 @@ class PreservedCellsTests(unittest.TestCase):
             self.assertFalse((root / 'never-created').exists())
 
     def test_fixed_two_source_epochs_cannot_be_swapped_or_promoted_to_current_execution(self):
-        for cell in ('java', 'rust'):
+        for cell in ('java', 'rust', 'c'):
             pin = cells.PINS[cell]
             run = {'id': pin['run'], 'head_sha': pin['source'], 'head_branch': cells.BRANCH,
                 'path': cells.WORKFLOW, 'event': 'push', 'run_attempt': 1,
@@ -128,6 +128,27 @@ class PreservedCellsTests(unittest.TestCase):
                 (repo / 'api/proto/unpaid.proto').unlink()
                 put('schemas/one.json', b'changed compiled input')
                 with self.assertRaises(ValueError): cells._auxiliary('after')
+
+    def test_default_none_Go_observer_postimage_is_exact_and_only_for_original_Go_queue_recipe(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory); repo = root / 'repo'; build = root / 'build'; build.mkdir()
+            api = 'tools/guest_api_analysis.py'; observer = 'tools/go_capsule_build.py'
+            sdk = 'sdk/go-guest/runtime.go'
+            old = {'size': 3, 'digest': cells.identity(b'old')['sha256']}
+            current = {'size': 3, 'digest': cells.identity(b'new')['sha256']}
+            for name in (api, observer, sdk):
+                path = repo / name; path.parent.mkdir(parents=True, exist_ok=True); path.write_bytes(b'new')
+            (build / 'recipe.json').write_bytes(encoded({api: old, observer: old}))
+            (build / 'source.json').write_bytes(encoded({'vendor/lsf/' + sdk: current, 'wit/world.wit': old}))
+            pin = {'source': cells.SOURCE, 'recipes': {'recipe.json': 2}, 'sources': {'source.json': 2}}
+            with patch.object(cells, 'ROOT', repo), patch.dict(cells.PINS, {'java': pin, 'go-queues': pin}, clear=True), \
+                    patch.dict(cells.PASSIVE, {api: {'original': old, 'current': current}}, clear=True), \
+                    patch.dict(cells.PASSIVE_ORIGINALS, {cells.SOURCE: {api: old}}, clear=True), \
+                    patch.object(cells, 'GO_OBSERVER_POSTIMAGE', {'original': old, 'current': current}):
+                self.assertIn(observer, cells._equivalence(build, 'go-queues')['passiveDiagnosticChanges'])
+                with self.assertRaises(ValueError): cells._equivalence(build, 'java')
+                (repo / observer).write_bytes(b'unreviewed builder')
+                with self.assertRaises(ValueError): cells._equivalence(build, 'go-queues')
 
 
 if __name__ == '__main__':

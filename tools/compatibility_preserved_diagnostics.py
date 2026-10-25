@@ -1,4 +1,4 @@
-"""Current passive diagnostics on five fixed prior executions; never a guest run.
+"""Current passive diagnostics on fixed authenticated prior builders; never a guest run.
 
 The caller must first authenticate the exact immutable archives. Original
 reports, build owners, runtime receipts and qualified.json are never rewritten.
@@ -18,7 +18,7 @@ from tools.phase3_resource_identity import file_identity
 from tools.rust_capsule_build import Commands
 from tools.rust_capsule_project import ROOT, canonical, fresh, read_file, write_json
 
-CELLS = ('java', 'typescript', 'go-queues', 'rust', 'typescript-initializer')
+CELLS = ('java', 'typescript', 'go-queues', 'rust', 'typescript-initializer', 'c', 'dotnet')
 CODE = ('tools/compatibility_preserved_diagnostics.py', 'tools/guest_api_analysis.py',
     'tools/guest_compatibility.py', 'tools/guest_compatibility_context.py',
     'tools/guest_compiler_capture.py', 'tools/guest_compiler_edges.py',

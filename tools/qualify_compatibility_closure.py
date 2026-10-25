@@ -9,6 +9,8 @@ from __future__ import annotations
 
 import argparse
 import importlib
+import json
+import os
 import re
 from pathlib import Path
 import subprocess
@@ -25,6 +27,7 @@ from tools import guest_api_analysis, guest_compatibility, guest_compatibility_c
 from tools import guest_compiler_edges, guest_dependency_inputs
 from tools import application_dependencies
 from tools.build_observation import build_environment
+from tools.build_process import run_bounded_result
 from tools.dev_workflow.common import require
 from tools.phase3_resource_identity import file_identity
 from tools.rust_capsule_build import Commands
@@ -82,6 +85,134 @@ def prepared_java_cache(path):
         and value['applicationRegistryResolution'] is False and value['nativeBuildCount'] == 0,
         'compatibility-closure-source-bound-normal-cache-prerequisite')
     return path
+
+
+def retained_dotnet_origin(run, job, artifact):
+    from tools import compatibility_dotnet_retained_node as retained
+    require(run['id'] == retained.RUN and run['head_sha'] == retained.SOURCE
+        and run['head_branch'] == 'feat/sdk-compatibility-closure-20261025'
+        and run['path'] == '.github/workflows/compiler-compatibility.yml'
+        and run['event'] == 'push' and run['run_attempt'] == 1
+        and run['status'] == 'completed' and run['conclusion'] == 'failure',
+        'compatibility-dotnet-exact-original-failed-run')
+    require(job['id'] == retained.JOB and job['run_id'] == retained.RUN and job['head_sha'] == retained.SOURCE
+        and job['name'] == 'Required finite dotnet compatibility completion'
+        and job['status'] == 'completed' and job['conclusion'] == 'failure',
+        'compatibility-dotnet-exact-original-failed-builder-job')
+    require(artifact['id'] == retained.ARTIFACT and artifact['size_in_bytes'] == retained.ARCHIVE['bytes']
+        and artifact['digest'] == retained.ARCHIVE['sha256'] and artifact['expired'] is False
+        and artifact['name'] == 'compatibility-closure-' + retained.SOURCE + '-dotnet'
+        and artifact['workflow_run']['id'] == retained.RUN
+        and artifact['workflow_run']['head_sha'] == retained.SOURCE
+        and artifact['workflow_run']['head_branch'] == 'feat/sdk-compatibility-closure-20261025',
+        'compatibility-dotnet-exact-original-failed-builder-artifact')
+    return {'source': retained.SOURCE, 'run': retained.RUN, 'job': retained.JOB,
+        'artifact': retained.ARTIFACT, 'archive': retained.ARCHIVE,
+        'originalStatus': 'failed-builder-not-qualified-cell'}
+
+
+def prepare_retained_dotnet(output):
+    """One pinned archive + passive diagnostics, before the fresh node clock."""
+    from tools import compatibility_dotnet_retained_node as retained
+    from tools.compatibility_preserved_diagnostics import diagnose
+    from tools.java_replay_materials import api
+    require(sys.platform == 'linux' and sys.version_info >= (3, 13), 'compatibility-dotnet-linux-reader')
+    origin = retained_dotnet_origin(api('actions/runs/' + str(retained.RUN)),
+        api('actions/jobs/' + str(retained.JOB)), api('actions/artifacts/' + str(retained.ARTIFACT)))
+    output = Path(output).absolute()
+    require(output != ROOT and ROOT not in output.parents and output not in ROOT.parents,
+        'compatibility-dotnet-external-preparation')
+    output = fresh(output)
+    downloaded = run_bounded_result(['gh', 'api', 'repos/KirilsTurkins/latent-service-fabric/actions/artifacts/'
+        + str(retained.ARTIFACT) + '/zip'], cwd=ROOT, env=dict(os.environ),
+        timeout_seconds=115, max_output_bytes=retained.MAX_ARCHIVE)
+    require(downloaded.returncode == 0 and retained.identity(downloaded.stdout) == retained.ARCHIVE,
+        'compatibility-dotnet-exact-original-archive-download')
+    archive = output / 'archive.zip'; archive.write_bytes(downloaded.stdout)
+    state = retained.prepare(output / 'prepared', archive=archive)
+    head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, timeout=10).decode().strip()
+    current = diagnose(state['original'] / 'baseline', output / 'current-baseline-diagnostics',
+        cell='dotnet', source_commit=head)
+    require(retained.verify_prepared(output / 'prepared') == state,
+        'compatibility-dotnet-originals-unchanged-after-passive-preparation')
+    write_json(output / 'PREPARATION.json', {'origin': origin, 'sourceCommit': head,
+        'currentAPIIdentity': current['currentAPI']['identity'],
+        'archiveCommandsMaximumSeconds': 120, 'diagnosticOwnerMaximumSeconds': 120,
+        'node1800SecondPhaseStarted': False, 'guestCompilerInvocations': 0})
+    return output / 'prepared'
+
+
+def retained_dotnet_diagnostic_channels(prepared, output, current):
+    require(len(current['commands']) == 1 and current['commands'][0]['stage'] == 'preserved-current-default-presentation'
+        and current['commands'][0]['exitCode'] == 0, 'compatibility-dotnet-one-passive-CLI-command')
+    result = {}; logs = Path(output) / 'commands/logs'; logs.mkdir(parents=True, exist_ok=True)
+    for stream in ('stdout', 'stderr'):
+        name = '00-preserved-current-default-presentation.' + stream + '.txt'
+        raw = read_file(Path(prepared).parent / 'current-baseline-diagnostics/diagnostic-commands/logs' / name,
+            (1 if stream == 'stdout' else 4) * 1024**2)
+        if stream == 'stdout':
+            require({'bytes': len(raw), 'sha256': digest(raw)} ==
+                {key: current['defaultPresentation'][key] for key in ('bytes', 'sha256')},
+                'compatibility-dotnet-original-current-CLI-raw-channel')
+        target = logs / name
+        with target.open('xb') as destination: destination.write(raw)
+        result[stream] = {'path': target.relative_to(output).as_posix(), 'bytes': len(raw), 'sha256': digest(raw)}
+    return result
+
+
+def qualify_retained_dotnet(prepared, native_directory, output):
+    from tools import compatibility_dotnet_retained_node as retained
+    from tools.compatibility_preserved_diagnostics import CODE
+    require(sys.platform == 'linux' and sys.version_info >= (3, 13), 'compatibility-dotnet-linux-node-owner')
+    prepared = Path(prepared).resolve(strict=True); native_directory = Path(native_directory).resolve(strict=True)
+    output = Path(output).absolute()
+    require(output != ROOT and ROOT not in output.parents and output not in ROOT.parents
+        and all(output != path and output not in path.parents and path not in output.parents
+            for path in (prepared, native_directory)), 'compatibility-dotnet-separated-node-output')
+    reader = products.reader(); compiled = reader.verify_prepared(native_directory)
+    native_inputs = read_json(native_directory / 'source-inputs.json', 1024**2)
+    source = products.current_source(native_inputs); native = reader.native_products(native_directory)
+    for path in native.values(): path.chmod(0o700)
+    native_before = {name: file_identity(path, 512 * 1024**2) for name, path in native.items()}
+    state = retained.verify_prepared(prepared)
+    head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, timeout=10).decode().strip()
+    diagnostic_root = prepared.parent / 'current-baseline-diagnostics'
+    current = read_json(diagnostic_root / 'DIAGNOSTIC-REANALYSIS.json', 1024**2)
+    require(current['cell'] == 'dotnet' and current['sourceCommit'] == head
+        and current['component'] == state['originalFailed']['baseline']['component']
+        and current['originalInputsUnchanged'] is True and current['guestInvocations'] == 0
+        and current['compilerInvocations'] == 0
+        and current['diagnosticCode'] == {name: file_identity(ROOT / name, 1024**2) for name in CODE},
+        'compatibility-dotnet-fixed-current-baseline-diagnostics')
+    report = guest_compatibility.read(read_file(diagnostic_root / 'compatibility-report.json', 65536))
+    context = guest_compatibility_context.read(read_file(diagnostic_root / 'compatibility-context.json', 65536), report=report)
+    require(guest_api_analysis.read(read_file(diagnostic_root / guest_api_analysis.NAME, 65536),
+        diagnostic_root, report, context) == current['currentAPI'], 'compatibility-dotnet-current-diagnostic-owner')
+    deadline = time.monotonic() + PROGRAMME_SECONDS
+    record = None
+    try:
+        record = retained.run(prepared, native, output, deadline, head)
+        record['currentPassiveRawChannels'] = retained_dotnet_diagnostic_channels(prepared, output, current)
+        require(reader.verify_prepared(native_directory) == compiled
+            and products.current_source(native_inputs) == source and retained.verify_prepared(prepared) == state
+            and native_before == {name: file_identity(path, 512 * 1024**2) for name, path in native.items()}
+            and subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, timeout=10).decode().strip() == head
+            and time.monotonic() < deadline, 'compatibility-dotnet-final-native-source-and-original-node-budget')
+        record.update(status='passed', native=compiled, nativeSource=source['currentSource'],
+            nativeSourcePreflight=source, guestBuildCount=0, nativeBuildCount=0,
+            currentPassiveDiagnostics=current, defaultPresentation=current['defaultPresentation'],
+            compilerNodePhaseMaximumSeconds=PROGRAMME_SECONDS, workflowJobMaximumMinutes=JOB_MINUTES['dotnet'],
+            currentCaptureAllowanceSeconds=0, single1800SecondWholeProgrammeClaim=False)
+        write_workflow_receipt(output / 'qualified.json', record)
+        return record
+    except BaseException as error:
+        if record is not None:
+            record.update(status='failed', errorCategory=type(error).__name__)
+            write_workflow_receipt(output / 'FAILED.json', record)
+        elif output.is_dir():
+            try: retained_dotnet_diagnostic_channels(prepared, output, current)
+            except (ValueError, OSError): pass  # Preserve the original node-owner failure.
+        raise
 
 
 def normal_build(language, app, output, native, tools, deadline, *, engine=None, read_only_cache=None,
@@ -409,13 +540,26 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--cell', choices=CELLS)
     parser.add_argument('--prepare-java-cache', action='store_true')
+    parser.add_argument('--prepare-dotnet-retained', action='store_true')
+    parser.add_argument('--retained-dotnet', type=Path)
     parser.add_argument('--go-selected-body-only', action='store_true')
     parser.add_argument('--native', type=Path)
     for name in ('tools', 'output'): parser.add_argument('--' + name, type=Path, required=True)
     parser.add_argument('--engine', type=Path)
     parser.add_argument('--read-only-cache', type=Path)
     args = parser.parse_args()
-    if args.prepare_java_cache:
+    if args.prepare_dotnet_retained:
+        require(args.cell == 'dotnet' and args.native is None and args.engine is None
+            and args.read_only_cache is None and not args.prepare_java_cache
+            and not args.go_selected_body_only and args.retained_dotnet is None,
+            'compatibility-dotnet-one-fixed-archive-preparation')
+        print(prepare_retained_dotnet(args.output))
+    elif args.retained_dotnet is not None:
+        require(args.cell == 'dotnet' and args.native is not None and args.engine is None
+            and args.read_only_cache is None and not args.prepare_java_cache and not args.go_selected_body_only,
+            'compatibility-dotnet-one-retained-node-route')
+        print(qualify_retained_dotnet(args.retained_dotnet, args.native, args.output)['status'])
+    elif args.prepare_java_cache:
         require(args.cell is None and args.native is None and args.engine is None and args.read_only_cache is None
             and not args.go_selected_body_only,
             'compatibility-closure-unambiguous-normal-cache-prerequisite')

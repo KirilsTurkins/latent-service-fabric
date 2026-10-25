@@ -51,6 +51,8 @@ class DefaultApiAnalysis(unittest.TestCase):
             for row in forged['apis']:
                 for ref in row['implementationMaterials']:
                     if ref['name'] == names[0]: ref['digest'] = selected_ref['digest']
+            for ref in forged['standardImplementationMaterials']:
+                if ref['name'] == names[0]: ref['digest'] = selected_ref['digest']
             forged['identity'] = digest(encode({key: item for key, item in forged.items() if key != 'identity'}))
             (output / 'compatibility-context.json').write_bytes(encode(selected))
             (output / api.NAME).write_bytes(encode(forged))

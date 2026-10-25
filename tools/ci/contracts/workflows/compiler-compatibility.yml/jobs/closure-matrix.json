@@ -3,7 +3,6 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "if": false,
     "needs": "closure-required",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -22,13 +21,6 @@
       {
         "name": "Install only locked readers",
         "run": "python3 -m pip install --requirement tools/requirements.lock"
-      },
-      {
-        "uses": "actions/download-artifact",
-        "with": {
-          "name": "compatibility-closure-${{ github.sha }}-c",
-          "path": "${{ runner.temp }}/compatibility-inputs/c"
-        }
       },
       {
         "uses": "actions/download-artifact",
@@ -72,7 +64,7 @@
   },
   "jobId": "closure-matrix",
   "kind": "job",
-  "reviewReason": "Reviewed root CI faithful mock-constructor/selected-rustc fixture corrections and ONE Go diagnostic route; all existing case IDs/decorators/skips preserved. Exact module helper setup changes are reviewed source, not a skipped control. Static false disables diagnostic rollup without expression obfuscation.",
+  "reviewReason": "Reviewed final eight logical cells: six immutable successful source/profile epochs plus current Go baseline/reached/initializer and fixed completed61a .NET builder/newpositive node-only. Exact passive postimages, source/SDK/WIT/materials/native/deadline/original failure gates remain strict. Original cases/skips/decorators preserved; additive bounded controls only.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/compiler-compatibility.yml"
 }

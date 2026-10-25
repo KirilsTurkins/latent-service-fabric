@@ -43,6 +43,29 @@ GO = b'''gate func(uint32) uint32
 
 
 class CompilerEdges(unittest.TestCase):
+    def test_actual_public_Go_stack_result_address_is_noncall_but_opaque_addresses_stay_unknown(self):
+        # Authenticated add85 run40233715162 artifact12612879518, exact260B body.
+        raw = b'''compatibilityRoot func() int32
+  b1:
+    (?) v1 = InitMem <mem>
+    (?) v5 = I64Const <int32> [0]
+    (?) v3 = SP <uintptr>
+    (+11) v2 = LoweredAddr <*int32> {~r0} v3
+    (+11) v7 = I64Store32 <mem> [0] v2 v5 v1
+    (+11) v6 = MakeResult <mem> v7
+    Ret v6
+'''
+        self.assertEqual(digest(raw), 'sha256:4ab1fd4db53b229214dc41cf324dd172a87b6e38bf1dc3765bfcaae8afaed9f4')
+        value = edges.observe('go-ssa', raw, 'compatibilityRoot', 'outside.example.test/api-primary.Probe', BINDINGS)
+        self.assertEqual((value['completeSelectedBody'], value['state'], value['operations'], value['directEdges']),
+                         (True, 'edge-not-observed', 7, 0))
+        for opcode in (b'LoweredWB', b'LoweredNilCheck', b'UnknownAddress'):
+            changed = raw.replace(b'LoweredAddr', opcode)
+            self.assertEqual(edges.observe('go-ssa', changed, 'compatibilityRoot', 'outside.denied', BINDINGS)['state'], 'unknown')
+        for shape in (b'<func()>', b'<uintptr>', b'<*func()>'):
+            changed = raw.replace(b'<*int32>', shape)
+            self.assertEqual(edges.observe('go-ssa', changed, 'compatibilityRoot', 'outside.denied', BINDINGS)['state'], 'unknown')
+
     def test_Go_result_tuple_preserves_unknown_indirect_and_function_pointer_producers(self):
         raw = (b'gate func() int32\n b1:\n (?) v1 = InitMem <mem>\n'
                b' (?) v2 = Const32 <int32> [0]\n'

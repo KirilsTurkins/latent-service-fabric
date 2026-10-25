@@ -1,10 +1,12 @@
 {
   "schemaVersion":"latent.ci.contracts.v2",
   "kind":"python",
-  "reviewReason":"Reviewed ONE fixed public Go selected-body diagnostic only, no node/sign/reached/init or qualified matrix row; exact unchanged CIL initializer-source alternative and finite six original fixture mappings preserve unknown execution and implementation scope. Original cases/decorators/skips remain; reviewed helper additions extend fixture guards only.",
+  "reviewReason":"Reviewed final eight logical cells: six immutable successful source/profile epochs plus current Go baseline/reached/initializer and fixed completed61a .NET builder/newpositive node-only. Exact passive postimages, source/SDK/WIT/materials/native/deadline/original failure gates remain strict. Original cases/skips/decorators preserved; additive bounded controls only.",
   "module":"tools/tests/test_compatibility_closure_owner.py",
-  "cases":["CompatibilityClosureOwner.test_actual_normal_C_capture_is_in_process_and_counterfactual_keeps_accepted_library_identity","CompatibilityClosureOwner.test_completed_capture_after_allowance_cannot_start_the_compiler_phase","CompatibilityClosureOwner.test_fixed_public_go_body_is_bounded_and_observer_is_private_default_none","CompatibilityClosureOwner.test_native_client_data_migration_is_exact_and_never_relabels_original_materials","CompatibilityClosureOwner.test_original_queue_operation_fact_never_replaces_unrelated_terminal_cause","CompatibilityClosureOwner.test_unqualified_native_tuple_refuses_before_output_or_acquisition"],
+  "cases":["CompatibilityClosureOwner.test_actual_normal_C_capture_is_in_process_and_counterfactual_keeps_accepted_library_identity","CompatibilityClosureOwner.test_completed_capture_after_allowance_cannot_start_the_compiler_phase","CompatibilityClosureOwner.test_fixed_public_go_body_is_bounded_and_observer_is_private_default_none","CompatibilityClosureOwner.test_native_client_data_migration_is_exact_and_never_relabels_original_materials","CompatibilityClosureOwner.test_original_queue_operation_fact_never_replaces_unrelated_terminal_cause","CompatibilityClosureOwner.test_retained_dotnet_origin_accepts_only_the_exact_failed_builder_and_original_artifact","CompatibilityClosureOwner.test_unqualified_native_tuple_refuses_before_output_or_acquisition"],
   "guards":{
+    "CompatibilityClosureOwner.test_retained_dotnet_origin_accepts_only_the_exact_failed_builder_and_original_artifact":
+      "e1a6596ef2ca69b62d4ab2c436e7e5cf09dd323193a01b3e720533c6ac6febe8",
     "CompatibilityClosureOwner.test_fixed_public_go_body_is_bounded_and_observer_is_private_default_none":
       "e1a6596ef2ca69b62d4ab2c436e7e5cf09dd323193a01b3e720533c6ac6febe8",
     "CompatibilityClosureOwner.test_native_client_data_migration_is_exact_and_never_relabels_original_materials":

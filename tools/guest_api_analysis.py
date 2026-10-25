@@ -547,6 +547,16 @@ def dotnet_retention_pair(negative, positive, before, after, root_path):
         and all(before[path] == after[path] for path in before if path != root_path)
         and negative['sourceDigest'] == digest(inventory(before))
         and positive['sourceDigest'] == digest(inventory(after)), 'api-analysis-dotnet-pair-only-root-edge')
+    return _dotnet_callee_join(negative, positive)
+
+
+def _dotnet_callee_join(negative, positive):
+    """Private common join; caller must already prove its exact source relation."""
+    from tools.dotnet_guest import reachability
+    for value in (negative, positive): reachability.validate(value)
+    require(all(negative[key] == positive[key] for key in
+        ('compilerDigest', 'recipeDigest', 'graphDigest'))
+        and negative['componentDigest'] != positive['componentDigest'], 'api-analysis-dotnet-pair-owner')
     left, right = negative.get('cilReferences'), positive.get('cilReferences')
     require(left is not None and right is not None and left['apiBodies'] == right['apiBodies']
         and len(left['apiBodies']) == 1 and left['corelibDigest'] == right['corelibDigest'],
