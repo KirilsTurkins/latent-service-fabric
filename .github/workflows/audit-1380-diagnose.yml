@@ -1,0 +1,61 @@
+name: PR 1380 bounded failure diagnosis
+on:
+  push:
+    branches: [ci/audit-1380-diagnose-f1dd3bc]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  diagnose:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Read failing jobs and bounded error context
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, os, re, subprocess, urllib.request
+          base = 'https://api.github.com/repos/KirilsTurkins/latent-service-fabric'
+          headers = {'Authorization': 'Bearer ' + os.environ['GH_TOKEN'], 'Accept': 'application/vnd.github+json', 'User-Agent': 'lsf-ci-diagnosis'}
+          def api(path):
+              with urllib.request.urlopen(urllib.request.Request(base + path, headers=headers), timeout=30) as response:
+                  data = response.read(2 * 1024 * 1024 + 1)
+              assert len(data) <= 2 * 1024 * 1024
+              return json.loads(data)
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self, req, fp, code, msg, hdrs, newurl):
+                  return None
+          def logs(job):
+              request = urllib.request.Request(base + '/actions/jobs/' + str(job) + '/logs', headers=headers)
+              try:
+                  response = urllib.request.build_opener(NoRedirect).open(request, timeout=30)
+              except urllib.error.HTTPError as error:
+                  assert error.code in (301, 302, 303, 307, 308)
+                  location = error.headers['Location']
+                  assert location.startswith('https://')
+                  response = urllib.request.urlopen(location, timeout=30)
+              with response:
+                  data = response.read(32 * 1024 * 1024 + 1)
+              assert len(data) <= 32 * 1024 * 1024
+              return re.sub(r'\x1b\[[0-9;]*m', '', data.decode('utf-8-sig')).splitlines()
+          for run in (40130264418, 40130264388, 40130264451):
+              jobs = api('/actions/runs/' + str(run) + '/jobs?per_page=100')
+              assert jobs['total_count'] <= 100
+              failed = [job for job in jobs['jobs'] if job['conclusion'] == 'failure']
+              print('RUN', run, 'FAILED', [(job['id'], job['name']) for job in failed], flush=True)
+              for job in failed:
+                  if job['name'] in ('CI result', 'Developer tools result', 'Rust capsule authoring result'):
+                      continue
+                  lines = logs(job['id'])
+                  hits = [i for i, line in enumerate(lines) if re.search(r'panicked at|^.*FAIL:|test .*FAILED|^.*error\[|^.*error:|\[error\]|failed:|Error:', line) and 'stderr' not in line]
+                  positions = sorted({n for i in hits[-12:] for n in range(max(0, i-2), min(len(lines), i+9))})
+                  output = '\n'.join(lines[i] for i in positions)
+                  print('JOB', job['id'], job['name'], '\n' + output[-18000:], flush=True)
+          result = subprocess.run(['git', 'grep', '-n', '-e', 'inventory-fixed-rows', '-e', 'diagnostic lease keeps physical guard alive', '--', 'tools', 'apps', 'crates'], capture_output=True, text=True, timeout=30)
+          print('SOURCE MATCHES\n' + result.stdout[:16000])
+          PY
