@@ -753,6 +753,7 @@ impl StandaloneNode {
                 threads,
             )
             .with_catalog(catalogs.artifacts.clone())
+            .with_audit(self.audit.as_ref().map(super::audit::AuditRuntime::handle))
             .with_policies(
                 self.policies
                     .as_ref()

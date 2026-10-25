@@ -1493,6 +1493,7 @@ dependencies = [
  "clap_complete",
  "latent-activation",
  "latent-artifacts",
+ "latent-audit",
  "latent-control-store",
  "latent-core",
  "latent-manifest",

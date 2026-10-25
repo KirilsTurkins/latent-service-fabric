@@ -37,7 +37,7 @@ FIXED_RUNTIME_ROWS = ("invocation-runtime", "control-runtime")
 FIXED_STACK_ROWS = tuple(name + "-stack" for name in FIXED_RUNTIME_ROWS)
 # Exact reviewed NodeFixed mapping envelope, not sampled RSS or guest capacity.
 THREAD_MAPPING_BYTES = 2 * 1024 * 1024 + 64 * 1024
-FIXED_UNKNOWN_ROWS = ("wasmtime-epoch", "grpc-listener")
+FIXED_UNKNOWN_ROWS = ("wasmtime-epoch", "grpc-listener", "audit-journal")
 
 
 def canonical(value):
@@ -104,12 +104,27 @@ def quiet(inventory):
         require(row["ownership"] == "node-fixed" and integer(row["configuredCount"]) == maximum,
                 "inventory-fixed-profile")
         if name in FIXED_UNKNOWN_ROWS:
-            # These two native inventory sources intentionally expose no live
+            # These native inventory sources intentionally expose no live
             # count. The independently owned OS samples supply that evidence.
             require(row["activeCount"] is None, "inventory-fixed-profile")
         else:
             require(row["activeCount"] is not None
                     and 1 <= integer(row["activeCount"]) <= maximum, "inventory-fixed-unavailable")
+    # The configured journal exposes capacity, not a live-worker count. Keep
+    # the new row explicit without accepting arbitrary topology additions or
+    # changing the frozen workload's audit limits. Shutdown still verifies the
+    # actual worker join independently; None must never become zero or one.
+    audit = rows["audit-journal"]
+    attributes = audit["attributes"]
+    require(audit["kind"] == "store" and isinstance(attributes, dict)
+            and attributes.get("profile") == "audit-capacity-v1"
+            and attributes.get("measurementStatus") == "available", "inventory-audit-profile")
+    configured_audit = configuration("tests")["audit"]
+    for observed, configured in (("maximumRecords", "records"), ("maximumDiskBytes", "diskBytes"),
+                                 ("maximumQueuedOperations", "queuedOperations"),
+                                 ("maximumQueryOwners", "queryOwners")):
+        require(integer(attributes.get(observed)) == configured_audit[configured],
+                "inventory-audit-profile")
     for runtime, stack in zip(FIXED_RUNTIME_ROWS, FIXED_STACK_ROWS):
         row, threads = rows[stack], rows[runtime]
         require(row["kind"] == "byte" and row["ownership"] == "node-fixed"

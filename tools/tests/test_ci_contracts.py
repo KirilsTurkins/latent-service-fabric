@@ -990,6 +990,11 @@ class RepositoryMigrationTests(unittest.TestCase):
                 self.assertEqual(value["run"].count(command), 1)
                 self.assertEqual(data["after"][key], dict(value, run=value["run"].replace(
                     command, command + " --standard-console", 1)), key)
+            elif key == '.github/workflows/ci.yml:rust:Qualify signed static sites through OCI and actual browsers':
+                old = '--chrome "$(command -v google-chrome)" > "${RUNNER_TEMP}/phase2-gate/static-site-receipt.json"'
+                new = '--chrome "$(command -v google-chrome)" --audit-lifecycle-receipt "${RUNNER_TEMP}/phase2-gate/audit-lifecycle-receipt.json" > "${RUNNER_TEMP}/phase2-gate/static-site-receipt.json"'
+                self.assertEqual(value["run"].count(old), 1)
+                self.assertEqual(data["after"][key], dict(value, run=value["run"].replace(old, new)), key)
             elif key != reviewed_extension and key not in performance_extensions:
                 self.assertEqual(data["after"][key], value, key)
             else:
