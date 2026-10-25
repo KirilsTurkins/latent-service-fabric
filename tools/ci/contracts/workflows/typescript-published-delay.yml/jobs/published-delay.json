@@ -1,0 +1,76 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "name": "One normal component and six signed published delay cases",
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    },
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "name": "Start the fixed aggregate setup and programme clock",
+        "run": "python3 -c 'import os,time;open(os.environ[\"GITHUB_ENV\"],\"a\").write(\"LSF_PUBLISHED_DELAY_STARTED_NS=\"+str(time.time_ns())+\"\\n\")'"
+      },
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "actions/setup-node",
+        "with": {
+          "node-version": "24.19.0",
+          "package-manager-cache": false
+        }
+      },
+      {
+        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "name": "Fetch only the immutable normal compiler and native inputs",
+        "run": "git fetch --no-tags --depth=1 origin 6d834e502beea33fbae9347fbaf23ff8c37223b3\ngit fetch --no-tags --depth=1 origin 77bf0e3f3b68e17342b6146abd6f2de34a3efa00\n"
+      },
+      {
+        "name": "Install normal pinned tools and compiler isolation within the aggregate",
+        "run": "python3 - <<'PY'\nimport os,sys,time\nfrom pathlib import Path\nfrom tools.build_process import run_bounded_result\nfrom tools.build_observation import build_environment\nroot=Path(os.environ['RUNNER_TEMP'])/'typescript-published-delay-bootstrap'\nroot.mkdir(mode=0o700)\nstarted=int(os.environ['LSF_PUBLISHED_DELAY_STARTED_NS'])\ncommands=[\n  [sys.executable,'-m','pip','install','--requirement','tools/requirements.lock'],\n  ['sudo','apt-get','update'],\n  ['sudo','apt-get','install','--yes','bubblewrap'],\n  ['sudo','sysctl','-w','kernel.apparmor_restrict_unprivileged_userns=0'],\n  [sys.executable,'tools/typescript_capsule.py','install-tools',str(Path(os.environ['RUNNER_TEMP'])/'typescript-published-delay-tools')],\n]\nfor command in commands:\n  remaining=1200-(time.time_ns()-started)/1e9-10\n  if remaining<=0:raise RuntimeError('published-delay-bootstrap-deadline')\n  result=run_bounded_result(command,Path.cwd(),build_environment(root),timeout_seconds=min(300,remaining),max_output_bytes=4*1024**2)\n  sys.stdout.buffer.write(result.stdout);sys.stderr.buffer.write(result.stderr)\n  if result.returncode:raise RuntimeError('published-delay-bootstrap-command')\nPY\n"
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Validate prerequisites compile once and execute six fresh signed calls",
+        "run": "python3 -B tools/qualify_typescript_published_delay.py \\\n  --tools \"$RUNNER_TEMP/typescript-published-delay-tools\" \\\n  --output \"$RUNNER_TEMP/typescript-published-delay-public\"\n"
+      },
+      {
+        "if": "always()",
+        "name": "Retain only fixed public collector files",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "typescript-published-delay-${{ github.sha }}",
+          "path": "${{ runner.temp }}/typescript-published-delay-public/RESULT.json\n${{ runner.temp }}/typescript-published-delay-public/FAILED.json\n${{ runner.temp }}/typescript-published-delay-public/COMMANDS.json\n${{ runner.temp }}/typescript-published-delay-public/INPUTS.json\n${{ runner.temp }}/typescript-published-delay-public/PROJECT-SOURCE.json\n${{ runner.temp }}/typescript-published-delay-public/CAPTURE.json\n${{ runner.temp }}/typescript-published-delay-public/APPLICATION-LOCK.json\n${{ runner.temp }}/typescript-published-delay-public/NPM-GRAPH.json\n${{ runner.temp }}/typescript-published-delay-public/DEPENDENCY-MANIFEST.json\n${{ runner.temp }}/typescript-published-delay-public/DEPENDENCY-LOCK.json\n${{ runner.temp }}/typescript-published-delay-public/BUILD-LOGS.json\n${{ runner.temp }}/typescript-published-delay-public/PUBLIC-MANIFEST.json\n${{ runner.temp }}/typescript-published-delay-public/INVOCATIONS.json\n${{ runner.temp }}/typescript-published-delay-public/RETIREMENTS.json\n${{ runner.temp }}/typescript-published-delay-public/STARTUP.json\n${{ runner.temp }}/typescript-published-delay-public/SHUTDOWN.json\n${{ runner.temp }}/typescript-published-delay-public/source-controls.stdout.txt\n${{ runner.temp }}/typescript-published-delay-public/source-controls.stderr.txt\n${{ runner.temp }}/typescript-published-delay-public/normal-build.stdout.txt\n${{ runner.temp }}/typescript-published-delay-public/normal-build.stderr.txt\n${{ runner.temp }}/typescript-published-delay-public/BUILD-COMPLETE.json\n${{ runner.temp }}/typescript-published-delay-public/BUILD-FAILED.json\n${{ runner.temp }}/typescript-published-delay-public/build-observation.json\n${{ runner.temp }}/typescript-published-delay-public/source-inputs.json\n${{ runner.temp }}/typescript-published-delay-public/recipe-inputs.json\n${{ runner.temp }}/typescript-published-delay-public/package-inputs.json\n${{ runner.temp }}/typescript-published-delay-public/package-source.json\n${{ runner.temp }}/typescript-published-delay-public/bindings.json\n${{ runner.temp }}/typescript-published-delay-public/compiler-containment.json\n${{ runner.temp }}/typescript-published-delay-public/typescript-runtime-selection.json\n${{ runner.temp }}/typescript-published-delay-public/standard-runtime-selection.json\n${{ runner.temp }}/typescript-published-delay-public/application-dependencies.json\n${{ runner.temp }}/typescript-published-delay-public/npm-inputs.json\n${{ runner.temp }}/typescript-published-delay-public/bundle-selected-inputs.json\n${{ runner.temp }}/typescript-published-delay-public/compatibility-report.json\n${{ runner.temp }}/typescript-published-delay-public/compatibility-context.json\n${{ runner.temp }}/typescript-published-delay-public/component.wasm\n${{ runner.temp }}/typescript-published-delay-public/application.mjs\n${{ runner.temp }}/typescript-published-delay-public/generated-bindings.js\n${{ runner.temp }}/typescript-published-delay-public/probe-main.ts\n${{ runner.temp }}/typescript-published-delay-public/probe-world.wit\n",
+          "retention-days": 7
+        }
+      }
+    ],
+    "timeout-minutes": 25
+  },
+  "jobId": "published-delay",
+  "kind": "job",
+  "reviewReason": "Require originalsetup/privatepolicy/pinnedinputs/onebuild/two-zero-skip-controls/six-actual-ID-and-revision-boundcalls and cleanretirement, retaining alloldrunblocks.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/typescript-published-delay.yml"
+}
