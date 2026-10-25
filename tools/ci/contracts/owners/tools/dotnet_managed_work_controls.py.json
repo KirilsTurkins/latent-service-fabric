@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/dotnet_managed_work_controls.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Append two exact production-registry typed-settlement-refusal controls; preserve all fifteen prior cases, normal SDK10.0.100 and existing timer/wait/driver modes.",
+  "reviewReason": "Retain the reviewed AggregateTaskWait compiler source in the existing explicit source closure; original controls, runtime behavior, pinning and qualification scope remain unchanged.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "ecc3311b39c7e6b3d73c1ba3c458015cd55aac6972dca3aad29b207c741691b9"
+  "sha256": "e9b27b59392b1a83709406c8fcc9d3ec0282a6b02e5aed55f915df770ad36cf6"
 }
