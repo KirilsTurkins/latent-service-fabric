@@ -102,6 +102,9 @@ pub struct WasmtimeConfig {
     pub execution_isolation_profile: ExecutionIsolationProfile,
     #[cfg(feature = "development-clock-fixture")]
     pub development_clock_readings: Option<DevelopmentClockReadings>,
+    /// Explicit disposable local-service rejection observation; no authority.
+    #[cfg(feature = "development-local-service-fixture")]
+    pub development_local_service_refusals: bool,
     /// Test-host-only factory-time numeric trap capture, fixed at sixteen frames.
     #[cfg(feature = "development-test-host")]
     pub development_numeric_trap_observation: bool,
@@ -200,6 +203,8 @@ impl Default for WasmtimeConfig {
             execution_isolation_profile: ExecutionIsolationProfile::LocalExperimental,
             #[cfg(feature = "development-clock-fixture")]
             development_clock_readings: None,
+            #[cfg(feature = "development-local-service-fixture")]
+            development_local_service_refusals: false,
             #[cfg(feature = "development-test-host")]
             development_numeric_trap_observation: false,
             angular_renderer: false,
@@ -285,6 +290,12 @@ impl WasmtimeConfig {
         self.execution_isolation_profile.validate_platform()?;
         #[cfg(feature = "development-clock-fixture")]
         if self.development_clock_readings.is_some()
+            && self.execution_isolation_profile != ExecutionIsolationProfile::LocalExperimental
+        {
+            return Err(invalid_config());
+        }
+        #[cfg(feature = "development-local-service-fixture")]
+        if self.development_local_service_refusals
             && self.execution_isolation_profile != ExecutionIsolationProfile::LocalExperimental
         {
             return Err(invalid_config());

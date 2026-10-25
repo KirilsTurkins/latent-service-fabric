@@ -308,7 +308,8 @@ def llvm_checks(run: Commands, build: Path, source: Path) -> dict:
     cross = results.cross_pass(patch.regular(run.root, projected.name, 256 * 1024))
     obj = run.root / 'sjlj-through-wineh.o'
     run.run('sjlj-phi-instruction-selection', build / 'bin/llc', projected,
-            '-exception-model=wasm', '-mattr=+exception-handling,+reference-types,+multivalue',
+            '-wasm-enable-eh', '-wasm-enable-sjlj', '-exception-model=wasm',
+            '-mattr=+exception-handling,+reference-types,+multivalue',
             '-wasm-use-legacy-eh=false', '-filetype=obj', '-o', obj, seconds=60)
     raw = patch.regular(run.root, obj.name)
     if raw[:8] != b'\0asm\x01\0\0\0':

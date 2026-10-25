@@ -73,6 +73,17 @@ The original 60-second per-test timeout, all thirteen lit cases and all other
 bounds remain unchanged. This prerequisite correction is not a compiler or
 Java component qualification.
 
+The next attempt built in 2,538.89 seconds and passed all nine SSA units and
+thirteen original lit cases without skips. Its separate opt/WinEH/verifier
+stage also passed, but the subsequent llc command lacked the explicit Wasm
+EH/SjLj selectors required alongside `-exception-model=wasm`. It aborted before
+instruction selection; no object, packaged compiler or Java component qualified.
+That diagnostic command now selects both `-wasm-enable-eh` and
+`-wasm-enable-sjlj`, matching the original mixed-EH/SjLj regression's llc RUN.
+The EH selector also preserves the incoming invokes in the already transformed
+cross-pass module. All source patches, mandatory oracles, guest flags and
+bounds remain unchanged; this harness correction makes no size/profit claim.
+
 Before acquisition, a bounded Linux reader records CPU affinity/process CPU
 count, physical total/available memory and current cgroup v2 ancestor limits.
 The operational preconditions are four effective CPUs, 12 GiB effective total
