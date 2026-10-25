@@ -1,0 +1,78 @@
+name: Focused containment deadline rendezvous
+on:
+  push:
+    branches: ['fix/containment-deadline-rendezvous-20261025']
+    paths:
+      - '.github/workflows/containment-deadline.yml'
+      - 'crates/latent-wasmtime/tests/containment_backend.rs'
+      - 'crates/latent-wasmtime/tests/containment_backend/**'
+      - 'tools/toolchain-smoke/examples/containment_capsule/**'
+      - 'tools/qualify_containment_deadline.py'
+permissions:
+  contents: read
+concurrency:
+  group: containment-deadline-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  deadline:
+    name: One maintained component and the exact real deadline case
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      CARGO_BUILD_JOBS: '2'
+      CARGO_INCREMENTAL: '0'
+      CARGO_PROFILE_DEV_DEBUG: '0'
+      CARGO_PROFILE_TEST_DEBUG: '0'
+      CARGO_PROFILE_DEV_DEBUG_ASSERTIONS: 'true'
+      CARGO_PROFILE_TEST_DEBUG_ASSERTIONS: 'true'
+      CARGO_PROFILE_DEV_OVERFLOW_CHECKS: 'true'
+      CARGO_PROFILE_TEST_OVERFLOW_CHECKS: 'true'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          prefix-key: lsf-ci-dependencies-v3-contract-profiles
+          shared-key: host-contracts
+          key: ubuntu-24.04
+          cache-targets: false
+          cache-directories: |
+            target/debug
+            target/release
+            target/wasm32-unknown-unknown
+            target/wasm32-wasip2
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - name: Build the tiny fixture and execute only the exact original deadline case
+        run: >-
+          python3 -B tools/qualify_containment_deadline.py
+          --source-commit "${{ github.sha }}"
+          --output "$RUNNER_TEMP/containment-deadline"
+      - name: Retain actual build, exact-case observation and failures
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: containment-deadline-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/containment-deadline/receipt.json
+            ${{ runner.temp }}/containment-deadline/FAILED.json
+            ${{ runner.temp }}/containment-deadline/source-inputs.json
+            ${{ runner.temp }}/containment-deadline/commands.json
+            ${{ runner.temp }}/containment-deadline/containment-core.wasm
+            ${{ runner.temp }}/containment-deadline/containment-component.wasm
+            ${{ runner.temp }}/containment-deadline/commands/logs/*.txt
+          if-no-files-found: warn
+          retention-days: 3
