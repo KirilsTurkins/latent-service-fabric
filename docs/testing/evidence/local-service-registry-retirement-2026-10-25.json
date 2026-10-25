@@ -1,0 +1,458 @@
+{
+  "actualNative": {
+    "caseSeconds": 0.04,
+    "cases": [
+      "broker::tests::session_native_memory::post_store_registry_retirement_releases_original_child_capacity_without_a_new_session"
+    ],
+    "commandSeconds": 85.848917361,
+    "failed": 0,
+    "filteredOut": 208,
+    "ignored": 0,
+    "passed": 1
+  },
+  "actualPython": {
+    "cases": [
+      "test_two_cells_and_explicit_child_budget_only_follow_a_selected_local_fixture",
+      "test_refusal_records_bind_the_failed_activation_after_expected_negative_cases",
+      "test_refusal_reader_rejects_coerced_private_forged_or_foreign_observations",
+      "test_refusal_probe_option_leaves_ordinary_log_rpc_path_untouched",
+      "test_public_retention_excludes_private_scratch_and_refuses_file_or_byte_drift"
+    ],
+    "failed": 0,
+    "passed": 5,
+    "skipped": 0
+  },
+  "artifact": {
+    "allCrcsVerified": true,
+    "bytes": 467431,
+    "id": 12588241111,
+    "members": [
+      {
+        "bytes": 17220,
+        "path": "NODE-LOCAL-SERVICE-REFUSAL.json",
+        "sha256": "sha256:68255557fd06ba86018faa2463633e2785d2f7f2ecb0bf817b0cf8375824868d"
+      },
+      {
+        "bytes": 1823,
+        "path": "commands/builder-import-preflight.stdout",
+        "sha256": "sha256:592c987ecfee24e140a8d483dc3ecc7ea3d37ff4a347e68399ef858d2b916eb0"
+      },
+      {
+        "bytes": 0,
+        "path": "commands/builder-import-preflight.stderr",
+        "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "bytes": 0,
+        "path": "commands/clean-source.stderr",
+        "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "bytes": 0,
+        "path": "commands/clean-source.stdout",
+        "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "bytes": 0,
+        "path": "commands/current-source-inventory.stderr",
+        "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "bytes": 1530341,
+        "path": "commands/current-source-inventory.stdout",
+        "sha256": "sha256:f121a398d30319c9831431a326e98769249981ec41f6256b65f4686b4461e981"
+      },
+      {
+        "bytes": 0,
+        "path": "commands/fixture-cli-preflight.stderr",
+        "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "bytes": 562,
+        "path": "commands/fixture-cli-preflight.stdout",
+        "sha256": "sha256:213e16d426479e79947d95190311716cbc6f7afdf6d62fae1a760407c4310367"
+      },
+      {
+        "bytes": 825,
+        "path": "commands/normal-rust-tools-and-node.stderr",
+        "sha256": "sha256:2ef8f552557fb7534486a4f7945c4bab53d1588fa48a559645fdc2ebcb4664be"
+      },
+      {
+        "bytes": 251,
+        "path": "commands/normal-rust-tools-and-node.stdout",
+        "sha256": "sha256:5e7e05ca65f867ec2ecabfb024b292bcd8aaef070d2af23ac94e7056fdb6cb6b"
+      },
+      {
+        "bytes": 0,
+        "path": "commands/original-local-service-fixture.stderr",
+        "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "bytes": 98,
+        "path": "commands/original-local-service-fixture.stdout",
+        "sha256": "sha256:e8ca3ae446eae2ff2772efd27a744d6d69956094be05179134de4b3023e57fbc"
+      },
+      {
+        "bytes": 1206,
+        "path": "commands/python-controls.stderr",
+        "sha256": "sha256:fb3c5aa262580bbecf17d6872337dc35664801556f710e425127b5af5eeb2f6c"
+      },
+      {
+        "bytes": 0,
+        "path": "commands/python-controls.stdout",
+        "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "bytes": 7786,
+        "path": "commands/registry-retirement-native-control.stderr",
+        "sha256": "sha256:64964baaba1f15a0d459c7028397d62e46d72c1c344871018f1a0eb10dfb0537"
+      },
+      {
+        "bytes": 250,
+        "path": "commands/registry-retirement-native-control.stdout",
+        "sha256": "sha256:c0a9e04af2baf26ea113b57ba28c493ddabfb2fe0946d8e6c1ec1a06e9ff2bff"
+      },
+      {
+        "bytes": 0,
+        "path": "commands/source-head.stderr",
+        "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "bytes": 41,
+        "path": "commands/source-head.stdout",
+        "sha256": "sha256:b54b1c5b0f8b577a2b17d301d63fb3908b21d3dfa0c2ca85a0de6ca55c8e7d06"
+      },
+      {
+        "bytes": 41,
+        "path": "commands/source-tree.stdout",
+        "sha256": "sha256:8e2619d70171d0c9d2cf7a41550d8a03a8e4a69f1121aa52ada4ec48f22a8b5a"
+      },
+      {
+        "bytes": 0,
+        "path": "commands/source-tree.stderr",
+        "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "bytes": 52996,
+        "path": "fixture/observation.json",
+        "sha256": "sha256:220b8a753f6420d0e333d703a0550f35929a190c1a25b918dfa58afde5d689c4"
+      },
+      {
+        "bytes": 50359,
+        "path": "fixture/node/probe.json",
+        "sha256": "sha256:c554df16c23e6af8625385a1031793c1bcbe0854f9ec26cb45a76cfbfcabc7f8"
+      },
+      {
+        "bytes": 24307,
+        "path": "fixture/node/node-tests.json",
+        "sha256": "sha256:7c6e310bf9df144c32ffc50d6b0eb0986b9fc634db5ea66110f8c466e8b3479e"
+      },
+      {
+        "bytes": 906,
+        "path": "source-node.json",
+        "sha256": "sha256:df1eef0a4fb7b84d8912cccbfa2b7205c15eb51bf2976dcf574061be1e79df9c"
+      }
+    ],
+    "publicFiles": 25,
+    "sha256": "sha256:43dd50735b7839ed08339ed9fc8e7b36cc97b925191df573117dd27f02920835"
+  },
+  "cleanup": {
+    "bothNodeShutdownsClean": true,
+    "calleeCompiler": "reaped",
+    "disposablePrivatePairWorkspace": "purged"
+  },
+  "commandSeconds": {
+    "builder-import-preflight": 0.33681823000000577,
+    "clean-source": 0.8537977310000002,
+    "current-source-inventory": 0.2175897500000019,
+    "fixture-cli-preflight": 0.13480540700000176,
+    "normal-rust-tools-and-node": 351.512145824,
+    "original-local-service-fixture": 81.34512325699995,
+    "python-controls": 0.2761659430000094,
+    "registry-retirement-native-control": 85.848917361,
+    "source-head": 0.014815092999995727,
+    "source-tree": 0.013477348000009215
+  },
+  "historicalNativeControls": {
+    "actualPassedConfigCases": 1,
+    "actualPassedObserverCases": 2,
+    "currentPassCredit": false,
+    "currentSourceEquivalent": false,
+    "reexecutedNow": false,
+    "run": 40156235393,
+    "sourceCommit": "81e7c5a8e8d687d478bd502c35c5cca98e4f3fb9",
+    "wholeRunStatus": "failed"
+  },
+  "history": [
+    {
+      "attempt": 2,
+      "executedSource": "850449c49d6996381f740e894b1a81a277977148",
+      "failedCase": "two-fresh-children",
+      "innerCapacityDimension": "not-recorded-in-that-run",
+      "job": 121024539436,
+      "observedPayload": "[\"4214\"]",
+      "originalCasesPassed": 13,
+      "run": 40142691214,
+      "prHead": "a6931393c09352d436878ece2bc2fa01a4189bee",
+      "status": "failed"
+    },
+    {
+      "cause": "private-state-directory-required",
+      "originalFourteen": "not-run",
+      "run": 40156235393,
+      "source": "81e7c5a8e8d687d478bd502c35c5cca98e4f3fb9",
+      "stage": "python-controls",
+      "status": "failed"
+    },
+    {
+      "artifactAvailability": "removed-owned-unintended-private-workspace-retention",
+      "artifactId": 12585129188,
+      "innerCause": "unavailable; removed artifact was not downloaded",
+      "run": 40158041215,
+      "source": "10b3fd79885eef4ba4d7ffd32ac87d987c8a1254",
+      "stage": "original-local-service-fixture",
+      "status": "failed"
+    },
+    {
+      "cause": "extended-acl-not-supported",
+      "originalFourteen": "not-run",
+      "run": 40159938950,
+      "source": "8b125bade308d27d3c70a57f4951dc34f56ad9e2",
+      "stage": "source-runtime-before-node-start",
+      "status": "failed"
+    },
+    {
+      "failedCase": "two-fresh-children",
+      "observedPayload": "[\"4214\"]",
+      "originalCasesPassed": 13,
+      "run": 40161413799,
+      "sameActivationRefusal": {
+        "activationId": "dev-f86ebfa96a786af4cad45e3c567c4351",
+        "code": "resource-exhausted",
+        "descendants": {
+          "closed": false,
+          "depth": 0,
+          "liveChildren": 1,
+          "liveDescendants": 1,
+          "liveObservedChildMemoryBytes": 1116704,
+          "reservedMemoryBytes": 15754790
+        },
+        "reason": "descendant-capacity",
+        "remaining": {
+          "childCalls": 15,
+          "cpuFuel": 999988570,
+          "memoryBytes": 14914359,
+          "wallTimeLimitMillis": 4991
+        },
+        "sampling": "before-public-redaction-after-adapter-return",
+        "schemaVersion": "latent.dev.local-service-refusal.v1",
+        "stage": "child-start",
+        "typedBudget": null
+      },
+      "source": "ff7e6fc297758691011418708edcb31aad1978a3",
+      "status": "failed"
+    }
+  ],
+  "inputBinding": {
+    "allCommandChannelsVerified": true,
+    "allRecipeGitBlobsVerified": true,
+    "canonicalEncoding": "UTF-8 json.dumps(sort_keys=True,separators=(comma,colon)); no trailing newline",
+    "commands": 10,
+    "currentGitInventory": {
+      "bytes": 1530341,
+      "sha256": "sha256:f121a398d30319c9831431a326e98769249981ec41f6256b65f4686b4461e981"
+    },
+    "rawChannels": 20,
+    "rawControllerReceipt": {
+      "bytes": 17220,
+      "path": "NODE-LOCAL-SERVICE-REFUSAL.json",
+      "sha256": "sha256:68255557fd06ba86018faa2463633e2785d2f7f2ecb0bf817b0cf8375824868d"
+    },
+    "recipeFiles": 45,
+    "recipeMappingCanonicalJsonSha256": "sha256:ac6b721b5e5d1bf3c73352bdca429a5d1e5653d789c595931bab4a66d2d71b24"
+  },
+  "limits": {
+    "allLanguagesOrPublishedLibrariesQualified": false,
+    "cleanHost": false,
+    "limitsOrGrantsRaised": false,
+    "productionEnablement": false,
+    "publisherAuthenticated": false,
+    "qualificationComplete": false,
+    "wholeCostBoundOrMinimumProfile": false,
+    "wholeTicketComplete": false
+  },
+  "normalHost": {
+    "binaries": {
+      "latent": "sha256:081c7e1642be1a7a4daa351f6e0fe017c96d433bbf0f2c760f59deba912468dc",
+      "latent-aot-compiler": "sha256:37c533cf80f9b6c23cee9a6f6526bcd149f75f1867297d749e379dc9a891b234",
+      "latentd": "sha256:12fa0429a2e93716eb0818101ac1964949e6a4558a7b214df8b394edd2545a43"
+    },
+    "buildProfile": {
+      "features": [
+        "latentd/development-test-node"
+      ],
+      "name": "dev",
+      "overrides": ".cargo/managed-guest.toml",
+      "sha256": "sha256:199eb2f4f23ccbc2b2e363afb3b0f82099567c7f46d22b86ba8131b19484c48a"
+    },
+    "engine": {
+      "compilerSha256": "37c533cf80f9b6c23cee9a6f6526bcd149f75f1867297d749e379dc9a891b234",
+      "hostAbiProfile": "lsf-host-abi-phase3-v5",
+      "wasmtimeVersion": "48.0.7"
+    },
+    "helperSha256": "sha256:ffa8916644a8dfe0993ae8b1fa98d7a97275cc1f81fe4f15a315c252b9a64bf9",
+    "purpose": "source-application-node-tests",
+    "sourceCommit": "95319ec828adbaa096b89cf7063d2ccb9a5164f9",
+    "sourceDirty": false,
+    "sourceNodeRecord": {
+      "bytes": 906,
+      "sha256": "sha256:df1eef0a4fb7b84d8912cccbfa2b7205c15eb51bf2976dcf574061be1e79df9c"
+    }
+  },
+  "originalFixtureBounds": {
+    "calleeMemoryCeilingBytes": 8388608,
+    "cells": 2,
+    "grants": [
+      "latent:service/invoke@0.1.0"
+    ],
+    "maximumLiveChildren": 1,
+    "maximumLiveDescendants": 2,
+    "rootChildCalls": 16,
+    "rootCpuFuel": 1000000000,
+    "rootMemoryBytes": 33554432,
+    "rootWallMillis": 5000
+  },
+  "originalSignedCases": [
+    {
+      "id": "cold",
+      "outcomeKnown": true,
+      "payloadSha256": "sha256:d646f2fabdd13a7ee16dfb12e59519b7b6880bf51912088c911f653b490c920f",
+      "status": "passed",
+      "targetMatches": true
+    },
+    {
+      "id": "warm",
+      "outcomeKnown": true,
+      "payloadSha256": "sha256:d646f2fabdd13a7ee16dfb12e59519b7b6880bf51912088c911f653b490c920f",
+      "status": "passed",
+      "targetMatches": true
+    },
+    {
+      "id": "declared-error",
+      "outcomeKnown": true,
+      "payloadSha256": "sha256:6e32bc5b03ab4d239b1eff1de30de5007f906dda41e8f720240bbf6481496a60",
+      "status": "passed",
+      "targetMatches": true
+    },
+    {
+      "id": "wrong-service",
+      "outcomeKnown": true,
+      "payloadSha256": "sha256:71447c96d68bdc65906c5092de19f2d27634b0fb59a86baac726a961b4de4228",
+      "status": "passed",
+      "targetMatches": true
+    },
+    {
+      "id": "wrong-tenant",
+      "outcomeKnown": true,
+      "payloadSha256": "sha256:71447c96d68bdc65906c5092de19f2d27634b0fb59a86baac726a961b4de4228",
+      "status": "passed",
+      "targetMatches": true
+    },
+    {
+      "id": "wrong-contract",
+      "outcomeKnown": true,
+      "payloadSha256": "sha256:71447c96d68bdc65906c5092de19f2d27634b0fb59a86baac726a961b4de4228",
+      "status": "passed",
+      "targetMatches": true
+    },
+    {
+      "id": "wrong-route",
+      "outcomeKnown": true,
+      "payloadSha256": "sha256:71447c96d68bdc65906c5092de19f2d27634b0fb59a86baac726a961b4de4228",
+      "status": "passed",
+      "targetMatches": true
+    },
+    {
+      "id": "wrong-function",
+      "outcomeKnown": true,
+      "payloadSha256": "sha256:71447c96d68bdc65906c5092de19f2d27634b0fb59a86baac726a961b4de4228",
+      "status": "passed",
+      "targetMatches": true
+    },
+    {
+      "id": "policy-denied",
+      "outcomeKnown": true,
+      "payloadSha256": "sha256:71447c96d68bdc65906c5092de19f2d27634b0fb59a86baac726a961b4de4228",
+      "status": "passed",
+      "targetMatches": true
+    },
+    {
+      "id": "after-denial",
+      "outcomeKnown": true,
+      "payloadSha256": "sha256:d646f2fabdd13a7ee16dfb12e59519b7b6880bf51912088c911f653b490c920f",
+      "status": "passed",
+      "targetMatches": true
+    },
+    {
+      "id": "child-trap",
+      "outcomeKnown": true,
+      "payloadSha256": "sha256:614c38a4fe853d409710a29b6c7559f5d0d794d8aa95ca462fba2cdd56b7ca73",
+      "status": "passed",
+      "targetMatches": true
+    },
+    {
+      "id": "after-trap",
+      "outcomeKnown": true,
+      "payloadSha256": "sha256:d646f2fabdd13a7ee16dfb12e59519b7b6880bf51912088c911f653b490c920f",
+      "status": "passed",
+      "targetMatches": true
+    },
+    {
+      "id": "two-fresh-children",
+      "outcomeKnown": true,
+      "payloadSha256": "sha256:d84b3924a4632843b814026aea9e5a0b9ca493193899fc26bb0203cbbe3fdc50",
+      "status": "passed",
+      "targetMatches": true
+    },
+    {
+      "id": "after-two",
+      "outcomeKnown": true,
+      "payloadSha256": "sha256:d646f2fabdd13a7ee16dfb12e59519b7b6880bf51912088c911f653b490c920f",
+      "status": "passed",
+      "targetMatches": true
+    }
+  ],
+  "schemaVersion": "latent.dev.local-service-registry-retirement.v1",
+  "scope": "one-native-registry-regression-and-original-fourteen-signed-Rust-local-service-cases",
+  "sourceCommit": "95319ec828adbaa096b89cf7063d2ccb9a5164f9",
+  "sourceTree": "167df60f7118aaa3d577ef64b05a453b86e46c04",
+  "status": "passed",
+  "twoFreshChildrenObservation": {
+    "case": "two-fresh-children",
+    "category": "success",
+    "consumption": {
+      "blobReadBytes": "0",
+      "blobWriteBytes": "0",
+      "childCalls": "2",
+      "cpuFuel": "17888",
+      "effectCount": "0",
+      "logBytes": "0",
+      "outboundRequests": "0",
+      "peakMemoryBytes": "2349969",
+      "stateReadBytes": "0",
+      "stateWriteBytes": "0",
+      "wallTimeMicros": "7684"
+    },
+    "invocationClientCleanup": "owned-client-reaped",
+    "outcomeKnown": true,
+    "phase": "common-scenarios"
+  },
+  "workflow": {
+    "attempt": 1,
+    "event": "push",
+    "job": 121083465485,
+    "origin": "KirilsTurkins/latent-service-fabric/.github/workflows/developer-local-service-refusal.yml@refs/heads/fix/local-service-registry-retirement-20261025",
+    "run": 40164771308,
+    "url": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40164771308"
+  }
+}

@@ -70,7 +70,7 @@ async fn guest_reads_before_full_body_and_store_drop_closes_the_stream() {
             serde_json::json!([4200])
         );
         if let Some(previous) = &previous {
-            // Replacing the actual reusable registry slot retires the old headers.
+            // The previous invocation was already retired before this fresh one.
             assert_eq!(previous.host_memory_bytes(), 0);
             assert_eq!(previous.outstanding_reservations(), 0);
         }
@@ -82,15 +82,14 @@ async fn guest_reads_before_full_body_and_store_drop_closes_the_stream() {
         assert_eq!(report.cleanup, ExecutionCleanup::Reusable);
         f.idle();
         assert_eq!(f.io.snapshot(), IoSnapshot::default());
-        // Store/table/provider payloads have retired. The real broker registry
-        // still owns its two physical Weak headers, alongside returned bytes.
+        // Store/table/provider payloads and registry weak headers have retired.
+        // Only the actual returned payload retains its original reservation.
         let output_bytes = output.capacity() as u64 + 256;
-        let retained_headers = control.budget.host_memory_bytes() - output_bytes;
-        assert!(retained_headers > 0);
-        assert_eq!(control.budget.outstanding_reservations(), 3);
+        assert_eq!(control.budget.host_memory_bytes(), output_bytes);
+        assert_eq!(control.budget.outstanding_reservations(), 1);
         drop(output);
-        assert_eq!(control.budget.host_memory_bytes(), retained_headers);
-        assert_eq!(control.budget.outstanding_reservations(), 2);
+        assert_eq!(control.budget.host_memory_bytes(), 0);
+        assert_eq!(control.budget.outstanding_reservations(), 0);
         previous = Some(control.budget.clone());
     }
     server.await.unwrap();

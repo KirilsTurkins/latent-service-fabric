@@ -1,0 +1,38 @@
+{
+  "cases": [
+    "PublishedDelayControls.test_exact_published_fixture_and_actual_strict_types",
+    "PublishedDelayControls.test_original_graph_bindings_and_public_only_collector"
+  ],
+  "guards": {
+    "PublishedDelayControls.test_exact_published_fixture_and_actual_strict_types": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f15ad4d42f3ca8752dbc981e77be76f4f4bd5844e507f46c2465de8ca78c82a9",
+        "class:setup-sha256:02b55c1cc09d8dbee29d7f127f3e78fb80fc4d9fe8e27356ce8f19c1ffafdd55",
+        "class:skip:self.skipTest('explicit normal published delay capture required; owning programme refuses skips')"
+      ],
+      "skipSites": []
+    },
+    "PublishedDelayControls.test_original_graph_bindings_and_public_only_collector": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f15ad4d42f3ca8752dbc981e77be76f4f4bd5844e507f46c2465de8ca78c82a9",
+        "class:setup-sha256:02b55c1cc09d8dbee29d7f127f3e78fb80fc4d9fe8e27356ce8f19c1ffafdd55",
+        "class:skip:self.skipTest('explicit normal published delay capture required; owning programme refuses skips')"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_typescript_published_delay.py",
+  "reviewReason": "Add two real normalcapture/provenance/publiccollector and actualpinnedstrictTSC controls; generic explicitcapture/tools skips are rejected by owning exact2/no-skip oracle.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

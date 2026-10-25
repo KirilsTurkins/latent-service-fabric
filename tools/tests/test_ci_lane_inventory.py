@@ -244,7 +244,7 @@ class RepositoryInventoryTests(unittest.TestCase):
             wait_runtime_native_products, wasmtime_48_0_7_native_products)}
         expected.update((qualify_go_write_progress.BASELINE,
             qualify_go_write_progress.CLOSE_BASELINE, 'aa56bdebad8c12f20acce4ec4ecfeca73cf554be'))
-        # These exact additional C/codec origins are needed by the preservation
+        # These exact additional C/codec/Buffer origins are needed by the preservation
         # controls. Keep the set closed: unrelated history must not be fetched.
         expected.update((
             'f6251df89851de98cb869784d095ad5cc2e5b385',
@@ -265,6 +265,7 @@ class RepositoryInventoryTests(unittest.TestCase):
             'b606b1402961593dd918722a66fe293bfab9b319',
             'c802283a5546620f071bd02ec01c410696893c5b',
             'b422af24d86344ac7abb8b8fa56c3782aab63915',
+            '95b8d8b16c29d94755262345a305401ee99a801f',
         ))
         self.assertEqual(len(words[5:]), len(expected))
         self.assertEqual(set(words[5:]), expected)

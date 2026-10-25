@@ -11,7 +11,7 @@ use latent_policy::capability::{
 };
 use std::sync::{
     atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering},
-    Arc, Mutex,
+    Arc, Mutex, Weak,
 };
 
 pub(in crate::broker) mod native_backing;
@@ -173,6 +173,7 @@ impl Drop for SessionResourceTableReservation {
 #[derive(Clone)]
 pub struct CapabilitySessionObserver {
     stats: StatsOwner,
+    owner: Weak<Inner>,
 }
 impl CapabilitySessionObserver {
     #[must_use]
@@ -203,6 +204,33 @@ impl CapabilitySessionObserver {
             && self.retained_handles() == 0
             && self.reserved_buffer_bytes() == 0
     }
+
+    fn retire_registry(&self) -> bool {
+        let Some(owner) = self.owner.upgrade() else {
+            return false;
+        };
+        let Ok(mut entries) = owner.sessions.try_lock() else {
+            return false;
+        };
+        // Stats is private to this published core/entry and held strongly here:
+        // its pointer cannot be reused while this observer still exists.
+        let Some(entry) = entries
+            .iter_mut()
+            .find(|entry| entry.stats.ptr_eq_shared(&self.stats))
+        else {
+            // Another session already replaced the original reusable entry.
+            return true;
+        };
+        if entry.core.strong_count() != 0 || !self.is_quiescent() {
+            return false;
+        }
+        let retired = std::mem::take(entry);
+        drop(entries);
+        // Destroy both actual Weak headers before their original billing drops.
+        // No ledger/destructor work is performed under the registry mutex.
+        drop(retired);
+        true
+    }
     /// The embedder calls this after destroying the guest future and Store.
     /// Queue owners, blocking jobs, streams and lowering/consumer leases all
     /// prevent reuse; a timeout response or finalized ledger is insufficient.
@@ -211,7 +239,7 @@ impl CapabilitySessionObserver {
         &self,
         outcome: Result<latent_executor::GuestOutcome, PlatformError>,
     ) -> latent_executor::ExecutionReport {
-        if self.is_quiescent() {
+        if self.is_quiescent() && self.retire_registry() {
             latent_executor::ExecutionReport::reusable(outcome)
         } else {
             latent_executor::ExecutionReport::quarantine(
@@ -595,6 +623,7 @@ impl CapabilitySession {
     pub fn observer(&self) -> CapabilitySessionObserver {
         CapabilitySessionObserver {
             stats: self.core.stats.clone(),
+            owner: Arc::downgrade(&self.core.owner),
         }
     }
     pub fn bind(
