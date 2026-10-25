@@ -354,6 +354,40 @@ done:
                 self.assertEqual(run.records[-1]['exitCode'], 0)
                 self.assertEqual(run.records[-1]['postCheckFailure'], 'llvm-producer-deadline')
 
+    def test_actual_ninja_log_counts_and_deadline_metadata_do_not_claim_target_completion(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            (root / 'build').mkdir()
+            log = root / 'build/.ninja_log'
+            rows = (b'# ninja log v7\n1\t2\t3\ttools/clang/a.o\tabc\n'
+                    b'2\t3\t4\tbin/llvm-config\tabd\n'
+                    b'3\t4\t5\ttools/clang/a.o\tabe\n'
+                    b'4\t5\t6\tunittests/Transforms/Utils/CMakeFiles/UtilsTests.dir/SSAUpdaterBulkTest.cpp.o\tabf\n')
+            log.write_bytes(rows)
+            progress = producer.ninja_progress(root, time.monotonic() + 10)
+            self.assertEqual((progress['completedLogRows'], progress['uniqueOutputs']), (4, 3))
+            self.assertEqual(progress['latestEndMilliseconds'], 5)
+            self.assertEqual((progress['clangObjectRows'], progress['utilsTestObjectRows']), (2, 1))
+            self.assertTrue(progress['loggedTargets']['llvm-config'])
+            self.assertFalse(progress['loggedTargets']['clang'])
+            self.assertFalse(progress['loggedTargets']['UtilsTests'])
+            self.assertNotIn('tools/clang/a.o', json.dumps(progress))
+            log.write_bytes(rows + b'partial')
+            self.assertEqual(producer.ninja_progress(root, time.monotonic() + 10)['status'], 'incomplete')
+            for mutant in (b'# ninja log v5\n', rows + b'bad\n', rows + b'x' * 4097 + b'\n'):
+                log.write_bytes(mutant)
+                self.assertEqual(producer.ninja_progress(root, time.monotonic() + 10)['status'], 'incomplete')
+            log.write_bytes(rows)
+            run = producer.Commands(root, time.monotonic() + 10)
+            with mock.patch.object(io.shutil, 'disk_usage', return_value=mock.Mock(free=io.MINIMUM_FREE)):
+                with self.assertRaisesRegex(BuildProcessError, '^command-deadline$'):
+                    run.run('build-reviewed-llvm-and-tests', os.sys.executable, '-c',
+                            'import time; time.sleep(5)', seconds=0.05)
+            self.assertEqual(run.records[-1]['failure'], 'command-deadline')
+            self.assertIsNone(run.records[-1]['exitCode'])
+            self.assertEqual(run.records[-1]['buildProgress'], progress)
+            self.assertNotIn('stdout', run.records[-1])
+
     def test_typed_carrier_roundtrip_preserves_modes_links_and_refuses_unknown_or_over_bound_uploads(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
