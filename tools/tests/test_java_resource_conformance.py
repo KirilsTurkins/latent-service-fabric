@@ -202,6 +202,15 @@ class JavaResourceConformance(unittest.TestCase):
     def test_resource_child_preserves_all_original_jobs_commands_and_deadlines(self):
         path = '.github/workflows/java-guest-feasibility.yml'
         current = yaml.safe_load(read_file(ROOT/path))
+        private = current[True]['workflow_dispatch']['inputs'].pop('public_fiber_private_scalar_llvm')
+        self.assertEqual(private['type'], 'boolean');self.assertIs(private['default'], False)
+        clause = " && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_private_scalar_llvm)"
+        for name in ('compiler-component', 'dependency-ingestion', 'http-public-spi'):
+            self.assertEqual(current['jobs'][name]['if'].count(clause), 1)
+            current['jobs'][name]['if'] = current['jobs'][name]['if'].replace(clause, '', 1)
+        self.assertEqual(current['jobs']['public-fiber-assembly']['if'],
+            "${{ github.event_name == 'workflow_dispatch' && (inputs.public_fiber_assembly || inputs.public_fiber_derived_llvm || inputs.public_fiber_private_scalar_llvm) }}")
+        current['jobs']['public-fiber-assembly']['if'] = "${{ github.event_name == 'workflow_dispatch' && (inputs.public_fiber_assembly || inputs.public_fiber_derived_llvm) }}"
         derived = current[True]['workflow_dispatch']['inputs'].pop('public_fiber_derived_llvm')
         self.assertEqual(derived['type'], 'boolean');self.assertIs(derived['default'], False)
         for name, clause in (
