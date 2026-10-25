@@ -168,6 +168,11 @@ pub struct Fixture {
     _root: tempfile::TempDir,
 }
 impl Fixture {
+    /// Original immutable factory configuration, observed without changing admission.
+    pub fn engine_profile(&self) -> &latent_wasmtime::WasmtimeEngineProfile {
+        self._factory.profile()
+    }
+
     pub async fn new(cells: u32, foreign: bool, permit_target: bool) -> Self {
         Self::with_audit(cells, foreign, permit_target, None).await
     }

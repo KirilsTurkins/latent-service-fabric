@@ -4,8 +4,12 @@ use super::*;
 const MAIN: &[u8] = include_bytes!("../../../../sdk/typescript-guest/probes/node-net/main.ts");
 const WIT: &[u8] = include_bytes!("../../../../sdk/typescript-guest/probes/node-net/world.wit");
 const CONTRACT: &str = "tenant-a:typescript-node-net/api@1.0.0";
+const REFERENCE_PROFILE: &str = "node-net-reference-t32-q32-v1";
 
-async fn configured_socket(root: &Path, port: u16) -> (Fixture, latent_core::ResourceBudget) {
+async fn configured_socket(
+    root: &Path,
+    port: u16,
+) -> (Fixture, latent_core::ResourceBudget, Value) {
     let prepared =
         std::path::PathBuf::from(std::env::var_os("LSF_TYPESCRIPT_BORROW_FIXTURE").unwrap());
     assert_eq!(
@@ -60,17 +64,19 @@ async fn configured_socket(root: &Path, port: u16) -> (Fixture, latent_core::Res
             .await
             .unwrap();
     }
+    // A separately funded finite reference profile, not a repair/relabel of Task16.
+    let limits = latent_core::activation_runtime::RuntimeLimits {
+        tasks: 32,
+        executors: 2,
+        queued_work: 32,
+        waits: 8,
+        timers: 8,
+        results: 8,
+        native_owners: 64,
+    };
     let f = Fixture::with_runtime_outbound_streams_and_numeric_trap_observation(
         (catalog, caller, callee),
-        latent_core::activation_runtime::RuntimeLimits {
-            tasks: 16,
-            executors: 2,
-            queued_work: 16,
-            waits: 8,
-            timers: 8,
-            results: 8,
-            native_owners: 64,
-        },
+        limits,
         configuration(port),
     )
     .await;
@@ -82,7 +88,7 @@ async fn configured_socket(root: &Path, port: u16) -> (Fixture, latent_core::Res
         .publication()
         .clone();
     let mut key = f.backend.preparation_key(&release).unwrap();
-    key.publication = Some(publication);
+    key.publication = Some(publication.clone());
     let ready = tokio::time::timeout(
         Duration::from_secs(600),
         f.backend
@@ -91,6 +97,38 @@ async fn configured_socket(root: &Path, port: u16) -> (Fixture, latent_core::Res
     .await
     .unwrap()
     .unwrap();
+    let profile = f.engine_profile();
+    let configured_limits = &profile.configuration["activation-runtime-limits"];
+    assert_eq!(configured_limits, &format!("{limits:?}"));
+    assert_eq!(
+        profile.configuration["activation-runtime-profile"],
+        latent_core::activation_runtime::PROFILE
+    );
+    let descriptor = ready.descriptor();
+    let actual_key = &descriptor.key;
+    assert_eq!(actual_key.release, release);
+    assert_eq!(actual_key.publication.as_ref(), Some(&publication));
+    assert_eq!(
+        actual_key.engine_configuration_digest,
+        profile.configuration["configuration-digest"]
+    );
+    assert_eq!(actual_key.engine_version, profile.wasmtime_version);
+    assert_eq!(actual_key.target_triple, profile.target_triple);
+    assert_eq!(actual_key.cpu_feature_set, profile.cpu_feature_set);
+    assert_eq!(descriptor.backend, profile.id);
+    let reference = json!({
+        "name":REFERENCE_PROFILE,
+        "runtimeLimits":{"tasks":limits.tasks,"executors":limits.executors,"queuedWork":limits.queued_work,
+            "waits":limits.waits,"timers":limits.timers,"results":limits.results,"native":limits.native_owners},
+        "activationRuntimeProfile":profile.configuration["activation-runtime-profile"],
+        "runtimeLimitsConfiguration":configured_limits,
+        "preparation":{"backend":descriptor.backend,"release":actual_key.release.0,
+            "publication":actual_key.publication.as_ref().unwrap().as_str(),
+            "componentDigest":descriptor.metadata["component-digest"],
+            "engineConfigurationDigest":actual_key.engine_configuration_digest,
+            "engineVersion":actual_key.engine_version,"targetTriple":actual_key.target_triple,
+            "cpuFeatureSet":actual_key.cpu_feature_set}
+    });
     drop(f.backend.materialize_ready(ready).unwrap());
     f.idle().await;
     assert_eq!(f.backend.resource_snapshot().stores_created, 0);
@@ -102,7 +140,7 @@ async fn configured_socket(root: &Path, port: u16) -> (Fixture, latent_core::Res
         .manifest
         .execution
         .resource_budget_ceiling;
-    (f, budget)
+    (f, budget, reference)
 }
 
 pub(super) async fn run() {
@@ -111,7 +149,7 @@ pub(super) async fn run() {
     let port = listener.local_addr().unwrap().port();
     let denied_port = alternate.local_addr().unwrap().port();
     let directory = tempfile::tempdir().unwrap();
-    let (mut f, budget) = configured_socket(directory.path(), port).await;
+    let (mut f, budget, reference) = configured_socket(directory.path(), port).await;
     let observer = f.backend.arm_development_trap_observation().unwrap();
     for (index, (mode, label)) in [
         (0, "node-net-echo"),
@@ -343,7 +381,7 @@ pub(super) async fn run() {
             json!({"case":label,"mode":mode,"index":index,"status":status,
             "outboundRequests":used.outbound_requests,"cpuFuel":used.cpu_fuel,"peakMemoryBytes":used.peak_memory_bytes,
             "grantFuel":granted.cpu_fuel,"grantMemoryBytes":granted.memory_bytes,"grantWallTimeMillis":granted.wall_time_limit_millis,
-            "outboundCeiling":8,"sameBackend":true,"kernelRetirementQualified":false,"publicErrorCode":public_code,"publicTrap":public_trap,
+            "outboundCeiling":8,"referenceProfile":reference,"sameBackend":true,"kernelRetirementQualified":false,"publicErrorCode":public_code,"publicTrap":public_trap,
             "heldOwnerBeforePermit":held_owner,"controlPeerEOF":control_peer_eof,"recordedAdmissionRefusal":diagnostic.borrow_admission_refusal.is_some(),
             "primaryReleasedAfterObservation":primary_released_after_observation,"postRoot":post_root,
             "originalFailureCause":if mode==4 {"unknown"} else {"not-applicable"},
@@ -355,7 +393,7 @@ pub(super) async fn run() {
     f.streams.take().unwrap().shutdown().await;
     println!(
         "TYPESCRIPT_NODE_NET_COMPLETE {}",
-        json!({"cases":6,"guestComponents":1,"gateComponent":false,"wholeAC7":false,"wholeCostQualification":false,"productionEnablement":false})
+        json!({"cases":6,"guestComponents":1,"gateComponent":false,"wholeAC7":false,"wholeCostQualification":false,"productionEnablement":false,"referenceProfile":reference})
     );
 }
 

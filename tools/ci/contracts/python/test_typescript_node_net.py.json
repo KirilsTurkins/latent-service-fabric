@@ -358,6 +358,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_typescript_node_net.py",
-  "reviewReason": "Replace private Socket async worker fanout with original logical/ACK completion joins; preserve21 case IDs/negative intent with necessary private-protocol migration, add4 callback/reference/fault controls, and update only reviewed helper hashes. All25 controls remain mandatory with zero skips; qualificationTask16 unchanged and not a production default.",
+  "reviewReason": "Retain all25 mandatory Socket source controls and original Task16 failure; extend only existing receipt control for separately declared Task32/QueuedWork32 reference limits and actual factory/preparation identity binding. No qualification, minimum or production-default claim.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

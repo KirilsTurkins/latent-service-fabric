@@ -783,8 +783,17 @@ class NodeNetOwningControls(unittest.TestCase):
                 guardAttribution='source-only' if mode==4 else 'not-applicable',recordedAdmissionRefusal=False,
                 postRoot=owners(False),heldOwnerBeforePermit=owners(True) if mode in (1,3,4) else None,
                 controlPeerEOF=mode in (1,3,4),primaryReleasedAfterObservation=mode==4)
+        reference = {'name':'node-net-reference-t32-q32-v1',
+            'runtimeLimits':{'tasks':32,'executors':2,'queuedWork':32,'waits':8,'timers':8,'results':8,'native':64},
+            'activationRuntimeProfile':'activation-owned-v1',
+            'runtimeLimitsConfiguration':'RuntimeLimits { tasks: 32, executors: 2, queued_work: 32, waits: 8, timers: 8, results: 8, native_owners: 64 }',
+            'preparation':{'backend':'wasmtime-component-phase-1','release':'sha256:'+'1'*64,
+                'publication':'publication:sha256:'+'2'*64,'componentDigest':'sha256:'+'1'*64,
+                'engineConfigurationDigest':'blake3:'+'3'*64,'engineVersion':'48.0.7',
+                'targetTriple':'x86_64-unknown-linux-gnu','cpuFeatureSet':'host-baseline'}}
+        for row in cases: row['referenceProfile']=copy.deepcopy(reference)
         complete = {'cases':6,'guestComponents':1,'gateComponent':False,'wholeAC7':False,
-                    'wholeCostQualification':False,'productionEnablement':False}
+                    'wholeCostQualification':False,'productionEnablement':False,'referenceProfile':reference}
 
         def raw(rows, done=complete):
             return ('\n'.join('TYPESCRIPT_NODE_NET_CASE '+json.dumps(row) for row in rows)
@@ -792,6 +801,27 @@ class NodeNetOwningControls(unittest.TestCase):
                     +'\ntest result: ok. 1 passed; 0 failed; 0 ignored;\n').encode()
 
         self.assertEqual(owner.node_net_records(raw(cases)), cases)
+        # No missing, mixed, boolean, expanded or relabelled stress-profile limits.
+        for replacement in (None,{}, {**reference,'name':'node-net-reference-t16-q16-v1'},
+                {**reference,'runtimeLimits':{**reference['runtimeLimits'],'tasks':16}},
+                {**reference,'runtimeLimits':{**reference['runtimeLimits'],'queuedWork':16}},
+                {**reference,'runtimeLimits':{**reference['runtimeLimits'],'executors':True}},
+                {**reference,'runtimeLimits':{**reference['runtimeLimits'],'extra':0}},
+                {**reference,'runtimeLimitsConfiguration':reference['runtimeLimitsConfiguration'].replace('32','16')},
+                {**reference,'preparation':{**reference['preparation'],'publication':'sha256:'+'2'*64}},
+                {**reference,'preparation':{**reference['preparation'],'componentDigest':'sha256:'+'4'*64}},
+                {**reference,'preparation':{**reference['preparation'],'engineConfigurationDigest':'sha256:'+'3'*64}}):
+            changed=copy.deepcopy(cases)
+            for row in changed: row['referenceProfile']=copy.deepcopy(replacement)
+            with self.subTest(profile=replacement),self.assertRaises(WorkflowError):
+                owner.node_net_records(raw(changed,{**complete,'referenceProfile':replacement}))
+        changed=copy.deepcopy(cases);changed[1]['referenceProfile']['preparation']['engineConfigurationDigest']='blake3:'+'4'*64
+        with self.assertRaises(WorkflowError): owner.node_net_records(raw(changed))
+        changed=copy.deepcopy(cases);del changed[0]['referenceProfile']
+        with self.assertRaises(WorkflowError): owner.node_net_records(raw(changed))
+        for done in ({k:v for k,v in complete.items() if k!='referenceProfile'},
+                {**complete,'referenceProfile':{**reference,'name':'foreign'}}):
+            with self.assertRaises(WorkflowError): owner.node_net_records(raw(cases,done))
         generic=copy.deepcopy(cases);generic[4]['publicTrap']={'kind':'runtime-error','code':'guest-runtime-error',
             'phase':'call-and-postreturn','message':'guest execution failed'}
         self.assertEqual(owner.node_net_records(raw(generic)),generic)

@@ -93,15 +93,43 @@ The latter passed all 21 then-current pinned controls and host compilation but
 completed zero signed cells: Task16/QueuedWork12/Result2/Native48, with fifteen
 parked tasks. Original post-root stream, I/O, pool, Store and activation counters
 were all zero. Those remain failed receipts. Removing duplicate ACK awaits and
-an unused observation sink did not resolve the peak. The completion coordinator
-still needs its actual signed campaign; no physical Task benefit is claimed.
+an unused observation sink did not resolve the peak. The completion coordinator also failed its original Task16 campaign
+[40143420546](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40143420546)
+at source `1b5299de7c3b723ed6dd8ce24921d11388bc2ecb`: all 25 pinned source
+controls passed, but zero signed cells completed. The first refusal retained
+Task16/QueuedWork12/Result2/Native46 with fifteen parked tasks; original post-root
+stream, I/O, pool, Store and activation counters were all zero. Artifact
+`12579782624` (5,252,152 bytes,
+`sha256:c2b494c6c467f83a445df1e6599fbf92d306d9b38871a7b73b68b9764071e718`)
+and its failed status remain unchanged. Aggregate counters cannot distinguish
+reachable parked reaction owners from untransferred reactions awaiting physical
+collection; they do not demonstrate an ownership leak or identify the exact
+failed CAP stage.
 
 Task16 is the fixture's explicit stress-profile choice, not a production default
 or a qualified minimum. Production activation runtime installation is opt-in
 and requires operator-selected limits; no TypeScript minimum successful resource
-profile has been established. The fixture limits remain Task16/Executor2/
-Queued16/Wait8/Timer8/Result8/Native64. Whole #745 AC7, ordinary published client
-compatibility and the whole-cost criterion remain open.
+profile has been established. That failed stress profile was Task16/Executor2/
+Queued16/Wait8/Timer8/Result8/Native64.
+
+A separate operator-funded positive reference candidate,
+`node-net-reference-t32-q32-v1`, selects Task32/Queued32 while retaining
+Executor2/Wait8/Timer8/Result8/Native64 and every other programme bound.
+This is a different resource profile, not a repair or passing relabel of the
+Task16 programme, a production default, a demonstrated minimum or an upper-cost
+qualification. Its six original signed oracles remain unchanged. Failure at
+Task32 does not authorize another increase. No engine, GC, ownership/refund or
+public Socket implementation change accompanies this selection.
+
+Each case and the terminal receipt must retain the actual immutable factory
+runtime-limit configuration and original preparation identity, including its
+configuration digest, component/release and publication. The host cross-checks
+the actual factory profile against the selected limits and owned readiness key;
+the reader requires exact numeric limits and the same identity in all six cases
+and the terminal record. Its normal-build component digest must also match.
+Authenticity still depends on the source-bound owning workflow and raw retained
+command channels; these observations grant no authority. Whole #745 AC7,
+ordinary published client compatibility and the whole-cost criterion remain open.
 
 The pending owning programme extends the existing signed stream target with
 one normal no-Gate Socket component. Its six cells cover echo/EOF and ordinary
@@ -112,8 +140,8 @@ backend. It retains the normal one-billion fuel grant, 128MiB memory, 120s root
 wall bound and eight OutboundRequests. That budget dimension charges connects;
 it does not count every read/write/chunkBytes WIT dispatch. The unchanged
 installed stream policy has an operations ceiling of 128, and the unchanged
-broker maximum_calls_per_session is 16. All original Task/Queue/Native bounds
-remain enforced; no cap is enlarged for qualification. The unclosed cell requires the actual
+broker maximum_calls_per_session is 16. The separately declared Task32/Queued32 candidate is the only changed
+resource selection; all other original bounds remain enforced. The unclosed cell requires the actual
 two-read/owner sample before peer permission, control close, a failed root with its original closed public code,
 no recorded admission/quota/stop refusal, physical idle, a paired closed positive
 and fresh success under the same bounds. Its original public classification

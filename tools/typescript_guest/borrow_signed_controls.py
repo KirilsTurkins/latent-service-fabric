@@ -271,6 +271,10 @@ NET_INPUTS = {'src/main.ts': NET_PREFIX+'main.ts', 'wit/world.wit': NET_PREFIX+'
 NET_LIMITS = {'cpuFuel':1_000_000_000,'memoryBytes':134217728,'wallTimeLimitMillis':120000,
     'logBytes':0,'outboundRequests':8,'childCalls':0,'effectCount':0,'blobReadBytes':0,
     'blobWriteBytes':0,'stateReadBytes':0,'stateWriteBytes':0}
+NET_RUNTIME_LIMITS = {'tasks':32,'executors':2,'queuedWork':32,'waits':8,'timers':8,'results':8,'native':64}
+NET_REFERENCE_PROFILE = 'node-net-reference-t32-q32-v1'
+NET_RUNTIME_CONFIGURATION = ('RuntimeLimits { tasks: 32, executors: 2, queued_work: 32, waits: 8, '
+    'timers: 8, results: 8, native_owners: 64 }')
 NET_CASES = (('node-net-echo',0),('node-net-sibling',1),('node-net-denied',2),
              ('node-net-destroy',3),('node-net-unclosed',4),('node-net-fresh',0))
 NET_RECIPE = tuple(dict.fromkeys((*RECIPE, *NET_INPUTS.values(),
@@ -352,7 +356,33 @@ def node_net_records(raw):
             and phase in (None,'call-and-postreturn')
             and value['message']==('guest execution failed' if kind=='runtime-error' else 'guest trapped: unreachable-code'))
 
+    # These are source-authenticated owning observations, not guest-provided authority.
+    # Exact limits cannot be replaced by another profile, booleans, or extra fields.
+    reference = cases[0].get('referenceProfile')
+    require(type(reference) is dict and set(reference)=={
+        'name','runtimeLimits','activationRuntimeProfile','runtimeLimitsConfiguration','preparation'}
+        and reference.get('name')==NET_REFERENCE_PROFILE
+        and reference.get('activationRuntimeProfile')=='activation-owned-v1'
+        and reference.get('runtimeLimitsConfiguration')==NET_RUNTIME_CONFIGURATION
+        and type(reference.get('runtimeLimits')) is dict
+        and json.dumps(reference['runtimeLimits'],sort_keys=True,allow_nan=False)==json.dumps(NET_RUNTIME_LIMITS,sort_keys=True),
+        'node-net-exact-declared-reference-profile')
+    preparation = reference.get('preparation')
+    require(type(preparation) is dict and set(preparation)=={'backend','release','publication','componentDigest',
+        'engineConfigurationDigest','engineVersion','targetTriple','cpuFeatureSet'}
+        and preparation.get('backend')=='wasmtime-component-phase-1'
+        and preparation.get('engineVersion')=='48.0.7'
+        and preparation.get('targetTriple')=='x86_64-unknown-linux-gnu'
+        and preparation.get('cpuFeatureSet')=='host-baseline'
+        and all(type(preparation.get(k)) is str and re.fullmatch(pattern,preparation[k]) is not None
+                for k,pattern in (('engineConfigurationDigest',r'blake3:[0-9a-f]{64}'),
+                    ('release',r'sha256:[0-9a-f]{64}'),('componentDigest',r'sha256:[0-9a-f]{64}'),
+                    ('publication',r'publication:sha256:[0-9a-f]{64}')))
+        and preparation['release']==preparation['componentDigest'],
+        'node-net-original-preparation-identity')
     for index,row in enumerate(cases):
+        require(json.dumps(row.get('referenceProfile'),sort_keys=True,allow_nan=False)
+                ==json.dumps(reference,sort_keys=True,allow_nan=False), 'node-net-same-actual-profile')
         require(type(row.get('mode')) is int and row.get('index')==index and type(row['index']) is int
                 and row.get('status')==('failed-with-unclosed-stream-owners' if row['mode']==4 else 'succeeded')
                 and row.get('sameBackend') is True and row.get('kernelRetirementQualified') is False
@@ -375,7 +405,7 @@ def node_net_records(raw):
     complete = [json.loads(line.removeprefix('TYPESCRIPT_NODE_NET_COMPLETE '))
         for line in raw.decode().splitlines() if line.startswith('TYPESCRIPT_NODE_NET_COMPLETE ')]
     expected_complete=[{'cases':6,'guestComponents':1,'gateComponent':False,'wholeAC7':False,
-        'wholeCostQualification':False,'productionEnablement':False}]
+        'wholeCostQualification':False,'productionEnablement':False,'referenceProfile':reference}]
     require(json.dumps(complete,sort_keys=True,allow_nan=False)==json.dumps(expected_complete,sort_keys=True,allow_nan=False),
             'node-net-actual-complete')
     require('test result: ok. 1 passed; 0 failed; 0 ignored;' in raw.decode(), 'node-net-one-actual-test')
@@ -404,6 +434,7 @@ def qualify_node_net(tools, material_directory, output, prepared_native):
         CARGO_PROFILE_DEV_DEBUG='0',CARGO_PROFILE_TEST_DEBUG='0')
     recipe={name:file_identity(ROOT/name) for name in NET_RECIPE}
     record={'schemaVersion':'latent.typescript.node-net-signed.v1','status':'in-progress','recipe':recipe,
+        'declaredReferenceProfile':{'name':NET_REFERENCE_PROFILE,'runtimeLimits':NET_RUNTIME_LIMITS},
         'engineBuildCount':0,'libraryBuildCount':0,'guestComponentBuildCount':0,'gateComponent':False,
         'wholeAC7':False,'wholeCostQualification':False,'productionEnablement':False,'commands':[]}
     commands=output/'commands';commands.mkdir(); retained=0
@@ -490,6 +521,9 @@ def qualify_node_net(tools, material_directory, output, prepared_native):
             '--','--ignored','--exact','--nocapture','--test-threads=1',seconds=600,
             env={**environment,'LSF_GUEST_SDK_LANGUAGE':'typescript','LSF_TYPESCRIPT_BORROW_FIXTURE':str(prepared),'LSF_GUEST_CAPSULES':str(prepared)})
         record['actualCases']=node_net_records(raw)
+        record['referenceProfile']=record['actualCases'][0]['referenceProfile']
+        require(record['referenceProfile']['preparation']['componentDigest']==record['component']['sha256'],
+                'node-net-prepared-component-matches-normal-build')
         stage='final-original-rechecks'
         require(source_before==inventory(verify_node_net_project(source)) and recipe=={n:file_identity(ROOT/n) for n in recipe}
             and original_inputs==inputs.verify(material_directory,run) and original_native==host.verify_prepared(prepared_native)
