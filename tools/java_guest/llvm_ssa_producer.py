@@ -344,7 +344,7 @@ def produce(output: Path) -> dict:
         build, install = root / 'build', root / 'fresh-install'
         run.run('configure-reviewed-llvm', *configure(build, source, install, tools), seconds=600)
         run.run('build-reviewed-llvm-and-tests', tools['cmake'], '--build', build, '--parallel', '2',
-                '--target', 'clang', 'LLVM', 'opt', 'llc', 'FileCheck', 'not', 'count',
+                '--target', 'clang', 'LLVM', 'opt', 'llc', 'FileCheck', 'not', 'count', 'llvm-config',
                 'UtilsTests', 'clang-resource-headers', seconds=3600)
         record['tests'] = llvm_checks(run, build, source)
         run.run('install-reviewed-compiler', tools['cmake'], '--build', build, '--parallel', '2',
