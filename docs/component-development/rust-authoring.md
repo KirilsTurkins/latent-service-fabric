@@ -16,11 +16,14 @@ uses a pinned copy of the maintained guest SDK.
 For application dependencies, exact lock review and the maintained test/watch
 commands, see [Rust application library inputs](rust-library-authoring.md).
 
-The ordinary recipe below keeps its selected stateless profile. The explicit
-[Original Rust standard-runtime evidence](https://github.com/KirilsTurkins/latent-service-fabric/blob/200c17c26b24d6bf06d8d28102362ea714c1f4eb/docs/development/rust-runtime-reconciliation/2026-10-12/README.md)
-has finite signed clock coverage and separate outstanding thread, executor,
-reactor and third-party HTTP-client requirements. It is not automatically
-selected by adding a Cargo dependency.
+The ordinary recipe below keeps its selected stateless profile. Explicit
+[standard-runtime builds](../../sdk/rust-standard-runtime/README.md) and the
+[WASI HTTP runtime](../testing/rust-wasi-http-runtime.md) have separate inputs,
+selection and source-bound finite evidence. The [runtime matrix](runtime-capabilities.md)
+distinguishes those paths from the remaining general thread/executor/reactor
+work. Adding a Cargo dependency does not select a runtime or install authority.
+The [original October 12 reconciliation](https://github.com/KirilsTurkins/latent-service-fabric/blob/200c17c26b24d6bf06d8d28102362ea714c1f4eb/docs/development/rust-runtime-reconciliation/2026-10-12/README.md)
+retains its historical clock-only boundary.
 
 Use Linux, Python 3.13.5, Rust 1.97.1, wasm-tools 1.254.0 and wit-bindgen-cli
 0.62.0. Follow the [toolchain setup](../development/toolchain.md), install

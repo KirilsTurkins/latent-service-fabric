@@ -112,7 +112,18 @@ therefore evidence of the overrun rather than a second accounting failure.
 The activation budget registry exposes the same `ActivationBudget` by
 `ActivationId` to Wasmtime and host-capability composition. This avoids ambient
 or service-owned accounting objects and preserves the invariant that accounting
-exists only while an activation is live.
+is selected from the live activation rather than a service-global substitute.
+
+Terminal consumption and physical backing ownership are separate. Selected
+Wasmtime allocations, capability buffers/results, timers, native workers and
+Audit storage retain original memory owners until their actual backing retires;
+a terminal snapshot, dropped waiter or destroyed Store cannot refund them early.
+See [host codec allocation](../testing/host-codec-original-memory.md),
+[capability handles and buffers](../testing/capability-handle-buffer-memory.md),
+[connected Audit memory](../testing/audit-connected-memory.md) and the
+[selected engine cohort](wasmtime.md#selected-continuation-and-memory-profiles).
+These controls qualify the named allocation paths, not all process RSS or kernel
+memory. Native and descendant-work retirement also remain separate observations.
 
 ## Exhaustion and terminal mapping
 

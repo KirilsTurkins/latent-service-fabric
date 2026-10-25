@@ -4,6 +4,8 @@ Typed Rust capability and ownership helpers inside a WebAssembly component. Publ
 
 The `transaction` feature selects the separately admitted transaction guest ABI. Application WIT imports, exact profile selection and deployment policy must all match the host.
 
+The `standard-logging` feature links the compiler-owned [standard stdio bridge](../rust-standard-stdio/README.md) for an explicitly selected rebuilt Rust logging sysroot. It does not install LOG, create a provider or grant console authority.
+
 ## Responsibilities and architecture
 
 | Source | Responsibility |
@@ -36,6 +38,7 @@ Target-specific workspace edges:
 | Target / dependency section | Package |
 | --- | --- |
 | `cfg(target_arch = "wasm32"):dependencies` | [latent-component-bindings](../../crates/latent-component-bindings/README.md) |
+| `cfg(target_arch = "wasm32"):dependencies`, optional | [latent-standard-stdio](../rust-standard-stdio/README.md) |
 
 Cargo features (the manifest owns their exact expansion):
 
@@ -43,6 +46,7 @@ Cargo features (the manifest owns their exact expansion):
 | --- | --- |
 | `default` | No additional feature dependency. |
 | `transaction` | `latent-component-bindings/guest-transaction` |
+| `standard-logging` | `dep:latent-standard-stdio` |
 
 Use [Cargo.toml](Cargo.toml) for external dependencies, target gates and test/build edges; [the workspace manifest](../../Cargo.toml) and [the toolchain guide](../../docs/development/toolchain.md) own current pins. Dependency presence does not install a runtime service.
 

@@ -16,6 +16,7 @@ they do not turn a historical test into qualification of the current checkout.
 - [Bounded outbound contract acceptance](../runtime/outbound-stream-acceptance-2026-10-16.md): exact owner decision, literal design criteria and separate implementation gates.
 - [Installed recovery qualification](../testing/installed-transaction-recovery.md): current native action and custody contracts.
 - [Post-alpha.5 documentation audit](documentation-audit-2026-10-14.md): release baseline, merged-change inventory and guide maintenance.
+- [25 October documentation audit](documentation-audit-2026-10-25.md): the next 455 development merges, current package/runtime entry points and retained qualification boundaries.
 
 The [changes guide](../start/development-changes.md) connects current authoring
 and operating workflows. Phase 4 gate #407 and the broader SDK/runtime gates

@@ -3,6 +3,9 @@
 ## Current Development selection
 
 The workspace and `tools/toolchain.toml` currently pin Wasmtime **48.0.7**.
+The main package is now the [maintained source cohort](../runtime/wasmtime.md#selected-continuation-and-memory-profiles)
+with selected allocation hooks; its upstream version alone is not its complete
+compatibility or security-review identity.
 Use [the toolchain table](toolchain.md#selected-versions) and committed Cargo locks
 for the complete compiler/runtime selection. The records below describe their
 original sources and advisory databases; they are not a current scan or approval

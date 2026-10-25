@@ -25,6 +25,17 @@ An ordinary HTTP method/path grant cannot authorize opaque socket bytes. The str
 
 ## Integration boundaries
 
+ADR-0061's bounded design was accepted on October 16, 2026; production
+installation remains disabled pending its implementation/qualification gates.
+The selected rustls source is `latent-rustls-outbound` 0.23.46, but the current
+`ACCOUNTING_QUALIFIED` guard still disables direct host TLS. Source/parser/VM
+controls do not override that guard. Linux construction also uses the
+[private factory leaf](../latent-stream-factory-native/README.md); descriptor
+closure, kernel Root return and backing-bank reclamation are separate observed
+boundaries. The [kernel accounting contract](../../docs/runtime/outbound-stream-kernel-accounting.md)
+and [operator preparation](../../docs/runtime/outbound-stream-operator.md)
+describe current evidence and protected installation, not general availability.
+
 `development-outbound` is a deliberate feature boundary, not permission to enable streams in every deployment. Unsupported TLS modes must reject rather than fall back to plaintext. No listening socket, permanent application runtime or provider credential discovery is created. Finite maintenance is shared node work and does not retain a guest Store.
 
 ## Dependencies and build

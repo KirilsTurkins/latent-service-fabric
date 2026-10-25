@@ -25,6 +25,15 @@ The broker implements bounded call acceptance and accounting. Protocol crates ow
 
 ## Integration boundaries
 
+Session registry entries, handle rows and copied call buffers keep their
+original memory owners through physical retirement. Post-Store cleanup removes
+only a closed, quiescent original entry with matching private identity; retained
+work, live cores or an unavailable fence keep capacity charged. See
+[registry retirement](../../docs/testing/local-service-registry-retirement.md)
+and [handle/buffer accounting](../../docs/testing/capability-handle-buffer-memory.md).
+This cleanup neither renews authority nor reconstructs a child budget from a
+descriptor.
+
 ABI recognition, provider installation and activation permission are three independent requirements. No I/O or await holds an authority fence. Only narrowly classified pre-effect bookkeeping contention may use its bounded wait path; provider/effect uncertainty does not authorize replay. Namespace DTOs and diagnostic inspection never substitute for current sealed authority.
 
 ## Dependencies and build
