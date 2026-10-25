@@ -22,6 +22,160 @@ from tools.java_guest import llvm_ssa_distribution as distribution
 
 
 class LlvmSsaProducer(unittest.TestCase):
+    def test_exact_build_retirement_preserves_other_roots_and_refuses_expiry_or_a_linked_root(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder).resolve()
+            build = root / 'build'
+            build.mkdir()
+            (build / 'nested').mkdir()
+            (build / 'nested/object').write_bytes(b'only the completed build child')
+            outside = root / 'official-sdk'
+            outside.mkdir()
+            (outside / 'compiler').write_bytes(b'original preserved')
+            signals = mock.Mock()
+            if os.name != 'posix':
+                with self.assertRaisesRegex(ValueError, 'retirement-platform'):
+                    io.retire_build(root, time.monotonic() + 5, signals)
+                self.assertTrue((build / 'nested/object').exists())
+                # Supported Linux owning must run the real fd-relative path;
+                # this Windows source result proves only platform refusal.
+                print('retirement control: unsupported platform refusal only')
+                return
+            (build / 'outside-link').symlink_to('../official-sdk', target_is_directory=True)
+            before = io.entry_names(root, time.monotonic() + 5)
+            with self.assertRaisesRegex(BuildProcessError, 'producer-deadline'):
+                io.retire_build(root, time.monotonic() - 1, signals)
+            self.assertEqual(io.entry_names(root, time.monotonic() + 5), before)
+            value = io.retire_build(root, time.monotonic() + 5, signals)
+            self.assertEqual(value['removedDescendants'], 3)
+            self.assertFalse(build.exists())
+            self.assertEqual((outside / 'compiler').read_bytes(), b'original preserved')
+            self.assertEqual(value['afterOwned'], {'entries': 2, 'logicalBytes': 18})
+            build.symlink_to(outside, target_is_directory=True)
+            with self.assertRaises(OSError):
+                io.retire_build(root, time.monotonic() + 5, signals)
+            self.assertEqual((outside / 'compiler').read_bytes(), b'original preserved')
+            build.unlink()
+            print('retirement control: actual Linux fd-relative unlink/rmdir and symlink refusal')
+
+    def test_copy_entry_projection_counts_empty_directories_and_refuses_before_copy_writes(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            original, install = root / 'official-sdk', root / 'fresh-install'
+            original.mkdir()
+            install.mkdir()
+            (original / 'bin').mkdir()
+            (original / 'bin/clang-21').write_bytes(b'original')
+            (original / 'empty').mkdir()
+            (install / 'bin').mkdir()
+            (install / 'bin/clang-21').write_bytes(b'derived')
+            deadline = time.monotonic() + 5
+            names = io.entry_names(root, deadline)
+            self.assertIn('official-sdk/empty', names)
+            projected = io.project_entries(names, {'products/toolchain/bin/clang-21'})
+            self.assertEqual(projected['additionalEntries'], 4)
+            with mock.patch.object(io, 'MAX_ENTRIES', len(names) + 3):
+                with self.assertRaisesRegex(BuildProcessError, 'disk-entries'):
+                    io.project_entries(names, {'products/toolchain/bin/clang-21'})
+                with mock.patch.object(producer.shutil, 'copytree') as copied:
+                    prepared = {'before': io.inventory(original, 1024, deadline),
+                                'installed': io.inventory(install, 1024, deadline),
+                                'overlay': {'bin/clang-21': {}}, 'closure': {}}
+                    with self.assertRaisesRegex(BuildProcessError, 'disk-entries'):
+                        producer.package(mock.Mock(root=root, deadline=deadline, records=[]),
+                                         original, install, prepared)
+                    copied.assert_not_called()
+            self.assertFalse((root / 'products').exists())
+            (install / 'bin/clang-21').unlink()
+            (install / 'bin').rmdir()
+            install.rmdir()
+            for name in ('../escape', '/absolute', 'a\\b', 'a/./b'):
+                with self.subTest(name=name), self.assertRaisesRegex(ValueError, 'projection-path'):
+                    io.project_entries(set(), {name})
+            headers = original / 'lib/clang/21/include'
+            headers.mkdir(parents=True)
+            (headers / 'header.h').write_bytes(b'header')
+            early = io.early_package_projection(root, original, deadline)
+            self.assertEqual(early['headerEntriesIncludingRoot'], 2)
+            with mock.patch.object(io, 'MAX_ENTRIES', early['projectedEntries'] - 1):
+                with self.assertRaisesRegex(BuildProcessError, 'disk-entries'):
+                    io.early_package_projection(root, original, deadline)
+
+    def test_three_elf_roles_require_both_actual_driver_sonames_and_closed_dependencies(self):
+        # Driver NEEDED/RUNPATH rows are the retained actual R6 readelf rows;
+        # DSO rows are parser fixtures, not observed compiled dependencies.
+        driver = (f'(NEEDED) Shared library: [{producer.CLANG_SONAME}]\n'
+                  f'(NEEDED) Shared library: [{producer.LLVM_SONAME}]\n'
+                  '(NEEDED) Shared library: [libc.so.6]\n'
+                  '(RUNPATH) Library runpath: [$ORIGIN/../lib]\n').encode()
+        self.assertEqual(producer.elf_closure(driver, 'driver')['needed'],
+                         [producer.CLANG_SONAME, producer.LLVM_SONAME, 'libc.so.6'])
+        llvm = (f'(SONAME) Library soname: [{producer.LLVM_SONAME}]\n'
+                '(NEEDED) Shared library: [libm.so.6]\n'
+                '(RUNPATH) Library runpath: [$ORIGIN/../lib]\n').encode()
+        clang = (f'(SONAME) Library soname: [{producer.CLANG_SONAME}]\n'
+                 f'(NEEDED) Shared library: [{producer.LLVM_SONAME}]\n'
+                 '(RUNPATH) Library runpath: [$ORIGIN/../lib]\n').encode()
+        producer.elf_closure(llvm, 'llvm')
+        producer.elf_closure(clang, 'clang')
+        for raw, role in [
+                (driver.replace(producer.CLANG_SONAME.encode(), b'missing.so'), 'driver'),
+                (driver + b'(NEEDED) Shared library: [libstdc++.so.6]\n', 'driver'),
+                (driver.replace(b'$ORIGIN/../lib', b'/tmp'), 'driver'),
+                (driver + b'(RPATH) Library rpath: [$ORIGIN/../lib]\n', 'driver'),
+                (clang.replace(producer.LLVM_SONAME.encode(), b'libLLVM.so'), 'clang'),
+                (llvm + f'(NEEDED) Shared library: [{producer.CLANG_SONAME}]\n'.encode(), 'llvm'),
+                (clang + clang, 'clang')]:
+            with self.subTest(role=role, raw=raw), self.assertRaisesRegex(ValueError, 'library-binding'):
+                producer.elf_closure(raw, role)
+
+    def test_install_overlay_requires_two_real_libraries_and_bounded_anchored_aliases(self):
+        binary = {'bytes': 1, 'sha256': patch.sha(b'x'), 'executable': True}
+        before = {'lib/clang/21/include/header.h': binary}
+        installed = {**before, 'bin/clang-21': binary,
+                     'lib/' + producer.LLVM_SONAME: binary,
+                     'lib/' + producer.CLANG_SONAME: binary,
+                     'lib/libLLVM.so': {'link': producer.LLVM_SONAME}}
+        self.assertEqual(set(producer.install_overlay(before, installed)), set(installed) - set(before))
+        for mutate in (
+                lambda value: value.pop('lib/' + producer.CLANG_SONAME),
+                lambda value: value.update({'lib/extra.so': binary}),
+                lambda value: value.update({'lib/libLLVM.so': {'link': '../../escape'}}),
+                lambda value: value.update({'lib/libLLVM.so': {'link': 'libLLVM.so'}}),
+                lambda value: value.update({'lib/libLLVM.so': {'link': producer.CLANG_SONAME}}),
+                lambda value: value.update({'lib/clang/21/include/header.h': {**binary, 'bytes': 2}})):
+            changed = json.loads(json.dumps(installed))
+            mutate(changed)
+            with self.assertRaises(ValueError):
+                producer.install_overlay(before, changed)
+
+    def test_final_raw_configuration_retention_checks_the_actual_ninja_pool_declarations(self):
+        cache = (b'CMAKE_GENERATOR:INTERNAL=Ninja\nLLVM_PARALLEL_COMPILE_JOBS:STRING=4\n'
+                 b'LLVM_PARALLEL_LINK_JOBS:STRING=1\n')
+        rules = b'pool compile_job_pool\n  depth = 4\npool link_job_pool\n  depth = 1\n'
+        for raw in (rules, rules.replace(b'depth = 1', b'depth = 4'), rules + rules):
+            with tempfile.TemporaryDirectory() as folder:
+                root = Path(folder)
+                build = root / 'build'
+                (build / 'CMakeFiles').mkdir(parents=True)
+                (build / 'CMakeCache.txt').write_bytes(cache)
+                (build / 'CMakeFiles/rules.ninja').write_bytes(raw)
+                if raw != rules:
+                    with self.assertRaisesRegex(ValueError, 'ninja-pools'):
+                        producer.read_configuration(build)
+                    self.assertFalse((root / 'retained-rules.ninja').exists())
+                else:
+                    initial, files = producer.read_configuration(build)
+                    self.assertFalse((root / 'retained-rules.ninja').exists())
+                    self.assertFalse((root / 'retained-CMakeCache.txt').exists())
+                    self.assertEqual(files, {'retained-CMakeCache.txt': cache, 'retained-rules.ninja': rules})
+                    value = producer.retain_configuration(root, build)
+                    self.assertEqual(value, initial)
+                    self.assertEqual((root / 'retained-CMakeCache.txt').read_bytes(), cache)
+                    self.assertEqual((root / 'retained-rules.ninja').read_bytes(), rules)
+                    self.assertEqual(value['files']['retained-rules.ninja'],
+                                     {'bytes': len(rules), 'sha256': patch.sha(rules)})
+
     def test_lit_timeout_dependency_refuses_before_acquisition_and_keeps_the_fixed_version(self):
         # API doubles only: actual installed-wheel/timeout qualification belongs
         # to the hosted run. The real producer refusal must precede acquisition.
