@@ -5,6 +5,29 @@
 SHA-256 `5fb6d1c6e33fb4418239ec4c3cb93435b194bf5b3d36e8350836e2830567ba8c`.
 Its original copyright and license header are retained.
 
+The private derivation also supplies a complete structural copy-cost input to
+the existing irreducible-graph splitter. Its positive initial weight counts the
+block, instructions, PHIs and incoming records, ordered handlers and exception
+binding. It is an IR-copy heuristic, not a measured Wasm byte or runtime cost.
+The graph/splitting algorithm, FULL/O2 and EH/SjLj semantics are unchanged.
+
+Private inherited weights track each actual original/copy node. Every proposed
+copy's positive weight is checked against the global `int` total before creating
+any block; the unchanged splitter's domain/collapse/subgraph accumulations are
+subsets of that bounded total. Arithmetic overflow refuses compilation instead
+of wrapping or saturating. This does not raise any compiler or guest limit.
+
+The separate fixed `copy-cost` JVM IR control runs the actual splitter
+on two metadata-heavy domain variants, checks PHI/handler preservation and real
+copy choices, preserves a reducible graph exactly, and exercises refusal before
+mutation on a forced accumulator overflow. It emits its own closed three-case
+record and cannot receive implicit credit from an old run. The old
+`original`/`corrected` command lines, JSON schemas and all prior assertions remain. These new controls are
+source-only until their hosted JVM execution; they do not prove that the actual
+public `pools` method changes or fits the unchanged parser limit. A later bounded
+qualification must stop before Clang if the hook is not reached or generated C
+does not improve, without tuning coefficients or changing Java/WIT/FULL/O2.
+
 The captured Python compiler helper checks that complete preimage before adding
 the copied-block ID set and changing one copied-phi predicate. Its three HPPC
 imports receive the exact `com.carrotsearch.hppc` to `org.teavm.hppc` relocation
@@ -86,3 +109,22 @@ class-initializer or unmanaged monitor suspension. The actual compiler classload
 must prove all eleven replacement classes before a component can be accepted.
 Actual six-case signed execution remains required; source and synthetic IR controls
 alone are insufficient.
+
+
+The structural-copy-cost observation is default-off and qualification-only. Its
+fixed public Java/WIT pair must authenticate before preparation, and its JVM
+property is set only after the replacement JAR and all eleven loaded classes
+pass the existing identity fence. It adds no replacement companion class.
+Production weights do not depend on method names. For the observed public
+`pools` method, one copy of the actual pre-normalization Program runs the real
+old-weight splitter, while the original Program runs the complete-weight path.
+Only bounded structural counts and ordered-decision SHA-256 values leave that
+hook. These are compiler observations, not runtime cost measurements.
+
+The private qualification mixin checks the adapted C shape before Clang. Missing,
+ambiguous, unchanged or non-improving observations refuse. A strictly improved
+candidate reaches the same bounded normal parent Clang command; the gate record
+is only a pre-Clang decision, not component acceptance. It selects no compiler
+SDK or alternate application. Existing FULL/O2, native EH/SjLj, 64KiB stack, 64MiB
+maximum memory and the 7654321-byte function parser limit remain unchanged.
+The new JVM cost controls and actual public observation are still unexecuted.

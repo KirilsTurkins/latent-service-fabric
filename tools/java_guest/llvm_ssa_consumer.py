@@ -180,3 +180,12 @@ class DerivedPublicCompiler(Compiler):
                 'derivedVersion': self._derived.own['products']['derivedVersion'],
                 'normalCompilerChecksUnchanged': True, 'publicInputs': self._public_inputs,
                 'componentRuntimeQualification': False, 'nodeExecution': 'not-run'}
+
+
+# Explicit closed composition under the existing derived-public flag. The same
+# frozen input reader admits the SDK; there is no alternate private variant.
+from tools.java_guest.copy_cost_observation import PublicCopyCostObservationMixin
+
+
+class CopyCostPublicCompiler(PublicCopyCostObservationMixin, DerivedPublicCompiler):
+    pass

@@ -94,6 +94,13 @@ class LlvmSsaConsumer(unittest.TestCase):
         retention = job['steps'][-1]['with']
         for suffix in ('java-activation-fibers/compiler-inputs.json',
                 'java-activation-fibers/build/derived-public-products/**',
+                'java-activation-fibers/compiler/public-copy-cost-candidate.json',
+                'java-activation-fibers/compiler/public-copy-cost-Capsule.c',
+                'java-activation-fibers/compiler/coroutine-compiler-preparation.json',
+                'java-activation-fibers/build/project/compiler-patch/loaded.json',
+                'java-activation-fibers/build/coroutine-compiler-profile.json',
+                'java-activation-fibers/src/Capsule.java',
+                'java-activation-fibers/wit/service.wit',
                 'java-llvm-public-inputs/producer-run.json', 'java-llvm-public-inputs/producer-job.json',
                 'java-llvm-public-inputs/producer-artifact.json', 'java-llvm-public-inputs/derived-sdk-manifest.json',
                 'java-llvm-public-inputs/products/NOTICE', 'java-llvm-public-inputs/products/LLVM-LICENSE.txt',

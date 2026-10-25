@@ -8,6 +8,7 @@
   <ItemGroup>
     <Compile Include="../../../tools/http-errors/Program.cs" Link="Program.cs" />
     <Compile Include="../../../tools/http-errors/TaskWait.cs" Link="TaskWait.cs" />
+    <Compile Include="../../../tools/http-errors/AggregateTaskWait.cs" Link="AggregateTaskWait.cs" />
     <Compile Include="../../../tools/http-errors/IdleTimerDriver.cs" Link="IdleTimerDriver.cs" />
     <Compile Include="../../../tools/http-errors/ClosedFilesystem.cs" Link="ClosedFilesystem.cs" />
     <Compile Include="../../../tools/http-errors/ManagedWorkRuntime.cs" Link="ManagedWorkRuntime.cs" />

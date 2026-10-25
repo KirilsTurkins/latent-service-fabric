@@ -1012,7 +1012,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 -m pip install --requirement tools/requirements.lock
-          python3 -B -m unittest tools.tests.test_java_normal_fiber_component_inputs tools.tests.test_java_public_wineh tools.tests.test_java_llvm_ssa_consumer -v
+          python3 -B -m unittest tools.tests.test_java_normal_fiber_component_inputs tools.tests.test_java_public_wineh tools.tests.test_java_llvm_ssa_consumer tools.tests.test_java_http_fibers.PublicCopyCostObservation -v
           curl --fail --location --retry 3 --max-time 180 \
             https://services.gradle.org/distributions/gradle-9.1.0-bin.zip \
             -o "$RUNNER_TEMP/gradle.zip"
@@ -1044,6 +1044,13 @@ jobs:
             ${{ runner.temp }}/java-activation-fibers/build/component.wasm
             ${{ runner.temp }}/java-activation-fibers/build/component-inputs/**
             ${{ runner.temp }}/java-activation-fibers/compiler-inputs.json
+            ${{ runner.temp }}/java-activation-fibers/compiler/public-copy-cost-candidate.json
+            ${{ runner.temp }}/java-activation-fibers/compiler/public-copy-cost-Capsule.c
+            ${{ runner.temp }}/java-activation-fibers/compiler/coroutine-compiler-preparation.json
+            ${{ runner.temp }}/java-activation-fibers/build/project/compiler-patch/loaded.json
+            ${{ runner.temp }}/java-activation-fibers/build/coroutine-compiler-profile.json
+            ${{ runner.temp }}/java-activation-fibers/src/Capsule.java
+            ${{ runner.temp }}/java-activation-fibers/wit/service.wit
             ${{ runner.temp }}/java-activation-fibers/build/derived-public-products/**
             ${{ runner.temp }}/java-llvm-public-inputs/producer-run.json
             ${{ runner.temp }}/java-llvm-public-inputs/producer-job.json

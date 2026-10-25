@@ -1,0 +1,626 @@
+{
+  "actualRuntime": {
+    "hostCoreLibSha256": "11a0f23df9fbb128743f372b0583528aac702f6b534706bfc28bfcd54dae6907",
+    "runtime": ".NET 10.0.13",
+    "runtimeVersion": "10.0.13"
+  },
+  "actualSdk": "10.0.100",
+  "artifact": {
+    "all128MembersAuthenticated": true,
+    "bytes": 7624330,
+    "id": 12594142004,
+    "sha256": "sha256:a97d310d55d6fd3cf89aa021102d8c642c6a68109d0184bcb28ff2506d19aafa"
+  },
+  "baselineSource": "655199b641fd7c35facc8531af26714095d44790",
+  "candidateAssembly": {
+    "bytes": 5621248,
+    "sha256": "sha256:340cfa899c6039efb67cec65174f2fbe307f84b827aca0e15d70f120a3d5b5a0"
+  },
+  "cases": [
+    {
+      "cancels": 0,
+      "copiedValidationCalls": 1,
+      "dispatches": 0,
+      "disposals": 0,
+      "id": "entry-cancellation-before-set",
+      "linkedSources": 0,
+      "originalTargetStateRestored": true,
+      "passed": true,
+      "rawResult": {
+        "bytes": 21365,
+        "sha256": "sha256:c59bd9ad16fdb1b468c5bb0524e3ceb82e764b9f75daa8aed17f59ff0cb99918"
+      },
+      "remainingClockReads": 0,
+      "startClockReads": 0,
+      "wakeCalls": 0
+    },
+    {
+      "cancels": 0,
+      "copiedValidationCalls": 1,
+      "dispatches": 0,
+      "disposals": 0,
+      "id": "disposal-before-cancellation",
+      "linkedSources": 0,
+      "originalTargetStateRestored": true,
+      "passed": true,
+      "rawResult": {
+        "bytes": 21364,
+        "sha256": "sha256:794d9d63422c5c6ad093325db51f6e7b6235958595999e43997dee61598a917e"
+      },
+      "remainingClockReads": 0,
+      "startClockReads": 0,
+      "wakeCalls": 0
+    },
+    {
+      "cancels": 0,
+      "copiedValidationCalls": 3,
+      "dispatches": 0,
+      "disposals": 0,
+      "id": "zero-and-already-set-no-clock",
+      "linkedSources": 0,
+      "originalTargetStateRestored": true,
+      "passed": true,
+      "rawResult": {
+        "bytes": 21365,
+        "sha256": "sha256:0139bb1154a8d082dcaebb557dfd3aa48dc1cd71bd6f5dc2c891c64f207dbc89"
+      },
+      "remainingClockReads": 0,
+      "startClockReads": 0,
+      "wakeCalls": 0
+    },
+    {
+      "cancels": 0,
+      "copiedValidationCalls": 0,
+      "dispatches": 0,
+      "disposals": 0,
+      "id": "all-seven-public-overloads",
+      "linkedSources": 0,
+      "originalTargetStateRestored": true,
+      "passed": true,
+      "rawResult": {
+        "bytes": 21362,
+        "sha256": "sha256:f94cf99677d1f60af700bbed3408faa842232453b37764bb6b28ed3ec7cc0d66"
+      },
+      "remainingClockReads": 0,
+      "startClockReads": 0,
+      "wakeCalls": 0
+    },
+    {
+      "cancels": 0,
+      "copiedValidationCalls": 0,
+      "dispatches": 0,
+      "disposals": 0,
+      "id": "original-validation-precedence",
+      "linkedSources": 0,
+      "originalTargetStateRestored": true,
+      "passed": true,
+      "rawResult": {
+        "bytes": 21366,
+        "sha256": "sha256:d0c3e7d08ca4791c3194296ffdcfa413b3a68eae108023db094de4562d0d38f4"
+      },
+      "remainingClockReads": 0,
+      "startClockReads": 0,
+      "wakeCalls": 0
+    },
+    {
+      "cancels": 0,
+      "copiedValidationCalls": 1,
+      "dispatches": 2,
+      "disposals": 0,
+      "id": "pending-first-order",
+      "linkedSources": 0,
+      "originalTargetStateRestored": true,
+      "passed": true,
+      "rawResult": {
+        "bytes": 21355,
+        "sha256": "sha256:e8c025320d8083e2289f2455a2c47199fa33da11dc291c8ddb90a30117fdcbf2"
+      },
+      "remainingClockReads": 0,
+      "startClockReads": 0,
+      "wakeCalls": 0
+    },
+    {
+      "cancels": 0,
+      "copiedValidationCalls": 1,
+      "dispatches": 2,
+      "disposals": 0,
+      "id": "pending-reverse-order",
+      "linkedSources": 0,
+      "originalTargetStateRestored": true,
+      "passed": true,
+      "rawResult": {
+        "bytes": 21357,
+        "sha256": "sha256:a263bbd21009506395ba63db52119eb4f2dca80a73b440f0df50616a69765745"
+      },
+      "remainingClockReads": 0,
+      "startClockReads": 0,
+      "wakeCalls": 0
+    },
+    {
+      "cancels": 0,
+      "copiedValidationCalls": 1,
+      "dispatches": 2,
+      "disposals": 0,
+      "id": "original-multiple-fault-identity",
+      "linkedSources": 0,
+      "originalTargetStateRestored": true,
+      "passed": true,
+      "rawResult": {
+        "bytes": 21368,
+        "sha256": "sha256:5132c105dc5faac523c901884ed0442954e0113ade3b1d422ccc36ac6b197163"
+      },
+      "remainingClockReads": 0,
+      "startClockReads": 0,
+      "wakeCalls": 0
+    },
+    {
+      "cancels": 0,
+      "copiedValidationCalls": 1,
+      "dispatches": 1,
+      "disposals": 0,
+      "id": "original-task-cancellation-token",
+      "linkedSources": 0,
+      "originalTargetStateRestored": true,
+      "passed": true,
+      "rawResult": {
+        "bytes": 21368,
+        "sha256": "sha256:4d471a1d70ba8f6bbf7de26a3ef7b723e1d1bbf9430d2d1c2393031036893dbb"
+      },
+      "remainingClockReads": 0,
+      "startClockReads": 0,
+      "wakeCalls": 0
+    },
+    {
+      "cancels": 1,
+      "copiedValidationCalls": 1,
+      "dispatches": 2,
+      "disposals": 1,
+      "id": "single-overall-deadline",
+      "linkedSources": 1,
+      "originalTargetStateRestored": true,
+      "passed": true,
+      "rawResult": {
+        "bytes": 21359,
+        "sha256": "sha256:29a1597c3d1c58663a874f1eb2c0f3130f32481bfa39a6344d7dfc602adbb878"
+      },
+      "remainingClockReads": 4,
+      "startClockReads": 1,
+      "wakeCalls": 1
+    },
+    {
+      "cancels": 1,
+      "copiedValidationCalls": 1,
+      "dispatches": 1,
+      "disposals": 1,
+      "id": "late-completion-before-cancellation",
+      "linkedSources": 1,
+      "originalTargetStateRestored": true,
+      "passed": true,
+      "rawResult": {
+        "bytes": 21371,
+        "sha256": "sha256:85ad2bef13edcf521bcd4bc6467469843af73156aa9d83a21acf0128b3c04a04"
+      },
+      "remainingClockReads": 0,
+      "startClockReads": 0,
+      "wakeCalls": 1
+    },
+    {
+      "cancels": 1,
+      "copiedValidationCalls": 1,
+      "dispatches": 1,
+      "disposals": 1,
+      "id": "later-cancellation-detaches-original",
+      "linkedSources": 1,
+      "originalTargetStateRestored": true,
+      "passed": true,
+      "rawResult": {
+        "bytes": 21372,
+        "sha256": "sha256:490faff7e67c2598e5b7489ad724c9ac58a599a3c229a4f11d58daefb858616a"
+      },
+      "remainingClockReads": 0,
+      "startClockReads": 0,
+      "wakeCalls": 1
+    },
+    {
+      "cancels": 0,
+      "copiedValidationCalls": 1,
+      "dispatches": 2,
+      "disposals": 0,
+      "id": "ready-ignores-completed-old-main",
+      "linkedSources": 0,
+      "originalTargetStateRestored": true,
+      "passed": true,
+      "rawResult": {
+        "bytes": 21368,
+        "sha256": "sha256:f25354d06cc37f81742a155807806f907e98c9271796b14df671129014c061ab"
+      },
+      "remainingClockReads": 0,
+      "startClockReads": 0,
+      "wakeCalls": 0
+    },
+    {
+      "cancels": 0,
+      "copiedValidationCalls": 1,
+      "dispatches": 1,
+      "disposals": 0,
+      "id": "ready-after-countdown-before-poll",
+      "linkedSources": 0,
+      "originalTargetStateRestored": true,
+      "passed": true,
+      "rawResult": {
+        "bytes": 21369,
+        "sha256": "sha256:4aa0fb5b64531186fc71b6625f8884a636b660aed8cfa8780b6d602f451718d6"
+      },
+      "remainingClockReads": 0,
+      "startClockReads": 0,
+      "wakeCalls": 0
+    },
+    {
+      "cancels": 0,
+      "copiedValidationCalls": 1,
+      "dispatches": 2,
+      "disposals": 0,
+      "id": "nested-single-inside-aggregate",
+      "linkedSources": 0,
+      "originalTargetStateRestored": true,
+      "passed": true,
+      "rawResult": {
+        "bytes": 21366,
+        "sha256": "sha256:a41bdb1adb475ba97935c6fba555cbd80f2182da7f25788a5a2fc6fabe3b9489"
+      },
+      "remainingClockReads": 0,
+      "startClockReads": 0,
+      "wakeCalls": 0
+    },
+    {
+      "cancels": 0,
+      "copiedValidationCalls": 1,
+      "dispatches": 2,
+      "disposals": 0,
+      "id": "nested-aggregate-inside-single",
+      "linkedSources": 0,
+      "originalTargetStateRestored": true,
+      "passed": true,
+      "rawResult": {
+        "bytes": 21366,
+        "sha256": "sha256:8679b2d01e1e1b1bc2d1f2c2aad1b3400e0e2b249d4127ddbb1c63b816f6116b"
+      },
+      "remainingClockReads": 0,
+      "startClockReads": 0,
+      "wakeCalls": 0
+    },
+    {
+      "cancels": 1,
+      "copiedValidationCalls": 1,
+      "dispatches": 1,
+      "disposals": 1,
+      "id": "dispatch-fault-restores-state",
+      "linkedSources": 1,
+      "originalTargetStateRestored": true,
+      "passed": true,
+      "rawResult": {
+        "bytes": 21365,
+        "sha256": "sha256:16c718a9c0284282fe51cf10c04dcd9f8c7a7a809292e673734aa0adebbae58a"
+      },
+      "remainingClockReads": 2,
+      "startClockReads": 1,
+      "wakeCalls": 1
+    },
+    {
+      "cancels": 1,
+      "copiedValidationCalls": 1,
+      "dispatches": 1,
+      "disposals": 1,
+      "id": "late-context-restoration-keeps-timeout",
+      "linkedSources": 1,
+      "originalTargetStateRestored": true,
+      "passed": true,
+      "rawResult": {
+        "bytes": 21374,
+        "sha256": "sha256:aedb62e5941c97a7f635f17cca9e1de4d43212e059f93463a9d935e7c83179fb"
+      },
+      "remainingClockReads": 3,
+      "startClockReads": 1,
+      "wakeCalls": 1
+    },
+    {
+      "cancels": 1,
+      "copiedValidationCalls": 2,
+      "dispatches": 2,
+      "disposals": 1,
+      "id": "late-restoration-nested-decision",
+      "linkedSources": 1,
+      "originalTargetStateRestored": true,
+      "passed": true,
+      "rawResult": {
+        "bytes": 21368,
+        "sha256": "sha256:3ba6ced62b5eafa2e6940b873637417d1b8b11001e922e4843d4179c4cbcdca1"
+      },
+      "remainingClockReads": 3,
+      "startClockReads": 1,
+      "wakeCalls": 1
+    },
+    {
+      "cancels": 1,
+      "copiedValidationCalls": 1,
+      "dispatches": 0,
+      "disposals": 1,
+      "id": "wake-admission-refusal-restores-state",
+      "linkedSources": 1,
+      "originalTargetStateRestored": true,
+      "passed": true,
+      "rawResult": {
+        "bytes": 21373,
+        "sha256": "sha256:597289d52155a6725765c9d881538d22de3578223e8b50a2792763ecea4e5b45"
+      },
+      "remainingClockReads": 1,
+      "startClockReads": 1,
+      "wakeCalls": 1
+    },
+    {
+      "cancels": 1,
+      "copiedValidationCalls": 1,
+      "dispatches": 1,
+      "disposals": 1,
+      "id": "cleanup-cancel-refusal-restores-state",
+      "linkedSources": 1,
+      "originalTargetStateRestored": true,
+      "passed": true,
+      "rawResult": {
+        "bytes": 21373,
+        "sha256": "sha256:1ecdaf9c55e0187fc1dd9f067be810d9ee5ce4a55d5f612058e06d43bae775d7"
+      },
+      "remainingClockReads": 2,
+      "startClockReads": 1,
+      "wakeCalls": 1
+    },
+    {
+      "cancels": 1,
+      "copiedValidationCalls": 1,
+      "dispatches": 1,
+      "disposals": 1,
+      "id": "cleanup-dispose-refusal-restores-state",
+      "linkedSources": 1,
+      "originalTargetStateRestored": true,
+      "passed": true,
+      "rawResult": {
+        "bytes": 21374,
+        "sha256": "sha256:82687a9a5cb7273b9487b4d59acb988c2ed29289dea518830864530815b745d9"
+      },
+      "remainingClockReads": 2,
+      "startClockReads": 1,
+      "wakeCalls": 1
+    },
+    {
+      "cancels": 0,
+      "copiedValidationCalls": 0,
+      "dispatches": 0,
+      "disposals": 0,
+      "id": "non-wasi-original-entry-once",
+      "linkedSources": 0,
+      "originalTargetStateRestored": true,
+      "passed": true,
+      "rawResult": {
+        "bytes": 21364,
+        "sha256": "sha256:af696111c27b9b607dd939632fd349e298a588ce8ffd23d2bac41b6331cf0318"
+      },
+      "remainingClockReads": 0,
+      "startClockReads": 0,
+      "wakeCalls": 0
+    }
+  ],
+  "cecilDigest": "sha256:2590bbe9492beef92f4dc1a34513d7ddafaeb6ab91eb618b84f6ee6c2b9c46d7",
+  "commands": {
+    "aggregateLimitSeconds": 600,
+    "allCleanupConfirmed": true,
+    "allExitZero": true,
+    "cleanupReserveSeconds": 5,
+    "commandWallSeconds": 120,
+    "count": 60,
+    "maximumCombinedCommandBytes": 4194304,
+    "maximumUploadUnionBytes": 268435456,
+    "rawChannels": 120,
+    "seconds": 69.298450009
+  },
+  "derivation": {
+    "copiedMethods": 16,
+    "generatedHelpers": 95,
+    "maximumNestedWaits": 32,
+    "originalGuardedMethods": 9,
+    "originalRemaindersPreserved": true,
+    "profile": "dotnet-aggregate-task-wait-candidate-v1",
+    "rewrittenBodyBindings": 15,
+    "unchangedOriginalMethods": 44710
+  },
+  "failedHistory": [
+    {
+      "acceptedCases": 0,
+      "artifact": 12591709744,
+      "cause": "Python local origin shadowed workflow-origin function;zero commands/builds",
+      "job": 121116789244,
+      "run": 40176031383,
+      "source": "eff3fdbc1816cce461ce5526e993c7cc2e0bc57e",
+      "status": "failed"
+    },
+    {
+      "acceptedCases": 0,
+      "artifact": 12593110448,
+      "cause": "private CLR enum ordinal mismatch;36 earlier commands passed",
+      "job": 121118253606,
+      "run": 40176516312,
+      "source": "b48d8fbb89f3561fdee23dbc67a57e96b7481675",
+      "status": "failed"
+    },
+    {
+      "acceptedCases": 0,
+      "artifact": 12592989274,
+      "cause": "culture token-map order rejected by strict ordinal reader",
+      "job": 121124205141,
+      "rawPassingCases": 1,
+      "run": 40178471836,
+      "source": "96ee036170e84930c2145296fd8e86776be7a2c8",
+      "status": "failed"
+    },
+    {
+      "acceptedCases": 5,
+      "artifact": 12592464650,
+      "cause": "instance callvirt targeted static DynamicMethod projection;MissingMethodException",
+      "job": 121125365503,
+      "run": 40178854301,
+      "source": "94560a722555cc02ae3dfdcabb781ef01c4f316c",
+      "status": "failed"
+    }
+  ],
+  "fullRuntimeQualified": false,
+  "job": 121130229483,
+  "nativeAotExecuted": false,
+  "nativeWasiPollAndLedgerQualified": false,
+  "next": "Review normal finite-profile promotion and one fresh source-matched signed NativeAOT programme;unchanged published dependency and original grants/caps required.",
+  "normalCompilerSelectionChanged": false,
+  "oldModeComparisons": [
+    {
+      "assembly": {
+        "bytes": 5605888,
+        "sha256": "sha256:5dbbf6d7f6ceae85c8d2b6de5ec05dc432b7c63db710ef5d6d0dc2488000a145"
+      },
+      "mode": "task-wait",
+      "rawDllAndReceiptEqual": true,
+      "receipt": {
+        "bytes": 2782,
+        "sha256": "sha256:161276025a0db8505d0a42e1670d657bc259b2bc41905d4b60da2160b474d35d"
+      }
+    },
+    {
+      "assembly": {
+        "bytes": 5606400,
+        "sha256": "sha256:12221b5c654633e75303c61e6df2e349e86cae10c6f2644dacd3b44a66fdad46"
+      },
+      "mode": "finite-task-wait",
+      "rawDllAndReceiptEqual": true,
+      "receipt": {
+        "bytes": 2993,
+        "sha256": "sha256:a5c54de9647a0b1128f618e27670ece0cee0cf0c0aa3088239249535e03c271b"
+      }
+    },
+    {
+      "assembly": {
+        "bytes": 5620224,
+        "sha256": "sha256:8b073982c9b62dd62fc06df73381f7a46cbc1cf72bd1c3106b367e7259d10d8d"
+      },
+      "mode": "managed-task-wait",
+      "rawDllAndReceiptEqual": true,
+      "receipt": {
+        "bytes": 8217,
+        "sha256": "sha256:0cbd2de2566d47ab0aede4737e6695262cc66bffbd29f39633167525cc82b6b5"
+      }
+    }
+  ],
+  "originalCorelib": {
+    "bytes": 5694976,
+    "sha256": "sha256:29e4bd3f70bfb0e0ea00fb2511e28ee9832b56caf9ddb5cd60906fe3bcaad735"
+  },
+  "physicalRetirementQualified": false,
+  "productionEnabled": false,
+  "rawIlMap": {
+    "bytes": 23137,
+    "sha256": "sha256:84b78999ed9c2461d094acb8fc45fadfb6ae08d2364fdc2710f85b2627111992"
+  },
+  "rawReceipt": {
+    "bytes": 125353,
+    "sha256": "sha256:1b3f02984e9c3731c55e0934c3a693e885d8f83a634e6ba4e894b60160a7939a"
+  },
+  "rawRewriteReceipt": {
+    "bytes": 17088,
+    "sha256": "sha256:6daca944af3af3d4fa526f97c2ac6063d5cb97f1c0a1e34bebffa740dcd46cd4"
+  },
+  "referenceProjections": {
+    "allOriginalInstructionBytesUnchanged": false,
+    "controlledDispatchAndClockPorts": true,
+    "hostPrivateCountdownCounterpart": true,
+    "opcodeAdaptations": [
+      {
+        "actualEmittedBodySha256": "bc970e66778e066e1c15dfdc3f88dbce9b17286ca64e0cb98e016e8c94b5abaa",
+        "branchesLocalsEhUnchanged": true,
+        "caller": "System.Boolean System.Threading.Tasks.Task::WaitAllBlockingCore(System.Collections.Generic.List`1<System.Threading.Tasks.Task>,System.Int32,System.Threading.CancellationToken)",
+        "codeBytes": 136,
+        "codeSizeUnchanged": true,
+        "loadOffset": 62,
+        "newobjOffset": 8,
+        "offset": 65,
+        "opcodeOnlyBodySha256": "c8c085c8100b33d887bddb49b679a3e08cf7e8eb268d1f614518380d94214505",
+        "receiverFreshNonNull": true,
+        "receiverLocal": 1,
+        "referenceOpcode": "call",
+        "referenceTargetStatic": true,
+        "sourceBodySha256": "cc0c863dd46f78950914a8950faa4a9490cef81b143468033c61ad536396c8fa",
+        "sourceOpcode": "callvirt",
+        "sourceTargetInstance": true,
+        "sourceTargetVirtual": false,
+        "storeOffset": 13,
+        "target": "System.Boolean System.Threading.ManualResetEventSlim::LsfAggregateWait(System.Int32,System.Threading.CancellationToken)"
+      }
+    ],
+    "originalBranchesLocalsAndEhPreserved": true,
+    "originalHostExceptionObjectsPreserved": true,
+    "pinnedWasiCountdownClassExecuted": false,
+    "realClrTaskMresTokenAndExecutionContext": true,
+    "throwHelperCalls": 9,
+    "throwHelperEnumBindings": [
+      {
+        "hostValue": 51,
+        "name": "tasks",
+        "sourceEnum": "System.ExceptionArgument",
+        "sourceValue": 51
+      },
+      {
+        "hostValue": 60,
+        "name": "millisecondsTimeout",
+        "sourceEnum": "System.ExceptionArgument",
+        "sourceValue": 60
+      },
+      {
+        "hostValue": 62,
+        "name": "timeout",
+        "sourceEnum": "System.ExceptionArgument",
+        "sourceValue": 62
+      },
+      {
+        "hostValue": 47,
+        "name": "Task_WaitMulti_NullTask",
+        "sourceEnum": "System.ExceptionResource",
+        "sourceValue": 47
+      }
+    ],
+    "throwHelperMethods": [
+      {
+        "hostMethod": "System.Void System.ThrowHelper::ThrowArgumentException(System.ExceptionResource,System.ExceptionArgument)",
+        "sourceMethod": "System.Void System.ThrowHelper::ThrowArgumentException(System.ExceptionResource,System.ExceptionArgument)"
+      },
+      {
+        "hostMethod": "System.Void System.ThrowHelper::ThrowArgumentNullException(System.ExceptionArgument)",
+        "sourceMethod": "System.Void System.ThrowHelper::ThrowArgumentNullException(System.ExceptionArgument)"
+      },
+      {
+        "hostMethod": "System.Void System.ThrowHelper::ThrowArgumentOutOfRangeException(System.ExceptionArgument)",
+        "sourceMethod": "System.Void System.ThrowHelper::ThrowArgumentOutOfRangeException(System.ExceptionArgument)"
+      }
+    ]
+  },
+  "run": 40180463429,
+  "schemaVersion": "latent.dotnet.aggregate-wait-reference.observation.v1",
+  "scope": "qualification-private-CLR-reference-with-explicit-host-projections",
+  "signedComponentExecuted": false,
+  "sourceCommit": "732c53e98570ad59428af546fb095f81d518e2fb",
+  "sourceGitInputs": {
+    "baseline": 16,
+    "candidateToolInputsIncludedInCurrent": 17,
+    "current": 30,
+    "total": 46
+  },
+  "sourceTree": "0145c2ccc1931ae6c274ff1c1441e91c7c34c6a1",
+  "status": "passed",
+  "url": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40180463429/job/121130229483",
+  "wholeCostQualified": false,
+  "wholeTicketComplete": false,
+  "wholeWaitAllCoreGuestQualified": false
+}

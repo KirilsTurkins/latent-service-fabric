@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_java_fibers.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Reviewed compiler-only exact R7 carrier selector; preserve normal SDK29 defaults, all original commands/caps, historical workflow inverses and closed public-only source admission.",
+  "reviewReason": "Explicitly select reviewed copy-cost observation mixin under existing derived-public-only flag; same frozen R7 reader, normal source/WIT, commands and limits; no alternate private variant.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "ad38f314d4834335df96de9b9dfad70e7d5a5c41b0c4c0e4245861430e813bf7"
+  "sha256": "be395f027f6de4db7184a6e7dde42c9a722dc728d8de36d6167a58021938364e"
 }

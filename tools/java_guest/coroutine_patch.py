@@ -25,6 +25,224 @@ LIVENESS_REPLACEMENTS = (
      'private Map<Instruction, BitSet> collectSplitInstructions(BasicBlock block, int originalIndex) {'),
     ('livenessAnalysis.liveOut(block.getIndex());', 'livenessAnalysis.liveOut(originalIndex);'),
 )
+# Preserve the immutable upstream source. Only this exact private derivation
+# changes the split objective; the graph algorithm and all old repairs remain.
+COPY_COST_FIELDS = '''    private List<Integer> copyWeights;
+    private int totalCopyWeight;
+'''
+COPY_COST_HELPERS = '''    private static int structuralCopyCost(BasicBlock block) {
+        // Count the complete initial IR payload copied by copyBasicBlock.
+        // These are structural units, never predicted machine bytes or time.
+        int result = Math.addExact(1, block.instructionCount());
+        result = Math.addExact(result, block.getPhis().size());
+        for (var phi : block.getPhis()) {
+            result = Math.addExact(result, phi.getIncomings().size());
+        }
+        result = Math.addExact(result, block.getTryCatchBlocks().size());
+        return Math.addExact(result, block.getExceptionVariable() == null ? 0 : 1);
+    }
+
+    private int[] initializeCopyWeights() {
+        int[] result = new int[program.basicBlockCount()];
+        var tracked = new ArrayList<Integer>(result.length);
+        int total = 0;
+        for (int i = 0; i < result.length; ++i) {
+            int weight = structuralCopyCost(program.basicBlockAt(i));
+            total = Math.addExact(total, weight);
+            result[i] = weight;
+            tracked.add(weight);
+        }
+        copyWeights = tracked;
+        totalCopyWeight = total;
+        return result;
+    }
+
+    private int checkedCopiedTotal(int[] toCopy) {
+        if (copyWeights == null) {
+            initializeCopyWeights();
+        }
+        if (copyWeights.size() != program.basicBlockCount()) {
+            throw new IllegalStateException("coroutine-copy-cost-node-drift");
+        }
+        int additional = 0;
+        for (int node : toCopy) {
+            additional = Math.addExact(additional, copyWeights.get(node));
+        }
+        // The unchanged splitter's nonnegative domain/collapse sums represent
+        // subsets of these real-node weights. Admit every clone before it
+        // exists, keeping their checked global sum within int throughout.
+        return Math.addExact(totalCopyWeight, additional);
+    }
+
+'''
+COPY_COST_REPLACEMENTS = (
+    ('    private ValueType returnType;\n',
+     '    private ValueType returnType;\n' + COPY_COST_FIELDS),
+    ('    private void processIrreducibleCfg() {\n',
+     COPY_COST_HELPERS + '    private void processIrreducibleCfg() {\n'
+     '        copyWeights = null;\n        totalCopyWeight = 0;\n'),
+    ('''        int[] weights = new int[graph.size()];
+        for (int i = 0; i < program.basicBlockCount(); ++i) {
+            weights[i] = program.basicBlockAt(i).instructionCount();
+        }''', '''        int[] weights = initializeCopyWeights();'''),
+    ('        public int[] split(int[] remaining, int[] toCopy) {\n',
+     '        public int[] split(int[] remaining, int[] toCopy) {\n'
+     '            int checkedTotal = checkedCopiedTotal(toCopy);\n'),
+    ('''                ProgramUtils.copyBasicBlock(block, blockCopy);
+                copies[i] = blockCopy.getIndex();''',
+     '''                ProgramUtils.copyBasicBlock(block, blockCopy);
+                if (blockCopy.getIndex() != copyWeights.size()) {
+                    throw new IllegalStateException("coroutine-copy-cost-copy-drift");
+                }
+                // Keep the same initial weight inherited by the splitter,
+                // even after predecessor pruning changes the copied PHIs.
+                copyWeights.add(copyWeights.get(node));
+                copies[i] = blockCopy.getIndex();'''),
+    ('            return copies;\n',
+     '            totalCopyWeight = checkedTotal;\n            return copies;\n'),
+)
+# Default-off, fixed public-source observation; never selects production weights.
+COPY_OBSERVER_PROPERTY = 'latent.java.coroutine.public-copy-cost.v1'
+COPY_OBSERVER_TOKEN = '6a2f7a5a13b3295761b0f18989e47cc7ff106a7c9546c559492247fcd36430c8:14c7bb47a7634153b4dcf39473a31f7f87f971f8c90a602b378be498dc938236'
+COPY_OBSERVER_FIELDS = '''    private java.security.MessageDigest observedDecisions;
+    private int observedSplitCalls;
+    private int observedCopiedNodes;
+    private int observedTraceNodes;
+    private static int publicObservationCount;
+'''
+COPY_OBSERVER_HELPERS = r'''    private static java.security.MessageDigest copyDecisionDigest() {
+        try {
+            return java.security.MessageDigest.getInstance("SHA-256");
+        } catch (java.security.NoSuchAlgorithmException e) {
+            throw new IllegalStateException("coroutine-copy-observer-sha256", e);
+        }
+    }
+
+    private void observeInteger(int value) {
+        observedDecisions.update((byte) (value >>> 24));
+        observedDecisions.update((byte) (value >>> 16));
+        observedDecisions.update((byte) (value >>> 8));
+        observedDecisions.update((byte) value);
+    }
+
+    private void observeSplit(int[] remaining, int[] toCopy) {
+        if (observedDecisions == null) {
+            return;
+        }
+        observedSplitCalls = Math.addExact(observedSplitCalls, 1);
+        observedCopiedNodes = Math.addExact(observedCopiedNodes, toCopy.length);
+        observedTraceNodes = Math.addExact(observedTraceNodes,
+                Math.addExact(remaining.length, toCopy.length));
+        if (observedSplitCalls > 65536 || observedTraceNodes > 1048576
+                || observedCopiedNodes > 1048576) {
+            throw new IllegalStateException("coroutine-copy-observer-trace-bound");
+        }
+        observeInteger(remaining.length);
+        for (int node : remaining) {
+            observeInteger(node);
+        }
+        observeInteger(toCopy.length);
+        for (int node : toCopy) {
+            observeInteger(node);
+        }
+    }
+
+    private static String observedHex(byte[] bytes) {
+        var result = new StringBuilder(64);
+        for (byte value : bytes) {
+            result.append(Character.forDigit((value >>> 4) & 15, 16));
+            result.append(Character.forDigit(value & 15, 16));
+        }
+        return result.toString();
+    }
+
+    private static synchronized void claimPublicObservation() {
+        if (++publicObservationCount != 1) {
+            throw new IllegalStateException("coroutine-copy-observer-ambiguous");
+        }
+    }
+
+    private boolean observePublicCopyCost(MethodReference method) {
+        if (!"__COPY_OBSERVER_TOKEN__".equals(System.getProperty(
+                "latent.java.coroutine.public-copy-cost.v1"))) {
+            return false;
+        }
+        if (!method.getClassName().equals("dev.latent.app.Capsule") || !method.getName().equals("pools")) {
+            return false;
+        }
+        if (method.parameterCount() != 0 || !method.getReturnType().equals(ValueType.object("java.lang.Long"))) {
+            throw new IllegalStateException("coroutine-copy-observer-method-shape");
+        }
+        claimPublicObservation();
+        int blocks = program.basicBlockCount();
+        if (blocks > 65536 || program.variableCount() > 262144) {
+            throw new IllegalStateException("coroutine-copy-observer-input-bound");
+        }
+        int instructions = 0;
+        int phis = 0;
+        int incoming = 0;
+        int handlers = 0;
+        int exceptions = 0;
+        int structural = 0;
+        for (var block : program.getBasicBlocks()) {
+            instructions = Math.addExact(instructions, block.instructionCount());
+            phis = Math.addExact(phis, block.getPhis().size());
+            for (var phi : block.getPhis()) {
+                incoming = Math.addExact(incoming, phi.getIncomings().size());
+            }
+            handlers = Math.addExact(handlers, block.getTryCatchBlocks().size());
+            exceptions = Math.addExact(exceptions, block.getExceptionVariable() == null ? 0 : 1);
+            structural = Math.addExact(structural, structuralCopyCost(block));
+        }
+        if (structural > 1048576) {
+            throw new IllegalStateException("coroutine-copy-observer-input-bound");
+        }
+        // Copy the actual post-resume-split, pre-normalization Program once.
+        // Run the SAME splitter and corrected PHI backend, not a graph model.
+        var old = new CoroutineTransformation(classSource, asyncMethods, hasThreads);
+        old.program = ProgramUtils.copy(program);
+        old.observedDecisions = copyDecisionDigest();
+        var oldGraph = ProgramUtils.buildControlFlowGraph(old.program);
+        boolean irreducible = GraphUtils.isIrreducible(oldGraph);
+        if (irreducible) {
+            old.initializeCopyWeights(); // Conservative global safety bound on copies.
+            int[] oldWeights = new int[blocks];
+            for (int i = 0; i < blocks; ++i) {
+                oldWeights[i] = old.program.basicBlockAt(i).instructionCount();
+            }
+            GraphUtils.splitIrreducibleGraph(oldGraph, oldWeights, old.new SplittingBackend());
+        }
+        observedDecisions = copyDecisionDigest();
+        observedSplitCalls = observedCopiedNodes = observedTraceNodes = 0;
+        processIrreducibleCfg();
+        String oldDigest = observedHex(old.observedDecisions.digest());
+        String newDigest = observedHex(observedDecisions.digest());
+        observedDecisions = null;
+        System.err.println("latent.java.coroutine-copy-observation.v1 {"
+                + "\"schemaVersion\":\"latent.java.coroutine-copy-observation.v1\","
+                + "\"hookCount\":1,\"blocks\":" + blocks
+                + ",\"instructions\":" + instructions + ",\"phis\":" + phis
+                + ",\"incomings\":" + incoming + ",\"handlers\":" + handlers
+                + ",\"exceptionBindings\":" + exceptions + ",\"structuralWeight\":" + structural
+                + ",\"irreducible\":" + irreducible
+                + ",\"oldSplitCalls\":" + old.observedSplitCalls + ",\"newSplitCalls\":" + observedSplitCalls
+                + ",\"oldCopiedNodes\":" + old.observedCopiedNodes + ",\"newCopiedNodes\":" + observedCopiedNodes
+                + ",\"oldFinalBlocks\":" + old.program.basicBlockCount()
+                + ",\"newFinalBlocks\":" + program.basicBlockCount()
+                + ",\"oldFinalWeight\":" + old.totalCopyWeight + ",\"newFinalWeight\":" + totalCopyWeight
+                + ",\"oldDecisionSha256\":\"" + oldDigest + "\",\"newDecisionSha256\":\"" + newDigest + "\"}");
+        return true;
+    }
+
+'''.replace('__COPY_OBSERVER_TOKEN__', COPY_OBSERVER_TOKEN)
+COPY_OBSERVER_REPLACEMENTS = (
+    (COPY_COST_FIELDS, COPY_COST_FIELDS + COPY_OBSERVER_FIELDS),
+    ('        processIrreducibleCfg();\n        RedundantJumpElimination.optimize(program);',
+     '        if (!observePublicCopyCost(methodReference)) {\n            processIrreducibleCfg();\n        }\n        RedundantJumpElimination.optimize(program);'),
+    (COPY_COST_HELPERS, COPY_COST_HELPERS + COPY_OBSERVER_HELPERS),
+    ('            int checkedTotal = checkedCopiedTotal(toCopy);\n',
+     '            int checkedTotal = checkedCopiedTotal(toCopy);\n            observeSplit(remaining, toCopy);\n'),
+)
 TYPE_INFERER_SHA256 = 'a1139fea2ab16d6b520e6c975f5fb04f9a54077269c811ee9853bf301db8489d'
 TYPE_SEED_BEFORE = 'if (types[i] != null && graph.outgoingEdgesCount(i) > 0) {'
 TYPE_SEED_AFTER = ('if (types[i] != null && (graph.outgoingEdgesCount(i) > 0\n'
@@ -431,6 +649,14 @@ def corrected_source(raw: bytes) -> bytes:
         if source.count(before) != 1:
             raise ValueError('unreviewed-teavm-coroutine-liveness')
         source = source.replace(before, after)
+    for before, after in COPY_COST_REPLACEMENTS:
+        if source.count(before) != 1:
+            raise ValueError('unreviewed-teavm-coroutine-copy-cost')
+        source = source.replace(before, after)
+    for before, after in COPY_OBSERVER_REPLACEMENTS:
+        if source.count(before) != 1:
+            raise ValueError('unreviewed-teavm-copy-observer')
+        source = source.replace(before, after)
     # The published 0.15.0 artifacts relocate HPPC, unlike the Git source tree.
     for name in RELOCATED_IMPORTS:
         before = 'import com.carrotsearch.hppc.' + name + ';'
@@ -626,6 +852,12 @@ def _groovy_path(path: Path) -> str:
 
 
 def stage(compiler, project: Path, destination: Path) -> dict:
+    observe_copy_cost = getattr(compiler, '_observe_public_copy_cost', False)
+    if type(observe_copy_cost) is not bool:
+        raise ValueError('coroutine-copy-observer-selection')
+    if observe_copy_cost:
+        from tools.java_guest.public_wineh import public_sources
+        public_sources(compiler.directory.parent)
     # The first ordinary classes task has already populated the strictly checked cache.
     jars = checked_jars(compiler, project)
     check_relocated_classes(jars)
@@ -669,6 +901,14 @@ def stage(compiler, project: Path, destination: Path) -> dict:
         if json.loads(monitor) != {'schemaVersion': 'latent.java.monitor-async-control.v1',
                 'mode': mode, 'passed': True}:
             raise ValueError('coroutine-patch-real-monitor-async-control')
+    cost_classpath = os.pathsep.join(map(str, [replacement, classes,
+        *[p for p in jars if p != original[0]]]))
+    cost_controls = ['domain-choice', 'reducible-parity', 'overflow-before-copy']
+    cost = compiler.run('java-coroutine-copy-cost-control', 'java', '-cp', cost_classpath,
+        'org.teavm.backend.lowlevel.transform.Check', 'copy-cost')
+    if json.loads(cost) != {'schemaVersion': 'latent.java.coroutine-copy-cost-control.v1',
+            'cases': cost_controls, 'passed': True}:
+        raise ValueError('coroutine-patch-real-copy-cost-control')
     if identities != jar_identities(compiler.dependency_cache, checked_jars(compiler, project)):
         raise ValueError('coroutine-patch-original-input-mutated')
     build = project / 'build.gradle'; script = read_file(build).decode('utf-8')
@@ -725,6 +965,7 @@ tasks.named('generateC') {
             if (classHash != expected) throw new GradleException('coroutine-patch-loaded-class-bytes')
             loadedClasses[name] = classHash
         }
+        __COPY_COST_OBSERVER__
         file('compiler-patch/loaded.json').text = groovy.json.JsonOutput.toJson([
             schemaVersion: 'latent.java.coroutine-compiler-load.v1',
             selectedOwnedReplacement: true, replacementJarSha256: hash,
@@ -734,6 +975,12 @@ tasks.named('generateC') {
 '''.replace('__PATCH_SHA256__', receipt['replacementJarSha256']).replace('__EXPECTED_CLASSES__',
         json.dumps({name: row['replacementSha256'] for name, row in receipt['replacedClasses'].items()},
                    sort_keys=True, separators=(',', ':')))
+    observer_hook = ("if (System.getProperty('" + COPY_OBSERVER_PROPERTY + "') != null) "
+        "throw new GradleException('coroutine-copy-observer-ambient-selection');")
+    if observe_copy_cost:
+        observer_hook += ("\n        System.setProperty('" + COPY_OBSERVER_PROPERTY + "', '"
+                          + COPY_OBSERVER_TOKEN + "');")
+    script = script.replace('__COPY_COST_OBSERVER__', observer_hook)
     build.write_bytes(script.encode('utf-8'))
     receipt.update(schemaVersion='latent.java.coroutine-compiler-patch.v1',
         upstreamSourceSha256=UPSTREAM_SHA256, correctedSourceSha256=hashlib.sha256(corrected).hexdigest(),
@@ -744,6 +991,10 @@ tasks.named('generateC') {
         realOriginalPrimitiveArrayRootDefectObserved=True,
         realCorrectedArrayTypesAndReferenceRootsPreserved=True,
         realCorrectedRestoredArrayPrimitiveTypePreserved=True,
+        structuralCopyCostPolicy='initial-ir-structural-copy-v1',
+        publicCopyCostObserverSelected=observe_copy_cost,
+        publicCopyCostObserverMaximumRecordBytes=131072,
+        realStructuralCopyCostControls=cost_controls,
         upstreamAsyncFinderSourceSha256=ASYNC_SOURCE_SHA256,
         correctedAsyncFinderSourceSha256=hashlib.sha256(corrected_async).hexdigest(),
         realOriginalMonitorBoundaryDefectObserved=True,

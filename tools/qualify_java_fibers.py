@@ -407,7 +407,7 @@ def prepare(output: Path, wasi_sdk: Path, *, gradle="gradle", offline_cache: Pat
             from tools.java_guest.public_wineh import PublicWinEHCompiler
             selected_compiler = PublicWinEHCompiler
         if derived_llvm_public:
-            selected_compiler = derived.DerivedPublicCompiler
+            selected_compiler = derived.CopyCostPublicCompiler
             extra['admitted'] = admitted
         compiler = selected_compiler(output / "compiler", wasi_sdk, gradle=gradle, offline_cache=offline_cache,
                             read_only_cache=read_only_cache, timeout=1200, **extra)
