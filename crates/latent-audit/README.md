@@ -25,6 +25,14 @@ Audit records describe original decisions; they cannot grant execution, refresh 
 
 ## Integration boundaries
 
+The connected journal and broker share the original node metadata bank, while
+the derived journal policy remains a distinct ceiling. Fixed backing, pending
+records, response/query views and native worker stacks retain prepaid owners
+through actual destruction; dropping an acknowledgement waiter does not refund
+them. The [connected audit programme](../../docs/testing/audit-connected-memory.md)
+distinguishes its actual native/startup controls from whole-process and broader
+runtime qualification.
+
 This is separate from best-effort telemetry. Required audit failure cannot be silently downgraded to a log line. A durable command/catalog result may remain known even when its audit acknowledgement is uncertain. `test-support` supplies controlled journal fixtures rather than production authority.
 
 ## Dependencies and build

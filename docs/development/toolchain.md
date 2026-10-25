@@ -18,13 +18,13 @@ See [build-foundation.md](build-foundation.md) for generation ownership, focused
 | Rust MSRV |                               1.95.0 | Oldest compiler checked for all native workspace targets |
 | Rust binding-check target |                      `wasm32-wasip2` | Compile generated Rust guest bindings against Preview 2 |
 | Rust component-core target |             `wasm32-unknown-unknown` | Build self-contained cores before explicit componentization |
-| Tokio |                               1.53.1 | Fixed node runtimes, async adapters, and explicit test runtimes |
+| Tokio |                               1.53.3 | Fixed node runtimes, async adapters, and explicit test runtimes |
 | Prost |                               0.14.4 | Generated Protobuf message implementation |
 | Tonic / `tonic-prost` |                      0.14.6 / 0.14.6 | Generated RPC clients, servers, and Prost codec |
 | `tonic-prost-build` |                               0.14.6 | Build-time Rust generation from every authoritative `.proto` |
 | `protoc-bin-vendored` |                                3.2.0 | Pinned cross-platform `protoc`; no ambient compiler lookup |
 | Tracing / tracing-subscriber |                      0.1.44 / 0.3.23 | Structured instrumentation baseline and compile probe |
-| Wasmtime |                               48.0.7 | Generic Component Model runtime and retained Phase 0 compatibility facade |
+| Wasmtime |                               48.0.7 | Maintained source package with selected value/native-allocation hooks; exact cohort participates in runtime identity |
 | `wasmparser` |                               0.261.0 | Direct component binary validation; WIT tooling retains its separately locked parser dependencies |
 | `wasm-encoder` |                               0.261.0 | Component fixtures; `waitable_set_wait(memory)` retains the zero immediate used by the pinned runtime |
 | `wit-parser` |                               0.259.0 | Direct WIT parsing and component decoding; guest tooling retains its separately locked parser dependencies |
@@ -42,6 +42,15 @@ See [build-foundation.md](build-foundation.md) for generation ownership, focused
 | Zig / Clang / C target | 0.16.0 / 21.1.0 / `x86_64-linux-gnu` | Pinned C11 header smoke test |
 
 Workspace dependencies are exact requirements and workspace crates consume them with `workspace = true`. Cargo ignores SemVer build metadata in requirements, so TOML is pinned as `=1.1.6`; the resolved package may display `1.1.6+spec-1.1.0` in `Cargo.lock`.
+
+Wasmtime is selected from `crates/vendor/wasmtime`, with original archive/file
+identities and a separate LSF patch manifest. The workspace also patches bytes
+for retained original-owner accounting. The outbound-stream rustls package is a
+separate selected dependency with its own parser derivation; its presence does
+not enable host TLS. See [the engine boundary](../runtime/wasmtime.md) and
+[stream qualification](../runtime/outbound-stream-qualification.md). Preserve
+the exact source cohort and locks when reproducing a build; an upstream package
+with the same version label is not interchangeable.
 
 SHA-256 output arrays are formatted through the shared `HexDigest` byte formatter.
 The `sha2` 0.11 update preserves the existing lowercase, zero-padded digest text

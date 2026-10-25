@@ -19,6 +19,17 @@ This is the implemented Wasm backend, not the native-SFI research backend. Exist
 | [src/surface.rs](src/surface.rs) | Exact dynamic export/import signatures and resource ownership validation. |
 | [src/values.rs](src/values.rs) | Bounded type-directed WIT-value JSON codec. |
 | [src/containment.rs](src/containment.rs) | Runtime resource accounting and shared epoch-worker ownership. |
+| [src/component_threading.rs](src/component_threading.rs) | Selected native-thread ABI authentication and original admission/stack integration. |
+
+The workspace selects the maintained [Wasmtime source extension](../vendor/wasmtime/README.latent.md),
+whose exact allocation cohort participates in engine/preparation identity. Its
+selected dynamic/native hooks charge actual Store/table/value/context/future
+backing before allocation. Retained values and byte owners may outlive a Store;
+their charges last through physical deallocation. This is not global allocator,
+node RSS or complete language/kernel memory accounting. The
+[engine guide](../../docs/runtime/wasmtime.md#selected-continuation-and-memory-profiles)
+separates this boundary from the explicit C/Rust cooperative profiles, whose
+creation remains disabled by default and whose receipts grant no authority.
 
 ## Execution and ownership
 
@@ -34,7 +45,7 @@ The Phase 0 facade retains echo framing over the shared backend; it is not a sec
 
 ## Dependencies and build
 
-Direct workspace dependencies: [latent-packaging](../latent-packaging/README.md), [latent-activation](../latent-activation/README.md), [latent-artifacts](../latent-artifacts/README.md), [latent-audit](../latent-audit/README.md), [latent-component-bindings](../latent-component-bindings/README.md), [latent-core](../latent-core/README.md), [latent-capabilities](../latent-capabilities/README.md), [latent-policy](../latent-policy/README.md), [latent-routing](../latent-routing/README.md), [latent-executor](../latent-executor/README.md), [latent-manifest](../latent-manifest/README.md), [latent-telemetry](../latent-telemetry/README.md).
+Direct workspace dependencies: [latent-component-threading](../latent-component-threading/README.md), [latent-packaging](../latent-packaging/README.md), [latent-activation](../latent-activation/README.md), [latent-artifacts](../latent-artifacts/README.md), [latent-audit](../latent-audit/README.md), [latent-component-bindings](../latent-component-bindings/README.md), [latent-core](../latent-core/README.md), [latent-capabilities](../latent-capabilities/README.md), [latent-policy](../latent-policy/README.md), [latent-routing](../latent-routing/README.md), [latent-executor](../latent-executor/README.md), [latent-manifest](../latent-manifest/README.md), [latent-telemetry](../latent-telemetry/README.md).
 
 Consumers with normal workspace dependency edges include [latentd](../../apps/latentd/README.md), [latent-portable-test-host](../../tools/portable-test-host/README.md). Optional features still gate the selected graph; target-specific and test edges are also declared in the manifests.
 
@@ -44,6 +55,7 @@ Cargo features (the manifest owns their exact expansion):
 | --- | --- |
 | `aot-test-timings` | No additional feature dependency. |
 | `development-clock-fixture` | No additional feature dependency. |
+| `development-local-service-fixture` | Explicit local-service refusal controls; no additional application authority. |
 | `development-test-host` | `latent-artifacts/development-test-host`, `latent-policy/development-test-host`, `development-clock-fixture` |
 | `java-guest-diagnostic` | No additional feature dependency. |
 

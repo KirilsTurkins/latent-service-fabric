@@ -38,7 +38,9 @@ describe their own release and may differ from the current source.
 
 [Changes since alpha.5](docs/start/development-changes.md) covers the newer
 source workflows: application-library capture, approved generators, immutable
-resources, composition diagnostics and explicitly configured transactions.
+resources, selected ordinary-library runtimes, composition diagnostics and
+explicitly configured transactions. The guide links the exact runtime and
+physical-memory evidence rather than implying package-wide compatibility.
 Use the published version's guides for downloaded alpha.5 tools.
 
 ## What you can build
