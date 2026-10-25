@@ -27,16 +27,18 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
         return None
 
-# No candidate compiler is admitted until its actual R8 producer succeeds.
-HEAD = TREE = None
+# Exact R8 producer passed nine SSA units, all thirteen SjLj and both private-scalar lit files.
+HEAD = 'ddc55c2d3a3d6d31806499962aff748324bb2e8b'
+TREE = 'eed32a4f9aaf45d6e55df5ddd1180850da50eec2'
 BRANCH = 'feat/java-llvm-private-stores-r6-20261025'
-RUN = JOB = None
+RUN = 40224708180
+JOB = 121263514074
 ATTEMPT = 1
 REPOSITORY = 'KirilsTurkins/latent-service-fabric'
 WORKFLOW = '.github/workflows/java-llvm-private-stores-producer.yml'
 CONSUMER_BRANCH = 'feat/java-llvm-ssa-consumer-20261025'
 RECIPE_SHA = 'eebc8920624c8a0b40b89648154bab16eaa5a3a9e54eb38ca4dfd18a3211366d'
-QUALIFIED = None
+QUALIFIED = {'artifactId': 12612367767, 'archiveBytes': 167429041, 'archiveSha256': '593006fad3362dc340959e57392e1379a79bfc2bd8e36c33cbe950d4fed1cc46', 'carrier': {'bytes': 159519677, 'sha256': 'c6fe95c061c6bd58658fd131288e0469fff6acca2d2c4c4fd86565a21f2c997d'}, 'manifest': {'bytes': 2102159, 'sha256': '896fdd53ffcd9400218ed63bb9a3d52af0c467bd232966bf54d4b4e8a2f532fa'}, 'originVersion': {'bytes': 90, 'sha256': 'cb9fa6c932384a5f2f90f576936415a7f256eeb1d9a7c38a3c300320bfad6e23'}}
 NOTICES = {'NOTICE': {'bytes': 6193, 'sha256': '88847eed7dadd32c7923c5f18342f1517ce2c29812f427c0d95bf1e1fc54fa47'}, 'LLVM-LICENSE.txt': {'bytes': 15141, 'sha256': '8d85c1057d742e597985c7d4e6320b015a9139385cff4cbae06ffc0ebe89afee'}, 'LLVM-PATCH.json': {'bytes': 211777, 'sha256': 'dd04c818debbb0491866ce119465526fb70a3112e85452b857d2528629b557ea'}, 'LLVM-PRIVATE-STORES.json': {'bytes': 79822, 'sha256': 'c695e9bfc6d499ebc0ec93b56e8a28ea9c1745d4d17d008ea5639cc50436ac04'}}
 LIT_LOCK = {'bytes': 174, 'sha256': '97f9e06a7255f789c87d21f91e8ee463f5f9a0cdafd5d1411e9433b092a8a858'}
 STAGES = (

@@ -19,14 +19,15 @@ from tools.ci_lane_inventory import workflow_model
 
 class PrivateScalarConsumer(unittest.TestCase):
     def test_unfilled_new_tuple_and_mixed_modes_refuse_before_io_or_old_sdk_fallback(self):
-        self.assertIsNone(inputs.QUALIFIED)
-        self.assertIsNone(inputs.HEAD)
-        self.assertIsNone(inputs.RUN)
-        with mock.patch.object(inputs.io, 'fresh') as fresh, mock.patch.object(inputs, '_response') as network:
-            with self.assertRaisesRegex(ValueError, 'qualified-tuple-unfilled'):
-                inputs.prepare(time.monotonic() + 10)
-            fresh.assert_not_called()
-            network.assert_not_called()
+        with mock.patch.multiple(inputs, QUALIFIED=None, HEAD=None, TREE=None, RUN=None, JOB=None):
+            self.assertIsNone(inputs.QUALIFIED)
+            self.assertIsNone(inputs.HEAD)
+            self.assertIsNone(inputs.RUN)
+            with mock.patch.object(inputs.io, 'fresh') as fresh, mock.patch.object(inputs, '_response') as network:
+                with self.assertRaisesRegex(ValueError, 'qualified-tuple-unfilled'):
+                    inputs.prepare(time.monotonic() + 10)
+                fresh.assert_not_called()
+                network.assert_not_called()
         for selection in ({'derived_llvm_public': True}, {'observe_public_wineh': True}, {'fixture': 'timers'}):
             with self.subTest(selection=selection), mock.patch.object(fibers, 'fresh') as fresh:
                 with self.assertRaisesRegex(ValueError, 'distinct fixed public backend'):
