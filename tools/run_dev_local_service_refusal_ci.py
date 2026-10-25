@@ -21,13 +21,16 @@ from tools.native_runtime import files as native_files
 from tools.native_runtime.common import InstallError
 
 ROOT = Path(__file__).resolve().parents[1]
-BRANCH = "diag/local-service-refusal-20261025"
+BRANCH = "fix/local-service-registry-retirement-20261025"
 WORKFLOW = ".github/workflows/developer-local-service-refusal.yml"
 MAX_SECONDS = 2400
 MAX_LOG = 16 * 1024 * 1024
-NATIVE_CASES = (
+PRIOR_NATIVE_CASES = (
     "host::service::refusal::tests::disabled_and_first_per_activation_do_not_share_global_admission",
     "host::service::refusal::tests::typed_budget_refuses_coercion_unknown_details_and_private_error_text",
+)
+NATIVE_CASES = (
+    "broker::tests::session_native_memory::post_store_registry_retirement_releases_original_child_capacity_without_a_new_session",
 )
 CONFIG_CASE = "config::tests::development::local_service_refusal_observation_requires_exact_consent_and_existing_local_provider"
 PYTHON_CASES = (
@@ -53,18 +56,22 @@ RECIPE = (
     "crates/latent-wasmtime/src/host/service/refusal.rs", "tools/toolchain.toml",
     "Cargo.toml", "Cargo.lock", ".cargo/managed-guest.toml", "wit/platform/invocation/package.wit",
     "tools/requirements.lock",
+    "crates/latent-capabilities/src/broker/session.rs",
+    "crates/latent-capabilities/src/broker/session/shared.rs",
+    "crates/latent-capabilities/src/broker/session/native_backing.rs",
+    "crates/latent-capabilities/src/broker/work.rs",
+    "crates/latent-capabilities/src/broker/tests/session_native_memory.rs",
+    "crates/latent-capabilities/src/broker/tests/fixture.rs",
+    "crates/latent-capabilities/src/broker/tests/resource_table_memory.rs",
+    "crates/latent-core/src/budget.rs",
+    "crates/latent-core/src/budget/host_memory.rs",
+    "crates/latent-core/src/budget/descendants/mod.rs",
+    "crates/latent-core/src/budget/descendants/admission.rs",
+    "crates/latent-core/src/budget/descendants/retirement.rs",
+    "crates/latent-core/src/budget/descendants/memory.rs",
 )
 
 
-ALLOWED_SOURCE_CHANGES = frozenset({
-    b"tools/tests/test_dev_local_service_fixture.py",
-    b"tools/run_dev_local_service_refusal_ci.py",
-    b"tools/ci/contracts/owners/tools/run_dev_local_service_refusal_ci.py.json",
-    b".github/workflows/developer-local-service-refusal.yml",
-    b"tools/ci/contracts/workflows/developer-local-service-refusal.yml/jobs/local-service.json",
-    b"tools/ci/contracts/python/test_dev_local_service_fixture.py.json",
-})
-PRIOR_FILTERED_TREE_SHA256 = "sha256:6ff92bd4a6c9fbc0452bf985fd587488c9aa31079f1644d8fa906378a04295fa"
 PRIOR_NATIVE_CONTROLS = {
     "sourceCommit": "81e7c5a8e8d687d478bd502c35c5cca98e4f3fb9",
     "sourceTree": "343a620dc91522bc1b35759f2cd48b2c4d955fbf",
@@ -75,7 +82,7 @@ PRIOR_NATIVE_CONTROLS = {
     "scope": "only-the-three-actually-passed-native-and-config-controls",
     "observerStdout": {"bytes": 334, "sha256": "sha256:9fdd45e5950f5df520f4dff02d7ba932efaa9b44401d5332614221ae7e283dfa"},
     "configStdout": {"bytes": 239, "sha256": "sha256:614fdae33b7d4376c8b1d26256ee0b6dc1ff3c35d39caff52d1e6c61ac857ab6"},
-    "nativeCases": list(NATIVE_CASES), "configCases": [CONFIG_CASE],
+    "nativeCases": list(PRIOR_NATIVE_CASES), "configCases": [CONFIG_CASE],
 }
 
 
@@ -102,7 +109,7 @@ def native_result(raw, expected):
 
 PUBLIC_COMMANDS = (
     "source-head", "source-tree", "clean-source", "builder-import-preflight",
-    "fixture-cli-preflight", "prior-native-source-tree", "python-controls",
+    "fixture-cli-preflight", "current-source-inventory", "python-controls", "registry-retirement-native-control",
     "normal-rust-tools-and-node", "original-local-service-fixture",
 )
 PUBLIC_REPORTS = {
@@ -114,7 +121,7 @@ PUBLIC_REPORTS = {
 PUBLIC_FILES = {**PUBLIC_REPORTS,
     **{f"commands/{name}.{channel}": MAX_LOG for name in PUBLIC_COMMANDS for channel in ("stdout", "stderr")},
     "source-node.json": 65536}
-MAX_PUBLIC_FILES = 23
+MAX_PUBLIC_FILES = 25
 MAX_PUBLIC_BYTES = sum(PUBLIC_FILES.values())
 PRIVATE_SCRATCH_ROOT = Path("/tmp")
 
@@ -159,27 +166,6 @@ def retain_public_evidence(output, source_node):
             stream.write(raw)
         retained.append(name)
     return {"files": retained, "bytes": total}
-
-
-def native_source_identity(raw):
-    # One fixed Git inventory, not a prior checkout/fetch or a rebuilt envelope.
-    require(0 < len(raw) <= MAX_LOG and raw.endswith(b"\0"), "bounded-git-tree-required")
-    canonical, exempt = [], set()
-    for entry in raw[:-1].split(b"\0"):
-        fields = entry.split(b"\t", 1)
-        require(len(fields) == 2, "git-tree-record-invalid")
-        header, path = fields
-        if path in ALLOWED_SOURCE_CHANGES:
-            require(path not in exempt and header.startswith(b"100644 blob "), "regular-exempt-source-required")
-            exempt.add(path)
-        else:
-            canonical.append(entry + b"\0")
-    require(exempt == ALLOWED_SOURCE_CHANGES, "all-six-source-exceptions-required")
-    observed = "sha256:" + hashlib.sha256(b"".join(canonical)).hexdigest()
-    require(observed == PRIOR_FILTERED_TREE_SHA256, "prior-native-source-tree-drift")
-    return {"filteredTreeSha256": observed, "inventoryBytes": len(raw),
-            "unchangedTrackedEntries": len(canonical),
-            "excludedPaths": sorted(path.decode("ascii") for path in exempt)}
 
 
 def run(python_prefix: Path, output: Path):
@@ -228,17 +214,25 @@ def run(python_prefix: Path, output: Path):
         command("builder-import-preflight", [sys.executable, "tools/build_dev_guest_tools.py", "--help"], 60)
         fixture_help = command("fixture-cli-preflight", [sys.executable, "tools/dev_local_service_fixture_probe.py", "--help"], 60)
         require(b"--observe-refusals" in fixture_help.stdout, "explicit-fixture-option-required")
-        source_tree = command("prior-native-source-tree", ["git", "ls-tree", "-r", "-z", "HEAD"], 15)
-        receipt["nativeSourceIdentity"] = native_source_identity(source_tree.stdout)
+        source_tree = command("current-source-inventory", ["git", "ls-tree", "-r", "-z", "HEAD"], 15)
+        require(source_tree.stdout and source_tree.stdout.endswith(b"\0"), "current-git-inventory-required")
+        receipt["currentSourceInventory"] = identity(logs / "current-source-inventory.stdout", MAX_LOG)
         receipt["priorNativeControls"] = PRIOR_NATIVE_CONTROLS
-        receipt["currentExecutionScope"] = "native-and-config-controls-only"
-        receipt["currentExecution"] = "not-run;prior-source-exact"
+        # The broker change invalidates the former full-tree equality proof.
+        # These three historical passes confer no current native/config credit.
+        receipt["priorNativeControlsCurrentSourceEquivalent"] = False
+        receipt["priorNativeControlsCurrentExecution"] = "not-run;historical-only"
+        receipt["currentExecutionScope"] = "one-native-registry-regression-and-original-fourteen-fixture-cases"
         controls = command("python-controls", [sys.executable, "-m", "unittest", "-v",
             *("tools.tests.test_dev_local_service_fixture.LocalServiceFixture." + case for case in PYTHON_CASES)], 60)
         passed_python = re.findall(rb"^(test_[a-zA-Z0-9_]+) \([^\n]+\) \.\.\. ok$", controls.stderr, re.M)
         require(sorted(name.decode() for name in passed_python) == sorted(PYTHON_CASES)
                 and b"Ran 5 tests" in controls.stderr and controls.stderr.rstrip().endswith(b"OK"), "five-python-cases-zero-skip-required")
         receipt["pythonCases"] = list(PYTHON_CASES)
+        native = command("registry-retirement-native-control", ["cargo", "--config", ".cargo/managed-guest.toml",
+            "test", "--locked", "-p", "latent-capabilities", "--lib", NATIVE_CASES[0], "--", "--exact"], 600)
+        native_result(native.stdout, NATIVE_CASES)
+        receipt["nativeCases"] = list(NATIVE_CASES)
         command("normal-rust-tools-and-node", [sys.executable, "tools/build_dev_guest_tools.py", "--language", "rust",
             "--output", "target/local-service-tools", "--python-prefix", python_prefix, "--node-tests"], 1800)
         source_node = ROOT / "target/local-service-tools/source-node/source-node.json"

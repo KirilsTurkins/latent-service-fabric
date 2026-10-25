@@ -9,7 +9,7 @@
     "on": {
       "push": {
         "branches": [
-          "diag/local-service-refusal-20261025"
+          "fix/local-service-registry-retirement-20261025"
         ]
       }
     },
@@ -20,7 +20,7 @@
   "requiredJobs": [
     "local-service"
   ],
-  "reviewReason": "Explicit cfg-only disposable local-service first-refusal observation; preserve original public failures and all runtime owners/grants; default ordinary path byte-equivalent; one narrowly owned actual fixture diagnostic.",
+  "reviewReason": "Retire only original closed/quiescent post-Store registry backing; preserve actual header drop order and unknown/quarantined work. One current source-matched native regression, five cheap Python controls, then unchanged normal Rust builder and fourteen signed fixture cases. Old three native/config passes are historical only, not current-source equivalent; fixed ten named public command pairs only, no private scratch upload.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/developer-local-service-refusal.yml"
 }

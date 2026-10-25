@@ -2,7 +2,7 @@ name: Ordinary local-service first refusal
 
 on:
   push:
-    branches: ['diag/local-service-refusal-20261025']
+    branches: ['fix/local-service-registry-retirement-20261025']
 
 permissions:
   contents: read

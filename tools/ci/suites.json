@@ -1595,14 +1595,15 @@
         "broker::pools::tests::close_observation::buffered_and_delivered_close_receipt_keeps_original_cleanup_charge",
         "broker::pools::tests::close_observation::close_worker_panic_never_publishes_accepted_receipt_or_refunds_connection",
         "broker::pools::tests::close_observation::held_close_receipt_bounds_new_admission_and_returns_unchanged_owner",
-        "broker::pools::tests::close_observation::published_receipt_drop_cannot_release_live_sender_worker_tail"
+        "broker::pools::tests::close_observation::published_receipt_drop_cannot_release_live_sender_worker_tail",
+        "broker::tests::session_native_memory::post_store_registry_retirement_releases_original_child_capacity_without_a_new_session"
       ],
       "expectedIgnored": [],
       "id": "latent-capabilities.lib.latent-capabilities",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-capabilities/Cargo.toml",
-      "minimumCases": 208,
+      "minimumCases": 209,
       "mode": "libtest",
       "package": "latent-capabilities",
       "platforms": [
