@@ -20,6 +20,25 @@ pub struct StreamKernelBacking {
     _pools: Arc<super::Inner>,
 }
 
+/// The exact original 512 KiB order-7 bank portion, never another allowance.
+/// Trusted adapters must retain this affine charge after possible entry until
+/// their original protected observation proves that bank physically returned.
+/// The remaining bootstrap/descriptor owner is independent and stays retained.
+pub struct StreamKernelBankCharge {
+    _metadata: ProviderMetadata,
+}
+
+impl StreamKernelBacking {
+    /// Partition the SAME atomic one-MiB admission before physical entry.
+    /// No counter changes here, allocation, size argument or refund proof.
+    pub fn partition_original_bank(&mut self) -> Result<StreamKernelBankCharge, PlatformError> {
+        let charge = self._metadata._charge.partition_stream_bank()?;
+        Ok(StreamKernelBankCharge {
+            _metadata: ProviderMetadata { _charge: charge },
+        })
+    }
+}
+
 /// Original accepted work retained by a private kernel factory owner. This is
 /// not a kernel identity, retirement certificate or provider-install permission.
 /// There is no constructor from strings, scope words, serialized claims or an

@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_host_stream_kernel_bank_vm.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Fixed source-matched bank consumer retains original limits and unchanged successful kernel material identities.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "f5137ee9ace97aa3d7595bf2b690bf598313c088b2b05b8108222028eaa4f610"
+}

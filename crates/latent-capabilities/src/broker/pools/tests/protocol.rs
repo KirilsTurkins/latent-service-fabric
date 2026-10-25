@@ -287,4 +287,31 @@ async fn kernel_backing_uses_existing_fixed_metadata_ceiling() {
     drop(backing);
     assert_eq!(setup.pools.snapshot().unwrap().metadata_bytes, before);
     clean(&setup.pools).await;
+    // Same original allowance, with the new pre-entry fixed partition.
+    let setup = Setup::new(ProviderPoolLimits::default());
+    let before = setup.pools.snapshot().unwrap().metadata_bytes;
+    let mut backing = setup.pools.reserve_stream_kernel_backing().unwrap();
+    let bank = backing.partition_original_bank().unwrap();
+    assert_eq!(
+        setup.pools.snapshot().unwrap().metadata_bytes,
+        before + 1024 * 1024
+    );
+    // Repeating the fixed partition neither duplicates nor destroys ownership.
+    assert!(backing.partition_original_bank().is_err());
+    assert_eq!(
+        setup.pools.snapshot().unwrap().metadata_bytes,
+        before + 1024 * 1024
+    );
+    setup.pools.retire();
+    // No physical entry occurs in this accounting control. The real adapter's
+    // protected observation, not this direct Drop, authorizes physical return.
+    drop(bank);
+    assert_eq!(
+        setup.pools.snapshot().unwrap().metadata_bytes,
+        before + 512 * 1024
+    );
+    assert!(backing.partition_original_bank().is_err());
+    drop(backing);
+    assert_eq!(setup.pools.snapshot().unwrap().metadata_bytes, before);
+    clean(&setup.pools).await;
 }

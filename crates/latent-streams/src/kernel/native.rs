@@ -4,7 +4,7 @@
 use crate::{error, StreamError, StreamErrorCode};
 use latent_capabilities::broker::pools::{
     ConnectionReservation, InstalledProvider, PooledConnection, ProviderPools, StreamKernelBacking,
-    StreamKernelCloseJob, StreamKernelCloseObservation,
+    StreamKernelBankCharge, StreamKernelCloseJob, StreamKernelCloseObservation,
 };
 use std::{fs::File, sync::Arc, time::Instant};
 
@@ -23,7 +23,14 @@ struct Resource {
     descriptor: Option<File>,
     bootstrap: Option<ReadyExpiry>,
     retirement: Option<retirement::Owner>,
+    bank: Option<StreamKernelBankCharge>,
     _backing: StreamKernelBacking,
+}
+
+#[derive(Clone, Copy)]
+enum BankReturn {
+    RetainWhole,
+    ReclaimFixedBank,
 }
 
 /// Created only after the actual BEGIN/WAIT reply validated bootstrap READY.
@@ -117,6 +124,7 @@ async fn start_initialized_with<O, I>(
     installed: &InstalledProvider,
     deadline: Instant,
     retirement: Option<retirement::Owner>,
+    bank_return: BankReturn,
     open: O,
     initialize: I,
 ) -> Result<NativeOwner, StreamError>
@@ -129,7 +137,11 @@ where
     }
     // SAME node metadata quota, before the protected open or its worker. This
     // is not an activation HostMemoryReservation or a new bootstrap ledger.
-    let backing = pools.reserve_stream_kernel_backing()?;
+    let mut backing = pools.reserve_stream_kernel_backing()?;
+    let bank = match bank_return {
+        BankReturn::RetainWhole => None,
+        BankReturn::ReclaimFixedBank => Some(backing.partition_original_bank()?),
+    };
     let client = pools.client::<Resource>(installed, u16::MAX)?;
     let maintenance = pools.maintenance(&client, deadline, 1)?;
     let request = maintenance.begin_request()?;
@@ -140,6 +152,7 @@ where
             descriptor: None,
             bootstrap: None,
             retirement,
+            bank,
             _backing: backing,
         }),
         entered: false,
@@ -212,6 +225,7 @@ where
         installed,
         deadline,
         None,
+        BankReturn::RetainWhole,
         open,
         move |resource, deadline| {
             initialize(
@@ -283,13 +297,14 @@ fn close_resource(resource: &mut Resource) -> StreamKernelCloseObservation {
         _ => StreamKernelCloseObservation::NotAttempted,
     };
     drop(resource.descriptor.take());
+    if observation == StreamKernelCloseObservation::RequestAccepted
+        && retirement::observe_after_original_close(resource)
+    {
+        // Only the new fixed partition can return its same bank charge.
+        // The connection, remainder and observation owner stay quarantined.
+        return StreamKernelCloseObservation::KernelRootReturned;
+    }
     if let Some(retirement) = resource.retirement.as_mut() {
-        if observation == StreamKernelCloseObservation::RequestAccepted
-            && retirement.observe_after_original_close()
-        {
-            // This fixed observation still cannot release ANY native owner.
-            return StreamKernelCloseObservation::KernelRootReturned;
-        }
         retirement.abandon();
     }
     // CLOSED4 is request acceptance only. The original caller ALWAYS moves
@@ -351,7 +366,7 @@ pub(crate) async fn start(
     installed: &InstalledProvider,
     deadline: Instant,
 ) -> Result<NativeOwner, StreamError> {
-    start_real(pools, installed, deadline, None).await
+    start_real(pools, installed, deadline, None, BankReturn::RetainWhole).await
 }
 
 /// Explicit qualification consumer for a NEW source-matched observation ABI.
@@ -369,7 +384,35 @@ pub(crate) async fn start_with_retirement_observation(
         eprintln!("LSFRETURNDIAG stage=reserve code={:?}", failure.code);
         failure
     })?;
-    start_real(pools, installed, deadline, Some(observation)).await
+    start_real(
+        pools,
+        installed,
+        deadline,
+        Some(observation),
+        BankReturn::RetainWhole,
+    )
+    .await
+}
+
+/// Only the exact bank portion can return; no other native owner is refunded.
+#[cfg(target_os = "linux")]
+pub(crate) async fn start_with_bank_reclamation(
+    pools: Arc<ProviderPools>,
+    installed: &InstalledProvider,
+    deadline: Instant,
+) -> Result<NativeOwner, StreamError> {
+    if Instant::now() >= deadline {
+        return Err(deadline_error());
+    }
+    let observation = retirement::Owner::reserve(&pools, deadline)?;
+    start_real(
+        pools,
+        installed,
+        deadline,
+        Some(observation),
+        BankReturn::ReclaimFixedBank,
+    )
+    .await
 }
 
 #[cfg(target_os = "linux")]
@@ -378,6 +421,7 @@ async fn start_real(
     installed: &InstalledProvider,
     deadline: Instant,
     retirement: Option<retirement::Owner>,
+    bank_return: BankReturn,
 ) -> Result<NativeOwner, StreamError> {
     let observing = retirement.is_some();
     start_initialized_with(
@@ -385,6 +429,7 @@ async fn start_real(
         installed,
         deadline,
         retirement,
+        bank_return,
         move || {
             rustix::fs::open(
                 c"/dev/lsf-stream-factory",

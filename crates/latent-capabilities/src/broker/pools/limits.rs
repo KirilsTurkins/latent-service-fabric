@@ -231,6 +231,22 @@ pub(super) struct Charge {
     kind: Kind,
     amount: usize,
 }
+impl Charge {
+    // Partition one already-admitted stream bootstrap charge before entry.
+    // This changes no quota counter and accepts no caller-selected amount.
+    pub(super) fn partition_stream_bank(&mut self) -> Result<Self, PlatformError> {
+        if !matches!(self.kind, Kind::Metadata) || self.amount != 1024 * 1024 {
+            return Err(invalid());
+        }
+        let owner = Arc::clone(&self.owner);
+        self.amount = 512 * 1024;
+        Ok(Self {
+            owner,
+            kind: Kind::Metadata,
+            amount: 512 * 1024,
+        })
+    }
+}
 impl Drop for Charge {
     fn drop(&mut self) {
         self.owner.values[self.kind as usize].fetch_sub(self.amount, Ordering::AcqRel);

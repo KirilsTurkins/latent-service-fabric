@@ -1,5 +1,5 @@
 //! One private precharged observation handle. Every result still quarantines.
-use super::{error, ReadyExpiry, StreamError, StreamErrorCode};
+use super::{error, ReadyExpiry, Resource, StreamError, StreamErrorCode};
 use latent_capabilities::broker::pools::{ProviderMetadata, ProviderPools};
 use rustix::event::{poll, PollFd, PollFlags, Timespec};
 use std::{
@@ -15,6 +15,27 @@ pub(super) const WIRE_BYTES: usize = 48;
 const METADATA_BYTES: usize = 4096;
 const MAX_INTERRUPTS: usize = 16;
 const MAX_WAIT: Duration = Duration::from_secs(20);
+
+// No constructor or value escapes this module. A codec match alone cannot
+// create this affine fact; only the actual protected observation read below.
+struct RootReturned;
+
+pub(super) fn observe_after_original_close(resource: &mut Resource) -> bool {
+    if resource.descriptor.is_some() {
+        return false;
+    }
+    let Some(observation) = resource.retirement.as_mut() else {
+        return false;
+    };
+    let Some(_returned) = observation.read_original_return() else {
+        return false;
+    };
+    // Both the protected observation and bank charge come from THIS Resource.
+    // read_original_return destroyed its observer File before returning. The
+    // proof and bank never leave this private flow or become caller authority.
+    drop(resource.bank.take());
+    true
+}
 
 pub(super) struct Owner {
     file: Option<File>,
@@ -78,21 +99,21 @@ impl Owner {
         self.deadline = self.deadline.min(deadline);
     }
 
-    pub(super) fn observe_after_original_close(&mut self) -> bool {
+    fn read_original_return(&mut self) -> Option<RootReturned> {
         // File becomes a local affine owner; even unwind closes this observer.
         // The prepaid metadata stays in self/the quarantined original Resource.
         let Some(mut file) = self.file.take() else {
-            return false;
+            return None;
         };
         let Some(expiry) = self.expiry else {
-            return false;
+            return None;
         };
         for _ in 0..MAX_INTERRUPTS {
             let Some(remaining) = self.deadline.checked_duration_since(Instant::now()) else {
-                return false;
+                return None;
             };
             if remaining.is_zero() {
-                return false;
+                return None;
             }
             let timeout = Timespec {
                 tv_sec: i64::try_from(remaining.as_secs()).expect("bounded twenty seconds"),
@@ -102,24 +123,29 @@ impl Owner {
             match poll(&mut descriptors, Some(&timeout)) {
                 Err(rustix::io::Errno::INTR) => continue,
                 Ok(1) => {}
-                _ => return false,
+                _ => return None,
             }
             if Instant::now() >= self.deadline {
-                return false;
+                return None;
             }
             let ready = descriptors[0].revents();
             if !ready.contains(PollFlags::IN)
                 || ready.intersects(PollFlags::ERR | PollFlags::HUP | PollFlags::NVAL)
             {
-                return false;
+                return None;
             }
             // Last descriptor use above ends its immutable borrow before read.
             let mut wire = [0; WIRE_BYTES];
-            return matches!(file.read(&mut wire), Ok(WIRE_BYTES))
+            return if matches!(file.read(&mut wire), Ok(WIRE_BYTES))
                 && Instant::now() < self.deadline
-                && terminal(&wire, expiry);
+                && terminal(&wire, expiry)
+            {
+                Some(RootReturned)
+            } else {
+                None
+            };
         }
-        false
+        None
     }
 }
 
