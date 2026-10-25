@@ -75,7 +75,7 @@ class LocalServiceFixture(unittest.TestCase):
         for enabled in (False, True):
             with tempfile.TemporaryDirectory() as temporary, ExitStack() as stack:
                 root = Path(temporary) / "test-owned"
-                root.mkdir()
+                root.mkdir(mode=0o700)
                 state.atomic(root, "lifecycle.json", {"state": "ready"})
                 stack.enter_context(patch.object(probe, "stage_runtime", return_value={}))
                 prepare = stack.enter_context(patch.object(probe.node_test_profile, "prepare", return_value={}))

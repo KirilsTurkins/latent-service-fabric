@@ -4,5 +4,5 @@
   "reviewBoundary": "committed-fingerprint",
   "reviewReason": "One explicit local-service-only diagnostic owner; install the unchanged maintained Python validator lock and import/CLI smoke before native compilation; preserve original fixture assertions/limits/default-off path.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "6c8288944786a65a90cccc939d026863fd1a81549edb334e828059a50720084f"
+  "sha256": "7ee3596b15210b44f96764fb80989ed869161b842e1ad65cda81e466776a81ed"
 }

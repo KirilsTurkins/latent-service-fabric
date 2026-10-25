@@ -52,6 +52,26 @@ RECIPE = (
 )
 
 
+ALLOWED_SOURCE_CHANGES = frozenset({
+    b"tools/tests/test_dev_local_service_fixture.py",
+    b"tools/run_dev_local_service_refusal_ci.py",
+    b"tools/ci/contracts/owners/tools/run_dev_local_service_refusal_ci.py.json",
+})
+PRIOR_FILTERED_TREE_SHA256 = "sha256:e075a17c434a9a720d242e08813ee6e3da05aad57e51a08c77580ecbf9ac6ca3"
+PRIOR_NATIVE_CONTROLS = {
+    "sourceCommit": "81e7c5a8e8d687d478bd502c35c5cca98e4f3fb9",
+    "sourceTree": "343a620dc91522bc1b35759f2cd48b2c4d955fbf",
+    "runId": 40156235393, "jobId": 121058134076, "artifactId": 12585211327,
+    "artifactBytes": 17457,
+    "artifactSha256": "sha256:d40994e1bb9f669c1f75685b978272ace5c9eae5be4eb3a684e1d0d846ca68bf",
+    "overallStatus": "failed", "overallFailurePhase": "python-controls",
+    "scope": "only-the-three-actually-passed-native-and-config-controls",
+    "observerStdout": {"bytes": 334, "sha256": "sha256:9fdd45e5950f5df520f4dff02d7ba932efaa9b44401d5332614221ae7e283dfa"},
+    "configStdout": {"bytes": 239, "sha256": "sha256:614fdae33b7d4376c8b1d26256ee0b6dc1ff3c35d39caff52d1e6c61ac857ab6"},
+    "nativeCases": list(NATIVE_CASES), "configCases": [CONFIG_CASE],
+}
+
+
 def require(value, reason):
     if not value:
         raise ValueError(reason)
@@ -71,6 +91,27 @@ def native_result(raw, expected):
     require(sorted(name.decode() for name in observed) == sorted(expected), "exact-native-cases-required")
     summary = re.findall(rb"test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored;", raw)
     require(summary == [(str(len(expected)).encode(), b"0", b"0")], "native-zero-skip-summary-required")
+
+
+def native_source_identity(raw):
+    # One fixed Git inventory, not a prior checkout/fetch or a rebuilt envelope.
+    require(0 < len(raw) <= MAX_LOG and raw.endswith(b"\0"), "bounded-git-tree-required")
+    canonical, exempt = [], set()
+    for entry in raw[:-1].split(b"\0"):
+        fields = entry.split(b"\t", 1)
+        require(len(fields) == 2, "git-tree-record-invalid")
+        header, path = fields
+        if path in ALLOWED_SOURCE_CHANGES:
+            require(path not in exempt and header.startswith(b"100644 blob "), "regular-exempt-source-required")
+            exempt.add(path)
+        else:
+            canonical.append(entry + b"\0")
+    require(exempt == ALLOWED_SOURCE_CHANGES, "all-three-source-exceptions-required")
+    observed = "sha256:" + hashlib.sha256(b"".join(canonical)).hexdigest()
+    require(observed == PRIOR_FILTERED_TREE_SHA256, "prior-native-source-tree-drift")
+    return {"filteredTreeSha256": observed, "inventoryBytes": len(raw),
+            "unchangedTrackedEntries": len(canonical),
+            "excludedPaths": sorted(path.decode("ascii") for path in exempt)}
 
 
 def run(python_prefix: Path, output: Path):
@@ -118,15 +159,11 @@ def run(python_prefix: Path, output: Path):
         command("builder-import-preflight", [sys.executable, "tools/build_dev_guest_tools.py", "--help"], 60)
         fixture_help = command("fixture-cli-preflight", [sys.executable, "tools/dev_local_service_fixture_probe.py", "--help"], 60)
         require(b"--observe-refusals" in fixture_help.stdout, "explicit-fixture-option-required")
-        tests = command("observer-controls", ["cargo", "--config", ".cargo/managed-guest.toml", "test", "--locked",
-            "-p", "latent-wasmtime", "--lib", "--features", "development-clock-fixture,development-local-service-fixture",
-            "host::service::refusal::tests"], 600)
-        native_result(tests.stdout, NATIVE_CASES)
-        receipt["nativeCases"] = list(NATIVE_CASES)
-        config = command("config-control", ["cargo", "--config", ".cargo/managed-guest.toml", "test", "--locked",
-            "-p", "latentd", "--lib", "--features", "development-test-node", CONFIG_CASE, "--", "--exact"], 600)
-        native_result(config.stdout, (CONFIG_CASE,))
-        receipt["configCases"] = [CONFIG_CASE]
+        source_tree = command("prior-native-source-tree", ["git", "ls-tree", "-r", "-z", "HEAD"], 15)
+        receipt["nativeSourceIdentity"] = native_source_identity(source_tree.stdout)
+        receipt["priorNativeControls"] = PRIOR_NATIVE_CONTROLS
+        receipt["currentExecutionScope"] = "native-and-config-controls-only"
+        receipt["currentExecution"] = "not-run;prior-source-exact"
         controls = command("python-controls", [sys.executable, "-m", "unittest", "-v",
             *("tools.tests.test_dev_local_service_fixture.LocalServiceFixture." + case for case in PYTHON_CASES)], 60)
         passed_python = re.findall(rb"^(test_[a-zA-Z0-9_]+) \([^\n]+\) \.\.\. ok$", controls.stderr, re.M)
