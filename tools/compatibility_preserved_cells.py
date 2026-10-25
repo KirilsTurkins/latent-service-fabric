@@ -1,4 +1,4 @@
-"""ONLY the three successful cc8b cells; originals never become current execution.
+"""ONLY five named passed cells from two exact source epochs; originals never become current execution.
 
 Whole archives and original public unions stay immutable. Two exact passive
 observer postimages are explicitly different; current diagnostic reanalysis is
@@ -76,6 +76,50 @@ PINS = {'java': {'job': 121246619390,
                'sources': {'baseline/source-inputs.json': 116}}}
 
 
+SECOND_SOURCE = '723ffc6a304737b000af03ddb65499b30e0a25f4'
+SECOND_RUN = 40226045441
+# Two fixed historical observer versions, never inferred from a latest run.
+PASSIVE_ORIGINALS = {SOURCE: {name: dict(row['original']) for name, row in PASSIVE.items()},
+    SECOND_SOURCE: {name: dict(row['current']) for name, row in PASSIVE.items()}}
+for name in ('java', 'typescript', 'go-queues'):
+    PINS[name].update(source=SOURCE, run=RUN, nativeSource=native.ORIGINAL_SOURCE)
+PINS.update({'rust': {'source': '723ffc6a304737b000af03ddb65499b30e0a25f4',
+          'run': 40226045441,
+          'job': 121267515763,
+          'artifact': 12611590450,
+          'archive': {'bytes': 4493272,
+                      'sha256': 'sha256:8dd4bd6887ff574df6b82fd3ecfa65b78cf32fdf7da97deaa782349cc1598fa6'},
+          'members': 331,
+          'expanded': 17491081,
+          'admission': {'bytes': 47078,
+                        'sha256': 'sha256:8a0a079e67c67e7284601bbe4d0ed1df9c1cf1831a65a942b2ae251cee3774f6'},
+          'qualified': {'bytes': 205195,
+                        'sha256': 'sha256:8eecc7256f669f4e4e6e3e4082e088e1dad1f258afde1b75fd27c26bca26f672'},
+          'recipes': {'baseline/recipe-inputs.json': 121,
+                      'initializer/recipe-inputs.json': 121,
+                      'reached/recipe-inputs.json': 121},
+          'sources': {'baseline/source-inputs.json': 65,
+                      'initializer/source-inputs.json': 65,
+                      'reached/source-inputs.json': 65}},
+ 'typescript-initializer': {'source': '723ffc6a304737b000af03ddb65499b30e0a25f4',
+                            'run': 40226045441,
+                            'job': 121267515667,
+                            'artifact': 12610629716,
+                            'archive': {'bytes': 12835034,
+                                        'sha256': 'sha256:92950c1e9d64b52730ca566590288ed1de35ee91f67fb4c23781ddd095d2eabc'},
+                            'members': 137,
+                            'expanded': 39696943,
+                            'admission': {'bytes': 19665,
+                                          'sha256': 'sha256:5490f2dd8cfdab0ee66e74f1d87fb6a222a2aa8710beee7535dcef025377433e'},
+                            'qualified': {'bytes': 58013,
+                                          'sha256': 'sha256:97b7234f79e9d9d99f2b41c4ee011fbb3abb922417c70382e02dbd2d0ff922ae'},
+                            'recipes': {'baseline/recipe-inputs.json': 137},
+                            'sources': {'baseline/source-inputs.json': 66}}})
+for name in ('rust', 'typescript-initializer'):
+    PINS[name]['nativeSource'] = native.CLIENT_DATA_SOURCE
+PASSIVE['tools/guest_compiler_edges.py']['current'] = {'size': 18746, 'digest': 'sha256:4e3d2a2bc6d96fcd4294bc394e25e49e449607d76f512a1de73d2897dad0eb8f'}
+
+
 def identity(raw):
     return {'bytes': len(raw), 'sha256': 'sha256:' + hashlib.sha256(raw).hexdigest()}
 
@@ -89,20 +133,20 @@ def _name(name):
 
 
 def _origin(cell, run, job, artifact):
-    pin = PINS[cell]
-    require(run['id'] == RUN and run['head_sha'] == SOURCE and run['head_branch'] == BRANCH
+    pin = PINS[cell]; original_source, original_run = pin['source'], pin['run']
+    require(run['id'] == original_run and run['head_sha'] == original_source and run['head_branch'] == BRANCH
         and run['path'] == WORKFLOW and run['event'] == 'push' and run['run_attempt'] == 1
         and run['status'] == 'completed' and run['conclusion'] == 'failure',
         'preserved-cell-original-run')
     # The overall eight-cell run failed. THESE three individual jobs passed.
-    require(job['id'] == pin['job'] and job['run_id'] == RUN and job['head_sha'] == SOURCE
+    require(job['id'] == pin['job'] and job['run_id'] == original_run and job['head_sha'] == original_source
         and job['name'] == 'Required finite ' + cell + ' compatibility completion'
         and job['status'] == 'completed' and job['conclusion'] == 'success',
         'preserved-cell-original-successful-job')
     require(artifact['id'] == pin['artifact'] and artifact['size_in_bytes'] == pin['archive']['bytes']
         and artifact['digest'] == pin['archive']['sha256'] and artifact['expired'] is False
-        and artifact['name'] == 'compatibility-closure-' + SOURCE + '-' + cell
-        and artifact['workflow_run']['id'] == RUN and artifact['workflow_run']['head_sha'] == SOURCE
+        and artifact['name'] == 'compatibility-closure-' + original_source + '-' + cell
+        and artifact['workflow_run']['id'] == original_run and artifact['workflow_run']['head_sha'] == original_source
         and artifact['workflow_run']['head_branch'] == BRANCH, 'preserved-cell-original-artifact')
 
 
@@ -160,9 +204,10 @@ def _equivalence(directory, cell):
                 'preserved-cell-recipe-shape')
             current = _input_identity(ROOT / relative)
             if relative in PASSIVE:
-                require(expected == PASSIVE[relative]['original'] and current == PASSIVE[relative]['current'],
+                require(expected == PASSIVE_ORIGINALS[PINS[cell]['source']][relative]
+                    and current == PASSIVE[relative]['current'],
                     'preserved-cell-exact-passive-postimage')
-                changes[relative] = {'original': expected, 'current': current,
+                changes[relative] = {'original': expected, 'current': current, 'changed': expected != current,
                     'currentDiagnosticsReanalysisRequired': True, 'newRuntimeExecutionClaimed': False}
             else:
                 require(current == expected, 'preserved-cell-consumed-recipe-drift')
@@ -189,7 +234,7 @@ def _equivalence(directory, cell):
             'originalGeneratedApplicationWit': app_wit, 'originalCaptureInventory': identity(
                 (json.dumps(rows, sort_keys=True, separators=(',', ':')) + '\n').encode()),
             'applicationRecaptured': False, 'currentRebuildClaimed': False}
-    return {'originalSourceCommit': SOURCE, 'recipes': recipes, 'capturedSources': captured,
+    return {'originalSourceCommit': PINS[cell]['source'], 'recipes': recipes, 'capturedSources': captured,
         'passiveDiagnosticChanges': changes, 'runtimeSourceRelabeled': False,
         'currentDiagnosticResultInferred': False}
 
@@ -235,10 +280,9 @@ def verify_prepared(output):
         'preserved-cell-exact-prepared-roots')
     archives = output / 'archives'
     require(archives.is_dir() and not archives.is_symlink()
-        and {path.name for path in archives.iterdir()} == {'run.json',
+        and {path.name for path in archives.iterdir()} == {*('run-' + pin['source'] + '.json' for pin in PINS.values()),
             *(cell + suffix for cell in PINS for suffix in ('.zip', '-job.json', '-artifact.json'))},
         'preserved-cell-exact-archive-roots')
-    run = read_json(archives / 'run.json', 1024**2)
     records, equivalence = {}, {}
     # Same immutable explicit native source scope accepted by the normal reader.
     current_native = source_identity(ROOT)
@@ -250,6 +294,7 @@ def verify_prepared(output):
             'preserved-cell-current-native-noncompiled-data')
     auxiliary = _auxiliary(version)
     for cell in PINS:
+        run = read_json(archives / ('run-' + PINS[cell]['source'] + '.json'), 1024**2)
         _origin(cell, run, read_json(archives / (cell + '-job.json'), 1024**2),
             read_json(archives / (cell + '-artifact.json'), 1024**2))
         _archive(archives / (cell + '.zip'), cell)
@@ -258,16 +303,16 @@ def verify_prepared(output):
             and file_identity(directory / 'qualified.json', 4 * 1024**2) == PINS[cell]['qualified'],
             'preserved-cell-original-extracted-receipts')
         record = read_retained(directory)
-        require(record['sourceCommit'] == SOURCE and record['cell'] == cell and record['status'] == 'passed'
+        require(record['sourceCommit'] == PINS[cell]['source'] and record['cell'] == cell and record['status'] == 'passed'
             and record['wholeTicketComplete'] is False and record['nativeBuildCount'] == 0
             and record['native']['compiledSource'] == native.QUALIFIED['source']
             and record['native']['producerRun'] == native.QUALIFIED['run']
             and record['native']['producerJob'] == native.QUALIFIED['job']
             and record['native']['origin']['artifact'] == native.QUALIFIED['artifact']['id']
             and record['native']['origin']['archiveDigest'] == native.QUALIFIED['artifact']['digest']
-            and record['nativeSource'] == native.ORIGINAL_SOURCE, 'preserved-cell-original-qualification')
+            and record['nativeSource'] == PINS[cell]['nativeSource'], 'preserved-cell-original-qualification')
         records[cell] = record
-        equivalence[cell] = {**_equivalence(directory, cell), 'originalRun': RUN,
+        equivalence[cell] = {**_equivalence(directory, cell), 'originalRun': PINS[cell]['run'],
             'originalJob': PINS[cell]['job'], 'originalArtifact': PINS[cell]['artifact'],
             'wholeArchive': PINS[cell]['archive'], 'currentExplicitNativeSource': current_native,
             'nativeSourceScopeHermetic': False, 'currentNativeBuildClaimed': False,
@@ -277,11 +322,14 @@ def verify_prepared(output):
 
 
 def prepare(output):
-    """One fixed acquisition of three already successful public evidence ZIPs."""
+    """One fixed acquisition of five already successful public evidence ZIPs."""
     output = fresh(Path(output)); archives = fresh(output / 'archives')
-    run = api('actions/runs/' + str(RUN))
-    write_json(archives / 'run.json', run)
+    runs = {}
     for cell, pin in PINS.items():
+        if pin['run'] not in runs:
+            runs[pin['run']] = api('actions/runs/' + str(pin['run']))
+            write_json(archives / ('run-' + pin['source'] + '.json'), runs[pin['run']])
+        run = runs[pin['run']]
         job = api('actions/jobs/' + str(pin['job']))
         artifact = api('actions/artifacts/' + str(pin['artifact']))
         _origin(cell, run, job, artifact)

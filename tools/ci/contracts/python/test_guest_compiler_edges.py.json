@@ -8,6 +8,7 @@
     "CompilerEdges.test_fixed_pair_requires_actual_whole_source_inventories_and_unchanged_library",
     "CompilerEdges.test_indirect_calls_and_unknown_instructions_refuse_closed_negative",
     "CompilerEdges.test_ir_comments_strings_and_substrings_never_count_as_calls",
+    "CompilerEdges.test_only_exact_bounded_nonexecuting_llvm_debug_records_are_ignored",
     "CompilerEdges.test_post_terminator_instructions_and_malformed_branch_geometry_are_unknown",
     "CompilerEdges.test_truncation_or_missing_successor_cannot_supply_a_negative",
     "CompilerEdges.test_unreachable_compiler_block_is_not_misreported_as_a_reached_edge"
@@ -109,6 +110,18 @@
       ],
       "skipSites": []
     },
+    "CompilerEdges.test_only_exact_bounded_nonexecuting_llvm_debug_records_are_ignored": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:799e81274f753050280dd2155ffb758f88ffa750ebe6d069ffa3ff43bb0c984a",
+        "class:setup-sha256:089050930276c74184c6a92fbb61b459a7b98c21b076e8f1353369ce26a24977"
+      ],
+      "skipSites": []
+    },
     "CompilerEdges.test_post_terminator_instructions_and_malformed_branch_geometry_are_unknown": {
       "bases": [
         "unittest.TestCase"
@@ -148,6 +161,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_guest_compiler_edges.py",
-  "reviewReason": "Reviewed actual failed-cell corrections and exact-three cc8b original execution authentication plus separately current passive diagnostics; all eight cells remain mandatory with original source/profile, owner boundaries and limits.",
+  "reviewReason": "Reviewed strict LLVM debug records and exact Go memory op grammar; preserve five actual passed cells in two fixed source epochs and execute only three missing cells, with original bounds and separate current passive diagnostics.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

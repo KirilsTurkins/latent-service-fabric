@@ -75,11 +75,17 @@ class CompilerWorkflow(unittest.TestCase):
 
     def test_completion_requires_exact_eight_cells_and_original_native_and_process_bounds(self):
         from tools.qualify_compatibility_closure import JOB_MINUTES
+        from tools.compatibility_closure_matrix import CELLS, PRESERVED_CELLS
+        from tools.compatibility_preserved_cells import PINS
         workflow = lanes.workflow_model(read_file(ROOT/'.github/workflows/compiler-compatibility.yml').decode())
         job = workflow['jobs']['closure-required']
         self.assertEqual(job['if'], "${{ github.event_name == 'push' && github.ref == 'refs/heads/feat/sdk-compatibility-closure-20261025' }}")
         self.assertEqual(job['strategy'], {'fail-fast': False, 'max-parallel': 4, 'matrix': {
-            'include': [{'cell': cell, 'minutes': minutes} for cell, minutes in JOB_MINUTES.items()]}})
+            'include': [{'cell': cell, 'minutes': minutes} for cell, minutes in JOB_MINUTES.items() if cell not in PRESERVED_CELLS]}})
+        active = {row['cell'] for row in job['strategy']['matrix']['include']}
+        self.assertEqual(set(PINS), set(PRESERVED_CELLS))
+        self.assertEqual(active | set(PINS), set(CELLS))
+        self.assertFalse(active & set(PINS))
         self.assertEqual(job['timeout-minutes'], '${{ matrix.minutes }}')
         self.assertEqual(job['env']['CARGO_BUILD_JOBS'], 2)
         steps = job['steps']; commands = [step.get('run', '') for step in steps]
@@ -97,7 +103,13 @@ class CompilerWorkflow(unittest.TestCase):
         self.assertEqual(steps[-1]['with']['path'], '${{ runner.temp }}/compatibility-public/**')
         rollup = workflow['jobs']['closure-matrix']
         self.assertEqual(rollup['needs'], 'closure-required')
-        self.assertEqual(len([step for step in rollup['steps'] if 'download-artifact@' in step.get('uses', '')]), 8)
+        self.assertEqual(len([step for step in rollup['steps'] if 'download-artifact@' in step.get('uses', '')]), len(active))
+        retained = [step for step in rollup['steps'] if 'compatibility_preserved_cells.py' in step.get('run', '')]
+        self.assertEqual(len(retained), 1)
+        self.assertEqual(retained[0]['env'], {'GH_TOKEN': '${{ github.token }}'})
+        assemble = next(step['run'] for step in rollup['steps'] if 'closure_matrix.py assemble' in step.get('run', ''))
+        self.assertIn('--preserved "$RUNNER_TEMP/compatibility-preserved"', assemble)
+        self.assertIn('--diagnostics "$RUNNER_TEMP/compatibility-current-diagnostics"', assemble)
 
 
 if __name__ == '__main__': unittest.main()

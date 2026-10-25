@@ -343,9 +343,9 @@ or prove physical retirement. Guest stack exhaustion is identified only from
 the engine's actual StackOverflow classification, not a generic unreachable trap.
 
 The fixed completion programme requires eight cells and one source-exact native
-prerequisite. Three passed cells retain their exact `cc8b88b18abda6e03fc3097d8af658f5e16022f6`
-execution receipts; current passive diagnostics are checked separately on their
-original components without rebuilding or invoking guests. Only the five failed
+prerequisite. Five passed cells retain their exact `cc8b88b18abda6e03fc3097d8af658f5e16022f6`
+or `723ffc6a304737b000af03ddb65499b30e0a25f4` execution receipts; current passive diagnostics are checked separately on their
+original components without rebuilding or invoking guests. Only the three remaining
 cells are executed again. Each executed cell captures its original dependency
 inputs once, then starts a separate 1,800-second compiler/node phase. Its workflow
 job also bounds setup and capture; 1,800 seconds is not a whole-programme claim.

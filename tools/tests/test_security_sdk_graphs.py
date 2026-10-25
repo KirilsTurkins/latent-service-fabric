@@ -33,7 +33,8 @@ class SdkGraphTests(unittest.TestCase):
         self.assertEqual({node.tag: node.text for node in project[0]}, {
             'OutputType': 'Exe', 'TargetFramework': 'net10.0', 'ImplicitUsings': 'enable',
             'Nullable': 'enable', 'EnableDefaultCompileItems': 'false'})
-        self.assertEqual([(node.tag, node.attrib) for node in project[1]], [('Compile', {'Include': 'Program.cs'})])
+        self.assertEqual([(node.tag, node.attrib) for node in project[1]], [
+            ('Compile', {'Include': 'Program.cs'}), ('Compile', {'Include': 'CilReferences.cs'})])
         for tag in ('PackageReference', 'ProjectReference', 'Reference', 'Import'):
             self.assertEqual(list(project.iter(tag)), [])
         _, records = inventory(root)

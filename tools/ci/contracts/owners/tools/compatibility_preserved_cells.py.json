@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/compatibility_preserved_cells.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Reviewed actual failed-cell corrections and exact-three cc8b original execution authentication plus separately current passive diagnostics; all eight cells remain mandatory with original source/profile, owner boundaries and limits.",
+  "reviewReason": "Reviewed strict LLVM debug records and exact Go memory op grammar; preserve five actual passed cells in two fixed source epochs and execute only three missing cells, with original bounds and separate current passive diagnostics.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "8329b800f0b19175f5308a5b433662bc3a3c4105e329806a15c667fe99d77729"
+  "sha256": "9b8920b5e24b32204def470bd215fd10b93dd4571ab41bc08727787e06b2e9b7"
 }

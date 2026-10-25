@@ -1,4 +1,4 @@
-"""Current passive diagnostics on three fixed prior executions; never a guest run.
+"""Current passive diagnostics on five fixed prior executions; never a guest run.
 
 The caller must first authenticate the exact immutable archives. Original
 reports, build owners, runtime receipts and qualified.json are never rewritten.
@@ -18,7 +18,7 @@ from tools.phase3_resource_identity import file_identity
 from tools.rust_capsule_build import Commands
 from tools.rust_capsule_project import ROOT, canonical, fresh, read_file, write_json
 
-CELLS = ('java', 'typescript', 'go-queues')
+CELLS = ('java', 'typescript', 'go-queues', 'rust', 'typescript-initializer')
 CODE = ('tools/compatibility_preserved_diagnostics.py', 'tools/guest_api_analysis.py',
     'tools/guest_compatibility.py', 'tools/guest_compatibility_context.py',
     'tools/guest_compiler_capture.py', 'tools/guest_compiler_edges.py',
@@ -48,7 +48,7 @@ def diagnose(source, output, *, cell, source_commit):
         (output / path.name).write_bytes(raw)
     report = compatibility.read(read_file(output / 'compatibility-report.json', 65536))
     selected = context.read(read_file(output / 'compatibility-context.json', 65536), report=report)
-    require(report['language'] == ('go' if cell == 'go-queues' else cell),
+    require(report['language'] == ('go' if cell == 'go-queues' else 'typescript' if cell == 'typescript-initializer' else cell),
         'preserved-diagnostic-original-language')
     # Authenticate original owner/material references before deriving anything.
     old, compiler, owner, build_raw, component = api.inputs(output, report, selected)

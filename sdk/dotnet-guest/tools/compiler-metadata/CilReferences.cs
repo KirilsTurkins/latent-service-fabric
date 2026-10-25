@@ -199,6 +199,7 @@ internal static class CilReferences
                 apiBodies.Add(new ApiBody("System.IO.Path.GetTempFileName", MethodId(corelibDigest, handle),
                     corelibDigest, Hash(signature), Hash(il), MetadataTokens.GetToken(handle)));
             }
+            var apiTargets = apiBodies.Select(row => row.Id).ToHashSet(StringComparer.Ordinal);
             // Keep ALL original input positions in owned. Deduplicate only
             // inside the original source prefix, never before Take: otherwise
             // an alias could move a reference assembly into the source set.
@@ -247,11 +248,18 @@ internal static class CilReferences
                                 instruction.Name!, target.Value.Id, target.Value.Assembly, target.Value.Signature));
                             // Addressable callbacks first, then current CoreLib
                             // operands; remaining omissions stay explicit.
-                            edges = edges.OrderBy(edge => edge.Operation is not ("ldftn" or "ldvirtftn"))
+                            edges = edges.OrderBy(edge => !apiTargets.Contains(edge.TargetId))
+                                .ThenBy(edge => edge.Operation is not ("ldftn" or "ldvirtftn"))
                                 .ThenBy(edge => edge.TargetAssemblyDigest != corelibDigest)
                                 .ThenBy(edge => edge.SourceId, StringComparer.Ordinal).ThenBy(edge => edge.Offset)
                                 .Take(65).ToList();
-                            if (edges.Count == 65) { edges.RemoveAt(64); omitted++; }
+                            if (edges.Count == 65)
+                            {
+                                // A real selected-API operand is mandatory,
+                                // never silently replaced by an absence claim.
+                                Require(!apiTargets.Contains(edges[64].TargetId));
+                                edges.RemoveAt(64); omitted++;
+                            }
                         }
                     }
                     at += bytes;

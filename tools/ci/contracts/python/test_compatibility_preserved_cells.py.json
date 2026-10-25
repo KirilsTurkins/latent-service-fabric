@@ -1,9 +1,22 @@
 {
   "cases": [
+    "PreservedCellsTests.test_fixed_two_source_epochs_cannot_be_swapped_or_promoted_to_current_execution",
     "PreservedCellsTests.test_only_reviewed_passive_changes_are_excluded_from_current_runtime_inputs",
     "PreservedCellsTests.test_original_archive_and_admission_refuse_tamper_and_nonregular_members"
   ],
   "guards": {
+    "PreservedCellsTests.test_fixed_two_source_epochs_cannot_be_swapped_or_promoted_to_current_execution": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:cad9f9566c119dff4e773a3efee1fd29185ca6ccad0788c7339dcbf42f497628",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "PreservedCellsTests.test_only_reviewed_passive_changes_are_excluded_from_current_runtime_inputs": {
       "bases": [
         "unittest.TestCase"
@@ -31,6 +44,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_compatibility_preserved_cells.py",
-  "reviewReason": "Reviewed actual failed-cell corrections and exact-three cc8b original execution authentication plus separately current passive diagnostics; all eight cells remain mandatory with original source/profile, owner boundaries and limits.",
+  "reviewReason": "Reviewed strict LLVM debug records and exact Go memory op grammar; preserve five actual passed cells in two fixed source epochs and execute only three missing cells, with original bounds and separate current passive diagnostics.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

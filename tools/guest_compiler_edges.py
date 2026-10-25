@@ -34,12 +34,17 @@ GO_PURE = frozenset(('Arg ArgIntReg ArgFloatReg InitMem SP SB Const8 Const16 Con
     'WasmI64Const WasmI32Const WasmI64Add WasmI64Sub WasmI64Mul WasmI64Eq WasmI64Eqz '
     'WasmI64Ne WasmI64LtS WasmI64LtU WasmI64LeS WasmI64LeU WasmI64And WasmI64Or '
     'WasmI64Xor WasmI64Shl WasmI64ShrS WasmI64ShrU WasmI32WrapI64 WasmI64ExtendI32S '
+    'I64Load8U I64Load8S I64Load16U I64Load16S I64Load32U I64Load32S I64Load '
+    'I64Store8 I64Store16 I64Store32 I64Store F32Load F64Load F32Store F64Store '
     'WasmI64ExtendI32U WasmI64Load WasmI32Load WasmI64Store WasmI32Store').split())
 # Go2aae1000 cmd/compile/internal/ssa/_gen/genericOps.go: MakeResult builds
 # result components with final memory operand. It is not a call; individual
 # operand-producing instructions still need their own explicitly known shapes.
 # The same pinned WasmOps.go names I64Const/LoweredStaticCall; _gen/main.go
 # writes opInfo.name verbatim and generates Op.String() from it, without Wasm.
+# WasmOps191-206 also defines the 15 unprefixed scalar memory ops above;
+# these may access memory/trap, but do not themselves make a call. Do not infer
+# this from absence of call:true: LoweredWB can call and stays unknown.
 
 
 @dataclass
@@ -107,6 +112,30 @@ def identifier(value):
     return value
 
 
+def llvm_debug_record(text):
+    """Only LLVM21's bounded single-line nonexecuting debug record subset.
+
+    SourceLevelDebugging/AsmWriter222fc11f define 4/7/2 argument shapes.
+    Unsupported metadata/value syntax still refuses a complete body. No '#' or
+    arbitrary-parenthesized-line fallback, and no instruction after the record.
+    """
+    if len(text) > 4096:
+        return False
+    ref = r'![0-9]{1,10}'
+    atom = r'(?:DW_OP_[A-Za-z0-9_]{1,96}|-?[0-9]{1,20})'
+    expression = r'(?:' + ref + r'|!DIExpression\((?:' + atom + r'(?:,\s*' + atom + r')*)?\))'
+    scalar = (r'(?:ptr(?: addrspace\([0-9]{1,3}\))?|i[1-9][0-9]{0,3}|half|bfloat|float|double) '
+              r'(?:[%@][-A-Za-z_.$0-9]{1,192}|-?[0-9]{1,64}|0x[0-9A-Fa-f]{1,64}|true|false|null|poison|undef)')
+    slots = {
+        'declare': (scalar, ref, expression, ref),
+        'value': (scalar, ref, expression, ref),
+        'assign': (scalar, ref, expression, ref, scalar, expression, ref),
+        'label': (ref, ref),
+    }
+    return any(re.fullmatch(r'#dbg_' + kind + r'\(' + r',\s*'.join(args) + r'\)', text)
+               for kind, args in slots.items())
+
+
 def llvm(raw, root):
     graph, block, active, ended = Graph(), None, False, False
     for row in lines(raw):
@@ -132,6 +161,8 @@ def llvm(raw, root):
         label = re.match(r'^([A-Za-z_.$0-9][A-Za-z0-9_.$-]*):(?:\s*;.*)?$', text)
         if label:
             block = graph.block(label[1])
+            continue
+        if llvm_debug_record(text):
             continue
         if block is None:
             block = graph.block('entry')

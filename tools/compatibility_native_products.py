@@ -55,7 +55,7 @@ NON_COMPILED_DATA = {
         'after': {'bytes': 22997, 'sha256': 'sha256:2e5114f48efb5015fe54a5b5ed2ff0c42ab52381a089d1cdd2b211706629e5c9'}},
     'api/proto/phase1-descriptor-contract.json': {
         'before': {'bytes': 249286, 'sha256': 'sha256:b08186d23e2c55063cfb2a6c69e0a48cc1f6d57ba063967ef0c9d2e6b704ba95'},
-        'after': {'bytes': 249737, 'sha256': 'sha256:8294dbb1c168ad2bad957f342001fc0b28de3f80fab6c87f62986d52da4c24f2'}}}
+        'after': {'bytes': 249917, 'sha256': 'sha256:0decef676919a3c250077d4d2de701e6a543f7af6ec2c7055c364c309b0aa184'}}}
 
 
 def current_source(producer_inputs, *, root=ROOT):

@@ -56,11 +56,41 @@ class CompilerEdges(unittest.TestCase):
             b'v2 = LoweredStaticCall <int32,mem> {outside.denied} v1')
         self.assertEqual(edges.observe('go-ssa', direct, 'gate', 'outside.denied', BINDINGS)['state'],
                          'observed-direct-edge')
+        # Exact pinned native-memory names; they may trap/access memory, but
+        # do not make calls. Unsafe lowered runtime helpers remain unknown.
+        for opcode in ('I64Load', 'I64Store', 'F64Load'):
+            changed = actual_spelling.replace(b'v2 = I64Const', b'v2 = ' + opcode.encode())
+            self.assertEqual(edges.observe('go-ssa', changed, 'gate', 'outside.denied', BINDINGS)['state'],
+                             'edge-not-observed')
+        for opcode in ('LoweredWB', 'LoweredNilCheck', 'LoweredInterCall', 'LoweredTailCall'):
+            changed = actual_spelling.replace(b'v2 = I64Const', b'v2 = ' + opcode.encode())
+            self.assertEqual(edges.observe('go-ssa', changed, 'gate', 'outside.denied', BINDINGS)['state'], 'unknown')
         for instruction in (
                 b' (?) v2 = WasmLoweredClosureCall <int32,mem> v4 v1',
                 b' (?) v2 = Addr <func()> {outside.denied} v1'):
             changed = raw.replace(b' (?) v2 = Const32 <int32> [0]', instruction)
             self.assertEqual(edges.observe('go-ssa', changed, 'gate', 'outside.denied', BINDINGS)['state'], 'unknown')
+
+    def test_only_exact_bounded_nonexecuting_llvm_debug_records_are_ignored(self):
+        before = b'define i32 @gate() {\nentry:\n ret i32 0\n}\n'
+        debug = (
+            b'#dbg_declare(ptr %slot, !12, !DIExpression(), !13)',
+            b'#dbg_value(i32 %seed, !12, !DIExpression(DW_OP_LLVM_fragment, 0, 32), !13)',
+            b'#dbg_assign(i32 0, !12, !DIExpression(), !14, ptr %slot, !DIExpression(), !13)',
+            b'#dbg_label(!12, !13)')
+        for row in debug:
+            raw = before.replace(b' ret', b'    ' + row + b'\n ret')
+            value = self.read('c-llvm', raw)
+            self.assertEqual(value['state'], 'edge-not-observed')
+            self.assertEqual(value['operations'], 1)
+            reached = raw.replace(b' ret i32 0', b' %value = call i32 @outside.denied()\n ret i32 %value')
+            self.assertEqual(self.read('c-llvm', reached)['state'], 'observed-direct-edge')
+        for bad in (b'#future_debug(!12, !13)', b'#dbg_value(call i32 @outside.denied(), !12, !DIExpression(), !13)',
+                    debug[0] + b' call i32 @outside.denied()', debug[0].replace(b'!13', b'!13, !14'),
+                    b'#dbg_value(' + b' ' * 4096 + b')', b'#dbg_declare(ptr %slot,\n!12, !DIExpression(), !13)'):
+            with self.subTest(record=bad[:64]):
+                raw = before.replace(b' ret', b' ' + bad + b'\n ret')
+                self.assertEqual(self.read('c-llvm', raw)['state'], 'unknown')
 
     def read(self, kind, raw):
         target = 'outside::denied' if kind == 'rust-mir' else 'outside.denied'

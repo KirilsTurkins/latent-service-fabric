@@ -69,6 +69,9 @@ internal static class Program
             cil = CilReferences.Read(paths, expectedCorelib, sourceCount);
         }
         var mappedApis = cil?.ApiBodies.Select(row => row.Id).ToHashSet(StringComparer.Ordinal) ?? new HashSet<string>();
+        var apiSources = cil?.Edges.Where(edge => mappedApis.Contains(edge.TargetId))
+            .Select(edge => edge.SourceId).ToHashSet(StringComparer.Ordinal) ?? new HashSet<string>();
+        var pinnedQueries = new Dictionary<string, Query>(StringComparer.Ordinal);
         var queries = new List<Query>(); var assemblyIdentities = new List<string>();
         long totalBytes = 0; int methods = 0, types = 0;
         var allNames = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -149,7 +152,12 @@ internal static class Program
                     var declaration = (method.Attributes & MethodAttributes.PinvokeImpl) != 0 ? "pinvoke" : "ordinary";
                     bool anchor = rootAssembly && mangled is not null && (method.Attributes & MethodAttributes.Static) != 0
                         && ExportAttribute(metadata, method);
-                    queries.Add(new Query(id, identity, Digest(signature), symbol, mangled, kind, declaration, anchor));
+                    var query = new Query(id, identity, Digest(signature), symbol, mangled, kind, declaration, anchor);
+                    if (anchor || mappedApis.Contains(id) || apiSources.Contains(id))
+                    {
+                        Require(pinnedQueries.TryAdd(id, query) && pinnedQueries.Count <= MaxQueries);
+                    }
+                    queries.Add(query);
                     // Preserve root mapping anchors, then the actual captured
                     // dependency assemblies. Generated SDK PInvokes in the root
                     // DLL must not crowd every transitive query out of the cap.
@@ -163,7 +171,25 @@ internal static class Program
                 }
             }
         }
-        var result = JsonSerializer.SerializeToUtf8Bytes(new {
+        // Preserve the original bounded ctor/cctor selection, not every
+        // framework constructor. Exact API operand-source rows are captured
+        // before count trimming so ordinary CoreLib queries cannot crowd them.
+        var protectedIds = queries.Where(q => q.Kind is "initialization" or "constructor")
+            .Select(q => q.Id).Concat(pinnedQueries.Keys).ToHashSet(StringComparer.Ordinal);
+        Require(protectedIds.Count <= MaxQueries && mappedApis.All(pinnedQueries.ContainsKey)
+            && apiSources.All(pinnedQueries.ContainsKey));
+        queries = queries.Concat(pinnedQueries.Values).DistinctBy(q => q.Id)
+            .OrderBy(q => !protectedIds.Contains(q.Id)).ThenBy(q => !q.RootAnchor)
+            .ThenBy(q => !mappedApis.Contains(q.Id)).ThenBy(q => !apiSources.Contains(q.Id))
+            .ThenBy(q => cil is null || !cil.CorelibTargets.Contains(q.Id))
+            .ThenBy(q => q.AssemblyDigest == assemblyIdentities[0]).ThenBy(q => q.Declaration != "pinvoke")
+            .ThenBy(q => q.Kind == "initialization" ? 0 : q.Kind == "constructor" ? 1 : 2)
+            .ThenBy(q => q.Symbol, StringComparer.Ordinal).ThenBy(q => q.Id, StringComparer.Ordinal)
+            .Take(MaxQueries).ToList();
+        Require(protectedIds.All(id => queries.Any(q => q.Id == id)));
+        var selectedEdges = cil?.Edges.ToList() ?? new List<CilReferences.Edge>();
+        int omittedOutputEdges = 0;
+        byte[] Encode() => JsonSerializer.SerializeToUtf8Bytes(new {
             schemaVersion = "lsf.dotnet.compiler-queries.v1", sourceRevision = "8449ba666dd991e495d8363d9852f18eb86a1aa1",
             assemblies = assemblyIdentities, queries, omittedMethods = methods - queries.Count,
             methodsInspected = methods, typesInspected = types, assemblyBytesInspected = totalBytes,
@@ -172,10 +198,34 @@ internal static class Program
                 schemaVersion = "lsf.dotnet.cil-references.v1", corelibDigest = expectedCorelib,
                 scope = "captured-input-call-operands", forwarding = "exact-selected-ILC-assembly-identities",
                 indirectDispatch = "unknown", apiSupport = "unknown", runtimeExecution = "not-observed",
-                edges = cil.Edges, apiBodies = cil.ApiBodies, unknownReferences = cil.UnknownReferences,
-                omittedEdges = cil.OmittedEdges, bodiesInspected = cil.BodiesInspected,
+                edges = selectedEdges, apiBodies = cil.ApiBodies, unknownReferences = cil.UnknownReferences,
+                omittedEdges = cil.OmittedEdges + omittedOutputEdges, bodiesInspected = cil.BodiesInspected,
                 bodyBytesInspected = cil.BodyBytesInspected }
         }, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+        Require(queries.Count <= MaxQueries && selectedEdges.Count <= 64);
+        var result = Encode();
+        Console.Error.WriteLine(FormattableString.Invariant($"compiler-metadata-size stage=initial bytes={result.Length} queries={queries.Count} edges={selectedEdges.Count} omittedMethods={methods - queries.Count} omittedEdges={(cil?.OmittedEdges ?? 0) + omittedOutputEdges}"));
+        // Exact serialized byte budget, with at most128 encodings total.
+        // API bodies, assembly hashes, anchors and API operand rows never drop.
+        for (int encoded = 1; result.Length > 65536 && encoded < 128; encoded++)
+        {
+            int optionalEdge = selectedEdges.FindLastIndex(edge => !mappedApis.Contains(edge.TargetId));
+            if (optionalEdge >= 0)
+            {
+                selectedEdges.RemoveAt(optionalEdge); omittedOutputEdges++;
+            }
+            else
+            {
+                int optionalQuery = queries.FindLastIndex(candidate => !protectedIds.Contains(candidate.Id));
+                if (optionalQuery < 0)
+                    Console.Error.WriteLine(FormattableString.Invariant($"compiler-metadata-size stage=protected-minimum bytes={result.Length} queries={queries.Count} edges={selectedEdges.Count} omittedMethods={methods - queries.Count} omittedEdges={(cil?.OmittedEdges ?? 0) + omittedOutputEdges}"));
+                Require(optionalQuery >= 0);
+                queries.RemoveAt(optionalQuery);
+            }
+            result = Encode();
+        }
+        // A protected minimum that does not fit is still unavailable.
+        Console.Error.WriteLine(FormattableString.Invariant($"compiler-metadata-size stage=final bytes={result.Length} queries={queries.Count} edges={selectedEdges.Count} omittedMethods={methods - queries.Count} omittedEdges={(cil?.OmittedEdges ?? 0) + omittedOutputEdges}"));
         Require(result.Length <= 65536);
         File.WriteAllBytes(args[1], result); return 0;
     }

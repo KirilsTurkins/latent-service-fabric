@@ -21,8 +21,9 @@ from tools.rust_capsule_project import ROOT, fresh, read_file, read_json, write_
 
 LANGUAGES = ('c', 'rust', 'go', 'java', 'dotnet', 'typescript')
 CELLS = (*LANGUAGES, 'go-queues', 'typescript-initializer')
-PRESERVED_CELLS = ('java', 'typescript', 'go-queues')
-PRESERVED_SOURCE = 'cc8b88b18abda6e03fc3097d8af658f5e16022f6'
+PRESERVED_CELLS = ('java', 'typescript', 'go-queues', 'rust', 'typescript-initializer')
+PRESERVED_SOURCES = {cell: ('723ffc6a304737b000af03ddb65499b30e0a25f4'
+    if cell in {'rust', 'typescript-initializer'} else 'cc8b88b18abda6e03fc3097d8af658f5e16022f6') for cell in PRESERVED_CELLS}
 MAX_PUBLIC_BYTES = 256 * 1024**2
 MAX_PUBLIC_FILES = 8192
 MAX_PUBLIC_FILE = 64 * 1024**2
@@ -125,7 +126,7 @@ def assemble(records, *, source_commit, root=ROOT, preserved_directory=None, dia
         from tools.compatibility_preserved_diagnostics import diagnose
         verified = retained.verify_prepared(Path(preserved_directory))
         require(set(verified['records']) == set(PRESERVED_CELLS),
-            'compatibility-matrix-exact-three-original-executions')
+            'compatibility-matrix-exact-five-original-executions')
         records = {**records, **verified['records']}
         preservation = verified['sourceEquivalence']
         diagnostic_output = fresh(Path(diagnostic_output))
@@ -136,7 +137,7 @@ def assemble(records, *, source_commit, root=ROOT, preserved_directory=None, dia
     rows = []
     for cell in CELLS:
         value = records[cell]; language = 'go' if cell == 'go-queues' else 'typescript' if cell == 'typescript-initializer' else cell
-        runtime_source = PRESERVED_SOURCE if cell in diagnostics else source_commit
+        runtime_source = PRESERVED_SOURCES[cell] if cell in diagnostics else source_commit
         require(value['status'] == 'passed' and value['sourceCommit'] == runtime_source
             and value['language'] == language and value['cell'] == cell and value['nativeBuildCount'] == 0
             and value['native']['compiledSource'] == native.QUALIFIED['source']
@@ -214,7 +215,7 @@ def assemble(records, *, source_commit, root=ROOT, preserved_directory=None, dia
         rows.append({'cell': cell, 'language': language, 'component': baseline['component'],
             'APIAnalysisIdentity': analysis['identity'], 'sourceCommit': value['sourceCommit'],
             'diagnosticSourceCommit': source_commit,
-            'executionScope': 'preserved-original-cc8b-execution' if cell in diagnostics else 'current-fixed-cell-execution',
+            'executionScope': 'preserved-exact-original-execution' if cell in diagnostics else 'current-fixed-cell-execution',
             'arbitraryApiSafety': 'unknown', 'physicalRetirementScope': 'only-actual-fixed-owner-observations'})
     return {'schemaVersion': 'latent.compatibility.closure-matrix.v1', 'status': 'required-finite-owners-passed',
         'sourceCommit': source_commit, 'cells': rows, 'historicalEvidence': historical(root),

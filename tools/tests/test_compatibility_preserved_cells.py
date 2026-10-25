@@ -57,6 +57,25 @@ class PreservedCellsTests(unittest.TestCase):
                 with self.assertRaises(ValueError): cells._archive(hostile, 'java', root / 'never-created')
             self.assertFalse((root / 'never-created').exists())
 
+    def test_fixed_two_source_epochs_cannot_be_swapped_or_promoted_to_current_execution(self):
+        for cell in ('java', 'rust'):
+            pin = cells.PINS[cell]
+            run = {'id': pin['run'], 'head_sha': pin['source'], 'head_branch': cells.BRANCH,
+                'path': cells.WORKFLOW, 'event': 'push', 'run_attempt': 1,
+                'status': 'completed', 'conclusion': 'failure'}
+            job = {'id': pin['job'], 'run_id': pin['run'], 'head_sha': pin['source'],
+                'name': 'Required finite ' + cell + ' compatibility completion',
+                'status': 'completed', 'conclusion': 'success'}
+            artifact = {'id': pin['artifact'], 'size_in_bytes': pin['archive']['bytes'],
+                'digest': pin['archive']['sha256'], 'expired': False,
+                'name': 'compatibility-closure-' + pin['source'] + '-' + cell,
+                'workflow_run': {'id': pin['run'], 'head_sha': pin['source'], 'head_branch': cells.BRANCH}}
+            cells._origin(cell, run, job, artifact)
+            other = cells.SECOND_SOURCE if cell == 'java' else cells.SOURCE
+            for changed in ({**run, 'head_sha': other}, {**run, 'id': cells.RUN if cell == 'rust' else cells.SECOND_RUN}):
+                with self.assertRaises(ValueError): cells._origin(cell, changed, job, artifact)
+            with self.assertRaises(ValueError): cells._origin(cell, run, {**job, 'conclusion': 'failure'}, artifact)
+
     def test_only_reviewed_passive_changes_are_excluded_from_current_runtime_inputs(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory); repo = root / 'repo'; build = root / 'build'
@@ -77,8 +96,8 @@ class PreservedCellsTests(unittest.TestCase):
             source = {'vendor/lsf/sdk/java-guest/runtime.java': sdk,
                 'wit/world.wit': {'digest': 'sha256:' + 'a'*64, 'size': 17}}
             (build / 'source-inputs.json').write_bytes(encoded(source))
-            pin = {'recipes': {'recipe-inputs.json': 3}, 'sources': {'source-inputs.json': 2}}
-            with patch.object(cells, 'ROOT', repo), patch.dict(cells.PASSIVE, passive, clear=True), patch.dict(cells.PINS, {'java': pin}, clear=True):
+            pin = {'source': cells.SOURCE, 'recipes': {'recipe-inputs.json': 3}, 'sources': {'source-inputs.json': 2}}
+            with patch.object(cells, 'ROOT', repo), patch.dict(cells.PASSIVE, passive, clear=True), patch.dict(cells.PASSIVE_ORIGINALS, {cells.SOURCE: {name: row['original'] for name, row in passive.items()}}, clear=True), patch.dict(cells.PINS, {'java': pin}, clear=True):
                 proof = cells._equivalence(build, 'java')
                 self.assertEqual(set(proof['passiveDiagnosticChanges']), set(passive))
                 self.assertFalse(proof['runtimeSourceRelabeled'])
