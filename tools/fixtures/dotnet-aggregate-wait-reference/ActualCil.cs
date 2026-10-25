@@ -6,6 +6,7 @@ using System.Reflection.PortableExecutable;
 using System.Security.Cryptography;
 using CecilOpCodes = Mono.Cecil.Cil.OpCodes;
 using CecilOperandType = Mono.Cecil.Cil.OperandType;
+using CecilCode = Mono.Cecil.Cil.Code;
 
 // HOST REFERENCE ONLY. No rewritten CoreLib is loaded as a CLR runtime.
 // Keep raw instructions/branches/EH; change only explicitly recorded tokens.
@@ -17,6 +18,19 @@ internal sealed class ActualCil : IDisposable
     private readonly Dictionary<string, DynamicMethod> methods = new();
     private readonly Dictionary<string, MethodDefinition> source = new();
     private readonly HashSet<string> mappings = new();
+    private readonly HashSet<string> throwSites = new();
+    private readonly List<object> throwCalls = new();
+    private static readonly HashSet<string> ExpectedThrowSites = [
+        "System.Void System.Threading.Tasks.Task::WaitAll(System.Threading.Tasks.Task[])@5|NullByName|51",
+        "System.Boolean System.Threading.Tasks.Task::WaitAll(System.Threading.Tasks.Task[],System.TimeSpan)@34|RangeByName|62",
+        "System.Boolean System.Threading.Tasks.Task::WaitAll(System.Threading.Tasks.Task[],System.TimeSpan)@44|NullByName|51",
+        "System.Boolean System.Threading.Tasks.Task::WaitAll(System.Threading.Tasks.Task[],System.Int32)@5|NullByName|51",
+        "System.Void System.Threading.Tasks.Task::WaitAll(System.Threading.Tasks.Task[],System.Threading.CancellationToken)@5|NullByName|51",
+        "System.Boolean System.Threading.Tasks.Task::WaitAll(System.Threading.Tasks.Task[],System.Int32,System.Threading.CancellationToken)@5|NullByName|51",
+        "System.Void System.Threading.Tasks.Task::WaitAll(System.Collections.Generic.IEnumerable`1<System.Threading.Tasks.Task>,System.Threading.CancellationToken)@5|NullByName|51",
+        "System.Boolean System.Threading.Tasks.Task::WaitAllCore(System.ReadOnlySpan`1<System.Threading.Tasks.Task>,System.Int32,System.Threading.CancellationToken)@6|RangeByName|60",
+        "System.Boolean System.Threading.Tasks.Task::WaitAllCore(System.ReadOnlySpan`1<System.Threading.Tasks.Task>,System.Int32,System.Threading.CancellationToken)@68|ArgumentByName|47,51",
+    ];
     private readonly Assembly core = typeof(Task).Assembly;
     private const BindingFlags Members = BindingFlags.Public | BindingFlags.NonPublic
         | BindingFlags.Instance | BindingFlags.Static;
@@ -47,7 +61,9 @@ internal sealed class ActualCil : IDisposable
                 { InitLocals = method.Body.InitLocals });
         }
         Need(source.Count == 16, "closed-sixteen-method-copy");
+        ThrowHelperPorts.Bind(module);
         foreach (var pair in source) Copy(pair.Value, methods[pair.Key]);
+        Need(throwSites.SetEquals(ExpectedThrowSites), "exact-nine-throw-helper-sites");
     }
 
     internal static void Need(bool value, string code)
@@ -65,6 +81,8 @@ internal sealed class ActualCil : IDisposable
                 handlerStart = handler.HandlerStart.Offset,
                 handlerEnd = handler.HandlerEnd?.Offset ?? pair.Value.Body.CodeSize }).ToArray() }).ToArray(),
         tokenMap = mappings.Order().ToArray(), originalInstructionsBranchesAndEhCopied = true,
+        throwHelperBindings = ThrowHelperPorts.Bindings, throwHelperMethods = ThrowHelperPorts.MethodBindings(),
+        throwHelperCalls = throwCalls, privateThrowHelperEnumsTranslatedByName = true,
         pinnedWasiCountdownClassExecuted = false, hostPrivateCountdownCounterpart = true,
         nativeWasiPollAndLedgerQualified = false, runtimeAddressesRetained = false,
     };
@@ -242,6 +260,21 @@ internal sealed class ActualCil : IDisposable
         }
         if (instruction.Operand is not MethodReference method)
             throw new InvalidOperationException("aggregate-reference:unsupported-token");
+        var throwing = ThrowHelperPorts.Port(method.FullName);
+        if (throwing is not null)
+        {
+            Need(instruction.OpCode == CecilOpCodes.Call && method.Resolve().Module == module,
+                "throw-helper-original-call");
+            int index = caller.Body.Instructions.IndexOf(instruction);
+            int count = method.Parameters.Count;
+            Need(count is 1 or 2 && index >= count, "throw-helper-argument-count");
+            var constants = caller.Body.Instructions.Skip(index - count).Take(count).Select(Integer).ToArray();
+            string site = caller.FullName + "@" + instruction.Offset + "|" + throwing.Name + "|" + string.Join(',', constants);
+            Need(ExpectedThrowSites.Contains(site) && throwSites.Add(site), "throw-helper-closed-callsite");
+            throwCalls.Add(new { caller = caller.FullName, offset = instruction.Offset, helper = method.FullName, constants });
+            mappings.Add(method.FullName + " => explicit-host-port:" + throwing.Name);
+            return info.GetTokenFor(throwing.MethodHandle);
+        }
         MethodInfo? port = method.FullName switch {
             "System.Boolean System.OperatingSystem::IsWasi()" => typeof(Ports).GetMethod(nameof(Ports.IsWasi)),
             "System.Boolean System.Threading.ManualResetEventSlim::get_IsDisposed()" => typeof(Ports).GetMethod(nameof(Ports.CopiedDisposed)),
@@ -275,6 +308,14 @@ internal sealed class ActualCil : IDisposable
         var host = HostMethod(method);
         return info.GetTokenFor(host.MethodHandle, host.DeclaringType!.TypeHandle);
     }
+
+    private static int Integer(Instruction instruction) => instruction.OpCode.Code switch {
+        CecilCode.Ldc_I4 => (int)instruction.Operand, CecilCode.Ldc_I4_S => (sbyte)instruction.Operand,
+        CecilCode.Ldc_I4_M1 => -1, CecilCode.Ldc_I4_0 => 0, CecilCode.Ldc_I4_1 => 1, CecilCode.Ldc_I4_2 => 2,
+        CecilCode.Ldc_I4_3 => 3, CecilCode.Ldc_I4_4 => 4, CecilCode.Ldc_I4_5 => 5, CecilCode.Ldc_I4_6 => 6,
+        CecilCode.Ldc_I4_7 => 7, CecilCode.Ldc_I4_8 => 8,
+        _ => throw new InvalidDataException("aggregate-reference:throw-helper-nonconstant"),
+    };
 
     private void Copy(MethodDefinition method, DynamicMethod copy)
     {

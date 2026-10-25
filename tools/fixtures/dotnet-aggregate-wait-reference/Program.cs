@@ -88,14 +88,23 @@ internal static class Reference
             }
             case "original-validation-precedence": {
                 Need(All([], 0, default), "empty-all");
-                bool nullArray = false, badTimeout = false, nullElement = false;
+                bool nullArray = false, badTimeout = false, nullElement = false, badSpan = false;
                 try { All(null!, -2, default); }
                 catch (ArgumentNullException error) when (error.ParamName == "tasks") { nullArray = true; }
                 try { All([Task.CompletedTask], -2, default); }
                 catch (ArgumentOutOfRangeException error) when (error.ParamName == "millisecondsTimeout") { badTimeout = true; }
                 try { All([null!], 0, default); }
                 catch (ArgumentException error) when (error.ParamName == "tasks") { nullElement = true; }
-                Need(nullArray && badTimeout && nullElement, "validation-precedence");
+                try { cil.Delegate<Func<Task[], TimeSpan, bool>>(Method("System.Boolean", TaskType, "WaitAll",
+                    TaskType + "[]", "System.TimeSpan"))([Task.CompletedTask], TimeSpan.FromMilliseconds(-2)); }
+                catch (ArgumentOutOfRangeException error) when (error.ParamName == "timeout") { badSpan = true; }
+                Need(nullArray && badTimeout && nullElement && badSpan, "validation-precedence");
+                int invocations = ThrowHelperPorts.Invocations;
+                bool unknownRefused = false;
+                try { ThrowHelperPorts.NullByName(int.MinValue); }
+                catch (InvalidOperationException error) when (error.Message == "aggregate-reference:throw-helper-unrecognized-source-enum")
+                { unknownRefused = true; }
+                Need(unknownRefused && ThrowHelperPorts.Invocations == invocations, "unknown-enum-before-host-invocation");
                 using var cancelled = new CancellationTokenSource(); cancelled.Cancel();
                 Cancelled(() => All([null!], 0, cancelled.Token), cancelled.Token);
                 break;

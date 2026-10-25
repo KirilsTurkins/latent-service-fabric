@@ -50,7 +50,21 @@ CASE_KEYS = {'control','passed','scope','sourceQualified','nativeAotExecuted','s
 COUNTERS = ('startClockReads','remainingClockReads','wakeCalls','copiedValidationCalls',
             'dispatches','linkedSources','cancels','disposals')
 PORTS = {'IsWasi','CopiedDisposed','StartClock','RemainingClock','Dispatch','EnsureReady',
-         'Delay','AggregateBridge','SingleBridge'}
+         'Delay','AggregateBridge','SingleBridge','NullByName','RangeByName','ArgumentByName'}
+THROW_NULL='System.Void System.ThrowHelper::ThrowArgumentNullException(System.ExceptionArgument)'
+THROW_RANGE='System.Void System.ThrowHelper::ThrowArgumentOutOfRangeException(System.ExceptionArgument)'
+THROW_ARGUMENT='System.Void System.ThrowHelper::ThrowArgumentException(System.ExceptionResource,System.ExceptionArgument)'
+THROW_SITES = {
+    ('System.Void System.Threading.Tasks.Task::WaitAll(System.Threading.Tasks.Task[])',5,THROW_NULL,(51,)),
+    ('System.Boolean System.Threading.Tasks.Task::WaitAll(System.Threading.Tasks.Task[],System.TimeSpan)',34,THROW_RANGE,(62,)),
+    ('System.Boolean System.Threading.Tasks.Task::WaitAll(System.Threading.Tasks.Task[],System.TimeSpan)',44,THROW_NULL,(51,)),
+    ('System.Boolean System.Threading.Tasks.Task::WaitAll(System.Threading.Tasks.Task[],System.Int32)',5,THROW_NULL,(51,)),
+    ('System.Void System.Threading.Tasks.Task::WaitAll(System.Threading.Tasks.Task[],System.Threading.CancellationToken)',5,THROW_NULL,(51,)),
+    ('System.Boolean System.Threading.Tasks.Task::WaitAll(System.Threading.Tasks.Task[],System.Int32,System.Threading.CancellationToken)',5,THROW_NULL,(51,)),
+    ('System.Void System.Threading.Tasks.Task::WaitAll(System.Collections.Generic.IEnumerable`1<System.Threading.Tasks.Task>,System.Threading.CancellationToken)',5,THROW_NULL,(51,)),
+    ('System.Boolean System.Threading.Tasks.Task::WaitAllCore(System.ReadOnlySpan`1<System.Threading.Tasks.Task>,System.Int32,System.Threading.CancellationToken)',6,THROW_RANGE,(60,)),
+    ('System.Boolean System.Threading.Tasks.Task::WaitAllCore(System.ReadOnlySpan`1<System.Threading.Tasks.Task>,System.Int32,System.Threading.CancellationToken)',68,THROW_ARGUMENT,(47,51)),
+}
 ORIGINALS = (
     (0x06003e7f,46,'87d5707683590051481de68a5c41d27654e0223f72d9d826950aa6bded0015fa'),
     (0x06003e80,31,'3230751c809caea2191f78d05b867d24c6d54fc334e66ab2aae202af25d09355'),
@@ -167,8 +181,10 @@ def case_shape(value, name, selected):
     observation=value['cil']
     need(isinstance(observation,dict) and set(observation)=={'copiedMethods','tokenMap',
         'originalInstructionsBranchesAndEhCopied','pinnedWasiCountdownClassExecuted',
-        'hostPrivateCountdownCounterpart','nativeWasiPollAndLedgerQualified','runtimeAddressesRetained'}
+        'hostPrivateCountdownCounterpart','nativeWasiPollAndLedgerQualified','runtimeAddressesRetained',
+        'throwHelperBindings','throwHelperMethods','throwHelperCalls','privateThrowHelperEnumsTranslatedByName'}
         and observation['originalInstructionsBranchesAndEhCopied'] is True
+        and observation['privateThrowHelperEnumsTranslatedByName'] is True
         and observation['hostPrivateCountdownCounterpart'] is True
         and all(observation[key] is False for key in ('pinnedWasiCountdownClassExecuted',
             'nativeWasiPollAndLedgerQualified','runtimeAddressesRetained')),'reference-il-scope')
@@ -195,10 +211,37 @@ def case_shape(value, name, selected):
         'reference-emitted-body-binding')
     extra=set(by_name)-common
     need(extra=={'System.Void System.Threading.WasiEventLoop::LsfDispatchUntilActualTaskCompletion(System.Object)',
-        'System.Int32 System.Threading.TimeoutHelper::UpdateTimeOut(System.Int64,System.Int64)'},'reference-two-extra-copies')
-    timeout=by_name['System.Int32 System.Threading.TimeoutHelper::UpdateTimeOut(System.Int64,System.Int64)']
-    need(timeout['ilSha256']=='f3834985458c4d55a958c241f5bc3e6c4196473162b11e9b3a749a48213dc6d4',
+        'System.Int64 System.Threading.TimeoutHelper::UpdateTimeOut(System.Int64,System.Int64)'},'reference-two-extra-copies')
+    timeout=by_name['System.Int64 System.Threading.TimeoutHelper::UpdateTimeOut(System.Int64,System.Int64)']
+    need(timeout['ilSha256']=='536ecbeb188fb3cdd511575ade7db19d6994602f60570e18164d1dc9b5eca269',
         'reference-original-timeout-code')
+    bindings=observation['throwHelperBindings']
+    need(isinstance(bindings,list) and len(bindings)==4,'reference-four-enum-bindings')
+    expected_bindings={('System.ExceptionArgument','tasks',51),('System.ExceptionArgument','millisecondsTimeout',60),
+        ('System.ExceptionArgument','timeout',62),('System.ExceptionResource','Task_WaitMulti_NullTask',47)}
+    found=set()
+    for row in bindings:
+        need(isinstance(row,dict) and set(row)=={'sourceEnum','name','sourceValue','hostValue'}
+            and isinstance(row['sourceEnum'],str) and isinstance(row['name'],str)
+            and type(row['sourceValue']) is int and type(row['hostValue']) is int
+            and -(2**31)<=row['hostValue']<2**31,'reference-enum-binding-shape')
+        found.add((row['sourceEnum'],row['name'],row['sourceValue']))
+    need(found==expected_bindings,'reference-exact-source-enum-bindings')
+    methods=observation['throwHelperMethods']
+    need(isinstance(methods,list) and len(methods)==3 and all(isinstance(row,dict)
+        and set(row)=={'sourceMethod','hostMethod'} and row['hostMethod']==row['sourceMethod']
+        and isinstance(row['sourceMethod'],str) for row in methods)
+        and {row['sourceMethod'] for row in methods}=={THROW_NULL,THROW_RANGE,THROW_ARGUMENT},
+        'reference-exact-real-throw-helpers')
+    calls=observation['throwHelperCalls'];need(isinstance(calls,list) and len(calls)==9,'reference-nine-enum-call-sites')
+    sites=set()
+    for row in calls:
+        need(isinstance(row,dict) and set(row)=={'caller','offset','helper','constants'}
+            and isinstance(row['caller'],str) and isinstance(row['helper'],str) and type(row['offset']) is int
+            and isinstance(row['constants'],list) and len(row['constants']) in (1,2)
+            and all(type(value) is int for value in row['constants']),'reference-enum-call-shape')
+        sites.add((row['caller'],row['offset'],row['helper'],tuple(row['constants'])))
+    need(sites==THROW_SITES,'reference-exact-enum-call-sites')
     mapping=observation['tokenMap']
     need(isinstance(mapping,list) and 0<len(mapping)<=256 and mapping==sorted(set(mapping))
         and all(isinstance(row,str) and 0<len(row)<2048 and ' => ' in row for row in mapping),
