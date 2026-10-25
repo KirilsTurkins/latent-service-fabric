@@ -18,6 +18,7 @@
           "tools/java_guest/llvm_ssa_*.py",
           "tools/data/java-llvm-ssa/patch.json",
           "tools/data/java-llvm-ssa/tests.json",
+          "tools/data/java-llvm-ssa/requirements.lock",
           "tools/data/java-llvm-ssa/LICENSE.txt",
           "tools/tests/test_java_llvm_ssa_producer.py",
           "tools/build_observation.py",
@@ -35,7 +36,7 @@
   "requiredJobs": [
     "compiler"
   ],
-  "reviewReason": "Exact source-branch push compiler producer; original Java SDK29 default and all existing workflows remain unchanged.",
+  "reviewReason": "Hash-lock the psutil Linux timeout dependency and preflight before costly acquisition; preserve original 60s lit timeout, 13 regressions, nine units, 17 source controls, 75/90 minute maxima, exact branch and product admission.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-llvm-ssa-producer.yml"
 }
