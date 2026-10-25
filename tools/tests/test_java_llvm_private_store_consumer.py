@@ -84,22 +84,53 @@ class PrivateScalarConsumer(unittest.TestCase):
             compiler.wasi_sdk = output / 'toolchain'
             compiler.paths = {'clang': compiler.wasi_sdk / 'bin/clang'}
             compiler.records = []
-            compiler._compile_selected, compiler._clang_requested = True, False
+            compiler._compile_selected, compiler._clang_requested = False, False
             compiler._public_inputs = compiler._backend_gate = None
             compiler._derived = mock.Mock()
             compiler._derived.own = {'products': {'derivedVersion': ['source fixture only']}}
             compiler._owner_deadline = compiler.deadline = time.monotonic() + 1195
+            java = (inputs.patch.ROOT / 'sdk/java-guest/fibers/conformance/Capsule.java').read_bytes()
+            wit = (inputs.patch.ROOT / 'sdk/java-guest/fibers/conformance/service.wit').read_bytes()
+            (output / 'src').mkdir()
+            (output / 'wit').mkdir()
+            (output / 'src/Capsule.java').write_bytes(java)
+            (output / 'wit/service.wit').write_bytes(wit)
+            self.assertFalse((output / 'build').exists())
+            def parent_compile(instance, sources, selected_wit, world, destination, **options):
+                self.assertFalse(destination.exists())
+                self.assertEqual((sources, selected_wit, world, destination, options),
+                    (output / 'src', output / 'wit', 'tests:caller/service@1.0.0', output / 'build',
+                     {'activation_profile': True}))
+                # A pure stage-order fixture, not TeaVM generation or compiler credit.
+                staged = destination / 'project/src/main/java/Capsule.java'
+                staged.parent.mkdir(parents=True)
+                staged.write_bytes(java)
+                (destination / 'wit').mkdir()
+                (destination / 'wit/service.wit').write_bytes(wit)
+                return 'parent source-staging fixture'
+            with mock.patch.object(consumer.Compiler, 'compile', parent_compile):
+                self.assertEqual(compiler.compile(output / 'src', output / 'wit',
+                    'tests:caller/service@1.0.0', output / 'build', activation_profile=True),
+                    'parent source-staging fixture')
+            self.assertTrue(compiler._compile_selected)
             command = [str(compiler.paths['clang']), 'original-normal-argv']
             identity = {'actual': 'bounded public source fixture'}
+            original_read = consumer.public_wineh.paths.read
+            def read_source(root, name, maximum):
+                if name == consumer.GENERATED_C:
+                    return b'public C'
+                return original_read(root, name, maximum)
             def parent_run(instance, stage, tool, *argv, cwd=None):
+                self.assertEqual(full_source_check.call_count, 1)
                 self.assertLessEqual(instance.deadline - time.monotonic(), 595)
                 self.assertEqual((stage, tool, argv, cwd), ('c-to-wasm', 'clang', ('original-normal-argv',), None))
                 instance.records.append({'stage': stage, 'exitCode': 0})
                 return 'actual parent fixture result'
             with mock.patch.object(consumer.public_wineh, 'expected_command', return_value=command), \
-                    mock.patch.object(consumer.public_wineh, 'public_sources'), \
+                    mock.patch.object(consumer.public_wineh, 'public_sources',
+                                      wraps=consumer.public_wineh.public_sources) as full_source_check, \
                     mock.patch.object(consumer.public_wineh, 'input_identity', return_value=identity), \
-                    mock.patch.object(consumer.public_wineh.paths, 'read', return_value=b'public C'), \
+                    mock.patch.object(consumer.public_wineh.paths, 'read', side_effect=read_source), \
                     mock.patch.object(consumer, 'backend_baseline', return_value={'pending': True}), \
                     mock.patch.object(consumer.Compiler, 'run', parent_run):
                 absolute = compiler.deadline

@@ -63,7 +63,9 @@ class PrivateScalarPublicCompiler(Compiler):
                     and options == {'activation_profile': True}
                     and sorted(path.name for path in sources.iterdir()) == ['Capsule.java'],
                     'private-backend-public-selection')
-        public_wineh.public_sources(output)
+        inputs.need(digest(public_wineh.paths.read(output, 'src/Capsule.java', 1024 * 1024)) == JAVA
+                    and digest(public_wineh.paths.read(output, 'wit/service.wit', 64 * 1024)) == WIT,
+                    'private-backend-original-inputs')
         self._compile_selected = True
         return super().compile(sources, wit, world, destination, **options)
 
