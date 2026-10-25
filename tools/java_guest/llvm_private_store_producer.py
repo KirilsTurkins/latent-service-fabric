@@ -31,7 +31,7 @@ HOST_LIBRARIES = {'libc.so.6', 'libgcc_s.so.1', 'libm.so.6', 'libpthread.so.0',
                   'libdl.so.2', 'librt.so.1', 'ld-linux-x86-64.so.2'}
 REPOSITORY = 'KirilsTurkins/latent-service-fabric'
 WORKFLOW = '.github/workflows/java-llvm-private-stores-producer.yml'
-BRANCH = 'feat/java-llvm-ssa-consumer-20261025'
+BRANCH = 'feat/java-llvm-private-stores-r6-20261025'
 OFFICIAL_VERSION = ['29.0', 'wasi-libc: ac020b86fd44', 'llvm: 222fc11f2b8f',
                     'llvm-version: 21.1.4', 'config: f992bcc08219']
 RECIPE = (

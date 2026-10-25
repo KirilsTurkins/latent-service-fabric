@@ -1,7 +1,7 @@
 name: Pinned Java LLVM private scalar compiler producer
 on:
   push:
-    branches: ['feat/java-llvm-ssa-consumer-20261025']
+    branches: ['feat/java-llvm-private-stores-r6-20261025']
     paths:
       - '.github/workflows/java-llvm-ssa-producer.yml'
       - '.github/workflows/java-llvm-private-stores-producer.yml'

@@ -9,7 +9,7 @@
     "on": {
       "push": {
         "branches": [
-          "feat/java-llvm-ssa-consumer-20261025"
+          "feat/java-llvm-private-stores-r6-20261025"
         ],
         "paths": [
           ".github/workflows/java-llvm-ssa-producer.yml",
@@ -44,7 +44,7 @@
   "requiredJobs": [
     "compiler"
   ],
-  "reviewReason": "Source-only R8 private-scalar candidate: exact seven-member supplement, original nine units and thirteen SjLj witnesses plus two new lit files, unchanged process owner/build bounds; new tuple unfilled and default-false public backend route requires unchanged C before one normal Clang/component. Historical R7/diagnostic modes, all old cases and default commands retained.",
+  "reviewReason": "Isolate the reviewed R6 loop-SSA test correction on one fixed producer-only branch, preserving the active 1462 TypeScript verification and all compiler/job/retention bounds; consumer stays on the original feature branch and the candidate tuple remains unfilled.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-llvm-private-stores-producer.yml"
 }

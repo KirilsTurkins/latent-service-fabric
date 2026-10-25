@@ -29,13 +29,13 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
 
 # No candidate compiler is admitted until its actual R8 producer succeeds.
 HEAD = TREE = None
-BRANCH = 'feat/java-llvm-ssa-consumer-20261025'
+BRANCH = 'feat/java-llvm-private-stores-r6-20261025'
 RUN = JOB = None
 ATTEMPT = 1
 REPOSITORY = 'KirilsTurkins/latent-service-fabric'
 WORKFLOW = '.github/workflows/java-llvm-private-stores-producer.yml'
 CONSUMER_BRANCH = 'feat/java-llvm-ssa-consumer-20261025'
-RECIPE_SHA = '91eeefce37420e23ada4b71c1406ea60f60a290cd46a1bc12f626eff3d0c184b'
+RECIPE_SHA = 'eebc8920624c8a0b40b89648154bab16eaa5a3a9e54eb38ca4dfd18a3211366d'
 QUALIFIED = None
 NOTICES = {'NOTICE': {'bytes': 6193, 'sha256': '88847eed7dadd32c7923c5f18342f1517ce2c29812f427c0d95bf1e1fc54fa47'}, 'LLVM-LICENSE.txt': {'bytes': 15141, 'sha256': '8d85c1057d742e597985c7d4e6320b015a9139385cff4cbae06ffc0ebe89afee'}, 'LLVM-PATCH.json': {'bytes': 211777, 'sha256': 'dd04c818debbb0491866ce119465526fb70a3112e85452b857d2528629b557ea'}, 'LLVM-PRIVATE-STORES.json': {'bytes': 79822, 'sha256': 'c695e9bfc6d499ebc0ec93b56e8a28ea9c1745d4d17d008ea5639cc50436ac04'}}
 LIT_LOCK = {'bytes': 174, 'sha256': '97f9e06a7255f789c87d21f91e8ee463f5f9a0cdafd5d1411e9433b092a8a858'}
