@@ -1,6 +1,6 @@
 # Unchanged SmartBuffer: selected global Buffer paths
 
-This pending programme uses the published `smart-buffer@4.2.0` CommonJS entry
+This finite programme passed using the published `smart-buffer@4.2.0` CommonJS entry
 and its original declarations. It is a binary Buffer helper, not an HTTP or TCP
 client. Its selected integer, string, growth and shared-view paths use the
 compiler-owned global Buffer installed before relevant application modules.
@@ -31,7 +31,7 @@ types add no runtime APIs or authority; their selection remains `unknown`.
 The SDK's local net encoding type derives from its imported Buffer's actual
 `toString` parameter, avoiding a named export absent from this type provider.
 
-The six mandatory fresh signed calls are:
+The six completed fresh signed calls are:
 
 1. Transitive initialization, default storage and integer round trip.
 2. Original package growth, insertion, overlapping copy and shared `toBuffer`.
@@ -54,11 +54,40 @@ Result8 and Native128. Effective requests remain 1 billion fuel, 128 MiB,
 products are authenticated inputs; no engine, library or native rebuild is
 planned. One normal component and normal signing/admission are mandatory.
 
-Source-only validation passed the genuine captured-provider/strict TSC check
-and the two new fixture/provenance/retention controls. No component or signed
-campaign has run. The earlier Windows path placement failure, original
-missing-separate-performance refusal and actual TS2305 net encoding failure
-remain source-stage history; none is a runtime result.
+[Owning run 40168609179](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40168609179/job/121094680344)
+passed at source `1b2bdeda3c6d639a5c7ff529143ebb3421676918`: all three controls
+without skips, 26 normal compiler stages, 178 bounded owner commands and all
+six signed calls. One 12,405,148-byte component was built, packaged, signed and
+admitted normally. Each actual CLI activation ID was unique and its resolved
+publication/revision matched the selected route. The original declaration
+provider, captured source tree and read-only typecheck alias were bound to
+normal build materials. The derived type view and Buffer selection were
+retained as signed assets.
+
+Consumed fuel per case was 15,125,201; 16,420,330; 16,391,750; 15,248,736;
+15,326,851; 15,540,895, with maximum reported peak memory 9,512,112 bytes.
+After each call, all 18 available active-provider counters, active/quarantined
+cells, quota reservations and cleanup slots were zero; the configured cell
+remained available. Deletion and clean reaped shutdown followed on the same
+owned node. Its private signing/client/node/work directory was removed before
+successful evidence publication. Internal factory/Store identities were not
+exposed; no complete GC/native allocation accounting is inferred.
+
+The [immutable public receipt](../testing/typescript-smart-buffer-evidence.json)
+retains all 41 actual archive member identities within the 44-name public
+allowlist, all three package integrities, the 137-file original module tree,
+215 source-bound Git materials, six raw results, retirement/shutdown fields
+and original command identities. The 107-entry captured-source inventory
+records identities, not 107 retained raw project files. Acquisition/signing
+channels retain hashes only; normal unsigned compiler logs retain 52 original
+channels. Source-capture `runtimeQualification=pending-selected-paths` and the
+type/profile `qualification=unknown` labels remain unchanged. This separate
+receipt supplies the stated finite execution evidence.
+
+No hosted attempt in this six-call programme failed. The earlier Windows
+path placement failure, missing-separate-performance refusal and actual
+TS2305 net encoding failure remain source-stage history; none is a runtime
+result. The earlier four-call global Buffer campaign was not replayed.
 
 The owning workflow explicitly fetches the immutable classic-helper baseline,
 requires all three controls without skips, and clips setup/build/CLI stages to
