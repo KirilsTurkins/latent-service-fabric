@@ -1,6 +1,7 @@
 {
   "cases": [
     "LlvmSsaProducer.test_actual_command_adapter_refuses_expired_start_and_zero_exit_after_aggregate_deadline",
+    "LlvmSsaProducer.test_actual_ninja_log_counts_and_deadline_metadata_do_not_claim_target_completion",
     "LlvmSsaProducer.test_archive_authentication_refuses_unknown_sources_and_modified_bytes_before_extracting",
     "LlvmSsaProducer.test_archive_metadata_preserves_case_distinct_sources_but_refuses_escape_duplicates_and_oversized_files",
     "LlvmSsaProducer.test_cross_pass_parser_rejects_unlowered_setjmp_and_phis_before_catchswitch",
@@ -16,6 +17,18 @@
   ],
   "guards": {
     "LlvmSsaProducer.test_actual_command_adapter_refuses_expired_start_and_zero_exit_after_aggregate_deadline": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9108d03a9c7a40c0ac272453627c0490378c9b2073e61a1e62be9509099bd95b",
+        "class:setup-sha256:3a91f0e479a1098f2a25d9a44d9bb79213341e09f20218d19b647cbcd13e24ac"
+      ],
+      "skipSites": []
+    },
+    "LlvmSsaProducer.test_actual_ninja_log_counts_and_deadline_metadata_do_not_claim_target_completion": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -174,6 +187,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_java_llvm_ssa_producer.py",
-  "reviewReason": "Preserve twelve reviewed controls and add one real disappearing-file/child-directory disk sample control; strict inventories, roots, permissions and all existing fixture/decorator/skip guards remain unchanged.",
+  "reviewReason": "Retain all thirteen source/controller cases and their unchanged fixture, decorator and skip guards; add one real bounded Ninja-log/deadline-metadata control. No compiled LLVM or Java qualification follows from these controls.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

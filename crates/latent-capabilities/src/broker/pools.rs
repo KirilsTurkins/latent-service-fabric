@@ -22,7 +22,9 @@ pub use ingress::IngressRequest;
 mod deferred;
 pub use deferred::DeferredRequest;
 mod protocol;
-pub use protocol::{ProviderMetadata, StreamKernelBacking, StreamKernelOwnership};
+pub use protocol::{
+    ProviderMetadata, StreamKernelBacking, StreamKernelBankCharge, StreamKernelOwnership,
+};
 mod client;
 mod control;
 mod limits;

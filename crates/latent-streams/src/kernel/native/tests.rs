@@ -176,6 +176,7 @@ async fn fixed_file_close_receipt_stays_paid_until_drop_without_refunding_backin
         &fixture.provider.inner.installed,
         Instant::now() + Duration::from_secs(5),
         None,
+        BankReturn::RetainWhole,
         move || {
             std::fs::OpenOptions::new()
                 .read(true)
@@ -328,6 +329,66 @@ async fn postopen_failure_closes_real_fd_without_refunding_backing() {
     let retained = stable_snapshot(&fixture.pools).await;
     assert_eq!(retained.connections, 1);
     assert!(retained.metadata_bytes >= before.metadata_bytes + 1024 * 1024);
+    partitioned_bank_retention_control().await;
+}
+
+async fn partitioned_bank_retention_control() {
+    for accepted_close in [false, true] {
+        let fixture = Fixture::new(config());
+        let before = stable_snapshot(&fixture.pools).await;
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("partitioned-no-observer");
+        let original = path.clone();
+        let mut content = vec![0; FRAME_BYTES];
+        content.extend_from_slice(&frame(CLOSED, 123));
+        std::fs::write(&path, content).unwrap();
+        let (send, receive) = tokio::sync::oneshot::channel();
+        let deadline = Instant::now() + Duration::from_secs(5);
+        let observation = retirement::Owner::reserve(&fixture.pools, deadline).unwrap();
+        let result = start_initialized_with(
+            Arc::clone(&fixture.pools),
+            &fixture.provider.inner.installed,
+            deadline,
+            Some(observation),
+            BankReturn::ReclaimFixedBank,
+            move || {
+                std::fs::OpenOptions::new()
+                    .read(true)
+                    .write(true)
+                    .open(path)
+                    .map_err(|_| error(StreamErrorCode::IoFailed))
+            },
+            move |resource, _| {
+                send.send(descriptor(resource.descriptor.as_ref().unwrap()))
+                    .unwrap();
+                if accepted_close {
+                    // The existing ordinary-file seam cannot mint a protected
+                    // observation File or actual READY/Root-return proof.
+                    Ok(Some(ReadyExpiry(123)))
+                } else {
+                    Err(error(StreamErrorCode::Unsupported))
+                }
+            },
+        )
+        .await;
+        let link = receive.await.unwrap();
+        if accepted_close {
+            let receipt = result.unwrap().close().unwrap().wait().await.unwrap();
+            assert_eq!(
+                receipt.observation(),
+                StreamKernelCloseObservation::RequestAccepted
+            );
+            drop(receipt);
+        } else {
+            assert!(result.is_err());
+        }
+        quarantined(&fixture.pools).await;
+        assert_ne!(std::fs::read_link(link).ok(), Some(original));
+        let retained = stable_snapshot(&fixture.pools).await;
+        assert_eq!(retained.connections, 1);
+        assert_eq!(retained.failed_cleanup, 1);
+        assert!(retained.metadata_bytes >= before.metadata_bytes + 1024 * 1024 + 4096);
+    }
 }
 
 // Keep maintenance on this task's runtime thread so it cannot contend for the

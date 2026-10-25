@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/build_process.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Keep the finite process archive transport ceiling aligned with the measured committed source snapshot:82MiB instead of80MiB; all caller-selected output limits, timeout, cancellation, cleanup and process ownership unchanged.",
+  "reviewReason": "Raise only the shared trusted-build operational timeout maximum to4500 for the selected hosted LLVM command; caller-selected timeouts and defaults remain unchanged, including Rustwatch3600 and its3550 total. Preserve the82MiB output maximum, all output allowances and every process ownership, cancellation, cleanup and validation rule.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "fe8756c83045fd92e007a5ffac7ccfdd21a56d374be02f7147ea1363c31932ea"
+  "sha256": "3e462a970e23c127a4e6f0964744d31fad763ed4e9f73fb309e3349db3670497"
 }

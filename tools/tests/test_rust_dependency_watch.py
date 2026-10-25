@@ -1022,7 +1022,7 @@ class RustWatchWrapperDeadline(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             self.assertEqual(build_process._validate(['not-executed'], Path(temporary), {},
                                                     timeout, 262144), ['not-executed'])
-        self.assertEqual(timeout, build_process.MAX_TIMEOUT_SECONDS)
+        self.assertEqual(timeout, 3600)
         self.assertEqual(timeout - qualifier.TOTAL_BUDGET_SECONDS, 50)
         self.assertGreater(qualifier.TOTAL_BUDGET_SECONDS, 2400)
 
