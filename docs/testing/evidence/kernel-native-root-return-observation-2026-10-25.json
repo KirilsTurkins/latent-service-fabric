@@ -1,0 +1,1113 @@
+{
+  "schemaVersion": "lsf.kernel-native-root-return-public-evidence.v1",
+  "issue": 738,
+  "status": "passed",
+  "sourceRevision": "15167d63a3aef6d211ffc83c9591890d4d2486b2",
+  "qualification": {
+    "workflow": ".github/workflows/stream-kernel-return-vm.yml",
+    "branch": "feat/kernel-native-return-vm-20261024",
+    "event": "push",
+    "runId": 40144839812,
+    "jobId": 121023860613,
+    "artifactId": 12580134816,
+    "artifactBytes": 19602627,
+    "artifactSha256": "deb69e68dbb73a072429a087382ea54f796214abe91d444a857dfd88a538f895",
+    "archiveMembers": 70,
+    "allMembersCrcRead": true,
+    "runUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40144839812"
+  },
+  "scope": {
+    "actualNativeReady": true,
+    "actualObservationIoctlAndRead": true,
+    "typedKernelRootReturned": true,
+    "actualOriginalKernelBankAndActorReferencesReturned": true,
+    "nativeConnectionAndBackingStillQuarantined": true,
+    "nativeQuotaReleased": false,
+    "normalInstallation": "Unsupported",
+    "productionInstallation": false,
+    "fullVfsLsmCostsQualified": false,
+    "completeAllocationClosure": false,
+    "wholeNodeExecuted": false,
+    "hostTlsQualified": false,
+    "note": "The protected observer reports past original kernel Root return; it is not native capacity refund or provider enablement authority."
+  },
+  "sourceBinding": {
+    "qualifiedSourceBefore": {
+      "entries": 6471,
+      "canonicalInventorySha256": "33edce3a826f4ff37d64f3af17909f4832a444269498224d2de4a76e55f39313"
+    },
+    "qualifiedSourceAfter": {
+      "entries": 6471,
+      "canonicalInventorySha256": "33edce3a826f4ff37d64f3af17909f4832a444269498224d2de4a76e55f39313"
+    },
+    "sourceUnchanged": true,
+    "uniqueGitBlobsVerified": 6694,
+    "kernelProducerMaterials": {
+      "entries": 296,
+      "canonicalInventorySha256": "51e5cff41f286f6476ea0f6054f086e1d07a0c84efe4fb0998b986c2d8e068a6"
+    },
+    "historicalKernelProducerMaterials": {
+      "entries": 294,
+      "canonicalInventorySha256": "bf955588e9ef359b39def3308fb3dfb368448c2b2bad26047e7f37d318a94c7f"
+    },
+    "additionalKernelProducerMaterials": {
+      "research/standard-outbound/linux-6.12-lineage/factory-retirement-observation.c": {
+        "bytes": 11025,
+        "sha256": "e6dd168c77da82c2da8a0706a4b7ce90526c74686a170ad63f29324fef48f98b"
+      },
+      "research/standard-outbound/linux-6.12-lineage/native-constructor-vm-init.c": {
+        "bytes": 8024,
+        "sha256": "96cedf4645b5b62f1381188d84fcdd208cab01d477d5686c0baa3e3ddaf47e7d"
+      }
+    },
+    "localSourceFreeze": {
+      "entries": 247,
+      "canonicalInventorySha256": "ddfa066003984876b28f8e682049cce3c7d4f84147c6032de521c54785730701"
+    },
+    "baselineSourceFreeze": {
+      "entries": 212,
+      "canonicalInventorySha256": "a5ad16e32c5f412563890dc5e8be155d9cb93842bb025270fc4459a146645ac5"
+    },
+    "recipeInputs": {
+      "entries": 33,
+      "canonicalInventorySha256": "c37c364b7d6bbe07927485944ad123c7055d9a4eadee7ce30acf61057b969f22"
+    },
+    "selectedOriginalKernelInputs": {
+      "entries": 85,
+      "canonicalInventorySha256": "15b740ba4c434cc803505bd4c2f1c67f9b93bcfd46a09a6783d305a28219aef1"
+    },
+    "normalDerived": {
+      "entries": 326,
+      "canonicalInventorySha256": "5e5a614aa2d3ddbfa56bce5dca6a744a1fbbe7e866de052ee8b9d01a84b39d2b"
+    },
+    "actualDerived": {
+      "entries": 327,
+      "canonicalInventorySha256": "8eae8029b88dad7942ee629b66b750a4fd3c4cd31210b37e013fd1aab25bff31"
+    },
+    "newDerivedDelta": {
+      "net/factory-cleanup-root-final-free.c": {
+        "bytes": 13701,
+        "sha256": "89b2f7da420437ced80dbcc3b79a750eef548430feb91e573aff31a74593e9d4"
+      },
+      "net/factory-retirement-observation.c": {
+        "bytes": 11025,
+        "sha256": "e6dd168c77da82c2da8a0706a4b7ce90526c74686a170ad63f29324fef48f98b"
+      },
+      "net/factory.c": {
+        "bytes": 34800,
+        "sha256": "a183864a8b9408e032876cb292a303a08aa48cdbde03f8069768a7c071f0870f"
+      }
+    },
+    "freshKernelRequired": true,
+    "historicalImageReused": false
+  },
+  "outsideBankLifetimeSource": {
+    "originals": {
+      "fs/anon_inodes.c": {
+        "bytes": 10328,
+        "sha256": "240c4cb8438b0d797328d6779659ca3bfc71ad9961e66ecafab3db42143a3641"
+      },
+      "fs/libfs.c": {
+        "bytes": 60749,
+        "sha256": "6fed4bc86ac742a0649b03d61e652a1d146be38f6ca6d3eaee66c20b5f68831a"
+      },
+      "fs/inode.c": {
+        "bytes": 75338,
+        "sha256": "73e256cf70bb0d80e6fee28d969c6fb44ab4c5c7cd92b6f74edff8b5297e7070"
+      },
+      "fs/file_table.c": {
+        "bytes": 15008,
+        "sha256": "853ad4b282453d6091944412fa5eae258e11e53292457b8be812afe4cc15320c"
+      },
+      "fs/dcache.c": {
+        "bytes": 86166,
+        "sha256": "adf8303cb586c20ea8a57c18d792123e2994a775e8ea54ba758dcb728f53cb29"
+      },
+      "security/security.c": {
+        "bytes": 180030,
+        "sha256": "b72fd7f869275b1caf1a98449e92024a779534fb36c77cb88f4ac210e4493055"
+      },
+      "security/selinux/hooks.c": {
+        "bytes": 204597,
+        "sha256": "6079b88f15ca1966b640753e35edc291139fe925fca37e5c54d0a2d6e36d8370"
+      },
+      "security/commoncap.c": {
+        "bytes": 43585,
+        "sha256": "f8dba4df187cd446bc336dfeed000b41bdd0a9afd8b8d985d9c9d502cec587d7"
+      }
+    },
+    "compiledOrdinaryBodies": {
+      "fs/anon_inodes.c": {
+        "struct inode *anon_inode_make_secure_inode(": {
+          "bytes": 424,
+          "sha256": "be2cbea26ef3ec2f5278b886550d445b0e64ce1a5a0946844f7e9332c705448a"
+        },
+        "static struct file *__anon_inode_getfile(": {
+          "bytes": 1021,
+          "sha256": "04b6de2ffc0d7f8420d2d145713efb114998dff7fd5f1acf4f8fcf8fb600b906"
+        },
+        "struct file *anon_inode_create_getfile(": {
+          "bytes": 272,
+          "sha256": "4a12d5050301314550b6ebfa7dc658a6071b067e15f6b469666d1ad3f3ecf9b8"
+        }
+      },
+      "fs/libfs.c": {
+        "struct inode *alloc_anon_inode(": {
+          "bytes": 718,
+          "sha256": "92203e4d1ee0a8c31fa2960f9cec0b41d85cc61e27c9043ee6624f106a25cd2d"
+        }
+      },
+      "fs/inode.c": {
+        "static struct inode *alloc_inode(": {
+          "bytes": 532,
+          "sha256": "0928ddbe8a0eabd87ecc6dfcc000c38e3ab1125bac6c0f94c244ed98df57eeed"
+        },
+        "struct inode *new_inode_pseudo(": {
+          "bytes": 84,
+          "sha256": "e70293266df3fa8db179981c09f960a95039046f8f099ac59308148150129232"
+        },
+        "int inode_init_always_gfp(": {
+          "bytes": 2311,
+          "sha256": "aebc8d3bcd037232f107c55cf9666a6afdfa0cc71eee306319de8f4256370a83"
+        }
+      },
+      "fs/file_table.c": {
+        "static int init_file(": {
+          "bytes": 907,
+          "sha256": "c92f60dad12559f44b87e148738a38550f643a0f9dfc43af7c6bf2e8243b80a0"
+        },
+        "struct file *alloc_empty_file(": {
+          "bytes": 900,
+          "sha256": "e7f88beb3873b553726c44184af6acab3c3d90e69e1d35fe583ca1591a8b250c"
+        },
+        "static struct file *alloc_file(": {
+          "bytes": 247,
+          "sha256": "ffa9232ed563ee01cf977dcf733b4808e1b5befcad2193978ae0618bef90ee08"
+        },
+        "struct file *alloc_file_pseudo(": {
+          "bytes": 411,
+          "sha256": "39e27147f33349877cebf8d93de831463b041cb468773aea9769739d1674a336"
+        }
+      },
+      "fs/dcache.c": {
+        "static struct dentry *__d_alloc(": {
+          "bytes": 2005,
+          "sha256": "49632dc7e577b12767760301962fc3f78d948ae662ff30f915b8960f65d0f583"
+        },
+        "struct dentry *d_alloc_pseudo(": {
+          "bytes": 341,
+          "sha256": "f9f7f3f29a46129bc2c8d3c5627088c12db3e5e439f6168b3fdc1529e8917962"
+        }
+      },
+      "security/security.c": {
+        "static int lsm_file_alloc(": {
+          "bytes": 243,
+          "sha256": "23b3d8116c51150461e0ed0683dc45f495795e1e6f3d363807180e057a5a7e35"
+        },
+        "static int lsm_inode_alloc(": {
+          "bytes": 255,
+          "sha256": "25e3909f7a702fe2544d84c4283c10c0a8dfed1737caf757cc7a661922198423"
+        },
+        "int security_inode_alloc(": {
+          "bytes": 244,
+          "sha256": "a67826845173334a1eae4ec3d6c8629298238387017aa51d7660e0cd7aa39689"
+        },
+        "int security_inode_init_security_anon(": {
+          "bytes": 228,
+          "sha256": "7a75d67a9a7ae9af5be6d05b27df085fdfbace370b3ae19c0fc421cae687ae55"
+        },
+        "int security_file_alloc(": {
+          "bytes": 209,
+          "sha256": "fab45c762b5bd91f2a29b4dd3af8c0bf83afbd41ffdf687f6c127d1d8aa1239d"
+        }
+      },
+      "security/selinux/hooks.c": {
+        "static int selinux_inode_alloc_security(": {
+          "bytes": 371,
+          "sha256": "872de8d9532ba59a2fc4e5488d69b50688d7c859de7d31d11be299394489abf4"
+        },
+        "static int selinux_inode_init_security_anon(": {
+          "bytes": 1319,
+          "sha256": "089e0c73bbe1637f5dd38b298151337c4826f858f35c0ffffaa31aee2bb906ef"
+        },
+        "static int selinux_file_alloc_security(": {
+          "bytes": 199,
+          "sha256": "4d0b8733587122744e5bcfbfab5d052d467a5bc7a34b6b5f709df9c5e9640058"
+        }
+      }
+    },
+    "compiledSelinuxHookRegistration": {
+      "prefix": "static struct security_hook_list selinux_hooks[] __ro_after_init = {",
+      "bytes": 13464,
+      "sha256": "ef25e0b21871e4761545eb389e5e59fbfb94de81a587a0382ebf09a2836f6276"
+    },
+    "configuration": {
+      "bytes": 143135,
+      "sha256": "0015c9ac3b9af98af1e4a0f88788321e96193ce6a387c5a6cec6eaa358cdc1d6"
+    },
+    "explicitPrepaidContextRequired": true,
+    "unselectedCompilerProbeProjection": {
+      "actual": {
+        "bytes": 143135,
+        "sha256": "0015c9ac3b9af98af1e4a0f88788321e96193ce6a387c5a6cec6eaa358cdc1d6"
+      },
+      "auditCanonical": {
+        "bytes": 143192,
+        "sha256": "1b9152e00c4ef645dda8318f804aaae17acbabf4bd4d1b065c7205faabaef2b3"
+      },
+      "difference": {
+        "CONFIG_RUSTC_HAS_SUSPICIOUS_RUNTIME_SYMBOL_DEFINITIONS": {
+          "actual": null,
+          "auditCanonical": "y"
+        },
+        "CONFIG_RUSTC_LLVM_VERSION": {
+          "actual": "220106",
+          "auditCanonical": "230101"
+        },
+        "CONFIG_RUSTC_VERSION": {
+          "actual": "109701",
+          "auditCanonical": "109900"
+        }
+      },
+      "rustKernelSelected": false,
+      "actualConfigurationMutated": false,
+      "allOtherConfigurationBytesExact": true
+    },
+    "ordinaryObjectsOutsideBankSourceClosure": true,
+    "contextInodeReferenceRetained": false,
+    "fullVfsLsmCostsQualified": false,
+    "actualMintExecuted": false
+  },
+  "sourceAuditNote": "The nested actualMintExecuted=false describes the pre-execution source audit; the separately retained VM observations establish this run actual mint/read. Full VFS/LSM costs remain unqualified.",
+  "configuration": {
+    "actual": {
+      "bytes": 143135,
+      "sha256": "0015c9ac3b9af98af1e4a0f88788321e96193ce6a387c5a6cec6eaa358cdc1d6",
+      "requiredOptions": [
+        "CONFIG_64BIT",
+        "CONFIG_X86_64",
+        "CONFIG_BLK_DEV_INITRD",
+        "CONFIG_BINFMT_ELF",
+        "CONFIG_DEVTMPFS",
+        "CONFIG_PROC_FS",
+        "CONFIG_SYSFS",
+        "CONFIG_SERIAL_8250",
+        "CONFIG_SERIAL_8250_CONSOLE",
+        "CONFIG_PCI",
+        "CONFIG_ACPI",
+        "CONFIG_LSF_STREAM_FACTORY"
+      ],
+      "configurationMutated": false
+    },
+    "explicitDataOnlyCompilerProbeProjection": {
+      "actual": {
+        "bytes": 143135,
+        "sha256": "0015c9ac3b9af98af1e4a0f88788321e96193ce6a387c5a6cec6eaa358cdc1d6"
+      },
+      "sourceFixture": {
+        "bytes": 143192,
+        "sha256": "b2bcccd5507f3f3a673690b660a2321870b57a3c77e72ce8532975f3c4752176"
+      },
+      "unselectedCompilerProbeProjection": {
+        "actual": {
+          "bytes": 143135,
+          "sha256": "0015c9ac3b9af98af1e4a0f88788321e96193ce6a387c5a6cec6eaa358cdc1d6"
+        },
+        "auditCanonical": {
+          "bytes": 143192,
+          "sha256": "1b9152e00c4ef645dda8318f804aaae17acbabf4bd4d1b065c7205faabaef2b3"
+        },
+        "difference": {
+          "CONFIG_RUSTC_HAS_SUSPICIOUS_RUNTIME_SYMBOL_DEFINITIONS": {
+            "actual": null,
+            "auditCanonical": "y"
+          },
+          "CONFIG_RUSTC_LLVM_VERSION": {
+            "actual": "220106",
+            "auditCanonical": "230101"
+          },
+          "CONFIG_RUSTC_VERSION": {
+            "actual": "109701",
+            "auditCanonical": "109900"
+          }
+        },
+        "rustKernelSelected": false,
+        "actualConfigurationMutated": false,
+        "allOtherConfigurationBytesExact": true
+      },
+      "historicalDataOnlyProjection": {
+        "actual": {
+          "bytes": 143192,
+          "sha256": "1b9152e00c4ef645dda8318f804aaae17acbabf4bd4d1b065c7205faabaef2b3"
+        },
+        "sourceFixture": {
+          "bytes": 143192,
+          "sha256": "b2bcccd5507f3f3a673690b660a2321870b57a3c77e72ce8532975f3c4752176"
+        },
+        "difference": {
+          "symbol": "CONFIG_RUSTC_VERSION",
+          "actual": 109900,
+          "sourceFixture": 109901,
+          "reason": "Rust kernel code is unselected; all other config bytes remain exact."
+        },
+        "actualConfigurationMutated": false,
+        "rustKernelSelected": false,
+        "allOtherConfigurationBytesExact": true
+      },
+      "actualConfigurationMutated": false,
+      "rustKernelSelected": false,
+      "allOtherConfigurationBytesExact": true
+    },
+    "generatedAutoconf": {
+      "bytes": 57331,
+      "sha256": "815d672d934387b66191941ff52d7fb059c1974257556eb816559a13fec2d9eb"
+    }
+  },
+  "limits": {
+    "overallSeconds": 2400,
+    "nativePhaseSeconds": 1320,
+    "kernelCommandSeconds": 1800,
+    "cargoCommandSeconds": 1200,
+    "vmSeconds": 180,
+    "vmCpus": 2,
+    "vmMemoryMiB": 512,
+    "pid1FileBytes": 2097152,
+    "nativeFileBytes": 3145728,
+    "aggregateLoadSpanBytes": 4194304,
+    "cpioBytes": 4194304
+  },
+  "products": {
+    "nativeInit": {
+      "bytes": 2941568,
+      "sha256": "d9afdbb56299b1368cbac9d03ffa8cbc399dd2c28722352d738f6b7541c99fa3",
+      "loadSegments": 4,
+      "staticX86_64": true
+    },
+    "supervisor": {
+      "bytes": 804304,
+      "sha256": "199f4940315da8f1bc8affa9133ce64e3a8b14439dcead932ba15584019becdb",
+      "loadSegments": 4,
+      "staticX86_64": true,
+      "sourceSha256": "5167480ea9104bc6e48f8c766329f031564700e3e54cbec9c3243614366a9147"
+    },
+    "executablePartition": {
+      "pid1MaximumFileBytes": 2097152,
+      "nativeMaximumFileBytes": 3145728,
+      "pid1LoadSpanBytes": 743912,
+      "nativeLoadSpanBytes": 2968648,
+      "aggregateLoadSpanBytes": 3712560,
+      "maximumAggregateLoadSpanBytes": 4194304
+    },
+    "kernelImage": {
+      "bytes": 13763584,
+      "sha256": "848b079b083612da53ba63fc739cc41fee9fddc29723b55f9400f9c29dc34575",
+      "bootProtocol": 527,
+      "x86_64": true
+    },
+    "linkedVmlinux": {
+      "bytes": 51892200,
+      "sha256": "3684ce6d9c5ad089d388e8c70355525bc83eb9073bfb62f7e60947342cd9fc71"
+    },
+    "initramfsGenerator": {
+      "bytes": 30560,
+      "sha256": "6079187069bf2c2146e32e9cbc86894a8c99e032f0e33cb45cca38c0dff6c7c8"
+    },
+    "initramfs": {
+      "bytes": 3747328,
+      "sha256": "030fdd6940fd03cb66f8a0b6cc569004eb208e298a733db0f832a8fba633245e"
+    },
+    "firmware": {
+      "bios-256k.bin": {
+        "bytes": 262144,
+        "sha256": "1a9ea4f17bcfb27bda5728e2c21d9fa074cf7947b9b4910bb28213a735c96735"
+      },
+      "linuxboot_dma.bin": {
+        "bytes": 1536,
+        "sha256": "d2f20622ebfea0a0222005452fd6a7747e1634395ed682272b38e17ad2334512"
+      },
+      "kvmvapic.bin": {
+        "bytes": 9216,
+        "sha256": "8bbe341af0ab06c3008d65b29fb961f21f63a1419297dd4db80632261046cd98"
+      }
+    }
+  },
+  "actualControls": {
+    "ownerControls": {
+      "native-owner": {
+        "registered": [
+          "kernel::native::tests::abandoned_waiter_cannot_drop_running_job_or_late_returned_owner",
+          "kernel::native::tests::cleanup_panic_keeps_original_connection_after_lost_unit_result",
+          "kernel::native::tests::close_status_preserves_original_expiry_and_never_accepts_ready_as_retirement",
+          "kernel::native::tests::constructor_panic_retains_prepaid_backing_and_closes_real_fd",
+          "kernel::native::tests::exhausted_node_allowance_refuses_before_any_open",
+          "kernel::native::tests::fixed_file_close_receipt_stays_paid_until_drop_without_refunding_backing",
+          "kernel::native::tests::fixed_wire_rejects_wrong_expiry_error_and_unknown_phase",
+          "kernel::native::tests::original_deadline_does_not_refund_a_blocked_native_constructor",
+          "kernel::native::tests::possible_failed_open_retains_original_node_charge",
+          "kernel::native::tests::postopen_failure_closes_real_fd_without_refunding_backing",
+          "kernel::native::tests::ready_owner_drop_closes_on_original_worker_and_retains_capacity",
+          "kernel::native::tests::real_file_close_transfer_keeps_exact_frame_and_refuses_short_or_error_reply",
+          "kernel::native::tests::unavailable_cleanup_slot_keeps_fd_and_backing_without_inline_close"
+        ],
+        "executed": [
+          "kernel::native::tests::abandoned_waiter_cannot_drop_running_job_or_late_returned_owner",
+          "kernel::native::tests::cleanup_panic_keeps_original_connection_after_lost_unit_result",
+          "kernel::native::tests::close_status_preserves_original_expiry_and_never_accepts_ready_as_retirement",
+          "kernel::native::tests::constructor_panic_retains_prepaid_backing_and_closes_real_fd",
+          "kernel::native::tests::exhausted_node_allowance_refuses_before_any_open",
+          "kernel::native::tests::fixed_file_close_receipt_stays_paid_until_drop_without_refunding_backing",
+          "kernel::native::tests::fixed_wire_rejects_wrong_expiry_error_and_unknown_phase",
+          "kernel::native::tests::original_deadline_does_not_refund_a_blocked_native_constructor",
+          "kernel::native::tests::possible_failed_open_retains_original_node_charge",
+          "kernel::native::tests::postopen_failure_closes_real_fd_without_refunding_backing",
+          "kernel::native::tests::ready_owner_drop_closes_on_original_worker_and_retains_capacity",
+          "kernel::native::tests::real_file_close_transfer_keeps_exact_frame_and_refuses_short_or_error_reply",
+          "kernel::native::tests::unavailable_cleanup_slot_keeps_fd_and_backing_without_inline_close"
+        ],
+        "ignored": [],
+        "stdout": {
+          "bytes": 3333,
+          "sha256": "fbe6d6788f1616ab0ca4143727aa6682c5bb7396f5d89d8fc5553a111cc3c072"
+        },
+        "executableSha256": "0e24ba05bdc15456314bd403ad4ad8d0e8bc78f8fe928e9793904b09e7f052c7",
+        "executableBytes": 295854168,
+        "customKernelOrNativeInitExecuted": false
+      },
+      "close-result": {
+        "registered": [
+          "broker::pools::tests::close_observation::abandoned_close_waiter_does_not_release_running_or_quarantined_owner",
+          "broker::pools::tests::close_observation::buffered_and_delivered_close_receipt_keeps_original_cleanup_charge",
+          "broker::pools::tests::close_observation::close_worker_panic_never_publishes_accepted_receipt_or_refunds_connection",
+          "broker::pools::tests::close_observation::held_close_receipt_bounds_new_admission_and_returns_unchanged_owner",
+          "broker::pools::tests::close_observation::published_receipt_drop_cannot_release_live_sender_worker_tail"
+        ],
+        "executed": [
+          "broker::pools::tests::close_observation::abandoned_close_waiter_does_not_release_running_or_quarantined_owner",
+          "broker::pools::tests::close_observation::buffered_and_delivered_close_receipt_keeps_original_cleanup_charge",
+          "broker::pools::tests::close_observation::close_worker_panic_never_publishes_accepted_receipt_or_refunds_connection",
+          "broker::pools::tests::close_observation::held_close_receipt_bounds_new_admission_and_returns_unchanged_owner",
+          "broker::pools::tests::close_observation::published_receipt_drop_cannot_release_live_sender_worker_tail"
+        ],
+        "ignored": [],
+        "stdout": {
+          "bytes": 1694,
+          "sha256": "dfa467c4dfb294cec2cee36dbbf4c98f5aac32e5a158714210beb00f988ff6b9"
+        },
+        "executableSha256": "c42cc1bd28e4a90d4c8ea5848e0303b49f70347071e48cc5757c071e50ab4742",
+        "executableBytes": 247758120,
+        "customKernelOrNativeInitExecuted": false
+      }
+    },
+    "leafControl": {
+      "executed": [
+        "ffi::tests::fixed_descriptor_boundary_refuses_foreign_and_preserves_actual_ownership"
+      ],
+      "ignored": [],
+      "stdout": {
+        "bytes": 322,
+        "sha256": "36e92afa6e0a33dece6734fc910e67c120156e22760b7d718d4ab8608d7e0690"
+      },
+      "executableBytes": 8692896,
+      "executableSha256": "15fcb95e6141301fdfbf00cf2343ba518d394a104780cd003339f37e565607d2",
+      "actualKernelMint": false
+    },
+    "compiledCControls": {
+      "passed": 12,
+      "failed": 0,
+      "bytes": 39,
+      "sha256": "800bb52a08b8bf285de524ed7cfa012528554ff3b4fae5dc1ae1af2c9bdb7809"
+    },
+    "note": "The first of the twelve C controls also exercises actual root-metadata acceptance and writable/sticky, wrong-uid and non-directory refusals; the original twelve parser assertions remain."
+  },
+  "vm": {
+    "freshVmAttempts": 1,
+    "validatedVmBoots": 1,
+    "observations": {
+      "snapshots": {
+        "baseline": {
+          "connections": 0,
+          "failedCleanup": 0,
+          "cleanupJobs": 0,
+          "pending": 0,
+          "running": 0,
+          "workers": 0,
+          "metadataBytes": 53248,
+          "controlFailed": 0,
+          "descriptors": 0,
+          "observerDescriptors": 0
+        },
+        "ready": {
+          "connections": 1,
+          "failedCleanup": 0,
+          "cleanupJobs": 1,
+          "pending": 0,
+          "running": 0,
+          "workers": 0,
+          "metadataBytes": 1256256,
+          "controlFailed": 0,
+          "descriptors": 1,
+          "observerDescriptors": 1
+        },
+        "root-return-observed-held": {
+          "connections": 1,
+          "failedCleanup": 1,
+          "cleanupJobs": 2,
+          "pending": 0,
+          "running": 0,
+          "workers": 0,
+          "metadataBytes": 1264728,
+          "controlFailed": 0,
+          "descriptors": 0,
+          "observerDescriptors": 0
+        },
+        "quarantined": {
+          "connections": 1,
+          "failedCleanup": 1,
+          "cleanupJobs": 1,
+          "pending": 0,
+          "running": 0,
+          "workers": 0,
+          "metadataBytes": 1125184,
+          "controlFailed": 0,
+          "descriptors": 0,
+          "observerDescriptors": 0
+        }
+      },
+      "actualNativeConstructorReady": true,
+      "actualDescriptorClosed": true,
+      "actualKernelRootReturn": true,
+      "kernelPostReturnObservations": 1,
+      "observedPendingFdHandoff": true,
+      "observedOutsideCollector": true,
+      "actualNativeKernelRootReturned": true,
+      "originalObserverChargeQuarantined": true,
+      "originalReceiptChargeObserved": true,
+      "independentUartOrders": true,
+      "originalNodeCapacityQuarantined": true,
+      "nativeQuotaReleased": false,
+      "productionInstallation": false,
+      "completeAllocationClosure": false,
+      "bytes": 25458,
+      "sha256": "c0ba6d1cf0af5e7c2c90cf83c4ef85b535c8444dd85d7fe89d92ede4912f0336"
+    },
+    "rawProtocolRows": [
+      "LSFVM1 boot=native-constructor-only production-sockets=disabled",
+      "LSFRETURN1 state=baseline connections=0 failedCleanup=0 cleanupJobs=0 pending=0 running=0 workers=0 metadataBytes=53248 controlFailed=0 descriptors=0 observerDescriptors=0",
+      "LSFRETURNDIAG stage=install-complete",
+      "LSFRETURN1 state=ready connections=1 failedCleanup=0 cleanupJobs=1 pending=0 running=0 workers=0 metadataBytes=1256256 controlFailed=0 descriptors=1 observerDescriptors=1",
+      "[    2.932372] LSFVM1 fd-handoff=original-root opened=2 request=LIVE pending=1",
+      "[    2.946540] LSFVM1 physical-return=constructor-root-bank-and-actor-refs",
+      "[    2.946767] LSFVM1 outside-collector=kthreadd-root-bank-and-actor-refs",
+      "LSFRETURN1 state=root-return-observed-held connections=1 failedCleanup=1 cleanupJobs=2 pending=0 running=0 workers=0 metadataBytes=1264728 controlFailed=0 descriptors=0 observerDescriptors=0",
+      "LSFRETURN1 state=quarantined connections=1 failedCleanup=1 cleanupJobs=1 pending=0 running=0 workers=0 metadataBytes=1125184 controlFailed=0 descriptors=0 observerDescriptors=0",
+      "LSFRETURN1 result=PASS constructorReady=1 kernelRootReturned=1 descriptorClosed=1 observerClosed=1 backingQuarantined=1 nativeQuotaReleased=0 productionInstalled=0",
+      "LSFVM1 result=PASS stage=actual-native-constructor-and-kernel-return"
+    ],
+    "protectedRootSetup": "Source-bound PID1 checks chmod(/,0755), then actual lstat directory/root-uid/exact-mode before fork; unchanged leaf independently validates protected ancestors and the original device."
+  },
+  "commands": [
+    {
+      "stage": "rust-compiler-version",
+      "exitCode": 0,
+      "seconds": 0.046693
+    },
+    {
+      "stage": "c-compiler-version",
+      "exitCode": 0,
+      "seconds": 0.015802
+    },
+    {
+      "stage": "native-owner-cargo",
+      "exitCode": 0,
+      "seconds": 117.9885
+    },
+    {
+      "stage": "native-owner-list",
+      "exitCode": 0,
+      "seconds": 0.016028
+    },
+    {
+      "stage": "native-owner-ignored",
+      "exitCode": 0,
+      "seconds": 0.016016
+    },
+    {
+      "stage": "native-owner-tests",
+      "exitCode": 0,
+      "seconds": 1.279123
+    },
+    {
+      "stage": "close-result-cargo",
+      "exitCode": 0,
+      "seconds": 81.311305
+    },
+    {
+      "stage": "close-result-list",
+      "exitCode": 0,
+      "seconds": 0.016222
+    },
+    {
+      "stage": "close-result-ignored",
+      "exitCode": 0,
+      "seconds": 0.015821
+    },
+    {
+      "stage": "close-result-tests",
+      "exitCode": 0,
+      "seconds": 0.148078
+    },
+    {
+      "stage": "leaf-cargo",
+      "exitCode": 0,
+      "seconds": 2.183454
+    },
+    {
+      "stage": "leaf-list",
+      "exitCode": 0,
+      "seconds": 0.016023
+    },
+    {
+      "stage": "leaf-ignored",
+      "exitCode": 0,
+      "seconds": 0.0159
+    },
+    {
+      "stage": "leaf-tests",
+      "exitCode": 0,
+      "seconds": 0.016025
+    },
+    {
+      "stage": "build-return-observation-example",
+      "exitCode": 0,
+      "seconds": 122.723187
+    },
+    {
+      "stage": "compile-static-constructor-init",
+      "exitCode": 0,
+      "seconds": 0.304445
+    },
+    {
+      "stage": "actual-native-kmsg-controls",
+      "exitCode": 0,
+      "seconds": 0.01621
+    },
+    {
+      "stage": "acquire-exact-linux-source",
+      "exitCode": 0,
+      "seconds": 2.566671
+    },
+    {
+      "stage": "extract-authenticated-source",
+      "exitCode": 0,
+      "seconds": 9.762097
+    },
+    {
+      "stage": "compiler-identity",
+      "exitCode": 0,
+      "seconds": 0.016195
+    },
+    {
+      "stage": "original-defconfig",
+      "exitCode": 0,
+      "seconds": 4.613894
+    },
+    {
+      "stage": "resolve-selected-config",
+      "exitCode": 0,
+      "seconds": 1.987074
+    },
+    {
+      "stage": "link-complete-candidate-kernel",
+      "exitCode": 0,
+      "seconds": 754.111507
+    },
+    {
+      "stage": "create-constructor-initramfs",
+      "exitCode": 0,
+      "seconds": 0.02657
+    },
+    {
+      "stage": "emulator-version",
+      "exitCode": 0,
+      "seconds": 0.045953
+    },
+    {
+      "stage": "one-real-native-return-vm",
+      "exitCode": 0,
+      "seconds": 3.805277
+    }
+  ],
+  "compiler": {
+    "nativeVersion": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+    "observedTools": {
+      "gcc": {
+        "bytes": 1023032,
+        "sha256": "1b99826121ae6682a634e5efe09bd3e3df58ce58e0b28f849114ab5b89139c26"
+      },
+      "rustc": {
+        "bytes": 21113232,
+        "sha256": "dda7234360b7f578ca8b0ddcb80145646fa61a67c1720a5abc7051b35c9fcb71"
+      },
+      "cargo": {
+        "bytes": 21113232,
+        "sha256": "dda7234360b7f578ca8b0ddcb80145646fa61a67c1720a5abc7051b35c9fcb71"
+      },
+      "qemu-system-x86_64": {
+        "bytes": 26415624,
+        "sha256": "8a35ccba41582fc6c38b9df85fc9e35fa1d42f414d2d7d8090ee9b2f5e7c0854"
+      },
+      "make": {
+        "bytes": 259808,
+        "sha256": "d78b8f1d099fbcfb6f2f49ab87223b9b68fb3956642f92d6ec6de812e8afa965"
+      },
+      "tar": {
+        "bytes": 440264,
+        "sha256": "3ee2c3c0b4dd9aacebfd2f0fbae44bad36348203acff78a44888dd58c05f811c"
+      },
+      "curl": {
+        "bytes": 297288,
+        "sha256": "1ccbd3dae948374ba8eef1ebda26c64b783ede50b463196e53666e0880bdac60"
+      }
+    },
+    "implicitInputsAttested": false,
+    "hermetic": false,
+    "reproducibility": "not-checked"
+  },
+  "retainedMembers": {
+    "receipt.json": {
+      "bytes": 2740684,
+      "sha256": "b52f6f31f1cb8967c9a0601f1fd8be9fc33b5ab6fb8c2c2c9a441575951b6b41"
+    },
+    "source-inputs.json": {
+      "bytes": 1076085,
+      "sha256": "c92f7bef893e204184485f67910c17b9517946ca9f83722d5a978c5c7e1ed38f"
+    },
+    "commands.json": {
+      "bytes": 2325,
+      "sha256": "b914f1e6114567cce561a365d17441478a91b2feb9852463c1bcdfbb6ac049fa"
+    },
+    "native-init": {
+      "bytes": 2941568,
+      "sha256": "d9afdbb56299b1368cbac9d03ffa8cbc399dd2c28722352d738f6b7541c99fa3"
+    },
+    "constructor-init": {
+      "bytes": 804304,
+      "sha256": "199f4940315da8f1bc8affa9133ce64e3a8b14439dcead932ba15584019becdb"
+    },
+    "constructor-init.c": {
+      "bytes": 25578,
+      "sha256": "5167480ea9104bc6e48f8c766329f031564700e3e54cbec9c3243614366a9147"
+    },
+    "constructor-initramfs.list": {
+      "bytes": 167,
+      "sha256": "02f42bf8eb84710590cf5e1b2925e4fa65909c4a62d39ea8f46682c37668b941"
+    },
+    "constructor-initramfs.cpio": {
+      "bytes": 805376,
+      "sha256": "43e87af1dba444832b45378ddca42c63de1c8c6dbd918cc423a68a4aa992d173"
+    },
+    "native-return-initramfs.cpio": {
+      "bytes": 3747328,
+      "sha256": "030fdd6940fd03cb66f8a0b6cc569004eb208e298a733db0f832a8fba633245e"
+    },
+    "firmware/bios-256k.bin": {
+      "bytes": 262144,
+      "sha256": "1a9ea4f17bcfb27bda5728e2c21d9fa074cf7947b9b4910bb28213a735c96735"
+    },
+    "firmware/kvmvapic.bin": {
+      "bytes": 9216,
+      "sha256": "8bbe341af0ab06c3008d65b29fb961f21f63a1419297dd4db80632261046cd98"
+    },
+    "firmware/linuxboot_dma.bin": {
+      "bytes": 1536,
+      "sha256": "d2f20622ebfea0a0222005452fd6a7747e1634395ed682272b38e17ad2334512"
+    },
+    "kernel/baseline.config": {
+      "bytes": 143146,
+      "sha256": "fdc184f17070af8ac583581edeb9ed8042c3ade2937eb230f8aeff79d71c7e5e"
+    },
+    "kernel/constructor-bzImage": {
+      "bytes": 13763584,
+      "sha256": "848b079b083612da53ba63fc739cc41fee9fddc29723b55f9400f9c29dc34575"
+    },
+    "kernel/objects/include/generated/autoconf.h": {
+      "bytes": 57331,
+      "sha256": "815d672d934387b66191941ff52d7fb059c1974257556eb816559a13fec2d9eb"
+    },
+    "kernel/selected.config": {
+      "bytes": 143135,
+      "sha256": "0015c9ac3b9af98af1e4a0f88788321e96193ce6a387c5a6cec6eaa358cdc1d6"
+    },
+    "kernel/selection.json": {
+      "bytes": 1609636,
+      "sha256": "53c905dbe4ca95b3ff1127e9bc5b0ccbf951db1ce2d189fc4cfdd0221982ebf1"
+    },
+    "kernel/source-fixture.config": {
+      "bytes": 143192,
+      "sha256": "b2bcccd5507f3f3a673690b660a2321870b57a3c77e72ce8532975f3c4752176"
+    },
+    "commands/logs/00-rust-compiler-version.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "commands/logs/00-rust-compiler-version.stdout.txt": {
+      "bytes": 36,
+      "sha256": "4ad84f16acc2f3bdcfbc7b0788f1e74a4e649b962154a585b8f8d0b28eb0dd06"
+    },
+    "commands/logs/01-c-compiler-version.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "commands/logs/01-c-compiler-version.stdout.txt": {
+      "bytes": 246,
+      "sha256": "8497f84b2b8334c413d9c6166bd39d009ba55d2ff60a8f23e66dfa5819c2b048"
+    },
+    "commands/logs/02-native-owner-cargo.stdout.txt": {
+      "bytes": 188624,
+      "sha256": "2f8101fd8ac9d45ff495c78dfde2c19ad041c7d5280f7bd262b06d9a58551d74"
+    },
+    "commands/logs/02-native-owner-cargo.stderr.txt": {
+      "bytes": 13414,
+      "sha256": "b60c8e9244c0816ad398bdca971b970b453f92ba379291daf8d34c77a7bb5588"
+    },
+    "commands/logs/03-native-owner-list.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "commands/logs/03-native-owner-list.stdout.txt": {
+      "bytes": 1222,
+      "sha256": "f0fa6501a9c7c86de22948d52b89f5b6c2de23e7263d241814e66a079a346395"
+    },
+    "commands/logs/05-native-owner-tests.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "commands/logs/04-native-owner-ignored.stdout.txt": {
+      "bytes": 22,
+      "sha256": "414c144fa67f1df75f7b14a69af5641637772e81c4c3fa0a171e3228adbb922e"
+    },
+    "commands/logs/04-native-owner-ignored.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "commands/logs/05-native-owner-tests.stdout.txt": {
+      "bytes": 3333,
+      "sha256": "fbe6d6788f1616ab0ca4143727aa6682c5bb7396f5d89d8fc5553a111cc3c072"
+    },
+    "commands/logs/06-close-result-cargo.stderr.txt": {
+      "bytes": 2862,
+      "sha256": "9a430964214d691635b90e15caf08ffc6deb438258328976ce4d0dc0f659b47c"
+    },
+    "commands/logs/06-close-result-cargo.stdout.txt": {
+      "bytes": 111501,
+      "sha256": "3e66b5c17544044d5c3692193ada5f28d6821d0d75f52cfcd22ca9895ae2af66"
+    },
+    "commands/logs/07-close-result-list.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "commands/logs/07-close-result-list.stdout.txt": {
+      "bytes": 598,
+      "sha256": "3197d0e4e39a6c1a791f0806c50d83a22acc91ea895a828bd2fc0c4a52d98630"
+    },
+    "commands/logs/08-close-result-ignored.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "commands/logs/08-close-result-ignored.stdout.txt": {
+      "bytes": 22,
+      "sha256": "414c144fa67f1df75f7b14a69af5641637772e81c4c3fa0a171e3228adbb922e"
+    },
+    "commands/logs/09-close-result-tests.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "commands/logs/09-close-result-tests.stdout.txt": {
+      "bytes": 1694,
+      "sha256": "dfa467c4dfb294cec2cee36dbbf4c98f5aac32e5a158714210beb00f988ff6b9"
+    },
+    "commands/logs/10-leaf-cargo.stderr.txt": {
+      "bytes": 410,
+      "sha256": "9be5d1c25cafc9b65756a437dd02fe92ad6ae5789980c4a8692a41480c39ad4c"
+    },
+    "commands/logs/10-leaf-cargo.stdout.txt": {
+      "bytes": 12059,
+      "sha256": "a2d58c18816a602376670373b0a1e7e1de58a7621db8d41c8781699310bf1ae3"
+    },
+    "commands/logs/11-leaf-list.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "commands/logs/11-leaf-list.stdout.txt": {
+      "bytes": 113,
+      "sha256": "00f5826cb6936fce375cd66cdce065ceff48900080292cf9c5a743c02c453f45"
+    },
+    "commands/logs/12-leaf-ignored.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "commands/logs/12-leaf-ignored.stdout.txt": {
+      "bytes": 22,
+      "sha256": "414c144fa67f1df75f7b14a69af5641637772e81c4c3fa0a171e3228adbb922e"
+    },
+    "commands/logs/13-leaf-tests.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "commands/logs/13-leaf-tests.stdout.txt": {
+      "bytes": 322,
+      "sha256": "36e92afa6e0a33dece6734fc910e67c120156e22760b7d718d4ab8608d7e0690"
+    },
+    "commands/logs/14-build-return-observation-example.stderr.txt": {
+      "bytes": 7945,
+      "sha256": "c78e3a1a03b5da9a01db6708ec3e2cf9b7f225903b629244a5a8c2bea9f394a9"
+    },
+    "commands/logs/14-build-return-observation-example.stdout.txt": {
+      "bytes": 198967,
+      "sha256": "0ec919d5cccec71fa33ef45749407fc9e99a79d126c46d3ac8f8de37165f4d6e"
+    },
+    "commands/logs/15-compile-static-constructor-init.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "commands/logs/15-compile-static-constructor-init.stdout.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "commands/logs/16-actual-native-kmsg-controls.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "commands/logs/16-actual-native-kmsg-controls.stdout.txt": {
+      "bytes": 39,
+      "sha256": "800bb52a08b8bf285de524ed7cfa012528554ff3b4fae5dc1ae1af2c9bdb7809"
+    },
+    "commands/logs/17-acquire-exact-linux-source.stderr.txt": {
+      "bytes": 554,
+      "sha256": "6db31640a4dbdb3b2effb1ecf9b9ae697adff8f82d81b5d253b4a5d583c35019"
+    },
+    "commands/logs/17-acquire-exact-linux-source.stdout.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "commands/logs/18-extract-authenticated-source.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "commands/logs/19-compiler-identity.stdout.txt": {
+      "bytes": 246,
+      "sha256": "8497f84b2b8334c413d9c6166bd39d009ba55d2ff60a8f23e66dfa5819c2b048"
+    },
+    "commands/logs/18-extract-authenticated-source.stdout.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "commands/logs/20-original-defconfig.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "commands/logs/19-compiler-identity.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "commands/logs/20-original-defconfig.stdout.txt": {
+      "bytes": 705,
+      "sha256": "2691e0da75d8dbbc0df47186e2af2e210ba528471e07b5f5b9b45664be516bc4"
+    },
+    "commands/logs/21-resolve-selected-config.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "commands/logs/21-resolve-selected-config.stdout.txt": {
+      "bytes": 231,
+      "sha256": "773785d288bdfca39c9d85f06d4e92b4b037238ea16425fa1b73a25450e214ef"
+    },
+    "commands/logs/22-link-complete-candidate-kernel.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "commands/logs/22-link-complete-candidate-kernel.stdout.txt": {
+      "bytes": 146987,
+      "sha256": "d090fc304e2d0a17755174de511675456bc4d5673a6673641c6fecd38754435b"
+    },
+    "commands/logs/23-create-constructor-initramfs.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "commands/logs/23-create-constructor-initramfs.stdout.txt": {
+      "bytes": 805376,
+      "sha256": "43e87af1dba444832b45378ddca42c63de1c8c6dbd918cc423a68a4aa992d173"
+    },
+    "commands/logs/24-emulator-version.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "commands/logs/24-emulator-version.stdout.txt": {
+      "bytes": 132,
+      "sha256": "8f79ffd97970d85d6833a0ccc87f5d6e7182f8f52101c741dfa2fb6374670b18"
+    },
+    "commands/logs/25-one-real-native-return-vm.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "commands/logs/25-one-real-native-return-vm.stdout.txt": {
+      "bytes": 25458,
+      "sha256": "c0ba6d1cf0af5e7c2c90cf83c4ef85b535c8444dd85d7fe89d92ede4912f0336"
+    }
+  },
+  "failedHistory": [
+    {
+      "source": "eff7adf1d1efcd927e1211d2a855d41bf89b573a",
+      "runId": 40136754448,
+      "artifactId": 12577896088,
+      "artifactBytes": 2428079,
+      "artifactSha256": "532137bb621f08e1e074b1970ecb7926ac3b04304bc93e91bc692a7c8c5913ce",
+      "status": "failed",
+      "boundary": "Historical294/current296 material partition before Kconfig/link/VM",
+      "vmAttempts": 0
+    },
+    {
+      "source": "de408ae48f28fb0d1237368bd53f1415433bd1d8",
+      "runId": 40137734712,
+      "artifactId": 12577698059,
+      "artifactBytes": 2468751,
+      "artifactSha256": "b09df057f2a68c157c80f164f04d449606032e4d7c83ebdbea2b61227579964f",
+      "status": "failed",
+      "boundary": "Kbuild CC Path/string argument before Kconfig/link/VM",
+      "vmAttempts": 0
+    },
+    {
+      "source": "01e06522540044b7bb7ba5b66c72dbb4ac729a9d",
+      "runId": 40138468871,
+      "artifactId": 12577393248,
+      "artifactBytes": 2550118,
+      "artifactSha256": "3d4be87029dd644df9ad2f0a13ef3478bdcd58efd53681a7cb18e184b7f7df32",
+      "status": "failed",
+      "boundary": "Historical unselected Rust compiler-probe fixture before kernel link/VM",
+      "vmAttempts": 0
+    },
+    {
+      "source": "8e473e5e1d0575a08fd3abd0e74bb5e00284b151",
+      "runId": 40140967266,
+      "artifactId": 12578514260,
+      "artifactBytes": 19275508,
+      "artifactSha256": "0eaa07579a914e1eb07841f4fff34b396270f4b9981e28b1f876afc08b6a8679",
+      "status": "failed",
+      "boundary": "Native constructor failure; cause not observed at that head",
+      "vmAttempts": 1,
+      "validatedVmBoots": 0
+    },
+    {
+      "source": "a6931393c09352d436878ece2bc2fa01a4189bee",
+      "runId": 40142687362,
+      "artifactId": 12579259529,
+      "artifactBytes": 19277638,
+      "artifactSha256": "706b9020133a7c3266c19644c7929a0ab8c2c4efdedec733c75c9e386c1416c8",
+      "status": "failed",
+      "boundary": "Observed mint errno0/PermissionDenied; wrapper rejected unprotected tmpfs root before ioctl",
+      "vmAttempts": 1,
+      "validatedVmBoots": 0
+    }
+  ],
+  "completionBoundary": "One constructor-only native/kernel join. No whole issue738 criterion, production networking, native capacity refund or full allocation/cost closure is certified."
+}

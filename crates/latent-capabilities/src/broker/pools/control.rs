@@ -28,12 +28,15 @@ impl Control {
 pub struct ProviderJob<T> {
     result: oneshot::Receiver<T>,
 }
-/// A close-request observation only. No variant certifies backing retirement,
-/// releases a connection, or permits provider installation.
+/// Fixed close/Root-return observations. No variant is an affine refund token,
+/// releases a native connection/backing charge, or permits provider installation.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum StreamKernelCloseObservation {
     NotAttempted,
     RequestAccepted,
+    /// The protected observation file reported original kernel bank/actor puts.
+    /// Its own VFS costs and the original native owner still remain quarantined.
+    KernelRootReturned,
     Uncertain,
 }
 

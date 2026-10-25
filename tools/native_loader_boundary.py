@@ -19,6 +19,10 @@ GUEST = "tools/angular-renderer-adapter"
 # lint; this does not grant another host loader or handwritten memory operation.
 STANDARD_STDIO = "sdk/rust-standard-stdio"
 STANDARD_STDIO_SHA256 = "e62d4a4f666199e96d10908125c7a8181657ead199942b2cc5049476a1ba0731"
+# Fixed protected factory ioctl only: reviewed OwnedFd adoption, no generic
+# syscall interface. Deny remains mandatory outside its one pinned FFI module.
+STREAM_FACTORY = "crates/latent-stream-factory-native"
+STREAM_FACTORY_SHA256 = "47233b07b205adfd04cfbd22b47632576cf564d56effd6e21e675defec1b88f7"
 GUEST_ALLOW = '#[allow(unsafe_code)] // Only wit-bindgen\'s generated canonical ABI and export.\nmod abi;'
 GUEST_ABI = '''#![allow(clippy::same_length_and_capacity, reason = "wit-bindgen consumes allocations transferred by the canonical ABI")]
 #[cfg(not(feature = "backend-http"))]
@@ -125,6 +129,8 @@ def validate(root: Path) -> list[str]:
             errors.extend(validate_guest(root))
         elif member == STANDARD_STDIO:
             errors.extend(validate_standard_stdio(root, workspace["lints"]["clippy"]))
+        elif member == STREAM_FACTORY:
+            errors.extend(validate_stream_factory(root, workspace["lints"]["clippy"]))
         elif lints != {"workspace": True}:
             errors.append(f"{member} must inherit workspace unsafe-code prohibition")
     if "#![deny(unsafe_code)]" not in (root / CRATE / "src/lib.rs").read_text(encoding="utf-8"):
@@ -177,6 +183,26 @@ def validate(root: Path) -> list[str]:
             # No unsafe allowance is granted to ordinary worker admission.
         if unsafe.search(source) or lowered.search(source):
             errors.append(f"unreviewed unsafe code or allowance in {relative}")
+    return errors
+
+
+def validate_stream_factory(root: Path, clippy: dict) -> list[str]:
+    errors = []
+    crate = root / STREAM_FACTORY
+    manifest = tomllib.loads((crate / "Cargo.toml").read_text(encoding="utf-8"))
+    package_keys = {"name", "version", "edition", "rust-version", "license", "authors", "description"}
+    if set(manifest) - {"package", "lints", "target", "dev-dependencies"} or set(manifest.get("package", {})) - package_keys:
+        errors.append("fixed stream factory must not add targets, build scripts, links or unreviewed Cargo fields")
+    if manifest.get("lints") != {"rust": {"unsafe_code": "deny"}, "clippy": clippy}:
+        errors.append("stream factory must retain deny and all workspace Clippy lints")
+    target = {'cfg(all(target_os = "linux", target_arch = "x86_64"))':
+        {"dependencies": {"rustix": {"version": "=1.1.5", "features": ["fs"]}}}}
+    if manifest.get("package", {}).get("name") != "latent-stream-factory-native" or manifest.get("target") != target:
+        errors.append("fixed stream factory identity or pinned rustix target changed; review its FD ownership ABI")
+    sources = sorted(path.relative_to(crate).as_posix() for path in crate.rglob("*.rs"))
+    source = (crate / "src/lib.rs").read_text(encoding="utf-8")
+    if sources != ["src/lib.rs"] or hashlib.sha256(source.encode("utf-8")).hexdigest() != STREAM_FACTORY_SHA256:
+        errors.append("audited fixed stream factory source changed; review its sole protected ioctl and OwnedFd lifetime")
     return errors
 
 

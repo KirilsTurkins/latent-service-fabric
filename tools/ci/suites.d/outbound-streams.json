@@ -100,6 +100,32 @@
       "source": "tests/outbound_streams.rs",
       "target": "outbound_streams",
       "timeoutSeconds": 900
+    },
+    {
+      "boundary": "runtime",
+      "expectedCases": [
+        "ffi::tests::fixed_descriptor_boundary_refuses_foreign_and_preserves_actual_ownership"
+      ],
+      "expectedIgnored": [],
+      "id": "latent-stream-factory-native.lib.latent-stream-factory-native",
+      "ignoredLeaves": [],
+      "kind": "lib",
+      "manifest": "crates/latent-stream-factory-native/Cargo.toml",
+      "minimumCases": 1,
+      "mode": "libtest",
+      "package": "latent-stream-factory-native",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "src/lib.rs",
+      "target": "latent_stream_factory_native",
+      "timeoutSeconds": 120
     }
   ]
 }

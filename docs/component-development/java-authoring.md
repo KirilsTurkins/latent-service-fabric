@@ -257,6 +257,18 @@ a safe compiler repair or Java execution qualification. The
 [retained evidence](../evidence/java-public-wineh-ea252/receipt.json) binds the
 source, original module, commands, finite limits and complete scalar counts.
 
+A subsequent [selected-fiber `-O0` attempt](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40129296830)
+used identical generated C and changed only the Clang optimization argument.
+Its ten hosted source controls passed, but component assembly still refused
+`pools`: 9,904,105 bytes at `0x1b343`, above the unchanged 7,654,321-byte limit.
+WinEH preparation added 638,994 stores (379 PHIs times 1,686 invoke sites);
+volatile counts again stayed unchanged across that pass. The smaller expansion
+did not establish a compiler repair. The candidate `O0` policy, provenance enum
+and added candidate test are withdrawn; the original `FULL`/`-O2` compiler and
+`O2`-only Java provenance validation remain intact. The [failed-attempt receipt](../evidence/java-fiber-o0-a464/receipt.json)
+binds its historical source and actual failure. No runtime qualification or
+additional compiler trial follows from this measurement.
+
 `--read-only-cache /path/to/modules-2` selects a verified immutable Gradle
 dependency cache. Gradle writes locks and updates to the build's private home.
 Choose one cache mode per build. Profile selection does not change invocation

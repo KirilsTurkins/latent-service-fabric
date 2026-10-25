@@ -1,0 +1,63 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "env": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "name": "Build and test one source-bound LLVM 21 compiler",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "name": "Start the one aggregate producer budget before setup",
+        "run": "printf 'LSF_LLVM_PRODUCER_STARTED=%s\\n' \"$(date +%s)\" >> \"$GITHUB_ENV\"",
+        "shell": "bash"
+      },
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "name": "Check only the new source and controller contracts",
+        "run": "python3 -B -m unittest tools.tests.test_java_llvm_ssa_producer -v"
+      },
+      {
+        "name": "Produce one fixed compiler without Java or native guest compilation",
+        "run": "python3 -B tools/qualify_java_llvm_ssa.py --output \"$RUNNER_TEMP/java-llvm-ssa-producer\""
+      },
+      {
+        "id": "retention",
+        "if": "always()",
+        "name": "Admit only the fixed carrier and bounded evidence, including failures",
+        "run": "python3 -B tools/qualify_java_llvm_ssa.py --admit-upload --output \"$RUNNER_TEMP/java-llvm-ssa-producer\""
+      },
+      {
+        "if": "always() && steps.retention.outcome == 'success'",
+        "name": "Retain finite compiler products and actual test observations",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "compression-level": 0,
+          "if-no-files-found": "warn",
+          "name": "java-llvm-ssa-producer-${{ github.sha }}",
+          "path": "${{ runner.temp }}/java-llvm-ssa-producer/result.json\n${{ runner.temp }}/java-llvm-ssa-producer/source.json\n${{ runner.temp }}/java-llvm-ssa-producer/commands.json\n${{ runner.temp }}/java-llvm-ssa-producer/commands/**\n${{ runner.temp }}/java-llvm-ssa-producer/units.xml\n${{ runner.temp }}/java-llvm-ssa-producer/lit.xml\n${{ runner.temp }}/java-llvm-ssa-producer/sjlj-through-wineh.ll\n${{ runner.temp }}/java-llvm-ssa-producer/sjlj-through-wineh.o\n${{ runner.temp }}/java-llvm-ssa-producer/derived-sdk.tar.gz\n${{ runner.temp }}/java-llvm-ssa-producer/derived-sdk-manifest.json\n${{ runner.temp }}/java-llvm-ssa-producer/upload-admission.json\n",
+          "retention-days": 3
+        }
+      }
+    ],
+    "timeout-minutes": 95
+  },
+  "jobId": "compiler",
+  "kind": "job",
+  "reviewReason": "One source-bound 90-minute two-job compiler producer; thirteen source controls, mandatory nine LLVM units/thirteen SjLj regressions, typed mode-preserving SDK carrier, and always-run bounded upload admission; no Java execution.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/java-llvm-ssa-producer.yml"
+}
