@@ -61,6 +61,18 @@ bounded 1 MiB cache reader requires the exact generator and pool values.
 The 4,500/5,400-second maxima, all tests, guest flags and product bounds remain
 unchanged; another failure never starts an automatic retry.
 
+The four-job attempt completed the LLVM build in 3,860.83 seconds and passed
+all nine SSA units. Lit then refused its per-test timeout during configuration
+because this Python environment lacked `psutil`; no regression case executed
+and no compiler carrier qualified. The failed run and its raw observations
+remain separate from later attempts. The owning workflow now installs the
+single hash-locked Linux ABI3 `psutil` wheel before the producer. A same-Python
+preflight checks the exact version, native extension availability and the APIs
+used by pinned LLVM lit's Linux timeout path before archive acquisition.
+The original 60-second per-test timeout, all thirteen lit cases and all other
+bounds remain unchanged. This prerequisite correction is not a compiler or
+Java component qualification.
+
 Before acquisition, a bounded Linux reader records CPU affinity/process CPU
 count, physical total/available memory and current cgroup v2 ancestor limits.
 The operational preconditions are four effective CPUs, 12 GiB effective total

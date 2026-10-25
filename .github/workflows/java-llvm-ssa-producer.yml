@@ -9,6 +9,7 @@ on:
       - 'tools/java_guest/llvm_ssa_*.py'
       - 'tools/data/java-llvm-ssa/patch.json'
       - 'tools/data/java-llvm-ssa/tests.json'
+      - 'tools/data/java-llvm-ssa/requirements.lock'
       - 'tools/data/java-llvm-ssa/LICENSE.txt'
       - 'tools/tests/test_java_llvm_ssa_producer.py'
       - 'tools/build_observation.py'
@@ -38,6 +39,9 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: 3.13.5
+      - name: Install the hash-locked Linux lit timeout dependency
+        run: |
+          python3 -m pip install --require-hashes --only-binary=:all: --no-deps --requirement tools/data/java-llvm-ssa/requirements.lock
       - name: Check only the new source and controller contracts
         run: python3 -B -m unittest tools.tests.test_java_llvm_ssa_producer -v
       - name: Produce one fixed compiler without Java or native guest compilation

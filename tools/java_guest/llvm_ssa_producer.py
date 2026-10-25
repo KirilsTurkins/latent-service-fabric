@@ -34,10 +34,35 @@ RECIPE = (
     'tools/java_guest/llvm_ssa_patch.py', 'tools/java_guest/llvm_ssa_results.py',
     'tools/java_guest/llvm_ssa_distribution.py',
     'tools/data/java-llvm-ssa/patch.json', 'tools/data/java-llvm-ssa/tests.json',
+    'tools/data/java-llvm-ssa/requirements.lock',
     'tools/data/java-llvm-ssa/LICENSE.txt', 'tools/tests/test_java_llvm_ssa_producer.py',
     'tools/build_observation.py', 'tools/build_snapshot.py', 'tools/build_process.py',
     'tools/build_process_linux.py', 'tools/build_process_signals.py',
 )
+
+
+def lit_timeout_support() -> dict:
+    """Fail before acquisition, using the same Python as the actual lit call.
+
+    Pinned LLVM21 lit.util's Linux support predicate imports psutil; its kill
+    path uses Process, children(recursive=True), kill and NoSuchProcess. Never
+    exercise the destructive operation during preflight.
+    """
+    try:
+        import psutil
+    except ImportError as error:
+        raise ValueError('llvm-producer-lit-timeout-dependency-missing') from error
+    if (psutil.__version__ != '7.1.3' or not callable(psutil.Process)
+            or not callable(psutil.Process.children) or not callable(psutil.Process.kill)
+            or not isinstance(psutil.NoSuchProcess, type)
+            or not issubclass(psutil.NoSuchProcess, Exception)):
+        raise ValueError('llvm-producer-lit-timeout-dependency-identity')
+    # Exercise the installed Linux extension on this process without sending
+    # signals, spawning children or changing the existing process owner.
+    if not psutil.Process(os.getpid()).is_running():
+        raise ValueError('llvm-producer-lit-timeout-dependency-unavailable')
+    return {'name': 'psutil', 'version': psutil.__version__,
+            'litTimeoutSeconds': 60, 'support': 'pinned-lit-linux-psutil'}
 
 
 def write(path: Path, value) -> None:
@@ -403,6 +428,7 @@ def produce(output: Path) -> dict:
         record['hostCapacity'] = io.host_capacity()
         if record['hostCapacity']['status'] != 'admitted':
             raise ValueError('llvm-producer-host-capacity')
+        record['litTimeoutSupport'] = lit_timeout_support()
         tools = {}
         for name in ('git', 'cmake', 'ninja', 'gcc', 'g++', 'readelf'):
             value = shutil.which(name, path=run.env.get('PATH'))

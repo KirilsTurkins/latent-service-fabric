@@ -22,6 +22,39 @@ from tools.java_guest import llvm_ssa_distribution as distribution
 
 
 class LlvmSsaProducer(unittest.TestCase):
+    def test_lit_timeout_dependency_refuses_before_acquisition_and_keeps_the_fixed_version(self):
+        # API doubles only: actual installed-wheel/timeout qualification belongs
+        # to the hosted run. The real producer refusal must precede acquisition.
+        class Process:
+            def __init__(self, pid):
+                self.pid = pid
+            def is_running(self):
+                return self.pid == os.getpid()
+            def children(self, recursive=False):
+                return []
+            def kill(self):
+                raise AssertionError('preflight must never kill')
+        module = mock.Mock(__version__='7.1.3', Process=Process, NoSuchProcess=ProcessLookupError)
+        with mock.patch.dict(producer.sys.modules, {'psutil': module}):
+            self.assertEqual(producer.lit_timeout_support(), {
+                'name': 'psutil', 'version': '7.1.3', 'litTimeoutSeconds': 60,
+                'support': 'pinned-lit-linux-psutil'})
+            module.__version__ = '7.1.2'
+            with self.assertRaisesRegex(ValueError, 'dependency-identity'):
+                producer.lit_timeout_support()
+        with tempfile.TemporaryDirectory() as folder, \
+                mock.patch.dict(producer.sys.modules, {'psutil': None}), \
+                mock.patch.object(producer, 'admission', return_value={'remainingSeconds': 5400}), \
+                mock.patch.object(io, 'preflight'), mock.patch.object(io, 'case_sensitive'), \
+                mock.patch.object(io, 'host_capacity', return_value={'status': 'admitted'}), \
+                mock.patch.object(io, 'acquire') as acquired:
+            root = Path(folder) / 'refused-build'
+            with self.assertRaisesRegex(ValueError, 'lit-timeout-dependency-missing'):
+                producer.produce(root)
+            acquired.assert_not_called()
+            self.assertEqual(json.loads((root / 'result.json').read_bytes())['failure'],
+                             'llvm-producer-lit-timeout-dependency-missing')
+
     def test_fixed_host_capacity_reads_ancestor_limits_and_refuses_before_acquisition(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)

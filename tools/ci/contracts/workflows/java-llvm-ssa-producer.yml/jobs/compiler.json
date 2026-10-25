@@ -27,6 +27,10 @@
         }
       },
       {
+        "name": "Install the hash-locked Linux lit timeout dependency",
+        "run": "python3 -m pip install --require-hashes --only-binary=:all: --no-deps --requirement tools/data/java-llvm-ssa/requirements.lock\n"
+      },
+      {
         "name": "Check only the new source and controller contracts",
         "run": "python3 -B -m unittest tools.tests.test_java_llvm_ssa_producer -v"
       },
@@ -57,7 +61,7 @@
   },
   "jobId": "compiler",
   "kind": "job",
-  "reviewReason": "One source-bound 90-minute producer with a 75-minute build maximum, four total Ninja jobs, compile pool 4/link pool 1/install 2; measured host-capacity preconditions and generated-cache proof. Preserve all 16 source controls, nine LLVM units, 13 original SjLj regressions and typed product admission. No Java execution or normal SDK29 default change.",
+  "reviewReason": "Hash-lock the psutil Linux timeout dependency and preflight before costly acquisition; preserve original 60s lit timeout, 13 regressions, nine units, 17 source controls, 75/90 minute maxima, exact branch and product admission.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-llvm-ssa-producer.yml"
 }
