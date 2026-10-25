@@ -886,6 +886,10 @@ class RepositoryMigrationTests(unittest.TestCase):
         java_assembly_selector = data['workflowContracts']['.github/workflows/java-guest-feasibility.yml']['on']['workflow_dispatch']['inputs']['public_fiber_assembly']
         self.assertEqual(java_assembly_selector['type'], 'boolean')
         self.assertIs(java_assembly_selector['default'], False)
+        for name in ('public_fiber_derived_llvm', 'public_fiber_private_scalar_llvm'):
+            selector = data['workflowContracts']['.github/workflows/java-guest-feasibility.yml']['on']['workflow_dispatch']['inputs'][name]
+            self.assertEqual(selector['type'], 'boolean')
+            self.assertIs(selector['default'], False)
         lane_baseline = contracts.read_json(ROOT / "tools/tests/fixtures/ci_lane_baseline.json")
         for key, original in legacy["after"].items():
             value = dict(original)
@@ -907,7 +911,7 @@ class RepositoryMigrationTests(unittest.TestCase):
                 self.assertEqual(value['jobIf'], 'success()', key)
                 # Only these explicit manual modes exclude the unchanged full
                 # job; default, PR and ordinary dispatch retain every command.
-                value['jobIf'] = "${{ (github.event_name != 'workflow_dispatch' || !inputs.java_http_spi) && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_assembly) }}"
+                value['jobIf'] = "${{ (github.event_name != 'workflow_dispatch' || !inputs.java_http_spi) && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_assembly) && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_derived_llvm) && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_private_scalar_llvm) }}"
             if value["workflow"] == ".github/workflows/ci.yml" and value["job"] in {"rust", "contracts"}:
                 # Exact commands survive; the reviewed fixed matrix allocates
                 # every obligation to its required, failure-propagating lane.
