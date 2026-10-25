@@ -11,12 +11,15 @@ from tools.rust_capsule_project import ROOT, digest, write_json
 from tools.tests import test_dotnet_task_wait as controls
 
 FIXTURE = ROOT / 'sdk/dotnet-guest/tests/fixtures/aggregate-task-wait-rewrite.json'
+CONTROL_FIXTURE = ROOT / 'sdk/dotnet-guest/tests/fixtures/aggregate-task-wait-v2-controlled.json'
 DECLARATIONS = [runtime.CLOCK, runtime.ACTIVATION, runtime.WALL, runtime.RANDOM]
 
 
 class AggregateTaskWaitPortTests(unittest.TestCase):
     def receipt(self):
-        return json.loads(FIXTURE.read_bytes())
+        # A controlled v2 shape, not an observed v2 assembly receipt. Keep the
+        # authenticated v1 fixture immutable; fake tools bind their own bytes.
+        return json.loads(CONTROL_FIXTURE.read_bytes())
 
     def test_authenticated_receipt_refuses_every_missing_or_cross_typed_aggregate_identity(self):
         original = self.receipt()
@@ -41,6 +44,11 @@ class AggregateTaskWaitPortTests(unittest.TestCase):
         value = copy.deepcopy(original)
         value['managedAcceptedWork']['modifiedOriginalMethods'].popitem()
         changes.append(value)
+        for key, replacement in (('originalBodyIdentity', '0'*64), ('rewrittenBodyIdentity', '0'*64),
+                                 ('inverseExact', False), ('originalIlBytes', True), ('nativeOwners', 1)):
+            value = copy.deepcopy(original)
+            value['aggregateTaskWait']['timerPump'][key] = replacement
+            changes.append(value)
         for value in changes:
             with self.subTest(value=value), self.assertRaises(ValueError):
                 task_wait.validate_receipt(value, finite=True, managed=True, aggregate=True)
@@ -50,9 +58,10 @@ class AggregateTaskWaitPortTests(unittest.TestCase):
         original = self.receipt()
         legacy = copy.deepcopy(original)
         del legacy['aggregateTaskWait']
-        legacy.update(generatedHelperCount=91, unchangedOriginalMethods=44719)
+        legacy.update(generatedHelperCount=91, unchangedOriginalMethods=44719, timerDriverScheduledToFire='untouched')
         task_wait.validate_receipt(legacy, finite=True, managed=True)
-        for value, flags in ((legacy, (True, True, True)), (original, (True, True, False)),
+        for value, flags in ((json.loads(FIXTURE.read_bytes()), (True, True, True)),
+                             (legacy, (True, True, True)), (original, (True, True, False)),
                              (original, (True, False, True)), (original, (False, True, True)),
                              (original, (True, True, 1))):
             with self.subTest(flags=flags), self.assertRaises(ValueError):

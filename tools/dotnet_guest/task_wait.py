@@ -89,7 +89,8 @@ def validate_receipt(value: dict, *, finite: bool = False, managed: bool = False
                 or type(value.get('outputDigest')) is not str
                 or re.fullmatch(r'sha256:[0-9a-f]{64}', value['outputDigest']) is None):
             raise ValueError('task-wait-aggregate-managed-and-output-identities')
-        fixed.update(generatedHelperCount=95, unchangedOriginalMethods=44710,
+        fixed.update(generatedHelperCount=95, unchangedOriginalMethods=44709,
+            timerDriverScheduledToFire='positive-batch-detachment-before-original-enumerator',
             aggregateTaskWait=value['aggregateTaskWait'])
     bodies = value.get('timerDriverOriginalBodies')
     cache_bodies = value.get('zeroCacheOriginalBodies')

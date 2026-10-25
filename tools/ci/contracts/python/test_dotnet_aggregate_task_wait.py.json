@@ -15,8 +15,8 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:3b2c8da9864fc1cf11cdadd5163b6e068854fe3455b1dbac75effd79cef2b2e5",
-        "class:setup-sha256:d9d3d387dd625de5f1745a5a63c7012699862cebb8b4d2b4b82ced885ca714d0"
+        "module:setup-sha256:17c96c7e3ac3ba7d9e00b4ebd217b2859b76f8df7c93a282901dd13a9ee9acbf",
+        "class:setup-sha256:5ab2068e1b51c2806546c883d2f441480cd4d205b1c83ec671df4d96aab96ea3"
       ],
       "skipSites": []
     },
@@ -27,8 +27,8 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:3b2c8da9864fc1cf11cdadd5163b6e068854fe3455b1dbac75effd79cef2b2e5",
-        "class:setup-sha256:d9d3d387dd625de5f1745a5a63c7012699862cebb8b4d2b4b82ced885ca714d0"
+        "module:setup-sha256:17c96c7e3ac3ba7d9e00b4ebd217b2859b76f8df7c93a282901dd13a9ee9acbf",
+        "class:setup-sha256:5ab2068e1b51c2806546c883d2f441480cd4d205b1c83ec671df4d96aab96ea3"
       ],
       "skipSites": []
     },
@@ -39,8 +39,8 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:3b2c8da9864fc1cf11cdadd5163b6e068854fe3455b1dbac75effd79cef2b2e5",
-        "class:setup-sha256:d9d3d387dd625de5f1745a5a63c7012699862cebb8b4d2b4b82ced885ca714d0"
+        "module:setup-sha256:17c96c7e3ac3ba7d9e00b4ebd217b2859b76f8df7c93a282901dd13a9ee9acbf",
+        "class:setup-sha256:5ab2068e1b51c2806546c883d2f441480cd4d205b1c83ec671df4d96aab96ea3"
       ],
       "skipSites": []
     },
@@ -51,8 +51,8 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:3b2c8da9864fc1cf11cdadd5163b6e068854fe3455b1dbac75effd79cef2b2e5",
-        "class:setup-sha256:d9d3d387dd625de5f1745a5a63c7012699862cebb8b4d2b4b82ced885ca714d0"
+        "module:setup-sha256:17c96c7e3ac3ba7d9e00b4ebd217b2859b76f8df7c93a282901dd13a9ee9acbf",
+        "class:setup-sha256:5ab2068e1b51c2806546c883d2f441480cd4d205b1c83ec671df4d96aab96ea3"
       ],
       "skipSites": []
     },
@@ -63,8 +63,8 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:3b2c8da9864fc1cf11cdadd5163b6e068854fe3455b1dbac75effd79cef2b2e5",
-        "class:setup-sha256:d9d3d387dd625de5f1745a5a63c7012699862cebb8b4d2b4b82ced885ca714d0"
+        "module:setup-sha256:17c96c7e3ac3ba7d9e00b4ebd217b2859b76f8df7c93a282901dd13a9ee9acbf",
+        "class:setup-sha256:5ab2068e1b51c2806546c883d2f441480cd4d205b1c83ec671df4d96aab96ea3"
       ],
       "skipSites": []
     },
@@ -75,14 +75,14 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:3b2c8da9864fc1cf11cdadd5163b6e068854fe3455b1dbac75effd79cef2b2e5",
-        "class:setup-sha256:d9d3d387dd625de5f1745a5a63c7012699862cebb8b4d2b4b82ced885ca714d0"
+        "module:setup-sha256:17c96c7e3ac3ba7d9e00b4ebd217b2859b76f8df7c93a282901dd13a9ee9acbf",
+        "class:setup-sha256:5ab2068e1b51c2806546c883d2f441480cd4d205b1c83ec671df4d96aab96ea3"
       ],
       "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_dotnet_aggregate_task_wait.py",
-  "reviewReason": "Promote only the existing declaration-guarded managed finite selection to the authenticated 95-helper aggregate derivation; retain old modes/evidence and all limits, and add one normal Polly NativeAOT component with fourteen signed outcomes, source-exact v10 product reuse and bounded public evidence.",
+  "reviewReason": "Preserve six case identities and all bases/decorators/skips; bind the separate controlled v2 receipt and strict guarded Pump detachment identities without reinterpreting the observed v1 fixture.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

@@ -16,7 +16,8 @@ existing activation adapter; it adds no network import, provider or grant.
 The current compiler source also selects the aggregate Task.WaitAll derivation
 inside that same managed finite path, with the authenticated async export and
 all four declarations still required. Its strict receipt binds 95 helpers, the
-nine original WaitAll preimages/remainders and fifteen derived bodies; the final
+nine original WaitAll preimages/remainders plus the guarded timer Pump and sixteen
+derived bodies (the fifteen existing identities remain exact); the final
 closed-filesystem/ILC reference chain retains that exact intermediate. There is
 no new application flag or automatic grant. Fresh signed NativeAOT qualification
 of this normal selection is pending; the CLR reference below is its prerequisite,
@@ -24,6 +25,20 @@ not a substitute. Outside this selected finite path, the original unsupported
 WaitAll contexts remain unsupported. WaitAny, general threads/monitors, whole
 runtime compatibility, physical ownership costs and production rollout are not
 qualified by this source change.
+
+The first normal NativeAOT programme at sourcee36c6708f9d5f54bbaa688494b1cf764e420da0b
+compiled, packaged and admitted the component and passed its first eight strict
+cases. [Run40184556525](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40184556525)
+then failed the nested single-wait timer case with public GuestTrap/unreachable;
+five later outcomes were not completed. Its private exception was unavailable,
+and that programme remains failed. Source inspection found the pinned timer pump
+reuses one static list across a live callback enumeration and nested pumping.
+The selected v2 derivation now detaches only a positive batch to a fresh original
+typed list before its original enumerator. Original callbacks, Clear/finally and
+FailFast remain intact. This adds managed allocation under the unchanged guest
+heap budget; it is not allocation-free or a cost qualification. The v2 fixture
+used by host controls is explicitly controlled data, not an observed v2 DLL or
+signed result. The same fourteen-outcome signed qualification is still pending.
 
 The private `dotnet-stackful-task-wait-v1` derivation preserves the exact original
 CoreLib preimage, dispatch, ExecutionContext entry/restore and TaskAwaiter error

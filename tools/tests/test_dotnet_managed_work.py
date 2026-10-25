@@ -120,7 +120,7 @@ class ManagedWorkContractTests(unittest.TestCase):
         def run(stage, *arguments):
             self.assertEqual(arguments[2], '--aggregate-task-wait')
             arguments[-2].write_bytes(b'explicit-managed-tool-control')
-            value = json.loads((ROOT / 'sdk/dotnet-guest/tests/fixtures/aggregate-task-wait-rewrite.json').read_text())
+            value = json.loads((ROOT / 'sdk/dotnet-guest/tests/fixtures/aggregate-task-wait-v2-controlled.json').read_text())
             value['outputDigest'] = digest(b'explicit-managed-tool-control')
             write_json(arguments[-1], value)
         control.run_tool = run
