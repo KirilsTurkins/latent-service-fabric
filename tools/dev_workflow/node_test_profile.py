@@ -13,7 +13,10 @@ def scope(descriptor: dict) -> dict:
     return {name: descriptor[name] for name in ("language", "tenant", "service")}
 
 
-def configuration(original: dict, descriptor: dict, fixtures: dict | None = None, *, root: Path | None = None) -> tuple[dict, dict]:
+def configuration(original: dict, descriptor: dict, fixtures: dict | None = None, *, root: Path | None = None,
+                  local_service_refusal_observation: bool = False) -> tuple[dict, dict]:
+    require(type(local_service_refusal_observation) is bool and (not local_service_refusal_observation
+            or fixtures is not None and "localService" in fixtures), "explicit-local-service-observation-required")
     require(original["securityProfile"] == "local-experimental-v1", "test-profile-requires-local-installation")
     require(descriptor["tenant"] == "examples" and "providers" not in original,
             "test-profile-will-not-replace-existing-providers")
@@ -57,6 +60,10 @@ def configuration(original: dict, descriptor: dict, fixtures: dict | None = None
         "maximumMemoryBytes": 134217728 if descriptor["language"] in {"dotnet", "typescript"} else 67108864}]
     if "localService" in selected:
         value["cells"][0].update(capacity=2, queueCapacity=4)
+        if local_service_refusal_observation:
+            require("developmentLocalServiceObservation" not in original, "test-profile-will-not-replace-existing-local-observation")
+            value["developmentLocalServiceObservation"] = {"formatVersion": 1, "consent": True,
+                "purpose": "disposable-local-service-refusal-observation"}
         value["budgetProfile"].update(maximumChildCalls=16, maximumDepth=2,
                                       maximumLiveDescendants=2, maximumLiveChildren=1)
     value.setdefault("execution", {}).update(maximumWallTimeMillis=120000, maximumCpuFuel=10000000000)
@@ -90,7 +97,10 @@ def configuration(original: dict, descriptor: dict, fixtures: dict | None = None
 
 
 def prepare(root: Path, descriptor: dict, *, consent: bool, admission: str = "trusted-local",
-            tool_root: Path | None = None, fixtures: dict | None = None) -> dict:
+            tool_root: Path | None = None, fixtures: dict | None = None,
+            local_service_refusal_observation: bool = False) -> dict:
+    require(type(local_service_refusal_observation) is bool and (not local_service_refusal_observation
+            or fixtures is not None and "localService" in fixtures), "explicit-local-service-observation-required")
     require(consent is True and root.name.startswith("test-"), "explicit-disposable-test-fixture-consent-required")
     require(admission in {"trusted-local", "signed-fixture"}, "explicit-test-admission-required")
     require(admission == "signed-fixture" or descriptor["language"] not in {"java", "dotnet", "go"},
@@ -125,18 +135,23 @@ def prepare(root: Path, descriptor: dict, *, consent: bool, admission: str = "tr
             require(plan["scope"] == scope(descriptor) and plan["admission"] == admission,
                     "test-profile-is-owned-by-another-project")
             require(plan.get("fixtures") == fixtures, "test-fixture-selection-changed")
+            require(plan.get("localServiceRefusalObservation", False) is local_service_refusal_observation,
+                    "local-service-observation-selection-changed")
             require(digest(raw) == plan["after"] or "configuration" in plan and digest(raw) == plan["before"],
                     "test-node-configuration-changed")
         else:
             original = decode(raw)
             require(original["dataDirectory"] == str(runtime / "data"), "test-node-data-owner")
-            value, selected = configuration(original, descriptor, fixtures, root=root)
+            value, selected = configuration(original, descriptor, fixtures, root=root,
+                local_service_refusal_observation=local_service_refusal_observation)
             if signing is not None:
                 value["supplyChain"] = {"mode": "enforced", "policyFile": str(root / "test-signing/policy.json")}
             fixture_check = node_fixtures.check_configuration(root, value) if fixtures is not None else None
             plan = {"scope": scope(descriptor), "before": digest(raw), "after": digest(encode(value)),
                     "configuration": value, "providers": selected, "profile": value["securityProfile"],
                     "admission": admission, "signing": signing, "fixtures": fixtures, "fixtureCheck": fixture_check}
+            if local_service_refusal_observation:
+                plan["localServiceRefusalObservation"] = True
             # This plan contains the existing private node configuration and
             # stays in the private workspace. It is never included in a report.
             state.atomic(root, "test-profile-plan.json", plan)

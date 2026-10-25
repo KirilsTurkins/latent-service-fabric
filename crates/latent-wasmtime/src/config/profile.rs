@@ -206,6 +206,13 @@ impl WasmtimeConfig {
                 ),
             );
         }
+        #[cfg(feature = "development-local-service-fixture")]
+        if self.development_local_service_refusals {
+            fields.insert(
+                "development-local-service-refusals".into(),
+                "first-per-activation-v1".into(),
+            );
+        }
         self.context_policy.append_profile_fields(&mut fields);
         fields
     }
