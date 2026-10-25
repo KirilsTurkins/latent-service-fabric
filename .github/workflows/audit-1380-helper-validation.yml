@@ -38,7 +38,8 @@ jobs:
           set -euo pipefail
           python3 -m unittest tools.tests.test_dev_tools tools.tests.test_guest_compatibility_outcomes tools.tests.test_dev_watch tools.tests.test_dev_contracts tools.tests.test_dev_workflow tools.tests.test_ci_contracts tools.tests.test_build_source_capacity > "$RUNNER_TEMP/audit-helper/tests.log" 2>&1 || { tail -120 "$RUNNER_TEMP/audit-helper/tests.log"; exit 1; }
           tail -12 "$RUNNER_TEMP/audit-helper/tests.log"
-          python3 tools/ci_coverage.py --receipt "$RUNNER_TEMP/audit-helper/coverage.json"
+          python3 tools/ci_coverage.py --receipt target/ci/audit-helper-coverage.json
+          cp target/ci/audit-helper-coverage.json "$RUNNER_TEMP/audit-helper/coverage.json"
       - name: Retain tested code without updating the feature branch
         env:
           GH_TOKEN: ${{ github.token }}
