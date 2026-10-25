@@ -213,4 +213,156 @@ class OriginalOutcome(unittest.TestCase):
         self.assertNotIn('private-provider-message', encode(value).decode())
 
 
+class TypeScriptNetContext(unittest.TestCase):
+    """Actual build/context readers with source-bound finite Socket receipts."""
+
+    def setUp(self):
+        from tools.typescript_guest import net_profile, runtime_profile
+        from tools.rust_capsule_project import ROOT, inventory, read_file
+        from tools import guest_runtime_receipts
+        owned = tempfile.TemporaryDirectory(); self.addCleanup(owned.cleanup)
+        self.output = Path(owned.name)
+        self.profile = net_profile
+        self.inventory = inventory
+        self.files = {'sdk-lock.json': encode({'version': 1}),
+            'capsule-project.json': encode({'runtimeProfile': runtime_profile.IMPORT_PROFILE}),
+            'vendor/lsf/' + net_profile.DECLARATION: read_file(ROOT/net_profile.DECLARATION),
+            'vendor/lsf/' + net_profile.WIT: read_file(ROOT/net_profile.WIT)}
+        self.source = inventory(self.files)
+        self.recipe = inventory({name: read_file(ROOT/name) for name in net_profile.RECIPE})
+        (self.output/'recipe-inputs.json').write_bytes(self.recipe)
+        self.identities = net_profile.identities(ROOT)
+        self.selection = net_profile.selected({'standardNetModules': ['node:net'],
+            'standardNetProfile': net_profile.PROFILE, 'standardNetIdentities': self.identities}, self.identities)
+        self.raw = encode(self.selection)
+        (self.output/'typescript-net-selection.json').write_bytes(self.raw)
+        self.materials = [{'name': 'build-recipe', 'digest': digest(self.recipe), 'size': len(self.recipe)},
+            {'name': 'typescript-standard-net', 'digest': digest(self.raw), 'size': len(self.raw)}]
+        self.materials.append(guest_runtime_receipts.emit(self.output, 'typescript', runtime_profile.IMPORT_PROFILE,
+            self.files, self.source, COMPONENT, self.materials, graph=None,
+            binding_digest=digest(b'original binding output'), configuration={'world': 'source-only-fixture'}))
+        observed = compatibility.report('typescript', digest(self.source), digest(COMPONENT),
+            'lsf-host-abi-phase3-v5', [],
+            [compatibility.finding('unresolved-behavior', 'initialization', 'not-evaluated')])
+        self.report_raw = encode(observed)
+        (self.output/'compatibility-report.json').write_bytes(self.report_raw)
+
+    def finish(self):
+        return builder.finish(self.output, self.files, self.source, COMPONENT, self.materials)
+
+    def test_selected_socket_source_mapping_preserves_unknown_qualification_and_report(self):
+        value = self.finish(); text = context.present(value)
+        self.assertEqual((self.output/'compatibility-report.json').read_bytes(), self.report_raw)
+        self.assertEqual(value['qualification'], 'unknown')
+        self.assertEqual(value['authority'], 'none')
+        self.assertEqual(value['workerDrain'], 'unproven')
+        self.assertEqual(value['standardRuntime']['ownerIssue'], 745)
+        self.assertIn('net, node:net; profile lsf-node-net-tcp-v1', text)
+        self.assertIn('implementation/qualification owner #745; qualification unknown; authority none', text)
+        for identity in (*self.identities.values(), digest(self.raw), digest(self.recipe)):
+            self.assertIn(identity, text)
+        self.assertNotIn('buffer, node:buffer', text)
+
+    def test_captured_declaration_and_interface_cannot_borrow_another_recipe(self):
+        for path in (self.profile.DECLARATION, self.profile.WIT):
+            with self.subTest(path=path):
+                changed = dict(self.files); changed['vendor/lsf/' + path] += b'\n'
+                with self.assertRaisesRegex(DevError, 'net-captured-input-drift'):
+                    builder.typescript_net_materials(self.raw, self.recipe, self.inventory(changed))
+        import json
+        recipe = json.loads(self.recipe)
+        del recipe[self.profile.BINDINGS]
+        with self.assertRaisesRegex(DevError, 'net-input-missing'):
+            builder.typescript_net_materials(self.raw, encode(recipe), self.source)
+
+    def test_changed_or_forged_selection_and_unbound_owner_are_refused(self):
+        for field, forged in (('maximumSocketStates', 2.0), ('tlsApi', 0),
+                              ('qualification', 'passed'), ('authority', 'granted')):
+            with self.subTest(field=field):
+                changed = copy.deepcopy(self.selection); changed[field] = forged
+                with self.assertRaisesRegex(DevError, 'net-selection-drift'):
+                    builder.typescript_net_materials(encode(changed), self.recipe, self.source)
+        (self.output/'typescript-net-selection.json').write_bytes(encode({**self.selection, 'profile': 'changed'}))
+        with self.assertRaisesRegex(DevError, 'stale-or-unbound-receipt'):
+            self.finish()
+        (self.output/'typescript-net-selection.json').write_bytes(self.raw)
+        (self.output/'standard-runtime-selection.json').unlink()
+        self.materials = [row for row in self.materials if row['name'] != 'standard-runtime-selection']
+        with self.assertRaisesRegex(DevError, 'net-owner-required'):
+            self.finish()
+
+    def test_rehashed_partial_or_wrong_owner_context_cannot_present_socket_mapping(self):
+        original = self.finish()
+        for alteration in ('partial', 'wrong-owner'):
+            changed = copy.deepcopy(original)
+            if alteration == 'partial':
+                changed['materials'] = [row for row in changed['materials']
+                    if row['name'] != 'typescript-standard-net-transport']
+            else:
+                changed['standardRuntime']['ownerIssue'] = 744
+            changed['identity'] = digest(encode({key: item for key, item in changed.items() if key != 'identity'}))
+            with self.subTest(alteration=alteration), self.assertRaisesRegex(DevError, 'net-module-'):
+                context.present(changed)
+
+    def test_original_outcome_reader_rejects_changed_and_rehashed_socket_sources(self):
+        original = self.finish()
+        (self.output/'source-inputs.json').write_bytes(self.source)
+        descriptor = {'artifacts': {'component': 'component.wasm'}}
+        receipt = {'source': digest(b'original frontend'), 'artifacts': {'component': digest(COMPONENT)}}
+
+        def read():
+            return outcomes.from_build(self.output, descriptor, receipt).context_state
+
+        self.assertEqual(read(), 'observed')
+        stripped = copy.deepcopy(original)
+        stripped['materials'] = [row for row in stripped['materials'] if row['name'] not in context.NET_MATERIALS]
+        stripped['identity'] = digest(encode({key: item for key, item in stripped.items() if key != 'identity'}))
+        (self.output/'compatibility-context.json').write_bytes(encode(stripped))
+        self.assertEqual(read(), 'invalid-present')
+        changed = copy.deepcopy(original)
+        next(row for row in changed['materials']
+             if row['name'] == 'typescript-standard-net-backend')['digest'] = digest(b'forged backend')
+        changed['identity'] = digest(encode({key: item for key, item in changed.items() if key != 'identity'}))
+        (self.output/'compatibility-context.json').write_bytes(encode(changed))
+        self.assertEqual(read(), 'invalid-present')
+        # Rehashing the recipe, selection and context together cannot borrow the
+        # original runtime owner's signed input identities either.
+        import json
+        recipe = json.loads(self.recipe)
+        recipe[self.profile.BACKEND]['digest'] = digest(b'forged backend')
+        recipe_raw = encode(recipe)
+        selected = copy.deepcopy(self.selection)
+        selected['identities']['backend'] = digest(b'forged backend')
+        selected_raw = encode(selected)
+        (self.output/'recipe-inputs.json').write_bytes(recipe_raw)
+        (self.output/'typescript-net-selection.json').write_bytes(selected_raw)
+        replacements = {'build-recipe': digest(recipe_raw), 'typescript-standard-net': digest(selected_raw)}
+        for row in changed['materials']:
+            if row['name'] in replacements:
+                row['digest'] = replacements[row['name']]
+        changed['identity'] = digest(encode({key: item for key, item in changed.items() if key != 'identity'}))
+        (self.output/'compatibility-context.json').write_bytes(encode(changed))
+        self.assertEqual(read(), 'invalid-present')
+        (self.output/'recipe-inputs.json').write_bytes(self.recipe)
+        (self.output/'typescript-net-selection.json').write_bytes(self.raw)
+        (self.output/'compatibility-context.json').write_bytes(encode(original))
+        self.assertEqual(read(), 'observed')
+
+    def test_complete_socket_mapping_survives_original_material_limit(self):
+        from tools import guest_runtime_receipts
+        from tools.typescript_guest.runtime_profile import IMPORT_PROFILE
+        self.materials = [row for row in self.materials if row['name'] != 'standard-runtime-selection']
+        self.materials += [{'name': 'a-tool-' + str(index), 'digest': digest(str(index).encode()), 'size': 1}
+                           for index in range(61)]
+        (self.output/'standard-runtime-selection.json').unlink()
+        self.materials.append(guest_runtime_receipts.emit(self.output, 'typescript', IMPORT_PROFILE,
+            self.files, self.source, COMPONENT, self.materials, graph=None,
+            binding_digest=digest(b'original binding output'), configuration={'world': 'source-only-fixture'}))
+        value = self.finish()
+        self.assertEqual(len(value['materials']), 64)
+        self.assertGreater(value['omittedMaterials'], 0)
+        self.assertEqual(set(context.net_module(value)), {*context.NET_MATERIALS, 'build-recipe'})
+        self.assertLessEqual(len(encode(value)), context.MAX_BYTES)
+
+
 if __name__ == '__main__': unittest.main()

@@ -154,16 +154,20 @@ class TypeScriptAuthoringTests(unittest.TestCase):
                 self.assertEqual(
                     sorted(path for path in files if path.startswith("vendor/lsf/sdk/typescript-guest/runtime/")),
                     ["vendor/lsf/sdk/typescript-guest/runtime/buffer.d.ts",
+                     "vendor/lsf/sdk/typescript-guest/runtime/net.d.ts",
                      "vendor/lsf/sdk/typescript-guest/runtime/text.ts"])
                 self.assertEqual(files["vendor/lsf/sdk/typescript-guest/runtime/buffer.d.ts"],
                                  (project.ROOT / "sdk/typescript-guest/runtime/buffer.d.ts").read_bytes())
+                self.assertEqual(files["vendor/lsf/sdk/typescript-guest/runtime/net.d.ts"],
+                                 (project.ROOT / "sdk/typescript-guest/runtime/net.d.ts").read_bytes())
                 self.assertFalse(any("tests/model" in path for path in files))
                 files["src/main.ts"] += b"\n// application edit\n"
                 files["wit/world.wit"] += b"\n// contract edit\n"
                 project.validate(files)
 
     def test_sdk_wit_and_compiler_lock_drift_are_rejected(self):
-        for name in ("sdk/typescript-guest/capabilities/owner.ts", "tools/toolchain.toml",
+        for name in ("sdk/typescript-guest/runtime/net.d.ts",
+                     "sdk/typescript-guest/capabilities/owner.ts", "tools/toolchain.toml",
                      "wit/platform/http-v2/package.wit", "sdk/typescript-guest/tools/package-lock.json"):
             files = dict(self.files)
             files["vendor/lsf/" + name] += b"\n"

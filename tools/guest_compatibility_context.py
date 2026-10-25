@@ -13,6 +13,27 @@ KINDS = {"sdk", "compiler", "runtime", "patch", "build-tool", "generated", "depe
 BUFFER_PROFILE = 'lsf-node-buffer-v1'
 BUFFER_MATERIALS = ('typescript-standard-buffer', 'typescript-standard-buffer-backend',
                     'typescript-standard-buffer-declaration')
+NET_PROFILE = 'lsf-node-net-tcp-v1'
+NET_PARTS = ('backend', 'transport', 'bindings', 'resolver', 'declaration', 'interface')
+NET_MATERIALS = ('typescript-standard-net', *(f'typescript-standard-net-{part}' for part in NET_PARTS))
+
+
+def net_module(value):
+    """Identify the complete source-bound Socket subgroup, never API support."""
+    rows = {row['name']: row for row in value['materials']
+            if row['kind'] == 'runtime' and row['name'] in NET_MATERIALS}
+    if not rows:
+        return None
+    require(value['language'] == 'typescript' and set(rows) == set(NET_MATERIALS)
+            and all(row.get('profile') == NET_PROFILE for row in rows.values()),
+            'compatibility-context-net-module-group')
+    owner = value['standardRuntime']
+    require(owner.get('state') == 'selected-unqualified'
+            and owner.get('receiptName') == 'standard-runtime-selection.json' and owner.get('ownerIssue') == 745,
+            'compatibility-context-net-module-owner')
+    recipes = [row for row in value['materials'] if row['kind'] == 'compiler' and row['name'] == 'build-recipe']
+    require(len(recipes) == 1, 'compatibility-context-net-module-recipe')
+    return {**rows, 'build-recipe': recipes[0]}
 
 
 def buffer_module(value):
@@ -113,6 +134,7 @@ def validate(value, *, report=None, source=None, component=None, expected_materi
         require(key not in seen, 'compatibility-context-duplicate-material')
         seen.add(key)
     buffer_module(value)
+    net_module(value)
     if selection['state'] == 'selected-unqualified':
         require(any(item['kind'] == 'runtime' and item['digest'] == selection['receiptDigest']
                     and item.get('profile') == selection['profile'] for item in value['materials']),
@@ -159,8 +181,18 @@ def present(value):
                  + '; backend ' + module[BUFFER_MATERIALS[1]]['digest']
                  + '; declaration ' + module[BUFFER_MATERIALS[2]]['digest']
                  + '; recipe ' + module['build-recipe']['digest'] + '.\n')
+    net = net_module(value)
+    if net is not None:
+        text += ('SELECTED runtime module: net, node:net; profile ' + NET_PROFILE
+                 + '; implementation/qualification owner #745; qualification unknown; authority none'
+                 + '; receipt ' + net[NET_MATERIALS[0]]['digest']
+                 + ''.join('; ' + part + ' ' + net[name]['digest']
+                           for part, name in zip(NET_PARTS, NET_MATERIALS[1:]))
+                 + '; recipe ' + net['build-recipe']['digest'] + '.\n')
     for row in value['materials']:
         if module is not None and row['kind'] == 'runtime' and row['name'] in BUFFER_MATERIALS:
+            continue
+        if net is not None and row['kind'] == 'runtime' and row['name'] in NET_MATERIALS:
             continue
         transformed = row['kind'] == 'generated' and {'originalDigest', 'transformDigest'} <= row.keys()
         if row['kind'] not in {'runtime', 'patch', 'dependency'} and not transformed:

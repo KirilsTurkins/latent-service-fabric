@@ -1,0 +1,26 @@
+[package]
+name = "latent-stream-factory-native"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "Private fixed Linux factory observation descriptor boundary."
+
+[lints.rust]
+# The fixed private ioctl adapter alone may opt into unsafe. Workspace and
+# latent-streams forbid remain unchanged; no generic syscall API is exported.
+unsafe_code = "deny"
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+module_name_repetitions = "allow"
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
+
+[target.'cfg(all(target_os = "linux", target_arch = "x86_64"))'.dependencies]
+rustix = { version = "=1.1.5", features = ["fs"] }
+
+[dev-dependencies]
+tempfile.workspace = true
