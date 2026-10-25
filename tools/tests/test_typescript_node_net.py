@@ -783,10 +783,10 @@ class NodeNetOwningControls(unittest.TestCase):
                 guardAttribution='source-only' if mode==4 else 'not-applicable',recordedAdmissionRefusal=False,
                 postRoot=owners(False),heldOwnerBeforePermit=owners(True) if mode in (1,3,4) else None,
                 controlPeerEOF=mode in (1,3,4),primaryReleasedAfterObservation=mode==4)
-        reference = {'name':'node-net-reference-t32-q32-v1',
-            'runtimeLimits':{'tasks':32,'executors':2,'queuedWork':32,'waits':8,'timers':8,'results':8,'native':64},
+        reference = {'name':'node-net-reference-t32-q32-n128-v1',
+            'runtimeLimits':{'tasks':32,'executors':2,'queuedWork':32,'waits':8,'timers':8,'results':8,'native':128},
             'activationRuntimeProfile':'activation-owned-v1',
-            'runtimeLimitsConfiguration':'RuntimeLimits { tasks: 32, executors: 2, queued_work: 32, waits: 8, timers: 8, results: 8, native_owners: 64 }',
+            'runtimeLimitsConfiguration':'RuntimeLimits { tasks: 32, executors: 2, queued_work: 32, waits: 8, timers: 8, results: 8, native_owners: 128 }',
             'preparation':{'backend':'wasmtime-component-phase-1','release':'sha256:'+'1'*64,
                 'publication':'publication:sha256:'+'2'*64,'componentDigest':'sha256:'+'1'*64,
                 'engineConfigurationDigest':'blake3:'+'3'*64,'engineVersion':'48.0.7',
@@ -803,8 +803,10 @@ class NodeNetOwningControls(unittest.TestCase):
         self.assertEqual(owner.node_net_records(raw(cases)), cases)
         # No missing, mixed, boolean, expanded or relabelled stress-profile limits.
         for replacement in (None,{}, {**reference,'name':'node-net-reference-t16-q16-v1'},
+                {**reference,'name':'node-net-reference-t32-q32-v1'},
                 {**reference,'runtimeLimits':{**reference['runtimeLimits'],'tasks':16}},
                 {**reference,'runtimeLimits':{**reference['runtimeLimits'],'queuedWork':16}},
+                {**reference,'runtimeLimits':{**reference['runtimeLimits'],'native':64}},
                 {**reference,'runtimeLimits':{**reference['runtimeLimits'],'executors':True}},
                 {**reference,'runtimeLimits':{**reference['runtimeLimits'],'extra':0}},
                 {**reference,'runtimeLimitsConfiguration':reference['runtimeLimitsConfiguration'].replace('32','16')},

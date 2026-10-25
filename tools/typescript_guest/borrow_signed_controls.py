@@ -271,10 +271,10 @@ NET_INPUTS = {'src/main.ts': NET_PREFIX+'main.ts', 'wit/world.wit': NET_PREFIX+'
 NET_LIMITS = {'cpuFuel':1_000_000_000,'memoryBytes':134217728,'wallTimeLimitMillis':120000,
     'logBytes':0,'outboundRequests':8,'childCalls':0,'effectCount':0,'blobReadBytes':0,
     'blobWriteBytes':0,'stateReadBytes':0,'stateWriteBytes':0}
-NET_RUNTIME_LIMITS = {'tasks':32,'executors':2,'queuedWork':32,'waits':8,'timers':8,'results':8,'native':64}
-NET_REFERENCE_PROFILE = 'node-net-reference-t32-q32-v1'
+NET_RUNTIME_LIMITS = {'tasks':32,'executors':2,'queuedWork':32,'waits':8,'timers':8,'results':8,'native':128}
+NET_REFERENCE_PROFILE = 'node-net-reference-t32-q32-n128-v1'
 NET_RUNTIME_CONFIGURATION = ('RuntimeLimits { tasks: 32, executors: 2, queued_work: 32, waits: 8, '
-    'timers: 8, results: 8, native_owners: 64 }')
+    'timers: 8, results: 8, native_owners: 128 }')
 NET_CASES = (('node-net-echo',0),('node-net-sibling',1),('node-net-denied',2),
              ('node-net-destroy',3),('node-net-unclosed',4),('node-net-fresh',0))
 NET_RECIPE = tuple(dict.fromkeys((*RECIPE, *NET_INPUTS.values(),

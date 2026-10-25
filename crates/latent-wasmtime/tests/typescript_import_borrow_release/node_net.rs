@@ -4,7 +4,7 @@ use super::*;
 const MAIN: &[u8] = include_bytes!("../../../../sdk/typescript-guest/probes/node-net/main.ts");
 const WIT: &[u8] = include_bytes!("../../../../sdk/typescript-guest/probes/node-net/world.wit");
 const CONTRACT: &str = "tenant-a:typescript-node-net/api@1.0.0";
-const REFERENCE_PROFILE: &str = "node-net-reference-t32-q32-v1";
+const REFERENCE_PROFILE: &str = "node-net-reference-t32-q32-n128-v1";
 
 async fn configured_socket(
     root: &Path,
@@ -64,7 +64,7 @@ async fn configured_socket(
             .await
             .unwrap();
     }
-    // A separately funded finite reference profile, not a repair/relabel of Task16.
+    // Separate operator funding, not a repair/relabel of either failed profile.
     let limits = latent_core::activation_runtime::RuntimeLimits {
         tasks: 32,
         executors: 2,
@@ -72,7 +72,7 @@ async fn configured_socket(
         waits: 8,
         timers: 8,
         results: 8,
-        native_owners: 64,
+        native_owners: 128,
     };
     let f = Fixture::with_runtime_outbound_streams_and_numeric_trap_observation(
         (catalog, caller, callee),

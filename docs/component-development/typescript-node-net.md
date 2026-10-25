@@ -112,14 +112,34 @@ and requires operator-selected limits; no TypeScript minimum successful resource
 profile has been established. That failed stress profile was Task16/Executor2/
 Queued16/Wait8/Timer8/Result8/Native64.
 
-A separate operator-funded positive reference candidate,
-`node-net-reference-t32-q32-v1`, selects Task32/Queued32 while retaining
-Executor2/Wait8/Timer8/Result8/Native64 and every other programme bound.
-This is a different resource profile, not a repair or passing relabel of the
-Task16 programme, a production default, a demonstrated minimum or an upper-cost
-qualification. Its six original signed oracles remain unchanged. Failure at
-Task32 does not authorize another increase. No engine, GC, ownership/refund or
-public Socket implementation change accompanies this selection.
+The separately funded `node-net-reference-t32-q32-v1` profile
+(Task32/Queued32/Native64, other limits unchanged) also remains **failed**:
+[run 40145622418](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40145622418),
+source `75132abdf208557b313c8de8475aefd4d9addabd`, artifact `12581086382`
+(5,253,075 bytes,
+`sha256:2b7e7cb4dc550166af9fa87889def2ebedeed7045f4db374b6a870d9538c7870`).
+All 25 pinned controls passed. Its actual signed echo succeeded with normal
+close events and zero post-root physical-owner scopes. The sibling cell reached
+the real two-connection/two-held-read barrier, then its first refusal recorded
+Native64 with Task23/QueuedWork18/Result3 and 22 parked tasks. Two refusals were
+observed (`ambiguous=true`), so the original assertion failed; post-root physical
+scopes were zero. One completed cell is not the six-cell programme passing.
+Neither that failed status nor the original Task16 history is relabelled.
+
+A subsequent explicit operator funding decision declares a new candidate,
+`node-net-reference-t32-q32-n128-v1`: Task32/Queued32/Native128, retaining
+Executor2/Wait8/Timer8/Result8 and every application, policy and broker bound.
+The measured Native64 refusal funds this candidate; no accounting defect was
+demonstrated. Native also pays for Promise objects, reaction records, import
+storage/observers and readiness support, independently of Task lifetime. The
+numerical Native-per-Task ratio is not a law, minimum or upper-cost theorem.
+Reachability cannot be determined from these aggregate owner counts.
+
+The new profile is not a repair or passing relabel of either failed programme,
+a production default, or a demonstrated minimum. Its six original signed oracles
+remain unchanged. No automatic next increase or retry is authorized if it fails.
+No engine, GC, ownership/refund or public Socket implementation change
+accompanies this funding selection.
 
 Each case and the terminal receipt must retain the actual immutable factory
 runtime-limit configuration and original preparation identity, including its
@@ -140,8 +160,9 @@ backend. It retains the normal one-billion fuel grant, 128MiB memory, 120s root
 wall bound and eight OutboundRequests. That budget dimension charges connects;
 it does not count every read/write/chunkBytes WIT dispatch. The unchanged
 installed stream policy has an operations ceiling of 128, and the unchanged
-broker maximum_calls_per_session is 16. The separately declared Task32/Queued32 candidate is the only changed
-resource selection; all other original bounds remain enforced. The unclosed cell requires the actual
+broker maximum_calls_per_session is 16. Only the separately declared
+Task32/Queued32/Native128 resource selection differs from the original stress
+profile; all other bounds remain enforced. The unclosed cell requires the actual
 two-read/owner sample before peer permission, control close, a failed root with its original closed public code,
 no recorded admission/quota/stop refusal, physical idle, a paired closed positive
 and fresh success under the same bounds. Its original public classification
