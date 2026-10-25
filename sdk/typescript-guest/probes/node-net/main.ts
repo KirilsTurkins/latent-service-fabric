@@ -1,9 +1,12 @@
 // Ordinary finite Socket calls only. No private import, resource id, shutdown
 // callback or job pump. The owning host supplies the real read-entry barrier.
 import net, {Socket} from 'node:net';
+import isPortReachable from 'is-port-reachable';
 
 export const api = {
   run(mode: number, port: number): Promise<string> {
+    if (mode === 5 || mode === 6)
+      return isPortReachable(port, {host: '127.0.0.1'}).then(reachable => 'node-net:published:' + reachable);
     if (!Number.isInteger(mode) || mode < 0 || mode > 4)
       throw new Error('node-net:unknown-case');
     return new Promise((resolve, reject) => {

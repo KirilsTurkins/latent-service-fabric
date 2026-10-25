@@ -30,7 +30,7 @@ export function createNodeNetModule(transport, Buffer, snapshotActive, target = 
     if (original !== undefined) value.cause = original;
     return value;
   }
-  const unsupported = name => error('ERR_LSF_UNSUPPORTED_OPERATION', name);
+  const unsupported = (name, possible = false) => error('ERR_LSF_UNSUPPORTED_OPERATION', name, undefined, 0, possible);
   function object(value, allowed) {
     if (value === null || typeof value !== 'object' || Array.isArray(value) ||
         Object.keys(value).some(name => !allowed.includes(name))) throw error('ERR_INVALID_ARG_VALUE', 'options');
@@ -66,7 +66,7 @@ export function createNodeNetModule(transport, Buffer, snapshotActive, target = 
   }
   class Socket {
     #token; #listeners = new Map(); #writes = [];
-    #readBusy = false; #writeBusy = false; #connectBusy = false; #chunk;
+    #readBusy = false; #writeBusy = false; #connectBusy = false; #chunk; #quietRead = false;
     #progressing = false; #stopReady = false; #closeStarted = false; #nativeClosed = false;
     #cleanupFailed = false; #notificationQueued = false; #notificationDone = false;
     #connecting = false; #connected = false; #destroyed = false; #closed = false;
@@ -203,7 +203,10 @@ export function createNodeNetModule(transport, Buffer, snapshotActive, target = 
       this.#progress();
     }
     #pumpReads() {
-      if (this.#readBusy || !this.#connected || !this.#flowing || this.#eof || this.#destroyed) return;
+      if (this.#readBusy || !this.#connected || this.#eof || this.#destroyed) return;
+      if (!this.#flowing && !(this.#ending && this.#finished)) return;
+      if (!this.#flowing && this.#buffered !== undefined) throw unsupported('paused-end-unread-data', this.#writeAttempted);
+      this.#quietRead = !this.#flowing;
       this.#readBusy = true;
       let failed = false, cause;
       try { transport.read(this.#token, windowBytes, undefined, this.#onRead, this); }
@@ -229,6 +232,9 @@ export function createNodeNetModule(transport, Buffer, snapshotActive, target = 
       if (this.#destroyed) {
         transport.disposeChunk(this.#token, chunk); this.#chunk = undefined; this.#readBusy = false; return;
       }
+      // A paused graceful-close probe can observe real EOF only. Actual data
+      // remains owned in quarantine; it is never discarded or relabelled EOF.
+      if (this.#quietRead) throw unsupported('paused-end-unread-data', this.#writeAttempted);
       let failed = false, cause;
       // The completed read tail plus copy plus sibling write stay within three.
       try { transport.chunkBytes(this.#token, chunk, this.#onCopy, this); }
@@ -389,7 +395,7 @@ export function createNodeNetModule(transport, Buffer, snapshotActive, target = 
       if (!this.#token || this.#destroyed) throw error('ERR_SOCKET_CLOSED', 'end');
       if (callback !== undefined) this.once('finish', callback);
       if (data !== undefined) this.write(data, encoding);
-      this.#ending = true; this.#progress(); return this;
+      this.#ending = true; transport.acceptTerminal(this.#token); this.#progress(); return this;
     }
     #maybeClose() { if (this.#eof && this.#finished && !this.#destroyed) this.destroy(); }
     #afterTail() { this.#progress(true); }
@@ -456,6 +462,7 @@ export function createNodeNetModule(transport, Buffer, snapshotActive, target = 
       this.#destroyed = true; this.#connected = false; this.#connecting = false; this.#error = cause;
       if (this.#timer !== undefined) { clearTimer(this.#timer); this.#timer = undefined; }
       if (!this.#token) { this.#closed = true; this.#notifyClose(); return this; }
+      transport.acceptTerminal(this.#token);
       transport.holdNotification(this.#token);
       let failed = false, failure;
       try { transport.stop(this.#token, this.#onStopped, this); }

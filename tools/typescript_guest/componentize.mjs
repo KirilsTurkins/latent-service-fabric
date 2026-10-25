@@ -126,7 +126,9 @@ if (netSelectionPath !== undefined) {
     maximumPendingOperationsPerSocket:3, maximumQueuedWriteBytes:65536, maximumQueuedWriteRecords:16,
     maximumTransferWindowBytes:16384,
     transport:'tcp', tlsApi:false, dnsApi:false, listeners:false, descriptorNamespace:false,
-    rootRequiresCompletedClose:true, automaticCloseDrain:false, physicalRetirement:'not-inferred',
+    rootRequiresCompletedClose:true, automaticCloseDrain:true,
+    closeDrain:'accepted-terminal-intent-only-v1', maximumRootCloseWaiters:1,
+    pausedEndRead:'eof-only-unread-data-refuses', physicalRetirement:'not-inferred',
     authority:'none', qualification:'unknown'};
   const canonical = value => JSON.stringify(value, Object.keys(value).sort());
   if (canonical(netSelection) !== canonical(fixed) || !netSelection.identities ||
