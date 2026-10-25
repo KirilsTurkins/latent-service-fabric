@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/java_guest/compiler_profile_distribution.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Fixed source-pinned compiler build input preparation and existing managed pack/installer admission-only verification.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "723ae9da033608baa821d7d30d34c3379411e3dec803f2d9e1af9d3301cc654b"
+}

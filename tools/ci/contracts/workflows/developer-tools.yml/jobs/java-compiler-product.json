@@ -1,0 +1,54 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "if": "github.event_name == 'workflow_dispatch' && inputs.java_compiler_product",
+    "name": "Sealed normal Java compiler product (data only)",
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    },
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "name": "Install the maintained recipe reader dependencies",
+        "run": "python -m pip install --requirement tools/requirements.lock"
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Verify fixed compiler inputs, existing pack and installer, and normal admission",
+        "run": "set -euo pipefail\nroot=$(mktemp -d /tmp/latent-java-product.XXXXXXXX)\ntrap 'rm -rf -- \"$root\"' EXIT\nmkdir -p target/java-compiler-product\ntimeout --signal=TERM --kill-after=5 1195 \\\n  python -B tools/java_guest/compiler_profile_distribution.py stage \\\n    --root \"$root\" \\\n    --output target/java-compiler-product/result.json\n"
+      },
+      {
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "error",
+          "name": "java-compiler-product-${{ github.sha }}",
+          "path": "target/java-compiler-product/result.json",
+          "retention-days": 7
+        }
+      }
+    ],
+    "timeout-minutes": 25
+  },
+  "jobId": "java-compiler-product",
+  "kind": "job",
+  "reviewReason": "Use explicit conventional prepared Java compiler CLI with committed owner fingerprint; all selected product and existing job semantics remain reviewed.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/developer-tools.yml"
+}

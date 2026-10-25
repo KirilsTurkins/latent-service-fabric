@@ -56,6 +56,7 @@ RECIPE += ("tools/java_generator_authoring.py",)
 RECIPE += java_http_client.RECIPE
 RECIPE += ("tools/application_dependency_approval.py", "tools/captured_compiler_isolation.py", "tools/java_annotation_processors.py")
 RECIPE += ("tools/java_guest/facilities.py", "tools/java_guest/filesystem.py")
+RECIPE += ("tools/java_guest/compiler_profile.py", "tools/data/java-compiler-profile.json")
 
 
 def retain_logs(source: Path, output: Path) -> None:
@@ -168,6 +169,9 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                         config=pins, timeout=timeout - (time.monotonic() - start), offline_cache=offline_cache,
                         **cache_selection)
                 (output / "compiler-inputs.json").write_bytes(compiler.compiler_inputs)
+                compiler_profile = getattr(compiler, 'wasi_compiler_profile', None)
+                if compiler_profile is not None:
+                    (output / 'java-compiler-profile.json').write_bytes(compiler_profile)
                 server_plan, automatic_bridge = None, None
                 if "server" in project:
                     stage = "server-source-analysis"
@@ -235,6 +239,9 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 guest_compatibility_build.inspect(commands, compiler.paths["wasm-tools"], output, surface,
                     host_abi_profile=guest_compatibility_build.declared_host_abi(surface), files=files)
                 additional_assets = []
+                if compiler_profile is not None:
+                    additional_assets.append(('java-compiler-profile.json', 'asset',
+                                              'application/vnd.latent.java.compiler.profile.v1+json'))
                 if "httpClient" in project:
                     selected_http = {'phase_timing': True} if http_phase_selected else {}
                     (output / "http-client-profile.json").write_bytes(java_http_client.profile(
@@ -278,6 +285,11 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     ("toolchain-config", files["vendor/lsf/tools/toolchain.toml"]), ("compiler-closure", compiler.compiler_inputs),
                     ("dependency-lock", files["vendor/lsf/sdk/java-guest/feasibility/dependencies.lock.json"]),
                     ("generated-bindings", read_file(output / "bindings.json"))))
+                if compiler_profile is not None:
+                    data = read_file(output / 'java-compiler-profile.json')
+                    if data != compiler_profile:
+                        raise ValueError('Java compiler profile changed during the build')
+                    materials.append({'name': 'java-compiler-profile', 'digest': digest(data), 'size': len(data)})
                 if 'java-generated-inputs.json' in files:
                     data = files['java-generated-inputs.json']
                     materials.append({"name": "java-generator-inputs",

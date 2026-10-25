@@ -35,7 +35,13 @@ SOURCES = {
 def sources(language: str) -> dict:
     require(language in {"java", "dotnet"}, "managed-distribution-language")
     names = ("wasi-sdk", "jdk", "gradle") if language == "java" else ("wasi-sdk", "dotnet")
-    return {name: SOURCES[name] for name in names}
+    result = {name: SOURCES[name] for name in names}
+    if language == 'java':
+        from tools.java_guest.compiler_profile import pin
+        selected = pin()
+        if selected is not None:
+            del result['wasi-sdk']  # Promoted compiler is an explicit prepared input, not an upstream URL.
+    return result
 
 
 def dependency_packages(language: str) -> list[dict]:
@@ -156,11 +162,23 @@ def retain_dotnet_support(installed: Path, retained: Path) -> None:
         shutil.copyfile(installed / name, retained / name)
 
 
-def prepare(payload: Path, output: Path, language: str, download) -> dict:
+def prepare(payload: Path, output: Path, language: str, download, *, prepared_java_compiler: Path | None = None) -> dict:
     require(language in {"java", "dotnet"}, "managed-distribution-language")
+    selected = None
+    if language == 'java':
+        from tools.java_guest.compiler_profile import pin
+        selected = pin()
+    require(prepared_java_compiler is None or language == 'java' and selected is not None,
+            'unqualified-prepared-java-compiler')
+    require(selected is None or prepared_java_compiler is not None, 'prepared-java-compiler-required')
     stage = output / "managed-source"
     stage.mkdir(mode=0o700)
     roots = {}
+    if selected is not None:
+        from tools.java_guest.compiler_profile_distribution import extract as extract_promoted
+        selected_root = stage / 'promoted-compiler'
+        selected_root.mkdir(mode=0o700)
+        roots['wasi-sdk'], roots['java-compiler-provenance'] = extract_promoted(prepared_java_compiler, selected_root)
     for name, source in sources(language).items():
         archive = output / (name + ".archive")
         download(archive, source)

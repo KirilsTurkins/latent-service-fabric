@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/build_dev_guest_tools.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Explicit assembly-only prepared Rust HTTP capture; default/nonRust commands unchanged",
+  "reviewReason": "Admit prepared Java compiler inputs before normal native-builder cost and retain exact source-owned provenance.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "f86803047c1561f6a14b11f29f4ff40d7c8b8dde5b006dbed27128d34cf4492f"
+  "sha256": "450e1a3b96d683b53c8c92d36fcbc95a4f2ab555919b39e016af28833cedfaa8"
 }
