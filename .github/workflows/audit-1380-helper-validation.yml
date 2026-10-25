@@ -1,0 +1,62 @@
+name: PR 1380 packaged helper validation
+on:
+  push:
+    branches: [ci/audit-1380-helper-validation]
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: 3.13.5
+      - name: Reproduce and repair the actual packaged helper path
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp .github/maintenance/audit-1380-helper-repair.py "$RUNNER_TEMP/repair-helper.py"
+          git fetch --no-tags --depth=1 origin f1dd3bc1c6ed68d2b4e5a0ed0c75d8bcf3e7f588
+          git checkout --detach f1dd3bc1c6ed68d2b4e5a0ed0c75d8bcf3e7f588
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 "$RUNNER_TEMP/repair-helper.py"
+          git diff --check
+          git config user.name 'LSF CI repair'
+          git config user.email 'ci-repair@users.noreply.github.com'
+          git add tools/build_dev_frontend.py tools/tests/test_dev_tools.py tools/ci/contracts/owners/tools/build_dev_frontend.py.json tools/ci/contracts/python/test_dev_tools.py.json
+          git commit -m 'fix(dev): retain compatibility readers in the packaged node helper'
+          echo "HELPER_CANDIDATE=$(git rev-parse HEAD)"
+      - name: Validate controller, outcomes, source bounds and CI contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m unittest tools.tests.test_dev_tools tools.tests.test_guest_compatibility_outcomes tools.tests.test_dev_watch tools.tests.test_dev_contracts tools.tests.test_dev_workflow tools.tests.test_ci_contracts tools.tests.test_build_source_capacity > "$RUNNER_TEMP/audit-helper/tests.log" 2>&1 || { tail -120 "$RUNNER_TEMP/audit-helper/tests.log"; exit 1; }
+          tail -12 "$RUNNER_TEMP/audit-helper/tests.log"
+          python3 tools/ci_coverage.py --receipt "$RUNNER_TEMP/audit-helper/coverage.json"
+      - name: Retain tested code without updating the feature branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git show -s --format=%P HEAD)" = f1dd3bc1c6ed68d2b4e5a0ed0c75d8bcf3e7f588
+          test -z "$(git status --porcelain --untracked-files=normal)"
+          auth=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)
+          git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $auth" push origin HEAD:refs/heads/ci/audit-1380-helper-candidate-f1dd3bc
+          unset auth GH_TOKEN
+          git show --stat --oneline HEAD
+          git diff HEAD^ HEAD > "$RUNNER_TEMP/audit-helper/repair.patch"
+      - name: Retain bounded before and after evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: audit-1380-helper-validation
+          path: ${{ runner.temp }}/audit-helper/
+          retention-days: 7
+          if-no-files-found: warn
