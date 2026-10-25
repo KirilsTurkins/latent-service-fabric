@@ -1,19 +1,24 @@
-name: PR 1380 pinned development merge inspection
+name: PR 1380 pinned merge validation
 on:
   push:
     branches: [ci/audit-1380-helper-validation]
 permissions:
   contents: read
 jobs:
-  inspect:
+  validate:
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 15
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
           show-progress: false
-      - name: Inspect only the pinned merge and bounded conflicting regions
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: 3.13.5
+      - name: Merge the exact reviewed sources without rewriting either parent
         shell: bash
         run: |
           set -euo pipefail
@@ -21,29 +26,101 @@ jobs:
           git checkout --detach 99a5bb10633df4280c32228367908381c8f36c34
           git config user.name 'LSF CI repair'
           git config user.email 'ci-repair@users.noreply.github.com'
+          python3 -m pip install --requirement tools/requirements.lock
           python3 - <<'PY'
-          import pathlib, subprocess
+          import hashlib, json, pathlib, subprocess, sys
+          root = pathlib.Path.cwd()
+          head = '99a5bb10633df4280c32228367908381c8f36c34'
+          development = '0ca8e0f574b3b8829c4691aa0d830e648f073a5e'
           def git(*args):
-              return subprocess.check_output(['git', *args], text=True, timeout=60)
-          outcome = subprocess.run(['git', 'merge', '--no-commit', '--no-ff', '0ca8e0f574b3b8829c4691aa0d830e648f073a5e'], capture_output=True, text=True, timeout=120)
-          assert outcome.returncode in (0, 1)
-          print(outcome.stdout[-12000:])
-          names = git('diff', '--name-only', '--diff-filter=U').splitlines()
-          print('CONFLICTS', names, flush=True)
-          assert len(names) <= 16
-          for name in names:
-              lines = pathlib.Path(name).read_text().splitlines()
-              selected = set()
-              start = None
-              for index, line in enumerate(lines):
-                  if line.startswith('<<<<<<< '): start = index
-                  if line.startswith('>>>>>>> ') and start is not None:
-                      selected.update(range(max(0, start-4), min(len(lines), index+5)))
-                      start = None
-              output = '\n'.join(f'{index+1}: {lines[index]}' for index in sorted(selected))
-              assert len(output) <= 24000, (name, len(output))
-              print('FILE', name, '\n'+output, flush=True)
-          for name in ('tools/build_dev_frontend.py', 'tools/tests/test_build_source_capacity.py', 'tools/tests/test_dev_tools.py'):
-              result = git('diff', '0dd0facf0ac9548c41f2d755655fd37e347eefd7', '0ca8e0f574b3b8829c4691aa0d830e648f073a5e', '--', name)
-              print('DEVELOPMENT DELTA', name, '\n'+result[:20000], flush=True)
+              return subprocess.check_output(['git', *args], text=True, timeout=120)
+          assert git('rev-parse', 'HEAD').strip() == head
+          assert not git('status', '--porcelain').strip()
+          merged = subprocess.run(['git', 'merge', '--no-commit', '--no-ff', development], capture_output=True, text=True, timeout=120)
+          print(merged.stdout)
+          conflicts = set(git('diff', '--name-only', '--diff-filter=U').splitlines())
+          source = 'tools/build_dev_frontend.py'
+          owner = 'tools/ci/contracts/owners/tools/build_dev_frontend.py.json'
+          contract = 'tools/ci/contracts/python/test_dev_tools.py.json'
+          assert merged.returncode == 1 and conflicts == {source, owner, contract}, conflicts
+          # Development already contains the same pure reader repair plus the
+          # additional selected-Net reader. Keep its exact source and reviewed
+          # fingerprint rather than deleting that newer dependency closure.
+          for name in (source, owner, contract):
+              (root / name).write_bytes(subprocess.check_output(['git', 'show', development + ':' + name]))
+          expected_owner = json.loads((root / owner).read_text())
+          assert hashlib.sha256((root / source).read_bytes()).hexdigest() == expected_owner['sha256']
+          text = (root / source).read_text()
+          for required in ('guest_compatibility_context_build', 'guest_emitted_code',
+                           'buffer_profile.py', '"net_profile", "runtime_profile"'):
+              assert required in text
+          # Keep the source-capacity negative tests aligned with development's
+          # independently reviewed 74/82 MiB envelope. This merge does not raise
+          # a production, archive, or source allowance above development.
+          path = root / 'tools/tests/test_build_source_capacity.py'
+          text = path.read_text()
+          for old, new in (('self.assertEqual(limits.max_total_bytes, 73 * 1024 * 1024)',
+                            'self.assertEqual(limits.max_total_bytes, 74 * 1024 * 1024)'),
+                           ('self.assertEqual(limits.max_archive_bytes, 80 * 1024 * 1024)',
+                            'self.assertEqual(limits.max_archive_bytes, 82 * 1024 * 1024)')):
+              assert text.count(old) == 1
+              text = text.replace(old, new)
+          path.write_text(text, newline='\n')
+          sys.path.insert(0, str(root))
+          from tools import ci_contracts
+          module = 'tools/tests/test_dev_tools.py'
+          ours = ci_contracts.semantic_record(json.loads(git('show', head + ':' + contract)))
+          theirs = ci_contracts.semantic_record(json.loads(git('show', development + ':' + contract)))
+          actual = ci_contracts.python_expectations(root)[module]
+          assert set(actual['cases']) == set(ours['cases']) | set(theirs['cases'])
+          # Both sides' source test changes auto-merged. Preserve development's
+          # already-reviewed stronger HelperRuntimeImports fixture and the
+          # feature's additive isolated context/Buffer regression unchanged.
+          for case in actual['cases']:
+              selected = theirs if case in theirs['cases'] else ours
+              assert actual['guards'][case] == selected['guards'][case], case
+          value = ci_contracts.record('python',
+              'Merge explicit prior reviews: preserve every case and guard from development, including selected-Net execution and missing-reader refusals, plus the feature branch isolated six-language context, uncertainty and Buffer regression. No case, skip predicate, fixture check, import isolation or authority refusal is removed.',
+              module=module, **actual)
+          value = ci_contracts.shared_python_record(value)
+          (root / contract).write_text(json.dumps(value, indent=2, sort_keys=True) + '\n', newline='\n')
+          git('add', source, owner, contract, 'tools/tests/test_build_source_capacity.py')
+          assert not git('diff', '--name-only', '--diff-filter=U').strip()
+          for name in ('tools/build_snapshot.py', 'tools/build_process.py',
+                       'tools/ci/contracts/owners/tools/build_process.py.json'):
+              assert (root / name).read_bytes() == subprocess.check_output(['git', 'show', development + ':' + name]), name
+          git('diff', '--cached', '--check')
+          git('commit', '-m', 'merge: retain audit CI repairs with current development reader and source contracts')
+          assert git('show', '-s', '--format=%P', 'HEAD').strip() == head + ' ' + development
+          assert not git('status', '--porcelain').strip()
+          print('MERGE_CANDIDATE=' + git('rev-parse', 'HEAD').strip(), flush=True)
+          print('MERGE_TREE=' + git('rev-parse', 'HEAD^{tree}').strip(), flush=True)
           PY
+      - name: Validate the merged source and original strict contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/audit-merge"
+          python3 -m unittest tools.tests.test_dev_tools tools.tests.test_guest_compatibility_outcomes tools.tests.test_guest_compatibility_context tools.tests.test_dev_watch tools.tests.test_dev_contracts tools.tests.test_dev_workflow tools.tests.test_ci_contracts tools.tests.test_build_source_capacity tools.tests.test_build_snapshot tools.tests.test_build_process tools.tests.test_phase2_gate_resource tools.tests.test_static_audit_lifecycle > "$RUNNER_TEMP/audit-merge/python.log" 2>&1 || { tail -120 "$RUNNER_TEMP/audit-merge/python.log"; exit 1; }
+          tail -15 "$RUNNER_TEMP/audit-merge/python.log"
+          python3 tools/ci_coverage.py --receipt target/ci/audit-merge-coverage.json
+          cp target/ci/audit-merge-coverage.json "$RUNNER_TEMP/audit-merge/coverage.json"
+          git diff 99a5bb10633df4280c32228367908381c8f36c34 HEAD > "$RUNNER_TEMP/audit-merge/merge.patch"
+          test -z "$(git status --porcelain --untracked-files=normal)"
+      - name: Preserve the tested merge objects on the isolated candidate branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          auth=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)
+          git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $auth" push origin HEAD:refs/heads/ci/audit-1380-merge-0ca8e0f
+          unset auth GH_TOKEN
+      - name: Retain validation evidence even if the runner cannot publish workflow changes
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: audit-1380-merge-validation
+          path: ${{ runner.temp }}/audit-merge/
+          retention-days: 7
+          if-no-files-found: warn
