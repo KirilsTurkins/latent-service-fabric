@@ -4,7 +4,6 @@
   "coverage": {},
   "definition": {
     "env": {
-      "LSF_DEV_COMPILER_CACHE": "${{ runner.temp }}/compiler-archives",
       "PYTHONDONTWRITEBYTECODE": 1
     },
     "if": "${{ (github.event_name != 'workflow_dispatch' || !inputs.java_http_spi) && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_assembly) && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_derived_llvm) && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_private_scalar_llvm) }}",
@@ -88,6 +87,10 @@
         "with": {
           "version": "1.254.0"
         }
+      },
+      {
+        "name": "Select the runner-owned compiler archive cache",
+        "run": "printf 'LSF_DEV_COMPILER_CACHE=%s\\n' \"$RUNNER_TEMP/compiler-archives\" >> \"$GITHUB_ENV\""
       },
       {
         "id": "java-compiler-cache",
@@ -289,7 +292,7 @@
   },
   "jobId": "compiler-component",
   "kind": "job",
-  "reviewReason": "Reuse exact prepared compiler cache before ordinary Java product staging; preserve every existing compile and runtime command.",
+  "reviewReason": "Select the existing runner cache through GITHUB_ENV before use; runner context is unavailable in job env",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-guest-feasibility.yml"
 }
