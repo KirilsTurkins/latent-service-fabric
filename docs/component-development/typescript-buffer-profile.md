@@ -141,15 +141,34 @@ Socket/EventEmitter/Duplex, ref/unref/managed idle, typed late-resource disposal
 DNS/TLS and transport selection remain separate work. No whole #745 criterion
 or issue is completed by this foundation.
 
-## Pending four-call global programme
+## Signed four-call global programme
 
-`typescript-buffer-globals.yml` owns one normal strict-TypeScript build and four
+`typescript-buffer-globals.yml` passed one normal strict-TypeScript build and four
 fresh signed calls on one node: transitive module initialization and alias/view
 identity, a timer callback using the real global, caught allocation-ceiling
 refusal, and fresh initializer state after that refusal. Its sources are
 repository-controlled fixtures, not unchanged published-library qualification.
-The campaign has not run yet. Each original public CLI response must bind its
-unique requested activation and the deployed publication/revision tuple.
+[Owning run 40163842153](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40163842153/job/121080744355)
+passed at source `677f05ae56498bdc63e0650d3103a1635213e2f1`: eight pinned
+source controls without skips, 26 normal build commands and 177 bounded owner
+commands. Each original public CLI response bound its unique requested
+activation and the same deployed publication/revision tuple. The one
+12,202,891-byte component was packaged, signed and admitted normally; existing
+authenticated engine/splicer and native CLI products were reused without rebuilding.
+
+All four calls returned their exact fresh-state strings. Consumed fuel was
+13,984,916; 14,321,214; 14,074,207; 14,122,088 respectively, with maximum reported
+peak memory 9,512,112 bytes. Each original retirement observation reported all
+18 available active-provider counters, active/quarantined cells, quota
+reservations and cleanup slots zero; the one configured cell remained available.
+Deletion and clean reaped shutdown followed on the same owned node process.
+The [immutable public receipt](../testing/typescript-buffer-globals-evidence.json)
+retains all 33 artifact member identities, four raw CLI results, observed
+retirement/shutdown fields, 210 unique source-bound Git materials and original
+command identities. The 103-entry captured-source inventory records identities;
+it does not claim that 103 raw project files were uploaded. Acquisition/signing
+channels retain hashes only; private state is excluded and removed before
+successful publication. Generic profile qualification remains unknown.
 
 This distinct reference programme selects Task32, Executor2, Queue32, Wait8,
 Timer8, Result8 and Native128, matching the reviewed Socket reference funding;
@@ -158,5 +177,10 @@ requests remain 1 billion fuel, 128 MiB and 120 seconds, with zero outbound
 requests and other effects. The global node fuel maximum remains separately
 10 billion. The owner keeps original retirement observations and an explicit
 public-file collector; signing, private node/client state and acquired tools
-are outside its retained artifacts. No whole cost or production gate is met by
-this source-stage programme.
+are outside its retained artifacts. Internal factory/Store identities were
+not exposed. The timer case proves callback completion, without a latency or
+separately observed parked-timer claim. No whole cost, unchanged published
+global-Buffer library, networking or production gate is met by this finite
+programme; AC5/AC7 and the whole ticket remain open. No hosted attempt in this
+programme failed; earlier local source-control setup repairs do not become
+runtime failures or additional signed evidence.
