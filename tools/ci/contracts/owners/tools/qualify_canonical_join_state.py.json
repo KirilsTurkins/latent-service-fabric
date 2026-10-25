@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_canonical_join_state.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Fixed five private owner controls and actual canonical first_poll refusal then same-budget fresh Store; original source and executable/tool identities retained and rechecked.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "76178bc39e6c0197d80738282917c402e199d9c16de73f6ce89dd33cbbe762cd"
+}

@@ -4,7 +4,7 @@ This is the complete crates.io Wasmtime 48.0.7 package, licensed under
 Apache-2.0 WITH LLVM-exception (see the unmodified LICENSE). The original
 archive checksum and all 250 original file identities are recorded in
 UPSTREAM.latent.json. `latent-dynamic-memory.patch` applies to that exact
-original package; it contains thirty changed upstream files and six added
+original package; it contains thirty-two changed upstream files and six added
 implementation files. Other Wasmtime packages remain at the original locked
 registry versions. The standalone development lock selects Tokio 1.51.6 for
 RUSTSEC-2026-0386; the immutable upstream inventory retains its original lock
@@ -36,7 +36,7 @@ retains confirmed actual allocations through native unwind, without confirming
 a hypothetical signature maximum as observed peak.
 
 The native cohort is
-`wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-memory-v9`. Runtime engine configuration identity
+`wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-memory-v10`. Runtime engine configuration identity
 includes this cohort, so old prepared/AOT identity cannot certify this host.
 The immutable v1/7b programme passed 61 controls; v2/de0 passed81,
 v3/48a passed85, v4/3e417 passed92, v5/94f passed97, v7/f535 passed114,
@@ -171,3 +171,23 @@ shared preparation closure/import backing, concurrent task/queue/resource and ho
 request ingress/discarded scaffolding, other hostcall copies, or controller/legacy transport allocations.
 Existing finite caps are not original memory admission. Whole SDK cost acceptance
 remains open; the source package and planned controls are not execution evidence.
+
+
+The v10 source extension pre-admits the complete allocation of a selected
+canonical-async JoinState cell before publishing either of its two private
+strong owners. This includes the Arc header, payload and alignment from the
+pinned Rust 1.97.1 source (compiler commit 8bab26f4f, alloc/src/sync.rs SHA256
+768776d4a37cfeb28c71a0c6d8b2ad33332d11ceaef7e47cb01463bd71b9048a).
+Every strong wrapper uses Arc::into_inner: the last winner receives the payload
+only after its implicit weak header is deallocated. It destroys state and wakers
+before refunding the original allocation owner. A state-destructor unwind keeps
+the charge conservatively retained. The cell does not retain its NativeMemory
+factory; a real owned binding lifetime control covers that separation.
+
+NativeMemory=None retains the original Arc<TryMutex<JoinState>> allocation and
+operation semantics. The private handle enum can enlarge inline handles/futures;
+existing concrete future-box admission charges their actual Layout. This is a
+source-only implementation until its five private implementation controls and
+separate actual canonical first_poll/original-budget control execute. It does
+not account all concurrent scheduler, opaque host future, engine GC or cache
+allocations, and does not complete a full JavaScript cost-model qualification.

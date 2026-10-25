@@ -1,7 +1,12 @@
-use crate::try_mutex::TryMutex;
+use crate::runtime::native_memory::{self, Memory};
+use crate::try_mutex::{TryMutex, TryMutexGuard};
+use crate::{NativeAllocation, Result};
+use alloc::boxed::Box;
 use alloc::sync::Arc;
+use core::alloc::Layout;
 use core::mem::{self, ManuallyDrop};
 use core::pin::Pin;
+use core::sync::atomic::AtomicUsize;
 use core::task::{Context, Poll, Waker};
 
 /// Handle to a task which may be used to join on the result of executing it.
@@ -19,7 +24,125 @@ pub struct JoinHandle {
     // a situation where this lock can be contended. Everything's bound to the
     // store and this is largely just used to satisfy compiler bounds. Hence,
     // lock operations in this module all unwrap.
-    state: Arc<TryMutex<JoinState>>,
+    state: JoinStateHandle,
+}
+
+// Keep the original Arc payload/layout for unselected embeddings. Selected
+// state has only two private strong handles, never Weak/raw/public Arc aliases.
+// The enum can enlarge inline JoinHandle/Future metadata; only the legacy Arc
+// backing/payload stays exact. Generic paid F boxes use their actual Layout.
+enum JoinStateHandle {
+    Legacy(Arc<TryMutex<JoinState>>),
+    Accounted(AccountedJoinState),
+}
+
+struct AccountedJoinState {
+    inner: Option<Arc<AccountedJoinStateInner>>,
+}
+
+struct AccountedJoinStateInner {
+    state: ManuallyDrop<TryMutex<JoinState>>,
+    allocation: ManuallyDrop<Box<dyn NativeAllocation>>,
+}
+
+// Pinned Rust1.97.1/8bab26f4f library/alloc/src/sync.rs:
+// ArcInner is repr(C,align(2)), two Atomic<usize> fields, then T. Arc::new
+// allocates Box<ArcInner<T>>. Primary source:
+// https://github.com/rust-lang/rust/blob/8bab26f4f/library/alloc/src/sync.rs
+// Complete source177276B/SHA256
+// 768776d4a37cfeb28c71a0c6d8b2ad33332d11ceaef7e47cb01463bd71b9048a.
+#[repr(C, align(2))]
+struct ArcHeader {
+    strong: AtomicUsize,
+    weak: AtomicUsize,
+}
+
+impl AccountedJoinState {
+    fn layout() -> Result<Layout> {
+        Ok(Layout::new::<ArcHeader>()
+            .extend(Layout::new::<AccountedJoinStateInner>())?
+            .0
+            .pad_to_align())
+    }
+
+    fn new(allocation: Box<dyn NativeAllocation>) -> Self {
+        let mut owner = Self {
+            inner: Some(Arc::new(AccountedJoinStateInner {
+                state: ManuallyDrop::new(TryMutex::new(JoinState::running())),
+                allocation: ManuallyDrop::new(allocation),
+            })),
+        };
+        // Install the owning wrapper before confirmation. If confirmation
+        // unwinds, its Drop still frees the actual Arc before releasing credit.
+        let inner = Arc::get_mut(owner.inner.as_mut().expect("private state exists"))
+            .expect("state has not been shared before confirmation");
+        inner.allocation.allocated();
+        owner
+    }
+
+    fn inner(&self) -> &AccountedJoinStateInner {
+        self.inner.as_ref().expect("live private state")
+    }
+
+    fn clone_private(&self) -> Self {
+        Self {
+            inner: Some(Arc::clone(self.inner.as_ref().expect("live private state"))),
+        }
+    }
+}
+
+impl Drop for AccountedJoinState {
+    fn drop(&mut self) {
+        let Some(inner) = self.inner.take().and_then(Arc::into_inner) else {
+            return;
+        };
+        // EVERY strong wrapper uses into_inner. The one winner receives the
+        // payload only after the sole implicit Weak/header allocation is freed
+        // (pinned sync.rs into_inner drops Weak before returning Some(inner)).
+        // Keep the charge through state/waker destruction too. If that panics,
+        // ManuallyDrop deliberately retains uncertain credit; no early refund.
+        let mut inner = ManuallyDrop::new(inner);
+        // SAFETY: into_inner transferred this sole payload after freeing its
+        // Arc header. Neither field has been dropped; we destroy each at most
+        // once in order, intentionally leaking allocation if state Drop unwinds.
+        unsafe {
+            ManuallyDrop::drop(&mut inner.state);
+            ManuallyDrop::drop(&mut inner.allocation);
+        }
+    }
+}
+
+impl JoinStateHandle {
+    fn legacy() -> Self {
+        Self::Legacy(Arc::new(TryMutex::new(JoinState::running())))
+    }
+
+    fn with_memory(memory: &Memory) -> Result<Self> {
+        if memory.is_none() {
+            return Ok(Self::legacy());
+        }
+        let layout = AccountedJoinState::layout()?;
+        // The supplied original factory pays the entire Arc header+payload
+        // BEFORE allocation. Its affine allocation guard owns budget directly;
+        // no factory Arc is retained by an escaping cancellation handle.
+        let allocation = native_memory::reserve(memory, layout.size())?
+            .expect("selected nonzero Arc requires an affine allocation owner");
+        Ok(Self::Accounted(AccountedJoinState::new(allocation)))
+    }
+
+    fn clone_private(&self) -> Self {
+        match self {
+            Self::Legacy(state) => Self::Legacy(Arc::clone(state)),
+            Self::Accounted(state) => Self::Accounted(state.clone_private()),
+        }
+    }
+
+    fn try_lock(&self) -> Option<TryMutexGuard<'_, JoinState>> {
+        match self {
+            Self::Legacy(state) => state.try_lock(),
+            Self::Accounted(state) => state.inner().state.try_lock(),
+        }
+    }
 }
 
 enum JoinState {
@@ -44,6 +167,15 @@ enum JoinState {
     /// The running task has completed, so no need to abort it and nothing else
     /// needs to wait.
     Complete,
+}
+
+impl JoinState {
+    fn running() -> Self {
+        Self::Running {
+            waiting_for_abort_signal: None,
+            waiting_for_abort_to_complete: None,
+        }
+    }
 }
 
 impl JoinHandle {
@@ -86,19 +218,37 @@ impl JoinHandle {
     /// Wraps the `future` provided in a new future which is "abortable" where
     /// if the returned `JoinHandle` is flagged then the future will resolve
     /// ASAP with `None` and drop the provided `future`.
+    #[cfg(test)]
     pub(crate) fn run<F>(future: F) -> (JoinHandle, impl Future<Output = Option<F::Output>>)
     where
         F: Future,
     {
-        let handle = JoinHandle {
-            state: Arc::new(TryMutex::new(JoinState::Running {
-                waiting_for_abort_signal: None,
-                waiting_for_abort_to_complete: None,
-            })),
-        };
+        Self::from_state(future, JoinStateHandle::legacy())
+    }
+
+    // Original NativeMemory is selected before Store construction. A typed
+    // refusal publishes no join handle and never polls the provided future.
+    pub(crate) fn run_with_memory<F>(
+        future: F,
+        memory: Memory,
+    ) -> Result<(JoinHandle, impl Future<Output = Option<F::Output>>)>
+    where
+        F: Future,
+    {
+        Ok(Self::from_state(
+            future,
+            JoinStateHandle::with_memory(&memory)?,
+        ))
+    }
+
+    fn from_state<F: Future>(
+        future: F,
+        state: JoinStateHandle,
+    ) -> (JoinHandle, JoinHandleFuture<F>) {
+        let handle = JoinHandle { state };
         let future = JoinHandleFuture {
             future: ManuallyDrop::new(future),
-            state: handle.state.clone(),
+            state: handle.state.clone_private(),
         };
         (handle, future)
     }
@@ -134,7 +284,7 @@ impl Future for JoinHandle {
 
 struct JoinHandleFuture<F> {
     future: ManuallyDrop<F>,
-    state: Arc<TryMutex<JoinState>>,
+    state: JoinStateHandle,
 }
 
 impl<F> Future for JoinHandleFuture<F>
@@ -210,6 +360,7 @@ impl<F> Drop for JoinHandleFuture<F> {
 #[cfg(test)]
 mod tests {
     use super::JoinHandle;
+    use alloc::{boxed::Box, string::ToString};
     use std::pin::{Pin, pin};
     use std::task::{Context, Poll, Waker};
     use tokio::sync::oneshot;
@@ -290,5 +441,292 @@ mod tests {
         let task = tokio::task::spawn(future);
         handle.await;
         task.await.unwrap();
+    }
+
+    // These controls exercise the actual private cell and allocation callbacks.
+    // Counters observe this exact backing owner; they are not a host/RSS ledger.
+    #[derive(Default)]
+    struct CellObservations {
+        requested: std::sync::atomic::AtomicUsize,
+        reserved: std::sync::atomic::AtomicUsize,
+        confirmed: std::sync::atomic::AtomicUsize,
+        refunded: std::sync::atomic::AtomicUsize,
+        factory_dropped: std::sync::atomic::AtomicUsize,
+        future_polled: std::sync::atomic::AtomicUsize,
+        future_dropped: std::sync::atomic::AtomicBool,
+        completion_woken: std::sync::atomic::AtomicBool,
+    }
+    struct CellMemory {
+        observations: std::sync::Arc<CellObservations>,
+        refuse: bool,
+        panic_confirmation: bool,
+    }
+    struct CellAllocation {
+        observations: std::sync::Arc<CellObservations>,
+        bytes: usize,
+        panic_confirmation: bool,
+    }
+    impl crate::NativeMemory for CellMemory {
+        fn reserve(&self, bytes: usize) -> crate::Result<Box<dyn crate::NativeAllocation>> {
+            use std::sync::atomic::Ordering::SeqCst;
+            self.observations.requested.store(bytes, SeqCst);
+            if self.refuse {
+                return Err(crate::Error::msg("join-cell-original-memory-refused"));
+            }
+            self.observations.reserved.fetch_add(bytes, SeqCst);
+            Ok(Box::new(CellAllocation {
+                observations: self.observations.clone(),
+                bytes,
+                panic_confirmation: self.panic_confirmation,
+            }))
+        }
+    }
+    impl Drop for CellMemory {
+        fn drop(&mut self) {
+            self.observations
+                .factory_dropped
+                .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        }
+    }
+    impl crate::NativeAllocation for CellAllocation {
+        fn allocated(&mut self) {
+            self.observations
+                .confirmed
+                .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            assert!(!self.panic_confirmation, "controlled confirmation unwind");
+        }
+    }
+    impl Drop for CellAllocation {
+        fn drop(&mut self) {
+            use std::sync::atomic::Ordering::SeqCst;
+            self.observations.reserved.fetch_sub(self.bytes, SeqCst);
+            self.observations.refunded.fetch_add(1, SeqCst);
+        }
+    }
+    fn cell_memory(
+        observations: &std::sync::Arc<CellObservations>,
+        refuse: bool,
+        panic_confirmation: bool,
+    ) -> crate::runtime::native_memory::Memory {
+        Some(std::sync::Arc::new(CellMemory {
+            observations: observations.clone(),
+            refuse,
+            panic_confirmation,
+        }))
+    }
+    struct CellFuture {
+        observations: std::sync::Arc<CellObservations>,
+        ready: bool,
+        paid: bool,
+    }
+    impl Future for CellFuture {
+        type Output = ();
+        fn poll(self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<()> {
+            self.observations
+                .future_polled
+                .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            if self.ready {
+                Poll::Ready(())
+            } else {
+                Poll::Pending
+            }
+        }
+    }
+    impl Drop for CellFuture {
+        fn drop(&mut self) {
+            use std::sync::atomic::Ordering::SeqCst;
+            if self.paid {
+                assert!(self.observations.reserved.load(SeqCst) > 0);
+            }
+            self.observations.future_dropped.store(true, SeqCst);
+        }
+    }
+    struct CompletionWake(std::sync::Arc<CellObservations>);
+    impl std::task::Wake for CompletionWake {
+        fn wake(self: std::sync::Arc<Self>) {
+            use std::sync::atomic::Ordering::SeqCst;
+            assert!(self.0.future_dropped.load(SeqCst));
+            assert!(self.0.reserved.load(SeqCst) > 0);
+            self.0.completion_woken.store(true, SeqCst);
+        }
+    }
+
+    #[test]
+    fn accounted_join_state_refuses_before_poll_and_none_retains_legacy_arc() {
+        use std::sync::atomic::Ordering::SeqCst;
+        let seen = std::sync::Arc::new(CellObservations::default());
+        let future = CellFuture {
+            observations: seen.clone(),
+            ready: false,
+            paid: false,
+        };
+        let result = JoinHandle::run_with_memory(future, cell_memory(&seen, true, false));
+        let error = match result {
+            Err(error) => error,
+            Ok(_) => panic!("must refuse"),
+        };
+        assert!(
+            error
+                .to_string()
+                .contains("join-cell-original-memory-refused")
+        );
+        assert_eq!(
+            seen.requested.load(SeqCst),
+            super::AccountedJoinState::layout().unwrap().size()
+        );
+        println!("LSF_JOIN_STATE_LAYOUT={}", seen.requested.load(SeqCst));
+        assert_eq!(seen.confirmed.load(SeqCst), 0);
+        assert_eq!(seen.future_polled.load(SeqCst), 0);
+        assert!(seen.future_dropped.load(SeqCst));
+        assert_eq!(seen.reserved.load(SeqCst), 0);
+        let (handle, future) = JoinHandle::run_with_memory(async {}, None).unwrap();
+        assert!(matches!(&handle.state, super::JoinStateHandle::Legacy(_)));
+        drop(future);
+        drop(handle);
+        assert_eq!(seen.confirmed.load(SeqCst), 0);
+    }
+
+    #[test]
+    fn accounted_join_state_normal_and_abort_keep_charge_through_last_alias() {
+        use std::sync::atomic::Ordering::SeqCst;
+        for abort in [false, true] {
+            let seen = std::sync::Arc::new(CellObservations::default());
+            let original = CellFuture {
+                observations: seen.clone(),
+                ready: !abort,
+                paid: true,
+            };
+            // Exercise the real owned Store-factory binding, not just an
+            // external Arc. Its separate pre-admitted header owner must retire
+            // while both cell aliases and their original allocation survive.
+            let factory_seen = std::sync::Arc::new(CellObservations::default());
+            let factory_bytes = crate::NativeMemoryBinding::allocation_size::<CellMemory>();
+            factory_seen.reserved.store(factory_bytes, SeqCst);
+            let binding = crate::NativeMemoryBinding::new(
+                CellMemory {
+                    observations: seen.clone(),
+                    refuse: false,
+                    panic_confirmation: false,
+                },
+                Box::new(CellAllocation {
+                    observations: factory_seen.clone(),
+                    bytes: factory_bytes,
+                    panic_confirmation: false,
+                }),
+            );
+            let (mut handle, future) =
+                JoinHandle::run_with_memory(original, Some(binding.memory())).unwrap();
+            assert_eq!(factory_seen.confirmed.load(SeqCst), 1);
+            assert_eq!(seen.factory_dropped.load(SeqCst), 0);
+            drop(binding);
+            assert_eq!(factory_seen.reserved.load(SeqCst), 0);
+            assert_eq!(factory_seen.refunded.load(SeqCst), 1);
+            let bytes = seen.requested.load(SeqCst);
+            assert_eq!(bytes, super::AccountedJoinState::layout().unwrap().size());
+            assert_eq!(seen.confirmed.load(SeqCst), 1);
+            // The state owns its paid allocation, not the factory Arc.
+            assert_eq!(seen.factory_dropped.load(SeqCst), 1);
+            let waker = Waker::from(std::sync::Arc::new(CompletionWake(seen.clone())));
+            assert!(
+                Pin::new(&mut handle)
+                    .poll(&mut Context::from_waker(&waker))
+                    .is_pending()
+            );
+            if abort {
+                handle.abort();
+            }
+            let mut future = Box::pin(future);
+            assert!(
+                future
+                    .as_mut()
+                    .poll(&mut Context::from_waker(Waker::noop()))
+                    .is_ready()
+            );
+            assert!(!seen.future_dropped.load(SeqCst));
+            drop(future);
+            assert!(seen.future_dropped.load(SeqCst));
+            assert!(seen.completion_woken.load(SeqCst));
+            assert_eq!(seen.reserved.load(SeqCst), bytes);
+            drop(handle);
+            assert_eq!(seen.reserved.load(SeqCst), 0);
+            assert_eq!(seen.refunded.load(SeqCst), 1);
+        }
+        // Dropping the cancellation handle first cannot refund the live future.
+        let seen = std::sync::Arc::new(CellObservations::default());
+        let (handle, future) =
+            JoinHandle::run_with_memory(async {}, cell_memory(&seen, false, false)).unwrap();
+        drop(handle);
+        assert!(seen.reserved.load(SeqCst) > 0);
+        drop(future);
+        assert_eq!(seen.reserved.load(SeqCst), 0);
+        assert_eq!(seen.refunded.load(SeqCst), 1);
+    }
+
+    #[test]
+    fn accounted_join_state_concurrent_final_drops_refund_exactly_once() {
+        use std::sync::atomic::Ordering::SeqCst;
+        let seen = std::sync::Arc::new(CellObservations::default());
+        let first = super::JoinStateHandle::with_memory(&cell_memory(&seen, false, false)).unwrap();
+        let second = first.clone_private();
+        let barrier = std::sync::Arc::new(std::sync::Barrier::new(2));
+        std::thread::scope(|scope| {
+            let other = barrier.clone();
+            scope.spawn(move || {
+                other.wait();
+                drop(first);
+            });
+            scope.spawn(move || {
+                barrier.wait();
+                drop(second);
+            });
+        });
+        assert_eq!(seen.reserved.load(SeqCst), 0);
+        assert_eq!(seen.refunded.load(SeqCst), 1);
+    }
+
+    #[test]
+    fn accounted_join_state_confirmation_unwind_destroys_cell_before_refund() {
+        use std::sync::atomic::Ordering::SeqCst;
+        let seen = std::sync::Arc::new(CellObservations::default());
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            let _ = JoinHandle::run_with_memory(async {}, cell_memory(&seen, false, true));
+        }));
+        assert!(result.is_err());
+        assert_eq!(seen.confirmed.load(SeqCst), 1);
+        assert_eq!(seen.reserved.load(SeqCst), 0);
+        assert_eq!(seen.refunded.load(SeqCst), 1);
+    }
+
+    #[test]
+    fn accounted_join_state_waker_destructor_unwind_retains_uncertain_charge() {
+        use std::sync::atomic::Ordering::SeqCst;
+        struct PanicOnDrop;
+        impl std::task::Wake for PanicOnDrop {
+            fn wake(self: std::sync::Arc<Self>) {}
+        }
+        impl Drop for PanicOnDrop {
+            fn drop(&mut self) {
+                panic!("controlled state-waker unwind");
+            }
+        }
+        let seen = std::sync::Arc::new(CellObservations::default());
+        let state = super::JoinStateHandle::with_memory(&cell_memory(&seen, false, false)).unwrap();
+        {
+            let mut locked = state.try_lock().unwrap();
+            match &mut *locked {
+                super::JoinState::Running {
+                    waiting_for_abort_signal,
+                    ..
+                } => {
+                    *waiting_for_abort_signal = Some(Waker::from(std::sync::Arc::new(PanicOnDrop)));
+                }
+                _ => panic!("original running state"),
+            }
+        }
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| drop(state)));
+        assert!(result.is_err());
+        assert!(seen.reserved.load(SeqCst) > 0);
+        assert_eq!(seen.refunded.load(SeqCst), 0);
+        // One intentionally retained affine owner; no retry/reset or fake free.
     }
 }
