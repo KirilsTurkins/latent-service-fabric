@@ -17,7 +17,7 @@ MAX_SAMPLES = 16 * 1024
 KEYS = ('blocks', 'instructions', 'phi', 'phiIncoming', 'alloca', 'load',
         'store', 'volatileLoad', 'volatileStore', 'invoke', 'catchswitch',
         'catchswitchPhi', 'catchswitchPhiIncoming', 'simpleSsaStores',
-        'simpleSsaStorePatterns', 'simpleSsaRepeatedStores')
+        'simpleSsaStorePatterns', 'simpleSsaRepeatedStores', 'unclassifiedSsaStoreCandidates')
 NAME = r'(?:[-a-zA-Z$._0-9]+|"(?:[^"\\]|\\[0-9A-Fa-f]{2})+")'
 LABEL = re.compile(NAME + r':(?:\s*;.*)?$')
 INCOMING = re.compile(r',\s*%' + NAME + r'\s*\]')
@@ -47,17 +47,21 @@ SIMPLE_STORE = re.compile(r'(.+?)\s+(%' + NAME + r'),\s+ptr(?:\s+addrspace\([0-9
 
 def validate_patterns(value: dict, snapshots: dict) -> None:
     if (type(value) is not dict or set(value) != {'claim', 'maximumKeys', 'maximumTokenBytes',
-            'maximumPublished', 'phases'} or value['claim'] != PATTERN_CLAIM
+            'maximumPublished', 'phases', 'coverage'} or value['claim'] != PATTERN_CLAIM
             or type(value['maximumKeys']) is not int or value['maximumKeys'] != MAX_PATTERN_KEYS
             or type(value['maximumTokenBytes']) is not int or value['maximumTokenBytes'] != MAX_PATTERN_TOKEN
             or type(value['maximumPublished']) is not int or value['maximumPublished'] != MAX_PUBLISHED_PATTERNS
-            or type(value['phases']) is not dict or set(value['phases']) != set(snapshots)):
+            or type(value['phases']) is not dict or set(value['phases']) != set(snapshots)
+            or type(value['coverage']) is not dict or set(value['coverage']) != set(snapshots)):
         raise ValueError('store-pattern-summary')
     for phase, top in value['phases'].items():
         row = snapshots[phase]
         if (type(top) is not list or len(top) != min(MAX_PUBLISHED_PATTERNS, row['simpleSsaStorePatterns'])
                 or not 0 <= row['simpleSsaStorePatterns'] <= MAX_PATTERN_KEYS
-                or row['simpleSsaStores'] > row['store'] - row['volatileStore']
+                or type(row['unclassifiedSsaStoreCandidates']) is not int
+                or not 0 <= row['unclassifiedSsaStoreCandidates'] <= row['store'] - row['volatileStore']
+                or row['simpleSsaStores'] + row['unclassifiedSsaStoreCandidates'] > row['store'] - row['volatileStore']
+                or value['coverage'][phase] != ('partial' if row['unclassifiedSsaStoreCandidates'] else 'complete')
                 or row['simpleSsaRepeatedStores'] != row['simpleSsaStores'] - row['simpleSsaStorePatterns']
                 or row['catchswitchPhi'] > row['phi'] or row['catchswitchPhiIncoming'] > row['phiIncoming']):
             raise ValueError('store-pattern-summary')
@@ -171,9 +175,11 @@ class Counter:
         # and volatile/atomic writes are outside this SYNTACTIC comparison.
         match = SIMPLE_STORE.fullmatch(operands)
         if match is None:
-            # A non-simple SSA store cannot silently masquerade as zero patterns.
+            # Ambiguous candidate syntax limits only this optional pattern view.
+            # A '%' may also name a type rather than a stored SSA value.
+            # Whole-phase opcode/store/PHI counts remain independent and exact.
             if '%' in operands.split(',', 1)[0]:
-                raise ValueError('store-pattern-format')
+                count['unclassifiedSsaStoreCandidates'] += 1
             return
         tokens = match.groups()
         if any('\0' in token or len(token.encode('utf-8')) > MAX_PATTERN_TOKEN for token in tokens):
@@ -237,6 +243,8 @@ class Counter:
         self.record['syntacticStorePatterns'] = {
             'claim': PATTERN_CLAIM, 'maximumKeys': MAX_PATTERN_KEYS,
             'maximumTokenBytes': MAX_PATTERN_TOKEN, 'maximumPublished': MAX_PUBLISHED_PATTERNS,
+            'coverage': {phase: 'partial' if row['unclassifiedSsaStoreCandidates'] else 'complete'
+                         for phase, row in self.record['snapshots'].items()},
             'phases': {phase: [{'digest': key, 'occurrences': value}
                 for key, value in sorted(rows.items(), key=lambda row: (-row[1], row[0]))[:MAX_PUBLISHED_PATTERNS]]
                 for phase, rows in self.patterns.items()}}

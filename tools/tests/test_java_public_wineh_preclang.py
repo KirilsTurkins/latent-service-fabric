@@ -43,6 +43,39 @@ class JavaPublicWinEHPreClang(unittest.TestCase):
         self.assertNotIn('%slot', canonical(value).decode())
         self.assertNotIn('%other', canonical(value).decode())
         self.assertEqual(value['syntacticStorePatterns']['claim'], ir.PATTERN_CLAIM)
+        self.assertEqual(value['syntacticStorePatterns']['coverage'],
+                         {'before': 'complete', 'after': 'complete'})
+        # Valid LLVM store forms outside the direct-SSA pattern classifier must
+        # not truncate the independent complete before/after phase counters.
+        extra = (b'  store %named zeroinitializer, ptr %destination, align 4\n'
+                 b'  store i32 %v, ptr getelementptr (i32, ptr @global, i32 0), align 4\n')
+        partial = ir.observe(IR.replace(b'  %cs = catchswitch', extra + b'  %cs = catchswitch')
+                             .replace(b'  ret ptr null', extra + b'  ret ptr null'))
+        self.assertEqual(partial['status'], 'observed')
+        self.assertFalse(partial['prefixOnly'])
+        self.assertEqual(partial['snapshots']['before']['store'], 2)
+        self.assertEqual(partial['snapshots']['after']['store'], 6)
+        for phase in ('before', 'after'):
+            self.assertEqual(partial['snapshots'][phase]['instructions'],
+                             value['snapshots'][phase]['instructions'] + 2)
+            self.assertEqual(partial['snapshots'][phase]['unclassifiedSsaStoreCandidates'], 2)
+            for key in ('phi', 'phiIncoming', 'catchswitchPhi', 'catchswitchPhiIncoming',
+                        'simpleSsaStores', 'simpleSsaStorePatterns', 'simpleSsaRepeatedStores'):
+                self.assertEqual(partial['snapshots'][phase][key], value['snapshots'][phase][key])
+        self.assertEqual(partial['syntacticStorePatterns']['coverage'],
+                         {'before': 'partial', 'after': 'partial'})
+        ir.validate_patterns(partial['syntacticStorePatterns'], partial['snapshots'])
+        forged = copy.deepcopy(partial['syntacticStorePatterns'])
+        forged['coverage']['after'] = 'complete'
+        with self.assertRaisesRegex(ValueError, 'store-pattern-summary'):
+            ir.validate_patterns(forged, partial['snapshots'])
+        for bad in (2.0, True, 7):
+            snapshots = copy.deepcopy(partial['snapshots'])
+            snapshots['after']['unclassifiedSsaStoreCandidates'] = bad
+            with self.assertRaisesRegex(ValueError, 'store-pattern-summary'):
+                ir.validate_patterns(partial['syntacticStorePatterns'], snapshots)
+        self.assertEqual(ir.observe(IR.replace(b'ret ptr null', b'unknown i32 %v'))['reason'],
+                         'instruction-opcode')
         counter = ir.Counter()
         for start in range(0, len(IR), 7):
             counter.feed(IR[start:start + 7])
