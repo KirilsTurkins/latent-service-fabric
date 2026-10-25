@@ -244,6 +244,7 @@ def helper(output: Path, resource_snapshot=None) -> str:
     for name in ("build_process", "build_process_linux", "build_process_signals", "guest_runtime_profiles",
                  "browser_response_ownership", "guest_compatibility", "guest_compatibility_context", "guest_compatibility_outcomes", "guest_runtime_receipts",
                  "guest_compatibility_context_build", "guest_emitted_code",
+                 "guest_api_analysis", "guest_compiler_capture", "guest_compiler_edges",
                  "application_dependencies", "application_dependency_store", "application_dependency_tools",
                  "build_snapshot", "rust_capsule_project", "guest_resources", "outbound_stream_operator"):
         entries[f"tools/{name}.py"] = (ROOT / f"tools/{name}.py").read_bytes()

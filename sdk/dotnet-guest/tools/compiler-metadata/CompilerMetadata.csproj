@@ -6,5 +6,5 @@
     <Nullable>enable</Nullable>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
   </PropertyGroup>
-  <ItemGroup><Compile Include="Program.cs" /></ItemGroup>
+  <ItemGroup><Compile Include="Program.cs" /><Compile Include="CilReferences.cs" /></ItemGroup>
 </Project>

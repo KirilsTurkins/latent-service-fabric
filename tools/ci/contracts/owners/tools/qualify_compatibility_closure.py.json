@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_compatibility_closure.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Reviewed whole679 finite owner, private deadline propagation and ordinary-default API presentation; original shared process ownership and runtime limits unchanged.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "d9773c98be7dc1e964005dd6dd73cecd0f0ec69a92ed16452cadeff110051475"
+}

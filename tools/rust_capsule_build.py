@@ -5,6 +5,7 @@ from tools import guest_compatibility_context_build, guest_runtime_receipts
 from tools.transaction_guest_project import packaging_arguments
 
 import json
+import math
 import re
 from pathlib import Path
 import shutil
@@ -489,7 +490,11 @@ def componentize(commands, wasm_tools: Path, module: Path, output: Path, source_
 def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path | None,
           repository: str, *, offline: bool = False, host_linker: Path | None = None,
           rust_bin: Path | None = None, executable_approval: str | None = None,
-          standard_runtime: Path | None = None, http_runtime: Path | None = None) -> Path:
+          standard_runtime: Path | None = None, http_runtime: Path | None = None,
+          _deadline: float | None = None) -> Path:
+    if _deadline is not None and (type(_deadline) not in (int, float) or not math.isfinite(_deadline)
+                                 or _deadline <= time.monotonic() + 5):
+        raise ValueError('Rust-build-original-owner-deadline')
     # Commands/package_inputs are shared by every language. Only this recipe
     # loads the Rust application graph and executable-input approval consumer.
     from tools import rust_standard_logging_inputs as standard
@@ -514,6 +519,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
     if (standard_runtime is not None) != (runtime_profile in standard.PREPARED):
         raise ValueError('explicit Rust logging profile requires its owned prepared standard runtime only')
     source_inputs = inventory(files)
+    from tools import guest_compiler_capture
+    compiler_edges = guest_compiler_capture.Capture(files, 'rust')
     recipe_files = {name: read_file(ROOT / name)
                     for name in dict.fromkeys((*selected_recipe(), *standard.source_build_inputs(runtime_profile)))}
     if http_runtime is not None:
@@ -544,7 +551,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             environment = build_environment(temporary)
             if offline:
                 environment.update(CARGO_NET_OFFLINE="true", RUSTUP_AUTO_INSTALL="0")
-            paths, materials = resolve_tools(pins["toolchain"], work, environment, installed=rust_bin)
+            probe_deadline = {} if _deadline is None else {'_deadline': _deadline}
+            paths, materials = resolve_tools(pins["toolchain"], work, environment, installed=rust_bin, **probe_deadline)
             prepared_runtime = standard.Prepared(standard_runtime, paths['rustc'], runtime_profile) if standard_runtime is not None else None
             thread_component = None
             if standard.has_threads(runtime_profile):
@@ -566,6 +574,10 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             environment.update(RUSTC=str(paths["rustc"]), RUSTUP_TOOLCHAIN=pins["toolchain"]["rust"]["toolchain"],
                                CARGO_INCREMENTAL="0", CARGO_TARGET_DIR=str(temporary / "target"))
             commands = Commands(work, output, environment)
+            if _deadline is not None:
+                if _deadline <= time.monotonic() + 5:
+                    raise ValueError('compiler-setup-consumed-parent-cleanup-reserve')
+                commands.deadline = min(commands.deadline, _deadline - 5)
             stage = "application-dependencies"
             verified = verify_inputs(observed.dependency_root, "rust")
             closure, approval, output_guard = None, None, None
@@ -594,7 +606,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 distributions = {"rust-compiler-and-sysroot": sysroot, "zig-host-linker-and-sysroot": zig.parent}
                 if prepared_runtime is not None:
                     distributions['rust-standard-stdio-sysroot'] = prepared_runtime.root
-                isolation = Isolation(temporary, selected_tools, distributions)
+                isolation = Isolation(temporary, selected_tools, distributions, **probe_deadline)
                 environment_guard = RustEnvironment(environment, isolation)
                 write_json(output / "rust-compiler-inputs.json", isolation.receipt)
                 if verified.lock["executableInputs"]:
@@ -622,7 +634,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             binding_digest = binding_check(work, pins, commands, paths["wit-bindgen"])
             stage = "compile"
             diagnostics = ["--message-format=json"] if packager is None else []
-            compile_arguments = ["build", "--locked", "--release", "--lib", "--target", "wasm32-unknown-unknown", *diagnostics]
+            compile_arguments = ["rustc", "--locked", "--release", "--lib", "--target", "wasm32-unknown-unknown", *diagnostics]
+            mir_output = temporary / 'compiler-edge.mir'
             if prepared_runtime is not None:
                 prepared_runtime.check()
                 compile_arguments.extend(prepared_runtime.arguments(source_root=work)
@@ -635,11 +648,20 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     compile_arguments.append("--all-features")
                 if selection.get("noDefaultFeatures"):
                     compile_arguments.append("--no-default-features")
+                compile_arguments.extend(['--', '--emit=mir=' + str(mir_output) + ',link'])
                 environment_guard.compile(commands, paths["cargo"], compile_arguments, work)
                 if approval is not None:
                     output_guard = RustExecutableOutputs(temporary / 'target', output, approval.identity)
             else:
+                compile_arguments.extend(['--', '--emit=mir=' + str(mir_output) + ',link'])
                 commands.run("compile", paths["cargo"], *compile_arguments)
+            if compiler_edges.queries:
+                try:
+                    raw_mir = read_file(mir_output, 4 * 1024 * 1024)
+                    for source in sorted({row['source'] for row in compiler_edges.queries}):
+                        compiler_edges.retain_unit(source, raw_mir)
+                except (OSError, ValueError):
+                    for query in compiler_edges.queries: compiler_edges.failed(query['id'])
             if prepared_runtime is not None:
                 prepared_runtime.check()
             module = temporary / "target/wasm32-unknown-unknown/release" / (project["name"].replace("-", "_") + ".wasm")
@@ -734,6 +756,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     for name in ("executable-input-approval-request.json", "executable-input-outputs.json"):
                         data = read_file(output / name, 8 * 1024 * 1024)
                         materials.append({"name": name.removesuffix(".json"), "digest": digest(data), "size": len(data)})
+            materials.append(guest_compiler_capture.finish(compiler_edges, output, files, component,
+                recipe_inputs, next(row['digest'] for row in materials if row['name'] == 'rustc')))
             materials.append(guest_runtime_receipts.emit(output, 'rust', runtime_profile, files,
                 source_inputs, component, materials, graph=closure.lock if closure is not None else None,
                 binding_digest=binding_digest, configuration={"profile": runtime_profile, "world": project['world'],

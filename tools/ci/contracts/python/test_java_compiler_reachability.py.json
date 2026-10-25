@@ -6,6 +6,7 @@
     "CompilerMethods.test_completed_marker_must_bind_every_exact_query_once",
     "CompilerMethods.test_native_not_retained_does_not_claim_api_unsupported_or_execution",
     "CompilerMethods.test_normal_builder_preserves_the_selected_option_at_the_actual_compiler_constructor",
+    "CompilerMethods.test_passive_source_origin_or_class_refusal_is_unknown_but_required_gate_and_owner_failures_stay_hard",
     "CompilerMethods.test_project_class_queries_use_passive_source_ownership_not_a_package_name_allowlist",
     "CompilerMethods.test_rehashed_report_cannot_turn_compiler_presence_into_api_support_or_execution",
     "CompilerMethods.test_transitive_captured_jar_identity_and_same_class_ambiguity_are_preserved",
@@ -19,7 +20,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:86a56b93cbed677fa57885d196b4708d99aa8203bc828ef80883accbec6e83e9",
+        "module:setup-sha256:381035cc59290179a0f8fafa9040a748cdcc931a90db04bb1f8a3613c7d7fab4",
         "class:raise:raise unittest.SkipTest('JDK is required for passive actual-class metadata controls')",
         "class:setup-sha256:33d07d8c3e6ceaa215c029e9335d3cf17039321c677e888af565768100620133",
         "class:skip:unittest.SkipTest('JDK is required for passive actual-class metadata controls')"
@@ -33,7 +34,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:86a56b93cbed677fa57885d196b4708d99aa8203bc828ef80883accbec6e83e9",
+        "module:setup-sha256:381035cc59290179a0f8fafa9040a748cdcc931a90db04bb1f8a3613c7d7fab4",
         "class:raise:raise unittest.SkipTest('JDK is required for passive actual-class metadata controls')",
         "class:setup-sha256:33d07d8c3e6ceaa215c029e9335d3cf17039321c677e888af565768100620133",
         "class:skip:unittest.SkipTest('JDK is required for passive actual-class metadata controls')"
@@ -47,7 +48,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:86a56b93cbed677fa57885d196b4708d99aa8203bc828ef80883accbec6e83e9",
+        "module:setup-sha256:381035cc59290179a0f8fafa9040a748cdcc931a90db04bb1f8a3613c7d7fab4",
         "class:raise:raise unittest.SkipTest('JDK is required for passive actual-class metadata controls')",
         "class:setup-sha256:33d07d8c3e6ceaa215c029e9335d3cf17039321c677e888af565768100620133",
         "class:skip:unittest.SkipTest('JDK is required for passive actual-class metadata controls')"
@@ -61,7 +62,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:86a56b93cbed677fa57885d196b4708d99aa8203bc828ef80883accbec6e83e9",
+        "module:setup-sha256:381035cc59290179a0f8fafa9040a748cdcc931a90db04bb1f8a3613c7d7fab4",
         "class:raise:raise unittest.SkipTest('JDK is required for passive actual-class metadata controls')",
         "class:setup-sha256:33d07d8c3e6ceaa215c029e9335d3cf17039321c677e888af565768100620133",
         "class:skip:unittest.SkipTest('JDK is required for passive actual-class metadata controls')"
@@ -75,7 +76,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:86a56b93cbed677fa57885d196b4708d99aa8203bc828ef80883accbec6e83e9",
+        "module:setup-sha256:381035cc59290179a0f8fafa9040a748cdcc931a90db04bb1f8a3613c7d7fab4",
         "class:raise:raise unittest.SkipTest('JDK is required for passive actual-class metadata controls')",
         "class:setup-sha256:33d07d8c3e6ceaa215c029e9335d3cf17039321c677e888af565768100620133",
         "class:skip:unittest.SkipTest('JDK is required for passive actual-class metadata controls')"
@@ -89,7 +90,21 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:86a56b93cbed677fa57885d196b4708d99aa8203bc828ef80883accbec6e83e9",
+        "module:setup-sha256:381035cc59290179a0f8fafa9040a748cdcc931a90db04bb1f8a3613c7d7fab4",
+        "class:raise:raise unittest.SkipTest('JDK is required for passive actual-class metadata controls')",
+        "class:setup-sha256:33d07d8c3e6ceaa215c029e9335d3cf17039321c677e888af565768100620133",
+        "class:skip:unittest.SkipTest('JDK is required for passive actual-class metadata controls')"
+      ],
+      "skipSites": []
+    },
+    "CompilerMethods.test_passive_source_origin_or_class_refusal_is_unknown_but_required_gate_and_owner_failures_stay_hard": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:381035cc59290179a0f8fafa9040a748cdcc931a90db04bb1f8a3613c7d7fab4",
         "class:raise:raise unittest.SkipTest('JDK is required for passive actual-class metadata controls')",
         "class:setup-sha256:33d07d8c3e6ceaa215c029e9335d3cf17039321c677e888af565768100620133",
         "class:skip:unittest.SkipTest('JDK is required for passive actual-class metadata controls')"
@@ -103,7 +118,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:86a56b93cbed677fa57885d196b4708d99aa8203bc828ef80883accbec6e83e9",
+        "module:setup-sha256:381035cc59290179a0f8fafa9040a748cdcc931a90db04bb1f8a3613c7d7fab4",
         "class:raise:raise unittest.SkipTest('JDK is required for passive actual-class metadata controls')",
         "class:setup-sha256:33d07d8c3e6ceaa215c029e9335d3cf17039321c677e888af565768100620133",
         "class:skip:unittest.SkipTest('JDK is required for passive actual-class metadata controls')"
@@ -117,7 +132,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:86a56b93cbed677fa57885d196b4708d99aa8203bc828ef80883accbec6e83e9",
+        "module:setup-sha256:381035cc59290179a0f8fafa9040a748cdcc931a90db04bb1f8a3613c7d7fab4",
         "class:raise:raise unittest.SkipTest('JDK is required for passive actual-class metadata controls')",
         "class:setup-sha256:33d07d8c3e6ceaa215c029e9335d3cf17039321c677e888af565768100620133",
         "class:skip:unittest.SkipTest('JDK is required for passive actual-class metadata controls')"
@@ -131,7 +146,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:86a56b93cbed677fa57885d196b4708d99aa8203bc828ef80883accbec6e83e9",
+        "module:setup-sha256:381035cc59290179a0f8fafa9040a748cdcc931a90db04bb1f8a3613c7d7fab4",
         "class:raise:raise unittest.SkipTest('JDK is required for passive actual-class metadata controls')",
         "class:setup-sha256:33d07d8c3e6ceaa215c029e9335d3cf17039321c677e888af565768100620133",
         "class:skip:unittest.SkipTest('JDK is required for passive actual-class metadata controls')"
@@ -145,7 +160,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:86a56b93cbed677fa57885d196b4708d99aa8203bc828ef80883accbec6e83e9",
+        "module:setup-sha256:381035cc59290179a0f8fafa9040a748cdcc931a90db04bb1f8a3613c7d7fab4",
         "class:raise:raise unittest.SkipTest('JDK is required for passive actual-class metadata controls')",
         "class:setup-sha256:33d07d8c3e6ceaa215c029e9335d3cf17039321c677e888af565768100620133",
         "class:skip:unittest.SkipTest('JDK is required for passive actual-class metadata controls')"
@@ -155,6 +170,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_java_compiler_reachability.py",
-  "reviewReason": "Preserve original nine controls and add the actual normal-builder constructor selection regression after retained 1be observer unavailability",
+  "reviewReason": "Whole679 reviewed finite source controls: all original cases, bases, decorators and skip sites retained; explicit fixture-only guard changes bind reviewed helper/source setup. Actual compiler/node qualification is separate.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

@@ -1,0 +1,187 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "env": {
+      "CARGO_BUILD_JOBS": 2,
+      "CARGO_INCREMENTAL": 0,
+      "CELL": "${{ matrix.cell }}"
+    },
+    "if": "${{ github.event_name == 'push' && github.ref == 'refs/heads/feat/sdk-compatibility-closure-20261025' }}",
+    "name": "Required finite ${{ matrix.cell }} compatibility completion",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "name": "Bind original qualified native source and locked reader dependencies",
+        "run": "git fetch --no-tags --depth=1 origin 17e8e622ecd3307a246196cbb5ca06c0fac37301\npython3 -m pip install --requirement tools/requirements.lock"
+      },
+      {
+        "uses": "dtolnay/rust-toolchain",
+        "with": {
+          "targets": "wasm32-unknown-unknown"
+        }
+      },
+      {
+        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "if": "${{ contains(fromJSON('[\"c\",\"rust\"]'), matrix.cell) }}",
+        "uses": "mlugg/setup-zig",
+        "with": {
+          "version": "0.16.0"
+        }
+      },
+      {
+        "name": "Install the original normal captured compiler boundary",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap libgdbm6t64 libreadline8t64 libsqlite3-0 liblttng-ust1t64 libtcl8.6 libtk8.6\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\npython3 -B tools/install_guest_bindgen.py \"$RUNNER_TEMP/compatibility-bindgen\"\necho \"$RUNNER_TEMP/compatibility-bindgen\" >> \"$GITHUB_PATH\""
+      },
+      {
+        "if": "${{ contains(fromJSON('[\"typescript\",\"typescript-initializer\"]'), matrix.cell) }}",
+        "uses": "actions/setup-node",
+        "with": {
+          "node-version": "24.19.0"
+        }
+      },
+      {
+        "if": "${{ contains(fromJSON('[\"java\"]'), matrix.cell) }}",
+        "uses": "actions/setup-java",
+        "with": {
+          "distribution": "temurin",
+          "java-version": "25.0.4+101.0.LTS"
+        }
+      },
+      {
+        "if": "${{ contains(fromJSON('[\"dotnet\"]'), matrix.cell) }}",
+        "uses": "actions/setup-dotnet",
+        "with": {
+          "dotnet-version": "10.0.100"
+        }
+      },
+      {
+        "if": "${{ contains(fromJSON('[\"java\",\"dotnet\"]'), matrix.cell) }}",
+        "name": "Authenticate the ordinary official SDK29 compiler for managed cells",
+        "run": "set -euo pipefail\ncurl --fail --location --proto '=https' --tlsv1.2 --max-time 180 https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz --output \"$RUNNER_TEMP/compatibility-wasi-sdk.tar.gz\"\necho \"87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171  $RUNNER_TEMP/compatibility-wasi-sdk.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/compatibility-wasi-sdk.tar.gz\" -C \"$RUNNER_TEMP\"",
+        "shell": "bash"
+      },
+      {
+        "if": "${{ contains(fromJSON('[\"java\"]'), matrix.cell) }}",
+        "name": "Authenticate original Gradle and prepare only its normal compiler cache",
+        "run": "set -euo pipefail\ncurl --fail --location --proto '=https' --tlsv1.2 --max-time 180 https://services.gradle.org/distributions/gradle-9.1.0-bin.zip --output \"$RUNNER_TEMP/compatibility-gradle.zip\"\necho \"a17ddd85a26b6a7f5ddb71ff8b05fc5104c0202c6e64782429790c933686c806  $RUNNER_TEMP/compatibility-gradle.zip\" | sha256sum --check --strict\nunzip -q \"$RUNNER_TEMP/compatibility-gradle.zip\" -d \"$RUNNER_TEMP\"\nexport PATH=\"$RUNNER_TEMP/gradle-9.1.0/bin:$PATH\"\necho \"$RUNNER_TEMP/gradle-9.1.0/bin\" >> \"$GITHUB_PATH\"\npython3 -B tools/qualify_compatibility_closure.py --prepare-java-cache --tools \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\" --output \"$RUNNER_TEMP/compatibility-java-prerequisite\"",
+        "shell": "bash"
+      },
+      {
+        "if": "${{ contains(fromJSON('[\"dotnet\"]'), matrix.cell) }}",
+        "name": "Install original normal NativeAOT adapters",
+        "run": "python3 -B tools/dotnet_capsule.py install-tools \"$RUNNER_TEMP/compatibility-dotnet-tools\" --wasi-sdk \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\""
+      },
+      {
+        "if": "${{ contains(fromJSON('[\"typescript\",\"typescript-initializer\"]'), matrix.cell) }}",
+        "name": "Install original normal TypeScript tools without an engine build",
+        "run": "python3 -B tools/typescript_capsule.py install-tools \"$RUNNER_TEMP/compatibility-typescript-tools\""
+      },
+      {
+        "if": "${{ contains(fromJSON('[\"go\",\"go-queues\"]'), matrix.cell) }}",
+        "name": "Authenticate original Go1.27.3 and componentize-go0.4.3 and prepare the maintained v5 compiler",
+        "run": "set -euo pipefail\nout=\"$RUNNER_TEMP/go-http-tenant-tools\"\ntest ! -e \"$out\"\nmkdir \"$out\"\ncurl --fail --location --proto '=https' --tlsv1.2 --max-time 180 --output \"$out/go.tar.gz\" https://dl.google.com/go/go1.27.3.linux-amd64.tar.gz\necho \"65efbc80fdc1fa2cd2631cad5b481777a68e8725f34e89f50fc6ac714e379b40  $out/go.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$out/go.tar.gz\" -C \"$out\"\ncurl --fail --location --proto '=https' --tlsv1.2 --max-time 180 --output \"$out/componentize-go.tar.gz\" https://github.com/bytecodealliance/componentize-go/releases/download/v0.4.3/componentize-go-linux-amd64.tar.gz\necho \"1061d845f550df5d9477612a7d458a31b1e2b8bdc95823704e42e5064deb0c52  $out/componentize-go.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$out/componentize-go.tar.gz\" -C \"$out\" componentize-go\necho \"b41803a645e54845bc8eacef9a69e0eeb8c2c4a9a61964c831ed544e85c137cb  $out/componentize-go\" | sha256sum --check --strict\nchmod 755 \"$out/componentize-go\"\ntest \"$(\"$out/componentize-go\" --version)\" = 'componentize-go 0.4.3'\ntest \"$(wasm-tools --version | cut -d ' ' -f 1,2)\" = 'wasm-tools 1.254.0'\npython3 -B tools/go_guest/runtime.py --prepare-compiler \"$out/go\" --output \"$out/go-async\"\necho \"$out\" >> \"$GITHUB_PATH\"\necho \"$out/go-async/bin\" >> \"$GITHUB_PATH\"\n"
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Acquire only the exact previously qualified native products",
+        "run": "python3 -B tools/compatibility_native_products.py --output \"$RUNNER_TEMP/compatibility-native\""
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "if": "${{ contains(fromJSON('[\"typescript\"]'), matrix.cell) }}",
+        "name": "Acquire only the already qualified source-exact TS import engine and splicer",
+        "run": "git fetch --no-tags --depth=1 origin 6d834e502beea33fbae9347fbaf23ff8c37223b3\npython3 -B -c 'import os; from pathlib import Path; from tools.typescript_guest.borrow_signed_inputs import prepare; prepare(Path(os.environ[\"RUNNER_TEMP\"])/\"compatibility-typescript-engine\")'"
+      },
+      {
+        "name": "Run only the fixed normal capture phase then the fresh1800s compiler and node phase",
+        "run": "set -euo pipefail\nmkdir \"$RUNNER_TEMP/compatibility-unused-tools\"\ntools=\"$RUNNER_TEMP/compatibility-unused-tools\"\nargs=()\ncase \"$CELL\" in\n  c|rust|go|go-queues) ;;\n  java) tools=\"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\"; args+=(--read-only-cache \"$RUNNER_TEMP/compatibility-java-prerequisite/compiler/gradle-home/caches/modules-2\") ;;\n  dotnet) tools=\"$RUNNER_TEMP/compatibility-dotnet-tools\" ;;\n  typescript) tools=\"$RUNNER_TEMP/compatibility-typescript-tools\"; args+=(--engine \"$RUNNER_TEMP/compatibility-typescript-engine/products\") ;;\n  typescript-initializer) tools=\"$RUNNER_TEMP/compatibility-typescript-tools\" ;;\n  *) exit 2 ;;\nesac\npython3 -B tools/qualify_compatibility_closure.py --cell \"$CELL\" --native \"$RUNNER_TEMP/compatibility-native\" --tools \"$tools\" --output \"$RUNNER_TEMP/compatibility-result\" \"${args[@]}\"",
+        "shell": "bash"
+      },
+      {
+        "id": "public",
+        "if": "always()",
+        "name": "Admit only the bounded public synthetic evidence union including failures",
+        "run": "python3 -B tools/compatibility_closure_matrix.py retain --source \"$RUNNER_TEMP/compatibility-result\" --output \"$RUNNER_TEMP/compatibility-public\"\necho 'admitted=true' >> \"$GITHUB_OUTPUT\""
+      },
+      {
+        "if": "${{ always() && steps.public.outputs.admitted == 'true' }}",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "error",
+          "name": "compatibility-closure-${{ github.sha }}-${{ matrix.cell }}",
+          "path": "${{ runner.temp }}/compatibility-public/**",
+          "retention-days": 3
+        }
+      }
+    ],
+    "strategy": {
+      "fail-fast": false,
+      "matrix": {
+        "include": [
+          {
+            "cell": "c",
+            "minutes": 45
+          },
+          {
+            "cell": "rust",
+            "minutes": 100
+          },
+          {
+            "cell": "go",
+            "minutes": 105
+          },
+          {
+            "cell": "java",
+            "minutes": 45
+          },
+          {
+            "cell": "dotnet",
+            "minutes": 70
+          },
+          {
+            "cell": "typescript",
+            "minutes": 65
+          },
+          {
+            "cell": "go-queues",
+            "minutes": 105
+          },
+          {
+            "cell": "typescript-initializer",
+            "minutes": 65
+          }
+        ]
+      },
+      "max-parallel": 4
+    },
+    "timeout-minutes": "${{ matrix.minutes }}"
+  },
+  "jobId": "closure-required",
+  "kind": "job",
+  "reviewReason": "Reviewed whole679 fixed eight cells, source-exact reused native products, normal compiler prerequisites, separate bounded original capture then1800s compiler/node phase, strict failed evidence admission, unchanged original two jobs.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/compiler-compatibility.yml"
+}

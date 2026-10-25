@@ -4,6 +4,7 @@ from __future__ import annotations
 from tools import guest_compatibility_context_build
 from tools.transaction_guest_project import packaging_arguments
 import json
+import math
 from pathlib import Path
 import tempfile
 import time
@@ -46,7 +47,10 @@ RECIPE += guest_dependency_inputs.RECIPE
 
 def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path | None, repository: str,
           *, tools: Path, offline: bool = False, executable_approval: str | None = None,
-          compiler_methods: bool = False):
+          compiler_methods: bool = False, _deadline: float | None = None):
+    if _deadline is not None and (type(_deadline) not in (int, float) or not math.isfinite(_deadline)
+                                 or _deadline <= time.monotonic() + 5):
+        raise ValueError('dotnet-build-original-owner-deadline')
     if type(compiler_methods) is not bool:
         raise ValueError('dotnet compiler method observations require an explicit boolean')
     project_path, output, tools = map(checked_path, (project_path, output, tools))
@@ -77,6 +81,11 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_bytes(data)
             commands = Commands(work, output, build_environment(temporary))
+            if _deadline is not None:
+                if _deadline <= time.monotonic() + 5:
+                    raise ValueError('compiler-setup-consumed-parent-cleanup-reserve')
+                commands.deadline = min(commands.deadline, _deadline - 5)
+                commands._parent_deadline = _deadline
             paths = {"contracts-tool": checked_path(contracts_tool)}
             if packager is not None:
                 paths["packager"] = checked_path(packager)
@@ -96,7 +105,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             stage = "compiler-inputs"
             verified = verify_inputs(observed.dependency_root, 'dotnet')
             compiler = Compiler(tools, commands, work / "vendor/lsf", offline=offline, captured=verified is not None,
-                **({'compiler_methods': True} if compiler_methods else {}))
+                compiler_methods=True)
             write_json(output / "compiler-inputs.json", compiler.before)
             materials.extend(compiler.materials)
             write_json(output / 'compiler-patches-preparation.json', {'formatVersion': 1, 'patches': compiler.compiler_patches})
@@ -173,7 +182,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 ("closed-runtime-coverage", read_file(output / "closed-runtime-coverage.json", 4 * 1024 * 1024)),
                 ("dependency-lock", files["vendor/lsf/sdk/dotnet-guest/probes/smoke/packages.lock.json"]),
                 ("toolchain-config", files["global.json"])))
-            if compiler_methods:
+            if compiler.compiler_methods:
                 from tools.dotnet_guest import reachability
                 from tools import guest_runtime_receipts
                 observed_methods = getattr(compiler, 'reachability_observation', None)

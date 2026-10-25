@@ -39,6 +39,8 @@ class Compiler:
         self.isolation = None
         self.paths: dict[str, Path] = {}
         self.materials: dict[str, dict] = {}
+        self.compiler_edges = None
+        self.compiler_edge_sources = {}
         config = config or tomllib.loads((ROOT / "tools/toolchain.toml").read_text())
         versions = {"zig": config["sdk"]["zig"],
                     "wit-bindgen": config["rust"]["dependencies"]["wit-bindgen"],
@@ -127,7 +129,9 @@ class Compiler:
 
     def enable_captured_isolation(self, workspace: Path) -> dict:
         from tools.captured_compiler_isolation import Isolation
-        self.isolation = Isolation(workspace, self.paths, {"zig-compiler-and-sysroot": self.paths["zig"].parent})
+        deadline = getattr(self.commands, '_parent_deadline', None)
+        options = {} if deadline is None else {'_deadline': deadline}
+        self.isolation = Isolation(workspace, self.paths, {"zig-compiler-and-sysroot": self.paths["zig"].parent}, **options)
         if self.commands is not None:
             self.isolation.protect_inputs(self.commands.root)
         return self.isolation.receipt
@@ -322,7 +326,39 @@ class Compiler:
                 'derivation': destination / 'c-threading/derivation.json',
                 'publicExport': public, 'finalComponent': component}
         self.check_unchanged()
+        if self.compiler_edges is not None:
+            link_inputs = [*sources, *static_libraries, generated / 'probe.c', generated / 'probe_component_type.o']
+            if trap:
+                link_inputs.append(self.sdk / 'src/trap.c')
+            self.observe_compiler_edges(command, destination, link_inputs)
         return component, lock
+
+    def observe_compiler_edges(self, original, destination, link_inputs):
+        """Passive per-TU O2 metadata under this original finite compiler owner.
+
+        Keep every original compile option. Remove only its link inputs/output
+        and linker-only options; the original component argv above is untouched.
+        A missing/large/unmapped witness is unavailable, never support.
+        """
+        from tools.rust_capsule_project import read_file
+        paths = {str(path) for path in link_inputs}
+        selected = sorted({row['source'] for row in self.compiler_edges.queries})
+        options, at = [], 0
+        while at < len(original):
+            value = str(original[at])
+            if value == '-o': at += 2; continue
+            if value in paths or value.startswith('-Wl,'):
+                at += 1; continue
+            options.append(value); at += 1
+        for index, name in enumerate(selected):
+            try:
+                source = self.compiler_edge_sources[name]
+                witness = destination / ('compiler-edge-%04d.ll' % index)
+                self.run('zig', *options, '-S', '-emit-llvm', str(source), '-o', str(witness))
+                self.compiler_edges.retain_unit(name, read_file(witness, 4 * 1024 * 1024))
+            except Exception:
+                self.compiler_edges.fail_unit(name)
+        self.check_unchanged()
 
 
 def safe_output(output: Path) -> Path:

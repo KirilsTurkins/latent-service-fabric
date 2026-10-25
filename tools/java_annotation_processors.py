@@ -235,9 +235,11 @@ class ProcessorIsolation(Isolation):
 def isolation(compiler, workspace: Path):
     jdk = compiler.tool_roots['jdk']
     javac = jdk / 'bin/javac'
+    deadline = getattr(compiler, '_parent_deadline', None)
+    options = {} if deadline is None else {'_deadline': deadline}
     selected = ProcessorIsolation(workspace,
         {'javac': javac, 'java': compiler.paths['java'], 'jvm-library': jdk / 'lib/server/libjvm.so'},
-        {'pinned-jdk': jdk, 'pinned-java-compiler-dependencies': compiler.dependency_cache.parent})
+        {'pinned-jdk': jdk, 'pinned-java-compiler-dependencies': compiler.dependency_cache.parent}, **options)
     return selected
 
 

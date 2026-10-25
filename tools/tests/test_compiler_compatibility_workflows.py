@@ -1,10 +1,31 @@
 """Dedicated diagnostics programme; historical workflows stay byteexact."""
 import hashlib
+import copy
+import json
 import unittest
 
 from tools import ci_lane_inventory as lanes
 from tools import activation_stack_native_products as products
 from tools.rust_capsule_project import ROOT, read_file
+
+
+def original_workflow(test):
+    workflow = lanes.workflow_model(read_file(ROOT/'.github/workflows/compiler-compatibility.yml').decode())
+    restored = copy.deepcopy(workflow)
+    test.assertEqual(set(restored['jobs']), {'java-diagnostics', 'dotnet-diagnostics', 'closure-required', 'closure-matrix'})
+    for name in ('closure-required', 'closure-matrix'): del restored['jobs'][name]
+    branches = restored['on']['push']['branches']
+    test.assertEqual(branches.count('feat/sdk-compatibility-closure-20261025'), 1)
+    branches.remove('feat/sdk-compatibility-closure-20261025')
+    paths = restored['on']['push']['paths']
+    for name in ('tools/compatibility_*.py', 'tools/qualify_compatibility_closure.py', 'tools/guest_api_analysis.py',
+            'tools/guest_compiler_*.py', 'tools/guest_compatibility*.py', 'tools/*capsule_build.py',
+            'tools/captured_compiler_isolation.py'):
+        test.assertEqual(paths.count(name), 1); paths.remove(name)
+    # All original jobs, setup, argv, artifacts and scheduling remain exact.
+    test.assertEqual(hashlib.sha256(json.dumps(restored, sort_keys=True, separators=(',', ':')).encode()).hexdigest(),
+        '7f7c9f67efb2a828e6c606c14ce43bf657bf55550c5550f3db92da4ec74c4824')
+    return restored
 
 
 class CompilerWorkflow(unittest.TestCase):
@@ -17,7 +38,7 @@ class CompilerWorkflow(unittest.TestCase):
             'tools/tests/test_resource_late_workflows.py': '8105f29ee99e0645f246629eaef524bfdb63f9cd9bd18a2e7377f2b1d00b1070',
         }
         for name, sha in expected.items(): self.assertEqual(hashlib.sha256(read_file(ROOT/name)).hexdigest(), sha, name)
-        workflow = lanes.workflow_model(read_file(ROOT/'.github/workflows/compiler-compatibility.yml').decode())
+        workflow = original_workflow(self)
         self.assertEqual(set(workflow['on']), {'push'})
         self.assertEqual(workflow['on']['push']['branches'], ['feat/java-dotnet-diagnostics-679-20261021'])
         paths = workflow['on']['push']['paths']
@@ -33,7 +54,7 @@ class CompilerWorkflow(unittest.TestCase):
             self.assertEqual(job['timeout-minutes'], 45 if name == 'java-diagnostics' else 40)
 
     def test_pinned_native_acquisition_token_scope_and_public_artifact_selection_are_exact(self):
-        workflow = lanes.workflow_model(read_file(ROOT/'.github/workflows/compiler-compatibility.yml').decode())
+        workflow = original_workflow(self)
         for name, job in workflow['jobs'].items():
             steps = job['steps']; commands = [step.get('run', '') for step in steps]
             fetch = next(i for i, run in enumerate(commands) if 'git fetch ' in run)
@@ -51,6 +72,32 @@ class CompilerWorkflow(unittest.TestCase):
             self.assertIn('/build/component.wasm', paths); self.assertIn('/build/package/**', paths)
             for private in ('*.dgml', '/project/**', '/build/*.json', 'diagnostic-source.json', 'signing-key', '.rsp'):
                 self.assertNotIn(private, paths)
+
+    def test_completion_requires_exact_eight_cells_and_original_native_and_process_bounds(self):
+        from tools.qualify_compatibility_closure import JOB_MINUTES
+        workflow = lanes.workflow_model(read_file(ROOT/'.github/workflows/compiler-compatibility.yml').decode())
+        job = workflow['jobs']['closure-required']
+        self.assertEqual(job['if'], "${{ github.event_name == 'push' && github.ref == 'refs/heads/feat/sdk-compatibility-closure-20261025' }}")
+        self.assertEqual(job['strategy'], {'fail-fast': False, 'max-parallel': 4, 'matrix': {
+            'include': [{'cell': cell, 'minutes': minutes} for cell, minutes in JOB_MINUTES.items()]}})
+        self.assertEqual(job['timeout-minutes'], '${{ matrix.minutes }}')
+        self.assertEqual(job['env']['CARGO_BUILD_JOBS'], 2)
+        steps = job['steps']; commands = [step.get('run', '') for step in steps]
+        native = next(step for step in steps if 'tools/compatibility_native_products.py' in step.get('run', ''))
+        self.assertEqual(native['env'], {'GH_TOKEN': '${{ github.token }}'})
+        self.assertFalse(any('cargo build' in command or 'native_build.py' in command for command in commands))
+        self.assertIn('--prepare-java-cache', '\n'.join(commands))
+        execute = next(command for command in commands if '--cell "$CELL"' in command)
+        self.assertIn('--engine "$RUNNER_TEMP/compatibility-typescript-engine/products"', execute)
+        self.assertIn('*) exit 2', execute)
+        admission = next(step for step in steps if step.get('id') == 'public')
+        self.assertEqual(admission['if'], 'always()')
+        self.assertIn('compatibility_closure_matrix.py retain', admission['run'])
+        self.assertEqual(steps[-1]['if'], "${{ always() && steps.public.outputs.admitted == 'true' }}")
+        self.assertEqual(steps[-1]['with']['path'], '${{ runner.temp }}/compatibility-public/**')
+        rollup = workflow['jobs']['closure-matrix']
+        self.assertEqual(rollup['needs'], 'closure-required')
+        self.assertEqual(len([step for step in rollup['steps'] if 'download-artifact@' in step.get('uses', '')]), 8)
 
 
 if __name__ == '__main__': unittest.main()

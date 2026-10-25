@@ -12,7 +12,8 @@ from tools.rust_capsule_project import inventory, read_file, write_json
 # Rust's shared Commands/package_inputs module is imported by every owner, so
 # its runtime receipt dependency belongs in their common captured closure too.
 RECIPE = ('tools/guest_compatibility_context.py', 'tools/guest_compatibility_context_build.py',
-          'tools/guest_runtime_receipts.py', 'tools/guest_emitted_code.py')
+          'tools/guest_runtime_receipts.py', 'tools/guest_emitted_code.py',
+          'tools/guest_compiler_edges.py', 'tools/guest_compiler_capture.py', 'tools/guest_api_analysis.py')
 
 
 JAVA_COMPILER_PATCH = 'java-teavm-coroutine-compiler'
@@ -299,6 +300,8 @@ def finish(output: Path, files: dict[str, bytes], source_inputs: bytes,
     graph = digest(encode(captured_graph)) if captured_graph is not None else None
     guest_emitted_code.emit(output, component, digest(source_inputs), selected.get('profile', 'not-observed'),
         report['runtimeProfile'], graph=graph, recipe=captured.get('build-recipe', {}).get('digest'))
+    from tools import guest_api_analysis
+    guest_api_analysis.emit(output, report, value)
     require(read_file(output / 'compatibility-report.json', compatibility.MAX_BYTES) == report_raw,
             'compatibility-context-report-was-mutated')
     return value

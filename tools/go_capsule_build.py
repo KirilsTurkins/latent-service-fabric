@@ -5,6 +5,7 @@ from tools import guest_compatibility_context_build, guest_runtime_receipts
 from tools.transaction_guest_project import packaging_arguments
 
 import json
+import math
 from pathlib import Path
 import tempfile
 import time
@@ -48,7 +49,10 @@ def runtime_transformations_material(output: Path) -> dict:
 
 
 def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path | None, repository: str,
-          *, offline_cache: Path | None = None) -> Path:
+          *, offline_cache: Path | None = None, _deadline: float | None = None) -> Path:
+    if _deadline is not None and (type(_deadline) not in (int, float) or not math.isfinite(_deadline)
+                                 or _deadline <= time.monotonic() + 5):
+        raise ValueError('Go-build-original-owner-deadline')
     project_path = guest_dependency_inputs.application_root(checked_path(project_path), 'go')
     output = checked_path(output)
     if output == project_path or output in project_path.parents or (
@@ -75,6 +79,11 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_bytes(data)
             commands = Commands(work, output, build_environment(temporary))
+            if _deadline is not None:
+                if _deadline <= time.monotonic() + 5:
+                    raise ValueError('compiler-setup-consumed-parent-cleanup-reserve')
+                commands.deadline = min(commands.deadline, _deadline - 5)
+                commands._parent_deadline = _deadline
             stage = "application-dependencies"
             closure = prepare(observed.dependency_root, work, output, "go")
             runtime_profile = project.get('runtimeProfile', 'go-component-async-v1')
@@ -86,6 +95,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             compiler = Compiler(temporary / "compiler", work / "vendor/lsf/sdk/go-guest", commands,
                                 offline_cache=offline_cache, source_root=project_path / "src", application_closure=closure,
                                 runtime_profile=runtime_profile)
+            from tools import guest_compiler_capture
+            compiler.compiler_edges = guest_compiler_capture.Capture(files, 'go')
             materials = list(compiler.materials.values())
             paths = {"contracts-tool": checked_path(contracts_tool)}
             if packager is not None:
@@ -146,6 +157,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     data = read_file(output / name, 16 * 1024 * 1024)
                     materials.append({"name": name.removesuffix(".json"), "digest": digest(data), "size": len(data)})
             materials.append(runtime_transformations_material(output))
+            materials.append(guest_compiler_capture.finish(compiler.compiler_edges, output, files, component,
+                recipe_inputs, compiler.materials['go']['digest']))
             materials.append(guest_runtime_receipts.emit(output, 'go', runtime_profile, files,
                 source_inputs, component, materials, graph=closure.lock if closure is not None else None,
                 binding_digest=binding_digest, configuration={"profile": runtime_profile, "world": project['world'],

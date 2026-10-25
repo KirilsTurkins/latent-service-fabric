@@ -1,0 +1,101 @@
+{
+  "cases": [
+    "DefaultApiAnalysis.test_actual_source_component_recipe_and_root_file_mutations_cannot_reuse_old_api_report",
+    "DefaultApiAnalysis.test_default_existing_presentation_loads_fixed_sidecar_and_json_report_stays_v1",
+    "DefaultApiAnalysis.test_identified_materials_are_still_unqualified_and_rehashed_behavior_upgrade_refuses",
+    "DefaultApiAnalysis.test_missing_passive_input_has_closed_unavailable_result_without_new_build_gate",
+    "DefaultApiAnalysis.test_rehashing_context_and_api_cannot_replace_original_owner_selected_materials",
+    "DefaultApiAnalysis.test_shared_normal_finish_emits_all_six_without_changing_original_report_or_package_eligibility",
+    "DefaultApiAnalysis.test_unknown_package_rename_changes_source_binding_without_changing_api_verdict"
+  ],
+  "guards": {
+    "DefaultApiAnalysis.test_actual_source_component_recipe_and_root_file_mutations_cannot_reuse_old_api_report": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:33eb7f569a51777a19381ab67b7feeebe87e3ecd93dbe8aebfba1f97894705e9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DefaultApiAnalysis.test_default_existing_presentation_loads_fixed_sidecar_and_json_report_stays_v1": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:33eb7f569a51777a19381ab67b7feeebe87e3ecd93dbe8aebfba1f97894705e9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DefaultApiAnalysis.test_identified_materials_are_still_unqualified_and_rehashed_behavior_upgrade_refuses": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:33eb7f569a51777a19381ab67b7feeebe87e3ecd93dbe8aebfba1f97894705e9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DefaultApiAnalysis.test_missing_passive_input_has_closed_unavailable_result_without_new_build_gate": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:33eb7f569a51777a19381ab67b7feeebe87e3ecd93dbe8aebfba1f97894705e9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DefaultApiAnalysis.test_rehashing_context_and_api_cannot_replace_original_owner_selected_materials": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:33eb7f569a51777a19381ab67b7feeebe87e3ecd93dbe8aebfba1f97894705e9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DefaultApiAnalysis.test_shared_normal_finish_emits_all_six_without_changing_original_report_or_package_eligibility": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:33eb7f569a51777a19381ab67b7feeebe87e3ecd93dbe8aebfba1f97894705e9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DefaultApiAnalysis.test_unknown_package_rename_changes_source_binding_without_changing_api_verdict": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:33eb7f569a51777a19381ab67b7feeebe87e3ecd93dbe8aebfba1f97894705e9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_guest_api_analysis.py",
+  "reviewReason": "Whole679 reviewed finite source controls: all original cases, bases, decorators and skip sites retained; explicit fixture-only guard changes bind reviewed helper/source setup. Actual compiler/node qualification is separate.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

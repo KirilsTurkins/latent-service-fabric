@@ -49,13 +49,26 @@ internal static class Program
     }
     public static int Main(string[] args)
     {
-        Require(args.Length == 2);
+        Require(args.Length is 2 or 4);
         var manifest = new FileInfo(args[0]);
         Require(manifest.Exists && manifest.Length <= 65536 && manifest.LinkTarget is null);
         var paths = JsonSerializer.Deserialize<string[]>(File.ReadAllBytes(manifest.FullName))
             ?? throw new InvalidDataException("compiler-metadata-input-invalid");
         Require(paths is not null && paths.Length is > 0 and <= MaxAssemblies
             && paths.Distinct(StringComparer.Ordinal).Count() == paths.Length);
+        string? expectedCorelib = null;
+        CilReferences.Result? cil = null;
+        if (args.Length == 4)
+        {
+            expectedCorelib = args[2];
+            Require(expectedCorelib.Length == 71 && expectedCorelib.StartsWith("sha256:", StringComparison.Ordinal)
+                && expectedCorelib[7..].All(c => c is >= '0' and <= '9' or >= 'a' and <= 'f'));
+            Require(int.TryParse(args[3], System.Globalization.NumberStyles.None,
+                System.Globalization.CultureInfo.InvariantCulture, out var sourceCount)
+                && sourceCount > 0 && sourceCount <= paths.Length);
+            cil = CilReferences.Read(paths, expectedCorelib, sourceCount);
+        }
+        var mappedApis = cil?.ApiBodies.Select(row => row.Id).ToHashSet(StringComparer.Ordinal) ?? new HashSet<string>();
         var queries = new List<Query>(); var assemblyIdentities = new List<string>();
         long totalBytes = 0; int methods = 0, types = 0;
         var allNames = new HashSet<string>(StringComparer.Ordinal);
@@ -69,6 +82,7 @@ internal static class Program
             Require(pe.HasMetadata);
             var metadata = pe.GetMetadataReader(); Require(metadata.IsAssembly);
             var assembly = metadata.GetString(metadata.GetAssemblyDefinition().Name);
+            bool knownCorelib = assembly == "System.Private.CoreLib" && identity == expectedCorelib;
             bool asciiAssembly = Ascii(assembly), rootAssembly = assemblyIdentities.Count == 0;
             Require(allNames.Add(assembly)); assemblyIdentities.Add(identity);
             if (assembly.StartsWith("System.Private.", StringComparison.Ordinal)) assembly = "S.P." + assembly[15..];
@@ -93,7 +107,17 @@ internal static class Program
             foreach (var handle in metadata.TypeDefinitions)
             {
                 types++; Require(types <= 65536);
-                typeNames[handle] = Unique(prefix + "_" + Sanitize(FullName(handle)), typeUsed);
+                var full = FullName(handle);
+                var typeName = prefix + "_" + Sanitize(full);
+                if (knownCorelib)
+                    typeName = full switch {
+                        "System.Boolean" => "Bool", "System.Byte" => "UInt8", "System.SByte" => "Int8",
+                        "System.UInt16" => "UInt16", "System.Int16" => "Int16", "System.UInt32" => "UInt32",
+                        "System.Int32" => "Int32", "System.UInt64" => "UInt64", "System.Int64" => "Int64",
+                        "System.Char" => "Char", "System.Double" => "Double", "System.Single" => "Single",
+                        "System.IntPtr" => "IntPtr", "System.UIntPtr" => "UIntPtr", "System.Object" => "Object",
+                        "System.String" => "String", _ => typeName };
+                typeNames[handle] = Unique(typeName, typeUsed);
             }
             foreach (var handle in metadata.TypeDefinitions)
             {
@@ -113,7 +137,7 @@ internal static class Program
                     // No system-module primitive abbreviations, generic
                     // instantiations, synthetic methods or fuzzy name matches.
                     string? mangled = generic || !asciiAssembly || !Ascii(FullName(handle)) || !Ascii(name)
-                        || assembly.StartsWith("S.P.", StringComparison.Ordinal)
+                        || assembly.StartsWith("S.P.", StringComparison.Ordinal) && !knownCorelib
                         ? null : typeNames[handle] + "__" + nativeName;
                     var kind = name == ".cctor" ? "initialization" : name == ".ctor" ? "constructor" : "method";
                     var declaration = (method.Attributes & MethodAttributes.PinvokeImpl) != 0 ? "pinvoke" : "ordinary";
@@ -124,6 +148,8 @@ internal static class Program
                     // dependency assemblies. Generated SDK PInvokes in the root
                     // DLL must not crowd every transitive query out of the cap.
                     queries = queries.OrderBy(q => !q.RootAnchor)
+                        .ThenBy(q => !mappedApis.Contains(q.Id))
+                        .ThenBy(q => cil is null || !cil.CorelibTargets.Contains(q.Id))
                         .ThenBy(q => q.AssemblyDigest == assemblyIdentities[0]).ThenBy(q => q.Declaration != "pinvoke")
                         .ThenBy(q => q.Kind == "initialization" ? 0 : q.Kind == "constructor" ? 1 : 2)
                         .ThenBy(q => q.Symbol, StringComparer.Ordinal).ThenBy(q => q.Id, StringComparer.Ordinal)
@@ -135,7 +161,14 @@ internal static class Program
             schemaVersion = "lsf.dotnet.compiler-queries.v1", sourceRevision = "8449ba666dd991e495d8363d9852f18eb86a1aa1",
             assemblies = assemblyIdentities, queries, omittedMethods = methods - queries.Count,
             methodsInspected = methods, typesInspected = types, assemblyBytesInspected = totalBytes,
-            initializersExecuted = false
+            initializersExecuted = false,
+            cilReferences = cil is null ? null : new {
+                schemaVersion = "lsf.dotnet.cil-references.v1", corelibDigest = expectedCorelib,
+                scope = "captured-input-call-operands", forwarding = "exact-selected-ILC-assembly-identities",
+                indirectDispatch = "unknown", apiSupport = "unknown", runtimeExecution = "not-observed",
+                edges = cil.Edges, apiBodies = cil.ApiBodies, unknownReferences = cil.UnknownReferences,
+                omittedEdges = cil.OmittedEdges, bodiesInspected = cil.BodiesInspected,
+                bodyBytesInspected = cil.BodyBytesInspected }
         }, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
         Require(result.Length <= 65536);
         File.WriteAllBytes(args[1], result); return 0;

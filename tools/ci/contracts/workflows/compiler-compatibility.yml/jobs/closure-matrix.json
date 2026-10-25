@@ -1,0 +1,105 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "needs": "closure-required",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "name": "Install only locked readers",
+        "run": "python3 -m pip install --requirement tools/requirements.lock"
+      },
+      {
+        "uses": "actions/download-artifact",
+        "with": {
+          "name": "compatibility-closure-${{ github.sha }}-c",
+          "path": "${{ runner.temp }}/compatibility-inputs/c"
+        }
+      },
+      {
+        "uses": "actions/download-artifact",
+        "with": {
+          "name": "compatibility-closure-${{ github.sha }}-rust",
+          "path": "${{ runner.temp }}/compatibility-inputs/rust"
+        }
+      },
+      {
+        "uses": "actions/download-artifact",
+        "with": {
+          "name": "compatibility-closure-${{ github.sha }}-go",
+          "path": "${{ runner.temp }}/compatibility-inputs/go"
+        }
+      },
+      {
+        "uses": "actions/download-artifact",
+        "with": {
+          "name": "compatibility-closure-${{ github.sha }}-java",
+          "path": "${{ runner.temp }}/compatibility-inputs/java"
+        }
+      },
+      {
+        "uses": "actions/download-artifact",
+        "with": {
+          "name": "compatibility-closure-${{ github.sha }}-dotnet",
+          "path": "${{ runner.temp }}/compatibility-inputs/dotnet"
+        }
+      },
+      {
+        "uses": "actions/download-artifact",
+        "with": {
+          "name": "compatibility-closure-${{ github.sha }}-typescript",
+          "path": "${{ runner.temp }}/compatibility-inputs/typescript"
+        }
+      },
+      {
+        "uses": "actions/download-artifact",
+        "with": {
+          "name": "compatibility-closure-${{ github.sha }}-go-queues",
+          "path": "${{ runner.temp }}/compatibility-inputs/go-queues"
+        }
+      },
+      {
+        "uses": "actions/download-artifact",
+        "with": {
+          "name": "compatibility-closure-${{ github.sha }}-typescript-initializer",
+          "path": "${{ runner.temp }}/compatibility-inputs/typescript-initializer"
+        }
+      },
+      {
+        "env": {
+          "SOURCE_COMMIT": "${{ github.sha }}"
+        },
+        "name": "Require every exact cell and preserve historical scope",
+        "run": "python3 -B tools/compatibility_closure_matrix.py assemble --inputs \"$RUNNER_TEMP/compatibility-inputs\" --source-commit \"$SOURCE_COMMIT\" --output \"$RUNNER_TEMP/compatibility-completion.json\""
+      },
+      {
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "error",
+          "name": "compatibility-closure-matrix-${{ github.sha }}",
+          "path": "${{ runner.temp }}/compatibility-completion.json",
+          "retention-days": 3
+        }
+      }
+    ],
+    "timeout-minutes": 10
+  },
+  "jobId": "closure-matrix",
+  "kind": "job",
+  "reviewReason": "Require all eight exact current-run artifacts and original historical scope; authenticate finite public-union hashes before strict outcome rollup. No issue closure or runtime authority is inferred automatically.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/compiler-compatibility.yml"
+}

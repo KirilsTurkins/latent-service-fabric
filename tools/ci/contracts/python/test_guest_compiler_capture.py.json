@@ -1,0 +1,166 @@
+{
+  "cases": [
+    "AutomaticCompilerCapture.test_Go_shadowed_or_unaliased_imports_cannot_claim_selected_package_identity",
+    "AutomaticCompilerCapture.test_Rust_conditional_binding_does_not_poison_an_unrelated_original_root",
+    "AutomaticCompilerCapture.test_actual_c_observer_retains_compile_flags_without_mutating_original_component_argv",
+    "AutomaticCompilerCapture.test_failed_real_observer_attempt_cannot_supply_a_negative_witness",
+    "AutomaticCompilerCapture.test_inactive_no_call_declaration_prevents_wrong_source_body_binding",
+    "AutomaticCompilerCapture.test_initialization_and_export_candidates_precede_finite_omissions",
+    "AutomaticCompilerCapture.test_normal_source_generates_queries_without_application_manifest_and_masks_literals",
+    "AutomaticCompilerCapture.test_original_Go_import_alias_resolves_actual_SSA_callee_without_fixture_query",
+    "AutomaticCompilerCapture.test_pinned_Go_root_name_uses_actual_compiled_package_then_unique_final_byte_match",
+    "AutomaticCompilerCapture.test_real_namespace_command_forwards_only_existing_owned_writable_SSA_directory",
+    "AutomaticCompilerCapture.test_real_output_bytes_bind_original_source_component_compiler_and_query",
+    "AutomaticCompilerCapture.test_unknown_source_syntax_and_unavailable_witness_never_become_eliminated"
+  ],
+  "guards": {
+    "AutomaticCompilerCapture.test_Go_shadowed_or_unaliased_imports_cannot_claim_selected_package_identity": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:83bf577fd124bcd575821f9f61293aabc5df3f24b833969e70ea58883a8bc413",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "AutomaticCompilerCapture.test_Rust_conditional_binding_does_not_poison_an_unrelated_original_root": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:83bf577fd124bcd575821f9f61293aabc5df3f24b833969e70ea58883a8bc413",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "AutomaticCompilerCapture.test_actual_c_observer_retains_compile_flags_without_mutating_original_component_argv": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:83bf577fd124bcd575821f9f61293aabc5df3f24b833969e70ea58883a8bc413",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "AutomaticCompilerCapture.test_failed_real_observer_attempt_cannot_supply_a_negative_witness": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:83bf577fd124bcd575821f9f61293aabc5df3f24b833969e70ea58883a8bc413",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "AutomaticCompilerCapture.test_inactive_no_call_declaration_prevents_wrong_source_body_binding": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:83bf577fd124bcd575821f9f61293aabc5df3f24b833969e70ea58883a8bc413",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "AutomaticCompilerCapture.test_initialization_and_export_candidates_precede_finite_omissions": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:83bf577fd124bcd575821f9f61293aabc5df3f24b833969e70ea58883a8bc413",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "AutomaticCompilerCapture.test_normal_source_generates_queries_without_application_manifest_and_masks_literals": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:83bf577fd124bcd575821f9f61293aabc5df3f24b833969e70ea58883a8bc413",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "AutomaticCompilerCapture.test_original_Go_import_alias_resolves_actual_SSA_callee_without_fixture_query": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:83bf577fd124bcd575821f9f61293aabc5df3f24b833969e70ea58883a8bc413",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "AutomaticCompilerCapture.test_pinned_Go_root_name_uses_actual_compiled_package_then_unique_final_byte_match": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:83bf577fd124bcd575821f9f61293aabc5df3f24b833969e70ea58883a8bc413",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "AutomaticCompilerCapture.test_real_namespace_command_forwards_only_existing_owned_writable_SSA_directory": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:83bf577fd124bcd575821f9f61293aabc5df3f24b833969e70ea58883a8bc413",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "AutomaticCompilerCapture.test_real_output_bytes_bind_original_source_component_compiler_and_query": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:83bf577fd124bcd575821f9f61293aabc5df3f24b833969e70ea58883a8bc413",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "AutomaticCompilerCapture.test_unknown_source_syntax_and_unavailable_witness_never_become_eliminated": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:83bf577fd124bcd575821f9f61293aabc5df3f24b833969e70ea58883a8bc413",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_guest_compiler_capture.py",
+  "reviewReason": "Whole679 reviewed finite source controls: all original cases, bases, decorators and skip sites retained; explicit fixture-only guard changes bind reviewed helper/source setup. Actual compiler/node qualification is separate.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

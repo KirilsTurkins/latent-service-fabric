@@ -144,6 +144,7 @@ def execute(artifact, native, output, deadline, language, before):
     require(remaining >= 180, 'compiler-diagnostics-original-node-deadline')
     commands = Commands(ROOT, fresh(output/'commands'), build_environment(output),
         deadline_seconds=remaining, command_seconds=120)
+    commands.deadline = min(commands.deadline, deadline - 5)
     record = {'schemaVersion': 'latent.compiler-diagnostics.node.v1', 'language': language,
         'status': 'incomplete', 'build': before, 'crossTenantQualification': False}
     node = peer = client = None; stage = 'normal-neutral-signing'

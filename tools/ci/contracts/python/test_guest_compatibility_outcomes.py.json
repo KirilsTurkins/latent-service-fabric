@@ -15,9 +15,12 @@
     "OutcomeReader.test_lifecycle_disposition_cannot_certify_a_cause_or_accept_unknown_tokens",
     "OutcomeReader.test_node_resource_exhaustion_preserves_unknown_dimension_and_retirement",
     "OutcomeReader.test_observed_lifecycle_disposition_round_trips_for_every_language_without_cause_claims",
+    "OutcomeReader.test_original_typed_bucket_observations_distinguish_bytes_counts_and_stack",
     "OutcomeReader.test_reader_bounds_duplicates_and_unbound_identity_fail_closed",
     "OutcomeReader.test_rehashed_cause_or_dimension_cannot_disagree_with_numeric_evidence",
+    "OutcomeReader.test_rehashed_management_unavailable_reasons_refuse_hostile_JSON_types",
     "OutcomeReader.test_rehashed_support_retirement_and_retry_claims_are_rejected",
+    "OutcomeReader.test_retained_task_fact_does_not_rewrite_unrelated_terminal_cause_even_after_rehash",
     "OutcomeReader.test_round_trip_binds_component_report_context_and_distinct_frontend_source",
     "OutcomeReader.test_stale_component_report_and_runtime_context_cannot_borrow_outcomes"
   ],
@@ -202,6 +205,18 @@
       ],
       "skipSites": []
     },
+    "OutcomeReader.test_original_typed_bucket_observations_distinguish_bytes_counts_and_stack": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e1ee3ab4aeecaf17898678eaacdb24d9eaa99ea690965ef1a6c400e151886d76",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "OutcomeReader.test_reader_bounds_duplicates_and_unbound_identity_fail_closed": {
       "bases": [
         "unittest.TestCase"
@@ -226,7 +241,31 @@
       ],
       "skipSites": []
     },
+    "OutcomeReader.test_rehashed_management_unavailable_reasons_refuse_hostile_JSON_types": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e1ee3ab4aeecaf17898678eaacdb24d9eaa99ea690965ef1a6c400e151886d76",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "OutcomeReader.test_rehashed_support_retirement_and_retry_claims_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e1ee3ab4aeecaf17898678eaacdb24d9eaa99ea690965ef1a6c400e151886d76",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "OutcomeReader.test_retained_task_fact_does_not_rewrite_unrelated_terminal_cause_even_after_rehash": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -265,6 +304,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_guest_compatibility_outcomes.py",
-  "reviewReason": "Preserve every prior case and fixture guard; add native thirteen-token vocabulary drift, malformed/contradictory kind refusal and bounded six-language reader/presentation controls without cause/retirement inference.",
+  "reviewReason": "Whole679 reviewed finite source controls: all original cases, bases, decorators and skip sites retained; explicit fixture-only guard changes bind reviewed helper/source setup. Actual compiler/node qualification is separate.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

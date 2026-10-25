@@ -316,3 +316,40 @@ refusal reports and bounded command diagnostics. The index-space decoder refuses
 unsupported forms or bounds; it never treats its own decoding as Wasm validation.
 The published record includes all 32 successful tool calls, source and original
 input hashes, and the two earlier control failures and their precise corrections.
+
+### Ordinary API and compiler observations
+
+Normal C, Rust, Go, Java, .NET and TypeScript builds automatically select bounded
+queries from their captured declarations and initializer/export anchors. The
+ordinary compatibility report reads the resulting `compatibility-api.json`
+sidecar without an application-authored query file or an analysis flag. Selected
+implementation identities are reconstructed from the original build owner;
+missing or unverifiable material stays unknown. This report grants no authority
+and does not make an arbitrary library eligible.
+
+C optimized translation units, Rust MIR and Go SSA can expose an exact controlled
+call edge. They do not establish global absence across other translation units,
+reflection, callbacks, initialization or unresolved calls. Java compiler graphs
+and .NET's original CIL plus both NativeAOT graphs retain their separate scopes.
+An observed API declaration or a missing wrapper is not proof of execution or
+API elimination. Ambiguous source declarations, stripped names, incomplete output
+and unmatched final component roots remain unavailable or unknown.
+
+Invocation errors retain their original diagnostic and terminal cause. A node
+management observation can describe an operation's configured and requested task,
+queue, timer or other resource count. Its activation-ID/service scope does not
+bind an implementation revision, prove a library caused the terminal failure,
+or prove physical retirement. Guest stack exhaustion is identified only from
+the engine's actual StackOverflow classification, not a generic unreachable trap.
+
+The fixed completion programme uses one source-exact native prerequisite and
+eight independent hosted cells. Each cell captures its original dependency inputs
+once, then starts a separate 1,800-second compiler/node phase. Its workflow job
+also bounds setup and capture; 1,800 seconds is not a whole-programme claim.
+Initializer cases preserve the captured libraries: C constructors and Go package
+variables are eager language initialization, Rust LazyLock and TypeScript class
+static fields are initialized during invocation. Caught Unsupported permits
+initializer completion and is not labeled initializer failure or component start.
+The strict rollup requires actual results and fresh-store checks, while preserving
+the original source/profile of older signed and final-import evidence. Source
+controls and a configured workflow alone do not complete the runtime matrix.

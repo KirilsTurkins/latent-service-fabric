@@ -4,6 +4,7 @@ from __future__ import annotations
 from tools import guest_compatibility_context_build
 from tools.transaction_guest_project import packaging_arguments
 import json
+import math
 from pathlib import Path
 import tempfile
 import time
@@ -78,7 +79,11 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
           repository: str, wasi_sdk: Path, *, gradle="gradle", timeout=900,
           offline_cache: Path | None = None, read_only_cache: Path | None = None,
           runtime_profile: str | None = None, executable_approval: str | None = None,
-          failure_contexts: tuple[str, ...] = (), compiler_methods: bool = False) -> Path:
+          failure_contexts: tuple[str, ...] = (), compiler_methods: bool = False,
+          _deadline: float | None = None) -> Path:
+    if _deadline is not None and (type(_deadline) not in (int, float) or not math.isfinite(_deadline)
+                                 or _deadline <= time.monotonic() + 5):
+        raise ValueError('Java-build-original-owner-deadline')
     from tools.java_guest.c_failure_context import selection
     selection(failure_contexts)
     if type(compiler_methods) is not bool:
@@ -125,10 +130,19 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     path.write_bytes(data)
                 commands = Commands(work, output, build_environment(temporary))
                 commands.deadline = start + timeout
+                if _deadline is not None:
+                    if _deadline <= time.monotonic() + 5:
+                        raise ValueError('compiler-setup-consumed-parent-cleanup-reserve')
+                    commands.deadline = min(commands.deadline, _deadline - 5)
                 stage = "application-dependencies"
                 approval, processor_stage = None, None
                 cache_selection = {"read_only_cache": read_only_cache} if read_only_cache is not None else {}
-                if compiler_methods: cache_selection['compiler_methods'] = True
+                # Bounded compiler-owned queries are part of ordinary authoring.
+                # The existing flag remains accepted for CLI compatibility; it
+                # cannot disable default unknown/omitted-root diagnostics.
+                cache_selection['compiler_methods'] = True
+                if _deadline is not None:
+                    cache_selection['_deadline'] = _deadline
                 if has_processors:
                     if offline_cache is None and read_only_cache is None:
                         raise DependencyError('java-annotation-processors-require-captured-compiler-cache')
@@ -296,7 +310,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                         data = read_file(output / (name + '.json'), 8 * 1024 * 1024)
                         materials.append({"name": name, "digest": digest(data), "size": len(data)})
                 methods_material = None
-                if compiler_methods and getattr(compiler, 'reachability_observation', None) is not None:
+                if getattr(compiler, 'reachability_observation', None) is not None:
                     from tools.java_guest import reachability
                     from tools import guest_runtime_receipts
                     graph = guest_runtime_receipts.captured_graph(files)
@@ -315,11 +329,11 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                         write_json(output / 'compatibility-compiler-methods-unavailable.json', {
                             'schemaVersion': 'lsf.guest.compatibility.failure.v1', 'status': 'unavailable',
                             'authority': 'none', 'reason': 'compiler-method-observation-unavailable-or-stale'})
-                elif compiler_methods:
+                else:
                     write_json(output / 'compatibility-compiler-methods-unavailable.json', {
                         'schemaVersion': 'lsf.guest.compatibility.failure.v1', 'status': 'unavailable',
                         'authority': 'none', 'reason': 'compiler-method-observation-unavailable-or-stale'})
-                if compiler_methods:
+                if compiler.compiler_methods:
                     # Optional collection is a signed material, not a new
                     # field in the native signer's closed build recipe.
                     selected = canonical({'schemaVersion': 'lsf.guest.compiler-method-selection.v1',

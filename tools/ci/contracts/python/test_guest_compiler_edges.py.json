@@ -1,0 +1,153 @@
+{
+  "cases": [
+    "CompilerEdges.test_Go_result_tuple_preserves_unknown_indirect_and_function_pointer_producers",
+    "CompilerEdges.test_all_three_real_readers_follow_complete_cfgs_and_bind_raw_inputs",
+    "CompilerEdges.test_complete_no_call_bodies_are_not_labelled_api_eliminated",
+    "CompilerEdges.test_duplicate_root_blocks_or_unbounded_source_are_rejected",
+    "CompilerEdges.test_even_rehashed_invalid_shape_and_stale_context_refuse",
+    "CompilerEdges.test_fixed_pair_requires_actual_whole_source_inventories_and_unchanged_library",
+    "CompilerEdges.test_indirect_calls_and_unknown_instructions_refuse_closed_negative",
+    "CompilerEdges.test_ir_comments_strings_and_substrings_never_count_as_calls",
+    "CompilerEdges.test_post_terminator_instructions_and_malformed_branch_geometry_are_unknown",
+    "CompilerEdges.test_truncation_or_missing_successor_cannot_supply_a_negative",
+    "CompilerEdges.test_unreachable_compiler_block_is_not_misreported_as_a_reached_edge"
+  ],
+  "guards": {
+    "CompilerEdges.test_Go_result_tuple_preserves_unknown_indirect_and_function_pointer_producers": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:799e81274f753050280dd2155ffb758f88ffa750ebe6d069ffa3ff43bb0c984a",
+        "class:setup-sha256:089050930276c74184c6a92fbb61b459a7b98c21b076e8f1353369ce26a24977"
+      ],
+      "skipSites": []
+    },
+    "CompilerEdges.test_all_three_real_readers_follow_complete_cfgs_and_bind_raw_inputs": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:799e81274f753050280dd2155ffb758f88ffa750ebe6d069ffa3ff43bb0c984a",
+        "class:setup-sha256:089050930276c74184c6a92fbb61b459a7b98c21b076e8f1353369ce26a24977"
+      ],
+      "skipSites": []
+    },
+    "CompilerEdges.test_complete_no_call_bodies_are_not_labelled_api_eliminated": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:799e81274f753050280dd2155ffb758f88ffa750ebe6d069ffa3ff43bb0c984a",
+        "class:setup-sha256:089050930276c74184c6a92fbb61b459a7b98c21b076e8f1353369ce26a24977"
+      ],
+      "skipSites": []
+    },
+    "CompilerEdges.test_duplicate_root_blocks_or_unbounded_source_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:799e81274f753050280dd2155ffb758f88ffa750ebe6d069ffa3ff43bb0c984a",
+        "class:setup-sha256:089050930276c74184c6a92fbb61b459a7b98c21b076e8f1353369ce26a24977"
+      ],
+      "skipSites": []
+    },
+    "CompilerEdges.test_even_rehashed_invalid_shape_and_stale_context_refuse": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:799e81274f753050280dd2155ffb758f88ffa750ebe6d069ffa3ff43bb0c984a",
+        "class:setup-sha256:089050930276c74184c6a92fbb61b459a7b98c21b076e8f1353369ce26a24977"
+      ],
+      "skipSites": []
+    },
+    "CompilerEdges.test_fixed_pair_requires_actual_whole_source_inventories_and_unchanged_library": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:799e81274f753050280dd2155ffb758f88ffa750ebe6d069ffa3ff43bb0c984a",
+        "class:setup-sha256:089050930276c74184c6a92fbb61b459a7b98c21b076e8f1353369ce26a24977"
+      ],
+      "skipSites": []
+    },
+    "CompilerEdges.test_indirect_calls_and_unknown_instructions_refuse_closed_negative": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:799e81274f753050280dd2155ffb758f88ffa750ebe6d069ffa3ff43bb0c984a",
+        "class:setup-sha256:089050930276c74184c6a92fbb61b459a7b98c21b076e8f1353369ce26a24977"
+      ],
+      "skipSites": []
+    },
+    "CompilerEdges.test_ir_comments_strings_and_substrings_never_count_as_calls": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:799e81274f753050280dd2155ffb758f88ffa750ebe6d069ffa3ff43bb0c984a",
+        "class:setup-sha256:089050930276c74184c6a92fbb61b459a7b98c21b076e8f1353369ce26a24977"
+      ],
+      "skipSites": []
+    },
+    "CompilerEdges.test_post_terminator_instructions_and_malformed_branch_geometry_are_unknown": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:799e81274f753050280dd2155ffb758f88ffa750ebe6d069ffa3ff43bb0c984a",
+        "class:setup-sha256:089050930276c74184c6a92fbb61b459a7b98c21b076e8f1353369ce26a24977"
+      ],
+      "skipSites": []
+    },
+    "CompilerEdges.test_truncation_or_missing_successor_cannot_supply_a_negative": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:799e81274f753050280dd2155ffb758f88ffa750ebe6d069ffa3ff43bb0c984a",
+        "class:setup-sha256:089050930276c74184c6a92fbb61b459a7b98c21b076e8f1353369ce26a24977"
+      ],
+      "skipSites": []
+    },
+    "CompilerEdges.test_unreachable_compiler_block_is_not_misreported_as_a_reached_edge": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:799e81274f753050280dd2155ffb758f88ffa750ebe6d069ffa3ff43bb0c984a",
+        "class:setup-sha256:089050930276c74184c6a92fbb61b459a7b98c21b076e8f1353369ce26a24977"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_guest_compiler_edges.py",
+  "reviewReason": "Whole679 reviewed finite source controls: all original cases, bases, decorators and skip sites retained; explicit fixture-only guard changes bind reviewed helper/source setup. Actual compiler/node qualification is separate.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
