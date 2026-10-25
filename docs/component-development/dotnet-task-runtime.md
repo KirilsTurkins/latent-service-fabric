@@ -13,6 +13,44 @@ timer waiting still uses the activation/monotonic clock. An HTTP
 declaration is unnecessary for task and timer progress. The compiler selects the
 existing activation adapter; it adds no network import, provider or grant.
 
+The current compiler source also selects the aggregate Task.WaitAll derivation
+inside that same managed finite path, with the authenticated async export and
+all four declarations still required. Its strict receipt binds 95 helpers, the
+nine original WaitAll preimages/remainders plus the guarded timer Pump and sixteen
+derived bodies (the fifteen existing identities remain exact); the final
+closed-filesystem/ILC reference chain retains that exact intermediate. There is
+no new application flag or automatic grant. All fourteen outcomes passed the fresh
+normal NativeAOT and signed-node
+[run40188795279](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40188795279/job/121155140690)
+at source18576f471ef817943b385d3ad5ab12d4dd6f89bb. The
+[source-bound receipt](../testing/evidence/dotnet-waitall-signed-2026-10-25.json)
+binds the actual component, intermediate/final CoreLib chain, 108 Git inputs and
+all fourteen ordered results. Outside this selected finite path, the original unsupported
+WaitAll contexts remain unsupported. WaitAny, general threads/monitors, whole
+runtime compatibility, physical ownership costs and production rollout are not
+qualified by this source change.
+
+The first normal NativeAOT programme at sourcee36c6708f9d5f54bbaa688494b1cf764e420da0b
+compiled, packaged and admitted the component and passed its first eight strict
+cases. [Run40184556525](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40184556525)
+then failed the nested single-wait timer case with public GuestTrap/unreachable;
+five later outcomes were not completed. Its private exception was unavailable,
+and that programme remains failed. Source inspection found the pinned timer pump
+reuses one static list across a live callback enumeration and nested pumping.
+The selected v2 derivation now detaches only a positive batch to a fresh original
+typed list before its original enumerator. Original callbacks, Clear/finally and
+FailFast remain intact. This adds managed allocation under the unchanged guest
+heap budget; it is not allocation-free or a cost qualification. The v2 fixture
+used by host controls is explicitly controlled data, not an observed v2 DLL or
+signed result. The later source18576 programme uses the actual v2 assembly and
+passes two-task ordering, original Polly8.6.3/Polly.Core8.6.3 errors, task/token
+cancellation, one finite deadline, zero query and nested single/aggregate waits.
+Its two root-stop negatives have original native pending witnesses, physical
+retirement and fresh recovery. Audit observation loss remains explicit; audit
+alone is not the pending barrier. The node and peer are reaped clean and all 23
+named final shutdown counts are zero. This covers the frozen ordinary calls,
+not every public WaitAll overload or arbitrary published-library behavior.
+
 The private `dotnet-stackful-task-wait-v1` derivation preserves the exact original
 CoreLib preimage, dispatch, ExecutionContext entry/restore and TaskAwaiter error
 paths. It limits nested joins to 32. With all four explicit task/timer declarations,
@@ -85,8 +123,9 @@ races, shutdown/tenant fencing and managed CPU scheduling remain separate.
 
 ## Qualification-private WaitAll reference
 
-The ordinary driver still selects its existing finite single-task implementation.
-`Task.WaitAll` is not promoted to that default by this source milestone. The
+At the reference's qualified source732c, the ordinary driver still selected its
+existing finite single-task implementation. That reference milestone did not
+promote `Task.WaitAll` into the normal path. The
 private `--aggregate-task-wait` tool variant retains the original nine public/core
 method remainders, countdown, completion actions and detach-finally, with one
 bounded aggregate-ready target and the existing depth32/context restoration.
@@ -113,7 +152,8 @@ proving its fresh nonnull countdown receiver; source/projected hashes and unchan
 branch/local/EH scope are recorded. The production candidate IL stays unchanged.
 This does not execute pinned WASI polling/accounting or qualify native exception,
 physical-retirement, default NativeAOT, signed-component or whole-cost behavior.
-Normal promotion and one fresh signed programme remain separate required work.
+The later normal NativeAOT programme above is separate evidence; it does not
+relabel this historical CLR reference or its v1 candidate.
 
 [#746](https://github.com/KirilsTurkins/latent-service-fabric/issues/746) remains
 open. This finite queue/join programme does not establish compiler-safe CPU

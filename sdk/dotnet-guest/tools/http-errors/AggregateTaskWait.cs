@@ -3,7 +3,7 @@ using Mono.Cecil.Cil;
 using System.Reflection.PortableExecutable;
 using System.Security.Cryptography;
 
-// Candidate tool-only derivation. The normal compiler never selects this mode.
+// Selected managed-finite derivation; host-reference projections live separately.
 // Keep the original countdown, task listeners, exceptions and detach finally.
 internal static class AggregateTaskWait
 {
@@ -83,7 +83,86 @@ internal static class AggregateTaskWait
         foreach (var instruction in old) method.Body.Instructions.Remove(instruction);
     }
 
-    internal static (MethodDefinition[] Changed, object Receipt, Dictionary<string, string> Remainders) Install(ModuleDefinition module, PEReader reader)
+    private static (MethodDefinition Method, string Original) DetachTimerPumpBatch(ModuleDefinition module, PEReader reader)
+    {
+        var queue = module.GetTypes().Single(type => type.FullName == "System.Threading.TimerQueue");
+        var pump = queue.Methods.Single(method => method.Name == "PumpTimerQueue");
+        var set = queue.Methods.Single(method => method.Name == "SetTimer");
+        Need(pump.MetadataToken.ToInt32() == 0x06003c90 && pump.IsStatic
+            && pump.ReturnType.MetadataType == MetadataType.Int64 && pump.Parameters.Count == 1
+            && pump.Parameters[0].ParameterType.MetadataType == MetadataType.Int64
+            && set.MetadataToken.ToInt32() == 0x06003c8d);
+        Raw(reader, pump, 214, "e486da68fcceeed848c7b35adbf5956f7345b9e3e63a05553148b83d2d7ba44b");
+        Raw(reader, set, 103, "b1cd9f5485b97d9954a55a73c7a11da54e532c577300ab3e213b89dc11f2e30e");
+        var batch = queue.Fields.Single(field => field.Name == "s_scheduledTimersToFire");
+        Need(batch.IsStatic && batch.MetadataToken.ToInt32() == 0x04000c56
+            && batch.FieldType is GenericInstanceType list
+            && list.ElementType.FullName == "System.Collections.Generic.List`1"
+            && list.GenericArguments.Count == 1 && list.GenericArguments[0].FullName == queue.FullName);
+        var instances = queue.Methods.Single(method => method.Name == "get_Instances" && method.IsStatic
+            && method.Parameters.Count == 0 && method.ReturnType is ArrayType array
+            && array.ElementType.FullName == queue.FullName);
+        var constructors = set.Body.Instructions.Where(instruction => instruction.OpCode == OpCodes.Newobj
+            && instruction.Operand is MethodReference method && method.DeclaringType.FullName == batch.FieldType.FullName)
+            .Select(instruction => (MethodReference)instruction.Operand).ToArray();
+        Need(constructors.Length == 2 && constructors.Select(method => method.FullName).Distinct().Count() == 1);
+        var constructor = constructors[0];
+        Need(constructor.Name == ".ctor" && constructor.HasThis && constructor.Parameters.Count == 1
+            && constructor.Parameters[0].ParameterType.MetadataType == MetadataType.Int32
+            && constructor.ReturnType.MetadataType == MetadataType.Void);
+        var get = pump.Body.Instructions.Single(instruction => instruction.OpCode == OpCodes.Callvirt
+            && instruction.Operand is MethodReference method && method.Name == "GetEnumerator"
+            && method.DeclaringType.FullName == batch.FieldType.FullName);
+        var anchor = get.Previous;
+        Need(anchor.OpCode == OpCodes.Ldloc_0 && anchor.Previous.OpCode == OpCodes.Ble_S
+            && pump.Body.Variables.Count == 7 && pump.Body.Variables[0].VariableType.FullName == batch.FieldType.FullName
+            && pump.Body.ExceptionHandlers.Count == 1
+            && pump.Body.ExceptionHandlers[0].HandlerType == ExceptionHandlerType.Finally
+            && anchor.Offset < pump.Body.ExceptionHandlers[0].TryStart.Offset
+            && !pump.Body.Instructions.Any(instruction => instruction.Operand == anchor
+                || instruction.Operand is Instruction[] branches && branches.Contains(anchor)));
+        var original = TaskWait.BodyIdentity(pump);
+        var il = pump.Body.GetILProcessor();
+        il.InsertBefore(anchor, Instruction.Create(OpCodes.Call, instances));
+        il.InsertBefore(anchor, Instruction.Create(OpCodes.Ldlen));
+        il.InsertBefore(anchor, Instruction.Create(OpCodes.Conv_I4));
+        il.InsertBefore(anchor, Instruction.Create(OpCodes.Newobj, constructor));
+        il.InsertBefore(anchor, Instruction.Create(OpCodes.Stsfld, batch));
+        VerifyTimerPump(module, original);
+        return (pump, original);
+    }
+
+    internal static void VerifyTimerPump(ModuleDefinition module, string original)
+    {
+        var queue = module.GetTypes().Single(type => type.FullName == "System.Threading.TimerQueue");
+        var pump = queue.Methods.Single(method => method.Name == "PumpTimerQueue");
+        var get = pump.Body.Instructions.Single(instruction => instruction.OpCode == OpCodes.Callvirt
+            && instruction.Operand is MethodReference method && method.Name == "GetEnumerator");
+        var anchor = get.Previous;
+        var inserted = new Instruction[5];
+        var cursor = anchor.Previous;
+        for (int i = 4; i >= 0; i--) { inserted[i] = cursor; cursor = cursor.Previous; }
+        Need(anchor.OpCode == OpCodes.Ldloc_0 && cursor.OpCode == OpCodes.Ble_S
+            && inserted[0].OpCode == OpCodes.Call && inserted[0].Operand is MethodReference instances
+            && instances.FullName == "System.Threading.TimerQueue[] System.Threading.TimerQueue::get_Instances()"
+            && inserted[1].OpCode == OpCodes.Ldlen && inserted[2].OpCode == OpCodes.Conv_I4
+            && inserted[3].OpCode == OpCodes.Newobj && inserted[3].Operand is MethodReference constructor
+            && constructor.FullName == "System.Void System.Collections.Generic.List`1<System.Threading.TimerQueue>::.ctor(System.Int32)"
+            && inserted[4].OpCode == OpCodes.Stsfld && inserted[4].Operand is FieldReference field
+            && field.Name == "s_scheduledTimersToFire" && field.DeclaringType.FullName == queue.FullName);
+        Need(!pump.Body.Instructions.Except(inserted).Any(instruction => instruction.Operand is Instruction branch && inserted.Contains(branch)
+            || instruction.Operand is Instruction[] branches && branches.Any(inserted.Contains))
+            && !pump.Body.ExceptionHandlers.Any(handler => inserted.Contains(handler.TryStart) || inserted.Contains(handler.TryEnd)
+                || inserted.Contains(handler.HandlerStart) || inserted.Contains(handler.HandlerEnd) || inserted.Contains(handler.FilterStart)));
+        var selected = TaskWait.BodyIdentity(pump);
+        var il = pump.Body.GetILProcessor();
+        foreach (var instruction in inserted) il.Remove(instruction);
+        try { Need(TaskWait.BodyIdentity(pump) == original); }
+        finally { foreach (var instruction in inserted) il.InsertBefore(anchor, instruction); }
+        Need(TaskWait.BodyIdentity(pump) == selected);
+    }
+
+    internal static (MethodDefinition[] Changed, object Receipt, Dictionary<string, string> Remainders, string TimerPumpOriginal) Install(ModuleDefinition module, PEReader reader)
     {
         TypeDefinition Type(string name) => module.GetTypes().Single(type => type.FullName == name);
         var task = Type("System.Threading.Tasks.Task");
@@ -319,14 +398,23 @@ internal static class AggregateTaskWait
         // Removing a prefix does not widen any original remainder branch. The
         // sole blocking-call substitution keeps its original encoded width.
         VerifyRemainders(module, remainders);
+        var timerPump = DetachTimerPumpBatch(module, reader);
 
         var receipt = new {
-            patch = "latent.dotnet.wait-all.v1", profile = "dotnet-aggregate-task-wait-candidate-v1",
+            patch = "latent.dotnet.wait-all.v2", profile = "dotnet-aggregate-task-wait-candidate-v2",
             originalMethods = Originals.Select((row, index) => new {
                 method = members[index].FullName, token = row.Token, ilBytes = row.Bytes, ilSha256 = "sha256:" + row.Sha256 }).ToArray(),
             originalRemainders = remainders,
-            rewrittenBodies = members.Append(check).Append(single).Append(ready).Append(body).Append(entry).Append(shim)
+            rewrittenBodies = members.Append(check).Append(single).Append(ready).Append(body).Append(entry).Append(shim).Append(timerPump.Method)
                 .ToDictionary(method => method.FullName, method => TaskWait.BodyIdentity(method)),
+            timerPump = new {
+                method = timerPump.Method.FullName, originalToken = 0x06003c90, originalIlBytes = 214,
+                originalIlSha256 = "sha256:e486da68fcceeed848c7b35adbf5956f7345b9e3e63a05553148b83d2d7ba44b",
+                originalBodyIdentity = timerPump.Original, rewrittenBodyIdentity = TaskWait.BodyIdentity(timerPump.Method),
+                batch = "detach-positive-batch-to-original-List(Instances.Length)-before-original-enumerator",
+                callbacks = "original-foreach-Clear-finally-FailFast-preserved", inverseExact = true,
+                generatedHelpers = 0, generatedFields = 0, nativeOwners = 0,
+            },
             countdown = "original-SetOnCountdownMres-completion-actions-detach-finally",
             waitEdge = "original-MRES-Wait-only", target = "private-aggregate-original-IsSet",
             deadline = "one-original-monotonic-interval-original-Task.Delay-wake",
@@ -338,7 +426,7 @@ internal static class AggregateTaskWait
             nonWasi = "original-MRES-Wait-entry-without-duplicate-validation",
             productionSelected = false, qualificationComplete = false, limitsChanged = false,
         };
-        return (members.Append(check).ToArray(), receipt, remainders);
+        return (members.Append(check).Append(timerPump.Method).ToArray(), receipt, remainders, timerPump.Original);
     }
 
     internal static void VerifyRemainders(ModuleDefinition module, IReadOnlyDictionary<string, string> expected)
@@ -377,8 +465,9 @@ internal static class AggregateTaskWait
                 || method.DeclaringType.FullName == "System.Threading.Tasks.Task"
                     && (method.Name is "WaitAll" or "WaitAllCore" or "WaitAllBlockingCore")
                 || method.DeclaringType.FullName == "System.Threading.WasiEventLoop"
-                    && (method.Name is "CheckPollables" or "LsfWaitForActualTaskCompletion")).ToArray();
-        Need(selected.Length == 15);
+                    && (method.Name is "CheckPollables" or "LsfWaitForActualTaskCompletion")
+                || method.DeclaringType.FullName == "System.Threading.TimerQueue" && method.Name == "PumpTimerQueue").ToArray();
+        Need(selected.Length == 16);
         foreach (var method in selected)
         {
             var instructions = method.Body.Instructions.ToArray();
