@@ -17,7 +17,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:a7c2b18d998bb2bfd9f5c9ab6c601906620bff32b240a9f2b4555c4641b50afd",
-        "class:setup-sha256:97463c63b72c5084bcbc20adec8c39e8258e1880fdb41630d866053b27e2be46"
+        "class:setup-sha256:1cdaba399add9eaeb86bf037cbce768085eea5fdce83970e7ab1de1d9b59ff19"
       ],
       "skipSites": []
     },
@@ -29,7 +29,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:a7c2b18d998bb2bfd9f5c9ab6c601906620bff32b240a9f2b4555c4641b50afd",
-        "class:setup-sha256:97463c63b72c5084bcbc20adec8c39e8258e1880fdb41630d866053b27e2be46"
+        "class:setup-sha256:1cdaba399add9eaeb86bf037cbce768085eea5fdce83970e7ab1de1d9b59ff19"
       ],
       "skipSites": []
     },
@@ -41,7 +41,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:a7c2b18d998bb2bfd9f5c9ab6c601906620bff32b240a9f2b4555c4641b50afd",
-        "class:setup-sha256:97463c63b72c5084bcbc20adec8c39e8258e1880fdb41630d866053b27e2be46"
+        "class:setup-sha256:1cdaba399add9eaeb86bf037cbce768085eea5fdce83970e7ab1de1d9b59ff19"
       ],
       "skipSites": []
     },
@@ -53,7 +53,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:a7c2b18d998bb2bfd9f5c9ab6c601906620bff32b240a9f2b4555c4641b50afd",
-        "class:setup-sha256:97463c63b72c5084bcbc20adec8c39e8258e1880fdb41630d866053b27e2be46"
+        "class:setup-sha256:1cdaba399add9eaeb86bf037cbce768085eea5fdce83970e7ab1de1d9b59ff19"
       ],
       "skipSites": []
     },
@@ -65,7 +65,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:a7c2b18d998bb2bfd9f5c9ab6c601906620bff32b240a9f2b4555c4641b50afd",
-        "class:setup-sha256:97463c63b72c5084bcbc20adec8c39e8258e1880fdb41630d866053b27e2be46"
+        "class:setup-sha256:1cdaba399add9eaeb86bf037cbce768085eea5fdce83970e7ab1de1d9b59ff19"
       ],
       "skipSites": []
     },
@@ -77,7 +77,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:a7c2b18d998bb2bfd9f5c9ab6c601906620bff32b240a9f2b4555c4641b50afd",
-        "class:setup-sha256:97463c63b72c5084bcbc20adec8c39e8258e1880fdb41630d866053b27e2be46"
+        "class:setup-sha256:1cdaba399add9eaeb86bf037cbce768085eea5fdce83970e7ab1de1d9b59ff19"
       ],
       "skipSites": []
     },
@@ -89,13 +89,13 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:a7c2b18d998bb2bfd9f5c9ab6c601906620bff32b240a9f2b4555c4641b50afd",
-        "class:setup-sha256:97463c63b72c5084bcbc20adec8c39e8258e1880fdb41630d866053b27e2be46"
+        "class:setup-sha256:1cdaba399add9eaeb86bf037cbce768085eea5fdce83970e7ab1de1d9b59ff19"
       ],
       "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_java_llvm_ssa_consumer.py",
-  "reviewReason": "Seven explicit compiler-only consumer controls bind the actual R7 source/test-qualified carrier, retain unfilled tuple refusal and closed defaults, and preserve original public job inverse; no compiler execution from controller fixtures.",
+  "reviewReason": "Reviewed synthetic carrier copied-notice identity binding only; same seven cases, module/decorator/base/skip guards and all production R7 source/license pins unchanged.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

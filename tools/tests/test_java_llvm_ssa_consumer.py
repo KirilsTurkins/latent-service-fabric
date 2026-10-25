@@ -183,6 +183,12 @@ class LlvmSsaConsumer(unittest.TestCase):
                 ('LLVM-LICENSE.txt', 'tools/data/java-llvm-ssa/LICENSE.txt'),
                 ('LLVM-PATCH.json', 'tools/data/java-llvm-ssa/patch.json')]:
             (products / name).write_bytes((patch.ROOT / source).read_bytes())
+        # This carrier is synthetic: bind its copied current notices locally.
+        # The real reader retains the immutable producer's notice identities.
+        notices = mock.patch.object(inputs, 'NOTICES', {
+            name: inputs.identity((products / name).read_bytes()) for name in inputs.NOTICES})
+        notices.start()
+        self.addCleanup(notices.stop)
         (products / 'toolchain/bin/clang-21').write_bytes(b'DERIVED FIXTURE; NEVER EXECUTED')
         library, clang_library = producer.LLVM_SONAME, producer.CLANG_SONAME
         (products / 'toolchain/lib').mkdir()
