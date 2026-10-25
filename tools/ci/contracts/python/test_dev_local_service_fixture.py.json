@@ -5,6 +5,7 @@
     "LocalServiceFixture.test_group_signing_binds_both_distinct_component_identities_and_the_entire_inventory",
     "LocalServiceFixture.test_pending_callee_operation_is_visible_and_cannot_be_treated_as_deployed",
     "LocalServiceFixture.test_provider_scope_and_declared_kind_are_required_for_fixture_initialization",
+    "LocalServiceFixture.test_public_retention_excludes_private_scratch_and_refuses_file_or_byte_drift",
     "LocalServiceFixture.test_refusal_probe_option_leaves_ordinary_log_rpc_path_untouched",
     "LocalServiceFixture.test_refusal_reader_rejects_coerced_private_forged_or_foreign_observations",
     "LocalServiceFixture.test_refusal_records_bind_the_failed_activation_after_expected_negative_cases",
@@ -28,7 +29,19 @@
         "unittest.skipUnless(os.name == 'posix', 'Linux helper owns the callee compiler')"
       ]
     },
-    "39bf79876c45e6f619dee22f3da2ce4f8e05a718c266284c268a00809013480a": {
+    "665af2688b2a9d89f595c01529931dad08ca4024161bbc34a5c8746ceef36354": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a77f79a20b4c4b67ed3fde9f7d7289e41c23577187d9c43d64d93b95d827922a",
+        "class:setup-sha256:e447805178ec05129fb4cac68d827528f02166fdd6d90bb8785175764e06d4c5"
+      ],
+      "skipSites": []
+    },
+    "b8d385711bcbc0e39117d567d0f47bf8b5165e8d5f9fee23e6787e2686456eb7": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -41,21 +54,9 @@
         "class:setup-sha256:e447805178ec05129fb4cac68d827528f02166fdd6d90bb8785175764e06d4c5"
       ],
       "skipSites": [
-        "skip-control-sha256:0bfc8cf78ab538e89fef779e98a6cf593156f9e5f1e4c5481a36c838af237f7f",
+        "skip-control-sha256:1932acbb6c85cf3adc0deadb71b0db839c4c42dfbc9288f5b4837e3ea203a703",
         "unittest.skipUnless(os.name == 'posix', 'Linux source-node probe owns the log RPC')"
       ]
-    },
-    "665af2688b2a9d89f595c01529931dad08ca4024161bbc34a5c8746ceef36354": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:a77f79a20b4c4b67ed3fde9f7d7289e41c23577187d9c43d64d93b95d827922a",
-        "class:setup-sha256:e447805178ec05129fb4cac68d827528f02166fdd6d90bb8785175764e06d4c5"
-      ],
-      "skipSites": []
     }
   },
   "guards": {
@@ -64,13 +65,14 @@
     "LocalServiceFixture.test_group_signing_binds_both_distinct_component_identities_and_the_entire_inventory": "665af2688b2a9d89f595c01529931dad08ca4024161bbc34a5c8746ceef36354",
     "LocalServiceFixture.test_pending_callee_operation_is_visible_and_cannot_be_treated_as_deployed": "665af2688b2a9d89f595c01529931dad08ca4024161bbc34a5c8746ceef36354",
     "LocalServiceFixture.test_provider_scope_and_declared_kind_are_required_for_fixture_initialization": "665af2688b2a9d89f595c01529931dad08ca4024161bbc34a5c8746ceef36354",
-    "LocalServiceFixture.test_refusal_probe_option_leaves_ordinary_log_rpc_path_untouched": "39bf79876c45e6f619dee22f3da2ce4f8e05a718c266284c268a00809013480a",
+    "LocalServiceFixture.test_public_retention_excludes_private_scratch_and_refuses_file_or_byte_drift": "665af2688b2a9d89f595c01529931dad08ca4024161bbc34a5c8746ceef36354",
+    "LocalServiceFixture.test_refusal_probe_option_leaves_ordinary_log_rpc_path_untouched": "b8d385711bcbc0e39117d567d0f47bf8b5165e8d5f9fee23e6787e2686456eb7",
     "LocalServiceFixture.test_refusal_reader_rejects_coerced_private_forged_or_foreign_observations": "665af2688b2a9d89f595c01529931dad08ca4024161bbc34a5c8746ceef36354",
     "LocalServiceFixture.test_refusal_records_bind_the_failed_activation_after_expected_negative_cases": "665af2688b2a9d89f595c01529931dad08ca4024161bbc34a5c8746ceef36354",
     "LocalServiceFixture.test_two_cells_and_explicit_child_budget_only_follow_a_selected_local_fixture": "665af2688b2a9d89f595c01529931dad08ca4024161bbc34a5c8746ceef36354"
   },
   "kind": "python",
   "module": "tools/tests/test_dev_local_service_fixture.py",
-  "reviewReason": "Explicit cfg-only disposable local-service first-refusal observation; preserve original public failures and all runtime owners/grants; default ordinary path byte-equivalent; one narrowly owned actual fixture diagnostic.",
+  "reviewReason": "Retain only fixed bounded public reports and nine named command channel pairs; private fixture scratch stays outside upload output. Preserve original failed fixture and prior exact-source native controls; explicit six non-native source exceptions only.",
   "schemaVersion": "latent.ci.contracts.v2"
 }

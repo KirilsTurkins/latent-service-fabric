@@ -49,8 +49,12 @@ jobs:
         with:
           name: local-service-refusal-${{ github.sha }}-${{ github.run_attempt }}
           path: |
-            ${{ runner.temp }}/local-service-refusal/
-            target/local-service-tools/logs/
-            target/local-service-tools/source-node/source-node.json
+            ${{ runner.temp }}/local-service-refusal/public/NODE-LOCAL-SERVICE-REFUSAL.json
+            ${{ runner.temp }}/local-service-refusal/public/commands/*.stdout
+            ${{ runner.temp }}/local-service-refusal/public/commands/*.stderr
+            ${{ runner.temp }}/local-service-refusal/public/fixture/observation.json
+            ${{ runner.temp }}/local-service-refusal/public/fixture/node/probe.json
+            ${{ runner.temp }}/local-service-refusal/public/fixture/node/node-tests.json
+            ${{ runner.temp }}/local-service-refusal/public/source-node.json
           if-no-files-found: error
           retention-days: 3

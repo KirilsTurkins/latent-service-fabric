@@ -51,7 +51,7 @@
         "with": {
           "if-no-files-found": "error",
           "name": "local-service-refusal-${{ github.sha }}-${{ github.run_attempt }}",
-          "path": "${{ runner.temp }}/local-service-refusal/\ntarget/local-service-tools/logs/\ntarget/local-service-tools/source-node/source-node.json\n",
+          "path": "${{ runner.temp }}/local-service-refusal/public/NODE-LOCAL-SERVICE-REFUSAL.json\n${{ runner.temp }}/local-service-refusal/public/commands/*.stdout\n${{ runner.temp }}/local-service-refusal/public/commands/*.stderr\n${{ runner.temp }}/local-service-refusal/public/fixture/observation.json\n${{ runner.temp }}/local-service-refusal/public/fixture/node/probe.json\n${{ runner.temp }}/local-service-refusal/public/fixture/node/node-tests.json\n${{ runner.temp }}/local-service-refusal/public/source-node.json\n",
           "retention-days": 3
         }
       }
@@ -60,7 +60,7 @@
   },
   "jobId": "local-service",
   "kind": "job",
-  "reviewReason": "One explicit local-service-only diagnostic owner; install the unchanged maintained Python validator lock and import/CLI smoke before native compilation; preserve original fixture assertions/limits/default-off path.",
+  "reviewReason": "Retain only fixed bounded public reports and nine named command channel pairs; private fixture scratch stays outside upload output. Preserve original failed fixture and prior exact-source native controls; explicit six non-native source exceptions only.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/developer-local-service-refusal.yml"
 }

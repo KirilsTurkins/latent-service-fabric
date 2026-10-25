@@ -11,6 +11,55 @@ from tools.dev_workflow.common import DevError, digest, encode
 
 
 class LocalServiceFixture(unittest.TestCase):
+    def test_public_retention_excludes_private_scratch_and_refuses_file_or_byte_drift(self):
+        from tools import run_dev_local_service_refusal_ci as owner
+        with tempfile.TemporaryDirectory() as temporary:
+            parent = Path(temporary)
+            output = parent / "output"
+            output.mkdir(mode=0o700)
+            environment = owner.private_environment(output)
+            scratch = Path(environment["TMPDIR"])
+            self.assertEqual(scratch.parent, parent.resolve())
+            self.assertFalse(scratch.is_relative_to(output.resolve()))
+            self.assertEqual(environment["TEMP"], str(scratch))
+            self.assertEqual(environment["TMP"], str(scratch))
+            (scratch / "private-node-config.json").write_text("private-sentinel")
+            private = output / "lsf-local-private"
+            private.mkdir()
+            (private / "private-key.json").write_text("private-sentinel")
+            (output / "commands").mkdir()
+            (output / "commands/original-local-service-fixture.stderr").write_bytes(b"closed-failure\n")
+            (output / "commands/unlisted.stdout").write_text("private-sentinel")
+            (output / "NODE-LOCAL-SERVICE-REFUSAL.json").write_bytes(b'{"status":"failed"}\n')
+            source_node = parent / "source-node.json"
+            source_node.write_bytes(b'{"purpose":"source-application-node-tests"}\n')
+            observed = owner.retain_public_evidence(output, source_node)
+            expected = {"commands/original-local-service-fixture.stderr", "source-node.json",
+                        "NODE-LOCAL-SERVICE-REFUSAL.json"}
+            self.assertEqual(set(observed["files"]), expected)
+            retained = {path.relative_to(output / "public").as_posix(): path.read_bytes()
+                        for path in (output / "public").rglob("*") if path.is_file()}
+            self.assertEqual(set(retained), expected)
+            self.assertEqual(retained["commands/original-local-service-fixture.stderr"], b"closed-failure\n")
+            self.assertEqual(observed["bytes"], sum(map(len, retained.values())))
+            self.assertTrue((scratch / "private-node-config.json").exists())
+            for label, constant, limit, reason in (
+                    ("files", "MAX_PUBLIC_FILES", 0, "public-evidence-total-bound"),
+                    ("total", "MAX_PUBLIC_BYTES", 0, "public-evidence-total-bound")):
+                candidate = parent / label
+                candidate.mkdir()
+                (candidate / "NODE-LOCAL-SERVICE-REFUSAL.json").write_bytes(b"{}")
+                with patch.object(owner, constant, limit), self.assertRaisesRegex(ValueError, reason):
+                    owner.retain_public_evidence(candidate, parent / "missing-source-node.json")
+            oversized = parent / "oversized"
+            oversized.mkdir()
+            with (oversized / "NODE-LOCAL-SERVICE-REFUSAL.json").open("wb") as stream:
+                stream.seek(owner.PUBLIC_FILES["NODE-LOCAL-SERVICE-REFUSAL.json"])
+                stream.write(b"x")
+            with self.assertRaisesRegex(ValueError, "public-evidence-file-byte-bound"):
+                owner.retain_public_evidence(oversized, parent / "missing-source-node.json")
+            self.assertFalse((oversized / "public/NODE-LOCAL-SERVICE-REFUSAL.json").exists())
+
     def selection(self):
         return {"service": "examples/callee", "deployment": "dev-callee", "contract": "examples:callee/api@1.0.0",
                 "project": "callee", "recipeSha256": "sha256:" + "1" * 64}

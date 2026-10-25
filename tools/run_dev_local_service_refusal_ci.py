@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 import re
 import sys
+import tempfile
 import time
 
 if __package__ in {None, ""}:
@@ -32,6 +33,7 @@ PYTHON_CASES = (
     "test_refusal_records_bind_the_failed_activation_after_expected_negative_cases",
     "test_refusal_reader_rejects_coerced_private_forged_or_foreign_observations",
     "test_refusal_probe_option_leaves_ordinary_log_rpc_path_untouched",
+    "test_public_retention_excludes_private_scratch_and_refuses_file_or_byte_drift",
 )
 RECIPE = (
     WORKFLOW, "tools/run_dev_local_service_refusal_ci.py", "tools/build_dev_guest_tools.py",
@@ -56,8 +58,11 @@ ALLOWED_SOURCE_CHANGES = frozenset({
     b"tools/tests/test_dev_local_service_fixture.py",
     b"tools/run_dev_local_service_refusal_ci.py",
     b"tools/ci/contracts/owners/tools/run_dev_local_service_refusal_ci.py.json",
+    b".github/workflows/developer-local-service-refusal.yml",
+    b"tools/ci/contracts/workflows/developer-local-service-refusal.yml/jobs/local-service.json",
+    b"tools/ci/contracts/python/test_dev_local_service_fixture.py.json",
 })
-PRIOR_FILTERED_TREE_SHA256 = "sha256:e075a17c434a9a720d242e08813ee6e3da05aad57e51a08c77580ecbf9ac6ca3"
+PRIOR_FILTERED_TREE_SHA256 = "sha256:6ff92bd4a6c9fbc0452bf985fd587488c9aa31079f1644d8fa906378a04295fa"
 PRIOR_NATIVE_CONTROLS = {
     "sourceCommit": "81e7c5a8e8d687d478bd502c35c5cca98e4f3fb9",
     "sourceTree": "343a620dc91522bc1b35759f2cd48b2c4d955fbf",
@@ -93,6 +98,59 @@ def native_result(raw, expected):
     require(summary == [(str(len(expected)).encode(), b"0", b"0")], "native-zero-skip-summary-required")
 
 
+PUBLIC_COMMANDS = (
+    "source-head", "source-tree", "clean-source", "builder-import-preflight",
+    "fixture-cli-preflight", "prior-native-source-tree", "python-controls",
+    "normal-rust-tools-and-node", "original-local-service-fixture",
+)
+PUBLIC_REPORTS = {
+    "NODE-LOCAL-SERVICE-REFUSAL.json": 1024 * 1024,
+    "fixture/observation.json": 2 * 1024 * 1024,
+    "fixture/node/probe.json": 2 * 1024 * 1024,
+    "fixture/node/node-tests.json": 256 * 1024,
+}
+PUBLIC_FILES = {**PUBLIC_REPORTS,
+    **{f"commands/{name}.{channel}": MAX_LOG for name in PUBLIC_COMMANDS for channel in ("stdout", "stderr")},
+    "source-node.json": 65536}
+MAX_PUBLIC_FILES = 23
+MAX_PUBLIC_BYTES = sum(PUBLIC_FILES.values())
+
+
+def private_environment(output):
+    # tempfile-created failed fixture workspaces must never be under public output.
+    scratch = Path(tempfile.mkdtemp(prefix="local-service-private-", dir=output.parent)).resolve(strict=True)
+    require(scratch.parent == output.parent.resolve(strict=True)
+            and not scratch.is_relative_to(output.resolve(strict=True)), "private-sibling-scratch-required")
+    return build_environment(scratch)
+
+
+def retain_public_evidence(output, source_node):
+    destination = output / "public"
+    require(not destination.exists() and not destination.is_symlink(), "new-public-evidence-required")
+    destination.mkdir(mode=0o700)
+    retained, total = [], 0
+    # Receipt last: a failed earlier copy cannot leave a stale success receipt.
+    for name in [key for key in PUBLIC_FILES if key != "NODE-LOCAL-SERVICE-REFUSAL.json"] + ["NODE-LOCAL-SERVICE-REFUSAL.json"]:
+        source = source_node if name == "source-node.json" else output / name
+        boundary = source_node.parent if name == "source-node.json" else output
+        require(not any(part.is_symlink() for part in (source, *source.parents)), "public-evidence-symlink-refused")
+        if not source.exists():
+            continue
+        require(source.is_file() and source.resolve(strict=True).is_relative_to(boundary.resolve(strict=True)),
+                "regular-public-evidence-required")
+        with source.open("rb") as stream:
+            raw = stream.read(PUBLIC_FILES[name] + 1)
+        require(len(raw) <= PUBLIC_FILES[name], "public-evidence-file-byte-bound")
+        total += len(raw)
+        require(len(retained) < MAX_PUBLIC_FILES and total <= MAX_PUBLIC_BYTES, "public-evidence-total-bound")
+        target = destination / name
+        target.parent.mkdir(parents=True, mode=0o700, exist_ok=True)
+        with target.open("xb") as stream:
+            stream.write(raw)
+        retained.append(name)
+    return {"files": retained, "bytes": total}
+
+
 def native_source_identity(raw):
     # One fixed Git inventory, not a prior checkout/fetch or a rebuilt envelope.
     require(0 < len(raw) <= MAX_LOG and raw.endswith(b"\0"), "bounded-git-tree-required")
@@ -106,7 +164,7 @@ def native_source_identity(raw):
             exempt.add(path)
         else:
             canonical.append(entry + b"\0")
-    require(exempt == ALLOWED_SOURCE_CHANGES, "all-three-source-exceptions-required")
+    require(exempt == ALLOWED_SOURCE_CHANGES, "all-six-source-exceptions-required")
     observed = "sha256:" + hashlib.sha256(b"".join(canonical)).hexdigest()
     require(observed == PRIOR_FILTERED_TREE_SHA256, "prior-native-source-tree-drift")
     return {"filteredTreeSha256": observed, "inventoryBytes": len(raw),
@@ -124,7 +182,7 @@ def run(python_prefix: Path, output: Path):
     logs = output / "commands"
     logs.mkdir(mode=0o700)
     until = time.monotonic() + MAX_SECONDS
-    environment = build_environment(output)
+    environment = private_environment(output)
     environment.update(RUSTUP_TOOLCHAIN="1.97.1", GITHUB_ACTIONS="true", RUNNER_OS="Linux")
     receipt = {"schemaVersion": "latent.dev.local-service-refusal-ci.v1", "status": "failed",
                "scope": "ordinary-signed-local-service-fixture-diagnostic", "qualificationComplete": False,
@@ -168,7 +226,7 @@ def run(python_prefix: Path, output: Path):
             *("tools.tests.test_dev_local_service_fixture.LocalServiceFixture." + case for case in PYTHON_CASES)], 60)
         passed_python = re.findall(rb"^(test_[a-zA-Z0-9_]+) \([^\n]+\) \.\.\. ok$", controls.stderr, re.M)
         require(sorted(name.decode() for name in passed_python) == sorted(PYTHON_CASES)
-                and b"Ran 4 tests" in controls.stderr and controls.stderr.rstrip().endswith(b"OK"), "four-python-cases-zero-skip-required")
+                and b"Ran 5 tests" in controls.stderr and controls.stderr.rstrip().endswith(b"OK"), "five-python-cases-zero-skip-required")
         receipt["pythonCases"] = list(PYTHON_CASES)
         command("normal-rust-tools-and-node", [sys.executable, "tools/build_dev_guest_tools.py", "--language", "rust",
             "--output", "target/local-service-tools", "--python-prefix", python_prefix, "--node-tests"], 1800)
@@ -189,6 +247,7 @@ def run(python_prefix: Path, output: Path):
         receipt["failure"] = str(error)
         raise
     finally:
+        original_failure = sys.exc_info()[0] is not None
         result = output / "fixture/node/node-tests.json"
         if result.is_file():
             try:
@@ -199,6 +258,24 @@ def run(python_prefix: Path, output: Path):
                 receipt["status"] = "failed"
         # The original failed test remains failed; no expected-negative rewriting.
         (output / "NODE-LOCAL-SERVICE-REFUSAL.json").write_text(json.dumps(receipt, sort_keys=True, indent=2) + "\n")
+        try:
+            retain_public_evidence(output, ROOT / "target/local-service-tools/source-node/source-node.json")
+        except (ValueError, OSError):
+            # Never replace an original fixture failure with a retention failure.
+            receipt.update(status="failed", publicEvidenceRetention="unavailable-fixed-public-allowlist")
+            public_receipt = output / "public/NODE-LOCAL-SERVICE-REFUSAL.json"
+            try:
+                require(public_receipt.parent.is_dir()
+                        and not any(part.is_symlink() for part in (public_receipt, *public_receipt.parents)),
+                        "regular-public-receipt-required")
+                raw = (json.dumps(receipt, sort_keys=True, indent=2) + "\n").encode("utf-8")
+                require(len(raw) <= PUBLIC_FILES["NODE-LOCAL-SERVICE-REFUSAL.json"], "public-evidence-file-byte-bound")
+                public_receipt.write_bytes(raw)
+            except (ValueError, OSError):
+                pass
+            print("public-evidence-retention-unavailable", file=sys.stderr)
+            if not original_failure:
+                raise
 
 
 def main():
