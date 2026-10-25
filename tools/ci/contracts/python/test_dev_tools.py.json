@@ -42,6 +42,7 @@
     "ManagedCompilerInputs.test_distribution_materializes_internal_links_and_rejects_external_links",
     "ManagedCompilerInputs.test_expansion_is_private_and_source_is_immutable",
     "ManagedCompilerInputs.test_expansion_observes_cancellation_and_finite_byte_budget",
+    "ManagedCompilerInputs.test_original_bundle_failure_forwards_only_captured_locations_through_the_installed_recipe",
     "NativeDifferential.test_actual_bytes_component_and_native_host_must_all_match",
     "ProjectNotices.test_bundle_notice_bytes_are_in_the_archive_and_hashed_inventory",
     "ProjectNotices.test_missing_or_empty_notice_cannot_prepare_a_license_only_payload",
@@ -289,6 +290,7 @@
     "ManagedCompilerInputs.test_distribution_materializes_internal_links_and_rejects_external_links": "aee2f49fbff494c5758ce5d8e54f97f1b85d5bc75b0816938366552b9b197710",
     "ManagedCompilerInputs.test_expansion_is_private_and_source_is_immutable": "e4a5601667f4b5922a193baf5c5410c63398cd2023a5beadc794446ef5ef40b4",
     "ManagedCompilerInputs.test_expansion_observes_cancellation_and_finite_byte_budget": "e4a5601667f4b5922a193baf5c5410c63398cd2023a5beadc794446ef5ef40b4",
+    "ManagedCompilerInputs.test_original_bundle_failure_forwards_only_captured_locations_through_the_installed_recipe": "e4a5601667f4b5922a193baf5c5410c63398cd2023a5beadc794446ef5ef40b4",
     "NativeDifferential.test_actual_bytes_component_and_native_host_must_all_match": "413bd4d285b4f390a8959d04587d6b2b09cf109d235dbd5c62cda78e1ceb0de6",
     "ProjectNotices.test_bundle_notice_bytes_are_in_the_archive_and_hashed_inventory": "36a1e906a660213e0f16d756c51b8e6ad32769e815ca10ab3f7be2a0f97a40b8",
     "ProjectNotices.test_missing_or_empty_notice_cannot_prepare_a_license_only_payload": "36a1e906a660213e0f16d756c51b8e6ad32769e815ca10ab3f7be2a0f97a40b8",
@@ -300,6 +302,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_dev_tools.py",
-  "reviewReason": "Merge explicit prior reviews: preserve every case and guard from development, including selected-Net execution and missing-reader refusals, plus the feature branch isolated six-language context, uncertainty and Buffer regression. No case, skip predicate, fixture check, import isolation or authority refusal is removed.",
+  "reviewReason": "Forward original bounded TypeScript bundle diagnostics through captured-source filter; preserve all old cases and guards, add one actual retained-stderr adapter failure control.",
   "schemaVersion": "latent.ci.contracts.v2"
 }

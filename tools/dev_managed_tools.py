@@ -70,6 +70,14 @@ def unpack(sdk: Path, destination: Path, check) -> Path:
 def diagnostics(output: Path, language: str) -> None:
     """Forward only bounded source locations mapped by the maintained recipe."""
     import sys
+    if language == "typescript":
+        try:
+            _typescript_diagnostics(output)
+        except (ValueError, OSError, TypeError, KeyError, RecursionError):
+            # Missing/malformed diagnostic metadata cannot replace the original
+            # compiler failure or turn it into a successful adapter result.
+            return
+        return
     if language == "go":
         if not (output / "diagnostic-files.json").exists():
             return
@@ -108,3 +116,48 @@ def diagnostics(output: Path, language: str) -> None:
             if retained > 128 * 1024:
                 return
             sys.stderr.buffer.write(raw)
+
+
+def _typescript_diagnostics(output: Path) -> None:
+    """Only original captured source locations, never stack traces or snippets."""
+    import sys
+    from tools.dev_workflow import diagnostics as reader
+
+    if not (output / "diagnostic-source.json").exists():
+        return
+    mapping = decode(paths.read(output, "diagnostic-source.json", 16384))
+    members(mapping, {"capturedSource", "requestedSource"})
+    require(all(type(mapping[key]) is str and Path(mapping[key]).is_absolute()
+                for key in mapping), "typescript-diagnostic-source")
+    captured, requested = Path(mapping["capturedSource"]), Path(mapping["requestedSource"])
+    inventory = decode(paths.read(output, "source-inputs.json", MAX_DOCUMENT), MAX_DOCUMENT,
+                       maximum_items=MAX_FILES * 4)
+    require(type(inventory) is dict and 0 < len(inventory) <= MAX_FILES, "typescript-diagnostic-inputs")
+    inputs = {paths.relative(name[4:]) for name in inventory if name.startswith("src/")}
+    require(bool(inputs), "typescript-diagnostic-inputs")
+    logs = sorted({path for pattern in ("*-bundle.*.txt", "*-typecheck.*.txt")
+                   for path in (output / "logs").glob(pattern)})
+    require(len(logs) <= 4, "typescript-diagnostic-log-count")
+    values, seen = [], set()
+    for path in logs:
+        rows = []
+        for line in paths.read(path.parent, path.name, 4 * 1024 * 1024).decode("utf-8", errors="replace").splitlines()[:4096]:
+            if len(line) > 16384:
+                continue
+            line = reader.ANSI.sub("", line).strip()
+            match = reader.PARENS.fullmatch(line) or reader.COLON.fullmatch(line)
+            if match and match.group(6):
+                rows.append(line)
+        for value in reader.collect(b"", "\n".join(rows).encode("utf-8"), captured, captured.parent, inputs):
+            value["message"] = reader.clean(value["message"].replace(str(captured), str(requested)))
+            key = tuple(value.values())
+            if key not in seen and len(values) < reader.MAX_DIAGNOSTICS:
+                values.append(value)
+                seen.add(key)
+    retained = 0
+    for line in reader.editor_lines(reader.for_host(values, requested), compiler=True):
+        raw = (line + "\n").encode("utf-8")
+        retained += len(raw)
+        if retained > 128 * 1024:
+            return
+        sys.stderr.buffer.write(raw)
