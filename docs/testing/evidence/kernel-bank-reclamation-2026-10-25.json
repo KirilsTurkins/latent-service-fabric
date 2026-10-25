@@ -1,0 +1,773 @@
+{
+  "schemaVersion": "lsf.kernel-bank-reclamation-evidence.v1",
+  "status": "passed",
+  "sourceRevision": "30ca4fbaa91471835e372e8d9e21916a1d791fdc",
+  "pullRequest": 1441,
+  "qualification": {
+    "run": 40151621360,
+    "job": 121044159537,
+    "attempt": 1,
+    "event": "push",
+    "conclusion": "success",
+    "url": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40151621360",
+    "artifactId": 12582722326,
+    "artifactName": "stream-kernel-bank-vm-30ca4fbaa91471835e372e8d9e21916a1d791fdc",
+    "archive": {
+      "bytes": 23727872,
+      "sha256": "ee3977f7765cebbbf3da1daaf60c3fb8d7116cd1c48b5d4cea9a3c4e32d0db6a"
+    }
+  },
+  "scope": {
+    "bankReservationReturnedBytes": 524288,
+    "bootstrapOverheadReservationRetainedBytes": 524288,
+    "originalObserverReservationRetained": true,
+    "originalConnectionQuarantined": true,
+    "kernelRebuilt": false,
+    "fullNativeQuotaReleased": false,
+    "connectionQuotaReleased": false,
+    "productionInstallation": false,
+    "completeAllocationClosure": false,
+    "fullVfsLsmCostsQualified": false,
+    "wholeNodeExecuted": false,
+    "hostTlsQualified": false,
+    "hermetic": false,
+    "compilerImplicitInputsAttested": false,
+    "reproducibility": "not-checked"
+  },
+  "sourceBinding": {
+    "qualifiedSourceBeforeAfter": {
+      "entries": 6484,
+      "canonicalSha256": "4ef56b98061fe797dfb340c2126811ec836f61e5b3e4f0a806e34a20613ab636",
+      "unchanged": true
+    },
+    "kernelProducerMaterials": {
+      "entries": 296,
+      "canonicalSha256": "51e5cff41f286f6476ea0f6054f086e1d07a0c84efe4fb0998b986c2d8e068a6",
+      "historicalEntries": 294,
+      "additionalEntries": 2,
+      "unchanged": true
+    },
+    "reviewedChange": {
+      "base": "e4ba2ab78c1592fd72fd9b16267d22e9aec27a8e",
+      "paths": {
+        ".github/workflows/stream-kernel-bank-vm.yml": {
+          "bytes": 3276,
+          "sha256": "804c23f239cc6f89d583ca8659b76a066b85cd1a87ef9c5b0a492c69c53e5ce6"
+        },
+        "crates/latent-capabilities/src/broker/pools.rs": {
+          "bytes": 17790,
+          "sha256": "0ae4c4f94673cbe685612388a71752988df3f9f0a9ccda8bd1d8e21dd1742e8d"
+        },
+        "crates/latent-capabilities/src/broker/pools/limits.rs": {
+          "bytes": 9469,
+          "sha256": "e049ca3e744c1ae99abcd0c9ecf7ddf42145b0d4fe939809321eb8ad63af0626"
+        },
+        "crates/latent-capabilities/src/broker/pools/protocol.rs": {
+          "bytes": 6016,
+          "sha256": "99ecd70b582322179a7e30a31c6b482fd4fb096f6795555449002b0e91aeadec"
+        },
+        "crates/latent-capabilities/src/broker/pools/tests/protocol.rs": {
+          "bytes": 12033,
+          "sha256": "3696621c373da757de5b2112ee42d8eab6e40f3dfbb90970d188e8905be97a4e"
+        },
+        "crates/latent-streams/examples/kernel_bank_reclamation_vm.rs": {
+          "bytes": 13781,
+          "sha256": "b3137fccf91bd3ab3c9acfcb820e89d1da33b2169fd97cdcbf8abbeb922ee515"
+        },
+        "crates/latent-streams/src/kernel/native.rs": {
+          "bytes": 16669,
+          "sha256": "c6650ca18dac2319d80ec97a1c10a91ff225c84e731cc4cf303600220f06ea02"
+        },
+        "crates/latent-streams/src/kernel/native/retirement.rs": {
+          "bytes": 6369,
+          "sha256": "4c4ae2d93a47a71ca9e6c7dcc1a67193a58154b50a41d7999f076b8c7d20cc2a"
+        },
+        "crates/latent-streams/src/kernel/native/tests.rs": {
+          "bytes": 23991,
+          "sha256": "b72c8a28b6c0115fd13bec47997b0fb49d8a22e81320243641c34ec903bc17de"
+        },
+        "crates/latent-streams/src/provider.rs": {
+          "bytes": 22040,
+          "sha256": "6e86968be8055a0c3db85180607ab21b0da798210251f3292db00593999b5605"
+        },
+        "docs/development/kernel-bank-reclamation-vm.md": {
+          "bytes": 3570,
+          "sha256": "c74dff7cbc972d47c2575fe4a5fd828929673738117967e075bcadd5cb25c8f3"
+        },
+        "tools/ci/contracts/owners/tools/qualify_host_stream_kernel_bank_vm.py.json": {
+          "bytes": 382,
+          "sha256": "185bf0e5747feb8f31722de90ed7f739099463a2788110ba9342360d522a50b4"
+        },
+        "tools/ci/contracts/python/test_kernel_bank_reclamation_vm.py.json": {
+          "bytes": 2605,
+          "sha256": "12491941980a7387612193584140c9062a3594fe0279322126380c18d62edf2c"
+        },
+        "tools/ci/contracts/workflows/stream-kernel-bank-vm.yml/jobs/fixed-bank.json": {
+          "bytes": 3049,
+          "sha256": "c698b408aee0fb191b6f189bc1afbe651fb92ddc83f23477cb233e682d1c4f09"
+        },
+        "tools/ci/contracts/workflows/stream-kernel-bank-vm.yml/workflow.json": {
+          "bytes": 1086,
+          "sha256": "1756f535769c5f8ac94113abe7f9a0fce548917613e5317793f4b3d794eaf151"
+        },
+        "tools/ci/suites.d/kernel-bank-reclamation-vm.json": {
+          "bytes": 876,
+          "sha256": "60d14d85f6160971a37bcbb9f078eab244e04fb4ed5ca867f2aa33804a131403"
+        },
+        "tools/host_stream_kernel_bank_inputs.py": {
+          "bytes": 10391,
+          "sha256": "6ff83e834f5ce4a36b0f5f26dd4f52700b2daf77a5ae42953135b9b42a2735d8"
+        },
+        "tools/host_stream_kernel_bank_vm.py": {
+          "bytes": 5248,
+          "sha256": "7abb25eaa820f606faeab1da929dc8bbb8a8ea5b5c0ab19d34de20b42ef1f75a"
+        },
+        "tools/qualify_host_stream_kernel_bank_vm.py": {
+          "bytes": 12698,
+          "sha256": "f5137ee9ace97aa3d7595bf2b690bf598313c088b2b05b8108222028eaa4f610"
+        },
+        "tools/tests/test_kernel_bank_reclamation_vm.py": {
+          "bytes": 6998,
+          "sha256": "5ac2dc53ecd01c42f05885dad094112624f496687ff967bab9692ab2b71ed9cf"
+        }
+      },
+      "capturedExecutionOrRecipePaths": [
+        ".github/workflows/stream-kernel-bank-vm.yml",
+        "crates/latent-capabilities/src/broker/pools.rs",
+        "crates/latent-capabilities/src/broker/pools/limits.rs",
+        "crates/latent-capabilities/src/broker/pools/protocol.rs",
+        "crates/latent-capabilities/src/broker/pools/tests/protocol.rs",
+        "crates/latent-streams/examples/kernel_bank_reclamation_vm.rs",
+        "crates/latent-streams/src/kernel/native.rs",
+        "crates/latent-streams/src/kernel/native/retirement.rs",
+        "crates/latent-streams/src/kernel/native/tests.rs",
+        "crates/latent-streams/src/provider.rs",
+        "tools/ci/suites.d/kernel-bank-reclamation-vm.json",
+        "tools/host_stream_kernel_bank_inputs.py",
+        "tools/host_stream_kernel_bank_vm.py",
+        "tools/qualify_host_stream_kernel_bank_vm.py",
+        "tools/tests/test_kernel_bank_reclamation_vm.py"
+      ],
+      "uncapturedNonexecutedGuideAndCiContracts": [
+        "docs/development/kernel-bank-reclamation-vm.md",
+        "tools/ci/contracts/owners/tools/qualify_host_stream_kernel_bank_vm.py.json",
+        "tools/ci/contracts/python/test_kernel_bank_reclamation_vm.py.json",
+        "tools/ci/contracts/workflows/stream-kernel-bank-vm.yml/jobs/fixed-bank.json",
+        "tools/ci/contracts/workflows/stream-kernel-bank-vm.yml/workflow.json"
+      ]
+    },
+    "finalEvidenceDocsExcludedFromExecutionInputs": [
+      "docs/testing/evidence/kernel-bank-reclamation-2026-10-25.json",
+      "docs/development/kernel-bank-reclamation-vm.md"
+    ]
+  },
+  "originalKernel": {
+    "source": "15167d63a3aef6d211ffc83c9591890d4d2486b2",
+    "run": 40144839812,
+    "job": 121023860613,
+    "artifact": 12580134816,
+    "archive": {
+      "bytes": 19602627,
+      "sha256": "deb69e68dbb73a072429a087382ea54f796214abe91d444a857dfd88a538f895"
+    },
+    "producerStatus": "passed",
+    "originalImage": {
+      "bytes": 13763584,
+      "sha256": "848b079b083612da53ba63fc739cc41fee9fddc29723b55f9400f9c29dc34575",
+      "bootProtocol": 527,
+      "x86_64": true
+    },
+    "originalSupervisor": {
+      "bytes": 804304,
+      "sha256": "199f4940315da8f1bc8affa9133ce64e3a8b14439dcead932ba15584019becdb",
+      "loadSegments": 4,
+      "staticX86_64": true,
+      "sourceSha256": "5167480ea9104bc6e48f8c766329f031564700e3e54cbec9c3243614366a9147"
+    },
+    "selectedBootMaterials": {
+      "kernel/constructor-bzImage": {
+        "bytes": 13763584,
+        "sha256": "848b079b083612da53ba63fc739cc41fee9fddc29723b55f9400f9c29dc34575"
+      },
+      "kernel/selected.config": {
+        "bytes": 143135,
+        "sha256": "0015c9ac3b9af98af1e4a0f88788321e96193ce6a387c5a6cec6eaa358cdc1d6"
+      },
+      "constructor-init": {
+        "bytes": 804304,
+        "sha256": "199f4940315da8f1bc8affa9133ce64e3a8b14439dcead932ba15584019becdb"
+      },
+      "constructor-initramfs.cpio": {
+        "bytes": 805376,
+        "sha256": "43e87af1dba444832b45378ddca42c63de1c8c6dbd918cc423a68a4aa992d173"
+      },
+      "constructor-init.c": {
+        "bytes": 25578,
+        "sha256": "5167480ea9104bc6e48f8c766329f031564700e3e54cbec9c3243614366a9147"
+      },
+      "firmware/bios-256k.bin": {
+        "bytes": 262144,
+        "sha256": "1a9ea4f17bcfb27bda5728e2c21d9fa074cf7947b9b4910bb28213a735c96735"
+      },
+      "firmware/linuxboot_dma.bin": {
+        "bytes": 1536,
+        "sha256": "d2f20622ebfea0a0222005452fd6a7747e1634395ed682272b38e17ad2334512"
+      },
+      "firmware/kvmvapic.bin": {
+        "bytes": 9216,
+        "sha256": "8bbe341af0ab06c3008d65b29fb961f21f63a1419297dd4db80632261046cd98"
+      }
+    },
+    "originalCompiledCControls": {
+      "passed": 12,
+      "failed": 0,
+      "bytes": 39,
+      "sha256": "800bb52a08b8bf285de524ed7cfa012528554ff3b4fae5dc1ae1af2c9bdb7809"
+    },
+    "producerNativeQuotaReleased": false
+  },
+  "controls": {
+    "nativeOwner": {
+      "registered": [
+        "kernel::native::tests::abandoned_waiter_cannot_drop_running_job_or_late_returned_owner",
+        "kernel::native::tests::cleanup_panic_keeps_original_connection_after_lost_unit_result",
+        "kernel::native::tests::close_status_preserves_original_expiry_and_never_accepts_ready_as_retirement",
+        "kernel::native::tests::constructor_panic_retains_prepaid_backing_and_closes_real_fd",
+        "kernel::native::tests::exhausted_node_allowance_refuses_before_any_open",
+        "kernel::native::tests::fixed_file_close_receipt_stays_paid_until_drop_without_refunding_backing",
+        "kernel::native::tests::fixed_wire_rejects_wrong_expiry_error_and_unknown_phase",
+        "kernel::native::tests::original_deadline_does_not_refund_a_blocked_native_constructor",
+        "kernel::native::tests::possible_failed_open_retains_original_node_charge",
+        "kernel::native::tests::postopen_failure_closes_real_fd_without_refunding_backing",
+        "kernel::native::tests::ready_owner_drop_closes_on_original_worker_and_retains_capacity",
+        "kernel::native::tests::real_file_close_transfer_keeps_exact_frame_and_refuses_short_or_error_reply",
+        "kernel::native::tests::unavailable_cleanup_slot_keeps_fd_and_backing_without_inline_close"
+      ],
+      "executed": [
+        "kernel::native::tests::abandoned_waiter_cannot_drop_running_job_or_late_returned_owner",
+        "kernel::native::tests::cleanup_panic_keeps_original_connection_after_lost_unit_result",
+        "kernel::native::tests::close_status_preserves_original_expiry_and_never_accepts_ready_as_retirement",
+        "kernel::native::tests::constructor_panic_retains_prepaid_backing_and_closes_real_fd",
+        "kernel::native::tests::exhausted_node_allowance_refuses_before_any_open",
+        "kernel::native::tests::fixed_file_close_receipt_stays_paid_until_drop_without_refunding_backing",
+        "kernel::native::tests::fixed_wire_rejects_wrong_expiry_error_and_unknown_phase",
+        "kernel::native::tests::original_deadline_does_not_refund_a_blocked_native_constructor",
+        "kernel::native::tests::possible_failed_open_retains_original_node_charge",
+        "kernel::native::tests::postopen_failure_closes_real_fd_without_refunding_backing",
+        "kernel::native::tests::ready_owner_drop_closes_on_original_worker_and_retains_capacity",
+        "kernel::native::tests::real_file_close_transfer_keeps_exact_frame_and_refuses_short_or_error_reply",
+        "kernel::native::tests::unavailable_cleanup_slot_keeps_fd_and_backing_without_inline_close"
+      ],
+      "ignored": [],
+      "stdout": {
+        "bytes": 3333,
+        "sha256": "87ea6659ac2491a833ac1264a54fd285b8f3bdd131eedb7502643cc0b5d152ce"
+      },
+      "executableSha256": "d02f84fa41c156910bc958b2082416058ef18d1a6221484dc0c883f76d4ff1f8",
+      "executableBytes": 296661720,
+      "customKernelOrNativeInitExecuted": false
+    },
+    "closeResult": {
+      "registered": [
+        "broker::pools::tests::close_observation::abandoned_close_waiter_does_not_release_running_or_quarantined_owner",
+        "broker::pools::tests::close_observation::buffered_and_delivered_close_receipt_keeps_original_cleanup_charge",
+        "broker::pools::tests::close_observation::close_worker_panic_never_publishes_accepted_receipt_or_refunds_connection",
+        "broker::pools::tests::close_observation::held_close_receipt_bounds_new_admission_and_returns_unchanged_owner",
+        "broker::pools::tests::close_observation::published_receipt_drop_cannot_release_live_sender_worker_tail"
+      ],
+      "executed": [
+        "broker::pools::tests::close_observation::abandoned_close_waiter_does_not_release_running_or_quarantined_owner",
+        "broker::pools::tests::close_observation::buffered_and_delivered_close_receipt_keeps_original_cleanup_charge",
+        "broker::pools::tests::close_observation::close_worker_panic_never_publishes_accepted_receipt_or_refunds_connection",
+        "broker::pools::tests::close_observation::held_close_receipt_bounds_new_admission_and_returns_unchanged_owner",
+        "broker::pools::tests::close_observation::published_receipt_drop_cannot_release_live_sender_worker_tail"
+      ],
+      "ignored": [],
+      "stdout": {
+        "bytes": 1694,
+        "sha256": "b8f27689ff03ddedf00004c718f2e2a06b88ac26b488955e9743ec126e4b494e"
+      },
+      "executableSha256": "43d68a407c408537d3885cdb163afeca0be5cf1e8bb327f62db44fc9fe2d4663",
+      "executableBytes": 247835528,
+      "customKernelOrNativeInitExecuted": false
+    },
+    "partition": {
+      "executed": [
+        "broker::pools::tests::protocol::kernel_backing_uses_existing_fixed_metadata_ceiling"
+      ],
+      "ignored": [],
+      "stdout": {
+        "bytes": 322,
+        "sha256": "eac265397b8a7728028bd96e133ba63620e7b24d3e37bf6d4c123bb6076628ad"
+      },
+      "sameCoreExecutableReused": true,
+      "actualKernelOrProofConstructed": false
+    },
+    "descriptorLeaf": {
+      "executed": [
+        "ffi::tests::fixed_descriptor_boundary_refuses_foreign_and_preserves_actual_ownership"
+      ],
+      "ignored": [],
+      "stdout": {
+        "bytes": 322,
+        "sha256": "36e92afa6e0a33dece6734fc910e67c120156e22760b7d718d4ab8608d7e0690"
+      },
+      "executableBytes": 8692896,
+      "executableSha256": "15fcb95e6141301fdfbf00cf2343ba518d394a104780cd003339f37e565607d2",
+      "actualKernelMint": false
+    },
+    "actualRustCases": 20,
+    "focusedPythonCases": 4,
+    "focusedPythonLocation": "owning job source-control step",
+    "compiledCControls": {
+      "passed": 12,
+      "source": "unchanged selected15167 producer; not rerun here"
+    }
+  },
+  "limits": {
+    "overallSeconds": 1320,
+    "cargoCommandSeconds": 1200,
+    "vmSeconds": 180,
+    "vmCpus": 2,
+    "vmMemoryMiB": 512,
+    "pid1FileBytes": 2097152,
+    "nativeFileBytes": 3145728,
+    "aggregateLoadSpanBytes": 4194304,
+    "cpioBytes": 4194304
+  },
+  "observedTools": {
+    "rustc": {
+      "bytes": 21113232,
+      "sha256": "dda7234360b7f578ca8b0ddcb80145646fa61a67c1720a5abc7051b35c9fcb71"
+    },
+    "cargo": {
+      "bytes": 21113232,
+      "sha256": "dda7234360b7f578ca8b0ddcb80145646fa61a67c1720a5abc7051b35c9fcb71"
+    },
+    "qemu-system-x86_64": {
+      "bytes": 26415624,
+      "sha256": "8a35ccba41582fc6c38b9df85fc9e35fa1d42f414d2d7d8090ee9b2f5e7c0854"
+    }
+  },
+  "nativeCompiler": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "products": {
+    "nativeInit": {
+      "bytes": 2947584,
+      "sha256": "794a1e0a6fdab02fce16cd459f1496ee41cb6ec38717ad73c7ef69f52d5d0ce1",
+      "loadSegments": 4,
+      "staticX86_64": true
+    },
+    "unchangedPid1": {
+      "bytes": 804304,
+      "sha256": "199f4940315da8f1bc8affa9133ce64e3a8b14439dcead932ba15584019becdb",
+      "loadSegments": 4,
+      "staticX86_64": true,
+      "sourceSha256": "5167480ea9104bc6e48f8c766329f031564700e3e54cbec9c3243614366a9147"
+    },
+    "executablePartition": {
+      "pid1MaximumFileBytes": 2097152,
+      "nativeMaximumFileBytes": 3145728,
+      "pid1LoadSpanBytes": 743912,
+      "nativeLoadSpanBytes": 2974664,
+      "aggregateLoadSpanBytes": 3718576,
+      "maximumAggregateLoadSpanBytes": 4194304
+    },
+    "initramfs": {
+      "bytes": 3752960,
+      "sha256": "79f1968071c8d72b97d354ca25a263e0505f502806483e4c0f7a0affd19880df"
+    }
+  },
+  "vm": {
+    "freshAttempts": 1,
+    "validatedBoots": 1,
+    "rawSerial": {
+      "path": "commands/logs/18-one-bank-consumption-vm.stdout.txt",
+      "bytes": 25908,
+      "sha256": "7786e20d7cebe24747c7d5ef1b1e9d45064941985bbd18e08162e44cb2cf1377"
+    },
+    "rows": [
+      "LSFVM1 boot=native-constructor-only production-sockets=disabled",
+      "LSFBANK1 state=baseline connections=0 failedCleanup=0 cleanupJobs=0 pending=0 running=0 workers=0 metadataBytes=53248 controlFailed=0 descriptors=0 observerDescriptors=0",
+      "LSFBANK1 state=ready connections=1 failedCleanup=0 cleanupJobs=1 pending=0 running=0 workers=0 metadataBytes=1256448 controlFailed=0 descriptors=1 observerDescriptors=1",
+      "[    2.220759] LSFVM1 fd-handoff=original-root opened=2 request=LIVE pending=1",
+      "[    2.235771] LSFVM1 physical-return=constructor-root-bank-and-actor-refs",
+      "[    2.235947] LSFVM1 outside-collector=kthreadd-root-bank-and-actor-refs",
+      "LSFBANK1 state=root-return-observed-held connections=1 failedCleanup=1 cleanupJobs=2 pending=0 running=0 workers=0 metadataBytes=740656 controlFailed=0 descriptors=0 observerDescriptors=0",
+      "LSFBANK1 state=quarantined connections=1 failedCleanup=1 cleanupJobs=1 pending=0 running=0 workers=0 metadataBytes=601088 controlFailed=0 descriptors=0 observerDescriptors=0",
+      "LSFBANK1 state=bank-capacity-reused connections=1 failedCleanup=1 cleanupJobs=1 pending=0 running=0 workers=0 metadataBytes=1125376 controlFailed=0 descriptors=0 observerDescriptors=0",
+      "LSFBANK1 state=bank-capacity-returned connections=1 failedCleanup=1 cleanupJobs=1 pending=0 running=0 workers=0 metadataBytes=601088 controlFailed=0 descriptors=0 observerDescriptors=0",
+      "LSFBANK1 result=PASS constructorReady=1 kernelRootReturned=1 descriptorClosed=1 observerClosed=1 bankReservationBytes=524288 overheadReservationBytes=524288 bankCapacityReused=1 connectionQuarantined=1 fullNativeQuotaReleased=0 productionInstalled=0",
+      "LSFVM1 result=PASS stage=actual-native-constructor-and-kernel-return"
+    ],
+    "observations": {
+      "snapshots": {
+        "baseline": {
+          "connections": 0,
+          "failedCleanup": 0,
+          "cleanupJobs": 0,
+          "pending": 0,
+          "running": 0,
+          "workers": 0,
+          "metadataBytes": 53248,
+          "controlFailed": 0,
+          "descriptors": 0,
+          "observerDescriptors": 0
+        },
+        "ready": {
+          "connections": 1,
+          "failedCleanup": 0,
+          "cleanupJobs": 1,
+          "pending": 0,
+          "running": 0,
+          "workers": 0,
+          "metadataBytes": 1256448,
+          "controlFailed": 0,
+          "descriptors": 1,
+          "observerDescriptors": 1
+        },
+        "root-return-observed-held": {
+          "connections": 1,
+          "failedCleanup": 1,
+          "cleanupJobs": 2,
+          "pending": 0,
+          "running": 0,
+          "workers": 0,
+          "metadataBytes": 740656,
+          "controlFailed": 0,
+          "descriptors": 0,
+          "observerDescriptors": 0
+        },
+        "quarantined": {
+          "connections": 1,
+          "failedCleanup": 1,
+          "cleanupJobs": 1,
+          "pending": 0,
+          "running": 0,
+          "workers": 0,
+          "metadataBytes": 601088,
+          "controlFailed": 0,
+          "descriptors": 0,
+          "observerDescriptors": 0
+        },
+        "bank-capacity-reused": {
+          "connections": 1,
+          "failedCleanup": 1,
+          "cleanupJobs": 1,
+          "pending": 0,
+          "running": 0,
+          "workers": 0,
+          "metadataBytes": 1125376,
+          "controlFailed": 0,
+          "descriptors": 0,
+          "observerDescriptors": 0
+        },
+        "bank-capacity-returned": {
+          "connections": 1,
+          "failedCleanup": 1,
+          "cleanupJobs": 1,
+          "pending": 0,
+          "running": 0,
+          "workers": 0,
+          "metadataBytes": 601088,
+          "controlFailed": 0,
+          "descriptors": 0,
+          "observerDescriptors": 0
+        }
+      },
+      "actualKernelRootReturned": true,
+      "bankReservationReturnedBytes": 524288,
+      "bootstrapOverheadReservationRetainedBytes": 524288,
+      "originalObserverReservationRetained": true,
+      "originalConnectionQuarantined": true,
+      "originalReceiptChargeObserved": true,
+      "actualBankCapacityReused": true,
+      "observedPendingFdHandoff": true,
+      "observedOutsideCollector": true,
+      "fullNativeQuotaReleased": false,
+      "connectionQuotaReleased": false,
+      "productionInstallation": false,
+      "completeAllocationClosure": false,
+      "bytes": 25908,
+      "sha256": "7786e20d7cebe24747c7d5ef1b1e9d45064941985bbd18e08162e44cb2cf1377"
+    }
+  },
+  "commands": [
+    {
+      "stage": "rust-compiler-version",
+      "exitCode": 0,
+      "seconds": 0.03444
+    },
+    {
+      "stage": "emulator-version",
+      "exitCode": 0,
+      "seconds": 0.055376
+    },
+    {
+      "stage": "native-owner-cargo",
+      "exitCode": 0,
+      "seconds": 101.874075
+    },
+    {
+      "stage": "native-owner-list",
+      "exitCode": 0,
+      "seconds": 0.013832
+    },
+    {
+      "stage": "native-owner-ignored",
+      "exitCode": 0,
+      "seconds": 0.013498
+    },
+    {
+      "stage": "native-owner-tests",
+      "exitCode": 0,
+      "seconds": 1.256343
+    },
+    {
+      "stage": "close-result-cargo",
+      "exitCode": 0,
+      "seconds": 56.860343
+    },
+    {
+      "stage": "close-result-list",
+      "exitCode": 0,
+      "seconds": 0.013869
+    },
+    {
+      "stage": "close-result-ignored",
+      "exitCode": 0,
+      "seconds": 0.013388
+    },
+    {
+      "stage": "close-result-tests",
+      "exitCode": 0,
+      "seconds": 0.124725
+    },
+    {
+      "stage": "bank-partition-list",
+      "exitCode": 0,
+      "seconds": 0.013868
+    },
+    {
+      "stage": "bank-partition-ignored",
+      "exitCode": 0,
+      "seconds": 0.013342
+    },
+    {
+      "stage": "bank-partition-test",
+      "exitCode": 0,
+      "seconds": 0.054055
+    },
+    {
+      "stage": "leaf-cargo",
+      "exitCode": 0,
+      "seconds": 1.483597
+    },
+    {
+      "stage": "leaf-list",
+      "exitCode": 0,
+      "seconds": 0.013874
+    },
+    {
+      "stage": "leaf-ignored",
+      "exitCode": 0,
+      "seconds": 0.013362
+    },
+    {
+      "stage": "leaf-tests",
+      "exitCode": 0,
+      "seconds": 0.013338
+    },
+    {
+      "stage": "build-bank-consumer-example",
+      "exitCode": 0,
+      "seconds": 84.825361
+    },
+    {
+      "stage": "one-bank-consumption-vm",
+      "exitCode": 0,
+      "seconds": 2.919306
+    }
+  ],
+  "retainedMembers": {
+    "receipt.json": {
+      "bytes": 2329721,
+      "sha256": "4a9d1a3bac8ef096a7b5007a16c86d1719196f6d0bc1aeedcfdfd771356d8dad"
+    },
+    "source-inputs.json": {
+      "bytes": 1078136,
+      "sha256": "5c5f9e31cf9de199e77638f965703256ad05414181305db2eab67de2cc67b7a6"
+    },
+    "commands.json": {
+      "bytes": 1651,
+      "sha256": "4a0971a69249ad7909b0611c1dbfcd59321717f8c0560d5ba6d091568a23cd0b"
+    },
+    "native-init": {
+      "bytes": 2947584,
+      "sha256": "794a1e0a6fdab02fce16cd459f1496ee41cb6ec38717ad73c7ef69f52d5d0ce1"
+    },
+    "bank-consumer-initramfs.cpio": {
+      "bytes": 3752960,
+      "sha256": "79f1968071c8d72b97d354ca25a263e0505f502806483e4c0f7a0affd19880df"
+    },
+    "kernel/origin.json": {
+      "bytes": 56822,
+      "sha256": "2e81031a5f49ab847ba5792f94dd12cba1515794e91b7d1bb5f08f2b08b180ae"
+    },
+    "kernel/qualified-observation-image.zip": {
+      "bytes": 19602627,
+      "sha256": "deb69e68dbb73a072429a087382ea54f796214abe91d444a857dfd88a538f895"
+    },
+    "commands/logs/00-rust-compiler-version.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "commands/logs/00-rust-compiler-version.stdout.txt": {
+      "bytes": 36,
+      "sha256": "4ad84f16acc2f3bdcfbc7b0788f1e74a4e649b962154a585b8f8d0b28eb0dd06"
+    },
+    "commands/logs/01-emulator-version.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "commands/logs/01-emulator-version.stdout.txt": {
+      "bytes": 132,
+      "sha256": "8f79ffd97970d85d6833a0ccc87f5d6e7182f8f52101c741dfa2fb6374670b18"
+    },
+    "commands/logs/02-native-owner-cargo.stderr.txt": {
+      "bytes": 13414,
+      "sha256": "7e5774696a513448c37221e11672610f9e67bad7cf6fd28625172d959bf84569"
+    },
+    "commands/logs/02-native-owner-cargo.stdout.txt": {
+      "bytes": 187802,
+      "sha256": "a56843c48c1ac9041661ddfd75fc367c856dc98da776a17dddbe199cc7d8042b"
+    },
+    "commands/logs/03-native-owner-list.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "commands/logs/03-native-owner-list.stdout.txt": {
+      "bytes": 1222,
+      "sha256": "f0fa6501a9c7c86de22948d52b89f5b6c2de23e7263d241814e66a079a346395"
+    },
+    "commands/logs/04-native-owner-ignored.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "commands/logs/04-native-owner-ignored.stdout.txt": {
+      "bytes": 22,
+      "sha256": "414c144fa67f1df75f7b14a69af5641637772e81c4c3fa0a171e3228adbb922e"
+    },
+    "commands/logs/05-native-owner-tests.stdout.txt": {
+      "bytes": 3333,
+      "sha256": "87ea6659ac2491a833ac1264a54fd285b8f3bdd131eedb7502643cc0b5d152ce"
+    },
+    "commands/logs/06-close-result-cargo.stderr.txt": {
+      "bytes": 2862,
+      "sha256": "2daa3d00162f3a941b00b6bda0f4b12194b281910f984889fe2ba8dd2dd329a8"
+    },
+    "commands/logs/06-close-result-cargo.stdout.txt": {
+      "bytes": 111015,
+      "sha256": "d2b1ba4add4dd0e5254008fcfdac75bb01f8a141a2877a3ba702b39a02ab94d8"
+    },
+    "commands/logs/05-native-owner-tests.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "commands/logs/07-close-result-list.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "commands/logs/07-close-result-list.stdout.txt": {
+      "bytes": 598,
+      "sha256": "3197d0e4e39a6c1a791f0806c50d83a22acc91ea895a828bd2fc0c4a52d98630"
+    },
+    "commands/logs/08-close-result-ignored.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "commands/logs/08-close-result-ignored.stdout.txt": {
+      "bytes": 22,
+      "sha256": "414c144fa67f1df75f7b14a69af5641637772e81c4c3fa0a171e3228adbb922e"
+    },
+    "commands/logs/09-close-result-tests.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "commands/logs/09-close-result-tests.stdout.txt": {
+      "bytes": 1694,
+      "sha256": "b8f27689ff03ddedf00004c718f2e2a06b88ac26b488955e9743ec126e4b494e"
+    },
+    "commands/logs/10-bank-partition-list.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "commands/logs/10-bank-partition-list.stdout.txt": {
+      "bytes": 112,
+      "sha256": "779dc7d5c4f3e85e382ded1f19719662d0aff7ccc11a4a17a611cd744dc475df"
+    },
+    "commands/logs/11-bank-partition-ignored.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "commands/logs/11-bank-partition-ignored.stdout.txt": {
+      "bytes": 22,
+      "sha256": "414c144fa67f1df75f7b14a69af5641637772e81c4c3fa0a171e3228adbb922e"
+    },
+    "commands/logs/12-bank-partition-test.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "commands/logs/12-bank-partition-test.stdout.txt": {
+      "bytes": 322,
+      "sha256": "eac265397b8a7728028bd96e133ba63620e7b24d3e37bf6d4c123bb6076628ad"
+    },
+    "commands/logs/13-leaf-cargo.stdout.txt": {
+      "bytes": 12007,
+      "sha256": "77688acf0dca748b4a0ce26ee5fc13a858b30e9a921b1d9581b073c7b77d4239"
+    },
+    "commands/logs/13-leaf-cargo.stderr.txt": {
+      "bytes": 410,
+      "sha256": "08ffae0693aa7028f3aad821d70902665bf203f55f240025095d95c3ebcd65d9"
+    },
+    "commands/logs/14-leaf-list.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "commands/logs/14-leaf-list.stdout.txt": {
+      "bytes": 113,
+      "sha256": "00f5826cb6936fce375cd66cdce065ceff48900080292cf9c5a743c02c453f45"
+    },
+    "commands/logs/15-leaf-ignored.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "commands/logs/15-leaf-ignored.stdout.txt": {
+      "bytes": 22,
+      "sha256": "414c144fa67f1df75f7b14a69af5641637772e81c4c3fa0a171e3228adbb922e"
+    },
+    "commands/logs/16-leaf-tests.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "commands/logs/16-leaf-tests.stdout.txt": {
+      "bytes": 322,
+      "sha256": "36e92afa6e0a33dece6734fc910e67c120156e22760b7d718d4ab8608d7e0690"
+    },
+    "commands/logs/17-build-bank-consumer-example.stderr.txt": {
+      "bytes": 7945,
+      "sha256": "23a8c018276e644f45f93e32a478727401aa35884904bff42c92b799b005d0d2"
+    },
+    "commands/logs/17-build-bank-consumer-example.stdout.txt": {
+      "bytes": 198125,
+      "sha256": "00ce2649f61d5dd4edfda021d786967f33bd5b74549190d381dd12cea154bd43"
+    },
+    "commands/logs/18-one-bank-consumption-vm.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "commands/logs/18-one-bank-consumption-vm.stdout.txt": {
+      "bytes": 25908,
+      "sha256": "7786e20d7cebe24747c7d5ef1b1e9d45064941985bbd18e08162e44cb2cf1377"
+    }
+  }
+}

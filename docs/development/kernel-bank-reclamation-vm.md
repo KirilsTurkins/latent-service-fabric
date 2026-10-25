@@ -27,8 +27,8 @@ the existing thirteen native cases, five close-result cases, fixed descriptor
 leaf and existing protocol metadata-partition case. Existing case identities,
 ignored-case rules and floors remain intact. Extended failed-entry and ordinary
 accepted-close controls retain the entire original reservation without a real
-protected return record. These Rust cases have not yet been executed for this
-source slice.
+protected return record. All twenty Rust cases passed in the actual campaign
+below, with no ignored cases in those selections.
 
 The programme authenticates successful producer 15167d63a3aef6d211ffc83c9591890d4d2486b2,
 run 40144839812, artifact 12580134816. It checks the whole archive, all seventy
@@ -52,7 +52,43 @@ the same 512 KiB through the existing metadata quota and checks every other
 counter stays identical. The host also requires the genuine physical kernel
 marker. UART orders from PID1 and the kernel are checked independently.
 
-The finite Python controls validate provenance and refusal/oracle behavior;
-they do not execute Rust, syscalls or a VM. No new actual bank-reclamation result
-is claimed until the owning programme succeeds and its retained products and
-raw observations are verified.
+The four finite Python controls validate provenance and refusal/oracle behavior;
+they do not execute Rust, syscalls or a VM. They also passed in the owning job.
+
+## Qualified result
+
+[Run 40151621360](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40151621360)
+passed at source `30ca4fbaa91471835e372e8d9e21916a1d791fdc`. The
+[source-bound receipt](../testing/evidence/kernel-bank-reclamation-2026-10-25.json)
+retains the exact artifact, all 45 member hashes, nineteen zero-exit commands,
+twenty Rust control identities, original selected kernel products and raw UART
+observations. The 6,484 current execution/recipe inputs were identical before
+and after; all 296 kernel inputs matched the unchanged successful15167 image.
+The final receipt and this guide are outside those execution inputs. Four
+reviewed CI contract fragments are separately bound by their qualified Git
+identities, rather than presented as captured execution inputs.
+
+The new static child was 2,947,584 bytes. PID1 plus child loaded spans totalled
+3,718,576 bytes and the CPIO was 3,752,960 bytes, below the original fixed
+aggregate limits. The one VM completed in 2.919306 seconds. The native process
+read the protected return record, and the raw UART independently retained the
+genuine pending handoff, physical return and outside-collector markers.
+
+| Actual state | Metadata bytes | Connections / failed cleanup | Cleanup jobs | Factory / observer FDs |
+| --- | ---: | --- | ---: | --- |
+| Baseline | 53,248 | 0 / 0 | 0 | 0 / 0 |
+| READY | 1,256,448 | 1 / 0 | 1 | 1 / 1 |
+| Root returned, receipt held | 740,656 | 1 / 1 | 2 | 0 / 0 |
+| Quarantined, receipt dropped | 601,088 | 1 / 1 | 1 | 0 / 0 |
+| Same 512 KiB admitted again | 1,125,376 | 1 / 1 | 1 | 0 / 0 |
+| Reused charge dropped | 601,088 | 1 / 1 | 1 | 0 / 0 |
+
+The same 512 KiB admission refused before close and succeeded after the typed
+return; its subsequent drop restored every recorded counter exactly. The
+source-bound affine guard returns exactly that fixed bank reservation. Total
+metadata changes between READY, held-receipt and quarantined snapshots also
+include other original job/client owners; they are not measurements of kernel
+allocator overhead. The remaining 512 KiB allowance, observer reservation,
+connection and original quarantined owners remain retained. This result does
+not qualify full native refund, full VFS/LSM costs, ordinary socket operations
+or production installation.
