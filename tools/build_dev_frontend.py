@@ -242,10 +242,15 @@ def helper(output: Path, resource_snapshot=None) -> str:
                 continue
             entries[path.relative_to(ROOT).as_posix()] = path.read_bytes()
     for name in ("build_process", "build_process_linux", "build_process_signals", "guest_runtime_profiles",
-                 "browser_response_ownership", "guest_compatibility", "guest_compatibility_context", "guest_compatibility_outcomes", "guest_runtime_receipts",
+                 "browser_response_ownership", "guest_compatibility", "guest_compatibility_context", "guest_compatibility_outcomes", "guest_compatibility_context_build", "guest_emitted_code", "guest_runtime_receipts",
                  "application_dependencies", "application_dependency_store", "application_dependency_tools",
                  "build_snapshot", "rust_capsule_project", "guest_resources", "outbound_stream_operator"):
         entries[f"tools/{name}.py"] = (ROOT / f"tools/{name}.py").read_bytes()
+    # Outcome readers reuse the compiler owner's pure material validators.
+    # Include the finite lazy Buffer reader, not its compiler or JS backend.
+    entries["tools/typescript_guest/__init__.py"] = b""
+    name = "tools/typescript_guest/buffer_profile.py"
+    entries[name] = (ROOT / name).read_bytes()
     for name, raw in resource_snapshot if resource_snapshot is not None else preflight_resources():
         entries["tools/dev_workflow/data/" + name] = raw
     with zipfile.ZipFile(output, "x", compression=zipfile.ZIP_DEFLATED) as archive:

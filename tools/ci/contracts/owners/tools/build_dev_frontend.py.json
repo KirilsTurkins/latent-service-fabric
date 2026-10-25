@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/build_dev_frontend.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Add only canonical rotation record resource to the existing frozen frontend/helper packaging; all original dependencies, inventory, licensing, process bounds and smoke controls remain intact.",
+  "reviewReason": "Explicitly package the existing pure compatibility material reader, its emitted-code dependency and the finite TypeScript Buffer profile reader. Preserve the curated bundle, every prior resource, deterministic encoding, byte identities, authority checks and existing build/smoke commands; do not bundle compilers or add fallback imports.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "165daad9ebb3599f058f657308bb1ade434b5dd4975e4198ce2eab56c0b08445"
+  "sha256": "9f0750ad321db0cee42944a5a7aebf65418f34953c245bb446ff06b26ae4e395"
 }
