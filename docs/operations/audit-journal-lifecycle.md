@@ -1,5 +1,10 @@
 # Stopped-node audit-journal lifecycle
 
+**Version boundary:** this guide describes the current-development lifecycle
+commands, not the released alpha.4/alpha.5 binaries. Use a reviewed matching
+node and CLI that include them. For the complete live renewal and maintenance
+sequence, use [renew static-site evidence](static-evidence-renewal.md).
+
 This is the bounded local-owner lifecycle for the durable administrative journal
 at `dataDirectory/audit`. It is not publication/content retention, a background
 exporter, or permission to disable audit. Required administrative mutations still
@@ -105,26 +110,36 @@ It returns a machine-readable advisory report without dispatching a mutation or
 writing a recovery journal. Planning retains that report, and apply samples again
 before each new route dispatch. None of these reads reserves future capacity.
 
-For an explicitly retained usage snapshot, the bounded
-`tools/static-release/audit-headroom.mjs` calculator also accepts the actual audit
-configuration and produces JSON or human-readable output:
+For a retained observation, capture authenticated inventory while the node is
+running, before entering the stopped-owner workflow. Use a new output filename
+in an already private operator directory:
 
 ```sh
+umask 077
+latent --config /srv/latent-operator/operator.json --profile operator \
+  --output json node get example-node > /srv/latent-operator/audit-inventory-001.json
 node tools/static-release/audit-headroom.mjs \
-  --usage /private/operator/audit-usage.json \
-  --audit-config /private/operator/audit-config.json \
+  --inventory /srv/latent-operator/audit-inventory-001.json --node example-node \
   --route-pairs 1 --diagnostic-records 2 --competing-operations 1 \
   --warning-percent 80 --cadence-minutes 10 --output human
 ```
 
-Both input files must be private ordinary files. The configuration file contains
-the node's audit object, for example `{"mode":"durable","records":4096}`. Usage
-is either the native CLI result containing `data.nodeUsage`, or that node-scoped
-usage object itself. The calculator refuses missing/unavailable counters rather
-than treating them as zero. It does not establish snapshot freshness, filesystem
-free space or future admission, and does not create a reservation.
+The private ordinary input file must contain the successful native CLI node
+inventory envelope. The calculator reads the single fixed `audit-journal` row
+with profile `audit-capacity-v1`, including the actual configured ceilings and
+available counters. Missing, duplicate or unavailable rows are not zero usage.
+This retained sample does not establish current freshness, filesystem free space
+or future admission, and it creates no reservation.
 
-One renewal plus GET and HEAD mutations needs at least six critical records.
+The alternative `--usage FILE --audit-config FILE` form requires a successful
+`latent.cli.result.v1` envelope with `outcomeKnown: true` and `data.nodeUsage`,
+plus the actual audit configuration object. A bare usage object is not accepted.
+Do not mix that form with `--inventory`/`--node`, or invent counters for an older
+node. Prefer the inventory form above for this development implementation.
+
+One renewal plus two actual GET and HEAD mutations needs at least six critical
+records. Renewing an unchanged publication does not itself require rewriting
+matching routes; the maintained route helper observes those without mutation.
 At ten-minute cadence that lower bound is 864 records/day; 4,096 records represent
 about 4.74 days from empty, and 16,384 about 18.96 days. These are arithmetic, not
 measured lifetimes. The default planning margin instead charges ten records and
@@ -149,14 +164,19 @@ permission to replay a mutation.
 The examples use explicit paths. Replace them with the installation's actual
 private directories and execute as its owning service UID. Stop the service and
 its automatic restart supervision using the installation's service manager.
-Do not stop only a CLI while leaving the node running.
+Do not stop only a CLI while leaving the node running. The parent of `OPS`
+must already be private and owned by the service UID. Use a new maintenance
+directory for a new operation: the example refuses an existing directory and
+output file. Do not rerun setup after interruption or replace retained selectors.
 
 ```sh
+set -e
+set -C
 umask 077
 JOURNAL=/srv/latent-data/audit
 ARCHIVES=/srv/latent-audit-archives
-OPS=/srv/latent-operator
-install -d -m 700 "$OPS"
+OPS=/srv/latent-operator/maintenance-001
+mkdir -m 700 "$OPS"
 
 latent --output json audit maintenance status \
   --local-operator --journal "$JOURNAL" > "$OPS/audit-status.json"
@@ -181,6 +201,12 @@ Record the original paths, epoch and operation identity before invocation. A
 successful result reports `durability: confirmed`, the successor epoch, unchanged
 global next sequence and archive seal digest. After an interrupted command, reuse
 those same inputs; do not generate another identity as a retry mechanism.
+Restore `EPOCH` from `rollover.epoch` and `OPERATION` from `rollover.operation`,
+keep the original journal/archive paths, and save each recovery response in a
+new file. The stopped `status` envelope exposes `data.journalId`; retain it for
+later custody inspection. The rollover result uses `data.receipt.epoch`,
+`data.receipt.nextSequence` and `data.receipt.archiveSeal`, with
+`data.durability: confirmed`. Verify the old epoch, not the new empty one.
 
 Restart the node with durable audit still configured. Recover any application
 operation through its actual owner's retained receipt and current state. A
@@ -236,7 +262,10 @@ latent --output json audit maintenance transfer --local-operator \
 
 Use the epoch and seal from verified custody inspection and a new 32-character
 lowercase hexadecimal operation identity for this **new** transfer. Retain all
-selectors for recovery. This command durably copies and verifies the destination,
+selectors for recovery. Epochs and operation IDs are 32 lowercase hexadecimal
+characters; the expected seal is the 64-character lowercase hexadecimal
+`sealDigest` from custody inspection, without a `sha256:` prefix. This command
+durably copies and verifies the destination,
 records the finite transferred boundary, and only then releases the matching
 local copy. An unavailable/full destination cannot authorize local deletion.
 Every incomplete transfer resume re-verifies the actual destination before

@@ -2,8 +2,13 @@
 
 Use the route-set tool when one static publication serves both GET and HEAD.
 It records the full intent before changing a route and helps a CI job continue
-after interruption. You need Node.js 22 or newer, the released `latent` binary,
-an operator profile for your tenant, and an already published static site.
+after interruption. You need Node.js 22 or newer, a matching `latent` binary
+and helper checkout, an operator profile for your tenant, and an already
+published static site. Audit-aware preflight below requires the current-development
+node inventory and helper; it is not available in the released alpha.4/alpha.5
+binaries. Missing observations must not be treated as spare capacity. Follow
+[renew static-site evidence](static-evidence-renewal.md) for the complete renewal,
+stopped-node maintenance and recovery sequence.
 On Windows, run these commands inside the Linux backend or WSL where your node
 and private operator profile are available.
 
@@ -97,6 +102,10 @@ extend signed evidence validity.
 After any required evidence renewal, retain that renewal's original operation
 identity, precondition, receipt and audit acknowledgement separately. The route-set
 tool manages GET/HEAD; it does **not** issue or atomically combine evidence renewal.
+Renewal of the same package retains its publication ID, so already matching
+GET/HEAD manifests do not need a write solely because evidence was renewed.
+The helper observes those routes without dispatch and still checks current
+eligibility. Its conservative preflight budgets the full renewal/route cycle.
 
 Prepare a plan:
 

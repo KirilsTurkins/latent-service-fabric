@@ -103,7 +103,14 @@ routes independently of runtime container revisions. After an interrupted
 command, recover the original operation before sending another mutation.
 
 Rollback selects an earlier, currently eligible publication through a **new**
-route-set journal. Renew expiring evidence before it prevents serving. Plan
+route-set journal. Renew expiring evidence before it prevents serving. For
+current-development nodes, follow the [evidence renewal and audit maintenance
+runbook](../operations/static-evidence-renewal.md): check audit headroom, retain
+the original renewal operation, reconcile GET/HEAD, and use stopped-node rollover
+when required. Its new preflight and maintenance commands require a matching
+node/CLI/helper; they are not part of the released alpha.5 walkthrough above.
+Rollover does not extend evidence freshness, and renewing unchanged content does
+not require rewriting already matching routes. Plan
 [publication capacity](../operations/publication-retention.md), take
 [consistent stopped backups](../operations/local-storage-recovery.md), and use
 [exclusive ownership handover](../operations/container-handover.md) when changing
