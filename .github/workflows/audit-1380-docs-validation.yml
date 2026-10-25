@@ -1,0 +1,86 @@
+name: PR 1380 renewal documentation validation
+on:
+  push:
+    branches: [ci/audit-1380-docs-validation]
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+          show-progress: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: '3.13.5'
+      - name: Prepare only reviewed documentation changes on the exact feature head
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp .github/maintenance/audit-1380-docs.py "$RUNNER_TEMP/audit-docs.py"
+          cp .github/maintenance/audit-1380-static-evidence-renewal.md "$RUNNER_TEMP/static-evidence-renewal.md"
+          git fetch --no-tags --depth=1 origin 62f075e2512bcdbbf51669d122656e5744547210
+          git checkout --detach 62f075e2512bcdbbf51669d122656e5744547210
+          python3 "$RUNNER_TEMP/audit-docs.py" edit "$RUNNER_TEMP/static-evidence-renewal.md"
+          git config user.name 'LSF documentation maintenance'
+          git config user.email 'ci-repair@users.noreply.github.com'
+          git add docs/operations/static-evidence-renewal.md docs/operations/audit-journal-lifecycle.md docs/operations/static-route-sets.md docs/operations/static-release-workflow.md docs/phase-2-audit.md docs/reference/operator-cli.md docs/reference/standalone-node.md docs/how-to/deliver-a-website.md website/lib/navigation.mjs
+          git commit -m 'docs(audit): add static evidence renewal runbook and align lifecycle guidance'
+          echo "DOCS_CANDIDATE=$(git rev-parse HEAD)"
+          echo "DOCS_TREE=$(git rev-parse HEAD^{tree})"
+      - name: Check examples, relative links and website navigation
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/audit-docs"
+          python3 "$RUNNER_TEMP/audit-docs.py" verify | tee "$RUNNER_TEMP/audit-docs/documentation.log"
+          node --check website/lib/navigation.mjs
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          import {readFileSync} from 'node:fs';
+          import {execFileSync} from 'node:child_process';
+          import {buildSidebars} from './website/lib/navigation.mjs';
+          const paths = execFileSync('git', ['ls-files', 'docs'], {encoding:'utf8'}).trim().split('\n').filter(p=>p.endsWith('.md'));
+          const pages = paths.map(source=>({source,id:source.slice(5,-3),title:readFileSync(source,'utf8').match(/^# (.+)/m)?.[1] ?? source}));
+          const sidebars = buildSidebars(pages);
+          const web = sidebars.howTo.find(item=>item.label==='Web delivery');
+          for (const id of ['operations/static-evidence-renewal','operations/audit-journal-lifecycle']) {
+            assert.equal(web.items.filter(item=>item.id===id).length,1);
+          }
+          console.log('Website Web delivery navigation contains both renewal and audit maintenance exactly once.');
+          JS
+          node --test tools/static-release/*.test.mjs > "$RUNNER_TEMP/audit-docs/route-tests.log" 2>&1 || { tail -100 "$RUNNER_TEMP/audit-docs/route-tests.log"; exit 1; }
+          tail -12 "$RUNNER_TEMP/audit-docs/route-tests.log"
+      - name: Validate lifecycle consumers and unchanged CI contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 -m unittest tools.tests.test_static_audit_lifecycle tools.tests.test_phase2_gate_resource > "$RUNNER_TEMP/audit-docs/python-tests.log" 2>&1 || { tail -100 "$RUNNER_TEMP/audit-docs/python-tests.log"; exit 1; }
+          tail -12 "$RUNNER_TEMP/audit-docs/python-tests.log"
+          python3 tools/ci_coverage.py --receipt target/ci/audit-docs-coverage.json
+          cp target/ci/audit-docs-coverage.json "$RUNNER_TEMP/audit-docs/coverage.json"
+          test -z "$(git status --porcelain --untracked-files=normal)"
+      - name: Preserve verified documentation commit on isolated candidate branch
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "$(git show -s --format=%P HEAD)" = 62f075e2512bcdbbf51669d122656e5744547210
+          auth=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)
+          git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $auth" push origin HEAD:refs/heads/ci/audit-1380-docs-candidate-62f075e
+          unset auth GH_TOKEN
+          git show --stat --oneline HEAD
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        if: always()
+        with:
+          name: audit-1380-documentation-validation
+          path: ${{ runner.temp }}/audit-docs/
+          retention-days: 7
+          if-no-files-found: warn
