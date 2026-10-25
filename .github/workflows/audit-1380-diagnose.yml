@@ -13,25 +13,20 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-      - name: Read failing jobs and bounded error context
+      - name: Read retained dependency-watch failure receipts
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           python3 - <<'PY'
-          import json, os, re, subprocess, urllib.request
+          import io, json, os, subprocess, urllib.request, urllib.error, zipfile
           base = 'https://api.github.com/repos/KirilsTurkins/latent-service-fabric'
           headers = {'Authorization': 'Bearer ' + os.environ['GH_TOKEN'], 'Accept': 'application/vnd.github+json', 'User-Agent': 'lsf-ci-diagnosis'}
-          def api(path):
-              with urllib.request.urlopen(urllib.request.Request(base + path, headers=headers), timeout=30) as response:
-                  data = response.read(2 * 1024 * 1024 + 1)
-              assert len(data) <= 2 * 1024 * 1024
-              return json.loads(data)
           class NoRedirect(urllib.request.HTTPRedirectHandler):
               def redirect_request(self, req, fp, code, msg, hdrs, newurl):
                   return None
-          def logs(job):
-              request = urllib.request.Request(base + '/actions/jobs/' + str(job) + '/logs', headers=headers)
+          def read(path, maximum):
+              request = urllib.request.Request(base + path, headers=headers)
               try:
                   response = urllib.request.build_opener(NoRedirect).open(request, timeout=30)
               except urllib.error.HTTPError as error:
@@ -40,22 +35,31 @@ jobs:
                   assert location.startswith('https://')
                   response = urllib.request.urlopen(location, timeout=30)
               with response:
-                  data = response.read(32 * 1024 * 1024 + 1)
-              assert len(data) <= 32 * 1024 * 1024
-              return re.sub(r'\x1b\[[0-9;]*m', '', data.decode('utf-8-sig')).splitlines()
-          for run in (40130264418, 40130264388, 40130264451):
-              jobs = api('/actions/runs/' + str(run) + '/jobs?per_page=100')
-              assert jobs['total_count'] <= 100
-              failed = [job for job in jobs['jobs'] if job['conclusion'] == 'failure']
-              print('RUN', run, 'FAILED', [(job['id'], job['name']) for job in failed], flush=True)
-              for job in failed:
-                  if job['name'] in ('CI result', 'Developer tools result', 'Rust capsule authoring result'):
-                      continue
-                  lines = logs(job['id'])
-                  hits = [i for i, line in enumerate(lines) if re.search(r'panicked at|^.*FAIL:|test .*FAILED|^.*error\[|^.*error:|\[error\]|failed:|Error:', line) and 'stderr' not in line]
-                  positions = sorted({n for i in hits[-12:] for n in range(max(0, i-2), min(len(lines), i+9))})
-                  output = '\n'.join(lines[i] for i in positions)
-                  print('JOB', job['id'], job['name'], '\n' + output[-18000:], flush=True)
-          result = subprocess.run(['git', 'grep', '-n', '-e', 'inventory-fixed-rows', '-e', 'diagnostic lease keeps physical guard alive', '--', 'tools', 'apps', 'crates'], capture_output=True, text=True, timeout=30)
-          print('SOURCE MATCHES\n' + result.stdout[:16000])
+                  data = response.read(maximum + 1)
+              assert len(data) <= maximum
+              return data
+          artifacts = json.loads(read('/actions/runs/40130264388/artifacts?per_page=100', 2*1024*1024))
+          assert artifacts['total_count'] <= 100
+          selected = [item for item in artifacts['artifacts'] if 'dependency-watch' in item['name']]
+          assert len(selected) <= 12
+          for item in selected:
+              print('ARTIFACT', item['id'], item['name'], item['size_in_bytes'], flush=True)
+              assert not item['expired'] and item['size_in_bytes'] <= 32*1024*1024
+              with zipfile.ZipFile(io.BytesIO(read('/actions/artifacts/' + str(item['id']) + '/zip', 32*1024*1024))) as archive:
+                  assert len(archive.infolist()) <= 512
+                  for member in archive.infolist():
+                      if member.filename.rsplit('/', 1)[-1] not in ('public-qualification.json', 'ci-account.json'):
+                          continue
+                      assert member.file_size <= 262144
+                      value = json.loads(archive.read(member))
+                      if member.filename.endswith('ci-account.json'):
+                          value = {key: val for key, val in value.items() if key in ('schemaVersion', 'passed', 'failure', 'reason', 'stage', 'error', 'status', 'run', 'qualification')}
+                      text = json.dumps(value, sort_keys=True)
+                      print('RECEIPT', member.filename, text[:16000], flush=True)
+          for command in (
+              ['git','grep','-n','-e','phase2_gate_resource_profile.py','--','tools/ci/contracts/owners'],
+              ['git','grep','-n','-e','"audit"','--','apps/latentd/tests/standalone_node/support.rs'],
+          ):
+              result = subprocess.run(command, capture_output=True, text=True, timeout=30)
+              print('SOURCE', ' '.join(command), '\n'+result.stdout[:10000], flush=True)
           PY
