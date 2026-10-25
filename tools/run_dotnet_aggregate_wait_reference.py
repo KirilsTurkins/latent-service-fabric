@@ -182,8 +182,10 @@ def case_shape(value, name, selected):
     need(isinstance(observation,dict) and set(observation)=={'copiedMethods','tokenMap',
         'originalInstructionsBranchesAndEhCopied','pinnedWasiCountdownClassExecuted',
         'hostPrivateCountdownCounterpart','nativeWasiPollAndLedgerQualified','runtimeAddressesRetained',
-        'throwHelperBindings','throwHelperMethods','throwHelperCalls','privateThrowHelperEnumsTranslatedByName'}
-        and observation['originalInstructionsBranchesAndEhCopied'] is True
+        'throwHelperBindings','throwHelperMethods','throwHelperCalls','privateThrowHelperEnumsTranslatedByName',
+        'originalBranchesLocalsAndEhCopied','opcodeAdaptations'}
+        and observation['originalInstructionsBranchesAndEhCopied'] is False
+        and observation['originalBranchesLocalsAndEhCopied'] is True
         and observation['privateThrowHelperEnumsTranslatedByName'] is True
         and observation['hostPrivateCountdownCounterpart'] is True
         and all(observation[key] is False for key in ('pinnedWasiCountdownClassExecuted',
@@ -242,6 +244,22 @@ def case_shape(value, name, selected):
             and all(type(value) is int for value in row['constants']),'reference-enum-call-shape')
         sites.add((row['caller'],row['offset'],row['helper'],tuple(row['constants'])))
     need(sites==THROW_SITES,'reference-exact-enum-call-sites')
+    adaptations=observation['opcodeAdaptations']
+    need(isinstance(adaptations,list) and len(adaptations)==1,'reference-one-opcode-adaptation')
+    adaptation=adaptations[0]
+    fixed={'caller':'System.Boolean System.Threading.Tasks.Task::WaitAllBlockingCore(System.Collections.Generic.List`1<System.Threading.Tasks.Task>,System.Int32,System.Threading.CancellationToken)',
+        'offset':65,'sourceOpcode':'callvirt','referenceOpcode':'call',
+        'target':'System.Boolean System.Threading.ManualResetEventSlim::LsfAggregateWait(System.Int32,System.Threading.CancellationToken)',
+        'sourceBodySha256':'cc0c863dd46f78950914a8950faa4a9490cef81b143468033c61ad536396c8fa',
+        'opcodeOnlyBodySha256':'c8c085c8100b33d887bddb49b679a3e08cf7e8eb268d1f614518380d94214505',
+        'codeBytes':136,'receiverLocal':1,'newobjOffset':8,'storeOffset':13,'loadOffset':62,
+        'sourceTargetInstance':True,'sourceTargetVirtual':False,'referenceTargetStatic':True,
+        'receiverFreshNonNull':True,'codeSizeUnchanged':True,'branchesLocalsEhUnchanged':True}
+    need(isinstance(adaptation,dict) and set(adaptation)==set(fixed)|{'actualEmittedBodySha256'}
+        and all(type(adaptation.get(key)) is type(expected) and adaptation[key]==expected for key,expected in fixed.items())
+        and hexadecimal(adaptation['actualEmittedBodySha256']),'reference-exact-static-instance-projection')
+    need(by_name[fixed['caller']]['ilSha256']==fixed['sourceBodySha256'],
+        'reference-original-production-body-preserved')
     mapping=observation['tokenMap']
     need(isinstance(mapping,list) and 0<len(mapping)<=256 and mapping==sorted(set(mapping))
         and all(isinstance(row,str) and 0<len(row)<2048 and ' => ' in row for row in mapping),

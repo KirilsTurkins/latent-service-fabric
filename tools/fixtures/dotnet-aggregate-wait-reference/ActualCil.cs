@@ -9,7 +9,8 @@ using CecilOperandType = Mono.Cecil.Cil.OperandType;
 using CecilCode = Mono.Cecil.Cil.Code;
 
 // HOST REFERENCE ONLY. No rewritten CoreLib is loaded as a CLR runtime.
-// Keep raw instructions/branches/EH; change only explicitly recorded tokens.
+// Keep source identities and branches/locals/EH. Only recorded tokens and the
+// single proven instance-to-static call projection change in the host copy.
 internal sealed class ActualCil : IDisposable
 {
     private readonly FileStream input;
@@ -20,6 +21,9 @@ internal sealed class ActualCil : IDisposable
     private readonly HashSet<string> mappings = new();
     private readonly HashSet<string> throwSites = new();
     private readonly List<object> throwCalls = new();
+    private readonly List<object> opcodeAdaptations = new();
+    private const string BlockingCore = "System.Boolean System.Threading.Tasks.Task::WaitAllBlockingCore(System.Collections.Generic.List`1<System.Threading.Tasks.Task>,System.Int32,System.Threading.CancellationToken)";
+    private const string MresShim = "System.Boolean System.Threading.ManualResetEventSlim::LsfAggregateWait(System.Int32,System.Threading.CancellationToken)";
     private static readonly HashSet<string> ExpectedThrowSites = [
         "System.Void System.Threading.Tasks.Task::WaitAll(System.Threading.Tasks.Task[])@5|NullByName|51",
         "System.Boolean System.Threading.Tasks.Task::WaitAll(System.Threading.Tasks.Task[],System.TimeSpan)@34|RangeByName|62",
@@ -64,6 +68,7 @@ internal sealed class ActualCil : IDisposable
         ThrowHelperPorts.Bind(module);
         foreach (var pair in source) Copy(pair.Value, methods[pair.Key]);
         Need(throwSites.SetEquals(ExpectedThrowSites), "exact-nine-throw-helper-sites");
+        Need(opcodeAdaptations.Count == 1, "exact-one-reference-opcode-adaptation");
     }
 
     internal static void Need(bool value, string code)
@@ -80,7 +85,8 @@ internal sealed class ActualCil : IDisposable
                 end = handler.TryEnd?.Offset ?? pair.Value.Body.CodeSize,
                 handlerStart = handler.HandlerStart.Offset,
                 handlerEnd = handler.HandlerEnd?.Offset ?? pair.Value.Body.CodeSize }).ToArray() }).ToArray(),
-        tokenMap = mappings.Order(StringComparer.Ordinal).ToArray(), originalInstructionsBranchesAndEhCopied = true,
+        tokenMap = mappings.Order(StringComparer.Ordinal).ToArray(), originalInstructionsBranchesAndEhCopied = false,
+        originalBranchesLocalsAndEhCopied = true, opcodeAdaptations,
         throwHelperBindings = ThrowHelperPorts.Bindings, throwHelperMethods = ThrowHelperPorts.MethodBindings(),
         throwHelperCalls = throwCalls, privateThrowHelperEnumsTranslatedByName = true,
         pinnedWasiCountdownClassExecuted = false, hostPrivateCountdownCounterpart = true,
@@ -321,14 +327,30 @@ internal sealed class ActualCil : IDisposable
     {
         var info = copy.GetDynamicILInfo();
         var code = Code(method);
+        bool instanceProjection = method.FullName == BlockingCore;
+        if (instanceProjection) AdaptKnownInstanceEdge(method, code);
         foreach (var instruction in method.Body.Instructions)
         {
+            if (instruction.OpCode == CecilOpCodes.Callvirt && instruction.Operand is MethodReference target
+                && methods.ContainsKey(target.FullName) && target.HasThis)
+                Need(instanceProjection && instruction.Offset == 65 && target.FullName == MresShim,
+                    "unknown-instance-dynamic-call");
             var kind = instruction.OpCode.OperandType;
             if (kind is CecilOperandType.InlineMethod or CecilOperandType.InlineField or CecilOperandType.InlineType
                 or CecilOperandType.InlineTok or CecilOperandType.InlineString)
                 BitConverter.GetBytes(Token(info, instruction, method)).CopyTo(code, instruction.Offset + instruction.OpCode.Size);
             else Need(kind != CecilOperandType.InlineSig, "unsupported-calli-signature");
         }
+        if (instanceProjection)
+            opcodeAdaptations.Add(new {
+                caller = method.FullName, offset = 65, sourceOpcode = "callvirt", referenceOpcode = "call", target = MresShim,
+                sourceBodySha256 = "cc0c863dd46f78950914a8950faa4a9490cef81b143468033c61ad536396c8fa",
+                opcodeOnlyBodySha256 = "c8c085c8100b33d887bddb49b679a3e08cf7e8eb268d1f614518380d94214505",
+                actualEmittedBodySha256 = Digest(code), codeBytes = code.Length,
+                receiverLocal = 1, newobjOffset = 8, storeOffset = 13, loadOffset = 62,
+                sourceTargetInstance = true, sourceTargetVirtual = false, referenceTargetStatic = true,
+                receiverFreshNonNull = true, codeSizeUnchanged = true, branchesLocalsEhUnchanged = true,
+            });
         var locals = SignatureHelper.GetLocalVarSigHelper();
         foreach (var variable in method.Body.Variables)
         {
@@ -354,6 +376,47 @@ internal sealed class ActualCil : IDisposable
                 : handler.HandlerType == ExceptionHandlerType.Filter ? handler.FilterStart.Offset : 0);
         }
         info.SetExceptions(stream.ToArray());
+    }
+
+    private void AdaptKnownInstanceEdge(MethodDefinition method, byte[] code)
+    {
+        Need(code.Length == 136 && Digest(code) == "cc0c863dd46f78950914a8950faa4a9490cef81b143468033c61ad536396c8fa"
+            && code[65] == 0x6f, "reference-instance-source-body");
+        var instructions = method.Body.Instructions.ToArray();
+        Need(instructions.Take(6).Select(instruction => instruction.OpCode.Code).SequenceEqual(new[] {
+            CecilCode.Ldc_I4_0, CecilCode.Stloc_0, CecilCode.Ldarg_0, CecilCode.Callvirt, CecilCode.Newobj, CecilCode.Stloc_1 }),
+            "reference-fresh-countdown-prefix");
+        var created = instructions.Single(instruction => instruction.Offset == 8);
+        Need(created.OpCode == CecilOpCodes.Newobj && created.Operand is MethodReference constructor
+            && constructor.FullName == "System.Void System.Threading.Tasks.Task/SetOnCountdownMres::.ctor(System.Int32)"
+            && method.Body.Variables[1].VariableType.FullName == "System.Threading.Tasks.Task/SetOnCountdownMres",
+            "reference-fresh-countdown-type");
+        var stores = instructions.Where(instruction => instruction.OpCode == CecilOpCodes.Stloc_1
+            || (instruction.OpCode == CecilOpCodes.Stloc || instruction.OpCode == CecilOpCodes.Stloc_S)
+                && instruction.Operand is VariableDefinition local && local.Index == 1).ToArray();
+        Need(stores.Length == 1 && stores[0].Offset == 13 && stores[0].Previous == created
+            && !instructions.Any(instruction => (instruction.OpCode == CecilOpCodes.Ldloca || instruction.OpCode == CecilOpCodes.Ldloca_S)
+                && instruction.Operand is VariableDefinition local && local.Index == 1), "reference-countdown-local-not-replaced");
+        Need(instructions.Single(instruction => instruction.Offset == 62).OpCode == CecilOpCodes.Ldloc_1
+            && instructions.Single(instruction => instruction.Offset == 63).OpCode == CecilOpCodes.Ldarg_1
+            && instructions.Single(instruction => instruction.Offset == 64).OpCode == CecilOpCodes.Ldarg_2,
+            "reference-countdown-receiver-stack");
+        var edge = instructions.Single(instruction => instruction.Offset == 65);
+        Need(edge.OpCode == CecilOpCodes.Callvirt && edge.GetSize() == 5 && edge.Operand is MethodReference reference
+            && reference.FullName == MresShim, "reference-instance-edge");
+        var target = ((MethodReference)edge.Operand).Resolve();
+        var projected = methods[MresShim];
+        Need(target.Module == module && target.HasThis && !target.IsStatic && !target.IsVirtual
+            && target.ReturnType.FullName == "System.Boolean" && projected.IsStatic
+            && projected.ReturnType == typeof(bool)
+            && projected.GetParameters().Select(parameter => parameter.ParameterType).SequenceEqual(
+                new[] { typeof(ManualResetEventSlim), typeof(int), typeof(CancellationToken) }),
+            "reference-instance-projection-signature");
+        // One nonvirtual receiver is a unique successful newobj in this pinned
+        // body. No null receiver reaches this edge; all other callvirt stay exact.
+        code[65] = 0x28;
+        Need(Digest(code) == "c8c085c8100b33d887bddb49b679a3e08cf7e8eb268d1f614518380d94214505",
+            "reference-single-opcode-projection");
     }
 
     public void Dispose() { module.Dispose(); reader.Dispose(); input.Dispose(); }
