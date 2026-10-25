@@ -1,63 +1,49 @@
-name: PR 1380 packaged helper validation
+name: PR 1380 pinned development merge inspection
 on:
   push:
     branches: [ci/audit-1380-helper-validation]
 permissions:
   contents: read
 jobs:
-  validate:
+  inspect:
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    permissions:
-      contents: write
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
-        with:
-          python-version: 3.13.5
-      - name: Reproduce and repair the actual packaged helper path
+          show-progress: false
+      - name: Inspect only the pinned merge and bounded conflicting regions
         shell: bash
         run: |
           set -euo pipefail
-          cp .github/maintenance/audit-1380-helper-repair.py "$RUNNER_TEMP/repair-helper.py"
-          git fetch --no-tags --depth=1 origin f1dd3bc1c6ed68d2b4e5a0ed0c75d8bcf3e7f588
-          git checkout --detach f1dd3bc1c6ed68d2b4e5a0ed0c75d8bcf3e7f588
-          python3 -m pip install --requirement tools/requirements.lock
-          python3 "$RUNNER_TEMP/repair-helper.py"
-          git diff --check
+          git fetch --no-tags --depth=128 origin 99a5bb10633df4280c32228367908381c8f36c34 0ca8e0f574b3b8829c4691aa0d830e648f073a5e
+          git checkout --detach 99a5bb10633df4280c32228367908381c8f36c34
           git config user.name 'LSF CI repair'
           git config user.email 'ci-repair@users.noreply.github.com'
-          git add tools/build_dev_frontend.py tools/tests/test_dev_tools.py tools/ci/contracts/owners/tools/build_dev_frontend.py.json tools/ci/contracts/python/test_dev_tools.py.json
-          git commit -m 'fix(dev): retain compatibility readers in the packaged node helper'
-          echo "HELPER_CANDIDATE=$(git rev-parse HEAD)"
-      - name: Validate controller, outcomes, source bounds and CI contracts
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 -m unittest tools.tests.test_dev_tools tools.tests.test_guest_compatibility_outcomes tools.tests.test_dev_watch tools.tests.test_dev_contracts tools.tests.test_dev_workflow tools.tests.test_ci_contracts tools.tests.test_build_source_capacity > "$RUNNER_TEMP/audit-helper/tests.log" 2>&1 || { tail -120 "$RUNNER_TEMP/audit-helper/tests.log"; exit 1; }
-          tail -12 "$RUNNER_TEMP/audit-helper/tests.log"
-          python3 tools/ci_coverage.py --receipt target/ci/audit-helper-coverage.json
-          cp target/ci/audit-helper-coverage.json "$RUNNER_TEMP/audit-helper/coverage.json"
-      - name: Retain tested code without updating the feature branch
-        env:
-          GH_TOKEN: ${{ github.token }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          test "$(git show -s --format=%P HEAD)" = f1dd3bc1c6ed68d2b4e5a0ed0c75d8bcf3e7f588
-          test -z "$(git status --porcelain --untracked-files=normal)"
-          auth=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)
-          git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $auth" push origin HEAD:refs/heads/ci/audit-1380-helper-candidate-f1dd3bc
-          unset auth GH_TOKEN
-          git show --stat --oneline HEAD
-          git diff HEAD^ HEAD > "$RUNNER_TEMP/audit-helper/repair.patch"
-      - name: Retain bounded before and after evidence
-        if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
-        with:
-          name: audit-1380-helper-validation
-          path: ${{ runner.temp }}/audit-helper/
-          retention-days: 7
-          if-no-files-found: warn
+          python3 - <<'PY'
+          import pathlib, subprocess
+          def git(*args):
+              return subprocess.check_output(['git', *args], text=True, timeout=60)
+          outcome = subprocess.run(['git', 'merge', '--no-commit', '--no-ff', '0ca8e0f574b3b8829c4691aa0d830e648f073a5e'], capture_output=True, text=True, timeout=120)
+          assert outcome.returncode in (0, 1)
+          print(outcome.stdout[-12000:])
+          names = git('diff', '--name-only', '--diff-filter=U').splitlines()
+          print('CONFLICTS', names, flush=True)
+          assert len(names) <= 16
+          for name in names:
+              lines = pathlib.Path(name).read_text().splitlines()
+              selected = set()
+              start = None
+              for index, line in enumerate(lines):
+                  if line.startswith('<<<<<<< '): start = index
+                  if line.startswith('>>>>>>> ') and start is not None:
+                      selected.update(range(max(0, start-4), min(len(lines), index+5)))
+                      start = None
+              output = '\n'.join(f'{index+1}: {lines[index]}' for index in sorted(selected))
+              assert len(output) <= 24000, (name, len(output))
+              print('FILE', name, '\n'+output, flush=True)
+          for name in ('tools/build_dev_frontend.py', 'tools/tests/test_build_source_capacity.py', 'tools/tests/test_dev_tools.py'):
+              result = git('diff', '0dd0facf0ac9548c41f2d755655fd37e347eefd7', '0ca8e0f574b3b8829c4691aa0d830e648f073a5e', '--', name)
+              print('DEVELOPMENT DELTA', name, '\n'+result[:20000], flush=True)
+          PY
