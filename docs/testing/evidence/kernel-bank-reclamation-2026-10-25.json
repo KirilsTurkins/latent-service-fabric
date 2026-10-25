@@ -769,5 +769,77 @@
       "bytes": 25908,
       "sha256": "7786e20d7cebe24747c7d5ef1b1e9d45064941985bbd18e08162e44cb2cf1377"
     }
+  },
+  "finalComposition": {
+    "incomingDevelopment": "0bc590885c46b19804dbdbf2ea9f496914663b0e",
+    "qualifiedSource": "30ca4fbaa91471835e372e8d9e21916a1d791fdc",
+    "incomingPaths": [
+      "tools/build_process.py",
+      "tools/ci/contracts/owners/tools/build_process.py.json",
+      "tools/ci/contracts/python/test_java_llvm_ssa_producer.py.json",
+      "tools/ci/contracts/workflows/java-llvm-ssa-producer.yml/jobs/compiler.json",
+      "tools/data/java-llvm-ssa/README.md",
+      "tools/java_guest/llvm_ssa_producer.py",
+      "tools/tests/test_build_process.py",
+      "tools/tests/test_java_llvm_ssa_producer.py",
+      "tools/tests/test_rust_dependency_watch.py"
+    ],
+    "changedCapturedInputs": {
+      "tools/build_process.py": {
+        "qualified": {
+          "bytes": 9063,
+          "sha256": "fe8756c83045fd92e007a5ffac7ccfdd21a56d374be02f7147ea1363c31932ea"
+        },
+        "incoming": {
+          "bytes": 9214,
+          "sha256": "3e462a970e23c127a4e6f0964744d31fad763ed4e9f73fb309e3349db3670497"
+        }
+      },
+      "tools/java_guest/llvm_ssa_producer.py": {
+        "qualified": {
+          "bytes": 22029,
+          "sha256": "8ed780319d81ac0414872e93d8c7f2b8653e3dbb48c3a0c033d03e311ef230c9"
+        },
+        "incoming": {
+          "bytes": 25439,
+          "sha256": "b2e7dd0028aaea01a3c66180afe7edd72da5e6c14df3e6979a5e4f0812a4e521"
+        }
+      },
+      "tools/tests/test_build_process.py": {
+        "qualified": {
+          "bytes": 20505,
+          "sha256": "b7039a0ae2f447e047287da192fb8e2cbde979b9380b606c010b4582883a683d"
+        },
+        "incoming": {
+          "bytes": 20661,
+          "sha256": "3b61af66c87c2e983904dfa55d3e54b97114b0aed926e0076e46485e3125a3d6"
+        }
+      },
+      "tools/tests/test_java_llvm_ssa_producer.py": {
+        "qualified": {
+          "bytes": 26435,
+          "sha256": "4fde7f19cebd693f1c6db14b703d9f27763d6e1610ac75445b21aec1b9d4641c"
+        },
+        "incoming": {
+          "bytes": 28762,
+          "sha256": "c383473e5472031fa6abf2ba6c03ed4306972345a4c8c2f3e3ff261eea4d445a"
+        }
+      },
+      "tools/tests/test_rust_dependency_watch.py": {
+        "qualified": {
+          "bytes": 66938,
+          "sha256": "5ee40f22904da01101dc51cf44f15bf8ce51e346e16338dd94c0540f8b9fb0b4"
+        },
+        "incoming": {
+          "bytes": 66909,
+          "sha256": "1129912eb33bdf337202942d27e7b31eb080f454e724dcc4bb19d36268fb4075"
+        }
+      }
+    },
+    "unchangedCapturedInputs": 6479,
+    "allBankImplementationPathsUnaffected": true,
+    "all296KernelInputsUnaffected": true,
+    "campaignReplayed": false,
+    "scope": "The qualified raw6484-input observation remains30ca. Incoming shared helper operational ceiling changes3600->4500; explicit bank deadlines1320/1200/180 and115+5 download are unchanged. Other captured incoming changes concern LLVM producer/tests. No replay or new bank qualification is claimed for this composition."
   }
 }

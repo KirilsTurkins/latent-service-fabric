@@ -20,6 +20,7 @@ ROOT = patch.ROOT
 PROFILE = distribution.PROFILE
 SUFFIX = '-wasi-sdk-' + PROFILE
 SECONDS = 90 * 60
+BUILD_SECONDS = 75 * 60
 REPOSITORY = 'KirilsTurkins/latent-service-fabric'
 WORKFLOW = '.github/workflows/java-llvm-ssa-producer.yml'
 BRANCH = 'feat/java-llvm-ssa-producer-20261025'
@@ -42,6 +43,68 @@ def write(path: Path, value) -> None:
     if len(raw) > 8 * 1024 ** 2:
         raise ValueError('llvm-producer-receipt-bound')
     path.write_bytes(raw)
+
+
+def ninja_progress(root: Path, deadline: float) -> dict:
+    """Count a bounded completed log prefix after original owner cleanup.
+
+    Ninja 1.13.2 writes v7 rows as start/end/mtime/output/hash. Counts are
+    diagnostics, not a planned-edge total, successful linking or qualification.
+    No output path, command text, compiler binary or raw log is retained.
+    """
+    result = {'status': 'unavailable', 'reason': 'missing', 'diagnosticOnly': True,
+              'completedLogRows': 0, 'uniqueOutputs': 0, 'latestEndMilliseconds': 0,
+              'clangObjectRows': 0, 'utilsTestObjectRows': 0,
+              'loggedTargets': {name: False for name in
+                  ('clang', 'llvm-config', 'opt', 'llc', 'FileCheck', 'not', 'count', 'UtilsTests')}}
+    if time.monotonic() >= deadline:
+        result.update(status='incomplete', reason='deadline')
+        return result
+    try:
+        raw = patch.regular(root, 'build/.ninja_log', 4 * 1024 ** 2)
+    except FileNotFoundError:
+        return result
+    except (OSError, ValueError):
+        result.update(status='incomplete', reason='input-refused')
+        return result
+    if not raw.startswith(b'# ninja log v7\n'):
+        result.update(status='incomplete', reason='unsupported-format')
+        return result
+    complete = raw.endswith(b'\n')
+    rows = raw.split(b'\n', 16386)[1:-1]
+    outputs = set()
+    targets = {b'bin/' + name.encode(): name for name in
+               ('llvm-config', 'opt', 'llc', 'FileCheck', 'not', 'count')}
+    targets.update({b'bin/clang': 'clang', b'bin/clang-21': 'clang',
+                    b'unittests/Transforms/Utils/UtilsTests': 'UtilsTests'})
+    result.update(status='observed' if complete else 'incomplete',
+                  reason='complete-prefix' if complete else 'partial-tail')
+    for ordinal, row in enumerate(rows):
+        if ordinal >= 16384 or len(row) > 4096 or time.monotonic() >= deadline:
+            result.update(status='incomplete', reason='work-bound')
+            break
+        fields = row.split(b'\t')
+        if (len(fields) != 5 or not re.fullmatch(rb'[0-9]{1,10}', fields[0])
+                or not re.fullmatch(rb'[0-9]{1,10}', fields[1])
+                or not re.fullmatch(rb'-?[0-9]{1,20}', fields[2])
+                or not fields[3] or not re.fullmatch(rb'[0-9a-f]{1,16}', fields[4])):
+            result.update(status='incomplete', reason='row-format')
+            break
+        start, end = int(fields[0]), int(fields[1])
+        if start > end or end > SECONDS * 1000:
+            result.update(status='incomplete', reason='row-time')
+            break
+        output = fields[3]
+        outputs.add(output)
+        result['completedLogRows'] += 1
+        result['latestEndMilliseconds'] = max(result['latestEndMilliseconds'], end)
+        result['clangObjectRows'] += int(output.startswith(b'tools/clang/') and output.endswith(b'.o'))
+        result['utilsTestObjectRows'] += int(output.startswith(
+            b'unittests/Transforms/Utils/CMakeFiles/UtilsTests.dir/') and output.endswith(b'.o'))
+        if output in targets:
+            result['loggedTargets'][targets[output]] = True
+    result['uniqueOutputs'] = len(outputs)
+    return result
 
 
 def admission(output: Path, *, artifact_only: bool = False) -> dict:
@@ -131,6 +194,8 @@ class Commands:
         if post_failure is not None:
             record['postCheckFailure'] = (post_failure.reason if isinstance(post_failure, build_process.BuildProcessError)
                                           else type(post_failure).__name__)
+        if stage == 'build-reviewed-llvm-and-tests':
+            record['buildProgress'] = ninja_progress(self.root, self.deadline)
         index = len(self.records)
         if completed is not None:
             for name, raw in [('stdout', completed.stdout), ('stderr', completed.stderr)]:
@@ -304,6 +369,7 @@ def produce(output: Path) -> dict:
     record = {'schemaVersion': 'latent.java.llvm-sjlj-producer.v1', 'status': 'running',
               'source': origin, 'recipeInputs': frozen, 'llvmCommit': patch.LLVM,
               'sdkSourceCommit': patch.SDK, 'profile': PROFILE, 'buildJobs': 2,
+              'buildCommandSeconds': BUILD_SECONDS,
               'aggregateSeconds': SECONDS, 'productByteLimit': io.PRODUCT_BYTES,
               'disk': {'preflightFreeBytes': shutil.disk_usage(root).free, 'minimumFreeBytes': io.MINIMUM_FREE,
                        'ownedLogicalByteBudget': io.MAX_OWNED_BYTES, 'reserveBytes': io.FREE_RESERVE,
@@ -345,7 +411,7 @@ def produce(output: Path) -> dict:
         run.run('configure-reviewed-llvm', *configure(build, source, install, tools), seconds=600)
         run.run('build-reviewed-llvm-and-tests', tools['cmake'], '--build', build, '--parallel', '2',
                 '--target', 'clang', 'LLVM', 'opt', 'llc', 'FileCheck', 'not', 'count', 'llvm-config',
-                'UtilsTests', 'clang-resource-headers', seconds=3600)
+                'UtilsTests', 'clang-resource-headers', seconds=BUILD_SECONDS)
         record['tests'] = llvm_checks(run, build, source)
         run.run('install-reviewed-compiler', tools['cmake'], '--build', build, '--parallel', '2',
                 '--target', 'install-clang', 'install-LLVM', 'install-clang-resource-headers', seconds=300)

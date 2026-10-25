@@ -24,6 +24,26 @@ official archives before tar access and checks the whole source tree without
 ignored paths before and after compilation. No LLVM or guest compiler build
 has yet qualified this candidate.
 
+The first build completed in 3,357.75 seconds and passed all nine SSA units,
+then lit refused its missing `llvm-config` prerequisite before running the
+thirteen regressions. Adding that build target corrected the harness, but the
+next build reached its original 3,600-second command deadline before tests.
+Its Ninja progress was not retained; no unfinished target or compiler defect
+is inferred. Both failed artifacts remain separately attributed.
+
+The selected LLVM build command now has a 4,500-second maximum within the same
+5,400-second aggregate. These maxima are not additive: each command is clipped
+to the remaining total budget. The shared trusted-build operational maximum
+admits this duration; other callers retain their existing selected timeouts
+and defaults. Two build jobs, all tests, disk and product bounds are unchanged.
+After the original owner cleans up, a bounded Ninja v7 log reader retains only
+completed-prefix counts and fixed logged-target flags in command metadata,
+including failures. It reads at most 4 MiB/16,384 rows/4,096 bytes per row.
+Counts are not a planned-edge total, percentage, successful compiler or test
+claim. Unknown, malformed, partial or over-bound logs report incomplete data;
+the original command failure remains decisive. No raw build log, output path
+or failed compiler binary is added to artifact retention.
+
 Before any acquisition/build it measures at least 18 GiB free on the owned
 filesystem and requires case-sensitive paths. It refuses insufficient space;
 it never removes system SDKs, installed tools or another session's files.

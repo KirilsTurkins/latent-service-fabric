@@ -68,6 +68,16 @@ The final receipt and this guide are outside those execution inputs. Four
 reviewed CI contract fragments are separately bound by their qualified Git
 identities, rather than presented as captured execution inputs.
 
+Final integration includes development `0bc590885c46b19804dbdbf2ea9f496914663b0e`.
+Its five changed captured Python inputs are explicitly identified in the
+receipt's `finalComposition`; the remaining 6,479 captured blobs and all 296
+kernel inputs stay exact. The shared process helper's operational ceiling moves
+from 3,600 to 4,500 seconds for LLVM, while this bank programme retains its
+explicit 1,320/1,200/180-second bounds and 115+5-second download/cleanup bound.
+Other incoming captured changes concern LLVM and tests. This integration
+preserves the actual qualified30ca observation; it is not a replay or a new
+qualification of the final composition.
+
 The new static child was 2,947,584 bytes. PID1 plus child loaded spans totalled
 3,718,576 bytes and the CPIO was 3,752,960 bytes, below the original fixed
 aggregate limits. The one VM completed in 2.919306 seconds. The native process

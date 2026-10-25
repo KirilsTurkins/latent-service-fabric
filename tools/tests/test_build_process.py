@@ -113,8 +113,10 @@ class BuildProcessTests(unittest.TestCase):
         self.assertEqual(result.stderr, b"")
 
     def test_limits_reject_before_spawning(self):
+        result = self.run_python("print('short')", timeout=4500)
+        self.assertEqual(result.stdout.strip(), b'short')
         cases = [(0, 32), (True, 32), (float("nan"), 32), (float("inf"), 32),
-                 (10 ** 1000, 32), (3601, 32), (1, 0), (1, True),
+                 (10 ** 1000, 32), (build_process.MAX_TIMEOUT_SECONDS + 1, 32), (1, 0), (1, True),
                  (1, build_process.MAX_OUTPUT_BYTES + 1)]
         with patch.object(build_process, "_new_owner") as spawn:
             for timeout, maximum in cases:
