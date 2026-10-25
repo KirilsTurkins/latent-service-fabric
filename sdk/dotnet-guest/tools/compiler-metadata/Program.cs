@@ -71,7 +71,7 @@ internal static class Program
         var mappedApis = cil?.ApiBodies.Select(row => row.Id).ToHashSet(StringComparer.Ordinal) ?? new HashSet<string>();
         var queries = new List<Query>(); var assemblyIdentities = new List<string>();
         long totalBytes = 0; int methods = 0, types = 0;
-        var allNames = new HashSet<string>(StringComparer.Ordinal);
+        var allNames = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var path in paths)
         {
             var file = new FileInfo(path);
@@ -84,7 +84,13 @@ internal static class Program
             var assembly = metadata.GetString(metadata.GetAssemblyDefinition().Name);
             bool knownCorelib = assembly == "System.Private.CoreLib" && identity == expectedCorelib;
             bool asciiAssembly = Ascii(assembly), rootAssembly = assemblyIdentities.Count == 0;
-            Require(allNames.Add(assembly)); assemblyIdentities.Add(identity);
+            bool firstName = allNames.TryAdd(assembly, identity);
+            // CilReferences already compared complete bytes of every alias.
+            // Preserve every original path/hash entry, but query its methods
+            // once. The legacy two-argument reader keeps its original refusal.
+            Require(firstName || cil is not null && allNames[assembly] == identity);
+            assemblyIdentities.Add(identity);
+            if (!firstName) continue;
             if (assembly.StartsWith("System.Private.", StringComparison.Ordinal)) assembly = "S.P." + assembly[15..];
             var prefix = Sanitize(assembly);
             var typeNames = new Dictionary<TypeDefinitionHandle, string>();

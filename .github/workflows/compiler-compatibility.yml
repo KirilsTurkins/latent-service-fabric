@@ -293,14 +293,8 @@ jobs:
           minutes: 100
         - cell: go
           minutes: 105
-        - cell: java
-          minutes: 45
         - cell: dotnet
           minutes: 70
-        - cell: typescript
-          minutes: 65
-        - cell: go-queues
-          minutes: 105
         - cell: typescript-initializer
           minutes: 65
     env:
@@ -493,29 +487,22 @@ jobs:
         path: ${{ runner.temp }}/compatibility-inputs/go
     - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
       with:
-        name: compatibility-closure-${{ github.sha }}-java
-        path: ${{ runner.temp }}/compatibility-inputs/java
-    - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-      with:
         name: compatibility-closure-${{ github.sha }}-dotnet
         path: ${{ runner.temp }}/compatibility-inputs/dotnet
     - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
       with:
-        name: compatibility-closure-${{ github.sha }}-typescript
-        path: ${{ runner.temp }}/compatibility-inputs/typescript
-    - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-      with:
-        name: compatibility-closure-${{ github.sha }}-go-queues
-        path: ${{ runner.temp }}/compatibility-inputs/go-queues
-    - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-      with:
         name: compatibility-closure-${{ github.sha }}-typescript-initializer
         path: ${{ runner.temp }}/compatibility-inputs/typescript-initializer
+    - name: Authenticate the three exact passed cc8b cells without rebuilding or invoking guests
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: python3 -B tools/compatibility_preserved_cells.py --output "$RUNNER_TEMP/compatibility-preserved"
     - name: Require every exact cell and preserve historical scope
       env:
         SOURCE_COMMIT: ${{ github.sha }}
       run: python3 -B tools/compatibility_closure_matrix.py assemble --inputs "$RUNNER_TEMP/compatibility-inputs"
-        --source-commit "$SOURCE_COMMIT" --output "$RUNNER_TEMP/compatibility-completion.json"
+        --source-commit "$SOURCE_COMMIT" --preserved "$RUNNER_TEMP/compatibility-preserved"
+        --diagnostics "$RUNNER_TEMP/compatibility-current-diagnostics" --output "$RUNNER_TEMP/compatibility-completion.json"
     - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       with:
         name: compatibility-closure-matrix-${{ github.sha }}

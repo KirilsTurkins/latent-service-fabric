@@ -54,6 +54,16 @@ export const DiagnosticReason = {
   DeadlineExceeded: 14,
   Cancelled: 15,
   HttpResponseRejected: 16,
+  RuntimeTaskLimit: 17,
+  RuntimeQueueLimit: 18,
+  RuntimeTimerLimit: 19,
+  RuntimeExecutorLimit: 20,
+  RuntimeWaitLimit: 21,
+  RuntimeResultLimit: 22,
+  RuntimeNativeOwnerLimit: 23,
+  NativeThreadStartLimit: 24,
+  NativeMemoryExhausted: 25,
+  GuestStackExhausted: 26,
 } as const;
 
 export type DiagnosticProfile = number;

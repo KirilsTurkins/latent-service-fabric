@@ -241,7 +241,8 @@ class AutomaticCompilerCapture(unittest.TestCase):
             owner.observe_compiler_edges(original, output, [source, helper, archive])
             self.assertEqual(original, before)
             self.assertEqual(calls, [('zig', ('cc', '-std=c23', '-target', 'wasm32-wasi', '-O2', '-Werror',
-                '-DRESOURCE=source.c', '-I', 'captured/include', '-S', '-emit-llvm', str(source),
+                '-DRESOURCE=source.c', '-I', 'captured/include', '-S', '-emit-llvm',
+                '-Wno-error=unused-command-line-argument', str(source),
                 '-o', str(output / 'compiler-edge-0000.ll')))])
             self.assertEqual(next(iter(owner.compiler_edges.raw.values())), IR)
 

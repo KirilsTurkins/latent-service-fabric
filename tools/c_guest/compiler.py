@@ -354,7 +354,11 @@ class Compiler:
             try:
                 source = self.compiler_edge_sources[name]
                 witness = destination / ('compiler-edge-%04d.ll' % index)
-                self.run('zig', *options, '-S', '-emit-llvm', str(source), '-o', str(witness))
+                # Zig's IR-only driver adds an otherwise unused -c internally.
+                # Keep that bounded warning visible without making it fatal;
+                # normal component argv and every other -Werror stay unchanged.
+                self.run('zig', *options, '-S', '-emit-llvm',
+                    '-Wno-error=unused-command-line-argument', str(source), '-o', str(witness))
                 self.compiler_edges.retain_unit(name, read_file(witness, 4 * 1024 * 1024))
             except Exception:
                 self.compiler_edges.fail_unit(name)

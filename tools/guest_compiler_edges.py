@@ -28,7 +28,7 @@ LLVM_PURE = frozenset(('alloca load store getelementptr bitcast addrspacecast tr
     'fptrunc fpext fptoui fptosi uitofp sitofp ptrtoint inttoptr icmp fcmp phi select freeze '
     'add sub mul udiv sdiv urem srem shl lshr ashr and or xor fadd fsub fmul fdiv frem fneg '
     'extractvalue insertvalue extractelement insertelement shufflevector fence atomicrmw cmpxchg').split())
-GO_PURE = frozenset(('Arg ArgIntReg ArgFloatReg InitMem SP SB Const8 Const16 Const32 Const64 MakeResult '
+GO_PURE = frozenset(('Arg ArgIntReg ArgFloatReg InitMem SP SB Const8 Const16 Const32 Const64 MakeResult I64Const '
     'ConstBool ConstNil ConstString Copy Phi Select0 Select1 SelectN Add32 Add64 Sub32 Sub64 '
     'Mul32 Mul64 Eq32 Eq64 Neq32 Neq64 Less32 Less64 Leq32 Leq64 Not OffPtr PtrIndex '
     'WasmI64Const WasmI32Const WasmI64Add WasmI64Sub WasmI64Mul WasmI64Eq WasmI64Eqz '
@@ -38,6 +38,8 @@ GO_PURE = frozenset(('Arg ArgIntReg ArgFloatReg InitMem SP SB Const8 Const16 Con
 # Go2aae1000 cmd/compile/internal/ssa/_gen/genericOps.go: MakeResult builds
 # result components with final memory operand. It is not a call; individual
 # operand-producing instructions still need their own explicitly known shapes.
+# The same pinned WasmOps.go names I64Const/LoweredStaticCall; _gen/main.go
+# writes opInfo.name verbatim and generates Op.String() from it, without Wasm.
 
 
 @dataclass
@@ -235,7 +237,7 @@ def go_ssa(raw, root):
             opcode, tail = value.groups()
             if 'Call' in opcode:
                 target = re.search(r'\{([A-Za-z_.$][A-Za-z0-9_.$:/<>,-]*)\}', tail)
-                if opcode in ('StaticCall', 'StaticLECall', 'WasmLoweredStaticCall') and target:
+                if opcode in ('StaticCall', 'StaticLECall', 'WasmLoweredStaticCall', 'LoweredStaticCall') and target:
                     block.calls.append(target[1])
                 else:
                     block.unknown = True

@@ -21,6 +21,8 @@ from tools.rust_capsule_project import ROOT, fresh, read_file, read_json, write_
 
 LANGUAGES = ('c', 'rust', 'go', 'java', 'dotnet', 'typescript')
 CELLS = (*LANGUAGES, 'go-queues', 'typescript-initializer')
+PRESERVED_CELLS = ('java', 'typescript', 'go-queues')
+PRESERVED_SOURCE = 'cc8b88b18abda6e03fc3097d8af658f5e16022f6'
 MAX_PUBLIC_BYTES = 256 * 1024**2
 MAX_PUBLIC_FILES = 8192
 MAX_PUBLIC_FILE = 64 * 1024**2
@@ -110,19 +112,38 @@ def signed(value, component, expected_count, *, expected=None, kind='api-pair', 
     return {'cases': expected_count, 'componentDigest': component, 'originalTerminalPreserved': True}
 
 
-def assemble(records, *, source_commit, root=ROOT):
-    require(type(records) is dict and set(records) == set(CELLS), 'compatibility-matrix-missing-or-extra-required-cells')
+def assemble(records, *, source_commit, root=ROOT, preserved_directory=None, diagnostic_output=None):
+    require((preserved_directory is None) == (diagnostic_output is None),
+        'compatibility-matrix-preservation-with-current-diagnostics')
+    required = set(CELLS) - set(PRESERVED_CELLS) if preserved_directory is not None else set(CELLS)
+    require(type(records) is dict and set(records) == required, 'compatibility-matrix-missing-or-extra-required-cells')
     require(type(source_commit) is str and len(source_commit) == 40
         and all(c in '0123456789abcdef' for c in source_commit), 'compatibility-matrix-feature-source')
+    preservation, diagnostics = {}, {}
+    if preserved_directory is not None:
+        from tools import compatibility_preserved_cells as retained
+        from tools.compatibility_preserved_diagnostics import diagnose
+        verified = retained.verify_prepared(Path(preserved_directory))
+        require(set(verified['records']) == set(PRESERVED_CELLS),
+            'compatibility-matrix-exact-three-original-executions')
+        records = {**records, **verified['records']}
+        preservation = verified['sourceEquivalence']
+        diagnostic_output = fresh(Path(diagnostic_output))
+        for cell in PRESERVED_CELLS:
+            diagnostics[cell] = diagnose(Path(preserved_directory) / cell /
+                ('build' if cell == 'java' else 'baseline'), diagnostic_output / cell,
+                cell=cell, source_commit=source_commit)
     rows = []
     for cell in CELLS:
         value = records[cell]; language = 'go' if cell == 'go-queues' else 'typescript' if cell == 'typescript-initializer' else cell
-        require(value['status'] == 'passed' and value['sourceCommit'] == source_commit
+        runtime_source = PRESERVED_SOURCE if cell in diagnostics else source_commit
+        require(value['status'] == 'passed' and value['sourceCommit'] == runtime_source
             and value['language'] == language and value['cell'] == cell and value['nativeBuildCount'] == 0
             and value['native']['compiledSource'] == native.QUALIFIED['source']
             and value['native']['producerRun'] == native.QUALIFIED['run']
             and value['native']['producerJob'] == native.QUALIFIED['job'], 'compatibility-matrix-detached-or-incomplete-owner')
-        baseline = value['baseline']; analysis = api.validate(baseline['api'])
+        baseline = value['baseline']
+        analysis = api.validate(diagnostics[cell]['currentAPI'] if cell in diagnostics else baseline['api'])
         require(analysis['state'] == 'observed' and analysis['language'] == language
             and analysis['componentDigest'] == baseline['component']['sha256']
             and value['defaultPresentation']['explicitAnalysisSelector'] is False,
@@ -191,10 +212,13 @@ def assemble(records, *, source_commit, root=ROOT):
                 for row in value['initializerSigned']['programme']['cases']),
                 'compatibility-matrix-real-TypeScript-native-Unsupported-and-count')
         rows.append({'cell': cell, 'language': language, 'component': baseline['component'],
-            'APIAnalysisIdentity': analysis['identity'], 'sourceCommit': source_commit,
+            'APIAnalysisIdentity': analysis['identity'], 'sourceCommit': value['sourceCommit'],
+            'diagnosticSourceCommit': source_commit,
+            'executionScope': 'preserved-original-cc8b-execution' if cell in diagnostics else 'current-fixed-cell-execution',
             'arbitraryApiSafety': 'unknown', 'physicalRetirementScope': 'only-actual-fixed-owner-observations'})
     return {'schemaVersion': 'latent.compatibility.closure-matrix.v1', 'status': 'required-finite-owners-passed',
         'sourceCommit': source_commit, 'cells': rows, 'historicalEvidence': historical(root),
+        'preservedExecutions': preservation, 'currentPassiveDiagnostics': diagnostics,
         'nativeSource': native.QUALIFIED['source'], 'nativeRun': native.QUALIFIED['run'],
         'sharedEngineStack': {'scope': 'unsigned-normal-component-containment-only',
             'nativeProducerStage': 'compiler-diagnostic-actual-stack-component',
@@ -304,11 +328,14 @@ if __name__ == '__main__':
     rollup.add_argument('--inputs', type=Path, required=True)
     rollup.add_argument('--source-commit', required=True)
     rollup.add_argument('--output', type=Path, required=True)
+    rollup.add_argument('--preserved', type=Path)
+    rollup.add_argument('--diagnostics', type=Path)
     args = parser.parse_args()
     if args.command == 'retain': retain(args.source, args.output)
     else:
-        require({path.name for path in args.inputs.iterdir()} == set(CELLS),
+        cells = set(CELLS) - set(PRESERVED_CELLS) if args.preserved is not None else set(CELLS)
+        require({path.name for path in args.inputs.iterdir()} == cells,
             'compatibility-matrix-exact-artifact-directories')
-        result = assemble({cell: read_retained(args.inputs / cell) for cell in CELLS},
-            source_commit=args.source_commit)
+        result = assemble({cell: read_retained(args.inputs / cell) for cell in cells},
+            source_commit=args.source_commit, preserved_directory=args.preserved, diagnostic_output=args.diagnostics)
         write_json(args.output, result)

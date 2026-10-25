@@ -17,7 +17,7 @@ PRIMARY = {'c': 'outside-api-primary/2026.10.25', 'rust': 'outside-api-primary',
 CHILD = {'c': 'outside-api-child/2026.10.25', 'rust': 'outside-api-child',
          'go': 'outside.example.test/api-child'}
 ROOTS = {'c': 'compatibility_root', 'rust': 'compatibility_root', 'go': 'compatibilityRoot'}
-CALLEES = {'c': 'outside_api_primary', 'rust': 'outside_api_primary::probe', 'go': 'primary.Probe'}
+CALLEES = {'c': 'outside_api_primary', 'rust': 'probe', 'go': 'primary.Probe'}
 API_KEYS = {'c': 'c.fopen.valid-mode', 'rust': 'rust.std.fs.File.open', 'go': 'go.os.Open'}
 ROOT_EDGES = {
     'c': (b'if (0) { /* lsf-api-root-edge */', b'if (1) { /* lsf-api-root-edge */'),
@@ -46,11 +46,12 @@ bool exports_examples_greeting_api_greet(probe_string_t *name, probe_string_t *v
     return true;
 }
 '''
-RUST = r'''#[inline(never)]
+RUST = r'''use outside_api_primary::probe;
+#[inline(never)]
 #[no_mangle]
 fn compatibility_root() -> i32 {
     if false { // lsf-api-root-edge
-        return outside_api_primary::probe();
+        return probe();
     }
     0
 }
@@ -327,7 +328,8 @@ func Greet(_ string) wit.Result[string, string] {
     return wit.Ok[string, string]("api|go|initialization|unsupported|result=42|count=1")
 }
 '''
-RUST_INITIALIZER = r'''use std::sync::{LazyLock, atomic::{AtomicU32, Ordering}};
+RUST_INITIALIZER = r'''use outside_api_primary::probe;
+use std::sync::{LazyLock, atomic::{AtomicU32, Ordering}};
 static INITIALIZER_CALLS: AtomicU32 = AtomicU32::new(0);
 static GREETING_CALLS: AtomicU32 = AtomicU32::new(0);
 static INITIALIZER_RESULT: LazyLock<i32> = LazyLock::new(|| {
@@ -337,7 +339,7 @@ static INITIALIZER_RESULT: LazyLock<i32> = LazyLock::new(|| {
 });
 #[inline(never)]
 #[no_mangle]
-fn compatibility_root() -> i32 { outside_api_primary::probe() }
+fn compatibility_root() -> i32 { probe() }
 pub fn greet(_name: String) -> Result<String, String> {
     assert_eq!(GREETING_CALLS.fetch_add(1, Ordering::SeqCst), 0, "api-fixture-initialization-state");
     let first = *LazyLock::force(&INITIALIZER_RESULT);

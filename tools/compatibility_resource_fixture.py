@@ -97,7 +97,7 @@ function compatibilityInitialization() {
   const first = Initializer.value, second = Initializer.value;
   if (first !== 42 || second !== 42 || compatibilityInitializerCalls !== 1)
     throw new Error('initializer-native-result-or-count');
-  return {ok: 'api|typescript|initialization|unsupported|result=42|count=1'};
+  return 'api|typescript|initialization|unsupported|result=42|count=1';
 }
 '''
 

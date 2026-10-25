@@ -132,7 +132,17 @@ internal static class CilReferences
                 Require(file.Exists && file.LinkTarget is null && file.Length is > 0 and <= 16 * 1024 * 1024);
                 total += file.Length; Require(total <= 64 * 1024 * 1024);
                 var module = new Module(File.ReadAllBytes(path)); owned.Add(module);
-                Require(modules.TryAdd(module.Identity, module));
+                if (modules.TryGetValue(module.Identity, out var canonical))
+                {
+                    // Actual ILC inputs may alias the SAME complete assembly
+                    // through different original paths. Identity alone never
+                    // permits two different implementations to resolve here.
+                    if (!canonical.Bytes.AsSpan().SequenceEqual(module.Bytes))
+                        throw new InvalidDataException("compiler-cil-identity-image-collision "
+                            + canonical.Digest + " " + module.Digest);
+                    continue;
+                }
+                modules.Add(module.Identity, module);
                 foreach (var type in module.Metadata.TypeDefinitions)
                 {
                     Require(++types <= MaxTypes);
@@ -159,7 +169,7 @@ internal static class CilReferences
                         ReferenceIdentity(module.Metadata, (AssemblyReferenceHandle)forward.Implementation)));
                 }
             }
-            var core = owned.Where(module => module.Digest == corelibDigest).ToArray();
+            var core = modules.Values.Where(module => module.Digest == corelibDigest).ToArray();
             Require(core.Length == 1 && core[0].Metadata.GetString(core[0].Metadata.GetAssemblyDefinition().Name)
                 == "System.Private.CoreLib");
             var opcodes = new Dictionary<ushort, OpCode>();
@@ -189,7 +199,10 @@ internal static class CilReferences
                 apiBodies.Add(new ApiBody("System.IO.Path.GetTempFileName", MethodId(corelibDigest, handle),
                     corelibDigest, Hash(signature), Hash(il), MetadataTokens.GetToken(handle)));
             }
-            foreach (var module in owned.Take(sourceAssemblies))
+            // Keep ALL original input positions in owned. Deduplicate only
+            // inside the original source prefix, never before Take: otherwise
+            // an alias could move a reference assembly into the source set.
+            foreach (var module in owned.Take(sourceAssemblies).DistinctBy(module => module.Digest))
             foreach (var handle in module.Metadata.MethodDefinitions)
             {
                 var method = module.Metadata.GetMethodDefinition(handle);

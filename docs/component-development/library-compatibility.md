@@ -321,7 +321,7 @@ input hashes, and the two earlier control failures and their precise corrections
 
 Normal C, Rust, Go, Java, .NET and TypeScript builds automatically select bounded
 queries from their captured declarations and initializer/export anchors. The
-ordinary compatibility report reads the resulting `compatibility-api.json`
+ordinary compatibility report reads the resulting `compatibility-api-analysis.json`
 sidecar without an application-authored query file or an analysis flag. Selected
 implementation identities are reconstructed from the original build owner;
 missing or unverifiable material stays unknown. This report grants no authority
@@ -342,10 +342,13 @@ bind an implementation revision, prove a library caused the terminal failure,
 or prove physical retirement. Guest stack exhaustion is identified only from
 the engine's actual StackOverflow classification, not a generic unreachable trap.
 
-The fixed completion programme uses one source-exact native prerequisite and
-eight independent hosted cells. Each cell captures its original dependency inputs
-once, then starts a separate 1,800-second compiler/node phase. Its workflow job
-also bounds setup and capture; 1,800 seconds is not a whole-programme claim.
+The fixed completion programme requires eight cells and one source-exact native
+prerequisite. Three passed cells retain their exact `cc8b88b18abda6e03fc3097d8af658f5e16022f6`
+execution receipts; current passive diagnostics are checked separately on their
+original components without rebuilding or invoking guests. Only the five failed
+cells are executed again. Each executed cell captures its original dependency
+inputs once, then starts a separate 1,800-second compiler/node phase. Its workflow
+job also bounds setup and capture; 1,800 seconds is not a whole-programme claim.
 Initializer cases preserve the captured libraries: C constructors and Go package
 variables are eager language initialization, Rust LazyLock and TypeScript class
 static fields are initialized during invocation. Caught Unsupported permits

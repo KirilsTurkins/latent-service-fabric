@@ -49,6 +49,13 @@ class CompilerEdges(unittest.TestCase):
                b' (?) v3 = MakeResult <int32,mem> v2 v1\n Ret v3\n')
         observed = edges.observe('go-ssa', raw, 'gate', 'outside.denied', BINDINGS)
         self.assertEqual(observed['state'], 'edge-not-observed')
+        actual_spelling = raw.replace(b'Const32', b'I64Const')
+        self.assertEqual(edges.observe('go-ssa', actual_spelling, 'gate', 'outside.denied', BINDINGS)['state'],
+                         'edge-not-observed')
+        direct = actual_spelling.replace(b'v2 = I64Const <int32> [0]',
+            b'v2 = LoweredStaticCall <int32,mem> {outside.denied} v1')
+        self.assertEqual(edges.observe('go-ssa', direct, 'gate', 'outside.denied', BINDINGS)['state'],
+                         'observed-direct-edge')
         for instruction in (
                 b' (?) v2 = WasmLoweredClosureCall <int32,mem> v4 v1',
                 b' (?) v2 = Addr <func()> {outside.denied} v1'):

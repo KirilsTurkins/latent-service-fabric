@@ -38,6 +38,16 @@ class CompatibilityApiFixture(unittest.TestCase):
         self.assertIn('volatile int baseline = 0;', fixture.C)
         self.assertIn('return baseline;', fixture.C)
         self.assertEqual(fixture.RUST.count('#[no_mangle]'), 1)
+        from tools.guest_compiler_capture import automatic
+        for reached in (False, True):
+            raw = fixture.application_source('rust', reached=reached)
+            self.assertEqual(raw.count(b'use outside_api_primary::probe;'), 1)
+            self.assertNotIn(b'fn probe(', raw)
+            queries = automatic({'src/lib.rs': raw}, 'rust')['queries']
+            root = [q for q in queries if q['root'] == 'compatibility_root']
+            self.assertEqual([(q['callee'], q['compilerTarget'], q['declarationState']) for q in root],
+                [('probe', 'probe', 'unique-captured-candidate')])
+            self.assertEqual(root[0]['calleeResolution'], 'unresolved-source-spelling')
         self.assertIn('#[inline(never)]\n#[no_mangle]\nfn compatibility_root()', fixture.RUST)
         with self.assertRaises(ValueError): fixture.library_sources('typescript')
 

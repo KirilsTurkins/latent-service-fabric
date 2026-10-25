@@ -18,6 +18,41 @@ from tools.rust_capsule_project import snapshot
 
 
 class CompatibilityClosureOwner(unittest.TestCase):
+    def test_native_client_data_migration_is_exact_and_never_relabels_original_materials(self):
+        products = owner.products
+        paths = tuple(products.NON_COMPILED_DATA)
+        payloads = {name: {'before': b'original-' + str(index).encode(),
+            'after': b'original-' + str(index).encode() + b'-ten-fixed-constants'} for index, name in enumerate(paths)}
+        identities = {name: {version: {'bytes': len(raw), 'sha256': digest(raw)}
+            for version, raw in values.items()} for name, values in payloads.items()}
+        inputs = {'native': dict(products.ORIGINAL_SOURCE), 'materials': {
+            paths[1]: identities[paths[1]]['before']}}
+        unchanged = copy.deepcopy(inputs)
+        with tempfile.TemporaryDirectory() as directory, patch.object(products, 'NON_COMPILED_DATA', identities):
+            root = Path(directory)
+            for version, source in (('before', products.ORIGINAL_SOURCE), ('after', products.CLIENT_DATA_SOURCE)):
+                for name in paths:
+                    path = root / name; path.parent.mkdir(parents=True, exist_ok=True)
+                    path.write_bytes(payloads[name][version])
+                with patch.object(products, 'source_identity', return_value=source):
+                    result = products.current_source(inputs, root=root)
+                    self.assertEqual(result['currentSource'], source)
+                    self.assertEqual(result['originalProducerSource'], products.ORIGINAL_SOURCE)
+                    self.assertFalse(result['sourceRelabeled'])
+                    (root / paths[1]).write_bytes(b'unknown descriptor')
+                    with self.assertRaisesRegex(WorkflowError, 'unreviewed-client-data'):
+                        products.current_source(inputs, root=root)
+                (root / paths[1]).write_bytes(payloads[paths[1]][version])
+            with patch.object(products, 'source_identity', return_value={**products.CLIENT_DATA_SOURCE, 'bytes': 1}):
+                with self.assertRaisesRegex(WorkflowError, 'unreviewed-current-source'):
+                    products.current_source(inputs, root=root)
+            with patch.object(products, 'source_identity', return_value=products.CLIENT_DATA_SOURCE):
+                changed = copy.deepcopy(inputs)
+                changed['materials'][paths[1]] = identities[paths[1]]['after']
+                with self.assertRaisesRegex(WorkflowError, 'original-material-not-rebound'):
+                    products.current_source(changed, root=root)
+            self.assertEqual(inputs, unchanged)
+
     def test_actual_normal_C_capture_is_in_process_and_counterfactual_keeps_accepted_library_identity(self):
         with tempfile.TemporaryDirectory() as temporary, patch.object(
                 subprocess, 'Popen', side_effect=AssertionError('no-native-tool-or-outer-Python')):

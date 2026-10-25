@@ -71,7 +71,10 @@ class ApiRootClassifier(unittest.TestCase):
         component = b'\0asm\x0d\0\x01\0' + section(1, raw) + section(1, raw)
         self.assertEqual(api.emitted_root_join(component, ['gate'])['gate']['state'], 'unmapped-or-ambiguous')
         dynamic = core([b'\x41\x00\x11\x00\x00\x0b', b'\x01\x0b'], table=True, names={2: 'gate'})
-        self.assertEqual(api.emitted_root_join(dynamic, ['gate'])['gate']['state'], 'dynamic-unknown')
+        joined = api.emitted_root_join(dynamic, ['gate'])['gate']
+        self.assertEqual(joined['state'], 'potential-root-path')
+        self.assertEqual(joined['phases'], ['callbacks'])
+        self.assertEqual(joined['apiElimination'], 'not-established')
 
     def test_complete_local_edge_absence_and_emitted_root_do_not_certify_global_api_elimination(self):
         files = {'src/main.c': ROOT}

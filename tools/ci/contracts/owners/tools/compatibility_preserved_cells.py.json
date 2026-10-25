@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/compatibility_preserved_cells.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Reviewed actual failed-cell corrections and exact-three cc8b original execution authentication plus separately current passive diagnostics; all eight cells remain mandatory with original source/profile, owner boundaries and limits.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "8329b800f0b19175f5308a5b433662bc3a3c4105e329806a15c667fe99d77729"
+}

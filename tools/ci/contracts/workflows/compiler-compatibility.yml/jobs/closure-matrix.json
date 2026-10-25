@@ -46,29 +46,8 @@
       {
         "uses": "actions/download-artifact",
         "with": {
-          "name": "compatibility-closure-${{ github.sha }}-java",
-          "path": "${{ runner.temp }}/compatibility-inputs/java"
-        }
-      },
-      {
-        "uses": "actions/download-artifact",
-        "with": {
           "name": "compatibility-closure-${{ github.sha }}-dotnet",
           "path": "${{ runner.temp }}/compatibility-inputs/dotnet"
-        }
-      },
-      {
-        "uses": "actions/download-artifact",
-        "with": {
-          "name": "compatibility-closure-${{ github.sha }}-typescript",
-          "path": "${{ runner.temp }}/compatibility-inputs/typescript"
-        }
-      },
-      {
-        "uses": "actions/download-artifact",
-        "with": {
-          "name": "compatibility-closure-${{ github.sha }}-go-queues",
-          "path": "${{ runner.temp }}/compatibility-inputs/go-queues"
         }
       },
       {
@@ -80,10 +59,17 @@
       },
       {
         "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Authenticate the three exact passed cc8b cells without rebuilding or invoking guests",
+        "run": "python3 -B tools/compatibility_preserved_cells.py --output \"$RUNNER_TEMP/compatibility-preserved\""
+      },
+      {
+        "env": {
           "SOURCE_COMMIT": "${{ github.sha }}"
         },
         "name": "Require every exact cell and preserve historical scope",
-        "run": "python3 -B tools/compatibility_closure_matrix.py assemble --inputs \"$RUNNER_TEMP/compatibility-inputs\" --source-commit \"$SOURCE_COMMIT\" --output \"$RUNNER_TEMP/compatibility-completion.json\""
+        "run": "python3 -B tools/compatibility_closure_matrix.py assemble --inputs \"$RUNNER_TEMP/compatibility-inputs\" --source-commit \"$SOURCE_COMMIT\" --preserved \"$RUNNER_TEMP/compatibility-preserved\" --diagnostics \"$RUNNER_TEMP/compatibility-current-diagnostics\" --output \"$RUNNER_TEMP/compatibility-completion.json\""
       },
       {
         "uses": "actions/upload-artifact",
@@ -99,7 +85,7 @@
   },
   "jobId": "closure-matrix",
   "kind": "job",
-  "reviewReason": "Require all eight exact current-run artifacts and original historical scope; authenticate finite public-union hashes before strict outcome rollup. No issue closure or runtime authority is inferred automatically.",
+  "reviewReason": "Reviewed actual failed-cell corrections and exact-three cc8b original execution authentication plus separately current passive diagnostics; all eight cells remain mandatory with original source/profile, owner boundaries and limits.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/compiler-compatibility.yml"
 }

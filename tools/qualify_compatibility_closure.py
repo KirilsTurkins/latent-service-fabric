@@ -25,7 +25,7 @@ from tools import guest_compiler_edges, guest_dependency_inputs
 from tools import application_dependencies
 from tools.build_observation import build_environment
 from tools.dev_workflow.common import require
-from tools.phase3_resource_identity import file_identity, source_identity
+from tools.phase3_resource_identity import file_identity
 from tools.rust_capsule_build import Commands
 from tools.rust_capsule_project import ROOT, digest, fresh, inventory, read_file, read_json, snapshot, write_json
 from tools.run_rust_capsule_workflow import write_workflow_receipt
@@ -238,14 +238,9 @@ def qualify(cell, native_directory, tools, output, *, engine=None, read_only_cac
         'compatibility-closure-unambiguous-prepared-compiler-selection')
     native_directory, tools = (Path(path).resolve(strict=True) for path in (native_directory, tools))
     compiled = reader.verify_prepared(native_directory)
-    current = source_identity(ROOT)
     native_inputs = read_json(native_directory / 'source-inputs.json', 1024**2)
-    require(native_inputs['native'] == current, 'compatibility-closure-current-native-source')
-    for name, expected in native_inputs['materials'].items():
-        if name.startswith(('api/proto/', 'wit/', 'schemas/', 'examples/echo-contract/wit/')) \
-                or name == '.cargo/managed-guest.toml':
-            require(file_identity(ROOT / name, 8 * 1024**2) == expected,
-                'compatibility-closure-current-native-compiled-auxiliary-input')
+    native_preflight = products.current_source(native_inputs)
+    current = native_preflight['currentSource']
     native = reader.native_products(native_directory)
     for path in native.values(): path.chmod(0o700)
     native_before = {name: file_identity(path, 512 * 1024**2) for name, path in native.items()}
@@ -257,6 +252,7 @@ def qualify(cell, native_directory, tools, output, *, engine=None, read_only_cac
     head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, timeout=10).decode().strip()
     record = {'schemaVersion': 'latent.compatibility.closure-language.v1', 'language': language, 'cell': cell,
         'status': 'incomplete', 'sourceCommit': head, 'native': compiled, 'nativeSource': current,
+        'nativeSourcePreflight': native_preflight,
         'guestBuildCount': 0, 'nativeBuildCount': 0, 'runtimeQualificationFromGraph': False,
         'arbitraryApiSafety': 'unknown', 'wholeTicketComplete': False,
         'workflowJobMaximumMinutes': JOB_MINUTES[cell], 'captureAllowanceSeconds': CAPTURE_SECONDS[cell],
@@ -339,7 +335,7 @@ def qualify(cell, native_directory, tools, output, *, engine=None, read_only_cac
                     'scope': value['expectedScope'], 'sourceAssertions': 'nativeUnsupported-and-initializerCount1',
                     'repeatInFreshStore': True, 'initializerFailureClaimed': False,
                     'beforeApplicationGreetingBody': language != 'rust', 'componentStartClaimed': False}
-        require(reader.verify_prepared(native_directory) == compiled and source_identity(ROOT) == current
+        require(reader.verify_prepared(native_directory) == compiled and products.current_source(native_inputs) == native_preflight
             and native_before == {name: file_identity(path, 512 * 1024**2) for name, path in native.items()}
             and subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, timeout=10).decode().strip() == head
             and time.monotonic() < commands.deadline, 'compatibility-closure-final-source-products-and-owner-budget')

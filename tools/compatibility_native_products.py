@@ -11,6 +11,8 @@ if __package__ in {None, ''}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from tools.phase2_operator_process import require
+from tools.phase3_resource_identity import file_identity, source_identity
+from tools.rust_capsule_project import ROOT
 from tools.sdk_native_products_reader import FrozenNativeProducts
 
 QUALIFIED = {
@@ -36,6 +38,52 @@ STAGES = (
     'release-preparation-command-name-controls', 'release-preparation-dispatch-controls',
     'ordinary-async-worker-owner-controls', 'compiler-diagnostic-owner-buckets',
     'compiler-diagnostic-native-memory', 'compiler-diagnostic-engine-stack', 'compiler-diagnostic-actual-stack-component')
+
+# Two exact censuses, not an ignored-path rule. The second differs ONLY in the
+# ten generated management-client constants. latent-sdk is not a dependency of
+# any of the five produced host targets; their Cargo/build.rs/proto inputs are
+# byte-identical. The descriptor JSON is a test oracle, not the compiled proto.
+# The original archive/source/material attestations are never rewritten.
+ORIGINAL_SOURCE = {'sha256': 'sha256:5db73985742dcd383f3b76491b36560267f31fba24195689e27a743e5b0b95a4',
+    'files': 3753, 'bytes': 34470544, 'scope': 'explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs',
+    'hermetic': False, 'implicitCompilerInputs': 'not-attested'}
+CLIENT_DATA_SOURCE = {**ORIGINAL_SOURCE,
+    'sha256': 'sha256:f75950327458321d594393d94e3f14f3765786c92d3e0adbfbbe8d3e626f7a72', 'bytes': 34471085}
+NON_COMPILED_DATA = {
+    'sdk/rust/src/management.rs': {
+        'before': {'bytes': 22456, 'sha256': 'sha256:885be3d11d99eb2004a70e4cc1bdc12153a30fd38f28c15e213b4111bee93d07'},
+        'after': {'bytes': 22997, 'sha256': 'sha256:2e5114f48efb5015fe54a5b5ed2ff0c42ab52381a089d1cdd2b211706629e5c9'}},
+    'api/proto/phase1-descriptor-contract.json': {
+        'before': {'bytes': 249286, 'sha256': 'sha256:b08186d23e2c55063cfb2a6c69e0a48cc1f6d57ba063967ef0c9d2e6b704ba95'},
+        'after': {'bytes': 249737, 'sha256': 'sha256:8294dbb1c168ad2bad957f342001fc0b28de3f80fab6c87f62986d52da4c24f2'}}}
+
+
+def current_source(producer_inputs, *, root=ROOT):
+    """Check one reviewed noncompiled-data migration without relabeling a build."""
+    require(producer_inputs['native'] == ORIGINAL_SOURCE, 'compatibility-native-original-producer-source')
+    current = source_identity(root)
+    require(current in (ORIGINAL_SOURCE, CLIENT_DATA_SOURCE), 'compatibility-native-unreviewed-current-source')
+    version = 'before' if current == ORIGINAL_SOURCE else 'after'
+    for name, identities in NON_COMPILED_DATA.items():
+        require(file_identity(root / name, 8 * 1024**2) == identities[version],
+            'compatibility-native-incomplete-or-unreviewed-client-data')
+    for name, expected in producer_inputs['materials'].items():
+        if name.startswith(('api/proto/', 'wit/', 'schemas/', 'examples/echo-contract/wit/')) \
+                or name == '.cargo/managed-guest.toml':
+            if name in NON_COMPILED_DATA:
+                require(expected == NON_COMPILED_DATA[name]['before'],
+                    'compatibility-native-original-material-not-rebound')
+            else:
+                require(file_identity(root / name, 8 * 1024**2) == expected,
+                    'compatibility-native-original-compiled-auxiliary-input')
+    require(producer_inputs['materials'].get('api/proto/phase1-descriptor-contract.json') ==
+        NON_COMPILED_DATA['api/proto/phase1-descriptor-contract.json']['before'],
+        'compatibility-native-original-descriptor-material')
+    return {'currentSource': current, 'originalProducerSource': ORIGINAL_SOURCE,
+        'sourceRelabeled': False, 'migration': 'none' if version == 'before' else 'exact-ten-generated-client-constants',
+        'nonCompiledData': {name: row[version] for name, row in NON_COMPILED_DATA.items()},
+        'compiledInputScope': 'same-five-targets-Cargo-build-rs-proto-and-linked-inputs',
+        'historicalArchiveAndMaterialsUnchanged': True}
 
 
 def reader():

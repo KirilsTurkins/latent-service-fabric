@@ -703,3 +703,15 @@ descriptor semantic. No existing field, service signature, reservation or enum
 value changes. The .NET generation lock follows the same authoritative source:
 the pinned Grpc.Tools 2.71.0 generators reproduced all sixteen previous outputs
 before regeneration, and only `Release.cs` changes with the current proto.
+
+## Runtime resource diagnostic reasons
+
+The October 25, 2026 descriptor update records the additive `DiagnosticReason`
+values 17 through 26 for the original runtime owner limits, native thread-start
+limit, native-memory exhaustion and engine stack exhaustion. Removing only these
+ten values restores the previous descriptor golden exactly. Existing numbers,
+fields, reservations, messages and service signatures remain unchanged.
+
+The six generated client models expose the same constants and retain unknown
+numeric values. These labels grant no authority and do not replace the original
+invocation outcome, establish API attribution, or prove physical retirement.

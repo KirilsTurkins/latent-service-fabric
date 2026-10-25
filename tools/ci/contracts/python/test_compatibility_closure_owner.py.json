@@ -2,6 +2,7 @@
   "cases": [
     "CompatibilityClosureOwner.test_actual_normal_C_capture_is_in_process_and_counterfactual_keeps_accepted_library_identity",
     "CompatibilityClosureOwner.test_completed_capture_after_allowance_cannot_start_the_compiler_phase",
+    "CompatibilityClosureOwner.test_native_client_data_migration_is_exact_and_never_relabels_original_materials",
     "CompatibilityClosureOwner.test_original_queue_operation_fact_never_replaces_unrelated_terminal_cause",
     "CompatibilityClosureOwner.test_unqualified_native_tuple_refuses_before_output_or_acquisition"
   ],
@@ -19,6 +20,18 @@
       "skipSites": []
     },
     "CompatibilityClosureOwner.test_completed_capture_after_allowance_cannot_start_the_compiler_phase": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2546ea586c87fbd7008eb14ad8c8dd3c00019918be51ccff43c93ad3a00c46c8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CompatibilityClosureOwner.test_native_client_data_migration_is_exact_and_never_relabels_original_materials": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -57,6 +70,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_compatibility_closure_owner.py",
-  "reviewReason": "Whole679 reviewed finite source controls: all original cases, bases, decorators and skip sites retained; explicit fixture-only guard changes bind reviewed helper/source setup. Actual compiler/node qualification is separate.",
+  "reviewReason": "Reviewed actual failed-cell corrections and exact-three cc8b original execution authentication plus separately current passive diagnostics; all eight cells remain mandatory with original source/profile, owner boundaries and limits.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
