@@ -73,7 +73,6 @@ jobs:
       actions: read
     env:
       PYTHONDONTWRITEBYTECODE: 1
-      LSF_DEV_COMPILER_CACHE: ${{ runner.temp }}/compiler-archives
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -128,6 +127,8 @@ jobs:
       - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
         with:
           version: 1.254.0
+      - name: Select the runner-owned compiler archive cache
+        run: printf 'LSF_DEV_COMPILER_CACHE=%s\n' "$RUNNER_TEMP/compiler-archives" >> "$GITHUB_ENV"
       - name: Restore untrusted source-pinned Java prepared inputs
         id: java-compiler-cache
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
