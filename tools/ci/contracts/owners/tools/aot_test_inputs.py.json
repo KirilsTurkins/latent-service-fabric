@@ -1,1 +1,8 @@
-{"kind":"owner","path":"tools/aot_test_inputs.py","reviewBoundary":"committed-fingerprint","reviewReason":"Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.","schemaVersion":"latent.ci.contracts.v1","sha256":"a8b40e498a3eb77b00fd8531e9c31a0a7c74200e25865703633d4304dcda98e7"}
+{
+  "kind": "owner",
+  "path": "tools/aot_test_inputs.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Bind the exact five-feature all-features test closure and increment its shared producer/consumer profile to v5; keep production feature defaults, preparation commands, executable identities and limits unchanged.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "9550e41482c08111a526e57b56bb5882712f933023e68bae616b02f7bdff3a5a"
+}
