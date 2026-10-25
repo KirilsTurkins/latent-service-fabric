@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_dotnet_finite_waits.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Retain the reviewed AggregateTaskWait compiler source in the existing explicit source closure; original controls, runtime behavior, pinning and qualification scope remain unchanged.",
+  "reviewReason": "Promote only the existing declaration-guarded managed finite selection to the authenticated 95-helper aggregate derivation; retain old modes/evidence and all limits, and add one normal Polly NativeAOT component with fourteen signed outcomes, source-exact v10 product reuse and bounded public evidence.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "70ef206b821a709d94172491af832f166f2c91e6eef32d7246fc830281a4cc24"
+  "sha256": "f338d039b48191e79f644300540358d38c71a4320fd8b6e7a7843c07afd5e334"
 }

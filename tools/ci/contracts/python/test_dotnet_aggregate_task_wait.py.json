@@ -1,0 +1,88 @@
+{
+  "cases": [
+    "AggregateTaskWaitPortTests.test_authenticated_receipt_refuses_every_missing_or_cross_typed_aggregate_identity",
+    "AggregateTaskWaitPortTests.test_both_node_modes_keep_the_actual_fresh_directory_owner_callable",
+    "AggregateTaskWaitPortTests.test_legacy_receipts_and_authority_selections_cannot_impersonate_aggregate",
+    "AggregateTaskWaitPortTests.test_normal_managed_selection_preserves_exact_final_corelib_chain_and_rejects_drift",
+    "AggregateTaskWaitPortTests.test_public_evidence_gate_excludes_private_workspaces_and_reserves_admission_bytes",
+    "AggregateTaskWaitPortTests.test_rehashed_build_cannot_hide_changed_aggregate_selection_or_final_helper_chain"
+  ],
+  "guards": {
+    "AggregateTaskWaitPortTests.test_authenticated_receipt_refuses_every_missing_or_cross_typed_aggregate_identity": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:3b2c8da9864fc1cf11cdadd5163b6e068854fe3455b1dbac75effd79cef2b2e5",
+        "class:setup-sha256:d9d3d387dd625de5f1745a5a63c7012699862cebb8b4d2b4b82ced885ca714d0"
+      ],
+      "skipSites": []
+    },
+    "AggregateTaskWaitPortTests.test_both_node_modes_keep_the_actual_fresh_directory_owner_callable": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:3b2c8da9864fc1cf11cdadd5163b6e068854fe3455b1dbac75effd79cef2b2e5",
+        "class:setup-sha256:d9d3d387dd625de5f1745a5a63c7012699862cebb8b4d2b4b82ced885ca714d0"
+      ],
+      "skipSites": []
+    },
+    "AggregateTaskWaitPortTests.test_legacy_receipts_and_authority_selections_cannot_impersonate_aggregate": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:3b2c8da9864fc1cf11cdadd5163b6e068854fe3455b1dbac75effd79cef2b2e5",
+        "class:setup-sha256:d9d3d387dd625de5f1745a5a63c7012699862cebb8b4d2b4b82ced885ca714d0"
+      ],
+      "skipSites": []
+    },
+    "AggregateTaskWaitPortTests.test_normal_managed_selection_preserves_exact_final_corelib_chain_and_rejects_drift": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:3b2c8da9864fc1cf11cdadd5163b6e068854fe3455b1dbac75effd79cef2b2e5",
+        "class:setup-sha256:d9d3d387dd625de5f1745a5a63c7012699862cebb8b4d2b4b82ced885ca714d0"
+      ],
+      "skipSites": []
+    },
+    "AggregateTaskWaitPortTests.test_public_evidence_gate_excludes_private_workspaces_and_reserves_admission_bytes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:3b2c8da9864fc1cf11cdadd5163b6e068854fe3455b1dbac75effd79cef2b2e5",
+        "class:setup-sha256:d9d3d387dd625de5f1745a5a63c7012699862cebb8b4d2b4b82ced885ca714d0"
+      ],
+      "skipSites": []
+    },
+    "AggregateTaskWaitPortTests.test_rehashed_build_cannot_hide_changed_aggregate_selection_or_final_helper_chain": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:3b2c8da9864fc1cf11cdadd5163b6e068854fe3455b1dbac75effd79cef2b2e5",
+        "class:setup-sha256:d9d3d387dd625de5f1745a5a63c7012699862cebb8b4d2b4b82ced885ca714d0"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_dotnet_aggregate_task_wait.py",
+  "reviewReason": "Promote only the existing declaration-guarded managed finite selection to the authenticated 95-helper aggregate derivation; retain old modes/evidence and all limits, and add one normal Polly NativeAOT component with fourteen signed outcomes, source-exact v10 product reuse and bounded public evidence.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

@@ -46,13 +46,14 @@ def recipe_inputs(artifact):
     return inventory({n:read_file(ROOT/n) for n in {*RECIPE,host}})
 
 
-def current_native_source():
+def current_native_source(selected_products=products):
     current=source_identity(ROOT)
-    require(current==git_source_identity(products.SOURCE), 'finite-wait-current-native-source-must-match-producer')
+    require(current==git_source_identity(selected_products.SOURCE), 'finite-wait-current-native-source-must-match-producer')
     return current
 
 
-def build_evidence(artifact):
+def build_evidence(artifact, *, aggregate: bool=False):
+    require(type(aggregate) is bool, 'finite-wait-closed-build-evidence-selection')
     names = ('BUILD-COMPLETE.json', 'build-observation.json', 'source-inputs.json', 'recipe-inputs.json',
         'package-inputs.json', 'runtime-profile.json', 'compiler-patches.json', 'task-wait-port.json',
         'closed-filesystem-port.json', 'noncrypto-entropy-port.json', 'managed-entropy-port.json')
@@ -66,7 +67,8 @@ def build_evidence(artifact):
         and marker['sourceDigest']==identities['source-inputs.json']['sha256'], 'finite-wait-normal-observed-build')
     require(observed['parameters']=={'compiler':'native-aot-llvm','bindings':'wit-bindgen-csharp','language':'csharp',
         'target':'wasi-wasm','runtime':'native-aot','locked':True,'ambientWasi':False}
-        and profile['profile']=='runtime' and sorted(profile['declaredImports'])==sorted(DECLARATIONS)
+        and profile['profile']==('runtime-managed' if aggregate else 'runtime')
+        and sorted(profile['declaredImports'])==sorted(DECLARATIONS)
         and 'closedIoPort' not in profile, 'finite-wait-exact-runtime-without-http-log-or-closed-io')
     for material, filename in (('build-recipe','recipe-inputs.json'), ('package-inputs','package-inputs.json'),
         ('runtime-profile','runtime-profile.json'), ('dotnet-task-wait-port','task-wait-port.json'),
@@ -75,7 +77,8 @@ def build_evidence(artifact):
         require(selected==[{'name':material,'digest':value['sha256'],'size':value['bytes']}], 'finite-wait-observed-selected-material')
     port = read_json(artifact/'task-wait-port.json')
     extras = {'profile','frameworkInput','tool','derived','sourceCaptureDigest','targetsDigest','nativeAotReferenceBinding','selection'}
-    task_wait.validate_receipt({k:v for k,v in port.items() if k not in extras}, finite=True)
+    task_wait.validate_receipt({k:v for k,v in port.items() if k not in extras},
+        finite=True, managed=aggregate, aggregate=aggregate)
     fs = read_json(artifact/'closed-filesystem-port.json')
     require(port['profile']==task_wait.PROFILE and port['frameworkInput']['digest']==task_wait.SOURCE
         and port['derived']['digest']==port['outputDigest']
@@ -91,21 +94,36 @@ def build_evidence(artifact):
         and all(rows[0]['selection'][k]==port[k] for k in ('finiteAndCancellableWaits','generatedHelperCount',
             'finiteWaitCleanup','zeroTimeout','waitCancellation','publicWaitValidationAndExceptions')),
         'finite-wait-compiler-patch-selection')
+    if aggregate:
+        require(rows[0]['selection']['aggregateTaskWait']==port['aggregateTaskWait']
+            and fs['unchangedBaseMethods']==44839,
+            'aggregate-wait-compiler-selection-and-final-filesystem-chain')
     return {'component':component, 'documents':identities, 'taskWaitPort':port, 'package':package_identity(artifact,marker)}
 
 
-def qualify(native_directory, tools, output):
+def qualify(native_directory, tools, output, *, aggregate: bool=False):
+    require(type(aggregate) is bool, 'finite-wait-closed-owner-selection')
+    selected_fixture, selected_products=fixture,products
+    selected_materials=MATERIALS
+    if aggregate:
+        from tools import dotnet_aggregate_wait_fixture as selected_fixture
+        from tools import wasmtime_48_0_7_v10_native_products as selected_products
+        selected_materials=tuple(sorted(set((*MATERIALS,
+            'tools/qualify_dotnet_aggregate_waits.py', 'tools/dotnet_aggregate_wait_fixture.py',
+            selected_fixture.LIBRARY, 'tools/dotnet_published_task_fixture.py',
+            'tools/wasmtime_48_0_7_v10_native_products.py',
+            '.github/workflows/dotnet-aggregate-task-waits.yml'))))
     require(sys.platform=='linux' and sys.version_info>=(3,13), 'finite-wait-linux-python313')
     native_directory, tools = (Path(p).resolve(strict=True) for p in (native_directory,tools))
     output=Path(output).absolute()
     require(output!=ROOT and ROOT not in output.parents and output not in ROOT.parents
         and all(output!=p and output not in p.parents and p not in output.parents for p in (native_directory,tools)),
         'finite-wait-separated-inputs')
-    compiled=products.verify_prepared(native_directory); native=products.native_products(native_directory)
+    compiled=selected_products.verify_prepared(native_directory); native=selected_products.native_products(native_directory)
     for path in native.values(): path.chmod(0o700)
     output=fresh(output)
     source=subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,timeout=10).decode().strip()
-    materials={n:file_identity(ROOT/n) for n in MATERIALS}; current=current_native_source()
+    materials={n:file_identity(ROOT/n) for n in selected_materials}; current=current_native_source(selected_products)
     runtime_source=runtime_inputs(ROOT)
     require(read_file(tools/'runtime-inputs.json')==runtime_source, 'finite-wait-current-installer-runtime-inputs')
     installation={n:file_identity(tools/n,16*1024**2) for n in ('INSTALL-COMPLETE.json','runtime-inputs.json','wasi-sdk.json')}
@@ -115,10 +133,16 @@ def qualify(native_directory, tools, output):
         'nativeProductsBuilt':0,'engineRebuilt':False,'guestComponentsCompiled':0,'freshNativeAotRequired':True,
         'nativeAotCompilationAttempted':False,'historicalGuestQualificationRelabelled':False,
         'fullTicketQualification':False,'cpuPreemptionQualified':False,'applicationSchedulerReplacement':False}
+    if aggregate:
+        record['schemaVersion']='latent.dotnet.aggregate-task-waits.qualification.v1'
     stage='ordinary-library-normal-capture'
     try:
-        app,record['capture']=fixture.prepare(output/'project',output/'outside',tools)
-        require(record['capture']['originalLibraryAndFeedRemoved'], 'finite-wait-originals-physically-removed')
+        app,record['capture']=selected_fixture.prepare(output/'project',output/'outside',tools)
+        if aggregate:
+            require(record['capture']['normalResolverWorkspaceEphemeral'] is True,
+                'aggregate-wait-normal-published-capture')
+        else:
+            require(record['capture']['originalLibraryAndFeedRemoved'], 'finite-wait-originals-physically-removed')
         captured=inventory(snapshot(app));write_json(output/'capture.json',record['capture'])
         stage='single-fresh-normal-offline-native-aot';record['nativeAotCompilationAttempted']=True
         artifact=build(app,output/'build',native['capsule_contracts'],native['package'],
@@ -127,18 +151,18 @@ def qualify(native_directory, tools, output):
         require(read_file(artifact/'source-inputs.json')==captured
             and read_file(artifact/'recipe-inputs.json')==recipe_inputs(artifact),
             'finite-wait-actual-source-and-recipe')
-        record['freshBuild']=build_evidence(artifact)
+        record['freshBuild']=build_evidence(artifact,aggregate=aggregate)
         stage='signed-admitted-finite-waits-and-pending-root-terminals'
-        actual=node.run(artifact,native,output/'node')
-        require(actual['status']=='passed' and len(actual['cases'])==18
-            and inventory(snapshot(app))==captured and products.verify_prepared(native_directory)==compiled
+        actual=node.run(artifact,native,output/'node',**({'aggregate':True} if aggregate else {}))
+        require(actual['status']=='passed' and len(actual['cases'])==(14 if aggregate else 18)
+            and inventory(snapshot(app))==captured and selected_products.verify_prepared(native_directory)==compiled
             and source_identity(ROOT)==current and runtime_inputs(ROOT)==runtime_source
             and read_file(tools/'runtime-inputs.json')==runtime_source
             and installation=={n:file_identity(tools/n,16*1024**2) for n in installation}
-            and materials=={n:file_identity(ROOT/n) for n in MATERIALS}
+            and materials=={n:file_identity(ROOT/n) for n in selected_materials}
             and subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,timeout=10).decode().strip()==source,
             'finite-wait-final-source-native-and-compiler-identities')
-        record.update(status='passed',signedAndAdmitted=True,outcomes=18,nodeReceipt=file_identity(output/'node/qualified.json'))
+        record.update(status='passed',signedAndAdmitted=True,outcomes=14 if aggregate else 18,nodeReceipt=file_identity(output/'node/qualified.json'))
         write_json(output/'qualified.json',record);return record
     except BaseException as error:
         record.update(status='failed',stage=stage,errorCategory=type(error).__name__)

@@ -13,6 +13,18 @@ timer waiting still uses the activation/monotonic clock. An HTTP
 declaration is unnecessary for task and timer progress. The compiler selects the
 existing activation adapter; it adds no network import, provider or grant.
 
+The current compiler source also selects the aggregate Task.WaitAll derivation
+inside that same managed finite path, with the authenticated async export and
+all four declarations still required. Its strict receipt binds 95 helpers, the
+nine original WaitAll preimages/remainders and fifteen derived bodies; the final
+closed-filesystem/ILC reference chain retains that exact intermediate. There is
+no new application flag or automatic grant. Fresh signed NativeAOT qualification
+of this normal selection is pending; the CLR reference below is its prerequisite,
+not a substitute. Outside this selected finite path, the original unsupported
+WaitAll contexts remain unsupported. WaitAny, general threads/monitors, whole
+runtime compatibility, physical ownership costs and production rollout are not
+qualified by this source change.
+
 The private `dotnet-stackful-task-wait-v1` derivation preserves the exact original
 CoreLib preimage, dispatch, ExecutionContext entry/restore and TaskAwaiter error
 paths. It limits nested joins to 32. With all four explicit task/timer declarations,
@@ -85,8 +97,9 @@ races, shutdown/tenant fencing and managed CPU scheduling remain separate.
 
 ## Qualification-private WaitAll reference
 
-The ordinary driver still selects its existing finite single-task implementation.
-`Task.WaitAll` is not promoted to that default by this source milestone. The
+At the reference's qualified source732c, the ordinary driver still selected its
+existing finite single-task implementation. That reference milestone did not
+promote `Task.WaitAll` into the normal path. The
 private `--aggregate-task-wait` tool variant retains the original nine public/core
 method remainders, countdown, completion actions and detach-finally, with one
 bounded aggregate-ready target and the existing depth32/context restoration.

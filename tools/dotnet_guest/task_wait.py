@@ -49,8 +49,9 @@ def selected(declared: list[str], bridge: dict | None) -> bool:
     return True
 
 
-def validate_receipt(value: dict, *, finite: bool = False, managed: bool = False) -> None:
-    if type(finite) is not bool or type(managed) is not bool or (managed and not finite):
+def validate_receipt(value: dict, *, finite: bool = False, managed: bool = False, aggregate: bool = False) -> None:
+    if (type(finite) is not bool or type(managed) is not bool or type(aggregate) is not bool
+            or (managed and not finite) or (aggregate and not managed)):
         raise ValueError('task-wait-finite-selection')
     fixed = {'patch': PATCH, 'sourceDigest': SOURCE, 'cecilDigest': http_errors.CECIL_DIGEST,
         'method': METHOD, **BODY_IDENTITIES, 'maximumNestedWaits': 32,
@@ -80,8 +81,21 @@ def validate_receipt(value: dict, *, finite: bool = False, managed: bool = False
         timers = value['managedAcceptedWork']['patch'] == 'latent.dotnet.managed-accepted-work.v2'
         fixed.update(generatedHelperCount=91 if timers else 77, unchangedOriginalMethods=44719 if timers else 44723,
             managedAcceptedWork=value['managedAcceptedWork'])
+    if aggregate:
+        from tools.dotnet_guest import aggregate_task_wait
+        from tools.dotnet_guest.managed_work import TIMER_REWRITE_RECEIPT
+        aggregate_task_wait.validate(value.get('aggregateTaskWait'))
+        if (not aggregate_task_wait.exact(value['managedAcceptedWork'], TIMER_REWRITE_RECEIPT)
+                or type(value.get('outputDigest')) is not str
+                or re.fullmatch(r'sha256:[0-9a-f]{64}', value['outputDigest']) is None):
+            raise ValueError('task-wait-aggregate-managed-and-output-identities')
+        fixed.update(generatedHelperCount=95, unchangedOriginalMethods=44710,
+            aggregateTaskWait=value['aggregateTaskWait'])
     bodies = value.get('timerDriverOriginalBodies')
     cache_bodies = value.get('zeroCacheOriginalBodies')
+    if aggregate and (not aggregate_task_wait.exact(bodies, aggregate_task_wait.TIMER_BODIES)
+            or not aggregate_task_wait.exact(cache_bodies, aggregate_task_wait.ZERO_CACHE_BODIES)):
+        raise ValueError('task-wait-aggregate-original-driver-identities')
     body_names = {'System.Void System.Threading.TimerQueue::SetNextTimer(System.Int64,System.Int64)',
         'System.Void System.Threading.TimerQueue::TimerHandler(System.Object)',
         'System.Void System.Threading.TimerQueue::DeleteTimer(System.Threading.TimerQueueTimer)'}
@@ -116,7 +130,8 @@ class Port:
             'targetsDigest', 'nativeAotReferenceBinding', 'selection'}
         finite = self.evidence.get('finiteAndCancellableWaits') == 'original-Task-WhenAny-Delay'
         managed = 'managedAcceptedWork' in self.evidence
-        validate_receipt({key: value for key, value in self.evidence.items() if key not in fields}, finite=finite, managed=managed)
+        validate_receipt({key: value for key, value in self.evidence.items() if key not in fields},
+            finite=finite, managed=managed, aggregate='aggregateTaskWait' in self.evidence)
         declarations = (runtime.CLOCK, runtime.ACTIVATION, runtime.WALL, runtime.RANDOM) if finite else (runtime.CLOCK, runtime.ACTIVATION)
         if (self.evidence['derived'] != self.identity or self.evidence['outputDigest'] != self.identity['digest']
                 or self.evidence['selection']['requiredDeclarations'] != sorted(declarations)):
@@ -188,9 +203,9 @@ def prepare(sdk: Path, tools: Path, packages: Path, dotnet: Path, declared: list
     target = read_file(sdk / 'tools/http-errors/TaskWait.targets', http_errors.MAX_RECEIPT)
     targets.write_bytes(target)
     run('task-wait-rewrite', dotnet, tools / 'http-errors/HttpErrors.dll',
-        '--managed-task-wait' if managed else '--finite-task-wait' if finite else '--task-wait', source, assembly, receipt)
+        '--aggregate-task-wait' if managed else '--finite-task-wait' if finite else '--task-wait', source, assembly, receipt)
     result = json.loads(read_file(receipt, http_errors.MAX_RECEIPT))
-    validate_receipt(result, finite=finite, managed=managed)
+    validate_receipt(result, finite=finite, managed=managed, aggregate=managed)
     identity = file_identity(assembly, 'task-wait-derived-corelib', MAX_ASSEMBLY)
     if identity['digest'] != result['outputDigest']:
         raise ValueError('task-wait-rewrite-output-drift')
