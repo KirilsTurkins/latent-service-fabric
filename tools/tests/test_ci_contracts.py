@@ -890,9 +890,24 @@ class RepositoryMigrationTests(unittest.TestCase):
             selector = data['workflowContracts']['.github/workflows/java-guest-feasibility.yml']['on']['workflow_dispatch']['inputs'][name]
             self.assertEqual(selector['type'], 'boolean')
             self.assertIs(selector['default'], False)
+        product_selector = data['workflowContracts']['.github/workflows/developer-tools.yml']['on']['workflow_dispatch']['inputs']['java_compiler_product']
+        self.assertEqual(product_selector['type'], 'boolean')
+        self.assertIs(product_selector['default'], False)
+        self.assertEqual(data['workflowContracts']['.github/workflows/developer-tools.yml']['jobs']['java-compiler-product']['if'],
+                         "github.event_name == 'workflow_dispatch' && inputs.java_compiler_product")
+        java_normal_routes = {
+            'Compile generated typed Java bindings against async capability WIT',
+            'Qualify standalone Java projects, nine SDK components, signed node and printed guide',
+        }
         lane_baseline = contracts.read_json(ROOT / "tools/tests/fixtures/ci_lane_baseline.json")
         for key, original in legacy["after"].items():
             value = dict(original)
+            if value['workflow'] == '.github/workflows/developer-tools.yml' and value['job'] in {'contracts', 'guest-tools', 'wsl-image'}:
+                # Only the closed default-false data-only mode skips these
+                # jobs. Every existing ordinary command remains mandatory.
+                old_guard = "github.event_name != 'pull_request' || !startsWith(github.head_ref, 'feat/559-') || github.event.pull_request.head.repo.full_name != github.repository"
+                self.assertEqual(value['jobIf'], old_guard, key)
+                value['jobIf'] = '${{ !inputs.java_compiler_product && (' + old_guard + ') }}'
             if value["workflow"] == ".github/workflows/typescript-guest.yml" and value["job"] == "boundary":
                 self.assertEqual(value["jobIf"], "success()", key)
                 value["jobIf"] = reviewed_typescript_observer_guard
@@ -912,6 +927,30 @@ class RepositoryMigrationTests(unittest.TestCase):
                 # Only these explicit manual modes exclude the unchanged full
                 # job; default, PR and ordinary dispatch retain every command.
                 value['jobIf'] = "${{ (github.event_name != 'workflow_dispatch' || !inputs.java_http_spi) && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_assembly) && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_derived_llvm) && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_private_scalar_llvm) }}"
+                if value['name'] in java_normal_routes:
+                    old_sdk = '$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux'
+                    self.assertEqual(value['run'].count(old_sdk), 1, key)
+                    value['run'] = value['run'].replace(old_sdk, '$LSF_JAVA_WASI_SDK')
+                elif value['name'] == 'Install pinned compiler tools':
+                    old_download = 'curl --fail --location --max-time 180 \\\n'
+                    explanation = (
+                        '# The independent historical feasibility helper still requires its\n'
+                        '# original explicit SDK. Ordinary BaseCompiler routes use the sealed\n'
+                        '# promoted product below; no old helper/version gate is weakened.\n')
+                    self.assertEqual(value['run'].count(old_download), 1, key)
+                    value['run'] = value['run'].replace(old_download, explanation + old_download)
+                    bindgen = 'python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/java-bindgen"\n'
+                    product = (
+                        'compiler_root=$(mktemp -d /tmp/latent-java-normal.XXXXXXXX)\n'
+                        'timeout --signal=TERM --kill-after=5 1195 \\\n'
+                        '  python3 -B tools/java_guest/compiler_profile_distribution.py stage \\\n'
+                        '    --root "$compiler_root" --output "$RUNNER_TEMP/java-normal-compiler-product.json" \\\n'
+                        '    > "$RUNNER_TEMP/java-normal-compiler-path.txt"\n'
+                        'compiler_sdk=$(cat "$RUNNER_TEMP/java-normal-compiler-path.txt")\n'
+                        'test "$compiler_sdk" = "$compiler_root/work/installed/wasi-sdk"\n'
+                        "printf 'LSF_JAVA_WASI_SDK=%s\\n' \"$compiler_sdk\" >> \"$GITHUB_ENV\"\n")
+                    self.assertEqual(value['run'].count(bindgen), 1, key)
+                    value['run'] = value['run'].replace(bindgen, product + bindgen)
             if value["workflow"] == ".github/workflows/ci.yml" and value["job"] in {"rust", "contracts"}:
                 # Exact commands survive; the reviewed fixed matrix allocates
                 # every obligation to its required, failure-propagating lane.

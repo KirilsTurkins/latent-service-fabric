@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/java_guest/compiler_profile_distribution.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Fixed source-pinned compiler build input preparation and existing managed pack/installer admission-only verification.",
+  "reviewReason": "Retain exact source-pinned prepared inputs through the existing untrusted digest cache; cold and expired origins still fail closed.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "723ae9da033608baa821d7d30d34c3379411e3dec803f2d9e1af9d3301cc654b"
+  "sha256": "8cc16edd75feaa0526a63620a7761a9285c2d43c5ce95617fc1a22164754f3a9"
 }

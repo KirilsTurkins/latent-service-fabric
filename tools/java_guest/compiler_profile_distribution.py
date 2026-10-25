@@ -21,16 +21,84 @@ from tools.java_guest import compiler_profile as profile
 PUBLIC_RECEIPT = 'java-activation-fibers/FIBERS-COMPILE.json'
 
 
+def _copy_fixed(root: Path, name: str, target: Path, expected: dict, deadline: float) -> None:
+    from tools.java_guest.llvm_private_store_distribution import file_identity
+    profile.need(file_identity(root, name, expected['bytes'], deadline) == expected, 'prepared-copy-source')
+    created = False
+    try:
+        with (root / name).open('rb') as source, target.open('xb') as output:
+            created = True
+            count = 0
+            while block := source.read(65536):
+                profile.need(time.monotonic() < deadline, 'build-input-deadline')
+                count += len(block)
+                profile.need(count <= expected['bytes'], 'prepared-copy-bound')
+                output.write(block)
+        target.chmod(0o600)
+        profile.need(file_identity(target.parent, target.name, expected['bytes'], deadline) == expected,
+                     'prepared-copy-digest')
+    except BaseException:
+        if created:
+            target.unlink(missing_ok=True)
+        raise
+
+
+def _save_cache(root: Path, cache: Path | None, records: tuple, deadline: float) -> None:
+    if cache is None:
+        return
+    from tools.java_guest.llvm_private_store_distribution import file_identity
+    for name, expected in records:
+        target = cache / (expected['sha256'] + '.archive')
+        if target.exists() or target.is_symlink():
+            profile.need(file_identity(cache, target.name, expected['bytes'], deadline) == expected,
+                         'prepared-cache-digest')
+        else:
+            _copy_fixed(root, name, target, expected, deadline)
+
+
 def acquire(output: Path, token: str, *, _deadline: float | None = None) -> None:
-    """Fetch exactly two expiring build inputs; never an ordinary upstream SDK."""
+    """Use exact prepared bytes first; Actions is only a cold acquisition input."""
     value = profile.pin()
     profile.need(value is not None, 'unqualified-distribution')
-    profile.need(type(token) is str and 0 < len(token) <= 4096, 'build-input-read-token')
     from tools.java_guest import llvm_private_store_inputs as inputs
     profile.need(not output.exists() and not output.is_symlink() and output.parent.is_dir(), 'fresh-input-output')
     output.mkdir(mode=0o700)
     deadline = min(time.monotonic() + 180, _deadline or float('inf'))
     producer, qualification = value['producer'], value['qualification']
+    records = (('producer.zip', producer['archive']), ('public-compiler.json', qualification['publicReceipt']))
+    cache_root = os.environ.get('LSF_DEV_COMPILER_CACHE', '')
+    cache = Path(cache_root) / 'java-prepared' if cache_root else None
+    if cache is not None:
+        profile.need(not cache.is_symlink() and not cache.is_junction(), 'prepared-cache-directory')
+        cache.mkdir(mode=0o700, parents=True, exist_ok=True)
+        profile.need(cache.is_dir(), 'prepared-cache-directory')
+    prepared = os.environ.get('LSF_DEV_JAVA_COMPILER_INPUT', '')
+    if prepared:
+        source = Path(prepared)
+        _check_input(source, deadline)
+        for name, expected in records:
+            _copy_fixed(source, name, output / name, expected, deadline)
+        _save_cache(output, cache, records, deadline)
+        return
+    if cache is not None:
+        from tools.java_guest.llvm_private_store_distribution import file_identity
+        complete = True
+        for _name, expected in records:
+            name = expected['sha256'] + '.archive'
+            target = cache / name
+            present = target.exists() or target.is_symlink()
+            complete = complete and present
+            if present:
+                profile.need(file_identity(cache, name, expected['bytes'], deadline) == expected,
+                             'prepared-cache-digest')
+        if complete:
+            for name, expected in records:
+                _copy_fixed(cache, expected['sha256'] + '.archive', output / name, expected, deadline)
+            return
+    # No cache is an availability guarantee. A cold build needs either the
+    # exact archived prepared-input pair or a still-available original origin.
+    profile.need(type(token) is str and 0 < len(token) <= 4096,
+                 'cold-build-requires-prepared-input-or-origin-token')
     public = qualification['publicArtifact']
     for artifact_id, expected, head, run, name, filename in (
             (producer['artifact'], producer['archive'], producer['head'], producer['run'],
@@ -87,6 +155,7 @@ def acquire(output: Path, token: str, *, _deadline: float | None = None) -> None
     (output / 'public-compiler.json').write_bytes(raw)
     (output / 'public-compiler.json').chmod(0o600)
     profile.need(time.monotonic() < deadline, 'build-input-deadline')
+    _save_cache(output, cache, records, deadline)
 
 
 def _check_input(source: Path, deadline: float) -> dict:

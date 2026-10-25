@@ -229,6 +229,13 @@ jobs:
           mkdir "$prefix"
           docker cp "$container:/usr/local/." "$prefix"
           printf 'LSF_DEV_PYTHON_PREFIX=%s\n' "$prefix" >> "$GITHUB_ENV"
+      - name: Restore untrusted source-pinned Java prepared inputs
+        id: java-compiler-cache
+        if: matrix.language == 'java'
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/compiler-archives/java-prepared
+          key: java-prepared-compiler-v1-${{ runner.os }}-${{ hashFiles('tools/data/java-compiler-profile.json') }}
       - name: Acquire the source-pinned Java compiler build inputs
         if: matrix.language == 'java'
         env:
@@ -239,6 +246,12 @@ jobs:
           rmdir "$input"
           python -B tools/java_guest/compiler_profile_distribution.py acquire --output "$input"
           printf 'LSF_DEV_JAVA_COMPILER_INPUT=%s\n' "$input" >> "$GITHUB_ENV"
+      - name: Save only reverified Java prepared input bytes
+        if: matrix.language == 'java' && steps.java-compiler-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/compiler-archives/java-prepared
+          key: ${{ steps.java-compiler-cache.outputs.cache-primary-key }}
       - name: Assemble pinned compiler tools and maintained templates
         env:
           LSF_DEV_COMPILER_CACHE: ${{ runner.temp }}/compiler-archives
@@ -835,6 +848,8 @@ jobs:
     name: Sealed normal Java compiler product (data only)
     runs-on: ubuntu-24.04
     timeout-minutes: 25
+    env:
+      LSF_DEV_COMPILER_CACHE: ${{ runner.temp }}/compiler-archives
     permissions:
       contents: read
       actions: read
@@ -847,6 +862,12 @@ jobs:
           python-version: 3.13.5
       - name: Install the maintained recipe reader dependencies
         run: python -m pip install --requirement tools/requirements.lock
+      - name: Restore untrusted source-pinned Java prepared inputs
+        id: java-compiler-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/compiler-archives/java-prepared
+          key: java-prepared-compiler-v1-${{ runner.os }}-${{ hashFiles('tools/data/java-compiler-profile.json') }}
       - name: Verify fixed compiler inputs, existing pack and installer, and normal admission
         env:
           GH_TOKEN: ${{ github.token }}
@@ -859,6 +880,12 @@ jobs:
             python -B tools/java_guest/compiler_profile_distribution.py stage \
               --root "$root" \
               --output target/java-compiler-product/result.json
+      - name: Save only reverified Java prepared input bytes
+        if: steps.java-compiler-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/compiler-archives/java-prepared
+          key: ${{ steps.java-compiler-cache.outputs.cache-primary-key }}
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: java-compiler-product-${{ github.sha }}

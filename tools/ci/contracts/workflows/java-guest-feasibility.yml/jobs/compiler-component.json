@@ -4,6 +4,7 @@
   "coverage": {},
   "definition": {
     "env": {
+      "LSF_DEV_COMPILER_CACHE": "${{ runner.temp }}/compiler-archives",
       "PYTHONDONTWRITEBYTECODE": 1
     },
     "if": "${{ (github.event_name != 'workflow_dispatch' || !inputs.java_http_spi) && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_assembly) && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_derived_llvm) && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_private_scalar_llvm) }}",
@@ -89,12 +90,30 @@
         }
       },
       {
+        "id": "java-compiler-cache",
+        "name": "Restore untrusted source-pinned Java prepared inputs",
+        "uses": "actions/cache/restore",
+        "with": {
+          "key": "java-prepared-compiler-v1-${{ runner.os }}-${{ hashFiles('tools/data/java-compiler-profile.json') }}",
+          "path": "${{ runner.temp }}/compiler-archives/java-prepared"
+        }
+      },
+      {
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
         "name": "Install pinned compiler tools",
         "run": "set -euo pipefail\ncurl --fail --location --retry 3 --max-time 180 \\\n  https://services.gradle.org/distributions/gradle-9.1.0-bin.zip \\\n  -o \"$RUNNER_TEMP/gradle.zip\"\necho \"a17ddd85a26b6a7f5ddb71ff8b05fc5104c0202c6e64782429790c933686c806  $RUNNER_TEMP/gradle.zip\" | sha256sum --check\nunzip -q \"$RUNNER_TEMP/gradle.zip\" -d \"$RUNNER_TEMP\"\necho \"$RUNNER_TEMP/gradle-9.1.0/bin\" >> \"$GITHUB_PATH\"\n# The independent historical feasibility helper still requires its\n# original explicit SDK. Ordinary BaseCompiler routes use the sealed\n# promoted product below; no old helper/version gate is weakened.\ncurl --fail --location --max-time 180 \\\n  https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \\\n  -o \"$RUNNER_TEMP/wasi-sdk.tar.gz\"\necho \"87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171  $RUNNER_TEMP/wasi-sdk.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/wasi-sdk.tar.gz\" -C \"$RUNNER_TEMP\"\ncompiler_root=$(mktemp -d /tmp/latent-java-normal.XXXXXXXX)\ntimeout --signal=TERM --kill-after=5 1195 \\\n  python3 -B tools/java_guest/compiler_profile_distribution.py stage \\\n    --root \"$compiler_root\" --output \"$RUNNER_TEMP/java-normal-compiler-product.json\" \\\n    > \"$RUNNER_TEMP/java-normal-compiler-path.txt\"\ncompiler_sdk=$(cat \"$RUNNER_TEMP/java-normal-compiler-path.txt\")\ntest \"$compiler_sdk\" = \"$compiler_root/work/installed/wasi-sdk\"\nprintf 'LSF_JAVA_WASI_SDK=%s\\n' \"$compiler_sdk\" >> \"$GITHUB_ENV\"\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/java-bindgen\"\necho \"$RUNNER_TEMP/java-bindgen\" >> \"$GITHUB_PATH\"\n",
         "shell": "bash"
+      },
+      {
+        "if": "steps.java-compiler-cache.outputs.cache-hit != 'true'",
+        "name": "Save only reverified Java prepared input bytes",
+        "uses": "actions/cache/save",
+        "with": {
+          "key": "${{ steps.java-compiler-cache.outputs.cache-primary-key }}",
+          "path": "${{ runner.temp }}/compiler-archives/java-prepared"
+        }
       },
       {
         "name": "Qualify proposed transaction shapes and shared imported owners with the maintained Java compiler",
@@ -270,7 +289,7 @@
   },
   "jobId": "compiler-component",
   "kind": "job",
-  "reviewReason": "Use explicit conventional prepared Java compiler CLI with committed owner fingerprint; all selected product and existing job semantics remain reviewed.",
+  "reviewReason": "Reuse exact prepared compiler cache before ordinary Java product staging; preserve every existing compile and runtime command.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-guest-feasibility.yml"
 }

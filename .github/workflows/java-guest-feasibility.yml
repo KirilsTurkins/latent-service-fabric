@@ -73,6 +73,7 @@ jobs:
       actions: read
     env:
       PYTHONDONTWRITEBYTECODE: 1
+      LSF_DEV_COMPILER_CACHE: ${{ runner.temp }}/compiler-archives
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -127,6 +128,12 @@ jobs:
       - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
         with:
           version: 1.254.0
+      - name: Restore untrusted source-pinned Java prepared inputs
+        id: java-compiler-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/compiler-archives/java-prepared
+          key: java-prepared-compiler-v1-${{ runner.os }}-${{ hashFiles('tools/data/java-compiler-profile.json') }}
       - name: Install pinned compiler tools
         shell: bash
         env:
@@ -157,6 +164,12 @@ jobs:
           printf 'LSF_JAVA_WASI_SDK=%s\n' "$compiler_sdk" >> "$GITHUB_ENV"
           python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/java-bindgen"
           echo "$RUNNER_TEMP/java-bindgen" >> "$GITHUB_PATH"
+      - name: Save only reverified Java prepared input bytes
+        if: steps.java-compiler-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/compiler-archives/java-prepared
+          key: ${{ steps.java-compiler-cache.outputs.cache-primary-key }}
       - name: Qualify proposed transaction shapes and shared imported owners with the maintained Java compiler
         run: python3 tools/qualify_transaction_contracts.py --language java --output "$RUNNER_TEMP/transaction-contract-java" --wasi-sdk "$LSF_JAVA_WASI_SDK"
       - name: Check bounded Java aggregate format vectors without claiming State execution

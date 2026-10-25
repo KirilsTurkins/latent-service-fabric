@@ -612,3 +612,60 @@ approved annotation-processor control also passed actual source-ownership
 negatives, host containment and three signed-node calls with clean shutdown.
 Both controls retain their actual source, component and native-product identities;
 the remaining installed/private and failure-lifecycle gates stay explicit.
+
+
+## Source-pinned compiler profile and measured component construction
+
+The Java SDK builder can seal the authenticated `lsf-private-scalar-v1`
+compiler and sysroot into the existing `sdk/managed.zip` distribution, together
+with its canonical inventory, source-bound qualification receipts and notices.
+The existing installer expands regular files; normal Java compiler admission
+checks the complete installed inventory and source-owned profile. Explicit
+original WASI-SDK29 remains supported, and the independent historical
+feasibility helper keeps its original explicit SDK. This uses the existing SDK
+builder and installer; it does not publish a release or add an application
+compiler-selection option.
+
+[The 25 October compiler evidence](../testing/evidence/java-private-scalar-compiler-2026-10-25.json)
+records one authenticated compiler build with 9 SSA controls and 15 LLVM lit
+cases, followed by the unchanged public Java/WIT programme. TeaVM remains at
+`FULL`, Clang at `-O2`, with native EH/SjLj, 64 KiB stack and 64 MiB maximum
+memory. Its generated C remains 733,980 bytes with the original digest and
+650-file inventory. The largest core function, `meth_dla_Capsule_pools`, fell
+from 15,264,587 to 6,133,668 bytes, below the unchanged 7,654,321-byte parser
+limit. Normal component construction and validation passed. The raw result
+remains `component-built-unqualified`, with runtime qualification pending;
+this did not execute a Java component.
+
+A separate data-only check used the existing packer and installer on the exact
+compiler subproduct: 10,154 SDK files plus 13 provenance files, 771,176,565 bytes
+in total. Both complete inventory identities matched, including link
+flattening. Normal compiler admission also passed from the isolated installed
+recipe without site packages. The selected `clang-21` driver bytes and command
+construction matched the actual public compilation. This check executed no
+Clang command and did not assemble or qualify an entire native SDK/frontend.
+Actions artifacts are expiring builder inputs; the sealed normal distribution
+contains the compiler bytes and provenance rather than relying on an evergreen
+Actions URL. Full runtime, GC, hostile-input, cost and ownership acceptance
+remains open.
+
+
+Prepared compiler inputs use the existing untrusted compiler archive cache,
+under `LSF_DEV_COMPILER_CACHE/java-prepared/<sha256>.archive`. Successful
+acquisition retains only the exact source-pinned producer archive and public
+compiler receipt. Every cache hit rechecks both complete sizes and digests;
+cache contents do not provide new provenance or compiler authority. A complete
+verified hit works without an origin token after the original Actions
+artifacts expire. CI restores and saves this finite pair with a key bound to
+the checked-in profile.
+
+Actions cache can be evicted and is branch-scoped; it is not an evergreen
+archive or release. A cold build after origin expiry must restore those exact
+entries or supply the existing builder-only `LSF_DEV_JAVA_COMPILER_INPUT`
+directory containing `producer.zip` and `public-compiler.json`. Both files must
+match the checked-in identities. Missing or altered inputs fail closed;
+there is no alternate compiler, permissive version gate or automatic rebuild.
+The source control exercised archived-input seeding, a real filesystem cache
+hit with expired source dates, tamper refusal, a tokenless cold miss and an
+otherwise matching expired origin refusal. No compiler or product check was
+repeated for this cache-only source change.

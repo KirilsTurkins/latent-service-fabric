@@ -137,6 +137,56 @@ class NormalJavaCompilerProfile(unittest.TestCase):
                     delivery.acquire(root / 'inputs', 'test-only-token')
                 blob.assert_not_called()
 
+    def test_expired_origin_uses_only_exact_archived_prepared_cache(self):
+        from tools.java_guest import compiler_profile_distribution as delivery
+        from tools.java_guest import llvm_private_store_inputs as inputs
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            value = self.fixture(root / 'first', root / 'second')
+            value['buildInput']['expiresAt'] = '2000-01-01T00:00:00Z'
+            value['qualification']['publicArtifact']['expiresAt'] = '2000-01-01T00:00:00Z'
+            prepared = root / 'prepared'
+            prepared.mkdir()
+            (prepared / 'producer.zip').write_bytes(b'fixture archive')
+            (prepared / 'public-compiler.json').write_bytes(b'fixture public')
+            environment = {'LSF_DEV_COMPILER_CACHE': str(root / 'cache'),
+                           'LSF_DEV_JAVA_COMPILER_INPUT': str(prepared)}
+            with mock.patch.object(profile, 'read', return_value=profile.encoded(value)), \
+                    mock.patch.dict(delivery.os.environ, environment), \
+                    mock.patch.object(inputs, '_response', side_effect=AssertionError('expired API must not be read')) as api, \
+                    mock.patch.object(delivery.urllib.request, 'urlopen', side_effect=AssertionError('offline cache')) as network:
+                # An operator's exact archived pair seeds the ordinary digest
+                # cache, without a token or a still-live Actions artifact.
+                delivery.acquire(root / 'seeded', '')
+                for name in ('producer.zip', 'public-compiler.json'):
+                    self.assertEqual((root / 'seeded' / name).read_bytes(), (prepared / name).read_bytes())
+                delivery.os.environ['LSF_DEV_JAVA_COMPILER_INPUT'] = ''
+                delivery.acquire(root / 'cache-hit', '')
+                for name in ('producer.zip', 'public-compiler.json'):
+                    self.assertEqual((root / 'cache-hit' / name).read_bytes(), (prepared / name).read_bytes())
+                cache = root / 'cache/java-prepared'
+                receipt = cache / (value['qualification']['publicReceipt']['sha256'] + '.archive')
+                receipt.write_bytes(b'wrong bytes')
+                with self.assertRaisesRegex(ValueError, 'prepared-cache-digest'):
+                    delivery.acquire(root / 'tampered', '')
+                receipt.unlink()
+                with self.assertRaisesRegex(ValueError, 'cold-build-requires-prepared-input'):
+                    delivery.acquire(root / 'missing', '')
+                api.assert_not_called()
+                # Even with a token, an otherwise matching expired origin
+                # cannot replace the missing archived receipt.
+                producer = value['producer']
+                api.side_effect = None
+                api.return_value = profile.encoded({'id': producer['artifact'],
+                    'name': 'java-llvm-private-stores-producer-' + producer['head'],
+                    'expired': True, 'size_in_bytes': producer['archive']['bytes'],
+                    'digest': 'sha256:' + producer['archive']['sha256'],
+                    'workflow_run': {'id': producer['run'], 'head_sha': producer['head']}})
+                with self.assertRaisesRegex(ValueError, 'build-input-origin'):
+                    delivery.acquire(root / 'expired-cold', 'test-only-token')
+                api.assert_called_once()
+                network.assert_not_called()
+
     def test_unqualified_builder_refuses_before_reading_any_candidate_archive(self):
         inactive = self.inactive()
         with mock.patch.object(profile, 'read', return_value=inactive):
