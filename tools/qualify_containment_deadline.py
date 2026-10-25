@@ -8,11 +8,11 @@ import re
 import subprocess
 import sys
 import time
+import tomllib
 
 if __package__ in (None,''):
     sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from tools import ci_rust_artifacts as artifacts, ci_suite_inventory as registry
-from tools.build_echo_capsule import load_toolchain
 from tools.build_observation import build_environment, file_identity, resolve_tools
 from tools.build_snapshot import SOURCE_ALLOWLIST, SnapshotLimits
 from tools.rust_capsule_build import Commands
@@ -86,9 +86,10 @@ def qualify(output,revision):
     try:
         artifacts.require_source(ROOT,revision,environment)
         before=source_inputs();receipt['sourceBefore']=before;write_json(output/'source-inputs.json',before)
-        tools,pins=resolve_tools(load_toolchain(),ROOT,environment);receipt['observedTools']=pins
-        require(load_toolchain()['rust']['toolchain']=='1.97.1'
-            and load_toolchain()['contracts']['wasm-tools']=='1.254.0','normal-tool-pins')
+        toolchain=tomllib.loads(read_file(ROOT/'tools/toolchain.toml',128*1024).decode('utf-8'))
+        tools,pins=resolve_tools(toolchain,ROOT,environment);receipt['observedTools']=pins
+        require(toolchain['rust']['toolchain']=='1.97.1'
+            and toolchain['contracts']['wasm-tools']=='1.254.0','normal-tool-pins')
         receipt['stage']='maintained-containment-core'
         inventory=commands.run('build-containment-core',tools['cargo'],'build','--locked',
             '-p','latent-toolchain-smoke','--example','containment-capsule',
