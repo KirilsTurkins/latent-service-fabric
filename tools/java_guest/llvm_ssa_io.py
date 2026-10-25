@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path, PurePosixPath
 import posixpath
+import re
 import shutil
 import stat
 import tarfile
@@ -15,6 +16,108 @@ import urllib.request
 from tools.build_process import BuildProcessError
 
 GIB = 1024 ** 3
+
+
+def _capacity_read(path: Path, maximum: int) -> bytes:
+    with path.open('rb') as source:
+        raw = source.read(maximum + 1)
+    if len(raw) > maximum:
+        raise ValueError('llvm-capacity-byte-limit')
+    return raw
+
+
+def host_capacity() -> dict:
+    """Fixed Linux host facts, not a hard RSS quota or a memory-fit proof.
+
+    Read the current cgroup and its bounded ancestor chain, so a child service
+    limit cannot be mistaken for the host's advertised physical resources.
+    Paths are kernel-reported, anchored below the one fixed cgroup mount, and
+    never emitted. No caller selects a path, runner or resource fallback.
+    """
+    result = {'status': 'refused', 'reason': 'unreadable-or-unsupported',
+              'minimumCpuMilli': 4000, 'minimumTotalBytes': 12 * GIB,
+              'minimumAvailableBytes': 10 * GIB,
+              'hardRssQuota': False, 'memoryFitQualified': False}
+    try:
+        affinity, process = len(os.sched_getaffinity(0)), os.process_cpu_count()
+        if type(process) is not int or not 1 <= process <= 4096 or not 1 <= affinity <= 4096:
+            return result
+        result.update(affinityCpuCount=affinity, processCpuCount=process,
+                      effectiveCpuMilli=1000 * min(affinity, process))
+        mem = _capacity_read(Path('/proc/meminfo'), 65536)
+        values = {}
+        for label in (b'MemTotal', b'MemAvailable'):
+            matches = re.findall(rb'^' + label + rb':[ ]+([0-9]{1,20}) kB$', mem, re.MULTILINE)
+            if len(matches) != 1:
+                return result
+            values[label] = int(matches[0]) * 1024
+        result.update(physicalTotalBytes=values[b'MemTotal'], physicalAvailableBytes=values[b'MemAvailable'],
+                      effectiveTotalBytes=values[b'MemTotal'], effectiveAvailableBytes=values[b'MemAvailable'])
+        group = _capacity_read(Path('/proc/self/cgroup'), 4096)
+        match = re.fullmatch(rb'0::(/[^\n]*)\n?', group)
+        if match is None:
+            return result
+        relative = PurePosixPath(match[1].decode('utf8'))
+        parts = relative.parts[1:]
+        if len(parts) > 32 or any(not re.fullmatch(r'[A-Za-z0-9_.:@-]{1,255}', part)
+                                 or part in {'.', '..'} for part in parts):
+            return result
+        base = Path('/sys/fs/cgroup')
+        if base.is_symlink() or not base.is_dir():
+            return result
+        current = base
+        chain = [base]
+        for part in parts:
+            current /= part
+            if current.is_symlink() or not current.is_dir():
+                return result
+            chain.append(current)
+        quota_levels = memory_levels = 0
+        for directory in chain:
+            for name in ('cpu.max', 'memory.max'):
+                path = directory / name
+                try:
+                    if path.is_symlink():
+                        return result
+                    raw = _capacity_read(path, 4096).strip()
+                except FileNotFoundError:
+                    continue  # No limit is exposed by this controller here.
+                if name == 'cpu.max':
+                    fields = raw.split()
+                    if len(fields) != 2 or not re.fullmatch(rb'[1-9][0-9]{0,19}', fields[1]):
+                        return result
+                    if fields[0] != b'max':
+                        if not re.fullmatch(rb'[1-9][0-9]{0,19}', fields[0]):
+                            return result
+                        quota_levels += 1
+                        result['effectiveCpuMilli'] = min(result['effectiveCpuMilli'],
+                                                         int(fields[0]) * 1000 // int(fields[1]))
+                elif raw != b'max':
+                    if not re.fullmatch(rb'[1-9][0-9]{0,19}', raw):
+                        return result
+                    used_path = directory / 'memory.current'
+                    if used_path.is_symlink():
+                        return result
+                    used = _capacity_read(used_path, 4096).strip()
+                    if not re.fullmatch(rb'[0-9]{1,20}', used):
+                        return result
+                    memory_levels += 1
+                    limit = int(raw)
+                    result['effectiveTotalBytes'] = min(result['effectiveTotalBytes'], limit)
+                    result['effectiveAvailableBytes'] = min(result['effectiveAvailableBytes'],
+                                                            max(0, limit - int(used)))
+        result.update(cgroupLevels=len(chain), cpuQuotaLevels=quota_levels, memoryLimitLevels=memory_levels)
+        if result['effectiveCpuMilli'] < 4000:
+            result['reason'] = 'insufficient-cpu'
+        elif result['effectiveTotalBytes'] < 12 * GIB:
+            result['reason'] = 'insufficient-memory-total'
+        elif result['effectiveAvailableBytes'] < 10 * GIB:
+            result['reason'] = 'insufficient-memory-available'
+        else:
+            result.update(status='admitted', reason='operational-preconditions-met')
+    except (OSError, ValueError, OverflowError):
+        pass
+    return result
 SDK_SOURCE = {
     'url': 'https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz',
     'bytes': 119441678,

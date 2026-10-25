@@ -22,6 +22,85 @@ from tools.java_guest import llvm_ssa_distribution as distribution
 
 
 class LlvmSsaProducer(unittest.TestCase):
+    def test_fixed_host_capacity_reads_ancestor_limits_and_refuses_before_acquisition(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            fixtures = {
+                '/proc/meminfo': b'MemTotal: 16777216 kB\nMemAvailable: 12582912 kB\n',
+                '/proc/self/cgroup': b'0::/job\n',
+                '/sys/fs/cgroup/cpu.max': b'max 100000\n',
+                '/sys/fs/cgroup/memory.max': b'max\n',
+                '/sys/fs/cgroup/memory.current': str(2 * io.GIB).encode(),
+                '/sys/fs/cgroup/job/cpu.max': b'400000 100000\n',
+                '/sys/fs/cgroup/job/memory.max': str(15 * io.GIB).encode(),
+                '/sys/fs/cgroup/job/memory.current': str(2 * io.GIB).encode(),
+            }
+            paths = {}
+            for ordinal, (name, raw) in enumerate(fixtures.items()):
+                paths[name] = root / str(ordinal)
+                paths[name].write_bytes(raw)
+            original_read = io._capacity_read
+            def read(path, maximum):
+                if path.as_posix() not in paths:
+                    raise FileNotFoundError
+                return original_read(paths[path.as_posix()], maximum)
+            def observe():
+                with mock.patch.object(io, '_capacity_read', side_effect=read), \
+                        mock.patch.object(io.os, 'sched_getaffinity', return_value=set(range(4)), create=True), \
+                        mock.patch.object(io.os, 'process_cpu_count', return_value=4), \
+                        mock.patch.object(Path, 'is_dir', return_value=True), \
+                        mock.patch.object(Path, 'is_symlink', return_value=False):
+                    return io.host_capacity()
+            value = observe()
+            self.assertEqual(value['status'], 'admitted')
+            self.assertEqual((value['effectiveCpuMilli'], value['effectiveTotalBytes'],
+                              value['effectiveAvailableBytes']), (4000, 15 * io.GIB, 12 * io.GIB))
+            self.assertEqual(value['cgroupLevels'], 2)
+            self.assertFalse(value['hardRssQuota'])
+            self.assertFalse(value['memoryFitQualified'])
+            for name, raw, reason in [
+                ('/sys/fs/cgroup/cpu.max', b'300000 100000', 'insufficient-cpu'),
+                ('/sys/fs/cgroup/memory.max', str(11 * io.GIB).encode(), 'insufficient-memory-total'),
+                ('/sys/fs/cgroup/job/memory.current', str(7 * io.GIB).encode(), 'insufficient-memory-available'),
+                ('/proc/self/cgroup', b'0::/../../escape\n', 'unreadable-or-unsupported'),
+                ('/proc/meminfo', b'x' * 65537, 'unreadable-or-unsupported'),
+            ]:
+                with self.subTest(material=name, reason=reason):
+                    paths[name].write_bytes(raw)
+                    try:
+                        rejected = observe()
+                        self.assertEqual((rejected['status'], rejected['reason']), ('refused', reason))
+                    finally:
+                        paths[name].write_bytes(fixtures[name])
+            paths['/sys/fs/cgroup/cpu.max'].write_bytes(b'300000 100000')
+            rejected = observe()
+            with mock.patch.object(producer, 'admission', return_value={'remainingSeconds': 5400}), \
+                    mock.patch.object(io, 'preflight'), mock.patch.object(io, 'case_sensitive'), \
+                    mock.patch.object(io, 'host_capacity', return_value=rejected), \
+                    mock.patch.object(io, 'acquire') as acquired:
+                with self.assertRaisesRegex(ValueError, 'host-capacity'):
+                    producer.produce(root / 'refused-build')
+                acquired.assert_not_called()
+            receipt = json.loads((root / 'refused-build/result.json').read_bytes())
+            self.assertEqual(receipt['hostCapacity'], rejected)
+            self.assertEqual(receipt['status'], 'failed')
+            self.assertNotIn('/sys/fs', json.dumps(rejected))
+
+    def test_generated_cmake_cache_requires_the_exact_ninja_compile_and_link_pools(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            cache = root / 'CMakeCache.txt'
+            raw = (b'CMAKE_GENERATOR:INTERNAL=Ninja\nLLVM_PARALLEL_COMPILE_JOBS:STRING=4\n'
+                   b'LLVM_PARALLEL_LINK_JOBS:STRING=1\n')
+            cache.write_bytes(raw)
+            self.assertEqual(producer.build_pool_values(root), {
+                'compileJobs': 4, 'linkJobs': 1, 'cache': {'bytes': len(raw), 'sha256': patch.sha(raw)}})
+            for mutant in (raw.replace(b'STRING=4', b'STRING=2'), raw.replace(b'STRING=1', b'STRING=4'),
+                           raw.replace(b'=Ninja', b'=Makefiles'), raw + raw, b'x' * (1024 ** 2 + 1)):
+                cache.write_bytes(mutant)
+                with self.assertRaises(ValueError):
+                    producer.build_pool_values(root)
+
     def original_tree(self, root):
         for name, row in patch.manifest()['files'].items():
             path = root / name

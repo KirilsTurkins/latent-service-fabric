@@ -57,7 +57,7 @@
   },
   "jobId": "compiler",
   "kind": "job",
-  "reviewReason": "One source-bound 90-minute two-job compiler producer; fourteen source controls; a4500-second build maximum within the unchanged5400-second aggregate, mandatory nine LLVM units/thirteen SjLj regressions, typed mode-preserving SDK carrier, and always-run bounded upload admission; no Java execution.",
+  "reviewReason": "One source-bound 90-minute producer with a 75-minute build maximum, four total Ninja jobs, compile pool 4/link pool 1/install 2; measured host-capacity preconditions and generated-cache proof. Preserve all 16 source controls, nine LLVM units, 13 original SjLj regressions and typed product admission. No Java execution or normal SDK29 default change.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-llvm-ssa-producer.yml"
 }
