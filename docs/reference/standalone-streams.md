@@ -2,8 +2,10 @@
 
 Outbound stream installation currently requires a Linux x86_64 node built with
 `development-outbound-streams`. Ordinary builds reject this configuration. The
-profile remains subject to [ADR-0061](../../adr/0061-bound-standard-outbound-streams.md)
-review and [qualification gates](../runtime/outbound-stream-qualification.md).
+bounded design was accepted in [ADR-0061](../../adr/0061-bound-standard-outbound-streams.md)
+on October 16, 2026. Production installation still depends on its implementation
+and [qualification gates](../runtime/outbound-stream-qualification.md); acceptance
+of the design did not enable it in ordinary builds.
 
 The node reads immutable destination facts from its existing protected JSON
 configuration. Protect the parent directory with mode `0700` and the file with

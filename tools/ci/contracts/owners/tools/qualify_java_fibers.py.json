@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_java_fibers.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Explicitly select reviewed copy-cost observation mixin under existing derived-public-only flag; same frozen R7 reader, normal source/WIT, commands and limits; no alternate private variant.",
+  "reviewReason": "Reviewed explicit combination of existing derived-public and WinEH flags selects only one pre-Clang diagnostic; historical modes remain, fixed baseline is recipe-bound and the ordinary no-improvement gate stays FAILED.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "be395f027f6de4db7184a6e7dde42c9a722dc728d8de36d6167a58021938364e"
+  "sha256": "e5b51d31d9c5439ceb85f83aea42712ee7cf14a5487071c35fba8bcac39ab10e"
 }

@@ -189,3 +189,9 @@ from tools.java_guest.copy_cost_observation import PublicCopyCostObservationMixi
 
 class CopyCostPublicCompiler(PublicCopyCostObservationMixin, DerivedPublicCompiler):
     pass
+
+
+class CopyCostWinEHDiagnosticCompiler(CopyCostPublicCompiler):
+    # Only the explicit existing derived+observe flag combination selects this.
+    # The failed ordinary gate remains failed after at most one diagnostic child.
+    _public_wineh_preclang = True

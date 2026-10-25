@@ -119,6 +119,14 @@ publication; it is not a reset of operation history.
 
 ## Renew evidence and recover
 
+For the current-development audit-aware procedure, follow
+[renew static-site evidence without losing audit history](static-evidence-renewal.md).
+It adds live capacity preflight, stopped-node rollover and partial GET/HEAD
+recovery to the renewal commands below. Those maintenance and inventory features
+are not in the released alpha.4/alpha.5 binaries; use matching tools and node.
+Evidence renewal and audit rollover solve different problems: rollover preserves
+history and frees active-epoch capacity, but does not extend evidence validity.
+
 Before evidence or trust snapshots expire, obtain new organization approval and
 sign the **unchanged** package into a fresh evidence directory. Verify it under
 current policy. Record a new renewal operation and the publication's observed
@@ -132,8 +140,14 @@ lifecycle generation:
 
 Renewal cannot override a revoked key, disallowed source, retired publication or
 changed trust policy. Do not reuse an old successful verification as current
-authority. Resolve generation conflicts from fresh state. After a node restart,
-honor its persisted restart clock floor and verify readiness before mutations.
+authority. Retain the original request, response and independent audit
+acknowledgement. A lost response, unknown receipt or unconfirmed durability is not
+a known rejection: stop automatic writes and look up the original operation
+before considering another decision. Resolve a confirmed generation conflict
+from fresh state without changing an old operation's preconditions. After a
+node restart, honor its persisted restart clock floor and verify readiness
+before mutations. Renewal does not require rewriting unchanged GET/HEAD routes;
+the route-set helper checks them without sending redundant apply requests.
 
 ## Connect it to CI and Terraform
 

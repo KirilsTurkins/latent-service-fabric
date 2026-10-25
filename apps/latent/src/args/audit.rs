@@ -1,7 +1,26 @@
+pub mod maintenance;
 use clap::{Args, Subcommand, ValueEnum};
 #[derive(Subcommand)]
 pub enum AuditCommand {
     Query(QueryArgs),
+    /// Exclusive stopped-node maintenance, authorized by private-filesystem ownership.
+    #[command(subcommand)]
+    Maintenance(maintenance::MaintenanceCommand),
+    /// Verify or query one operator-held sealed epoch without contacting a node.
+    #[command(subcommand)]
+    Archive(maintenance::ArchiveCommand),
+}
+impl AuditCommand {
+    pub const fn is_local(&self) -> bool {
+        !matches!(self, Self::Query(_))
+    }
+    pub const fn name(&self) -> &'static str {
+        match self {
+            Self::Query(_) => "audit query",
+            Self::Maintenance(command) => command.name(),
+            Self::Archive(command) => command.name(),
+        }
+    }
 }
 #[derive(Clone, Copy, ValueEnum)]
 pub enum Scope {

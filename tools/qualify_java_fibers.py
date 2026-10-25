@@ -357,6 +357,7 @@ def recipe_inputs() -> dict[str, str]:
     from tools.java_capsule_build import RECIPE
     paths = [Path(__file__), *sorted((ROOT / "tools/java_guest").glob("*.py")),
              ROOT / "tools/java_fiber_library_inputs.py",
+             ROOT / "tools/data/java-public-wineh/e782-baseline.json",
              ROOT / "tools/stage_runtime_wit.py", ROOT / "tools/rust_capsule_project.py",
              ROOT / "tools/build_observation.py", ROOT / "tools/build_process.py",
              ROOT / "tools/build_process_linux.py", ROOT / "tools/build_process_windows.py"]
@@ -371,7 +372,7 @@ def prepare(output: Path, wasi_sdk: Path, *, gradle="gradle", offline_cache: Pat
     if type(observe_public_wineh) is not bool or observe_public_wineh and fixture != 'threads':
         raise ValueError('WinEH observation requires only the fixed normal public fiber fixture')
     if (type(derived_llvm_public) is not bool
-            or derived_llvm_public and (fixture != 'threads' or observe_public_wineh)):
+            or derived_llvm_public and fixture != 'threads'):
         raise ValueError('Derived LLVM requires only the fixed public fiber compiler without replay')
     if offline_cache is not None and read_only_cache is not None:
         raise ValueError("Java dependency cache selections are mutually exclusive")
@@ -407,7 +408,8 @@ def prepare(output: Path, wasi_sdk: Path, *, gradle="gradle", offline_cache: Pat
             from tools.java_guest.public_wineh import PublicWinEHCompiler
             selected_compiler = PublicWinEHCompiler
         if derived_llvm_public:
-            selected_compiler = derived.CopyCostPublicCompiler
+            selected_compiler = (derived.CopyCostWinEHDiagnosticCompiler if observe_public_wineh
+                                 else derived.CopyCostPublicCompiler)
             extra['admitted'] = admitted
         compiler = selected_compiler(output / "compiler", wasi_sdk, gradle=gradle, offline_cache=offline_cache,
                             read_only_cache=read_only_cache, timeout=1200, **extra)
@@ -470,7 +472,7 @@ def prepare(output: Path, wasi_sdk: Path, *, gradle="gradle", offline_cache: Pat
                 retain(compiler, output)
             except BaseException:
                 pass  # Failure-only retention must preserve the original compiler exception.
-            if observe_public_wineh:
+            if observe_public_wineh and not derived_llvm_public:
                 try:
                     from tools.java_guest.public_wineh import retain as retain_wineh
                     retain_wineh(compiler, output)
@@ -494,7 +496,7 @@ def main():
     caches.add_argument("--read-only-cache", type=Path)
     parser.add_argument("--fixture", choices=("threads", "completable", "timers", "fiber-io", "worker-libraries"), default="threads")
     parser.add_argument('--observe-public-wineh', action='store_true',
-                        help='Optional fixed-public-only postfailure numeric LLVM observation')
+                        help='Fixed-public-only WinEH observation: historical postfailure, or explicit derived pre-Clang diagnostic only')
     parser.add_argument('--derived-llvm-public', action='store_true',
                         help='Only the fixed authenticated LLVM candidate and unchanged public compiler fixture')
     args = parser.parse_args()

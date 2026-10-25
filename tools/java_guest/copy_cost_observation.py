@@ -205,7 +205,13 @@ class PublicCopyCostObservationMixin:
             improved = candidate(self._copy_trace, shape)
             if not improved:
                 self._copy_record(reason='candidate-not-improved', inputIdentity=inputs, shape=shape, improved=False)
+                if getattr(self, '_public_wineh_preclang', False) is True:
+                    from tools.java_guest.wineh_preclang import observe
+                    observe(self, output, actual, inputs)
                 raise ObservationStopped('copy-cost-not-improved')
+            if getattr(self, '_public_wineh_preclang', False) is True:
+                self._copy_record(reason='diagnostic-baseline-mismatch', inputIdentity=inputs, shape=shape, improved=True)
+                raise ObservationStopped('copy-cost-diagnostic-baseline-mismatch')
             self._copy_record(reason='strictly-improved', inputIdentity=inputs, shape=shape, improved=True,
                               clangDecision='admitted-pending-original-command', originalCommand=actual)
             # Continue through the SAME bounded super().run below. This record

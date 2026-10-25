@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 1104" role="img" aria-labelledby="standalone-architecture-title standalone-architecture-description">
+  <title id="standalone-architecture-title">Standalone node: shared control, fresh execution and optional protected state</title>
+  <desc id="standalone-architecture-description">Management RPC, authenticated invocation RPC and configured HTTP ingress enter one standalone Linux node. Protected catalogs, route and policy views, and bounded immutable-code caches feed static delivery or fixed in-process execution cells. Static requests need no guest Store. Capsules and supported SSR get fresh Stores and original budgets. Host capability calls cross the broker into configured finite provider pools. A separately installed Phase 4 command/query profile supplies host-owned protected state, outbox and outcomes. That optional state path is distinct from ordinary provider installation. Listeners and workers are shared; an inactive deployment owns no guest heap. Profile qualification and the in-process security boundary still apply.</desc>
+  <defs>
+    <marker id="standalone-architecture-arrow" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M 1 1 L 11 6 L 1 11 z" fill="#F2CA68"/>
+    </marker>
+    <style>
+      .heading { font: 700 34px system-ui, sans-serif; fill: #F3EBDD; }
+      .subtitle { font: 400 20px system-ui, sans-serif; fill: #C7BA9C; }
+      .title { font: 700 24px system-ui, sans-serif; fill: #F3EBDD; }
+      .copy { font: 400 20px system-ui, sans-serif; fill: #F3EBDD; }
+      .note { font: 400 18px system-ui, sans-serif; fill: #C7BA9C; }
+      .label { font: 600 16px system-ui, sans-serif; fill: #F2CA68; }
+      .success { font: 400 20px system-ui, sans-serif; fill: #B9E8BD; }
+      .warning { font: 400 20px system-ui, sans-serif; fill: #F8D586; }
+    </style>
+  </defs>
+  <rect width="1440" height="1104" rx="28" fill="#0D0D0B"/>
+  <text x="72" y="98" class="heading">One shared node, fresh execution per invocation</text>
+  <text x="72" y="138" class="subtitle">Development topology. Protected transactions require the separately installed Phase 4 profile.</text>
+  <g data-card="Management RPC">
+  <rect x="72" y="176" width="384" height="96" rx="24" fill="#191812" stroke="#9F8C62" stroke-width="2"/>
+  <text x="104" y="220" class="title">Management RPC</text>
+  <text x="104" y="252" class="note">Operator + current scoped authority</text>
+  </g>
+  <g data-card="Invocation RPC">
+  <rect x="528" y="176" width="384" height="96" rx="24" fill="#191812" stroke="#9F8C62" stroke-width="2"/>
+  <text x="560" y="220" class="title">Invocation RPC</text>
+  <text x="560" y="252" class="note">Authenticated caller and target</text>
+  </g>
+  <g data-card="Shared HTTP ingress">
+  <rect x="984" y="176" width="384" height="96" rx="24" fill="#191812" stroke="#9F8C62" stroke-width="2"/>
+  <text x="1016" y="220" class="title">Shared HTTP ingress</text>
+  <text x="1016" y="252" class="note">Configured route and principal</text>
+  </g>
+  <!-- The enclosing boundary is one process, not a separate-process sandbox. -->
+  <rect x="72" y="312" width="1296" height="672" rx="24" fill="#0D0D0B" stroke="#9F8C62" stroke-width="2"/>
+  <path d="M 264 272 V 340" fill="none" stroke="#F2CA68" stroke-width="3" stroke-linejoin="round" marker-end="url(#standalone-architecture-arrow)"/>
+  <path d="M 720 272 V 340" fill="none" stroke="#F2CA68" stroke-width="3" stroke-linejoin="round" marker-end="url(#standalone-architecture-arrow)"/>
+  <path d="M 1176 272 V 340" fill="none" stroke="#F2CA68" stroke-width="3" stroke-linejoin="round" marker-end="url(#standalone-architecture-arrow)"/>
+  <g data-card="Catalogs, routes, policy and immutable code">
+  <rect x="104" y="352" width="1232" height="128" rx="24" fill="#242017" stroke="#9F8C62" stroke-width="2"/>
+  <text x="136" y="396" class="title">Catalogs, routes, policy and immutable code</text>
+  <text x="136" y="432" class="copy">Protected catalogs and bounded preparation/native caches retain exact source and target identities.</text>
+  <text x="136" y="462" class="note">Selection is pinned; current admission and capability checks still apply.</text>
+  </g>
+  <path d="M 264 480 V 532" fill="none" stroke="#F2CA68" stroke-width="3" stroke-linejoin="round" marker-end="url(#standalone-architecture-arrow)"/>
+  <path d="M 708 480 V 532" fill="none" stroke="#F2CA68" stroke-width="3" stroke-linejoin="round" marker-end="url(#standalone-architecture-arrow)"/>
+  <text x="286" y="518" class="label">HTTP files</text>
+  <text x="732" y="518" class="label">guest calls</text>
+  <g data-card="Static delivery">
+  <rect x="104" y="544" width="320" height="164" rx="24" fill="#191812" stroke="#9F8C62" stroke-width="2"/>
+  <text x="136" y="588" class="title">Static delivery</text>
+  <text x="136" y="623" class="note">Admitted public files</text>
+  <text x="136" y="654" class="note">GET/HEAD; no guest Store</text>
+  <text x="136" y="684" class="note">Shared listener and buffers</text>
+  </g>
+  <g data-card="Fixed execution cells">
+  <rect x="464" y="544" width="488" height="164" rx="24" fill="#191812" stroke="#9F8C62" stroke-width="2"/>
+  <text x="496" y="588" class="title">Fixed execution cells</text>
+  <text x="496" y="623" class="copy">Fresh Store, guest and original budget</text>
+  <text x="496" y="654" class="note">Capsules and supported Angular SSR</text>
+  <text x="496" y="684" class="note">Finite admission, queues and deadlines</text>
+  </g>
+  <g data-card="Capability broker">
+  <rect x="1000" y="544" width="336" height="164" rx="24" fill="#191812" stroke="#9F8C62" stroke-width="2"/>
+  <text x="1032" y="588" class="title">Capability broker</text>
+  <text x="1032" y="623" class="note">Current bindings and grants</text>
+  <text x="1032" y="654" class="note">Activation-owned handles</text>
+  <text x="1032" y="684" class="note">Provider identity and limits</text>
+  </g>
+  <path d="M 964 626 H 988" fill="none" stroke="#F2CA68" stroke-width="3" stroke-linejoin="round" marker-end="url(#standalone-architecture-arrow)"/>
+  <!-- Conditional host-owned state is not an ambient broker grant. -->
+  <path d="M 708 708 V 756" fill="none" stroke="#F2CA68" stroke-width="3" stroke-linejoin="round" marker-end="url(#standalone-architecture-arrow)" stroke-dasharray="8 6"/>
+  <text x="734" y="741" class="label">if Phase 4 is installed</text>
+  <path d="M 1168 708 V 756" fill="none" stroke="#F2CA68" stroke-width="3" stroke-linejoin="round" marker-end="url(#standalone-architecture-arrow)"/>
+  <g data-card="Protected state (opt-in)">
+  <rect x="464" y="768" width="488" height="148" rx="24" fill="#191812" stroke="#9F8C62" stroke-width="2" stroke-dasharray="8 6"/>
+  <text x="496" y="812" class="title">Protected state (opt-in)</text>
+  <text x="496" y="848" class="note">Host-owned commands and fresh queries</text>
+  <text x="496" y="880" class="note">State + outbox + outcome + applicable inbox</text>
+  </g>
+  <g data-card="Configured providers">
+  <rect x="1000" y="768" width="336" height="148" rx="24" fill="#191812" stroke="#9F8C62" stroke-width="2"/>
+  <text x="1032" y="812" class="title">Configured providers</text>
+  <text x="1032" y="848" class="note">HTTP, blobs, secrets, events</text>
+  <text x="1032" y="880" class="note">Finite pools; current policy</text>
+  </g>
+  <text x="136" y="804" class="title">Code may be reused</text>
+  <text x="136" y="844" class="note">Guest state stays fresh.</text>
+  <text x="136" y="876" class="note">No heap per dormant service.</text>
+  <text x="104" y="956" class="label">One Linux latentd: shared listeners, fixed workers and bounded node-owned storage.</text>
+  <text x="72" y="1028" class="note">In-process execution in one Linux node; installed profiles retain their own security and qualification limits.</text>
+</svg>

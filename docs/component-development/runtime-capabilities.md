@@ -62,6 +62,12 @@ Ordinary dependency declarations and runtime-profile selection are the primary w
 
 ## Interpretation and updates
 
+This v1 snapshot does not incorporate every later merge. For newer, separately
+scoped paths use the [Development changes guide](../start/development-changes.md),
+including Buffer/net modules, finite managed waits and closed C/Rust cooperative
+profiles. Those records retain their own source and evidence; this navigation
+does not change a row's status or its machine-readable source binding.
+
 Limits above identify selected test/runtime profiles, not universal defaults or minimum library requirements. Execution budgets, admission charges, provider quotas, physical owners and static bounds remain distinct. Cancellation, handle disposal and a reaped caller cannot prove worker drain or external rollback. Root deadline and uncertain mutation remain failures with their original status.
 
 Update this document and the JSON together when source or evidence changes. Retain old source-specific receipts, record new source identities, and keep incomplete API/lifecycle combinations visible. Package observations belong in the [versioned compatibility catalogue](../compatibility-catalogue/README.md); proposed ports belong to their implementation tickets. This matrix supplies no six-runtime completion certificate.

@@ -15,7 +15,9 @@ PASS = 'Windows exception handling preparation (win-eh-prepare)'
 MAX_LINE = 256 * 1024
 MAX_SAMPLES = 16 * 1024
 KEYS = ('blocks', 'instructions', 'phi', 'phiIncoming', 'alloca', 'load',
-        'store', 'volatileLoad', 'volatileStore', 'invoke', 'catchswitch')
+        'store', 'volatileLoad', 'volatileStore', 'invoke', 'catchswitch',
+        'catchswitchPhi', 'catchswitchPhiIncoming', 'simpleSsaStores',
+        'simpleSsaStorePatterns', 'simpleSsaRepeatedStores')
 NAME = r'(?:[-a-zA-Z$._0-9]+|"(?:[^"\\]|\\[0-9A-Fa-f]{2})+")'
 LABEL = re.compile(NAME + r':(?:\s*;.*)?$')
 INCOMING = re.compile(r',\s*%' + NAME + r'\s*\]')
@@ -35,12 +37,56 @@ CONTINUATION = re.compile(r'(?:to label %.* unwind label %.*|unwind label %.*|'
                           r'i[0-9]+ -?[0-9]+, label %.*)')
 
 
+MAX_PATTERN_KEYS = 8192
+MAX_PATTERN_TOKEN = 512
+MAX_PUBLISHED_PATTERNS = 16
+PATTERN_CLAIM = 'syntactic-only-no-alias-or-semantic-redundancy-proof'
+SIMPLE_STORE = re.compile(r'(.+?)\s+(%' + NAME + r'),\s+ptr(?:\s+addrspace\([0-9]+\))?\s+(%'
+                         + NAME + r')(?:,\s+(?:align [0-9]+|![^\r\n]+))*$')
+
+
+def validate_patterns(value: dict, snapshots: dict) -> None:
+    if (type(value) is not dict or set(value) != {'claim', 'maximumKeys', 'maximumTokenBytes',
+            'maximumPublished', 'phases'} or value['claim'] != PATTERN_CLAIM
+            or type(value['maximumKeys']) is not int or value['maximumKeys'] != MAX_PATTERN_KEYS
+            or type(value['maximumTokenBytes']) is not int or value['maximumTokenBytes'] != MAX_PATTERN_TOKEN
+            or type(value['maximumPublished']) is not int or value['maximumPublished'] != MAX_PUBLISHED_PATTERNS
+            or type(value['phases']) is not dict or set(value['phases']) != set(snapshots)):
+        raise ValueError('store-pattern-summary')
+    for phase, top in value['phases'].items():
+        row = snapshots[phase]
+        if (type(top) is not list or len(top) != min(MAX_PUBLISHED_PATTERNS, row['simpleSsaStorePatterns'])
+                or not 0 <= row['simpleSsaStorePatterns'] <= MAX_PATTERN_KEYS
+                or row['simpleSsaStores'] > row['store'] - row['volatileStore']
+                or row['simpleSsaRepeatedStores'] != row['simpleSsaStores'] - row['simpleSsaStorePatterns']
+                or row['catchswitchPhi'] > row['phi'] or row['catchswitchPhiIncoming'] > row['phiIncoming']):
+            raise ValueError('store-pattern-summary')
+        seen = set()
+        for item in top:
+            if (type(item) is not dict or set(item) != {'digest', 'occurrences'}
+                    or type(item['digest']) is not str or not re.fullmatch(r'sha256:[0-9a-f]{64}', item['digest'])
+                    or item['digest'] in seen or type(item['occurrences']) is not int
+                    or not 1 <= item['occurrences'] <= row['simpleSsaStores']):
+                raise ValueError('store-pattern-summary')
+            seen.add(item['digest'])
+        if (top != sorted(top, key=lambda item: (-item['occurrences'], item['digest']))
+                or sum(item['occurrences'] for item in top) > row['simpleSsaStores']):
+            raise ValueError('store-pattern-summary')
+        if top:
+            published = sum(item['occurrences'] for item in top)
+            rest = row['simpleSsaStorePatterns'] - len(top)
+            if not published + rest <= row['simpleSsaStores'] <= published + rest * top[-1]['occurrences']:
+                raise ValueError('store-pattern-summary')
+
+
 class Counter:
     """One bounded line buffer; each byte is appended at most once."""
 
     def __init__(self):
         self.record = {'status': 'incomplete', 'qualification': False,
                        'source': 'pinned-llvm-text-only', 'snapshots': {}, 'samples': []}
+        self.patterns = {}
+        self.block_phi = self.block_phi_incoming = 0
         self.phase = None
         self.opened = False
         self.completed = []
@@ -60,6 +106,8 @@ class Counter:
                 raise ValueError('snapshot-order-or-identity')
             self.phase = expected_phase.lower()
             self.record['snapshots'][self.phase] = dict.fromkeys(KEYS, 0)
+            self.patterns[self.phase] = {}
+            self.block_phi = self.block_phi_incoming = 0
             return
         if self.phase is None:
             return  # Outside-print warnings contribute only to the hash.
@@ -79,6 +127,7 @@ class Counter:
             return
         count = self.record['snapshots'][self.phase]
         if LABEL.fullmatch(text):
+            self.block_phi = self.block_phi_incoming = 0
             count['blocks'] += 1
             return
         if CONTINUATION.fullmatch(text):
@@ -101,6 +150,13 @@ class Counter:
             if not incoming:
                 raise ValueError('phi-format')
             count['phiIncoming'] += incoming
+            self.block_phi += 1
+            self.block_phi_incoming += incoming
+        if opcode == 'catchswitch':
+            count['catchswitchPhi'] += self.block_phi
+            count['catchswitchPhiIncoming'] += self.block_phi_incoming
+        if opcode == 'store' and not re.match(r'\s*(?:atomic|volatile)\b', operands):
+            self._store_pattern(operands.strip(), count)
         if opcode in {'phi', 'alloca', 'store', 'catchswitch'} and len(self.record['samples']) < 16:
             sample = {'phase': self.phase, 'opcode': opcode,
                       'instruction': count['instructions'], 'lineBytes': len(line),
@@ -109,6 +165,28 @@ class Counter:
             if self.samples_bytes > MAX_SAMPLES:
                 raise ValueError('sample-limit')
             self.record['samples'].append(sample)
+
+    def _store_pattern(self, operands: str, count: dict) -> None:
+        # Only direct SSA-value/direct SSA-address stores are eligible. Constants
+        # and volatile/atomic writes are outside this SYNTACTIC comparison.
+        match = SIMPLE_STORE.fullmatch(operands)
+        if match is None:
+            # A non-simple SSA store cannot silently masquerade as zero patterns.
+            if '%' in operands.split(',', 1)[0]:
+                raise ValueError('store-pattern-format')
+            return
+        tokens = match.groups()
+        if any('\0' in token or len(token.encode('utf-8')) > MAX_PATTERN_TOKEN for token in tokens):
+            raise ValueError('store-pattern-token-limit')
+        # No raw SSA token leaves the bounded line buffer; store SHA keys only.
+        key = digest(('\0'.join(tokens)).encode('utf-8'))
+        patterns = self.patterns[self.phase]
+        if key not in patterns and len(patterns) >= MAX_PATTERN_KEYS:
+            raise ValueError('store-pattern-limit')
+        patterns[key] = patterns.get(key, 0) + 1
+        count['simpleSsaStores'] += 1
+        count['simpleSsaStorePatterns'] = len(patterns)
+        count['simpleSsaRepeatedStores'] = count['simpleSsaStores'] - len(patterns)
 
     def feed(self, chunk: bytes) -> bool:
         if self.final is not None:
@@ -156,6 +234,13 @@ class Counter:
         except ValueError as error:
             self.error = self.error or str(error)
         self.pending.clear()
+        self.record['syntacticStorePatterns'] = {
+            'claim': PATTERN_CLAIM, 'maximumKeys': MAX_PATTERN_KEYS,
+            'maximumTokenBytes': MAX_PATTERN_TOKEN, 'maximumPublished': MAX_PUBLISHED_PATTERNS,
+            'phases': {phase: [{'digest': key, 'occurrences': value}
+                for key, value in sorted(rows.items(), key=lambda row: (-row[1], row[0]))[:MAX_PUBLISHED_PATTERNS]]
+                for phase, rows in self.patterns.items()}}
+        self.patterns.clear()
         self.record.update(streamDigest='sha256:' + self.checksum.hexdigest(),
                            streamBytes=self.stream_bytes, prefixOnly=self.error is not None)
         if self.error is None:

@@ -59,7 +59,7 @@
       {
         "if": "${{ inputs.public_fiber_derived_llvm }}",
         "name": "Install the same public compiler prerequisites for the qualified LLVM candidate",
-        "run": "set -euo pipefail\npython3 -m pip install --requirement tools/requirements.lock\npython3 -B -m unittest tools.tests.test_java_normal_fiber_component_inputs tools.tests.test_java_public_wineh tools.tests.test_java_llvm_ssa_consumer tools.tests.test_java_http_fibers.PublicCopyCostObservation -v\ncurl --fail --location --retry 3 --max-time 180 \\\n  https://services.gradle.org/distributions/gradle-9.1.0-bin.zip \\\n  -o \"$RUNNER_TEMP/gradle.zip\"\necho \"a17ddd85a26b6a7f5ddb71ff8b05fc5104c0202c6e64782429790c933686c806  $RUNNER_TEMP/gradle.zip\" | sha256sum --check\nunzip -q \"$RUNNER_TEMP/gradle.zip\" -d \"$RUNNER_TEMP\"\necho \"$RUNNER_TEMP/gradle-9.1.0/bin\" >> \"$GITHUB_PATH\"\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/java-bindgen\"\necho \"$RUNNER_TEMP/java-bindgen\" >> \"$GITHUB_PATH\"\n",
+        "run": "set -euo pipefail\npython3 -m pip install --requirement tools/requirements.lock\npython3 -B -m unittest tools.tests.test_java_normal_fiber_component_inputs tools.tests.test_java_public_wineh tools.tests.test_java_llvm_ssa_consumer tools.tests.test_java_http_fibers.PublicCopyCostObservation tools.tests.test_java_public_wineh_preclang -v\ncurl --fail --location --retry 3 --max-time 180 \\\n  https://services.gradle.org/distributions/gradle-9.1.0-bin.zip \\\n  -o \"$RUNNER_TEMP/gradle.zip\"\necho \"a17ddd85a26b6a7f5ddb71ff8b05fc5104c0202c6e64782429790c933686c806  $RUNNER_TEMP/gradle.zip\" | sha256sum --check\nunzip -q \"$RUNNER_TEMP/gradle.zip\" -d \"$RUNNER_TEMP\"\necho \"$RUNNER_TEMP/gradle-9.1.0/bin\" >> \"$GITHUB_PATH\"\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/java-bindgen\"\necho \"$RUNNER_TEMP/java-bindgen\" >> \"$GITHUB_PATH\"\n",
         "shell": "bash"
       },
       {
@@ -73,7 +73,7 @@
         },
         "if": "${{ inputs.public_fiber_derived_llvm }}",
         "name": "Compile only the same public fixture using its authenticated LLVM candidate",
-        "run": "python3 -B tools/qualify_java_fibers.py --output \"$RUNNER_TEMP/java-activation-fibers\" --wasi-sdk \"$RUNNER_TEMP/java-llvm-public-inputs/products/toolchain\" --derived-llvm-public"
+        "run": "python3 -B tools/qualify_java_fibers.py --output \"$RUNNER_TEMP/java-activation-fibers\" --wasi-sdk \"$RUNNER_TEMP/java-llvm-public-inputs/products/toolchain\" --derived-llvm-public --observe-public-wineh"
       },
       {
         "if": "${{ always() && steps.public-fiber-mode.outcome == 'success' }}",
@@ -82,7 +82,7 @@
         "with": {
           "if-no-files-found": "warn",
           "name": "java-public-fiber-assembly-${{ github.sha }}",
-          "path": "${{ runner.temp }}/java-activation-fibers/FIBERS-COMPILE.json\n${{ runner.temp }}/java-activation-fibers/compiler/*.command.json\n${{ runner.temp }}/java-activation-fibers/compiler/*.log\n${{ runner.temp }}/java-activation-fibers/build/runtime-profile.json\n${{ runner.temp }}/java-activation-fibers/build/component.wasm\n${{ runner.temp }}/java-activation-fibers/build/component-inputs/**\n${{ runner.temp }}/java-activation-fibers/compiler-inputs.json\n${{ runner.temp }}/java-activation-fibers/compiler/public-copy-cost-candidate.json\n${{ runner.temp }}/java-activation-fibers/compiler/public-copy-cost-Capsule.c\n${{ runner.temp }}/java-activation-fibers/compiler/coroutine-compiler-preparation.json\n${{ runner.temp }}/java-activation-fibers/build/project/compiler-patch/loaded.json\n${{ runner.temp }}/java-activation-fibers/build/coroutine-compiler-profile.json\n${{ runner.temp }}/java-activation-fibers/src/Capsule.java\n${{ runner.temp }}/java-activation-fibers/wit/service.wit\n${{ runner.temp }}/java-activation-fibers/build/derived-public-products/**\n${{ runner.temp }}/java-llvm-public-inputs/producer-run.json\n${{ runner.temp }}/java-llvm-public-inputs/producer-job.json\n${{ runner.temp }}/java-llvm-public-inputs/producer-artifact.json\n${{ runner.temp }}/java-llvm-public-inputs/derived-sdk-manifest.json\n${{ runner.temp }}/java-llvm-public-inputs/products/NOTICE\n${{ runner.temp }}/java-llvm-public-inputs/products/LLVM-LICENSE.txt\n${{ runner.temp }}/java-llvm-public-inputs/products/LLVM-PATCH.json\n",
+          "path": "${{ runner.temp }}/java-activation-fibers/FIBERS-COMPILE.json\n${{ runner.temp }}/java-activation-fibers/compiler/*.command.json\n${{ runner.temp }}/java-activation-fibers/compiler/*.log\n${{ runner.temp }}/java-activation-fibers/build/runtime-profile.json\n${{ runner.temp }}/java-activation-fibers/build/component.wasm\n${{ runner.temp }}/java-activation-fibers/build/component-inputs/**\n${{ runner.temp }}/java-activation-fibers/compiler-inputs.json\n${{ runner.temp }}/java-activation-fibers/compiler/public-copy-cost-candidate.json\n${{ runner.temp }}/java-activation-fibers/compiler/public-wineh-preclang.json\n${{ runner.temp }}/java-activation-fibers/compiler/public-copy-cost-Capsule.c\n${{ runner.temp }}/java-activation-fibers/compiler/coroutine-compiler-preparation.json\n${{ runner.temp }}/java-activation-fibers/build/project/compiler-patch/loaded.json\n${{ runner.temp }}/java-activation-fibers/build/coroutine-compiler-profile.json\n${{ runner.temp }}/java-activation-fibers/src/Capsule.java\n${{ runner.temp }}/java-activation-fibers/wit/service.wit\n${{ runner.temp }}/java-activation-fibers/build/derived-public-products/**\n${{ runner.temp }}/java-llvm-public-inputs/producer-run.json\n${{ runner.temp }}/java-llvm-public-inputs/producer-job.json\n${{ runner.temp }}/java-llvm-public-inputs/producer-artifact.json\n${{ runner.temp }}/java-llvm-public-inputs/derived-sdk-manifest.json\n${{ runner.temp }}/java-llvm-public-inputs/products/NOTICE\n${{ runner.temp }}/java-llvm-public-inputs/products/LLVM-LICENSE.txt\n${{ runner.temp }}/java-llvm-public-inputs/products/LLVM-PATCH.json\n",
           "retention-days": 3
         }
       }
@@ -91,7 +91,7 @@
   },
   "jobId": "public-fiber-assembly",
   "kind": "job",
-  "reviewReason": "Preserve all original public job steps/inputs/caps and normal compiler command; append2 bounded source controls to derived-only prerequisites and exact public observation/C/preparation/loaded/source receipt filenames.",
+  "reviewReason": "Preserve existing job/default-false inputs/35m bounds and all other modes; derived step explicitly selects diagnostic-only existing flag combination, adds four source controls and one fixed public summary filename; no ordinary Clang/component duplicate.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-guest-feasibility.yml"
 }

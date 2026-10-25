@@ -23,7 +23,7 @@ from tools.rust_capsule_project import ROOT, fresh, read_json, write_json
 from tools.sdk_provider_scenario import start_provider, close_failed_provider
 
 
-def checked(row, component, revision, mode):
+def checked(row, component, revision, mode, *, selected_fixture=fixture):
     response=row['response'];used=response['data']['consumption']
     require(row['processReaped'] and response['outcomeKnown'] is True
         and revision['releaseDigest']==component and response['data']['resolvedRevision']==revision,
@@ -35,7 +35,7 @@ def checked(row, component, revision, mode):
         require(row['exitCode']==4 and response['error']['code']=={
             'root-cancel':'cancelled','root-deadline':'deadline-exceeded'}[mode], 'finite-wait-root-terminal-not-success')
     else:
-        require(row['exitCode']==0 and row['decoded']==[{'ok':fixture.expected(mode)}],
+        require(row['exitCode']==0 and row['decoded']==[{'ok':selected_fixture.expected(mode)}],
             'finite-wait-exact-standard-library-result')
 
 
@@ -68,11 +68,22 @@ def pending(client, process, probe, target, output, label, offset):
     finally:client.deadline=original
 
 
-def run(artifact: Path,native: dict,output: Path):
+def run(artifact: Path,native: dict,output: Path, *, aggregate: bool=False):
+    require(type(aggregate) is bool, 'finite-wait-closed-programme-selection')
+    selected_fixture=fixture
+    prefix='finite:'
+    fresh_mode='infinite-join-regression'
+    if aggregate:
+        from tools import dotnet_aggregate_wait_fixture as selected_fixture
+        prefix=selected_fixture.PREFIX
+        fresh_mode=selected_fixture.FRESH
     output=fresh(output);component=file_identity(artifact/'component.wasm')
     before={k:file_identity(p) for k,p in native.items()}
     record={'schemaVersion':'latent.dotnet.finite-task-waits.node.v1','status':'incomplete',
         'cases':[],'attempts':[],'fullTicketQualification':False,'native':before,'component':component}
+    if aggregate:
+        record['schemaVersion']='latent.dotnet.aggregate-task-waits.node.v1'
+        record['expectedCaseOrder']=[*selected_fixture.CASES,'root-cancel',fresh_mode,'root-deadline',fresh_mode]
     commands=Commands(ROOT,fresh(output/'commands'),build_environment(output),deadline_seconds=360,command_seconds=120)
     peer=node=client=None;stage='normal-single-component-signing'
     def checkpoint():
@@ -109,15 +120,15 @@ def run(artifact: Path,native: dict,output: Path):
                     return {'provider':owners.provider_idle(client,target),'physical':sample(client,probe,label,1)}
                 def invoke(mode,label):
                     revision=selected_revision(client,target)
-                    row=call(client,target,'greeting','greet',['finite:'+mode],label)
+                    row=call(client,target,'greeting','greet',[prefix+mode],label)
                     record['attempts'].append({'mode':mode,'invocation':row});checkpoint()
-                    checked(row,component['sha256'],revision,mode)
+                    checked(row,component['sha256'],revision,mode,selected_fixture=selected_fixture)
                     record['cases'].append({'mode':mode,'invocation':row,'retirement':retire(label+'-retired')});checkpoint()
-                for index,mode in enumerate(fixture.CASES):
+                for index,mode in enumerate(selected_fixture.CASES):
                     stage=mode;invoke(mode,'finite-wait-'+str(index))
                 for mode,label in (('root-cancel','node-stop-pending'),('root-deadline','node-stop-drain')):
                     stage=mode;revision=selected_revision(client,target);node.drain();offset=len(node.buffers[1])
-                    active=start_call(client,target,'greeting','greet',['finite:pending-root'],label,wall=3000 if mode=='root-deadline' else None)
+                    active=start_call(client,target,'greeting','greet',[prefix+'pending-root'],label,wall=3000 if mode=='root-deadline' else None)
                     try:
                         live=pending(client,active,probe,target,output,label,offset);ack=None
                         if mode=='root-cancel':
@@ -125,12 +136,15 @@ def run(artifact: Path,native: dict,output: Path):
                             require(ack['outcomeKnown'] is True and ack['data']['disposition']=='accepted','finite-wait-root-cancel-accepted')
                         row=finish_call(client,active)
                         record['attempts'].append({'mode':mode,'invocation':row,'live':live,'cancelAcknowledgement':ack});checkpoint()
-                        checked(row,component['sha256'],revision,mode)
+                        checked(row,component['sha256'],revision,mode,selected_fixture=selected_fixture)
                         record['cases'].append({'mode':mode,'invocation':row,'live':live,'cancelAcknowledgement':ack,
                             'retirement':retire(label+'-retired')});checkpoint()
                     finally:active.close()
-                    invoke('infinite-join-regression','finite-wait-fresh-after-'+mode)
-                require(len(record['cases'])==len(fixture.CASES)+4,'finite-wait-all-eighteen-ordered-cases')
+                    invoke(fresh_mode,'finite-wait-fresh-after-'+mode)
+                require(len(record['cases'])==len(selected_fixture.CASES)+4,'finite-wait-all-ordered-cases')
+                if aggregate:
+                    require([row['mode'] for row in record['cases']]==record['expectedCaseOrder'],
+                        'aggregate-wait-fourteen-original-ordered-outcomes')
                 delete_all(client,[target['name']]);record['afterDeletes']=sample(client,probe,'finite-wait-after-deletes',0)
                 stop(client,node);record['nodeShutdown']=stopped_record(node);record['peerShutdown']=stop_observation_peer(peer)
                 stderr=bytes(node.buffers[1]);(output/'node-stderr.txt').write_bytes(stderr)

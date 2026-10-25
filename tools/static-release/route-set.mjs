@@ -3,7 +3,7 @@ import path from 'node:path';
 import {parseArgs} from 'node:util';
 import {fileURLToPath} from 'node:url';
 import {connection, durableWrite, locked, readJson} from './io.mjs';
-import {plan, requireValue, validateJournal} from './model.mjs';
+import {manifests, plan, requireValue, validateJournal} from './model.mjs';
 import {reconcile} from './reconcile.mjs';
 
 export async function main(argv) {
@@ -11,19 +11,38 @@ export async function main(argv) {
     cli: {type: 'string'}, config: {type: 'string'}, profile: {type: 'string'}, node: {type: 'string'},
     intent: {type: 'string'}, journal: {type: 'string'}, 'deadline-seconds': {type: 'string', default: '120'},
     'maximum-writes': {type: 'string', default: '16'},
+    'diagnostic-records': {type: 'string', default: '2'}, 'competing-operations': {type: 'string', default: '1'},
+    'warning-percent': {type: 'string', default: '80'}, 'cadence-minutes': {type: 'string', default: '10'},
   }});
   const command = positionals[0];
-  requireValue(positionals.length === 1 && ['plan', 'apply', 'status'].includes(command), 'plan-apply-or-status-required');
+  requireValue(positionals.length === 1 && ['preflight', 'plan', 'apply', 'status'].includes(command), 'preflight-plan-apply-or-status-required');
   requireValue(['cli', 'config', 'profile', 'node', 'journal'].every(name => typeof values[name] === 'string' && values[name].length > 0), 'explicit-connection-and-journal-required');
-  const options = {...values, cli: path.resolve(values.cli), config: path.resolve(values.config), journal: path.resolve(values.journal), deadlineSeconds: Number(values['deadline-seconds'])};
+  const bounded = (name, minimum, maximum) => {
+    const value = values[name];
+    requireValue(/^(0|[1-9][0-9]{0,8})$/.test(value) && Number(value) >= minimum && Number(value) <= maximum,
+      'audit-planning-option-bound');
+    return Number(value);
+  };
+  const auditOptions = {diagnosticRecords: bounded('diagnostic-records', 0, 256),
+    competingOperations: bounded('competing-operations', 0, 64), warningPercent: bounded('warning-percent', 1, 100),
+    cadenceMinutes: bounded('cadence-minutes', 1, 1440)};
+  const options = {...values, auditOptions, cli: path.resolve(values.cli), config: path.resolve(values.config),
+    journal: path.resolve(values.journal), deadlineSeconds: Number(values['deadline-seconds'])};
   return locked(options.journal, async () => {
-    const journal = command === 'plan' ? null : await readJson(options.journal, true);
+    const journal = ['preflight', 'plan'].includes(command) ? null : await readJson(options.journal, true);
     const intent = journal?.intent ?? await readJson(path.resolve(values.intent));
+    manifests(intent);
     const {client, binding} = await connection(options, intent.tenant);
+    if (command === 'preflight') {
+      // Capacity can be observed before renewing stale evidence. This does not
+      // assert eligibility, alter an existing journal, or dispatch any mutation.
+      return client.auditPreflight(intent.routes.length);
+    }
     if (command === 'plan') {
       const value = await plan(client, intent, binding);
+      value.auditCapacity = await client.auditPreflight(intent.routes.length);
       await durableWrite(options.journal, value, true);
-      return {schemaVersion: 'latent.static.route-result.v1', id: value.id, status: 'planned',
+      return {schemaVersion: 'latent.static.route-result.v1', id: value.id, status: 'planned', auditCapacity: value.auditCapacity,
         routes: value.rows.map(row => ({id: row.desired.metadata.name, generation: row.baseline.generation,
           publication: row.desired.spec.target.publication}))};
     }
@@ -43,7 +62,9 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.a
   try {
     const result = await main(process.argv.slice(2));
     console.log(JSON.stringify(result));
-    process.exitCode = ['complete', 'planned'].includes(result.status) ? 0 : result.status === 'uncertain' ? 5 : result.status === 'partial' ? 3 : 4;
+    process.exitCode = result.schemaVersion === 'latent.static.audit-headroom.v1'
+      ? {'headroom-observed': 0, warning: 3, blocked: 4, unavailable: 5}[result.status]
+      : ['complete', 'planned'].includes(result.status) ? 0 : result.status === 'uncertain' ? 5 : result.status === 'partial' ? 3 : 4;
   } catch (error) {
     const reason = /^[a-z][a-z-]{0,95}$/.test(error.message) ? error.message : 'route-set-input-or-storage-failed';
     console.log(JSON.stringify({schemaVersion: 'latent.static.route-result.v1', status: 'failed', reason}));

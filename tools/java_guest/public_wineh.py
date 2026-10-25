@@ -58,6 +58,13 @@ REFUSALS.update({
     'nonportable project path': 'bindings-path',
 })
 
+REFUSALS.update({'preclang-' + name: 'preclang-' + name for name in (
+    'baseline-source', 'baseline-match', 'filter-root', 'filter-environment', 'compiler-environment',
+    'fixed-root', 'carrier-manifest', 'ticket-schema', 'deadline', 'ticket-source', 'ticket-roots',
+    'original-command', 'diagnostic-command', 'materials', 'gate-record', 'actual-c',
+    'no-original-compile', 'source-ref', 'inputs-before', 'inputs-after', 'ambient-filter-root',
+    'ticket-bound', 'ticket-after', 'ticket-duplicate-key', 'source-after')})
+
 
 def refusal(error: Exception) -> str:
     # Only literal closed codes leave this helper, never a tool/path message.
@@ -156,7 +163,7 @@ def input_identity(compiler: Compiler, output: Path) -> dict:
             'environmentDigest': digest(canonical(compiler.environment))}
 
 
-def load_ticket(output: Path, expected: str, environment: dict) -> dict:
+def load_ticket(output: Path, expected: str, environment: dict, *, deadline=None) -> dict:
     """Pure file admission for the child; never spawn Git/tools or a compiler."""
     paths.absolute(output)
     if not re.fullmatch(r'[0-9a-f]{64}', expected):
@@ -165,6 +172,12 @@ def load_ticket(output: Path, expected: str, environment: dict) -> dict:
     if digest(raw) != 'sha256:' + expected:
         raise ValueError('ticket-digest')
     value = json.loads(raw)
+    if type(value) is dict and value.get('schemaVersion') == 'latent.java.public-wineh-preclang-ticket.v1':
+        from tools.java_guest import wineh_preclang
+        if deadline is None:
+            raise ValueError('preclang-deadline')
+        value = json.loads(raw, object_pairs_hook=wineh_preclang.no_duplicate_pairs)
+        return wineh_preclang.load_ticket(output, expected, environment, value, deadline)
     if (type(value) is not dict or set(value) != {'schemaVersion', 'source', 'inputs',
             'toolRoots', 'originalCommand', 'originalPair', 'ordinal', 'diagnosticCommand', 'output',
             'failureCommand', 'failureOrdinal'}
@@ -297,7 +310,7 @@ def filter_summary(result, expected: str, source: dict, command: list[str]) -> d
         observation = value.get('observation', {})
         if (type(observation) is not dict or not set(observation) <= {
                 'status', 'qualification', 'source', 'snapshots', 'samples', 'streamDigest',
-                'streamBytes', 'prefixOnly', 'delta', 'reason'}
+                'streamBytes', 'prefixOnly', 'delta', 'reason', 'syntacticStorePatterns'}
                 or observation.get('qualification') is not False
                 or observation.get('source') != 'pinned-llvm-text-only'
                 or observation.get('status') not in {'observed', 'incomplete'}
@@ -314,6 +327,8 @@ def filter_summary(result, expected: str, source: dict, command: list[str]) -> d
             if (type(row) is not dict or set(row) != set(KEYS)
                     or any(type(item) is not int or not 0 <= item <= RAW_TRANSIT_BUDGET for item in row.values())):
                 raise ValueError('filter-summary')
+        from tools.java_guest.wineh_ir import validate_patterns
+        validate_patterns(observation.get('syntacticStorePatterns'), snapshots)
         for sample in samples:
             if (type(sample) is not dict or set(sample) != {'phase', 'opcode', 'instruction', 'lineBytes', 'lineDigest'}
                     or sample['phase'] not in {'before', 'after'} or sample['opcode'] not in {'phi', 'alloca', 'store', 'catchswitch'}

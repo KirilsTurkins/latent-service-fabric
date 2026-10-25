@@ -34,9 +34,9 @@ Angular qualification profiles. [The private package](../../website/package.json
 root Cargo and SDK manifests. Docusaurus 3.10.2, React 19.3.0 and TypeScript 5.9.3
 are exact pins, not floating recommendations. There is no root npm workspace.
 
-The explicit `npm-11.19.1-lsf-bundle-v4` derivation replaces npm's bundled
+The explicit `npm-11.19.1-lsf-bundle-v5` derivation replaces npm's bundled
 `ip-address`/`undici`/`brace-expansion`/`http-cache-semantics`/`postcss-selector-parser`
-with 10.7.2/6.28.1/5.0.12/4.3.0/7.1.6 before executing the package manager.
+with 10.7.4/6.29.1/5.0.12/4.3.0/7.1.6 before executing the package manager.
 Preparation authenticates seven registry archives and two SHA-bound source repair
 documents, executes no package code and writes deterministic TARs under ignored
 `target/`. The npm bundle includes the maintained HTTP cache repair; website and
@@ -49,7 +49,10 @@ new dependencies or nested shadow copies are rejected.
 The selector parser retains its exact existing `cssesc` 3.0.0 and
 `util-deprecate` 1.0.2 dependencies. The website and framework inventories also
 pin tinypool 2.1.2, source-map-js 1.2.2, postcss-selector-parser 7.1.6 and KaTeX
-0.18.2, including transitive copies, for the October 2026 advisory fixes.
+0.18.2, including transitive copies, for the October 2026 advisory fixes. Current
+website overrides also pin serialize-javascript 7.1.3, launch-editor 2.14.2 and
+follow-redirects 1.16.1. The source/lock and authenticated distribution records
+own the exact graph; older build receipts keep their v4 identity.
 This is not an upstream npm release. The [toolchain instructions](../../website/README.md)
 describe offline inputs and the explicit maintainer-only refresh path.
 

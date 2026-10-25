@@ -1,7 +1,7 @@
 # Workspace package architecture
 
 Use this guide to find the implementation owner before changing a Rust package.
-The [package index](../../crates/README.md) links all 53 workspace members,
+The [package index](../../crates/README.md) links all 55 workspace members,
 including applications, SDKs and tools outside `crates/`. Each package README
 maps its public surface, modules, execution/ownership flow, dependency and feature
 gates, source tests and related specifications.
@@ -23,6 +23,7 @@ not establish an installed implementation.
 | Identity, deadline, budget or lifecycle vocabulary | [latent-core](../../crates/latent-core/README.md) | Admission and original resource owners; wire projections |
 | Manifest/schema validation | [latent-manifest](../../crates/latent-manifest/README.md) | Authoritative schemas, packaging and runtime compatibility |
 | WIT interface or generated resource identity | [latent-component-bindings](../../crates/latent-component-bindings/README.md) | WIT authority, host adapter and guest SDK |
+| Authenticated cooperative component transformation | [latent-component-threading](../../crates/latent-component-threading/README.md) | Exact Rust/C source, context and component graph; separately selected engine/ledger owners |
 | RPC schema and generated services | [latent-rpc](../../crates/latent-rpc/README.md) | Protobuf manifest, concrete wire adapter and clients |
 | Structural compatibility | [latent-contracts](../../crates/latent-contracts/README.md) | Full component/WIT inspection in packaging |
 | Package layout, SBOM or supplied-file validation | [latent-packaging](../../crates/latent-packaging/README.md) | Artifact identities, signing and registry transfer |
@@ -31,6 +32,7 @@ not establish an installed implementation.
 | Invocation lifecycle or child calls | [latent-node](../../crates/latent-node/README.md) | Admission, scheduler, backend, journal and descendant accounting |
 | Execution, interruption or code reuse | [latent-executor](../../crates/latent-executor/README.md), [latent-wasmtime](../../crates/latent-wasmtime/README.md) | Preparation identity, fresh Store state and cleanup |
 | Capability acceptance or provider resources | [latent-capabilities](../../crates/latent-capabilities/README.md) | Installed provider, policy, audit and actual I/O owner |
+| Selected Linux factory observation descriptor | [latent-stream-factory-native](../../crates/latent-stream-factory-native/README.md) | Trusted kernel/device, original precharge and physical Root/child retirement |
 | HTTP adaptation or application delivery | [latent-ingress](../../crates/latent-ingress/README.md) | Listener, exact trigger selection and browser boundary |
 | Transaction storage and recovery | [latent-state](../../crates/latent-state/README.md) | Original protected worker/view, namespace history and native capacity |
 | Atomic command completion | [latent-commit](../../crates/latent-commit/README.md) | State/result/outbox/inbox envelope and physical retirement |
@@ -39,6 +41,7 @@ not establish an installed implementation.
 | Startup, listeners or shutdown | [latentd](../../apps/latentd/README.md) | Configuration validation and shared composition |
 | Operator/client behavior | [latent](../../apps/latent/README.md), [latent-sdk](../../sdk/rust/README.md) | Original operation identity, bounded transport and outcome recovery |
 | Guest helper/resource lifecycle | [latent-guest](../../sdk/rust-guest/README.md) | Exact generated WIT profile and actual Wasm fixture |
+| Compiler-owned Rust standard logging | [latent-standard-stdio](../../sdk/rust-standard-stdio/README.md) | Same-compiler sysroot ABI, typed LOG, explicit profile and permission |
 
 ## Three end-to-end flows
 
@@ -121,6 +124,14 @@ not a substitute for Cargo's complete selected feature graph.
 - Development clock/test-host, outbound-stream and measurement features require
   their explicit fixture/profile. Enabling them is not a production grant or
   replacement for current admission owners.
+
+The workspace selects a maintained Wasmtime 48.0.7 source package with explicit
+value/native-allocation admission hooks, plus the retained-owner bytes patch.
+The upstream version number alone does not identify those changes. The
+[engine guide](../runtime/wasmtime.md) explains preparation identity and selected
+accounting scope. The private Linux factory leaf and Rust stdio export also
+have narrow, documented unsafe allowances; they do not relax the rule for
+unrelated workspace code.
 
 Use [selected toolchains](toolchain.md) and
 [generated input ownership](build-foundation.md). WIT and Protobuf are

@@ -1,5 +1,6 @@
 //! Bounded local durability. Records describe decisions; they confer no authority.
 mod codec;
+mod diagnostics;
 mod limits;
 mod memory;
 mod model;
@@ -12,6 +13,11 @@ pub use memory::{
     AuditBox, AuditBoxPreparation, AuditCallMemory, AuditOwned, AuditValuePreparation,
 };
 pub use model::*;
+pub use store::lifecycle::{
+    AuditArchiveCoverage, AuditArchivePage, AuditMaintenance, AuditRolloverReceipt,
+    AuditTransferReceipt,
+};
+pub use store::lifecycle::{AuditCustodyStatus, AuditJournalStatus};
 pub use ticket::{AuditAppendTicket, AuditBeginTicket, AuditQueryTicket};
 pub use worker::*;
 type Result<T> = std::result::Result<T, PlatformError>;
@@ -20,7 +26,7 @@ fn error(code: PlatformErrorCode, reason: &'static str) -> PlatformError {
         code,
         message: reason.into(),
         retryable: false,
-        details: Vec::new(),
+        details: diagnostics::details(reason),
     }
 }
 fn invalid() -> PlatformError {

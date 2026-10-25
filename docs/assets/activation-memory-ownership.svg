@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 992" role="img" aria-labelledby="activation-memory-ownership-title activation-memory-ownership-description">
+  <title id="activation-memory-ownership-title">Cell reuse and memory refunds have distinct physical owners</title>
+  <desc id="activation-memory-ownership-description">Selected native and capability allocation paths precharge the original activation before allocating, including old plus replacement backing during growth. Store and guest-owned allocations retire through actual cleanup. A separate retained result or host-work owner can outlive Store destruction and keeps the same original charge. Only the backend cleanup proof permits cell reuse; uncertain cleanup quarantines it. Memory refunds follow the final physical deallocation, including strong and weak owners and pending work. A safe transfer must sever cell and Store references without refunding retained backing. This is selected allocation accounting, not a complete RSS or kernel-memory bound.</desc>
+  <defs>
+    <marker id="activation-memory-ownership-arrow" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M 1 1 L 11 6 L 1 11 z" fill="#F2CA68"/>
+    </marker>
+    <style>
+      .heading { font: 700 34px system-ui, sans-serif; fill: #F3EBDD; }
+      .subtitle { font: 400 20px system-ui, sans-serif; fill: #C7BA9C; }
+      .title { font: 700 24px system-ui, sans-serif; fill: #F3EBDD; }
+      .copy { font: 400 20px system-ui, sans-serif; fill: #F3EBDD; }
+      .note { font: 400 18px system-ui, sans-serif; fill: #C7BA9C; }
+      .label { font: 600 16px system-ui, sans-serif; fill: #F2CA68; }
+      .success { font: 400 20px system-ui, sans-serif; fill: #B9E8BD; }
+      .warning { font: 400 20px system-ui, sans-serif; fill: #F8D586; }
+    </style>
+  </defs>
+  <rect width="1440" height="992" rx="28" fill="#0D0D0B"/>
+  <text x="72" y="98" class="heading">Memory follows the original backing owner</text>
+  <text x="72" y="138" class="subtitle">Selected Wasmtime and capability paths can retain allocations beyond the Store lifetime.</text>
+  <g data-card="Precharge the original activation before allocating">
+  <rect x="72" y="192" width="1296" height="120" rx="24" fill="#242017" stroke="#9F8C62" stroke-width="2"/>
+  <text x="104" y="236" class="title">Precharge the original activation before allocating</text>
+  <text x="104" y="274" class="copy">Pay for actual capacity; reserve old and replacement backing while growth overlaps.</text>
+  </g>
+  <path d="M 720 312 V 344 H 384 V 364" fill="none" stroke="#F2CA68" stroke-width="3" stroke-linejoin="round" marker-end="url(#activation-memory-ownership-arrow)"/>
+  <path d="M 720 344 H 1056 V 364" fill="none" stroke="#F2CA68" stroke-width="3" stroke-linejoin="round" marker-end="url(#activation-memory-ownership-arrow)"/>
+  <g data-card="Store and guest-owned state">
+  <rect x="72" y="376" width="624" height="204" rx="24" fill="#191812" stroke="#9F8C62" stroke-width="2"/>
+  <text x="104" y="420" class="title">Store and guest-owned state</text>
+  <text x="104" y="458" class="copy">Fresh instance, heap, tables and selected Store backing.</text>
+  <text x="104" y="495" class="note">Destroy the real allocations during proven cleanup.</text>
+  <text x="104" y="536" class="note">Guest return alone does not establish retirement.</text>
+  </g>
+  <g data-card="Retained results and host work">
+  <rect x="744" y="376" width="624" height="204" rx="24" fill="#191812" stroke="#9F8C62" stroke-width="2"/>
+  <text x="776" y="420" class="title">Retained results and host work</text>
+  <text x="776" y="458" class="copy">Bytes clones, metadata, timers or native work.</text>
+  <text x="776" y="495" class="note">Keep the original charge while backing exists.</text>
+  <text x="776" y="536" class="note">Selected owners can outlive Store destruction.</text>
+  </g>
+  <path d="M 384 580 V 632" fill="none" stroke="#F2CA68" stroke-width="3" stroke-linejoin="round" marker-end="url(#activation-memory-ownership-arrow)"/>
+  <path d="M 1056 580 V 632" fill="none" stroke="#F2CA68" stroke-width="3" stroke-linejoin="round" marker-end="url(#activation-memory-ownership-arrow)"/>
+  <g data-card="Cell disposition">
+  <rect x="72" y="644" width="624" height="180" rx="24" fill="#191812" stroke="#9F8C62" stroke-width="2"/>
+  <text x="104" y="688" class="title">Cell disposition</text>
+  <text x="104" y="724" class="success">Cleanup proved: reusable under the backend proof.</text>
+  <text x="104" y="764" class="warning">Cleanup uncertain: quarantine the cell.</text>
+  <text x="104" y="798" class="note">Disposition is separate from result delivery.</text>
+  </g>
+  <g data-card="Memory reservation">
+  <rect x="744" y="644" width="624" height="180" rx="24" fill="#191812" stroke="#9F8C62" stroke-width="2"/>
+  <text x="776" y="688" class="title">Memory reservation</text>
+  <text x="776" y="724" class="copy">Release only after physical deallocation.</text>
+  <text x="776" y="760" class="note">Last owners, actual backing and work retirement</text>
+  <text x="776" y="790" class="note">determine when the original charge can return.</text>
+  </g>
+  <text x="72" y="852" class="note">Safe transfer must sever cell/Store references; retained work keeps its original owner and charge.</text>
+  <text x="72" y="884" class="note">Reservation release does not rewind finalized fuel or peak-memory consumption.</text>
+  <text x="72" y="916" class="note">Scope: selected allocation controls, not a complete process-RSS or kernel-memory bound.</text>
+</svg>

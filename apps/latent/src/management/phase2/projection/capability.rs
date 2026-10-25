@@ -270,6 +270,10 @@ fn audit_usage_key(suffix: &str) -> bool {
     matches!(
         suffix,
         "capture_dropped"
+            | "retained_records"
+            | "retained_bytes"
+            | "unknown_outcomes"
+            | "previous_session_loss_unknown"
             | "closed"
             | "dropped_observations"
             | "unavailable_events"

@@ -415,6 +415,8 @@ class Compiler:
             if port['finiteAndCancellableWaits'] == 'original-Task-WhenAny-Delay':
                 self.compiler_patches[-1]['selection'].update({key: port[key] for key in (
                     'finiteWaitCleanup', 'zeroTimeout', 'waitCancellation', 'publicWaitValidationAndExceptions')})
+            if 'aggregateTaskWait' in port:
+                self.compiler_patches[-1]['selection']['aggregateTaskWait'] = port['aggregateTaskWait']
             if managed:
                 self.compiler_patches.append({'name': managed_work.PROFILE, 'profile': managed_work.PROFILE,
                     'original': port['frameworkInput'], 'selected': port['derived'],

@@ -95,6 +95,7 @@ class LlvmSsaConsumer(unittest.TestCase):
         for suffix in ('java-activation-fibers/compiler-inputs.json',
                 'java-activation-fibers/build/derived-public-products/**',
                 'java-activation-fibers/compiler/public-copy-cost-candidate.json',
+                'java-activation-fibers/compiler/public-wineh-preclang.json',
                 'java-activation-fibers/compiler/public-copy-cost-Capsule.c',
                 'java-activation-fibers/compiler/coroutine-compiler-preparation.json',
                 'java-activation-fibers/build/project/compiler-patch/loaded.json',

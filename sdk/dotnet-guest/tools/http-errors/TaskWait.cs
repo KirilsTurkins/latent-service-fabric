@@ -334,6 +334,7 @@ internal static class TaskWait
             }
             object? aggregateReceipt = null;
             Dictionary<string, string>? aggregateRemainders = null;
+            string? aggregateTimerPumpOriginal = null;
             if (aggregateSelected)
             {
                 var aggregate = AggregateTaskWait.Install(module, pe);
@@ -348,11 +349,12 @@ internal static class TaskWait
                 }
                 aggregateReceipt = aggregate.Receipt;
                 aggregateRemainders = aggregate.Remainders;
+                aggregateTimerPumpOriginal = aggregate.TimerPumpOriginal;
             }
             var generatedHelpers = Methods(module).Where(item => !originalMap.ContainsKey(item.Key))
                 .ToDictionary(item => item.Value.FullName, item => BodyIdentity(item.Value));
             Require(generatedHelpers.Count == (aggregateSelected ? 95 : managedSelected ? 91 : finiteSelected ? 10 : 9)
-                && timerMethods.Length == 3 && modifiedBodies.Count == (aggregateSelected ? 35 : managedSelected ? 26 : 4));
+                && timerMethods.Length == 3 && modifiedBodies.Count == (aggregateSelected ? 36 : managedSelected ? 26 : 4));
             module.Write(output, new WriterParameters { WriteSymbols = false, DeterministicMvid = true });
             using (var written = ModuleDefinition.ReadModule(output))
             {
@@ -370,6 +372,7 @@ internal static class TaskWait
                 {
                     AggregateTaskWait.VerifyRemainders(written, aggregateRemainders);
                     AggregateTaskWait.VerifyDerivedLayout(written);
+                    AggregateTaskWait.VerifyTimerPump(written, aggregateTimerPumpOriginal!);
                 }
                 var fields = written.GetTypes().SelectMany(type => type.Fields).Select(field => field.FullName).ToHashSet();
                 var addedFields = module.GetTypes().SelectMany(type => type.Fields).Select(field => field.FullName)
@@ -393,7 +396,7 @@ internal static class TaskWait
                 timerDriver = "TimerQueue.SetNextTimer-only", timerDriverIdle = "Timer.ActiveCount==0",
                 timerDriverCancellation = "original-CancellationTokenSource-CancelAndDispose",
                 timerDriverIdentity = "original-task-reference-and-epoch", timerDriverCallbacks = "original-queued-user-callbacks-preserved",
-                timerDriverScheduledToFire = "untouched", timerDriverCacheCleanup = false,
+                timerDriverScheduledToFire = aggregateSelected ? "positive-batch-detachment-before-original-enumerator" : "untouched", timerDriverCacheCleanup = false,
                 timerDriverRegistrationContext = "no-new-capture-original-flow-restored",
                 timerDriverModifiedOriginalMethods = 3, timerDriverOriginalBodies = timerOriginalBodies,
                 zeroCacheLifetime = "CheckPollables-original-Poll-call-only", zeroCacheDetach = "before-original-Poll",

@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 1008" role="img" aria-labelledby="transaction-command-recovery-title transaction-command-recovery-description">
+  <title id="transaction-command-recovery-title">Host-owned atomic command commitment and original-identity recovery</title>
+  <desc id="transaction-command-recovery-description">The optional Development Phase 4 profile admits an original command key and namespace scope under current authority and finite budgets. A fresh guest reads one view and stages bounded writes and logical effect intents. The host validates output, authorization and the optimistic-concurrency fence, then seals an eligible commit plan. One physical durable envelope contains state changes, outbox intents, the original command outcome and applicable inbox facts. Reply or original-result recovery is separate from deferred effect dispatch. Lookup requires current result-read authority and does not rerun the guest. Dispatch has its own worker, authority and acknowledged, rejected or uncertain provider outcome. A lost reply or cancellation is not abort proof; local commit is not atomic remote execution.</desc>
+  <defs>
+    <marker id="transaction-command-recovery-arrow" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M 1 1 L 11 6 L 1 11 z" fill="#F2CA68"/>
+    </marker>
+    <style>
+      .heading { font: 700 34px system-ui, sans-serif; fill: #F3EBDD; }
+      .subtitle { font: 400 20px system-ui, sans-serif; fill: #C7BA9C; }
+      .title { font: 700 24px system-ui, sans-serif; fill: #F3EBDD; }
+      .copy { font: 400 20px system-ui, sans-serif; fill: #F3EBDD; }
+      .note { font: 400 18px system-ui, sans-serif; fill: #C7BA9C; }
+      .label { font: 600 16px system-ui, sans-serif; fill: #F2CA68; }
+      .success { font: 400 20px system-ui, sans-serif; fill: #B9E8BD; }
+      .warning { font: 400 20px system-ui, sans-serif; fill: #F8D586; }
+    </style>
+  </defs>
+  <rect width="1440" height="1008" rx="28" fill="#0D0D0B"/>
+  <text x="72" y="98" class="heading">Commit state once; recover by the original command</text>
+  <text x="72" y="138" class="subtitle">Development Phase 4 success path: protected engine, signed companion and current scoped authority.</text>
+  <g data-card="Admit original identity">
+  <rect x="72" y="192" width="384" height="210" rx="24" fill="#191812" stroke="#9F8C62" stroke-width="2"/>
+  <text x="104" y="236" class="title">Admit original identity</text>
+  <text x="104" y="278" class="note">Command key + namespace scope</text>
+  <text x="104" y="312" class="note">Current authority + finite budgets</text>
+  <text x="104" y="370" class="label">COMMAND KEY IS NOT AN ACTIVATION ID</text>
+  </g>
+  <g data-card="Execute and stage">
+  <rect x="528" y="192" width="384" height="210" rx="24" fill="#191812" stroke="#9F8C62" stroke-width="2"/>
+  <text x="560" y="236" class="title">Execute and stage</text>
+  <text x="560" y="278" class="note">Fresh guest; bounded state view</text>
+  <text x="560" y="312" class="note">Writes and logical effect intents</text>
+  <text x="560" y="370" class="label">HOST OWNS THE COMMIT</text>
+  </g>
+  <g data-card="Validate the commit plan">
+  <rect x="984" y="192" width="384" height="210" rx="24" fill="#191812" stroke="#9F8C62" stroke-width="2"/>
+  <text x="1016" y="236" class="title">Validate the commit plan</text>
+  <text x="1016" y="278" class="note">Output, authority and OCC fence</text>
+  <text x="1016" y="312" class="note">Seal the complete bounded plan</text>
+  <text x="1016" y="370" class="label">SUCCESS GATES WRITES + EFFECTS</text>
+  </g>
+  <path d="M 468 296 H 514" fill="none" stroke="#F2CA68" stroke-width="3" stroke-linejoin="round" marker-end="url(#transaction-command-recovery-arrow)"/>
+  <path d="M 924 296 H 970" fill="none" stroke="#F2CA68" stroke-width="3" stroke-linejoin="round" marker-end="url(#transaction-command-recovery-arrow)"/>
+  <path d="M 1176 402 V 452" fill="none" stroke="#F2CA68" stroke-width="3" stroke-linejoin="round" marker-end="url(#transaction-command-recovery-arrow)"/>
+  <!-- All four records participate in one local authoritative transition. -->
+  <rect x="72" y="464" width="1296" height="160" rx="24" fill="#242017" stroke="#9F8C62" stroke-width="2"/>
+  <text x="104" y="506" class="title">One physical atomic envelope</text>
+  <g data-card="State writes / deletes">
+  <rect x="104" y="536" width="276" height="56" rx="24" fill="#191812" stroke="#9F8C62" stroke-width="2"/>
+  <text x="124" y="572" class="copy">State writes / deletes</text>
+  </g>
+  <g data-card="Deferred effect intents">
+  <rect x="412" y="536" width="276" height="56" rx="24" fill="#191812" stroke="#9F8C62" stroke-width="2"/>
+  <text x="432" y="572" class="copy">Deferred effect intents</text>
+  </g>
+  <g data-card="Original outcome">
+  <rect x="720" y="536" width="276" height="56" rx="24" fill="#191812" stroke="#9F8C62" stroke-width="2"/>
+  <text x="740" y="572" class="copy">Original outcome</text>
+  </g>
+  <g data-card="Inbox facts (if used)">
+  <rect x="1028" y="536" width="276" height="56" rx="24" fill="#191812" stroke="#9F8C62" stroke-width="2"/>
+  <text x="1048" y="572" class="copy">Inbox facts (if used)</text>
+  </g>
+  <path d="M 720 624 V 660 H 384 V 692" fill="none" stroke="#F2CA68" stroke-width="3" stroke-linejoin="round" marker-end="url(#transaction-command-recovery-arrow)"/>
+  <path d="M 720 660 H 1056 V 692" fill="none" stroke="#F2CA68" stroke-width="3" stroke-linejoin="round" marker-end="url(#transaction-command-recovery-arrow)"/>
+  <g data-card="Reply or recover the original outcome">
+  <rect x="72" y="704" width="624" height="184" rx="24" fill="#191812" stroke="#9F8C62" stroke-width="2"/>
+  <text x="104" y="748" class="title">Reply or recover the original outcome</text>
+  <text x="104" y="786" class="copy">Lost reply? Look up the original command identity.</text>
+  <text x="104" y="822" class="note">Lookup needs current result-read authority.</text>
+  <text x="104" y="856" class="note">Unknown stays unknown; never infer an abort.</text>
+  </g>
+  <g data-card="Dispatch the recorded effect">
+  <rect x="744" y="704" width="624" height="184" rx="24" fill="#191812" stroke="#9F8C62" stroke-width="2"/>
+  <text x="776" y="748" class="title">Dispatch the recorded effect</text>
+  <text x="776" y="786" class="copy">Separate worker and current effect authority.</text>
+  <text x="776" y="822" class="note">Provider result: acknowledged, rejected or uncertain.</text>
+  <text x="776" y="856" class="note">Provider uncertainty does not roll back the commit.</text>
+  </g>
+  <text x="72" y="936" class="note">Local commit does not make remote work atomic; response loss or cancellation cannot establish abort.</text>
+</svg>

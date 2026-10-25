@@ -1012,7 +1012,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 -m pip install --requirement tools/requirements.lock
-          python3 -B -m unittest tools.tests.test_java_normal_fiber_component_inputs tools.tests.test_java_public_wineh tools.tests.test_java_llvm_ssa_consumer tools.tests.test_java_http_fibers.PublicCopyCostObservation -v
+          python3 -B -m unittest tools.tests.test_java_normal_fiber_component_inputs tools.tests.test_java_public_wineh tools.tests.test_java_llvm_ssa_consumer tools.tests.test_java_http_fibers.PublicCopyCostObservation tools.tests.test_java_public_wineh_preclang -v
           curl --fail --location --retry 3 --max-time 180 \
             https://services.gradle.org/distributions/gradle-9.1.0-bin.zip \
             -o "$RUNNER_TEMP/gradle.zip"
@@ -1028,7 +1028,7 @@ jobs:
         if: ${{ inputs.public_fiber_derived_llvm }}
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 -B tools/qualify_java_fibers.py --output "$RUNNER_TEMP/java-activation-fibers" --wasi-sdk "$RUNNER_TEMP/java-llvm-public-inputs/products/toolchain" --derived-llvm-public
+        run: python3 -B tools/qualify_java_fibers.py --output "$RUNNER_TEMP/java-activation-fibers" --wasi-sdk "$RUNNER_TEMP/java-llvm-public-inputs/products/toolchain" --derived-llvm-public --observe-public-wineh
       - name: Retain only fixed public assembly evidence and original failure
         if: ${{ always() && steps.public-fiber-mode.outcome == 'success' }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -1045,6 +1045,7 @@ jobs:
             ${{ runner.temp }}/java-activation-fibers/build/component-inputs/**
             ${{ runner.temp }}/java-activation-fibers/compiler-inputs.json
             ${{ runner.temp }}/java-activation-fibers/compiler/public-copy-cost-candidate.json
+            ${{ runner.temp }}/java-activation-fibers/compiler/public-wineh-preclang.json
             ${{ runner.temp }}/java-activation-fibers/compiler/public-copy-cost-Capsule.c
             ${{ runner.temp }}/java-activation-fibers/compiler/coroutine-compiler-preparation.json
             ${{ runner.temp }}/java-activation-fibers/build/project/compiler-patch/loaded.json

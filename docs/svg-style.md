@@ -124,20 +124,21 @@ checks; no extra workflow or rendering dependency is required.
 
 ## Layout and typography
 
-Use the 1440 × 760 wide canvas for flows, decision diagrams, and architecture
-boundaries. A smaller canvas is acceptable only when its aspect ratio makes the
-relationship clearer. Keep a 72 px outer margin, 24 px rounded cards, and a
-clear left-to-right or top-to-bottom reading direction.
+Use a 1440 px wide canvas, with 760 px height for simple flows. Branching
+ownership and architecture views may use a taller canvas to preserve label size
+and separate connectors. A smaller canvas is appropriate when its aspect ratio
+makes the relationship clearer. Keep a 72 px outer margin, 24 px rounded cards,
+and a clear left-to-right or top-to-bottom reading direction.
 
 Use the renderer-safe type stack `system-ui, sans-serif` and these size tiers:
 
 | Role | Weight and size | Purpose |
 |---|---|---|
 | Heading | 700, 34 px | Single statement of the visual's point |
-| Subheading | 400, 18 px | Scope or qualification |
-| Card title | 700, 21 px | Named step, component, or decision |
-| Card copy | 400, 15 px | Short factual detail |
-| Supporting label | 600, 14 px | Commands, notes, and constraints |
+| Subheading | 400, 18–20 px | Scope or qualification |
+| Card title | 700, 21–24 px | Named step, component, or decision |
+| Card copy | 400, 18–20 px | Short factual detail |
+| Supporting label | 400–600, 16–18 px | Commands, notes, and constraints |
 
 Prefer short labels and several aligned text lines over dense paragraphs.
 Arrowheads and connectors must make direction unambiguous without relying on
@@ -189,17 +190,21 @@ An unclassified new SVG fails the scoped check. Current dispositions are:
 | `phase2-delivery-boundary.svg` | Immutable historical boundary; dated completion review keeps original | Exact SHA-256 in inventory |
 | `activation-lifecycle.svg` | Maintained current activation and cleanup behavior | Hand-authored; palette checked by `tools/illustration_palette.py` |
 | `package-delivery.svg` | Maintained current capsule, static-site and SSR delivery | Hand-authored; palette checked by `tools/illustration_palette.py` |
+| `standalone-architecture.svg` | Shared standalone node, static/guest dispatch and optional protected state | Hand-authored; same palette and SVG checks |
+| `activation-memory-ownership.svg` | Original allocation owners, retained backing and separate cell/memory retirement | Hand-authored; same palette and SVG checks |
+| `transaction-command-recovery.svg` | Successful command commit, original-result recovery and separate effect dispatch | Hand-authored; same palette and SVG checks |
 
-There are no tracked vendor/brand SVGs or migrated Wiki SVGs in this initial
-inventory. The two legacy Wiki SVGs (`architecture-at-a-glance.svg` and
+The inventory covers five maintained diagrams, five historical originals and
+19 immutable release-snapshot SVGs. The two legacy Wiki SVGs (`architecture-at-a-glance.svg` and
 `system-decomposition.svg`) and their CairoSVG/Pillow generator are recorded at
 exact `docs/wiki` source revision
 `d1035a50d2fd99b076c74dd958ca4437d909f2ec`, with Git blob identities. Their dated
 Phase 2 statements are **not** republished as current runtime facts. No Wiki
-generator or GIF is imported. [Issue 356](https://github.com/KirilsTurkins/latent-service-fabric/issues/356)
-owns selective migration and publisher retirement; any later editable migration
-must select one maintained owner and enter this inventory. This is not a claim
-that the live Wiki is already retired or completely audited.
+generator or GIF is imported. The [completed Wiki migration](development/wiki-migration.md)
+records publisher retirement and the current replacements. These new product
+diagrams are maintained sources rather than republications of the old Wiki
+claims. Any later editable migration must select one maintained owner and enter
+this inventory.
 
 The five originals are exact, individually documented historical palette
 exceptions, not a wildcard waiver for new purple/blue presentation. Benchmark,
@@ -260,5 +265,25 @@ in the repository source tree: XML parsing, the accessibility contract,
 title/description labels, local-only references, and the absence of active
 content. The layout and color rules above remain a deliberate review standard.
 
-The current delivery and activation diagrams are the palette references.
-The five archived originals retain their historical scope and bytes.
+## Current semantic owners
+
+| Diagram | Authoritative relationship and review sources |
+| --- | --- |
+| [Delivery](assets/package-delivery.svg) | [Captured inputs](how-to/add-application-libraries.md), [admission](phase-2-delivery.md) and [current capability bindings](runtime/capability-bindings.md) remain separate. The two dispatch branches distinguish guest execution from static files. |
+| [Activation](assets/activation-lifecycle.svg) | [Lifecycle](activation-lifecycle.md), [fixed cells](architecture/execution-cells.md) and [local calls](runtime/local-service-invocation.md): waits retain Store/cell ownership; a backend cleanup proof decides reuse or quarantine. |
+| [Shared node](assets/standalone-architecture.svg) | [Architecture](architecture/overview.md), [standalone providers](reference/standalone-providers.md) and [installed transaction runtime](development/installed-transaction-rpc.md): one process with shared services and a conditional command/query path. |
+| [Memory owners](assets/activation-memory-ownership.svg) | [Budget accounting](runtime/resource-budgets.md), [actual codec backing](testing/host-codec-original-memory.md) and [capability buffers](testing/capability-handle-buffer-memory.md): retained allocations can outlive a Store; reservation release does not rewind finalized consumption. |
+| [Command and recovery](assets/transaction-command-recovery.svg) | [State/effects](architecture/state-and-effects.md), [commit protocol](protocol/commit-protocol.md) and [operator recovery](operations/transaction-recovery.md): eligible business writes/intents commit locally; reply recovery and external effects retain independent authority and uncertainty. |
+
+The delivery and activation diagrams replace their earlier coarse views. In
+particular, proven cell cleanup does not release every retained memory charge.
+The memory figure's branches describe owners, not measured durations; the
+transaction figure explicitly shows the successful business-command path.
+Neither a diagram nor its rendering checks promotes an execution profile,
+closes a qualification gate or establishes process-wide resource accounting.
+
+For visual review, render each maintained SVG at its intrinsic size and at
+200% inspection scale, check text/card bounds and connector direction, then
+review embedded light/dark and narrow layouts with the full-size links. Real
+SVG text, accessible names and adjacent prose must remain available. The five
+historical originals and release snapshots retain their exact recorded bytes.

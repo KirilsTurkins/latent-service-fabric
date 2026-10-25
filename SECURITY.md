@@ -64,6 +64,23 @@ does not provide a separate guest execution process.
 
 ## Transports, providers and application isolation
 
+The trusted runtime includes the maintained Wasmtime source extension and
+retained-owner bytes dependency described in the
+[engine guide](docs/runtime/wasmtime.md). Their upstream version labels alone
+do not identify the running code: exact source/cohort, compiler and configuration
+participate in compatibility and native reuse. Selected allocation hooks retain
+original charges through physical destruction; they do not bound all node RSS
+or establish a separate execution process.
+
+Explicit cooperative Rust/C profiles additionally authenticate their original
+core and final component graph before native child admission. They retain
+original Task/Native owners and do not make arbitrary thread creators safe.
+The [private Linux factory leaf](crates/latent-stream-factory-native/README.md)
+trusts the selected kernel/device and has one fixed descriptor-adoption unsafe
+boundary. The [Rust stdio bridge](sdk/rust-standard-stdio/README.md) has a separate
+export-attribute allowance tied to the same-compiler sysroot. Neither widens
+unrelated workspace code or creates ambient host authority.
+
 Management/invocation RPC remains authenticated loopback transport. Trusted
 principals and current scoped decisions supply authority, not request-body
 identities, correlation IDs or descriptive grants. Cluster mTLS, remote delegation

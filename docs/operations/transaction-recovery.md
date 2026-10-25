@@ -16,6 +16,11 @@ and retained acceptance limits.
 
 ## Preserve the original command
 
+The [commit and recovery diagram](../assets/transaction-command-recovery.svg)
+shows why the original command outcome and a deferred provider result must be
+inspected independently. Its successful-commit path does not turn a lost reply,
+unknown record or cancelled waiter into proof of an abort.
+
 Before dispatch, retain the original client key, operation, namespace incarnation,
 canonical input bytes, entity and stale-edit preconditions. After response loss,
 keep any validated command/attempt/transaction IDs and commit receipt. A local

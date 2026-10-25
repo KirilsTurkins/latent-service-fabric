@@ -32,6 +32,10 @@ impl Cli {
             Command::Dispatcher(command) => command.validate(),
             Command::Policy(command) => command.validate(),
             Command::Rollout(command) => rollout(command),
+            Command::Audit(super::audit::AuditCommand::Maintenance(command)) => {
+                command.validate(self)
+            }
+            Command::Audit(super::audit::AuditCommand::Archive(command)) => command.validate(self),
             Command::Audit(super::audit::AuditCommand::Query(args)) => {
                 optional(args.actor.as_deref(), 512)?;
                 page_token(args.page_token.as_deref(), args.page_size)?;

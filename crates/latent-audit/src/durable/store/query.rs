@@ -50,12 +50,12 @@ impl Store {
             }
             let a = u64::from_str_radix(p[3], 16).map_err(|_| corrupt())?;
             let h = u64::from_str_radix(p[4], 16).map_err(|_| corrupt())?;
-            if a > h || h >= self.head.next_sequence {
+            if a < self.first_sequence - 1 || a > h || h >= self.head.next_sequence {
                 return Err(super::super::invalid());
             }
             (a, h)
         } else {
-            (0, self.head.next_sequence - 1)
+            (self.first_sequence - 1, self.head.next_sequence - 1)
         };
         let mut events = Vec::new();
         let mut scanned = 0;
@@ -64,7 +64,7 @@ impl Store {
         for e in self
             .entries
             .iter()
-            .skip(usize::try_from(after).map_err(|_| corrupt())?)
+            .skip(usize::try_from(after - (self.first_sequence - 1)).map_err(|_| corrupt())?)
         {
             if e.sequence > high {
                 break;
@@ -139,7 +139,7 @@ impl Store {
             events,
             AuditPageCoverage {
                 epoch: self.head.epoch.clone(),
-                retained_floor: 1,
+                retained_floor: self.first_sequence,
                 high_watermark: high,
                 scanned,
                 stop,
