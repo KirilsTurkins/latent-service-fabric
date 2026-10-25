@@ -142,7 +142,7 @@ PINS['c'] = {'source': '61a0be045ca33f44cd2ae1467e272168bccdafb7',
 PINS['c']['nativeSource'] = native.CLIENT_DATA_SOURCE
 PASSIVE_ORIGINALS[THIRD_SOURCE] = {name: dict(row['current']) for name, row in PASSIVE.items()}
 PASSIVE['tools/guest_compiler_edges.py']['current'] = {'size': 19180, 'digest': 'sha256:167de6a71b90f4c2de95440d0578160b3cd5eccce6163ee087c461f0ad436ed8'}
-PASSIVE['tools/guest_api_analysis.py'] = {'original': {'digest': 'sha256:6477141c8897de13cd73a1179ae9350ed0f01baa2ec4aa85442dfb7c8c45daba', 'size': 41055}, 'current': {'size': 65520, 'digest': 'sha256:85c7bb29abddbb3ce909889e58c968be120f7ee41dac9f56e47f74d14df11eb5'}}
+PASSIVE['tools/guest_api_analysis.py'] = {'original': {'digest': 'sha256:6477141c8897de13cd73a1179ae9350ed0f01baa2ec4aa85442dfb7c8c45daba', 'size': 41055}, 'current': {'size': 71586, 'digest': 'sha256:ae9f6636d7a03abe43fdc82ce830392453b93705c3852b38e15d453ba978e215'}}
 for version in (SOURCE, SECOND_SOURCE, THIRD_SOURCE):
     PASSIVE_ORIGINALS[version]['tools/guest_api_analysis.py'] = dict(PASSIVE['tools/guest_api_analysis.py']['original'])
 # Only the old Go-queue recipe consumes this unchanged-default builder.

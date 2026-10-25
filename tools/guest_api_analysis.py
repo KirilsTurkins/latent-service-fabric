@@ -65,8 +65,8 @@ RULES['typescript'] += (('javascript.Date.now', ('selected-runtime-original', 's
 STANDARD_IMPLEMENTATION_NAMES = frozenset({'selected-runtime-original', 'selected-standard-runtime',
     'rust-compiler-inputs', 'go-runtime-transformations', 'c-closed-filesystem-libc-0',
     'c-closed-filesystem-libc-1', 'c-closed-filesystem-stdio-v1'})
-# These six origins were independently authenticated from official fixed
-# artifacts. Original WHOLE runs failed; only these individual cells passed.
+# These eight origins were independently authenticated from official fixed
+# artifacts. Earlier whole runs failed;92a9 passed. Each row retains its actual origin.
 # This table is informational evidence about exact standard implementation bytes,
 # never package eligibility, app execution, grants, installation or API-global proof.
 FINITE_IMPLEMENTATION_FIXTURES = ({'cell': 'java',
@@ -297,6 +297,95 @@ FINITE_IMPLEMENTATION_FIXTURES = ({'cell': 'java',
  'matchingScope': 'exact-original-selection-receipt-only',
  'selectionReceiptRole': 'original-fixture-provenance-only'})
 
+# Qualified92a9 runtime stays at its actual executed source. These two source-owned
+# literal joins add evidence only; no later ledger head is an executed compiler.
+FINITE_IMPLEMENTATION_FIXTURES += ({'cell': 'go',
+  'language': 'go',
+  'apis': ['go.os.Open'],
+  'runtimeProfile': 'go-component-async-v1',
+  'hostAbiProfile': 'lsf-host-abi-phase3-v4',
+  'materials': [{'kind': 'compiler',
+                 'name': 'go-runtime-transformations',
+                 'digest': 'sha256:6d87d43c0fae25821eeb69be0147c750fd04134f34c2e8c80309131eb5beeedb'},
+                {'kind': 'runtime',
+                 'name': 'selected-runtime-original',
+                 'digest': 'sha256:d8e1e9539cc6e8026276a1137ee9a8d1a86fd6bd1f44d4df2a7790d3e91575a4',
+                 'profile': 'go-component-async-v1'},
+                {'kind': 'runtime',
+                 'name': 'selected-standard-runtime',
+                 'digest': 'sha256:57ab0f4347a613260b3e362c118eb877a995e264fe03b2ca0d85fee3bb7773e2',
+                 'profile': 'go-component-async-v1'}],
+  'ownerObservations': {},
+  'scope': 'normal-API-Unsupported-fallback-and-eager-package-initialization-count1-with-fresh-stores',
+  'origin': {'sourceCommit': '92a9b0bf0436b142433ba66ebe5f8b8db59c874c',
+             'run': 40240058211,
+             'job': 121309733980,
+             'artifact': 12616747190,
+             'archive': {'bytes': 8716339,
+                         'sha256': 'sha256:1456016bf3bbfa69bb8272283774fa6b13c80e83d075809b356baa2a9bd14ab4'},
+             'qualifiedReceipt': {'member': 'qualified.json',
+                                  'bytes': 175088,
+                                  'sha256': 'sha256:7ebff6738e52fb03e07ec18cfe054b45e8bb102e12ba42d3c866b76330fe83e6'},
+             'componentDigest': 'sha256:f2d770ddcd749cf6f1092a0a7239ffeb944c4ea62d81edcada283e383fe1d3ea',
+             'sourceDigest': 'sha256:d132b746b7d4bffe6319e277996b7a71aea04c49f18d24894e2e6dacb373ad75',
+             'recipeDigest': 'sha256:7f9b9852fe0482be85eca2d557202f3878df1cde70195ddf66c1ae932586bc82',
+             'qualifiedCanonicalDigest': 'sha256:91c8ed4ffa73323dddb191faa20ec56b93d5c6ff9b783060e427f0dd55f06eed'},
+  'appExecution': 'not-observed',
+  'apiGlobalBehavior': 'unknown',
+  'authority': 'none',
+  'operationImplementationBinding': 'not-derived-from-management-fact',
+  'qualifiedImplementationMaterials': [{'kind': 'compiler',
+                                        'name': 'go-runtime-transformations',
+                                        'digest': 'sha256:6d87d43c0fae25821eeb69be0147c750fd04134f34c2e8c80309131eb5beeedb'},
+                                       {'kind': 'runtime',
+                                        'name': 'selected-standard-runtime',
+                                        'digest': 'sha256:57ab0f4347a613260b3e362c118eb877a995e264fe03b2ca0d85fee3bb7773e2',
+                                        'profile': 'go-component-async-v1'}],
+  'qualification': 'finite-selected-implementation-fixture',
+  'matchingScope': 'exact-original-selection-receipt-only',
+  'selectionReceiptRole': 'original-fixture-provenance-only'},
+ {'cell': 'dotnet',
+  'language': 'dotnet',
+  'apis': ['dotnet.System.IO.Path.GetTempFileName'],
+  'runtimeProfile': 'closed',
+  'hostAbiProfile': 'lsf-host-abi-phase3-v4',
+  'materials': [{'kind': 'runtime',
+                 'name': 'selected-standard-runtime',
+                 'digest': 'sha256:de00ac2c6ee70d7e223a84387d93c708650a50306b5fa0eda027f7dfbe26a449',
+                 'profile': 'closed'}],
+  'ownerObservations': {},
+  'scope': 'original-baseline2-and-current-GetTempFileName-Unsupported-fallback-positive2-with-fresh-stores',
+  'origin': {'sourceCommit': '92a9b0bf0436b142433ba66ebe5f8b8db59c874c',
+             'run': 40240058211,
+             'job': 121309733750,
+             'artifact': 12616142034,
+             'archive': {'bytes': 721496,
+                         'sha256': 'sha256:8fc5edfd7e822abd92e99af8df3357f840c8ed5800ec8d9ea2a47398a652e69a'},
+             'qualifiedReceipt': {'member': 'qualified.json',
+                                  'bytes': 363707,
+                                  'sha256': 'sha256:8ace1fd8f69b558243f8ac2132f8ebe6ae484e955f02d5cda802eaa5e13179ec'},
+             'componentDigest': 'sha256:acc5b1772c352501b2ee05f5b641e2bc5fc249a813970ff678cf3aa17c73eb0d',
+             'sourceDigest': 'sha256:1205f7d6c1094620662f58235dbc2aea13dd43789660384c21813504c5e69c59',
+             'recipeDigest': 'sha256:cae18db846427000c92cf4792dc05417592b026ef9e6aa29173ac50f3d29c0cb',
+             'qualifiedCanonicalDigest': 'sha256:cecdc6be33a4713d2d505bab166525777454a592c722efe6e471e2d91d7f6821',
+             'builderSourceCommit': '61a0be045ca33f44cd2ae1467e272168bccdafb7',
+             'baselineRuntimeSourceCommit': '61a0be045ca33f44cd2ae1467e272168bccdafb7',
+             'nodeSourceCommit': '92a9b0bf0436b142433ba66ebe5f8b8db59c874c'},
+  'appExecution': 'not-observed',
+  'apiGlobalBehavior': 'unknown',
+  'authority': 'none',
+  'operationImplementationBinding': 'not-derived-from-management-fact',
+  'qualifiedImplementationMaterials': [{'kind': 'patch',
+                                        'name': 'dotnet-closed-filesystem-v1',
+                                        'digest': 'sha256:953314dee4f7c25f202b2d44536c6c84439aa3042cb7a2ccc95ee7a74227d43b',
+                                        'profile': 'dotnet-closed-filesystem-v1',
+                                        'originalDigest': 'sha256:29e4bd3f70bfb0e0ea00fb2511e28ee9832b56caf9ddb5cd60906fe3bcaad735',
+                                        'transformDigest': 'sha256:2dab00934a65c9f7533752db8ab005d2a8d1c7473364a8e67a262cd8993c3e5f'}],
+  'qualification': 'finite-selected-implementation-fixture',
+  'matchingScope': 'exact-original-selection-receipt-only',
+  'selectionReceiptRole': 'original-fixture-provenance-only',
+  'initializationDisposition': 'unknown'})
+
 COMPILER_FILES = {
     'compiler-call-edges': ('compatibility-compiler-edges.json', 65536),
     'compiler-method-reachability': ('compatibility-compiler-methods.json', 65536),
@@ -353,9 +442,11 @@ def finite_cell_qualification(value):
     """Join only an exact original cell already validated by the signed matrix."""
     matches = [row for row in FINITE_IMPLEMENTATION_FIXTURES if row['cell'] == value.get('cell')]
     if not matches:
-        return []  # Go/.NET have NO pin until actual new qualification passes.
+        return []  # Unknown cells have no source-owned runtime qualification.
     require(len(matches) == 1, 'api-finite-origin-ambiguity')
     known = matches[0]
+    if value.get('sourceCommit') != known['origin']['sourceCommit']:
+        return []  # Another source has no qualification from this fixed receipt.
     require(value.get('status') == 'passed' and value.get('sourceCommit') == known['origin']['sourceCommit']
         and digest(encode(value)) == known['origin']['qualifiedCanonicalDigest'], 'api-finite-original-receipt')
     return [deepcopy(known)]

@@ -49,7 +49,7 @@ PINS = {'ADMISSION.json': {'bytes': 46602,
                                  'sha256': 'sha256:cae18db846427000c92cf4792dc05417592b026ef9e6aa29173ac50f3d29c0cb'},
  'reached/recipe-inputs.json': {'bytes': 8981,
                                 'sha256': 'sha256:cae18db846427000c92cf4792dc05417592b026ef9e6aa29173ac50f3d29c0cb'}}
-CURRENT_API = {'size': 65520, 'digest': 'sha256:85c7bb29abddbb3ce909889e58c968be120f7ee41dac9f56e47f74d14df11eb5'}
+CURRENT_API = {'size': 71586, 'digest': 'sha256:ae9f6636d7a03abe43fdc82ce830392453b93705c3852b38e15d453ba978e215'}
 
 
 def _input(raw):

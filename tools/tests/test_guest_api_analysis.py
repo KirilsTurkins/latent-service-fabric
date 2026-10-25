@@ -172,8 +172,14 @@ class FiniteImplementationFixtureMapping(unittest.TestCase):
                 self.assertEqual(selected(owners={'java-closed-filesystem': digest(b'foreign-owner')}), [])
                 selected()[0]['origin']['run'] = 0
                 self.assertNotEqual(selected()[0]['origin']['run'], 0)
+                self.assertEqual(api.finite_cell_qualification({'cell': known['cell'],
+                    'status': 'passed', 'sourceCommit': 'f' * 40}), [])
+                with self.assertRaisesRegex(ValueError, 'api-finite-original-receipt'):
+                    api.finite_cell_qualification({'cell': known['cell'], 'status': 'passed',
+                        'sourceCommit': known['origin']['sourceCommit']})
         self.assertEqual(api.missing_implementation_issues('node.net.Socket', 'typescript'), [738, 739, 745])
-        self.assertFalse(any(row['cell'] in {'go', 'dotnet'} for row in api.FINITE_IMPLEMENTATION_FIXTURES))
+        self.assertEqual({row['cell'] for row in api.FINITE_IMPLEMENTATION_FIXTURES},
+                         {'c', 'rust', 'go', 'java', 'dotnet', 'typescript', 'go-queues', 'typescript-initializer'})
 
     def test_rehashed_fixture_claim_and_legacy_downgrade_cannot_replace_current_owner_projection(self):
         with tempfile.TemporaryDirectory() as directory:
