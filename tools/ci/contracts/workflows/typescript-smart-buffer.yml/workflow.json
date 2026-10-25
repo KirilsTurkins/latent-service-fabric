@@ -1,0 +1,36 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "typescript-smart-buffer-${{ github.ref }}"
+    },
+    "name": "TypeScript unchanged published SmartBuffer qualification",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/typescript-smart-buffer-20261025"
+        ],
+        "paths": [
+          ".github/workflows/typescript-smart-buffer.yml",
+          "tools/qualify_typescript_smart_buffer.py",
+          "tools/typescript_smart_buffer_fixture.py",
+          "tools/typescript_guest/standard_global_types.py",
+          "tools/tests/test_typescript_smart_buffer.py",
+          "tools/tests/test_typescript_standard_global_types_inline.py",
+          "sdk/typescript-guest/runtime/net.d.ts",
+          "sdk/typescript-guest/probes/smart-buffer/**"
+        ]
+      }
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "smart-buffer"
+  ],
+  "reviewReason": "One fixedbranch25minute normalcapture/strictTSC/onecomponent/sixsigned programme under original1200aggregate with explicit44public files and no engine/nativebuild; preserve allotherworkflows.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/typescript-smart-buffer.yml"
+}
