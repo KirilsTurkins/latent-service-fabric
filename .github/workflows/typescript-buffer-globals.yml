@@ -1,0 +1,131 @@
+name: TypeScript finite global Buffer signed qualification
+
+on:
+  push:
+    branches: ['feat/typescript-global-buffer-20261025']
+    paths:
+      - '.github/workflows/typescript-buffer-globals.yml'
+      - 'tools/qualify_typescript_buffer_globals.py'
+      - 'tools/typescript_buffer_globals_fixture.py'
+      - 'tools/typescript_guest/buffer*.mjs'
+      - 'tools/typescript_guest/buffer_profile.py'
+      - 'tools/typescript_guest/bundle.mjs'
+      - 'tools/typescript_guest/compiler.py'
+      - 'tools/typescript_guest/build.py'
+      - 'tools/guest_compatibility_context*.py'
+      - 'tools/guest_compatibility_outcomes.py'
+      - 'tools/tests/test_typescript_buffer_globals*.py'
+      - 'sdk/typescript-guest/runtime/buffer-globals.d.ts'
+      - 'sdk/typescript-guest/probes/buffer-globals/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: typescript-buffer-globals-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  global-buffer:
+    name: One normal component and four signed global Buffer cases
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Start the fixed aggregate setup and programme clock
+        run: python3 -c 'import os,time;open(os.environ["GITHUB_ENV"],"a").write("LSF_BUFFER_GLOBAL_STARTED_NS="+str(time.time_ns())+"\n")'
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.19.0
+          package-manager-cache: false
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - name: Fetch only the immutable normal inputs and old bundle baseline
+        run: |
+          git fetch --no-tags --depth=1 origin 6d834e502beea33fbae9347fbaf23ff8c37223b3
+          git fetch --no-tags --depth=1 origin 77bf0e3f3b68e17342b6146abd6f2de34a3efa00
+          git fetch --no-tags --depth=1 origin 95b8d8b16c29d94755262345a305401ee99a801f
+      - name: Install normal pinned tools and compiler isolation within the aggregate
+        run: |
+          python3 - <<'PY'
+          import os,sys,time
+          from pathlib import Path
+          from tools.build_process import run_bounded_result
+          from tools.build_observation import build_environment
+          root=Path(os.environ['RUNNER_TEMP'])/'typescript-global-buffer-bootstrap'
+          root.mkdir(mode=0o700)
+          started=int(os.environ['LSF_BUFFER_GLOBAL_STARTED_NS'])
+          commands=[
+            [sys.executable,'-m','pip','install','--requirement','tools/requirements.lock'],
+            ['sudo','apt-get','update'],
+            ['sudo','apt-get','install','--yes','bubblewrap'],
+            ['sudo','sysctl','-w','kernel.apparmor_restrict_unprivileged_userns=0'],
+            [sys.executable,'tools/typescript_capsule.py','install-tools',str(Path(os.environ['RUNNER_TEMP'])/'typescript-global-buffer-tools')],
+          ]
+          for command in commands:
+            remaining=1200-(time.time_ns()-started)/1e9-10
+            if remaining<=0:raise RuntimeError('buffer-globals-bootstrap-deadline')
+            result=run_bounded_result(command,Path.cwd(),build_environment(root),timeout_seconds=min(300,remaining),max_output_bytes=4*1024**2)
+            sys.stdout.buffer.write(result.stdout);sys.stderr.buffer.write(result.stderr)
+            if result.returncode:raise RuntimeError('buffer-globals-bootstrap-command')
+          PY
+      - name: Validate prerequisites compile once and execute four fresh signed calls
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 -B tools/qualify_typescript_buffer_globals.py \
+            --tools "$RUNNER_TEMP/typescript-global-buffer-tools" \
+            --output "$RUNNER_TEMP/typescript-global-buffer-public"
+      - name: Retain only fixed public collector files
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: typescript-buffer-globals-${{ github.sha }}
+          retention-days: 7
+          if-no-files-found: warn
+          path: |
+            ${{ runner.temp }}/typescript-global-buffer-public/RESULT.json
+            ${{ runner.temp }}/typescript-global-buffer-public/FAILED.json
+            ${{ runner.temp }}/typescript-global-buffer-public/COMMANDS.json
+            ${{ runner.temp }}/typescript-global-buffer-public/INPUTS.json
+            ${{ runner.temp }}/typescript-global-buffer-public/PROJECT-SOURCE.json
+            ${{ runner.temp }}/typescript-global-buffer-public/BUILD-LOGS.json
+            ${{ runner.temp }}/typescript-global-buffer-public/PUBLIC-MANIFEST.json
+            ${{ runner.temp }}/typescript-global-buffer-public/INVOCATIONS.json
+            ${{ runner.temp }}/typescript-global-buffer-public/RETIREMENTS.json
+            ${{ runner.temp }}/typescript-global-buffer-public/STARTUP.json
+            ${{ runner.temp }}/typescript-global-buffer-public/SHUTDOWN.json
+            ${{ runner.temp }}/typescript-global-buffer-public/source-controls.stdout.txt
+            ${{ runner.temp }}/typescript-global-buffer-public/source-controls.stderr.txt
+            ${{ runner.temp }}/typescript-global-buffer-public/normal-build.stdout.txt
+            ${{ runner.temp }}/typescript-global-buffer-public/normal-build.stderr.txt
+            ${{ runner.temp }}/typescript-global-buffer-public/BUILD-COMPLETE.json
+            ${{ runner.temp }}/typescript-global-buffer-public/BUILD-FAILED.json
+            ${{ runner.temp }}/typescript-global-buffer-public/build-observation.json
+            ${{ runner.temp }}/typescript-global-buffer-public/source-inputs.json
+            ${{ runner.temp }}/typescript-global-buffer-public/recipe-inputs.json
+            ${{ runner.temp }}/typescript-global-buffer-public/package-inputs.json
+            ${{ runner.temp }}/typescript-global-buffer-public/package-source.json
+            ${{ runner.temp }}/typescript-global-buffer-public/bindings.json
+            ${{ runner.temp }}/typescript-global-buffer-public/compiler-containment.json
+            ${{ runner.temp }}/typescript-global-buffer-public/typescript-runtime-selection.json
+            ${{ runner.temp }}/typescript-global-buffer-public/standard-runtime-selection.json
+            ${{ runner.temp }}/typescript-global-buffer-public/typescript-buffer-selection.json
+            ${{ runner.temp }}/typescript-global-buffer-public/compatibility-report.json
+            ${{ runner.temp }}/typescript-global-buffer-public/compatibility-context.json
+            ${{ runner.temp }}/typescript-global-buffer-public/component.wasm
+            ${{ runner.temp }}/typescript-global-buffer-public/application.mjs
+            ${{ runner.temp }}/typescript-global-buffer-public/generated-bindings.js
+            ${{ runner.temp }}/typescript-global-buffer-public/probe-main.ts
+            ${{ runner.temp }}/typescript-global-buffer-public/probe-transitive.ts
+            ${{ runner.temp }}/typescript-global-buffer-public/probe-dependency.ts
+            ${{ runner.temp }}/typescript-global-buffer-public/probe-world.wit

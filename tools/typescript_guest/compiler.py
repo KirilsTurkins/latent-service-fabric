@@ -139,7 +139,7 @@ class Compiler:
             self.tools = staged
             self.recipe = isolated_workspace / "compiler-recipe"
             self.recipe.mkdir()
-            for name in ("bundle.mjs", "componentize.mjs", "signed64.mjs", "resources.mjs", "source_splicer.mjs", "async_waiters.mjs", "import_cancellation.mjs", "borrow_probe.mjs", "fetch.mjs", "console.mjs", "activation_module.mjs", "entropy.mjs", "clock_app.mjs", "node_buffer.mjs", "buffer_builtin.mjs", "node_net.mjs", "node_net_transport.mjs", "node_net_bindings.mjs", "net_builtin.mjs"):
+            for name in ("bundle.mjs", "componentize.mjs", "signed64.mjs", "resources.mjs", "source_splicer.mjs", "async_waiters.mjs", "import_cancellation.mjs", "borrow_probe.mjs", "fetch.mjs", "console.mjs", "activation_module.mjs", "entropy.mjs", "clock_app.mjs", "node_buffer.mjs", "buffer_builtin.mjs", "buffer_globals.mjs", "buffer_global_initializer.mjs", "node_net.mjs", "node_net_transport.mjs", "node_net_bindings.mjs", "net_builtin.mjs"):
                 (self.recipe / name).write_bytes(read_file(ROOT / "tools/typescript_guest" / name))
         modules = self.tools / "node_modules"
         self.jco = modules / "@bytecodealliance/jco/dist/jco.js"
@@ -405,7 +405,6 @@ class Compiler:
         if application_modules is not None:
             config["compilerOptions"]["customConditions"] = application_modules["conditions"]
         write_json(work / "tsconfig.json", config)
-        command.run("typecheck", self.node, self.tsc, "--project", work / "tsconfig.json")
         allowed = output / "imports.json"
         write_json(allowed, imports)
         bundle = output / "application.mjs"
@@ -447,11 +446,23 @@ class Compiler:
                     work, work / "src/main.ts", bundle, allowed, bundle_configuration,
                     self.tools / "node_modules/acorn/dist/acorn.mjs")
         bundled = json.loads(read_file(output / 'application.mjs.inputs.json', 8 * 1024 * 1024))
-        buffer_selection = buffer_profile.check_selection(bundled, digest(read_file(ROOT/buffer_profile.BACKEND)))
+        buffer_selection = buffer_profile.check_selection(bundled, digest(read_file(ROOT/buffer_profile.BACKEND)),
+            buffer_profile.global_identities(ROOT))
         buffer_profile.verify_captured_declaration(buffer_selection, buffer_declaration,
             lambda: read_file(work/'vendor/lsf'/buffer_profile.DECLARATION))
         if buffer_selection is not None:
             write_json(output/'typescript-buffer-selection.json', buffer_selection)
+        if buffer_selection is not None and buffer_selection['globalBufferInstalled']:
+            global_path = buffer_profile.GLOBAL_RECIPE['declaration']
+            declaration = read_file(ROOT/global_path)
+            buffer_profile.prepare_global_declarations(buffer_selection, declaration,
+                lambda: read_file(work/'vendor/lsf'/global_path), (generated, second),
+                provided_node=self.standard_global_provider is not None)
+            if tree_identity(generated) != tree_identity(second):
+                raise ValueError('selected global Buffer declarations changed between identical inputs')
+        # The bounded bundler prepass only selects declarations/owned modules.
+        # Strict typechecking still precedes all componentization and admission.
+        command.run("typecheck", self.node, self.tsc, "--project", work / "tsconfig.json")
         net_selection = net_profile.selected(bundled, net_profile.identities(ROOT))
         if net_selection is not None:
             if borrow_probe or read_file(work/'vendor/lsf'/net_profile.DECLARATION) != net_declaration:

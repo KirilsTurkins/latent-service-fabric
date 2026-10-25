@@ -5,6 +5,7 @@ import { pathToFileURL } from 'node:url';
 import { createHash } from 'node:crypto';
 import { activationModule } from './activation_module.mjs';
 import { bufferBuiltin, BUFFER_PROFILE } from './buffer_builtin.mjs';
+import { bufferGlobalReferences, bufferGlobalBuiltin, BUFFER_GLOBAL_PROFILE, BUFFER_GLOBAL_PRIVATE } from './buffer_globals.mjs';
 import { netBuiltin, NET_PROFILE, NET_PRIVATE } from './net_builtin.mjs';
 import { borrowProbeConfiguration, borrowProbeBuiltin } from './borrow_probe.mjs';
 
@@ -13,11 +14,14 @@ const { build } = await import(pathToFileURL(esbuildPath));
 const project = await realpath(projectPath);
 const imports = new Set(JSON.parse(await readFile(importsPath, 'utf8')));
 const configuration = configurationPath ? JSON.parse(await readFile(configurationPath, 'utf8')) : {};
-if (['standardBufferProfile', 'standardBufferBackendDigest', 'standardBufferModules'].some(name => name in configuration))
+if (Object.keys(configuration).some(name => name.startsWith('standardBuffer')))
   throw new Error('application-cannot-override-standard-buffer-backend');
 const bufferSource = await readFile(new URL('./node_buffer.mjs', import.meta.url), 'utf8');
 const bufferBackend = bufferBuiltin(bufferSource);
 const bufferDigest = 'sha256:' + createHash('sha256').update(bufferSource).digest('hex');
+const bufferGlobalSource = await readFile(new URL('./buffer_globals.mjs', import.meta.url));
+const bufferGlobalInitializer = await readFile(new URL('./buffer_global_initializer.mjs', import.meta.url), 'utf8');
+const bufferGlobal = bufferGlobalBuiltin(bufferGlobalInitializer);
 const standardNet = configuration.standardNetProfile === NET_PROFILE;
 if (Object.keys(configuration).some(name => name.startsWith('standardNet') &&
     !['standardNetProfile', 'standardNetIdentities'].includes(name)) ||
@@ -101,7 +105,7 @@ if (standardConsole) {
   guard += consoleBackend;
 }
 const footer = '__lsfSnapshotActive = false;';
-const result = await build({
+const options = {
   absWorkingDir: project, entryPoints: [input], outfile: output,
   bundle: true, format: 'esm', platform: 'neutral', target: 'es2022',
   conditions: configuration.conditions || [], mainFields: configuration.mainFields || ['module', 'main'],
@@ -122,6 +126,8 @@ const result = await build({
       }
       const ownedNet = netBackend.resolve(args);
       if (ownedNet) return ownedNet;
+      const ownedGlobal = bufferGlobal.resolve(args);
+      if (ownedGlobal) return ownedGlobal;
       if (imports.has(args.path)) return { path: args.path, external: true };
       const ownedBuffer = bufferBackend.resolve(args.path);
       if (ownedBuffer) return ownedBuffer;
@@ -138,6 +144,7 @@ const result = await build({
     });
     builder.onLoad({ filter: /.*/, namespace: 'lsf-owned-node-net' }, args => netBackend.load(args));
     builder.onLoad({ filter: /.*/, namespace: 'lsf-owned-node-buffer' }, args => bufferBackend.load(args));
+    builder.onLoad({ filter: /.*/, namespace: 'lsf-owned-buffer-global' }, args => bufferGlobal.load(args));
     builder.onLoad({ filter: /.*/ }, async args => {
       const path = await realpath(args.path);
       const suffixes = captured ? ['.ts', '.js', '.mjs', '.cjs', '.json', '.txt', '.bin'] : ['.ts', '.js', '.mjs'];
@@ -147,7 +154,28 @@ const result = await build({
       return undefined;
     });
   } }],
-});
+};
+let result = await build(options);
+let globalReferences = [];
+if (parserPath) {
+  const {parse} = await import(pathToFileURL(parserPath));
+  const original = result.outputFiles.find(file => file.path === resolve(output));
+  if (!original || original.contents.byteLength > 32 * 1024 * 1024)
+    throw new Error('buffer-global-selection-output-bound');
+  globalReferences = bufferGlobalReferences(original.text, parse);
+  if (globalReferences.length) {
+    // Selection is data-only. Final code retains real global reads/writes;
+    // injected exported aliases would change reassignment semantics.
+    bufferGlobal.enable();
+    result = await build({...options, inject: [BUFFER_GLOBAL_PRIVATE]});
+    const final = result.outputFiles.find(file => file.path === resolve(output));
+    if (!final || final.contents.byteLength > 32 * 1024 * 1024 ||
+        JSON.stringify(bufferGlobalReferences(final.text, parse)) !== JSON.stringify(globalReferences))
+      throw new Error('buffer-global-selection-input-drift');
+    const name = Object.keys(result.metafile.outputs).find(name => resolve(project, name) === resolve(output));
+    bufferGlobal.verify(result.metafile, name);
+  }
+}
 const inputs = [];
 let total = 0;
 if (bufferBackend.selection().length && !Object.hasOwn(result.metafile.inputs, 'lsf-owned-node-buffer:node:buffer'))
@@ -159,6 +187,7 @@ for (const name of Object.keys(result.metafile.inputs)) {
     continue; // Authenticated compiler recipe input, not an application capture.
   }
   if (name === 'lsf-owned-node-net:node:net') continue; // Compiler-owned recipe input.
+  if (name === 'lsf-owned-buffer-global:' + BUFFER_GLOBAL_PRIVATE) continue;
   const path = await realpath(resolve(project, name));
   if (!insideProject(path)) throw new Error('bundle-input-outside-captured-source');
   const bytes = await readFile(path);
@@ -247,6 +276,12 @@ await writeFile(output + '.inputs.json', JSON.stringify({
   standardEntropyBackendDigest: 'sha256:' + createHash('sha256').update(entropyBackend).digest('hex'),
   ...(bufferBackend.selection().length ? {standardBufferProfile: BUFFER_PROFILE,
     standardBufferBackendDigest: bufferDigest, standardBufferModules: bufferBackend.selection()} : {}),
+  ...(globalReferences.length ? {standardBufferGlobalProfile: BUFFER_GLOBAL_PROFILE,
+    standardBufferGlobalReferences: globalReferences,
+    standardBufferGlobalIdentities: {
+      selector: 'sha256:' + createHash('sha256').update(bufferGlobalSource).digest('hex'),
+      initializer: 'sha256:' + createHash('sha256').update(bufferGlobalInitializer).digest('hex'),
+    }} : {}),
   ...(netModules.length ? {standardNetProfile: NET_PROFILE, standardNetModules: netModules,
     standardNetIdentities: configuration.standardNetIdentities} : {}),
   ...(standardFetch ? {standardFetchProfile: configuration.standardFetchProfile,

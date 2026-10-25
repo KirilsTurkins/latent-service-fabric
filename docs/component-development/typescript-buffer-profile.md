@@ -6,9 +6,53 @@ independently of package identity and the selected synchronous/async runtime.
 It adds no global `Buffer`, Node process, I/O, capability, permission or native
 storage. Every other uninstalled Node builtin retains its existing refusal.
 
-This is source and Node reference evidence. No guest compiler, engine rebuild
-or signed Component Model programme has run for this profile. Arbitrary npm
-dependencies and the full TypeScript accounting/socket criteria are unqualified.
+The additive global mechanism below has source and pinned host-compiler evidence
+only; it has not run in a signed Component Model guest. Earlier module-only
+Buffer programmes retain their own immutable receipts. Arbitrary npm dependencies
+and the full TypeScript accounting/socket criteria remain unqualified.
+
+## Automatically selected global provision
+
+`lsf-node-buffer-global-v1` installs the same finite constructor as `Buffer`,
+`buffer.Buffer` and `node:buffer.Buffer` before application module initialization.
+It is selected from unbound `Buffer` or unshadowed direct/literal
+`globalThis.Buffer` references in retained compiler output, independently of
+package names and dependency catalogues. Dynamic aliases and reflection-only
+lookups are outside this selector; an analysis result is not arbitrary API
+reachability or initialization evidence. Local bindings and erased code do not
+select it. Module-only and unselected bundles retain their previous bytes.
+
+The first bounded esbuild pass is data-only. If selected, a second normal pass
+links one compiler-private side-effect initializer before transitive ESM and
+CommonJS initializers. Application imports cannot load that private module.
+The initializer refuses an already present global and installs a writable,
+configurable, non-enumerable property. Final code uses real global reads and
+writes rather than captured lexical replacement aliases. It adds no I/O,
+credentials, caller state, native storage, provider, grant or engine feature.
+Existing snapshot effect guards and fresh per-activation state remain required.
+
+The selection pass may precede strict TSC. Only a selected capture without a
+verified Node type provider receives the finite ambient declaration; a captured
+Node provider retains its own global types. Missing/stale selected declarations
+refuse, while unselected old captures require no new file. Strict typechecking
+still gates componentization, packaging, signing and admission. This does not
+provide guessed declarations for untyped packages or infer Node runtime support
+from broad captured Node types.
+
+Selected globals use a closed selection-v2 receipt binding the existing module
+profile plus selector, initializer and declaration identities. Module-only
+selection-v1 remains unchanged. The build and diagnostic readers retain and
+recheck the complete source subgroup, report qualification unknown and authority
+none, and preserve the original material/byte limits and omissions. The additional
+Buffer/string ceilings and original activation funding below are unchanged.
+
+Five focused controls exercise the real pinned esbuild/Acorn/TSC path, lexical
+shadowing, transitive initialization and global reassignment, old/current
+unselected bundle identity, selected declarations and real filesystem
+receipt/context retention. These are compiler/host controls, not signed guest,
+GC, physical retirement or complete cost qualification. The source-compatible
+binary-client candidate still needs legitimate published typing inputs and
+normal capture before any unmodified-client qualification claim.
 
 ## Storage and limits
 
@@ -96,3 +140,23 @@ signed runtime or complete original-budget accounting qualification.
 Socket/EventEmitter/Duplex, ref/unref/managed idle, typed late-resource disposal,
 DNS/TLS and transport selection remain separate work. No whole #745 criterion
 or issue is completed by this foundation.
+
+## Pending four-call global programme
+
+`typescript-buffer-globals.yml` owns one normal strict-TypeScript build and four
+fresh signed calls on one node: transitive module initialization and alias/view
+identity, a timer callback using the real global, caught allocation-ceiling
+refusal, and fresh initializer state after that refusal. Its sources are
+repository-controlled fixtures, not unchanged published-library qualification.
+The campaign has not run yet. Each original public CLI response must bind its
+unique requested activation and the deployed publication/revision tuple.
+
+This distinct reference programme selects Task32, Executor2, Queue32, Wait8,
+Timer8, Result8 and Native128, matching the reviewed Socket reference funding;
+the earlier pure-Buffer Task16/Queue16/Native64 programme is unchanged. Effective
+requests remain 1 billion fuel, 128 MiB and 120 seconds, with zero outbound
+requests and other effects. The global node fuel maximum remains separately
+10 billion. The owner keeps original retirement observations and an explicit
+public-file collector; signing, private node/client state and acquired tools
+are outside its retained artifacts. No whole cost or production gate is met by
+this source-stage programme.
