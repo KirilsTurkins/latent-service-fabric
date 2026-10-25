@@ -115,10 +115,22 @@ def typescript_buffer_materials(receipt: bytes, recipe: bytes, source_inputs: by
     declaration = entry(recipe_inputs, buffer_profile.DECLARATION)
     require(declaration == entry(captured, 'vendor/lsf/' + buffer_profile.DECLARATION),
             'compatibility-context-buffer-declaration-drift')
-    buffer_profile.validate_selection(decode(receipt, 65536), backend['digest'])
+    value = decode(receipt, 65536)
+    globals_selected = isinstance(value, dict) and value.get('schemaVersion') == 'latent.typescript.standard-buffer-selection.v2'
+    global_entries = {part: entry(recipe_inputs, name) for part, name in buffer_profile.GLOBAL_RECIPE.items()} if globals_selected else {}
+    if globals_selected:
+        name = buffer_profile.GLOBAL_RECIPE['declaration']
+        require(global_entries['declaration'] == entry(captured, 'vendor/lsf/' + name),
+                'compatibility-context-buffer-global-declaration-drift')
+    buffer_profile.validate_selection(value, backend['digest'],
+        {part: row['digest'] for part, row in global_entries.items()} if globals_selected else None)
     identities = (digest(receipt), backend['digest'], declaration['digest'])
-    return [context.material('runtime', name, identity, profile=context.BUFFER_PROFILE)
+    rows = [context.material('runtime', name, identity, profile=context.BUFFER_PROFILE)
             for name, identity in zip(context.BUFFER_MATERIALS, identities)]
+    if globals_selected:
+        rows.extend(context.material('runtime', name, global_entries[part]['digest'], profile=context.BUFFER_GLOBAL_PROFILE)
+                    for part, name in zip(buffer_profile.GLOBAL_RECIPE, context.BUFFER_GLOBAL_MATERIALS))
+    return rows
 
 
 def typescript_buffer_owner(owner, receipt_digest, recipe_digest):
