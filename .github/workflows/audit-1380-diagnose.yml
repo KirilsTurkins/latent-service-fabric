@@ -13,53 +13,38 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-      - name: Read retained dependency-watch failure receipts
+      - name: Inspect the exact source dispatch and retained failure account
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           python3 - <<'PY'
-          import io, json, os, subprocess, urllib.request, urllib.error, zipfile
-          base = 'https://api.github.com/repos/KirilsTurkins/latent-service-fabric'
-          headers = {'Authorization': 'Bearer ' + os.environ['GH_TOKEN'], 'Accept': 'application/vnd.github+json', 'User-Agent': 'lsf-ci-diagnosis'}
+          import io,json,os,re,subprocess,urllib.request,urllib.error,zipfile
+          from pathlib import Path
+          base='https://api.github.com/repos/KirilsTurkins/latent-service-fabric'
+          headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','User-Agent':'lsf-ci-diagnosis'}
           class NoRedirect(urllib.request.HTTPRedirectHandler):
-              def redirect_request(self, req, fp, code, msg, hdrs, newurl):
-                  return None
-          def read(path, maximum):
-              request = urllib.request.Request(base + path, headers=headers)
-              try:
-                  response = urllib.request.build_opener(NoRedirect).open(request, timeout=30)
-              except urllib.error.HTTPError as error:
-                  assert error.code in (301, 302, 303, 307, 308)
-                  location = error.headers['Location']
-                  assert location.startswith('https://')
-                  response = urllib.request.urlopen(location, timeout=30)
-              with response:
-                  data = response.read(maximum + 1)
-              assert len(data) <= maximum
-              return data
-          artifacts = json.loads(read('/actions/runs/40130264388/artifacts?per_page=100', 2*1024*1024))
-          assert artifacts['total_count'] <= 100
-          selected = [item for item in artifacts['artifacts'] if 'dependency-watch' in item['name']]
-          assert len(selected) <= 12
-          for item in selected:
-              print('ARTIFACT', item['id'], item['name'], item['size_in_bytes'], flush=True)
-              assert not item['expired'] and item['size_in_bytes'] <= 32*1024*1024
-              with zipfile.ZipFile(io.BytesIO(read('/actions/artifacts/' + str(item['id']) + '/zip', 32*1024*1024))) as archive:
-                  assert len(archive.infolist()) <= 512
-                  for member in archive.infolist():
-                      if member.filename.rsplit('/', 1)[-1] not in ('public-qualification.json', 'ci-account.json'):
-                          continue
-                      assert member.file_size <= 262144
-                      value = json.loads(archive.read(member))
-                      if member.filename.endswith('ci-account.json'):
-                          value = {key: val for key, val in value.items() if key in ('schemaVersion', 'passed', 'failure', 'reason', 'stage', 'error', 'status', 'run', 'qualification')}
-                      text = json.dumps(value, sort_keys=True)
-                      print('RECEIPT', member.filename, text[:16000], flush=True)
+              def redirect_request(self,req,fp,code,msg,hdrs,newurl): return None
+          request=urllib.request.Request(base+'/actions/artifacts/12574974336/zip',headers=headers)
+          try: response=urllib.request.build_opener(NoRedirect).open(request,timeout=30)
+          except urllib.error.HTTPError as error:
+              assert error.code in (301,302,303,307,308)
+              location=error.headers['Location']; assert location.startswith('https://')
+              response=urllib.request.urlopen(location,timeout=30)
+          with response: data=response.read(4*1024*1024+1)
+          assert len(data)<=4*1024*1024
+          with zipfile.ZipFile(io.BytesIO(data)) as archive:
+              print('MEMBERS',[(i.filename,i.file_size) for i in archive.infolist()])
+              for member in archive.infolist():
+                  if member.filename.endswith('ci-account.json'):
+                      assert member.file_size<=32768
+                      print('ACCOUNT',archive.read(member).decode())
+          print('DEV FILES',[p.name for p in Path('tools/dev_workflow').glob('*.py')])
           for command in (
-              ['git','grep','-n','-e','phase2_gate_resource_profile.py','--','tools/ci/contracts/owners'],
-              ['git','grep','-n','-e','"audit"','--','apps/latentd/tests/standalone_node/support.rs'],
+              ['git','grep','-n','-e','def test','-e','action == "test"','-e','command == "test"','-e','post-deploy','--','tools/dev_workflow'],
+              ['git','grep','-n','-e','def python','-e','guardDefinitions','--','tools/ci_contracts.py','tools/ci_contracts'],
+              ['git','grep','-n','-e','inventory.topology','-e','topology[','--','tools/dev_workflow'],
           ):
-              result = subprocess.run(command, capture_output=True, text=True, timeout=30)
-              print('SOURCE', ' '.join(command), '\n'+result.stdout[:10000], flush=True)
+              result=subprocess.run(command,capture_output=True,text=True,timeout=30)
+              print('SOURCE',' '.join(command),'\n'+result.stdout[:18000],flush=True)
           PY
