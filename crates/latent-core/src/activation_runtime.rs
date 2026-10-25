@@ -81,6 +81,18 @@ pub enum OwnerKind {
     Native,
 }
 impl OwnerKind {
+    const fn limit_reason(self) -> crate::diagnostic::DiagnosticReason {
+        use crate::diagnostic::DiagnosticReason as R;
+        match self {
+            Self::Task | Self::ManagedIdleWorker => R::RuntimeTaskLimit,
+            Self::Executor => R::RuntimeExecutorLimit,
+            Self::QueuedWork => R::RuntimeQueueLimit,
+            Self::Wait => R::RuntimeWaitLimit,
+            Self::Timer => R::RuntimeTimerLimit,
+            Self::Result => R::RuntimeResultLimit,
+            Self::Native => R::RuntimeNativeOwnerLimit,
+        }
+    }
     const fn index(self) -> usize {
         match self {
             Self::Task | Self::ManagedIdleWorker => 0,
@@ -285,10 +297,16 @@ impl ActivationRuntime {
         }
         let index = kind.index();
         if state.owners[index] >= self.inner.limits.values()[index] {
-            return Err(error(
+            let mut observed = crate::diagnostic::ActivationDiagnostic::new(
+                crate::diagnostic::DiagnosticStage::Execution,
+                kind.limit_reason(),
+            );
+            observed.configured_bound = Some(u64::from(self.inner.limits.values()[index]));
+            observed.calculated_requirement = Some(u64::from(state.owners[index]) + 1);
+            return Err(observed.attach(error(
                 PlatformErrorCode::ResourceExhausted,
                 "runtime-owner-limit",
-            ));
+            )));
         }
         let next_id = state.next_id.checked_add(1).ok_or_else(|| {
             error(
@@ -308,7 +326,7 @@ impl ActivationRuntime {
                 .inner
                 .budget
                 .reserve_host_memory(bytes)
-                .map_err(|failure| failure.to_platform_error())?;
+                .map_err(|failure| failure.to_host_memory_error())?;
             let mut records = Vec::new();
             records.try_reserve_exact(count).map_err(|_| {
                 error(

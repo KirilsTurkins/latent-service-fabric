@@ -150,6 +150,7 @@ class CompiledResources(unittest.TestCase):
     def test_c23_flags_and_embed_roots_apply_to_both_compilation_and_dependency_observation(self):
         source = self.root / 'source.c'; source.write_text('int value;')
         compiler = Compiler.__new__(Compiler)
+        compiler.compiler_edges, compiler.compiler_edge_sources = None, {}
         compiler.sdk, compiler.platform, compiler.commands = project.ROOT / 'sdk/c-guest', None, None
         compiler.isolation = SimpleNamespace(receipt={}, observe_inputs=lambda path: [])
         compiler.validate_static_libraries = lambda *args: None; compiler.check_unchanged = lambda: None

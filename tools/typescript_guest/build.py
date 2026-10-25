@@ -4,6 +4,7 @@ from __future__ import annotations
 from tools import guest_compatibility_context_build, guest_runtime_receipts
 from tools.transaction_guest_project import packaging_arguments
 import json
+import math
 from pathlib import Path, PurePosixPath
 import tempfile
 import time
@@ -101,7 +102,11 @@ def runtime_package_sources(original: dict[str, bytes], selected: dict,
 
 def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path | None, repository: str, *, tools: Path,
           runtime_engine: Path | None = None, runtime_engine_receipt: Path | None = None,
-          runtime_splicer: Path | None = None, runtime_splicer_receipt: Path | None = None):
+          runtime_splicer: Path | None = None, runtime_splicer_receipt: Path | None = None,
+          _deadline: float | None = None):
+    if _deadline is not None and (type(_deadline) not in (int, float) or not math.isfinite(_deadline)
+                                 or _deadline <= time.monotonic() + 5):
+        raise ValueError('typescript-build-original-owner-deadline')
     project_path, output, tools = map(checked_path, (project_path, output, tools))
     project_path = guest_dependency_inputs.application_root(project_path, 'typescript')
     if output == project_path or output in project_path.parents or (
@@ -129,6 +134,11 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_bytes(data)
             commands = Commands(work, output, build_environment(temporary))
+            if _deadline is not None:
+                if _deadline <= time.monotonic() + 5:
+                    raise ValueError('compiler-setup-consumed-parent-cleanup-reserve')
+                commands.deadline = min(commands.deadline, _deadline - 5)
+                commands._parent_deadline = _deadline
             stage = "application-dependencies"
             closure = prepare(observed.dependency_root, work, output, "typescript")
             application_modules = bundle_configuration(closure) if closure is not None else None

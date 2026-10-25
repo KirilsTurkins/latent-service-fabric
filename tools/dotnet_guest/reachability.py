@@ -35,6 +35,8 @@ FAILURE_CODES = frozenset({
     'compiler-scanner-root-mapping-anchor-unavailable', 'compiler-scanner-section-order-or-attributes',
     'compiler-scanner-unexpected-text', 'compiler-scanner-unknown-element', 'compiler-scanner-work-bound',
     'compiler-scanner-xml-depth',
+    'compiler-method-codegen-selection', 'compiler-method-codegen-location',
+    'compiler-method-CoreLib-response-binding', 'compiler-method-reference-input-root',
 })
 
 
@@ -196,13 +198,113 @@ def response_inputs(project: Path, package_cache: Path, selection: dict | None) 
     return matched[0]
 
 
+def codegen_input(project: Path, response: bytes) -> Path:
+    """The SAME actual ILC response selects its completed compilation graph."""
+    require(type(response) is bytes and len(response) <= 1024 * 1024, 'compiler-method-response-bytes')
+    args = [value for line in response.decode('utf-8-sig').splitlines() for value in shlex.split(line)]
+    paths = [value[len('--dgmllog:'):] for value in args if value.startswith('--dgmllog:')]
+    require(len(paths) == 1, 'compiler-method-codegen-selection')
+    selected = Path(paths[0])
+    selected = (selected if selected.is_absolute() else project / selected).resolve(strict=True)
+    require(selected.is_relative_to(project.resolve(strict=True)), 'compiler-method-codegen-location')
+    return selected
+
+
+def compiled_methods(raw, queries):
+    """Reuse the whole bounded pinned DGML grammar, not an absent-wrapper scan."""
+    observed = scanner(raw, queries)
+    value = {'schemaVersion': 'lsf.dotnet.compiled-methods.v1', 'graphDigest': observed['scannerDigest'],
+        'queryDigest': observed['queryDigest'], 'nodesInspected': observed['nodesInspected'],
+        'linksInspected': observed['linksInspected'], 'mappingAnchorCount': observed['mappingAnchorCount'],
+        'methods': [{'id': row['id'], 'state': {'linked': 'codegen-node-observed',
+            'not-retained': 'codegen-node-not-observed', 'unknown': 'unknown'}[row['state']]}
+            for row in observed['methods']],
+        'scope': 'completed-ILC-compilation-dependency-graph', 'apiElimination': 'not-established',
+        'runtimeExecution': 'not-observed', 'authority': 'none'}
+    value['identity'] = digest(encode(value))
+    return value
+
+
+def cil_inputs(compiler, project, response, application_assemblies):
+    """Actual ILC references + original closed-port CoreLib, never a new resolver."""
+    port = compiler.filesystem_port
+    port.recheck()
+    args = [value for line in response.decode('utf-8-sig').splitlines() for value in shlex.split(line)]
+    references = []
+    for value in args:
+        if not value.startswith('-r:'): continue
+        path = Path(value[3:])
+        selected = (path if path.is_absolute() else project / path).resolve(strict=True)
+        require(selected.is_relative_to(compiler.package_cache.resolve(strict=True))
+                or selected.is_relative_to(project.parent.resolve(strict=True)) or selected in application_assemblies,
+                'compiler-method-reference-input-root')
+        references.append(selected)
+    corelib = port.assembly.resolve(strict=True)
+    require(references.count(corelib) == 1 and [path for path in references if path.name == 'System.Private.CoreLib.dll'] == [corelib],
+            'compiler-method-CoreLib-response-binding')
+    selected = list(dict.fromkeys([*application_assemblies, corelib, *references]))
+    require(len(selected) <= 512, 'compiler-method-managed-input-count')
+    require(digest(read_file(corelib, 8 * 1024 * 1024)) == port.identity['digest'],
+            'compiler-method-CoreLib-response-binding')
+    return selected, len(application_assemblies), port.identity['digest']
+
+
+def cil_observation(value, corelib, methods):
+    """Reduce actual passive CIL operands/selected forwarding; never execute IL."""
+    members(value, {'schemaVersion', 'corelibDigest', 'scope', 'forwarding', 'indirectDispatch',
+        'apiSupport', 'runtimeExecution', 'edges', 'apiBodies', 'unknownReferences', 'omittedEdges',
+        'bodiesInspected', 'bodyBytesInspected'})
+    require((value['schemaVersion'], value['corelibDigest'], value['scope'], value['forwarding'],
+        value['indirectDispatch'], value['apiSupport'], value['runtimeExecution']) ==
+        ('lsf.dotnet.cil-references.v1', sha(corelib), 'captured-input-call-operands',
+        'exact-selected-ILC-assembly-identities', 'unknown', 'unknown', 'not-observed'),
+        'compiler-cil-scope')
+    for key, maximum in (('unknownReferences', 8 * 1024 * 1024), ('omittedEdges', 65536),
+                         ('bodiesInspected', 262144), ('bodyBytesInspected', 8 * 1024 * 1024)):
+        require(type(value[key]) is int and 0 <= value[key] <= maximum, 'compiler-cil-count')
+    require(type(value['edges']) is list and len(value['edges']) <= 64
+            and type(value['apiBodies']) is list and len(value['apiBodies']) <= 1, 'compiler-cil-row-limit')
+    seen = set()
+    for edge in value['edges']:
+        members(edge, {'sourceId', 'bodyDigest', 'offset', 'operation', 'targetId',
+                       'targetAssemblyDigest', 'targetSignatureDigest'})
+        for key in ('sourceId', 'targetId'):
+            require(type(edge[key]) is str and re.fullmatch('[0-9a-f]{64}', edge[key]), 'compiler-cil-method-id')
+        for key in ('bodyDigest', 'targetAssemblyDigest', 'targetSignatureDigest'): sha(edge[key])
+        require(type(edge['offset']) is int and 0 <= edge['offset'] < 262144
+                and type(edge['operation']) is str and edge['operation'] in {'call', 'callvirt', 'newobj', 'ldftn', 'ldvirtftn'}
+                and (edge['sourceId'], edge['offset']) not in seen, 'compiler-cil-operand')
+        seen.add((edge['sourceId'], edge['offset']))
+    for api in value['apiBodies']:
+        members(api, {'api', 'id', 'assemblyDigest', 'signatureDigest', 'bodyDigest', 'metadataToken'})
+        require(api['api'] == 'System.IO.Path.GetTempFileName' and api['assemblyDigest'] == corelib
+                and api['signatureDigest'] == digest(bytes((0, 0, 14)))
+                and type(api['metadataToken']) is int and 0x06000001 <= api['metadataToken'] <= 0x06ffffff
+                and api['id'] == digest((corelib + ':' + str(api['metadataToken'])).encode())[7:],
+                'compiler-cil-api-identity')
+        sha(api['bodyDigest'])
+        mapped = [row for row in methods if row['id'] == api['id']]
+        require(not mapped or len(mapped) == 1 and mapped[0]['assemblyDigest'] == corelib
+                and mapped[0]['signatureDigest'] == api['signatureDigest'], 'compiler-cil-api-query-identity')
+    # Keep public 64KiB report limit unchanged. Metadata/graph counts retain
+    # omissions rather than silently turning unretained operands into absence.
+    reduced = {key: item for key, item in value.items() if key != 'edges'}
+    reduced['edges'] = value['edges'][:16]
+    reduced['omittedEdges'] += max(0, len(value['edges']) - 16)
+    reduced['identity'] = digest(encode(reduced))
+    return reduced
+
+
 def collect(compiler, project: Path, output: Path, selection: dict | None) -> dict:
     """Observe successful normal ILC; the raw scanner graph stays temporary."""
-    response, response_raw, graph, assemblies = response_inputs(project, compiler.package_cache, selection)
+    response, response_raw, graph, application_assemblies = response_inputs(project, compiler.package_cache, selection)
+    assemblies, source_count, corelib_digest = cil_inputs(compiler, project, response_raw, application_assemblies)
     graph_raw = read_file(graph, MAX_GRAPH_BYTES)
+    codegen = codegen_input(project, response_raw)
+    codegen_raw = read_file(codegen, MAX_GRAPH_BYTES)
     before = [digest(read_file(path, 16 * 1024 * 1024)) for path in assemblies]
     source = compiler.sdk / 'tools/compiler-metadata'; original = snapshot(source)
-    require(set(original) == {'CompilerMetadata.csproj', 'Program.cs', 'LICENSE.MIT'}, 'compiler-method-owned-tool-source')
+    require(set(original) == {'CompilerMetadata.csproj', 'Program.cs', 'CilReferences.cs', 'LICENSE.MIT'}, 'compiler-method-owned-tool-source')
     # Paths, metadata query labels and the graph are private compiler inputs.
     # Here output is the compiler's existing private TemporaryDirectory, not
     # build()'s retained output. Its original scope owns helper/manifest cleanup.
@@ -217,13 +319,16 @@ def collect(compiler, project: Path, output: Path, selection: dict | None) -> di
         '-p:RestoreConfigFile=' + str(config), '-p:NuGetAudit=false', '-p:UseAppHost=false', '-nodeReuse:false',
         '-p:UseSharedCompilation=false', '-p:ImportDirectoryBuildProps=false', '-p:ImportDirectoryBuildTargets=false')
     tool = directory / 'bin/CompilerMetadata.dll'; tool_bytes = read_file(tool, 4 * 1024 * 1024)
-    compiler.run('compiler-metadata-read', compiler.dotnet, tool, manifest, result)
+    compiler.run('compiler-metadata-read', compiler.dotnet, tool, manifest, result, corelib_digest, str(source_count))
     queries = json.loads(read_file(result, MAX_PUBLIC_BYTES))
     require(queries['assemblies'] == before and before == [digest(read_file(path, 16 * 1024 * 1024)) for path in assemblies]
             and read_file(response, 1024 * 1024) == response_raw and read_file(graph, MAX_GRAPH_BYTES) == graph_raw
+            and read_file(codegen, MAX_GRAPH_BYTES) == codegen_raw
             and snapshot(source) == original and all(read_file(directory / name) == body for name, body in original.items())
             and read_file(tool, 4 * 1024 * 1024) == tool_bytes, 'compiler-method-observer-input-changed')
     value = scanner(graph_raw, queries)
+    value['compiledMethods'] = compiled_methods(codegen_raw, queries)
+    value['cilReferences'] = cil_observation(queries.get('cilReferences'), corelib_digest, value['methods'])
     value.update(responseDigest=digest(response_raw), metadataToolSourceDigest=digest(inventory(original)),
                  metadataToolDigest=digest(tool_bytes))
     return value
@@ -234,7 +339,7 @@ def validate(value: dict, *, source=None, component=None, compiler=None, recipe=
         'linksInspected', 'methods', 'omittedMethods', 'mappingAnchorCount', 'retentionScope', 'analysisCompleteness', 'rootScope', 'reflection',
         'initializersExecuted', 'runtimeExecution', 'workerDrain', 'apiSupport', 'authority', 'identity',
         'responseDigest', 'metadataToolSourceDigest', 'metadataToolDigest', 'sourceDigest', 'componentDigest',
-        'compilerDigest', 'recipeDigest', 'graphDigest'})
+        'compilerDigest', 'recipeDigest', 'graphDigest'}, {'compiledMethods', 'cilReferences'})
     require((value['schemaVersion'], value['compilerSource'], value['analysisCompleteness'],
         value['rootScope'], value['reflection'], value['runtimeExecution'], value['workerDrain'],
         value['apiSupport'], value['authority'], value['retentionScope']) == ('lsf.dotnet.compiler-methods.v1', SOURCE,
@@ -263,6 +368,37 @@ def validate(value: dict, *, source=None, component=None, compiler=None, recipe=
             'compiler-method-public-row')
     require(value['mappingAnchorCount'] == sum(row['rootAnchor'] and row['state'] == 'linked'
             for row in value['methods']), 'compiler-method-root-mapping-anchor-count')
+    if 'compiledMethods' in value:
+        compiled = members(value['compiledMethods'], {'schemaVersion', 'graphDigest', 'queryDigest',
+            'nodesInspected', 'linksInspected', 'mappingAnchorCount', 'methods', 'scope', 'apiElimination',
+            'runtimeExecution', 'authority', 'identity'})
+        require((compiled['schemaVersion'], compiled['scope'], compiled['apiElimination'],
+            compiled['runtimeExecution'], compiled['authority']) == ('lsf.dotnet.compiled-methods.v1',
+            'completed-ILC-compilation-dependency-graph', 'not-established', 'not-observed', 'none')
+            and compiled['queryDigest'] == value['queryDigest'], 'compiler-method-codegen-scope')
+        sha(compiled['graphDigest']); sha(compiled['identity'])
+        integer(compiled['nodesInspected'], 1, MAX_NODES); integer(compiled['linksInspected'], 0, MAX_LINKS)
+        integer(compiled['mappingAnchorCount'], 1, 64)
+        require(type(compiled['methods']) is list and len(compiled['methods']) == len(value['methods']),
+                'compiler-method-codegen-query-count')
+        for actual, original in zip(compiled['methods'], value['methods']):
+            members(actual, {'id', 'state'})
+            require(actual['id'] == original['id'] and type(actual['state']) is str
+                    and actual['state'] in {'codegen-node-observed', 'codegen-node-not-observed', 'unknown'}
+                    and (original['state'] != 'unknown' or actual['state'] == 'unknown'),
+                    'compiler-method-codegen-query-identity')
+        require(compiled['mappingAnchorCount'] == sum(original['rootAnchor'] and actual['state'] == 'codegen-node-observed'
+                for original, actual in zip(value['methods'], compiled['methods']))
+            and compiled['identity'] == digest(encode({key: item for key, item in compiled.items() if key != 'identity'})),
+            'compiler-method-codegen-identity')
+    if 'cilReferences' in value:
+        cil = value['cilReferences']
+        members(cil, {'schemaVersion', 'corelibDigest', 'scope', 'forwarding', 'indirectDispatch', 'apiSupport',
+            'runtimeExecution', 'edges', 'apiBodies', 'unknownReferences', 'omittedEdges', 'bodiesInspected',
+            'bodyBytesInspected', 'identity'})
+        require(type(cil['edges']) is list and len(cil['edges']) <= 16
+                and cil_observation({key: item for key, item in cil.items() if key != 'identity'},
+                    cil['corelibDigest'], value['methods']) == cil, 'compiler-cil-public-identity')
     require(len(encode(value)) <= MAX_PUBLIC_BYTES
             and value['identity'] == digest(encode({k: v for k, v in value.items() if k != 'identity'})),
             'compiler-method-public-identity-or-size')

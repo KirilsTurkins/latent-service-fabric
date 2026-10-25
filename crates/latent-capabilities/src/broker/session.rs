@@ -548,6 +548,17 @@ impl SessionCore {
     }
 }
 impl CapabilitySession {
+    /// Retain an original runtime operation's closed resource refusal in the
+    /// existing activation journal before its frozen WIT error is returned.
+    /// A caught refusal remains an observation, never a later terminal cause.
+    pub fn observe_runtime_refusal(&self, error: &PlatformError) {
+        if let Some(diagnostic) = latent_core::diagnostic::ActivationDiagnostic::from_error(error)
+            .filter(latent_core::diagnostic::ActivationDiagnostic::is_runtime_resource_refusal)
+        {
+            self.core.observe_diagnostic(diagnostic);
+        }
+    }
+
     /// Verified web projections expose their own invocation context as core ABI.
     /// This does not authorize a provider or another activation's context.
     pub fn uses_core_web_context(&self, output_bytes: usize) -> Result<bool, PlatformError> {

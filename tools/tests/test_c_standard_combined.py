@@ -84,6 +84,7 @@ class StandardCombined(unittest.TestCase):
     def test_combined_compiler_uses_existing_stdio_adapter_and_other_profiles_stay_separate(self):
         source = self.root / 'library.c'; source.write_text('int value;')
         compiler = Compiler.__new__(Compiler)
+        compiler.compiler_edges, compiler.compiler_edge_sources = None, {}
         compiler.sdk, compiler.platform, compiler.commands, compiler.isolation = project.ROOT / 'sdk/c-guest', None, None, None
         compiler.validate_static_libraries = lambda *args: None
         compiler.check_unchanged = lambda: None

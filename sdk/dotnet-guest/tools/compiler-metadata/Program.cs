@@ -49,16 +49,32 @@ internal static class Program
     }
     public static int Main(string[] args)
     {
-        Require(args.Length == 2);
+        Require(args.Length is 2 or 4);
         var manifest = new FileInfo(args[0]);
         Require(manifest.Exists && manifest.Length <= 65536 && manifest.LinkTarget is null);
         var paths = JsonSerializer.Deserialize<string[]>(File.ReadAllBytes(manifest.FullName))
             ?? throw new InvalidDataException("compiler-metadata-input-invalid");
         Require(paths is not null && paths.Length is > 0 and <= MaxAssemblies
             && paths.Distinct(StringComparer.Ordinal).Count() == paths.Length);
+        string? expectedCorelib = null;
+        CilReferences.Result? cil = null;
+        if (args.Length == 4)
+        {
+            expectedCorelib = args[2];
+            Require(expectedCorelib.Length == 71 && expectedCorelib.StartsWith("sha256:", StringComparison.Ordinal)
+                && expectedCorelib[7..].All(c => c is >= '0' and <= '9' or >= 'a' and <= 'f'));
+            Require(int.TryParse(args[3], System.Globalization.NumberStyles.None,
+                System.Globalization.CultureInfo.InvariantCulture, out var sourceCount)
+                && sourceCount > 0 && sourceCount <= paths.Length);
+            cil = CilReferences.Read(paths, expectedCorelib, sourceCount);
+        }
+        var mappedApis = cil?.ApiBodies.Select(row => row.Id).ToHashSet(StringComparer.Ordinal) ?? new HashSet<string>();
+        var apiSources = cil?.Edges.Where(edge => mappedApis.Contains(edge.TargetId))
+            .Select(edge => edge.SourceId).ToHashSet(StringComparer.Ordinal) ?? new HashSet<string>();
+        var pinnedQueries = new Dictionary<string, Query>(StringComparer.Ordinal);
         var queries = new List<Query>(); var assemblyIdentities = new List<string>();
         long totalBytes = 0; int methods = 0, types = 0;
-        var allNames = new HashSet<string>(StringComparer.Ordinal);
+        var allNames = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var path in paths)
         {
             var file = new FileInfo(path);
@@ -69,8 +85,15 @@ internal static class Program
             Require(pe.HasMetadata);
             var metadata = pe.GetMetadataReader(); Require(metadata.IsAssembly);
             var assembly = metadata.GetString(metadata.GetAssemblyDefinition().Name);
+            bool knownCorelib = assembly == "System.Private.CoreLib" && identity == expectedCorelib;
             bool asciiAssembly = Ascii(assembly), rootAssembly = assemblyIdentities.Count == 0;
-            Require(allNames.Add(assembly)); assemblyIdentities.Add(identity);
+            bool firstName = allNames.TryAdd(assembly, identity);
+            // CilReferences already compared complete bytes of every alias.
+            // Preserve every original path/hash entry, but query its methods
+            // once. The legacy two-argument reader keeps its original refusal.
+            Require(firstName || cil is not null && allNames[assembly] == identity);
+            assemblyIdentities.Add(identity);
+            if (!firstName) continue;
             if (assembly.StartsWith("System.Private.", StringComparison.Ordinal)) assembly = "S.P." + assembly[15..];
             var prefix = Sanitize(assembly);
             var typeNames = new Dictionary<TypeDefinitionHandle, string>();
@@ -93,7 +116,17 @@ internal static class Program
             foreach (var handle in metadata.TypeDefinitions)
             {
                 types++; Require(types <= 65536);
-                typeNames[handle] = Unique(prefix + "_" + Sanitize(FullName(handle)), typeUsed);
+                var full = FullName(handle);
+                var typeName = prefix + "_" + Sanitize(full);
+                if (knownCorelib)
+                    typeName = full switch {
+                        "System.Boolean" => "Bool", "System.Byte" => "UInt8", "System.SByte" => "Int8",
+                        "System.UInt16" => "UInt16", "System.Int16" => "Int16", "System.UInt32" => "UInt32",
+                        "System.Int32" => "Int32", "System.UInt64" => "UInt64", "System.Int64" => "Int64",
+                        "System.Char" => "Char", "System.Double" => "Double", "System.Single" => "Single",
+                        "System.IntPtr" => "IntPtr", "System.UIntPtr" => "UIntPtr", "System.Object" => "Object",
+                        "System.String" => "String", _ => typeName };
+                typeNames[handle] = Unique(typeName, typeUsed);
             }
             foreach (var handle in metadata.TypeDefinitions)
             {
@@ -113,17 +146,24 @@ internal static class Program
                     // No system-module primitive abbreviations, generic
                     // instantiations, synthetic methods or fuzzy name matches.
                     string? mangled = generic || !asciiAssembly || !Ascii(FullName(handle)) || !Ascii(name)
-                        || assembly.StartsWith("S.P.", StringComparison.Ordinal)
+                        || assembly.StartsWith("S.P.", StringComparison.Ordinal) && !knownCorelib
                         ? null : typeNames[handle] + "__" + nativeName;
                     var kind = name == ".cctor" ? "initialization" : name == ".ctor" ? "constructor" : "method";
                     var declaration = (method.Attributes & MethodAttributes.PinvokeImpl) != 0 ? "pinvoke" : "ordinary";
                     bool anchor = rootAssembly && mangled is not null && (method.Attributes & MethodAttributes.Static) != 0
                         && ExportAttribute(metadata, method);
-                    queries.Add(new Query(id, identity, Digest(signature), symbol, mangled, kind, declaration, anchor));
+                    var query = new Query(id, identity, Digest(signature), symbol, mangled, kind, declaration, anchor);
+                    if (anchor || mappedApis.Contains(id) || apiSources.Contains(id))
+                    {
+                        Require(pinnedQueries.TryAdd(id, query) && pinnedQueries.Count <= MaxQueries);
+                    }
+                    queries.Add(query);
                     // Preserve root mapping anchors, then the actual captured
                     // dependency assemblies. Generated SDK PInvokes in the root
                     // DLL must not crowd every transitive query out of the cap.
                     queries = queries.OrderBy(q => !q.RootAnchor)
+                        .ThenBy(q => !mappedApis.Contains(q.Id))
+                        .ThenBy(q => cil is null || !cil.CorelibTargets.Contains(q.Id))
                         .ThenBy(q => q.AssemblyDigest == assemblyIdentities[0]).ThenBy(q => q.Declaration != "pinvoke")
                         .ThenBy(q => q.Kind == "initialization" ? 0 : q.Kind == "constructor" ? 1 : 2)
                         .ThenBy(q => q.Symbol, StringComparer.Ordinal).ThenBy(q => q.Id, StringComparer.Ordinal)
@@ -131,12 +171,61 @@ internal static class Program
                 }
             }
         }
-        var result = JsonSerializer.SerializeToUtf8Bytes(new {
+        // Preserve the original bounded ctor/cctor selection, not every
+        // framework constructor. Exact API operand-source rows are captured
+        // before count trimming so ordinary CoreLib queries cannot crowd them.
+        var protectedIds = queries.Where(q => q.Kind is "initialization" or "constructor")
+            .Select(q => q.Id).Concat(pinnedQueries.Keys).ToHashSet(StringComparer.Ordinal);
+        Require(protectedIds.Count <= MaxQueries && mappedApis.All(pinnedQueries.ContainsKey)
+            && apiSources.All(pinnedQueries.ContainsKey));
+        queries = queries.Concat(pinnedQueries.Values).DistinctBy(q => q.Id)
+            .OrderBy(q => !protectedIds.Contains(q.Id)).ThenBy(q => !q.RootAnchor)
+            .ThenBy(q => !mappedApis.Contains(q.Id)).ThenBy(q => !apiSources.Contains(q.Id))
+            .ThenBy(q => cil is null || !cil.CorelibTargets.Contains(q.Id))
+            .ThenBy(q => q.AssemblyDigest == assemblyIdentities[0]).ThenBy(q => q.Declaration != "pinvoke")
+            .ThenBy(q => q.Kind == "initialization" ? 0 : q.Kind == "constructor" ? 1 : 2)
+            .ThenBy(q => q.Symbol, StringComparer.Ordinal).ThenBy(q => q.Id, StringComparer.Ordinal)
+            .Take(MaxQueries).ToList();
+        Require(protectedIds.All(id => queries.Any(q => q.Id == id)));
+        var selectedEdges = cil?.Edges.ToList() ?? new List<CilReferences.Edge>();
+        int omittedOutputEdges = 0;
+        byte[] Encode() => JsonSerializer.SerializeToUtf8Bytes(new {
             schemaVersion = "lsf.dotnet.compiler-queries.v1", sourceRevision = "8449ba666dd991e495d8363d9852f18eb86a1aa1",
             assemblies = assemblyIdentities, queries, omittedMethods = methods - queries.Count,
             methodsInspected = methods, typesInspected = types, assemblyBytesInspected = totalBytes,
-            initializersExecuted = false
+            initializersExecuted = false,
+            cilReferences = cil is null ? null : new {
+                schemaVersion = "lsf.dotnet.cil-references.v1", corelibDigest = expectedCorelib,
+                scope = "captured-input-call-operands", forwarding = "exact-selected-ILC-assembly-identities",
+                indirectDispatch = "unknown", apiSupport = "unknown", runtimeExecution = "not-observed",
+                edges = selectedEdges, apiBodies = cil.ApiBodies, unknownReferences = cil.UnknownReferences,
+                omittedEdges = cil.OmittedEdges + omittedOutputEdges, bodiesInspected = cil.BodiesInspected,
+                bodyBytesInspected = cil.BodyBytesInspected }
         }, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+        Require(queries.Count <= MaxQueries && selectedEdges.Count <= 64);
+        var result = Encode();
+        Console.Error.WriteLine(FormattableString.Invariant($"compiler-metadata-size stage=initial bytes={result.Length} queries={queries.Count} edges={selectedEdges.Count} omittedMethods={methods - queries.Count} omittedEdges={(cil?.OmittedEdges ?? 0) + omittedOutputEdges}"));
+        // Exact serialized byte budget, with at most128 encodings total.
+        // API bodies, assembly hashes, anchors and API operand rows never drop.
+        for (int encoded = 1; result.Length > 65536 && encoded < 128; encoded++)
+        {
+            int optionalEdge = selectedEdges.FindLastIndex(edge => !mappedApis.Contains(edge.TargetId));
+            if (optionalEdge >= 0)
+            {
+                selectedEdges.RemoveAt(optionalEdge); omittedOutputEdges++;
+            }
+            else
+            {
+                int optionalQuery = queries.FindLastIndex(candidate => !protectedIds.Contains(candidate.Id));
+                if (optionalQuery < 0)
+                    Console.Error.WriteLine(FormattableString.Invariant($"compiler-metadata-size stage=protected-minimum bytes={result.Length} queries={queries.Count} edges={selectedEdges.Count} omittedMethods={methods - queries.Count} omittedEdges={(cil?.OmittedEdges ?? 0) + omittedOutputEdges}"));
+                Require(optionalQuery >= 0);
+                queries.RemoveAt(optionalQuery);
+            }
+            result = Encode();
+        }
+        // A protected minimum that does not fit is still unavailable.
+        Console.Error.WriteLine(FormattableString.Invariant($"compiler-metadata-size stage=final bytes={result.Length} queries={queries.Count} edges={selectedEdges.Count} omittedMethods={methods - queries.Count} omittedEdges={(cil?.OmittedEdges ?? 0) + omittedOutputEdges}"));
         Require(result.Length <= 65536);
         File.WriteAllBytes(args[1], result); return 0;
     }

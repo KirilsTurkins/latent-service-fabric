@@ -86,11 +86,32 @@ class EmittedGraph(unittest.TestCase):
         self.assertEqual(value['selectedExportMapping'], 'conservative-superset')
 
     def test_indirect_callback_and_table_dispatch_prevent_elimination(self):
-        value = analyze(core([b'\x41\x00\x11\x00\x00\x0b', b'\x10\x00\x0b'], table=True))
-        self.assertEqual(by_function(value)[0]['state'], 'dynamic-unknown')
-        self.assertEqual(by_function(value)[2]['state'], 'dynamic-unknown')
+        raw = core([b'\x41\x00\x11\x00\x00\x0b', b'\x10\x00\x0b'], table=True)
+        value = analyze(raw)
+        self.assertEqual(by_function(value)[0]['state'], 'potentially-reachable')
+        self.assertEqual(by_function(value)[2]['phases'], ['callbacks'])
+        self.assertFalse(emitted.graphs(raw, emitted.Budget())[0]['closed'])
+        self.assertEqual(value['dynamicDispatch'], 'unknown')
         self.assertIn('table-or-indirect-dispatch', value['analysisReasons'])
         self.assertEqual(value['libraryReachability'], 'unknown')
+        original = section(9, b'\x01\x00\x41\x00\x0b\x01\x02')
+        for invalid in (b'\x01\x00\x41\x00\x0b\x01\x00',  # imported function
+                        b'\x01\x00\x41\x00\x0b\x01\x03',  # function outside module
+                        b'\x01\x00\x41\x01\x0b\x01\x02',  # table initial extent
+                        b'\x01\x00\x41\x7f\x0b\x01\x02',  # negative offset
+                        b'\x01\x01\x00\x01\x02'):          # unimplemented form1
+            with self.subTest(element=invalid):
+                refused = analyze(raw.replace(original, section(9, invalid), 1))
+                self.assertIn('unsupported-or-malformed-encoding', refused['analysisReasons'])
+                self.assertEqual(refused['qualification'], 'unknown')
+        old_import = section(2, b'\x01' + name('controlled') + name('unsupported') + b'\x00\x00')
+        table_import = section(2, b'\x02' + name('controlled') + name('unsupported') + b'\x00\x00'
+            + name('env') + name('table') + b'\x01\x70\x00\x01')
+        imported = raw.replace(old_import, table_import, 1).replace(
+            section(4, b'\x01\x70\x01\x01\x01'), b'', 1)
+        opaque = emitted.graphs(imported, emitted.Budget())[0]
+        self.assertFalse(opaque['closed'])
+        self.assertNotIn('callbacks', opaque['reachable'].get(2, ()))
 
     def test_addressable_function_is_a_callback_candidate_even_without_invoking_it(self):
         value = analyze(core([b'\xd2\x02\x1a\x0b', b'\x01\x0b'], exports=(1, 2)))

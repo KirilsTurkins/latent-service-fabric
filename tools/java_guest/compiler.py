@@ -2,6 +2,7 @@
 from __future__ import annotations
 import json
 import importlib.util
+import math
 import os
 import re
 from pathlib import Path
@@ -125,7 +126,11 @@ class Compiler:
     def __init__(self, directory: Path, wasi_sdk: Path, *, gradle="gradle", sdk: Path | None = None,
                  platform: Path | None = None, config: dict | None = None, timeout=900,
                  offline_cache: Path | None = None, read_only_cache: Path | None = None,
-                 compiler_methods: bool = False):
+                 compiler_methods: bool = False, _deadline: float | None = None):
+        if _deadline is not None and (type(_deadline) not in (int, float) or not math.isfinite(_deadline)
+                                     or _deadline <= time.monotonic() + 5):
+            raise ValueError('Java-build-original-owner-deadline')
+        self._parent_deadline = _deadline
         if type(compiler_methods) is not bool:
             raise ValueError('Java compiler method observations require an explicit boolean')
         self.compiler_methods = compiler_methods
@@ -155,6 +160,8 @@ class Compiler:
             self.environment["GRADLE_RO_DEP_CACHE"] = str(selected_cache.parent)
             self.dependency_cache = selected_cache / "files-2.1"
         self.deadline = time.monotonic() + timeout
+        if _deadline is not None:
+            self.deadline = min(self.deadline, _deadline - 5)
         self.records = []
         self.retained_bytes = 0
         self.paths = {}
@@ -192,6 +199,8 @@ class Compiler:
         self.binding_digest = verify(self.run, self.sdk, self.platform, self.directory / "sdk-reference")
 
     def run(self, stage: str, tool: str, *arguments, cwd: Path | None = None) -> str:
+        if getattr(self, '_parent_deadline', None) is not None:
+            self.deadline = min(self.deadline, self._parent_deadline - 5)
         remaining = self.deadline - time.monotonic()
         if remaining <= 0: raise ValueError("Java build deadline exceeded")
         path = self.paths.get(tool, Path(tool))
@@ -222,6 +231,45 @@ class Compiler:
             # __init__ can fail before the caller receives the Compiler. Keep
             # each command's bounded exit/cleanup record beside its log anyway.
             write_json(self.directory / (str(len(self.records) - 1) + "-" + stage + ".command.json"), record)
+
+    def prepare_method_analysis(self, project, destination, origin_sources, application_source_names, *, required):
+        """Original strict activation inputs; passive-only failures stay unknown.
+
+        This catches expected failures of these TWO diagnostic preparatory
+        commands only. The original TeaVM/C/component commands remain outside.
+        No application initializer is executed by the passive metadata readers.
+        """
+        try:
+            origins = json.loads(self.run("java-source-origins", "java",
+                self.sdk / "fibers/analysis/SourceOrigins.java", origin_sources))
+            if (not isinstance(origins, dict) or set(origins) != {"schemaVersion", "sources"}
+                    or origins["schemaVersion"] != "lsf.java.source-origins.v1"
+                    or not isinstance(origins["sources"], list)):
+                raise ValueError("invalid Java source origin analysis")
+            source_packages = {}
+            for row in origins["sources"]:
+                if (not isinstance(row, dict) or set(row) != {"source", "package"}
+                        or not isinstance(row["source"], str)
+                        or row["source"] not in application_source_names or row["source"] in source_packages
+                        or not isinstance(row["package"], str)
+                        or any(char in row["package"] for char in "/\\\x00\r\n")):
+                    raise ValueError("invalid Java captured source origin")
+                source_packages[row["source"]] = row["package"]
+            if set(source_packages) != application_source_names:
+                raise ValueError("incomplete Java captured source origins")
+            write_json(destination / "source-origins.json", origins)
+            if required:
+                coroutine_patch.record_original_classpath(project)
+            self.run("java-owned-classes", "gradle", "--no-daemon", *(["--offline"] if self.offline else []), "classes", cwd=project)
+            return origins, source_packages
+        except BuildProcessError as error:
+            if required or error.reason not in {'command-output-limit', 'command-deadline'}:
+                raise  # Cancellation/cleanup/owner failures are never swallowed.
+            return None
+        except (ValueError, OSError):
+            if required:
+                raise  # The ORIGINAL activation attribution/checkpoint gate.
+            return None  # No dynamic error strings or unsupported-source verdict.
 
     def compile(self, sources: Path, wit: Path, world: str, destination: Path, *,
                 application_classpath: tuple[Path, ...] = (), application_resources: Path | None = None,
@@ -379,34 +427,15 @@ class Compiler:
                 selected.parent.mkdir(parents=True, exist_ok=True)
                 selected.write_bytes(read_file(java_root / name))
                 application_source_names.add(name)
+        from tools.java_guest.class_origin import checkpoint_index
+        origins, source_packages = None, None
         if activation_profile or self.compiler_methods:
-            from tools.java_guest.class_origin import checkpoint_index
-            origins = json.loads(self.run("java-source-origins", "java",
-                self.sdk / "fibers/analysis/SourceOrigins.java", origin_sources))
-            if (not isinstance(origins, dict) or set(origins) != {"schemaVersion", "sources"}
-                    or origins["schemaVersion"] != "lsf.java.source-origins.v1"
-                    or not isinstance(origins["sources"], list)):
-                raise ValueError("invalid Java source origin analysis")
-            source_packages = {}
-            for row in origins["sources"]:
-                if (not isinstance(row, dict) or set(row) != {"source", "package"}
-                        or not isinstance(row["source"], str)
-                        or row["source"] not in application_source_names or row["source"] in source_packages
-                        or not isinstance(row["package"], str)
-                        or any(char in row["package"] for char in "/\\\x00\r\n")):
-                    raise ValueError("invalid Java captured source origin")
-                source_packages[row["source"]] = row["package"]
-            if set(source_packages) != application_source_names:
-                raise ValueError("incomplete Java captured source origins")
-            write_json(destination / "source-origins.json", origins)
-            if activation_profile:
-                coroutine_patch.record_original_classpath(project)
-        # javac metadata is read passively. This task was already required by
-        # the activation compiler; no application initializer is run here.
-        if activation_profile or self.compiler_methods:
-            self.run("java-owned-classes", "gradle", "--no-daemon", *(["--offline"] if self.offline else []), "classes", cwd=project)
+            selected_analysis = self.prepare_method_analysis(project, destination, origin_sources,
+                application_source_names, required=activation_profile)
+            if selected_analysis is not None:
+                origins, source_packages = selected_analysis
         method_queries = None
-        if self.compiler_methods:
+        if self.compiler_methods and source_packages is not None:
             try:
                 owned_classes = set(checkpoint_index(project / "build/classes/java/main", source_packages,
                                                      application_classpath).decode().splitlines())

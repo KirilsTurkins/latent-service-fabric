@@ -1,0 +1,20 @@
+{
+  "schemaVersion":"latent.ci.contracts.v2",
+  "kind":"python",
+  "reviewReason":"Reviewed final eight logical cells: six immutable successful source/profile epochs plus current Go baseline/reached/initializer and fixed completed61a .NET builder/newpositive node-only. Exact passive postimages, source/SDK/WIT/materials/native/deadline/original failure gates remain strict. Original cases/skips/decorators preserved; additive bounded controls only.",
+  "module":"tools/tests/test_compatibility_preserved_cells.py",
+  "cases":["PreservedCellsTests.test_default_none_Go_observer_postimage_is_exact_and_only_for_original_Go_queue_recipe","PreservedCellsTests.test_fixed_two_source_epochs_cannot_be_swapped_or_promoted_to_current_execution","PreservedCellsTests.test_only_reviewed_passive_changes_are_excluded_from_current_runtime_inputs","PreservedCellsTests.test_original_archive_and_admission_refuse_tamper_and_nonregular_members"],
+  "guards":{
+    "PreservedCellsTests.test_original_archive_and_admission_refuse_tamper_and_nonregular_members":
+      "2a924a6a9d3c0c76fe3cce074f5ef950734e32869455ac95be3e40f2f44e0a27",
+    "PreservedCellsTests.test_fixed_two_source_epochs_cannot_be_swapped_or_promoted_to_current_execution":
+      "2a924a6a9d3c0c76fe3cce074f5ef950734e32869455ac95be3e40f2f44e0a27",
+    "PreservedCellsTests.test_only_reviewed_passive_changes_are_excluded_from_current_runtime_inputs":
+      "2a924a6a9d3c0c76fe3cce074f5ef950734e32869455ac95be3e40f2f44e0a27",
+    "PreservedCellsTests.test_default_none_Go_observer_postimage_is_exact_and_only_for_original_Go_queue_recipe":
+      "2a924a6a9d3c0c76fe3cce074f5ef950734e32869455ac95be3e40f2f44e0a27"
+  },
+  "guardDefinitions":{
+    "2a924a6a9d3c0c76fe3cce074f5ef950734e32869455ac95be3e40f2f44e0a27":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:cad9f9566c119dff4e773a3efee1fd29185ca6ccad0788c7339dcbf42f497628","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"]}
+  }
+}

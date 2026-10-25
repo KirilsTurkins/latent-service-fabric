@@ -142,7 +142,7 @@ class OriginalOutcome(unittest.TestCase):
 
     def test_absent_invalid_and_valid_diagnostics_stay_distinct(self):
         self.assertEqual(outcomes.original(result())['activationDiagnostic']['state'], 'absent')
-        self.assertEqual(outcomes.original(result(17))['activationDiagnostic']['state'], 'invalid-present')
+        self.assertEqual(outcomes.original(result(27))['activationDiagnostic']['state'], 'invalid-present')
         self.assertEqual(outcomes.original(result(10))['activationDiagnostic']['state'], 'observed')
 
     def test_closed_enum_numeric_and_digest_projection_rejects_hostile_fields(self):

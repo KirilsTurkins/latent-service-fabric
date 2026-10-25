@@ -68,6 +68,16 @@ impl DiagnosticReason {
     pub const DEADLINE_EXCEEDED: Self = Self(14);
     pub const CANCELLED: Self = Self(15);
     pub const HTTP_RESPONSE_REJECTED: Self = Self(16);
+    pub const RUNTIME_TASK_LIMIT: Self = Self(17);
+    pub const RUNTIME_QUEUE_LIMIT: Self = Self(18);
+    pub const RUNTIME_TIMER_LIMIT: Self = Self(19);
+    pub const RUNTIME_EXECUTOR_LIMIT: Self = Self(20);
+    pub const RUNTIME_WAIT_LIMIT: Self = Self(21);
+    pub const RUNTIME_RESULT_LIMIT: Self = Self(22);
+    pub const RUNTIME_NATIVE_OWNER_LIMIT: Self = Self(23);
+    pub const NATIVE_THREAD_START_LIMIT: Self = Self(24);
+    pub const NATIVE_MEMORY_EXHAUSTED: Self = Self(25);
+    pub const GUEST_STACK_EXHAUSTED: Self = Self(26);
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]

@@ -951,7 +951,9 @@ for language in compatibility.LANGUAGES:
   {'source':digest(b'frontend'),'artifacts':{'component':report['componentDigest']}})
  assert captured.context_state=='observed',language
  assert captured.context==selected,language
-for name in ('tools.guest_compatibility_context_build','tools.guest_emitted_code','tools.typescript_guest.buffer_profile',
+for name in ('tools.guest_compatibility_context_build','tools.guest_emitted_code',
+             'tools.guest_api_analysis','tools.guest_compiler_capture','tools.guest_compiler_edges',
+             'tools.typescript_guest.buffer_profile',
              'tools.typescript_guest.net_profile','tools.typescript_guest.runtime_profile'):
  importlib.import_module(name)
 # Exercise the actual selected Net lazy reader, not just unselected imports.

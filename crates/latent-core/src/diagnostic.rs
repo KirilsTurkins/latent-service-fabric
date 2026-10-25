@@ -41,7 +41,11 @@ vocabulary!(DiagnosticReason {
     ProviderAbsent = 5, BindingAbsent = 6, AdmissionDenied = 7,
     GrantDenied = 8, QueuePressure = 9, GuestMemoryExhausted = 10,
     GuestFuelExhausted = 11, GuestResourceExhausted = 12,
-    ProviderTimeout = 13, DeadlineExceeded = 14, Cancelled = 15, HttpResponseRejected = 16
+    ProviderTimeout = 13, DeadlineExceeded = 14, Cancelled = 15, HttpResponseRejected = 16,
+    RuntimeTaskLimit = 17, RuntimeQueueLimit = 18, RuntimeTimerLimit = 19,
+    RuntimeExecutorLimit = 20, RuntimeWaitLimit = 21, RuntimeResultLimit = 22,
+    RuntimeNativeOwnerLimit = 23, NativeThreadStartLimit = 24,
+    NativeMemoryExhausted = 25, GuestStackExhausted = 26
 });
 vocabulary!(DiagnosticProfile {
     WasmtimeServiceValuesV1 = 1, WasmtimeBufferedWebValuesV1 = 2
@@ -66,6 +70,24 @@ pub struct ActivationDiagnostic {
 impl ActivationDiagnostic {
     pub const VERSION: u32 = 1;
     pub const DETAIL_KIND: &'static str = "activation.diagnostic.v1";
+
+    /// Original-operation observations may be retained even when a guest
+    /// catches its WIT error. They do not identify a later terminal cause.
+    #[must_use]
+    pub const fn is_runtime_resource_refusal(&self) -> bool {
+        matches!(
+            self.reason,
+            DiagnosticReason::RuntimeTaskLimit
+                | DiagnosticReason::RuntimeQueueLimit
+                | DiagnosticReason::RuntimeTimerLimit
+                | DiagnosticReason::RuntimeExecutorLimit
+                | DiagnosticReason::RuntimeWaitLimit
+                | DiagnosticReason::RuntimeResultLimit
+                | DiagnosticReason::RuntimeNativeOwnerLimit
+                | DiagnosticReason::NativeThreadStartLimit
+                | DiagnosticReason::NativeMemoryExhausted
+        )
+    }
 
     #[must_use]
     pub const fn new(stage: DiagnosticStage, reason: DiagnosticReason) -> Self {

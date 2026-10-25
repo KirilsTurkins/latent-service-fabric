@@ -50,7 +50,7 @@ impl Table {
             + 64;
         let mut allocation = budget
             .reserve_host_memory(bytes)
-            .map_err(|e| e.to_platform_error())?;
+            .map_err(|e| e.to_host_memory_error())?;
         let mut owners = Vec::new();
         owners.try_reserve_exact(limits.total()).map_err(|_| {
             failure(
@@ -226,6 +226,9 @@ where
         }
     };
     let result = table(state).and_then(execute);
+    if let Err(error) = &result {
+        observe_runtime_refusal(state, error);
+    }
     #[cfg(feature = "development-test-host")]
     if let Err(error) = &result {
         observe_borrow_registration_refusal(state, operation, error);
@@ -233,6 +236,12 @@ where
     let _ = call.record_provider_outcome(AuditProviderOutcome::HostCompleted);
     state.record_host_call(started);
     Completion::new(result.map_err(convert), Some(call))
+}
+
+pub(super) fn observe_runtime_refusal(state: &HostState, error: &PlatformError) {
+    if let Some(session) = &state.capabilities.session {
+        session.observe_runtime_refusal(error);
+    }
 }
 
 #[cfg(feature = "development-test-host")]
@@ -554,6 +563,9 @@ fn prepare_wait(
     })();
     // A failed timer preparation has no pending producer, but its accepted
     // call still owns the fixed error result through actual canonical lowering.
+    if let Err(error) = &result {
+        observe_runtime_refusal(state, error);
+    }
     PreparedWait {
         result,
         failed_call: call,
@@ -608,6 +620,9 @@ fn prepare_timer_next(state: &mut HostState, token: RuntimeToken) -> PreparedWai
             call: call.take().expect("original accepted runtime call"),
         })
     })();
+    if let Err(error) = &result {
+        observe_runtime_refusal(state, error);
+    }
     PreparedWait {
         result,
         failed_call: call,

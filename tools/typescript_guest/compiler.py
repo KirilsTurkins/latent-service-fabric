@@ -177,7 +177,9 @@ class Compiler:
             inputs = {"typescript-compiler": self.tools}
             if self.engine is not None:
                 inputs['typescript-runtime-engine'] = self.engine.parent
-            self.isolation = Isolation(isolated_workspace, selected_tools, inputs)
+            deadline = getattr(commands, '_parent_deadline', None)
+            options = {} if deadline is None else {'_deadline': deadline}
+            self.isolation = Isolation(isolated_workspace, selected_tools, inputs, **options)
             self.isolation.protect_inputs(self.recipe)
 
     def run(self, stage, tool, *arguments):

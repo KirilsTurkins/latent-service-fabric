@@ -41,13 +41,15 @@ class SnapshotError(RuntimeError):
 # directory, per-file, total-byte and archive-byte budgets remain independent.
 # The current selected tree includes the authenticated Wasmtime source and
 # exceeds 72 MiB: revision 976e86c has 75,529,037 archived file bytes.
-# Retain every selected compiler input within fixed 74 MiB source / 82 MiB
+# Retain every selected compiler input within fixed 75 MiB source / 82 MiB
 # archive caps; activation/runtime budgets are independent.
 # The 2026-10-25 selection at 36a2620 has 8,707 files and an 83,916,800-byte
 # Git archive. Its next finite 256-file allowance is shared by capture and Cargo
 # attribution; archive transport gets two MiB and no selected input is dropped.
 # The 2026-10-25 local-service diagnostic adds more than the 21,034 source bytes
 # left at 4168d40; one finite source MiB retains every input. Other caps stay fixed.
+# Before this adjustment, R8 totals 77,779,641 archived file bytes, exceeding
+# 74 MiB by 185,017 bytes; one finite source MiB retains all selected inputs.
 MAX_SOURCE_FILES = 8960
 
 
@@ -56,7 +58,7 @@ class SnapshotLimits:
     max_entries: int = MAX_SOURCE_FILES
     max_directories: int = 4096
     max_file_bytes: int = 4 * 1024 * 1024
-    max_total_bytes: int = 74 * 1024 * 1024
+    max_total_bytes: int = 75 * 1024 * 1024
     max_archive_bytes: int = 82 * 1024 * 1024
 
     def validate(self) -> None:

@@ -1,7 +1,7 @@
 name: Compiler and signed initializer callback diagnostics
 'on':
   push:
-    branches: ['feat/java-dotnet-diagnostics-679-20261021']
+    branches: ['feat/java-dotnet-diagnostics-679-20261021', 'feat/sdk-compatibility-closure-20261025']
     paths:
       - '.github/workflows/compiler-compatibility.yml'
       - 'sdk/java-guest/**'
@@ -15,6 +15,13 @@ name: Compiler and signed initializer callback diagnostics
       - 'tools/qualify_compiler_compatibility.py'
       - 'tools/fixtures/compatibility-java/**'
       - 'tools/fixtures/compatibility-dotnet/**'
+      - 'tools/compatibility_*.py'
+      - 'tools/qualify_compatibility_closure.py'
+      - 'tools/guest_api_analysis.py'
+      - 'tools/guest_compiler_*.py'
+      - 'tools/guest_compatibility*.py'
+      - 'tools/*capsule_build.py'
+      - 'tools/captured_compiler_isolation.py'
 permissions:
   contents: read
   actions: read
@@ -269,3 +276,233 @@ jobs:
           ${{ runner.temp }}/dotnet-diagnostics-tools/runtime-inputs.json
           ${{ runner.temp }}/dotnet-diagnostics-tools/wasi-sdk.json
           ${{ runner.temp }}/dotnet-diagnostics-tools/logs/**
+
+  closure-required:
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/feat/sdk-compatibility-closure-20261025' }}
+    name: Required finite ${{ matrix.cell }} compatibility completion
+    runs-on: ubuntu-24.04
+    timeout-minutes: ${{ matrix.minutes }}
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        include:
+        - cell: go
+          minutes: 105
+        - cell: dotnet
+          minutes: 70
+          retained: true
+    env:
+      CELL: ${{ matrix.cell }}
+      CARGO_BUILD_JOBS: 2
+      CARGO_INCREMENTAL: 0
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
+    - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      with:
+        python-version: 3.13.5
+    - name: Bind original qualified native source and locked reader dependencies
+      run: 'git fetch --no-tags --depth=1 origin 17e8e622ecd3307a246196cbb5ca06c0fac37301
+
+        python3 -m pip install --requirement tools/requirements.lock'
+    - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+      if: ${{ matrix.cell == 'go' }}
+      with:
+        targets: wasm32-unknown-unknown
+    - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+      if: ${{ matrix.cell == 'go' }}
+      with:
+        version: 1.254.0
+    - uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2
+      if: ${{ contains(fromJSON('["c","rust"]'), matrix.cell) }}
+      with:
+        version: 0.16.0
+    - name: Install the original normal captured compiler boundary
+      if: ${{ matrix.cell == 'go' }}
+      run: 'sudo apt-get update
+
+        sudo apt-get install --yes bubblewrap libgdbm6t64 libreadline8t64 libsqlite3-0 liblttng-ust1t64 libtcl8.6
+        libtk8.6
+
+        sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+
+        python3 -B tools/install_guest_bindgen.py "$RUNNER_TEMP/compatibility-bindgen"
+
+        echo "$RUNNER_TEMP/compatibility-bindgen" >> "$GITHUB_PATH"'
+    - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      if: ${{ contains(fromJSON('["typescript","typescript-initializer"]'), matrix.cell) }}
+      with:
+        node-version: 24.19.0
+    - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v5.0.0
+      if: ${{ contains(fromJSON('["java"]'), matrix.cell) }}
+      with:
+        distribution: temurin
+        java-version: 25.0.4+101.0.LTS
+    - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+      if: ${{ contains(fromJSON('["dotnet"]'), matrix.cell) && !matrix.retained }}
+      with:
+        dotnet-version: 10.0.100
+    - name: Authenticate the ordinary official SDK29 compiler for managed cells
+      if: ${{ contains(fromJSON('["java","dotnet"]'), matrix.cell) && !matrix.retained }}
+      shell: bash
+      run: 'set -euo pipefail
+
+        curl --fail --location --proto ''=https'' --tlsv1.2 --max-time 180 https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz
+        --output "$RUNNER_TEMP/compatibility-wasi-sdk.tar.gz"
+
+        echo "87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171  $RUNNER_TEMP/compatibility-wasi-sdk.tar.gz"
+        | sha256sum --check --strict
+
+        tar -xzf "$RUNNER_TEMP/compatibility-wasi-sdk.tar.gz" -C "$RUNNER_TEMP"'
+    - name: Authenticate original Gradle and prepare only its normal compiler cache
+      if: ${{ contains(fromJSON('["java"]'), matrix.cell) }}
+      shell: bash
+      run: 'set -euo pipefail
+
+        curl --fail --location --proto ''=https'' --tlsv1.2 --max-time 180 https://services.gradle.org/distributions/gradle-9.1.0-bin.zip
+        --output "$RUNNER_TEMP/compatibility-gradle.zip"
+
+        echo "a17ddd85a26b6a7f5ddb71ff8b05fc5104c0202c6e64782429790c933686c806  $RUNNER_TEMP/compatibility-gradle.zip"
+        | sha256sum --check --strict
+
+        unzip -q "$RUNNER_TEMP/compatibility-gradle.zip" -d "$RUNNER_TEMP"
+
+        export PATH="$RUNNER_TEMP/gradle-9.1.0/bin:$PATH"
+
+        echo "$RUNNER_TEMP/gradle-9.1.0/bin" >> "$GITHUB_PATH"
+
+        python3 -B tools/qualify_compatibility_closure.py --prepare-java-cache --tools "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
+        --output "$RUNNER_TEMP/compatibility-java-prerequisite"'
+    - name: Install original normal NativeAOT adapters
+      if: ${{ contains(fromJSON('["dotnet"]'), matrix.cell) && !matrix.retained }}
+      run: python3 -B tools/dotnet_capsule.py install-tools "$RUNNER_TEMP/compatibility-dotnet-tools" --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
+    - name: Install original normal TypeScript tools without an engine build
+      if: ${{ contains(fromJSON('["typescript","typescript-initializer"]'), matrix.cell) }}
+      run: python3 -B tools/typescript_capsule.py install-tools "$RUNNER_TEMP/compatibility-typescript-tools"
+    - name: Authenticate original Go1.27.3 and componentize-go0.4.3 and prepare the maintained v5 compiler
+      run: 'set -euo pipefail
+
+        out="$RUNNER_TEMP/go-http-tenant-tools"
+
+        test ! -e "$out"
+
+        mkdir "$out"
+
+        curl --fail --location --proto ''=https'' --tlsv1.2 --max-time 180 --output "$out/go.tar.gz" https://dl.google.com/go/go1.27.3.linux-amd64.tar.gz
+
+        echo "65efbc80fdc1fa2cd2631cad5b481777a68e8725f34e89f50fc6ac714e379b40  $out/go.tar.gz" | sha256sum --check
+        --strict
+
+        tar -xzf "$out/go.tar.gz" -C "$out"
+
+        curl --fail --location --proto ''=https'' --tlsv1.2 --max-time 180 --output "$out/componentize-go.tar.gz"
+        https://github.com/bytecodealliance/componentize-go/releases/download/v0.4.3/componentize-go-linux-amd64.tar.gz
+
+        echo "1061d845f550df5d9477612a7d458a31b1e2b8bdc95823704e42e5064deb0c52  $out/componentize-go.tar.gz" | sha256sum
+        --check --strict
+
+        tar -xzf "$out/componentize-go.tar.gz" -C "$out" componentize-go
+
+        echo "b41803a645e54845bc8eacef9a69e0eeb8c2c4a9a61964c831ed544e85c137cb  $out/componentize-go" | sha256sum
+        --check --strict
+
+        chmod 755 "$out/componentize-go"
+
+        test "$("$out/componentize-go" --version)" = ''componentize-go 0.4.3''
+
+        test "$(wasm-tools --version | cut -d '' '' -f 1,2)" = ''wasm-tools 1.254.0''
+
+        python3 -B tools/go_guest/runtime.py --prepare-compiler "$out/go" --output "$out/go-async"
+
+        echo "$out" >> "$GITHUB_PATH"
+
+        echo "$out/go-async/bin" >> "$GITHUB_PATH"
+
+        '
+      if: ${{ contains(fromJSON('["go","go-queues"]'), matrix.cell) }}
+    - name: Acquire only the exact previously qualified native products
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: python3 -B tools/compatibility_native_products.py --output "$RUNNER_TEMP/compatibility-native"
+    - name: Acquire only the already qualified source-exact TS import engine and splicer
+      if: ${{ contains(fromJSON('["typescript"]'), matrix.cell) }}
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: 'git fetch --no-tags --depth=1 origin 6d834e502beea33fbae9347fbaf23ff8c37223b3
+
+        python3 -B -c ''import os; from pathlib import Path; from tools.typescript_guest.borrow_signed_inputs import
+        prepare; prepare(Path(os.environ["RUNNER_TEMP"])/"compatibility-typescript-engine")'''
+    - name: Authenticate the one completed .NET builder and current passive diagnostics
+      if: ${{ matrix.cell == 'dotnet' }}
+      timeout-minutes: 10
+      env:
+        GH_TOKEN: ${{ github.token }}
+      shell: bash
+      run: |
+        set -euo pipefail
+        mkdir "$RUNNER_TEMP/compatibility-dotnet-unused-tools"
+        python3 -B tools/qualify_compatibility_closure.py --cell dotnet --prepare-dotnet-retained \
+          --tools "$RUNNER_TEMP/compatibility-dotnet-unused-tools" --output "$RUNNER_TEMP/compatibility-dotnet-retained"
+    - name: Run only the fixed normal capture phase then the fresh1800s compiler and node phase
+      shell: bash
+      run: "set -euo pipefail\nmkdir \"$RUNNER_TEMP/compatibility-unused-tools\"\ntools=\"$RUNNER_TEMP/compatibility-unused-tools\"\
+        \nargs=()\ncase \"$CELL\" in\n  c|rust|go|go-queues) ;;\n  java) tools=\"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\"\
+        ; args+=(--read-only-cache \"$RUNNER_TEMP/compatibility-java-prerequisite/compiler/gradle-home/caches/modules-2\"\
+        ) ;;\n  dotnet) args+=(--retained-dotnet \"$RUNNER_TEMP/compatibility-dotnet-retained/prepared\") ;;\n  typescript) tools=\"$RUNNER_TEMP/compatibility-typescript-tools\"\
+        ; args+=(--engine \"$RUNNER_TEMP/compatibility-typescript-engine/products\") ;;\n  typescript-initializer)\
+        \ tools=\"$RUNNER_TEMP/compatibility-typescript-tools\" ;;\n  *) exit 2 ;;\nesac\npython3 -B tools/qualify_compatibility_closure.py\
+        \ --cell \"$CELL\" --native \"$RUNNER_TEMP/compatibility-native\" --tools \"$tools\" --output \"$RUNNER_TEMP/compatibility-result\"\
+        \ \"${args[@]}\""
+    - name: Admit only the bounded public synthetic evidence union including failures
+      id: public
+      if: always()
+      run: 'python3 -B tools/compatibility_closure_matrix.py retain --source "$RUNNER_TEMP/compatibility-result" --output
+        "$RUNNER_TEMP/compatibility-public"
+
+        echo ''admitted=true'' >> "$GITHUB_OUTPUT"'
+    - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      if: ${{ always() && steps.public.outputs.admitted == 'true' }}
+      with:
+        name: compatibility-closure-${{ github.sha }}-${{ matrix.cell }}
+        retention-days: 3
+        if-no-files-found: error
+        path: ${{ runner.temp }}/compatibility-public/**
+  closure-matrix:
+    needs: closure-required
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
+    - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      with:
+        python-version: 3.13.5
+    - name: Install only locked readers
+      run: python3 -m pip install --requirement tools/requirements.lock
+    - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+      with:
+        name: compatibility-closure-${{ github.sha }}-go
+        path: ${{ runner.temp }}/compatibility-inputs/go
+    - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+      with:
+        name: compatibility-closure-${{ github.sha }}-dotnet
+        path: ${{ runner.temp }}/compatibility-inputs/dotnet
+    - name: Authenticate five exact passed cells from cc8b and723ffc without rebuilding or invoking guests
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: python3 -B tools/compatibility_preserved_cells.py --output "$RUNNER_TEMP/compatibility-preserved"
+    - name: Require every exact cell and preserve historical scope
+      env:
+        SOURCE_COMMIT: ${{ github.sha }}
+      run: python3 -B tools/compatibility_closure_matrix.py assemble --inputs "$RUNNER_TEMP/compatibility-inputs"
+        --source-commit "$SOURCE_COMMIT" --preserved "$RUNNER_TEMP/compatibility-preserved"
+        --diagnostics "$RUNNER_TEMP/compatibility-current-diagnostics" --output "$RUNNER_TEMP/compatibility-completion.json"
+    - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      with:
+        name: compatibility-closure-matrix-${{ github.sha }}
+        path: ${{ runner.temp }}/compatibility-completion.json
+        if-no-files-found: error
+        retention-days: 3

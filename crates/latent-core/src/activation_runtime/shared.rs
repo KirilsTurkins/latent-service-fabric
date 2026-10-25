@@ -80,7 +80,7 @@ impl<T> Shared<T> {
         Ok(Prepared {
             allocation: budget
                 .reserve_host_memory(Self::allocation_bytes()?)
-                .map_err(|failure| failure.to_platform_error())?,
+                .map_err(|failure| failure.to_host_memory_error())?,
             payload: PhantomData,
         })
     }
