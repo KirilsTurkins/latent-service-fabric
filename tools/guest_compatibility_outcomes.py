@@ -72,6 +72,9 @@ def from_build(source, descriptor, receipt):
                                                             typescript_buffer_materials, typescript_buffer_owner,
                                                             typescript_net_materials, typescript_net_owner)
         buffer = context.buffer_module(selected)
+        if owner is not None and any(row['name'] == context.BUFFER_MATERIALS[0]
+                                     for row in owner['toolAndCompilerInputs']):
+            require(buffer is not None, 'compatibility-outcomes-missing-buffer-module')
         if buffer is not None:
             typescript_buffer_owner(owner, buffer[context.BUFFER_MATERIALS[0]]['digest'], buffer['build-recipe']['digest'])
             raw = paths.read(source, str(parent / 'typescript-buffer-selection.json').replace('\\', '/'), 65536)
@@ -80,7 +83,9 @@ def from_build(source, descriptor, receipt):
             recipe = paths.read(source, str(parent / 'recipe-inputs.json').replace('\\', '/'), 8 * 1024 * 1024)
             require(digest(recipe) == buffer['build-recipe']['digest'], 'compatibility-outcomes-stale-buffer-recipe')
             expected = typescript_buffer_materials(raw, recipe, original_source)
-            require(all(buffer[row['name']] == row for row in expected), 'compatibility-outcomes-detached-buffer-module')
+            require(set(buffer) - {'build-recipe'} == {row['name'] for row in expected}
+                    and all(buffer.get(row['name']) == row for row in expected),
+                    'compatibility-outcomes-detached-buffer-module')
         net = context.net_module(selected)
         if owner is not None and any(row['name'] == context.NET_MATERIALS[0]
                                      for row in owner['toolAndCompilerInputs']):

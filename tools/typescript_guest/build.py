@@ -67,6 +67,7 @@ RECIPE += ('tools/typescript_guest/console.mjs', 'tools/typescript_guest/console
 RECIPE += ('tools/typescript_guest/node_buffer.mjs', 'tools/typescript_guest/buffer_builtin.mjs',
            'tools/typescript_guest/buffer_profile.py', 'sdk/typescript-guest/runtime/buffer.d.ts')
 RECIPE += ('tools/typescript_guest/standard_global_types.py',)
+RECIPE += tuple(buffer_profile.GLOBAL_RECIPE.values())
 RECIPE += net_profile.RECIPE
 
 
@@ -212,7 +213,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             runtime_assets += (('typescript-entropy-selection.json', 'asset',
                                 'application/vnd.latent.typescript.entropy-selection.v1+json'),)
             buffer_assets, buffer_materials = buffer_profile.retain_selection(
-                temporary/'compiled', output, digest(read_file(ROOT/buffer_profile.BACKEND)))
+                temporary/'compiled', output, digest(read_file(ROOT/buffer_profile.BACKEND)),
+                buffer_profile.global_identities(ROOT))
             runtime_assets += buffer_assets
             runtime_materials.extend(buffer_materials)
             net_assets, net_materials = net_profile.retain_selection(
