@@ -3,7 +3,7 @@
 LSF runs service capsules on a standalone Linux node. A deployed
 capsule is stored code, contracts and configuration. A request creates a
 short-lived activation inside a fixed pool of sandboxed execution cells.
-The node reclaims that activation's execution resources when it finishes.
+The node retires that activation's execution resources through explicit cleanup.
 
 The current development implementation includes authenticated invocation and
 management, package admission, rollout and recovery, capability providers,
@@ -16,7 +16,7 @@ See [Run your first node](../start/first-node.md) for a working local example.
 
 ## From source to service
 
-[![Build a package, sign and admit it, then invoke a capsule or serve a website through a configured route.](../assets/package-delivery.svg)](../assets/package-delivery.svg)
+[![Review and compile captured inputs, sign and admit the package, then authorize guest execution or static-file delivery.](../assets/package-delivery.svg)](../assets/package-delivery.svg)
 
 [Open the delivery diagram at full size](../assets/package-delivery.svg).
 
@@ -48,7 +48,7 @@ reservations also have finite node-owned budgets. Durable pending work can
 outlive every activation without retaining a guest Store or cell. This ownership
 model is not an RSS formula or a claim that durable state is free.
 
-[![An admitted request leases a cell, runs with fresh activation state, then releases the cell after proven cleanup or quarantines it if cleanup is uncertain.](../assets/activation-lifecycle.svg)](../assets/activation-lifecycle.svg)
+[![A fresh activation retains its Store and cell across waits; a separate cleanup proof permits cell reuse or requires quarantine. Retained memory keeps its original owner.](../assets/activation-lifecycle.svg)](../assets/activation-lifecycle.svg)
 
 [Open the activation diagram at full size](../assets/activation-lifecycle.svg).
 
@@ -57,6 +57,11 @@ handles belong to that activation. Success, declared errors, traps,
 cancellation and timeout all lead through cleanup. Cell reuse requires proof
 that cleanup completed; uncertain cleanup keeps the cell quarantined and its
 resources accounted for.
+
+Cell reuse and memory reservation release are distinct. Safely detached result
+buffers or selected native backing can outlive Store destruction while retaining
+their original charges. The [physical ownership diagram](../runtime/resource-budgets.md#accounting)
+shows those owners; their release does not rewind finalized consumption reports.
 
 A fixed node cleanup supervisor keeps ownership after a client disconnects.
 It does not create a worker for each disconnected caller. Node-wide audit,
@@ -87,6 +92,15 @@ The [runtime identity guide](../learn/runtime-identities.md) explains how to kee
 these identities distinct when deploying and recovering an application.
 
 ## Node responsibilities
+
+[![One standalone Linux node shares catalogs, listeners, fixed execution cells and provider pools. Static delivery bypasses guest execution; protected state requires an explicit command/query profile.](../assets/standalone-architecture.svg)](../assets/standalone-architecture.svg)
+
+[Open the shared-node diagram at full size](../assets/standalone-architecture.svg).
+
+The enclosing node is one process. The conditional state path supplies the
+host-owned command/query runtime; it is separate from ordinary capability
+provider installation. Each installed profile retains its own security and
+qualification boundary.
 
 **Build and delivery tooling** compiles sources, records build inputs, packages
 output and transfers content. Package assembly itself does not run arbitrary
