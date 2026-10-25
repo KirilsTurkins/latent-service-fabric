@@ -6,6 +6,10 @@ on:
         description: Run the finite C proof, accounting and normal operator controls with these same products
         type: boolean
         default: false
+      compiler-diagnostic-controls:
+        description: Require the original typed runtime-resource and actual engine trap classification controls
+        type: boolean
+        default: false
   push:
     branches: ['feat/sdk-current-native-products-20261020', 'diag/sdk-v7-native-products-20261020', 'feat/http-phase-nominal-semantics-20261020', 'fix/http-phase-unused-nominal-type-20261020', 'fix/http-phase-operational-authority-20261020', 'fix/runtime-wait-positive-observation-20261020']
 permissions:
@@ -21,6 +25,7 @@ jobs:
     env:
       CARGO_BUILD_JOBS: '2'
       C_THREAD_PROFILE_CONTROLS: ${{ github.event_name == 'workflow_dispatch' && inputs.c-thread-profile-controls && 'true' || 'false' }}
+      COMPILER_DIAGNOSTIC_CONTROLS: ${{ github.event_name == 'workflow_dispatch' && inputs.compiler-diagnostic-controls && 'true' || 'false' }}
       CARGO_INCREMENTAL: '0'
       CARGO_PROFILE_DEV_DEBUG: '0'
       CARGO_PROFILE_TEST_DEBUG: '0'
@@ -36,6 +41,10 @@ jobs:
         with:
           python-version: 3.13.5
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.compiler-diagnostic-controls }}
+        with:
+          version: 1.254.0
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
           prefix-key: lsf-ci-dependencies-v2
@@ -63,6 +72,9 @@ jobs:
           from tools.rust_capsule_project import fresh, write_json
           root=Path.cwd();output=fresh(Path(os.environ['RUNNER_TEMP'])/'sdk-native-products')
           require(os.environ['C_THREAD_PROFILE_CONTROLS'] in ('true','false'),'native-products-c-profile-closed-selector')
+          require(os.environ['COMPILER_DIAGNOSTIC_CONTROLS'] in ('true','false'),'native-products-compiler-diagnostics-closed-selector')
+          require(not (os.environ['C_THREAD_PROFILE_CONTROLS']=='true' and os.environ['COMPILER_DIAGNOSTIC_CONTROLS']=='true'),
+              'native-products-disjoint-finite-control-programmes')
           pins=tomllib.loads((root/'rust-toolchain.toml').read_text())
           require(pins['toolchain']['channel']=='1.97.1','native-products-original-rust-pin')
           selected=('.github/workflows/sdk-native-products.yml','.cargo/managed-guest.toml',
@@ -91,6 +103,16 @@ jobs:
           commands=Commands(root,output,environment,deadline_seconds=1320,command_seconds=1200)
           compiler=commands.run('rust-version','rustc','--version').decode().strip()
           require(compiler.startswith('rustc 1.97.1 ('),'native-products-rust-version')
+          if os.environ['COMPILER_DIAGNOSTIC_CONTROLS']=='true':
+              import re
+              parser=commands.run('compiler-diagnostic-wasm-tools-version','wasm-tools','--version').decode().strip()
+              require(re.match(r'^wasm-tools 1\.254\.0(?:\s|$)',parser) is not None,
+                  'native-products-original-component-parser')
+              commands.run('compiler-diagnostic-stack-parse','wasm-tools','parse',
+                  root/'crates/latent-wasmtime/tests/fixtures/compatibility_stack.wat',
+                  '-o',output/'compatibility-stack.wasm')
+              require(0<(output/'compatibility-stack.wasm').stat().st_size<=65536,
+                  'native-products-fixed-stack-component-bound')
           commands.run('normal-host-build','cargo','--config',root/'.cargo/managed-guest.toml',
               'build','--locked','-p','latent','-p','latentd','--bins','-p','latent-packaging',
               '--example','package','--example','capsule_contracts','-p','latent-policy','--example','capsule_authoring')
@@ -229,6 +251,26 @@ jobs:
               '--','--test-threads=1')
           require(b'test result: ok. 11 passed; 0 failed; 0 ignored;' in workers,
               'native-products-ordinary-async-eleven-owner-controls')
+          if os.environ['COMPILER_DIAGNOSTIC_CONTROLS']=='true':
+              require(b'native_stacks::tests::child_total_start_capacity_survives_logical_completion_and_releases_only_after_store_drop ... ok' in workers,
+                  'native-products-actual-total-start-retirement-control')
+              for label, package, name in (
+                  ('compiler-diagnostic-owner-buckets','latent-core','activation_runtime::tests::actual_owner_refusals_name_only_the_original_bucket_without_refunding_live_owners'),
+                  ('compiler-diagnostic-native-memory','latent-core','activation_runtime::tests::actual_native_reservation_refusal_keeps_original_budget_and_does_not_guess_other_dimensions'),
+                  ('compiler-diagnostic-engine-stack','latent-wasmtime','containment::tests::only_the_actual_engine_stack_overflow_produces_stack_exhaustion_diagnostic')):
+                  actual=commands.run(label,'cargo','--config',root/'.cargo/managed-guest.toml',
+                      'test','--locked','-p',package,'--lib',name,'--','--exact','--test-threads=1')
+                  require(b'test result: ok. 1 passed; 0 failed; 0 ignored;' in actual
+                      and ('test '+name+' ... ok').encode() in actual,
+                      'native-products-actual-resource-control-no-skip')
+              commands.environment['LSF_COMPATIBILITY_STACK_COMPONENT']=str(output/'compatibility-stack.wasm')
+              stack=commands.run('compiler-diagnostic-actual-stack-component','cargo','--config',root/'.cargo/managed-guest.toml',
+                  'test','--locked','-p','latent-wasmtime','--test','compatibility_stack',
+                  'compatibility_stack::actual_stack_overflow_keeps_original_typed_fact_and_new_store_fresh_result',
+                  '--','--ignored','--exact','--nocapture','--test-threads=1')
+              require(b'test result: ok. 1 passed; 0 failed; 0 ignored;' in stack
+                  and b'LSF_COMPATIBILITY_STACK_V1 stack-reason=26 fresh=42 stores=2 signed-language=false' in stack,
+                  'native-products-actual-stack-component-and-fresh-store')
           require(before==source_identity(root) and materials==material_identities(),
               'native-products-source-changed')
           products={};owned=output/'native-binaries';owned.mkdir(mode=0o700)
