@@ -1,0 +1,49 @@
+{
+  "cases": [
+    "PrivateScalarConsumer.test_full_generated_inventory_and_c_baseline_are_required_without_copy_cost_policy",
+    "PrivateScalarConsumer.test_one_normal_parent_clang_and_component_required_with_cleanup_inside_bounds",
+    "PrivateScalarConsumer.test_unfilled_new_tuple_and_mixed_modes_refuse_before_io_or_old_sdk_fallback"
+  ],
+  "guards": {
+    "PrivateScalarConsumer.test_full_generated_inventory_and_c_baseline_are_required_without_copy_cost_policy": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:981a8b30e7500dc60cd39686076da1bc917ab8ff20d732f568907038ec869735",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "PrivateScalarConsumer.test_one_normal_parent_clang_and_component_required_with_cleanup_inside_bounds": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:981a8b30e7500dc60cd39686076da1bc917ab8ff20d732f568907038ec869735",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "PrivateScalarConsumer.test_unfilled_new_tuple_and_mixed_modes_refuse_before_io_or_old_sdk_fallback": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:981a8b30e7500dc60cd39686076da1bc917ab8ff20d732f568907038ec869735",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_llvm_private_store_consumer.py",
+  "reviewReason": "Refresh only the new R8 three-case module setup hash after bounded real workflow-selector source control imports; unchanged case IDs, bases, decorators and skips.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

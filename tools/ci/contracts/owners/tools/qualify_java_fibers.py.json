@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_java_fibers.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Reviewed explicit combination of existing derived-public and WinEH flags selects only one pre-Clang diagnostic; historical modes remain, fixed baseline is recipe-bound and the ordinary no-improvement gate stays FAILED.",
+  "reviewReason": "Source-only R8 private-scalar candidate: exact seven-member supplement, original nine units and thirteen SjLj witnesses plus two new lit files, unchanged process owner/build bounds; new tuple unfilled and default-false public backend route requires unchanged C before one normal Clang/component. Historical R7/diagnostic modes, all old cases and default commands retained.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "e5b51d31d9c5439ceb85f83aea42712ee7cf14a5487071c35fba8bcac39ab10e"
+  "sha256": "94025e3e909de77cb83ab65bb6d6ba4ab77b2fcda422a3caaf2bbae14ce3d34b"
 }

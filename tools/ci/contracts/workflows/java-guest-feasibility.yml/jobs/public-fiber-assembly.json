@@ -6,7 +6,7 @@
     "env": {
       "PYTHONDONTWRITEBYTECODE": "1"
     },
-    "if": "${{ github.event_name == 'workflow_dispatch' && (inputs.public_fiber_assembly || inputs.public_fiber_derived_llvm) }}",
+    "if": "${{ github.event_name == 'workflow_dispatch' && (inputs.public_fiber_assembly || inputs.public_fiber_derived_llvm || inputs.public_fiber_private_scalar_llvm) }}",
     "name": "Fixed public Java fiber assembly inputs only",
     "permissions": {
       "actions": "read",
@@ -19,11 +19,12 @@
           "JAVA_HTTP_SPI": "${{ inputs.java_http_spi }}",
           "PUBLIC_FIBER_ASSEMBLY": "${{ inputs.public_fiber_assembly }}",
           "PUBLIC_FIBER_DERIVED_LLVM": "${{ inputs.public_fiber_derived_llvm }}",
+          "PUBLIC_FIBER_PRIVATE_SCALAR_LLVM": "${{ inputs.public_fiber_private_scalar_llvm }}",
           "QUALIFY_SCRATCH_REFUSALS": "${{ inputs.qualify-scratch-refusals }}"
         },
         "id": "public-fiber-mode",
         "name": "Require the sole public assembly mode before any acquisition",
-        "run": "python3 - <<'PY'\nimport os\nif (os.environ['PUBLIC_FIBER_ASSEMBLY'] != 'true'\n        or os.environ['PUBLIC_FIBER_DERIVED_LLVM'] not in ('true', 'false')\n        or os.environ['QUALIFY_SCRATCH_REFUSALS'] != 'false'\n        or os.environ['JAVA_HTTP_SPI'] != 'false'):\n    raise SystemExit('only the fixed public fiber assembly mode may be selected')\nif os.environ['PUBLIC_FIBER_DERIVED_LLVM'] == 'true':\n    if (os.environ.get('GITHUB_EVENT_NAME') != 'workflow_dispatch'\n            or os.environ.get('GITHUB_REF') != 'refs/heads/feat/java-llvm-ssa-consumer-20261025'):\n        raise SystemExit('derived LLVM public compiler requires its explicit feature ref')\n    import time\n    with open(os.environ['GITHUB_ENV'], 'a', encoding='utf-8') as output:\n        output.write('LSF_JAVA_LLVM_PUBLIC_STARTED=' + str(int(time.time())) + '\\n')\nPY\n"
+        "run": "python3 - <<'PY'\nimport os\nif (os.environ['PUBLIC_FIBER_ASSEMBLY'] != 'true'\n        or os.environ['PUBLIC_FIBER_DERIVED_LLVM'] not in ('true', 'false')\n        or os.environ.get('PUBLIC_FIBER_PRIVATE_SCALAR_LLVM', 'false') not in ('true', 'false')\n        or (os.environ['PUBLIC_FIBER_DERIVED_LLVM'] == 'true' and os.environ.get('PUBLIC_FIBER_PRIVATE_SCALAR_LLVM', 'false') == 'true')\n        or os.environ['QUALIFY_SCRATCH_REFUSALS'] != 'false'\n        or os.environ['JAVA_HTTP_SPI'] != 'false'):\n    raise SystemExit('only the fixed public fiber assembly mode may be selected')\nif os.environ['PUBLIC_FIBER_DERIVED_LLVM'] == 'true' or os.environ.get('PUBLIC_FIBER_PRIVATE_SCALAR_LLVM', 'false') == 'true':\n    if (os.environ.get('GITHUB_EVENT_NAME') != 'workflow_dispatch'\n            or os.environ.get('GITHUB_REF') != 'refs/heads/feat/java-llvm-ssa-consumer-20261025'):\n        raise SystemExit('derived LLVM public compiler requires its explicit feature ref')\n    import time\n    with open(os.environ['GITHUB_ENV'], 'a', encoding='utf-8') as output:\n        output.write('LSF_JAVA_LLVM_PUBLIC_STARTED=' + str(int(time.time())) + '\\n')\nPY\n"
       },
       {
         "uses": "actions/checkout",
@@ -51,7 +52,7 @@
         }
       },
       {
-        "if": "${{ !inputs.public_fiber_derived_llvm }}",
+        "if": "${{ !inputs.public_fiber_derived_llvm && !inputs.public_fiber_private_scalar_llvm }}",
         "name": "Install only the same pinned normal public component compiler",
         "run": "set -euo pipefail\npython3 -m pip install --requirement tools/requirements.lock\npython3 -B -m unittest tools.tests.test_java_normal_fiber_component_inputs tools.tests.test_java_public_wineh -v\ncurl --fail --location --retry 3 --max-time 180 \\\n  https://services.gradle.org/distributions/gradle-9.1.0-bin.zip \\\n  -o \"$RUNNER_TEMP/gradle.zip\"\necho \"a17ddd85a26b6a7f5ddb71ff8b05fc5104c0202c6e64782429790c933686c806  $RUNNER_TEMP/gradle.zip\" | sha256sum --check\nunzip -q \"$RUNNER_TEMP/gradle.zip\" -d \"$RUNNER_TEMP\"\necho \"$RUNNER_TEMP/gradle-9.1.0/bin\" >> \"$GITHUB_PATH\"\ncurl --fail --location --max-time 180 \\\n  https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \\\n  -o \"$RUNNER_TEMP/wasi-sdk.tar.gz\"\necho \"87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171  $RUNNER_TEMP/wasi-sdk.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/wasi-sdk.tar.gz\" -C \"$RUNNER_TEMP\"\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/java-bindgen\"\necho \"$RUNNER_TEMP/java-bindgen\" >> \"$GITHUB_PATH\"\n",
         "shell": "bash"
@@ -63,7 +64,21 @@
         "shell": "bash"
       },
       {
-        "if": "${{ !inputs.public_fiber_derived_llvm }}",
+        "if": "${{ inputs.public_fiber_private_scalar_llvm }}",
+        "name": "Install the same prerequisites for the separately admitted private-scalar backend",
+        "run": "set -euo pipefail\npython3 -m pip install --requirement tools/requirements.lock\npython3 -B -m unittest tools.tests.test_java_llvm_private_store_consumer -v\ncurl --fail --location --retry 3 --max-time 180 \\\n  https://services.gradle.org/distributions/gradle-9.1.0-bin.zip \\\n  -o \"$RUNNER_TEMP/gradle.zip\"\necho \"a17ddd85a26b6a7f5ddb71ff8b05fc5104c0202c6e64782429790c933686c806  $RUNNER_TEMP/gradle.zip\" | sha256sum --check\nunzip -q \"$RUNNER_TEMP/gradle.zip\" -d \"$RUNNER_TEMP\"\necho \"$RUNNER_TEMP/gradle-9.1.0/bin\" >> \"$GITHUB_PATH\"\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/java-bindgen\"\necho \"$RUNNER_TEMP/java-bindgen\" >> \"$GITHUB_PATH\"\n",
+        "shell": "bash"
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "if": "${{ inputs.public_fiber_private_scalar_llvm }}",
+        "name": "Compile the unchanged public C with the independently qualified backend",
+        "run": "python3 -B tools/qualify_java_fibers.py --output \"$RUNNER_TEMP/java-activation-fibers\" --wasi-sdk \"$RUNNER_TEMP/java-llvm-private-stores-inputs/products/toolchain\" --private-scalar-llvm-public"
+      },
+      {
+        "if": "${{ !inputs.public_fiber_derived_llvm && !inputs.public_fiber_private_scalar_llvm }}",
         "name": "Prepare only the unchanged public fibers and original JDK controls",
         "run": "python3 tools/qualify_java_fibers.py --output \"$RUNNER_TEMP/java-activation-fibers\" --wasi-sdk \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\" --observe-public-wineh"
       },
@@ -82,7 +97,7 @@
         "with": {
           "if-no-files-found": "warn",
           "name": "java-public-fiber-assembly-${{ github.sha }}",
-          "path": "${{ runner.temp }}/java-activation-fibers/FIBERS-COMPILE.json\n${{ runner.temp }}/java-activation-fibers/compiler/*.command.json\n${{ runner.temp }}/java-activation-fibers/compiler/*.log\n${{ runner.temp }}/java-activation-fibers/build/runtime-profile.json\n${{ runner.temp }}/java-activation-fibers/build/component.wasm\n${{ runner.temp }}/java-activation-fibers/build/component-inputs/**\n${{ runner.temp }}/java-activation-fibers/compiler-inputs.json\n${{ runner.temp }}/java-activation-fibers/compiler/public-copy-cost-candidate.json\n${{ runner.temp }}/java-activation-fibers/compiler/public-wineh-preclang.json\n${{ runner.temp }}/java-activation-fibers/compiler/public-copy-cost-Capsule.c\n${{ runner.temp }}/java-activation-fibers/compiler/coroutine-compiler-preparation.json\n${{ runner.temp }}/java-activation-fibers/build/project/compiler-patch/loaded.json\n${{ runner.temp }}/java-activation-fibers/build/coroutine-compiler-profile.json\n${{ runner.temp }}/java-activation-fibers/src/Capsule.java\n${{ runner.temp }}/java-activation-fibers/wit/service.wit\n${{ runner.temp }}/java-activation-fibers/build/derived-public-products/**\n${{ runner.temp }}/java-llvm-public-inputs/producer-run.json\n${{ runner.temp }}/java-llvm-public-inputs/producer-job.json\n${{ runner.temp }}/java-llvm-public-inputs/producer-artifact.json\n${{ runner.temp }}/java-llvm-public-inputs/derived-sdk-manifest.json\n${{ runner.temp }}/java-llvm-public-inputs/products/NOTICE\n${{ runner.temp }}/java-llvm-public-inputs/products/LLVM-LICENSE.txt\n${{ runner.temp }}/java-llvm-public-inputs/products/LLVM-PATCH.json\n",
+          "path": "${{ runner.temp }}/java-activation-fibers/FIBERS-COMPILE.json\n${{ runner.temp }}/java-activation-fibers/compiler/*.command.json\n${{ runner.temp }}/java-activation-fibers/compiler/*.log\n${{ runner.temp }}/java-activation-fibers/build/runtime-profile.json\n${{ runner.temp }}/java-activation-fibers/build/component.wasm\n${{ runner.temp }}/java-activation-fibers/build/component-inputs/**\n${{ runner.temp }}/java-activation-fibers/compiler-inputs.json\n${{ runner.temp }}/java-activation-fibers/compiler/public-copy-cost-candidate.json\n${{ runner.temp }}/java-activation-fibers/compiler/public-wineh-preclang.json\n${{ runner.temp }}/java-activation-fibers/compiler/public-copy-cost-Capsule.c\n${{ runner.temp }}/java-activation-fibers/compiler/coroutine-compiler-preparation.json\n${{ runner.temp }}/java-activation-fibers/build/project/compiler-patch/loaded.json\n${{ runner.temp }}/java-activation-fibers/build/coroutine-compiler-profile.json\n${{ runner.temp }}/java-activation-fibers/src/Capsule.java\n${{ runner.temp }}/java-activation-fibers/wit/service.wit\n${{ runner.temp }}/java-activation-fibers/build/derived-public-products/**\n${{ runner.temp }}/java-llvm-public-inputs/producer-run.json\n${{ runner.temp }}/java-llvm-public-inputs/producer-job.json\n${{ runner.temp }}/java-llvm-public-inputs/producer-artifact.json\n${{ runner.temp }}/java-llvm-public-inputs/derived-sdk-manifest.json\n${{ runner.temp }}/java-llvm-public-inputs/products/NOTICE\n${{ runner.temp }}/java-llvm-public-inputs/products/LLVM-LICENSE.txt\n${{ runner.temp }}/java-llvm-public-inputs/products/LLVM-PATCH.json\n${{ runner.temp }}/java-llvm-private-stores-inputs/producer-run.json\n${{ runner.temp }}/java-llvm-private-stores-inputs/producer-job.json\n${{ runner.temp }}/java-llvm-private-stores-inputs/producer-artifact.json\n${{ runner.temp }}/java-llvm-private-stores-inputs/derived-sdk-manifest.json\n${{ runner.temp }}/java-llvm-private-stores-inputs/products/NOTICE\n${{ runner.temp }}/java-llvm-private-stores-inputs/products/LLVM-LICENSE.txt\n${{ runner.temp }}/java-llvm-private-stores-inputs/products/LLVM-PATCH.json\n${{ runner.temp }}/java-llvm-private-stores-inputs/products/LLVM-PRIVATE-STORES.json\n",
           "retention-days": 3
         }
       }
@@ -91,7 +106,7 @@
   },
   "jobId": "public-fiber-assembly",
   "kind": "job",
-  "reviewReason": "Preserve existing job/default-false inputs/35m bounds and all other modes; derived step explicitly selects diagnostic-only existing flag combination, adds four source controls and one fixed public summary filename; no ordinary Clang/component duplicate.",
+  "reviewReason": "Reviewed R8 default-false route and exact test-only inverse of that route. All original R7 assertion bodies, case identities, skip/decorator guards, commands and diagnostic gate retained; new mode is independent and requires its own successful qualified tuple before acquisition.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-guest-feasibility.yml"
 }

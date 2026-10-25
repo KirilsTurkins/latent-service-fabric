@@ -62,6 +62,37 @@ class LlvmSsaConsumer(unittest.TestCase):
     def test_original_public_job_defaults_and_complete_command_recipe_remain_exact(self):
         model = workflow_model((patch.ROOT / '.github/workflows/java-guest-feasibility.yml').read_text())
         job = copy.deepcopy(model['jobs']['public-fiber-assembly'])
+        # Invert ONLY the explicit R8 additions before the original R7/default
+        # preservation oracle below. Every removed route/pin is asserted first.
+        self.assertEqual(model['on']['workflow_dispatch']['inputs']['public_fiber_private_scalar_llvm'], {
+            'description': 'Compiler-only public fixture using the independently qualified private-scalar backend',
+            'type': 'boolean', 'default': False})
+        self.assertEqual(job['if'], "${{ github.event_name == 'workflow_dispatch' && (inputs.public_fiber_assembly || inputs.public_fiber_derived_llvm || inputs.public_fiber_private_scalar_llvm) }}")
+        job['if'] = "${{ github.event_name == 'workflow_dispatch' && (inputs.public_fiber_assembly || inputs.public_fiber_derived_llvm) }}"
+        mode = job['steps'][0]
+        self.assertEqual(mode['env'].pop('PUBLIC_FIBER_PRIVATE_SCALAR_LLVM'), '${{ inputs.public_fiber_private_scalar_llvm }}')
+        for clause in ("        or os.environ.get('PUBLIC_FIBER_PRIVATE_SCALAR_LLVM', 'false') not in ('true', 'false')\n",
+                "        or (os.environ['PUBLIC_FIBER_DERIVED_LLVM'] == 'true' and os.environ.get('PUBLIC_FIBER_PRIVATE_SCALAR_LLVM', 'false') == 'true')\n"):
+            self.assertEqual(mode['run'].count(clause), 1)
+            mode['run'] = mode['run'].replace(clause, '', 1)
+        selected = "if os.environ['PUBLIC_FIBER_DERIVED_LLVM'] == 'true' or os.environ.get('PUBLIC_FIBER_PRIVATE_SCALAR_LLVM', 'false') == 'true':"
+        self.assertEqual(mode['run'].count(selected), 1)
+        mode['run'] = mode['run'].replace(selected, "if os.environ['PUBLIC_FIBER_DERIVED_LLVM'] == 'true':", 1)
+        added = {'Install the same prerequisites for the separately admitted private-scalar backend',
+                 'Compile the unchanged public C with the independently qualified backend'}
+        self.assertEqual(sum(s.get('name') in added for s in job['steps']), 2)
+        job['steps'] = [s for s in job['steps'] if s.get('name') not in added]
+        for step in job['steps']:
+            if step.get('name') in {'Install only the same pinned normal public component compiler',
+                                   'Prepare only the unchanged public fibers and original JDK controls'}:
+                self.assertEqual(step['if'], '${{ !inputs.public_fiber_derived_llvm && !inputs.public_fiber_private_scalar_llvm }}')
+                step['if'] = '${{ !inputs.public_fiber_derived_llvm }}'
+        for suffix in ('producer-run.json', 'producer-job.json', 'producer-artifact.json', 'derived-sdk-manifest.json',
+                       'products/NOTICE', 'products/LLVM-LICENSE.txt', 'products/LLVM-PATCH.json',
+                       'products/LLVM-PRIVATE-STORES.json'):
+            line = '${{ runner.temp }}/java-llvm-private-stores-inputs/' + suffix + '\n'
+            self.assertEqual(job['steps'][-1]['with']['path'].count(line), 1)
+            job['steps'][-1]['with']['path'] = job['steps'][-1]['with']['path'].replace(line, '', 1)
         self.assertEqual(model['on']['workflow_dispatch']['inputs']['public_fiber_derived_llvm'], {
             'description': 'Compiler-only public fixture using one qualified source-bound LLVM candidate',
             'type': 'boolean', 'default': False})

@@ -1,0 +1,50 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "java-llvm-private-stores-producer-${{ github.ref }}"
+    },
+    "name": "Pinned Java LLVM private scalar compiler producer",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/java-llvm-ssa-consumer-20261025"
+        ],
+        "paths": [
+          ".github/workflows/java-llvm-ssa-producer.yml",
+          ".github/workflows/java-llvm-private-stores-producer.yml",
+          "tools/qualify_java_llvm_private_stores.py",
+          "tools/java_guest/llvm_private_store_producer.py",
+          "tools/java_guest/llvm_private_store_patch.py",
+          "tools/java_guest/llvm_private_store_results.py",
+          "tools/java_guest/llvm_private_store_distribution.py",
+          "tools/data/java-llvm-private-stores/supplement.json",
+          "tools/tests/test_java_llvm_private_store_producer.py",
+          "NOTICE",
+          "tools/qualify_java_llvm_ssa.py",
+          "tools/java_guest/llvm_ssa_*.py",
+          "tools/data/java-llvm-ssa/patch.json",
+          "tools/data/java-llvm-ssa/tests.json",
+          "tools/data/java-llvm-ssa/requirements.lock",
+          "tools/data/java-llvm-ssa/LICENSE.txt",
+          "tools/tests/test_java_llvm_ssa_producer.py",
+          "tools/build_observation.py",
+          "tools/build_snapshot.py",
+          "tools/build_process.py",
+          "tools/build_process_linux.py",
+          "tools/build_process_signals.py"
+        ]
+      }
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "compiler"
+  ],
+  "reviewReason": "Source-only R8 private-scalar candidate: exact seven-member supplement, original nine units and thirteen SjLj witnesses plus two new lit files, unchanged process owner/build bounds; new tuple unfilled and default-false public backend route requires unchanged C before one normal Clang/component. Historical R7/diagnostic modes, all old cases and default commands retained.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/java-llvm-private-stores-producer.yml"
+}
