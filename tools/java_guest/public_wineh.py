@@ -310,7 +310,8 @@ def filter_summary(result, expected: str, source: dict, command: list[str]) -> d
         observation = value.get('observation', {})
         if (type(observation) is not dict or not set(observation) <= {
                 'status', 'qualification', 'source', 'snapshots', 'samples', 'streamDigest',
-                'streamBytes', 'prefixOnly', 'delta', 'reason', 'syntacticStorePatterns'}
+                'streamBytes', 'prefixOnly', 'delta', 'reason', 'syntacticStorePatterns',
+                'catchswitchPhiIncomingShapes'}
                 or observation.get('qualification') is not False
                 or observation.get('source') != 'pinned-llvm-text-only'
                 or observation.get('status') not in {'observed', 'incomplete'}
@@ -327,8 +328,9 @@ def filter_summary(result, expected: str, source: dict, command: list[str]) -> d
             if (type(row) is not dict or set(row) != set(KEYS)
                     or any(type(item) is not int or not 0 <= item <= RAW_TRANSIT_BUDGET for item in row.values())):
                 raise ValueError('filter-summary')
-        from tools.java_guest.wineh_ir import validate_patterns
+        from tools.java_guest.wineh_ir import validate_patterns, validate_phi_shapes
         validate_patterns(observation.get('syntacticStorePatterns'), snapshots)
+        validate_phi_shapes(observation.get('catchswitchPhiIncomingShapes'), snapshots)
         for sample in samples:
             if (type(sample) is not dict or set(sample) != {'phase', 'opcode', 'instruction', 'lineBytes', 'lineDigest'}
                     or sample['phase'] not in {'before', 'after'} or sample['opcode'] not in {'phi', 'alloca', 'store', 'catchswitch'}

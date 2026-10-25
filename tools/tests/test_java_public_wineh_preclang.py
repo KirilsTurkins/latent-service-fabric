@@ -76,6 +76,63 @@ class JavaPublicWinEHPreClang(unittest.TestCase):
                 ir.validate_patterns(partial['syntacticStorePatterns'], snapshots)
         self.assertEqual(ir.observe(IR.replace(b'ret ptr null', b'unknown i32 %v'))['reason'],
                          'instruction-opcode')
+        self.assertEqual(value['catchswitchPhiIncomingShapes']['phases']['before']['opaque'], 1)
+        rows = [
+            '%same = phi i32 [ %v, %a ], [ %v, %b ]',
+            '%u = phi i32 [ %u, %a ], [ %v, %b ], [ undef, %c ]',
+            '%p = phi i32 [ %v, %a ], [ poison, %b ]',
+            '%up = phi i32 [ %v, %a ], [ undef, %b ], [ poison, %c ]',
+            '%multi = phi i32 [ %v, %a ], [ %other, %b ], [ %third, %c ]',
+            '%self = phi i32 [ %self, %a ], [ undef, %b ], [ poison, %c ]',
+            '%constant = phi i32 [ 1, %a ], [ 2, %b ]',
+            '%aggregate = phi { i32, i32 } [ %v, %a ], [ %other, %b ]',
+            '%metadata = phi i32 [ %v, %a ], [ %v, %b ], !dbg !42',
+        ]
+        def shapes(lines):
+            return ir.observe((f'*** IR Dump Before {ir.PASS} ***\n'
+                f'define ptr @{ir.FUNCTION}() {{\nentry:\n  ' + '\n  '.join(lines)
+                + '\n  %cs = catchswitch within none [label %handler] unwind to caller\n}\n'
+                + f'*** IR Dump After {ir.PASS} ***\ndefine ptr @{ir.FUNCTION}() {{\n'
+                + 'entry:\n  ret ptr null\n}\n').encode())
+        classified = shapes(rows)
+        self.assertEqual(classified['status'], 'observed')
+        self.assertEqual(classified['snapshots']['before']['catchswitchPhi'], 9)
+        view = classified['catchswitchPhiIncomingShapes']
+        self.assertEqual(view['phases']['before'], {
+            'singleSSAOnly': 1, 'singleSSAWithUndef': 1, 'singleSSAWithPoison': 1,
+            'singleSSAWithUndefAndPoison': 1, 'multipleSSA': 1, 'noNonSelfSSA': 1, 'opaque': 3})
+        self.assertEqual(sum(view['phases']['after'].values()), 0)
+        ir.validate_phi_shapes(view, classified['snapshots'])
+        self.assertNotIn('%third', canonical(view).decode())
+        separated = shapes(['%ignored = phi i32 [ 0, %a ], [ 1, %b ]',
+                            'br label %dispatch', 'dispatch:', *rows])
+        self.assertEqual(separated['snapshots']['before']['phi'], 10)
+        self.assertEqual(separated['catchswitchPhiIncomingShapes'], view)
+        opaque = shapes(['%mixed = phi i32 [ %v, %a ], [ %other, %b ], [ 0, %c ]'])
+        self.assertEqual(opaque['catchswitchPhiIncomingShapes']['phases']['before']['opaque'], 1)
+        # Byte bounds apply independently to the result and first incoming name.
+        for name in ('%' + 'a' * 511, '%"' + '\u00e9' * 254 + '"'):
+            self.assertEqual(shapes([f'%out = phi ptr [ {name}, %a ], [ {name}, %b ]'])
+                             ['catchswitchPhiIncomingShapes']['phases']['before']['singleSSAOnly'], 1)
+            self.assertEqual(shapes([f'{name} = phi ptr [ %v, %a ], [ %v, %b ]'])
+                             ['catchswitchPhiIncomingShapes']['phases']['before']['singleSSAOnly'], 1)
+        for name in ('%' + 'a' * 512, '%"' + '\u00e9' * 255 + '"'):
+            for line in (f'%out = phi ptr [ {name}, %a ], [ {name}, %b ]',
+                         f'{name} = phi ptr [ %v, %a ], [ %v, %b ]'):
+                bounded = shapes([line])
+                self.assertEqual(bounded['status'], 'observed')
+                self.assertEqual(bounded['catchswitchPhiIncomingShapes']['phases']['before']['opaque'], 1)
+        for bad in (True, 1.0, -1, 10):
+            forged = copy.deepcopy(view)
+            forged['phases']['before']['singleSSAOnly'] = bad
+            with self.assertRaisesRegex(ValueError, 'phi-shape-summary'):
+                ir.validate_phi_shapes(forged, classified['snapshots'])
+        forged = copy.deepcopy(view); forged['phases']['before']['singleSSAOnly'] = 0
+        with self.assertRaisesRegex(ValueError, 'phi-shape-summary'):
+            ir.validate_phi_shapes(forged, classified['snapshots'])
+        forged = copy.deepcopy(view); forged['maximumRetainedIdentities'] = 2.0
+        with self.assertRaisesRegex(ValueError, 'phi-shape-summary'):
+            ir.validate_phi_shapes(forged, classified['snapshots'])
         counter = ir.Counter()
         for start in range(0, len(IR), 7):
             counter.feed(IR[start:start + 7])

@@ -43,6 +43,106 @@ MAX_PUBLISHED_PATTERNS = 16
 PATTERN_CLAIM = 'syntactic-only-no-alias-or-semantic-redundancy-proof'
 SIMPLE_STORE = re.compile(r'(.+?)\s+(%' + NAME + r'),\s+ptr(?:\s+addrspace\([0-9]+\))?\s+(%'
                          + NAME + r')(?:,\s+(?:align [0-9]+|![^\r\n]+))*$')
+PHI_SHAPE_KEYS = ('singleSSAOnly', 'singleSSAWithUndef', 'singleSSAWithPoison',
+                  'singleSSAWithUndefAndPoison', 'multipleSSA', 'noNonSelfSSA', 'opaque')
+PHI_SHAPE_CLAIM = 'syntactic-incoming-identities-only-no-dominance-nonpoison-or-equivalence-proof'
+PHI_RESULT = re.compile(r'(?P<result>%' + NAME + r') = phi\b')
+PHI_SCALAR = re.compile(r'\s*(?:i[1-9][0-9]*|half|bfloat|float|double|fp128|x86_fp80|ppc_fp128|'
+                        r'ptr(?:\s+addrspace\([0-9]+\))?)\s+')
+PHI_PAIR = re.compile(r'\[\s*(?:(?P<ssa>%' + NAME + r')|(?P<undef>undef)|(?P<poison>poison))'
+                      r'\s*,\s*%' + NAME + r'\s*\]')
+
+
+def validate_phi_shapes(value: dict, snapshots: dict) -> None:
+    if (type(value) is not dict or set(value) != {
+            'claim', 'maximumTokenBytes', 'maximumRetainedIdentities', 'phases'}
+            or value['claim'] != PHI_SHAPE_CLAIM
+            or type(value['maximumTokenBytes']) is not int
+            or value['maximumTokenBytes'] != MAX_PATTERN_TOKEN
+            or type(value['maximumRetainedIdentities']) is not int
+            or value['maximumRetainedIdentities'] != 2
+            or type(value['phases']) is not dict or set(value['phases']) != set(snapshots)):
+        raise ValueError('phi-shape-summary')
+    for phase, row in value['phases'].items():
+        total = snapshots[phase]['catchswitchPhi']
+        if (type(total) is not int or total < 0 or type(row) is not dict
+                or set(row) != set(PHI_SHAPE_KEYS)
+                or any(type(item) is not int or not 0 <= item <= total for item in row.values())
+                or sum(row.values()) != total):
+            raise ValueError('phi-shape-summary')
+
+
+def _bounded_phi_token(text: str, start: int, end: int) -> bool:
+    # Check the UTF-8 size before retaining a token substring. LLVM names may
+    # be quoted, so character count alone is not the byte limit.
+    if end - start > MAX_PATTERN_TOKEN:
+        return False
+    size = 0
+    for index in range(start, end):
+        code = ord(text[index])
+        if code == 0:
+            return False
+        size += 1 if code < 128 else 2 if code < 2048 else 3 if code < 65536 else 4
+        if size > MAX_PATTERN_TOKEN:
+            return False
+    return True
+
+
+def _phi_shape(text: str, operands: str, incoming: int) -> str:
+    result_match = PHI_RESULT.match(text)
+    scalar_match = PHI_SCALAR.match(operands)
+    if result_match is None or scalar_match is None:
+        return 'opaque'
+    start, end = result_match.span('result')
+    if not _bounded_phi_token(text, start, end):
+        return 'opaque'
+    # Only these two bounded token identities survive between incoming pairs.
+    result = text[start:end]
+    first = None
+    multiple = undef = poison = False
+    position, count = scalar_match.end(), 0
+    while True:
+        pair = PHI_PAIR.match(operands, position)
+        if pair is None:
+            return 'opaque'
+        count += 1
+        if pair.start('ssa') >= 0:
+            start, end = pair.span('ssa')
+            if not _bounded_phi_token(operands, start, end):
+                return 'opaque'
+            # Compare against the line without copying another identity.
+            if not (end - start == len(result) and operands.startswith(result, start, end)):
+                if first is None and not multiple:
+                    first = operands[start:end]
+                elif first is not None and not (
+                        end - start == len(first) and operands.startswith(first, start, end)):
+                    multiple, first = True, None
+        else:
+            undef |= pair.start('undef') >= 0
+            poison |= pair.start('poison') >= 0
+        position = pair.end()
+        while position < len(operands) and operands[position].isspace():
+            position += 1
+        if position == len(operands):
+            break
+        if operands[position] != ',':
+            return 'opaque'
+        position += 1
+        while position < len(operands) and operands[position].isspace():
+            position += 1
+    if count != incoming:
+        return 'opaque'
+    if multiple:
+        return 'multipleSSA'
+    if first is None:
+        return 'noNonSelfSSA'
+    if undef and poison:
+        return 'singleSSAWithUndefAndPoison'
+    if undef:
+        return 'singleSSAWithUndef'
+    if poison:
+        return 'singleSSAWithPoison'
+    return 'singleSSAOnly'
 
 
 def validate_patterns(value: dict, snapshots: dict) -> None:
@@ -90,6 +190,8 @@ class Counter:
         self.record = {'status': 'incomplete', 'qualification': False,
                        'source': 'pinned-llvm-text-only', 'snapshots': {}, 'samples': []}
         self.patterns = {}
+        self.phi_shapes = {}
+        self.block_phi_shapes = dict.fromkeys(PHI_SHAPE_KEYS, 0)
         self.block_phi = self.block_phi_incoming = 0
         self.phase = None
         self.opened = False
@@ -111,7 +213,9 @@ class Counter:
             self.phase = expected_phase.lower()
             self.record['snapshots'][self.phase] = dict.fromkeys(KEYS, 0)
             self.patterns[self.phase] = {}
+            self.phi_shapes[self.phase] = dict.fromkeys(PHI_SHAPE_KEYS, 0)
             self.block_phi = self.block_phi_incoming = 0
+            self.block_phi_shapes = dict.fromkeys(PHI_SHAPE_KEYS, 0)
             return
         if self.phase is None:
             return  # Outside-print warnings contribute only to the hash.
@@ -132,6 +236,7 @@ class Counter:
         count = self.record['snapshots'][self.phase]
         if LABEL.fullmatch(text):
             self.block_phi = self.block_phi_incoming = 0
+            self.block_phi_shapes = dict.fromkeys(PHI_SHAPE_KEYS, 0)
             count['blocks'] += 1
             return
         if CONTINUATION.fullmatch(text):
@@ -156,9 +261,12 @@ class Counter:
             count['phiIncoming'] += incoming
             self.block_phi += 1
             self.block_phi_incoming += incoming
+            self.block_phi_shapes[_phi_shape(text, operands, incoming)] += 1
         if opcode == 'catchswitch':
             count['catchswitchPhi'] += self.block_phi
             count['catchswitchPhiIncoming'] += self.block_phi_incoming
+            for key in PHI_SHAPE_KEYS:
+                self.phi_shapes[self.phase][key] += self.block_phi_shapes[key]
         if opcode == 'store' and not re.match(r'\s*(?:atomic|volatile)\b', operands):
             self._store_pattern(operands.strip(), count)
         if opcode in {'phi', 'alloca', 'store', 'catchswitch'} and len(self.record['samples']) < 16:
@@ -249,6 +357,11 @@ class Counter:
                 for key, value in sorted(rows.items(), key=lambda row: (-row[1], row[0]))[:MAX_PUBLISHED_PATTERNS]]
                 for phase, rows in self.patterns.items()}}
         self.patterns.clear()
+        self.record['catchswitchPhiIncomingShapes'] = {
+            'claim': PHI_SHAPE_CLAIM, 'maximumTokenBytes': MAX_PATTERN_TOKEN,
+            'maximumRetainedIdentities': 2, 'phases': self.phi_shapes}
+        self.phi_shapes = {}
+        self.block_phi_shapes.clear()
         self.record.update(streamDigest='sha256:' + self.checksum.hexdigest(),
                            streamBytes=self.stream_bytes, prefixOnly=self.error is not None)
         if self.error is None:
