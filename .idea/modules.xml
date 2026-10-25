@@ -39,6 +39,7 @@
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/lsf.crates.latent-secrets.iml" filepath="$PROJECT_DIR$/.idea/modules/lsf.crates.latent-secrets.iml" group="LSF/crates" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/lsf.crates.latent-signing.iml" filepath="$PROJECT_DIR$/.idea/modules/lsf.crates.latent-signing.iml" group="LSF/crates" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/lsf.crates.latent-state.iml" filepath="$PROJECT_DIR$/.idea/modules/lsf.crates.latent-state.iml" group="LSF/crates" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/lsf.crates.latent-stream-factory-native.iml" filepath="$PROJECT_DIR$/.idea/modules/lsf.crates.latent-stream-factory-native.iml" group="LSF/crates" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/lsf.crates.latent-streams.iml" filepath="$PROJECT_DIR$/.idea/modules/lsf.crates.latent-streams.iml" group="LSF/crates" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/lsf.crates.latent-telemetry.iml" filepath="$PROJECT_DIR$/.idea/modules/lsf.crates.latent-telemetry.iml" group="LSF/crates" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/lsf.crates.latent-test-process.iml" filepath="$PROJECT_DIR$/.idea/modules/lsf.crates.latent-test-process.iml" group="LSF/crates" />

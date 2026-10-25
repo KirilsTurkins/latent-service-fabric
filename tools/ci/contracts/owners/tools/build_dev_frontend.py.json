@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/build_dev_frontend.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Add only canonical rotation record resource to the existing frozen frontend/helper packaging; all original dependencies, inventory, licensing, process bounds and smoke controls remain intact.",
+  "reviewReason": "Package the runtime compatibility context reader and its exact pure helper dependencies; no compiler or node invocation changes.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "165daad9ebb3599f058f657308bb1ade434b5dd4975e4198ce2eab56c0b08445"
+  "sha256": "dfea68cecf6ffc6808f885616759a23f554c41e9d987d5dd10d82c0c9eef987d"
 }

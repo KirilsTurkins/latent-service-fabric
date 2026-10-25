@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_host_stream_kernel_return_vm.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Retain the exact historical294 producer material digest plus only the two declared, sourceBefore-bound current C sources; recheck the complete296 materials. All nineteen Rust, twelve C, fresh-kernel/one-VM obligations, original bounds and quarantine remain mandatory.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "78e2e9690b5c6b78101bd4a7abdd020ab94cd143d3df558f0f52385a748fac49"
+}
