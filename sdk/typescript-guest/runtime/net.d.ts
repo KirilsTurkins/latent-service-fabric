@@ -4,7 +4,8 @@
  * No TLS/DNS API, listeners, descriptors, address export, persistent idle pools,
  * custom lookup, family fallback, proxy or arbitrary socket options.
  */
-import type {Buffer, BufferEncoding} from 'node:buffer';
+import type {Buffer} from 'node:buffer';
+type BufferEncoding = NonNullable<Parameters<Buffer['toString']>[0]>;
 export interface SocketOptions {allowHalfOpen?: boolean; highWaterMark?: number;}
 export interface TcpConnectOptions {host?: string; port: number | string;}
 export interface SocketError extends Error {

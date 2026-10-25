@@ -29,6 +29,7 @@ FIXED_METADATA = {
     'commands.json': 8 * 1024 ** 2, 'units.xml': 256 * 1024,
     'lit.xml': 256 * 1024, 'sjlj-through-wineh.ll': 256 * 1024,
     'sjlj-through-wineh.o': 1024 ** 2, MANIFEST: MANIFEST_BYTES,
+    'retained-CMakeCache.txt': 1024 ** 2, 'retained-rules.ninja': 1024 ** 2,
 }
 
 

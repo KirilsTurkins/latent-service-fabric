@@ -119,11 +119,43 @@ publishes a compiler carrier. The decoded SDK bound and encoded carrier bound
 are independent. Overflow, timeout, cancellation, skips, missing cases or
 failed cleanup prevent publication; none triggers an automatic retry.
 
+The sixth attempt completed its build, nine units, thirteen lit cases,
+opt/WinEH verifier regression, actual llc object and installation. Packaging
+then exceeded the unchanged 200,000-entry budget while duplicating the SDK;
+the packaged version command never started and no compiler carrier qualified.
+Its actual driver readelf also revealed a missing install/package dependency:
+the new driver needs both profile LLVM and clang-cpp shared libraries.
+
+The delivery repair adds the original `install-clang-cpp` target and requires
+the exact two profile DSOs plus at most six anchored aliases. Separate actual
+readelf observations must bind the driver and both libraries, their SONAMEs,
+directed dependencies and ordinary relative loader paths. Other dependencies
+remain restricted to the existing normal seven-library host C ABI whitelist.
+No preload, library-path override or unrelated SDK member change is admitted.
+
+Before spending on the build, strict source/SDK/header inventories project a
+bounded final entry count. An independently authenticated metadata-only SDK29
+census found 10,704 SDK descendants and 272 header-subtree entries including
+its root. With the measured 175,211 source entries, two SDK trees and those
+headers occupy 196,893 entries before the fixed roots/overlay/evidence margin.
+The programme still checks its actual trees rather than trusting that census.
+After all build/test/install/readelf commands complete and the original owner
+reaps their process groups, only the fresh owned `build` child is retired using
+Linux directory-fd operations. Original source, archives, SDK and installation
+remain held. Two fixed raw configuration files (CMake cache and Ninja rules,
+at most 1 MiB each) preserve the selected pools and identities. An exact path
+union checks copy headroom before any products are written; final whole-root
+counts still enforce the original cap. The bounded evidence allowance is 512
+entries. This retires compiler scratch space, not a failed-artifact compiler
+cache, and provides no Java/runtime qualification. Mandatory hosted Linux
+source controls exercise real retirement before any compiler acquisition or
+build; the Windows check only verifies unsupported-platform refusal.
+
 The derived compiler has a distinct version suffix and source/patch/material
 manifest. Original SDK sysroot, runtime and linker members must remain
-byte-identical. The compiler's ELF dependency must select its newly compiled
-LLVM library through the ordinary relative loader path, without preload or
-library-path overrides. Existing compiler consumers do not admit this new
+byte-identical. The compiler's ELF dependencies must select its newly compiled
+LLVM and clang-cpp libraries through the ordinary relative loader path.
+Existing compiler consumers do not admit this new
 identity; that is a separate review after a successful producer artifact.
 
 The effect on the oversized public Java `pools` function remains unknown.
