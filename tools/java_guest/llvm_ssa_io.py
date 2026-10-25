@@ -214,6 +214,120 @@ def preflight(parent: Path) -> None:
         raise ValueError('llvm-producer-disk-preflight')
 
 
+def entry_names(root: Path, deadline: float) -> set[str]:
+    """Strict names, including empty directories; links are never traversed."""
+    tree_size(root, MAX_OWNED_BYTES, deadline=deadline)
+    names, pending = set(), [root]
+    while pending:
+        directory = pending.pop()
+        with os.scandir(directory) as scan:
+            for row in scan:
+                if time.monotonic() >= deadline:
+                    raise BuildProcessError('llvm-producer-deadline')
+                info = row.stat(follow_symlinks=False)
+                name = Path(row.path).relative_to(root).as_posix()
+                if name in names or len(names) >= MAX_ENTRIES:
+                    raise BuildProcessError('llvm-producer-disk-entries')
+                names.add(name)
+                if stat.S_ISDIR(info.st_mode):
+                    pending.append(Path(row.path))
+                elif not (stat.S_ISREG(info.st_mode) or stat.S_ISLNK(info.st_mode)):
+                    raise BuildProcessError('llvm-producer-disk-kind')
+    return names
+
+
+def project_entries(existing: set[str], proposed: set[str]) -> dict:
+    """Include implicit parents before admitting any planned copy writes."""
+    all_names = set(existing)
+    for name in proposed:
+        path = PurePosixPath(name)
+        if (not path.parts or path.is_absolute() or '..' in path.parts
+                or '\\' in name or path.as_posix() != name):
+            raise ValueError('llvm-producer-projection-path')
+        all_names.add(name)
+        all_names.update(parent.as_posix() for parent in path.parents if parent.parts)
+        if len(all_names) > MAX_ENTRIES:
+            raise BuildProcessError('llvm-producer-disk-entries')
+    return {'existingEntries': len(existing), 'additionalEntries': len(all_names - existing),
+            'projectedEntries': len(all_names), 'entryLimit': MAX_ENTRIES}
+
+
+def early_package_projection(root: Path, original: Path, deadline: float) -> dict:
+    """Final-state upper bound before spending on configure/build."""
+    if (root / 'build').exists() or (root / 'products').exists() or (root / 'fresh-install').exists():
+        raise ValueError('llvm-producer-projection-not-early')
+    before = tree_size(root, MAX_OWNED_BYTES, deadline=deadline)
+    sdk = tree_size(original, SDK_BYTES, deadline=deadline)
+    headers = tree_size(original / 'lib/clang/21/include', SDK_BYTES, deadline=deadline)
+    # SDK copy/root; install headers/root; fixed roots/drivers/two DSOs/six
+    # aliases; products/notices; closed evidence namespace (enforced below).
+    projected = before['entries'] + sdk['entries'] + 1 + headers['entries'] + 1 + 32 + 16 + 512
+    if projected > MAX_ENTRIES:
+        raise BuildProcessError('llvm-producer-disk-entries')
+    return {'existingEntries': before['entries'], 'sdkEntries': sdk['entries'],
+            'headerEntriesIncludingRoot': headers['entries'] + 1,
+            'fixedInstallAllowance': 32, 'fixedProductAllowance': 16,
+            'evidenceEntryAllowance': 512, 'projectedEntries': projected,
+            'entryLimit': MAX_ENTRIES, 'buildMustBeRetired': True}
+
+
+def retire_build(root: Path, deadline: float, signals) -> dict:
+    """Linux exact-child cleanup, only after original command-owner completion."""
+    if os.name != 'posix' or not hasattr(os, 'fwalk'):
+        raise ValueError('llvm-producer-retirement-platform')
+    if root.is_symlink() or root.is_junction() or root.resolve(strict=True) != root:
+        raise ValueError('llvm-producer-retirement-root')
+    flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+    root_fd = os.open(root, flags)
+    build_fd = None
+    def check():
+        signals.check()
+        if time.monotonic() >= deadline:
+            raise BuildProcessError('llvm-producer-deadline')
+    def identity(info):
+        return info.st_dev, info.st_ino
+    def fail(error):
+        raise error
+    try:
+        root_identity = identity(os.fstat(root_fd))
+        check()
+        build_fd = os.open('build', flags, dir_fd=root_fd)
+        build_identity = identity(os.fstat(build_fd))
+        before = tree_size(root / 'build', MAX_OWNED_BYTES, deadline=deadline, signals=signals)
+        removed = 0
+        for _, directories, files, directory_fd in os.fwalk(
+                '.', topdown=False, onerror=fail, follow_symlinks=False, dir_fd=build_fd):
+            for name in files + directories:
+                check()
+                info = os.stat(name, dir_fd=directory_fd, follow_symlinks=False)
+                if stat.S_ISDIR(info.st_mode):
+                    os.rmdir(name, dir_fd=directory_fd)
+                elif stat.S_ISREG(info.st_mode) or stat.S_ISLNK(info.st_mode):
+                    os.unlink(name, dir_fd=directory_fd)
+                else:
+                    raise BuildProcessError('llvm-producer-disk-kind')
+                removed += 1
+                if removed > MAX_ENTRIES:
+                    raise BuildProcessError('llvm-producer-disk-entries')
+        check()
+        if (removed != before['entries']
+                or identity(os.stat('build', dir_fd=root_fd, follow_symlinks=False)) != build_identity
+                or identity(os.stat(root, follow_symlinks=False)) != root_identity):
+            raise ValueError('llvm-producer-retirement-identity')
+        os.rmdir('build', dir_fd=root_fd)
+        if 'build' in os.listdir(root_fd):
+            raise ValueError('llvm-producer-retirement-survivor')
+        after = tree_size(root, MAX_OWNED_BYTES, deadline=deadline, signals=signals)
+        return {'child': 'build', 'before': before, 'removedDescendants': removed,
+                'removedRoot': True, 'afterOwned': after, 'liveCompilerChildren': 0,
+                'childObservationBasis': 'completed-original-process-owner',
+                'otherOwnedRootsRetired': False}
+    finally:
+        if build_fd is not None:
+            os.close(build_fd)
+        os.close(root_fd)
+
+
 def case_sensitive(root: Path) -> None:
     """The Linux source carrier has legitimate case-distinct test members."""
     probe = fresh(root / 'case-probe')
