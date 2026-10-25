@@ -21,6 +21,8 @@ PROFILE = distribution.PROFILE
 SUFFIX = '-wasi-sdk-' + PROFILE
 SECONDS = 90 * 60
 BUILD_SECONDS = 75 * 60
+BUILD_JOBS = 4
+LINK_JOBS = 1
 REPOSITORY = 'KirilsTurkins/latent-service-fabric'
 WORKFLOW = '.github/workflows/java-llvm-ssa-producer.yml'
 BRANCH = 'feat/java-llvm-ssa-producer-20261025'
@@ -240,9 +242,24 @@ def configure(build: Path, source: Path, install: Path, tools: dict) -> list[str
             '-DLLVM_ENABLE_ZSTD=OFF', '-DLLVM_ENABLE_LIBXML2=OFF', '-DLLVM_ENABLE_LIBEDIT=OFF',
             '-DLLVM_STATIC_LINK_CXX_STDLIB=ON', '-DLLVM_BUILD_LLVM_DYLIB=ON',
             '-DLLVM_LINK_LLVM_DYLIB=ON', '-DLLVM_VERSION_SUFFIX=' + SUFFIX,
+            '-DLLVM_PARALLEL_COMPILE_JOBS=' + str(BUILD_JOBS),
+            '-DLLVM_PARALLEL_LINK_JOBS=' + str(LINK_JOBS),
             '-DLLVM_INCLUDE_TESTS=ON', '-DLLVM_INCLUDE_UTILS=ON', '-DCLANG_INCLUDE_TESTS=OFF',
             '-DLLVM_INCLUDE_BENCHMARKS=OFF', '-DLLVM_INCLUDE_EXAMPLES=OFF',
             '-DCMAKE_EXE_LINKER_FLAGS=-s']
+
+
+def build_pool_values(build: Path) -> dict:
+    raw = patch.regular(build, 'CMakeCache.txt', 1024 * 1024)
+    expected = {b'LLVM_PARALLEL_COMPILE_JOBS:STRING': str(BUILD_JOBS).encode(),
+                b'LLVM_PARALLEL_LINK_JOBS:STRING': str(LINK_JOBS).encode(),
+                b'CMAKE_GENERATOR:INTERNAL': b'Ninja'}
+    for key, value in expected.items():
+        matches = re.findall(rb'^' + re.escape(key) + rb'=([^\r\n]*)\r?$', raw, re.MULTILINE)
+        if matches != [value]:
+            raise ValueError('llvm-producer-build-pool-cache')
+    return {'compileJobs': BUILD_JOBS, 'linkJobs': LINK_JOBS,
+            'cache': {'bytes': len(raw), 'sha256': patch.sha(raw)}}
 
 
 def llvm_checks(run: Commands, build: Path, source: Path) -> dict:
@@ -368,7 +385,8 @@ def produce(output: Path) -> dict:
     frozen = recipe()
     record = {'schemaVersion': 'latent.java.llvm-sjlj-producer.v1', 'status': 'running',
               'source': origin, 'recipeInputs': frozen, 'llvmCommit': patch.LLVM,
-              'sdkSourceCommit': patch.SDK, 'profile': PROFILE, 'buildJobs': 2,
+              'sdkSourceCommit': patch.SDK, 'profile': PROFILE, 'buildJobs': BUILD_JOBS,
+              'compileJobs': BUILD_JOBS, 'linkJobs': LINK_JOBS,
               'buildCommandSeconds': BUILD_SECONDS,
               'aggregateSeconds': SECONDS, 'productByteLimit': io.PRODUCT_BYTES,
               'disk': {'preflightFreeBytes': shutil.disk_usage(root).free, 'minimumFreeBytes': io.MINIMUM_FREE,
@@ -382,6 +400,9 @@ def produce(output: Path) -> dict:
         # Only this fresh result directory exists at this point.
         io.preflight(root)
         io.case_sensitive(root)
+        record['hostCapacity'] = io.host_capacity()
+        if record['hostCapacity']['status'] != 'admitted':
+            raise ValueError('llvm-producer-host-capacity')
         tools = {}
         for name in ('git', 'cmake', 'ninja', 'gcc', 'g++', 'readelf'):
             value = shutil.which(name, path=run.env.get('PATH'))
@@ -409,7 +430,8 @@ def produce(output: Path) -> dict:
                                      'after': record['patchedSource']})
         build, install = root / 'build', root / 'fresh-install'
         run.run('configure-reviewed-llvm', *configure(build, source, install, tools), seconds=600)
-        run.run('build-reviewed-llvm-and-tests', tools['cmake'], '--build', build, '--parallel', '2',
+        record['buildPools'] = build_pool_values(build)
+        run.run('build-reviewed-llvm-and-tests', tools['cmake'], '--build', build, '--parallel', str(BUILD_JOBS),
                 '--target', 'clang', 'LLVM', 'opt', 'llc', 'FileCheck', 'not', 'count', 'llvm-config',
                 'UtilsTests', 'clang-resource-headers', seconds=BUILD_SECONDS)
         record['tests'] = llvm_checks(run, build, source)
