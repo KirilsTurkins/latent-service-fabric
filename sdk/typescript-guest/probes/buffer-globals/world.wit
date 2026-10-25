@@ -1,0 +1,3 @@
+package examples:typescript-buffer-globals@1.0.0;
+interface api { run: async func(which: u32) -> string; }
+world service { export api; }

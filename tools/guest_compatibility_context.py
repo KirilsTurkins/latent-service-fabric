@@ -13,6 +13,9 @@ KINDS = {"sdk", "compiler", "runtime", "patch", "build-tool", "generated", "depe
 BUFFER_PROFILE = 'lsf-node-buffer-v1'
 BUFFER_MATERIALS = ('typescript-standard-buffer', 'typescript-standard-buffer-backend',
                     'typescript-standard-buffer-declaration')
+BUFFER_GLOBAL_PROFILE = 'lsf-node-buffer-global-v1'
+BUFFER_GLOBAL_MATERIALS = tuple('typescript-standard-buffer-global-' + part
+                               for part in ('selector', 'initializer', 'declaration'))
 NET_PROFILE = 'lsf-node-net-tcp-v1'
 NET_PARTS = ('backend', 'transport', 'bindings', 'resolver', 'declaration', 'interface')
 NET_MATERIALS = ('typescript-standard-net', *(f'typescript-standard-net-{part}' for part in NET_PARTS))
@@ -39,11 +42,13 @@ def net_module(value):
 def buffer_module(value):
     """A complete fixed API-level subgroup; package names never select it."""
     rows = {row['name']: row for row in value['materials']
-            if row['kind'] == 'runtime' and row['name'] in BUFFER_MATERIALS}
+            if row['kind'] == 'runtime' and row['name'] in (*BUFFER_MATERIALS, *BUFFER_GLOBAL_MATERIALS)}
     if not rows:
         return None
-    require(value['language'] == 'typescript' and set(rows) == set(BUFFER_MATERIALS)
-            and all(row.get('profile') == BUFFER_PROFILE for row in rows.values()),
+    require(value['language'] == 'typescript'
+            and set(rows) in (set(BUFFER_MATERIALS), set((*BUFFER_MATERIALS, *BUFFER_GLOBAL_MATERIALS)))
+            and all(row.get('profile') == (BUFFER_GLOBAL_PROFILE if name in BUFFER_GLOBAL_MATERIALS else BUFFER_PROFILE)
+                    for name, row in rows.items()),
             'compatibility-context-buffer-module-group')
     owner = value['standardRuntime']
     require(owner.get('state') == 'selected-unqualified'
@@ -181,6 +186,11 @@ def present(value):
                  + '; backend ' + module[BUFFER_MATERIALS[1]]['digest']
                  + '; declaration ' + module[BUFFER_MATERIALS[2]]['digest']
                  + '; recipe ' + module['build-recipe']['digest'] + '.\n')
+        if BUFFER_GLOBAL_MATERIALS[0] in module:
+            text += ('SELECTED runtime global: Buffer; profile ' + BUFFER_GLOBAL_PROFILE
+                + '; qualification unknown; authority none; '
+                + '; '.join(part + ' ' + module[name]['digest'] for part, name in
+                    zip(('selector', 'initializer', 'declaration'), BUFFER_GLOBAL_MATERIALS)) + '.\n')
     net = net_module(value)
     if net is not None:
         text += ('SELECTED runtime module: net, node:net; profile ' + NET_PROFILE
@@ -190,7 +200,7 @@ def present(value):
                            for part, name in zip(NET_PARTS, NET_MATERIALS[1:]))
                  + '; recipe ' + net['build-recipe']['digest'] + '.\n')
     for row in value['materials']:
-        if module is not None and row['kind'] == 'runtime' and row['name'] in BUFFER_MATERIALS:
+        if module is not None and row['kind'] == 'runtime' and row['name'] in (*BUFFER_MATERIALS, *BUFFER_GLOBAL_MATERIALS):
             continue
         if net is not None and row['kind'] == 'runtime' and row['name'] in NET_MATERIALS:
             continue
