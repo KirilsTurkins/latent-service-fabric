@@ -4,6 +4,8 @@ import copy
 import io
 import json
 from pathlib import Path
+import subprocess
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -116,6 +118,21 @@ class DefaultApiAnalysis(unittest.TestCase):
             with patch('sys.argv', ['compatibility', str(output / 'compatibility-report.json'), '--json']), contextlib.redirect_stdout(stdout):
                 self.assertEqual(compatibility.main(), 0)
             self.assertEqual(json.loads(stdout.getvalue()), report)
+            # Exercise the REAL file entrypoint under the same sanitized
+            # environment as the compiler owner, outside the checkout. An
+            # in-process main() call cannot detect a missing tools bootstrap.
+            from tools.build_observation import build_environment
+            from tools.rust_capsule_project import ROOT
+            environment = build_environment(output)
+            self.assertNotIn('PYTHONPATH', environment)
+            for options in ([], ['--json']):
+                completed = subprocess.run([sys.executable, '-B', ROOT / 'tools/guest_compatibility.py',
+                    output / 'compatibility-report.json', *options], cwd=output,
+                    env=environment, capture_output=True, timeout=15)
+                self.assertEqual(completed.returncode, 0, completed.stderr.decode(errors='replace'))
+                self.assertEqual(completed.stderr, b'')
+                if options: self.assertEqual(json.loads(completed.stdout), report)
+                else: self.assertIn(b'API implementation observations;', completed.stdout)
 
     def test_missing_passive_input_has_closed_unavailable_result_without_new_build_gate(self):
         with tempfile.TemporaryDirectory() as directory:

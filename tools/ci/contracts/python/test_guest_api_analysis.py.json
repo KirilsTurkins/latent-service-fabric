@@ -16,7 +16,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:33eb7f569a51777a19381ab67b7feeebe87e3ecd93dbe8aebfba1f97894705e9",
+        "module:setup-sha256:68b73279deeacc9b960bbaa76e7fed0ac2c5d295c79756057931b99326ead927",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -28,7 +28,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:33eb7f569a51777a19381ab67b7feeebe87e3ecd93dbe8aebfba1f97894705e9",
+        "module:setup-sha256:68b73279deeacc9b960bbaa76e7fed0ac2c5d295c79756057931b99326ead927",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -40,7 +40,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:33eb7f569a51777a19381ab67b7feeebe87e3ecd93dbe8aebfba1f97894705e9",
+        "module:setup-sha256:68b73279deeacc9b960bbaa76e7fed0ac2c5d295c79756057931b99326ead927",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -52,7 +52,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:33eb7f569a51777a19381ab67b7feeebe87e3ecd93dbe8aebfba1f97894705e9",
+        "module:setup-sha256:68b73279deeacc9b960bbaa76e7fed0ac2c5d295c79756057931b99326ead927",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -64,7 +64,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:33eb7f569a51777a19381ab67b7feeebe87e3ecd93dbe8aebfba1f97894705e9",
+        "module:setup-sha256:68b73279deeacc9b960bbaa76e7fed0ac2c5d295c79756057931b99326ead927",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -76,7 +76,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:33eb7f569a51777a19381ab67b7feeebe87e3ecd93dbe8aebfba1f97894705e9",
+        "module:setup-sha256:68b73279deeacc9b960bbaa76e7fed0ac2c5d295c79756057931b99326ead927",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -88,7 +88,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:33eb7f569a51777a19381ab67b7feeebe87e3ecd93dbe8aebfba1f97894705e9",
+        "module:setup-sha256:68b73279deeacc9b960bbaa76e7fed0ac2c5d295c79756057931b99326ead927",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -96,6 +96,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_guest_api_analysis.py",
-  "reviewReason": "Whole679 reviewed finite source controls: all original cases, bases, decorators and skip sites retained; explicit fixture-only guard changes bind reviewed helper/source setup. Actual compiler/node qualification is separate.",
+  "reviewReason": "Actual hosted Go normal CLI presentation failed because sanitized build children have no PYTHONPATH. Preserve all7cases/bases/decorators/skips; extend existing presentation control with real sanitized Python subprocess text/JSON entrypoints outside the checkout. Only added stdlib imports alter module fixture guard.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
