@@ -1,0 +1,71 @@
+name: Authenticated fixed kernel bank reclamation
+on:
+  push:
+    branches: ['feat/kernel-bank-reclamation-20261025']
+    paths:
+      - '.github/workflows/stream-kernel-bank-vm.yml'
+      - 'crates/latent-streams/**'
+      - 'crates/latent-stream-factory-native/**'
+      - 'crates/latent-capabilities/src/broker/pools/**'
+      - 'tools/*host_stream_kernel*'
+      - 'tools/tests/test_kernel_bank_reclamation_vm.py'
+      - 'tools/ci/suites.d/kernel-bank-reclamation-vm.json'
+permissions:
+  contents: read
+concurrency:
+  group: stream-kernel-bank-vm-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  fixed-bank:
+    name: Twenty native controls and one bank consumer on the qualified kernel
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04-kernel-bank
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-targets: false
+      - name: Check closed image selection and bank observation refusal controls
+        run: python3 -B -m unittest tools.tests.test_kernel_bank_reclamation_vm -v
+      - name: Install only the normal static linker and isolated emulator prerequisites
+        run: |
+          sudo timeout --signal=TERM --kill-after=30s 180s apt-get update
+          sudo timeout --signal=TERM --kill-after=30s 900s apt-get install --yes --no-install-recommends gcc libc6-dev qemu-system-x86 seabios
+      - name: Reuse the authenticated kernel and execute one new bank consumer
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          python3 -B tools/qualify_host_stream_kernel_bank_vm.py
+          --source-commit "${{ github.sha }}"
+          --output "$RUNNER_TEMP/stream-kernel-bank-vm"
+      - name: Retain actual current consumer and unchanged kernel provenance
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: stream-kernel-bank-vm-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/stream-kernel-bank-vm/receipt.json
+            ${{ runner.temp }}/stream-kernel-bank-vm/FAILED.json
+            ${{ runner.temp }}/stream-kernel-bank-vm/commands.json
+            ${{ runner.temp }}/stream-kernel-bank-vm/source-inputs.json
+            ${{ runner.temp }}/stream-kernel-bank-vm/native-init
+            ${{ runner.temp }}/stream-kernel-bank-vm/bank-consumer-initramfs.cpio
+            ${{ runner.temp }}/stream-kernel-bank-vm/kernel/origin.json
+            ${{ runner.temp }}/stream-kernel-bank-vm/kernel/qualified-observation-image.zip
+            ${{ runner.temp }}/stream-kernel-bank-vm/commands/logs/*.txt
+          if-no-files-found: warn
+          retention-days: 3
