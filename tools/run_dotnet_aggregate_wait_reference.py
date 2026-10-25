@@ -428,8 +428,8 @@ def qualify(output):
         packages=(('runtime.wasi-wasm.microsoft.dotnet.ilcompiler.llvm','10.0.0-rc.1.26306.1',base),
                   ('microsoft.net.illink.tasks','10.0.0','https://api.nuget.org/v3-flatcontainer/'))
         package_rows=[]
-        for name,version,origin in packages:
-            target=scratch/(name+'.nupkg');url=origin+name+'/'+version+'/'+name+'.'+version+'.nupkg'
+        for name,version,package_origin in packages:
+            target=scratch/(name+'.nupkg');url=package_origin+name+'/'+version+'/'+name+'.'+version+'.nupkg'
             package_rows.append({'name':name,'version':version,'origin':url,'archive':fetch(url,target,commands),
                                  'lockedContentHash':hashes[name]})
         hasher=scratch/'package-hash';hasher.mkdir()

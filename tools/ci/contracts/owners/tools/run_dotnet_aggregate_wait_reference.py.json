@@ -4,5 +4,5 @@
   "reviewBoundary": "committed-fingerprint",
   "reviewReason": "Use the unchanged maintained process-group owner with reserved cleanup time and a fixed always-run evidence gate; original WaitAll CIL, twenty-three controls and all default selections remain unchanged.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "b20aceacacf2bbd85316aa2ffc3053c27e696b02070959202e73f9ed7b1ff69a"
+  "sha256": "b848d0e585725545767e9ea73231351dd4e9b66b3af39989fbab8c9937240f1b"
 }
