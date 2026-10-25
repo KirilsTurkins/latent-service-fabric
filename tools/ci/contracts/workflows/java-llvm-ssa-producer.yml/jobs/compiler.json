@@ -52,7 +52,7 @@
           "compression-level": 0,
           "if-no-files-found": "warn",
           "name": "java-llvm-ssa-producer-${{ github.sha }}",
-          "path": "${{ runner.temp }}/java-llvm-ssa-producer/result.json\n${{ runner.temp }}/java-llvm-ssa-producer/source.json\n${{ runner.temp }}/java-llvm-ssa-producer/commands.json\n${{ runner.temp }}/java-llvm-ssa-producer/commands/**\n${{ runner.temp }}/java-llvm-ssa-producer/units.xml\n${{ runner.temp }}/java-llvm-ssa-producer/lit.xml\n${{ runner.temp }}/java-llvm-ssa-producer/sjlj-through-wineh.ll\n${{ runner.temp }}/java-llvm-ssa-producer/sjlj-through-wineh.o\n${{ runner.temp }}/java-llvm-ssa-producer/derived-sdk.tar.gz\n${{ runner.temp }}/java-llvm-ssa-producer/derived-sdk-manifest.json\n${{ runner.temp }}/java-llvm-ssa-producer/upload-admission.json\n",
+          "path": "${{ runner.temp }}/java-llvm-ssa-producer/result.json\n${{ runner.temp }}/java-llvm-ssa-producer/source.json\n${{ runner.temp }}/java-llvm-ssa-producer/commands.json\n${{ runner.temp }}/java-llvm-ssa-producer/commands/**\n${{ runner.temp }}/java-llvm-ssa-producer/units.xml\n${{ runner.temp }}/java-llvm-ssa-producer/lit.xml\n${{ runner.temp }}/java-llvm-ssa-producer/sjlj-through-wineh.ll\n${{ runner.temp }}/java-llvm-ssa-producer/sjlj-through-wineh.o\n${{ runner.temp }}/java-llvm-ssa-producer/retained-CMakeCache.txt\n${{ runner.temp }}/java-llvm-ssa-producer/retained-rules.ninja\n${{ runner.temp }}/java-llvm-ssa-producer/derived-sdk.tar.gz\n${{ runner.temp }}/java-llvm-ssa-producer/derived-sdk-manifest.json\n${{ runner.temp }}/java-llvm-ssa-producer/upload-admission.json\n",
           "retention-days": 3
         }
       }
@@ -61,7 +61,7 @@
   },
   "jobId": "compiler",
   "kind": "job",
-  "reviewReason": "Hash-lock the psutil Linux timeout dependency and preflight before costly acquisition; preserve original 60s lit timeout, 13 regressions, nine units, 17 source controls, 75/90 minute maxima, exact branch and product admission.",
+  "reviewReason": "Retain two bounded raw final configuration files after original owned commands; preserve runner, aggregate and all original mandatory commands and tests.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-llvm-ssa-producer.yml"
 }

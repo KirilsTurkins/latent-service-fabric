@@ -67,6 +67,8 @@ jobs:
             ${{ runner.temp }}/java-llvm-ssa-producer/lit.xml
             ${{ runner.temp }}/java-llvm-ssa-producer/sjlj-through-wineh.ll
             ${{ runner.temp }}/java-llvm-ssa-producer/sjlj-through-wineh.o
+            ${{ runner.temp }}/java-llvm-ssa-producer/retained-CMakeCache.txt
+            ${{ runner.temp }}/java-llvm-ssa-producer/retained-rules.ninja
             ${{ runner.temp }}/java-llvm-ssa-producer/derived-sdk.tar.gz
             ${{ runner.temp }}/java-llvm-ssa-producer/derived-sdk-manifest.json
             ${{ runner.temp }}/java-llvm-ssa-producer/upload-admission.json

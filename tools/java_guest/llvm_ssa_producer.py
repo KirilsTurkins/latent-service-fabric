@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
+import posixpath
 import platform
 import re
 import shutil
@@ -23,6 +24,10 @@ SECONDS = 90 * 60
 BUILD_SECONDS = 75 * 60
 BUILD_JOBS = 4
 LINK_JOBS = 1
+LLVM_SONAME = 'libLLVM.so.21.1' + SUFFIX
+CLANG_SONAME = 'libclang-cpp.so.21.1' + SUFFIX
+HOST_LIBRARIES = {'libc.so.6', 'libgcc_s.so.1', 'libm.so.6', 'libpthread.so.0',
+                  'libdl.so.2', 'librt.so.1', 'ld-linux-x86-64.so.2'}
 REPOSITORY = 'KirilsTurkins/latent-service-fabric'
 WORKFLOW = '.github/workflows/java-llvm-ssa-producer.yml'
 BRANCH = 'feat/java-llvm-ssa-producer-20261025'
@@ -318,36 +323,145 @@ def llvm_checks(run: Commands, build: Path, source: Path) -> dict:
     return {'units': unit_result, 'originalSjLj': lit_result, 'crossPass': cross}
 
 
-def package(run: Commands, original: Path, install: Path, readelf: Path) -> dict:
-    """Fresh derived SDK; preserve EVERY original runtime/sysroot/lld member."""
+def read_configuration(build: Path) -> tuple[dict, dict[str, bytes]]:
+    """Validate available configuration before build cost, without writes."""
+    pools = build_pool_values(build)
+    rules = patch.regular(build, 'CMakeFiles/rules.ninja', 1024 * 1024)
+    for name, depth in [('compile_job_pool', BUILD_JOBS), ('link_job_pool', LINK_JOBS)]:
+        matches = re.findall(rb'^pool ' + name.encode() + rb'\r?\n[ ]+depth = ([0-9]+)\r?$',
+                             rules, re.MULTILINE)
+        if matches != [str(depth).encode()]:
+            raise ValueError('llvm-producer-ninja-pools')
+    retained, files = {}, {}
+    for source, destination in [('CMakeCache.txt', 'retained-CMakeCache.txt'),
+                                ('CMakeFiles/rules.ninja', 'retained-rules.ninja')]:
+        raw = patch.regular(build, source, 1024 * 1024)
+        files[destination] = raw
+        retained[destination] = {'bytes': len(raw), 'sha256': patch.sha(raw)}
+    return {'pools': pools, 'files': retained}, files
+
+
+def retain_configuration(root: Path, build: Path) -> dict:
+    value, files = read_configuration(build)
+    for destination, raw in files.items():
+        with (root / destination).open('xb') as stream:
+            stream.write(raw)
+    return value
+
+
+def elf_closure(raw: bytes, role: str) -> dict:
+    if len(raw) > 4 * 1024 ** 2 or role not in {'driver', 'llvm', 'clang'}:
+        raise ValueError('llvm-producer-elf-role')
+    text = raw.decode('utf-8')
+    needed = re.findall(r'\(NEEDED\)\s+Shared library: \[([^\]\r\n]+)\]', text)
+    rpaths = re.findall(r'\((?:RUNPATH|RPATH)\)\s+Library (?:runpath|rpath): \[([^\]\r\n]+)\]', text)
+    sonames = re.findall(r'\(SONAME\)\s+Library soname: \[([^\]\r\n]+)\]', text)
+    required = {'driver': {LLVM_SONAME, CLANG_SONAME}, 'llvm': set(), 'clang': {LLVM_SONAME}}[role]
+    expected_sonames = {'driver': [], 'llvm': [LLVM_SONAME], 'clang': [CLANG_SONAME]}[role]
+    if (len(needed) != len(set(needed)) or not required <= set(needed)
+            or not set(needed) <= required | HOST_LIBRARIES
+            or rpaths != ['$ORIGIN/../lib'] or sonames != expected_sonames):
+        raise ValueError('llvm-producer-compiled-library-binding')
+    return {'needed': needed, 'rpath': rpaths, 'soname': sonames,
+            'raw': {'bytes': len(raw), 'sha256': patch.sha(raw)}}
+
+
+def install_overlay(before: dict, installed: dict) -> dict:
+    """Only two real profile DSOs and bounded aliases may join the drivers."""
+    real_libraries = {'lib/' + LLVM_SONAME, 'lib/' + CLANG_SONAME}
+    libraries = {name: row for name, row in installed.items() if name.startswith('lib/')
+                 and len(Path(name).parts) == 2}
+    if ({name for name, row in libraries.items() if 'link' not in row} != real_libraries
+            or len(libraries) > 8):
+        raise ValueError('llvm-producer-library-set')
+    for name, row in libraries.items():
+        if not re.fullmatch(r'lib/(?:libLLVM|libclang-cpp)[A-Za-z0-9._+-]*', name):
+            raise ValueError('llvm-producer-library-name')
+        seen, target = set(), name
+        while 'link' in libraries.get(target, {}):
+            if target in seen:
+                raise ValueError('llvm-producer-library-alias')
+            seen.add(target)
+            link = libraries[target]['link']
+            target = posixpath.normpath(posixpath.join(posixpath.dirname(target), link))
+            if posixpath.isabs(link) or target not in libraries:
+                raise ValueError('llvm-producer-library-alias')
+        expected_target = 'lib/' + (LLVM_SONAME if name.startswith('lib/libLLVM') else CLANG_SONAME)
+        if target != expected_target:
+            raise ValueError('llvm-producer-library-alias')
+    overlay = {}
+    for name, row in installed.items():
+        path = Path(name)
+        compiler = path.parent == Path('bin') and re.fullmatch(r'clang(?:-21|\+\+|-cl|-cpp)?', path.name)
+        if name.startswith('lib/clang/21/include/'):
+            if before.get(name) != row:
+                raise ValueError('llvm-producer-resource-header-drift')
+        elif compiler or name in libraries:
+            overlay[name] = row
+        else:
+            raise ValueError('llvm-producer-unexpected-install-member')
+    if 'bin/clang-21' not in overlay or 'link' in overlay['bin/clang-21']:
+        raise ValueError('llvm-producer-incomplete-compiler-install')
+    return overlay
+
+
+def prepare_install(run: Commands, original: Path, install: Path, readelf: Path) -> dict:
     before = io.inventory(original, io.SDK_BYTES, run.deadline)
     installed = io.inventory(install, io.PRODUCT_BYTES, run.deadline)
-    dynamic = run.run('compiled-clang-dynamic-dependencies', readelf, '--dynamic', '--wide',
-                      install / 'bin/clang-21', seconds=30).decode('utf-8')
-    needed = re.findall(r'\(NEEDED\)\s+Shared library: \[([^\]\r\n]+)\]', dynamic)
-    llvm_needed = [name for name in needed if 'LLVM' in name]
-    rpaths = re.findall(r'\((?:RUNPATH|RPATH)\)\s+Library (?:runpath|rpath): \[([^\]\r\n]+)\]', dynamic)
-    if (len(llvm_needed) != 1 or PROFILE not in llvm_needed[0]
-            or not re.fullmatch(r'libLLVM[A-Za-z0-9._+-]+', llvm_needed[0])
-            or rpaths != ['$ORIGIN/../lib'] or 'lib/' + llvm_needed[0] not in installed):
-        raise ValueError('llvm-producer-compiled-library-binding')
+    overlay = install_overlay(before, installed)
+    allowed = set(installed)
+    allowed.update('lib/clang/21/include/' + name for name in
+                   io.entry_names(original / 'lib/clang/21/include', run.deadline))
+    for name in tuple(allowed):
+        allowed.update(parent.as_posix() for parent in Path(name).parents if parent.parts)
+    if io.entry_names(install, run.deadline) != allowed:
+        raise ValueError('llvm-producer-install-directory-set')
+    closure = {}
+    for role, stage, member in [
+            ('driver', 'compiled-clang-dynamic-dependencies', 'bin/clang-21'),
+            ('llvm', 'compiled-llvm-dynamic-dependencies', 'lib/' + LLVM_SONAME),
+            ('clang', 'compiled-clang-cpp-dynamic-dependencies', 'lib/' + CLANG_SONAME)]:
+        closure[role] = elf_closure(run.run(stage, readelf, '--dynamic', '--wide',
+                                           install / member, seconds=30), role)
+        closure[role]['member'] = member
+        closure[role]['identity'] = installed[member]
+    return {'before': before, 'installed': installed, 'overlay': overlay, 'closure': closure}
+
+
+def package(run: Commands, original: Path, install: Path, prepared: dict) -> dict:
+    """Fresh derived SDK; preserve EVERY original runtime/sysroot/lld member."""
+    before, installed = prepared['before'], prepared['installed']
+    if (io.inventory(original, io.SDK_BYTES, run.deadline) != before
+            or io.inventory(install, io.PRODUCT_BYTES, run.deadline) != installed):
+        raise ValueError('llvm-producer-prepared-install-mutated')
+    existing = io.entry_names(run.root, run.deadline)
+    evidence = {name for name in existing if Path(name).parts[0] not in {
+        'llvm-source', 'official-sdk', 'fresh-install'}}
+    if len(evidence) > 512 or any(Path(name).parts[0] in {'build', 'products'} for name in existing):
+        raise ValueError('llvm-producer-evidence-entry-bound')
+    proposed = {'products', 'products/toolchain'}
+    proposed.update('products/toolchain/' + name for name in io.entry_names(original, run.deadline))
+    proposed.update('products/toolchain/' + name for name in prepared['overlay'])
+    proposed.update('products/' + name for name in distribution.TOP - {'toolchain'})
+    proposed.update({distribution.ARCHIVE, distribution.ARCHIVE + '.part', distribution.MANIFEST,
+                     'upload-admission.json', 'result.json'})
+    for offset, stage in enumerate(['packaged-derived-clang-version', 'final-repository-head']):
+        proposed.update(f'commands/{len(run.records) + offset:02d}-{stage}.{channel}.log'
+                        for channel in ['stdout', 'stderr'])
+    future_evidence = evidence | {name for name in proposed if Path(name).parts[0] != 'products'}
+    if len(future_evidence) > 512:
+        raise ValueError('llvm-producer-evidence-entry-bound')
+    projection = io.project_entries(existing, proposed)
     products = io.fresh(run.root / 'products')
     target = products / 'toolchain'
     shutil.copytree(original, target, symlinks=True)
     if io.inventory(target, io.PRODUCT_BYTES, run.deadline) != before:
         raise ValueError('llvm-producer-sdk-copy-identity')
     changed, added, omitted = [], [], []
-    for name, row in installed.items():
+    for name, row in prepared['overlay'].items():
         path = Path(name)
         compiler = path.parent == Path('bin') and re.fullmatch(r'clang(?:-21|\+\+|-cl|-cpp)?', path.name)
-        library = path.parent == Path('lib') and re.fullmatch(r'libLLVM[A-Za-z0-9._+-]*', path.name)
-        header = name.startswith('lib/clang/21/include/')
-        if header:
-            if before.get(name) != row:
-                raise ValueError('llvm-producer-resource-header-drift')
-            continue
-        if not (compiler or library):
-            raise ValueError('llvm-producer-unexpected-install-member')
+        library = path.parent == Path('lib')
         if library and name in before:
             # A build-time unversioned alias may collide. Keep the original
             # alias/libraries for original lld and record the omitted new link.
@@ -370,7 +484,8 @@ def package(run: Commands, original: Path, install: Path, readelf: Path) -> dict
         else:
             shutil.copy2(install / name, destination)
         (changed if name in before else added).append(name)
-    if not any(name.startswith('bin/clang') for name in changed) or not any(name.startswith('lib/libLLVM') for name in added):
+    if (not any(name.startswith('bin/clang') for name in changed)
+            or not {'lib/' + LLVM_SONAME, 'lib/' + CLANG_SONAME} <= set(added)):
         raise ValueError('llvm-producer-incomplete-compiler-install')
     original_version = patch.regular(original, 'VERSION', 1024)
     if original_version.decode().splitlines() != OFFICIAL_VERSION:
@@ -399,8 +514,9 @@ def package(run: Commands, original: Path, install: Path, readelf: Path) -> dict
             'addedCompilerMembers': sorted(added), 'omittedBuildTimeAliases': sorted(omitted),
             'originalVersion': OFFICIAL_VERSION, 'derivedVersion': derived_version,
             'officialArchive': io.SDK_SOURCE, 'runtimeSysrootLldPreserved': True,
-            'compiledElfNeeded': needed, 'compiledElfRpath': rpaths,
-            'customLlvmLibrary': llvm_needed[0], 'retainedSourceNotices': retained_sources}
+            'compiledElfClosure': prepared['closure'], 'copyEntryProjection': projection,
+            'customLlvmLibrary': LLVM_SONAME, 'customClangLibrary': CLANG_SONAME,
+            'retainedSourceNotices': retained_sources}
 
 
 def produce(output: Path) -> dict:
@@ -455,16 +571,25 @@ def produce(output: Path) -> dict:
         record['patchedSource'] = source_state(run, source, True)
         write(root / 'source.json', {'before': record['originalSource'], 'patch': record['patch'],
                                      'after': record['patchedSource']})
+        record['earlyPackageProjection'] = io.early_package_projection(root, original, deadline)
         build, install = root / 'build', root / 'fresh-install'
         run.run('configure-reviewed-llvm', *configure(build, source, install, tools), seconds=600)
-        record['buildPools'] = build_pool_values(build)
+        record['initialConfiguration'], _ = read_configuration(build)
+        record['buildPools'] = record['initialConfiguration']['pools']
         run.run('build-reviewed-llvm-and-tests', tools['cmake'], '--build', build, '--parallel', str(BUILD_JOBS),
                 '--target', 'clang', 'LLVM', 'opt', 'llc', 'FileCheck', 'not', 'count', 'llvm-config',
                 'UtilsTests', 'clang-resource-headers', seconds=BUILD_SECONDS)
         record['tests'] = llvm_checks(run, build, source)
         run.run('install-reviewed-compiler', tools['cmake'], '--build', build, '--parallel', '2',
-                '--target', 'install-clang', 'install-LLVM', 'install-clang-resource-headers', seconds=300)
-        record['products'] = package(run, original, install, tools['readelf'])
+                '--target', 'install-clang', 'install-LLVM', 'install-clang-cpp',
+                'install-clang-resource-headers', seconds=300)
+        prepared = prepare_install(run, original, install, tools['readelf'])
+        record['retainedConfiguration'] = retain_configuration(root, build)
+        if record['retainedConfiguration'] != record['initialConfiguration']:
+            raise ValueError('llvm-producer-final-configuration-mutated')
+        with owned_cancellation() as signals:
+            record['buildRetirement'] = io.retire_build(root, deadline, signals)
+        record['products'] = package(run, original, install, prepared)
         record['distribution'] = distribution.create(root, origin['sourceCommit'], deadline)
         record['finalSource'] = source_state(run, source, True)
         if (recipe() != frozen or record['finalSource'] != record['patchedSource']
@@ -473,6 +598,10 @@ def produce(output: Path) -> dict:
                 or run.run('final-repository-head', git, 'rev-parse', 'HEAD', cwd=ROOT).decode().strip() != origin['sourceCommit']):
             raise ValueError('llvm-producer-final-input-identity')
         io.tree_size(root / 'products', io.PRODUCT_BYTES, deadline=deadline)
+        record['finalOwnedDisk'] = io.tree_size(root, io.MAX_OWNED_BYTES, deadline=deadline)
+        if len({name for name in io.entry_names(root, deadline) if Path(name).parts[0] not in {
+                'llvm-source', 'official-sdk', 'fresh-install', 'products'}}) > 512:
+            raise ValueError('llvm-producer-evidence-entry-bound')
         if time.monotonic() >= deadline:
             raise ValueError('llvm-producer-deadline')
         record['status'] = 'passed'
