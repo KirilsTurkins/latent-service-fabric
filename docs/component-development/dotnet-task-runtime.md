@@ -83,6 +83,38 @@ the integrated source. The identified historical native binaries are reused;
 this does not claim a rebuilt current host. Complete simultaneous reset/dispose
 races, shutdown/tenant fencing and managed CPU scheduling remain separate.
 
+## Qualification-private WaitAll reference
+
+The ordinary driver still selects its existing finite single-task implementation.
+`Task.WaitAll` is not promoted to that default by this source milestone. The
+private `--aggregate-task-wait` tool variant retains the original nine public/core
+method remainders, countdown, completion actions and detach-finally, with one
+bounded aggregate-ready target and the existing depth32/context restoration.
+It adds no application scheduler, replacement completion task, authority or grant.
+
+All23 CLR reference controls passed the actual
+[run40180463429](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40180463429/job/121130229483)
+at source732c53e98570ad59428af546fb095f81d518e2fb. The
+[bounded receipt](../testing/evidence/dotnet-waitall-reference-2026-10-25.json)
+binds the authenticated128-member artifact,46 Git inputs,60 zero-exit commands,
+120 raw channels, three byte-identical old-mode DLL/receipt comparisons, the
+95-helper derivation and all23 exact outcomes. Actual SDK is10.0.100 and CLR is
+10.0.13; controller execution took69.298450009s within600s. Both target and context
+restoration, original exception/token identity, two-task completion ordering,
+one finite interval, no added infinite-wait clock reads and cleanup refusals are
+checked. The earlier four failed runs retain their original failed status.
+
+This is an explicit host reference: real CLR tasks/MRES/token/ExecutionContext and
+the host's private countdown counterpart run with controlled dispatch/clock ports.
+Three exact real ThrowHelpers translate four source enum constants by name to the
+actual CLR enum, rethrowing the original exception object. One pinned nonvirtual
+instance-call opcode is projected to a static DynamicMethod call only after
+proving its fresh nonnull countdown receiver; source/projected hashes and unchanged
+branch/local/EH scope are recorded. The production candidate IL stays unchanged.
+This does not execute pinned WASI polling/accounting or qualify native exception,
+physical-retirement, default NativeAOT, signed-component or whole-cost behavior.
+Normal promotion and one fresh signed programme remain separate required work.
+
 [#746](https://github.com/KirilsTurkins/latent-service-fabric/issues/746) remains
 open. This finite queue/join programme does not establish compiler-safe CPU
 preemption without yields, parked Monitor.Wait or Thread behavior, logical

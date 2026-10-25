@@ -1,0 +1,74 @@
+name: Private aggregate WaitAll generated-CIL reference
+
+on:
+  push:
+    branches: ['feat/dotnet-waitall-source-20261025']
+    paths:
+      - '.github/workflows/dotnet-aggregate-wait-reference.yml'
+      - 'sdk/dotnet-guest/tools/http-errors/**'
+      - 'sdk/dotnet-guest/tools/package-hash/**'
+      - 'sdk/dotnet-guest/global.json'
+      - 'sdk/dotnet-guest/nuget.config'
+      - 'sdk/dotnet-guest/probes/smoke/packages.lock.json'
+      - 'tools/run_dotnet_aggregate_wait_reference.py'
+      - 'tools/build_process.py'
+      - 'tools/build_process_linux.py'
+      - 'tools/build_process_signals.py'
+      - 'tools/fixtures/dotnet-aggregate-wait-reference/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dotnet-aggregate-wait-reference-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  aggregate-reference:
+    name: Exact old-mode equality and twenty-three private CLR reference controls
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: '10.0.100'
+      - name: Fetch the exact pre-feature tool source
+        run: git fetch --no-tags --depth=1 origin 655199b641fd7c35facc8531af26714095d44790
+      - name: Build only small host tools and run the actual copied-CIL reference
+        run: python3 -B tools/run_dotnet_aggregate_wait_reference.py --output "$RUNNER_TEMP/dotnet-aggregate-reference-public"
+      - name: Admit only the fixed bounded public evidence
+        if: always()
+        id: evidence
+        run: python3 -B tools/run_dotnet_aggregate_wait_reference.py --admit-evidence --output "$RUNNER_TEMP/dotnet-aggregate-reference-public"
+      - name: Retain admitted public reference evidence
+        if: always() && steps.evidence.outcome == 'success'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: dotnet-aggregate-wait-reference-${{ github.sha }}
+          retention-days: 3
+          if-no-files-found: warn
+          path: |
+            ${{ runner.temp }}/dotnet-aggregate-reference-public/WAITALL-REFERENCE.json
+            ${{ runner.temp }}/dotnet-aggregate-reference-public/candidate.json
+            ${{ runner.temp }}/dotnet-aggregate-reference-public/IL-MAP.json
+            ${{ runner.temp }}/dotnet-aggregate-reference-public/assemblies/task-wait.dll
+            ${{ runner.temp }}/dotnet-aggregate-reference-public/assemblies/finite-task-wait.dll
+            ${{ runner.temp }}/dotnet-aggregate-reference-public/assemblies/managed-task-wait.dll
+            ${{ runner.temp }}/dotnet-aggregate-reference-public/assemblies/aggregate.dll
+            ${{ runner.temp }}/dotnet-aggregate-reference-public/commands/*.stdout
+            ${{ runner.temp }}/dotnet-aggregate-reference-public/commands/*.stderr
+            ${{ runner.temp }}/dotnet-aggregate-reference-admission.json
+      - name: Retain only the closed admission failure projection
+        if: always() && steps.evidence.outcome != 'success'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: dotnet-aggregate-wait-reference-${{ github.sha }}
+          retention-days: 3
+          if-no-files-found: warn
+          path: ${{ runner.temp }}/dotnet-aggregate-reference-admission.json
