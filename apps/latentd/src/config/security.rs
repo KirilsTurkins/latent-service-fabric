@@ -219,6 +219,10 @@ pub(super) fn persist(settings: &NodeSettings) -> Result<(), PlatformError> {
 }
 
 #[cfg(feature = "development-test-node")]
+#[expect(
+    clippy::trivially_copy_pass_by_ref,
+    reason = "serde skip_serializing_if passes a borrowed field to this callback"
+)]
 fn is_false(value: &bool) -> bool {
     !*value
 }
