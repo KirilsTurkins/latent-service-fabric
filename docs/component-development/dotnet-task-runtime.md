@@ -19,9 +19,13 @@ all four declarations still required. Its strict receipt binds 95 helpers, the
 nine original WaitAll preimages/remainders plus the guarded timer Pump and sixteen
 derived bodies (the fifteen existing identities remain exact); the final
 closed-filesystem/ILC reference chain retains that exact intermediate. There is
-no new application flag or automatic grant. Fresh signed NativeAOT qualification
-of this normal selection is pending; the CLR reference below is its prerequisite,
-not a substitute. Outside this selected finite path, the original unsupported
+no new application flag or automatic grant. All fourteen outcomes passed the fresh
+normal NativeAOT and signed-node
+[run40188795279](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40188795279/job/121155140690)
+at source18576f471ef817943b385d3ad5ab12d4dd6f89bb. The
+[source-bound receipt](../testing/evidence/dotnet-waitall-signed-2026-10-25.json)
+binds the actual component, intermediate/final CoreLib chain, 108 Git inputs and
+all fourteen ordered results. Outside this selected finite path, the original unsupported
 WaitAll contexts remain unsupported. WaitAny, general threads/monitors, whole
 runtime compatibility, physical ownership costs and production rollout are not
 qualified by this source change.
@@ -38,7 +42,14 @@ typed list before its original enumerator. Original callbacks, Clear/finally and
 FailFast remain intact. This adds managed allocation under the unchanged guest
 heap budget; it is not allocation-free or a cost qualification. The v2 fixture
 used by host controls is explicitly controlled data, not an observed v2 DLL or
-signed result. The same fourteen-outcome signed qualification is still pending.
+signed result. The later source18576 programme uses the actual v2 assembly and
+passes two-task ordering, original Polly8.6.3/Polly.Core8.6.3 errors, task/token
+cancellation, one finite deadline, zero query and nested single/aggregate waits.
+Its two root-stop negatives have original native pending witnesses, physical
+retirement and fresh recovery. Audit observation loss remains explicit; audit
+alone is not the pending barrier. The node and peer are reaped clean and all 23
+named final shutdown counts are zero. This covers the frozen ordinary calls,
+not every public WaitAll overload or arbitrary published-library behavior.
 
 The private `dotnet-stackful-task-wait-v1` derivation preserves the exact original
 CoreLib preimage, dispatch, ExecutionContext entry/restore and TaskAwaiter error
@@ -141,7 +152,8 @@ proving its fresh nonnull countdown receiver; source/projected hashes and unchan
 branch/local/EH scope are recorded. The production candidate IL stays unchanged.
 This does not execute pinned WASI polling/accounting or qualify native exception,
 physical-retirement, default NativeAOT, signed-component or whole-cost behavior.
-Normal promotion and one fresh signed programme remain separate required work.
+The later normal NativeAOT programme above is separate evidence; it does not
+relabel this historical CLR reference or its v1 candidate.
 
 [#746](https://github.com/KirilsTurkins/latent-service-fabric/issues/746) remains
 open. This finite queue/join programme does not establish compiler-safe CPU
