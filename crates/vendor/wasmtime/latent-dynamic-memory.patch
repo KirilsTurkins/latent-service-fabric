@@ -264,7 +264,15 @@
  }
  
  impl<F> Future for JoinHandleFuture<F>
-@@ -291,4 +441,291 @@
+@@ -210,6 +360,7 @@
+ #[cfg(test)]
+ mod tests {
+     use super::JoinHandle;
++    use alloc::{boxed::Box, string::ToString};
+     use std::pin::{Pin, pin};
+     use std::task::{Context, Poll, Waker};
+     use tokio::sync::oneshot;
+@@ -291,4 +442,291 @@
          handle.await;
          task.await.unwrap();
      }

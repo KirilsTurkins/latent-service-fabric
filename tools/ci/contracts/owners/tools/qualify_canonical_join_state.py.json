@@ -4,5 +4,5 @@
   "reviewBoundary": "committed-fingerprint",
   "reviewReason": "Fixed five private owner controls and actual canonical first_poll refusal then same-budget fresh Store; original source and executable/tool identities retained and rechecked.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "164d13bb168d52002233442f5ac05f7ef4e9f0c017d4ba57f26401995f3c9aff"
+  "sha256": "76178bc39e6c0197d80738282917c402e199d9c16de73f6ce89dd33cbbe762cd"
 }

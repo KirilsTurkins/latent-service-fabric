@@ -360,6 +360,7 @@ impl<F> Drop for JoinHandleFuture<F> {
 #[cfg(test)]
 mod tests {
     use super::JoinHandle;
+    use alloc::{boxed::Box, string::ToString};
     use std::pin::{Pin, pin};
     use std::task::{Context, Poll, Waker};
     use tokio::sync::oneshot;

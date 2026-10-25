@@ -34,7 +34,7 @@ PRIVATE_CASES = tuple(PREFIX + name for name in (
 CANONICAL_CASE = ('host::join_state_tests::'
     'canonical_join_state_first_poll_refusal_and_same_budget_fresh_store')
 FEATURES = ('component-model,component-model-async,cranelift,pooling-allocator,'
-    'runtime,std,wit-parser,gc,gc-drc')
+    'runtime,std,wit-parser,gc,gc-drc,cache,threads,coredump')
 
 
 def require(value, reason):
