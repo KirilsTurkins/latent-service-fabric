@@ -17,8 +17,19 @@ class LocalServiceFixture(unittest.TestCase):
             parent = Path(temporary)
             output = parent / "output"
             output.mkdir(mode=0o700)
-            environment = owner.private_environment(output)
+            self.assertEqual(owner.PRIVATE_SCRATCH_ROOT, Path("/tmp"))
+            # Windows verifies fixed-root selection/forwarding, not Linux ACLs.
+            with patch.object(owner, "PRIVATE_SCRATCH_ROOT", parent), \
+                    patch.object(owner, "native_scratch_preflight") as preflight:
+                environment = owner.private_environment(output)
             scratch = Path(environment["TMPDIR"])
+            preflight.assert_called_once_with(scratch)
+            refused = ValueError("unchanged-native-preflight-refusal")
+            with patch.object(owner, "PRIVATE_SCRATCH_ROOT", parent), \
+                    patch.object(owner, "native_scratch_preflight", side_effect=refused):
+                with self.assertRaises(ValueError) as captured:
+                    owner.private_environment(output)
+                self.assertIs(captured.exception, refused)
             self.assertEqual(scratch.parent, parent.resolve())
             self.assertFalse(scratch.is_relative_to(output.resolve()))
             self.assertEqual(environment["TEMP"], str(scratch))

@@ -4,5 +4,5 @@
   "reviewBoundary": "committed-fingerprint",
   "reviewReason": "Retain only fixed bounded public reports and nine named command channel pairs; private fixture scratch stays outside upload output. Preserve original failed fixture and prior exact-source native controls; explicit six non-native source exceptions only.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "fc9e5ab546bc0bcca8e25b15f7fc6dbf9caa4865ec8518e03c58583ac53cf2e9"
+  "sha256": "05fdb409155ac30eede69c6644536e683ea88f576a27e11c9f6ae9da2ebf6ea6"
 }

@@ -17,6 +17,8 @@ if __package__ in {None, ""}:
 
 from tools.build_observation import build_environment
 from tools.build_process import BuildProcessError, run_bounded_result
+from tools.native_runtime import files as native_files
+from tools.native_runtime.common import InstallError
 
 ROOT = Path(__file__).resolve().parents[1]
 BRANCH = "diag/local-service-refusal-20261025"
@@ -114,13 +116,21 @@ PUBLIC_FILES = {**PUBLIC_REPORTS,
     "source-node.json": 65536}
 MAX_PUBLIC_FILES = 23
 MAX_PUBLIC_BYTES = sum(PUBLIC_FILES.values())
+PRIVATE_SCRATCH_ROOT = Path("/tmp")
+
+
+def native_scratch_preflight(scratch):
+    # The normal installer validates every ancestor, including ACLs, unchanged.
+    with native_files.directory(scratch, owners={0, os.geteuid()}):
+        pass
 
 
 def private_environment(output):
     # tempfile-created failed fixture workspaces must never be under public output.
-    scratch = Path(tempfile.mkdtemp(prefix="local-service-private-", dir=output.parent)).resolve(strict=True)
-    require(scratch.parent == output.parent.resolve(strict=True)
-            and not scratch.is_relative_to(output.resolve(strict=True)), "private-sibling-scratch-required")
+    scratch = Path(tempfile.mkdtemp(prefix="local-service-private-", dir=PRIVATE_SCRATCH_ROOT)).resolve(strict=True)
+    require(scratch.parent == PRIVATE_SCRATCH_ROOT.resolve(strict=True)
+            and not scratch.is_relative_to(output.resolve(strict=True)), "private-fixed-root-scratch-required")
+    native_scratch_preflight(scratch)
     return build_environment(scratch)
 
 
@@ -182,8 +192,6 @@ def run(python_prefix: Path, output: Path):
     logs = output / "commands"
     logs.mkdir(mode=0o700)
     until = time.monotonic() + MAX_SECONDS
-    environment = private_environment(output)
-    environment.update(RUSTUP_TOOLCHAIN="1.97.1", GITHUB_ACTIONS="true", RUNNER_OS="Linux")
     receipt = {"schemaVersion": "latent.dev.local-service-refusal-ci.v1", "status": "failed",
                "scope": "ordinary-signed-local-service-fixture-diagnostic", "qualificationComplete": False,
                "publisherAuthenticated": False, "maximumSeconds": MAX_SECONDS, "workflowOrigin": origin,
@@ -207,6 +215,9 @@ def run(python_prefix: Path, output: Path):
         return result
 
     try:
+        receipt["phase"] = "private-scratch-preflight"
+        environment = private_environment(output)
+        environment.update(RUSTUP_TOOLCHAIN="1.97.1", GITHUB_ACTIONS="true", RUNNER_OS="Linux")
         commit = command("source-head", ["git", "rev-parse", "HEAD"], 15).stdout.decode().strip()
         require(re.fullmatch(r"[0-9a-f]{40}", commit) and commit == os.environ.get("GITHUB_SHA"), "exact-source-head-required")
         receipt["sourceCommit"] = commit
@@ -243,7 +254,7 @@ def run(python_prefix: Path, output: Path):
         require(time.monotonic() < until, "overall-deadline")
         receipt["status"] = "passed"
         receipt["phase"] = "complete"
-    except (ValueError, BuildProcessError) as error:
+    except (ValueError, BuildProcessError, InstallError) as error:
         receipt["failure"] = str(error)
         raise
     finally:
