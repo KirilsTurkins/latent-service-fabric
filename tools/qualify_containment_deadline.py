@@ -90,6 +90,7 @@ def qualify(output,revision):
         tools,pins=resolve_tools(toolchain,ROOT,environment);receipt['observedTools']=pins
         require(toolchain['rust']['toolchain']=='1.97.1'
             and toolchain['contracts']['wasm-tools']=='1.254.0','normal-tool-pins')
+        environment.update(RUSTC=str(tools['rustc']),RUSTUP_TOOLCHAIN=toolchain['rust']['toolchain'])
         receipt['stage']='maintained-containment-core'
         inventory=commands.run('build-containment-core',tools['cargo'],'build','--locked',
             '-p','latent-toolchain-smoke','--example','containment-capsule',

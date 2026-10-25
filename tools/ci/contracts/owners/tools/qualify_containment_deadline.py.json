@@ -4,5 +4,5 @@
   "reviewBoundary": "committed-fingerprint",
   "reviewReason": "Bind current Cargo test and maintained component source/products before executing only the existing ignored deadline case explicitly, never accept an ignored skip.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "265779a911f6ed53bccd50c7ea3fa40a77104d31ff5de4485efb787859f87fc7"
+  "sha256": "56c7f70d0570ecfee5c5f40d4efd0ce2cdabecf56799e6fbce9e448d1d110bbc"
 }
