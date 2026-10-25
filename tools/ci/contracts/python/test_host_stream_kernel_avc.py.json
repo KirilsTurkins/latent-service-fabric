@@ -1,257 +1,50 @@
 {
-  "cases": [
-    "KernelAvc.test_all_six_normal_destructor_and_revocation_remainders_are_exact",
-    "KernelAvc.test_all_uninstalled_flags_stay_false_and_reserved_kinds_are_not_range_allowed",
-    "KernelAvc.test_both_connect_permission_paths_have_real_original_socket_source",
-    "KernelAvc.test_bounded_graph_checks_original_birth_before_reading_linked_fields",
-    "KernelAvc.test_cache_hit_keeps_original_rcu_and_does_not_adopt_or_allocate",
-    "KernelAvc.test_drain_copies_identity_then_revalidates_under_original_slot_lock",
-    "KernelAvc.test_each_selected_private_call_inherits_explicit_source",
-    "KernelAvc.test_mandatory_audit_seam_keeps_result_and_never_falls_back_to_normal_allocators",
-    "KernelAvc.test_old_heap_producers_become_exact_typed_original_children",
-    "KernelAvc.test_old_selected_modes_do_not_include_avc_factory_and_limits_are_unchanged",
-    "KernelAvc.test_partial_decision_failure_follows_actual_nonnull_pointers_not_used_mask",
-    "KernelAvc.test_permissive_grant_preserves_policy_updates_and_propagates_real_exhaustion",
-    "KernelAvc.test_poisoned_private_victim_never_prevents_normal_revocation_or_unlink",
-    "KernelAvc.test_private_cache_publication_retains_original_keys_lock_and_reclaim",
-    "KernelAvc.test_private_replacement_preflights_both_records_before_any_publication",
-    "KernelAvc.test_queued_callback_and_private_failure_have_distinct_original_phases",
-    "KernelAvc.test_same_translation_unit_private_helpers_do_not_redeclare_prepaid_core_names",
-    "KernelAvc.test_seventeen_actual_whole_inputs_and_nineteen_exact_definitions",
-    "KernelAvc.test_unknown_duplicate_changed_crlf_or_missing_whole_sources_refuse"
-  ],
-  "guards": {
-    "KernelAvc.test_all_six_normal_destructor_and_revocation_remainders_are_exact": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:7da8420ff0bc43dba1f3577568c7778433fcca6a695f2cedc75c49117f73d897",
-        "class:setup-sha256:ab05a882a0fa5af3d52e3b72c2f5e210a2e570a3a3cb4ff3fc1c210caa43aa1b"
-      ],
-      "skipSites": []
-    },
-    "KernelAvc.test_all_uninstalled_flags_stay_false_and_reserved_kinds_are_not_range_allowed": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:7da8420ff0bc43dba1f3577568c7778433fcca6a695f2cedc75c49117f73d897",
-        "class:setup-sha256:ab05a882a0fa5af3d52e3b72c2f5e210a2e570a3a3cb4ff3fc1c210caa43aa1b"
-      ],
-      "skipSites": []
-    },
-    "KernelAvc.test_both_connect_permission_paths_have_real_original_socket_source": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:7da8420ff0bc43dba1f3577568c7778433fcca6a695f2cedc75c49117f73d897",
-        "class:setup-sha256:ab05a882a0fa5af3d52e3b72c2f5e210a2e570a3a3cb4ff3fc1c210caa43aa1b"
-      ],
-      "skipSites": []
-    },
-    "KernelAvc.test_bounded_graph_checks_original_birth_before_reading_linked_fields": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:7da8420ff0bc43dba1f3577568c7778433fcca6a695f2cedc75c49117f73d897",
-        "class:setup-sha256:ab05a882a0fa5af3d52e3b72c2f5e210a2e570a3a3cb4ff3fc1c210caa43aa1b"
-      ],
-      "skipSites": []
-    },
-    "KernelAvc.test_cache_hit_keeps_original_rcu_and_does_not_adopt_or_allocate": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:7da8420ff0bc43dba1f3577568c7778433fcca6a695f2cedc75c49117f73d897",
-        "class:setup-sha256:ab05a882a0fa5af3d52e3b72c2f5e210a2e570a3a3cb4ff3fc1c210caa43aa1b"
-      ],
-      "skipSites": []
-    },
-    "KernelAvc.test_drain_copies_identity_then_revalidates_under_original_slot_lock": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:7da8420ff0bc43dba1f3577568c7778433fcca6a695f2cedc75c49117f73d897",
-        "class:setup-sha256:ab05a882a0fa5af3d52e3b72c2f5e210a2e570a3a3cb4ff3fc1c210caa43aa1b"
-      ],
-      "skipSites": []
-    },
-    "KernelAvc.test_each_selected_private_call_inherits_explicit_source": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:7da8420ff0bc43dba1f3577568c7778433fcca6a695f2cedc75c49117f73d897",
-        "class:setup-sha256:ab05a882a0fa5af3d52e3b72c2f5e210a2e570a3a3cb4ff3fc1c210caa43aa1b"
-      ],
-      "skipSites": []
-    },
-    "KernelAvc.test_mandatory_audit_seam_keeps_result_and_never_falls_back_to_normal_allocators": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:7da8420ff0bc43dba1f3577568c7778433fcca6a695f2cedc75c49117f73d897",
-        "class:setup-sha256:ab05a882a0fa5af3d52e3b72c2f5e210a2e570a3a3cb4ff3fc1c210caa43aa1b"
-      ],
-      "skipSites": []
-    },
-    "KernelAvc.test_old_heap_producers_become_exact_typed_original_children": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:7da8420ff0bc43dba1f3577568c7778433fcca6a695f2cedc75c49117f73d897",
-        "class:setup-sha256:ab05a882a0fa5af3d52e3b72c2f5e210a2e570a3a3cb4ff3fc1c210caa43aa1b"
-      ],
-      "skipSites": []
-    },
-    "KernelAvc.test_old_selected_modes_do_not_include_avc_factory_and_limits_are_unchanged": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:7da8420ff0bc43dba1f3577568c7778433fcca6a695f2cedc75c49117f73d897",
-        "class:setup-sha256:ab05a882a0fa5af3d52e3b72c2f5e210a2e570a3a3cb4ff3fc1c210caa43aa1b"
-      ],
-      "skipSites": []
-    },
-    "KernelAvc.test_partial_decision_failure_follows_actual_nonnull_pointers_not_used_mask": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:7da8420ff0bc43dba1f3577568c7778433fcca6a695f2cedc75c49117f73d897",
-        "class:setup-sha256:ab05a882a0fa5af3d52e3b72c2f5e210a2e570a3a3cb4ff3fc1c210caa43aa1b"
-      ],
-      "skipSites": []
-    },
-    "KernelAvc.test_permissive_grant_preserves_policy_updates_and_propagates_real_exhaustion": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:7da8420ff0bc43dba1f3577568c7778433fcca6a695f2cedc75c49117f73d897",
-        "class:setup-sha256:ab05a882a0fa5af3d52e3b72c2f5e210a2e570a3a3cb4ff3fc1c210caa43aa1b"
-      ],
-      "skipSites": []
-    },
-    "KernelAvc.test_poisoned_private_victim_never_prevents_normal_revocation_or_unlink": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:7da8420ff0bc43dba1f3577568c7778433fcca6a695f2cedc75c49117f73d897",
-        "class:setup-sha256:ab05a882a0fa5af3d52e3b72c2f5e210a2e570a3a3cb4ff3fc1c210caa43aa1b"
-      ],
-      "skipSites": []
-    },
-    "KernelAvc.test_private_cache_publication_retains_original_keys_lock_and_reclaim": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:7da8420ff0bc43dba1f3577568c7778433fcca6a695f2cedc75c49117f73d897",
-        "class:setup-sha256:ab05a882a0fa5af3d52e3b72c2f5e210a2e570a3a3cb4ff3fc1c210caa43aa1b"
-      ],
-      "skipSites": []
-    },
-    "KernelAvc.test_private_replacement_preflights_both_records_before_any_publication": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:7da8420ff0bc43dba1f3577568c7778433fcca6a695f2cedc75c49117f73d897",
-        "class:setup-sha256:ab05a882a0fa5af3d52e3b72c2f5e210a2e570a3a3cb4ff3fc1c210caa43aa1b"
-      ],
-      "skipSites": []
-    },
-    "KernelAvc.test_queued_callback_and_private_failure_have_distinct_original_phases": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:7da8420ff0bc43dba1f3577568c7778433fcca6a695f2cedc75c49117f73d897",
-        "class:setup-sha256:ab05a882a0fa5af3d52e3b72c2f5e210a2e570a3a3cb4ff3fc1c210caa43aa1b"
-      ],
-      "skipSites": []
-    },
-    "KernelAvc.test_same_translation_unit_private_helpers_do_not_redeclare_prepaid_core_names": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:7da8420ff0bc43dba1f3577568c7778433fcca6a695f2cedc75c49117f73d897",
-        "class:setup-sha256:ab05a882a0fa5af3d52e3b72c2f5e210a2e570a3a3cb4ff3fc1c210caa43aa1b"
-      ],
-      "skipSites": []
-    },
-    "KernelAvc.test_seventeen_actual_whole_inputs_and_nineteen_exact_definitions": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:7da8420ff0bc43dba1f3577568c7778433fcca6a695f2cedc75c49117f73d897",
-        "class:setup-sha256:ab05a882a0fa5af3d52e3b72c2f5e210a2e570a3a3cb4ff3fc1c210caa43aa1b"
-      ],
-      "skipSites": []
-    },
-    "KernelAvc.test_unknown_duplicate_changed_crlf_or_missing_whole_sources_refuse": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:7da8420ff0bc43dba1f3577568c7778433fcca6a695f2cedc75c49117f73d897",
-        "class:setup-sha256:ab05a882a0fa5af3d52e3b72c2f5e210a2e570a3a3cb4ff3fc1c210caa43aa1b"
-      ],
-      "skipSites": []
-    }
+  "cases":["KernelAvc.test_all_six_normal_destructor_and_revocation_remainders_are_exact","KernelAvc.test_all_uninstalled_flags_stay_false_and_reserved_kinds_are_not_range_allowed","KernelAvc.test_both_connect_permission_paths_have_real_original_socket_source","KernelAvc.test_bounded_graph_checks_original_birth_before_reading_linked_fields","KernelAvc.test_cache_hit_keeps_original_rcu_and_does_not_adopt_or_allocate","KernelAvc.test_drain_copies_identity_then_revalidates_under_original_slot_lock","KernelAvc.test_each_selected_private_call_inherits_explicit_source","KernelAvc.test_mandatory_audit_seam_keeps_result_and_never_falls_back_to_normal_allocators","KernelAvc.test_old_heap_producers_become_exact_typed_original_children","KernelAvc.test_old_selected_modes_do_not_include_avc_factory_and_limits_are_unchanged","KernelAvc.test_partial_decision_failure_follows_actual_nonnull_pointers_not_used_mask","KernelAvc.test_permissive_grant_preserves_policy_updates_and_propagates_real_exhaustion","KernelAvc.test_poisoned_private_victim_never_prevents_normal_revocation_or_unlink","KernelAvc.test_private_cache_publication_retains_original_keys_lock_and_reclaim","KernelAvc.test_private_replacement_preflights_both_records_before_any_publication","KernelAvc.test_queued_callback_and_private_failure_have_distinct_original_phases","KernelAvc.test_same_translation_unit_private_helpers_do_not_redeclare_prepaid_core_names","KernelAvc.test_seventeen_actual_whole_inputs_and_nineteen_exact_definitions","KernelAvc.test_unknown_duplicate_changed_crlf_or_missing_whole_sources_refuse"],
+  "guards":{
+    "KernelAvc.test_all_six_normal_destructor_and_revocation_remainders_are_exact":
+      "318a2b6dcacab9527a01e0936c070e4b30832e4c4f509f8ff201e73c0d3fda38",
+    "KernelAvc.test_all_uninstalled_flags_stay_false_and_reserved_kinds_are_not_range_allowed":
+      "318a2b6dcacab9527a01e0936c070e4b30832e4c4f509f8ff201e73c0d3fda38",
+    "KernelAvc.test_both_connect_permission_paths_have_real_original_socket_source":
+      "318a2b6dcacab9527a01e0936c070e4b30832e4c4f509f8ff201e73c0d3fda38",
+    "KernelAvc.test_bounded_graph_checks_original_birth_before_reading_linked_fields":
+      "318a2b6dcacab9527a01e0936c070e4b30832e4c4f509f8ff201e73c0d3fda38",
+    "KernelAvc.test_cache_hit_keeps_original_rcu_and_does_not_adopt_or_allocate":
+      "318a2b6dcacab9527a01e0936c070e4b30832e4c4f509f8ff201e73c0d3fda38",
+    "KernelAvc.test_drain_copies_identity_then_revalidates_under_original_slot_lock":
+      "318a2b6dcacab9527a01e0936c070e4b30832e4c4f509f8ff201e73c0d3fda38",
+    "KernelAvc.test_each_selected_private_call_inherits_explicit_source":
+      "318a2b6dcacab9527a01e0936c070e4b30832e4c4f509f8ff201e73c0d3fda38",
+    "KernelAvc.test_mandatory_audit_seam_keeps_result_and_never_falls_back_to_normal_allocators":
+      "318a2b6dcacab9527a01e0936c070e4b30832e4c4f509f8ff201e73c0d3fda38",
+    "KernelAvc.test_old_heap_producers_become_exact_typed_original_children":
+      "318a2b6dcacab9527a01e0936c070e4b30832e4c4f509f8ff201e73c0d3fda38",
+    "KernelAvc.test_old_selected_modes_do_not_include_avc_factory_and_limits_are_unchanged":
+      "318a2b6dcacab9527a01e0936c070e4b30832e4c4f509f8ff201e73c0d3fda38",
+    "KernelAvc.test_partial_decision_failure_follows_actual_nonnull_pointers_not_used_mask":
+      "318a2b6dcacab9527a01e0936c070e4b30832e4c4f509f8ff201e73c0d3fda38",
+    "KernelAvc.test_permissive_grant_preserves_policy_updates_and_propagates_real_exhaustion":
+      "318a2b6dcacab9527a01e0936c070e4b30832e4c4f509f8ff201e73c0d3fda38",
+    "KernelAvc.test_poisoned_private_victim_never_prevents_normal_revocation_or_unlink":
+      "318a2b6dcacab9527a01e0936c070e4b30832e4c4f509f8ff201e73c0d3fda38",
+    "KernelAvc.test_private_cache_publication_retains_original_keys_lock_and_reclaim":
+      "318a2b6dcacab9527a01e0936c070e4b30832e4c4f509f8ff201e73c0d3fda38",
+    "KernelAvc.test_private_replacement_preflights_both_records_before_any_publication":
+      "318a2b6dcacab9527a01e0936c070e4b30832e4c4f509f8ff201e73c0d3fda38",
+    "KernelAvc.test_queued_callback_and_private_failure_have_distinct_original_phases":
+      "318a2b6dcacab9527a01e0936c070e4b30832e4c4f509f8ff201e73c0d3fda38",
+    "KernelAvc.test_same_translation_unit_private_helpers_do_not_redeclare_prepaid_core_names":
+      "318a2b6dcacab9527a01e0936c070e4b30832e4c4f509f8ff201e73c0d3fda38",
+    "KernelAvc.test_seventeen_actual_whole_inputs_and_nineteen_exact_definitions":
+      "318a2b6dcacab9527a01e0936c070e4b30832e4c4f509f8ff201e73c0d3fda38",
+    "KernelAvc.test_unknown_duplicate_changed_crlf_or_missing_whole_sources_refuse":
+      "318a2b6dcacab9527a01e0936c070e4b30832e4c4f509f8ff201e73c0d3fda38"
   },
-  "kind": "python",
-  "module": "tools/tests/test_host_stream_kernel_avc.py",
-  "reviewReason": "Add one exclusive sixteen-object AVC-over-SID source lane under original20min/900s/300s/-j2/-Werror/security/config/archive/output bounds. Preserve all four prior job bodies except selector exclusions, old commands/cases/guards and default/offline refusals. Retain every15/52 SID target, add one AVC object and9 definitions. Preserve cache_anchor/SID lifetime and explicit kind allowlists; audit remains unimplemented, no link/boot/installation/closure credit.",
-  "schemaVersion": "latent.ci.contracts.v1"
+  "kind":"python",
+  "module":"tools/tests/test_host_stream_kernel_avc.py",
+  "reviewReason":"Add one exclusive sixteen-object AVC-over-SID source lane under original20min/900s/300s/-j2/-Werror/security/config/archive/output bounds. Preserve all four prior job bodies except selector exclusions, old commands/cases/guards and default/offline refusals. Retain every15/52 SID target, add one AVC object and9 definitions. Preserve cache_anchor/SID lifetime and explicit kind allowlists; audit remains unimplemented, no link/boot/installation/closure credit.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "318a2b6dcacab9527a01e0936c070e4b30832e4c4f509f8ff201e73c0d3fda38":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:7da8420ff0bc43dba1f3577568c7778433fcca6a695f2cedc75c49117f73d897","class:setup-sha256:ab05a882a0fa5af3d52e3b72c2f5e210a2e570a3a3cb4ff3fc1c210caa43aa1b"],"skipSites":[]}
+  }
 }

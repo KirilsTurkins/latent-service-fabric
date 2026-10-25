@@ -1,0 +1,26 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "protected-stream-host-${{ github.ref }}"
+    },
+    "name": "Protected stream host source controls",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/protected-stream-custody-20261026"
+        ]
+      }
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "host-controls"
+  ],
+  "reviewReason": "Retain the reviewed source-only six-case owner using the currently approved artifact action pin; no command, cap or case changes.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/protected-stream-host.yml"
+}

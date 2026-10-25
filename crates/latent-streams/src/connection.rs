@@ -20,7 +20,7 @@ use latent_policy::capability::{ResourceTarget, StreamEndpoint};
 use std::{
     future::Future,
     io,
-    net::{Shutdown, SocketAddr},
+    net::SocketAddr,
     pin::Pin,
     sync::{Arc, Mutex},
     time::{Duration, Instant},
@@ -113,9 +113,50 @@ pub(crate) struct Socket {
     _native: Option<SocketMemory>,
     _metadata: Option<ProviderMetadata>,
     _dns_native: Option<SocketMemory>,
+    #[cfg(all(target_os = "linux", any(test, feature = "development-outbound")))]
+    _dns_transport: Option<Arc<crate::kernel::native::StreamSocket>>,
     _dns_metadata: Option<ProviderMetadata>,
     kernel_mode: crate::kernel::Mode,
+    // Fixed internal selection, never serialized or supplied by the caller.
+    protected_selected: bool,
     _kernel_scope: Arc<StreamScope>,
+    // Only the original pool's explicit quarantine may retain a lost registry
+    // owner. This is the SAME Connection/PoolCall/IoCall, never replacement work.
+    _quarantined_connection: Option<Arc<Connection>>,
+}
+impl Socket {
+    // The ONLY registered callback is this fixed private host function. No
+    // guest function, closure, receipt field or timeout is accepted as proof.
+    fn retire_quarantined(&mut self) -> bool {
+        if !self.protected_selected {
+            return false;
+        }
+        if let Some(connection) = &self._quarantined_connection {
+            let Ok(state) = connection.state.try_lock() else {
+                return false;
+            };
+            if !state.closing || state.pending != 0 {
+                return false;
+            }
+        }
+        #[cfg(all(target_os = "linux", any(test, feature = "development-outbound")))]
+        {
+            // These are SAME original Arc/identity/Scope owners, not a second
+            // context table. RETIRED validates slot/generation/lease/sequence.
+            let dns = self
+                ._dns_transport
+                .as_ref()
+                .is_none_or(|socket| socket.retire_step());
+            let tcp = self.stream.as_ref().is_none_or(|stream| {
+                stream.protected_owner() && stream.retire_step() && stream.protected_retired()
+            });
+            dns && tcp
+        }
+        #[cfg(not(all(target_os = "linux", any(test, feature = "development-outbound"))))]
+        {
+            false
+        }
+    }
 }
 enum SocketMemory {
     Logical(HostMemoryReservation),
@@ -172,33 +213,83 @@ impl SocketOwner {
 }
 impl Drop for SocketOwner {
     fn drop(&mut self) {
+        #[cfg(all(target_os = "linux", any(test, feature = "development-outbound")))]
+        if let Some(dns) = self.value.as_ref().and_then(|v| v._dns_transport.as_ref()) {
+            dns.retire_step();
+        }
         if self.armed
             && self
                 .value
                 .as_ref()
                 .is_some_and(|v| v.kernel_mode.retains_unproved())
         {
+            if self
+                .value
+                .as_ref()
+                .and_then(|value| value.stream.as_ref())
+                .is_some_and(|transport| transport.protected_retired())
+            {
+                return; // Actual original context retired; normal field Drop is permitted.
+            }
             let mut value = self.value.take().expect("original socket owners");
-            drop(value.stream.take());
-            self.reservation
-                .take()
-                .expect("original dial reservation")
-                .quarantine(value);
+            if !value
+                .stream
+                .as_ref()
+                .is_some_and(|transport| transport.protected_owner())
+            {
+                drop(value.stream.take());
+            }
+            let reservation = self.reservation.take().expect("original dial reservation");
+            if value.protected_selected {
+                reservation.quarantine_stream(value, Socket::retire_quarantined);
+            } else {
+                reservation.quarantine(value); // Old unproved profile stays permanent.
+            }
         }
     }
 }
 struct PhysicalSocket(Option<PooledConnection<Socket>>);
 impl PhysicalSocket {
+    fn quarantine_with_connection(mut self, owner: Arc<Connection>) {
+        let mut original = self.0.take().expect("original physical wrapper");
+        original.resource()._quarantined_connection = Some(owner);
+        if original.resource().protected_selected {
+            original.quarantine_stream(Socket::retire_quarantined);
+        } else {
+            original.quarantine();
+        } // SAME original finite client quarantine table.
+    }
     fn resource(&mut self) -> &mut Socket {
         self.0.as_mut().expect("physical socket owner").resource()
     }
 }
 impl Drop for PhysicalSocket {
     fn drop(&mut self) {
-        let mut original = self.0.take().expect("physical socket owner");
+        let Some(mut original) = self.0.take() else {
+            return;
+        };
         if original.resource().kernel_mode.retains_unproved() {
-            drop(original.resource().stream.take());
-            original.quarantine();
+            let protected = original
+                .resource()
+                .stream
+                .as_ref()
+                .is_some_and(|s| s.protected_owner());
+            let retired = protected
+                && original
+                    .resource()
+                    .stream
+                    .as_ref()
+                    .is_some_and(|s| s.protected_retired());
+            if !retired {
+                if !protected {
+                    drop(original.resource().stream.take());
+                }
+                if original.resource().protected_selected {
+                    original.quarantine_stream(Socket::retire_quarantined);
+                } else {
+                    original.quarantine();
+                }
+            }
         }
     }
 }
@@ -211,6 +302,7 @@ struct State {
     pending: usize,
     busy: [bool; 3],
     closing: bool,
+    quarantined: bool,
     failure: Option<StreamErrorCode>,
     read_eof: bool,
     write_shut: bool,
@@ -229,7 +321,8 @@ pub(crate) struct Connection {
     call: PoolCall,
     scope: Arc<StreamScope>,
     owner_memory: HostMemoryReservation,
-    _owner_metadata: ProviderMetadata,
+    registry: crate::connection_registry::RegistryWeak,
+    _owner_metadata: Arc<ProviderMetadata>,
 }
 struct Handle {
     connection: Arc<Connection>,
@@ -299,12 +392,21 @@ pub(crate) async fn connect(
     })?;
     let owner_metadata = inner.pools.reserve_protocol_metadata(16 * 1024)?;
     let owner_memory = scope.reserve_host_memory(16 * 1024)?;
+    // Both new Arc layouts stay inside the original prepaid 16-KiB owner.
+    if crate::connection_registry::arc_bytes::<Connection>()
+        + crate::connection_registry::arc_bytes::<ProviderMetadata>()
+        > 16 * 1024
+    {
+        return Err(error(StreamErrorCode::Exhausted));
+    }
+    let owner_metadata = Arc::new(owner_metadata);
     let mut connection = Arc::new(Connection {
         state: Mutex::new(State {
             socket: Some(socket),
             pending: 0,
             busy: [false; 3],
             closing: false,
+            quarantined: false,
             failure: None,
             read_eof: false,
             write_shut: false,
@@ -321,6 +423,7 @@ pub(crate) async fn connect(
         call,
         scope,
         owner_memory,
+        registry: inner.connections.downgrade(),
         _owner_metadata: owner_metadata,
     });
     // Move the confirmed owner reservation into the real Arc; it cannot be
@@ -329,16 +432,7 @@ pub(crate) async fn connect(
         .expect("new owner")
         .owner_memory
         .confirm();
-    let mut registry = inner
-        .connections
-        .lock()
-        .map_err(|_| error(StreamErrorCode::Exhausted))?;
-    let slot = registry
-        .iter_mut()
-        .find(|slot| slot.strong_count() == 0)
-        .ok_or_else(|| error(StreamErrorCode::Exhausted))?;
-    *slot = Arc::downgrade(&connection);
-    drop(registry);
+    inner.connections.register(&connection)?;
     Ok(Box::new(Handle { connection }))
 }
 
@@ -365,9 +459,16 @@ async fn create_socket(
             _native: None,
             _metadata: None,
             _dns_native: None,
+            #[cfg(all(target_os = "linux", any(test, feature = "development-outbound")))]
+            _dns_transport: None,
             _dns_metadata: None,
             kernel_mode: inner.kernel_mode,
+            #[cfg(all(target_os = "linux", any(test, feature = "development-outbound")))]
+            protected_selected: inner.native_bank.is_some(),
+            #[cfg(not(all(target_os = "linux", any(test, feature = "development-outbound"))))]
+            protected_selected: false,
             _kernel_scope: Arc::clone(scope),
+            _quarantined_connection: None,
         }),
         armed: false,
     };
@@ -381,7 +482,9 @@ async fn create_socket(
                 .ok_or_else(|| error(StreamErrorCode::Denied))?,
             deadline,
         ),
-        StreamResolution::Dns { .. } => {
+        StreamResolution::Dns { server, .. } => {
+            #[cfg(not(all(target_os = "linux", any(test, feature = "development-outbound"))))]
+            let _ = server;
             owned.value()._dns_native = Some(SocketMemory::reserve(
                 scope,
                 call,
@@ -393,19 +496,96 @@ async fn create_socket(
                 .as_ref()
                 .ok_or_else(|| error(StreamErrorCode::DnsFailed))?;
             owned.armed = true;
-            let dns_memory = owned
-                .value()
-                ._dns_native
-                .as_mut()
-                .expect("original DNS allowance");
-            let answers = wait_current(
-                call.io(),
-                deadline,
-                resolver
-                    .resolve_with_expiry_observed(deadline.into(), &mut || dns_memory.confirm()),
-            )
-            .await?
-            .map_err(network_error)?;
+            #[cfg(all(target_os = "linux", any(test, feature = "development-outbound")))]
+            let protected = if let Some(bank) = &inner.native_bank {
+                let original = match owned.value()._dns_native.take() {
+                    Some(SocketMemory::Kernel(original)) => original,
+                    _ => return Err(error(StreamErrorCode::Denied)),
+                };
+                let socket = crate::kernel::native::StreamSocket::prepare_dns(
+                    Arc::clone(bank),
+                    original,
+                    *server,
+                    deadline,
+                )?;
+                // Original pool/quarantine owns this Arc BEFORE any constructor
+                // or UDP/TCP future. Cancellation never drops an entered loan.
+                owned.value()._dns_transport = Some(Arc::clone(&socket));
+                let mut transport =
+                    crate::kernel::native::StreamDnsExchange::new(Arc::clone(&socket), *server);
+                let result = wait_current(
+                    call.io(),
+                    deadline,
+                    resolver.resolve_with_expiry_using(deadline.into(), &mut || {}, &mut transport),
+                )
+                .await;
+                // Close ACK is not occupancy return. Both successful answers
+                // and failed queries keep this SAME admission until RETIRED.
+                socket.retire_step();
+                let retired = wait_current(
+                    call.io(),
+                    deadline,
+                    std::future::poll_fn(|_| {
+                        if socket.retire_step() {
+                            std::task::Poll::Ready(())
+                        } else {
+                            std::task::Poll::Pending
+                        }
+                    }),
+                )
+                .await;
+                // Preserve the original resolution/authority failure even if
+                // cleanup cannot finish; SocketOwner retains the SAME loan.
+                let protocol_may_have_applied = transport.may_have_applied();
+                let answers = result
+                    .map_err(|authority| {
+                        // wait_current can fail its POST-future authority check.
+                        // Preserve that code, plus effects of actual earlier DNS IO.
+                        StreamError::from(authority).uncertain(protocol_may_have_applied)
+                    })?
+                    .map_err(|network| {
+                        transport.take_failure().map_or_else(
+                            || network_error(network).uncertain(protocol_may_have_applied),
+                            |mut native| {
+                                // Retain actual private native code/uncertainty. This
+                                // prefix counts DNS protocol bytes, NOT app plaintext.
+                                native.may_have_applied |=
+                                    protocol_may_have_applied || native.accepted_prefix_bytes != 0;
+                                native.accepted_prefix_bytes = 0;
+                                native
+                            },
+                        )
+                    })?;
+                retired.map_err(|authority| {
+                    StreamError::from(authority).uncertain(protocol_may_have_applied)
+                })?;
+                drop(transport);
+                drop(owned.value()._dns_transport.take());
+                Some(answers)
+            } else {
+                None
+            };
+            #[cfg(not(all(target_os = "linux", any(test, feature = "development-outbound"))))]
+            let protected: Option<latent_network::dns::ResolvedAnswers> = None;
+            let answers = match protected {
+                Some(answers) => answers,
+                None => {
+                    let dns_memory = owned
+                        .value()
+                        ._dns_native
+                        .as_mut()
+                        .expect("original DNS allowance");
+                    wait_current(
+                        call.io(),
+                        deadline,
+                        resolver.resolve_with_expiry_observed(deadline.into(), &mut || {
+                            dns_memory.confirm()
+                        }),
+                    )
+                    .await?
+                    .map_err(network_error)?
+                }
+            };
             let first = answers
                 .answers
                 .iter()
@@ -446,6 +626,54 @@ async fn create_socket(
     if let Some((memory, metadata)) = tls_allowance {
         owned.value()._tls_native = Some(memory);
         owned.value()._tls_metadata = Some(metadata);
+    }
+    #[cfg(all(target_os = "linux", any(test, feature = "development-outbound")))]
+    if let Some(bank) = &inner.native_bank {
+        let original = match owned.value()._native.take() {
+            Some(SocketMemory::Kernel(original)) => original,
+            _ => return Err(error(StreamErrorCode::Denied)),
+        };
+        let peer = SocketAddr::new(canonical(address), destination.endpoint.port);
+        let socket = crate::kernel::native::StreamSocket::prepare(
+            Arc::clone(bank),
+            original,
+            peer,
+            deadline.min(valid_until),
+        )?;
+        if let Some(memory) = owned.value()._tls_native.as_mut() {
+            memory.confirm();
+        }
+        let transport = Arc::new(crate::transport::Transport::protected(
+            Arc::clone(&socket),
+            inner.tls[index].as_ref().map(Arc::clone),
+            destination.endpoint.host.clone(),
+        )?);
+        // SAME original PooledConnection/Scope custody is attached BEFORE any
+        // protected constructor syscall can execute, including failed birth.
+        owned.value().stream = Some(Arc::clone(&transport));
+        owned.armed = true;
+        let connected =
+            wait_current(call.io(), deadline.min(valid_until), socket.connect(peer)).await?;
+        if let Err(fault) = connected {
+            socket.retire_step(); // One real cleanup attempt, never a refund proof.
+            return Err(fault);
+        }
+        if transport.host_tls() {
+            loop {
+                recheck_io(call.io(), deadline.min(valid_until)).await?;
+                let Some(interest) = transport.handshake_step()? else {
+                    break;
+                };
+                wait_current(
+                    call.io(),
+                    deadline.min(valid_until),
+                    transport.ready(interest),
+                )
+                .await?
+                .map_err(|_| error(StreamErrorCode::TlsFailed))?;
+            }
+        }
+        return Ok((owned.connected()?, valid_until));
     }
     owned.armed = true;
     let socket = if address.is_ipv4() {
@@ -521,7 +749,7 @@ async fn create_socket(
             wait_current(
                 call.io(),
                 deadline.min(valid_until),
-                transport.tcp.ready(interest),
+                transport.ready(interest),
             )
             .await?
             .map_err(|_| error(StreamErrorCode::TlsFailed))?;
@@ -532,7 +760,37 @@ async fn create_socket(
 }
 
 impl Connection {
-    pub(crate) fn maintenance_step(&self, now: Instant) {
+    pub(crate) fn metadata_billing(&self) -> Arc<ProviderMetadata> {
+        Arc::clone(&self._owner_metadata)
+    }
+
+    // The last copied transport reference retires before PendingGuard calls
+    // finish. Only a now-empty original physical wrapper may release custody.
+    fn release_retiring_if_done(&self) {
+        let done = self
+            .state
+            .try_lock()
+            .is_ok_and(|state| state.closing && state.pending == 0 && state.socket.is_none());
+        if done {
+            self.registry.release(self);
+        }
+    }
+
+    pub(crate) fn maintenance_step(self: &Arc<Self>, now: Instant) {
+        self.release_retiring_if_done();
+        let transport = {
+            let Ok(mut state) = self.state.try_lock() else {
+                return;
+            };
+            state
+                .socket
+                .as_mut()
+                .and_then(|physical| physical.resource().stream.as_ref().map(Arc::clone))
+        };
+        if let Some(transport) = transport {
+            transport.maintenance();
+        }
+        self.drain_closed();
         let expired = match self.state.try_lock() {
             Ok(state) => {
                 !state.closing && now >= self.deadline.min(state.last_progress + self.idle)
@@ -609,14 +867,31 @@ impl Connection {
             deadline,
         })
     }
-    fn finish(&self, direction: usize) {
+    fn drain_closed(&self) {
+        let transport = {
+            let Ok(mut state) = self.state.try_lock() else {
+                return;
+            };
+            if !state.closing || state.pending != 0 {
+                return;
+            }
+            state
+                .socket
+                .as_mut()
+                .and_then(|physical| physical.resource().stream.as_ref().map(Arc::clone))
+        };
+        let released = transport
+            .as_ref()
+            .is_none_or(|transport| transport.retire_step());
+        drop(transport); // No copied transport remains when wrapper is removed.
+        if !released {
+            return;
+        }
         let physical = {
             let mut state = self
                 .state
                 .lock()
                 .unwrap_or_else(std::sync::PoisonError::into_inner);
-            state.pending -= 1;
-            state.busy[direction] = false;
             if state.closing && state.pending == 0 {
                 state.socket.take()
             } else {
@@ -624,13 +899,50 @@ impl Connection {
             }
         };
         drop(physical);
+        self.release_retiring_if_done();
         self.changed.notify_waiters();
     }
-    pub(crate) fn abort(&self, reason: StreamErrorCode) {
+    fn finish(&self, direction: usize) {
+        {
+            let mut state = self
+                .state
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            state.pending -= 1;
+            state.busy[direction] = false;
+        }
+        self.drain_closed();
+        self.changed.notify_waiters();
+    }
+    pub(crate) fn abort(self: &Arc<Self>, reason: StreamErrorCode) {
         self.stop(Some(reason));
     }
-    fn stop(&self, reason: Option<StreamErrorCode>) {
-        let physical = {
+    fn stop(self: &Arc<Self>, reason: Option<StreamErrorCode>) {
+        // SAME registry slot takes strong custody before admission closes.
+        // Refusal never fabricates a release: original physical Drop still
+        // follows its same mode-specific quarantine contract.
+        if !self.registry.retain(self) {
+            // Registry teardown/missing identity cannot become an ordinary
+            // release. Move the SAME full original owner into its original
+            // paid client quarantine; no callbacks or Drop under state lock.
+            let physical = {
+                let mut state = self
+                    .state
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner);
+                state.closing = true;
+                state.quarantined = true;
+                state.failure = Some(StreamErrorCode::Uncertain);
+                state.socket.take()
+            };
+            self.call.io().stop_handle().stop();
+            if let Some(physical) = physical {
+                physical.quarantine_with_connection(Arc::clone(self));
+            }
+            self.changed.notify_waiters();
+            return;
+        }
+        {
             let mut state = self
                 .state
                 .lock()
@@ -639,14 +951,9 @@ impl Connection {
             if state.failure.is_none() {
                 state.failure = reason;
             }
-            if state.pending == 0 {
-                state.socket.take()
-            } else {
-                None
-            }
-        };
+        }
         self.call.io().stop_handle().stop();
-        drop(physical);
+        self.drain_closed();
         self.changed.notify_waiters();
     }
     fn observe(&self) -> StreamObservation {
@@ -692,7 +999,7 @@ impl Connection {
         })
     }
     async fn authorize(
-        &self,
+        self: &Arc<Self>,
         operation: &str,
         cost: CapabilityCallCost,
     ) -> Result<ProviderCall, StreamError> {
@@ -784,7 +1091,6 @@ impl OutboundStream for Handle {
                         match pending.socket.try_read(buffer.spare_mut()?) {
                             Ok(None) => pending
                                 .socket
-                                .tcp
                                 .readable()
                                 .await
                                 .map_err(|_| error(StreamErrorCode::IoFailed))?,
@@ -871,7 +1177,6 @@ impl OutboundStream for Handle {
                         match pending.socket.try_write(input.as_ref()) {
                             Ok(None) => pending
                                 .socket
-                                .tcp
                                 .writable()
                                 .await
                                 .map_err(|_| error(StreamErrorCode::IoFailed))?,
@@ -886,7 +1191,6 @@ impl OutboundStream for Handle {
                                     }
                                     pending
                                         .socket
-                                        .tcp
                                         .writable()
                                         .await
                                         .map_err(|_| error(StreamErrorCode::IoFailed))?;
@@ -962,11 +1266,7 @@ impl OutboundStream for Handle {
                 });
             }
             let result = connection
-                .wait(
-                    &pending,
-                    call.deadline(),
-                    pending.socket.tcp.ready(selected),
-                )
+                .wait(&pending, call.deadline(), pending.socket.ready(selected))
                 .await
                 .and_then(|value| value.map_err(|_| error(StreamErrorCode::IoFailed)));
             match result {
@@ -1017,9 +1317,21 @@ impl OutboundStream for Handle {
             if how == StreamShutdown::Both {
                 connection.stop(None);
             } else {
-                socket2::SockRef::from(pending.socket.tcp.as_ref())
-                    .shutdown(Shutdown::Write)
-                    .map_err(|_| error(StreamErrorCode::IoFailed))?;
+                connection
+                    .wait(&pending, call.deadline(), async {
+                        loop {
+                            recheck_provider(&mut call).await?;
+                            if pending.socket.shutdown_send()?.is_some() {
+                                break Ok::<_, StreamError>(());
+                            }
+                            pending
+                                .socket
+                                .writable()
+                                .await
+                                .map_err(|_| error(StreamErrorCode::IoFailed))?;
+                        }
+                    })
+                    .await??;
                 connection
                     .state
                     .lock()
@@ -1043,7 +1355,10 @@ impl OutboundStream for Handle {
                 let changed = connection.changed.notified();
                 tokio::pin!(changed);
                 changed.as_mut().enable();
-                if connection.usage()?.pending_operations == 0 {
+                if {
+                    let usage = connection.usage()?;
+                    usage.pending_operations == 0 && usage.connections == 0
+                } {
                     break;
                 }
                 if tokio::time::timeout_at(connection.deadline.into(), changed)
@@ -1053,6 +1368,16 @@ impl OutboundStream for Handle {
                     return Err(error(StreamErrorCode::Uncertain)
                         .uncertain(connection.observe().application_write_attempted));
                 }
+            }
+            let quarantined = connection
+                .state
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .quarantined;
+            if quarantined {
+                connection.audit(call, false).await?;
+                return Err(error(StreamErrorCode::Uncertain)
+                    .uncertain(connection.observe().application_write_attempted));
             }
             connection.audit(call, true).await?;
             Ok(connection.observe())
@@ -1090,7 +1415,12 @@ impl Connection {
         use std::os::fd::AsRawFd;
         let mut state = self.state.lock().unwrap();
         let socket = state.socket.as_mut().unwrap().resource();
-        let tcp = &socket.stream.as_ref().expect("live socket transport").tcp;
+        let tcp = socket
+            .stream
+            .as_ref()
+            .expect("live socket transport")
+            .host_tcp()
+            .expect("historical ordinary-socket identity only");
         let (local, peer) = (tcp.local_addr().unwrap(), tcp.peer_addr().unwrap());
         assert_eq!(local.ip(), std::net::Ipv4Addr::LOCALHOST);
         assert_eq!(peer.ip(), std::net::Ipv4Addr::LOCALHOST);

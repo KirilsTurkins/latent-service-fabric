@@ -81,10 +81,10 @@ class CleanupNativeSource(unittest.TestCase):
 
     def test_missing_failed_ignored_or_extra_outcome_refuses(self):
         raw=('\n'.join('test '+name+' ... ok' for name in sorted(native.CASES))+
-            '\ntest result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 30 filtered out; finished in 1s\n').encode()
+            '\ntest result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 31 filtered out; finished in 1s\n').encode()
         self.assertEqual(native.outcomes(raw),sorted(native.CASES))
         for changed in (raw.replace(b'13 passed',b'12 passed'),raw.replace(b'0 ignored',b'1 ignored'),
-                raw.replace(b'30 filtered',b'31 filtered'),raw.replace(b'... ok',b'... FAILED',1),
+                raw.replace(b'31 filtered',b'32 filtered'),raw.replace(b'... ok',b'... FAILED',1),
                 raw+b'test extra ... ok\n'):
             with self.assertRaises(ValueError):
                 native.outcomes(changed)

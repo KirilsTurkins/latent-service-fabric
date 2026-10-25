@@ -47,10 +47,14 @@ pub struct ProviderClient<T: Send + 'static> {
 // external provider handle cannot certify unknown physical retirement.
 enum Retained<T: Send + 'static> {
     Idle(Idle<T>),
-    Connection(PooledConnection<T>),
+    Connection {
+        owner: PooledConnection<T>,
+        stream_retirement: Option<fn(&mut T) -> bool>,
+    },
     Dial {
         reservation: ConnectionReservation<T>,
         _value: T,
+        stream_retirement: Option<fn(&mut T) -> bool>,
     },
 }
 struct Idle<T> {
@@ -110,9 +114,12 @@ impl ProviderPools {
         }
         let limits = self.inner.quotas.limits()?;
         let slot = self.inner.quotas.acquire(Kind::Client, 1)?;
-        let bytes = std::mem::size_of::<Retained<T>>()
-            .checked_mul(limits.maximum_connections_per_client)
-            .and_then(|v| v.checked_add(4096))
+        // Exact fixed element layout, including the stream callback pointer,
+        // BEFORE VecDeque allocation. Original4096 covers unchanged headers.
+        let bytes = std::alloc::Layout::array::<Retained<T>>(limits.maximum_connections_per_client)
+            .map_err(|_| capacity())?
+            .size()
+            .checked_add(4096)
             .ok_or_else(capacity)?;
         let metadata = self.inner.quotas.acquire(Kind::Metadata, bytes)?;
         limits::increment(
@@ -320,7 +327,7 @@ impl<T: Send + 'static> ErasedClient for ProviderClient<T> {
                 Retained::Idle(value) => {
                     retired || now.saturating_duration_since(value.since) >= maximum
                 }
-                Retained::Connection(owner) => {
+                Retained::Connection { owner, .. } => {
                     debug_assert!(owner.physical.is_some());
                     false
                 }
@@ -335,6 +342,9 @@ impl<T: Send + 'static> ErasedClient for ProviderClient<T> {
             drop(idle);
             drop(old);
         }
+    }
+    fn progress_stream_quarantine(&self) {
+        self.progress_original_stream_quarantine();
     }
 }
 pub struct ConnectionReservation<T: Send + 'static> {
@@ -392,7 +402,24 @@ impl<T: Send + 'static> ConnectionReservation<T> {
     }
     /// Keep a failed/cancelled dial's original leases when its kernel object
     /// has no final-retirement certificate. This entry can never be checked out.
-    pub fn quarantine(mut self, value: T) {
+    pub fn quarantine(self, value: T) {
+        self.quarantine_with_stream_retirement(value, None);
+    }
+    /// Trusted stream adapter ONLY: continue this original resource in the
+    /// existing paid quarantine, never a new dial/task/admission. The callback
+    /// is fixed host code and may return true only after actual native RETIRED
+    /// (or proven never-born). It is not a guest-supplied close certificate.
+    pub fn quarantine_stream(self, value: T, retirement: fn(&mut T) -> bool) {
+        let reference = self.client.core.epoch.registration.reference();
+        let stream = reference.capability() == crate::broker::network::STREAM_CAPABILITY
+            && reference.profile() == crate::broker::network::STREAM_PROFILE;
+        self.quarantine_with_stream_retirement(value, stream.then_some(retirement));
+    }
+    fn quarantine_with_stream_retirement(
+        mut self,
+        value: T,
+        retirement: Option<fn(&mut T) -> bool>,
+    ) {
         let lifetime = self.lifetime.as_mut().expect("dial capacity");
         mark_failed(lifetime);
         self.finish_dial();
@@ -400,6 +427,7 @@ impl<T: Send + 'static> ConnectionReservation<T> {
         client.retain_quarantine(Retained::Dial {
             reservation: self,
             _value: value,
+            stream_retirement: retirement,
         });
     }
     fn finish_dial(&mut self) {
@@ -448,7 +476,73 @@ fn mark_failed(lifetime: &mut ConnectionLifetime) {
         }
     }
 }
+// The original table entry remains affine while its fixed synchronous native
+// step runs outside locks. Unwind puts it back BEFORE original fields can Drop.
+// The same connection quota reserves its existing VecDeque place throughout.
+struct QuarantineStep<'a, T: Send + 'static> {
+    client: &'a ProviderClient<T>,
+    entry: Option<Retained<T>>,
+}
+impl<T: Send + 'static> Drop for QuarantineStep<'_, T> {
+    fn drop(&mut self) {
+        if let Some(entry) = self.entry.take() {
+            let mut entries = self
+                .client
+                .idle
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            if entries.len() >= entries.capacity() {
+                // Impossible under original connection admission: this local
+                // entry STILL holds its slot. Even an invariant violation must
+                // not allocate, Drop or refund an unproved physical owner.
+                drop(entries);
+                self.client.core.epoch.retire();
+                std::mem::forget(entry); // Permanently paid, bounded by that slot.
+                return;
+            }
+            entries.push_back(entry);
+        }
+    }
+}
 impl<T: Send + 'static> ProviderClient<T> {
+    fn progress_original_stream_quarantine(&self) {
+        let count = match self.idle.try_lock() {
+            Ok(entries) => entries.len(),
+            Err(_) => return,
+        };
+        for _ in 0..count {
+            let entry = {
+                let Ok(mut entries) = self.idle.try_lock() else {
+                    return;
+                };
+                entries.pop_front()
+            };
+            let Some(entry) = entry else {
+                return;
+            };
+            let mut step = QuarantineStep {
+                client: self,
+                entry: Some(entry),
+            };
+            let retired = match step.entry.as_mut().expect("original retained resource") {
+                Retained::Dial {
+                    _value,
+                    stream_retirement: Some(retire),
+                    ..
+                } => retire(_value),
+                Retained::Connection {
+                    owner,
+                    stream_retirement: Some(retire),
+                } => retire(owner.resource()),
+                _ => false, // Original ordinary/unproved quarantine stays permanent.
+            };
+            if retired {
+                let entry = step.entry.take();
+                self.core.epoch.quarantined.fetch_sub(1, Ordering::AcqRel);
+                drop(entry); // Actual resource/loan/Request/IoLease, OUTSIDE locks.
+            }
+        }
+    }
     fn retain_quarantine(&self, value: Retained<T>) {
         // Every entry already holds exactly one live connection quota. Their
         // total is bounded before any dial, and this table was prepaid for that
@@ -520,12 +614,140 @@ impl<T: Send + 'static> PooledConnection<T> {
     /// Permanently retain unproved physical retirement in the original bounded
     /// client table. Only a future source-authenticated platform profile may add
     /// a sealed final-free path; ordinary close/timeout/snapshot cannot release it.
-    pub fn quarantine(mut self) {
+    pub fn quarantine(self) {
+        self.quarantine_with_stream_retirement(None);
+    }
+    /// Same original connection and prepaid quarantine as failed predials.
+    pub fn quarantine_stream(self, retirement: fn(&mut T) -> bool) {
+        let reference = self.client.core.epoch.registration.reference();
+        let stream = reference.capability() == crate::broker::network::STREAM_CAPABILITY
+            && reference.profile() == crate::broker::network::STREAM_PROFILE;
+        self.quarantine_with_stream_retirement(stream.then_some(retirement));
+    }
+    fn quarantine_with_stream_retirement(mut self, retirement: Option<fn(&mut T) -> bool>) {
         self.cleanup_failed();
         let client = Arc::clone(&self.client);
-        client.retain_quarantine(Retained::Connection(self));
+        client.retain_quarantine(Retained::Connection {
+            owner: self,
+            stream_retirement: retirement,
+        });
     }
     pub(super) fn cleanup_failed(&mut self) {
         mark_failed(&mut self.physical.as_mut().expect("connection owner").lifetime);
+    }
+}
+
+#[cfg(test)]
+mod stream_quarantine_controls {
+    // Actual original pool/lease controls. These do NOT simulate a kernel
+    // RETIRED proof or qualify the protected Socket callback.
+    use super::super::tests::fixture::{connect, single, Setup};
+    use super::*;
+    use std::{
+        net::TcpStream,
+        panic::{catch_unwind, AssertUnwindSafe},
+    };
+    fn pending(_: &mut TcpStream) -> bool {
+        false
+    }
+    fn panic_step(_: &mut TcpStream) -> bool {
+        panic!("fixed retirement callback failed");
+    }
+    fn retired(_: &mut TcpStream) -> bool {
+        true
+    }
+
+    #[tokio::test]
+    async fn stream_quarantine_false_and_unwind_keep_original_lease_until_completed_step() {
+        let setup = Setup::new(single());
+        let (session, _control) = setup.session("quarantine-original-lease");
+        let observer = session.observer();
+        let call = setup.call(&session).await;
+        let (connection, _peer) = connect(&setup.client, &call);
+        connection.quarantine_with_stream_retirement(Some(pending));
+        drop(call);
+        drop(session);
+        setup.client.progress_original_stream_quarantine();
+        assert!(!observer.is_quiescent());
+        assert_eq!(setup.client.idle.lock().unwrap().len(), 1);
+        assert_eq!(setup.client.core.connections.load(Ordering::Acquire), 1);
+        {
+            let mut entries = setup.client.idle.lock().unwrap();
+            let Retained::Connection {
+                stream_retirement, ..
+            } = entries.front_mut().unwrap()
+            else {
+                panic!("same original connection");
+            };
+            *stream_retirement = Some(panic_step); // Test-only fault injection.
+        }
+        assert!(catch_unwind(AssertUnwindSafe(|| setup
+            .client
+            .progress_original_stream_quarantine()))
+        .is_err());
+        assert!(!observer.is_quiescent());
+        assert_eq!(setup.client.idle.lock().unwrap().len(), 1);
+        assert_eq!(
+            setup.client.core.epoch.quarantined.load(Ordering::Acquire),
+            1
+        );
+        {
+            let mut entries = setup.client.idle.lock().unwrap();
+            let Retained::Connection {
+                stream_retirement, ..
+            } = entries.front_mut().unwrap()
+            else {
+                panic!("same original connection");
+            };
+            *stream_retirement = Some(retired); // Pool algorithm only, no native proof.
+        }
+        setup.client.progress_original_stream_quarantine();
+        assert_eq!(setup.client.core.connections.load(Ordering::Acquire), 0);
+        assert_eq!(
+            setup.client.core.epoch.quarantined.load(Ordering::Acquire),
+            0
+        );
+        assert!(observer.is_quiescent());
+    }
+
+    #[tokio::test]
+    async fn temporarily_dequeued_quarantine_still_funds_its_original_reinsertion_place() {
+        let setup = Setup::new(single());
+        let (session, _control) = setup.session("quarantine-no-extra-slot");
+        let call = setup.call(&session).await;
+        let (connection, _peer) = connect(&setup.client, &call);
+        connection.quarantine(); // Ordinary None remains permanent.
+        let capacity = setup.client.idle.lock().unwrap().capacity();
+        let entry = setup.client.idle.lock().unwrap().pop_front().unwrap();
+        let step = QuarantineStep {
+            client: &setup.client,
+            entry: Some(entry),
+        };
+        // The table is empty, but the original physical slot is NOT available.
+        assert!(setup.client.reserve_connection(&call).is_err());
+        assert_eq!(setup.client.core.connections.load(Ordering::Acquire), 1);
+        drop(step);
+        setup.client.progress_original_stream_quarantine();
+        let mut entries = setup.client.idle.lock().unwrap();
+        assert_eq!(entries.capacity(), capacity);
+        assert_eq!(entries.len(), 1);
+        let Retained::Connection {
+            stream_retirement, ..
+        } = entries.front().unwrap()
+        else {
+            panic!("same original connection");
+        };
+        assert!(stream_retirement.is_none());
+        let old = entries.pop_front();
+        drop(entries);
+        // Test ends by destroying its actual host TCP resource, not by minting
+        // a protected retirement claim or changing the production None path.
+        setup
+            .client
+            .core
+            .epoch
+            .quarantined
+            .fetch_sub(1, Ordering::AcqRel);
+        drop(old);
     }
 }

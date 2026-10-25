@@ -40,7 +40,9 @@ pub(super) fn observe_after_original_close(resource: &mut Resource) -> bool {
 pub(super) struct Owner {
     file: Option<File>,
     expiry: Option<ReadyExpiry>,
-    deadline: Instant,
+    mint_deadline: Instant,
+    deadline: Option<Instant>,
+    node_lifetime: bool,
     // LAST: closing the file does NOT release this charge. The whole Owner
     // remains in the original quarantined Resource, including VFS uncertainty.
     _metadata: ProviderMetadata,
@@ -56,16 +58,40 @@ const _: () = assert!(
 impl Owner {
     pub(super) fn reserve(pools: &ProviderPools, deadline: Instant) -> Result<Self, StreamError> {
         let metadata = pools.reserve_protocol_metadata(METADATA_BYTES)?;
+        let deadline = deadline.min(Instant::now() + MAX_WAIT);
         Ok(Self {
             file: None,
             expiry: None,
-            deadline: deadline.min(Instant::now() + MAX_WAIT),
+            mint_deadline: deadline,
+            deadline: Some(deadline),
+            node_lifetime: false,
             _metadata: metadata,
         })
     }
 
+    /// Private future normal-Node owner. Bootstrap/mint remains bounded;
+    /// retirement's SAME20s maximum begins only from an explicit original
+    /// Node-stop deadline. No activation deadline or runtime grant is renewed.
+    pub(super) fn reserve_node(
+        pools: &ProviderPools,
+        bootstrap: Instant,
+    ) -> Result<Self, StreamError> {
+        let metadata = pools.reserve_protocol_metadata(METADATA_BYTES)?;
+        Ok(Self {
+            file: None,
+            expiry: None,
+            mint_deadline: bootstrap.min(Instant::now() + MAX_WAIT),
+            deadline: None,
+            node_lifetime: true,
+            _metadata: metadata,
+        })
+    }
+    pub(super) fn node_lifetime(&self) -> bool {
+        self.node_lifetime
+    }
+
     pub(super) fn mint(&mut self, original: &File, expiry: ReadyExpiry) -> Result<(), StreamError> {
-        if self.file.is_some() || self.expiry.is_some() || Instant::now() >= self.deadline {
+        if self.file.is_some() || self.expiry.is_some() || Instant::now() >= self.mint_deadline {
             return Err(error(StreamErrorCode::Unsupported));
         }
         // Mark the immutable identity before possible entry. This original
@@ -85,7 +111,7 @@ impl Owner {
         })?;
         // Infallible ownership transfer BEFORE any later failure/checkpoint.
         self.file = Some(File::from(descriptor));
-        if Instant::now() >= self.deadline {
+        if Instant::now() >= self.mint_deadline {
             return Err(error(StreamErrorCode::Timeout));
         }
         Ok(())
@@ -96,7 +122,15 @@ impl Owner {
     }
 
     pub(super) fn narrow_deadline(&mut self, deadline: Instant) {
-        self.deadline = self.deadline.min(deadline);
+        let bounded = if self.node_lifetime {
+            deadline.min(Instant::now() + MAX_WAIT)
+        } else {
+            deadline
+        };
+        self.deadline = Some(
+            self.deadline
+                .map_or(bounded, |original| original.min(bounded)),
+        );
     }
 
     fn read_original_return(&mut self) -> Option<RootReturned> {
@@ -108,8 +142,11 @@ impl Owner {
         let Some(expiry) = self.expiry else {
             return None;
         };
+        // Dropping a normal bank without explicit stop never mints a deadline
+        // or permits refund. The original Resource stays quarantined.
+        let deadline = self.deadline?;
         for _ in 0..MAX_INTERRUPTS {
-            let Some(remaining) = self.deadline.checked_duration_since(Instant::now()) else {
+            let Some(remaining) = deadline.checked_duration_since(Instant::now()) else {
                 return None;
             };
             if remaining.is_zero() {
@@ -125,7 +162,7 @@ impl Owner {
                 Ok(1) => {}
                 _ => return None,
             }
-            if Instant::now() >= self.deadline {
+            if Instant::now() >= deadline {
                 return None;
             }
             let ready = descriptors[0].revents();
@@ -137,7 +174,7 @@ impl Owner {
             // Last descriptor use above ends its immutable borrow before read.
             let mut wire = [0; WIRE_BYTES];
             return if matches!(file.read(&mut wire), Ok(WIRE_BYTES))
-                && Instant::now() < self.deadline
+                && Instant::now() < deadline
                 && terminal(&wire, expiry)
             {
                 Some(RootReturned)

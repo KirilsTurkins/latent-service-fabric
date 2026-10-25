@@ -18,6 +18,13 @@ const CLOSED: u32 = 4;
 const FRAME_BYTES: usize = 24;
 
 mod retirement;
+mod stream_dns;
+mod stream_exchange;
+mod stream_protocol;
+mod stream_socket;
+pub(crate) use stream_dns::Exchange as StreamDnsExchange;
+pub(crate) use stream_exchange::Bank as StreamBank;
+pub(crate) use stream_socket::Socket as StreamSocket;
 
 struct Resource {
     descriptor: Option<File>,
@@ -409,6 +416,29 @@ pub(crate) async fn start_with_bank_reclamation(
         pools,
         installed,
         deadline,
+        Some(observation),
+        BankReturn::ReclaimFixedBank,
+    )
+    .await
+}
+
+/// Unselected normal-bank preparation. It uses the SAME protected factory,
+/// original finite constructor, precharged observer and fixed bank partition.
+/// No provider installation calls it until all platform gates qualify.
+#[cfg(target_os = "linux")]
+pub(super) async fn start_node_bank(
+    pools: Arc<ProviderPools>,
+    installed: &InstalledProvider,
+    bootstrap_deadline: Instant,
+) -> Result<NativeOwner, StreamError> {
+    if Instant::now() >= bootstrap_deadline {
+        return Err(deadline_error());
+    }
+    let observation = retirement::Owner::reserve_node(&pools, bootstrap_deadline)?;
+    start_real(
+        pools,
+        installed,
+        bootstrap_deadline,
         Some(observation),
         BankReturn::ReclaimFixedBank,
     )

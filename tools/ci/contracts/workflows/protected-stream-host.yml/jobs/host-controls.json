@@ -1,0 +1,66 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "name": "Current Rust types and six original-owner controls",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "name": "Install normal pinned validator dependencies",
+        "run": "python3 -m pip install --require-hashes -r tools/requirements.lock"
+      },
+      {
+        "uses": "dtolnay/rust-toolchain"
+      },
+      {
+        "uses": "Swatinem/rust-cache",
+        "with": {
+          "cache-bin": false,
+          "cache-targets": true,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "shared-key": "host-correctness"
+        }
+      },
+      {
+        "name": "Refuse incomplete or ignored focused outcomes",
+        "run": "python3 -B -m unittest tools.tests.test_host_stream_protected -v"
+      },
+      {
+        "name": "Compile current source and execute exactly six host controls",
+        "run": "python3 -B tools/qualify_host_stream_protected.py --source-commit \"${{ github.sha }}\" --output \"$RUNNER_TEMP/protected-stream-host\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain only finite public command channels and receipt",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "protected-stream-host-${{ github.sha }}",
+          "path": "${{ runner.temp }}/protected-stream-host/receipt.json\n${{ runner.temp }}/protected-stream-host/*.stdout.log\n${{ runner.temp }}/protected-stream-host/*.stderr.log\n",
+          "retention-days": 3
+        }
+      }
+    ],
+    "timeout-minutes": 25
+  },
+  "jobId": "host-controls",
+  "kind": "job",
+  "reviewReason": "Retain the reviewed source-only six-case owner using the currently approved artifact action pin; no command, cap or case changes.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/protected-stream-host.yml"
+}

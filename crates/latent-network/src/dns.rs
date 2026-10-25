@@ -21,6 +21,29 @@ use tokio::{
     time::{timeout_at, Instant},
 };
 
+/// Trusted host packet transport beneath the SAME bounded resolver. This is
+/// not a guest-selected transport, address policy, resolver or authority grant.
+/// Implementations must retain their original admitted owner across the future.
+pub trait PacketExchange: Send {
+    fn exchange<'a>(
+        &'a mut self,
+        server: SocketAddr,
+        packet: &'a [u8],
+        allocated: &'a mut (dyn FnMut() + Send),
+    ) -> impl std::future::Future<Output = Result<Vec<u8>, NetworkError>> + Send + 'a;
+}
+struct HostExchange;
+impl PacketExchange for HostExchange {
+    async fn exchange<'a>(
+        &'a mut self,
+        server: SocketAddr,
+        packet: &'a [u8],
+        allocated: &'a mut (dyn FnMut() + Send),
+    ) -> Result<Vec<u8>, NetworkError> {
+        exchange::run(server, packet, allocated).await
+    }
+}
+
 #[derive(Clone, Copy, Debug, Default)]
 pub struct Answers {
     addresses: [Option<IpAddr>; 8],
@@ -146,6 +169,18 @@ impl Resolver {
         deadline: Instant,
         allocated: &mut (dyn FnMut() + Send),
     ) -> Result<ResolvedAnswers, NetworkError> {
+        self.resolve_with_expiry_using(deadline, allocated, &mut HostExchange)
+            .await
+    }
+
+    /// Original cache/admission, question construction, parser, TTL and answer
+    /// policy with an explicitly owned host transport. No ambient fallback.
+    pub async fn resolve_with_expiry_using<E: PacketExchange>(
+        &self,
+        deadline: Instant,
+        allocated: &mut (dyn FnMut() + Send),
+        transport: &mut E,
+    ) -> Result<ResolvedAnswers, NetworkError> {
         self.check(deadline)?;
         if let Some(answers) = self.cached()? {
             return Ok(ResolvedAnswers {
@@ -170,7 +205,7 @@ impl Resolver {
             });
         }
         let _active = Count::new(&self.active);
-        let (answers, expires) = timeout_at(deadline, self.query(allocated))
+        let (answers, expires) = timeout_at(deadline, self.query(allocated, transport))
             .await
             .map_err(|_| NetworkError::DeadlineExceeded)??;
         self.check(deadline)?;
@@ -225,9 +260,10 @@ impl Resolver {
         Ok(*cache)
     }
 
-    async fn query(
+    async fn query<E: PacketExchange>(
         &self,
         allocated: &mut (dyn FnMut() + Send),
+        transport: &mut E,
     ) -> Result<(Answers, Instant), NetworkError> {
         let name = Name::from_ascii(format!("{}.", self.host.trim_end_matches('.')))
             .map_err(|_| NetworkError::DnsFailed)?;
@@ -249,7 +285,7 @@ impl Resolver {
                 query.metadata.recursion_desired = true;
                 query.add_query(Query::query(current.clone(), kind));
                 let packet = query.to_vec().map_err(|_| NetworkError::DnsFailed)?;
-                let received = exchange::run(self.server, &packet, allocated).await?;
+                let received = transport.exchange(self.server, &packet, allocated).await?;
                 let decoded =
                     decode::response(&received, identifier, &current, kind, &self.policy)?;
                 expires = expires.min(Instant::now() + Duration::from_secs(u64::from(decoded.ttl)));

@@ -46,6 +46,7 @@
         "tests::tls::wrong_tls_hostname_fails_closed_without_cleartext_fallback",
         "tests::uncertainty::lost_mutation_reply_preserves_typed_uncertainty_and_never_replays",
         "tests::unimplemented_host_tls_is_never_silently_replaced_with_tcp",
+        "transport::tests::private_wire_fault_keeps_uncertainty_without_ciphertext_as_plaintext_prefix",
         "transport::tests::repeated_handshake_reads_share_one_original_encrypted_input_ceiling"
       ],
       "expectedIgnored": [],
@@ -53,7 +54,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-streams/Cargo.toml",
-      "minimumCases": 43,
+      "minimumCases": 44,
       "mode": "libtest",
       "package": "latent-streams",
       "platforms": [

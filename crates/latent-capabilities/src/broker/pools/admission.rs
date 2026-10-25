@@ -31,7 +31,7 @@ pub(super) struct Request {
     owner: Weak<Inner>,
     pub client: Arc<client::ClientCore>,
     tenant: Arc<Tenant>,
-    sequence: u64,
+    pub(super) sequence: u64,
     deadline: Instant,
     phase: AtomicU8,
     waiting: AtomicBool,

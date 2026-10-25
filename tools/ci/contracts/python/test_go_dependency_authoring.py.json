@@ -1,351 +1,65 @@
 {
-  "cases": [
-    "GoDependencyAuthoring.test_actual_staged_recipe_resolves_reviews_and_requires_selected_frontend",
-    "GoDependencyAuthoring.test_candidate_cannot_overwrite_sources_prior_receipts_or_local_modules",
-    "GoDependencyAuthoring.test_candidate_expected_digest_and_native_input_tampering_preserve_accepted_lock",
-    "GoDependencyAuthoring.test_changed_cached_original_bytes_fail_read_only_review",
-    "GoDependencyAuthoring.test_changed_resolution_cannot_be_rebound_as_successful_public_receipt",
-    "GoDependencyAuthoring.test_cli_capture_requires_exact_review_and_emits_separate_receipts",
-    "GoDependencyAuthoring.test_concurrent_candidate_change_never_replaces_an_accepted_lock",
-    "GoDependencyAuthoring.test_consistently_recaptured_invalid_native_graph_never_claims_review_success",
-    "GoDependencyAuthoring.test_exact_local_graph_and_resource_review_work_after_originals_are_removed",
-    "GoDependencyAuthoring.test_go_source_sdk_proxy_and_resolver_drift_stop_before_candidate_acceptance",
-    "GoDependencyAuthoring.test_graph_lookup_cannot_mutate_reviewed_sums_after_selected_download_validation",
-    "GoDependencyAuthoring.test_inner_descriptor_or_capture_cannot_redirect_test_watch_before_dispatch",
-    "GoDependencyAuthoring.test_maintained_test_watch_parser_preserves_unknown_and_interrupted_results",
-    "GoDependencyAuthoring.test_outer_and_app_entries_bind_exact_original_and_transformed_module_paths",
-    "GoDependencyAuthoring.test_private_proxy_tokens_are_opaque_and_do_not_replace_go_control_environment",
-    "GoDependencyAuthoring.test_proxy_config_must_stay_outside_project_and_never_embed_url_credentials",
-    "GoDependencyAuthoring.test_proxy_control_tokens_and_malformed_explicit_auth_stop_before_native_resolution",
-    "GoDependencyAuthoring.test_public_failed_receipts_never_echo_resolver_credentials",
-    "GoDependencyAuthoring.test_resolve_preserves_each_accepted_lock_until_exact_update_and_remove_review",
-    "GoDependencyAuthoring.test_resolver_inherits_project_runtime_profile_in_captured_native_graph",
-    "GoDependencyAuthoring.test_resolver_rejects_explicit_profile_disagreement_before_native_command",
-    "GoDependencyAuthoring.test_sdk_drift_stops_before_any_go_command",
-    "GoDependencyAuthoring.test_superseded_graph_manifests_survive_review_and_offline_staging_without_extra_sources",
-    "GoDependencyAuthoring.test_symbolic_local_replace_is_denied_before_module_fetch",
-    "GoDependencyAuthoring.test_tags_remain_exact_without_installing_new_runtime_authority",
-    "GoDependencyAuthoring.test_tool_declarations_and_wrong_runtime_profile_require_separate_qualified_stage"
-  ],
-  "guards": {
-    "GoDependencyAuthoring.test_actual_staged_recipe_resolves_reviews_and_requires_selected_frontend": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:03cbeb3ae744550d1eaf655a72a14165814bc3380d7d7cae193fbc3eadc6f4ff",
-        "class:setup-sha256:b57368a069ec6598b80c109b3edec684e9c755a82144cc3a456000d7bc5b7436"
-      ],
-      "skipSites": []
-    },
-    "GoDependencyAuthoring.test_candidate_cannot_overwrite_sources_prior_receipts_or_local_modules": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:03cbeb3ae744550d1eaf655a72a14165814bc3380d7d7cae193fbc3eadc6f4ff",
-        "class:setup-sha256:b57368a069ec6598b80c109b3edec684e9c755a82144cc3a456000d7bc5b7436"
-      ],
-      "skipSites": []
-    },
-    "GoDependencyAuthoring.test_candidate_expected_digest_and_native_input_tampering_preserve_accepted_lock": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:03cbeb3ae744550d1eaf655a72a14165814bc3380d7d7cae193fbc3eadc6f4ff",
-        "class:setup-sha256:b57368a069ec6598b80c109b3edec684e9c755a82144cc3a456000d7bc5b7436"
-      ],
-      "skipSites": []
-    },
-    "GoDependencyAuthoring.test_changed_cached_original_bytes_fail_read_only_review": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:03cbeb3ae744550d1eaf655a72a14165814bc3380d7d7cae193fbc3eadc6f4ff",
-        "class:setup-sha256:b57368a069ec6598b80c109b3edec684e9c755a82144cc3a456000d7bc5b7436"
-      ],
-      "skipSites": []
-    },
-    "GoDependencyAuthoring.test_changed_resolution_cannot_be_rebound_as_successful_public_receipt": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:03cbeb3ae744550d1eaf655a72a14165814bc3380d7d7cae193fbc3eadc6f4ff",
-        "class:setup-sha256:b57368a069ec6598b80c109b3edec684e9c755a82144cc3a456000d7bc5b7436"
-      ],
-      "skipSites": []
-    },
-    "GoDependencyAuthoring.test_cli_capture_requires_exact_review_and_emits_separate_receipts": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:03cbeb3ae744550d1eaf655a72a14165814bc3380d7d7cae193fbc3eadc6f4ff",
-        "class:setup-sha256:b57368a069ec6598b80c109b3edec684e9c755a82144cc3a456000d7bc5b7436"
-      ],
-      "skipSites": []
-    },
-    "GoDependencyAuthoring.test_concurrent_candidate_change_never_replaces_an_accepted_lock": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:03cbeb3ae744550d1eaf655a72a14165814bc3380d7d7cae193fbc3eadc6f4ff",
-        "class:setup-sha256:b57368a069ec6598b80c109b3edec684e9c755a82144cc3a456000d7bc5b7436"
-      ],
-      "skipSites": []
-    },
-    "GoDependencyAuthoring.test_consistently_recaptured_invalid_native_graph_never_claims_review_success": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:03cbeb3ae744550d1eaf655a72a14165814bc3380d7d7cae193fbc3eadc6f4ff",
-        "class:setup-sha256:b57368a069ec6598b80c109b3edec684e9c755a82144cc3a456000d7bc5b7436"
-      ],
-      "skipSites": []
-    },
-    "GoDependencyAuthoring.test_exact_local_graph_and_resource_review_work_after_originals_are_removed": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:03cbeb3ae744550d1eaf655a72a14165814bc3380d7d7cae193fbc3eadc6f4ff",
-        "class:setup-sha256:b57368a069ec6598b80c109b3edec684e9c755a82144cc3a456000d7bc5b7436"
-      ],
-      "skipSites": []
-    },
-    "GoDependencyAuthoring.test_go_source_sdk_proxy_and_resolver_drift_stop_before_candidate_acceptance": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:03cbeb3ae744550d1eaf655a72a14165814bc3380d7d7cae193fbc3eadc6f4ff",
-        "class:setup-sha256:b57368a069ec6598b80c109b3edec684e9c755a82144cc3a456000d7bc5b7436"
-      ],
-      "skipSites": []
-    },
-    "GoDependencyAuthoring.test_graph_lookup_cannot_mutate_reviewed_sums_after_selected_download_validation": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:03cbeb3ae744550d1eaf655a72a14165814bc3380d7d7cae193fbc3eadc6f4ff",
-        "class:setup-sha256:b57368a069ec6598b80c109b3edec684e9c755a82144cc3a456000d7bc5b7436"
-      ],
-      "skipSites": []
-    },
-    "GoDependencyAuthoring.test_inner_descriptor_or_capture_cannot_redirect_test_watch_before_dispatch": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:03cbeb3ae744550d1eaf655a72a14165814bc3380d7d7cae193fbc3eadc6f4ff",
-        "class:setup-sha256:b57368a069ec6598b80c109b3edec684e9c755a82144cc3a456000d7bc5b7436"
-      ],
-      "skipSites": []
-    },
-    "GoDependencyAuthoring.test_maintained_test_watch_parser_preserves_unknown_and_interrupted_results": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:03cbeb3ae744550d1eaf655a72a14165814bc3380d7d7cae193fbc3eadc6f4ff",
-        "class:setup-sha256:b57368a069ec6598b80c109b3edec684e9c755a82144cc3a456000d7bc5b7436"
-      ],
-      "skipSites": []
-    },
-    "GoDependencyAuthoring.test_outer_and_app_entries_bind_exact_original_and_transformed_module_paths": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:03cbeb3ae744550d1eaf655a72a14165814bc3380d7d7cae193fbc3eadc6f4ff",
-        "class:setup-sha256:b57368a069ec6598b80c109b3edec684e9c755a82144cc3a456000d7bc5b7436"
-      ],
-      "skipSites": []
-    },
-    "GoDependencyAuthoring.test_private_proxy_tokens_are_opaque_and_do_not_replace_go_control_environment": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:03cbeb3ae744550d1eaf655a72a14165814bc3380d7d7cae193fbc3eadc6f4ff",
-        "class:setup-sha256:b57368a069ec6598b80c109b3edec684e9c755a82144cc3a456000d7bc5b7436"
-      ],
-      "skipSites": []
-    },
-    "GoDependencyAuthoring.test_proxy_config_must_stay_outside_project_and_never_embed_url_credentials": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:03cbeb3ae744550d1eaf655a72a14165814bc3380d7d7cae193fbc3eadc6f4ff",
-        "class:setup-sha256:b57368a069ec6598b80c109b3edec684e9c755a82144cc3a456000d7bc5b7436"
-      ],
-      "skipSites": []
-    },
-    "GoDependencyAuthoring.test_proxy_control_tokens_and_malformed_explicit_auth_stop_before_native_resolution": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:03cbeb3ae744550d1eaf655a72a14165814bc3380d7d7cae193fbc3eadc6f4ff",
-        "class:setup-sha256:b57368a069ec6598b80c109b3edec684e9c755a82144cc3a456000d7bc5b7436"
-      ],
-      "skipSites": []
-    },
-    "GoDependencyAuthoring.test_public_failed_receipts_never_echo_resolver_credentials": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:03cbeb3ae744550d1eaf655a72a14165814bc3380d7d7cae193fbc3eadc6f4ff",
-        "class:setup-sha256:b57368a069ec6598b80c109b3edec684e9c755a82144cc3a456000d7bc5b7436"
-      ],
-      "skipSites": []
-    },
-    "GoDependencyAuthoring.test_resolve_preserves_each_accepted_lock_until_exact_update_and_remove_review": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:03cbeb3ae744550d1eaf655a72a14165814bc3380d7d7cae193fbc3eadc6f4ff",
-        "class:setup-sha256:b57368a069ec6598b80c109b3edec684e9c755a82144cc3a456000d7bc5b7436"
-      ],
-      "skipSites": []
-    },
-    "GoDependencyAuthoring.test_resolver_inherits_project_runtime_profile_in_captured_native_graph": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:03cbeb3ae744550d1eaf655a72a14165814bc3380d7d7cae193fbc3eadc6f4ff",
-        "class:setup-sha256:b57368a069ec6598b80c109b3edec684e9c755a82144cc3a456000d7bc5b7436"
-      ],
-      "skipSites": []
-    },
-    "GoDependencyAuthoring.test_resolver_rejects_explicit_profile_disagreement_before_native_command": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:03cbeb3ae744550d1eaf655a72a14165814bc3380d7d7cae193fbc3eadc6f4ff",
-        "class:setup-sha256:b57368a069ec6598b80c109b3edec684e9c755a82144cc3a456000d7bc5b7436"
-      ],
-      "skipSites": []
-    },
-    "GoDependencyAuthoring.test_sdk_drift_stops_before_any_go_command": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:03cbeb3ae744550d1eaf655a72a14165814bc3380d7d7cae193fbc3eadc6f4ff",
-        "class:setup-sha256:b57368a069ec6598b80c109b3edec684e9c755a82144cc3a456000d7bc5b7436"
-      ],
-      "skipSites": []
-    },
-    "GoDependencyAuthoring.test_superseded_graph_manifests_survive_review_and_offline_staging_without_extra_sources": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:03cbeb3ae744550d1eaf655a72a14165814bc3380d7d7cae193fbc3eadc6f4ff",
-        "class:setup-sha256:b57368a069ec6598b80c109b3edec684e9c755a82144cc3a456000d7bc5b7436"
-      ],
-      "skipSites": []
-    },
-    "GoDependencyAuthoring.test_symbolic_local_replace_is_denied_before_module_fetch": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:03cbeb3ae744550d1eaf655a72a14165814bc3380d7d7cae193fbc3eadc6f4ff",
-        "class:setup-sha256:b57368a069ec6598b80c109b3edec684e9c755a82144cc3a456000d7bc5b7436"
-      ],
-      "skipSites": [
-        "self.skipTest('POSIX symbolic-link fixture; Windows reparse controls are separate')",
-        "skip-control-sha256:58717edb8c2c78e37afacda75f46cfaccec7d83e2041f9ea6870770dbb894df2"
-      ]
-    },
-    "GoDependencyAuthoring.test_tags_remain_exact_without_installing_new_runtime_authority": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:03cbeb3ae744550d1eaf655a72a14165814bc3380d7d7cae193fbc3eadc6f4ff",
-        "class:setup-sha256:b57368a069ec6598b80c109b3edec684e9c755a82144cc3a456000d7bc5b7436"
-      ],
-      "skipSites": []
-    },
-    "GoDependencyAuthoring.test_tool_declarations_and_wrong_runtime_profile_require_separate_qualified_stage": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:03cbeb3ae744550d1eaf655a72a14165814bc3380d7d7cae193fbc3eadc6f4ff",
-        "class:setup-sha256:b57368a069ec6598b80c109b3edec684e9c755a82144cc3a456000d7bc5b7436"
-      ],
-      "skipSites": []
-    }
+  "cases":["GoDependencyAuthoring.test_actual_staged_recipe_resolves_reviews_and_requires_selected_frontend","GoDependencyAuthoring.test_candidate_cannot_overwrite_sources_prior_receipts_or_local_modules","GoDependencyAuthoring.test_candidate_expected_digest_and_native_input_tampering_preserve_accepted_lock","GoDependencyAuthoring.test_changed_cached_original_bytes_fail_read_only_review","GoDependencyAuthoring.test_changed_resolution_cannot_be_rebound_as_successful_public_receipt","GoDependencyAuthoring.test_cli_capture_requires_exact_review_and_emits_separate_receipts","GoDependencyAuthoring.test_concurrent_candidate_change_never_replaces_an_accepted_lock","GoDependencyAuthoring.test_consistently_recaptured_invalid_native_graph_never_claims_review_success","GoDependencyAuthoring.test_exact_local_graph_and_resource_review_work_after_originals_are_removed","GoDependencyAuthoring.test_go_source_sdk_proxy_and_resolver_drift_stop_before_candidate_acceptance","GoDependencyAuthoring.test_graph_lookup_cannot_mutate_reviewed_sums_after_selected_download_validation","GoDependencyAuthoring.test_inner_descriptor_or_capture_cannot_redirect_test_watch_before_dispatch","GoDependencyAuthoring.test_maintained_test_watch_parser_preserves_unknown_and_interrupted_results","GoDependencyAuthoring.test_outer_and_app_entries_bind_exact_original_and_transformed_module_paths","GoDependencyAuthoring.test_private_proxy_tokens_are_opaque_and_do_not_replace_go_control_environment","GoDependencyAuthoring.test_proxy_config_must_stay_outside_project_and_never_embed_url_credentials","GoDependencyAuthoring.test_proxy_control_tokens_and_malformed_explicit_auth_stop_before_native_resolution","GoDependencyAuthoring.test_public_failed_receipts_never_echo_resolver_credentials","GoDependencyAuthoring.test_resolve_preserves_each_accepted_lock_until_exact_update_and_remove_review","GoDependencyAuthoring.test_resolver_inherits_project_runtime_profile_in_captured_native_graph","GoDependencyAuthoring.test_resolver_rejects_explicit_profile_disagreement_before_native_command","GoDependencyAuthoring.test_sdk_drift_stops_before_any_go_command","GoDependencyAuthoring.test_superseded_graph_manifests_survive_review_and_offline_staging_without_extra_sources","GoDependencyAuthoring.test_symbolic_local_replace_is_denied_before_module_fetch","GoDependencyAuthoring.test_tags_remain_exact_without_installing_new_runtime_authority","GoDependencyAuthoring.test_tool_declarations_and_wrong_runtime_profile_require_separate_qualified_stage"],
+  "guards":{
+    "GoDependencyAuthoring.test_actual_staged_recipe_resolves_reviews_and_requires_selected_frontend":
+      "abbf0d8a1242a641ae916c3c6e0ec99d75cbcf7aad0d760805106c7b106f2169",
+    "GoDependencyAuthoring.test_candidate_cannot_overwrite_sources_prior_receipts_or_local_modules":
+      "abbf0d8a1242a641ae916c3c6e0ec99d75cbcf7aad0d760805106c7b106f2169",
+    "GoDependencyAuthoring.test_candidate_expected_digest_and_native_input_tampering_preserve_accepted_lock":
+      "abbf0d8a1242a641ae916c3c6e0ec99d75cbcf7aad0d760805106c7b106f2169",
+    "GoDependencyAuthoring.test_changed_cached_original_bytes_fail_read_only_review":
+      "abbf0d8a1242a641ae916c3c6e0ec99d75cbcf7aad0d760805106c7b106f2169",
+    "GoDependencyAuthoring.test_changed_resolution_cannot_be_rebound_as_successful_public_receipt":
+      "abbf0d8a1242a641ae916c3c6e0ec99d75cbcf7aad0d760805106c7b106f2169",
+    "GoDependencyAuthoring.test_cli_capture_requires_exact_review_and_emits_separate_receipts":
+      "abbf0d8a1242a641ae916c3c6e0ec99d75cbcf7aad0d760805106c7b106f2169",
+    "GoDependencyAuthoring.test_concurrent_candidate_change_never_replaces_an_accepted_lock":
+      "abbf0d8a1242a641ae916c3c6e0ec99d75cbcf7aad0d760805106c7b106f2169",
+    "GoDependencyAuthoring.test_consistently_recaptured_invalid_native_graph_never_claims_review_success":
+      "abbf0d8a1242a641ae916c3c6e0ec99d75cbcf7aad0d760805106c7b106f2169",
+    "GoDependencyAuthoring.test_exact_local_graph_and_resource_review_work_after_originals_are_removed":
+      "abbf0d8a1242a641ae916c3c6e0ec99d75cbcf7aad0d760805106c7b106f2169",
+    "GoDependencyAuthoring.test_go_source_sdk_proxy_and_resolver_drift_stop_before_candidate_acceptance":
+      "abbf0d8a1242a641ae916c3c6e0ec99d75cbcf7aad0d760805106c7b106f2169",
+    "GoDependencyAuthoring.test_graph_lookup_cannot_mutate_reviewed_sums_after_selected_download_validation":
+      "abbf0d8a1242a641ae916c3c6e0ec99d75cbcf7aad0d760805106c7b106f2169",
+    "GoDependencyAuthoring.test_inner_descriptor_or_capture_cannot_redirect_test_watch_before_dispatch":
+      "abbf0d8a1242a641ae916c3c6e0ec99d75cbcf7aad0d760805106c7b106f2169",
+    "GoDependencyAuthoring.test_maintained_test_watch_parser_preserves_unknown_and_interrupted_results":
+      "abbf0d8a1242a641ae916c3c6e0ec99d75cbcf7aad0d760805106c7b106f2169",
+    "GoDependencyAuthoring.test_outer_and_app_entries_bind_exact_original_and_transformed_module_paths":
+      "abbf0d8a1242a641ae916c3c6e0ec99d75cbcf7aad0d760805106c7b106f2169",
+    "GoDependencyAuthoring.test_private_proxy_tokens_are_opaque_and_do_not_replace_go_control_environment":
+      "abbf0d8a1242a641ae916c3c6e0ec99d75cbcf7aad0d760805106c7b106f2169",
+    "GoDependencyAuthoring.test_proxy_config_must_stay_outside_project_and_never_embed_url_credentials":
+      "abbf0d8a1242a641ae916c3c6e0ec99d75cbcf7aad0d760805106c7b106f2169",
+    "GoDependencyAuthoring.test_proxy_control_tokens_and_malformed_explicit_auth_stop_before_native_resolution":
+      "abbf0d8a1242a641ae916c3c6e0ec99d75cbcf7aad0d760805106c7b106f2169",
+    "GoDependencyAuthoring.test_public_failed_receipts_never_echo_resolver_credentials":
+      "abbf0d8a1242a641ae916c3c6e0ec99d75cbcf7aad0d760805106c7b106f2169",
+    "GoDependencyAuthoring.test_resolve_preserves_each_accepted_lock_until_exact_update_and_remove_review":
+      "abbf0d8a1242a641ae916c3c6e0ec99d75cbcf7aad0d760805106c7b106f2169",
+    "GoDependencyAuthoring.test_resolver_inherits_project_runtime_profile_in_captured_native_graph":
+      "abbf0d8a1242a641ae916c3c6e0ec99d75cbcf7aad0d760805106c7b106f2169",
+    "GoDependencyAuthoring.test_resolver_rejects_explicit_profile_disagreement_before_native_command":
+      "abbf0d8a1242a641ae916c3c6e0ec99d75cbcf7aad0d760805106c7b106f2169",
+    "GoDependencyAuthoring.test_sdk_drift_stops_before_any_go_command":
+      "abbf0d8a1242a641ae916c3c6e0ec99d75cbcf7aad0d760805106c7b106f2169",
+    "GoDependencyAuthoring.test_superseded_graph_manifests_survive_review_and_offline_staging_without_extra_sources":
+      "abbf0d8a1242a641ae916c3c6e0ec99d75cbcf7aad0d760805106c7b106f2169",
+    "GoDependencyAuthoring.test_symbolic_local_replace_is_denied_before_module_fetch":
+      "afa1465e126b4fee63e5703d0ab72ab3f4f47fc86eeacc4303a96b6fe66f649c",
+    "GoDependencyAuthoring.test_tags_remain_exact_without_installing_new_runtime_authority":
+      "abbf0d8a1242a641ae916c3c6e0ec99d75cbcf7aad0d760805106c7b106f2169",
+    "GoDependencyAuthoring.test_tool_declarations_and_wrong_runtime_profile_require_separate_qualified_stage":
+      "abbf0d8a1242a641ae916c3c6e0ec99d75cbcf7aad0d760805106c7b106f2169"
   },
-  "kind": "python",
-  "module": "tools/tests/test_go_dependency_authoring.py",
-  "reviewReason": "Fix actual current CI failures: Go 1.27.3 official security patch and archive digest; preserve every original test, command, guard, coverage and bound. All 27 pinned Go overlay files are byte-identical in the official source archive. Preserve historical diagnostics and compiler receipts. Retained entropy authenticates its old compiler before acquiring the separately pinned patched compiler.",
-  "schemaVersion": "latent.ci.contracts.v1"
+  "kind":"python",
+  "module":"tools/tests/test_go_dependency_authoring.py",
+  "reviewReason":"Fix actual current CI failures: Go 1.27.3 official security patch and archive digest; preserve every original test, command, guard, coverage and bound. All 27 pinned Go overlay files are byte-identical in the official source archive. Preserve historical diagnostics and compiler receipts. Retained entropy authenticates its old compiler before acquiring the separately pinned patched compiler.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "abbf0d8a1242a641ae916c3c6e0ec99d75cbcf7aad0d760805106c7b106f2169":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:03cbeb3ae744550d1eaf655a72a14165814bc3380d7d7cae193fbc3eadc6f4ff","class:setup-sha256:b57368a069ec6598b80c109b3edec684e9c755a82144cc3a456000d7bc5b7436"],"skipSites":[]},
+    "afa1465e126b4fee63e5703d0ab72ab3f4f47fc86eeacc4303a96b6fe66f649c":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:03cbeb3ae744550d1eaf655a72a14165814bc3380d7d7cae193fbc3eadc6f4ff","class:setup-sha256:b57368a069ec6598b80c109b3edec684e9c755a82144cc3a456000d7bc5b7436"],"skipSites":["self.skipTest('POSIX symbolic-link fixture; Windows reparse controls are separate')","skip-control-sha256:58717edb8c2c78e37afacda75f46cfaccec7d83e2041f9ea6870770dbb894df2"]}
+  }
 }
