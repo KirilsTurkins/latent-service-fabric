@@ -80,7 +80,7 @@ internal sealed class ActualCil : IDisposable
                 end = handler.TryEnd?.Offset ?? pair.Value.Body.CodeSize,
                 handlerStart = handler.HandlerStart.Offset,
                 handlerEnd = handler.HandlerEnd?.Offset ?? pair.Value.Body.CodeSize }).ToArray() }).ToArray(),
-        tokenMap = mappings.Order().ToArray(), originalInstructionsBranchesAndEhCopied = true,
+        tokenMap = mappings.Order(StringComparer.Ordinal).ToArray(), originalInstructionsBranchesAndEhCopied = true,
         throwHelperBindings = ThrowHelperPorts.Bindings, throwHelperMethods = ThrowHelperPorts.MethodBindings(),
         throwHelperCalls = throwCalls, privateThrowHelperEnumsTranslatedByName = true,
         pinnedWasiCountdownClassExecuted = false, hostPrivateCountdownCounterpart = true,
