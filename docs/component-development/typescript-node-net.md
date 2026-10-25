@@ -37,10 +37,15 @@ Borrow release never certifies physical IoCall/IoTransfer retirement.
 
 The selected generated export checks the same private registry after the
 application resolves, inside its original error handler and before result
-lowering. A second check precedes canonical publication. During the original
-synchronous lowering, resolve and exit tail, a private admission fence rejects
+lowering. If every remaining Socket has accepted `end()` or `destroy()`, it
+waits for the existing registry to retire those slots through their actual
+acknowledgements and callback tails. An open Socket still fails immediately.
+At most one original Promise joins accepted close; an empty registry allocates
+no join Promise. A second check precedes canonical publication. Throughout
+the close wait and original synchronous lowering, resolve and exit tail, a private admission fence rejects
 new Socket reservations/connects before any CAP call, including reentrant
-result getters and resolve callbacks. Its finally restores the fence on error;
+result getters and resolve callbacks. Only its exact private owner can release
+the fence, including on the original error path;
 it does not certify later jobs or whole-root quiescence. The snapshot footer
 remains assertion-only and checks the registry before snapshot mode ends.
 The initializer installs the registry before application ESM evaluation;
@@ -51,13 +56,25 @@ retain their default bytes. Normal project capture and compiler declaration
 staging also include `net.d.ts`; this does not select a runtime module, grant
 a capability or require that new declaration in an old unselected capture.
 
-Application completion requires **completed close**, not merely calling
-`end()` or `destroy()`. Ordinary code can await a Promise resolved by the normal
-Socket `close` event, while rejecting on `error`. Returning while close
-acknowledgement is still pending fails the registry check. The public `closed`
+Application completion requires **completed close**. Calling `end()` or
+`destroy()` supplies terminal intent, while the export waits for actual close;
+the call itself never retires an owner. Ordinary code can also await a Promise
+resolved by the normal Socket `close` event, while rejecting on `error`.
+The public `closed`
 property describes logical stream destruction, as in Node; it is not proof of
 borrow acknowledgement, consuming native close or physical retirement. Idle sockets,
-persistent pools and automatic accepted-close drainage remain unsupported.
+persistent pools and drainage without accepted terminal intent remain unsupported.
+
+After successful send shutdown, a paused Socket can make one ordinary read to
+observe real EOF without a data listener or forced resume. This finite path
+supports an empty peer response only. Actual unread data throws the explicit
+`paused-end-unread-data` unsupported error after the original borrow ACK;
+its chunk and connection remain retained for failure cleanup, rather than
+being discarded or relabelled EOF. Prior writes retain their possible-effect
+flag. Buffered paused data also refuses. General paused-readable or Duplex
+drainage is not supported. The selected generated error path forwards the
+original rejection value, including `undefined`, without reading a diagnostic
+`message` getter that could replace it with another error.
 
 There is no TLS Socket API, DNS API, listener/server, descriptor namespace,
 address export, proxy, arbitrary socket option, custom lookup or family
@@ -65,13 +82,24 @@ fallback. Unsupported operations fail closed. This is a finite Socket API;
 it does not claim the complete Node stream/Duplex surface or compatibility
 with arbitrary npm networking packages.
 
-The finite 25 host controls include the pinned parser/bundler/typechecker,
+The finite 30 host controls include the pinned parser/bundler/typechecker,
 an authenticated previous raw generated initializer, and bounded real Node24
 loopback references for the promised callback/close ordering. The raw fixture
 contains the old diagnostic Gate; it remains mechanism evidence, not a new
 signed Socket qualification. Native handle/ACK holds, distinct cancellation
 acknowledgements, callback throws and caught synchronous emit errors are
 controlled separately. No host model count proves physical Task retirement.
+
+The new accepted-close mechanism and unchanged published
+`is-port-reachable@4.0.0` client are **pending signed qualification**. The normal
+npm capture pins its original 2,025-byte archive and all five published files,
+uses its declared ESM entrypoint and declarations, and executes no package
+hooks. The new programme retains all six original signed oracles and adds
+granted/denied ordinary-client cases. Its positive peer must receive a real
+FIN, withhold EOF while the original read and root remain live, then release
+EOF before success and physical idle. No result is inferred from host controls
+or the prior six-case receipt below. Runtime funding remains the same explicit
+Task32/Queued32/Native128 reference profile, without a budget increase.
 
 The private Socket coordinator uses synchronous completion transitions driven
 by its existing original result/ACK observer jobs, without private async worker
