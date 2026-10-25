@@ -2,10 +2,12 @@
 from __future__ import annotations
 
 import os
+import math
 from pathlib import Path
 import re
 import shutil
 import sys
+import time
 
 from tools.application_dependency_store import DependencyError, read_bytes, regular_path
 from tools.build_observation import file_identity
@@ -90,7 +92,11 @@ class Isolation:
         return distribution(root)
 
     def __init__(self, workspace: Path, tools: dict[str, Path], distributions: dict[str, Path], *,
-                 loader_directories: tuple[Path, ...] = (), host_tool_path: str | None = None):
+                 loader_directories: tuple[Path, ...] = (), host_tool_path: str | None = None,
+                 _deadline: float | None = None):
+        if _deadline is not None and (type(_deadline) not in (int, float) or not math.isfinite(_deadline)
+                                     or _deadline <= time.monotonic() + 5):
+            raise DependencyError('compiler-isolation-original-owner-deadline')
         if host_tool_path is not None and (not isinstance(host_tool_path, str)
                 or not host_tool_path or "\0" in host_tool_path):
             raise DependencyError("compiler-host-tool-path-invalid")
@@ -124,7 +130,12 @@ class Isolation:
         if self.loader_directories:
             probe_environment["LD_LIBRARY_PATH"] = ":".join(map(str, self.loader_directories))
         for tool in self.tools.values():
-            result = run_bounded_result([loader_probe, str(tool)], self.workspace, probe_environment, 10, 16384)
+            timeout = 10
+            if _deadline is not None:
+                timeout = min(timeout, _deadline - time.monotonic() - 5)
+                if timeout <= 0:
+                    raise DependencyError('compiler-isolation-parent-cleanup-reserve')
+            result = run_bounded_result([loader_probe, str(tool)], self.workspace, probe_environment, timeout, 16384)
             text = (result.stdout + result.stderr).decode("utf-8")
             if result.returncode and "not a dynamic executable" not in text and "statically linked" not in text:
                 raise DependencyError("compiler-runtime-library-observation-failed")
@@ -196,6 +207,15 @@ class Isolation:
         for key in ("GOROOT", "GOCACHE", "GOMODCACHE", "GOFLAGS"):
             if key in environment:
                 command += ["--setenv", key, environment[key]]
+        if 'GOSSADIR' in environment:
+            selected = Path(environment['GOSSADIR'])
+            if not selected.is_absolute():
+                raise DependencyError('compiler-SSA-output-outside-owned-workspace')
+            selected = regular_path(selected).resolve(strict=True)
+            if (not selected.is_dir() or selected == self.workspace or not selected.is_relative_to(self.workspace)
+                    or any(selected.is_relative_to(root) for root in self.read_only_inputs)):
+                raise DependencyError('compiler-SSA-output-outside-owned-workspace')
+            command += ['--setenv', 'GOSSADIR', str(selected)]
         return [*command, "--chdir", str(cwd), "--", str(tool), *arguments]
 
     def enable_children(self, directory: Path):

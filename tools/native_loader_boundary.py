@@ -81,7 +81,7 @@ unsafe impl wasmtime::MemoryCreator for RefusingCreator {
 NATIVE_STACK = f"{CRATE}/src/native_stacks.rs"
 NATIVE_STACK_CHILD = f"{CRATE}/src/native_stacks/children.rs"
 NATIVE_STACK_WORKER = f"{CRATE}/src/native_stacks/workers.rs"
-NATIVE_STACK_CHILD_SHA256 = "b85f62e09afe12771c8e2634b3281743fed9817ec615ebb6fb0388905dadc840"
+NATIVE_STACK_CHILD_SHA256 = "d1814527adf59a2ca9c94f7b5dd9fbcd32b3c02d265863856a62ca3ada73a9a4"
 NATIVE_STACK_SHA256 = "baee4644bcb751ce7bb922df61c155e1ebde96ddcf1353c205df968704123244"
 NATIVE_STACK_WORKER_SHA256 = "8b42a5a426bb83b462f44dec140118326de19487f88e628f0c210cd442cad791"
 ALLOW = '''#[allow(

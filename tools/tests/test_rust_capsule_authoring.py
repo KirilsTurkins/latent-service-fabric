@@ -703,7 +703,8 @@ class RustExecutableOutputMaterials(unittest.TestCase):
         verified.lock['executableInputs'] = [{'id': 'outside/build-script'}]
         verified.lock['selection']['runtimeProfile'] = standard.DEFAULT
         output = workspace.parent / 'output'
-        with patch.object(build, 'resolve_tools', return_value=(dict(scope.tools), [])), \
+        with patch.object(build, 'resolve_tools', return_value=(dict(scope.tools),
+                [build.file_identity(scope.tools['rustc'], 'rustc')])), \
                 patch.object(build.shutil, 'which', side_effect=lambda name, **_kwargs: str(scope.tools['shell' if name == 'sh' else name])), \
                 patch.object(build, 'Commands', ObservedCommands), \
                 patch.object(build, 'binding_check', return_value=project.digest(b'controlled bindings')), \

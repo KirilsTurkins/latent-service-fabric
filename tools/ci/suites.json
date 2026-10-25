@@ -2309,14 +2309,16 @@
         "node_metadata::tests::original_node_metadata_concurrent_last_strong_and_weak_refund_once",
         "node_metadata::tests::original_node_fixed_and_transient_observations_conserve_one_admission_bank",
         "budget::host_memory::tests::original_native_envelope_reuses_only_retired_storage_without_refunding_capacity",
-        "budget::host_memory::tests::native_envelope_refuses_unobserved_retirement_before_mutating_original_ledger"
+        "budget::host_memory::tests::native_envelope_refuses_unobserved_retirement_before_mutating_original_ledger",
+        "activation_runtime::tests::actual_owner_refusals_name_only_the_original_bucket_without_refunding_live_owners",
+        "activation_runtime::tests::actual_native_reservation_refusal_keeps_original_budget_and_does_not_guess_other_dimensions"
       ],
       "expectedIgnored": [],
       "id": "latent-core.lib.latent-core",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-core/Cargo.toml",
-      "minimumCases": 168,
+      "minimumCases": 170,
       "mode": "libtest",
       "package": "latent-core",
       "platforms": [
@@ -7558,7 +7560,8 @@
         "development_borrow_admission::tests::normal_socket_cases_keep_distinct_closed_indices_and_original_opt_in",
         "host::service::refusal::tests::disabled_and_first_per_activation_do_not_share_global_admission",
         "host::service::refusal::tests::typed_budget_refuses_coercion_unknown_details_and_private_error_text",
-        "host::join_state_tests::canonical_join_state_first_poll_refusal_and_same_budget_fresh_store"
+        "host::join_state_tests::canonical_join_state_first_poll_refusal_and_same_budget_fresh_store",
+        "containment::tests::only_the_actual_engine_stack_overflow_produces_stack_exhaustion_diagnostic"
       ],
       "expectedIgnored": [
         "cache::measurement::cache_lookup_collector",
@@ -7573,7 +7576,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 485,
+      "minimumCases": 486,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [

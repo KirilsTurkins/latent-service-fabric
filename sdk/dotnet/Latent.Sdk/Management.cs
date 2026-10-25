@@ -106,6 +106,26 @@ public readonly record struct DiagnosticReason(int Value)
     public static readonly DiagnosticReason Cancelled = new(15);
     /// <summary>The http response rejected value.</summary>
     public static readonly DiagnosticReason HttpResponseRejected = new(16);
+    /// <summary>The runtime task limit value.</summary>
+    public static readonly DiagnosticReason RuntimeTaskLimit = new(17);
+    /// <summary>The runtime queue limit value.</summary>
+    public static readonly DiagnosticReason RuntimeQueueLimit = new(18);
+    /// <summary>The runtime timer limit value.</summary>
+    public static readonly DiagnosticReason RuntimeTimerLimit = new(19);
+    /// <summary>The runtime executor limit value.</summary>
+    public static readonly DiagnosticReason RuntimeExecutorLimit = new(20);
+    /// <summary>The runtime wait limit value.</summary>
+    public static readonly DiagnosticReason RuntimeWaitLimit = new(21);
+    /// <summary>The runtime result limit value.</summary>
+    public static readonly DiagnosticReason RuntimeResultLimit = new(22);
+    /// <summary>The runtime native owner limit value.</summary>
+    public static readonly DiagnosticReason RuntimeNativeOwnerLimit = new(23);
+    /// <summary>The native thread start limit value.</summary>
+    public static readonly DiagnosticReason NativeThreadStartLimit = new(24);
+    /// <summary>The native memory exhausted value.</summary>
+    public static readonly DiagnosticReason NativeMemoryExhausted = new(25);
+    /// <summary>The guest stack exhausted value.</summary>
+    public static readonly DiagnosticReason GuestStackExhausted = new(26);
 }
 
 /// <summary>Open numeric DiagnosticProfile value; unknown integers are retained.</summary>

@@ -2,6 +2,11 @@
 from __future__ import annotations
 
 import re
+from pathlib import Path
+import sys
+
+if __package__ in {None, ''}:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from tools.dev_workflow.common import decode, digest, encode, integer, members, require, sha
 
@@ -35,7 +40,8 @@ BLOCKERS = frozenset(CLASSIFICATIONS) - {
 }
 PHASES = ("resolution", "compile", "link", "initialization", "invocation", "retirement")
 EVIDENCE = ("final-component", "compiler", "actual-component", "native-reference", "model", "not-evaluated")
-RESOURCES = ("tasks", "threads", "frames", "queues", "timers", "guest-memory", "native-memory", "provider", "fuel")
+RESOURCES = ("tasks", "threads", "frames", "queues", "timers", "guest-memory", "native-memory", "provider", "fuel",
+             "executors", "waits", "results", "native-owners", "thread-total-starts", "guest-stack")
 OBSERVED_OUTCOMES = frozenset({"denied-grant", "resource-exhausted", "deadline", "cancelled", "external-uncertain"})
 TOKEN = re.compile(r"[A-Za-z0-9_.:/@+\[\]-]{1,192}")
 
@@ -241,11 +247,21 @@ def main() -> int:
     require(not args.json or (args.context is None and args.outcomes is None), 'compatibility-sidecar-presentation-requires-text')
     with args.report.open("rb") as source:
         value = read(source.read(MAX_BYTES + 1))
+    from tools import guest_api_analysis
+    analysis_path = args.report.parent / guest_api_analysis.NAME
+    has_analysis = not args.json and (analysis_path.exists() or analysis_path.is_symlink())
+    context_path = args.context
+    if context_path is None and has_analysis:
+        context_path = args.report.parent / 'compatibility-context.json'
     selected = None
-    if args.context is not None:
+    if context_path is not None:
         from tools import guest_compatibility_context
-        with args.context.open('rb') as source:
-            selected = guest_compatibility_context.read(source.read(guest_compatibility_context.MAX_BYTES + 1), report=value)
+        if args.context is None:
+            from tools.rust_capsule_project import read_file
+            selected = guest_compatibility_context.read(read_file(context_path, guest_compatibility_context.MAX_BYTES), report=value)
+        else:
+            with context_path.open('rb') as source:
+                selected = guest_compatibility_context.read(source.read(guest_compatibility_context.MAX_BYTES + 1), report=value)
     outcomes = None
     if args.outcomes is not None:
         from tools import guest_compatibility_outcomes
@@ -255,6 +271,11 @@ def main() -> int:
     print(encode(value).decode().rstrip() if args.json else present(value), end="\n" if args.json else "")
     if selected is not None:
         print(guest_compatibility_context.present(selected), end='')
+    if has_analysis:
+        from tools.rust_capsule_project import read_file
+        analysis = guest_api_analysis.read(read_file(analysis_path, guest_api_analysis.MAX_BYTES),
+                                           args.report.parent, value, selected)
+        print(guest_api_analysis.present(analysis), end='')
     if outcomes is not None:
         print(guest_compatibility_outcomes.present(outcomes), end='')
     return 0

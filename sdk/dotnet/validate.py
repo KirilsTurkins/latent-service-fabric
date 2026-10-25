@@ -196,7 +196,10 @@ def main() -> int:
         if arguments.print_generation:
             print(json.dumps(result, indent=2))
         else:
-            require(result == decode_json((SDK / "protobuf.lock.json").read_bytes()), "dotnet-generated-bindings-drift")
+            expected_generation = decode_json((SDK / "protobuf.lock.json").read_bytes())
+            if result != expected_generation:
+                print("Observed generation for deliberate lock review:\n" + json.dumps(result, indent=2), file=sys.stderr)
+            require(result == expected_generation, "dotnet-generated-bindings-drift")
             evidence = {"generation": result, "packages": packages, "tests": transcripts, "cleanRestores": 2,
                         "packageSignaturesVerified": True, "implicitDirectoryImports": False}
             if arguments.osv:

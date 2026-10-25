@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "sdk/dotnet/validate.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Refresh only the exact SDK and runtime pins to the October security release while preserving all qualification checks",
+  "reviewReason": "Retain the actual bounded generated-file identities on lock drift while preserving the existing failure; required to review the additive diagnostic enum regeneration.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "9ed7ef59cfe4971a834a3dbd5f542bf5a6cc3f7ed07d9a188e1d31a8ce37e09d"
+  "sha256": "149e97bde5c40fbc7259dbe1c710459e70c125925d53b0c4fdbd71265f1e3a99"
 }

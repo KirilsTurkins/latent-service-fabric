@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import hashlib
+import math
 import os
 from pathlib import Path
 import re
 import shutil
+import time
 
 from tools.build_process import run_bounded
 from tools.build_snapshot import SnapshotError, canonical, digest, is_reparse
@@ -85,14 +87,25 @@ def build_environment(temporary_root: Path) -> dict[str, str]:
     return result
 
 
-def _probe(command: list[str], root: Path, environment: dict[str, str]) -> str:
+def _probe(command: list[str], root: Path, environment: dict[str, str], *, _deadline=None) -> str:
+    timeout = 30
+    if _deadline is not None:
+        if type(_deadline) not in (int, float) or not math.isfinite(_deadline):
+            raise SnapshotError('compiler-probe-invalid-parent-deadline')
+        remaining = _deadline - time.monotonic() - 5
+        if remaining <= 0:
+            raise SnapshotError('compiler-probe-parent-cleanup-reserve')
+        timeout = min(timeout, remaining)
     result = run_bounded(command, cwd=root, env=environment,
-                         timeout_seconds=30, max_output_bytes=16 * 1024)
+                         timeout_seconds=timeout, max_output_bytes=16 * 1024)
     return result.stdout.decode("utf-8").strip()
 
 
 def resolve_tools(toolchain: dict, root: Path, environment: dict[str, str], *,
-                  installed: Path | None = None) -> tuple[dict, list[dict]]:
+                  installed: Path | None = None, _deadline=None) -> tuple[dict, list[dict]]:
+    if _deadline is not None and (type(_deadline) not in (int, float) or not math.isfinite(_deadline)
+                                 or _deadline <= time.monotonic() + 5):
+        raise SnapshotError('compiler-tools-parent-cleanup-reserve')
     version = str(toolchain["rust"]["toolchain"])
     if not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", version):
         raise SnapshotError("invalid pinned Rust toolchain")
@@ -101,17 +114,18 @@ def resolve_tools(toolchain: dict, root: Path, environment: dict[str, str], *,
     if (installed is None and not rustup) or not wasm_tools:
         raise SnapshotError("required build tools are unavailable")
     paths = {}
+    probe_options = {} if _deadline is None else {'_deadline': _deadline}
     for name in ("cargo", "rustc"):
-        path = (Path(_probe([rustup, "which", "--toolchain", version, name], root, environment))
+        path = (Path(_probe([rustup, "which", "--toolchain", version, name], root, environment, **probe_options))
                 if installed is None else installed / name)
         if not path.is_absolute() or not path.is_file():
             raise SnapshotError("selected Rust tool is unavailable")
         paths[name] = path.resolve(strict=True)
-        reported = _probe([str(paths[name]), "--version"], root, environment)
+        reported = _probe([str(paths[name]), "--version"], root, environment, **probe_options)
         if not re.match(rf"{name} {re.escape(version)}(?:\s|$)", reported):
             raise SnapshotError("selected Rust tool version does not match its pin")
     paths["wasm-tools"] = Path(wasm_tools).resolve(strict=True)
-    reported = _probe([str(paths["wasm-tools"]), "--version"], root, environment)
+    reported = _probe([str(paths["wasm-tools"]), "--version"], root, environment, **probe_options)
     expected = str(toolchain["contracts"]["wasm-tools"])
     if not re.match(rf"wasm-tools {re.escape(expected)}(?:\s|$)", reported):
         raise SnapshotError("selected wasm tool version does not match its pin")
