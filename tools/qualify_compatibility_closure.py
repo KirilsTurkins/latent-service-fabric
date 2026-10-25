@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import importlib
+import re
 from pathlib import Path
 import subprocess
 import sys
@@ -83,7 +84,8 @@ def prepared_java_cache(path):
     return path
 
 
-def normal_build(language, app, output, native, tools, deadline, *, engine=None, read_only_cache=None):
+def normal_build(language, app, output, native, tools, deadline, *, engine=None, read_only_cache=None,
+                 _compiler_observer=None):
     require(language in LANGUAGES and deadline - time.monotonic() > 5,
         'compatibility-closure-original-compiler-deadline')
     args = (app, output, native['capsule_contracts'], native['package'], REPOSITORY)
@@ -95,7 +97,8 @@ def normal_build(language, app, output, native, tools, deadline, *, engine=None,
         return build(*args, _deadline=deadline)
     if language == 'go':
         from tools.go_capsule_build import build
-        return build(*args, _deadline=deadline)
+        extra = {} if _compiler_observer is None else {'_compiler_observer': _compiler_observer}
+        return build(*args, _deadline=deadline, **extra)
     if language == 'dotnet':
         from tools.dotnet_guest.build import build
         return build(*args, tools=tools, offline=True, _deadline=deadline)
@@ -227,7 +230,43 @@ def default_presentation(commands, artifact):
     return {'sha256': digest(raw), 'bytes': len(raw), 'explicitAnalysisSelector': False}
 
 
-def qualify(cell, native_directory, tools, output, *, engine=None, read_only_cache=None):
+def selected_go_body(captured, value, files, output):
+    """Only the fixed public source fixture, never arbitrary captured app text."""
+    require(value['language'] == 'go' and value['reached'] is False
+        and value['rootFunction'] == 'compatibilityRoot'
+        and files[value['rootSource']] == fixtures.application_source('go', reached=False)
+        and captured.language == 'go' and captured.source_files == files
+        and captured.selection == guest_compiler_capture.automatic(files, 'go'),
+        'compatibility-Go-public-original-fixture-selection')
+    matches = [row for row in captured.queries if row['source'] == value['rootSource']
+        and row['root'] == value['rootFunction'] and row['callee'] == value['sourceTargetSpelling']]
+    require(len(matches) == 1 and matches[0]['compilerTarget'] == value['targetFunction']
+        and matches[0]['id'] not in captured.failures, 'compatibility-Go-exact-selected-query')
+    query = matches[0]; raw = captured.raw.get(query['id'])
+    require(type(raw) is bytes and 1 <= len(raw) <= 4096, 'compatibility-Go-public-body-byte-bound')
+    rows = raw.decode('utf-8').splitlines()
+    require('\0' not in raw.decode('utf-8') and 1 <= len(rows) <= 64
+        and all(len(row.encode('utf-8')) <= 256 for row in rows), 'compatibility-Go-public-syntax-bound')
+    tokens = []
+    for number, row in enumerate(rows, 1):
+        match = re.match(r'^\([?+\-0-9]+\) v[0-9]+ = ([A-Za-z0-9_]+)\b', row.strip())
+        tokens.append({'line': number, 'text': row, 'opcode': None if match is None else match[1],
+            'recognizedNonCallOpcode': None if match is None else match[1] in guest_compiler_edges.GO_PURE})
+    destination = Path(output) / 'go-selected-body.ssa'
+    require(not destination.exists() and not destination.is_symlink(), 'compatibility-Go-fresh-public-body')
+    destination.write_bytes(raw)
+    return {'scope': 'one-fixed-public-baseline-selected-compiler-body',
+        'raw': {'bytes': len(raw), 'sha256': digest(raw)}, 'query': query,
+        'sourceDigest': digest(inventory(files)), 'syntaxLines': tokens,
+        'unrecognizedOpcodeTokens': sorted({row['opcode'] for row in tokens
+            if row['recognizedNonCallOpcode'] is False and 'Call' not in row['opcode']}),
+        'runtimeExecution': 'not-observed', 'qualificationClaimed': False}
+
+
+def qualify(cell, native_directory, tools, output, *, engine=None, read_only_cache=None,
+            go_selected_body_only=False):
+    require(type(go_selected_body_only) is bool and (not go_selected_body_only or cell == 'go'),
+        'compatibility-closure-fixed-Go-observation-selection')
     require(cell in CELLS and sys.platform == 'linux' and sys.version_info >= (3, 13),
         'compatibility-closure-linux-python313-closed-cell')
     language = 'go' if cell == 'go-queues' else 'typescript' if cell == 'typescript-initializer' else cell
@@ -268,16 +307,31 @@ def qualify(cell, native_directory, tools, output, *, engine=None, read_only_cac
             engine = Path(engine).resolve(strict=True)
             record['engine'] = borrow_signed_inputs.verify(engine, commands.run)
         before = guest_dependency_inputs.capture_source(app, language).files
+        observation = []
+        def observe(captured):
+            observation.append(selected_go_body(captured, value, before, output))
         stage = 'ordinary-default-component-and-selected-API-build'
         destination = output / ('build' if cell == 'java' else 'baseline')
         negative = normal_build(language, app, destination, native, tools, commands.deadline,
-            engine=engine, read_only_cache=read_only_cache)
+            engine=engine, read_only_cache=read_only_cache,
+            **({'_compiler_observer': observe} if go_selected_body_only else {}))
         record['baseline'] = bound_analysis(negative); record['guestBuildCount'] += 1
         require(cell == 'typescript-initializer' or any(row['state'] == 'selected-implementation-unqualified'
             for row in record['baseline']['api']['apis']),
             'compatibility-closure-actual-owner-selected-implementation-not-all-unmapped')
         record['defaultPresentation'] = default_presentation(commands, negative)
-        if cell == 'java':
+        if go_selected_body_only:
+            require(len(observation) == 1, 'compatibility-Go-one-original-compiler-observation')
+            original = read_json(negative / guest_compiler_capture.OUTPUT, 65536)
+            query = observation[0]['query']
+            observed = [row for row in original['queries'] if row['id'] == query['id']]
+            require(len(observed) == 1 and observed[0]['state'] == 'observed'
+                and observed[0]['observation']['rawDigest'] == observation[0]['raw']['sha256']
+                and observed[0]['observation']['rawBytes'] == observation[0]['raw']['bytes'],
+                'compatibility-Go-original-body-observation-binding')
+            record['goSelectedBody'] = {**observation[0], 'originalCompilerResult': original,
+                'guestExecutionCount': 0, 'signedPackageCount': 0}
+        elif cell == 'java':
             from tools.compiler_compatibility_observation import build_evidence
             from tools.qualify_compiler_compatibility import java_counterfactual
             from tools.compiler_compatibility_node import execute
@@ -341,8 +395,8 @@ def qualify(cell, native_directory, tools, output, *, engine=None, read_only_cac
             and time.monotonic() < commands.deadline, 'compatibility-closure-final-source-products-and-owner-budget')
         require(application_dependencies.verify_inputs(app, language).identity == record['capturePhase']['acceptedInputIdentity'],
             'compatibility-closure-final-accepted-inputs-unchanged')
-        record.update(status='passed', commands=commands.records)
-        write_workflow_receipt(output / 'qualified.json', record)
+        record.update(status='diagnostic-observed' if go_selected_body_only else 'passed', commands=commands.records)
+        write_workflow_receipt(output / ('DIAGNOSTIC.json' if go_selected_body_only else 'qualified.json'), record)
         return record
     except BaseException as error:
         record.update(status='failed', stage=stage, errorCategory=type(error).__name__,
@@ -355,16 +409,19 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--cell', choices=CELLS)
     parser.add_argument('--prepare-java-cache', action='store_true')
+    parser.add_argument('--go-selected-body-only', action='store_true')
     parser.add_argument('--native', type=Path)
     for name in ('tools', 'output'): parser.add_argument('--' + name, type=Path, required=True)
     parser.add_argument('--engine', type=Path)
     parser.add_argument('--read-only-cache', type=Path)
     args = parser.parse_args()
     if args.prepare_java_cache:
-        require(args.cell is None and args.native is None and args.engine is None and args.read_only_cache is None,
+        require(args.cell is None and args.native is None and args.engine is None and args.read_only_cache is None
+            and not args.go_selected_body_only,
             'compatibility-closure-unambiguous-normal-cache-prerequisite')
         print(prepare_java_cache(args.tools, args.output))
     else:
         require(args.cell in CELLS and args.native is not None, 'compatibility-closure-closed-owning-selection')
         print(qualify(args.cell, args.native, args.tools, args.output,
-            engine=args.engine, read_only_cache=args.read_only_cache)['status'])
+            engine=args.engine, read_only_cache=args.read_only_cache,
+            go_selected_body_only=args.go_selected_body_only)['status'])

@@ -18,6 +18,45 @@ from tools.rust_capsule_project import snapshot
 
 
 class CompatibilityClosureOwner(unittest.TestCase):
+    def test_fixed_public_go_body_is_bounded_and_observer_is_private_default_none(self):
+        from tools import guest_compiler_capture, go_capsule_build
+        source = fixture.SOURCES['go']
+        files = {source: fixture.application_source('go', reached=False)}
+        value = {'language': 'go', 'reached': False, 'rootFunction': fixture.ROOTS['go'],
+            'rootSource': source, 'sourceTargetSpelling': fixture.CALLEES['go'],
+            'targetFunction': fixture.PRIMARY['go'] + '.Probe'}
+        captured = guest_compiler_capture.Capture(files, 'go')
+        query = next(row for row in captured.queries if row['root'] == value['rootFunction'])
+        raw = b'compatibilityRoot func() int32\nb1:\n(?) v1 = I64Const <int32> [0]\nRet v1\n'
+        captured.retain(query['id'], raw)
+        with tempfile.TemporaryDirectory() as temporary, patch.object(subprocess, 'Popen', side_effect=AssertionError('no-process')):
+            root = Path(temporary)
+            result = owner.selected_go_body(captured, value, files, root)
+            self.assertEqual((root / 'go-selected-body.ssa').read_bytes(), raw)
+            self.assertEqual(result['raw'], {'bytes': len(raw), 'sha256': digest(raw)})
+            self.assertFalse(result['qualificationClaimed'])
+            self.assertEqual(result['runtimeExecution'], 'not-observed')
+            from tools import compatibility_closure_matrix as matrix
+            (root / 'unselected.ssa').write_bytes(b'not selected')
+            admitted = matrix.retain(root, root.parent / (root.name + '-public'))
+            self.assertEqual(set(admitted['files']), {'go-selected-body.ssa'})
+            import shutil
+            shutil.rmtree(root.parent / (root.name + '-public'))
+            for invalid in (b'x' * 4097, b'x' * 257, b'\0', b'x\n' * 65):
+                captured.raw[query['id']] = invalid
+                with self.subTest(invalid=len(invalid)), self.assertRaises(ValueError):
+                    owner.selected_go_body(captured, value, files, root)
+            with self.assertRaisesRegex(ValueError, 'private-compiler-observer'):
+                go_capsule_build.build(root / 'absent', root / 'uncreated', root / 'contracts', None,
+                    'https://github.com/example/test', _compiler_observer=1)
+            self.assertFalse((root / 'uncreated').exists())
+        from inspect import signature
+        self.assertIsNone(signature(go_capsule_build.build).parameters['_compiler_observer'].default)
+        with patch.object(go_capsule_build, 'build', return_value=Path('original')) as build:
+            owner.normal_build('go', Path('app'), Path('out'), {'capsule_contracts': Path('contracts'),
+                'package': Path('packager')}, Path('tools'), owner.time.monotonic() + 60)
+            self.assertNotIn('_compiler_observer', build.call_args.kwargs)
+
     def test_native_client_data_migration_is_exact_and_never_relabels_original_materials(self):
         products = owner.products
         paths = tuple(products.NON_COMPILED_DATA)

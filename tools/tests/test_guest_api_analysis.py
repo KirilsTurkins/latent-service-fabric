@@ -147,4 +147,51 @@ class DefaultApiAnalysis(unittest.TestCase):
             self.assertNotIn('private', encode(value).decode())
 
 
+
+
+class FiniteImplementationFixtureMapping(unittest.TestCase):
+    def test_exact_standard_materials_profiles_and_owners_only_select_finite_fixture(self):
+        for known in api.FINITE_IMPLEMENTATION_FIXTURES:
+            with self.subTest(cell=known['cell']):
+                refs = sorted(copy.deepcopy(known['materials']), key=lambda row: row['name'])
+                def selected(materials=refs, runtime=known['runtimeProfile'], host=known['hostAbiProfile'],
+                             owners=known['ownerObservations'], language=known['language']):
+                    return api.finite_implementation_fixtures(language, materials, runtime, host, owners)
+                self.assertEqual(selected(), [known])
+                for index in range(len(refs)):
+                    changed = copy.deepcopy(refs); changed[index]['digest'] = digest(b'different-standard-bytes')
+                    # Java identity is original JARs + selected CFileSystem
+                    # source, not the per-app runtime/profile JSON digest.
+                    self.assertEqual(selected(materials=changed), [known] if known['cell'] == 'java' else [])
+                self.assertEqual(selected(materials=[]), [])
+                self.assertEqual(selected(runtime='foreign-profile'), [])
+                self.assertEqual(selected(host='foreign-host'), [])
+                self.assertEqual(selected(language='foreign-language'), [])
+                self.assertEqual(selected(owners={'java-closed-filesystem': digest(b'foreign-owner')}), [])
+                selected()[0]['origin']['run'] = 0
+                self.assertNotEqual(selected()[0]['origin']['run'], 0)
+        self.assertEqual(api.missing_implementation_issues('node.net.Socket', 'typescript'), [738, 739, 745])
+        self.assertFalse(any(row['cell'] in {'go', 'dotnet'} for row in api.FINITE_IMPLEMENTATION_FIXTURES))
+
+    def test_rehashed_fixture_claim_and_legacy_downgrade_cannot_replace_current_owner_projection(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory)
+            report, selected, value, _ = fixture(output)
+            self.assertEqual(value['finiteImplementationFixtures'], [])
+            self.assertTrue(all(row['apiBehavior'] == 'unqualified' for row in value['apis']))
+            forged = copy.deepcopy(value)
+            forged['finiteImplementationFixtures'] = [copy.deepcopy(api.FINITE_IMPLEMENTATION_FIXTURES[0])]
+            forged['identity'] = digest(encode({key: item for key, item in forged.items() if key != 'identity'}))
+            with self.assertRaisesRegex(ValueError, 'rehashed-qualification'):
+                api.present(forged)
+            legacy = copy.deepcopy(value)
+            del legacy['standardImplementationMaterials']; del legacy['finiteImplementationFixtures']
+            for row in legacy['apis']: del row['missingImplementationIssues']
+            legacy['identity'] = digest(encode({key: item for key, item in legacy.items() if key != 'identity'}))
+            self.assertEqual(api.validate(legacy), legacy)
+            self.assertNotIn('finite fixture', api.present(legacy))
+            with self.assertRaisesRegex(ValueError, 'stale-or-rehashed-evidence'):
+                api.read(encode(legacy), output, report, selected)
+
+
 if __name__ == '__main__': unittest.main()

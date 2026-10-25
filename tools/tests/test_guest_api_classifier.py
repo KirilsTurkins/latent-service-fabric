@@ -21,23 +21,26 @@ API_ID = digest((CORELIB + ':' + str(TOKEN)).encode())[7:]
 LIBRARY_ID = 'b' * 64
 
 
-def method_pair(before, after, *, operand='ldftn'):
+def method_pair(before, after, *, operand='ldftn', initializer=False, standalone=True):
     signature = digest(bytes((0, 0, 14)))
     queries = {'schemaVersion': 'lsf.dotnet.compiler-queries.v1', 'sourceRevision': managed.SOURCE,
         'initializersExecuted': False, 'omittedMethods': 0, 'queries': [
             {'id': 'a' * 64, 'assemblyDigest': digest(b'entry'), 'signatureDigest': digest(b'entry signature'),
              'symbol': 'Entry.Run', 'mangledName': 'Entry__Run', 'kind': 'method',
              'declaration': 'ordinary', 'rootAnchor': True},
-            {'id': LIBRARY_ID, 'assemblyDigest': digest(b'identical library'), 'signatureDigest': signature,
-             'symbol': 'Outside.Probe', 'mangledName': 'Outside__Probe', 'kind': 'method',
+            {'id': LIBRARY_ID, 'assemblyDigest': digest(b'identical library'),
+             'signatureDigest': digest(bytes((0, 0, 1))) if initializer else signature,
+             'symbol': 'Outside.Core..cctor' if initializer else 'Outside.Probe',
+             'mangledName': 'Outside__cctor' if initializer else 'Outside__Probe',
+             'kind': 'initialization' if initializer else 'method',
              'declaration': 'ordinary', 'rootAnchor': False},
             {'id': API_ID, 'assemblyDigest': CORELIB, 'signatureDigest': signature,
              'symbol': 'System.IO.Path.GetTempFileName', 'mangledName': 'System_Private_CoreLib_System_IO_Path__GetTempFileName',
              'kind': 'method', 'declaration': 'ordinary', 'rootAnchor': False}]}
     prefix = b'<DirectedGraph xmlns="http://schemas.microsoft.com/vs/2009/dgml"><Nodes>'
     nodes = b'<Node Id="0" Label="Entry__Run"/>'
-    extra = (b'<Node Id="1" Label="Outside__Probe"/>'
-             b'<Node Id="2" Label="System_Private_CoreLib_System_IO_Path__GetTempFileName"/>')
+    source_node = b'<Node Id="1" Label="Outside__cctor"/>' if initializer else b'<Node Id="1" Label="Outside__Probe"/>'
+    extra = (source_node if standalone else b'') + b'<Node Id="2" Label="System_Private_CoreLib_System_IO_Path__GetTempFileName"/>'
     cil = {'schemaVersion': 'lsf.dotnet.cil-references.v1', 'corelibDigest': CORELIB,
         'scope': 'captured-input-call-operands', 'forwarding': 'exact-selected-ILC-assembly-identities',
         'indirectDispatch': 'unknown', 'apiSupport': 'unknown', 'runtimeExecution': 'not-observed',
@@ -113,6 +116,28 @@ class ApiRootClassifier(unittest.TestCase):
                 else:
                     with self.assertRaisesRegex(ValueError, 'addressable-input-source'):
                         api.dotnet_retention_pair(negative, positive, before, after, 'src/Capsule.cs')
+
+    def test_original_initializer_operand_does_not_infer_execution_from_missing_standalone_nodes(self):
+        before = {'src/Capsule.cs': b'if (false) { // lsf-api-root-edge\nProbe();\n}', 'library.cs': b'original library'}
+        after = dict(before); after['src/Capsule.cs'] = before['src/Capsule.cs'].replace(b'false', b'true')
+        negative, positive = method_pair(before, after, initializer=True, standalone=False)
+        pair = api.dotnet_retention_pair(negative, positive, before, after, 'src/Capsule.cs')
+        source = pair['inputSourceObservation']
+        self.assertEqual(source['negativeScanner'], source['positiveScanner'])
+        self.assertEqual(source['positiveCodegen'], 'codegen-node-not-observed')
+        self.assertFalse(source['standaloneSourceRetained'])
+        self.assertEqual(source['initializationDisposition'], 'unknown')
+        self.assertEqual(pair['runtimeExecution'], 'not-observed')
+        # An ordinary method does not gain the initializer-specific alternative.
+        ordinary = method_pair(before, after, standalone=False)
+        with self.assertRaisesRegex(ValueError, 'addressable-input-source'):
+            api.dotnet_retention_pair(*ordinary, before, after, 'src/Capsule.cs')
+        # The actual API-callee codegen proof remains mandatory in this form.
+        changed = copy.deepcopy(positive); changed['compiledMethods'] = copy.deepcopy(negative['compiledMethods'])
+        from tools.dev_workflow.common import encode
+        changed['identity'] = digest(encode({key: val for key, val in changed.items() if key != 'identity'}))
+        with self.assertRaisesRegex(ValueError, 'actual-callee-retention'):
+            api.dotnet_retention_pair(negative, changed, before, after, 'src/Capsule.cs')
 
     def test_api_pair_refuses_changed_library_body_and_scanner_codegen_disagreement(self):
         before = {'src/Capsule.cs': b'if (false) { // lsf-api-root-edge\nProbe();\n}', 'library.cs': b'original library'}

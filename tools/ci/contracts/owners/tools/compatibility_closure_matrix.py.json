@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/compatibility_closure_matrix.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Reviewed strict LLVM debug records and exact Go memory op grammar; preserve five actual passed cells in two fixed source epochs and execute only three missing cells, with original bounds and separate current passive diagnostics.",
+  "reviewReason": "Reviewed ONE fixed public Go selected-body diagnostic only, no node/sign/reached/init or qualified matrix row; exact unchanged CIL initializer-source alternative and finite six original fixture mappings preserve unknown execution and implementation scope. Original cases/decorators/skips remain; reviewed helper additions extend fixture guards only.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "bab1ffe00c9f746b996501de30f78136f6b5f354b0698f8e29cd5a501cccd25c"
+  "sha256": "c12dc1bb4ef18ed65e505ce9e9ba355c7a2b0cf438056cce18c05a14a51f1112"
 }

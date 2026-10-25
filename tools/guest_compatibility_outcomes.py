@@ -30,7 +30,7 @@ DIAGNOSTIC_LABELS = {
         15: 'cancelled', 16: 'http-response-rejected',
         17: 'runtime-task-limit', 18: 'runtime-queue-limit', 19: 'runtime-timer-limit',
         20: 'runtime-executor-limit', 21: 'runtime-wait-limit', 22: 'runtime-result-limit',
-        23: 'runtime-native-owner-limit', 24: 'native-thread-total-start-limit',
+        23: 'runtime-native-owner-limit', 24: 'native-thread-start-limit',
         25: 'native-memory-exhausted', 26: 'guest-stack-exhausted'},
     'profile': {1: 'wasmtime-service-values-v1', 2: 'wasmtime-buffered-web-values-v1'},
 }

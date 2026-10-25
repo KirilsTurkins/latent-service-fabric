@@ -135,6 +135,7 @@ def assemble(records, *, source_commit, root=ROOT, preserved_directory=None, dia
                 ('build' if cell == 'java' else 'baseline'), diagnostic_output / cell,
                 cell=cell, source_commit=source_commit)
     rows = []
+    implementation_qualifications = []
     for cell in CELLS:
         value = records[cell]; language = 'go' if cell == 'go-queues' else 'typescript' if cell == 'typescript-initializer' else cell
         runtime_source = PRESERVED_SOURCES[cell] if cell in diagnostics else source_commit
@@ -212,6 +213,9 @@ def assemble(records, *, source_commit, root=ROOT, preserved_directory=None, dia
                 'api|typescript|initialization|unsupported|result=42|count=1'}]
                 for row in value['initializerSigned']['programme']['cases']),
                 'compatibility-matrix-real-TypeScript-native-Unsupported-and-count')
+        # Signed checks above are necessary; exact immutable receipt origin is
+        # an additional constraint for the five already-reviewed evidence pins.
+        implementation_qualifications.extend(api.finite_cell_qualification(value))
         rows.append({'cell': cell, 'language': language, 'component': baseline['component'],
             'APIAnalysisIdentity': analysis['identity'], 'sourceCommit': value['sourceCommit'],
             'diagnosticSourceCommit': source_commit,
@@ -219,6 +223,9 @@ def assemble(records, *, source_commit, root=ROOT, preserved_directory=None, dia
             'arbitraryApiSafety': 'unknown', 'physicalRetirementScope': 'only-actual-fixed-owner-observations'})
     return {'schemaVersion': 'latent.compatibility.closure-matrix.v1', 'status': 'required-finite-owners-passed',
         'sourceCommit': source_commit, 'cells': rows, 'historicalEvidence': historical(root),
+        'implementationQualifications': implementation_qualifications,
+        'qualificationScope': 'exact-selected-standard-implementation-finite-fixtures-only',
+        'applicationApiExecution': 'unknown',
         'preservedExecutions': preservation, 'currentPassiveDiagnostics': diagnostics,
         'nativeSource': native.QUALIFIED['source'], 'nativeRun': native.QUALIFIED['run'],
         'sharedEngineStack': {'scope': 'unsigned-normal-component-containment-only',
@@ -276,7 +283,9 @@ def retain(source, output):
                     require(entry.is_file(follow_symlinks=False), 'compatibility-public-regular-file')
                     # Direct selection is digest/observation metadata, component
                     # and WIT only. In particular signed/*.key is never selected.
-                    if not recursive and path.suffix not in {'.json', '.wasm', '.wit'}: continue
+                    if not recursive and path.suffix not in {'.json', '.wasm', '.wit'}:
+                        if path != source / 'go-selected-body.ssa': continue
+                        require(path.stat().st_size <= 4096, 'compatibility-public-fixed-Go-body-bound')
                     relative = path.relative_to(source).as_posix()
                     if relative in rows: continue
                     require(len(relative.encode('utf-8')) <= 512, 'compatibility-public-path-bound')

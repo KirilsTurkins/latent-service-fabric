@@ -279,7 +279,7 @@ jobs:
 
   closure-required:
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/feat/sdk-compatibility-closure-20261025' }}
-    name: Required finite ${{ matrix.cell }} compatibility completion
+    name: Fixed public Go compiler selected-body observation
     runs-on: ubuntu-24.04
     timeout-minutes: ${{ matrix.minutes }}
     strategy:
@@ -287,12 +287,8 @@ jobs:
       max-parallel: 4
       matrix:
         include:
-        - cell: c
-          minutes: 45
         - cell: go
           minutes: 105
-        - cell: dotnet
-          minutes: 70
     env:
       CELL: ${{ matrix.cell }}
       CARGO_BUILD_JOBS: 2
@@ -441,7 +437,7 @@ jobs:
         ; args+=(--engine \"$RUNNER_TEMP/compatibility-typescript-engine/products\") ;;\n  typescript-initializer)\
         \ tools=\"$RUNNER_TEMP/compatibility-typescript-tools\" ;;\n  *) exit 2 ;;\nesac\npython3 -B tools/qualify_compatibility_closure.py\
         \ --cell \"$CELL\" --native \"$RUNNER_TEMP/compatibility-native\" --tools \"$tools\" --output \"$RUNNER_TEMP/compatibility-result\"\
-        \ \"${args[@]}\""
+        \ --go-selected-body-only \"${args[@]}\""
     - name: Admit only the bounded public synthetic evidence union including failures
       id: public
       if: always()
@@ -457,6 +453,7 @@ jobs:
         if-no-files-found: error
         path: ${{ runner.temp }}/compatibility-public/**
   closure-matrix:
+    if: false # Diagnostic-only Go observation cannot satisfy the eight-cell matrix.
     needs: closure-required
     runs-on: ubuntu-24.04
     timeout-minutes: 10

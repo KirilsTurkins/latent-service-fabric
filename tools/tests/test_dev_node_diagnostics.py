@@ -269,7 +269,12 @@ class ProbeIntegration(unittest.TestCase):
                 report = node_scenarios.run(root, {"environment": "node", "selection": []},
                                             diagnostic_observer=capture.observer("common-scenarios"))
             self.assertFalse(report["passed"])
-            cli.call.assert_called_once()
+            calls = cli.call.call_args_list
+            self.assertEqual(len(calls), 2)
+            self.assertEqual([item.args[0] for item in calls].count('invoke'), 1)
+            self.assertEqual(calls[1].args,
+                ('--rpc-timeout-ms', '1500', 'activation', 'tree', 'original', '--page-size', '1'))
+            self.assertEqual(calls[1].kwargs, {'timeout': 2})
             self.assertEqual(capture.snapshot()["cases"][0]["guestTrapCode"], "guest-runtime-error")
             self.assertEqual(capture.snapshot()["invocationClientCleanup"], "owned-client-reaped")
 

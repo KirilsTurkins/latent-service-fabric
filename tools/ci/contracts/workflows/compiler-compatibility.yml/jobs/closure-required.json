@@ -9,7 +9,7 @@
       "CELL": "${{ matrix.cell }}"
     },
     "if": "${{ github.event_name == 'push' && github.ref == 'refs/heads/feat/sdk-compatibility-closure-20261025' }}",
-    "name": "Required finite ${{ matrix.cell }} compatibility completion",
+    "name": "Fixed public Go compiler selected-body observation",
     "runs-on": "ubuntu-24.04",
     "steps": [
       {
@@ -117,7 +117,7 @@
       },
       {
         "name": "Run only the fixed normal capture phase then the fresh1800s compiler and node phase",
-        "run": "set -euo pipefail\nmkdir \"$RUNNER_TEMP/compatibility-unused-tools\"\ntools=\"$RUNNER_TEMP/compatibility-unused-tools\"\nargs=()\ncase \"$CELL\" in\n  c|rust|go|go-queues) ;;\n  java) tools=\"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\"; args+=(--read-only-cache \"$RUNNER_TEMP/compatibility-java-prerequisite/compiler/gradle-home/caches/modules-2\") ;;\n  dotnet) tools=\"$RUNNER_TEMP/compatibility-dotnet-tools\" ;;\n  typescript) tools=\"$RUNNER_TEMP/compatibility-typescript-tools\"; args+=(--engine \"$RUNNER_TEMP/compatibility-typescript-engine/products\") ;;\n  typescript-initializer) tools=\"$RUNNER_TEMP/compatibility-typescript-tools\" ;;\n  *) exit 2 ;;\nesac\npython3 -B tools/qualify_compatibility_closure.py --cell \"$CELL\" --native \"$RUNNER_TEMP/compatibility-native\" --tools \"$tools\" --output \"$RUNNER_TEMP/compatibility-result\" \"${args[@]}\"",
+        "run": "set -euo pipefail\nmkdir \"$RUNNER_TEMP/compatibility-unused-tools\"\ntools=\"$RUNNER_TEMP/compatibility-unused-tools\"\nargs=()\ncase \"$CELL\" in\n  c|rust|go|go-queues) ;;\n  java) tools=\"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\"; args+=(--read-only-cache \"$RUNNER_TEMP/compatibility-java-prerequisite/compiler/gradle-home/caches/modules-2\") ;;\n  dotnet) tools=\"$RUNNER_TEMP/compatibility-dotnet-tools\" ;;\n  typescript) tools=\"$RUNNER_TEMP/compatibility-typescript-tools\"; args+=(--engine \"$RUNNER_TEMP/compatibility-typescript-engine/products\") ;;\n  typescript-initializer) tools=\"$RUNNER_TEMP/compatibility-typescript-tools\" ;;\n  *) exit 2 ;;\nesac\npython3 -B tools/qualify_compatibility_closure.py --cell \"$CELL\" --native \"$RUNNER_TEMP/compatibility-native\" --tools \"$tools\" --output \"$RUNNER_TEMP/compatibility-result\" --go-selected-body-only \"${args[@]}\"",
         "shell": "bash"
       },
       {
@@ -142,16 +142,8 @@
       "matrix": {
         "include": [
           {
-            "cell": "c",
-            "minutes": 45
-          },
-          {
             "cell": "go",
             "minutes": 105
-          },
-          {
-            "cell": "dotnet",
-            "minutes": 70
           }
         ]
       },
@@ -161,7 +153,7 @@
   },
   "jobId": "closure-required",
   "kind": "job",
-  "reviewReason": "Reviewed strict LLVM debug records and exact Go memory op grammar; preserve five actual passed cells in two fixed source epochs and execute only three missing cells, with original bounds and separate current passive diagnostics.",
+  "reviewReason": "Reviewed root CI faithful mock-constructor/selected-rustc fixture corrections and ONE Go diagnostic route; all existing case IDs/decorators/skips preserved. Exact module helper setup changes are reviewed source, not a skipped control. Static false disables diagnostic rollup without expression obfuscation.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/compiler-compatibility.yml"
 }

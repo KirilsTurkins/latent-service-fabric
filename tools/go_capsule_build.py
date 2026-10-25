@@ -49,7 +49,10 @@ def runtime_transformations_material(output: Path) -> dict:
 
 
 def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path | None, repository: str,
-          *, offline_cache: Path | None = None, _deadline: float | None = None) -> Path:
+          *, offline_cache: Path | None = None, _deadline: float | None = None,
+          _compiler_observer=None) -> Path:
+    if _compiler_observer is not None and not callable(_compiler_observer):
+        raise ValueError('Go-build-private-compiler-observer')
     if _deadline is not None and (type(_deadline) not in (int, float) or not math.isfinite(_deadline)
                                  or _deadline <= time.monotonic() + 5):
         raise ValueError('Go-build-original-owner-deadline')
@@ -179,6 +182,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 "observationDigest": digest(read_file(output / "build-observation.json")), "sourceDigest": digest(source_inputs),
                 "componentDigest": digest(component), "sdkBindingDigest": binding_digest,
                 "buildSeconds": round(time.monotonic() - start, 6), "commands": commands.records})
+            if _compiler_observer is not None:
+                _compiler_observer(compiler.compiler_edges)
         return output
     except BaseException as error:
         write_json(output / "BUILD-FAILED.json", {"formatVersion": 1, "stage": stage,

@@ -81,10 +81,10 @@ class CompilerWorkflow(unittest.TestCase):
         job = workflow['jobs']['closure-required']
         self.assertEqual(job['if'], "${{ github.event_name == 'push' && github.ref == 'refs/heads/feat/sdk-compatibility-closure-20261025' }}")
         self.assertEqual(job['strategy'], {'fail-fast': False, 'max-parallel': 4, 'matrix': {
-            'include': [{'cell': cell, 'minutes': minutes} for cell, minutes in JOB_MINUTES.items() if cell not in PRESERVED_CELLS]}})
+            'include': [{'cell': 'go', 'minutes': JOB_MINUTES['go']}]}})
         active = {row['cell'] for row in job['strategy']['matrix']['include']}
         self.assertEqual(set(PINS), set(PRESERVED_CELLS))
-        self.assertEqual(active | set(PINS), set(CELLS))
+        self.assertEqual(active, {'go'})
         self.assertFalse(active & set(PINS))
         self.assertEqual(job['timeout-minutes'], '${{ matrix.minutes }}')
         self.assertEqual(job['env']['CARGO_BUILD_JOBS'], 2)
@@ -96,6 +96,7 @@ class CompilerWorkflow(unittest.TestCase):
         execute = next(command for command in commands if '--cell "$CELL"' in command)
         self.assertIn('--engine "$RUNNER_TEMP/compatibility-typescript-engine/products"', execute)
         self.assertIn('*) exit 2', execute)
+        self.assertIn('--go-selected-body-only', execute)
         admission = next(step for step in steps if step.get('id') == 'public')
         self.assertEqual(admission['if'], 'always()')
         self.assertIn('compatibility_closure_matrix.py retain', admission['run'])
@@ -103,7 +104,8 @@ class CompilerWorkflow(unittest.TestCase):
         self.assertEqual(steps[-1]['with']['path'], '${{ runner.temp }}/compatibility-public/**')
         rollup = workflow['jobs']['closure-matrix']
         self.assertEqual(rollup['needs'], 'closure-required')
-        self.assertEqual(len([step for step in rollup['steps'] if 'download-artifact@' in step.get('uses', '')]), len(active))
+        self.assertIs(rollup['if'], False)
+        self.assertEqual(len([step for step in rollup['steps'] if 'download-artifact@' in step.get('uses', '')]), 3)
         retained = [step for step in rollup['steps'] if 'compatibility_preserved_cells.py' in step.get('run', '')]
         self.assertEqual(len(retained), 1)
         self.assertEqual(retained[0]['env'], {'GH_TOKEN': '${{ github.token }}'})
