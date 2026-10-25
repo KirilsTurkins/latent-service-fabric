@@ -130,8 +130,8 @@ internal static class ThrowHelperPorts
                     && hostFields[0].FieldType == host && hostFields[0].GetRawConstantValue() is int,
                     "throw-helper-host-constant");
                 int hostValue = (int)hostFields[0].GetRawConstantValue()!;
-                ActualCil.Need(hostMembers.Count(field => field.IsLiteral && field.GetRawConstantValue() is int number
-                    && number == hostValue) == 1, "throw-helper-host-enum-alias");
+                ActualCil.Need(hostMembers.Count(field => field.IsLiteral && field.GetRawConstantValue() is int hostNumber
+                    && hostNumber == hostValue) == 1, "throw-helper-host-enum-alias");
                 ActualCil.Need(values.TryAdd((name, pin.Value), Enum.ToObject(host, hostValue)), "throw-helper-duplicate-constant");
                 Bindings.Add(new(name, pin.Name, pin.Value, hostValue));
             }
