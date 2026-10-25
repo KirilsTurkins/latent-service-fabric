@@ -7541,20 +7541,23 @@
         "component_threading::tests::rust_sync_private_dispatch_executes_production_helper_and_preserves_source_fallback",
         "development_borrow_admission::tests::normal_socket_cases_keep_distinct_closed_indices_and_original_opt_in",
         "host::service::refusal::tests::disabled_and_first_per_activation_do_not_share_global_admission",
-        "host::service::refusal::tests::typed_budget_refuses_coercion_unknown_details_and_private_error_text"
+        "host::service::refusal::tests::typed_budget_refuses_coercion_unknown_details_and_private_error_text",
+        "host::join_state_tests::canonical_join_state_first_poll_refusal_and_same_budget_fresh_store"
       ],
       "expectedIgnored": [
         "cache::measurement::cache_lookup_collector",
+        "host::join_state_tests::canonical_join_state_first_poll_refusal_and_same_budget_fresh_store",
         "values::tests::measurement::codec_collector"
       ],
       "id": "latent-wasmtime.lib.latent-wasmtime",
       "ignoredLeaves": [
         "cache_lookup_collector",
+        "canonical_join_state_first_poll_refusal_and_same_budget_fresh_store",
         "codec_collector"
       ],
       "kind": "lib",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 484,
+      "minimumCases": 485,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [
