@@ -1,7 +1,7 @@
-name: Focused canonical async JoinState accounting
+name: Focused canonical async call-future accounting
 on:
   push:
-    branches: ['feat/canonical-join-state-accounting-20261025']
+    branches: ['feat/sdk-736-shared-owners-20261025']
     paths:
       - '.github/workflows/canonical-join-state.yml'
       - 'crates/vendor/wasmtime/**'
@@ -12,11 +12,11 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: canonical-join-state-${{ github.ref }}
+  group: canonical-call-future-${{ github.ref }}
   cancel-in-progress: false
 jobs:
   join-state:
-    name: Five private owners and one real canonical budget admission
+    name: Four private future owners and one real canonical budget admission
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     env:
@@ -55,7 +55,7 @@ jobs:
       - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
         with:
           version: 1.254.0
-      - name: Build only two locked host targets and execute the exact six controls
+      - name: Build only two locked host targets and execute the exact five controls
         run: >-
           python3 -B tools/qualify_canonical_join_state.py
           --source-commit "${{ github.sha }}"
@@ -64,7 +64,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: canonical-join-state-${{ github.sha }}
+          name: canonical-call-future-${{ github.sha }}
           path: |
             ${{ runner.temp }}/canonical-join-state/receipt.json
             ${{ runner.temp }}/canonical-join-state/FAILED.json
