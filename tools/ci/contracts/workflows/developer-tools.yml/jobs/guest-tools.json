@@ -6,9 +6,10 @@
     "env": {
       "LSF_DEV_LANGUAGE": "${{ matrix.language }}"
     },
-    "if": "github.event_name != 'pull_request' || !startsWith(github.head_ref, 'feat/559-') || github.event.pull_request.head.repo.full_name != github.repository",
+    "if": "${{ !inputs.java_compiler_product && (github.event_name != 'pull_request' || !startsWith(github.head_ref, 'feat/559-') || github.event.pull_request.head.repo.full_name != github.repository) }}",
     "name": "Guest tool bundle and maintained application builds (${{ matrix.language }})",
     "permissions": {
+      "actions": "read",
       "attestations": "write",
       "contents": "read",
       "id-token": "write"
@@ -55,6 +56,33 @@
       {
         "name": "Stage the pinned relocatable Python prefix",
         "run": "image='python@sha256:4c2cf9917bd1cbacc5e9b07320025bdb7cdf2df7b0ceaccb55e9dd7e30987419'\ncontainer=$(docker create \"$image\")\ntrap 'docker rm \"$container\"' EXIT\nprefix=\"$RUNNER_TEMP/guest-tools-cpython\"\nmkdir \"$prefix\"\ndocker cp \"$container:/usr/local/.\" \"$prefix\"\nprintf 'LSF_DEV_PYTHON_PREFIX=%s\\n' \"$prefix\" >> \"$GITHUB_ENV\"\n"
+      },
+      {
+        "id": "java-compiler-cache",
+        "if": "matrix.language == 'java'",
+        "name": "Restore untrusted source-pinned Java prepared inputs",
+        "uses": "actions/cache/restore",
+        "with": {
+          "key": "java-prepared-compiler-v1-${{ runner.os }}-${{ hashFiles('tools/data/java-compiler-profile.json') }}",
+          "path": "${{ runner.temp }}/compiler-archives/java-prepared"
+        }
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "if": "matrix.language == 'java'",
+        "name": "Acquire the source-pinned Java compiler build inputs",
+        "run": "set -euo pipefail\ninput=$(mktemp -d /tmp/latent-java-input.XXXXXXXX)\nrmdir \"$input\"\npython -B tools/java_guest/compiler_profile_distribution.py acquire --output \"$input\"\nprintf 'LSF_DEV_JAVA_COMPILER_INPUT=%s\\n' \"$input\" >> \"$GITHUB_ENV\"\n"
+      },
+      {
+        "if": "matrix.language == 'java' && steps.java-compiler-cache.outputs.cache-hit != 'true'",
+        "name": "Save only reverified Java prepared input bytes",
+        "uses": "actions/cache/save",
+        "with": {
+          "key": "${{ steps.java-compiler-cache.outputs.cache-primary-key }}",
+          "path": "${{ runner.temp }}/compiler-archives/java-prepared"
+        }
       },
       {
         "env": {
@@ -421,7 +449,7 @@
   },
   "jobId": "guest-tools",
   "kind": "job",
-  "reviewReason": "Retain only the two existing owned bounded initial-build diagnostics from the fixed public .NET watch fixture; preserve all commands, guards, coverage and limits.",
+  "reviewReason": "Restore/save exact source-profile keyed prepared compiler bytes through existing Actions cache conventions; preserve all original matrix commands.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/developer-tools.yml"
 }

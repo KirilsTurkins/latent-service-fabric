@@ -147,7 +147,15 @@
           "docs/**"
         ]
       },
-      "workflow_dispatch": null
+      "workflow_dispatch": {
+        "inputs": {
+          "java_compiler_product": {
+            "default": false,
+            "description": "Verify only the sealed Java compiler product using existing pack and installer",
+            "type": "boolean"
+          }
+        }
+      }
     },
     "permissions": {
       "contents": "read"
@@ -156,13 +164,14 @@
   "requiredJobs": [
     "contracts",
     "guest-tools",
+    "java-compiler-product",
     "linux-portable",
     "portable-differential",
     "windows",
     "windows-bundle",
     "wsl-image"
   ],
-  "reviewReason": "Retain workflow ownership of the measured guest-tools timeout adjustment without changing workflow triggers or job selection.",
+  "reviewReason": "Add a default-false existing-workflow compiler product check; preserve ordinary matrix and select prepared Java inputs.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/developer-tools.yml"
 }

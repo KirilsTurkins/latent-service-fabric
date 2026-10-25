@@ -166,6 +166,26 @@ class JavaSpiManualWorkflow(unittest.TestCase):
         old = yaml.safe_load(subprocess.check_output(['git', 'show',
             'aa56bdebad8c12f20acce4ec4ecfeca73cf554be:'+name], cwd=ROOT, text=True))
         selected = yaml.safe_load((ROOT/name).read_text())
+        private = selected[True]['workflow_dispatch']['inputs'].pop('public_fiber_private_scalar_llvm')
+        self.assertEqual(private['type'], 'boolean');self.assertIs(private['default'], False)
+        clause = " && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_private_scalar_llvm)"
+        for name in ('compiler-component', 'dependency-ingestion', 'http-public-spi'):
+            self.assertEqual(selected['jobs'][name]['if'].count(clause), 1)
+            selected['jobs'][name]['if'] = selected['jobs'][name]['if'].replace(clause, '', 1)
+        self.assertEqual(selected['jobs']['public-fiber-assembly']['if'],
+            "${{ github.event_name == 'workflow_dispatch' && (inputs.public_fiber_assembly || inputs.public_fiber_derived_llvm || inputs.public_fiber_private_scalar_llvm) }}")
+        selected['jobs']['public-fiber-assembly']['if'] = "${{ github.event_name == 'workflow_dispatch' && (inputs.public_fiber_assembly || inputs.public_fiber_derived_llvm) }}"
+        derived = selected[True]['workflow_dispatch']['inputs'].pop('public_fiber_derived_llvm')
+        self.assertEqual(derived['type'], 'boolean');self.assertIs(derived['default'], False)
+        for name, clause in (
+                ('compiler-component', " && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_derived_llvm)"),
+                ('dependency-ingestion', " && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_derived_llvm)"),
+                ('http-public-spi', ' && !inputs.public_fiber_derived_llvm')):
+            self.assertEqual(selected['jobs'][name]['if'].count(clause), 1)
+            selected['jobs'][name]['if'] = selected['jobs'][name]['if'].replace(clause, '', 1)
+        self.assertEqual(selected['jobs']['public-fiber-assembly']['if'],
+            "${{ github.event_name == 'workflow_dispatch' && (inputs.public_fiber_assembly || inputs.public_fiber_derived_llvm) }}")
+        selected['jobs']['public-fiber-assembly']['if'] = "${{ github.event_name == 'workflow_dispatch' && inputs.public_fiber_assembly }}"
         public = selected[True]['workflow_dispatch']['inputs'].pop('public_fiber_assembly')
         self.assertEqual(public['type'], 'boolean');self.assertIs(public['default'], False)
         assembly = selected['jobs'].pop('public-fiber-assembly')

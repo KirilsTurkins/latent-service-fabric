@@ -35,6 +35,14 @@ on:
         description: Build only the fixed public fiber assembly inputs without component execution
         type: boolean
         default: false
+      public_fiber_derived_llvm:
+        description: Compiler-only public fixture using one qualified source-bound LLVM candidate
+        type: boolean
+        default: false
+      public_fiber_private_scalar_llvm:
+        description: Compiler-only public fixture using the independently qualified private-scalar backend
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -56,12 +64,16 @@ env:
 
 jobs:
   compiler-component:
-    if: ${{ (github.event_name != 'workflow_dispatch' || !inputs.java_http_spi) && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_assembly) }}
+    if: ${{ (github.event_name != 'workflow_dispatch' || !inputs.java_http_spi) && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_assembly) && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_derived_llvm) && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_private_scalar_llvm) }}
     name: Actual Java sources, SDK ownership and enforced node
     runs-on: ubuntu-24.04
     timeout-minutes: 55
+    permissions:
+      contents: read
+      actions: read
     env:
       PYTHONDONTWRITEBYTECODE: 1
+      LSF_DEV_COMPILER_CACHE: ${{ runner.temp }}/compiler-archives
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -116,8 +128,16 @@ jobs:
       - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
         with:
           version: 1.254.0
+      - name: Restore untrusted source-pinned Java prepared inputs
+        id: java-compiler-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/compiler-archives/java-prepared
+          key: java-prepared-compiler-v1-${{ runner.os }}-${{ hashFiles('tools/data/java-compiler-profile.json') }}
       - name: Install pinned compiler tools
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           curl --fail --location --retry 3 --max-time 180 \
@@ -126,15 +146,32 @@ jobs:
           echo "a17ddd85a26b6a7f5ddb71ff8b05fc5104c0202c6e64782429790c933686c806  $RUNNER_TEMP/gradle.zip" | sha256sum --check
           unzip -q "$RUNNER_TEMP/gradle.zip" -d "$RUNNER_TEMP"
           echo "$RUNNER_TEMP/gradle-9.1.0/bin" >> "$GITHUB_PATH"
+          # The independent historical feasibility helper still requires its
+          # original explicit SDK. Ordinary BaseCompiler routes use the sealed
+          # promoted product below; no old helper/version gate is weakened.
           curl --fail --location --max-time 180 \
             https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \
             -o "$RUNNER_TEMP/wasi-sdk.tar.gz"
           echo "87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171  $RUNNER_TEMP/wasi-sdk.tar.gz" | sha256sum --check --strict
           tar -xzf "$RUNNER_TEMP/wasi-sdk.tar.gz" -C "$RUNNER_TEMP"
+          compiler_root=$(mktemp -d /tmp/latent-java-normal.XXXXXXXX)
+          timeout --signal=TERM --kill-after=5 1195 \
+            python3 -B tools/java_guest/compiler_profile_distribution.py stage \
+              --root "$compiler_root" --output "$RUNNER_TEMP/java-normal-compiler-product.json" \
+              > "$RUNNER_TEMP/java-normal-compiler-path.txt"
+          compiler_sdk=$(cat "$RUNNER_TEMP/java-normal-compiler-path.txt")
+          test "$compiler_sdk" = "$compiler_root/work/installed/wasi-sdk"
+          printf 'LSF_JAVA_WASI_SDK=%s\n' "$compiler_sdk" >> "$GITHUB_ENV"
           python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/java-bindgen"
           echo "$RUNNER_TEMP/java-bindgen" >> "$GITHUB_PATH"
+      - name: Save only reverified Java prepared input bytes
+        if: steps.java-compiler-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/compiler-archives/java-prepared
+          key: ${{ steps.java-compiler-cache.outputs.cache-primary-key }}
       - name: Qualify proposed transaction shapes and shared imported owners with the maintained Java compiler
-        run: python3 tools/qualify_transaction_contracts.py --language java --output "$RUNNER_TEMP/transaction-contract-java" --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
+        run: python3 tools/qualify_transaction_contracts.py --language java --output "$RUNNER_TEMP/transaction-contract-java" --wasi-sdk "$LSF_JAVA_WASI_SDK"
       - name: Check bounded Java aggregate format vectors without claiming State execution
         id: aggregate-schema-vectors
         run: |
@@ -148,9 +185,9 @@ jobs:
           java -cp "$RUNNER_TEMP/java-aggregate-encoding" dev.latent.app.EncodingVectors \
             | tee "$RUNNER_TEMP/java-aggregate-encoding/vectors.log"
       - name: Compile the authored transaction aggregate and forbidden immediate HTTP variant
-        run: python3 tools/compile_transaction_guests.py --language java --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux" --output "$RUNNER_TEMP/transaction-guests-java"
+        run: python3 tools/compile_transaction_guests.py --language java --wasi-sdk "$LSF_JAVA_WASI_SDK" --output "$RUNNER_TEMP/transaction-guests-java"
       - name: Compile exact state value and forbidden child inputs
-        run: python3 tools/compile_transaction_guests.py --language java --java-state-acceptance --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux" --output "$RUNNER_TEMP/transaction-guest-acceptance-java"
+        run: python3 tools/compile_transaction_guests.py --language java --java-state-acceptance --wasi-sdk "$LSF_JAVA_WASI_SDK" --output "$RUNNER_TEMP/transaction-guest-acceptance-java"
       - name: Check explicit post-stage diagnostic helpers without claiming transaction execution
         id: transaction-diagnostic-vectors
         shell: bash
@@ -164,7 +201,7 @@ jobs:
           done | tee "$RUNNER_TEMP/java-aggregate-encoding/diagnostic-vectors.log"
       - name: Compile the separate Java post-stage fault capsule without claiming host execution
         id: transaction-diagnostic-component
-        run: python3 tools/compile_transaction_guests.py --language java --java-post-stage-diagnostic --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux" --output "$RUNNER_TEMP/transaction-guest-diagnostic-java"
+        run: python3 tools/compile_transaction_guests.py --language java --java-post-stage-diagnostic --wasi-sdk "$LSF_JAVA_WASI_SDK" --output "$RUNNER_TEMP/transaction-guest-diagnostic-java"
       - name: Compile real Java sources and retain the first incompatible stage
         run: python3 sdk/java-guest/tools/feasibility.py --output "$RUNNER_TEMP/java-guest-feasibility" --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
       - name: Minimize supported Java WIT composition with the actual parser and C ABI
@@ -174,14 +211,14 @@ jobs:
           set -o pipefail
           cargo --config .cargo/managed-guest.toml run --locked -p latent-wasmtime --features java-guest-diagnostic --example java_runtime_probe -- "$RUNNER_TEMP/java-guest-feasibility/probe.wasm" 2>&1 | tee "$RUNNER_TEMP/java-guest-feasibility/runtime-probe.log"
       - name: Compile generated typed Java bindings against async capability WIT
-        run: python3 tools/qualify_java_bridge.py --output "$RUNNER_TEMP/java-guest-bindings" --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
+        run: python3 tools/qualify_java_bridge.py --output "$RUNNER_TEMP/java-guest-bindings" --wasi-sdk "$LSF_JAVA_WASI_SDK"
       - name: Execute typed Java values and async host suspension
         run: |
           set -o pipefail
           cargo --config .cargo/managed-guest.toml run --locked -p latent-wasmtime --features java-guest-diagnostic --example java_runtime_probe -- "$RUNNER_TEMP/java-guest-bindings/compiled/component.wasm" --typed 2>&1 | tee "$RUNNER_TEMP/java-guest-bindings/runtime-probe.log"
       - name: Prepare the opt-in Java fibers and reference JDK controls
         id: prepare-java-activation-fibers
-        run: python3 tools/qualify_java_fibers.py --output "$RUNNER_TEMP/java-activation-fibers" --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
+        run: python3 tools/qualify_java_fibers.py --output "$RUNNER_TEMP/java-activation-fibers" --wasi-sdk "$LSF_JAVA_WASI_SDK"
       - name: Execute signed activation threads with actual physical cleanup
         id: signed-java-activation-fibers
         env:
@@ -198,7 +235,7 @@ jobs:
           python3 tools/qualify_java_fibers.py --fixture fiber-io \
             --output "$RUNNER_TEMP/java-fiber-io" \
             --read-only-cache "$RUNNER_TEMP/java-activation-fibers/compiler/gradle-home/caches/modules-2" \
-            --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
+            --wasi-sdk "$LSF_JAVA_WASI_SDK"
       - name: Execute signed Java pending host imports and overlapping waits
         id: signed-java-fiber-io
         env:
@@ -214,7 +251,7 @@ jobs:
         run: |
           python3 tools/qualify_java_fibers.py --fixture timers \
             --read-only-cache "$RUNNER_TEMP/java-activation-fibers/compiler/gradle-home/caches/modules-2" \
-            --output "$RUNNER_TEMP/java-standard-timers" --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
+            --output "$RUNNER_TEMP/java-standard-timers" --wasi-sdk "$LSF_JAVA_WASI_SDK"
       - name: Execute signed recurring Java timers and physical worker retirement
         id: signed-java-standard-timers
         env:
@@ -228,7 +265,7 @@ jobs:
       - name: Qualify standalone Java projects, nine SDK components, signed node and printed guide
         run: |
           set -o pipefail
-          python3 tools/qualify_java_capsules.py --output "$RUNNER_TEMP/java-capsule-authoring" --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux" 2>&1 | tee "$RUNNER_TEMP/java-capsule-authoring.log"
+          python3 tools/qualify_java_capsules.py --output "$RUNNER_TEMP/java-capsule-authoring" --wasi-sdk "$LSF_JAVA_WASI_SDK" 2>&1 | tee "$RUNNER_TEMP/java-capsule-authoring.log"
       - name: Export only exact normal public prerequisites for the separate Java scratch packet
         run: >-
           python3 tools/qualify_sdk_scratch.py --export-bundle --language java
@@ -249,7 +286,7 @@ jobs:
           python3 tools/qualify_java_fibers.py --fixture worker-libraries \
             --output "$RUNNER_TEMP/java-worker-libraries" \
             --read-only-cache "$RUNNER_TEMP/java-activation-fibers/compiler/gradle-home/caches/modules-2" \
-            --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
+            --wasi-sdk "$LSF_JAVA_WASI_SDK"
       - name: Execute signed published libraries with their default workers
         id: signed-java-worker-libraries
         env:
@@ -263,11 +300,11 @@ jobs:
       - name: Qualify separately signed typed Java domain through ordinary Java HTTP adapter
         run: |
           set -o pipefail
-          python3 tools/qualify_java_http_composition.py --output "$RUNNER_TEMP/java-http-composition" --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux" 2>&1 | tee "$RUNNER_TEMP/java-http-composition.log"
+          python3 tools/qualify_java_http_composition.py --output "$RUNNER_TEMP/java-http-composition" --wasi-sdk "$LSF_JAVA_WASI_SDK" 2>&1 | tee "$RUNNER_TEMP/java-http-composition.log"
       - name: Qualify original ingress and real revision lifecycle on fresh ordinary default nodes
         run: |
           set -o pipefail
-          python3 tools/qualify_java_server_lifecycle_suite.py --output "$RUNNER_TEMP/java-server-lifecycle" --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux" 2>&1 | tee "$RUNNER_TEMP/java-server-lifecycle.log"
+          python3 tools/qualify_java_server_lifecycle_suite.py --output "$RUNNER_TEMP/java-server-lifecycle" --wasi-sdk "$LSF_JAVA_WASI_SDK" 2>&1 | tee "$RUNNER_TEMP/java-server-lifecycle.log"
       - name: Qualify shared-node Java state and credentials in two admitted tenants
         run: |
           set -euo pipefail
@@ -276,7 +313,7 @@ jobs:
             --native-directory "$RUNNER_TEMP/java-server-lifecycle/selected-native" \
             --native-tuple "$RUNNER_TEMP/java-server-lifecycle/native/native-tuple.json" \
             --read-only-cache "$RUNNER_TEMP/java-activation-fibers/compiler/gradle-home/caches/modules-2" \
-            --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux" 2>&1 | tee "$RUNNER_TEMP/java-server-tenants.log"
+            --wasi-sdk "$LSF_JAVA_WASI_SDK" 2>&1 | tee "$RUNNER_TEMP/java-server-tenants.log"
       - name: Qualify exact-approved contained processors and signed generated Java source
         run: |
           set -euo pipefail
@@ -288,7 +325,7 @@ jobs:
             --native-directory "$RUNNER_TEMP/java-server-lifecycle/selected-native" \
             --native-tuple "$RUNNER_TEMP/java-server-lifecycle/native/native-tuple.json" \
             --read-only-cache "$RUNNER_TEMP/java-activation-fibers/compiler/gradle-home/caches/modules-2" \
-            --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux" 2>&1 | tee "$RUNNER_TEMP/java-annotation-processors.log"
+            --wasi-sdk "$LSF_JAVA_WASI_SDK" 2>&1 | tee "$RUNNER_TEMP/java-annotation-processors.log"
       - name: Qualify captured original JAR native and reflection compiler failures with a signed ordinary entry
         run: |
           set -euo pipefail
@@ -297,7 +334,7 @@ jobs:
             --native-directory "$RUNNER_TEMP/java-server-lifecycle/selected-native" \
             --native-tuple "$RUNNER_TEMP/java-server-lifecycle/native/native-tuple.json" \
             --read-only-cache "$RUNNER_TEMP/java-activation-fibers/compiler/gradle-home/caches/modules-2" \
-            --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux" 2>&1 | tee "$RUNNER_TEMP/java-library-failures.log"
+            --wasi-sdk "$LSF_JAVA_WASI_SDK" 2>&1 | tee "$RUNNER_TEMP/java-library-failures.log"
       - name: Test private HTTP JAR capture and exact provider evidence controls
         run: python3 -B -m unittest tools.tests.test_java_private_http -v
       - name: Qualify unknown private HTTP JARs through the shared standard backend
@@ -307,7 +344,7 @@ jobs:
             --native "$RUNNER_TEMP/java-server-lifecycle/selected-native" \
             --native-tuple "$RUNNER_TEMP/java-server-lifecycle/native/native-tuple.json" \
             --read-only-cache "$RUNNER_TEMP/java-activation-fibers/compiler/gradle-home/caches/modules-2" \
-            --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
+            --wasi-sdk "$LSF_JAVA_WASI_SDK"
       - name: Test published Java factory capture and replay identity controls
         run: python3 -B -m unittest tools.tests.test_java_published_http tools.tests.test_java_published_replay -v
       - name: Qualify two unchanged published Java clients through the same standard backend
@@ -317,7 +354,7 @@ jobs:
           --native "$RUNNER_TEMP/java-server-lifecycle/selected-native"
           --native-tuple "$RUNNER_TEMP/java-server-lifecycle/native/native-tuple.json"
           --read-only-cache "$RUNNER_TEMP/java-activation-fibers/compiler/gradle-home/caches/modules-2"
-          --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
+          --wasi-sdk "$LSF_JAVA_WASI_SDK"
       - name: Retain diagnostics, generated source and component candidates
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -577,7 +614,7 @@ jobs:
           retention-days: 14
 
   dependency-ingestion:
-    if: ${{ (github.event_name != 'workflow_dispatch' || !inputs.qualify-scratch-refusals) && (github.event_name != 'workflow_dispatch' || !inputs.java_http_spi) && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_assembly) }}
+    if: ${{ (github.event_name != 'workflow_dispatch' || !inputs.qualify-scratch-refusals) && (github.event_name != 'workflow_dispatch' || !inputs.java_http_spi) && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_assembly) && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_derived_llvm) && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_private_scalar_llvm) }}
     name: Captured Java dependency native programme (${{ matrix.mode }})
     runs-on: ubuntu-24.04
     timeout-minutes: 35
@@ -830,7 +867,7 @@ jobs:
         retention-days: 3
 
   http-public-spi:
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.java_http_spi && !inputs.public_fiber_assembly }}
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.java_http_spi && !inputs.public_fiber_assembly && !inputs.public_fiber_derived_llvm && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_private_scalar_llvm) }}
     name: Optional Java public ConnectionFactory with isolated default calls
     runs-on: ubuntu-24.04
     timeout-minutes: 55
@@ -936,10 +973,13 @@ jobs:
         retention-days: 3
 
   public-fiber-assembly:
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.public_fiber_assembly }}
+    if: ${{ github.event_name == 'workflow_dispatch' && (inputs.public_fiber_assembly || inputs.public_fiber_derived_llvm || inputs.public_fiber_private_scalar_llvm) }}
     name: Fixed public Java fiber assembly inputs only
     runs-on: ubuntu-24.04
     timeout-minutes: 35
+    permissions:
+      contents: read
+      actions: read
     env:
       PYTHONDONTWRITEBYTECODE: '1'
     steps:
@@ -947,15 +987,27 @@ jobs:
         id: public-fiber-mode
         env:
           PUBLIC_FIBER_ASSEMBLY: ${{ inputs.public_fiber_assembly }}
+          PUBLIC_FIBER_DERIVED_LLVM: ${{ inputs.public_fiber_derived_llvm }}
+          PUBLIC_FIBER_PRIVATE_SCALAR_LLVM: ${{ inputs.public_fiber_private_scalar_llvm }}
           QUALIFY_SCRATCH_REFUSALS: ${{ inputs.qualify-scratch-refusals }}
           JAVA_HTTP_SPI: ${{ inputs.java_http_spi }}
         run: |
           python3 - <<'PY'
           import os
           if (os.environ['PUBLIC_FIBER_ASSEMBLY'] != 'true'
+                  or os.environ['PUBLIC_FIBER_DERIVED_LLVM'] not in ('true', 'false')
+                  or os.environ.get('PUBLIC_FIBER_PRIVATE_SCALAR_LLVM', 'false') not in ('true', 'false')
+                  or (os.environ['PUBLIC_FIBER_DERIVED_LLVM'] == 'true' and os.environ.get('PUBLIC_FIBER_PRIVATE_SCALAR_LLVM', 'false') == 'true')
                   or os.environ['QUALIFY_SCRATCH_REFUSALS'] != 'false'
                   or os.environ['JAVA_HTTP_SPI'] != 'false'):
               raise SystemExit('only the fixed public fiber assembly mode may be selected')
+          if os.environ['PUBLIC_FIBER_DERIVED_LLVM'] == 'true' or os.environ.get('PUBLIC_FIBER_PRIVATE_SCALAR_LLVM', 'false') == 'true':
+              if (os.environ.get('GITHUB_EVENT_NAME') != 'workflow_dispatch'
+                      or os.environ.get('GITHUB_REF') != 'refs/heads/feat/java-llvm-ssa-consumer-20261025'):
+                  raise SystemExit('derived LLVM public compiler requires its explicit feature ref')
+              import time
+              with open(os.environ['GITHUB_ENV'], 'a', encoding='utf-8') as output:
+                  output.write('LSF_JAVA_LLVM_PUBLIC_STARTED=' + str(int(time.time())) + '\n')
           PY
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -971,6 +1023,7 @@ jobs:
         with:
           version: 1.254.0
       - name: Install only the same pinned normal public component compiler
+        if: ${{ !inputs.public_fiber_derived_llvm && !inputs.public_fiber_private_scalar_llvm }}
         shell: bash
         run: |
           set -euo pipefail
@@ -989,8 +1042,49 @@ jobs:
           tar -xzf "$RUNNER_TEMP/wasi-sdk.tar.gz" -C "$RUNNER_TEMP"
           python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/java-bindgen"
           echo "$RUNNER_TEMP/java-bindgen" >> "$GITHUB_PATH"
+      - name: Install the same public compiler prerequisites for the qualified LLVM candidate
+        if: ${{ inputs.public_fiber_derived_llvm }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 -B -m unittest tools.tests.test_java_normal_fiber_component_inputs tools.tests.test_java_public_wineh tools.tests.test_java_llvm_ssa_consumer tools.tests.test_java_http_fibers.PublicCopyCostObservation tools.tests.test_java_public_wineh_preclang -v
+          curl --fail --location --retry 3 --max-time 180 \
+            https://services.gradle.org/distributions/gradle-9.1.0-bin.zip \
+            -o "$RUNNER_TEMP/gradle.zip"
+          echo "a17ddd85a26b6a7f5ddb71ff8b05fc5104c0202c6e64782429790c933686c806  $RUNNER_TEMP/gradle.zip" | sha256sum --check
+          unzip -q "$RUNNER_TEMP/gradle.zip" -d "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/gradle-9.1.0/bin" >> "$GITHUB_PATH"
+          python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/java-bindgen"
+          echo "$RUNNER_TEMP/java-bindgen" >> "$GITHUB_PATH"
+      - name: Install the same prerequisites for the separately admitted private-scalar backend
+        if: ${{ inputs.public_fiber_private_scalar_llvm }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 -B -m unittest tools.tests.test_java_llvm_private_store_consumer -v
+          curl --fail --location --retry 3 --max-time 180 \
+            https://services.gradle.org/distributions/gradle-9.1.0-bin.zip \
+            -o "$RUNNER_TEMP/gradle.zip"
+          echo "a17ddd85a26b6a7f5ddb71ff8b05fc5104c0202c6e64782429790c933686c806  $RUNNER_TEMP/gradle.zip" | sha256sum --check
+          unzip -q "$RUNNER_TEMP/gradle.zip" -d "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/gradle-9.1.0/bin" >> "$GITHUB_PATH"
+          python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/java-bindgen"
+          echo "$RUNNER_TEMP/java-bindgen" >> "$GITHUB_PATH"
+      - name: Compile the unchanged public C with the independently qualified backend
+        if: ${{ inputs.public_fiber_private_scalar_llvm }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/qualify_java_fibers.py --output "$RUNNER_TEMP/java-activation-fibers" --wasi-sdk "$RUNNER_TEMP/java-llvm-private-stores-inputs/products/toolchain" --private-scalar-llvm-public
       - name: Prepare only the unchanged public fibers and original JDK controls
+        if: ${{ !inputs.public_fiber_derived_llvm && !inputs.public_fiber_private_scalar_llvm }}
         run: python3 tools/qualify_java_fibers.py --output "$RUNNER_TEMP/java-activation-fibers" --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux" --observe-public-wineh
+      - name: Compile only the same public fixture using its authenticated LLVM candidate
+        if: ${{ inputs.public_fiber_derived_llvm }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/qualify_java_fibers.py --output "$RUNNER_TEMP/java-activation-fibers" --wasi-sdk "$RUNNER_TEMP/java-llvm-public-inputs/products/toolchain" --derived-llvm-public --observe-public-wineh
       - name: Retain only fixed public assembly evidence and original failure
         if: ${{ always() && steps.public-fiber-mode.outcome == 'success' }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -1005,3 +1099,28 @@ jobs:
             ${{ runner.temp }}/java-activation-fibers/build/runtime-profile.json
             ${{ runner.temp }}/java-activation-fibers/build/component.wasm
             ${{ runner.temp }}/java-activation-fibers/build/component-inputs/**
+            ${{ runner.temp }}/java-activation-fibers/compiler-inputs.json
+            ${{ runner.temp }}/java-activation-fibers/compiler/public-copy-cost-candidate.json
+            ${{ runner.temp }}/java-activation-fibers/compiler/public-wineh-preclang.json
+            ${{ runner.temp }}/java-activation-fibers/compiler/public-copy-cost-Capsule.c
+            ${{ runner.temp }}/java-activation-fibers/compiler/coroutine-compiler-preparation.json
+            ${{ runner.temp }}/java-activation-fibers/build/project/compiler-patch/loaded.json
+            ${{ runner.temp }}/java-activation-fibers/build/coroutine-compiler-profile.json
+            ${{ runner.temp }}/java-activation-fibers/src/Capsule.java
+            ${{ runner.temp }}/java-activation-fibers/wit/service.wit
+            ${{ runner.temp }}/java-activation-fibers/build/derived-public-products/**
+            ${{ runner.temp }}/java-llvm-public-inputs/producer-run.json
+            ${{ runner.temp }}/java-llvm-public-inputs/producer-job.json
+            ${{ runner.temp }}/java-llvm-public-inputs/producer-artifact.json
+            ${{ runner.temp }}/java-llvm-public-inputs/derived-sdk-manifest.json
+            ${{ runner.temp }}/java-llvm-public-inputs/products/NOTICE
+            ${{ runner.temp }}/java-llvm-public-inputs/products/LLVM-LICENSE.txt
+            ${{ runner.temp }}/java-llvm-public-inputs/products/LLVM-PATCH.json
+            ${{ runner.temp }}/java-llvm-private-stores-inputs/producer-run.json
+            ${{ runner.temp }}/java-llvm-private-stores-inputs/producer-job.json
+            ${{ runner.temp }}/java-llvm-private-stores-inputs/producer-artifact.json
+            ${{ runner.temp }}/java-llvm-private-stores-inputs/derived-sdk-manifest.json
+            ${{ runner.temp }}/java-llvm-private-stores-inputs/products/NOTICE
+            ${{ runner.temp }}/java-llvm-private-stores-inputs/products/LLVM-LICENSE.txt
+            ${{ runner.temp }}/java-llvm-private-stores-inputs/products/LLVM-PATCH.json
+            ${{ runner.temp }}/java-llvm-private-stores-inputs/products/LLVM-PRIVATE-STORES.json

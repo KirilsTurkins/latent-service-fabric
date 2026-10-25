@@ -123,6 +123,19 @@ def read_only_dependency_cache(path: Path) -> Path:
 class Compiler:
     compiler_methods = False
 
+    def _wasi_compiler_version(self) -> str:
+        """Preserve official SDK29 and admit only a fully promoted fixed cohort."""
+        self.wasi_compiler_profile = None
+        if (self.wasi_sdk / "VERSION").read_text().splitlines() != [
+            "29.0", "wasi-libc: ac020b86fd44", "llvm: 222fc11f2b8f", "llvm-version: 21.1.4", "config: f992bcc08219"]:
+            from tools.java_guest.compiler_profile import admit
+            selected = admit(self.wasi_sdk)
+            if selected is not None:
+                version, self.wasi_compiler_profile = selected
+                return version
+            raise ValueError("unreviewed WASI-SDK Java compiler")
+        return "21.1.4-wasi-sdk"
+
     def __init__(self, directory: Path, wasi_sdk: Path, *, gradle="gradle", sdk: Path | None = None,
                  platform: Path | None = None, config: dict | None = None, timeout=900,
                  offline_cache: Path | None = None, read_only_cache: Path | None = None,
@@ -163,18 +176,18 @@ class Compiler:
         if _deadline is not None:
             self.deadline = min(self.deadline, _deadline - 5)
         self.records = []
+        self.wasi_compiler_profile = None
         self.retained_bytes = 0
         self.paths = {}
         self.materials = []
         self.reachability_observation = None
         config = config or tomllib.loads((ROOT / "tools/toolchain.toml").read_text())
-        if (self.wasi_sdk / "VERSION").read_text().splitlines() != [
-            "29.0", "wasi-libc: ac020b86fd44", "llvm: 222fc11f2b8f", "llvm-version: 21.1.4", "config: f992bcc08219"]:
-            raise ValueError("unreviewed WASI-SDK Java compiler")
+        clang_version = self._wasi_compiler_version()
+        clang_path = 'bin/clang-21' if self.wasi_compiler_profile is not None else 'bin/clang'
         verify_version = source_module(self.sdk / "tools/feasibility.py").verify_version
         for name, selected, version in [
             ("java", "java", config["sdk"]["java"]), ("gradle", gradle, config["sdk"]["gradle"]),
-            ("clang", str(self.wasi_sdk / "bin/clang"), "21.1.4-wasi-sdk"),
+            ("clang", str(self.wasi_sdk / clang_path), clang_version),
             ("wit-bindgen", "wit-bindgen", config["rust"]["dependencies"]["wit-bindgen"]),
             ("wasm-tools", "wasm-tools", config["contracts"]["wasm-tools"]),
         ]:
@@ -495,6 +508,8 @@ class Compiler:
             raise ValueError("compiled Java component changed authoritative WIT semantics")
         details = {"bindings": bindings, "dependencies": retained, "platform": adaptation,
                    "semanticSurfaceDigest": digest(canonical(actual)), "closedFilesystem": filesystem_profile}
+        if getattr(self, 'wasi_compiler_profile', None) is not None:
+            details['wasiCompilerProfile'] = json.loads(self.wasi_compiler_profile)
         if coroutine_profile is not None:
             details['coroutineCompiler'] = coroutine_profile
         if http_phase_record is not None:
@@ -507,6 +522,9 @@ class Compiler:
         return component, details
 
     def check_unchanged(self):
+        if getattr(self, 'wasi_compiler_profile', None) is not None:
+            from tools.java_guest.compiler_profile import recheck
+            recheck(self.wasi_compiler_profile)
         if self.original_sdk != sdk_snapshot(self.sdk): raise ValueError("Java SDK changed during build")
         if self.compiler_inputs != tool_inventory(self.tool_roots): raise ValueError("Java compiler distribution changed during build")
         for item in self.materials:

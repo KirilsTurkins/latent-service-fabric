@@ -52,6 +52,16 @@
             "description": "Build only the fixed public fiber assembly inputs without component execution",
             "type": "boolean"
           },
+          "public_fiber_derived_llvm": {
+            "default": false,
+            "description": "Compiler-only public fixture using one qualified source-bound LLVM candidate",
+            "type": "boolean"
+          },
+          "public_fiber_private_scalar_llvm": {
+            "default": false,
+            "description": "Compiler-only public fixture using the independently qualified private-scalar backend",
+            "type": "boolean"
+          },
           "qualify-scratch-refusals": {
             "default": false,
             "description": "Run the unchanged normal Java prerequisite and separate filesystem refusal packet",
@@ -72,7 +82,7 @@
     "resource-conformance",
     "scratch-refusals"
   ],
-  "reviewReason": "Add an explicit default-false manual public-fiber assembly selector while preserving default CI coverage.",
+  "reviewReason": "Reviewed R8 default-false route and exact test-only inverse of that route. All original R7 assertion bodies, case identities, skip/decorator guards, commands and diagnostic gate retained; new mode is independent and requires its own successful qualified tuple before acquisition.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-guest-feasibility.yml"
 }

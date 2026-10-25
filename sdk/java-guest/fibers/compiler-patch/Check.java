@@ -8,6 +8,7 @@ import org.teavm.model.BasicBlock;
 import org.teavm.model.Incoming;
 import org.teavm.model.Phi;
 import org.teavm.model.Program;
+import org.teavm.model.TryCatchBlock;
 import org.teavm.model.Variable;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
@@ -19,6 +20,7 @@ import org.teavm.model.instructions.BranchingCondition;
 import org.teavm.model.instructions.BranchingInstruction;
 import org.teavm.model.instructions.IntegerConstantInstruction;
 import org.teavm.model.util.ProgramUtils;
+import org.teavm.model.text.ListingBuilder;
 
 /** Real pinned TeaVM IR at its irreducible-loop splitting boundary. */
 public final class Check {
@@ -87,7 +89,152 @@ public final class Check {
         }
     }
 
+    private static Program copyCostProgram(boolean heavyFirst) {
+        var program = new Program();
+        var entry = program.createBasicBlock();
+        var first = program.createBasicBlock();
+        var second = program.createBasicBlock();
+        var handler = program.createBasicBlock();
+        var seed = program.createVariable();
+        var constant = new IntegerConstantInstruction();
+        constant.setReceiver(seed); constant.setConstant(42); entry.add(constant);
+        branch(entry, seed, first, second);
+        for (int i = 1; i <= 2; ++i) {
+            var block = program.basicBlockAt(i);
+            var other = program.basicBlockAt(3 - i);
+            var marker = new IntegerConstantInstruction();
+            marker.setReceiver(program.createVariable()); marker.setConstant(i * 100); block.add(marker);
+            jump(block, other);
+            boolean heavy = (i == 1) == heavyFirst;
+            for (int n = 0; n < (heavy ? 3 : 1); ++n) {
+                var phi = new Phi(); phi.setReceiver(program.createVariable());
+                incoming(phi, entry, seed); incoming(phi, other, seed); block.getPhis().add(phi);
+            }
+            for (String type : heavy
+                    ? new String[] {"java.lang.IllegalArgumentException", "java.lang.IllegalStateException",
+                        "java.lang.Throwable"}
+                    : new String[] {"java.lang.Throwable"}) {
+                var guard = new TryCatchBlock(); guard.setExceptionType(type); guard.setHandler(handler);
+                block.getTryCatchBlocks().add(guard);
+            }
+        }
+        handler.setExceptionVariable(program.createVariable()); handler.add(new ExitInstruction());
+        return program;
+    }
+
+    private static CoroutineTransformation costTransform(Program program) throws Exception {
+        var transform = new CoroutineTransformation(null, Set.of(), true);
+        Field field = CoroutineTransformation.class.getDeclaredField("program");
+        field.setAccessible(true); field.set(transform, program);
+        return transform;
+    }
+
+    private static void normalizeCost(CoroutineTransformation transform) throws Exception {
+        var method = CoroutineTransformation.class.getDeclaredMethod("processIrreducibleCfg");
+        method.setAccessible(true); method.invoke(transform);
+    }
+
+    private static int[] copiedMarkers(boolean complete, boolean heavyFirst) throws Exception {
+        var program = copyCostProgram(heavyFirst);
+        var graph = ProgramUtils.buildControlFlowGraph(program);
+        if (!GraphUtils.isIrreducible(graph)) throw new AssertionError("copy-cost-control-reducible-input");
+        var transform = costTransform(program);
+        int originalCount = program.basicBlockCount();
+        if (complete) {
+            normalizeCost(transform);
+        } else {
+            int[] weights = new int[originalCount];
+            for (int i = 0; i < originalCount; ++i) weights[i] = program.basicBlockAt(i).instructionCount();
+            GraphUtils.splitIrreducibleGraph(graph, weights, transform.new SplittingBackend());
+        }
+        graph = ProgramUtils.buildControlFlowGraph(program);
+        if (GraphUtils.isIrreducible(graph)) throw new AssertionError("copy-cost-control-not-normalized");
+        int[] copied = new int[2];
+        for (var block : program.getBasicBlocks()) {
+            for (var phi : block.getPhis()) {
+                var expected = new HashSet<Integer>();
+                for (int predecessor : graph.incomingEdges(block.getIndex())) expected.add(predecessor);
+                if (!sources(phi).equals(expected) || sources(phi).size() != phi.getIncomings().size()) {
+                    throw new AssertionError("copy-cost-control-incomplete-phi");
+                }
+            }
+            int marker = 0;
+            for (var instruction : block) {
+                if (instruction instanceof IntegerConstantInstruction) {
+                    int value = ((IntegerConstantInstruction) instruction).getConstant();
+                    if (value == 100 || value == 200) marker = value / 100;
+                }
+            }
+            if (marker == 0) continue;
+            boolean heavy = (marker == 1) == heavyFirst;
+            String[] expected = heavy
+                    ? new String[] {"java.lang.IllegalArgumentException", "java.lang.IllegalStateException",
+                        "java.lang.Throwable"}
+                    : new String[] {"java.lang.Throwable"};
+            if (block.getTryCatchBlocks().size() != expected.length
+                    || block.getPhis().size() != (heavy ? 3 : 1)) {
+                throw new AssertionError("copy-cost-control-copied-metadata-lost");
+            }
+            for (int i = 0; i < expected.length; ++i) {
+                var guard = block.getTryCatchBlocks().get(i);
+                if (!expected[i].equals(guard.getExceptionType()) || guard.getHandler().getIndex() != 3) {
+                    throw new AssertionError("copy-cost-control-handler-changed");
+                }
+            }
+            if (block.getIndex() >= originalCount) ++copied[marker - 1];
+        }
+        return copied;
+    }
+
+    private static void copyCostControls() throws Exception {
+        boolean decisionChanged = false;
+        for (boolean heavyFirst : new boolean[] {false, true}) {
+            int[] old = copiedMarkers(false, heavyFirst);
+            int[] fixed = copiedMarkers(true, heavyFirst);
+            int heavy = heavyFirst ? 0 : 1;
+            int light = 1 - heavy;
+            if (fixed[heavy] != 0 || fixed[light] != 1) {
+                throw new AssertionError("copy-cost-control-heavy-domain-copied");
+            }
+            decisionChanged |= old[heavy] != fixed[heavy] || old[light] != fixed[light];
+        }
+        if (!decisionChanged) throw new AssertionError("copy-cost-control-no-real-decision-change");
+
+        var reducible = new Program();
+        var entry = reducible.createBasicBlock(); var exit = reducible.createBasicBlock();
+        jump(entry, exit); exit.add(new ExitInstruction());
+        String before = new ListingBuilder().buildListing(reducible, "");
+        normalizeCost(costTransform(reducible));
+        if (!before.equals(new ListingBuilder().buildListing(reducible, ""))
+                || reducible.basicBlockCount() != 2 || reducible.basicBlockAt(0) != entry) {
+            throw new AssertionError("copy-cost-control-reducible-fast-path-changed");
+        }
+
+        var overflow = copyCostProgram(true);
+        var transform = costTransform(overflow);
+        var initialize = CoroutineTransformation.class.getDeclaredMethod("initializeCopyWeights");
+        initialize.setAccessible(true); initialize.invoke(transform);
+        var total = CoroutineTransformation.class.getDeclaredField("totalCopyWeight");
+        total.setAccessible(true); total.setInt(transform, Integer.MAX_VALUE);
+        String original = new ListingBuilder().buildListing(overflow, "");
+        try {
+            transform.new SplittingBackend().split(new int[] {2}, new int[] {1});
+            throw new AssertionError("copy-cost-control-overflow-not-refused");
+        } catch (ArithmeticException expected) {
+            if (!original.equals(new ListingBuilder().buildListing(overflow, ""))
+                    || overflow.basicBlockCount() != 4 || total.getInt(transform) != Integer.MAX_VALUE) {
+                throw new AssertionError("copy-cost-control-overflow-mutated-program");
+            }
+        }
+    }
+
     public static void main(String[] args) throws Exception {
+        if (args.length == 1 && args[0].equals("copy-cost")) {
+            copyCostControls();
+            System.out.println("{\"schemaVersion\":\"latent.java.coroutine-copy-cost-control.v1\","
+                    + "\"cases\":[\"domain-choice\",\"reducible-parity\",\"overflow-before-copy\"],\"passed\":true}");
+            return;
+        }
         if (args.length != 1 || !(args[0].equals("original") || args[0].equals("corrected"))) {
             throw new IllegalArgumentException("coroutine-control-mode");
         }

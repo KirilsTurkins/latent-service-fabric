@@ -6,7 +6,7 @@
     "env": {
       "PYTHONDONTWRITEBYTECODE": "1"
     },
-    "if": "${{ github.event_name == 'workflow_dispatch' && inputs.java_http_spi && !inputs.public_fiber_assembly }}",
+    "if": "${{ github.event_name == 'workflow_dispatch' && inputs.java_http_spi && !inputs.public_fiber_assembly && !inputs.public_fiber_derived_llvm && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_private_scalar_llvm) }}",
     "name": "Optional Java public ConnectionFactory with isolated default calls",
     "permissions": {
       "actions": "read",
@@ -111,7 +111,7 @@
   },
   "jobId": "http-public-spi",
   "kind": "job",
-  "reviewReason": "Exclude the unchanged original job only for the explicit manual public-fiber assembly mode.",
+  "reviewReason": "Reviewed R8 default-false route and exact test-only inverse of that route. All original R7 assertion bodies, case identities, skip/decorator guards, commands and diagnostic gate retained; new mode is independent and requires its own successful qualified tuple before acquisition.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-guest-feasibility.yml"
 }

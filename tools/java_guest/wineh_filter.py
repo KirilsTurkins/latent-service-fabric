@@ -131,9 +131,12 @@ def main() -> int:
             raise ValueError('ticket-digest')
         report['ticketDigest'] = ticket_digest
         environment = dict(os.environ)
-        ticket = load_ticket(output, ticket_digest, environment)
+        ticket = load_ticket(output, ticket_digest, environment, deadline=started + INNER_SECONDS)
         if Path.cwd() != output / 'compiler':
             raise ValueError('ticket-context')
+        if ticket['schemaVersion'] == 'latent.java.public-wineh-preclang-ticket.v1':
+            from tools.java_guest.wineh_preclang import child_environment
+            environment = child_environment(ticket, environment)
         report.update(sourceCommit=ticket['source']['revision'],
                       diagnosticCommandDigest='sha256:' + hashlib.sha256(
                           canonical(ticket['diagnosticCommand'])).hexdigest())
@@ -164,10 +167,9 @@ def main() -> int:
                  'sourceCommit', 'diagnosticCommandDigest', 'childExitCode', 'pipeEOFComplete')}
                if report['childStarted'] else {})}
         if report['childStarted']:
-            report['observation'] = {'status': 'incomplete', 'prefixOnly': True,
-                'qualification': False, 'source': 'pinned-llvm-text-only',
-                'snapshots': {}, 'samples': [], 'reason': 'summary-limit',
-                'streamBytes': report['stderrBytes'], 'streamDigest': report['stderrDigest']}
+            report['observation'] = {**Counter().finish(stream_complete=False),
+                'reason': 'summary-limit', 'streamBytes': report['stderrBytes'],
+                'streamDigest': report['stderrDigest']}
         raw = canonical(report)
     sys.stdout.buffer.write(raw + b'\n')
     sys.stdout.buffer.flush()

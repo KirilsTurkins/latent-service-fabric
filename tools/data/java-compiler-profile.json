@@ -1,0 +1,98 @@
+{
+  "schemaVersion": "latent.java.normal-compiler-profile.v1",
+  "profile": "lsf-private-scalar-v1",
+  "cohortRecipeSha256": "eebc8920624c8a0b40b89648154bab16eaa5a3a9e54eb38ca4dfd18a3211366d",
+  "producer": {
+    "head": "ddc55c2d3a3d6d31806499962aff748324bb2e8b",
+    "tree": "eed32a4f9aaf45d6e55df5ddd1180850da50eec2",
+    "run": 40224708180,
+    "job": 121263514074,
+    "artifact": 12612367767,
+    "archive": {
+      "bytes": 167429041,
+      "sha256": "593006fad3362dc340959e57392e1379a79bfc2bd8e36c33cbe950d4fed1cc46"
+    }
+  },
+  "qualification": {
+    "producerReceipt": {
+      "bytes": 4706175,
+      "sha256": "e350049722754af48fb53cf36946e209dfa42a16a10278cf410c4f6018d56068"
+    },
+    "publicReceipt": {
+      "bytes": 278426,
+      "sha256": "c10b0902e1aa8dd9bf285bc03b9ed8236f7558de127a513d912a6c76806a3dbc"
+    },
+    "publicComponent": {
+      "bytes": 10282099,
+      "sha256": "d6336d4667db6a01d4f6fd18dfb53850b0d27a7ab96d828660b98dfeb64f469c"
+    },
+    "publicHead": "9871d6b54520bc2bd4fcd920f2d59d9ee0efd995",
+    "publicRun": 40231419998,
+    "publicJob": 121283781554,
+    "publicArtifact": {
+      "id": 12612853018,
+      "archive": {
+        "bytes": 2578267,
+        "sha256": "70304aae3dd82275536dcacc05a7960ef13b70de18b5ea6681c6c1e6e76c62a0"
+      },
+      "expiresAt": "2026-10-28T20:38:02Z"
+    },
+    "normalCommandShape": {
+      "bytes": 2021,
+      "sha256": "7d1958cc4912eb28bbc3d47e1ee4121e07922d18082befd394124ee806cc7190"
+    }
+  },
+  "carrier": {
+    "bytes": 159519677,
+    "sha256": "c6fe95c061c6bd58658fd131288e0469fff6acca2d2c4c4fd86565a21f2c997d"
+  },
+  "manifest": {
+    "bytes": 2102159,
+    "sha256": "896fdd53ffcd9400218ed63bb9a3d52af0c467bd232966bf54d4b4e8a2f532fa"
+  },
+  "version": {
+    "bytes": 200,
+    "sha256": "e5bdd5811c82d9bbcb956592a6ff5303c90bff0d43fa46b97a341968b79b735d"
+  },
+  "inventories": {
+    "linked": {
+      "bytes": 2772116,
+      "sha256": "057245a29ae0cc2a854521d2c3d34754965d750615e81e8be760e571cd194630"
+    },
+    "managed": {
+      "bytes": 2771269,
+      "sha256": "24c4f39cd783851741aebe01e9ecc7fe36f35df4c488d1f44221ceec5ab01019"
+    }
+  },
+  "buildInput": {
+    "kind": "prepared-compiler-inputs",
+    "artifactId": 12612367767,
+    "archive": {
+      "bytes": 167429041,
+      "sha256": "593006fad3362dc340959e57392e1379a79bfc2bd8e36c33cbe950d4fed1cc46"
+    },
+    "expiresAt": "2026-10-28T20:03:43Z"
+  },
+  "notices": {
+    "NOTICE": {
+      "bytes": 6193,
+      "sha256": "88847eed7dadd32c7923c5f18342f1517ce2c29812f427c0d95bf1e1fc54fa47"
+    },
+    "LLVM-LICENSE.txt": {
+      "bytes": 15141,
+      "sha256": "8d85c1057d742e597985c7d4e6320b015a9139385cff4cbae06ffc0ebe89afee"
+    },
+    "LLVM-PATCH.json": {
+      "bytes": 211777,
+      "sha256": "dd04c818debbb0491866ce119465526fb70a3112e85452b857d2528629b557ea"
+    },
+    "LLVM-PRIVATE-STORES.json": {
+      "bytes": 79822,
+      "sha256": "c695e9bfc6d499ebc0ec93b56e8a28ea9c1745d4d17d008ea5639cc50436ac04"
+    },
+    "official-origin-VERSION": {
+      "bytes": 90,
+      "sha256": "cb9fa6c932384a5f2f90f576936415a7f256eeb1d9a7c38a3c300320bfad6e23"
+    }
+  }
+}

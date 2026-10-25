@@ -136,6 +136,11 @@ on:
       - tools/toolchain-smoke/**
       - wit/**
   workflow_dispatch:
+    inputs:
+      java_compiler_product:
+        description: Verify only the sealed Java compiler product using existing pack and installer
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -148,7 +153,7 @@ jobs:
   contracts:
     # This branch also produces exact-source candidates on push. Its PR must
     # consume those checks without duplicating six compiler bundles and hosts.
-    if: github.event_name != 'pull_request' || !startsWith(github.head_ref, 'feat/559-') || github.event.pull_request.head.repo.full_name != github.repository
+    if: ${{ !inputs.java_compiler_product && (github.event_name != 'pull_request' || !startsWith(github.head_ref, 'feat/559-') || github.event.pull_request.head.repo.full_name != github.repository) }}
     name: Developer controller contracts (${{ matrix.os }})
     strategy:
       fail-fast: false
@@ -179,7 +184,7 @@ jobs:
         run: python -m unittest tools.tests.test_java_annotation_processors
 
   guest-tools:
-    if: github.event_name != 'pull_request' || !startsWith(github.head_ref, 'feat/559-') || github.event.pull_request.head.repo.full_name != github.repository
+    if: ${{ !inputs.java_compiler_product && (github.event_name != 'pull_request' || !startsWith(github.head_ref, 'feat/559-') || github.event.pull_request.head.repo.full_name != github.repository) }}
     name: Guest tool bundle and maintained application builds (${{ matrix.language }})
     runs-on: ubuntu-24.04
     timeout-minutes: 90
@@ -191,6 +196,7 @@ jobs:
       LSF_DEV_LANGUAGE: ${{ matrix.language }}
     permissions:
       contents: read
+      actions: read
       id-token: write
       attestations: write
     steps:
@@ -223,6 +229,29 @@ jobs:
           mkdir "$prefix"
           docker cp "$container:/usr/local/." "$prefix"
           printf 'LSF_DEV_PYTHON_PREFIX=%s\n' "$prefix" >> "$GITHUB_ENV"
+      - name: Restore untrusted source-pinned Java prepared inputs
+        id: java-compiler-cache
+        if: matrix.language == 'java'
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/compiler-archives/java-prepared
+          key: java-prepared-compiler-v1-${{ runner.os }}-${{ hashFiles('tools/data/java-compiler-profile.json') }}
+      - name: Acquire the source-pinned Java compiler build inputs
+        if: matrix.language == 'java'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          input=$(mktemp -d /tmp/latent-java-input.XXXXXXXX)
+          rmdir "$input"
+          python -B tools/java_guest/compiler_profile_distribution.py acquire --output "$input"
+          printf 'LSF_DEV_JAVA_COMPILER_INPUT=%s\n' "$input" >> "$GITHUB_ENV"
+      - name: Save only reverified Java prepared input bytes
+        if: matrix.language == 'java' && steps.java-compiler-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/compiler-archives/java-prepared
+          key: ${{ steps.java-compiler-cache.outputs.cache-primary-key }}
       - name: Assemble pinned compiler tools and maintained templates
         env:
           LSF_DEV_COMPILER_CACHE: ${{ runner.temp }}/compiler-archives
@@ -735,7 +764,7 @@ jobs:
           retention-days: 7
 
   wsl-image:
-    if: github.event_name != 'pull_request' || !startsWith(github.head_ref, 'feat/559-') || github.event.pull_request.head.repo.full_name != github.repository
+    if: ${{ !inputs.java_compiler_product && (github.event_name != 'pull_request' || !startsWith(github.head_ref, 'feat/559-') || github.event.pull_request.head.repo.full_name != github.repository) }}
     name: Pinned WSL image candidate
     runs-on: ubuntu-24.04
     timeout-minutes: 15
@@ -813,3 +842,53 @@ jobs:
 
 # These hosted checks prove contracts and native executable startup. They do not
 # authorize publication or count as full managed-WSL2/portable clean-host qualification.
+
+  java-compiler-product:
+    if: github.event_name == 'workflow_dispatch' && inputs.java_compiler_product
+    name: Sealed normal Java compiler product (data only)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      LSF_DEV_COMPILER_CACHE: ${{ runner.temp }}/compiler-archives
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - name: Install the maintained recipe reader dependencies
+        run: python -m pip install --requirement tools/requirements.lock
+      - name: Restore untrusted source-pinned Java prepared inputs
+        id: java-compiler-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/compiler-archives/java-prepared
+          key: java-prepared-compiler-v1-${{ runner.os }}-${{ hashFiles('tools/data/java-compiler-profile.json') }}
+      - name: Verify fixed compiler inputs, existing pack and installer, and normal admission
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          root=$(mktemp -d /tmp/latent-java-product.XXXXXXXX)
+          trap 'rm -rf -- "$root"' EXIT
+          mkdir -p target/java-compiler-product
+          timeout --signal=TERM --kill-after=5 1195 \
+            python -B tools/java_guest/compiler_profile_distribution.py stage \
+              --root "$root" \
+              --output target/java-compiler-product/result.json
+      - name: Save only reverified Java prepared input bytes
+        if: steps.java-compiler-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/compiler-archives/java-prepared
+          key: ${{ steps.java-compiler-cache.outputs.cache-primary-key }}
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: java-compiler-product-${{ github.sha }}
+          path: target/java-compiler-product/result.json
+          if-no-files-found: error
+          retention-days: 7

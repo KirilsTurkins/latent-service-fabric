@@ -92,13 +92,18 @@ def for_host(values: list, source: Path) -> list:
     return [{**value, "hostPath": str(source / value["path"])} for value in validate(values)]
 
 
-def editor_lines(values: list) -> list[str]:
+def editor_lines(values: list, *, compiler: bool = False) -> list[str]:
+    require(type(compiler) is bool, "compiler-diagnostic-renderer-mode")
     result = []
     for value in values:
         record = {key: entry for key, entry in value.items() if key != "hostPath"}
         validate([record])
         path = value.get("hostPath")
         require(isinstance(path, str) and all(ord(character) >= 32 for character in path), "editor-diagnostic-path")
-        severity = "info" if value["severity"] == "note" else value["severity"]
-        result.append(f"LSF {path}:{value['line']}:{value['column']}: {severity} {value['code']}: {value['message']}")
+        if compiler:
+            code = " " + value["code"] if value["code"] else ""
+            result.append(f"{path}:{value['line']}:{value['column']}: {value['severity']}{code}: {value['message']}")
+        else:
+            severity = "info" if value["severity"] == "note" else value["severity"]
+            result.append(f"LSF {path}:{value['line']}:{value['column']}: {severity} {value['code']}: {value['message']}")
     return result

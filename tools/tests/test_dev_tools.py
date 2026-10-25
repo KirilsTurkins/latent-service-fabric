@@ -418,6 +418,55 @@ class LargeInventory(unittest.TestCase):
 
 
 class ManagedCompilerInputs(unittest.TestCase):
+    def test_original_bundle_failure_forwards_only_captured_locations_through_the_installed_recipe(self):
+        import io
+        import json
+        from tools import dev_guest_recipe, dev_tool_distribution
+        from tools.dev_workflow import diagnostics
+        repository = Path(__file__).resolve().parents[2]
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            project, output = root / 'project', root / 'output'
+            (project / 'src').mkdir(parents=True)
+            (project / 'src/main.ts').write_text('\n' * 14 + 'this is not valid source;\n')
+            (output / 'logs').mkdir(parents=True)
+            captured = root / 'unavailable-private-capture/src'
+            (output / 'diagnostic-source.json').write_bytes(common.encode({
+                'capturedSource': str(captured), 'requestedSource': str(project / 'src')}))
+            source = (project / 'src/main.ts').read_bytes()
+            (output / 'source-inputs.json').write_bytes(common.encode({'src/main.ts': {
+                'digest': common.digest(source), 'size': len(source)}}))
+            actual = (repository / 'tools/tests/fixtures/typescript-bundle-error.stderr').read_bytes()
+            (output / 'logs/09-bundle.stderr.txt').write_bytes(actual +
+                b'    src/main.ts:15:5:\n/private/compiler.js:2:3: error: PRIVATE-STACK\n'
+                b'../secret.ts:1:1: error: PRIVATE-ESCAPE\nsrc/unselected.ts:1:1: error: PRIVATE-FILE\n')
+            stdout, stderr = io.BytesIO(), io.BytesIO()
+            out_text, err_text = io.TextIOWrapper(stdout, encoding='utf-8'), io.TextIOWrapper(stderr, encoding='utf-8')
+            with patch.object(sys, 'argv', ['recipe', '--project', str(project), '--output', str(output), '--language', 'typescript']), \
+                    patch.object(sys, 'stdout', out_text), patch.object(sys, 'stderr', err_text), \
+                    patch.object(dev_guest_recipe, 'compile_managed', side_effect=ValueError('bundle failed')):
+                code = dev_guest_recipe.main()
+            out_text.flush(); err_text.flush()
+            self.assertEqual(code, 1)
+            self.assertEqual(json.loads(stdout.getvalue())['code'], 'compiler-input-or-build-failed')
+            forwarded = stderr.getvalue()
+            self.assertNotIn(b'PRIVATE-', forwarded)
+            self.assertNotIn(str(captured).encode(), forwarded)
+            rows = diagnostics.collect(b'', forwarded, project, project, {'src/main.ts'})
+            self.assertEqual(len(rows), 1)
+            self.assertEqual((rows[0]['path'], rows[0]['line'], rows[0]['column']), ('src/main.ts', 15, 5))
+            self.assertIn('Expected ";" but found "is"', rows[0]['message'])
+            # Unknown capture metadata yields no invented source diagnostic.
+            (output / 'source-inputs.json').write_bytes(common.encode({'src/other.ts': {}}))
+            absent = io.BytesIO(); absent_text = io.TextIOWrapper(absent, encoding='utf-8')
+            with patch.object(sys, 'stderr', absent_text):
+                dev_guest_recipe.diagnostics(output, 'typescript')
+            absent_text.flush(); self.assertEqual(absent.getvalue(), b'')
+            payload = root / 'payload'
+            dev_tool_distribution.recipe(payload, 'typescript')
+            self.assertEqual((payload / 'recipe/tools/dev_workflow/diagnostics.py').read_bytes(),
+                             (repository / 'tools/dev_workflow/diagnostics.py').read_bytes())
+
     def fixture(self, root):
         from tools.dev_managed_distribution import pack
         inputs, sdk = root / "input", root / "sdk"

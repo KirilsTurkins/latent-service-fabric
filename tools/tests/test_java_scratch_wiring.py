@@ -18,6 +18,26 @@ def model():
 class JavaScratchWiring(unittest.TestCase):
     def test_original_normal_parent_and_dependency_programmes_remain_exact(self):
         workflow = model()
+        private = workflow['on']['workflow_dispatch']['inputs'].pop('public_fiber_private_scalar_llvm')
+        self.assertEqual(private['type'], 'boolean');self.assertIs(private['default'], False)
+        clause = " && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_private_scalar_llvm)"
+        for name in ('compiler-component', 'dependency-ingestion', 'http-public-spi'):
+            self.assertEqual(workflow['jobs'][name]['if'].count(clause), 1)
+            workflow['jobs'][name]['if'] = workflow['jobs'][name]['if'].replace(clause, '', 1)
+        self.assertEqual(workflow['jobs']['public-fiber-assembly']['if'],
+            "${{ github.event_name == 'workflow_dispatch' && (inputs.public_fiber_assembly || inputs.public_fiber_derived_llvm || inputs.public_fiber_private_scalar_llvm) }}")
+        workflow['jobs']['public-fiber-assembly']['if'] = "${{ github.event_name == 'workflow_dispatch' && (inputs.public_fiber_assembly || inputs.public_fiber_derived_llvm) }}"
+        derived = workflow['on']['workflow_dispatch']['inputs'].pop('public_fiber_derived_llvm')
+        self.assertEqual(derived['type'], 'boolean');self.assertIs(derived['default'], False)
+        for name, clause in (
+                ('compiler-component', " && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_derived_llvm)"),
+                ('dependency-ingestion', " && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_derived_llvm)"),
+                ('http-public-spi', ' && !inputs.public_fiber_derived_llvm')):
+            self.assertEqual(workflow['jobs'][name]['if'].count(clause), 1)
+            workflow['jobs'][name]['if'] = workflow['jobs'][name]['if'].replace(clause, '', 1)
+        self.assertEqual(workflow['jobs']['public-fiber-assembly']['if'],
+            "${{ github.event_name == 'workflow_dispatch' && (inputs.public_fiber_assembly || inputs.public_fiber_derived_llvm) }}")
+        workflow['jobs']['public-fiber-assembly']['if'] = "${{ github.event_name == 'workflow_dispatch' && inputs.public_fiber_assembly }}"
         public = workflow['on']['workflow_dispatch']['inputs'].pop('public_fiber_assembly')
         self.assertEqual(public['type'], 'boolean');self.assertIs(public['default'], False)
         assembly = workflow['jobs'].pop('public-fiber-assembly')
