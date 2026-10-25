@@ -1,0 +1,75 @@
+name: Focused canonical async JoinState accounting
+on:
+  push:
+    branches: ['feat/canonical-join-state-accounting-20261025']
+    paths:
+      - '.github/workflows/canonical-join-state.yml'
+      - 'crates/vendor/wasmtime/**'
+      - 'crates/latent-wasmtime/src/host.rs'
+      - 'crates/latent-wasmtime/src/host/join_state_tests.rs'
+      - 'tools/qualify_canonical_join_state.py'
+      - 'tools/host_codec_wasmtime.py'
+permissions:
+  contents: read
+concurrency:
+  group: canonical-join-state-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  join-state:
+    name: Five private owners and one real canonical budget admission
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      CARGO_BUILD_JOBS: '2'
+      CARGO_INCREMENTAL: '0'
+      CARGO_PROFILE_DEV_DEBUG: '0'
+      CARGO_PROFILE_TEST_DEBUG: '0'
+      CARGO_PROFILE_DEV_DEBUG_ASSERTIONS: 'true'
+      CARGO_PROFILE_TEST_DEBUG_ASSERTIONS: 'true'
+      CARGO_PROFILE_DEV_OVERFLOW_CHECKS: 'true'
+      CARGO_PROFILE_TEST_OVERFLOW_CHECKS: 'true'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          prefix-key: lsf-ci-dependencies-v3-contract-profiles
+          shared-key: host-contracts
+          key: ubuntu-24.04
+          cache-targets: false
+          cache-directories: |
+            target/debug
+            target/release
+            target/wasm32-unknown-unknown
+            target/wasm32-wasip2
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - name: Build only two locked host targets and execute the exact six controls
+        run: >-
+          python3 -B tools/qualify_canonical_join_state.py
+          --source-commit "${{ github.sha }}"
+          --output "$RUNNER_TEMP/canonical-join-state"
+      - name: Retain bounded source, exact test observations and failure history
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: canonical-join-state-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/canonical-join-state/receipt.json
+            ${{ runner.temp }}/canonical-join-state/FAILED.json
+            ${{ runner.temp }}/canonical-join-state/source-inputs.json
+            ${{ runner.temp }}/canonical-join-state/commands.json
+            ${{ runner.temp }}/canonical-join-state/commands/logs/*.txt
+          if-no-files-found: warn
+          retention-days: 3

@@ -12,8 +12,8 @@ from tools.rust_capsule_project import ROOT, read_file
 PROVIDER = "crates/vendor/wasmtime"
 NAME = "wasmtime"
 VERSION = "48.0.7"
-COHORT = "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-memory-v9"
-RECORD_SHA256 = "9b28241a6d818a7728cc06d949881bdd2274a7857cc12f7af79e9bde1ff88fe8"
+COHORT = "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-memory-v10"
+RECORD_SHA256 = "84b5b595e1c14318eb680c3c513e70afd928c102f1fc072d10c3ecb5f8017bea"
 # Explicit reviewed postimages; the remaining original files use the immutable
 # registry inventory. Changing a claimed record or patch cannot authorize bytes.
 POSTIMAGES = {
@@ -22,16 +22,24 @@ POSTIMAGES = {
         "bytes": 60487
     },
     "README.latent.md": {
-        "sha256": "597f982001871866ce5306a868881e5ae2760076676ca159f1d3eb59c1db5ec2",
-        "bytes": 11731
+        "sha256": "95b828ffa06ed87594f0f1ee29a6f395e7bbaa5523ed175be8a48331bc81c907",
+        "bytes": 13061
     },
     "latent-dynamic-memory.patch": {
-        "sha256": "1ef5f3b8e5aec2d93c8f4f326a493c9fc0d7d762fe5276c1c43a8020170d3286",
-        "bytes": 179665
+        "sha256": "f4f3b6c621d6685550f1a6c19f92193d7642e4393e608cb1bba102f8ddf51963",
+        "bytes": 200979
     },
     "src/runtime.rs": {
         "sha256": "3290f57919f6dc6b6f797ee55cd62504ce31e91500741501e261f2c7e4eac970",
         "bytes": 6393
+    },
+    "src/runtime/component/concurrent.rs": {
+        "sha256": "a63f706d5d5f58096be88126ca5f8e6217641b7f1a7dc24c889a34848fbc26ae",
+        "bytes": 232972
+    },
+    "src/runtime/component/concurrent/abort.rs": {
+        "sha256": "a42a819ef66cf352114ca4a06d9279189f215c19e1231d1d71f0dd1ce53d1f55",
+        "bytes": 26992
     },
     "src/runtime/component/concurrent/func.rs": {
         "sha256": "f702bfbbc9b1dae7511eea811bb38b70536e297a23ffbeac2f372f6e0dd224e3",
@@ -70,8 +78,8 @@ POSTIMAGES = {
         "bytes": 9471
     },
     "src/runtime/component/mod.rs": {
-        "sha256": "cd61cd4a5676f78fc0707613a245fa28db2e8516be3aa898d12755287bc99133",
-        "bytes": 33036
+        "sha256": "4a9e0dfa4854a1170ab67b8b4d354849da25358d355b02d5b79534598123e49e",
+        "bytes": 33048
     },
     "src/runtime/component/resource_types.rs": {
         "sha256": "4e37f8fb059389b694fec202163830b98a9ae033003be03ef5e3da42641d4988",

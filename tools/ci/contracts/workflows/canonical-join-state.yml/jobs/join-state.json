@@ -1,0 +1,78 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "env": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
+    },
+    "name": "Five private owners and one real canonical budget admission",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "dtolnay/rust-toolchain"
+      },
+      {
+        "uses": "Swatinem/rust-cache",
+        "with": {
+          "cache-all-crates": false,
+          "cache-bin": false,
+          "cache-directories": "target/debug\ntarget/release\ntarget/wasm32-unknown-unknown\ntarget/wasm32-wasip2\n",
+          "cache-on-failure": false,
+          "cache-targets": false,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v3-contract-profiles",
+          "save-if": false,
+          "shared-key": "host-contracts"
+        }
+      },
+      {
+        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "name": "Build only two locked host targets and execute the exact six controls",
+        "run": "python3 -B tools/qualify_canonical_join_state.py --source-commit \"${{ github.sha }}\" --output \"$RUNNER_TEMP/canonical-join-state\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain bounded source, exact test observations and failure history",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "canonical-join-state-${{ github.sha }}",
+          "path": "${{ runner.temp }}/canonical-join-state/receipt.json\n${{ runner.temp }}/canonical-join-state/FAILED.json\n${{ runner.temp }}/canonical-join-state/source-inputs.json\n${{ runner.temp }}/canonical-join-state/commands.json\n${{ runner.temp }}/canonical-join-state/commands/logs/*.txt\n",
+          "retention-days": 3
+        }
+      }
+    ],
+    "timeout-minutes": 45
+  },
+  "jobId": "join-state",
+  "kind": "job",
+  "reviewReason": "Require the fixed five plus one actual controls with source-matched Cargo artifacts, zero ignored skips and fixed 45 minute job/2400 second owner.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/canonical-join-state.yml"
+}

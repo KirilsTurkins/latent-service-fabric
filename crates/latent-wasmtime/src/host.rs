@@ -533,3 +533,6 @@ mod native_table_tests;
 
 #[cfg(test)]
 mod native_context_reply_tests;
+
+#[cfg(test)]
+mod join_state_tests;

@@ -114,7 +114,7 @@ class PinnedWasmtimeSource(unittest.TestCase):
                 registry.workspace(root)
 
     def test_actual_table_hook_sources_and_new_cohort_require_exact_postimages(self):
-        self.assertEqual(source.COHORT, 'wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-memory-v9')
+        self.assertEqual(source.COHORT, 'wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-memory-v10')
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             self.fixture(root)
@@ -216,6 +216,18 @@ class PinnedWasmtimeSource(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'host-codec-wasmtime-source-identity'):
                 source.verify(root)
             target.write_bytes(original)
+            for name, token in (
+                ('src/runtime/component/concurrent/abort.rs', b'self.inner.take().and_then(Arc::into_inner)'),
+                ('src/runtime/component/concurrent.rs', b'JoinHandle::run_with_memory'),
+            ):
+                with self.subTest(name=name):
+                    target = root / source.PROVIDER / name
+                    original = target.read_bytes()
+                    self.assertIn(token, original)
+                    target.write_bytes(original.replace(token, b'unreviewed_join_cell', 1))
+                    with self.assertRaisesRegex(ValueError, 'host-codec-wasmtime-source-identity'):
+                        source.verify(root)
+                    target.write_bytes(original)
             self.assertEqual(len(source.verify(root)['files']), 259)
 
 
