@@ -89,12 +89,12 @@ const originalFault=Object.freeze({originalFault:true});
 const content={Promise,Error,TextEncoder,TextDecoder,Uint8Array,queueMicrotask,setTimeout,clearTimeout};
 content.__lsfAsyncImportBridge={reserve(){const id=++sequence;records.set(id,{id,ack:deferred(),handle:Object.freeze({id})});return id},
  watchBorrow(id){return records.get(id).handle},lift(value){return value},delivered(id,value){return value},
- finish(id){const r=records.get(id);r.finished=true;events.push('finish:'+r.kind);if(!['read','chunkBytes'].includes(r.kind)&&!faultMode)r.ack.resolve()},
+ finish(id){const r=records.get(id);r.finished=true;events.push('finish:'+r.kind);if(!['read','chunkBytes'].includes(r.kind)&&(!faultMode||faultMode==='hold-close'&&r.kind!=='close'))r.ack.resolve()},
  borrowReleased(handle){if(faultMode==='setup')throw originalFault;return records.get(handle.id).ack.promise},cancelBorrow(handle){const r=records.get(handle.id);events.push('cancel:'+r.kind);if(faultMode==='distinct-cancel'){r.cancelAck??=deferred();return r.cancelAck.promise}return r.ack.promise}};
 function result(kind,id){const r=records.get(id);r.kind=kind;events.push('start:'+kind);r.ptr=128+id*64;new Uint8Array(memory.buffer,r.ptr,64).fill(0);return r.ptr}
 const bindings=[memory,(_p,_old,_align,n)=>{const p=allocated;allocated+=n;return p},
  id=>{const p=result('connect',id);view.setInt32(p+4,7,true);return Promise.resolve(p)},
- id=>{const p=result('read',id);assert.equal(reads++,0);view.setUint8(p+4,1);view.setInt32(p+8,11,true);return failureKind==='read'?Promise.reject(Error('original-read-failure')):Promise.resolve(p)},
+ id=>{const p=result('read',id);assert.equal(reads++,0);if(failureKind!=='eof'){view.setUint8(p+4,1);view.setInt32(p+8,11,true)}return failureKind==='read'?Promise.reject(Error('original-read-failure')):Promise.resolve(p)},
  (id,_handle,_bytes,n)=>{const p=result('write',id);view.setUint32(p+4,n,true);return Promise.resolve(p)},
  ()=>{throw Error('no readiness call in this profile')},
  id=>{const p=result('chunkBytes',id);view.setUint32(p+4,14000,true);view.setUint32(p+8,2,true);new Uint8Array(memory.buffer,14000,2).set([65,66]);return failureKind==='chunkBytes'?Promise.reject(Error('original-copy-failure')):Promise.resolve(p)},
@@ -124,7 +124,10 @@ for(const name of Object.keys(original))facade[name]=(...args)=>{
  return Reflect.apply(original[name],original,args);
 };
 const net=createNodeNetModule(Object.freeze(facade),Buffer,()=>false,content);
-return {net,original,records,events,ackGets,originalFault,armFault(){context.__faultArm=true},get drops(){return drops}};
+return {net,original,records,events,ackGets,originalFault,armFault(){context.__faultArm=true},get drops(){return drops},
+ runApplication(fn){context.__application=fn;vm.runInContext('api100Run=__application;',context);
+  const name=parse(script,{ecmaVersion:'latest',sourceType:'module'}).body.find(node=>node.id?.name.startsWith('export_')).id.name;
+  return context[name](0,123,0)}};
 }
 """
 
@@ -486,12 +489,16 @@ assert.equal(nodeNetBindings(original,()=>{{throw Error('must not parse')}},unde
 const tree=parse(changed,{{ecmaVersion:'latest',sourceType:'module'}});
 const run=tree.body.find(node=>node.id?.name===proof.exports[0][0]);
 const guarded=run.body.body.find(node=>node.type==='TryStatement');
-assert.equal(guarded.block.body.length,2);assert.equal(guarded.block.body[1].expression.callee.name,'__lsfNodeNetRootCheck');
-assert.equal(guarded.handler.body.body[2].expression.callee.property.name,'exit');
+assert.equal(guarded.block.body.length,4);
+assert.equal(guarded.block.body[1].expression.right.callee.property.name,'beginAcceptedClose');
+assert.equal(guarded.block.body[2].consequent.expression.type,'AwaitExpression');
+assert.equal(guarded.block.body[3].expression.callee.name,'__lsfNodeNetRootCheck');
+assert.equal(guarded.handler.body.body[3].expression.callee.property.name,'exit');
 for(const altered of [original.replace(/ret = await +_withGlobalCurrentTaskMetaAsync/,'ret = await changedWrapper'),
  original.slice(0,original.indexOf('async function '+proof.exports[0][0]))+
  original.slice(original.indexOf('async function '+proof.exports[0][0])).replace('task.setErrored(err);','task.otherError(err);'),
- 'import x from "x";\\n'+original])
+ 'import x from "x";\\n'+original,
+ original.replace('errMsg: taskErr.message','errMsg: other.message')])
  {{assert.notEqual(altered,original);assert.throws(()=>nodeNetBindings(altered,parse,NET_PROFILE,proof.exports),/shape/);}}
 const modules=new Map(),content={{Promise,TextEncoder,TextDecoder,__lsfAsyncImportBridge:{{}}}};
 const scope={{contentGlobal:content,$bindings:[{{buffer:new ArrayBuffer(65536)}},()=>0,...Array(22).fill(()=>0)],
@@ -528,13 +535,108 @@ assert.deepEqual(attempts,['lowering-getter','onResolve']);transport.assertEmpty
 const marker=Error('original-lowering-error');
 Object.defineProperty(Encoder.prototype,'encode',{configurable:true,get(){throw marker}});
 await assert.rejects(scope[proofName(script)](0,123,0),error=>error===marker);
-transport.beginRootReturn();assert.throws(()=>transport.beginRootReturn(),/nested-root-return/);
+const owner=transport.beginRootReturn();assert.throws(()=>transport.beginRootReturn(),/nested-root-return/);
 assert.throws(()=>transport.reserve(),/canonical-return-admission/);
 assert.throws(()=>transport.connect({},{}),/canonical-return-admission/);
-transport.endRootReturn();transport.assertEmpty();
+assert.throws(()=>transport.endRootReturn({}),/root-return-not-held/);
+transport.endRootReturn(owner);transport.assertEmpty();
 const token=transport.reserve();assert.equal(typeof token,'object');assert.throws(transport.assertEmpty,/unclosed/);
 function proofName(value){return parse(value,{ecmaVersion:'latest',sourceType:'module'}).body.find(node=>node.id?.name.startsWith('export_')).id.name;}
 """, parser=True)
+
+    def test_actual_generated_root_awaits_accepted_end_eof_ack_close_and_notification_tail(self):
+        self.javascript(self.captured_ack_fixture() + r"""
+const f=await ackFixture('eof','hold-close');let completed=false,closeTail=false;
+const root=f.runApplication(()=>new Promise((yes,no)=>{
+ const socket=f.net.connect(12345,'127.0.0.1');socket.on('error',no);
+ socket.once('connect',()=>{socket.end();yes('ready')});
+ socket.on('close',()=>{assert.equal(completed,false);assert.throws(f.original.assertEmpty,/unclosed/);
+  assert.throws(()=>f.net.connect(12345,'127.0.0.1'),/canonical-return-admission/);closeTail=true});
+}));
+root.then(()=>{completed=true});
+for(let i=0;i<16&&![...f.records.values()].some(r=>r.kind==='read');++i)await turn();
+const read=[...f.records.values()].find(r=>r.kind==='read');assert(read?.finished);
+assert.equal(completed,false);assert.equal(closeTail,false);
+assert.throws(()=>f.original.reserve(),/canonical-return-admission/);
+assert.throws(()=>f.original.beginAcceptedClose(),/nested-root-return/);
+assert.throws(()=>f.original.endRootReturn({}),/root-return-not-held/);
+read.ack.resolve();
+for(let i=0;i<16&&![...f.records.values()].some(r=>r.kind==='close');++i)await turn();
+const close=[...f.records.values()].find(r=>r.kind==='close');assert(close?.finished);
+assert.equal(completed,false);assert.equal(closeTail,false);assert.equal(f.drops,0);
+close.ack.resolve();await root;
+assert.equal(completed,true);assert.equal(closeTail,true);f.original.assertEmpty();
+assert([...f.records.values()].every(r=>r.finished));
+""", parser=True)
+
+    def test_accepted_close_fence_is_lazy_exact_owned_and_refuses_open_siblings(self):
+        self.javascript(r"""
+let allocations=0;class P extends Promise{constructor(executor){++allocations;super(executor)}}
+const t={...target(),Promise:P},transport=createNodeNetTransport({},t,()=>({}));
+Object.defineProperty(Object.prototype,'promise',{configurable:true,get(){throw Error('inherited promise getter')}});
+let empty;try{empty=transport.beginAcceptedClose();assert.equal(empty.promise,undefined);assert.equal(Object.hasOwn(empty,'promise'),true)}
+finally{delete Object.prototype.promise}assert.equal(allocations,0);
+assert.throws(()=>transport.endRootReturn({}),/root-return-not-held/);
+assert.throws(()=>transport.beginAcceptedClose(),/nested-root-return/);
+assert.throws(()=>transport.reserve(),/canonical-return-admission/);transport.endRootReturn(empty);
+const one=transport.reserve(),two=transport.reserve();transport.acceptTerminal(one);
+assert.throws(()=>transport.beginAcceptedClose(),/unclosed/);
+// Refused acquisition did not fence an unrelated live owner or mint success.
+assert.throws(()=>transport.connect({},{}),/foreign/);assert.throws(transport.assertEmpty,/unclosed/);
+transport.acceptTerminal(two);const owner=transport.beginAcceptedClose();assert(owner.promise instanceof P);
+assert.equal(allocations,1);assert.throws(()=>transport.endRootReturn(empty),/root-return-not-held/);
+const caught=owner.promise.then(()=>assert.fail('poison cannot complete'),error=>assert.equal(error,undefined));
+transport.poison(one,undefined);await caught;assert.throws(transport.assertEmpty,/unclosed/);
+transport.endRootReturn(owner);assert.throws(()=>transport.beginAcceptedClose(),error=>error===undefined);
+""")
+
+    def test_actual_generated_close_join_keeps_undefined_rejection_through_original_task_exit(self):
+        self.javascript(self.captured_ack_fixture() + r"""
+for(const original of [undefined,Object.freeze({get message(){throw Error('rejection getter must not run')}})]) {
+const f=await ackFixture('eof','hold-close');
+const root=f.runApplication(()=>new Promise((yes,no)=>{
+ const socket=f.net.connect(12345,'127.0.0.1');socket.on('error',()=>{});
+ socket.once('connect',()=>{socket.end();yes('ready')});
+}));
+const failed=assert.rejects(root,error=>error===original);
+for(let i=0;i<16&&![...f.records.values()].some(r=>r.kind==='read');++i)await turn();
+const read=[...f.records.values()].find(r=>r.kind==='read');assert(read?.finished);
+read.ack.reject(original);await failed;assert.throws(f.original.assertEmpty,/unclosed/);
+}
+""", parser=True)
+
+    def test_accepted_destroy_join_waits_distinct_cancel_and_borrow_ack_then_close_tail(self):
+        self.javascript(r"""
+const logical=deferred(),borrow=deferred(),cancel=deferred(),started=deferred(),closeAck=deferred();let cancels=0,closeStarts=0,tail=false;
+const f=fixture({read(){started.resolve();return {promise:logical.promise,borrowReleased:borrow.promise,
+ cancel(){++cancels;logical.reject(Error('original cancellation'));return cancel.promise}}},
+ close(){++closeStarts;return {promise:Promise.resolve({}),borrowReleased:closeAck.promise,cancel(){return closeAck.promise}}}});
+const socket=f.net.connect(12345,'127.0.0.1');socket.on('error',()=>assert.fail('cancelled read must not become error'));
+socket.on('data',()=>assert.fail('cancelled read must not deliver'));socket.on('close',()=>{tail=true;assert.throws(f.transport.assertEmpty,/unclosed/)});
+await started.promise;socket.destroy();const owner=f.transport.beginAcceptedClose();let complete=false;
+owner.promise.then(()=>{complete=true});assert.equal(cancels,1);
+borrow.resolve();await turn();assert.equal(complete,false);assert.equal(closeStarts,0);
+cancel.resolve();await turn();assert.equal(complete,false);assert.equal(tail,false);assert.equal(closeStarts,1);
+closeAck.resolve();await owner.promise;assert.equal(complete,true);assert.equal(tail,true);f.transport.assertEmpty();
+f.transport.endRootReturn(owner);
+""")
+
+    def test_paused_end_actual_data_retains_chunk_and_refuses_instead_of_fabricating_eof(self):
+        self.javascript(r"""
+const logical=deferred(),ack=deferred(),started=deferred();let copied=0,reported;
+const f=fixture({read(){started.resolve();return {promise:logical.promise,borrowReleased:ack.promise,cancel(){return ack.promise}}},
+ chunkBytes(){++copied;assert.fail('paused end cannot discard data through an implicit copy')}});
+const socket=f.net.connect(12345,'127.0.0.1');socket.on('error',()=>assert.fail('original callback fault must not become EIO'));
+socket.once('connect',()=>socket.end('x'));await started.promise;
+const owner=f.transport.beginAcceptedClose();const refused=owner.promise.then(()=>assert.fail('data cannot become EOF'),error=>{reported=error});
+const unhandled=[];const observe=error=>unhandled.push(error);process.on('unhandledRejection',observe);
+logical.resolve(f.chunk);await turn();assert.equal(reported,undefined);assert.equal(f.drops,0);assert.equal(copied,0);
+ack.resolve();await refused;await turn();process.removeListener('unhandledRejection',observe);
+assert.equal(reported.code,'ERR_LSF_UNSUPPORTED_OPERATION');assert.equal(reported.syscall,'paused-end-unread-data');
+assert.equal(socket.bytesWritten,1);assert.equal(reported.mayHaveApplied,true);assert.equal(reported.acceptedPrefixBytes,0);
+assert(unhandled.includes(reported));assert.equal(socket.readableEnded,false);assert.equal(copied,0);assert.equal(f.drops,0);
+assert.equal(f.calls.includes('close'),false);assert.throws(f.transport.assertEmpty,/unclosed/);f.transport.endRootReturn(owner);
+""")
 
     def test_actual_generated_handoff_captures_resolver_before_application_mutation(self):
         self.javascript(r"""
@@ -596,7 +698,10 @@ for(const make of [()=>new NativeSocket(),()=>new (fixture().net.Socket)()]) {
                 net_profile.selected({'standardNetModules': invalid}, identities)
         selected = net_profile.selected({'standardNetModules': ['node:net'],
             'standardNetProfile': net_profile.PROFILE, 'standardNetIdentities': identities}, identities)
-        self.assertFalse(selected['automaticCloseDrain'])
+        self.assertTrue(selected['automaticCloseDrain'])
+        self.assertEqual(selected['closeDrain'], 'accepted-terminal-intent-only-v1')
+        self.assertEqual(selected['maximumRootCloseWaiters'], 1)
+        self.assertEqual(selected['pausedEndRead'], 'eof-only-unread-data-refuses')
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary)
             self.assertEqual(net_profile.retain_selection(path, path, identities), ((), []))
@@ -768,21 +873,23 @@ class NodeNetOwningControls(unittest.TestCase):
             'outboundRequests':1,'cpuFuel':100,'peakMemoryBytes':4096,'grantFuel':1_000_000_000,
             'outboundCeiling':8,'sameBackend':True,'kernelRetirementQualified':False}
             for index,(name,mode) in enumerate(owner.NET_CASES)]
-        def owners(held):
-            count=2 if held else 0
+        def owners(held, count=None):
+            count=(2 if held else 0) if count is None else count
             return {'stream':dict.fromkeys(('owners','connections','pendingOperations','retainedChunks'),count),
-                'io':{'calls':count,'streams':count,'stagedBytes':65536 if held else 0,'buffers':4 if held else 0,
+                'io':{'calls':count,'streams':count,'stagedBytes':32768*count if held else 0,'buffers':2*count if held else 0,
                       'running':0,'queued':0,'resultBytes':0,'metadataBytes':0},
                 'poolConnections':count,'poolRunningRequests':0,'liveStores':1 if held else 0,
                 'activeActivations':1 if held else 0,'liveInstances':1 if held else 0,'queuedActivations':0,'kernelRetirementQualified':False}
         for row in cases:
-            mode=row['mode']; row.update(grantMemoryBytes=128*1024**2,grantWallTimeMillis=120000,
+            mode=row['mode']; row['outboundRequests']=0 if mode==6 else 1
+            row.update(grantMemoryBytes=128*1024**2,grantWallTimeMillis=120000,
                 publicErrorCode='guest-trap' if mode==4 else 'none',
                 publicTrap={'kind':'unreachable-code','code':'guest-trap','phase':None,'message':'guest trapped: unreachable-code'} if mode==4 else None,
                 originalFailureCause='unknown' if mode==4 else 'not-applicable',
                 guardAttribution='source-only' if mode==4 else 'not-applicable',recordedAdmissionRefusal=False,
                 postRoot=owners(False),heldOwnerBeforePermit=owners(True) if mode in (1,3,4) else None,
-                controlPeerEOF=mode in (1,3,4),primaryReleasedAfterObservation=mode==4)
+                controlPeerEOF=mode in (1,3,4),primaryReleasedAfterObservation=mode==4,
+                acceptedCloseBeforeEOF=owners(True,1) if mode==5 else None)
         reference = {'name':'node-net-reference-t32-q32-n128-v1',
             'runtimeLimits':{'tasks':32,'executors':2,'queuedWork':32,'waits':8,'timers':8,'results':8,'native':128},
             'activationRuntimeProfile':'activation-owned-v1',
@@ -792,7 +899,7 @@ class NodeNetOwningControls(unittest.TestCase):
                 'engineConfigurationDigest':'blake3:'+'3'*64,'engineVersion':'48.0.7',
                 'targetTriple':'x86_64-unknown-linux-gnu','cpuFeatureSet':'host-baseline'}}
         for row in cases: row['referenceProfile']=copy.deepcopy(reference)
-        complete = {'cases':6,'guestComponents':1,'gateComponent':False,'wholeAC7':False,
+        complete = {'cases':8,'guestComponents':1,'gateComponent':False,'wholeAC7':False,
                     'wholeCostQualification':False,'productionEnablement':False,'referenceProfile':reference}
 
         def raw(rows, done=complete):
@@ -849,6 +956,12 @@ class NodeNetOwningControls(unittest.TestCase):
         with self.assertRaises(WorkflowError): owner.node_net_records(raw(changed))
         changed=copy.deepcopy(cases);changed[3]['status']='guest-trap'
         with self.assertRaises(WorkflowError): owner.node_net_records(raw(changed))
+        for value in (None, owners(True), {**owners(True,1),'liveStores':0}):
+            changed=copy.deepcopy(cases);changed[6]['acceptedCloseBeforeEOF']=value
+            with self.assertRaises(WorkflowError): owner.node_net_records(raw(changed))
+        for index,value in ((6,0),(7,1)):
+            changed=copy.deepcopy(cases);changed[index]['outboundRequests']=value
+            with self.assertRaises(WorkflowError): owner.node_net_records(raw(changed))
         with self.assertRaises(WorkflowError): owner.node_net_records(raw(cases[:-1]))
         with self.assertRaises(WorkflowError): owner.node_net_records(raw(cases, {**complete,'gateComponent':0}))
 

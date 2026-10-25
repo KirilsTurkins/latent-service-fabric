@@ -7,7 +7,7 @@ const prefix = 'import_latent_network_streams_0_1_0$';
 const operations = Object.freeze(['connect', 'read', 'write', 'ready', 'chunkBytes', 'shutdown', 'close']);
 
 // This projection changes no public call, typed lift/lower, task exit or native
-// owner. Its one root assertion stays within the ORIGINAL error-handling try.
+// owner. Accepted-close waiting stays within the ORIGINAL error-handling try.
 export function nodeNetBindings(source, parse, profile, exported) {
   if (profile === undefined) return source;
   const fail = () => { throw new Error('compiler-owned-node-net-binding-shape'); };
@@ -37,6 +37,24 @@ export function nodeNetBindings(source, parse, profile, exported) {
   }
   if (functions.filter(node => node.id?.name.startsWith('export_')).length !== names.size) fail();
   const edits = [];
+  // The pinned generator's debug-only message read throws on reject(undefined)
+  // before its original rejection/exit path. Never inspect a rejection value
+  // for logging; forward the exact value through every original Task operation.
+  const tasks = tree.body.filter(node => node.type === 'ClassDeclaration' && id(node.id, 'AsyncTask'));
+  if (tasks.length !== 1) fail();
+  const rejects = tasks[0].body.body.filter(node => node.type === 'MethodDefinition' && id(node.key, 'reject'));
+  if (rejects.length !== 1 || rejects[0].computed || rejects[0].static ||
+      rejects[0].value.params.length !== 1 || !id(rejects[0].value.params[0], 'taskErr')) fail();
+  const debug = rejects[0].value.body.body[0]?.expression;
+  if (debug?.type !== 'CallExpression' || !id(debug.callee, '_debugLog') || debug.arguments.length !== 2 ||
+      debug.arguments[0].value !== '[AsyncTask#reject()] args' || debug.arguments[1].type !== 'ObjectExpression') fail();
+  const debugFields = debug.arguments[1].properties;
+  if (debugFields.length !== 7 || debugFields.some(node => node.type !== 'Property' || node.computed || node.kind !== 'init') ||
+      debugFields.map(node => node.key.name).sort().join(',') !==
+      'callbackFnName,componentIdx,entryFnName,errMsg,parentSubtask,parentSubtaskID,taskID') fail();
+  const message = debugFields.find(node => id(node.key, 'errMsg')).value;
+  if (!member(message, 'taskErr', 'message')) fail();
+  edits.push({start: message.start, end: message.end, text: 'undefined'});
   for (const [name, abi] of exported) {
     const found = functions.filter(node => id(node.id, name));
     if (found.length !== 1) fail();
@@ -93,15 +111,20 @@ export function nodeNetBindings(source, parse, profile, exported) {
     }
     for (const node of tail) inspectTail(node);
     if (resolves !== 1) fail();
-    edits.push({start: statement.end, text: '\n    __lsfNodeNetRootCheck();'});
-    edits.push({start: original.end, text: '\n  __lsfNodeNetTransport.beginRootReturn();\n  try {'});
+    edits.push({start: fn.body.start + 1, text: '\n  let __lsfNodeNetReturn;'});
+    edits.push({start: statement.end, text: '\n    __lsfNodeNetReturn = __lsfNodeNetTransport.beginAcceptedClose();\n' +
+      '    if (__lsfNodeNetReturn.promise !== undefined) await __lsfNodeNetReturn.promise;\n' +
+      '    __lsfNodeNetRootCheck();'});
+    edits.push({start: caught.body.start + 1, text: '\n    if (__lsfNodeNetReturn !== undefined) ' +
+      '__lsfNodeNetTransport.endRootReturn(__lsfNodeNetReturn);'});
+    edits.push({start: original.end, text: '\n  try {'});
     edits.push({start: terminal.start, text: '__lsfNodeNetRootCheck();\n  '});
-    edits.push({start: fn.body.end - 1, text: '\n  } finally { __lsfNodeNetTransport.endRootReturn(); }\n'});
+    edits.push({start: fn.body.end - 1, text: '\n  } finally { __lsfNodeNetTransport.endRootReturn(__lsfNodeNetReturn); }\n'});
   }
   const inspections = functions.filter(node => id(node.id, prefix + 'inspect'));
   if (inspections.length !== 1 || inspections[0].async || inspections[0].params.length !== 1) fail();
   edits.sort((a, b) => b.start - a.start);
-  for (const edit of edits) source = source.slice(0, edit.start) + edit.text + source.slice(edit.start);
+  for (const edit of edits) source = source.slice(0, edit.start) + edit.text + source.slice(edit.end ?? edit.start);
   // Tail registration is after every real CAP/task/resource initializer. The
   // private module cannot resolve until this exact factory/registry is ready.
   source += '\nconst __lsfNodeNetTransport = (' + createNodeNetTransport.toString() +

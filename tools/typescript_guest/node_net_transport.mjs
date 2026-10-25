@@ -18,7 +18,8 @@ export function createNodeNetTransport(calls, target, inspect) {
   const react = (promise, yes, no) => apply(then, promise, [yes, no]);
   const dispose = Symbol.dispose || Symbol.for('dispose');
   const slots = []; // Explicit two-Socket port ceiling, not an activation ledger.
-  let returning = false; // Synchronous canonical-return admission fence only.
+  let returning; // Exact private owner spans accepted close and canonical return.
+  let drain;
   const failure = code => new E('lsf-node-net:' + code);
   const rootKey = '__lsfNodeNetRootCheck';
   if (descriptor(target, rootKey)) throw failure('root-check-already-installed');
@@ -31,6 +32,9 @@ export function createNodeNetTransport(calls, target, inspect) {
     item.unknown = true;
     if (!item.faulted) { item.faulted = true; item.fault = error; }
     if (user) item.userFaulted = true;
+    if (drain && !drain.settled) {
+      drain.settled = true; drain.reject(item.fault);
+    }
   }
   function invoke(item, callback, receiver, value) {
     ++item.callbackTails;
@@ -44,6 +48,9 @@ export function createNodeNetTransport(calls, target, inspect) {
     const index = indexOf(slots, item);
     if (index < 0) throw failure('socket-registry-identity');
     remove(slots, index);
+    if (!slots.length && drain && !drain.settled) {
+      drain.settled = true; drain.resolve();
+    }
   }
   function stopReady(item) {
     if (!item.stop || item.stop.delivered || item.callbackTails || item.externalTails ||
@@ -156,17 +163,34 @@ export function createNodeNetTransport(calls, target, inspect) {
       assertBorrowReleased: record.assertBorrowReleased, cancel: record.cancel});
   }
   const checkRoot = () => { if (slots.length) throw failure('unclosed-sockets'); };
+  function beginReturn(acceptedClose) {
+    if (returning) throw failure('nested-root-return');
+    if (!acceptedClose) checkRoot();
+    for (const item of slots) {
+      if (item.faulted) throw item.fault;
+      if (item.unknown || !item.terminalIntent) throw failure('unclosed-sockets');
+    }
+    // Install admission fencing before allocating the sole original Promise.
+    // Empty registries retain the synchronous path with no join Promise.
+    const owner = {promise: undefined};
+    returning = owner;
+    try {
+      if (slots.length) {
+        let yes, no;
+        owner.promise = new P((resolve, reject) => { yes = resolve; no = reject; });
+        drain = {owner, resolve: yes, reject: no, settled: false};
+      }
+      return freeze(owner);
+    } catch (error) { returning = undefined; drain = undefined; throw error; }
+  }
   define(target, rootKey, {value: checkRoot, writable: false, configurable: false});
   return freeze({
     assertEmpty: checkRoot,
-    beginRootReturn() {
-      if (returning) throw failure('nested-root-return');
-      checkRoot();
-      returning = true;
-    },
-    endRootReturn() {
-      if (!returning) throw failure('root-return-not-held');
-      returning = false;
+    beginRootReturn() { return beginReturn(false); },
+    beginAcceptedClose() { return beginReturn(true); },
+    endRootReturn(owner) {
+      if (!returning || owner !== returning) throw failure('root-return-not-held');
+      returning = undefined; drain = undefined;
     },
     reserve(afterTail, receiver) {
       if (afterTail !== undefined && typeof afterTail !== 'function') throw failure('socket-progress');
@@ -174,10 +198,14 @@ export function createNodeNetTransport(calls, target, inspect) {
       if (slots.length >= 2) throw failure('socket-port-limit');
       const token = freeze({});
       push(slots, {token, pending: [], chunks: [], connection: undefined,
-        connecting: false, connectDone: false, closing: false, closed: false, unknown: false,
+        connecting: false, connectDone: false, closing: false, closed: false, unknown: false, terminalIntent: false,
         faulted: false, fault: undefined, userFaulted: false, afterTail, receiver, progressing: false,
         callbackTails: 0, externalTails: 0, notification: false, stop: undefined});
       return token;
+    },
+    acceptTerminal(token) {
+      const item = state(token);
+      item.terminalIntent = true;
     },
     connect(token, request, callback, receiver) {
       if (returning) throw failure('canonical-return-admission');
