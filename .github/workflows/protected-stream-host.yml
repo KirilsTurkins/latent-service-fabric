@@ -20,7 +20,7 @@ jobs:
         with:
           python-version: 3.13.5
       - name: Install normal pinned validator dependencies
-        run: python3 -m pip install --require-hashes -r tools/requirements.lock
+        run: python3 -m pip install --requirement tools/requirements.lock
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:

@@ -20,7 +20,7 @@
       },
       {
         "name": "Install normal pinned validator dependencies",
-        "run": "python3 -m pip install --require-hashes -r tools/requirements.lock"
+        "run": "python3 -m pip install --requirement tools/requirements.lock"
       },
       {
         "uses": "dtolnay/rust-toolchain"
@@ -60,7 +60,7 @@
   },
   "jobId": "host-controls",
   "kind": "job",
-  "reviewReason": "Retain the reviewed source-only six-case owner using the currently approved artifact action pin; no command, cap or case changes.",
+  "reviewReason": "Use the existing maintained version-pinned validator installation command; the initial owner requested hashes absent from the unchanged lock and failed before Rust compilation.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/protected-stream-host.yml"
 }
