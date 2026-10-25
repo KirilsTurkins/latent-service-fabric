@@ -6,8 +6,9 @@ capabilities. Deploying another service adds code and bounded metadata; it does
 not create an idle service process, thread, socket, guest heap or connection pool.
 
 An incoming request creates an **activation** in a fixed pool of execution cells.
-Each activation gets fresh guest state. The node reclaims its resources when the
-request finishes, fails, times out or is cancelled.
+Each activation gets fresh guest state. Completion, failure, timeout or
+cancellation starts cleanup. The backend's proof governs cell reuse; retained
+memory stays charged until its actual owner retires.
 
 ## Try LSF
 
@@ -79,12 +80,12 @@ collective and packaged acceptance remains open. See
 local; application HTTP ingress has its own
 [listener and security configuration](docs/reference/http-ingress.md).
 
-[![Build a package, sign and admit it, then invoke a capsule or serve a website through the node.](docs/assets/package-delivery.svg)](docs/assets/package-delivery.svg)
+[![Review and compile captured inputs, sign and admit the package, then authorize guest execution or static-file delivery.](docs/assets/package-delivery.svg)](docs/assets/package-delivery.svg)
 
 ## Resource and security model
 
 ```text
-resident state = fixed node runtime + bounded catalog metadata + active activations + bounded shared caches
+resident ownership = fixed node services + bounded metadata/caches + active and retiring work
 ```
 
 The number of node processes, threads, sockets and execution cells must not grow

@@ -72,6 +72,15 @@ terminates.
 
 ## Accounting
 
+[![Selected allocations precharge the original activation. Store cleanup decides cell reuse, while retained result and host-work reservations release only after actual backing retirement.](../assets/activation-memory-ownership.svg)](../assets/activation-memory-ownership.svg)
+
+[Open the memory-ownership diagram at full size](../assets/activation-memory-ownership.svg).
+
+The two branches distinguish physical owners; they are not a timing scale or
+a guarantee that every host operation can detach safely. Reuse still needs the
+backend proof. Releasing a memory reservation does not subtract spent fuel or
+rewind the activation's finalized peak-memory report.
+
 `ActivationBudget` is cloneable, but every clone refers to one mutex-serialized
 activation state. This gives the following invariants:
 

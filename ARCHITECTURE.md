@@ -19,6 +19,13 @@ and [package architecture walkthrough](docs/development/workspace-packages.md).
 Every Rust workspace package has a README mapping its modules, ownership,
 dependencies, feature/target gates, tests and related contracts.
 
+The current SVG maps show [delivery](docs/assets/package-delivery.svg),
+[shared-node responsibilities](docs/assets/standalone-architecture.svg),
+[activation cleanup](docs/assets/activation-lifecycle.svg),
+[physical memory ownership](docs/assets/activation-memory-ownership.svg) and
+[command commitment and recovery](docs/assets/transaction-command-recovery.svg).
+Their linked guides remain authoritative for scope and qualification.
+
 The [container profile](docs/operations/container-runtime.md) runs the same
 standalone node as a non-root process. Optional node-level adapters provide
 [private readiness probes](docs/operations/readiness-probes.md),
