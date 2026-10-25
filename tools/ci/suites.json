@@ -7538,7 +7538,9 @@
         "host::streaming_http::table::shared::tests::native_streaming_shared_arc_payload_unwind_still_retires_its_original_owner",
         "host::blob::table::tests::blob_table_native_backing_retains_unused_slots_and_actual_values_until_drop",
         "component_threading::tests::rust_sync_private_dispatch_executes_production_helper_and_preserves_source_fallback",
-        "development_borrow_admission::tests::normal_socket_cases_keep_distinct_closed_indices_and_original_opt_in"
+        "development_borrow_admission::tests::normal_socket_cases_keep_distinct_closed_indices_and_original_opt_in",
+        "host::service::refusal::tests::disabled_and_first_per_activation_do_not_share_global_admission",
+        "host::service::refusal::tests::typed_budget_refuses_coercion_unknown_details_and_private_error_text"
       ],
       "expectedIgnored": [
         "cache::measurement::cache_lookup_collector",
@@ -7551,7 +7553,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 482,
+      "minimumCases": 484,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [
@@ -10583,7 +10585,8 @@
         "config::tests::providers::activation_runtime::c_native_opt_in_preserves_the_old_provider_digest_and_requires_its_own_binding",
         "config::tests::providers::activation_runtime::protected_c_profile_reaches_normal_node_settings_without_raising_any_limits",
         "config::tests::providers::activation_runtime::activation_owned_stack_selection_keeps_native_threads_and_provider_quotas_unchanged",
-        "config::tests::providers::activation_runtime::cooperative_admission_requires_the_selected_c_profile_and_exact_store_owner_limits"
+        "config::tests::providers::activation_runtime::cooperative_admission_requires_the_selected_c_profile_and_exact_store_owner_limits",
+        "config::tests::development::local_service_refusal_observation_requires_exact_consent_and_existing_local_provider"
       ],
       "expectedIgnored": [
         "standalone::http::assets::browser::actual_browser_application_uses_only_the_public_shared_http_contract",
@@ -10652,7 +10655,7 @@
       ],
       "kind": "lib",
       "manifest": "apps/latentd/Cargo.toml",
-      "minimumCases": 474,
+      "minimumCases": 475,
       "mode": "libtest",
       "package": "latentd",
       "platforms": [

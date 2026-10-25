@@ -17,6 +17,7 @@ def configuration(original: dict, descriptor: dict, fixtures: dict | None = None
                   local_service_refusal_observation: bool = False) -> tuple[dict, dict]:
     require(type(local_service_refusal_observation) is bool and (not local_service_refusal_observation
             or fixtures is not None and "localService" in fixtures), "explicit-local-service-observation-required")
+    require("developmentLocalServiceObservation" not in original, "test-profile-will-not-replace-existing-local-observation")
     require(original["securityProfile"] == "local-experimental-v1", "test-profile-requires-local-installation")
     require(descriptor["tenant"] == "examples" and "providers" not in original,
             "test-profile-will-not-replace-existing-providers")
@@ -61,7 +62,6 @@ def configuration(original: dict, descriptor: dict, fixtures: dict | None = None
     if "localService" in selected:
         value["cells"][0].update(capacity=2, queueCapacity=4)
         if local_service_refusal_observation:
-            require("developmentLocalServiceObservation" not in original, "test-profile-will-not-replace-existing-local-observation")
             value["developmentLocalServiceObservation"] = {"formatVersion": 1, "consent": True,
                 "purpose": "disposable-local-service-refusal-observation"}
         value["budgetProfile"].update(maximumChildCalls=16, maximumDepth=2,

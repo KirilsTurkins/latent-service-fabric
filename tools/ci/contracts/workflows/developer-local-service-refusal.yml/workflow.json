@@ -1,0 +1,26 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "local-service-refusal-${{ github.ref }}"
+    },
+    "name": "Ordinary local-service first refusal",
+    "on": {
+      "push": {
+        "branches": [
+          "diag/local-service-refusal-20261025"
+        ]
+      }
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "local-service"
+  ],
+  "reviewReason": "Explicit cfg-only disposable local-service first-refusal observation; preserve original public failures and all runtime owners/grants; default ordinary path byte-equivalent; one narrowly owned actual fixture diagnostic.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/developer-local-service-refusal.yml"
+}

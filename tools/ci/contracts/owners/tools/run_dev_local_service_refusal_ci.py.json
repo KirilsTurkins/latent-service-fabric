@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/run_dev_local_service_refusal_ci.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "One explicit local-service-only diagnostic owner; install the unchanged maintained Python validator lock and import/CLI smoke before native compilation; preserve original fixture assertions/limits/default-off path.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "6c8288944786a65a90cccc939d026863fd1a81549edb334e828059a50720084f"
+}

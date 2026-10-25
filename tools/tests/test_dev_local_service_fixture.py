@@ -62,6 +62,10 @@ class LocalServiceFixture(unittest.TestCase):
             with self.assertRaises(DevError):
                 node_test_profile.configuration(original, descriptor, {"localService": self.selection()},
                     root=Path("test-local"), local_service_refusal_observation=flag)
+        for flag in (False, True):
+            with self.assertRaises(DevError):
+                node_test_profile.configuration(dict(original, developmentLocalServiceObservation={}), descriptor,
+                    {"localService": self.selection()}, root=Path("test-local"), local_service_refusal_observation=flag)
         self.assertEqual(selected["providers"]["localService"]["deployment"], "dev-callee")
 
     @unittest.skipUnless(os.name == "posix", "Linux source-node probe owns the log RPC")
