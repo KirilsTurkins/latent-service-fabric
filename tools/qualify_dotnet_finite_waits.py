@@ -35,6 +35,7 @@ MATERIALS = tuple(sorted(set((*RECIPE,
     'tools/phase3_resource_identity.py', 'tools/phase3_resource_os.py', 'tools/phase3_resource_profile.py',
     'tools/sdk_provider_scenario.py', 'wit/host-abi-phase3-v5.json',
     'sdk/dotnet-guest/tools/http-errors/TaskWait.cs', 'sdk/dotnet-guest/tools/http-errors/Program.cs',
+    'sdk/dotnet-guest/tools/http-errors/AggregateTaskWait.cs',
     'sdk/dotnet-guest/tools/http-errors/TaskWait.targets', 'sdk/dotnet-guest/tools/http-errors/IdleTimerDriver.cs',
     'sdk/dotnet-guest/tools/http-errors/ClosedFilesystem.cs', 'sdk/dotnet-guest/tools/http-errors/ClosedFilesystem.targets',
     '.github/workflows/dotnet-finite-task-waits.yml'))))

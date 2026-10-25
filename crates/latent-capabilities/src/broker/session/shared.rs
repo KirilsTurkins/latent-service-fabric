@@ -152,6 +152,10 @@ impl<T> Default for SharedWeak<T> {
     }
 }
 impl<T> SharedWeak<T> {
+    pub(in crate::broker) fn ptr_eq_shared(&self, owner: &Shared<T>) -> bool {
+        self.inner.as_ptr() == Arc::as_ptr(&owner.inner)
+    }
+
     pub(in crate::broker) fn strong_count(&self) -> usize {
         self.inner.strong_count()
     }

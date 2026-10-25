@@ -38,7 +38,7 @@ pub use audit::AuditConfig;
 pub use budgets::BudgetConfig;
 pub use capability_policies::CapabilityPolicyConfig;
 #[cfg(feature = "development-test-node")]
-pub use development::DevelopmentTestConfig;
+pub use development::{DevelopmentTestConfig, LocalServiceObservation};
 #[cfg(feature = "development-test-node")]
 pub use development_preparation::DevelopmentPreparationProfile;
 pub use http::{

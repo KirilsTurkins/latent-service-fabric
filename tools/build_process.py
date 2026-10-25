@@ -19,8 +19,10 @@ from collections.abc import Mapping, Sequence
 
 # The fixed archive transport cap is independent of the source file-byte cap.
 # Each caller still supplies its independent, bounded output allowance.
-MAX_OUTPUT_BYTES = 80 * 1024 * 1024
-MAX_TIMEOUT_SECONDS = 3600
+MAX_OUTPUT_BYTES = 82 * 1024 * 1024
+# Trusted callers retain their own deadlines; this is the operational ceiling,
+# including the separately bounded 75-minute hosted LLVM build command.
+MAX_TIMEOUT_SECONDS = 4500
 _CLEANUP_SECONDS = 5.0
 _CHUNK_BYTES = 16 * 1024
 

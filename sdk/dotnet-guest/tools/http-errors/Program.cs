@@ -37,6 +37,10 @@ internal static class Program
             return TaskWait.Run(args[1..], finiteSelected: true);
         if (args.Length == 4 && args[0] == "--managed-task-wait")
             return TaskWait.Run(args[1..], finiteSelected: true, managedSelected: true);
+        // Qualification-private candidate. Normal compiler selection remains
+        // on --managed-task-wait until this distinct variant is qualified.
+        if (args.Length == 4 && args[0] == "--aggregate-task-wait")
+            return TaskWait.Run(args[1..], finiteSelected: true, managedSelected: true, aggregateSelected: true);
         if (args.Length == 5 && args[0] == "--closed-filesystem")
             return ClosedFilesystem.Run(args[1..]);
         try

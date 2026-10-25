@@ -102,9 +102,85 @@ impl StreamProvider {
             .map_err(crate::snapshot_lock_error)? = Some(owner);
         Ok(provider)
     }
-    /// Observe the same native close that ordinary retirement initiates. This
-    /// qualification-only result means CLOSE request acceptance, never physical
-    /// retirement/refund. Holding it keeps its original cleanup/result charge.
+    /// Explicit consumer for a NEW source-matched retirement-observation image.
+    /// It cannot enable normal sockets or return any native capacity. The old
+    /// constructor entry above never mints an observation descriptor.
+    #[cfg(all(target_os = "linux", any(test, feature = "development-outbound")))]
+    pub async fn install_kernel_return_observation_for_qualification(
+        pools: Arc<ProviderPools>,
+        logical_id: &str,
+        epoch: u64,
+        expected_epoch: u64,
+        config: StreamProviderConfig,
+        deadline: Instant,
+    ) -> Result<Self, StreamError> {
+        let provider = Self::install_with_modes(
+            Arc::clone(&pools),
+            logical_id,
+            epoch,
+            expected_epoch,
+            config,
+            TlsInstallMode::Qualified,
+            crate::kernel::Mode::RetainUnproved,
+        )?;
+        let owner = crate::kernel::native::start_with_retirement_observation(
+            pools,
+            &provider.inner.installed,
+            deadline,
+        )
+        .await?;
+        if Instant::now() >= deadline {
+            drop(owner);
+            return Err(error(StreamErrorCode::Timeout));
+        }
+        *provider
+            .inner
+            .native
+            .try_lock()
+            .map_err(crate::snapshot_lock_error)? = Some(owner);
+        Ok(provider)
+    }
+    /// Fixed qualification-only consumption of the original 512 KiB bank.
+    /// Connection, bootstrap/descriptor remainder and observer costs remain
+    /// quarantined. This cannot select normal provider installation.
+    #[cfg(all(target_os = "linux", any(test, feature = "development-outbound")))]
+    pub async fn install_kernel_bank_reclamation_for_qualification(
+        pools: Arc<ProviderPools>,
+        logical_id: &str,
+        epoch: u64,
+        expected_epoch: u64,
+        config: StreamProviderConfig,
+        deadline: Instant,
+    ) -> Result<Self, StreamError> {
+        let provider = Self::install_with_modes(
+            Arc::clone(&pools),
+            logical_id,
+            epoch,
+            expected_epoch,
+            config,
+            TlsInstallMode::Qualified,
+            crate::kernel::Mode::RetainUnproved,
+        )?;
+        let owner = crate::kernel::native::start_with_bank_reclamation(
+            pools,
+            &provider.inner.installed,
+            deadline,
+        )
+        .await?;
+        if Instant::now() >= deadline {
+            drop(owner);
+            return Err(error(StreamErrorCode::Timeout));
+        }
+        *provider
+            .inner
+            .native
+            .try_lock()
+            .map_err(crate::snapshot_lock_error)? = Some(owner);
+        Ok(provider)
+    }
+    /// Observe the same native close that ordinary retirement initiates. Its
+    /// fixed result is not an affine native refund proof or full cost claim.
+    /// Holding it keeps the original cleanup/result charge.
     #[cfg(all(target_os = "linux", any(test, feature = "development-outbound")))]
     pub async fn retire_kernel_constructor_for_qualification(
         &self,
@@ -120,7 +196,7 @@ impl StreamProvider {
         // The native slot is already empty: normal retirement cannot submit a
         // duplicate close. It still retires all the original other resources.
         self.retire();
-        let job = owner.close()?;
+        let job = owner.close_before(deadline)?;
         tokio::select! {
             biased;
             () = tokio::time::sleep_until(deadline.into()) => Err(error(StreamErrorCode::Timeout)),

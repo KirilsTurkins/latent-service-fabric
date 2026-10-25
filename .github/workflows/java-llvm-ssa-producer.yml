@@ -1,0 +1,74 @@
+name: Pinned Java LLVM SjLj compiler producer
+on:
+  push:
+    branches: ['feat/java-llvm-ssa-producer-20261025']
+    paths:
+      - '.github/workflows/java-llvm-ssa-producer.yml'
+      - 'NOTICE'
+      - 'tools/qualify_java_llvm_ssa.py'
+      - 'tools/java_guest/llvm_ssa_*.py'
+      - 'tools/data/java-llvm-ssa/patch.json'
+      - 'tools/data/java-llvm-ssa/tests.json'
+      - 'tools/data/java-llvm-ssa/requirements.lock'
+      - 'tools/data/java-llvm-ssa/LICENSE.txt'
+      - 'tools/tests/test_java_llvm_ssa_producer.py'
+      - 'tools/build_observation.py'
+      - 'tools/build_snapshot.py'
+      - 'tools/build_process.py'
+      - 'tools/build_process_linux.py'
+      - 'tools/build_process_signals.py'
+permissions:
+  contents: read
+concurrency:
+  group: java-llvm-ssa-producer-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  compiler:
+    name: Build and test one source-bound LLVM 21 compiler
+    runs-on: ubuntu-24.04
+    timeout-minutes: 95
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - name: Start the one aggregate producer budget before setup
+        shell: bash
+        run: printf 'LSF_LLVM_PRODUCER_STARTED=%s\n' "$(date +%s)" >> "$GITHUB_ENV"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - name: Install the hash-locked Linux lit timeout dependency
+        run: |
+          python3 -m pip install --require-hashes --only-binary=:all: --no-deps --requirement tools/data/java-llvm-ssa/requirements.lock
+      - name: Check only the new source and controller contracts
+        run: python3 -B -m unittest tools.tests.test_java_llvm_ssa_producer -v
+      - name: Produce one fixed compiler without Java or native guest compilation
+        run: python3 -B tools/qualify_java_llvm_ssa.py --output "$RUNNER_TEMP/java-llvm-ssa-producer"
+      - name: Admit only the fixed carrier and bounded evidence, including failures
+        id: retention
+        if: always()
+        run: python3 -B tools/qualify_java_llvm_ssa.py --admit-upload --output "$RUNNER_TEMP/java-llvm-ssa-producer"
+      - name: Retain finite compiler products and actual test observations
+        if: always() && steps.retention.outcome == 'success'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: java-llvm-ssa-producer-${{ github.sha }}
+          retention-days: 3
+          if-no-files-found: warn
+          compression-level: 0
+          path: |
+            ${{ runner.temp }}/java-llvm-ssa-producer/result.json
+            ${{ runner.temp }}/java-llvm-ssa-producer/source.json
+            ${{ runner.temp }}/java-llvm-ssa-producer/commands.json
+            ${{ runner.temp }}/java-llvm-ssa-producer/commands/**
+            ${{ runner.temp }}/java-llvm-ssa-producer/units.xml
+            ${{ runner.temp }}/java-llvm-ssa-producer/lit.xml
+            ${{ runner.temp }}/java-llvm-ssa-producer/sjlj-through-wineh.ll
+            ${{ runner.temp }}/java-llvm-ssa-producer/sjlj-through-wineh.o
+            ${{ runner.temp }}/java-llvm-ssa-producer/retained-CMakeCache.txt
+            ${{ runner.temp }}/java-llvm-ssa-producer/retained-rules.ninja
+            ${{ runner.temp }}/java-llvm-ssa-producer/derived-sdk.tar.gz
+            ${{ runner.temp }}/java-llvm-ssa-producer/derived-sdk-manifest.json
+            ${{ runner.temp }}/java-llvm-ssa-producer/upload-admission.json

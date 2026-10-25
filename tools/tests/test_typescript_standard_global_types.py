@@ -73,12 +73,14 @@ class StandardGlobalTypes(unittest.TestCase):
             with self.assertRaisesRegex(ValueError,'unselected-receipt'):types.retain(compiled,out,None)
 
     def test_partial_multiple_mutated_and_unreviewed_shapes_fail_explicitly(self):
-        changes=(lambda files:files.pop(types.PROVIDER+'web-globals/performance.d.ts'),
-                 lambda files:files.update({'other/node_modules/'+types.PROVIDER+'package.json':files[types.PROVIDER+'package.json']}))
-        for change in changes:
+        changes=(('standard-global-types-incomplete-provider-reference',
+                  lambda files:files.pop(types.PROVIDER+'web-globals/performance.d.ts')),
+                 ('standard-global-types-ambiguous-or-incomplete-provider',
+                  lambda files:files.update({'other/node_modules/'+types.PROVIDER+'package.json':files[types.PROVIDER+'package.json']})))
+        for expected,change in changes:
             with tempfile.TemporaryDirectory() as temporary:
                 _owner,closure=self.captured(Path(temporary),change)
-                with self.assertRaisesRegex(ValueError,'ambiguous-or-incomplete'):types.select(closure)
+                with self.assertRaisesRegex(ValueError,'^'+expected+'$'):types.select(closure)
         with tempfile.TemporaryDirectory() as temporary:
             _owner,closure=self.captured(Path(temporary));selected=types.select(closure)
             path=closure.work/'dependencies/npm/node_modules'/types.PROVIDER/'web-globals/abortcontroller.d.ts'

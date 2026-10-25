@@ -232,7 +232,7 @@ def verify_abort(dotnet: Path, tools: Path, output: Path) -> dict:
     fixture = 'sdk/dotnet-guest/tests/fixtures/http-abort-control'
     names = (fixture+'/Control.csproj', fixture+'/Program.cs', 'sdk/dotnet-guest/global.json',
         *('sdk/dotnet-guest/tools/http-errors/'+name for name in (
-            'Program.cs', 'TaskWait.cs', 'IdleTimerDriver.cs', 'ClosedFilesystem.cs',
+            'Program.cs', 'TaskWait.cs', 'AggregateTaskWait.cs', 'IdleTimerDriver.cs', 'ClosedFilesystem.cs',
             'ManagedWorkRuntime.cs', 'ManagedWorkTimers.cs', 'ManagedWorkBindings.cs', 'ManagedWorkCopy.cs',
             'ManagedWorkContext.cs', 'ManagedWorkHooks.cs', 'ManagedWorkPort.cs', 'ManagedHttpWork.cs')))
     source = output/'source'

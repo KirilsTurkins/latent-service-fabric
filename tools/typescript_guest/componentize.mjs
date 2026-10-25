@@ -11,8 +11,14 @@ import { selectedSourceSplicer } from './source_splicer.mjs';
 import { lazySyncImportWaiters, retireGeneratedTaskSlots, applicationRealmImportPromises, fuseNativeImportAwaits, directIdleTaskSlots, nativeCarrierImports } from './async_waiters.mjs';
 import { borrowReleaseHandoff } from './import_cancellation.mjs';
 import { borrowProbeBindings, borrowProbeProfile, borrowProbeSpliceCapture } from './borrow_probe.mjs';
+import { nodeNetBindings, NET_PROFILE } from './node_net_bindings.mjs';
 
-const [compiler, witPath, sourcePath, output, world = 'capsule', engine, selectionPath, sourceSplicer, bindingParser, diagnosticProfile] = process.argv.slice(2);
+const arguments_ = process.argv.slice(2);
+const netArguments = arguments_.filter(value => value.startsWith('--node-net-selection='));
+if (netArguments.length > 1) throw new Error('compiler-owned-node-net-selection-duplicate');
+const [compiler, witPath, sourcePath, output, world = 'capsule', engine, selectionPath, sourceSplicer, bindingParser, diagnosticProfile] =
+  arguments_.filter(value => !value.startsWith('--node-net-selection='));
+const netSelectionPath = netArguments[0]?.slice('--node-net-selection='.length);
 const prepareImport = witPath === '--source-import-adapter';
 const importProfile = 'spidermonkey-activation-promises-clocks-imports-v1';
 const useImportAdapter = prepareImport || !!sourceSplicer;
@@ -109,13 +115,45 @@ if (selectedSplicer) {
 if (diagnosticProfile !== undefined && (!selectedSplicer || diagnosticProfile !== borrowProbeProfile)) {
   throw new Error('compiler-owned-borrow-probe-runtime');
 }
+let netSelection, netExports;
+if (netSelectionPath !== undefined) {
+  if (!selectedSplicer || diagnosticProfile !== undefined) throw new Error('compiler-owned-node-net-runtime');
+  const raw = await readFile(netSelectionPath);
+  if (raw.byteLength > 65536) throw new Error('compiler-owned-node-net-selection-bound');
+  netSelection = JSON.parse(raw);
+  const fixed = {schemaVersion:'latent.typescript.standard-net-selection.v1', profile:NET_PROFILE,
+    modules:['node:net'], identities:netSelection.identities, maximumSocketStates:2,
+    maximumPendingOperationsPerSocket:3, maximumQueuedWriteBytes:65536, maximumQueuedWriteRecords:16,
+    maximumTransferWindowBytes:16384,
+    transport:'tcp', tlsApi:false, dnsApi:false, listeners:false, descriptorNamespace:false,
+    rootRequiresCompletedClose:true, automaticCloseDrain:true,
+    closeDrain:'accepted-terminal-intent-only-v1', maximumRootCloseWaiters:1,
+    pausedEndRead:'eof-only-unread-data-refuses', physicalRetirement:'not-inferred',
+    authority:'none', qualification:'unknown'};
+  const canonical = value => JSON.stringify(value, Object.keys(value).sort());
+  if (canonical(netSelection) !== canonical(fixed) || !netSelection.identities ||
+      Object.keys(netSelection.identities).sort().join(',') !== 'backend,bindings,declaration,interface,resolver,transport' ||
+      Object.values(netSelection.identities).some(value => !/^sha256:[0-9a-f]{64}$/.test(value)))
+    throw new Error('compiler-owned-node-net-selection-shape');
+  for (const [name, file] of [['backend','node_net.mjs'],['bindings','node_net_bindings.mjs'],
+      ['resolver','net_builtin.mjs'],['transport','node_net_transport.mjs']]) {
+    const actual = 'sha256:' + createHash('sha256').update(await readFile(new URL(file, import.meta.url))).digest('hex');
+    if (actual !== netSelection.identities[name]) throw new Error('compiler-owned-node-net-source-drift');
+  }
+}
+const diagnosticTap = borrowProbeSpliceCapture(diagnosticProfile,
+  (name, value) => writeFileSync(join(output,name),value,{flag:'wx'}));
 const result = await componentize({
   sourcePath, sourceName: basename(sourcePath),
   witPath, worldName: world, enableAot: false, env: compilerEnv,
   ...(engine ? { engine } : {}),
   ...(selectedSplicer ? {lsfSplicer:selectedSplicer} : {}),
-  lsfSpliceTap: borrowProbeSpliceCapture(diagnosticProfile,
-    (name, value) => writeFileSync(join(output,name),value,{flag:'wx'})),
+  lsfSpliceTap: netSelection ? result => {
+    if (!result || !Array.isArray(result.exports) || result.exports.length > 64)
+      throw new Error('compiler-owned-node-net-splice-exports');
+    netExports = result.exports;
+    return result; // Preserve exact synchronous result object/receiver/arguments.
+  } : diagnosticTap,
   lsfBindings(source) {
     generatedBindings = explicitResourceOwners(coreIntegerLowering(source));
     if (selectedEngine) {
@@ -127,6 +165,7 @@ const result = await componentize({
       generatedBindings = nativeCarrierImports(generatedBindings, parseBindings);
       generatedBindings = borrowReleaseHandoff(generatedBindings, parseBindings);
       generatedBindings = borrowProbeBindings(generatedBindings, parseBindings, diagnosticProfile);
+      generatedBindings = nodeNetBindings(generatedBindings, parseBindings, netSelection?.profile, netExports);
       generatedBindings = applicationRealmImportPromises(generatedBindings);
     }
     if (diagnosticProfile === borrowProbeProfile) {

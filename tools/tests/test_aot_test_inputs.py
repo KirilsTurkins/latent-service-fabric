@@ -202,7 +202,9 @@ class PreparedInputsTests(unittest.TestCase):
 
     def test_previous_feature_closure_is_not_the_current_profile(self):
         for previous in (["aot-test-timings"],
-                         ["aot-test-timings", "development-test-host", "java-guest-diagnostic"]):
+                         ["aot-test-timings", "development-test-host", "java-guest-diagnostic"],
+                         ["aot-test-timings", "development-clock-fixture", "development-test-host",
+                          "java-guest-diagnostic"]):
             with self.subTest(features=previous):
                 for record in self.records[:-1]:
                     record["features"] = previous

@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/build_dev_frontend.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Explicitly package the existing pure compatibility material reader, its emitted-code dependency and the finite TypeScript Buffer profile reader. Preserve the curated bundle, every prior resource, deterministic encoding, byte identities, authority checks and existing build/smoke commands; do not bundle compilers or add fallback imports.",
+  "reviewReason": "Retain exactly net_profile.py and its pure runtime_profile.py dependency in the delivered helper so selected-Net compatibility materials use the original strict reader; root bab3 compatibility-reader closure retained. No compiler/tool/runtime authority.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "9f0750ad321db0cee42944a5a7aebf65418f34953c245bb446ff06b26ae4e395"
+  "sha256": "fc70250704237ff27f8f4e3278f84adb2c07f7c9dea4282886810a0fc60beedc"
 }

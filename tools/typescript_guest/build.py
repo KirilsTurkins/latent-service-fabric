@@ -15,7 +15,7 @@ from tools.rust_capsule_project import (ROOT, checked_path, digest, fresh, inven
     read_file, read_json, snapshot, write_json)
 from tools.typescript_guest.compiler import Compiler
 from tools.typescript_guest.project import validate
-from tools.typescript_guest import buffer_profile, standard_global_types, runtime_profile as runtime
+from tools.typescript_guest import buffer_profile, net_profile, standard_global_types, runtime_profile as runtime
 from tools.application_dependencies import prepare
 from tools.typescript_application_dependencies import source_snapshot, bundle_configuration
 
@@ -67,6 +67,8 @@ RECIPE += ('tools/typescript_guest/console.mjs', 'tools/typescript_guest/console
 RECIPE += ('tools/typescript_guest/node_buffer.mjs', 'tools/typescript_guest/buffer_builtin.mjs',
            'tools/typescript_guest/buffer_profile.py', 'sdk/typescript-guest/runtime/buffer.d.ts')
 RECIPE += ('tools/typescript_guest/standard_global_types.py',)
+RECIPE += tuple(buffer_profile.GLOBAL_RECIPE.values())
+RECIPE += net_profile.RECIPE
 
 
 def runtime_package_sources(original: dict[str, bytes], selected: dict,
@@ -211,9 +213,14 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             runtime_assets += (('typescript-entropy-selection.json', 'asset',
                                 'application/vnd.latent.typescript.entropy-selection.v1+json'),)
             buffer_assets, buffer_materials = buffer_profile.retain_selection(
-                temporary/'compiled', output, digest(read_file(ROOT/buffer_profile.BACKEND)))
+                temporary/'compiled', output, digest(read_file(ROOT/buffer_profile.BACKEND)),
+                buffer_profile.global_identities(ROOT))
             runtime_assets += buffer_assets
             runtime_materials.extend(buffer_materials)
+            net_assets, net_materials = net_profile.retain_selection(
+                temporary/'compiled', output, net_profile.identities(ROOT))
+            runtime_assets += net_assets
+            runtime_materials.extend(net_materials)
             type_assets, type_materials = standard_global_types.retain(
                 temporary/'compiled', output, compiler.standard_global_types_receipt)
             runtime_assets += type_assets

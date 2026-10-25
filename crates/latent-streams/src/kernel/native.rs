@@ -4,7 +4,7 @@
 use crate::{error, StreamError, StreamErrorCode};
 use latent_capabilities::broker::pools::{
     ConnectionReservation, InstalledProvider, PooledConnection, ProviderPools, StreamKernelBacking,
-    StreamKernelCloseJob, StreamKernelCloseObservation,
+    StreamKernelBankCharge, StreamKernelCloseJob, StreamKernelCloseObservation,
 };
 use std::{fs::File, sync::Arc, time::Instant};
 
@@ -17,10 +17,20 @@ const READY: u32 = 2;
 const CLOSED: u32 = 4;
 const FRAME_BYTES: usize = 24;
 
+mod retirement;
+
 struct Resource {
     descriptor: Option<File>,
     bootstrap: Option<ReadyExpiry>,
+    retirement: Option<retirement::Owner>,
+    bank: Option<StreamKernelBankCharge>,
     _backing: StreamKernelBacking,
+}
+
+#[derive(Clone, Copy)]
+enum BankReturn {
+    RetainWhole,
+    ReclaimFixedBank,
 }
 
 /// Created only after the actual BEGIN/WAIT reply validated bootstrap READY.
@@ -45,6 +55,18 @@ impl Drop for NativeOwner {
 impl NativeOwner {
     pub(crate) fn close(mut self) -> Result<StreamKernelCloseJob, StreamError> {
         self.begin_close()
+    }
+
+    pub(crate) fn close_before(
+        mut self,
+        deadline: Instant,
+    ) -> Result<StreamKernelCloseJob, StreamError> {
+        if let Some(connection) = self.connection.as_mut() {
+            if let Some(observation) = connection.resource().retirement.as_mut() {
+                observation.narrow_deadline(deadline);
+            }
+        }
+        self.close()
     }
 
     fn begin_close(&mut self) -> Result<StreamKernelCloseJob, StreamError> {
@@ -79,6 +101,9 @@ impl Drop for Attempt {
             // unsuccessful open can itself have entered the kernel constructor.
             let mut resource = self.resource.take().expect("prepaid original backing");
             drop(resource.descriptor.take());
+            if let Some(observation) = resource.retirement.as_mut() {
+                observation.abandon();
+            }
             self.reservation
                 .take()
                 .expect("original connection reservation")
@@ -98,19 +123,25 @@ async fn start_initialized_with<O, I>(
     pools: Arc<ProviderPools>,
     installed: &InstalledProvider,
     deadline: Instant,
+    retirement: Option<retirement::Owner>,
+    bank_return: BankReturn,
     open: O,
     initialize: I,
 ) -> Result<NativeOwner, StreamError>
 where
     O: FnOnce() -> Result<File, StreamError> + Send + 'static,
-    I: FnOnce(&mut File, Instant) -> Result<Option<ReadyExpiry>, StreamError> + Send + 'static,
+    I: FnOnce(&mut Resource, Instant) -> Result<Option<ReadyExpiry>, StreamError> + Send + 'static,
 {
     if Instant::now() >= deadline {
         return Err(deadline_error());
     }
     // SAME node metadata quota, before the protected open or its worker. This
     // is not an activation HostMemoryReservation or a new bootstrap ledger.
-    let backing = pools.reserve_stream_kernel_backing()?;
+    let mut backing = pools.reserve_stream_kernel_backing()?;
+    let bank = match bank_return {
+        BankReturn::RetainWhole => None,
+        BankReturn::ReclaimFixedBank => Some(backing.partition_original_bank()?),
+    };
     let client = pools.client::<Resource>(installed, u16::MAX)?;
     let maintenance = pools.maintenance(&client, deadline, 1)?;
     let request = maintenance.begin_request()?;
@@ -120,6 +151,8 @@ where
         resource: Some(Resource {
             descriptor: None,
             bootstrap: None,
+            retirement,
+            bank,
             _backing: backing,
         }),
         entered: false,
@@ -135,13 +168,8 @@ where
             attempt.entered = true;
             let resource = attempt.resource.as_mut().expect("prepaid owner");
             resource.descriptor = Some(open()?);
-            resource.bootstrap = initialize(
-                resource
-                    .descriptor
-                    .as_mut()
-                    .expect("actual opened descriptor"),
-                deadline,
-            )?;
+            let bootstrap = initialize(resource, deadline)?;
+            resource.bootstrap = bootstrap;
             request.checkpoint()?;
             let resource = attempt.resource.take().expect("original resource");
             let reservation = attempt.reservation.take().expect("original reservation");
@@ -192,9 +220,21 @@ where
     O: FnOnce() -> Result<File, StreamError> + Send + 'static,
     I: FnOnce(&mut File, Instant) -> Result<(), StreamError> + Send + 'static,
 {
-    start_initialized_with(pools, installed, deadline, open, move |file, deadline| {
-        initialize(file, deadline).map(|()| None)
-    })
+    start_initialized_with(
+        pools,
+        installed,
+        deadline,
+        None,
+        BankReturn::RetainWhole,
+        open,
+        move |resource, deadline| {
+            initialize(
+                resource.descriptor.as_mut().expect("actual descriptor"),
+                deadline,
+            )
+            .map(|()| None)
+        },
+    )
     .await
 }
 
@@ -257,6 +297,16 @@ fn close_resource(resource: &mut Resource) -> StreamKernelCloseObservation {
         _ => StreamKernelCloseObservation::NotAttempted,
     };
     drop(resource.descriptor.take());
+    if observation == StreamKernelCloseObservation::RequestAccepted
+        && retirement::observe_after_original_close(resource)
+    {
+        // Only the new fixed partition can return its same bank charge.
+        // The connection, remainder and observation owner stay quarantined.
+        return StreamKernelCloseObservation::KernelRootReturned;
+    }
+    if let Some(retirement) = resource.retirement.as_mut() {
+        retirement.abandon();
+    }
     // CLOSED4 is request acceptance only. The original caller ALWAYS moves
     // this resource/connection/backing into quarantine after returning.
     observation
@@ -316,11 +366,71 @@ pub(crate) async fn start(
     installed: &InstalledProvider,
     deadline: Instant,
 ) -> Result<NativeOwner, StreamError> {
+    start_real(pools, installed, deadline, None, BankReturn::RetainWhole).await
+}
+
+/// Explicit qualification consumer for a NEW source-matched observation ABI.
+/// The old constructor path above never tries this ioctl or changes its image.
+#[cfg(target_os = "linux")]
+pub(crate) async fn start_with_retirement_observation(
+    pools: Arc<ProviderPools>,
+    installed: &InstalledProvider,
+    deadline: Instant,
+) -> Result<NativeOwner, StreamError> {
+    if Instant::now() >= deadline {
+        return Err(deadline_error());
+    }
+    let observation = retirement::Owner::reserve(&pools, deadline).map_err(|failure| {
+        eprintln!("LSFRETURNDIAG stage=reserve code={:?}", failure.code);
+        failure
+    })?;
+    start_real(
+        pools,
+        installed,
+        deadline,
+        Some(observation),
+        BankReturn::RetainWhole,
+    )
+    .await
+}
+
+/// Only the exact bank portion can return; no other native owner is refunded.
+#[cfg(target_os = "linux")]
+pub(crate) async fn start_with_bank_reclamation(
+    pools: Arc<ProviderPools>,
+    installed: &InstalledProvider,
+    deadline: Instant,
+) -> Result<NativeOwner, StreamError> {
+    if Instant::now() >= deadline {
+        return Err(deadline_error());
+    }
+    let observation = retirement::Owner::reserve(&pools, deadline)?;
+    start_real(
+        pools,
+        installed,
+        deadline,
+        Some(observation),
+        BankReturn::ReclaimFixedBank,
+    )
+    .await
+}
+
+#[cfg(target_os = "linux")]
+async fn start_real(
+    pools: Arc<ProviderPools>,
+    installed: &InstalledProvider,
+    deadline: Instant,
+    retirement: Option<retirement::Owner>,
+    bank_return: BankReturn,
+) -> Result<NativeOwner, StreamError> {
+    let observing = retirement.is_some();
     start_initialized_with(
         pools,
         installed,
         deadline,
-        || {
+        retirement,
+        bank_return,
+        move || {
             rustix::fs::open(
                 c"/dev/lsf-stream-factory",
                 rustix::fs::OFlags::RDWR
@@ -330,9 +440,29 @@ pub(crate) async fn start(
                 rustix::fs::Mode::empty(),
             )
             .map(File::from)
-            .map_err(|_| error(StreamErrorCode::Unsupported))
+            .map_err(|failure| {
+                if observing {
+                    eprintln!("LSFRETURNDIAG stage=open errno={}", failure.raw_os_error());
+                }
+                error(StreamErrorCode::Unsupported)
+            })
         },
-        |file, deadline| initialize(file, deadline).map(Some),
+        move |resource, deadline| {
+            let file = resource
+                .descriptor
+                .as_mut()
+                .expect("actual opened descriptor");
+            let expiry = initialize(file, deadline).map_err(|failure| {
+                if observing {
+                    eprintln!("LSFRETURNDIAG stage=initialize code={:?}", failure.code);
+                }
+                failure
+            })?;
+            if let Some(observation) = resource.retirement.as_mut() {
+                observation.mint(file, expiry)?;
+            }
+            Ok(Some(expiry))
+        },
     )
     .await
 }

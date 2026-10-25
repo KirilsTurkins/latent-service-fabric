@@ -1093,7 +1093,10 @@ impl<T> StoreContextMut<'_, T> {
         // Create an "abortable future" here where internally the future will
         // hook calls to poll and possibly spawn more background tasks on each
         // iteration.
-        let (handle, future) = JoinHandle::run(async move { task.run(&accessor).await });
+        let (handle, future) = JoinHandle::run_with_memory(
+            async move { task.run(&accessor).await },
+            self.0.native_memory(),
+        )?;
         self.0
             .concurrent_state_mut()?
             .push_future(Box::pin(async move { future.await.unwrap_or(Ok(())) }));
@@ -3273,11 +3276,12 @@ impl Instance {
     ) -> Result<u32> {
         let token = StoreToken::new(store.as_context_mut());
         let task = store.0.current_host_thread()?;
+        let memory = store.0.native_memory();
         let state = store.0.concurrent_state_mut()?;
 
         // Create an abortable future which hooks calls to poll and manages call
         // context state for the future.
-        let (join_handle, future) = JoinHandle::run(future);
+        let (join_handle, future) = JoinHandle::run_with_memory(future, memory)?;
         {
             let state = &mut state.get_mut(task)?.state;
             assert!(matches!(state, HostTaskState::CalleeStarted));

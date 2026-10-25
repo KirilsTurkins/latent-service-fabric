@@ -37,6 +37,14 @@ pub(crate) fn case_index(label: &str) -> Option<u8> {
         "fresh-after-trap" => Some(3),
         "root-deadline-with-held-borrow" => Some(4),
         "fresh-after-deadline" => Some(5),
+        "node-net-echo" => Some(6),
+        "node-net-sibling" => Some(7),
+        "node-net-denied" => Some(8),
+        "node-net-destroy" => Some(9),
+        "node-net-unclosed" => Some(10),
+        "node-net-fresh" => Some(11),
+        "node-net-published-granted" => Some(12),
+        "node-net-published-denied" => Some(13),
         _ => None,
     }
 }
@@ -181,6 +189,34 @@ impl Observer {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn normal_socket_cases_keep_distinct_closed_indices_and_original_opt_in() {
+        for (index, label) in [
+            "node-net-echo",
+            "node-net-sibling",
+            "node-net-denied",
+            "node-net-destroy",
+            "node-net-unclosed",
+            "node-net-fresh",
+            "node-net-published-granted",
+            "node-net-published-denied",
+        ]
+        .into_iter()
+        .enumerate()
+        {
+            assert_eq!(case_index(label), Some(u8::try_from(index + 6).unwrap()));
+            assert!(Observer::select(label, false, true).is_none());
+            assert!(Observer::select(label, true, false).is_none());
+            assert!(Observer::select(label, true, true)
+                .unwrap()
+                .snapshot()
+                .is_none());
+        }
+        assert!(case_index("node-net-unknown").is_none());
+        assert_eq!(case_index("normal-copy-dispose"), Some(0));
+        assert_eq!(case_index("fresh-after-deadline"), Some(5));
+    }
 
     #[test]
     fn only_existing_typescript_borrow_fixture_and_closed_case_select() {

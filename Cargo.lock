@@ -2148,6 +2148,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "latent-stream-factory-native"
+version = "0.1.0-alpha.5"
+dependencies = [
+ "rustix",
+ "tempfile",
+]
+
+[[package]]
 name = "latent-streams"
 version = "0.1.0-alpha.5"
 dependencies = [
@@ -2165,6 +2173,7 @@ dependencies = [
  "latent-protected-files",
  "latent-routing",
  "latent-rustls-outbound",
+ "latent-stream-factory-native",
  "rcgen",
  "rustix",
  "rustls",

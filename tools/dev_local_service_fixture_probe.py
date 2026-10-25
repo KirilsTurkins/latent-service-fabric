@@ -149,8 +149,9 @@ def author(payload: Path, destination: Path) -> tuple[dict, dict]:
     return descriptor, fixtures
 
 
-def run(payload: Path, supplied: Path, output: Path) -> dict:
+def run(payload: Path, supplied: Path, output: Path, *, observe_refusals: bool = False) -> dict:
     require(sys.platform == "linux" and os.geteuid() != 0 and not output.exists(), "new-unprivileged-linux-local-probe-required")
+    require(type(observe_refusals) is bool, "explicit-local-service-observation-required")
     output.mkdir(mode=0o700, parents=True)
     temporary = Path(tempfile.mkdtemp(prefix="lsf-local-"))
     require(not temporary.is_relative_to(Path(__file__).resolve().parents[1]), "fixture-project-outside-checkout")
@@ -168,7 +169,8 @@ def run(payload: Path, supplied: Path, output: Path) -> dict:
         trust = project.trust_identity(descriptor)
         state.atomic(root, "project.json", {"descriptor": descriptor, "trust": trust, "source": str(source), "snapshot": record["identity"]})
         build.execute(root, source, descriptor, payload, trusted=trust, cli=supplied / "bin/latent")
-        report["node"] = run_node(root, supplied, payload, descriptor, output / "node", fixtures=fixtures)
+        report["node"] = run_node(root, supplied, payload, descriptor, output / "node", fixtures=fixtures,
+            **({"local_service_refusal_observation": True} if observe_refusals else {}))
         dependency = report["node"]["tests"]["identity"]["fixtureRuntime"]["localService"]
         retained = report["node"]["retained"]["identity"]["fixtureRuntime"]["localService"]
         require(dependency["deployment"] == retained["deployment"], "local-callee-must-survive-restart-without-redeployment")
@@ -196,6 +198,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("payload", "source-node", "output"):
         parser.add_argument("--" + name, type=Path, required=True)
+    parser.add_argument("--observe-refusals", action="store_true",
+                        help="Explicit test-node-only closed first-refusal observation; ordinary probes are unchanged")
     args = parser.parse_args()
-    receipt = run(args.payload.resolve(strict=True), args.source_node.resolve(strict=True), args.output.absolute())
+    receipt = run(args.payload.resolve(strict=True), args.source_node.resolve(strict=True), args.output.absolute(),
+                  observe_refusals=args.observe_refusals)
     print(encode({"passed": receipt["passed"], "cleanup": receipt["cleanup"]}).decode())

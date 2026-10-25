@@ -6,6 +6,15 @@
 #define main original_constructor_vm_main
 #include "constructor-vm-init.c"
 #undef main
+#include <sys/stat.h>
+
+/* The selected tmpfs root starts at 01777 without a root CPIO entry. Establish
+ * the protected fixture namespace before any child or factory entry; do not
+ * relax the native wrapper's independent ancestor/uid/device checks. */
+static int native_root_metadata(mode_t mode, uid_t uid)
+{
+    return S_ISDIR(mode) && uid == 0 && (mode & 07777) == 0755;
+}
 
 /* Validate every header with the maintained parser first. Recognize the shared
  * post-physical-return record too, but never echo it onto the UART. */
@@ -57,7 +66,11 @@ static int native_kmsg_controls(void)
     char large[4097] = {0};
     unsigned int cases = 0;
 #define CONTROL(expression) do { if (!(expression)) return 2; ++cases; } while (0)
-    CONTROL(native_record(&state, good, sizeof(good)-1) == 1);
+    CONTROL(native_root_metadata(0040000 | 0755, 0) &&
+        !native_root_metadata(0040000 | 01777, 0) &&
+        !native_root_metadata(0040000 | 0755, 1) &&
+        !native_root_metadata(0100000 | 0755, 0) &&
+        native_record(&state, good, sizeof(good)-1) == 1);
     CONTROL(native_record(&state, later, sizeof(later)-1) == -1);
     state = (struct log_observation){0};
     CONTROL(native_record(&state, user, sizeof(user)-1) == -1);
@@ -85,6 +98,10 @@ int main(int argc, char **argv)
         return native_kmsg_controls(); /* No mount/child/device/finish on host. */
     if (getpid() != 1) return 2;
     setvbuf(stdout, NULL, _IONBF, 0);
+    check(chmod("/", 0755) == 0, "native-protected-root-mode");
+    struct stat root;
+    check(lstat("/", &root) == 0 && native_root_metadata(root.st_mode, root.st_uid),
+          "native-protected-root-metadata");
     check(mount("devtmpfs", "/dev", "devtmpfs", MS_NOSUID | MS_NOEXEC, "") == 0,
           "native-devtmpfs");
     check(mount("proc", "/proc", "proc", MS_NOSUID | MS_NODEV | MS_NOEXEC, "") == 0,

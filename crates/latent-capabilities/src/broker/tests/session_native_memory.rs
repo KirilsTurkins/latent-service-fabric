@@ -15,6 +15,264 @@ pub(super) fn drop_registry(fixture: &Fixture) {
     assert!(entries.iter().all(|entry| entry.core.strong_count() == 0));
     entries.fill_with(RegistryEntry::default);
 }
+
+#[test]
+#[expect(
+    clippy::too_many_lines,
+    reason = "one original descendant ledger exercises actual post-Store registry retirement and its refusal fences"
+)]
+fn post_store_registry_retirement_releases_original_child_capacity_without_a_new_session() {
+    use latent_core::{
+        ActivationBudget, BudgetCancellationProbe, ChildBudgetOwner, ClockSample, DelegationLimits,
+        EffectiveActivationBudget,
+    };
+    use latent_executor::{ExecutionCleanup, ExecutionRequest, GuestOutcome};
+    use std::sync::{atomic::AtomicBool, Mutex};
+    use std::task::{Poll, Waker};
+
+    #[derive(Default)]
+    struct Signal {
+        closed: AtomicBool,
+        waiter: Mutex<Option<Waker>>,
+    }
+    impl BudgetCancellationProbe for Signal {
+        fn is_cancelled(&self) -> bool {
+            self.closed.load(Ordering::Acquire)
+        }
+        fn cancelled(&self) -> latent_core::BoxFuture<'_, ()> {
+            Box::pin(std::future::poll_fn(|context| {
+                let mut waiter = self.waiter.lock().unwrap();
+                if self.closed.load(Ordering::Acquire) {
+                    Poll::Ready(())
+                } else {
+                    *waiter = Some(context.waker().clone());
+                    Poll::Pending
+                }
+            }))
+        }
+        fn mark_terminal(&self) {
+            self.closed.store(true, Ordering::Release);
+            let waiter = self.waiter.lock().unwrap().take();
+            if let Some(waiter) = waiter {
+                waiter.wake();
+            }
+        }
+    }
+    fn selected_child(
+        fixture: &Fixture,
+    ) -> (
+        ActivationBudget,
+        ExecutionRequest,
+        Control,
+        ChildBudgetOwner,
+    ) {
+        let (mut request, mut control) = fixture.request("registry-child");
+        let mut ceiling = request.budget.clone();
+        ceiling.cpu_fuel *= 4;
+        ceiling.memory_bytes *= 4;
+        ceiling.child_calls = 4;
+        let sample = ClockSample::system_now();
+        let grant = EffectiveActivationBudget::admit_profile_at(
+            BudgetProfile::Phase3,
+            &ceiling,
+            &ceiling,
+            &ceiling,
+            None,
+            sample,
+        )
+        .unwrap();
+        let parent = ActivationBudget::with_profile(grant, BudgetProfile::Phase3).unwrap();
+        parent
+            .enable_descendants(
+                DelegationLimits {
+                    maximum_depth: 2,
+                    maximum_live_children: 1,
+                    maximum_live_descendants: 2,
+                },
+                Arc::new(Signal::default()),
+            )
+            .unwrap();
+        let delegation = parent
+            .delegate_at(&request.budget, &request.budget, &ceiling, None, sample)
+            .unwrap();
+        let grant = delegation.grant();
+        let child = delegation
+            .accept(&grant, Arc::new(Signal::default()), sample.monotonic())
+            .unwrap();
+        control.budget = child.accounting().clone();
+        request.activation.deadline_unix_millis = control.budget.deadline().unix_millis();
+        (parent, request, control, child)
+    }
+    fn report(observer: &CapabilitySessionObserver, reusable: bool) {
+        let original: Result<GuestOutcome, PlatformError> = Err(denied());
+        let report = observer.after_store_dropped(original.clone());
+        assert_eq!(report.outcome, original);
+        assert_eq!(
+            matches!(report.cleanup, ExecutionCleanup::Reusable),
+            reusable
+        );
+    }
+    let fixture = Fixture::new(CapabilityBrokerLimits {
+        maximum_sessions: 1,
+        ..Default::default()
+    });
+
+    // A closed scalar snapshot alone does not prove the actual Core has died.
+    let (parent, request, control, child) = selected_child(&fixture);
+    let session = fixture.session(&request, &control);
+    let stats = session.core.stats.clone();
+    let still_owned_core = session.core.clone();
+    let observer = session.observer();
+    drop(session);
+    assert!(observer.is_quiescent());
+    report(&observer, false);
+    assert!(fixture.broker.inner.sessions.lock().unwrap()[0]
+        .stats
+        .ptr_eq_shared(&stats));
+    drop(still_owned_core);
+    assert!(child
+        .finish(None, std::time::Instant::now())
+        .violation()
+        .is_none());
+    drop(control);
+    assert_eq!(parent.descendant_snapshot().unwrap().live_children, 1);
+    // The old implementation returns Reusable but leaves both paid Weak headers.
+    assert!(parent
+        .delegate_at(
+            &request.budget,
+            &request.budget,
+            parent.granted(),
+            None,
+            ClockSample::system_now()
+        )
+        .is_err());
+    {
+        let _busy = fixture.broker.inner.sessions.lock().unwrap();
+        report(&observer, false);
+    }
+    report(&observer, true);
+    assert!(fixture.broker.inner.sessions.lock().unwrap()[0]
+        .stats
+        .upgrade()
+        .is_none());
+    // An actual observer/Stats owner still owns its backing after registry removal.
+    assert_eq!(parent.descendant_snapshot().unwrap().live_children, 1);
+    report(&observer, true);
+    drop(observer);
+    drop(stats);
+    assert_eq!(parent.descendant_snapshot().unwrap().live_children, 0);
+    assert_eq!(
+        parent.descendant_snapshot().unwrap().reserved_memory_bytes,
+        0
+    );
+    let next = parent
+        .delegate_at(
+            &request.budget,
+            &request.budget,
+            parent.granted(),
+            None,
+            ClockSample::system_now(),
+        )
+        .unwrap();
+    drop(next);
+    assert_eq!(parent.descendant_snapshot().unwrap().live_children, 0);
+
+    // Real detached work/results keep registry diagnostics and original charge.
+    let (parent, request, control, child) = selected_child(&fixture);
+    let session = fixture.session(&request, &control);
+    let handle = session.bind(CAP, "read", resource()).unwrap();
+    let call = session
+        .dispatch(handle, "read", resource(), b"input", output(), |call| call)
+        .unwrap();
+    let observer = session.observer();
+    drop(session);
+    report(&observer, false);
+    assert_eq!(
+        fixture
+            .broker
+            .inspect_tenant_usage(&request.activation.target.tenant)
+            .unwrap()
+            .calls,
+        1
+    );
+    drop(call);
+    report(&observer, true);
+    drop(observer);
+    assert!(child
+        .finish(None, std::time::Instant::now())
+        .violation()
+        .is_none());
+    drop(control);
+    assert_eq!(parent.descendant_snapshot().unwrap().live_children, 0);
+
+    let (parent, request, control, child) = selected_child(&fixture);
+    let session = fixture.session(&request, &control);
+    let handle = session.bind(CAP, "read", resource()).unwrap();
+    let response = session
+        .dispatch(handle, "read", resource(), b"input", output(), |call| {
+            call.complete(b"retained")
+        })
+        .unwrap()
+        .unwrap();
+    let observer = session.observer();
+    drop(session);
+    report(&observer, false);
+    let usage = fixture
+        .broker
+        .inspect_tenant_usage(&request.activation.target.tenant)
+        .unwrap();
+    assert_eq!(
+        (usage.results, usage.retired_sessions_with_resources),
+        (1, 1)
+    );
+    assert_eq!(response.bytes(), b"retained");
+    drop(response);
+    report(&observer, true);
+    drop(observer);
+    assert!(child
+        .finish(None, std::time::Instant::now())
+        .violation()
+        .is_none());
+    drop(control);
+    assert_eq!(parent.descendant_snapshot().unwrap().live_children, 0);
+
+    // Slot reuse cannot let an old observer remove another original session.
+    let (old_request, old_control) =
+        super::resource_table_memory::selected(&fixture, BudgetProfile::Phase3);
+    let old = fixture.session(&old_request, &old_control);
+    let observer = old.observer();
+    drop(old);
+    let (fresh_request, fresh_control) =
+        super::resource_table_memory::selected(&fixture, BudgetProfile::Phase3);
+    let fresh = fixture.session(&fresh_request, &fresh_control);
+    let fresh_bytes = fresh_control.budget.host_memory_bytes();
+    report(&observer, true);
+    assert!(fixture.broker.inner.sessions.lock().unwrap()[0]
+        .stats
+        .ptr_eq_shared(&fresh.core.stats));
+    assert_eq!(fresh_control.budget.host_memory_bytes(), fresh_bytes);
+    assert!(!fresh.observer().is_closed());
+    drop(observer);
+    assert_eq!(old_control.budget.host_memory_bytes(), 0);
+    let fresh_observer = fresh.observer();
+    drop(fresh);
+    report(&fresh_observer, true);
+    drop(fresh_observer);
+    assert_eq!(fresh_control.budget.host_memory_bytes(), 0);
+
+    // An unavailable original broker cannot supply a new retirement proof.
+    let isolated = Fixture::new(CapabilityBrokerLimits::default());
+    let (request, control) =
+        super::resource_table_memory::selected(&isolated, BudgetProfile::Phase3);
+    let session = isolated.session(&request, &control);
+    let observer = session.observer();
+    drop(session);
+    drop(isolated);
+    assert!(observer.is_quiescent());
+    report(&observer, false);
+    drop(observer);
+    assert_eq!(control.budget.host_memory_bytes(), 0);
+}
 fn amounts(fixture: &Fixture, request: &latent_executor::ExecutionRequest) -> (u64, u64, u64) {
     let (core, stats) = native_backing::payload_bytes(
         request,
