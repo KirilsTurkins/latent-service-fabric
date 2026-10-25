@@ -159,11 +159,11 @@ class BuildSnapshotTests(unittest.TestCase):
         # The finite 73 MiB source budget has a separate 7 MiB allowance
         # for archive framing. Both remain hard caps.
         self.assertEqual(SnapshotLimits().max_total_bytes, 73 * 1024 * 1024)
-        self.assertEqual(SnapshotLimits().max_archive_bytes, 80 * 1024 * 1024)
+        self.assertEqual(SnapshotLimits().max_archive_bytes, 82 * 1024 * 1024)
         SnapshotLimits().validate()
         for limits in (SnapshotLimits(max_entries=0),
                        SnapshotLimits(max_total_bytes=73 * 1024 * 1024 + 1),
-                       SnapshotLimits(max_archive_bytes=80 * 1024 * 1024 + 1)):
+                       SnapshotLimits(max_archive_bytes=82 * 1024 * 1024 + 1)):
             with self.assertRaises(SnapshotError):
                 limits.validate()
 

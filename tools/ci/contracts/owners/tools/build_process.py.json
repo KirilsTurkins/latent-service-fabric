@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/build_process.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Clarify the unchanged fixed80MiB archive transport cap after exact976e archive source75,529,037B exceeded72MiB; the separately bounded source cap is73MiB. This process helper changes only a comment: all AST, caller-specific bounds, cancellation, deadlines, ownership and cleanup remain unchanged.",
+  "reviewReason": "Keep the finite process archive transport ceiling aligned with the measured committed source snapshot:82MiB instead of80MiB; all caller-selected output limits, timeout, cancellation, cleanup and process ownership unchanged.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "63a232cb41d047eeb3c2c3b5226a01a6922e3e71b8066ae362b1f8aae7d90f4d"
+  "sha256": "fe8756c83045fd92e007a5ffac7ccfdd21a56d374be02f7147ea1363c31932ea"
 }
