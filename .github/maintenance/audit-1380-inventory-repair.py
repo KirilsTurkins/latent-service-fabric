@@ -1,4 +1,4 @@
-"""Prepare only the reviewed inventory consumers on the exact PR 1380 head."""
+"""Prepare only reviewed inventory consumers on the exact PR 1380 head."""
 from pathlib import Path
 import json
 import subprocess
@@ -106,19 +106,23 @@ replace(tests, 'class Phase2ResourceTests(unittest.TestCase):', '''class Phase2R
 sys.path.insert(0, str(ROOT))
 from tools import ci_contracts
 contract = ROOT / 'tools/ci/contracts/python/test_phase2_gate_resource.py.json'
-before = json.loads(contract.read_text())
-output = ROOT / 'target/ci/proposals/audit-inventory'
-proposed = ci_contracts.propose(ROOT, 'python', tests, None, output,
-    'Retain every existing case and workload/OS/receipt bound. Extend the shared fixture with the actual audit-capacity-v1 row, require unchanged configured audit limits and unknown worker liveness, and reject duplicate, missing and arbitrary rows. No execution or skip guard is weakened.')
-after = json.loads(proposed.read_text())
-assert set(before['cases']) <= set(after['cases'])
+physical = json.loads(contract.read_text())
+before = ci_contracts.semantic_record(physical)
+actual = ci_contracts.python_expectations(ROOT)[tests]
+assert set(before['cases']) <= set(actual['cases'])
+assert len(actual['cases']) == len(before['cases']) + 2
+# Only the reviewed complete_inventory fixture AST changed. The original
+# inheritance, decorators, skip predicates and execution controls stay exact.
 for case in before['cases']:
-    def guard(record):
-        value = record['guards'][case]
-        return record.get('guardDefinitions', {}).get(value, value) if isinstance(value, str) else value
-    old, new = guard(before), guard(after)
+    old, new = before['guards'][case], actual['guards'][case]
     assert {k:v for k,v in old.items() if k != 'fixtureGuards'} == {k:v for k,v in new.items() if k != 'fixtureGuards'}, case
-contract.write_bytes(proposed.read_bytes())
+    assert [x for x in old['fixtureGuards'] if ':setup-sha256:' not in x] == [x for x in new['fixtureGuards'] if ':setup-sha256:' not in x], case
+value = ci_contracts.record('python',
+    'Explicit fixture review: add the actual audit-capacity-v1 row to complete_inventory with the unchanged 512-record, 8 MiB, 8-queue, 2-query profile. Preserve every prior case, decorator, skip condition and execution guard. Add unconditional controls for unknown liveness, frozen limits and missing, duplicate or arbitrary rows.',
+    module=tests, **actual)
+if physical['schemaVersion'] == ci_contracts.PYTHON_STORAGE_SCHEMA:
+    value = ci_contracts.shared_python_record(value)
+contract.write_text(json.dumps(value, indent=2, sort_keys=True) + '\n', newline='\n')
 allowed = {startup, profile, tests, str(contract.relative_to(ROOT))}
 assert set(git('diff', '--name-only').splitlines()) == allowed
 assert not git('ls-files', '--others', '--exclude-standard')
