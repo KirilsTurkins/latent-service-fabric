@@ -130,6 +130,48 @@ def typescript_buffer_owner(owner, receipt_digest, recipe_digest):
             and inputs.get('build-recipe') == recipe_digest, 'compatibility-context-buffer-owner-input-drift')
 
 
+def typescript_net_materials(receipt, recipe, source_inputs):
+    """Bind each Socket implementation input to the original captured recipe."""
+    from tools.typescript_guest import net_profile
+    require(net_profile.PROFILE == context.NET_PROFILE, 'compatibility-context-net-owner-profile')
+    recipe_inputs = decode(recipe, 8 * 1024 * 1024)
+    captured = decode(source_inputs, 8 * 1024 * 1024)
+
+    def entry(document, name):
+        require(isinstance(document, dict) and name in document, 'compatibility-context-net-input-missing')
+        row = document[name]
+        members(row, {'digest', 'size'})
+        sha(row['digest']); integer(row['size'], 1, 4 * 1024 * 1024)
+        return row
+
+    paths = (net_profile.BACKEND, net_profile.TRANSPORT, net_profile.BINDINGS,
+             net_profile.RESOLVER, net_profile.DECLARATION, net_profile.WIT)
+    identities = {}
+    for part, path in zip(context.NET_PARTS, paths):
+        row = entry(recipe_inputs, path)
+        if part in {'declaration', 'interface'}:
+            require(row == entry(captured, 'vendor/lsf/' + path),
+                    'compatibility-context-net-captured-input-drift')
+        identities[part] = row['digest']
+    # The selector itself must be part of the same immutable recipe.
+    entry(recipe_inputs, 'tools/typescript_guest/net_profile.py')
+    selected = net_profile.selected({'standardNetModules': ['node:net'],
+        'standardNetProfile': context.NET_PROFILE, 'standardNetIdentities': identities}, identities)
+    require(encode(decode(receipt, 65536)) == encode(selected),
+            'compatibility-context-net-selection-drift')
+    return [context.material('runtime', name, identity, profile=context.NET_PROFILE)
+            for name, identity in zip(context.NET_MATERIALS, (digest(receipt), *identities.values()))]
+
+
+def typescript_net_owner(owner, receipt_digest, recipe_digest):
+    require(isinstance(owner, dict) and owner.get('schemaVersion') == guest_runtime_receipts.SCHEMA
+            and owner.get('language') == 'typescript' and owner.get('ownerIssue') == 745,
+            'compatibility-context-net-owner-required')
+    inputs = {row['name']: row['digest'] for row in owner['toolAndCompilerInputs']}
+    require(inputs.get(context.NET_MATERIALS[0]) == receipt_digest
+            and inputs.get('build-recipe') == recipe_digest, 'compatibility-context-net-owner-input-drift')
+
+
 def finish(output: Path, files: dict[str, bytes], source_inputs: bytes,
            component: bytes, materials: list[dict]) -> dict:
     report_raw = read_file(output / 'compatibility-report.json', compatibility.MAX_BYTES)
@@ -145,7 +187,7 @@ def finish(output: Path, files: dict[str, bytes], source_inputs: bytes,
         require(isinstance(row, dict) and isinstance(row.get('name'), str) and row['name'] not in captured,
                 'compatibility-context-duplicate-build-material')
         captured[row['name']] = row
-        if report['language'] == 'typescript' and row['name'] == context.BUFFER_MATERIALS[0]:
+        if report['language'] == 'typescript' and row['name'] in {context.BUFFER_MATERIALS[0], context.NET_MATERIALS[0]}:
             continue  # Project its bound module/source identities below.
         if row['name'] not in {'source-snapshot', 'package-inputs'}:
             kind = 'generated' if row['name'] in {'c-generator-inputs', 'go-generator-inputs',
@@ -165,6 +207,12 @@ def finish(output: Path, files: dict[str, bytes], source_inputs: bytes,
         buffer_raw, _ = bound_receipt('typescript-buffer-selection.json', context.BUFFER_MATERIALS[0], 65536)
         recipe_raw, _ = bound_receipt('recipe-inputs.json', 'build-recipe', 8 * 1024 * 1024)
         retained.extend(typescript_buffer_materials(buffer_raw, recipe_raw, source_inputs))
+    net_selected = report['language'] == 'typescript' and (context.NET_MATERIALS[0] in captured
+            or (output / 'typescript-net-selection.json').exists())
+    if net_selected:
+        net_raw, _ = bound_receipt('typescript-net-selection.json', context.NET_MATERIALS[0], 65536)
+        net_recipe_raw, _ = bound_receipt('recipe-inputs.json', 'build-recipe', 8 * 1024 * 1024)
+        retained.extend(typescript_net_materials(net_raw, net_recipe_raw, source_inputs))
 
     runtime_path = output / 'runtime-profile.json'
     owner_runtime = output / 'standard-runtime-selection.json'
@@ -197,6 +245,8 @@ def finish(output: Path, files: dict[str, bytes], source_inputs: bytes,
         # cannot establish this component's reachability or runtime behavior.
     if buffer_selected:
         typescript_buffer_owner(validated_owner, digest(buffer_raw), digest(recipe_raw))
+    if net_selected:
+        typescript_net_owner(validated_owner, digest(net_raw), digest(net_recipe_raw))
     if report['language'] == 'java' and 'generated-bindings' in captured:
         _, bindings = bound_receipt('bindings.json', 'generated-bindings', 4 * 1024 * 1024)
         require(isinstance(bindings, dict), 'compatibility-context-java-bindings')
@@ -228,7 +278,7 @@ def finish(output: Path, files: dict[str, bytes], source_inputs: bytes,
     retained.extend(dependencies)
     retained.sort(key=lambda row: (row['kind'] == 'dependency',
                                    row['kind'] not in {'runtime', 'patch'} and not (
-                                       buffer_selected and row['kind'] == 'compiler' and row['name'] == 'build-recipe'),
+                                       (buffer_selected or net_selected) and row['kind'] == 'compiler' and row['name'] == 'build-recipe'),
                                    row['kind'], row['name']))
     omitted += max(0, len(retained) - context.MAX_MATERIALS)
     value = context.create(report, retained[:context.MAX_MATERIALS], selected, omitted=omitted)

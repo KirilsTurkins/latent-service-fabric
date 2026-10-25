@@ -81,6 +81,10 @@ export function borrowReleaseHandoff(source, parse, selected = selectedBorrowRel
   const helper = `
 // This frame exists only during the synchronous reservation prefix. It cannot
 // outlive an await, select another binding, or carry an ambient caller id.
+const __lsfBorrowPromise = contentGlobal.Promise;
+const __lsfBorrowPromiseResolve = __lsfBorrowPromise.resolve;
+const __lsfBorrowApply = Reflect.apply, __lsfBorrowFreeze = Object.freeze;
+const __lsfBorrowResolve = value => __lsfBorrowApply(__lsfBorrowPromiseResolve, __lsfBorrowPromise, [value]);
 let __lsfBorrowFrame = null;
 function __lsfBorrowArm(original, id) {
   const frame = __lsfBorrowFrame;
@@ -93,7 +97,7 @@ function __lsfBorrowStart(original, receiver, args) {
   const previous = __lsfBorrowFrame;
   let result;
   __lsfBorrowFrame = frame;
-  try { result = Reflect.apply(original, receiver, args); }
+  try { result = __lsfBorrowApply(original, receiver, args); }
   finally { __lsfBorrowFrame = previous; }
   const handle = frame.handle;
   const requireHandle = () => {
@@ -102,13 +106,13 @@ function __lsfBorrowStart(original, receiver, args) {
   };
   // Preserve the original logical result/rejection separately. Failed native
   // admission leaves that rejection visible and cannot yield a release proof.
-  return Object.freeze({
-    promise: contentGlobal.Promise.resolve(result),
+  return __lsfBorrowFreeze({
+    promise: __lsfBorrowResolve(result),
     get borrowReleased() {
-      return contentGlobal.Promise.resolve(__lsfImports.borrowReleased(requireHandle()));
+      return __lsfBorrowResolve(__lsfImports.borrowReleased(requireHandle()));
     },
     cancel() {
-      return contentGlobal.Promise.resolve(__lsfImports.cancelBorrow(requireHandle()));
+      return __lsfBorrowResolve(__lsfImports.cancelBorrow(requireHandle()));
     }
   });
 }

@@ -54,6 +54,11 @@
         "run": "git fetch --no-tags --depth=1 origin 6d834e502beea33fbae9347fbaf23ff8c37223b3"
       },
       {
+        "if": "github.ref == 'refs/heads/feat/typescript-node-net-source-20261024'",
+        "name": "Fetch the exact normal CLI producer source for the Socket programme",
+        "run": "git fetch --no-tags --depth=1 origin 77bf0e3f3b68e17342b6146abd6f2de34a3efa00"
+      },
+      {
         "name": "Install the normal locked public compiler and pinned parser",
         "run": "python3 tools/typescript_capsule.py install-tools \"$RUNNER_TEMP/typescript-borrow-signed-tools\""
       },
@@ -61,8 +66,17 @@
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
+        "if": "github.ref == 'refs/heads/feat/typescript-borrow-release-probe-20261024'",
         "name": "Authenticate fresh prerequisites compile once and execute signed cases",
         "run": "python3 tools/qualify_typescript_borrow_signed.py \\\n  --tools \"$RUNNER_TEMP/typescript-borrow-signed-tools\" \\\n  --inputs \"$RUNNER_TEMP/typescript-borrow-signed-inputs\" \\\n  --output \"$RUNNER_TEMP/typescript-borrow-signed\"\n"
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "if": "github.ref == 'refs/heads/feat/typescript-node-net-source-20261024'",
+        "name": "Build one normal no-Gate Socket component and execute six signed cases",
+        "run": "python3 tools/qualify_typescript_borrow_signed.py \\\n  --programme node-net \\\n  --tools \"$RUNNER_TEMP/typescript-borrow-signed-tools\" \\\n  --inputs \"$RUNNER_TEMP/typescript-borrow-signed-inputs\" \\\n  --prepared-native \"$RUNNER_TEMP/typescript-node-net-native\" \\\n  --output \"$RUNNER_TEMP/typescript-borrow-signed\"\n"
       },
       {
         "if": "always()",
@@ -71,7 +85,7 @@
         "with": {
           "if-no-files-found": "warn",
           "name": "typescript-borrow-signed-${{ github.sha }}",
-          "path": "${{ runner.temp }}/typescript-borrow-signed-inputs/ACQUIRED.json\n${{ runner.temp }}/typescript-borrow-signed-inputs/products/OWN-RESULTS.json\n${{ runner.temp }}/typescript-borrow-signed/*.json\n${{ runner.temp }}/typescript-borrow-signed/commands/**\n${{ runner.temp }}/typescript-borrow-signed/prepared/BORROW-COMPILE.json\n${{ runner.temp }}/typescript-borrow-signed/prepared/compiler-inputs.json\n${{ runner.temp }}/typescript-borrow-signed/prepared/engine-qualification/**\n${{ runner.temp }}/typescript-borrow-signed/prepared/src/**\n${{ runner.temp }}/typescript-borrow-signed/prepared/wit/**\n${{ runner.temp }}/typescript-borrow-signed/prepared/build/*.json\n${{ runner.temp }}/typescript-borrow-signed/prepared/build/*.wasm\n${{ runner.temp }}/typescript-borrow-signed/prepared/build/*.js\n${{ runner.temp }}/typescript-borrow-signed/prepared/build/*.mjs\n${{ runner.temp }}/typescript-borrow-signed/prepared/build/*.wit\n",
+          "path": "${{ runner.temp }}/typescript-borrow-signed-inputs/ACQUIRED.json\n${{ runner.temp }}/typescript-borrow-signed-inputs/products/OWN-RESULTS.json\n${{ runner.temp }}/typescript-borrow-signed/*.json\n${{ runner.temp }}/typescript-borrow-signed/commands/**\n${{ runner.temp }}/typescript-borrow-signed/prepared/BORROW-COMPILE.json\n${{ runner.temp }}/typescript-borrow-signed/prepared/compiler-inputs.json\n${{ runner.temp }}/typescript-borrow-signed/prepared/engine-qualification/**\n${{ runner.temp }}/typescript-borrow-signed/prepared/src/**\n${{ runner.temp }}/typescript-borrow-signed/prepared/wit/**\n${{ runner.temp }}/typescript-borrow-signed/prepared/build/*.json\n${{ runner.temp }}/typescript-borrow-signed/prepared/build/*.wasm\n${{ runner.temp }}/typescript-borrow-signed/prepared/build/*.js\n${{ runner.temp }}/typescript-borrow-signed/prepared/build/*.mjs\n${{ runner.temp }}/typescript-borrow-signed/prepared/build/*.wit\n${{ runner.temp }}/typescript-node-net-native/*.json\n${{ runner.temp }}/typescript-borrow-signed/prepared/project/src/**\n${{ runner.temp }}/typescript-borrow-signed/prepared/project/wit/**\n${{ runner.temp }}/typescript-borrow-signed/prepared/project/capsule-project.json\n${{ runner.temp }}/typescript-borrow-signed/prepared/project/sdk-lock.json\n${{ runner.temp }}/typescript-borrow-signed/prepared/typescript-node-net-service/*.json\n${{ runner.temp }}/typescript-borrow-signed/prepared/typescript-node-net-service/*.wasm\n${{ runner.temp }}/typescript-borrow-signed/prepared/typescript-node-net-service/generated-bindings.js\n${{ runner.temp }}/typescript-borrow-signed/prepared/typescript-node-net-service/logs/**\n${{ runner.temp }}/typescript-borrow-signed/prepared/typescript-node-net-service/wit/**\n",
           "retention-days": 7
         }
       }
@@ -80,7 +94,7 @@
   },
   "jobId": "signed-borrow",
   "kind": "job",
-  "reviewReason": "Reviewed exact late-backing6d immutable producer source fetch and shared reader; all signed cases, commands, authority and finite bounds retained.",
+  "reviewReason": "Recover the actual normal packager stderr and exact existing WIT inputs after failed owning40128627172; only artifact retention paths change, all runtime inputs/commands/bounds remain frozen.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-borrow-signed.yml"
 }

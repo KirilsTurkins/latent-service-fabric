@@ -139,7 +139,7 @@ class Compiler:
             self.tools = staged
             self.recipe = isolated_workspace / "compiler-recipe"
             self.recipe.mkdir()
-            for name in ("bundle.mjs", "componentize.mjs", "signed64.mjs", "resources.mjs", "source_splicer.mjs", "async_waiters.mjs", "import_cancellation.mjs", "borrow_probe.mjs", "fetch.mjs", "console.mjs", "activation_module.mjs", "entropy.mjs", "clock_app.mjs", "node_buffer.mjs", "buffer_builtin.mjs"):
+            for name in ("bundle.mjs", "componentize.mjs", "signed64.mjs", "resources.mjs", "source_splicer.mjs", "async_waiters.mjs", "import_cancellation.mjs", "borrow_probe.mjs", "fetch.mjs", "console.mjs", "activation_module.mjs", "entropy.mjs", "clock_app.mjs", "node_buffer.mjs", "buffer_builtin.mjs", "node_net.mjs", "node_net_transport.mjs", "node_net_bindings.mjs", "net_builtin.mjs"):
                 (self.recipe / name).write_bytes(read_file(ROOT / "tools/typescript_guest" / name))
         modules = self.tools / "node_modules"
         self.jco = modules / "@bytecodealliance/jco/dist/jco.js"
@@ -375,10 +375,13 @@ class Compiler:
             console_configuration = console_profile.configuration({}, application_graph, application_world, standard)
             for directory in (generated, second):
                 (directory/'console-runtime-globals.d.ts').write_bytes(declaration)
-        from tools.typescript_guest import buffer_profile
+        from tools.typescript_guest import buffer_profile, net_profile
         buffer_declaration = read_file(ROOT/buffer_profile.DECLARATION)
         for directory in (generated, second):
             (directory/'buffer-runtime.d.ts').write_bytes(buffer_declaration)
+        net_declaration = read_file(ROOT/net_profile.DECLARATION)
+        for directory in (generated, second):
+            (directory/'net-runtime.d.ts').write_bytes(net_declaration)
         first_identity = tree_identity(generated)
         if first_identity != tree_identity(second):
             raise ValueError("generated binding drift between identical inputs")
@@ -391,6 +394,7 @@ class Compiler:
         if missing:
             raise ValueError("unsupported or colliding generated WIT import identities: " + ", ".join(missing))
         paths['buffer'] = paths['node:buffer'] = ['./generated/buffer-runtime.d.ts']
+        paths['net'] = paths['node:net'] = ['./generated/net-runtime.d.ts']
         # Compiler-generated wrappers use stackful calls: asynchronous host WIT
         # still suspends in Wasmtime, never a hidden JavaScript event loop.
         config = {"compilerOptions": {"target": "ES2022", "module": "ESNext", "moduleResolution": "Bundler",
@@ -424,6 +428,16 @@ class Compiler:
                                                               'component', 'wit', contract, '--json')))
         entropy_configuration = entropy_profile.configuration(
             {**configured, **(console_configuration or {})}, application_graph, application_world, standard_random)
+        standard_net = None
+        if self.runtime_profile == runtime.IMPORT_PROFILE and net_profile.INTERFACE in runtime.public_graph(application_graph, application_world)['imports']:
+            if read_file(work/'vendor/lsf'/net_profile.WIT) != read_file(ROOT/net_profile.WIT):
+                raise ValueError('captured TypeScript stream interface differs from the maintained profile')
+            standard_net = semantic(json.loads(command.run('standard-net-types', wasm, 'component', 'wit',
+                work/'vendor/lsf/wit/platform/network', '--json')))
+        entropy_configuration = net_profile.configuration(entropy_configuration, application_graph, application_world,
+            standard_net, runtime_profile=self.runtime_profile)
+        if 'standardNetProfile' in entropy_configuration:
+            entropy_configuration['standardNetIdentities'] = net_profile.identities(ROOT)
         if borrow_probe:
             entropy_configuration['borrowProbeProfile'] = borrow_probe_profile.PROFILE
         write_json(bundle_configuration, entropy_configuration)
@@ -438,6 +452,11 @@ class Compiler:
             lambda: read_file(work/'vendor/lsf'/buffer_profile.DECLARATION))
         if buffer_selection is not None:
             write_json(output/'typescript-buffer-selection.json', buffer_selection)
+        net_selection = net_profile.selected(bundled, net_profile.identities(ROOT))
+        if net_selection is not None:
+            if borrow_probe or read_file(work/'vendor/lsf'/net_profile.DECLARATION) != net_declaration:
+                raise ValueError('captured TypeScript net declarations or private probe profile differ')
+            write_json(output/'typescript-net-selection.json', net_selection)
         if bundled['standardEntropyProfile'] != entropy_configuration['standardEntropyProfile']:
             raise ValueError('typescript-standard-entropy-selection-drift')
         write_json(output / 'typescript-entropy-selection.json', {
@@ -459,6 +478,8 @@ class Compiler:
                               self.tools/'node_modules/acorn/dist/acorn.mjs'))
         if borrow_probe:
             arguments.append(borrow_probe_profile.PROFILE)
+        if net_selection is not None:
+            arguments.append("--node-net-selection=" + str(output/'typescript-net-selection.json'))
         command.run("componentize", self.node, self.recipe / "componentize.mjs", *arguments)
         bare, embedded, component = (output / name for name in ("bare.wasm", "embedded.wasm", "component.wasm"))
         command.run("strip-projection", wasm, "strip", "--delete", "^component-type", output / "core.wasm", "-o", bare)

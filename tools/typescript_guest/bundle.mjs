@@ -5,6 +5,7 @@ import { pathToFileURL } from 'node:url';
 import { createHash } from 'node:crypto';
 import { activationModule } from './activation_module.mjs';
 import { bufferBuiltin, BUFFER_PROFILE } from './buffer_builtin.mjs';
+import { netBuiltin, NET_PROFILE, NET_PRIVATE } from './net_builtin.mjs';
 import { borrowProbeConfiguration, borrowProbeBuiltin } from './borrow_probe.mjs';
 
 const [esbuildPath, projectPath, input, output, importsPath, configurationPath, parserPath] = process.argv.slice(2);
@@ -17,6 +18,14 @@ if (['standardBufferProfile', 'standardBufferBackendDigest', 'standardBufferModu
 const bufferSource = await readFile(new URL('./node_buffer.mjs', import.meta.url), 'utf8');
 const bufferBackend = bufferBuiltin(bufferSource);
 const bufferDigest = 'sha256:' + createHash('sha256').update(bufferSource).digest('hex');
+const standardNet = configuration.standardNetProfile === NET_PROFILE;
+if (Object.keys(configuration).some(name => name.startsWith('standardNet') &&
+    !['standardNetProfile', 'standardNetIdentities'].includes(name)) ||
+    configuration.standardNetProfile !== undefined && (!standardNet ||
+      configuration.runtimeProfile !== 'spidermonkey-activation-promises-clocks-imports-v1' ||
+      !imports.has('latent:network/streams@0.1.0') || !configuration.standardNetIdentities || !parserPath))
+  throw new Error('standard-node-net-requires-exact-stream-profile');
+const netBackend = netBuiltin(await readFile(new URL('./node_net.mjs', import.meta.url), 'utf8'), standardNet);
 const captured = !!configuration.moduleRoot;
 const borrowProbe = borrowProbeConfiguration(configuration, imports);
 const phaseFetch = configuration.standardFetchProfile === 'lsf-fetch-phase-buffered-v2';
@@ -111,6 +120,8 @@ const result = await build({
         return borrowProbe ? {path: args.path, external: true} :
           {errors: [{text: 'compiler-owned-borrow-probe-not-selected'}]};
       }
+      const ownedNet = netBackend.resolve(args);
+      if (ownedNet) return ownedNet;
       if (imports.has(args.path)) return { path: args.path, external: true };
       const ownedBuffer = bufferBackend.resolve(args.path);
       if (ownedBuffer) return ownedBuffer;
@@ -125,6 +136,7 @@ const result = await build({
       }
       return undefined;
     });
+    builder.onLoad({ filter: /.*/, namespace: 'lsf-owned-node-net' }, args => netBackend.load(args));
     builder.onLoad({ filter: /.*/, namespace: 'lsf-owned-node-buffer' }, args => bufferBackend.load(args));
     builder.onLoad({ filter: /.*/ }, async args => {
       const path = await realpath(args.path);
@@ -146,6 +158,7 @@ for (const name of Object.keys(result.metafile.inputs)) {
       throw new Error('compiler-owned-buffer-input-identity');
     continue; // Authenticated compiler recipe input, not an application capture.
   }
+  if (name === 'lsf-owned-node-net:node:net') continue; // Compiler-owned recipe input.
   const path = await realpath(resolve(project, name));
   if (!insideProject(path)) throw new Error('bundle-input-outside-captured-source');
   const bytes = await readFile(path);
@@ -156,6 +169,8 @@ for (const name of Object.keys(result.metafile.inputs)) {
 }
 const application = result.outputFiles.find(file => file.path === resolve(output));
 if (!application || application.contents.byteLength > 32 * 1024 * 1024) throw new Error('bundle-output-limit');
+const outputName = Object.keys(result.metafile.outputs).find(name => resolve(project, name) === application.path);
+const netModules = standardNet ? netBackend.selection(result.metafile, outputName) : [];
 let applicationText = application.text, deferred;
 if (standardConsole) {
   const { parse } = await import(pathToFileURL(parserPath));
@@ -165,6 +180,25 @@ if (standardConsole) {
   deferred = activationModule(applicationText.slice(guard.length, -footer.length - 1),
     configuration.activationExports, parse);
   applicationText = guard + deferred.source + footer + '\n';
+}
+if (netModules.length) {
+  if (!applicationText.endsWith(footer + '\n')) throw new Error('node-net-snapshot-footer-shape');
+  const {parse} = await import(pathToFileURL(parserPath));
+  const tree = parse(applicationText, {ecmaVersion: 2022, sourceType: 'module'});
+  const nodes = [tree];
+  for (let count = 0; nodes.length; ++count) {
+    if (count > 1000000) throw new Error('node-net-snapshot-syntax-bound');
+    const node = nodes.pop();
+    if (node.type === 'Identifier' && node.name === '__lsfNetSnapshotTransport')
+      throw new Error('node-net-snapshot-binding-reserved');
+    for (const value of Object.values(node)) {
+      if (Array.isArray(value)) { for (const child of value) if (child?.type) nodes.push(child); }
+      else if (value?.type) nodes.push(value);
+    }
+  }
+  applicationText = applicationText.slice(0, -footer.length - 1) +
+    'import * as __lsfNetSnapshotTransport from ' + JSON.stringify(NET_PRIVATE) + ';\n' +
+    '__lsfNetSnapshotTransport.assertEmpty();\n' + footer + '\n';
 }
 if (parserPath) {
   const { parse } = await import(pathToFileURL(parserPath));
@@ -213,6 +247,8 @@ await writeFile(output + '.inputs.json', JSON.stringify({
   standardEntropyBackendDigest: 'sha256:' + createHash('sha256').update(entropyBackend).digest('hex'),
   ...(bufferBackend.selection().length ? {standardBufferProfile: BUFFER_PROFILE,
     standardBufferBackendDigest: bufferDigest, standardBufferModules: bufferBackend.selection()} : {}),
+  ...(netModules.length ? {standardNetProfile: NET_PROFILE, standardNetModules: netModules,
+    standardNetIdentities: configuration.standardNetIdentities} : {}),
   ...(standardFetch ? {standardFetchProfile: configuration.standardFetchProfile,
     standardFetchBackendDigest: 'sha256:' + createHash('sha256').update(backend).digest('hex')} : {}),
   ...(standardConsole ? {standardConsoleProfile: configuration.standardConsoleProfile,

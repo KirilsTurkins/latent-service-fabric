@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/build_dev_frontend.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Package the runtime compatibility context reader and its exact pure helper dependencies; no compiler or node invocation changes.",
+  "reviewReason": "Retain exactly net_profile.py and its pure runtime_profile.py dependency in the delivered helper so selected-Net compatibility materials use the original strict reader; root bab3 compatibility-reader closure retained. No compiler/tool/runtime authority.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "dfea68cecf6ffc6808f885616759a23f554c41e9d987d5dd10d82c0c9eef987d"
+  "sha256": "fc70250704237ff27f8f4e3278f84adb2c07f7c9dea4282886810a0fc60beedc"
 }

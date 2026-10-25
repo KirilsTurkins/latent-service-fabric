@@ -249,6 +249,8 @@ def helper(output: Path, resource_snapshot=None) -> str:
         entries[f"tools/{name}.py"] = (ROOT / f"tools/{name}.py").read_bytes()
     entries["tools/typescript_guest/__init__.py"] = b""
     entries["tools/typescript_guest/buffer_profile.py"] = (ROOT / "tools/typescript_guest/buffer_profile.py").read_bytes()
+    for name in ("net_profile", "runtime_profile"):
+        entries[f"tools/typescript_guest/{name}.py"] = (ROOT / f"tools/typescript_guest/{name}.py").read_bytes()
     for name, raw in resource_snapshot if resource_snapshot is not None else preflight_resources():
         entries["tools/dev_workflow/data/" + name] = raw
     with zipfile.ZipFile(output, "x", compression=zipfile.ZIP_DEFLATED) as archive:
