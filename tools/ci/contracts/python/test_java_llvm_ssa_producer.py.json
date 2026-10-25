@@ -6,7 +6,10 @@
     "LlvmSsaProducer.test_archive_metadata_preserves_case_distinct_sources_but_refuses_escape_duplicates_and_oversized_files",
     "LlvmSsaProducer.test_cross_pass_parser_rejects_unlowered_setjmp_and_phis_before_catchswitch",
     "LlvmSsaProducer.test_exact_four_preimages_produce_upstream_outputs_and_refuse_replay",
+    "LlvmSsaProducer.test_fixed_host_capacity_reads_ancestor_limits_and_refuses_before_acquisition",
+    "LlvmSsaProducer.test_generated_cmake_cache_requires_the_exact_ninja_compile_and_link_pools",
     "LlvmSsaProducer.test_hosted_admission_uses_real_repository_head_and_refuses_other_event_workflow_or_output_before_creation",
+    "LlvmSsaProducer.test_lit_timeout_dependency_refuses_before_acquisition_and_keeps_the_fixed_version",
     "LlvmSsaProducer.test_lit_xml_keeps_all_original_sjlj_files_and_refuses_skips_or_missing_cases",
     "LlvmSsaProducer.test_mutated_last_preimage_refuses_before_any_source_write",
     "LlvmSsaProducer.test_operational_disk_sample_tolerates_only_actual_disappearing_entries_and_child_directories",
@@ -88,7 +91,43 @@
       ],
       "skipSites": []
     },
+    "LlvmSsaProducer.test_fixed_host_capacity_reads_ancestor_limits_and_refuses_before_acquisition": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9108d03a9c7a40c0ac272453627c0490378c9b2073e61a1e62be9509099bd95b",
+        "class:setup-sha256:3a91f0e479a1098f2a25d9a44d9bb79213341e09f20218d19b647cbcd13e24ac"
+      ],
+      "skipSites": []
+    },
+    "LlvmSsaProducer.test_generated_cmake_cache_requires_the_exact_ninja_compile_and_link_pools": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9108d03a9c7a40c0ac272453627c0490378c9b2073e61a1e62be9509099bd95b",
+        "class:setup-sha256:3a91f0e479a1098f2a25d9a44d9bb79213341e09f20218d19b647cbcd13e24ac"
+      ],
+      "skipSites": []
+    },
     "LlvmSsaProducer.test_hosted_admission_uses_real_repository_head_and_refuses_other_event_workflow_or_output_before_creation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9108d03a9c7a40c0ac272453627c0490378c9b2073e61a1e62be9509099bd95b",
+        "class:setup-sha256:3a91f0e479a1098f2a25d9a44d9bb79213341e09f20218d19b647cbcd13e24ac"
+      ],
+      "skipSites": []
+    },
+    "LlvmSsaProducer.test_lit_timeout_dependency_refuses_before_acquisition_and_keeps_the_fixed_version": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -187,6 +226,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_java_llvm_ssa_producer.py",
-  "reviewReason": "Retain all thirteen source/controller cases and their unchanged fixture, decorator and skip guards; add one real bounded Ninja-log/deadline-metadata control. No compiled LLVM or Java qualification follows from these controls.",
+  "reviewReason": "Add one actual pre-acquisition lit timeout dependency refusal/API control; preserve all 16 existing case identities and original fixture, decorator and skip guards.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

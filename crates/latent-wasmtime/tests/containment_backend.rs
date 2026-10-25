@@ -32,6 +32,9 @@ use sha2::{Digest, Sha256};
 #[path = "containment_backend/rendezvous.rs"]
 mod rendezvous;
 
+#[path = "containment_backend/deadline.rs"]
+mod deadline;
+
 use rendezvous::{MixedMemoryRendezvous, MixedMemoryRendezvousSnapshot};
 
 const TRAP_MODE: &str = "__latent_test_trap";
@@ -545,7 +548,7 @@ fn now_unix_millis() -> u64 {
 }
 
 const DELAYED_MEMORY_MODE: &str = "__latent_test_delayed_memory";
-const MIXED_DELAYED_ECHO_PREFIX: &str = "__latent_test_mixed_delayed_echo:";
+const MIXED_DEADLINE_MODE: &str = "__latent_test_mixed_deadline";
 const MIXED_MEMORY_ECHO_PREFIX: &str = "__latent_test_mixed_memory_echo:";
 const MIXED_MEMORY_READY_LOG_MESSAGE: &str = "containment mixed memory rendezvous";
 const MIXED_MEMORY_PRESSURE_LOG_MESSAGE: &str = "containment mixed memory pressure started";
@@ -555,29 +558,57 @@ const DEADLINE_CI_SCHEDULING_ALLOWANCE_MILLIS: u64 = 500;
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 #[ignore = "requires the containment component built by tools/validate_contracts.sh"]
 async fn healthy_activations_remain_correct_while_an_infinite_activation_times_out() {
-    let (runner, pool, backend, config) = runner_fixture(5).await;
-    let requested_deadline = Duration::from_millis(75);
-    let deadline = now_unix_millis().saturating_add(
-        u64::try_from(requested_deadline.as_millis()).expect("test duration fits u64"),
-    );
     let failure_id = ActivationId("mixed-deadline-failure".to_owned());
+    let healthy_ids = (0..4)
+        .map(|index| format!("mixed-deadline-healthy-{index}"))
+        .collect::<BTreeSet<_>>();
+    let mut expected = healthy_ids.clone();
+    expected.insert(failure_id.0.clone());
+    let rendezvous = Arc::new(MixedMemoryRendezvous::new(expected, Duration::from_secs(2)));
+    let deadline_sink = Arc::new(deadline::MixedDeadlineLogSink::new(
+        Arc::clone(&rendezvous),
+        failure_id.0.clone(),
+    ));
+    let sink: Arc<dyn StructuredLogSink> = deadline_sink.clone();
+    let (runner, pool, backend, config) = runner_fixture_with_log_sink(5, sink).await;
+    deadline_sink.bind_backend(&backend);
+    let healthy = spawn_mixed_healthy(&runner, "deadline", 4);
+    let ready = deadline::wait_for_healthy(&rendezvous, &healthy_ids, || {
+        healthy.iter().all(|(_, _, task)| !task.is_finished())
+    })
+    .await;
+    if ready.timed_out
+        || ready.opened
+        || ready.arrived != healthy_ids
+        || !ready.unexpected.is_empty()
+        || ready.departed_before_release
+    {
+        rendezvous.timeout_now();
+        let mut outcomes = Vec::new();
+        for (activation_id, _, task) in healthy {
+            outcomes.push((activation_id.0, describe_activation_task(task).await));
+        }
+        panic!("deadline healthy preparation failed: {ready:?}; outcomes={outcomes:?}");
+    }
+    let requested_deadline = Duration::from_millis(75);
     let failure = {
         let runner = Arc::clone(&runner);
+        let failure_id = failure_id.clone();
         tokio::spawn(async move {
             let started = Instant::now();
+            let deadline = now_unix_millis().saturating_add(
+                u64::try_from(requested_deadline.as_millis()).expect("test duration fits u64"),
+            );
             let outcome = runner
                 .invoke(activation_envelope(
                     failure_id,
-                    INFINITE_MODE,
+                    MIXED_DEADLINE_MODE,
                     budget(MAXIMUM_FUEL, 16 * 1024 * 1024, Some(deadline)),
                 ))
                 .await;
             (started.elapsed(), outcome)
         })
     };
-    wait_for_runtime_active(&backend, 1).await;
-    let healthy = spawn_mixed_healthy(&runner, "deadline", 4);
-    wait_for_runtime_active(&backend, 2).await;
 
     let (elapsed, outcome) = tokio::time::timeout(Duration::from_secs(5), failure)
         .await
@@ -595,6 +626,24 @@ async fn healthy_activations_remain_correct_while_an_infinite_activation_times_o
 
     assert_mixed_healthy(healthy, &backend, "deadline").await;
     assert_end_to_end_reclaimed(&runner, &pool, &backend, 5);
+    // The current fifth guest opened this witness synchronously from its real
+    // host callback. No parent sampler must win the 75ms failure window.
+    let witness = rendezvous.snapshot();
+    assert!(
+        witness.opened,
+        "mixed deadline rendezvous failed: {witness:?}"
+    );
+    assert_eq!(witness.arrived, witness.expected);
+    assert!(witness.unexpected.is_empty());
+    assert!(!witness.timed_out);
+    assert!(!witness.departed_before_release);
+    let logs = backend.log_sink().snapshot_for(&failure_id);
+    assert_eq!(
+        logs.len(),
+        1,
+        "infinite guest entered the actual ready callback"
+    );
+    assert_eq!(logs[0].message, MIXED_MEMORY_READY_LOG_MESSAGE);
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
@@ -729,17 +778,6 @@ async fn memory_pressure_stays_within_the_grant_while_healthy_activations_comple
     assert_end_to_end_reclaimed(&runner, &pool, &backend, 5);
 }
 
-async fn runner_fixture(
-    capacity: u32,
-) -> (
-    Arc<latent_node::Phase0ActivationRunner>,
-    latent_scheduler::FixedCellPool,
-    Arc<Phase0WasmtimeBackend>,
-    Phase0WasmtimeConfig,
-) {
-    runner_fixture_with_services(capacity, WasmtimeHostServices::default()).await
-}
-
 async fn runner_fixture_with_log_sink(
     capacity: u32,
     log_sink: Arc<dyn StructuredLogSink>,
@@ -810,7 +848,7 @@ fn spawn_mixed_healthy(
     String,
     tokio::task::JoinHandle<ActivationOutcome>,
 )> {
-    spawn_mixed_healthy_with_prefix(runner, suite, count, MIXED_DELAYED_ECHO_PREFIX)
+    spawn_mixed_healthy_with_prefix(runner, suite, count, MIXED_MEMORY_ECHO_PREFIX)
 }
 
 fn spawn_mixed_healthy_with_prefix(
@@ -871,7 +909,7 @@ async fn assert_mixed_healthy(
             }
         }
         let logs = backend.log_sink().snapshot_for(&activation_id);
-        if suite == "memory" || suite == "trap" {
+        if suite == "memory" || suite == "trap" || suite == "deadline" {
             assert_eq!(
                 logs.len(),
                 2,
@@ -1055,19 +1093,6 @@ fn assert_deadline_tolerance(
         elapsed <= maximum_elapsed,
         "deadline interruption took {elapsed:?}, exceeding {maximum_elapsed:?}"
     );
-}
-
-async fn wait_for_runtime_active(backend: &Phase0WasmtimeBackend, minimum: u64) {
-    tokio::time::timeout(Duration::from_secs(2), async {
-        while backend.resource_snapshot().active_invocations < minimum {
-            // Give the spawned blocking guest invocation a scheduling window;
-            // a yield-only polling loop can otherwise monopolize an executor
-            // worker while the parallel test suite is under load.
-            tokio::time::sleep(Duration::from_millis(1)).await;
-        }
-    })
-    .await
-    .unwrap_or_else(|_| panic!("runtime never reached {minimum} concurrent invocations"));
 }
 
 fn assert_end_to_end_reclaimed(

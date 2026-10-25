@@ -2,7 +2,7 @@ name: TypeScript signed canonical borrow release
 
 on:
   push:
-    branches: ['feat/typescript-borrow-release-probe-20261024', 'feat/typescript-node-net-source-20261024']
+    branches: ['feat/typescript-borrow-release-probe-20261024', 'feat/typescript-accepted-close-20261025']
     paths:
       - '.github/workflows/typescript-borrow-signed.yml'
       - 'tools/qualify_typescript_borrow_signed.py'
@@ -88,7 +88,7 @@ jobs:
       - name: Fetch only the eventual immutable successful producer source
         run: git fetch --no-tags --depth=1 origin 6d834e502beea33fbae9347fbaf23ff8c37223b3
       - name: Fetch the exact normal CLI producer source for the Socket programme
-        if: github.ref == 'refs/heads/feat/typescript-node-net-source-20261024'
+        if: github.ref == 'refs/heads/feat/typescript-accepted-close-20261025'
         run: git fetch --no-tags --depth=1 origin 77bf0e3f3b68e17342b6146abd6f2de34a3efa00
       - name: Install the normal locked public compiler and pinned parser
         run: python3 tools/typescript_capsule.py install-tools "$RUNNER_TEMP/typescript-borrow-signed-tools"
@@ -101,8 +101,8 @@ jobs:
             --tools "$RUNNER_TEMP/typescript-borrow-signed-tools" \
             --inputs "$RUNNER_TEMP/typescript-borrow-signed-inputs" \
             --output "$RUNNER_TEMP/typescript-borrow-signed"
-      - name: Build one normal no-Gate Socket component and execute six signed cases
-        if: github.ref == 'refs/heads/feat/typescript-node-net-source-20261024'
+      - name: Build one normal Socket component and execute eight signed client cases
+        if: github.ref == 'refs/heads/feat/typescript-accepted-close-20261025'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -144,3 +144,8 @@ jobs:
             ${{ runner.temp }}/typescript-borrow-signed/prepared/typescript-node-net-service/generated-bindings.js
             ${{ runner.temp }}/typescript-borrow-signed/prepared/typescript-node-net-service/logs/**
             ${{ runner.temp }}/typescript-borrow-signed/prepared/typescript-node-net-service/wit/**
+            ${{ runner.temp }}/typescript-borrow-signed/prepared/project/package.json
+            ${{ runner.temp }}/typescript-borrow-signed/prepared/project/package-lock.json
+            ${{ runner.temp }}/typescript-borrow-signed/prepared/project/npm-resolved.lock.json
+            ${{ runner.temp }}/typescript-borrow-signed/prepared/project/latent.dependencies.json
+            ${{ runner.temp }}/typescript-borrow-signed/prepared/project/latent.dependencies.lock.json

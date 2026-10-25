@@ -46,7 +46,9 @@ def selected(observation, identities):
             'maximumTransferWindowBytes': 16384,
             'transport': 'tcp', 'tlsApi': False, 'dnsApi': False,
             'listeners': False, 'descriptorNamespace': False,
-            'rootRequiresCompletedClose': True, 'automaticCloseDrain': False,
+            'rootRequiresCompletedClose': True, 'automaticCloseDrain': True,
+            'closeDrain': 'accepted-terminal-intent-only-v1', 'maximumRootCloseWaiters': 1,
+            'pausedEndRead': 'eof-only-unread-data-refuses',
             'physicalRetirement': 'not-inferred', 'authority': 'none', 'qualification': 'unknown'}
 
 

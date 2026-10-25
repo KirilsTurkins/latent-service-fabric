@@ -43,6 +43,8 @@ pub(crate) fn case_index(label: &str) -> Option<u8> {
         "node-net-destroy" => Some(9),
         "node-net-unclosed" => Some(10),
         "node-net-fresh" => Some(11),
+        "node-net-published-granted" => Some(12),
+        "node-net-published-denied" => Some(13),
         _ => None,
     }
 }
@@ -197,6 +199,8 @@ mod tests {
             "node-net-destroy",
             "node-net-unclosed",
             "node-net-fresh",
+            "node-net-published-granted",
+            "node-net-published-denied",
         ]
         .into_iter()
         .enumerate()

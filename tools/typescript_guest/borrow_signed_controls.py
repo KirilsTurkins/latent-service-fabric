@@ -276,8 +276,13 @@ NET_REFERENCE_PROFILE = 'node-net-reference-t32-q32-n128-v1'
 NET_RUNTIME_CONFIGURATION = ('RuntimeLimits { tasks: 32, executors: 2, queued_work: 32, waits: 8, '
     'timers: 8, results: 8, native_owners: 128 }')
 NET_CASES = (('node-net-echo',0),('node-net-sibling',1),('node-net-denied',2),
-             ('node-net-destroy',3),('node-net-unclosed',4),('node-net-fresh',0))
+             ('node-net-destroy',3),('node-net-unclosed',4),('node-net-fresh',0),
+             ('node-net-published-granted',5),('node-net-published-denied',6))
 NET_RECIPE = tuple(dict.fromkeys((*RECIPE, *NET_INPUTS.values(),
+    'tools/typescript_net_client_fixture.py', 'tools/typescript_application_dependencies.py',
+    'tools/typescript_dependency_authoring.py', 'tools/application_dependencies.py',
+    'tools/application_dependency_store.py', 'tools/typescript_registry_tls.py',
+    NET_PREFIX+'application-native-lock.json',
     'crates/latent-wasmtime/tests/typescript_import_borrow_release/node_net.rs',
     'tools/java_phase_native_products.py', 'tools/tests/test_typescript_node_net.py',
     'tools/tests/fixtures/typescript_node_net_generated.json',
@@ -323,13 +328,13 @@ def node_net_records(raw):
         line = line.removeprefix('test '+NET_TEST+' ... ')
         if line.startswith('TYPESCRIPT_NODE_NET_CASE '):
             cases.append(json.loads(line.removeprefix('TYPESCRIPT_NODE_NET_CASE ')))
-    require(len(cases)==6 and [(row.get('case'),row.get('mode')) for row in cases]==list(NET_CASES),
-            'node-net-six-exact-actual-cases')
-    def owner_sample(value, held):
+    require(len(cases)==8 and [(row.get('case'),row.get('mode')) for row in cases]==list(NET_CASES),
+            'node-net-eight-exact-actual-cases')
+    def owner_sample(value, held, count=None):
         if type(value) is not dict or type(value.get('stream')) is not dict or type(value.get('io')) is not dict:
             return False
         stream, io = value['stream'], value['io']
-        expected = 2 if held else 0
+        expected = (2 if held else 0) if count is None else count
         if not all(type(stream.get(key)) is int and stream[key]==expected
                    for key in ('owners','connections','pendingOperations','retainedChunks')):
             return False
@@ -340,9 +345,9 @@ def node_net_records(raw):
         if value.get('kernelRetirementQualified') is not False:
             return False
         if held:
-            return (type(io.get('stagedBytes')) is int and io['stagedBytes']==65536
-                and type(io.get('buffers')) is int and io['buffers']==4
-                and all(type(io.get(key)) is int and io[key]>=2 for key in ('calls','streams')))
+            return (type(io.get('stagedBytes')) is int and io['stagedBytes']==32768*expected
+                and type(io.get('buffers')) is int and io['buffers']==2*expected
+                and all(type(io.get(key)) is int and io[key]>=expected for key in ('calls','streams')))
         return (type(value.get('liveInstances')) is int and value['liveInstances']==0
             and type(value.get('poolRunningRequests')) is int and value['poolRunningRequests']==0
             and all(type(io.get(key)) is int and io[key]==0 for key in (
@@ -395,8 +400,11 @@ def node_net_records(raw):
                 and row.get('originalFailureCause')==('unknown' if row['mode']==4 else 'not-applicable')
                 and row.get('guardAttribution')==('source-only' if row['mode']==4 else 'not-applicable')
                 and row.get('recordedAdmissionRefusal') is False and owner_sample(row.get('postRoot'),False)
+                and (row.get('outboundRequests')==(1 if row['mode']==5 else 0) if row['mode'] in (5,6) else True)
                 and (owner_sample(row.get('heldOwnerBeforePermit'),True) if row['mode'] in (1,3,4)
                      else row.get('heldOwnerBeforePermit') is None)
+                and (owner_sample(row.get('acceptedCloseBeforeEOF'),True,1) if row['mode']==5
+                     else row.get('acceptedCloseBeforeEOF') is None)
                 and row.get('controlPeerEOF') is (row['mode'] in (1,3,4))
                 and row.get('primaryReleasedAfterObservation') is (row['mode']==4)
                 and all(type(row.get(key)) is int and 0<=row[key]<=bound for key,bound in (
@@ -404,7 +412,7 @@ def node_net_records(raw):
                 'node-net-actual-case-budgets-or-attribution')
     complete = [json.loads(line.removeprefix('TYPESCRIPT_NODE_NET_COMPLETE '))
         for line in raw.decode().splitlines() if line.startswith('TYPESCRIPT_NODE_NET_COMPLETE ')]
-    expected_complete=[{'cases':6,'guestComponents':1,'gateComponent':False,'wholeAC7':False,
+    expected_complete=[{'cases':8,'guestComponents':1,'gateComponent':False,'wholeAC7':False,
         'wholeCostQualification':False,'productionEnablement':False,'referenceProfile':reference}]
     require(json.dumps(complete,sort_keys=True,allow_nan=False)==json.dumps(expected_complete,sort_keys=True,allow_nan=False),
             'node-net-actual-complete')
@@ -416,6 +424,7 @@ def qualify_node_net(tools, material_directory, output, prepared_native):
     """The existing owner, one normal build, one exact test in its SAME target."""
     from tools import java_phase_native_products as host
     from tools.typescript_guest import net_profile
+    from tools import typescript_net_client_fixture as client
     from tools.typescript_guest.build import build
     from tools import guest_compatibility_context as context, guest_compatibility_outcomes as outcomes
     require(sys.platform=='linux' and platform.machine() in ('x86_64','AMD64')
@@ -457,7 +466,7 @@ def qualify_node_net(tools, material_directory, output, prepared_native):
         commit=run('source-commit','git','rev-parse','HEAD').decode().strip()
         tree=run('source-tree','git','rev-parse','HEAD^{tree}').decode().strip()
         require(not run('source-clean','git','status','--porcelain','--untracked-files=normal').strip(), 'node-net-clean-source')
-        branch='refs/heads/feat/typescript-node-net-source-20261024'
+        branch='refs/heads/feat/typescript-accepted-close-20261025'
         require(os.environ.get('GITHUB_SHA')==commit and os.environ.get('GITHUB_EVENT_NAME')=='push'
             and os.environ.get('GITHUB_REPOSITORY')=='KirilsTurkins/latent-service-fabric'
             and re.fullmatch(r'[1-9][0-9]{0,19}',os.environ.get('GITHUB_RUN_ID','')) is not None
@@ -472,14 +481,17 @@ def qualify_node_net(tools, material_directory, output, prepared_native):
         require(set(binaries)=={'latent','latentd','capsule_contracts','package','capsule_authoring'},'node-net-original-five-products')
         record.update(originalPrerequisites=original_inputs,originalNativeCLI=original_native)
         prepared=output/'prepared';prepared.mkdir();source=node_net_project(prepared/'project')
+        stage='normal-published-client-capture'
+        dependency=client.capture(source)
+        record['publishedClient']=dependency
         source_before=inventory(snapshot(source))
         stage='no-skip-pinned-source-controls'
         parser=tools/'node_modules/acorn/dist/acorn.mjs';require(parser.is_file() and not parser.is_symlink(),'node-net-pinned-parser')
         program="import unittest,json,sys;s=unittest.defaultTestLoader.loadTestsFromName('tools.tests.test_typescript_node_net');r=unittest.TextTestRunner(verbosity=2).run(s);print(json.dumps(dict(testsRun=r.testsRun,skipped=len(r.skipped),failures=len(r.failures),errors=len(r.errors))));sys.exit(0 if r.wasSuccessful() else 1)"
         controls=json.loads(run('normal-source-controls',sys.executable,'-c',program,
             env={**environment,'LSF_TYPESCRIPT_FRONTEND':str(tools)},seconds=60))
-        require(controls=={'testsRun':25,'skipped':0,'failures':0,'errors':0}
-                and all(type(v) is int for v in controls.values()),'node-net-all-twenty-five-no-skips')
+        require(controls=={'testsRun':30,'skipped':0,'failures':0,'errors':0}
+                and all(type(v) is int for v in controls.values()),'node-net-all-thirty-no-skips')
         record['sourceControls']=controls
         stage='one-normal-build-and-package'
         artifact=build(source,prepared/'typescript-node-net-service',binaries['capsule_contracts'],binaries['package'],
@@ -487,6 +499,7 @@ def qualify_node_net(tools, material_directory, output, prepared_native):
             runtime_engine=material_directory/'engine/engine.wasm',runtime_engine_receipt=material_directory/'engine/engine-input.json',
             runtime_splicer=material_directory/'splicer/splicer',runtime_splicer_receipt=material_directory/'splicer/splicer-input.json')
         record['guestComponentBuildCount']=1
+        record['publishedClientBuild']=client.build_evidence(artifact,dependency)
         selection_raw=read_file(artifact/'typescript-net-selection.json',65536)
         observed=json.loads(read_file(artifact/'build-observation.json',65536))
         require([row for row in observed['materials'] if row['name']=='typescript-standard-net']==[
@@ -516,7 +529,7 @@ def qualify_node_net(tools, material_directory, output, prepared_native):
         raw=run('host-new-closed-case-control','cargo','test','--locked','-p','latent-wasmtime','--features','development-test-host','--lib',
             'development_borrow_admission::tests::normal_socket_cases_keep_distinct_closed_indices_and_original_opt_in','--','--exact','--nocapture',seconds=remaining)
         require('test result: ok. 1 passed; 0 failed; 0 ignored;' in raw.decode(),'node-net-actual-one-new-host-control')
-        stage='six-normal-signed-activations'
+        stage='eight-normal-signed-activations'
         raw=run('signed-node-net','cargo','test','--locked','-p','latent-wasmtime','--features','development-test-host','--test',TARGET,NET_TEST,
             '--','--ignored','--exact','--nocapture','--test-threads=1',seconds=600,
             env={**environment,'LSF_GUEST_SDK_LANGUAGE':'typescript','LSF_TYPESCRIPT_BORROW_FIXTURE':str(prepared),'LSF_GUEST_CAPSULES':str(prepared)})
@@ -525,7 +538,8 @@ def qualify_node_net(tools, material_directory, output, prepared_native):
         require(record['referenceProfile']['preparation']['componentDigest']==record['component']['sha256'],
                 'node-net-prepared-component-matches-normal-build')
         stage='final-original-rechecks'
-        require(source_before==inventory(verify_node_net_project(source)) and recipe=={n:file_identity(ROOT/n) for n in recipe}
+        require(source_before==inventory(verify_node_net_project(source)) and dependency==client.provenance(source)
+            and recipe=={n:file_identity(ROOT/n) for n in recipe}
             and original_inputs==inputs.verify(material_directory,run) and original_native==host.verify_prepared(prepared_native)
             and run('final-commit','git','rev-parse','HEAD').decode().strip()==commit
             and run('final-tree','git','rev-parse','HEAD^{tree}').decode().strip()==tree

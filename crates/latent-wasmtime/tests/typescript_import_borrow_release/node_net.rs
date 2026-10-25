@@ -39,7 +39,10 @@ async fn configured_socket(
         serde_json::from_slice(caller.blob("typescript-net-selection.json").unwrap()).unwrap();
     assert_eq!(selected["profile"], "lsf-node-net-tcp-v1");
     assert_eq!(selected["qualification"], "unknown");
-    assert_eq!(selected["automaticCloseDrain"], false);
+    assert_eq!(selected["automaticCloseDrain"], true);
+    assert_eq!(selected["closeDrain"], "accepted-terminal-intent-only-v1");
+    assert_eq!(selected["maximumRootCloseWaiters"], 1);
+    assert_eq!(selected["pausedEndRead"], "eof-only-unread-data-refuses");
     let callee = packages::callee(42);
     let signers = package::Signers::typescript_with_echo_fixture();
     let tenant = TenantId("tenant-a".into());
@@ -158,6 +161,8 @@ pub(super) async fn run() {
         (3, "node-net-destroy"),
         (4, "node-net-unclosed"),
         (0, "node-net-fresh"),
+        (5, "node-net-published-granted"),
+        (6, "node-net-published-denied"),
     ]
     .into_iter()
     .enumerate()
@@ -165,8 +170,15 @@ pub(super) async fn run() {
         let before = observer.snapshot().unwrap();
         let mut request = f.request(label, mode);
         request.target.contract = ContractId(CONTRACT.into());
-        request.input =
-            serde_json::to_vec(&json!([mode, if mode == 2 { denied_port } else { port }])).unwrap();
+        request.input = serde_json::to_vec(&json!([
+            mode,
+            if matches!(mode, 2 | 6) {
+                denied_port
+            } else {
+                port
+            }
+        ]))
+        .unwrap();
         // The normal package's actual lower grant, not the generic fixture10b ceiling.
         request.budget = budget.clone();
         assert_eq!(request.budget.cpu_fuel, 1_000_000_000);
@@ -183,10 +195,27 @@ pub(super) async fn run() {
         let (release_tx, release_rx) = oneshot::channel();
         let peer_listener = Arc::clone(&listener);
         let peer = tokio::spawn(async move {
-            if mode == 2 {
+            if matches!(mode, 2 | 6) {
                 return;
             }
             let (mut primary, _) = peer_listener.accept().await.unwrap();
+            if mode == 5 {
+                // The published client uses ordinary end(), not destroy().
+                // Require actual FIN; the old destroy helper also accepts RST.
+                let mut byte = [0_u8; 1];
+                assert_eq!(
+                    tokio::time::timeout(Duration::from_secs(2), primary.read(&mut byte))
+                        .await
+                        .unwrap()
+                        .unwrap(),
+                    0,
+                    "published client did not send a real FIN"
+                );
+                entered_tx.send(()).unwrap();
+                release_rx.await.unwrap();
+                primary.shutdown().await.unwrap();
+                return;
+            }
             if mode == 0 {
                 expect_bytes(&mut primary, b"q").await;
                 eof(&mut primary).await;
@@ -216,10 +245,50 @@ pub(super) async fn run() {
             }
         });
         let mut held_owner = None;
+        let mut accepted_close_before_eof = None;
         let mut control_peer_eof = false;
         let mut primary_released_after_observation = false;
         let mut invocation = Box::pin(f.manager.start(request).unwrap());
-        let receipt = if mode == 0 || mode == 2 {
+        let receipt = if mode == 5 {
+            marker(&mut invocation, entered_rx, "published-client-real-fin").await;
+            read_admitted(
+                &f,
+                &mut invocation,
+                1,
+                32768,
+                "published-client-original-read-before-eof",
+            )
+            .await;
+            // Poll the actual invocation once while the peer still withholds
+            // EOF. A timer/delay cannot stand in for this Pending witness.
+            std::future::poll_fn(|context| match invocation.as_mut().poll(context) {
+                std::task::Poll::Ready(receipt) => panic!(
+                    "published root completed before peer EOF: {:?}",
+                    receipt.outcome
+                ),
+                std::task::Poll::Pending => std::task::Poll::Ready(()),
+            })
+            .await;
+            let held = sample(&f, "published-client-accepted-close-before-eof");
+            for field in [
+                "owners",
+                "connections",
+                "pendingOperations",
+                "retainedChunks",
+            ] {
+                assert_eq!(held["stream"][field], 1, "held original stream {field}");
+            }
+            for field in ["poolConnections", "liveStores", "activeActivations"] {
+                assert_eq!(held[field], 1, "held original root {field}");
+            }
+            assert_eq!(held["io"]["calls"], 1);
+            assert_eq!(held["io"]["streams"], 1);
+            assert_eq!(held["io"]["stagedBytes"], 32768);
+            assert_eq!(held["io"]["buffers"], 2);
+            accepted_close_before_eof = Some(held);
+            release_tx.send(()).unwrap();
+            invocation.await
+        } else if mode == 0 || matches!(mode, 2 | 6) {
             invocation.await
         } else {
             marker(&mut invocation, entered_rx, "node-net-two-real-connections").await;
@@ -328,6 +397,8 @@ pub(super) async fn run() {
                     1 => "node-net:sibling:pass",
                     2 => "node-net:denied:EACCES",
                     3 => "node-net:destroy:pass",
+                    5 => "node-net:published:true",
+                    6 => "node-net:published:false",
                     _ => panic!("unclosed root escaped"),
                 };
                 assert_eq!(
@@ -363,6 +434,11 @@ pub(super) async fn run() {
             other => panic!("unexpected actual outcome: {other:?}"),
         };
         assert!(used.outbound_requests <= 8);
+        if mode == 5 {
+            assert_eq!(used.outbound_requests, 1);
+        } else if mode == 6 {
+            assert_eq!(used.outbound_requests, 0);
+        }
         assert!(used.cpu_fuel <= granted.cpu_fuel);
         assert!(used.peak_memory_bytes <= granted.memory_bytes);
         assert_eq!(used.child_calls, 0);
@@ -383,17 +459,18 @@ pub(super) async fn run() {
             "grantFuel":granted.cpu_fuel,"grantMemoryBytes":granted.memory_bytes,"grantWallTimeMillis":granted.wall_time_limit_millis,
             "outboundCeiling":8,"referenceProfile":reference,"sameBackend":true,"kernelRetirementQualified":false,"publicErrorCode":public_code,"publicTrap":public_trap,
             "heldOwnerBeforePermit":held_owner,"controlPeerEOF":control_peer_eof,"recordedAdmissionRefusal":diagnostic.borrow_admission_refusal.is_some(),
+            "acceptedCloseBeforeEOF":accepted_close_before_eof,
             "primaryReleasedAfterObservation":primary_released_after_observation,"postRoot":post_root,
             "originalFailureCause":if mode==4 {"unknown"} else {"not-applicable"},
             "guardAttribution":if mode==4 {"source-only"} else {"not-applicable"}})
         );
     }
-    assert_eq!(f.backend.resource_snapshot().stores_created, 6);
+    assert_eq!(f.backend.resource_snapshot().stores_created, 8);
     drop(observer);
     f.streams.take().unwrap().shutdown().await;
     println!(
         "TYPESCRIPT_NODE_NET_COMPLETE {}",
-        json!({"cases":6,"guestComponents":1,"gateComponent":false,"wholeAC7":false,"wholeCostQualification":false,"productionEnablement":false,"referenceProfile":reference})
+        json!({"cases":8,"guestComponents":1,"gateComponent":false,"wholeAC7":false,"wholeCostQualification":false,"productionEnablement":false,"referenceProfile":reference})
     );
 }
 
