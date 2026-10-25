@@ -844,6 +844,7 @@ class RepositoryMigrationTests(unittest.TestCase):
         reviewed_go_probe = ".github/workflows/go-guest.yml:upstream-probe:Generate and compile upstream and constrained LSF components"
         reviewed_go_normal_id = ".github/workflows/go-guest.yml:upstream-probe:Qualify editable projects, all SDK owners, enforced node and printed guide"
         reviewed_typescript_console = ".github/workflows/typescript-guest.yml:boundary:Qualify captured projects, all SDK owners, enforced node and printed guide"
+        reviewed_typescript_models = ".github/workflows/typescript-guest.yml:boundary:Execute supplementary value and ownership models"
         performance_extensions = {
             ".github/workflows/ci.yml:rust:integration_lanes": [
                 "python3 tools/run_ci_lanes.py", '--inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl"',
@@ -995,6 +996,14 @@ class RepositoryMigrationTests(unittest.TestCase):
                 new = '--chrome "$(command -v google-chrome)" --audit-lifecycle-receipt "${RUNNER_TEMP}/phase2-gate/audit-lifecycle-receipt.json" > "${RUNNER_TEMP}/phase2-gate/static-site-receipt.json"'
                 self.assertEqual(value["run"].count(old), 1)
                 self.assertEqual(data["after"][key], dict(value, run=value["run"].replace(old, new)), key)
+            elif key == reviewed_typescript_models:
+                # Compile the same executable runtime and both model sources.
+                # Profile-scoped ambient Node declarations require application
+                # module mappings and are not standalone model inputs.
+                original_inputs = "sdk/typescript-guest/runtime/*.ts"
+                self.assertEqual(value["run"].count(original_inputs), 1)
+                self.assertEqual(data["after"][key], dict(value, run=value["run"].replace(
+                    original_inputs, "sdk/typescript-guest/runtime/text.ts", 1)), key)
             elif key != reviewed_extension and key not in performance_extensions:
                 self.assertEqual(data["after"][key], value, key)
             else:
