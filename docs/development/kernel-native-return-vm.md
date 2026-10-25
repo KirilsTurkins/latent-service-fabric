@@ -1,6 +1,28 @@
 # Authenticated native Root-return observation programme
 
-This is a new programme for #738. The first owning run at `eff7adf1d1ef` passed
+The [owning run40144839812](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40144839812)
+passed at exact source `15167d63a3aef6d211ffc83c9591890d4d2486b2`. The
+[public receipt](../testing/evidence/kernel-native-root-return-observation-2026-10-25.json)
+binds its retained archive, raw observations, products and original limits.
+All nineteen registered/unignored Rust controls, twelve compiled C controls and
+twenty-six commands passed before/through one fresh kernel and one validated VM.
+All6471 source-before/after rows and296 kernel materials match that source
+(6694 unique Git blobs). The historical294-material subset remains unchanged.
+
+The actual native caller reached READY with one factory and one observation FD,
+closed the original File, and received typed `KernelRootReturned` from its
+protected fixed48-byte observer. Both FDs were absent afterward. Genuine kernel
+physical-return/outside-collector rows were also mandatory independent evidence.
+Holding the close receipt kept cleanupJobs2; explicit drop/worker completion
+returned that count to1. The original connection1, failedCleanup1 and metadata
+1,125,184B remained quarantined, including the original1MiB backing and4096-byte
+observation reservation. These counters do not measure complete native/VFS/LSM
+allocation costs. Normal installation remains Unsupported; native quota refund,
+production enablement and whole-issue acceptance remain unqualified.
+
+## Retained failed attempts
+
+The first owning run at `eff7adf1d1ef` passed
 all nineteen Rust controls, the static native example build and twelve compiled
 C controls. It failed before kernel configuration/link or VM execution because
 the historical 294-material comparison included two newly captured C sources.
@@ -29,23 +51,23 @@ The genuine pending-handoff, physical-return and outside-collector rows followed
 during failure cleanup, but no typed native Root-return result was observed.
 All 26 command exits were zero; the strict serial oracle correctly refused the
 failed child. This failed attempt records one attempted and zero validated boots.
-The next source adds only bounded failure diagnostics (fixed stage, numeric
-errno or closed error code/kind) and a ready-rejection snapshot. It preserves
+The next published source added only bounded failure diagnostics (fixed stage,
+numeric errno or closed error code/kind) and a ready-rejection snapshot. It preserved
 every original error, permission/actor check, success predicate and limit; the
-constructor cause remains unknown until those actual observations exist.
+constructor cause was unknown at that point.
 The fifth run at `a6931393c093` again linked and booted the same kernel bytes.
 Its new diagnostic was `stage=mint errno=0 kind=PermissionDenied`: the private
 wrapper rejected metadata before issuing the observation ioctl, after genuine
 READY initialization. Exact selected Linux source/configuration explains the
 missing fixture premise: rootfs selects tmpfs, defaults to mode01777, and this
 CPIO contains no root entry. The supervisor had not protected that root before
-the strict wrapper checked it. The next source sets mode0755 on `/` in PID1,
+the strict wrapper checked it. The subsequently qualified fix sets mode0755 on `/` in PID1,
 checks the actual resulting directory type/root uid/mode before any child or
 factory access, and retains all wrapper, device, `/dev`, actor and LSM checks.
 The first existing pure C control additionally refuses writable/sticky root,
 wrong uid and non-directory metadata; all twelve original parser assertions
-remain. This source correction has not yet passed a VM; both failed boots stay
-failed observations, with no authenticated typed native Root-return result.
+remain. Both failed boots stay failed observations; their cleanup markers are
+not relabelled as successful authenticated native Root-return results.
 The historical image has no observation ioctl and is never relabelled as this
 image. Normal installation remains Unsupported; native backing stays quarantined.
 
@@ -72,7 +94,7 @@ The owning push workflow is `stream-kernel-return-vm.yml`, restricted to
 controller then executes the original thirteen native cases, five paid cleanup
 result cases and one descriptor-leaf case, with exact Cargo source/product,
 registered names and unignored outcomes. It builds the new normal static Rust
-example, checks its fixed ELF limits, compiles the unchanged C supervisor and
+example, checks its fixed ELF limits, compiles the selected C supervisor and
 executes all twelve pure host parser controls. Only then may Linux acquisition
 and the expensive fresh kernel build start. No native constructor runs on the
 build host.
@@ -94,7 +116,7 @@ final-close or the outside collector can remove the bank. Unexpected hooks or
 changed ordinary bodies refuse; no LSM is disabled. These are source lifetime
 premises, not complete allocator/LSM cost qualification.
 
-The kernel's own newly built initramfs generator constructs the unchanged
+The kernel's own newly built initramfs generator constructs the selected
 supervisor image; the maintained bounded newc helper adds only tmp/native-init.
 Both exact executables and original dev/console entry are retained. One fresh
 isolated VM runs this fresh image. The old fast, late-FD and no-BEGIN readers,
@@ -114,7 +136,7 @@ PT_LOAD spans at most 4 MiB and the entire CPIO at most 4 MiB. All original
 static ET_EXEC, no interpreter, W^X and finite-entry checks remain. Rejected
 native products may be retained only through the existing fixed 8 MiB forensic
 path, unadmitted/nonexecutable and never run. There is no cap-increase fallback.
-The unchanged supervisor has its 20-second event deadline and 4096-byte record,
+The bounded supervisor has its 20-second event deadline and 4096-byte record,
 65536-byte total and 128-record bounds. Native observation uses its original
 READY expiry/close deadline, at most twenty seconds, one pollfd and sixteen
 interrupts; it cannot remint or reset the one-birth static slot.
@@ -127,4 +149,4 @@ serial validation. A failed attempted boot is not reported as validated.
 Actual EMFILE, descriptor-zero minting and production installation are outside
 this single success boot; source/RAII controls are not relabelled as those runs.
 Whole-node/signed-component/TLS, full VFS/LSM cost and native refund qualification
-remain false even if this new bounded programme eventually passes.
+remain false after this bounded constructor/observation programme passed.
