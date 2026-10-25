@@ -6,7 +6,7 @@
     "env": {
       "PYTHONDONTWRITEBYTECODE": 1
     },
-    "if": "${{ (github.event_name != 'workflow_dispatch' || !inputs.java_http_spi) && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_assembly) }}",
+    "if": "${{ (github.event_name != 'workflow_dispatch' || !inputs.java_http_spi) && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_assembly) && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_derived_llvm) }}",
     "name": "Actual Java sources, SDK ownership and enforced node",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -263,7 +263,7 @@
   },
   "jobId": "compiler-component",
   "kind": "job",
-  "reviewReason": "Exclude the unchanged original job only for the explicit manual public-fiber assembly mode.",
+  "reviewReason": "Preserve the original complete compiler job except exclusion from the explicitly selected derived LLVM compiler-only public programme.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-guest-feasibility.yml"
 }

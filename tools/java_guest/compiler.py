@@ -122,6 +122,13 @@ def read_only_dependency_cache(path: Path) -> Path:
 class Compiler:
     compiler_methods = False
 
+    def _wasi_compiler_version(self) -> str:
+        """Normal builders admit only the original official SDK29 identity."""
+        if (self.wasi_sdk / "VERSION").read_text().splitlines() != [
+            "29.0", "wasi-libc: ac020b86fd44", "llvm: 222fc11f2b8f", "llvm-version: 21.1.4", "config: f992bcc08219"]:
+            raise ValueError("unreviewed WASI-SDK Java compiler")
+        return "21.1.4-wasi-sdk"
+
     def __init__(self, directory: Path, wasi_sdk: Path, *, gradle="gradle", sdk: Path | None = None,
                  platform: Path | None = None, config: dict | None = None, timeout=900,
                  offline_cache: Path | None = None, read_only_cache: Path | None = None,
@@ -161,13 +168,11 @@ class Compiler:
         self.materials = []
         self.reachability_observation = None
         config = config or tomllib.loads((ROOT / "tools/toolchain.toml").read_text())
-        if (self.wasi_sdk / "VERSION").read_text().splitlines() != [
-            "29.0", "wasi-libc: ac020b86fd44", "llvm: 222fc11f2b8f", "llvm-version: 21.1.4", "config: f992bcc08219"]:
-            raise ValueError("unreviewed WASI-SDK Java compiler")
+        clang_version = self._wasi_compiler_version()
         verify_version = source_module(self.sdk / "tools/feasibility.py").verify_version
         for name, selected, version in [
             ("java", "java", config["sdk"]["java"]), ("gradle", gradle, config["sdk"]["gradle"]),
-            ("clang", str(self.wasi_sdk / "bin/clang"), "21.1.4-wasi-sdk"),
+            ("clang", str(self.wasi_sdk / "bin/clang"), clang_version),
             ("wit-bindgen", "wit-bindgen", config["rust"]["dependencies"]["wit-bindgen"]),
             ("wasm-tools", "wasm-tools", config["contracts"]["wasm-tools"]),
         ]:

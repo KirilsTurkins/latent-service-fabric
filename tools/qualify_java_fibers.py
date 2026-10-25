@@ -365,12 +365,23 @@ def recipe_inputs() -> dict[str, str]:
 
 
 def prepare(output: Path, wasi_sdk: Path, *, gradle="gradle", offline_cache: Path | None = None,
-            read_only_cache: Path | None = None, fixture="threads", observe_public_wineh=False):
+            read_only_cache: Path | None = None, fixture="threads", observe_public_wineh=False,
+            derived_llvm_public=False):
     if fixture not in {"threads", "completable", "timers", "fiber-io", "worker-libraries"}: raise ValueError("unknown Java fiber fixture")
     if type(observe_public_wineh) is not bool or observe_public_wineh and fixture != 'threads':
         raise ValueError('WinEH observation requires only the fixed normal public fiber fixture')
+    if (type(derived_llvm_public) is not bool
+            or derived_llvm_public and (fixture != 'threads' or observe_public_wineh)):
+        raise ValueError('Derived LLVM requires only the fixed public fiber compiler without replay')
     if offline_cache is not None and read_only_cache is not None:
         raise ValueError("Java dependency cache selections are mutually exclusive")
+    admitted, derived_deadline = None, None
+    if derived_llvm_public:
+        from tools.java_guest import llvm_ssa_consumer as derived
+        derived_deadline = derived.deadline()
+        admitted = derived.inputs.prepare(derived_deadline)
+        if wasi_sdk.resolve(strict=True) != admitted.sdk:
+            raise ValueError('Derived LLVM requires its fixed authenticated input root')
     output = fresh(output)
     common = ROOT / "sdk/java-guest/fibers/conformance"
     selected = common if fixture == "threads" else common / fixture
@@ -391,11 +402,15 @@ def prepare(output: Path, wasi_sdk: Path, *, gradle="gradle", offline_cache: Pat
     compiler = None
     try:
         selected_compiler = Compiler
+        extra = {}
         if observe_public_wineh:
             from tools.java_guest.public_wineh import PublicWinEHCompiler
             selected_compiler = PublicWinEHCompiler
+        if derived_llvm_public:
+            selected_compiler = derived.DerivedPublicCompiler
+            extra['admitted'] = admitted
         compiler = selected_compiler(output / "compiler", wasi_sdk, gradle=gradle, offline_cache=offline_cache,
-                            read_only_cache=read_only_cache, timeout=1200)
+                            read_only_cache=read_only_cache, timeout=1200, **extra)
         library_jars, reference_jars = (), ()
         if fixture == 'worker-libraries':
             from tools import java_fiber_library_inputs
@@ -438,6 +453,12 @@ def prepare(output: Path, wasi_sdk: Path, *, gradle="gradle", offline_cache: Pat
         report["sdkInputs"] = {name: digest(data) for name, data in compiler.original_sdk.items()}
         report["componentDigest"] = digest(read_file(component, 64 * 1024 * 1024))
         compiler.check_unchanged()
+        if derived_llvm_public:
+            from tools.java_guest.llvm_ssa_consumer import retain_products
+            report['derivedLlvm'] = compiler.qualification_record()
+            report['derivedPublicProducts'] = retain_products(output)
+            if time.monotonic() >= derived_deadline:
+                raise ValueError('Derived LLVM public compiler job deadline exceeded')
         if recipe_inputs() != before: raise ValueError("Java fiber qualification recipe changed during preparation")
         report["commands"] = compiler.records
         (output / "compiler-inputs.json").write_bytes(compiler.compiler_inputs)
@@ -474,10 +495,13 @@ def main():
     parser.add_argument("--fixture", choices=("threads", "completable", "timers", "fiber-io", "worker-libraries"), default="threads")
     parser.add_argument('--observe-public-wineh', action='store_true',
                         help='Optional fixed-public-only postfailure numeric LLVM observation')
+    parser.add_argument('--derived-llvm-public', action='store_true',
+                        help='Only the fixed authenticated LLVM candidate and unchanged public compiler fixture')
     args = parser.parse_args()
     prepare(args.output, args.wasi_sdk, gradle=args.gradle, offline_cache=args.offline_cache,
             read_only_cache=args.read_only_cache, fixture=args.fixture,
-            observe_public_wineh=args.observe_public_wineh)
+            observe_public_wineh=args.observe_public_wineh,
+            derived_llvm_public=args.derived_llvm_public)
 
 
 if __name__ == "__main__": main()

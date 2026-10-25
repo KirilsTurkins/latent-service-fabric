@@ -1,7 +1,8 @@
 # Pinned LLVM SjLj source backport
 
-This directory contains source inputs for a compiler candidate. It does not
-contain or qualify a compiler binary, Java component, runtime, GC, or service.
+This directory contains source inputs for a compiler candidate. It contains no
+compiler binary. Compiler artifact qualification is recorded separately below;
+it does not qualify a Java component, runtime, GC, or service.
 The normal Java compiler remains the original official WASI SDK 29.
 
 `patch.json` binds four complete LLVM 21.1.4 preimages and outputs. Its utility
@@ -22,8 +23,8 @@ The fixed source-branch push `java-llvm-ssa-producer.yml` programme has one
 including workflow setup, and at most four simultaneous Ninja commands.
 It authenticates both fixed
 official archives before tar access and checks the whole source tree without
-ignored paths before and after compilation. No LLVM or guest compiler build
-has yet qualified this candidate.
+ignored paths before and after compilation. R7 qualified one source-built
+compiler artifact; Java component assembly remains a separate qualification.
 
 The first build completed in 3,357.75 seconds and passed all nine SSA units,
 then lit refused its missing `llvm-config` prerequisite before running the
@@ -133,6 +134,24 @@ directed dependencies and ordinary relative loader paths. Other dependencies
 remain restricted to the existing normal seven-library host C ABI whitelist.
 No preload, library-path override or unrelated SDK member change is admitted.
 
+[R7 run 40174439697](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40174439697)
+passed at source `4545bf149d8ea732e78c25509d5f90ffd16e3ad8`. Its 22 Linux
+controller cases, nine SSA units, thirteen original lit cases, opt/WinEH verifier,
+actual llc object, three ELF dependency checks and real packaged Clang version
+all passed. The actual build took 2,341.620686 seconds. After original command
+cleanup, 5,604 build entries were retired; final owned entries were 196,974 under
+the unchanged 200,000 cap. Both final configuration files matched their initial
+pre-build identities. No failed compiler artifact was reused.
+
+Artifact `12593061730` is 167,405,228 bytes, SHA256
+`7dffc969ad2f91ebc61126f5df0b15ba4a410733704a0abee5f60ce83ef7cb48`.
+Independent cached verification authenticated 52 ZIP members, all 18 immutable
+Git recipe inputs, 20 successful command records/40 raw channels, and all 10,713
+typed tar members including modes and links. Decoded payload was 508,050,298
+bytes including the manifest. The carrier is 159,518,361 bytes, SHA256
+`07032a463018271517dd26fde68b99716937fa5e231c3430ace811f610ae0d37`.
+The original SDK runtime, sysroot and lld members remain byte-identical.
+
 Before spending on the build, strict source/SDK/header inventories project a
 bounded final entry count. An independently authenticated metadata-only SDK29
 census found 10,704 SDK descendants and 272 header-subtree entries including
@@ -155,8 +174,14 @@ The derived compiler has a distinct version suffix and source/patch/material
 manifest. Original SDK sysroot, runtime and linker members must remain
 byte-identical. The compiler's ELF dependencies must select its newly compiled
 LLVM and clang-cpp libraries through the ordinary relative loader path.
-Existing compiler consumers do not admit this new
-identity; that is a separate review after a successful producer artifact.
+The explicit compiler-only reader pins that exact successful source, run, job,
+artifact, carrier, manifest and recipe together. It refuses historical failed
+artifacts and arbitrary SDK roots. The existing public-fiber owning job can
+select it only through `public_fiber_derived_llvm=true` at the closed consumer
+feature ref; default selection remains false and the normal SDK29 gate is
+unchanged. This separate programme retains TeaVM FULL, Clang O2, the unchanged
+public Java/WIT, 600-second compiler command, 35-minute total, 64 KiB stack,
+64 MiB memory and original parser limit. Its Java assembly outcome is pending.
 
 The effect on the oversized public Java `pools` function remains unknown.
 Original TeaVM `FULL`, Clang `-O2`, Java source, EH/SjLj/GC behavior, 64 KiB
