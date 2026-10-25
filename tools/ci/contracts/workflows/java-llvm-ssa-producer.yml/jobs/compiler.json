@@ -57,7 +57,7 @@
   },
   "jobId": "compiler",
   "kind": "job",
-  "reviewReason": "One source-bound 90-minute two-job compiler producer; thirteen source controls, mandatory nine LLVM units/thirteen SjLj regressions, typed mode-preserving SDK carrier, and always-run bounded upload admission; no Java execution.",
+  "reviewReason": "One source-bound 90-minute two-job compiler producer; fourteen source controls; a4500-second build maximum within the unchanged5400-second aggregate, mandatory nine LLVM units/thirteen SjLj regressions, typed mode-preserving SDK carrier, and always-run bounded upload admission; no Java execution.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-llvm-ssa-producer.yml"
 }
