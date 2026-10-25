@@ -81,3 +81,39 @@ fn reading(value: &str) -> Result<u64, PlatformError> {
         .parse()
         .map_err(|_| invalid("developmentTest.guestClock"))
 }
+
+/// Explicit closed observation for one disposable local-service fixture node.
+#[derive(Clone, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct LocalServiceObservation {
+    format_version: u32,
+    consent: bool,
+    purpose: String,
+}
+pub(super) fn local_service_present<'de, D: Deserializer<'de>>(
+    input: D,
+) -> Result<Option<LocalServiceObservation>, D::Error> {
+    object(input).map(Some)
+}
+impl LocalServiceObservation {
+    pub(super) fn check(&self, node: &NodeConfig) -> Result<(), PlatformError> {
+        if self.format_version != 1
+            || !self.consent
+            || self.purpose != "disposable-local-service-refusal-observation"
+            || node.security_profile != ExecutionIsolationProfile::LocalExperimental
+            || node.isolated_aot.is_some()
+            || node.renderer_profile.is_some()
+            || node.http_ingress.is_some()
+            || node
+                .providers
+                .as_ref()
+                .and_then(|providers| providers.local_service.as_ref())
+                .is_none()
+        {
+            return Err(invalid(
+                "developmentLocalServiceObservation.explicitLocalTestRequired",
+            ));
+        }
+        Ok(())
+    }
+}

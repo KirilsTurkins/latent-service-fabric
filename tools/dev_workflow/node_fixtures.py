@@ -64,6 +64,8 @@ def check_configuration(root: Path, value: dict) -> dict:
             and report.get("protectedCredentialFile") is True
             and report.get("developmentGuestClock") == value.get("developmentTest", {}).get("guestClock"),
             "node-development-fixture-not-confirmed")
+    if "developmentLocalServiceObservation" in value:
+        require(report.get("developmentLocalServiceObservation") is True, "node-local-service-observation-not-confirmed")
     return {"configurationSha256": digest(encode(value)),
             "guestClock": report.get("developmentGuestClock"), "ordinaryNodeClock": "unchanged"}
 
