@@ -1,96 +1,39 @@
-name: PR 1380 inventory repair validation
+name: PR 1380 secondary qualification diagnosis
 on:
   push:
     branches: [ci/audit-1380-diagnose-f1dd3bc]
 permissions:
   contents: read
+  actions: read
 jobs:
-  prepare:
+  diagnose:
     runs-on: ubuntu-24.04
-    timeout-minutes: 35
-    permissions:
-      contents: write
-    env:
-      CARGO_BUILD_JOBS: 2
-      CARGO_INCREMENTAL: 0
-      CARGO_PROFILE_DEV_DEBUG: 0
-      CARGO_PROFILE_TEST_DEBUG: 0
-      CARGO_PROFILE_DEV_DEBUG_ASSERTIONS: true
-      CARGO_PROFILE_TEST_DEBUG_ASSERTIONS: true
-      CARGO_PROFILE_DEV_OVERFLOW_CHECKS: true
-      CARGO_PROFILE_TEST_OVERFLOW_CHECKS: true
+    timeout-minutes: 5
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-        with:
-          persist-credentials: false
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
-        with:
-          python-version: 3.13.5
-      - name: Select exact feature source and prepare reviewed repairs
-        shell: bash
-        run: |
-          set -euo pipefail
-          cp .github/maintenance/audit-1380-inventory-repair.py "$RUNNER_TEMP/repair.py"
-          git fetch --no-tags --depth=1 origin f1dd3bc1c6ed68d2b4e5a0ed0c75d8bcf3e7f588
-          git checkout --detach f1dd3bc1c6ed68d2b4e5a0ed0c75d8bcf3e7f588
-          python3 -m pip install --requirement tools/requirements.lock
-          python3 "$RUNNER_TEMP/repair.py"
-      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
-        with:
-          components: rustfmt
-          targets: wasm32-wasip2,wasm32-unknown-unknown
-      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
-        with:
-          prefix-key: lsf-ci-dependencies-v2
-          shared-key: host-correctness
-          key: ubuntu-24.04
-          cache-targets: true
-          cache-bin: false
-          cache-workspace-crates: false
-          cache-all-crates: false
-          save-if: false
-      - name: Commit exact candidate and check Python consumers and contracts
-        shell: bash
-        run: |
-          set -euo pipefail
-          rustfmt --edition 2021 apps/latentd/tests/standalone_node/startup.rs
-          git diff --check
-          git config user.name 'LSF CI repair'
-          git config user.email 'ci-repair@users.noreply.github.com'
-          git add apps/latentd/tests/standalone_node/startup.rs tools/phase2_gate_resource_profile.py tools/tests/test_phase2_gate_resource.py tools/ci/contracts/python/test_phase2_gate_resource.py.json
-          git commit -m 'fix(audit): qualify the explicit journal topology without weakening inventory bounds'
-          echo "INVENTORY_CANDIDATE=$(git rev-parse HEAD)"
-          mkdir -p "$RUNNER_TEMP/audit-inventory"
-          python3 -m unittest discover -s tools/tests -p 'test_phase2_gate*.py' > "$RUNNER_TEMP/audit-inventory/python.log" 2>&1 || { tail -100 "$RUNNER_TEMP/audit-inventory/python.log"; exit 1; }
-          tail -12 "$RUNNER_TEMP/audit-inventory/python.log"
-          python3 -m unittest tools.tests.test_ci_contracts tools.tests.test_build_source_capacity > "$RUNNER_TEMP/audit-inventory/contracts.log" 2>&1 || { tail -100 "$RUNNER_TEMP/audit-inventory/contracts.log"; exit 1; }
-          tail -12 "$RUNNER_TEMP/audit-inventory/contracts.log"
-          python3 tools/ci_coverage.py --receipt target/ci/audit-inventory-coverage.json
-          cp target/ci/audit-inventory-coverage.json "$RUNNER_TEMP/audit-inventory/coverage.json"
-      - name: Preserve candidate after Python and contract checks
+      - name: Read bounded error context from the three original failed jobs
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
-          set -euo pipefail
-          test "$(git show -s --format=%P HEAD)" = f1dd3bc1c6ed68d2b4e5a0ed0c75d8bcf3e7f588
-          test -z "$(git status --porcelain --untracked-files=normal)"
-          auth=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)
-          git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $auth" push origin HEAD:refs/heads/ci/audit-1380-inventory-f1dd3bc
-          unset auth GH_TOKEN
-          git show --stat --oneline HEAD
-          git diff HEAD^ HEAD > "$RUNNER_TEMP/audit-inventory/repair.patch"
-      - name: Run the exact failing real node startup and restart test
-        shell: bash
-        run: |
-          set -euo pipefail
-          cargo test -p latentd --test standalone_node --all-features --locked listener_authentication_inventory_restart_and_clean_shutdown -- --exact --nocapture > "$RUNNER_TEMP/audit-inventory/startup.log" 2>&1 || { tail -100 "$RUNNER_TEMP/audit-inventory/startup.log"; exit 1; }
-          tail -12 "$RUNNER_TEMP/audit-inventory/startup.log"
-      - name: Retain bounded validation evidence
-        if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
-        with:
-          name: audit-1380-inventory-validation
-          path: ${{ runner.temp }}/audit-inventory/
-          retention-days: 7
-          if-no-files-found: warn
+          python3 - <<'PY'
+          import os,re,urllib.request,urllib.error
+          base='https://api.github.com/repos/KirilsTurkins/latent-service-fabric'
+          headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','User-Agent':'lsf-ci-diagnosis'}
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self,req,fp,code,msg,hdrs,newurl): return None
+          for job in (120980289873,120992103528,120980289348):
+              request=urllib.request.Request(base+'/actions/jobs/'+str(job)+'/logs',headers=headers)
+              try:
+                  response=urllib.request.build_opener(NoRedirect).open(request,timeout=30)
+              except urllib.error.HTTPError as error:
+                  assert error.code in (301,302,303,307,308)
+                  location=error.headers['Location'];assert location.startswith('https://')
+                  response=urllib.request.urlopen(location,timeout=30)
+              with response: data=response.read(32*1024*1024+1)
+              assert len(data)<=32*1024*1024
+              lines=re.sub(r'\x1b\[[0-9;]*m','',data.decode('utf-8-sig')).splitlines()
+              hits=[i for i,line in enumerate(lines) if re.search(r'panicked at|FAIL:|test .*FAILED|error\[|error:|\[error\]|failed:|Error:|Traceback',line)]
+              positions=sorted({n for i in hits[-8:] for n in range(max(0,i-4),min(len(lines),i+14))})
+              text='\n'.join(lines[i] for i in positions)
+              print('JOB',job,'\n'+text[-20000:],flush=True)
+          PY
