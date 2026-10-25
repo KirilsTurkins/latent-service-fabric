@@ -17,6 +17,17 @@ CLOCK = 'sdk/typescript-guest/activation/clock-globals.d.ts'
 PROVIDER = '@types/node/'
 FILES = ('package.json', 'index.d.ts', 'web-globals/abortcontroller.d.ts',
          'web-globals/performance.d.ts', 'perf_hooks.d.ts')
+INLINE_FILES = tuple(name for name in FILES if name != 'web-globals/performance.d.ts')
+INLINE_LAYOUT = 'inline-performance-value-v1'
+INLINE_PERFORMANCE_IMPORT = '''    import {
+        performance as _performance,
+        PerformanceEntry as _PerformanceEntry,
+        PerformanceMark as _PerformanceMark,
+        PerformanceMeasure as _PerformanceMeasure,
+        PerformanceObserver as _PerformanceObserver,
+        PerformanceObserverEntryList as _PerformanceObserverEntryList,
+        PerformanceResourceTiming as _PerformanceResourceTiming,
+    } from "perf_hooks";'''
 SIGNAL = """declare var AbortSignal: {
     abort(reason?: any): AbortSignal;
     timeout(milliseconds: number): AbortSignal;
@@ -50,13 +61,15 @@ def select(closure):
     partial = any(name.startswith(PROVIDER) for name in files)
     if not providers and not partial:
         return None
-    if providers != [PROVIDER+'package.json'] or not all(PROVIDER+name in files for name in FILES):
+    separate = PROVIDER+'web-globals/performance.d.ts' in files
+    required = FILES if separate else INLINE_FILES
+    if providers != [PROVIDER+'package.json'] or not all(PROVIDER+name in files for name in required):
         raise ValueError('standard-global-types-ambiguous-or-incomplete-provider')
-    selected = [files[PROVIDER+name] for name in FILES]
+    selected = [files[PROVIDER+name] for name in required]
     if any(type(row['size']) is not int or not 0 < row['size'] <= 1024**2 for row in selected) or sum(row['size'] for row in selected) > 2*1024**2:
         raise ValueError('standard-global-types-provider-bound')
     content = {}
-    for name in FILES:
+    for name in required:
         row = files[PROVIDER+name]
         data = (read_file(closure.work/tree['mount']/PROVIDER/name, 1024**2)
                 if isinstance(closure, Closure) else closure.store.get(row['digest'], row['size']))
@@ -74,12 +87,42 @@ def select(closure):
                 or int(key[2:].split('.')[0]) >= 7 for key in versions)):
         raise ValueError('standard-global-types-ambiguous-provider-entrypoint')
     index = content['index.d.ts'].decode('utf-8')
-    for name in FILES[2:]:
+    for name in required[2:]:
         if index.count('/// <reference path="'+name+'" />') != 1:
             raise ValueError('standard-global-types-incomplete-provider-reference')
+    inline_marker = '_performance' in content['perf_hooks.d.ts'].decode('utf-8')
+    if separate:
+        if inline_marker:
+            raise ValueError('standard-global-types-mixed-performance-layout')
+    else:
+        if 'web-globals/performance.d.ts' in index:
+            raise ValueError('standard-global-types-incomplete-provider-reference')
+        inline_performance_value(content['perf_hooks.d.ts'])
     return {'inputIdentity': closure.identity, 'mount': tree['mount'],
         'package': {key:package[key] for key in ('name','version')}, 'content': content,
-        'files': [{'path': tree['mount']+'/'+PROVIDER+name, **identity(content[name])} for name in FILES]}
+        'files': [{'path': tree['mount']+'/'+PROVIDER+name, **identity(content[name])} for name in required]}
+
+
+def inline_performance_value(data):
+    """One captured inline declaration grammar, with its real value alias."""
+    source = data.decode('utf-8').replace('\r\n','\n')
+    anchor = '        var performance: '
+    if (source.count(INLINE_PERFORMANCE_IMPORT) != 1 or source.count(anchor) != 1
+            or len(re.findall(r'\b_performance\b', source)) != 2):
+        raise ValueError('standard-global-types-unreviewed-inline-performance')
+    tail = source.split(anchor,1)[1][:8192]
+    depth = 0
+    for index, character in enumerate(tail):
+        if character == '{': depth += 1
+        elif character == '}': depth -= 1
+        elif character == ';' and depth == 0:
+            value = tail[:index]
+            if ' '.join(value.split()) != ('typeof globalThis extends { onmessage: any; '
+                    'performance: infer T; } ? T : typeof _performance'):
+                raise ValueError('standard-global-types-unreviewed-inline-performance')
+            return value.replace('typeof _performance', 'typeof import("node:perf_hooks").performance')
+        if depth < 0: break
+    raise ValueError('standard-global-types-provider-variable-bound')
 
 
 def node_variable(data, name):
@@ -125,14 +168,17 @@ def compose(provider, runtime, clock):
     runtime = replace_once(runtime, CONTROLLER, finite_controller+'\ndeclare var AbortController: '+controller+';')
     runtime = '/// <reference types="node" />\n'+runtime
     if clock is not None:
-        perf_source = provider['content']['web-globals/performance.d.ts']
-        if perf_source.decode('utf-8').count('import * as perf_hooks from "node:perf_hooks";') != 1:
-            raise ValueError('standard-global-types-unreviewed-performance-import')
-        performance = node_variable(perf_source, 'performance')
-        if performance.count('perf_hooks.Performance') != 1:
-            raise ValueError('standard-global-types-unreviewed-performance-type')
-        # Same captured module type, with its local namespace alias made explicit.
-        performance = performance.replace('perf_hooks.Performance', 'import("node:perf_hooks").Performance')
+        if 'web-globals/performance.d.ts' in provider['content']:
+            perf_source = provider['content']['web-globals/performance.d.ts']
+            if perf_source.decode('utf-8').count('import * as perf_hooks from "node:perf_hooks";') != 1:
+                raise ValueError('standard-global-types-unreviewed-performance-import')
+            performance = node_variable(perf_source, 'performance')
+            if performance.count('perf_hooks.Performance') != 1:
+                raise ValueError('standard-global-types-unreviewed-performance-type')
+            # Same captured module type, with its local namespace alias made explicit.
+            performance = performance.replace('perf_hooks.Performance', 'import("node:perf_hooks").Performance')
+        else:
+            performance = inline_performance_value(provider['content']['perf_hooks.d.ts'])
         finite_performance = PERFORMANCE.replace('declare var performance: {', 'interface Performance {').removesuffix(';')
         clock = replace_once(clock, PERFORMANCE, finite_performance+'\ndeclare var performance: '+performance+';')
     runtime = runtime.encode()
@@ -147,6 +193,8 @@ def compose(provider, runtime, clock):
     if clock is not None:
         receipt['originals'][CLOCK] = identity(original_clock)
         receipt['derived']['clock-runtime-globals.d.ts'] = {**identity(clock),'text':clock.decode()}
+    if 'web-globals/performance.d.ts' not in provider['content']:
+        receipt['providerLayout'] = INLINE_LAYOUT
     if len(canonical(receipt)) > 65536:
         raise ValueError('standard-global-types-receipt-bound')
     return runtime, clock, receipt
