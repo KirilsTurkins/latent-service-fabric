@@ -1,0 +1,548 @@
+{
+  "schemaVersion": "latent.typescript.node-net-evidence.v1",
+  "status": "passed",
+  "scope": "six-normal-signed-socket-reference-cases-only",
+  "issue": 745,
+  "pullRequest": 1435,
+  "qualifiedSource": {
+    "commit": "a7cae2fbd6f1048bd8727792daa65e8e6de3f040",
+    "tree": "fc58e16d8d02c62c58272b2ad9787f4e97ac5ee9"
+  },
+  "owning": {
+    "runId": 40147756239,
+    "jobId": 121032656231,
+    "conclusion": "success",
+    "artifact": {
+      "id": 12581229639,
+      "bytes": 5605999,
+      "sha256": "sha256:7ad3b59202356dad17b4740e96e2de0b4221f2313bbb13b80abcdbcad92cb5d8"
+    },
+    "rawReceiptPath": "typescript-borrow-signed/NODE-NET-SIGNED.json",
+    "rawReceipt": {
+      "bytes": 128775,
+      "sha256": "sha256:eeef012068c8a2b8a85f4385319bdd025561e561d645684ceb8fce1f8e4f094a"
+    }
+  },
+  "referenceProfile": {
+    "activationRuntimeProfile": "activation-owned-v1",
+    "name": "node-net-reference-t32-q32-n128-v1",
+    "preparation": {
+      "backend": "wasmtime-component-phase-1",
+      "componentDigest": "sha256:7fc8516ceef1253ec3f64a1a6dc9a56f8a4eb033ea59569bea5297e823157f43",
+      "cpuFeatureSet": "host-baseline",
+      "engineConfigurationDigest": "blake3:c7a3206e4247aa3a841b3ce4c7dd509935840ce70768c4a691d4d8a6a8f16bc5",
+      "engineVersion": "48.0.7",
+      "publication": "publication:sha256:7264b571e20e00f2494db80a76cdd0ef728306f65d643aa8ff6fdd723cb9de1c",
+      "release": "sha256:7fc8516ceef1253ec3f64a1a6dc9a56f8a4eb033ea59569bea5297e823157f43",
+      "targetTriple": "x86_64-unknown-linux-gnu"
+    },
+    "runtimeLimits": {
+      "executors": 2,
+      "native": 128,
+      "queuedWork": 32,
+      "results": 8,
+      "tasks": 32,
+      "timers": 8,
+      "waits": 8
+    },
+    "runtimeLimitsConfiguration": "RuntimeLimits { tasks: 32, executors: 2, queued_work: 32, waits: 8, timers: 8, results: 8, native_owners: 128 }"
+  },
+  "products": {
+    "component": {
+      "sha256": "sha256:7fc8516ceef1253ec3f64a1a6dc9a56f8a4eb033ea59569bea5297e823157f43",
+      "bytes": 12479645
+    },
+    "selection": {
+      "sha256": "sha256:78fe1e3ba7d5be00ebb924a5e7393ad4a47bd2396bb87bc11524986d123f4a09",
+      "bytes": 1169
+    },
+    "normalBuild": {
+      "sha256": "sha256:f29dd91f01dc9603bff399fca9ab367c857d76f66a97f22aac3eb9e11ea7d7ac",
+      "bytes": 3038
+    }
+  },
+  "executedBuilds": {
+    "engineBuildCount": 0,
+    "libraryBuildCount": 0,
+    "guestComponentBuildCount": 1
+  },
+  "verifiedEvidence": {
+    "safeCRCEntries": 803,
+    "recipeGitBlobs": 168,
+    "zeroExitCommands": 176,
+    "rawChannelsVerified": 352,
+    "actualCasesEqualRawProjection": true,
+    "rawOwnerSamples": 18,
+    "postRootAllSixZero": true
+  },
+  "sourceControls": {
+    "testsRun": 25,
+    "skipped": 0,
+    "failures": 0,
+    "errors": 0
+  },
+  "cases": [
+    {
+      "case": "node-net-echo",
+      "mode": 0,
+      "index": 0,
+      "status": "succeeded",
+      "cpuFuel": 334705906,
+      "peakMemoryBytes": 9949633,
+      "outboundRequests": 1,
+      "grantFuel": 1000000000,
+      "grantMemoryBytes": 134217728,
+      "grantWallTimeMillis": 120000,
+      "outboundCeiling": 8,
+      "sameBackend": true,
+      "kernelRetirementQualified": false,
+      "publicErrorCode": "none",
+      "publicTrap": null,
+      "recordedAdmissionRefusal": false,
+      "heldOwnerBeforePermit": null,
+      "controlPeerEOF": false,
+      "primaryReleasedAfterObservation": false,
+      "postRoot": {
+        "activeActivations": 0,
+        "io": {
+          "buffers": 0,
+          "calls": 0,
+          "metadataBytes": 0,
+          "queued": 0,
+          "resultBytes": 0,
+          "running": 0,
+          "stagedBytes": 0,
+          "streams": 0
+        },
+        "kernelRetirementQualified": false,
+        "liveInstances": 0,
+        "liveStores": 0,
+        "poolConnections": 0,
+        "poolRunningRequests": 0,
+        "queuedActivations": 0,
+        "stage": "node-net-post-root-idle",
+        "stream": {
+          "acceptedWriteBytes": 0,
+          "connections": 0,
+          "deliveredReadBytes": 0,
+          "inputBudgetBytes": 0,
+          "owners": 0,
+          "pendingOperations": 0,
+          "retainedChunks": 0,
+          "retired": false
+        }
+      },
+      "originalFailureCause": "not-applicable",
+      "guardAttribution": "not-applicable"
+    },
+    {
+      "case": "node-net-sibling",
+      "mode": 1,
+      "index": 1,
+      "status": "succeeded",
+      "cpuFuel": 539425560,
+      "peakMemoryBytes": 12146736,
+      "outboundRequests": 2,
+      "grantFuel": 1000000000,
+      "grantMemoryBytes": 134217728,
+      "grantWallTimeMillis": 120000,
+      "outboundCeiling": 8,
+      "sameBackend": true,
+      "kernelRetirementQualified": false,
+      "publicErrorCode": "none",
+      "publicTrap": null,
+      "recordedAdmissionRefusal": false,
+      "heldOwnerBeforePermit": {
+        "activeActivations": 1,
+        "io": {
+          "buffers": 4,
+          "calls": 2,
+          "metadataBytes": 12288,
+          "queued": 0,
+          "resultBytes": 0,
+          "running": 2,
+          "stagedBytes": 65536,
+          "streams": 2
+        },
+        "kernelRetirementQualified": false,
+        "liveInstances": 1,
+        "liveStores": 1,
+        "poolConnections": 2,
+        "poolRunningRequests": 2,
+        "queuedActivations": 0,
+        "stage": "node-net-before-peer-permit",
+        "stream": {
+          "acceptedWriteBytes": 0,
+          "connections": 2,
+          "deliveredReadBytes": 0,
+          "inputBudgetBytes": 0,
+          "owners": 2,
+          "pendingOperations": 2,
+          "retainedChunks": 2,
+          "retired": false
+        }
+      },
+      "controlPeerEOF": true,
+      "primaryReleasedAfterObservation": false,
+      "postRoot": {
+        "activeActivations": 0,
+        "io": {
+          "buffers": 0,
+          "calls": 0,
+          "metadataBytes": 0,
+          "queued": 0,
+          "resultBytes": 0,
+          "running": 0,
+          "stagedBytes": 0,
+          "streams": 0
+        },
+        "kernelRetirementQualified": false,
+        "liveInstances": 0,
+        "liveStores": 0,
+        "poolConnections": 0,
+        "poolRunningRequests": 0,
+        "queuedActivations": 0,
+        "stage": "node-net-post-root-idle",
+        "stream": {
+          "acceptedWriteBytes": 0,
+          "connections": 0,
+          "deliveredReadBytes": 0,
+          "inputBudgetBytes": 0,
+          "owners": 0,
+          "pendingOperations": 0,
+          "retainedChunks": 0,
+          "retired": false
+        }
+      },
+      "originalFailureCause": "not-applicable",
+      "guardAttribution": "not-applicable"
+    },
+    {
+      "case": "node-net-denied",
+      "mode": 2,
+      "index": 2,
+      "status": "succeeded",
+      "cpuFuel": 28794582,
+      "peakMemoryBytes": 9801845,
+      "outboundRequests": 0,
+      "grantFuel": 1000000000,
+      "grantMemoryBytes": 134217728,
+      "grantWallTimeMillis": 120000,
+      "outboundCeiling": 8,
+      "sameBackend": true,
+      "kernelRetirementQualified": false,
+      "publicErrorCode": "none",
+      "publicTrap": null,
+      "recordedAdmissionRefusal": false,
+      "heldOwnerBeforePermit": null,
+      "controlPeerEOF": false,
+      "primaryReleasedAfterObservation": false,
+      "postRoot": {
+        "activeActivations": 0,
+        "io": {
+          "buffers": 0,
+          "calls": 0,
+          "metadataBytes": 0,
+          "queued": 0,
+          "resultBytes": 0,
+          "running": 0,
+          "stagedBytes": 0,
+          "streams": 0
+        },
+        "kernelRetirementQualified": false,
+        "liveInstances": 0,
+        "liveStores": 0,
+        "poolConnections": 0,
+        "poolRunningRequests": 0,
+        "queuedActivations": 0,
+        "stage": "node-net-post-root-idle",
+        "stream": {
+          "acceptedWriteBytes": 0,
+          "connections": 0,
+          "deliveredReadBytes": 0,
+          "inputBudgetBytes": 0,
+          "owners": 0,
+          "pendingOperations": 0,
+          "retainedChunks": 0,
+          "retired": false
+        }
+      },
+      "originalFailureCause": "not-applicable",
+      "guardAttribution": "not-applicable"
+    },
+    {
+      "case": "node-net-destroy",
+      "mode": 3,
+      "index": 3,
+      "status": "succeeded",
+      "cpuFuel": 401476400,
+      "peakMemoryBytes": 10082352,
+      "outboundRequests": 2,
+      "grantFuel": 1000000000,
+      "grantMemoryBytes": 134217728,
+      "grantWallTimeMillis": 120000,
+      "outboundCeiling": 8,
+      "sameBackend": true,
+      "kernelRetirementQualified": false,
+      "publicErrorCode": "none",
+      "publicTrap": null,
+      "recordedAdmissionRefusal": false,
+      "heldOwnerBeforePermit": {
+        "activeActivations": 1,
+        "io": {
+          "buffers": 4,
+          "calls": 2,
+          "metadataBytes": 12288,
+          "queued": 0,
+          "resultBytes": 0,
+          "running": 2,
+          "stagedBytes": 65536,
+          "streams": 2
+        },
+        "kernelRetirementQualified": false,
+        "liveInstances": 1,
+        "liveStores": 1,
+        "poolConnections": 2,
+        "poolRunningRequests": 2,
+        "queuedActivations": 0,
+        "stage": "node-net-before-peer-permit",
+        "stream": {
+          "acceptedWriteBytes": 0,
+          "connections": 2,
+          "deliveredReadBytes": 0,
+          "inputBudgetBytes": 0,
+          "owners": 2,
+          "pendingOperations": 2,
+          "retainedChunks": 2,
+          "retired": false
+        }
+      },
+      "controlPeerEOF": true,
+      "primaryReleasedAfterObservation": false,
+      "postRoot": {
+        "activeActivations": 0,
+        "io": {
+          "buffers": 0,
+          "calls": 0,
+          "metadataBytes": 0,
+          "queued": 0,
+          "resultBytes": 0,
+          "running": 0,
+          "stagedBytes": 0,
+          "streams": 0
+        },
+        "kernelRetirementQualified": false,
+        "liveInstances": 0,
+        "liveStores": 0,
+        "poolConnections": 0,
+        "poolRunningRequests": 0,
+        "queuedActivations": 0,
+        "stage": "node-net-post-root-idle",
+        "stream": {
+          "acceptedWriteBytes": 0,
+          "connections": 0,
+          "deliveredReadBytes": 0,
+          "inputBudgetBytes": 0,
+          "owners": 0,
+          "pendingOperations": 0,
+          "retainedChunks": 0,
+          "retired": false
+        }
+      },
+      "originalFailureCause": "not-applicable",
+      "guardAttribution": "not-applicable"
+    },
+    {
+      "case": "node-net-unclosed",
+      "mode": 4,
+      "index": 4,
+      "status": "failed-with-unclosed-stream-owners",
+      "cpuFuel": 405284640,
+      "peakMemoryBytes": 12031406,
+      "outboundRequests": 2,
+      "grantFuel": 1000000000,
+      "grantMemoryBytes": 134217728,
+      "grantWallTimeMillis": 120000,
+      "outboundCeiling": 8,
+      "sameBackend": true,
+      "kernelRetirementQualified": false,
+      "publicErrorCode": "guest-trap",
+      "publicTrap": {
+        "code": "guest-trap",
+        "kind": "unreachable-code",
+        "message": "guest trapped: unreachable-code",
+        "phase": null
+      },
+      "recordedAdmissionRefusal": false,
+      "heldOwnerBeforePermit": {
+        "activeActivations": 1,
+        "io": {
+          "buffers": 4,
+          "calls": 2,
+          "metadataBytes": 12288,
+          "queued": 0,
+          "resultBytes": 0,
+          "running": 2,
+          "stagedBytes": 65536,
+          "streams": 2
+        },
+        "kernelRetirementQualified": false,
+        "liveInstances": 1,
+        "liveStores": 1,
+        "poolConnections": 2,
+        "poolRunningRequests": 2,
+        "queuedActivations": 0,
+        "stage": "node-net-before-peer-permit",
+        "stream": {
+          "acceptedWriteBytes": 0,
+          "connections": 2,
+          "deliveredReadBytes": 0,
+          "inputBudgetBytes": 0,
+          "owners": 2,
+          "pendingOperations": 2,
+          "retainedChunks": 2,
+          "retired": false
+        }
+      },
+      "controlPeerEOF": true,
+      "primaryReleasedAfterObservation": true,
+      "postRoot": {
+        "activeActivations": 0,
+        "io": {
+          "buffers": 0,
+          "calls": 0,
+          "metadataBytes": 0,
+          "queued": 0,
+          "resultBytes": 0,
+          "running": 0,
+          "stagedBytes": 0,
+          "streams": 0
+        },
+        "kernelRetirementQualified": false,
+        "liveInstances": 0,
+        "liveStores": 0,
+        "poolConnections": 0,
+        "poolRunningRequests": 0,
+        "queuedActivations": 0,
+        "stage": "node-net-post-root-idle",
+        "stream": {
+          "acceptedWriteBytes": 0,
+          "connections": 0,
+          "deliveredReadBytes": 0,
+          "inputBudgetBytes": 0,
+          "owners": 0,
+          "pendingOperations": 0,
+          "retainedChunks": 0,
+          "retired": false
+        }
+      },
+      "originalFailureCause": "unknown",
+      "guardAttribution": "source-only"
+    },
+    {
+      "case": "node-net-fresh",
+      "mode": 0,
+      "index": 5,
+      "status": "succeeded",
+      "cpuFuel": 334705906,
+      "peakMemoryBytes": 9949639,
+      "outboundRequests": 1,
+      "grantFuel": 1000000000,
+      "grantMemoryBytes": 134217728,
+      "grantWallTimeMillis": 120000,
+      "outboundCeiling": 8,
+      "sameBackend": true,
+      "kernelRetirementQualified": false,
+      "publicErrorCode": "none",
+      "publicTrap": null,
+      "recordedAdmissionRefusal": false,
+      "heldOwnerBeforePermit": null,
+      "controlPeerEOF": false,
+      "primaryReleasedAfterObservation": false,
+      "postRoot": {
+        "activeActivations": 0,
+        "io": {
+          "buffers": 0,
+          "calls": 0,
+          "metadataBytes": 0,
+          "queued": 0,
+          "resultBytes": 0,
+          "running": 0,
+          "stagedBytes": 0,
+          "streams": 0
+        },
+        "kernelRetirementQualified": false,
+        "liveInstances": 0,
+        "liveStores": 0,
+        "poolConnections": 0,
+        "poolRunningRequests": 0,
+        "queuedActivations": 0,
+        "stage": "node-net-post-root-idle",
+        "stream": {
+          "acceptedWriteBytes": 0,
+          "connections": 0,
+          "deliveredReadBytes": 0,
+          "inputBudgetBytes": 0,
+          "owners": 0,
+          "pendingOperations": 0,
+          "retainedChunks": 0,
+          "retired": false
+        }
+      },
+      "originalFailureCause": "not-applicable",
+      "guardAttribution": "not-applicable"
+    }
+  ],
+  "retainedPriorFailedProfiles": [
+    {
+      "name": "Task16-stress",
+      "limits": [
+        16,
+        2,
+        16,
+        8,
+        8,
+        8,
+        64
+      ],
+      "source": "1b5299de7c3b723ed6dd8ce24921d11388bc2ecb",
+      "runId": 40143420546,
+      "artifactId": 12579782624,
+      "status": "failed",
+      "completedSignedCells": 0,
+      "firstRefusal": "task-quota",
+      "postRootExternalOwnersZero": true
+    },
+    {
+      "name": "node-net-reference-t32-q32-v1",
+      "limits": [
+        32,
+        2,
+        32,
+        8,
+        8,
+        8,
+        64
+      ],
+      "source": "75132abdf208557b313c8de8475aefd4d9addabd",
+      "runId": 40145622418,
+      "artifactId": 12581086382,
+      "status": "failed",
+      "completedSignedCells": 1,
+      "firstCompletedCase": "node-net-echo",
+      "firstRefusal": "native-quota",
+      "siblingTwoReadBarrierObserved": true,
+      "postRootExternalOwnersZero": true
+    }
+  ],
+  "qualificationLimits": {
+    "wholeAC7": false,
+    "wholeCostQualification": false,
+    "minimumProfileEstablished": false,
+    "productionEnablement": false,
+    "kernelRetirementQualified": false,
+    "automaticAcceptedCloseDrainage": false,
+    "arbitraryPublishedNpmClientQualification": false,
+    "fullNodeStreamCompatibility": false
+  }
+}

@@ -1,4 +1,4 @@
-# Finite ordinary TCP Socket source profile
+# Finite ordinary TCP Socket profile
 
 `lsf-node-net-tcp-v1` supplies `net` and `node:net` through a compiler-owned
 module over the original `latent:network/streams@0.1.0` operations. It requires
@@ -30,7 +30,7 @@ The slot is reserved before the original connect starts.
 
 Native operations retain their original logical result and separate borrow
 release acknowledgement. Destroy first requests cancellation of admitted
-operations, waits for those original acknowledgements and the workers' chunk
+operations, waits for those original acknowledgements and chunk
 cleanup, then consumes the original connection through close. A failed or
 unknown acknowledgement/destruction retains the private registry entry.
 Borrow release never certifies physical IoCall/IoTransfer retirement.
@@ -135,7 +135,7 @@ storage/observers and readiness support, independently of Task lifetime. The
 numerical Native-per-Task ratio is not a law, minimum or upper-cost theorem.
 Reachability cannot be determined from these aggregate owner counts.
 
-The new profile is not a repair or passing relabel of either failed programme,
+This profile is not a repair or passing relabel of either failed programme,
 a production default, or a demonstrated minimum. Its six original signed oracles
 remain unchanged. No automatic next increase or retry is authorized if it fails.
 No engine, GC, ownership/refund or public Socket implementation change
@@ -151,7 +151,7 @@ Authenticity still depends on the source-bound owning workflow and raw retained
 command channels; these observations grant no authority. Whole #745 AC7,
 ordinary published client compatibility and the whole-cost criterion remain open.
 
-The pending owning programme extends the existing signed stream target with
+The successful finite owning programme extends the existing signed stream target with
 one normal no-Gate Socket component. Its six cells cover echo/EOF and ordinary
 close events, a sibling write while the primary read is held, zero-contact
 alternate-endpoint denial, destroy with original cancellation acknowledgements,
@@ -172,4 +172,35 @@ Original JavaScript error text is
 intentionally redacted: the original failure cause remains unknown and guard
 attribution is source-only. This does not prove that the guard instruction ran;
 it does not qualify the complete diagnostics or root-quiescence contract.
-No result from this pending programme is claimed here.
+[Run 40147756239](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40147756239)
+passed all six original signed cases at source
+`a7cae2fbd6f1048bd8727792daa65e8e6de3f040`, using the declared
+`node-net-reference-t32-q32-n128-v1` profile. The actual factory configuration,
+preparation identity and normal component digest matched in every case and the
+terminal receipt. All 25 pinned source controls passed without skips. One
+normal component was built; the existing qualified engine and library were
+reused unchanged, with zero engine/library builds.
+
+| Actual signed cell | Observed result | Fuel consumed | Peak memory bytes |
+| --- | --- | ---: | ---: |
+| Echo/EOF/ordinary close | Succeeded | 334,705,906 | 9,949,633 |
+| Held-read sibling write | Succeeded | 539,425,560 | 12,146,736 |
+| Alternate endpoint denied | Succeeded; zero outbound connects | 28,794,582 | 9,801,845 |
+| Destroy/cancel/close | Succeeded | 401,476,400 | 10,082,352 |
+| Unclosed-root cleanup negative | Failed with unclosed stream owners, as required | 405,284,640 | 12,031,406 |
+| Fresh on same backend | Succeeded | 334,705,906 | 9,949,639 |
+
+The three held-read cells retained the measured original owners before peer
+permission. All six post-root stream/I/O/pool/Store/activation samples were zero.
+The unclosed-root original cause remains unknown and guard attribution remains
+source-only; no private error text or particular instruction is inferred.
+These measurements describe these executions, not an upper-cost theorem.
+
+The [public evidence receipt](../testing/typescript-node-net-evidence.json)
+binds artifact `12581229639` (5,605,999 bytes,
+`sha256:7ad3b59202356dad17b4740e96e2de0b4221f2313bbb13b80abcdbcad92cb5d8`),
+168 exact source-recipe Git blobs, 176 successful raw commands, the selected
+limits and all six original case results. It preserves both failed profile
+histories. This does not qualify automatic close drainage, arbitrary published
+npm clients, full Node stream compatibility, a minimum profile, whole #745 AC7,
+whole cost, the production kernel provider or production enablement.
