@@ -78,7 +78,8 @@ pub fn scenario() {
             assert_eq!(inventory.cache_summary.entries, 0);
             assert!(inventory.cache_entries.is_empty());
             assert!(inventory.topology.available && inventory.topology.complete);
-            assert_eq!(inventory.topology.entries.len(), 25);
+            assert_eq!(inventory.topology.entries.len(), 26);
+            assert_audit_topology(&inventory.topology.entries);
             assert_runtime_stack_topology(&inventory.topology.entries);
             assert_catalog_topology(&inventory.topology.entries);
             assert_compiler_topology(&inventory.topology.entries);
@@ -105,6 +106,28 @@ pub fn scenario() {
         }
     });
     runtimes.finish();
+}
+
+fn assert_audit_topology(entries: &[NodeTopologyEntry]) {
+    let mut matching = entries.iter().filter(|row| row.name == "audit-journal");
+    let row = matching
+        .next()
+        .expect("explicit audit configuration observation");
+    assert!(matching.next().is_none(), "duplicate audit row");
+    assert_eq!(row.kind, "store");
+    assert_eq!(row.ownership, ResourceOwnership::NodeFixed);
+    // This fixture does not configure audit. A row or retained handle is not
+    // a measurement of a live worker, including after the second node start.
+    assert_eq!((row.configured_count, row.active_count), (0, None));
+    assert_eq!(row.attributes.len(), 2);
+    assert_eq!(
+        row.attributes.get("profile").map(String::as_str),
+        Some("audit-capacity-v1")
+    );
+    assert_eq!(
+        row.attributes.get("measurementStatus").map(String::as_str),
+        Some("not-configured")
+    );
 }
 
 fn assert_catalog_topology(entries: &[NodeTopologyEntry]) {
