@@ -23,7 +23,6 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-          show-progress: false
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
         with:
           python-version: 3.13.5
@@ -66,14 +65,9 @@ jobs:
           tail -12 "$RUNNER_TEMP/audit-inventory/python.log"
           python3 -m unittest tools.tests.test_ci_contracts tools.tests.test_build_source_capacity > "$RUNNER_TEMP/audit-inventory/contracts.log" 2>&1 || { tail -100 "$RUNNER_TEMP/audit-inventory/contracts.log"; exit 1; }
           tail -12 "$RUNNER_TEMP/audit-inventory/contracts.log"
-          python3 tools/ci_coverage.py --receipt "$RUNNER_TEMP/audit-inventory/coverage.json"
-      - name: Run the exact failing real node startup and restart test
-        shell: bash
-        run: |
-          set -euo pipefail
-          cargo test -p latentd --test standalone_node --all-features --locked listener_authentication_inventory_restart_and_clean_shutdown -- --exact --nocapture > "$RUNNER_TEMP/audit-inventory/startup.log" 2>&1 || { tail -100 "$RUNNER_TEMP/audit-inventory/startup.log"; exit 1; }
-          tail -12 "$RUNNER_TEMP/audit-inventory/startup.log"
-      - name: Preserve tested code on the isolated candidate branch
+          python3 tools/ci_coverage.py --receipt target/ci/audit-inventory-coverage.json
+          cp target/ci/audit-inventory-coverage.json "$RUNNER_TEMP/audit-inventory/coverage.json"
+      - name: Preserve candidate after Python and contract checks
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
@@ -86,6 +80,12 @@ jobs:
           unset auth GH_TOKEN
           git show --stat --oneline HEAD
           git diff HEAD^ HEAD > "$RUNNER_TEMP/audit-inventory/repair.patch"
+      - name: Run the exact failing real node startup and restart test
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test -p latentd --test standalone_node --all-features --locked listener_authentication_inventory_restart_and_clean_shutdown -- --exact --nocapture > "$RUNNER_TEMP/audit-inventory/startup.log" 2>&1 || { tail -100 "$RUNNER_TEMP/audit-inventory/startup.log"; exit 1; }
+          tail -12 "$RUNNER_TEMP/audit-inventory/startup.log"
       - name: Retain bounded validation evidence
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
