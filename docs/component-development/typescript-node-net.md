@@ -90,16 +90,44 @@ signed Socket qualification. Native handle/ACK holds, distinct cancellation
 acknowledgements, callback throws and caught synchronous emit errors are
 controlled separately. No host model count proves physical Task retirement.
 
-The new accepted-close mechanism and unchanged published
-`is-port-reachable@4.0.0` client are **pending signed qualification**. The normal
+The finite accepted-close mechanism and unchanged published
+`is-port-reachable@4.0.0` client passed signed qualification in
+[run 40157957656](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40157957656/job/121063276920)
+at source `d94290f662172df734029874d0c1d8188f56b7d7`. The normal
 npm capture pins its original 2,025-byte archive and all five published files,
 uses its declared ESM entrypoint and declarations, and executes no package
-hooks. The new programme retains all six original signed oracles and adds
-granted/denied ordinary-client cases. Its positive peer must receive a real
-FIN, withhold EOF while the original read and root remain live, then release
-EOF before success and physical idle. No result is inferred from host controls
-or the prior six-case receipt below. Runtime funding remains the same explicit
+hooks. One fresh normal component passed all eight signed oracles: the original
+six and granted/denied ordinary-client cases. All 30 pinned host controls passed
+with zero skips; the qualified engine and library were reused, with zero
+engine/library builds. Runtime funding remains the same explicit
 Task32/Queued32/Native128 reference profile, without a budget increase.
+
+The granted client's peer received real FIN, then withheld EOF while the
+original read was admitted and the actual invocation remained pending. The
+retained sample has one stream owner, connection, pending operation, retained
+chunk, Store and activation, with 32,768 staged I/O bytes and two buffers. Only
+after that sample did the peer release EOF. The ordinary client returned true;
+the independently denied endpoint returned false with zero outbound contacts.
+All eight post-root stream/I/O/pool/Store/activation samples were zero.
+
+| Actual published-client case | Outbound connects | Fuel consumed | Peak memory bytes |
+| --- | ---: | ---: | ---: |
+| Granted, real FIN and held EOF | 1 | 212,967,920 | 9,935,494 |
+| Denied alternate endpoint | 0 | 62,712,082 | 9,801,905 |
+
+The [published-client evidence receipt](../testing/typescript-node-net-client-evidence.json)
+retains all eight raw case rows, the actual reference profile, original five
+package-source hashes and SRI, 170 recipe identities and 176 successful command
+channels. Artifact `12585313760` is 5,619,715 bytes,
+`sha256:07f6613494bd1bfc7f3d38c4721bc26d5e36d3614a242860f56585cfd990641a`;
+the component is 12,486,226 bytes,
+`sha256:3f84558cecff5c1133aae4c982e7bc8f89c78629d08b557fdd22d5ba52c72c3c`.
+Original capture/build `runtimeQualification:pending` labels remain unchanged;
+these actual finite outcomes are recorded separately. The earlier six-case
+receipt and failed programmes below retain their original identities. This is
+EOF-only paused-end qualification for this client, not general paused-readable
+drainage, arbitrary package compatibility, kernel retirement, a minimum resource
+profile, whole #745 AC7, complete cost accounting or production enablement.
 
 The private Socket coordinator uses synchronous completion transitions driven
 by its existing original result/ACK observer jobs, without private async worker
@@ -177,7 +205,7 @@ the reader requires exact numeric limits and the same identity in all six cases
 and the terminal record. Its normal-build component digest must also match.
 Authenticity still depends on the source-bound owning workflow and raw retained
 command channels; these observations grant no authority. Whole #745 AC7,
-ordinary published client compatibility and the whole-cost criterion remain open.
+broader published-client compatibility and the whole-cost criterion remain open.
 
 The successful finite owning programme extends the existing signed stream target with
 one normal no-Gate Socket component. Its six cells cover echo/EOF and ordinary
@@ -229,6 +257,6 @@ binds artifact `12581229639` (5,605,999 bytes,
 `sha256:7ad3b59202356dad17b4740e96e2de0b4221f2313bbb13b80abcdbcad92cb5d8`),
 168 exact source-recipe Git blobs, 176 successful raw commands, the selected
 limits and all six original case results. It preserves both failed profile
-histories. This does not qualify automatic close drainage, arbitrary published
+histories. That original six-case programme does not qualify automatic close drainage, arbitrary published
 npm clients, full Node stream compatibility, a minimum profile, whole #745 AC7,
 whole cost, the production kernel provider or production enablement.
