@@ -33,7 +33,11 @@ jobs:
           head = '99a5bb10633df4280c32228367908381c8f36c34'
           development = '0ca8e0f574b3b8829c4691aa0d830e648f073a5e'
           def git(*args):
-              return subprocess.check_output(['git', *args], text=True, timeout=120)
+              result = subprocess.run(['git', *args], text=True, capture_output=True, timeout=120)
+              if result.returncode:
+                  print(result.stdout[-16000:], result.stderr[-8000:], flush=True)
+                  result.check_returncode()
+              return result.stdout
           assert git('rev-parse', 'HEAD').strip() == head
           assert not git('status', '--porcelain').strip()
           merged = subprocess.run(['git', 'merge', '--no-commit', '--no-ff', development], capture_output=True, text=True, timeout=120)
@@ -43,9 +47,6 @@ jobs:
           owner = 'tools/ci/contracts/owners/tools/build_dev_frontend.py.json'
           contract = 'tools/ci/contracts/python/test_dev_tools.py.json'
           assert merged.returncode == 1 and conflicts == {source, owner, contract}, conflicts
-          # Development already contains the same pure reader repair plus the
-          # additional selected-Net reader. Keep its exact source and reviewed
-          # fingerprint rather than deleting that newer dependency closure.
           for name in (source, owner, contract):
               (root / name).write_bytes(subprocess.check_output(['git', 'show', development + ':' + name]))
           expected_owner = json.loads((root / owner).read_text())
@@ -54,9 +55,6 @@ jobs:
           for required in ('guest_compatibility_context_build', 'guest_emitted_code',
                            'buffer_profile.py', '"net_profile", "runtime_profile"'):
               assert required in text
-          # Keep the source-capacity negative tests aligned with development's
-          # independently reviewed 74/82 MiB envelope. This merge does not raise
-          # a production, archive, or source allowance above development.
           path = root / 'tools/tests/test_build_source_capacity.py'
           text = path.read_text()
           for old, new in (('self.assertEqual(limits.max_total_bytes, 73 * 1024 * 1024)',
@@ -73,9 +71,6 @@ jobs:
           theirs = ci_contracts.semantic_record(json.loads(git('show', development + ':' + contract)))
           actual = ci_contracts.python_expectations(root)[module]
           assert set(actual['cases']) == set(ours['cases']) | set(theirs['cases'])
-          # Both sides' source test changes auto-merged. Preserve development's
-          # already-reviewed stronger HelperRuntimeImports fixture and the
-          # feature's additive isolated context/Buffer regression unchanged.
           for case in actual['cases']:
               selected = theirs if case in theirs['cases'] else ours
               assert actual['guards'][case] == selected['guards'][case], case
@@ -89,7 +84,9 @@ jobs:
           for name in ('tools/build_snapshot.py', 'tools/build_process.py',
                        'tools/ci/contracts/owners/tools/build_process.py.json'):
               assert (root / name).read_bytes() == subprocess.check_output(['git', 'show', development + ':' + name]), name
-          git('diff', '--cached', '--check')
+          # Check this PR's contribution, not whitespace already present in the
+          # incoming development history. Do not normalize reviewed bytes.
+          git('diff', '--cached', '--check', development)
           git('commit', '-m', 'merge: retain audit CI repairs with current development reader and source contracts')
           assert git('show', '-s', '--format=%P', 'HEAD').strip() == head + ' ' + development
           assert not git('status', '--porcelain').strip()
