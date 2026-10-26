@@ -3,6 +3,7 @@
   "before": {},
   "coverage": {},
   "definition": {
+    "if": "github.ref == 'refs/heads/test/sdk-738-stream-objects-20261026'",
     "name": "Eighteen current normal protected C objects without image or boot",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -67,7 +68,7 @@
   },
   "jobId": "normal-objects",
   "kind": "job",
-  "reviewReason": "Review bounded checkout depth16 for the short corrective history while preserving exact013c object/tree hard guards, unchanged18-object command/deadlines/limits and no fallback fetch or full-history authority.",
+  "reviewReason": "Review the fixed private four-translation-unit classdir compile mode: exact approved initialized-object source, fifty frozen inputs, original eighteen-object defaults preserved, same process/config/deadline/caps and NULL consumer; no runtime or fit claim.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/stream-provider-objects.yml"
 }

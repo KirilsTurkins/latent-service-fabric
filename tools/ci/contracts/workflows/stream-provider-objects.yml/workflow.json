@@ -9,7 +9,8 @@
     "on": {
       "push": {
         "branches": [
-          "test/sdk-738-stream-objects-20261026"
+          "test/sdk-738-stream-objects-20261026",
+          "test/sdk-738-classdir-objects-20261026"
         ]
       }
     },
@@ -18,9 +19,10 @@
     }
   },
   "requiredJobs": [
+    "classdir-objects",
     "normal-objects"
   ],
-  "reviewReason": "Review one unselected normal C object programme for the exact provider source checkpoint and strict SKB composition: eighteen objects, original config and bounded owner; no image, boot, consumer activation, useful fit or runtime qualification.",
+  "reviewReason": "Review the fixed private four-translation-unit classdir compile mode: exact approved initialized-object source, fifty frozen inputs, original eighteen-object defaults preserved, same process/config/deadline/caps and NULL consumer; no runtime or fit claim.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/stream-provider-objects.yml"
 }

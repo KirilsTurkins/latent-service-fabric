@@ -24,6 +24,15 @@ WORKFLOW = '.github/workflows/stream-provider-objects.yml'
 SOURCE_PATHS = ('research/standard-outbound/linux-6.12-lineage/device-prepaid.h', 'research/standard-outbound/linux-6.12-lineage/factory-stream-find-vqs.c', 'research/standard-outbound/linux-6.12-lineage/factory-stream-material-arena.c', 'research/standard-outbound/linux-6.12-lineage/factory-stream-material-plan.c', 'research/standard-outbound/linux-6.12-lineage/factory-stream-netdev-address.c', 'research/standard-outbound/linux-6.12-lineage/factory-stream-netdev-core.c', 'research/standard-outbound/linux-6.12-lineage/factory-stream-netdev-cpu.c', 'research/standard-outbound/linux-6.12-lineage/factory-stream-netdev-fixed.c', 'research/standard-outbound/linux-6.12-lineage/factory-stream-netdev-name.c', 'research/standard-outbound/linux-6.12-lineage/factory-stream-operations.c', 'research/standard-outbound/linux-6.12-lineage/factory-stream-retirement.c', 'research/standard-outbound/linux-6.12-lineage/factory-stream-root-final-free.c', 'research/standard-outbound/linux-6.12-lineage/factory-stream-rss.c', 'research/standard-outbound/linux-6.12-lineage/factory-stream-rx-preallocate.c', 'research/standard-outbound/linux-6.12-lineage/factory-stream-stop.c', 'research/standard-outbound/linux-6.12-lineage/factory-stream-udp-cork.c', 'research/standard-outbound/linux-6.12-lineage/stream-material-geometry-private.h', 'research/standard-outbound/linux-6.12-lineage/stream-net-geometry.c', 'research/standard-outbound/linux-6.12-lineage/stream-net-material-geometry.c', 'research/standard-outbound/linux-6.12-lineage/stream-netdev-core-private.h', 'research/standard-outbound/linux-6.12-lineage/stream-netdev-cpu-private.h', 'research/standard-outbound/linux-6.12-lineage/stream-netdev-cpu.c', 'research/standard-outbound/linux-6.12-lineage/stream-netdev-fixed-geometry-private.h', 'research/standard-outbound/linux-6.12-lineage/stream-netdev-fixed-geometry.c', 'research/standard-outbound/linux-6.12-lineage/stream-netdev-fixed-private.h', 'research/standard-outbound/linux-6.12-lineage/stream-netdev-name-private.h', 'research/standard-outbound/linux-6.12-lineage/stream-netdev-private.h', 'research/standard-outbound/linux-6.12-lineage/stream-operation-private.h', 'research/standard-outbound/linux-6.12-lineage/stream-owned-ring.c', 'research/standard-outbound/linux-6.12-lineage/stream-pci-material-geometry.c', 'research/standard-outbound/linux-6.12-lineage/stream-protocol-allocation.c', 'research/standard-outbound/linux-6.12-lineage/stream-ring-geometry.c', 'research/standard-outbound/linux-6.12-lineage/stream-ring-profile-private.h', 'research/standard-outbound/linux-6.12-lineage/stream-skb-dispatch.c', 'research/standard-outbound/linux-6.12-lineage/stream-udp-cork-private.c', 'research/standard-outbound/linux-6.12-lineage/stream-udp-private.c', 'tools/host_stream_kernel_stream_core.py', 'tools/host_stream_kernel_stream_cpu.py', 'tools/host_stream_kernel_stream_fixed_netdev.py', 'tools/host_stream_kernel_stream_name.py', 'tools/host_stream_kernel_stream_netdev.py', 'tools/host_stream_kernel_stream_operations.py', 'tools/host_stream_kernel_stream_protocol.py', 'tools/host_stream_kernel_stream_rss_failure.py', 'tools/host_stream_kernel_stream_rx.py', 'tools/host_stream_kernel_stream_skb.py', 'tools/host_stream_kernel_stream_udp.py')
 SOURCE_SHA = '0d297733d0d376b952cafd03ae8e4c9477b979e5afd90d79d53e938ef34e4397'
 SOURCE_BYTES = 337639
+CLASSDIR_SOURCE_PATHS = tuple(sorted((*SOURCE_PATHS,
+    'research/standard-outbound/linux-6.12-lineage/factory-stream-netdev-classdir.c',
+    'research/standard-outbound/linux-6.12-lineage/stream-netdev-classdir-private.h',
+    'tools/host_stream_kernel_stream_classdir.py',
+)))
+CLASSDIR_SOURCE_SHA = 'c0245686c1c5c5217c778215a151888a853d1ec21f15a2a372330ad7693aedca'
+CLASSDIR_SOURCE_BYTES = 367882
+CLASSDIR_BRANCH = 'test/sdk-738-classdir-objects-20261026'
+CLASSDIR_TARGETS = ('net/factory.o','drivers/base/core.o','lib/kobject.o','net/core/net-sysfs.o')
 CHECKPOINT45_SHA = '1ec18c5c933a74a8378cfa0da8893cb6612a84d6e14f02614a769365f6b30f62'
 CONFIG = {'bytes':143135, 'sha256':'0015c9ac3b9af98af1e4a0f88788321e96193ce6a387c5a6cec6eaa358cdc1d6'}
 TARGETS = ('net/factory.o','net/socket.o','net/core/sock.o','net/ipv4/af_inet.o',
@@ -39,7 +48,7 @@ STAGES = ('source-head','source-tree','source-clean','baseline-object','baseline
     'baseline-tree-after','locked-python-dependencies','normal-prerequisite-update',
     'normal-prerequisite-install','gcc-version','make-version','as-version','ld-version',
     'rustc-version','official-source','extract-source','original-defconfig','selected-olddefconfig',
-    'pure-baseline','eighteen-objects','source-clean-after','source-tree-after','source-head-after')
+    'pure-baseline','eighteen-objects','classdir-objects','source-clean-after','source-tree-after','source-head-after')
 DOCUMENTS = {'receipt.json':MAX_DOCUMENT,'source-inputs.json':16*MAX_DOCUMENT,
     'derived-inputs.json':4*MAX_DOCUMENT,'baseline-inputs.json':16*MAX_DOCUMENT,
     'commands.json':MAX_DOCUMENT,'baseline.config':MAX_DOCUMENT,'selected.config':MAX_DOCUMENT,
@@ -83,11 +92,14 @@ def deadline(started, now=None):
     return end
 
 
-def selected_sources(root):
-    require(len(SOURCE_PATHS)==len(set(SOURCE_PATHS))==47,'source-path-count')
-    rows={name:identity(read(root/name,65536)) for name in SOURCE_PATHS}
-    require(sum(r['bytes'] for r in rows.values())==SOURCE_BYTES and
-        hashlib.sha256(canonical(rows)).hexdigest()==SOURCE_SHA,'frozen-47-source')
+def selected_sources(root, *, classdir=False):
+    require(type(classdir) is bool,'closed-classdir-mode')
+    paths = CLASSDIR_SOURCE_PATHS if classdir else SOURCE_PATHS
+    require(len(paths)==len(set(paths))==(50 if classdir else 47),'source-path-count')
+    rows={name:identity(read(root/name,65536)) for name in paths}
+    require(sum(r['bytes'] for r in rows.values())==(CLASSDIR_SOURCE_BYTES if classdir else SOURCE_BYTES) and
+        hashlib.sha256(canonical(rows)).hexdigest()==(CLASSDIR_SOURCE_SHA if classdir else SOURCE_SHA),
+        'frozen-50-source' if classdir else 'frozen-47-source')
     return rows
 
 
@@ -180,7 +192,8 @@ def udp_source(values, tree):
     return result
 
 
-def current_compose(values, tree):
+def current_compose(values, tree, *, classdir=False):
+    require(type(classdir) is bool,'closed-classdir-mode')
     from tools import host_stream_kernel_stream_operations as operations
     from tools import host_stream_kernel_stream_protocol as protocol
     from tools import host_stream_kernel_stream_udp as udp
@@ -199,6 +212,9 @@ def current_compose(values, tree):
     values=cpu.transform(values,{n:read(tree/n,MAX_FILE) for n in cpu.PREIMAGES})
     values=fixed.transform(values,{n:read(tree/n,MAX_FILE) for n in fixed.PRIMARY})
     values=core.transform(rss.transform(name.transform(values)))
+    if classdir:
+        from tools import host_stream_kernel_stream_classdir
+        values=host_stream_kernel_stream_classdir.transform(values)
     from tools.host_stream_kernel_stream_skb import finish
     values=finish(values)
     require(b'lsf_factory_selected_consumer(void)\n{\n    return NULL;\n}' in
@@ -217,15 +233,17 @@ def object_identity(path):
     return identity(raw)
 
 
-def public_allowed(name):
+def public_allowed(name, *, classdir=False):
+    require(type(classdir) is bool,'closed-classdir-mode')
     if name in DOCUMENTS:return DOCUMENTS[name]
-    if name in {'objects/'+n for n in TARGETS}:return MAX_OBJECT
+    if name in {'objects/'+n for n in (CLASSDIR_TARGETS if classdir else TARGETS)}:return MAX_OBJECT
     match=re.fullmatch(r'logs/([0-9]{2})-([a-z0-9-]+)\.(stdout|stderr)\.txt',name)
     if match and int(match[1])<MAX_COMMANDS and match[2] in STAGES:return 4*1024**2
     return None
 
 
-def admit(output):
+def admit(output, *, classdir=False):
+    require(type(classdir) is bool,'closed-classdir-mode')
     require(not output.is_symlink() and output.is_dir(),'public-output-directory')
     rows={};total=logs=0
     for q in sorted(output.rglob('*')):
@@ -233,12 +251,12 @@ def admit(output):
         if q.is_dir():continue
         name=q.relative_to(output).as_posix()
         if name=='ADMISSION.json':continue
-        maximum=public_allowed(name);require(maximum is not None,'public-member')
+        maximum=public_allowed(name,classdir=classdir);require(maximum is not None,'public-member')
         raw=read(q,maximum);total+=len(raw)
         if name.startswith('logs/'):logs+=len(raw)
         require(total<=MAX_PUBLIC-MAX_DOCUMENT and logs<=16*1024**2,'public-union-bound')
         rows[name]=identity(raw)
-    require('receipt.json' in rows and len(rows)<=len(DOCUMENTS)+len(TARGETS)+2*MAX_COMMANDS,'public-inventory')
+    require('receipt.json' in rows and len(rows)<=len(DOCUMENTS)+len(CLASSDIR_TARGETS if classdir else TARGETS)+2*MAX_COMMANDS,'public-inventory')
     record={'schemaVersion':'lsf.stream-object-public.v1','files':rows,'payloadBytes':total,
         'maximumUnionBytes':MAX_PUBLIC,'admissionMaximumBytes':MAX_DOCUMENT}
     raw=canonical(record);require(len(raw)<=MAX_DOCUMENT and total+len(raw)<=MAX_PUBLIC,'public-admission-bound')
@@ -250,14 +268,16 @@ def _copy_public(source, output, name, maximum):
     raw=read(source,maximum);q=output/name;q.parent.mkdir(parents=True,exist_ok=True);q.write_bytes(raw)
 
 
-def run(output, revision, started):
+def run(output, revision, started, *, classdir=False):
+    require(type(classdir) is bool,'closed-classdir-mode')
+    targets=CLASSDIR_TARGETS if classdir else TARGETS
     end=deadline(started) # Before imports, filesystem mutation or tool probes.
     require(sys.platform=='linux' and os.environ.get('GITHUB_ACTIONS')=='true' and
         os.environ.get('GITHUB_REPOSITORY')=='KirilsTurkins/latent-service-fabric' and
-        os.environ.get('GITHUB_REF_NAME')==BRANCH and os.environ.get('GITHUB_EVENT_NAME')=='push',
+        os.environ.get('GITHUB_REF_NAME')==(CLASSDIR_BRANCH if classdir else BRANCH) and os.environ.get('GITHUB_EVENT_NAME')=='push',
         'fixed-hosted-origin')
     require(type(revision) is str and re.fullmatch('[0-9a-f]{40}',revision),'source-revision')
-    before=selected_sources(ROOT)
+    before=selected_sources(ROOT,classdir=classdir)
     output=output.resolve()
     require(output!=ROOT and ROOT not in output.parents and output not in ROOT.parents and
         not output.exists(),'fresh-public-outside-source')
@@ -273,10 +293,10 @@ def run(output, revision, started):
         KBUILD_BUILD_TIMESTAMP='2026-10-23 00:00:00 UTC',KCONFIG_NOTIMESTAMP='1')
     commands=objects.Commands(ROOT,scratch/'commands',environment,deadline_seconds=end-time.monotonic(),command_seconds=1200)
     commands.deadline=end-5.0 # ONE reserve; run_owned itself includes cleanup.
-    receipt={'schemaVersion':'lsf.stream-normal-objects.v1','status':'in-progress','stage':'preflight',
+    receipt={'schemaVersion':'lsf.stream-classdir-objects.v1' if classdir else 'lsf.stream-normal-objects.v1','status':'in-progress','stage':'preflight',
         'sourceRevision':revision,'checkpoint':CHECKPOINT,'baselineRecipeRevision':BASELINE,
         'baselineRecipeTree':BASELINE_TREE,'sourceBefore':before,'sourceAfter':None,'checkpoint45SourceDigest':CHECKPOINT45_SHA,
-        'objectTargets':list(TARGETS),'products':{},'compiledObjectsOnly':True,'kernelLinked':False,
+        'objectTargets':list(targets),'products':{},'compiledObjectsOnly':True,'kernelLinked':False,
         'imageBuilt':False,'booted':False,'normalOperationsExecuted':False,'compiledUsefulFit':False,
         'physicalRootRetirementQualified':False,'consumerSelected':False,'productionInstallation':False,
         'whole738Complete':False,'hermetic':False,'compilerImplicitInputsAttested':False,
@@ -293,7 +313,7 @@ def run(output, revision, started):
     try:
         current_inputs=input_files(ROOT)
         source_record={'currentBefore':current_inputs,'currentAfter':None,
-            'current47':before,'currentSourceRevision':revision,'originalBaselineSourceRevision':BASELINE}
+            ('current50' if classdir else 'current47'):before,'currentSourceRevision':revision,'originalBaselineSourceRevision':BASELINE}
         write_json(scratch/'source-inputs.json',source_record)
         public_sources['source-inputs.json']=scratch/'source-inputs.json'
         git=shutil.which('git');require(git,'git-tool')
@@ -360,24 +380,24 @@ def run(output, revision, started):
         public_sources['baseline-inputs.json']=baseline_output/'baseline.json'
         command('baseline-clean-after',git,'diff','--no-ext-diff','--exit-code','HEAD','--',cap=30,root=recipe)
         require(command('baseline-tree-after',git,'rev-parse','HEAD^{tree}',cap=15,root=recipe).decode().strip()==BASELINE_TREE,'baseline-tree-after')
-        values=current_compose(derived_read(baseline_output/'derived',baseline['derived']),tree)
+        values=current_compose(derived_read(baseline_output/'derived',baseline['derived']),tree,classdir=classdir)
         rows=derived_write(scratch/'current-derived',values)
         for name,raw in values.items():
             q=tree/name;q.parent.mkdir(parents=True,exist_ok=True);q.write_bytes(raw)
         write_json(scratch/'derived-inputs.json',rows,4*MAX_DOCUMENT);public_sources['derived-inputs.json']=scratch/'derived-inputs.json'
-        command('eighteen-objects',*common,'-j2',*TARGETS,root=tree,cap=1200)
+        command('classdir-objects' if classdir else 'eighteen-objects',*common,'-j2',*targets,root=tree,cap=1200)
         require(read(build/'.config',MAX_DOCUMENT)==selected,'actual-config-mutated')
         autoconf=read(build/'include/generated/autoconf.h',MAX_DOCUMENT)
         require(b'#define CONFIG_LSF_STREAM_FACTORY 1\n' in autoconf and b'#define CONFIG_RUST ' not in autoconf,
             'actual-selected-autoconf')
         (scratch/'generated-autoconf.h').write_bytes(autoconf);public_sources['generated-autoconf.h']=scratch/'generated-autoconf.h'
-        receipt['products']={name:object_identity(build/name) for name in TARGETS}
-        require(len(receipt['products'])==18,'eighteen-exact-products')
-        for name in TARGETS:public_sources['objects/'+name]=build/name
+        receipt['products']={name:object_identity(build/name) for name in targets}
+        require(len(receipt['products'])==(4 if classdir else 18),'four-exact-products' if classdir else 'eighteen-exact-products')
+        for name in targets:public_sources['objects/'+name]=build/name
         command('source-clean-after',git,'diff','--no-ext-diff','--exit-code','HEAD','--',cap=30)
         require(command('source-tree-after',git,'ls-tree','-rz','--full-tree','HEAD',cap=30)==tree_before,'source-tree-mutated')
         require(command('source-head-after',git,'rev-parse','HEAD',cap=15).decode().strip()==revision,'source-head-mutated')
-        receipt['sourceAfter']=selected_sources(ROOT)
+        receipt['sourceAfter']=selected_sources(ROOT,classdir=classdir)
         require(receipt['sourceAfter']==before and input_files(ROOT)==current_inputs,'current-source-mutated')
         require(time.monotonic()<commands.deadline,'original-deadline')
         source_record.update(currentAfter=current_inputs,currentGitTreeInventory=identity(tree_before))
@@ -395,12 +415,12 @@ def run(output, revision, started):
             write_json(output/'receipt.json',receipt,MAX_DOCUMENT)
             write_json(output/'commands.json',commands.records,MAX_DOCUMENT)
             for name,q in public_sources.items():
-                maximum=public_allowed(name);require(maximum is not None,'public-source')
+                maximum=public_allowed(name,classdir=classdir);require(maximum is not None,'public-source')
                 _copy_public(q,output,name,maximum)
             for q in sorted((scratch/'commands/logs').iterdir()):
-                name='logs/'+q.name;maximum=public_allowed(name);require(maximum is not None,'public-command-channel')
+                name='logs/'+q.name;maximum=public_allowed(name,classdir=classdir);require(maximum is not None,'public-command-channel')
                 _copy_public(q,output,name,maximum)
-            admit(output)
+            admit(output,classdir=classdir)
         except BaseException as retention:
             receipt['status']='failed';receipt['retentionFailure']='bounded-public-admission-failed'
             raw=canonical(receipt)
@@ -417,13 +437,15 @@ def main():
     parser.add_argument('--source-commit')
     parser.add_argument('--started',type=float)
     parser.add_argument('--admit',action='store_true')
+    parser.add_argument('--classdir',action='store_true',help='fixed private four-object source check only')
     parser.add_argument('--baseline-worker',action='store_true')
     parser.add_argument('--recipe',type=Path);parser.add_argument('--kernel-tree',type=Path);parser.add_argument('--config',type=Path)
     args=parser.parse_args()
+    require(not (args.classdir and args.baseline_worker),'one-private-mode')
     if args.admit:
         require(not args.baseline_worker,'one-private-mode')
         try:
-            admit(args.output)
+            admit(args.output,classdir=args.classdir)
         except BaseException:
             # Fixed fallback only; never upload any rejected directory/glob.
             require(not args.output.is_symlink(),'fallback-output-symlink')
@@ -450,7 +472,7 @@ def main():
     elif args.baseline_worker:
         require(args.recipe and args.kernel_tree and args.config,'worker-fixed-inputs')
         baseline_worker(args.recipe,args.kernel_tree,args.config,args.output)
-    else:run(args.output,args.source_commit,args.started)
+    else:run(args.output,args.source_commit,args.started,classdir=args.classdir)
 
 
 if __name__=='__main__':
