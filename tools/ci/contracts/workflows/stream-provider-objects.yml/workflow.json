@@ -11,7 +11,8 @@
         "branches": [
           "test/sdk-738-stream-objects-20261026",
           "test/sdk-738-classdir-objects-20261026",
-          "test/sdk-738-classdir-kernfs-objects-20261026"
+          "test/sdk-738-classdir-kernfs-objects-20261026",
+          "test/sdk-738-netdev-directory-objects-20261026"
         ]
       }
     },
@@ -23,7 +24,7 @@
     "classdir-objects",
     "normal-objects"
   ],
-  "reviewReason": "Bind the reviewed empty-classdir kernfs52-source nine-TU programme to existing bounded ownership; preserve historical47/eighteen and50/four contracts and all previous test/coverage guards.",
+  "reviewReason": "Bind the reviewed NETDEV own-directory55-source nine changed-TU programme to existing process/public bounds; preserve all historical47/50/52 identities, targets, test cases, guards and coverage.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/stream-provider-objects.yml"
 }
