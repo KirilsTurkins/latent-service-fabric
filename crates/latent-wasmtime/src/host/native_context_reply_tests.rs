@@ -142,6 +142,14 @@ fn engine() -> Engine {
     Engine::new(&config).unwrap()
 }
 fn store(engine: &Engine, original: &ActivationBudget, empty: bool) -> Store<HostState> {
+    store_with_observations(engine, original, empty, None)
+}
+fn store_with_observations(
+    engine: &Engine,
+    original: &ActivationBudget,
+    empty: bool,
+    observed: Option<&Arc<super::native_store_tests::Observations>>,
+) -> Store<HostState> {
     let state = state(original, empty);
     let mut store = if original.profile() == BudgetProfile::Phase1 {
         Store::new(engine, state)
@@ -149,7 +157,10 @@ fn store(engine: &Engine, original: &ActivationBudget, empty: bool) -> Store<Hos
         Store::try_new_with_memory_binding(
             engine,
             state,
-            crate::native_tables::binding(original).unwrap(),
+            match observed {
+                Some(observed) => super::native_store_tests::binding(original, observed).unwrap(),
+                None => crate::native_tables::binding(original).unwrap(),
+            },
         )
         .unwrap()
     };
@@ -289,21 +300,32 @@ struct Padding {
 async fn actual_context_reply_original_refusal_keeps_exact_error_and_fresh_same_grant() {
     let engine = engine();
     let original = ledger(BudgetProfile::Phase3);
-    let mut first = store(&engine, &original, false);
+    let observed = Arc::new(super::native_store_tests::Observations::default());
+    let mut first = store_with_observations(&engine, &original, false, Some(&observed));
     let instance = instantiate(&engine, &mut first).await;
     let function = instance
         .get_typed_func::<(), (String,)>(&mut first, "activation-id")
         .unwrap();
+    let before = super::native_store_tests::requests(&observed).len();
     assert_eq!(
         function.call_async(&mut first, ()).await.unwrap().0,
         "context-owned"
     );
-    // Warm the identical call path, then pad physically allocated backing. Fixed
-    // linear pages are the actual limiter observation, not a guessed prefix sum.
+    // Warm the identical callback-less call and observe its GuestCall node.
+    // Leave that node funded so the ORIGINAL reply, rather than an earlier
+    // queue admission, exceeds the unchanged grant by exactly one byte.
+    let warmed = super::native_store_tests::requests(&observed);
+    let queues = &warmed[before..];
+    assert_eq!(queues.len(), 1);
+    assert!(queues.iter().all(|bytes| *bytes > 0));
+    let queue_charge = queues
+        .iter()
+        .map(|bytes| *bytes as u64 + crate::native_tables::OWNER_ESCROW as u64)
+        .sum::<u64>();
     let reply = super::policy::reply_string_charge("context-owned").unwrap() as u64
         + crate::native_tables::OWNER_ESCROW as u64;
     let linear = first.data().limiter.peak_memory_bytes();
-    let consumed = original.host_memory_bytes() + linear;
+    let consumed = original.host_memory_bytes() + linear + queue_charge;
     let bytes = MIB - consumed - reply + 1 - crate::native_tables::OWNER_ESCROW as u64;
     let mut owner = crate::native_tables::reserve(&original, bytes as usize)
         .unwrap()
@@ -315,10 +337,14 @@ async fn actual_context_reply_original_refusal_keeps_exact_error_and_fresh_same_
         _bytes: allocation,
         _owner: owner,
     };
-    let consumed = original.host_memory_bytes() + linear;
+    let consumed = original.host_memory_bytes() + linear + queue_charge;
     assert_eq!(consumed + reply, MIB + 1);
     let error = function.call_async(&mut first, ()).await.unwrap_err();
     denial(&error, MIB, consumed, reply);
+    assert_eq!(
+        &super::native_store_tests::requests(&observed)[warmed.len()..],
+        queues
+    );
     drop(error);
     drop(padding);
     drop(first);

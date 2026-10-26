@@ -1,0 +1,2325 @@
+{
+  "schemaVersion": "latent.java.scheduled-library-runtime-evidence.v1",
+  "status": "finite-normal-signed-scheduling-cases-passed",
+  "qualifiedSource": {
+    "sourceRevision": "c7e7e740e022fd2698969e6a04675d68786f9ead",
+    "localEquivalentCommit": "dc6e566ece636c385e1246c18a34da6617f79dc8",
+    "tree": "f7d7dddef81abaad40cacda00de2f75ca1cf8528",
+    "nativeCohort": "maintained Wasmtime48.0.7 v14 event-queue cohort",
+    "nativeInputs": 8936,
+    "javaInputs": 225,
+    "compilerRecipeInputs": 103,
+    "uniqueGitPaths": 9114,
+    "allBeforeAfterEqual": true,
+    "allGitBlobsMatched": true,
+    "checkoutTransforms": [
+      {
+        "path": "tools/intellij.cmd",
+        "gitBytes": 894,
+        "runnerBytes": 922,
+        "reason": "committed eol=crlf checkout attribute"
+      }
+    ],
+    "inventories": {
+      "sourceBefore": {
+        "bytes": 1297206,
+        "sha256": "2ad55d6a33ef94211ee12f61ad15978784846b00eadf98a547af9cf72dd9c76c"
+      },
+      "javaSourceBefore": {
+        "bytes": 35176,
+        "sha256": "31c43466751141a3487459d030ab6209752f6b0068ca176c648c8dca771b2913"
+      }
+    },
+    "retainedSourceInventory": {
+      "bytes": 1579764,
+      "sha256": "bb90c0bcc977567c4841c7388b039893d651dda00e75ae2b25af5aa45d90f1bb"
+    },
+    "compilerRecipe": {
+      "tools/qualify_java_fibers.py": "sha256:f2325469d0f26e752340c4330c337bf74906a4871f23b1bebee1d707eb12d97b",
+      "tools/java_guest/async_imports.py": "sha256:f84c40987c2bd71e4662281ceb07eb70e6082b9be19b409522db83dedaa8dbe1",
+      "tools/java_guest/bindings.py": "sha256:b31a4f19f4bd8bef828d4b98eadd1323b6b4b63433101a175643af012e9a0a4a",
+      "tools/java_guest/c.py": "sha256:d7cbbfe591989e746d4090f075585a7389007a313958c3d048efb0184715b02b",
+      "tools/java_guest/c_failure_context.py": "sha256:84230acc9f4795716f7939f9d96bcc27d859ba86b2d2ec248568fca8e00186a1",
+      "tools/java_guest/class_origin.py": "sha256:7662513e7b61c5720e23e13a5c1dfc7aacc1706b9201a86d89078b0b37a17fae",
+      "tools/java_guest/compiler.py": "sha256:66a1ce9136fe4d9b74d8ce4431c860e8cb96ad0a5e7215a146a9921520ce369f",
+      "tools/java_guest/compiler_diagnostics.py": "sha256:d7481f8e1d07275c2330f51f80e7853a934457474ea7b6d0775b0c1aed652b5a",
+      "tools/java_guest/compiler_profile.py": "sha256:179fad25fe86ab0fcca900416e7a95044972bbe7ea4722d44ad8e20738b2ed55",
+      "tools/java_guest/compiler_profile_distribution.py": "sha256:12443a135d933054ff3dc0ef9e06bca9a903ad2dd869b16b55e1cb2f245491b0",
+      "tools/java_guest/copy_cost_observation.py": "sha256:5cc2f000d3d1440fbe9d996130140be147bafcdf9d8ede359633599d1af7882e",
+      "tools/java_guest/coroutine_patch.py": "sha256:328aa284d1ab28bdc24565cf94ede1ba3687da05d28ac0f5f24ac780a5851586",
+      "tools/java_guest/facilities.py": "sha256:8d101f290af12114d1eb251937e38fd47a9499ad44c40acfe6258de4af34f033",
+      "tools/java_guest/fiber_component_inputs.py": "sha256:1996fd5c0823483b667b97c3bf5c3f7c9856e2cb11da6d3a06d29c41191c7b46",
+      "tools/java_guest/filesystem.py": "sha256:e0d8d6dfdeda7afdaa39205e16f82ee92f19d57577268ddaae5a32d3d4eab605",
+      "tools/java_guest/java.py": "sha256:c4bcb4d37a97a80ecfe386df402c9b532db392a45b31516ccf92a6bb33447dea",
+      "tools/java_guest/llvm_private_store_consumer.py": "sha256:9579a6a3d7dd97461ebb4b36e5226d5991f1bd1dd0f0cf1ffe82810a8c65a5cb",
+      "tools/java_guest/llvm_private_store_distribution.py": "sha256:dd29fa5f89d21b067bf79d113a79532ab840ad14f327dbab405a3d297ad368aa",
+      "tools/java_guest/llvm_private_store_inputs.py": "sha256:9dcc11a4a7c7dcd9f8a7b1929c7cf8b458128ad4aefaa080e91fa0ca527b53c3",
+      "tools/java_guest/llvm_private_store_patch.py": "sha256:a6b42bb9fd0c1fd808addee22e10a08587f258cf94c36e590c64fa43008b8e5c",
+      "tools/java_guest/llvm_private_store_producer.py": "sha256:8c6de159fae8402cbefd1600a05cf4d82a174d7440bd719f214e9f4e58901e7e",
+      "tools/java_guest/llvm_private_store_results.py": "sha256:18181adc73fa502fd2a32b533d3c26a6f685d14cec02fffb919e07fc10f0a438",
+      "tools/java_guest/llvm_ssa_consumer.py": "sha256:ed8ab5eeeec67825e2b8869e52dc630a677e38aacf7355abed4b347a702e5b8a",
+      "tools/java_guest/llvm_ssa_consumer_inputs.py": "sha256:2afeace58cae3bcdd66e0894d9558a2bf13b04176de445d5845a3ceaeefd83c9",
+      "tools/java_guest/llvm_ssa_distribution.py": "sha256:24f4aff480895983be7686045a354c19cfe89c04723a89d0f9bd9f4188accd8c",
+      "tools/java_guest/llvm_ssa_io.py": "sha256:9a3dcd06cf7e0ae845c2272a4b6bf83161a3daf0c155ee4fbaed4abe22e9b116",
+      "tools/java_guest/llvm_ssa_patch.py": "sha256:70dfa7583c439aa1d97cff9a4a691a73002600b5b0a7d39ae27e2ad9a771de03",
+      "tools/java_guest/llvm_ssa_producer.py": "sha256:b94a85a17e435020872d8b98cf231bde8e372edd1c2e6bf558883e61413677ef",
+      "tools/java_guest/llvm_ssa_results.py": "sha256:02cecf34e19171693ac3ea27ea348beb62119b7fbc11ce3ed06d6a04d15a8ad0",
+      "tools/java_guest/lock.py": "sha256:13e0e47d807a020c202902634c5f2bef1fe5342afdacd2d017c674982ab2f52c",
+      "tools/java_guest/model.py": "sha256:945c4bc3428ddd887e6dd14679af56bf8f8a32788459f8374cfc0dc113c3a2e9",
+      "tools/java_guest/public_wineh.py": "sha256:fda55843fe03914ff5a99309a5aa11184e5f3a22d951710c0ab63e2ff1ccf890",
+      "tools/java_guest/reachability.py": "sha256:001cca01fe5a7541faf82241f9df7446a426cb943e19782502060f45b5005418",
+      "tools/java_guest/resources.py": "sha256:77389b62f5f820e03a81ef852105ab122087c381954d06283f79b7da394918c1",
+      "tools/java_guest/retained_fiber_inputs.py": "sha256:37ba81a46e52ed7bded0d1f959ff4ec22be6df4d73bfec3279a45630f942eb1a",
+      "tools/java_guest/sdk.py": "sha256:f1561266c21b51beb2ac8de6c24319af313d0a9fd186c124ca06500c226e67e8",
+      "tools/java_guest/surface.py": "sha256:3952a3f65038661ab8121d7b81312c99df5de26407355f39593a1eed7186d530",
+      "tools/java_guest/wineh_filter.py": "sha256:ab7364edaf1db146e3d7a26e4b47e6aa2d54d9bd65725f44e19717c5fe9e9f28",
+      "tools/java_guest/wineh_ir.py": "sha256:df24fe15c8ab301756d5576488b5705073f52b341179eca9771f66ad949e76b5",
+      "tools/java_guest/wineh_preclang.py": "sha256:18a9e1d0d0699a50771fa11caa7a1be61ca26bcb854a10ff8842c51f2e04efe9",
+      "tools/java_fiber_library_inputs.py": "sha256:a077dc12899b2d9edfa151cbcc8893ae3b1ebd0bbc693a681519c60d702fbd94",
+      "tools/data/java-public-wineh/e782-baseline.json": "sha256:2311ad8d5456ba50ff784304bf803c8a505e3e2b36ef75b776bd72856d81766b",
+      "tools/data/java-llvm-private-stores/supplement.json": "sha256:c695e9bfc6d499ebc0ec93b56e8a28ea9c1745d4d17d008ea5639cc50436ac04",
+      "tools/stage_runtime_wit.py": "sha256:a44bcfc7054c8a63a43e3b9ad6428e7d4ac1bb551420020bc29015c9333b9828",
+      "tools/rust_capsule_project.py": "sha256:584331e9da177b9443738916047a2a7bb076b86de6348105baa04514ede0be36",
+      "tools/build_observation.py": "sha256:49ed72767a609870ac9166b9466b94c38347efe1fc66d6a3176087c988da661c",
+      "tools/build_process.py": "sha256:3e462a970e23c127a4e6f0964744d31fad763ed4e9f73fb309e3349db3670497",
+      "tools/build_process_linux.py": "sha256:e3d45b83b7dfe213135491b8a094925179b884df11615ea0dcb64af6451d08ce",
+      "tools/build_process_windows.py": "sha256:3de6d1a259112579d0da53b90614233fd27d57daf3cf75582d9ac774f13b31fd",
+      "tools/java_capsule.py": "sha256:c73ed8a032629bbc5f4406f4256eb6fc260d58162bcb04a1b8b1c9d9a4bffa4f",
+      "tools/java_capsule_project.py": "sha256:b1ba19f44a5c26d5b3b4003a50b50a9cf6909a119a3a3daafeadd51417de22af",
+      "tools/java_capsule_build.py": "sha256:5cf4f72bd1cc1e630f6f9c22daf44e92888ec98ef1fe3b27fbf9d65d7f9654e8",
+      "tools/application_dependencies.py": "sha256:4582e588d2c28a87c3c1c8acdd713d3f22fb3c65764e450e483ffb15dae33e5f",
+      "tools/application_dependency_store.py": "sha256:ac8bd16090cbbd2a3696bd21fd269bbba7abfd9357049ed002f3bb4975e931ed",
+      "tools/application_dependency_tools.py": "sha256:4b4b26044e185269feed5344cd333a0dbffec76927b7ca9ad779fefb33aa94f9",
+      "tools/java_application_dependencies.py": "sha256:6438526019b4c05f050005ddd3bf5e2065d1abdc4cbfa0925aa409eaa69205e7",
+      "tools/java_dependency_resolution.py": "sha256:ca73b38b3dfccb8e07501dac66db77482d8bcfeffcf9c9e0e4e1690ce09409e2",
+      "tools/java_registry_tls.py": "sha256:ced13f857387b76871bbc70ee45a8a103a39d7ea43b5c53f154f46ca19f45a1a",
+      "tools/java_resource_artifacts.py": "sha256:a4de04801a5af4dbead4c98e48890d2e5e6d48aba820c8550e692d15f9cae463",
+      "tools/java_dependency_authoring.py": "sha256:76e01f6d22c25a6b715586467952c1400d258f5e526c591968ff49faa91fed32",
+      "tools/toolchain.toml": "sha256:ccbf00ab487b1b3cbeb799a59280ea1fb97784805032b7b3f52e8211c588f4e4",
+      "tools/dev_workflow/paths.py": "sha256:6758044322e58c687c73d8302c0fab82a07d9680ed647a3a52f2a34f60d0da59",
+      "tools/dev_workflow/windows.py": "sha256:88f584e03e560395027f5d59a8358dbf57ce3daf64c68d56f5af2a98cee5f473",
+      "tools/rust_capsule_build.py": "sha256:71571f4e26890557f916e6cd21502f63a40b97bc6311ae86f4106eed810f1fa2",
+      "tools/build_process_signals.py": "sha256:96dddca07cc20b77b0b6b93a3524c047877a4fcdd7442fe8c635024ade13cdb2",
+      "tools/build_snapshot.py": "sha256:0f5a899b52906bfa4153af1f709d9eefc620661a022a3ff75046fdb3d7edd5a4",
+      "examples/echo-contract/capsule.json": "sha256:92a55f1185902458d3e5418ab464ce651a12779fc90bf5ab3433e2eb2a5ca85d",
+      "examples/echo-contract/deployment.json": "sha256:2f14e5feb3eabfb56c4ec5e445f5fa02c42aa8f201828b78812ea399b36f9f3a",
+      "tools/transaction_guest_project.py": "sha256:8f70d19a6181e3d078d42944d0957f5512ab7a4b426befaffbb73b2cec874f39",
+      "tools/dev_workflow/common.py": "sha256:f398999c39fc80606ca3ec0d47db5a9e32debe96367a87a9aa72b70089f13a28",
+      "tools/dev_workflow/transaction_binding.py": "sha256:d758bd2b904f9ff53d61398afe4910230d457afc1f14748080a3930f06cf38aa",
+      "tools/guest_compatibility.py": "sha256:bae6de621f5fa27f7efb49c32fd02be0669f3bb2da2cb8121eba7b1f34e523b6",
+      "tools/guest_compatibility_build.py": "sha256:67339aedb2de99b7de7675ac51e69aa6d7de4c5f1f26e0d773ca315cfca24840",
+      "wit/host-abi-phase3-v4.json": "sha256:3cfbd9bf55248f972d53598cc71ceccf068aa9234de4e1fce488d458271a937d",
+      "wit/host-abi-phase4-v1.json": "sha256:e8d67cb2ca7f696296a28684d59f6663788888e8e0c06f2aafe1eab34f4f0403",
+      "sdk/profile/transaction-requirements-v1.json": "sha256:9bb389824b6a2d3015727b5c17de25a51505339d0a4f6cf46199ffe520881cd5",
+      "tools/guest_compatibility_context.py": "sha256:c2548301abccdf55e08e44ed08b7c1d43f95cf4fa3ffdf02f5fe6be015d94da5",
+      "tools/guest_compatibility_context_build.py": "sha256:af0ac2c0ce48d1d8dce99777068027ae16acc4a7f9f72722ba6bed0453cce302",
+      "tools/guest_runtime_receipts.py": "sha256:a6010a4c1a767779eec5a6bef7907cd12f6f95ce91dc9c32d18283f08436672e",
+      "tools/guest_emitted_code.py": "sha256:d647d9512d3405666b1d896e67c8e3cc74c35f12d0682d73529e0f6327fbcaae",
+      "tools/guest_compiler_edges.py": "sha256:167de6a71b90f4c2de95440d0578160b3cd5eccce6163ee087c461f0ad436ed8",
+      "tools/guest_compiler_capture.py": "sha256:d6eed9c3618a2d039cc7654f51aca0c184159eaac7911eb3350a0494759b1adf",
+      "tools/guest_api_analysis.py": "sha256:ae9f6636d7a03abe43fdc82ce830392453b93705c3852b38e15d453ba978e215",
+      "tools/guest_resources.py": "sha256:558e9c937b9b7113fe5f51d035c4f56695cc8a3db30b0f378c7d926e76111814",
+      "tools/guest_dependency_inputs.py": "sha256:0d12177e8343aaa7a051d8baa19e15b0fa122b7ea26cb7aa92dead89e980baca",
+      "tools/application_dependency_approval.py": "sha256:70126c2b142a74f4fe169ceff32642008b843d668c66b7c5addac66dc1e14209",
+      "tools/dev_workflow/__init__.py": "sha256:83994d5549a6b1de4ef471c2e8fa9db700b731807f8e9b806c71b9bcf594eaf2",
+      "tools/dev_workflow/project.py": "sha256:0867f8ded6f515b2ed6fb3a76d78fed77141bcfcce931227aa201930d2e19137",
+      "tools/dev_workflow/dependencies.py": "sha256:6c2b1e343e05d10b43fead70d017193dedd6d0a7bde7db0a4c110d3d51a67b7b",
+      "tools/dev_workflow/snapshot.py": "sha256:c8c3967d3a067c19748e657889362f694683445e61c2ee1fd9ff4e3d5a39acbe",
+      "tools/dev_workflow/resource_inputs.py": "sha256:aa847812a09cd13558277a8d4a07888f96ee70375651a7f7802b7102c9090aaf",
+      "tools/dev_workflow/state.py": "sha256:19ae59fbd3b94e9ddff4565a4da98ff04308448e7f660ecadb20f123d2f3626e",
+      "tools/guest_authoring_frontend.py": "sha256:50fb4567e172a9a8b8b72ce4b964912f980d1406979267b5d59e3545fad869c7",
+      "tools/java_server_source.py": "sha256:1fdc82d40b7ec550b3330eee99f0e9f002e9c8e6c6ef02194999f1182c1366e4",
+      "tools/java_server_project.py": "sha256:b600a1516901f5f49f65b44ffd7a93c484af9a18c0127427a3add38ad3586904",
+      "tools/server_source.py": "sha256:4f9c5aceaab9bd8bf55dc1cc8b689fba4b8700656f22be80476532e696b4fd95",
+      "wit/platform/web/package.wit": "sha256:3ad4d3e122c839115891ba9b69c9b790245a64ecb00690e23270623ac94b1450",
+      "wit/platform/context/package.wit": "sha256:9b5d08ce6d4f698ea43b17aaf879e196e2e8d64610fabc2b626ad40560daadc1",
+      "tools/java_generator_authoring.py": "sha256:606df780f777ea41d7b611fb96a8d057066870b91a4da5142e26c63c5fa4f80f",
+      "tools/java_http_client.py": "sha256:c05dcb7a76db093ff101f0e9f130b6c93bbc44dc3e3c771ee60565df8f3a9b17",
+      "tools/captured_compiler_isolation.py": "sha256:d653599333a5b7b644231fc163ac12dd29165ce1e175955995ed96d65a494a03",
+      "tools/java_annotation_processors.py": "sha256:998ba9e2d49f126c947d602fd704b98afbcc54c38d6ab3c96d3da0dcf2e1598b",
+      "tools/data/java-compiler-profile.json": "sha256:0f1d3c02be04e55599ae176156b7859c02d7f0cfa1ded6944b574ef5e86f7900"
+    }
+  },
+  "origin": {
+    "repository": "KirilsTurkins/latent-service-fabric",
+    "workflow": ".github/workflows/java-scheduled-library.yml",
+    "event": "push",
+    "branch": "feat/java-scheduled-executor-20261026",
+    "run": 40274897443,
+    "job": 121415455764,
+    "attempt": 1,
+    "conclusion": "success",
+    "artifact": 12630031761,
+    "artifactName": "java-scheduled-library-c7e7e740e022fd2698969e6a04675d68786f9ead",
+    "archive": {
+      "bytes": 6635771,
+      "sha256": "d16506abc60d6d67327c7d2027f3143ea1bfd3d55c6b0b394c15f987ca43ef58"
+    },
+    "members": 112,
+    "allCrcVerified": true,
+    "actionsArtifactIsPermanentArchive": false
+  },
+  "scope": {
+    "statement": "twelve unchanged Commons TimedSemaphore default-factory calls plus four source-controlled default-CompletableFuture/rejection calls; no executor injection or full scheduler API claim",
+    "javaComponentRecompiled": true,
+    "nativeHarnessBuilt": true,
+    "llvmBuilt": false,
+    "applicationExecutorInjected": false,
+    "originalLibrarySourceChanged": false,
+    "sameBackendSixteenFreshStores": true,
+    "fullScheduledThreadPoolExecutorSurface": false,
+    "fullJavaProfileQualified": false,
+    "fullCostModelQualified": false,
+    "hermetic": false,
+    "compilerImplicitInputsAttested": false,
+    "whole741Closed": false,
+    "oldProgrammesReplayed": false
+  },
+  "supportedApiBoundary": {
+    "interfaces": [
+      "Delayed",
+      "ScheduledFuture",
+      "ScheduledExecutorService"
+    ],
+    "concrete": [
+      "ScheduledThreadPoolExecutor constructors",
+      "Executors.newScheduledThreadPool",
+      "Executors.newSingleThreadScheduledExecutor",
+      "schedule(Runnable/Callable)",
+      "scheduleAtFixedRate",
+      "scheduleWithFixedDelay",
+      "execute/submit",
+      "shutdown/shutdownNow/termination",
+      "two existing-work shutdown policy getters/setters"
+    ],
+    "unqualified": [
+      "full ThreadPoolExecutor inheritance/configuration",
+      "custom rejection-handler constructors",
+      "queue inspection/remove/purge",
+      "task decoration/RunnableScheduledFuture extension",
+      "core-pool mutation"
+    ]
+  },
+  "libraries": [
+    {
+      "id": "cn.hutool:hutool-core:5.8.40",
+      "originalDigest": "sha256:d6bedc908cba480cd12dbe6f8422fa60c0da31030b58a68c3c077f555fc0cbbc",
+      "selectedDigest": "sha256:98bbb79681cc7b9fbaf6ba34ab54d35557f0f6405799df5e87023c811ad7bf1c",
+      "original": {
+        "bytes": 1500560,
+        "sha256": "d6bedc908cba480cd12dbe6f8422fa60c0da31030b58a68c3c077f555fc0cbbc"
+      },
+      "selected": {
+        "bytes": 3344457,
+        "sha256": "98bbb79681cc7b9fbaf6ba34ab54d35557f0f6405799df5e87023c811ad7bf1c"
+      },
+      "entries": 932,
+      "allSelectedEntryBytesMatchOriginal": true,
+      "ordinaryMultiReleaseSelection": []
+    },
+    {
+      "id": "org.apache.commons:commons-lang3:3.14.0",
+      "originalDigest": "sha256:7b96bf3ee68949abb5bc465559ac270e0551596fa34523fddf890ec418dde13c",
+      "selectedDigest": "sha256:9948b2564eb3fd0fc0408b567b607f04e68a2a3bf7631a1faa64083022363514",
+      "original": {
+        "bytes": 657952,
+        "sha256": "7b96bf3ee68949abb5bc465559ac270e0551596fa34523fddf890ec418dde13c"
+      },
+      "selected": {
+        "bytes": 1515328,
+        "sha256": "9948b2564eb3fd0fc0408b567b607f04e68a2a3bf7631a1faa64083022363514"
+      },
+      "entries": 409,
+      "allSelectedEntryBytesMatchOriginal": true,
+      "ordinaryMultiReleaseSelection": [
+        {
+          "original": "META-INF/versions/9/module-info.class",
+          "selected": "module-info.class"
+        }
+      ]
+    }
+  ],
+  "capture": {
+    "status": "captured-not-executed",
+    "sourceModified": false,
+    "externalExecutorInjected": false,
+    "originalLibraries": {
+      "cn.hutool:hutool-core:5.8.40": "sha256:d6bedc908cba480cd12dbe6f8422fa60c0da31030b58a68c3c077f555fc0cbbc",
+      "org.apache.commons:commons-lang3:3.14.0": "sha256:7b96bf3ee68949abb5bc465559ac270e0551596fa34523fddf890ec418dde13c"
+    },
+    "capturedInputIdentity": "sha256:ef86de5ab739211b642ff0c248c5981d83f1af8d16a948bc9c78ae56d7fba30e",
+    "sdkLockDigest": "sha256:ead53c0c2b6ad303eae833248de8e832d07c39f813438db63300efed0603ea88",
+    "applicationIdentity": "sha256:2c7a289a79e4498cd1e214066c5870b9172c26fb7d0f28e9dc24f0e369857b36",
+    "selectedJars": [
+      {
+        "id": "cn.hutool:hutool-core:5.8.40",
+        "originalDigest": "sha256:d6bedc908cba480cd12dbe6f8422fa60c0da31030b58a68c3c077f555fc0cbbc",
+        "selectedDigest": "sha256:98bbb79681cc7b9fbaf6ba34ab54d35557f0f6405799df5e87023c811ad7bf1c"
+      },
+      {
+        "id": "org.apache.commons:commons-lang3:3.14.0",
+        "originalDigest": "sha256:7b96bf3ee68949abb5bc465559ac270e0551596fa34523fddf890ec418dde13c",
+        "selectedDigest": "sha256:9948b2564eb3fd0fc0408b567b607f04e68a2a3bf7631a1faa64083022363514"
+      }
+    ],
+    "classpathDigest": "sha256:d25366c447867d93b252b13f84afacfa49c2e48a973856f7b8b6b1374f3d068f"
+  },
+  "limits": {
+    "owner": {
+      "overallSeconds": 2400,
+      "cleanupReserveSeconds": 5,
+      "compilerAggregateSeconds": 1200,
+      "compilerCommandSeconds": 600,
+      "nativeBuildSeconds": 900,
+      "caseProcessSeconds": 1800,
+      "listProcessSeconds": 30,
+      "sourceControlSeconds": 60
+    },
+    "request": {
+      "fuel": 10000000000,
+      "memoryBytes": 67108864,
+      "wallMilliseconds": 120000,
+      "outboundRequests": 0,
+      "cells": 1
+    },
+    "javaOwners": {
+      "tasks": 5,
+      "executors": 3,
+      "queuedWork": 8,
+      "waits": 8,
+      "timers": 2,
+      "results": 8,
+      "nativeOwners": 2
+    }
+  },
+  "modes": [
+    {
+      "mode": 0,
+      "calls": 2,
+      "expectedValue": 42,
+      "behavior": "unchanged TimedSemaphore default factory, limit1 and actual replenishment"
+    },
+    {
+      "mode": 1,
+      "calls": 2,
+      "expectedValue": 42,
+      "behavior": "unchanged TimedSemaphore limit2, third acquire requires replenishment"
+    },
+    {
+      "mode": 2,
+      "calls": 2,
+      "expectedValue": 42,
+      "behavior": "unchanged tryAcquire then blocking acquire across replenishment"
+    },
+    {
+      "mode": 3,
+      "calls": 2,
+      "expectedValue": 42,
+      "behavior": "unchanged unlimited-limit semaphore"
+    },
+    {
+      "mode": 4,
+      "calls": 2,
+      "expectedValue": 42,
+      "behavior": "unchanged shutdown and original illegal-state refusal"
+    },
+    {
+      "mode": 5,
+      "calls": 2,
+      "expectedValue": 42,
+      "behavior": "unchanged invalid-period constructor refusal"
+    },
+    {
+      "mode": 6,
+      "calls": 2,
+      "expectedValue": 42,
+      "behavior": "genuinely pending default CompletableFuture, thenApplyAsync, original exception/root/ThreadLocal checks"
+    },
+    {
+      "mode": 7,
+      "calls": 2,
+      "expectedValue": 42,
+      "behavior": "ordinary single-thread worker then submit-after-shutdown RejectedExecutionException"
+    }
+  ],
+  "reference": {
+    "jdk": [
+      {
+        "iteration": 0,
+        "modes": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "results": [
+          42,
+          42,
+          42,
+          42,
+          42,
+          42,
+          42,
+          42
+        ]
+      }
+    ],
+    "scheduledSource": {
+      "status": "SDK-source-controls-passed",
+      "sourceInputs": {
+        "fibers/dev/latent/guest/runtime/concurrent/AbstractExecutorService.java": "sha256:3654119185bc8dbef26f1e28a310395cef9f5fbe851e4534fc15b0387be25ece",
+        "fibers/dev/latent/guest/runtime/concurrent/CompletableFuture.java": "sha256:66a424517efaa74496fd6e60b13af27f83023abf3a82d14de4e7c5bd5f467aa5",
+        "fibers/dev/latent/guest/runtime/concurrent/CompletionException.java": "sha256:e745f58e7e0e41d42b55303d2a7329799348a0ab77a2cde81810466a3d256482",
+        "fibers/dev/latent/guest/runtime/concurrent/CompletionStage.java": "sha256:e980415748ea784a24510b3916ecedb7747d692dd9267459e0587e085c827140",
+        "fibers/dev/latent/guest/runtime/concurrent/Delayed.java": "sha256:8e9f4d46b7ec70d14c2dae1e927f1414dfe9d4f3ae74ca49ea90bf7e497d27b5",
+        "fibers/dev/latent/guest/runtime/concurrent/ExecutorService.java": "sha256:c115a8e148278b324414a8ad4b4ad3cda23ce8daaf9e58ba40581b72ea6805bb",
+        "fibers/dev/latent/guest/runtime/concurrent/Executors.java": "sha256:4f30c2be8a0837a0f6d3f4352ff936ff60934d27b3caf96ab2fefa3447700f51",
+        "fibers/dev/latent/guest/runtime/concurrent/Future.java": "sha256:4a688803e8209e56ce331ece8291740cfee79d63e063fbab441aa6dd36e87f76",
+        "fibers/dev/latent/guest/runtime/concurrent/FutureTask.java": "sha256:e5c19c5fe00bd0d773c51ac1635a30e59299c2d3d60e412c3f0e026ce116d5c3",
+        "fibers/dev/latent/guest/runtime/concurrent/ManagedExecutor.java": "sha256:08f8133cc28836b2296893d0efc265298e15c8aa72fd8defad97e1900e3b0d92",
+        "fibers/dev/latent/guest/runtime/concurrent/RejectedExecutionException.java": "sha256:e21010bc97c6990e75877998547ed8bef4c185294a3feb3e3b1d5b16c622b4ba",
+        "fibers/dev/latent/guest/runtime/concurrent/RunnableFuture.java": "sha256:cf3e9e8bab8aecf190dab76e5f7e7e4333057b65ea9112670dd6cb8521fd6328",
+        "fibers/dev/latent/guest/runtime/concurrent/ScheduledExecutorService.java": "sha256:88dc797357adf7272cd9b829b7dad836fcbda511e75245980c45a88f5285aa0f",
+        "fibers/dev/latent/guest/runtime/concurrent/ScheduledFuture.java": "sha256:1a4517cc2930179f7a19bfcfc08b3f5e31031060e73e13a75dc9b873b59f4697",
+        "fibers/dev/latent/guest/runtime/concurrent/ScheduledThreadPoolExecutor.java": "sha256:99e048bc157aa51c9b78c2acd18d7816788e4009c16fd9433fabb428895febf8",
+        "fibers/dev/latent/guest/runtime/concurrent/ThreadFactory.java": "sha256:1aed06e12da6b8111a47dbc2266ee0eb0d51db5f4a9c25e9e59eb70c3cd4e0b6",
+        "fibers/dev/latent/guest/runtime/concurrent/TimeUnit.java": "sha256:6c829473167d1cbe05f4fcb858a0f5f355209711ee3959ec58f2d6c569ac1ab1",
+        "fibers/dev/latent/guest/runtime/concurrent/TimeoutException.java": "sha256:9b0d6e7a88746f81b0fdb8804d25a727459db8463d35738afcfee3830a3ae462",
+        "fibers/conformance/compiler/scheduled-source-control/ScheduledOwnerControl.java": "sha256:96c2910fa8600d43e2f2a834d4a02790b3dfb1ca555ceffc81a9c9b4050e2a28",
+        "fibers/conformance/compiler/scheduled-source-control/dev/latent/generated/Bindings.java": "sha256:c97da0a13d621e25d0f028c37c2ff9ced43ba9b5f47d31118b64dba9da3b6a0e",
+        "fibers/conformance/compiler/scheduled-source-control/dev/latent/guest/runtime/Activation.java": "sha256:da5455ea79950ad3b99cf0c95e2e3ea691618291211c645ad66185e04f536086"
+      },
+      "componentExecutionPerformed": false,
+      "actualGuestBindingsUsed": false
+    },
+    "scheduledModel": {
+      "status": "actual-locked-classlib-model-passed",
+      "models": 8,
+      "constructedIdentities": 5,
+      "actualGeneratedCallbacks": 3,
+      "jarDigests": {
+        "com/jcraft/jzlib/1.1.3/jzlib-1.1.3.jar": "89b1360f407381bf61fde411019d8cbd009ebb10cff715f3669017a031027560",
+        "joda-time/joda-time/2.12.2/joda-time-2.12.2.jar": "8d4d807adc8e92a83913d9ccd61e634b4907c78d88f3016d06b3b3d2b4795a02",
+        "org/teavm/teavm-classlib/0.15.0/teavm-classlib-0.15.0.jar": "7d805be4670a892a34c89d9d750a8afd65e2f8201b7b3a10343634ea19d1c410",
+        "org/teavm/teavm-core/0.15.0/teavm-core-0.15.0.jar": "501ca5eae7a835cd6278c822685f32800fa0818e3f42204afc9b558408c943df",
+        "org/teavm/teavm-devserver-client/0.15.0/teavm-devserver-client-0.15.0.jar": "4113d73ac4241935de10dfdff20f8b67957a3253a0127bb6bada04ee5cd009d7",
+        "org/teavm/teavm-extension-annotation-processor/0.15.0/teavm-extension-annotation-processor-0.15.0.jar": "a801dfbbeef2f11e75b7fc3a6bfe63add003890f8b53679d63adbf92ffac1520",
+        "org/teavm/teavm-extension-apis/0.15.0/teavm-extension-apis-0.15.0.jar": "9e867f3760b1c8d86cdb18ec70e429c23fd933021c8c3bb0cc0b727eac3202c0",
+        "org/teavm/teavm-extension-spi-util/0.15.0/teavm-extension-spi-util-0.15.0.jar": "d94e8d4478c4186d18b657cb67654851d38b9f51d372dc7e7e54e0f3a24347c9",
+        "org/teavm/teavm-extension-spi/0.15.0/teavm-extension-spi-0.15.0.jar": "d30bc018e3d857d585c4887e8863fe40f4d20293b3286293eda5af2b97266b49",
+        "org/teavm/teavm-gradle-plugin/0.15.0/teavm-gradle-plugin-0.15.0.jar": "d68695de71995c16741208223d7ef755cfe7dcbfb436128f6ec6e7c76abd7ceb",
+        "org/teavm/teavm-interop/0.15.0/teavm-interop-0.15.0.jar": "5c8511d71ae6f6d2ca913130393b64a959303e521727b2d9c1a9b1e14519216f",
+        "org/teavm/teavm-jso-apis/0.15.0/teavm-jso-apis-0.15.0.jar": "171abaff01d9c029218df911470184ed8e30e6b511be6bb03381a924ec4a8c3c",
+        "org/teavm/teavm-jso-impl/0.15.0/teavm-jso-impl-0.15.0.jar": "9a8d15205807b70d7efdfbd4c1356304954e20146e464aec3830dbc6616ef57c",
+        "org/teavm/teavm-jso/0.15.0/teavm-jso-0.15.0.jar": "58b337b93924106bf819c45890c7c231a0c740145afe77795f1e0f099f621d71",
+        "org/teavm/teavm-metaprogramming-api/0.15.0/teavm-metaprogramming-api-0.15.0.jar": "00f053ad35ff78312e48eebbf4e1c6cf5f7a1e759b2432ba0b60d6f111bb3bdd",
+        "org/teavm/teavm-metaprogramming-impl/0.15.0/teavm-metaprogramming-impl-0.15.0.jar": "616d30aa28f7b0180a61c2289b11c77bf84c715bd79f255e1e42400edb5b6d70",
+        "org/teavm/teavm-platform/0.15.0/teavm-platform-0.15.0.jar": "999d369ab15aa83c17987d048ba59560759169891de7e13a5a1c2bd93dd060a8",
+        "org/teavm/teavm-relocated-libs-asm-analysis/0.15.0/teavm-relocated-libs-asm-analysis-0.15.0.jar": "6bb5ef62ab00d557061d9b04dc4571f711fbe11d339783e55029b37b75d5159c",
+        "org/teavm/teavm-relocated-libs-asm-commons/0.15.0/teavm-relocated-libs-asm-commons-0.15.0.jar": "d49685681db5039075f2fde01568f2bb6df14a99ef88d39b29df8e701e12e140",
+        "org/teavm/teavm-relocated-libs-asm-tree/0.15.0/teavm-relocated-libs-asm-tree-0.15.0.jar": "6b475fd62b8ddedfa0808c0c412c311f000a80a13123b6ba07f5da531164fd5b",
+        "org/teavm/teavm-relocated-libs-asm-util/0.15.0/teavm-relocated-libs-asm-util-0.15.0.jar": "a41247ca7f023959712be0e713d3f2f5687b4dfeda6b112b2d976494d52cdc57",
+        "org/teavm/teavm-relocated-libs-asm/0.15.0/teavm-relocated-libs-asm-0.15.0.jar": "400496e463dddd878fed2b9b25a66deca2126f71bb68e41f82244b4315006018",
+        "org/teavm/teavm-relocated-libs-hppc/0.15.0/teavm-relocated-libs-hppc-0.15.0.jar": "7b82fedf747e0bf5d7a50acece86a8a684901e469165a3c5621c653128df4cd6",
+        "org/teavm/teavm-relocated-libs-rhino/0.15.0/teavm-relocated-libs-rhino-0.15.0.jar": "49cedc9bfcdd44d30b8bc8d1d46d78fb7f8f2044b8c85c9c3f1ece33e94ee7e9",
+        "org/teavm/teavm-tooling/0.15.0/teavm-tooling-0.15.0.jar": "51123d78dc48404aa2e7cb0c04a0a6d75309decf604ffafda1c64564e7c9c6f3",
+        "org/teavm/teavm-wasm-gc-deobfuscator/0.15.0/teavm-wasm-gc-deobfuscator-0.15.0.jar": "875532a32d0c328f33f830ff5a75df752773229c71ae1d5a85bdeac497050376"
+      },
+      "sourceInputs": {
+        "fibers/compiler/dev/latent/guest/runtime/compiler/ContinuationProgram.java": "sha256:fc7253b0e968b1d9d961a14f72ae3a7a1d32ffdd61eb3d9be4e9c3e16c79b278",
+        "fibers/compiler/dev/latent/guest/runtime/compiler/MonitorContinuations.java": "sha256:4820f3b9a4a76c22b6c6110488c98f7094fae05f4d4c628513206491b057a587",
+        "fibers/compiler/dev/latent/guest/runtime/compiler/RuntimePlugin.java": "sha256:14ffcff7e93de59ae962bfd4e559329caaf120696d71c9a831dcff6b733277a7",
+        "fibers/compiler/dev/latent/guest/runtime/compiler/RuntimeSubstitution.java": "sha256:e4ffb25d2772aa866b95466540b58fefcb8bb3ea1ed8a09a6942e7a2ff438a16",
+        "fibers/compiler/dev/latent/guest/runtime/compiler/SleepContinuations.java": "sha256:ff3318393a22fac68998cf7ba6e219e71f454e6e5bf53162ae583f07a5609161",
+        "fibers/compiler/dev/latent/guest/runtime/compiler/StandardTimerMethods.java": "sha256:5673a2bd563b1727ccbebe0fcefbb7b02eb05a481f0b1288580b22b70db9a125",
+        "fibers/compiler/dev/latent/guest/runtime/compiler/SynchronizedMethods.java": "sha256:c8942a70c5f6b0dd789474f7238eb0db2e2dce9ff02561d52c6e9d4b858f202e",
+        "fibers/compiler/dev/latent/guest/runtime/compiler/ThrowableInitialization.java": "sha256:e8e69c388a711c5630c0adc8b4f10e2ab913f27dacb5bc524ab1ac67e23bbc98",
+        "fibers/compiler/dev/latent/guest/runtime/compiler/TimeUnitMethods.java": "sha256:33f89cb353b7a2a01049d883094872a5d8ff60e6ee48bef39da42f45221a9e81",
+        "fibers/compiler/dev/latent/guest/runtime/compiler/WaitContinuations.java": "sha256:e0f0c8a78d0b51b46c9d671c93e085717750934af415aa9a46d18e710c3b64f8",
+        "fibers/dev/latent/guest/runtime/concurrent/AbstractExecutorService.java": "sha256:3654119185bc8dbef26f1e28a310395cef9f5fbe851e4534fc15b0387be25ece",
+        "fibers/dev/latent/guest/runtime/concurrent/CompletableFuture.java": "sha256:66a424517efaa74496fd6e60b13af27f83023abf3a82d14de4e7c5bd5f467aa5",
+        "fibers/dev/latent/guest/runtime/concurrent/CompletionException.java": "sha256:e745f58e7e0e41d42b55303d2a7329799348a0ab77a2cde81810466a3d256482",
+        "fibers/dev/latent/guest/runtime/concurrent/CompletionStage.java": "sha256:e980415748ea784a24510b3916ecedb7747d692dd9267459e0587e085c827140",
+        "fibers/dev/latent/guest/runtime/concurrent/Delayed.java": "sha256:8e9f4d46b7ec70d14c2dae1e927f1414dfe9d4f3ae74ca49ea90bf7e497d27b5",
+        "fibers/dev/latent/guest/runtime/concurrent/ExecutorService.java": "sha256:c115a8e148278b324414a8ad4b4ad3cda23ce8daaf9e58ba40581b72ea6805bb",
+        "fibers/dev/latent/guest/runtime/concurrent/Executors.java": "sha256:4f30c2be8a0837a0f6d3f4352ff936ff60934d27b3caf96ab2fefa3447700f51",
+        "fibers/dev/latent/guest/runtime/concurrent/Future.java": "sha256:4a688803e8209e56ce331ece8291740cfee79d63e063fbab441aa6dd36e87f76",
+        "fibers/dev/latent/guest/runtime/concurrent/FutureTask.java": "sha256:e5c19c5fe00bd0d773c51ac1635a30e59299c2d3d60e412c3f0e026ce116d5c3",
+        "fibers/dev/latent/guest/runtime/concurrent/ManagedExecutor.java": "sha256:08f8133cc28836b2296893d0efc265298e15c8aa72fd8defad97e1900e3b0d92",
+        "fibers/dev/latent/guest/runtime/concurrent/RejectedExecutionException.java": "sha256:e21010bc97c6990e75877998547ed8bef4c185294a3feb3e3b1d5b16c622b4ba",
+        "fibers/dev/latent/guest/runtime/concurrent/RunnableFuture.java": "sha256:cf3e9e8bab8aecf190dab76e5f7e7e4333057b65ea9112670dd6cb8521fd6328",
+        "fibers/dev/latent/guest/runtime/concurrent/ScheduledExecutorService.java": "sha256:88dc797357adf7272cd9b829b7dad836fcbda511e75245980c45a88f5285aa0f",
+        "fibers/dev/latent/guest/runtime/concurrent/ScheduledFuture.java": "sha256:1a4517cc2930179f7a19bfcfc08b3f5e31031060e73e13a75dc9b873b59f4697",
+        "fibers/dev/latent/guest/runtime/concurrent/ScheduledThreadPoolExecutor.java": "sha256:99e048bc157aa51c9b78c2acd18d7816788e4009c16fd9433fabb428895febf8",
+        "fibers/dev/latent/guest/runtime/concurrent/ThreadFactory.java": "sha256:1aed06e12da6b8111a47dbc2266ee0eb0d51db5f4a9c25e9e59eb70c3cd4e0b6",
+        "fibers/dev/latent/guest/runtime/concurrent/TimeUnit.java": "sha256:6c829473167d1cbe05f4fcb858a0f5f355209711ee3959ec58f2d6c569ac1ab1",
+        "fibers/dev/latent/guest/runtime/concurrent/TimeoutException.java": "sha256:9b0d6e7a88746f81b0fdb8804d25a727459db8463d35738afcfee3830a3ae462",
+        "fibers/conformance/compiler/ScheduledModelControl.java": "sha256:d74fd43a602f16497db4e9518f7deb88ee9871f32dca01f4938cf776bd02dbd3",
+        "fibers/conformance/compiler/source-control/org/teavm/dependency/LambdaEmitterControlContext.java": "sha256:62946adf455a102ed57550b933d5832894299551a484c6a9652e55d26262ca43",
+        "fibers/conformance/compiler/scheduled-source-control/dev/latent/generated/Bindings.java": "sha256:c97da0a13d621e25d0f028c37c2ff9ced43ba9b5f47d31118b64dba9da3b6a0e",
+        "fibers/conformance/compiler/scheduled-source-control/dev/latent/guest/runtime/Activation.java": "sha256:da5455ea79950ad3b99cf0c95e2e3ea691618291211c645ad66185e04f536086"
+      },
+      "portOrApplicationClassesInitialized": false,
+      "actualGuestBindingsUsed": false
+    },
+    "actualModelMarker": "SCHEDULED_MODEL_CONTROL PASS standard-APIs;private-task;canonical-fields-and-methods;ordinary-constructor;no-fallback;constructed-identities=5;actual-generated-callbacks=3;models=8",
+    "sourceOwnerControls": {
+      "passed": 4,
+      "skipped": 0,
+      "stderr": {
+        "bytes": 1002,
+        "sha256": "01e39d2171db13d289b8e53b014b71d8f1a9552c010bd5d839e27d40d92a483a"
+      }
+    }
+  },
+  "compiler": {
+    "rawRecord": {
+      "bytes": 147611,
+      "sha256": "f4ad5f6dc6e83840e7bc1100255c9213614be5eff0c2f70843e275a93ccfe44b"
+    },
+    "rawStatusPreserved": {
+      "profile": "teavm-activation-fibers-v1",
+      "status": "component-built-unqualified",
+      "qualification": "pending",
+      "nodeExecution": "not-run"
+    },
+    "sourceDigest": "sha256:f14b93bb60c66655978d607032e2a17f6f895e8bca9d03c44fd94197a5164254",
+    "componentDigest": "sha256:70ed83c543c68768f9a85ea19f6d7a388afe43834973ee185a46fc995dace487",
+    "sdkInputsCanonical": {
+      "bytes": 23749,
+      "sha256": "c7b86c6e20f1a9a2563476250bccaa9ce5828a108cf3f75b9c4fd8b7f0c92bc9"
+    },
+    "fullCompilerInputs": {
+      "bytes": 2912106,
+      "sha256": "281a0b32d7b8a1821fad5fe1f59bae659df0af80e42b69b51c2d5c7004e7b098"
+    },
+    "normalCompilerSeconds": 69.961567,
+    "commands": [
+      {
+        "stage": "java-version",
+        "command": [
+          "/opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/25.0.4-101.0.LTS/x64/bin/java",
+          "-version"
+        ],
+        "exitCode": 0,
+        "seconds": 0.023786
+      },
+      {
+        "stage": "gradle-version",
+        "command": [
+          "/tmp/latent-java-scheduled.w33z62ie/gradle-9.1.0/bin/gradle",
+          "--version"
+        ],
+        "exitCode": 0,
+        "seconds": 0.442452
+      },
+      {
+        "stage": "clang-version",
+        "command": [
+          "/tmp/latent-java-scheduled.w33z62ie/product/installed/wasi-sdk/bin/clang-21",
+          "--version"
+        ],
+        "exitCode": 0,
+        "seconds": 0.013334
+      },
+      {
+        "stage": "wit-bindgen-version",
+        "command": [
+          "/tmp/latent-java-scheduled.w33z62ie/bindgen/wit-bindgen",
+          "--version"
+        ],
+        "exitCode": 0,
+        "seconds": 0.013365
+      },
+      {
+        "stage": "wasm-tools-version",
+        "command": [
+          "/home/runner/downloader/bin/wasm-tools",
+          "--version"
+        ],
+        "exitCode": 0,
+        "seconds": 0.013495
+      },
+      {
+        "stage": "wit-graph",
+        "command": [
+          "/home/runner/downloader/bin/wasm-tools",
+          "component",
+          "wit",
+          "/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/sdk-reference/wit",
+          "--json"
+        ],
+        "exitCode": 0,
+        "seconds": 0.013682
+      },
+      {
+        "stage": "wit-bindings",
+        "command": [
+          "/tmp/latent-java-scheduled.w33z62ie/bindgen/wit-bindgen",
+          "c",
+          "/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/sdk-reference/wit",
+          "--world",
+          "latent:java-guest/sdk@1.0.0",
+          "--rename-world",
+          "probe",
+          "--no-sig-flattening",
+          "--async=-all",
+          "--out-dir",
+          "/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/sdk-reference/bindings"
+        ],
+        "exitCode": 0,
+        "seconds": 0.01355
+      },
+      {
+        "stage": "bindings-metadata",
+        "command": [
+          "/home/runner/downloader/bin/wasm-tools",
+          "component",
+          "wit",
+          "/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/sdk-reference/bindings/probe_component_type.o"
+        ],
+        "exitCode": 0,
+        "seconds": 0.013767
+      },
+      {
+        "stage": "reference-jdk-compile",
+        "command": [
+          "/opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/25.0.4-101.0.LTS/x64/bin/javac",
+          "-proc:none",
+          "-cp",
+          "/tmp/latent-java-scheduled.w33z62ie/scheduled/library-inputs/offline-inputs/dependencies/java/0000.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/library-inputs/offline-inputs/dependencies/java/0001.jar",
+          "-d",
+          "/tmp/latent-java-scheduled.w33z62ie/scheduled/reference-jdk",
+          "/tmp/latent-java-scheduled.w33z62ie/scheduled/src/Capsule.java",
+          "/tmp/latent-java-scheduled.w33z62ie/scheduled/reference-jdk/Main.java"
+        ],
+        "exitCode": 0,
+        "seconds": 0.548325
+      },
+      {
+        "stage": "reference-jdk-0",
+        "command": [
+          "/opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/25.0.4-101.0.LTS/x64/bin/java",
+          "-cp",
+          "/tmp/latent-java-scheduled.w33z62ie/scheduled/reference-jdk:/tmp/latent-java-scheduled.w33z62ie/scheduled/library-inputs/offline-inputs/dependencies/java/0000.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/library-inputs/offline-inputs/dependencies/java/0001.jar",
+          "Main"
+        ],
+        "exitCode": 0,
+        "seconds": 0.06436
+      },
+      {
+        "stage": "scheduled-source-compile",
+        "command": [
+          "/opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/25.0.4-101.0.LTS/x64/bin/javac",
+          "-proc:none",
+          "--release",
+          "25",
+          "-d",
+          "/tmp/latent-java-scheduled.w33z62ie/scheduled/scheduled-source",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/fibers/dev/latent/guest/runtime/concurrent/AbstractExecutorService.java",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/fibers/dev/latent/guest/runtime/concurrent/CompletableFuture.java",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/fibers/dev/latent/guest/runtime/concurrent/CompletionException.java",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/fibers/dev/latent/guest/runtime/concurrent/CompletionStage.java",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/fibers/dev/latent/guest/runtime/concurrent/Delayed.java",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/fibers/dev/latent/guest/runtime/concurrent/ExecutorService.java",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/fibers/dev/latent/guest/runtime/concurrent/Executors.java",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/fibers/dev/latent/guest/runtime/concurrent/Future.java",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/fibers/dev/latent/guest/runtime/concurrent/FutureTask.java",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/fibers/dev/latent/guest/runtime/concurrent/ManagedExecutor.java",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/fibers/dev/latent/guest/runtime/concurrent/RejectedExecutionException.java",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/fibers/dev/latent/guest/runtime/concurrent/RunnableFuture.java",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/fibers/dev/latent/guest/runtime/concurrent/ScheduledExecutorService.java",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/fibers/dev/latent/guest/runtime/concurrent/ScheduledFuture.java",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/fibers/dev/latent/guest/runtime/concurrent/ScheduledThreadPoolExecutor.java",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/fibers/dev/latent/guest/runtime/concurrent/ThreadFactory.java",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/fibers/dev/latent/guest/runtime/concurrent/TimeUnit.java",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/fibers/dev/latent/guest/runtime/concurrent/TimeoutException.java",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/fibers/conformance/compiler/scheduled-source-control/ScheduledOwnerControl.java",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/fibers/conformance/compiler/scheduled-source-control/dev/latent/generated/Bindings.java",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/fibers/conformance/compiler/scheduled-source-control/dev/latent/guest/runtime/Activation.java"
+        ],
+        "exitCode": 0,
+        "seconds": 1.056073
+      },
+      {
+        "stage": "scheduled-source-control",
+        "command": [
+          "/opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/25.0.4-101.0.LTS/x64/bin/java",
+          "-Xmx256m",
+          "-cp",
+          "/tmp/latent-java-scheduled.w33z62ie/scheduled/scheduled-source",
+          "ScheduledOwnerControl"
+        ],
+        "exitCode": 0,
+        "seconds": 0.043912
+      },
+      {
+        "stage": "activation-profile-wit",
+        "command": [
+          "/home/runner/downloader/bin/wasm-tools",
+          "component",
+          "wit",
+          "/tmp/latent-java-scheduled.w33z62ie/scheduled/build/wit",
+          "--json"
+        ],
+        "exitCode": 0,
+        "seconds": 0.013488
+      },
+      {
+        "stage": "wit-graph",
+        "command": [
+          "/home/runner/downloader/bin/wasm-tools",
+          "component",
+          "wit",
+          "/tmp/latent-java-scheduled.w33z62ie/scheduled/build/wit",
+          "--json"
+        ],
+        "exitCode": 0,
+        "seconds": 0.013474
+      },
+      {
+        "stage": "wit-bindings",
+        "command": [
+          "/tmp/latent-java-scheduled.w33z62ie/bindgen/wit-bindgen",
+          "c",
+          "/tmp/latent-java-scheduled.w33z62ie/scheduled/build/wit",
+          "--world",
+          "tests:caller/service@1.0.0",
+          "--rename-world",
+          "probe",
+          "--no-sig-flattening",
+          "--async=-all",
+          "--out-dir",
+          "/tmp/latent-java-scheduled.w33z62ie/scheduled/build/bindings"
+        ],
+        "exitCode": 0,
+        "seconds": 0.013323
+      },
+      {
+        "stage": "bindings-metadata",
+        "command": [
+          "/home/runner/downloader/bin/wasm-tools",
+          "component",
+          "wit",
+          "/tmp/latent-java-scheduled.w33z62ie/scheduled/build/bindings/probe_component_type.o"
+        ],
+        "exitCode": 0,
+        "seconds": 0.013302
+      },
+      {
+        "stage": "wit-graph",
+        "command": [
+          "/home/runner/downloader/bin/wasm-tools",
+          "component",
+          "wit",
+          "/tmp/latent-java-scheduled.w33z62ie/scheduled/build/wit",
+          "--json"
+        ],
+        "exitCode": 0,
+        "seconds": 0.013305
+      },
+      {
+        "stage": "wit-bindings",
+        "command": [
+          "/tmp/latent-java-scheduled.w33z62ie/bindgen/wit-bindgen",
+          "c",
+          "/tmp/latent-java-scheduled.w33z62ie/scheduled/build/wit",
+          "--world",
+          "tests:caller/service@1.0.0",
+          "--rename-world",
+          "probe",
+          "--no-sig-flattening",
+          "--async=-all",
+          "--out-dir",
+          "/tmp/latent-java-scheduled.w33z62ie/scheduled/build/bindings-check"
+        ],
+        "exitCode": 0,
+        "seconds": 0.01343
+      },
+      {
+        "stage": "bindings-metadata",
+        "command": [
+          "/home/runner/downloader/bin/wasm-tools",
+          "component",
+          "wit",
+          "/tmp/latent-java-scheduled.w33z62ie/scheduled/build/bindings-check/probe_component_type.o"
+        ],
+        "exitCode": 0,
+        "seconds": 0.013439
+      },
+      {
+        "stage": "java-source-origins",
+        "command": [
+          "/opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/25.0.4-101.0.LTS/x64/bin/java",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/fibers/analysis/SourceOrigins.java",
+          "/tmp/latent-java-scheduled.w33z62ie/scheduled/src"
+        ],
+        "exitCode": 0,
+        "seconds": 0.649133
+      },
+      {
+        "stage": "java-owned-classes",
+        "command": [
+          "/tmp/latent-java-scheduled.w33z62ie/gradle-9.1.0/bin/gradle",
+          "--no-daemon",
+          "classes"
+        ],
+        "exitCode": 0,
+        "seconds": 11.038517
+      },
+      {
+        "stage": "java-coroutine-patch",
+        "command": [
+          "/opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/25.0.4-101.0.LTS/x64/bin/java",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/fibers/compiler-patch/Compile.java",
+          "/tmp/latent-java-scheduled.w33z62ie/scheduled/build/project/compiler-patch/CoroutineTransformation.java",
+          "/tmp/latent-java-scheduled.w33z62ie/scheduled/build/project/compiler-patch/Check.java",
+          "/tmp/latent-java-scheduled.w33z62ie/scheduled/build/project/compiler-patch/classes",
+          "/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/com.jcraft/jzlib/1.1.3/c01428efa717624f7aabf4df319939dda9646b2d/jzlib-1.1.3.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/joda-time/joda-time/2.12.2/78e18a7b4180e911dafba0a412adfa82c1e3d14b/joda-time-2.12.2.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-classlib/0.15.0/99920463973edd9bb8de9a608255434c9f844c33/teavm-classlib-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-core/0.15.0/10de41fb4be7ca03e697e8d0e2000d3a73f2bf84/teavm-core-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-devserver-client/0.15.0/8a4cf9e7dd5ed701bf3d23f71b2147de304645c8/teavm-devserver-client-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-extension-annotation-processor/0.15.0/1fffcff5477865ac5ff11451a1e7f52755c5e27b/teavm-extension-annotation-processor-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-extension-apis/0.15.0/2f3f7d35226b785c85eade6437e8f5b6ec6b27de/teavm-extension-apis-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-extension-spi-util/0.15.0/7748e2048097834afc835bf19658d15462bcf276/teavm-extension-spi-util-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-extension-spi/0.15.0/48cc7a96af9764b2b3989597c6ce7b9e783fb4c7/teavm-extension-spi-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-gradle-plugin/0.15.0/fb5f3f2531d60e1482bbabea859fb5e2a458cc41/teavm-gradle-plugin-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-interop/0.15.0/468be097a4844330485762e3447be4197626d0c1/teavm-interop-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-jso-apis/0.15.0/fbb8bf591c3a157e9232cd8883763a97c81b4f3/teavm-jso-apis-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-jso-impl/0.15.0/768095aaf09decff120671ff42cb649f75c880b5/teavm-jso-impl-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-jso/0.15.0/bf36e3b6121090baf24ed30a4a1e6a794882da87/teavm-jso-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-metaprogramming-api/0.15.0/d55532b1c37b2b3c1690f073160244f8c46baae0/teavm-metaprogramming-api-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-metaprogramming-impl/0.15.0/719fee54b8982472576915694365f24fb9516050/teavm-metaprogramming-impl-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-platform/0.15.0/1284571e7a257c1a96d067d92a93a7085ff34d42/teavm-platform-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-relocated-libs-asm-analysis/0.15.0/65ac69292aa28307f73a61c149da3f877ba5426b/teavm-relocated-libs-asm-analysis-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-relocated-libs-asm-commons/0.15.0/20f0ca058ba290048d2a17e9f5014a2ec90539b0/teavm-relocated-libs-asm-commons-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-relocated-libs-asm-tree/0.15.0/d709372e6eb5f80877b7f505f1f02a916af6b1cb/teavm-relocated-libs-asm-tree-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-relocated-libs-asm-util/0.15.0/e0cc59407083aa266185f9c5c4f59d5a04c1d6b7/teavm-relocated-libs-asm-util-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-relocated-libs-asm/0.15.0/f746b39e4d2db6e5dac979cba0b630fc358770a1/teavm-relocated-libs-asm-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-relocated-libs-hppc/0.15.0/d7b3043e84b9202a5f252df6322271a30de3a5a3/teavm-relocated-libs-hppc-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-relocated-libs-rhino/0.15.0/c6b7703825bcae8794359e8f1cbe342816116762/teavm-relocated-libs-rhino-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-tooling/0.15.0/9baabc005c3fef546b975cd3d6efc71346772fb3/teavm-tooling-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-wasm-gc-deobfuscator/0.15.0/a90b1987c2b1b01a019dcb0ea426b777230840c9/teavm-wasm-gc-deobfuscator-0.15.0.jar",
+          "/tmp/latent-java-scheduled.w33z62ie/scheduled/build/project/compiler-patch/TypeInferer.java",
+          "/tmp/latent-java-scheduled.w33z62ie/scheduled/build/project/compiler-patch/ArrayTypeCheck.java",
+          "/tmp/latent-java-scheduled.w33z62ie/scheduled/build/project/compiler-patch/AsyncMethodFinder.java",
+          "/tmp/latent-java-scheduled.w33z62ie/scheduled/build/project/compiler-patch/MonitorAsyncControl.java"
+        ],
+        "exitCode": 0,
+        "seconds": 1.022658
+      },
+      {
+        "stage": "java-coroutine-original-control",
+        "command": [
+          "/opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/25.0.4-101.0.LTS/x64/bin/java",
+          "-cp",
+          "/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-core/0.15.0/10de41fb4be7ca03e697e8d0e2000d3a73f2bf84/teavm-core-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/build/project/compiler-patch/classes:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/com.jcraft/jzlib/1.1.3/c01428efa717624f7aabf4df319939dda9646b2d/jzlib-1.1.3.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/joda-time/joda-time/2.12.2/78e18a7b4180e911dafba0a412adfa82c1e3d14b/joda-time-2.12.2.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-classlib/0.15.0/99920463973edd9bb8de9a608255434c9f844c33/teavm-classlib-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-devserver-client/0.15.0/8a4cf9e7dd5ed701bf3d23f71b2147de304645c8/teavm-devserver-client-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-extension-annotation-processor/0.15.0/1fffcff5477865ac5ff11451a1e7f52755c5e27b/teavm-extension-annotation-processor-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-extension-apis/0.15.0/2f3f7d35226b785c85eade6437e8f5b6ec6b27de/teavm-extension-apis-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-extension-spi-util/0.15.0/7748e2048097834afc835bf19658d15462bcf276/teavm-extension-spi-util-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-extension-spi/0.15.0/48cc7a96af9764b2b3989597c6ce7b9e783fb4c7/teavm-extension-spi-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-gradle-plugin/0.15.0/fb5f3f2531d60e1482bbabea859fb5e2a458cc41/teavm-gradle-plugin-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-interop/0.15.0/468be097a4844330485762e3447be4197626d0c1/teavm-interop-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-jso-apis/0.15.0/fbb8bf591c3a157e9232cd8883763a97c81b4f3/teavm-jso-apis-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-jso-impl/0.15.0/768095aaf09decff120671ff42cb649f75c880b5/teavm-jso-impl-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-jso/0.15.0/bf36e3b6121090baf24ed30a4a1e6a794882da87/teavm-jso-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-metaprogramming-api/0.15.0/d55532b1c37b2b3c1690f073160244f8c46baae0/teavm-metaprogramming-api-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-metaprogramming-impl/0.15.0/719fee54b8982472576915694365f24fb9516050/teavm-metaprogramming-impl-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-platform/0.15.0/1284571e7a257c1a96d067d92a93a7085ff34d42/teavm-platform-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-relocated-libs-asm-analysis/0.15.0/65ac69292aa28307f73a61c149da3f877ba5426b/teavm-relocated-libs-asm-analysis-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-relocated-libs-asm-commons/0.15.0/20f0ca058ba290048d2a17e9f5014a2ec90539b0/teavm-relocated-libs-asm-commons-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-relocated-libs-asm-tree/0.15.0/d709372e6eb5f80877b7f505f1f02a916af6b1cb/teavm-relocated-libs-asm-tree-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-relocated-libs-asm-util/0.15.0/e0cc59407083aa266185f9c5c4f59d5a04c1d6b7/teavm-relocated-libs-asm-util-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-relocated-libs-asm/0.15.0/f746b39e4d2db6e5dac979cba0b630fc358770a1/teavm-relocated-libs-asm-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-relocated-libs-hppc/0.15.0/d7b3043e84b9202a5f252df6322271a30de3a5a3/teavm-relocated-libs-hppc-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-relocated-libs-rhino/0.15.0/c6b7703825bcae8794359e8f1cbe342816116762/teavm-relocated-libs-rhino-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-tooling/0.15.0/9baabc005c3fef546b975cd3d6efc71346772fb3/teavm-tooling-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-wasm-gc-deobfuscator/0.15.0/a90b1987c2b1b01a019dcb0ea426b777230840c9/teavm-wasm-gc-deobfuscator-0.15.0.jar",
+          "org.teavm.backend.lowlevel.transform.Check",
+          "original"
+        ],
+        "exitCode": 0,
+        "seconds": 0.136247
+      },
+      {
+        "stage": "java-coroutine-monitor-original-control",
+        "command": [
+          "/opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/25.0.4-101.0.LTS/x64/bin/java",
+          "-cp",
+          "/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-core/0.15.0/10de41fb4be7ca03e697e8d0e2000d3a73f2bf84/teavm-core-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/build/project/compiler-patch/classes:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/com.jcraft/jzlib/1.1.3/c01428efa717624f7aabf4df319939dda9646b2d/jzlib-1.1.3.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/joda-time/joda-time/2.12.2/78e18a7b4180e911dafba0a412adfa82c1e3d14b/joda-time-2.12.2.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-classlib/0.15.0/99920463973edd9bb8de9a608255434c9f844c33/teavm-classlib-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-devserver-client/0.15.0/8a4cf9e7dd5ed701bf3d23f71b2147de304645c8/teavm-devserver-client-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-extension-annotation-processor/0.15.0/1fffcff5477865ac5ff11451a1e7f52755c5e27b/teavm-extension-annotation-processor-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-extension-apis/0.15.0/2f3f7d35226b785c85eade6437e8f5b6ec6b27de/teavm-extension-apis-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-extension-spi-util/0.15.0/7748e2048097834afc835bf19658d15462bcf276/teavm-extension-spi-util-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-extension-spi/0.15.0/48cc7a96af9764b2b3989597c6ce7b9e783fb4c7/teavm-extension-spi-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-gradle-plugin/0.15.0/fb5f3f2531d60e1482bbabea859fb5e2a458cc41/teavm-gradle-plugin-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-interop/0.15.0/468be097a4844330485762e3447be4197626d0c1/teavm-interop-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-jso-apis/0.15.0/fbb8bf591c3a157e9232cd8883763a97c81b4f3/teavm-jso-apis-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-jso-impl/0.15.0/768095aaf09decff120671ff42cb649f75c880b5/teavm-jso-impl-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-jso/0.15.0/bf36e3b6121090baf24ed30a4a1e6a794882da87/teavm-jso-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-metaprogramming-api/0.15.0/d55532b1c37b2b3c1690f073160244f8c46baae0/teavm-metaprogramming-api-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-metaprogramming-impl/0.15.0/719fee54b8982472576915694365f24fb9516050/teavm-metaprogramming-impl-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-platform/0.15.0/1284571e7a257c1a96d067d92a93a7085ff34d42/teavm-platform-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-relocated-libs-asm-analysis/0.15.0/65ac69292aa28307f73a61c149da3f877ba5426b/teavm-relocated-libs-asm-analysis-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-relocated-libs-asm-commons/0.15.0/20f0ca058ba290048d2a17e9f5014a2ec90539b0/teavm-relocated-libs-asm-commons-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-relocated-libs-asm-tree/0.15.0/d709372e6eb5f80877b7f505f1f02a916af6b1cb/teavm-relocated-libs-asm-tree-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-relocated-libs-asm-util/0.15.0/e0cc59407083aa266185f9c5c4f59d5a04c1d6b7/teavm-relocated-libs-asm-util-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-relocated-libs-asm/0.15.0/f746b39e4d2db6e5dac979cba0b630fc358770a1/teavm-relocated-libs-asm-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-relocated-libs-hppc/0.15.0/d7b3043e84b9202a5f252df6322271a30de3a5a3/teavm-relocated-libs-hppc-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-relocated-libs-rhino/0.15.0/c6b7703825bcae8794359e8f1cbe342816116762/teavm-relocated-libs-rhino-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-tooling/0.15.0/9baabc005c3fef546b975cd3d6efc71346772fb3/teavm-tooling-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-wasm-gc-deobfuscator/0.15.0/a90b1987c2b1b01a019dcb0ea426b777230840c9/teavm-wasm-gc-deobfuscator-0.15.0.jar",
+          "org.teavm.dependency.MonitorAsyncControl",
+          "original"
+        ],
+        "exitCode": 0,
+        "seconds": 0.105145
+      },
+      {
+        "stage": "java-coroutine-corrected-control",
+        "command": [
+          "/opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/25.0.4-101.0.LTS/x64/bin/java",
+          "-cp",
+          "/tmp/latent-java-scheduled.w33z62ie/scheduled/build/project/compiler-patch/teavm-core-patched.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/build/project/compiler-patch/classes:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/com.jcraft/jzlib/1.1.3/c01428efa717624f7aabf4df319939dda9646b2d/jzlib-1.1.3.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/joda-time/joda-time/2.12.2/78e18a7b4180e911dafba0a412adfa82c1e3d14b/joda-time-2.12.2.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-classlib/0.15.0/99920463973edd9bb8de9a608255434c9f844c33/teavm-classlib-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-devserver-client/0.15.0/8a4cf9e7dd5ed701bf3d23f71b2147de304645c8/teavm-devserver-client-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-extension-annotation-processor/0.15.0/1fffcff5477865ac5ff11451a1e7f52755c5e27b/teavm-extension-annotation-processor-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-extension-apis/0.15.0/2f3f7d35226b785c85eade6437e8f5b6ec6b27de/teavm-extension-apis-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-extension-spi-util/0.15.0/7748e2048097834afc835bf19658d15462bcf276/teavm-extension-spi-util-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-extension-spi/0.15.0/48cc7a96af9764b2b3989597c6ce7b9e783fb4c7/teavm-extension-spi-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-gradle-plugin/0.15.0/fb5f3f2531d60e1482bbabea859fb5e2a458cc41/teavm-gradle-plugin-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-interop/0.15.0/468be097a4844330485762e3447be4197626d0c1/teavm-interop-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-jso-apis/0.15.0/fbb8bf591c3a157e9232cd8883763a97c81b4f3/teavm-jso-apis-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-jso-impl/0.15.0/768095aaf09decff120671ff42cb649f75c880b5/teavm-jso-impl-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-jso/0.15.0/bf36e3b6121090baf24ed30a4a1e6a794882da87/teavm-jso-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-metaprogramming-api/0.15.0/d55532b1c37b2b3c1690f073160244f8c46baae0/teavm-metaprogramming-api-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-metaprogramming-impl/0.15.0/719fee54b8982472576915694365f24fb9516050/teavm-metaprogramming-impl-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-platform/0.15.0/1284571e7a257c1a96d067d92a93a7085ff34d42/teavm-platform-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-relocated-libs-asm-analysis/0.15.0/65ac69292aa28307f73a61c149da3f877ba5426b/teavm-relocated-libs-asm-analysis-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-relocated-libs-asm-commons/0.15.0/20f0ca058ba290048d2a17e9f5014a2ec90539b0/teavm-relocated-libs-asm-commons-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-relocated-libs-asm-tree/0.15.0/d709372e6eb5f80877b7f505f1f02a916af6b1cb/teavm-relocated-libs-asm-tree-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-relocated-libs-asm-util/0.15.0/e0cc59407083aa266185f9c5c4f59d5a04c1d6b7/teavm-relocated-libs-asm-util-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-relocated-libs-asm/0.15.0/f746b39e4d2db6e5dac979cba0b630fc358770a1/teavm-relocated-libs-asm-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-relocated-libs-hppc/0.15.0/d7b3043e84b9202a5f252df6322271a30de3a5a3/teavm-relocated-libs-hppc-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-relocated-libs-rhino/0.15.0/c6b7703825bcae8794359e8f1cbe342816116762/teavm-relocated-libs-rhino-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-tooling/0.15.0/9baabc005c3fef546b975cd3d6efc71346772fb3/teavm-tooling-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-wasm-gc-deobfuscator/0.15.0/a90b1987c2b1b01a019dcb0ea426b777230840c9/teavm-wasm-gc-deobfuscator-0.15.0.jar",
+          "org.teavm.backend.lowlevel.transform.Check",
+          "corrected"
+        ],
+        "exitCode": 0,
+        "seconds": 0.115098
+      },
+      {
+        "stage": "java-coroutine-monitor-corrected-control",
+        "command": [
+          "/opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/25.0.4-101.0.LTS/x64/bin/java",
+          "-cp",
+          "/tmp/latent-java-scheduled.w33z62ie/scheduled/build/project/compiler-patch/teavm-core-patched.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/build/project/compiler-patch/classes:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/com.jcraft/jzlib/1.1.3/c01428efa717624f7aabf4df319939dda9646b2d/jzlib-1.1.3.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/joda-time/joda-time/2.12.2/78e18a7b4180e911dafba0a412adfa82c1e3d14b/joda-time-2.12.2.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-classlib/0.15.0/99920463973edd9bb8de9a608255434c9f844c33/teavm-classlib-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-devserver-client/0.15.0/8a4cf9e7dd5ed701bf3d23f71b2147de304645c8/teavm-devserver-client-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-extension-annotation-processor/0.15.0/1fffcff5477865ac5ff11451a1e7f52755c5e27b/teavm-extension-annotation-processor-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-extension-apis/0.15.0/2f3f7d35226b785c85eade6437e8f5b6ec6b27de/teavm-extension-apis-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-extension-spi-util/0.15.0/7748e2048097834afc835bf19658d15462bcf276/teavm-extension-spi-util-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-extension-spi/0.15.0/48cc7a96af9764b2b3989597c6ce7b9e783fb4c7/teavm-extension-spi-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-gradle-plugin/0.15.0/fb5f3f2531d60e1482bbabea859fb5e2a458cc41/teavm-gradle-plugin-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-interop/0.15.0/468be097a4844330485762e3447be4197626d0c1/teavm-interop-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-jso-apis/0.15.0/fbb8bf591c3a157e9232cd8883763a97c81b4f3/teavm-jso-apis-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-jso-impl/0.15.0/768095aaf09decff120671ff42cb649f75c880b5/teavm-jso-impl-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-jso/0.15.0/bf36e3b6121090baf24ed30a4a1e6a794882da87/teavm-jso-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-metaprogramming-api/0.15.0/d55532b1c37b2b3c1690f073160244f8c46baae0/teavm-metaprogramming-api-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-metaprogramming-impl/0.15.0/719fee54b8982472576915694365f24fb9516050/teavm-metaprogramming-impl-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-platform/0.15.0/1284571e7a257c1a96d067d92a93a7085ff34d42/teavm-platform-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-relocated-libs-asm-analysis/0.15.0/65ac69292aa28307f73a61c149da3f877ba5426b/teavm-relocated-libs-asm-analysis-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-relocated-libs-asm-commons/0.15.0/20f0ca058ba290048d2a17e9f5014a2ec90539b0/teavm-relocated-libs-asm-commons-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-relocated-libs-asm-tree/0.15.0/d709372e6eb5f80877b7f505f1f02a916af6b1cb/teavm-relocated-libs-asm-tree-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-relocated-libs-asm-util/0.15.0/e0cc59407083aa266185f9c5c4f59d5a04c1d6b7/teavm-relocated-libs-asm-util-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-relocated-libs-asm/0.15.0/f746b39e4d2db6e5dac979cba0b630fc358770a1/teavm-relocated-libs-asm-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-relocated-libs-hppc/0.15.0/d7b3043e84b9202a5f252df6322271a30de3a5a3/teavm-relocated-libs-hppc-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-relocated-libs-rhino/0.15.0/c6b7703825bcae8794359e8f1cbe342816116762/teavm-relocated-libs-rhino-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-tooling/0.15.0/9baabc005c3fef546b975cd3d6efc71346772fb3/teavm-tooling-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-wasm-gc-deobfuscator/0.15.0/a90b1987c2b1b01a019dcb0ea426b777230840c9/teavm-wasm-gc-deobfuscator-0.15.0.jar",
+          "org.teavm.dependency.MonitorAsyncControl",
+          "corrected"
+        ],
+        "exitCode": 0,
+        "seconds": 0.094762
+      },
+      {
+        "stage": "java-coroutine-copy-cost-control",
+        "command": [
+          "/opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/25.0.4-101.0.LTS/x64/bin/java",
+          "-cp",
+          "/tmp/latent-java-scheduled.w33z62ie/scheduled/build/project/compiler-patch/teavm-core-patched.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/build/project/compiler-patch/classes:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/com.jcraft/jzlib/1.1.3/c01428efa717624f7aabf4df319939dda9646b2d/jzlib-1.1.3.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/joda-time/joda-time/2.12.2/78e18a7b4180e911dafba0a412adfa82c1e3d14b/joda-time-2.12.2.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-classlib/0.15.0/99920463973edd9bb8de9a608255434c9f844c33/teavm-classlib-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-devserver-client/0.15.0/8a4cf9e7dd5ed701bf3d23f71b2147de304645c8/teavm-devserver-client-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-extension-annotation-processor/0.15.0/1fffcff5477865ac5ff11451a1e7f52755c5e27b/teavm-extension-annotation-processor-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-extension-apis/0.15.0/2f3f7d35226b785c85eade6437e8f5b6ec6b27de/teavm-extension-apis-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-extension-spi-util/0.15.0/7748e2048097834afc835bf19658d15462bcf276/teavm-extension-spi-util-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-extension-spi/0.15.0/48cc7a96af9764b2b3989597c6ce7b9e783fb4c7/teavm-extension-spi-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-gradle-plugin/0.15.0/fb5f3f2531d60e1482bbabea859fb5e2a458cc41/teavm-gradle-plugin-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-interop/0.15.0/468be097a4844330485762e3447be4197626d0c1/teavm-interop-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-jso-apis/0.15.0/fbb8bf591c3a157e9232cd8883763a97c81b4f3/teavm-jso-apis-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-jso-impl/0.15.0/768095aaf09decff120671ff42cb649f75c880b5/teavm-jso-impl-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-jso/0.15.0/bf36e3b6121090baf24ed30a4a1e6a794882da87/teavm-jso-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-metaprogramming-api/0.15.0/d55532b1c37b2b3c1690f073160244f8c46baae0/teavm-metaprogramming-api-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-metaprogramming-impl/0.15.0/719fee54b8982472576915694365f24fb9516050/teavm-metaprogramming-impl-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-platform/0.15.0/1284571e7a257c1a96d067d92a93a7085ff34d42/teavm-platform-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-relocated-libs-asm-analysis/0.15.0/65ac69292aa28307f73a61c149da3f877ba5426b/teavm-relocated-libs-asm-analysis-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-relocated-libs-asm-commons/0.15.0/20f0ca058ba290048d2a17e9f5014a2ec90539b0/teavm-relocated-libs-asm-commons-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-relocated-libs-asm-tree/0.15.0/d709372e6eb5f80877b7f505f1f02a916af6b1cb/teavm-relocated-libs-asm-tree-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-relocated-libs-asm-util/0.15.0/e0cc59407083aa266185f9c5c4f59d5a04c1d6b7/teavm-relocated-libs-asm-util-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-relocated-libs-asm/0.15.0/f746b39e4d2db6e5dac979cba0b630fc358770a1/teavm-relocated-libs-asm-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-relocated-libs-hppc/0.15.0/d7b3043e84b9202a5f252df6322271a30de3a5a3/teavm-relocated-libs-hppc-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-relocated-libs-rhino/0.15.0/c6b7703825bcae8794359e8f1cbe342816116762/teavm-relocated-libs-rhino-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-tooling/0.15.0/9baabc005c3fef546b975cd3d6efc71346772fb3/teavm-tooling-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-wasm-gc-deobfuscator/0.15.0/a90b1987c2b1b01a019dcb0ea426b777230840c9/teavm-wasm-gc-deobfuscator-0.15.0.jar",
+          "org.teavm.backend.lowlevel.transform.Check",
+          "copy-cost"
+        ],
+        "exitCode": 0,
+        "seconds": 0.084541
+      },
+      {
+        "stage": "java-to-c",
+        "command": [
+          "/tmp/latent-java-scheduled.w33z62ie/gradle-9.1.0/bin/gradle",
+          "--no-daemon",
+          "generateC"
+        ],
+        "exitCode": 0,
+        "seconds": 11.707209
+      },
+      {
+        "stage": "c-to-wasm",
+        "command": [
+          "/tmp/latent-java-scheduled.w33z62ie/product/installed/wasi-sdk/bin/clang-21",
+          "-target",
+          "wasm32-wasip1",
+          "-std=c11",
+          "-O2",
+          "-DLSF_JAVA_ACTIVATION_PROFILE=1",
+          "-DLSF_TEAVM_WASM=1",
+          "-DTEAVM_CUSTOM_LOG=1",
+          "-mllvm",
+          "-wasm-enable-sjlj",
+          "-lsetjmp",
+          "-mllvm",
+          "-wasm-use-legacy-eh=false",
+          "-mexec-model=reactor",
+          "-Wl,--no-entry",
+          "-Wl,--export-memory",
+          "-Wl,-z,stack-size=65536",
+          "-Wl,--max-memory=67108864",
+          "-include",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/runtime/native.h",
+          "-I",
+          "/tmp/latent-java-scheduled.w33z62ie/scheduled/build/bindings",
+          "-I",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/runtime",
+          "-iquote",
+          "/tmp/latent-java-scheduled.w33z62ie/scheduled/build/project/build/teavm-c/c",
+          "/tmp/latent-java-scheduled.w33z62ie/scheduled/build/project/build/teavm-c/c/all.c",
+          "/tmp/latent-java-scheduled.w33z62ie/scheduled/build/bindings/bridge.c",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/feasibility/platform.c",
+          "/tmp/latent-java-scheduled.w33z62ie/scheduled/build/bindings/probe.c",
+          "/tmp/latent-java-scheduled.w33z62ie/scheduled/build/bindings/probe_component_type.o",
+          "-o",
+          "/tmp/latent-java-scheduled.w33z62ie/scheduled/build/core.wasm"
+        ],
+        "exitCode": 0,
+        "seconds": 25.097131
+      },
+      {
+        "stage": "closed-runtime",
+        "command": [
+          "/home/runner/downloader/bin/wasm-tools",
+          "component",
+          "embed",
+          "/tmp/latent-java-scheduled.w33z62ie/scheduled/build/wit",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/feasibility/closed-runtime.wat",
+          "--world",
+          "runtime-support",
+          "-o",
+          "/tmp/latent-java-scheduled.w33z62ie/scheduled/build/closed-runtime.wasm"
+        ],
+        "exitCode": 0,
+        "seconds": 0.013415
+      },
+      {
+        "stage": "component-new",
+        "command": [
+          "/home/runner/downloader/bin/wasm-tools",
+          "component",
+          "new",
+          "/tmp/latent-java-scheduled.w33z62ie/scheduled/build/core.wasm",
+          "--adapt",
+          "wasi_snapshot_preview1=/tmp/latent-java-scheduled.w33z62ie/scheduled/build/closed-runtime.wasm",
+          "-o",
+          "/tmp/latent-java-scheduled.w33z62ie/scheduled/build/component.wasm"
+        ],
+        "exitCode": 0,
+        "seconds": 0.033577
+      },
+      {
+        "stage": "component-validate",
+        "command": [
+          "/home/runner/downloader/bin/wasm-tools",
+          "validate",
+          "/tmp/latent-java-scheduled.w33z62ie/scheduled/build/component.wasm"
+        ],
+        "exitCode": 0,
+        "seconds": 0.023537
+      },
+      {
+        "stage": "component-surface",
+        "command": [
+          "/home/runner/downloader/bin/wasm-tools",
+          "component",
+          "wit",
+          "/tmp/latent-java-scheduled.w33z62ie/scheduled/build/component.wasm"
+        ],
+        "exitCode": 0,
+        "seconds": 0.013607
+      },
+      {
+        "stage": "expected-wit",
+        "command": [
+          "/home/runner/downloader/bin/wasm-tools",
+          "component",
+          "wit",
+          "/tmp/latent-java-scheduled.w33z62ie/scheduled/build/wit",
+          "--json"
+        ],
+        "exitCode": 0,
+        "seconds": 0.013921
+      },
+      {
+        "stage": "compiled-wit",
+        "command": [
+          "/home/runner/downloader/bin/wasm-tools",
+          "component",
+          "wit",
+          "/tmp/latent-java-scheduled.w33z62ie/scheduled/build/component.wasm",
+          "--json"
+        ],
+        "exitCode": 0,
+        "seconds": 0.014004
+      },
+      {
+        "stage": "scheduled-model-compile",
+        "command": [
+          "/opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/25.0.4-101.0.LTS/x64/bin/javac",
+          "-proc:none",
+          "--release",
+          "25",
+          "-cp",
+          "/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/com.jcraft/jzlib/1.1.3/c01428efa717624f7aabf4df319939dda9646b2d/jzlib-1.1.3.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/joda-time/joda-time/2.12.2/78e18a7b4180e911dafba0a412adfa82c1e3d14b/joda-time-2.12.2.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-classlib/0.15.0/99920463973edd9bb8de9a608255434c9f844c33/teavm-classlib-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-core/0.15.0/10de41fb4be7ca03e697e8d0e2000d3a73f2bf84/teavm-core-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-devserver-client/0.15.0/8a4cf9e7dd5ed701bf3d23f71b2147de304645c8/teavm-devserver-client-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-extension-annotation-processor/0.15.0/1fffcff5477865ac5ff11451a1e7f52755c5e27b/teavm-extension-annotation-processor-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-extension-apis/0.15.0/2f3f7d35226b785c85eade6437e8f5b6ec6b27de/teavm-extension-apis-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-extension-spi-util/0.15.0/7748e2048097834afc835bf19658d15462bcf276/teavm-extension-spi-util-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-extension-spi/0.15.0/48cc7a96af9764b2b3989597c6ce7b9e783fb4c7/teavm-extension-spi-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-gradle-plugin/0.15.0/fb5f3f2531d60e1482bbabea859fb5e2a458cc41/teavm-gradle-plugin-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-interop/0.15.0/468be097a4844330485762e3447be4197626d0c1/teavm-interop-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-jso-apis/0.15.0/fbb8bf591c3a157e9232cd8883763a97c81b4f3/teavm-jso-apis-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-jso-impl/0.15.0/768095aaf09decff120671ff42cb649f75c880b5/teavm-jso-impl-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-jso/0.15.0/bf36e3b6121090baf24ed30a4a1e6a794882da87/teavm-jso-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-metaprogramming-api/0.15.0/d55532b1c37b2b3c1690f073160244f8c46baae0/teavm-metaprogramming-api-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-metaprogramming-impl/0.15.0/719fee54b8982472576915694365f24fb9516050/teavm-metaprogramming-impl-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-platform/0.15.0/1284571e7a257c1a96d067d92a93a7085ff34d42/teavm-platform-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-relocated-libs-asm-analysis/0.15.0/65ac69292aa28307f73a61c149da3f877ba5426b/teavm-relocated-libs-asm-analysis-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-relocated-libs-asm-commons/0.15.0/20f0ca058ba290048d2a17e9f5014a2ec90539b0/teavm-relocated-libs-asm-commons-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-relocated-libs-asm-tree/0.15.0/d709372e6eb5f80877b7f505f1f02a916af6b1cb/teavm-relocated-libs-asm-tree-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-relocated-libs-asm-util/0.15.0/e0cc59407083aa266185f9c5c4f59d5a04c1d6b7/teavm-relocated-libs-asm-util-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-relocated-libs-asm/0.15.0/f746b39e4d2db6e5dac979cba0b630fc358770a1/teavm-relocated-libs-asm-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-relocated-libs-hppc/0.15.0/d7b3043e84b9202a5f252df6322271a30de3a5a3/teavm-relocated-libs-hppc-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-relocated-libs-rhino/0.15.0/c6b7703825bcae8794359e8f1cbe342816116762/teavm-relocated-libs-rhino-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-tooling/0.15.0/9baabc005c3fef546b975cd3d6efc71346772fb3/teavm-tooling-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-wasm-gc-deobfuscator/0.15.0/a90b1987c2b1b01a019dcb0ea426b777230840c9/teavm-wasm-gc-deobfuscator-0.15.0.jar",
+          "-d",
+          "/tmp/latent-java-scheduled.w33z62ie/scheduled/scheduled-model",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/fibers/compiler/dev/latent/guest/runtime/compiler/ContinuationProgram.java",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/fibers/compiler/dev/latent/guest/runtime/compiler/MonitorContinuations.java",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/fibers/compiler/dev/latent/guest/runtime/compiler/RuntimePlugin.java",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/fibers/compiler/dev/latent/guest/runtime/compiler/RuntimeSubstitution.java",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/fibers/compiler/dev/latent/guest/runtime/compiler/SleepContinuations.java",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/fibers/compiler/dev/latent/guest/runtime/compiler/StandardTimerMethods.java",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/fibers/compiler/dev/latent/guest/runtime/compiler/SynchronizedMethods.java",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/fibers/compiler/dev/latent/guest/runtime/compiler/ThrowableInitialization.java",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/fibers/compiler/dev/latent/guest/runtime/compiler/TimeUnitMethods.java",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/fibers/compiler/dev/latent/guest/runtime/compiler/WaitContinuations.java",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/fibers/dev/latent/guest/runtime/concurrent/AbstractExecutorService.java",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/fibers/dev/latent/guest/runtime/concurrent/CompletableFuture.java",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/fibers/dev/latent/guest/runtime/concurrent/CompletionException.java",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/fibers/dev/latent/guest/runtime/concurrent/CompletionStage.java",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/fibers/dev/latent/guest/runtime/concurrent/Delayed.java",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/fibers/dev/latent/guest/runtime/concurrent/ExecutorService.java",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/fibers/dev/latent/guest/runtime/concurrent/Executors.java",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/fibers/dev/latent/guest/runtime/concurrent/Future.java",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/fibers/dev/latent/guest/runtime/concurrent/FutureTask.java",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/fibers/dev/latent/guest/runtime/concurrent/ManagedExecutor.java",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/fibers/dev/latent/guest/runtime/concurrent/RejectedExecutionException.java",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/fibers/dev/latent/guest/runtime/concurrent/RunnableFuture.java",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/fibers/dev/latent/guest/runtime/concurrent/ScheduledExecutorService.java",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/fibers/dev/latent/guest/runtime/concurrent/ScheduledFuture.java",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/fibers/dev/latent/guest/runtime/concurrent/ScheduledThreadPoolExecutor.java",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/fibers/dev/latent/guest/runtime/concurrent/ThreadFactory.java",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/fibers/dev/latent/guest/runtime/concurrent/TimeUnit.java",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/fibers/dev/latent/guest/runtime/concurrent/TimeoutException.java",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/fibers/conformance/compiler/ScheduledModelControl.java",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/fibers/conformance/compiler/source-control/org/teavm/dependency/LambdaEmitterControlContext.java",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/fibers/conformance/compiler/scheduled-source-control/dev/latent/generated/Bindings.java",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/fibers/conformance/compiler/scheduled-source-control/dev/latent/guest/runtime/Activation.java"
+        ],
+        "exitCode": 0,
+        "seconds": 1.246426
+      },
+      {
+        "stage": "scheduled-model-control",
+        "command": [
+          "/opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/25.0.4-101.0.LTS/x64/bin/java",
+          "-Xmx256m",
+          "-cp",
+          "/tmp/latent-java-scheduled.w33z62ie/scheduled/scheduled-model:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/com.jcraft/jzlib/1.1.3/c01428efa717624f7aabf4df319939dda9646b2d/jzlib-1.1.3.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/joda-time/joda-time/2.12.2/78e18a7b4180e911dafba0a412adfa82c1e3d14b/joda-time-2.12.2.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-classlib/0.15.0/99920463973edd9bb8de9a608255434c9f844c33/teavm-classlib-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-core/0.15.0/10de41fb4be7ca03e697e8d0e2000d3a73f2bf84/teavm-core-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-devserver-client/0.15.0/8a4cf9e7dd5ed701bf3d23f71b2147de304645c8/teavm-devserver-client-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-extension-annotation-processor/0.15.0/1fffcff5477865ac5ff11451a1e7f52755c5e27b/teavm-extension-annotation-processor-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-extension-apis/0.15.0/2f3f7d35226b785c85eade6437e8f5b6ec6b27de/teavm-extension-apis-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-extension-spi-util/0.15.0/7748e2048097834afc835bf19658d15462bcf276/teavm-extension-spi-util-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-extension-spi/0.15.0/48cc7a96af9764b2b3989597c6ce7b9e783fb4c7/teavm-extension-spi-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-gradle-plugin/0.15.0/fb5f3f2531d60e1482bbabea859fb5e2a458cc41/teavm-gradle-plugin-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-interop/0.15.0/468be097a4844330485762e3447be4197626d0c1/teavm-interop-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-jso-apis/0.15.0/fbb8bf591c3a157e9232cd8883763a97c81b4f3/teavm-jso-apis-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-jso-impl/0.15.0/768095aaf09decff120671ff42cb649f75c880b5/teavm-jso-impl-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-jso/0.15.0/bf36e3b6121090baf24ed30a4a1e6a794882da87/teavm-jso-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-metaprogramming-api/0.15.0/d55532b1c37b2b3c1690f073160244f8c46baae0/teavm-metaprogramming-api-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-metaprogramming-impl/0.15.0/719fee54b8982472576915694365f24fb9516050/teavm-metaprogramming-impl-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-platform/0.15.0/1284571e7a257c1a96d067d92a93a7085ff34d42/teavm-platform-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-relocated-libs-asm-analysis/0.15.0/65ac69292aa28307f73a61c149da3f877ba5426b/teavm-relocated-libs-asm-analysis-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-relocated-libs-asm-commons/0.15.0/20f0ca058ba290048d2a17e9f5014a2ec90539b0/teavm-relocated-libs-asm-commons-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-relocated-libs-asm-tree/0.15.0/d709372e6eb5f80877b7f505f1f02a916af6b1cb/teavm-relocated-libs-asm-tree-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-relocated-libs-asm-util/0.15.0/e0cc59407083aa266185f9c5c4f59d5a04c1d6b7/teavm-relocated-libs-asm-util-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-relocated-libs-asm/0.15.0/f746b39e4d2db6e5dac979cba0b630fc358770a1/teavm-relocated-libs-asm-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-relocated-libs-hppc/0.15.0/d7b3043e84b9202a5f252df6322271a30de3a5a3/teavm-relocated-libs-hppc-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-relocated-libs-rhino/0.15.0/c6b7703825bcae8794359e8f1cbe342816116762/teavm-relocated-libs-rhino-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-tooling/0.15.0/9baabc005c3fef546b975cd3d6efc71346772fb3/teavm-tooling-0.15.0.jar:/tmp/latent-java-scheduled.w33z62ie/scheduled/compiler/gradle-home/caches/modules-2/files-2.1/org.teavm/teavm-wasm-gc-deobfuscator/0.15.0/a90b1987c2b1b01a019dcb0ea426b777230840c9/teavm-wasm-gc-deobfuscator-0.15.0.jar",
+          "dev.latent.guest.runtime.compiler.ScheduledModelControl"
+        ],
+        "exitCode": 0,
+        "seconds": 0.362555
+      }
+    ]
+  },
+  "normalProduct": {
+    "compilerExecuted": false,
+    "driver": "bin/clang-21",
+    "driverIdentity": {
+      "bytes": 112896,
+      "sha256": "2652b5c91dd9230bdac18a220d35a5c4c92ecd90653be7d0f8c24aff84a086e9"
+    },
+    "installed": {
+      "buildInput": {
+        "archive": {
+          "bytes": 167429041,
+          "sha256": "593006fad3362dc340959e57392e1379a79bfc2bd8e36c33cbe950d4fed1cc46"
+        },
+        "artifactId": 12612367767,
+        "expiresAt": "2026-10-28T20:03:43Z",
+        "kind": "prepared-compiler-inputs"
+      },
+      "carrier": {
+        "bytes": 159519677,
+        "sha256": "c6fe95c061c6bd58658fd131288e0469fff6acca2d2c4c4fd86565a21f2c997d"
+      },
+      "compilerInventory": {
+        "bytes": 2771269,
+        "sha256": "24c4f39cd783851741aebe01e9ecc7fe36f35df4c488d1f44221ceec5ab01019"
+      },
+      "compilerVersion": "21.1.4-wasi-sdk-lsf-private-scalar-v1",
+      "manifest": {
+        "bytes": 2102159,
+        "sha256": "896fdd53ffcd9400218ed63bb9a3d52af0c467bd232966bf54d4b4e8a2f532fa"
+      },
+      "notices": {
+        "LLVM-LICENSE.txt": {
+          "bytes": 15141,
+          "sha256": "8d85c1057d742e597985c7d4e6320b015a9139385cff4cbae06ffc0ebe89afee"
+        },
+        "LLVM-PATCH.json": {
+          "bytes": 211777,
+          "sha256": "dd04c818debbb0491866ce119465526fb70a3112e85452b857d2528629b557ea"
+        },
+        "LLVM-PRIVATE-STORES.json": {
+          "bytes": 79822,
+          "sha256": "c695e9bfc6d499ebc0ec93b56e8a28ea9c1745d4d17d008ea5639cc50436ac04"
+        },
+        "NOTICE": {
+          "bytes": 6193,
+          "sha256": "88847eed7dadd32c7923c5f18342f1517ce2c29812f427c0d95bf1e1fc54fa47"
+        },
+        "official-origin-VERSION": {
+          "bytes": 90,
+          "sha256": "cb9fa6c932384a5f2f90f576936415a7f256eeb1d9a7c38a3c300320bfad6e23"
+        }
+      },
+      "producer": {
+        "archive": {
+          "bytes": 167429041,
+          "sha256": "593006fad3362dc340959e57392e1379a79bfc2bd8e36c33cbe950d4fed1cc46"
+        },
+        "artifact": 12612367767,
+        "head": "ddc55c2d3a3d6d31806499962aff748324bb2e8b",
+        "job": 121263514074,
+        "run": 40224708180,
+        "tree": "eed32a4f9aaf45d6e55df5ddd1180850da50eec2"
+      },
+      "profile": "lsf-private-scalar-v1",
+      "qualification": {
+        "normalCommandShape": {
+          "bytes": 2021,
+          "sha256": "7d1958cc4912eb28bbc3d47e1ee4121e07922d18082befd394124ee806cc7190"
+        },
+        "producerReceipt": {
+          "bytes": 4706175,
+          "sha256": "e350049722754af48fb53cf36946e209dfa42a16a10278cf410c4f6018d56068"
+        },
+        "publicArtifact": {
+          "archive": {
+            "bytes": 2578267,
+            "sha256": "70304aae3dd82275536dcacc05a7960ef13b70de18b5ea6681c6c1e6e76c62a0"
+          },
+          "expiresAt": "2026-10-28T20:38:02Z",
+          "id": 12612853018
+        },
+        "publicComponent": {
+          "bytes": 10282099,
+          "sha256": "d6336d4667db6a01d4f6fd18dfb53850b0d27a7ab96d828660b98dfeb64f469c"
+        },
+        "publicHead": "9871d6b54520bc2bd4fcd920f2d59d9ee0efd995",
+        "publicJob": 121283781554,
+        "publicReceipt": {
+          "bytes": 278426,
+          "sha256": "c10b0902e1aa8dd9bf285bc03b9ed8236f7558de127a513d912a6c76806a3dbc"
+        },
+        "publicRun": 40231419998
+      },
+      "representation": "managed",
+      "runtimeQualification": false,
+      "schemaVersion": "latent.java.normal-compiler-profile.v1",
+      "sourceProfile": {
+        "bytes": 3105,
+        "sha256": "0f1d3c02be04e55599ae176156b7859c02d7f0cfa1ded6944b574ef5e86f7900"
+      },
+      "version": {
+        "bytes": 200,
+        "sha256": "e5bdd5811c82d9bbcb956592a6ff5303c90bff0d43fa46b97a341968b79b735d"
+      }
+    },
+    "isolatedInstalledRecipeAdmission": {
+      "exitCode": 0,
+      "sitePackages": false,
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 2737,
+        "sha256": "de7e4fa49c2764890d157606d72126b0396db1cfc176dfc837ad4c4f2bba0f4f"
+      }
+    },
+    "linked": {
+      "buildInput": {
+        "archive": {
+          "bytes": 167429041,
+          "sha256": "593006fad3362dc340959e57392e1379a79bfc2bd8e36c33cbe950d4fed1cc46"
+        },
+        "artifactId": 12612367767,
+        "expiresAt": "2026-10-28T20:03:43Z",
+        "kind": "prepared-compiler-inputs"
+      },
+      "carrier": {
+        "bytes": 159519677,
+        "sha256": "c6fe95c061c6bd58658fd131288e0469fff6acca2d2c4c4fd86565a21f2c997d"
+      },
+      "compilerInventory": {
+        "bytes": 2772116,
+        "sha256": "057245a29ae0cc2a854521d2c3d34754965d750615e81e8be760e571cd194630"
+      },
+      "compilerVersion": "21.1.4-wasi-sdk-lsf-private-scalar-v1",
+      "manifest": {
+        "bytes": 2102159,
+        "sha256": "896fdd53ffcd9400218ed63bb9a3d52af0c467bd232966bf54d4b4e8a2f532fa"
+      },
+      "notices": {
+        "LLVM-LICENSE.txt": {
+          "bytes": 15141,
+          "sha256": "8d85c1057d742e597985c7d4e6320b015a9139385cff4cbae06ffc0ebe89afee"
+        },
+        "LLVM-PATCH.json": {
+          "bytes": 211777,
+          "sha256": "dd04c818debbb0491866ce119465526fb70a3112e85452b857d2528629b557ea"
+        },
+        "LLVM-PRIVATE-STORES.json": {
+          "bytes": 79822,
+          "sha256": "c695e9bfc6d499ebc0ec93b56e8a28ea9c1745d4d17d008ea5639cc50436ac04"
+        },
+        "NOTICE": {
+          "bytes": 6193,
+          "sha256": "88847eed7dadd32c7923c5f18342f1517ce2c29812f427c0d95bf1e1fc54fa47"
+        },
+        "official-origin-VERSION": {
+          "bytes": 90,
+          "sha256": "cb9fa6c932384a5f2f90f576936415a7f256eeb1d9a7c38a3c300320bfad6e23"
+        }
+      },
+      "producer": {
+        "archive": {
+          "bytes": 167429041,
+          "sha256": "593006fad3362dc340959e57392e1379a79bfc2bd8e36c33cbe950d4fed1cc46"
+        },
+        "artifact": 12612367767,
+        "head": "ddc55c2d3a3d6d31806499962aff748324bb2e8b",
+        "job": 121263514074,
+        "run": 40224708180,
+        "tree": "eed32a4f9aaf45d6e55df5ddd1180850da50eec2"
+      },
+      "profile": "lsf-private-scalar-v1",
+      "qualification": {
+        "normalCommandShape": {
+          "bytes": 2021,
+          "sha256": "7d1958cc4912eb28bbc3d47e1ee4121e07922d18082befd394124ee806cc7190"
+        },
+        "producerReceipt": {
+          "bytes": 4706175,
+          "sha256": "e350049722754af48fb53cf36946e209dfa42a16a10278cf410c4f6018d56068"
+        },
+        "publicArtifact": {
+          "archive": {
+            "bytes": 2578267,
+            "sha256": "70304aae3dd82275536dcacc05a7960ef13b70de18b5ea6681c6c1e6e76c62a0"
+          },
+          "expiresAt": "2026-10-28T20:38:02Z",
+          "id": 12612853018
+        },
+        "publicComponent": {
+          "bytes": 10282099,
+          "sha256": "d6336d4667db6a01d4f6fd18dfb53850b0d27a7ab96d828660b98dfeb64f469c"
+        },
+        "publicHead": "9871d6b54520bc2bd4fcd920f2d59d9ee0efd995",
+        "publicJob": 121283781554,
+        "publicReceipt": {
+          "bytes": 278426,
+          "sha256": "c10b0902e1aa8dd9bf285bc03b9ed8236f7558de127a513d912a6c76806a3dbc"
+        },
+        "publicRun": 40231419998
+      },
+      "representation": "linked",
+      "runtimeQualification": false,
+      "schemaVersion": "latent.java.normal-compiler-profile.v1",
+      "sourceProfile": {
+        "bytes": 3105,
+        "sha256": "0f1d3c02be04e55599ae176156b7859c02d7f0cfa1ded6944b574ef5e86f7900"
+      },
+      "version": {
+        "bytes": 200,
+        "sha256": "e5bdd5811c82d9bbcb956592a6ff5303c90bff0d43fa46b97a341968b79b735d"
+      }
+    },
+    "managedArchive": {
+      "bytes": 258614047,
+      "sha256": "5d44ceeee596e4452ad91896d9db3832ca328671f2231363678c2bb1ffb934da"
+    },
+    "managedInputs": {
+      "bytes": 2108552,
+      "sha256": "0f836458399c6c13956c19cd48cb926b0cdd545a26d3515d94e16f3ffa6611e3"
+    },
+    "normalCommandShape": {
+      "bytes": 2021,
+      "sha256": "7d1958cc4912eb28bbc3d47e1ee4121e07922d18082befd394124ee806cc7190"
+    },
+    "normalCompilerVersion": "21.1.4-wasi-sdk-lsf-private-scalar-v1",
+    "releasePublished": false,
+    "runtimeQualified": false,
+    "schemaVersion": "latent.java.prepared-compiler-product.v1",
+    "scope": "existing compiler pack/unpack and normal admission; compiler subproduct only",
+    "sourceProfile": {
+      "bytes": 3105,
+      "sha256": "0f1d3c02be04e55599ae176156b7859c02d7f0cfa1ded6944b574ef5e86f7900"
+    },
+    "managedInventoryCanonical": {
+      "entries": 10167,
+      "bytes": 2108551,
+      "sha256": "79ca911809b8fd53e2e3d2f36e8365d9090e1d955e7647386fa830845c4a1fdf",
+      "rawInventoryRetainedIn": "normal-product.json"
+    }
+  },
+  "products": {
+    "component/src/Capsule.java": {
+      "bytes": 5500,
+      "sha256": "f14b93bb60c66655978d607032e2a17f6f895e8bca9d03c44fd94197a5164254"
+    },
+    "component/wit/service.wit": {
+      "bytes": 340,
+      "sha256": "14c7bb47a7634153b4dcf39473a31f7f87f971f8c90a602b378be498dc938236"
+    },
+    "component/build/component.wasm": {
+      "bytes": 4550165,
+      "sha256": "70ed83c543c68768f9a85ea19f6d7a388afe43834973ee185a46fc995dace487"
+    },
+    "component/FIBERS-COMPILE.json": {
+      "bytes": 147611,
+      "sha256": "f4ad5f6dc6e83840e7bc1100255c9213614be5eff0c2f70843e275a93ccfe44b"
+    },
+    "component/compiler-inputs.json": {
+      "bytes": 2912106,
+      "sha256": "281a0b32d7b8a1821fad5fe1f59bae659df0af80e42b69b51c2d5c7004e7b098"
+    },
+    "component/library-inputs/receipts/capture.json": {
+      "bytes": 1301,
+      "sha256": "790e70d1144c819ab5c82aec911b045f1e3c07a1c73e75f27c1ef0aa76ce4bfd"
+    },
+    "component/library-inputs/receipts/java-classpath.json": {
+      "bytes": 283262,
+      "sha256": "d25366c447867d93b252b13f84afacfa49c2e48a973856f7b8b6b1374f3d068f"
+    },
+    "component/library-inputs/candidate.json": {
+      "bytes": 13151,
+      "sha256": "f1e98710cce696e68f2f62e645835adcf01da816b8d03788f9ddece64bacce15"
+    },
+    "component/library-inputs/application/java-dependencies.json": {
+      "bytes": 393,
+      "sha256": "b2ad594efddb9b5fe897192df1030a560efa579cf62cd73eea197ad2cb62743a"
+    },
+    "component/library-inputs/application/java-resolved.lock.json": {
+      "bytes": 1221,
+      "sha256": "5f6e2f440a24e52adb1ef39316cf6beb017de8d22959c327bf92cae80a539947"
+    },
+    "component/library-inputs/application/latent.dependencies.json": {
+      "bytes": 9380,
+      "sha256": "f64c7c5611572a5ac1895c3350934e25d6f6192eb8f46e2f4a107b56a4f9b568"
+    },
+    "component/library-inputs/application/latent.dependencies.lock.json": {
+      "bytes": 13151,
+      "sha256": "f1e98710cce696e68f2f62e645835adcf01da816b8d03788f9ddece64bacce15"
+    },
+    "libraries/0.original.jar": {
+      "bytes": 1500560,
+      "sha256": "d6bedc908cba480cd12dbe6f8422fa60c0da31030b58a68c3c077f555fc0cbbc"
+    },
+    "libraries/0.selected.jar": {
+      "bytes": 3344457,
+      "sha256": "98bbb79681cc7b9fbaf6ba34ab54d35557f0f6405799df5e87023c811ad7bf1c"
+    },
+    "libraries/1.original.jar": {
+      "bytes": 657952,
+      "sha256": "7b96bf3ee68949abb5bc465559ac270e0551596fa34523fddf890ec418dde13c"
+    },
+    "libraries/1.selected.jar": {
+      "bytes": 1515328,
+      "sha256": "9948b2564eb3fd0fc0408b567b607f04e68a2a3bf7631a1faa64083022363514"
+    }
+  },
+  "native": {
+    "observedTools": [
+      {
+        "name": "cargo",
+        "digest": "sha256:828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953",
+        "size": 42839824
+      },
+      {
+        "name": "rustc",
+        "digest": "sha256:d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea",
+        "size": 645000
+      },
+      {
+        "name": "wasm-tools",
+        "digest": "sha256:cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6",
+        "size": 20231696
+      }
+    ],
+    "executable": {
+      "name": "local-service-java-scheduled-library",
+      "digest": "sha256:28971a893b25bb5646475b3f975d65e287e88861fa9c7f6038decce3fcdef501",
+      "size": 135847264
+    },
+    "commands": [
+      {
+        "stage": "source-paths",
+        "exitCode": 0,
+        "seconds": 0.056313
+      },
+      {
+        "stage": "source-controls",
+        "exitCode": 0,
+        "seconds": 0.326493
+      },
+      {
+        "stage": "gradle-download",
+        "exitCode": 0,
+        "seconds": 1.116948
+      },
+      {
+        "stage": "gradle-unpack",
+        "exitCode": 0,
+        "seconds": 0.721914
+      },
+      {
+        "stage": "wit-bindgen-install",
+        "exitCode": 0,
+        "seconds": 0.569488
+      },
+      {
+        "stage": "build-harness",
+        "exitCode": 0,
+        "seconds": 189.579264
+      },
+      {
+        "stage": "rust-library-path",
+        "exitCode": 0,
+        "seconds": 0.013505
+      },
+      {
+        "stage": "list-exact-case",
+        "exitCode": 0,
+        "seconds": 0.013143
+      },
+      {
+        "stage": "execute-exact-case",
+        "exitCode": 0,
+        "seconds": 11.512539
+      }
+    ],
+    "observation": {
+      "case": "runtime::signed_java_published_libraries_use_unchanged_default_workers",
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "filteredOut": 51,
+      "setupMicroseconds": 8959317,
+      "calls": [
+        {
+          "activationId": "java-scheduled-libraries-0-0",
+          "activeReservations": 0,
+          "brokerBufferBytes": 0,
+          "brokerCalls": 0,
+          "brokerHandles": 0,
+          "brokerResults": 0,
+          "brokerSessions": 0,
+          "cpuFuel": 5390122,
+          "iteration": 0,
+          "liveStores": 0,
+          "mode": 0,
+          "reportedPeakMemoryBytes": 9483253,
+          "storesBefore": 0,
+          "storesCreated": 1,
+          "value": 42
+        },
+        {
+          "activationId": "java-scheduled-libraries-0-1",
+          "activeReservations": 0,
+          "brokerBufferBytes": 0,
+          "brokerCalls": 0,
+          "brokerHandles": 0,
+          "brokerResults": 0,
+          "brokerSessions": 0,
+          "cpuFuel": 5394140,
+          "iteration": 0,
+          "liveStores": 0,
+          "mode": 1,
+          "reportedPeakMemoryBytes": 9483253,
+          "storesBefore": 1,
+          "storesCreated": 2,
+          "value": 42
+        },
+        {
+          "activationId": "java-scheduled-libraries-0-2",
+          "activeReservations": 0,
+          "brokerBufferBytes": 0,
+          "brokerCalls": 0,
+          "brokerHandles": 0,
+          "brokerResults": 0,
+          "brokerSessions": 0,
+          "cpuFuel": 5390480,
+          "iteration": 0,
+          "liveStores": 0,
+          "mode": 2,
+          "reportedPeakMemoryBytes": 9483253,
+          "storesBefore": 2,
+          "storesCreated": 3,
+          "value": 42
+        },
+        {
+          "activationId": "java-scheduled-libraries-0-3",
+          "activeReservations": 0,
+          "brokerBufferBytes": 0,
+          "brokerCalls": 0,
+          "brokerHandles": 0,
+          "brokerResults": 0,
+          "brokerSessions": 0,
+          "cpuFuel": 5128683,
+          "iteration": 0,
+          "liveStores": 0,
+          "mode": 3,
+          "reportedPeakMemoryBytes": 9482268,
+          "storesBefore": 3,
+          "storesCreated": 4,
+          "value": 42
+        },
+        {
+          "activationId": "java-scheduled-libraries-0-4",
+          "activeReservations": 0,
+          "brokerBufferBytes": 0,
+          "brokerCalls": 0,
+          "brokerHandles": 0,
+          "brokerResults": 0,
+          "brokerSessions": 0,
+          "cpuFuel": 5127144,
+          "iteration": 0,
+          "liveStores": 0,
+          "mode": 4,
+          "reportedPeakMemoryBytes": 9482268,
+          "storesBefore": 4,
+          "storesCreated": 5,
+          "value": 42
+        },
+        {
+          "activationId": "java-scheduled-libraries-0-5",
+          "activeReservations": 0,
+          "brokerBufferBytes": 0,
+          "brokerCalls": 0,
+          "brokerHandles": 0,
+          "brokerResults": 0,
+          "brokerSessions": 0,
+          "cpuFuel": 5000475,
+          "iteration": 0,
+          "liveStores": 0,
+          "mode": 5,
+          "reportedPeakMemoryBytes": 9482267,
+          "storesBefore": 5,
+          "storesCreated": 6,
+          "value": 42
+        },
+        {
+          "activationId": "java-scheduled-libraries-0-6",
+          "activeReservations": 0,
+          "brokerBufferBytes": 0,
+          "brokerCalls": 0,
+          "brokerHandles": 0,
+          "brokerResults": 0,
+          "brokerSessions": 0,
+          "cpuFuel": 5712618,
+          "iteration": 0,
+          "liveStores": 0,
+          "mode": 6,
+          "reportedPeakMemoryBytes": 9482268,
+          "storesBefore": 6,
+          "storesCreated": 7,
+          "value": 42
+        },
+        {
+          "activationId": "java-scheduled-libraries-0-7",
+          "activeReservations": 0,
+          "brokerBufferBytes": 0,
+          "brokerCalls": 0,
+          "brokerHandles": 0,
+          "brokerResults": 0,
+          "brokerSessions": 0,
+          "cpuFuel": 5285384,
+          "iteration": 0,
+          "liveStores": 0,
+          "mode": 7,
+          "reportedPeakMemoryBytes": 9482550,
+          "storesBefore": 7,
+          "storesCreated": 8,
+          "value": 42
+        },
+        {
+          "activationId": "java-scheduled-libraries-1-0",
+          "activeReservations": 0,
+          "brokerBufferBytes": 0,
+          "brokerCalls": 0,
+          "brokerHandles": 0,
+          "brokerResults": 0,
+          "brokerSessions": 0,
+          "cpuFuel": 5390122,
+          "iteration": 1,
+          "liveStores": 0,
+          "mode": 0,
+          "reportedPeakMemoryBytes": 9483253,
+          "storesBefore": 8,
+          "storesCreated": 9,
+          "value": 42
+        },
+        {
+          "activationId": "java-scheduled-libraries-1-1",
+          "activeReservations": 0,
+          "brokerBufferBytes": 0,
+          "brokerCalls": 0,
+          "brokerHandles": 0,
+          "brokerResults": 0,
+          "brokerSessions": 0,
+          "cpuFuel": 5493298,
+          "iteration": 1,
+          "liveStores": 0,
+          "mode": 1,
+          "reportedPeakMemoryBytes": 9483253,
+          "storesBefore": 9,
+          "storesCreated": 10,
+          "value": 42
+        },
+        {
+          "activationId": "java-scheduled-libraries-1-2",
+          "activeReservations": 0,
+          "brokerBufferBytes": 0,
+          "brokerCalls": 0,
+          "brokerHandles": 0,
+          "brokerResults": 0,
+          "brokerSessions": 0,
+          "cpuFuel": 5390480,
+          "iteration": 1,
+          "liveStores": 0,
+          "mode": 2,
+          "reportedPeakMemoryBytes": 9483253,
+          "storesBefore": 10,
+          "storesCreated": 11,
+          "value": 42
+        },
+        {
+          "activationId": "java-scheduled-libraries-1-3",
+          "activeReservations": 0,
+          "brokerBufferBytes": 0,
+          "brokerCalls": 0,
+          "brokerHandles": 0,
+          "brokerResults": 0,
+          "brokerSessions": 0,
+          "cpuFuel": 5128683,
+          "iteration": 1,
+          "liveStores": 0,
+          "mode": 3,
+          "reportedPeakMemoryBytes": 9482268,
+          "storesBefore": 11,
+          "storesCreated": 12,
+          "value": 42
+        },
+        {
+          "activationId": "java-scheduled-libraries-1-4",
+          "activeReservations": 0,
+          "brokerBufferBytes": 0,
+          "brokerCalls": 0,
+          "brokerHandles": 0,
+          "brokerResults": 0,
+          "brokerSessions": 0,
+          "cpuFuel": 5127144,
+          "iteration": 1,
+          "liveStores": 0,
+          "mode": 4,
+          "reportedPeakMemoryBytes": 9482268,
+          "storesBefore": 12,
+          "storesCreated": 13,
+          "value": 42
+        },
+        {
+          "activationId": "java-scheduled-libraries-1-5",
+          "activeReservations": 0,
+          "brokerBufferBytes": 0,
+          "brokerCalls": 0,
+          "brokerHandles": 0,
+          "brokerResults": 0,
+          "brokerSessions": 0,
+          "cpuFuel": 5000475,
+          "iteration": 1,
+          "liveStores": 0,
+          "mode": 5,
+          "reportedPeakMemoryBytes": 9482267,
+          "storesBefore": 13,
+          "storesCreated": 14,
+          "value": 42
+        },
+        {
+          "activationId": "java-scheduled-libraries-1-6",
+          "activeReservations": 0,
+          "brokerBufferBytes": 0,
+          "brokerCalls": 0,
+          "brokerHandles": 0,
+          "brokerResults": 0,
+          "brokerSessions": 0,
+          "cpuFuel": 5712618,
+          "iteration": 1,
+          "liveStores": 0,
+          "mode": 6,
+          "reportedPeakMemoryBytes": 9482268,
+          "storesBefore": 14,
+          "storesCreated": 15,
+          "value": 42
+        },
+        {
+          "activationId": "java-scheduled-libraries-1-7",
+          "activeReservations": 0,
+          "brokerBufferBytes": 0,
+          "brokerCalls": 0,
+          "brokerHandles": 0,
+          "brokerResults": 0,
+          "brokerSessions": 0,
+          "cpuFuel": 5285384,
+          "iteration": 1,
+          "liveStores": 0,
+          "mode": 7,
+          "reportedPeakMemoryBytes": 9482550,
+          "storesBefore": 15,
+          "storesCreated": 16,
+          "value": 42
+        }
+      ],
+      "stdout": {
+        "bytes": 10439,
+        "sha256": "4c8dfab7ad0d353e0fb85b321c8b958e7028206509ec00fae1534ea24fe0c03e"
+      }
+    },
+    "rawStdout": "commands/logs/08-execute-exact-case.stdout.txt",
+    "strictReaderProjectionMatched": true,
+    "fuelRange": [
+      5000475,
+      5712618
+    ],
+    "reportedPeakMemoryRange": [
+      9482267,
+      9483253
+    ],
+    "cleanup": {
+      "allSevenReportedIdleCountersZeroPerCall": true,
+      "fixtureIdleAssertionPassed": true,
+      "privateRootRemoved": true
+    }
+  },
+  "historicalAttempts": [
+    {
+      "head": "ff2a46bb38300484360fa1034958291f6376e249",
+      "run": 40271348019,
+      "artifact": 12628317790,
+      "status": "failed",
+      "stage": "source-control receipt guard",
+      "cause": "passing test name contained skipped; all four actually passed",
+      "componentOrSignedSuccess": false
+    },
+    {
+      "head": "3a5d4c3d9609cf1f423c57429e43da8cb101789c",
+      "run": 40272021746,
+      "artifact": 12628039500,
+      "status": "failed",
+      "stage": "precompile model cache admission",
+      "cause": "model inspection before normal compilation populated the locked cache",
+      "actualJdkReferenceAndSourceOwnershipControlPassed": true,
+      "componentOrSignedSuccess": false
+    },
+    {
+      "head": "b91bfaaf9aad5bb83787e0857694d2d469bc5312",
+      "run": 40272999479,
+      "artifact": 12628054325,
+      "status": "failed",
+      "stage": "TeaVM generateC",
+      "cause": "synthesized standard callbacks incorrectly normalized as declared SDK private helpers",
+      "missingClasses": [
+        "dev.latent.guest.runtime.concurrent.Executors$callable$lambda$_13_0",
+        "dev.latent.guest.runtime.concurrent.ScheduledThreadPoolExecutor$startWorker$lambda$_6_0"
+      ],
+      "rawLog": {
+        "bytes": 3343,
+        "sha256": "2361e6f0cff42f80d730dedbb56f09ddd2bf3297cdae38746763c91fb80f21ec"
+      },
+      "componentOrSignedSuccess": false
+    }
+  ],
+  "archiveInventory": [
+    {
+      "path": "receipt.json",
+      "bytes": 3184059,
+      "sha256": "f827114079d69b9fb1bce6393f1ceea98e3a0f633158b8c2589f4a159f9d4d38"
+    },
+    {
+      "path": "source-inputs.json",
+      "bytes": 1579764,
+      "sha256": "bb90c0bcc977567c4841c7388b039893d651dda00e75ae2b25af5aa45d90f1bb"
+    },
+    {
+      "path": "commands.json",
+      "bytes": 764,
+      "sha256": "f3ecf7d88d6b708b27736999eafd00c647778cd0b61ac5fba75e3b40f6889e3f"
+    },
+    {
+      "path": "normal-product.json",
+      "bytes": 2114812,
+      "sha256": "841aa405c94748fe26815398c6f9311c93a226747757c23982258f1660f39319"
+    },
+    {
+      "path": "component/src/Capsule.java",
+      "bytes": 5500,
+      "sha256": "f14b93bb60c66655978d607032e2a17f6f895e8bca9d03c44fd94197a5164254"
+    },
+    {
+      "path": "component/wit/service.wit",
+      "bytes": 340,
+      "sha256": "14c7bb47a7634153b4dcf39473a31f7f87f971f8c90a602b378be498dc938236"
+    },
+    {
+      "path": "component/build/component.wasm",
+      "bytes": 4550165,
+      "sha256": "70ed83c543c68768f9a85ea19f6d7a388afe43834973ee185a46fc995dace487"
+    },
+    {
+      "path": "component/FIBERS-COMPILE.json",
+      "bytes": 147611,
+      "sha256": "f4ad5f6dc6e83840e7bc1100255c9213614be5eff0c2f70843e275a93ccfe44b"
+    },
+    {
+      "path": "component/compiler-inputs.json",
+      "bytes": 2912106,
+      "sha256": "281a0b32d7b8a1821fad5fe1f59bae659df0af80e42b69b51c2d5c7004e7b098"
+    },
+    {
+      "path": "component/library-inputs/receipts/capture.json",
+      "bytes": 1301,
+      "sha256": "790e70d1144c819ab5c82aec911b045f1e3c07a1c73e75f27c1ef0aa76ce4bfd"
+    },
+    {
+      "path": "component/library-inputs/receipts/java-classpath.json",
+      "bytes": 283262,
+      "sha256": "d25366c447867d93b252b13f84afacfa49c2e48a973856f7b8b6b1374f3d068f"
+    },
+    {
+      "path": "component/library-inputs/candidate.json",
+      "bytes": 13151,
+      "sha256": "f1e98710cce696e68f2f62e645835adcf01da816b8d03788f9ddece64bacce15"
+    },
+    {
+      "path": "component/library-inputs/application/java-dependencies.json",
+      "bytes": 393,
+      "sha256": "b2ad594efddb9b5fe897192df1030a560efa579cf62cd73eea197ad2cb62743a"
+    },
+    {
+      "path": "component/library-inputs/application/java-resolved.lock.json",
+      "bytes": 1221,
+      "sha256": "5f6e2f440a24e52adb1ef39316cf6beb017de8d22959c327bf92cae80a539947"
+    },
+    {
+      "path": "component/library-inputs/application/latent.dependencies.json",
+      "bytes": 9380,
+      "sha256": "f64c7c5611572a5ac1895c3350934e25d6f6192eb8f46e2f4a107b56a4f9b568"
+    },
+    {
+      "path": "component/library-inputs/application/latent.dependencies.lock.json",
+      "bytes": 13151,
+      "sha256": "f1e98710cce696e68f2f62e645835adcf01da816b8d03788f9ddece64bacce15"
+    },
+    {
+      "path": "libraries/1.original.jar",
+      "bytes": 657952,
+      "sha256": "7b96bf3ee68949abb5bc465559ac270e0551596fa34523fddf890ec418dde13c"
+    },
+    {
+      "path": "libraries/1.selected.jar",
+      "bytes": 1515328,
+      "sha256": "9948b2564eb3fd0fc0408b567b607f04e68a2a3bf7631a1faa64083022363514"
+    },
+    {
+      "path": "libraries/0.original.jar",
+      "bytes": 1500560,
+      "sha256": "d6bedc908cba480cd12dbe6f8422fa60c0da31030b58a68c3c077f555fc0cbbc"
+    },
+    {
+      "path": "libraries/0.selected.jar",
+      "bytes": 3344457,
+      "sha256": "98bbb79681cc7b9fbaf6ba34ab54d35557f0f6405799df5e87023c811ad7bf1c"
+    },
+    {
+      "path": "compiler/0-java-version.log",
+      "bytes": 201,
+      "sha256": "dc52985e291a871cd813e0ec48efca3a22da113e8faae9101f126c3d6b16ce36"
+    },
+    {
+      "path": "compiler/0-java-version.command.json",
+      "bytes": 188,
+      "sha256": "4aff25a9a2b1124f836bebddc08e223180849c6e8bc8589e4d62e49069a033c7"
+    },
+    {
+      "path": "compiler/1-gradle-version.log",
+      "bytes": 806,
+      "sha256": "23dbdfcf47bece482ed891afa796d00ff6c97ea7b8ffebe27bb26c989dbb0a93"
+    },
+    {
+      "path": "compiler/1-gradle-version.command.json",
+      "bytes": 175,
+      "sha256": "0660b13c785d499d2a313c2faab576d633e8d4982e71b4f73610d89f234d1811"
+    },
+    {
+      "path": "compiler/10-scheduled-source-compile.command.json",
+      "bytes": 3497,
+      "sha256": "943a1df377e6081300e3549d91ef52707fda53491f29e4334dbd8cc747d28d28"
+    },
+    {
+      "path": "compiler/10-scheduled-source-compile.log",
+      "bytes": 1,
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "path": "compiler/11-scheduled-source-control.command.json",
+      "bytes": 310,
+      "sha256": "332d7f92ba72364c5cedb7289d69cb5e3e61e82367e680f36d40a331124c8fa2"
+    },
+    {
+      "path": "compiler/11-scheduled-source-control.log",
+      "bytes": 207,
+      "sha256": "a147b75a56a2b7767cd2a1f2bac7fe1221c0038f008b317ddf09161ec3ff463c"
+    },
+    {
+      "path": "compiler/12-activation-profile-wit.command.json",
+      "bytes": 250,
+      "sha256": "c88ff904e65a47f8900fe47fe330789a54c9cf3737091acaeb31853a40722205"
+    },
+    {
+      "path": "compiler/12-activation-profile-wit.log",
+      "bytes": 10938,
+      "sha256": "f97649dda7bf85e06db8c8eeb346114d56ca3093b55282b02358b4b405606ae9"
+    },
+    {
+      "path": "compiler/13-wit-graph.command.json",
+      "bytes": 237,
+      "sha256": "29eda2327c590adc76c2e0d8e12b9a3cca4c82080aba647225584ad7ab631606"
+    },
+    {
+      "path": "compiler/13-wit-graph.log",
+      "bytes": 10938,
+      "sha256": "f97649dda7bf85e06db8c8eeb346114d56ca3093b55282b02358b4b405606ae9"
+    },
+    {
+      "path": "compiler/14-wit-bindings.command.json",
+      "bytes": 440,
+      "sha256": "99fd2e499d30350abdcd86d791e97d91bb48ca744d465bc50d5e59a0d476bece"
+    },
+    {
+      "path": "compiler/14-wit-bindings.log",
+      "bytes": 262,
+      "sha256": "c83deaa0f820e669ebef0c9caf1ee80cfe5d994ff5bfd67459b64e2635051fe9"
+    },
+    {
+      "path": "compiler/15-bindings-metadata.command.json",
+      "bytes": 259,
+      "sha256": "b6505af22b5b303603136b9fa01b4d23af31e8cee880606b7bf6723073bc6b33"
+    },
+    {
+      "path": "compiler/15-bindings-metadata.log",
+      "bytes": 2276,
+      "sha256": "9b32f1bf90ec37d58b164e26703bbae8a84849bc70649c5ccd518d26e0d18497"
+    },
+    {
+      "path": "compiler/16-wit-graph.command.json",
+      "bytes": 237,
+      "sha256": "ec1be71d8b18158a36a327273023d25cedc9372673268eeb678b4d6068c2643f"
+    },
+    {
+      "path": "compiler/16-wit-graph.log",
+      "bytes": 10938,
+      "sha256": "f97649dda7bf85e06db8c8eeb346114d56ca3093b55282b02358b4b405606ae9"
+    },
+    {
+      "path": "compiler/17-wit-bindings.command.json",
+      "bytes": 445,
+      "sha256": "387733664cdd7d527cb1e2475e9ebaf79dbb8a4187e70a9492b44ceed06b53bb"
+    },
+    {
+      "path": "compiler/17-wit-bindings.log",
+      "bytes": 280,
+      "sha256": "dcaea16ee79417eae9ef037c79bc3765faaf47f64326279f4a6893803257818e"
+    },
+    {
+      "path": "compiler/18-bindings-metadata.command.json",
+      "bytes": 265,
+      "sha256": "dc3d132211cb08c02eb08e05b6e970c6a7f3d1d414a842436d543566937a23a9"
+    },
+    {
+      "path": "compiler/18-bindings-metadata.log",
+      "bytes": 2276,
+      "sha256": "9b32f1bf90ec37d58b164e26703bbae8a84849bc70649c5ccd518d26e0d18497"
+    },
+    {
+      "path": "compiler/19-java-source-origins.command.json",
+      "bytes": 355,
+      "sha256": "50d45fe800f382f148ac743fb32dec1d42f75ea99a66ef42ea14df95e54b9b6a"
+    },
+    {
+      "path": "compiler/19-java-source-origins.log",
+      "bytes": 113,
+      "sha256": "6b2f3640a203af9efa2553e10c262fc80ae7806c89fc0303a146ca6e33605758"
+    },
+    {
+      "path": "compiler/2-clang-version.command.json",
+      "bytes": 190,
+      "sha256": "12e5769035bf101e285aa17d68b7def4e2896fb5aa06391a711e07c5389097f7"
+    },
+    {
+      "path": "compiler/2-clang-version.log",
+      "bytes": 279,
+      "sha256": "c432dc967eff075c136d3e4cf70fb980f63cf7b93d9bfdb34540377ff69076c3"
+    },
+    {
+      "path": "compiler/20-java-owned-classes.command.json",
+      "bytes": 197,
+      "sha256": "c5dd94f05fade6cc03ef5a1fd18c79225ea70b0b832e68572a2e9ea653ea2eaa"
+    },
+    {
+      "path": "compiler/20-java-owned-classes.log",
+      "bytes": 535,
+      "sha256": "0fd649a29ee033e4e46fd7e82922b05ee93b0712c9636f6b39e465b5cbfbd7f0"
+    },
+    {
+      "path": "compiler/21-java-coroutine-patch.command.json",
+      "bytes": 6361,
+      "sha256": "462cb523ab90e48f352f5f940ed7c4300538b4271a64d122cd3e3a87d9abd477"
+    },
+    {
+      "path": "compiler/21-java-coroutine-patch.log",
+      "bytes": 1,
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "path": "compiler/22-java-coroutine-original-control.command.json",
+      "bytes": 5706,
+      "sha256": "aa1ab653295ef1ef88d3b6c44fc396bbff5b7893d7118aa33e2bb42aaf813e34"
+    },
+    {
+      "path": "compiler/22-java-coroutine-original-control.log",
+      "bytes": 90,
+      "sha256": "01c538693a3632d25520419458df49878381435cf3447bbbf057656177ec326f"
+    },
+    {
+      "path": "compiler/23-java-coroutine-monitor-original-control.command.json",
+      "bytes": 5712,
+      "sha256": "f8ecf92452e20929f139f96e48b94dd32bd83f0421523cfacc1566e3af7c932d"
+    },
+    {
+      "path": "compiler/23-java-coroutine-monitor-original-control.log",
+      "bytes": 90,
+      "sha256": "51845c53fd413c79c1c4e61c01fee793d8425ef808a2fd09d4f9bd3d34d85795"
+    },
+    {
+      "path": "compiler/24-java-coroutine-corrected-control.command.json",
+      "bytes": 5621,
+      "sha256": "01cf463a3d20c1086d3a3f783168f8da341852dd9f13bd9325a428e146ee40c7"
+    },
+    {
+      "path": "compiler/24-java-coroutine-corrected-control.log",
+      "bytes": 91,
+      "sha256": "4828f5d55aa6bab7d28b8266afd76eaca05911722b3338c1d23abc56c65b7d51"
+    },
+    {
+      "path": "compiler/25-java-coroutine-monitor-corrected-control.command.json",
+      "bytes": 5627,
+      "sha256": "588c801d61b3674e801b2debbec158e14e3e0d57b619a5dfdc348e415f6ed0d1"
+    },
+    {
+      "path": "compiler/25-java-coroutine-monitor-corrected-control.log",
+      "bytes": 91,
+      "sha256": "36ae283936a6b418b41521d8b079dfcea962b00da32322146ab4bbc64b99ab53"
+    },
+    {
+      "path": "compiler/26-java-coroutine-copy-cost-control.command.json",
+      "bytes": 5621,
+      "sha256": "f5cf908ec82d3aa22068d413fa8d4570a64d848e7e1b2dddc5e486c93845e267"
+    },
+    {
+      "path": "compiler/26-java-coroutine-copy-cost-control.log",
+      "bytes": 146,
+      "sha256": "ba65ac55e8818fb9bd9267963f0b59d24ca66ae05bb1d9cc6a2082e7d18bc1c3"
+    },
+    {
+      "path": "compiler/27-java-to-c.command.json",
+      "bytes": 190,
+      "sha256": "4697cf2c24ce442608d760e506121a46048a932483561ff914d67d89e37a8776"
+    },
+    {
+      "path": "compiler/28-c-to-wasm.command.json",
+      "bytes": 1483,
+      "sha256": "71adf57a8a2439e19c5c368e8b591b470c54be3822970ed2613d6f9fe8a80cbb"
+    },
+    {
+      "path": "compiler/27-java-to-c.log",
+      "bytes": 921,
+      "sha256": "2349c8dfb62acbf0b8a12e2a0862260c638681d5f1a0a333a97779d6874660b2"
+    },
+    {
+      "path": "compiler/28-c-to-wasm.log",
+      "bytes": 219424,
+      "sha256": "bbc40b902d60888225d337bda3b2cfa88c5da19e5d8386b9a137d36f15f89af0"
+    },
+    {
+      "path": "compiler/29-closed-runtime.command.json",
+      "bytes": 472,
+      "sha256": "cdc67ca2a57a12a4fc826c1c498f2b96b44b448ebd59807a3abfc16a6e75ccf9"
+    },
+    {
+      "path": "compiler/29-closed-runtime.log",
+      "bytes": 1,
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "path": "compiler/3-wit-bindgen-version.command.json",
+      "bytes": 176,
+      "sha256": "0cf951b809d0cf3b9045c829cb980e44d4b3b1535af809b7d19e3f45e3e61615"
+    },
+    {
+      "path": "compiler/3-wit-bindgen-version.log",
+      "bytes": 24,
+      "sha256": "54a3b7f07a7f22e6db46237d76553a5024aa175f6e8966d2db7111e653d9cf42"
+    },
+    {
+      "path": "compiler/30-component-new.command.json",
+      "bytes": 434,
+      "sha256": "a0e896d0fc6b4ce705df633ddd8cb905feeed3a07dddcafdde8de61f6219c3e8"
+    },
+    {
+      "path": "compiler/30-component-new.log",
+      "bytes": 1,
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "path": "compiler/31-component-validate.command.json",
+      "bytes": 231,
+      "sha256": "11e0c74c8099330c71487ae07a1adedfd68b4c6fdfbc1ecf354b2feb133465ab"
+    },
+    {
+      "path": "compiler/31-component-validate.log",
+      "bytes": 1,
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "path": "compiler/32-component-surface.command.json",
+      "bytes": 242,
+      "sha256": "5180ec61ea92f373413cb7bfe06c188bc85be98cc7fa42a8d82b8a5e0730405e"
+    },
+    {
+      "path": "compiler/32-component-surface.log",
+      "bytes": 2121,
+      "sha256": "be2251aac61b2924b53e41004130ce9114b288a4398e2ed4afcde6ac535d3f85"
+    },
+    {
+      "path": "compiler/33-expected-wit.command.json",
+      "bytes": 240,
+      "sha256": "0097c69e73dc9dc3d003e4f83bc68a1fb484ad2ff7a934fd198081dceb04f290"
+    },
+    {
+      "path": "compiler/33-expected-wit.log",
+      "bytes": 10938,
+      "sha256": "f97649dda7bf85e06db8c8eeb346114d56ca3093b55282b02358b4b405606ae9"
+    },
+    {
+      "path": "compiler/34-compiled-wit.command.json",
+      "bytes": 251,
+      "sha256": "3d30348d5f24ad99f309538c4e5ecc8ccf549794093cec8abe4991719bb5fb09"
+    },
+    {
+      "path": "compiler/35-scheduled-model-compile.command.json",
+      "bytes": 10600,
+      "sha256": "f7a02ada6ff3594917c5d9747c31be83abd495207071deed688c7c08fc4c5da3"
+    },
+    {
+      "path": "compiler/34-compiled-wit.log",
+      "bytes": 9432,
+      "sha256": "724880ec390f7098aa96e0d772fcd17dbefbee9c5e626c186684c8f617ce54b2"
+    },
+    {
+      "path": "compiler/35-scheduled-model-compile.log",
+      "bytes": 1,
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "path": "compiler/36-scheduled-model-control.command.json",
+      "bytes": 5690,
+      "sha256": "c9a70b2cfd97a84b76f16b2ca8a2d5d60c12410892c8c5f49f8b0e44f5563277"
+    },
+    {
+      "path": "compiler/36-scheduled-model-control.log",
+      "bytes": 182,
+      "sha256": "89019c1e8ab19bb3fb405edb374e4c9c220615968d7b00fc0ae0aea4643ddcf3"
+    },
+    {
+      "path": "compiler/4-wasm-tools-version.command.json",
+      "bytes": 158,
+      "sha256": "411ca870b1a0d11157b231c9b178c0e836ad1f5be63139f5b91d1b0fc6c9da5c"
+    },
+    {
+      "path": "compiler/4-wasm-tools-version.log",
+      "bytes": 43,
+      "sha256": "a9d05a8e1e1fd8ceb59716d851f535e44be83f11d8a2d6ff21b95fb6aafa39df"
+    },
+    {
+      "path": "compiler/5-wit-graph.command.json",
+      "bytes": 254,
+      "sha256": "5a422bc19e9155b1c79359f34bff2930d82e94b6a0d7ab5b26a04bb18ec3a3d5"
+    },
+    {
+      "path": "compiler/6-wit-bindings.command.json",
+      "bytes": 474,
+      "sha256": "35228d03072c544996749b03526396c823f2f7836c82b79925bd47fdf31335cf"
+    },
+    {
+      "path": "compiler/5-wit-graph.log",
+      "bytes": 41883,
+      "sha256": "5d5d27b6acbdb5d606bd21ac1a48355b6b9bcfe3b675ec3217279615cdec895a"
+    },
+    {
+      "path": "compiler/6-wit-bindings.log",
+      "bytes": 313,
+      "sha256": "a6df8e29a4db5972486daaf7b1de252179be4407a12f0fb80630e93eb78766fe"
+    },
+    {
+      "path": "compiler/7-bindings-metadata.command.json",
+      "bytes": 276,
+      "sha256": "69c3279281d79c4be6d20826d95aebbb8db239ef50e0db2434a064cc44894759"
+    },
+    {
+      "path": "compiler/7-bindings-metadata.log",
+      "bytes": 8431,
+      "sha256": "16ad67914b30acd8ddc8f7336d9e9e20d2be36f535756bb2dc329a2ab34b371b"
+    },
+    {
+      "path": "compiler/8-reference-jdk-compile.command.json",
+      "bytes": 648,
+      "sha256": "29b0e9f0e368e712c2707d7fed8d5cc3c874c9f76df240997d9a016011e7903c"
+    },
+    {
+      "path": "compiler/8-reference-jdk-compile.log",
+      "bytes": 1,
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "path": "compiler/9-reference-jdk-0.command.json",
+      "bytes": 470,
+      "sha256": "c14cf3a0a465caabc938ce717eee49e6978e29415d283e58d93b1d17ac457a0b"
+    },
+    {
+      "path": "compiler/9-reference-jdk-0.log",
+      "bytes": 25,
+      "sha256": "11a02c71bb097c1ee9d48ea072823b3163211824322062243280c85b92ee7ec6"
+    },
+    {
+      "path": "commands/logs/00-source-paths.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "commands/logs/00-source-paths.stdout.txt",
+      "bytes": 464297,
+      "sha256": "41b53ee3d2157f069edd0538c71a9bb4f6120cae0670c7c332271c131f93b5cf"
+    },
+    {
+      "path": "commands/logs/01-source-controls.stderr.txt",
+      "bytes": 1002,
+      "sha256": "01e39d2171db13d289b8e53b014b71d8f1a9552c010bd5d839e27d40d92a483a"
+    },
+    {
+      "path": "commands/logs/01-source-controls.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "commands/logs/02-gradle-download.stderr.txt",
+      "bytes": 556,
+      "sha256": "7a6a7ed3578d2bb2e560a378437ebb7bfb8df2920134b625f459d5b4c4ea3391"
+    },
+    {
+      "path": "commands/logs/02-gradle-download.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "commands/logs/03-gradle-unpack.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "commands/logs/03-gradle-unpack.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "commands/logs/04-wit-bindgen-install.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "commands/logs/04-wit-bindgen-install.stdout.txt",
+      "bytes": 44,
+      "sha256": "eba707099ae086290a9e3abc81c37b16ef738806247fdb42c81e605747b9c445"
+    },
+    {
+      "path": "commands/logs/05-build-harness.stderr.txt",
+      "bytes": 20331,
+      "sha256": "c0983ae94b752ca628ad60574ddee938d3ea210b65b6df734a956edabf58fa04"
+    },
+    {
+      "path": "commands/logs/05-build-harness.stdout.txt",
+      "bytes": 340151,
+      "sha256": "91342a986ad1a2c82655155aa68cd3609812b8c4bd7e23c747dc1cd59d8a6634"
+    },
+    {
+      "path": "commands/logs/06-rust-library-path.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "commands/logs/06-rust-library-path.stdout.txt",
+      "bytes": 105,
+      "sha256": "7675ece60101aa9118dc7df3c8865c010dc07858e7fb4b48536a3376fa3b9ed0"
+    },
+    {
+      "path": "commands/logs/07-list-exact-case.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "commands/logs/07-list-exact-case.stdout.txt",
+      "bytes": 99,
+      "sha256": "e86706302e19d254348f79fff6d8755c765558f4bace3fb0ecc2fbfb43367348"
+    },
+    {
+      "path": "commands/logs/08-execute-exact-case.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "commands/logs/08-execute-exact-case.stdout.txt",
+      "bytes": 10439,
+      "sha256": "4c8dfab7ad0d353e0fb85b321c8b958e7028206509ec00fae1534ea24fe0c03e"
+    }
+  ],
+  "remainingGates": [
+    "GC and complete actual allocation accounting remain separate #741 obligations",
+    "CPU/fuel fairness and full Java profile qualification remain open",
+    "No outbound networking or whole-issue closure claim",
+    "Only the named finite scheduling surface and exact emitted paths are observed"
+  ]
+}

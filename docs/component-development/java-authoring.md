@@ -558,4 +558,14 @@ declared activation wait and private JDK wait reference.
 The receipt also preserves 36 earlier thread/I/O/JDK-timer calls as separate v11
 evidence from the failed normal authoring run. Neither those observations nor the
 new twelve are retagged as later native cohorts. Full Java-profile and cost-model
-qualification, published timer-library behavior and whole #741 closure remain open.
+qualification and whole #741 closure remain open.
+
+## Ordinary scheduled executors and published timers
+
+[The scheduled-library receipt](../testing/evidence/java-scheduled-libraries-runtime-2026-10-26.json)
+records sixteen signed calls on a source-matched v14 host: twelve unchanged
+Commons TimedSemaphore default-factory calls and four pending default
+CompletableFuture/shutdown-rejection calls. All returned `42`, created fresh
+Stores and retired the seven reported idle counters. Actual JDK/source/model
+controls passed. The exercised scheduling paths passed; broader scheduler
+APIs, GC, full cost/profile qualification and whole #741 remain open.

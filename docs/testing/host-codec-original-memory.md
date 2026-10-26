@@ -171,6 +171,36 @@ That Legacy stream Box, queue/node backing and other opaque/transitive backing
 remain unpaid gaps. This unsigned native result does not close #736 or establish
 an allocator/RSS ceiling, and does not replay the v11/v12 or Java qualifications.
 
+## Canonical scheduler queue backing
+
+[The focused v14 evidence](evidence/canonical-queue-nodes-native-2026-10-26.json)
+binds [run 40270862197](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40270862197)
+at `b5fc40c2703621c23c0107434c46933ef78846ec`: four new private queue controls
+and seven affected/new actual canonical cases passed, each with zero failures
+or ignored cases. The actual cases cover eight typed memory-refusal/fresh-42
+scenarios, including both upstream nodes before guest fuel consumption. All 37
+archive members, 34 raw channels, 17 zero-exit commands and 8,914 before/after
+source bindings were checked; the declared `tools/intellij.cmd` checkout line
+ending conversion is retained. The compiled queue entry is 120 bytes, aligned
+to 8; this is a backing-layout witness, not a new memory grant or RSS ceiling.
+
+Queue nodes are admitted before effects and the same physical node survives
+pending calls, promotion, waits, cancellation and fiber/worker execution. Both
+completion and initial PushFuture nodes precede the first host poll, with
+independent unused refunds on Ready. The original host-local owner positions
+2–5 remain identifiable at global requests 4–7 after the two new upstream
+nodes; the new host nodes are local 6/7 at globals 8/9. Those four affected
+actual controls were deliberately re-executed. The first `c4a1afeb` attempt
+failed private compilation (E0576/E0502), executed zero controls, and remains
+separately recorded. The corrected programme kept the original two locked
+targets and all job, command, cleanup, activation and compile-job limits.
+
+This unsigned native result covers the queue-entry owner and its bounded
+integration cases. FuturesUnordered task/stub/ready-queue and weak backing,
+other scheduler collections, the Legacy stream callback Box and transitive
+allocations remain open. It does not close #736 or qualify a whole allocator,
+runtime or signed-language path.
+
 ## Scope retained outside this slice
 
 Initial linear-memory success/failure notifications, direct Core HostFunc construction, shared
