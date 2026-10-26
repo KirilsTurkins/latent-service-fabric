@@ -3,28 +3,29 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "if": "${{ github.event_name == 'workflow_dispatch' && inputs.qualify-standard-clocks }}",
     "name": "Ordinary Date and performance signed authority and fresh-state programme",
-    "permissions": {
-      "actions": "read",
-      "contents": "read"
-    },
+    "if": "${{ github.event_name == 'workflow_dispatch' && inputs.qualify-standard-clocks }}",
     "runs-on": "ubuntu-24.04",
+    "timeout-minutes": 20,
+    "permissions": {
+      "contents": "read",
+      "actions": "read"
+    },
     "steps": [
       {
-        "uses": "actions/checkout",
+        "uses": "KirilsTurkins/lsf-checkout",
         "with": {
           "persist-credentials": false
         }
       },
       {
-        "uses": "actions/setup-python",
+        "uses": "KirilsTurkins/lsf-setup-python",
         "with": {
           "python-version": "3.13.5"
         }
       },
       {
-        "uses": "actions/setup-node",
+        "uses": "KirilsTurkins/lsf-setup-node",
         "with": {
           "node-version": "24.19.0"
         }
@@ -34,7 +35,7 @@
         "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\npython3 -m pip install -r tools/requirements.lock\n"
       },
       {
-        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "uses": "KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup",
         "with": {
           "version": "1.254.0"
         }
@@ -48,34 +49,33 @@
         "run": "python3 tools/typescript_capsule.py install-tools \"$RUNNER_TEMP/typescript-clock-tools\""
       },
       {
+        "name": "Acquire only authenticated public layers original native products and clock engine",
+        "timeout-minutes": 5,
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
-        "name": "Acquire only authenticated public layers original native products and clock engine",
-        "run": "python3 -B tools/replay_typescript_standard_entropy.py --acquire --inputs \"$RUNNER_TEMP/typescript-clock-original-inputs\"\npython3 -B tools/qualify_typescript_standard_clocks.py --acquire-engine --engine \"$RUNNER_TEMP/typescript-clock-original-engine\"\n",
-        "timeout-minutes": 5
+        "run": "python3 -B tools/replay_typescript_standard_entropy.py --acquire --inputs \"$RUNNER_TEMP/typescript-clock-original-inputs\"\npython3 -B tools/qualify_typescript_standard_clocks.py --acquire-engine --engine \"$RUNNER_TEMP/typescript-clock-original-engine\"\n"
       },
       {
         "name": "Compile two clock components refuse snapshot observations and execute all47 signed outcomes",
         "run": "python3 -B tools/qualify_typescript_standard_clocks.py --acquired \"$RUNNER_TEMP/typescript-clock-original-inputs\" --engine \"$RUNNER_TEMP/typescript-clock-original-engine\" --tools \"$RUNNER_TEMP/typescript-clock-tools\" --output \"$RUNNER_TEMP/typescript-standard-clocks\""
       },
       {
-        "if": "always()",
         "name": "Retain source-bound compiler refusals authority results and physical cleanup",
-        "uses": "actions/upload-artifact",
+        "if": "always()",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
-          "if-no-files-found": "warn",
           "name": "typescript-standard-clocks-${{ github.sha }}",
           "path": "${{ runner.temp }}/typescript-clock-original-inputs/acquisition.json\n${{ runner.temp }}/typescript-clock-original-engine/acquisition.json\n${{ runner.temp }}/typescript-standard-clocks/*.json\n${{ runner.temp }}/typescript-standard-clocks/build-*/*.json\n${{ runner.temp }}/typescript-standard-clocks/build-*/component.wasm\n${{ runner.temp }}/typescript-standard-clocks/build-*/logs/**\n${{ runner.temp }}/typescript-standard-clocks/snapshot-*/*.json\n${{ runner.temp }}/typescript-standard-clocks/snapshot-*/logs/**\n${{ runner.temp }}/typescript-standard-clocks/node/*.json\n${{ runner.temp }}/typescript-standard-clocks/node/controls/*.json\n",
+          "if-no-files-found": "warn",
           "retention-days": 7
         }
       }
-    ],
-    "timeout-minutes": 20
+    ]
   },
   "jobId": "standard-clocks",
   "kind": "job",
-  "reviewReason": "Repair actual before-component loopback permission failure by restoring the exact already-reviewed namespace prerequisite used by the original captured TypeScript compiler; keep all isolation flags and finite deadlines.",
+  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }

@@ -3,28 +3,29 @@
   "before": {},
   "coverage": {},
   "definition": {
+    "if": "${{ github.event_name != 'workflow_dispatch' || (!inputs.late_facilities && !inputs.replay_late_facilities) }}",
+    "name": "Signed managed resources tasks clocks entropy and logging",
+    "runs-on": "ubuntu-24.04",
+    "timeout-minutes": 20,
     "env": {
       "CARGO_BUILD_JOBS": 2,
       "CARGO_INCREMENTAL": 0
     },
-    "if": "${{ github.event_name != 'workflow_dispatch' || (!inputs.late_facilities && !inputs.replay_late_facilities) }}",
-    "name": "Signed managed resources tasks clocks entropy and logging",
-    "runs-on": "ubuntu-24.04",
     "steps": [
       {
-        "uses": "actions/checkout",
+        "uses": "KirilsTurkins/lsf-checkout",
         "with": {
           "persist-credentials": false
         }
       },
       {
-        "uses": "actions/setup-python",
+        "uses": "KirilsTurkins/lsf-setup-python",
         "with": {
           "python-version": "3.13.5"
         }
       },
       {
-        "uses": "actions/setup-dotnet",
+        "uses": "KirilsTurkins/lsf-setup-dotnet",
         "with": {
           "dotnet-version": "10.0.100"
         }
@@ -36,21 +37,21 @@
         }
       },
       {
-        "uses": "Swatinem/rust-cache",
+        "uses": "KirilsTurkins/lsf-rust-cache",
         "with": {
-          "cache-all-crates": false,
-          "cache-bin": false,
-          "cache-on-failure": false,
-          "cache-targets": true,
-          "cache-workspace-crates": false,
-          "key": "ubuntu-24.04",
           "prefix-key": "lsf-ci-dependencies-v2",
-          "save-if": false,
-          "shared-key": "host-correctness"
+          "shared-key": "host-correctness",
+          "key": "ubuntu-24.04",
+          "cache-targets": true,
+          "cache-bin": false,
+          "cache-workspace-crates": false,
+          "cache-all-crates": false,
+          "cache-on-failure": false,
+          "save-if": false
         }
       },
       {
-        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "uses": "KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup",
         "with": {
           "version": "1.254.0"
         }
@@ -69,14 +70,14 @@
       },
       {
         "name": "Prepare the pinned compiler and small current closed-runtime adapters",
-        "run": "curl --fail --location --max-time 180 \\\n  https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \\\n  --output \"$RUNNER_TEMP/wasi-sdk.tar.gz\"\nprintf '%s  %s\\n' 87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171 \"$RUNNER_TEMP/wasi-sdk.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/wasi-sdk.tar.gz\" -C \"$RUNNER_TEMP\"\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/dotnet-resource-bindgen\"\nexport PATH=\"$RUNNER_TEMP/dotnet-resource-bindgen:$PATH\"\nprintf '%s\\n' \"$RUNNER_TEMP/dotnet-resource-bindgen\" >> \"$GITHUB_PATH\"\npython3 tools/dotnet_capsule.py install-tools \"$RUNNER_TEMP/dotnet-resource-tools\" \\\n  --wasi-sdk \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\"\n",
-        "shell": "bash"
+        "shell": "bash",
+        "run": "curl --fail --location --max-time 180 \\\n  https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \\\n  --output \"$RUNNER_TEMP/wasi-sdk.tar.gz\"\nprintf '%s  %s\\n' 87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171 \"$RUNNER_TEMP/wasi-sdk.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/wasi-sdk.tar.gz\" -C \"$RUNNER_TEMP\"\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/dotnet-resource-bindgen\"\nexport PATH=\"$RUNNER_TEMP/dotnet-resource-bindgen:$PATH\"\nprintf '%s\\n' \"$RUNNER_TEMP/dotnet-resource-bindgen\" >> \"$GITHUB_PATH\"\npython3 tools/dotnet_capsule.py install-tools \"$RUNNER_TEMP/dotnet-resource-tools\" \\\n  --wasi-sdk \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\"\n"
       },
       {
+        "name": "Authenticate the original V7 products without a native host rebuild",
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
-        "name": "Authenticate the original V7 products without a native host rebuild",
         "run": "python3 -B tools/java_phase_native_products.py --output \"$RUNNER_TEMP/dotnet-resource-native\""
       },
       {
@@ -84,22 +85,21 @@
         "run": "python3 -B tools/qualify_dotnet_resource_runtime.py \\\n  --native \"$RUNNER_TEMP/dotnet-resource-native\" --tools \"$RUNNER_TEMP/dotnet-resource-tools\" \\\n  --output \"$RUNNER_TEMP/dotnet-resource-runtime\"\n"
       },
       {
-        "if": "always()",
         "name": "Retain bounded public build identities and raw lifecycle outcomes",
-        "uses": "actions/upload-artifact",
+        "if": "always()",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
-          "if-no-files-found": "warn",
           "name": "dotnet-resource-runtime-${{ github.sha }}",
-          "path": "${{ runner.temp }}/dotnet-resource-native/*.json\n${{ runner.temp }}/dotnet-resource-tools/INSTALL-COMPLETE.json\n${{ runner.temp }}/dotnet-resource-tools/runtime-inputs.json\n${{ runner.temp }}/dotnet-resource-tools/wasi-sdk.json\n${{ runner.temp }}/dotnet-resource-tools/logs/**\n${{ runner.temp }}/dotnet-resource-runtime/*.json\n${{ runner.temp }}/dotnet-resource-runtime/build/*.json\n${{ runner.temp }}/dotnet-resource-runtime/build/component.wasm\n${{ runner.temp }}/dotnet-resource-runtime/build/native-aot-original.wasm\n${{ runner.temp }}/dotnet-resource-runtime/build/derived-*.dll\n${{ runner.temp }}/dotnet-resource-runtime/build/package/**\n${{ runner.temp }}/dotnet-resource-runtime/build/logs/**\n${{ runner.temp }}/dotnet-resource-runtime/node/*.json\n${{ runner.temp }}/dotnet-resource-runtime/node/node-stderr.txt\n${{ runner.temp }}/dotnet-resource-runtime/node/commands/logs/**\n${{ runner.temp }}/dotnet-resource-runtime/node/examples-controls/*.json\n${{ runner.temp }}/dotnet-resource-runtime/node/foreign-controls/*.json\n${{ runner.temp }}/dotnet-resource-runtime/node/signed/my-greeting/build-observation.json\n${{ runner.temp }}/dotnet-resource-runtime/node/signed/release-set.json\n",
-          "retention-days": 3
+          "retention-days": 3,
+          "if-no-files-found": "warn",
+          "path": "${{ runner.temp }}/dotnet-resource-native/*.json\n${{ runner.temp }}/dotnet-resource-tools/INSTALL-COMPLETE.json\n${{ runner.temp }}/dotnet-resource-tools/runtime-inputs.json\n${{ runner.temp }}/dotnet-resource-tools/wasi-sdk.json\n${{ runner.temp }}/dotnet-resource-tools/logs/**\n${{ runner.temp }}/dotnet-resource-runtime/*.json\n${{ runner.temp }}/dotnet-resource-runtime/build/*.json\n${{ runner.temp }}/dotnet-resource-runtime/build/component.wasm\n${{ runner.temp }}/dotnet-resource-runtime/build/native-aot-original.wasm\n${{ runner.temp }}/dotnet-resource-runtime/build/derived-*.dll\n${{ runner.temp }}/dotnet-resource-runtime/build/package/**\n${{ runner.temp }}/dotnet-resource-runtime/build/logs/**\n${{ runner.temp }}/dotnet-resource-runtime/node/*.json\n${{ runner.temp }}/dotnet-resource-runtime/node/node-stderr.txt\n${{ runner.temp }}/dotnet-resource-runtime/node/commands/logs/**\n${{ runner.temp }}/dotnet-resource-runtime/node/examples-controls/*.json\n${{ runner.temp }}/dotnet-resource-runtime/node/foreign-controls/*.json\n${{ runner.temp }}/dotnet-resource-runtime/node/signed/my-greeting/build-observation.json\n${{ runner.temp }}/dotnet-resource-runtime/node/signed/release-set.json\n"
         }
       }
-    ],
-    "timeout-minutes": 20
+    ]
   },
   "jobId": "resource-runtime",
   "kind": "job",
-  "reviewReason": "Reviewed exact df4 completed AOT package node-only continuation: same six late/fresh obligations and caps; no guest/native compilation; exact old jobs restored after only explicit default-false replay selector and job removal. Current managed-profile reader is bound to actual owner/private-IO/task-v2 receipts.",
+  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-resource-runtime.yml"
 }

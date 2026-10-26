@@ -3,16 +3,17 @@
   "before": {},
   "coverage": {},
   "definition": {
+    "if": "${{ github.event_name == 'push' && github.ref == 'refs/heads/feat/java-dotnet-diagnostics-679-20261021' }}",
+    "name": "Compiler observations plus six signed dotnet initializer and callback cases",
+    "runs-on": "ubuntu-24.04",
+    "timeout-minutes": 40,
     "env": {
       "CARGO_BUILD_JOBS": 2,
       "CARGO_INCREMENTAL": 0
     },
-    "if": "${{ github.event_name == 'push' && github.ref == 'refs/heads/feat/java-dotnet-diagnostics-679-20261021' }}",
-    "name": "Compiler observations plus six signed dotnet initializer and callback cases",
-    "runs-on": "ubuntu-24.04",
     "steps": [
       {
-        "uses": "actions/checkout",
+        "uses": "KirilsTurkins/lsf-checkout",
         "with": {
           "persist-credentials": false
         }
@@ -22,13 +23,13 @@
         "run": "git fetch --no-tags --depth=1 origin c7134289f446cb3171eb0ffd800a94afc2a5209f"
       },
       {
-        "uses": "actions/setup-python",
+        "uses": "KirilsTurkins/lsf-setup-python",
         "with": {
           "python-version": "3.13.5"
         }
       },
       {
-        "uses": "actions/setup-dotnet",
+        "uses": "KirilsTurkins/lsf-setup-dotnet",
         "with": {
           "dotnet-version": "10.0.100"
         }
@@ -40,21 +41,21 @@
         }
       },
       {
-        "uses": "Swatinem/rust-cache",
+        "uses": "KirilsTurkins/lsf-rust-cache",
         "with": {
-          "cache-all-crates": false,
-          "cache-bin": false,
-          "cache-on-failure": false,
-          "cache-targets": true,
-          "cache-workspace-crates": false,
-          "key": "ubuntu-24.04",
           "prefix-key": "lsf-ci-dependencies-v2",
-          "save-if": false,
-          "shared-key": "host-correctness"
+          "shared-key": "host-correctness",
+          "key": "ubuntu-24.04",
+          "cache-targets": true,
+          "cache-bin": false,
+          "cache-workspace-crates": false,
+          "cache-all-crates": false,
+          "cache-on-failure": false,
+          "save-if": false
         }
       },
       {
-        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "uses": "KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup",
         "with": {
           "version": "1.254.0"
         }
@@ -65,18 +66,18 @@
       },
       {
         "name": "Prepare the pinned compiler and small current closed-runtime adapters",
-        "run": "curl --fail --location --max-time 180 \\\n  https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \\\n  --output \"$RUNNER_TEMP/wasi-sdk.tar.gz\"\nprintf '%s  %s\\n' 87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171 \"$RUNNER_TEMP/wasi-sdk.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/wasi-sdk.tar.gz\" -C \"$RUNNER_TEMP\"\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/dotnet-diagnostics-bindgen\"\nexport PATH=\"$RUNNER_TEMP/dotnet-diagnostics-bindgen:$PATH\"\nprintf '%s\\n' \"$RUNNER_TEMP/dotnet-diagnostics-bindgen\" >> \"$GITHUB_PATH\"\npython3 tools/dotnet_capsule.py install-tools \"$RUNNER_TEMP/dotnet-diagnostics-tools\" \\\n  --wasi-sdk \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\"\n",
-        "shell": "bash"
+        "shell": "bash",
+        "run": "curl --fail --location --max-time 180 \\\n  https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \\\n  --output \"$RUNNER_TEMP/wasi-sdk.tar.gz\"\nprintf '%s  %s\\n' 87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171 \"$RUNNER_TEMP/wasi-sdk.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/wasi-sdk.tar.gz\" -C \"$RUNNER_TEMP\"\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/dotnet-diagnostics-bindgen\"\nexport PATH=\"$RUNNER_TEMP/dotnet-diagnostics-bindgen:$PATH\"\nprintf '%s\\n' \"$RUNNER_TEMP/dotnet-diagnostics-bindgen\" >> \"$GITHUB_PATH\"\npython3 tools/dotnet_capsule.py install-tools \"$RUNNER_TEMP/dotnet-diagnostics-tools\" \\\n  --wasi-sdk \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\"\n"
       },
       {
         "name": "Check passive collectors, source binding and finite runtime oracles",
         "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 -B -m unittest tools.tests.test_java_compiler_reachability tools.tests.test_dotnet_compiler_reachability tools.tests.test_compiler_compatibility_fixture tools.tests.test_compiler_compatibility_execution tools.tests.test_compiler_compatibility_workflows -v\n"
       },
       {
+        "name": "Authenticate the same five native products without rebuilding the host",
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
-        "name": "Authenticate the same five native products without rebuilding the host",
         "run": "python3 -B tools/activation_stack_native_products.py --output \"$RUNNER_TEMP/dotnet-diagnostics-native\""
       },
       {
@@ -84,22 +85,21 @@
         "run": "python3 -B tools/qualify_compiler_compatibility.py --language dotnet \\\n  --native \"$RUNNER_TEMP/dotnet-diagnostics-native\" --tools \"$RUNNER_TEMP/dotnet-diagnostics-tools\" \\\n  --output \"$RUNNER_TEMP/dotnet-compiler-diagnostics\"\n"
       },
       {
-        "if": "always()",
         "name": "Retain bounded public identities, actual results and signable package for causal replay",
-        "uses": "actions/upload-artifact",
+        "if": "always()",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
-          "if-no-files-found": "warn",
           "name": "dotnet-compiler-diagnostics-${{ github.sha }}",
-          "path": "${{ runner.temp }}/dotnet-diagnostics-native/*.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/*.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/commands/logs/**\n${{ runner.temp }}/dotnet-compiler-diagnostics/compiler-cache/compiler-cache-selection.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/node/*.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/node/controls/*.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/node/commands/logs/**\n${{ runner.temp }}/dotnet-compiler-diagnostics/node/signed/release-set.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/node/signed/my-greeting/build-observation.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/build/BUILD-COMPLETE.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/build/BUILD-FAILED.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/build/build-observation.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/build/source-inputs.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/build/recipe-inputs.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/build/compiler-inputs.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/build/package-inputs.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/build/application-dependencies.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/build/runtime-profile.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/build/compiler-patches.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/build/compiler-method-observation-selection.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/build/compatibility-compiler-methods.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/build/compatibility-compiler-methods-unavailable.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/build/compatibility-report.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/build/compatibility-java-compiler-report.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/build/compatibility-java-compiler-failed.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/build/compatibility-context.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/build/java-classpath.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/build/source-origins.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/build/coroutine-compiler-preparation.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/build/retirement-port.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/build/task-wait-port.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/build/closed-filesystem-port.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/build/internal-io-port.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/build/closed-runtime-coverage.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/build/component.wasm\n${{ runner.temp }}/dotnet-compiler-diagnostics/build/capsule.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/build/package-source.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/build/package/**\n${{ runner.temp }}/dotnet-compiler-diagnostics/build/logs/**\n${{ runner.temp }}/dotnet-diagnostics-tools/INSTALL-COMPLETE.json\n${{ runner.temp }}/dotnet-diagnostics-tools/runtime-inputs.json\n${{ runner.temp }}/dotnet-diagnostics-tools/wasi-sdk.json\n${{ runner.temp }}/dotnet-diagnostics-tools/logs/**\n",
-          "retention-days": 3
+          "retention-days": 3,
+          "if-no-files-found": "warn",
+          "path": "${{ runner.temp }}/dotnet-diagnostics-native/*.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/*.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/commands/logs/**\n${{ runner.temp }}/dotnet-compiler-diagnostics/compiler-cache/compiler-cache-selection.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/node/*.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/node/controls/*.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/node/commands/logs/**\n${{ runner.temp }}/dotnet-compiler-diagnostics/node/signed/release-set.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/node/signed/my-greeting/build-observation.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/build/BUILD-COMPLETE.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/build/BUILD-FAILED.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/build/build-observation.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/build/source-inputs.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/build/recipe-inputs.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/build/compiler-inputs.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/build/package-inputs.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/build/application-dependencies.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/build/runtime-profile.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/build/compiler-patches.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/build/compiler-method-observation-selection.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/build/compatibility-compiler-methods.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/build/compatibility-compiler-methods-unavailable.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/build/compatibility-report.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/build/compatibility-java-compiler-report.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/build/compatibility-java-compiler-failed.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/build/compatibility-context.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/build/java-classpath.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/build/source-origins.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/build/coroutine-compiler-preparation.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/build/retirement-port.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/build/task-wait-port.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/build/closed-filesystem-port.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/build/internal-io-port.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/build/closed-runtime-coverage.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/build/component.wasm\n${{ runner.temp }}/dotnet-compiler-diagnostics/build/capsule.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/build/package-source.json\n${{ runner.temp }}/dotnet-compiler-diagnostics/build/package/**\n${{ runner.temp }}/dotnet-compiler-diagnostics/build/logs/**\n${{ runner.temp }}/dotnet-diagnostics-tools/INSTALL-COMPLETE.json\n${{ runner.temp }}/dotnet-diagnostics-tools/runtime-inputs.json\n${{ runner.temp }}/dotnet-diagnostics-tools/wasi-sdk.json\n${{ runner.temp }}/dotnet-diagnostics-tools/logs/**\n"
         }
       }
-    ],
-    "timeout-minutes": 40
+    ]
   },
   "jobId": "dotnet-diagnostics",
   "kind": "job",
-  "reviewReason": "One fresh captured managed fixture with current explicit Task profile, exact compiler graph anchors and six signed actual cases; no historical programme or native rebuild.",
+  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/compiler-compatibility.yml"
 }

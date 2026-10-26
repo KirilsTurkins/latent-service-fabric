@@ -6,28 +6,29 @@
     "if": "${{ inputs.recipient != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-device-recipient-20261022') && (inputs.registration != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-device-registration-20261021') && (inputs.firmware != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-device-setup-20261021') && (inputs.device != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-device-closure-20261021') && (inputs.packet != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-packet-prefix-20261021') && (inputs.route_cache != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-cache-20261021') && (inputs.route != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-consumer-20261021') && (inputs.bind != true && !(github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-route-owners-20261021') && ((github.event_name == 'push' && github.ref_name == 'feat/stream-kernel-audit-skb-20261021') || inputs.audit == true)))))))) }}",
     "name": "Twenty actual maintained objects with mandatory audit and SKB owners",
     "runs-on": "ubuntu-24.04",
+    "timeout-minutes": 20,
     "steps": [
       {
-        "uses": "actions/checkout",
+        "uses": "KirilsTurkins/lsf-checkout",
         "with": {
           "persist-credentials": false
         }
       },
       {
-        "uses": "actions/setup-python",
+        "uses": "KirilsTurkins/lsf-setup-python",
         "with": {
           "python-version": "3.13.5"
         }
       },
       {
+        "name": "Refuse mixed or unknown object profile inputs before acquisition or build",
         "env": {
-          "AUDIT_REQUEST": "${{ inputs.audit }}",
-          "AVC_REQUEST": "${{ inputs.avc }}",
           "NETLABEL_REQUEST": "${{ inputs.netlabel }}",
           "NETPORT_REQUEST": "${{ inputs.netport }}",
-          "SIDCACHE_REQUEST": "${{ inputs.sidcache }}"
+          "SIDCACHE_REQUEST": "${{ inputs.sidcache }}",
+          "AVC_REQUEST": "${{ inputs.avc }}",
+          "AUDIT_REQUEST": "${{ inputs.audit }}"
         },
-        "name": "Refuse mixed or unknown object profile inputs before acquisition or build",
         "run": "python3 - <<'PY'\nimport os\nvalues = [os.environ[name] for name in ('NETLABEL_REQUEST', 'NETPORT_REQUEST', 'SIDCACHE_REQUEST', 'AVC_REQUEST', 'AUDIT_REQUEST')]\nassert all(value in ('', 'true', 'false') for value in values)\nassert values.count('true') <= 1\nPY\n"
       },
       {
@@ -44,30 +45,29 @@
       },
       {
         "name": "Acquire only the exact maintained official source archive",
-        "run": "set -euo pipefail\ncurl --fail --location --proto '=https' --tlsv1.2 --max-time 180 \\\n  https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.12.113.tar.xz \\\n  --output \"$RUNNER_TEMP/linux-6.12.113.tar.xz\"\necho \"e09b6727e5c521253f0d41694900b9c38fb7604db7d35238a8197aa9f7de2428  $RUNNER_TEMP/linux-6.12.113.tar.xz\" | sha256sum --check --strict\n",
-        "shell": "bash"
+        "shell": "bash",
+        "run": "set -euo pipefail\ncurl --fail --location --proto '=https' --tlsv1.2 --max-time 180 \\\n  https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.12.113.tar.xz \\\n  --output \"$RUNNER_TEMP/linux-6.12.113.tar.xz\"\necho \"e09b6727e5c521253f0d41694900b9c38fb7604db7d35238a8197aa9f7de2428  $RUNNER_TEMP/linux-6.12.113.tar.xz\" | sha256sum --check --strict\n"
       },
       {
         "name": "Derive actual source preserve security config and compile twenty unlinked mandatory-audit and SKB objects",
         "run": "python3 -B tools/qualify_host_stream_kernel_objects.py --archive \"$RUNNER_TEMP/linux-6.12.113.tar.xz\" --output \"$RUNNER_TEMP/stream-kernel-objects\" --audit"
       },
       {
-        "if": "always()",
         "name": "Retain bounded configuration compiler objects and failure evidence",
-        "uses": "actions/upload-artifact",
+        "if": "always()",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
-          "if-no-files-found": "warn",
           "name": "stream-kernel-audit-objects-${{ github.sha }}",
           "path": "${{ runner.temp }}/stream-kernel-objects/qualification.json\n${{ runner.temp }}/stream-kernel-objects/FAILED.json\n${{ runner.temp }}/stream-kernel-objects/selection.json\n${{ runner.temp }}/stream-kernel-objects/commands.json\n${{ runner.temp }}/stream-kernel-objects/baseline.config\n${{ runner.temp }}/stream-kernel-objects/selected.config\n${{ runner.temp }}/stream-kernel-objects/commands/logs/*.txt\n${{ runner.temp }}/stream-kernel-objects/objects/include/generated/autoconf.h\n${{ runner.temp }}/stream-kernel-objects/objects/net/socket.o\n${{ runner.temp }}/stream-kernel-objects/objects/fs/inode.o\n${{ runner.temp }}/stream-kernel-objects/objects/net/core/sock.o\n${{ runner.temp }}/stream-kernel-objects/objects/net/ipv4/af_inet.o\n${{ runner.temp }}/stream-kernel-objects/objects/security/security.o\n${{ runner.temp }}/stream-kernel-objects/objects/net/factory.o\n${{ runner.temp }}/stream-kernel-objects/objects/security/selinux/netlabel.o\n${{ runner.temp }}/stream-kernel-objects/objects/security/selinux/ss/services.o\n${{ runner.temp }}/stream-kernel-objects/objects/security/selinux/ss/mls.o\n${{ runner.temp }}/stream-kernel-objects/objects/security/selinux/ss/ebitmap.o\n${{ runner.temp }}/stream-kernel-objects/objects/net/netlabel/netlabel_kapi.o\n${{ runner.temp }}/stream-kernel-objects/objects/net/ipv4/cipso_ipv4.o\n${{ runner.temp }}/stream-kernel-objects/objects/security/selinux/netport.o\n${{ runner.temp }}/stream-kernel-objects/objects/security/selinux/hooks.o\n${{ runner.temp }}/stream-kernel-objects/objects/security/selinux/ss/sidtab.o\n${{ runner.temp }}/stream-kernel-objects/objects/security/selinux/avc.o\n${{ runner.temp }}/stream-kernel-objects/objects/net/core/skbuff.o\n${{ runner.temp }}/stream-kernel-objects/objects/kernel/audit.o\n${{ runner.temp }}/stream-kernel-objects/objects/security/lsm_audit.o\n${{ runner.temp }}/stream-kernel-objects/objects/net/netlink/af_netlink.o\n",
+          "if-no-files-found": "warn",
           "retention-days": 3
         }
       }
-    ],
-    "timeout-minutes": 20
+    ]
   },
   "jobId": "audit-objects",
   "kind": "job",
-  "reviewReason": "Reviewed grouped recipient signal and mandatory security source; one exclusive object-only lane retains every historical command, case, configuration and physical qualification boundary.",
+  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/stream-kernel-objects.yml"
 }

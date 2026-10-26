@@ -5,15 +5,16 @@
   "definition": {
     "name": "Nineteen native controls then one fresh kernel and observation VM",
     "runs-on": "ubuntu-24.04",
+    "timeout-minutes": 45,
     "steps": [
       {
-        "uses": "actions/checkout",
+        "uses": "KirilsTurkins/lsf-checkout",
         "with": {
           "persist-credentials": false
         }
       },
       {
-        "uses": "actions/setup-python",
+        "uses": "KirilsTurkins/lsf-setup-python",
         "with": {
           "python-version": "3.13.5"
         }
@@ -22,14 +23,14 @@
         "uses": "dtolnay/rust-toolchain"
       },
       {
-        "uses": "Swatinem/rust-cache",
+        "uses": "KirilsTurkins/lsf-rust-cache",
         "with": {
-          "cache-bin": false,
-          "cache-targets": false,
-          "cache-workspace-crates": false,
-          "key": "ubuntu-24.04-native-return",
           "prefix-key": "lsf-ci-dependencies-v2",
-          "shared-key": "host-correctness"
+          "shared-key": "host-correctness",
+          "key": "ubuntu-24.04-native-return",
+          "cache-bin": false,
+          "cache-workspace-crates": false,
+          "cache-targets": false
         }
       },
       {
@@ -45,22 +46,21 @@
         "run": "python3 -B tools/qualify_host_stream_kernel_return_vm.py --source-commit \"${{ github.sha }}\" --output \"$RUNNER_TEMP/stream-kernel-return-vm\""
       },
       {
-        "if": "always()",
         "name": "Retain actual source products observations and failures",
-        "uses": "actions/upload-artifact",
+        "if": "always()",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
-          "if-no-files-found": "warn",
           "name": "stream-kernel-return-vm-${{ github.sha }}",
           "path": "${{ runner.temp }}/stream-kernel-return-vm/receipt.json\n${{ runner.temp }}/stream-kernel-return-vm/FAILED.json\n${{ runner.temp }}/stream-kernel-return-vm/commands.json\n${{ runner.temp }}/stream-kernel-return-vm/source-inputs.json\n${{ runner.temp }}/stream-kernel-return-vm/native-init\n${{ runner.temp }}/stream-kernel-return-vm/native-init.rejected.elf\n${{ runner.temp }}/stream-kernel-return-vm/constructor-init\n${{ runner.temp }}/stream-kernel-return-vm/constructor-init.c\n${{ runner.temp }}/stream-kernel-return-vm/constructor-initramfs.list\n${{ runner.temp }}/stream-kernel-return-vm/constructor-initramfs.cpio\n${{ runner.temp }}/stream-kernel-return-vm/native-return-initramfs.cpio\n${{ runner.temp }}/stream-kernel-return-vm/firmware/*.bin\n${{ runner.temp }}/stream-kernel-return-vm/kernel/selection.json\n${{ runner.temp }}/stream-kernel-return-vm/kernel/*.config\n${{ runner.temp }}/stream-kernel-return-vm/kernel/constructor-bzImage\n${{ runner.temp }}/stream-kernel-return-vm/kernel/objects/include/generated/autoconf.h\n${{ runner.temp }}/stream-kernel-return-vm/commands/logs/*.txt\n",
+          "if-no-files-found": "warn",
           "retention-days": 3
         }
       }
-    ],
-    "timeout-minutes": 45
+    ]
   },
   "jobId": "authenticated-return",
   "kind": "job",
-  "reviewReason": "Add bounded source-only authenticated observer qualification: nineteen mandatory native/core/leaf cases and twelve C controls before new kernel acquisition/link; unchanged original cases, source materials, quota quarantine, bounds and production refusal.",
+  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/stream-kernel-return-vm.yml"
 }

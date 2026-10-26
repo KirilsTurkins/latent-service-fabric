@@ -7,15 +7,16 @@
     "name": "Captured Cargo Git offline components and signed execution",
     "needs": "authoring",
     "runs-on": "ubuntu-24.04",
+    "timeout-minutes": 20,
     "steps": [
       {
-        "uses": "actions/checkout",
+        "uses": "KirilsTurkins/lsf-checkout",
         "with": {
           "persist-credentials": false
         }
       },
       {
-        "uses": "actions/setup-python",
+        "uses": "KirilsTurkins/lsf-setup-python",
         "with": {
           "python-version": "3.13.5"
         }
@@ -27,13 +28,13 @@
         }
       },
       {
-        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "uses": "KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup",
         "with": {
           "version": "1.254.0"
         }
       },
       {
-        "uses": "mlugg/setup-zig",
+        "uses": "KirilsTurkins/lsf-setup-zig",
         "with": {
           "version": "0.16.0"
         }
@@ -44,7 +45,7 @@
       },
       {
         "name": "Download only this run's identity-checked public prerequisites",
-        "uses": "actions/download-artifact",
+        "uses": "KirilsTurkins/lsf-download-artifact",
         "with": {
           "name": "rust-git-prepared-${{ github.sha }}",
           "path": "${{ runner.temp }}/rust-git-prepared"
@@ -59,22 +60,21 @@
         "run": "python3 tools/qualify_rust_git_components.py run --prepared-qualification \"$RUNNER_TEMP/rust-git-prepared\" --output \"$RUNNER_TEMP/rust-git-components\""
       },
       {
-        "if": "always()",
         "name": "Retain bounded Git component qualification observations including failures",
-        "uses": "actions/upload-artifact",
+        "if": "always()",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
-          "if-no-files-found": "warn",
           "name": "rust-git-components-${{ github.sha }}",
           "path": "${{ runner.temp }}/rust-git-components/qualification.json\n${{ runner.temp }}/rust-git-components/FAILED.json\n${{ runner.temp }}/rust-git-components/capture.json\n${{ runner.temp }}/rust-git-components/offline.json\n${{ runner.temp }}/rust-git-components/logs/**\n${{ runner.temp }}/rust-git-components/first/*.json\n${{ runner.temp }}/rust-git-components/first/logs/**\n${{ runner.temp }}/rust-git-components/first/component.wasm\n${{ runner.temp }}/rust-git-components/first/component.wit\n${{ runner.temp }}/rust-git-components/offline-rebuild/*.json\n${{ runner.temp }}/rust-git-components/offline-rebuild/logs/**\n${{ runner.temp }}/rust-git-components/offline-rebuild/component.wasm\n${{ runner.temp }}/rust-git-components/offline-rebuild/component.wit\n${{ runner.temp }}/rust-git-components/node/workflow.json\n${{ runner.temp }}/rust-git-components/node/FAILED.json\n",
+          "if-no-files-found": "warn",
           "retention-days": 3
         }
       }
-    ],
-    "timeout-minutes": 20
+    ]
   },
   "jobId": "git-components",
   "kind": "job",
-  "reviewReason": "Fix actual scratch offline-cache miss with bounded owned-manifest locked data-only fetch and unchanged source/ offline compile; add exact historical38 normal replay20min, preserve all9 original job bodies/default execution.",
+  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-capsule-authoring.yml"
 }

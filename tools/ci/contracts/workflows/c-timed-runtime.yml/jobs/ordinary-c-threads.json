@@ -3,20 +3,21 @@
   "before": {},
   "coverage": {},
   "definition": {
+    "name": "One captured C component and thirty-six signed lifecycle and timer cases",
+    "runs-on": "ubuntu-24.04",
+    "timeout-minutes": 20,
     "env": {
       "PYTHONDONTWRITEBYTECODE": "1"
     },
-    "name": "One captured C component and thirty-six signed lifecycle and timer cases",
-    "runs-on": "ubuntu-24.04",
     "steps": [
       {
-        "uses": "actions/checkout",
+        "uses": "KirilsTurkins/lsf-checkout",
         "with": {
           "persist-credentials": false
         }
       },
       {
-        "uses": "actions/setup-python",
+        "uses": "KirilsTurkins/lsf-setup-python",
         "with": {
           "python-version": "3.13.5"
         }
@@ -30,20 +31,20 @@
         "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 -B -m unittest tools.tests.test_c_timed_runtime tools.tests.test_c_threading_profile tools.tests.test_host_codec_retirement_native_products -v\n"
       },
       {
+        "name": "Authenticate five verified native products",
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
-        "name": "Authenticate five verified native products",
         "run": "python3 -B tools/host_codec_retirement_native_products.py --output \"$RUNNER_TEMP/c-thread-native\""
       },
       {
-        "uses": "mlugg/setup-zig",
+        "uses": "KirilsTurkins/lsf-setup-zig",
         "with": {
           "version": "0.16.0"
         }
       },
       {
-        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "uses": "KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup",
         "with": {
           "version": "1.254.0"
         }
@@ -61,21 +62,20 @@
         "run": "python3 -B tools/qualify_c_timed_runtime.py --prepared \"$RUNNER_TEMP/c-thread-native\" --output \"$RUNNER_TEMP/c-thread-runtime\""
       },
       {
-        "if": "always()",
         "name": "Retain bounded public build, invocation and cleanup evidence",
-        "uses": "actions/upload-artifact",
+        "if": "always()",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
           "name": "c-timed-runtime-${{ github.sha }}",
           "path": "${{ runner.temp }}/c-thread-runtime/*.json\n${{ runner.temp }}/c-thread-runtime/build/*.json\n${{ runner.temp }}/c-thread-runtime/build/component.wasm\n${{ runner.temp }}/c-thread-runtime/application/src/main.c\n${{ runner.temp }}/c-thread-runtime/application/src/synchronization.h\n${{ runner.temp }}/c-thread-runtime/application/src/timing.h\n${{ runner.temp }}/c-thread-runtime/application/wit/**\n${{ runner.temp }}/c-thread-runtime/build/wit/**\n${{ runner.temp }}/c-thread-runtime/build/logs/*.txt\n${{ runner.temp }}/c-thread-runtime/node/*.json\n${{ runner.temp }}/c-thread-runtime/node/*.stdout\n${{ runner.temp }}/c-thread-runtime/node/*.stderr\n${{ runner.temp }}/c-thread-runtime/node/controls/*.json\n${{ runner.temp }}/c-thread-runtime/node/commands/logs/*.txt\n${{ runner.temp }}/c-thread-runtime/node/commands/*.json\n${{ runner.temp }}/c-timed-source/*.json\n${{ runner.temp }}/c-timed-source/*.wasm\n${{ runner.temp }}/c-timed-source/logs/*.txt\n",
           "retention-days": 7
         }
       }
-    ],
-    "timeout-minutes": 20
+    ]
   },
   "jobId": "ordinary-c-threads",
   "kind": "job",
-  "reviewReason": "Consume actual verified native177 products while retaining all original C36 cases, bounds, historical readers and fixed-source controls.",
+  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/c-timed-runtime.yml"
 }

@@ -5,9 +5,10 @@
   "definition": {
     "name": "Actual owner allocation and final-clone retirement",
     "runs-on": "ubuntu-24.04",
+    "timeout-minutes": 5,
     "steps": [
       {
-        "uses": "actions/checkout",
+        "uses": "KirilsTurkins/lsf-checkout",
         "with": {
           "persist-credentials": false
         }
@@ -17,20 +18,19 @@
       },
       {
         "name": "Compile only the std-only bytes crate and allocator observer",
-        "run": "rustc --edition=2021 --crate-name=bytes --crate-type=rlib --cfg 'feature=\"std\"' \\\n  crates/vendor/bytes/src/lib.rs -o \"$RUNNER_TEMP/libbytes.rlib\"\nrustc --edition=2021 --test crates/vendor/bytes/tests/test_owner_retirement.rs \\\n  --extern \"bytes=$RUNNER_TEMP/libbytes.rlib\" -o \"$RUNNER_TEMP/result-owner-tests\"\n",
-        "shell": "bash"
+        "shell": "bash",
+        "run": "rustc --edition=2021 --crate-name=bytes --crate-type=rlib --cfg 'feature=\"std\"' \\\n  crates/vendor/bytes/src/lib.rs -o \"$RUNNER_TEMP/libbytes.rlib\"\nrustc --edition=2021 --test crates/vendor/bytes/tests/test_owner_retirement.rs \\\n  --extern \"bytes=$RUNNER_TEMP/libbytes.rlib\" -o \"$RUNNER_TEMP/result-owner-tests\"\n"
       },
       {
         "name": "Observe actual allocation frees through clones, copies, races and unwind",
-        "run": "\"$RUNNER_TEMP/result-owner-tests\" --test-threads=1",
-        "shell": "bash"
+        "shell": "bash",
+        "run": "\"$RUNNER_TEMP/result-owner-tests\" --test-threads=1"
       }
-    ],
-    "timeout-minutes": 5
+    ]
   },
   "jobId": "physical-owner",
   "kind": "job",
-  "reviewReason": "Compile only the pinned std-only bytes source and exact physical-owner regression; preserve workspace checks and original bounds.",
+  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/result-owner-retirement.yml"
 }

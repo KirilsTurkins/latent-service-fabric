@@ -29,17 +29,17 @@ jobs:
       CARGO_PROFILE_DEV_OVERFLOW_CHECKS: 'true'
       CARGO_PROFILE_TEST_OVERFLOW_CHECKS: 'true'
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: KirilsTurkins/lsf-checkout@c3024dfac542bb46ebccc7829ddf1f95e0be8da9 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      - uses: KirilsTurkins/lsf-setup-node@c1136b2d97fe79ef645e9508b2048a222f50a170 # v7.1.0 + upstream changes + LSF security fixes
         with:
           node-version: 24.19.0
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
-      - uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2
+      - uses: KirilsTurkins/lsf-setup-zig@e064b42fa88ad0859d8b54838b44f672ffd5ea7a # v2.2.1 + upstream changes + LSF security fixes
         with:
           version: '0.16.0'
       - name: Build only the parser and C context source mechanism
@@ -48,7 +48,7 @@ jobs:
           cargo build --locked -p latent-component-threading --bin c-context --target-dir "$RUNNER_TEMP/c-context-tools"
       - name: Execute fixed C compiler and actual core-Wasm callback controls
         run: python3 tools/qualify_c_context_lowering.py --zig "$(command -v zig)" --node "$(command -v node)" --transformer "$RUNNER_TEMP/c-context-tools/debug/c-context" --output "$RUNNER_TEMP/c-context-mechanism"
-      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+      - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@9244ec9f4725400c84054e3e6ec97514cadddf53 # v1.1.3 + upstream changes + LSF security fixes
         with:
           version: 1.254.0
       - name: Install only the pinned normal C bindings generator
@@ -59,7 +59,7 @@ jobs:
         run: python3 tools/qualify_c_canonical_abi.py --zig "$(command -v zig)" --wit-bindgen "$(command -v wit-bindgen)" --wasm-tools "$(command -v wasm-tools)" --node "$(command -v node)" --transformer "$RUNNER_TEMP/c-context-tools/debug/c-context" --output "$RUNNER_TEMP/c-canonical-abi"
       - name: Retain source mechanism observations, including failure
         if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: c-context-mechanism-${{ github.sha }}
           path: |

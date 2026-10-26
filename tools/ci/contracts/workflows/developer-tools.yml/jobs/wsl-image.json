@@ -5,21 +5,22 @@
   "definition": {
     "if": "${{ !inputs.java_compiler_product && (github.event_name != 'pull_request' || !startsWith(github.head_ref, 'feat/559-') || github.event.pull_request.head.repo.full_name != github.repository) }}",
     "name": "Pinned WSL image candidate",
-    "permissions": {
-      "attestations": "write",
-      "contents": "read",
-      "id-token": "write"
-    },
     "runs-on": "ubuntu-24.04",
+    "timeout-minutes": 15,
+    "permissions": {
+      "contents": "read",
+      "id-token": "write",
+      "attestations": "write"
+    },
     "steps": [
       {
-        "uses": "actions/checkout",
+        "uses": "KirilsTurkins/lsf-checkout",
         "with": {
           "persist-credentials": false
         }
       },
       {
-        "uses": "actions/setup-python",
+        "uses": "KirilsTurkins/lsf-setup-python",
         "with": {
           "python-version": "3.13.5"
         }
@@ -29,37 +30,36 @@
         "run": "python tools/build_dev_rootfs.py --output target/dev-wsl"
       },
       {
-        "id": "attest",
-        "if": "github.event_name != 'pull_request'",
         "name": "Attest image candidate without release authority",
-        "uses": "actions/attest-build-provenance",
+        "if": "github.event_name != 'pull_request'",
+        "id": "attest",
+        "uses": "KirilsTurkins/lsf-attest-build-provenance",
         "with": {
           "subject-path": "target/dev-wsl/candidate/SHA256SUMS"
         }
       },
       {
+        "name": "Retain offline image attestation",
+        "if": "github.event_name != 'pull_request'",
         "env": {
           "BUNDLE_PATH": "${{ steps.attest.outputs.bundle-path }}"
         },
-        "if": "github.event_name != 'pull_request'",
-        "name": "Retain offline image attestation",
         "run": "install -m 0644 \"$BUNDLE_PATH\" target/dev-wsl/candidate/attestation.json"
       },
       {
-        "uses": "actions/upload-artifact",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
-          "if-no-files-found": "error",
           "name": "developer-wsl-candidate-${{ github.sha }}",
           "path": "target/dev-wsl/candidate/",
+          "if-no-files-found": "error",
           "retention-days": 7
         }
       }
-    ],
-    "timeout-minutes": 15
+    ]
   },
   "jobId": "wsl-image",
   "kind": "job",
-  "reviewReason": "Gate only the new closed manual compiler-product mode; all existing commands remain unchanged.",
+  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/developer-tools.yml"
 }

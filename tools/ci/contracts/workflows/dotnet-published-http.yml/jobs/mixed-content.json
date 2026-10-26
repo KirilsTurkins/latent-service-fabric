@@ -3,28 +3,29 @@
   "before": {},
   "coverage": {},
   "definition": {
+    "if": "github.event_name == 'workflow_dispatch' && inputs.mixed_content && !inputs.owner_capacity && !inputs.periodic_diagnostic",
+    "name": "Default HttpClient streamed content and accepted managed work",
+    "runs-on": "ubuntu-24.04",
+    "timeout-minutes": 40,
     "env": {
       "CARGO_BUILD_JOBS": 2,
       "CARGO_INCREMENTAL": 0
     },
-    "if": "github.event_name == 'workflow_dispatch' && inputs.mixed_content && !inputs.owner_capacity && !inputs.periodic_diagnostic",
-    "name": "Default HttpClient streamed content and accepted managed work",
-    "runs-on": "ubuntu-24.04",
     "steps": [
       {
-        "uses": "actions/checkout",
+        "uses": "KirilsTurkins/lsf-checkout",
         "with": {
           "persist-credentials": false
         }
       },
       {
-        "uses": "actions/setup-python",
+        "uses": "KirilsTurkins/lsf-setup-python",
         "with": {
           "python-version": "3.13.5"
         }
       },
       {
-        "uses": "actions/setup-dotnet",
+        "uses": "KirilsTurkins/lsf-setup-dotnet",
         "with": {
           "dotnet-version": "10.0.100"
         }
@@ -36,21 +37,21 @@
         }
       },
       {
-        "uses": "Swatinem/rust-cache",
+        "uses": "KirilsTurkins/lsf-rust-cache",
         "with": {
-          "cache-all-crates": false,
-          "cache-bin": false,
-          "cache-on-failure": false,
-          "cache-targets": true,
-          "cache-workspace-crates": false,
-          "key": "ubuntu-24.04",
           "prefix-key": "lsf-ci-dependencies-v2",
-          "save-if": false,
-          "shared-key": "host-correctness"
+          "shared-key": "host-correctness",
+          "key": "ubuntu-24.04",
+          "cache-targets": true,
+          "cache-bin": false,
+          "cache-workspace-crates": false,
+          "cache-all-crates": false,
+          "cache-on-failure": false,
+          "save-if": false
         }
       },
       {
-        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "uses": "KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup",
         "with": {
           "version": "1.254.0"
         }
@@ -77,18 +78,18 @@
       },
       {
         "name": "Prepare the pinned compiler and current closed-runtime adapters",
-        "run": "curl --fail --location --max-time 180 \\\n  https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \\\n  --output \"$RUNNER_TEMP/wasi-sdk.tar.gz\"\nprintf '%s  %s\\n' 87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171 \"$RUNNER_TEMP/wasi-sdk.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/wasi-sdk.tar.gz\" -C \"$RUNNER_TEMP\"\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/mixed-bindgen\"\nexport PATH=\"$RUNNER_TEMP/mixed-bindgen:$PATH\"\nprintf '%s\\n' \"$RUNNER_TEMP/mixed-bindgen\" >> \"$GITHUB_PATH\"\npython3 tools/dotnet_capsule.py install-tools \"$RUNNER_TEMP/mixed-tools\" \\\n  --wasi-sdk \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\"\n",
-        "shell": "bash"
+        "shell": "bash",
+        "run": "curl --fail --location --max-time 180 \\\n  https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \\\n  --output \"$RUNNER_TEMP/wasi-sdk.tar.gz\"\nprintf '%s  %s\\n' 87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171 \"$RUNNER_TEMP/wasi-sdk.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/wasi-sdk.tar.gz\" -C \"$RUNNER_TEMP\"\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/mixed-bindgen\"\nexport PATH=\"$RUNNER_TEMP/mixed-bindgen:$PATH\"\nprintf '%s\\n' \"$RUNNER_TEMP/mixed-bindgen\" >> \"$GITHUB_PATH\"\npython3 tools/dotnet_capsule.py install-tools \"$RUNNER_TEMP/mixed-tools\" \\\n  --wasi-sdk \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\"\n"
       },
       {
         "name": "Execute actual failed-request cleanup RED and GREEN controls",
         "run": "python3 -B tools/dotnet_managed_work_controls.py --dotnet \"$(command -v dotnet)\" --http-abort-tools \"$RUNNER_TEMP/mixed-tools\" --output \"$RUNNER_TEMP/http-abort-controls\""
       },
       {
+        "name": "Authenticate the exact five historical products and all 134 native materials",
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
-        "name": "Authenticate the exact five historical products and all 134 native materials",
         "run": "python3 -B tools/release_preparation_cli_native_products.py --output \"$RUNNER_TEMP/mixed-native\""
       },
       {
@@ -96,22 +97,21 @@
         "run": "python3 -B tools/qualify_dotnet_http_mixed.py --native \"$RUNNER_TEMP/mixed-native\" --tools \"$RUNNER_TEMP/mixed-tools\" --output \"$RUNNER_TEMP/managed-http-mixed\""
       },
       {
-        "if": "always()",
         "name": "Retain bounded public source build and actual physical evidence",
-        "uses": "actions/upload-artifact",
+        "if": "always()",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
-          "if-no-files-found": "warn",
           "name": "dotnet-http-mixed-${{ github.sha }}",
-          "path": "${{ runner.temp }}/mixed-native/*.json\n${{ runner.temp }}/managed-work-state-controls/state-controls.json\n${{ runner.temp }}/managed-work-state-controls/logs/**\n${{ runner.temp }}/http-abort-controls/abort-controls.json\n${{ runner.temp }}/http-abort-controls/rewrite.json\n${{ runner.temp }}/http-abort-controls/logs/**\n${{ runner.temp }}/mixed-tools/INSTALL-COMPLETE.json\n${{ runner.temp }}/mixed-tools/runtime-inputs.json\n${{ runner.temp }}/mixed-tools/wasi-sdk.json\n${{ runner.temp }}/mixed-tools/logs/**\n${{ runner.temp }}/managed-http-mixed/*.json\n${{ runner.temp }}/managed-http-mixed/reference/reference.json\n${{ runner.temp }}/managed-http-mixed/reference/logs/**\n${{ runner.temp }}/managed-http-mixed/build/*.json\n${{ runner.temp }}/managed-http-mixed/build/compiler.*.txt\n${{ runner.temp }}/managed-http-mixed/build/component.wasm\n${{ runner.temp }}/managed-http-mixed/build/native-aot-raw.wasm\n${{ runner.temp }}/managed-http-mixed/build/native-aot-original.wasm\n${{ runner.temp }}/managed-http-mixed/build/derived-*.dll\n${{ runner.temp }}/managed-http-mixed/build/package/**\n${{ runner.temp }}/managed-http-mixed/build/wit/**\n${{ runner.temp }}/managed-http-mixed/build/logs/**\n${{ runner.temp }}/managed-http-mixed/node/*.json\n${{ runner.temp }}/managed-http-mixed/node/controls/*.json\n${{ runner.temp }}/managed-http-mixed/node/controls/*-partial.stdout\n${{ runner.temp }}/managed-http-mixed/node/controls/*-partial.stderr\n${{ runner.temp }}/managed-http-mixed/tenants/*.json\n${{ runner.temp }}/managed-http-mixed/tenants/examples-controls/*.json\n${{ runner.temp }}/managed-http-mixed/tenants/examples-controls/*-partial.stdout\n${{ runner.temp }}/managed-http-mixed/tenants/examples-controls/*-partial.stderr\n${{ runner.temp }}/managed-http-mixed/tenants/foreign-controls/*.json\n${{ runner.temp }}/managed-http-mixed/tenants/foreign-controls/*-partial.stdout\n${{ runner.temp }}/managed-http-mixed/tenants/foreign-controls/*-partial.stderr\n",
-          "retention-days": 3
+          "retention-days": 3,
+          "if-no-files-found": "warn",
+          "path": "${{ runner.temp }}/mixed-native/*.json\n${{ runner.temp }}/managed-work-state-controls/state-controls.json\n${{ runner.temp }}/managed-work-state-controls/logs/**\n${{ runner.temp }}/http-abort-controls/abort-controls.json\n${{ runner.temp }}/http-abort-controls/rewrite.json\n${{ runner.temp }}/http-abort-controls/logs/**\n${{ runner.temp }}/mixed-tools/INSTALL-COMPLETE.json\n${{ runner.temp }}/mixed-tools/runtime-inputs.json\n${{ runner.temp }}/mixed-tools/wasi-sdk.json\n${{ runner.temp }}/mixed-tools/logs/**\n${{ runner.temp }}/managed-http-mixed/*.json\n${{ runner.temp }}/managed-http-mixed/reference/reference.json\n${{ runner.temp }}/managed-http-mixed/reference/logs/**\n${{ runner.temp }}/managed-http-mixed/build/*.json\n${{ runner.temp }}/managed-http-mixed/build/compiler.*.txt\n${{ runner.temp }}/managed-http-mixed/build/component.wasm\n${{ runner.temp }}/managed-http-mixed/build/native-aot-raw.wasm\n${{ runner.temp }}/managed-http-mixed/build/native-aot-original.wasm\n${{ runner.temp }}/managed-http-mixed/build/derived-*.dll\n${{ runner.temp }}/managed-http-mixed/build/package/**\n${{ runner.temp }}/managed-http-mixed/build/wit/**\n${{ runner.temp }}/managed-http-mixed/build/logs/**\n${{ runner.temp }}/managed-http-mixed/node/*.json\n${{ runner.temp }}/managed-http-mixed/node/controls/*.json\n${{ runner.temp }}/managed-http-mixed/node/controls/*-partial.stdout\n${{ runner.temp }}/managed-http-mixed/node/controls/*-partial.stderr\n${{ runner.temp }}/managed-http-mixed/tenants/*.json\n${{ runner.temp }}/managed-http-mixed/tenants/examples-controls/*.json\n${{ runner.temp }}/managed-http-mixed/tenants/examples-controls/*-partial.stdout\n${{ runner.temp }}/managed-http-mixed/tenants/examples-controls/*-partial.stderr\n${{ runner.temp }}/managed-http-mixed/tenants/foreign-controls/*.json\n${{ runner.temp }}/managed-http-mixed/tenants/foreign-controls/*-partial.stdout\n${{ runner.temp }}/managed-http-mixed/tenants/foreign-controls/*-partial.stderr\n"
         }
       }
-    ],
-    "timeout-minutes": 40
+    ]
   },
   "jobId": "mixed-content",
   "kind": "job",
-  "reviewReason": "Default-false diagnostic-only periodic lane; explicit review preserves every original command/step/limit and adds only manual diagnostic exclusion. Whole previous four-job workflow restores byte-equivalent semantic data.",
+  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-published-http.yml"
 }

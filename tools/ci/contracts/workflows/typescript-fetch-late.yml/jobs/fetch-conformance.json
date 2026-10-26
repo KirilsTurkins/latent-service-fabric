@@ -4,32 +4,33 @@
   "coverage": {},
   "definition": {
     "name": "Signed late headers and body completion after public abort",
-    "permissions": {
-      "actions": "read",
-      "contents": "read"
-    },
     "runs-on": "ubuntu-24.04",
+    "timeout-minutes": 20,
+    "permissions": {
+      "contents": "read",
+      "actions": "read"
+    },
     "steps": [
       {
-        "uses": "actions/checkout",
+        "uses": "KirilsTurkins/lsf-checkout",
         "with": {
           "persist-credentials": false
         }
       },
       {
-        "uses": "actions/setup-python",
+        "uses": "KirilsTurkins/lsf-setup-python",
         "with": {
           "python-version": "3.13.5"
         }
       },
       {
-        "uses": "actions/setup-node",
+        "uses": "KirilsTurkins/lsf-setup-node",
         "with": {
           "node-version": "24.19.0"
         }
       },
       {
-        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "uses": "KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup",
         "with": {
           "version": "1.254.0"
         }
@@ -51,10 +52,10 @@
         "run": "python3 tools/typescript_capsule.py install-tools \"$RUNNER_TEMP/fetch-late-tools\""
       },
       {
+        "name": "Acquire exact historical import engine and original native tools",
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
-        "name": "Acquire exact historical import engine and original native tools",
         "run": "python3 -B tools/typescript_fetch_replay_inputs.py --output \"$RUNNER_TEMP/fetch-late-original\""
       },
       {
@@ -62,22 +63,21 @@
         "run": "python3 -B tools/qualify_typescript_fetch_late.py --acquired \"$RUNNER_TEMP/fetch-late-original\" --tools \"$RUNNER_TEMP/fetch-late-tools\" --output \"$RUNNER_TEMP/fetch-late\""
       },
       {
-        "if": "always()",
         "name": "Retain exact source compiler results real contacts and physical ownership",
-        "uses": "actions/upload-artifact",
+        "if": "always()",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
-          "if-no-files-found": "warn",
           "name": "typescript-fetch-late-${{ github.sha }}",
           "path": "${{ runner.temp }}/fetch-late-original/acquisition.json\n${{ runner.temp }}/fetch-late/*.json\n${{ runner.temp }}/fetch-late/build/*.json\n${{ runner.temp }}/fetch-late/build/*.wit\n${{ runner.temp }}/fetch-late/build/component.wasm\n${{ runner.temp }}/fetch-late/build/package/**\n${{ runner.temp }}/fetch-late/build/logs/\n${{ runner.temp }}/fetch-late/node/*.json\n${{ runner.temp }}/fetch-late/node/controls/\n",
+          "if-no-files-found": "warn",
           "retention-days": 7
         }
       }
-    ],
-    "timeout-minutes": 20
+    ]
   },
   "jobId": "fetch-conformance",
   "kind": "job",
-  "reviewReason": "Add separate signed ordinary Fetch late-completion programme with exact caller abort reason, one public rejection and no resolution while actual peer completes held headers/body, original budgets and physical retirement, plus fresh module state. Preserve every existing programme. Three source controls use real authenticated loopback peer and reject incomplete/abandoned/miscounted responses, bind original manifest/source, and forbid build failures from reaching signing/execution. Actual execution remains pending; no cross-tenant or intermediate-refund qualification.",
+  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-fetch-late.yml"
 }

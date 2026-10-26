@@ -108,10 +108,10 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: KirilsTurkins/lsf-checkout@c3024dfac542bb46ebccc7829ddf1f95e0be8da9 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
       - name: Install the existing locked Python recipe dependencies
@@ -137,7 +137,7 @@ jobs:
           --output "$RUNNER_TEMP/stream-kernel-objects"
       - name: Retain bounded configuration compiler objects and failure evidence
         if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: stream-kernel-objects-${{ github.sha }}
           path: |
@@ -163,10 +163,10 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: KirilsTurkins/lsf-checkout@c3024dfac542bb46ebccc7829ddf1f95e0be8da9 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
       - name: Install the existing locked Python recipe dependencies
@@ -192,7 +192,7 @@ jobs:
           --output "$RUNNER_TEMP/stream-kernel-objects" --netlabel
       - name: Retain bounded configuration compiler objects and failure evidence
         if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: stream-kernel-netlabel-objects-${{ github.sha }}
           path: |
@@ -224,10 +224,10 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: KirilsTurkins/lsf-checkout@c3024dfac542bb46ebccc7829ddf1f95e0be8da9 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
       - name: Refuse mixed or unknown object profile inputs before acquisition or build
@@ -264,7 +264,7 @@ jobs:
           --output "$RUNNER_TEMP/stream-kernel-objects" --netport
       - name: Retain bounded configuration compiler objects and failure evidence
         if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: stream-kernel-netport-objects-${{ github.sha }}
           path: |
@@ -299,10 +299,10 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: KirilsTurkins/lsf-checkout@c3024dfac542bb46ebccc7829ddf1f95e0be8da9 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
       - name: Refuse mixed or unknown object profile inputs before acquisition or build
@@ -340,7 +340,7 @@ jobs:
           --output "$RUNNER_TEMP/stream-kernel-objects" --sidcache
       - name: Retain bounded configuration compiler objects and failure evidence
         if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: stream-kernel-sidcache-objects-${{ github.sha }}
           path: |
@@ -376,10 +376,10 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: KirilsTurkins/lsf-checkout@c3024dfac542bb46ebccc7829ddf1f95e0be8da9 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
       - name: Refuse mixed or unknown object profile inputs before acquisition or build
@@ -418,7 +418,7 @@ jobs:
           --output "$RUNNER_TEMP/stream-kernel-objects" --avc
       - name: Retain bounded configuration compiler objects and failure evidence
         if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: stream-kernel-avc-objects-${{ github.sha }}
           path: |
@@ -455,10 +455,10 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: KirilsTurkins/lsf-checkout@c3024dfac542bb46ebccc7829ddf1f95e0be8da9 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
       - name: Refuse mixed or unknown object profile inputs before acquisition or build
@@ -498,7 +498,7 @@ jobs:
           --output "$RUNNER_TEMP/stream-kernel-objects" --audit
       - name: Retain bounded configuration compiler objects and failure evidence
         if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: stream-kernel-audit-objects-${{ github.sha }}
           path: |
@@ -538,10 +538,10 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: KirilsTurkins/lsf-checkout@c3024dfac542bb46ebccc7829ddf1f95e0be8da9 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
       - name: Refuse mixed or unknown object profile inputs before acquisition or build
@@ -582,7 +582,7 @@ jobs:
           --output "$RUNNER_TEMP/stream-kernel-objects" --bind
       - name: Retain bounded configuration compiler objects and failure evidence
         if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: stream-kernel-bind-objects-${{ github.sha }}
           path: |
@@ -624,10 +624,10 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: KirilsTurkins/lsf-checkout@c3024dfac542bb46ebccc7829ddf1f95e0be8da9 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
       - name: Refuse mixed or unknown object profile inputs before acquisition or build
@@ -669,7 +669,7 @@ jobs:
           --output "$RUNNER_TEMP/stream-kernel-objects" --route
       - name: Retain bounded configuration compiler objects and failure evidence
         if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: stream-kernel-route-objects-${{ github.sha }}
           path: |
@@ -713,10 +713,10 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: KirilsTurkins/lsf-checkout@c3024dfac542bb46ebccc7829ddf1f95e0be8da9 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
       - name: Refuse mixed or unknown object profile inputs before acquisition or build
@@ -759,7 +759,7 @@ jobs:
           --output "$RUNNER_TEMP/stream-kernel-objects" --route-cache
       - name: Retain bounded configuration compiler objects and failure evidence
         if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: stream-kernel-route-cache-objects-${{ github.sha }}
           path: |
@@ -803,10 +803,10 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: KirilsTurkins/lsf-checkout@c3024dfac542bb46ebccc7829ddf1f95e0be8da9 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
       - name: Refuse mixed or unknown object profile inputs before acquisition or build
@@ -850,7 +850,7 @@ jobs:
           --output "$RUNNER_TEMP/stream-kernel-objects" --packet
       - name: Retain bounded configuration compiler objects and failure evidence
         if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: stream-kernel-packet-objects-${{ github.sha }}
           path: |
@@ -897,10 +897,10 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: KirilsTurkins/lsf-checkout@c3024dfac542bb46ebccc7829ddf1f95e0be8da9 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
       - name: Refuse mixed or unknown object profile inputs before acquisition or build
@@ -945,7 +945,7 @@ jobs:
           --output "$RUNNER_TEMP/stream-kernel-objects" --device
       - name: Retain bounded configuration compiler objects and failure evidence
         if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: stream-kernel-device-objects-${{ github.sha }}
           path: |
@@ -998,10 +998,10 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: KirilsTurkins/lsf-checkout@c3024dfac542bb46ebccc7829ddf1f95e0be8da9 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
       - name: Refuse mixed or unknown object profile inputs before acquisition or build
@@ -1047,7 +1047,7 @@ jobs:
           --output "$RUNNER_TEMP/stream-kernel-objects" --firmware
       - name: Retain bounded configuration compiler objects and failure evidence
         if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: stream-kernel-firmware-objects-${{ github.sha }}
           path: |
@@ -1104,10 +1104,10 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: KirilsTurkins/lsf-checkout@c3024dfac542bb46ebccc7829ddf1f95e0be8da9 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
       - name: Refuse mixed or unknown object profile inputs before acquisition or build
@@ -1154,7 +1154,7 @@ jobs:
           --output "$RUNNER_TEMP/stream-kernel-objects" --registration
       - name: Retain bounded configuration compiler objects and failure evidence
         if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: stream-kernel-registration-objects-${{ github.sha }}
           path: |
@@ -1222,10 +1222,10 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: KirilsTurkins/lsf-checkout@c3024dfac542bb46ebccc7829ddf1f95e0be8da9 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
       - name: Refuse mixed or unknown object profile inputs before acquisition or build
@@ -1273,7 +1273,7 @@ jobs:
           --output "$RUNNER_TEMP/stream-kernel-objects" --recipient
       - name: Retain bounded configuration compiler objects and failure evidence
         if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: stream-kernel-recipient-objects-${{ github.sha }}
           path: |

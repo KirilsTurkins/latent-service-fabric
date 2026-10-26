@@ -3,27 +3,28 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "env": {
-      "PYTHONDONTWRITEBYTECODE": "1"
-    },
     "if": "${{ !inputs.observe-failed-fetch && !inputs.observe-fetch-boundaries && !inputs.replay-entropy-policy && !inputs.qualify-standard-clocks && !inputs.qualify-scratch-refusals && !inputs.qualify-runtime-retirement }}",
     "name": "Source-owned asynchronous import compiler",
     "runs-on": "ubuntu-24.04",
+    "timeout-minutes": 20,
+    "env": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
     "steps": [
       {
-        "uses": "actions/checkout",
+        "uses": "KirilsTurkins/lsf-checkout",
         "with": {
           "persist-credentials": false
         }
       },
       {
-        "uses": "actions/setup-python",
+        "uses": "KirilsTurkins/lsf-setup-python",
         "with": {
           "python-version": "3.13.5"
         }
       },
       {
-        "uses": "actions/setup-node",
+        "uses": "KirilsTurkins/lsf-setup-node",
         "with": {
           "node-version": "24.19.0"
         }
@@ -48,31 +49,30 @@
       },
       {
         "name": "Freeze reusable source compiler products",
-        "uses": "actions/upload-artifact",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
-          "if-no-files-found": "error",
           "name": "typescript-source-splicer-input-${{ github.sha }}",
           "path": "${{ runner.temp }}/typescript-source-splicer/*.json\n${{ runner.temp }}/typescript-source-splicer/splicer/**\n${{ runner.temp }}/typescript-source-splicer/licenses/**\n",
+          "if-no-files-found": "error",
           "retention-days": 7
         }
       },
       {
-        "if": "always()",
         "name": "Retain actual source compiler products and failed attempts",
-        "uses": "actions/upload-artifact",
+        "if": "always()",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
-          "if-no-files-found": "error",
           "name": "typescript-source-splicer-${{ github.sha }}",
           "path": "tools/ci/contracts/\n${{ runner.temp }}/typescript-source-splicer/*.json\n${{ runner.temp }}/typescript-source-splicer/*.log\n${{ runner.temp }}/typescript-source-splicer/componentize.archive\n${{ runner.temp }}/typescript-source-splicer/spidermonkey-embedding-splicer.wasm\n${{ runner.temp }}/typescript-source-splicer/splicer/**\n${{ runner.temp }}/typescript-source-splicer/licenses/**\n",
+          "if-no-files-found": "error",
           "retention-days": 7
         }
       }
-    ],
-    "timeout-minutes": 20
+    ]
   },
   "jobId": "source-splicer",
   "kind": "job",
-  "reviewReason": "Add one default-false manual exact signed retirement case with original owner witnesses, authenticated existing compiler/engine, two fresh components and unchanged guest limits; original job bodies remain identical.",
+  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }

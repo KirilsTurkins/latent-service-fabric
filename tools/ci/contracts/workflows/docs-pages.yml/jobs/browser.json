@@ -14,14 +14,14 @@
     },
     "steps": [
       {
-        "uses": "actions/checkout",
+        "uses": "KirilsTurkins/lsf-checkout",
         "with": {
           "ref": "${{ inputs.source_sha }}",
           "persist-credentials": false
         }
       },
       {
-        "uses": "actions/setup-node",
+        "uses": "KirilsTurkins/lsf-setup-node",
         "with": {
           "node-version": "24.19.0"
         }
@@ -38,7 +38,7 @@
         "run": "node website/scripts/test-live.mjs"
       },
       {
-        "uses": "actions/upload-artifact",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
           "name": "docs-pages-browser-${{ github.run_id }}-${{ github.run_attempt }}",
           "path": "website/.generated/live-review/evidence.json",
@@ -50,7 +50,7 @@
   },
   "jobId": "browser",
   "kind": "job",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced. Union Root state-renderer/narrow-fixture assertions and every current-main owner/artifact/qualification obligation; retire only the duplicate obsolete source builder in favor of maintained byte-authenticated npm v4. Root reviewed obligation: Generate the authenticated local braces archive before the retained browser install; preserve all publication checks.",
+  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/docs-pages.yml"
 }

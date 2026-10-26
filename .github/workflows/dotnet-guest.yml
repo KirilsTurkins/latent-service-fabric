@@ -103,7 +103,7 @@ jobs:
     env:
       PYTHONDONTWRITEBYTECODE: '1'
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: KirilsTurkins/lsf-checkout@c3024dfac542bb46ebccc7829ddf1f95e0be8da9 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
       - name: Capture immutable qualification source inputs
@@ -115,7 +115,7 @@ jobs:
           test "$(stat --format=%s "$RUNNER_TEMP/dotnet-guest-source.tar.gz")" -le 134217728
           git rev-parse HEAD > "$RUNNER_TEMP/dotnet-guest-source.sha"
       - name: Retain the exact reviewed command contract input
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: dotnet-guest-command-contract-${{ github.sha }}
           path: |
@@ -124,19 +124,19 @@ jobs:
             ${{ runner.temp }}/dotnet-guest-source.sha
           if-no-files-found: error
           retention-days: 7
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
       - name: Test contract projection, output ownership and drift rejection
         run: python3 -m unittest discover -s sdk/dotnet-guest/tests -v
-      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+      - uses: KirilsTurkins/lsf-setup-dotnet@f5bcdac7f26977ef44527f837688dd86faf648ec # v6.0.0 + upstream changes + LSF security fixes
         with:
           dotnet-version: '10.0.100'
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
         with:
           targets: wasm32-unknown-unknown
           components: rustfmt
-      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
+      - uses: KirilsTurkins/lsf-rust-cache@476b290465f7c84db317df6e6a6e2d3c12ea3477 # v2.9.3 + upstream changes + LSF security fixes
         with:
           prefix-key: lsf-ci-dependencies-v2
           shared-key: host-correctness
@@ -147,7 +147,7 @@ jobs:
           cache-all-crates: false
           cache-on-failure: false
           save-if: false
-      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+      - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@9244ec9f4725400c84054e3e6ec97514cadddf53 # v1.1.3 + upstream changes + LSF security fixes
         with:
           version: 1.254.0
       - name: Retain exact inputs and check the clock contract
@@ -301,7 +301,7 @@ jobs:
           --native-qualification "$RUNNER_TEMP/dotnet-capsule-authoring"
           --output "$RUNNER_TEMP/dotnet-published-prepared"
       - name: Retain identity-checked normal task prerequisites
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: dotnet-published-prepared-${{ github.sha }}
           path: ${{ runner.temp }}/dotnet-published-prepared/
@@ -309,7 +309,7 @@ jobs:
           retention-days: 3
       - name: Retain output and failed attempts
         if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: dotnet-guest-qualification-${{ github.sha }}
           path: |
@@ -449,7 +449,7 @@ jobs:
           --native-qualification "$RUNNER_TEMP/dotnet-capsule-authoring"
           --output "$RUNNER_TEMP/dotnet-scratch-prepared"
       - name: Retain identity-checked normal task prerequisites
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: dotnet-scratch-prepared-${{ github.sha }}
           path: ${{ runner.temp }}/dotnet-scratch-prepared/
@@ -464,20 +464,20 @@ jobs:
     env:
       PYTHONDONTWRITEBYTECODE: '1'
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: KirilsTurkins/lsf-checkout@c3024dfac542bb46ebccc7829ddf1f95e0be8da9 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
-      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+      - uses: KirilsTurkins/lsf-setup-dotnet@f5bcdac7f26977ef44527f837688dd86faf648ec # v6.0.0 + upstream changes + LSF security fixes
         with:
           dotnet-version: '10.0.100'
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
         with:
           targets: wasm32-unknown-unknown
           components: rustfmt
-      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
+      - uses: KirilsTurkins/lsf-rust-cache@476b290465f7c84db317df6e6a6e2d3c12ea3477 # v2.9.3 + upstream changes + LSF security fixes
         with:
           prefix-key: lsf-ci-dependencies-v2
           shared-key: host-correctness
@@ -488,11 +488,11 @@ jobs:
           cache-all-crates: false
           cache-on-failure: false
           save-if: false
-      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+      - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@9244ec9f4725400c84054e3e6ec97514cadddf53 # v1.1.3 + upstream changes + LSF security fixes
         with:
           version: 1.254.0
       - name: Download this run's exact normal public products
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        uses: KirilsTurkins/lsf-download-artifact@f073ba9e3801be93f933866d4c9a748e42157e5f # v8.0.2 + upstream changes + LSF security fixes
         with:
           name: dotnet-scratch-prepared-${{ github.sha }}
           path: ${{ runner.temp }}/dotnet-scratch-prepared
@@ -537,7 +537,7 @@ jobs:
           --output "$RUNNER_TEMP/dotnet-closed-filesystem"
       - name: Retain bounded filesystem observations including failures
         if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: dotnet-scratch-refusals-${{ github.sha }}
           path: |
@@ -577,20 +577,20 @@ jobs:
     env:
       PYTHONDONTWRITEBYTECODE: '1'
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: KirilsTurkins/lsf-checkout@c3024dfac542bb46ebccc7829ddf1f95e0be8da9 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
-      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+      - uses: KirilsTurkins/lsf-setup-dotnet@f5bcdac7f26977ef44527f837688dd86faf648ec # v6.0.0 + upstream changes + LSF security fixes
         with:
           dotnet-version: '10.0.100'
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
         with:
           targets: wasm32-unknown-unknown
           components: rustfmt
-      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
+      - uses: KirilsTurkins/lsf-rust-cache@476b290465f7c84db317df6e6a6e2d3c12ea3477 # v2.9.3 + upstream changes + LSF security fixes
         with:
           prefix-key: lsf-ci-dependencies-v2
           shared-key: host-correctness
@@ -601,11 +601,11 @@ jobs:
           cache-all-crates: false
           cache-on-failure: false
           save-if: false
-      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+      - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@9244ec9f4725400c84054e3e6ec97514cadddf53 # v1.1.3 + upstream changes + LSF security fixes
         with:
           version: 1.254.0
       - name: Download this run's exact normal public products
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        uses: KirilsTurkins/lsf-download-artifact@f073ba9e3801be93f933866d4c9a748e42157e5f # v8.0.2 + upstream changes + LSF security fixes
         with:
           name: dotnet-published-prepared-${{ github.sha }}
           path: ${{ runner.temp }}/dotnet-published-prepared
@@ -639,7 +639,7 @@ jobs:
           --output "$RUNNER_TEMP/dotnet-published-tasks"
       - name: Retain bounded published task observations including failures
         if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: dotnet-published-tasks-${{ github.sha }}
           path: |

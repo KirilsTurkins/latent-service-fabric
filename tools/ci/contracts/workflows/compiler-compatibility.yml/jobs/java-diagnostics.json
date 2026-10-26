@@ -6,9 +6,10 @@
     "if": "${{ github.event_name == 'push' && github.ref == 'refs/heads/feat/java-dotnet-diagnostics-679-20261021' }}",
     "name": "Compiler observations plus six signed java initializer and callback cases",
     "runs-on": "ubuntu-24.04",
+    "timeout-minutes": 45,
     "steps": [
       {
-        "uses": "actions/checkout",
+        "uses": "KirilsTurkins/lsf-checkout",
         "with": {
           "persist-credentials": false
         }
@@ -18,38 +19,38 @@
         "run": "git fetch --no-tags --depth=1 origin c7134289f446cb3171eb0ffd800a94afc2a5209f"
       },
       {
-        "uses": "actions/setup-python",
+        "uses": "KirilsTurkins/lsf-setup-python",
         "with": {
           "python-version": "3.13.5"
         }
       },
       {
-        "uses": "actions/setup-java",
+        "uses": "KirilsTurkins/lsf-setup-java",
         "with": {
           "distribution": "temurin",
           "java-version": "25.0.4+101.0.LTS"
         }
       },
       {
-        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "uses": "KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup",
         "with": {
           "version": "1.254.0"
         }
       },
       {
         "name": "Install the existing pinned Java guest compiler tools",
-        "run": "set -euo pipefail\ncurl --fail --location --retry 3 --max-time 180 \\\n  https://services.gradle.org/distributions/gradle-9.1.0-bin.zip \\\n  -o \"$RUNNER_TEMP/gradle.zip\"\necho \"a17ddd85a26b6a7f5ddb71ff8b05fc5104c0202c6e64782429790c933686c806  $RUNNER_TEMP/gradle.zip\" | sha256sum --check --strict\nunzip -q \"$RUNNER_TEMP/gradle.zip\" -d \"$RUNNER_TEMP\"\necho \"$RUNNER_TEMP/gradle-9.1.0/bin\" >> \"$GITHUB_PATH\"\ncurl --fail --location --max-time 180 \\\n  https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \\\n  -o \"$RUNNER_TEMP/wasi-sdk.tar.gz\"\necho \"87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171  $RUNNER_TEMP/wasi-sdk.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/wasi-sdk.tar.gz\" -C \"$RUNNER_TEMP\"\npython3 -B tools/install_guest_bindgen.py \"$RUNNER_TEMP/java-diagnostics-bindgen\"\necho \"$RUNNER_TEMP/java-diagnostics-bindgen\" >> \"$GITHUB_PATH\"\n",
-        "shell": "bash"
+        "shell": "bash",
+        "run": "set -euo pipefail\ncurl --fail --location --retry 3 --max-time 180 \\\n  https://services.gradle.org/distributions/gradle-9.1.0-bin.zip \\\n  -o \"$RUNNER_TEMP/gradle.zip\"\necho \"a17ddd85a26b6a7f5ddb71ff8b05fc5104c0202c6e64782429790c933686c806  $RUNNER_TEMP/gradle.zip\" | sha256sum --check --strict\nunzip -q \"$RUNNER_TEMP/gradle.zip\" -d \"$RUNNER_TEMP\"\necho \"$RUNNER_TEMP/gradle-9.1.0/bin\" >> \"$GITHUB_PATH\"\ncurl --fail --location --max-time 180 \\\n  https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \\\n  -o \"$RUNNER_TEMP/wasi-sdk.tar.gz\"\necho \"87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171  $RUNNER_TEMP/wasi-sdk.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/wasi-sdk.tar.gz\" -C \"$RUNNER_TEMP\"\npython3 -B tools/install_guest_bindgen.py \"$RUNNER_TEMP/java-diagnostics-bindgen\"\necho \"$RUNNER_TEMP/java-diagnostics-bindgen\" >> \"$GITHUB_PATH\"\n"
       },
       {
         "name": "Check passive collectors, source binding and finite runtime oracles",
         "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 -B -m unittest tools.tests.test_java_compiler_reachability tools.tests.test_dotnet_compiler_reachability tools.tests.test_compiler_compatibility_fixture tools.tests.test_compiler_compatibility_execution tools.tests.test_compiler_compatibility_workflows -v\n"
       },
       {
+        "name": "Authenticate the same five native products without rebuilding the host",
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
-        "name": "Authenticate the same five native products without rebuilding the host",
         "run": "python3 -B tools/activation_stack_native_products.py --output \"$RUNNER_TEMP/java-diagnostics-native\""
       },
       {
@@ -57,22 +58,21 @@
         "run": "python3 -B tools/qualify_compiler_compatibility.py --language java \\\n  --native \"$RUNNER_TEMP/java-diagnostics-native\" --tools \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\" \\\n  --output \"$RUNNER_TEMP/java-compiler-diagnostics\"\n"
       },
       {
-        "if": "always()",
         "name": "Retain bounded public identities, actual results and signable package for causal replay",
-        "uses": "actions/upload-artifact",
+        "if": "always()",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
-          "if-no-files-found": "warn",
           "name": "java-compiler-diagnostics-${{ github.sha }}",
-          "path": "${{ runner.temp }}/java-diagnostics-native/*.json\n${{ runner.temp }}/java-compiler-diagnostics/*.json\n${{ runner.temp }}/java-compiler-diagnostics/commands/logs/**\n${{ runner.temp }}/java-compiler-diagnostics/compiler-cache/compiler-cache-selection.json\n${{ runner.temp }}/java-compiler-diagnostics/node/*.json\n${{ runner.temp }}/java-compiler-diagnostics/node/controls/*.json\n${{ runner.temp }}/java-compiler-diagnostics/node/commands/logs/**\n${{ runner.temp }}/java-compiler-diagnostics/node/signed/release-set.json\n${{ runner.temp }}/java-compiler-diagnostics/node/signed/my-greeting/build-observation.json\n${{ runner.temp }}/java-compiler-diagnostics/build/BUILD-COMPLETE.json\n${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/BUILD-COMPLETE.json\n${{ runner.temp }}/java-compiler-diagnostics/build/BUILD-FAILED.json\n${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/BUILD-FAILED.json\n${{ runner.temp }}/java-compiler-diagnostics/build/build-observation.json\n${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/build-observation.json\n${{ runner.temp }}/java-compiler-diagnostics/build/source-inputs.json\n${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/source-inputs.json\n${{ runner.temp }}/java-compiler-diagnostics/build/recipe-inputs.json\n${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/recipe-inputs.json\n${{ runner.temp }}/java-compiler-diagnostics/build/compiler-inputs.json\n${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/compiler-inputs.json\n${{ runner.temp }}/java-compiler-diagnostics/build/package-inputs.json\n${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/package-inputs.json\n${{ runner.temp }}/java-compiler-diagnostics/build/application-dependencies.json\n${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/application-dependencies.json\n${{ runner.temp }}/java-compiler-diagnostics/build/runtime-profile.json\n${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/runtime-profile.json\n${{ runner.temp }}/java-compiler-diagnostics/build/compiler-patches.json\n${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/compiler-patches.json\n${{ runner.temp }}/java-compiler-diagnostics/build/compiler-method-observation-selection.json\n${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/compiler-method-observation-selection.json\n${{ runner.temp }}/java-compiler-diagnostics/build/compatibility-compiler-methods.json\n${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/compatibility-compiler-methods.json\n${{ runner.temp }}/java-compiler-diagnostics/build/compatibility-compiler-methods-unavailable.json\n${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/compatibility-compiler-methods-unavailable.json\n${{ runner.temp }}/java-compiler-diagnostics/build/compatibility-report.json\n${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/compatibility-report.json\n${{ runner.temp }}/java-compiler-diagnostics/build/compatibility-java-compiler-report.json\n${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/compatibility-java-compiler-report.json\n${{ runner.temp }}/java-compiler-diagnostics/build/compatibility-java-compiler-failed.json\n${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/compatibility-java-compiler-failed.json\n${{ runner.temp }}/java-compiler-diagnostics/build/compatibility-context.json\n${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/compatibility-context.json\n${{ runner.temp }}/java-compiler-diagnostics/build/java-classpath.json\n${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/java-classpath.json\n${{ runner.temp }}/java-compiler-diagnostics/build/source-origins.json\n${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/source-origins.json\n${{ runner.temp }}/java-compiler-diagnostics/build/coroutine-compiler-preparation.json\n${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/coroutine-compiler-preparation.json\n${{ runner.temp }}/java-compiler-diagnostics/build/retirement-port.json\n${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/retirement-port.json\n${{ runner.temp }}/java-compiler-diagnostics/build/task-wait-port.json\n${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/task-wait-port.json\n${{ runner.temp }}/java-compiler-diagnostics/build/closed-filesystem-port.json\n${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/closed-filesystem-port.json\n${{ runner.temp }}/java-compiler-diagnostics/build/internal-io-port.json\n${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/internal-io-port.json\n${{ runner.temp }}/java-compiler-diagnostics/build/closed-runtime-coverage.json\n${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/closed-runtime-coverage.json\n${{ runner.temp }}/java-compiler-diagnostics/build/component.wasm\n${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/component.wasm\n${{ runner.temp }}/java-compiler-diagnostics/build/capsule.json\n${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/capsule.json\n${{ runner.temp }}/java-compiler-diagnostics/build/package-source.json\n${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/package-source.json\n${{ runner.temp }}/java-compiler-diagnostics/build/package/**\n${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/package/**\n${{ runner.temp }}/java-compiler-diagnostics/build/compiler-logs/*-java-to-c.log\n${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/compiler-logs/*-java-to-c.log\n",
-          "retention-days": 3
+          "retention-days": 3,
+          "if-no-files-found": "warn",
+          "path": "${{ runner.temp }}/java-diagnostics-native/*.json\n${{ runner.temp }}/java-compiler-diagnostics/*.json\n${{ runner.temp }}/java-compiler-diagnostics/commands/logs/**\n${{ runner.temp }}/java-compiler-diagnostics/compiler-cache/compiler-cache-selection.json\n${{ runner.temp }}/java-compiler-diagnostics/node/*.json\n${{ runner.temp }}/java-compiler-diagnostics/node/controls/*.json\n${{ runner.temp }}/java-compiler-diagnostics/node/commands/logs/**\n${{ runner.temp }}/java-compiler-diagnostics/node/signed/release-set.json\n${{ runner.temp }}/java-compiler-diagnostics/node/signed/my-greeting/build-observation.json\n${{ runner.temp }}/java-compiler-diagnostics/build/BUILD-COMPLETE.json\n${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/BUILD-COMPLETE.json\n${{ runner.temp }}/java-compiler-diagnostics/build/BUILD-FAILED.json\n${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/BUILD-FAILED.json\n${{ runner.temp }}/java-compiler-diagnostics/build/build-observation.json\n${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/build-observation.json\n${{ runner.temp }}/java-compiler-diagnostics/build/source-inputs.json\n${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/source-inputs.json\n${{ runner.temp }}/java-compiler-diagnostics/build/recipe-inputs.json\n${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/recipe-inputs.json\n${{ runner.temp }}/java-compiler-diagnostics/build/compiler-inputs.json\n${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/compiler-inputs.json\n${{ runner.temp }}/java-compiler-diagnostics/build/package-inputs.json\n${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/package-inputs.json\n${{ runner.temp }}/java-compiler-diagnostics/build/application-dependencies.json\n${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/application-dependencies.json\n${{ runner.temp }}/java-compiler-diagnostics/build/runtime-profile.json\n${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/runtime-profile.json\n${{ runner.temp }}/java-compiler-diagnostics/build/compiler-patches.json\n${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/compiler-patches.json\n${{ runner.temp }}/java-compiler-diagnostics/build/compiler-method-observation-selection.json\n${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/compiler-method-observation-selection.json\n${{ runner.temp }}/java-compiler-diagnostics/build/compatibility-compiler-methods.json\n${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/compatibility-compiler-methods.json\n${{ runner.temp }}/java-compiler-diagnostics/build/compatibility-compiler-methods-unavailable.json\n${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/compatibility-compiler-methods-unavailable.json\n${{ runner.temp }}/java-compiler-diagnostics/build/compatibility-report.json\n${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/compatibility-report.json\n${{ runner.temp }}/java-compiler-diagnostics/build/compatibility-java-compiler-report.json\n${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/compatibility-java-compiler-report.json\n${{ runner.temp }}/java-compiler-diagnostics/build/compatibility-java-compiler-failed.json\n${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/compatibility-java-compiler-failed.json\n${{ runner.temp }}/java-compiler-diagnostics/build/compatibility-context.json\n${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/compatibility-context.json\n${{ runner.temp }}/java-compiler-diagnostics/build/java-classpath.json\n${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/java-classpath.json\n${{ runner.temp }}/java-compiler-diagnostics/build/source-origins.json\n${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/source-origins.json\n${{ runner.temp }}/java-compiler-diagnostics/build/coroutine-compiler-preparation.json\n${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/coroutine-compiler-preparation.json\n${{ runner.temp }}/java-compiler-diagnostics/build/retirement-port.json\n${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/retirement-port.json\n${{ runner.temp }}/java-compiler-diagnostics/build/task-wait-port.json\n${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/task-wait-port.json\n${{ runner.temp }}/java-compiler-diagnostics/build/closed-filesystem-port.json\n${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/closed-filesystem-port.json\n${{ runner.temp }}/java-compiler-diagnostics/build/internal-io-port.json\n${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/internal-io-port.json\n${{ runner.temp }}/java-compiler-diagnostics/build/closed-runtime-coverage.json\n${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/closed-runtime-coverage.json\n${{ runner.temp }}/java-compiler-diagnostics/build/component.wasm\n${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/component.wasm\n${{ runner.temp }}/java-compiler-diagnostics/build/capsule.json\n${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/capsule.json\n${{ runner.temp }}/java-compiler-diagnostics/build/package-source.json\n${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/package-source.json\n${{ runner.temp }}/java-compiler-diagnostics/build/package/**\n${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/package/**\n${{ runner.temp }}/java-compiler-diagnostics/build/compiler-logs/*-java-to-c.log\n${{ runner.temp }}/java-compiler-diagnostics/counterfactual-build/compiler-logs/*-java-to-c.log\n"
         }
       }
-    ],
-    "timeout-minutes": 45
+    ]
   },
   "jobId": "java-diagnostics",
   "kind": "job",
-  "reviewReason": "One fresh captured Java fixture plus exact one-edge same-JAR expected compiler refusal, original limits, passive bounded observations and six signed actual cases; historical jobs untouched.",
+  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/compiler-compatibility.yml"
 }

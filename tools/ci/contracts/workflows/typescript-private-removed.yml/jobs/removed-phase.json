@@ -5,16 +5,17 @@
   "definition": {
     "name": "One captured removed package on a separately authenticated 193-control host",
     "runs-on": "ubuntu-24.04",
+    "timeout-minutes": 25,
     "steps": [
       {
-        "uses": "actions/checkout",
+        "uses": "KirilsTurkins/lsf-checkout",
         "with": {
-          "fetch-depth": 1,
-          "persist-credentials": false
+          "persist-credentials": false,
+          "fetch-depth": 1
         }
       },
       {
-        "uses": "actions/setup-python",
+        "uses": "KirilsTurkins/lsf-setup-python",
         "with": {
           "python-version": "3.13.5"
         }
@@ -28,17 +29,17 @@
         "run": "python3 -m pip install -r tools/requirements.lock\npython3 -B -m unittest tools.tests.test_typescript_private_removed -v\n"
       },
       {
+        "name": "Acquire only five completed guest packages and three historical outcomes",
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
-        "name": "Acquire only five completed guest packages and three historical outcomes",
         "run": "python3 -B tools/typescript_private_removed_inputs.py --output \"$RUNNER_TEMP/typescript-removed-guests\""
       },
       {
+        "name": "Authenticate the separate five native products without rebuilding",
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
-        "name": "Authenticate the separate five native products without rebuilding",
         "run": "python3 -B tools/rust_thread_native_products.py --output \"$RUNNER_TEMP/typescript-removed-native\""
       },
       {
@@ -46,22 +47,21 @@
         "run": "python3 -B tools/qualify_typescript_private_removed.py \\\n  --guests \"$RUNNER_TEMP/typescript-removed-guests\" \\\n  --native \"$RUNNER_TEMP/typescript-removed-native\" \\\n  --output \"$RUNNER_TEMP/typescript-removed-runtime\"\n"
       },
       {
-        "if": "always()",
         "name": "Retain original input identities and actual remaining outcomes",
-        "uses": "actions/upload-artifact",
+        "if": "always()",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
-          "if-no-files-found": "warn",
           "name": "typescript-private-removed-${{ github.sha }}",
-          "path": "${{ runner.temp }}/typescript-removed-guests/retrieval.json\n${{ runner.temp }}/typescript-removed-native/*.json\n${{ runner.temp }}/typescript-removed-runtime/*.json\n${{ runner.temp }}/typescript-removed-runtime/commands/logs/**\n${{ runner.temp }}/typescript-removed-runtime/node/workflow.json\n${{ runner.temp }}/typescript-removed-runtime/node/FAILED.json\n${{ runner.temp }}/typescript-removed-runtime/node/controls/**\n",
-          "retention-days": 3
+          "retention-days": 3,
+          "if-no-files-found": "warn",
+          "path": "${{ runner.temp }}/typescript-removed-guests/retrieval.json\n${{ runner.temp }}/typescript-removed-native/*.json\n${{ runner.temp }}/typescript-removed-runtime/*.json\n${{ runner.temp }}/typescript-removed-runtime/commands/logs/**\n${{ runner.temp }}/typescript-removed-runtime/node/workflow.json\n${{ runner.temp }}/typescript-removed-runtime/node/FAILED.json\n${{ runner.temp }}/typescript-removed-runtime/node/controls/**\n"
         }
       }
-    ],
-    "timeout-minutes": 25
+    ]
   },
   "jobId": "removed-phase",
   "kind": "job",
-  "reviewReason": "Continue only the unfinished private npm removal with original completed a8 guest packages and a separately authenticated 193-control native host. Preserve original cancelled producer and three prior runtime origins; no compiler/SDK rebuild or retest, no fabricated normal qualification. Six additive provenance/archive/static-layer/retirement controls; exact fixed member hashes and conservative production scope.",
+  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-private-removed.yml"
 }

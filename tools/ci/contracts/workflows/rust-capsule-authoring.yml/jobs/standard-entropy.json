@@ -7,15 +7,16 @@
     "name": "Rebuilt Rust standard entropy and signed ordinary libraries",
     "needs": "authoring",
     "runs-on": "ubuntu-24.04",
+    "timeout-minutes": 20,
     "steps": [
       {
-        "uses": "actions/checkout",
+        "uses": "KirilsTurkins/lsf-checkout",
         "with": {
           "persist-credentials": false
         }
       },
       {
-        "uses": "actions/setup-python",
+        "uses": "KirilsTurkins/lsf-setup-python",
         "with": {
           "python-version": "3.13.5"
         }
@@ -27,13 +28,13 @@
         }
       },
       {
-        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "uses": "KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup",
         "with": {
           "version": "1.254.0"
         }
       },
       {
-        "uses": "mlugg/setup-zig",
+        "uses": "KirilsTurkins/lsf-setup-zig",
         "with": {
           "version": "0.16.0"
         }
@@ -44,17 +45,17 @@
       },
       {
         "name": "Download this run's existing public native and companion products",
-        "uses": "actions/download-artifact",
+        "uses": "KirilsTurkins/lsf-download-artifact",
         "with": {
           "name": "rust-git-prepared-${{ github.sha }}",
           "path": "${{ runner.temp }}/rust-entropy-prepared"
         }
       },
       {
+        "name": "Test exact entropy source, ordinary transitive capture and retirement controls",
         "env": {
           "RUSTUP_TOOLCHAIN": "1.97.1"
         },
-        "name": "Test exact entropy source, ordinary transitive capture and retirement controls",
         "run": "python3 -m unittest tools.tests.test_rust_standard_entropy tools.tests.test_rust_standard_entropy_campaign"
       },
       {
@@ -62,22 +63,21 @@
         "run": "python3 tools/qualify_rust_standard_entropy.py --prepared-qualification \"$RUNNER_TEMP/rust-entropy-prepared\" --output \"$RUNNER_TEMP/rust-standard-entropy\""
       },
       {
-        "if": "always()",
         "name": "Retain bounded entropy observations including failed attempts",
-        "uses": "actions/upload-artifact",
+        "if": "always()",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
-          "if-no-files-found": "warn",
           "name": "rust-standard-entropy-${{ github.sha }}",
           "path": "${{ runner.temp }}/rust-standard-entropy/qualification.json\n${{ runner.temp }}/rust-standard-entropy/FAILED.json\n${{ runner.temp }}/rust-standard-entropy/capture.json\n${{ runner.temp }}/rust-standard-entropy/outside/executable-inputs.json\n${{ runner.temp }}/rust-standard-entropy/logs/**\n${{ runner.temp }}/rust-standard-entropy/entropy-std/*.json\n${{ runner.temp }}/rust-standard-entropy/entropy-std/logs/**\n${{ runner.temp }}/rust-standard-entropy/approval-required/*.json\n${{ runner.temp }}/rust-standard-entropy/approval-required/logs/**\n${{ runner.temp }}/rust-standard-entropy/build/*.json\n${{ runner.temp }}/rust-standard-entropy/build/logs/**\n${{ runner.temp }}/rust-standard-entropy/build/component.wasm\n${{ runner.temp }}/rust-standard-entropy/node/workflow.json\n${{ runner.temp }}/rust-standard-entropy/node/FAILED.json\n",
+          "if-no-files-found": "warn",
           "retention-days": 3
         }
       }
-    ],
-    "timeout-minutes": 20
+    ]
   },
   "jobId": "standard-entropy",
   "kind": "job",
-  "reviewReason": "Select the already installed exact1.97.1 compiler for the native entropy reference test. Prevent implicit rust-toolchain component installation conflicts; all13controls and actual sysroot/signed programmes remain unchanged.",
+  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-capsule-authoring.yml"
 }

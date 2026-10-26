@@ -30,7 +30,7 @@ def original_compiler_parent(test, parent):
         'Save only reverified Java prepared input bytes'])
     # Covers every command, action SHA, cache key/path, token scope and condition.
     test.assertEqual(signature(selected),
-        '546d215a6b29407956193b415b001e1d24686b7e427f6d92c8dfda06ffefc499')
+        'f145f3a3fbb98a7473f7c35bb07b1b3fd82b3f82a5e54003fc04f72755bad476')
     legacy = next(step['run'] for step in model()['jobs']['scratch-refusals']['steps']
         if step.get('name') == 'Install only the pinned ordinary Java component compiler')
     test.assertEqual(hashlib.sha256(legacy.encode()).hexdigest(),

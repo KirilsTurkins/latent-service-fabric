@@ -3,27 +3,28 @@
   "before": {},
   "coverage": {},
   "definition": {
+    "name": "Original ledger shared tables and runtime memory ownership diagnostics",
+    "runs-on": "ubuntu-24.04",
+    "timeout-minutes": 25,
     "env": {
       "CARGO_BUILD_JOBS": "2",
       "CARGO_INCREMENTAL": "0",
       "CARGO_PROFILE_DEV_DEBUG": "0",
-      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
-      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
       "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
       "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
       "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
     },
-    "name": "Original ledger shared tables and runtime memory ownership diagnostics",
-    "runs-on": "ubuntu-24.04",
     "steps": [
       {
-        "uses": "actions/checkout",
+        "uses": "KirilsTurkins/lsf-checkout",
         "with": {
           "persist-credentials": false
         }
       },
       {
-        "uses": "actions/setup-python",
+        "uses": "KirilsTurkins/lsf-setup-python",
         "with": {
           "python-version": "3.13.5"
         }
@@ -32,17 +33,17 @@
         "uses": "dtolnay/rust-toolchain"
       },
       {
-        "uses": "Swatinem/rust-cache",
+        "uses": "KirilsTurkins/lsf-rust-cache",
         "with": {
-          "cache-all-crates": false,
-          "cache-bin": false,
-          "cache-on-failure": false,
-          "cache-targets": true,
-          "cache-workspace-crates": false,
-          "key": "ubuntu-24.04",
           "prefix-key": "lsf-ci-dependencies-v2",
-          "save-if": false,
-          "shared-key": "host-correctness"
+          "shared-key": "host-correctness",
+          "key": "ubuntu-24.04",
+          "cache-targets": true,
+          "cache-bin": false,
+          "cache-workspace-crates": false,
+          "cache-all-crates": false,
+          "cache-on-failure": false,
+          "save-if": false
         }
       },
       {
@@ -54,27 +55,26 @@
         "run": "python3 -B -m unittest tools.tests.test_host_codec_native -v"
       },
       {
-        "id": "own-native-memory",
         "name": "Execute one hundred ninety-three source-bound controls with the ordinary native host",
+        "id": "own-native-memory",
         "run": "python3 -B tools/qualify_host_codec_native.py --source-commit \"${{ github.sha }}\" --output \"$RUNNER_TEMP/host-codec-memory\""
       },
       {
-        "if": "always()",
         "name": "Retain exact source, products, outcomes and bounded failure logs",
-        "uses": "actions/upload-artifact",
+        "if": "always()",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
-          "if-no-files-found": "warn",
           "name": "host-codec-memory-${{ github.sha }}",
           "path": "${{ runner.temp }}/host-codec-memory/",
+          "if-no-files-found": "warn",
           "retention-days": 7
         }
       }
-    ],
-    "timeout-minutes": 25
+    ]
   },
   "jobId": "native",
   "kind": "job",
-  "reviewReason": "Execute the exact193-control native cohort; preserve original workflow permissions, limits, product captures and historical readers",
+  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/host-codec-memory.yml"
 }

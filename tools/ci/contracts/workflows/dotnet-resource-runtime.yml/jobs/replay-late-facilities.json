@@ -6,15 +6,16 @@
     "if": "${{ github.event_name == 'workflow_dispatch' && inputs.replay_late_facilities && !inputs.late_facilities }}",
     "name": "Reuse the authenticated df4 component for late managed facilities",
     "runs-on": "ubuntu-24.04",
+    "timeout-minutes": 20,
     "steps": [
       {
-        "uses": "actions/checkout",
+        "uses": "KirilsTurkins/lsf-checkout",
         "with": {
           "persist-credentials": false
         }
       },
       {
-        "uses": "actions/setup-python",
+        "uses": "KirilsTurkins/lsf-setup-python",
         "with": {
           "python-version": "3.13.5"
         }
@@ -28,17 +29,17 @@
         "run": "python3 -m pip install -r tools/requirements.lock\npython3 -B -m unittest tools.tests.test_dotnet_resource_runtime tools.tests.test_resource_late_facilities tools.tests.test_resource_late_workflows tools.tests.test_replay_dotnet_resource_late -v\n"
       },
       {
+        "name": "Authenticate the same frozen 6fd products without rebuilding",
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
-        "name": "Authenticate the same frozen 6fd products without rebuilding",
         "run": "python3 -B tools/release_preparation_cli_native_products.py --output \"$RUNNER_TEMP/dotnet-resource-late-replay-native\""
       },
       {
+        "name": "Authenticate the complete failed df4 artifact and completed AOT package",
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
-        "name": "Authenticate the complete failed df4 artifact and completed AOT package",
         "run": "python3 -B tools/replay_dotnet_resource_late.py acquire --output \"$RUNNER_TEMP/dotnet-resource-late-replay-inputs\""
       },
       {
@@ -46,22 +47,21 @@
         "run": "python3 -B tools/replay_dotnet_resource_late.py run --prepared \"$RUNNER_TEMP/dotnet-resource-late-replay-inputs\" \\\n  --native \"$RUNNER_TEMP/dotnet-resource-late-replay-native\" --output \"$RUNNER_TEMP/dotnet-resource-late-replay\"\n"
       },
       {
-        "if": "always()",
         "name": "Retain the original failure and bounded new node outcomes",
-        "uses": "actions/upload-artifact",
+        "if": "always()",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
-          "if-no-files-found": "warn",
           "name": "dotnet-resource-late-replay-${{ github.sha }}",
-          "path": "${{ runner.temp }}/dotnet-resource-late-replay-native/*.json\n${{ runner.temp }}/dotnet-resource-late-replay-inputs/artifact.zip\n${{ runner.temp }}/dotnet-resource-late-replay-inputs/retrieval.json\n${{ runner.temp }}/dotnet-resource-late-replay/*.json\n${{ runner.temp }}/dotnet-resource-late-replay/node/*.json\n${{ runner.temp }}/dotnet-resource-late-replay/node/node-stderr.txt\n${{ runner.temp }}/dotnet-resource-late-replay/node/commands/logs/**\n${{ runner.temp }}/dotnet-resource-late-replay/node/examples-controls/*.json\n${{ runner.temp }}/dotnet-resource-late-replay/node/foreign-controls/*.json\n${{ runner.temp }}/dotnet-resource-late-replay/node/signed/my-greeting/build-observation.json\n${{ runner.temp }}/dotnet-resource-late-replay/node/signed/release-set.json\n",
-          "retention-days": 3
+          "retention-days": 3,
+          "if-no-files-found": "warn",
+          "path": "${{ runner.temp }}/dotnet-resource-late-replay-native/*.json\n${{ runner.temp }}/dotnet-resource-late-replay-inputs/artifact.zip\n${{ runner.temp }}/dotnet-resource-late-replay-inputs/retrieval.json\n${{ runner.temp }}/dotnet-resource-late-replay/*.json\n${{ runner.temp }}/dotnet-resource-late-replay/node/*.json\n${{ runner.temp }}/dotnet-resource-late-replay/node/node-stderr.txt\n${{ runner.temp }}/dotnet-resource-late-replay/node/commands/logs/**\n${{ runner.temp }}/dotnet-resource-late-replay/node/examples-controls/*.json\n${{ runner.temp }}/dotnet-resource-late-replay/node/foreign-controls/*.json\n${{ runner.temp }}/dotnet-resource-late-replay/node/signed/my-greeting/build-observation.json\n${{ runner.temp }}/dotnet-resource-late-replay/node/signed/release-set.json\n"
         }
       }
-    ],
-    "timeout-minutes": 20
+    ]
   },
   "jobId": "replay-late-facilities",
   "kind": "job",
-  "reviewReason": "Reviewed exact df4 completed AOT package node-only continuation: same six late/fresh obligations and caps; no guest/native compilation; exact old jobs restored after only explicit default-false replay selector and job removal. Current managed-profile reader is bound to actual owner/private-IO/task-v2 receipts.",
+  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-resource-runtime.yml"
 }

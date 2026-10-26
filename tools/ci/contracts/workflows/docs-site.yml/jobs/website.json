@@ -12,7 +12,7 @@
     "timeout-minutes": 40,
     "steps": [
       {
-        "uses": "actions/checkout",
+        "uses": "KirilsTurkins/lsf-checkout",
         "with": {
           "persist-credentials": false
         }
@@ -26,13 +26,13 @@
         "run": "native_cache=$(mktemp -d /tmp/lsf-swc-native.XXXXXX)\nprintf 'SWC_NATIVE_BINDING_CACHE=%s\\n' \"$native_cache\" >> \"$GITHUB_ENV\"\n"
       },
       {
-        "uses": "actions/setup-node",
+        "uses": "KirilsTurkins/lsf-setup-node",
         "with": {
           "node-version": "24.19.0"
         }
       },
       {
-        "uses": "actions/setup-python",
+        "uses": "KirilsTurkins/lsf-setup-python",
         "with": {
           "python-version": "3.13.5"
         }
@@ -67,7 +67,7 @@
       },
       {
         "name": "Retain only the tested site and compact browser receipts",
-        "uses": "actions/upload-artifact",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
           "name": "docs-site-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}",
           "path": "website/build/project/\nwebsite/.generated/build-evidence.json\nwebsite/.generated/theme-review/evidence.json\nwebsite/.generated/code-example-review/evidence.json\nwebsite/.generated/version-review/evidence.json\nwebsite/.generated/discovery-review/evidence.json\n",
@@ -81,7 +81,7 @@
   },
   "jobId": "website",
   "kind": "job",
-  "reviewReason": "Preserve complete workspace tests and every metadata/security qualification command, separating qualification onto a required fresh-inventory lane. Preserve both website builds and all five browser suites while using the digest-pinned official matching Noble image for preinstalled system libraries and fonts; exact project browser installation remains mandatory. Trust only the checkout workspace in this ephemeral container so Git operations work across the runner/container UID boundary; preserve repository path validation. Create a private mode-0700 SWC native materialization cache below the trusted sticky container temporary directory; retain native payload permission validation instead of using the host-mounted GitHub home. Union Root state-renderer/narrow-fixture assertions and every current-main owner/artifact/qualification obligation; retire only the duplicate obsolete source builder in favor of maintained byte-authenticated npm v4. Root reviewed obligation: Generate the authenticated local braces archive before the retained website npm installs; preserve all site and browser checks.",
+  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/docs-site.yml"
 }

@@ -5,21 +5,22 @@
   "definition": {
     "name": "Exact old-mode equality and twenty-three private CLR reference controls",
     "runs-on": "ubuntu-24.04",
+    "timeout-minutes": 20,
     "steps": [
       {
-        "uses": "actions/checkout",
+        "uses": "KirilsTurkins/lsf-checkout",
         "with": {
           "persist-credentials": false
         }
       },
       {
-        "uses": "actions/setup-python",
+        "uses": "KirilsTurkins/lsf-setup-python",
         "with": {
           "python-version": "3.13.5"
         }
       },
       {
-        "uses": "actions/setup-dotnet",
+        "uses": "KirilsTurkins/lsf-setup-dotnet",
         "with": {
           "dotnet-version": "10.0.100"
         }
@@ -33,39 +34,38 @@
         "run": "python3 -B tools/run_dotnet_aggregate_wait_reference.py --output \"$RUNNER_TEMP/dotnet-aggregate-reference-public\""
       },
       {
-        "id": "evidence",
-        "if": "always()",
         "name": "Admit only the fixed bounded public evidence",
+        "if": "always()",
+        "id": "evidence",
         "run": "python3 -B tools/run_dotnet_aggregate_wait_reference.py --admit-evidence --output \"$RUNNER_TEMP/dotnet-aggregate-reference-public\""
       },
       {
-        "if": "always() && steps.evidence.outcome == 'success'",
         "name": "Retain admitted public reference evidence",
-        "uses": "actions/upload-artifact",
+        "if": "always() && steps.evidence.outcome == 'success'",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
-          "if-no-files-found": "warn",
           "name": "dotnet-aggregate-wait-reference-${{ github.sha }}",
-          "path": "${{ runner.temp }}/dotnet-aggregate-reference-public/WAITALL-REFERENCE.json\n${{ runner.temp }}/dotnet-aggregate-reference-public/candidate.json\n${{ runner.temp }}/dotnet-aggregate-reference-public/IL-MAP.json\n${{ runner.temp }}/dotnet-aggregate-reference-public/assemblies/task-wait.dll\n${{ runner.temp }}/dotnet-aggregate-reference-public/assemblies/finite-task-wait.dll\n${{ runner.temp }}/dotnet-aggregate-reference-public/assemblies/managed-task-wait.dll\n${{ runner.temp }}/dotnet-aggregate-reference-public/assemblies/aggregate.dll\n${{ runner.temp }}/dotnet-aggregate-reference-public/commands/*.stdout\n${{ runner.temp }}/dotnet-aggregate-reference-public/commands/*.stderr\n${{ runner.temp }}/dotnet-aggregate-reference-admission.json\n",
-          "retention-days": 3
+          "retention-days": 3,
+          "if-no-files-found": "warn",
+          "path": "${{ runner.temp }}/dotnet-aggregate-reference-public/WAITALL-REFERENCE.json\n${{ runner.temp }}/dotnet-aggregate-reference-public/candidate.json\n${{ runner.temp }}/dotnet-aggregate-reference-public/IL-MAP.json\n${{ runner.temp }}/dotnet-aggregate-reference-public/assemblies/task-wait.dll\n${{ runner.temp }}/dotnet-aggregate-reference-public/assemblies/finite-task-wait.dll\n${{ runner.temp }}/dotnet-aggregate-reference-public/assemblies/managed-task-wait.dll\n${{ runner.temp }}/dotnet-aggregate-reference-public/assemblies/aggregate.dll\n${{ runner.temp }}/dotnet-aggregate-reference-public/commands/*.stdout\n${{ runner.temp }}/dotnet-aggregate-reference-public/commands/*.stderr\n${{ runner.temp }}/dotnet-aggregate-reference-admission.json\n"
         }
       },
       {
-        "if": "always() && steps.evidence.outcome != 'success'",
         "name": "Retain only the closed admission failure projection",
-        "uses": "actions/upload-artifact",
+        "if": "always() && steps.evidence.outcome != 'success'",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
-          "if-no-files-found": "warn",
           "name": "dotnet-aggregate-wait-reference-${{ github.sha }}",
-          "path": "${{ runner.temp }}/dotnet-aggregate-reference-admission.json",
-          "retention-days": 3
+          "retention-days": 3,
+          "if-no-files-found": "warn",
+          "path": "${{ runner.temp }}/dotnet-aggregate-reference-admission.json"
         }
       }
-    ],
-    "timeout-minutes": 20
+    ]
   },
   "jobId": "aggregate-reference",
   "kind": "job",
-  "reviewReason": "Use the unchanged maintained process-group owner with reserved cleanup time and a fixed always-run evidence gate; original WaitAll CIL, twenty-three controls and all default selections remain unchanged.",
+  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-aggregate-wait-reference.yml"
 }

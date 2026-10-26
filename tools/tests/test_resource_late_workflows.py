@@ -9,8 +9,8 @@ from tools.rust_capsule_project import ROOT, read_file
 
 class ResourceLateWorkflows(unittest.TestCase):
     ORIGINALS = {
-        'java': '6a95de1476911a828181031a3c7ad46a5f8325a68ed5385da1795e9a9423526f',
-        'dotnet': '48a7f95e46dfe583ec5944387ce908450b8c7d61b7ef55f52c1357be1e7b00ac',
+        'java': 'dcba5d7051ed5930499f1518c03df1258538e7b1504b784d436ebdcdafecdae3',
+        'dotnet': '2603388d03bbac5d473857bf39a6e932327b9c2fcf89ff5db15965529f9edf7d',
     }
 
     def test_removing_only_reviewed_selector_and_job_restores_both_original_workflows(self):

@@ -5,15 +5,16 @@
   "definition": {
     "name": "Actual original-owner retention through kernel close tails",
     "runs-on": "ubuntu-24.04",
+    "timeout-minutes": 25,
     "steps": [
       {
-        "uses": "actions/checkout",
+        "uses": "KirilsTurkins/lsf-checkout",
         "with": {
           "persist-credentials": false
         }
       },
       {
-        "uses": "actions/setup-python",
+        "uses": "KirilsTurkins/lsf-setup-python",
         "with": {
           "python-version": "3.13.5"
         }
@@ -22,14 +23,14 @@
         "uses": "dtolnay/rust-toolchain"
       },
       {
-        "uses": "Swatinem/rust-cache",
+        "uses": "KirilsTurkins/lsf-rust-cache",
         "with": {
-          "cache-bin": false,
-          "cache-targets": true,
-          "cache-workspace-crates": false,
-          "key": "ubuntu-24.04",
           "prefix-key": "lsf-ci-dependencies-v2",
-          "shared-key": "host-correctness"
+          "shared-key": "host-correctness",
+          "key": "ubuntu-24.04",
+          "cache-bin": false,
+          "cache-workspace-crates": false,
+          "cache-targets": true
         }
       },
       {
@@ -41,22 +42,21 @@
         "run": "python3 tools/qualify_host_stream_kernel.py --source-commit \"${{ github.sha }}\" --output \"$RUNNER_TEMP/host-stream-kernel-reference\""
       },
       {
-        "if": "always()",
         "name": "Retain bounded numeric observations and exact source identities",
-        "uses": "actions/upload-artifact",
+        "if": "always()",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
-          "if-no-files-found": "warn",
           "name": "host-stream-kernel-reference-${{ github.sha }}",
           "path": "${{ runner.temp }}/host-stream-kernel-reference/receipt.json\n${{ runner.temp }}/host-stream-kernel-reference/cargo.stderr.log\n${{ runner.temp }}/host-stream-kernel-reference/cargo-diagnostics.json\n${{ runner.temp }}/host-stream-kernel-reference/tests.stdout.log\n${{ runner.temp }}/host-stream-kernel-reference/tests.stderr.log\n${{ runner.temp }}/host-stream-kernel-reference/list.stdout.log\n${{ runner.temp }}/host-stream-kernel-reference/ignored.stdout.log\n",
+          "if-no-files-found": "warn",
           "retention-days": 7
         }
       }
-    ],
-    "timeout-minutes": 25
+    ]
   },
   "jobId": "reference",
   "kind": "job",
-  "reviewReason": "retain all original required command keys while extending actual kernel owner reference",
+  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/host-stream-kernel-reference.yml"
 }

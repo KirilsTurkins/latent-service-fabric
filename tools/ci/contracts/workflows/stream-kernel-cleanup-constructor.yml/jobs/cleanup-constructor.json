@@ -5,15 +5,16 @@
   "definition": {
     "name": "Four actual defining objects and paid constructor layout",
     "runs-on": "ubuntu-24.04",
+    "timeout-minutes": 20,
     "steps": [
       {
-        "uses": "actions/checkout",
+        "uses": "KirilsTurkins/lsf-checkout",
         "with": {
           "persist-credentials": false
         }
       },
       {
-        "uses": "actions/setup-python",
+        "uses": "KirilsTurkins/lsf-setup-python",
         "with": {
           "python-version": "3.13.5"
         }
@@ -32,30 +33,29 @@
       },
       {
         "name": "Acquire exact official maintained source archive",
-        "run": "set -euo pipefail\ncurl --fail --location --proto '=https' --tlsv1.2 --max-time 180 \\\n  https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.12.113.tar.xz \\\n  --output \"$RUNNER_TEMP/linux-6.12.113.tar.xz\"\necho \"e09b6727e5c521253f0d41694900b9c38fb7604db7d35238a8197aa9f7de2428  $RUNNER_TEMP/linux-6.12.113.tar.xz\" | sha256sum --check --strict\n",
-        "shell": "bash"
+        "shell": "bash",
+        "run": "set -euo pipefail\ncurl --fail --location --proto '=https' --tlsv1.2 --max-time 180 \\\n  https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.12.113.tar.xz \\\n  --output \"$RUNNER_TEMP/linux-6.12.113.tar.xz\"\necho \"e09b6727e5c521253f0d41694900b9c38fb7604db7d35238a8197aa9f7de2428  $RUNNER_TEMP/linux-6.12.113.tar.xz\" | sha256sum --check --strict\n"
       },
       {
         "name": "Run one finite four-object geometry programme",
         "run": "python3 -B tools/qualify_host_stream_kernel_cleanup_constructor.py --archive \"$RUNNER_TEMP/linux-6.12.113.tar.xz\" --output \"$RUNNER_TEMP/stream-kernel-cleanup-constructor\""
       },
       {
-        "if": "always()",
         "name": "Retain bounded actual measurements and failure evidence",
-        "uses": "actions/upload-artifact",
+        "if": "always()",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
-          "if-no-files-found": "warn",
           "name": "stream-kernel-cleanup-constructor-${{ github.sha }}",
           "path": "${{ runner.temp }}/stream-kernel-cleanup-constructor/qualification.json\n${{ runner.temp }}/stream-kernel-cleanup-constructor/FAILED.json\n${{ runner.temp }}/stream-kernel-cleanup-constructor/selection.json\n${{ runner.temp }}/stream-kernel-cleanup-constructor/commands.json\n${{ runner.temp }}/stream-kernel-cleanup-constructor/baseline.config\n${{ runner.temp }}/stream-kernel-cleanup-constructor/selected.config\n${{ runner.temp }}/stream-kernel-cleanup-constructor/source-fixture.config\n${{ runner.temp }}/stream-kernel-cleanup-constructor/geometry/*.bin\n${{ runner.temp }}/stream-kernel-cleanup-constructor/commands/logs/*.txt\n${{ runner.temp }}/stream-kernel-cleanup-constructor/objects/include/generated/autoconf.h\n${{ runner.temp }}/stream-kernel-cleanup-constructor/objects/net/factory.o\n${{ runner.temp }}/stream-kernel-cleanup-constructor/objects/kernel/kthread.o\n${{ runner.temp }}/stream-kernel-cleanup-constructor/objects/kernel/workqueue.o\n${{ runner.temp }}/stream-kernel-cleanup-constructor/objects/drivers/acpi/osl.o\n",
+          "if-no-files-found": "warn",
           "retention-days": 3
         }
       }
-    ],
-    "timeout-minutes": 20
+    ]
   },
   "jobId": "cleanup-constructor",
   "kind": "job",
-  "reviewReason": "Additive retained paid constructor completion/deadline source controls and four changed defining-object geometry programme only. Preserve old24-object/native-atomic programmes and all prior cases. Full consumer, public IoCall integration and wall-clock bounds stay unqualified.",
+  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/stream-kernel-cleanup-constructor.yml"
 }

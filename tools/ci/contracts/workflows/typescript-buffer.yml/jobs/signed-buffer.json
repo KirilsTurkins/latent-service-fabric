@@ -4,33 +4,34 @@
   "coverage": {},
   "definition": {
     "name": "One normally compiled and signed eight-case Buffer component",
-    "permissions": {
-      "actions": "read",
-      "contents": "read"
-    },
     "runs-on": "ubuntu-24.04",
+    "timeout-minutes": 25,
+    "permissions": {
+      "contents": "read",
+      "actions": "read"
+    },
     "steps": [
       {
-        "uses": "actions/checkout",
+        "uses": "KirilsTurkins/lsf-checkout",
         "with": {
           "persist-credentials": false
         }
       },
       {
-        "uses": "actions/setup-python",
+        "uses": "KirilsTurkins/lsf-setup-python",
         "with": {
           "python-version": "3.13.5"
         }
       },
       {
-        "uses": "actions/setup-node",
+        "uses": "KirilsTurkins/lsf-setup-node",
         "with": {
           "node-version": "24.19.0",
           "package-manager-cache": false
         }
       },
       {
-        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "uses": "KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup",
         "with": {
           "version": "1.254.0"
         }
@@ -52,17 +53,17 @@
         "run": "python3 tools/typescript_capsule.py install-tools \"$RUNNER_TEMP/typescript-buffer-tools\""
       },
       {
+        "name": "Authenticate existing five-product host without rebuilding",
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
-        "name": "Authenticate existing five-product host without rebuilding",
         "run": "python3 -B tools/java_phase_native_products.py --output \"$RUNNER_TEMP/typescript-buffer-native\""
       },
       {
+        "name": "Authenticate completed engine stage and original source splicer",
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
-        "name": "Authenticate completed engine stage and original source splicer",
         "run": "python3 -B tools/typescript_borrow_retry_inputs.py --output \"$RUNNER_TEMP/typescript-buffer-compiler\""
       },
       {
@@ -70,22 +71,21 @@
         "run": "python3 -B tools/qualify_typescript_buffer.py \\\n  --prepared-native \"$RUNNER_TEMP/typescript-buffer-native\" \\\n  --tools \"$RUNNER_TEMP/typescript-buffer-tools\" \\\n  --engine \"$RUNNER_TEMP/typescript-buffer-compiler/products/typescript-borrow-controls/engine\" \\\n  --splicer \"$RUNNER_TEMP/typescript-buffer-compiler/products/typescript-borrow-splicer/splicer\" \\\n  --output \"$RUNNER_TEMP/typescript-buffer\"\n"
       },
       {
-        "if": "always()",
         "name": "Retain actual inputs commands signed receipts and physical retirement",
-        "uses": "actions/upload-artifact",
+        "if": "always()",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
-          "if-no-files-found": "warn",
           "name": "typescript-buffer-${{ github.sha }}",
-          "path": "${{ runner.temp }}/typescript-buffer-native/*.json\n${{ runner.temp }}/typescript-buffer-compiler/*.json\n${{ runner.temp }}/typescript-buffer-compiler/products/typescript-borrow-controls/engine/*.json\n${{ runner.temp }}/typescript-buffer-compiler/products/typescript-borrow-controls/engine/engine.wasm\n${{ runner.temp }}/typescript-buffer-compiler/products/typescript-borrow-splicer/splicer/**\n${{ runner.temp }}/typescript-buffer/*.json\n${{ runner.temp }}/typescript-buffer/application/**\n${{ runner.temp }}/typescript-buffer/build/*.json\n${{ runner.temp }}/typescript-buffer/build/*.js\n${{ runner.temp }}/typescript-buffer/build/*.wit\n${{ runner.temp }}/typescript-buffer/build/*.wasm\n${{ runner.temp }}/typescript-buffer/build/package/**\n${{ runner.temp }}/typescript-buffer/build/logs/**\n${{ runner.temp }}/typescript-buffer/node/*.json\n${{ runner.temp }}/typescript-buffer/node/node-stderr.txt\n${{ runner.temp }}/typescript-buffer/node/controls/**\n${{ runner.temp }}/typescript-buffer/node/signed/**\n",
-          "retention-days": 7
+          "retention-days": 7,
+          "if-no-files-found": "warn",
+          "path": "${{ runner.temp }}/typescript-buffer-native/*.json\n${{ runner.temp }}/typescript-buffer-compiler/*.json\n${{ runner.temp }}/typescript-buffer-compiler/products/typescript-borrow-controls/engine/*.json\n${{ runner.temp }}/typescript-buffer-compiler/products/typescript-borrow-controls/engine/engine.wasm\n${{ runner.temp }}/typescript-buffer-compiler/products/typescript-borrow-splicer/splicer/**\n${{ runner.temp }}/typescript-buffer/*.json\n${{ runner.temp }}/typescript-buffer/application/**\n${{ runner.temp }}/typescript-buffer/build/*.json\n${{ runner.temp }}/typescript-buffer/build/*.js\n${{ runner.temp }}/typescript-buffer/build/*.wit\n${{ runner.temp }}/typescript-buffer/build/*.wasm\n${{ runner.temp }}/typescript-buffer/build/package/**\n${{ runner.temp }}/typescript-buffer/build/logs/**\n${{ runner.temp }}/typescript-buffer/node/*.json\n${{ runner.temp }}/typescript-buffer/node/node-stderr.txt\n${{ runner.temp }}/typescript-buffer/node/controls/**\n${{ runner.temp }}/typescript-buffer/node/signed/**\n"
         }
       }
-    ],
-    "timeout-minutes": 25
+    ]
   },
   "jobId": "signed-buffer",
   "kind": "job",
-  "reviewReason": "Keep every finite source control, unchanged authenticated input selector and real signed runtime case.",
+  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-buffer.yml"
 }

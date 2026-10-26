@@ -28,11 +28,11 @@ jobs:
       CARGO_BUILD_JOBS: 2
       CARGO_INCREMENTAL: 0
     steps:
-    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    - uses: KirilsTurkins/lsf-checkout@c3024dfac542bb46ebccc7829ddf1f95e0be8da9 # v7.0.1 + upstream changes + LSF security fixes
       with:
         persist-credentials: false
         fetch-depth: 1
-    - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+    - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
       with:
         python-version: 3.13.5
     - name: Fetch the exact successful current SDK5 producer before validation
@@ -49,7 +49,7 @@ jobs:
         sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
 
         '
-    - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+    - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@9244ec9f4725400c84054e3e6ec97514cadddf53 # v1.1.3 + upstream changes + LSF security fixes
       with:
         version: 1.254.0
     - name: Authenticate original Go1.27.3 and componentize-go0.4.3 and prepare the maintained v5 compiler
@@ -96,7 +96,7 @@ jobs:
       run: python3 -B tools/qualify_go_resource_runtime.py --native "$RUNNER_TEMP/go-resource-native" --output "$RUNNER_TEMP/go-resource-runtime" --late-completion
     - name: Retain bounded original construction and actual outcomes including failures
       if: always()
-      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
       with:
         name: go-resource-late-${{ github.sha }}
         retention-days: 3

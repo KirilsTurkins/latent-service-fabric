@@ -4,14 +4,15 @@
   "coverage": {},
   "definition": {
     "name": "Two normal components one root edge and eight actual outcomes",
-    "permissions": {
-      "actions": "read",
-      "contents": "read"
-    },
     "runs-on": "ubuntu-24.04",
+    "timeout-minutes": 20,
+    "permissions": {
+      "contents": "read",
+      "actions": "read"
+    },
     "steps": [
       {
-        "uses": "actions/checkout",
+        "uses": "KirilsTurkins/lsf-checkout",
         "with": {
           "persist-credentials": false
         }
@@ -21,19 +22,19 @@
         "run": "git fetch --no-tags --depth=1 origin f6251df89851de98cb869784d095ad5cc2e5b385\ngit fetch --no-tags --depth=1 origin f244b81f14abad5d4dc4984cb842aaf1d9076e23\n"
       },
       {
-        "uses": "actions/setup-python",
+        "uses": "KirilsTurkins/lsf-setup-python",
         "with": {
           "python-version": "3.13.5"
         }
       },
       {
-        "uses": "actions/setup-node",
+        "uses": "KirilsTurkins/lsf-setup-node",
         "with": {
           "node-version": "24.19.0"
         }
       },
       {
-        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "uses": "KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup",
         "with": {
           "version": "1.254.0"
         }
@@ -55,10 +56,10 @@
         "run": "python3 -B tools/typescript_capsule.py install-tools \"$RUNNER_TEMP/typescript-elimination-tools\""
       },
       {
+        "name": "Authenticate the existing five native products with original compilation lineage",
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
-        "name": "Authenticate the existing five native products with original compilation lineage",
         "run": "python3 -B tools/c_thread_admission_native_products.py --output \"$RUNNER_TEMP/typescript-elimination-native\""
       },
       {
@@ -66,22 +67,21 @@
         "run": "python3 -B tools/qualify_typescript_elimination.py \\\n  --native-products \"$RUNNER_TEMP/typescript-elimination-native\" \\\n  --tools \"$RUNNER_TEMP/typescript-elimination-tools\" --output \"$RUNNER_TEMP/typescript-elimination\"\n"
       },
       {
-        "if": "always()",
         "name": "Retain source construction outcomes and actual retirement observations",
-        "uses": "actions/upload-artifact",
+        "if": "always()",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
-          "if-no-files-found": "warn",
           "name": "typescript-elimination-${{ github.sha }}",
-          "path": "${{ runner.temp }}/typescript-elimination-native/*.json\n${{ runner.temp }}/typescript-elimination/*.json\n${{ runner.temp }}/typescript-elimination/logs/**\n${{ runner.temp }}/typescript-elimination/*/compatibility-execution-report.json\n${{ runner.temp }}/typescript-elimination/*/build/*.json\n${{ runner.temp }}/typescript-elimination/*/build/*.wit\n${{ runner.temp }}/typescript-elimination/*/build/wit/**\n${{ runner.temp }}/typescript-elimination/*/build/component.wasm\n${{ runner.temp }}/typescript-elimination/*/build/package/**\n${{ runner.temp }}/typescript-elimination/*/build/logs/**\n${{ runner.temp }}/typescript-elimination/*/node/*.json\n${{ runner.temp }}/typescript-elimination/*/node/*.log\n${{ runner.temp }}/typescript-elimination/*/node/controls/**\n",
-          "retention-days": 7
+          "retention-days": 7,
+          "if-no-files-found": "warn",
+          "path": "${{ runner.temp }}/typescript-elimination-native/*.json\n${{ runner.temp }}/typescript-elimination/*.json\n${{ runner.temp }}/typescript-elimination/logs/**\n${{ runner.temp }}/typescript-elimination/*/compatibility-execution-report.json\n${{ runner.temp }}/typescript-elimination/*/build/*.json\n${{ runner.temp }}/typescript-elimination/*/build/*.wit\n${{ runner.temp }}/typescript-elimination/*/build/wit/**\n${{ runner.temp }}/typescript-elimination/*/build/component.wasm\n${{ runner.temp }}/typescript-elimination/*/build/package/**\n${{ runner.temp }}/typescript-elimination/*/build/logs/**\n${{ runner.temp }}/typescript-elimination/*/node/*.json\n${{ runner.temp }}/typescript-elimination/*/node/*.log\n${{ runner.temp }}/typescript-elimination/*/node/controls/**\n"
         }
       }
-    ],
-    "timeout-minutes": 20
+    ]
   },
   "jobId": "compiler-elimination",
   "kind": "job",
-  "reviewReason": "Add finite two-build one-root-edge TypeScript compiler/elimination programme; preserve all historical campaigns and guards.",
+  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-elimination.yml"
 }

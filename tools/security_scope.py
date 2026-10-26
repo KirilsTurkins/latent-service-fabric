@@ -37,7 +37,7 @@ def classify(paths: list[str]) -> dict[str, bool]:
                               or path.startswith((".cargo/", "wit/platform/", "crates/latent-wasmtime/src/host/",
                                                   "crates/latent-wasmtime/src/surface", "crates/latent-component-bindings/"))
                               for path in paths)
-    return {"rustsec": rustsec, "dependencies": controls or any(is_manifest(path) for path in paths),
+    return {"rustsec": rustsec, "dependencies": controls or workflows or any(is_manifest(path) for path in paths),
             "static": controls or workflows or any(PurePosixPath(path).suffix in SOURCE_EXTENSIONS for path in paths),
             "selftest": controls or workflows}
 

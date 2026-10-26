@@ -3,27 +3,28 @@
   "before": {},
   "coverage": {},
   "definition": {
+    "name": "One maintained component and the exact real deadline case",
+    "runs-on": "ubuntu-24.04",
+    "timeout-minutes": 25,
     "env": {
       "CARGO_BUILD_JOBS": "2",
       "CARGO_INCREMENTAL": "0",
       "CARGO_PROFILE_DEV_DEBUG": "0",
-      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
-      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
       "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
       "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
       "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
     },
-    "name": "One maintained component and the exact real deadline case",
-    "runs-on": "ubuntu-24.04",
     "steps": [
       {
-        "uses": "actions/checkout",
+        "uses": "KirilsTurkins/lsf-checkout",
         "with": {
           "persist-credentials": false
         }
       },
       {
-        "uses": "actions/setup-python",
+        "uses": "KirilsTurkins/lsf-setup-python",
         "with": {
           "python-version": "3.13.5"
         }
@@ -35,22 +36,22 @@
         }
       },
       {
-        "uses": "Swatinem/rust-cache",
+        "uses": "KirilsTurkins/lsf-rust-cache",
         "with": {
-          "cache-all-crates": false,
-          "cache-bin": false,
-          "cache-directories": "target/debug\ntarget/release\ntarget/wasm32-unknown-unknown\ntarget/wasm32-wasip2\n",
-          "cache-on-failure": false,
-          "cache-targets": false,
-          "cache-workspace-crates": false,
-          "key": "ubuntu-24.04",
           "prefix-key": "lsf-ci-dependencies-v3-contract-profiles",
-          "save-if": false,
-          "shared-key": "host-contracts"
+          "shared-key": "host-contracts",
+          "key": "ubuntu-24.04",
+          "cache-targets": false,
+          "cache-directories": "target/debug\ntarget/release\ntarget/wasm32-unknown-unknown\ntarget/wasm32-wasip2\n",
+          "cache-bin": false,
+          "cache-workspace-crates": false,
+          "cache-all-crates": false,
+          "cache-on-failure": false,
+          "save-if": false
         }
       },
       {
-        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "uses": "KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup",
         "with": {
           "version": "1.254.0"
         }
@@ -60,22 +61,21 @@
         "run": "python3 -B tools/qualify_containment_deadline.py --source-commit \"${{ github.sha }}\" --output \"$RUNNER_TEMP/containment-deadline\""
       },
       {
-        "if": "always()",
         "name": "Retain actual build, exact-case observation and failures",
-        "uses": "actions/upload-artifact",
+        "if": "always()",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
-          "if-no-files-found": "warn",
           "name": "containment-deadline-${{ github.sha }}",
           "path": "${{ runner.temp }}/containment-deadline/receipt.json\n${{ runner.temp }}/containment-deadline/FAILED.json\n${{ runner.temp }}/containment-deadline/source-inputs.json\n${{ runner.temp }}/containment-deadline/commands.json\n${{ runner.temp }}/containment-deadline/containment-core.wasm\n${{ runner.temp }}/containment-deadline/containment-component.wasm\n${{ runner.temp }}/containment-deadline/commands/logs/*.txt\n",
+          "if-no-files-found": "warn",
           "retention-days": 3
         }
       }
-    ],
-    "timeout-minutes": 25
+    ]
   },
   "jobId": "deadline",
   "kind": "job",
-  "reviewReason": "Normal maintained tiny containment component and one source-matched actual deadline case; exact one-pass zero-ignored result with original75ms and500ms tolerance.",
+  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/containment-deadline.yml"
 }

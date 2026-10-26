@@ -166,13 +166,30 @@ class JavaSpiManualWorkflow(unittest.TestCase):
         name = '.github/workflows/java-guest-feasibility.yml'
         old = yaml.safe_load(subprocess.check_output(['git', 'show',
             'aa56bdebad8c12f20acce4ec4ecfeca73cf554be:'+name], cwd=ROOT, text=True))
-        # Only the reviewed setup-java revision changes in the historical baseline.
+        # Apply only the exact reviewed action identity migrations; every other
+        # baseline field is still compared after the existing selector inversion.
         java_steps = [step for job in old['jobs'].values() for step in job.get('steps', [])
                       if step.get('uses', '').startswith('actions/setup-java@')]
         self.assertTrue(java_steps)
         for step in java_steps:
             self.assertEqual(step['uses'], 'actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6')
-            step['uses'] = 'actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad'
+            step['uses'] = 'KirilsTurkins/lsf-setup-java@f041d6677134ada73c077d0c012bd78164b251a7'
+        action_migrations = {
+            'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1': 'KirilsTurkins/lsf-checkout@c3024dfac542bb46ebccc7829ddf1f95e0be8da9',
+            'actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97': 'KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140',
+            'actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333': 'KirilsTurkins/lsf-download-artifact@f073ba9e3801be93f933866d4c9a748e42157e5f',
+            'actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9': 'KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9',
+            'Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6': 'KirilsTurkins/lsf-rust-cache@476b290465f7c84db317df6e6a6e2d3c12ea3477',
+            'bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613': 'KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@9244ec9f4725400c84054e3e6ec97514cadddf53',
+        }
+        migrated = set()
+        for job in old['jobs'].values():
+            for step in job.get('steps', []):
+                reference = step.get('uses')
+                if reference in action_migrations:
+                    step['uses'] = action_migrations[reference]
+                    migrated.add(reference)
+        self.assertEqual(migrated, set(action_migrations))
         selected = yaml.safe_load((ROOT/name).read_text())
         private = selected[True]['workflow_dispatch']['inputs'].pop('public_fiber_private_scalar_llvm')
         self.assertEqual(private['type'], 'boolean');self.assertIs(private['default'], False)

@@ -4,16 +4,32 @@
   "coverage": {},
   "definition": {
     "name": "Stream operator frontend (${{ matrix.os }})",
+    "strategy": {
+      "fail-fast": false,
+      "matrix": {
+        "include": [
+          {
+            "os": "ubuntu-24.04",
+            "lock": "tools/dev-frontend-linux.lock"
+          },
+          {
+            "os": "windows-2025",
+            "lock": "tools/dev-frontend-windows.lock"
+          }
+        ]
+      }
+    },
     "runs-on": "${{ matrix.os }}",
+    "timeout-minutes": 12,
     "steps": [
       {
-        "uses": "actions/checkout",
+        "uses": "KirilsTurkins/lsf-checkout",
         "with": {
           "persist-credentials": false
         }
       },
       {
-        "uses": "actions/setup-python",
+        "uses": "KirilsTurkins/lsf-setup-python",
         "with": {
           "python-version": "3.13.5"
         }
@@ -31,37 +47,21 @@
         "run": "python tools/build_dev_frontend.py --output target/stream-operator-frontend"
       },
       {
-        "if": "always()",
         "name": "Retain actual frontend products and existing source/license inventories",
-        "uses": "actions/upload-artifact",
+        "if": "always()",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
-          "if-no-files-found": "error",
           "name": "stream-operator-frontend-${{ matrix.os }}-${{ github.sha }}",
           "path": "target/stream-operator-frontend/build.json\ntarget/stream-operator-frontend/helper.pyz\ntarget/stream-operator-frontend/python-inventory.json\ntarget/stream-operator-frontend/licenses/\ntarget/stream-operator-frontend/dist/\n",
+          "if-no-files-found": "error",
           "retention-days": 7
         }
       }
-    ],
-    "strategy": {
-      "fail-fast": false,
-      "matrix": {
-        "include": [
-          {
-            "lock": "tools/dev-frontend-linux.lock",
-            "os": "ubuntu-24.04"
-          },
-          {
-            "lock": "tools/dev-frontend-windows.lock",
-            "os": "windows-2025"
-          }
-        ]
-      }
-    },
-    "timeout-minutes": 12
+    ]
   },
   "jobId": "frontend",
   "kind": "job",
-  "reviewReason": "Add four causal pinned-wheel attribution controls to the existing preserved 34 operator/frontend controls after the actual Linux owner-unknown failure. Preserve two platforms, deadline, all existing smoke checks, permissions, artifacts and commands.",
+  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/stream-operator-packaging.yml"
 }

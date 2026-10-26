@@ -162,10 +162,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: KirilsTurkins/lsf-checkout@c3024dfac542bb46ebccc7829ddf1f95e0be8da9 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
       - name: Exercise controller boundaries and actual owned subprocesses
@@ -200,23 +200,23 @@ jobs:
       id-token: write
       attestations: write
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: KirilsTurkins/lsf-checkout@c3024dfac542bb46ebccc7829ddf1f95e0be8da9 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
         with:
           targets: wasm32-unknown-unknown
-      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+      - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@9244ec9f4725400c84054e3e6ec97514cadddf53 # v1.1.3 + upstream changes + LSF security fixes
         with:
           version: 1.254.0
       - name: Select the runner-owned compiler archive cache
         run: printf 'LSF_DEV_COMPILER_CACHE=%s\n' "$RUNNER_TEMP/compiler-archives" >> "$GITHUB_ENV"
       - name: Restore untrusted pinned compiler archives
         id: compiler-cache
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        uses: KirilsTurkins/lsf-cache/restore@2ff27e45011b8bcf31ef566ae84c1c923c8aea69 # v6.1.0 + upstream changes + LSF security fixes
         with:
           path: ${{ runner.temp }}/compiler-archives
           key: compiler-archives-v1-${{ runner.os }}-${{ matrix.language }}-${{ hashFiles('tools/build_dev_guest_tools.py', 'tools/dev_guest_tools.py', 'tools/dev_tool_distribution.py', 'tools/install_guest_bindgen.py', 'tools/dev_managed_distribution.py', 'tools/dev_go_distribution.py', 'tools/dev_typescript_distribution.py') }}
@@ -232,7 +232,7 @@ jobs:
       - name: Restore untrusted source-pinned Java prepared inputs
         id: java-compiler-cache
         if: matrix.language == 'java'
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        uses: KirilsTurkins/lsf-cache/restore@2ff27e45011b8bcf31ef566ae84c1c923c8aea69 # v6.1.0 + upstream changes + LSF security fixes
         with:
           path: ${{ runner.temp }}/compiler-archives/java-prepared
           key: java-prepared-compiler-v1-${{ runner.os }}-${{ hashFiles('tools/data/java-compiler-profile.json') }}
@@ -248,7 +248,7 @@ jobs:
           printf 'LSF_DEV_JAVA_COMPILER_INPUT=%s\n' "$input" >> "$GITHUB_ENV"
       - name: Save only reverified Java prepared input bytes
         if: matrix.language == 'java' && steps.java-compiler-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        uses: KirilsTurkins/lsf-cache/save@2ff27e45011b8bcf31ef566ae84c1c923c8aea69 # v6.1.0 + upstream changes + LSF security fixes
         with:
           path: ${{ runner.temp }}/compiler-archives/java-prepared
           key: ${{ steps.java-compiler-cache.outputs.cache-primary-key }}
@@ -258,7 +258,7 @@ jobs:
         run: python tools/build_dev_guest_tools.py --language "$LSF_DEV_LANGUAGE" --output target/dev-tools --python-prefix "$LSF_DEV_PYTHON_PREFIX" --node-tests
       - name: Save independently verified compiler archive bytes
         if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/development' && steps.compiler-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        uses: KirilsTurkins/lsf-cache/save@2ff27e45011b8bcf31ef566ae84c1c923c8aea69 # v6.1.0 + upstream changes + LSF security fixes
         with:
           path: ${{ runner.temp }}/compiler-archives
           key: ${{ steps.compiler-cache.outputs.cache-primary-key }}
@@ -277,7 +277,7 @@ jobs:
           sudo --preserve-env=GITHUB_ACTIONS,RUNNER_OS "$(command -v python)" -B tools/run_typescript_dependency_watch_ci.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --output "$RUNNER_TEMP/typescript-dependency-watch" --qualifier tools/qualify_typescript_dependency_watch.py --fixture tools/typescript_dependency_watch_fixture.py --node-probe tools/dev_node_application_probe.py
       - name: Retain public TypeScript dependency watch receipts
         if: always() && matrix.language == 'typescript'
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: typescript-dependency-watch-${{ github.sha }}
           path: |
@@ -298,13 +298,13 @@ jobs:
         run: sudo --preserve-env=GITHUB_ACTIONS,RUNNER_OS "$(command -v python)" -B tools/run_c_dependency_watch_ci.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --qualifier tools/qualify_c_dependency_watch.py --fixture tools/c_dependency_watch_fixture.py --node-probe tools/dev_node_application_probe.py --output "$RUNNER_TEMP/c-dependency-watch"
       - name: Retain bounded C dependency watch and normal shutdown observations
         if: always() && matrix.language == 'c'
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: c-dependency-watch-${{ github.sha }}
           path: ${{ runner.temp }}/c-dependency-watch/
           if-no-files-found: warn
           retention-days: 7
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      - uses: KirilsTurkins/lsf-setup-node@c1136b2d97fe79ef645e9508b2048a222f50a170 # v7.1.0 + upstream changes + LSF security fixes
         if: matrix.language == 'typescript'
         with:
           node-version: 24.19.0
@@ -319,7 +319,7 @@ jobs:
         run: sudo --preserve-env=GITHUB_ACTIONS,RUNNER_OS "$(command -v python)" -B tools/run_go_dependency_watch_ci.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --qualifier tools/qualify_go_dependency_watch.py --fixture tools/go_dependency_watch_fixture.py --node-probe tools/dev_node_application_probe.py --output "$RUNNER_TEMP/go-dependency-watch"
       - name: Retain bounded Go dependency watch and normal shutdown observations
         if: always() && matrix.language == 'go'
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: go-dependency-watch-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
@@ -338,7 +338,7 @@ jobs:
         run: sudo --preserve-env=GITHUB_ACTIONS,RUNNER_OS "$(command -v python)" -B tools/run_rust_dependency_watch_ci.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --qualifier tools/qualify_rust_dependency_watch.py --fixture tools/rust_dependency_watch_fixture.py --node-probe tools/dev_node_application_probe.py --output "$RUNNER_TEMP/rust-dependency-watch"
       - name: Retain bounded Rust dependency watch and normal shutdown observations
         if: always() && matrix.language == 'rust'
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: rust-dependency-watch-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
@@ -357,7 +357,7 @@ jobs:
         run: sudo --preserve-env=GITHUB_ACTIONS,RUNNER_OS "$(command -v python)" -B tools/run_dotnet_dependency_watch_ci.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --qualifier tools/qualify_dotnet_dependency_watch.py --fixture tools/dotnet_dependency_watch_fixture.py --node-probe tools/dev_node_application_probe.py --output "$RUNNER_TEMP/dotnet-dependency-watch"
       - name: Retain bounded .NET dependency watch and normal shutdown observations
         if: always() && matrix.language == 'dotnet'
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: dotnet-dependency-watch-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
@@ -380,7 +380,7 @@ jobs:
         run: sudo --preserve-env=GITHUB_ACTIONS,RUNNER_OS "$(command -v python)" -B tools/run_java_dependency_watch_ci.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --qualifier tools/qualify_java_dependency_watch.py --node-probe tools/dev_node_application_probe.py --output "$RUNNER_TEMP/java-dependency-watch"
       - name: Retain bounded Java dependency watch and normal shutdown observations
         if: always() && matrix.language == 'java'
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: java-dependency-watch-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
@@ -414,7 +414,7 @@ jobs:
           sudo --preserve-env=GITHUB_ACTIONS,RUNNER_OS "$(command -v python)" -B tools/run_dev_recovery_ci.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --output "$RUNNER_TEMP/dev-recovery-fixtures"
       - name: Retain actual watch failure, revision and revocation observations
         if: always() && matrix.language == 'rust'
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: developer-watch-fixtures-${{ github.sha }}
           path: ${{ runner.temp }}/dev-watch-fixtures/
@@ -422,7 +422,7 @@ jobs:
           retention-days: 7
       - name: Retain actual workspace isolation and expired original receipt observations
         if: always() && matrix.language == 'rust'
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: developer-workspace-isolation-${{ github.sha }}
           path: ${{ runner.temp }}/dev-workspace-isolation/
@@ -430,7 +430,7 @@ jobs:
           retention-days: 7
       - name: Retain authenticated immediate-event protocol and cleanup receipts
         if: always() && matrix.language == 'rust'
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: developer-event-fixtures-${{ github.sha }}
           path: ${{ runner.temp }}/dev-event-fixtures/
@@ -438,7 +438,7 @@ jobs:
           retention-days: 7
       - name: Retain actual clock fixtures and node comparison receipts
         if: always() && matrix.language == 'rust'
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: developer-clock-fixtures-${{ github.sha }}
           path: ${{ runner.temp }}/dev-clock-fixtures/
@@ -446,14 +446,14 @@ jobs:
           retention-days: 7
       - name: Retain authored failures and actual running cancellation
         if: always() && matrix.language == 'rust'
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: developer-failure-fixtures-${{ github.sha }}
           path: ${{ runner.temp }}/dev-failure-fixtures/
           if-no-files-found: warn
           retention-days: 7
       - name: Retain original-operation recovery and authority receipts
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         if: always() && matrix.language == 'rust'
         with:
           name: developer-recovery-fixtures-${{ github.sha }}
@@ -461,7 +461,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
       - name: Retain authenticated HTTP fixture and comparison receipts
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         if: always() && matrix.language == 'rust'
         with:
           name: developer-http-fixtures-${{ github.sha }}
@@ -469,7 +469,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
       - name: Retain actual immutable-blob ownership and restart receipts
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         if: always() && matrix.language == 'rust'
         with:
           name: developer-blob-fixtures-${{ github.sha }}
@@ -477,7 +477,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
       - name: Retain actual scoped secret disclosure and cleanup receipts
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         if: always() && matrix.language == 'rust'
         with:
           name: developer-secret-fixtures-${{ github.sha }}
@@ -485,7 +485,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
       - name: Retain actual metric exports and joined-owner cleanup receipts
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         if: always() && matrix.language == 'rust'
         with:
           name: developer-metric-fixtures-${{ github.sha }}
@@ -493,7 +493,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
       - name: Retain actual local caller and callee receipts
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         if: always() && matrix.language == 'rust'
         with:
           name: developer-local-service-fixtures-${{ github.sha }}
@@ -501,7 +501,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
       - name: Retain identical applications for both native execution hosts
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: developer-${{ matrix.language }}-applications-${{ github.sha }}
           path: ${{ runner.temp }}/dev-projects/
@@ -514,7 +514,7 @@ jobs:
           python -c "from pathlib import Path; import os,shutil; shutil.copytree(Path(os.environ['RUNNER_TEMP'])/'dev-projects', 'target/dev-c-portable/applications')"
       - name: Retain exact C components and shared scenarios
         if: matrix.language == 'c'
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: developer-c-portable-inputs-${{ github.sha }}
           path: target/dev-c-portable/
@@ -523,7 +523,7 @@ jobs:
       - name: Attest guest tool candidate without release authority
         if: github.event_name != 'pull_request'
         id: attest
-        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        uses: KirilsTurkins/lsf-attest-build-provenance@16b356100dfe77222eebe783b5e26a565b76055a # v4.2.2 + upstream changes + LSF security fixes
         with:
           subject-path: target/dev-tools/candidate/SHA256SUMS
       - name: Retain offline guest tool attestation
@@ -531,7 +531,7 @@ jobs:
         env:
           BUNDLE_PATH: ${{ steps.attest.outputs.bundle-path }}
         run: install -m 0644 "$BUNDLE_PATH" target/dev-tools/candidate/attestation.json
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      - uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: developer-${{ matrix.language }}-tools-candidate-${{ github.sha }}
           path: target/dev-tools/candidate/
@@ -539,7 +539,7 @@ jobs:
           retention-days: 7
       - name: Retain compiler and application evidence
         if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: developer-${{ matrix.language }}-builds-${{ github.sha }}
           path: |
@@ -557,10 +557,10 @@ jobs:
     runs-on: windows-2025
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: KirilsTurkins/lsf-checkout@c3024dfac542bb46ebccc7829ddf1f95e0be8da9 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
       - name: Install exact hashed frontend build inputs
@@ -571,7 +571,7 @@ jobs:
         with:
           targets: wasm32-wasip2,wasm32-unknown-unknown
           components: clippy,rustfmt
-      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+      - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@9244ec9f4725400c84054e3e6ec97514cadddf53 # v1.1.3 + upstream changes + LSF security fixes
         with:
           version: 1.254.0
       - name: Install pinned component manifest validator
@@ -591,42 +591,42 @@ jobs:
       - name: Exercise native production Wasmtime and shared scenario assertions outside checkout
         run: python tools/run_portable_dev_tests.py --host target/release/latent-portable-test-host.exe --echo target/dev-echo --generic target/dev-generic.wasm --providers target/dev-providers --output target/dev-portable-smoke.json
       - name: Retrieve identical deterministic clock capsules and real node receipts
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        uses: KirilsTurkins/lsf-download-artifact@f073ba9e3801be93f933866d4c9a748e42157e5f # v8.0.2 + upstream changes + LSF security fixes
         with:
           name: developer-clock-fixtures-${{ github.sha }}
           path: target/dev-clock-fixtures/
       - name: Compare actual native Windows clocks and denial with the signed Linux node
         run: python tools/run_dev_clock_portable.py --host target/release/latent-portable-test-host.exe --inputs target/dev-clock-fixtures --output target/dev-portable-clock-comparison.json
       - name: Retrieve identical failure capsules and real node receipts
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        uses: KirilsTurkins/lsf-download-artifact@f073ba9e3801be93f933866d4c9a748e42157e5f # v8.0.2 + upstream changes + LSF security fixes
         with:
           name: developer-failure-fixtures-${{ github.sha }}
           path: target/dev-failure-fixtures/
       - name: Compare native Windows failures and fresh state with the signed Linux node
         run: python tools/run_dev_failure_portable.py --host target/release/latent-portable-test-host.exe --inputs target/dev-failure-fixtures --output target/dev-portable-failure-comparison.json
       - name: Retrieve identical HTTP capsules and real node receipts
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        uses: KirilsTurkins/lsf-download-artifact@f073ba9e3801be93f933866d4c9a748e42157e5f # v8.0.2 + upstream changes + LSF security fixes
         with:
           name: developer-http-fixtures-${{ github.sha }}
           path: target/dev-http-fixtures/
       - name: Compare authenticated native Windows HTTP with the signed Linux node
         run: python tools/run_dev_http_portable.py --host target/release/latent-portable-test-host.exe --inputs target/dev-http-fixtures --output target/dev-portable-http-comparison.json
       - name: Retrieve identical metric capsules and real node exports
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        uses: KirilsTurkins/lsf-download-artifact@f073ba9e3801be93f933866d4c9a748e42157e5f # v8.0.2 + upstream changes + LSF security fixes
         with:
           name: developer-metric-fixtures-${{ github.sha }}
           path: target/dev-metric-fixtures/
       - name: Compare native Windows metric exports with the signed Linux node
         run: python tools/run_dev_metric_portable.py --host target/release/latent-portable-test-host.exe --inputs target/dev-metric-fixtures --output target/dev-portable-metric-comparison.json
       - name: Retrieve exact C components compiled by the maintained guest tool recipe
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        uses: KirilsTurkins/lsf-download-artifact@f073ba9e3801be93f933866d4c9a748e42157e5f # v8.0.2 + upstream changes + LSF security fixes
         with:
           name: developer-c-portable-inputs-${{ github.sha }}
           path: target/dev-c-portable/
       - name: Execute actual C applications and SDK providers natively
         run: python tools/run_portable_c_tests.py --host target/release/latent-portable-test-host.exe --providers target/dev-c-portable/providers --applications target/dev-c-portable/applications --output target/dev-portable-c-smoke.json
       - name: Retrieve identical maintained applications
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        uses: KirilsTurkins/lsf-download-artifact@f073ba9e3801be93f933866d4c9a748e42157e5f # v8.0.2 + upstream changes + LSF security fixes
         with:
           pattern: developer-*-applications-${{ github.sha }}
           path: target/dev-applications/
@@ -640,7 +640,7 @@ jobs:
         run: |
           python -c "from pathlib import Path; import shutil,subprocess; from tools.dev_distribution import file_digest; from tools.dev_workflow.common import encode; d=Path('target/dev-candidate/portable'); d.mkdir(); p=d/'latent-portable-test-host.exe'; shutil.copyfile('target/release/latent-portable-test-host.exe',p); p.with_suffix('.json').write_bytes(encode({'sourceCommit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'sha256':file_digest(p)[0],'target':'windows-x86_64','profile':'release'}))"
       - name: Retain exact Windows distribution inputs
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: developer-windows-inputs-${{ github.sha }}
           path: |
@@ -654,7 +654,7 @@ jobs:
           retention-days: 7
       - name: Retain actual native subset receipt
         if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: windows-portable-subset-${{ github.sha }}
           path: |
@@ -678,10 +678,10 @@ jobs:
       id-token: write
       attestations: write
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: KirilsTurkins/lsf-checkout@c3024dfac542bb46ebccc7829ddf1f95e0be8da9 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
@@ -689,7 +689,7 @@ jobs:
         run: python -m pip install --require-hashes -r tools/dev-frontend-linux.lock
       - name: Build native Linux frontend and observe redistributed libraries
         run: python tools/build_dev_frontend.py --output target/dev-linux-frontend
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+      - uses: KirilsTurkins/lsf-download-artifact@f073ba9e3801be93f933866d4c9a748e42157e5f # v8.0.2 + upstream changes + LSF security fixes
         with:
           pattern: developer-*-applications-${{ github.sha }}
           path: target/dev-applications/
@@ -708,7 +708,7 @@ jobs:
       - name: Attest Linux developer candidate without release authority
         if: github.event_name != 'pull_request'
         id: attest
-        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        uses: KirilsTurkins/lsf-attest-build-provenance@16b356100dfe77222eebe783b5e26a565b76055a # v4.2.2 + upstream changes + LSF security fixes
         with:
           subject-path: target/dev-linux/candidate/SHA256SUMS
       - name: Retain offline Linux developer attestation
@@ -717,13 +717,13 @@ jobs:
           BUNDLE_PATH: ${{ steps.attest.outputs.bundle-path }}
         run: install -m 0644 "$BUNDLE_PATH" target/dev-linux/candidate/attestation.json
       - name: Retain Linux developer distribution
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: developer-linux-candidate-${{ github.sha }}
           path: target/dev-linux/candidate/
           if-no-files-found: error
           retention-days: 7
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      - uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: linux-portable-subset-${{ github.sha }}
           path: target/dev-portable-*-applications.json
@@ -736,17 +736,17 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: KirilsTurkins/lsf-checkout@c3024dfac542bb46ebccc7829ddf1f95e0be8da9 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+      - uses: KirilsTurkins/lsf-download-artifact@f073ba9e3801be93f933866d4c9a748e42157e5f # v8.0.2 + upstream changes + LSF security fixes
         with:
           name: windows-portable-subset-${{ github.sha }}
           path: target/windows/
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+      - uses: KirilsTurkins/lsf-download-artifact@f073ba9e3801be93f933866d4c9a748e42157e5f # v8.0.2 + upstream changes + LSF security fixes
         with:
           name: linux-portable-subset-${{ github.sha }}
           path: target/linux/
@@ -756,7 +756,7 @@ jobs:
           for language in rust c java dotnet go typescript; do
             python tools/compare_portable_guest_tests.py --windows "target/windows/dev-portable-$language-applications.json" --linux "target/linux/dev-portable-$language-applications.json" --output "target/$language-differential.json"
           done
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      - uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: portable-differential-${{ github.sha }}
           path: target/*-differential.json
@@ -773,10 +773,10 @@ jobs:
       id-token: write
       attestations: write
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: KirilsTurkins/lsf-checkout@c3024dfac542bb46ebccc7829ddf1f95e0be8da9 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
       - name: Build reviewed image and observed package license inventory
@@ -784,7 +784,7 @@ jobs:
       - name: Attest image candidate without release authority
         if: github.event_name != 'pull_request'
         id: attest
-        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        uses: KirilsTurkins/lsf-attest-build-provenance@16b356100dfe77222eebe783b5e26a565b76055a # v4.2.2 + upstream changes + LSF security fixes
         with:
           subject-path: target/dev-wsl/candidate/SHA256SUMS
       - name: Retain offline image attestation
@@ -792,7 +792,7 @@ jobs:
         env:
           BUNDLE_PATH: ${{ steps.attest.outputs.bundle-path }}
         run: install -m 0644 "$BUNDLE_PATH" target/dev-wsl/candidate/attestation.json
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      - uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: developer-wsl-candidate-${{ github.sha }}
           path: target/dev-wsl/candidate/
@@ -809,14 +809,14 @@ jobs:
       id-token: write
       attestations: write
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: KirilsTurkins/lsf-checkout@c3024dfac542bb46ebccc7829ddf1f95e0be8da9 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+      - uses: KirilsTurkins/lsf-download-artifact@f073ba9e3801be93f933866d4c9a748e42157e5f # v8.0.2 + upstream changes + LSF security fixes
         with:
           name: developer-windows-inputs-${{ github.sha }}
           path: target/windows-input
@@ -825,7 +825,7 @@ jobs:
       - name: Attest Windows candidate without release authority
         if: github.event_name != 'pull_request'
         id: attest
-        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        uses: KirilsTurkins/lsf-attest-build-provenance@16b356100dfe77222eebe783b5e26a565b76055a # v4.2.2 + upstream changes + LSF security fixes
         with:
           subject-path: target/dev-windows/candidate/SHA256SUMS
       - name: Retain offline Windows attestation
@@ -833,7 +833,7 @@ jobs:
         env:
           BUNDLE_PATH: ${{ steps.attest.outputs.bundle-path }}
         run: install -m 0644 "$BUNDLE_PATH" target/dev-windows/candidate/attestation.json
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      - uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: developer-windows-candidate-${{ github.sha }}
           path: target/dev-windows/candidate/
@@ -852,10 +852,10 @@ jobs:
       contents: read
       actions: read
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: KirilsTurkins/lsf-checkout@c3024dfac542bb46ebccc7829ddf1f95e0be8da9 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
       - name: Install the maintained recipe reader dependencies
@@ -864,7 +864,7 @@ jobs:
         run: printf 'LSF_DEV_COMPILER_CACHE=%s\n' "$RUNNER_TEMP/compiler-archives" >> "$GITHUB_ENV"
       - name: Restore untrusted source-pinned Java prepared inputs
         id: java-compiler-cache
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        uses: KirilsTurkins/lsf-cache/restore@2ff27e45011b8bcf31ef566ae84c1c923c8aea69 # v6.1.0 + upstream changes + LSF security fixes
         with:
           path: ${{ runner.temp }}/compiler-archives/java-prepared
           key: java-prepared-compiler-v1-${{ runner.os }}-${{ hashFiles('tools/data/java-compiler-profile.json') }}
@@ -882,11 +882,11 @@ jobs:
               --output target/java-compiler-product/result.json
       - name: Save only reverified Java prepared input bytes
         if: steps.java-compiler-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        uses: KirilsTurkins/lsf-cache/save@2ff27e45011b8bcf31ef566ae84c1c923c8aea69 # v6.1.0 + upstream changes + LSF security fixes
         with:
           path: ${{ runner.temp }}/compiler-archives/java-prepared
           key: ${{ steps.java-compiler-cache.outputs.cache-primary-key }}
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      - uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: java-compiler-product-${{ github.sha }}
           path: target/java-compiler-product/result.json

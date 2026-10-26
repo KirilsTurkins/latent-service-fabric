@@ -23,13 +23,13 @@
     },
     "steps": [
       {
-        "uses": "actions/checkout",
+        "uses": "KirilsTurkins/lsf-checkout",
         "with": {
           "persist-credentials": false
         }
       },
       {
-        "uses": "actions/setup-python",
+        "uses": "KirilsTurkins/lsf-setup-python",
         "with": {
           "python-version": "3.13.5"
         }
@@ -58,7 +58,7 @@
       {
         "name": "Select the website Node runtime for native Windows execution",
         "if": "runner.os == 'Windows'",
-        "uses": "actions/setup-node",
+        "uses": "KirilsTurkins/lsf-setup-node",
         "with": {
           "node-version-file": "website/package.json",
           "package-manager-cache": false
@@ -74,7 +74,7 @@
       {
         "name": "Retain review proposal, not machine settings",
         "if": "always()",
-        "uses": "actions/upload-artifact",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
           "name": "intellij-review-${{ matrix.os }}-${{ github.sha }}",
           "path": "${{ runner.temp }}/intellij-review/",
@@ -87,7 +87,7 @@
   },
   "jobId": "project",
   "kind": "job",
-  "reviewReason": "Retain three-platform metadata/tests and real Windows terminal help; qualify locked website preparation through the unified Python entry and add actual help execution on every host.",
+  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/intellij.yml"
 }

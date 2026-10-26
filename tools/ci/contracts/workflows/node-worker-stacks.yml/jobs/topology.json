@@ -3,21 +3,22 @@
   "before": {},
   "coverage": {},
   "definition": {
+    "name": "Standalone fixed topology capacity and exact byte precharge",
+    "runs-on": "ubuntu-24.04",
+    "timeout-minutes": 25,
     "env": {
       "CARGO_BUILD_JOBS": "2",
       "CARGO_INCREMENTAL": "0",
       "CARGO_PROFILE_DEV_DEBUG": "0",
-      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
-      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
       "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
       "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
       "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
     },
-    "name": "Standalone fixed topology capacity and exact byte precharge",
-    "runs-on": "ubuntu-24.04",
     "steps": [
       {
-        "uses": "actions/checkout",
+        "uses": "KirilsTurkins/lsf-checkout",
         "with": {
           "persist-credentials": false
         }
@@ -27,17 +28,17 @@
       },
       {
         "name": "Restore compiled Rust dependencies",
-        "uses": "Swatinem/rust-cache",
+        "uses": "KirilsTurkins/lsf-rust-cache",
         "with": {
-          "cache-all-crates": false,
-          "cache-bin": false,
-          "cache-on-failure": false,
-          "cache-targets": true,
-          "cache-workspace-crates": false,
-          "key": "ubuntu-24.04",
           "prefix-key": "lsf-ci-dependencies-v2",
-          "save-if": false,
-          "shared-key": "host-correctness"
+          "shared-key": "host-correctness",
+          "key": "ubuntu-24.04",
+          "cache-targets": true,
+          "cache-bin": false,
+          "cache-workspace-crates": false,
+          "cache-all-crates": false,
+          "cache-on-failure": false,
+          "save-if": false
         }
       },
       {
@@ -49,22 +50,21 @@
         "run": "set -o pipefail\ncargo test --locked -p latentd --lib config::tests::defaults_derive_compatible_node_limits_without_creating_storage -- --exact --nocapture --test-threads=1 2>&1 | tee \"$RUNNER_TEMP/standalone-topology-config.log\"\ngrep -F 'test result: ok. 1 passed; 0 failed; 0 ignored;' \"$RUNNER_TEMP/standalone-topology-config.log\"\n"
       },
       {
-        "if": "always()",
         "name": "Retain exact reporter and capacity results",
-        "uses": "actions/upload-artifact",
+        "if": "always()",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
-          "if-no-files-found": "warn",
           "name": "standalone-topology-capacity-${{ github.sha }}",
           "path": "${{ runner.temp }}/standalone-topology.log\n${{ runner.temp }}/standalone-topology-config.log\n",
+          "if-no-files-found": "warn",
           "retention-days": 7
         }
       }
-    ],
-    "timeout-minutes": 25
+    ]
   },
   "jobId": "topology",
   "kind": "job",
-  "reviewReason": "Capture successful counter output after exact named results via --show-output, retaining five required topology cases and config case. No runtime, source selection, bounds or original reference changes.",
+  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/node-worker-stacks.yml"
 }

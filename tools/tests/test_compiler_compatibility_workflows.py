@@ -24,7 +24,7 @@ def original_workflow(test):
         test.assertEqual(paths.count(name), 1); paths.remove(name)
     # All original jobs, setup, argv, artifacts and scheduling remain exact.
     test.assertEqual(hashlib.sha256(json.dumps(restored, sort_keys=True, separators=(',', ':')).encode()).hexdigest(),
-        '3cbf457afdae7956d7de0c2fd5f55d54c1647fbebf79f731f39552e879f813f2')
+        'e08841e2ab6a566fb167612a3c5d99094221708610acdb349a8d26230954c07a')
     return restored
 
 
@@ -33,9 +33,9 @@ class CompilerWorkflow(unittest.TestCase):
         # Frozen source checkpoint e2f791; no inherited job selectors, commands
         # or whole-workflow restoration fixtures are edited for this feature.
         expected = {
-            '.github/workflows/java-resource-runtime.yml': 'c4d18427c3e097147c7288db18c594fb002d0e9d1fb33232d8ef0e7e7d195f4d',
-            '.github/workflows/dotnet-resource-runtime.yml': 'da03d35554ebc1bb71bd606b86b7d8cd90ac92a0b2fbd4439439098b1ede644e',
-            'tools/tests/test_resource_late_workflows.py': 'a4a55e0ed4392f3992e3f12504d36bdff5c7daf4a59f956b7fdbc90b335cb921',
+            '.github/workflows/java-resource-runtime.yml': 'b0318036da35e36efcfa4a4b1c3b8c3472307f977793ed5ffebdd5e6e49993e8',
+            '.github/workflows/dotnet-resource-runtime.yml': 'ce558e68dcc865806c2175874f3d266678dbd8a64abc6d5d463df1fcfc321c1a',
+            'tools/tests/test_resource_late_workflows.py': '822370bbba7a0c27ecf85f8981a54f3914589d0c1ef51da57f1ae0231a9b3b2c',
         }
         for name, sha in expected.items(): self.assertEqual(hashlib.sha256(read_file(ROOT/name)).hexdigest(), sha, name)
         workflow = original_workflow(self)
@@ -103,7 +103,7 @@ class CompilerWorkflow(unittest.TestCase):
         self.assertEqual(retained['env'], {'GH_TOKEN': '${{ github.token }}'})
         self.assertEqual(retained['timeout-minutes'], 10)
         for step in steps:
-            if step.get('uses', '').startswith('actions/setup-dotnet@') or 'install-tools' in step.get('run', ''):
+            if step.get('uses', '').startswith('KirilsTurkins/lsf-setup-dotnet@') or 'install-tools' in step.get('run', ''):
                 if 'dotnet' in str(step): self.assertIn('!matrix.retained', step['if'])
         admission = next(step for step in steps if step.get('id') == 'public')
         self.assertEqual(admission['if'], 'always()')

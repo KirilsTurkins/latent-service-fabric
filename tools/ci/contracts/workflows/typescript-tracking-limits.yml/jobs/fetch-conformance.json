@@ -4,32 +4,33 @@
   "coverage": {},
   "definition": {
     "name": "Signed independent task queue native timer and memory boundaries",
-    "permissions": {
-      "actions": "read",
-      "contents": "read"
-    },
     "runs-on": "ubuntu-24.04",
+    "timeout-minutes": 20,
+    "permissions": {
+      "contents": "read",
+      "actions": "read"
+    },
     "steps": [
       {
-        "uses": "actions/checkout",
+        "uses": "KirilsTurkins/lsf-checkout",
         "with": {
           "persist-credentials": false
         }
       },
       {
-        "uses": "actions/setup-python",
+        "uses": "KirilsTurkins/lsf-setup-python",
         "with": {
           "python-version": "3.13.5"
         }
       },
       {
-        "uses": "actions/setup-node",
+        "uses": "KirilsTurkins/lsf-setup-node",
         "with": {
           "node-version": "24.19.0"
         }
       },
       {
-        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "uses": "KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup",
         "with": {
           "version": "1.254.0"
         }
@@ -55,10 +56,10 @@
         "run": "git fetch --no-tags --depth=1 origin 357eecbd7744bbc026741d241b679966d14b0e95"
       },
       {
+        "name": "Acquire successful tracking engine jobs and exact native products",
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
-        "name": "Acquire successful tracking engine jobs and exact native products",
         "run": "python3 -B tools/typescript_tracking_replay_inputs.py --output \"$RUNNER_TEMP/runtime-limits-original\""
       },
       {
@@ -66,22 +67,21 @@
         "run": "python3 -B tools/qualify_typescript_runtime_limits.py --tracking-retirement --acquired \"$RUNNER_TEMP/runtime-limits-original\" --tools \"$RUNNER_TEMP/runtime-limits-tools\" --output \"$RUNNER_TEMP/runtime-limits\""
       },
       {
-        "if": "always()",
         "name": "Retain exact source compiler results real contacts and physical ownership",
-        "uses": "actions/upload-artifact",
+        "if": "always()",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
-          "if-no-files-found": "warn",
           "name": "typescript-tracking-limits-${{ github.sha }}",
           "path": "${{ runner.temp }}/runtime-limits-original/acquisition.json\n${{ runner.temp }}/runtime-limits-original/native/*.json\n${{ runner.temp }}/runtime-limits/*.json\n${{ runner.temp }}/runtime-limits/build/*.json\n${{ runner.temp }}/runtime-limits/build/*.wit\n${{ runner.temp }}/runtime-limits/build/component.wasm\n${{ runner.temp }}/runtime-limits/build/package/**\n${{ runner.temp }}/runtime-limits/build/logs/\n${{ runner.temp }}/runtime-limits/node/*.json\n${{ runner.temp }}/runtime-limits/node/*/*.json\n${{ runner.temp }}/runtime-limits/node/*/controls/\n",
+          "if-no-files-found": "warn",
           "retention-days": 7
         }
       }
-    ],
-    "timeout-minutes": 20
+    ]
   },
   "jobId": "fetch-conformance",
   "kind": "job",
-  "reviewReason": "Review bounded tracking-engine reuse, immutable successful producer jobs and exact native artifacts; preserve every original five-profile limit and all refusal/retirement oracles. Add adverse provenance controls without changing existing cases or guards.",
+  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-tracking-limits.yml"
 }

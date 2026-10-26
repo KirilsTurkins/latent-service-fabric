@@ -5,21 +5,22 @@
   "definition": {
     "if": "${{ github.event_name == 'workflow_dispatch' && inputs.replay-entropy-authority && !inputs.qualify-entropy-retained && !inputs.entropy-only }}",
     "name": "Same-component Go entropy explicit authority and retirement",
-    "permissions": {
-      "actions": "read",
-      "contents": "read"
-    },
     "runs-on": "ubuntu-24.04",
+    "timeout-minutes": 20,
+    "permissions": {
+      "contents": "read",
+      "actions": "read"
+    },
     "steps": [
       {
-        "uses": "actions/checkout",
+        "uses": "KirilsTurkins/lsf-checkout",
         "with": {
-          "fetch-depth": 0,
-          "persist-credentials": false
+          "persist-credentials": false,
+          "fetch-depth": 0
         }
       },
       {
-        "uses": "actions/setup-python",
+        "uses": "KirilsTurkins/lsf-setup-python",
         "with": {
           "python-version": "3.13.5"
         }
@@ -33,34 +34,33 @@
         "run": "python3 -B -m unittest tools.tests.test_go_standard_entropy tools.tests.test_go_entropy_replay -v"
       },
       {
+        "name": "Read fixed original public documents and binary products",
+        "timeout-minutes": 5,
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
-        "name": "Read fixed original public documents and binary products",
-        "run": "python3 -B tools/go_entropy_replay_inputs.py --output \"$RUNNER_TEMP/go-entropy-original-inputs\"",
-        "timeout-minutes": 5
+        "run": "python3 -B tools/go_entropy_replay_inputs.py --output \"$RUNNER_TEMP/go-entropy-original-inputs\""
       },
       {
         "name": "Re-sign unchanged component and repeat all original and entropy outcomes",
         "run": "python3 -B tools/replay_go_standard_entropy.py --acquired \"$RUNNER_TEMP/go-entropy-original-inputs\" --output \"$RUNNER_TEMP/go-entropy-authority-replay\""
       },
       {
-        "if": "always()",
         "name": "Retain bounded same-component source and signed observations",
-        "uses": "actions/upload-artifact",
+        "if": "always()",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
-          "if-no-files-found": "warn",
           "name": "go-entropy-authority-replay-${{ github.sha }}",
           "path": "${{ runner.temp }}/go-entropy-original-inputs/acquisition.json\n${{ runner.temp }}/go-entropy-original-inputs/acquisition-failure.json\n${{ runner.temp }}/go-entropy-authority-replay/qualification.json\n${{ runner.temp }}/go-entropy-authority-replay/FAILED.json\n${{ runner.temp }}/go-entropy-authority-replay/node/workflow.json\n${{ runner.temp }}/go-entropy-authority-replay/node/FAILED.json\n${{ runner.temp }}/go-entropy-authority-replay/node/controls/*.json\n",
+          "if-no-files-found": "warn",
           "retention-days": 7
         }
       }
-    ],
-    "timeout-minutes": 20
+    ]
   },
   "jobId": "entropy-authority-replay",
   "kind": "job",
-  "reviewReason": "Review exact selected-five historical binary checks (unselected Go probe metadata remains unexecuted) and retry-only entropy selector preserving prior CPU/native15 proof and all original commands.",
+  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml"
 }

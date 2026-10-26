@@ -7,15 +7,16 @@
     "name": "Signed Rust unsupported operation diagnostics",
     "needs": "authoring",
     "runs-on": "ubuntu-24.04",
+    "timeout-minutes": 20,
     "steps": [
       {
-        "uses": "actions/checkout",
+        "uses": "KirilsTurkins/lsf-checkout",
         "with": {
           "persist-credentials": false
         }
       },
       {
-        "uses": "actions/setup-python",
+        "uses": "KirilsTurkins/lsf-setup-python",
         "with": {
           "python-version": "3.13.5"
         }
@@ -27,13 +28,13 @@
         }
       },
       {
-        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "uses": "KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup",
         "with": {
           "version": "1.254.0"
         }
       },
       {
-        "uses": "mlugg/setup-zig",
+        "uses": "KirilsTurkins/lsf-setup-zig",
         "with": {
           "version": "0.16.0"
         }
@@ -44,7 +45,7 @@
       },
       {
         "name": "Read only this run's identity-checked existing native products",
-        "uses": "actions/download-artifact",
+        "uses": "KirilsTurkins/lsf-download-artifact",
         "with": {
           "name": "rust-git-prepared-${{ github.sha }}",
           "path": "${{ runner.temp }}/rust-compatibility-prepared"
@@ -59,22 +60,21 @@
         "run": "python3 tools/qualify_rust_compatibility.py --prepared-qualification \"$RUNNER_TEMP/rust-compatibility-prepared\" --output \"$RUNNER_TEMP/rust-compatibility\""
       },
       {
-        "if": "always()",
         "name": "Retain bounded diagnostic evidence including failures",
-        "uses": "actions/upload-artifact",
+        "if": "always()",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
-          "if-no-files-found": "warn",
           "name": "rust-compatibility-${{ github.sha }}",
           "path": "${{ runner.temp }}/rust-compatibility/qualification.json\n${{ runner.temp }}/rust-compatibility/FAILED.json\n${{ runner.temp }}/rust-compatibility/capture.json\n${{ runner.temp }}/rust-compatibility/compatibility-execution-report.json\n${{ runner.temp }}/rust-compatibility/logs/**\n${{ runner.temp }}/rust-compatibility/build/*.json\n${{ runner.temp }}/rust-compatibility/build/logs/**\n${{ runner.temp }}/rust-compatibility/build/component.wasm\n${{ runner.temp }}/rust-compatibility/build/component.wit\n${{ runner.temp }}/rust-compatibility/node/workflow.json\n${{ runner.temp }}/rust-compatibility/node/FAILED.json\n",
+          "if-no-files-found": "warn",
           "retention-days": 3
         }
       }
-    ],
-    "timeout-minutes": 20
+    ]
   },
   "jobId": "compatibility",
   "kind": "job",
-  "reviewReason": "Fix actual scratch offline-cache miss with bounded owned-manifest locked data-only fetch and unchanged source/ offline compile; add exact historical38 normal replay20min, preserve all9 original job bodies/default execution.",
+  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-capsule-authoring.yml"
 }

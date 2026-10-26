@@ -16,13 +16,13 @@ jobs:
     env:
       PYTHONDONTWRITEBYTECODE: '1'
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: KirilsTurkins/lsf-checkout@c3024dfac542bb46ebccc7829ddf1f95e0be8da9 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
-      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v5.0.0
+      - uses: KirilsTurkins/lsf-setup-java@f041d6677134ada73c077d0c012bd78164b251a7 # v6.1.0 + upstream changes + LSF security fixes
         with:
           distribution: temurin
           java-version: 25.0.4+101.0.LTS
@@ -32,7 +32,7 @@ jobs:
           python3 -B tools/qualify_java_checkpoint_context.py --output "$RUNNER_TEMP/checkpoint-context"
       - name: Retain bounded original and corrected compiler observations
         if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: java-checkpoint-context-${{ github.sha }}
           retention-days: 3

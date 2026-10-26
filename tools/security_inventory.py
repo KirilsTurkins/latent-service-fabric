@@ -334,10 +334,15 @@ def inventory(repo: Path, policy: Path = POLICY) -> tuple[list[Package], list[di
         covered.add(path)
     discovered = {path for path in paths if is_manifest(path)}
     require(discovered == covered, "unreviewed-or-missing-dependency-manifest")
+    from tools.security_actions import verify as verify_actions
+    records.extend(verify_actions(repo, paths))
     control_path = "controls/.github/security/requirements.txt"
     control_packages = pypi_packages(policy, "requirements.txt")
     packages.extend(Package(item.ecosystem, item.name, item.version, control_path) for item in control_packages)
     records.append({"path": control_path, "coverage": "OSV-scanner-controls", "packages": len(control_packages),
                     "sha256": digest(read_file(policy, "requirements.txt"))})
-    require(0 < len(packages) <= 5000, "sdk-package-count-limit")
+    # Preserve the original repository-graph ceiling; audited external action
+    # graphs have their own identical per-scan ceiling and a bounded total.
+    require(0 < sum(not item.path.startswith(".github/security/actions/") for item in packages) <= 5000
+            and len(packages) <= 20000, "sdk-package-count-limit")
     return sorted(set(packages)), records

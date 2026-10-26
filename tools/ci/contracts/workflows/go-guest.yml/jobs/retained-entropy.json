@@ -3,22 +3,23 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "if": "${{ github.event_name == 'workflow_dispatch' && inputs.qualify-entropy-retained && !inputs.replay-entropy-authority }}",
     "name": "Current ordinary host normal27 and freshly compiled entropy43",
+    "timeout-minutes": 35,
+    "if": "${{ github.event_name == 'workflow_dispatch' && inputs.qualify-entropy-retained && !inputs.replay-entropy-authority }}",
     "permissions": {
-      "actions": "read",
-      "contents": "read"
+      "contents": "read",
+      "actions": "read"
     },
     "runs-on": "ubuntu-24.04",
     "steps": [
       {
-        "uses": "actions/checkout",
+        "uses": "KirilsTurkins/lsf-checkout",
         "with": {
           "persist-credentials": false
         }
       },
       {
-        "uses": "actions/setup-python",
+        "uses": "KirilsTurkins/lsf-setup-python",
         "with": {
           "python-version": "3.13.5"
         }
@@ -28,21 +29,21 @@
       },
       {
         "name": "Restore only locked dependency compilation cache",
-        "uses": "Swatinem/rust-cache",
+        "uses": "KirilsTurkins/lsf-rust-cache",
         "with": {
-          "cache-all-crates": false,
-          "cache-bin": false,
-          "cache-on-failure": false,
-          "cache-targets": true,
-          "cache-workspace-crates": false,
-          "key": "ubuntu-24.04",
           "prefix-key": "lsf-ci-dependencies-v2",
-          "save-if": false,
-          "shared-key": "host-correctness"
+          "shared-key": "host-correctness",
+          "key": "ubuntu-24.04",
+          "cache-targets": true,
+          "cache-bin": false,
+          "cache-workspace-crates": false,
+          "cache-all-crates": false,
+          "cache-on-failure": false,
+          "save-if": false
         }
       },
       {
-        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "uses": "KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup",
         "with": {
           "version": "1.254.0"
         }
@@ -57,12 +58,12 @@
       },
       {
         "name": "Read original pinned compiler and generator from the failed owning run",
-        "uses": "actions/download-artifact",
+        "uses": "KirilsTurkins/lsf-download-artifact",
         "with": {
-          "github-token": "${{ github.token }}",
           "name": "go-guest-tools-72e693bc25fe269bb584feaaf4b7270fa81647df",
-          "path": "${{ runner.temp }}/go-entropy-tools",
-          "run-id": 39310234677
+          "run-id": 39310234677,
+          "github-token": "${{ github.token }}",
+          "path": "${{ runner.temp }}/go-entropy-tools"
         }
       },
       {
@@ -70,34 +71,33 @@
         "run": "set -euo pipefail\nout=\"$RUNNER_TEMP/go-entropy-tools\"\necho \"ecbadb99091a3f46e31f5f934b068b1864eafa7995211b39eaddf76996045fe5  $out/go.tar.gz\" | sha256sum --check --strict\nmv \"$out/go.tar.gz\" \"$out/go1.27.2-historical.tar.gz\"\ncurl --fail --location --proto '=https' --tlsv1.2 --max-time 180 --output \"$out/go.tar.gz\" https://dl.google.com/go/go1.27.3.linux-amd64.tar.gz\necho \"65efbc80fdc1fa2cd2631cad5b481777a68e8725f34e89f50fc6ac714e379b40  $out/go.tar.gz\" | sha256sum --check --strict\npython3 -B -c 'import os; from pathlib import Path; from tools.qualify_go_entropy_retained import compiler_inputs; compiler_inputs(Path(os.environ[\"RUNNER_TEMP\"])/\"go-entropy-tools\")'\ntest \"$(\"$out/componentize-go\" --version)\" = 'componentize-go 0.4.3'\ntar -xzf \"$out/go.tar.gz\" -C \"$out\"\npython3 -B tools/go_guest/runtime.py --prepare-compiler \"$out/go\" --output \"$out/go-async\"\necho \"$out\" >> \"$GITHUB_PATH\"\necho \"$out/go-async/bin\" >> \"$GITHUB_PATH\"\n"
       },
       {
+        "name": "Read only authenticated original public packages and native products",
+        "timeout-minutes": 5,
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
-        "name": "Read only authenticated original public packages and native products",
-        "run": "python3 -B tools/go_entropy_replay_inputs.py --include-normal-greeting --output \"$RUNNER_TEMP/go-entropy-retained-inputs\"",
-        "timeout-minutes": 5
+        "run": "python3 -B tools/go_entropy_replay_inputs.py --include-normal-greeting --output \"$RUNNER_TEMP/go-entropy-retained-inputs\""
       },
       {
         "name": "Build current ordinary host once then sign and execute normal27 and fresh entropy43",
         "run": "python3 -B tools/qualify_go_entropy_retained.py --acquired \"$RUNNER_TEMP/go-entropy-retained-inputs\" --output \"$RUNNER_TEMP/go-entropy-retained\""
       },
       {
-        "if": "always()",
         "name": "Retain distinct historical inputs current host fresh component and signed observations",
-        "uses": "actions/upload-artifact",
+        "if": "always()",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
-          "if-no-files-found": "warn",
           "name": "go-entropy-retained-${{ github.sha }}",
           "path": "${{ runner.temp }}/go-entropy-retained-inputs/acquisition*.json\n${{ runner.temp }}/go-entropy-retained/qualification.json\n${{ runner.temp }}/go-entropy-retained/FAILED.json\n${{ runner.temp }}/go-entropy-retained/current-host.json\n${{ runner.temp }}/go-entropy-retained/current-latentd\n${{ runner.temp }}/go-entropy-retained/capture.json\n${{ runner.temp }}/go-entropy-retained/build/*.json\n${{ runner.temp }}/go-entropy-retained/build/component.wasm\n${{ runner.temp }}/go-entropy-retained/logs/**\n${{ runner.temp }}/go-entropy-retained/node-normal/workflow.json\n${{ runner.temp }}/go-entropy-retained/node-normal/FAILED.json\n${{ runner.temp }}/go-entropy-retained/node-normal/controls/*.json\n${{ runner.temp }}/go-entropy-retained/node-entropy/workflow.json\n${{ runner.temp }}/go-entropy-retained/node-entropy/FAILED.json\n${{ runner.temp }}/go-entropy-retained/node-entropy/controls/*.json\n",
+          "if-no-files-found": "warn",
           "retention-days": 7
         }
       }
-    ],
-    "timeout-minutes": 35
+    ]
   },
   "jobId": "retained-entropy",
   "kind": "job",
-  "reviewReason": "Fix actual current CI failures: Go 1.27.3 official security patch and archive digest; preserve every original test, command, guard, coverage and bound. All 27 pinned Go overlay files are byte-identical in the official source archive. Preserve historical diagnostics and compiler receipts. Retained entropy authenticates its old compiler before acquiring the separately pinned patched compiler.",
+  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml"
 }

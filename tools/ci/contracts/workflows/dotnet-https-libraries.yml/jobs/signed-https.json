@@ -5,15 +5,16 @@
   "definition": {
     "name": "Original Flurl Refit component with real TLS trust and cancellation",
     "runs-on": "ubuntu-24.04",
+    "timeout-minutes": 20,
     "steps": [
       {
-        "uses": "actions/checkout",
+        "uses": "KirilsTurkins/lsf-checkout",
         "with": {
           "persist-credentials": false
         }
       },
       {
-        "uses": "actions/setup-python",
+        "uses": "KirilsTurkins/lsf-setup-python",
         "with": {
           "python-version": "3.13.5"
         }
@@ -31,36 +32,35 @@
         "run": "python3 -B -m unittest tools.tests.test_dotnet_published_http_replay tools.tests.test_sdk_native_products_reader tools.tests.test_http_tls_peer -v"
       },
       {
+        "name": "Authenticate five original native products without rebuilding",
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
-        "name": "Authenticate five original native products without rebuilding",
         "run": "python3 -B tools/wait_runtime_native_products.py --output \"$RUNNER_TEMP/https-native\""
       },
       {
+        "name": "Execute fifteen ordinary library outcomes on independent TLS nodes",
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
-        "name": "Execute fifteen ordinary library outcomes on independent TLS nodes",
         "run": "python3 -B tools/qualify_dotnet_https_libraries.py --native \"$RUNNER_TEMP/https-native\" --output \"$RUNNER_TEMP/https-libraries\""
       },
       {
-        "if": "always()",
         "name": "Retain public ancestry certificates and actual signed outcomes",
-        "uses": "actions/upload-artifact",
+        "if": "always()",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
-          "if-no-files-found": "warn",
           "name": "dotnet-https-libraries-${{ github.sha }}",
-          "path": "${{ runner.temp }}/https-native/*.json\n${{ runner.temp }}/https-libraries/*.json\n${{ runner.temp }}/https-libraries/node/*.json\n${{ runner.temp }}/https-libraries/node/*/*.json\n${{ runner.temp }}/https-libraries/node/*/*.der\n${{ runner.temp }}/https-libraries/node/*/controls/*.json\n${{ runner.temp }}/https-libraries/original/published-http/FAILED.json\n${{ runner.temp }}/https-libraries/original/published-http/catalogue-free-source.json\n${{ runner.temp }}/https-libraries/original/published-http/node/FAILED.json\n${{ runner.temp }}/https-libraries/original/published-http/build/*.json\n",
-          "retention-days": 3
+          "retention-days": 3,
+          "if-no-files-found": "warn",
+          "path": "${{ runner.temp }}/https-native/*.json\n${{ runner.temp }}/https-libraries/*.json\n${{ runner.temp }}/https-libraries/node/*.json\n${{ runner.temp }}/https-libraries/node/*/*.json\n${{ runner.temp }}/https-libraries/node/*/*.der\n${{ runner.temp }}/https-libraries/node/*/controls/*.json\n${{ runner.temp }}/https-libraries/original/published-http/FAILED.json\n${{ runner.temp }}/https-libraries/original/published-http/catalogue-free-source.json\n${{ runner.temp }}/https-libraries/original/published-http/node/FAILED.json\n${{ runner.temp }}/https-libraries/original/published-http/build/*.json\n"
         }
       }
-    ],
-    "timeout-minutes": 20
+    ]
   },
   "jobId": "signed-https",
   "kind": "job",
-  "reviewReason": "Explicit cosmetic command-label rename review: original step body/argv/env/order/job deadline are byte-equivalent; remove misleading3-node label after selecting5 independent nodes. No executable command, job or test removed/replaced. All15 outcomes, source guards and originalcaps retained.",
+  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-https-libraries.yml"
 }

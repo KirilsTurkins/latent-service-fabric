@@ -13,13 +13,13 @@
     "timeout-minutes": 20,
     "steps": [
       {
-        "uses": "actions/checkout",
+        "uses": "KirilsTurkins/lsf-checkout",
         "with": {
           "persist-credentials": false
         }
       },
       {
-        "uses": "actions/setup-python",
+        "uses": "KirilsTurkins/lsf-setup-python",
         "with": {
           "python-version": "3.13.5"
         }
@@ -45,7 +45,7 @@
       {
         "name": "Retain exact host dependency, discovery and timing receipts",
         "if": "always()",
-        "uses": "actions/upload-artifact",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
           "name": "ci-host-correctness-${{ github.sha }}",
           "path": "${{ runner.temp }}/ci-fast/",
@@ -57,7 +57,7 @@
   },
   "jobId": "fast",
   "kind": "job",
-  "reviewReason": "Preserve current full state renderer and actual narrow workflow selection, every historical command and all limits/artifacts.",
+  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/ci.yml"
 }

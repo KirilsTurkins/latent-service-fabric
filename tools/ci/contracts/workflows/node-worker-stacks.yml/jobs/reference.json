@@ -5,15 +5,16 @@
   "definition": {
     "name": "Exact node worker stack and physical-thread reference",
     "runs-on": "ubuntu-24.04",
+    "timeout-minutes": 25,
     "steps": [
       {
-        "uses": "actions/checkout",
+        "uses": "KirilsTurkins/lsf-checkout",
         "with": {
           "persist-credentials": false
         }
       },
       {
-        "uses": "actions/setup-python",
+        "uses": "KirilsTurkins/lsf-setup-python",
         "with": {
           "python-version": "3.13.5"
         }
@@ -30,22 +31,21 @@
         "run": "python3 tools/qualify_node_worker_stacks.py --source-commit \"${{ github.sha }}\" --output \"$RUNNER_TEMP/node-worker-stack-reference\""
       },
       {
-        "if": "always()",
         "name": "Retain finite numeric stack evidence and bounded compiler failures",
-        "uses": "actions/upload-artifact",
+        "if": "always()",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
-          "if-no-files-found": "warn",
           "name": "node-worker-stack-reference-${{ github.sha }}",
           "path": "${{ runner.temp }}/node-worker-stack-reference/receipt.json\n${{ runner.temp }}/node-worker-stack-reference/*-build.stderr.log\n${{ runner.temp }}/node-worker-stack-reference/*-run.stdout.log\n${{ runner.temp }}/node-worker-stack-reference/*-run.stderr.log\n${{ runner.temp }}/node-worker-stack-reference/new-list.stdout.log\n${{ runner.temp }}/node-worker-stack-reference/new-ignored.stdout.log\n",
+          "if-no-files-found": "warn",
           "retention-days": 7
         }
       }
-    ],
-    "timeout-minutes": 25
+    ]
   },
   "jobId": "reference",
   "kind": "job",
-  "reviewReason": "One checked standalone worker/stack profile fixes the two-blocking-worker topology undercount and ambient native stack default; exact-source small Linux mapping/timeout reference, all prior limits and cases preserved; no full-node/TLS/kernel qualification",
+  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/node-worker-stacks.yml"
 }

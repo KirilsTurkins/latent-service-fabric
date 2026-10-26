@@ -5,15 +5,16 @@
   "definition": {
     "name": "Actual frozen operator and native277 configuration checks",
     "runs-on": "ubuntu-24.04",
+    "timeout-minutes": 10,
     "steps": [
       {
-        "uses": "actions/checkout",
+        "uses": "KirilsTurkins/lsf-checkout",
         "with": {
           "persist-credentials": false
         }
       },
       {
-        "uses": "actions/setup-python",
+        "uses": "KirilsTurkins/lsf-setup-python",
         "with": {
           "python-version": "3.13.5"
         }
@@ -27,29 +28,28 @@
         "run": "python -S -B -m unittest tools.tests.test_stream_operator_node"
       },
       {
+        "name": "Reuse authenticated products and observe actual configuration-only refusals",
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
-        "name": "Reuse authenticated products and observe actual configuration-only refusals",
         "run": "python -S -B tools/qualify_stream_operator_node.py --output target/stream-operator-node-check"
       },
       {
-        "if": "always()",
         "name": "Retain only redacted public configuration outcomes",
-        "uses": "actions/upload-artifact",
+        "if": "always()",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
-          "if-no-files-found": "error",
           "name": "stream-operator-node-check-${{ github.sha }}",
           "path": "target/stream-operator-node-check/result.json",
+          "if-no-files-found": "error",
           "retention-days": 7
         }
       }
-    ],
-    "timeout-minutes": 10
+    ]
   },
   "jobId": "node-check",
   "kind": "job",
-  "reviewReason": "Ten-minute immutable-product reuse observes a complete valid baseline then explicit compiled-profile and protected-input refusals, retains only redacted outcomes and never installs a provider or publishes private candidate inputs.",
+  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/stream-operator-node-check.yml"
 }

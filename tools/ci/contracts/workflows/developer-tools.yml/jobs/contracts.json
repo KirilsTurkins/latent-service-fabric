@@ -5,16 +5,26 @@
   "definition": {
     "if": "${{ !inputs.java_compiler_product && (github.event_name != 'pull_request' || !startsWith(github.head_ref, 'feat/559-') || github.event.pull_request.head.repo.full_name != github.repository) }}",
     "name": "Developer controller contracts (${{ matrix.os }})",
+    "strategy": {
+      "fail-fast": false,
+      "matrix": {
+        "os": [
+          "ubuntu-24.04",
+          "windows-2025"
+        ]
+      }
+    },
     "runs-on": "${{ matrix.os }}",
+    "timeout-minutes": 10,
     "steps": [
       {
-        "uses": "actions/checkout",
+        "uses": "KirilsTurkins/lsf-checkout",
         "with": {
           "persist-credentials": false
         }
       },
       {
-        "uses": "actions/setup-python",
+        "uses": "KirilsTurkins/lsf-setup-python",
         "with": {
           "python-version": "3.13.5"
         }
@@ -47,21 +57,11 @@
         "name": "Exercise explicit captured Java processor boundaries",
         "run": "python -m unittest tools.tests.test_java_annotation_processors"
       }
-    ],
-    "strategy": {
-      "fail-fast": false,
-      "matrix": {
-        "os": [
-          "ubuntu-24.04",
-          "windows-2025"
-        ]
-      }
-    },
-    "timeout-minutes": 10
+    ]
   },
   "jobId": "contracts",
   "kind": "job",
-  "reviewReason": "Gate only the new closed manual compiler-product mode; all existing commands remain unchanged.",
+  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/developer-tools.yml"
 }

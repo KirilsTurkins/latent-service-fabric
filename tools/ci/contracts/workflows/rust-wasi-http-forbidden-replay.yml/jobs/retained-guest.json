@@ -3,21 +3,22 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "env": {
-      "PRESSURE_OBSERVATION_ONLY": "${{ github.ref_name == 'diag/rust-wasi-http-capacity-observation-20261021' }}",
-      "PYTHONDONTWRITEBYTECODE": "1"
-    },
     "name": "Authenticate the original compiled guest and execute only its full node programme",
     "runs-on": "ubuntu-24.04",
+    "timeout-minutes": 20,
+    "env": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PRESSURE_OBSERVATION_ONLY": "${{ github.ref_name == 'diag/rust-wasi-http-capacity-observation-20261021' }}"
+    },
     "steps": [
       {
-        "uses": "actions/checkout",
+        "uses": "KirilsTurkins/lsf-checkout",
         "with": {
           "persist-credentials": false
         }
       },
       {
-        "uses": "actions/setup-python",
+        "uses": "KirilsTurkins/lsf-setup-python",
         "with": {
           "python-version": "3.13.5"
         }
@@ -36,45 +37,44 @@
       },
       {
         "name": "Restore only the fixed original public compiled-guest artifact",
-        "uses": "actions/download-artifact",
+        "uses": "KirilsTurkins/lsf-download-artifact",
         "with": {
-          "github-token": "${{ github.token }}",
           "name": "rust-wasi-http-runtime-88b3c9c1d305eb8e308a7187600f782163bc6131",
-          "path": "${{ runner.temp }}/rust-http-original",
-          "run-id": "39623507324"
+          "run-id": "39623507324",
+          "github-token": "${{ github.token }}",
+          "path": "${{ runner.temp }}/rust-http-original"
         }
       },
       {
+        "name": "Authenticate unchanged original native products without another host build",
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
-        "name": "Authenticate unchanged original native products without another host build",
         "run": "python3 -B tools/activation_stack_native_products.py --output \"$RUNNER_TEMP/rust-http-native\""
       },
       {
+        "name": "Re-sign the original component for its full programme or nonqualifying pressure observation",
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
-        "name": "Re-sign the original component for its full programme or nonqualifying pressure observation",
         "run": "case \"$PRESSURE_OBSERVATION_ONLY\" in\n  true) selection=(--pressure-observation-only) ;;\n  false) selection=() ;;\n  *) exit 2 ;;\nesac\npython3 -B tools/replay_rust_wasi_http_forbidden_runtime.py \\\n  --original-artifact \"$RUNNER_TEMP/rust-http-original\" \\\n  --native-products \"$RUNNER_TEMP/rust-http-native\" \\\n  --output \"$RUNNER_TEMP/rust-http-node-replay\" \"${selection[@]}\"\n"
       },
       {
-        "if": "always()",
         "name": "Retain exact ancestry and bounded public invocation and cleanup observations",
-        "uses": "actions/upload-artifact",
+        "if": "always()",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
-          "if-no-files-found": "warn",
           "name": "rust-wasi-http-forbidden-node-replay-${{ github.sha }}",
           "path": "${{ runner.temp }}/rust-http-node-replay/*.json\n${{ runner.temp }}/rust-http-node-replay/build/*.json\n${{ runner.temp }}/rust-http-node-replay/build/*.wasm\n${{ runner.temp }}/rust-http-node-replay/build/wit/**\n${{ runner.temp }}/rust-http-node-replay/node/*.json\n${{ runner.temp }}/rust-http-node-replay/node/examples-controls/*.json\n${{ runner.temp }}/rust-http-node-replay/node/foreign-controls/*.json\n${{ runner.temp }}/rust-http-node-replay/node/provider-absence/*.json\n${{ runner.temp }}/rust-http-node-replay/node/provider-absence/controls/*.json\n${{ runner.temp }}/rust-http-native/*.json\n",
+          "if-no-files-found": "warn",
           "retention-days": 3
         }
       }
-    ],
-    "timeout-minutes": 20
+    ]
   },
   "jobId": "retained-guest",
   "kind": "job",
-  "reviewReason": "Parent reviewed one nonqualifying original Golem pressure observation to retain actual peer counts before the unchanged contact assertion; original branch64 default, component/backend/native identities, budgets and retirement predicates preserved.",
+  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-wasi-http-forbidden-replay.yml"
 }

@@ -3,9 +3,6 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "env": {
-      "PYTHONDONTWRITEBYTECODE": "1"
-    },
     "name": "Finite signed default Fetch and one-shot JSON bodies",
     "needs": [
       "boundary",
@@ -14,27 +11,31 @@
       "fetch-component"
     ],
     "runs-on": "ubuntu-24.04",
+    "timeout-minutes": 25,
+    "env": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
     "steps": [
       {
-        "uses": "actions/checkout",
+        "uses": "KirilsTurkins/lsf-checkout",
         "with": {
           "persist-credentials": false
         }
       },
       {
-        "uses": "actions/setup-python",
+        "uses": "KirilsTurkins/lsf-setup-python",
         "with": {
           "python-version": "3.13.5"
         }
       },
       {
-        "uses": "actions/setup-node",
+        "uses": "KirilsTurkins/lsf-setup-node",
         "with": {
           "node-version": "24.19.0"
         }
       },
       {
-        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "uses": "KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup",
         "with": {
           "version": "1.254.0"
         }
@@ -65,7 +66,7 @@
       },
       {
         "name": "Read the existing native qualification from this exact run",
-        "uses": "actions/download-artifact",
+        "uses": "KirilsTurkins/lsf-download-artifact",
         "with": {
           "name": "typescript-fetch-native-input-${{ github.sha }}",
           "path": "${{ runner.temp }}/typescript-signed-fetch-native"
@@ -73,7 +74,7 @@
       },
       {
         "name": "Read the source compiler from this exact run",
-        "uses": "actions/download-artifact",
+        "uses": "KirilsTurkins/lsf-download-artifact",
         "with": {
           "name": "typescript-source-splicer-input-${{ github.sha }}",
           "path": "${{ runner.temp }}/typescript-signed-fetch-splicer"
@@ -81,7 +82,7 @@
       },
       {
         "name": "Read the actual import engine from this exact run",
-        "uses": "actions/download-artifact",
+        "uses": "KirilsTurkins/lsf-download-artifact",
         "with": {
           "name": "typescript-fetch-engine-input-${{ github.sha }}",
           "path": "${{ runner.temp }}/typescript-signed-fetch-engine"
@@ -92,22 +93,21 @@
         "run": "python3 tools/qualify_typescript_fetch_runtime.py --tools \"$RUNNER_TEMP/typescript-signed-fetch-tools\" --engine \"$RUNNER_TEMP/typescript-signed-fetch-engine\" --splicer \"$RUNNER_TEMP/typescript-signed-fetch-splicer\" --prepared-qualification \"$RUNNER_TEMP/typescript-signed-fetch-native\" --output \"$RUNNER_TEMP/typescript-signed-fetch\""
       },
       {
-        "if": "always()",
         "name": "Retain finite signed Fetch attempts and exact input identities",
-        "uses": "actions/upload-artifact",
+        "if": "always()",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
-          "if-no-files-found": "warn",
           "name": "typescript-signed-fetch-${{ github.sha }}",
           "path": "${{ runner.temp }}/typescript-signed-fetch/*.json\n${{ runner.temp }}/typescript-signed-fetch/build/*.json\n${{ runner.temp }}/typescript-signed-fetch/build/logs/**\n${{ runner.temp }}/typescript-signed-fetch/build/component.wasm\n${{ runner.temp }}/typescript-signed-fetch/node/*.json\n${{ runner.temp }}/typescript-signed-fetch/node/controls/*.json\n",
+          "if-no-files-found": "warn",
           "retention-days": 7
         }
       }
-    ],
-    "timeout-minutes": 25
+    ]
   },
   "jobId": "fetch-runtime",
   "kind": "job",
-  "reviewReason": "Authenticate generated native metadata inline control and retain original owning controls",
+  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }

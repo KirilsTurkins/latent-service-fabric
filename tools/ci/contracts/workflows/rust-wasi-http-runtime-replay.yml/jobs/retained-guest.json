@@ -3,20 +3,21 @@
   "before": {},
   "coverage": {},
   "definition": {
+    "name": "Authenticate the original compiled guest and execute only its full node programme",
+    "runs-on": "ubuntu-24.04",
+    "timeout-minutes": 20,
     "env": {
       "PYTHONDONTWRITEBYTECODE": "1"
     },
-    "name": "Authenticate the original compiled guest and execute only its full node programme",
-    "runs-on": "ubuntu-24.04",
     "steps": [
       {
-        "uses": "actions/checkout",
+        "uses": "KirilsTurkins/lsf-checkout",
         "with": {
           "persist-credentials": false
         }
       },
       {
-        "uses": "actions/setup-python",
+        "uses": "KirilsTurkins/lsf-setup-python",
         "with": {
           "python-version": "3.13.5"
         }
@@ -35,45 +36,44 @@
       },
       {
         "name": "Restore only the fixed original public compiled-guest artifact",
-        "uses": "actions/download-artifact",
+        "uses": "KirilsTurkins/lsf-download-artifact",
         "with": {
-          "github-token": "${{ github.token }}",
           "name": "rust-wasi-http-runtime-8f1d08257e724dca71b0c20aeff547524cba7076",
-          "path": "${{ runner.temp }}/rust-http-original",
-          "run-id": "39532447535"
+          "run-id": "39532447535",
+          "github-token": "${{ github.token }}",
+          "path": "${{ runner.temp }}/rust-http-original"
         }
       },
       {
+        "name": "Authenticate unchanged original native products without another host build",
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
-        "name": "Authenticate unchanged original native products without another host build",
         "run": "python3 -B tools/release_preparation_cli_native_products.py --output \"$RUNNER_TEMP/rust-http-native\""
       },
       {
+        "name": "Re-sign the exact original component and execute all original64 attempts",
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
-        "name": "Re-sign the exact original component and execute all original64 attempts",
         "run": "python3 -B tools/replay_rust_wasi_http_runtime.py --original-artifact \"$RUNNER_TEMP/rust-http-original\" --native-products \"$RUNNER_TEMP/rust-http-native\" --output \"$RUNNER_TEMP/rust-http-node-replay\""
       },
       {
-        "if": "always()",
         "name": "Retain exact ancestry and bounded public invocation and cleanup observations",
-        "uses": "actions/upload-artifact",
+        "if": "always()",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
-          "if-no-files-found": "warn",
           "name": "rust-wasi-http-node-replay-${{ github.sha }}",
           "path": "${{ runner.temp }}/rust-http-node-replay/*.json\n${{ runner.temp }}/rust-http-node-replay/build/*.json\n${{ runner.temp }}/rust-http-node-replay/build/*.wasm\n${{ runner.temp }}/rust-http-node-replay/build/wit/**\n${{ runner.temp }}/rust-http-node-replay/node/*.json\n${{ runner.temp }}/rust-http-node-replay/node/examples-controls/*.json\n${{ runner.temp }}/rust-http-node-replay/node/foreign-controls/*.json\n${{ runner.temp }}/rust-http-node-replay/node/provider-absence/*.json\n${{ runner.temp }}/rust-http-node-replay/node/provider-absence/controls/*.json\n${{ runner.temp }}/rust-http-native/*.json\n",
+          "if-no-files-found": "warn",
           "retention-days": 3
         }
       }
-    ],
-    "timeout-minutes": 20
+    ]
   },
   "jobId": "retained-guest",
   "kind": "job",
-  "reviewReason": "Authenticate original8f compile and unchanged64 programme with exact empty-list API correction; no compilation",
+  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-wasi-http-runtime-replay.yml"
 }
