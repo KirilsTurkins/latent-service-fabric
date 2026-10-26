@@ -339,12 +339,17 @@ async fn signed_java_fiber_fixture(variable: &str, expected_source: &[u8], name:
     );
     for iteration in 0..3 {
         for mode in 0..4 {
-            let receipt = success(
-                f.manager
-                    .start(f.request(&format!("{name}-{iteration}-{mode}"), mode))
-                    .unwrap()
-                    .await,
-            );
+            let requested_id = format!("{name}-{iteration}-{mode}");
+            let stores_before = f.backend.resource_snapshot().stores_created;
+            let actual = f
+                .manager
+                .start(f.request(&requested_id, mode))
+                .unwrap()
+                .await;
+            if name == "java-fibers" {
+                assert_eq!(actual.activation_id.0, requested_id);
+            }
+            let receipt = success(actual);
             assert_eq!(
                 serde_json::from_slice::<Vec<u32>>(&receipt.output).unwrap(),
                 [42]
@@ -356,6 +361,25 @@ async fn signed_java_fiber_fixture(variable: &str, expected_source: &[u8], name:
                 receipt.consumption
             );
             f.idle().await;
+            if name == "java-fibers" {
+                let runtime = f.backend.resource_snapshot();
+                let broker = f.broker.snapshot();
+                assert!(runtime.stores_created > stores_before);
+                eprintln!(
+                    "LSF_JAVA_RETAINED={}",
+                    serde_json::json!({
+                        "activationId": requested_id, "iteration": iteration, "mode": mode,
+                        "value": 42, "cpuFuel": receipt.consumption.cpu_fuel,
+                        "reportedPeakMemoryBytes": receipt.consumption.peak_memory_bytes,
+                        "storesBefore": stores_before, "storesCreated": runtime.stores_created,
+                        "liveStores": runtime.live_stores,
+                        "activeReservations": f.backend.active_instance_reservations(),
+                        "brokerCalls": broker.calls, "brokerSessions": broker.sessions,
+                        "brokerHandles": broker.handles, "brokerResults": broker.results,
+                        "brokerBufferBytes": broker.buffer_bytes
+                    })
+                );
+            }
         }
     }
 }
