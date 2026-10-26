@@ -506,12 +506,12 @@ async fn actual_producer_stream_conversion_reuses_budget_and_preserves_owning_es
         let (producer, _) = gates();
         let before = requests(&observed).len();
         let mut reader = StreamReader::new(&mut first, EscapingProducer(producer.clone())).unwrap();
-        assert_eq!(requests(&observed).len(), before + 1);
+        assert_eq!(requests(&observed).len(), before + 3);
         let live = original.host_memory_bytes();
         for _ in 0..4 {
             reader = reader.try_into::<()>(&mut first).err().unwrap();
             assert_eq!(original.host_memory_bytes(), live);
-            assert_eq!(requests(&observed).len(), before + 1);
+            assert_eq!(requests(&observed).len(), before + 3);
         }
         reader.close(&mut first).unwrap();
         assert_eq!(producer.drops.load(SeqCst), 1);
@@ -582,12 +582,12 @@ async fn actual_producer_future_any_roundtrip_and_pending_completion_preserve_cu
         let before = requests(&observed).len();
         let reader =
             wasmtime::component::FutureReader::new(&mut first, future_value(&producer)).unwrap();
-        assert_eq!(requests(&observed).len(), before + 2);
+        assert_eq!(requests(&observed).len(), before + 4);
         let live = original.host_memory_bytes();
         let any = reader.try_into_future_any(&mut first).unwrap();
         let mut reader = wasmtime::component::FutureReader::<u8>::try_from_future_any(any).unwrap();
         assert_eq!(original.host_memory_bytes(), live);
-        assert_eq!(requests(&observed).len(), before + 2);
+        assert_eq!(requests(&observed).len(), before + 4);
         reader.close(&mut first).unwrap();
         assert_eq!(producer.drops.load(SeqCst), 1);
         assert_eq!(original.host_memory_bytes(), baseline);
@@ -614,4 +614,190 @@ async fn actual_producer_future_any_roundtrip_and_pending_completion_preserve_cu
         assert_eq!(original.outstanding_reservations(), 0);
         println!("PRODUCER-PUBLIC-FUTURE adapter-custody=true Any-handle-only=true pending-payload=42 final=0 wall=5");
     }
+}
+
+#[tokio::test]
+async fn actual_producer_factory_refusals_precede_transmit_factory_and_polls() {
+    let engine = engine();
+    let core = Module::new(&engine, CORE).unwrap();
+    // Source-defined new cuts only: Stream factories2/3; Future factories3/4.
+    for (future, local) in [(false, 2), (false, 3), (true, 3), (true, 4)] {
+        let original = budget(MIB);
+        let observed = Arc::new(Observations::default());
+        let other = Arc::new(Observations::default());
+        let mut foreign = store(&engine, &original, &other).unwrap();
+        warm(&mut foreign).await;
+        let foreign_bytes = original.host_memory_bytes();
+        let foreign_requests = requests(&other);
+        let mut first = store(&engine, &original, &observed).unwrap();
+        warm(&mut first).await;
+        let (producer, _) = gates();
+        let before = requests(&observed).len();
+        let padding = Arc::new(Mutex::new(None::<Padding>));
+        let consumed = Arc::new(AtomicU64::new(0));
+        let requested = Arc::new(AtomicU64::new(0));
+        let kept = padding.clone();
+        let kept_consumed = consumed.clone();
+        let kept_requested = requested.clone();
+        let invocation = original.clone();
+        observed.before_request(before + local, move |bytes| {
+            let request = bytes as u64 + OWNER;
+            let payload = MIB - invocation.host_memory_bytes() - request + 1 - OWNER;
+            let mut owner = crate::native_tables::reserve(&invocation, payload as usize)
+                .unwrap()
+                .unwrap();
+            let bytes = vec![0u8; payload as usize];
+            assert_eq!(bytes.capacity(), payload as usize);
+            owner.allocated();
+            *kept.lock().unwrap() = Some(Padding {
+                _bytes: bytes,
+                _owner: owner,
+            });
+            kept_consumed.store(invocation.host_memory_bytes(), SeqCst);
+            kept_requested.store(request, SeqCst);
+        });
+        let error = if future {
+            wasmtime::component::FutureReader::new(&mut first, future_value(&producer))
+                .err()
+                .unwrap()
+        } else {
+            StreamReader::new(&mut first, Producer(producer.clone()))
+                .err()
+                .unwrap()
+        };
+        denial(&error, MIB, consumed.load(SeqCst), requested.load(SeqCst));
+        assert_eq!(consumed.load(SeqCst) + requested.load(SeqCst), MIB + 1);
+        assert_eq!(requests(&observed).len(), before + local);
+        assert_eq!(producer.polls.load(SeqCst), 0);
+        assert_eq!(producer.drops.load(SeqCst), 1);
+        drop(error);
+        drop(padding.lock().unwrap().take());
+        drop(first);
+        assert_eq!(original.host_memory_bytes(), foreign_bytes);
+        assert_eq!(requests(&other), foreign_requests);
+        let mut fresh = store(&engine, &original, &observed).unwrap();
+        fresh.set_fuel(FUEL).unwrap();
+        let instance = wasmtime::Instance::new(&mut fresh, &core, &[]).unwrap();
+        assert_eq!(core_answer(instance, &mut fresh), 42);
+        drop(fresh);
+        assert_eq!(original.host_memory_bytes(), foreign_bytes);
+        drop(foreign);
+        assert_eq!(original.host_memory_bytes(), 0);
+        assert_eq!(original.outstanding_reservations(), 0);
+        println!("PRODUCER-FACTORY-REFUSAL future={future} local={local} global={} polls=0 fresh=42 foreign-unchanged=true final=0 wall=5", before + local);
+    }
+}
+
+#[tokio::test]
+async fn actual_producer_factory_conversion_and_pending_lifetime_preserve_budget() {
+    let engine = engine();
+    let original = budget(MIB);
+    let observed = Arc::new(Observations::default());
+    let other = Arc::new(Observations::default());
+    let mut foreign = store(&engine, &original, &other).unwrap();
+    warm(&mut foreign).await;
+    let foreign_bytes = original.host_memory_bytes();
+    let foreign_requests = requests(&other);
+    let mut first = store(&engine, &original, &observed).unwrap();
+    warm(&mut first).await;
+    let baseline = original.host_memory_bytes();
+    for _ in 0..16 {
+        let (producer, _) = gates();
+        let before = requests(&observed).len();
+        let mut reader = StreamReader::new(&mut first, EscapingProducer(producer.clone())).unwrap();
+        assert_eq!(
+            requests(&observed).len(),
+            before + 3,
+            "shared, produce factory, conversion factory"
+        );
+        let live = original.host_memory_bytes();
+        for _ in 0..4 {
+            reader = reader.try_into::<()>(&mut first).err().unwrap();
+            assert_eq!(original.host_memory_bytes(), live);
+            assert_eq!(requests(&observed).len(), before + 3);
+        }
+        reader.close(&mut first).unwrap();
+        assert_eq!(producer.polls.load(SeqCst), 0);
+        assert_eq!(producer.drops.load(SeqCst), 1);
+        assert_eq!(original.host_memory_bytes(), baseline);
+    }
+    let (producer, _) = gates();
+    let reader = StreamReader::new(&mut first, EscapingProducer(producer.clone())).unwrap();
+    let escaped: Pin<Box<EscapingProducer>> = reader.try_into(&mut first).unwrap();
+    assert_eq!(producer.drops.load(SeqCst), 0);
+    assert_eq!(
+        original.host_memory_bytes(),
+        baseline,
+        "both factories and cell retired; escaped P Box remains UNPAID"
+    );
+    drop(escaped);
+    assert_eq!(producer.drops.load(SeqCst), 1);
+    drop(first);
+    assert_eq!(original.host_memory_bytes(), foreign_bytes);
+
+    // Actual producer factory moves into the existing completion, across Pending.
+    // Test ready, genuinely pending and original user error, without a component.
+    for mode in 0..3 {
+        let mut first = store(&engine, &original, &observed).unwrap();
+        warm(&mut first).await;
+        let baseline = original.host_memory_bytes();
+        let (producer, consumer) = gates();
+        producer.ready.store(mode != 1, SeqCst);
+        producer.fail.store(mode == 2, SeqCst);
+        let before = requests(&observed).len();
+        let reader =
+            wasmtime::component::FutureReader::new(&mut first, future_value(&producer)).unwrap();
+        assert_eq!(
+            requests(&observed).len(),
+            before + 4,
+            "local adapter body, shared, two factories"
+        );
+        reader
+            .pipe(&mut first, FutureSink(consumer.clone()))
+            .unwrap();
+        let mut running = Box::pin(drive(&mut first, &producer, &consumer));
+        if mode == 1 {
+            assert!(running
+                .as_mut()
+                .poll(&mut Context::from_waker(Waker::noop()))
+                .is_pending());
+            assert!(producer.polls.load(SeqCst) > 0);
+            assert_eq!(consumer.polls.load(SeqCst), 0);
+            assert!(original.host_memory_bytes() > baseline);
+            producer.release();
+        }
+        let result = running.await;
+        if mode == 2 {
+            assert!(format!("{:#}", result.unwrap_err()).contains(FAILURE));
+        } else {
+            result.unwrap();
+            assert_eq!(consumer.payload.load(SeqCst), 42);
+        }
+        // The original error path may retain transmit/work state until Store
+        // teardown; a failed user poll is not a synthetic successful settle.
+        drop(first);
+        producer.release();
+        consumer.release();
+        assert_eq!(producer.drops.load(SeqCst), 1);
+        assert_eq!(original.host_memory_bytes(), foreign_bytes);
+    }
+    assert_eq!(requests(&other), foreign_requests);
+    drop(foreign);
+    assert_eq!(original.host_memory_bytes(), 0);
+    assert_eq!(original.outstanding_reservations(), 0);
+
+    // Literal None path remains a separate source/Box/capture route.
+    let mut none = Store::new(&engine, ());
+    warm(&mut none).await;
+    let (producer, consumer) = gates();
+    producer.ready.store(true, SeqCst);
+    StreamReader::new(&mut none, Producer(producer.clone()))
+        .unwrap()
+        .pipe(&mut none, Consumer(consumer.clone()))
+        .unwrap();
+    drive(&mut none, &producer, &consumer).await.unwrap();
+    assert_eq!(*producer.trace.lock().unwrap(), ["produce", "consume"]);
+    assert_eq!(consumer.payload.load(SeqCst), 42);
+    drop(none);
+    println!("PRODUCER-FACTORY-LIFETIME Err-reusable=true Ok-escape-P-unpaid=true pending=42 error=original None-order=true foreign-unchanged=true final=0 wall=5");
 }

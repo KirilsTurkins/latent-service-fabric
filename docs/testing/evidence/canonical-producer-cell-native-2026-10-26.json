@@ -1,0 +1,472 @@
+{
+  "schemaVersion": "lsf.canonical-producer-cell-native-result.v1",
+  "date": "2026-10-26",
+  "scope": "Native producer shared-cell and private Future adapter custody controls; not whole activation, signed-component or provider qualification.",
+  "execution": {
+    "head": "5b9fa5e8a59256455868413155b7ed372260527e",
+    "tree": "f380102c3d842a7733fb2aa3071d19ab691d68cb",
+    "run": 40387684318,
+    "job": 121800213039,
+    "url": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40387684318/job/121800213039",
+    "artifact": 12681714019,
+    "zipBytes": 1432882,
+    "zipSha256": "62bf257a56167bccd5598d9050b147c4c44f7080c96846f933443dbc585ca475",
+    "safeCrcShaMembers": 55,
+    "supervisedZeroExitCommands": 26,
+    "rawChannels": 52,
+    "exactPassedCases": 11
+  },
+  "source": {
+    "wasmtimeFiles": 275,
+    "cacheFiles": 14,
+    "nativeCohort": "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-unordered-futures-outer-sync-result-stream-outers-consumer-producer-memory-v19-cache-repair",
+    "recordSha256": "2c5174cb36b59fc3ccc79ad5505db0c547db572c419e41da389d69879b9c3409",
+    "patchSha256": "14a13879e32bb5e55a26b00c7ba473c5be43f7e7eaeb640137f5caf97fe43a1e",
+    "production": {
+      "sha256": "4d5b0c94a4c1fc94ecec50fd9caf3168a0377de208066f768d0503db1dfe5cd8",
+      "bytes": 234585
+    },
+    "privateControls": {
+      "sha256": "4b1c346e24c373955876d1899626c708df34da25d50ef15af5d2f946b843ffca",
+      "bytes": 40506
+    },
+    "selectedOwningInputs": {
+      ".github/workflows/canonical-stream-outers.yml": {
+        "bytes": 3137,
+        "sha256": "ae694c1d5dd2a1586d8ee62e0c70e1858e67e3b4f844dcc9dc00cfbe9191733a"
+      },
+      "Cargo.lock": {
+        "bytes": 113422,
+        "sha256": "41234a75cbc14c450c9a3c1da5694313e3ceae093718e20a72b9f017d3874106"
+      },
+      "rust-toolchain.toml": {
+        "bytes": 140,
+        "sha256": "7527c74e92bfb75a72d184650b0a06c3d645f43536541007782abf9618f26bcc"
+      },
+      "crates/latent-wasmtime/src/host/native_stream_outer_tests.rs": {
+        "bytes": 24517,
+        "sha256": "26b5918ffc899e84e0400d2bf4afc0aa5fbe872712e8acaa798a22e9dc2b701a"
+      },
+      "tools/qualify_stream_outers.py": {
+        "bytes": 42968,
+        "sha256": "52366af11b05989db6e9afb88b6c7c7123e3b77b3aeab3765e243e4a89b7f68b"
+      }
+    },
+    "sourceBeforeAfterBindings": 8976,
+    "rawGitMatches": 8975,
+    "sourceBeforeAfterEqual": true,
+    "declaredCrlfConversions": [
+      {
+        "path": "tools/intellij.cmd",
+        "git": {
+          "bytes": 894,
+          "sha256": "fcaca9e75d7d09ebd0863ca252222a1e1b7ac3f78bd1efb465f94b5209545049"
+        },
+        "checkout": {
+          "bytes": 922,
+          "sha256": "7d96a1573b04fb4c7aa3add1ec47fd5ba8a2c827dda142e6b2098843b33f45e4"
+        }
+      }
+    ]
+  },
+  "observations": [
+    {
+      "case": "runtime::component::concurrent::futures_and_streams::stream_outer_tests::producer_cell_stream_admission_is_shared_only_and_unused_refunds",
+      "stdout": {
+        "bytes": 430,
+        "sha256": "4e8300e642ef312bbd259a35edee59a07f4651128162da8ecf1df80616e9e699"
+      },
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "filteredOut": 221,
+      "scope": "private-producer-implementation-counter"
+    },
+    {
+      "case": "runtime::component::concurrent::futures_and_streams::stream_outer_tests::producer_cell_pin_clone_send_guard_restore_and_p_then_b_retirement",
+      "stdout": {
+        "bytes": 951,
+        "sha256": "7877a6473d5549986ff6655a7bddaac27f827d6ed7013aaf33ab16d201edb5d5"
+      },
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "filteredOut": 221,
+      "scope": "private-producer-implementation-counter"
+    },
+    {
+      "case": "runtime::component::concurrent::futures_and_streams::stream_outer_tests::producer_cell_zst_and_original_none_tuple_remain_distinct",
+      "stdout": {
+        "bytes": 416,
+        "sha256": "1d622134b3360dedad295c23e7bb3547323e322776deb8fafb5a14828bed6b1d"
+      },
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "filteredOut": 221,
+      "scope": "private-producer-implementation-counter"
+    },
+    {
+      "case": "runtime::component::concurrent::futures_and_streams::stream_outer_tests::producer_cell_confirmation_and_buffer_default_unwind_install_cleanup_first",
+      "stdout": {
+        "bytes": 1681,
+        "sha256": "dc0d021fe7e5e72553e30af2863918f5de07b41699a44fdc22ee696b9c46a524"
+      },
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "filteredOut": 221,
+      "scope": "private-producer-implementation-counter"
+    },
+    {
+      "case": "runtime::component::concurrent::futures_and_streams::stream_outer_tests::producer_cell_destructor_unwind_retains_same_original_guards",
+      "stdout": {
+        "bytes": 1185,
+        "sha256": "16bd0f3ff837daa41caf1b30f21219e0b8103a485f1f8312bd6a2edced3fcfc1"
+      },
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "filteredOut": 221,
+      "scope": "private-producer-implementation-counter"
+    },
+    {
+      "case": "runtime::component::concurrent::futures_and_streams::stream_outer_tests::producer_cell_real_future_adapter_default_err_restores_original_custody",
+      "stdout": {
+        "bytes": 444,
+        "sha256": "60fcc7e309e1bd17d6449e010c39f667d4b7ac34ad8a37cb511c3ccef54cc69f"
+      },
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "filteredOut": 221,
+      "scope": "private-producer-implementation-counter"
+    },
+    {
+      "case": "host::native_stream_outer_tests::actual_producer_creation_refusals_precede_poll_and_preserve_foreign_store",
+      "stdout": {
+        "bytes": 819,
+        "sha256": "63f12f626d8ea9ab0e2b8ceccb4bff14a78d3f30d72ff4f46df1fa6daacd0268"
+      },
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "filteredOut": 492,
+      "scope": "public-original-ActivationBudget"
+    },
+    {
+      "case": "host::native_stream_outer_tests::actual_producer_stream_conversion_reuses_budget_and_preserves_owning_escape",
+      "stdout": {
+        "bytes": 606,
+        "sha256": "dc6b444c05072379b35f2bb5262f0b65f95e82e566984acd1e4aac44187c391d"
+      },
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "filteredOut": 492,
+      "scope": "public-original-ActivationBudget"
+    },
+    {
+      "case": "host::native_stream_outer_tests::actual_producer_future_any_roundtrip_and_pending_completion_preserve_custody",
+      "stdout": {
+        "bytes": 602,
+        "sha256": "0c65bb15fac4fcfa1c263fe87c4718280775ecd96a87737ab67f0c42b234abd0"
+      },
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "filteredOut": 492,
+      "scope": "public-original-ActivationBudget"
+    },
+    {
+      "case": "host::native_stream_outer_tests::actual_stream_host_ready_refusals_precede_consumer_factory_and_polls",
+      "stdout": {
+        "bytes": 831,
+        "sha256": "04ffdbfb8cab14adcab0890581e95e3728814fa2f68cdc4a5bf071faff5d1a41"
+      },
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "filteredOut": 492,
+      "scope": "public-original-ActivationBudget"
+    },
+    {
+      "case": "host::native_stream_outer_tests::actual_stream_host_ready_pending_ready_and_error_preserve_cleanup",
+      "stdout": {
+        "bytes": 887,
+        "sha256": "ef1e6169a047b8e64113285090663ae09bf24bbbe64b60ba5aa9da1a7730d060"
+      },
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "filteredOut": 492,
+      "scope": "public-original-ActivationBudget"
+    }
+  ],
+  "commands": [
+    {
+      "stage": "build-private",
+      "exitCode": 0,
+      "seconds": 93.852634
+    },
+    {
+      "stage": "private-rust-library-path",
+      "exitCode": 0,
+      "seconds": 0.015569
+    },
+    {
+      "stage": "private-list-0",
+      "exitCode": 0,
+      "seconds": 0.015124
+    },
+    {
+      "stage": "private-case-0",
+      "exitCode": 0,
+      "seconds": 0.01516
+    },
+    {
+      "stage": "private-list-1",
+      "exitCode": 0,
+      "seconds": 0.015075
+    },
+    {
+      "stage": "private-case-1",
+      "exitCode": 0,
+      "seconds": 0.015191
+    },
+    {
+      "stage": "private-list-2",
+      "exitCode": 0,
+      "seconds": 0.015398
+    },
+    {
+      "stage": "private-case-2",
+      "exitCode": 0,
+      "seconds": 0.015131
+    },
+    {
+      "stage": "private-list-3",
+      "exitCode": 0,
+      "seconds": 0.01517
+    },
+    {
+      "stage": "private-case-3",
+      "exitCode": 0,
+      "seconds": 0.015096
+    },
+    {
+      "stage": "private-list-4",
+      "exitCode": 0,
+      "seconds": 0.015324
+    },
+    {
+      "stage": "private-case-4",
+      "exitCode": 0,
+      "seconds": 0.015089
+    },
+    {
+      "stage": "private-list-5",
+      "exitCode": 0,
+      "seconds": 0.015282
+    },
+    {
+      "stage": "private-case-5",
+      "exitCode": 0,
+      "seconds": 0.015138
+    },
+    {
+      "stage": "build-public",
+      "exitCode": 0,
+      "seconds": 230.453059
+    },
+    {
+      "stage": "public-rust-library-path",
+      "exitCode": 0,
+      "seconds": 0.015371
+    },
+    {
+      "stage": "public-list-0",
+      "exitCode": 0,
+      "seconds": 0.01538
+    },
+    {
+      "stage": "public-case-0",
+      "exitCode": 0,
+      "seconds": 0.015029
+    },
+    {
+      "stage": "public-list-1",
+      "exitCode": 0,
+      "seconds": 0.015028
+    },
+    {
+      "stage": "public-case-1",
+      "exitCode": 0,
+      "seconds": 0.014952
+    },
+    {
+      "stage": "public-list-2",
+      "exitCode": 0,
+      "seconds": 0.014965
+    },
+    {
+      "stage": "public-case-2",
+      "exitCode": 0,
+      "seconds": 0.015273
+    },
+    {
+      "stage": "public-list-3",
+      "exitCode": 0,
+      "seconds": 0.0154
+    },
+    {
+      "stage": "public-case-3",
+      "exitCode": 0,
+      "seconds": 0.026014
+    },
+    {
+      "stage": "public-list-4",
+      "exitCode": 0,
+      "seconds": 0.015214
+    },
+    {
+      "stage": "public-case-4",
+      "exitCode": 0,
+      "seconds": 0.015074
+    }
+  ],
+  "buildTargets": {
+    "private": {
+      "target": "wasmtime",
+      "executablePath": "/home/runner/work/latent-service-fabric/latent-service-fabric/target/debug/deps/wasmtime-367b94e01c7b61eb",
+      "fixedRegistryPackages": {
+        "zstd": "0.14.3",
+        "zstd-safe": "8.2.0",
+        "zstd-sys": "2.1.2+zstd.1.5.7"
+      },
+      "localCachePackage": "path+file:///home/runner/work/latent-service-fabric/latent-service-fabric/crates/vendor/wasmtime-cache#wasmtime-internal-cache@48.0.7",
+      "publicWasmtimeNoCacheFeatures": null,
+      "reportedExecutable": {
+        "name": "private-stream-controls",
+        "digest": "sha256:56a1599a5b1bbac6dbe0e74767126e248624fdeaadf985f6ee4f91fb928e57ce",
+        "size": 79397080
+      }
+    },
+    "public": {
+      "target": "latent_wasmtime",
+      "executablePath": "/home/runner/work/latent-service-fabric/latent-service-fabric/target/debug/deps/latent_wasmtime-3a3d5d04cba4e47f",
+      "fixedRegistryPackages": {},
+      "localCachePackage": null,
+      "publicWasmtimeNoCacheFeatures": [
+        "async",
+        "component-model",
+        "component-model-async",
+        "cranelift",
+        "gc",
+        "gc-drc",
+        "once_cell",
+        "pooling-allocator",
+        "runtime",
+        "std",
+        "wasmtime-jit-icache-coherence",
+        "wit-parser"
+      ],
+      "reportedExecutable": {
+        "name": "public-stream-controls",
+        "digest": "sha256:4f5d1a8fa55638bf6977685660ec7cbb14f78b5a1f8c9f71ca3f2e234dc6da1e",
+        "size": 126967808
+      }
+    }
+  },
+  "retainedExecutableBytesVerified": false,
+  "publicOriginalBudget": {
+    "memoryBytes": 1048576,
+    "cpuFuel": 1000000000,
+    "wallTimeMilliseconds": 5000
+  },
+  "privateCounterOwner": {
+    "originalActivationBudget": false,
+    "guestExecuted": false,
+    "genericMemoryCeilingClaimed": false,
+    "oneRealFutureStoreInstrumentationCeilingBytes": 67108864,
+    "installedFuelClaimed": false
+  },
+  "ownerLimits": {
+    "overallSeconds": 2400,
+    "buildCommandSeconds": 900,
+    "caseProcessSeconds": 60,
+    "listProcessSeconds": 30,
+    "cleanupReserveSeconds": 5
+  },
+  "earlierCompileFailure": {
+    "head": "83329299603897a85d01708021bc81974f6f5501",
+    "tree": "e565fedaa36cad5eba9909118673899ac1b850cb",
+    "run": 40386010980,
+    "job": 121794332607,
+    "artifact": 12681866033,
+    "zipBytes": 940708,
+    "zipSha256": "875557602429bff467fafa61fbeea1ea5bd544762cde470bf4bcefe4e12c7806",
+    "safeCrcMembers": 5,
+    "testsExecuted": 0,
+    "privateCompileExitCode": 101,
+    "privateCompileSeconds": 84.060953,
+    "codes": [
+      "E0107",
+      "E0061",
+      "E0271"
+    ],
+    "cause": "The private producer conversion call resolved to blanket TryInto instead of the private cell method.",
+    "fix": "Explicit AccountedProducerCell::try_into::<T>(&producer, ty), with matching derived postimages."
+  },
+  "separateCi": {
+    "initialPublicationRun": 40387692639,
+    "initialPublicationJob": 121804419864,
+    "initialPublicationResult": "failed",
+    "failedCall": 46,
+    "command": "audit query",
+    "publicCode": "resource-exhausted",
+    "grpcCode": "absent",
+    "exclusiveRefusalCause": "not retained; unproven",
+    "failureArtifact": 12684225383,
+    "failureZipSha256": "8e41e9398ecf3d11118fc9dc228f9e3b9fac2cc8ac599e94dab19d7d79c763a2",
+    "diagnosticHead": "6d66676296485115339bd6897ab644f7f9b92d02",
+    "diagnosticTree": "473ceeed5e13c6efb6a24ed78011417b8eb08475",
+    "diagnostic": "Publication-local failure-only six-token public reason projection; fatal decision, coverage and limits unchanged; not a capacity fix.",
+    "retryRun": 40395483367,
+    "retryPublicationJob": 121827412736,
+    "retryPublicationResult": "success",
+    "securityRun": 40395483557,
+    "securityResult": "seven jobs succeeded",
+    "nativeSourcesAndElevenCaseOwnerUnchangedByDiagnostic": true,
+    "nativeElevenCaseReplay": false
+  },
+  "merge": {
+    "pr": 1517,
+    "target": "development",
+    "method": "squash-admin",
+    "head": "6d66676296485115339bd6897ab644f7f9b92d02",
+    "commit": "87eb5d1d48c19aeea368d12f894d3d1692e07484",
+    "parent": "3ba40c1c69f556dc1cbc75e7dc8eaee955633a23",
+    "tree": "688f6c27136ff5ad41a21211fcfefa34abe4c871",
+    "featurePaths": 29,
+    "incomingBuilderPaths": 6,
+    "exactDisjointCompositionVerified": true,
+    "executionIsNotRetaggedToMergedTree": true
+  },
+  "unqualified": {
+    "whole736Complete": false,
+    "fullCostModelQualified": false,
+    "fullRuntimeSuiteExecuted": false,
+    "fullVendorSuiteExecuted": false,
+    "signedGuestExecuted": false,
+    "hermetic": false,
+    "compilerImplicitInputsAttested": false,
+    "remainingAtExecution": [
+      "general StreamProducer P backing",
+      "transitive Buffer heaps",
+      "producer factory closure backing",
+      "consumer factories and returned inner futures",
+      "broader stack/TLS/GC/RSS and actual-node lifecycle obligations"
+    ]
+  }
+}

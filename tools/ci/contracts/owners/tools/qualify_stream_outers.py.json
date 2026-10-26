@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_stream_outers.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Reviewed #736 producer-cell v19: six finite private implementation counters, three new public creation/conversion cases and two affected existing public HostReady cases;26 commands/52 raw channels, unchanged two locked Cargo targets/features/45m2400/900/60/30/cleanup5/j2. No WAT/old consumer-five/private-six/canonical/cache/language replay. Existing owner modes/functions source exact. General P Boxes remain unpaid; only exact local Future adapter owns body. Mandatory14-file strict workspace cache auth retained.",
+  "reviewReason": "Reviewed #736 producer-factory v20: four new private and two new public implementation controls plus three affected historical count controls;9cases/22commands/44raw. Exact two locked Cargo targets/features,45m/2400/900/60/30/cleanup5/j2 unchanged. No WAT/cache/old11 aggregate/native-local replay. All13 historical owner functions source exact. General P/body Buffer/inner/consumer closures remain unpaid. Mandatory275Wasmtime+14cache auth retained; source-only pending owning outcome.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "52366af11b05989db6e9afb88b6c7c7123e3b77b3aeab3765e243e4a89b7f68b"
+  "sha256": "04ee5a4b5a9d40807770461f6d328e7e785b6e977e1da241bcd6200eac2d3d2e"
 }
