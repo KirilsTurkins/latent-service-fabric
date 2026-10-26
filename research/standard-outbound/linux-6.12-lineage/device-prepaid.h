@@ -163,6 +163,74 @@ static inline int lsf_device_allocate(struct lsf_prepaid *pool,
     return 0;
 }
 
+/* Separate selected normal-stream allocator. Caller holds SAME pool_lock;
+ * all original context/parent/record/generation guards remain. Entire extent
+ * and start-address padding are charged to original192KiB before publication.
+ * Padding is continuously owned backing, not an untracked allocation/view.
+ * No record/address reuse or physical backing return is introduced here. */
+static inline int lsf_device_allocate_stream_aligned(struct lsf_prepaid *pool,
+    struct lsf_prepaid_key key, lsf_u64 bytes, unsigned int kind,
+    struct lsf_prepaid_ticket parent, struct lsf_prepaid_ticket *ticket,
+    lsf_u64 alignment, lsf_u64 *offset)
+{
+    struct lsf_prepaid_context *context = lsf_device_context(pool, key);
+    struct lsf_prepaid_view *original;
+    lsf_u64 rounded, start;
+    unsigned int i;
+    if (!context || !ticket || !offset || !lsf_device_kind(kind) || !bytes ||
+        bytes > (lsf_u64)-1 - 63u ||
+        (alignment != 64u && alignment != 4096u) ||
+        LSF_FACTORY_INFRA_OFFSET % alignment ||
+        context->cursor > (lsf_u64)-1 - (alignment - 1u) ||
+        !pool->next_generation ||
+        pool->next_generation == (lsf_u64)-1)
+        return 0;
+    if (kind == LSF_DEVICE_ROOT) {
+        if (parent.slot || parent.generation || context->cursor ||
+            context->live || context->closed || pool->stopped)
+            return 0;
+    } else {
+        if (!parent.slot || parent.slot >= LSF_ALLOCATION_SLOTS)
+            return 0;
+        original = &pool->records[parent.slot];
+        if (original->phase != LSF_PREPAID_LIVE ||
+            original->generation != parent.generation ||
+            original->owner != key.slot ||
+            original->owner_generation != key.generation ||
+            !lsf_device_kind(original->kind))
+            return 0;
+    }
+    rounded = (bytes + 63u) & ~(lsf_u64)63u;
+    start = (context->cursor + alignment - 1u) & ~(alignment - 1u);
+    if (rounded > LSF_FACTORY_INFRA_BYTES ||
+        start > LSF_FACTORY_INFRA_BYTES - rounded)
+        return 0;
+    for (i = 1; i < LSF_ALLOCATION_SLOTS; ++i) {
+        struct lsf_prepaid_view *record = &pool->records[i];
+        if (record->phase != LSF_PREPAID_EMPTY)
+            continue;
+        *record = (struct lsf_prepaid_view){
+            .generation = pool->next_generation++,
+            .owner_generation = key.generation,
+            .offset = LSF_FACTORY_INFRA_OFFSET + start,
+            .bytes = rounded,
+            .owner = key.slot,
+            .phase = LSF_PREPAID_LIVE,
+            .kind = kind,
+            .deferred = LSF_PREPAID_PRIVATE,
+            .cache_bucket = parent.slot,
+            .cache_anchor = parent.generation,
+        };
+        context->cursor = start + rounded;
+        context->live++;
+        ticket->slot = i;
+        ticket->generation = record->generation;
+        *offset = record->offset;
+        return 1;
+    }
+    return 0;
+}
+
 /* These transitions are used at the actual publication/unlink/callback sites.
  * A changed flag alone does not prove a DMA or callback has retired. */
 static inline int lsf_device_publish(struct lsf_prepaid *pool,
