@@ -1,0 +1,253 @@
+{
+  "schemaVersion": "lsf.protected-stream-host-evidence.v1",
+  "issue": 738,
+  "scope": "Linux x86_64 Rust host type checking and six original-owner controls; no protected kernel or installed provider execution",
+  "actual": {
+    "sourceCommit": "d3e9f756abb51fb4fe20ea409f6984fda394b442",
+    "tree": "8f5371f18529e908a5ec1a73038c5f8bb9d1f516",
+    "workflow": ".github/workflows/protected-stream-host.yml",
+    "branch": "feat/protected-stream-custody-20261026",
+    "event": "push",
+    "run": 40248854016,
+    "job": 121336126243,
+    "runUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40248854016",
+    "artifact": {
+      "id": 12620017776,
+      "name": "protected-stream-host-d3e9f756abb51fb4fe20ea409f6984fda394b442",
+      "bytes": 925003,
+      "sha256": "1fe73edf6ea6af94b41cbc32adfaf33e532a2604c186b56ec31e1cd87d7bce35",
+      "safeCrcMembers": 45,
+      "uncompressedPublicBytes": 3389488,
+      "memberInventorySha256": "sha256:09d71bf12597e3bec0d05c91fcaecdf1495a60f90bbe5b652e35ab946a631041"
+    },
+    "status": "host-type-and-six-controls-passed",
+    "compiler": "rustc 1.97.1 (8bab26f4f 2026-07-14)"
+  },
+  "build": {
+    "argv": [
+      "cargo",
+      "test",
+      "--locked",
+      "--all-features",
+      "-p",
+      "latent-capabilities",
+      "-p",
+      "latent-streams",
+      "-p",
+      "latent-network",
+      "--lib",
+      "--no-run",
+      "--message-format=json"
+    ],
+    "cargoExit": 0,
+    "onlyCurrentThreeLibraryTestProducts": true,
+    "products": {
+      "latent-capabilities": {
+        "path": "target/debug/deps/latent_capabilities-88ce4527a55c07a5",
+        "bytes": 251374928,
+        "sha256": "fce11bb0a02e7588a705f26c9ebeb6530d2021a2473971562596a92855f9217a"
+      },
+      "latent-streams": {
+        "path": "target/debug/deps/latent_streams-9926bac96e7926d1",
+        "bytes": 298582144,
+        "sha256": "8e5ea6b2f76aa02e7836d4023c69af2cfbe63bc2ebdbf8a42a7fef8ae4ac8dc1"
+      },
+      "latent-network": {
+        "path": "target/debug/deps/latent_network-0f2b9a40af1e390d",
+        "bytes": 30241712,
+        "sha256": "72b09b807419b51bbba38f5b74b5f25df3c9c5960be1bab093b487404cf95c7c"
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "broker::pools::client::stream_quarantine_controls::stream_quarantine_false_and_unwind_keep_original_lease_until_completed_step",
+      "status": "passed",
+      "failed": 0,
+      "ignored": 0,
+      "measured": 0
+    },
+    {
+      "id": "broker::pools::client::stream_quarantine_controls::temporarily_dequeued_quarantine_still_funds_its_original_reinsertion_place",
+      "status": "passed",
+      "failed": 0,
+      "ignored": 0,
+      "measured": 0
+    },
+    {
+      "id": "transport::tests::private_wire_fault_keeps_uncertainty_without_ciphertext_as_plaintext_prefix",
+      "status": "passed",
+      "failed": 0,
+      "ignored": 0,
+      "measured": 0
+    },
+    {
+      "id": "transport::tests::repeated_handshake_reads_share_one_original_encrypted_input_ceiling",
+      "status": "passed",
+      "failed": 0,
+      "ignored": 0,
+      "measured": 0
+    },
+    {
+      "id": "dns::tests::truncated_udp_uses_only_the_same_explicit_tcp_resolver_and_fixed_cache",
+      "status": "passed",
+      "failed": 0,
+      "ignored": 0,
+      "measured": 0
+    },
+    {
+      "id": "dns::tests::tcp_length_is_rejected_before_unbounded_read_or_allocation",
+      "status": "passed",
+      "failed": 0,
+      "ignored": 0,
+      "measured": 0
+    }
+  ],
+  "ownerBounds": {
+    "jobMinutes": 25,
+    "aggregateSeconds": 1320,
+    "maximumCompileSeconds": 1200,
+    "maximumCaseSeconds": 120,
+    "cargoBuildJobs": 2,
+    "cargoIncremental": false,
+    "cleanupReserveSecondsInsideParent": 5,
+    "maximumPublicBytes": 50331648,
+    "maximumCombinedCargoLogBytes": 16777216
+  },
+  "rawFences": {
+    "commands": 22,
+    "allZeroExit": true,
+    "allCleanupConfirmed": true,
+    "allWithinDeclaredCommandTimeout": true,
+    "rawChannels": 44,
+    "commandRecordsSha256": "sha256:ae25637ebf986a3d591eb3c81457967cf482926edc21f71e7ef236565d776ef5",
+    "rawSourceInventoryBytes": 1553169,
+    "rawSourceInventorySha256": "6a1bd17d13db638d046ccc97c566cc1014aa90ba0e1b313274267e55763509f0",
+    "trackedEntries": 13993,
+    "sourceBeforeEqualsAfter": true,
+    "trackedStatusBeforeAndAfterEmpty": true,
+    "allThreeBinaryHashesCheckedBeforeAndAfter": true
+  },
+  "failedHistory": [
+    {
+      "sourceCommit": "38554c3dfc5d94bb6f4cd015caf0a327b1459e47",
+      "run": 40246871986,
+      "job": 121330182797,
+      "status": "FAILED",
+      "phase": "validator-dependency-install",
+      "cause": "New workflow required hashes absent from the unchanged maintained version-pinned requirements lock.",
+      "rustCompileExecuted": false,
+      "casesExecuted": 0,
+      "artifact": null,
+      "jobLogBytes": 27824,
+      "jobLogSha256": "9bd244d607de7c2b4c9a439c35c4c83ce131026095129df230ccc8dfd5b6886d",
+      "correction": "Use existing normal pip install --requirement tools/requirements.lock; no lock or security-policy changes."
+    },
+    {
+      "sourceCommit": "fcfe25d946eb580ceb6f1bfa271c0b6d7b2c5e1c",
+      "run": 40247160277,
+      "job": 121331054966,
+      "status": "FAILED",
+      "phase": "Rust compilation",
+      "cause": "Four E0616 accesses to the sibling-module-private PoolCall.request field.",
+      "cargoExit": 101,
+      "cargoCleanupConfirmed": true,
+      "casesExecuted": 0,
+      "artifact": {
+        "id": 12618923989,
+        "bytes": 463142,
+        "sha256": "a7ea6641618fb53412c34221876f844f42c26be75ffaabcd3ff74426b5c29c2c"
+      },
+      "correction": "Module-private borrowed accessor; original field privacy, final Arc clone and limits unchanged."
+    },
+    {
+      "sourceCommit": "5ce4aa6cfe6a49a34fc7bc0c4b9c81df2e89ab39",
+      "run": 40247780678,
+      "job": 121332919216,
+      "status": "FAILED",
+      "phase": "second quarantine control",
+      "cargoCompiled": true,
+      "casesPassed": 1,
+      "casesFailed": 1,
+      "casesNotExecuted": 4,
+      "cause": "single() bounded running requests but retained the default eight physical connection places; the test expected one exhausted place.",
+      "artifact": {
+        "id": 12619980749,
+        "bytes": 473754,
+        "sha256": "99654469233ac47481869ad4ceb6b2592ea9307c47a98919d4c0d46477a9b025"
+      },
+      "correction": "Only the target test explicitly funds one connection place and asserts capacity one; original held-charge/refusal/reinsertion/permanent-None checks remain."
+    }
+  ],
+  "composition": {
+    "qualifiedSourceRemains": "d3e9f756abb51fb4fe20ea409f6984fda394b442",
+    "publishedCompositionCommit": "7701089e7328b24fb6766929c461cdce7304bc3b",
+    "publishedCompositionTree": "71d8f01abef301f1285a3a3dbc96915009407964",
+    "incomingDevelopment": "0f4be2888bbf0caca3da5f971d95d50bda37c65f",
+    "all18QualifiedRustBlobsExact": true,
+    "actualFirstPartyCargoRoots": 23,
+    "actualFirstPartyCargoRootsSha256": "sha256:c64584ffca06092276f0f15319d5538e9a30cdb6a3a40e17ded3a1e37066f64c",
+    "changedConsumedInputs": [],
+    "wasmtimeArtifactsConsumed": 0,
+    "additionalSixCaseCampaigns": 0,
+    "strictTlsCatalogueCases": 44,
+    "affectedTlsReaderControlsPassed": 5,
+    "affectedTlsReaderControlSeconds": 0.117,
+    "staticContracts": {
+      "baselineCommands": 88,
+      "currentCommands": 1327,
+      "delegatedOwners": 389
+    },
+    "scopedFindings": {
+      "source": 0,
+      "gitleaks": 0,
+      "workflow": 0
+    },
+    "allOldPythonCasesAndExecutionGuardsPreserved": true,
+    "oldPythonCases": 8452,
+    "losslessStorageFragments": 33,
+    "sourceLimitsUnchanged": {
+      "max_entries": 8960,
+      "max_directories": 4096,
+      "max_file_bytes": 4194304,
+      "max_total_bytes": 78643200,
+      "max_archive_bytes": 85983232
+    },
+    "actualComposedSourceBytes": 78243773,
+    "actualComposedSourceFiles": 8897,
+    "actualComposedArchiveBytes": 85872640
+  },
+  "gates": {
+    "hostTypeAndSixControlsPassed": true,
+    "customKernelExecuted": false,
+    "protectedProviderInstalled": false,
+    "normalNativeBankSelected": false,
+    "kernelConsumerSelected": false,
+    "physicalRetirementQualified": false,
+    "completeAllocationClosure": false,
+    "productionInstallation": false,
+    "whole738Complete": false
+  },
+  "remaining": [
+    "Complete the selected RX/device allocation plan and actual compiled geometry within the original 192 KiB/256-record bank.",
+    "Qualify real DMA/dataref, reset/IRQ/NAPI/RCU, context and final normal Root bank retirement.",
+    "Qualify the original protected IPv4/IPv6 TCP/DNS/TLS operations and operator installation gates; no production enablement is granted."
+  ],
+  "postCompositionKernelReferenceCorrection": {
+    "historicalCompositionCommitRemains": "7701089e7328b24fb6766929c461cdce7304bc3b",
+    "scope": "Strict44-case output and positive fixture;43-case one-missing refusal retained. Original64KiB/owner/privacy/retirement guards preserved.",
+    "ownerSourceSha256": "0161c52f118a89d3c5229966ab82099120f864fae8a3f73498b97854eb990564",
+    "fixtureSourceSha256": "fa4483da7da94f2698c2a97a8a4bb0b1525c16ba2d03116613f3d3878fb43304",
+    "focusedPureControlsPassed": 6,
+    "focusedPureControlSeconds": 1.615,
+    "oldCaseIDsAndAllOtherExecutionGuardsExact": true,
+    "rustAndVmExecutions": 0,
+    "additionalSixCaseCampaigns": 0
+  },
+  "subsequentJavaComposition": {
+    "incomingDevelopment": "0215c57121fae5bc9b6973fc5eb0ee7c7e6de18a",
+    "allActualConsumedRustInputsUnchanged": true,
+    "additionalSixCaseCampaigns": 0,
+    "qualifiedSourceRemains": "d3e9f756abb51fb4fe20ea409f6984fda394b442"
+  }
+}

@@ -1,0 +1,81 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "env": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
+    },
+    "name": "One source-matched harness and twelve original signed calls",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "dtolnay/rust-toolchain"
+      },
+      {
+        "uses": "Swatinem/rust-cache",
+        "with": {
+          "cache-all-crates": false,
+          "cache-bin": false,
+          "cache-directories": "target/debug\ntarget/release\ntarget/wasm32-unknown-unknown\ntarget/wasm32-wasip2\n",
+          "cache-on-failure": false,
+          "cache-targets": false,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v3-contract-profiles",
+          "save-if": false,
+          "shared-key": "host-contracts"
+        }
+      },
+      {
+        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Authenticate the old component and run only the original twelve-call test",
+        "run": "python3 -B tools/qualify_java_retained_fibers.py --source-commit \"${{ github.sha }}\" --output \"$RUNNER_TEMP/java-retained-fibers\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain only bounded public observations and source identities",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "java-retained-fibers-${{ github.sha }}",
+          "path": "${{ runner.temp }}/java-retained-fibers/receipt.json\n${{ runner.temp }}/java-retained-fibers/FAILED.json\n${{ runner.temp }}/java-retained-fibers/source-inputs.json\n${{ runner.temp }}/java-retained-fibers/commands.json\n${{ runner.temp }}/java-retained-fibers/commands/logs/*.txt\n",
+          "retention-days": 3
+        }
+      }
+    ],
+    "timeout-minutes": 45
+  },
+  "jobId": "retained-fibers",
+  "kind": "job",
+  "reviewReason": "Build one locked source-matched local_service harness and execute exactly the existing twelve-call fibers case under finite caps.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/java-retained-fibers.yml"
+}

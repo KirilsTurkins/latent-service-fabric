@@ -1,0 +1,34 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "java-retained-fibers-${{ github.ref }}"
+    },
+    "name": "Retained public Java fibers through the normal signed node",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/java-retained-fibers-runtime-20261026"
+        ],
+        "paths": [
+          ".github/workflows/java-retained-fibers.yml",
+          "tools/qualify_java_retained_fibers.py",
+          "tools/java_guest/retained_fiber_inputs.py",
+          "tools/tests/test_java_retained_fibers.py",
+          "crates/latent-wasmtime/tests/local_service/runtime.rs"
+        ]
+      }
+    },
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "retained-fibers"
+  ],
+  "reviewReason": "Add one fixed-source retained-component Java runtime programme; no compiler or prior programme replay.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/java-retained-fibers.yml"
+}

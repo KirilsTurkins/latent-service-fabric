@@ -1,0 +1,54 @@
+{
+  "cases": [
+    "RetainedJavaFibersTests.test_exact_public_archive_and_corruption_refusal",
+    "RetainedJavaFibersTests.test_origin_allows_unselected_skips_but_requires_the_actual_backend",
+    "RetainedJavaFibersTests.test_twelve_real_rows_bind_ids_fresh_stores_budgets_and_retirement"
+  ],
+  "guards": {
+    "RetainedJavaFibersTests.test_exact_public_archive_and_corruption_refusal": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [
+        "unittest.skipUnless(os.environ.get('LSF_JAVA_RETAINED_ARCHIVE'), 'requires the one authenticated public archive')"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:5499d31d6b375d8b28af8d385109b91b4ef774b44c5aed9a6a3499359b379402",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": [
+        "skip-control-sha256:2207b65bb3243363ce71c52e1780761eb4f41ce895a7b44e4504b09ff87a492e",
+        "unittest.skipUnless(os.environ.get('LSF_JAVA_RETAINED_ARCHIVE'), 'requires the one authenticated public archive')"
+      ]
+    },
+    "RetainedJavaFibersTests.test_origin_allows_unselected_skips_but_requires_the_actual_backend": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5499d31d6b375d8b28af8d385109b91b4ef774b44c5aed9a6a3499359b379402",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "RetainedJavaFibersTests.test_twelve_real_rows_bind_ids_fresh_stores_budgets_and_retirement": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5499d31d6b375d8b28af8d385109b91b4ef774b44c5aed9a6a3499359b379402",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_retained_fibers.py",
+  "reviewReason": "Add three pure archive origin and twelve-call observation refusal controls; owning job rejects skips.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
