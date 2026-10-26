@@ -329,3 +329,289 @@ async fn actual_stream_host_ready_pending_ready_and_error_preserve_cleanup() {
     assert_eq!(*producer.trace.lock().unwrap(), ["produce", "consume"]);
     drop(none);
 }
+
+// Actual public producer creation/conversion on the ORIGINAL 1MiB/1B/5s
+// ActivationBudget adapter, separate from the implementation counter controls.
+#[repr(align(256))]
+struct FutureValue {
+    gate: Arc<Gate>,
+    _pinned: std::marker::PhantomPinned,
+}
+impl Drop for FutureValue {
+    fn drop(&mut self) {
+        self.gate.drops.fetch_add(1, SeqCst);
+    }
+}
+impl<D: 'static> wasmtime::component::FutureProducer<D> for FutureValue {
+    type Item = u8;
+    fn poll_produce(
+        self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        _store: StoreContextMut<D>,
+        _finish: bool,
+    ) -> Poll<wasmtime::Result<Option<u8>>> {
+        self.gate
+            .poll(cx, "produce")
+            .map(|result| result.map(|()| Some(42)))
+    }
+}
+fn future_value(gate: &Arc<Gate>) -> FutureValue {
+    FutureValue {
+        gate: gate.clone(),
+        _pinned: std::marker::PhantomPinned,
+    }
+}
+struct FutureSink(Arc<Gate>);
+impl<D: 'static> wasmtime::component::FutureConsumer<D> for FutureSink {
+    type Item = u8;
+    fn poll_consume(
+        self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        store: StoreContextMut<D>,
+        source: Source<'_, u8>,
+        _finish: bool,
+    ) -> Poll<wasmtime::Result<()>> {
+        match self.0.poll(cx, "consume") {
+            Poll::Pending => Poll::Pending,
+            Poll::Ready(Err(error)) => Poll::Ready(Err(error)),
+            Poll::Ready(Ok(())) => {
+                let mut source = source.as_direct(store);
+                assert_eq!(source.remaining(), &[42]);
+                source.mark_read(1);
+                self.0.payload.store(42, SeqCst);
+                Poll::Ready(Ok(()))
+            }
+        }
+    }
+}
+
+#[tokio::test]
+async fn actual_producer_creation_refusals_precede_poll_and_preserve_foreign_store() {
+    let engine = engine();
+    let core = Module::new(&engine, CORE).unwrap();
+    // Stream shared cell; Future exact local adapter Box then shared cell.
+    for (future, local) in [(false, 1), (true, 1), (true, 2)] {
+        let original = budget(MIB);
+        let observed = Arc::new(Observations::default());
+        let other = Arc::new(Observations::default());
+        let mut foreign = store(&engine, &original, &other).unwrap();
+        warm(&mut foreign).await;
+        let foreign_bytes = original.host_memory_bytes();
+        let foreign_requests = requests(&other);
+        let mut first = store(&engine, &original, &observed).unwrap();
+        warm(&mut first).await;
+        let (producer, _) = gates();
+        let before = requests(&observed).len();
+        let padding = Arc::new(Mutex::new(None::<Padding>));
+        let consumed = Arc::new(AtomicU64::new(0));
+        let requested = Arc::new(AtomicU64::new(0));
+        let kept = padding.clone();
+        let kept_consumed = consumed.clone();
+        let kept_requested = requested.clone();
+        let invocation = original.clone();
+        observed.before_request(before + local, move |bytes| {
+            let request = bytes as u64 + OWNER;
+            let payload = MIB - invocation.host_memory_bytes() - request + 1 - OWNER;
+            let mut owner = crate::native_tables::reserve(&invocation, payload as usize)
+                .unwrap()
+                .unwrap();
+            let bytes = vec![0u8; payload as usize];
+            assert_eq!(bytes.capacity(), payload as usize);
+            owner.allocated();
+            *kept.lock().unwrap() = Some(Padding {
+                _bytes: bytes,
+                _owner: owner,
+            });
+            kept_consumed.store(invocation.host_memory_bytes(), SeqCst);
+            kept_requested.store(request, SeqCst);
+        });
+        let error = if future {
+            wasmtime::component::FutureReader::new(&mut first, future_value(&producer))
+                .err()
+                .unwrap()
+        } else {
+            StreamReader::new(&mut first, Producer(producer.clone()))
+                .err()
+                .unwrap()
+        };
+        denial(&error, MIB, consumed.load(SeqCst), requested.load(SeqCst));
+        assert_eq!(consumed.load(SeqCst) + requested.load(SeqCst), MIB + 1);
+        assert_eq!(requests(&observed).len(), before + local);
+        assert_eq!(producer.polls.load(SeqCst), 0);
+        assert_eq!(producer.drops.load(SeqCst), 1);
+        drop(error);
+        drop(padding.lock().unwrap().take());
+        drop(first);
+        assert_eq!(original.host_memory_bytes(), foreign_bytes);
+        assert_eq!(requests(&other), foreign_requests);
+        let mut fresh = store(&engine, &original, &observed).unwrap();
+        fresh.set_fuel(FUEL).unwrap();
+        let instance = wasmtime::Instance::new(&mut fresh, &core, &[]).unwrap();
+        assert_eq!(core_answer(instance, &mut fresh), 42);
+        drop(fresh);
+        assert_eq!(original.host_memory_bytes(), foreign_bytes);
+        drop(foreign);
+        assert_eq!(original.host_memory_bytes(), 0);
+        assert_eq!(original.outstanding_reservations(), 0);
+        println!("PRODUCER-PUBLIC-REFUSAL future={future} local={local} global={} polls=0 fresh=42 foreign-unchanged=true final=0 wall=5", before + local);
+    }
+}
+
+struct EscapingProducer(Arc<Gate>);
+impl Drop for EscapingProducer {
+    fn drop(&mut self) {
+        self.0.drops.fetch_add(1, SeqCst);
+    }
+}
+impl<D: 'static> StreamProducer<D> for EscapingProducer {
+    type Item = u8;
+    type Buffer = Option<u8>;
+    fn poll_produce<'a>(
+        self: Pin<&mut Self>,
+        _cx: &mut Context<'_>,
+        _store: StoreContextMut<'a, D>,
+        _dst: Destination<'a, u8, Option<u8>>,
+        _finish: bool,
+    ) -> Poll<wasmtime::Result<StreamResult>> {
+        self.0.polls.fetch_add(1, SeqCst);
+        Poll::Pending
+    }
+    fn try_into(
+        me: Pin<Box<Self>>,
+        ty: std::any::TypeId,
+    ) -> Result<Box<dyn std::any::Any>, Pin<Box<Self>>> {
+        if ty == std::any::TypeId::of::<Pin<Box<Self>>>() {
+            Ok(Box::new(me))
+        } else {
+            Err(me)
+        }
+    }
+}
+
+#[tokio::test]
+async fn actual_producer_stream_conversion_reuses_budget_and_preserves_owning_escape() {
+    let engine = engine();
+    let original = budget(MIB);
+    let observed = Arc::new(Observations::default());
+    let other = Arc::new(Observations::default());
+    let mut foreign = store(&engine, &original, &other).unwrap();
+    warm(&mut foreign).await;
+    let foreign_bytes = original.host_memory_bytes();
+    let foreign_requests = requests(&other);
+    let mut first = store(&engine, &original, &observed).unwrap();
+    warm(&mut first).await;
+    let baseline = original.host_memory_bytes();
+    // Repeat create -> ordinary Err -> close on the SAME reusable budget.
+    for _ in 0..16 {
+        let (producer, _) = gates();
+        let before = requests(&observed).len();
+        let mut reader = StreamReader::new(&mut first, EscapingProducer(producer.clone())).unwrap();
+        assert_eq!(requests(&observed).len(), before + 1);
+        let live = original.host_memory_bytes();
+        for _ in 0..4 {
+            reader = reader.try_into::<()>(&mut first).err().unwrap();
+            assert_eq!(original.host_memory_bytes(), live);
+            assert_eq!(requests(&observed).len(), before + 1);
+        }
+        reader.close(&mut first).unwrap();
+        assert_eq!(producer.drops.load(SeqCst), 1);
+        assert_eq!(producer.polls.load(SeqCst), 0);
+        assert_eq!(original.host_memory_bytes(), baseline);
+    }
+    let (producer, _) = gates();
+    let reader = StreamReader::new(&mut first, EscapingProducer(producer.clone())).unwrap();
+    let escaped: Pin<Box<EscapingProducer>> = reader.try_into(&mut first).unwrap();
+    assert_eq!(producer.drops.load(SeqCst), 0);
+    assert_eq!(
+        original.host_memory_bytes(),
+        baseline,
+        "shared cell retired; escaped P Box explicitly UNPAID"
+    );
+    drop(first);
+    assert_eq!(original.host_memory_bytes(), foreign_bytes);
+    assert_eq!(requests(&other), foreign_requests);
+    drop(escaped); // Genuine original Box survives Store, without a fake refund.
+    assert_eq!(producer.drops.load(SeqCst), 1);
+    drop(foreign);
+    assert_eq!(original.host_memory_bytes(), 0);
+    assert_eq!(original.outstanding_reservations(), 0);
+    println!("PRODUCER-PUBLIC-CONVERSION ordinary-Err-reusable=true owning-Ok-preserved=true PBox=unpaid final=0 wall=5");
+}
+
+#[tokio::test]
+async fn actual_producer_future_any_roundtrip_and_pending_completion_preserve_custody() {
+    let engine = engine();
+    for selected in [true, false] {
+        let original = budget(MIB);
+        let observed = Arc::new(Observations::default());
+        // The None branch uses the SAME public FutureReader local adapter type.
+        let mut first = if selected {
+            store(&engine, &original, &observed).unwrap()
+        } else {
+            // The concrete local Producer<FutureValue> is unchanged on None.
+            // Use the original no-factory Store rather than a dummy binding.
+            let mut none = Store::new(&engine, ());
+            warm(&mut none).await;
+            let (producer, consumer) = gates();
+            let reader =
+                wasmtime::component::FutureReader::new(&mut none, future_value(&producer)).unwrap();
+            reader
+                .pipe(&mut none, FutureSink(consumer.clone()))
+                .unwrap();
+            let mut running = Box::pin(drive(&mut none, &producer, &consumer));
+            assert!(running
+                .as_mut()
+                .poll(&mut Context::from_waker(Waker::noop()))
+                .is_pending());
+            producer.release();
+            running.await.unwrap();
+            assert_eq!(consumer.payload.load(SeqCst), 42);
+            let trace = producer.trace.lock().unwrap();
+            assert_eq!(trace.first(), Some(&"produce"));
+            assert_eq!(trace.last(), Some(&"consume"));
+            assert!(trace[..trace.len() - 1]
+                .iter()
+                .all(|item| *item == "produce"));
+            drop(trace);
+            drop(none);
+            continue;
+        };
+        warm(&mut first).await;
+        let baseline = original.host_memory_bytes();
+        let (producer, _consumer) = gates();
+        let before = requests(&observed).len();
+        let reader =
+            wasmtime::component::FutureReader::new(&mut first, future_value(&producer)).unwrap();
+        assert_eq!(requests(&observed).len(), before + 2);
+        let live = original.host_memory_bytes();
+        let any = reader.try_into_future_any(&mut first).unwrap();
+        let mut reader = wasmtime::component::FutureReader::<u8>::try_from_future_any(any).unwrap();
+        assert_eq!(original.host_memory_bytes(), live);
+        assert_eq!(requests(&observed).len(), before + 2);
+        reader.close(&mut first).unwrap();
+        assert_eq!(producer.drops.load(SeqCst), 1);
+        assert_eq!(original.host_memory_bytes(), baseline);
+        let (producer, consumer) = gates();
+        let reader =
+            wasmtime::component::FutureReader::new(&mut first, future_value(&producer)).unwrap();
+        reader
+            .pipe(&mut first, FutureSink(consumer.clone()))
+            .unwrap();
+        let mut running = Box::pin(drive(&mut first, &producer, &consumer));
+        assert!(running
+            .as_mut()
+            .poll(&mut Context::from_waker(Waker::noop()))
+            .is_pending());
+        assert_eq!(producer.drops.load(SeqCst), 0);
+        producer.release();
+        running.await.unwrap();
+        assert_eq!(consumer.payload.load(SeqCst), 42);
+        assert_eq!(producer.drops.load(SeqCst), 1);
+        drop(first);
+        producer.release();
+        consumer.release();
+        assert_eq!(original.host_memory_bytes(), 0);
+        assert_eq!(original.outstanding_reservations(), 0);
+        println!("PRODUCER-PUBLIC-FUTURE adapter-custody=true Any-handle-only=true pending-payload=42 final=0 wall=5");
+    }
+}

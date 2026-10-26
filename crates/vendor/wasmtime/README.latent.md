@@ -441,7 +441,7 @@ not qualify this backport; no cache compilation or runtime execution is
 claimed here. Native memory/refund code and runtime budgets are unchanged.
 
 Current source-cohort identity for this unqualified dependency backport is
-`wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-unordered-futures-outer-sync-result-stream-outers-consumer-memory-v18-cache-repair`. The original plain-v17/fe9 execution remains a separate immutable source.
+`wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-unordered-futures-outer-sync-result-stream-outers-consumer-producer-memory-v19-cache-repair`. The original plain-v17/fe9 execution remains a separate immutable source.
 
 
 The v18 SOURCE stage adds exact selected consumer pinned-value and shared-cell
@@ -470,3 +470,36 @@ state, P::Buffer default/transitive allocations, per-invocation inner Boxes,
 resource tables/collections and borrowed host-to-host future backing remain
 separate unpaid scopes. Payload layouts are not allocator/RSS/full-cost quotas;
 whole #736 CPU/memory/retirement coverage remains OPEN.
+
+
+The v19 SOURCE stage adds exact selected producer shared-cell backing. General
+StreamProducer P Boxes remain explicitly unpaid: an owning try_into may return
+or retain arbitrary original/different Boxes. Shared-only general producers do
+not strand credit on ordinary Err. FutureReader's original function-local
+Producer<P> alone chooses the private body-plus-cell policy; its literal
+source-known default Err restores the original affine body token. Unexpected
+Ok/panic retains that same uncertain charge, without pointer equality proof.
+
+All selected reservations precede table insertion, P Box, Buffer::default, Arc,
+factory construction and poll. None keeps the literal original tuple/Arc and
+closure captures; the write body is unchanged behind a private static storage
+trait with Send guard and no new P:Sync bound. Final private Arc retirement
+deallocates its header before original P-then-B destruction and token refunds.
+Confirmation cleanup is installed before confirmation; destructor unwind keeps
+the original uncertain charge. No Memory/factory Arc is published.
+
+Six new private implementation controls, three new public creation/conversion
+cases and two affected existing public cases are SOURCE ONLY, UNCOMPILED and
+UNEXECUTED. The bounded owner plan selects only these eleven ordinary cases in
+two locked targets,26 supervised commands/52 raw channels; it adds no WAT/cache
+roundtrip, old private group or language replay. Public original grant remains
+1MiB/1B fuel/5s; private counters do not certify that grant or a generic ceiling.
+
+The earlier v18 preparation wording above is a historical source stage. Its
+later exact e4ce seven-case qualification is recorded separately in the dated
+consumer-cell evidence, not retagged as this new v19 source cohort. This slice
+narrows the historical producer-shared-state gap only; general P Boxes, inner
+factories/completion closures, buffer-owned storage, tables/collections and
+transitive allocations remain unpaid. Layout is not allocator/RSS/full cost;
+whole #736 CPU/memory/retirement completion remains OPEN. Mandatory current
+14-file workspace-isolated cache authentication and fixed locks are unchanged.
