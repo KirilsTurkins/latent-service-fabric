@@ -1,8 +1,8 @@
 {
-  "kind": "owner",
-  "path": "tools/qualify_java_resource_runtime.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Two explicit default-false accepted late-facility lanes; original jobs restore byte-exact after only selector/job/guard removal; same original limits, immutable 6fd native, two denials plus four ordinary late/fresh calls, no old programme or post-Store credit.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "0dbe562c01f75038ee195fd1118dd71173c2a795e1a35fcefa9d3a16292573eb"
+"kind":"owner",
+"path":"tools/qualify_java_resource_runtime.py",
+"reviewBoundary":"committed-fingerprint",
+"reviewReason":"Two explicit default-false accepted late-facility lanes; original jobs restore byte-exact after only selector/job/guard removal; same original limits, immutable 6fd native, two denials plus four ordinary late/fresh calls, no old programme or post-Store credit.",
+"schemaVersion":"latent.ci.contracts.v1",
+"sha256":"0dbe562c01f75038ee195fd1118dd71173c2a795e1a35fcefa9d3a16292573eb"
 }

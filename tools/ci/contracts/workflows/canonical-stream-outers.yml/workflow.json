@@ -5,21 +5,22 @@
       "cancel-in-progress": false,
       "group": "canonical-stream-outers-${{ github.ref }}"
     },
-    "name": "Focused producer factory ownership",
+    "name": "Focused real I/O native ownership",
     "on": {
       "push": {
         "branches": [
-          "feat/sdk-736-producer-factories-20261026"
+          "feat/sdk-736-io-operation-native-20261026"
         ],
         "paths": [
           ".github/workflows/canonical-stream-outers.yml",
-          "crates/vendor/wasmtime/**",
-          "crates/vendor/wasmtime-cache/**",
-          "crates/latent-wasmtime/src/host.rs",
-          "crates/latent-wasmtime/src/host/native_stream_outer_tests.rs",
-          "crates/latent-wasmtime/src/host/native-stream-outers.wat",
+          "crates/latent-capabilities/**",
+          "Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "tools/toolchain.toml",
           "tools/qualify_stream_outers.py",
-          "tools/host_codec_wasmtime.py"
+          "tools/host_codec_wasmtime.py",
+          "tools/ci/suites.json"
         ]
       }
     },
@@ -30,7 +31,7 @@
   "requiredJobs": [
     "stream-outers"
   ],
-  "reviewReason": "Reviewed #736 producer-factory v20: four new private and two new public implementation controls plus three affected historical count controls;9cases/22commands/44raw. Exact two locked Cargo targets/features,45m/2400/900/60/30/cleanup5/j2 unchanged. No WAT/cache/old11 aggregate/native-local replay. All13 historical owner functions source exact. General P/body Buffer/inner/consumer closures remain unpaid. Mandatory275Wasmtime+14cache auth retained; source-only pending owning outcome.",
+  "reviewReason": "Reviewed #736 real I/O native backing: three new original Phase3 budget/physical lifetime controls plus changed node2048 layout check and unchanged Phase1 reference. One existing latent-capabilities locked all-features target,5cases/12commands/24raw; original45m/2395+5/895+5/55+5/25+5/j2 unchanged. No canonical9/producer11/language/compiler/guest replay. Wasmtime275/cache14/currentv20cohort unchanged and unexecuted by this owner; Shared full physical Arc+billing retained through lastWeak. Prior owner functions exact; source-only pending owning outcome.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/canonical-stream-outers.yml"
 }

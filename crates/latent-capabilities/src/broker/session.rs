@@ -17,6 +17,7 @@ use std::sync::{
 pub(in crate::broker) mod native_backing;
 pub(in crate::broker) mod native_handle;
 mod shared;
+pub(in crate::broker) use shared::{Shared, SharedWeak};
 pub(in crate::broker) type SessionCoreOwner = shared::Shared<SessionCore>;
 pub(in crate::broker) type StatsOwner = shared::Shared<Stats>;
 pub(in crate::broker) type HandleEntryOwner = shared::Shared<HandleEntry>;

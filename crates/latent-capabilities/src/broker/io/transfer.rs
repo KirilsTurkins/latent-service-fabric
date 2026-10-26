@@ -1,6 +1,6 @@
 //! One accepted transfer, finite totals and independently owned resident chunks.
 use super::{
-    capacity, denied, invalid, Authority, Charge, IoBuffer, IoCall, IoMemory, Kind, Operation,
+    capacity, denied, invalid, Authority, Charge, IoBuffer, IoCall, IoMemory, Kind, OperationOwner,
     PlatformError,
 };
 use crate::broker::CapabilityStreamBudget;
@@ -15,7 +15,7 @@ pub struct IoTransferOptions {
     pub maximum_outstanding_chunks: usize,
 }
 struct Transfer {
-    operation: Arc<Operation>,
+    operation: OperationOwner,
     budget: CapabilityStreamBudget,
     options: IoTransferOptions,
     input: AtomicU64,
@@ -179,7 +179,7 @@ impl IoCall {
         let stream = runtime.counters.acquire(Kind::Stream, 1)?;
         let metadata = runtime.counters.acquire(Kind::Metadata, 2048)?;
         let inner = Arc::new(Transfer {
-            operation: Arc::clone(&self.operation),
+            operation: self.operation.clone(),
             budget,
             options,
             input: AtomicU64::new(0),

@@ -1,18 +1,18 @@
 {
-  "cases":["CompositeAdmissionProducts.test_actual_failed_missing_reordered_or_unqualified_control_records_cannot_supply_products","CompositeAdmissionProducts.test_actual_seven_commands_keep_three_new_and_two_original_compiler_identities","CompositeAdmissionProducts.test_all_six_source_fields_auxiliary_rows_and_five_preimages_are_mandatory"],
-  "guards":{
-    "CompositeAdmissionProducts.test_actual_failed_missing_reordered_or_unqualified_control_records_cannot_supply_products":
+"cases":["CompositeAdmissionProducts.test_actual_failed_missing_reordered_or_unqualified_control_records_cannot_supply_products","CompositeAdmissionProducts.test_actual_seven_commands_keep_three_new_and_two_original_compiler_identities","CompositeAdmissionProducts.test_all_six_source_fields_auxiliary_rows_and_five_preimages_are_mandatory"],
+"guards":{
+"CompositeAdmissionProducts.test_actual_failed_missing_reordered_or_unqualified_control_records_cannot_supply_products":
       "76fb42fb8cbff4387fb46cd20a0bee8edc4ff95c0ba807f48ef334b6876a9843",
-    "CompositeAdmissionProducts.test_actual_seven_commands_keep_three_new_and_two_original_compiler_identities":
+"CompositeAdmissionProducts.test_actual_seven_commands_keep_three_new_and_two_original_compiler_identities":
       "76fb42fb8cbff4387fb46cd20a0bee8edc4ff95c0ba807f48ef334b6876a9843",
-    "CompositeAdmissionProducts.test_all_six_source_fields_auxiliary_rows_and_five_preimages_are_mandatory":
+"CompositeAdmissionProducts.test_all_six_source_fields_auxiliary_rows_and_five_preimages_are_mandatory":
       "76fb42fb8cbff4387fb46cd20a0bee8edc4ff95c0ba807f48ef334b6876a9843"
-  },
-  "kind":"python",
-  "module":"tools/tests/test_c_thread_admission_native_products.py",
-  "reviewReason":"Add3 actualproducer and adverse ancestry controls without changing existingcases or guards",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "76fb42fb8cbff4387fb46cd20a0bee8edc4ff95c0ba807f48ef334b6876a9843":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:34402a98638d6c3d8cf117b7f93a6c46a1874cc41ff43438e0e0b82be0e5038c","class:setup-sha256:e636c6ae11ad364f76a1890489154d3470340a6b2ec343deb01f7d8e5a63793d"],"skipSites":[]}
-  }
+},
+"kind":"python",
+"module":"tools/tests/test_c_thread_admission_native_products.py",
+"reviewReason":"Add3 actualproducer and adverse ancestry controls without changing existingcases or guards",
+"schemaVersion":"latent.ci.contracts.v2",
+"guardDefinitions":{
+"76fb42fb8cbff4387fb46cd20a0bee8edc4ff95c0ba807f48ef334b6876a9843":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:34402a98638d6c3d8cf117b7f93a6c46a1874cc41ff43438e0e0b82be0e5038c","class:setup-sha256:e636c6ae11ad364f76a1890489154d3470340a6b2ec343deb01f7d8e5a63793d"],"skipSites":[]}
+}
 }

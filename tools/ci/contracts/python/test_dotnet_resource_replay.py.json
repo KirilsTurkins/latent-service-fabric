@@ -1,22 +1,22 @@
 {
-  "cases":["ManagedResourceReplay.test_archive_rejects_traversal_and_corrupt_members_before_replay","ManagedResourceReplay.test_missing_component_or_arbitrary_layer_cannot_be_reconstructed","ManagedResourceReplay.test_only_the_exact_failed_build_producer_can_supply_the_fresh_component","ManagedResourceReplay.test_original_compiler_native_ancestry_cannot_be_relabelled_as_a_new_replay_host","ManagedResourceReplay.test_wit_is_copied_verbatim_from_the_normal_package_with_its_original_observed_digest"],
-  "guards":{
-    "ManagedResourceReplay.test_archive_rejects_traversal_and_corrupt_members_before_replay":
+"cases":["ManagedResourceReplay.test_archive_rejects_traversal_and_corrupt_members_before_replay","ManagedResourceReplay.test_missing_component_or_arbitrary_layer_cannot_be_reconstructed","ManagedResourceReplay.test_only_the_exact_failed_build_producer_can_supply_the_fresh_component","ManagedResourceReplay.test_original_compiler_native_ancestry_cannot_be_relabelled_as_a_new_replay_host","ManagedResourceReplay.test_wit_is_copied_verbatim_from_the_normal_package_with_its_original_observed_digest"],
+"guards":{
+"ManagedResourceReplay.test_archive_rejects_traversal_and_corrupt_members_before_replay":
       "53dd8ec765dfe266a243d07fa74a75bb84d4183052e43845bf7f9567cbc7d686",
-    "ManagedResourceReplay.test_missing_component_or_arbitrary_layer_cannot_be_reconstructed":
+"ManagedResourceReplay.test_missing_component_or_arbitrary_layer_cannot_be_reconstructed":
       "53dd8ec765dfe266a243d07fa74a75bb84d4183052e43845bf7f9567cbc7d686",
-    "ManagedResourceReplay.test_only_the_exact_failed_build_producer_can_supply_the_fresh_component":
+"ManagedResourceReplay.test_only_the_exact_failed_build_producer_can_supply_the_fresh_component":
       "53dd8ec765dfe266a243d07fa74a75bb84d4183052e43845bf7f9567cbc7d686",
-    "ManagedResourceReplay.test_original_compiler_native_ancestry_cannot_be_relabelled_as_a_new_replay_host":
+"ManagedResourceReplay.test_original_compiler_native_ancestry_cannot_be_relabelled_as_a_new_replay_host":
       "53dd8ec765dfe266a243d07fa74a75bb84d4183052e43845bf7f9567cbc7d686",
-    "ManagedResourceReplay.test_wit_is_copied_verbatim_from_the_normal_package_with_its_original_observed_digest":
+"ManagedResourceReplay.test_wit_is_copied_verbatim_from_the_normal_package_with_its_original_observed_digest":
       "53dd8ec765dfe266a243d07fa74a75bb84d4183052e43845bf7f9567cbc7d686"
-  },
-  "kind":"python",
-  "module":"tools/tests/test_dotnet_resource_replay.py",
-  "reviewReason":"Keep exact original77 compiler-native ancestry independently bound when replay uses a new observer host; preserve four original controls",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "53dd8ec765dfe266a243d07fa74a75bb84d4183052e43845bf7f9567cbc7d686":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:96d389e79d61eaea27a6aa4a3806753e03c83657f72c148ac3105125390792c9","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
-  }
+},
+"kind":"python",
+"module":"tools/tests/test_dotnet_resource_replay.py",
+"reviewReason":"Keep exact original77 compiler-native ancestry independently bound when replay uses a new observer host; preserve four original controls",
+"schemaVersion":"latent.ci.contracts.v2",
+"guardDefinitions":{
+"53dd8ec765dfe266a243d07fa74a75bb84d4183052e43845bf7f9567cbc7d686":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:96d389e79d61eaea27a6aa4a3806753e03c83657f72c148ac3105125390792c9","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+}
 }
