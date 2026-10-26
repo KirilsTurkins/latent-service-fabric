@@ -7,8 +7,8 @@ use latent_core::{
 };
 use std::future::Future;
 use std::sync::{
-    atomic::{AtomicBool, Ordering},
     Arc, Mutex,
+    atomic::{AtomicBool, Ordering},
 };
 use std::task::Poll;
 use std::time::Instant;
@@ -29,6 +29,7 @@ fn admission(error: latent_core::BudgetError) -> wasmtime::Error {
 #[derive(Default)]
 struct Probe {
     armed: bool,
+    refusal_request: usize,
     requests: Vec<usize>, // test observation only; never an admission oracle
     contention: Option<HostMemoryReservation>,
 }
@@ -47,13 +48,13 @@ impl NativeMemory for Memory {
         let mut probe = self.probe.lock().unwrap();
         if probe.armed {
             assert!(
-                probe.requests.len() < 2,
+                probe.requests.len() < probe.refusal_request,
                 "refusal must stop the closed allocation path"
             );
             probe.requests.push(bytes);
-            if probe.requests.len() == 2 {
+            if probe.requests.len() == probe.refusal_request {
                 // Actual contention consumes the SAME original budget, after
-                // the existing callback-Future Box and before the new cell.
+                // the callback-Future Box and before the selected allocation.
                 let remaining = self.budget.remaining_at(Instant::now()).memory_bytes;
                 probe.contention = Some(
                     self.budget
@@ -344,11 +345,25 @@ fn component() -> Vec<u8> {
 #[tokio::test]
 #[ignore = "requires compiled private JoinState layout from the paired owning controls"]
 async fn canonical_join_state_first_poll_refusal_and_same_budget_fresh_store() {
-    let expected: usize = std::env::var("LSF_TEST_JOIN_STATE_LAYOUT")
-        .expect("owning layout witness")
-        .parse()
-        .expect("typed compiled layout");
-    assert!((1..=4096).contains(&expected)); // assertion only; never grants capacity
+    canonical_backing_refusal_and_same_budget_fresh_store(2).await;
+}
+
+#[tokio::test]
+#[ignore = "requires focused actual async-import future backing qualification"]
+async fn canonical_call_future_first_poll_refusal_and_same_budget_fresh_store() {
+    canonical_backing_refusal_and_same_budget_fresh_store(3).await;
+}
+
+async fn canonical_backing_refusal_and_same_budget_fresh_store(refusal_request: usize) {
+    assert!(refusal_request == 2 || refusal_request == 3);
+    let expected = (refusal_request == 2).then(|| {
+        let layout: usize = std::env::var("LSF_TEST_JOIN_STATE_LAYOUT")
+            .expect("owning layout witness")
+            .parse()
+            .expect("typed compiled layout");
+        assert!((1..=4096).contains(&layout)); // assertion only; never grants capacity
+        layout
+    });
     let original = budget();
     let mut config = Config::new();
     config
@@ -396,7 +411,11 @@ async fn canonical_join_state_first_poll_refusal_and_same_budget_fresh_store() {
         let function = instance
             .get_typed_func::<(), (u32,)>(&mut store, "run")
             .unwrap();
-        probe.lock().unwrap().armed = refuse;
+        {
+            let mut probe = probe.lock().unwrap();
+            probe.armed = refuse;
+            probe.refusal_request = refusal_request;
+        }
         let initial_fuel = original.remaining_at(Instant::now()).cpu_fuel;
         store.set_fuel(initial_fuel).unwrap();
         let mut call = Box::pin(function.call_async(&mut store, ()));
@@ -407,19 +426,30 @@ async fn canonical_join_state_first_poll_refusal_and_same_budget_fresh_store() {
                 .find_map(|cause| cause.downcast_ref::<OriginalAdmission>())
                 .expect("original typed budget error");
             assert_eq!(admitted.0.code, PlatformErrorCode::ResourceExhausted);
-            assert!(admitted.0.details.iter().any(|d| d
-                .fields
-                .get("dimension")
-                .map(String::as_str)
-                == Some("memory-bytes")));
+            assert!(
+                admitted
+                    .0
+                    .details
+                    .iter()
+                    .any(|d| d.fields.get("dimension").map(String::as_str) == Some("memory-bytes"))
+            );
             assert!(!entered.load(Ordering::SeqCst) && !polled.load(Ordering::SeqCst));
             let observed = probe.lock().unwrap();
-            assert_eq!(observed.requests.len(), 2);
-            assert_eq!(
-                observed.requests[1], expected,
-                "actual private cell admission, not an earlier allocation"
-            );
+            assert_eq!(observed.requests.len(), refusal_request);
+            if let Some(expected) = expected {
+                assert_eq!(
+                    observed.requests[1], expected,
+                    "actual private cell admission, not an earlier allocation"
+                );
+            }
             assert!(observed.contention.is_some());
+            if refusal_request == 3 {
+                // The closed path is callback box, JoinState, then the
+                // abortable call future Box before any user code is polled.
+                // Order and the unentered closure identify this admission;
+                // the byte count alone is not treated as allocation identity.
+                assert!((1..=4096).contains(&observed.requests[2]));
+            }
             drop(observed);
             drop(error);
             drop(send);
@@ -443,5 +473,10 @@ async fn canonical_join_state_first_poll_refusal_and_same_budget_fresh_store() {
         drop(probe);
         assert_eq!(original.host_memory_bytes(), 0);
         assert_eq!(original.outstanding_reservations(), 0);
+    }
+    if refusal_request == 3 {
+        println!(
+            "LSF_CALL_FUTURE_V1 refusal=memory-bytes requests=3 before-poll=true fresh=42 stores=2"
+        );
     }
 }

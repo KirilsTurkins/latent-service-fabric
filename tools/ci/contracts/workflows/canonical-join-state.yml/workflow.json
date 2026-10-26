@@ -3,13 +3,13 @@
   "policy": {
     "concurrency": {
       "cancel-in-progress": false,
-      "group": "canonical-join-state-${{ github.ref }}"
+      "group": "canonical-call-future-${{ github.ref }}"
     },
-    "name": "Focused canonical async JoinState accounting",
+    "name": "Focused canonical async call-future accounting",
     "on": {
       "push": {
         "branches": [
-          "feat/canonical-join-state-accounting-20261025"
+          "feat/sdk-736-shared-owners-20261025"
         ],
         "paths": [
           ".github/workflows/canonical-join-state.yml",
@@ -28,7 +28,7 @@
   "requiredJobs": [
     "join-state"
   ],
-  "reviewReason": "Closed branch-only canonical JoinState accounting owner; two locked host targets and exactly five private plus one actual canonical control, with unchanged limits and no generic suite.",
+  "reviewReason": "Reviewed concrete abortable async-import future Box preadmission and physical-drop ownership. Existing focused owner runs only four new private cases and one new actual canonical third-admission/fresh-Store case under unchanged two-build/45m/2400s/900s/60s/two-job bounds. No old case, skip or authority is removed.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/canonical-join-state.yml"
 }
