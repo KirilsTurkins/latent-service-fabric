@@ -1387,8 +1387,8 @@
     ],
     "postimages": {
       "Cargo.toml": {
-        "sha256": "ffff35412e363d84f4db2a74deaa31ce96a0051dcc68713ff4870cc439676a4d",
-        "bytes": 3035
+        "sha256": "e68146456e40062edfde8d47c853ea8155f20b63044fba94bf8ef24f2c8bae5d",
+        "bytes": 3048
       },
       "Cargo.lock": {
         "sha256": "6f22ad7ad2def709e45bd209f2b12041f692f8e35a6092553a54a18233d66f1e",

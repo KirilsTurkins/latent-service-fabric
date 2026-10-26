@@ -13,7 +13,7 @@ PROVIDER = "crates/vendor/wasmtime"
 NAME = "wasmtime"
 VERSION = "48.0.7"
 COHORT = "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-unordered-futures-outer-sync-result-stream-outers-memory-v17-cache-repair"
-RECORD_SHA256 = "4c39b53ab8067ac71ee1993b9eec56581474ba920d5075804732c48de65e104e"
+RECORD_SHA256 = "c2ec501a8616bbf32701786f732fbb5228807bb4c7808f56d57efc7ee68ea694"
 # Explicit reviewed postimages; the remaining original files use the immutable
 # registry inventory. Changing a claimed record or patch cannot authorize bytes.
 POSTIMAGES = {
@@ -242,8 +242,8 @@ POSTIMAGES = {
         "bytes": 9353
     },
     "README.latent.md": {
-        "sha256": "5dfd87728fcae1ae178b612f8d4d7e0038513b86dfa9523e1153e2eb3f959cb4",
-        "bytes": 30083
+        "sha256": "bc6146d002e06ff27cf8872aa2d79bae87fe58efc67aa10ee5af58bf57461069",
+        "bytes": 30279
     },
     "latent-dynamic-memory.patch": {
         "sha256": "32a3c60bc9e302cae92e2a0525a1246616c97ab4d97a02256a3e9f60c5a3747a",
@@ -296,7 +296,8 @@ def verify_cache_dependency(root: Path, record: dict) -> dict:
         actual[path.relative_to(directory).as_posix()] = identity(read_file(path, 4 * 1024**2))
     require(actual == expected, "cache-source-identity")
     manifest = tomllib.loads(read_file(directory / "Cargo.toml", 128 * 1024).decode())
-    require(manifest["package"]["name"] == cache["name"]
+    require(manifest.get("workspace") == {}
+        and manifest["package"]["name"] == cache["name"]
         and manifest["package"]["version"] == VERSION
         and manifest["package"]["license"] == "Apache-2.0 WITH LLVM-exception"
         and manifest["dependencies"]["zstd"] == {"version": "0.14.3", "default-features": False},
