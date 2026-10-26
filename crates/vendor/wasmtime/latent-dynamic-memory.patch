@@ -25,7 +25,7 @@
  pub(crate) mod trampoline;
 --- a/src/runtime/component/concurrent.rs
 +++ b/src/runtime/component/concurrent.rs
-@@ -107,12 +107,15 @@
+@@ -107,14 +107,18 @@
      StreamProducer, StreamReader, StreamResult, VecBuffer, WriteBuffer,
  };
  pub(crate) use futures_and_streams::{ResourcePair, lower_error_context_to_index};
@@ -40,8 +40,29 @@
 +mod pending_future;
  pub(crate) mod table;
  pub(crate) mod tls;
++mod worker_function;
  
-@@ -857,7 +860,7 @@
+ /// Constant defined in the Component Model spec to indicate that the async
+ /// intrinsic (e.g. `future.write`) has not yet completed.
+@@ -778,7 +782,7 @@
+ /// Job to be run on a worker fiber.
+ enum WorkerItem {
+     GuestCall(GuestCall),
+-    Function(AlwaysMut<Box<dyn FnOnce(&mut dyn VMStore) -> Result<()> + Send>>),
++    Function(AlwaysMut<worker_function::WorkerFunction>),
+ }
+ 
+ /// Represents a pending work item to be handled by the event loop for a given
+@@ -793,7 +797,7 @@
+     /// A pending call into guest code for a given guest task.
+     GuestCall(RuntimeComponentInstanceIndex, GuestCall),
+     /// A job to run on a worker fiber.
+-    WorkerFunction(AlwaysMut<Box<dyn FnOnce(&mut dyn VMStore) -> Result<()> + Send>>),
++    WorkerFunction(AlwaysMut<worker_function::WorkerFunction>),
+ }
+ 
+ impl fmt::Debug for WorkItem {
+@@ -857,7 +861,7 @@
  
              Ok(())
          })
@@ -50,7 +71,7 @@
  
      // Finally, poll the future.  We can use a dummy `Waker` here because we'll
      // add the future to `ConcurrentState::futures` and poll it automatically
-@@ -1093,7 +1096,10 @@
+@@ -1093,7 +1097,10 @@
          // Create an "abortable future" here where internally the future will
          // hook calls to poll and possibly spawn more background tasks on each
          // iteration.
@@ -62,7 +83,16 @@
          self.0
              .concurrent_state_mut()?
              .push_future(Box::pin(async move { future.await.unwrap_or(Ok(())) }));
-@@ -3273,32 +3279,89 @@
+@@ -1546,7 +1553,7 @@
+                     };
+                     match item {
+                         WorkerItem::GuestCall(call) => handle_guest_call(store, call)?,
+-                        WorkerItem::Function(fun) => fun.into_inner()(store)?,
++                        WorkerItem::Function(fun) => fun.into_inner().invoke(store)?,
+                     }
+ 
+                     store.suspend(SuspendReason::NeedWork)?;
+@@ -3273,32 +3280,100 @@
      ) -> Result<u32> {
          let token = StoreToken::new(store.as_context_mut());
          let task = store.0.current_host_thread()?;
@@ -76,18 +106,12 @@
 +        // Admit the concrete pinned future backing before polling it or
 +        // publishing its join handle into the host task's running state.
 +        let future = call_future::CallFuture::new(&memory, future)?;
-+        // Reserve the exact factory-output Box before the first poll can
-+        // perform user I/O. The prepared tuple retains the same inner owner,
-+        // lowering closure, Store token and host-task identity.
-+        let mut prepared = pending_future::PreparedFuture::new(
-+            &memory,
-+            (future, lower, token, task),
-+            |(future, lower, token, task)| async move {
-+                let result = match future.await {
-+                    Some(result) => Some(result?),
-+                    None => None,
-+                };
-+                let on_complete = move |store: &mut dyn VMStore| {
++        // Merely store the noncapturing factory and its typed context here.
++        // Its exact output Layout is reserved only AFTER the pending Box (#4).
++        let worker = worker_function::PreparedWorker::new(
++            (lower, token, task),
++            |(lower, token, task), result: Option<R>| {
++                move |store: &mut dyn VMStore| {
 +                    // Restore the `current_thread` to be the host so `lower` knows
 +                    // how to manipulate borrows and knows which scope of borrows
 +                    // to check.
@@ -114,7 +138,21 @@
 +
 +                    store.0.set_thread(old)?;
 +                    Ok(())
++                }
++            },
++        );
++        // Reserve the SAME exact pending factory output before any user poll.
++        let mut prepared = pending_future::PreparedFuture::new(
++            &memory,
++            (future, worker),
++            |(future, worker)| async move {
++                let result = match future.await {
++                    Some(result) => Some(result?),
++                    None => None,
 +                };
++                // No new admission after I/O: materialize the pre-funded
++                // one-shot closure and transfer its SAME original owner.
++                let on_complete = worker.finish(result);
 +
 +                // Here we schedule a task to run on a worker fiber to do the
 +                // lowering since it may involve a call to the guest's realloc
@@ -123,13 +161,15 @@
 +                tls::get(move |store| {
 +                    store
 +                        .concurrent_state_mut()?
-+                        .push_high_priority(WorkItem::WorkerFunction(AlwaysMut::new(Box::new(
-+                            on_complete,
-+                        ))));
++                        .push_high_priority(WorkItem::WorkerFunction(AlwaysMut::new(on_complete)));
 +                    Ok(())
 +                })
 +            },
 +        )?;
++        // Preserve callback/JoinState/inner/pending admissions #1..4. Only
++        // now reserve the exact completion-closure Box as #5, before Running
++        // publication or the first inner poll.
++        prepared.args_mut().1.admit(&memory)?;
          {
              let state = &mut state.get_mut(task)?.state;
              assert!(matches!(state, HostTaskState::CalleeStarted));
@@ -154,11 +194,12 @@
              Poll::Ready(result) => {
 +                // Keep the inner Box alive through direct lowering as before,
 +                // but refund the unused continuation reservation first.
-+                let (_future, lower, _token, _task) = prepared.into_args();
++                let (_future, worker) = prepared.into_args();
++                let (lower, _token, _task) = worker.into_context();
                  let result = result.transpose()?;
                  lower(store.as_context_mut(), result, true)?;
                  return Ok(Status::Returned.pack(None));
-@@ -3315,53 +3378,7 @@
+@@ -3315,53 +3390,7 @@
          // Wrap the future in a closure responsible for lowering the result into
          // the guest's stack and memory, as well as notifying any waiters that
          // the task returned.
@@ -213,7 +254,7 @@
  
          // Make this task visible to the guest and then record what it
          // was made visible as.
-@@ -3370,7 +3387,7 @@
+@@ -3370,7 +3399,7 @@
              None => bail_bug!("host task wasn't created but should have been"),
          };
          let state = store.0.concurrent_state_mut()?;
@@ -222,7 +263,7 @@
          let instance = state.get_mut(caller.task)?.instance;
          let (state, counter) = store.0.instance_state_and_handle_counter(instance);
          let handle = state
-@@ -4668,7 +4685,7 @@
+@@ -4668,7 +4697,7 @@
      }
  }
  
@@ -231,7 +272,7 @@
  
  /// Represents the state of a pending host task.
  ///
-@@ -5615,7 +5632,11 @@
+@@ -5615,7 +5644,11 @@
          self.table.get_mut().delete(Resource::from(id))
      }
  
@@ -1537,6 +1578,378 @@
 +        assert!(!probe.owner_dropped.load(Ordering::SeqCst));
 +        assert_eq!(probe.live.load(Ordering::SeqCst), 1);
 +        assert_eq!(probe.requests.load(Ordering::SeqCst), 1);
++    }
++}
+--- /dev/null
++++ b/src/runtime/component/concurrent/worker_function.rs
+@@ -0,0 +1,369 @@
++//! Pre-admit the exact completion closure before the initial host poll.
++//!
++//! The continuation reserves first; this typed factory then reserves its output
++//! without running it. The original owner stays outside the one-shot Box.
++
++use crate::runtime::native_memory::{self, Memory};
++use crate::vm::VMStore;
++use crate::{NativeAllocation, Result};
++use alloc::boxed::Box;
++use core::alloc::Layout;
++use core::marker::PhantomData;
++use core::mem::ManuallyDrop;
++
++type BoxedFunction = Box<dyn FnOnce(&mut dyn VMStore) -> Result<()> + Send>;
++
++pub(super) struct PreparedWorker<Context, Value, Factory, Function> {
++    context: Context,
++    factory: Factory,
++    allocation: Option<Box<dyn NativeAllocation>>,
++    admitted: bool,
++    _output: PhantomData<fn(Value) -> Function>,
++}
++
++impl<Context, Value, Factory, Function> PreparedWorker<Context, Value, Factory, Function>
++where
++    Factory: FnOnce(Context, Value) -> Function,
++    Function: FnOnce(&mut dyn VMStore) -> Result<()> + Send + 'static,
++{
++    pub(super) fn new(context: Context, factory: Factory) -> Self {
++        // Deliberately no reservation here: the enclosing pending-output Box
++        // must remain admission #4, before this closure's admission #5.
++        Self {
++            context,
++            factory,
++            allocation: None,
++            admitted: false,
++            _output: PhantomData,
++        }
++    }
++
++    pub(super) fn admit(&mut self, memory: &Memory) -> Result<()> {
++        assert!(!self.admitted);
++        self.allocation = native_memory::reserve(memory, Layout::new::<Function>().size())?;
++        self.admitted = true;
++        Ok(())
++    }
++
++    pub(super) fn into_context(self) -> Context {
++        assert!(self.admitted);
++        let Self {
++            context,
++            factory,
++            allocation,
++            ..
++        } = self;
++        // Ready never creates a completion closure Box. Refund this unused,
++        // unconfirmed reservation before the original direct lower call.
++        drop(factory);
++        drop(allocation);
++        context
++    }
++
++    pub(super) fn finish(self, value: Value) -> WorkerFunction {
++        assert!(self.admitted);
++        let Self {
++            context,
++            factory,
++            allocation,
++            ..
++        } = self;
++        // SAME output type and reservation; no post-I/O admission or second
++        // heap wrapper. Coercion adds pointer metadata, not another allocation.
++        let function: BoxedFunction = Box::new(factory(context, value));
++        let Some(allocation) = allocation else {
++            return WorkerFunction(Kind::Legacy(function));
++        };
++        let mut owner = AccountedFunction {
++            function: ManuallyDrop::new(Some(function)),
++            allocation: ManuallyDrop::new(allocation),
++            invoking: false,
++        };
++        owner.allocation.allocated();
++        WorkerFunction(Kind::Accounted(owner))
++    }
++}
++
++pub(super) struct WorkerFunction(Kind);
++
++enum Kind {
++    Legacy(BoxedFunction),
++    Accounted(AccountedFunction),
++}
++
++struct AccountedFunction {
++    function: ManuallyDrop<Option<BoxedFunction>>,
++    allocation: ManuallyDrop<Box<dyn NativeAllocation>>,
++    invoking: bool,
++}
++
++impl WorkerFunction {
++    pub(super) fn invoke(self, store: &mut dyn VMStore) -> Result<()> {
++        match self.0 {
++            Kind::Legacy(function) => function(store),
++            Kind::Accounted(owner) => owner.invoke(store),
++        }
++    }
++}
++
++impl AccountedFunction {
++    fn invoke(mut self, store: &mut dyn VMStore) -> Result<()> {
++        // Existing Box<dyn FnOnce> consumes its one-shot target. Keep the
++        // outside owner through the complete call and Box deallocation.
++        self.invoking = true;
++        let function = self.function.take().expect("private worker consumed once");
++        let result = function(store);
++        self.invoking = false;
++        result
++    }
++}
++
++impl Drop for AccountedFunction {
++    fn drop(&mut self) {
++        // SAFETY: private affine fields are destroyed once. Unrun queue drops
++        // destroy/deallocate the function first. A normal invocation consumed
++        // the Box before this refund. Either function-destructor or call unwind
++        // conservatively retains the SAME original charge, never a new ledger.
++        unsafe {
++            ManuallyDrop::drop(&mut self.function);
++            if !self.invoking {
++                ManuallyDrop::drop(&mut self.allocation);
++            }
++        }
++    }
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++    use crate::{AsContextMut, Engine, Store};
++    use alloc::sync::Arc;
++    use core::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
++    use std::panic::{AssertUnwindSafe, catch_unwind};
++
++    #[derive(Default)]
++    struct Probe {
++        requests: AtomicUsize,
++        live: AtomicUsize,
++        factories: AtomicUsize,
++        confirmations: AtomicUsize,
++        invocations: AtomicUsize,
++        context_dropped: AtomicBool,
++        owner_dropped: AtomicBool,
++    }
++    struct TestContext {
++        probe: Arc<Probe>,
++        panic_call: bool,
++        panic_drop: bool,
++        selected: bool,
++    }
++    impl TestContext {
++        fn invoke(self, value: u32) -> Result<()> {
++            self.probe.invocations.fetch_add(1, Ordering::SeqCst);
++            assert_eq!(value, 42);
++            assert!(!self.probe.context_dropped.load(Ordering::SeqCst));
++            if self.selected {
++                assert_eq!(self.probe.live.load(Ordering::SeqCst), 1);
++            }
++            assert!(!self.panic_call, "worker-call-control");
++            Ok(())
++        }
++    }
++    impl Drop for TestContext {
++        fn drop(&mut self) {
++            if self.selected && self.probe.factories.load(Ordering::SeqCst) != 0 {
++                assert_eq!(self.probe.live.load(Ordering::SeqCst), 1);
++                assert!(!self.probe.owner_dropped.load(Ordering::SeqCst));
++            }
++            self.probe.context_dropped.store(true, Ordering::SeqCst);
++            assert!(!self.panic_drop, "worker-destructor-control");
++        }
++    }
++    fn factory(
++        context: TestContext,
++        value: u32,
++    ) -> impl FnOnce(&mut dyn VMStore) -> Result<()> + Send {
++        context.probe.factories.fetch_add(1, Ordering::SeqCst);
++        move |_: &mut dyn VMStore| context.invoke(value)
++    }
++    fn context(
++        probe: &Arc<Probe>,
++        panic_call: bool,
++        panic_drop: bool,
++        selected: bool,
++    ) -> TestContext {
++        TestContext {
++            probe: probe.clone(),
++            panic_call,
++            panic_drop,
++            selected,
++        }
++    }
++    struct Owner {
++        probe: Arc<Probe>,
++        panic_confirmation: bool,
++    }
++    impl NativeAllocation for Owner {
++        fn allocated(&mut self) {
++            self.probe.confirmations.fetch_add(1, Ordering::SeqCst);
++            assert!(!self.panic_confirmation, "worker-confirmation-control");
++        }
++    }
++    impl Drop for Owner {
++        fn drop(&mut self) {
++            if self.probe.factories.load(Ordering::SeqCst) != 0 {
++                assert!(self.probe.context_dropped.load(Ordering::SeqCst));
++            } else {
++                assert_eq!(self.probe.confirmations.load(Ordering::SeqCst), 0);
++            }
++            assert_eq!(self.probe.live.fetch_sub(1, Ordering::SeqCst), 1);
++            assert!(!self.probe.owner_dropped.swap(true, Ordering::SeqCst));
++        }
++    }
++    struct Memory {
++        probe: Arc<Probe>,
++        expected: usize,
++        refuse: bool,
++        panic_confirmation: bool,
++    }
++    impl crate::NativeMemory for Memory {
++        fn reserve(&self, bytes: usize) -> Result<Box<dyn NativeAllocation>> {
++            assert_eq!(bytes, self.expected);
++            self.probe.requests.fetch_add(1, Ordering::SeqCst);
++            if self.refuse {
++                crate::bail!("original-worker-refusal-control");
++            }
++            assert_eq!(self.probe.live.fetch_add(1, Ordering::SeqCst), 0);
++            Ok(Box::new(Owner {
++                probe: self.probe.clone(),
++                panic_confirmation: self.panic_confirmation,
++            }))
++        }
++    }
++    fn memory<Factory, Function>(
++        probe: &Arc<Probe>,
++        _: &Factory,
++        refuse: bool,
++        panic_confirmation: bool,
++    ) -> native_memory::Memory
++    where
++        Factory: FnOnce(TestContext, u32) -> Function,
++    {
++        Some(Arc::new(Memory {
++            probe: probe.clone(),
++            expected: Layout::new::<Function>().size(),
++            refuse,
++            panic_confirmation,
++        }))
++    }
++    fn invoke(function: WorkerFunction) -> Result<()> {
++        // Harness only: no component compilation or new activation ledger.
++        let mut store = Store::new(&Engine::default(), ());
++        function.invoke(store.as_context_mut().0)
++    }
++
++    #[test]
++    fn worker_function_refuses_before_factory_and_ready_refunds_unused() {
++        let probe = Arc::new(Probe::default());
++        let mut prepared = PreparedWorker::new(context(&probe, false, false, true), factory);
++        assert_eq!(probe.requests.load(Ordering::SeqCst), 0);
++        assert!(
++            prepared
++                .admit(&memory(&probe, &factory, true, false))
++                .is_err()
++        );
++        assert_eq!(probe.requests.load(Ordering::SeqCst), 1);
++        assert_eq!(probe.factories.load(Ordering::SeqCst), 0);
++        assert_eq!(probe.invocations.load(Ordering::SeqCst), 0);
++        assert_eq!(probe.live.load(Ordering::SeqCst), 0);
++        drop(prepared);
++        assert!(probe.context_dropped.load(Ordering::SeqCst));
++
++        let probe = Arc::new(Probe::default());
++        let mut prepared = PreparedWorker::new(context(&probe, false, false, true), factory);
++        prepared
++            .admit(&memory(&probe, &factory, false, false))
++            .unwrap();
++        let original = prepared.into_context();
++        assert_eq!(probe.live.load(Ordering::SeqCst), 0);
++        assert_eq!(probe.factories.load(Ordering::SeqCst), 0);
++        assert_eq!(probe.confirmations.load(Ordering::SeqCst), 0);
++        assert!(!probe.context_dropped.load(Ordering::SeqCst));
++        drop(original);
++        assert!(probe.context_dropped.load(Ordering::SeqCst));
++    }
++
++    #[test]
++    fn worker_function_same_owner_survives_queue_drop_or_one_shot_call_and_none() {
++        for call in [false, true] {
++            let probe = Arc::new(Probe::default());
++            let mut prepared = PreparedWorker::new(context(&probe, false, false, true), factory);
++            prepared
++                .admit(&memory(&probe, &factory, false, false))
++                .unwrap();
++            let function = prepared.finish(42);
++            assert_eq!(probe.requests.load(Ordering::SeqCst), 1);
++            assert_eq!(probe.factories.load(Ordering::SeqCst), 1);
++            assert_eq!(probe.confirmations.load(Ordering::SeqCst), 1);
++            assert_eq!(probe.live.load(Ordering::SeqCst), 1);
++            if call {
++                invoke(function).unwrap();
++            } else {
++                drop(function);
++            }
++            assert_eq!(probe.invocations.load(Ordering::SeqCst), usize::from(call));
++            assert!(probe.context_dropped.load(Ordering::SeqCst));
++            assert!(probe.owner_dropped.load(Ordering::SeqCst));
++            assert_eq!(probe.live.load(Ordering::SeqCst), 0);
++        }
++        let probe = Arc::new(Probe::default());
++        let mut prepared = PreparedWorker::new(context(&probe, false, false, false), factory);
++        prepared.admit(&None).unwrap();
++        let function = prepared.finish(42);
++        assert!(matches!(&function.0, Kind::Legacy(_)));
++        invoke(function).unwrap();
++        assert_eq!(probe.invocations.load(Ordering::SeqCst), 1);
++        assert_eq!(probe.requests.load(Ordering::SeqCst), 0);
++        assert!(probe.context_dropped.load(Ordering::SeqCst));
++    }
++
++    #[test]
++    fn worker_function_confirmation_unwind_destroys_closure_before_refund() {
++        let probe = Arc::new(Probe::default());
++        let mut prepared = PreparedWorker::new(context(&probe, false, false, true), factory);
++        prepared
++            .admit(&memory(&probe, &factory, false, true))
++            .unwrap();
++        assert!(catch_unwind(AssertUnwindSafe(|| prepared.finish(42))).is_err());
++        assert_eq!(probe.invocations.load(Ordering::SeqCst), 0);
++        assert!(probe.context_dropped.load(Ordering::SeqCst));
++        assert!(probe.owner_dropped.load(Ordering::SeqCst));
++        assert_eq!(probe.live.load(Ordering::SeqCst), 0);
++    }
++
++    #[test]
++    fn worker_function_call_or_destructor_unwind_retains_original_charge() {
++        for call in [false, true] {
++            let probe = Arc::new(Probe::default());
++            let mut prepared = PreparedWorker::new(context(&probe, call, !call, true), factory);
++            prepared
++                .admit(&memory(&probe, &factory, false, false))
++                .unwrap();
++            let function = prepared.finish(42);
++            assert!(
++                catch_unwind(AssertUnwindSafe(|| {
++                    if call {
++                        let _ = invoke(function);
++                    } else {
++                        drop(function);
++                    }
++                }))
++                .is_err()
++            );
++            assert!(probe.context_dropped.load(Ordering::SeqCst));
++            assert!(!probe.owner_dropped.load(Ordering::SeqCst));
++            assert_eq!(probe.live.load(Ordering::SeqCst), 1);
++            assert_eq!(probe.requests.load(Ordering::SeqCst), 1);
++        }
 +    }
 +}
 --- /dev/null

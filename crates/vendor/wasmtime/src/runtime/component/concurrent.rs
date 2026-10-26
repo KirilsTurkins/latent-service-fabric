@@ -118,6 +118,7 @@ mod futures_and_streams;
 mod pending_future;
 pub(crate) mod table;
 pub(crate) mod tls;
+mod worker_function;
 
 /// Constant defined in the Component Model spec to indicate that the async
 /// intrinsic (e.g. `future.write`) has not yet completed.
@@ -781,7 +782,7 @@ impl GuestCall {
 /// Job to be run on a worker fiber.
 enum WorkerItem {
     GuestCall(GuestCall),
-    Function(AlwaysMut<Box<dyn FnOnce(&mut dyn VMStore) -> Result<()> + Send>>),
+    Function(AlwaysMut<worker_function::WorkerFunction>),
 }
 
 /// Represents a pending work item to be handled by the event loop for a given
@@ -796,7 +797,7 @@ enum WorkItem {
     /// A pending call into guest code for a given guest task.
     GuestCall(RuntimeComponentInstanceIndex, GuestCall),
     /// A job to run on a worker fiber.
-    WorkerFunction(AlwaysMut<Box<dyn FnOnce(&mut dyn VMStore) -> Result<()> + Send>>),
+    WorkerFunction(AlwaysMut<worker_function::WorkerFunction>),
 }
 
 impl fmt::Debug for WorkItem {
@@ -1552,7 +1553,7 @@ impl<T> StoreContextMut<'_, T> {
                     };
                     match item {
                         WorkerItem::GuestCall(call) => handle_guest_call(store, call)?,
-                        WorkerItem::Function(fun) => fun.into_inner()(store)?,
+                        WorkerItem::Function(fun) => fun.into_inner().invoke(store)?,
                     }
 
                     store.suspend(SuspendReason::NeedWork)?;
@@ -3288,18 +3289,12 @@ impl Instance {
         // Admit the concrete pinned future backing before polling it or
         // publishing its join handle into the host task's running state.
         let future = call_future::CallFuture::new(&memory, future)?;
-        // Reserve the exact factory-output Box before the first poll can
-        // perform user I/O. The prepared tuple retains the same inner owner,
-        // lowering closure, Store token and host-task identity.
-        let mut prepared = pending_future::PreparedFuture::new(
-            &memory,
-            (future, lower, token, task),
-            |(future, lower, token, task)| async move {
-                let result = match future.await {
-                    Some(result) => Some(result?),
-                    None => None,
-                };
-                let on_complete = move |store: &mut dyn VMStore| {
+        // Merely store the noncapturing factory and its typed context here.
+        // Its exact output Layout is reserved only AFTER the pending Box (#4).
+        let worker = worker_function::PreparedWorker::new(
+            (lower, token, task),
+            |(lower, token, task), result: Option<R>| {
+                move |store: &mut dyn VMStore| {
                     // Restore the `current_thread` to be the host so `lower` knows
                     // how to manipulate borrows and knows which scope of borrows
                     // to check.
@@ -3326,7 +3321,21 @@ impl Instance {
 
                     store.0.set_thread(old)?;
                     Ok(())
+                }
+            },
+        );
+        // Reserve the SAME exact pending factory output before any user poll.
+        let mut prepared = pending_future::PreparedFuture::new(
+            &memory,
+            (future, worker),
+            |(future, worker)| async move {
+                let result = match future.await {
+                    Some(result) => Some(result?),
+                    None => None,
                 };
+                // No new admission after I/O: materialize the pre-funded
+                // one-shot closure and transfer its SAME original owner.
+                let on_complete = worker.finish(result);
 
                 // Here we schedule a task to run on a worker fiber to do the
                 // lowering since it may involve a call to the guest's realloc
@@ -3335,13 +3344,15 @@ impl Instance {
                 tls::get(move |store| {
                     store
                         .concurrent_state_mut()?
-                        .push_high_priority(WorkItem::WorkerFunction(AlwaysMut::new(Box::new(
-                            on_complete,
-                        ))));
+                        .push_high_priority(WorkItem::WorkerFunction(AlwaysMut::new(on_complete)));
                     Ok(())
                 })
             },
         )?;
+        // Preserve callback/JoinState/inner/pending admissions #1..4. Only
+        // now reserve the exact completion-closure Box as #5, before Running
+        // publication or the first inner poll.
+        prepared.args_mut().1.admit(&memory)?;
         {
             let state = &mut state.get_mut(task)?.state;
             assert!(matches!(state, HostTaskState::CalleeStarted));
@@ -3361,7 +3372,8 @@ impl Instance {
             Poll::Ready(result) => {
                 // Keep the inner Box alive through direct lowering as before,
                 // but refund the unused continuation reservation first.
-                let (_future, lower, _token, _task) = prepared.into_args();
+                let (_future, worker) = prepared.into_args();
+                let (lower, _token, _task) = worker.into_context();
                 let result = result.transpose()?;
                 lower(store.as_context_mut(), result, true)?;
                 return Ok(Status::Returned.pack(None));

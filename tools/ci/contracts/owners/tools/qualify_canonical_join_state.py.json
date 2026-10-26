@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_canonical_join_state.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Reviewed exact factory-output pending continuation reservation before first poll and Running publication, unused Ready refund, same owner outside one erased Box, and physical-drop/unwind order. Existing finite owner selects ONLY four new private pending controls plus actual fourth-admission/fresh-Store case, preserving two locked targets/45m/2400s/900s/60s/cleanup5/two jobs. Existing v11 cases remain registered and are not replayed.",
+  "reviewReason": "Reviewed exact completion-closure factory-output reservation after pending admission4 and before Running/first poll, unused Ready refund, and outside one-shot Box owner through invoke/drop/unwind. Existing owner selects ONLY four NEW private worker controls plus actual fifth-admission/fresh-Store case under unchanged two targets/45m/2400s/900s/60s/cleanup5/two jobs. Old v11/v12 controls remain registered and are not replayed.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "2490158135843929bb06ff1ba1813c38268dd07050f504eebdabda16f4112c2e"
+  "sha256": "e62f548f84e2379008781b253dc6f9087039d3f8c658b0a9fe1bd11fb6354acd"
 }
