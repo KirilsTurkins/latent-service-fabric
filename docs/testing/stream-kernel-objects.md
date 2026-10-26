@@ -610,3 +610,36 @@ NULL; class/kernfs and full allocation/free closure, linked image, actual kernel
 operations/physical retirement and node/provider/operator qualification remain
 required. The fifty-source executed tuple is retained through later docs,
 lossless storage and independent native-cohort composition without C replay.
+
+
+## Empty class-directory kernfs objects, 2026-10-26
+
+[Run 40347086313](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40347086313)
+passed at `a53bb3595eddc6990868a3a9299f9781834bedc3`. Its
+[separate durable receipt](evidence/protected-stream-classdir-kernfs-objects-2026-10-26.json)
+binds nine ELF64 x86-64 relocatable objects, 52 source inputs / 369 derived rows,
+74 safe archive members, 28 cleaned zero-exit commands / 56 raw channels, 2,781
+current before/after Git materials and 2,725 original baseline materials. The
+nine targets cover factory, device core, kobject, sysfs/kernfs directory, IDR,
+radix tree and the original security/SELinux translation units. The two new
+source/admission controls passed; old four-object steps and the eighteen-object
+job were skipped. Their earlier results remain separate.
+
+The source routes the empty class_dir directory, exact copied name and actual
+IDR/radix storage through the original funded arena. It preserves real namespace,
+LSM and positive-parent operations, records the original completed kobject tail,
+and retains the same parent until actual kernfs/radix RCU children return. The
+first attempt failed a missing-prototype diagnostic; the second exposed three
+cross-enum comparison warnings. Both retain initial-only current-source evidence,
+without final current-source checks or nine-object qualification. File-local
+helpers now retain static scope, and all three kind assertions compare their
+constants as unsigned int. Assertions and warnings-as-errors remain enabled.
+
+The accepted configuration, one original 1,320-second owner / 1,200-second compile
+bound, `-j2`, physical bank and evidence caps are unchanged. A single bounded
+exact baseline fetch replaces assumptions about current-branch ancestry. This
+is compile-only evidence: consumer stays NULL, with no linked image, running
+provider, useful-fit or physical-retirement qualification. Ordinary NETDEV
+files/groups/queues, inherited attrs/labels, full source closure and actual
+kernel/node/provider/operator qualification remain open. Documentation and
+lossless contract storage do not relabel the executed a53 source or replay C.
