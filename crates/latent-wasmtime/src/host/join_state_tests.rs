@@ -7,8 +7,8 @@ use latent_core::{
 };
 use std::future::Future;
 use std::sync::{
-    atomic::{AtomicBool, Ordering},
     Arc, Mutex,
+    atomic::{AtomicBool, Ordering},
 };
 use std::task::Poll;
 use std::time::Instant;
@@ -366,9 +366,52 @@ async fn canonical_worker_function_first_poll_refusal_and_same_budget_fresh_stor
     canonical_backing_refusal_and_same_budget_fresh_store(5).await;
 }
 
+#[tokio::test]
+#[ignore = "requires focused actual pre-poll completion queue-node qualification"]
+async fn canonical_completion_queue_node_refusal_and_same_budget_fresh_store() {
+    canonical_backing_refusal_and_same_budget_fresh_store(6).await;
+}
+
+#[tokio::test]
+#[ignore = "requires focused actual pre-poll PushFuture queue-node qualification"]
+async fn canonical_push_future_queue_node_refusal_and_same_budget_fresh_store() {
+    canonical_backing_refusal_and_same_budget_fresh_store(7).await;
+}
+
+#[tokio::test]
+#[ignore = "requires focused actual initial queue-node cleanup qualification"]
+async fn canonical_upstream_queue_nodes_refuse_before_guest_and_same_budget_fresh_store() {
+    for upstream in 1..=2 {
+        canonical_backing_refusal_scope(upstream, true).await;
+    }
+    println!("LSF_CANONICAL_UPSTREAM_QUEUE_V1 scenarios=2 before-guest=true fresh=42 stores=4");
+}
+
 async fn canonical_backing_refusal_and_same_budget_fresh_store(refusal_request: usize) {
-    assert!(matches!(refusal_request, 2..=5));
-    let expected = (refusal_request == 2).then(|| {
+    canonical_backing_refusal_scope(refusal_request, false).await;
+}
+
+async fn canonical_backing_refusal_scope(refusal_request: usize, upstream: bool) {
+    assert!(if upstream {
+        matches!(refusal_request, 1..=2)
+    } else {
+        matches!(refusal_request, 2..=7)
+    });
+    // The same callback-style export now owns TWO queue nodes before entering
+    // its sole host import: queued GuestCall and callback wake. Preserve the
+    // original local owner positions, and record their actual global indices.
+    const UPSTREAM_QUEUE_NODES: usize = 2;
+    let global_request = if upstream {
+        refusal_request
+    } else {
+        refusal_request + UPSTREAM_QUEUE_NODES
+    };
+    let queue_layout: usize = std::env::var("LSF_TEST_WORK_QUEUE_LAYOUT")
+        .expect("owning compiled scheduler entry layout")
+        .parse()
+        .expect("typed compiled scheduler entry layout");
+    assert!((1..=4096).contains(&queue_layout)); // witness only, never a grant
+    let expected = (!upstream && refusal_request == 2).then(|| {
         let layout: usize = std::env::var("LSF_TEST_JOIN_STATE_LAYOUT")
             .expect("owning layout witness")
             .parse()
@@ -426,7 +469,7 @@ async fn canonical_backing_refusal_and_same_budget_fresh_store(refusal_request: 
         {
             let mut probe = probe.lock().unwrap();
             probe.armed = refuse;
-            probe.refusal_request = refusal_request;
+            probe.refusal_request = global_request;
         }
         let initial_fuel = original.remaining_at(Instant::now()).cpu_fuel;
         store.set_fuel(initial_fuel).unwrap();
@@ -438,44 +481,73 @@ async fn canonical_backing_refusal_and_same_budget_fresh_store(refusal_request: 
                 .find_map(|cause| cause.downcast_ref::<OriginalAdmission>())
                 .expect("original typed budget error");
             assert_eq!(admitted.0.code, PlatformErrorCode::ResourceExhausted);
-            assert!(admitted.0.details.iter().any(|d| d
-                .fields
-                .get("dimension")
-                .map(String::as_str)
-                == Some("memory-bytes")));
+            assert!(
+                admitted
+                    .0
+                    .details
+                    .iter()
+                    .any(|d| d.fields.get("dimension").map(String::as_str) == Some("memory-bytes"))
+            );
             assert!(!entered.load(Ordering::SeqCst) && !polled.load(Ordering::SeqCst));
+            if upstream {
+                // Both queue nodes precede initial GuestCall publication.
+                assert_eq!(store.get_fuel().unwrap(), initial_fuel);
+            }
             let observed = probe.lock().unwrap();
-            assert_eq!(observed.requests.len(), refusal_request);
-            if let Some(expected) = expected {
-                assert_eq!(
-                    observed.requests[1], expected,
-                    "actual private cell admission, not an earlier allocation"
-                );
-            }
+            assert_eq!(observed.requests.len(), global_request);
             assert!(observed.contention.is_some());
-            if refusal_request == 3 {
-                // The closed path is callback box, JoinState, then the
-                // abortable call future Box before any user code is polled.
-                // Order and the unentered closure identify this admission;
-                // the byte count alone is not treated as allocation identity.
-                assert!((1..=4096).contains(&observed.requests[2]));
+            if upstream {
+                assert_eq!(observed.requests, vec![queue_layout; global_request]);
+            } else {
+                assert_eq!(
+                    &observed.requests[..UPSTREAM_QUEUE_NODES],
+                    &[queue_layout; UPSTREAM_QUEUE_NODES]
+                );
+                let host_requests = &observed.requests[UPSTREAM_QUEUE_NODES..];
+                if let Some(expected) = expected {
+                    assert_eq!(
+                        host_requests[1], expected,
+                        "actual private cell admission, not an earlier allocation"
+                    );
+                }
+                if refusal_request == 3 {
+                    // The closed path is callback box, JoinState, then the
+                    // abortable call future Box before any user code is polled.
+                    // Order and the unentered closure identify this admission;
+                    // the byte count alone is not treated as allocation identity.
+                    assert!((1..=4096).contains(&host_requests[2]));
+                }
+                if refusal_request == 4 {
+                    // The unchanged first three admissions are callback Box,
+                    // JoinState, and inner CallFuture Box. The fourth reserves
+                    // the exact continuation output before the SAME first poll.
+                    // No user code, continuation factory, or completion worker
+                    // can have run on this closed path before that refusal.
+                    assert!((1..=4096).contains(&host_requests[2]));
+                    assert!((1..=4096).contains(&host_requests[3]));
+                }
+                if refusal_request == 5 {
+                    // SAME first four identities: callback Box, JoinState, inner
+                    // CallFuture, pending-output reservation. Only then admit the
+                    // exact one-shot completion closure before ANY user poll.
+                    assert!((1..=4096).contains(&host_requests[3]));
+                    assert!((1..=4096).contains(&host_requests[4]));
+                }
+                if refusal_request >= 6 {
+                    assert_eq!(host_requests[5], queue_layout);
+                }
+                if refusal_request == 7 {
+                    assert_eq!(host_requests[6], queue_layout);
+                }
             }
-            if refusal_request == 4 {
-                // The unchanged first three admissions are callback Box,
-                // JoinState, and inner CallFuture Box. The fourth reserves
-                // the exact continuation output before the SAME first poll.
-                // No user code, continuation factory, or completion worker
-                // can have run on this closed path before that refusal.
-                assert!((1..=4096).contains(&observed.requests[2]));
-                assert!((1..=4096).contains(&observed.requests[3]));
-            }
-            if refusal_request == 5 {
-                // SAME first four identities: callback Box, JoinState, inner
-                // CallFuture, pending-output reservation. Only then admit the
-                // exact one-shot completion closure before ANY user poll.
-                assert!((1..=4096).contains(&observed.requests[3]));
-                assert!((1..=4096).contains(&observed.requests[4]));
-            }
+            println!(
+                "LSF_CANONICAL_QUEUE_SEQUENCE_V1 scope={} local-owner={} global-request={} prefix-queue-nodes={} bytes={:?}",
+                if upstream { "upstream" } else { "host" },
+                refusal_request,
+                global_request,
+                if upstream { 0 } else { UPSTREAM_QUEUE_NODES },
+                observed.requests
+            );
             drop(observed);
             drop(error);
             drop(send);
@@ -500,19 +572,11 @@ async fn canonical_backing_refusal_and_same_budget_fresh_store(refusal_request: 
         assert_eq!(original.host_memory_bytes(), 0);
         assert_eq!(original.outstanding_reservations(), 0);
     }
-    if refusal_request == 3 {
-        println!(
-            "LSF_CALL_FUTURE_V1 refusal=memory-bytes requests=3 before-poll=true fresh=42 stores=2"
-        );
-    }
-    if refusal_request == 4 {
-        println!(
-            "LSF_PENDING_FUTURE_V1 refusal=memory-bytes requests=4 before-poll=true fresh=42 stores=2"
-        );
-    }
-    if refusal_request == 5 {
-        println!(
-            "LSF_WORKER_FUNCTION_V1 refusal=memory-bytes requests=5 before-poll=true fresh=42 stores=2"
-        );
-    }
+    println!(
+        "LSF_CANONICAL_QUEUE_V1 scope={} refusal=memory-bytes local-owner={} global-request={} prefix-queue-nodes={} before-poll=true fresh=42 stores=2",
+        if upstream { "upstream" } else { "host" },
+        refusal_request,
+        global_request,
+        if upstream { 0 } else { UPSTREAM_QUEUE_NODES }
+    );
 }

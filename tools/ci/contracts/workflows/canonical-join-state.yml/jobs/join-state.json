@@ -13,7 +13,7 @@
       "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
       "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
     },
-    "name": "Four prepared completion owners and one real canonical budget admission",
+    "name": "Four queue owners and seven actual canonical admission cases",
     "runs-on": "ubuntu-24.04",
     "steps": [
       {
@@ -53,7 +53,7 @@
         }
       },
       {
-        "name": "Build only two locked host targets and execute the exact five controls",
+        "name": "Build only two locked host targets and execute the exact eleven controls",
         "run": "python3 -B tools/qualify_canonical_join_state.py --source-commit \"${{ github.sha }}\" --output \"$RUNNER_TEMP/canonical-join-state\""
       },
       {
@@ -62,7 +62,7 @@
         "uses": "actions/upload-artifact",
         "with": {
           "if-no-files-found": "warn",
-          "name": "canonical-worker-function-${{ github.sha }}",
+          "name": "canonical-queue-nodes-${{ github.sha }}",
           "path": "${{ runner.temp }}/canonical-join-state/receipt.json\n${{ runner.temp }}/canonical-join-state/FAILED.json\n${{ runner.temp }}/canonical-join-state/source-inputs.json\n${{ runner.temp }}/canonical-join-state/commands.json\n${{ runner.temp }}/canonical-join-state/commands/logs/*.txt\n",
           "retention-days": 3
         }
@@ -72,7 +72,7 @@
   },
   "jobId": "join-state",
   "kind": "job",
-  "reviewReason": "Reviewed exact completion-closure factory-output reservation after pending admission4 and before Running/first poll, unused Ready refund, and outside one-shot Box owner through invoke/drop/unwind. Existing owner selects ONLY four NEW private worker controls plus actual fifth-admission/fresh-Store case under unchanged two targets/45m/2400s/900s/60s/cleanup5/two jobs. Old v11/v12 controls remain registered and are not replayed. Explicit label replacement from pending-continuation to completion-closure control; the sole original Python CLI run text is byte-equal.",
+  "reviewReason": "Reviewed exact scheduler Entry backing before effects and same-node transfers. The focused owner selects four NEW private queue controls and seven actual IDs: four affected original owners at explicit global4..7, two new pre-poll nodes8/9, and one two-scenario upstream1/2 refusal/cleanup control. Fixed compiled layout witnesses and original-budget fresh42 required. Same two locked targets,45m/2400s/900s/60s,cleanup5 and two jobs; no full-runtime/RSS/SDK qualification or stopped campaigns. Explicit five-to-eleven label replacement; sole original Python CLI run text byte exact.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/canonical-join-state.yml"
 }

@@ -1,36 +1,16 @@
 {
-  "cases": [
-    "CThreadOwnedReplyRuntime.test_explicit128_requires_whole_source_equality_and_never_uses_old114_fixture_projection",
-    "CThreadOwnedReplyRuntime.test_native_admission_refuses_changed_materials_source_or_missing_product_before_tool_use"
-  ],
-  "guards": {
-    "CThreadOwnedReplyRuntime.test_explicit128_requires_whole_source_equality_and_never_uses_old114_fixture_projection": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:6e62b9dd12a567312ff65e8b11ed3ea3808f571059587b207f891a92eec7a6b0",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "CThreadOwnedReplyRuntime.test_native_admission_refuses_changed_materials_source_or_missing_product_before_tool_use": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:6e62b9dd12a567312ff65e8b11ed3ea3808f571059587b207f891a92eec7a6b0",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    }
+  "cases":["CThreadOwnedReplyRuntime.test_explicit128_requires_whole_source_equality_and_never_uses_old114_fixture_projection","CThreadOwnedReplyRuntime.test_native_admission_refuses_changed_materials_source_or_missing_product_before_tool_use"],
+  "guards":{
+    "CThreadOwnedReplyRuntime.test_explicit128_requires_whole_source_equality_and_never_uses_old114_fixture_projection":
+      "0a2ebdf81e5befdfa90ce1440605923ef8fce4d158513a5d1f276db32143840f",
+    "CThreadOwnedReplyRuntime.test_native_admission_refuses_changed_materials_source_or_missing_product_before_tool_use":
+      "0a2ebdf81e5befdfa90ce1440605923ef8fce4d158513a5d1f276db32143840f"
   },
-  "kind": "python",
-  "module": "tools/tests/test_c_thread_owned_reply_runtime.py",
-  "reviewReason": "Root full-reviewed exact cb8 native128 origin/closed CLI group; preserve all original17 outcomes/caps and every old Python case/base/decorator/skip; new reader source and complete148/native admission controls.",
-  "schemaVersion": "latent.ci.contracts.v1"
+  "kind":"python",
+  "module":"tools/tests/test_c_thread_owned_reply_runtime.py",
+  "reviewReason":"Root full-reviewed exact cb8 native128 origin/closed CLI group; preserve all original17 outcomes/caps and every old Python case/base/decorator/skip; new reader source and complete148/native admission controls.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "0a2ebdf81e5befdfa90ce1440605923ef8fce4d158513a5d1f276db32143840f":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:6e62b9dd12a567312ff65e8b11ed3ea3808f571059587b207f891a92eec7a6b0","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+  }
 }

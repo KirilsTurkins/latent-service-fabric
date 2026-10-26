@@ -36,7 +36,7 @@ retains confirmed actual allocations through native unwind, without confirming
 a hypothetical signature maximum as observed peak.
 
 The native cohort is
-`wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-memory-v13`. Runtime engine configuration identity
+`wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-memory-v14`. Runtime engine configuration identity
 includes this cohort, so old prepared/AOT identity cannot certify this host.
 The immutable v1/7b programme passed 61 controls; v2/de0 passed81,
 v3/48a passed85, v4/3e417 passed92, v5/94f passed97, v7/f535 passed114,
@@ -262,3 +262,51 @@ that SAME existing Box in the infallible Legacy adapter, preserving its closure
 body and allocation point. This stream callback remains unpaid and outside the
 selected first_poll completion-closure slice. The failed attempt receives no
 control credit; the corrected four-plus-one programme is not yet executed.
+
+
+The v13 source stage above was subsequently qualified at source
+1f8eb3411c87454d19fd543339cd6e9b07342b20, run 40259061940: four private
+completion-owner controls and the actual local-fifth-owner refusal/fresh-Store
+case passed. The preceding 743cf2c4ad7250a4c36d586472d83e2aa5754928 run
+40257187860 failed compilation before executing any controls. Its separate
+Legacy stream callback adapter was corrected; those original receipts remain
+historical and do not qualify the following extension.
+
+The v14 SOURCE extension charges exact scheduler Entry<WorkItem> Box layouts,
+not guessed VecDeque capacity. An affine outside owner accompanies one stable
+Box::into_raw allocation, reconstructed once for physical drop before refund.
+Private predecessor/tail pointers are non-owning. A destructor unwind retains
+the SAME original charge and any uncertain remaining chain. Normal draining is
+iterative. None keeps the original VecDeque path. This does not account for
+allocator metadata/RSS or the other remaining runtime allocations.
+
+Empty nodes are prepared before effects. The SAME node survives queue pop,
+pending-instance storage, priority promotion, worker/fiber execution and waits;
+wake and cancellation publication are infallible. The former at-most-one ready
+Vec is inline Option staging. Stream pipe nodes precede the initial poll;
+possible producer-realloc work is prepared before polling the producer. The
+separate stream callback closure Box itself remains unpaid.
+
+Canonical first_poll preserves the original host-local callback/JoinState/
+CallFuture/pending-output/WorkerFunction order 1..5, then prepares two DISTINCT
+physical nodes (completion and PushFuture) before Running or user poll. Ready
+deallocates/refunds both unused nodes before direct lowering. The controlled
+callback-style export also now has two upstream nodes before its sole import.
+Old actual local-owner 2..5 case identities therefore target globals 4..7,
+explicitly retaining their meaning rather than relabeling old receipts. New
+actual cases target local 6/7 at globals 8/9, plus one two-scenario case refuses
+upstream nodes 1/2 before any guest fuel consumption. Every refusal requires
+the original typed budget error, teardown to zero and fresh 42 on the SAME
+original budget. Compiled Entry and JoinState layout witnesses plus bounded
+observed reservation sequences must validate that closed source chain.
+
+Four NEW private controls and SEVEN affected/new actual case IDs are prepared,
+UNCOMPILED and UNEXECUTED at this source stage. One focused programme will run
+those eleven IDs under the original two locked targets, 45-minute job,
+2400-second aggregate, 900-second build, 60-second case and two compile-job
+limits, including existing cleanup reserves. The aggregate clips late commands;
+there is no guarantee every stage receives its individual maximum. No old
+private v11/v12/v13 programme or signed-language/Java campaign is selected.
+FuturesUnordered task/Arc/waker nodes, other scheduler maps/collections, Legacy
+stream closure Box and transitive/escaping backing remain separate unpaid gaps.
+This is not whole #736 or a complete native allocator/RSS quota.

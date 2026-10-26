@@ -358,6 +358,11 @@ impl<F> Drop for JoinHandleFuture<F> {
 }
 
 #[cfg(test)]
+pub(super) fn accounted_layout_witness() -> usize {
+    AccountedJoinState::layout().unwrap().size()
+}
+
+#[cfg(test)]
 mod tests {
     use super::JoinHandle;
     use alloc::{boxed::Box, string::ToString};
