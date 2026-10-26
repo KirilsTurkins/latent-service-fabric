@@ -28,7 +28,7 @@ See [build-foundation.md](build-foundation.md) for generation ownership, focused
 | Wasmtime |                               48.0.7 | Maintained source package with selected value/native-allocation hooks; exact cohort participates in runtime identity |
 | `wasmparser` |                               0.261.0 | Direct component binary validation; WIT tooling retains its separately locked parser dependencies |
 | `wasm-encoder` |                               0.261.0 | Component fixtures; `waitable_set_wait(memory)` retains the zero immediate used by the pinned runtime |
-| `wit-parser` |                               0.259.0 | Direct WIT parsing and component decoding; guest tooling retains its separately locked parser dependencies |
+| `wit-parser` |                               0.262.0 | Direct WIT parsing and component decoding; guest tooling retains its separately locked parser dependencies |
 | `wit-bindgen` Rust macro |                    0.63.0 | Rust guest bindings generated from WIT |
 | `wit-bindgen-cli` |                            0.62.0 | Separately pinned C/C#/Java and canonical ABI source fixtures |
 | Serde / `serde_json` |                    1.0.229 / 1.0.154 | Rust contract serialization |
