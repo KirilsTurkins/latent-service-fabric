@@ -34,6 +34,7 @@ See [build-foundation.md](build-foundation.md) for generation ownership, focused
 | TOML |                                1.1.6 | Configuration parsing and serialization |
 | BLAKE3 / SHA-256 |                       1.8.7 / 0.11.0 | Cache/prepared identity and artifact digest verification |
 | Clap / `tempfile` |                       4.6.7 / 3.27.0 | CLI surfaces and test-only temporary storage |
+| `libc` |                               0.2.191 | Unix audit/sandbox support and synchronized standalone/reference locks |
 | `wasm-tools` |                              1.254.0 | WIT parsing, validation, componentization, and interface extraction |
 | Buf |                               1.72.0 | Protobuf linting and independent descriptor-set generation |
 | Python / `jsonschema` |                      3.13.5 / 4.26.0 | Repository and Draft 2020-12 schema validation |
@@ -46,7 +47,9 @@ Workspace dependencies are exact requirements and workspace crates consume them 
 
 Wasmtime is selected from `crates/vendor/wasmtime`, with original archive/file
 identities and a separate LSF patch manifest. The workspace also patches bytes
-for retained original-owner accounting. The outbound-stream rustls package is a
+for retained original-owner accounting. The standalone native VM fixture selects the same bytes source explicitly,
+because independent Cargo workspaces do not inherit the root patch table.
+The outbound-stream rustls package is a
 separate selected dependency with its own parser derivation; its presence does
 not enable host TLS. See [the engine boundary](../runtime/wasmtime.md) and
 [stream qualification](../runtime/outbound-stream-qualification.md). Preserve

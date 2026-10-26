@@ -1,88 +1,24 @@
 {
-  "cases": [
-    "CleanupCloneSource.test_actual_child_completes_success_and_creator_only_completes_error",
-    "CleanupCloneSource.test_actual_kthreadd_mm_profile_precedes_request_birth_read",
-    "CleanupCloneSource.test_full_original_clone_tail_and_inverse_are_exact",
-    "CleanupCloneSource.test_full_original_kernel_thread_flag_translation_is_exact",
-    "CleanupCloneSource.test_request_birth_precedes_request_fields_and_alias_checks",
-    "CleanupCloneSource.test_source_and_disconnected_consumer_are_explicit"
-  ],
-  "guards": {
-    "CleanupCloneSource.test_actual_child_completes_success_and_creator_only_completes_error": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:c7eacb576c57129f515ade5628cedb667d46e05bc76388d2808878d121e64a6c",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "CleanupCloneSource.test_actual_kthreadd_mm_profile_precedes_request_birth_read": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:c7eacb576c57129f515ade5628cedb667d46e05bc76388d2808878d121e64a6c",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "CleanupCloneSource.test_full_original_clone_tail_and_inverse_are_exact": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:c7eacb576c57129f515ade5628cedb667d46e05bc76388d2808878d121e64a6c",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "CleanupCloneSource.test_full_original_kernel_thread_flag_translation_is_exact": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:c7eacb576c57129f515ade5628cedb667d46e05bc76388d2808878d121e64a6c",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "CleanupCloneSource.test_request_birth_precedes_request_fields_and_alias_checks": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:c7eacb576c57129f515ade5628cedb667d46e05bc76388d2808878d121e64a6c",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "CleanupCloneSource.test_source_and_disconnected_consumer_are_explicit": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:c7eacb576c57129f515ade5628cedb667d46e05bc76388d2808878d121e64a6c",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    }
+  "cases":["CleanupCloneSource.test_actual_child_completes_success_and_creator_only_completes_error","CleanupCloneSource.test_actual_kthreadd_mm_profile_precedes_request_birth_read","CleanupCloneSource.test_full_original_clone_tail_and_inverse_are_exact","CleanupCloneSource.test_full_original_kernel_thread_flag_translation_is_exact","CleanupCloneSource.test_request_birth_precedes_request_fields_and_alias_checks","CleanupCloneSource.test_source_and_disconnected_consumer_are_explicit"],
+  "guards":{
+    "CleanupCloneSource.test_actual_child_completes_success_and_creator_only_completes_error":
+      "ad6e8cc36413b6e8277e7baabe420602a19101d30821653e8749f770c2272210",
+    "CleanupCloneSource.test_actual_kthreadd_mm_profile_precedes_request_birth_read":
+      "ad6e8cc36413b6e8277e7baabe420602a19101d30821653e8749f770c2272210",
+    "CleanupCloneSource.test_full_original_clone_tail_and_inverse_are_exact":
+      "ad6e8cc36413b6e8277e7baabe420602a19101d30821653e8749f770c2272210",
+    "CleanupCloneSource.test_full_original_kernel_thread_flag_translation_is_exact":
+      "ad6e8cc36413b6e8277e7baabe420602a19101d30821653e8749f770c2272210",
+    "CleanupCloneSource.test_request_birth_precedes_request_fields_and_alias_checks":
+      "ad6e8cc36413b6e8277e7baabe420602a19101d30821653e8749f770c2272210",
+    "CleanupCloneSource.test_source_and_disconnected_consumer_are_explicit":
+      "ad6e8cc36413b6e8277e7baabe420602a19101d30821653e8749f770c2272210"
   },
-  "kind": "python",
-  "module": "tools/tests/test_host_stream_kernel_cleanup_clone.py",
-  "reviewReason": "Additive reviewed finite cleanup constructor source controls and one 24-object hosted geometry/atomic programme; original four-object recipe and all earlier cases retained; no kernel link/boot, consumer selection or runtime/native qualification.",
-  "schemaVersion": "latent.ci.contracts.v1"
+  "kind":"python",
+  "module":"tools/tests/test_host_stream_kernel_cleanup_clone.py",
+  "reviewReason":"Additive reviewed finite cleanup constructor source controls and one 24-object hosted geometry/atomic programme; original four-object recipe and all earlier cases retained; no kernel link/boot, consumer selection or runtime/native qualification.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "ad6e8cc36413b6e8277e7baabe420602a19101d30821653e8749f770c2272210":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:c7eacb576c57129f515ade5628cedb667d46e05bc76388d2808878d121e64a6c","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+  }
 }

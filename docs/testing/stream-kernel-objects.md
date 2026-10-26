@@ -556,3 +556,31 @@ normal factory enabled. Extended task/PID/security/instrumentation descendants,
 running-stack/RCU/TLB final return, actual worker/queue/stop ownership, bootstrap,
 remaining device/RX/DNS/deferred closure, sealed image/layout/BTF and finite
 installed node/operator/provider conformance remain required.
+
+
+## Normal protected-stream objects, 2026-10-26
+
+[Run 40301019517](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40301019517)
+compiled all eighteen selected x86-64 objects at exact source
+`c6f901819ba5d84a5a0474f2e6bbcad8019b6dcd`. The
+[durable compile-only receipt](evidence/protected-stream-normal-objects-2026-10-26.json)
+binds eighteen ELF objects, all 81 safe artifact members, 27 successful owned
+commands with cleanup, 54 raw channels, 2,773 current and 2,725 original baseline
+Git materials, and the exact accepted configuration. Normal Kbuild used `-j2`
+under the unchanged 1,320-second owner and 1,200-second compile bounds.
+
+The first attempt failed a strict source-composition guard before the object
+command. The second reached C compilation and reported the missing original
+`VIRTIO_RING_F_INDIRECT_DESC` declaration at three sites. Adding its UAPI header
+changed one derived header by 36 bytes; the other 364 derived files remained
+exact. Both failed attempts remain historical failures.
+
+This checks C types and compilation of the reviewed source through NETDEV core
+and original kobject release tails. The later class-directory draft is excluded.
+The original bank, infrastructure and record limits remain fixed. Consumer
+selection stays NULL. There is no linked image, boot, actual socket/RX/DMA/DNS/TLS
+operation, complete physical geometry, useful-fit, final-free, installation or
+whole #738 qualification. Remaining class/kernfs and allocation/free source
+closure and real-kernel/node/provider/operator qualification remain required.
+Current-main composition and lossless contract storage retain the actual c6f9
+compile identity; they do not turn it into a newly executed result.

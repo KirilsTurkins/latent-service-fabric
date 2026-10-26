@@ -1,88 +1,24 @@
 {
-  "cases": [
-    "KernelDeviceRecipientSource.test_changed_duplicate_crlf_and_unknown_definitions_refuse",
-    "KernelDeviceRecipientSource.test_final_return_classifies_before_dereference_and_keeps_normal_body",
-    "KernelDeviceRecipientSource.test_original_rt_overflow_signal_fallback_and_namespace_rewrite_are_exact",
-    "KernelDeviceRecipientSource.test_private_allocation_preserves_original_ucount_and_rlimit_algorithm",
-    "KernelDeviceRecipientSource.test_source_member_and_enablement_metadata_cannot_be_rehashed_away",
-    "KernelDeviceRecipientSource.test_whole_parent_and_false_enablement_scope_are_preserved"
-  ],
-  "guards": {
-    "KernelDeviceRecipientSource.test_changed_duplicate_crlf_and_unknown_definitions_refuse": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:aafdf7bdea4e07f1c8e45b6c069cd56bc5ef05fbb143de383e8f8b751bf0d92f",
-        "class:setup-sha256:a201e5d00e217c740dcacad593ff9590e57d121dd5d92ae2de5c1573fb82e749"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceRecipientSource.test_final_return_classifies_before_dereference_and_keeps_normal_body": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:aafdf7bdea4e07f1c8e45b6c069cd56bc5ef05fbb143de383e8f8b751bf0d92f",
-        "class:setup-sha256:a201e5d00e217c740dcacad593ff9590e57d121dd5d92ae2de5c1573fb82e749"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceRecipientSource.test_original_rt_overflow_signal_fallback_and_namespace_rewrite_are_exact": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:aafdf7bdea4e07f1c8e45b6c069cd56bc5ef05fbb143de383e8f8b751bf0d92f",
-        "class:setup-sha256:a201e5d00e217c740dcacad593ff9590e57d121dd5d92ae2de5c1573fb82e749"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceRecipientSource.test_private_allocation_preserves_original_ucount_and_rlimit_algorithm": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:aafdf7bdea4e07f1c8e45b6c069cd56bc5ef05fbb143de383e8f8b751bf0d92f",
-        "class:setup-sha256:a201e5d00e217c740dcacad593ff9590e57d121dd5d92ae2de5c1573fb82e749"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceRecipientSource.test_source_member_and_enablement_metadata_cannot_be_rehashed_away": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:aafdf7bdea4e07f1c8e45b6c069cd56bc5ef05fbb143de383e8f8b751bf0d92f",
-        "class:setup-sha256:a201e5d00e217c740dcacad593ff9590e57d121dd5d92ae2de5c1573fb82e749"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceRecipientSource.test_whole_parent_and_false_enablement_scope_are_preserved": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:aafdf7bdea4e07f1c8e45b6c069cd56bc5ef05fbb143de383e8f8b751bf0d92f",
-        "class:setup-sha256:a201e5d00e217c740dcacad593ff9590e57d121dd5d92ae2de5c1573fb82e749"
-      ],
-      "skipSites": []
-    }
+  "cases":["KernelDeviceRecipientSource.test_changed_duplicate_crlf_and_unknown_definitions_refuse","KernelDeviceRecipientSource.test_final_return_classifies_before_dereference_and_keeps_normal_body","KernelDeviceRecipientSource.test_original_rt_overflow_signal_fallback_and_namespace_rewrite_are_exact","KernelDeviceRecipientSource.test_private_allocation_preserves_original_ucount_and_rlimit_algorithm","KernelDeviceRecipientSource.test_source_member_and_enablement_metadata_cannot_be_rehashed_away","KernelDeviceRecipientSource.test_whole_parent_and_false_enablement_scope_are_preserved"],
+  "guards":{
+    "KernelDeviceRecipientSource.test_changed_duplicate_crlf_and_unknown_definitions_refuse":
+      "0d31a14c6d2d77f0f7fea65fe73a5872c110b2710254ee8223ee4e53caee2055",
+    "KernelDeviceRecipientSource.test_final_return_classifies_before_dereference_and_keeps_normal_body":
+      "0d31a14c6d2d77f0f7fea65fe73a5872c110b2710254ee8223ee4e53caee2055",
+    "KernelDeviceRecipientSource.test_original_rt_overflow_signal_fallback_and_namespace_rewrite_are_exact":
+      "0d31a14c6d2d77f0f7fea65fe73a5872c110b2710254ee8223ee4e53caee2055",
+    "KernelDeviceRecipientSource.test_private_allocation_preserves_original_ucount_and_rlimit_algorithm":
+      "0d31a14c6d2d77f0f7fea65fe73a5872c110b2710254ee8223ee4e53caee2055",
+    "KernelDeviceRecipientSource.test_source_member_and_enablement_metadata_cannot_be_rehashed_away":
+      "0d31a14c6d2d77f0f7fea65fe73a5872c110b2710254ee8223ee4e53caee2055",
+    "KernelDeviceRecipientSource.test_whole_parent_and_false_enablement_scope_are_preserved":
+      "0d31a14c6d2d77f0f7fea65fe73a5872c110b2710254ee8223ee4e53caee2055"
   },
-  "kind": "python",
-  "module": "tools/tests/test_host_stream_kernel_device_recipient.py",
-  "reviewReason": "Reviewed grouped recipient signal and mandatory security source; one exclusive object-only lane retains every historical command, case, configuration and physical qualification boundary.",
-  "schemaVersion": "latent.ci.contracts.v1"
+  "kind":"python",
+  "module":"tools/tests/test_host_stream_kernel_device_recipient.py",
+  "reviewReason":"Reviewed grouped recipient signal and mandatory security source; one exclusive object-only lane retains every historical command, case, configuration and physical qualification boundary.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "0d31a14c6d2d77f0f7fea65fe73a5872c110b2710254ee8223ee4e53caee2055":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:aafdf7bdea4e07f1c8e45b6c069cd56bc5ef05fbb143de383e8f8b751bf0d92f","class:setup-sha256:a201e5d00e217c740dcacad593ff9590e57d121dd5d92ae2de5c1573fb82e749"],"skipSites":[]}
+  }
 }

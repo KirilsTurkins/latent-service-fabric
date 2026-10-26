@@ -1,101 +1,26 @@
 {
-  "cases": [
-    "KernelDeviceCapabilitiesSource.test_another_definition_cannot_be_used_as_the_allocator_or_final_free",
-    "KernelDeviceCapabilitiesSource.test_final_hlist_free_supplies_device_and_member_without_normal_fallback_on_error",
-    "KernelDeviceCapabilitiesSource.test_missing_unknown_drifted_duplicate_and_crlf_source_refuse",
-    "KernelDeviceCapabilitiesSource.test_new_membership_and_production_gate_changes_fail_closed",
-    "KernelDeviceCapabilitiesSource.test_normal_allocator_body_is_unchanged_after_closed_dispatch",
-    "KernelDeviceCapabilitiesSource.test_private_copy_changes_only_birth_and_guard_before_original_lookup",
-    "KernelDeviceCapabilitiesSource.test_whole_original_members_and_all_prior_definitions_are_exact"
-  ],
-  "guards": {
-    "KernelDeviceCapabilitiesSource.test_another_definition_cannot_be_used_as_the_allocator_or_final_free": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:e4a0867e661816bd7d67f8643658988bb05cb1dba7ae2f65ecf06930957f047c",
-        "class:setup-sha256:18888c2f1ee2b35195d85d321fbba9f6cb235adea206fff700ac9374b721dd8b"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceCapabilitiesSource.test_final_hlist_free_supplies_device_and_member_without_normal_fallback_on_error": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:e4a0867e661816bd7d67f8643658988bb05cb1dba7ae2f65ecf06930957f047c",
-        "class:setup-sha256:18888c2f1ee2b35195d85d321fbba9f6cb235adea206fff700ac9374b721dd8b"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceCapabilitiesSource.test_missing_unknown_drifted_duplicate_and_crlf_source_refuse": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:e4a0867e661816bd7d67f8643658988bb05cb1dba7ae2f65ecf06930957f047c",
-        "class:setup-sha256:18888c2f1ee2b35195d85d321fbba9f6cb235adea206fff700ac9374b721dd8b"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceCapabilitiesSource.test_new_membership_and_production_gate_changes_fail_closed": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:e4a0867e661816bd7d67f8643658988bb05cb1dba7ae2f65ecf06930957f047c",
-        "class:setup-sha256:18888c2f1ee2b35195d85d321fbba9f6cb235adea206fff700ac9374b721dd8b"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceCapabilitiesSource.test_normal_allocator_body_is_unchanged_after_closed_dispatch": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:e4a0867e661816bd7d67f8643658988bb05cb1dba7ae2f65ecf06930957f047c",
-        "class:setup-sha256:18888c2f1ee2b35195d85d321fbba9f6cb235adea206fff700ac9374b721dd8b"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceCapabilitiesSource.test_private_copy_changes_only_birth_and_guard_before_original_lookup": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:e4a0867e661816bd7d67f8643658988bb05cb1dba7ae2f65ecf06930957f047c",
-        "class:setup-sha256:18888c2f1ee2b35195d85d321fbba9f6cb235adea206fff700ac9374b721dd8b"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceCapabilitiesSource.test_whole_original_members_and_all_prior_definitions_are_exact": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:e4a0867e661816bd7d67f8643658988bb05cb1dba7ae2f65ecf06930957f047c",
-        "class:setup-sha256:18888c2f1ee2b35195d85d321fbba9f6cb235adea206fff700ac9374b721dd8b"
-      ],
-      "skipSites": []
-    }
+  "cases":["KernelDeviceCapabilitiesSource.test_another_definition_cannot_be_used_as_the_allocator_or_final_free","KernelDeviceCapabilitiesSource.test_final_hlist_free_supplies_device_and_member_without_normal_fallback_on_error","KernelDeviceCapabilitiesSource.test_missing_unknown_drifted_duplicate_and_crlf_source_refuse","KernelDeviceCapabilitiesSource.test_new_membership_and_production_gate_changes_fail_closed","KernelDeviceCapabilitiesSource.test_normal_allocator_body_is_unchanged_after_closed_dispatch","KernelDeviceCapabilitiesSource.test_private_copy_changes_only_birth_and_guard_before_original_lookup","KernelDeviceCapabilitiesSource.test_whole_original_members_and_all_prior_definitions_are_exact"],
+  "guards":{
+    "KernelDeviceCapabilitiesSource.test_another_definition_cannot_be_used_as_the_allocator_or_final_free":
+      "d45f54fe6830ee1806b76d87939934928f1a4b591cf63ffdfe51f464fc4acaf6",
+    "KernelDeviceCapabilitiesSource.test_final_hlist_free_supplies_device_and_member_without_normal_fallback_on_error":
+      "d45f54fe6830ee1806b76d87939934928f1a4b591cf63ffdfe51f464fc4acaf6",
+    "KernelDeviceCapabilitiesSource.test_missing_unknown_drifted_duplicate_and_crlf_source_refuse":
+      "d45f54fe6830ee1806b76d87939934928f1a4b591cf63ffdfe51f464fc4acaf6",
+    "KernelDeviceCapabilitiesSource.test_new_membership_and_production_gate_changes_fail_closed":
+      "d45f54fe6830ee1806b76d87939934928f1a4b591cf63ffdfe51f464fc4acaf6",
+    "KernelDeviceCapabilitiesSource.test_normal_allocator_body_is_unchanged_after_closed_dispatch":
+      "d45f54fe6830ee1806b76d87939934928f1a4b591cf63ffdfe51f464fc4acaf6",
+    "KernelDeviceCapabilitiesSource.test_private_copy_changes_only_birth_and_guard_before_original_lookup":
+      "d45f54fe6830ee1806b76d87939934928f1a4b591cf63ffdfe51f464fc4acaf6",
+    "KernelDeviceCapabilitiesSource.test_whole_original_members_and_all_prior_definitions_are_exact":
+      "d45f54fe6830ee1806b76d87939934928f1a4b591cf63ffdfe51f464fc4acaf6"
   },
-  "kind": "python",
-  "module": "tools/tests/test_host_stream_kernel_device_capabilities.py",
-  "reviewReason": "Reviewed grouped uninstalled PCI registration sysfs IDR and uevent consumers; exclusive48object/201function compile retains all prior profiles commands cases security and original bounds; no runtime physical closure link boot or installation qualification",
-  "schemaVersion": "latent.ci.contracts.v1"
+  "kind":"python",
+  "module":"tools/tests/test_host_stream_kernel_device_capabilities.py",
+  "reviewReason":"Reviewed grouped uninstalled PCI registration sysfs IDR and uevent consumers; exclusive48object/201function compile retains all prior profiles commands cases security and original bounds; no runtime physical closure link boot or installation qualification",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "d45f54fe6830ee1806b76d87939934928f1a4b591cf63ffdfe51f464fc4acaf6":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:e4a0867e661816bd7d67f8643658988bb05cb1dba7ae2f65ecf06930957f047c","class:setup-sha256:18888c2f1ee2b35195d85d321fbba9f6cb235adea206fff700ac9374b721dd8b"],"skipSites":[]}
+  }
 }

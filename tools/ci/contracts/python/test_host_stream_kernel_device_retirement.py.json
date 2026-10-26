@@ -1,101 +1,26 @@
 {
-  "cases": [
-    "KernelDeviceRetirementSource.test_all_eight_actual_existing_resume_callers_capture_under_original_lock_before_return",
-    "KernelDeviceRetirementSource.test_compact_preimages_bind_actual_parent_without_replacing_original_fixture_or_gates",
-    "KernelDeviceRetirementSource.test_every_complete_function_refuses_body_change_duplicate_crlf_and_unknown_prefix",
-    "KernelDeviceRetirementSource.test_rehashed_or_oversized_unknown_capture_refuses_before_any_source_change",
-    "KernelDeviceRetirementSource.test_scheduler_recovers_every_original_statement_and_checks_generation_before_lookup",
-    "KernelDeviceRetirementSource.test_security_final_returns_resume_after_finish_and_unlock_and_preserve_application_paths",
-    "KernelDeviceRetirementSource.test_whole_derived_preimage_refusal_precedes_mutation_and_resume"
-  ],
-  "guards": {
-    "KernelDeviceRetirementSource.test_all_eight_actual_existing_resume_callers_capture_under_original_lock_before_return": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:7967ec5231d37b2fdde878a8e7e0ee4ad7dea4f32ec62bb8eb0da9d78226ac68",
-        "class:setup-sha256:4bb25f05feb5643f2fc94f44c2def00e5cf4beb85292f160546c45010063c99f"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceRetirementSource.test_compact_preimages_bind_actual_parent_without_replacing_original_fixture_or_gates": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:7967ec5231d37b2fdde878a8e7e0ee4ad7dea4f32ec62bb8eb0da9d78226ac68",
-        "class:setup-sha256:4bb25f05feb5643f2fc94f44c2def00e5cf4beb85292f160546c45010063c99f"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceRetirementSource.test_every_complete_function_refuses_body_change_duplicate_crlf_and_unknown_prefix": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:7967ec5231d37b2fdde878a8e7e0ee4ad7dea4f32ec62bb8eb0da9d78226ac68",
-        "class:setup-sha256:4bb25f05feb5643f2fc94f44c2def00e5cf4beb85292f160546c45010063c99f"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceRetirementSource.test_rehashed_or_oversized_unknown_capture_refuses_before_any_source_change": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:7967ec5231d37b2fdde878a8e7e0ee4ad7dea4f32ec62bb8eb0da9d78226ac68",
-        "class:setup-sha256:4bb25f05feb5643f2fc94f44c2def00e5cf4beb85292f160546c45010063c99f"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceRetirementSource.test_scheduler_recovers_every_original_statement_and_checks_generation_before_lookup": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:7967ec5231d37b2fdde878a8e7e0ee4ad7dea4f32ec62bb8eb0da9d78226ac68",
-        "class:setup-sha256:4bb25f05feb5643f2fc94f44c2def00e5cf4beb85292f160546c45010063c99f"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceRetirementSource.test_security_final_returns_resume_after_finish_and_unlock_and_preserve_application_paths": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:7967ec5231d37b2fdde878a8e7e0ee4ad7dea4f32ec62bb8eb0da9d78226ac68",
-        "class:setup-sha256:4bb25f05feb5643f2fc94f44c2def00e5cf4beb85292f160546c45010063c99f"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceRetirementSource.test_whole_derived_preimage_refusal_precedes_mutation_and_resume": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:7967ec5231d37b2fdde878a8e7e0ee4ad7dea4f32ec62bb8eb0da9d78226ac68",
-        "class:setup-sha256:4bb25f05feb5643f2fc94f44c2def00e5cf4beb85292f160546c45010063c99f"
-      ],
-      "skipSites": []
-    }
+  "cases":["KernelDeviceRetirementSource.test_all_eight_actual_existing_resume_callers_capture_under_original_lock_before_return","KernelDeviceRetirementSource.test_compact_preimages_bind_actual_parent_without_replacing_original_fixture_or_gates","KernelDeviceRetirementSource.test_every_complete_function_refuses_body_change_duplicate_crlf_and_unknown_prefix","KernelDeviceRetirementSource.test_rehashed_or_oversized_unknown_capture_refuses_before_any_source_change","KernelDeviceRetirementSource.test_scheduler_recovers_every_original_statement_and_checks_generation_before_lookup","KernelDeviceRetirementSource.test_security_final_returns_resume_after_finish_and_unlock_and_preserve_application_paths","KernelDeviceRetirementSource.test_whole_derived_preimage_refusal_precedes_mutation_and_resume"],
+  "guards":{
+    "KernelDeviceRetirementSource.test_all_eight_actual_existing_resume_callers_capture_under_original_lock_before_return":
+      "b4fed799bf07f17a0591b0551769e152ee9bd4e4c415f639b4cab62f1a1e4727",
+    "KernelDeviceRetirementSource.test_compact_preimages_bind_actual_parent_without_replacing_original_fixture_or_gates":
+      "b4fed799bf07f17a0591b0551769e152ee9bd4e4c415f639b4cab62f1a1e4727",
+    "KernelDeviceRetirementSource.test_every_complete_function_refuses_body_change_duplicate_crlf_and_unknown_prefix":
+      "b4fed799bf07f17a0591b0551769e152ee9bd4e4c415f639b4cab62f1a1e4727",
+    "KernelDeviceRetirementSource.test_rehashed_or_oversized_unknown_capture_refuses_before_any_source_change":
+      "b4fed799bf07f17a0591b0551769e152ee9bd4e4c415f639b4cab62f1a1e4727",
+    "KernelDeviceRetirementSource.test_scheduler_recovers_every_original_statement_and_checks_generation_before_lookup":
+      "b4fed799bf07f17a0591b0551769e152ee9bd4e4c415f639b4cab62f1a1e4727",
+    "KernelDeviceRetirementSource.test_security_final_returns_resume_after_finish_and_unlock_and_preserve_application_paths":
+      "b4fed799bf07f17a0591b0551769e152ee9bd4e4c415f639b4cab62f1a1e4727",
+    "KernelDeviceRetirementSource.test_whole_derived_preimage_refusal_precedes_mutation_and_resume":
+      "b4fed799bf07f17a0591b0551769e152ee9bd4e4c415f639b4cab62f1a1e4727"
   },
-  "kind": "python",
-  "module": "tools/tests/test_host_stream_kernel_device_retirement.py",
-  "reviewReason": "Reviewed fixed one-object maintained factory retirement source check; original56/243 record and all existing jobs/guards remain unchanged; source and physical qualification gates stay separate.",
-  "schemaVersion": "latent.ci.contracts.v1"
+  "kind":"python",
+  "module":"tools/tests/test_host_stream_kernel_device_retirement.py",
+  "reviewReason":"Reviewed fixed one-object maintained factory retirement source check; original56/243 record and all existing jobs/guards remain unchanged; source and physical qualification gates stay separate.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "b4fed799bf07f17a0591b0551769e152ee9bd4e4c415f639b4cab62f1a1e4727":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:7967ec5231d37b2fdde878a8e7e0ee4ad7dea4f32ec62bb8eb0da9d78226ac68","class:setup-sha256:4bb25f05feb5643f2fc94f44c2def00e5cf4beb85292f160546c45010063c99f"],"skipSites":[]}
+  }
 }

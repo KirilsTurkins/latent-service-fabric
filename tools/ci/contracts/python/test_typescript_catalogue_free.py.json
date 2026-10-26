@@ -1,114 +1,29 @@
 {
-  "cases": [
-    "CatalogueFreeDefaultClientTests.test_new_outside_identity_preserves_unchanged_published_default_calls_and_phase_source",
-    "CatalogueFreeDefaultClientTests.test_real_three_json_peer_contacts_and_closed_receipt_negatives",
-    "CatalogueFreeDefaultClientTests.test_smoke_configuration_uses_exact_previously_qualified_owner_profile_and_phase_provider",
-    "TypeScriptCatalogueFreeTests.test_complete_real_recipe_engine_and_static_python_closure_without_catalogue",
-    "TypeScriptCatalogueFreeTests.test_extra_catalogue_reference_or_python_reader_rejected_even_after_rehash",
-    "TypeScriptCatalogueFreeTests.test_missing_engine_wit_or_selected_manifest_fails_even_after_rehash",
-    "TypeScriptCatalogueFreeTests.test_source_path_link_and_original_inventory_mutation_are_refused",
-    "TypeScriptCatalogueFreeTests.test_staged_direct_cli_uses_own_closure_and_never_writes_bytecode"
-  ],
-  "guards": {
-    "CatalogueFreeDefaultClientTests.test_new_outside_identity_preserves_unchanged_published_default_calls_and_phase_source": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:8d67eb45fdff886cf4aafa8f88af4565d2a4d156d4fa046e6618d5c6545563aa",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "CatalogueFreeDefaultClientTests.test_real_three_json_peer_contacts_and_closed_receipt_negatives": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:8d67eb45fdff886cf4aafa8f88af4565d2a4d156d4fa046e6618d5c6545563aa",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "CatalogueFreeDefaultClientTests.test_smoke_configuration_uses_exact_previously_qualified_owner_profile_and_phase_provider": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:8d67eb45fdff886cf4aafa8f88af4565d2a4d156d4fa046e6618d5c6545563aa",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "TypeScriptCatalogueFreeTests.test_complete_real_recipe_engine_and_static_python_closure_without_catalogue": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:8d67eb45fdff886cf4aafa8f88af4565d2a4d156d4fa046e6618d5c6545563aa",
-        "class:setup-sha256:246a1315ac01083f28bd7a15b44d45b8f3d174b236362d984e3b25c53cacd142"
-      ],
-      "skipSites": []
-    },
-    "TypeScriptCatalogueFreeTests.test_extra_catalogue_reference_or_python_reader_rejected_even_after_rehash": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:8d67eb45fdff886cf4aafa8f88af4565d2a4d156d4fa046e6618d5c6545563aa",
-        "class:setup-sha256:246a1315ac01083f28bd7a15b44d45b8f3d174b236362d984e3b25c53cacd142"
-      ],
-      "skipSites": []
-    },
-    "TypeScriptCatalogueFreeTests.test_missing_engine_wit_or_selected_manifest_fails_even_after_rehash": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:8d67eb45fdff886cf4aafa8f88af4565d2a4d156d4fa046e6618d5c6545563aa",
-        "class:setup-sha256:246a1315ac01083f28bd7a15b44d45b8f3d174b236362d984e3b25c53cacd142"
-      ],
-      "skipSites": []
-    },
-    "TypeScriptCatalogueFreeTests.test_source_path_link_and_original_inventory_mutation_are_refused": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:8d67eb45fdff886cf4aafa8f88af4565d2a4d156d4fa046e6618d5c6545563aa",
-        "class:setup-sha256:246a1315ac01083f28bd7a15b44d45b8f3d174b236362d984e3b25c53cacd142"
-      ],
-      "skipSites": []
-    },
-    "TypeScriptCatalogueFreeTests.test_staged_direct_cli_uses_own_closure_and_never_writes_bytecode": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:8d67eb45fdff886cf4aafa8f88af4565d2a4d156d4fa046e6618d5c6545563aa",
-        "class:setup-sha256:246a1315ac01083f28bd7a15b44d45b8f3d174b236362d984e3b25c53cacd142"
-      ],
-      "skipSites": []
-    }
+  "cases":["CatalogueFreeDefaultClientTests.test_new_outside_identity_preserves_unchanged_published_default_calls_and_phase_source","CatalogueFreeDefaultClientTests.test_real_three_json_peer_contacts_and_closed_receipt_negatives","CatalogueFreeDefaultClientTests.test_smoke_configuration_uses_exact_previously_qualified_owner_profile_and_phase_provider","TypeScriptCatalogueFreeTests.test_complete_real_recipe_engine_and_static_python_closure_without_catalogue","TypeScriptCatalogueFreeTests.test_extra_catalogue_reference_or_python_reader_rejected_even_after_rehash","TypeScriptCatalogueFreeTests.test_missing_engine_wit_or_selected_manifest_fails_even_after_rehash","TypeScriptCatalogueFreeTests.test_source_path_link_and_original_inventory_mutation_are_refused","TypeScriptCatalogueFreeTests.test_staged_direct_cli_uses_own_closure_and_never_writes_bytecode"],
+  "guards":{
+    "CatalogueFreeDefaultClientTests.test_new_outside_identity_preserves_unchanged_published_default_calls_and_phase_source":
+      "77478fea8828898fc5f9cbf471884da1d64308deadb9bbd4d87ec21ce36f51b5",
+    "CatalogueFreeDefaultClientTests.test_real_three_json_peer_contacts_and_closed_receipt_negatives":
+      "77478fea8828898fc5f9cbf471884da1d64308deadb9bbd4d87ec21ce36f51b5",
+    "CatalogueFreeDefaultClientTests.test_smoke_configuration_uses_exact_previously_qualified_owner_profile_and_phase_provider":
+      "77478fea8828898fc5f9cbf471884da1d64308deadb9bbd4d87ec21ce36f51b5",
+    "TypeScriptCatalogueFreeTests.test_complete_real_recipe_engine_and_static_python_closure_without_catalogue":
+      "5d03cfa03b440e898b4b59e10667c094cf1b75cfae596a6f5ce47610911ce7a6",
+    "TypeScriptCatalogueFreeTests.test_extra_catalogue_reference_or_python_reader_rejected_even_after_rehash":
+      "5d03cfa03b440e898b4b59e10667c094cf1b75cfae596a6f5ce47610911ce7a6",
+    "TypeScriptCatalogueFreeTests.test_missing_engine_wit_or_selected_manifest_fails_even_after_rehash":
+      "5d03cfa03b440e898b4b59e10667c094cf1b75cfae596a6f5ce47610911ce7a6",
+    "TypeScriptCatalogueFreeTests.test_source_path_link_and_original_inventory_mutation_are_refused":
+      "5d03cfa03b440e898b4b59e10667c094cf1b75cfae596a6f5ce47610911ce7a6",
+    "TypeScriptCatalogueFreeTests.test_staged_direct_cli_uses_own_closure_and_never_writes_bytecode":
+      "5d03cfa03b440e898b4b59e10667c094cf1b75cfae596a6f5ce47610911ce7a6"
   },
-  "kind": "python",
-  "module": "tools/tests/test_typescript_catalogue_free.py",
-  "reviewReason": "Qualify the exact normal TypeScript builder closure without optional catalogue/reference data; preserve selected source-bound engine/native products and three signed default-client gates.",
-  "schemaVersion": "latent.ci.contracts.v1"
+  "kind":"python",
+  "module":"tools/tests/test_typescript_catalogue_free.py",
+  "reviewReason":"Qualify the exact normal TypeScript builder closure without optional catalogue/reference data; preserve selected source-bound engine/native products and three signed default-client gates.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "77478fea8828898fc5f9cbf471884da1d64308deadb9bbd4d87ec21ce36f51b5":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:8d67eb45fdff886cf4aafa8f88af4565d2a4d156d4fa046e6618d5c6545563aa","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]},
+    "5d03cfa03b440e898b4b59e10667c094cf1b75cfae596a6f5ce47610911ce7a6":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:8d67eb45fdff886cf4aafa8f88af4565d2a4d156d4fa046e6618d5c6545563aa","class:setup-sha256:246a1315ac01083f28bd7a15b44d45b8f3d174b236362d984e3b25c53cacd142"],"skipSites":[]}
+  }
 }
