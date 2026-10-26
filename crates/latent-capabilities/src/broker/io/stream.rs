@@ -1,5 +1,5 @@
 use super::{
-    capacity, denied, error, invalid, Charge, IoBuffer, Kind, Operation, PlatformError,
+    capacity, denied, error, invalid, Charge, IoBuffer, Kind, OperationOwner, PlatformError,
     PlatformErrorCode,
 };
 use std::sync::{Arc, Mutex};
@@ -36,7 +36,7 @@ impl IoStreamTerminal {
     }
 }
 pub(super) struct StreamLifetime {
-    operation: Arc<Operation>,
+    operation: OperationOwner,
     _metadata: Charge,
     _slot: Charge,
 }
@@ -62,7 +62,7 @@ pub struct IoStreamReader {
 }
 
 pub(super) fn create(
-    op: &Arc<Operation>,
+    op: &OperationOwner,
     depth: usize,
 ) -> Result<(IoStreamWriter, IoStreamReader), PlatformError> {
     op.check()?;
@@ -92,7 +92,7 @@ pub(super) fn create(
         readable: Notify::new(),
         writable: Notify::new(),
         lifetime: Arc::new(StreamLifetime {
-            operation: Arc::clone(op),
+            operation: op.clone(),
             _metadata: metadata,
             _slot: slot,
         }),
@@ -157,7 +157,7 @@ impl IoStreamWriter {
     /// single affine writer preserves order; saturation cannot create workers.
     pub async fn write(&mut self, buffer: IoBuffer) -> Result<(), PlatformError> {
         let op = &self.stream.lifetime.operation;
-        if !Arc::ptr_eq(op, &buffer.operation) || buffer.stream.is_some() {
+        if !OperationOwner::ptr_eq(op, &buffer.operation) || buffer.stream.is_some() {
             return Err(denied());
         }
         if buffer.bytes().is_empty() {

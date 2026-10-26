@@ -356,6 +356,11 @@ async fn unwinding_work_and_dropping_runtime_keep_only_actual_retained_owners() 
 
 #[test]
 fn all_limit_dimensions_have_finite_hard_ceilings() {
+    let shell = OperationOwner::allocation_bytes()
+        .unwrap()
+        .checked_add(PreparedRunningCall::<ProviderCall>::allocation_bytes().unwrap())
+        .unwrap();
+    assert!(shell <= OPERATION_METADATA as u64);
     assert!(IoRuntime::new(IoLimits {
         maximum_running_calls: 0,
         ..IoLimits::default()
@@ -479,3 +484,215 @@ async fn retiring_the_broker_wakes_existing_queues_and_denies_new_waiters() {
 }
 
 mod transfer;
+
+fn native_request(fixture: &Fixture, id: &str) -> (latent_executor::ExecutionRequest, Control) {
+    let (mut request, mut control) = fixture.request(id);
+    let profile = latent_core::BudgetProfile::Phase3;
+    let grant = EffectiveActivationBudget::admit_profile_at(
+        profile,
+        &request.budget,
+        &request.budget,
+        &request.budget,
+        None,
+        ClockSample::system_now(),
+    )
+    .unwrap();
+    control.budget = ActivationBudget::with_profile(grant, profile).unwrap();
+    request.activation.deadline_unix_millis = control.budget.deadline().unix_millis();
+    (request, control)
+}
+
+#[tokio::test]
+async fn native_operation_preparation_refuses_each_backing_without_dispatch_or_node_leak() {
+    let fixture = Fixture::new(CapabilityBrokerLimits::default());
+    let (request, control) = native_request(&fixture, "native-io-refusal");
+    let session = fixture.session(&request, &control);
+    let io = IoRuntime::new(IoLimits::default()).unwrap();
+    let baseline = control.budget.host_memory_bytes();
+    let reservations = control.budget.outstanding_reservations();
+    let broker = fixture.broker.snapshot();
+    let shared = OperationOwner::allocation_bytes().unwrap();
+    let body = PreparedRunningCall::<ProviderCall>::allocation_bytes().unwrap();
+    assert!(shared > 0 && body > 0 && shared + body <= OPERATION_METADATA as u64);
+    // First refusal targets shared backing; second allows it and refuses only
+    // the later body. The original1MiB grant is short by exactly ONE byte.
+    for needed in [shared, shared + body] {
+        let held = request.budget.memory_bytes - baseline - needed + 1;
+        let padding = control.budget.reserve_host_memory(held).unwrap();
+        let error = io.admit(&session).err().unwrap();
+        assert_eq!(error.code, PlatformErrorCode::ResourceExhausted);
+        assert_eq!(io.snapshot(), IoSnapshot::default());
+        assert_eq!(fixture.broker.snapshot(), broker);
+        assert_eq!(control.budget.host_memory_bytes(), baseline + held);
+        assert_eq!(control.budget.outstanding_reservations(), reservations + 1);
+        drop(padding);
+        assert_eq!(control.budget.host_memory_bytes(), baseline);
+        assert_eq!(control.budget.outstanding_reservations(), reservations);
+    }
+    let admission = io.admit(&session).unwrap();
+    assert_eq!(control.budget.host_memory_bytes(), baseline + shared + body);
+    drop(admission); // never dispatched; running body was never allocated
+    assert_eq!(control.budget.host_memory_bytes(), baseline);
+    assert_eq!(io.snapshot(), IoSnapshot::default());
+    let (foreign_request, foreign_control) = native_request(&fixture, "native-io-foreign");
+    let foreign = fixture.session(&foreign_request, &foreign_control);
+    let foreign_bytes = foreign_control.budget.host_memory_bytes();
+    let foreign_guards = foreign_control.budget.outstanding_reservations();
+    let ready = io.admit(&session).unwrap().wait().await.unwrap();
+    assert!(ready.start(dispatch(&foreign)).is_err());
+    assert_eq!(control.budget.host_memory_bytes(), baseline);
+    assert_eq!(control.budget.outstanding_reservations(), reservations);
+    assert_eq!(foreign_control.budget.host_memory_bytes(), foreign_bytes);
+    assert_eq!(
+        foreign_control.budget.outstanding_reservations(),
+        foreign_guards
+    );
+    assert_eq!(io.snapshot(), IoSnapshot::default());
+    let call = start(&io, &session).await;
+    drop(call);
+    assert_eq!(control.budget.host_memory_bytes(), baseline);
+    assert_eq!(control.budget.outstanding_reservations(), reservations);
+    assert_eq!(io.snapshot(), IoSnapshot::default());
+}
+
+#[tokio::test]
+async fn native_operation_running_buffer_and_last_weak_keep_full_backing_paid() {
+    let fixture = Fixture::new(CapabilityBrokerLimits::default());
+    let (request, control) = native_request(&fixture, "native-io-lifetime");
+    let session = fixture.session(&request, &control);
+    let io = IoRuntime::new(IoLimits::default()).unwrap();
+    let baseline = control.budget.host_memory_bytes();
+    let reservations = control.budget.outstanding_reservations();
+    let shared = OperationOwner::allocation_bytes().unwrap();
+    let body = PreparedRunningCall::<ProviderCall>::allocation_bytes().unwrap();
+    let admission = io.admit(&session).unwrap();
+    let stop = admission.stop_handle();
+    let late = stop.clone();
+    assert_eq!(control.budget.host_memory_bytes(), baseline + shared + body);
+    assert_eq!(control.budget.outstanding_reservations(), reservations + 2);
+    assert_eq!(stop.phase(), IoWorkPhase::Queued);
+    let ready = admission.wait().await.unwrap();
+    assert_eq!(stop.phase(), IoWorkPhase::Ready);
+    let provider = dispatch(&session);
+    let admitted = control.budget.host_memory_bytes();
+    let count = control.budget.outstanding_reservations();
+    let call = ready.start(provider).unwrap();
+    assert_eq!(stop.phase(), IoWorkPhase::Running);
+    assert_eq!(control.budget.host_memory_bytes(), admitted);
+    assert_eq!(control.budget.outstanding_reservations(), count);
+    {
+        let state = call.operation.execution.lock().unwrap();
+        assert!(state.running_backing.is_none());
+        let Authority::Running(call) = &state.authority else {
+            panic!("running owner")
+        };
+        assert_eq!(call.allocation.as_ref().unwrap().bytes(), body);
+        assert!(call
+            .allocation
+            .as_ref()
+            .unwrap()
+            .is_from_budget(&control.budget));
+    }
+    let retained = buffer(&call, b"physical owner", 64);
+    let lease = call.lease();
+    stop.stop();
+    assert_eq!(
+        call.wait_for(std::future::pending::<()>())
+            .await
+            .unwrap_err()
+            .code,
+        PlatformErrorCode::Cancelled
+    );
+    drop(call);
+    assert_eq!(stop.phase(), IoWorkPhase::Cleaning);
+    assert!(control.budget.host_memory_bytes() >= baseline + shared + body);
+    drop(retained);
+    assert_eq!(io.snapshot().calls, 1); // the existing provider lease is real work
+    assert!(lease.checkpoint().is_err());
+    drop(lease);
+    assert_eq!(stop.phase(), IoWorkPhase::Retired);
+    assert_eq!(io.snapshot(), IoSnapshot::default()); // existing logical node quota
+                                                      // Dead T does NOT shrink the Arc allocation. FULL backing + billing stay
+                                                      // paid until its actual final Weak, not just size_of(header).
+    assert_eq!(control.budget.host_memory_bytes(), baseline + shared);
+    assert_eq!(control.budget.outstanding_reservations(), reservations + 1);
+    assert!(stop.checkpoint().is_err());
+    drop(stop);
+    assert_eq!(control.budget.host_memory_bytes(), baseline + shared);
+    drop(late);
+    assert_eq!(control.budget.host_memory_bytes(), baseline);
+    assert_eq!(control.budget.outstanding_reservations(), reservations);
+    let fresh = start(&io, &session).await;
+    drop(fresh);
+    assert_eq!(control.budget.host_memory_bytes(), baseline);
+    assert_eq!(io.snapshot(), IoSnapshot::default());
+}
+
+#[test]
+fn native_running_box_cleanup_is_physical_first_and_unwind_conservative() {
+    use std::sync::atomic::AtomicUsize;
+    #[repr(align(256))]
+    struct Value {
+        budget: ActivationBudget,
+        drops: Arc<AtomicUsize>,
+        panic: bool,
+    }
+    impl Drop for Value {
+        fn drop(&mut self) {
+            assert_eq!(self as *const Self as usize % 256, 0);
+            assert_eq!(
+                self.budget.host_memory_bytes(),
+                PreparedRunningCall::<Self>::allocation_bytes().unwrap()
+            );
+            self.drops.fetch_add(1, Ordering::SeqCst);
+            assert!(!self.panic, "original running body destructor");
+        }
+    }
+    let fixture = Fixture::new(CapabilityBrokerLimits::default());
+    for mode in 0..3 {
+        let (_, control) = native_request(&fixture, "native-box-drop");
+        let budget = control.budget.clone();
+        let drops = Arc::new(AtomicUsize::new(0));
+        let prepared = PreparedRunningCall::<Value>::reserve(&budget).unwrap();
+        let bytes = PreparedRunningCall::<Value>::allocation_bytes().unwrap();
+        assert_eq!(Layout::new::<Value>().align(), 256);
+        assert_eq!(budget.host_memory_bytes(), bytes);
+        assert_eq!(budget.snapshot_at(Instant::now()).peak_memory_bytes, 0);
+        let owner = prepared.finish(Value {
+            budget: budget.clone(),
+            drops: drops.clone(),
+            panic: mode == 2,
+        });
+        assert_eq!(budget.snapshot_at(Instant::now()).peak_memory_bytes, bytes);
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(move || {
+            let actual_body = owner;
+            if mode == 1 {
+                panic!("unrelated caller unwind");
+            }
+            drop(actual_body);
+        }));
+        assert_eq!(result.is_err(), mode != 0);
+        assert_eq!(drops.load(Ordering::SeqCst), 1);
+        if mode == 2 {
+            assert_eq!(budget.host_memory_bytes(), bytes); // SAME uncertain guard
+            assert_eq!(budget.outstanding_reservations(), 1);
+        } else {
+            assert_eq!(budget.host_memory_bytes(), 0);
+            assert_eq!(budget.outstanding_reservations(), 0);
+        }
+    }
+    let (_, control) = native_request(&fixture, "native-box-zst");
+    let owner = PreparedRunningCall::<()>::reserve(&control.budget)
+        .unwrap()
+        .finish(());
+    assert_eq!(control.budget.host_memory_bytes(), 0);
+    drop(owner);
+    let (_, legacy) = fixture.request("legacy-box");
+    let owner = PreparedRunningCall::<u64>::reserve(&legacy.budget)
+        .unwrap()
+        .finish(42);
+    assert_eq!(*owner, 42);
+    assert!(owner.allocation.is_none());
+    drop(owner);
+    assert_eq!(legacy.budget.host_memory_bytes(), 0);
+}
