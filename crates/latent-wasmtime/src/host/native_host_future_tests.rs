@@ -122,14 +122,15 @@ async fn actual_host_future_typed_and_dynamic_boxes_retain_original_memory_while
             .is_pending());
         assert!(gate.polls.load(Ordering::SeqCst) > 0);
         let allocated = requests(&observed);
-        // Cold callbackless path: GuestCall entry, lazy stub and ready headers,
-        // ORIGINAL callback Box, PushFuture entry, prepared unordered Task.
-        // Publication retired entry5, not the suspended entry1 or task/header.
-        assert_eq!(allocated.len(), before + 6);
+        // SOURCE-DERIVED v16 cold callbackless order, to be exercised here:
+        // GuestCall, stub, ready, ORIGINAL callback Box, result reservation,
+        // concrete outer Box, PushFuture, prepared unordered Task.
+        // Publication retires entry7, not result/outer/call/task/header owners.
+        assert_eq!(allocated.len(), before + 8);
         assert!(allocated[before..].iter().all(|bytes| *bytes > 0));
-        assert_eq!(allocated[before], allocated[before + 4]);
-        assert_eq!(allocated[before + 1], allocated[before + 5]);
-        let live_call = [0, 1, 2, 3, 5]
+        assert_eq!(allocated[before], allocated[before + 6]);
+        assert_eq!(allocated[before + 1], allocated[before + 7]);
+        let live_call = [0, 1, 2, 3, 4, 5, 7]
             .iter()
             .map(|index| allocated[before + index] as u64 + OWNER)
             .sum::<u64>();
@@ -260,15 +261,15 @@ async fn actual_host_future_cancellation_cannot_credit_another_live_store() {
     let cold_a = &allocated_a[before_a..];
     let cold_b = &allocated_b[before_b..];
     for cold in [cold_a, cold_b] {
-        // Same cold callbackless six-owner sequence as the pending control:
-        // GuestCall, stub, ready queue, callback Box, PushFuture, Task.
-        assert_eq!(cold.len(), 6);
+        // SOURCE-DERIVED v16 cold eight-request sequence as above:
+        // GuestCall, stub, ready, callback Box, result, outer, PushFuture, Task.
+        assert_eq!(cold.len(), 8);
         assert!(cold.iter().all(|bytes| *bytes > 0));
-        assert_eq!(cold[0], cold[4]);
-        assert_eq!(cold[1], cold[5]);
+        assert_eq!(cold[0], cold[6]);
+        assert_eq!(cold[1], cold[7]);
     }
-    let escaped_a = cold_a[5] as u64 + cold_a[2] as u64 + 2 * OWNER;
-    let escaped_b = cold_b[5] as u64 + cold_b[2] as u64 + 2 * OWNER;
+    let escaped_a = cold_a[7] as u64 + cold_a[2] as u64 + 2 * OWNER;
+    let escaped_b = cold_b[7] as u64 + cold_b[2] as u64 + 2 * OWNER;
     let live_b = b.host_memory_bytes();
     let live_b_reservations = b.outstanding_reservations();
     drop(first_call);
@@ -290,7 +291,7 @@ async fn actual_host_future_cancellation_cannot_credit_another_live_store() {
     assert_eq!(requests(&observed_b), allocated_b);
     println!(
         "LSF_CANCELLED_HOST_FUTURE_ESCAPED_V1 store=a task-bytes={} ready-bytes={} owner-escrow={} retained={} late-wake-admissions=0 foreign-unchanged=true",
-        cold_a[5], cold_a[2], OWNER, escaped_a
+        cold_a[7], cold_a[2], OWNER, escaped_a
     );
     drop(second_call);
     drop(second);
@@ -305,7 +306,7 @@ async fn actual_host_future_cancellation_cannot_credit_another_live_store() {
     assert_eq!(requests(&observed_b), allocated_b);
     println!(
         "LSF_CANCELLED_HOST_FUTURE_ESCAPED_V1 store=b task-bytes={} ready-bytes={} owner-escrow={} retained={} late-wake-admissions=0 foreign-unchanged=true",
-        cold_b[5], cold_b[2], OWNER, escaped_b
+        cold_b[7], cold_b[2], OWNER, escaped_b
     );
 }
 
@@ -328,8 +329,9 @@ async fn actual_host_future_callback_error_is_unchanged_and_its_box_retires() {
         assert!(format!("{error:#}").contains("native-host-future-original-callback-error"));
         assert!(gate.polls.load(Ordering::SeqCst) > 0);
         let allocated = requests(&observed);
-        // Immediate callback error still follows all six pre-poll admissions.
-        assert_eq!(allocated.len(), before + 6);
+        // Immediate callback error still follows all eight pre-poll admissions;
+        // the unused result reservation has no Box to confirm on input Err.
+        assert_eq!(allocated.len(), before + 8);
         assert!(allocated[before..].iter().all(|bytes| *bytes > 0));
         let live_call = allocated[before..]
             .iter()
@@ -368,4 +370,213 @@ async fn actual_host_future_legacy_unaccounted_embedding_keeps_original_scalar_r
         assert_eq!(function.call_async(&mut store, ()).await.unwrap(), (42,));
         assert!(store.get_fuel().unwrap() < 1_000_000_000);
     }
+}
+
+// Test-controller synchronization is outside the invocation backing claim.
+struct AccessorProbeTask {
+    gate: Arc<Gate>,
+    entered: Arc<AtomicBool>,
+    dropped: Arc<AtomicUsize>,
+}
+impl wasmtime::component::AccessorTask<Data> for AccessorProbeTask {
+    fn run(
+        self,
+        _: &wasmtime::component::Accessor<Data>,
+    ) -> impl Future<Output = wasmtime::Result<()>> + Send {
+        // Observe the actual AccessorTask method call, not only its future poll.
+        self.entered.store(true, Ordering::SeqCst);
+        async move { self.gate.wait().await }
+    }
+}
+impl Drop for AccessorProbeTask {
+    fn drop(&mut self) {
+        self.dropped.fetch_add(1, Ordering::SeqCst);
+    }
+}
+
+#[tokio::test]
+async fn actual_accessor_spawn_outer_box_refuses_before_run_and_retires_after_pending() {
+    let engine = engine();
+    let original = budget(MIB);
+    let observed = Arc::new(Observations::default());
+    let gate = Arc::new(Gate::default());
+    let entered = Arc::new(AtomicBool::new(false));
+    let dropped = Arc::new(AtomicUsize::new(0));
+    let mut first = store(&engine, &original, &observed).unwrap();
+    // The ordinary driver initializes the selected set's two shared headers.
+    // No child task or task.run call is needed to warm that actual owner scope.
+    first.run_concurrent(async |_| ()).await.unwrap();
+    let before = requests(&observed).len();
+    let padding = Arc::new(Mutex::new(None::<Padding>));
+    let consumed = Arc::new(AtomicU64::new(0));
+    let requested = Arc::new(AtomicU64::new(0));
+    let kept = padding.clone();
+    let kept_consumed = consumed.clone();
+    let kept_requested = requested.clone();
+    let invocation = original.clone();
+    // With shared headers warm: queue, TaskSlot, JoinState, then this exact
+    // concrete outer Box. No task.run or user poll precedes request four.
+    observed.before_request(before + 4, move |bytes| {
+        let request = bytes as u64 + OWNER;
+        let bytes = MIB - invocation.host_memory_bytes() - request + 1 - OWNER;
+        let mut owner = crate::native_tables::reserve(&invocation, bytes as usize)
+            .unwrap()
+            .unwrap();
+        let allocation = vec![0u8; bytes as usize];
+        assert_eq!(allocation.capacity(), bytes as usize);
+        owner.allocated();
+        *kept.lock().unwrap() = Some(Padding {
+            _bytes: allocation,
+            _owner: owner,
+        });
+        kept_consumed.store(invocation.host_memory_bytes(), Ordering::SeqCst);
+        kept_requested.store(request, Ordering::SeqCst);
+    });
+    let error = first
+        .spawn(AccessorProbeTask {
+            gate: gate.clone(),
+            entered: entered.clone(),
+            dropped: dropped.clone(),
+        })
+        .err()
+        .expect("original outer-Box admission refusal");
+    denial(
+        &error,
+        MIB,
+        consumed.load(Ordering::SeqCst),
+        requested.load(Ordering::SeqCst),
+    );
+    assert_eq!(requests(&observed).len(), before + 4);
+    assert_eq!(
+        consumed.load(Ordering::SeqCst) + requested.load(Ordering::SeqCst),
+        MIB + 1
+    );
+    assert!(!entered.load(Ordering::SeqCst));
+    assert_eq!(gate.polls.load(Ordering::SeqCst), 0);
+    assert_eq!(dropped.load(Ordering::SeqCst), 1);
+    drop(error);
+    drop(padding.lock().unwrap().take());
+    drop(first);
+    assert_eq!(original.host_memory_bytes(), 0);
+    assert_eq!(original.outstanding_reservations(), 0);
+
+    // Fresh Store, SAME original budget; no component/compiler fixture needed.
+    let mut fresh = store(&engine, &original, &observed).unwrap();
+    fresh.run_concurrent(async |_| ()).await.unwrap();
+    let baseline = original.host_memory_bytes();
+    let before = requests(&observed).len();
+    let handle = fresh
+        .spawn(AccessorProbeTask {
+            gate: gate.clone(),
+            entered: entered.clone(),
+            dropped: dropped.clone(),
+        })
+        .unwrap();
+    assert!(!entered.load(Ordering::SeqCst));
+    let allocated = requests(&observed);
+    assert_eq!(allocated.len(), before + 4);
+    assert!(allocated[before..].iter().all(|bytes| *bytes > 0));
+    let all_four = allocated[before..]
+        .iter()
+        .map(|bytes| *bytes as u64 + OWNER)
+        .sum::<u64>();
+    assert_eq!(original.host_memory_bytes(), baseline + all_four);
+    let mut drive = Box::pin(fresh.run_concurrent(async |_| handle.await));
+    assert!(drive
+        .as_mut()
+        .poll(&mut Context::from_waker(Waker::noop()))
+        .is_pending());
+    assert!(entered.load(Ordering::SeqCst));
+    assert!(gate.polls.load(Ordering::SeqCst) > 0);
+    // The published queue node may have retired. TaskSlot, JoinState and the
+    // genuinely pending outer Box must all still be physically owned.
+    let pending = allocated[before + 1..]
+        .iter()
+        .map(|bytes| *bytes as u64 + OWNER)
+        .sum::<u64>();
+    assert!(original.host_memory_bytes() >= baseline + pending);
+    assert_eq!(dropped.load(Ordering::SeqCst), 1);
+    gate.finish();
+    drive.await.unwrap();
+    assert_eq!(dropped.load(Ordering::SeqCst), 2);
+    // Weak/task-header tails may remain paid until physical set teardown.
+    drop(fresh);
+    assert_eq!(observed.factory_drops.load(Ordering::SeqCst), 2);
+    assert_eq!(original.host_memory_bytes(), 0);
+    assert_eq!(original.outstanding_reservations(), 0);
+}
+
+#[tokio::test]
+async fn actual_sync_lower_result_box_refuses_before_poll_and_fresh_budget_reuses() {
+    let engine = engine();
+    let component = Component::new(&engine, COMPONENT).unwrap();
+    let original = budget(MIB);
+    let observed = Arc::new(Observations::default());
+    let mut first = store(&engine, &original, &observed).unwrap();
+    let gate = Arc::new(Gate::default());
+    // Existing component's typed wait returns (u32,), not ABI ValRaw storage.
+    let linker = linker(&engine, &gate, false);
+    let (_, function) = instance(&linker, &component, &mut first).await;
+    let before = requests(&observed).len();
+    let padding = Arc::new(Mutex::new(None::<Padding>));
+    let consumed = Arc::new(AtomicU64::new(0));
+    let requested = Arc::new(AtomicU64::new(0));
+    let kept = padding.clone();
+    let kept_consumed = consumed.clone();
+    let kept_requested = requested.clone();
+    let invocation = original.clone();
+    // SOURCE-DERIVED cold prefix: queue1, stub2, ready3, original Box4,
+    // result reservation5. Layout equality is an assertion, never type authority.
+    observed.before_request(before + 5, move |bytes| {
+        assert_eq!(bytes, std::alloc::Layout::new::<(u32,)>().size());
+        assert!(bytes > 0);
+        let request = bytes as u64 + OWNER;
+        let bytes = MIB - invocation.host_memory_bytes() - request + 1 - OWNER;
+        let mut owner = crate::native_tables::reserve(&invocation, bytes as usize)
+            .unwrap()
+            .unwrap();
+        let allocation = vec![0u8; bytes as usize];
+        assert_eq!(allocation.capacity(), bytes as usize);
+        owner.allocated();
+        *kept.lock().unwrap() = Some(Padding {
+            _bytes: allocation,
+            _owner: owner,
+        });
+        kept_consumed.store(invocation.host_memory_bytes(), Ordering::SeqCst);
+        kept_requested.store(request, Ordering::SeqCst);
+    });
+    let error = function.call_async(&mut first, ()).await.unwrap_err();
+    denial(
+        &error,
+        MIB,
+        consumed.load(Ordering::SeqCst),
+        requested.load(Ordering::SeqCst),
+    );
+    assert_eq!(requests(&observed).len(), before + 5);
+    assert_eq!(
+        requests(&observed)[before + 4],
+        std::alloc::Layout::new::<(u32,)>().size()
+    );
+    assert_eq!(gate.polls.load(Ordering::SeqCst), 0);
+    assert_eq!(
+        consumed.load(Ordering::SeqCst) + requested.load(Ordering::SeqCst),
+        MIB + 1
+    );
+    drop(error);
+    drop(padding.lock().unwrap().take());
+    drop(first);
+    assert_eq!(observed.factory_drops.load(Ordering::SeqCst), 1);
+    assert_eq!(original.host_memory_bytes(), 0);
+    assert_eq!(original.outstanding_reservations(), 0);
+
+    // Physical teardown above precedes a fresh Store under the SAME grant.
+    let mut fresh = store(&engine, &original, &observed).unwrap();
+    let (_, function) = instance(&linker, &component, &mut fresh).await;
+    gate.finish();
+    assert_eq!(function.call_async(&mut fresh, ()).await.unwrap(), (42,));
+    assert!(gate.polls.load(Ordering::SeqCst) > 0);
+    drop(fresh);
+    assert_eq!(observed.factory_drops.load(Ordering::SeqCst), 2);
+    assert_eq!(original.host_memory_bytes(), 0);
+    assert_eq!(original.outstanding_reservations(), 0);
 }

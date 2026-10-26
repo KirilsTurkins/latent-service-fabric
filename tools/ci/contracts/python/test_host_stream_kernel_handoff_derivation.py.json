@@ -1,114 +1,28 @@
 {
-  "cases": [
-    "HostStreamKernelHandoffDerivation.test_constructor_retains_reserved_address_instead_of_preinitialization_cookie_commit",
-    "HostStreamKernelHandoffDerivation.test_factory_gate_normal_provider_and_old_mechanisms_remain_closed",
-    "HostStreamKernelHandoffDerivation.test_fresh_handoff_follows_initialization_and_clone_handoff_follows_failure_paths",
-    "HostStreamKernelHandoffDerivation.test_original_cookie_copy_and_generation_semantics_are_not_reset_or_replaced",
-    "HostStreamKernelHandoffDerivation.test_outer_constructor_changes_are_insertions_preserving_every_upstream_statement",
-    "HostStreamKernelHandoffDerivation.test_private_handoff_copies_before_cookie_and_revalidates_after_with_no_new_table",
-    "HostStreamKernelHandoffDerivation.test_unknown_changed_duplicate_and_partial_preimages_refuse",
-    "HostStreamKernelHandoffDerivation.test_whole_header_and_cookie_chain_preimages_have_no_implicit_acquisition"
-  ],
-  "guards": {
-    "HostStreamKernelHandoffDerivation.test_constructor_retains_reserved_address_instead_of_preinitialization_cookie_commit": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:33091d12d0c64ec3f509fd89233f4f97b8fb13b4d10384d8a2a7ae2e45f10ead",
-        "class:setup-sha256:70c63c92375d1060f84b1292e92e2867e52d853e0f9aac3f952027d38375b024"
-      ],
-      "skipSites": []
-    },
-    "HostStreamKernelHandoffDerivation.test_factory_gate_normal_provider_and_old_mechanisms_remain_closed": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:33091d12d0c64ec3f509fd89233f4f97b8fb13b4d10384d8a2a7ae2e45f10ead",
-        "class:setup-sha256:70c63c92375d1060f84b1292e92e2867e52d853e0f9aac3f952027d38375b024"
-      ],
-      "skipSites": []
-    },
-    "HostStreamKernelHandoffDerivation.test_fresh_handoff_follows_initialization_and_clone_handoff_follows_failure_paths": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:33091d12d0c64ec3f509fd89233f4f97b8fb13b4d10384d8a2a7ae2e45f10ead",
-        "class:setup-sha256:70c63c92375d1060f84b1292e92e2867e52d853e0f9aac3f952027d38375b024"
-      ],
-      "skipSites": []
-    },
-    "HostStreamKernelHandoffDerivation.test_original_cookie_copy_and_generation_semantics_are_not_reset_or_replaced": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:33091d12d0c64ec3f509fd89233f4f97b8fb13b4d10384d8a2a7ae2e45f10ead",
-        "class:setup-sha256:70c63c92375d1060f84b1292e92e2867e52d853e0f9aac3f952027d38375b024"
-      ],
-      "skipSites": []
-    },
-    "HostStreamKernelHandoffDerivation.test_outer_constructor_changes_are_insertions_preserving_every_upstream_statement": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:33091d12d0c64ec3f509fd89233f4f97b8fb13b4d10384d8a2a7ae2e45f10ead",
-        "class:setup-sha256:70c63c92375d1060f84b1292e92e2867e52d853e0f9aac3f952027d38375b024"
-      ],
-      "skipSites": []
-    },
-    "HostStreamKernelHandoffDerivation.test_private_handoff_copies_before_cookie_and_revalidates_after_with_no_new_table": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:33091d12d0c64ec3f509fd89233f4f97b8fb13b4d10384d8a2a7ae2e45f10ead",
-        "class:setup-sha256:70c63c92375d1060f84b1292e92e2867e52d853e0f9aac3f952027d38375b024"
-      ],
-      "skipSites": []
-    },
-    "HostStreamKernelHandoffDerivation.test_unknown_changed_duplicate_and_partial_preimages_refuse": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:33091d12d0c64ec3f509fd89233f4f97b8fb13b4d10384d8a2a7ae2e45f10ead",
-        "class:setup-sha256:70c63c92375d1060f84b1292e92e2867e52d853e0f9aac3f952027d38375b024"
-      ],
-      "skipSites": []
-    },
-    "HostStreamKernelHandoffDerivation.test_whole_header_and_cookie_chain_preimages_have_no_implicit_acquisition": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:33091d12d0c64ec3f509fd89233f4f97b8fb13b4d10384d8a2a7ae2e45f10ead",
-        "class:setup-sha256:70c63c92375d1060f84b1292e92e2867e52d853e0f9aac3f952027d38375b024"
-      ],
-      "skipSites": []
-    }
+  "cases":["HostStreamKernelHandoffDerivation.test_constructor_retains_reserved_address_instead_of_preinitialization_cookie_commit","HostStreamKernelHandoffDerivation.test_factory_gate_normal_provider_and_old_mechanisms_remain_closed","HostStreamKernelHandoffDerivation.test_fresh_handoff_follows_initialization_and_clone_handoff_follows_failure_paths","HostStreamKernelHandoffDerivation.test_original_cookie_copy_and_generation_semantics_are_not_reset_or_replaced","HostStreamKernelHandoffDerivation.test_outer_constructor_changes_are_insertions_preserving_every_upstream_statement","HostStreamKernelHandoffDerivation.test_private_handoff_copies_before_cookie_and_revalidates_after_with_no_new_table","HostStreamKernelHandoffDerivation.test_unknown_changed_duplicate_and_partial_preimages_refuse","HostStreamKernelHandoffDerivation.test_whole_header_and_cookie_chain_preimages_have_no_implicit_acquisition"],
+  "guards":{
+    "HostStreamKernelHandoffDerivation.test_constructor_retains_reserved_address_instead_of_preinitialization_cookie_commit":
+      "6bae3a8a478819603c98cd751734104634cf0ffd17d8d5b03cc3212cfbd7ac25",
+    "HostStreamKernelHandoffDerivation.test_factory_gate_normal_provider_and_old_mechanisms_remain_closed":
+      "6bae3a8a478819603c98cd751734104634cf0ffd17d8d5b03cc3212cfbd7ac25",
+    "HostStreamKernelHandoffDerivation.test_fresh_handoff_follows_initialization_and_clone_handoff_follows_failure_paths":
+      "6bae3a8a478819603c98cd751734104634cf0ffd17d8d5b03cc3212cfbd7ac25",
+    "HostStreamKernelHandoffDerivation.test_original_cookie_copy_and_generation_semantics_are_not_reset_or_replaced":
+      "6bae3a8a478819603c98cd751734104634cf0ffd17d8d5b03cc3212cfbd7ac25",
+    "HostStreamKernelHandoffDerivation.test_outer_constructor_changes_are_insertions_preserving_every_upstream_statement":
+      "6bae3a8a478819603c98cd751734104634cf0ffd17d8d5b03cc3212cfbd7ac25",
+    "HostStreamKernelHandoffDerivation.test_private_handoff_copies_before_cookie_and_revalidates_after_with_no_new_table":
+      "6bae3a8a478819603c98cd751734104634cf0ffd17d8d5b03cc3212cfbd7ac25",
+    "HostStreamKernelHandoffDerivation.test_unknown_changed_duplicate_and_partial_preimages_refuse":
+      "6bae3a8a478819603c98cd751734104634cf0ffd17d8d5b03cc3212cfbd7ac25",
+    "HostStreamKernelHandoffDerivation.test_whole_header_and_cookie_chain_preimages_have_no_implicit_acquisition":
+      "6bae3a8a478819603c98cd751734104634cf0ffd17d8d5b03cc3212cfbd7ac25"
   },
-  "kind": "python",
-  "module": "tools/tests/test_host_stream_kernel_handoff_derivation.py",
-  "reviewReason": "Eight additive exact initialization/cookie preimage and affine handoff controls; preserve prior source cases, original generator and closed factory/profile gates",
-  "schemaVersion": "latent.ci.contracts.v1"
+  "kind":"python",
+  "module":"tools/tests/test_host_stream_kernel_handoff_derivation.py",
+  "reviewReason":"Eight additive exact initialization/cookie preimage and affine handoff controls; preserve prior source cases, original generator and closed factory/profile gates",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "6bae3a8a478819603c98cd751734104634cf0ffd17d8d5b03cc3212cfbd7ac25":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:33091d12d0c64ec3f509fd89233f4f97b8fb13b4d10384d8a2a7ae2e45f10ead","class:setup-sha256:70c63c92375d1060f84b1292e92e2867e52d853e0f9aac3f952027d38375b024"],"skipSites":[]}
+  }
 }

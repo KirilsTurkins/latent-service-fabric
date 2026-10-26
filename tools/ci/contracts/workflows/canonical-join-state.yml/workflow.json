@@ -3,13 +3,13 @@
   "policy": {
     "concurrency": {
       "cancel-in-progress": false,
-      "group": "canonical-unordered-backing-${{ github.ref }}"
+      "group": "canonical-outer-sync-result-${{ github.ref }}"
     },
-    "name": "Focused canonical async unordered backing",
+    "name": "Focused canonical outer and sync result backing",
     "on": {
       "push": {
         "branches": [
-          "feat/sdk-736-futures-unordered-20261026"
+          "feat/sdk-736-legacy-host-futures-20261026"
         ],
         "paths": [
           ".github/workflows/canonical-join-state.yml",
@@ -31,7 +31,7 @@
   "requiredJobs": [
     "join-state"
   ],
-  "reviewReason": "Actual CI cancellation repairs preserve escaped Task/ready-weak charges until real late wake and warm the real two-header Store baseline before existing lift/foreign-Store assertions. Same six NEW private/eight canonical plus six affected ordinary IDs,20 total; original two locked Cargo builds/features/caps unchanged. Historical4eca18pass retained; no production refund change or whole-runtime claim.",
+  "reviewReason": "SOURCE ONLY v16: six exact sync-result private controls plus seven actual host cases including prior late-waker cancellation, original callback refusal4 and new typed result refusal5; same two locked targets/features and all bounds; no old v15 aggregate replay.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/canonical-join-state.yml"
 }

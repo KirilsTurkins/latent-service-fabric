@@ -7571,7 +7571,9 @@
         "host::join_state_tests::canonical_push_future_queue_node_refusal_and_same_budget_fresh_store",
         "host::join_state_tests::canonical_upstream_queue_nodes_refuse_before_guest_and_same_budget_fresh_store",
         "host::join_state_tests::canonical_unordered_initialization_refusal_and_same_budget_fresh_store",
-        "host::join_state_tests::canonical_unordered_task_first_poll_refusal_and_same_budget_fresh_store"
+        "host::join_state_tests::canonical_unordered_task_first_poll_refusal_and_same_budget_fresh_store",
+        "host::native_host_future_tests::actual_accessor_spawn_outer_box_refuses_before_run_and_retires_after_pending",
+        "host::native_host_future_tests::actual_sync_lower_result_box_refuses_before_poll_and_fresh_budget_reuses"
       ],
       "expectedIgnored": [
         "cache::measurement::cache_lookup_collector",
@@ -7602,7 +7604,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 494,
+      "minimumCases": 496,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [
