@@ -13,7 +13,7 @@
       "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
       "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
     },
-    "name": "Six producer implementation and five public ownership controls",
+    "name": "Five private and four public producer factory controls",
     "runs-on": "ubuntu-24.04",
     "steps": [
       {
@@ -53,16 +53,16 @@
         }
       },
       {
-        "name": "Execute only eleven producer cell ownership controls",
-        "run": "python3 -B tools/qualify_stream_outers.py --source-commit \"${{ github.sha }}\" --producer-cell --output \"$RUNNER_TEMP/canonical-stream-outers\""
+        "name": "Execute only nine producer factory ownership controls",
+        "run": "python3 -B tools/qualify_stream_outers.py --source-commit \"${{ github.sha }}\" --producer-factories --output \"$RUNNER_TEMP/canonical-stream-outers\""
       },
       {
         "if": "always()",
-        "name": "Retain eleven source-bound producer cell outcomes",
+        "name": "Retain nine source-bound producer factory outcomes",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
           "if-no-files-found": "warn",
-          "name": "canonical-producer-cells-${{ github.sha }}",
+          "name": "canonical-producer-factories-${{ github.sha }}",
           "path": "${{ runner.temp }}/canonical-stream-outers/receipt.json\n${{ runner.temp }}/canonical-stream-outers/FAILED.json\n${{ runner.temp }}/canonical-stream-outers/source-inputs.json\n${{ runner.temp }}/canonical-stream-outers/commands.json\n${{ runner.temp }}/canonical-stream-outers/commands/logs/*.txt\n",
           "retention-days": 3
         }
@@ -72,7 +72,7 @@
   },
   "jobId": "stream-outers",
   "kind": "job",
-  "reviewReason": "Reviewed #736 producer-cell v19: six finite private implementation counters, three new public creation/conversion cases and two affected existing public HostReady cases;26 commands/52 raw channels, unchanged two locked Cargo targets/features/45m2400/900/60/30/cleanup5/j2. No WAT/old consumer-five/private-six/canonical/cache/language replay. Existing owner modes/functions source exact. General P Boxes remain unpaid; only exact local Future adapter owns body. Mandatory14-file strict workspace cache auth retained.",
+  "reviewReason": "Reviewed #736 producer-factory v20: four new private and two new public implementation controls plus three affected historical count controls;9cases/22commands/44raw. Exact two locked Cargo targets/features,45m/2400/900/60/30/cleanup5/j2 unchanged. No WAT/cache/old11 aggregate/native-local replay. All13 historical owner functions source exact. General P/body Buffer/inner/consumer closures remain unpaid. Mandatory275Wasmtime+14cache auth retained; source-only pending owning outcome.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/canonical-stream-outers.yml"
 }

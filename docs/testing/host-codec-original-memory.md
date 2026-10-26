@@ -414,3 +414,33 @@ tables/collections, allocator RSS and whole CPU/memory/retirement coverage remai
 open. This unsigned native result does not close #736 or qualify a signed guest.
 
 The related PR CI run `40372479026` passed all 24 jobs including its aggregate; selected Security checks in `40372478831` passed, with the SDK advisory scope skipped. Those PR checks scanned merge `c09eb1ace82fee3e7b2dccbc42238cfb1bea4737`, whose tree is exactly the native-executed `4cb809a8...` tree; the native execution revision remains `e4ce7210...`. The prior baseline standalone rustup bootstrap conflict occurred before tests; the current feature standalone job passed.
+
+
+## Producer shared-cell and closed Future adapter result, 2026-10-26
+
+The [dated producer result](evidence/canonical-producer-cell-native-2026-10-26.json)
+records eleven passing native controls at source 5b9fa5e8, run 40387684318 /
+job 121800213039. The authenticated artifact binds 55 members, 26 completed
+commands and 52 raw channels, including six private implementation controls,
+three new public creation/conversion cases and two affected public stream cases.
+The initial 83329299 attempt failed compilation before any test; the explicit
+private conversion-method correction is retained separately.
+
+These cases cover shared-cell preadmission, only the private Future adapter's
+known body custody, repeated failed conversions, owning escape, Pending payload 42
+and physical guard cleanup. Public controls retain the original 1 MiB memory / 1 billion fuel / 5 s
+budget declaration. Private 64 MiB instrumentation is not ActivationBudget,
+a generic memory ceiling, installed fuel or signed-component qualification.
+General StreamProducer bodies, Buffer heaps and factory/inner-future backing
+remain unpaid at this execution source. Executable identities were reported by
+the owning build; executable bytes are not retained in the public ZIP.
+
+The separate full-CI publication attempt refused audit query 46 with
+resource-exhausted and no retained public subtype. Its exact cause remains
+unproven. A publication-local fixed-reason diagnostic preserved the fatal
+decision and all limits; the retry publication job 121827412736 and all seven
+Security jobs passed at 6d666762. No native eleven-case replay was needed for
+that Python-only diagnostic. PR 1517 was squash-merged into development as 87eb5d1d,
+with its 29 feature paths and the six incoming builder paths independently joined.
+The native execution remains dated 5b9fa5e8, not retagged to the merged source.
+The remaining requirements of #736 stay open.

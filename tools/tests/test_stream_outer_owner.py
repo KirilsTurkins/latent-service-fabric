@@ -55,6 +55,25 @@ class StreamOuterOwnerReader(unittest.TestCase):
         for case in (*owner.PRIVATE_CASES, *owner.CONSUMER_PRIVATE_CASES, 'unknown::case'):
             with self.assertRaises(ValueError):
                 owner.producer_result(b'', case)
+        self.assertEqual((len(owner.FACTORY_PRIVATE_CASES), len(owner.FACTORY_PUBLIC_CASES)), (5, 4))
+        self.assertEqual(owner.FACTORY_AFFECTED_PRIVATE_CASES, owner.PRODUCER_PRIVATE_CASES[-1:])
+        self.assertEqual(owner.FACTORY_AFFECTED_PUBLIC_CASES, owner.PRODUCER_NEW_PUBLIC_CASES[-2:])
+        for case in (*owner.FACTORY_PRIVATE_CASES, *owner.FACTORY_PUBLIC_CASES):
+            raw = (f'test {case} ... ok\n\ntest result: ok. 1 passed; 0 failed; '
+                '0 ignored; 0 measured; 17 filtered out; finished in 0.01s\n').encode()
+            with self.subTest(factory_case=case):
+                value = owner.factory_result(raw, case)
+                self.assertEqual((value['passed'], value['ignored']), (1, 0))
+                self.assertEqual(value['scope'], 'private-producer-factory-implementation-counter'
+                    if case in owner.FACTORY_PRIVATE_CASES else 'public-original-ActivationBudget')
+                for changed in (raw + raw, raw.replace(b'0 ignored', b'1 ignored'),
+                    raw.replace(b'1 passed', b'0 passed'),
+                    raw.replace(case.encode(), b'wrong::case')):
+                    with self.assertRaises(ValueError):
+                        owner.factory_result(changed, case)
+        for case in (*owner.PRIVATE_CASES, *owner.CONSUMER_PRIVATE_CASES, 'unknown::case'):
+            with self.assertRaises(ValueError):
+                owner.factory_result(b'', case)
 
     def test_private_fixture_identity_is_bounded_and_changes_are_observed(self):
         with tempfile.TemporaryDirectory() as temporary:
