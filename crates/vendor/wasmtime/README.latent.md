@@ -36,7 +36,7 @@ retains confirmed actual allocations through native unwind, without confirming
 a hypothetical signature maximum as observed peak.
 
 The native cohort is
-`wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-memory-v12`. Runtime engine configuration identity
+`wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-memory-v13`. Runtime engine configuration identity
 includes this cohort, so old prepared/AOT identity cannot certify this host.
 The immutable v1/7b programme passed 61 controls; v2/de0 passed81,
 v3/48a passed85, v4/3e417 passed92, v5/94f passed97, v7/f535 passed114,
@@ -227,6 +227,38 @@ enum can enlarge separate queue/node backing, which this slice does not pay.
 Layout<Output> is payload backing, not allocator overhead or an RSS upper bound.
 The v11 inner CallFuture source is unchanged. Completion WorkerFunction boxes,
 FuturesUnordered nodes, queue backing and other transitive/opaque allocations
-remain separate gaps. Four new private controls and the actual fourth-admission
-refusal/fresh-Store control are prepared, UNCOMPILED and UNEXECUTED here. The
-focused programme selects only these five, not the already-qualified v11 cases.
+remain separate gaps at that historical source stage. The four private controls
+and actual fourth-admission/refusal/fresh-Store control subsequently passed at
+source 5d72ee7886bfd4ed737d02d49e7f85a60c00f0cd, run 40252236378. That v12
+receipt is limited to those five controls and does not qualify later extensions.
+The v11 cases and Java twelve were not replayed by that v12 programme.
+
+
+The v13 source extension pre-admits the exact completion WorkerFunction closure
+Box using a noncapturing typed-context/result factory. Creating the prepared
+holder does not allocate or reserve. The enclosing pending-output reservation
+remains admission four; admission five then reserves Layout<Function> through
+the prepared tuple before Running publication or the first poll. Ready refunds
+both unused reservations before direct lowering. Pending transfers the SAME
+worker reservation into one erased closure Box without post-I/O admission.
+Its outside affine owner travels through the queue and one-shot invocation.
+Normal return/error and unrun queue drop destroy/deallocate the Box before
+refund; confirmation unwind has installed cleanup, while call/destructor unwind
+conservatively retains the SAME original charge. None keeps the legacy Box call.
+Pinned Rust 1.97.1 boxed.rs (8bab26f4f, SHA256
+31fe2ec856527253e2a78279f44b7dec14b73d9f1114a75584b031dcd6f64418)
+binds its consuming FnOnce call and target/deallocation behavior. This charges
+only closure payload backing, not allocator/RSS, transitive captures, escaping
+error backing, queue storage or FuturesUnordered nodes. The v11 inner and v12
+pending helper source files remain unchanged, although the exact concrete
+pending output now includes the prepared worker holder. Four NEW private
+controls and actual fifth-admission/refusal/fresh-Store control are prepared,
+UNCOMPILED and UNEXECUTED at that source stage; only those five are selected by
+the focused owner. The initial attempt at source
+743cf2c4ad7250a4c36d586472d83e2aa5754928 (run 40257187860) stopped in the private
+Rust build with E0308 before executing any control: a separate pre-existing
+stream callback still supplied the old boxed type. The corrective source wraps
+that SAME existing Box in the infallible Legacy adapter, preserving its closure
+body and allocation point. This stream callback remains unpaid and outside the
+selected first_poll completion-closure slice. The failed attempt receives no
+control credit; the corrected four-plus-one programme is not yet executed.
