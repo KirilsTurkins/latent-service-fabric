@@ -22,9 +22,9 @@ compatibility is not implied.
 
 | Input | Pinned value |
 | --- | --- |
-| Angular core/common/compiler/compiler-cli/platform-browser/platform-server/router | 22.2.2; full AOT, zoneless, server rendering and client hydration |
+| Angular core/common/compiler/compiler-cli/platform-browser/platform-server/router | 22.2.3; full AOT, zoneless, server rendering and client hydration |
 | TypeScript / Babel / esbuild / RxJS | 6.0.3 / 8.0.1 / 0.28.2 / 7.8.2 |
-| Build Node / ComponentizeJS / jco | 24.19.0 / 0.23.0 / 1.35.0 |
+| Build Node / ComponentizeJS / jco | 24.19.0 / 0.23.0 / 1.39.0 |
 | JavaScript guest engine | ComponentizeJS's packaged `starlingmonkey_embedding.wasm`, identified by its observed SHA-256 and npm integrity-locked inputs |
 | Native execution | [Workspace-pinned Wasmtime](../development/toolchain.md#selected-versions), Cranelift speed, on-demand allocation, fuel and epoch interruption, Component Model and async types enabled |
 | Public application contract | `latent:web/application@0.1.0`, buffered V1, async `handle`; unchanged |
