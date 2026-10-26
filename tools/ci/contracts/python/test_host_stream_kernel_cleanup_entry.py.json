@@ -1,88 +1,24 @@
 {
-  "cases": [
-    "CleanupEntrySource.test_actual_fixed_task_request_and_callback_identity_precede_reads",
-    "CleanupEntrySource.test_entire_original_run_park_stop_scheduler_tail_is_exact",
-    "CleanupEntrySource.test_entry_claim_is_single_current_task_generation_bound_and_lock_scoped",
-    "CleanupEntrySource.test_interrupted_creator_exits_without_giving_bank_storage_to_heap",
-    "CleanupEntrySource.test_invalid_request_notifies_only_the_actual_owned_borrowed_completion",
-    "CleanupEntrySource.test_origin_and_claims_are_closed"
-  ],
-  "guards": {
-    "CleanupEntrySource.test_actual_fixed_task_request_and_callback_identity_precede_reads": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:71c39cfd90da2d96cb86daa5e801a8f5cc68fa35b6c40541a0c4131ae03a6693",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "CleanupEntrySource.test_entire_original_run_park_stop_scheduler_tail_is_exact": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:71c39cfd90da2d96cb86daa5e801a8f5cc68fa35b6c40541a0c4131ae03a6693",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "CleanupEntrySource.test_entry_claim_is_single_current_task_generation_bound_and_lock_scoped": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:71c39cfd90da2d96cb86daa5e801a8f5cc68fa35b6c40541a0c4131ae03a6693",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "CleanupEntrySource.test_interrupted_creator_exits_without_giving_bank_storage_to_heap": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:71c39cfd90da2d96cb86daa5e801a8f5cc68fa35b6c40541a0c4131ae03a6693",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "CleanupEntrySource.test_invalid_request_notifies_only_the_actual_owned_borrowed_completion": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:71c39cfd90da2d96cb86daa5e801a8f5cc68fa35b6c40541a0c4131ae03a6693",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "CleanupEntrySource.test_origin_and_claims_are_closed": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:71c39cfd90da2d96cb86daa5e801a8f5cc68fa35b6c40541a0c4131ae03a6693",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    }
+  "cases":["CleanupEntrySource.test_actual_fixed_task_request_and_callback_identity_precede_reads","CleanupEntrySource.test_entire_original_run_park_stop_scheduler_tail_is_exact","CleanupEntrySource.test_entry_claim_is_single_current_task_generation_bound_and_lock_scoped","CleanupEntrySource.test_interrupted_creator_exits_without_giving_bank_storage_to_heap","CleanupEntrySource.test_invalid_request_notifies_only_the_actual_owned_borrowed_completion","CleanupEntrySource.test_origin_and_claims_are_closed"],
+  "guards":{
+    "CleanupEntrySource.test_actual_fixed_task_request_and_callback_identity_precede_reads":
+      "c985836a04346e7522c3b7443c4999a20f361dbede8fd72f9f3f67704fd5319e",
+    "CleanupEntrySource.test_entire_original_run_park_stop_scheduler_tail_is_exact":
+      "c985836a04346e7522c3b7443c4999a20f361dbede8fd72f9f3f67704fd5319e",
+    "CleanupEntrySource.test_entry_claim_is_single_current_task_generation_bound_and_lock_scoped":
+      "c985836a04346e7522c3b7443c4999a20f361dbede8fd72f9f3f67704fd5319e",
+    "CleanupEntrySource.test_interrupted_creator_exits_without_giving_bank_storage_to_heap":
+      "c985836a04346e7522c3b7443c4999a20f361dbede8fd72f9f3f67704fd5319e",
+    "CleanupEntrySource.test_invalid_request_notifies_only_the_actual_owned_borrowed_completion":
+      "c985836a04346e7522c3b7443c4999a20f361dbede8fd72f9f3f67704fd5319e",
+    "CleanupEntrySource.test_origin_and_claims_are_closed":
+      "c985836a04346e7522c3b7443c4999a20f361dbede8fd72f9f3f67704fd5319e"
   },
-  "kind": "python",
-  "module": "tools/tests/test_host_stream_kernel_cleanup_entry.py",
-  "reviewReason": "Additive reviewed finite cleanup constructor source controls and one 24-object hosted geometry/atomic programme; original four-object recipe and all earlier cases retained; no kernel link/boot, consumer selection or runtime/native qualification.",
-  "schemaVersion": "latent.ci.contracts.v1"
+  "kind":"python",
+  "module":"tools/tests/test_host_stream_kernel_cleanup_entry.py",
+  "reviewReason":"Additive reviewed finite cleanup constructor source controls and one 24-object hosted geometry/atomic programme; original four-object recipe and all earlier cases retained; no kernel link/boot, consumer selection or runtime/native qualification.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "c985836a04346e7522c3b7443c4999a20f361dbede8fd72f9f3f67704fd5319e":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:71c39cfd90da2d96cb86daa5e801a8f5cc68fa35b6c40541a0c4131ae03a6693","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+  }
 }

@@ -1,88 +1,24 @@
 {
-  "cases": [
-    "CleanupIrqSource.test_callback_only_signals_and_process_sync_precedes_original_capture",
-    "CleanupIrqSource.test_fast_hook_never_takes_record_vm_rq_locks_or_reads_task_fields",
-    "CleanupIrqSource.test_fixed_original_origin_and_runtime_gates_stay_closed",
-    "CleanupIrqSource.test_original_ordinary_free_and_actual_irq_algorithms_are_not_replaced",
-    "CleanupIrqSource.test_real_continuation_reference_and_all_generations_are_required_before_arm",
-    "CleanupIrqSource.test_selected_primitive_has_local_queue_and_real_postcallback_epilogue"
-  ],
-  "guards": {
-    "CleanupIrqSource.test_callback_only_signals_and_process_sync_precedes_original_capture": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:8748a979eb8fb95c0af61f30ee2d01a801bd750316cf41c93e3a56cd0c2de656",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "CleanupIrqSource.test_fast_hook_never_takes_record_vm_rq_locks_or_reads_task_fields": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:8748a979eb8fb95c0af61f30ee2d01a801bd750316cf41c93e3a56cd0c2de656",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "CleanupIrqSource.test_fixed_original_origin_and_runtime_gates_stay_closed": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:8748a979eb8fb95c0af61f30ee2d01a801bd750316cf41c93e3a56cd0c2de656",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "CleanupIrqSource.test_original_ordinary_free_and_actual_irq_algorithms_are_not_replaced": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:8748a979eb8fb95c0af61f30ee2d01a801bd750316cf41c93e3a56cd0c2de656",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "CleanupIrqSource.test_real_continuation_reference_and_all_generations_are_required_before_arm": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:8748a979eb8fb95c0af61f30ee2d01a801bd750316cf41c93e3a56cd0c2de656",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "CleanupIrqSource.test_selected_primitive_has_local_queue_and_real_postcallback_epilogue": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:8748a979eb8fb95c0af61f30ee2d01a801bd750316cf41c93e3a56cd0c2de656",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    }
+  "cases":["CleanupIrqSource.test_callback_only_signals_and_process_sync_precedes_original_capture","CleanupIrqSource.test_fast_hook_never_takes_record_vm_rq_locks_or_reads_task_fields","CleanupIrqSource.test_fixed_original_origin_and_runtime_gates_stay_closed","CleanupIrqSource.test_original_ordinary_free_and_actual_irq_algorithms_are_not_replaced","CleanupIrqSource.test_real_continuation_reference_and_all_generations_are_required_before_arm","CleanupIrqSource.test_selected_primitive_has_local_queue_and_real_postcallback_epilogue"],
+  "guards":{
+    "CleanupIrqSource.test_callback_only_signals_and_process_sync_precedes_original_capture":
+      "d09d916f35fd9115a484a9d6b6dc7acbe258a0193c6c7be0adfd564e9a3104f6",
+    "CleanupIrqSource.test_fast_hook_never_takes_record_vm_rq_locks_or_reads_task_fields":
+      "d09d916f35fd9115a484a9d6b6dc7acbe258a0193c6c7be0adfd564e9a3104f6",
+    "CleanupIrqSource.test_fixed_original_origin_and_runtime_gates_stay_closed":
+      "d09d916f35fd9115a484a9d6b6dc7acbe258a0193c6c7be0adfd564e9a3104f6",
+    "CleanupIrqSource.test_original_ordinary_free_and_actual_irq_algorithms_are_not_replaced":
+      "d09d916f35fd9115a484a9d6b6dc7acbe258a0193c6c7be0adfd564e9a3104f6",
+    "CleanupIrqSource.test_real_continuation_reference_and_all_generations_are_required_before_arm":
+      "d09d916f35fd9115a484a9d6b6dc7acbe258a0193c6c7be0adfd564e9a3104f6",
+    "CleanupIrqSource.test_selected_primitive_has_local_queue_and_real_postcallback_epilogue":
+      "d09d916f35fd9115a484a9d6b6dc7acbe258a0193c6c7be0adfd564e9a3104f6"
   },
-  "kind": "python",
-  "module": "tools/tests/test_host_stream_kernel_cleanup_irq.py",
-  "reviewReason": "Additive reviewed finite cleanup constructor source controls and one 24-object hosted geometry/atomic programme; original four-object recipe and all earlier cases retained; no kernel link/boot, consumer selection or runtime/native qualification.",
-  "schemaVersion": "latent.ci.contracts.v1"
+  "kind":"python",
+  "module":"tools/tests/test_host_stream_kernel_cleanup_irq.py",
+  "reviewReason":"Additive reviewed finite cleanup constructor source controls and one 24-object hosted geometry/atomic programme; original four-object recipe and all earlier cases retained; no kernel link/boot, consumer selection or runtime/native qualification.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "d09d916f35fd9115a484a9d6b6dc7acbe258a0193c6c7be0adfd564e9a3104f6":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:8748a979eb8fb95c0af61f30ee2d01a801bd750316cf41c93e3a56cd0c2de656","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+  }
 }

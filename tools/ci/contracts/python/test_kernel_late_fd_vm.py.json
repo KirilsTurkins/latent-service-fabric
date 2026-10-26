@@ -1,101 +1,26 @@
 {
-  "cases": [
-    "KernelLateFdVm.test_actual_ordered_transitions_preserve_raw_identity_without_synthetic_child_snapshot",
-    "KernelLateFdVm.test_actual_prebirth_and_ready_field_refusals_are_retained",
-    "KernelLateFdVm.test_hosted_compiled_controls_use_pure_leaf_before_all_guest_side_effects",
-    "KernelLateFdVm.test_missing_duplicate_reordered_forged_or_shared_only_witnesses_refuse",
-    "KernelLateFdVm.test_only_explicit_late_compile_selector_changes_source_and_both_modes_keep_budget",
-    "KernelLateFdVm.test_pid1_completion_may_precede_delayed_kernel_uart_with_independent_orders",
-    "KernelLateFdVm.test_real_event_wait_is_nonblocking_bounded_and_never_echoes_kernel_messages"
-  ],
-  "guards": {
-    "KernelLateFdVm.test_actual_ordered_transitions_preserve_raw_identity_without_synthetic_child_snapshot": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:9a9428eaa1ab4f378aa20261bc970cb94fd4c072d273b27ee860f6f40e9f6958",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "KernelLateFdVm.test_actual_prebirth_and_ready_field_refusals_are_retained": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:9a9428eaa1ab4f378aa20261bc970cb94fd4c072d273b27ee860f6f40e9f6958",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "KernelLateFdVm.test_hosted_compiled_controls_use_pure_leaf_before_all_guest_side_effects": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:9a9428eaa1ab4f378aa20261bc970cb94fd4c072d273b27ee860f6f40e9f6958",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "KernelLateFdVm.test_missing_duplicate_reordered_forged_or_shared_only_witnesses_refuse": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:9a9428eaa1ab4f378aa20261bc970cb94fd4c072d273b27ee860f6f40e9f6958",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "KernelLateFdVm.test_only_explicit_late_compile_selector_changes_source_and_both_modes_keep_budget": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:9a9428eaa1ab4f378aa20261bc970cb94fd4c072d273b27ee860f6f40e9f6958",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "KernelLateFdVm.test_pid1_completion_may_precede_delayed_kernel_uart_with_independent_orders": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:9a9428eaa1ab4f378aa20261bc970cb94fd4c072d273b27ee860f6f40e9f6958",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "KernelLateFdVm.test_real_event_wait_is_nonblocking_bounded_and_never_echoes_kernel_messages": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:9a9428eaa1ab4f378aa20261bc970cb94fd4c072d273b27ee860f6f40e9f6958",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    }
+  "cases":["KernelLateFdVm.test_actual_ordered_transitions_preserve_raw_identity_without_synthetic_child_snapshot","KernelLateFdVm.test_actual_prebirth_and_ready_field_refusals_are_retained","KernelLateFdVm.test_hosted_compiled_controls_use_pure_leaf_before_all_guest_side_effects","KernelLateFdVm.test_missing_duplicate_reordered_forged_or_shared_only_witnesses_refuse","KernelLateFdVm.test_only_explicit_late_compile_selector_changes_source_and_both_modes_keep_budget","KernelLateFdVm.test_pid1_completion_may_precede_delayed_kernel_uart_with_independent_orders","KernelLateFdVm.test_real_event_wait_is_nonblocking_bounded_and_never_echoes_kernel_messages"],
+  "guards":{
+    "KernelLateFdVm.test_actual_ordered_transitions_preserve_raw_identity_without_synthetic_child_snapshot":
+      "808d31d3d74831185e7e495b73cfa61efbf97dff38ddee0881ef5e46ed1ca9da",
+    "KernelLateFdVm.test_actual_prebirth_and_ready_field_refusals_are_retained":
+      "808d31d3d74831185e7e495b73cfa61efbf97dff38ddee0881ef5e46ed1ca9da",
+    "KernelLateFdVm.test_hosted_compiled_controls_use_pure_leaf_before_all_guest_side_effects":
+      "808d31d3d74831185e7e495b73cfa61efbf97dff38ddee0881ef5e46ed1ca9da",
+    "KernelLateFdVm.test_missing_duplicate_reordered_forged_or_shared_only_witnesses_refuse":
+      "808d31d3d74831185e7e495b73cfa61efbf97dff38ddee0881ef5e46ed1ca9da",
+    "KernelLateFdVm.test_only_explicit_late_compile_selector_changes_source_and_both_modes_keep_budget":
+      "808d31d3d74831185e7e495b73cfa61efbf97dff38ddee0881ef5e46ed1ca9da",
+    "KernelLateFdVm.test_pid1_completion_may_precede_delayed_kernel_uart_with_independent_orders":
+      "808d31d3d74831185e7e495b73cfa61efbf97dff38ddee0881ef5e46ed1ca9da",
+    "KernelLateFdVm.test_real_event_wait_is_nonblocking_bounded_and_never_echoes_kernel_messages":
+      "808d31d3d74831185e7e495b73cfa61efbf97dff38ddee0881ef5e46ed1ca9da"
   },
-  "kind": "python",
-  "module": "tools/tests/test_kernel_late_fd_vm.py",
-  "reviewReason": "Retain every late observation refusal and allow independently ordered PID1 and kernel UART streams after ring-buffer event observation.",
-  "schemaVersion": "latent.ci.contracts.v1"
+  "kind":"python",
+  "module":"tools/tests/test_kernel_late_fd_vm.py",
+  "reviewReason":"Retain every late observation refusal and allow independently ordered PID1 and kernel UART streams after ring-buffer event observation.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "808d31d3d74831185e7e495b73cfa61efbf97dff38ddee0881ef5e46ed1ca9da":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:9a9428eaa1ab4f378aa20261bc970cb94fd4c072d273b27ee860f6f40e9f6958","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+  }
 }

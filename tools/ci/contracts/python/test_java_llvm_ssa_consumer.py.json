@@ -1,101 +1,26 @@
 {
-  "cases": [
-    "LlvmSsaConsumer.test_actual_archive_hash_and_metadata_gate_refuse_before_product_extraction",
-    "LlvmSsaConsumer.test_actual_workflow_selector_refuses_mixed_or_nonboolean_modes_before_acquisition",
-    "LlvmSsaConsumer.test_default_official_gate_does_not_admit_derived_or_unknown_distribution",
-    "LlvmSsaConsumer.test_original_public_job_defaults_and_complete_command_recipe_remain_exact",
-    "LlvmSsaConsumer.test_real_small_core_framing_counts_imports_bodies_and_fixed_pools_name",
-    "LlvmSsaConsumer.test_small_actual_carrier_extraction_preserves_members_and_detects_real_material_changes",
-    "LlvmSsaConsumer.test_unfilled_tuple_refuses_before_output_network_or_compiler"
-  ],
-  "guards": {
-    "LlvmSsaConsumer.test_actual_archive_hash_and_metadata_gate_refuse_before_product_extraction": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:a7c2b18d998bb2bfd9f5c9ab6c601906620bff32b240a9f2b4555c4641b50afd",
-        "class:setup-sha256:1cdaba399add9eaeb86bf037cbce768085eea5fdce83970e7ab1de1d9b59ff19"
-      ],
-      "skipSites": []
-    },
-    "LlvmSsaConsumer.test_actual_workflow_selector_refuses_mixed_or_nonboolean_modes_before_acquisition": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:a7c2b18d998bb2bfd9f5c9ab6c601906620bff32b240a9f2b4555c4641b50afd",
-        "class:setup-sha256:1cdaba399add9eaeb86bf037cbce768085eea5fdce83970e7ab1de1d9b59ff19"
-      ],
-      "skipSites": []
-    },
-    "LlvmSsaConsumer.test_default_official_gate_does_not_admit_derived_or_unknown_distribution": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:a7c2b18d998bb2bfd9f5c9ab6c601906620bff32b240a9f2b4555c4641b50afd",
-        "class:setup-sha256:1cdaba399add9eaeb86bf037cbce768085eea5fdce83970e7ab1de1d9b59ff19"
-      ],
-      "skipSites": []
-    },
-    "LlvmSsaConsumer.test_original_public_job_defaults_and_complete_command_recipe_remain_exact": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:a7c2b18d998bb2bfd9f5c9ab6c601906620bff32b240a9f2b4555c4641b50afd",
-        "class:setup-sha256:1cdaba399add9eaeb86bf037cbce768085eea5fdce83970e7ab1de1d9b59ff19"
-      ],
-      "skipSites": []
-    },
-    "LlvmSsaConsumer.test_real_small_core_framing_counts_imports_bodies_and_fixed_pools_name": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:a7c2b18d998bb2bfd9f5c9ab6c601906620bff32b240a9f2b4555c4641b50afd",
-        "class:setup-sha256:1cdaba399add9eaeb86bf037cbce768085eea5fdce83970e7ab1de1d9b59ff19"
-      ],
-      "skipSites": []
-    },
-    "LlvmSsaConsumer.test_small_actual_carrier_extraction_preserves_members_and_detects_real_material_changes": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:a7c2b18d998bb2bfd9f5c9ab6c601906620bff32b240a9f2b4555c4641b50afd",
-        "class:setup-sha256:1cdaba399add9eaeb86bf037cbce768085eea5fdce83970e7ab1de1d9b59ff19"
-      ],
-      "skipSites": []
-    },
-    "LlvmSsaConsumer.test_unfilled_tuple_refuses_before_output_network_or_compiler": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:a7c2b18d998bb2bfd9f5c9ab6c601906620bff32b240a9f2b4555c4641b50afd",
-        "class:setup-sha256:1cdaba399add9eaeb86bf037cbce768085eea5fdce83970e7ab1de1d9b59ff19"
-      ],
-      "skipSites": []
-    }
+  "cases":["LlvmSsaConsumer.test_actual_archive_hash_and_metadata_gate_refuse_before_product_extraction","LlvmSsaConsumer.test_actual_workflow_selector_refuses_mixed_or_nonboolean_modes_before_acquisition","LlvmSsaConsumer.test_default_official_gate_does_not_admit_derived_or_unknown_distribution","LlvmSsaConsumer.test_original_public_job_defaults_and_complete_command_recipe_remain_exact","LlvmSsaConsumer.test_real_small_core_framing_counts_imports_bodies_and_fixed_pools_name","LlvmSsaConsumer.test_small_actual_carrier_extraction_preserves_members_and_detects_real_material_changes","LlvmSsaConsumer.test_unfilled_tuple_refuses_before_output_network_or_compiler"],
+  "guards":{
+    "LlvmSsaConsumer.test_actual_archive_hash_and_metadata_gate_refuse_before_product_extraction":
+      "d4465ebfb834fcac5c35cd78fcfec61a28a012a0ca83fa5dbd1270400d483b7b",
+    "LlvmSsaConsumer.test_actual_workflow_selector_refuses_mixed_or_nonboolean_modes_before_acquisition":
+      "d4465ebfb834fcac5c35cd78fcfec61a28a012a0ca83fa5dbd1270400d483b7b",
+    "LlvmSsaConsumer.test_default_official_gate_does_not_admit_derived_or_unknown_distribution":
+      "d4465ebfb834fcac5c35cd78fcfec61a28a012a0ca83fa5dbd1270400d483b7b",
+    "LlvmSsaConsumer.test_original_public_job_defaults_and_complete_command_recipe_remain_exact":
+      "d4465ebfb834fcac5c35cd78fcfec61a28a012a0ca83fa5dbd1270400d483b7b",
+    "LlvmSsaConsumer.test_real_small_core_framing_counts_imports_bodies_and_fixed_pools_name":
+      "d4465ebfb834fcac5c35cd78fcfec61a28a012a0ca83fa5dbd1270400d483b7b",
+    "LlvmSsaConsumer.test_small_actual_carrier_extraction_preserves_members_and_detects_real_material_changes":
+      "d4465ebfb834fcac5c35cd78fcfec61a28a012a0ca83fa5dbd1270400d483b7b",
+    "LlvmSsaConsumer.test_unfilled_tuple_refuses_before_output_network_or_compiler":
+      "d4465ebfb834fcac5c35cd78fcfec61a28a012a0ca83fa5dbd1270400d483b7b"
   },
-  "kind": "python",
-  "module": "tools/tests/test_java_llvm_ssa_consumer.py",
-  "reviewReason": "Reviewed synthetic carrier copied-notice identity binding only; same seven cases, module/decorator/base/skip guards and all production R7 source/license pins unchanged.",
-  "schemaVersion": "latent.ci.contracts.v1"
+  "kind":"python",
+  "module":"tools/tests/test_java_llvm_ssa_consumer.py",
+  "reviewReason":"Reviewed synthetic carrier copied-notice identity binding only; same seven cases, module/decorator/base/skip guards and all production R7 source/license pins unchanged.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "d4465ebfb834fcac5c35cd78fcfec61a28a012a0ca83fa5dbd1270400d483b7b":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:a7c2b18d998bb2bfd9f5c9ab6c601906620bff32b240a9f2b4555c4641b50afd","class:setup-sha256:1cdaba399add9eaeb86bf037cbce768085eea5fdce83970e7ab1de1d9b59ff19"],"skipSites":[]}
+  }
 }
