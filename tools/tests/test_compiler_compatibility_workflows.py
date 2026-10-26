@@ -24,7 +24,7 @@ def original_workflow(test):
         test.assertEqual(paths.count(name), 1); paths.remove(name)
     # All original jobs, setup, argv, artifacts and scheduling remain exact.
     test.assertEqual(hashlib.sha256(json.dumps(restored, sort_keys=True, separators=(',', ':')).encode()).hexdigest(),
-        '7f7c9f67efb2a828e6c606c14ce43bf657bf55550c5550f3db92da4ec74c4824')
+        '3cbf457afdae7956d7de0c2fd5f55d54c1647fbebf79f731f39552e879f813f2')
     return restored
 
 
@@ -33,9 +33,9 @@ class CompilerWorkflow(unittest.TestCase):
         # Frozen source checkpoint e2f791; no inherited job selectors, commands
         # or whole-workflow restoration fixtures are edited for this feature.
         expected = {
-            '.github/workflows/java-resource-runtime.yml': 'f748cda7dea09e59e5b5a8a50d4572f8c7a2dc3d0faa9b0887b049633bbf8a7b',
+            '.github/workflows/java-resource-runtime.yml': 'c4d18427c3e097147c7288db18c594fb002d0e9d1fb33232d8ef0e7e7d195f4d',
             '.github/workflows/dotnet-resource-runtime.yml': 'da03d35554ebc1bb71bd606b86b7d8cd90ac92a0b2fbd4439439098b1ede644e',
-            'tools/tests/test_resource_late_workflows.py': '8105f29ee99e0645f246629eaef524bfdb63f9cd9bd18a2e7377f2b1d00b1070',
+            'tools/tests/test_resource_late_workflows.py': 'a4a55e0ed4392f3992e3f12504d36bdff5c7daf4a59f956b7fdbc90b335cb921',
         }
         for name, sha in expected.items(): self.assertEqual(hashlib.sha256(read_file(ROOT/name)).hexdigest(), sha, name)
         workflow = original_workflow(self)

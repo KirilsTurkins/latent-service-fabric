@@ -29,7 +29,7 @@ The pins introduced for Phase 3 issue #281 were resolved against the named upstr
 | `actions/setup-python` | `v7.0.0` | `5fda3b95a4ea91299a34e894583c3862153e4b97` |
 | `actions/setup-go` | `v5` | `40f1582b2485089dde7abd97c1529aa768e1baff` |
 | `actions/setup-node` | `v7.1.0` | `949feb2413d6458794dcd2491c4babbbce0c15c1` |
-| `actions/setup-java` | `v6.0.1` | `de7274f081f381c8f8158605e0321c36c376e2e6` |
+| `actions/setup-java` | `v6.1.0` | `b843ebf9b913146b38da2eaa7aeddf76074ae1ad` |
 | `actions/setup-dotnet` | `v6.0.0` | `a98b56852c35b8e3190ac28c8c2271da59106c68` |
 | `actions/upload-artifact` | `v7.0.2` | `cf430e030ddbb5b0abf93d22962f4752f3646cd9` |
 | `actions/download-artifact` | `v8.0.2` | `9000827ccba6bdab643e8b6fd33ac0654aef8333` |
@@ -42,12 +42,15 @@ The pins introduced for Phase 3 issue #281 were resolved against the named upstr
 | `bufbuild/buf-setup-action` | `v1` | `a47c93e0b1648d5651a065437926377d060baa99` |
 | `mlugg/setup-zig` | `v2` | `d1434d08867e3ee9daa34448df10607b98908d29` |
 
-The `actions/setup-java` v6.0.1 identity was resolved and its action definition
-reviewed on **2026-09-27**. The action uses Node 24 on the hosted runners and
-retains the `distribution: temurin` and exact `java-version: '25.0.4+101.0.LTS'`
-inputs selected by LSF. The JDK baseline remains Temurin 25.0.4.1+1. The workflow
-hashes in `tools/ci/history/commands-v1.json` reflect the new action pin; required commands
-and job conditions are unchanged.
+The `actions/setup-java` v6.1.0 identity, [release notes](https://github.com/actions/setup-java/releases/tag/v6.1.0)
+and upstream source/action-definition diff were reviewed on **2026-10-26**.
+It retains Node 24 and the explicitly selected Temurin version, cache inputs
+and installation steps. The release updates bundled dependencies, version
+resolution and GPG cleanup, and adds optional Maven repository inputs; these
+workflows do not enable those inputs. Exact workflow-preservation fixtures
+now include the reviewed action pin. Commands, selectors, deadlines and token
+scopes retain their existing assertions. The ownership-local workflow
+contracts and archived snapshot require no pin-only refresh.
 
 The `actions/attest-build-provenance` v4.2.2 identity was resolved and its action
 definition reviewed on **2026-09-27**. It delegates to the pinned `actions/attest`

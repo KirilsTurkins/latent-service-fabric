@@ -106,11 +106,11 @@ class JavaScratchWiring(unittest.TestCase):
             'Export only exact normal public prerequisites for the separate Java scratch packet',
             'Retain verified normal Java products without keys or compiler caches'}]
         self.assertEqual(len(parent['steps']), 43)
-        self.assertEqual(signature(parent), '675efc9337b2541aa3e3ded18bc473fb3109c5653794d80c347a45a539c12fb6')
+        self.assertEqual(signature(parent), '44d4eaecff7fca51dc7d814542f2a1428daa192e1001de69467c168d4392ad9f')
         dependency = dict(jobs['dependency-ingestion'])
         self.assertEqual(dependency.pop('if'),
             "${{ (github.event_name != 'workflow_dispatch' || !inputs.qualify-scratch-refusals) && (github.event_name != 'workflow_dispatch' || !inputs.java_http_spi) }}")
-        self.assertEqual(signature(dependency), '610ba34e0cd9c37dacdc2f5c1575272cc609d62f261656ff145e4bdc22f4694e')
+        self.assertEqual(signature(dependency), '088b1a5e08bcb76a36d4796538ac5953ed0021765cd48b84a43b5d8210f41a74')
         selector = model()['on']['workflow_dispatch']['inputs']['qualify-scratch-refusals']
         self.assertEqual(selector['type'], 'boolean')
         self.assertIs(selector['default'], False)

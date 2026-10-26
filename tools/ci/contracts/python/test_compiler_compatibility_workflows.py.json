@@ -6,13 +6,13 @@
   "cases":["CompilerWorkflow.test_completion_requires_exact_eight_cells_and_original_native_and_process_bounds","CompilerWorkflow.test_new_workflow_is_branch_scoped_and_keeps_old_resource_workflows_and_fixtures_exact","CompilerWorkflow.test_pinned_native_acquisition_token_scope_and_public_artifact_selection_are_exact"],
   "guards":{
     "CompilerWorkflow.test_new_workflow_is_branch_scoped_and_keeps_old_resource_workflows_and_fixtures_exact":
-      "8bd96c31b637f723dca8b7480fa040315a7fd6816ac4076b5a1302c0b46fe53d",
+      "a1cde48466f2815f74950e558b5b34c692824d5a209e3e7a5dfc47081c14f882",
     "CompilerWorkflow.test_pinned_native_acquisition_token_scope_and_public_artifact_selection_are_exact":
-      "8bd96c31b637f723dca8b7480fa040315a7fd6816ac4076b5a1302c0b46fe53d",
+      "a1cde48466f2815f74950e558b5b34c692824d5a209e3e7a5dfc47081c14f882",
     "CompilerWorkflow.test_completion_requires_exact_eight_cells_and_original_native_and_process_bounds":
-      "8bd96c31b637f723dca8b7480fa040315a7fd6816ac4076b5a1302c0b46fe53d"
+      "a1cde48466f2815f74950e558b5b34c692824d5a209e3e7a5dfc47081c14f882"
   },
   "guardDefinitions":{
-    "8bd96c31b637f723dca8b7480fa040315a7fd6816ac4076b5a1302c0b46fe53d":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:748aee2f999e39e1d1a5908de1cb8164110ad602f963714e85880262373da29f","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"]}
+    "a1cde48466f2815f74950e558b5b34c692824d5a209e3e7a5dfc47081c14f882":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:7701cb3553c4cc897f0a27ccb7f447a783eb4e8f44cce444dfaed15487b92076","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"]}
   }
 }

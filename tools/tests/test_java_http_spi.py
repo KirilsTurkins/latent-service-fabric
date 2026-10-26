@@ -166,6 +166,13 @@ class JavaSpiManualWorkflow(unittest.TestCase):
         name = '.github/workflows/java-guest-feasibility.yml'
         old = yaml.safe_load(subprocess.check_output(['git', 'show',
             'aa56bdebad8c12f20acce4ec4ecfeca73cf554be:'+name], cwd=ROOT, text=True))
+        # Only the reviewed setup-java revision changes in the historical baseline.
+        java_steps = [step for job in old['jobs'].values() for step in job.get('steps', [])
+                      if step.get('uses', '').startswith('actions/setup-java@')]
+        self.assertTrue(java_steps)
+        for step in java_steps:
+            self.assertEqual(step['uses'], 'actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6')
+            step['uses'] = 'actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad'
         selected = yaml.safe_load((ROOT/name).read_text())
         private = selected[True]['workflow_dispatch']['inputs'].pop('public_fiber_private_scalar_llvm')
         self.assertEqual(private['type'], 'boolean');self.assertIs(private['default'], False)
