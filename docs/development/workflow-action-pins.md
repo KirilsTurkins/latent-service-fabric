@@ -84,14 +84,6 @@ diff were reviewed on **2026-09-27**. It uses Node 24 and keeps the explicit
 or package sources are enabled. The workflow hashes in `tools/ci/history/commands-v1.json`
 reflect the new pin; required commands and job conditions are unchanged.
 
-The `actions/download-artifact` v8.0.2 identity, [release notes](https://github.com/actions/download-artifact/releases/tag/v8.0.2)
-and action definition were reviewed on **2026-10-26**. It uses Node 24 and
-retains the existing artifact names, IDs, destinations, run IDs and explicit
-cross-run token inputs. Digest mismatches still fail by default. Its artifact
-dependency improves download retries on rate-limited requests. The remaining
-v8.0.1 pins now match the v8.0.2 identity already used by the other workflows;
-the ownership-local command contracts and historical snapshot need no refresh.
-
 The `actions/upload-artifact` v7.0.2 identity, [release notes](https://github.com/actions/upload-artifact/releases/tag/v7.0.2)
 and action definition were reviewed on **2026-10-26**. It uses Node 24 and
 retains the existing artifact names, paths, retention, compression and hidden-file
@@ -119,6 +111,14 @@ installation is retained in `tools/ci/contracts/workflows/ci.yml/jobs/msrv.json`
 with all existing steps and historical coverage obligations unchanged. The
 archived pre-sharding snapshot is not regenerated, and the retired active
 `tools/ci/commands.json` is not restored.
+
+The `actions/download-artifact` v8.0.2 identity, [release notes](https://github.com/actions/download-artifact/releases/tag/v8.0.2)
+and action definition were reviewed on **2026-10-26**. It uses Node 24 and
+retains the existing artifact names, IDs, destinations, run IDs and explicit
+cross-run token inputs. Digest mismatches still fail by default. Its artifact
+dependency improves download retries on rate-limited requests. The remaining
+v8.0.1 pins now match the v8.0.2 identity already used by the other workflows;
+the ownership-local command contracts and historical snapshot need no refresh.
 
 ## Updating a pin
 
