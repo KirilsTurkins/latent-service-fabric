@@ -17,10 +17,41 @@ if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from tools.build_process_signals import owned_cancellation
-from tools.phase2_operator_process import Client, WorkflowError, bounded_receipt, read_json, require, stopped_record, write_json
+from tools.phase2_operator_process import Client as WorkflowClient, WorkflowError, bounded_receipt, read_json, require, stopped_record, write_json
 from tools.phase2_operator_scenario import TOKEN, configure_node, connect, receipt, stop
 from tools.phase2_operator_canary import invoke, rollback_target
 from tools.run_phase2_operator_workflow import build_identity, inventory
+
+
+def audit_reason(value):
+    """Retain one already-public reason token, never messages or arbitrary fields."""
+    if not isinstance(value, dict):
+        return "unclassified"
+    error = value.get("error")
+    details = error.get("details") if isinstance(error, dict) else None
+    if not isinstance(details, list) or len(details) > 16:
+        return "unclassified"
+    reasons = []
+    for detail in details:
+        if not isinstance(detail, dict) or detail.get("kind") != "audit-journal":
+            continue
+        fields = detail.get("fields")
+        if not isinstance(fields, dict) or set(fields) != {"reason"}:
+            return "unclassified"
+        reason = fields["reason"]
+        if reason not in ("audit-capacity", "audit-critical-pending", "audit-busy",
+                          "audit-unavailable", "audit-closed", "audit-corrupt"):
+            return "unclassified"
+        reasons.append(reason)
+    return reasons[0] if len(reasons) == 1 else "unclassified"
+
+
+class Client(WorkflowClient):
+    def observe_failed_call(self, value, call, status):
+        observed = super().observe_failed_call(value, call, status)
+        if observed["command"] == "audit query":
+            observed["auditReason"] = audit_reason(value)
+        return observed
 
 
 def publication(value, tenant):
