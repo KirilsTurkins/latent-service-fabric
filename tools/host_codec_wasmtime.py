@@ -162,8 +162,8 @@ POSTIMAGES = {
         "bytes": 21595
     },
     "src/runtime/component/concurrent/futures_and_streams.rs": {
-        "sha256": "b21771609b1e10543197def7b84587a2a918a0ba7438c66ccc2a0eb1044c9ae1",
-        "bytes": 234560
+        "sha256": "4d5b0c94a4c1fc94ecec50fd9caf3168a0377de208066f768d0503db1dfe5cd8",
+        "bytes": 234585
     },
     "src/runtime/component/concurrent/pending_future.rs": {
         "sha256": "3daf6c6252f684830bc40b86065096b65e50d2a40fceb8db97c76a6e6a614164",
@@ -246,8 +246,8 @@ POSTIMAGES = {
         "bytes": 34317
     },
     "latent-dynamic-memory.patch": {
-        "sha256": "d8a16290654ae969d4de61c8a2e91308f4d2fa51f4c46fc0db8a87e60c6f8a2f",
-        "bytes": 511892
+        "sha256": "14a13879e32bb5e55a26b00c7ba473c5be43f7e7eaeb640137f5caf97fe43a1e",
+        "bytes": 511917
     }
 }
 DEPENDENCY = {"path": PROVIDER, "version": "=48.0.7", "default-features": False,

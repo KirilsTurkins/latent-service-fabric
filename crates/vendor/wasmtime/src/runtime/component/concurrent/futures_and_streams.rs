@@ -3157,7 +3157,7 @@ impl<T> StoreContextMut<'_, T> {
                 .boxed()
             }
         });
-        let try_into = Box::new(move |ty| producer.try_into::<T>(ty));
+        let try_into = Box::new(move |ty| AccountedProducerCell::try_into::<T>(&producer, ty));
         state.get_mut(id)?.write = WriteState::HostReady {
             produce,
             try_into,
