@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_stream_outers.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Reviewed stream outer source: four owner-only canonical entry controls and two public original-budget controls only; one fixed parse into private RunnerTemp, two locked targets, six exact non-skipped outcomes; separate public1MiB/1B/5s vs private64MiB/1B/120s, unchanged45m/2400/900/60/30/5s-cleanup and2jobs; no prior or language replay.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "026ecdb848cf17468fc101a14fdee6ef29a742a1243fa23eeb712a098cdc6b2d"
+}

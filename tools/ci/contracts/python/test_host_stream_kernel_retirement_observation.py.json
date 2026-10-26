@@ -1,62 +1,20 @@
 {
-  "cases": [
-    "RetirementObservationSource.test_actual_actor_guard_preserves_private_file_mm_tgid_both_creds_and_net",
-    "RetirementObservationSource.test_actual_mint_guard_refuses_every_wrong_original_owner_or_birth_operand",
-    "RetirementObservationSource.test_actual_scalar_publication_and_last_vfs_cutpoint_precede_native_record",
-    "RetirementObservationSource.test_whole_authentication_and_inverse_keep_original_release_and_every_unrelated_input"
-  ],
-  "guards": {
-    "RetirementObservationSource.test_actual_actor_guard_preserves_private_file_mm_tgid_both_creds_and_net": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:ae9d39c471e8845583a6932c1b05cbcee82f8604c1e842c3f1bcc11d617b06d5",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "RetirementObservationSource.test_actual_mint_guard_refuses_every_wrong_original_owner_or_birth_operand": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:ae9d39c471e8845583a6932c1b05cbcee82f8604c1e842c3f1bcc11d617b06d5",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "RetirementObservationSource.test_actual_scalar_publication_and_last_vfs_cutpoint_precede_native_record": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:ae9d39c471e8845583a6932c1b05cbcee82f8604c1e842c3f1bcc11d617b06d5",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "RetirementObservationSource.test_whole_authentication_and_inverse_keep_original_release_and_every_unrelated_input": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:ae9d39c471e8845583a6932c1b05cbcee82f8604c1e842c3f1bcc11d617b06d5",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    }
+  "cases":["RetirementObservationSource.test_actual_actor_guard_preserves_private_file_mm_tgid_both_creds_and_net","RetirementObservationSource.test_actual_mint_guard_refuses_every_wrong_original_owner_or_birth_operand","RetirementObservationSource.test_actual_scalar_publication_and_last_vfs_cutpoint_precede_native_record","RetirementObservationSource.test_whole_authentication_and_inverse_keep_original_release_and_every_unrelated_input"],
+  "guards":{
+    "RetirementObservationSource.test_actual_actor_guard_preserves_private_file_mm_tgid_both_creds_and_net":
+      "e04bb087bd5e84267b5217a97d12206dad83976745695a60889051a8dfd2d57c",
+    "RetirementObservationSource.test_actual_mint_guard_refuses_every_wrong_original_owner_or_birth_operand":
+      "e04bb087bd5e84267b5217a97d12206dad83976745695a60889051a8dfd2d57c",
+    "RetirementObservationSource.test_actual_scalar_publication_and_last_vfs_cutpoint_precede_native_record":
+      "e04bb087bd5e84267b5217a97d12206dad83976745695a60889051a8dfd2d57c",
+    "RetirementObservationSource.test_whole_authentication_and_inverse_keep_original_release_and_every_unrelated_input":
+      "e04bb087bd5e84267b5217a97d12206dad83976745695a60889051a8dfd2d57c"
   },
-  "kind": "python",
-  "module": "tools/tests/test_host_stream_kernel_retirement_observation.py",
-  "reviewReason": "Four source-only controls authenticate complete qualified parent preimages and inverse preservation, evaluate actual mint/actor guard operands, and bind scalar layout plus after-physical publication. No compiled Linux/native or refund claim; all existing cases and guards remain.",
-  "schemaVersion": "latent.ci.contracts.v1"
+  "kind":"python",
+  "module":"tools/tests/test_host_stream_kernel_retirement_observation.py",
+  "reviewReason":"Four source-only controls authenticate complete qualified parent preimages and inverse preservation, evaluate actual mint/actor guard operands, and bind scalar layout plus after-physical publication. No compiled Linux/native or refund claim; all existing cases and guards remain.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "e04bb087bd5e84267b5217a97d12206dad83976745695a60889051a8dfd2d57c":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:ae9d39c471e8845583a6932c1b05cbcee82f8604c1e842c3f1bcc11d617b06d5","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+  }
 }

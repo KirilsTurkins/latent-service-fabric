@@ -12,8 +12,8 @@ from tools.rust_capsule_project import ROOT, read_file
 PROVIDER = "crates/vendor/wasmtime"
 NAME = "wasmtime"
 VERSION = "48.0.7"
-COHORT = "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-unordered-futures-outer-sync-result-memory-v16"
-RECORD_SHA256 = "e06ef10d6341631625e0312c509970b4b401704dd40be31d928ce1c03d991c07"
+COHORT = "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-unordered-futures-outer-sync-result-stream-outers-memory-v17"
+RECORD_SHA256 = "19b5a97605ec6d692002facf20a1b621c8c5b23e8ca1dbddfd026d4206773ea5"
 # Explicit reviewed postimages; the remaining original files use the immutable
 # registry inventory. Changing a claimed record or patch cannot authorize bytes.
 POSTIMAGES = {
@@ -22,12 +22,12 @@ POSTIMAGES = {
         "bytes": 60487
     },
     "README.latent.md": {
-        "sha256": "84075c7d7ae56394f7e36b2addaa15646c8d3e25074010865dd6b4341fa9abc1",
-        "bytes": 26272
+        "sha256": "b7f820dfac38239ae271001affdb115a6d48c20a60659b28325f68f9be4e05fc",
+        "bytes": 28555
     },
     "latent-dynamic-memory.patch": {
-        "sha256": "ec258af0fac72fe4f0824cb0795fb0de4d318584398615bc2cd2ed34a39098ae",
-        "bytes": 416989
+        "sha256": "d2b49dac020ab3f73179b2dd7fe74d28aef7ff314c475839c9b8239eacbd1a55",
+        "bytes": 461424
     },
     "src/runtime.rs": {
         "sha256": "3290f57919f6dc6b6f797ee55cd62504ce31e91500741501e261f2c7e4eac970",
@@ -190,8 +190,8 @@ POSTIMAGES = {
         "bytes": 13734
     },
     "src/runtime/component/concurrent/futures_and_streams.rs": {
-        "sha256": "fe7281fd639680f0c818dc16c2f44c362fa592c9fafcd0fd81e05670ca2d35b3",
-        "bytes": 190392
+        "sha256": "b312cc45eef714ad62c64b0eceff50e8285603f00cf1937fe72641e1734eb40f",
+        "bytes": 205958
     },
     "src/runtime/component/concurrent/work_queue.rs": {
         "sha256": "b9f2db05b9f27c6e6e88da558651e002101c2228eafd46ea9c2d386c45bf3ad8",
@@ -240,6 +240,10 @@ POSTIMAGES = {
     "src/runtime/component/concurrent/sync_result.rs": {
         "sha256": "306ac053b5fb9fdd5b01697ecbd3aaeabbcaf05015b7f447b89c0ccb4ed12f5e",
         "bytes": 15651
+    },
+    "src/runtime/component/concurrent/futures_and_streams/stream_outer_tests.rs": {
+        "sha256": "2124ff8f1f0dc94c79c7dfdd362049d06554db99e875744ba46247d37f2ca469",
+        "bytes": 22964
     }
 }
 DEPENDENCY = {"path": PROVIDER, "version": "=48.0.7", "default-features": False,
@@ -271,7 +275,7 @@ def verify(root: Path = ROOT) -> dict:
                 for row in record["originalFiles"]}
     require(len(record["originalFiles"]) == len(original) == 250, "original-file-set")
     expected = {**original, **POSTIMAGES, "UPSTREAM.latent.json": identity(raw)}
-    require(len(expected) == 274, "maintained-file-set")
+    require(len(expected) == 275, "maintained-file-set")
     actual, total = {}, 0
     for ordinal, path in enumerate(source.rglob("*")):
         require(ordinal < 1024 and not path.is_symlink(), "source-tree-bound-or-link")

@@ -1,62 +1,20 @@
 {
-  "cases": [
-    "JavaScratchWiring.test_child_compiler_and_jdk_are_the_same_pinned_tools_as_original_parent",
-    "JavaScratchWiring.test_original_normal_parent_and_dependency_programmes_remain_exact",
-    "JavaScratchWiring.test_public_bundle_is_from_this_same_normal_run_and_original_native_directory",
-    "JavaScratchWiring.test_separate_twenty_minute_child_does_not_build_a_host_or_install_rust"
-  ],
-  "guards": {
-    "JavaScratchWiring.test_child_compiler_and_jdk_are_the_same_pinned_tools_as_original_parent": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:4010f175583097b5b39e5756dbd92251f0166ed9194c41ca586a6e8f80d108bb",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "JavaScratchWiring.test_original_normal_parent_and_dependency_programmes_remain_exact": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:4010f175583097b5b39e5756dbd92251f0166ed9194c41ca586a6e8f80d108bb",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "JavaScratchWiring.test_public_bundle_is_from_this_same_normal_run_and_original_native_directory": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:4010f175583097b5b39e5756dbd92251f0166ed9194c41ca586a6e8f80d108bb",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "JavaScratchWiring.test_separate_twenty_minute_child_does_not_build_a_host_or_install_rust": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:4010f175583097b5b39e5756dbd92251f0166ed9194c41ca586a6e8f80d108bb",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    }
+  "cases":["JavaScratchWiring.test_child_compiler_and_jdk_are_the_same_pinned_tools_as_original_parent","JavaScratchWiring.test_original_normal_parent_and_dependency_programmes_remain_exact","JavaScratchWiring.test_public_bundle_is_from_this_same_normal_run_and_original_native_directory","JavaScratchWiring.test_separate_twenty_minute_child_does_not_build_a_host_or_install_rust"],
+  "guards":{
+    "JavaScratchWiring.test_child_compiler_and_jdk_are_the_same_pinned_tools_as_original_parent":
+      "1f28bad21c513ea75e7e993995d59c06cdf7298f5aa9695d099e466b5c2b79a8",
+    "JavaScratchWiring.test_original_normal_parent_and_dependency_programmes_remain_exact":
+      "1f28bad21c513ea75e7e993995d59c06cdf7298f5aa9695d099e466b5c2b79a8",
+    "JavaScratchWiring.test_public_bundle_is_from_this_same_normal_run_and_original_native_directory":
+      "1f28bad21c513ea75e7e993995d59c06cdf7298f5aa9695d099e466b5c2b79a8",
+    "JavaScratchWiring.test_separate_twenty_minute_child_does_not_build_a_host_or_install_rust":
+      "1f28bad21c513ea75e7e993995d59c06cdf7298f5aa9695d099e466b5c2b79a8"
   },
-  "kind": "python",
-  "module": "tools/tests/test_java_scratch_wiring.py",
-  "reviewReason": "Validate exact reviewed sealed compiler/cache setup and SDK argument inverse before all unchanged historical workflow assertions; same cases and skip/decorator predicates.",
-  "schemaVersion": "latent.ci.contracts.v1"
+  "kind":"python",
+  "module":"tools/tests/test_java_scratch_wiring.py",
+  "reviewReason":"Validate exact reviewed sealed compiler/cache setup and SDK argument inverse before all unchanged historical workflow assertions; same cases and skip/decorator predicates.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "1f28bad21c513ea75e7e993995d59c06cdf7298f5aa9695d099e466b5c2b79a8":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:4010f175583097b5b39e5756dbd92251f0166ed9194c41ca586a6e8f80d108bb","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+  }
 }

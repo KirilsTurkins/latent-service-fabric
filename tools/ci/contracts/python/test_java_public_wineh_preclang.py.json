@@ -1,62 +1,20 @@
 {
-  "cases": [
-    "JavaPublicWinEHPreClang.test_closed_ticket_refuses_retargeting_extra_flags_tree_or_environment_before_spawn",
-    "JavaPublicWinEHPreClang.test_counter_bounds_hashes_and_catchswitch_phi_counts_are_syntactic_only",
-    "JavaPublicWinEHPreClang.test_one_owned_diagnostic_child_uses_original_environment_and_never_parent_compile",
-    "JavaPublicWinEHPreClang.test_real_pinned_negative_baseline_and_full_inventory_are_required"
-  ],
-  "guards": {
-    "JavaPublicWinEHPreClang.test_closed_ticket_refuses_retargeting_extra_flags_tree_or_environment_before_spawn": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:070a700c61ce6eaa48777ff9640bcda5b853ba9394fcdf6631cb62b892070df8",
-        "class:setup-sha256:d7ab8175b806d8a92851ed4a5a6be65e83329b77b648bc1be1bfde3192c80ac0"
-      ],
-      "skipSites": []
-    },
-    "JavaPublicWinEHPreClang.test_counter_bounds_hashes_and_catchswitch_phi_counts_are_syntactic_only": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:070a700c61ce6eaa48777ff9640bcda5b853ba9394fcdf6631cb62b892070df8",
-        "class:setup-sha256:d7ab8175b806d8a92851ed4a5a6be65e83329b77b648bc1be1bfde3192c80ac0"
-      ],
-      "skipSites": []
-    },
-    "JavaPublicWinEHPreClang.test_one_owned_diagnostic_child_uses_original_environment_and_never_parent_compile": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:070a700c61ce6eaa48777ff9640bcda5b853ba9394fcdf6631cb62b892070df8",
-        "class:setup-sha256:d7ab8175b806d8a92851ed4a5a6be65e83329b77b648bc1be1bfde3192c80ac0"
-      ],
-      "skipSites": []
-    },
-    "JavaPublicWinEHPreClang.test_real_pinned_negative_baseline_and_full_inventory_are_required": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:070a700c61ce6eaa48777ff9640bcda5b853ba9394fcdf6631cb62b892070df8",
-        "class:setup-sha256:d7ab8175b806d8a92851ed4a5a6be65e83329b77b648bc1be1bfde3192c80ac0"
-      ],
-      "skipSites": []
-    }
+  "cases":["JavaPublicWinEHPreClang.test_closed_ticket_refuses_retargeting_extra_flags_tree_or_environment_before_spawn","JavaPublicWinEHPreClang.test_counter_bounds_hashes_and_catchswitch_phi_counts_are_syntactic_only","JavaPublicWinEHPreClang.test_one_owned_diagnostic_child_uses_original_environment_and_never_parent_compile","JavaPublicWinEHPreClang.test_real_pinned_negative_baseline_and_full_inventory_are_required"],
+  "guards":{
+    "JavaPublicWinEHPreClang.test_closed_ticket_refuses_retargeting_extra_flags_tree_or_environment_before_spawn":
+      "274bd091f20e6afc77f1776033b5293ad0f44b142dd1381993ba55581b16d128",
+    "JavaPublicWinEHPreClang.test_counter_bounds_hashes_and_catchswitch_phi_counts_are_syntactic_only":
+      "274bd091f20e6afc77f1776033b5293ad0f44b142dd1381993ba55581b16d128",
+    "JavaPublicWinEHPreClang.test_one_owned_diagnostic_child_uses_original_environment_and_never_parent_compile":
+      "274bd091f20e6afc77f1776033b5293ad0f44b142dd1381993ba55581b16d128",
+    "JavaPublicWinEHPreClang.test_real_pinned_negative_baseline_and_full_inventory_are_required":
+      "274bd091f20e6afc77f1776033b5293ad0f44b142dd1381993ba55581b16d128"
   },
-  "kind": "python",
-  "module": "tools/tests/test_java_public_wineh_preclang.py",
-  "reviewReason": "Four bounded data/controller controls for the explicit diagnostic-only pre-Clang route: fixed failed baseline, full inventory, typed ticket/refusals, syntactic counts and one owned child/no ordinary compilation; no LLVM/JVM/guest execution.",
-  "schemaVersion": "latent.ci.contracts.v1"
+  "kind":"python",
+  "module":"tools/tests/test_java_public_wineh_preclang.py",
+  "reviewReason":"Four bounded data/controller controls for the explicit diagnostic-only pre-Clang route: fixed failed baseline, full inventory, typed ticket/refusals, syntactic counts and one owned child/no ordinary compilation; no LLVM/JVM/guest execution.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "274bd091f20e6afc77f1776033b5293ad0f44b142dd1381993ba55581b16d128":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:070a700c61ce6eaa48777ff9640bcda5b853ba9394fcdf6631cb62b892070df8","class:setup-sha256:d7ab8175b806d8a92851ed4a5a6be65e83329b77b648bc1be1bfde3192c80ac0"],"skipSites":[]}
+  }
 }

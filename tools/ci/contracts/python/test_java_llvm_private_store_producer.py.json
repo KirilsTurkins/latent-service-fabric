@@ -1,49 +1,18 @@
 {
-  "cases": [
-    "PrivateScalarProducer.test_exact_old_nine_and_thirteen_plus_two_lit_no_missing_extra_or_skip",
-    "PrivateScalarProducer.test_exact_seven_member_patch_refuses_all_preimages_before_any_write",
-    "PrivateScalarProducer.test_typed_carrier_has_both_patch_identities_and_keeps_original_owner_bounds"
-  ],
-  "guards": {
-    "PrivateScalarProducer.test_exact_old_nine_and_thirteen_plus_two_lit_no_missing_extra_or_skip": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:dd82de742da4f7b7c00de235be08bb91880bf46127fa02c45bae517772f944f6",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "PrivateScalarProducer.test_exact_seven_member_patch_refuses_all_preimages_before_any_write": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:dd82de742da4f7b7c00de235be08bb91880bf46127fa02c45bae517772f944f6",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "PrivateScalarProducer.test_typed_carrier_has_both_patch_identities_and_keeps_original_owner_bounds": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:dd82de742da4f7b7c00de235be08bb91880bf46127fa02c45bae517772f944f6",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    }
+  "cases":["PrivateScalarProducer.test_exact_old_nine_and_thirteen_plus_two_lit_no_missing_extra_or_skip","PrivateScalarProducer.test_exact_seven_member_patch_refuses_all_preimages_before_any_write","PrivateScalarProducer.test_typed_carrier_has_both_patch_identities_and_keeps_original_owner_bounds"],
+  "guards":{
+    "PrivateScalarProducer.test_exact_old_nine_and_thirteen_plus_two_lit_no_missing_extra_or_skip":
+      "67c7965962716005b103ac2c7762bb8fead4e9035f18eadb087d07bb19b85463",
+    "PrivateScalarProducer.test_exact_seven_member_patch_refuses_all_preimages_before_any_write":
+      "67c7965962716005b103ac2c7762bb8fead4e9035f18eadb087d07bb19b85463",
+    "PrivateScalarProducer.test_typed_carrier_has_both_patch_identities_and_keeps_original_owner_bounds":
+      "67c7965962716005b103ac2c7762bb8fead4e9035f18eadb087d07bb19b85463"
   },
-  "kind": "python",
-  "module": "tools/tests/test_java_llvm_private_store_producer.py",
-  "reviewReason": "Source-only R8 private-scalar candidate: exact seven-member supplement, original nine units and thirteen SjLj witnesses plus two new lit files, unchanged process owner/build bounds; new tuple unfilled and default-false public backend route requires unchanged C before one normal Clang/component. Historical R7/diagnostic modes, all old cases and default commands retained.",
-  "schemaVersion": "latent.ci.contracts.v1"
+  "kind":"python",
+  "module":"tools/tests/test_java_llvm_private_store_producer.py",
+  "reviewReason":"Source-only R8 private-scalar candidate: exact seven-member supplement, original nine units and thirteen SjLj witnesses plus two new lit files, unchanged process owner/build bounds; new tuple unfilled and default-false public backend route requires unchanged C before one normal Clang/component. Historical R7/diagnostic modes, all old cases and default commands retained.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "67c7965962716005b103ac2c7762bb8fead4e9035f18eadb087d07bb19b85463":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:dd82de742da4f7b7c00de235be08bb91880bf46127fa02c45bae517772f944f6","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+  }
 }

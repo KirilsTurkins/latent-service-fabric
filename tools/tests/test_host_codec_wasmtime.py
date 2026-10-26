@@ -21,7 +21,7 @@ class PinnedWasmtimeSource(unittest.TestCase):
 
     def test_exact_vendor_source_and_original_license_are_required_by_the_ci_graph(self):
         checked = source.verify()
-        self.assertEqual(len(checked['files']), 274)
+        self.assertEqual(len(checked['files']), 275)
         self.assertEqual(checked['nativeCohort'], source.COHORT)
         self.assertEqual(checked['licenseFiles'], {'LICENSE': hashlib.sha256(
             (source.ROOT / source.PROVIDER / 'LICENSE').read_bytes()).hexdigest()})
@@ -51,6 +51,7 @@ class PinnedWasmtimeSource(unittest.TestCase):
                          'src/runtime/component/concurrent/host_futures/LICENSE-MIT',
                          'src/runtime/component/concurrent/host_futures/LICENSE-APACHE',
                          'src/runtime/component/concurrent/futures_and_streams.rs',
+                         'src/runtime/component/concurrent/futures_and_streams/stream_outer_tests.rs',
                          'src/runtime/component/concurrent/pending_future.rs',
                          'README.latent.md', 'latent-dynamic-memory.patch'):
                 with self.subTest(name=name):

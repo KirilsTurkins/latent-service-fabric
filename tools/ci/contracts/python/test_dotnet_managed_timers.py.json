@@ -1,62 +1,20 @@
 {
-  "cases": [
-    "ManagedTimerContractTests.test_actual_serialized_corelib_receipt_keeps_original_and_timer_identities",
-    "ManagedTimerContractTests.test_each_original_producer_and_every_timer_policy_is_required",
-    "ManagedTimerContractTests.test_producer_ports_are_explicit_and_each_causal_state_has_a_control",
-    "ManagedTimerContractTests.test_timer_and_old_registry_receipts_cannot_mix_counts_or_methods"
-  ],
-  "guards": {
-    "ManagedTimerContractTests.test_actual_serialized_corelib_receipt_keeps_original_and_timer_identities": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:1fd6f6ede76c72c6df72bcf3219458f4f918f1a97f898712dacac70e02b762ea",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "ManagedTimerContractTests.test_each_original_producer_and_every_timer_policy_is_required": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:1fd6f6ede76c72c6df72bcf3219458f4f918f1a97f898712dacac70e02b762ea",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "ManagedTimerContractTests.test_producer_ports_are_explicit_and_each_causal_state_has_a_control": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:1fd6f6ede76c72c6df72bcf3219458f4f918f1a97f898712dacac70e02b762ea",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "ManagedTimerContractTests.test_timer_and_old_registry_receipts_cannot_mix_counts_or_methods": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:1fd6f6ede76c72c6df72bcf3219458f4f918f1a97f898712dacac70e02b762ea",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    }
+  "cases":["ManagedTimerContractTests.test_actual_serialized_corelib_receipt_keeps_original_and_timer_identities","ManagedTimerContractTests.test_each_original_producer_and_every_timer_policy_is_required","ManagedTimerContractTests.test_producer_ports_are_explicit_and_each_causal_state_has_a_control","ManagedTimerContractTests.test_timer_and_old_registry_receipts_cannot_mix_counts_or_methods"],
+  "guards":{
+    "ManagedTimerContractTests.test_actual_serialized_corelib_receipt_keeps_original_and_timer_identities":
+      "c12644fdbce370a8efb53d7de3a91b3451652c6b4c29c65c5fc7d47b7c6acbc9",
+    "ManagedTimerContractTests.test_each_original_producer_and_every_timer_policy_is_required":
+      "c12644fdbce370a8efb53d7de3a91b3451652c6b4c29c65c5fc7d47b7c6acbc9",
+    "ManagedTimerContractTests.test_producer_ports_are_explicit_and_each_causal_state_has_a_control":
+      "c12644fdbce370a8efb53d7de3a91b3451652c6b4c29c65c5fc7d47b7c6acbc9",
+    "ManagedTimerContractTests.test_timer_and_old_registry_receipts_cannot_mix_counts_or_methods":
+      "c12644fdbce370a8efb53d7de3a91b3451652c6b4c29c65c5fc7d47b7c6acbc9"
   },
-  "kind": "python",
-  "module": "tools/tests/test_dotnet_managed_timers.py",
-  "reviewReason": "Four exact original-producer/v2 receipt boundaries while historicalv1 remains immutable.",
-  "schemaVersion": "latent.ci.contracts.v1"
+  "kind":"python",
+  "module":"tools/tests/test_dotnet_managed_timers.py",
+  "reviewReason":"Four exact original-producer/v2 receipt boundaries while historicalv1 remains immutable.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "c12644fdbce370a8efb53d7de3a91b3451652c6b4c29c65c5fc7d47b7c6acbc9":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:1fd6f6ede76c72c6df72bcf3219458f4f918f1a97f898712dacac70e02b762ea","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+  }
 }
