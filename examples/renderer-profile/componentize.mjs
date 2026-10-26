@@ -1,6 +1,8 @@
 import {componentize} from '@bytecodealliance/componentize-js';
+import {_setPreopens, _clearPreopens} from '@bytecodealliance/preview2-shim/filesystem';
 import {readFile, writeFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
+import path from 'node:path';
 import assert from 'node:assert/strict';
 
 const profileBytes = await readFile('profile.json');
@@ -8,11 +10,19 @@ const profile = JSON.parse(profileBytes);
 assert.equal(process.version, 'v' + profile.nodeBuild);
 const digest = bytes => createHash('sha256').update(bytes).digest('hex');
 const started = performance.now();
-const result = await componentize({
-  sourcePath: './timer-bridge.js', witPath: './renderer.wit', env: {},
-  disableFeatures: profile.disableFeatures,
-  enableAot: profile.enableAot,
-});
+// The trusted build splicer needs only this fixture's WIT directory.
+const witDirectory = path.resolve('.');
+_setPreopens({[path.toNamespacedPath(witDirectory).replaceAll('\\', '/')]: witDirectory});
+let result;
+try {
+  result = await componentize({
+    sourcePath: './timer-bridge.js', witPath: './renderer.wit', env: {},
+    disableFeatures: profile.disableFeatures,
+    enableAot: profile.enableAot,
+  });
+} finally {
+  _clearPreopens();
+}
 assert.deepEqual(result.imports, profile.allowedComponentImports);
 assert.ok(result.component.length <= 32 * 1024 * 1024);
 await writeFile('dist/renderer.wasm', result.component);

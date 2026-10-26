@@ -13,7 +13,7 @@
       "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
       "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
     },
-    "name": "Cache feature compile and one upstream compressed roundtrip",
+    "name": "Five consumer implementation and two public HostReady controls",
     "runs-on": "ubuntu-24.04",
     "steps": [
       {
@@ -53,17 +53,17 @@
         }
       },
       {
-        "name": "Check repaired cache feature and execute only one upstream cache roundtrip",
-        "run": "python3 -B tools/qualify_stream_outers.py --source-commit \"${{ github.sha }}\" --cache-repair --output \"$RUNNER_TEMP/canonical-stream-outers\""
+        "name": "Execute only seven consumer cell ownership controls",
+        "run": "python3 -B tools/qualify_stream_outers.py --source-commit \"${{ github.sha }}\" --consumer-cell --output \"$RUNNER_TEMP/canonical-stream-outers\""
       },
       {
         "if": "always()",
-        "name": "Retain bounded cache compile source and one raw roundtrip outcome",
+        "name": "Retain seven source-bound consumer cell outcomes",
         "uses": "actions/upload-artifact",
         "with": {
           "if-no-files-found": "warn",
-          "name": "canonical-stream-outers-${{ github.sha }}",
-          "path": "${{ runner.temp }}/canonical-stream-outers/receipt.json\n${{ runner.temp }}/canonical-stream-outers/FAILED.json\n${{ runner.temp }}/canonical-stream-outers/source-inputs.json\n${{ runner.temp }}/canonical-stream-outers/commands.json\n${{ runner.temp }}/canonical-stream-outers/commands/logs/*.txt\n${{ runner.temp }}/canonical-stream-outers/fixtures/native-stream-outers.wasm\n",
+          "name": "canonical-consumer-cells-${{ github.sha }}",
+          "path": "${{ runner.temp }}/canonical-stream-outers/receipt.json\n${{ runner.temp }}/canonical-stream-outers/FAILED.json\n${{ runner.temp }}/canonical-stream-outers/source-inputs.json\n${{ runner.temp }}/canonical-stream-outers/commands.json\n${{ runner.temp }}/canonical-stream-outers/commands/logs/*.txt\n",
           "retention-days": 3
         }
       }
@@ -72,7 +72,7 @@
   },
   "jobId": "stream-outers",
   "kind": "job",
-  "reviewReason": "Reviewed cache security backport: complete14 source/fixedzstd0.14.3,safe8.2.0,sys2.1.2; distinctcache-repaircohort. ParentCHECKusesSAMEexistingv17FEATURES, cachelibtestBUILD plusprobe/list/exactupstreamroundtrip, fixed5commands/unchanged45m2400/900/60/30/j2/cleanup. No fixture or old6replay; fe9historicalonly.",
+  "reviewReason": "Reviewed #736 consumer-cell v18: five finite private implementation counters plus two affected public HostReady cases;18 commands/36 raw channels, unchanged two locked Cargo targets/features/45m2400/900/60/30/cleanup5/j2. No WAT/old canonical4/stream6/cache replay. Existing stream/cache function sources exact; completed cache programme deliberately replaced only in this branch-owned workflow. Mandatory14-file isolated-workspace cache auth retained.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/canonical-stream-outers.yml"
 }

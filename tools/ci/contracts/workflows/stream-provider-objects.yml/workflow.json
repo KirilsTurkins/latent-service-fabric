@@ -12,7 +12,8 @@
           "test/sdk-738-stream-objects-20261026",
           "test/sdk-738-classdir-objects-20261026",
           "test/sdk-738-classdir-kernfs-objects-20261026",
-          "test/sdk-738-netdev-directory-objects-20261026"
+          "test/sdk-738-netdev-directory-objects-20261026",
+          "test/sdk-738-netdev-layout-objects-20261026"
         ]
       }
     },
@@ -24,7 +25,7 @@
     "classdir-objects",
     "normal-objects"
   ],
-  "reviewReason": "Bind the reviewed NETDEV own-directory55-source nine changed-TU programme to existing process/public bounds; preserve all historical47/50/52 identities, targets, test cases, guards and coverage.",
+  "reviewReason": "Bind reviewed immutable58 notification sources plus readonly allocating-TU probe59/375/11 programme to unchanged process/public bounds; retain all earlier programmes and add only two synthetic/source controls.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/stream-provider-objects.yml"
 }

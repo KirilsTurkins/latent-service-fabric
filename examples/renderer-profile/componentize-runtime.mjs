@@ -1,8 +1,10 @@
 // Maintained conformance fixture. Observed third-party application builds and
 // publication are the separate production developer-plane adapter (#234).
 import {componentize} from '@bytecodealliance/componentize-js';
+import {_setPreopens, _clearPreopens} from '@bytecodealliance/preview2-shim/filesystem';
 import {readFile, writeFile, mkdir, copyFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
+import path from 'node:path';
 import assert from 'node:assert/strict';
 
 const adapter = '../../tools/angular-renderer-adapter';
@@ -19,10 +21,17 @@ for (const name of ['context', 'web', 'http-v2']) {
   await mkdir(`${output}/wit/deps/${name}`, {recursive: true});
   await copyFile(`../../wit/platform/${name}/package.wit`, `${output}/wit/deps/${name}/package.wit`);
 }
-const result = await componentize({
-  sourcePath: `${output}/bridge.js`, witPath: `${output}/wit`, worldName: 'renderer',
-  env: {}, disableFeatures: profile.disableFeatures, enableAot: false,
-});
+const witDirectory = path.resolve(`${output}/wit`);
+_setPreopens({[path.toNamespacedPath(witDirectory).replaceAll('\\', '/')]: witDirectory});
+let result;
+try {
+  result = await componentize({
+    sourcePath: `${output}/bridge.js`, witPath: `${output}/wit`, worldName: 'renderer',
+    env: {}, disableFeatures: profile.disableFeatures, enableAot: false,
+  });
+} finally {
+  _clearPreopens();
+}
 assert.deepEqual(result.imports, []);
 assert.ok(result.component.length <= 32 * 1024 * 1024);
 await writeFile(`${output}/renderer.wasm`, result.component);

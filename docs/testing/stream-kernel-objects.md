@@ -643,3 +643,35 @@ provider, useful-fit or physical-retirement qualification. Ordinary NETDEV
 files/groups/queues, inherited attrs/labels, full source closure and actual
 kernel/node/provider/operator qualification remain open. Documentation and
 lossless contract storage do not relabel the executed a53 source or replay C.
+
+
+## NETDEV own-directory objects, 2026-10-26
+
+[Run 40368865475](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40368865475)
+passed at `cbab64b24c966966e8983708372be7a319c70894`. Its
+[separate durable receipt](evidence/protected-stream-netdev-directory-objects-2026-10-26.json)
+binds nine changed ELF64 x86-64 relocatable objects, 55 source inputs / 371
+derived rows, 74 safe archive members, 28 cleaned zero-exit commands / 56 raw
+channels, 2,786 current before/after Git materials and 2,725 original baseline
+materials. Compilation took 14,257.146562 ms. The two new controls passed;
+old four-object and empty-classdir nine-object steps and the eighteen-object job
+were skipped. Their earlier results and failure histories remain separate.
+
+The source adds the NETDEV's own empty directory, separately copied IFNAMSIZ
+name and typed IDR/radix births through the original funded arena. Original
+namespace, ownership and security operations remain guarded; delayed children
+retain the original NETDEV/VIRTIO parent custody. The actual device-add route
+refuses before platform notification and later sysfs families, using the original
+directory/glue/parent unwind without unpaired REMOVE notifications. All previous
+52 source files remain byte-exact; a dedicated projector follows their unchanged
+369-file intermediate. This programme passed on its first attempt.
+
+The selected configuration, original 1,320-second owner / 1,200-second compile
+bound, `-j2`, physical bank and evidence caps are unchanged. Source commit `cbab`
+and its exact tree were merged as `bdd50a4506394e9a1f0d85df14d09c1ec18d7ba4`;
+no C replay or receipt relabelling is used for that tree-identical merge. This is
+compile-only evidence: consumer stays NULL. Platform notification, ordinary
+NETDEV files/groups/queues, inherited attrs/labels, shared-IDR retirement, useful
+fit, actual kernel operations and node/provider/operator qualification remain
+open. The current 2,786-row input map is dated evidence, not a claim that later
+independent source composition has identical inputs.
