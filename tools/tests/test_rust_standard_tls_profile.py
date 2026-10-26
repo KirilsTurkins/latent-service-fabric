@@ -63,7 +63,7 @@ class StandardTlsSource(unittest.TestCase):
         inputs = self.recipe(); profile.tool_pins(inputs)
         for name, before, after in (('rust-toolchain.toml', b'1.97.1', b'1.97.2'),
                                    ('Cargo.toml', b'=48.0.7', b'=48.0.8'),
-                                   ('Cargo.toml', b'=0.62.0', b'=0.63.0')):
+                                   ('Cargo.toml', b'=0.63.0', b'=0.64.0')):
             altered = dict(inputs); self.assertIn(before, altered[name]); altered[name] = altered[name].replace(before, after)
             with self.subTest(name=name), self.assertRaises(DevError): profile.tool_pins(altered)
         # Keep the original exact registry-checksum adverse independently of the

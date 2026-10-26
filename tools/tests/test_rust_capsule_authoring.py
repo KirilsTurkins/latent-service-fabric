@@ -537,7 +537,7 @@ class RustDeclaredEnvironment(unittest.TestCase):
                 if stage == 'zig-version':
                     return pins['sdk']['zig'].encode()
                 if stage == 'bindgen-version':
-                    return ('wit-bindgen-cli ' + pins['rust']['dependencies']['wit-bindgen']).encode()
+                    return ('wit-bindgen-cli ' + pins['contracts']['wit-bindgen-cli']).encode()
                 raise AssertionError('native compile boundary reached without stable declared environment')
         def isolate(owned, tools, distributions):
             scope.workspace, scope.tools, scope.distributions = owned.resolve(), tools, distributions
@@ -672,7 +672,7 @@ class RustExecutableOutputMaterials(unittest.TestCase):
                 stages.append(stage)
                 if stage == 'rust-sysroot': return str(scope.distributions['rust-compiler-and-sysroot']).encode()
                 if stage == 'zig-version': return pins['sdk']['zig'].encode()
-                if stage == 'bindgen-version': return ('wit-bindgen-cli ' + pins['rust']['dependencies']['wit-bindgen']).encode()
+                if stage == 'bindgen-version': return ('wit-bindgen-cli ' + pins['contracts']['wit-bindgen-cli']).encode()
                 if stage == 'compile':
                     selected = Path(self.environment['CARGO_TARGET_DIR']) / 'release/build/controlled/out/generated.rs'
                     selected.parent.mkdir(parents=True); selected.write_bytes(b'original generated input')

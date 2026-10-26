@@ -16,6 +16,10 @@ latent-packaging = { path = "../../crates/latent-packaging" }
 latent-policy = { path = "../../crates/latent-policy" }
 latent-signing = { path = "../../crates/latent-signing" }
 
+# Independent workspaces do not inherit the host workspace patch table.
+[patch.crates-io]
+bytes = { path = "../../crates/vendor/bytes" }
+
 [profile.release]
 debug = 0
 strip = "debuginfo"

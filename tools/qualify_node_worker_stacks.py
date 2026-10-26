@@ -20,7 +20,7 @@ from tools.test_run import digest, redact
 
 ROOT = Path(__file__).resolve().parents[1]
 LOCK = "sdk/node-worker-stacks/reference-Cargo.lock"
-LOCK_SHA256 = "e125b91b6a5f16e5f37976e7ddd67cbc263143ddb7f3873b461fe4ee74682c67"
+LOCK_SHA256 = "4e9992b676665ad800bc77e50093b31a2768b754fdf0d50bc8358916ed90613e"
 PROFILE = "apps/latentd/src/worker_stacks.rs"
 TESTS = "apps/latentd/src/worker_stacks/tests.rs"
 STACK, GUARD, AMBIENT = 2 * 1024 * 1024, 64 * 1024, 8 * 1024 * 1024

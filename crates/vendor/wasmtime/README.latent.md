@@ -4,8 +4,8 @@ This is the complete crates.io Wasmtime 48.0.7 package, licensed under
 Apache-2.0 WITH LLVM-exception (see the unmodified LICENSE). The original
 archive checksum and all 250 original file identities are recorded in
 UPSTREAM.latent.json. `latent-dynamic-memory.patch` applies to that exact
-original package; it contains thirty-two changed upstream files and six added
-implementation files. Other Wasmtime packages remain at the original locked
+original package; it contains 33 changed upstream files and 21 added
+source/license files. Other Wasmtime packages remain at the original locked
 registry versions. The standalone development lock selects Tokio 1.51.6 for
 RUSTSEC-2026-0386; the immutable upstream inventory retains its original lock
 identity. This dependency-only lock correction changes no Wasmtime runtime source.
@@ -36,7 +36,7 @@ retains confirmed actual allocations through native unwind, without confirming
 a hypothetical signature maximum as observed peak.
 
 The native cohort is
-`wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-unordered-futures-memory-v15`. Runtime engine configuration identity
+`wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-unordered-futures-outer-sync-result-memory-v16`. Runtime engine configuration identity
 includes this cohort, so old prepared/AOT identity cannot certify this host.
 The immutable v1/7b programme passed 61 controls; v2/de0 passed81,
 v3/48a passed85, v4/3e417 passed92, v5/94f passed97, v7/f535 passed114,
@@ -346,3 +346,42 @@ byte size alone never selects an owner. Original job/aggregate/build/case,
 cleanup, two compile-job and activation limits remain unchanged. No old private
 groups or Java campaign is implied. Legacy callback/pipe Boxes, other maps/
 collections, transitive allocations and full allocator/RSS/#736 remain gaps.
+
+
+The frozen v15 stage above subsequently passed twenty focused controls at
+source a32624956270c6e18f3f108b831574e22368704b, run40294127180. Its separate
+six-private/eight-canonical/six-affected receipt and failed history remain at
+docs/testing/evidence/canonical-unordered-backing-native-2026-10-26.json.
+That immutable result does not qualify this next source stage.
+
+The v16 SOURCE stage uses existing PreparedFuture for two remaining concurrent
+outer Boxes. poll_and_block preadmits exact Layout<R>, actual outer Output,
+then queue/task owners before outer allocation or first user poll. The result
+owner travels into CalleeFinished independently of outer completion/set_event
+failure. spawn_with_accessor prepares its outer Box after JoinState admission
+and before publication/task.run. Neither stores a factory Memory Arc. None
+preserves original physical allocation/callback/receiver order; inline enum,
+HostTaskState and enclosing Output can enlarge and are not all claimed paid.
+
+Exact safe downcast yields the same Box<R,Global>; into_raw/read moves R,
+matching nonzero Global dealloc(Layout<R>) returns BEFORE its original guard
+refunds. Abandonment destroys R/backing first; destructor unwind retains the
+same charge conservatively. Confirmation has installed cleanup, wrong type
+retains its envelope, ZST has no allocation/reservation. The private primitive
+follows Rust1.97.1 boxed.rs at8bab26f4f68e0e26f0bb7960be334d5b520ea452,
+SHA31fe2ec856527253e2a78279f44b7dec14b73d9f1114a75584b031dcd6f64418.
+No unstable/custom allocator APIs, erased layout or raw owner escape is used.
+Global LiftedResult and unrelated result/stream paths remain unchanged; R's
+Vec/String/Arc transitive backing is outside the Box<R> charge.
+
+Six NEW private sync-result and seven actual host controls are prepared,
+UNCOMPILED/UNEXECUTED: pending/refusal/error/cancellation/None plus new Accessor
+and typed result-refusal/fresh-Store cases on the existing component. Typed
+R=(u32,), dynamic R=Vec<Val>; the dynamic callback's Ok(()) is not enclosing R.
+The documented cold source order is callback4/result5/outer6/PushFuture7/Task8
+after three upstream/shared owners, not fresh evidence or a universal ordinal.
+Callback refusal remains4; exact late-waker/foreign-Store assertions remain.
+No old v15 aggregate, Java or unrelated private programme is reexecuted.
+Original45m/2400/900/60/30 bounds,5s cleanup and2 compile jobs remain; actual
+accounted host cases keep original1MiB/1B fuel/5s. Stream Boxes, collections,
+transitive metadata, allocator/RSS/full cost and whole #736 remain gaps.

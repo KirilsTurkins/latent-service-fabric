@@ -120,6 +120,7 @@ mod future_stream_any;
 mod futures_and_streams;
 mod host_futures;
 mod pending_future;
+mod sync_result;
 pub(crate) mod table;
 pub(crate) mod tls;
 mod work_queue;
@@ -856,33 +857,66 @@ pub(crate) fn poll_and_block<R: Send + Sync + 'static>(
     // Wrap the future in a closure which will take care of stashing the result
     // in `GuestTask::result` and resuming this fiber when the host task
     // completes.
-    let mut future = Box::pin(async move {
-        let result = future.await?;
-        tls::get(move |store| {
-            let state = store.concurrent_state_mut()?;
-            let host_state = &mut state.get_mut(task)?.state;
-            assert!(matches!(host_state, HostTaskState::CalleeStarted));
-            *host_state = HostTaskState::CalleeFinished(Box::new(result));
+    let memory = store.native_memory();
+    let (queue_slot, mut future) = if memory.is_none() {
+        // Preserve the original unselected Box allocation before queue setup.
+        let future = Box::pin(async move {
+            let result = future.await?;
+            tls::get(move |store| {
+                let state = store.concurrent_state_mut()?;
+                let host_state = &mut state.get_mut(task)?.state;
+                assert!(matches!(host_state, HostTaskState::CalleeStarted));
+                *host_state = HostTaskState::CalleeFinished(sync_result::SyncResult::legacy(
+                    Box::new(result),
+                ));
 
-            Waitable::Host(task).set_event(
-                state,
-                Some(Event::Subtask {
-                    status: Status::Returned,
-                }),
-            )?;
+                Waitable::Host(task).set_event(
+                    state,
+                    Some(Event::Subtask {
+                        status: Status::Returned,
+                    }),
+                )?;
 
-            Ok(())
-        })
-    }) as BoxedHostTaskFuture;
+                Ok(())
+            })
+        }) as BoxedHostTaskFuture;
+        let queue_slot = store.concurrent_state_mut()?.prepare_future_slot()?;
+        (queue_slot, HostTaskFuture::legacy(future))
+    } else {
+        // Both concrete layouts are admitted before user polling. The result
+        // owner travels in the SAME outer future until CalleeFinished takes it.
+        let result_owner = sync_result::PreparedSyncResult::<R>::new(&memory)?;
+        let prepared = pending_future::PreparedFuture::new(
+            &memory,
+            (future, task, result_owner),
+            |(future, task, result_owner)| async move {
+                let result = future.await?;
+                tls::get(move |store| {
+                    let state = store.concurrent_state_mut()?;
+                    let host_state = &mut state.get_mut(task)?.state;
+                    assert!(matches!(host_state, HostTaskState::CalleeStarted));
+                    *host_state = HostTaskState::CalleeFinished(result_owner.finish(result));
 
-    let queue_slot = store.concurrent_state_mut()?.prepare_future_slot()?;
+                    Waitable::Host(task).set_event(
+                        state,
+                        Some(Event::Subtask {
+                            status: Status::Returned,
+                        }),
+                    )?;
+
+                    Ok(())
+                })
+            },
+        )?;
+        let queue_slot = store.concurrent_state_mut()?.prepare_future_slot()?;
+        // Every queue/task/outer-future admission precedes this Box and first poll.
+        (queue_slot, prepared.finish())
+    };
     // Finally, poll the future.  We can use a dummy `Waker` here because we'll
     // add the future to `ConcurrentState::futures` and poll it automatically
     // from the event loop if it doesn't complete immediately here.
     let poll = tls::set(store, || {
-        future
-            .as_mut()
-            .poll(&mut Context::from_waker(&Waker::noop()))
+        Pin::new(&mut future).poll(&mut Context::from_waker(&Waker::noop()))
     });
 
     let caller = match host_task {
@@ -900,7 +934,7 @@ pub(crate) fn poll_and_block<R: Send + Sync + 'static>(
         // complete, suspending the current fiber until it does so.
         Poll::Pending => {
             let state = store.concurrent_state_mut()?;
-            state.push_future(queue_slot, future);
+            state.push_host_future(queue_slot, future);
 
             let set = state.get_mut(caller.thread)?.sync_call_set;
             Waitable::Host(task).join(state, Some(set))?;
@@ -921,8 +955,8 @@ pub(crate) fn poll_and_block<R: Send + Sync + 'static>(
     // Retrieve and return the result.
     let host_state = &mut store.concurrent_state_mut()?.get_mut(task)?.state;
     match mem::replace(host_state, HostTaskState::CalleeDone { cancelled: false }) {
-        HostTaskState::CalleeFinished(result) => Ok(match result.downcast() {
-            Ok(result) => *result,
+        HostTaskState::CalleeFinished(result) => Ok(match result.into_value::<R>() {
+            Ok(result) => result,
             Err(_) => bail_bug!("host task finished with wrong type of result"),
         }),
         _ => bail_bug!("unexpected host task state after completion"),
@@ -1111,17 +1145,24 @@ impl<T> StoreContextMut<'_, T> {
         D: HasData + ?Sized,
     {
         let queue_slot = self.0.concurrent_state_mut()?.prepare_future_slot()?;
-        // Create an "abortable future" here where internally the future will
-        // hook calls to poll and possibly spawn more background tasks on each
-        // iteration.
-        let (handle, future) = JoinHandle::run_with_memory(
-            async move { task.run(&accessor).await },
-            self.0.native_memory(),
-        )?;
-        self.0.concurrent_state_mut()?.push_future(
-            queue_slot,
-            Box::pin(async move { future.await.unwrap_or(Ok(())) }),
-        );
+        let memory = self.0.native_memory();
+        // Construct the paid join cell, but do not publish a handle or run task.
+        let (handle, future) =
+            JoinHandle::run_with_memory(async move { task.run(&accessor).await }, memory.clone())?;
+        if memory.is_none() {
+            // Preserve the original receiver lookup, Box and legacy publication.
+            self.0.concurrent_state_mut()?.push_future(
+                queue_slot,
+                Box::pin(async move { future.await.unwrap_or(Ok(())) }),
+            );
+        } else {
+            let prepared =
+                pending_future::PreparedFuture::new(&memory, future, |future| async move {
+                    future.await.unwrap_or(Ok(()))
+                })?;
+            let state = self.0.concurrent_state_mut()?;
+            state.push_host_future(queue_slot, prepared.finish());
+        }
         Ok(handle)
     }
 
@@ -4813,7 +4854,7 @@ enum HostTaskState {
     /// Terminal state used for tasks in `poll_and_block` to store the result of
     /// their computation. Note that this state is not used for tasks in
     /// `first_poll`.
-    CalleeFinished(LiftedResult),
+    CalleeFinished(sync_result::SyncResult),
 
     /// Terminal state for host tasks meaning that the task was cancelled or the
     /// result was taken.

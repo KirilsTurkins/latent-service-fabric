@@ -584,3 +584,29 @@ whole #738 qualification. Remaining class/kernfs and allocation/free source
 closure and real-kernel/node/provider/operator qualification remain required.
 Current-main composition and lossless contract storage retain the actual c6f9
 compile identity; they do not turn it into a newly executed result.
+
+
+## Class-directory lifetime objects, 2026-10-26
+
+[Run 40310522972](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40310522972)
+passed at `5c1e8876a2495843b902595d961c8cc4f068901c`. Its
+[separate durable receipt](evidence/protected-stream-classdir-objects-2026-10-26.json)
+binds the four changed translation units: `net/factory.o`, `drivers/base/core.o`,
+`lib/kobject.o` and `net/core/net-sysfs.o`. All four ELF objects, 67 safe archive
+members, 27 cleaned zero-exit commands, 54 raw channels, 2,779 current / 2,725
+baseline Git materials and the accepted configuration were authenticated.
+Two new pure controls passed. The eighteen-object job was skipped; its earlier
+c6f901 result remains separate and its other fourteen objects were not replayed.
+
+The source adds real typed class/name births, the original positive class
+subsystem reference and original kobject/name/parent release tails. An actual
+static-type/initialized witness distinguishes cleanup of an existing object
+from admission to create a new child. Unknown, poisoned or closed ownership
+still retains backing. The same original process, deadline, physical bank,
+infrastructure, record and bounded public-evidence limits remain in force.
+
+Compilation supplies no running lifetime or useful-fit proof. Consumer stays
+NULL; class/kernfs and full allocation/free closure, linked image, actual kernel
+operations/physical retirement and node/provider/operator qualification remain
+required. The fifty-source executed tuple is retained through later docs,
+lossless storage and independent native-cohort composition without C replay.

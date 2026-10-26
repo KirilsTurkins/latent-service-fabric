@@ -51,7 +51,7 @@
  use futures_and_streams::{FlatAbi, ReturnCode, TransmitHandle, TransmitIndex};
  use table::{TableDebug, TableId};
  use wasmtime_environ::component::{
-@@ -107,14 +108,22 @@
+@@ -107,14 +108,23 @@
      StreamProducer, StreamReader, StreamResult, VecBuffer, WriteBuffer,
  };
  pub(crate) use futures_and_streams::{ResourcePair, lower_error_context_to_index};
@@ -67,6 +67,7 @@
  mod futures_and_streams;
 +mod host_futures;
 +mod pending_future;
++mod sync_result;
  pub(crate) mod table;
  pub(crate) mod tls;
 +mod work_queue;
@@ -74,7 +75,7 @@
  
  /// Constant defined in the Component Model spec to indicate that the async
  /// intrinsic (e.g. `future.write`) has not yet completed.
-@@ -651,10 +660,10 @@
+@@ -651,10 +661,10 @@
  /// Indicates how a guest task is waiting on a waitable set.
  enum WaitMode {
      /// The guest task is waiting using `task.wait`
@@ -87,7 +88,7 @@
  }
  
  /// Represents the reason a fiber is suspending itself.
-@@ -778,14 +787,14 @@
+@@ -778,14 +788,14 @@
  /// Job to be run on a worker fiber.
  enum WorkerItem {
      GuestCall(GuestCall),
@@ -104,7 +105,7 @@
      /// A fiber to resume.
      ResumeFiber(StoreFiber<'static>),
      /// A thread to resume.
-@@ -793,13 +802,13 @@
+@@ -793,13 +803,13 @@
      /// A pending call into guest code for a given guest task.
      GuestCall(RuntimeComponentInstanceIndex, GuestCall),
      /// A job to run on a worker fiber.
@@ -120,7 +121,7 @@
              Self::ResumeFiber(_) => f.debug_tuple("ResumeFiber").finish(),
              Self::ResumeThread(instance, thread) => f
                  .debug_tuple("ResumeThread")
-@@ -814,6 +823,13 @@
+@@ -814,6 +824,13 @@
              Self::WorkerFunction(_) => f.debug_tuple("WorkerFunction").finish(),
          }
      }
@@ -134,28 +135,116 @@
  }
  
  /// Whether a suspension intrinsic was cancelled or completed
-@@ -857,8 +873,9 @@
- 
-             Ok(())
-         })
+@@ -840,32 +857,66 @@
+     // Wrap the future in a closure which will take care of stashing the result
+     // in `GuestTask::result` and resuming this fiber when the host task
+     // completes.
+-    let mut future = Box::pin(async move {
+-        let result = future.await?;
+-        tls::get(move |store| {
+-            let state = store.concurrent_state_mut()?;
+-            let host_state = &mut state.get_mut(task)?.state;
+-            assert!(matches!(host_state, HostTaskState::CalleeStarted));
+-            *host_state = HostTaskState::CalleeFinished(Box::new(result));
+-
+-            Waitable::Host(task).set_event(
+-                state,
+-                Some(Event::Subtask {
+-                    status: Status::Returned,
+-                }),
+-            )?;
+-
+-            Ok(())
+-        })
 -    }) as HostTaskFuture;
 -
-+    }) as BoxedHostTaskFuture;
++    let memory = store.native_memory();
++    let (queue_slot, mut future) = if memory.is_none() {
++        // Preserve the original unselected Box allocation before queue setup.
++        let future = Box::pin(async move {
++            let result = future.await?;
++            tls::get(move |store| {
++                let state = store.concurrent_state_mut()?;
++                let host_state = &mut state.get_mut(task)?.state;
++                assert!(matches!(host_state, HostTaskState::CalleeStarted));
++                *host_state = HostTaskState::CalleeFinished(sync_result::SyncResult::legacy(
++                    Box::new(result),
++                ));
 +
-+    let queue_slot = store.concurrent_state_mut()?.prepare_future_slot()?;
++                Waitable::Host(task).set_event(
++                    state,
++                    Some(Event::Subtask {
++                        status: Status::Returned,
++                    }),
++                )?;
++
++                Ok(())
++            })
++        }) as BoxedHostTaskFuture;
++        let queue_slot = store.concurrent_state_mut()?.prepare_future_slot()?;
++        (queue_slot, HostTaskFuture::legacy(future))
++    } else {
++        // Both concrete layouts are admitted before user polling. The result
++        // owner travels in the SAME outer future until CalleeFinished takes it.
++        let result_owner = sync_result::PreparedSyncResult::<R>::new(&memory)?;
++        let prepared = pending_future::PreparedFuture::new(
++            &memory,
++            (future, task, result_owner),
++            |(future, task, result_owner)| async move {
++                let result = future.await?;
++                tls::get(move |store| {
++                    let state = store.concurrent_state_mut()?;
++                    let host_state = &mut state.get_mut(task)?.state;
++                    assert!(matches!(host_state, HostTaskState::CalleeStarted));
++                    *host_state = HostTaskState::CalleeFinished(result_owner.finish(result));
++
++                    Waitable::Host(task).set_event(
++                        state,
++                        Some(Event::Subtask {
++                            status: Status::Returned,
++                        }),
++                    )?;
++
++                    Ok(())
++                })
++            },
++        )?;
++        let queue_slot = store.concurrent_state_mut()?.prepare_future_slot()?;
++        // Every queue/task/outer-future admission precedes this Box and first poll.
++        (queue_slot, prepared.finish())
++    };
      // Finally, poll the future.  We can use a dummy `Waker` here because we'll
      // add the future to `ConcurrentState::futures` and poll it automatically
      // from the event loop if it doesn't complete immediately here.
-@@ -883,7 +900,7 @@
+     let poll = tls::set(store, || {
+-        future
+-            .as_mut()
+-            .poll(&mut Context::from_waker(&Waker::noop()))
++        Pin::new(&mut future).poll(&mut Context::from_waker(&Waker::noop()))
+     });
+ 
+     let caller = match host_task {
+@@ -883,7 +934,7 @@
          // complete, suspending the current fiber until it does so.
          Poll::Pending => {
              let state = store.concurrent_state_mut()?;
 -            state.push_future(future);
-+            state.push_future(queue_slot, future);
++            state.push_host_future(queue_slot, future);
  
              let set = state.get_mut(caller.thread)?.sync_call_set;
              Waitable::Host(task).join(state, Some(set))?;
-@@ -918,6 +935,8 @@
+@@ -904,8 +955,8 @@
+     // Retrieve and return the result.
+     let host_state = &mut store.concurrent_state_mut()?.get_mut(task)?.state;
+     match mem::replace(host_state, HostTaskState::CalleeDone { cancelled: false }) {
+-        HostTaskState::CalleeFinished(result) => Ok(match result.downcast() {
+-            Ok(result) => *result,
++        HostTaskState::CalleeFinished(result) => Ok(match result.into_value::<R>() {
++            Ok(result) => result,
+             Err(_) => bail_bug!("host task finished with wrong type of result"),
+         }),
+         _ => bail_bug!("unexpected host task state after completion"),
+@@ -918,6 +969,8 @@
      while let Some(call) = next.take() {
          match call.kind {
              GuestCallKind::DeliverEvent { instance, set } => {
@@ -164,7 +253,7 @@
                  let (event, waitable) =
                      match instance.get_event(store, call.thread.task, set, true)? {
                          Some(pair) => pair,
-@@ -966,6 +985,7 @@
+@@ -966,6 +1019,7 @@
                      call.thread,
                      runtime_instance.index,
                      code,
@@ -172,30 +261,40 @@
                  )?;
  
                  log::trace!(
-@@ -1090,13 +1110,18 @@
+@@ -1090,13 +1144,25 @@
          T: 'static,
          D: HasData + ?Sized,
      {
-+        let queue_slot = self.0.concurrent_state_mut()?.prepare_future_slot()?;
-         // Create an "abortable future" here where internally the future will
-         // hook calls to poll and possibly spawn more background tasks on each
-         // iteration.
+-        // Create an "abortable future" here where internally the future will
+-        // hook calls to poll and possibly spawn more background tasks on each
+-        // iteration.
 -        let (handle, future) = JoinHandle::run(async move { task.run(&accessor).await });
 -        self.0
 -            .concurrent_state_mut()?
 -            .push_future(Box::pin(async move { future.await.unwrap_or(Ok(())) }));
-+        let (handle, future) = JoinHandle::run_with_memory(
-+            async move { task.run(&accessor).await },
-+            self.0.native_memory(),
-+        )?;
-+        self.0.concurrent_state_mut()?.push_future(
-+            queue_slot,
-+            Box::pin(async move { future.await.unwrap_or(Ok(())) }),
-+        );
++        let queue_slot = self.0.concurrent_state_mut()?.prepare_future_slot()?;
++        let memory = self.0.native_memory();
++        // Construct the paid join cell, but do not publish a handle or run task.
++        let (handle, future) =
++            JoinHandle::run_with_memory(async move { task.run(&accessor).await }, memory.clone())?;
++        if memory.is_none() {
++            // Preserve the original receiver lookup, Box and legacy publication.
++            self.0.concurrent_state_mut()?.push_future(
++                queue_slot,
++                Box::pin(async move { future.await.unwrap_or(Ok(())) }),
++            );
++        } else {
++            let prepared =
++                pending_future::PreparedFuture::new(&memory, future, |future| async move {
++                    future.await.unwrap_or(Ok(()))
++                })?;
++            let state = self.0.concurrent_state_mut()?;
++            state.push_host_future(queue_slot, prepared.finish());
++        }
          Ok(handle)
      }
  
-@@ -1263,7 +1288,7 @@
+@@ -1263,7 +1329,7 @@
      {
          struct Reset<'a, T: 'static> {
              store: StoreContextMut<'a, T>,
@@ -204,7 +303,7 @@
          }
  
          impl<'a, T> Drop for Reset<'a, T> {
-@@ -1279,6 +1304,9 @@
+@@ -1279,6 +1345,9 @@
              }
          }
  
@@ -214,7 +313,7 @@
          loop {
              // Take `ConcurrentState::futures` out of the store so we can poll
              // it while also safely giving any of the futures inside access to
-@@ -1296,7 +1324,7 @@
+@@ -1296,7 +1365,7 @@
              enum PollResult<R> {
                  Complete(R),
                  ProcessWork {
@@ -223,7 +322,7 @@
                      low_priority: bool,
                  },
              }
-@@ -1323,22 +1351,18 @@
+@@ -1323,22 +1392,18 @@
                      Poll::Pending => Poll::Pending,
                  };
  
@@ -252,7 +351,7 @@
                      return Poll::Ready(Ok(PollResult::ProcessWork {
                          ready,
                          low_priority,
-@@ -1356,7 +1380,7 @@
+@@ -1356,7 +1421,7 @@
                          // the outer loop in case there is another one
                          // ready to complete.
                          Poll::Ready(Ok(PollResult::ProcessWork {
@@ -261,7 +360,7 @@
                              low_priority: false,
                          }))
                      }
-@@ -1410,17 +1434,21 @@
+@@ -1410,17 +1475,21 @@
                      ready,
                      low_priority,
                  } => {
@@ -287,7 +386,7 @@
                                          tls::set(self.store.0, move || drop(future))
                                      }
                                      _ => {}
-@@ -1459,11 +1487,11 @@
+@@ -1459,11 +1528,11 @@
                          dispose.store.0.yield_now().await
                      }
  
@@ -301,7 +400,7 @@
                              .await?;
                      }
                  }
-@@ -1472,34 +1500,35 @@
+@@ -1472,34 +1541,35 @@
      }
  
      /// Handle the specified work item, possibly resuming a fiber if applicable.
@@ -343,7 +442,7 @@
                  } else {
                      let state = self.0.concurrent_state_mut()?;
                      let task = state.get_mut(call.thread.task)?;
-@@ -1520,11 +1549,11 @@
+@@ -1520,11 +1590,11 @@
                          .instance_state(instance)
                          .concurrent_state()
                          .pending
@@ -357,7 +456,7 @@
              }
          }
  
-@@ -1532,7 +1561,7 @@
+@@ -1532,7 +1602,7 @@
      }
  
      /// Execute the specified guest call on a worker fiber.
@@ -366,7 +465,7 @@
      where
          T: Send,
      {
-@@ -1546,7 +1575,7 @@
+@@ -1546,7 +1616,7 @@
                      };
                      match item {
                          WorkerItem::GuestCall(call) => handle_guest_call(store, call)?,
@@ -375,7 +474,7 @@
                      }
  
                      store.suspend(SuspendReason::NeedWork)?;
-@@ -1558,7 +1587,7 @@
+@@ -1558,7 +1628,7 @@
          assert!(worker_item.is_none());
          *worker_item = Some(item);
  
@@ -384,7 +483,7 @@
      }
  
      /// Wrap the specified host function in a future which will call it, passing
-@@ -2056,18 +2085,18 @@
+@@ -2056,18 +2126,18 @@
      ///
      /// See `GuestCall::is_ready` for details.
      fn partition_pending(&mut self, instance: RuntimeInstance) -> Result<()> {
@@ -406,7 +505,7 @@
              }
          }
  
-@@ -2104,7 +2133,11 @@
+@@ -2104,7 +2174,11 @@
  
      /// Resume the specified fiber, giving it exclusive access to the specified
      /// store.
@@ -419,7 +518,7 @@
          struct Dispose<'a> {
              store: &'a mut StoreOpaque,
              fiber: Option<StoreFiber<'static>>,
-@@ -2122,6 +2155,10 @@
+@@ -2122,6 +2196,10 @@
              store: self,
              fiber: Some(fiber),
          };
@@ -430,7 +529,7 @@
  
          let old_thread = dispose.store.current_thread()?;
          log::trace!("resume_fiber: save current thread {old_thread:?}");
-@@ -2163,17 +2200,17 @@
+@@ -2163,17 +2241,17 @@
                          cancellable,
                      };
                      let instance = state.get_mut(thread.task)?.instance.index;
@@ -453,7 +552,7 @@
                      assert!(old.is_none());
                  }
              };
-@@ -2398,7 +2435,7 @@
+@@ -2398,7 +2476,7 @@
                  _ => false,
              };
  
@@ -462,7 +561,7 @@
                  let count = queue.len();
                  queue.retain(|item| !matches(item));
                  count != queue.len()
-@@ -2499,6 +2536,7 @@
+@@ -2499,6 +2577,7 @@
          guest_thread: QualifiedThreadId,
          runtime_instance: RuntimeComponentInstanceIndex,
          code: u32,
@@ -470,7 +569,7 @@
      ) -> Result<Option<GuestCall>> {
          let (code, set) = unpack_callback_code(code);
  
-@@ -2549,7 +2587,7 @@
+@@ -2549,7 +2628,7 @@
                  if state.may_block(guest_thread.task)? {
                      // Push this thread onto the "low priority" queue so it runs
                      // after any other threads have had a chance to run.
@@ -479,7 +578,7 @@
                      None
                  } else {
                      // Yielding in a non-blocking context is defined as a no-op
-@@ -2570,16 +2608,19 @@
+@@ -2570,16 +2649,19 @@
                      || !state.get_mut(set)?.ready.is_empty()
                  {
                      // An event is immediately available; deliver it ASAP.
@@ -508,7 +607,7 @@
                  } else {
                      // No event is immediately available.
                      //
-@@ -2598,7 +2639,7 @@
+@@ -2598,7 +2680,7 @@
                      let old = state
                          .get_mut(set)?
                          .waiting
@@ -517,7 +616,7 @@
                      if !old.is_none() {
                          bail_bug!("set's waiting set already had this thread registered");
                      }
-@@ -2626,6 +2667,7 @@
+@@ -2626,6 +2708,7 @@
          callback: Option<SendSyncPtr<VMFuncRef>>,
          post_return: Option<SendSyncPtr<VMFuncRef>>,
      ) -> Result<()> {
@@ -525,7 +624,7 @@
          /// Return a closure which will call the specified function in the scope
          /// of the specified task.
          ///
-@@ -2705,6 +2747,7 @@
+@@ -2705,6 +2788,7 @@
  
          let fun = if callback.is_some() {
              assert!(async_);
@@ -533,7 +632,7 @@
  
              Box::new(move |store: &mut dyn VMStore| {
                  self.add_guest_thread_to_instance_table(
-@@ -2740,7 +2783,13 @@
+@@ -2740,7 +2824,13 @@
                  // function returns a `i32` result.
                  let code = unsafe { storage[0].assume_init() }.get_i32() as u32;
  
@@ -548,7 +647,7 @@
              })
                  as Box<dyn FnOnce(&mut dyn VMStore) -> Result<Option<GuestCall>> + Send + Sync>
          } else {
-@@ -2833,16 +2882,16 @@
+@@ -2833,16 +2923,16 @@
              })
          };
  
@@ -570,7 +669,7 @@
  
          Ok(())
      }
-@@ -3273,32 +3322,111 @@
+@@ -3273,32 +3363,111 @@
      ) -> Result<u32> {
          let token = StoreToken::new(store.as_context_mut());
          let task = store.0.current_host_thread()?;
@@ -688,7 +787,7 @@
                  let result = result.transpose()?;
                  lower(store.as_context_mut(), result, true)?;
                  return Ok(Status::Returned.pack(None));
-@@ -3315,53 +3443,7 @@
+@@ -3315,53 +3484,7 @@
          // Wrap the future in a closure responsible for lowering the result into
          // the guest's stack and memory, as well as notifying any waiters that
          // the task returned.
@@ -743,7 +842,7 @@
  
          // Make this task visible to the guest and then record what it
          // was made visible as.
-@@ -3370,7 +3452,13 @@
+@@ -3370,7 +3493,13 @@
              None => bail_bug!("host task wasn't created but should have been"),
          };
          let state = store.0.concurrent_state_mut()?;
@@ -758,7 +857,7 @@
          let instance = state.get_mut(caller.task)?.instance;
          let (state, counter) = store.0.instance_state_and_handle_counter(instance);
          let handle = state
-@@ -3791,6 +3879,14 @@
+@@ -3791,6 +3920,14 @@
              GuestThread::from_instance(self.id().get_mut(store), runtime_instance, thread_idx)?;
          let state = store.concurrent_state_mut()?;
          let guest_thread = QualifiedThreadId::qualify(state, thread_id)?;
@@ -773,7 +872,7 @@
          let thread = state.get_mut(guest_thread.thread)?;
  
          match mem::replace(&mut thread.state, GuestThreadState::Running) {
-@@ -3805,15 +3901,19 @@
+@@ -3805,15 +3942,19 @@
                          })),
                      },
                  );
@@ -799,7 +898,7 @@
              }
              GuestThreadState::Ready { fiber, cancellable } if allow_ready => {
                  log::trace!("resuming thread {thread_id:?} that was ready");
-@@ -4104,21 +4204,27 @@
+@@ -4104,21 +4245,27 @@
                      let thread_mut = concurrent_state.get_mut(thread.thread)?;
                      if let Some(set) = thread_mut.wake_on_cancel.take() {
                          // The thread is in a cancellable wait, so wake it up:
@@ -842,7 +941,7 @@
  
                          let caller = store.current_guest_thread()?;
                          store.suspend(SuspendReason::Yielding {
-@@ -4668,7 +4774,7 @@
+@@ -4668,7 +4815,7 @@
      }
  }
  
@@ -851,7 +950,16 @@
  
  /// Represents the state of a pending host task.
  ///
-@@ -5186,20 +5292,23 @@
+@@ -4707,7 +4854,7 @@
+     /// Terminal state used for tasks in `poll_and_block` to store the result of
+     /// their computation. Note that this state is not used for tasks in
+     /// `first_poll`.
+-    CalleeFinished(LiftedResult),
++    CalleeFinished(sync_result::SyncResult),
+ 
+     /// Terminal state for host tasks meaning that the task was cancelled or the
+     /// result was taken.
+@@ -5186,20 +5333,23 @@
                  let wake_on_cancel = state.get_mut(thread.thread)?.wake_on_cancel.take();
                  assert!(wake_on_cancel.is_none() || wake_on_cancel == Some(set));
  
@@ -886,7 +994,7 @@
              }
          }
          Ok(())
-@@ -5288,7 +5397,7 @@
+@@ -5288,7 +5438,7 @@
      do_not_enter: bool,
      /// Pending calls for this instance which require `Self::backpressure` to be
      /// `true` and/or `Self::do_not_enter` to be false before they can proceed.
@@ -895,7 +1003,7 @@
  }
  
  impl ConcurrentInstanceState {
-@@ -5354,6 +5463,7 @@
+@@ -5354,6 +5504,7 @@
  
  /// Represents the Component Model Async state of a store.
  pub struct ConcurrentState {
@@ -903,7 +1011,7 @@
      /// The currently running thread, if any.
      ///
      /// Note that we lazily materialize threads on-demand and this field is not
-@@ -5365,13 +5475,13 @@
+@@ -5365,13 +5516,13 @@
      ///
      /// See `ComponentInstance::poll_until` for where we temporarily take this
      /// out, poll it, then put it back to avoid any mutable aliasing hazards.
@@ -920,7 +1028,7 @@
      /// A place to stash the reason a fiber is suspending so that the code which
      /// resumed it will know under what conditions the fiber should be resumed
      /// again.
-@@ -5426,12 +5536,20 @@
+@@ -5426,12 +5577,20 @@
  
  impl Default for ConcurrentState {
      fn default() -> Self {
@@ -944,7 +1052,7 @@
              suspend_reason: None,
              worker: None,
              worker_item: None,
-@@ -5463,12 +5581,12 @@
+@@ -5463,12 +5622,12 @@
      pub(crate) fn take_fibers_and_futures(
          &mut self,
          fibers: &mut Vec<StoreFiber<'static>>,
@@ -959,7 +1067,7 @@
                          fibers.push(fiber);
                      }
                  }
-@@ -5489,12 +5607,12 @@
+@@ -5489,12 +5648,12 @@
              WorkItem::ResumeFiber(fiber) => {
                  fibers.push(fiber);
              }
@@ -974,7 +1082,7 @@
              }
              WorkItem::ResumeThread(..) | WorkItem::GuestCall(..) | WorkItem::WorkerFunction(..) => {
              }
-@@ -5538,12 +5656,13 @@
+@@ -5538,12 +5697,13 @@
              interesting_tasks: _,
              interesting_tasks_empty_waker: _,
              ready_for_concurrent_call_waker: _,
@@ -989,7 +1097,7 @@
                          fiber.trace_gc_roots(modules, unwind, gc_roots_list);
                      }
                  }
-@@ -5564,7 +5683,7 @@
+@@ -5564,7 +5724,7 @@
              WorkItem::ResumeFiber(fiber) => {
                  fiber.trace_gc_roots(modules, unwind, gc_roots_list);
              }
@@ -998,7 +1106,7 @@
                  // TODO(cm-gc): once futures can contain GC roots, we will need
                  // to trace them.
              }
-@@ -5572,12 +5691,8 @@
+@@ -5572,12 +5732,8 @@
              }
          };
  
@@ -1013,7 +1121,7 @@
      }
  
      fn push<V: Send + Sync + 'static>(
-@@ -5615,31 +5730,65 @@
+@@ -5615,31 +5771,65 @@
          self.table.get_mut().delete(Resource::from(id))
      }
  
@@ -1094,7 +1202,7 @@
          }
      }
  
-@@ -5672,13 +5821,16 @@
+@@ -5672,13 +5862,16 @@
          // we don't need to promote anything, but we return true to indicate that
          // work is pending for the current instance.
          if self.high_priority.iter().any(&mut predicate) {
@@ -1115,7 +1223,7 @@
              true
          } else {
              false
-@@ -5714,7 +5866,7 @@
+@@ -5714,7 +5907,7 @@
          }
      }
  
@@ -4788,6 +4896,401 @@
 +        assert!(!probe.owner_dropped.load(Ordering::SeqCst));
 +        assert_eq!(probe.live.load(Ordering::SeqCst), 1);
 +        assert_eq!(probe.requests.load(Ordering::SeqCst), 1);
++    }
++}
+--- /dev/null
++++ b/src/runtime/component/concurrent/sync_result.rs
+@@ -0,0 +1,392 @@
++//! Same-budget ownership of only the sync-lowered host result Box.
++//!
++//! The reservation precedes the user poll. Its original owner then moves into
++//! CalleeFinished, independently of the completed outer future's lifetime.
++use super::LiftedResult;
++use crate::runtime::native_memory::{self, Memory};
++use crate::{NativeAllocation, Result};
++use alloc::alloc::dealloc;
++use alloc::boxed::Box;
++use core::alloc::Layout;
++use core::marker::PhantomData;
++use core::mem::ManuallyDrop;
++use core::ptr;
++
++pub(super) struct PreparedSyncResult<R> {
++    allocation: Option<Box<dyn NativeAllocation>>,
++    _result: PhantomData<fn() -> R>,
++}
++impl<R: Send + Sync + 'static> PreparedSyncResult<R> {
++    pub(super) fn new(memory: &Memory) -> Result<Self> {
++        Ok(Self {
++            allocation: native_memory::reserve(memory, Layout::new::<R>().size())?,
++            _result: PhantomData,
++        })
++    }
++
++    pub(super) fn finish(self, value: R) -> SyncResult {
++        // Coercion erases this SAME Box; it creates no other allocation.
++        let value: LiftedResult = Box::new(value);
++        let Some(allocation) = self.allocation else {
++            return SyncResult::legacy(value);
++        };
++        let mut owned = AccountedResult {
++            value: ManuallyDrop::new(value),
++            allocation: ManuallyDrop::new(allocation),
++        };
++        // Install actual Box cleanup before confirmation can unwind.
++        owned.allocation.allocated();
++        SyncResult(Kind::Accounted(owned))
++    }
++}
++
++pub(super) struct SyncResult(Kind);
++enum Kind {
++    Legacy(LiftedResult),
++    Accounted(AccountedResult),
++}
++struct AccountedResult {
++    value: ManuallyDrop<LiftedResult>,
++    allocation: ManuallyDrop<Box<dyn NativeAllocation>>,
++}
++impl SyncResult {
++    pub(super) fn legacy(value: LiftedResult) -> Self {
++        Self(Kind::Legacy(value))
++    }
++
++    pub(super) fn into_value<R: Send + Sync + 'static>(self) -> core::result::Result<R, Self> {
++        match self.0 {
++            Kind::Legacy(value) => match value.downcast::<R>() {
++                Ok(value) => Ok(*value),
++                Err(value) => Err(Self::legacy(value)),
++            },
++            Kind::Accounted(owned) => owned
++                .into_value::<R>()
++                .map_err(|owned| Self(Kind::Accounted(owned))),
++        }
++    }
++}
++impl AccountedResult {
++    fn into_value<R: Send + Sync + 'static>(self) -> core::result::Result<R, Self> {
++        // A wrong type retains the complete original erased Box/guard pair.
++        if !self.value.is::<R>() {
++            return Err(self);
++        }
++        let mut owned = ManuallyDrop::new(self);
++        // SAFETY: the only private owner is consumed; take this field once and
++        // suppress AccountedResult::drop until either rebuilding or deallocation.
++        let value = unsafe { ManuallyDrop::take(&mut owned.value) };
++        let value = match value.downcast::<R>() {
++            Ok(value) => value,
++            Err(value) => {
++                // Keep even this unexpected safe-downcast failure conservative.
++                // SAFETY: its unchanged guard has not been taken or dropped.
++                let allocation = unsafe { ManuallyDrop::take(&mut owned.allocation) };
++                return Err(Self {
++                    value: ManuallyDrop::new(value),
++                    allocation: ManuallyDrop::new(allocation),
++                });
++            }
++        };
++        let raw = Box::into_raw(value);
++        let layout = Layout::new::<R>();
++        // SAFETY: exact successful downcast of our sole fresh default-global
++        // Box<R>. into_raw returns its initialized, nonnull, aligned pointer.
++        // read moves R without running its destructor or retaining old ownership.
++        // The matching nonzero global allocation is then destroyed exactly once;
++        // no raw pointer escapes, and no access to old storage follows dealloc.
++        let value = unsafe {
++            let value = ptr::read(raw);
++            if layout.size() != 0 {
++                dealloc(raw.cast::<u8>(), layout);
++            }
++            value
++        };
++        // SAFETY: the SAME original guard remains initialized and alive through
++        // the explicit deallocation above. Drop once, before returning live R.
++        unsafe { ManuallyDrop::drop(&mut owned.allocation) };
++        Ok(value)
++    }
++}
++impl Drop for AccountedResult {
++    fn drop(&mut self) {
++        // SAFETY: each private field is destroyed once. Erased Box destruction
++        // drops actual R and deallocates its backing BEFORE guard refund. If R
++        // destruction unwinds, ManuallyDrop deliberately retains the guard.
++        unsafe {
++            ManuallyDrop::drop(&mut self.value);
++            ManuallyDrop::drop(&mut self.allocation);
++        }
++    }
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++    use alloc::format;
++    use alloc::sync::Arc;
++    use core::sync::atomic::{AtomicUsize, Ordering};
++    use std::panic::{AssertUnwindSafe, catch_unwind};
++
++    struct Probe {
++        expected: usize,
++        requests: AtomicUsize,
++        live: AtomicUsize,
++        confirmations: AtomicUsize,
++        owners_dropped: AtomicUsize,
++        factories_dropped: AtomicUsize,
++        created: AtomicUsize,
++        values_dropped: AtomicUsize,
++        events: AtomicUsize,
++        value_event: AtomicUsize,
++        owner_event: AtomicUsize,
++    }
++    impl Probe {
++        fn new(expected: usize) -> Arc<Self> {
++            Arc::new(Self {
++                expected,
++                requests: AtomicUsize::new(0),
++                live: AtomicUsize::new(0),
++                confirmations: AtomicUsize::new(0),
++                owners_dropped: AtomicUsize::new(0),
++                factories_dropped: AtomicUsize::new(0),
++                created: AtomicUsize::new(0),
++                values_dropped: AtomicUsize::new(0),
++                events: AtomicUsize::new(0),
++                value_event: AtomicUsize::new(0),
++                owner_event: AtomicUsize::new(0),
++            })
++        }
++    }
++    struct Owner {
++        probe: Arc<Probe>,
++        panic_confirmation: bool,
++    }
++    impl NativeAllocation for Owner {
++        fn allocated(&mut self) {
++            self.probe.confirmations.fetch_add(1, Ordering::SeqCst);
++            assert!(!self.panic_confirmation, "sync-result-confirmation-control");
++        }
++    }
++    impl Drop for Owner {
++        fn drop(&mut self) {
++            self.probe.owner_event.store(
++                self.probe.events.fetch_add(1, Ordering::SeqCst) + 1,
++                Ordering::SeqCst,
++            );
++            assert_eq!(self.probe.live.fetch_sub(1, Ordering::SeqCst), 1);
++            assert_eq!(self.probe.owners_dropped.fetch_add(1, Ordering::SeqCst), 0);
++        }
++    }
++    struct Factory {
++        probe: Arc<Probe>,
++        refuse: bool,
++        panic_confirmation: bool,
++    }
++    impl crate::NativeMemory for Factory {
++        fn reserve(&self, bytes: usize) -> Result<Box<dyn NativeAllocation>> {
++            assert_eq!(bytes, self.probe.expected);
++            self.probe.requests.fetch_add(1, Ordering::SeqCst);
++            if self.refuse {
++                crate::bail!("original-sync-result-refusal-control");
++            }
++            assert_eq!(self.probe.live.fetch_add(1, Ordering::SeqCst), 0);
++            Ok(Box::new(Owner {
++                probe: self.probe.clone(),
++                panic_confirmation: self.panic_confirmation,
++            }))
++        }
++    }
++    impl Drop for Factory {
++        fn drop(&mut self) {
++            self.probe.factories_dropped.fetch_add(1, Ordering::SeqCst);
++        }
++    }
++    fn memory(probe: &Arc<Probe>, refuse: bool, panic_confirmation: bool) -> Memory {
++        Some(Arc::new(Factory {
++            probe: probe.clone(),
++            refuse,
++            panic_confirmation,
++        }))
++    }
++
++    #[repr(align(128))]
++    struct Value {
++        probe: Arc<Probe>,
++        number: u32,
++        panic_drop: bool,
++    }
++    impl Value {
++        fn new(probe: &Arc<Probe>, panic_drop: bool) -> Self {
++            probe.created.fetch_add(1, Ordering::SeqCst);
++            Self {
++                probe: probe.clone(),
++                number: 42,
++                panic_drop,
++            }
++        }
++    }
++    impl Drop for Value {
++        fn drop(&mut self) {
++            self.probe.value_event.store(
++                self.probe.events.fetch_add(1, Ordering::SeqCst) + 1,
++                Ordering::SeqCst,
++            );
++            assert_eq!(self.probe.values_dropped.fetch_add(1, Ordering::SeqCst), 0);
++            assert!(!self.panic_drop, "sync-result-destructor-control");
++        }
++    }
++    fn extract<R: Send + Sync + 'static>(value: SyncResult) -> R {
++        match value.into_value::<R>() {
++            Ok(value) => value,
++            Err(_) => panic!("actual result type mismatch"),
++        }
++    }
++
++    #[test]
++    fn sync_result_refuses_before_value_and_unbuilt_reservation_refunds() {
++        let probe = Probe::new(Layout::new::<Value>().size());
++        let refused = PreparedSyncResult::<Value>::new(&memory(&probe, true, false));
++        let error = refused.err().expect("original refusal");
++        assert!(format!("{error:#}").contains("original-sync-result-refusal-control"));
++        assert_eq!(probe.requests.load(Ordering::SeqCst), 1);
++        assert_eq!(probe.created.load(Ordering::SeqCst), 0);
++        assert_eq!(probe.live.load(Ordering::SeqCst), 0);
++        assert_eq!(probe.confirmations.load(Ordering::SeqCst), 0);
++
++        let probe = Probe::new(Layout::new::<Value>().size());
++        let source = memory(&probe, false, false);
++        let prepared = PreparedSyncResult::<Value>::new(&source).unwrap();
++        drop(source);
++        assert_eq!(probe.factories_dropped.load(Ordering::SeqCst), 1);
++        assert_eq!(probe.live.load(Ordering::SeqCst), 1);
++        drop(prepared);
++        assert_eq!(probe.created.load(Ordering::SeqCst), 0);
++        assert_eq!(probe.confirmations.load(Ordering::SeqCst), 0);
++        assert_eq!(probe.owners_dropped.load(Ordering::SeqCst), 1);
++        assert_eq!(probe.live.load(Ordering::SeqCst), 0);
++    }
++
++    #[test]
++    fn sync_result_overaligned_move_out_refunds_before_returned_value_drop() {
++        let probe = Probe::new(Layout::new::<Value>().size());
++        let prepared = PreparedSyncResult::<Value>::new(&memory(&probe, false, false)).unwrap();
++        assert_eq!(probe.factories_dropped.load(Ordering::SeqCst), 1);
++        let owned = prepared.finish(Value::new(&probe, false));
++        match &owned.0 {
++            Kind::Accounted(value) => {
++                let pointer =
++                    value.value.as_ref() as *const (dyn core::any::Any + Send + Sync) as *const ();
++                assert_eq!((pointer as usize) % Layout::new::<Value>().align(), 0);
++            }
++            Kind::Legacy(_) => panic!("paid nonzero result expected"),
++        }
++        assert_eq!(probe.live.load(Ordering::SeqCst), 1);
++        let value = extract::<Value>(owned);
++        assert_eq!(value.number, 42);
++        assert_eq!(probe.confirmations.load(Ordering::SeqCst), 1);
++        assert_eq!(probe.owners_dropped.load(Ordering::SeqCst), 1);
++        assert_eq!(probe.live.load(Ordering::SeqCst), 0);
++        assert_eq!(probe.values_dropped.load(Ordering::SeqCst), 0);
++        drop(value);
++        assert_eq!(probe.values_dropped.load(Ordering::SeqCst), 1);
++        assert!(
++            probe.owner_event.load(Ordering::SeqCst) < probe.value_event.load(Ordering::SeqCst)
++        );
++    }
++
++    #[test]
++    fn sync_result_wrong_type_preserves_envelope_and_abandon_drops_value_before_owner() {
++        let probe = Probe::new(Layout::new::<Value>().size());
++        let result = PreparedSyncResult::<Value>::new(&memory(&probe, false, false))
++            .unwrap()
++            .finish(Value::new(&probe, false));
++        let result = match result.into_value::<u64>() {
++            Err(result) => result,
++            Ok(_) => panic!("wrong downcast unexpectedly succeeded"),
++        };
++        assert_eq!(probe.live.load(Ordering::SeqCst), 1);
++        assert_eq!(probe.values_dropped.load(Ordering::SeqCst), 0);
++        assert_eq!(probe.owners_dropped.load(Ordering::SeqCst), 0);
++        drop(result);
++        assert_eq!(probe.live.load(Ordering::SeqCst), 0);
++        assert_eq!(probe.values_dropped.load(Ordering::SeqCst), 1);
++        assert_eq!(probe.owners_dropped.load(Ordering::SeqCst), 1);
++        assert!(
++            probe.value_event.load(Ordering::SeqCst) < probe.owner_event.load(Ordering::SeqCst)
++        );
++    }
++
++    #[test]
++    fn sync_result_confirmation_unwind_has_installed_physical_cleanup() {
++        let probe = Probe::new(Layout::new::<Value>().size());
++        let prepared = PreparedSyncResult::<Value>::new(&memory(&probe, false, true)).unwrap();
++        assert!(
++            catch_unwind(AssertUnwindSafe(
++                || prepared.finish(Value::new(&probe, false))
++            ))
++            .is_err()
++        );
++        assert_eq!(probe.confirmations.load(Ordering::SeqCst), 1);
++        assert_eq!(probe.values_dropped.load(Ordering::SeqCst), 1);
++        assert_eq!(probe.owners_dropped.load(Ordering::SeqCst), 1);
++        assert_eq!(probe.live.load(Ordering::SeqCst), 0);
++        assert!(
++            probe.value_event.load(Ordering::SeqCst) < probe.owner_event.load(Ordering::SeqCst)
++        );
++    }
++
++    #[test]
++    fn sync_result_destructor_unwind_retains_same_original_charge() {
++        let probe = Probe::new(Layout::new::<Value>().size());
++        let result = PreparedSyncResult::<Value>::new(&memory(&probe, false, false))
++            .unwrap()
++            .finish(Value::new(&probe, true));
++        assert!(catch_unwind(AssertUnwindSafe(|| drop(result))).is_err());
++        assert_eq!(probe.values_dropped.load(Ordering::SeqCst), 1);
++        assert_eq!(probe.owners_dropped.load(Ordering::SeqCst), 0);
++        assert_eq!(probe.live.load(Ordering::SeqCst), 1);
++        assert_eq!(probe.confirmations.load(Ordering::SeqCst), 1);
++    }
++
++    #[test]
++    fn sync_result_zst_and_none_keep_legacy_boxes_without_native_admission() {
++        static ZERO_DROPS: AtomicUsize = AtomicUsize::new(0);
++        #[repr(align(64))]
++        struct Zero;
++        impl Drop for Zero {
++            fn drop(&mut self) {
++                ZERO_DROPS.fetch_add(1, Ordering::SeqCst);
++            }
++        }
++        assert_eq!(Layout::new::<Zero>().size(), 0);
++        let probe = Probe::new(0);
++        let source = memory(&probe, false, false);
++        let prepared = PreparedSyncResult::<Zero>::new(&source).unwrap();
++        assert_eq!(probe.requests.load(Ordering::SeqCst), 0);
++        let result = prepared.finish(Zero);
++        assert!(matches!(&result.0, Kind::Legacy(_)));
++        let value = extract::<Zero>(result);
++        assert_eq!(ZERO_DROPS.load(Ordering::SeqCst), 0);
++        drop(value);
++        assert_eq!(ZERO_DROPS.load(Ordering::SeqCst), 1);
++        drop(
++            PreparedSyncResult::<Zero>::new(&source)
++                .unwrap()
++                .finish(Zero),
++        );
++        assert_eq!(ZERO_DROPS.load(Ordering::SeqCst), 2);
++        assert_eq!(probe.requests.load(Ordering::SeqCst), 0);
++        assert_eq!(probe.owners_dropped.load(Ordering::SeqCst), 0);
++
++        let probe = Probe::new(Layout::new::<Value>().size());
++        let result = PreparedSyncResult::<Value>::new(&None)
++            .unwrap()
++            .finish(Value::new(&probe, false));
++        assert!(matches!(&result.0, Kind::Legacy(_)));
++        assert_eq!(extract::<Value>(result).number, 42);
++        assert_eq!(probe.requests.load(Ordering::SeqCst), 0);
++        assert_eq!(probe.values_dropped.load(Ordering::SeqCst), 1);
++        assert_eq!(probe.owners_dropped.load(Ordering::SeqCst), 0);
 +    }
 +}
 --- /dev/null

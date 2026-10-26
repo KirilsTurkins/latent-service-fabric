@@ -32,7 +32,7 @@ def qualify(output: Path) -> dict:
         "sourceDigest": digest(inventory(observed)), "execution": "actual-parser-c-abi-bindings-only", "cases": {}}
     try:
         for name, printed, version in (("wasm-tools", "wasm-tools", pins["contracts"]["wasm-tools"]),
-                                      ("wit-bindgen", "wit-bindgen-cli", pins["rust"]["dependencies"]["wit-bindgen"])):
+                                      ("wit-bindgen", "wit-bindgen-cli", pins["contracts"]["wit-bindgen-cli"])):
             value = run_bounded_result([name, "--version"], cwd=ROOT, env=environment,
                 timeout_seconds=10, max_output_bytes=4096)
             if value.returncode != 0 or value.stdout.decode().split()[:2] != [printed, version]:

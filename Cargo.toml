@@ -95,7 +95,7 @@ tracing-subscriber = "=0.3.23"
 wasm-encoder = "=0.261.0"
 wasmparser = "=0.261.0"
 wasmtime = { path = "crates/vendor/wasmtime", version = "=48.0.7", default-features = false, features = ["component-model", "component-model-async", "cranelift", "pooling-allocator", "runtime", "std", "wit-parser"] }
-wit-bindgen = "=0.62.0"
+wit-bindgen = "=0.63.0"
 
 [patch.crates-io]
 bytes = { path = "crates/vendor/bytes" }

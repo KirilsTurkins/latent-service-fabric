@@ -629,7 +629,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 write_json(output / "cargo-inputs.json", cargo_inputs)
             stage = "bindings"
             version = commands.run("bindgen-version", paths["wit-bindgen"], "--version").decode().strip().split()
-            if version != ["wit-bindgen-cli", pins["toolchain"]["rust"]["dependencies"]["wit-bindgen"]]:
+            if version != ["wit-bindgen-cli", pins["toolchain"]["contracts"]["wit-bindgen-cli"]]:
                 raise ValueError("wit-bindgen CLI does not match the project pin")
             binding_digest = binding_check(work, pins, commands, paths["wit-bindgen"])
             stage = "compile"

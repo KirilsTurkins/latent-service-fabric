@@ -524,7 +524,7 @@ jobs:
       - name: Sign approved and undeclared Math.random components with the exact normal products
         run: python3 -B tools/qualify_typescript_standard_entropy.py --prepared-qualification "$RUNNER_TEMP/typescript-capsule-dependencies" --tools "$RUNNER_TEMP/typescript-guest-tools" --output "$RUNNER_TEMP/typescript-standard-entropy"
       - name: Freeze exact-source existing native products for signed Fetch
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: typescript-fetch-native-input-${{ github.sha }}
           path: |
@@ -654,17 +654,17 @@ jobs:
       - name: Check exact native metadata contention and cleanup before signed Fetch
         run: LSF_TYPESCRIPT_FRONTEND="$RUNNER_TEMP/typescript-signed-fetch-tools" python3 -m unittest tools.tests.test_typescript_native_task_meta -v
       - name: Read the existing native qualification from this exact run
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: typescript-fetch-native-input-${{ github.sha }}
           path: ${{ runner.temp }}/typescript-signed-fetch-native
       - name: Read the source compiler from this exact run
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: typescript-source-splicer-input-${{ github.sha }}
           path: ${{ runner.temp }}/typescript-signed-fetch-splicer
       - name: Read the actual import engine from this exact run
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: typescript-fetch-engine-input-${{ github.sha }}
           path: ${{ runner.temp }}/typescript-signed-fetch-engine
@@ -672,7 +672,7 @@ jobs:
         run: python3 tools/qualify_typescript_fetch_runtime.py --tools "$RUNNER_TEMP/typescript-signed-fetch-tools" --engine "$RUNNER_TEMP/typescript-signed-fetch-engine" --splicer "$RUNNER_TEMP/typescript-signed-fetch-splicer" --prepared-qualification "$RUNNER_TEMP/typescript-signed-fetch-native" --output "$RUNNER_TEMP/typescript-signed-fetch"
       - name: Retain finite signed Fetch attempts and exact input identities
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: typescript-signed-fetch-${{ github.sha }}
           path: |
@@ -725,14 +725,14 @@ jobs:
           sudo apt-get install --yes bubblewrap
           sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
       - name: Read the original failed component and bounded build documents
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: typescript-signed-fetch-ba62bf8f266e589971a03e496b18b8f2cb5e5d85
           run-id: 39247171188
           github-token: ${{ github.token }}
           path: ${{ runner.temp }}/typescript-original-fetch
       - name: Read the original exact-source native products
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: typescript-fetch-native-input-ba62bf8f266e589971a03e496b18b8f2cb5e5d85
           run-id: 39247171188
@@ -744,7 +744,7 @@ jobs:
           python3 -B "$RUNNER_TEMP/diagnose-typescript-fetch.py" --attempt "$RUNNER_TEMP/typescript-original-fetch" --native "$RUNNER_TEMP/typescript-original-native" --output "$RUNNER_TEMP/typescript-fetch-frames"
       - name: Retain only closed observations and original public CLI rows
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: typescript-fetch-private-frames-${{ github.sha }}
           path: |
@@ -796,21 +796,21 @@ jobs:
       - name: Install the original locked compiler namespace
         run: python3 tools/typescript_capsule.py install-tools "$RUNNER_TEMP/typescript-boundary-tools"
       - name: Read the authenticated original native products
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: typescript-fetch-native-input-ba62bf8f266e589971a03e496b18b8f2cb5e5d85
           run-id: 39247171188
           github-token: ${{ github.token }}
           path: ${{ runner.temp }}/typescript-boundary-native
       - name: Read the authenticated original source-owned engine
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: typescript-fetch-engine-input-ba62bf8f266e589971a03e496b18b8f2cb5e5d85
           run-id: 39247171188
           github-token: ${{ github.token }}
           path: ${{ runner.temp }}/typescript-boundary-engine
       - name: Read the authenticated original source compiler
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: typescript-source-splicer-input-ba62bf8f266e589971a03e496b18b8f2cb5e5d85
           run-id: 39247171188
@@ -820,7 +820,7 @@ jobs:
         run: python3 -B "$RUNNER_TEMP/diagnose-typescript-boundaries.py" --probes "$RUNNER_TEMP/typescript-boundary-probes" --native "$RUNNER_TEMP/typescript-boundary-native" --engine "$RUNNER_TEMP/typescript-boundary-engine" --splicer "$RUNNER_TEMP/typescript-boundary-splicer" --tools "$RUNNER_TEMP/typescript-boundary-tools" --output "$RUNNER_TEMP/typescript-fetch-boundaries"
       - name: Retain closed same-SDK observations and actual application build evidence
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: typescript-fetch-boundaries-${{ github.sha }}
           path: |

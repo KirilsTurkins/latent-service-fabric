@@ -246,6 +246,50 @@ replayed. This unsigned native result leaves Legacy future/stream Boxes, other
 collections and transitive backing open; it does not close #736 or establish
 an allocator/RSS ceiling.
 
+## Owned concurrent outer and sync-result backing
+
+[The v16 evidence](evidence/canonical-outer-sync-result-native-2026-10-26.json)
+keeps two source-bound results separate. The first attempt at `405c2e4`
+([run 40305108367](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40305108367))
+passed six new private controls and three actual host controls, then **failed**
+the callback-error physical-peak oracle. Its final source-after checks were not
+reached. Those nine raw passes remain historical; the failed run is preserved.
+
+The separate completion at `8f7498b7a7c101a4ec992b5482ea1dd9b43bc067`
+([run 40309368682](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40309368682))
+passed only the four remaining actual cases: corrected callback error, ordinary
+None embedding, Accessor spawn and typed result-refusal/fresh Store. It used one
+locked root host target, ten zero-exit commands and four exact no-skip outcomes.
+The two artifacts retain 41 and 23 members respectively. The initial source
+snapshots each bind 8,933 rows; only the completion reached before/after source
+equality. All 274 vendor rows and the source-reader/production/component pins
+are identical across attempts. This is thirteen distinct passed control IDs
+across two sources, **not** a newly executed thirteen-control programme.
+
+Both outer Future Boxes are admitted through the original NativeMemory before
+polling. The sync-lowered result has its own affine guard in CalleeFinished,
+so outer completion or a set-event error cannot refund a still-live result Box.
+Exact downcast, raw move and matching nonzero Global deallocation precede the
+same original guard's refund. Wrong type retains its envelope; destructor unwind
+retains the charge conservatively. ZST and ordinary None keep their original
+physical routes. Inline HostTask/outer metadata may enlarge and is not all
+claimed paid by this slice; transitive R buffers remain outside its Box charge.
+
+The corrected test distinguishes reserved capacity from confirmed physical
+usage. On input Err, result backing was never allocated, while its real boxed
+owner's 256-byte escrow existed. The test asserts the actual `(u32,)` or
+`Vec<Val>` layout before excluding **only that unallocated backing** from the
+peak lower bound; all eight admissions, original error, Gate poll and final-zero
+assertions remain. Pending and late-waker/foreign-Store controls passed in the
+first attempt and were not replayed. Original 1 MiB/one-billion-fuel/five-second
+host grants and job/command/cleanup bounds remain unchanged.
+
+Subsequent current-main dependency/action/metadata composition does not retag
+these outcomes or their executed lock/source identities. The earlier v15 result
+also remains historical. This unsigned native slice leaves remaining stream
+Boxes, collections, transitive/inline metadata, stack/GC/lowering and full
+allocator/RSS/cost ownership open; it does not close #736 or #745.
+
 ## Scope retained outside this slice
 
 Initial linear-memory success/failure notifications, direct Core HostFunc construction, shared

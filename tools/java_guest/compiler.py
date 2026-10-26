@@ -188,7 +188,7 @@ class Compiler:
         for name, selected, version in [
             ("java", "java", config["sdk"]["java"]), ("gradle", gradle, config["sdk"]["gradle"]),
             ("clang", str(self.wasi_sdk / clang_path), clang_version),
-            ("wit-bindgen", "wit-bindgen", config["rust"]["dependencies"]["wit-bindgen"]),
+            ("wit-bindgen", "wit-bindgen", config["contracts"]["wit-bindgen-cli"]),
             ("wasm-tools", "wasm-tools", config["contracts"]["wasm-tools"]),
         ]:
             located = shutil.which(selected, path=self.environment.get("PATH"))

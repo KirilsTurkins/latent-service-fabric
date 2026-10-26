@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_node_worker_stacks.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve exact same worker stack semantics and registry closure after resolved Tokio security patch 1.53.3; update only fixed manifest and reference-lock identity",
+  "reviewReason": "Review the libc 0.2.191 reference-lock identity; preserve exact dependency closure and every existing qualification case.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "80b84d980579f4199ca2b2500f57d418e07bc5260706982725341f39f5276d6b"
+  "sha256": "a5415c86defd1bdd73866c6e4b3626de495d0d621a6564a49b4d34ba8ddcdfb1"
 }
