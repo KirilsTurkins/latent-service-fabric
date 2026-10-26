@@ -74,9 +74,9 @@ poison:
     return -EIO;
 }
 
-static_assert(LSF_STREAM_CLASSDIR_NODE == LSF_DEVICE_STREAM_CLASSDIR_NODE);
-static_assert(LSF_STREAM_CLASSDIR_NAME == LSF_DEVICE_STREAM_CLASSDIR_NAME);
-static_assert(LSF_STREAM_CLASSDIR_IDR == LSF_DEVICE_STREAM_CLASSDIR_IDR);
+static_assert((unsigned int)LSF_STREAM_CLASSDIR_NODE == (unsigned int)LSF_DEVICE_STREAM_CLASSDIR_NODE);
+static_assert((unsigned int)LSF_STREAM_CLASSDIR_NAME == (unsigned int)LSF_DEVICE_STREAM_CLASSDIR_NAME);
+static_assert((unsigned int)LSF_STREAM_CLASSDIR_IDR == (unsigned int)LSF_DEVICE_STREAM_CLASSDIR_IDR);
 
 static void lsf_stream_classdir_unknown_locked(void)
 {

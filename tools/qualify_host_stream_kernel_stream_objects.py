@@ -37,8 +37,8 @@ REGISTRATION_SOURCE_PATHS = tuple(sorted((*CLASSDIR_SOURCE_PATHS,
     'research/standard-outbound/linux-6.12-lineage/factory-stream-classdir-registration.c',
     'research/standard-outbound/linux-6.12-lineage/stream-classdir-registration-private.h',
 )))
-REGISTRATION_SOURCE_SHA = 'c18734a80e471d1f7933193798feff4c8d746e7b9a701bec3595c3b65d3616eb'
-REGISTRATION_SOURCE_BYTES = 415571
+REGISTRATION_SOURCE_SHA = '6784ec02a37b8c845edaab608f086ac7950ffb9e8afd5de36ce54fc2e90a8fdd'
+REGISTRATION_SOURCE_BYTES = 415655
 REGISTRATION_BRANCH = 'test/sdk-738-classdir-kernfs-objects-20261026'
 REGISTRATION_TARGETS = ('net/factory.o','drivers/base/core.o','lib/kobject.o',
     'fs/sysfs/dir.o','fs/kernfs/dir.o','lib/idr.o','lib/radix-tree.o',
