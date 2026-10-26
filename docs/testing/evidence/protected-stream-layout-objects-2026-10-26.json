@@ -1,0 +1,721 @@
+{
+  "schemaVersion": "lsf.protected-stream-layout-objects-evidence.v1",
+  "date": "2026-10-26",
+  "scope": "dated eleven-object compile and readonly layout measurement; unselected provider; not useful fit",
+  "source": {
+    "commit": "85c56752e8b766aab8ad0e1f5f5670925201ff2e",
+    "tree": "0312de5239ac8147f955abfab82ca37b14848cb5",
+    "parent": "80fb2d224a4446c744d8fd415fc617ffc4978359",
+    "branch": "test/sdk-738-netdev-layout-objects-20261026",
+    "pr": 1518,
+    "mergedAs": "4e0b9f04d403dc1a0caef253c5c8c8f2af62ae8d",
+    "mergedTree": "ed4471a44c37b453e6e9eaddb3e45ce734643d22",
+    "laterCommitsDoNotRetagExecutedSource": true
+  },
+  "owning": {
+    "workflow": ".github/workflows/stream-provider-objects.yml",
+    "event": "push",
+    "run": 40391149294,
+    "job": 121812151475,
+    "url": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40391149294",
+    "conclusion": "success",
+    "artifact": {
+      "id": 12684261177,
+      "name": "protected-stream-classdir-objects-85c56752e8b766aab8ad0e1f5f5670925201ff2e",
+      "bytes": 1954503,
+      "sha256": "940b1af946887dcdf6f7f57040f44ce774b1df88d94b406c2c779331cd487d92",
+      "safeZipMembers": 77,
+      "admissionPayloads": 76,
+      "payloadBytes": 6531570
+    }
+  },
+  "configuration": {
+    "bytes": 143135,
+    "sha256": "0015c9ac3b9af98af1e4a0f88788321e96193ce6a387c5a6cec6eaa358cdc1d6"
+  },
+  "tools": {
+    "as": {
+      "bytes": 745768,
+      "invocationPath": "/usr/bin/as",
+      "resolvedPath": "/usr/bin/x86_64-linux-gnu-as",
+      "sha256": "21aff249b692b5c31a44007491f922dcb49f41323e362c57d2ada3f52eddb7f0"
+    },
+    "curl": {
+      "bytes": 297288,
+      "invocationPath": "/usr/bin/curl",
+      "resolvedPath": "/usr/bin/curl",
+      "sha256": "1ccbd3dae948374ba8eef1ebda26c64b783ede50b463196e53666e0880bdac60"
+    },
+    "gcc": {
+      "bytes": 1023032,
+      "invocationPath": "/usr/bin/gcc",
+      "resolvedPath": "/usr/bin/x86_64-linux-gnu-gcc-13",
+      "sha256": "1b99826121ae6682a634e5efe09bd3e3df58ce58e0b28f849114ab5b89139c26"
+    },
+    "ld": {
+      "bytes": 1359128,
+      "invocationPath": "/usr/bin/ld",
+      "resolvedPath": "/usr/bin/x86_64-linux-gnu-ld.bfd",
+      "sha256": "e9ceb054c12207970f2726dfc07e9a66b411602748628baf27399f02a9bbb31b"
+    },
+    "make": {
+      "bytes": 259808,
+      "invocationPath": "/usr/bin/make",
+      "resolvedPath": "/usr/bin/make",
+      "sha256": "d78b8f1d099fbcfb6f2f49ab87223b9b68fb3956642f92d6ec6de812e8afa965"
+    },
+    "rustc": {
+      "bytes": 21113232,
+      "invocationPath": "/home/runner/.cargo/bin/rustc",
+      "resolvedPath": "/home/runner/.cargo/bin/rustup",
+      "sha256": "dda7234360b7f578ca8b0ddcb80145646fa61a67c1720a5abc7051b35c9fcb71"
+    },
+    "tar": {
+      "bytes": 440264,
+      "invocationPath": "/usr/bin/tar",
+      "resolvedPath": "/usr/bin/tar",
+      "sha256": "3ee2c3c0b4dd9aacebfd2f0fbae44bad36348203acff78a44888dd58c05f811c"
+    }
+  },
+  "toolVersionFirstLines": {
+    "as": "GNU assembler (GNU Binutils for Ubuntu) 2.42",
+    "gcc": "gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+    "ld": "GNU ld (GNU Binutils for Ubuntu) 2.42",
+    "make": "GNU Make 4.3",
+    "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)"
+  },
+  "bindings": {
+    "source59": {
+      "count": 59,
+      "bytes": 515419,
+      "canonical": {
+        "bytes": 9440,
+        "sha256": "3a978598c09bfdf44846bb8009345d2bf4a4d76799ac2b43c3bcfec5674d8d19"
+      },
+      "beforeEqualsAfter": true
+    },
+    "currentGitInputs": {
+      "count": 2790,
+      "canonical": {
+        "bytes": 384152,
+        "sha256": "f1dae8b09de2d18a431d48938ef173d019179244a72aab288aec250771d1c181"
+      },
+      "beforeEqualsAfter": true
+    },
+    "baseline": {
+      "commit": "013c3866942f1654b0effeebc93986b1c5268c2c",
+      "tree": "ee776dfd184e4f3128561ba5213f95988962c98e",
+      "count": 2725,
+      "canonical": {
+        "bytes": 373912,
+        "sha256": "2804d4ea947ccb2187096abbd35c93ae14d885aaa5f1745a04e649a034890505"
+      },
+      "beforeEqualsAfter": true
+    },
+    "derived375": {
+      "count": 375,
+      "canonical": {
+        "bytes": 45917,
+        "sha256": "177ea9d8a3e32ad77f5a081c82538bbcaaeccf957553e899986d9215889a04d7"
+      }
+    },
+    "descriptorSource": {
+      "bytes": 27719,
+      "sha256": "21fa6de11a8bd0f1288e885230ef349b3568ae0567238899147e11ba0c9c5da1"
+    },
+    "readonlyReport": {
+      "bytes": 21219,
+      "sha256": "fce3c93fff9819d7a003938f04090e5bad218c23a4971897abc67463c09b51f2"
+    }
+  },
+  "process": {
+    "commands": 28,
+    "rawChannels": 56,
+    "allZeroExit": true,
+    "allCompletedAndReaped": true,
+    "compileElapsedMillis": 13627.947016999997,
+    "maximumOwnerSeconds": 1320,
+    "maximumCompileSeconds": 1200,
+    "jobMinutes": 25,
+    "makeJobs": 2,
+    "maximumPublicUnionBytes": 134217728,
+    "maximumCombinedCommandBytes": 4194304,
+    "maximumAggregateLogBytes": 16777216,
+    "maximumObjectBytes": 16777216,
+    "maximumReportBytes": 65536,
+    "manualDispatches": 0,
+    "oldEighteenJob": {
+      "id": 121812154232,
+      "conclusion": "skipped"
+    },
+    "oldFourAndNineModesReplayed": false
+  },
+  "objectTargets": [
+    "drivers/net/virtio_net.o",
+    "drivers/virtio/virtio_ring.o",
+    "net/core/dev.o",
+    "net/factory.o",
+    "drivers/base/core.o",
+    "fs/kernfs/dir.o",
+    "security/selinux/hooks.o",
+    "drivers/virtio/virtio_pci_common.o",
+    "drivers/acpi/glue.o",
+    "drivers/base/swnode.o",
+    "drivers/usb/core/usb-acpi.o"
+  ],
+  "products": {
+    "drivers/acpi/glue.o": {
+      "bytes": 14816,
+      "sha256": "6ae477823c48313fe710858f8ebc6a2986dcb51a0e0bff6cf1850b4239fa7923"
+    },
+    "drivers/base/core.o": {
+      "bytes": 138504,
+      "sha256": "9b738edb5d6b2d4be468e9a812337a49b6f07a5a6cd6083b8809893adb2ce661"
+    },
+    "drivers/base/swnode.o": {
+      "bytes": 33104,
+      "sha256": "495e094b38066faac98250eb2619816aa03c4c0cd8a20167942da447fd73db1d"
+    },
+    "drivers/net/virtio_net.o": {
+      "bytes": 138496,
+      "sha256": "fe033a7d2b4d0ca5b3681046181aca2397a36e95ddb4a4cd1dc45b8f802a6afe"
+    },
+    "drivers/usb/core/usb-acpi.o": {
+      "bytes": 8552,
+      "sha256": "01f539d9c2511dbd442e2718c9c2e3a5f3d2b25016d75b92cc6ab13450af2f06"
+    },
+    "drivers/virtio/virtio_pci_common.o": {
+      "bytes": 22440,
+      "sha256": "633c5dc1fad34c06fe973eba51d2a5674f821235a4ff2c9b592e485ddb0fbe9f"
+    },
+    "drivers/virtio/virtio_ring.o": {
+      "bytes": 53352,
+      "sha256": "364f6e4bc616b4883f613139fd94fc1e73e440051dd5c2d6a3d9341bf371b509"
+    },
+    "fs/kernfs/dir.o": {
+      "bytes": 48648,
+      "sha256": "cc50076b4f45bcb28cefd1ba2232623c602bc40c8368d53349e77f2bcba47aa5"
+    },
+    "net/core/dev.o": {
+      "bytes": 326536,
+      "sha256": "024118fac9169be9e29b3e719cfca4d378e362cb296ff69268d87ebd86b67d84"
+    },
+    "net/factory.o": {
+      "bytes": 320800,
+      "sha256": "d20a7ff3e43af96634c2406f8d96c4b46b7311d5a81b7793126df4da1e49092e"
+    },
+    "security/selinux/hooks.o": {
+      "bytes": 176888,
+      "sha256": "6eb762a7b0fcfe9a1dbfe2d0f365cf61aaaee05d1c6490867e553d297e99e2e3"
+    }
+  },
+  "layout": {
+    "dataProducers": 8,
+    "fieldCount": 93,
+    "measuredFields": {
+      "drivers/base/core.c": {
+        "class_dir": {
+          "alignment": 8,
+          "value": 72
+        },
+        "device.private": {
+          "alignment": 8,
+          "value": 216
+        },
+        "device.public": {
+          "alignment": 8,
+          "value": 744
+        }
+      },
+      "drivers/net/virtio_net.c": {
+        "cache.bytes": {
+          "value": 64
+        },
+        "netdev.base": {
+          "alignment": 64,
+          "value": 2432
+        },
+        "netdev.main": {
+          "alignment": 64,
+          "value": 2872
+        },
+        "netdev.priv_element": {
+          "value": 1
+        },
+        "netdev.priv_offset": {
+          "value": 2432
+        },
+        "page.bytes": {
+          "value": 4096
+        },
+        "rss": {
+          "alignment": 4,
+          "value": 10
+        },
+        "rx.descriptors": {
+          "value": 32
+        },
+        "rx.good_packet": {
+          "value": 1518
+        },
+        "rx.head": {
+          "alignment": 64,
+          "value": 1920
+        },
+        "rx.header": {
+          "alignment": 8,
+          "value": 232
+        },
+        "rx.pad": {
+          "value": 64
+        },
+        "rx.queue": {
+          "alignment": 64,
+          "value": 1600
+        },
+        "skb.max_frags": {
+          "value": 17
+        },
+        "skb.shared_info": {
+          "alignment": 8,
+          "value": 320
+        },
+        "temporary.ctx": {
+          "alignment": 1,
+          "value": 2
+        },
+        "temporary.info": {
+          "alignment": 8,
+          "value": 48
+        },
+        "temporary.vqs": {
+          "alignment": 8,
+          "value": 16
+        },
+        "tx.descriptors": {
+          "value": 64
+        },
+        "tx.queue": {
+          "alignment": 8,
+          "value": 1128
+        },
+        "virtio.v1_header": {
+          "alignment": 2,
+          "value": 12
+        },
+        "virtnet.private": {
+          "alignment": 8,
+          "value": 440
+        }
+      },
+      "drivers/virtio/virtio_pci_common.c": {
+        "msix.cpumask_type": {
+          "alignment": 8,
+          "value": 8
+        },
+        "msix.mask_slot": {
+          "alignment": 8,
+          "value": 8
+        },
+        "msix.name_element": {
+          "alignment": 1,
+          "value": 256
+        },
+        "msix.offstack_enabled": {
+          "value": 0
+        },
+        "msix.optional_backing": {
+          "value": 0
+        },
+        "vp.private": {
+          "alignment": 8,
+          "value": 1112
+        },
+        "vp.vqs": {
+          "alignment": 8,
+          "value": 16
+        },
+        "vq.info": {
+          "alignment": 8,
+          "value": 32
+        }
+      },
+      "drivers/virtio/virtio_ring.c": {
+        "cache.bytes": {
+          "value": 64
+        },
+        "extra.rx": {
+          "alignment": 8,
+          "value": 512
+        },
+        "extra.tx": {
+          "alignment": 8,
+          "value": 1024
+        },
+        "extra.type": {
+          "alignment": 8,
+          "value": 16
+        },
+        "page.bytes": {
+          "value": 4096
+        },
+        "ring.rx": {
+          "alignment": 4096,
+          "value": 4096
+        },
+        "ring.tx": {
+          "alignment": 4096,
+          "value": 4096
+        },
+        "rx.descriptors": {
+          "value": 32
+        },
+        "state.rx": {
+          "alignment": 8,
+          "value": 512
+        },
+        "state.tx": {
+          "alignment": 8,
+          "value": 1024
+        },
+        "state.type": {
+          "alignment": 8,
+          "value": 16
+        },
+        "tx.descriptors": {
+          "value": 64
+        },
+        "virtqueue": {
+          "alignment": 8,
+          "value": 208
+        }
+      },
+      "fs/kernfs/dir.c": {
+        "kernfs.iattrs": {
+          "alignment": 8,
+          "value": 80
+        },
+        "kernfs.node": {
+          "alignment": 8,
+          "value": 136
+        },
+        "kernfs.root": {
+          "alignment": 8,
+          "value": 232
+        }
+      },
+      "net/core/dev.c": {
+        "netdev.base": {
+          "alignment": 64,
+          "value": 2432
+        },
+        "netdev.ethtool": {
+          "alignment": 8,
+          "value": 56
+        },
+        "netdev.flex_one": {
+          "value": 2433
+        },
+        "netdev.flex_zero": {
+          "value": 2432
+        },
+        "netdev.primary_name": {
+          "alignment": 8,
+          "value": 64
+        },
+        "netdev.priv_element": {
+          "value": 1
+        },
+        "netdev.priv_offset": {
+          "value": 2432
+        },
+        "netdev.rx": {
+          "alignment": 64,
+          "value": 192
+        },
+        "netdev.tx": {
+          "alignment": 64,
+          "value": 320
+        }
+      },
+      "net/factory.c": {
+        "application_contexts": {
+          "value": 4
+        },
+        "backing.bytes": {
+          "value": 524288
+        },
+        "bootstrap.ceiling": {
+          "value": 1048576
+        },
+        "cpu.storage": {
+          "alignment": 64,
+          "value": 2368
+        },
+        "cpus": {
+          "value": 64
+        },
+        "dns.bytes": {
+          "value": 65536
+        },
+        "file.public": {
+          "alignment": 8,
+          "value": 184
+        },
+        "global.factory": {
+          "value": 37592
+        },
+        "global.record": {
+          "value": 120
+        },
+        "global.records": {
+          "value": 30720
+        },
+        "global.retirement": {
+          "value": 80
+        },
+        "global.retirement_wait": {
+          "value": 24
+        },
+        "global.rx_pointer": {
+          "value": 8
+        },
+        "infra.bytes": {
+          "value": 196608
+        },
+        "infra.offset": {
+          "value": 327680
+        },
+        "inode.public": {
+          "alignment": 8,
+          "value": 592
+        },
+        "kernfs.public": {
+          "alignment": 8,
+          "value": 136
+        },
+        "kobject.public": {
+          "alignment": 8,
+          "value": 64
+        },
+        "name.ifsize": {
+          "value": 16
+        },
+        "name.netclass": {
+          "value": 4
+        },
+        "owners.count": {
+          "value": 64
+        },
+        "pci.type": {
+          "alignment": 8,
+          "value": 2096
+        },
+        "radix.node": {
+          "alignment": 8,
+          "value": 576
+        },
+        "records.count": {
+          "value": 256
+        },
+        "root.firmware": {
+          "alignment": 8,
+          "value": 128
+        },
+        "root.state": {
+          "alignment": 8,
+          "value": 312
+        },
+        "rx.head_descriptor": {
+          "alignment": 8,
+          "value": 48
+        },
+        "rx.header_descriptor": {
+          "alignment": 8,
+          "value": 40
+        },
+        "rx.state": {
+          "alignment": 8,
+          "value": 3320
+        },
+        "tcp.bytes": {
+          "value": 98304
+        },
+        "virtio.public": {
+          "alignment": 8,
+          "value": 816
+        }
+      },
+      "security/selinux/hooks.c": {
+        "selinux.file": {
+          "alignment": 4,
+          "value": 16
+        },
+        "selinux.inode": {
+          "alignment": 8,
+          "value": 40
+        },
+        "selinux.socket": {
+          "alignment": 8,
+          "value": 32
+        },
+        "selinux.task": {
+          "alignment": 4,
+          "value": 24
+        }
+      }
+    },
+    "tableBindings": {
+      "drivers/base/core.c": {
+        "object": {
+          "bytes": 138504,
+          "sha256": "9b738edb5d6b2d4be468e9a812337a49b6f07a5a6cd6083b8809893adb2ce661"
+        },
+        "section": {
+          "bytes": 128,
+          "flags": 2,
+          "name": ".rodata.lsf_stream_layout_5",
+          "sha256": "0006c191acbd2d178855c027faf190fb64f35a3e5ba58aed2cca25cc3b73039e"
+        },
+        "symbol": "lsf_stream_layout_5"
+      },
+      "drivers/net/virtio_net.c": {
+        "object": {
+          "bytes": 138496,
+          "sha256": "fe033a7d2b4d0ca5b3681046181aca2397a36e95ddb4a4cd1dc45b8f802a6afe"
+        },
+        "section": {
+          "bytes": 664,
+          "flags": 2,
+          "name": ".rodata.lsf_stream_layout_1",
+          "sha256": "d898ebcf5ca94f48434d6ea478972fe20cd8ec0c3e0577b4e2104e7cbe18face"
+        },
+        "symbol": "lsf_stream_layout_1"
+      },
+      "drivers/virtio/virtio_pci_common.c": {
+        "object": {
+          "bytes": 22440,
+          "sha256": "633c5dc1fad34c06fe973eba51d2a5674f821235a4ff2c9b592e485ddb0fbe9f"
+        },
+        "section": {
+          "bytes": 272,
+          "flags": 2,
+          "name": ".rodata.lsf_stream_layout_8",
+          "sha256": "e97cbe76f01da49236feba624bff00474cdc919a22369078f37e4a57cff09bf1"
+        },
+        "symbol": "lsf_stream_layout_8"
+      },
+      "drivers/virtio/virtio_ring.c": {
+        "object": {
+          "bytes": 53352,
+          "sha256": "364f6e4bc616b4883f613139fd94fc1e73e440051dd5c2d6a3d9341bf371b509"
+        },
+        "section": {
+          "bytes": 416,
+          "flags": 2,
+          "name": ".rodata.lsf_stream_layout_2",
+          "sha256": "ea424489833247af345d0f695468df9642a9374ea01c283c137870c1e1b9c80f"
+        },
+        "symbol": "lsf_stream_layout_2"
+      },
+      "fs/kernfs/dir.c": {
+        "object": {
+          "bytes": 48648,
+          "sha256": "cc50076b4f45bcb28cefd1ba2232623c602bc40c8368d53349e77f2bcba47aa5"
+        },
+        "section": {
+          "bytes": 128,
+          "flags": 2,
+          "name": ".rodata.lsf_stream_layout_6",
+          "sha256": "927cf8b492c10e8dce33f92d5ae91f5e3e31988f986bb1f71a05d6945f02a2d8"
+        },
+        "symbol": "lsf_stream_layout_6"
+      },
+      "net/core/dev.c": {
+        "object": {
+          "bytes": 326536,
+          "sha256": "024118fac9169be9e29b3e719cfca4d378e362cb296ff69268d87ebd86b67d84"
+        },
+        "section": {
+          "bytes": 288,
+          "flags": 2,
+          "name": ".rodata.lsf_stream_layout_3",
+          "sha256": "cf28543e196c6838a0eb53c9cf8921701654fa377cd7645519511130180b5e1e"
+        },
+        "symbol": "lsf_stream_layout_3"
+      },
+      "net/factory.c": {
+        "object": {
+          "bytes": 320800,
+          "sha256": "d20a7ff3e43af96634c2406f8d96c4b46b7311d5a81b7793126df4da1e49092e"
+        },
+        "section": {
+          "bytes": 880,
+          "flags": 2,
+          "name": ".rodata.lsf_stream_layout_4",
+          "sha256": "a209ffaa83468c2cad5fb428f65e6d1a6051f9741ce6ee80115667ab701e6d51"
+        },
+        "symbol": "lsf_stream_layout_4"
+      },
+      "security/selinux/hooks.c": {
+        "object": {
+          "bytes": 176888,
+          "sha256": "6eb762a7b0fcfe9a1dbfe2d0f365cf61aaaee05d1c6490867e553d297e99e2e3"
+        },
+        "section": {
+          "bytes": 160,
+          "flags": 2,
+          "name": ".rodata.lsf_stream_layout_7",
+          "sha256": "b7145b59153dd215c0409a8533a750e1c88fc0ed060ec40b2921cb69d4bc5a0a"
+        },
+        "symbol": "lsf_stream_layout_7"
+      }
+    },
+    "knownMinimum": {
+      "scope": "isolated original Root plus fixed75 RX births; not an actual live entry cursor",
+      "bytes": 89600,
+      "recordHighWater": 76,
+      "status": "insufficient-to-prove-fit",
+      "ledgerRows": 76,
+      "ledgerCanonical": {
+        "bytes": 13313,
+        "sha256": "82819add71e964f75e92acecd0170ede53184b4f0882368b056c6c37a77f92d2"
+      },
+      "differenceFromPartitionIsNotHeadroom": true
+    },
+    "actualPreRxEntryCursor": null,
+    "actualPreRxEntryOccupiedRecords": null,
+    "constructorDemandFacts": {
+      "mandatoryPriorBirthsAndCountsComplete": false,
+      "returnedTemporaryBirthsReusable": false,
+      "scope": "measured shapes are not invented birth multiplicities"
+    },
+    "uncovered": [
+      "IRQ action/descriptors/domains and actual MSIX retry multiplicities",
+      "AVC nodes/xperms/SID caches/audit and runtime LSM blob-offset totals when reached",
+      "dynamic device-name bitmap/caller strings until actual sites are source-bound",
+      "shared IDR growth/counts and global parent provenance",
+      "earlier NETDEV_POST_INIT retained writers/callback descendants",
+      "constructor/cleanup work/kthread/RCU/stack transient costs not measured by the selected fields",
+      "full TCP/TX/IPv6/UDP/DNS/labels/neighbour and close/failure/overlap graphs",
+      "actual prior observer/constructor occupancy before the RX reservation",
+      "source-complete actual order/multiplicity of the remaining PCI/virtio/NETDEV/security births"
+    ]
+  },
+  "claims": {
+    "compiledObjectsOnly": true,
+    "kernelLinked": false,
+    "imageBuilt": false,
+    "booted": false,
+    "normalOperationsExecuted": false,
+    "compiledUsefulFit": false,
+    "physicalRootRetirementQualified": false,
+    "consumerSelected": false,
+    "productionInstallation": false,
+    "whole738Complete": false,
+    "hermetic": false,
+    "compilerImplicitInputsAttested": false
+  },
+  "newerPostInitSourceWasNotCompiledByThisProgramme": true,
+  "scopeBoundary": "Original Root+75 RX minimum only; actual prior occupancy/constructor growth/registered callbacks/physical TCP operation remain separate source and runtime gates."
+}

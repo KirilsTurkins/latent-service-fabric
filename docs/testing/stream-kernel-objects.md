@@ -675,3 +675,33 @@ NETDEV files/groups/queues, inherited attrs/labels, shared-IDR retirement, usefu
 fit, actual kernel operations and node/provider/operator qualification remain
 open. The current 2,786-row input map is dated evidence, not a claim that later
 independent source composition has identical inputs.
+
+
+### Allocating-TU layout result — 2026-10-26
+
+The first [eleven-object layout programme](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40391149294)
+passed at source `85c56752e8b766aab8ad0e1f5f5670925201ff2e` (PR #1518).
+The [dated evidence](evidence/protected-stream-layout-objects-2026-10-26.json)
+binds the sole 1,954,503-byte artifact, all eleven ELF64 x86-64 relocatable objects,
+59 raw source files, 375 derived files, 2,790 current / 2,725 baseline Git inputs,
+28 zero-exit reaped commands and 56 raw channels. The older eighteen-object job
+and four/nine-object branches were skipped; this result does not replay or retag
+their historical receipts. Source composition merged as `4e0b9f04d403dc1a0caef253c5c8c8f2af62ae8d`;
+later source changes remain separately dated.
+
+Eight real allocating translation units emitted 93 fixed read-only facts under
+the unchanged `0015c9ac...` configuration. The bounded ELF reader independently
+binds their object/table identities without executing a product. The recomputed
+isolated Root-plus-75-RX minimum is **89,600 bytes / 76 births**. Its status is
+`insufficient-to-prove-fit`: 107,008 bytes / 180 records is only the numerical
+difference from the fixed infrastructure limits, **not available headroom**.
+Actual pre-RX cursor/occupied-record values remain unknown in this offline report.
+The real C allocator continues to check actual cursor, all nonempty records,
+padding and cumulative returned temporaries; no source-completeness bit is inferred.
+
+The programme keeps the existing 25-minute job, 1,320-second owner, 1,200-second
+`make -j2`, 128 MiB public union and 64 KiB report bounds. Full constructor/security/
+IRQ/shared-IDR/name/cleanup demand, later NETDEV effects, TCP/TX/DNS/IPv6/TLS,
+used-bank physical retirement and a current real-node standard-API vertical remain
+unqualified. No image, boot or network operation ran; the consumer remains NULL.
+The subsequent POST_INIT source draft was not compiled by this dated programme.

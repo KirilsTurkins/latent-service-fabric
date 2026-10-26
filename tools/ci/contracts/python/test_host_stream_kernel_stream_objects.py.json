@@ -1,9 +1,9 @@
 {
   "schemaVersion":"latent.ci.contracts.v2",
   "kind":"python",
-  "reviewReason":"Bind reviewed immutable58 notification sources plus readonly allocating-TU probe59/375/11 programme to unchanged process/public bounds; retain all earlier programmes and add only two synthetic/source controls. FULLREAD new helper setup AST; old test ASTs/skip policy exact, module setup hash only.",
+  "reviewReason":"Reviewed closed62-source/381-derived POST_INIT eight-object programme, exact bounded builtin preflight and unchanged process/public bounds; retain every previous programme and add only three source/owner controls.",
   "module":"tools/tests/test_host_stream_kernel_stream_objects.py",
-  "cases":["StreamObjectOwner.test_classdir_kernfs_freeze_binds_full_projector_and_keeps_historical_modes_closed","StreamObjectOwner.test_classdir_kernfs_public_gate_keeps_exact_nine_targets_and_current_only_channels","StreamObjectOwner.test_classdir_public_gate_refuses_other_original_object_targets","StreamObjectOwner.test_classdir_source_freeze_is_exact_and_preserves_default_source_scope","StreamObjectOwner.test_layout_elf_refuses_malformed_tables_and_reports_only_incomplete_lower_bound","StreamObjectOwner.test_layout_source_freeze_preserves_notify_and_all_prior_modes","StreamObjectOwner.test_netdev_directory_freeze_preserves_all_fifty_two_sources","StreamObjectOwner.test_netdev_directory_public_gate_is_closed_to_nine_changed_targets","StreamObjectOwner.test_object_gate_accepts_relocatable_without_claiming_link_and_refuses_executable","StreamObjectOwner.test_original_deadline_rejects_invalid_and_expired_start_before_work","StreamObjectOwner.test_public_gate_rejects_private_members_and_reserves_admission_bytes"],
+  "cases":["StreamObjectOwner.test_classdir_kernfs_freeze_binds_full_projector_and_keeps_historical_modes_closed","StreamObjectOwner.test_classdir_kernfs_public_gate_keeps_exact_nine_targets_and_current_only_channels","StreamObjectOwner.test_classdir_public_gate_refuses_other_original_object_targets","StreamObjectOwner.test_classdir_source_freeze_is_exact_and_preserves_default_source_scope","StreamObjectOwner.test_layout_elf_refuses_malformed_tables_and_reports_only_incomplete_lower_bound","StreamObjectOwner.test_layout_source_freeze_preserves_notify_and_all_prior_modes","StreamObjectOwner.test_netdev_directory_freeze_preserves_all_fifty_two_sources","StreamObjectOwner.test_netdev_directory_public_gate_is_closed_to_nine_changed_targets","StreamObjectOwner.test_object_gate_accepts_relocatable_without_claiming_link_and_refuses_executable","StreamObjectOwner.test_original_deadline_rejects_invalid_and_expired_start_before_work","StreamObjectOwner.test_post_init_instances_are_bound_before_next_and_both_chains_preflight","StreamObjectOwner.test_post_init_owner_keeps_exact_eight_targets_and_denies_size_probe_union","StreamObjectOwner.test_post_init_projection_keeps_whole_ordinary_body_and_original_unwind","StreamObjectOwner.test_public_gate_rejects_private_members_and_reserves_admission_bytes"],
   "guards":{
     "StreamObjectOwner.test_original_deadline_rejects_invalid_and_expired_start_before_work":
       "78b2aaa057bf3a8bca5bc7c6d1ae6ef015734ccd7a9cfef6436fc5251471cbb5",
@@ -26,6 +26,12 @@
     "StreamObjectOwner.test_layout_source_freeze_preserves_notify_and_all_prior_modes":
       "78b2aaa057bf3a8bca5bc7c6d1ae6ef015734ccd7a9cfef6436fc5251471cbb5",
     "StreamObjectOwner.test_layout_elf_refuses_malformed_tables_and_reports_only_incomplete_lower_bound":
+      "78b2aaa057bf3a8bca5bc7c6d1ae6ef015734ccd7a9cfef6436fc5251471cbb5",
+    "StreamObjectOwner.test_post_init_projection_keeps_whole_ordinary_body_and_original_unwind":
+      "78b2aaa057bf3a8bca5bc7c6d1ae6ef015734ccd7a9cfef6436fc5251471cbb5",
+    "StreamObjectOwner.test_post_init_instances_are_bound_before_next_and_both_chains_preflight":
+      "78b2aaa057bf3a8bca5bc7c6d1ae6ef015734ccd7a9cfef6436fc5251471cbb5",
+    "StreamObjectOwner.test_post_init_owner_keeps_exact_eight_targets_and_denies_size_probe_union":
       "78b2aaa057bf3a8bca5bc7c6d1ae6ef015734ccd7a9cfef6436fc5251471cbb5"
   },
   "guardDefinitions":{
