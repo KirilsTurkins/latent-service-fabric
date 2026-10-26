@@ -364,7 +364,8 @@ def transform(outputs, sources):
         and MATERIAL_HEADER not in outputs,
         'stream-rx-fixed-source-inputs')
     result = dict(outputs)
-    require(not set(PREIMAGES).intersection(result), 'stream-rx-fresh-driver-stage')
+    require(set(PREIMAGES).intersection(result) <= {'net/core/skbuff.c'},
+        'stream-rx-fresh-driver-stage')
     require('net/factory.c' in outputs and 'net/device-prepaid.h' in outputs
         and 'net/factory-device.c' in outputs,
         'stream-rx-original-factory-and-device-header-required')
@@ -480,5 +481,9 @@ def transform(outputs, sources):
         ('drivers/virtio/virtio_pci_modern.c', modern),
         ('drivers/virtio/virtio_pci_common.c', pci_common),
     ):
-        result[name] = project(sources[name])
+        if name == 'net/core/skbuff.c' and name in outputs:
+            from tools.host_stream_kernel_stream_skb import compose
+            result[name] = compose(sources[name], outputs[name])
+        else:
+            result[name] = project(sources[name])
     return result

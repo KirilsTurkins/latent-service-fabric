@@ -60,6 +60,8 @@ struct sk_buff;
 int lsf_factory_stream_rx_take(struct virtio_device *, unsigned long, void **);
 int lsf_factory_stream_rx_unposted(void *);
 int lsf_factory_stream_rx_header(void *, unsigned long, struct sk_buff **);
+enum { LSF_STREAM_SKB_HEAD, LSF_STREAM_SKB_HEADER };
+int lsf_factory_stream_rx_skb_kind(const void *, unsigned int);
 int lsf_factory_stream_rx_data_return(const void *);
 int lsf_factory_stream_rx_header_return(const void *);
 int lsf_factory_stream_ring_views(struct virtio_device *, unsigned int,

@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_host_stream_kernel_stream_objects.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Review unchanged compiler argv0 and canonical dispatch source identities for the fixed eighteen-object compile-only programme; strict config, source, deadlines and all false runtime gates preserved.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "2e3246e65c41be54fa669ac6772e74794c419b8d13e63ed4016890b7ddc5f06f"
+}

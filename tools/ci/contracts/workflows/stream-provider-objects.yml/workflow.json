@@ -1,0 +1,26 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "stream-provider-objects-${{ github.ref }}"
+    },
+    "name": "Protected stream normal C object check",
+    "on": {
+      "push": {
+        "branches": [
+          "test/sdk-738-stream-objects-20261026"
+        ]
+      }
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "normal-objects"
+  ],
+  "reviewReason": "Review one unselected normal C object programme for the exact provider source checkpoint and strict SKB composition: eighteen objects, original config and bounded owner; no image, boot, consumer activation, useful fit or runtime qualification.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/stream-provider-objects.yml"
+}
