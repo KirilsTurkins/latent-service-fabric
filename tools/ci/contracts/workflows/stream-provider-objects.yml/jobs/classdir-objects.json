@@ -3,7 +3,7 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "if": "github.ref == 'refs/heads/test/sdk-738-classdir-objects-20261026' || github.ref == 'refs/heads/test/sdk-738-classdir-kernfs-objects-20261026' || github.ref == 'refs/heads/test/sdk-738-netdev-directory-objects-20261026'",
+    "if": "github.ref == 'refs/heads/test/sdk-738-classdir-objects-20261026' || github.ref == 'refs/heads/test/sdk-738-classdir-kernfs-objects-20261026' || github.ref == 'refs/heads/test/sdk-738-netdev-directory-objects-20261026' || github.ref == 'refs/heads/test/sdk-738-netdev-layout-objects-20261026'",
     "name": "Changed class-directory translation units without image or boot",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -58,6 +58,16 @@
         "run": "python3 -B tools/qualify_host_stream_kernel_stream_objects.py --netdev-directory --source-commit \"${{ github.sha }}\" --started \"$STREAM_OBJECT_STARTED\" --output \"$RUNNER_TEMP/stream-provider-classdir-objects\""
       },
       {
+        "if": "github.ref == 'refs/heads/test/sdk-738-netdev-layout-objects-20261026'",
+        "name": "Check only two readonly layout source and ELF controls",
+        "run": "python3 -B -m unittest tools.tests.test_host_stream_kernel_stream_objects.StreamObjectOwner.test_layout_source_freeze_preserves_notify_and_all_prior_modes tools.tests.test_host_stream_kernel_stream_objects.StreamObjectOwner.test_layout_elf_refuses_malformed_tables_and_reports_only_incomplete_lower_bound -v"
+      },
+      {
+        "if": "github.ref == 'refs/heads/test/sdk-738-netdev-layout-objects-20261026'",
+        "name": "Compile eleven fixed allocating and notify translation units with readonly data",
+        "run": "python3 -B tools/qualify_host_stream_kernel_stream_objects.py --netdev-layout --source-commit \"${{ github.sha }}\" --started \"$STREAM_OBJECT_STARTED\" --output \"$RUNNER_TEMP/stream-provider-classdir-objects\""
+      },
+      {
         "id": "admission",
         "if": "${{ always() && github.ref == 'refs/heads/test/sdk-738-classdir-objects-20261026' }}",
         "name": "Admit the fixed bounded public union before any upload",
@@ -76,18 +86,24 @@
         "run": "python3 -B tools/qualify_host_stream_kernel_stream_objects.py --netdev-directory --admit --output \"$RUNNER_TEMP/stream-provider-classdir-objects\""
       },
       {
-        "if": "${{ always() && (steps.admission.outputs.admitted == 'true' || steps.kernfs_admission.outputs.admitted == 'true' || steps.directory_admission.outputs.admitted == 'true') }}",
+        "id": "layout_admission",
+        "if": "${{ always() && github.ref == 'refs/heads/test/sdk-738-netdev-layout-objects-20261026' }}",
+        "name": "Admit only the eleven-target readonly-layout public union",
+        "run": "python3 -B tools/qualify_host_stream_kernel_stream_objects.py --netdev-layout --admit --output \"$RUNNER_TEMP/stream-provider-classdir-objects\""
+      },
+      {
+        "if": "${{ always() && (steps.admission.outputs.admitted == 'true' || steps.kernfs_admission.outputs.admitted == 'true' || steps.directory_admission.outputs.admitted == 'true' || steps.layout_admission.outputs.admitted == 'true') }}",
         "name": "Retain only admitted object evidence",
         "uses": "actions/upload-artifact",
         "with": {
           "if-no-files-found": "error",
           "name": "protected-stream-classdir-objects-${{ github.sha }}",
-          "path": "${{ runner.temp }}/stream-provider-classdir-objects/receipt.json\n${{ runner.temp }}/stream-provider-classdir-objects/source-inputs.json\n${{ runner.temp }}/stream-provider-classdir-objects/derived-inputs.json\n${{ runner.temp }}/stream-provider-classdir-objects/baseline-inputs.json\n${{ runner.temp }}/stream-provider-classdir-objects/commands.json\n${{ runner.temp }}/stream-provider-classdir-objects/baseline.config\n${{ runner.temp }}/stream-provider-classdir-objects/selected.config\n${{ runner.temp }}/stream-provider-classdir-objects/generated-autoconf.h\n${{ runner.temp }}/stream-provider-classdir-objects/ADMISSION.json\n${{ runner.temp }}/stream-provider-classdir-objects/logs/*.stdout.txt\n${{ runner.temp }}/stream-provider-classdir-objects/logs/*.stderr.txt\n${{ runner.temp }}/stream-provider-classdir-objects/objects/**/*.o\n",
+          "path": "${{ runner.temp }}/stream-provider-classdir-objects/receipt.json\n${{ runner.temp }}/stream-provider-classdir-objects/layout.json\n${{ runner.temp }}/stream-provider-classdir-objects/source-inputs.json\n${{ runner.temp }}/stream-provider-classdir-objects/derived-inputs.json\n${{ runner.temp }}/stream-provider-classdir-objects/baseline-inputs.json\n${{ runner.temp }}/stream-provider-classdir-objects/commands.json\n${{ runner.temp }}/stream-provider-classdir-objects/baseline.config\n${{ runner.temp }}/stream-provider-classdir-objects/selected.config\n${{ runner.temp }}/stream-provider-classdir-objects/generated-autoconf.h\n${{ runner.temp }}/stream-provider-classdir-objects/ADMISSION.json\n${{ runner.temp }}/stream-provider-classdir-objects/logs/*.stdout.txt\n${{ runner.temp }}/stream-provider-classdir-objects/logs/*.stderr.txt\n${{ runner.temp }}/stream-provider-classdir-objects/objects/**/*.o\n",
           "retention-days": 7
         }
       },
       {
-        "if": "${{ always() && (steps.admission.outputs.fallback == 'true' || steps.kernfs_admission.outputs.fallback == 'true' || steps.directory_admission.outputs.fallback == 'true') }}",
+        "if": "${{ always() && (steps.admission.outputs.fallback == 'true' || steps.kernfs_admission.outputs.fallback == 'true' || steps.directory_admission.outputs.fallback == 'true' || steps.layout_admission.outputs.fallback == 'true') }}",
         "name": "Retain only the bounded admission-failure receipt",
         "uses": "actions/upload-artifact",
         "with": {
@@ -102,7 +118,7 @@
   },
   "jobId": "classdir-objects",
   "kind": "job",
-  "reviewReason": "Bind the reviewed NETDEV own-directory55-source nine changed-TU programme to existing process/public bounds; preserve all historical47/50/52 identities, targets, test cases, guards and coverage.",
+  "reviewReason": "Bind reviewed immutable58 notification sources plus readonly allocating-TU probe59/375/11 programme to unchanged process/public bounds; retain all earlier programmes and add only two synthetic/source controls.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/stream-provider-objects.yml"
 }
