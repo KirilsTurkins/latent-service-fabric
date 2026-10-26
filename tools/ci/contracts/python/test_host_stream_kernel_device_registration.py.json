@@ -1,153 +1,34 @@
 {
-  "cases": [
-    "KernelDeviceRegistrationSource.test_another_definition_is_never_an_accepted_transform_input",
-    "KernelDeviceRegistrationSource.test_bank_node_uses_actual_ctor_then_all_original_metadata_assignments",
-    "KernelDeviceRegistrationSource.test_cyclic_source_precedes_original_two_attempts_and_entry_is_actual_node",
-    "KernelDeviceRegistrationSource.test_exact_original_members_definitions_and_uninstalled_gates",
-    "KernelDeviceRegistrationSource.test_extension_retains_whole_original_algorithm_after_exact_call_projection",
-    "KernelDeviceRegistrationSource.test_get_free_admits_before_actual_walk_even_without_a_new_allocation",
-    "KernelDeviceRegistrationSource.test_missing_duplicate_drift_crlf_unknown_definitions_refuse",
-    "KernelDeviceRegistrationSource.test_rcu_preflight_before_cleanup_and_finish_only_at_original_slab_return",
-    "KernelDeviceRegistrationSource.test_rehashed_membership_or_production_promotion_is_not_a_fixture",
-    "KernelDeviceRegistrationSource.test_revoke_failure_releases_known_constructor_mutex_without_clearing_active_fence",
-    "KernelDeviceRegistrationSource.test_u32_preserves_id_before_pointer_and_real_tag_publication"
-  ],
-  "guards": {
-    "KernelDeviceRegistrationSource.test_another_definition_is_never_an_accepted_transform_input": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:9968440c790a6d0c9b82e2d0966139c0a4ce169e1c37d6e421dda8bb66409736",
-        "class:setup-sha256:9e13e57c7effa5220e10c9d4d7fe1d5799a995d38e58ae233c1b3ed1faf6ab62"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceRegistrationSource.test_bank_node_uses_actual_ctor_then_all_original_metadata_assignments": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:9968440c790a6d0c9b82e2d0966139c0a4ce169e1c37d6e421dda8bb66409736",
-        "class:setup-sha256:9e13e57c7effa5220e10c9d4d7fe1d5799a995d38e58ae233c1b3ed1faf6ab62"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceRegistrationSource.test_cyclic_source_precedes_original_two_attempts_and_entry_is_actual_node": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:9968440c790a6d0c9b82e2d0966139c0a4ce169e1c37d6e421dda8bb66409736",
-        "class:setup-sha256:9e13e57c7effa5220e10c9d4d7fe1d5799a995d38e58ae233c1b3ed1faf6ab62"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceRegistrationSource.test_exact_original_members_definitions_and_uninstalled_gates": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:9968440c790a6d0c9b82e2d0966139c0a4ce169e1c37d6e421dda8bb66409736",
-        "class:setup-sha256:9e13e57c7effa5220e10c9d4d7fe1d5799a995d38e58ae233c1b3ed1faf6ab62"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceRegistrationSource.test_extension_retains_whole_original_algorithm_after_exact_call_projection": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:9968440c790a6d0c9b82e2d0966139c0a4ce169e1c37d6e421dda8bb66409736",
-        "class:setup-sha256:9e13e57c7effa5220e10c9d4d7fe1d5799a995d38e58ae233c1b3ed1faf6ab62"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceRegistrationSource.test_get_free_admits_before_actual_walk_even_without_a_new_allocation": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:9968440c790a6d0c9b82e2d0966139c0a4ce169e1c37d6e421dda8bb66409736",
-        "class:setup-sha256:9e13e57c7effa5220e10c9d4d7fe1d5799a995d38e58ae233c1b3ed1faf6ab62"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceRegistrationSource.test_missing_duplicate_drift_crlf_unknown_definitions_refuse": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:9968440c790a6d0c9b82e2d0966139c0a4ce169e1c37d6e421dda8bb66409736",
-        "class:setup-sha256:9e13e57c7effa5220e10c9d4d7fe1d5799a995d38e58ae233c1b3ed1faf6ab62"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceRegistrationSource.test_rcu_preflight_before_cleanup_and_finish_only_at_original_slab_return": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:9968440c790a6d0c9b82e2d0966139c0a4ce169e1c37d6e421dda8bb66409736",
-        "class:setup-sha256:9e13e57c7effa5220e10c9d4d7fe1d5799a995d38e58ae233c1b3ed1faf6ab62"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceRegistrationSource.test_rehashed_membership_or_production_promotion_is_not_a_fixture": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:9968440c790a6d0c9b82e2d0966139c0a4ce169e1c37d6e421dda8bb66409736",
-        "class:setup-sha256:9e13e57c7effa5220e10c9d4d7fe1d5799a995d38e58ae233c1b3ed1faf6ab62"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceRegistrationSource.test_revoke_failure_releases_known_constructor_mutex_without_clearing_active_fence": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:9968440c790a6d0c9b82e2d0966139c0a4ce169e1c37d6e421dda8bb66409736",
-        "class:setup-sha256:9e13e57c7effa5220e10c9d4d7fe1d5799a995d38e58ae233c1b3ed1faf6ab62"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceRegistrationSource.test_u32_preserves_id_before_pointer_and_real_tag_publication": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:9968440c790a6d0c9b82e2d0966139c0a4ce169e1c37d6e421dda8bb66409736",
-        "class:setup-sha256:9e13e57c7effa5220e10c9d4d7fe1d5799a995d38e58ae233c1b3ed1faf6ab62"
-      ],
-      "skipSites": []
-    }
+  "cases":["KernelDeviceRegistrationSource.test_another_definition_is_never_an_accepted_transform_input","KernelDeviceRegistrationSource.test_bank_node_uses_actual_ctor_then_all_original_metadata_assignments","KernelDeviceRegistrationSource.test_cyclic_source_precedes_original_two_attempts_and_entry_is_actual_node","KernelDeviceRegistrationSource.test_exact_original_members_definitions_and_uninstalled_gates","KernelDeviceRegistrationSource.test_extension_retains_whole_original_algorithm_after_exact_call_projection","KernelDeviceRegistrationSource.test_get_free_admits_before_actual_walk_even_without_a_new_allocation","KernelDeviceRegistrationSource.test_missing_duplicate_drift_crlf_unknown_definitions_refuse","KernelDeviceRegistrationSource.test_rcu_preflight_before_cleanup_and_finish_only_at_original_slab_return","KernelDeviceRegistrationSource.test_rehashed_membership_or_production_promotion_is_not_a_fixture","KernelDeviceRegistrationSource.test_revoke_failure_releases_known_constructor_mutex_without_clearing_active_fence","KernelDeviceRegistrationSource.test_u32_preserves_id_before_pointer_and_real_tag_publication"],
+  "guards":{
+    "KernelDeviceRegistrationSource.test_another_definition_is_never_an_accepted_transform_input":
+      "7fbce1a8e862522b3b7ed310dbbc09abb736f594c3f2b9a69f66a21674ddb37c",
+    "KernelDeviceRegistrationSource.test_bank_node_uses_actual_ctor_then_all_original_metadata_assignments":
+      "7fbce1a8e862522b3b7ed310dbbc09abb736f594c3f2b9a69f66a21674ddb37c",
+    "KernelDeviceRegistrationSource.test_cyclic_source_precedes_original_two_attempts_and_entry_is_actual_node":
+      "7fbce1a8e862522b3b7ed310dbbc09abb736f594c3f2b9a69f66a21674ddb37c",
+    "KernelDeviceRegistrationSource.test_exact_original_members_definitions_and_uninstalled_gates":
+      "7fbce1a8e862522b3b7ed310dbbc09abb736f594c3f2b9a69f66a21674ddb37c",
+    "KernelDeviceRegistrationSource.test_extension_retains_whole_original_algorithm_after_exact_call_projection":
+      "7fbce1a8e862522b3b7ed310dbbc09abb736f594c3f2b9a69f66a21674ddb37c",
+    "KernelDeviceRegistrationSource.test_get_free_admits_before_actual_walk_even_without_a_new_allocation":
+      "7fbce1a8e862522b3b7ed310dbbc09abb736f594c3f2b9a69f66a21674ddb37c",
+    "KernelDeviceRegistrationSource.test_missing_duplicate_drift_crlf_unknown_definitions_refuse":
+      "7fbce1a8e862522b3b7ed310dbbc09abb736f594c3f2b9a69f66a21674ddb37c",
+    "KernelDeviceRegistrationSource.test_rcu_preflight_before_cleanup_and_finish_only_at_original_slab_return":
+      "7fbce1a8e862522b3b7ed310dbbc09abb736f594c3f2b9a69f66a21674ddb37c",
+    "KernelDeviceRegistrationSource.test_rehashed_membership_or_production_promotion_is_not_a_fixture":
+      "7fbce1a8e862522b3b7ed310dbbc09abb736f594c3f2b9a69f66a21674ddb37c",
+    "KernelDeviceRegistrationSource.test_revoke_failure_releases_known_constructor_mutex_without_clearing_active_fence":
+      "7fbce1a8e862522b3b7ed310dbbc09abb736f594c3f2b9a69f66a21674ddb37c",
+    "KernelDeviceRegistrationSource.test_u32_preserves_id_before_pointer_and_real_tag_publication":
+      "7fbce1a8e862522b3b7ed310dbbc09abb736f594c3f2b9a69f66a21674ddb37c"
   },
-  "kind": "python",
-  "module": "tools/tests/test_host_stream_kernel_device_registration.py",
-  "reviewReason": "Reviewed grouped uninstalled PCI registration sysfs IDR and uevent consumers; exclusive48object/201function compile retains all prior profiles commands cases security and original bounds; no runtime physical closure link boot or installation qualification",
-  "schemaVersion": "latent.ci.contracts.v1"
+  "kind":"python",
+  "module":"tools/tests/test_host_stream_kernel_device_registration.py",
+  "reviewReason":"Reviewed grouped uninstalled PCI registration sysfs IDR and uevent consumers; exclusive48object/201function compile retains all prior profiles commands cases security and original bounds; no runtime physical closure link boot or installation qualification",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "7fbce1a8e862522b3b7ed310dbbc09abb736f594c3f2b9a69f66a21674ddb37c":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:9968440c790a6d0c9b82e2d0966139c0a4ce169e1c37d6e421dda8bb66409736","class:setup-sha256:9e13e57c7effa5220e10c9d4d7fe1d5799a995d38e58ae233c1b3ed1faf6ab62"],"skipSites":[]}
+  }
 }

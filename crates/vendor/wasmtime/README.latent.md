@@ -36,7 +36,7 @@ retains confirmed actual allocations through native unwind, without confirming
 a hypothetical signature maximum as observed peak.
 
 The native cohort is
-`wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-memory-v14`. Runtime engine configuration identity
+`wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-unordered-futures-memory-v15`. Runtime engine configuration identity
 includes this cohort, so old prepared/AOT identity cannot certify this host.
 The immutable v1/7b programme passed 61 controls; v2/de0 passed81,
 v3/48a passed85, v4/3e417 passed92, v5/94f passed97, v7/f535 passed114,
@@ -310,3 +310,39 @@ private v11/v12/v13 programme or signed-language/Java campaign is selected.
 FuturesUnordered task/Arc/waker nodes, other scheduler maps/collections, Legacy
 stream closure Box and transitive/escaping backing remain separate unpaid gaps.
 This is not whole #736 or a complete native allocator/RSS quota.
+
+
+The frozen v14 stage above was later qualified at source
+b5fc40c2703621c23c0107434c46933ef78846ec, run40270862197: four new private
+queue controls and seven affected/new actual controls passed (eight refusal/
+fresh scenarios). Its first c4a1afeb attempt failed compilation with zero
+controls. Durable results are outside this vendor snapshot; those receipts
+retain their original scope and source rather than qualifying this extension.
+
+The v15 SOURCE stage derives only the five locked futures-util0.3.34 unordered
+files and retains their MIT/Apache licenses and exact original identities in
+UPSTREAM.latent.json. The declared private sized Header includes strong/weak
+counters, the SAME original affine allocation owner and ManuallyDrop payload.
+Its own actual Layout is admitted before raw global allocation. On the last
+weak, the owner moves outside the header; identical-layout deallocation returns
+before refund. Weak paths never reference destroyed payloads. Payload-unwind
+keeps the SAME original implicit weak/header/charge, never an unpaid control
+Arc. Escaped wakers keep task and weak ready-queue backing paid until actual
+deallocation. Refcount overflow aborts before publishing an out-of-bound CAS.
+
+The paid set lazily initializes its stub and ready queue before the event-loop
+argument's first poll. It stores only a mode flag and backing owners, never a
+factory Memory Arc. Task headers are prepared at all six pre-effect producers;
+publication, wake, cancellation and teardown only transfer existing owners.
+The None path remains the original futures::FuturesUnordered implementation.
+The linked-list/MPSC/pin/yield/release-bomb algorithm remains source-derived;
+unused infallible allocating builder APIs are absent from the private fork.
+
+Six new private source controls are UNCOMPILED/UNEXECUTED here. The forthcoming
+finite owner must also execute actual lazy-header/task refusals and repair/
+verify existing controls whose original owner positions or live-cost premises
+change. Callback and callbackless paths have different source-owned sequences;
+byte size alone never selects an owner. Original job/aggregate/build/case,
+cleanup, two compile-job and activation limits remain unchanged. No old private
+groups or Java campaign is implied. Legacy callback/pipe Boxes, other maps/
+collections, transitive allocations and full allocator/RSS/#736 remain gaps.

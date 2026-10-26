@@ -3,19 +3,22 @@
   "policy": {
     "concurrency": {
       "cancel-in-progress": false,
-      "group": "canonical-queue-nodes-${{ github.ref }}"
+      "group": "canonical-unordered-backing-${{ github.ref }}"
     },
-    "name": "Focused canonical async queue-node accounting",
+    "name": "Focused canonical async unordered backing",
     "on": {
       "push": {
         "branches": [
-          "feat/sdk-736-event-queue-20261026"
+          "feat/sdk-736-futures-unordered-20261026"
         ],
         "paths": [
           ".github/workflows/canonical-join-state.yml",
           "crates/vendor/wasmtime/**",
           "crates/latent-wasmtime/src/host.rs",
           "crates/latent-wasmtime/src/host/join_state_tests.rs",
+          "crates/latent-wasmtime/src/host/native_host_future_tests.rs",
+          "crates/latent-wasmtime/src/host/native_context_reply_tests.rs",
+          "crates/latent-wasmtime/src/host/native_store_tests.rs",
           "tools/qualify_canonical_join_state.py",
           "tools/host_codec_wasmtime.py"
         ]
@@ -28,7 +31,7 @@
   "requiredJobs": [
     "join-state"
   ],
-  "reviewReason": "Reviewed exact scheduler Entry backing before effects and same-node transfers. The focused owner selects four NEW private queue controls and seven actual IDs: four affected original owners at explicit global4..7, two new pre-poll nodes8/9, and one two-scenario upstream1/2 refusal/cleanup control. Fixed compiled layout witnesses and original-budget fresh42 required. Same two locked targets,45m/2400s/900s/60s,cleanup5 and two jobs; no full-runtime/RSS/SDK qualification or stopped campaigns.",
+  "reviewReason": "Actual CI cancellation repairs preserve escaped Task/ready-weak charges until real late wake and warm the real two-header Store baseline before existing lift/foreign-Store assertions. Same six NEW private/eight canonical plus six affected ordinary IDs,20 total; original two locked Cargo builds/features/caps unchanged. Historical4eca18pass retained; no production refund change or whole-runtime claim.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/canonical-join-state.yml"
 }

@@ -42,10 +42,21 @@
  use core::any::Any;
  use core::cell::UnsafeCell;
  use core::fmt;
-@@ -107,14 +108,19 @@
+@@ -83,7 +84,7 @@
+ use core::ptr::{self, NonNull};
+ use core::task::{Context, Poll, Waker};
+ use futures::channel::oneshot;
+-use futures::stream::{FuturesUnordered, StreamExt};
++use futures::stream::StreamExt;
+ use futures_and_streams::{FlatAbi, ReturnCode, TransmitHandle, TransmitIndex};
+ use table::{TableDebug, TableId};
+ use wasmtime_environ::component::{
+@@ -107,14 +108,22 @@
      StreamProducer, StreamReader, StreamResult, VecBuffer, WriteBuffer,
  };
  pub(crate) use futures_and_streams::{ResourcePair, lower_error_context_to_index};
++pub(crate) use host_futures::HostFutureSet;
++use host_futures::TaskSlot;
 +pub(crate) use pending_future::HostTaskFuture;
  
  mod abort;
@@ -54,6 +65,7 @@
  mod func;
  mod future_stream_any;
  mod futures_and_streams;
++mod host_futures;
 +mod pending_future;
  pub(crate) mod table;
  pub(crate) mod tls;
@@ -62,7 +74,7 @@
  
  /// Constant defined in the Component Model spec to indicate that the async
  /// intrinsic (e.g. `future.write`) has not yet completed.
-@@ -651,10 +657,10 @@
+@@ -651,10 +660,10 @@
  /// Indicates how a guest task is waiting on a waitable set.
  enum WaitMode {
      /// The guest task is waiting using `task.wait`
@@ -75,7 +87,7 @@
  }
  
  /// Represents the reason a fiber is suspending itself.
-@@ -778,7 +784,7 @@
+@@ -778,14 +787,14 @@
  /// Job to be run on a worker fiber.
  enum WorkerItem {
      GuestCall(GuestCall),
@@ -84,7 +96,15 @@
  }
  
  /// Represents a pending work item to be handled by the event loop for a given
-@@ -793,7 +799,7 @@
+ /// component instance.
+ enum WorkItem {
+     /// A host task to be pushed to `ConcurrentState::futures`.
+-    PushFuture(AlwaysMut<HostTaskFuture>),
++    PushFuture(AlwaysMut<HostTaskFuture>, TaskSlot),
+     /// A fiber to resume.
+     ResumeFiber(StoreFiber<'static>),
+     /// A thread to resume.
+@@ -793,13 +802,13 @@
      /// A pending call into guest code for a given guest task.
      GuestCall(RuntimeComponentInstanceIndex, GuestCall),
      /// A job to run on a worker fiber.
@@ -93,7 +113,28 @@
  }
  
  impl fmt::Debug for WorkItem {
-@@ -857,8 +863,9 @@
+     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+         match self {
+-            Self::PushFuture(_) => f.debug_tuple("PushFuture").finish(),
++            Self::PushFuture(..) => f.debug_tuple("PushFuture").finish(),
+             Self::ResumeFiber(_) => f.debug_tuple("ResumeFiber").finish(),
+             Self::ResumeThread(instance, thread) => f
+                 .debug_tuple("ResumeThread")
+@@ -814,6 +823,13 @@
+             Self::WorkerFunction(_) => f.debug_tuple("WorkerFunction").finish(),
+         }
+     }
++}
++
++// Affine preparation travels beside the future until the SAME stable task is
++// inserted. No factory Arc is kept in either backing owner or removed set.
++struct FutureWorkSlot {
++    queue: QueueSlot<WorkItem>,
++    task: TaskSlot,
+ }
+ 
+ /// Whether a suspension intrinsic was cancelled or completed
+@@ -857,8 +873,9 @@
  
              Ok(())
          })
@@ -101,11 +142,11 @@
 -
 +    }) as BoxedHostTaskFuture;
 +
-+    let queue_slot = store.concurrent_state_mut()?.prepare_queue_slot()?;
++    let queue_slot = store.concurrent_state_mut()?.prepare_future_slot()?;
      // Finally, poll the future.  We can use a dummy `Waker` here because we'll
      // add the future to `ConcurrentState::futures` and poll it automatically
      // from the event loop if it doesn't complete immediately here.
-@@ -883,7 +890,7 @@
+@@ -883,7 +900,7 @@
          // complete, suspending the current fiber until it does so.
          Poll::Pending => {
              let state = store.concurrent_state_mut()?;
@@ -114,7 +155,7 @@
  
              let set = state.get_mut(caller.thread)?.sync_call_set;
              Waitable::Host(task).join(state, Some(set))?;
-@@ -918,6 +925,8 @@
+@@ -918,6 +935,8 @@
      while let Some(call) = next.take() {
          match call.kind {
              GuestCallKind::DeliverEvent { instance, set } => {
@@ -123,7 +164,7 @@
                  let (event, waitable) =
                      match instance.get_event(store, call.thread.task, set, true)? {
                          Some(pair) => pair,
-@@ -966,6 +975,7 @@
+@@ -966,6 +985,7 @@
                      call.thread,
                      runtime_instance.index,
                      code,
@@ -131,11 +172,11 @@
                  )?;
  
                  log::trace!(
-@@ -1090,13 +1100,18 @@
+@@ -1090,13 +1110,18 @@
          T: 'static,
          D: HasData + ?Sized,
      {
-+        let queue_slot = self.0.concurrent_state_mut()?.prepare_queue_slot()?;
++        let queue_slot = self.0.concurrent_state_mut()?.prepare_future_slot()?;
          // Create an "abortable future" here where internally the future will
          // hook calls to poll and possibly spawn more background tasks on each
          // iteration.
@@ -154,7 +195,26 @@
          Ok(handle)
      }
  
-@@ -1296,7 +1311,7 @@
+@@ -1263,7 +1288,7 @@
+     {
+         struct Reset<'a, T: 'static> {
+             store: StoreContextMut<'a, T>,
+-            futures: Option<FuturesUnordered<HostTaskFuture>>,
++            futures: Option<HostFutureSet>,
+         }
+ 
+         impl<'a, T> Drop for Reset<'a, T> {
+@@ -1279,6 +1304,9 @@
+             }
+         }
+ 
++        // Lazy paid stub/ready headers precede even the argument's first poll.
++        // The removed set and all escaped tasks carry no factory Memory Arc.
++        self.0.concurrent_state_mut()?.ensure_futures_ready()?;
+         loop {
+             // Take `ConcurrentState::futures` out of the store so we can poll
+             // it while also safely giving any of the futures inside access to
+@@ -1296,7 +1324,7 @@
              enum PollResult<R> {
                  Complete(R),
                  ProcessWork {
@@ -163,7 +223,7 @@
                      low_priority: bool,
                  },
              }
-@@ -1323,22 +1338,18 @@
+@@ -1323,22 +1351,18 @@
                      Poll::Pending => Poll::Pending,
                  };
  
@@ -192,7 +252,7 @@
                      return Poll::Ready(Ok(PollResult::ProcessWork {
                          ready,
                          low_priority,
-@@ -1356,7 +1367,7 @@
+@@ -1356,7 +1380,7 @@
                          // the outer loop in case there is another one
                          // ready to complete.
                          Poll::Ready(Ok(PollResult::ProcessWork {
@@ -201,7 +261,7 @@
                              low_priority: false,
                          }))
                      }
-@@ -1410,14 +1421,18 @@
+@@ -1410,17 +1434,21 @@
                      ready,
                      low_priority,
                  } => {
@@ -222,8 +282,12 @@
 +                            while let Some((_slot, item)) = self.ready.next() {
                                  match item {
                                      WorkItem::ResumeFiber(mut fiber) => fiber.dispose(self.store.0),
-                                     WorkItem::PushFuture(future) => {
-@@ -1459,11 +1474,11 @@
+-                                    WorkItem::PushFuture(future) => {
++                                    WorkItem::PushFuture(future, _task_slot) => {
+                                         tls::set(self.store.0, move || drop(future))
+                                     }
+                                     _ => {}
+@@ -1459,11 +1487,11 @@
                          dispose.store.0.yield_now().await
                      }
  
@@ -237,7 +301,7 @@
                              .await?;
                      }
                  }
-@@ -1472,7 +1487,7 @@
+@@ -1472,34 +1500,35 @@
      }
  
      /// Handle the specified work item, possibly resuming a fiber if applicable.
@@ -246,8 +310,15 @@
      where
          T: Send,
      {
-@@ -1485,21 +1500,22 @@
-                     .push(future.into_inner());
+         log::trace!("handle work item {item:?}");
+         match item {
+-            WorkItem::PushFuture(future) => {
++            WorkItem::PushFuture(future, task_slot) => {
+                 self.0
+                     .concurrent_state_mut()?
+                     .futures_mut()?
+-                    .push(future.into_inner());
++                    .push_prepared(task_slot, future.into_inner());
              }
              WorkItem::ResumeFiber(fiber) => {
 -                self.0.resume_fiber(fiber).await?;
@@ -272,7 +343,7 @@
                  } else {
                      let state = self.0.concurrent_state_mut()?;
                      let task = state.get_mut(call.thread.task)?;
-@@ -1520,11 +1536,11 @@
+@@ -1520,11 +1549,11 @@
                          .instance_state(instance)
                          .concurrent_state()
                          .pending
@@ -286,7 +357,7 @@
              }
          }
  
-@@ -1532,7 +1548,7 @@
+@@ -1532,7 +1561,7 @@
      }
  
      /// Execute the specified guest call on a worker fiber.
@@ -295,7 +366,7 @@
      where
          T: Send,
      {
-@@ -1546,7 +1562,7 @@
+@@ -1546,7 +1575,7 @@
                      };
                      match item {
                          WorkerItem::GuestCall(call) => handle_guest_call(store, call)?,
@@ -304,7 +375,7 @@
                      }
  
                      store.suspend(SuspendReason::NeedWork)?;
-@@ -1558,7 +1574,7 @@
+@@ -1558,7 +1587,7 @@
          assert!(worker_item.is_none());
          *worker_item = Some(item);
  
@@ -313,7 +384,7 @@
      }
  
      /// Wrap the specified host function in a future which will call it, passing
-@@ -2056,18 +2072,18 @@
+@@ -2056,18 +2085,18 @@
      ///
      /// See `GuestCall::is_ready` for details.
      fn partition_pending(&mut self, instance: RuntimeInstance) -> Result<()> {
@@ -335,7 +406,7 @@
              }
          }
  
-@@ -2104,7 +2120,11 @@
+@@ -2104,7 +2133,11 @@
  
      /// Resume the specified fiber, giving it exclusive access to the specified
      /// store.
@@ -348,7 +419,7 @@
          struct Dispose<'a> {
              store: &'a mut StoreOpaque,
              fiber: Option<StoreFiber<'static>>,
-@@ -2122,6 +2142,10 @@
+@@ -2122,6 +2155,10 @@
              store: self,
              fiber: Some(fiber),
          };
@@ -359,7 +430,7 @@
  
          let old_thread = dispose.store.current_thread()?;
          log::trace!("resume_fiber: save current thread {old_thread:?}");
-@@ -2163,17 +2187,17 @@
+@@ -2163,17 +2200,17 @@
                          cancellable,
                      };
                      let instance = state.get_mut(thread.task)?.instance.index;
@@ -382,7 +453,7 @@
                      assert!(old.is_none());
                  }
              };
-@@ -2398,7 +2422,7 @@
+@@ -2398,7 +2435,7 @@
                  _ => false,
              };
  
@@ -391,7 +462,7 @@
                  let count = queue.len();
                  queue.retain(|item| !matches(item));
                  count != queue.len()
-@@ -2499,6 +2523,7 @@
+@@ -2499,6 +2536,7 @@
          guest_thread: QualifiedThreadId,
          runtime_instance: RuntimeComponentInstanceIndex,
          code: u32,
@@ -399,7 +470,7 @@
      ) -> Result<Option<GuestCall>> {
          let (code, set) = unpack_callback_code(code);
  
-@@ -2549,7 +2574,7 @@
+@@ -2549,7 +2587,7 @@
                  if state.may_block(guest_thread.task)? {
                      // Push this thread onto the "low priority" queue so it runs
                      // after any other threads have had a chance to run.
@@ -408,7 +479,7 @@
                      None
                  } else {
                      // Yielding in a non-blocking context is defined as a no-op
-@@ -2570,16 +2595,19 @@
+@@ -2570,16 +2608,19 @@
                      || !state.get_mut(set)?.ready.is_empty()
                  {
                      // An event is immediately available; deliver it ASAP.
@@ -437,7 +508,7 @@
                  } else {
                      // No event is immediately available.
                      //
-@@ -2598,7 +2626,7 @@
+@@ -2598,7 +2639,7 @@
                      let old = state
                          .get_mut(set)?
                          .waiting
@@ -446,7 +517,7 @@
                      if !old.is_none() {
                          bail_bug!("set's waiting set already had this thread registered");
                      }
-@@ -2626,6 +2654,7 @@
+@@ -2626,6 +2667,7 @@
          callback: Option<SendSyncPtr<VMFuncRef>>,
          post_return: Option<SendSyncPtr<VMFuncRef>>,
      ) -> Result<()> {
@@ -454,7 +525,7 @@
          /// Return a closure which will call the specified function in the scope
          /// of the specified task.
          ///
-@@ -2705,6 +2734,7 @@
+@@ -2705,6 +2747,7 @@
  
          let fun = if callback.is_some() {
              assert!(async_);
@@ -462,7 +533,7 @@
  
              Box::new(move |store: &mut dyn VMStore| {
                  self.add_guest_thread_to_instance_table(
-@@ -2740,7 +2770,13 @@
+@@ -2740,7 +2783,13 @@
                  // function returns a `i32` result.
                  let code = unsafe { storage[0].assume_init() }.get_i32() as u32;
  
@@ -477,7 +548,7 @@
              })
                  as Box<dyn FnOnce(&mut dyn VMStore) -> Result<Option<GuestCall>> + Send + Sync>
          } else {
-@@ -2833,16 +2869,16 @@
+@@ -2833,16 +2882,16 @@
              })
          };
  
@@ -499,7 +570,7 @@
  
          Ok(())
      }
-@@ -3273,32 +3309,107 @@
+@@ -3273,32 +3322,111 @@
      ) -> Result<u32> {
          let token = StoreToken::new(store.as_context_mut());
          let task = store.0.current_host_thread()?;
@@ -582,6 +653,9 @@
 +        // PushFuture (#7). Neither admission may occur after the first poll.
 +        prepared.args_mut().2 = Some(QueueSlot::prepare(&memory)?);
 +        let future_queue_slot = QueueSlot::prepare(&memory)?;
++        // Task header is a NEW distinct physical owner, after host-local #7.
++        // It must exist even if the first poll later completes immediately.
++        let future_task_slot = state.prepare_future_task_slot()?;
          {
              let state = &mut state.get_mut(task)?.state;
              assert!(matches!(state, HostTaskState::CalleeStarted));
@@ -609,11 +683,12 @@
 +                let (_future, worker, unused_completion_slot) = prepared.into_args();
 +                drop(unused_completion_slot);
 +                drop(future_queue_slot);
++                drop(future_task_slot);
 +                let (lower, _token, _task) = worker.into_context();
                  let result = result.transpose()?;
                  lower(store.as_context_mut(), result, true)?;
                  return Ok(Status::Returned.pack(None));
-@@ -3315,53 +3426,7 @@
+@@ -3315,53 +3443,7 @@
          // Wrap the future in a closure responsible for lowering the result into
          // the guest's stack and memory, as well as notifying any waiters that
          // the task returned.
@@ -668,16 +743,22 @@
  
          // Make this task visible to the guest and then record what it
          // was made visible as.
-@@ -3370,7 +3435,7 @@
+@@ -3370,7 +3452,13 @@
              None => bail_bug!("host task wasn't created but should have been"),
          };
          let state = store.0.concurrent_state_mut()?;
 -        state.push_future(future);
-+        state.push_host_future(future_queue_slot, future);
++        state.push_host_future(
++            FutureWorkSlot {
++                queue: future_queue_slot,
++                task: future_task_slot,
++            },
++            future,
++        );
          let instance = state.get_mut(caller.task)?.instance;
          let (state, counter) = store.0.instance_state_and_handle_counter(instance);
          let handle = state
-@@ -3791,6 +3856,14 @@
+@@ -3791,6 +3879,14 @@
              GuestThread::from_instance(self.id().get_mut(store), runtime_instance, thread_idx)?;
          let state = store.concurrent_state_mut()?;
          let guest_thread = QualifiedThreadId::qualify(state, thread_id)?;
@@ -692,7 +773,7 @@
          let thread = state.get_mut(guest_thread.thread)?;
  
          match mem::replace(&mut thread.state, GuestThreadState::Running) {
-@@ -3805,15 +3878,19 @@
+@@ -3805,15 +3901,19 @@
                          })),
                      },
                  );
@@ -718,7 +799,7 @@
              }
              GuestThreadState::Ready { fiber, cancellable } if allow_ready => {
                  log::trace!("resuming thread {thread_id:?} that was ready");
-@@ -4104,21 +4181,27 @@
+@@ -4104,21 +4204,27 @@
                      let thread_mut = concurrent_state.get_mut(thread.thread)?;
                      if let Some(set) = thread_mut.wake_on_cancel.take() {
                          // The thread is in a cancellable wait, so wake it up:
@@ -761,7 +842,7 @@
  
                          let caller = store.current_guest_thread()?;
                          store.suspend(SuspendReason::Yielding {
-@@ -4668,7 +4751,7 @@
+@@ -4668,7 +4774,7 @@
      }
  }
  
@@ -770,7 +851,7 @@
  
  /// Represents the state of a pending host task.
  ///
-@@ -5186,20 +5269,23 @@
+@@ -5186,20 +5292,23 @@
                  let wake_on_cancel = state.get_mut(thread.thread)?.wake_on_cancel.take();
                  assert!(wake_on_cancel.is_none() || wake_on_cancel == Some(set));
  
@@ -805,7 +886,7 @@
              }
          }
          Ok(())
-@@ -5288,7 +5374,7 @@
+@@ -5288,7 +5397,7 @@
      do_not_enter: bool,
      /// Pending calls for this instance which require `Self::backpressure` to be
      /// `true` and/or `Self::do_not_enter` to be false before they can proceed.
@@ -814,7 +895,7 @@
  }
  
  impl ConcurrentInstanceState {
-@@ -5354,6 +5440,7 @@
+@@ -5354,6 +5463,7 @@
  
  /// Represents the Component Model Async state of a store.
  pub struct ConcurrentState {
@@ -822,7 +903,12 @@
      /// The currently running thread, if any.
      ///
      /// Note that we lazily materialize threads on-demand and this field is not
-@@ -5369,9 +5456,9 @@
+@@ -5365,13 +5475,13 @@
+     ///
+     /// See `ComponentInstance::poll_until` for where we temporarily take this
+     /// out, poll it, then put it back to avoid any mutable aliasing hazards.
+-    futures: AlwaysMut<Option<FuturesUnordered<HostTaskFuture>>>,
++    futures: AlwaysMut<Option<HostFutureSet>>,
      /// The table of waitables, waitable sets, etc.
      table: AlwaysMut<ResourceTable>,
      /// The "high priority" work queue for this store's event loop.
@@ -834,7 +920,7 @@
      /// A place to stash the reason a fiber is suspending so that the code which
      /// resumed it will know under what conditions the fiber should be resumed
      /// again.
-@@ -5426,12 +5513,19 @@
+@@ -5426,12 +5536,20 @@
  
  impl Default for ConcurrentState {
      fn default() -> Self {
@@ -844,19 +930,27 @@
 +
 +impl ConcurrentState {
 +    pub(super) fn new(queue_memory: crate::runtime::native_memory::Memory) -> Self {
++        let paid = queue_memory.is_some();
          Self {
 +            high_priority: Queue::new(queue_memory.is_some()),
 +            low_priority: Queue::new(queue_memory.is_some()),
 +            queue_memory,
              unforced_current_thread: CurrentThread::None,
              table: AlwaysMut::new(ResourceTable::new()),
-             futures: AlwaysMut::new(Some(FuturesUnordered::new())),
+-            futures: AlwaysMut::new(Some(FuturesUnordered::new())),
 -            high_priority: VecDeque::new(),
 -            low_priority: VecDeque::new(),
++            futures: AlwaysMut::new(Some(HostFutureSet::new(paid))),
              suspend_reason: None,
              worker: None,
              worker_item: None,
-@@ -5468,7 +5562,7 @@
+@@ -5463,12 +5581,12 @@
+     pub(crate) fn take_fibers_and_futures(
+         &mut self,
+         fibers: &mut Vec<StoreFiber<'static>>,
+-        futures: &mut Vec<FuturesUnordered<HostTaskFuture>>,
++        futures: &mut Vec<HostFutureSet>,
+     ) {
          for entry in self.table.get_mut().iter_mut() {
              if let Some(set) = entry.downcast_mut::<WaitableSet>() {
                  for mode in mem::take(&mut set.waiting).into_values() {
@@ -865,7 +959,22 @@
                          fibers.push(fiber);
                      }
                  }
-@@ -5538,12 +5632,13 @@
+@@ -5489,12 +5607,12 @@
+             WorkItem::ResumeFiber(fiber) => {
+                 fibers.push(fiber);
+             }
+-            WorkItem::PushFuture(future) => {
++            WorkItem::PushFuture(future, task_slot) => {
+                 self.futures
+                     .get_mut()
+                     .as_mut()
+                     .unwrap()
+-                    .push(future.into_inner());
++                    .push_prepared(task_slot, future.into_inner());
+             }
+             WorkItem::ResumeThread(..) | WorkItem::GuestCall(..) | WorkItem::WorkerFunction(..) => {
+             }
+@@ -5538,12 +5656,13 @@
              interesting_tasks: _,
              interesting_tasks_empty_waker: _,
              ready_for_concurrent_call_waker: _,
@@ -880,7 +989,16 @@
                          fiber.trace_gc_roots(modules, unwind, gc_roots_list);
                      }
                  }
-@@ -5572,12 +5667,8 @@
+@@ -5564,7 +5683,7 @@
+             WorkItem::ResumeFiber(fiber) => {
+                 fiber.trace_gc_roots(modules, unwind, gc_roots_list);
+             }
+-            WorkItem::PushFuture(_future) => {
++            WorkItem::PushFuture(_future, _task_slot) => {
+                 // TODO(cm-gc): once futures can contain GC roots, we will need
+                 // to trace them.
+             }
+@@ -5572,12 +5691,8 @@
              }
          };
  
@@ -895,7 +1013,7 @@
      }
  
      fn push<V: Send + Sync + 'static>(
-@@ -5615,31 +5706,39 @@
+@@ -5615,31 +5730,65 @@
          self.table.get_mut().delete(Resource::from(id))
      }
  
@@ -904,11 +1022,34 @@
 +        QueueSlot::prepare(&self.queue_memory)
 +    }
 +
-+    fn push_future(&mut self, slot: QueueSlot<WorkItem>, future: BoxedHostTaskFuture) {
++    fn ensure_futures_ready(&mut self) -> Result<()> {
++        match self.futures.get_mut().as_mut() {
++            Some(set) => set.ensure(&self.queue_memory),
++            None => bail_bug!("cannot initialize the removed host future set"),
++        }
++    }
++
++    fn prepare_future_task_slot(&mut self) -> Result<TaskSlot> {
++        if let Some(set) = self.futures.get_mut().as_mut() {
++            set.ensure(&self.queue_memory)?;
++        }
++        // None here means poll_until owns the set, which it initialized BEFORE
++        // taking it out and polling any user future. Slots need no queue/factory
++        // reference; the ready-queue Weak is attached only during publication.
++        TaskSlot::prepare(&self.queue_memory)
++    }
++
++    fn prepare_future_slot(&mut self) -> Result<FutureWorkSlot> {
++        let queue = self.prepare_queue_slot()?;
++        let task = self.prepare_future_task_slot()?;
++        Ok(FutureWorkSlot { queue, task })
++    }
++
++    fn push_future(&mut self, slot: FutureWorkSlot, future: BoxedHostTaskFuture) {
 +        self.push_host_future(slot, HostTaskFuture::legacy(future));
 +    }
 +
-+    fn push_host_future(&mut self, slot: QueueSlot<WorkItem>, future: HostTaskFuture) {
++    fn push_host_future(&mut self, slot: FutureWorkSlot, future: HostTaskFuture) {
          // Note that we can't directly push to `ConcurrentState::futures` here
          // since this may be called from a future that's being polled inside
          // `Self::poll_until`, which temporarily removes the `FuturesUnordered`
@@ -919,7 +1060,10 @@
 -    }
 -
 -    fn push_high_priority(&mut self, item: WorkItem) {
-+        self.push_high_priority(slot, WorkItem::PushFuture(AlwaysMut::new(future)));
++        self.push_high_priority(
++            slot.queue,
++            WorkItem::PushFuture(AlwaysMut::new(future), slot.task),
++        );
 +    }
 +
 +    fn push_high_priority(&mut self, slot: QueueSlot<WorkItem>, item: WorkItem) {
@@ -950,7 +1094,7 @@
          }
      }
  
-@@ -5672,13 +5771,16 @@
+@@ -5672,13 +5821,16 @@
          // we don't need to promote anything, but we return true to indicate that
          // work is pending for the current instance.
          if self.high_priority.iter().any(&mut predicate) {
@@ -971,6 +1115,15 @@
              true
          } else {
              false
+@@ -5714,7 +5866,7 @@
+         }
+     }
+ 
+-    fn futures_mut(&mut self) -> Result<&mut FuturesUnordered<HostTaskFuture>> {
++    fn futures_mut(&mut self) -> Result<&mut HostFutureSet> {
+         match self.futures.get_mut().as_mut() {
+             Some(f) => Ok(f),
+             None => bail_bug!("futures field of concurrent state is currently taken"),
 --- a/src/runtime/component/concurrent/abort.rs
 +++ b/src/runtime/component/concurrent/abort.rs
 @@ -1,7 +1,12 @@
@@ -1891,7 +2044,7 @@
  impl StoreOpaque {
      fn pipe_from_guest(
          &mut self,
-+        queue_slot: super::QueueSlot<WorkItem>,
++        queue_slot: super::FutureWorkSlot,
          kind: TransmitKind,
          id: TableId<TransmitState>,
          future: Pin<Box<dyn Future<Output = Result<StreamResult>> + Send + 'static>>,
@@ -1905,7 +2058,7 @@
  
      fn pipe_to_guest(
          &mut self,
-+        queue_slot: super::QueueSlot<WorkItem>,
++        queue_slot: super::FutureWorkSlot,
          kind: TransmitKind,
          id: TableId<TransmitState>,
          future: Pin<Box<dyn Future<Output = Result<StreamResult>> + Send + 'static>>,
@@ -1949,7 +2102,7 @@
 +            state.get_mut(id)?.write,
 +            WriteState::GuestReady { .. } | WriteState::HostReady { .. }
 +        ) {
-+            Some(state.prepare_queue_slot()?)
++            Some(state.prepare_future_slot()?)
 +        } else {
 +            None
 +        };
@@ -2020,7 +2173,7 @@
          guest_offset: ItemCount,
          cancel: bool,
      ) -> Result<ReturnCode> {
-+        let queue_slot = store.concurrent_state_mut()?.prepare_queue_slot()?;
++        let queue_slot = store.concurrent_state_mut()?.prepare_future_slot()?;
          let mut future = consume();
          store.concurrent_state_mut()?.get_mut(transmit_id)?.read = ReadState::HostReady {
              consume,
@@ -2037,7 +2190,7 @@
          guest_offset: ItemCount,
          cancel: bool,
      ) -> Result<ReturnCode> {
-+        let queue_slot = store.concurrent_state_mut()?.prepare_queue_slot()?;
++        let queue_slot = store.concurrent_state_mut()?.prepare_future_slot()?;
          let mut future = produce();
          store.concurrent_state_mut()?.get_mut(transmit_id)?.write = WriteState::HostReady {
              produce,
@@ -2050,6 +2203,2205 @@
                  ReturnCode::Blocked
              }
          })
+--- /dev/null
++++ b/src/runtime/component/concurrent/host_futures/LICENSE-APACHE
+@@ -0,0 +1,202 @@
++                              Apache License
++                        Version 2.0, January 2004
++                     http://www.apache.org/licenses/
++
++TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
++
++1. Definitions.
++
++   "License" shall mean the terms and conditions for use, reproduction,
++   and distribution as defined by Sections 1 through 9 of this document.
++
++   "Licensor" shall mean the copyright owner or entity authorized by
++   the copyright owner that is granting the License.
++
++   "Legal Entity" shall mean the union of the acting entity and all
++   other entities that control, are controlled by, or are under common
++   control with that entity. For the purposes of this definition,
++   "control" means (i) the power, direct or indirect, to cause the
++   direction or management of such entity, whether by contract or
++   otherwise, or (ii) ownership of fifty percent (50%) or more of the
++   outstanding shares, or (iii) beneficial ownership of such entity.
++
++   "You" (or "Your") shall mean an individual or Legal Entity
++   exercising permissions granted by this License.
++
++   "Source" form shall mean the preferred form for making modifications,
++   including but not limited to software source code, documentation
++   source, and configuration files.
++
++   "Object" form shall mean any form resulting from mechanical
++   transformation or translation of a Source form, including but
++   not limited to compiled object code, generated documentation,
++   and conversions to other media types.
++
++   "Work" shall mean the work of authorship, whether in Source or
++   Object form, made available under the License, as indicated by a
++   copyright notice that is included in or attached to the work
++   (an example is provided in the Appendix below).
++
++   "Derivative Works" shall mean any work, whether in Source or Object
++   form, that is based on (or derived from) the Work and for which the
++   editorial revisions, annotations, elaborations, or other modifications
++   represent, as a whole, an original work of authorship. For the purposes
++   of this License, Derivative Works shall not include works that remain
++   separable from, or merely link (or bind by name) to the interfaces of,
++   the Work and Derivative Works thereof.
++
++   "Contribution" shall mean any work of authorship, including
++   the original version of the Work and any modifications or additions
++   to that Work or Derivative Works thereof, that is intentionally
++   submitted to Licensor for inclusion in the Work by the copyright owner
++   or by an individual or Legal Entity authorized to submit on behalf of
++   the copyright owner. For the purposes of this definition, "submitted"
++   means any form of electronic, verbal, or written communication sent
++   to the Licensor or its representatives, including but not limited to
++   communication on electronic mailing lists, source code control systems,
++   and issue tracking systems that are managed by, or on behalf of, the
++   Licensor for the purpose of discussing and improving the Work, but
++   excluding communication that is conspicuously marked or otherwise
++   designated in writing by the copyright owner as "Not a Contribution."
++
++   "Contributor" shall mean Licensor and any individual or Legal Entity
++   on behalf of whom a Contribution has been received by Licensor and
++   subsequently incorporated within the Work.
++
++2. Grant of Copyright License. Subject to the terms and conditions of
++   this License, each Contributor hereby grants to You a perpetual,
++   worldwide, non-exclusive, no-charge, royalty-free, irrevocable
++   copyright license to reproduce, prepare Derivative Works of,
++   publicly display, publicly perform, sublicense, and distribute the
++   Work and such Derivative Works in Source or Object form.
++
++3. Grant of Patent License. Subject to the terms and conditions of
++   this License, each Contributor hereby grants to You a perpetual,
++   worldwide, non-exclusive, no-charge, royalty-free, irrevocable
++   (except as stated in this section) patent license to make, have made,
++   use, offer to sell, sell, import, and otherwise transfer the Work,
++   where such license applies only to those patent claims licensable
++   by such Contributor that are necessarily infringed by their
++   Contribution(s) alone or by combination of their Contribution(s)
++   with the Work to which such Contribution(s) was submitted. If You
++   institute patent litigation against any entity (including a
++   cross-claim or counterclaim in a lawsuit) alleging that the Work
++   or a Contribution incorporated within the Work constitutes direct
++   or contributory patent infringement, then any patent licenses
++   granted to You under this License for that Work shall terminate
++   as of the date such litigation is filed.
++
++4. Redistribution. You may reproduce and distribute copies of the
++   Work or Derivative Works thereof in any medium, with or without
++   modifications, and in Source or Object form, provided that You
++   meet the following conditions:
++
++   (a) You must give any other recipients of the Work or
++       Derivative Works a copy of this License; and
++
++   (b) You must cause any modified files to carry prominent notices
++       stating that You changed the files; and
++
++   (c) You must retain, in the Source form of any Derivative Works
++       that You distribute, all copyright, patent, trademark, and
++       attribution notices from the Source form of the Work,
++       excluding those notices that do not pertain to any part of
++       the Derivative Works; and
++
++   (d) If the Work includes a "NOTICE" text file as part of its
++       distribution, then any Derivative Works that You distribute must
++       include a readable copy of the attribution notices contained
++       within such NOTICE file, excluding those notices that do not
++       pertain to any part of the Derivative Works, in at least one
++       of the following places: within a NOTICE text file distributed
++       as part of the Derivative Works; within the Source form or
++       documentation, if provided along with the Derivative Works; or,
++       within a display generated by the Derivative Works, if and
++       wherever such third-party notices normally appear. The contents
++       of the NOTICE file are for informational purposes only and
++       do not modify the License. You may add Your own attribution
++       notices within Derivative Works that You distribute, alongside
++       or as an addendum to the NOTICE text from the Work, provided
++       that such additional attribution notices cannot be construed
++       as modifying the License.
++
++   You may add Your own copyright statement to Your modifications and
++   may provide additional or different license terms and conditions
++   for use, reproduction, or distribution of Your modifications, or
++   for any such Derivative Works as a whole, provided Your use,
++   reproduction, and distribution of the Work otherwise complies with
++   the conditions stated in this License.
++
++5. Submission of Contributions. Unless You explicitly state otherwise,
++   any Contribution intentionally submitted for inclusion in the Work
++   by You to the Licensor shall be under the terms and conditions of
++   this License, without any additional terms or conditions.
++   Notwithstanding the above, nothing herein shall supersede or modify
++   the terms of any separate license agreement you may have executed
++   with Licensor regarding such Contributions.
++
++6. Trademarks. This License does not grant permission to use the trade
++   names, trademarks, service marks, or product names of the Licensor,
++   except as required for reasonable and customary use in describing the
++   origin of the Work and reproducing the content of the NOTICE file.
++
++7. Disclaimer of Warranty. Unless required by applicable law or
++   agreed to in writing, Licensor provides the Work (and each
++   Contributor provides its Contributions) on an "AS IS" BASIS,
++   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
++   implied, including, without limitation, any warranties or conditions
++   of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A
++   PARTICULAR PURPOSE. You are solely responsible for determining the
++   appropriateness of using or redistributing the Work and assume any
++   risks associated with Your exercise of permissions under this License.
++
++8. Limitation of Liability. In no event and under no legal theory,
++   whether in tort (including negligence), contract, or otherwise,
++   unless required by applicable law (such as deliberate and grossly
++   negligent acts) or agreed to in writing, shall any Contributor be
++   liable to You for damages, including any direct, indirect, special,
++   incidental, or consequential damages of any character arising as a
++   result of this License or out of the use or inability to use the
++   Work (including but not limited to damages for loss of goodwill,
++   work stoppage, computer failure or malfunction, or any and all
++   other commercial damages or losses), even if such Contributor
++   has been advised of the possibility of such damages.
++
++9. Accepting Warranty or Additional Liability. While redistributing
++   the Work or Derivative Works thereof, You may choose to offer,
++   and charge a fee for, acceptance of support, warranty, indemnity,
++   or other liability obligations and/or rights consistent with this
++   License. However, in accepting such obligations, You may act only
++   on Your own behalf and on Your sole responsibility, not on behalf
++   of any other Contributor, and only if You agree to indemnify,
++   defend, and hold each Contributor harmless for any liability
++   incurred by, or claims asserted against, such Contributor by reason
++   of your accepting any such warranty or additional liability.
++
++END OF TERMS AND CONDITIONS
++
++APPENDIX: How to apply the Apache License to your work.
++
++   To apply the Apache License to your work, attach the following
++   boilerplate notice, with the fields enclosed by brackets "[]"
++   replaced with your own identifying information. (Don't include
++   the brackets!)  The text should be enclosed in the appropriate
++   comment syntax for the file format. We also recommend that a
++   file or class name and description of purpose be included on the
++   same "printed page" as the copyright notice for easier
++   identification within third-party archives.
++
++Copyright (c) 2016 Alex Crichton
++Copyright (c) 2017 The Tokio Authors
++
++Licensed under the Apache License, Version 2.0 (the "License");
++you may not use this file except in compliance with the License.
++You may obtain a copy of the License at
++
++	http://www.apache.org/licenses/LICENSE-2.0
++
++Unless required by applicable law or agreed to in writing, software
++distributed under the License is distributed on an "AS IS" BASIS,
++WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++See the License for the specific language governing permissions and
++limitations under the License.
+--- /dev/null
++++ b/src/runtime/component/concurrent/host_futures/LICENSE-MIT
+@@ -0,0 +1,26 @@
++Copyright (c) 2016 Alex Crichton
++Copyright (c) 2017 The Tokio Authors
++
++Permission is hereby granted, free of charge, to any
++person obtaining a copy of this software and associated
++documentation files (the "Software"), to deal in the
++Software without restriction, including without
++limitation the rights to use, copy, modify, merge,
++publish, distribute, sublicense, and/or sell copies of
++the Software, and to permit persons to whom the Software
++is furnished to do so, subject to the following
++conditions:
++
++The above copyright notice and this permission notice
++shall be included in all copies or substantial portions
++of the Software.
++
++THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF
++ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
++TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
++PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
++SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
++CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
++OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
++IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
++DEALINGS IN THE SOFTWARE.
+--- /dev/null
++++ b/src/runtime/component/concurrent/host_futures/abort.rs
+@@ -0,0 +1,12 @@
++pub(super) fn abort(s: &str) -> ! {
++    struct DoublePanic;
++
++    impl Drop for DoublePanic {
++        fn drop(&mut self) {
++            panic!("panicking twice to abort the program");
++        }
++    }
++
++    let _bomb = DoublePanic;
++    panic!("{}", s);
++}
+--- /dev/null
++++ b/src/runtime/component/concurrent/host_futures/mod.rs
+@@ -0,0 +1,87 @@
++//! Host future backing selected without retaining a native-memory factory.
++//!
++//! None preserves the original upstream set. Paid initialization and individual
++//! task allocations receive the Store's original Memory only during admission.
++//! Transferred sets, TaskSlots and escaped Wakers contain owner tokens only.
++
++use super::pending_future::HostTaskFuture;
++use crate::Result;
++use crate::runtime::native_memory::Memory;
++use core::pin::Pin;
++use core::task::{Context, Poll};
++use futures::stream::{FuturesUnordered, Stream};
++
++mod abort;
++mod paid;
++mod paid_arc;
++#[cfg(test)]
++mod tests;
++
++pub(crate) struct HostFutureSet(Kind);
++
++enum Kind {
++    Legacy(FuturesUnordered<HostTaskFuture>),
++    // A mode flag with lazy physical initialization, never a factory Arc.
++    Paid(Option<paid::FuturesUnordered<HostTaskFuture>>),
++}
++
++pub(super) struct TaskSlot(TaskKind);
++
++enum TaskKind {
++    Legacy,
++    Paid(paid::PreparedTask<HostTaskFuture>),
++}
++
++impl HostFutureSet {
++    pub(super) fn new(paid: bool) -> Self {
++        if paid {
++            Self(Kind::Paid(None))
++        } else {
++            Self(Kind::Legacy(FuturesUnordered::new()))
++        }
++    }
++
++    pub(super) fn is_empty(&self) -> bool {
++        match &self.0 {
++            Kind::Legacy(set) => set.is_empty(),
++            Kind::Paid(None) => true,
++            Kind::Paid(Some(set)) => set.is_empty(),
++        }
++    }
++
++    pub(super) fn ensure(&mut self, memory: &Memory) -> Result<()> {
++        if let Kind::Paid(set @ None) = &mut self.0 {
++            // Construct both headers locally; publish only after both succeed.
++            *set = Some(paid::FuturesUnordered::try_new(memory)?);
++        }
++        Ok(())
++    }
++
++    pub(super) fn push_prepared(&self, slot: TaskSlot, future: HostTaskFuture) {
++        match (&self.0, slot.0) {
++            (Kind::Legacy(set), TaskKind::Legacy) => set.push(future),
++            (Kind::Paid(Some(set)), TaskKind::Paid(slot)) => set.push_prepared(slot, future),
++            _ => unreachable!("future publication requires matching pre-effect preparation"),
++        }
++    }
++}
++
++impl TaskSlot {
++    pub(super) fn prepare(memory: &Memory) -> Result<Self> {
++        match memory {
++            None => Ok(Self(TaskKind::Legacy)),
++            Some(_) => Ok(Self(TaskKind::Paid(paid::PreparedTask::new(memory)?))),
++        }
++    }
++}
++
++impl Stream for HostFutureSet {
++    type Item = crate::Result<()>;
++    fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
++        match &mut self.get_mut().0 {
++            Kind::Legacy(set) => Pin::new(set).poll_next(cx),
++            Kind::Paid(Some(set)) => Pin::new(set).poll_next(cx),
++            Kind::Paid(None) => unreachable!("paid driver must initialize before polling"),
++        }
++    }
++}
+--- /dev/null
++++ b/src/runtime/component/concurrent/host_futures/paid/iter.rs
+@@ -0,0 +1,184 @@
++use super::Arc;
++use super::FuturesUnordered;
++use super::task::Task;
++use core::marker::PhantomData;
++use core::pin::Pin;
++use core::ptr;
++use core::sync::atomic::Ordering::Relaxed;
++
++/// Mutable iterator over all futures in the unordered set.
++#[derive(Debug)]
++pub struct IterPinMut<'a, Fut> {
++    pub(super) task: *const Task<Fut>,
++    pub(super) len: usize,
++    pub(super) _marker: PhantomData<&'a mut FuturesUnordered<Fut>>,
++}
++
++/// Mutable iterator over all futures in the unordered set.
++#[derive(Debug)]
++pub struct IterMut<'a, Fut: Unpin>(pub(super) IterPinMut<'a, Fut>);
++
++/// Immutable iterator over all futures in the unordered set.
++#[derive(Debug)]
++pub struct IterPinRef<'a, Fut> {
++    pub(super) task: *const Task<Fut>,
++    pub(super) len: usize,
++    pub(super) pending_next_all: *mut Task<Fut>,
++    pub(super) _marker: PhantomData<&'a FuturesUnordered<Fut>>,
++}
++
++/// Immutable iterator over all the futures in the unordered set.
++#[derive(Debug)]
++pub struct Iter<'a, Fut: Unpin>(pub(super) IterPinRef<'a, Fut>);
++
++/// Owned iterator over all futures in the unordered set.
++#[derive(Debug)]
++pub struct IntoIter<Fut: Unpin> {
++    pub(super) len: usize,
++    pub(super) inner: FuturesUnordered<Fut>,
++}
++
++impl<Fut: Unpin> Iterator for IntoIter<Fut> {
++    type Item = Fut;
++
++    fn next(&mut self) -> Option<Self::Item> {
++        // `head_all` can be accessed directly and we don't need to spin on
++        // `Task::next_all` since we have exclusive access to the set.
++        let task = self.inner.head_all.get_mut();
++
++        if (*task).is_null() {
++            return None;
++        }
++
++        unsafe {
++            let head = *task;
++
++            // Moving out of the future is safe because it is `Unpin`
++            let future = (*(*head).future.get()).take().unwrap();
++
++            // Mutable access to a previously shared `FuturesUnordered` implies
++            // that the other threads already released the object before the
++            // current thread acquired it, so relaxed ordering can be used and
++            // valid `next_all` checks can be skipped.
++            let next = (*head).next_all.load(Relaxed);
++            *task = next;
++            if !next.is_null() {
++                *(*next).prev_all.get() = ptr::null_mut();
++            }
++            self.len -= 1;
++
++            let arc = Arc::from_raw(head);
++            arc.next_all.store(self.inner.pending_next_all(), Relaxed);
++            *arc.prev_all.get() = ptr::null_mut();
++            self.inner.release_task(arc);
++
++            Some(future)
++        }
++    }
++
++    fn size_hint(&self) -> (usize, Option<usize>) {
++        (self.len, Some(self.len))
++    }
++}
++
++impl<Fut: Unpin> ExactSizeIterator for IntoIter<Fut> {}
++
++impl<'a, Fut> Iterator for IterPinMut<'a, Fut> {
++    type Item = Pin<&'a mut Fut>;
++
++    fn next(&mut self) -> Option<Self::Item> {
++        if self.task.is_null() {
++            return None;
++        }
++
++        unsafe {
++            let future = (*(*self.task).future.get()).as_mut().unwrap();
++
++            // Mutable access to a previously shared `FuturesUnordered` implies
++            // that the other threads already released the object before the
++            // current thread acquired it, so relaxed ordering can be used and
++            // valid `next_all` checks can be skipped.
++            let next = (*self.task).next_all.load(Relaxed);
++            self.task = next;
++            self.len -= 1;
++            Some(Pin::new_unchecked(future))
++        }
++    }
++
++    fn size_hint(&self) -> (usize, Option<usize>) {
++        (self.len, Some(self.len))
++    }
++}
++
++impl<Fut> ExactSizeIterator for IterPinMut<'_, Fut> {}
++
++impl<'a, Fut: Unpin> Iterator for IterMut<'a, Fut> {
++    type Item = &'a mut Fut;
++
++    fn next(&mut self) -> Option<Self::Item> {
++        self.0.next().map(Pin::get_mut)
++    }
++
++    fn size_hint(&self) -> (usize, Option<usize>) {
++        self.0.size_hint()
++    }
++}
++
++impl<Fut: Unpin> ExactSizeIterator for IterMut<'_, Fut> {}
++
++impl<'a, Fut> Iterator for IterPinRef<'a, Fut> {
++    type Item = Pin<&'a Fut>;
++
++    fn next(&mut self) -> Option<Self::Item> {
++        if self.task.is_null() {
++            return None;
++        }
++
++        unsafe {
++            let future = (*(*self.task).future.get()).as_ref().unwrap();
++
++            // Relaxed ordering can be used since acquire ordering when
++            // `head_all` was initially read for this iterator implies acquire
++            // ordering for all previously inserted nodes (and we don't need to
++            // read `len_all` again for any other nodes).
++            let next = (*self.task).spin_next_all(self.pending_next_all, Relaxed);
++            self.task = next;
++            self.len -= 1;
++            Some(Pin::new_unchecked(future))
++        }
++    }
++
++    fn size_hint(&self) -> (usize, Option<usize>) {
++        (self.len, Some(self.len))
++    }
++}
++
++impl<Fut> ExactSizeIterator for IterPinRef<'_, Fut> {}
++
++impl<'a, Fut: Unpin> Iterator for Iter<'a, Fut> {
++    type Item = &'a Fut;
++
++    fn next(&mut self) -> Option<Self::Item> {
++        self.0.next().map(Pin::get_ref)
++    }
++
++    fn size_hint(&self) -> (usize, Option<usize>) {
++        self.0.size_hint()
++    }
++}
++
++impl<Fut: Unpin> ExactSizeIterator for Iter<'_, Fut> {}
++
++// SAFETY: `IterPinRef` yields `Pin<&Fut>` shared references. Sending these
++// to another thread requires `Fut: Sync` since both the sender and receiver
++// can concurrently access the same `Fut` through their shared references.
++unsafe impl<Fut: Sync> Send for IterPinRef<'_, Fut> {}
++unsafe impl<Fut: Sync> Sync for IterPinRef<'_, Fut> {}
++
++// SAFETY: we do nothing thread-local and there is no interior mutability,
++// so the usual structural `Send`/`Sync` apply.
++unsafe impl<Fut: Send> Send for IterPinMut<'_, Fut> {}
++unsafe impl<Fut: Sync> Sync for IterPinMut<'_, Fut> {}
++
++unsafe impl<Fut: Send + Unpin> Send for IntoIter<Fut> {}
++unsafe impl<Fut: Sync + Unpin> Sync for IntoIter<Fut> {}
+--- /dev/null
++++ b/src/runtime/component/concurrent/host_futures/paid/mod.rs
+@@ -0,0 +1,681 @@
++//! An unbounded set of futures.
++//!
++//! This module is only available when the `std` or `alloc` feature of this
++//! library is activated, and it is activated by default.
++
++// Derived from the five locked futures-util0.3.34 unordered files.
++// Algorithm and license: see LICENSE-MIT / LICENSE-APACHE in this directory.
++// This paid-only fork accepts prepared task backing; None uses upstream.
++use super::paid_arc::{Arc, Weak};
++use crate::Result;
++use crate::runtime::native_memory::Memory;
++use atomic::Ordering::{AcqRel, Acquire, Relaxed, Release, SeqCst};
++use atomic::{AtomicBool, AtomicPtr};
++use core::cell::UnsafeCell;
++use core::fmt::{self, Debug};
++use core::future::Future;
++use core::marker::PhantomData;
++use core::mem;
++use core::pin::Pin;
++use core::ptr;
++use core::sync::atomic;
++use core::task::{Context, Poll};
++use futures::stream::{FusedStream, Stream};
++use futures::task::AtomicWaker;
++
++use super::abort;
++
++mod iter;
++#[allow(unreachable_pub)] // https://github.com/rust-lang/rust/issues/102352
++pub use self::iter::{IntoIter, Iter, IterMut, IterPinMut, IterPinRef};
++
++mod task;
++use self::task::Task;
++
++mod ready_to_run_queue;
++use self::ready_to_run_queue::{Dequeue, ReadyToRunQueue};
++
++/// A set of futures which may complete in any order.
++///
++/// See [`FuturesOrdered`](futures::stream::FuturesOrdered) for a version of this
++/// type that preserves a FIFO order.
++///
++/// This structure is optimized to manage a large number of futures.
++/// Futures managed by [`FuturesUnordered`] will only be polled when they
++/// generate wake-up notifications. This reduces the required amount of work
++/// needed to poll large numbers of futures.
++///
++/// [`FuturesUnordered`] can be filled by [`collect`](Iterator::collect)ing an
++/// iterator of futures into a [`FuturesUnordered`], or by
++/// [`push`](FuturesUnordered::push)ing futures onto an existing
++/// [`FuturesUnordered`]. When new futures are added,
++/// [`poll_next`](Stream::poll_next) must be called in order to begin receiving
++/// wake-ups for new futures.
++///
++/// Note that you can create a ready-made [`FuturesUnordered`] via the
++/// [`collect`](Iterator::collect) method, or you can start with an empty set
++/// with the [`FuturesUnordered::new`] constructor.
++///
++/// This type is only available when the `std` or `alloc` feature of this
++/// library is activated, and it is activated by default.
++#[must_use = "streams do nothing unless polled"]
++pub struct FuturesUnordered<Fut> {
++    ready_to_run_queue: Arc<ReadyToRunQueue<Fut>>,
++    head_all: AtomicPtr<Task<Fut>>,
++    is_terminated: AtomicBool,
++}
++
++unsafe impl<Fut: Send> Send for FuturesUnordered<Fut> {}
++unsafe impl<Fut: Send + Sync> Sync for FuturesUnordered<Fut> {}
++impl<Fut> Unpin for FuturesUnordered<Fut> {}
++
++// FuturesUnordered is implemented using two linked lists. One which links all
++// futures managed by a `FuturesUnordered` and one that tracks futures that have
++// been scheduled for polling. The first linked list allows for thread safe
++// insertion of nodes at the head as well as forward iteration, but is otherwise
++// not thread safe and is only accessed by the thread that owns the
++// `FuturesUnordered` value for any other operations. The second linked list is
++// an implementation of the intrusive MPSC queue algorithm described by
++// 1024cores.net.
++//
++// When a future is submitted to the set, a task is allocated and inserted in
++// both linked lists. The next call to `poll_next` will (eventually) see this
++// task and call `poll` on the future.
++//
++// Before a managed future is polled, the current context's waker is replaced
++// with one that is aware of the specific future being run. This ensures that
++// wake-up notifications generated by that specific future are visible to
++// `FuturesUnordered`. When a wake-up notification is received, the task is
++// inserted into the ready to run queue, so that its future can be polled later.
++//
++// Each task is wrapped in an `Arc` and thereby atomically reference counted.
++// Also, each task contains an `AtomicBool` which acts as a flag that indicates
++// whether the task is currently inserted in the atomic queue. When a wake-up
++// notification is received, the task will only be inserted into the ready to
++// run queue if it isn't inserted already.
++
++impl<Fut> FuturesUnordered<Fut> {
++    /// Constructs a new, empty [`FuturesUnordered`].
++    ///
++    /// The returned [`FuturesUnordered`] does not contain any futures.
++    /// In this state, [`FuturesUnordered::poll_next`](Stream::poll_next) will
++    /// return [`Poll::Ready(None)`](Poll::Ready).
++    pub(super) fn try_new(memory: &Memory) -> Result<Self> {
++        let stub = Arc::new(
++            memory,
++            Task {
++                future: UnsafeCell::new(None),
++                next_all: AtomicPtr::new(ptr::null_mut()),
++                prev_all: UnsafeCell::new(ptr::null()),
++                len_all: UnsafeCell::new(0),
++                next_ready_to_run: AtomicPtr::new(ptr::null_mut()),
++                queued: AtomicBool::new(true),
++                ready_to_run_queue: Weak::new(),
++                woken: AtomicBool::new(false),
++            },
++        )?;
++        let stub_ptr = Arc::as_ptr(&stub);
++        let ready_to_run_queue = Arc::new(
++            memory,
++            ReadyToRunQueue {
++                waker: AtomicWaker::new(),
++                head: AtomicPtr::new(stub_ptr as *mut _),
++                tail: UnsafeCell::new(stub_ptr),
++                stub,
++            },
++        )?;
++
++        Ok(Self {
++            head_all: AtomicPtr::new(ptr::null_mut()),
++            ready_to_run_queue,
++            is_terminated: AtomicBool::new(false),
++        })
++    }
++
++    /// Returns the number of futures contained in the set.
++    ///
++    /// This represents the total number of in-flight futures.
++    pub fn len(&self) -> usize {
++        let (_, len) = self.atomic_load_head_and_len_all();
++        len
++    }
++
++    /// Returns `true` if the set contains no futures.
++    pub fn is_empty(&self) -> bool {
++        // Relaxed ordering can be used here since we don't need to read from
++        // the head pointer, only check whether it is null.
++        self.head_all.load(Relaxed).is_null()
++    }
++
++    /// Fill and publish the SAME already-admitted stable task header.
++    /// No allocator or admission is called here after user effects.
++    pub(super) fn push_prepared(&self, prepared: PreparedTask<Fut>, future: Fut) {
++        let PreparedTask { task } = prepared;
++        // TaskSlot has never published a pointer, clone, or weak token. Its
++        // original sole strong owner is therefore exclusive until link below.
++        let ptr = Arc::as_ptr(&task).cast_mut();
++        unsafe {
++            *(*ptr).future.get() = Some(future);
++            (*ptr).ready_to_run_queue = Arc::downgrade(&self.ready_to_run_queue);
++        }
++        task.next_all.store(self.pending_next_all(), Relaxed);
++
++        // Reset the `is_terminated` flag if we've previously marked ourselves
++        // as terminated.
++        self.is_terminated.store(false, Relaxed);
++
++        // Right now our task has a strong reference count of 1. We transfer
++        // ownership of this reference count to our internal linked list
++        // and we'll reclaim ownership through the `unlink` method below.
++        let ptr = self.link(task);
++
++        // We'll need to get the future "into the system" to start tracking it,
++        // e.g. getting its wake-up notifications going to us tracking which
++        // futures are ready. To do that we unconditionally enqueue it for
++        // polling here.
++        self.ready_to_run_queue.enqueue(ptr);
++    }
++
++    /// Returns an iterator that allows inspecting each future in the set.
++    pub fn iter(&self) -> Iter<'_, Fut>
++    where
++        Fut: Unpin,
++    {
++        Iter(Pin::new(self).iter_pin_ref())
++    }
++
++    /// Returns an iterator that allows inspecting each future in the set.
++    pub fn iter_pin_ref(self: Pin<&Self>) -> IterPinRef<'_, Fut> {
++        let (task, len) = self.atomic_load_head_and_len_all();
++        let pending_next_all = self.pending_next_all();
++
++        IterPinRef {
++            task,
++            len,
++            pending_next_all,
++            _marker: PhantomData,
++        }
++    }
++
++    /// Returns an iterator that allows modifying each future in the set.
++    pub fn iter_mut(&mut self) -> IterMut<'_, Fut>
++    where
++        Fut: Unpin,
++    {
++        IterMut(Pin::new(self).iter_pin_mut())
++    }
++
++    /// Returns an iterator that allows modifying each future in the set.
++    pub fn iter_pin_mut(mut self: Pin<&mut Self>) -> IterPinMut<'_, Fut> {
++        // `head_all` can be accessed directly and we don't need to spin on
++        // `Task::next_all` since we have exclusive access to the set.
++        let task = *self.head_all.get_mut();
++        let len = if task.is_null() {
++            0
++        } else {
++            unsafe { *(*task).len_all.get() }
++        };
++
++        IterPinMut {
++            task,
++            len,
++            _marker: PhantomData,
++        }
++    }
++
++    /// Returns the current head node and number of futures in the list of all
++    /// futures within a context where access is shared with other threads
++    /// (mostly for use with the `len` and `iter_pin_ref` methods).
++    fn atomic_load_head_and_len_all(&self) -> (*const Task<Fut>, usize) {
++        let task = self.head_all.load(Acquire);
++        let len = if task.is_null() {
++            0
++        } else {
++            unsafe {
++                (*task).spin_next_all(self.pending_next_all(), Acquire);
++                *(*task).len_all.get()
++            }
++        };
++
++        (task, len)
++    }
++
++    /// Releases the task. It destroys the future inside and either drops
++    /// the `Arc<Task>` or transfers ownership to the ready to run queue.
++    /// The task this method is called on must have been unlinked before.
++    fn release_task(&mut self, task: Arc<Task<Fut>>) {
++        // `release_task` must only be called on unlinked tasks
++        debug_assert_eq!(task.next_all.load(Relaxed), self.pending_next_all());
++        unsafe {
++            debug_assert!((*task.prev_all.get()).is_null());
++        }
++
++        // The future is done, try to reset the queued flag. This will prevent
++        // `wake` from doing any work in the future
++        let prev = task.queued.swap(true, SeqCst);
++
++        // If the queued flag was previously set, then it means that this task
++        // is still in our internal ready to run queue. We then transfer
++        // ownership of our reference count to the ready to run queue, and it'll
++        // come along and free it later, noticing that the future is `None`.
++        //
++        // If, however, the queued flag was *not* set then we're safe to
++        // release our reference count on the task. The queued flag was set
++        // above so all future `enqueue` operations will not actually
++        // enqueue the task, so our task will never see the ready to run queue
++        // again. The task itself will be deallocated once all reference counts
++        // have been dropped elsewhere by the various wakers that contain it.
++        //
++        // Use ManuallyDrop to transfer the reference count ownership before
++        // dropping the future so unwinding won't release the reference count.
++        let md_slot;
++        let task = if prev {
++            md_slot = mem::ManuallyDrop::new(task);
++            &*md_slot
++        } else {
++            &task
++        };
++
++        // Drop the future, even if it hasn't finished yet. This is safe
++        // because we're dropping the future on the thread that owns
++        // `FuturesUnordered`, which correctly tracks `Fut`'s lifetimes and
++        // such.
++        unsafe {
++            // Set to `None` rather than `take()`ing to prevent moving the
++            // future.
++            *task.future.get() = None;
++        }
++    }
++
++    /// Insert a new task into the internal linked list.
++    fn link(&self, task: Arc<Task<Fut>>) -> *const Task<Fut> {
++        // `next_all` should already be reset to the pending state before this
++        // function is called.
++        debug_assert_eq!(task.next_all.load(Relaxed), self.pending_next_all());
++        let ptr = Arc::into_raw(task);
++
++        // Atomically swap out the old head node to get the node that should be
++        // assigned to `next_all`.
++        let next = self.head_all.swap(ptr as *mut _, AcqRel);
++
++        unsafe {
++            // Store the new list length in the new node.
++            let new_len = if next.is_null() {
++                1
++            } else {
++                // Make sure `next_all` has been written to signal that it is
++                // safe to read `len_all`.
++                (*next).spin_next_all(self.pending_next_all(), Acquire);
++                *(*next).len_all.get() + 1
++            };
++            *(*ptr).len_all.get() = new_len;
++
++            // Write the old head as the next node pointer, signaling to other
++            // threads that `len_all` and `next_all` are ready to read.
++            (*ptr).next_all.store(next, Release);
++
++            // `prev_all` updates don't need to be synchronized, as the field is
++            // only ever used after exclusive access has been acquired.
++            if !next.is_null() {
++                *(*next).prev_all.get() = ptr;
++            }
++        }
++
++        ptr
++    }
++
++    /// Remove the task from the linked list tracking all tasks currently
++    /// managed by `FuturesUnordered`.
++    /// This method is unsafe because it has be guaranteed that `task` is a
++    /// valid pointer.
++    unsafe fn unlink(&mut self, task: *const Task<Fut>) -> Arc<Task<Fut>> {
++        unsafe {
++            // Compute the new list length now in case we're removing the head node
++            // and won't be able to retrieve the correct length later.
++            let head = *self.head_all.get_mut();
++            debug_assert!(!head.is_null());
++            let new_len = *(*head).len_all.get() - 1;
++
++            let task = Arc::from_raw(task);
++            let next = task.next_all.load(Relaxed);
++            let prev = *task.prev_all.get();
++            task.next_all.store(self.pending_next_all(), Relaxed);
++            *task.prev_all.get() = ptr::null_mut();
++
++            if !next.is_null() {
++                *(*next).prev_all.get() = prev;
++            }
++
++            if !prev.is_null() {
++                (*prev).next_all.store(next, Relaxed);
++            } else {
++                *self.head_all.get_mut() = next;
++            }
++
++            // Store the new list length in the head node.
++            let head = *self.head_all.get_mut();
++            if !head.is_null() {
++                *(*head).len_all.get() = new_len;
++            }
++
++            task
++        }
++    }
++
++    /// Returns the reserved value for `Task::next_all` to indicate a pending
++    /// assignment from the thread that inserted the task.
++    ///
++    /// `FuturesUnordered::link` needs to update `Task` pointers in an order
++    /// that ensures any iterators created on other threads can correctly
++    /// traverse the entire `Task` list using the chain of `next_all` pointers.
++    /// This could be solved with a compare-exchange loop that stores the
++    /// current `head_all` in `next_all` and swaps out `head_all` with the new
++    /// `Task` pointer if the head hasn't already changed. Under heavy thread
++    /// contention, this compare-exchange loop could become costly.
++    ///
++    /// An alternative is to initialize `next_all` to a reserved pending state
++    /// first, perform an atomic swap on `head_all`, and finally update
++    /// `next_all` with the old head node. Iterators will then either see the
++    /// pending state value or the correct next node pointer, and can reload
++    /// `next_all` as needed until the correct value is loaded. The number of
++    /// retries needed (if any) would be small and will always be finite, so
++    /// this should generally perform better than the compare-exchange loop.
++    ///
++    /// A valid `Task` pointer in the `head_all` list is guaranteed to never be
++    /// this value, so it is safe to use as a reserved value until the correct
++    /// value can be written.
++    fn pending_next_all(&self) -> *mut Task<Fut> {
++        // The `ReadyToRunQueue` stub is never inserted into the `head_all`
++        // list, and its pointer value will remain valid for the lifetime of
++        // this `FuturesUnordered`, so we can make use of its value here.
++        Arc::as_ptr(&self.ready_to_run_queue.stub) as *mut _
++    }
++}
++
++impl<Fut: Future> Stream for FuturesUnordered<Fut> {
++    type Item = Fut::Output;
++
++    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
++        let len = self.len();
++
++        // Keep track of how many child futures we have polled,
++        // in case we want to forcibly yield.
++        let mut polled = 0;
++        let mut yielded = 0;
++
++        // Ensure `parent` is correctly set.
++        self.ready_to_run_queue.waker.register(cx.waker());
++
++        loop {
++            // Safety: &mut self guarantees the mutual exclusion `dequeue`
++            // expects
++            let task = match unsafe { self.ready_to_run_queue.dequeue() } {
++                Dequeue::Empty => {
++                    if self.is_empty() {
++                        // We can only consider ourselves terminated once we
++                        // have yielded a `None`
++                        *self.is_terminated.get_mut() = true;
++                        return Poll::Ready(None);
++                    } else {
++                        return Poll::Pending;
++                    }
++                }
++                Dequeue::Inconsistent => {
++                    // At this point, it may be worth yielding the thread &
++                    // spinning a few times... but for now, just yield using the
++                    // task system.
++                    cx.waker().wake_by_ref();
++                    return Poll::Pending;
++                }
++                Dequeue::Data(task) => task,
++            };
++
++            debug_assert!(task != self.ready_to_run_queue.stub());
++
++            // Safety:
++            // - `task` is a valid pointer.
++            // - We are the only thread that accesses the `UnsafeCell` that
++            //   contains the future
++            let future = match unsafe { &mut *(*task).future.get() } {
++                Some(future) => future,
++
++                // If the future has already gone away then we're just
++                // cleaning out this task. See the comment in
++                // `release_task` for more information, but we're basically
++                // just taking ownership of our reference count here.
++                None => {
++                    // This case only happens when `release_task` was called
++                    // for this task before and couldn't drop the task
++                    // because it was already enqueued in the ready to run
++                    // queue.
++
++                    // Safety: `task` is a valid pointer
++                    let task = unsafe { Arc::from_raw(task) };
++
++                    // Double check that the call to `release_task` really
++                    // happened. Calling it required the task to be unlinked.
++                    debug_assert_eq!(task.next_all.load(Relaxed), self.pending_next_all());
++                    unsafe {
++                        debug_assert!((*task.prev_all.get()).is_null());
++                    }
++                    continue;
++                }
++            };
++
++            // Safety: `task` is a valid pointer
++            let task = unsafe { self.unlink(task) };
++
++            // Unset queued flag: This must be done before polling to ensure
++            // that the future's task gets rescheduled if it sends a wake-up
++            // notification **during** the call to `poll`.
++            let prev = task.queued.swap(false, SeqCst);
++            assert!(prev);
++
++            // We're going to need to be very careful if the `poll`
++            // method below panics. We need to (a) not leak memory and
++            // (b) ensure that we still don't have any use-after-frees. To
++            // manage this we do a few things:
++            //
++            // * A "bomb" is created which if dropped abnormally will call
++            //   `release_task`. That way we'll be sure the memory management
++            //   of the `task` is managed correctly. In particular
++            //   `release_task` will drop the future. This ensures that it is
++            //   dropped on this thread and not accidentally on a different
++            //   thread (bad).
++            // * We unlink the task from our internal queue to preemptively
++            //   assume it'll panic, in which case we'll want to discard it
++            //   regardless.
++            struct Bomb<'a, Fut> {
++                queue: &'a mut FuturesUnordered<Fut>,
++                task: Option<Arc<Task<Fut>>>,
++            }
++
++            impl<Fut> Drop for Bomb<'_, Fut> {
++                fn drop(&mut self) {
++                    if let Some(task) = self.task.take() {
++                        self.queue.release_task(task);
++                    }
++                }
++            }
++
++            let mut bomb = Bomb {
++                task: Some(task),
++                queue: &mut *self,
++            };
++
++            // Poll the underlying future with the appropriate waker
++            // implementation. This is where a large bit of the unsafety
++            // starts to stem from internally. The waker is basically just
++            // our `Arc<Task<Fut>>` and can schedule the future for polling by
++            // enqueuing itself in the ready to run queue.
++            //
++            // Critically though `Task<Fut>` won't actually access `Fut`, the
++            // future, while it's floating around inside of wakers.
++            // These structs will basically just use `Fut` to size
++            // the internal allocation, appropriately accessing fields and
++            // deallocating the task if need be.
++            let res = {
++                let task = bomb.task.as_ref().unwrap();
++                // We are only interested in whether the future is awoken before it
++                // finishes polling, so reset the flag here.
++                task.woken.store(false, Relaxed);
++                // SAFETY: see the comments of Bomb and this block.
++                let waker = unsafe { Task::waker_ref(task) };
++                let mut cx = Context::from_waker(&waker);
++
++                // Safety: We won't move the future ever again
++                let future = unsafe { Pin::new_unchecked(future) };
++
++                future.poll(&mut cx)
++            };
++            polled += 1;
++
++            match res {
++                Poll::Pending => {
++                    let task = bomb.task.take().unwrap();
++                    // If the future was awoken during polling, we assume
++                    // the future wanted to explicitly yield.
++                    yielded += task.woken.load(Relaxed) as usize;
++                    bomb.queue.link(task);
++
++                    // If a future yields, we respect it and yield here.
++                    // If all futures have been polled, we also yield here to
++                    // avoid starving other tasks waiting on the executor.
++                    // (polling the same future twice per iteration may cause
++                    // the problem: https://github.com/rust-lang/futures-rs/pull/2333)
++                    if yielded >= 2 || polled == len {
++                        cx.waker().wake_by_ref();
++                        return Poll::Pending;
++                    }
++                    continue;
++                }
++                Poll::Ready(output) => return Poll::Ready(Some(output)),
++            }
++        }
++    }
++
++    fn size_hint(&self) -> (usize, Option<usize>) {
++        let len = self.len();
++        (len, Some(len))
++    }
++}
++
++impl<Fut> Debug for FuturesUnordered<Fut> {
++    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
++        write!(f, "FuturesUnordered {{ ... }}")
++    }
++}
++
++impl<Fut> Drop for FuturesUnordered<Fut> {
++    fn drop(&mut self) {
++        // Before the strong reference to the queue is dropped we need all
++        // futures to be dropped. See note at the bottom of this method.
++        //
++        // If there is a panic before this completes, we leak the queue.
++        struct LeakQueueOnDrop<'a, Fut>(&'a mut FuturesUnordered<Fut>);
++        impl<Fut> Drop for LeakQueueOnDrop<'_, Fut> {
++            fn drop(&mut self) {
++                mem::forget(Arc::clone(&self.0.ready_to_run_queue));
++            }
++        }
++        let guard = LeakQueueOnDrop(self);
++        // When a `FuturesUnordered` is dropped we want to drop all futures
++        // associated with it. At the same time though there may be tons of
++        // wakers flying around which contain `Task<Fut>` references
++        // inside them. We'll let those naturally get deallocated.
++        while !guard.0.head_all.get_mut().is_null() {
++            let head = *guard.0.head_all.get_mut();
++            let task = unsafe { guard.0.unlink(head) };
++            guard.0.release_task(task);
++        }
++        mem::forget(guard); // safe to release strong reference to queue
++
++        // Note that at this point we could still have a bunch of tasks in the
++        // ready to run queue. None of those tasks, however, have futures
++        // associated with them so they're safe to destroy on any thread. At
++        // this point the `FuturesUnordered` struct, the owner of the one strong
++        // reference to the ready to run queue will drop the strong reference.
++        // At that point whichever thread releases the strong refcount last (be
++        // it this thread or some other thread as part of an `upgrade`) will
++        // clear out the ready to run queue and free all remaining tasks.
++        //
++        // While that freeing operation isn't guaranteed to happen here, it's
++        // guaranteed to happen "promptly" as no more "blocking work" will
++        // happen while there's a strong refcount held.
++    }
++}
++
++impl<'a, Fut: Unpin> IntoIterator for &'a FuturesUnordered<Fut> {
++    type Item = &'a Fut;
++    type IntoIter = Iter<'a, Fut>;
++
++    fn into_iter(self) -> Self::IntoIter {
++        self.iter()
++    }
++}
++
++impl<'a, Fut: Unpin> IntoIterator for &'a mut FuturesUnordered<Fut> {
++    type Item = &'a mut Fut;
++    type IntoIter = IterMut<'a, Fut>;
++
++    fn into_iter(self) -> Self::IntoIter {
++        self.iter_mut()
++    }
++}
++
++impl<Fut: Unpin> IntoIterator for FuturesUnordered<Fut> {
++    type Item = Fut;
++    type IntoIter = IntoIter<Fut>;
++
++    fn into_iter(mut self) -> Self::IntoIter {
++        // `head_all` can be accessed directly and we don't need to spin on
++        // `Task::next_all` since we have exclusive access to the set.
++        let task = *self.head_all.get_mut();
++        let len = if task.is_null() {
++            0
++        } else {
++            unsafe { *(*task).len_all.get() }
++        };
++
++        IntoIter { len, inner: self }
++    }
++}
++
++impl<Fut: Future> FusedStream for FuturesUnordered<Fut> {
++    fn is_terminated(&self) -> bool {
++        self.is_terminated.load(Relaxed)
++    }
++}
++
++/// An affine unexposed task backing, created before user poll/state effects.
++pub(super) struct PreparedTask<Fut> {
++    task: Arc<Task<Fut>>,
++}
++
++impl<Fut> PreparedTask<Fut> {
++    pub(super) fn new(memory: &Memory) -> Result<Self> {
++        Ok(Self {
++            task: Arc::new(
++                memory,
++                Task {
++                    future: UnsafeCell::new(None),
++                    next_all: AtomicPtr::new(ptr::null_mut()),
++                    prev_all: UnsafeCell::new(ptr::null()),
++                    len_all: UnsafeCell::new(0),
++                    next_ready_to_run: AtomicPtr::new(ptr::null_mut()),
++                    ready_to_run_queue: Weak::new(),
++                    queued: AtomicBool::new(true),
++                    woken: AtomicBool::new(false),
++                },
++            )?,
++        })
++    }
++}
++
++#[cfg(test)]
++pub(super) fn allocation_layouts<Fut>() -> (core::alloc::Layout, core::alloc::Layout) {
++    (
++        Arc::<Task<Fut>>::layout(),
++        Arc::<ReadyToRunQueue<Fut>>::layout(),
++    )
++}
+--- /dev/null
++++ b/src/runtime/component/concurrent/host_futures/paid/ready_to_run_queue.rs
+@@ -0,0 +1,113 @@
++use super::Arc;
++use super::atomic::AtomicPtr;
++use super::atomic::Ordering::{AcqRel, Acquire, Relaxed, Release};
++use core::cell::UnsafeCell;
++use core::ptr;
++use futures::task::AtomicWaker;
++
++use super::abort::abort;
++use super::task::Task;
++
++pub(super) enum Dequeue<Fut> {
++    Data(*const Task<Fut>),
++    Empty,
++    Inconsistent,
++}
++
++pub(super) struct ReadyToRunQueue<Fut> {
++    // The waker of the task using `FuturesUnordered`.
++    pub(super) waker: AtomicWaker,
++
++    // Head/tail of the readiness queue
++    pub(super) head: AtomicPtr<Task<Fut>>,
++    pub(super) tail: UnsafeCell<*const Task<Fut>>,
++    pub(super) stub: Arc<Task<Fut>>,
++}
++
++/// An MPSC queue into which the tasks containing the futures are inserted
++/// whenever the future inside is scheduled for polling.
++impl<Fut> ReadyToRunQueue<Fut> {
++    // FIXME: this takes raw pointer without safety conditions.
++
++    /// The enqueue function from the 1024cores intrusive MPSC queue algorithm.
++    pub(super) fn enqueue(&self, task: *const Task<Fut>) {
++        unsafe {
++            debug_assert!((*task).queued.load(Relaxed));
++
++            // This action does not require any coordination
++            (*task).next_ready_to_run.store(ptr::null_mut(), Relaxed);
++
++            // Note that these atomic orderings come from 1024cores
++            let task = task as *mut _;
++            let prev = self.head.swap(task, AcqRel);
++            (*prev).next_ready_to_run.store(task, Release);
++        }
++    }
++
++    /// The dequeue function from the 1024cores intrusive MPSC queue algorithm
++    ///
++    /// Note that this is unsafe as it required mutual exclusion (only one
++    /// thread can call this) to be guaranteed elsewhere.
++    pub(super) unsafe fn dequeue(&self) -> Dequeue<Fut> {
++        unsafe {
++            let mut tail = *self.tail.get();
++            let mut next = (*tail).next_ready_to_run.load(Acquire);
++
++            if tail == self.stub() {
++                if next.is_null() {
++                    return Dequeue::Empty;
++                }
++
++                *self.tail.get() = next;
++                tail = next;
++                next = (*next).next_ready_to_run.load(Acquire);
++            }
++
++            if !next.is_null() {
++                *self.tail.get() = next;
++                debug_assert!(tail != self.stub());
++                return Dequeue::Data(tail);
++            }
++
++            if !core::ptr::eq(self.head.load(Acquire), tail) {
++                return Dequeue::Inconsistent;
++            }
++
++            self.enqueue(self.stub());
++
++            next = (*tail).next_ready_to_run.load(Acquire);
++
++            if !next.is_null() {
++                *self.tail.get() = next;
++                return Dequeue::Data(tail);
++            }
++
++            Dequeue::Inconsistent
++        }
++    }
++
++    pub(super) fn stub(&self) -> *const Task<Fut> {
++        Arc::as_ptr(&self.stub)
++    }
++}
++
++impl<Fut> Drop for ReadyToRunQueue<Fut> {
++    fn drop(&mut self) {
++        // Once we're in the destructor for `Inner<Fut>` we need to clear out
++        // the ready to run queue of tasks if there's anything left in there.
++        //
++        // Note that each task has a strong reference count associated with it
++        // which is owned by the ready to run queue. All tasks should have had
++        // their futures dropped already by the `FuturesUnordered` destructor
++        // above, so we're just pulling out tasks and dropping their refcounts.
++        unsafe {
++            loop {
++                match self.dequeue() {
++                    Dequeue::Empty => break,
++                    Dequeue::Inconsistent => abort("inconsistent in drop"),
++                    Dequeue::Data(ptr) => drop(Arc::from_raw(ptr)),
++                }
++            }
++        }
++    }
++}
+--- /dev/null
++++ b/src/runtime/component/concurrent/host_futures/paid/task.rs
+@@ -0,0 +1,268 @@
++use super::{Arc, Weak, atomic};
++
++use core::cell::UnsafeCell;
++
++use atomic::Ordering::{self, Relaxed, SeqCst};
++use atomic::{AtomicBool, AtomicPtr};
++
++use super::ReadyToRunQueue;
++use super::abort::abort;
++
++/// Local wake adapter for this fork's private sized paid strong token.
++///
++/// A way of waking up a specific task.
++///
++/// By implementing this trait, types that are expected to be wrapped in an `Arc`
++/// can be converted into [`Waker`] objects.
++/// Those Wakers can be used to signal executors that a task it owns
++/// is ready to be `poll`ed again.
++///
++/// Currently, there are two ways to convert `ArcWake` into [`Waker`]:
++///
++/// * The private raw adapter transfers one strong token into [`Waker`].
++/// * The borrowed `waker_ref` converts `&Arc<impl ArcWake>` into `WakerRef` that
++///   provides access to a [`&Waker`][`Waker`].
++///
++/// [`Waker`]: std::task::Waker
++// Note: Send + Sync required because `Arc<T>` doesn't automatically imply
++// those bounds, but `Waker` implements them.
++pub(crate) trait ArcWake: Send + Sync + Sized {
++    /// Indicates that the associated task is ready to make progress and should
++    /// be `poll`ed.
++    ///
++    /// This function can be called from an arbitrary thread, including threads which
++    /// did not create the `ArcWake` based [`Waker`].
++    ///
++    /// Executors generally maintain a queue of "ready" tasks; `wake` should place
++    /// the associated task onto this queue.
++    ///
++    /// [`Waker`]: std::task::Waker
++    fn wake(this: Arc<Self>) {
++        Self::wake_by_ref(&this)
++    }
++
++    /// Indicates that the associated task is ready to make progress and should
++    /// be `poll`ed.
++    ///
++    /// This function can be called from an arbitrary thread, including threads which
++    /// did not create the `ArcWake` based [`Waker`].
++    ///
++    /// Executors generally maintain a queue of "ready" tasks; `wake_by_ref` should place
++    /// the associated task onto this queue.
++    ///
++    /// This function is similar to [`wake`](ArcWake::wake), but must not consume the provided data
++    /// pointer.
++    ///
++    /// [`Waker`]: std::task::Waker
++    fn wake_by_ref(arc_self: &Arc<Self>);
++}
++
++pub(super) struct Task<Fut> {
++    // The future
++    pub(super) future: UnsafeCell<Option<Fut>>,
++
++    // Next pointer for linked list tracking all active tasks (use
++    // `spin_next_all` to read when access is shared across threads)
++    pub(super) next_all: AtomicPtr<Task<Fut>>,
++
++    // Previous task in linked list tracking all active tasks
++    pub(super) prev_all: UnsafeCell<*const Task<Fut>>,
++
++    // Length of the linked list tracking all active tasks when this node was
++    // inserted (use `spin_next_all` to synchronize before reading when access
++    // is shared across threads)
++    pub(super) len_all: UnsafeCell<usize>,
++
++    // Next pointer in ready to run queue
++    pub(super) next_ready_to_run: AtomicPtr<Task<Fut>>,
++
++    // Queue that we'll be enqueued to when woken
++    pub(super) ready_to_run_queue: Weak<ReadyToRunQueue<Fut>>,
++
++    // Whether or not this task is currently in the ready to run queue
++    pub(super) queued: AtomicBool,
++
++    // Whether the future was awoken during polling
++    // It is possible for this flag to be set to true after the polling,
++    // but it will be ignored.
++    pub(super) woken: AtomicBool,
++}
++
++// `Task` can be sent across threads safely because it ensures that
++// the underlying `Fut` type isn't touched from any of its methods.
++//
++// The parent (`super`) module is trusted not to access `future`
++// across different threads.
++unsafe impl<Fut> Send for Task<Fut> {}
++unsafe impl<Fut> Sync for Task<Fut> {}
++
++impl<Fut> ArcWake for Task<Fut> {
++    fn wake_by_ref(arc_self: &Arc<Self>) {
++        let inner = match arc_self.ready_to_run_queue.upgrade() {
++            Some(inner) => inner,
++            None => return,
++        };
++
++        arc_self.woken.store(true, Relaxed);
++
++        // It's our job to enqueue this task it into the ready to run queue. To
++        // do this we set the `queued` flag, and if successful we then do the
++        // actual queueing operation, ensuring that we're only queued once.
++        //
++        // Once the task is inserted call `wake` to notify the parent task,
++        // as it'll want to come along and run our task later.
++        //
++        // Note that we don't change the reference count of the task here,
++        // we merely enqueue the raw pointer. The `FuturesUnordered`
++        // implementation guarantees that if we set the `queued` flag that
++        // there's a reference count held by the main `FuturesUnordered` queue
++        // still.
++        let prev = arc_self.queued.swap(true, SeqCst);
++        if !prev {
++            inner.enqueue(Arc::as_ptr(arc_self));
++            inner.waker.wake();
++        }
++    }
++}
++
++impl<Fut> Task<Fut> {
++    /// Returns a waker reference for this task without cloning the Arc.
++    pub(super) unsafe fn waker_ref(this: &Arc<Self>) -> waker_ref::WakerRef<'_> {
++        unsafe { waker_ref::waker_ref(this) }
++    }
++
++    /// Spins until `next_all` is no longer set to `pending_next_all`.
++    ///
++    /// The temporary `pending_next_all` value is typically overwritten fairly
++    /// quickly after a node is inserted into the list of all futures, so this
++    /// should rarely spin much.
++    ///
++    /// When it returns, the correct `next_all` value is returned.
++    ///
++    /// `Relaxed` or `Acquire` ordering can be used. `Acquire` ordering must be
++    /// used before `len_all` can be safely read.
++    #[inline]
++    pub(super) fn spin_next_all(
++        &self,
++        pending_next_all: *mut Self,
++        ordering: Ordering,
++    ) -> *const Self {
++        loop {
++            let next = self.next_all.load(ordering);
++            if next != pending_next_all {
++                return next;
++            }
++        }
++    }
++}
++
++impl<Fut> Drop for Task<Fut> {
++    fn drop(&mut self) {
++        // Since `Task<Fut>` is sent across all threads for any lifetime,
++        // regardless of `Fut`, we, to guarantee memory safety, can't actually
++        // touch `Fut` at any time except when we have a reference to the
++        // `FuturesUnordered` itself .
++        //
++        // Consequently it *should* be the case that we always drop futures from
++        // the `FuturesUnordered` instance. This is a bomb, just in case there's
++        // a bug in that logic.
++        unsafe {
++            if (*self.future.get()).is_some() {
++                abort("future still here when dropping");
++            }
++        }
++    }
++}
++
++mod waker_ref {
++    use super::super::Arc;
++    use super::ArcWake;
++    use core::marker::PhantomData;
++    use core::mem;
++    use core::mem::ManuallyDrop;
++    use core::ops::Deref;
++    use core::task::{RawWaker, RawWakerVTable, Waker};
++
++    pub(crate) struct WakerRef<'a> {
++        waker: ManuallyDrop<Waker>,
++        _marker: PhantomData<&'a ()>,
++    }
++
++    impl WakerRef<'_> {
++        #[inline]
++        fn new_unowned(waker: ManuallyDrop<Waker>) -> Self {
++            Self {
++                waker,
++                _marker: PhantomData,
++            }
++        }
++    }
++
++    impl Deref for WakerRef<'_> {
++        type Target = Waker;
++
++        #[inline]
++        fn deref(&self) -> &Waker {
++            &self.waker
++        }
++    }
++
++    /// Copy of `future_task::waker_ref` without `W: 'static` bound.
++    ///
++    /// # Safety
++    ///
++    /// The caller must guarantee that use-after-free will not occur.
++    #[inline]
++    pub(crate) unsafe fn waker_ref<W>(wake: &Arc<W>) -> WakerRef<'_>
++    where
++        W: ArcWake,
++    {
++        // simply copy the pointer instead of using Arc::into_raw,
++        // as we don't actually keep a refcount by using ManuallyDrop.<
++        let ptr = Arc::as_ptr(wake).cast::<()>();
++
++        let waker =
++            ManuallyDrop::new(unsafe { Waker::from_raw(RawWaker::new(ptr, waker_vtable::<W>())) });
++        WakerRef::new_unowned(waker)
++    }
++
++    fn waker_vtable<W: ArcWake>() -> &'static RawWakerVTable {
++        &RawWakerVTable::new(
++            clone_arc_raw::<W>,
++            wake_arc_raw::<W>,
++            wake_by_ref_arc_raw::<W>,
++            drop_arc_raw::<W>,
++        )
++    }
++
++    // FIXME: panics on Arc::clone / refcount changes could wreak havoc on the
++    // code here. We should guard against this by aborting.
++
++    unsafe fn increase_refcount<T: ArcWake>(data: *const ()) {
++        // Retain Arc, but don't touch refcount by wrapping in ManuallyDrop
++        let arc = mem::ManuallyDrop::new(unsafe { Arc::<T>::from_raw(data.cast::<T>()) });
++        // Now increase refcount, but don't drop new refcount either
++        let _arc_clone: mem::ManuallyDrop<_> = arc.clone();
++    }
++
++    #[inline(always)]
++    unsafe fn clone_arc_raw<T: ArcWake>(data: *const ()) -> RawWaker {
++        unsafe { increase_refcount::<T>(data) }
++        RawWaker::new(data, waker_vtable::<T>())
++    }
++
++    unsafe fn wake_arc_raw<T: ArcWake>(data: *const ()) {
++        let arc: Arc<T> = unsafe { Arc::from_raw(data.cast::<T>()) };
++        ArcWake::wake(arc);
++    }
++
++    unsafe fn wake_by_ref_arc_raw<T: ArcWake>(data: *const ()) {
++        // Retain Arc, but don't touch refcount by wrapping in ManuallyDrop
++        let arc = mem::ManuallyDrop::new(unsafe { Arc::<T>::from_raw(data.cast::<T>()) });
++        ArcWake::wake_by_ref(&arc);
++    }
++
++    unsafe fn drop_arc_raw<T: ArcWake>(data: *const ()) {
++        drop(unsafe { Arc::<T>::from_raw(data.cast::<T>()) })
++    }
++}
+--- /dev/null
++++ b/src/runtime/component/concurrent/host_futures/paid_arc.rs
+@@ -0,0 +1,230 @@
++//! Sized-only shared backing with an owned declared allocation layout.
++//!
++//! This is private to the locked unordered fork. No std Arc layout is used.
++//! Weak tokens retain the header and its SAME original charge after T is gone.
++
++use super::abort::abort;
++use crate::runtime::native_memory::{self, Memory};
++use crate::{NativeAllocation, OutOfMemory, Result};
++use alloc::alloc::{alloc, dealloc};
++use alloc::boxed::Box;
++use core::alloc::Layout;
++use core::marker::PhantomData;
++use core::mem::{ManuallyDrop, offset_of};
++use core::ops::Deref;
++use core::ptr::{self, NonNull};
++use core::sync::atomic::Ordering::{Acquire, Relaxed, Release};
++use core::sync::atomic::{AtomicUsize, fence};
++
++const MAX_REFS: usize = isize::MAX as usize;
++
++#[repr(C)]
++struct Header<T> {
++    strong: AtomicUsize,
++    // Includes one implicit weak while any strong token remains.
++    weak: AtomicUsize,
++    charge: ManuallyDrop<Box<dyn NativeAllocation>>,
++    value: ManuallyDrop<T>,
++}
++
++pub(super) struct Arc<T> {
++    ptr: NonNull<Header<T>>,
++    _owned: PhantomData<Header<T>>,
++}
++
++pub(super) struct Weak<T> {
++    ptr: Option<NonNull<Header<T>>>,
++    _owned: PhantomData<Header<T>>,
++}
++
++unsafe impl<T: Send + Sync> Send for Arc<T> {}
++unsafe impl<T: Send + Sync> Sync for Arc<T> {}
++unsafe impl<T: Send + Sync> Send for Weak<T> {}
++unsafe impl<T: Send + Sync> Sync for Weak<T> {}
++
++// The pinned Rust1.97.1 sync.rs counter rules are used only as synchronization
++// guidance: positive ref clone Relaxed, upgrade Acquire, final Release/Acquire.
++// CAS bounds EVERY increment before publishing it; no overflowing fetch_add.
++fn increment(counter: &AtomicUsize) {
++    let mut count = counter.load(Relaxed);
++    loop {
++        if count == 0 || count >= MAX_REFS {
++            abort("private paid reference count overflow");
++        }
++        match counter.compare_exchange_weak(count, count + 1, Relaxed, Relaxed) {
++            Ok(_) => return,
++            Err(actual) => count = actual,
++        }
++    }
++}
++
++impl<T> Arc<T> {
++    pub(super) fn new(memory: &Memory, value: T) -> Result<Self> {
++        let layout = Layout::new::<Header<T>>();
++        let charge = native_memory::reserve(memory, layout.size())?
++            .expect("paid header requires original selected memory");
++        // Header always contains counters and a charge, including for ZST T.
++        let ptr = NonNull::new(unsafe { alloc(layout) }.cast::<Header<T>>())
++            .ok_or_else(|| OutOfMemory::new(layout.size()))?;
++        unsafe {
++            ptr.as_ptr().write(Header {
++                strong: AtomicUsize::new(1),
++                weak: AtomicUsize::new(1),
++                charge: ManuallyDrop::new(charge),
++                value: ManuallyDrop::new(value),
++            });
++        }
++        let owner = Self {
++            ptr,
++            _owned: PhantomData,
++        };
++        // Arm physical cleanup before a foreign confirmation may unwind.
++        unsafe { (*ptr.as_ptr()).charge.allocated() };
++        Ok(owner)
++    }
++
++    pub(super) fn as_ptr(this: &Self) -> *const T {
++        // No reference to the enclosing header is formed here.
++        unsafe { ptr::addr_of!((*this.ptr.as_ptr()).value).cast::<T>() }
++    }
++
++    pub(super) fn into_raw(this: Self) -> *const T {
++        let this = ManuallyDrop::new(this);
++        Self::as_ptr(&this)
++    }
++
++    /// Recover exactly one existing strong token from this private type.
++    /// The pointer must originate in into_raw, or be a borrowed as_ptr token
++    /// whose destruction is suppressed by the locked RawWaker adapter.
++    pub(super) unsafe fn from_raw(value: *const T) -> Self {
++        let ptr = unsafe {
++            value
++                .cast::<u8>()
++                .sub(offset_of!(Header<T>, value))
++                .cast_mut()
++                .cast::<Header<T>>()
++        };
++        Self {
++            ptr: unsafe { NonNull::new_unchecked(ptr) },
++            _owned: PhantomData,
++        }
++    }
++
++    pub(super) fn downgrade(this: &Self) -> Weak<T> {
++        // A live strong token keeps both counters and T alive.
++        increment(unsafe { &*ptr::addr_of!((*this.ptr.as_ptr()).weak) });
++        Weak {
++            ptr: Some(this.ptr),
++            _owned: PhantomData,
++        }
++    }
++
++    #[cfg(test)]
++    pub(super) fn layout() -> Layout {
++        Layout::new::<Header<T>>()
++    }
++}
++
++impl<T> Clone for Arc<T> {
++    fn clone(&self) -> Self {
++        increment(unsafe { &*ptr::addr_of!((*self.ptr.as_ptr()).strong) });
++        Self {
++            ptr: self.ptr,
++            _owned: PhantomData,
++        }
++    }
++}
++
++impl<T> Deref for Arc<T> {
++    type Target = T;
++    fn deref(&self) -> &T {
++        // Only a live strong token exposes the payload.
++        unsafe { &*Self::as_ptr(self) }
++    }
++}
++
++impl<T> Weak<T> {
++    pub(super) fn new() -> Self {
++        Self {
++            ptr: None,
++            _owned: PhantomData,
++        }
++    }
++
++    pub(super) fn upgrade(&self) -> Option<Arc<T>> {
++        let ptr = self.ptr?;
++        // The value may already have been destroyed. Access only the counter
++        // through its raw field address, never &Header<T> or &T.
++        let strong = unsafe { &*ptr::addr_of!((*ptr.as_ptr()).strong) };
++        let mut count = strong.load(Relaxed);
++        loop {
++            if count == 0 {
++                return None;
++            }
++            if count >= MAX_REFS {
++                abort("private paid reference count overflow");
++            }
++            match strong.compare_exchange_weak(count, count + 1, Acquire, Relaxed) {
++                Ok(_) => {
++                    return Some(Arc {
++                        ptr,
++                        _owned: PhantomData,
++                    });
++                }
++                Err(actual) => count = actual,
++            }
++        }
++    }
++}
++
++impl<T> Clone for Weak<T> {
++    fn clone(&self) -> Self {
++        if let Some(ptr) = self.ptr {
++            increment(unsafe { &*ptr::addr_of!((*ptr.as_ptr()).weak) });
++        }
++        Self {
++            ptr: self.ptr,
++            _owned: PhantomData,
++        }
++    }
++}
++
++// Safety: caller consumes one real weak token (or the implicit weak after
++// successful last-strong destruction). No reference covers destroyed T.
++unsafe fn release_weak<T>(ptr: NonNull<Header<T>>) {
++    let weak = unsafe { &*ptr::addr_of!((*ptr.as_ptr()).weak) };
++    if weak.fetch_sub(1, Release) == 1 {
++        fence(Acquire);
++        let charge = unsafe { ManuallyDrop::take(&mut *ptr::addr_of_mut!((*ptr.as_ptr()).charge)) };
++        // SAME allocator and OWN complete layout. No Box<T> is reconstructed
++        // around a previously destroyed value and no payload is moved again.
++        unsafe { dealloc(ptr.as_ptr().cast::<u8>(), Layout::new::<Header<T>>()) };
++        #[cfg(test)]
++        super::tests::physical_deallocation(Layout::new::<Header<T>>().size());
++        drop(charge);
++    }
++}
++
++impl<T> Drop for Arc<T> {
++    fn drop(&mut self) {
++        let strong = unsafe { &*ptr::addr_of!((*self.ptr.as_ptr()).strong) };
++        if strong.fetch_sub(1, Release) != 1 {
++            return;
++        }
++        fence(Acquire);
++        // If T unwinds, deliberately keep the implicit weak/header and SAME
++        // charge. Never refund live or uncertain backing or add another owner.
++        unsafe {
++            ManuallyDrop::drop(&mut *ptr::addr_of_mut!((*self.ptr.as_ptr()).value));
++            release_weak(self.ptr);
++        }
++    }
++}
++
++impl<T> Drop for Weak<T> {
++    fn drop(&mut self) {
++        if let Some(ptr) = self.ptr {
++            unsafe { release_weak(ptr) };
++        }
++    }
++}
+--- /dev/null
++++ b/src/runtime/component/concurrent/host_futures/tests.rs
+@@ -0,0 +1,366 @@
++use super::*;
++use crate::NativeAllocation;
++use alloc::boxed::Box;
++use alloc::sync::Arc as Shared;
++use alloc::vec::Vec;
++use core::cell::RefCell;
++use core::future::Future;
++use core::sync::atomic::{AtomicBool, AtomicUsize, Ordering::SeqCst};
++use core::task::Waker;
++use std::panic::{AssertUnwindSafe, catch_unwind};
++use std::sync::Mutex;
++
++// Observe the REAL raw deallocator's return, without changing header layout.
++// Per-thread events avoid cross-test races or a new product/accounting owner.
++std::thread_local! {
++    static EVENTS: RefCell<Vec<(&'static str, usize)>> = const { RefCell::new(Vec::new()) };
++}
++pub(super) fn physical_deallocation(bytes: usize) {
++    EVENTS.with(|events| events.borrow_mut().push(("deallocated", bytes)));
++}
++fn reset_events() {
++    EVENTS.with(|events| events.borrow_mut().clear());
++}
++
++#[derive(Default)]
++struct Probe {
++    requests: AtomicUsize,
++    live: AtomicUsize,
++    confirmations: AtomicUsize,
++    refunds: AtomicUsize,
++    refuse: AtomicUsize,
++    panic_confirmation: AtomicBool,
++    dropped: AtomicUsize,
++    sizes: Mutex<Vec<usize>>,
++}
++struct Allocation {
++    probe: Shared<Probe>,
++    bytes: usize,
++    confirmed: bool,
++}
++impl NativeAllocation for Allocation {
++    fn allocated(&mut self) {
++        self.confirmed = true;
++        self.probe.confirmations.fetch_add(1, SeqCst);
++        assert!(
++            !self.probe.panic_confirmation.load(SeqCst),
++            "paid-header-confirmation-control"
++        );
++    }
++}
++impl Drop for Allocation {
++    fn drop(&mut self) {
++        if self.confirmed {
++            EVENTS.with(|events| {
++                let mut events = events.borrow_mut();
++                assert_eq!(events.last(), Some(&("deallocated", self.bytes)));
++                events.push(("refund", self.bytes));
++            });
++        }
++        assert!(self.probe.live.fetch_sub(self.bytes, SeqCst) >= self.bytes);
++        self.probe.refunds.fetch_add(1, SeqCst);
++    }
++}
++struct Memory(Shared<Probe>);
++impl crate::NativeMemory for Memory {
++    fn reserve(&self, bytes: usize) -> Result<Box<dyn NativeAllocation>> {
++        let request = self.0.requests.fetch_add(1, SeqCst) + 1;
++        self.0.sizes.lock().unwrap().push(bytes);
++        if request == self.0.refuse.load(SeqCst) {
++            crate::bail!("original-future-header-refusal-control");
++        }
++        self.0.live.fetch_add(bytes, SeqCst);
++        Ok(Box::new(Allocation {
++            probe: self.0.clone(),
++            bytes,
++            confirmed: false,
++        }))
++    }
++}
++fn memory(probe: &Shared<Probe>) -> crate::runtime::native_memory::Memory {
++    Some(Shared::new(Memory(probe.clone())))
++}
++
++#[repr(align(64))]
++struct Aligned(u8);
++
++#[test]
++fn paid_header_exact_layout_refusal_confirmation_and_last_weak_refund() {
++    reset_events();
++    let probe = Shared::new(Probe::default());
++    let memory = memory(&probe);
++    let layout = paid_arc::Arc::<Aligned>::layout();
++    probe.refuse.store(1, SeqCst);
++    assert!(paid_arc::Arc::new(&memory, Aligned(9)).is_err());
++    assert_eq!(probe.live.load(SeqCst), 0);
++    probe.panic_confirmation.store(true, SeqCst);
++    assert!(
++        catch_unwind(AssertUnwindSafe(|| {
++            let _ = paid_arc::Arc::new(&memory, Aligned(9));
++        }))
++        .is_err()
++    );
++    assert_eq!(probe.live.load(SeqCst), 0);
++    probe.panic_confirmation.store(false, SeqCst);
++    let value = paid_arc::Arc::new(&memory, Aligned(9)).unwrap();
++    assert_eq!(value.0, 9);
++    assert_eq!(paid_arc::Arc::as_ptr(&value) as usize % layout.align(), 0);
++    let weak = paid_arc::Arc::downgrade(&value);
++    let other_weak = weak.clone();
++    drop(value);
++    assert!(weak.upgrade().is_none());
++    assert_eq!(probe.live.load(SeqCst), layout.size());
++    drop(weak);
++    assert_eq!(probe.live.load(SeqCst), layout.size());
++    drop(other_weak);
++    assert_eq!(probe.live.load(SeqCst), 0);
++    assert!(
++        probe
++            .sizes
++            .lock()
++            .unwrap()
++            .iter()
++            .all(|size| *size == layout.size())
++    );
++}
++
++struct Value {
++    probe: Shared<Probe>,
++    panic_drop: bool,
++}
++impl Drop for Value {
++    fn drop(&mut self) {
++        assert_ne!(self.probe.live.load(SeqCst), 0);
++        self.probe.dropped.fetch_add(1, SeqCst);
++        assert!(!self.panic_drop, "paid-header-payload-destructor-control");
++    }
++}
++
++#[test]
++fn paid_header_raw_token_and_destructor_unwind_retain_same_charge() {
++    reset_events();
++    let probe = Shared::new(Probe::default());
++    let memory = memory(&probe);
++    let value = paid_arc::Arc::new(
++        &memory,
++        Value {
++            probe: probe.clone(),
++            panic_drop: false,
++        },
++    )
++    .unwrap();
++    let weak = paid_arc::Arc::downgrade(&value);
++    let raw = paid_arc::Arc::into_raw(value.clone());
++    let restored = unsafe { paid_arc::Arc::from_raw(raw) };
++    assert_eq!(raw, paid_arc::Arc::as_ptr(&restored));
++    let upgraded = weak.upgrade().unwrap();
++    drop((restored, value, upgraded));
++    assert_eq!(probe.dropped.load(SeqCst), 1);
++    assert!(weak.upgrade().is_none());
++    drop(weak);
++    assert_eq!(probe.live.load(SeqCst), 0);
++    let value = paid_arc::Arc::new(
++        &memory,
++        Value {
++            probe: probe.clone(),
++            panic_drop: true,
++        },
++    )
++    .unwrap();
++    let weak = paid_arc::Arc::downgrade(&value);
++    assert!(catch_unwind(AssertUnwindSafe(|| drop(value))).is_err());
++    assert!(weak.upgrade().is_none());
++    drop(weak); // implicit weak remains: SAME physical allocation/charge retained.
++    assert_eq!(probe.requests.load(SeqCst), 2);
++    assert_eq!(probe.refunds.load(SeqCst), 1);
++    assert_eq!(
++        probe.live.load(SeqCst),
++        paid_arc::Arc::<Value>::layout().size()
++    );
++    assert_eq!(probe.dropped.load(SeqCst), 2);
++}
++
++struct TestFuture {
++    waker: Shared<Mutex<Option<Waker>>>,
++    ready: Shared<AtomicBool>,
++    polls: Shared<AtomicUsize>,
++    panic_drop: bool,
++}
++impl Future for TestFuture {
++    type Output = Result<()>;
++    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
++        self.polls.fetch_add(1, SeqCst);
++        *self.waker.lock().unwrap() = Some(cx.waker().clone());
++        if self.ready.load(SeqCst) {
++            Poll::Ready(Ok(()))
++        } else {
++            Poll::Pending
++        }
++    }
++}
++impl Drop for TestFuture {
++    fn drop(&mut self) {
++        assert!(!self.panic_drop, "paid-unordered-future-destructor-control");
++    }
++}
++fn future(
++    panic_drop: bool,
++) -> (
++    HostTaskFuture,
++    Shared<Mutex<Option<Waker>>>,
++    Shared<AtomicBool>,
++    Shared<AtomicUsize>,
++) {
++    let waker = Shared::new(Mutex::new(None));
++    let ready = Shared::new(AtomicBool::new(false));
++    let polls = Shared::new(AtomicUsize::new(0));
++    (
++        HostTaskFuture::legacy(Box::pin(TestFuture {
++            waker: waker.clone(),
++            ready: ready.clone(),
++            polls: polls.clone(),
++            panic_drop,
++        })),
++        waker,
++        ready,
++        polls,
++    )
++}
++
++#[test]
++fn paid_unordered_escaped_waker_keeps_task_and_last_weak_queue_backing() {
++    reset_events();
++    let probe = Shared::new(Probe::default());
++    let memory = memory(&probe);
++    let (task_layout, queue_layout) = paid::allocation_layouts::<HostTaskFuture>();
++    let mut set = HostFutureSet::new(true);
++    set.ensure(&memory).unwrap();
++    let slot = TaskSlot::prepare(&memory).unwrap();
++    let (future, waker, _, polls) = future(false);
++    set.push_prepared(slot, future);
++    assert!(
++        Pin::new(&mut set)
++            .poll_next(&mut Context::from_waker(Waker::noop()))
++            .is_pending()
++    );
++    assert_eq!(polls.load(SeqCst), 1);
++    drop(set);
++    // Stub freed; task's escaped strong and its queue Weak keep BOTH headers.
++    assert_eq!(
++        probe.live.load(SeqCst),
++        task_layout.size() + queue_layout.size()
++    );
++    let waker = waker.lock().unwrap().take().unwrap();
++    let clone = waker.clone();
++    clone.wake(); // queue upgrade is terminal None; no enqueue/allocation.
++    waker.wake_by_ref();
++    assert_eq!(probe.requests.load(SeqCst), 3);
++    assert_eq!(
++        probe.live.load(SeqCst),
++        task_layout.size() + queue_layout.size()
++    );
++    drop(waker);
++    assert_eq!(probe.live.load(SeqCst), 0);
++    assert_eq!(probe.refunds.load(SeqCst), 3);
++}
++
++#[test]
++fn paid_unordered_prepared_unused_and_wake_publish_make_no_new_admission() {
++    reset_events();
++    let probe = Shared::new(Probe::default());
++    let memory = memory(&probe);
++    let mut set = HostFutureSet::new(true);
++    set.ensure(&memory).unwrap();
++    let initial = probe.live.load(SeqCst);
++    drop(TaskSlot::prepare(&memory).unwrap());
++    assert_eq!(probe.live.load(SeqCst), initial);
++    let slot = TaskSlot::prepare(&memory).unwrap();
++    let (future, waker, ready, polls) = future(false);
++    // All later original-memory reserve calls would fail. Wake/publish need none.
++    probe.refuse.store(probe.requests.load(SeqCst) + 1, SeqCst);
++    set.push_prepared(slot, future);
++    let mut cx = Context::from_waker(Waker::noop());
++    assert!(Pin::new(&mut set).poll_next(&mut cx).is_pending());
++    let escaped = waker.lock().unwrap().take().unwrap();
++    ready.store(true, SeqCst);
++    escaped.wake_by_ref();
++    match Pin::new(&mut set).poll_next(&mut cx) {
++        Poll::Ready(Some(Ok(()))) => {}
++        _ => panic!("ready task missing"),
++    }
++    assert_eq!(polls.load(SeqCst), 2);
++    drop(escaped);
++    drop(waker.lock().unwrap().take());
++    drop(set);
++    assert_eq!(probe.requests.load(SeqCst), 4);
++    assert_eq!(probe.live.load(SeqCst), 0);
++}
++
++#[test]
++fn paid_unordered_lazy_each_initialization_refusal_and_none_keep_original() {
++    reset_events();
++    let (task, ready_queue) = paid::allocation_layouts::<HostTaskFuture>();
++    println!(
++        "LSF_FUTURES_BACKING_LAYOUT_V1 task-bytes={} task-align={} ready-queue-bytes={} ready-queue-align={}",
++        task.size(),
++        task.align(),
++        ready_queue.size(),
++        ready_queue.align()
++    );
++    let work_queue =
++        super::super::work_queue::allocation_layout_witness::<super::super::WorkItem>();
++    println!(
++        "LSF_WORK_QUEUE_LAYOUT_V1 bytes={} align={}",
++        work_queue.size(),
++        work_queue.align()
++    );
++    println!(
++        "LSF_JOIN_STATE_LAYOUT_V1 bytes={}",
++        super::super::abort::accounted_layout_witness()
++    );
++    for refuse in [1, 2] {
++        let probe = Shared::new(Probe::default());
++        let memory = memory(&probe);
++        let mut set = HostFutureSet::new(true);
++        assert_eq!(probe.requests.load(SeqCst), 0);
++        probe.refuse.store(refuse, SeqCst);
++        assert!(set.ensure(&memory).is_err());
++        assert_eq!(probe.live.load(SeqCst), 0);
++        assert!(matches!(set.0, Kind::Paid(None)));
++        set.ensure(&memory).unwrap();
++        drop(set);
++        assert_eq!(probe.live.load(SeqCst), 0);
++    }
++    let mut original = HostFutureSet::new(false);
++    original.ensure(&None).unwrap();
++    let slot = TaskSlot::prepare(&None).unwrap();
++    let (future, waker, ready, _) = future(false);
++    ready.store(true, SeqCst);
++    original.push_prepared(slot, future);
++    assert!(matches!(
++        Pin::new(&mut original).poll_next(&mut Context::from_waker(Waker::noop())),
++        Poll::Ready(Some(Ok(())))
++    ));
++    drop((original, waker));
++}
++
++#[test]
++fn paid_unordered_future_unwind_retains_original_queue_and_task_charges() {
++    reset_events();
++    let probe = Shared::new(Probe::default());
++    let memory = memory(&probe);
++    let mut set = HostFutureSet::new(true);
++    set.ensure(&memory).unwrap();
++    let slot = TaskSlot::prepare(&memory).unwrap();
++    let (future, waker, _, _) = future(true);
++    set.push_prepared(slot, future);
++    // Keep the task in the ready queue, so release_task first transfers its
++    // strong token before future Drop unwinds; upstream LeakQueueOnDrop retains
++    // that queue and its stub. No destructor bomb is deliberately triggered.
++    let before = probe.live.load(SeqCst);
++    assert!(catch_unwind(AssertUnwindSafe(|| drop(set))).is_err());
++    drop(waker);
++    assert_eq!(probe.requests.load(SeqCst), 3);
++    assert_eq!(probe.refunds.load(SeqCst), 0);
++    assert_eq!(probe.live.load(SeqCst), before);
++}
 --- /dev/null
 +++ b/src/runtime/component/concurrent/pending_future.rs
 @@ -0,0 +1,385 @@
@@ -2440,7 +4792,7 @@
 +}
 --- /dev/null
 +++ b/src/runtime/component/concurrent/work_queue.rs
-@@ -0,0 +1,536 @@
+@@ -0,0 +1,541 @@
 +//! Exact, pre-admitted backing for scheduler queue entries.
 +//!
 +//! A slot is prepared before polling or transferring state. Publication only
@@ -2764,6 +5116,11 @@
 +    fn into_iter(self) -> IntoIter<T> {
 +        IntoIter(self)
 +    }
++}
++
++#[cfg(test)]
++pub(super) fn allocation_layout_witness<T>() -> core::alloc::Layout {
++    core::alloc::Layout::new::<Entry<T>>()
 +}
 +
 +#[cfg(test)]

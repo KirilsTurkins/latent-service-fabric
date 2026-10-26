@@ -2418,7 +2418,7 @@ fn settle_host_write(
 impl StoreOpaque {
     fn pipe_from_guest(
         &mut self,
-        queue_slot: super::QueueSlot<WorkItem>,
+        queue_slot: super::FutureWorkSlot,
         kind: TransmitKind,
         id: TableId<TransmitState>,
         future: Pin<Box<dyn Future<Output = Result<StreamResult>> + Send + 'static>>,
@@ -2445,7 +2445,7 @@ impl StoreOpaque {
 
     fn pipe_to_guest(
         &mut self,
-        queue_slot: super::QueueSlot<WorkItem>,
+        queue_slot: super::FutureWorkSlot,
         kind: TransmitKind,
         id: TableId<TransmitState>,
         future: Pin<Box<dyn Future<Output = Result<StreamResult>> + Send + 'static>>,
@@ -2865,7 +2865,7 @@ impl<T> StoreContextMut<'_, T> {
             state.get_mut(id)?.write,
             WriteState::GuestReady { .. } | WriteState::HostReady { .. }
         ) {
-            Some(state.prepare_queue_slot()?)
+            Some(state.prepare_future_slot()?)
         } else {
             None
         };
@@ -3250,7 +3250,7 @@ impl Instance {
         guest_offset: ItemCount,
         cancel: bool,
     ) -> Result<ReturnCode> {
-        let queue_slot = store.concurrent_state_mut()?.prepare_queue_slot()?;
+        let queue_slot = store.concurrent_state_mut()?.prepare_future_slot()?;
         let mut future = consume();
         store.concurrent_state_mut()?.get_mut(transmit_id)?.read = ReadState::HostReady {
             consume,
@@ -3290,7 +3290,7 @@ impl Instance {
         guest_offset: ItemCount,
         cancel: bool,
     ) -> Result<ReturnCode> {
-        let queue_slot = store.concurrent_state_mut()?.prepare_queue_slot()?;
+        let queue_slot = store.concurrent_state_mut()?.prepare_future_slot()?;
         let mut future = produce();
         store.concurrent_state_mut()?.get_mut(transmit_id)?.write = WriteState::HostReady {
             produce,

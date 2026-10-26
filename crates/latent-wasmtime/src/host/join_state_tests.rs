@@ -382,36 +382,79 @@ async fn canonical_push_future_queue_node_refusal_and_same_budget_fresh_store() 
 #[ignore = "requires focused actual initial queue-node cleanup qualification"]
 async fn canonical_upstream_queue_nodes_refuse_before_guest_and_same_budget_fresh_store() {
     for upstream in 1..=2 {
-        canonical_backing_refusal_scope(upstream, true).await;
+        canonical_backing_refusal_scope(upstream, RefusalScope::Upstream).await;
     }
     println!("LSF_CANONICAL_UPSTREAM_QUEUE_V1 scenarios=2 before-guest=true fresh=42 stores=4");
 }
 
-async fn canonical_backing_refusal_and_same_budget_fresh_store(refusal_request: usize) {
-    canonical_backing_refusal_scope(refusal_request, false).await;
+#[tokio::test]
+#[ignore = "requires focused actual lazy unordered stub/ready-header qualification"]
+async fn canonical_unordered_initialization_refusal_and_same_budget_fresh_store() {
+    for header in 1..=2 {
+        canonical_backing_refusal_scope(header, RefusalScope::Initialization).await;
+    }
+    println!(
+        "LSF_CANONICAL_FUTURES_INITIALIZATION_V1 scenarios=2 before-guest=true fresh=42 stores=4"
+    );
 }
 
-async fn canonical_backing_refusal_scope(refusal_request: usize, upstream: bool) {
-    assert!(if upstream {
+#[tokio::test]
+#[ignore = "requires focused actual pre-poll unordered Task backing qualification"]
+async fn canonical_unordered_task_first_poll_refusal_and_same_budget_fresh_store() {
+    canonical_backing_refusal_and_same_budget_fresh_store(8).await;
+}
+
+#[derive(Clone, Copy)]
+enum RefusalScope {
+    Upstream,
+    Initialization,
+    Host,
+}
+
+async fn canonical_backing_refusal_and_same_budget_fresh_store(refusal_request: usize) {
+    canonical_backing_refusal_scope(refusal_request, RefusalScope::Host).await;
+}
+
+async fn canonical_backing_refusal_scope(refusal_request: usize, scope: RefusalScope) {
+    let upstream = matches!(scope, RefusalScope::Upstream);
+    let initialization = matches!(scope, RefusalScope::Initialization);
+    let scope_name = match scope {
+        RefusalScope::Upstream => "upstream",
+        RefusalScope::Initialization => "initialization",
+        RefusalScope::Host => "host",
+    };
+    assert!(if upstream || initialization {
         matches!(refusal_request, 1..=2)
     } else {
-        matches!(refusal_request, 2..=7)
+        matches!(refusal_request, 2..=8)
     });
-    // The same callback-style export now owns TWO queue nodes before entering
-    // its sole host import: queued GuestCall and callback wake. Preserve the
-    // original local owner positions, and record their actual global indices.
+    // QueuedCall exists BEFORE poll_until starts. This exact callback fixture
+    // has two upstream entries, THEN lazy stub/ready headers, THEN host1..8.
+    // Preserve local owner meanings; expose the changed GLOBAL indices.
     const UPSTREAM_QUEUE_NODES: usize = 2;
+    const SHARED_HEADERS: usize = 2;
     let global_request = if upstream {
         refusal_request
-    } else {
+    } else if initialization {
         refusal_request + UPSTREAM_QUEUE_NODES
+    } else {
+        refusal_request + UPSTREAM_QUEUE_NODES + SHARED_HEADERS
     };
+    let task_layout: usize = std::env::var("LSF_TEST_FUTURES_TASK_LAYOUT")
+        .expect("owning compiled actual unordered Task header layout")
+        .parse()
+        .expect("typed compiled Task header layout");
+    let ready_layout: usize = std::env::var("LSF_TEST_FUTURES_READY_LAYOUT")
+        .expect("owning compiled actual ready-queue header layout")
+        .parse()
+        .expect("typed compiled ready-queue header layout");
+    assert!((1..=4096).contains(&task_layout) && (1..=4096).contains(&ready_layout));
     let queue_layout: usize = std::env::var("LSF_TEST_WORK_QUEUE_LAYOUT")
         .expect("owning compiled scheduler entry layout")
         .parse()
         .expect("typed compiled scheduler entry layout");
     assert!((1..=4096).contains(&queue_layout)); // witness only, never a grant
-    let expected = (!upstream && refusal_request == 2).then(|| {
+    let expected = (!upstream && !initialization && refusal_request == 2).then(|| {
         let layout: usize = std::env::var("LSF_TEST_JOIN_STATE_LAYOUT")
             .expect("owning layout witness")
             .parse()
@@ -487,21 +530,26 @@ async fn canonical_backing_refusal_scope(refusal_request: usize, upstream: bool)
                 .map(String::as_str)
                 == Some("memory-bytes")));
             assert!(!entered.load(Ordering::SeqCst) && !polled.load(Ordering::SeqCst));
-            if upstream {
-                // Both queue nodes precede initial GuestCall publication.
+            if upstream || initialization {
+                // QueuedCall entry preparation and lazy header initialization
+                // both precede the first actual guest instruction.
                 assert_eq!(store.get_fuel().unwrap(), initial_fuel);
             }
             let observed = probe.lock().unwrap();
             assert_eq!(observed.requests.len(), global_request);
             assert!(observed.contention.is_some());
-            if upstream {
-                assert_eq!(observed.requests, vec![queue_layout; global_request]);
-            } else {
-                assert_eq!(
-                    &observed.requests[..UPSTREAM_QUEUE_NODES],
-                    &[queue_layout; UPSTREAM_QUEUE_NODES]
-                );
-                let host_requests = &observed.requests[UPSTREAM_QUEUE_NODES..];
+            assert_eq!(
+                &observed.requests[..global_request.min(UPSTREAM_QUEUE_NODES)],
+                &vec![queue_layout; global_request.min(UPSTREAM_QUEUE_NODES)]
+            );
+            if !upstream {
+                assert_eq!(observed.requests[2], task_layout);
+                if global_request >= 4 {
+                    assert_eq!(observed.requests[3], ready_layout);
+                }
+            }
+            if !upstream && !initialization {
+                let host_requests = &observed.requests[UPSTREAM_QUEUE_NODES + SHARED_HEADERS..];
                 if let Some(expected) = expected {
                     assert_eq!(
                         host_requests[1], expected,
@@ -534,16 +582,24 @@ async fn canonical_backing_refusal_scope(refusal_request: usize, upstream: bool)
                 if refusal_request >= 6 {
                     assert_eq!(host_requests[5], queue_layout);
                 }
-                if refusal_request == 7 {
+                if refusal_request >= 7 {
                     assert_eq!(host_requests[6], queue_layout);
+                }
+                if refusal_request == 8 {
+                    assert_eq!(host_requests[7], task_layout);
                 }
             }
             println!(
-                "LSF_CANONICAL_QUEUE_SEQUENCE_V1 scope={} local-owner={} global-request={} prefix-queue-nodes={} bytes={:?}",
-                if upstream { "upstream" } else { "host" },
+                "LSF_CANONICAL_UNORDERED_SEQUENCE_V1 scope={} local-owner={} global-request={} prefix-queue-nodes={} prefix-shared-headers={} bytes={:?}",
+                scope_name,
                 refusal_request,
                 global_request,
                 if upstream { 0 } else { UPSTREAM_QUEUE_NODES },
+                if upstream || initialization {
+                    0
+                } else {
+                    SHARED_HEADERS
+                },
                 observed.requests
             );
             drop(observed);
@@ -571,10 +627,15 @@ async fn canonical_backing_refusal_scope(refusal_request: usize, upstream: bool)
         assert_eq!(original.outstanding_reservations(), 0);
     }
     println!(
-        "LSF_CANONICAL_QUEUE_V1 scope={} refusal=memory-bytes local-owner={} global-request={} prefix-queue-nodes={} before-poll=true fresh=42 stores=2",
-        if upstream { "upstream" } else { "host" },
+        "LSF_CANONICAL_UNORDERED_V1 scope={} refusal=memory-bytes local-owner={} global-request={} prefix-queue-nodes={} prefix-shared-headers={} before-poll=true fresh=42 stores=2",
+        scope_name,
         refusal_request,
         global_request,
-        if upstream { 0 } else { UPSTREAM_QUEUE_NODES }
+        if upstream { 0 } else { UPSTREAM_QUEUE_NODES },
+        if upstream || initialization {
+            0
+        } else {
+            SHARED_HEADERS
+        }
     );
 }

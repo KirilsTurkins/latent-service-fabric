@@ -324,6 +324,11 @@ impl<T> IntoIterator for Queue<T> {
 }
 
 #[cfg(test)]
+pub(super) fn allocation_layout_witness<T>() -> core::alloc::Layout {
+    core::alloc::Layout::new::<Entry<T>>()
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
     use alloc::sync::Arc;

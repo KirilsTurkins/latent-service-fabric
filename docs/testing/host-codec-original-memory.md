@@ -201,6 +201,51 @@ other scheduler collections, the Legacy stream callback Box and transitive
 allocations remain open. It does not close #736 or qualify a whole allocator,
 runtime or signed-language path.
 
+## Owned unordered futures backing
+
+[The focused v15 evidence](evidence/canonical-unordered-backing-native-2026-10-26.json)
+binds [run 40294127180](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40294127180)
+at `a32624956270c6e18f3f108b831574e22368704b`: six new private ownership
+controls, eight canonical cases and six affected ordinary host cases passed,
+with zero failures or ignored cases. The canonical cases cover nine typed
+refusal/fresh-42 scenarios. All 67 archive members, 64 raw channels, 32 zero-exit
+commands and 8,932 before/after source rows were checked. The compiled Task,
+ready-queue and scheduler-entry headers are 120, 80 and 120 bytes (alignment 8);
+JoinState is 80 bytes. These exact layouts are witnesses, not new grants.
+
+The private sized header keeps its original charge through the last weak
+reference and refunds only after physical deallocation returns. Escaped wakers
+retain both Task and weak ready-queue backing; destructor unwind intentionally
+retains the same original charge. Lazy initialization and prepared task slots
+precede effects at all six producers, and wake/publication adds no fallible
+allocation. None keeps the original FuturesUnordered path. Callback-local
+owners 2 through 7 now remain identifiable at globals 6 through 11 after two
+queue entries and two shared headers; the new task owner is local 8/global 12.
+The two initialization refusals occur before guest fuel consumption.
+
+The cancellation cases observe each Store's actual six-owner sequence. After
+Store destruction, an escaped Task waker retains 712 bytes: the observed Task
+120 and ready-queue 80 plus two original 256-byte owner escrows. A real late wake
+releases those same owners without admissions or changes to the foreign Store's
+bytes/reservations. The lift-cancellation case warms the real two shared headers
+without consuming guest fuel before taking its original Store baseline; every
+original post-cancellation/foreign-Store subtraction and final-zero assertion
+remains. Ordinary cases retain their original 1 MiB host-memory grant; canonical
+cases retain 64 MiB, with the same fuel, wall and process limits.
+The lift-cancellation case keeps its stricter pre-existing 1,000,000 installed
+guest-fuel cap within the unchanged 1,000,000,000 grant.
+
+The earlier `4eca00b9` focused run passed 18 controls. Its broader Rust CI then
+reported 481 passed, two failed and 11 ignored: those two old cancellation
+oracles omitted correctly retained backing. Their test-only correction and
+inclusion produced the current 20-pass result, without production changes.
+The first `ce233c98` attempt had failed private compilation with one E0599 and
+executed zero tests; its missing is_empty adapter and failed receipt remain
+separate history. No unrelated private or signed-language/Java campaign was
+replayed. This unsigned native result leaves Legacy future/stream Boxes, other
+collections and transitive backing open; it does not close #736 or establish
+an allocator/RSS ceiling.
+
 ## Scope retained outside this slice
 
 Initial linear-memory success/failure notifications, direct Core HostFunc construction, shared

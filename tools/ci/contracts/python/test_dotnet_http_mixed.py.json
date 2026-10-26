@@ -1,170 +1,37 @@
 {
-  "cases": [
-    "DotnetHttpMixed.test_actual_retained_node_usage_is_old_red_new_green_and_refuses_hostile_shapes",
-    "DotnetHttpMixed.test_closing_child_and_finally_require_actual_pending_release_completion_order",
-    "DotnetHttpMixed.test_every_result_requires_signed_owner_original_budget_and_exact_contact_count",
-    "DotnetHttpMixed.test_exact_fixture_runs_real_incomplete_content_and_cancelled_result_on_clr",
-    "DotnetHttpMixed.test_late_release_requires_exact_completed_marker_after_actual_pending_gate",
-    "DotnetHttpMixed.test_manual_only_selector_restores_entire_previous_workflow_without_any_step_changes",
-    "DotnetHttpMixed.test_neutral_tenant_scope_refuses_inherited_grants_or_foreign_service",
-    "DotnetHttpMixed.test_observer_failure_retains_both_public_peers_and_original_exception",
-    "DotnetHttpMixed.test_project_keeps_normal_sdk_authoritative_wit_and_all_original_limits",
-    "DotnetHttpMixed.test_second_origin_changes_only_explicit_destinations_and_scoped_credentials",
-    "DotnetHttpMixed.test_sibling_release_requires_guest_marker_after_completed_domain_result",
-    "DotnetHttpMixed.test_tenant_configuration_preserves_limits_and_uses_independent_http_not_aliases"
-  ],
-  "guards": {
-    "DotnetHttpMixed.test_actual_retained_node_usage_is_old_red_new_green_and_refuses_hostile_shapes": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:cf87bece919025f158eeca81b8f62b45c459075af1c20dd650f904b21474c46c",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "DotnetHttpMixed.test_closing_child_and_finally_require_actual_pending_release_completion_order": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:cf87bece919025f158eeca81b8f62b45c459075af1c20dd650f904b21474c46c",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "DotnetHttpMixed.test_every_result_requires_signed_owner_original_budget_and_exact_contact_count": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:cf87bece919025f158eeca81b8f62b45c459075af1c20dd650f904b21474c46c",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "DotnetHttpMixed.test_exact_fixture_runs_real_incomplete_content_and_cancelled_result_on_clr": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:cf87bece919025f158eeca81b8f62b45c459075af1c20dd650f904b21474c46c",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": [
-        "self.skipTest('local .NET SDK unavailable; hosted owning reference is mandatory')",
-        "self.skipTest('local .NET10 unavailable; hosted owning reference is mandatory')",
-        "skip-control-sha256:f07d5106d662598e48c399ecb1f14ff997e991f54b574c70a25e9c82281eeab4"
-      ]
-    },
-    "DotnetHttpMixed.test_late_release_requires_exact_completed_marker_after_actual_pending_gate": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:cf87bece919025f158eeca81b8f62b45c459075af1c20dd650f904b21474c46c",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "DotnetHttpMixed.test_manual_only_selector_restores_entire_previous_workflow_without_any_step_changes": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:cf87bece919025f158eeca81b8f62b45c459075af1c20dd650f904b21474c46c",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "DotnetHttpMixed.test_neutral_tenant_scope_refuses_inherited_grants_or_foreign_service": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:cf87bece919025f158eeca81b8f62b45c459075af1c20dd650f904b21474c46c",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "DotnetHttpMixed.test_observer_failure_retains_both_public_peers_and_original_exception": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:cf87bece919025f158eeca81b8f62b45c459075af1c20dd650f904b21474c46c",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "DotnetHttpMixed.test_project_keeps_normal_sdk_authoritative_wit_and_all_original_limits": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:cf87bece919025f158eeca81b8f62b45c459075af1c20dd650f904b21474c46c",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "DotnetHttpMixed.test_second_origin_changes_only_explicit_destinations_and_scoped_credentials": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:cf87bece919025f158eeca81b8f62b45c459075af1c20dd650f904b21474c46c",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "DotnetHttpMixed.test_sibling_release_requires_guest_marker_after_completed_domain_result": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:cf87bece919025f158eeca81b8f62b45c459075af1c20dd650f904b21474c46c",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "DotnetHttpMixed.test_tenant_configuration_preserves_limits_and_uses_independent_http_not_aliases": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:cf87bece919025f158eeca81b8f62b45c459075af1c20dd650f904b21474c46c",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    }
+  "cases":["DotnetHttpMixed.test_actual_retained_node_usage_is_old_red_new_green_and_refuses_hostile_shapes","DotnetHttpMixed.test_closing_child_and_finally_require_actual_pending_release_completion_order","DotnetHttpMixed.test_every_result_requires_signed_owner_original_budget_and_exact_contact_count","DotnetHttpMixed.test_exact_fixture_runs_real_incomplete_content_and_cancelled_result_on_clr","DotnetHttpMixed.test_late_release_requires_exact_completed_marker_after_actual_pending_gate","DotnetHttpMixed.test_manual_only_selector_restores_entire_previous_workflow_without_any_step_changes","DotnetHttpMixed.test_neutral_tenant_scope_refuses_inherited_grants_or_foreign_service","DotnetHttpMixed.test_observer_failure_retains_both_public_peers_and_original_exception","DotnetHttpMixed.test_project_keeps_normal_sdk_authoritative_wit_and_all_original_limits","DotnetHttpMixed.test_second_origin_changes_only_explicit_destinations_and_scoped_credentials","DotnetHttpMixed.test_sibling_release_requires_guest_marker_after_completed_domain_result","DotnetHttpMixed.test_tenant_configuration_preserves_limits_and_uses_independent_http_not_aliases"],
+  "guards":{
+    "DotnetHttpMixed.test_actual_retained_node_usage_is_old_red_new_green_and_refuses_hostile_shapes":
+      "6841f798f51f80fffbfef7a733c90daff00e82725b7f600fa9a840259228d36d",
+    "DotnetHttpMixed.test_closing_child_and_finally_require_actual_pending_release_completion_order":
+      "6841f798f51f80fffbfef7a733c90daff00e82725b7f600fa9a840259228d36d",
+    "DotnetHttpMixed.test_every_result_requires_signed_owner_original_budget_and_exact_contact_count":
+      "6841f798f51f80fffbfef7a733c90daff00e82725b7f600fa9a840259228d36d",
+    "DotnetHttpMixed.test_exact_fixture_runs_real_incomplete_content_and_cancelled_result_on_clr":
+      "c9db3272ff6e60cbde8eaa7415fd410dde036d6952db6716b69d913b332faafa",
+    "DotnetHttpMixed.test_late_release_requires_exact_completed_marker_after_actual_pending_gate":
+      "6841f798f51f80fffbfef7a733c90daff00e82725b7f600fa9a840259228d36d",
+    "DotnetHttpMixed.test_manual_only_selector_restores_entire_previous_workflow_without_any_step_changes":
+      "6841f798f51f80fffbfef7a733c90daff00e82725b7f600fa9a840259228d36d",
+    "DotnetHttpMixed.test_neutral_tenant_scope_refuses_inherited_grants_or_foreign_service":
+      "6841f798f51f80fffbfef7a733c90daff00e82725b7f600fa9a840259228d36d",
+    "DotnetHttpMixed.test_observer_failure_retains_both_public_peers_and_original_exception":
+      "6841f798f51f80fffbfef7a733c90daff00e82725b7f600fa9a840259228d36d",
+    "DotnetHttpMixed.test_project_keeps_normal_sdk_authoritative_wit_and_all_original_limits":
+      "6841f798f51f80fffbfef7a733c90daff00e82725b7f600fa9a840259228d36d",
+    "DotnetHttpMixed.test_second_origin_changes_only_explicit_destinations_and_scoped_credentials":
+      "6841f798f51f80fffbfef7a733c90daff00e82725b7f600fa9a840259228d36d",
+    "DotnetHttpMixed.test_sibling_release_requires_guest_marker_after_completed_domain_result":
+      "6841f798f51f80fffbfef7a733c90daff00e82725b7f600fa9a840259228d36d",
+    "DotnetHttpMixed.test_tenant_configuration_preserves_limits_and_uses_independent_http_not_aliases":
+      "6841f798f51f80fffbfef7a733c90daff00e82725b7f600fa9a840259228d36d"
   },
-  "kind": "python",
-  "module": "tools/tests/test_dotnet_http_mixed.py",
-  "reviewReason": "Preserve every original mixed control and original whole-workflow hash; first restore only the new default-false owner-capacity selector/exclusions.",
-  "schemaVersion": "latent.ci.contracts.v1"
+  "kind":"python",
+  "module":"tools/tests/test_dotnet_http_mixed.py",
+  "reviewReason":"Preserve every original mixed control and original whole-workflow hash; first restore only the new default-false owner-capacity selector/exclusions.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "6841f798f51f80fffbfef7a733c90daff00e82725b7f600fa9a840259228d36d":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:cf87bece919025f158eeca81b8f62b45c459075af1c20dd650f904b21474c46c","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]},
+    "c9db3272ff6e60cbde8eaa7415fd410dde036d6952db6716b69d913b332faafa":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:cf87bece919025f158eeca81b8f62b45c459075af1c20dd650f904b21474c46c","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":["self.skipTest('local .NET SDK unavailable; hosted owning reference is mandatory')","self.skipTest('local .NET10 unavailable; hosted owning reference is mandatory')","skip-control-sha256:f07d5106d662598e48c399ecb1f14ff997e991f54b574c70a25e9c82281eeab4"]}
+  }
 }
