@@ -3118,10 +3118,12 @@ async fn write<D: 'static, P: Send + 'static, T: func::Lower + 'static, B: Write
                         store
                             .concurrent_state_mut()?
                             .push_high_priority(WorkItem::WorkerFunction(AlwaysMut::new(
-                                Box::new(move |store| {
-                                    _ = tx.send(accept(token.as_context_mut(store))?);
-                                    Ok(())
-                                }),
+                                super::worker_function::WorkerFunction::legacy(Box::new(
+                                    move |store| {
+                                        _ = tx.send(accept(token.as_context_mut(store))?);
+                                        Ok(())
+                                    },
+                                )),
                             )));
                         crate::error::Ok(())
                     })?;

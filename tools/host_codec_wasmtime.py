@@ -22,12 +22,12 @@ POSTIMAGES = {
         "bytes": 60487
     },
     "README.latent.md": {
-        "sha256": "0bd11dcb90534f19fb4905b6eb2232acc857b6cd32ac5282f4dde1e2d61be70d",
-        "bytes": 17523
+        "sha256": "a04029bffa4a5565d731d812e9a8b5efa4ca4ce10ac7b087393bafed2b0f91c0",
+        "bytes": 18117
     },
     "latent-dynamic-memory.patch": {
-        "sha256": "1809bf477a42521a9b197107cf5d9cc1c591992c66a82b956e2137aab3953f84",
-        "bytes": 249337
+        "sha256": "04d6571a9ea051b7e9b1386667945b4771163f2c72d54a46fce173623af71300",
+        "bytes": 250613
     },
     "src/runtime.rs": {
         "sha256": "3290f57919f6dc6b6f797ee55cd62504ce31e91500741501e261f2c7e4eac970",
@@ -186,8 +186,12 @@ POSTIMAGES = {
         "bytes": 13771
     },
     "src/runtime/component/concurrent/worker_function.rs": {
-        "sha256": "eab2ca6149bfe3cc5ca786943e404ad110d35b3c464351381aea8a3acb8ffa51",
-        "bytes": 13478
+        "sha256": "385115039479020f0c648fdbadc0f130d42ef863eeda77ab2fde8d3cc5e7a79e",
+        "bytes": 13734
+    },
+    "src/runtime/component/concurrent/futures_and_streams.rs": {
+        "sha256": "cd4f7761cc272fdcad658fff0f8ec989994726ca9e9c4a57a9b8a357eb091e34",
+        "bytes": 189018
     }
 }
 DEPENDENCY = {"path": PROVIDER, "version": "=48.0.7", "default-features": False,

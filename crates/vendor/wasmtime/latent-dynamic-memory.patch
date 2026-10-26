@@ -1192,6 +1192,25 @@
              },
          )
      }
+--- a/src/runtime/component/concurrent/futures_and_streams.rs
++++ b/src/runtime/component/concurrent/futures_and_streams.rs
+@@ -3118,10 +3118,12 @@
+                         store
+                             .concurrent_state_mut()?
+                             .push_high_priority(WorkItem::WorkerFunction(AlwaysMut::new(
+-                                Box::new(move |store| {
+-                                    _ = tx.send(accept(token.as_context_mut(store))?);
+-                                    Ok(())
+-                                }),
++                                super::worker_function::WorkerFunction::legacy(Box::new(
++                                    move |store| {
++                                        _ = tx.send(accept(token.as_context_mut(store))?);
++                                        Ok(())
++                                    },
++                                )),
+                             )));
+                         crate::error::Ok(())
+                     })?;
 --- /dev/null
 +++ b/src/runtime/component/concurrent/pending_future.rs
 @@ -0,0 +1,385 @@
@@ -1582,7 +1601,7 @@
 +}
 --- /dev/null
 +++ b/src/runtime/component/concurrent/worker_function.rs
-@@ -0,0 +1,369 @@
+@@ -0,0 +1,375 @@
 +//! Pre-admit the exact completion closure before the initial host poll.
 +//!
 +//! The continuation reserves first; this typed factory then reserves its output
@@ -1657,7 +1676,7 @@
 +        // heap wrapper. Coercion adds pointer metadata, not another allocation.
 +        let function: BoxedFunction = Box::new(factory(context, value));
 +        let Some(allocation) = allocation else {
-+            return WorkerFunction(Kind::Legacy(function));
++            return WorkerFunction::legacy(function);
 +        };
 +        let mut owner = AccountedFunction {
 +            function: ManuallyDrop::new(Some(function)),
@@ -1683,6 +1702,12 @@
 +}
 +
 +impl WorkerFunction {
++    // Adapt an existing Box without another allocation or fallible admission.
++    // The separate stream callback remains outside the paid first_poll slice.
++    pub(super) fn legacy(function: BoxedFunction) -> Self {
++        Self(Kind::Legacy(function))
++    }
++
 +    pub(super) fn invoke(self, store: &mut dyn VMStore) -> Result<()> {
 +        match self.0 {
 +            Kind::Legacy(function) => function(store),

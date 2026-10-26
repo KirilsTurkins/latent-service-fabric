@@ -72,7 +72,7 @@ where
         // heap wrapper. Coercion adds pointer metadata, not another allocation.
         let function: BoxedFunction = Box::new(factory(context, value));
         let Some(allocation) = allocation else {
-            return WorkerFunction(Kind::Legacy(function));
+            return WorkerFunction::legacy(function);
         };
         let mut owner = AccountedFunction {
             function: ManuallyDrop::new(Some(function)),
@@ -98,6 +98,12 @@ struct AccountedFunction {
 }
 
 impl WorkerFunction {
+    // Adapt an existing Box without another allocation or fallible admission.
+    // The separate stream callback remains outside the paid first_poll slice.
+    pub(super) fn legacy(function: BoxedFunction) -> Self {
+        Self(Kind::Legacy(function))
+    }
+
     pub(super) fn invoke(self, store: &mut dyn VMStore) -> Result<()> {
         match self.0 {
             Kind::Legacy(function) => function(store),

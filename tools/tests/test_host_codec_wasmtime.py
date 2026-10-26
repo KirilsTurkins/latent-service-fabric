@@ -41,6 +41,7 @@ class PinnedWasmtimeSource(unittest.TestCase):
                          'src/runtime/component/dynamic_memory.rs', 'UPSTREAM.latent.json',
                          'src/runtime/component/concurrent/call_future.rs',
                          'src/runtime/component/concurrent/worker_function.rs',
+                         'src/runtime/component/concurrent/futures_and_streams.rs',
                          'src/runtime/component/concurrent/pending_future.rs',
                          'README.latent.md', 'latent-dynamic-memory.patch'):
                 with self.subTest(name=name):

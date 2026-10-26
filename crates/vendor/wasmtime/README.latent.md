@@ -253,4 +253,12 @@ error backing, queue storage or FuturesUnordered nodes. The v11 inner and v12
 pending helper source files remain unchanged, although the exact concrete
 pending output now includes the prepared worker holder. Four NEW private
 controls and actual fifth-admission/refusal/fresh-Store control are prepared,
-UNCOMPILED and UNEXECUTED here; only those five are selected by the focused owner.
+UNCOMPILED and UNEXECUTED at that source stage; only those five are selected by
+the focused owner. The initial attempt at source
+743cf2c4ad7250a4c36d586472d83e2aa5754928 (run 40257187860) stopped in the private
+Rust build with E0308 before executing any control: a separate pre-existing
+stream callback still supplied the old boxed type. The corrective source wraps
+that SAME existing Box in the infallible Legacy adapter, preserving its closure
+body and allocation point. This stream callback remains unpaid and outside the
+selected first_poll completion-closure slice. The failed attempt receives no
+control credit; the corrected four-plus-one programme is not yet executed.
