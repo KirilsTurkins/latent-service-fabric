@@ -7,7 +7,7 @@ dropped. Existing result, metadata, host-memory and operation ownership apply.
 Controls and DEL reject, with HTTP horizontal tab permitted.
 
 The streaming adapter has an explicit capture selector, currently false on
-the existing provider. It captures the pinned Hyper1.11.1 parser's original
+the existing provider. It captures the pinned Hyper1.12.0 parser's original
 reason bytes. Hyper preserves every noncanonical phrase in its extension;
 extension absence for HTTP/1 means the parser observed the canonical phrase.
 Other protocol versions remain unavailable. The old typed HTTP response and

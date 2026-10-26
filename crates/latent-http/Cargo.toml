@@ -23,7 +23,7 @@ hickory-proto = "=0.26.3"
 http = "=1.5.0"
 http-body.workspace = true
 http-body-util = "=0.1.5"
-hyper = { version = "=1.11.1", features = ["client", "http1"] }
+hyper = { version = "=1.12.0", features = ["client", "http1"] }
 hyper-util.workspace = true
 ipnet = { version = "=2.12.2", features = ["serde"] }
 rustls = { version = "=0.23.46", default-features = false, features = ["ring", "std", "tls12"] }
