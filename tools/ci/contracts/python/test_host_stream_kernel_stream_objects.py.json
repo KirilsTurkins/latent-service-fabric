@@ -1,75 +1,30 @@
 {
-  "cases": [
-    "StreamObjectOwner.test_classdir_public_gate_refuses_other_original_object_targets",
-    "StreamObjectOwner.test_classdir_source_freeze_is_exact_and_preserves_default_source_scope",
-    "StreamObjectOwner.test_object_gate_accepts_relocatable_without_claiming_link_and_refuses_executable",
-    "StreamObjectOwner.test_original_deadline_rejects_invalid_and_expired_start_before_work",
-    "StreamObjectOwner.test_public_gate_rejects_private_members_and_reserves_admission_bytes"
-  ],
-  "guards": {
-    "StreamObjectOwner.test_classdir_public_gate_refuses_other_original_object_targets": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:9b3ccc238ca4c870b9f7e01281563ae8c9833174794c263bcc1855cec7f365c2",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "StreamObjectOwner.test_classdir_source_freeze_is_exact_and_preserves_default_source_scope": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:9b3ccc238ca4c870b9f7e01281563ae8c9833174794c263bcc1855cec7f365c2",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "StreamObjectOwner.test_object_gate_accepts_relocatable_without_claiming_link_and_refuses_executable": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:9b3ccc238ca4c870b9f7e01281563ae8c9833174794c263bcc1855cec7f365c2",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "StreamObjectOwner.test_original_deadline_rejects_invalid_and_expired_start_before_work": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:9b3ccc238ca4c870b9f7e01281563ae8c9833174794c263bcc1855cec7f365c2",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "StreamObjectOwner.test_public_gate_rejects_private_members_and_reserves_admission_bytes": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:9b3ccc238ca4c870b9f7e01281563ae8c9833174794c263bcc1855cec7f365c2",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    }
+  "schemaVersion":"latent.ci.contracts.v2",
+  "kind":"python",
+  "reviewReason":"Bind the reviewed NETDEV own-directory55-source nine changed-TU programme to existing process/public bounds; preserve all historical47/50/52 identities, targets, test cases, guards and coverage.",
+  "module":"tools/tests/test_host_stream_kernel_stream_objects.py",
+  "cases":["StreamObjectOwner.test_classdir_kernfs_freeze_binds_full_projector_and_keeps_historical_modes_closed","StreamObjectOwner.test_classdir_kernfs_public_gate_keeps_exact_nine_targets_and_current_only_channels","StreamObjectOwner.test_classdir_public_gate_refuses_other_original_object_targets","StreamObjectOwner.test_classdir_source_freeze_is_exact_and_preserves_default_source_scope","StreamObjectOwner.test_netdev_directory_freeze_preserves_all_fifty_two_sources","StreamObjectOwner.test_netdev_directory_public_gate_is_closed_to_nine_changed_targets","StreamObjectOwner.test_object_gate_accepts_relocatable_without_claiming_link_and_refuses_executable","StreamObjectOwner.test_original_deadline_rejects_invalid_and_expired_start_before_work","StreamObjectOwner.test_public_gate_rejects_private_members_and_reserves_admission_bytes"],
+  "guards":{
+    "StreamObjectOwner.test_original_deadline_rejects_invalid_and_expired_start_before_work":
+      "0c44ea0f9574a11b56e32443d894d9dc929c13ccfeb9462df60123a0aeae7822",
+    "StreamObjectOwner.test_public_gate_rejects_private_members_and_reserves_admission_bytes":
+      "0c44ea0f9574a11b56e32443d894d9dc929c13ccfeb9462df60123a0aeae7822",
+    "StreamObjectOwner.test_object_gate_accepts_relocatable_without_claiming_link_and_refuses_executable":
+      "0c44ea0f9574a11b56e32443d894d9dc929c13ccfeb9462df60123a0aeae7822",
+    "StreamObjectOwner.test_classdir_source_freeze_is_exact_and_preserves_default_source_scope":
+      "0c44ea0f9574a11b56e32443d894d9dc929c13ccfeb9462df60123a0aeae7822",
+    "StreamObjectOwner.test_classdir_public_gate_refuses_other_original_object_targets":
+      "0c44ea0f9574a11b56e32443d894d9dc929c13ccfeb9462df60123a0aeae7822",
+    "StreamObjectOwner.test_classdir_kernfs_freeze_binds_full_projector_and_keeps_historical_modes_closed":
+      "0c44ea0f9574a11b56e32443d894d9dc929c13ccfeb9462df60123a0aeae7822",
+    "StreamObjectOwner.test_classdir_kernfs_public_gate_keeps_exact_nine_targets_and_current_only_channels":
+      "0c44ea0f9574a11b56e32443d894d9dc929c13ccfeb9462df60123a0aeae7822",
+    "StreamObjectOwner.test_netdev_directory_freeze_preserves_all_fifty_two_sources":
+      "0c44ea0f9574a11b56e32443d894d9dc929c13ccfeb9462df60123a0aeae7822",
+    "StreamObjectOwner.test_netdev_directory_public_gate_is_closed_to_nine_changed_targets":
+      "0c44ea0f9574a11b56e32443d894d9dc929c13ccfeb9462df60123a0aeae7822"
   },
-  "kind": "python",
-  "module": "tools/tests/test_host_stream_kernel_stream_objects.py",
-  "reviewReason": "Review the fixed private four-translation-unit classdir compile mode: exact approved initialized-object source, fifty frozen inputs, original eighteen-object defaults preserved, same process/config/deadline/caps and NULL consumer; no runtime or fit claim.",
-  "schemaVersion": "latent.ci.contracts.v1"
+  "guardDefinitions":{
+    "0c44ea0f9574a11b56e32443d894d9dc929c13ccfeb9462df60123a0aeae7822":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:9b3ccc238ca4c870b9f7e01281563ae8c9833174794c263bcc1855cec7f365c2","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"]}
+  }
 }

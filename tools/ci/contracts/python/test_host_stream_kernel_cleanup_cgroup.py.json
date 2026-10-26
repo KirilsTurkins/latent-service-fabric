@@ -1,62 +1,20 @@
 {
-  "cases": [
-    "CleanupCgroupSource.test_complete_original_callback_and_cancel_body_projects_exactly",
-    "CleanupCgroupSource.test_pinned_actual_cset_selector_precedes_every_real_callback",
-    "CleanupCgroupSource.test_root_selected_fork_hooks_keep_their_real_fast_paths",
-    "CleanupCgroupSource.test_selected_subsystems_and_exact_task_hooks"
-  ],
-  "guards": {
-    "CleanupCgroupSource.test_complete_original_callback_and_cancel_body_projects_exactly": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:a7f967ffcc7079dbd8073bce562bdcd71b86d7e2c251174181f789d6fa9e19a2",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "CleanupCgroupSource.test_pinned_actual_cset_selector_precedes_every_real_callback": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:a7f967ffcc7079dbd8073bce562bdcd71b86d7e2c251174181f789d6fa9e19a2",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "CleanupCgroupSource.test_root_selected_fork_hooks_keep_their_real_fast_paths": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:a7f967ffcc7079dbd8073bce562bdcd71b86d7e2c251174181f789d6fa9e19a2",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "CleanupCgroupSource.test_selected_subsystems_and_exact_task_hooks": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:a7f967ffcc7079dbd8073bce562bdcd71b86d7e2c251174181f789d6fa9e19a2",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    }
+  "cases":["CleanupCgroupSource.test_complete_original_callback_and_cancel_body_projects_exactly","CleanupCgroupSource.test_pinned_actual_cset_selector_precedes_every_real_callback","CleanupCgroupSource.test_root_selected_fork_hooks_keep_their_real_fast_paths","CleanupCgroupSource.test_selected_subsystems_and_exact_task_hooks"],
+  "guards":{
+    "CleanupCgroupSource.test_complete_original_callback_and_cancel_body_projects_exactly":
+      "50ab73872000d10ad0140ac1bd94f9664e380f1935b457b32c34a1348551b62e",
+    "CleanupCgroupSource.test_pinned_actual_cset_selector_precedes_every_real_callback":
+      "50ab73872000d10ad0140ac1bd94f9664e380f1935b457b32c34a1348551b62e",
+    "CleanupCgroupSource.test_root_selected_fork_hooks_keep_their_real_fast_paths":
+      "50ab73872000d10ad0140ac1bd94f9664e380f1935b457b32c34a1348551b62e",
+    "CleanupCgroupSource.test_selected_subsystems_and_exact_task_hooks":
+      "50ab73872000d10ad0140ac1bd94f9664e380f1935b457b32c34a1348551b62e"
   },
-  "kind": "python",
-  "module": "tools/tests/test_host_stream_kernel_cleanup_cgroup.py",
-  "reviewReason": "Additive reviewed finite cleanup constructor source controls and one 24-object hosted geometry/atomic programme; original four-object recipe and all earlier cases retained; no kernel link/boot, consumer selection or runtime/native qualification.",
-  "schemaVersion": "latent.ci.contracts.v1"
+  "kind":"python",
+  "module":"tools/tests/test_host_stream_kernel_cleanup_cgroup.py",
+  "reviewReason":"Additive reviewed finite cleanup constructor source controls and one 24-object hosted geometry/atomic programme; original four-object recipe and all earlier cases retained; no kernel link/boot, consumer selection or runtime/native qualification.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "50ab73872000d10ad0140ac1bd94f9664e380f1935b457b32c34a1348551b62e":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:a7f967ffcc7079dbd8073bce562bdcd71b86d7e2c251174181f789d6fa9e19a2","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+  }
 }

@@ -1,49 +1,18 @@
 {
-  "cases": [
-    "TypeScriptOwnedResultSourceTests.test_actual_resource_import_namespace_and_sync_export_generator_are_preserved",
-    "TypeScriptOwnedResultSourceTests.test_actual_splicer_keeps_sync_body_and_contiguous_original_import_bindings",
-    "TypeScriptOwnedResultSourceTests.test_changed_upstream_source_refuses_before_any_derivation"
-  ],
-  "guards": {
-    "TypeScriptOwnedResultSourceTests.test_actual_resource_import_namespace_and_sync_export_generator_are_preserved": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:267c6c375432349e4d093e935ac9fb580a280a1c9ebf20362d44d393b0cd9b70",
-        "class:setup-sha256:991cc346359ae18af4809030b227353c1da7534f595284b06013129fbed6c756"
-      ],
-      "skipSites": []
-    },
-    "TypeScriptOwnedResultSourceTests.test_actual_splicer_keeps_sync_body_and_contiguous_original_import_bindings": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:267c6c375432349e4d093e935ac9fb580a280a1c9ebf20362d44d393b0cd9b70",
-        "class:setup-sha256:991cc346359ae18af4809030b227353c1da7534f595284b06013129fbed6c756"
-      ],
-      "skipSites": []
-    },
-    "TypeScriptOwnedResultSourceTests.test_changed_upstream_source_refuses_before_any_derivation": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:267c6c375432349e4d093e935ac9fb580a280a1c9ebf20362d44d393b0cd9b70",
-        "class:setup-sha256:991cc346359ae18af4809030b227353c1da7534f595284b06013129fbed6c756"
-      ],
-      "skipSites": []
-    }
+  "cases":["TypeScriptOwnedResultSourceTests.test_actual_resource_import_namespace_and_sync_export_generator_are_preserved","TypeScriptOwnedResultSourceTests.test_actual_splicer_keeps_sync_body_and_contiguous_original_import_bindings","TypeScriptOwnedResultSourceTests.test_changed_upstream_source_refuses_before_any_derivation"],
+  "guards":{
+    "TypeScriptOwnedResultSourceTests.test_actual_resource_import_namespace_and_sync_export_generator_are_preserved":
+      "68208d018c7a6e9f285b80b860fa699985e7d82feb65c2647877374f5c89b4a5",
+    "TypeScriptOwnedResultSourceTests.test_actual_splicer_keeps_sync_body_and_contiguous_original_import_bindings":
+      "68208d018c7a6e9f285b80b860fa699985e7d82feb65c2647877374f5c89b4a5",
+    "TypeScriptOwnedResultSourceTests.test_changed_upstream_source_refuses_before_any_derivation":
+      "68208d018c7a6e9f285b80b860fa699985e7d82feb65c2647877374f5c89b4a5"
   },
-  "kind": "python",
-  "module": "tools/tests/test_typescript_owned_result_source.py",
-  "reviewReason": "Reviewed source-only OWN-result disposal controls; preserve all existing cases, authenticate original compiler bindings, and allow only host-test Node Acorn fallback while actual owning execution continues to require its pinned compiler parser.",
-  "schemaVersion": "latent.ci.contracts.v1"
+  "kind":"python",
+  "module":"tools/tests/test_typescript_owned_result_source.py",
+  "reviewReason":"Reviewed source-only OWN-result disposal controls; preserve all existing cases, authenticate original compiler bindings, and allow only host-test Node Acorn fallback while actual owning execution continues to require its pinned compiler parser.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "68208d018c7a6e9f285b80b860fa699985e7d82feb65c2647877374f5c89b4a5":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:267c6c375432349e4d093e935ac9fb580a280a1c9ebf20362d44d393b0cd9b70","class:setup-sha256:991cc346359ae18af4809030b227353c1da7534f595284b06013129fbed6c756"],"skipSites":[]}
+  }
 }

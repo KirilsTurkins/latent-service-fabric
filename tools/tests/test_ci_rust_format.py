@@ -25,6 +25,7 @@ class AuthenticatedRustFormat(unittest.TestCase):
             dest.write_bytes((provider.ROOT / name).read_bytes())
         shutil.copytree(provider.ROOT / provider.PROVIDER, root / provider.PROVIDER)
         shutil.copytree(provider.ROOT / codec.PROVIDER, root / codec.PROVIDER)
+        shutil.copytree(provider.ROOT / codec.CACHE_PROVIDER, root / codec.CACHE_PROVIDER)
 
     def test_real_command_checks_every_owned_package_and_only_omits_authenticated_dependency(self):
         command = cargo.format_command(provider.ROOT)
