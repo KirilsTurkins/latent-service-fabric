@@ -441,4 +441,32 @@ not qualify this backport; no cache compilation or runtime execution is
 claimed here. Native memory/refund code and runtime budgets are unchanged.
 
 Current source-cohort identity for this unqualified dependency backport is
-`wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-unordered-futures-outer-sync-result-stream-outers-memory-v17-cache-repair`. The original plain-v17/fe9 execution remains a separate immutable source.
+`wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-unordered-futures-outer-sync-result-stream-outers-consumer-memory-v18-cache-repair`. The original plain-v17/fe9 execution remains a separate immutable source.
+
+
+The v18 SOURCE stage adds exact selected consumer pinned-value and shared-cell
+backing. Existing queue/Task/outer preparation remains before both new affine
+reservations; both are admitted before either consumer allocation, consumer
+factory construction, first poll or transmit mutation. Shared retirement uses
+the pinned Arc::into_inner physical-header contract, then destroys the original
+LockedState and pinned consumer before releasing their original charges.
+Confirmation unwind has physical cleanup installed; destructor unwind keeps
+both uncertain original charges. No Memory/factory Arc enters either owner.
+None retains its original concrete Arc<LockedState<Pin<Box<C>>>> and literal
+Box/Arc allocation expression; this is not a machine-code identity claim.
+
+Five new private implementation controls and two affected public HostReady
+controls are prepared SOURCE ONLY, UNCOMPILED/UNEXECUTED. Public original
+ActivationBudget remains 1MiB / 1B fuel / 5s, with local queue/Task/outer/C-box/
+shared-cell admission order; private counter evidence is separate. The owning
+plan selects only those seven IDs in two locked targets, with no canonical WAT
+assembly, old four canonical controls, six-control programme or language replay.
+The dated fe9 v17 six-control native receipt remains scoped to that original
+source and dependency identity; it qualifies neither these new consumer owners
+nor this cache-repair source cohort. Strict 14-file cache authentication remains.
+
+Inner producer/consume/accept factory Boxes and closure backing, producer shared
+state, P::Buffer default/transitive allocations, per-invocation inner Boxes,
+resource tables/collections and borrowed host-to-host future backing remain
+separate unpaid scopes. Payload layouts are not allocator/RSS/full-cost quotas;
+whole #736 CPU/memory/retirement coverage remains OPEN.

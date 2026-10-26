@@ -1,7 +1,7 @@
-name: Focused canonical stream outer ownership
+name: Focused consumer cell ownership
 on:
   push:
-    branches: ['feat/sdk-736-stream-outers-20261026']
+    branches: ['feat/sdk-736-consumer-cell-20261026']
     paths:
       - '.github/workflows/canonical-stream-outers.yml'
       - 'crates/vendor/wasmtime/**'
@@ -18,7 +18,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   stream-outers:
-    name: Cache feature compile and one upstream compressed roundtrip
+    name: Five consumer implementation and two public HostReady controls
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     env:
@@ -57,23 +57,22 @@ jobs:
       - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
         with:
           version: 1.254.0
-      - name: Check repaired cache feature and execute only one upstream cache roundtrip
+      - name: Execute only seven consumer cell ownership controls
         run: >-
           python3 -B tools/qualify_stream_outers.py
           --source-commit "${{ github.sha }}"
-          --cache-repair
+          --consumer-cell
           --output "$RUNNER_TEMP/canonical-stream-outers"
-      - name: Retain bounded cache compile source and one raw roundtrip outcome
+      - name: Retain seven source-bound consumer cell outcomes
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: canonical-stream-outers-${{ github.sha }}
+          name: canonical-consumer-cells-${{ github.sha }}
           path: |
             ${{ runner.temp }}/canonical-stream-outers/receipt.json
             ${{ runner.temp }}/canonical-stream-outers/FAILED.json
             ${{ runner.temp }}/canonical-stream-outers/source-inputs.json
             ${{ runner.temp }}/canonical-stream-outers/commands.json
             ${{ runner.temp }}/canonical-stream-outers/commands/logs/*.txt
-            ${{ runner.temp }}/canonical-stream-outers/fixtures/native-stream-outers.wasm
           if-no-files-found: warn
           retention-days: 3

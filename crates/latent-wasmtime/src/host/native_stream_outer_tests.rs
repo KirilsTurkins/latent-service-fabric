@@ -160,7 +160,7 @@ async fn actual_stream_host_ready_refusals_precede_consumer_factory_and_polls() 
     let engine = engine();
     // Existing fixed native-store fixture; no WAT/compiler-tool invocation.
     let core = Module::new(&engine, CORE).unwrap();
-    for local in 1..=3 {
+    for local in 1..=5 {
         let original = budget(MIB);
         let observed = Arc::new(Observations::default());
         let mut first = store(&engine, &original, &observed).unwrap();
@@ -175,7 +175,8 @@ async fn actual_stream_host_ready_refusals_precede_consumer_factory_and_polls() 
         let kept_consumed = consumed.clone();
         let kept_requested = requested.clone();
         let invocation = original.clone();
-        // Source-owned LOCAL queue -> Task -> outer after warmed shared headers.
+        // Source-owned LOCAL queue -> Task -> outer -> pinned C -> shared C cell.
+        // Warmed shared headers and the original real-budget padding stay unchanged.
         observed.before_request(before + local, move |bytes| {
             let request = bytes as u64 + OWNER;
             let payload = MIB - invocation.host_memory_bytes() - request + 1 - OWNER;
@@ -197,7 +198,14 @@ async fn actual_stream_host_ready_refusals_precede_consumer_factory_and_polls() 
             .unwrap_err();
         denial(&error, MIB, consumed.load(SeqCst), requested.load(SeqCst));
         assert_eq!(consumed.load(SeqCst) + requested.load(SeqCst), MIB + 1);
-        assert_eq!(requests(&observed).len(), before + local);
+        let entries = requests(&observed);
+        assert_eq!(entries.len(), before + local);
+        if local >= 4 {
+            assert_eq!(
+                entries[before + 3],
+                std::alloc::Layout::new::<Consumer>().size()
+            );
+        }
         assert_eq!(producer.polls.load(SeqCst), 0);
         assert_eq!(consumer.polls.load(SeqCst), 0);
         println!(
@@ -244,8 +252,12 @@ async fn actual_stream_host_ready_pending_ready_and_error_preserve_cleanup() {
         let before = requests(&observed).len();
         reader.pipe(&mut first, Consumer(consumer.clone())).unwrap();
         let entries = requests(&observed);
-        assert_eq!(entries.len(), before + 3);
-        let task_and_outer = entries[before + 1..before + 3]
+        assert_eq!(entries.len(), before + 5);
+        assert_eq!(
+            entries[before + 3],
+            std::alloc::Layout::new::<Consumer>().size()
+        );
+        let task_outer_and_consumer = entries[before + 1..before + 5]
             .iter()
             .map(|bytes| *bytes as u64 + OWNER)
             .sum::<u64>();
@@ -257,7 +269,7 @@ async fn actual_stream_host_ready_pending_ready_and_error_preserve_cleanup() {
                 .is_pending());
             assert!(producer.polls.load(SeqCst) > 0);
             assert_eq!(consumer.polls.load(SeqCst), 0);
-            assert!(original.host_memory_bytes() >= foreign_bytes + task_and_outer);
+            assert!(original.host_memory_bytes() >= foreign_bytes + task_outer_and_consumer);
         }
         if mode == 4 {
             drop(running);

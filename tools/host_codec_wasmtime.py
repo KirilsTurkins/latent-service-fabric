@@ -12,8 +12,8 @@ from tools.rust_capsule_project import ROOT, read_file
 PROVIDER = "crates/vendor/wasmtime"
 NAME = "wasmtime"
 VERSION = "48.0.7"
-COHORT = "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-unordered-futures-outer-sync-result-stream-outers-memory-v17-cache-repair"
-RECORD_SHA256 = "c2ec501a8616bbf32701786f732fbb5228807bb4c7808f56d57efc7ee68ea694"
+COHORT = "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-unordered-futures-outer-sync-result-stream-outers-consumer-memory-v18-cache-repair"
+RECORD_SHA256 = "162338494e06c18c15bb3a813c4711595c2c8cf4034f2d0ba4df25fd2e9725bf"
 # Explicit reviewed postimages; the remaining original files use the immutable
 # registry inventory. Changing a claimed record or patch cannot authorize bytes.
 POSTIMAGES = {
@@ -162,8 +162,8 @@ POSTIMAGES = {
         "bytes": 21595
     },
     "src/runtime/component/concurrent/futures_and_streams.rs": {
-        "sha256": "b312cc45eef714ad62c64b0eceff50e8285603f00cf1937fe72641e1734eb40f",
-        "bytes": 205958
+        "sha256": "3ac001dbf9c3de87dface40070a12d5616dfe45cd68569d9f35c964b099073ae",
+        "bytes": 213409
     },
     "src/runtime/component/concurrent/pending_future.rs": {
         "sha256": "3daf6c6252f684830bc40b86065096b65e50d2a40fceb8db97c76a6e6a614164",
@@ -198,8 +198,8 @@ POSTIMAGES = {
         "bytes": 16605
     },
     "src/runtime/component/concurrent/futures_and_streams/stream_outer_tests.rs": {
-        "sha256": "2124ff8f1f0dc94c79c7dfdd362049d06554db99e875744ba46247d37f2ca469",
-        "bytes": 22964
+        "sha256": "3592903d1b4c5a882af1088368911ccca7674eb9beeb06acd0aa0a5f6c0ebc30",
+        "bytes": 31025
     },
     "src/runtime/component/concurrent/host_futures/abort.rs": {
         "sha256": "bdfece9f91accafd5122be36d628c37c5b219ac0eecec181267840fbb1e95a45",
@@ -242,12 +242,12 @@ POSTIMAGES = {
         "bytes": 9353
     },
     "README.latent.md": {
-        "sha256": "bc6146d002e06ff27cf8872aa2d79bae87fe58efc67aa10ee5af58bf57461069",
-        "bytes": 30279
+        "sha256": "42de7fb72a7ab6aec02e92c131f1112573e9c0e39363da48dc3cc4957df2ed9d",
+        "bytes": 32135
     },
     "latent-dynamic-memory.patch": {
-        "sha256": "32a3c60bc9e302cae92e2a0525a1246616c97ab4d97a02256a3e9f60c5a3747a",
-        "bytes": 463146
+        "sha256": "b657b2865a1b5cbce7e0b215e871bdff2720481e75bffb2407c4086dd07e7e0f",
+        "bytes": 479463
     }
 }
 DEPENDENCY = {"path": PROVIDER, "version": "=48.0.7", "default-features": False,
