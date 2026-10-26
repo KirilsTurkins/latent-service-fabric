@@ -89,7 +89,7 @@ class DotnetResourceLateReplay(unittest.TestCase):
         original = original.replace('(!inputs.late_facilities && !inputs.replay_late_facilities)', '!inputs.late_facilities', 1)
         original = original.replace('inputs.late_facilities && !inputs.replay_late_facilities', 'inputs.late_facilities', 1)
         self.assertEqual(hashlib.sha256((original.rstrip()+'\n').encode()).hexdigest(),
-            '3cf93fd3f75b121b30c838ff22e0698b67cdeec819c26d6196f36fa08d49a815')
+            'ec927e58aa04f8f643abe123435fed56fb9fba7e71892083c17aa241e24eb174')
         model = lanes.workflow_model(raw); selected = model['jobs']['replay-late-facilities']
         self.assertFalse(model['on']['workflow_dispatch']['inputs']['replay_late_facilities']['default'])
         self.assertEqual(selected['if'], "${{ github.event_name == 'workflow_dispatch' && inputs.replay_late_facilities && !inputs.late_facilities }}")

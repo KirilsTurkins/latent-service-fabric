@@ -115,7 +115,7 @@ class DotnetHttpMixed(unittest.TestCase):
         value['jobs']['published-http']['if'] = "github.event_name == 'workflow_dispatch' && inputs.fresh_component"
         value['jobs']['exact-component']['if'] = "github.event_name != 'workflow_dispatch' || !inputs.fresh_component"
         self.assertEqual(hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':')).encode()).hexdigest(),
-            '3cfb841dfe77016d6f85f3d4ad7c5e74eb67b2171e2d49ab257848c58ac7cac2')
+            'be7b04874a1e666ffe5816c7908b9e0af681a03bc3057c585c62f9cfccad8441')
 
     def test_project_keeps_normal_sdk_authoritative_wit_and_all_original_limits(self):
         with tempfile.TemporaryDirectory() as temporary:

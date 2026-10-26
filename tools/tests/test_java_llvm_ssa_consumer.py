@@ -141,7 +141,7 @@ class LlvmSsaConsumer(unittest.TestCase):
             self.assertEqual(retention['path'].count(line), 1)
             retention['path'] = retention['path'].replace(line, '', 1)
         baseline = hashlib.sha256(json.dumps(job, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
-        self.assertEqual(baseline, 'bd9edf4ce8987000fa8e170932bafde9e8e65358fe6dde8cd59d489f904b185c')
+        self.assertEqual(baseline, '3c135ea421184dccc318ff57ac3cffd2ade8d5270e4646581e25258a674aa28f')
 
     def test_actual_workflow_selector_refuses_mixed_or_nonboolean_modes_before_acquisition(self):
         model = workflow_model((patch.ROOT / '.github/workflows/java-guest-feasibility.yml').read_text())

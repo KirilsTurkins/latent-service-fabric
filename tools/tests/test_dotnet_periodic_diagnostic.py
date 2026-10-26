@@ -19,6 +19,22 @@ class PeriodicDiagnosticTests(unittest.TestCase):
         raw=read_file(ROOT/'tools/tests/fixtures/dotnet-periodic-base-workflow.yml')
         self.assertEqual(hashlib.sha256(raw).hexdigest(),'2158598ce9a64b7a6325de2382083608d64c833a5c3b0addf06f5829e5c04978')
         old=workflow_model(raw.decode('utf8'))
+        # Migrate only these reviewed immutable action identities in the frozen
+        # comparison; retain the original Git blob and every other model field.
+        pins={
+            'Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6':'KirilsTurkins/lsf-rust-cache@476b290465f7c84db317df6e6a6e2d3c12ea3477',
+            'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1':'KirilsTurkins/lsf-checkout@c3024dfac542bb46ebccc7829ddf1f95e0be8da9',
+            'actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68':'KirilsTurkins/lsf-setup-dotnet@f5bcdac7f26977ef44527f837688dd86faf648ec',
+            'actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97':'KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140',
+            'actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9':'KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9',
+            'bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613':'KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@9244ec9f4725400c84054e3e6ec97514cadddf53',
+        }
+        migrated=set()
+        for previous in old['jobs'].values():
+            for step in previous.get('steps',[]):
+                reference=step.get('uses')
+                if reference in pins:step['uses']=pins[reference];migrated.add(reference)
+        self.assertEqual(migrated,set(pins))
         actual=workflow_model((ROOT/source).read_text(encoding='utf8'))
         selector=actual['on']['workflow_dispatch']['inputs'].pop('periodic_diagnostic')
         self.assertEqual(selector['type'],'boolean');self.assertIs(selector['default'],False)

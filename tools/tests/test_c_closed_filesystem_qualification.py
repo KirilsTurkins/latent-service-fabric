@@ -104,9 +104,9 @@ class ClosedFilesystemQualification(unittest.TestCase):
         self.assertEqual(jobs['standard-facilities']['if'],
             "${{ github.event_name != 'workflow_dispatch' || (!inputs.qualify-scratch-refusals && !inputs.replay-closed-filesystem) }}")
         jobs['standard-facilities']['if'] = "${{ github.event_name != 'workflow_dispatch' || !inputs.qualify-scratch-refusals }}"
-        original = {'runtime': 'ed38d44ac1351f016d87cd1e8db6d6b7ef8a0ae5c30de5d5184bba0f084964f0',
-            'standard-facilities': '8ad24f63359ac731714586993740f4a11e2658cd89a82d5a4cc4baeeea22b47c',
-            'scratch-refusals': '68e045c0babb0266bde7736cc1a0fc541e1e72941f307022ab6f0136e63a2d9d'}
+        original = {'runtime': 'bc0a352e086d7408ac98776baa775efefa9a666367ff1d7036256152cbf3680d',
+            'standard-facilities': 'd5ce9143431e6a34300c7731be60d45d8d74331e68149929b2af9db4ff7a0196',
+            'scratch-refusals': 'b0acceb6c84052bf65335cca2caacaba7a27724b922f7b2ca91a8041d5565602'}
         for name, expected in original.items():
             self.assertEqual(hashlib.sha256(json.dumps(jobs[name], sort_keys=True, separators=(',', ':')).encode()).hexdigest(), expected)
         replay = jobs['closed-filesystem']
