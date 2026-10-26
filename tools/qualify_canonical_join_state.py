@@ -1,4 +1,4 @@
-"""Execute four private call-future controls and one actual canonical budget case."""
+"""Execute four private pending-continuation controls and one actual canonical budget case."""
 from __future__ import annotations
 
 import argparse
@@ -21,24 +21,24 @@ from tools.build_snapshot import SOURCE_ALLOWLIST, SnapshotLimits
 from tools.rust_capsule_build import Commands
 from tools.rust_capsule_project import ROOT, fresh, read_file, write_json
 
-BRANCH = 'feat/sdk-736-shared-owners-20261025'
+BRANCH = 'feat/sdk-736-pending-box-20261026'
 WORKFLOW = '.github/workflows/canonical-join-state.yml'
-PREFIX = 'runtime::component::concurrent::call_future::tests::'
+PREFIX = 'runtime::component::concurrent::pending_future::tests::'
 PRIVATE_CASES = tuple(PREFIX + name for name in (
-    'call_future_refuses_before_first_poll_and_none_preserves_legacy_box',
-    'call_future_pending_completion_and_cancel_keep_charge_until_drop',
-    'call_future_confirmation_unwind_destroys_state_before_refund',
-    'call_future_destructor_unwind_retains_uncertain_original_charge',
+    'pending_future_refuses_before_input_poll_or_factory_and_ready_refunds_unused',
+    'pending_future_same_reservation_keeps_pinned_output_until_physical_drop',
+    'pending_future_confirmation_unwind_destroys_output_before_refund',
+    'pending_future_destructor_unwind_retains_only_original_charge',
 ))
 CANONICAL_CASE = ('host::join_state_tests::'
-    'canonical_call_future_first_poll_refusal_and_same_budget_fresh_store')
+    'canonical_pending_future_first_poll_refusal_and_same_budget_fresh_store')
 FEATURES = ('component-model,component-model-async,cranelift,pooling-allocator,'
     'runtime,std,wit-parser,gc,gc-drc,cache,threads,coredump')
 
 
 def require(value, reason):
     if not value:
-        raise ValueError('canonical-call-future-' + reason)
+        raise ValueError('canonical-pending-future-' + reason)
 
 
 def identity(raw):
@@ -94,12 +94,12 @@ def qualify(output, revision):
     # run_bounded_result may spend five additional seconds reaping its child.
     # Reserve that time INSIDE every declared command and overall wall cap.
     commands = Commands(ROOT, logs, environment, deadline_seconds=2395, command_seconds=895)
-    receipt = {'schemaVersion': 'lsf.canonical-call-future.v1', 'status': 'in-progress',
+    receipt = {'schemaVersion': 'lsf.canonical-pending-future.v1', 'status': 'in-progress',
         'sourceRevision': revision, 'privateCases': list(PRIVATE_CASES),
         'canonicalCase': CANONICAL_CASE, 'observations': [], 'fullCostModelQualified': False,
         'fullVendorSuiteExecuted': False, 'fullRuntimeSuiteExecuted': False,
         'signedJavaScriptExecuted': False, 'compilerImplicitInputsAttested': False,
-        'hermetic': False, 'scope': 'first_poll concrete abortable future Box only; no allocator/RSS or whole-runtime qualification', 'limits': {'overallSeconds': 2400, 'buildCommandSeconds': 900,
+        'hermetic': False, 'scope': 'first_poll exact pending-continuation output Box only; no allocator/RSS, queue-node, WorkerFunction or whole-runtime qualification', 'limits': {'overallSeconds': 2400, 'buildCommandSeconds': 900,
             'caseProcessSeconds': 60, 'listProcessSeconds': 30,
             'cleanupReserveSeconds': 5},
         'activationLimits': {'cpuFuel': 1_000_000_000, 'memoryBytes': 64 * 1024**2,
@@ -138,7 +138,7 @@ def qualify(output, revision):
             'crates/vendor/wasmtime/Cargo.toml', '--locked', '--lib', '--no-default-features',
             '--features', FEATURES, '--no-run', '--message-format=json')
         private_suite = artifacts.Suite('crates/vendor/wasmtime/Cargo.toml', 'wasmtime',
-            'src/lib.rs', PREFIX + 'call_future_', frozenset(PRIVATE_CASES), False)
+            'src/lib.rs', PREFIX + 'pending_future_', frozenset(PRIVATE_CASES), False)
         private = artifacts.read_inventory(logs / 'logs/00-build-private-controls.stdout.txt',
             ROOT, private_suite, target=target)
         receipt['privateExecutable'] = file_identity(private.executable, 'wasmtime-private-controls',
@@ -165,7 +165,7 @@ def qualify(output, revision):
             '--lib', '--no-run', '--message-format=json')
         contract, = [row for row in registry.load()['suites']
             if row['id'] == 'latent-wasmtime.lib.latent-wasmtime']
-        require(contract['minimumCases'] == 487 and CANONICAL_CASE in contract['expectedCases']
+        require(contract['minimumCases'] == 488 and CANONICAL_CASE in contract['expectedCases']
             and CANONICAL_CASE in contract['expectedIgnored'], 'actual-canonical-contract')
         canonical_suite = artifacts.Suite('crates/latent-wasmtime/Cargo.toml', 'latent_wasmtime',
             'src/lib.rs', CANONICAL_CASE, frozenset({CANONICAL_CASE}), True)
@@ -184,10 +184,10 @@ def qualify(output, revision):
         raw = commands.run('execute-one-canonical-control', canonical.executable,
             CANONICAL_CASE, '--exact', '--ignored', '--show-output', '--test-threads=1')
         receipt['observations'].append(result(raw, CANONICAL_CASE))
-        require(re.findall(rb'^LSF_CALL_FUTURE_V1 refusal=memory-bytes requests=3 '
+        require(re.findall(rb'^LSF_PENDING_FUTURE_V1 refusal=memory-bytes requests=4 '
             rb'before-poll=true fresh=42 stores=2$', raw, re.M) == [
-            b'LSF_CALL_FUTURE_V1 refusal=memory-bytes requests=3 before-poll=true fresh=42 stores=2'],
-            'actual-third-admission-and-same-budget-fresh-store')
+            b'LSF_PENDING_FUTURE_V1 refusal=memory-bytes requests=4 before-poll=true fresh=42 stores=2'],
+            'actual-fourth-admission-and-same-budget-fresh-store')
         require(time.monotonic() < commands.deadline, 'overall-deadline')
         require(source_inputs() == before and source.verify() == checked, 'final-source')
         require(file_identity(private.executable, 'wasmtime-private-controls', 512 * 1024**2)

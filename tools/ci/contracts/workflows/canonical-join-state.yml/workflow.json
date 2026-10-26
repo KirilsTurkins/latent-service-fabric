@@ -3,13 +3,13 @@
   "policy": {
     "concurrency": {
       "cancel-in-progress": false,
-      "group": "canonical-call-future-${{ github.ref }}"
+      "group": "canonical-pending-future-${{ github.ref }}"
     },
-    "name": "Focused canonical async call-future accounting",
+    "name": "Focused canonical async pending-continuation accounting",
     "on": {
       "push": {
         "branches": [
-          "feat/sdk-736-shared-owners-20261025"
+          "feat/sdk-736-pending-box-20261026"
         ],
         "paths": [
           ".github/workflows/canonical-join-state.yml",
@@ -28,7 +28,7 @@
   "requiredJobs": [
     "join-state"
   ],
-  "reviewReason": "Reviewed concrete abortable async-import future Box preadmission and physical-drop ownership. Existing focused owner runs only four new private cases and one new actual canonical third-admission/fresh-Store case under unchanged two-build/45m/2400s/900s/60s/two-job bounds. No old case, skip or authority is removed.",
+  "reviewReason": "Reviewed exact factory-output pending continuation reservation before first poll and Running publication, unused Ready refund, same owner outside one erased Box, and physical-drop/unwind order. Existing finite owner selects ONLY four new private pending controls plus actual fourth-admission/fresh-Store case, preserving two locked targets/45m/2400s/900s/60s/cleanup5/two jobs. Existing v11 cases remain registered and are not replayed.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/canonical-join-state.yml"
 }

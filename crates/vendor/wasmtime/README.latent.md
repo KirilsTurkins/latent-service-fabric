@@ -36,7 +36,7 @@ retains confirmed actual allocations through native unwind, without confirming
 a hypothetical signature maximum as observed peak.
 
 The native cohort is
-`wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-memory-v11`. Runtime engine configuration identity
+`wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-memory-v12`. Runtime engine configuration identity
 includes this cohort, so old prepared/AOT identity cannot certify this host.
 The immutable v1/7b programme passed 61 controls; v2/de0 passed81,
 v3/48a passed85, v4/3e417 passed92, v5/94f passed97, v7/f535 passed114,
@@ -204,6 +204,29 @@ NativeMemory=None preserves the original Box<F> allocation and poll semantics;
 the inline wrapper can enlarge the separate enclosing scheduler future.
 Layout<F> covers this backing, not allocator overhead or an RSS upper bound.
 Other scheduler/opaque future boxes, FuturesUnordered nodes, queue/waitable
-backing and transitive captures remain outside this slice. Four private controls
-and one actual canonical third-admission/refusal/fresh-Store control are prepared
-but have not yet been compiled or executed by this source update.
+backing and transitive captures remain outside this slice. At that historical
+source stage the four private controls and actual third-admission/refusal/fresh-
+Store control were prepared but unexecuted. They subsequently all passed at
+source e225fc670b97f4511c2acac21cfd3b7b8f47d9af, run 40245918267. That v11
+qualification covers only those four private cases and request-3/fresh-42 native
+control; it does not qualify this v12 continuation extension or the full runtime.
+
+
+The v12 source extension prepares the selected pending continuation before the
+initial host poll or CalleeRunning publication. A private noncapturing factory
+and its typed (inner future, lower, StoreToken, task) tuple determine the exact
+factory-output Future Layout without invoking the factory. Ready releases the
+unused unconfirmed reservation before direct lowering. Pending creates one Box
+of that SAME output type with the SAME owner, outside its erased pinned pointer.
+Completion keeps the charge until actual destruction/deallocation; confirmation
+unwind destroys the installed Box before refund, while destructor unwind retains
+the original charge conservatively. There is no new admission after user I/O.
+Other existing scheduler boxed paths retain their infallible Legacy adapter;
+NativeMemory=None retains the original allocation/poll semantics. The scheduler
+enum can enlarge separate queue/node backing, which this slice does not pay.
+Layout<Output> is payload backing, not allocator overhead or an RSS upper bound.
+The v11 inner CallFuture source is unchanged. Completion WorkerFunction boxes,
+FuturesUnordered nodes, queue backing and other transitive/opaque allocations
+remain separate gaps. Four new private controls and the actual fourth-admission
+refusal/fresh-Store control are prepared, UNCOMPILED and UNEXECUTED here. The
+focused programme selects only these five, not the already-qualified v11 cases.

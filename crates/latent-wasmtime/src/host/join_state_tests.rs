@@ -354,8 +354,14 @@ async fn canonical_call_future_first_poll_refusal_and_same_budget_fresh_store() 
     canonical_backing_refusal_and_same_budget_fresh_store(3).await;
 }
 
+#[tokio::test]
+#[ignore = "requires focused actual prepared pending-continuation qualification"]
+async fn canonical_pending_future_first_poll_refusal_and_same_budget_fresh_store() {
+    canonical_backing_refusal_and_same_budget_fresh_store(4).await;
+}
+
 async fn canonical_backing_refusal_and_same_budget_fresh_store(refusal_request: usize) {
-    assert!(refusal_request == 2 || refusal_request == 3);
+    assert!(matches!(refusal_request, 2..=4));
     let expected = (refusal_request == 2).then(|| {
         let layout: usize = std::env::var("LSF_TEST_JOIN_STATE_LAYOUT")
             .expect("owning layout witness")
@@ -448,6 +454,15 @@ async fn canonical_backing_refusal_and_same_budget_fresh_store(refusal_request: 
                 // the byte count alone is not treated as allocation identity.
                 assert!((1..=4096).contains(&observed.requests[2]));
             }
+            if refusal_request == 4 {
+                // The unchanged first three admissions are callback Box,
+                // JoinState, and inner CallFuture Box. The fourth reserves
+                // the exact continuation output before the SAME first poll.
+                // No user code, continuation factory, or completion worker
+                // can have run on this closed path before that refusal.
+                assert!((1..=4096).contains(&observed.requests[2]));
+                assert!((1..=4096).contains(&observed.requests[3]));
+            }
             drop(observed);
             drop(error);
             drop(send);
@@ -475,6 +490,11 @@ async fn canonical_backing_refusal_and_same_budget_fresh_store(refusal_request: 
     if refusal_request == 3 {
         println!(
             "LSF_CALL_FUTURE_V1 refusal=memory-bytes requests=3 before-poll=true fresh=42 stores=2"
+        );
+    }
+    if refusal_request == 4 {
+        println!(
+            "LSF_PENDING_FUTURE_V1 refusal=memory-bytes requests=4 before-poll=true fresh=42 stores=2"
         );
     }
 }
