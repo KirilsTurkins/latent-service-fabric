@@ -1,62 +1,20 @@
 {
-  "cases": [
-    "StreamOperatorNode.test_actual_node_refusal_parser_rejects_uncertainty_foreign_fields_and_success",
-    "StreamOperatorNode.test_authentic_frontend_receipt_and_fixed_origin_do_not_relabel_process_double_as_node",
-    "StreamOperatorNode.test_closed_frontend_index_requires_exact_members_sizes_compression_and_regular_files",
-    "StreamOperatorNode.test_complete_original_baseline_is_preserved_while_stream_addition_is_explicit"
-  ],
-  "guards": {
-    "StreamOperatorNode.test_actual_node_refusal_parser_rejects_uncertainty_foreign_fields_and_success": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:39feab13e113214f3828697fe8a2465422fce511d2ab6649b57dba9697208ec7",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "StreamOperatorNode.test_authentic_frontend_receipt_and_fixed_origin_do_not_relabel_process_double_as_node": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:39feab13e113214f3828697fe8a2465422fce511d2ab6649b57dba9697208ec7",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "StreamOperatorNode.test_closed_frontend_index_requires_exact_members_sizes_compression_and_regular_files": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:39feab13e113214f3828697fe8a2465422fce511d2ab6649b57dba9697208ec7",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "StreamOperatorNode.test_complete_original_baseline_is_preserved_while_stream_addition_is_explicit": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:39feab13e113214f3828697fe8a2465422fce511d2ab6649b57dba9697208ec7",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    }
+  "cases":["StreamOperatorNode.test_actual_node_refusal_parser_rejects_uncertainty_foreign_fields_and_success","StreamOperatorNode.test_authentic_frontend_receipt_and_fixed_origin_do_not_relabel_process_double_as_node","StreamOperatorNode.test_closed_frontend_index_requires_exact_members_sizes_compression_and_regular_files","StreamOperatorNode.test_complete_original_baseline_is_preserved_while_stream_addition_is_explicit"],
+  "guards":{
+    "StreamOperatorNode.test_actual_node_refusal_parser_rejects_uncertainty_foreign_fields_and_success":
+      "82bdd01c77e054c93aef0f0b54fd105adde9b2fe9f178b8f0482e2ed70bd4002",
+    "StreamOperatorNode.test_authentic_frontend_receipt_and_fixed_origin_do_not_relabel_process_double_as_node":
+      "82bdd01c77e054c93aef0f0b54fd105adde9b2fe9f178b8f0482e2ed70bd4002",
+    "StreamOperatorNode.test_closed_frontend_index_requires_exact_members_sizes_compression_and_regular_files":
+      "82bdd01c77e054c93aef0f0b54fd105adde9b2fe9f178b8f0482e2ed70bd4002",
+    "StreamOperatorNode.test_complete_original_baseline_is_preserved_while_stream_addition_is_explicit":
+      "82bdd01c77e054c93aef0f0b54fd105adde9b2fe9f178b8f0482e2ed70bd4002"
   },
-  "kind": "python",
-  "module": "tools/tests/test_stream_operator_node.py",
-  "reviewReason": "Four additive fixed-origin archive and refusal controls preserve authentic380 process-double provenance, closed receipt/member/compression bounds, reject uncertain/foreign outcomes and bind the complete original277 baseline; no node or old38 controls executed locally.",
-  "schemaVersion": "latent.ci.contracts.v1"
+  "kind":"python",
+  "module":"tools/tests/test_stream_operator_node.py",
+  "reviewReason":"Four additive fixed-origin archive and refusal controls preserve authentic380 process-double provenance, closed receipt/member/compression bounds, reject uncertain/foreign outcomes and bind the complete original277 baseline; no node or old38 controls executed locally.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "82bdd01c77e054c93aef0f0b54fd105adde9b2fe9f178b8f0482e2ed70bd4002":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:39feab13e113214f3828697fe8a2465422fce511d2ab6649b57dba9697208ec7","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+  }
 }

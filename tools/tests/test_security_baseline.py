@@ -138,6 +138,19 @@ class SecurityFixtureTests(unittest.TestCase):
         self.assertTrue(any(package.path == "sdk/typescript-client/package-lock.json" for package in packages))
         self.assertTrue(any(package.path == "examples/renderer-profile/package-lock.json" for package in packages))
         self.assertTrue(any(package.path == "tools/requirements.lock" for package in packages))
+        # The real standalone cache must use the existing pinned isolated route.
+        from tools.security_inventory import cargo_inventory
+        from tools.security_common import digest
+        configuration = json.loads(read_file(POLICY, "inventory.json"))
+        manifest = "crates/vendor/wasmtime-cache/Cargo.toml"
+        entry = next(row for row in configuration["manifests"] if row["path"] == manifest)
+        self.assertIs(entry["isolated"], True)
+        self.assertEqual(entry["manifest_sha256"], digest(read_file(ROOT, manifest).replace(b"\r\n", b"\n")))
+        covered, cache = cargo_inventory(ROOT, entry)
+        self.assertEqual(covered, {manifest, "crates/vendor/wasmtime-cache/Cargo.lock"})
+        self.assertEqual((cache["coverage"], cache["members"]), ("RustSec", 0))
+        with self.assertRaisesRegex(SecurityError, "unreviewed-isolated-cargo-manifest"):
+            cargo_inventory(ROOT, {**entry, "manifest_sha256": "0" * 64})
 
     def test_source_repair_classifies_only_the_proved_braces_advisory(self) -> None:
         from tools.security_npm_sources import resolve_findings

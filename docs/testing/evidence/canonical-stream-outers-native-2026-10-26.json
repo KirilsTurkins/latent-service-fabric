@@ -1,0 +1,936 @@
+{
+  "schemaVersion": "lsf.canonical-stream-outers.evidence.v1",
+  "status": "six-finite-native-controls-passed-security-repair-pending",
+  "pullRequest": {
+    "number": 1504,
+    "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/1504"
+  },
+  "qualifiedSource": {
+    "revision": "fe9a04fd8e94894ecdd15c45d9e6c5d6ca547fd5",
+    "tree": "ca48a7512d4b7129e38d20f8175fe1e8dd9200a0",
+    "parent": "f8e78744f36cb4d98944487a125cd6763b68a400"
+  },
+  "run": {
+    "id": 40339377974,
+    "jobId": 121629558115,
+    "event": "push",
+    "conclusion": "success",
+    "url": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40339377974",
+    "workflow": ".github/workflows/canonical-stream-outers.yml"
+  },
+  "artifact": {
+    "id": 12658423228,
+    "name": "canonical-stream-outers-fe9a04fd8e94894ecdd15c45d9e6c5d6ca547fd5",
+    "archiveBytes": 1423943,
+    "archiveSha256": "b0b4421ae62aeda848f08a70fe0564764ff8bd62fb4b84d6a82da5750953ffdb",
+    "safeCrcShaMembers": 38,
+    "expandedBytes": 5195110,
+    "members": [
+      {
+        "path": "receipt.json",
+        "bytes": 3139249,
+        "sha256": "b77aa4e4a8cd5c0f3609c9fa939fe81f22979760578451bdf2c27c2e9b196877"
+      },
+      {
+        "path": "source-inputs.json",
+        "bytes": 1471503,
+        "sha256": "ca4b3ffff97f45712e02f44f03b9405169d546dd9d93f2be522f04948f3baf4c"
+      },
+      {
+        "path": "commands.json",
+        "bytes": 1440,
+        "sha256": "ac5488b1dfa9528cda090d92ae759d1ecdf6254665a1f56b0f15930d5cac849d"
+      },
+      {
+        "path": "commands/logs/00-parse-one-fixed-fixture.stderr.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "commands/logs/00-parse-one-fixed-fixture.stdout.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "commands/logs/01-build-private.stderr.txt",
+        "bytes": 11355,
+        "sha256": "73c5bafee93e54f5863fbb00327c942743d1f207e3dce3ca75a055d10eacdc1e"
+      },
+      {
+        "path": "commands/logs/01-build-private.stdout.txt",
+        "bytes": 210161,
+        "sha256": "c1bdeee781fe5abd0d4c9f46119ce1f4c4e02500c29066504eb796a8f5ea3b33"
+      },
+      {
+        "path": "commands/logs/02-private-rust-library-path.stderr.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "commands/logs/02-private-rust-library-path.stdout.txt",
+        "bytes": 105,
+        "sha256": "7675ece60101aa9118dc7df3c8865c010dc07858e7fb4b48536a3376fa3b9ed0"
+      },
+      {
+        "path": "commands/logs/03-private-list-0.stderr.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "commands/logs/03-private-list-0.stdout.txt",
+        "bytes": 171,
+        "sha256": "e105717b000d762f31cd2bfc90cd8679d6f57ba991645a69aac7840c1610dbcf"
+      },
+      {
+        "path": "commands/logs/04-private-case-0.stderr.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "commands/logs/04-private-case-0.stdout.txt",
+        "bytes": 1082,
+        "sha256": "335ea59dba2974c1dfda7613ad6fcf1d76d2d30264250e4f398255ae60e8d818"
+      },
+      {
+        "path": "commands/logs/05-private-list-1.stderr.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "commands/logs/05-private-list-1.stdout.txt",
+        "bytes": 170,
+        "sha256": "8515a0a45abadfe405893ce9950aeeeccf9d84ea62b30e30888f4c361efc559d"
+      },
+      {
+        "path": "commands/logs/06-private-case-1.stderr.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "commands/logs/06-private-case-1.stdout.txt",
+        "bytes": 797,
+        "sha256": "f1f2658e4f87005f4f824a7c429678da98f74d91e1d376983bb2aea486139094"
+      },
+      {
+        "path": "commands/logs/07-private-list-2.stderr.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "commands/logs/07-private-list-2.stdout.txt",
+        "bytes": 162,
+        "sha256": "6482ba3b64de5ca789bc18283c4967a497a3ab0f6e7d15e143f128ac3b70380d"
+      },
+      {
+        "path": "commands/logs/08-private-case-2.stderr.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "commands/logs/08-private-case-2.stdout.txt",
+        "bytes": 1337,
+        "sha256": "f9cffac76d89079ee514e20e51053baef05f1b4350e642cb884a6dd6224c56d5"
+      },
+      {
+        "path": "commands/logs/09-private-list-3.stderr.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "commands/logs/09-private-list-3.stdout.txt",
+        "bytes": 161,
+        "sha256": "3d36869b45080ead0fddda26b7b2f1450400c1cf4c06f2156bb92ae72739a532"
+      },
+      {
+        "path": "commands/logs/10-private-case-3.stderr.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "commands/logs/10-private-case-3.stdout.txt",
+        "bytes": 947,
+        "sha256": "4990d6419779d2e24ddc2f75dbc17b1d39a7f6d1b07fc09e204f2c7a8cc2bd0c"
+      },
+      {
+        "path": "commands/logs/11-build-public.stderr.txt",
+        "bytes": 17588,
+        "sha256": "7493b6279cd69c1fde2aa9a7b56ca204892513865f89f290172ddb631e533882"
+      },
+      {
+        "path": "commands/logs/11-build-public.stdout.txt",
+        "bytes": 336156,
+        "sha256": "59fbca0da944532f37f5c8fdbd5f323379ca1f82346e5a28bf391b0ca36fe03b"
+      },
+      {
+        "path": "commands/logs/12-public-rust-library-path.stderr.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "commands/logs/13-public-list-0.stderr.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "commands/logs/12-public-rust-library-path.stdout.txt",
+        "bytes": 105,
+        "sha256": "7675ece60101aa9118dc7df3c8865c010dc07858e7fb4b48536a3376fa3b9ed0"
+      },
+      {
+        "path": "commands/logs/13-public-list-0.stdout.txt",
+        "bytes": 130,
+        "sha256": "60bde20b71941227d703d69b92676d03791e4dc8d756a4ee718b1f2f6afc580d"
+      },
+      {
+        "path": "commands/logs/14-public-case-0.stderr.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "commands/logs/14-public-case-0.stdout.txt",
+        "bytes": 689,
+        "sha256": "dafc077e7a0da729a496352e307ac297134ce2823b97a5e46042c0b390c21c53"
+      },
+      {
+        "path": "commands/logs/15-public-list-1.stderr.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "commands/logs/15-public-list-1.stdout.txt",
+        "bytes": 127,
+        "sha256": "32ecd8e36a2ec311d3c98e2bbac42c4fa066752872c558a53a871e063a007e02"
+      },
+      {
+        "path": "commands/logs/16-public-case-1.stderr.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "commands/logs/16-public-case-1.stdout.txt",
+        "bytes": 887,
+        "sha256": "aef2d61a5d78d2d35acbdf3b5fb6874309dce6f240d9b5d7202ce9f6532f9673"
+      },
+      {
+        "path": "fixtures/native-stream-outers.wasm",
+        "bytes": 788,
+        "sha256": "084a1996a2debcd8cd949096561cf8b2140845a3c24e14d629447973e9289869"
+      }
+    ]
+  },
+  "programme": {
+    "exactPassedIds": 6,
+    "privateOwnerOnlyCases": 4,
+    "publicOriginalBudgetCases": 2,
+    "failed": 0,
+    "ignored": 0,
+    "zeroExitCommands": 17,
+    "rawChannels": 34,
+    "commands": [
+      {
+        "stage": "parse-one-fixed-fixture",
+        "exitCode": 0,
+        "seconds": 0.014346
+      },
+      {
+        "stage": "build-private",
+        "exitCode": 0,
+        "seconds": 86.348388
+      },
+      {
+        "stage": "private-rust-library-path",
+        "exitCode": 0,
+        "seconds": 0.014444
+      },
+      {
+        "stage": "private-list-0",
+        "exitCode": 0,
+        "seconds": 0.014116
+      },
+      {
+        "stage": "private-case-0",
+        "exitCode": 0,
+        "seconds": 0.044588
+      },
+      {
+        "stage": "private-list-1",
+        "exitCode": 0,
+        "seconds": 0.013932
+      },
+      {
+        "stage": "private-case-1",
+        "exitCode": 0,
+        "seconds": 0.044819
+      },
+      {
+        "stage": "private-list-2",
+        "exitCode": 0,
+        "seconds": 0.014332
+      },
+      {
+        "stage": "private-case-2",
+        "exitCode": 0,
+        "seconds": 0.044824
+      },
+      {
+        "stage": "private-list-3",
+        "exitCode": 0,
+        "seconds": 0.014317
+      },
+      {
+        "stage": "private-case-3",
+        "exitCode": 0,
+        "seconds": 0.044783
+      },
+      {
+        "stage": "build-public",
+        "exitCode": 0,
+        "seconds": 208.826925
+      },
+      {
+        "stage": "public-rust-library-path",
+        "exitCode": 0,
+        "seconds": 0.013887
+      },
+      {
+        "stage": "public-list-0",
+        "exitCode": 0,
+        "seconds": 0.013866
+      },
+      {
+        "stage": "public-case-0",
+        "exitCode": 0,
+        "seconds": 0.013694
+      },
+      {
+        "stage": "public-list-1",
+        "exitCode": 0,
+        "seconds": 0.013502
+      },
+      {
+        "stage": "public-case-1",
+        "exitCode": 0,
+        "seconds": 0.013769
+      }
+    ],
+    "commandLedgerSeconds": 295.508532,
+    "ledgerBoundary": "17 supervised parse/build/library/list/test commands; normal pinned-tool resolver probes retain their existing owner and are not this ledger"
+  },
+  "observations": [
+    {
+      "case": "runtime::component::concurrent::futures_and_streams::stream_outer_tests::actual_stream_guest_write_refusals_precede_busy_and_transmit_mutation",
+      "stdout": {
+        "bytes": 1082,
+        "sha256": "335ea59dba2974c1dfda7613ad6fcf1d76d2d30264250e4f398255ae60e8d818"
+      },
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "filteredOut": 210,
+      "scope": "private-canonical-entry-counter-owner",
+      "rawStdout": "commands/logs/04-private-case-0.stdout.txt",
+      "rawStderr": "commands/logs/04-private-case-0.stderr.txt",
+      "markers": [
+        "STREAM-CUT direction=write local=1 global=24 pre-busy=true polls=0",
+        "STREAM-CUT direction=write local=2 global=25 pre-busy=true polls=0",
+        "STREAM-CUT direction=write local=3 global=26 pre-busy=true polls=0",
+        "STREAM-REVERSE-CUT local=1 global=24 preexisting-busy=true guest-ready=true consumer-polls=0",
+        "STREAM-REVERSE-CUT local=2 global=25 preexisting-busy=true guest-ready=true consumer-polls=0",
+        "STREAM-REVERSE-CUT local=3 global=26 preexisting-busy=true guest-ready=true consumer-polls=0"
+      ]
+    },
+    {
+      "case": "runtime::component::concurrent::futures_and_streams::stream_outer_tests::actual_stream_guest_read_refusals_precede_busy_and_transmit_mutation",
+      "stdout": {
+        "bytes": 797,
+        "sha256": "f1f2658e4f87005f4f824a7c429678da98f74d91e1d376983bb2aea486139094"
+      },
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "filteredOut": 210,
+      "scope": "private-canonical-entry-counter-owner",
+      "rawStdout": "commands/logs/06-private-case-1.stdout.txt",
+      "rawStderr": "commands/logs/06-private-case-1.stderr.txt",
+      "markers": [
+        "STREAM-CUT direction=read local=1 global=23 pre-busy=true polls=0",
+        "STREAM-CUT direction=read local=2 global=24 pre-busy=true polls=0",
+        "STREAM-CUT direction=read local=3 global=25 pre-busy=true polls=0"
+      ]
+    },
+    {
+      "case": "runtime::component::concurrent::futures_and_streams::stream_outer_tests::actual_stream_guest_write_ready_pending_error_and_none_order",
+      "stdout": {
+        "bytes": 1337,
+        "sha256": "f9cffac76d89079ee514e20e51053baef05f1b4350e642cb884a6dd6224c56d5"
+      },
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "filteredOut": 210,
+      "scope": "private-canonical-entry-counter-owner",
+      "rawStdout": "commands/logs/08-private-case-2.stdout.txt",
+      "rawStderr": "commands/logs/08-private-case-2.stderr.txt",
+      "markers": [
+        "STREAM-PAYLOAD direction=write paid=false mode=0 payload=42",
+        "STREAM-PAYLOAD direction=write paid=false mode=1 payload=42",
+        "STREAM-PAYLOAD direction=write paid=false mode=2 payload=original-error",
+        "STREAM-PAYLOAD direction=write paid=true mode=0 payload=42",
+        "STREAM-PAYLOAD direction=write paid=true mode=1 payload=42",
+        "STREAM-PAYLOAD direction=write paid=true mode=2 payload=original-error",
+        "STREAM-REVERSE-CLEANUP paid=false mode=0 payload=42 final=0",
+        "STREAM-REVERSE-CLEANUP paid=false mode=1 payload=42 final=0",
+        "STREAM-REVERSE-CLEANUP paid=false mode=2 payload=original-error final=0",
+        "STREAM-REVERSE-CLEANUP paid=true mode=0 payload=42 final=0",
+        "STREAM-REVERSE-CLEANUP paid=true mode=1 payload=42 final=0",
+        "STREAM-REVERSE-CLEANUP paid=true mode=2 payload=original-error final=0"
+      ]
+    },
+    {
+      "case": "runtime::component::concurrent::futures_and_streams::stream_outer_tests::actual_stream_guest_read_ready_pending_error_and_none_order",
+      "stdout": {
+        "bytes": 947,
+        "sha256": "4990d6419779d2e24ddc2f75dbc17b1d39a7f6d1b07fc09e204f2c7a8cc2bd0c"
+      },
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "filteredOut": 210,
+      "scope": "private-canonical-entry-counter-owner",
+      "rawStdout": "commands/logs/10-private-case-3.stdout.txt",
+      "rawStderr": "commands/logs/10-private-case-3.stderr.txt",
+      "markers": [
+        "STREAM-PAYLOAD direction=read paid=false mode=0 payload=42",
+        "STREAM-PAYLOAD direction=read paid=false mode=1 payload=42",
+        "STREAM-PAYLOAD direction=read paid=false mode=2 payload=original-error",
+        "STREAM-PAYLOAD direction=read paid=true mode=0 payload=42",
+        "STREAM-PAYLOAD direction=read paid=true mode=1 payload=42",
+        "STREAM-PAYLOAD direction=read paid=true mode=2 payload=original-error"
+      ]
+    },
+    {
+      "case": "host::native_stream_outer_tests::actual_stream_host_ready_refusals_precede_consumer_factory_and_polls",
+      "stdout": {
+        "bytes": 689,
+        "sha256": "dafc077e7a0da729a496352e307ac297134ce2823b97a5e46042c0b390c21c53"
+      },
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "filteredOut": 489,
+      "scope": "public-original-ActivationBudget",
+      "rawStdout": "commands/logs/14-public-case-0.stdout.txt",
+      "rawStderr": "commands/logs/14-public-case-0.stderr.txt",
+      "markers": [
+        "STREAM-PUBLIC-REFUSAL local=1 global=6 original-grant=1048576 polls=0",
+        "STREAM-PUBLIC-REFUSAL local=2 global=7 original-grant=1048576 polls=0",
+        "STREAM-PUBLIC-REFUSAL local=3 global=8 original-grant=1048576 polls=0"
+      ]
+    },
+    {
+      "case": "host::native_stream_outer_tests::actual_stream_host_ready_pending_ready_and_error_preserve_cleanup",
+      "stdout": {
+        "bytes": 887,
+        "sha256": "aef2d61a5d78d2d35acbdf3b5fb6874309dce6f240d9b5d7202ce9f6532f9673"
+      },
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "filteredOut": 489,
+      "scope": "public-original-ActivationBudget",
+      "rawStdout": "commands/logs/16-public-case-1.stdout.txt",
+      "rawStderr": "commands/logs/16-public-case-1.stderr.txt",
+      "markers": [
+        "STREAM-PUBLIC-CLEANUP mode=0 payload=42 foreign-unchanged=true final=0 wall=5",
+        "STREAM-PUBLIC-CLEANUP mode=1 payload=42 foreign-unchanged=true final=0 wall=5",
+        "STREAM-PUBLIC-CLEANUP mode=2 payload=not-claimed foreign-unchanged=true final=0 wall=5",
+        "STREAM-PUBLIC-CLEANUP mode=3 payload=not-claimed foreign-unchanged=true final=0 wall=5",
+        "STREAM-PUBLIC-CLEANUP mode=4 payload=not-claimed foreign-unchanged=true final=0 wall=5"
+      ]
+    }
+  ],
+  "actualRefusalVectors": [
+    {
+      "scope": "private-counter",
+      "route": "guest-write",
+      "localOwner": 1,
+      "globalRequest": 24,
+      "preBusy": true,
+      "polls": 0
+    },
+    {
+      "scope": "private-counter",
+      "route": "guest-write",
+      "localOwner": 2,
+      "globalRequest": 25,
+      "preBusy": true,
+      "polls": 0
+    },
+    {
+      "scope": "private-counter",
+      "route": "guest-write",
+      "localOwner": 3,
+      "globalRequest": 26,
+      "preBusy": true,
+      "polls": 0
+    },
+    {
+      "scope": "private-counter",
+      "route": "reverse-host-pipe",
+      "localOwner": 1,
+      "globalRequest": 24,
+      "preexistingBusyAndGuestReadyPreserved": true,
+      "consumerPolls": 0
+    },
+    {
+      "scope": "private-counter",
+      "route": "reverse-host-pipe",
+      "localOwner": 2,
+      "globalRequest": 25,
+      "preexistingBusyAndGuestReadyPreserved": true,
+      "consumerPolls": 0
+    },
+    {
+      "scope": "private-counter",
+      "route": "reverse-host-pipe",
+      "localOwner": 3,
+      "globalRequest": 26,
+      "preexistingBusyAndGuestReadyPreserved": true,
+      "consumerPolls": 0
+    },
+    {
+      "scope": "private-counter",
+      "route": "guest-read",
+      "localOwner": 1,
+      "globalRequest": 23,
+      "preBusy": true,
+      "polls": 0
+    },
+    {
+      "scope": "private-counter",
+      "route": "guest-read",
+      "localOwner": 2,
+      "globalRequest": 24,
+      "preBusy": true,
+      "polls": 0
+    },
+    {
+      "scope": "private-counter",
+      "route": "guest-read",
+      "localOwner": 3,
+      "globalRequest": 25,
+      "preBusy": true,
+      "polls": 0
+    },
+    {
+      "scope": "original-ActivationBudget",
+      "route": "HostReady-producer-loop",
+      "localOwner": 1,
+      "globalRequest": 6,
+      "memoryGrantBytes": 1048576,
+      "polls": 0
+    },
+    {
+      "scope": "original-ActivationBudget",
+      "route": "HostReady-producer-loop",
+      "localOwner": 2,
+      "globalRequest": 7,
+      "memoryGrantBytes": 1048576,
+      "polls": 0
+    },
+    {
+      "scope": "original-ActivationBudget",
+      "route": "HostReady-producer-loop",
+      "localOwner": 3,
+      "globalRequest": 8,
+      "memoryGrantBytes": 1048576,
+      "polls": 0
+    }
+  ],
+  "privateCanonicalVariants": [
+    {
+      "route": "guest-write",
+      "privateCounterOwner": false,
+      "mode": 0,
+      "payloadOrOriginalError": "42"
+    },
+    {
+      "route": "guest-write",
+      "privateCounterOwner": false,
+      "mode": 1,
+      "payloadOrOriginalError": "42"
+    },
+    {
+      "route": "guest-write",
+      "privateCounterOwner": false,
+      "mode": 2,
+      "payloadOrOriginalError": "original-error"
+    },
+    {
+      "route": "guest-write",
+      "privateCounterOwner": true,
+      "mode": 0,
+      "payloadOrOriginalError": "42"
+    },
+    {
+      "route": "guest-write",
+      "privateCounterOwner": true,
+      "mode": 1,
+      "payloadOrOriginalError": "42"
+    },
+    {
+      "route": "guest-write",
+      "privateCounterOwner": true,
+      "mode": 2,
+      "payloadOrOriginalError": "original-error"
+    },
+    {
+      "route": "reverse-host-pipe",
+      "privateCounterOwner": false,
+      "mode": 0,
+      "payloadOrOriginalError": "42",
+      "finalCounterBytes": 0
+    },
+    {
+      "route": "reverse-host-pipe",
+      "privateCounterOwner": false,
+      "mode": 1,
+      "payloadOrOriginalError": "42",
+      "finalCounterBytes": 0
+    },
+    {
+      "route": "reverse-host-pipe",
+      "privateCounterOwner": false,
+      "mode": 2,
+      "payloadOrOriginalError": "original-error",
+      "finalCounterBytes": 0
+    },
+    {
+      "route": "reverse-host-pipe",
+      "privateCounterOwner": true,
+      "mode": 0,
+      "payloadOrOriginalError": "42",
+      "finalCounterBytes": 0
+    },
+    {
+      "route": "reverse-host-pipe",
+      "privateCounterOwner": true,
+      "mode": 1,
+      "payloadOrOriginalError": "42",
+      "finalCounterBytes": 0
+    },
+    {
+      "route": "reverse-host-pipe",
+      "privateCounterOwner": true,
+      "mode": 2,
+      "payloadOrOriginalError": "original-error",
+      "finalCounterBytes": 0
+    },
+    {
+      "route": "guest-read",
+      "privateCounterOwner": false,
+      "mode": 0,
+      "payloadOrOriginalError": "42"
+    },
+    {
+      "route": "guest-read",
+      "privateCounterOwner": false,
+      "mode": 1,
+      "payloadOrOriginalError": "42"
+    },
+    {
+      "route": "guest-read",
+      "privateCounterOwner": false,
+      "mode": 2,
+      "payloadOrOriginalError": "original-error"
+    },
+    {
+      "route": "guest-read",
+      "privateCounterOwner": true,
+      "mode": 0,
+      "payloadOrOriginalError": "42"
+    },
+    {
+      "route": "guest-read",
+      "privateCounterOwner": true,
+      "mode": 1,
+      "payloadOrOriginalError": "42"
+    },
+    {
+      "route": "guest-read",
+      "privateCounterOwner": true,
+      "mode": 2,
+      "payloadOrOriginalError": "original-error"
+    }
+  ],
+  "publicCleanupModes": [
+    {
+      "mode": 0,
+      "payload": 42,
+      "foreignStoreUnchanged": true,
+      "finalOriginalBytes": 0,
+      "wallSeconds": 5
+    },
+    {
+      "mode": 1,
+      "payload": 42,
+      "foreignStoreUnchanged": true,
+      "finalOriginalBytes": 0,
+      "wallSeconds": 5
+    },
+    {
+      "mode": 2,
+      "payload": null,
+      "foreignStoreUnchanged": true,
+      "finalOriginalBytes": 0,
+      "wallSeconds": 5
+    },
+    {
+      "mode": 3,
+      "payload": null,
+      "foreignStoreUnchanged": true,
+      "finalOriginalBytes": 0,
+      "wallSeconds": 5
+    },
+    {
+      "mode": 4,
+      "payload": null,
+      "foreignStoreUnchanged": true,
+      "finalOriginalBytes": 0,
+      "wallSeconds": 5
+    }
+  ],
+  "variantModes": {
+    "0": "direct ready",
+    "1": "genuine pending then real wake/completion",
+    "2": "original poll error"
+  },
+  "publicModes": {
+    "0": "ready payload42",
+    "1": "pending then payload42",
+    "2": "producer original error",
+    "3": "consumer original error",
+    "4": "pending Store teardown then real late wake"
+  },
+  "sourceBindings": {
+    "beforeAfterRows": 8961,
+    "sourceUnchanged": true,
+    "rawGitMatches": 8960,
+    "declaredCrlfConversions": [
+      {
+        "path": "tools/intellij.cmd",
+        "git": {
+          "bytes": 894,
+          "sha256": "fcaca9e75d7d09ebd0863ca252222a1e1b7ac3f78bd1efb465f94b5209545049"
+        },
+        "checkout": {
+          "bytes": 922,
+          "sha256": "7d96a1573b04fb4c7aa3add1ec47fd5ba8a2c827dda142e6b2098843b33f45e4"
+        }
+      }
+    ],
+    "controlAndExecutedLockInputs": {
+      ".github/workflows/canonical-stream-outers.yml": {
+        "bytes": 3220,
+        "sha256": "c30b72d4a4e2bd6a181ec0b35dc06b2a124d92b275294303ff7afdadcfe832c0"
+      },
+      "tools/qualify_stream_outers.py": {
+        "bytes": 13039,
+        "sha256": "026ecdb848cf17468fc101a14fdee6ef29a742a1243fa23eeb712a098cdc6b2d"
+      },
+      "tools/host_codec_wasmtime.py": {
+        "bytes": 13730,
+        "sha256": "644e40af2cda5e0828cb599ec3166b0cae914594f3b784ad4f71fa9feb3af785"
+      },
+      "crates/latent-wasmtime/src/host/native_stream_outer_tests.rs": {
+        "bytes": 12201,
+        "sha256": "af8f0652b80f6c4f134ad10351d6cac0d0ebcda377732a49aa8832b3fe6f7f30"
+      },
+      "crates/vendor/wasmtime/src/runtime/component/concurrent/futures_and_streams.rs": {
+        "bytes": 205958,
+        "sha256": "b312cc45eef714ad62c64b0eceff50e8285603f00cf1937fe72641e1734eb40f"
+      },
+      "crates/vendor/wasmtime/src/runtime/component/concurrent/futures_and_streams/stream_outer_tests.rs": {
+        "bytes": 22964,
+        "sha256": "2124ff8f1f0dc94c79c7dfdd362049d06554db99e875744ba46247d37f2ca469"
+      },
+      "crates/vendor/wasmtime/src/runtime/component/concurrent/pending_future.rs": {
+        "bytes": 13771,
+        "sha256": "3daf6c6252f684830bc40b86065096b65e50d2a40fceb8db97c76a6e6a614164"
+      },
+      "crates/vendor/wasmtime/src/runtime/component/concurrent.rs": {
+        "bytes": 242539,
+        "sha256": "e2e776c92875ea95b1a04e46afa3b51117d868bb85e9aa0cd439a60af1a9f85c"
+      },
+      "crates/vendor/wasmtime/src/runtime/component/concurrent/work_queue.rs": {
+        "bytes": 17922,
+        "sha256": "b9f2db05b9f27c6e6e88da558651e002101c2228eafd46ea9c2d386c45bf3ad8"
+      },
+      "crates/vendor/wasmtime/UPSTREAM.latent.json": {
+        "bytes": 44462,
+        "sha256": "19b5a97605ec6d692002facf20a1b621c8c5b23e8ca1dbddfd026d4206773ea5"
+      },
+      "crates/vendor/wasmtime/latent-dynamic-memory.patch": {
+        "bytes": 461424,
+        "sha256": "d2b49dac020ab3f73179b2dd7fe74d28aef7ff314c475839c9b8239eacbd1a55"
+      },
+      "Cargo.lock": {
+        "bytes": 113422,
+        "sha256": "41234a75cbc14c450c9a3c1da5694313e3ceae093718e20a72b9f017d3874106"
+      },
+      "crates/vendor/wasmtime/Cargo.lock": {
+        "bytes": 60487,
+        "sha256": "858dfc32837c4f1e2689cf031be92eff0c6ed3ff01f7721dbf23dac055a45a44"
+      }
+    },
+    "fullInputsMember": {
+      "path": "source-inputs.json",
+      "bytes": 1471503,
+      "sha256": "ca4b3ffff97f45712e02f44f03b9405169d546dd9d93f2be522f04948f3baf4c"
+    }
+  },
+  "wasmtimeSource": {
+    "package": "wasmtime",
+    "version": "48.0.7",
+    "recordSha256": "19b5a97605ec6d692002facf20a1b621c8c5b23e8ca1dbddfd026d4206773ea5",
+    "nativeCohort": "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-unordered-futures-outer-sync-result-stream-outers-memory-v17",
+    "upstreamArchive": "https://static.crates.io/crates/wasmtime/wasmtime-48.0.7.crate",
+    "upstreamSha256": "12300d040e8bea7e7ccde75b9919d27ebba47a217a64b09ba058ae8d3b4290b6",
+    "patchSha256": "d2b49dac020ab3f73179b2dd7fe74d28aef7ff314c475839c9b8239eacbd1a55",
+    "licenseFiles": {
+      "LICENSE": "268872b9816f90fd8e85db5a28d33f8150ebb8dd016653fb39ef1f94f2686bc5"
+    },
+    "additionalLicenseFiles": {
+      "src/runtime/component/concurrent/host_futures/LICENSE-MIT": "6652c868f35dfe5e8ef636810a4e576b9d663f3a17fb0f5613ad73583e1b88fd",
+      "src/runtime/component/concurrent/host_futures/LICENSE-APACHE": "275c491d6d1160553c32fd6127061d7f9606c3ea25abfad6ca3f6ed088785427"
+    }
+  },
+  "fixture": {
+    "wat": {
+      "bytes": 2792,
+      "sha256": "c44cd15ee6216b00989c952452aaa6bbfa742fa2c4392196f8e679552a6ac6ad"
+    },
+    "component": {
+      "bytes": 788,
+      "sha256": "084a1996a2debcd8cd949096561cf8b2140845a3c24e14d629447973e9289869"
+    },
+    "outputScope": "private owning RunnerTemp only",
+    "retainedPath": "fixtures/native-stream-outers.wasm"
+  },
+  "compiledExecutables": {
+    "private": {
+      "name": "private-stream-controls",
+      "digest": "sha256:71f6a5b7313331e33e338fe9d592acae8d29049de86d54b436ee308e3c11b27e",
+      "size": 79001512
+    },
+    "public": {
+      "name": "public-stream-controls",
+      "digest": "sha256:ea6d6bdaf051b0f2473f9f0563440dc140d04b5e5750739d1424dd69799e850f",
+      "size": 125536248
+    }
+  },
+  "observedTools": [
+    {
+      "name": "cargo",
+      "digest": "sha256:828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953",
+      "size": 42839824
+    },
+    {
+      "name": "rustc",
+      "digest": "sha256:d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea",
+      "size": 645000
+    },
+    {
+      "name": "wasm-tools",
+      "digest": "sha256:cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6",
+      "size": 20231696
+    }
+  ],
+  "unchangedLimits": {
+    "owner": {
+      "overallSeconds": 2400,
+      "buildCommandSeconds": 900,
+      "parseCommandSeconds": 60,
+      "caseProcessSeconds": 60,
+      "listProcessSeconds": 30,
+      "cleanupReserveSeconds": 5
+    },
+    "jobMinutes": 45,
+    "compileJobs": 2,
+    "publicOriginalActivationBudget": {
+      "memoryBytes": 1048576,
+      "cpuFuel": 1000000000,
+      "wallTimeMilliseconds": 5000
+    },
+    "privateCounterOwner": {
+      "payloadCeilingBytes": 67108864,
+      "installedFuel": 1000000000,
+      "wallCeilingSeconds": 120,
+      "originalActivationBudget": false
+    }
+  },
+  "scope": {
+    "threeOuterLayouts": "from-guest/to-guest completions and HostReady producer loop",
+    "counterEvidenceIsNotOriginalActivationBudget": true,
+    "signedNodeEvidence": false,
+    "unsignedCanonicalComponentExecuted": true,
+    "readPayloadIsSameMemoryOffset512Byte42": true,
+    "writeConsumerAssertsActualByte42": true,
+    "freshAnswer42IsSeparate": true,
+    "reverseRefusalPreservesLegitimatePriorBusyGuestReady": true,
+    "publicMapCleanupCheckedBeforeStoreDestruction": true,
+    "pendingPublicBytesAreLowerBoundNotCompleteCensus": true,
+    "lateWakeUsesOriginalOwnersWithoutNewAdmissionAndCannotCreditForeignStore": true,
+    "noReaderRollbackClaimForConsumedPipe": true
+  },
+  "actualSecurityGate": {
+    "runId": 40339385076,
+    "jobId": 121629777721,
+    "conclusion": "failure",
+    "findingCount": 10,
+    "affectedExecutedStandaloneLock": "crates/vendor/wasmtime/Cargo.lock",
+    "affectedPackages": [
+      "zstd-safe7.0.0",
+      "zstd-sys2.0.9+zstd1.5.5"
+    ],
+    "advisories": [
+      "RUSTSEC-2026-0395",
+      "RUSTSEC-2026-0397",
+      "RUSTSEC-2026-0399",
+      "RUSTSEC-2026-0400",
+      "RUSTSEC-2026-0401",
+      "RUSTSEC-2026-0402",
+      "RUSTSEC-2026-0403",
+      "RUSTSEC-2026-0404",
+      "RUSTSEC-2026-0406",
+      "RUSTSEC-2026-0410"
+    ],
+    "dependencyAndCacheRepair": "pending separate source/authentication/audit; not qualified by this fe9 result",
+    "oldPassRetaggedToNewDependencies": false,
+    "pullHeadRevision": "fe9a04fd8e94894ecdd15c45d9e6c5d6ca547fd5",
+    "scannedMergeRevision": "384b3b6ff9e8c8d2ae5103e3edb5ff5f543aef47",
+    "scannedTree": "ca48a7512d4b7129e38d20f8175fe1e8dd9200a0",
+    "scannedMergeParents": [
+      "f8e78744f36cb4d98944487a125cd6763b68a400",
+      "fe9a04fd8e94894ecdd15c45d9e6c5d6ca547fd5"
+    ],
+    "sameTreeAsQualifiedNativeHead": true
+  },
+  "remainingOpen": [
+    "inner producer/consume/accept factory boxes",
+    "consumer Arc/pinned consumer",
+    "stream buffers",
+    "tables and collections",
+    "transitive backing",
+    "complete CPU/memory cost model"
+  ],
+  "fullRuntimeSuiteExecuted": false,
+  "fullVendorSuiteExecuted": false,
+  "fullCostModelQualified": false,
+  "allocatorRssQuotaClaimed": false,
+  "hermetic": false,
+  "compilerImplicitInputsAttested": false,
+  "whole736Complete": false,
+  "priorV15V16OrLanguageProgrammeReplayed": false,
+  "newDependencyClosureQualifiedByThisReceipt": false
+}

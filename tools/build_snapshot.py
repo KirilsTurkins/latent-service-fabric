@@ -50,7 +50,7 @@ class SnapshotError(RuntimeError):
 # left at 4168d40; one finite source MiB retains every input. Other caps stay fixed.
 # Before this adjustment, R8 totals 77,779,641 archived file bytes, exceeding
 # 74 MiB by 185,017 bytes; one finite source MiB retains all selected inputs.
-MAX_SOURCE_FILES = 8960
+MAX_SOURCE_FILES = 8992
 
 
 @dataclass(frozen=True)

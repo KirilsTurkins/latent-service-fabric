@@ -1,75 +1,22 @@
 {
-  "cases": [
-    "PublishedHttpCapture.test_malformed_analyzer_approval_refuses_before_staging_or_compiler_access",
-    "PublishedHttpCapture.test_normal_project_retains_original_sdk_limits_and_authoritative_wit",
-    "PublishedHttpCapture.test_private_archive_rejects_unsafe_coordinate_or_unbounded_material",
-    "PublishedHttpCapture.test_private_coordinate_variation_preserves_exact_compiled_bytes",
-    "PublishedHttpCapture.test_real_peer_oracle_requires_all_contacts_and_actual_uncertain_mutation"
-  ],
-  "guards": {
-    "PublishedHttpCapture.test_malformed_analyzer_approval_refuses_before_staging_or_compiler_access": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:6894a283d53ff629687a4d03fdf1f24213f3f008d5502e40fc3117a6027357e4",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "PublishedHttpCapture.test_normal_project_retains_original_sdk_limits_and_authoritative_wit": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:6894a283d53ff629687a4d03fdf1f24213f3f008d5502e40fc3117a6027357e4",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "PublishedHttpCapture.test_private_archive_rejects_unsafe_coordinate_or_unbounded_material": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:6894a283d53ff629687a4d03fdf1f24213f3f008d5502e40fc3117a6027357e4",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "PublishedHttpCapture.test_private_coordinate_variation_preserves_exact_compiled_bytes": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:6894a283d53ff629687a4d03fdf1f24213f3f008d5502e40fc3117a6027357e4",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "PublishedHttpCapture.test_real_peer_oracle_requires_all_contacts_and_actual_uncertain_mutation": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:6894a283d53ff629687a4d03fdf1f24213f3f008d5502e40fc3117a6027357e4",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    }
+  "cases":["PublishedHttpCapture.test_malformed_analyzer_approval_refuses_before_staging_or_compiler_access","PublishedHttpCapture.test_normal_project_retains_original_sdk_limits_and_authoritative_wit","PublishedHttpCapture.test_private_archive_rejects_unsafe_coordinate_or_unbounded_material","PublishedHttpCapture.test_private_coordinate_variation_preserves_exact_compiled_bytes","PublishedHttpCapture.test_real_peer_oracle_requires_all_contacts_and_actual_uncertain_mutation"],
+  "guards":{
+    "PublishedHttpCapture.test_malformed_analyzer_approval_refuses_before_staging_or_compiler_access":
+      "f153b2b97fe40a2ca8d2265054cc497b5fee1f5a6c9c1dfbe414907b14650e46",
+    "PublishedHttpCapture.test_normal_project_retains_original_sdk_limits_and_authoritative_wit":
+      "f153b2b97fe40a2ca8d2265054cc497b5fee1f5a6c9c1dfbe414907b14650e46",
+    "PublishedHttpCapture.test_private_archive_rejects_unsafe_coordinate_or_unbounded_material":
+      "f153b2b97fe40a2ca8d2265054cc497b5fee1f5a6c9c1dfbe414907b14650e46",
+    "PublishedHttpCapture.test_private_coordinate_variation_preserves_exact_compiled_bytes":
+      "f153b2b97fe40a2ca8d2265054cc497b5fee1f5a6c9c1dfbe414907b14650e46",
+    "PublishedHttpCapture.test_real_peer_oracle_requires_all_contacts_and_actual_uncertain_mutation":
+      "f153b2b97fe40a2ca8d2265054cc497b5fee1f5a6c9c1dfbe414907b14650e46"
   },
-  "kind": "python",
-  "module": "tools/tests/test_dotnet_published_http_fixture.py",
-  "reviewReason": "Add a separate normal captured NativeAOT programme for unchanged Flurl4.0.2/Refit16.4 and two outside NuGet identities, twenty signed cases/two pre-entry refusals and strict15-contact physical-retirement oracle. Capture original generator closure, require its exact isolated approval, retain default compiler/stager behavior. Five new capture/real-peer/approval guards and twelve original boundary controls pass; actual guest results pending. Preserve every existing command, case, cap and failed receipt; no host/native baseline rebuild. Use authenticated f919 wait-observer products through the unchanged shared strict reader and exact frozen wrapper; six reader mutation guards pass. No source-equality waiver or native rebuild.",
-  "schemaVersion": "latent.ci.contracts.v1"
+  "kind":"python",
+  "module":"tools/tests/test_dotnet_published_http_fixture.py",
+  "reviewReason":"Add a separate normal captured NativeAOT programme for unchanged Flurl4.0.2/Refit16.4 and two outside NuGet identities, twenty signed cases/two pre-entry refusals and strict15-contact physical-retirement oracle. Capture original generator closure, require its exact isolated approval, retain default compiler/stager behavior. Five new capture/real-peer/approval guards and twelve original boundary controls pass; actual guest results pending. Preserve every existing command, case, cap and failed receipt; no host/native baseline rebuild. Use authenticated f919 wait-observer products through the unchanged shared strict reader and exact frozen wrapper; six reader mutation guards pass. No source-equality waiver or native rebuild.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "f153b2b97fe40a2ca8d2265054cc497b5fee1f5a6c9c1dfbe414907b14650e46":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:6894a283d53ff629687a4d03fdf1f24213f3f008d5502e40fc3117a6027357e4","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+  }
 }

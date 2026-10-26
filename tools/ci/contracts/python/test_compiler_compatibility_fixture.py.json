@@ -1,78 +1,23 @@
 {
-  "cases": [
-    "CompatibilityFixtures.test_actual_javac_preserves_transitive_native_init_constructor_and_callback_definitions",
-    "CompatibilityFixtures.test_counterfactual_changes_only_one_root_edge_and_keeps_reviewed_dependencies",
-    "CompatibilityFixtures.test_dotnet_outside_projects_have_only_two_fixed_sources_and_one_transitive_edge",
-    "CompatibilityFixtures.test_ordinary_callback_sources_preserve_real_join_and_separate_uncaught_paths",
-    "CompatibilityFixtures.test_projects_keep_unchanged_normal_limits_and_exact_vendored_sdk"
-  ],
-  "guards": {
-    "CompatibilityFixtures.test_actual_javac_preserves_transitive_native_init_constructor_and_callback_definitions": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:dbf00d44ae182bcd2c6b896d6c1c0de82973cbeaf0d4e85175fcfc08f2f67755",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": [
-        "self.skipTest('JDK required for actual passive metadata source control')",
-        "skip-control-sha256:7b7c89d17d9c314452687787986d421aa71bee9c896928836d5385b470b397a3"
-      ]
-    },
-    "CompatibilityFixtures.test_counterfactual_changes_only_one_root_edge_and_keeps_reviewed_dependencies": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:dbf00d44ae182bcd2c6b896d6c1c0de82973cbeaf0d4e85175fcfc08f2f67755",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "CompatibilityFixtures.test_dotnet_outside_projects_have_only_two_fixed_sources_and_one_transitive_edge": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:dbf00d44ae182bcd2c6b896d6c1c0de82973cbeaf0d4e85175fcfc08f2f67755",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "CompatibilityFixtures.test_ordinary_callback_sources_preserve_real_join_and_separate_uncaught_paths": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:dbf00d44ae182bcd2c6b896d6c1c0de82973cbeaf0d4e85175fcfc08f2f67755",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "CompatibilityFixtures.test_projects_keep_unchanged_normal_limits_and_exact_vendored_sdk": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:dbf00d44ae182bcd2c6b896d6c1c0de82973cbeaf0d4e85175fcfc08f2f67755",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    }
+  "cases":["CompatibilityFixtures.test_actual_javac_preserves_transitive_native_init_constructor_and_callback_definitions","CompatibilityFixtures.test_counterfactual_changes_only_one_root_edge_and_keeps_reviewed_dependencies","CompatibilityFixtures.test_dotnet_outside_projects_have_only_two_fixed_sources_and_one_transitive_edge","CompatibilityFixtures.test_ordinary_callback_sources_preserve_real_join_and_separate_uncaught_paths","CompatibilityFixtures.test_projects_keep_unchanged_normal_limits_and_exact_vendored_sdk"],
+  "guards":{
+    "CompatibilityFixtures.test_actual_javac_preserves_transitive_native_init_constructor_and_callback_definitions":
+      "269e917aa30bf39894560792df95eacf55581b8f98bf86c5bbbeb4a1f3b64143",
+    "CompatibilityFixtures.test_counterfactual_changes_only_one_root_edge_and_keeps_reviewed_dependencies":
+      "fefa3d37b63f019a6333fe231168a29c6e11bdba79699e63118f7f26beeb753d",
+    "CompatibilityFixtures.test_dotnet_outside_projects_have_only_two_fixed_sources_and_one_transitive_edge":
+      "fefa3d37b63f019a6333fe231168a29c6e11bdba79699e63118f7f26beeb753d",
+    "CompatibilityFixtures.test_ordinary_callback_sources_preserve_real_join_and_separate_uncaught_paths":
+      "fefa3d37b63f019a6333fe231168a29c6e11bdba79699e63118f7f26beeb753d",
+    "CompatibilityFixtures.test_projects_keep_unchanged_normal_limits_and_exact_vendored_sdk":
+      "fefa3d37b63f019a6333fe231168a29c6e11bdba79699e63118f7f26beeb753d"
   },
-  "kind": "python",
-  "module": "tools/tests/test_compiler_compatibility_fixture.py",
-  "reviewReason": "New finite source and adverse reader controls only; preserve all prior Python cases, fixture guards and skip rules; modeled rows are not actual guest evidence.",
-  "schemaVersion": "latent.ci.contracts.v1"
+  "kind":"python",
+  "module":"tools/tests/test_compiler_compatibility_fixture.py",
+  "reviewReason":"New finite source and adverse reader controls only; preserve all prior Python cases, fixture guards and skip rules; modeled rows are not actual guest evidence.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "269e917aa30bf39894560792df95eacf55581b8f98bf86c5bbbeb4a1f3b64143":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:dbf00d44ae182bcd2c6b896d6c1c0de82973cbeaf0d4e85175fcfc08f2f67755","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":["self.skipTest('JDK required for actual passive metadata source control')","skip-control-sha256:7b7c89d17d9c314452687787986d421aa71bee9c896928836d5385b470b397a3"]},
+    "fefa3d37b63f019a6333fe231168a29c6e11bdba79699e63118f7f26beeb753d":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:dbf00d44ae182bcd2c6b896d6c1c0de82973cbeaf0d4e85175fcfc08f2f67755","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+  }
 }

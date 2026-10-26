@@ -1,49 +1,18 @@
 {
-  "cases": [
-    "HostCodecLinearMemoryProductsReaderControls.test_exact_v6_literal_contract_keeps_the_original_prefix_and_three_audit_cases",
-    "HostCodecLinearMemoryProductsReaderControls.test_shared_acquisition_is_unchanged_and_no_unfrozen_module_can_prepare_products",
-    "HostCodecLinearMemoryProductsReaderControls.test_whole_v6_model_refuses_partial_records_wrong_sources_cohorts_and_command_claims"
-  ],
-  "guards": {
-    "HostCodecLinearMemoryProductsReaderControls.test_exact_v6_literal_contract_keeps_the_original_prefix_and_three_audit_cases": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:167892d89a35f801ccc4460f2085d5a02e84e678da42fd104804765cc3493b48",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "HostCodecLinearMemoryProductsReaderControls.test_shared_acquisition_is_unchanged_and_no_unfrozen_module_can_prepare_products": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:167892d89a35f801ccc4460f2085d5a02e84e678da42fd104804765cc3493b48",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "HostCodecLinearMemoryProductsReaderControls.test_whole_v6_model_refuses_partial_records_wrong_sources_cohorts_and_command_claims": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:167892d89a35f801ccc4460f2085d5a02e84e678da42fd104804765cc3493b48",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    }
+  "cases":["HostCodecLinearMemoryProductsReaderControls.test_exact_v6_literal_contract_keeps_the_original_prefix_and_three_audit_cases","HostCodecLinearMemoryProductsReaderControls.test_shared_acquisition_is_unchanged_and_no_unfrozen_module_can_prepare_products","HostCodecLinearMemoryProductsReaderControls.test_whole_v6_model_refuses_partial_records_wrong_sources_cohorts_and_command_claims"],
+  "guards":{
+    "HostCodecLinearMemoryProductsReaderControls.test_exact_v6_literal_contract_keeps_the_original_prefix_and_three_audit_cases":
+      "039dc62c29ef4ffc78e633586f4c865b157f5b3aa163b3c2dddded4b36df9954",
+    "HostCodecLinearMemoryProductsReaderControls.test_shared_acquisition_is_unchanged_and_no_unfrozen_module_can_prepare_products":
+      "039dc62c29ef4ffc78e633586f4c865b157f5b3aa163b3c2dddded4b36df9954",
+    "HostCodecLinearMemoryProductsReaderControls.test_whole_v6_model_refuses_partial_records_wrong_sources_cohorts_and_command_claims":
+      "039dc62c29ef4ffc78e633586f4c865b157f5b3aa163b3c2dddded4b36df9954"
   },
-  "kind": "python",
-  "module": "tools/tests/test_host_codec_linear_memory_native_products_reader.py",
-  "reviewReason": "Explicit review of the exact f535114/v7 source-model fixture retarget; all3 case names, decorators, classes, skip sites and class fixture guards unchanged",
-  "schemaVersion": "latent.ci.contracts.v1"
+  "kind":"python",
+  "module":"tools/tests/test_host_codec_linear_memory_native_products_reader.py",
+  "reviewReason":"Explicit review of the exact f535114/v7 source-model fixture retarget; all3 case names, decorators, classes, skip sites and class fixture guards unchanged",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "039dc62c29ef4ffc78e633586f4c865b157f5b3aa163b3c2dddded4b36df9954":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:167892d89a35f801ccc4460f2085d5a02e84e678da42fd104804765cc3493b48","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+  }
 }

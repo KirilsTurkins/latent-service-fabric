@@ -1,0 +1,36 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "canonical-stream-outers-${{ github.ref }}"
+    },
+    "name": "Focused canonical stream outer ownership",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/sdk-736-stream-outers-20261026"
+        ],
+        "paths": [
+          ".github/workflows/canonical-stream-outers.yml",
+          "crates/vendor/wasmtime/**",
+          "crates/vendor/wasmtime-cache/**",
+          "crates/latent-wasmtime/src/host.rs",
+          "crates/latent-wasmtime/src/host/native_stream_outer_tests.rs",
+          "crates/latent-wasmtime/src/host/native-stream-outers.wat",
+          "tools/qualify_stream_outers.py",
+          "tools/host_codec_wasmtime.py"
+        ]
+      }
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "stream-outers"
+  ],
+  "reviewReason": "Reviewed cache security backport: complete14 source/fixedzstd0.14.3,safe8.2.0,sys2.1.2; distinctcache-repaircohort. ParentCHECKusesSAMEexistingv17FEATURES, cachelibtestBUILD plusprobe/list/exactupstreamroundtrip, fixed5commands/unchanged45m2400/900/60/30/j2/cleanup. No fixture or old6replay; fe9historicalonly.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/canonical-stream-outers.yml"
+}

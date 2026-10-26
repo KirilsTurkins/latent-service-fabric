@@ -1,49 +1,18 @@
 {
-  "cases": [
-    "CThreadPackageNativeProducts.test_cli_help_works_outside_the_checkout_without_output_or_pythonpath",
-    "CThreadPackageNativeProducts.test_exact_tuple_matches_the_authenticated_whole_archive_and_real_controls",
-    "CThreadPackageNativeProducts.test_thirty_five_stages_preserve_the_original_c713_tuple_and_exact_order"
-  ],
-  "guards": {
-    "CThreadPackageNativeProducts.test_cli_help_works_outside_the_checkout_without_output_or_pythonpath": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:37627c9f216235180f85925cda827bf660c9008885548b4410b24c8a81e071a7",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "CThreadPackageNativeProducts.test_exact_tuple_matches_the_authenticated_whole_archive_and_real_controls": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:37627c9f216235180f85925cda827bf660c9008885548b4410b24c8a81e071a7",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "CThreadPackageNativeProducts.test_thirty_five_stages_preserve_the_original_c713_tuple_and_exact_order": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:37627c9f216235180f85925cda827bf660c9008885548b4410b24c8a81e071a7",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    }
+  "cases":["CThreadPackageNativeProducts.test_cli_help_works_outside_the_checkout_without_output_or_pythonpath","CThreadPackageNativeProducts.test_exact_tuple_matches_the_authenticated_whole_archive_and_real_controls","CThreadPackageNativeProducts.test_thirty_five_stages_preserve_the_original_c713_tuple_and_exact_order"],
+  "guards":{
+    "CThreadPackageNativeProducts.test_cli_help_works_outside_the_checkout_without_output_or_pythonpath":
+      "ead471e37b4d1d0538b1fa3f418649106e92207ec96de6a91c14500550cffc97",
+    "CThreadPackageNativeProducts.test_exact_tuple_matches_the_authenticated_whole_archive_and_real_controls":
+      "ead471e37b4d1d0538b1fa3f418649106e92207ec96de6a91c14500550cffc97",
+    "CThreadPackageNativeProducts.test_thirty_five_stages_preserve_the_original_c713_tuple_and_exact_order":
+      "ead471e37b4d1d0538b1fa3f418649106e92207ec96de6a91c14500550cffc97"
   },
-  "kind": "python",
-  "module": "tools/tests/test_c_thread_package_native_products.py",
-  "reviewReason": "Reviewed immutable f625 canonical native tuple; all old c713 cases and origins remain unchanged.",
-  "schemaVersion": "latent.ci.contracts.v1"
+  "kind":"python",
+  "module":"tools/tests/test_c_thread_package_native_products.py",
+  "reviewReason":"Reviewed immutable f625 canonical native tuple; all old c713 cases and origins remain unchanged.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "ead471e37b4d1d0538b1fa3f418649106e92207ec96de6a91c14500550cffc97":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:37627c9f216235180f85925cda827bf660c9008885548b4410b24c8a81e071a7","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+  }
 }

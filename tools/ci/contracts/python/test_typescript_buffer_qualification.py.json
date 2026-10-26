@@ -1,49 +1,18 @@
 {
-  "cases": [
-    "BufferQualificationControls.test_normal_project_keeps_original_limits_and_exact_fixture_capture",
-    "BufferQualificationControls.test_selected_receipt_survives_compiler_directory_and_binds_exact_material",
-    "BufferQualificationControls.test_unselected_has_no_asset_and_mismatched_receipt_cannot_be_promoted"
-  ],
-  "guards": {
-    "BufferQualificationControls.test_normal_project_keeps_original_limits_and_exact_fixture_capture": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:4b0089b588135c5ea4f0883bb122741318fdee7b3010cd579e0692024089eaf1",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "BufferQualificationControls.test_selected_receipt_survives_compiler_directory_and_binds_exact_material": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:4b0089b588135c5ea4f0883bb122741318fdee7b3010cd579e0692024089eaf1",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "BufferQualificationControls.test_unselected_has_no_asset_and_mismatched_receipt_cannot_be_promoted": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:4b0089b588135c5ea4f0883bb122741318fdee7b3010cd579e0692024089eaf1",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    }
+  "cases":["BufferQualificationControls.test_normal_project_keeps_original_limits_and_exact_fixture_capture","BufferQualificationControls.test_selected_receipt_survives_compiler_directory_and_binds_exact_material","BufferQualificationControls.test_unselected_has_no_asset_and_mismatched_receipt_cannot_be_promoted"],
+  "guards":{
+    "BufferQualificationControls.test_normal_project_keeps_original_limits_and_exact_fixture_capture":
+      "bc245c7d17e15e786f0efdfc5b2669c2670a202d37f91ff44df5b72c56ebf7a2",
+    "BufferQualificationControls.test_selected_receipt_survives_compiler_directory_and_binds_exact_material":
+      "bc245c7d17e15e786f0efdfc5b2669c2670a202d37f91ff44df5b72c56ebf7a2",
+    "BufferQualificationControls.test_unselected_has_no_asset_and_mismatched_receipt_cannot_be_promoted":
+      "bc245c7d17e15e786f0efdfc5b2669c2670a202d37f91ff44df5b72c56ebf7a2"
   },
-  "kind": "python",
-  "module": "tools/tests/test_typescript_buffer_qualification.py",
-  "reviewReason": "Finite normal Buffer project capture and selected-only package material retention; no compiler or runtime credit.",
-  "schemaVersion": "latent.ci.contracts.v1"
+  "kind":"python",
+  "module":"tools/tests/test_typescript_buffer_qualification.py",
+  "reviewReason":"Finite normal Buffer project capture and selected-only package material retention; no compiler or runtime credit.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "bc245c7d17e15e786f0efdfc5b2669c2670a202d37f91ff44df5b72c56ebf7a2":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:4b0089b588135c5ea4f0883bb122741318fdee7b3010cd579e0692024089eaf1","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+  }
 }
