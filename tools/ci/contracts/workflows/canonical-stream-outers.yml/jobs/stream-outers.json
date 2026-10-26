@@ -3,7 +3,7 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "name": "Five consumer implementation and two public HostReady controls",
+    "name": "Six producer implementation and five public ownership controls",
     "runs-on": "ubuntu-24.04",
     "timeout-minutes": 45,
     "env": {
@@ -54,15 +54,15 @@
         }
       },
       {
-        "name": "Execute only seven consumer cell ownership controls",
-        "run": "python3 -B tools/qualify_stream_outers.py --source-commit \"${{ github.sha }}\" --consumer-cell --output \"$RUNNER_TEMP/canonical-stream-outers\""
+        "name": "Execute only eleven producer cell ownership controls",
+        "run": "python3 -B tools/qualify_stream_outers.py --source-commit \"${{ github.sha }}\" --producer-cell --output \"$RUNNER_TEMP/canonical-stream-outers\""
       },
       {
-        "name": "Retain seven source-bound consumer cell outcomes",
+        "name": "Retain eleven source-bound producer cell outcomes",
         "if": "always()",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
-          "name": "canonical-consumer-cells-${{ github.sha }}",
+          "name": "canonical-producer-cells-${{ github.sha }}",
           "path": "${{ runner.temp }}/canonical-stream-outers/receipt.json\n${{ runner.temp }}/canonical-stream-outers/FAILED.json\n${{ runner.temp }}/canonical-stream-outers/source-inputs.json\n${{ runner.temp }}/canonical-stream-outers/commands.json\n${{ runner.temp }}/canonical-stream-outers/commands/logs/*.txt\n",
           "if-no-files-found": "warn",
           "retention-days": 3
@@ -72,7 +72,7 @@
   },
   "jobId": "stream-outers",
   "kind": "job",
-  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
+  "reviewReason": "Retain incoming producer shared-cell qualification and all historical obligations; migrate only the reviewed action identities.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/canonical-stream-outers.yml"
 }

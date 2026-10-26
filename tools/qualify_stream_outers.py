@@ -1,4 +1,4 @@
-"""Fixed stream, cache and consumer modes; private counters and public budgets stay distinct."""
+"""Fixed stream, cache, consumer and producer modes; private counters and public budgets stay distinct."""
 from __future__ import annotations
 
 import argparse
@@ -544,6 +544,166 @@ def qualify_consumer_cell(output, revision):
         write_json(output / 'commands.json', commands.records)
 
 
+PRODUCER_BRANCH = 'feat/sdk-736-producer-cell-20261026'
+PRODUCER_PRIVATE_CASES = tuple(PRIVATE_PREFIX + name for name in (
+    'producer_cell_stream_admission_is_shared_only_and_unused_refunds',
+    'producer_cell_pin_clone_send_guard_restore_and_p_then_b_retirement',
+    'producer_cell_zst_and_original_none_tuple_remain_distinct',
+    'producer_cell_confirmation_and_buffer_default_unwind_install_cleanup_first',
+    'producer_cell_destructor_unwind_retains_same_original_guards',
+    'producer_cell_real_future_adapter_default_err_restores_original_custody',
+))
+PRODUCER_NEW_PUBLIC_CASES = tuple(PUBLIC_PREFIX + name for name in (
+    'actual_producer_creation_refusals_precede_poll_and_preserve_foreign_store',
+    'actual_producer_stream_conversion_reuses_budget_and_preserves_owning_escape',
+    'actual_producer_future_any_roundtrip_and_pending_completion_preserve_custody',
+))
+PRODUCER_PUBLIC_CASES = PRODUCER_NEW_PUBLIC_CASES + PUBLIC_CASES
+
+
+def producer_result(raw, case):
+    require(case in (*PRODUCER_PRIVATE_CASES, *PRODUCER_PUBLIC_CASES), 'fixed-case')
+    require(len(raw) <= artifacts.MAX_OUTPUT_BYTES, 'case-output-bound')
+    require(re.findall(rb'^test ([a-zA-Z0-9_:]+) \.\.\. ok$', raw, re.M)
+        == [case.encode()], 'one-exact-success')
+    summaries = re.findall(rb'^test result: ok\. (\d+) passed; (\d+) failed; '
+        rb'(\d+) ignored; (\d+) measured; (\d+) filtered out;', raw, re.M)
+    require(len(summaries) == 1 and summaries[0][:4] == (b'1', b'0', b'0', b'0')
+        and int(summaries[0][4]) <= 10000, 'one-executed-no-skip')
+    return {'case': case, 'stdout': identity(raw), 'passed': 1, 'failed': 0,
+        'ignored': 0, 'filteredOut': int(summaries[0][4]),
+        'scope': 'private-producer-implementation-counter' if case in PRODUCER_PRIVATE_CASES
+            else 'public-original-ActivationBudget'}
+
+
+def qualify_producer_cell(output, revision):
+    require(sys.platform == 'linux' and os.environ.get('GITHUB_ACTIONS') == 'true'
+        and os.environ.get('GITHUB_REPOSITORY') == 'KirilsTurkins/latent-service-fabric'
+        and os.environ.get('GITHUB_REF_NAME') == PRODUCER_BRANCH
+        and os.environ.get('GITHUB_EVENT_NAME') == 'push', 'one-exact-hosted-push')
+    require(output != ROOT and ROOT not in output.parents and output not in ROOT.parents,
+        'owned-output')
+    output = fresh(output)
+    environment = build_environment(output)
+    environment.pop(FIXTURE_ENV, None)
+    environment.update(CARGO_TARGET_DIR=str(ROOT / 'target'), CARGO_INCREMENTAL='0',
+        CARGO_PROFILE_DEV_DEBUG='0', CARGO_PROFILE_TEST_DEBUG='0',
+        CARGO_PROFILE_DEV_DEBUG_ASSERTIONS='true', CARGO_PROFILE_TEST_DEBUG_ASSERTIONS='true',
+        CARGO_PROFILE_DEV_OVERFLOW_CHECKS='true', CARGO_PROFILE_TEST_OVERFLOW_CHECKS='true')
+    logs = output / 'commands'
+    logs.mkdir()
+    # Existing five-second reaping reserve remains inside declared caps.
+    commands = Commands(ROOT, logs, environment, deadline_seconds=2395, command_seconds=895)
+    receipt = {'schemaVersion': 'lsf.producer-cell-ownership.v1', 'status': 'in-progress',
+        'sourceRevision': revision, 'privateCases': list(PRODUCER_PRIVATE_CASES),
+        'publicCases': list(PRODUCER_PUBLIC_CASES), 'observations': [],
+        'fullCostModelQualified': False, 'fullRuntimeSuiteExecuted': False,
+        'fullVendorSuiteExecuted': False, 'signedGuestExecuted': False,
+        'hermetic': False, 'compilerImplicitInputsAttested': False,
+        'scope': 'selected producer shared cell and closed Future local-adapter body: six finite private implementation, three new public and two affected existing public controls; general stream P Boxes, inner factories, buffers, collections and RSS remain unpaid',
+        'limits': {'overallSeconds': 2400, 'buildCommandSeconds': 900,
+            'caseProcessSeconds': 60,
+            'listProcessSeconds': 30, 'cleanupReserveSeconds': 5},
+        'publicOriginalBudget': {'memoryBytes': 1024**2, 'cpuFuel': 1_000_000_000,
+            'wallTimeMilliseconds': 5000},
+        'privateCounterOwner': {'originalActivationBudget': False,
+            'guestExecuted': False, 'genericMemoryCeilingClaimed': False,
+            'oneRealFutureStoreInstrumentationCeilingBytes': 64 * 1024**2,
+            'installedFuelClaimed': False},
+        'fixtureAssembled': False, 'oldCanonicalCasesExecuted': False,
+        'oldStreamProgrammeExecuted': False, 'cacheRoundtripExecuted': False, 'oldConsumerPrivateCasesExecuted': False,
+        'affectedExistingPublicCases': list(PUBLIC_CASES),
+        'commandLedgerBoundary': '26 supervised build/library/list/test commands; normal pinned-tool resolver probes retain their existing owner and are not this ledger'}
+    try:
+        artifacts.require_source(ROOT, revision, environment)
+        before = source_inputs()
+        receipt['sourceBefore'] = before
+        write_json(output / 'source-inputs.json', before)
+        checked = source.verify()
+        receipt['wasmtimeSource'] = checked
+        toolchain = tomllib.loads(read_file(ROOT / 'tools/toolchain.toml', 128 * 1024).decode())
+        require(toolchain['rust']['toolchain'] == '1.97.1'
+            and toolchain['contracts']['wasm-tools'] == '1.254.0', 'normal-tool-pins')
+        tools, pins = resolve_tools(toolchain, ROOT, environment, _deadline=commands.deadline)
+        receipt['observedTools'] = pins
+        environment.update(RUSTC=str(tools['rustc']), RUSTUP_TOOLCHAIN=toolchain['rust']['toolchain'])
+        def runtime_environment(artifact, label):
+            def probe(argv, *, cwd, env, timeout, maximum):
+                require(argv == ['rustc', '--print', 'target-libdir'] and cwd == ROOT
+                    and timeout == 30 and maximum == 4096, 'normal-library-probe')
+                commands.command_seconds = 25
+                commands.environment = env
+                raw = commands.run(label + '-rust-library-path', tools['rustc'], *argv[1:])
+                require(len(raw) <= maximum, 'rust-library-output-bound')
+                return 0, raw
+            return artifacts.cargo_environment(ROOT, artifact, environment,
+                target=ROOT / 'target', execute=probe)
+
+        targets = (
+            ('private', PRODUCER_PRIVATE_CASES, (),
+             ('test', '--manifest-path', 'crates/vendor/wasmtime/Cargo.toml', '--locked',
+              '--lib', '--no-default-features', '--features', FEATURES,
+              '--no-run', '--message-format=json'),
+             artifacts.Suite('crates/vendor/wasmtime/Cargo.toml', 'wasmtime',
+                'src/lib.rs', PRIVATE_PREFIX, frozenset(PRODUCER_PRIVATE_CASES), True)),
+            ('public', PRODUCER_PUBLIC_CASES, (),
+             ('test', '-p', 'latent-wasmtime', '--locked', '--lib', '--no-run', '--message-format=json'),
+             artifacts.Suite('crates/latent-wasmtime/Cargo.toml', 'latent_wasmtime',
+                'src/lib.rs', PUBLIC_PREFIX, frozenset(PRODUCER_PUBLIC_CASES), True)),
+        )
+        executables = []
+        for label, cases, ignored, argv, suite in targets:
+            receipt['stage'] = 'build-' + label
+            commands.environment = environment
+            commands.command_seconds = 895
+            ordinal = len(commands.records)
+            commands.run('build-' + label, tools['cargo'], *argv)
+            artifact = artifacts.read_inventory(logs / f'logs/{ordinal:02d}-build-{label}.stdout.txt',
+                ROOT, suite, target=ROOT / 'target')
+            executable = file_identity(artifact.executable, label + '-stream-controls', 512 * 1024**2)
+            receipt[label + 'Executable'] = executable
+            executables.append((artifact.executable, executable, label + '-stream-controls'))
+            run_env = runtime_environment(artifact, label)
+            run_env.pop(FIXTURE_ENV, None)
+            if label == 'public':
+                contract, = [row for row in registry.load()['suites']
+                    if row['id'] == 'latent-wasmtime.lib.latent-wasmtime']
+                require(contract['minimumCases'] == 501
+                    and set(cases) <= set(contract['expectedCases'])
+                    and not set(cases) & set(contract['expectedIgnored']), 'public-suite-contract')
+            commands.environment = run_env
+            for index, case in enumerate(cases):
+                receipt['stage'] = case
+                commands.command_seconds = 25
+                listed = commands.run(f'{label}-list-{index}', artifact.executable,
+                    case, '--exact', *ignored, '--list')
+                require(len(listed) <= artifacts.MAX_LIST_BYTES, 'list-bound')
+                artifacts.validate_listing(listed, artifacts.Suite(suite.manifest, suite.target,
+                    suite.source, case, frozenset((case,)), True))
+                commands.command_seconds = 55
+                raw = commands.run(f'{label}-case-{index}', artifact.executable,
+                    case, '--exact', *ignored, '--show-output', '--test-threads=1')
+                receipt['observations'].append(producer_result(raw, case))
+        require(len(commands.records) == 26 and len(receipt['observations']) == 11,
+            'two-builds-two-library-probes-eleven-exact-cases')
+        require(time.monotonic() < commands.deadline, 'overall-deadline')
+        require(source_inputs() == before and source.verify() == checked, 'final-source')
+        for path, bound, label in executables:
+            require(file_identity(path, label, 512 * 1024**2) == bound, 'final-executable')
+        require([file_identity(tools[name], name) for name in sorted(tools)] == pins, 'final-tools')
+        artifacts.require_source(ROOT, revision, environment)
+        require(time.monotonic() < commands.deadline, 'final-deadline')
+        receipt.update(status='passed', sourceAfter=before, sourceUnchanged=True,
+            executed=[*PRODUCER_PRIVATE_CASES, *PRODUCER_PUBLIC_CASES], ignored=[])
+        write_json(output / 'receipt.json', receipt)
+    except BaseException:
+        receipt['status'] = 'failed'
+        write_json(output / 'FAILED.json', receipt)
+        raise
+    finally:
+        write_json(output / 'commands.json', commands.records)
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, required=True)
@@ -551,8 +711,11 @@ if __name__ == '__main__':
     modes = parser.add_mutually_exclusive_group()
     modes.add_argument('--cache-repair', action='store_true')
     modes.add_argument('--consumer-cell', action='store_true')
+    modes.add_argument('--producer-cell', action='store_true')
     args = parser.parse_args()
-    if args.consumer_cell:
+    if args.producer_cell:
+        qualify_producer_cell(args.output.resolve(), args.source_commit)
+    elif args.consumer_cell:
         qualify_consumer_cell(args.output.resolve(), args.source_commit)
     elif args.cache_repair:
         qualify_cache_repair(args.output.resolve(), args.source_commit)

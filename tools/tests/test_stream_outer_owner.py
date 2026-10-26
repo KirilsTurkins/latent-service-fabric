@@ -39,6 +39,22 @@ class StreamOuterOwnerReader(unittest.TestCase):
         for case in (*owner.PRIVATE_CASES, 'unknown::case'):
             with self.assertRaises(ValueError):
                 owner.consumer_result(b'', case)
+        for case in (*owner.PRODUCER_PRIVATE_CASES, *owner.PRODUCER_PUBLIC_CASES):
+            raw = (f'test {case} ... ok\n\ntest result: ok. 1 passed; 0 failed; '
+                '0 ignored; 0 measured; 17 filtered out; finished in 0.01s\n').encode()
+            with self.subTest(producer_case=case):
+                value = owner.producer_result(raw, case)
+                self.assertEqual((value['passed'], value['ignored']), (1, 0))
+                self.assertEqual(value['scope'], 'private-producer-implementation-counter'
+                    if case in owner.PRODUCER_PRIVATE_CASES else 'public-original-ActivationBudget')
+                for changed in (raw + raw, raw.replace(b'0 ignored', b'1 ignored'),
+                    raw.replace(b'1 passed', b'0 passed'),
+                    raw.replace(case.encode(), b'wrong::case')):
+                    with self.assertRaises(ValueError):
+                        owner.producer_result(changed, case)
+        for case in (*owner.PRIVATE_CASES, *owner.CONSUMER_PRIVATE_CASES, 'unknown::case'):
+            with self.assertRaises(ValueError):
+                owner.producer_result(b'', case)
 
     def test_private_fixture_identity_is_bounded_and_changes_are_observed(self):
         with tempfile.TemporaryDirectory() as temporary:

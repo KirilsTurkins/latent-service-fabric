@@ -371,3 +371,46 @@ The SDK-advisory and canary failures were traced to the new Cargo inventory entr
 
 
 Main CI run 40358355805 (job 121702592768) recorded 8,461 tests with two failures and 17 errors: 15 workspace-inventory errors and four missing-cache format/placeholder fixture failures. The follow-up adds one mandatory adjacent cache copy in each of the two existing fixtures; six affected pure controls passed in 65.687 seconds with no failures or ignored cases. These results do not claim a fresh whole-CI or hosted Security pass.
+
+
+### Selected consumer backing: dated native qualification
+
+The [2026-10-26 consumer-cell receipt](evidence/canonical-consumer-cell-native-2026-10-26.json)
+records tested source `e4ce721088d51a718c837c9586afd187379df36f`, tree
+`4cb809a8a11ec70fd1ec9bccddf3645868438372`, owning run40372424379/job121746381721.
+All seven exact controls passed with zero ignored: five private finite ownership
+controls and two public HostReady cases. The18 supervised commands exited0,
+with36 raw channels and39 authenticated artifact members. All8,976 captured
+source bindings were unchanged before/after;8,975 matched Git directly and the
+remaining tools/intellij.cmd row used the declared Git-LF→checkout-CRLF conversion.
+That checkout conversion was separate from the unchanged execution inputs.
+
+The public controls use the original1MiB/1B fuel/5-second ActivationBudget.
+Five actual refusal positions—local1..5/global6..10—kept producer/consumer polls0,
+covering queue, Task, outer, pinned C and shared C cell admission. Five cleanup
+modes preserved the foreign Store and ended at zero: ready and pending-complete
+verified payload42; producer-error, consumer-error and pending-Store-drop do not
+claim payload delivery. The refusal case verifies same-budget fresh42; pending
+Store-drop uses the real release/late-wake path. Private controls use
+ownership counters without an ActivationBudget, guest execution or a generic
+memory-ceiling/allocator-free observation claim.
+
+Both locked Cargo library targets were observed with the authenticated275-file
+Wasmtime source and mandatory14-file isolated cache backport/fixed dependency
+graph. Original45m/2400/900/60/30 bounds,5-second cleanup and2 compile jobs stayed
+unchanged. No WAT assembly, old four canonical cases, six-control programme,
+cache roundtrip or language campaign was selected for replay.
+
+Merge8d9c6b176ebc99c296d32490517138e7cef5258a/tree3dee326e7c44418472fdc127c07f262f7e5bb5d3
+also included bot PR1509: only the two equal-size renderer Playwright package
+JSON inputs differ from the tested tree; all other8,974 bindings and native
+Rust/Cargo/locks/cache/owner/workflow inputs remain exact. The selected archive
+size stayed85,975,040B. This is a dated receipt, without retagging execution to
+the merged revision or later producer source.
+
+The qualified scope is the selected consumer pinned-value/shared-cell backing.
+Producer state, inner factory/future/closure Boxes, buffers and transitive heaps,
+tables/collections, allocator RSS and whole CPU/memory/retirement coverage remain
+open. This unsigned native result does not close #736 or qualify a signed guest.
+
+The related PR CI run `40372479026` passed all 24 jobs including its aggregate; selected Security checks in `40372478831` passed, with the SDK advisory scope skipped. Those PR checks scanned merge `c09eb1ace82fee3e7b2dccbc42238cfb1bea4737`, whose tree is exactly the native-executed `4cb809a8...` tree; the native execution revision remains `e4ce7210...`. The prior baseline standalone rustup bootstrap conflict occurred before tests; the current feature standalone job passed.
