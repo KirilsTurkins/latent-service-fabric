@@ -1,31 +1,32 @@
 {
-  "kind": "workflow",
-  "policy": {
-    "concurrency": {
-      "cancel-in-progress": false,
-      "group": "stream-provider-objects-${{ github.ref }}"
-    },
-    "name": "Protected stream normal C object check",
-    "on": {
-      "push": {
-        "branches": [
-          "test/sdk-738-stream-objects-20261026",
-          "test/sdk-738-classdir-objects-20261026",
-          "test/sdk-738-classdir-kernfs-objects-20261026",
-          "test/sdk-738-netdev-directory-objects-20261026",
-          "test/sdk-738-netdev-layout-objects-20261026"
-        ]
-      }
-    },
-    "permissions": {
-      "contents": "read"
-    }
-  },
-  "requiredJobs": [
-    "classdir-objects",
-    "normal-objects"
-  ],
-  "reviewReason": "Bind reviewed immutable58 notification sources plus readonly allocating-TU probe59/375/11 programme to unchanged process/public bounds; retain all earlier programmes and add only two synthetic/source controls.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "workflow": ".github/workflows/stream-provider-objects.yml"
+"kind":"workflow",
+"policy":{
+"concurrency":{
+"cancel-in-progress":false,
+"group":"stream-provider-objects-${{ github.ref }}"
+},
+"name":"Protected stream normal C object check",
+"on":{
+"push":{
+"branches":[
+"test/sdk-738-stream-objects-20261026",
+"test/sdk-738-classdir-objects-20261026",
+"test/sdk-738-classdir-kernfs-objects-20261026",
+"test/sdk-738-netdev-directory-objects-20261026",
+"test/sdk-738-netdev-layout-objects-20261026",
+"test/sdk-738-netdev-post-init-objects-20261026"
+]
+}
+},
+"permissions":{
+"contents":"read"
+}
+},
+"requiredJobs":[
+"classdir-objects",
+"normal-objects"
+],
+"reviewReason":"Reviewed closed62-source/381-derived POST_INIT eight-object programme, exact bounded builtin preflight and unchanged process/public bounds; retain every previous programme and add only three source/owner controls.",
+"schemaVersion":"latent.ci.contracts.v1",
+"workflow":".github/workflows/stream-provider-objects.yml"
 }

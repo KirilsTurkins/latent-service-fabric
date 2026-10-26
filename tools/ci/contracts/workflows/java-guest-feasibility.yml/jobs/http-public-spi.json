@@ -1,117 +1,117 @@
 {
-  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
-  "before": {},
-  "coverage": {},
-  "definition": {
-    "env": {
-      "PYTHONDONTWRITEBYTECODE": "1"
-    },
-    "if": "${{ github.event_name == 'workflow_dispatch' && inputs.java_http_spi && !inputs.public_fiber_assembly && !inputs.public_fiber_derived_llvm && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_private_scalar_llvm) }}",
-    "name": "Optional Java public ConnectionFactory with isolated default calls",
-    "permissions": {
-      "actions": "read",
-      "contents": "read"
-    },
-    "runs-on": "ubuntu-24.04",
-    "steps": [
-      {
-        "uses": "actions/checkout",
-        "with": {
-          "persist-credentials": false
-        }
-      },
-      {
-        "uses": "actions/setup-python",
-        "with": {
-          "python-version": "3.13.5"
-        }
-      },
-      {
-        "name": "Fetch the one exact V7 native producer source before any helper verification",
-        "run": "git fetch --no-tags --depth=1 origin 77bf0e3f3b68e17342b6146abd6f2de34a3efa00"
-      },
-      {
-        "name": "Fetch the exact nominal HTTP native producer source before new helper controls",
-        "run": "git fetch --no-tags --depth=1 origin 36eaed79dbd92cac12bad2dd1f52cd5d1acd525f"
-      },
-      {
-        "name": "Fetch the exact independent-tenant HTTP producer before its helper verification",
-        "run": "git fetch --no-tags --depth=1 origin 6f5f180136d140ac670561695260f71514781015"
-      },
-      {
-        "uses": "actions/setup-java",
-        "with": {
-          "distribution": "temurin",
-          "java-version": "25.0.4+101.0.LTS"
-        }
-      },
-      {
-        "name": "Fetch the exact operational-authority native producer before SPI helper controls",
-        "run": "git fetch --no-tags --depth=1 origin 8f7780dd0a35e3375524d72e7dfaddf847deaa5c"
-      },
-      {
-        "name": "Fetch the exact current native producer before optional SPI controls",
-        "run": "git fetch --no-tags --depth=1 origin f9192fb5785ca7bed8b33dbb869b3d775b72ab4b"
-      },
-      {
-        "name": "Check shared strict fixed-tuple acquisition for optional SPI products",
-        "run": "python3 -B -m unittest tools.tests.test_sdk_native_products_reader -v"
-      },
-      {
-        "name": "Check the captured standard socket timeout exception identity",
-        "run": "python3 -B -m unittest tools.tests.test_java_timeout_exception -v"
-      },
-      {
-        "name": "Check exact selected phase emission before optional SPI compilation",
-        "run": "python3 -B -m unittest tools.tests.test_java_phase_surface -v"
-      },
-      {
-        "name": "Fetch exact original workflow baseline before SPI preservation controls",
-        "run": "git fetch --no-tags --depth=1 origin aa56bdebad8c12f20acce4ec4ecfeca73cf554be"
-      },
-      {
-        "name": "Check optional SPI authority, original exception and native receipt controls",
-        "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 -B -m unittest tools.tests.test_java_http_spi tools.tests.test_http_tenant_native_products -v\n"
-      },
-      {
-        "env": {
-          "GH_TOKEN": "${{ github.token }}"
-        },
-        "name": "Retrieve exactly the five authenticated V7 products without a native rebuild",
-        "run": "python3 -B tools/wait_runtime_native_products.py --output \"$RUNNER_TEMP/java-http-spi-prepared\""
-      },
-      {
-        "uses": "bytecodealliance/actions/wasm-tools/setup",
-        "with": {
-          "version": "1.254.0"
-        }
-      },
-      {
-        "name": "Install the same pinned Java compiler tools without any native Cargo build",
-        "run": "set -euo pipefail\ncurl --fail --location --retry 3 --max-time 180 \\\n  https://services.gradle.org/distributions/gradle-9.1.0-bin.zip \\\n  -o \"$RUNNER_TEMP/gradle.zip\"\necho \"a17ddd85a26b6a7f5ddb71ff8b05fc5104c0202c6e64782429790c933686c806  $RUNNER_TEMP/gradle.zip\" | sha256sum --check\nunzip -q \"$RUNNER_TEMP/gradle.zip\" -d \"$RUNNER_TEMP\"\necho \"$RUNNER_TEMP/gradle-9.1.0/bin\" >> \"$GITHUB_PATH\"\ntimeout --signal=KILL 180s curl --fail --location \\\n  --retry 3 --retry-all-errors --retry-delay 1 --max-time 60 \\\n  https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \\\n  -o \"$RUNNER_TEMP/wasi-sdk.tar.gz\"\necho \"87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171  $RUNNER_TEMP/wasi-sdk.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/wasi-sdk.tar.gz\" -C \"$RUNNER_TEMP\"\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/java-bindgen\"\necho \"$RUNNER_TEMP/java-bindgen\" >> \"$GITHUB_PATH\"\n",
-        "shell": "bash"
-      },
-      {
-        "name": "Build one fresh optional public SPI component and execute its isolated programme",
-        "run": "python3 -B tools/qualify_java_http_spi.py --prepared \"$RUNNER_TEMP/java-http-spi-prepared\" --wasi-sdk \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\" --output \"$RUNNER_TEMP/java-http-spi\""
-      },
-      {
-        "if": "always()",
-        "name": "Retain bounded source-specific replay evidence without credentials or keys",
-        "uses": "actions/upload-artifact",
-        "with": {
-          "if-no-files-found": "warn",
-          "name": "java-http-spi-${{ github.sha }}",
-          "path": "${{ runner.temp }}/java-http-spi-prepared/retrieval.json\n${{ runner.temp }}/java-http-spi-prepared/native-products.json\n${{ runner.temp }}/java-http-spi-prepared/source-inputs.json\n${{ runner.temp }}/java-http-spi/campaign/qualification.json\n${{ runner.temp }}/java-http-spi/campaign/FAILED.json\n${{ runner.temp }}/java-http-spi/campaign/final-materials.json\n${{ runner.temp }}/java-http-spi/campaign/build/*.json\n${{ runner.temp }}/java-http-spi/campaign/build/component.wasm\n${{ runner.temp }}/java-http-spi/campaign/build/package/**\n${{ runner.temp }}/java-http-spi/campaign/build/compiler-logs/*-java-to-c.log\n${{ runner.temp }}/java-http-spi/campaign/build/compiler-logs/*-java-owned-classes.log\n${{ runner.temp }}/java-http-spi/campaign/build/compiler-logs/*-java-coroutine-*.log\n${{ runner.temp }}/java-http-spi/campaign/build/compiler-logs/*-c-to-wasm.log\n${{ runner.temp }}/java-http-spi/campaign/build/compiler-logs/*-c-to-wasm-context.command.json\n${{ runner.temp }}/java-http-spi/campaign/build/compiler-logs/*-expected-wit.log\n${{ runner.temp }}/java-http-spi/campaign/build/compiler-logs/*-compiled-wit.log\n${{ runner.temp }}/java-http-spi/campaign/node/qualification.json\n${{ runner.temp }}/java-http-spi/campaign/node/FAILED.json\n${{ runner.temp }}/java-http-spi/campaign/node/controls/*.json",
-          "retention-days": 3
-        }
-      }
-    ],
-    "timeout-minutes": 55
-  },
-  "jobId": "http-public-spi",
-  "kind": "job",
-  "reviewReason": "Reviewed R8 default-false route and exact test-only inverse of that route. All original R7 assertion bodies, case identities, skip/decorator guards, commands and diagnostic gate retained; new mode is independent and requires its own successful qualified tuple before acquisition.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "workflow": ".github/workflows/java-guest-feasibility.yml"
+"baselineRevision":"50f003dd006e0786494936c49e55dc683cf26fd6",
+"before":{},
+"coverage":{},
+"definition":{
+"env":{
+"PYTHONDONTWRITEBYTECODE":"1"
+},
+"if":"${{ github.event_name == 'workflow_dispatch' && inputs.java_http_spi && !inputs.public_fiber_assembly && !inputs.public_fiber_derived_llvm && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_private_scalar_llvm) }}",
+"name":"Optional Java public ConnectionFactory with isolated default calls",
+"permissions":{
+"actions":"read",
+"contents":"read"
+},
+"runs-on":"ubuntu-24.04",
+"steps":[
+{
+"uses":"actions/checkout",
+"with":{
+"persist-credentials":false
+}
+},
+{
+"uses":"actions/setup-python",
+"with":{
+"python-version":"3.13.5"
+}
+},
+{
+"name":"Fetch the one exact V7 native producer source before any helper verification",
+"run":"git fetch --no-tags --depth=1 origin 77bf0e3f3b68e17342b6146abd6f2de34a3efa00"
+},
+{
+"name":"Fetch the exact nominal HTTP native producer source before new helper controls",
+"run":"git fetch --no-tags --depth=1 origin 36eaed79dbd92cac12bad2dd1f52cd5d1acd525f"
+},
+{
+"name":"Fetch the exact independent-tenant HTTP producer before its helper verification",
+"run":"git fetch --no-tags --depth=1 origin 6f5f180136d140ac670561695260f71514781015"
+},
+{
+"uses":"actions/setup-java",
+"with":{
+"distribution":"temurin",
+"java-version":"25.0.4+101.0.LTS"
+}
+},
+{
+"name":"Fetch the exact operational-authority native producer before SPI helper controls",
+"run":"git fetch --no-tags --depth=1 origin 8f7780dd0a35e3375524d72e7dfaddf847deaa5c"
+},
+{
+"name":"Fetch the exact current native producer before optional SPI controls",
+"run":"git fetch --no-tags --depth=1 origin f9192fb5785ca7bed8b33dbb869b3d775b72ab4b"
+},
+{
+"name":"Check shared strict fixed-tuple acquisition for optional SPI products",
+"run":"python3 -B -m unittest tools.tests.test_sdk_native_products_reader -v"
+},
+{
+"name":"Check the captured standard socket timeout exception identity",
+"run":"python3 -B -m unittest tools.tests.test_java_timeout_exception -v"
+},
+{
+"name":"Check exact selected phase emission before optional SPI compilation",
+"run":"python3 -B -m unittest tools.tests.test_java_phase_surface -v"
+},
+{
+"name":"Fetch exact original workflow baseline before SPI preservation controls",
+"run":"git fetch --no-tags --depth=1 origin aa56bdebad8c12f20acce4ec4ecfeca73cf554be"
+},
+{
+"name":"Check optional SPI authority, original exception and native receipt controls",
+"run":"python3 -m pip install --requirement tools/requirements.lock\npython3 -B -m unittest tools.tests.test_java_http_spi tools.tests.test_http_tenant_native_products -v\n"
+},
+{
+"env":{
+"GH_TOKEN":"${{ github.token }}"
+},
+"name":"Retrieve exactly the five authenticated V7 products without a native rebuild",
+"run":"python3 -B tools/wait_runtime_native_products.py --output \"$RUNNER_TEMP/java-http-spi-prepared\""
+},
+{
+"uses":"bytecodealliance/actions/wasm-tools/setup",
+"with":{
+"version":"1.254.0"
+}
+},
+{
+"name":"Install the same pinned Java compiler tools without any native Cargo build",
+"run":"set -euo pipefail\ncurl --fail --location --retry 3 --max-time 180 \\\n  https://services.gradle.org/distributions/gradle-9.1.0-bin.zip \\\n  -o \"$RUNNER_TEMP/gradle.zip\"\necho \"a17ddd85a26b6a7f5ddb71ff8b05fc5104c0202c6e64782429790c933686c806  $RUNNER_TEMP/gradle.zip\" | sha256sum --check\nunzip -q \"$RUNNER_TEMP/gradle.zip\" -d \"$RUNNER_TEMP\"\necho \"$RUNNER_TEMP/gradle-9.1.0/bin\" >> \"$GITHUB_PATH\"\ntimeout --signal=KILL 180s curl --fail --location \\\n  --retry 3 --retry-all-errors --retry-delay 1 --max-time 60 \\\n  https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \\\n  -o \"$RUNNER_TEMP/wasi-sdk.tar.gz\"\necho \"87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171  $RUNNER_TEMP/wasi-sdk.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/wasi-sdk.tar.gz\" -C \"$RUNNER_TEMP\"\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/java-bindgen\"\necho \"$RUNNER_TEMP/java-bindgen\" >> \"$GITHUB_PATH\"\n",
+"shell":"bash"
+},
+{
+"name":"Build one fresh optional public SPI component and execute its isolated programme",
+"run":"python3 -B tools/qualify_java_http_spi.py --prepared \"$RUNNER_TEMP/java-http-spi-prepared\" --wasi-sdk \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\" --output \"$RUNNER_TEMP/java-http-spi\""
+},
+{
+"if":"always()",
+"name":"Retain bounded source-specific replay evidence without credentials or keys",
+"uses":"actions/upload-artifact",
+"with":{
+"if-no-files-found":"warn",
+"name":"java-http-spi-${{ github.sha }}",
+"path":"${{ runner.temp }}/java-http-spi-prepared/retrieval.json\n${{ runner.temp }}/java-http-spi-prepared/native-products.json\n${{ runner.temp }}/java-http-spi-prepared/source-inputs.json\n${{ runner.temp }}/java-http-spi/campaign/qualification.json\n${{ runner.temp }}/java-http-spi/campaign/FAILED.json\n${{ runner.temp }}/java-http-spi/campaign/final-materials.json\n${{ runner.temp }}/java-http-spi/campaign/build/*.json\n${{ runner.temp }}/java-http-spi/campaign/build/component.wasm\n${{ runner.temp }}/java-http-spi/campaign/build/package/**\n${{ runner.temp }}/java-http-spi/campaign/build/compiler-logs/*-java-to-c.log\n${{ runner.temp }}/java-http-spi/campaign/build/compiler-logs/*-java-owned-classes.log\n${{ runner.temp }}/java-http-spi/campaign/build/compiler-logs/*-java-coroutine-*.log\n${{ runner.temp }}/java-http-spi/campaign/build/compiler-logs/*-c-to-wasm.log\n${{ runner.temp }}/java-http-spi/campaign/build/compiler-logs/*-c-to-wasm-context.command.json\n${{ runner.temp }}/java-http-spi/campaign/build/compiler-logs/*-expected-wit.log\n${{ runner.temp }}/java-http-spi/campaign/build/compiler-logs/*-compiled-wit.log\n${{ runner.temp }}/java-http-spi/campaign/node/qualification.json\n${{ runner.temp }}/java-http-spi/campaign/node/FAILED.json\n${{ runner.temp }}/java-http-spi/campaign/node/controls/*.json",
+"retention-days":3
+}
+}
+],
+"timeout-minutes":55
+},
+"jobId":"http-public-spi",
+"kind":"job",
+"reviewReason":"Reviewed R8 default-false route and exact test-only inverse of that route. All original R7 assertion bodies, case identities, skip/decorator guards, commands and diagnostic gate retained; new mode is independent and requires its own successful qualified tuple before acquisition.",
+"schemaVersion":"latent.ci.contracts.v1",
+"workflow":".github/workflows/java-guest-feasibility.yml"
 }
