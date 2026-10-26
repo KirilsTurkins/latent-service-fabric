@@ -3,7 +3,7 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "if": "github.ref == 'refs/heads/test/sdk-738-classdir-objects-20261026' || github.ref == 'refs/heads/test/sdk-738-classdir-kernfs-objects-20261026'",
+    "if": "github.ref == 'refs/heads/test/sdk-738-classdir-objects-20261026' || github.ref == 'refs/heads/test/sdk-738-classdir-kernfs-objects-20261026' || github.ref == 'refs/heads/test/sdk-738-netdev-directory-objects-20261026'",
     "name": "Changed class-directory translation units without image or boot",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -48,6 +48,16 @@
         "run": "python3 -B tools/qualify_host_stream_kernel_stream_objects.py --classdir-kernfs --source-commit \"${{ github.sha }}\" --started \"$STREAM_OBJECT_STARTED\" --output \"$RUNNER_TEMP/stream-provider-classdir-objects\""
       },
       {
+        "if": "github.ref == 'refs/heads/test/sdk-738-netdev-directory-objects-20261026'",
+        "name": "Check only two NETDEV directory source and admission controls",
+        "run": "python3 -B -m unittest tools.tests.test_host_stream_kernel_stream_objects.StreamObjectOwner.test_netdev_directory_freeze_preserves_all_fifty_two_sources tools.tests.test_host_stream_kernel_stream_objects.StreamObjectOwner.test_netdev_directory_public_gate_is_closed_to_nine_changed_targets -v"
+      },
+      {
+        "if": "github.ref == 'refs/heads/test/sdk-738-netdev-directory-objects-20261026'",
+        "name": "Compile only nine changed NETDEV own-directory translation units",
+        "run": "python3 -B tools/qualify_host_stream_kernel_stream_objects.py --netdev-directory --source-commit \"${{ github.sha }}\" --started \"$STREAM_OBJECT_STARTED\" --output \"$RUNNER_TEMP/stream-provider-classdir-objects\""
+      },
+      {
         "id": "admission",
         "if": "${{ always() && github.ref == 'refs/heads/test/sdk-738-classdir-objects-20261026' }}",
         "name": "Admit the fixed bounded public union before any upload",
@@ -60,7 +70,13 @@
         "run": "python3 -B tools/qualify_host_stream_kernel_stream_objects.py --classdir-kernfs --admit --output \"$RUNNER_TEMP/stream-provider-classdir-objects\""
       },
       {
-        "if": "${{ always() && (steps.admission.outputs.admitted == 'true' || steps.kernfs_admission.outputs.admitted == 'true') }}",
+        "id": "directory_admission",
+        "if": "${{ always() && github.ref == 'refs/heads/test/sdk-738-netdev-directory-objects-20261026' }}",
+        "name": "Admit only the nine-target NETDEV directory public union",
+        "run": "python3 -B tools/qualify_host_stream_kernel_stream_objects.py --netdev-directory --admit --output \"$RUNNER_TEMP/stream-provider-classdir-objects\""
+      },
+      {
+        "if": "${{ always() && (steps.admission.outputs.admitted == 'true' || steps.kernfs_admission.outputs.admitted == 'true' || steps.directory_admission.outputs.admitted == 'true') }}",
         "name": "Retain only admitted object evidence",
         "uses": "actions/upload-artifact",
         "with": {
@@ -71,7 +87,7 @@
         }
       },
       {
-        "if": "${{ always() && (steps.admission.outputs.fallback == 'true' || steps.kernfs_admission.outputs.fallback == 'true') }}",
+        "if": "${{ always() && (steps.admission.outputs.fallback == 'true' || steps.kernfs_admission.outputs.fallback == 'true' || steps.directory_admission.outputs.fallback == 'true') }}",
         "name": "Retain only the bounded admission-failure receipt",
         "uses": "actions/upload-artifact",
         "with": {
@@ -86,7 +102,7 @@
   },
   "jobId": "classdir-objects",
   "kind": "job",
-  "reviewReason": "Extend the existing closed classdir job to the separately bound52-source nine-TU kernfs mode; retain historical50/four and default47/eighteen obligations without adding a selected contract file.",
+  "reviewReason": "Bind the reviewed NETDEV own-directory55-source nine changed-TU programme to existing process/public bounds; preserve all historical47/50/52 identities, targets, test cases, guards and coverage.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/stream-provider-objects.yml"
 }

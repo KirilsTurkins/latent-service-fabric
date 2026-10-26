@@ -128,5 +128,44 @@ class StreamObjectOwner(unittest.TestCase):
             forbidden.write_bytes(b'unchanged TU is outside this programme')
             with self.assertRaises(ValueError):owner.admit(output,classdir_kernfs=True)
 
+    def test_netdev_directory_freeze_preserves_all_fifty_two_sources(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory)
+            for name in owner.DIRECTORY_SOURCE_PATHS:
+                target=root/name;target.parent.mkdir(parents=True,exist_ok=True)
+                target.write_bytes((owner.ROOT/name).read_bytes())
+            original=owner.selected_sources(root,classdir_kernfs=True)
+            current=owner.selected_sources(root,netdev_directory=True)
+            self.assertEqual(len(original),52)
+            self.assertEqual(len(current),55)
+            self.assertTrue(all(current[name]==value for name,value in original.items()))
+            self.assertEqual(len(owner.selected_sources(root)),47)
+            for kwargs in ({'netdev_directory':1},
+                {'netdev_directory':True,'classdir':True},
+                {'netdev_directory':True,'classdir_kernfs':True}):
+                with self.assertRaises(ValueError):owner.selected_sources(root,**kwargs)
+            path=root/'tools/host_stream_kernel_stream_netdev_directory.py'
+            path.write_bytes(path.read_bytes()+b'\n')
+            self.assertEqual(owner.selected_sources(root,classdir_kernfs=True),original)
+            with self.assertRaises(ValueError):owner.selected_sources(root,netdev_directory=True)
+
+    def test_netdev_directory_public_gate_is_closed_to_nine_changed_targets(self):
+        expected={'net/factory.o','drivers/base/core.o','lib/kobject.o','fs/sysfs/dir.o',
+            'fs/kernfs/dir.o','lib/idr.o','lib/radix-tree.o','security/security.o','security/selinux/hooks.o'}
+        self.assertEqual(set(owner.mode_targets(netdev_directory=True)),expected)
+        for flag in ({},{'classdir':True},{'classdir_kernfs':True}):
+            self.assertIsNone(owner.public_allowed('logs/00-netdev-directory-objects.stdout.txt',**flag))
+        self.assertIsNotNone(owner.public_allowed('logs/00-baseline-fetch.stdout.txt',netdev_directory=True))
+        self.assertIsNotNone(owner.public_allowed('logs/00-netdev-directory-objects.stdout.txt',netdev_directory=True))
+        for stage in ('eighteen-objects','classdir-objects','classdir-kernfs-objects'):
+            self.assertIsNone(owner.public_allowed('logs/00-'+stage+'.stdout.txt',netdev_directory=True))
+        with tempfile.TemporaryDirectory() as directory:
+            output=Path(directory)
+            (output/'receipt.json').write_bytes(b'{"status":"failed","stage":"netdev-directory-objects"}\n')
+            self.assertEqual(set(owner.admit(output,netdev_directory=True)['files']),{'receipt.json'})
+            forbidden=output/'objects/net/core/net-sysfs.o';forbidden.parent.mkdir(parents=True)
+            forbidden.write_bytes(b'unchanged TU is outside the selected programme')
+            with self.assertRaises(ValueError):owner.admit(output,netdev_directory=True)
+
 
 if __name__=='__main__':unittest.main()

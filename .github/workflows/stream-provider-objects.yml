@@ -1,7 +1,7 @@
 name: Protected stream normal C object check
 on:
   push:
-    branches: ['test/sdk-738-stream-objects-20261026', 'test/sdk-738-classdir-objects-20261026', 'test/sdk-738-classdir-kernfs-objects-20261026']
+    branches: ['test/sdk-738-stream-objects-20261026', 'test/sdk-738-classdir-objects-20261026', 'test/sdk-738-classdir-kernfs-objects-20261026', 'test/sdk-738-netdev-directory-objects-20261026']
 permissions:
   contents: read
 concurrency:
@@ -68,7 +68,7 @@ jobs:
           if-no-files-found: error
           path: ${{ runner.temp }}/stream-provider-objects/FAILED.json
   classdir-objects:
-    if: github.ref == 'refs/heads/test/sdk-738-classdir-objects-20261026' || github.ref == 'refs/heads/test/sdk-738-classdir-kernfs-objects-20261026'
+    if: github.ref == 'refs/heads/test/sdk-738-classdir-objects-20261026' || github.ref == 'refs/heads/test/sdk-738-classdir-kernfs-objects-20261026' || github.ref == 'refs/heads/test/sdk-738-netdev-directory-objects-20261026'
     name: Changed class-directory translation units without image or boot
     runs-on: ubuntu-24.04
     timeout-minutes: 25
@@ -110,6 +110,19 @@ jobs:
           --source-commit "${{ github.sha }}"
           --started "$STREAM_OBJECT_STARTED"
           --output "$RUNNER_TEMP/stream-provider-classdir-objects"
+      - name: Check only two NETDEV directory source and admission controls
+        if: github.ref == 'refs/heads/test/sdk-738-netdev-directory-objects-20261026'
+        run: >-
+          python3 -B -m unittest
+          tools.tests.test_host_stream_kernel_stream_objects.StreamObjectOwner.test_netdev_directory_freeze_preserves_all_fifty_two_sources
+          tools.tests.test_host_stream_kernel_stream_objects.StreamObjectOwner.test_netdev_directory_public_gate_is_closed_to_nine_changed_targets -v
+      - name: Compile only nine changed NETDEV own-directory translation units
+        if: github.ref == 'refs/heads/test/sdk-738-netdev-directory-objects-20261026'
+        run: >-
+          python3 -B tools/qualify_host_stream_kernel_stream_objects.py --netdev-directory
+          --source-commit "${{ github.sha }}"
+          --started "$STREAM_OBJECT_STARTED"
+          --output "$RUNNER_TEMP/stream-provider-classdir-objects"
       - name: Admit the fixed bounded public union before any upload
         id: admission
         if: ${{ always() && github.ref == 'refs/heads/test/sdk-738-classdir-objects-20261026' }}
@@ -122,8 +135,14 @@ jobs:
         run: >-
           python3 -B tools/qualify_host_stream_kernel_stream_objects.py --classdir-kernfs
           --admit --output "$RUNNER_TEMP/stream-provider-classdir-objects"
+      - name: Admit only the nine-target NETDEV directory public union
+        id: directory_admission
+        if: ${{ always() && github.ref == 'refs/heads/test/sdk-738-netdev-directory-objects-20261026' }}
+        run: >-
+          python3 -B tools/qualify_host_stream_kernel_stream_objects.py --netdev-directory
+          --admit --output "$RUNNER_TEMP/stream-provider-classdir-objects"
       - name: Retain only admitted object evidence
-        if: ${{ always() && (steps.admission.outputs.admitted == 'true' || steps.kernfs_admission.outputs.admitted == 'true') }}
+        if: ${{ always() && (steps.admission.outputs.admitted == 'true' || steps.kernfs_admission.outputs.admitted == 'true' || steps.directory_admission.outputs.admitted == 'true') }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: protected-stream-classdir-objects-${{ github.sha }}
@@ -143,7 +162,7 @@ jobs:
             ${{ runner.temp }}/stream-provider-classdir-objects/logs/*.stderr.txt
             ${{ runner.temp }}/stream-provider-classdir-objects/objects/**/*.o
       - name: Retain only the bounded admission-failure receipt
-        if: ${{ always() && (steps.admission.outputs.fallback == 'true' || steps.kernfs_admission.outputs.fallback == 'true') }}
+        if: ${{ always() && (steps.admission.outputs.fallback == 'true' || steps.kernfs_admission.outputs.fallback == 'true' || steps.directory_admission.outputs.fallback == 'true') }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: protected-stream-classdir-objects-FAILED-${{ github.sha }}
