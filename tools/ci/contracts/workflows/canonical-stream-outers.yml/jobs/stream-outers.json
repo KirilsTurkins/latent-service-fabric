@@ -13,7 +13,7 @@
       "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
       "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
     },
-    "name": "Four private canonical entries and two public original-budget controls",
+    "name": "Cache feature compile and one upstream compressed roundtrip",
     "runs-on": "ubuntu-24.04",
     "steps": [
       {
@@ -53,12 +53,12 @@
         }
       },
       {
-        "name": "Assemble one private fixture and execute only six exact stream controls",
-        "run": "python3 -B tools/qualify_stream_outers.py --source-commit \"${{ github.sha }}\" --output \"$RUNNER_TEMP/canonical-stream-outers\""
+        "name": "Check repaired cache feature and execute only one upstream cache roundtrip",
+        "run": "python3 -B tools/qualify_stream_outers.py --source-commit \"${{ github.sha }}\" --cache-repair --output \"$RUNNER_TEMP/canonical-stream-outers\""
       },
       {
         "if": "always()",
-        "name": "Retain bounded original failures, fixture identity, source and raw outcomes",
+        "name": "Retain bounded cache compile source and one raw roundtrip outcome",
         "uses": "actions/upload-artifact",
         "with": {
           "if-no-files-found": "warn",
@@ -72,7 +72,7 @@
   },
   "jobId": "stream-outers",
   "kind": "job",
-  "reviewReason": "Reviewed stream outer source: four owner-only canonical entry controls and two public original-budget controls only; one fixed parse into private RunnerTemp, two locked targets, six exact non-skipped outcomes; separate public1MiB/1B/5s vs private64MiB/1B/120s, unchanged45m/2400/900/60/30/5s-cleanup and2jobs; no prior or language replay.",
+  "reviewReason": "Reviewed cache security backport: complete14 source/fixedzstd0.14.3,safe8.2.0,sys2.1.2; distinctcache-repaircohort. ParentCHECKusesSAMEexistingv17FEATURES, cachelibtestBUILD plusprobe/list/exactupstreamroundtrip, fixed5commands/unchanged45m2400/900/60/30/j2/cleanup. No fixture or old6replay; fe9historicalonly.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/canonical-stream-outers.yml"
 }

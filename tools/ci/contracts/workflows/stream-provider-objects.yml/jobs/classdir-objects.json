@@ -3,8 +3,8 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "if": "github.ref == 'refs/heads/test/sdk-738-classdir-objects-20261026'",
-    "name": "Four changed class-directory translation units without image or boot",
+    "if": "github.ref == 'refs/heads/test/sdk-738-classdir-objects-20261026' || github.ref == 'refs/heads/test/sdk-738-classdir-kernfs-objects-20261026'",
+    "name": "Changed class-directory translation units without image or boot",
     "runs-on": "ubuntu-24.04",
     "steps": [
       {
@@ -28,21 +28,39 @@
         "run": "python3 -c 'import time; print(\"STREAM_OBJECT_STARTED=\" + str(time.monotonic()))' >> \"$GITHUB_ENV\"\n"
       },
       {
+        "if": "github.ref == 'refs/heads/test/sdk-738-classdir-objects-20261026'",
         "name": "Check only the new fixed classdir source and object-allowlist controls",
         "run": "python3 -B -m unittest tools.tests.test_host_stream_kernel_stream_objects.StreamObjectOwner.test_classdir_source_freeze_is_exact_and_preserves_default_source_scope tools.tests.test_host_stream_kernel_stream_objects.StreamObjectOwner.test_classdir_public_gate_refuses_other_original_object_targets -v"
       },
       {
+        "if": "github.ref == 'refs/heads/test/sdk-738-classdir-objects-20261026'",
         "name": "Compile only four changed class-directory translation units",
         "run": "python3 -B tools/qualify_host_stream_kernel_stream_objects.py --classdir --source-commit \"${{ github.sha }}\" --started \"$STREAM_OBJECT_STARTED\" --output \"$RUNNER_TEMP/stream-provider-classdir-objects\""
       },
       {
+        "if": "github.ref == 'refs/heads/test/sdk-738-classdir-kernfs-objects-20261026'",
+        "name": "Check only the two new empty-classdir source and nine-target controls",
+        "run": "python3 -B -m unittest tools.tests.test_host_stream_kernel_stream_objects.StreamObjectOwner.test_classdir_kernfs_freeze_binds_full_projector_and_keeps_historical_modes_closed tools.tests.test_host_stream_kernel_stream_objects.StreamObjectOwner.test_classdir_kernfs_public_gate_keeps_exact_nine_targets_and_current_only_channels -v"
+      },
+      {
+        "if": "github.ref == 'refs/heads/test/sdk-738-classdir-kernfs-objects-20261026'",
+        "name": "Compile only nine changed empty-classdir translation units",
+        "run": "python3 -B tools/qualify_host_stream_kernel_stream_objects.py --classdir-kernfs --source-commit \"${{ github.sha }}\" --started \"$STREAM_OBJECT_STARTED\" --output \"$RUNNER_TEMP/stream-provider-classdir-objects\""
+      },
+      {
         "id": "admission",
-        "if": "always()",
+        "if": "${{ always() && github.ref == 'refs/heads/test/sdk-738-classdir-objects-20261026' }}",
         "name": "Admit the fixed bounded public union before any upload",
         "run": "python3 -B tools/qualify_host_stream_kernel_stream_objects.py --classdir --admit --output \"$RUNNER_TEMP/stream-provider-classdir-objects\""
       },
       {
-        "if": "${{ always() && steps.admission.outputs.admitted == 'true' }}",
+        "id": "kernfs_admission",
+        "if": "${{ always() && github.ref == 'refs/heads/test/sdk-738-classdir-kernfs-objects-20261026' }}",
+        "name": "Admit only the nine-target empty-classdir public union",
+        "run": "python3 -B tools/qualify_host_stream_kernel_stream_objects.py --classdir-kernfs --admit --output \"$RUNNER_TEMP/stream-provider-classdir-objects\""
+      },
+      {
+        "if": "${{ always() && (steps.admission.outputs.admitted == 'true' || steps.kernfs_admission.outputs.admitted == 'true') }}",
         "name": "Retain only admitted object evidence",
         "uses": "actions/upload-artifact",
         "with": {
@@ -53,7 +71,7 @@
         }
       },
       {
-        "if": "${{ always() && steps.admission.outputs.fallback == 'true' }}",
+        "if": "${{ always() && (steps.admission.outputs.fallback == 'true' || steps.kernfs_admission.outputs.fallback == 'true') }}",
         "name": "Retain only the bounded admission-failure receipt",
         "uses": "actions/upload-artifact",
         "with": {
@@ -68,7 +86,7 @@
   },
   "jobId": "classdir-objects",
   "kind": "job",
-  "reviewReason": "Review the fixed private four-translation-unit classdir compile mode: exact approved initialized-object source, fifty frozen inputs, original eighteen-object defaults preserved, same process/config/deadline/caps and NULL consumer; no runtime or fit claim.",
+  "reviewReason": "Extend the existing closed classdir job to the separately bound52-source nine-TU kernfs mode; retain historical50/four and default47/eighteen obligations without adding a selected contract file.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/stream-provider-objects.yml"
 }

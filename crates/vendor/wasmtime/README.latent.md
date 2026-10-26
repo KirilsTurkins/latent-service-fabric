@@ -4,7 +4,7 @@ This is the complete crates.io Wasmtime 48.0.7 package, licensed under
 Apache-2.0 WITH LLVM-exception (see the unmodified LICENSE). The original
 archive checksum and all 250 original file identities are recorded in
 UPSTREAM.latent.json. `latent-dynamic-memory.patch` applies to that exact
-original package; it contains 33 changed upstream files and 22 added
+original package; it contains 34 changed upstream files and 22 added
 source/license files. Other Wasmtime packages remain at the original locked
 registry versions. The standalone development lock selects Tokio 1.51.6 for
 RUSTSEC-2026-0386; the immutable upstream inventory retains its original lock
@@ -420,3 +420,22 @@ separate unpaid scopes. Prepared outer Layout payload is not allocator/RSS
 quota; full CPU/memory accounting and whole #736 remain OPEN. Physical Store
 teardown and real escaped-waker retirement remain distinct from logical
 completion; consumed pipe handles have no invented rollback guarantee.
+
+
+The source-only zstd security backport retains the complete fourteen-file
+wasmtime-internal-cache48.0.7 package at crates/vendor/wasmtime-cache. Only its
+normalized Cargo.toml zstd requirement and its own active Cargo.lock change;
+all published Rust, tests, build.rs, license and original manifest remain exact.
+The parent Wasmtime manifest selects that same-version local cache, retaining
+optional cache features/coverage; this is not an unmodified registry package.
+Both active standalone locks select zstd0.14.3, zstd-safe8.2.0 and
+zstd-sys2.1.2+zstd.1.5.7, with exact registry checksums in the source record.
+These satisfy all ten named RustSec fixes from advisory-db a78282a1414d6c28cc228c4eae3570451affb0dc.
+The original250 Wasmtime identities and complete275-file source remain bound;
+the separate14-file cache inventory is mandatory, not optional on absence.
+The existing v17/fe9 result retains its ORIGINAL source/dependencies. It does
+not qualify this backport; no cache compilation or runtime execution is
+claimed here. Native memory/refund code and runtime budgets are unchanged.
+
+Current source-cohort identity for this unqualified dependency backport is
+`wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-unordered-futures-outer-sync-result-stream-outers-memory-v17-cache-repair`. The original plain-v17/fe9 execution remains a separate immutable source.

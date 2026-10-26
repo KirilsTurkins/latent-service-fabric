@@ -4,7 +4,7 @@
   "registryArchive": "https://static.crates.io/crates/wasmtime/wasmtime-48.0.7.crate",
   "registrySha256": "12300d040e8bea7e7ccde75b9919d27ebba47a217a64b09ba058ae8d3b4290b6",
   "license": "Apache-2.0 WITH LLVM-exception",
-  "nativeCohort": "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-unordered-futures-outer-sync-result-stream-outers-memory-v17",
+  "nativeCohort": "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-unordered-futures-outer-sync-result-stream-outers-memory-v17-cache-repair",
   "originalFiles": [
     {
       "path": ".cargo_vcs_info.json",
@@ -1305,5 +1305,109 @@
       "src/runtime/component/concurrent/host_futures/LICENSE-MIT",
       "src/runtime/component/concurrent/host_futures/LICENSE-APACHE"
     ]
+  },
+  "cacheSecurityBackport": {
+    "schema": "latent.wasmtime-cache-zstd-backport.v1",
+    "name": "wasmtime-internal-cache",
+    "version": "48.0.7",
+    "provider": "crates/vendor/wasmtime-cache",
+    "registryArchive": "https://static.crates.io/crates/wasmtime-internal-cache/wasmtime-internal-cache-48.0.7.crate",
+    "registrySha256": "b11ca8945aa341f944558622db59845dffa1435971f318d5fce2f2d9765a69b0",
+    "originalFiles": [
+      {
+        "path": ".cargo_vcs_info.json",
+        "bytes": 106,
+        "sha256": "7195aa8798bc6148aba24023183432c8506068279acdb2030701d2dd5cecc871"
+      },
+      {
+        "path": "Cargo.lock",
+        "bytes": 28260,
+        "sha256": "81a97cafe35748d7a0783a40ff78f9c2113d70c256231a74f4369eed98df9bdc"
+      },
+      {
+        "path": "Cargo.toml",
+        "bytes": 3035,
+        "sha256": "2e6ba437f84252e4a0d4bc32115be69df740fe14704fdde38257e2a79aae0be5"
+      },
+      {
+        "path": "Cargo.toml.orig",
+        "bytes": 1074,
+        "sha256": "efbbe3e7164bdbb260be64bde8da91ccb2ba9b9cc726787caa904e71c4ea61c2"
+      },
+      {
+        "path": "LICENSE",
+        "bytes": 12243,
+        "sha256": "268872b9816f90fd8e85db5a28d33f8150ebb8dd016653fb39ef1f94f2686bc5"
+      },
+      {
+        "path": "build.rs",
+        "bytes": 537,
+        "sha256": "562d7f7a9de09870e065818847ca1dce0582bcc4d204276cc67f971cd9e63099"
+      },
+      {
+        "path": "src/config/tests.rs",
+        "bytes": 16900,
+        "sha256": "ec1bc1a07c425aa8a23c4c1fbc284cb545e10b67c143bdbcd02e4826f8d67809"
+      },
+      {
+        "path": "src/config.rs",
+        "bytes": 23394,
+        "sha256": "d77c176f7b19d9908b9a0dd0f4391a8299ef5092a8477ab8693f35506bb89352"
+      },
+      {
+        "path": "src/lib.rs",
+        "bytes": 12442,
+        "sha256": "bbae5c0dff3392f1442b3c92ebdb87903b0fc28fe39f69962cde039c22bfcc47"
+      },
+      {
+        "path": "src/tests.rs",
+        "bytes": 3370,
+        "sha256": "77ed12aa325a29ce61c6636cec21ed6451ffed15c007a8a4d90cad32c6276139"
+      },
+      {
+        "path": "src/worker/tests/system_time_stub.rs",
+        "bytes": 692,
+        "sha256": "17c1651e1a1dbb3cad353449ebe8e64f509a7b21ecea37b7284bb29f9a4284e9"
+      },
+      {
+        "path": "src/worker/tests.rs",
+        "bytes": 26612,
+        "sha256": "e7d96e3c75cecb49327aa1759eaed0572b2ad18e28c78155393220ef1f066122"
+      },
+      {
+        "path": "src/worker.rs",
+        "bytes": 32582,
+        "sha256": "531eac51254c195f153098aa9f822c15d02ed2d44553176edf416b8b313da540"
+      },
+      {
+        "path": "tests/cache_write_default_config.rs",
+        "bytes": 403,
+        "sha256": "bdd4758c9dd7f300a7726b04fda7989a295695fe4c5168faeb16ea2ebc1bde3b"
+      }
+    ],
+    "postimages": {
+      "Cargo.toml": {
+        "sha256": "ffff35412e363d84f4db2a74deaa31ce96a0051dcc68713ff4870cc439676a4d",
+        "bytes": 3035
+      },
+      "Cargo.lock": {
+        "sha256": "6f22ad7ad2def709e45bd209f2b12041f692f8e35a6092553a54a18233d66f1e",
+        "bytes": 28260
+      }
+    },
+    "fixedRegistryPackages": {
+      "zstd": {
+        "version": "0.14.3",
+        "checksum": "db3ae9bf90af6e40197bef767eeefc46ad6397420fe873830bd85e5fbbfb3c70"
+      },
+      "zstd-safe": {
+        "version": "8.2.0",
+        "checksum": "ded520f16b29e1a9b771c722221b2b0a0398c2316d9bb3c42b458a5414d7434b"
+      },
+      "zstd-sys": {
+        "version": "2.1.2+zstd.1.5.7",
+        "checksum": "481ada9c543b2323cbb7bbdbb5249177fbf0188ed959ed2c15e4b22421c84ed3"
+      }
+    }
   }
 }

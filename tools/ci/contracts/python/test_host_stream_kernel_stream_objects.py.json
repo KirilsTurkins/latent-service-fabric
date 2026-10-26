@@ -1,6 +1,10 @@
 {
-  "cases":["StreamObjectOwner.test_classdir_public_gate_refuses_other_original_object_targets","StreamObjectOwner.test_classdir_source_freeze_is_exact_and_preserves_default_source_scope","StreamObjectOwner.test_object_gate_accepts_relocatable_without_claiming_link_and_refuses_executable","StreamObjectOwner.test_original_deadline_rejects_invalid_and_expired_start_before_work","StreamObjectOwner.test_public_gate_rejects_private_members_and_reserves_admission_bytes"],
+  "cases":["StreamObjectOwner.test_classdir_kernfs_freeze_binds_full_projector_and_keeps_historical_modes_closed","StreamObjectOwner.test_classdir_kernfs_public_gate_keeps_exact_nine_targets_and_current_only_channels","StreamObjectOwner.test_classdir_public_gate_refuses_other_original_object_targets","StreamObjectOwner.test_classdir_source_freeze_is_exact_and_preserves_default_source_scope","StreamObjectOwner.test_object_gate_accepts_relocatable_without_claiming_link_and_refuses_executable","StreamObjectOwner.test_original_deadline_rejects_invalid_and_expired_start_before_work","StreamObjectOwner.test_public_gate_rejects_private_members_and_reserves_admission_bytes"],
   "guards":{
+    "StreamObjectOwner.test_classdir_kernfs_freeze_binds_full_projector_and_keeps_historical_modes_closed":
+      "0c44ea0f9574a11b56e32443d894d9dc929c13ccfeb9462df60123a0aeae7822",
+    "StreamObjectOwner.test_classdir_kernfs_public_gate_keeps_exact_nine_targets_and_current_only_channels":
+      "0c44ea0f9574a11b56e32443d894d9dc929c13ccfeb9462df60123a0aeae7822",
     "StreamObjectOwner.test_classdir_public_gate_refuses_other_original_object_targets":
       "0c44ea0f9574a11b56e32443d894d9dc929c13ccfeb9462df60123a0aeae7822",
     "StreamObjectOwner.test_classdir_source_freeze_is_exact_and_preserves_default_source_scope":
@@ -14,7 +18,7 @@
   },
   "kind":"python",
   "module":"tools/tests/test_host_stream_kernel_stream_objects.py",
-  "reviewReason":"Review the fixed private four-translation-unit classdir compile mode: exact approved initialized-object source, fifty frozen inputs, original eighteen-object defaults preserved, same process/config/deadline/caps and NULL consumer; no runtime or fit claim.",
+  "reviewReason":"Bind the reviewed empty-classdir kernfs52-source nine-TU programme to existing bounded ownership; preserve historical47/eighteen and50/four contracts and all previous test/coverage guards.",
   "schemaVersion":"latent.ci.contracts.v2",
   "guardDefinitions":{
     "0c44ea0f9574a11b56e32443d894d9dc929c13ccfeb9462df60123a0aeae7822":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:9b3ccc238ca4c870b9f7e01281563ae8c9833174794c263bcc1855cec7f365c2","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}

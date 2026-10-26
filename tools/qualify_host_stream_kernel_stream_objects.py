@@ -33,6 +33,16 @@ CLASSDIR_SOURCE_SHA = 'c0245686c1c5c5217c778215a151888a853d1ec21f15a2a372330ad76
 CLASSDIR_SOURCE_BYTES = 367882
 CLASSDIR_BRANCH = 'test/sdk-738-classdir-objects-20261026'
 CLASSDIR_TARGETS = ('net/factory.o','drivers/base/core.o','lib/kobject.o','net/core/net-sysfs.o')
+REGISTRATION_SOURCE_PATHS = tuple(sorted((*CLASSDIR_SOURCE_PATHS,
+    'research/standard-outbound/linux-6.12-lineage/factory-stream-classdir-registration.c',
+    'research/standard-outbound/linux-6.12-lineage/stream-classdir-registration-private.h',
+)))
+REGISTRATION_SOURCE_SHA = '6784ec02a37b8c845edaab608f086ac7950ffb9e8afd5de36ce54fc2e90a8fdd'
+REGISTRATION_SOURCE_BYTES = 415655
+REGISTRATION_BRANCH = 'test/sdk-738-classdir-kernfs-objects-20261026'
+REGISTRATION_TARGETS = ('net/factory.o','drivers/base/core.o','lib/kobject.o',
+    'fs/sysfs/dir.o','fs/kernfs/dir.o','lib/idr.o','lib/radix-tree.o',
+    'security/security.o','security/selinux/hooks.o')
 CHECKPOINT45_SHA = '1ec18c5c933a74a8378cfa0da8893cb6612a84d6e14f02614a769365f6b30f62'
 CONFIG = {'bytes':143135, 'sha256':'0015c9ac3b9af98af1e4a0f88788321e96193ce6a387c5a6cec6eaa358cdc1d6'}
 TARGETS = ('net/factory.o','net/socket.o','net/core/sock.o','net/ipv4/af_inet.o',
@@ -49,6 +59,7 @@ STAGES = ('source-head','source-tree','source-clean','baseline-object','baseline
     'normal-prerequisite-install','gcc-version','make-version','as-version','ld-version',
     'rustc-version','official-source','extract-source','original-defconfig','selected-olddefconfig',
     'pure-baseline','eighteen-objects','classdir-objects','source-clean-after','source-tree-after','source-head-after')
+REGISTRATION_STAGES = (*STAGES,'baseline-fetch','classdir-kernfs-objects')
 DOCUMENTS = {'receipt.json':MAX_DOCUMENT,'source-inputs.json':16*MAX_DOCUMENT,
     'derived-inputs.json':4*MAX_DOCUMENT,'baseline-inputs.json':16*MAX_DOCUMENT,
     'commands.json':MAX_DOCUMENT,'baseline.config':MAX_DOCUMENT,'selected.config':MAX_DOCUMENT,
@@ -92,14 +103,20 @@ def deadline(started, now=None):
     return end
 
 
-def selected_sources(root, *, classdir=False):
-    require(type(classdir) is bool,'closed-classdir-mode')
-    paths = CLASSDIR_SOURCE_PATHS if classdir else SOURCE_PATHS
-    require(len(paths)==len(set(paths))==(50 if classdir else 47),'source-path-count')
+def mode_targets(classdir=False, classdir_kernfs=False):
+    require(type(classdir) is bool and type(classdir_kernfs) is bool and
+        not (classdir and classdir_kernfs),'closed-classdir-mode')
+    return REGISTRATION_TARGETS if classdir_kernfs else CLASSDIR_TARGETS if classdir else TARGETS
+
+
+def selected_sources(root, *, classdir=False, classdir_kernfs=False):
+    mode_targets(classdir,classdir_kernfs)
+    paths = REGISTRATION_SOURCE_PATHS if classdir_kernfs else CLASSDIR_SOURCE_PATHS if classdir else SOURCE_PATHS
+    require(len(paths)==len(set(paths))==(52 if classdir_kernfs else 50 if classdir else 47),'source-path-count')
     rows={name:identity(read(root/name,65536)) for name in paths}
-    require(sum(r['bytes'] for r in rows.values())==(CLASSDIR_SOURCE_BYTES if classdir else SOURCE_BYTES) and
-        hashlib.sha256(canonical(rows)).hexdigest()==(CLASSDIR_SOURCE_SHA if classdir else SOURCE_SHA),
-        'frozen-50-source' if classdir else 'frozen-47-source')
+    require(sum(r['bytes'] for r in rows.values())==(REGISTRATION_SOURCE_BYTES if classdir_kernfs else CLASSDIR_SOURCE_BYTES if classdir else SOURCE_BYTES) and
+        hashlib.sha256(canonical(rows)).hexdigest()==(REGISTRATION_SOURCE_SHA if classdir_kernfs else CLASSDIR_SOURCE_SHA if classdir else SOURCE_SHA),
+        'frozen-52-source' if classdir_kernfs else 'frozen-50-source' if classdir else 'frozen-47-source')
     return rows
 
 
@@ -192,8 +209,8 @@ def udp_source(values, tree):
     return result
 
 
-def current_compose(values, tree, *, classdir=False):
-    require(type(classdir) is bool,'closed-classdir-mode')
+def current_compose(values, tree, *, classdir=False, classdir_kernfs=False):
+    mode_targets(classdir,classdir_kernfs)
     from tools import host_stream_kernel_stream_operations as operations
     from tools import host_stream_kernel_stream_protocol as protocol
     from tools import host_stream_kernel_stream_udp as udp
@@ -212,11 +229,13 @@ def current_compose(values, tree, *, classdir=False):
     values=cpu.transform(values,{n:read(tree/n,MAX_FILE) for n in cpu.PREIMAGES})
     values=fixed.transform(values,{n:read(tree/n,MAX_FILE) for n in fixed.PRIMARY})
     values=core.transform(rss.transform(name.transform(values)))
-    if classdir:
+    if classdir or classdir_kernfs:
         from tools import host_stream_kernel_stream_classdir
         values=host_stream_kernel_stream_classdir.transform(values)
     from tools.host_stream_kernel_stream_skb import finish
     values=finish(values)
+    if classdir_kernfs:
+        values=host_stream_kernel_stream_classdir.registration_transform(values)
     require(b'lsf_factory_selected_consumer(void)\n{\n    return NULL;\n}' in
         values['net/factory-private.h'], 'unselected-consumer')
     return values
@@ -233,17 +252,17 @@ def object_identity(path):
     return identity(raw)
 
 
-def public_allowed(name, *, classdir=False):
-    require(type(classdir) is bool,'closed-classdir-mode')
+def public_allowed(name, *, classdir=False, classdir_kernfs=False):
+    targets=mode_targets(classdir,classdir_kernfs)
     if name in DOCUMENTS:return DOCUMENTS[name]
-    if name in {'objects/'+n for n in (CLASSDIR_TARGETS if classdir else TARGETS)}:return MAX_OBJECT
+    if name in {'objects/'+n for n in targets}:return MAX_OBJECT
     match=re.fullmatch(r'logs/([0-9]{2})-([a-z0-9-]+)\.(stdout|stderr)\.txt',name)
-    if match and int(match[1])<MAX_COMMANDS and match[2] in STAGES:return 4*1024**2
+    if match and int(match[1])<MAX_COMMANDS and match[2] in (REGISTRATION_STAGES if classdir_kernfs else STAGES):return 4*1024**2
     return None
 
 
-def admit(output, *, classdir=False):
-    require(type(classdir) is bool,'closed-classdir-mode')
+def admit(output, *, classdir=False, classdir_kernfs=False):
+    targets=mode_targets(classdir,classdir_kernfs)
     require(not output.is_symlink() and output.is_dir(),'public-output-directory')
     rows={};total=logs=0
     for q in sorted(output.rglob('*')):
@@ -251,12 +270,12 @@ def admit(output, *, classdir=False):
         if q.is_dir():continue
         name=q.relative_to(output).as_posix()
         if name=='ADMISSION.json':continue
-        maximum=public_allowed(name,classdir=classdir);require(maximum is not None,'public-member')
+        maximum=public_allowed(name,classdir=classdir,classdir_kernfs=classdir_kernfs);require(maximum is not None,'public-member')
         raw=read(q,maximum);total+=len(raw)
         if name.startswith('logs/'):logs+=len(raw)
         require(total<=MAX_PUBLIC-MAX_DOCUMENT and logs<=16*1024**2,'public-union-bound')
         rows[name]=identity(raw)
-    require('receipt.json' in rows and len(rows)<=len(DOCUMENTS)+len(CLASSDIR_TARGETS if classdir else TARGETS)+2*MAX_COMMANDS,'public-inventory')
+    require('receipt.json' in rows and len(rows)<=len(DOCUMENTS)+len(targets)+2*MAX_COMMANDS,'public-inventory')
     record={'schemaVersion':'lsf.stream-object-public.v1','files':rows,'payloadBytes':total,
         'maximumUnionBytes':MAX_PUBLIC,'admissionMaximumBytes':MAX_DOCUMENT}
     raw=canonical(record);require(len(raw)<=MAX_DOCUMENT and total+len(raw)<=MAX_PUBLIC,'public-admission-bound')
@@ -268,16 +287,15 @@ def _copy_public(source, output, name, maximum):
     raw=read(source,maximum);q=output/name;q.parent.mkdir(parents=True,exist_ok=True);q.write_bytes(raw)
 
 
-def run(output, revision, started, *, classdir=False):
-    require(type(classdir) is bool,'closed-classdir-mode')
-    targets=CLASSDIR_TARGETS if classdir else TARGETS
+def run(output, revision, started, *, classdir=False, classdir_kernfs=False):
+    targets=mode_targets(classdir,classdir_kernfs)
     end=deadline(started) # Before imports, filesystem mutation or tool probes.
     require(sys.platform=='linux' and os.environ.get('GITHUB_ACTIONS')=='true' and
         os.environ.get('GITHUB_REPOSITORY')=='KirilsTurkins/latent-service-fabric' and
-        os.environ.get('GITHUB_REF_NAME')==(CLASSDIR_BRANCH if classdir else BRANCH) and os.environ.get('GITHUB_EVENT_NAME')=='push',
+        os.environ.get('GITHUB_REF_NAME')==(REGISTRATION_BRANCH if classdir_kernfs else CLASSDIR_BRANCH if classdir else BRANCH) and os.environ.get('GITHUB_EVENT_NAME')=='push',
         'fixed-hosted-origin')
     require(type(revision) is str and re.fullmatch('[0-9a-f]{40}',revision),'source-revision')
-    before=selected_sources(ROOT,classdir=classdir)
+    before=selected_sources(ROOT,classdir=classdir,classdir_kernfs=classdir_kernfs)
     output=output.resolve()
     require(output!=ROOT and ROOT not in output.parents and output not in ROOT.parents and
         not output.exists(),'fresh-public-outside-source')
@@ -291,9 +309,11 @@ def run(output, revision, started, *, classdir=False):
     environment.update(PYTHONDONTWRITEBYTECODE='1',LC_ALL='C',LANG='C',TMPDIR=str(scratch/'tmp'),
         KBUILD_BUILD_USER='lsf-object-check',KBUILD_BUILD_HOST='isolated-ci',
         KBUILD_BUILD_TIMESTAMP='2026-10-23 00:00:00 UTC',KCONFIG_NOTIMESTAMP='1')
+    if classdir_kernfs:
+        environment.update(GIT_NO_LAZY_FETCH='1',GIT_TERMINAL_PROMPT='0')
     commands=objects.Commands(ROOT,scratch/'commands',environment,deadline_seconds=end-time.monotonic(),command_seconds=1200)
     commands.deadline=end-5.0 # ONE reserve; run_owned itself includes cleanup.
-    receipt={'schemaVersion':'lsf.stream-classdir-objects.v1' if classdir else 'lsf.stream-normal-objects.v1','status':'in-progress','stage':'preflight',
+    receipt={'schemaVersion':'lsf.stream-classdir-kernfs-objects.v1' if classdir_kernfs else 'lsf.stream-classdir-objects.v1' if classdir else 'lsf.stream-normal-objects.v1','status':'in-progress','stage':'preflight',
         'sourceRevision':revision,'checkpoint':CHECKPOINT,'baselineRecipeRevision':BASELINE,
         'baselineRecipeTree':BASELINE_TREE,'sourceBefore':before,'sourceAfter':None,'checkpoint45SourceDigest':CHECKPOINT45_SHA,
         'objectTargets':list(targets),'products':{},'compiledObjectsOnly':True,'kernelLinked':False,
@@ -304,7 +324,7 @@ def run(output, revision, started, *, classdir=False):
         'maximumCompileSeconds':1200,'privateScratchRetained':True}
     error=None;tools={};public_sources={}
     def command(stage,*argv,cap=120,root=None):
-        require(stage in STAGES and len(commands.records)<MAX_COMMANDS,'fixed-command-count')
+        require(stage in (REGISTRATION_STAGES if classdir_kernfs else STAGES) and len(commands.records)<MAX_COMMANDS,'fixed-command-count')
         require(time.monotonic()<commands.deadline,'original-deadline')
         commands.root=ROOT if root is None else root
         commands.command_seconds=min(cap,1200)
@@ -313,13 +333,20 @@ def run(output, revision, started, *, classdir=False):
     try:
         current_inputs=input_files(ROOT)
         source_record={'currentBefore':current_inputs,'currentAfter':None,
-            ('current50' if classdir else 'current47'):before,'currentSourceRevision':revision,'originalBaselineSourceRevision':BASELINE}
+            ('current52' if classdir_kernfs else 'current50' if classdir else 'current47'):before,'currentSourceRevision':revision,'originalBaselineSourceRevision':BASELINE}
         write_json(scratch/'source-inputs.json',source_record)
         public_sources['source-inputs.json']=scratch/'source-inputs.json'
         git=shutil.which('git');require(git,'git-tool')
         require(command('source-head',git,'rev-parse','HEAD',cap=15).decode().strip()==revision,'actual-checkout')
         tree_before=command('source-tree',git,'ls-tree','-rz','--full-tree','HEAD',cap=30)
         command('source-clean',git,'diff','--no-ext-diff','--exit-code','HEAD','--',cap=30)
+        if classdir_kernfs:
+            # ONE exact shallow acquisition, never history search/lazy fallback.
+            # A growing current branch is not baseline authority. Same owner,
+            # original absolute1320s deadline and single5s reserve apply.
+            command('baseline-fetch',git,'-c','gc.auto=0','fetch','--no-tags',
+                '--no-recurse-submodules','--depth=1',
+                'https://github.com/KirilsTurkins/latent-service-fabric.git',BASELINE,cap=90)
         command('baseline-object',git,'--no-lazy-fetch','cat-file','-e',BASELINE+'^{commit}',cap=15)
         require(command('baseline-tree',git,'rev-parse',BASELINE+'^{tree}',cap=15).decode().strip()==BASELINE_TREE,'original-tree')
         recipe=scratch/'baseline-recipe'
@@ -380,24 +407,26 @@ def run(output, revision, started, *, classdir=False):
         public_sources['baseline-inputs.json']=baseline_output/'baseline.json'
         command('baseline-clean-after',git,'diff','--no-ext-diff','--exit-code','HEAD','--',cap=30,root=recipe)
         require(command('baseline-tree-after',git,'rev-parse','HEAD^{tree}',cap=15,root=recipe).decode().strip()==BASELINE_TREE,'baseline-tree-after')
-        values=current_compose(derived_read(baseline_output/'derived',baseline['derived']),tree,classdir=classdir)
+        values=current_compose(derived_read(baseline_output/'derived',baseline['derived']),tree,
+            classdir=classdir,classdir_kernfs=classdir_kernfs)
         rows=derived_write(scratch/'current-derived',values)
         for name,raw in values.items():
             q=tree/name;q.parent.mkdir(parents=True,exist_ok=True);q.write_bytes(raw)
         write_json(scratch/'derived-inputs.json',rows,4*MAX_DOCUMENT);public_sources['derived-inputs.json']=scratch/'derived-inputs.json'
-        command('classdir-objects' if classdir else 'eighteen-objects',*common,'-j2',*targets,root=tree,cap=1200)
+        command('classdir-kernfs-objects' if classdir_kernfs else 'classdir-objects' if classdir else 'eighteen-objects',
+            *common,'-j2',*targets,root=tree,cap=1200)
         require(read(build/'.config',MAX_DOCUMENT)==selected,'actual-config-mutated')
         autoconf=read(build/'include/generated/autoconf.h',MAX_DOCUMENT)
         require(b'#define CONFIG_LSF_STREAM_FACTORY 1\n' in autoconf and b'#define CONFIG_RUST ' not in autoconf,
             'actual-selected-autoconf')
         (scratch/'generated-autoconf.h').write_bytes(autoconf);public_sources['generated-autoconf.h']=scratch/'generated-autoconf.h'
         receipt['products']={name:object_identity(build/name) for name in targets}
-        require(len(receipt['products'])==(4 if classdir else 18),'four-exact-products' if classdir else 'eighteen-exact-products')
+        require(len(receipt['products'])==len(targets),'nine-exact-products' if classdir_kernfs else 'four-exact-products' if classdir else 'eighteen-exact-products')
         for name in targets:public_sources['objects/'+name]=build/name
         command('source-clean-after',git,'diff','--no-ext-diff','--exit-code','HEAD','--',cap=30)
         require(command('source-tree-after',git,'ls-tree','-rz','--full-tree','HEAD',cap=30)==tree_before,'source-tree-mutated')
         require(command('source-head-after',git,'rev-parse','HEAD',cap=15).decode().strip()==revision,'source-head-mutated')
-        receipt['sourceAfter']=selected_sources(ROOT,classdir=classdir)
+        receipt['sourceAfter']=selected_sources(ROOT,classdir=classdir,classdir_kernfs=classdir_kernfs)
         require(receipt['sourceAfter']==before and input_files(ROOT)==current_inputs,'current-source-mutated')
         require(time.monotonic()<commands.deadline,'original-deadline')
         source_record.update(currentAfter=current_inputs,currentGitTreeInventory=identity(tree_before))
@@ -415,12 +444,12 @@ def run(output, revision, started, *, classdir=False):
             write_json(output/'receipt.json',receipt,MAX_DOCUMENT)
             write_json(output/'commands.json',commands.records,MAX_DOCUMENT)
             for name,q in public_sources.items():
-                maximum=public_allowed(name,classdir=classdir);require(maximum is not None,'public-source')
+                maximum=public_allowed(name,classdir=classdir,classdir_kernfs=classdir_kernfs);require(maximum is not None,'public-source')
                 _copy_public(q,output,name,maximum)
             for q in sorted((scratch/'commands/logs').iterdir()):
-                name='logs/'+q.name;maximum=public_allowed(name,classdir=classdir);require(maximum is not None,'public-command-channel')
+                name='logs/'+q.name;maximum=public_allowed(name,classdir=classdir,classdir_kernfs=classdir_kernfs);require(maximum is not None,'public-command-channel')
                 _copy_public(q,output,name,maximum)
-            admit(output,classdir=classdir)
+            admit(output,classdir=classdir,classdir_kernfs=classdir_kernfs)
         except BaseException as retention:
             receipt['status']='failed';receipt['retentionFailure']='bounded-public-admission-failed'
             raw=canonical(receipt)
@@ -438,14 +467,16 @@ def main():
     parser.add_argument('--started',type=float)
     parser.add_argument('--admit',action='store_true')
     parser.add_argument('--classdir',action='store_true',help='fixed private four-object source check only')
+    parser.add_argument('--classdir-kernfs',action='store_true',help='fixed private nine-object source check only')
     parser.add_argument('--baseline-worker',action='store_true')
     parser.add_argument('--recipe',type=Path);parser.add_argument('--kernel-tree',type=Path);parser.add_argument('--config',type=Path)
     args=parser.parse_args()
-    require(not (args.classdir and args.baseline_worker),'one-private-mode')
+    mode_targets(args.classdir,args.classdir_kernfs)
+    require(not ((args.classdir or args.classdir_kernfs) and args.baseline_worker),'one-private-mode')
     if args.admit:
         require(not args.baseline_worker,'one-private-mode')
         try:
-            admit(args.output,classdir=args.classdir)
+            admit(args.output,classdir=args.classdir,classdir_kernfs=args.classdir_kernfs)
         except BaseException:
             # Fixed fallback only; never upload any rejected directory/glob.
             require(not args.output.is_symlink(),'fallback-output-symlink')
@@ -472,7 +503,7 @@ def main():
     elif args.baseline_worker:
         require(args.recipe and args.kernel_tree and args.config,'worker-fixed-inputs')
         baseline_worker(args.recipe,args.kernel_tree,args.config,args.output)
-    else:run(args.output,args.source_commit,args.started,classdir=args.classdir)
+    else:run(args.output,args.source_commit,args.started,classdir=args.classdir,classdir_kernfs=args.classdir_kernfs)
 
 
 if __name__=='__main__':

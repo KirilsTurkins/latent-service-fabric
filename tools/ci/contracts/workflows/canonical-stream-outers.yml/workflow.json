@@ -14,6 +14,7 @@
         "paths": [
           ".github/workflows/canonical-stream-outers.yml",
           "crates/vendor/wasmtime/**",
+          "crates/vendor/wasmtime-cache/**",
           "crates/latent-wasmtime/src/host.rs",
           "crates/latent-wasmtime/src/host/native_stream_outer_tests.rs",
           "crates/latent-wasmtime/src/host/native-stream-outers.wat",
@@ -29,7 +30,7 @@
   "requiredJobs": [
     "stream-outers"
   ],
-  "reviewReason": "Reviewed stream outer source: four owner-only canonical entry controls and two public original-budget controls only; one fixed parse into private RunnerTemp, two locked targets, six exact non-skipped outcomes; separate public1MiB/1B/5s vs private64MiB/1B/120s, unchanged45m/2400/900/60/30/5s-cleanup and2jobs; no prior or language replay.",
+  "reviewReason": "Reviewed cache security backport: complete14 source/fixedzstd0.14.3,safe8.2.0,sys2.1.2; distinctcache-repaircohort. ParentCHECKusesSAMEexistingv17FEATURES, cachelibtestBUILD plusprobe/list/exactupstreamroundtrip, fixed5commands/unchanged45m2400/900/60/30/j2/cleanup. No fixture or old6replay; fe9historicalonly.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/canonical-stream-outers.yml"
 }

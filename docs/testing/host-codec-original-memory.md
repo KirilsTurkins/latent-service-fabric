@@ -290,6 +290,61 @@ also remains historical. This unsigned native slice leaves remaining stream
 Boxes, collections, transitive/inline metadata, stack/GC/lowering and full
 allocator/RSS/cost ownership open; it does not close #736 or #745.
 
+## Finite stream outer source qualification
+
+Source `fe9a04fd8e94894ecdd15c45d9e6c5d6ca547fd5` (PR1504, tree `ca48a751...`)
+passed [the one focused programme](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40339377974):
+six exact controls, no failed/ignored cases, seventeen zero-exit commands and
+thirty-four raw channels. The [durable source-bound receipt](evidence/canonical-stream-outers-native-2026-10-26.json)
+anchors the 1,423,943-byte artifact, all38 safe CRC/SHA members, and8,961
+before/after source bindings. One fixed wasm-tools1.254 parse produced the
+788-byte canonical component only in owning RunnerTemp. Captured source was
+identical BEFORE and AFTER execution. Separately, the declared Git-to-checkout
+launcher CRLF conversion explains its Git blob versus checkout identity; it
+was not a change during the run.
+
+The four private canonical controls use a bounded NativeMemory COUNTER owner,
+64MiB payload ceiling,1B installed fuel and120-second ceiling. They are not
+original ActivationBudget or signed-node evidence. The two public HostReady
+controls use the ORIGINAL1MiB/1B-fuel/5-second ActivationBudget. The owning
+job/process/list/cleanup bounds and2compile jobs stayed unchanged.
+
+| Actual route | Local queue/Task/outer owners | Observed global requests | Refusal boundary |
+| --- | --- | --- | --- |
+| Private guest write |1/2/3|24/25/26|Before Busy and transmit mutation; polls0|
+| Private guest read |1/2/3|23/24/25|Before Busy and transmit mutation; polls0|
+| Private reverse host pipe |1/2/3|24/25/26|Existing Busy/GuestReady preserved; consumer polls0|
+| Public HostReady loop |1/2/3|6/7/8|Original grant refusal before consumer effects; polls0|
+
+These twelve refusal vectors retain their actual source/owner identities.
+Private ready/pending/error and None variants passed in both directions and
+the reverse caller. Read checks actual byte42 at offset512 in the SAME memory;
+write consumes actual byte42. Fresh-Store answer42 is a separate reuse check.
+Reverse await-error does not invent settled state or handle rollback: physical
+Store destruction still must retire the genuine remaining owners.
+
+Public ready/pending, producer/consumer original errors and pending teardown
+passed. The original map cleanup destroys the consumer before Store destruction
+on success/error. Genuine escaped waker ownership stays paid until real late
+wake/drop, with no new admission or credit against the live foreign Store.
+The pending-byte assertion is a lower bound for the measured scopes, not a
+complete allocator census. None retains its original physical helper/loop order.
+
+**This focused success does not clear Security.** PR head `fe9a04fd` was
+evaluated through synthetic merge `384b3b6f` (parents `f8e78744`, `fe9a04fd`),
+whose tree is the SAME `ca48a751...` tree as the qualified native head. That
+merge failed [RustSec](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40339385076/job/121629777721)
+on ten findings in the standalone vendor lock's old zstd-safe/zstd-sys closure.
+Dependency/cache backport, strict source authentication and audit repair are
+separate pending work. This receipt is not retagged to later dependencies or
+used as proof that a repaired cache/source closure executed these cases.
+
+Inner producer/consume/accept boxes, consumer Arc/pinned consumer, buffers,
+tables, collections, transitive backing and full CPU/memory accounting remain
+open. Exact outer Layout payloads are not allocator RSS quotas. This unsigned
+native slice neither closes #736 nor claims a full vendor/runtime suite; no
+prior v15/v16 or language programme was replayed.
+
 ## Scope retained outside this slice
 
 Initial linear-memory success/failure notifications, direct Core HostFunc construction, shared
