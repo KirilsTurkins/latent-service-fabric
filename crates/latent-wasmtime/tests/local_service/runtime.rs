@@ -284,7 +284,9 @@ async fn signed_java_fiber_fixture(variable: &str, expected_source: &[u8], name:
             record["scheduledModel"]["status"],
             "actual-locked-classlib-model-passed"
         );
-        assert_eq!(record["scheduledModel"]["models"], 7);
+        assert_eq!(record["scheduledModel"]["models"], 8);
+        assert_eq!(record["scheduledModel"]["constructedIdentities"], 5);
+        assert_eq!(record["scheduledModel"]["actualGeneratedCallbacks"], 3);
         assert_eq!(
             record["scheduledModel"]["portOrApplicationClassesInitialized"],
             false

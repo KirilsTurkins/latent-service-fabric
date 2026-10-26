@@ -379,7 +379,8 @@ def scheduled_model_control(compiler: Compiler, output: Path) -> dict:
     classpath, identities = locked_model_classpath(compiler, include_platform=True, include_dependency_analysis=True)
     sources = [*sorted((compiler.sdk / 'fibers/compiler/dev/latent/guest/runtime/compiler').glob('*.java')),
         *sorted((compiler.sdk / 'fibers/dev/latent/guest/runtime/concurrent').glob('*.java')),
-        compiler.sdk / 'fibers/conformance/compiler/ScheduledModelControl.java']
+        compiler.sdk / 'fibers/conformance/compiler/ScheduledModelControl.java',
+        compiler.sdk / 'fibers/conformance/compiler/source-control/org/teavm/dependency/LambdaEmitterControlContext.java']
     sources += [compiler.sdk / ('fibers/conformance/compiler/scheduled-source-control/' + name)
         for name in ('dev/latent/generated/Bindings.java', 'dev/latent/guest/runtime/Activation.java')]
     inputs = {path.relative_to(compiler.sdk).as_posix(): digest(read_file(path)) for path in sources}
@@ -389,11 +390,12 @@ def scheduled_model_control(compiler: Compiler, output: Path) -> dict:
     result = compiler.run('scheduled-model-control', 'java', '-Xmx256m', '-cp',
         str(output) + os.pathsep + classpath, 'dev.latent.guest.runtime.compiler.ScheduledModelControl').strip()
     if result != ('SCHEDULED_MODEL_CONTROL PASS standard-APIs;private-task;canonical-fields-and-methods;'
-                  'ordinary-constructor;no-fallback;models=7'):
+                  'ordinary-constructor;no-fallback;constructed-identities=5;actual-generated-callbacks=3;models=8'):
         raise ValueError('Java scheduled model control did not complete')
     if inputs != {name: digest(read_file(compiler.sdk / name)) for name in inputs}:
         raise ValueError('Java scheduled model inputs changed')
-    return {'status': 'actual-locked-classlib-model-passed', 'models': 7,
+    return {'status': 'actual-locked-classlib-model-passed', 'models': 8,
+        'constructedIdentities': 5, 'actualGeneratedCallbacks': 3,
         'jarDigests': identities, 'sourceInputs': inputs,
         'portOrApplicationClassesInitialized': False, 'actualGuestBindingsUsed': False}
 

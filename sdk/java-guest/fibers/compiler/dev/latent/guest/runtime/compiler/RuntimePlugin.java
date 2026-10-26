@@ -142,6 +142,7 @@ public final class RuntimePlugin implements TeaVMPlugin {
     private static boolean privateConcurrentHelper(String suffix) {
         // Generated callback classes belong to the actual TeaVM caller. Only
         // these declared CompletableFuture helpers retain the SDK identity.
+        if (suffix.contains("$lambda$")) return false;
         return suffix.equals("ManagedExecutor") || suffix.startsWith("ManagedExecutor$")
             || suffix.startsWith("ScheduledThreadPoolExecutor$")
             || suffix.startsWith("AbstractExecutorService$") || suffix.startsWith("Executors$")
