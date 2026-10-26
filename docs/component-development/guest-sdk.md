@@ -59,7 +59,7 @@ support or a Node.js/WASI environment inside an LSF activation.
 ## Exact toolchain and host surface
 
 Use the pins in [tools/toolchain.toml](../../tools/toolchain.toml): Rust 1.97.1,
-`wit-bindgen` 0.62.0, `wasm-tools` 1.254.0, Python 3.13.5 and Zig 0.16.0 for C.
+the Rust `wit-bindgen` macro 0.63.0, the separately pinned CLI generator 0.62.0, `wasm-tools` 1.254.0, Python 3.13.5 and Zig 0.16.0 for C.
 Rust guests target `wasm32-unknown-unknown`. The C reactor uses Zig's libc and
 64 KiB stack without importing WASI. The node and compiler use the workspace-pinned
 Wasmtime engine. The maintained capability examples below generate

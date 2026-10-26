@@ -43,7 +43,7 @@ class Compiler:
         self.compiler_edge_sources = {}
         config = config or tomllib.loads((ROOT / "tools/toolchain.toml").read_text())
         versions = {"zig": config["sdk"]["zig"],
-                    "wit-bindgen": config["rust"]["dependencies"]["wit-bindgen"],
+                    "wit-bindgen": config["contracts"]["wit-bindgen-cli"],
                     "wasm-tools": config["contracts"]["wasm-tools"]}
         if installed is not None and set(installed) != set(versions):
             raise ValueError("explicit C compiler selection must name exactly the required tools")

@@ -62,7 +62,7 @@ edition = "2024"
 [lib]
 crate-type = ["cdylib"]
 [dependencies]
-wit-bindgen = "=0.62.0"
+wit-bindgen = "=0.63.0"
 [profile.release]
 panic = "abort"
 opt-level = "s"

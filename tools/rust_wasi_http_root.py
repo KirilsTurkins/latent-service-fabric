@@ -108,13 +108,29 @@ def argument(graph: dict, name: str, value) -> str:
     return name
 
 
-def forwarding_source(graph: dict) -> tuple[bytes, list[dict]]:
+BINDGEN_OPTIONS = {'0.62.0': 'async: false', '0.63.0': 'sync: true'}
+
+
+def selected_bindgen(lock: bytes) -> str:
+    if len(lock) > 8 * 1024 * 1024:
+        raise ValueError('rust-http-root-lock-input')
+    versions = [row['version'] for row in tomllib.loads(lock.decode()).get('package', [])
+                if row.get('name') == 'wit-bindgen']
+    if len(versions) != 1 or versions[0] not in BINDGEN_OPTIONS:
+        raise ValueError('rust-http-root-exact-captured-bindgen-required')
+    return versions[0]
+
+
+def forwarding_source(graph: dict, *, bindgen_version: str = '0.63.0') -> tuple[bytes, list[dict]]:
+    if bindgen_version not in BINDGEN_OPTIONS:
+        raise ValueError('rust-http-root-exact-captured-bindgen-required')
+    option = BINDGEN_OPTIONS[bindgen_version]
     exports = profile.names(graph, 'exports')
     if not exports or len(exports) > 32 or profile.RETIREMENT in exports:
         raise ValueError('rust-http-root-export-count')
     lines = [
         '#![cfg(target_arch = "wasm32")]',
-        'wit_bindgen::generate!({ path: "wit", world: "root", async: false });',
+        'wit_bindgen::generate!({ path: "wit", world: "root", '+option+' });',
         'struct Root;',
     ]
     calls = []
@@ -153,7 +169,7 @@ def forwarding_source(graph: dict) -> tuple[bytes, list[dict]]:
         lines.append('}')
     mappings = ', '.join(json.dumps(name)+': generate'
         for name in sorted({*exports, profile.RETIREMENT}))
-    lines[1] = 'wit_bindgen::generate!({ path: "wit", world: "root", async: false, with: { '+mappings+' } });'
+    lines[1] = 'wit_bindgen::generate!({ path: "wit", world: "root", '+option+', with: { '+mappings+' } });'
     lines.append('export!(Root);')
     source = ('\n'.join(lines) + '\n').encode()
     if len(source) > 128*1024:
@@ -213,7 +229,7 @@ def compiler_lock(original: bytes, name: str) -> bytes:
         if key in rows or row['name'] == name:
             raise ValueError('rust-http-root-lock-duplicate-or-collision')
         rows[key] = (row, body)
-    starts = [key for key in rows if key[:2] == ('wit-bindgen', '0.62.0')]
+    starts = [key for key in rows if key[0] == 'wit-bindgen' and key[1] == selected_bindgen(original)]
     if len(starts) != 1:
         raise ValueError('rust-http-root-exact-captured-bindgen-required')
     retained, pending = set(), starts[:]
@@ -302,7 +318,7 @@ def normalized_lock(projected: bytes, normalized: bytes, name: str) -> dict:
     before, before_index = rows(projected)
     after, after_index = rows(normalized)
     own = (name, '0.0.0', None)
-    starts = [key for key in before if key[:2] == ('wit-bindgen', '0.62.0')]
+    starts = [key for key in before if key[0] == 'wit-bindgen' and key[1] == selected_bindgen(projected)]
     if (len(starts) != 1 or own not in before or own not in after
             or before[own] != {'name': name, 'version': '0.0.0', 'dependencies': ['wit-bindgen']}
             or after[own] != before[own] or not set(after) <= set(before)):
@@ -338,13 +354,14 @@ def normalized_lock(projected: bytes, normalized: bytes, name: str) -> dict:
 
 def prepare_project(output, canonical: str, graph: dict, lock: bytes):
     from tools.rust_capsule_project import digest, fresh, inventory, write_json
-    source, calls = forwarding_source(graph)
+    version = selected_bindgen(lock)
+    source, calls = forwarding_source(graph, bindgen_version=version)
     name = 'lsf-owned-http-root-' + digest(source)[7:23]
     files = {
         'src/lib.rs': source,
         'wit/world.wit': forwarding_wit(canonical, graph),
         'Cargo.toml': ('[package]\nname="'+name+'"\nversion="0.0.0"\nedition="2021"\nbuild=false\n'
-            '[workspace]\n[lib]\ncrate-type=["cdylib"]\n[dependencies]\nwit-bindgen="=0.62.0"\n'
+            '[workspace]\n[lib]\ncrate-type=["cdylib"]\n[dependencies]\nwit-bindgen="=' + version + '"\n'
             '[profile.release]\npanic="abort"\nlto=true\ncodegen-units=1\n').encode(),
         'Cargo.lock': compiler_lock(lock, name),
     }

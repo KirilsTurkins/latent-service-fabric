@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_java_composition_shapes.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Review finite actual parser and C ABI composition qualification owner",
+  "reviewReason": "Review Rust wit-bindgen 0.63.0 macro compatibility and separate 0.62.0 CLI selection; preserve existing execution commands and qualification cases.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "82084dbc64de1e3cb1a3ad014aa3dfde6ba759feca871d49fc77802162b64425"
+  "sha256": "d6fd8badaec7dc8cc6de329f793dad164c594da36b9e39173a035fe9a675bf4a"
 }

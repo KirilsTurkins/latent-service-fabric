@@ -44,6 +44,12 @@ class OriginalSourceAndAuthority(unittest.TestCase):
             ('wit-component', '0.259.0'), ('wit-bindgen-rust', '0.62.0')]))
         self.assertTrue(profile.verify_compiled_core(original, [encoded])['allNonEncoderMetadataSectionsExact'])
         self.assertTrue(profile.verify_compiled_core(original, [original])['originalCoreExact'])
+        # Both exact generator cohorts preserve the original executable bytes.
+        current = original.replace(b'0.62.0', b'0.63.0')
+        current_encoded = encoded.replace(b'0.62.0', b'0.63.0').replace(b'0.259.0', b'0.262.0')
+        self.assertTrue(profile.verify_compiled_core(current, [current_encoded])['allNonEncoderMetadataSectionsExact'])
+        with self.assertRaises(ValueError):
+            profile.verify_compiled_core(current, [encoded])
         for changed in (encoded.replace(b'code-control', b'code-altered'),
                 encoded.replace(b'features-control', b'features-altered'),
                 encoded.replace(b'0.259.0', b'0.258.0'), encoded + custom(marker, b'unexpected'),
@@ -173,7 +179,7 @@ class CompilerRoot(unittest.TestCase):
         self.assertEqual(selected,[{'interface':'outside:varied-client/api@1.2.3',
             'function':'request','kind':'async-freestanding'}])
         source,calls=root.forwarding_source(graph)
-        self.assertIn(b'world: "root", async: false, with:',source)
+        self.assertIn(b'world: "root", sync: true, with:',source)
         self.assertIn(b'    fn request(',source)
         self.assertNotIn(b'async fn',source)
         self.assertNotIn(b'.await',source)

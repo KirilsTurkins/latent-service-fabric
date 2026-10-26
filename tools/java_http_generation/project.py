@@ -44,7 +44,7 @@ def rendered(domain: Path, selection_path: Path, *, tools: dict[str, Path] | Non
             return result.stdout.decode("utf-8")
 
         for tool, printed, version in (("wasm-tools", "wasm-tools", pins["contracts"]["wasm-tools"]),
-                                      ("wit-bindgen", "wit-bindgen-cli", pins["rust"]["dependencies"]["wit-bindgen"])):
+                                      ("wit-bindgen", "wit-bindgen-cli", pins["contracts"]["wit-bindgen-cli"])):
             if run("toolchain", tool, "--version").split()[:2] != [printed, version]:
                 raise ValueError("toolchain: " + tool + " must match the captured exact pin " + version)
         wit = temporary / "wit"
