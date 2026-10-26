@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_canonical_join_state.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Reviewed private sized unordered strong/weak headers with exact allocator Layout, last-weak deallocation-before-refund and same-charge unwind retention. Six NEW private controls, eight source-affected/new canonical cases (nine refusal scenarios) and four affected ordinary host cases; unchanged two locked Cargo builds, original45m/2400/900/60/30 caps,cleanup5,two jobs. No old private groups,Java replay,RSS or whole-runtime qualification.",
+  "reviewReason": "Actual CI cancellation repairs preserve escaped Task/ready-weak charges until real late wake and warm the real two-header Store baseline before existing lift/foreign-Store assertions. Same six NEW private/eight canonical plus six affected ordinary IDs,20 total; original two locked Cargo builds/features/caps unchanged. Historical4eca18pass retained; no production refund change or whole-runtime claim.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "c6edc40ea184293c2f7545db81a49bd902a35687ad232b4f654ed03d0e7d5b01"
+  "sha256": "6500156e9318d8401514c55e44be7fe581879e9c26c97646fddf40935d2f10bd"
 }

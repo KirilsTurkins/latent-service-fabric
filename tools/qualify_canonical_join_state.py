@@ -1,4 +1,4 @@
-"""Execute six paid-unordered owners, eight canonical cases and four affected normal cases."""
+"""Execute six paid-unordered owners, eight canonical cases and six affected normal cases."""
 from __future__ import annotations
 
 import argparse
@@ -53,6 +53,8 @@ MAIN_CASES = (
     'host::native_host_future_tests::actual_host_future_refusal_preserves_original_error_and_fresh_budget_reuse',
     'host::native_host_future_tests::actual_host_future_callback_error_is_unchanged_and_its_box_retires',
     'host::native_context_reply_tests::actual_context_reply_original_refusal_keeps_exact_error_and_fresh_same_grant',
+    'host::native_host_future_tests::actual_host_future_cancellation_cannot_credit_another_live_store',
+    'host::native_store_tests::actual_cancelled_lift_preserves_store_owners_and_cannot_credit_another_live_store',
 )
 
 FEATURES = ('component-model,component-model-async,cranelift,pooling-allocator,'
@@ -188,7 +190,7 @@ def qualify(output, revision):
         'mainCases': list(MAIN_CASES), 'observations': [], 'fullCostModelQualified': False,
         'fullVendorSuiteExecuted': False, 'fullRuntimeSuiteExecuted': False,
         'signedJavaScriptExecuted': False, 'compilerImplicitInputsAttested': False,
-        'hermetic': False, 'scope': 'private sized unordered task/stub/ready backing through last weak; six new private, eight canonical and four affected normal cases; exact before-effect owners only, not allocator/RSS, Legacy Boxes, other collections, transitive backing or whole runtime', 'limits': {'overallSeconds': 2400, 'buildCommandSeconds': 900,
+        'hermetic': False, 'scope': 'private sized unordered task/stub/ready backing through last weak; six new private, eight canonical and six affected normal cases; exact before-effect owners only, not allocator/RSS, Legacy Boxes, other collections, transitive backing or whole runtime', 'limits': {'overallSeconds': 2400, 'buildCommandSeconds': 900,
             'caseProcessSeconds': 60, 'listProcessSeconds': 30,
             'cleanupReserveSeconds': 5},
         'activationLimits': {'cpuFuel': 1_000_000_000, 'memoryBytes': 64 * 1024**2,
@@ -286,7 +288,7 @@ def qualify(output, revision):
             observation = result(raw, case)
             observation['admissions'] = canonical_markers(raw, case, layouts)
             receipt['observations'].append(observation)
-        # SAME already-built native libtest binary. These four existing cases
+        # SAME already-built native libtest binary. These six existing cases
         # have source-affected cold/warm allocation premises, so execute them;
         # no additional Cargo build or unrelated old programme is selected.
         for index, case in enumerate(MAIN_CASES):

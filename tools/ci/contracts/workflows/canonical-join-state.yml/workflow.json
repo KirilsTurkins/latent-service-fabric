@@ -18,6 +18,7 @@
           "crates/latent-wasmtime/src/host/join_state_tests.rs",
           "crates/latent-wasmtime/src/host/native_host_future_tests.rs",
           "crates/latent-wasmtime/src/host/native_context_reply_tests.rs",
+          "crates/latent-wasmtime/src/host/native_store_tests.rs",
           "tools/qualify_canonical_join_state.py",
           "tools/host_codec_wasmtime.py"
         ]
@@ -30,7 +31,7 @@
   "requiredJobs": [
     "join-state"
   ],
-  "reviewReason": "Reviewed private sized unordered strong/weak headers with exact allocator Layout, last-weak deallocation-before-refund and same-charge unwind retention. Six NEW private controls, eight source-affected/new canonical cases (nine refusal scenarios) and four affected ordinary host cases; unchanged two locked Cargo builds, original45m/2400/900/60/30 caps,cleanup5,two jobs. No old private groups,Java replay,RSS or whole-runtime qualification.",
+  "reviewReason": "Actual CI cancellation repairs preserve escaped Task/ready-weak charges until real late wake and warm the real two-header Store baseline before existing lift/foreign-Store assertions. Same six NEW private/eight canonical plus six affected ordinary IDs,20 total; original two locked Cargo builds/features/caps unchanged. Historical4eca18pass retained; no production refund change or whole-runtime claim.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/canonical-join-state.yml"
 }

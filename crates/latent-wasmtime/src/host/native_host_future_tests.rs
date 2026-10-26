@@ -246,6 +246,8 @@ async fn actual_host_future_cancellation_cannot_credit_another_live_store() {
     let (_, second_func) = instance(&linker_b, &component, &mut second).await;
     let baseline_a = a.host_memory_bytes();
     let baseline_b = b.host_memory_bytes();
+    let before_a = requests(&observed_a).len();
+    let before_b = requests(&observed_b).len();
     let mut first_call = Box::pin(first_func.call_async(&mut first, ()));
     let mut second_call = Box::pin(second_func.call_async(&mut second, ()));
     let mut context = Context::from_waker(Waker::noop());
@@ -253,19 +255,58 @@ async fn actual_host_future_cancellation_cannot_credit_another_live_store() {
     assert!(second_call.as_mut().poll(&mut context).is_pending());
     assert!(a.host_memory_bytes() > baseline_a);
     assert!(b.host_memory_bytes() > baseline_b);
+    let allocated_a = requests(&observed_a);
+    let allocated_b = requests(&observed_b);
+    let cold_a = &allocated_a[before_a..];
+    let cold_b = &allocated_b[before_b..];
+    for cold in [cold_a, cold_b] {
+        // Same cold callbackless six-owner sequence as the pending control:
+        // GuestCall, stub, ready queue, callback Box, PushFuture, Task.
+        assert_eq!(cold.len(), 6);
+        assert!(cold.iter().all(|bytes| *bytes > 0));
+        assert_eq!(cold[0], cold[4]);
+        assert_eq!(cold[1], cold[5]);
+    }
+    let escaped_a = cold_a[5] as u64 + cold_a[2] as u64 + 2 * OWNER;
+    let escaped_b = cold_b[5] as u64 + cold_b[2] as u64 + 2 * OWNER;
     let live_b = b.host_memory_bytes();
+    let live_b_reservations = b.outstanding_reservations();
     drop(first_call);
     // Physical cancellation may already destroy the first callback. Do not
     // demand artificial retention after the actual Future allocation dies.
     assert!(a.host_memory_bytes() >= baseline_a);
     drop(first);
-    assert_eq!(a.host_memory_bytes(), 0);
+    // The test Gate deliberately escaped a real Task waker. Its Task and weak
+    // ready-queue backing remain paid after Store destruction, not refunded.
+    assert_eq!(a.host_memory_bytes(), escaped_a);
     assert_eq!(b.host_memory_bytes(), live_b);
+    assert_eq!(b.outstanding_reservations(), live_b_reservations);
+    gate_a.finish(); // Real late wake consumes that SAME escaped waker.
+    assert_eq!(a.host_memory_bytes(), 0);
+    assert_eq!(a.outstanding_reservations(), 0);
+    assert_eq!(b.host_memory_bytes(), live_b);
+    assert_eq!(b.outstanding_reservations(), live_b_reservations);
+    assert_eq!(requests(&observed_a), allocated_a);
+    assert_eq!(requests(&observed_b), allocated_b);
+    println!(
+        "LSF_CANCELLED_HOST_FUTURE_ESCAPED_V1 store=a task-bytes={} ready-bytes={} owner-escrow={} retained={} late-wake-admissions=0 foreign-unchanged=true",
+        cold_a[5], cold_a[2], OWNER, escaped_a
+    );
     drop(second_call);
     drop(second);
+    assert_eq!(b.host_memory_bytes(), escaped_b);
+    assert_eq!(a.host_memory_bytes(), 0);
+    gate_b.finish();
     assert_eq!(b.host_memory_bytes(), 0);
+    assert_eq!(a.host_memory_bytes(), 0);
     assert_eq!(a.outstanding_reservations(), 0);
     assert_eq!(b.outstanding_reservations(), 0);
+    assert_eq!(requests(&observed_a), allocated_a);
+    assert_eq!(requests(&observed_b), allocated_b);
+    println!(
+        "LSF_CANCELLED_HOST_FUTURE_ESCAPED_V1 store=b task-bytes={} ready-bytes={} owner-escrow={} retained={} late-wake-admissions=0 foreign-unchanged=true",
+        cold_b[5], cold_b[2], OWNER, escaped_b
+    );
 }
 
 #[tokio::test]

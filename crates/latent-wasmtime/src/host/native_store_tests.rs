@@ -391,6 +391,31 @@ async fn actual_cancelled_lift_preserves_store_owners_and_cannot_credit_another_
         .await
         .unwrap();
     let function = instance.get_func(&mut first, "echo-post").unwrap();
+    // Initialize the SAME paid set without calling the guest. The lazy stub
+    // and ready headers belong to this Store until it is actually destroyed;
+    // they must be in the original post-cancellation Store baseline below.
+    let before_shared = requests(&observed).len();
+    let before_shared_bytes = budget.host_memory_bytes();
+    let before_shared_fuel = first.get_fuel().unwrap();
+    first.run_concurrent(async |_| ()).await.unwrap();
+    assert_eq!(first.get_fuel().unwrap(), before_shared_fuel);
+    assert!(!entered.load(Ordering::SeqCst));
+    let allocated = requests(&observed);
+    let shared = &allocated[before_shared..];
+    assert_eq!(shared.len(), 2);
+    assert!(shared.iter().all(|bytes| *bytes > 0));
+    let shared_bytes = shared
+        .iter()
+        .map(|bytes| *bytes as u64 + OWNER)
+        .sum::<u64>();
+    assert_eq!(
+        budget.host_memory_bytes(),
+        before_shared_bytes + shared_bytes
+    );
+    println!(
+        "LSF_CANCELLED_LIFT_SHARED_BASELINE_V1 headers=2 bytes={} fuel-unchanged=true",
+        shared_bytes
+    );
     let store_bytes = budget.host_memory_bytes();
     let json = serde_json::to_vec(&vec!["x".repeat(8192)]).unwrap();
     let input = crate::values::decode_params_accounted(
