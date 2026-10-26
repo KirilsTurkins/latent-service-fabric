@@ -7,6 +7,12 @@ Component Model artifact, and exercises it in Wasmtime. It is an
 operator-controlled qualification tool; node integration and package delivery
 are #233/#234. See the [profile and evidence](../../docs/runtime/angular-renderer-profile.md).
 
+The renderer toolchain directly pins `@bytecodealliance/preview2-shim` 0.30.0;
+its transitive JCO tool dependencies retain their own resolved versions.
+The trusted ComponentizeJS build splicer receives an explicit preopen for its
+WIT source directory, cleared after componentization. This build-time mapping
+does not add filesystem imports or ambient features to the produced component.
+
 Use Node 24.19.0 and the repository Rust toolchain. From this directory:
 
 ```bash
