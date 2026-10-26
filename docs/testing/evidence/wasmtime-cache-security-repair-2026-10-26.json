@@ -1,0 +1,730 @@
+{
+  "schemaVersion": "lsf.wasmtime-cache-security-repair-evidence.v1",
+  "status": "five-command-cache-compatibility-and-one-upstream-roundtrip-passed",
+  "success": true,
+  "pullRequest": 1504,
+  "source": {
+    "revision": "757ae2285fdc1e0c3aef5d23a6b136b28fec2b86",
+    "tree": "e10da25104a2fee835d1a66f1c063c85a47a09d0",
+    "parents": [
+      "fe9a04fd8e94894ecdd15c45d9e6c5d6ca547fd5",
+      "b0d0dd3bd38d2c5b87f8fc892aac65b3723465dd"
+    ],
+    "cohortSuffix": "-cache-repair",
+    "equivalentMergedDevelopment": "f7cf175f1505eb0199c0e5bd2ce68ecc28a22c4e"
+  },
+  "run": {
+    "id": 40356260339,
+    "jobId": 121689432374,
+    "url": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40356260339",
+    "conclusion": "success",
+    "verifiedByRoot": true
+  },
+  "artifact": {
+    "id": 12667638279,
+    "archiveBytes": 1395754,
+    "archiveSha256": "2ac374f64aaa2b46dc004fdc8dce758e466434607339b5c7c27a1532c822bd41",
+    "safeCrcShaMembers": 13,
+    "expandedBytes": 4882885,
+    "members": [
+      {
+        "path": "receipt.json",
+        "bytes": 3144011,
+        "sha256": "fda9e5e399e0f48ddedb471be28a4a534497538bdb23b1b2cf0432948e221e88"
+      },
+      {
+        "path": "commands.json",
+        "bytes": 447,
+        "sha256": "91abe353d65058a942baca81fdeba8c50ceff44a7cf379ab2a11c1089611b546"
+      },
+      {
+        "path": "source-inputs.json",
+        "bytes": 1473719,
+        "sha256": "f16d9298d4ff9ab0c99e3bf27e0f28cd8c86ba974381b6e575e6240af1412700"
+      },
+      {
+        "path": "commands/logs/00-parent-cache-feature-check.stderr.txt",
+        "bytes": 8496,
+        "sha256": "811c596aa399c326f2b506186798d281de87e0af34ab4f75d0b63b404d38705b"
+      },
+      {
+        "path": "commands/logs/00-parent-cache-feature-check.stdout.txt",
+        "bytes": 163617,
+        "sha256": "0f9777726ec3ceba9cf5f56e0cd0f0ab6417f2842f2325d49cb85a87f13a7e17"
+      },
+      {
+        "path": "commands/logs/01-build-one-cache-libtest.stdout.txt",
+        "bytes": 89435,
+        "sha256": "ae7761108f9060b94101c6c2cb4ea0741f57e9f3244cfdcfe23270c91e59e2ee"
+      },
+      {
+        "path": "commands/logs/01-build-one-cache-libtest.stderr.txt",
+        "bytes": 2787,
+        "sha256": "c71fd7ce0cdf34d656ce8d0fe338553dc648ae3240e5ebf91288fda07224796d"
+      },
+      {
+        "path": "commands/logs/02-cache-rust-library-path.stderr.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "commands/logs/02-cache-rust-library-path.stdout.txt",
+        "bytes": 105,
+        "sha256": "7675ece60101aa9118dc7df3c8865c010dc07858e7fb4b48536a3376fa3b9ed0"
+      },
+      {
+        "path": "commands/logs/03-cache-list.stderr.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "commands/logs/03-cache-list.stdout.txt",
+        "bytes": 57,
+        "sha256": "43342e851fdf50a00c120adfb0504a82e9909d36e3fe8db91658f7e59eae3643"
+      },
+      {
+        "path": "commands/logs/04-cache-roundtrip.stderr.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "commands/logs/04-cache-roundtrip.stdout.txt",
+        "bytes": 211,
+        "sha256": "ad9713454ad36fa7915071ebf9527f00a48746436e1924906704674aec807405"
+      }
+    ]
+  },
+  "actualCommands": [
+    {
+      "stage": "parent-cache-feature-check",
+      "exitCode": 0,
+      "seconds": 50.285388
+    },
+    {
+      "stage": "build-one-cache-libtest",
+      "exitCode": 0,
+      "seconds": 13.748122
+    },
+    {
+      "stage": "cache-rust-library-path",
+      "exitCode": 0,
+      "seconds": 0.013194
+    },
+    {
+      "stage": "cache-list",
+      "exitCode": 0,
+      "seconds": 0.012713
+    },
+    {
+      "stage": "cache-roundtrip",
+      "exitCode": 0,
+      "seconds": 0.012762
+    }
+  ],
+  "actualRoundtripResult": {
+    "case": "tests::test_write_read_cache",
+    "stdout": {
+      "bytes": 211,
+      "sha256": "ad9713454ad36fa7915071ebf9527f00a48746436e1924906704674aec807405"
+    },
+    "passed": 1,
+    "failed": 0,
+    "ignored": 0,
+    "filteredOut": 21,
+    "scope": "published-cache-compressed-write-and-read-source-matched-libtest"
+  },
+  "sourceBeforeAfter": {
+    "bindings": 8975,
+    "equal": true,
+    "rawGitMatches": 8974,
+    "declaredCheckoutConversions": [
+      {
+        "path": "tools/intellij.cmd",
+        "git": {
+          "bytes": 894,
+          "sha256": "fcaca9e75d7d09ebd0863ca252222a1e1b7ac3f78bd1efb465f94b5209545049"
+        },
+        "checkout": {
+          "bytes": 922,
+          "sha256": "7d96a1573b04fb4c7aa3add1ec47fd5ba8a2c827dda142e6b2098843b33f45e4"
+        }
+      }
+    ],
+    "fullInventoryBoundByArtifactMember": "source-inputs.json"
+  },
+  "requiredProgramme": {
+    "commands": 5,
+    "stages": [
+      "locked-parent-cache-feature-check",
+      "locked-cache-library-test-build",
+      "rust-target-library-path",
+      "exact-upstream-test-list",
+      "exact-upstream-cache-write-read-roundtrip"
+    ],
+    "parentFeatures": "same existing v17 FEATURES; no minimal feature substitution",
+    "test": "tests::test_write_read_cache",
+    "requiredResult": {
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0
+    },
+    "oldSixControlsReplayed": false
+  },
+  "historicalNativeResult": {
+    "evidence": "canonical-stream-outers-native-2026-10-26.json",
+    "qualifiedSource": {
+      "revision": "fe9a04fd8e94894ecdd15c45d9e6c5d6ca547fd5",
+      "tree": "ca48a7512d4b7129e38d20f8175fe1e8dd9200a0",
+      "parent": "f8e78744f36cb4d98944487a125cd6763b68a400"
+    },
+    "run": {
+      "id": 40339377974,
+      "jobId": 121629558115,
+      "event": "push",
+      "conclusion": "success",
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40339377974",
+      "workflow": ".github/workflows/canonical-stream-outers.yml"
+    },
+    "artifact": {
+      "id": 12658423228,
+      "name": "canonical-stream-outers-fe9a04fd8e94894ecdd15c45d9e6c5d6ca547fd5",
+      "archiveBytes": 1423943,
+      "archiveSha256": "b0b4421ae62aeda848f08a70fe0564764ff8bd62fb4b84d6a82da5750953ffdb",
+      "safeCrcShaMembers": 38,
+      "expandedBytes": 5195110
+    },
+    "passed": 6,
+    "failed": 0,
+    "ignored": 0,
+    "zeroExitCommands": 17,
+    "newCacheDependenciesQualifiedByHistoricalPass": false
+  },
+  "historicalSecurityFailure": {
+    "runId": 40339385076,
+    "jobId": 121629777721,
+    "conclusion": "failure",
+    "findingCount": 10,
+    "affectedExecutedStandaloneLock": "crates/vendor/wasmtime/Cargo.lock",
+    "affectedPackages": [
+      "zstd-safe7.0.0",
+      "zstd-sys2.0.9+zstd1.5.5"
+    ],
+    "advisories": [
+      "RUSTSEC-2026-0395",
+      "RUSTSEC-2026-0397",
+      "RUSTSEC-2026-0399",
+      "RUSTSEC-2026-0400",
+      "RUSTSEC-2026-0401",
+      "RUSTSEC-2026-0402",
+      "RUSTSEC-2026-0403",
+      "RUSTSEC-2026-0404",
+      "RUSTSEC-2026-0406",
+      "RUSTSEC-2026-0410"
+    ],
+    "dependencyAndCacheRepair": "pending separate source/authentication/audit; not qualified by this fe9 result",
+    "oldPassRetaggedToNewDependencies": false,
+    "pullHeadRevision": "fe9a04fd8e94894ecdd15c45d9e6c5d6ca547fd5",
+    "scannedMergeRevision": "384b3b6ff9e8c8d2ae5103e3edb5ff5f543aef47",
+    "scannedTree": "ca48a7512d4b7129e38d20f8175fe1e8dd9200a0",
+    "scannedMergeParents": [
+      "f8e78744f36cb4d98944487a125cd6763b68a400",
+      "fe9a04fd8e94894ecdd15c45d9e6c5d6ca547fd5"
+    ],
+    "sameTreeAsQualifiedNativeHead": true
+  },
+  "historicalStaleAssertions": {
+    "sourceRevision": "fe9a04fd8e94894ecdd15c45d9e6c5d6ca547fd5",
+    "failedCases": [
+      "tools.tests.test_host_codec_wasmtime.PinnedWasmtimeSource.test_actual_linear_allocator_notifications_cannot_be_substituted",
+      "tools.tests.test_host_codec_wasmtime.PinnedWasmtimeSource.test_actual_table_hook_sources_and_new_cohort_require_exact_postimages",
+      "tools.tests.test_host_codec_wasmtime.PinnedWasmtimeSource.test_funcrefs_stable_arena_and_directory_sources_cannot_be_substituted",
+      "tools.tests.test_host_codec_wasmtime.PinnedWasmtimeSource.test_owned_context_reply_lowering_requires_exact_guard_and_public_entrypoint_sources",
+      "tools.tests.test_host_codec_wasmtime.PinnedWasmtimeSource.test_per_call_host_future_owner_requires_its_exact_source_postimage",
+      "tools.tests.test_host_codec_wasmtime.PinnedWasmtimeSource.test_resource_substitution_map_and_escape_ownership_sources_cannot_be_substituted",
+      "tools.tests.test_host_codec_wasmtime.PinnedWasmtimeSource.test_store_header_binding_and_guarded_buffer_postimages_cannot_be_substituted"
+    ],
+    "count": 7,
+    "cause": "six obsolete maintained-file counts of 274 instead of 275 and one obsolete v16 cohort literal",
+    "repairedWithoutWeakeningSourceChecks": true,
+    "pureChecksAtRepair": {
+      "cases": [
+        "tools.tests.test_host_codec_wasmtime.PinnedWasmtimeSource.test_actual_linear_allocator_notifications_cannot_be_substituted",
+        "tools.tests.test_host_codec_wasmtime.PinnedWasmtimeSource.test_actual_table_hook_sources_and_new_cohort_require_exact_postimages",
+        "tools.tests.test_host_codec_wasmtime.PinnedWasmtimeSource.test_funcrefs_stable_arena_and_directory_sources_cannot_be_substituted",
+        "tools.tests.test_host_codec_wasmtime.PinnedWasmtimeSource.test_owned_context_reply_lowering_requires_exact_guard_and_public_entrypoint_sources",
+        "tools.tests.test_host_codec_wasmtime.PinnedWasmtimeSource.test_per_call_host_future_owner_requires_its_exact_source_postimage",
+        "tools.tests.test_host_codec_wasmtime.PinnedWasmtimeSource.test_resource_substitution_map_and_escape_ownership_sources_cannot_be_substituted",
+        "tools.tests.test_host_codec_wasmtime.PinnedWasmtimeSource.test_store_header_binding_and_guarded_buffer_postimages_cannot_be_substituted",
+        "tools.tests.test_host_codec_wasmtime.PinnedWasmtimeSource.test_cache_backport_complete_source_and_fixed_locks_are_required",
+        "tools.tests.test_host_codec_wasmtime.PinnedWasmtimeSource.test_local_cache_inventory_retains_original_license_and_backport_identity",
+        "tools.tests.test_build_source_capacity.SourceCapacityTests.test_source_inventory_uses_capture_file_ceiling_and_rejects_one_over"
+      ],
+      "count": 10,
+      "exitCode": 0,
+      "seconds": 88.04267779999645,
+      "nativeOrGuestCompilationOrExecution": false
+    },
+    "nativeReplay": false
+  },
+  "dependencyRepair": {
+    "cachePackage": "wasmtime-internal-cache",
+    "cacheVersion": "48.0.7",
+    "completePublishedFiles": 14,
+    "unchangedRustAndBuildFiles": 9,
+    "selectedRegistryPackages": {
+      "zstd": "0.14.3",
+      "zstd-safe": "8.2.0",
+      "zstd-sys": "2.1.2+zstd.1.5.7"
+    },
+    "advisoryDatabaseCommit": "a78282a1414d6c28cc228c4eae3570451affb0dc",
+    "advisoryMatrix": [
+      {
+        "id": "RUSTSEC-2026-0395",
+        "package": "zstd-safe",
+        "patched": [
+          ">= 8.2.0"
+        ],
+        "unaffected": [
+          "< 4.1.0"
+        ],
+        "selected": "8.2.0",
+        "satisfiesPatched": true,
+        "primarySha256": "c1edb31084861c3616c154fe4f929d6bcaf49dc279fecca337979ef7367f34eb"
+      },
+      {
+        "id": "RUSTSEC-2026-0397",
+        "package": "zstd-safe",
+        "patched": [
+          ">= 8.2.0"
+        ],
+        "unaffected": [
+          "< 4.0.0"
+        ],
+        "selected": "8.2.0",
+        "satisfiesPatched": true,
+        "primarySha256": "7114de7fc31bf3335b9efdda1d962ba7d842c9556f815ad03514663a70374233"
+      },
+      {
+        "id": "RUSTSEC-2026-0399",
+        "package": "zstd-safe",
+        "patched": [
+          ">= 8.2.0"
+        ],
+        "unaffected": [
+          "< 3.0.0"
+        ],
+        "selected": "8.2.0",
+        "satisfiesPatched": true,
+        "primarySha256": "c0bafd7a60715bce6359c92813acef499822dfc27bf1db1954fe84af24f7b353"
+      },
+      {
+        "id": "RUSTSEC-2026-0400",
+        "package": "zstd-safe",
+        "patched": [
+          ">= 8.2.0"
+        ],
+        "unaffected": [
+          "< 3.0.1"
+        ],
+        "selected": "8.2.0",
+        "satisfiesPatched": true,
+        "primarySha256": "0e6dde9156e9c750af45fbf1b5d1ebd0b4292e8464143462665aac03ff9adb78"
+      },
+      {
+        "id": "RUSTSEC-2026-0401",
+        "package": "zstd-safe",
+        "patched": [
+          ">= 8.2.0"
+        ],
+        "unaffected": [],
+        "selected": "8.2.0",
+        "satisfiesPatched": true,
+        "primarySha256": "fd995c2bb57142e6e6ff0a5cf9b0644eebd7f1fb0fbaafa177b653d65995ab45"
+      },
+      {
+        "id": "RUSTSEC-2026-0402",
+        "package": "zstd-safe",
+        "patched": [
+          ">= 8.2.0"
+        ],
+        "unaffected": [
+          "< 4.1.4"
+        ],
+        "selected": "8.2.0",
+        "satisfiesPatched": true,
+        "primarySha256": "22f3974648278672be3feca0e317795e97df1b48b8f346d5b7cb089fbc08ee35"
+      },
+      {
+        "id": "RUSTSEC-2026-0403",
+        "package": "zstd-safe",
+        "patched": [
+          ">= 8.2.0"
+        ],
+        "unaffected": [
+          "< 4.0.0"
+        ],
+        "selected": "8.2.0",
+        "satisfiesPatched": true,
+        "primarySha256": "05ac3b7223d7837dae022a5a857185b891f89801d94468d65b214c747b0bf432"
+      },
+      {
+        "id": "RUSTSEC-2026-0404",
+        "package": "zstd-safe",
+        "patched": [
+          ">= 8.2.0"
+        ],
+        "unaffected": [
+          "< 4.1.4"
+        ],
+        "selected": "8.2.0",
+        "satisfiesPatched": true,
+        "primarySha256": "ec593926653683515e4a6a3738f4e4b1ae2d83187f4fc4fc39d69b2a2a92bac2"
+      },
+      {
+        "id": "RUSTSEC-2026-0406",
+        "package": "zstd-safe",
+        "patched": [
+          ">= 8.2.0"
+        ],
+        "unaffected": [],
+        "selected": "8.2.0",
+        "satisfiesPatched": true,
+        "primarySha256": "26a7af678e3732bf8a85a8261ee2dcbcc86afb6ad75a49077ebb466d4d6ef7fb"
+      },
+      {
+        "id": "RUSTSEC-2026-0410",
+        "package": "zstd-sys",
+        "patched": [
+          ">= 2.1.2"
+        ],
+        "unaffected": [
+          "< 2.0.9"
+        ],
+        "selected": "2.1.2",
+        "satisfiesPatched": true,
+        "primarySha256": "5b7e7181131b2b3f5236f650229f62cb3c45e79ed5de2764ca3d5a6d47b81356"
+      }
+    ],
+    "advisoryExceptions": false,
+    "rootWorkspaceLockChanged": false,
+    "hostedCompatibilityQualified": true
+  },
+  "unchangedLimits": {
+    "jobMinutes": 45,
+    "aggregateSeconds": 2400,
+    "buildSeconds": 900,
+    "testSeconds": 60,
+    "listSeconds": 30,
+    "jobs": 2,
+    "cleanupReserveSecondsInsideBounds": 5,
+    "sourceBytes": 78643200,
+    "sourceArchiveBytes": 85983232,
+    "sourceFileBytes": 4194304,
+    "sourceDirectories": 4096
+  },
+  "explicitSourceEntryEnvelope": {
+    "previous": 8960,
+    "current": 8992,
+    "actual": 8974,
+    "sourceBytes": 78272747,
+    "archiveBytes": 85954560
+  },
+  "remainingOpen": [
+    "inner producer/consume/accept factory boxes",
+    "consumer Arc/pinned consumer",
+    "stream buffers",
+    "tables and collections",
+    "transitive backing",
+    "complete CPU/memory cost model"
+  ],
+  "whole736Complete": false,
+  "fullRuntimeSuiteExecuted": false,
+  "fullVendorSuiteExecuted": false,
+  "fullCostModelQualified": false,
+  "allocatorRssQuotaClaimed": false,
+  "actualCompilerProof": {
+    "parentCacheCompilePackages": {
+      "zstd-sys": {
+        "packageId": "registry+https://github.com/rust-lang/crates.io-index#zstd-sys@2.1.2+zstd.1.5.7",
+        "lockedChecksum": "481ada9c543b2323cbb7bbdbb5249177fbf0188ed959ed2c15e4b22421c84ed3",
+        "targetName": "zstd_sys",
+        "fresh": false
+      },
+      "zstd-safe": {
+        "packageId": "registry+https://github.com/rust-lang/crates.io-index#zstd-safe@8.2.0",
+        "lockedChecksum": "ded520f16b29e1a9b771c722221b2b0a0398c2316d9bb3c42b458a5414d7434b",
+        "targetName": "zstd_safe",
+        "fresh": false
+      },
+      "zstd": {
+        "packageId": "registry+https://github.com/rust-lang/crates.io-index#zstd@0.14.3",
+        "lockedChecksum": "db3ae9bf90af6e40197bef767eeefc46ad6397420fe873830bd85e5fbbfb3c70",
+        "targetName": "zstd",
+        "fresh": false
+      }
+    },
+    "cacheTestCompilePackages": {
+      "zstd-sys": {
+        "packageId": "registry+https://github.com/rust-lang/crates.io-index#zstd-sys@2.1.2+zstd.1.5.7",
+        "lockedChecksum": "481ada9c543b2323cbb7bbdbb5249177fbf0188ed959ed2c15e4b22421c84ed3",
+        "targetName": "zstd_sys",
+        "fresh": false
+      },
+      "zstd-safe": {
+        "packageId": "registry+https://github.com/rust-lang/crates.io-index#zstd-safe@8.2.0",
+        "lockedChecksum": "ded520f16b29e1a9b771c722221b2b0a0398c2316d9bb3c42b458a5414d7434b",
+        "targetName": "zstd_safe",
+        "fresh": false
+      },
+      "zstd": {
+        "packageId": "registry+https://github.com/rust-lang/crates.io-index#zstd@0.14.3",
+        "lockedChecksum": "db3ae9bf90af6e40197bef767eeefc46ad6397420fe873830bd85e5fbbfb3c70",
+        "targetName": "zstd",
+        "fresh": false
+      }
+    },
+    "localCacheArtifactsInEachCompileStream": 1,
+    "parentCompilerAndCacheFeaturesObserved": true,
+    "cacheExecutable": {
+      "name": "upstream-cache-libtest",
+      "digest": "sha256:965c3165c85028b8e2eb588e1f0d26b18ce55968944b79b40273e677c1c07c40",
+      "size": 9776096
+    },
+    "observedTools": [
+      {
+        "name": "cargo",
+        "digest": "sha256:828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953",
+        "size": 42839824
+      },
+      {
+        "name": "rustc",
+        "digest": "sha256:d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea",
+        "size": 645000
+      },
+      {
+        "name": "wasm-tools",
+        "digest": "sha256:cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6",
+        "size": 20231696
+      }
+    ]
+  },
+  "wasmtimeSource": {
+    "package": "wasmtime",
+    "version": "48.0.7",
+    "recordSha256": "4c39b53ab8067ac71ee1993b9eec56581474ba920d5075804732c48de65e104e",
+    "nativeCohort": "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-unordered-futures-outer-sync-result-stream-outers-memory-v17-cache-repair",
+    "upstreamArchive": "https://static.crates.io/crates/wasmtime/wasmtime-48.0.7.crate",
+    "upstreamSha256": "12300d040e8bea7e7ccde75b9919d27ebba47a217a64b09ba058ae8d3b4290b6",
+    "patchSha256": "32a3c60bc9e302cae92e2a0525a1246616c97ab4d97a02256a3e9f60c5a3747a",
+    "licenseFiles": {
+      "LICENSE": "268872b9816f90fd8e85db5a28d33f8150ebb8dd016653fb39ef1f94f2686bc5"
+    },
+    "additionalLicenseFiles": {
+      "src/runtime/component/concurrent/host_futures/LICENSE-MIT": "6652c868f35dfe5e8ef636810a4e576b9d663f3a17fb0f5613ad73583e1b88fd",
+      "src/runtime/component/concurrent/host_futures/LICENSE-APACHE": "275c491d6d1160553c32fd6127061d7f9606c3ea25abfad6ca3f6ed088785427"
+    },
+    "maintainedFiles": 275
+  },
+  "cacheSource": {
+    "package": "wasmtime-internal-cache",
+    "version": "48.0.7",
+    "provider": "crates/vendor/wasmtime-cache",
+    "upstreamArchive": "https://static.crates.io/crates/wasmtime-internal-cache/wasmtime-internal-cache-48.0.7.crate",
+    "upstreamSha256": "b11ca8945aa341f944558622db59845dffa1435971f318d5fce2f2d9765a69b0",
+    "fixedRegistryPackages": {
+      "zstd": {
+        "version": "0.14.3",
+        "checksum": "db3ae9bf90af6e40197bef767eeefc46ad6397420fe873830bd85e5fbbfb3c70"
+      },
+      "zstd-safe": {
+        "version": "8.2.0",
+        "checksum": "ded520f16b29e1a9b771c722221b2b0a0398c2316d9bb3c42b458a5414d7434b"
+      },
+      "zstd-sys": {
+        "version": "2.1.2+zstd.1.5.7",
+        "checksum": "481ada9c543b2323cbb7bbdbb5249177fbf0188ed959ed2c15e4b22421c84ed3"
+      }
+    },
+    "licenseFiles": {
+      "LICENSE": "268872b9816f90fd8e85db5a28d33f8150ebb8dd016653fb39ef1f94f2686bc5"
+    },
+    "completeFiles": 14
+  },
+  "cacheTestUsesActivationBudget": false,
+  "cacheTestHasMemoryOrFuelQuotaEvidence": false,
+  "noRuntimeReplayForDependencyRepair": true,
+  "actualSecurityMetadata": {
+    "run": 40356268168,
+    "head": "757ae2285fdc1e0c3aef5d23a6b136b28fec2b86",
+    "scanMergeRevision": "c9ec496f3c9b77e6d9cfa6a5c75b7df8126cb0ba",
+    "jobs": [
+      {
+        "id": 121689462424,
+        "name": "Select security scope",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 121694833358,
+        "name": "Source and workflow rules c9ec496f3c9b77e6d9cfa6a5c75b7df8126cb0ba",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 121694833386,
+        "name": "SDK advisories c9ec496f3c9b77e6d9cfa6a5c75b7df8126cb0ba",
+        "status": "completed",
+        "conclusion": "failure"
+      },
+      {
+        "id": 121694833425,
+        "name": "Redacted secrets c9ec496f3c9b77e6d9cfa6a5c75b7df8126cb0ba",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 121694833811,
+        "name": "Security fail-closed canaries",
+        "status": "completed",
+        "conclusion": "failure"
+      },
+      {
+        "id": 121694834035,
+        "name": "RustSec c9ec496f3c9b77e6d9cfa6a5c75b7df8126cb0ba / RustSec current change",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 121706280364,
+        "name": "Security baseline result",
+        "status": "queued",
+        "conclusion": null
+      }
+    ],
+    "wholeSecurityRunPassed": false,
+    "scope": "official job metadata only: SDK advisories and fail-closed canaries failed; cause not inferred and logs retained by the root collector"
+  },
+  "sourceOnlyInventoryRepair": {
+    "cause": "new ordinary Cargo cache inventory row lacked the isolated-policy marker and manifest workspace declaration; cargo_inventory reached manifest[workspace][members] and raised KeyError workspace",
+    "failedJobIds": [
+      121694833386,
+      121694833811
+    ],
+    "isolatedPolicyImplementationChanged": false,
+    "explicitEmptyWorkspace": true,
+    "cacheManifest": {
+      "sha256": "e68146456e40062edfde8d47c853ea8155f20b63044fba94bf8ef24f2c8bae5d",
+      "bytes": 3048
+    },
+    "newSourceRecordSha256": "c2ec501a8616bbf32701786f732fbb5228807bb4c7808f56d57efc7ee68ea694",
+    "rustFilesUnchangedFromExecuted757": 270,
+    "locksUnchanged": {
+      "Cargo.lock": {
+        "sha256": "41234a75cbc14c450c9a3c1da5694313e3ceae093718e20a72b9f017d3874106",
+        "bytes": 113422
+      },
+      "crates/vendor/wasmtime/Cargo.lock": {
+        "sha256": "cd4732cd7667ff9352408a5f59aeb37ead9df5937b7aef61bc2089edaf5cb24b",
+        "bytes": 60344
+      },
+      "crates/vendor/wasmtime-cache/Cargo.lock": {
+        "sha256": "6f22ad7ad2def709e45bd209f2b12041f692f8e35a6092553a54a18233d66f1e",
+        "bytes": 28260
+      }
+    },
+    "affectedPureControls": {
+      "cases": [
+        "tools.tests.test_security_baseline.SecurityFixtureTests.test_current_manifest_inventory_covers_guest_client_and_build_locks",
+        "tools.tests.test_security_baseline.SecurityFixtureTests.test_legacy_release_absent_features_do_not_hide_partial_or_unknown_manifests",
+        "tools.tests.test_security_baseline.SecurityFixtureTests.test_new_manifest_missing_lock_or_unresolved_requirement_cannot_pass",
+        "tools.tests.test_security_result_bytes.ResultBytesAdvisoryIdentity.test_complete_source_keeps_upstream_coordinate_and_unknown_or_partial_inventory_refuses",
+        "tools.tests.test_security_sdk_graphs.SdkGraphTests.test_actual_dotnet_projects_have_complete_registered_package_and_runtime_graphs",
+        "tools.tests.test_security_sdk_graphs.SdkGraphTests.test_compiler_metadata_helper_has_one_exact_framework_only_manifest_and_no_orphan_allowance",
+        "tools.tests.test_security_sdk_graphs.SdkGraphTests.test_dotnet_legacy_absence_cannot_hide_partial_transport_or_orphan_configuration",
+        "tools.tests.test_security_sdk_graphs.SdkGraphTests.test_http_error_helpers_keep_exact_manifest_pins_and_the_scanned_compiler_dependency",
+        "tools.tests.test_security_sdk_graphs.SdkGraphTests.test_http_error_legacy_directory_absence_cannot_hide_partial_or_orphan_manifests",
+        "tools.tests.test_security_sdk_graphs.SdkGraphTests.test_original_wasi_manifest_is_only_byte_pinned_provenance_and_mutation_refuses",
+        "tools.tests.test_security_sdk_graphs.SdkGraphTests.test_standard_rust_transform_graph_is_pinned_and_missing_directory_cannot_hide_orphans",
+        "tools.tests.test_security_sdk_graphs.SdkGraphTests.test_task_wait_context_fixture_has_exact_no_package_manifest_and_cannot_hide_mutations_or_orphans",
+        "tools.tests.test_security_sdk_graphs.SdkGraphTests.test_wasmtime_fork_inventory_keeps_upstream_advisory_identity_and_refuses_partial_or_mutated_sources",
+        "tools.tests.test_security_tls_provider.BoundedTlsAdvisoryIdentity.test_old_policy_is_red_and_no_generic_vendor_manifest_exclusion_is_added",
+        "tools.tests.test_security_tls_provider.BoundedTlsAdvisoryIdentity.test_real_active_provider_has_upstream_osv_identity_and_complete_manifest_coverage"
+      ],
+      "count": 15,
+      "exitCode": 0,
+      "seconds": 115.25771,
+      "compilationOrNativeExecution": false
+    },
+    "lockedOfflineResolution": {
+      "commands": [
+        {
+          "argv": [
+            "C:/Users/turkins/.cargo/bin/cargo.exe",
+            "update",
+            "--locked",
+            "--offline",
+            "--workspace",
+            "--manifest-path",
+            "crates/vendor/wasmtime-cache/Cargo.toml"
+          ],
+          "exitCode": 0,
+          "seconds": 0.868556
+        },
+        {
+          "argv": [
+            "C:/Users/turkins/.cargo/bin/cargo.exe",
+            "update",
+            "--locked",
+            "--offline",
+            "--workspace",
+            "--manifest-path",
+            "crates/vendor/wasmtime/Cargo.toml"
+          ],
+          "exitCode": 0,
+          "seconds": 1.513799
+        }
+      ],
+      "bothLockedOfflineResolutionsPassed": true,
+      "threeLocksUnchanged": {
+        "Cargo.lock": "41234a75cbc14c450c9a3c1da5694313e3ceae093718e20a72b9f017d3874106",
+        "crates/vendor/wasmtime/Cargo.lock": "cd4732cd7667ff9352408a5f59aeb37ead9df5937b7aef61bc2089edaf5cb24b",
+        "crates/vendor/wasmtime-cache/Cargo.lock": "6f22ad7ad2def709e45bd209f2b12041f692f8e35a6092553a54a18233d66f1e"
+      },
+      "noPackageDownloadOrCompilation": true,
+      "fullCargoMetadataUnavailableBecauseOriginal757MissingLocalAddr2lineCrateBytes": true
+    },
+    "newCacheProbeExecuted": false,
+    "newSecurityOutcome": null,
+    "existing757ProbeRetaggedToNewManifest": false
+  },
+  "actualMainCiFailure": {
+    "runId": 40358355805,
+    "jobId": 121702592768,
+    "sourceRevision": "f7cf175f1505eb0199c0e5bd2ce68ecc28a22c4e",
+    "tests": 8461,
+    "failed": 2,
+    "errors": 17,
+    "actualFailureCauses": {
+      "workspaceInventoryErrors": 15,
+      "remainingFailures": "four actual format/placeholder fixture failures caused by missing mandatory adjacent cache source"
+    },
+    "wholeMainCiPassed": false
+  },
+  "sourceOnlyFixtureRepair": {
+    "files": [
+      "tools/tests/test_validate_repository.py",
+      "tools/tests/test_ci_rust_format.py"
+    ],
+    "change": "one mandatory adjacent CACHE_PROVIDER source-copy line in each existing fixture",
+    "affectedPureControls": {
+      "passed": 6,
+      "failed": 0,
+      "ignored": 0,
+      "seconds": 65.687
+    },
+    "sourceOfOutcome": "root-owned focused execution",
+    "allCaseAndSkipObligationsPreserved": true,
+    "nativeOrCacheReplay": false,
+    "freshHostedSecurityOrMainCiPassClaimed": false
+  }
+}

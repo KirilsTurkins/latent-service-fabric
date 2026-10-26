@@ -187,6 +187,7 @@ class AuthenticatedWasmtimePlaceholderTests(unittest.TestCase):
         for name in ("Cargo.toml", "Cargo.lock"):
             (root / name).write_bytes((provider.ROOT / name).read_bytes())
         shutil.copytree(provider.ROOT / provider.PROVIDER, root / provider.PROVIDER)
+        shutil.copytree(provider.ROOT / provider.CACHE_PROVIDER, root / provider.CACHE_PROVIDER)
 
     def test_exact_seven_unchanged_upstream_paths_and_eight_occurrences_are_authenticated(self):
         with tempfile.TemporaryDirectory() as temporary:
