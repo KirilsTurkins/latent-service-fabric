@@ -84,7 +84,7 @@ use core::pin::{Pin, pin};
 use core::ptr::{self, NonNull};
 use core::task::{Context, Poll, Waker};
 use futures::channel::oneshot;
-use futures::stream::{FuturesUnordered, StreamExt};
+use futures::stream::StreamExt;
 use futures_and_streams::{FlatAbi, ReturnCode, TransmitHandle, TransmitIndex};
 use table::{TableDebug, TableId};
 use wasmtime_environ::component::{
@@ -108,6 +108,8 @@ pub use futures_and_streams::{
     StreamProducer, StreamReader, StreamResult, VecBuffer, WriteBuffer,
 };
 pub(crate) use futures_and_streams::{ResourcePair, lower_error_context_to_index};
+pub(crate) use host_futures::HostFutureSet;
+use host_futures::TaskSlot;
 pub(crate) use pending_future::HostTaskFuture;
 
 mod abort;
@@ -116,6 +118,7 @@ mod error_contexts;
 mod func;
 mod future_stream_any;
 mod futures_and_streams;
+mod host_futures;
 mod pending_future;
 pub(crate) mod table;
 pub(crate) mod tls;
@@ -791,7 +794,7 @@ enum WorkerItem {
 /// component instance.
 enum WorkItem {
     /// A host task to be pushed to `ConcurrentState::futures`.
-    PushFuture(AlwaysMut<HostTaskFuture>),
+    PushFuture(AlwaysMut<HostTaskFuture>, TaskSlot),
     /// A fiber to resume.
     ResumeFiber(StoreFiber<'static>),
     /// A thread to resume.
@@ -805,7 +808,7 @@ enum WorkItem {
 impl fmt::Debug for WorkItem {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Self::PushFuture(_) => f.debug_tuple("PushFuture").finish(),
+            Self::PushFuture(..) => f.debug_tuple("PushFuture").finish(),
             Self::ResumeFiber(_) => f.debug_tuple("ResumeFiber").finish(),
             Self::ResumeThread(instance, thread) => f
                 .debug_tuple("ResumeThread")
@@ -820,6 +823,13 @@ impl fmt::Debug for WorkItem {
             Self::WorkerFunction(_) => f.debug_tuple("WorkerFunction").finish(),
         }
     }
+}
+
+// Affine preparation travels beside the future until the SAME stable task is
+// inserted. No factory Arc is kept in either backing owner or removed set.
+struct FutureWorkSlot {
+    queue: QueueSlot<WorkItem>,
+    task: TaskSlot,
 }
 
 /// Whether a suspension intrinsic was cancelled or completed
@@ -865,7 +875,7 @@ pub(crate) fn poll_and_block<R: Send + Sync + 'static>(
         })
     }) as BoxedHostTaskFuture;
 
-    let queue_slot = store.concurrent_state_mut()?.prepare_queue_slot()?;
+    let queue_slot = store.concurrent_state_mut()?.prepare_future_slot()?;
     // Finally, poll the future.  We can use a dummy `Waker` here because we'll
     // add the future to `ConcurrentState::futures` and poll it automatically
     // from the event loop if it doesn't complete immediately here.
@@ -1100,7 +1110,7 @@ impl<T> StoreContextMut<'_, T> {
         T: 'static,
         D: HasData + ?Sized,
     {
-        let queue_slot = self.0.concurrent_state_mut()?.prepare_queue_slot()?;
+        let queue_slot = self.0.concurrent_state_mut()?.prepare_future_slot()?;
         // Create an "abortable future" here where internally the future will
         // hook calls to poll and possibly spawn more background tasks on each
         // iteration.
@@ -1278,7 +1288,7 @@ impl<T> StoreContextMut<'_, T> {
     {
         struct Reset<'a, T: 'static> {
             store: StoreContextMut<'a, T>,
-            futures: Option<FuturesUnordered<HostTaskFuture>>,
+            futures: Option<HostFutureSet>,
         }
 
         impl<'a, T> Drop for Reset<'a, T> {
@@ -1294,6 +1304,9 @@ impl<T> StoreContextMut<'_, T> {
             }
         }
 
+        // Lazy paid stub/ready headers precede even the argument's first poll.
+        // The removed set and all escaped tasks carry no factory Memory Arc.
+        self.0.concurrent_state_mut()?.ensure_futures_ready()?;
         loop {
             // Take `ConcurrentState::futures` out of the store so we can poll
             // it while also safely giving any of the futures inside access to
@@ -1435,7 +1448,7 @@ impl<T> StoreContextMut<'_, T> {
                             while let Some((_slot, item)) = self.ready.next() {
                                 match item {
                                     WorkItem::ResumeFiber(mut fiber) => fiber.dispose(self.store.0),
-                                    WorkItem::PushFuture(future) => {
+                                    WorkItem::PushFuture(future, _task_slot) => {
                                         tls::set(self.store.0, move || drop(future))
                                     }
                                     _ => {}
@@ -1493,11 +1506,11 @@ impl<T> StoreContextMut<'_, T> {
     {
         log::trace!("handle work item {item:?}");
         match item {
-            WorkItem::PushFuture(future) => {
+            WorkItem::PushFuture(future, task_slot) => {
                 self.0
                     .concurrent_state_mut()?
                     .futures_mut()?
-                    .push(future.into_inner());
+                    .push_prepared(task_slot, future.into_inner());
             }
             WorkItem::ResumeFiber(fiber) => {
                 self.0.resume_fiber(fiber, slot).await?;
@@ -3387,6 +3400,9 @@ impl Instance {
         // PushFuture (#7). Neither admission may occur after the first poll.
         prepared.args_mut().2 = Some(QueueSlot::prepare(&memory)?);
         let future_queue_slot = QueueSlot::prepare(&memory)?;
+        // Task header is a NEW distinct physical owner, after host-local #7.
+        // It must exist even if the first poll later completes immediately.
+        let future_task_slot = state.prepare_future_task_slot()?;
         {
             let state = &mut state.get_mut(task)?.state;
             assert!(matches!(state, HostTaskState::CalleeStarted));
@@ -3409,6 +3425,7 @@ impl Instance {
                 let (_future, worker, unused_completion_slot) = prepared.into_args();
                 drop(unused_completion_slot);
                 drop(future_queue_slot);
+                drop(future_task_slot);
                 let (lower, _token, _task) = worker.into_context();
                 let result = result.transpose()?;
                 lower(store.as_context_mut(), result, true)?;
@@ -3435,7 +3452,13 @@ impl Instance {
             None => bail_bug!("host task wasn't created but should have been"),
         };
         let state = store.0.concurrent_state_mut()?;
-        state.push_host_future(future_queue_slot, future);
+        state.push_host_future(
+            FutureWorkSlot {
+                queue: future_queue_slot,
+                task: future_task_slot,
+            },
+            future,
+        );
         let instance = state.get_mut(caller.task)?.instance;
         let (state, counter) = store.0.instance_state_and_handle_counter(instance);
         let handle = state
@@ -5452,7 +5475,7 @@ pub struct ConcurrentState {
     ///
     /// See `ComponentInstance::poll_until` for where we temporarily take this
     /// out, poll it, then put it back to avoid any mutable aliasing hazards.
-    futures: AlwaysMut<Option<FuturesUnordered<HostTaskFuture>>>,
+    futures: AlwaysMut<Option<HostFutureSet>>,
     /// The table of waitables, waitable sets, etc.
     table: AlwaysMut<ResourceTable>,
     /// The "high priority" work queue for this store's event loop.
@@ -5519,13 +5542,14 @@ impl Default for ConcurrentState {
 
 impl ConcurrentState {
     pub(super) fn new(queue_memory: crate::runtime::native_memory::Memory) -> Self {
+        let paid = queue_memory.is_some();
         Self {
             high_priority: Queue::new(queue_memory.is_some()),
             low_priority: Queue::new(queue_memory.is_some()),
             queue_memory,
             unforced_current_thread: CurrentThread::None,
             table: AlwaysMut::new(ResourceTable::new()),
-            futures: AlwaysMut::new(Some(FuturesUnordered::new())),
+            futures: AlwaysMut::new(Some(HostFutureSet::new(paid))),
             suspend_reason: None,
             worker: None,
             worker_item: None,
@@ -5557,7 +5581,7 @@ impl ConcurrentState {
     pub(crate) fn take_fibers_and_futures(
         &mut self,
         fibers: &mut Vec<StoreFiber<'static>>,
-        futures: &mut Vec<FuturesUnordered<HostTaskFuture>>,
+        futures: &mut Vec<HostFutureSet>,
     ) {
         for entry in self.table.get_mut().iter_mut() {
             if let Some(set) = entry.downcast_mut::<WaitableSet>() {
@@ -5583,12 +5607,12 @@ impl ConcurrentState {
             WorkItem::ResumeFiber(fiber) => {
                 fibers.push(fiber);
             }
-            WorkItem::PushFuture(future) => {
+            WorkItem::PushFuture(future, task_slot) => {
                 self.futures
                     .get_mut()
                     .as_mut()
                     .unwrap()
-                    .push(future.into_inner());
+                    .push_prepared(task_slot, future.into_inner());
             }
             WorkItem::ResumeThread(..) | WorkItem::GuestCall(..) | WorkItem::WorkerFunction(..) => {
             }
@@ -5659,7 +5683,7 @@ impl ConcurrentState {
             WorkItem::ResumeFiber(fiber) => {
                 fiber.trace_gc_roots(modules, unwind, gc_roots_list);
             }
-            WorkItem::PushFuture(_future) => {
+            WorkItem::PushFuture(_future, _task_slot) => {
                 // TODO(cm-gc): once futures can contain GC roots, we will need
                 // to trace them.
             }
@@ -5710,18 +5734,44 @@ impl ConcurrentState {
         QueueSlot::prepare(&self.queue_memory)
     }
 
-    fn push_future(&mut self, slot: QueueSlot<WorkItem>, future: BoxedHostTaskFuture) {
+    fn ensure_futures_ready(&mut self) -> Result<()> {
+        match self.futures.get_mut().as_mut() {
+            Some(set) => set.ensure(&self.queue_memory),
+            None => bail_bug!("cannot initialize the removed host future set"),
+        }
+    }
+
+    fn prepare_future_task_slot(&mut self) -> Result<TaskSlot> {
+        if let Some(set) = self.futures.get_mut().as_mut() {
+            set.ensure(&self.queue_memory)?;
+        }
+        // None here means poll_until owns the set, which it initialized BEFORE
+        // taking it out and polling any user future. Slots need no queue/factory
+        // reference; the ready-queue Weak is attached only during publication.
+        TaskSlot::prepare(&self.queue_memory)
+    }
+
+    fn prepare_future_slot(&mut self) -> Result<FutureWorkSlot> {
+        let queue = self.prepare_queue_slot()?;
+        let task = self.prepare_future_task_slot()?;
+        Ok(FutureWorkSlot { queue, task })
+    }
+
+    fn push_future(&mut self, slot: FutureWorkSlot, future: BoxedHostTaskFuture) {
         self.push_host_future(slot, HostTaskFuture::legacy(future));
     }
 
-    fn push_host_future(&mut self, slot: QueueSlot<WorkItem>, future: HostTaskFuture) {
+    fn push_host_future(&mut self, slot: FutureWorkSlot, future: HostTaskFuture) {
         // Note that we can't directly push to `ConcurrentState::futures` here
         // since this may be called from a future that's being polled inside
         // `Self::poll_until`, which temporarily removes the `FuturesUnordered`
         // so it has exclusive access while polling it.  Therefore, we push a
         // work item to the "high priority" queue, which will actually push to
         // `ConcurrentState::futures` later.
-        self.push_high_priority(slot, WorkItem::PushFuture(AlwaysMut::new(future)));
+        self.push_high_priority(
+            slot.queue,
+            WorkItem::PushFuture(AlwaysMut::new(future), slot.task),
+        );
     }
 
     fn push_high_priority(&mut self, slot: QueueSlot<WorkItem>, item: WorkItem) {
@@ -5816,7 +5866,7 @@ impl ConcurrentState {
         }
     }
 
-    fn futures_mut(&mut self) -> Result<&mut FuturesUnordered<HostTaskFuture>> {
+    fn futures_mut(&mut self) -> Result<&mut HostFutureSet> {
         match self.futures.get_mut().as_mut() {
             Some(f) => Ok(f),
             None => bail_bug!("futures field of concurrent state is currently taken"),

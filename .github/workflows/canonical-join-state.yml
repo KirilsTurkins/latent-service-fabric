@@ -1,22 +1,24 @@
-name: Focused canonical async queue-node accounting
+name: Focused canonical async unordered backing
 on:
   push:
-    branches: ['feat/sdk-736-event-queue-20261026']
+    branches: ['feat/sdk-736-futures-unordered-20261026']
     paths:
       - '.github/workflows/canonical-join-state.yml'
       - 'crates/vendor/wasmtime/**'
       - 'crates/latent-wasmtime/src/host.rs'
       - 'crates/latent-wasmtime/src/host/join_state_tests.rs'
+      - 'crates/latent-wasmtime/src/host/native_host_future_tests.rs'
+      - 'crates/latent-wasmtime/src/host/native_context_reply_tests.rs'
       - 'tools/qualify_canonical_join_state.py'
       - 'tools/host_codec_wasmtime.py'
 permissions:
   contents: read
 concurrency:
-  group: canonical-queue-nodes-${{ github.ref }}
+  group: canonical-unordered-backing-${{ github.ref }}
   cancel-in-progress: false
 jobs:
   join-state:
-    name: Four queue owners and seven actual canonical admission cases
+    name: Six private unordered owners and twelve actual affected cases
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     env:
@@ -55,7 +57,7 @@ jobs:
       - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
         with:
           version: 1.254.0
-      - name: Build only two locked host targets and execute the exact eleven controls
+      - name: Build only two locked host targets and execute the exact eighteen controls
         run: >-
           python3 -B tools/qualify_canonical_join_state.py
           --source-commit "${{ github.sha }}"
@@ -64,7 +66,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: canonical-queue-nodes-${{ github.sha }}
+          name: canonical-unordered-backing-${{ github.sha }}
           path: |
             ${{ runner.temp }}/canonical-join-state/receipt.json
             ${{ runner.temp }}/canonical-join-state/FAILED.json

@@ -7569,7 +7569,9 @@
         "host::join_state_tests::canonical_worker_function_first_poll_refusal_and_same_budget_fresh_store",
         "host::join_state_tests::canonical_completion_queue_node_refusal_and_same_budget_fresh_store",
         "host::join_state_tests::canonical_push_future_queue_node_refusal_and_same_budget_fresh_store",
-        "host::join_state_tests::canonical_upstream_queue_nodes_refuse_before_guest_and_same_budget_fresh_store"
+        "host::join_state_tests::canonical_upstream_queue_nodes_refuse_before_guest_and_same_budget_fresh_store",
+        "host::join_state_tests::canonical_unordered_initialization_refusal_and_same_budget_fresh_store",
+        "host::join_state_tests::canonical_unordered_task_first_poll_refusal_and_same_budget_fresh_store"
       ],
       "expectedIgnored": [
         "cache::measurement::cache_lookup_collector",
@@ -7580,7 +7582,9 @@
         "host::join_state_tests::canonical_worker_function_first_poll_refusal_and_same_budget_fresh_store",
         "host::join_state_tests::canonical_completion_queue_node_refusal_and_same_budget_fresh_store",
         "host::join_state_tests::canonical_push_future_queue_node_refusal_and_same_budget_fresh_store",
-        "host::join_state_tests::canonical_upstream_queue_nodes_refuse_before_guest_and_same_budget_fresh_store"
+        "host::join_state_tests::canonical_upstream_queue_nodes_refuse_before_guest_and_same_budget_fresh_store",
+        "host::join_state_tests::canonical_unordered_initialization_refusal_and_same_budget_fresh_store",
+        "host::join_state_tests::canonical_unordered_task_first_poll_refusal_and_same_budget_fresh_store"
       ],
       "id": "latent-wasmtime.lib.latent-wasmtime",
       "ignoredLeaves": [
@@ -7592,11 +7596,13 @@
         "canonical_worker_function_first_poll_refusal_and_same_budget_fresh_store",
         "canonical_completion_queue_node_refusal_and_same_budget_fresh_store",
         "canonical_push_future_queue_node_refusal_and_same_budget_fresh_store",
-        "canonical_upstream_queue_nodes_refuse_before_guest_and_same_budget_fresh_store"
+        "canonical_upstream_queue_nodes_refuse_before_guest_and_same_budget_fresh_store",
+        "canonical_unordered_initialization_refusal_and_same_budget_fresh_store",
+        "canonical_unordered_task_first_poll_refusal_and_same_budget_fresh_store"
       ],
       "kind": "lib",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 492,
+      "minimumCases": 494,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [

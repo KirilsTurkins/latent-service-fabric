@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_canonical_join_state.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Reviewed exact scheduler Entry backing before effects and same-node transfers. The focused owner selects four NEW private queue controls and seven actual IDs: four affected original owners at explicit global4..7, two new pre-poll nodes8/9, and one two-scenario upstream1/2 refusal/cleanup control. Fixed compiled layout witnesses and original-budget fresh42 required. Same two locked targets,45m/2400s/900s/60s,cleanup5 and two jobs; no full-runtime/RSS/SDK qualification or stopped campaigns.",
+  "reviewReason": "Reviewed private sized unordered strong/weak headers with exact allocator Layout, last-weak deallocation-before-refund and same-charge unwind retention. Six NEW private controls, eight source-affected/new canonical cases (nine refusal scenarios) and four affected ordinary host cases; unchanged two locked Cargo builds, original45m/2400/900/60/30 caps,cleanup5,two jobs. No old private groups,Java replay,RSS or whole-runtime qualification.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "4a442c43f7c818a7a9277b49858e0fcd39af0440f9b05a04f7867552079f3978"
+  "sha256": "c6edc40ea184293c2f7545db81a49bd902a35687ad232b4f654ed03d0e7d5b01"
 }

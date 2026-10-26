@@ -311,13 +311,15 @@ async fn actual_context_reply_original_refusal_keeps_exact_error_and_fresh_same_
         function.call_async(&mut first, ()).await.unwrap().0,
         "context-owned"
     );
-    // Warm the identical callback-less call and observe its GuestCall node.
-    // Leave that node funded so the ORIGINAL reply, rather than an earlier
-    // queue admission, exceeds the unchanged grant by exactly one byte.
+    // The cold call observes GuestCall followed by lazy stub/ready headers.
+    // Those two shared headers are STILL in the same Store's baseline below;
+    // only the first (actual GuestCall) allocation repeats before owned R.
+    // Legacy block_on does not allocate a HostFuture or unordered task header.
     let warmed = super::native_store_tests::requests(&observed);
-    let queues = &warmed[before..];
-    assert_eq!(queues.len(), 1);
-    assert!(queues.iter().all(|bytes| *bytes > 0));
+    let cold = &warmed[before..];
+    assert_eq!(cold.len(), 3);
+    assert!(cold.iter().all(|bytes| *bytes > 0));
+    let queues = &cold[..1];
     let queue_charge = queues
         .iter()
         .map(|bytes| *bytes as u64 + crate::native_tables::OWNER_ESCROW as u64)

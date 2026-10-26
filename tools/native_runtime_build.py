@@ -160,10 +160,11 @@ def dependency_inventory(metadata: dict, lock: dict, commit: str, epoch: int,
                     and manifest == root / codec_wasmtime.PROVIDER / "Cargo.toml",
                     "codec-wasmtime-license-package-identity")
             checked = codec_wasmtime.verify(root)
-            candidates = {manifest.parent / name for name in checked["licenseFiles"]}
+            candidates = {manifest.parent / name for name in
+                          (*checked["licenseFiles"], *checked["additionalLicenseFiles"])}
             entry["comment"] = "Authenticated pinned Wasmtime allocation-hook fork: " + encode({
                 key: checked[key] for key in ("upstreamArchive", "upstreamSha256", "recordSha256",
-                    "patchSha256", "nativeCohort", "licenseFiles")}).decode().strip()
+                    "patchSha256", "nativeCohort", "licenseFiles", "additionalLicenseFiles")}).decode().strip()
         elif checksum:
             entry["checksums"] = [{"algorithm": "SHA256", "checksumValue": checksum}]
             directory = Path(package["manifest_path"]).parent

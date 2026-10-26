@@ -4,7 +4,7 @@
   "registryArchive": "https://static.crates.io/crates/wasmtime/wasmtime-48.0.7.crate",
   "registrySha256": "12300d040e8bea7e7ccde75b9919d27ebba47a217a64b09ba058ae8d3b4290b6",
   "license": "Apache-2.0 WITH LLVM-exception",
-  "nativeCohort": "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-memory-v14",
+  "nativeCohort": "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-unordered-futures-memory-v15",
   "originalFiles": [
     {
       "path": ".cargo_vcs_info.json",
@@ -1256,5 +1256,54 @@
       "sha256": "5978e5d1c73c508253fd908c44e3060c193fa86ea841b4f825df4c36437bb4f8",
       "bytes": 958
     }
-  ]
+  ],
+  "additionalUpstream": {
+    "name": "futures-util",
+    "version": "0.3.34",
+    "registryArchive": "https://static.crates.io/crates/futures-util/futures-util-0.3.34.crate",
+    "registrySha256": "0d50a92467f8ba5dd6e3ee5d4bd04d73ab2e4e1c44474a0674821dfce14b79bc",
+    "license": "MIT OR Apache-2.0",
+    "scope": "five locked unordered source files only, derived privately with declared sized paid headers; original None path remains dependency implementation",
+    "originalFiles": [
+      {
+        "path": "src/stream/futures_unordered/mod.rs",
+        "bytes": 27995,
+        "sha256": "93454ce3057d667972f0da470a1c6a665738df8b8f40bffecb52eb209c5bad8d"
+      },
+      {
+        "path": "src/stream/futures_unordered/task.rs",
+        "bytes": 9528,
+        "sha256": "2b3a40599fcddc506f1d48f780caa0a9a2df2cc0a2030e729e12a75961d59156"
+      },
+      {
+        "path": "src/stream/futures_unordered/ready_to_run_queue.rs",
+        "bytes": 3690,
+        "sha256": "eccd922fcd8dc9214230867027533b9a67acabae57397ecd370107d26f421bce"
+      },
+      {
+        "path": "src/stream/futures_unordered/iter.rs",
+        "bytes": 5843,
+        "sha256": "b7b26ff19df9a4beda137bc6ac1023c1a659cdd36c89fec71cae8200c02a0897"
+      },
+      {
+        "path": "src/stream/futures_unordered/abort.rs",
+        "bytes": 251,
+        "sha256": "bdfece9f91accafd5122be36d628c37c5b219ac0eecec181267840fbb1e95a45"
+      },
+      {
+        "path": "LICENSE-MIT",
+        "bytes": 1094,
+        "sha256": "6652c868f35dfe5e8ef636810a4e576b9d663f3a17fb0f5613ad73583e1b88fd"
+      },
+      {
+        "path": "LICENSE-APACHE",
+        "bytes": 10874,
+        "sha256": "275c491d6d1160553c32fd6127061d7f9606c3ea25abfad6ca3f6ed088785427"
+      }
+    ],
+    "licenseFiles": [
+      "src/runtime/component/concurrent/host_futures/LICENSE-MIT",
+      "src/runtime/component/concurrent/host_futures/LICENSE-APACHE"
+    ]
+  }
 }

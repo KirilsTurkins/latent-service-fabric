@@ -13,7 +13,7 @@
       "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
       "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
     },
-    "name": "Four queue owners and seven actual canonical admission cases",
+    "name": "Six private unordered owners and twelve actual affected cases",
     "runs-on": "ubuntu-24.04",
     "steps": [
       {
@@ -53,7 +53,7 @@
         }
       },
       {
-        "name": "Build only two locked host targets and execute the exact eleven controls",
+        "name": "Build only two locked host targets and execute the exact eighteen controls",
         "run": "python3 -B tools/qualify_canonical_join_state.py --source-commit \"${{ github.sha }}\" --output \"$RUNNER_TEMP/canonical-join-state\""
       },
       {
@@ -62,7 +62,7 @@
         "uses": "actions/upload-artifact",
         "with": {
           "if-no-files-found": "warn",
-          "name": "canonical-queue-nodes-${{ github.sha }}",
+          "name": "canonical-unordered-backing-${{ github.sha }}",
           "path": "${{ runner.temp }}/canonical-join-state/receipt.json\n${{ runner.temp }}/canonical-join-state/FAILED.json\n${{ runner.temp }}/canonical-join-state/source-inputs.json\n${{ runner.temp }}/canonical-join-state/commands.json\n${{ runner.temp }}/canonical-join-state/commands/logs/*.txt\n",
           "retention-days": 3
         }
@@ -72,7 +72,7 @@
   },
   "jobId": "join-state",
   "kind": "job",
-  "reviewReason": "Reviewed exact scheduler Entry backing before effects and same-node transfers. The focused owner selects four NEW private queue controls and seven actual IDs: four affected original owners at explicit global4..7, two new pre-poll nodes8/9, and one two-scenario upstream1/2 refusal/cleanup control. Fixed compiled layout witnesses and original-budget fresh42 required. Same two locked targets,45m/2400s/900s/60s,cleanup5 and two jobs; no full-runtime/RSS/SDK qualification or stopped campaigns. Explicit five-to-eleven label replacement; sole original Python CLI run text byte exact.",
+  "reviewReason": "Reviewed private sized unordered strong/weak headers with exact allocator Layout, last-weak deallocation-before-refund and same-charge unwind retention. Six NEW private controls, eight source-affected/new canonical cases (nine refusal scenarios) and four affected ordinary host cases; unchanged two locked Cargo builds, original45m/2400/900/60/30 caps,cleanup5,two jobs. No old private groups,Java replay,RSS or whole-runtime qualification. Explicit eleven-to-eighteen step label replacement; original single Python CLI argv byte-equal.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/canonical-join-state.yml"
 }
