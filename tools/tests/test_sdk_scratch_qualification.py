@@ -197,7 +197,7 @@ class ScratchQualification(unittest.TestCase):
             rust = [(i, step) for i, step in enumerate(steps)
                     if step.get('uses', '').startswith('dtolnay/rust-toolchain@')]
             cache = [(i, step) for i, step in enumerate(steps)
-                     if step.get('uses', '').startswith('Swatinem/rust-cache@')]
+                     if step.get('uses', '').startswith('KirilsTurkins/lsf-rust-cache@')]
             self.assertEqual(len(rust), 1)
             self.assertEqual(len(cache), 1)
             self.assertLess(rust[0][0], cache[0][0])
