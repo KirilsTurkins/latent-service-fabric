@@ -24,6 +24,7 @@ See [build-foundation.md](build-foundation.md) for generation ownership, focused
 | `tonic-prost-build` |                               0.14.6 | Build-time Rust generation from every authoritative `.proto` |
 | Hyper |                               1.12.0 | Native HTTP/OCI clients and optional Rust SDK HTTP/2 transport |
 | `protoc-bin-vendored` |                                3.2.0 | Pinned cross-platform `protoc`; no ambient compiler lookup |
+| `tokio-rustls` |                               0.26.6 | Direct TLS adapter dependency |
 | Tracing / tracing-subscriber |                      0.1.44 / 0.3.23 | Structured instrumentation baseline and compile probe |
 | Wasmtime |                               48.0.7 | Maintained source package with selected value/native-allocation hooks; exact cohort participates in runtime identity |
 | `wasmparser` |                               0.261.0 | Direct component binary validation; WIT tooling retains its separately locked parser dependencies |
