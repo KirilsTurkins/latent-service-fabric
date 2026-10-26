@@ -130,8 +130,9 @@ def qualify(output, revision):
         commands.run('source-controls', sys.executable, '-B', '-m', 'unittest', '-v',
             'tools.tests.test_java_scheduled_library')
         raw = read_file(logs / 'logs/01-source-controls.stderr.txt', 128 * 1024)
-        need(re.search(rb'^Ran 4 tests in [0-9.]+s\r?$', raw, re.M)
-            and re.search(rb'^OK\r?$', raw, re.M) and b'skipped' not in raw, 'four-controls-no-skip')
+        need(re.findall(rb'^Ran (\d+) tests in [0-9.]+s\r?$', raw, re.M) == [b'4']
+            and re.findall(rb'^(OK)\r?$', raw, re.M) == [b'OK']
+            and raw.rstrip().endswith(b'OK'), 'four-controls-no-skip')
         receipt['sourceControls'] = {'passed': 4, 'skipped': 0, 'stderr': identities.identity(raw)}
         receipt['stage'] = 'normal-pinned-tools'
         commands.command_seconds = 175

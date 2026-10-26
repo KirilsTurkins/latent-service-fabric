@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_java_scheduled_library.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Add one finite unchanged TimedSemaphore/default-CF/refusal programme; preserve every old worker fixture, case, command and guest limit.",
+  "reviewReason": "Require exactly four controls and one terminal unittest OK; refuse actual skipped summaries without rejecting a passing test name.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "d5bd600d7e9dff0540c3ddc584dd6222445f55988a61a50ce187d4aba8114fec"
+  "sha256": "369257aa5b788ea10b2ebc5ccdca20e78ab7dd6e643de56c451b73aa8df234ca"
 }
