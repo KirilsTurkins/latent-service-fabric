@@ -41,6 +41,14 @@ impl HostFutureSet {
         }
     }
 
+    pub(super) fn is_empty(&self) -> bool {
+        match &self.0 {
+            Kind::Legacy(set) => set.is_empty(),
+            Kind::Paid(None) => true,
+            Kind::Paid(Some(set)) => set.is_empty(),
+        }
+    }
+
     pub(super) fn ensure(&mut self, memory: &Memory) -> Result<()> {
         if let Kind::Paid(set @ None) = &mut self.0 {
             // Construct both headers locally; publish only after both succeed.

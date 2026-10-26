@@ -2454,7 +2454,7 @@
 +}
 --- /dev/null
 +++ b/src/runtime/component/concurrent/host_futures/mod.rs
-@@ -0,0 +1,79 @@
+@@ -0,0 +1,87 @@
 +//! Host future backing selected without retaining a native-memory factory.
 +//!
 +//! None preserves the original upstream set. Paid initialization and individual
@@ -2495,6 +2495,14 @@
 +            Self(Kind::Paid(None))
 +        } else {
 +            Self(Kind::Legacy(FuturesUnordered::new()))
++        }
++    }
++
++    pub(super) fn is_empty(&self) -> bool {
++        match &self.0 {
++            Kind::Legacy(set) => set.is_empty(),
++            Kind::Paid(None) => true,
++            Kind::Paid(Some(set)) => set.is_empty(),
 +        }
 +    }
 +
