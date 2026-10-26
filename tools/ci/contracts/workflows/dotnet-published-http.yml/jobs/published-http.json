@@ -1,105 +1,105 @@
 {
-  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
-  "before": {},
-  "coverage": {},
-  "definition": {
-    "env": {
-      "CARGO_BUILD_JOBS": 2,
-      "CARGO_INCREMENTAL": 0
-    },
-    "if": "github.event_name == 'workflow_dispatch' && inputs.fresh_component && !inputs.mixed_content && !inputs.owner_capacity && !inputs.periodic_diagnostic",
-    "name": "Signed ordinary Flurl Refit and outside NuGet clients",
-    "runs-on": "ubuntu-24.04",
-    "steps": [
-      {
-        "uses": "actions/checkout",
-        "with": {
-          "persist-credentials": false
-        }
-      },
-      {
-        "uses": "actions/setup-python",
-        "with": {
-          "python-version": "3.13.5"
-        }
-      },
-      {
-        "uses": "actions/setup-dotnet",
-        "with": {
-          "dotnet-version": "10.0.100"
-        }
-      },
-      {
-        "uses": "dtolnay/rust-toolchain",
-        "with": {
-          "targets": "wasm32-unknown-unknown"
-        }
-      },
-      {
-        "uses": "Swatinem/rust-cache",
-        "with": {
-          "cache-all-crates": false,
-          "cache-bin": false,
-          "cache-on-failure": false,
-          "cache-targets": true,
-          "cache-workspace-crates": false,
-          "key": "ubuntu-24.04",
-          "prefix-key": "lsf-ci-dependencies-v2",
-          "save-if": false,
-          "shared-key": "host-correctness"
-        }
-      },
-      {
-        "uses": "bytecodealliance/actions/wasm-tools/setup",
-        "with": {
-          "version": "1.254.0"
-        }
-      },
-      {
-        "name": "Fetch the exact successful native producer source",
-        "run": "git fetch --no-tags --depth=1 origin f9192fb5785ca7bed8b33dbb869b3d775b72ab4b"
-      },
-      {
-        "name": "Check immutable capture real peer and compiler boundaries",
-        "run": "python3 -m pip install -r tools/requirements.lock\npython3 -B -m unittest tools.tests.test_dotnet_published_http_fixture tools.tests.test_dotnet_reflection_boundaries tools.tests.test_sdk_native_products_reader -v\n"
-      },
-      {
-        "name": "Install the normal captured compiler isolation boundary",
-        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap libgdbm6t64 libreadline8t64 libsqlite3-0 liblttng-ust1t64 libtcl8.6 libtk8.6\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
-      },
-      {
-        "name": "Prepare the pinned compiler and current small closed-runtime adapters",
-        "run": "curl --fail --location --max-time 180 \\\n  https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \\\n  --output \"$RUNNER_TEMP/wasi-sdk.tar.gz\"\nprintf '%s  %s\\n' 87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171 \"$RUNNER_TEMP/wasi-sdk.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/wasi-sdk.tar.gz\" -C \"$RUNNER_TEMP\"\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/published-bindgen\"\nexport PATH=\"$RUNNER_TEMP/published-bindgen:$PATH\"\nprintf '%s\\n' \"$RUNNER_TEMP/published-bindgen\" >> \"$GITHUB_PATH\"\npython3 tools/dotnet_capsule.py install-tools \"$RUNNER_TEMP/published-tools\" \\\n  --wasi-sdk \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\"\n",
-        "shell": "bash"
-      },
-      {
-        "env": {
-          "GH_TOKEN": "${{ github.token }}"
-        },
-        "name": "Authenticate the five frozen products without a native host rebuild",
-        "run": "python3 -B tools/wait_runtime_native_products.py --output \"$RUNNER_TEMP/published-native\""
-      },
-      {
-        "name": "Capture one actual component and execute ordinary library paths",
-        "run": "python3 -B tools/qualify_dotnet_published_http.py --native \"$RUNNER_TEMP/published-native\" --tools \"$RUNNER_TEMP/published-tools\" --output \"$RUNNER_TEMP/published-http\""
-      },
-      {
-        "if": "always()",
-        "name": "Retain bounded public original build and library evidence",
-        "uses": "actions/upload-artifact",
-        "with": {
-          "if-no-files-found": "warn",
-          "name": "dotnet-published-http-${{ github.sha }}",
-          "path": "${{ runner.temp }}/published-native/*.json\n${{ runner.temp }}/published-tools/INSTALL-COMPLETE.json\n${{ runner.temp }}/published-tools/runtime-inputs.json\n${{ runner.temp }}/published-tools/wasi-sdk.json\n${{ runner.temp }}/published-tools/logs/**\n${{ runner.temp }}/published-http/*.json\n${{ runner.temp }}/published-http/generator-approval-required/*.json\n${{ runner.temp }}/published-http/generator-approval-required/compiler.*.txt\n${{ runner.temp }}/published-http/build/*.json\n${{ runner.temp }}/published-http/build/compiler.*.txt\n${{ runner.temp }}/published-http/build/component.wasm\n${{ runner.temp }}/published-http/build/derived-*.dll\n${{ runner.temp }}/published-http/build/executable-input-outputs/**\n${{ runner.temp }}/published-http/build/package/**\n${{ runner.temp }}/published-http/build/logs/**\n${{ runner.temp }}/published-http/outside/compiler-*/logs/**\n${{ runner.temp }}/published-http/node/*.json\n${{ runner.temp }}/published-http/node/controls/*.json\n",
-          "retention-days": 3
-        }
-      }
-    ],
-    "timeout-minutes": 40
-  },
-  "jobId": "published-http",
-  "kind": "job",
-  "reviewReason": "Default-false diagnostic-only periodic lane; explicit review preserves every original command/step/limit and adds only manual diagnostic exclusion. Whole previous four-job workflow restores byte-equivalent semantic data.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "workflow": ".github/workflows/dotnet-published-http.yml"
+"baselineRevision":"50f003dd006e0786494936c49e55dc683cf26fd6",
+"before":{},
+"coverage":{},
+"definition":{
+"env":{
+"CARGO_BUILD_JOBS":2,
+"CARGO_INCREMENTAL":0
+},
+"if":"github.event_name == 'workflow_dispatch' && inputs.fresh_component && !inputs.mixed_content && !inputs.owner_capacity && !inputs.periodic_diagnostic",
+"name":"Signed ordinary Flurl Refit and outside NuGet clients",
+"runs-on":"ubuntu-24.04",
+"steps":[
+{
+"uses":"actions/checkout",
+"with":{
+"persist-credentials":false
+}
+},
+{
+"uses":"actions/setup-python",
+"with":{
+"python-version":"3.13.5"
+}
+},
+{
+"uses":"actions/setup-dotnet",
+"with":{
+"dotnet-version":"10.0.100"
+}
+},
+{
+"uses":"dtolnay/rust-toolchain",
+"with":{
+"targets":"wasm32-unknown-unknown"
+}
+},
+{
+"uses":"Swatinem/rust-cache",
+"with":{
+"cache-all-crates":false,
+"cache-bin":false,
+"cache-on-failure":false,
+"cache-targets":true,
+"cache-workspace-crates":false,
+"key":"ubuntu-24.04",
+"prefix-key":"lsf-ci-dependencies-v2",
+"save-if":false,
+"shared-key":"host-correctness"
+}
+},
+{
+"uses":"bytecodealliance/actions/wasm-tools/setup",
+"with":{
+"version":"1.254.0"
+}
+},
+{
+"name":"Fetch the exact successful native producer source",
+"run":"git fetch --no-tags --depth=1 origin f9192fb5785ca7bed8b33dbb869b3d775b72ab4b"
+},
+{
+"name":"Check immutable capture real peer and compiler boundaries",
+"run":"python3 -m pip install -r tools/requirements.lock\npython3 -B -m unittest tools.tests.test_dotnet_published_http_fixture tools.tests.test_dotnet_reflection_boundaries tools.tests.test_sdk_native_products_reader -v\n"
+},
+{
+"name":"Install the normal captured compiler isolation boundary",
+"run":"sudo apt-get update\nsudo apt-get install --yes bubblewrap libgdbm6t64 libreadline8t64 libsqlite3-0 liblttng-ust1t64 libtcl8.6 libtk8.6\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
+},
+{
+"name":"Prepare the pinned compiler and current small closed-runtime adapters",
+"run":"curl --fail --location --max-time 180 \\\n  https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \\\n  --output \"$RUNNER_TEMP/wasi-sdk.tar.gz\"\nprintf '%s  %s\\n' 87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171 \"$RUNNER_TEMP/wasi-sdk.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/wasi-sdk.tar.gz\" -C \"$RUNNER_TEMP\"\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/published-bindgen\"\nexport PATH=\"$RUNNER_TEMP/published-bindgen:$PATH\"\nprintf '%s\\n' \"$RUNNER_TEMP/published-bindgen\" >> \"$GITHUB_PATH\"\npython3 tools/dotnet_capsule.py install-tools \"$RUNNER_TEMP/published-tools\" \\\n  --wasi-sdk \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\"\n",
+"shell":"bash"
+},
+{
+"env":{
+"GH_TOKEN":"${{ github.token }}"
+},
+"name":"Authenticate the five frozen products without a native host rebuild",
+"run":"python3 -B tools/wait_runtime_native_products.py --output \"$RUNNER_TEMP/published-native\""
+},
+{
+"name":"Capture one actual component and execute ordinary library paths",
+"run":"python3 -B tools/qualify_dotnet_published_http.py --native \"$RUNNER_TEMP/published-native\" --tools \"$RUNNER_TEMP/published-tools\" --output \"$RUNNER_TEMP/published-http\""
+},
+{
+"if":"always()",
+"name":"Retain bounded public original build and library evidence",
+"uses":"actions/upload-artifact",
+"with":{
+"if-no-files-found":"warn",
+"name":"dotnet-published-http-${{ github.sha }}",
+"path":"${{ runner.temp }}/published-native/*.json\n${{ runner.temp }}/published-tools/INSTALL-COMPLETE.json\n${{ runner.temp }}/published-tools/runtime-inputs.json\n${{ runner.temp }}/published-tools/wasi-sdk.json\n${{ runner.temp }}/published-tools/logs/**\n${{ runner.temp }}/published-http/*.json\n${{ runner.temp }}/published-http/generator-approval-required/*.json\n${{ runner.temp }}/published-http/generator-approval-required/compiler.*.txt\n${{ runner.temp }}/published-http/build/*.json\n${{ runner.temp }}/published-http/build/compiler.*.txt\n${{ runner.temp }}/published-http/build/component.wasm\n${{ runner.temp }}/published-http/build/derived-*.dll\n${{ runner.temp }}/published-http/build/executable-input-outputs/**\n${{ runner.temp }}/published-http/build/package/**\n${{ runner.temp }}/published-http/build/logs/**\n${{ runner.temp }}/published-http/outside/compiler-*/logs/**\n${{ runner.temp }}/published-http/node/*.json\n${{ runner.temp }}/published-http/node/controls/*.json\n",
+"retention-days":3
+}
+}
+],
+"timeout-minutes":40
+},
+"jobId":"published-http",
+"kind":"job",
+"reviewReason":"Default-false diagnostic-only periodic lane; explicit review preserves every original command/step/limit and adds only manual diagnostic exclusion. Whole previous four-job workflow restores byte-equivalent semantic data.",
+"schemaVersion":"latent.ci.contracts.v1",
+"workflow":".github/workflows/dotnet-published-http.yml"
 }

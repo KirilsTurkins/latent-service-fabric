@@ -1,97 +1,97 @@
 {
-  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
-  "before": {},
-  "coverage": {},
-  "definition": {
-    "env": {
-      "PYTHONDONTWRITEBYTECODE": "1"
-    },
-    "name": "Actual canonical OWN disposal and bounded payload reuse",
-    "permissions": {
-      "actions": "read",
-      "contents": "read"
-    },
-    "runs-on": "ubuntu-24.04",
-    "steps": [
-      {
-        "name": "Start the single setup acquisition build and execution deadline",
-        "run": "python3 -c 'import os,time;open(os.environ[\"GITHUB_ENV\"],\"a\").write(\"LSF_OWN_COMPONENT_STARTED_NS=\"+str(time.time_ns())+\"\\n\")'"
-      },
-      {
-        "uses": "actions/checkout",
-        "with": {
-          "persist-credentials": false
-        }
-      },
-      {
-        "uses": "actions/setup-python",
-        "with": {
-          "python-version": "3.13.5"
-        }
-      },
-      {
-        "uses": "actions/setup-node",
-        "with": {
-          "node-version": "24.19.0",
-          "package-manager-cache": false
-        }
-      },
-      {
-        "uses": "dtolnay/rust-toolchain"
-      },
-      {
-        "uses": "bytecodealliance/actions/wasm-tools/setup",
-        "with": {
-          "version": "1.254.0"
-        }
-      },
-      {
-        "name": "Install locked Python controls",
-        "run": "python3 -m pip install --requirement tools/requirements.lock"
-      },
-      {
-        "name": "Make the exact successful producer source available for immutable checks",
-        "run": "git fetch --no-tags --depth=1 origin 6d834e502beea33fbae9347fbaf23ff8c37223b3"
-      },
-      {
-        "name": "Install normal isolated compiler prerequisites",
-        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
-      },
-      {
-        "name": "Install the normal pinned public compiler",
-        "run": "python3 tools/typescript_capsule.py install-tools \"$RUNNER_TEMP/typescript-own-canonical-tools\""
-      },
-      {
-        "env": {
-          "GH_TOKEN": "${{ github.token }}"
-        },
-        "name": "Acquire the one exact successful fresh OWN input artifact",
-        "run": "python3 -c 'import os;from pathlib import Path;from tools.typescript_guest.borrow_signed_inputs import prepare;prepare(Path(os.environ[\"RUNNER_TEMP\"])/\"typescript-own-canonical-inputs\")'"
-      },
-      {
-        "env": {
-          "LSF_OWN_COMPONENT_PROFILE": "${{ inputs.profile || 'canonical-own' }}"
-        },
-        "name": "Run mandatory source controls and the selected actual component cases",
-        "run": "python3 tools/qualify_typescript_owned_component.py \\\n  --tools \"$RUNNER_TEMP/typescript-own-canonical-tools\" \\\n  --prepared-products \"$RUNNER_TEMP/typescript-own-canonical-inputs/products\" \\\n  --profile \"$LSF_OWN_COMPONENT_PROFILE\" \\\n  --output \"$RUNNER_TEMP/typescript-own-canonical\"\n"
-      },
-      {
-        "if": "always()",
-        "name": "Retain actual component source probe observations and failures",
-        "uses": "actions/upload-artifact",
-        "with": {
-          "if-no-files-found": "warn",
-          "name": "typescript-own-canonical-${{ github.sha }}",
-          "path": "${{ runner.temp }}/typescript-own-canonical-inputs/ACQUIRED.json\n${{ runner.temp }}/typescript-own-canonical-inputs/products/**\n${{ runner.temp }}/typescript-own-canonical/*.json\n${{ runner.temp }}/typescript-own-canonical/logs/**\n${{ runner.temp }}/typescript-own-canonical/fixture/**\n${{ runner.temp }}/typescript-own-canonical/compiled/**\n${{ runner.temp }}/typescript-own-canonical/cargo-target/debug/examples/typescript_runtime_probe\n",
-          "retention-days": 7
-        }
-      }
-    ],
-    "timeout-minutes": 15
-  },
-  "jobId": "canonical-own",
-  "kind": "job",
-  "reviewReason": "Review exact successful6d native input pin and62-product emitted closure, preserve all existing fixture/evidence cases and guards, and use the closed published native-carrier fixture shape with14 mandatory source controls; no component qualification or quota expansion.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "workflow": ".github/workflows/typescript-owned-component.yml"
+"baselineRevision":"50f003dd006e0786494936c49e55dc683cf26fd6",
+"before":{},
+"coverage":{},
+"definition":{
+"env":{
+"PYTHONDONTWRITEBYTECODE":"1"
+},
+"name":"Actual canonical OWN disposal and bounded payload reuse",
+"permissions":{
+"actions":"read",
+"contents":"read"
+},
+"runs-on":"ubuntu-24.04",
+"steps":[
+{
+"name":"Start the single setup acquisition build and execution deadline",
+"run":"python3 -c 'import os,time;open(os.environ[\"GITHUB_ENV\"],\"a\").write(\"LSF_OWN_COMPONENT_STARTED_NS=\"+str(time.time_ns())+\"\\n\")'"
+},
+{
+"uses":"actions/checkout",
+"with":{
+"persist-credentials":false
+}
+},
+{
+"uses":"actions/setup-python",
+"with":{
+"python-version":"3.13.5"
+}
+},
+{
+"uses":"actions/setup-node",
+"with":{
+"node-version":"24.19.0",
+"package-manager-cache":false
+}
+},
+{
+"uses":"dtolnay/rust-toolchain"
+},
+{
+"uses":"bytecodealliance/actions/wasm-tools/setup",
+"with":{
+"version":"1.254.0"
+}
+},
+{
+"name":"Install locked Python controls",
+"run":"python3 -m pip install --requirement tools/requirements.lock"
+},
+{
+"name":"Make the exact successful producer source available for immutable checks",
+"run":"git fetch --no-tags --depth=1 origin 6d834e502beea33fbae9347fbaf23ff8c37223b3"
+},
+{
+"name":"Install normal isolated compiler prerequisites",
+"run":"sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
+},
+{
+"name":"Install the normal pinned public compiler",
+"run":"python3 tools/typescript_capsule.py install-tools \"$RUNNER_TEMP/typescript-own-canonical-tools\""
+},
+{
+"env":{
+"GH_TOKEN":"${{ github.token }}"
+},
+"name":"Acquire the one exact successful fresh OWN input artifact",
+"run":"python3 -c 'import os;from pathlib import Path;from tools.typescript_guest.borrow_signed_inputs import prepare;prepare(Path(os.environ[\"RUNNER_TEMP\"])/\"typescript-own-canonical-inputs\")'"
+},
+{
+"env":{
+"LSF_OWN_COMPONENT_PROFILE":"${{ inputs.profile || 'canonical-own' }}"
+},
+"name":"Run mandatory source controls and the selected actual component cases",
+"run":"python3 tools/qualify_typescript_owned_component.py \\\n  --tools \"$RUNNER_TEMP/typescript-own-canonical-tools\" \\\n  --prepared-products \"$RUNNER_TEMP/typescript-own-canonical-inputs/products\" \\\n  --profile \"$LSF_OWN_COMPONENT_PROFILE\" \\\n  --output \"$RUNNER_TEMP/typescript-own-canonical\"\n"
+},
+{
+"if":"always()",
+"name":"Retain actual component source probe observations and failures",
+"uses":"actions/upload-artifact",
+"with":{
+"if-no-files-found":"warn",
+"name":"typescript-own-canonical-${{ github.sha }}",
+"path":"${{ runner.temp }}/typescript-own-canonical-inputs/ACQUIRED.json\n${{ runner.temp }}/typescript-own-canonical-inputs/products/**\n${{ runner.temp }}/typescript-own-canonical/*.json\n${{ runner.temp }}/typescript-own-canonical/logs/**\n${{ runner.temp }}/typescript-own-canonical/fixture/**\n${{ runner.temp }}/typescript-own-canonical/compiled/**\n${{ runner.temp }}/typescript-own-canonical/cargo-target/debug/examples/typescript_runtime_probe\n",
+"retention-days":7
+}
+}
+],
+"timeout-minutes":15
+},
+"jobId":"canonical-own",
+"kind":"job",
+"reviewReason":"Review exact successful6d native input pin and62-product emitted closure, preserve all existing fixture/evidence cases and guards, and use the closed published native-carrier fixture shape with14 mandatory source controls; no component qualification or quota expansion.",
+"schemaVersion":"latent.ci.contracts.v1",
+"workflow":".github/workflows/typescript-owned-component.yml"
 }

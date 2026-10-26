@@ -298,5 +298,103 @@ class StreamObjectOwner(unittest.TestCase):
         del decoded[pci]
         with self.assertRaises(ValueError):layout.report_bytes(decoded)
 
+    def test_post_init_projection_keeps_whole_ordinary_body_and_original_unwind(self):
+        from tools import host_stream_kernel_stream_post_init as post
+        from tools.host_stream_kernel_constructor_failure import Editor
+        # Actual source fragments only: no C compiler or notifier execution.
+        fixture=json.loads((Path(__file__).parent/'fixtures/host_stream_kernel_post_init.json').read_bytes())
+        self.assertTrue(fixture['sourceOnly'])
+        self.assertFalse(fixture['compilerQualification'])
+        raw=fixture['fragments']['net/core/dev.c::int register_netdevice(']
+        original=post._body(raw,'net/core/dev.c','int register_netdevice(')
+        editor=Editor(original);post._register(editor);code=editor.finish()
+        self.assertIn(original[original.index('\n{\n')+1:],code)
+        clone=post.function(code,'static int lsf_prepaid_stream_register_netdevice(')
+        gate=clone.index('    {\n        struct virtio_device *same = NULL;')
+        call=clone.index('\tret = call_netdevice_notifiers(NETDEV_POST_INIT, dev);\n')
+        restored=(clone[:gate]+clone[call:]).replace(
+            'static int lsf_prepaid_stream_register_netdevice(', 'int register_netdevice(',1)
+        self.assertEqual(restored,original)
+        self.assertEqual(clone.count('call_netdevice_notifiers(NETDEV_POST_INIT, dev)'),1)
+        self.assertLess(clone.index('lsf_stream_post_init_chains(dev)'),call)
+        self.assertIn('goto err_ifindex_release; /* No POST_INIT ran: no PRE_UNINIT. */',clone[:call])
+        self.assertEqual(clone[call:],original[original.index('\tret = call_netdevice_notifiers(NETDEV_POST_INIT, dev);\n'):])
+        before=code[:code.index('static int lsf_prepaid_stream_register_netdevice(')]
+        self.assertNotIn('call_netdevice_notifiers(',before)
+        self.assertNotIn('raw_notifier_call_chain(',before)
+        self.assertEqual(len(post.CALLBACKS),4)
+        for key,pin in post.BODIES.items():
+            path,signature=key.split('::',1);text=fixture['fragments'][key]
+            self.assertEqual(post._body(text,path,signature),text)
+            changed=text.replace('\n{\n','\n{ /* altered original */\n',1)
+            with self.assertRaises(ValueError):post._body(changed,path,signature)
+            with self.assertRaises(ValueError):post._body('static inline '+text,path,signature)
+        # New source does not alter the separately executed59-source tuple.
+        self.assertEqual(len(owner.selected_sources(owner.ROOT,netdev_layout=True)),59)
+
+    def test_post_init_instances_are_bound_before_next_and_both_chains_preflight(self):
+        from tools import host_stream_kernel_stream_post_init as post
+        fixture=json.loads((Path(__file__).parent/'fixtures/host_stream_kernel_post_init.json').read_bytes())
+        for key in post.DECLARATIONS:
+            path,prefix=key.split('::',1);text=fixture['fragments'][key]
+            self.assertEqual(post._declaration(text,path,prefix),text)
+            with self.assertRaises(ValueError):post._declaration(text.replace(' = {',' = { /* changed */',1),path,prefix)
+            with self.assertRaises(ValueError):post._declaration('__attribute__((used)) '+text,path,prefix)
+        for _,block,callback,priority,name in post.CALLBACKS:
+            text=post._callback_source(block,callback,priority,name)
+            self.assertLess(text.index('nb != &'+block),text.index('nb->notifier_call'))
+            self.assertIn('nb->notifier_call == '+callback,text)
+            self.assertIn('nb->priority == '+priority,text)
+            self.assertNotIn('nb->next',text)
+            self.assertNotIn(callback+'(',text)
+        preflight=post._preflight_source()
+        self.assertIn('ASSERT_RTNL();',preflight)
+        self.assertIn('{ &dev_net(dev)->netdev_chain, &netdev_chain }',preflight)
+        self.assertLess(preflight.index('if (!identity || (seen & identity)) return 0;'),
+            preflight.index('nb = rcu_dereference_raw(nb->next);'))
+        self.assertEqual(preflight.count('seen |= identity;'),1)
+        self.assertNotIn('raw_notifier_call_chain(',preflight)
+        self.assertNotIn('kzalloc(',preflight)
+        self.assertNotIn('schedule_work(',preflight)
+        with self.assertRaises(ValueError):post.transform({}, {})
+        with self.assertRaises(ValueError):post.transform({str(i):b'fragment is not a whole input' for i in range(375)}, {})
+
+    def test_post_init_owner_keeps_exact_eight_targets_and_denies_size_probe_union(self):
+        current=owner.selected_sources(owner.ROOT,netdev_post_init=True)
+        historical=owner.selected_sources(owner.ROOT,netdev_layout=True)
+        self.assertEqual(len(current),62)
+        self.assertEqual(len(historical),59)
+        self.assertTrue(all(current[n]==row for n,row in historical.items()))
+        self.assertEqual(owner.mode_targets(netdev_post_init=True),('net/core/dev.o',
+            'drivers/net/virtio_net.o','net/ipv4/fib_frontend.o','net/factory.o',
+            'net/ipv4/devinet.o','net/ipv6/addrconf.o','net/core/rtnetlink.o','drivers/virtio/virtio.o'))
+        for kwargs in ({'netdev_post_init':1},{'netdev_post_init':True,'netdev_layout':True},
+            {'netdev_post_init':True,'netdev_directory':True},{'netdev_post_init':True,'classdir':True},
+            {'netdev_post_init':True,'classdir_kernfs':True}):
+            with self.assertRaises(ValueError):owner.mode_targets(**kwargs)
+        self.assertIsNone(owner.public_allowed('layout.json',netdev_post_init=True))
+        self.assertIsNone(owner.public_allowed('objects/drivers/virtio/virtio_ring.o',netdev_post_init=True))
+        self.assertIsNotNone(owner.public_allowed('objects/drivers/virtio/virtio.o',netdev_post_init=True))
+        self.assertIsNotNone(owner.public_allowed('logs/00-baseline-fetch.stdout.txt',netdev_post_init=True))
+        self.assertIsNotNone(owner.public_allowed('logs/00-netdev-post-init-objects.stdout.txt',netdev_post_init=True))
+        for old in ('eighteen-objects','classdir-objects','classdir-kernfs-objects',
+            'netdev-directory-objects','netdev-layout-objects'):
+            self.assertIsNone(owner.public_allowed('logs/00-'+old+'.stdout.txt',netdev_post_init=True))
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory)
+            for name in owner.POST_INIT_SOURCE_PATHS:
+                target=root/name;target.parent.mkdir(parents=True,exist_ok=True)
+                target.write_bytes((owner.ROOT/name).read_bytes())
+            helper=root/'tools/host_stream_kernel_stream_post_init.py'
+            helper.write_bytes(helper.read_bytes()+b'\n')
+            with self.assertRaises(ValueError):owner.selected_sources(root,netdev_post_init=True)
+            self.assertEqual(owner.selected_sources(root,netdev_layout=True),historical)
+        with tempfile.TemporaryDirectory() as directory:
+            output=Path(directory)
+            (output/'receipt.json').write_bytes(b'{"status":"failed","stage":"netdev-post-init-objects"}\n')
+            self.assertEqual(set(owner.admit(output,netdev_post_init=True)['files']),{'receipt.json'})
+            (output/'layout.json').write_bytes(b'{}\n')
+            with self.assertRaises(ValueError):owner.admit(output,netdev_post_init=True)
+
 
 if __name__=='__main__':unittest.main()
