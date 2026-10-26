@@ -122,12 +122,17 @@ async fn actual_host_future_typed_and_dynamic_boxes_retain_original_memory_while
             .is_pending());
         assert!(gate.polls.load(Ordering::SeqCst) > 0);
         let allocated = requests(&observed);
-        assert_eq!(allocated.len(), before + 1);
-        assert!(allocated[before] > 0);
-        assert_eq!(
-            original.host_memory_bytes(),
-            retained + allocated[before] as u64 + OWNER
-        );
+        // The callback-less call admits a GuestCall node, the callback Box,
+        // then a PushFuture node. Publication has already retired that last
+        // node; the suspended fiber and callback retain the first two owners.
+        assert_eq!(allocated.len(), before + 3);
+        assert!(allocated[before..].iter().all(|bytes| *bytes > 0));
+        assert_eq!(allocated[before], allocated[before + 2]);
+        let live_call = allocated[before..before + 2]
+            .iter()
+            .map(|bytes| *bytes as u64 + OWNER)
+            .sum::<u64>();
+        assert_eq!(original.host_memory_bytes(), retained + live_call);
         gate.finish();
         // This concurrent typed API performs result lifting/post-return itself.
         assert_eq!(call.await.unwrap(), (42,));
@@ -164,10 +169,12 @@ async fn actual_host_future_refusal_preserves_original_error_and_fresh_budget_re
         let kept_consumed = consumed.clone();
         let kept_requested = requested.clone();
         let invocation = original.clone();
-        // Observe the actual concrete Future request. Real padding plus its
+        // The first request funds GuestCall; the second is the ORIGINAL
+        // concrete callback Future Box, before the later PushFuture node.
+        // Real padding plus its
         // existing owner makes the original admission exceed MIB by one byte.
         // No fake error, summed historic prefix or increased grant is used.
-        observed.before_request(before + 1, move |bytes| {
+        observed.before_request(before + 2, move |bytes| {
             let request = bytes as u64 + OWNER;
             let bytes = MIB - invocation.host_memory_bytes() - request + 1 - OWNER;
             let mut owner = crate::native_tables::reserve(&invocation, bytes as usize)
@@ -191,7 +198,7 @@ async fn actual_host_future_refusal_preserves_original_error_and_fresh_budget_re
             requested.load(Ordering::SeqCst),
         );
         assert_eq!(gate.polls.load(Ordering::SeqCst), 0);
-        assert_eq!(requests(&observed).len(), before + 1);
+        assert_eq!(requests(&observed).len(), before + 2);
         assert_eq!(
             consumed.load(Ordering::SeqCst) + requested.load(Ordering::SeqCst),
             MIB + 1
@@ -272,12 +279,17 @@ async fn actual_host_future_callback_error_is_unchanged_and_its_box_retires() {
         assert!(format!("{error:#}").contains("native-host-future-original-callback-error"));
         assert!(gate.polls.load(Ordering::SeqCst) > 0);
         let allocated = requests(&observed);
-        assert_eq!(allocated.len(), before + 1);
+        assert_eq!(allocated.len(), before + 3);
+        assert!(allocated[before..].iter().all(|bytes| *bytes > 0));
+        let live_call = allocated[before..]
+            .iter()
+            .map(|bytes| *bytes as u64 + OWNER)
+            .sum::<u64>();
         assert!(
             original
                 .snapshot_at(std::time::Instant::now())
                 .peak_memory_bytes
-                >= retained + allocated[before] as u64 + OWNER
+                >= retained + live_call
         );
         drop(error);
         drop(store);
