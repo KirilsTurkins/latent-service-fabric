@@ -333,15 +333,24 @@ async fn actual_host_future_callback_error_is_unchanged_and_its_box_retires() {
         // the unused result reservation has no Box to confirm on input Err.
         assert_eq!(allocated.len(), before + 8);
         assert!(allocated[before..].iter().all(|bytes| *bytes > 0));
+        let result_bytes = if dynamic {
+            std::alloc::Layout::new::<Vec<Val>>().size()
+        } else {
+            std::alloc::Layout::new::<(u32,)>().size()
+        };
+        assert_eq!(allocated[before + 4], result_bytes);
         let live_call = allocated[before..]
             .iter()
             .map(|bytes| *bytes as u64 + OWNER)
             .sum::<u64>();
+        // On input Err, result backing was never allocated/confirmed. Its
+        // real boxed owner's OWNER escrow DID exist and stays in this sum.
+        let physical_call = live_call - result_bytes as u64;
         assert!(
             original
                 .snapshot_at(std::time::Instant::now())
                 .peak_memory_bytes
-                >= retained + live_call
+                >= retained + physical_call
         );
         drop(error);
         drop(store);

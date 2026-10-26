@@ -13,7 +13,7 @@
       "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
       "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
     },
-    "name": "Six sync-result owners and seven actual host cases",
+    "name": "Four remaining actual host controls",
     "runs-on": "ubuntu-24.04",
     "steps": [
       {
@@ -53,7 +53,7 @@
         }
       },
       {
-        "name": "Build only two locked host targets and execute the exact thirteen controls",
+        "name": "Build only one locked host target and execute the exact four remaining controls",
         "run": "python3 -B tools/qualify_canonical_join_state.py --source-commit \"${{ github.sha }}\" --output \"$RUNNER_TEMP/canonical-join-state\""
       },
       {
@@ -72,7 +72,7 @@
   },
   "jobId": "join-state",
   "kind": "job",
-  "reviewReason": "Explicit reviewed focused job replacement: same owner argv/pins/bounds; human step name twenty->thirteen with v16 branch/artifact scope, six NEW private/seven actual cases only; preserve all88 historical obligations.",
+  "reviewReason": "Actual405 callback Err peak oracle excludes ONLY unallocated result backing at index4 after asserting its typed/dynamic R Layout; owner escrow256 and all8 admissions/error/Gate/zero checks retained. Completion ONLY4remaining actual cases,1locked root target/10commands; prior6private+3main passes historical405, no replay or production change; original bounds unchanged.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/canonical-join-state.yml"
 }

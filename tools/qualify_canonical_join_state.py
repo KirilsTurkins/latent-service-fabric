@@ -1,4 +1,4 @@
-"""Execute six sync-result owners and seven actual outer/result/None host cases."""
+"""Execute only the four remaining v16 actual host cases after the physical-peak oracle repair."""
 from __future__ import annotations
 
 import argparse
@@ -23,27 +23,31 @@ from tools.rust_capsule_project import ROOT, fresh, read_file, write_json
 
 BRANCH = 'feat/sdk-736-legacy-host-futures-20261026'
 WORKFLOW = '.github/workflows/canonical-join-state.yml'
-PREFIX = 'runtime::component::concurrent::sync_result::tests::'
-PRIVATE_CASES = tuple(PREFIX + name for name in (
-    'sync_result_refuses_before_value_and_unbuilt_reservation_refunds',
-    'sync_result_overaligned_move_out_refunds_before_returned_value_drop',
-    'sync_result_wrong_type_preserves_envelope_and_abandon_drops_value_before_owner',
-    'sync_result_confirmation_unwind_has_installed_physical_cleanup',
-    'sync_result_destructor_unwind_retains_same_original_charge',
-    'sync_result_zst_and_none_keep_legacy_boxes_without_native_admission',
-))
-MAIN_CASES = tuple('host::native_host_future_tests::' + name for name in (
-    'actual_host_future_typed_and_dynamic_boxes_retain_original_memory_while_pending',
-    'actual_host_future_refusal_preserves_original_error_and_fresh_budget_reuse',
-    'actual_host_future_cancellation_cannot_credit_another_live_store',
-    'actual_host_future_callback_error_is_unchanged_and_its_box_retires',
-    'actual_host_future_legacy_unaccounted_embedding_keeps_original_scalar_result',
-    'actual_accessor_spawn_outer_box_refuses_before_run_and_retires_after_pending',
-    'actual_sync_lower_result_box_refuses_before_poll_and_fresh_budget_reuses',
-))
-
-FEATURES = ('component-model,component-model-async,cranelift,pooling-allocator,'
-    'runtime,std,wit-parser,gc,gc-drc,cache,threads,coredump')
+MAIN_CASES = (
+    'host::native_host_future_tests::actual_host_future_callback_error_is_unchanged_and_its_box_retires',
+    'host::native_host_future_tests::actual_host_future_legacy_unaccounted_embedding_keeps_original_scalar_result',
+    'host::native_host_future_tests::actual_accessor_spawn_outer_box_refuses_before_run_and_retires_after_pending',
+    'host::native_host_future_tests::actual_sync_lower_result_box_refuses_before_poll_and_fresh_budget_reuses',
+)
+HISTORICAL_405 = {
+    'sourceRevision': '405c2e447fc41036e4b7a19ae887f664e050f827',
+    'runId': 40305108367, 'jobId': 121512180056,
+    'artifactId': 12643330637, 'artifactBytes': 970283,
+    'artifactSha256': '96f8916297b3bfd05ce815cc7407b54f430cc315e84fe08f098ba7aa85c3c23e',
+    'runConclusion': 'failure',
+    'passedCasesNotReexecuted': (
+        'runtime::component::concurrent::sync_result::tests::sync_result_refuses_before_value_and_unbuilt_reservation_refunds',
+        'runtime::component::concurrent::sync_result::tests::sync_result_overaligned_move_out_refunds_before_returned_value_drop',
+        'runtime::component::concurrent::sync_result::tests::sync_result_wrong_type_preserves_envelope_and_abandon_drops_value_before_owner',
+        'runtime::component::concurrent::sync_result::tests::sync_result_confirmation_unwind_has_installed_physical_cleanup',
+        'runtime::component::concurrent::sync_result::tests::sync_result_destructor_unwind_retains_same_original_charge',
+        'runtime::component::concurrent::sync_result::tests::sync_result_zst_and_none_keep_legacy_boxes_without_native_admission',
+        'host::native_host_future_tests::actual_host_future_typed_and_dynamic_boxes_retain_original_memory_while_pending',
+        'host::native_host_future_tests::actual_host_future_refusal_preserves_original_error_and_fresh_budget_reuse',
+        'host::native_host_future_tests::actual_host_future_cancellation_cannot_credit_another_live_store',
+    ),
+    'failedCase': 'host::native_host_future_tests::actual_host_future_callback_error_is_unchanged_and_its_box_retires',
+}
 
 
 def require(value, reason):
@@ -105,18 +109,19 @@ def qualify(output, revision):
     # Five seconds of existing process reaping stay INSIDE every declared cap.
     commands = Commands(ROOT, logs, environment, deadline_seconds=2395, command_seconds=895)
     receipt = {'schemaVersion': 'lsf.canonical-outer-sync-result.v1', 'status': 'in-progress',
-        'sourceRevision': revision, 'privateCases': list(PRIVATE_CASES),
+        'sourceRevision': revision, 'privateCases': [],
         'mainCases': list(MAIN_CASES), 'observations': [], 'fullCostModelQualified': False,
         'fullVendorSuiteExecuted': False, 'fullRuntimeSuiteExecuted': False,
         'signedJavaScriptExecuted': False, 'compilerImplicitInputsAttested': False,
         'hermetic': False,
-        'scope': 'six new private sync-result owners plus seven actual sync-lower/Accessor/None cases; original guards and exact backing only, not transitive results, streams, allocator/RSS or whole runtime',
-        'historicalNotReexecuted': 'v15 twenty-control qualification retains its original source and receipt',
+        'scope': 'four remaining actual callback-error/None/Accessor/result-refusal cases only; original guards and exact backing, not transitive results, streams, allocator/RSS or whole runtime',
+        'historicalNotReexecuted': 'v15 twenty-control result and nine passed controls of failed405 retain their original sources/receipts',
+        'priorV16Attempt': HISTORICAL_405,
         'limits': {'overallSeconds': 2400, 'buildCommandSeconds': 900,
             'caseProcessSeconds': 60, 'listProcessSeconds': 30, 'cleanupReserveSeconds': 5},
         'actualHostBudget': {'cpuFuel': 1_000_000_000, 'memoryBytes': 1024**2,
             'wallTimeMilliseconds': 5000,
-            'scope': 'original native_table_tests::budget for accounted host cases; private probes and None do not claim this ledger'}}
+            'scope': 'original native_table_tests::budget for accounted host cases; None does not claim this ledger'}}
     try:
         artifacts.require_source(ROOT, revision, environment)
         before = source_inputs()
@@ -143,31 +148,7 @@ def qualify(output, revision):
             return artifacts.cargo_environment(ROOT, artifact, environment,
                 target=target, execute=probe)
 
-        receipt['stage'] = 'build-six-sync-result-controls'
-        commands.command_seconds = 895
-        commands.run('build-private-controls', tools['cargo'], 'test', '--manifest-path',
-            'crates/vendor/wasmtime/Cargo.toml', '--locked', '--lib', '--no-default-features',
-            '--features', FEATURES, '--no-run', '--message-format=json')
-        private_suite = artifacts.Suite('crates/vendor/wasmtime/Cargo.toml', 'wasmtime',
-            'src/lib.rs', PREFIX, frozenset(PRIVATE_CASES), False)
-        private = artifacts.read_inventory(logs / 'logs/00-build-private-controls.stdout.txt',
-            ROOT, private_suite, target=target)
-        receipt['privateExecutable'] = file_identity(private.executable, 'wasmtime-private-controls',
-            512 * 1024**2)
-        commands.environment = runtime_environment(private, 'private')
-        commands.command_seconds = 25
-        listed = commands.run('list-six-private-controls', private.executable,
-            private_suite.filter, '--list')
-        require(len(listed) <= artifacts.MAX_LIST_BYTES, 'private-list-bound')
-        artifacts.validate_listing(listed, private_suite)
-        for index, case in enumerate(PRIVATE_CASES):
-            receipt['stage'] = case
-            commands.command_seconds = 55
-            raw = commands.run('private-case-' + str(index), private.executable, case,
-                '--exact', '--show-output', '--test-threads=1')
-            receipt['observations'].append(result(raw, case))
-
-        receipt['stage'] = 'build-seven-actual-host-controls'
+        receipt['stage'] = 'build-four-remaining-actual-host-controls'
         commands.environment = environment
         commands.command_seconds = 895
         stage = 'build-actual-host-controls'
@@ -186,7 +167,7 @@ def qualify(output, revision):
         receipt['nativeExecutable'] = file_identity(native.executable,
             'latent-wasmtime-actual-host-controls', 512 * 1024**2)
         commands.environment = runtime_environment(native, 'native')
-        # Same already-built root libtest binary, exact seven cases only. Each
+        # Same already-built root libtest binary, exact four remaining cases only. Each
         # independent listing refuses a missing/ignored/renamed control.
         for index, case in enumerate(MAIN_CASES):
             receipt['stage'] = case
@@ -201,20 +182,18 @@ def qualify(output, revision):
             raw = commands.run('main-case-' + str(index), native.executable,
                 case, '--exact', '--show-output', '--test-threads=1')
             receipt['observations'].append(result(raw, case))
-        require(len(commands.records) == 25 and len(receipt['observations']) == 13,
+        require(len(commands.records) == 10 and len(receipt['observations']) == 4,
             'exact-bounded-programme-count')
         require(time.monotonic() < commands.deadline, 'overall-deadline')
         require(source_inputs() == before and source.verify() == checked, 'final-source')
-        require(file_identity(private.executable, 'wasmtime-private-controls', 512 * 1024**2)
-            == receipt['privateExecutable'] and file_identity(native.executable,
-                'latent-wasmtime-actual-host-controls', 512 * 1024**2)
-            == receipt['nativeExecutable'], 'final-executables')
+        require(file_identity(native.executable, 'latent-wasmtime-actual-host-controls',
+            512 * 1024**2) == receipt['nativeExecutable'], 'final-executable')
         require([file_identity(tools[name], name) for name in sorted(tools)] == pins,
             'final-tools')
         artifacts.require_source(ROOT, revision, environment)
         require(time.monotonic() < commands.deadline, 'final-deadline')
         receipt.update(status='passed', sourceAfter=before, sourceUnchanged=True,
-            executed=[*PRIVATE_CASES, *MAIN_CASES], ignored=[])
+            executed=list(MAIN_CASES), ignored=[])
         write_json(output / 'receipt.json', receipt)
     except BaseException:
         receipt['status'] = 'failed'
