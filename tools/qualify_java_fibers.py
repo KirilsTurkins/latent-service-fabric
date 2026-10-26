@@ -509,7 +509,6 @@ def prepare(output: Path, wasi_sdk: Path, *, gradle="gradle", offline_cache: Pat
             report["reference"].append({"iteration": iteration, "modes": list(range(modes)), "results": [42] * modes})
         if fixture == 'scheduled-library':
             report['scheduledSource'] = scheduled_source_control(compiler, output / 'scheduled-source')
-            report['scheduledModel'] = scheduled_model_control(compiler, output / 'scheduled-model')
         else:
             report["completableSource"] = completable_source_control(compiler, output / "completable-source")
         if fixture == "timers":
@@ -519,7 +518,9 @@ def prepare(output: Path, wasi_sdk: Path, *, gradle="gradle", offline_cache: Pat
         if library_jars: selection['application_classpath'] = library_jars
         component, report["record"] = compiler.compile(output / "src", wit.parent,
             "tests:caller/service@1.0.0", output / "build", activation_profile=True, **selection)
-        if fixture != 'scheduled-library':
+        if fixture == 'scheduled-library':
+            report['scheduledModel'] = scheduled_model_control(compiler, output / 'scheduled-model')
+        else:
             report["throwableModel"] = throwable_model_control(compiler, output / "throwable-model")
             report["timeunitModel"] = timeunit_model_control(compiler, output / "timeunit-model")
             report["waitFrameModel"] = wait_frame_model_control(compiler, output / "wait-frame-model")

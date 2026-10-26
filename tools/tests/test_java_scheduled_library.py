@@ -68,13 +68,14 @@ class ScheduledLibraryOwnership(unittest.TestCase):
                 patch.object(preparation, 'recipe_inputs', return_value={}), \
                 patch.object(libraries, 'capture', return_value=((), (), {})) as captured, \
                 patch.object(preparation, 'scheduled_source_control', side_effect=control('scheduled-source')), \
-                patch.object(preparation, 'scheduled_model_control', side_effect=control('scheduled-model')), \
+                patch.object(preparation, 'scheduled_model_control', side_effect=control('scheduled-model')) as model, \
                 patch.object(preparation, 'completable_source_control', side_effect=AssertionError('old controls replayed')):
             path = Path(temporary) / 'prepared'
             with self.assertRaises(BeforeComponent):
                 preparation.prepare(path, owner.ROOT / 'sdk/java-guest', fixture='scheduled-library', _deadline=1000)
             self.assertEqual([stage for stage, _ in calls], ['compiler', 'reference-jdk-compile', 'reference-jdk-0',
-                'scheduled-source', 'scheduled-model', 'component'])
+                'scheduled-source', 'component'])
+            model.assert_not_called()
             self.assertEqual(captured.call_args.kwargs['_deadline'], 1000)
             self.assertEqual(calls[0][1]['_deadline'], 1000)
             self.assertEqual(calls[-1][1], {'activation_profile': True})
