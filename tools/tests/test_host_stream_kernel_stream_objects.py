@@ -48,5 +48,36 @@ class StreamObjectOwner(unittest.TestCase):
             struct.pack_into('<H',raw,16,2);path.write_bytes(raw)
             with self.assertRaises(ValueError):owner.object_identity(path)
 
+    def test_classdir_source_freeze_is_exact_and_preserves_default_source_scope(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory)
+            for name in owner.CLASSDIR_SOURCE_PATHS:
+                target=root/name;target.parent.mkdir(parents=True,exist_ok=True)
+                target.write_bytes((owner.ROOT/name).read_bytes())
+            normal=owner.selected_sources(root)
+            current=owner.selected_sources(root,classdir=True)
+            self.assertEqual(len(normal),47)
+            self.assertEqual(len(current),50)
+            self.assertTrue(all(current[name]==value for name,value in normal.items()))
+            with self.assertRaises(ValueError):owner.selected_sources(root,classdir=1)
+            path=root/'research/standard-outbound/linux-6.12-lineage/factory-stream-netdev-classdir.c'
+            path.write_bytes(path.read_bytes()+b'\n')
+            self.assertEqual(owner.selected_sources(root),normal)
+            with self.assertRaises(ValueError):owner.selected_sources(root,classdir=True)
+
+    def test_classdir_public_gate_refuses_other_original_object_targets(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output=Path(directory)
+            (output/'receipt.json').write_bytes(b'{"status":"failed","stage":"classdir-objects"}\n')
+            record=owner.admit(output,classdir=True)
+            self.assertEqual(set(record['files']),{'receipt.json'})
+            self.assertEqual(set(owner.CLASSDIR_TARGETS),
+                {'net/factory.o','drivers/base/core.o','lib/kobject.o','net/core/net-sysfs.o'})
+            self.assertIsNotNone(owner.public_allowed('objects/net/socket.o'))
+            self.assertIsNone(owner.public_allowed('objects/net/socket.o',classdir=True))
+            forbidden=output/'objects/net/socket.o';forbidden.parent.mkdir(parents=True)
+            forbidden.write_bytes(b'rejected before publication')
+            with self.assertRaises(ValueError):owner.admit(output,classdir=True)
+
 
 if __name__=='__main__':unittest.main()

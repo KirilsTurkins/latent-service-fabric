@@ -1,10 +1,36 @@
 {
   "cases": [
+    "StreamObjectOwner.test_classdir_public_gate_refuses_other_original_object_targets",
+    "StreamObjectOwner.test_classdir_source_freeze_is_exact_and_preserves_default_source_scope",
     "StreamObjectOwner.test_object_gate_accepts_relocatable_without_claiming_link_and_refuses_executable",
     "StreamObjectOwner.test_original_deadline_rejects_invalid_and_expired_start_before_work",
     "StreamObjectOwner.test_public_gate_rejects_private_members_and_reserves_admission_bytes"
   ],
   "guards": {
+    "StreamObjectOwner.test_classdir_public_gate_refuses_other_original_object_targets": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9b3ccc238ca4c870b9f7e01281563ae8c9833174794c263bcc1855cec7f365c2",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "StreamObjectOwner.test_classdir_source_freeze_is_exact_and_preserves_default_source_scope": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9b3ccc238ca4c870b9f7e01281563ae8c9833174794c263bcc1855cec7f365c2",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "StreamObjectOwner.test_object_gate_accepts_relocatable_without_claiming_link_and_refuses_executable": {
       "bases": [
         "unittest.TestCase"
@@ -44,6 +70,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_host_stream_kernel_stream_objects.py",
-  "reviewReason": "Review one unselected normal C object programme for the exact provider source checkpoint and strict SKB composition: eighteen objects, original config and bounded owner; no image, boot, consumer activation, useful fit or runtime qualification.",
+  "reviewReason": "Review the fixed private four-translation-unit classdir compile mode: exact approved initialized-object source, fifty frozen inputs, original eighteen-object defaults preserved, same process/config/deadline/caps and NULL consumer; no runtime or fit claim.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
