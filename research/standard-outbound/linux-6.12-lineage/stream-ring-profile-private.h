@@ -5,6 +5,7 @@
 #include <linux/errno.h>
 #include <linux/overflow.h>
 #include <linux/types.h>
+#include <uapi/linux/virtio_ring.h>
 
 #define LSF_STREAM_RX_DESCRIPTORS 32u
 #define LSF_STREAM_TX_DESCRIPTORS 64u
