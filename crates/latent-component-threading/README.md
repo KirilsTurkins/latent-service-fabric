@@ -57,7 +57,7 @@ compiler input.
 ## Dependencies and verification
 
 [Cargo.toml](Cargo.toml) preserves the implementation's exact wasmparser and
-wasm-encoder 0.259.0 and SHA-2 0.10.9 pins. Runtime workspace parser and digest
+wasm-encoder 0.259.0 and SHA-2 0.11.0 pins. Runtime workspace parser and digest
 versions are unchanged. The package follows the workspace MSRV and forbids unsafe
 code; it does not link a runtime engine.
 
