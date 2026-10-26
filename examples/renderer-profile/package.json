@@ -13,7 +13,7 @@
     "@angular/router": "22.2.3",
     "@babel/core": "8.0.6",
     "@bytecodealliance/componentize-js": "0.23.0",
-    "@bytecodealliance/jco": "1.35.0",
+    "@bytecodealliance/jco": "1.39.0",
     "@bytecodealliance/preview2-shim": "0.26.0",
     "esbuild": "0.28.2",
     "playwright-core": "1.64.0",
