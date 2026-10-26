@@ -32,7 +32,7 @@ The pins introduced for Phase 3 issue #281 were resolved against the named upstr
 | `actions/setup-java` | `v6.0.1` | `de7274f081f381c8f8158605e0321c36c376e2e6` |
 | `actions/setup-dotnet` | `v6.0.0` | `a98b56852c35b8e3190ac28c8c2271da59106c68` |
 | `actions/upload-artifact` | `v7.0.1` | `043fb46d1a93c77aae656e7c1c64a875d1fc6a0a` |
-| `actions/download-artifact` | `v4` | `d3f86a106a0bac45b974a628896c90dbdf5c8093` |
+| `actions/download-artifact` | `v8.0.2` | `9000827ccba6bdab643e8b6fd33ac0654aef8333` |
 | `actions/cache/restore`, `actions/cache/save` | `v5` | `caa296126883cff596d87d8935842f9db880ef25` |
 | `actions/attest-build-provenance` | `v4.2.2` | `4d101475d8b20a2381f78447822ac1eab6504dd8` |
 | `actions/upload-pages-artifact` | `v5.0.0` | `fc324d3547104276b827a68afc52ff2a11cc49c9` |
@@ -83,6 +83,14 @@ diff were reviewed on **2026-09-27**. It uses Node 24 and keeps the explicit
 .NET SDK and cache inputs selected by the workflows. No new installer options
 or package sources are enabled. The workflow hashes in `tools/ci/history/commands-v1.json`
 reflect the new pin; required commands and job conditions are unchanged.
+
+The `actions/download-artifact` v8.0.2 identity, [release notes](https://github.com/actions/download-artifact/releases/tag/v8.0.2)
+and action definition were reviewed on **2026-10-26**. It uses Node 24 and
+retains the existing artifact names, IDs, destinations, run IDs and explicit
+cross-run token inputs. Digest mismatches still fail by default. Its artifact
+dependency improves download retries on rate-limited requests. The remaining
+v8.0.1 pins now match the v8.0.2 identity already used by the other workflows;
+the ownership-local command contracts and historical snapshot need no refresh.
 
 The `actions/upload-artifact` v7.0.1 identity, release notes and action-definition
 diff were reviewed on **2026-09-28**. It uses Node 24 and retains the existing
