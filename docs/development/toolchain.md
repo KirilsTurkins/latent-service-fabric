@@ -46,7 +46,9 @@ Workspace dependencies are exact requirements and workspace crates consume them 
 
 Wasmtime is selected from `crates/vendor/wasmtime`, with original archive/file
 identities and a separate LSF patch manifest. The workspace also patches bytes
-for retained original-owner accounting. The outbound-stream rustls package is a
+for retained original-owner accounting. The standalone native VM fixture selects the same bytes source explicitly,
+because independent Cargo workspaces do not inherit the root patch table.
+The outbound-stream rustls package is a
 separate selected dependency with its own parser derivation; its presence does
 not enable host TLS. See [the engine boundary](../runtime/wasmtime.md) and
 [stream qualification](../runtime/outbound-stream-qualification.md). Preserve
