@@ -1,218 +1,44 @@
 {
-  "cases": [
-    "KernelRoute.test_actual_cache_hit_and_publication_bodies_are_preserved_without_transfer",
-    "KernelRoute.test_actual_ipv4_metrics_refcounts_and_fib_final_cleanup_stay_original",
-    "KernelRoute.test_changed_duplicate_crlf_unknown_or_missing_preimages_refuse",
-    "KernelRoute.test_clone_derives_same_original_route_birth_and_does_not_adopt_normal_cache_hits",
-    "KernelRoute.test_every_original_normal_body_is_recovered_exactly",
-    "KernelRoute.test_final_rcuref_precedes_queue_and_actual_callback_precedes_view_return",
-    "KernelRoute.test_no_policy_fast_path_keeps_socket_precedence_and_default_block",
-    "KernelRoute.test_original_caps_single_record_owner_and_closed_installation_are_preserved",
-    "KernelRoute.test_owned_flow_keeps_initial_and_final_port_lookups_and_real_security",
-    "KernelRoute.test_prepaid_miss_keeps_full_original_rtable_initialization",
-    "KernelRoute.test_private_rcu_lookup_keeps_actual_fib_rules_path_selection_and_errors",
-    "KernelRoute.test_source_comes_from_actual_socket_not_current_task_or_late_pointer_registration",
-    "KernelRoute.test_three_shared_extensions_project_to_exact_previous_full_source",
-    "KernelRoute.test_unclosed_transform_tracker_and_lwt_producers_are_refused_before_allocation",
-    "KernelRoute.test_unknown_duplicate_or_poisoned_private_dst_never_reaches_normal_slub",
-    "KernelRoute.test_whole_maintained_sources_and_complete_function_preimages_are_bound"
-  ],
-  "guards": {
-    "KernelRoute.test_actual_cache_hit_and_publication_bodies_are_preserved_without_transfer": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:105ed37a310d4b07669ea0faa8fcec6a4f69e9d75534e4d74215445ae8f3a10d",
-        "class:setup-sha256:13e4a45a055db94ed18c503b6c6fd7727d58ca60d0effbe162f3040921969d82"
-      ],
-      "skipSites": []
-    },
-    "KernelRoute.test_actual_ipv4_metrics_refcounts_and_fib_final_cleanup_stay_original": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:105ed37a310d4b07669ea0faa8fcec6a4f69e9d75534e4d74215445ae8f3a10d",
-        "class:setup-sha256:13e4a45a055db94ed18c503b6c6fd7727d58ca60d0effbe162f3040921969d82"
-      ],
-      "skipSites": []
-    },
-    "KernelRoute.test_changed_duplicate_crlf_unknown_or_missing_preimages_refuse": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:105ed37a310d4b07669ea0faa8fcec6a4f69e9d75534e4d74215445ae8f3a10d",
-        "class:setup-sha256:13e4a45a055db94ed18c503b6c6fd7727d58ca60d0effbe162f3040921969d82"
-      ],
-      "skipSites": []
-    },
-    "KernelRoute.test_clone_derives_same_original_route_birth_and_does_not_adopt_normal_cache_hits": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:105ed37a310d4b07669ea0faa8fcec6a4f69e9d75534e4d74215445ae8f3a10d",
-        "class:setup-sha256:13e4a45a055db94ed18c503b6c6fd7727d58ca60d0effbe162f3040921969d82"
-      ],
-      "skipSites": []
-    },
-    "KernelRoute.test_every_original_normal_body_is_recovered_exactly": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:105ed37a310d4b07669ea0faa8fcec6a4f69e9d75534e4d74215445ae8f3a10d",
-        "class:setup-sha256:13e4a45a055db94ed18c503b6c6fd7727d58ca60d0effbe162f3040921969d82"
-      ],
-      "skipSites": []
-    },
-    "KernelRoute.test_final_rcuref_precedes_queue_and_actual_callback_precedes_view_return": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:105ed37a310d4b07669ea0faa8fcec6a4f69e9d75534e4d74215445ae8f3a10d",
-        "class:setup-sha256:13e4a45a055db94ed18c503b6c6fd7727d58ca60d0effbe162f3040921969d82"
-      ],
-      "skipSites": []
-    },
-    "KernelRoute.test_no_policy_fast_path_keeps_socket_precedence_and_default_block": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:105ed37a310d4b07669ea0faa8fcec6a4f69e9d75534e4d74215445ae8f3a10d",
-        "class:setup-sha256:13e4a45a055db94ed18c503b6c6fd7727d58ca60d0effbe162f3040921969d82"
-      ],
-      "skipSites": []
-    },
-    "KernelRoute.test_original_caps_single_record_owner_and_closed_installation_are_preserved": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:105ed37a310d4b07669ea0faa8fcec6a4f69e9d75534e4d74215445ae8f3a10d",
-        "class:setup-sha256:13e4a45a055db94ed18c503b6c6fd7727d58ca60d0effbe162f3040921969d82"
-      ],
-      "skipSites": []
-    },
-    "KernelRoute.test_owned_flow_keeps_initial_and_final_port_lookups_and_real_security": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:105ed37a310d4b07669ea0faa8fcec6a4f69e9d75534e4d74215445ae8f3a10d",
-        "class:setup-sha256:13e4a45a055db94ed18c503b6c6fd7727d58ca60d0effbe162f3040921969d82"
-      ],
-      "skipSites": []
-    },
-    "KernelRoute.test_prepaid_miss_keeps_full_original_rtable_initialization": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:105ed37a310d4b07669ea0faa8fcec6a4f69e9d75534e4d74215445ae8f3a10d",
-        "class:setup-sha256:13e4a45a055db94ed18c503b6c6fd7727d58ca60d0effbe162f3040921969d82"
-      ],
-      "skipSites": []
-    },
-    "KernelRoute.test_private_rcu_lookup_keeps_actual_fib_rules_path_selection_and_errors": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:105ed37a310d4b07669ea0faa8fcec6a4f69e9d75534e4d74215445ae8f3a10d",
-        "class:setup-sha256:13e4a45a055db94ed18c503b6c6fd7727d58ca60d0effbe162f3040921969d82"
-      ],
-      "skipSites": []
-    },
-    "KernelRoute.test_source_comes_from_actual_socket_not_current_task_or_late_pointer_registration": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:105ed37a310d4b07669ea0faa8fcec6a4f69e9d75534e4d74215445ae8f3a10d",
-        "class:setup-sha256:13e4a45a055db94ed18c503b6c6fd7727d58ca60d0effbe162f3040921969d82"
-      ],
-      "skipSites": []
-    },
-    "KernelRoute.test_three_shared_extensions_project_to_exact_previous_full_source": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:105ed37a310d4b07669ea0faa8fcec6a4f69e9d75534e4d74215445ae8f3a10d",
-        "class:setup-sha256:13e4a45a055db94ed18c503b6c6fd7727d58ca60d0effbe162f3040921969d82"
-      ],
-      "skipSites": []
-    },
-    "KernelRoute.test_unclosed_transform_tracker_and_lwt_producers_are_refused_before_allocation": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:105ed37a310d4b07669ea0faa8fcec6a4f69e9d75534e4d74215445ae8f3a10d",
-        "class:setup-sha256:13e4a45a055db94ed18c503b6c6fd7727d58ca60d0effbe162f3040921969d82"
-      ],
-      "skipSites": []
-    },
-    "KernelRoute.test_unknown_duplicate_or_poisoned_private_dst_never_reaches_normal_slub": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:105ed37a310d4b07669ea0faa8fcec6a4f69e9d75534e4d74215445ae8f3a10d",
-        "class:setup-sha256:13e4a45a055db94ed18c503b6c6fd7727d58ca60d0effbe162f3040921969d82"
-      ],
-      "skipSites": []
-    },
-    "KernelRoute.test_whole_maintained_sources_and_complete_function_preimages_are_bound": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:105ed37a310d4b07669ea0faa8fcec6a4f69e9d75534e4d74215445ae8f3a10d",
-        "class:setup-sha256:13e4a45a055db94ed18c503b6c6fd7727d58ca60d0effbe162f3040921969d82"
-      ],
-      "skipSites": []
-    }
+  "cases":["KernelRoute.test_actual_cache_hit_and_publication_bodies_are_preserved_without_transfer","KernelRoute.test_actual_ipv4_metrics_refcounts_and_fib_final_cleanup_stay_original","KernelRoute.test_changed_duplicate_crlf_unknown_or_missing_preimages_refuse","KernelRoute.test_clone_derives_same_original_route_birth_and_does_not_adopt_normal_cache_hits","KernelRoute.test_every_original_normal_body_is_recovered_exactly","KernelRoute.test_final_rcuref_precedes_queue_and_actual_callback_precedes_view_return","KernelRoute.test_no_policy_fast_path_keeps_socket_precedence_and_default_block","KernelRoute.test_original_caps_single_record_owner_and_closed_installation_are_preserved","KernelRoute.test_owned_flow_keeps_initial_and_final_port_lookups_and_real_security","KernelRoute.test_prepaid_miss_keeps_full_original_rtable_initialization","KernelRoute.test_private_rcu_lookup_keeps_actual_fib_rules_path_selection_and_errors","KernelRoute.test_source_comes_from_actual_socket_not_current_task_or_late_pointer_registration","KernelRoute.test_three_shared_extensions_project_to_exact_previous_full_source","KernelRoute.test_unclosed_transform_tracker_and_lwt_producers_are_refused_before_allocation","KernelRoute.test_unknown_duplicate_or_poisoned_private_dst_never_reaches_normal_slub","KernelRoute.test_whole_maintained_sources_and_complete_function_preimages_are_bound"],
+  "guards":{
+    "KernelRoute.test_actual_cache_hit_and_publication_bodies_are_preserved_without_transfer":
+      "3e31c37e01aaee330705352f620993d32574e62a533c3b6d1c0d8bf4bd4a8737",
+    "KernelRoute.test_actual_ipv4_metrics_refcounts_and_fib_final_cleanup_stay_original":
+      "3e31c37e01aaee330705352f620993d32574e62a533c3b6d1c0d8bf4bd4a8737",
+    "KernelRoute.test_changed_duplicate_crlf_unknown_or_missing_preimages_refuse":
+      "3e31c37e01aaee330705352f620993d32574e62a533c3b6d1c0d8bf4bd4a8737",
+    "KernelRoute.test_clone_derives_same_original_route_birth_and_does_not_adopt_normal_cache_hits":
+      "3e31c37e01aaee330705352f620993d32574e62a533c3b6d1c0d8bf4bd4a8737",
+    "KernelRoute.test_every_original_normal_body_is_recovered_exactly":
+      "3e31c37e01aaee330705352f620993d32574e62a533c3b6d1c0d8bf4bd4a8737",
+    "KernelRoute.test_final_rcuref_precedes_queue_and_actual_callback_precedes_view_return":
+      "3e31c37e01aaee330705352f620993d32574e62a533c3b6d1c0d8bf4bd4a8737",
+    "KernelRoute.test_no_policy_fast_path_keeps_socket_precedence_and_default_block":
+      "3e31c37e01aaee330705352f620993d32574e62a533c3b6d1c0d8bf4bd4a8737",
+    "KernelRoute.test_original_caps_single_record_owner_and_closed_installation_are_preserved":
+      "3e31c37e01aaee330705352f620993d32574e62a533c3b6d1c0d8bf4bd4a8737",
+    "KernelRoute.test_owned_flow_keeps_initial_and_final_port_lookups_and_real_security":
+      "3e31c37e01aaee330705352f620993d32574e62a533c3b6d1c0d8bf4bd4a8737",
+    "KernelRoute.test_prepaid_miss_keeps_full_original_rtable_initialization":
+      "3e31c37e01aaee330705352f620993d32574e62a533c3b6d1c0d8bf4bd4a8737",
+    "KernelRoute.test_private_rcu_lookup_keeps_actual_fib_rules_path_selection_and_errors":
+      "3e31c37e01aaee330705352f620993d32574e62a533c3b6d1c0d8bf4bd4a8737",
+    "KernelRoute.test_source_comes_from_actual_socket_not_current_task_or_late_pointer_registration":
+      "3e31c37e01aaee330705352f620993d32574e62a533c3b6d1c0d8bf4bd4a8737",
+    "KernelRoute.test_three_shared_extensions_project_to_exact_previous_full_source":
+      "3e31c37e01aaee330705352f620993d32574e62a533c3b6d1c0d8bf4bd4a8737",
+    "KernelRoute.test_unclosed_transform_tracker_and_lwt_producers_are_refused_before_allocation":
+      "3e31c37e01aaee330705352f620993d32574e62a533c3b6d1c0d8bf4bd4a8737",
+    "KernelRoute.test_unknown_duplicate_or_poisoned_private_dst_never_reaches_normal_slub":
+      "3e31c37e01aaee330705352f620993d32574e62a533c3b6d1c0d8bf4bd4a8737",
+    "KernelRoute.test_whole_maintained_sources_and_complete_function_preimages_are_bound":
+      "3e31c37e01aaee330705352f620993d32574e62a533c3b6d1c0d8bf4bd4a8737"
   },
-  "kind": "python",
-  "module": "tools/tests/test_host_stream_kernel_route.py",
-  "reviewReason": "Add sixteen exact maintained route source/lifetime/policy-boundary controls; preserve all existing cases, guards, native source and qualification gates.",
-  "schemaVersion": "latent.ci.contracts.v1"
+  "kind":"python",
+  "module":"tools/tests/test_host_stream_kernel_route.py",
+  "reviewReason":"Add sixteen exact maintained route source/lifetime/policy-boundary controls; preserve all existing cases, guards, native source and qualification gates.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "3e31c37e01aaee330705352f620993d32574e62a533c3b6d1c0d8bf4bd4a8737":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:105ed37a310d4b07669ea0faa8fcec6a4f69e9d75534e4d74215445ae8f3a10d","class:setup-sha256:13e4a45a055db94ed18c503b6c6fd7727d58ca60d0effbe162f3040921969d82"],"skipSites":[]}
+  }
 }
