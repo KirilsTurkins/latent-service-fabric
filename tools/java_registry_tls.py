@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+import math
 from pathlib import Path
 import re
 import time
@@ -56,13 +57,16 @@ def credentials(config: dict, environment: dict) -> None:
     environment.update(selected)
 
 
-def prepare(project: Path, config: dict, work: Path, java: Path, environment: dict):
+def prepare(project: Path, config: dict, work: Path, java: Path, environment: dict, *, _deadline=None):
     """Derive an owned truststore; never change JDK or machine trust settings.
 
     Returned public certificate bytes become native lock inputs. The private
     derived store and SDK tool inputs are checked again before capture commits.
     Credentials are not given to keytool and never enter these identities.
     """
+    if _deadline is not None and (type(_deadline) not in (int, float)
+            or not math.isfinite(_deadline) or _deadline <= time.monotonic() + 5):
+        raise DependencyError('java-registry-parent-deadline')
     names = certificates(config)
     if not names:
         return (), {}, {}, None
@@ -92,6 +96,8 @@ def prepare(project: Path, config: dict, work: Path, java: Path, environment: di
         target.write(original)
     trust.chmod(0o600)
     deadline = time.monotonic() + TRUST_PREPARATION_SECONDS
+    if _deadline is not None:
+        deadline = min(deadline - 5, _deadline - 5)
     key_environment = {name: value for name, value in environment.items() if not name.startswith('LSF_REGISTRY_')}
     for ordinal, (name, raw) in enumerate(source.items()):
         certificate = work / f'public-registry-ca-{ordinal:04d}.pem'

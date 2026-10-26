@@ -2,11 +2,13 @@
 from __future__ import annotations
 
 import json
+import math
 import os
 from pathlib import Path
 import re
 import shutil
 import tempfile
+import time
 import tomllib
 from urllib.parse import urlsplit
 
@@ -143,13 +145,26 @@ tasks.register('captureRuntime') {
 """
 
 
-def resolve(project: Path, candidate: Path, *, gradle: str = "gradle") -> dict:
+def resolve(project: Path, candidate: Path, *, gradle: str = "gradle", _deadline=None) -> dict:
+    if _deadline is not None and (type(_deadline) not in (int, float)
+            or not math.isfinite(_deadline) or _deadline <= time.monotonic() + 5):
+        raise DependencyError('java-resolution-parent-deadline')
     from tools.java_dependency_authoring import transaction
     with transaction(project) as (owner, app, private, sdk):
-        return _resolve(owner, app, private, sdk, candidate, gradle=gradle)
+        options = {'gradle': gradle}
+        if _deadline is not None:
+            options['_deadline'] = _deadline
+        return _resolve(owner, app, private, sdk, candidate, **options)
 
 
-def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *, gradle: str) -> dict:
+def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *, gradle: str, _deadline=None) -> dict:
+    def run(command, cwd, environment, maximum_seconds, maximum_bytes):
+        if _deadline is not None:
+            remaining = _deadline - time.monotonic() - 5
+            if remaining <= 0:
+                raise DependencyError('java-resolution-parent-deadline')
+            maximum_seconds = min(maximum_seconds - 5, remaining)
+        return run_bounded_result(command, cwd, environment, maximum_seconds, maximum_bytes)
     from tools.java_dependency_authoring import candidate_location, optional, replace, unchanged
     from tools.dev_workflow import paths
     from tools.rust_capsule_project import snapshot
@@ -189,21 +204,22 @@ def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
             if not java:
                 raise DependencyError("java-pinned-resolution-jdk-unavailable")
             tools_before = {resolver_path: resolver_digest, java: digest(read_bytes(Path(java)))}
-            java_version = run_bounded_result([java, "-version"], work, environment, 30, 16384)
+            java_version = run([java, "-version"], work, environment, 30, 16384)
             reported = (java_version.stdout + java_version.stderr).decode("utf-8")
             if java_version.returncode or pins["sdk"]["java"] not in reported:
                 raise DependencyError("java-pinned-resolution-jdk-version-mismatch")
-            version = run_bounded_result([resolver_path, "--version"], work, environment, 30, 16384)
+            version = run([resolver_path, "--version"], work, environment, 30, 16384)
             if version.returncode or not re.search(r"\bGradle " + re.escape(pins["sdk"]["gradle"]) + r"\b", version.stdout.decode("utf-8")):
                 raise DependencyError("java-pinned-resolver-version-mismatch")
             (work / "settings.gradle").write_text("rootProject.name = 'captured-application-resolution'\n", encoding="utf-8")
             (work / "gradle.properties").write_text("org.gradle.java.installations.auto-download=false\n", encoding="utf-8")
             (work / "build.gradle").write_text(script(config), encoding="utf-8")
+            trust_options = {'_deadline': _deadline} if _deadline is not None else {}
             trust_arguments, trust_sources, trust_inputs, trust_identity = java_registry_tls.prepare(
-                project, config, work, Path(java), environment)
+                project, config, work, Path(java), environment, **trust_options)
             tools_before.update(trust_inputs)
             environment.update(registry_credentials)
-            result = run_bounded_result([resolver_path, *trust_arguments, "--no-daemon", "captureRuntime"], work, environment, 300, 4 * 1024 * 1024)
+            result = run([resolver_path, *trust_arguments, "--no-daemon", "captureRuntime"], work, environment, 300, 4 * 1024 * 1024)
             if result.returncode:
                 raise DependencyError("java-maven-resolution-failed-private-diagnostics-discarded")
             resolved = document(work / "resolved.json")

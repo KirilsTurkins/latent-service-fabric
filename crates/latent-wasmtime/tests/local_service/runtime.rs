@@ -346,7 +346,7 @@ async fn signed_java_fiber_fixture(variable: &str, expected_source: &[u8], name:
                 .start(f.request(&requested_id, mode))
                 .unwrap()
                 .await;
-            if name == "java-fibers" {
+            if matches!(name, "java-fibers" | "java-worker-libraries") {
                 assert_eq!(actual.activation_id.0, requested_id);
             }
             let receipt = success(actual);
@@ -361,7 +361,7 @@ async fn signed_java_fiber_fixture(variable: &str, expected_source: &[u8], name:
                 receipt.consumption
             );
             f.idle().await;
-            if name == "java-fibers" {
+            if matches!(name, "java-fibers" | "java-worker-libraries") {
                 let runtime = f.backend.resource_snapshot();
                 let broker = f.broker.snapshot();
                 assert!(runtime.stores_created > stores_before);
