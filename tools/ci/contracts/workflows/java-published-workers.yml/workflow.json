@@ -1,0 +1,40 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "java-published-workers-${{ github.ref }}"
+    },
+    "name": "Ordinary published Java workers through the normal signed node",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/java-published-workers-20261026"
+        ],
+        "paths": [
+          ".github/workflows/java-published-workers.yml",
+          "tools/qualify_java_published_workers.py",
+          "tools/qualify_java_retained_fibers.py",
+          "tools/qualify_java_fibers.py",
+          "tools/java_fiber_library_inputs.py",
+          "tools/java_dependency_resolution.py",
+          "tools/java_registry_tls.py",
+          "tools/java_guest/compiler.py",
+          "tools/java_guest/compiler_profile_distribution.py",
+          "tools/tests/test_java_published_workers.py",
+          "crates/latent-wasmtime/tests/local_service/runtime.rs"
+        ]
+      }
+    },
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "published-workers"
+  ],
+  "reviewReason": "Add one normal unchanged published-worker component and source-matched twelve-call owner; preserve historical programmes and shared parent cleanup budgets.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/java-published-workers.yml"
+}

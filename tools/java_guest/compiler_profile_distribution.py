@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from pathlib import Path
 import hashlib
+import math
 import ast
 import json
 import os
@@ -176,9 +177,12 @@ def check_input(source: Path) -> dict:
     return _check_input(source, time.monotonic() + 600)
 
 
-def extract(source: Path, directory: Path) -> tuple[Path, Path]:
+def extract(source: Path, directory: Path, *, _deadline: float | None = None) -> tuple[Path, Path]:
     """Decode a fixed local product; no network, tools or private-root authority."""
-    deadline = time.monotonic() + 600
+    if _deadline is not None and (type(_deadline) not in (int, float)
+            or not math.isfinite(_deadline) or _deadline <= time.monotonic() + 5):
+        raise ValueError('java-prepared-extract-parent-deadline')
+    deadline = min(time.monotonic() + 600, _deadline or float('inf'))
     value = _check_input(source, deadline)
     from tools.java_guest import llvm_private_store_inputs as inputs
     from tools.java_guest import llvm_private_store_distribution as carrier
@@ -236,7 +240,8 @@ def product(source: Path, directory: Path, output: Path, *, _deadline: float | N
     directory.mkdir(mode=0o700)
     decoded = directory / 'decoded'
     decoded.mkdir(mode=0o700)
-    sdk, provenance = extract(source, decoded)
+    extract_options = {'_deadline': deadline} if _deadline is not None else {}
+    sdk, provenance = extract(source, decoded, **extract_options)
     value = profile.pin()
     profile.need(value is not None, 'unqualified-product')
     linked = profile.admit(sdk)

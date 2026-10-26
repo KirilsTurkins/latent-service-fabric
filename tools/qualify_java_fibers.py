@@ -8,6 +8,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import sys
@@ -368,7 +369,13 @@ def recipe_inputs() -> dict[str, str]:
 
 def prepare(output: Path, wasi_sdk: Path, *, gradle="gradle", offline_cache: Path | None = None,
             read_only_cache: Path | None = None, fixture="threads", observe_public_wineh=False,
-            derived_llvm_public=False, private_scalar_llvm_public=False):
+            derived_llvm_public=False, private_scalar_llvm_public=False, _deadline=None):
+    if _deadline is not None:
+        if (fixture != 'worker-libraries' or type(_deadline) not in (int, float)
+                or not math.isfinite(_deadline) or _deadline <= time.monotonic() + 5):
+            raise ValueError('Java-worker-parent-deadline')
+        # Includes the existing process owner's five-second cleanup allowance.
+        _deadline = min(_deadline, time.monotonic() + 1200)
     if fixture not in {"threads", "completable", "timers", "fiber-io", "worker-libraries"}: raise ValueError("unknown Java fiber fixture")
     if type(observe_public_wineh) is not bool or observe_public_wineh and fixture != 'threads':
         raise ValueError('WinEH observation requires only the fixed normal public fiber fixture')
@@ -414,6 +421,8 @@ def prepare(output: Path, wasi_sdk: Path, *, gradle="gradle", offline_cache: Pat
     try:
         selected_compiler = Compiler
         extra = {}
+        if _deadline is not None:
+            extra['_deadline'] = _deadline
         if observe_public_wineh:
             from tools.java_guest.public_wineh import PublicWinEHCompiler
             selected_compiler = PublicWinEHCompiler
@@ -429,8 +438,11 @@ def prepare(output: Path, wasi_sdk: Path, *, gradle="gradle", offline_cache: Pat
         library_jars, reference_jars = (), ()
         if fixture == 'worker-libraries':
             from tools import java_fiber_library_inputs
+            capture_options = {'gradle': gradle}
+            if _deadline is not None:
+                capture_options['_deadline'] = _deadline
             library_jars, reference_jars, report['libraries'] = java_fiber_library_inputs.capture(
-                output / 'library-inputs', gradle=gradle)
+                output / 'library-inputs', **capture_options)
         control = output / "reference-jdk"
         control.mkdir()
         main = control / "Main.java"
@@ -480,6 +492,8 @@ def prepare(output: Path, wasi_sdk: Path, *, gradle="gradle", offline_cache: Pat
             if time.monotonic() >= derived_deadline:
                 raise ValueError('Private scalar LLVM public compiler job deadline exceeded')
         if recipe_inputs() != before: raise ValueError("Java fiber qualification recipe changed during preparation")
+        if _deadline is not None and time.monotonic() >= _deadline:
+            raise ValueError('Java-worker-parent-deadline')
         report["commands"] = compiler.records
         (output / "compiler-inputs.json").write_bytes(compiler.compiler_inputs)
         report["status"] = "component-built-unqualified"

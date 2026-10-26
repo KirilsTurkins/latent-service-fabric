@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/java_guest/compiler_profile_distribution.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Retain exact source-pinned prepared inputs through the existing untrusted digest cache; cold and expired origins still fail closed.",
+  "reviewReason": "Add one normal unchanged published-worker component and source-matched twelve-call owner; preserve historical programmes and shared parent cleanup budgets.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "8cc16edd75feaa0526a63620a7761a9285c2d43c5ce95617fc1a22164754f3a9"
+  "sha256": "12443a135d933054ff3dc0ef9e06bca9a903ad2dd869b16b55e1cb2f245491b0"
 }

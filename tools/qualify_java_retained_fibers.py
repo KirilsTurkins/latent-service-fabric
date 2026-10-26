@@ -23,6 +23,7 @@ from tools.rust_capsule_project import ROOT, fresh, read_file, write_json
 BRANCH = 'feat/java-retained-fibers-runtime-20261026'
 WORKFLOW = '.github/workflows/java-retained-fibers.yml'
 CASE = 'runtime::signed_java_threads_spin_join_and_thread_local_use_real_activation_fibers'
+WORKER_CASE = 'runtime::signed_java_published_libraries_use_unchanged_default_workers'
 JAVA = 'sdk/java-guest/fibers/conformance/'
 EXTRA_SOURCES = tuple(JAVA + name + 'Capsule.java' for name in (
     '', 'completable/', 'fiber-io/', 'worker-libraries/', 'timers/')) + tuple(
@@ -53,13 +54,17 @@ def source_inputs():
     return result
 
 
-def observations(raw):
+def observations(raw, *, worker=False):
+    need(type(worker) is bool, 'closed-observation-selection')
+    case = WORKER_CASE if worker else CASE
+    fixture = 'java-worker-libraries' if worker else 'java-fibers'
+    profile = b'teavm-activation-fibers-io-v1' if worker else b'teavm-activation-fibers-v1'
     need(len(raw) <= artifacts.MAX_OUTPUT_BYTES, 'output-bound')
-    need(re.findall(rb'^test ([a-zA-Z0-9_:]+) \.\.\. ok$', raw, re.M) == [CASE.encode()], 'exact-case')
+    need(re.findall(rb'^test ([a-zA-Z0-9_:]+) \.\.\. ok$', raw, re.M) == [case.encode()], 'exact-case')
     summaries = re.findall(rb'^test result: ok\. (\d+) passed; (\d+) failed; '
         rb'(\d+) ignored; (\d+) measured; (\d+) filtered out;', raw, re.M)
     need(summaries == [(b'1', b'0', b'0', b'0', b'51')], 'one-executed-no-skip')
-    setup = re.findall(rb'^teavm-activation-fibers-v1 signed-preparation-setup-micros=(\d+) '
+    setup = re.findall(rb'^' + profile + rb' signed-preparation-setup-micros=(\d+) '
         rb'stores-created=0 guest-activations=0$', raw, re.M)
     need(len(setup) == 1, 'normal-preparation')
     rows = [json.loads(line, object_pairs_hook=registry.unique_object)
@@ -68,7 +73,7 @@ def observations(raw):
     created = 0
     for index, row in enumerate(rows):
         iteration, mode = divmod(index, 4)
-        expected_id = f'java-fibers-{iteration}-{mode}'
+        expected_id = f'{fixture}-{iteration}-{mode}'
         need(type(row) is dict and set(row) == {*ZERO_FIELDS, 'activationId', 'iteration', 'mode',
             'value', 'cpuFuel', 'reportedPeakMemoryBytes', 'storesBefore', 'storesCreated'}, 'row-fields')
         need(row['activationId'] == expected_id and row['iteration'] == iteration
@@ -80,7 +85,7 @@ def observations(raw):
         need(row['storesBefore'] == created and row['storesCreated'] > created, 'fresh-stores')
         need(all(row[field] == 0 for field in ZERO_FIELDS), 'actual-idle-counters')
         created = row['storesCreated']
-    return {'case': CASE, 'passed': 1, 'failed': 0, 'ignored': 0, 'filteredOut': 51,
+    return {'case': case, 'passed': 1, 'failed': 0, 'ignored': 0, 'filteredOut': 51,
             'setupMicroseconds': int(setup[0]), 'calls': rows, 'stdout': inputs.identity(raw)}
 
 

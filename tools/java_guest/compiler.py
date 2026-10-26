@@ -223,7 +223,8 @@ class Compiler:
         failure = None
         try:
             result = run_bounded_result(argv, cwd or self.directory, self.environment,
-                                 timeout_seconds=min(remaining, 600), max_output_bytes=4 * 1024 * 1024)
+                                 timeout_seconds=min(remaining, 595 if getattr(self, '_parent_deadline', None) is not None else 600),
+                                 max_output_bytes=4 * 1024 * 1024)
             exit_code = result.returncode
             log = result.stdout + b"\n" + result.stderr
             self.retained_bytes += len(log)
