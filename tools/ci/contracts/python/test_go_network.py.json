@@ -1,192 +1,40 @@
 {
-  "cases": [
-    "GoNetworkSourceTests.test_actual_generated_identity_requires_managed_v5_without_installing_authority",
-    "GoNetworkSourceTests.test_actual_install_creates_owned_facade_without_raw_resource_constructors_or_gc_drop",
-    "GoNetworkSourceTests.test_close_restores_only_untransferred_own_handle_and_cancellation_keeps_uncertainty",
-    "GoNetworkSourceTests.test_every_generated_function_preimage_and_single_derivation_is_required",
-    "GoNetworkSourceTests.test_full_upstream_preimages_are_required_before_any_overlay_is_created",
-    "GoNetworkSourceTests.test_global_resolver_replacement_and_nondefault_settings_are_refused_before_host_dispatch",
-    "GoNetworkSourceTests.test_incomplete_or_nonboolean_dispatcher_selection_cannot_publish_overlay",
-    "GoNetworkSourceTests.test_injection_or_changed_template_cannot_publish_a_projection",
-    "GoNetworkSourceTests.test_no_declared_stream_preserves_the_ordinary_sdk_path",
-    "GoNetworkSourceTests.test_original_canonical_marshalling_and_original_entry_points_are_preserved",
-    "GoNetworkSourceTests.test_precancelled_close_preserves_owner_and_final_drop_is_never_claimed_no_effect",
-    "GoNetworkSourceTests.test_real_pinned_dial_projection_bypasses_ambient_resolution_without_editing_upstream",
-    "GoNetworkSourceTests.test_standalone_dns_and_concrete_tcp_are_closed_unsupported_without_os_fallback",
-    "GoNetworkSourceTests.test_unknown_version_or_interface_and_aliased_or_duplicate_package_fail_closed"
-  ],
-  "guards": {
-    "GoNetworkSourceTests.test_actual_generated_identity_requires_managed_v5_without_installing_authority": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:e1bc735ce52c7d93c54b98795d5ba9c7725a2685e4576fc033c68c57576be3ea",
-        "class:setup-sha256:4af4b790894f1af268301ad9f795d543b926385923b503b898f03344984873ff"
-      ],
-      "skipSites": []
-    },
-    "GoNetworkSourceTests.test_actual_install_creates_owned_facade_without_raw_resource_constructors_or_gc_drop": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:e1bc735ce52c7d93c54b98795d5ba9c7725a2685e4576fc033c68c57576be3ea",
-        "class:setup-sha256:4af4b790894f1af268301ad9f795d543b926385923b503b898f03344984873ff"
-      ],
-      "skipSites": []
-    },
-    "GoNetworkSourceTests.test_close_restores_only_untransferred_own_handle_and_cancellation_keeps_uncertainty": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:e1bc735ce52c7d93c54b98795d5ba9c7725a2685e4576fc033c68c57576be3ea",
-        "class:setup-sha256:4af4b790894f1af268301ad9f795d543b926385923b503b898f03344984873ff"
-      ],
-      "skipSites": []
-    },
-    "GoNetworkSourceTests.test_every_generated_function_preimage_and_single_derivation_is_required": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:e1bc735ce52c7d93c54b98795d5ba9c7725a2685e4576fc033c68c57576be3ea",
-        "class:setup-sha256:4af4b790894f1af268301ad9f795d543b926385923b503b898f03344984873ff"
-      ],
-      "skipSites": []
-    },
-    "GoNetworkSourceTests.test_full_upstream_preimages_are_required_before_any_overlay_is_created": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:e1bc735ce52c7d93c54b98795d5ba9c7725a2685e4576fc033c68c57576be3ea",
-        "class:setup-sha256:4af4b790894f1af268301ad9f795d543b926385923b503b898f03344984873ff"
-      ],
-      "skipSites": []
-    },
-    "GoNetworkSourceTests.test_global_resolver_replacement_and_nondefault_settings_are_refused_before_host_dispatch": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:e1bc735ce52c7d93c54b98795d5ba9c7725a2685e4576fc033c68c57576be3ea",
-        "class:setup-sha256:4af4b790894f1af268301ad9f795d543b926385923b503b898f03344984873ff"
-      ],
-      "skipSites": []
-    },
-    "GoNetworkSourceTests.test_incomplete_or_nonboolean_dispatcher_selection_cannot_publish_overlay": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:e1bc735ce52c7d93c54b98795d5ba9c7725a2685e4576fc033c68c57576be3ea",
-        "class:setup-sha256:4af4b790894f1af268301ad9f795d543b926385923b503b898f03344984873ff"
-      ],
-      "skipSites": []
-    },
-    "GoNetworkSourceTests.test_injection_or_changed_template_cannot_publish_a_projection": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:e1bc735ce52c7d93c54b98795d5ba9c7725a2685e4576fc033c68c57576be3ea",
-        "class:setup-sha256:4af4b790894f1af268301ad9f795d543b926385923b503b898f03344984873ff"
-      ],
-      "skipSites": []
-    },
-    "GoNetworkSourceTests.test_no_declared_stream_preserves_the_ordinary_sdk_path": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:e1bc735ce52c7d93c54b98795d5ba9c7725a2685e4576fc033c68c57576be3ea",
-        "class:setup-sha256:4af4b790894f1af268301ad9f795d543b926385923b503b898f03344984873ff"
-      ],
-      "skipSites": []
-    },
-    "GoNetworkSourceTests.test_original_canonical_marshalling_and_original_entry_points_are_preserved": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:e1bc735ce52c7d93c54b98795d5ba9c7725a2685e4576fc033c68c57576be3ea",
-        "class:setup-sha256:4af4b790894f1af268301ad9f795d543b926385923b503b898f03344984873ff"
-      ],
-      "skipSites": []
-    },
-    "GoNetworkSourceTests.test_precancelled_close_preserves_owner_and_final_drop_is_never_claimed_no_effect": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:e1bc735ce52c7d93c54b98795d5ba9c7725a2685e4576fc033c68c57576be3ea",
-        "class:setup-sha256:4af4b790894f1af268301ad9f795d543b926385923b503b898f03344984873ff"
-      ],
-      "skipSites": []
-    },
-    "GoNetworkSourceTests.test_real_pinned_dial_projection_bypasses_ambient_resolution_without_editing_upstream": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:e1bc735ce52c7d93c54b98795d5ba9c7725a2685e4576fc033c68c57576be3ea",
-        "class:setup-sha256:4af4b790894f1af268301ad9f795d543b926385923b503b898f03344984873ff"
-      ],
-      "skipSites": []
-    },
-    "GoNetworkSourceTests.test_standalone_dns_and_concrete_tcp_are_closed_unsupported_without_os_fallback": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:e1bc735ce52c7d93c54b98795d5ba9c7725a2685e4576fc033c68c57576be3ea",
-        "class:setup-sha256:4af4b790894f1af268301ad9f795d543b926385923b503b898f03344984873ff"
-      ],
-      "skipSites": []
-    },
-    "GoNetworkSourceTests.test_unknown_version_or_interface_and_aliased_or_duplicate_package_fail_closed": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:e1bc735ce52c7d93c54b98795d5ba9c7725a2685e4576fc033c68c57576be3ea",
-        "class:setup-sha256:4af4b790894f1af268301ad9f795d543b926385923b503b898f03344984873ff"
-      ],
-      "skipSites": []
-    }
+  "cases":["GoNetworkSourceTests.test_actual_generated_identity_requires_managed_v5_without_installing_authority","GoNetworkSourceTests.test_actual_install_creates_owned_facade_without_raw_resource_constructors_or_gc_drop","GoNetworkSourceTests.test_close_restores_only_untransferred_own_handle_and_cancellation_keeps_uncertainty","GoNetworkSourceTests.test_every_generated_function_preimage_and_single_derivation_is_required","GoNetworkSourceTests.test_full_upstream_preimages_are_required_before_any_overlay_is_created","GoNetworkSourceTests.test_global_resolver_replacement_and_nondefault_settings_are_refused_before_host_dispatch","GoNetworkSourceTests.test_incomplete_or_nonboolean_dispatcher_selection_cannot_publish_overlay","GoNetworkSourceTests.test_injection_or_changed_template_cannot_publish_a_projection","GoNetworkSourceTests.test_no_declared_stream_preserves_the_ordinary_sdk_path","GoNetworkSourceTests.test_original_canonical_marshalling_and_original_entry_points_are_preserved","GoNetworkSourceTests.test_precancelled_close_preserves_owner_and_final_drop_is_never_claimed_no_effect","GoNetworkSourceTests.test_real_pinned_dial_projection_bypasses_ambient_resolution_without_editing_upstream","GoNetworkSourceTests.test_standalone_dns_and_concrete_tcp_are_closed_unsupported_without_os_fallback","GoNetworkSourceTests.test_unknown_version_or_interface_and_aliased_or_duplicate_package_fail_closed"],
+  "guards":{
+    "GoNetworkSourceTests.test_actual_generated_identity_requires_managed_v5_without_installing_authority":
+      "33eb6bf6686478e5f4d53809a581961ee20b7f84ee2df04432e7b81f796f1df9",
+    "GoNetworkSourceTests.test_actual_install_creates_owned_facade_without_raw_resource_constructors_or_gc_drop":
+      "33eb6bf6686478e5f4d53809a581961ee20b7f84ee2df04432e7b81f796f1df9",
+    "GoNetworkSourceTests.test_close_restores_only_untransferred_own_handle_and_cancellation_keeps_uncertainty":
+      "33eb6bf6686478e5f4d53809a581961ee20b7f84ee2df04432e7b81f796f1df9",
+    "GoNetworkSourceTests.test_every_generated_function_preimage_and_single_derivation_is_required":
+      "33eb6bf6686478e5f4d53809a581961ee20b7f84ee2df04432e7b81f796f1df9",
+    "GoNetworkSourceTests.test_full_upstream_preimages_are_required_before_any_overlay_is_created":
+      "33eb6bf6686478e5f4d53809a581961ee20b7f84ee2df04432e7b81f796f1df9",
+    "GoNetworkSourceTests.test_global_resolver_replacement_and_nondefault_settings_are_refused_before_host_dispatch":
+      "33eb6bf6686478e5f4d53809a581961ee20b7f84ee2df04432e7b81f796f1df9",
+    "GoNetworkSourceTests.test_incomplete_or_nonboolean_dispatcher_selection_cannot_publish_overlay":
+      "33eb6bf6686478e5f4d53809a581961ee20b7f84ee2df04432e7b81f796f1df9",
+    "GoNetworkSourceTests.test_injection_or_changed_template_cannot_publish_a_projection":
+      "33eb6bf6686478e5f4d53809a581961ee20b7f84ee2df04432e7b81f796f1df9",
+    "GoNetworkSourceTests.test_no_declared_stream_preserves_the_ordinary_sdk_path":
+      "33eb6bf6686478e5f4d53809a581961ee20b7f84ee2df04432e7b81f796f1df9",
+    "GoNetworkSourceTests.test_original_canonical_marshalling_and_original_entry_points_are_preserved":
+      "33eb6bf6686478e5f4d53809a581961ee20b7f84ee2df04432e7b81f796f1df9",
+    "GoNetworkSourceTests.test_precancelled_close_preserves_owner_and_final_drop_is_never_claimed_no_effect":
+      "33eb6bf6686478e5f4d53809a581961ee20b7f84ee2df04432e7b81f796f1df9",
+    "GoNetworkSourceTests.test_real_pinned_dial_projection_bypasses_ambient_resolution_without_editing_upstream":
+      "33eb6bf6686478e5f4d53809a581961ee20b7f84ee2df04432e7b81f796f1df9",
+    "GoNetworkSourceTests.test_standalone_dns_and_concrete_tcp_are_closed_unsupported_without_os_fallback":
+      "33eb6bf6686478e5f4d53809a581961ee20b7f84ee2df04432e7b81f796f1df9",
+    "GoNetworkSourceTests.test_unknown_version_or_interface_and_aliased_or_duplicate_package_fail_closed":
+      "33eb6bf6686478e5f4d53809a581961ee20b7f84ee2df04432e7b81f796f1df9"
   },
-  "kind": "python",
-  "module": "tools/tests/test_go_network.py",
-  "reviewReason": "Retain all 13 controls and add fail-closed original DefaultResolver identity/settings before any owned host dispatch.",
-  "schemaVersion": "latent.ci.contracts.v1"
+  "kind":"python",
+  "module":"tools/tests/test_go_network.py",
+  "reviewReason":"Retain all 13 controls and add fail-closed original DefaultResolver identity/settings before any owned host dispatch.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "33eb6bf6686478e5f4d53809a581961ee20b7f84ee2df04432e7b81f796f1df9":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:e1bc735ce52c7d93c54b98795d5ba9c7725a2685e4576fc033c68c57576be3ea","class:setup-sha256:4af4b790894f1af268301ad9f795d543b926385923b503b898f03344984873ff"],"skipSites":[]}
+  }
 }

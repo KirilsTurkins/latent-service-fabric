@@ -12,8 +12,8 @@ from tools.rust_capsule_project import ROOT, read_file
 PROVIDER = "crates/vendor/wasmtime"
 NAME = "wasmtime"
 VERSION = "48.0.7"
-COHORT = "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-memory-v13"
-RECORD_SHA256 = "81c6a7f4ea7949b2a15b0880f095ddadea338b458688afc39b0a07bddeb0b4b1"
+COHORT = "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-memory-v14"
+RECORD_SHA256 = "1765549852063926ff13063610ec8952f4cb5458dc987d2855c64fc7cda2dc52"
 # Explicit reviewed postimages; the remaining original files use the immutable
 # registry inventory. Changing a claimed record or patch cannot authorize bytes.
 POSTIMAGES = {
@@ -22,24 +22,24 @@ POSTIMAGES = {
         "bytes": 60487
     },
     "README.latent.md": {
-        "sha256": "a04029bffa4a5565d731d812e9a8b5efa4ca4ce10ac7b087393bafed2b0f91c0",
-        "bytes": 18117
+        "sha256": "3b1759e11d01da809d4fd2fcc5b14e2389ada3bb83ce12fd39c1d79bf6ecc5cf",
+        "bytes": 21286
     },
     "latent-dynamic-memory.patch": {
-        "sha256": "04d6571a9ea051b7e9b1386667945b4771163f2c72d54a46fce173623af71300",
-        "bytes": 250613
+        "sha256": "e763fe452b4c6b9fe6d55b958a5162477ec28363274d7c120b77e9102b794ed7",
+        "bytes": 304220
     },
     "src/runtime.rs": {
         "sha256": "3290f57919f6dc6b6f797ee55cd62504ce31e91500741501e261f2c7e4eac970",
         "bytes": 6393
     },
     "src/runtime/component/concurrent.rs": {
-        "sha256": "426bfc87cc4c3919f33805933af144cfebbe3378571bde03b4e7ab4e0bccbe7d",
-        "bytes": 234750
+        "sha256": "f953bb0908af1a104ff589f4cd1931b6bf072a178a2a47bbcecf3413d00f2346",
+        "bytes": 238258
     },
     "src/runtime/component/concurrent/abort.rs": {
-        "sha256": "a42a819ef66cf352114ca4a06d9279189f215c19e1231d1d71f0dd1ce53d1f55",
-        "bytes": 26992
+        "sha256": "3e15b4c7493da1e268efdc3979cda4d8db628a7a1bfef308f8d04250d53600ef",
+        "bytes": 27109
     },
     "src/runtime/component/concurrent/func.rs": {
         "sha256": "f702bfbbc9b1dae7511eea811bb38b70536e297a23ffbeac2f372f6e0dd224e3",
@@ -86,8 +86,8 @@ POSTIMAGES = {
         "bytes": 5025
     },
     "src/runtime/component/store.rs": {
-        "sha256": "248924cbb1cd3955b8857c106f2284398464e68cf5b5c86992753bf1ee38f6ce",
-        "bytes": 23704
+        "sha256": "a80ca7dea6b93c3318d62c0dea7a9bc558af6b0aa55b7a8215a25edc5cb902d0",
+        "bytes": 23722
     },
     "src/runtime/component/types.rs": {
         "sha256": "3f3a0d08bceb6f2981a92d377a884a5d92c70502d5f1b3c90037fc14574e2b5c",
@@ -190,8 +190,12 @@ POSTIMAGES = {
         "bytes": 13734
     },
     "src/runtime/component/concurrent/futures_and_streams.rs": {
-        "sha256": "cd4f7761cc272fdcad658fff0f8ec989994726ca9e9c4a57a9b8a357eb091e34",
-        "bytes": 189018
+        "sha256": "43e725f434ea59f9ac832d46efd0f7722bffddaeba9a728b0a4a0e475beda3da",
+        "bytes": 190391
+    },
+    "src/runtime/component/concurrent/work_queue.rs": {
+        "sha256": "c7a23282d35b3bd9783bcb34b0d9ec2815618a1886ab003be1011de059fbe043",
+        "bytes": 17793
     }
 }
 DEPENDENCY = {"path": PROVIDER, "version": "=48.0.7", "default-features": False,
@@ -223,7 +227,7 @@ def verify(root: Path = ROOT) -> dict:
                 for row in record["originalFiles"]}
     require(len(record["originalFiles"]) == len(original) == 250, "original-file-set")
     expected = {**original, **POSTIMAGES, "UPSTREAM.latent.json": identity(raw)}
-    require(len(expected) == 262, "maintained-file-set")
+    require(len(expected) == 263, "maintained-file-set")
     actual, total = {}, 0
     for ordinal, path in enumerate(source.rglob("*")):
         require(ordinal < 1024 and not path.is_symlink(), "source-tree-bound-or-link")

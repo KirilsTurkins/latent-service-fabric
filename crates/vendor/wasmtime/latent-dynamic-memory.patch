@@ -25,7 +25,24 @@
  pub(crate) mod trampoline;
 --- a/src/runtime/component/concurrent.rs
 +++ b/src/runtime/component/concurrent.rs
-@@ -107,14 +107,18 @@
+@@ -51,6 +51,7 @@
+ //! in host functions.
+ 
+ use self::error_contexts::GlobalErrorContextRefCount;
++use self::work_queue::{Queue, Slot as QueueSlot};
+ use crate::bail_bug;
+ use crate::component::func::{Func, call_post_return};
+ use crate::component::{
+@@ -70,7 +71,7 @@
+     AsContext, AsContextMut, FuncType, Result, StoreContext, StoreContextMut, ValRaw, ValType, bail,
+ };
+ use alloc::borrow::ToOwned;
+-use alloc::collections::{BTreeMap, BTreeSet, VecDeque};
++use alloc::collections::{BTreeMap, BTreeSet};
+ use core::any::Any;
+ use core::cell::UnsafeCell;
+ use core::fmt;
+@@ -107,14 +108,19 @@
      StreamProducer, StreamReader, StreamResult, VecBuffer, WriteBuffer,
  };
  pub(crate) use futures_and_streams::{ResourcePair, lower_error_context_to_index};
@@ -40,11 +57,25 @@
 +mod pending_future;
  pub(crate) mod table;
  pub(crate) mod tls;
++mod work_queue;
 +mod worker_function;
  
  /// Constant defined in the Component Model spec to indicate that the async
  /// intrinsic (e.g. `future.write`) has not yet completed.
-@@ -778,7 +782,7 @@
+@@ -651,10 +657,10 @@
+ /// Indicates how a guest task is waiting on a waitable set.
+ enum WaitMode {
+     /// The guest task is waiting using `task.wait`
+-    Fiber(StoreFiber<'static>),
++    Fiber(StoreFiber<'static>, QueueSlot<WorkItem>),
+     /// The guest task is waiting via a callback declared as part of an
+     /// async-lifted export.
+-    Callback(Instance),
++    Callback(Instance, QueueSlot<WorkItem>),
+ }
+ 
+ /// Represents the reason a fiber is suspending itself.
+@@ -778,7 +784,7 @@
  /// Job to be run on a worker fiber.
  enum WorkerItem {
      GuestCall(GuestCall),
@@ -53,7 +84,7 @@
  }
  
  /// Represents a pending work item to be handled by the event loop for a given
-@@ -793,7 +797,7 @@
+@@ -793,7 +799,7 @@
      /// A pending call into guest code for a given guest task.
      GuestCall(RuntimeComponentInstanceIndex, GuestCall),
      /// A job to run on a worker fiber.
@@ -62,28 +93,209 @@
  }
  
  impl fmt::Debug for WorkItem {
-@@ -857,7 +861,7 @@
+@@ -857,8 +863,9 @@
  
              Ok(())
          })
 -    }) as HostTaskFuture;
+-
 +    }) as BoxedHostTaskFuture;
- 
++
++    let queue_slot = store.concurrent_state_mut()?.prepare_queue_slot()?;
      // Finally, poll the future.  We can use a dummy `Waker` here because we'll
      // add the future to `ConcurrentState::futures` and poll it automatically
-@@ -1093,7 +1097,10 @@
+     // from the event loop if it doesn't complete immediately here.
+@@ -883,7 +890,7 @@
+         // complete, suspending the current fiber until it does so.
+         Poll::Pending => {
+             let state = store.concurrent_state_mut()?;
+-            state.push_future(future);
++            state.push_future(queue_slot, future);
+ 
+             let set = state.get_mut(caller.thread)?.sync_call_set;
+             Waitable::Host(task).join(state, Some(set))?;
+@@ -918,6 +925,8 @@
+     while let Some(call) = next.take() {
+         match call.kind {
+             GuestCallKind::DeliverEvent { instance, set } => {
++                // The callback can perform I/O before returning WAIT/YIELD.
++                let wake_slot = store.concurrent_state_mut()?.prepare_queue_slot()?;
+                 let (event, waitable) =
+                     match instance.get_event(store, call.thread.task, set, true)? {
+                         Some(pair) => pair,
+@@ -966,6 +975,7 @@
+                     call.thread,
+                     runtime_instance.index,
+                     code,
++                    wake_slot,
+                 )?;
+ 
+                 log::trace!(
+@@ -1090,13 +1100,18 @@
+         T: 'static,
+         D: HasData + ?Sized,
+     {
++        let queue_slot = self.0.concurrent_state_mut()?.prepare_queue_slot()?;
          // Create an "abortable future" here where internally the future will
          // hook calls to poll and possibly spawn more background tasks on each
          // iteration.
 -        let (handle, future) = JoinHandle::run(async move { task.run(&accessor).await });
+-        self.0
+-            .concurrent_state_mut()?
+-            .push_future(Box::pin(async move { future.await.unwrap_or(Ok(())) }));
 +        let (handle, future) = JoinHandle::run_with_memory(
 +            async move { task.run(&accessor).await },
 +            self.0.native_memory(),
 +        )?;
-         self.0
-             .concurrent_state_mut()?
-             .push_future(Box::pin(async move { future.await.unwrap_or(Ok(())) }));
-@@ -1546,7 +1553,7 @@
++        self.0.concurrent_state_mut()?.push_future(
++            queue_slot,
++            Box::pin(async move { future.await.unwrap_or(Ok(())) }),
++        );
+         Ok(handle)
+     }
+ 
+@@ -1296,7 +1311,7 @@
+             enum PollResult<R> {
+                 Complete(R),
+                 ProcessWork {
+-                    ready: Vec<WorkItem>,
++                    ready: Option<(QueueSlot<WorkItem>, WorkItem)>,
+                     low_priority: bool,
+                 },
+             }
+@@ -1323,22 +1338,18 @@
+                     Poll::Pending => Poll::Pending,
+                 };
+ 
+-                // Next, collect the next batch of work items to process, if
+-                // any.  This will be either all of the high-priority work
+-                // items, or if there are none, a single low-priority work item.
++                // Take at most ONE item: high priority first, otherwise low.
++                // Keep it inline; no unaccounted transfer Vec is needed.
+                 let state = reset.store.0.concurrent_state_mut()?;
+-                let mut ready = Vec::new();
+-                if let Some(item) = state.high_priority.pop_back() {
+-                    ready.push(item);
+-                }
++                let mut ready = state.high_priority.pop_back();
+                 let mut low_priority = false;
+-                if ready.is_empty() {
++                if ready.is_none() {
+                     if let Some(item) = state.low_priority.pop_back() {
+-                        ready.push(item);
++                        ready = Some(item);
+                         low_priority = true;
+                     }
+                 }
+-                if !ready.is_empty() {
++                if ready.is_some() {
+                     return Poll::Ready(Ok(PollResult::ProcessWork {
+                         ready,
+                         low_priority,
+@@ -1356,7 +1367,7 @@
+                         // the outer loop in case there is another one
+                         // ready to complete.
+                         Poll::Ready(Ok(PollResult::ProcessWork {
+-                            ready: Vec::new(),
++                            ready: None,
+                             low_priority: false,
+                         }))
+                     }
+@@ -1410,14 +1421,18 @@
+                     ready,
+                     low_priority,
+                 } => {
+-                    struct Dispose<'a, T: 'static, I: Iterator<Item = WorkItem>> {
++                    struct Dispose<
++                        'a,
++                        T: 'static,
++                        I: Iterator<Item = (QueueSlot<WorkItem>, WorkItem)>,
++                    > {
+                         store: StoreContextMut<'a, T>,
+                         ready: I,
+                     }
+ 
+-                    impl<'a, T, I: Iterator<Item = WorkItem>> Drop for Dispose<'a, T, I> {
++                    impl<'a, T, I: Iterator<Item = (QueueSlot<WorkItem>, WorkItem)>> Drop for Dispose<'a, T, I> {
+                         fn drop(&mut self) {
+-                            while let Some(item) = self.ready.next() {
++                            while let Some((_slot, item)) = self.ready.next() {
+                                 match item {
+                                     WorkItem::ResumeFiber(mut fiber) => fiber.dispose(self.store.0),
+                                     WorkItem::PushFuture(future) => {
+@@ -1459,11 +1474,11 @@
+                         dispose.store.0.yield_now().await
+                     }
+ 
+-                    while let Some(item) = dispose.ready.next() {
++                    while let Some((slot, item)) = dispose.ready.next() {
+                         dispose
+                             .store
+                             .as_context_mut()
+-                            .handle_work_item(item)
++                            .handle_work_item(slot, item)
+                             .await?;
+                     }
+                 }
+@@ -1472,7 +1487,7 @@
+     }
+ 
+     /// Handle the specified work item, possibly resuming a fiber if applicable.
+-    async fn handle_work_item(self, item: WorkItem) -> Result<()>
++    async fn handle_work_item(self, slot: QueueSlot<WorkItem>, item: WorkItem) -> Result<()>
+     where
+         T: Send,
+     {
+@@ -1485,21 +1500,22 @@
+                     .push(future.into_inner());
+             }
+             WorkItem::ResumeFiber(fiber) => {
+-                self.0.resume_fiber(fiber).await?;
++                self.0.resume_fiber(fiber, slot).await?;
+             }
+             WorkItem::ResumeThread(_, thread) => {
+                 if let GuestThreadState::Ready { fiber, .. } = mem::replace(
+                     &mut self.0.concurrent_state_mut()?.get_mut(thread.thread)?.state,
+                     GuestThreadState::Running,
+                 ) {
+-                    self.0.resume_fiber(fiber).await?;
++                    self.0.resume_fiber(fiber, slot).await?;
+                 } else {
+                     bail_bug!("cannot resume non-pending thread {thread:?}");
+                 }
+             }
+             WorkItem::GuestCall(_, call) => {
+                 if call.is_ready(self.0)? {
+-                    self.run_on_worker(WorkerItem::GuestCall(call)).await?;
++                    self.run_on_worker(slot, WorkerItem::GuestCall(call))
++                        .await?;
+                 } else {
+                     let state = self.0.concurrent_state_mut()?;
+                     let task = state.get_mut(call.thread.task)?;
+@@ -1520,11 +1536,11 @@
+                         .instance_state(instance)
+                         .concurrent_state()
+                         .pending
+-                        .insert(call.thread, call.kind);
++                        .insert(call.thread, (call.kind, slot));
+                 }
+             }
+             WorkItem::WorkerFunction(fun) => {
+-                self.run_on_worker(WorkerItem::Function(fun)).await?;
++                self.run_on_worker(slot, WorkerItem::Function(fun)).await?;
+             }
+         }
+ 
+@@ -1532,7 +1548,7 @@
+     }
+ 
+     /// Execute the specified guest call on a worker fiber.
+-    async fn run_on_worker(self, item: WorkerItem) -> Result<()>
++    async fn run_on_worker(self, wake_slot: QueueSlot<WorkItem>, item: WorkerItem) -> Result<()>
+     where
+         T: Send,
+     {
+@@ -1546,7 +1562,7 @@
                      };
                      match item {
                          WorkerItem::GuestCall(call) => handle_guest_call(store, call)?,
@@ -92,7 +304,202 @@
                      }
  
                      store.suspend(SuspendReason::NeedWork)?;
-@@ -3273,32 +3280,100 @@
+@@ -1558,7 +1574,7 @@
+         assert!(worker_item.is_none());
+         *worker_item = Some(item);
+ 
+-        self.0.resume_fiber(worker).await
++        self.0.resume_fiber(worker, wake_slot).await
+     }
+ 
+     /// Wrap the specified host function in a future which will call it, passing
+@@ -2056,18 +2072,18 @@
+     ///
+     /// See `GuestCall::is_ready` for details.
+     fn partition_pending(&mut self, instance: RuntimeInstance) -> Result<()> {
+-        for (thread, kind) in
++        for (thread, (kind, slot)) in
+             mem::take(&mut self.instance_state(instance).concurrent_state().pending).into_iter()
+         {
+             let call = GuestCall { thread, kind };
+             if call.is_ready(self)? {
+                 self.concurrent_state_mut()?
+-                    .push_high_priority(WorkItem::GuestCall(instance.index, call));
++                    .push_high_priority(slot, WorkItem::GuestCall(instance.index, call));
+             } else {
+                 self.instance_state(instance)
+                     .concurrent_state()
+                     .pending
+-                    .insert(call.thread, call.kind);
++                    .insert(call.thread, (call.kind, slot));
+             }
+         }
+ 
+@@ -2104,7 +2120,11 @@
+ 
+     /// Resume the specified fiber, giving it exclusive access to the specified
+     /// store.
+-    async fn resume_fiber(&mut self, fiber: StoreFiber<'static>) -> Result<()> {
++    async fn resume_fiber(
++        &mut self,
++        fiber: StoreFiber<'static>,
++        wake_slot: QueueSlot<WorkItem>,
++    ) -> Result<()> {
+         struct Dispose<'a> {
+             store: &'a mut StoreOpaque,
+             fiber: Option<StoreFiber<'static>>,
+@@ -2122,6 +2142,10 @@
+             store: self,
+             fiber: Some(fiber),
+         };
++
++        // A yield/wait may follow arbitrary guest or host effects. Retain the
++        // SAME node removed from the queue across execution; no new admission
++        // or allocation is allowed after resuming this fiber.
+ 
+         let old_thread = dispose.store.current_thread()?;
+         log::trace!("resume_fiber: save current thread {old_thread:?}");
+@@ -2163,17 +2187,17 @@
+                         cancellable,
+                     };
+                     let instance = state.get_mut(thread.task)?.instance.index;
+-                    state.push_low_priority(WorkItem::ResumeThread(instance, thread));
++                    state.push_low_priority(wake_slot, WorkItem::ResumeThread(instance, thread));
+                 }
+                 SuspendReason::ExplicitlySuspending { thread, .. } => {
+                     state.get_mut(thread.thread)?.state =
+                         GuestThreadState::Suspended(dispose.fiber.take().unwrap());
+                 }
+                 SuspendReason::Waiting { set, thread, .. } => {
+-                    let old = state
+-                        .get_mut(set)?
+-                        .waiting
+-                        .insert(thread, WaitMode::Fiber(dispose.fiber.take().unwrap()));
++                    let old = state.get_mut(set)?.waiting.insert(
++                        thread,
++                        WaitMode::Fiber(dispose.fiber.take().unwrap(), wake_slot),
++                    );
+                     assert!(old.is_none());
+                 }
+             };
+@@ -2398,7 +2422,7 @@
+                 _ => false,
+             };
+ 
+-            let remove = |queue: &mut VecDeque<WorkItem>| {
++            let remove = |queue: &mut Queue<WorkItem>| {
+                 let count = queue.len();
+                 queue.retain(|item| !matches(item));
+                 count != queue.len()
+@@ -2499,6 +2523,7 @@
+         guest_thread: QualifiedThreadId,
+         runtime_instance: RuntimeComponentInstanceIndex,
+         code: u32,
++        wake_slot: QueueSlot<WorkItem>,
+     ) -> Result<Option<GuestCall>> {
+         let (code, set) = unpack_callback_code(code);
+ 
+@@ -2549,7 +2574,7 @@
+                 if state.may_block(guest_thread.task)? {
+                     // Push this thread onto the "low priority" queue so it runs
+                     // after any other threads have had a chance to run.
+-                    state.push_low_priority(WorkItem::GuestCall(runtime_instance, call));
++                    state.push_low_priority(wake_slot, WorkItem::GuestCall(runtime_instance, call));
+                     None
+                 } else {
+                     // Yielding in a non-blocking context is defined as a no-op
+@@ -2570,16 +2595,19 @@
+                     || !state.get_mut(set)?.ready.is_empty()
+                 {
+                     // An event is immediately available; deliver it ASAP.
+-                    state.push_high_priority(WorkItem::GuestCall(
+-                        runtime_instance,
+-                        GuestCall {
+-                            thread: guest_thread,
+-                            kind: GuestCallKind::DeliverEvent {
+-                                instance: self,
+-                                set: Some(set),
++                    state.push_high_priority(
++                        wake_slot,
++                        WorkItem::GuestCall(
++                            runtime_instance,
++                            GuestCall {
++                                thread: guest_thread,
++                                kind: GuestCallKind::DeliverEvent {
++                                    instance: self,
++                                    set: Some(set),
++                                },
+                             },
+-                        },
+-                    ));
++                        ),
++                    );
+                 } else {
+                     // No event is immediately available.
+                     //
+@@ -2598,7 +2626,7 @@
+                     let old = state
+                         .get_mut(set)?
+                         .waiting
+-                        .insert(guest_thread, WaitMode::Callback(self));
++                        .insert(guest_thread, WaitMode::Callback(self, wake_slot));
+                     if !old.is_none() {
+                         bail_bug!("set's waiting set already had this thread registered");
+                     }
+@@ -2626,6 +2654,7 @@
+         callback: Option<SendSyncPtr<VMFuncRef>>,
+         post_return: Option<SendSyncPtr<VMFuncRef>>,
+     ) -> Result<()> {
++        let queue_slot = store.0.concurrent_state_mut()?.prepare_queue_slot()?;
+         /// Return a closure which will call the specified function in the scope
+         /// of the specified task.
+         ///
+@@ -2705,6 +2734,7 @@
+ 
+         let fun = if callback.is_some() {
+             assert!(async_);
++            let wake_slot = store.0.concurrent_state_mut()?.prepare_queue_slot()?;
+ 
+             Box::new(move |store: &mut dyn VMStore| {
+                 self.add_guest_thread_to_instance_table(
+@@ -2740,7 +2770,13 @@
+                 // function returns a `i32` result.
+                 let code = unsafe { storage[0].assume_init() }.get_i32() as u32;
+ 
+-                self.handle_callback_code(store, guest_thread, callee_instance.index, code)
++                self.handle_callback_code(
++                    store,
++                    guest_thread,
++                    callee_instance.index,
++                    code,
++                    wake_slot,
++                )
+             })
+                 as Box<dyn FnOnce(&mut dyn VMStore) -> Result<Option<GuestCall>> + Send + Sync>
+         } else {
+@@ -2833,16 +2869,16 @@
+             })
+         };
+ 
+-        store
+-            .0
+-            .concurrent_state_mut()?
+-            .push_high_priority(WorkItem::GuestCall(
++        store.0.concurrent_state_mut()?.push_high_priority(
++            queue_slot,
++            WorkItem::GuestCall(
+                 callee_instance.index,
+                 GuestCall {
+                     thread: guest_thread,
+                     kind: GuestCallKind::StartImplicit(fun),
+                 },
+-            ));
++            ),
++        );
+ 
+         Ok(())
+     }
+@@ -3273,32 +3309,107 @@
      ) -> Result<u32> {
          let token = StoreToken::new(store.as_context_mut());
          let task = store.0.current_host_thread()?;
@@ -144,8 +551,8 @@
 +        // Reserve the SAME exact pending factory output before any user poll.
 +        let mut prepared = pending_future::PreparedFuture::new(
 +            &memory,
-+            (future, worker),
-+            |(future, worker)| async move {
++            (future, worker, None::<QueueSlot<WorkItem>>),
++            |(future, worker, queue_slot)| async move {
 +                let result = match future.await {
 +                    Some(result) => Some(result?),
 +                    None => None,
@@ -159,9 +566,10 @@
 +                // function. This is necessary because calling the guest while
 +                // there are host embedder frames on the stack is unsound.
 +                tls::get(move |store| {
-+                    store
-+                        .concurrent_state_mut()?
-+                        .push_high_priority(WorkItem::WorkerFunction(AlwaysMut::new(on_complete)));
++                    store.concurrent_state_mut()?.push_high_priority(
++                        queue_slot.expect("pre-poll completion node"),
++                        WorkItem::WorkerFunction(AlwaysMut::new(on_complete)),
++                    );
 +                    Ok(())
 +                })
 +            },
@@ -170,6 +578,10 @@
 +        // now reserve the exact completion-closure Box as #5, before Running
 +        // publication or the first inner poll.
 +        prepared.args_mut().1.admit(&memory)?;
++        // Two DISTINCT physical queue nodes: completion (#6) and initial
++        // PushFuture (#7). Neither admission may occur after the first poll.
++        prepared.args_mut().2 = Some(QueueSlot::prepare(&memory)?);
++        let future_queue_slot = QueueSlot::prepare(&memory)?;
          {
              let state = &mut state.get_mut(task)?.state;
              assert!(matches!(state, HostTaskState::CalleeStarted));
@@ -194,12 +606,14 @@
              Poll::Ready(result) => {
 +                // Keep the inner Box alive through direct lowering as before,
 +                // but refund the unused continuation reservation first.
-+                let (_future, worker) = prepared.into_args();
++                let (_future, worker, unused_completion_slot) = prepared.into_args();
++                drop(unused_completion_slot);
++                drop(future_queue_slot);
 +                let (lower, _token, _task) = worker.into_context();
                  let result = result.transpose()?;
                  lower(store.as_context_mut(), result, true)?;
                  return Ok(Status::Returned.pack(None));
-@@ -3315,53 +3390,7 @@
+@@ -3315,53 +3426,7 @@
          // Wrap the future in a closure responsible for lowering the result into
          // the guest's stack and memory, as well as notifying any waiters that
          // the task returned.
@@ -254,16 +668,100 @@
  
          // Make this task visible to the guest and then record what it
          // was made visible as.
-@@ -3370,7 +3399,7 @@
+@@ -3370,7 +3435,7 @@
              None => bail_bug!("host task wasn't created but should have been"),
          };
          let state = store.0.concurrent_state_mut()?;
 -        state.push_future(future);
-+        state.push_host_future(future);
++        state.push_host_future(future_queue_slot, future);
          let instance = state.get_mut(caller.task)?.instance;
          let (state, counter) = store.0.instance_state_and_handle_counter(instance);
          let handle = state
-@@ -4668,7 +4697,7 @@
+@@ -3791,6 +3856,14 @@
+             GuestThread::from_instance(self.id().get_mut(store), runtime_instance, thread_idx)?;
+         let state = store.concurrent_state_mut()?;
+         let guest_thread = QualifiedThreadId::qualify(state, thread_id)?;
++        let queue_slot = if matches!(
++            &state.get_mut(guest_thread.thread)?.state,
++            GuestThreadState::NotStartedExplicit(_) | GuestThreadState::Suspended(_)
++        ) {
++            Some(state.prepare_queue_slot()?)
++        } else {
++            None // Ready promotes its SAME existing node, without admission.
++        };
+         let thread = state.get_mut(guest_thread.thread)?;
+ 
+         match mem::replace(&mut thread.state, GuestThreadState::Running) {
+@@ -3805,15 +3878,19 @@
+                         })),
+                     },
+                 );
+-                store
+-                    .concurrent_state_mut()?
+-                    .push_work_item(guest_call, high_priority);
++                store.concurrent_state_mut()?.push_work_item(
++                    queue_slot.expect("prepared explicit-start node"),
++                    guest_call,
++                    high_priority,
++                );
+             }
+             GuestThreadState::Suspended(fiber) => {
+                 log::trace!("resuming thread {thread_id:?} that was suspended");
+-                store
+-                    .concurrent_state_mut()?
+-                    .push_work_item(WorkItem::ResumeFiber(fiber), high_priority);
++                store.concurrent_state_mut()?.push_work_item(
++                    queue_slot.expect("prepared fiber-resume node"),
++                    WorkItem::ResumeFiber(fiber),
++                    high_priority,
++                );
+             }
+             GuestThreadState::Ready { fiber, cancellable } if allow_ready => {
+                 log::trace!("resuming thread {thread_id:?} that was ready");
+@@ -4104,21 +4181,27 @@
+                     let thread_mut = concurrent_state.get_mut(thread.thread)?;
+                     if let Some(set) = thread_mut.wake_on_cancel.take() {
+                         // The thread is in a cancellable wait, so wake it up:
+-                        let item = match concurrent_state.get_mut(set)?.waiting.remove(&thread) {
+-                            Some(WaitMode::Fiber(fiber)) => WorkItem::ResumeFiber(fiber),
+-                            Some(WaitMode::Callback(instance)) => WorkItem::GuestCall(
+-                                runtime_instance,
+-                                GuestCall {
+-                                    thread,
+-                                    kind: GuestCallKind::DeliverEvent {
+-                                        instance,
+-                                        set: None,
+-                                    },
+-                                },
+-                            ),
+-                            None => bail_bug!("thread not present in wake_on_cancel set"),
+-                        };
+-                        concurrent_state.push_high_priority(item);
++                        let (slot, item) =
++                            match concurrent_state.get_mut(set)?.waiting.remove(&thread) {
++                                Some(WaitMode::Fiber(fiber, slot)) => {
++                                    (slot, WorkItem::ResumeFiber(fiber))
++                                }
++                                Some(WaitMode::Callback(instance, slot)) => (
++                                    slot,
++                                    WorkItem::GuestCall(
++                                        runtime_instance,
++                                        GuestCall {
++                                            thread,
++                                            kind: GuestCallKind::DeliverEvent {
++                                                instance,
++                                                set: None,
++                                            },
++                                        },
++                                    ),
++                                ),
++                                None => bail_bug!("thread not present in wake_on_cancel set"),
++                            };
++                        concurrent_state.push_high_priority(slot, item);
+ 
+                         let caller = store.current_guest_thread()?;
+                         store.suspend(SuspendReason::Yielding {
+@@ -4668,7 +4751,7 @@
      }
  }
  
@@ -272,19 +770,197 @@
  
  /// Represents the state of a pending host task.
  ///
-@@ -5615,7 +5644,11 @@
+@@ -5186,20 +5269,23 @@
+                 let wake_on_cancel = state.get_mut(thread.thread)?.wake_on_cancel.take();
+                 assert!(wake_on_cancel.is_none() || wake_on_cancel == Some(set));
+ 
+-                let item = match mode {
+-                    WaitMode::Fiber(fiber) => WorkItem::ResumeFiber(fiber),
+-                    WaitMode::Callback(instance) => WorkItem::GuestCall(
+-                        state.get_mut(thread.task)?.instance.index,
+-                        GuestCall {
+-                            thread,
+-                            kind: GuestCallKind::DeliverEvent {
+-                                instance,
+-                                set: Some(set),
++                let (slot, item) = match mode {
++                    WaitMode::Fiber(fiber, slot) => (slot, WorkItem::ResumeFiber(fiber)),
++                    WaitMode::Callback(instance, slot) => (
++                        slot,
++                        WorkItem::GuestCall(
++                            state.get_mut(thread.task)?.instance.index,
++                            GuestCall {
++                                thread,
++                                kind: GuestCallKind::DeliverEvent {
++                                    instance,
++                                    set: Some(set),
++                                },
+                             },
+-                        },
++                        ),
+                     ),
+                 };
+-                state.push_high_priority(item);
++                state.push_high_priority(slot, item);
+             }
+         }
+         Ok(())
+@@ -5288,7 +5374,7 @@
+     do_not_enter: bool,
+     /// Pending calls for this instance which require `Self::backpressure` to be
+     /// `true` and/or `Self::do_not_enter` to be false before they can proceed.
+-    pending: BTreeMap<QualifiedThreadId, GuestCallKind>,
++    pending: BTreeMap<QualifiedThreadId, (GuestCallKind, QueueSlot<WorkItem>)>,
+ }
+ 
+ impl ConcurrentInstanceState {
+@@ -5354,6 +5440,7 @@
+ 
+ /// Represents the Component Model Async state of a store.
+ pub struct ConcurrentState {
++    queue_memory: crate::runtime::native_memory::Memory,
+     /// The currently running thread, if any.
+     ///
+     /// Note that we lazily materialize threads on-demand and this field is not
+@@ -5369,9 +5456,9 @@
+     /// The table of waitables, waitable sets, etc.
+     table: AlwaysMut<ResourceTable>,
+     /// The "high priority" work queue for this store's event loop.
+-    high_priority: VecDeque<WorkItem>,
++    high_priority: Queue<WorkItem>,
+     /// The "low priority" work queue for this store's event loop.
+-    low_priority: VecDeque<WorkItem>,
++    low_priority: Queue<WorkItem>,
+     /// A place to stash the reason a fiber is suspending so that the code which
+     /// resumed it will know under what conditions the fiber should be resumed
+     /// again.
+@@ -5426,12 +5513,19 @@
+ 
+ impl Default for ConcurrentState {
+     fn default() -> Self {
++        Self::new(None)
++    }
++}
++
++impl ConcurrentState {
++    pub(super) fn new(queue_memory: crate::runtime::native_memory::Memory) -> Self {
+         Self {
++            high_priority: Queue::new(queue_memory.is_some()),
++            low_priority: Queue::new(queue_memory.is_some()),
++            queue_memory,
+             unforced_current_thread: CurrentThread::None,
+             table: AlwaysMut::new(ResourceTable::new()),
+             futures: AlwaysMut::new(Some(FuturesUnordered::new())),
+-            high_priority: VecDeque::new(),
+-            low_priority: VecDeque::new(),
+             suspend_reason: None,
+             worker: None,
+             worker_item: None,
+@@ -5468,7 +5562,7 @@
+         for entry in self.table.get_mut().iter_mut() {
+             if let Some(set) = entry.downcast_mut::<WaitableSet>() {
+                 for mode in mem::take(&mut set.waiting).into_values() {
+-                    if let WaitMode::Fiber(fiber) = mode {
++                    if let WaitMode::Fiber(fiber, _slot) = mode {
+                         fibers.push(fiber);
+                     }
+                 }
+@@ -5538,12 +5632,13 @@
+             interesting_tasks: _,
+             interesting_tasks_empty_waker: _,
+             ready_for_concurrent_call_waker: _,
++            queue_memory: _,
+         } = self;
+ 
+         for entry in table.get_mut().iter_mut() {
+             if let Some(set) = entry.downcast_mut::<WaitableSet>() {
+                 for mode in set.waiting.values_mut() {
+-                    if let WaitMode::Fiber(fiber) = mode {
++                    if let WaitMode::Fiber(fiber, _slot) = mode {
+                         fiber.trace_gc_roots(modules, unwind, gc_roots_list);
+                     }
+                 }
+@@ -5572,12 +5667,8 @@
+             }
+         };
+ 
+-        for item in high_priority {
+-            handle_item(item);
+-        }
+-        for item in low_priority {
+-            handle_item(item);
+-        }
++        high_priority.for_each_mut(&mut handle_item);
++        low_priority.for_each_mut(&mut handle_item);
+     }
+ 
+     fn push<V: Send + Sync + 'static>(
+@@ -5615,31 +5706,39 @@
          self.table.get_mut().delete(Resource::from(id))
      }
  
 -    fn push_future(&mut self, future: HostTaskFuture) {
-+    fn push_future(&mut self, future: BoxedHostTaskFuture) {
-+        self.push_host_future(HostTaskFuture::legacy(future));
++    fn prepare_queue_slot(&self) -> Result<QueueSlot<WorkItem>> {
++        QueueSlot::prepare(&self.queue_memory)
 +    }
 +
-+    fn push_host_future(&mut self, future: HostTaskFuture) {
++    fn push_future(&mut self, slot: QueueSlot<WorkItem>, future: BoxedHostTaskFuture) {
++        self.push_host_future(slot, HostTaskFuture::legacy(future));
++    }
++
++    fn push_host_future(&mut self, slot: QueueSlot<WorkItem>, future: HostTaskFuture) {
          // Note that we can't directly push to `ConcurrentState::futures` here
          // since this may be called from a future that's being polled inside
          // `Self::poll_until`, which temporarily removes the `FuturesUnordered`
+         // so it has exclusive access while polling it.  Therefore, we push a
+         // work item to the "high priority" queue, which will actually push to
+         // `ConcurrentState::futures` later.
+-        self.push_high_priority(WorkItem::PushFuture(AlwaysMut::new(future)));
+-    }
+-
+-    fn push_high_priority(&mut self, item: WorkItem) {
++        self.push_high_priority(slot, WorkItem::PushFuture(AlwaysMut::new(future)));
++    }
++
++    fn push_high_priority(&mut self, slot: QueueSlot<WorkItem>, item: WorkItem) {
+         log::trace!("push high priority: {item:?}");
+-        self.high_priority.push_front(item);
+-    }
+-
+-    fn push_low_priority(&mut self, item: WorkItem) {
++        self.high_priority.push_front(slot, item);
++    }
++
++    fn push_low_priority(&mut self, slot: QueueSlot<WorkItem>, item: WorkItem) {
+         log::trace!("push low priority: {item:?}");
+-        self.low_priority.push_front(item);
+-    }
+-
+-    fn push_work_item(&mut self, item: WorkItem, high_priority: bool) {
++        self.low_priority.push_front(slot, item);
++    }
++
++    fn push_work_item(&mut self, slot: QueueSlot<WorkItem>, item: WorkItem, high_priority: bool) {
+         if high_priority {
+-            self.push_high_priority(item);
++            self.push_high_priority(slot, item);
+         } else {
+-            self.push_low_priority(item);
++            self.push_low_priority(slot, item);
+         }
+     }
+ 
+@@ -5677,8 +5776,8 @@
+         // Otherwise, look for a low-priority work item that matches the current
+         // instance and promote it to high-priority.
+         else if let Some(idx) = self.low_priority.iter().position(&mut predicate) {
+-            let item = self.low_priority.remove(idx).unwrap();
+-            self.push_high_priority(item);
++            let (slot, item) = self.low_priority.remove(idx).unwrap();
++            self.push_high_priority(slot, item);
+             true
+         } else {
+             false
 --- a/src/runtime/component/concurrent/abort.rs
 +++ b/src/runtime/component/concurrent/abort.rs
 @@ -1,7 +1,12 @@
@@ -498,15 +1174,22 @@
  }
  
  impl<F> Future for JoinHandleFuture<F>
-@@ -210,6 +360,7 @@
+@@ -208,8 +358,14 @@
+ }
+ 
  #[cfg(test)]
++pub(super) fn accounted_layout_witness() -> usize {
++    AccountedJoinState::layout().unwrap().size()
++}
++
++#[cfg(test)]
  mod tests {
      use super::JoinHandle;
 +    use alloc::{boxed::Box, string::ToString};
      use std::pin::{Pin, pin};
      use std::task::{Context, Poll, Waker};
      use tokio::sync::oneshot;
-@@ -291,4 +442,291 @@
+@@ -291,4 +447,291 @@
          handle.await;
          task.await.unwrap();
      }
@@ -1194,23 +1877,169 @@
      }
 --- a/src/runtime/component/concurrent/futures_and_streams.rs
 +++ b/src/runtime/component/concurrent/futures_and_streams.rs
-@@ -3118,10 +3118,12 @@
-                         store
-                             .concurrent_state_mut()?
-                             .push_high_priority(WorkItem::WorkerFunction(AlwaysMut::new(
+@@ -2418,6 +2418,7 @@
+ impl StoreOpaque {
+     fn pipe_from_guest(
+         &mut self,
++        queue_slot: super::QueueSlot<WorkItem>,
+         kind: TransmitKind,
+         id: TableId<TransmitState>,
+         future: Pin<Box<dyn Future<Output = Result<StreamResult>> + Send + 'static>>,
+@@ -2439,11 +2440,12 @@
+         };
+ 
+         self.concurrent_state_mut_already_forced_current_thread()
+-            .push_future(future.boxed());
++            .push_future(queue_slot, future.boxed());
+     }
+ 
+     fn pipe_to_guest(
+         &mut self,
++        queue_slot: super::QueueSlot<WorkItem>,
+         kind: TransmitKind,
+         id: TableId<TransmitState>,
+         future: Pin<Box<dyn Future<Output = Result<StreamResult>> + Send + 'static>>,
+@@ -2465,7 +2467,7 @@
+         };
+ 
+         self.concurrent_state_mut_already_forced_current_thread()
+-            .push_future(future.boxed());
++            .push_future(queue_slot, future.boxed());
+     }
+ 
+     /// Drop the read end of a stream or future read from the host.
+@@ -2675,6 +2677,13 @@
+             move || {
+                 let producer = producer.clone();
+                 async move {
++                    // Any later guest realloc work is scheduled only with this
++                    // pre-funded node, reserved before the producer is polled.
++                    let worker_slot = if <P::Item as func::Lower>::MAY_REQUIRE_REALLOC {
++                        Some(tls::get(|store| store.concurrent_state_mut()?.prepare_queue_slot())?)
++                    } else {
++                        None
++                    };
+                     let mut state = producer.take()?;
+                     let (mine, buffer) = &mut *state;
+ 
+@@ -2807,7 +2816,7 @@
+                     drop(state);
+ 
+                     if write_buffer {
+-                        write(token, id, producer.clone(), kind).await?;
++                        write(token, id, producer.clone(), kind, worker_slot).await?;
+                     }
+ 
+                     Ok(if dropped {
+@@ -2852,6 +2861,14 @@
+         let token = StoreToken::new(self.as_context_mut());
+         let state = self.0.concurrent_state_mut()?;
+         let id = state.get_mut(id)?.state;
++        let queue_slot = if matches!(
++            state.get_mut(id)?.write,
++            WriteState::GuestReady { .. } | WriteState::HostReady { .. }
++        ) {
++            Some(state.prepare_queue_slot()?)
++        } else {
++            None
++        };
+         let transmit = state.get_mut(id)?;
+         let consumer = Arc::new(LockedState::new(Box::pin(consumer)));
+         let consume_with_buffer = {
+@@ -2979,7 +2996,12 @@
+                     cancel: false,
+                     cancel_waker: None,
+                 };
+-                self.0.pipe_from_guest(kind, id, future);
++                self.0.pipe_from_guest(
++                    queue_slot.expect("prepared consumer node"),
++                    kind,
++                    id,
++                    future,
++                );
+             }
+             WriteState::HostReady { .. } => {
+                 let WriteState::HostReady { produce, .. } = mem::replace(
+@@ -3032,7 +3054,10 @@
+                     result
+                 });
+ 
+-                state.push_future(Box::pin(future));
++                state.push_future(
++                    queue_slot.expect("prepared consumer node"),
++                    Box::pin(future),
++                );
+             }
+             WriteState::Dropped => {
+                 let reader = transmit.read_handle;
+@@ -3048,6 +3073,7 @@
+     id: TableId<TransmitState>,
+     pair: Arc<LockedState<(P, B)>>,
+     kind: TransmitKind,
++    worker_slot: Option<super::QueueSlot<WorkItem>>,
+ ) -> Result<()> {
+     let (read, guest_offset) = tls::get(|store| {
+         let transmit = store.concurrent_state_mut()?.get_mut(id)?;
+@@ -3115,14 +3141,17 @@
+                     // host embedder frames on the stack is unsound.
+                     let (tx, rx) = oneshot::channel();
+                     tls::get(move |store| {
+-                        store
+-                            .concurrent_state_mut()?
+-                            .push_high_priority(WorkItem::WorkerFunction(AlwaysMut::new(
 -                                Box::new(move |store| {
 -                                    _ = tx.send(accept(token.as_context_mut(store))?);
 -                                    Ok(())
 -                                }),
+-                            )));
++                        store.concurrent_state_mut()?.push_high_priority(
++                            worker_slot.expect("pre-producer completion node"),
++                            WorkItem::WorkerFunction(AlwaysMut::new(
 +                                super::worker_function::WorkerFunction::legacy(Box::new(
 +                                    move |store| {
 +                                        _ = tx.send(accept(token.as_context_mut(store))?);
 +                                        Ok(())
 +                                    },
 +                                )),
-                             )));
++                            )),
++                        );
                          crate::error::Ok(())
                      })?;
+                     match rx.await {
+@@ -3221,6 +3250,7 @@
+         guest_offset: ItemCount,
+         cancel: bool,
+     ) -> Result<ReturnCode> {
++        let queue_slot = store.concurrent_state_mut()?.prepare_queue_slot()?;
+         let mut future = consume();
+         store.concurrent_state_mut()?.get_mut(transmit_id)?.read = ReadState::HostReady {
+             consume,
+@@ -3242,7 +3272,7 @@
+                 code
+             }
+             Poll::Pending => {
+-                store.pipe_from_guest(kind, transmit_id, future);
++                store.pipe_from_guest(queue_slot, kind, transmit_id, future);
+                 ReturnCode::Blocked
+             }
+         })
+@@ -3260,6 +3290,7 @@
+         guest_offset: ItemCount,
+         cancel: bool,
+     ) -> Result<ReturnCode> {
++        let queue_slot = store.concurrent_state_mut()?.prepare_queue_slot()?;
+         let mut future = produce();
+         store.concurrent_state_mut()?.get_mut(transmit_id)?.write = WriteState::HostReady {
+             produce,
+@@ -3282,7 +3313,7 @@
+                 code
+             }
+             Poll::Pending => {
+-                store.pipe_to_guest(kind, transmit_id, future);
++                store.pipe_to_guest(queue_slot, kind, transmit_id, future);
+                 ReturnCode::Blocked
+             }
+         })
 --- /dev/null
 +++ b/src/runtime/component/concurrent/pending_future.rs
 @@ -0,0 +1,385 @@
@@ -1597,6 +2426,545 @@
 +        assert!(!probe.owner_dropped.load(Ordering::SeqCst));
 +        assert_eq!(probe.live.load(Ordering::SeqCst), 1);
 +        assert_eq!(probe.requests.load(Ordering::SeqCst), 1);
++    }
++}
+--- /dev/null
++++ b/src/runtime/component/concurrent/work_queue.rs
+@@ -0,0 +1,536 @@
++//! Exact, pre-admitted backing for scheduler queue entries.
++//!
++//! A slot is prepared before polling or transferring state. Publication only
++//! links that same allocation; removal retains it until reuse or physical
++//! deallocation before refund. Stores
++//! without a native-memory owner retain their original VecDeque backing.
++
++use crate::runtime::native_memory::{self, Memory};
++use crate::{NativeAllocation, Result};
++use alloc::boxed::Box;
++use alloc::collections::VecDeque;
++use core::alloc::Layout;
++use core::marker::PhantomData;
++use core::mem::ManuallyDrop;
++use core::ops::{Deref, DerefMut};
++use core::ptr::NonNull;
++
++struct Entry<T> {
++    value: Option<T>,
++    next: Option<Node<T>>,
++    previous: Option<NonNull<Entry<T>>>,
++}
++
++struct Node<T> {
++    pointer: NonNull<Entry<T>>,
++    allocation: ManuallyDrop<Box<dyn NativeAllocation>>,
++    _owned: PhantomData<Box<Entry<T>>>,
++}
++
++impl<T> Deref for Node<T> {
++    type Target = Entry<T>;
++    fn deref(&self) -> &Entry<T> {
++        // SAFETY: a private affine node owns this allocation until Drop. Shared
++        // traversal does not mutate links or values.
++        unsafe { self.pointer.as_ref() }
++    }
++}
++
++impl<T> DerefMut for Node<T> {
++    fn deref_mut(&mut self) -> &mut Entry<T> {
++        // SAFETY: all mutation requires the unique node/queue borrow. No Box
++        // is reconstructed, moved or retagged while linked raw pointers exist.
++        unsafe { self.pointer.as_mut() }
++    }
++}
++
++// SAFETY: pointer owns one private Entry allocation; predecessor/tail pointers
++// only refer into that same exclusively owned chain. Moving an affine node
++// never dereferences it. All unlinking requires &mut Queue; isolated slots have
++// no predecessor. Box::from_raw occurs once, only when the node is destroyed.
++unsafe impl<T: Send> Send for Node<T> {}
++// SAFETY: shared access only exposes &T or follows immutable owned links.
++unsafe impl<T: Sync> Sync for Node<T> {}
++
++impl<T> Drop for Node<T> {
++    fn drop(&mut self) {
++        // SAFETY: affine private fields are destroyed once, in physical order.
++        // If a queued value's destructor unwinds, retain the SAME charge; do
++        // not certify deallocation or refund before the Box drop completes.
++        unsafe {
++            drop(Box::from_raw(self.pointer.as_ptr()));
++            ManuallyDrop::drop(&mut self.allocation);
++        }
++    }
++}
++
++pub(super) struct Slot<T>(Option<Node<T>>);
++
++impl<T> core::fmt::Debug for Slot<T> {
++    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
++        f.debug_struct("QueueSlot")
++            .field("accounted", &self.0.is_some())
++            .finish()
++    }
++}
++
++impl<T> Slot<T> {
++    pub(super) fn prepare(memory: &Memory) -> Result<Self> {
++        let Some(allocation) = native_memory::reserve(memory, Layout::new::<Entry<T>>().size())?
++        else {
++            return Ok(Self(None));
++        };
++        let entry = Box::new(Entry {
++            value: None,
++            next: None,
++            previous: None,
++        });
++        let mut node = Node {
++            pointer: NonNull::new(Box::into_raw(entry)).expect("Box is nonnull"),
++            allocation: ManuallyDrop::new(allocation),
++            _owned: PhantomData,
++        };
++        // Install the outside owner before this possibly panicking hook.
++        node.allocation.allocated();
++        Ok(Self(Some(node)))
++    }
++}
++
++struct Linked<T> {
++    // Suppress automatic recursive drop on value-destructor unwind. The normal
++    // destructor drains iteratively; an unwind retains the remaining chain and
++    // its SAME charges rather than refunding unfreed backing.
++    head: ManuallyDrop<Option<Node<T>>>,
++    tail: Option<NonNull<Entry<T>>>,
++    len: usize,
++}
++
++// SAFETY: tail and predecessor pointers refer only into the exclusively owned
++// head chain. Owned heap allocations stay stable as nodes move; T must be Send.
++unsafe impl<T: Send> Send for Linked<T> {}
++// SAFETY: immutable traversal exposes shared T references only.
++unsafe impl<T: Sync> Sync for Linked<T> {}
++
++impl<T> Default for Linked<T> {
++    fn default() -> Self {
++        Self {
++            head: ManuallyDrop::new(None),
++            tail: None,
++            len: 0,
++        }
++    }
++}
++
++impl<T> Linked<T> {
++    fn push_front(&mut self, mut node: Node<T>) {
++        assert!(node.next.is_none() && node.previous.is_none());
++        let pointer = node.pointer;
++        node.next = self.head.take();
++        if let Some(next) = node.next.as_mut() {
++            next.previous = Some(pointer);
++        } else {
++            self.tail = Some(pointer);
++        }
++        *self.head = Some(node);
++        self.len += 1;
++    }
++
++    fn remove(&mut self, index: usize) -> Option<Node<T>> {
++        if index >= self.len {
++            return None;
++        }
++        let mut link = &mut *self.head;
++        for _ in 0..index {
++            link = &mut link.as_mut().unwrap().next;
++        }
++        let mut node = link.take().unwrap();
++        let previous = node.previous.take();
++        *link = node.next.take();
++        if let Some(next) = link.as_mut() {
++            next.previous = previous;
++        } else {
++            self.tail = previous;
++        }
++        self.len -= 1;
++        Some(node)
++    }
++
++    fn pop_back(&mut self) -> Option<Node<T>> {
++        let mut tail = self.tail?;
++        // SAFETY: tail is maintained by push/remove, refers to the live last
++        // entry, and exclusive &mut self prevents any other access.
++        let previous = unsafe { tail.as_mut().previous.take() };
++        let node = if let Some(mut previous) = previous {
++            // SAFETY: the predecessor belongs to this same live chain. Taking
++            // its next disconnects exactly the tail, never an aliased owner.
++            unsafe { previous.as_mut().next.take().unwrap() }
++        } else {
++            self.head.take().unwrap()
++        };
++        self.tail = previous;
++        self.len -= 1;
++        Some(node)
++    }
++
++    fn retain(&mut self, mut keep: impl FnMut(&T) -> bool) {
++        let mut previous = None;
++        let mut link = &mut *self.head;
++        while link.is_some() {
++            if keep(link.as_ref().unwrap().value.as_ref().unwrap()) {
++                let node = link.as_mut().unwrap();
++                previous = Some(node.pointer);
++                link = &mut node.next;
++            } else {
++                let mut node = link.take().unwrap();
++                *link = node.next.take();
++                node.previous = None;
++                if let Some(next) = link.as_mut() {
++                    next.previous = previous;
++                } else {
++                    self.tail = previous;
++                }
++                self.len -= 1;
++                drop(node);
++            }
++        }
++    }
++}
++
++impl<T> Drop for Linked<T> {
++    fn drop(&mut self) {
++        while let Some(mut node) = self.head.take() {
++            *self.head = node.next.take();
++            node.previous = None;
++            drop(node);
++        }
++    }
++}
++
++pub(super) struct Queue<T> {
++    accounted: bool,
++    legacy: VecDeque<T>,
++    linked: Linked<T>,
++}
++
++impl<T> Default for Queue<T> {
++    fn default() -> Self {
++        Self::new(false)
++    }
++}
++
++impl<T> Queue<T> {
++    pub(super) fn new(accounted: bool) -> Self {
++        Self {
++            accounted,
++            legacy: VecDeque::new(),
++            linked: Linked::default(),
++        }
++    }
++
++    pub(super) fn push_front(&mut self, slot: Slot<T>, value: T) {
++        match slot.0 {
++            Some(mut node) => {
++                assert!(self.accounted);
++                assert!(node.value.is_none());
++                node.value = Some(value);
++                self.linked.push_front(node);
++            }
++            None => {
++                assert!(!self.accounted);
++                self.legacy.push_front(value);
++            }
++        }
++    }
++
++    pub(super) fn len(&self) -> usize {
++        if self.accounted {
++            self.linked.len
++        } else {
++            self.legacy.len()
++        }
++    }
++
++    pub(super) fn is_empty(&self) -> bool {
++        self.len() == 0
++    }
++
++    pub(super) fn pop_back(&mut self) -> Option<(Slot<T>, T)> {
++        if self.accounted {
++            let mut node = self.linked.pop_back()?;
++            let value = node.value.take().unwrap();
++            Some((Slot(Some(node)), value))
++        } else {
++            self.legacy.pop_back().map(|value| (Slot(None), value))
++        }
++    }
++
++    pub(super) fn remove(&mut self, index: usize) -> Option<(Slot<T>, T)> {
++        if self.accounted {
++            let mut node = self.linked.remove(index)?;
++            let value = node.value.take().unwrap();
++            Some((Slot(Some(node)), value))
++        } else {
++            self.legacy.remove(index).map(|value| (Slot(None), value))
++        }
++    }
++
++    pub(super) fn iter(&self) -> impl Iterator<Item = &T> {
++        let mut next = self.linked.head.as_ref();
++        let linked = core::iter::from_fn(move || {
++            let node = next?;
++            next = node.next.as_ref();
++            node.value.as_ref()
++        });
++        self.legacy.iter().chain(linked)
++    }
++
++    pub(super) fn retain(&mut self, mut keep: impl FnMut(&T) -> bool) {
++        if !self.accounted {
++            self.legacy.retain(keep);
++            return;
++        }
++        self.linked.retain(&mut keep);
++    }
++
++    #[cfg(feature = "gc")]
++    pub(super) fn for_each_mut(&mut self, mut visit: impl FnMut(&mut T)) {
++        for value in &mut self.legacy {
++            visit(value);
++        }
++        let mut next = self.linked.head.as_mut();
++        while let Some(node) = next {
++            let entry = &mut **node;
++            visit(entry.value.as_mut().unwrap());
++            next = entry.next.as_mut();
++        }
++    }
++}
++
++pub(super) struct IntoIter<T>(Queue<T>);
++
++impl<T> Iterator for IntoIter<T> {
++    type Item = T;
++    fn next(&mut self) -> Option<T> {
++        self.0.remove(0).map(|(_slot, value)| value)
++    }
++}
++
++impl<T> IntoIterator for Queue<T> {
++    type Item = T;
++    type IntoIter = IntoIter<T>;
++    fn into_iter(self) -> IntoIter<T> {
++        IntoIter(self)
++    }
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++    use alloc::sync::Arc;
++    use alloc::vec::Vec;
++    use core::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
++    use std::panic::{AssertUnwindSafe, catch_unwind};
++
++    #[derive(Default)]
++    struct Probe {
++        requests: AtomicUsize,
++        live: AtomicUsize,
++        confirmed: AtomicUsize,
++        values_dropped: AtomicUsize,
++        require_value_drop: AtomicBool,
++    }
++    struct Allocation {
++        probe: Arc<Probe>,
++        panic_confirmation: bool,
++    }
++    impl NativeAllocation for Allocation {
++        fn allocated(&mut self) {
++            self.probe.confirmed.fetch_add(1, Ordering::SeqCst);
++            assert!(!self.panic_confirmation, "queue-confirmation-control");
++        }
++    }
++    impl Drop for Allocation {
++        fn drop(&mut self) {
++            if self.probe.require_value_drop.load(Ordering::SeqCst) {
++                assert_ne!(self.probe.values_dropped.load(Ordering::SeqCst), 0);
++            }
++            assert_ne!(self.probe.live.fetch_sub(1, Ordering::SeqCst), 0);
++        }
++    }
++    struct Memory {
++        probe: Arc<Probe>,
++        expected: usize,
++        refuse: bool,
++        panic_confirmation: bool,
++    }
++    impl crate::NativeMemory for Memory {
++        fn reserve(&self, bytes: usize) -> Result<Box<dyn NativeAllocation>> {
++            assert_eq!(bytes, self.expected);
++            self.probe.requests.fetch_add(1, Ordering::SeqCst);
++            if self.refuse {
++                crate::bail!("original-queue-refusal-control");
++            }
++            self.probe.live.fetch_add(1, Ordering::SeqCst);
++            Ok(Box::new(Allocation {
++                probe: self.probe.clone(),
++                panic_confirmation: self.panic_confirmation,
++            }))
++        }
++    }
++    fn memory<T>(
++        probe: &Arc<Probe>,
++        refuse: bool,
++        panic_confirmation: bool,
++    ) -> native_memory::Memory {
++        Some(Arc::new(Memory {
++            probe: probe.clone(),
++            expected: Layout::new::<Entry<T>>().size(),
++            refuse,
++            panic_confirmation,
++        }))
++    }
++    struct Value {
++        probe: Arc<Probe>,
++        panic_drop: bool,
++    }
++    impl Drop for Value {
++        fn drop(&mut self) {
++            assert_ne!(self.probe.live.load(Ordering::SeqCst), 0);
++            self.probe.values_dropped.fetch_add(1, Ordering::SeqCst);
++            assert!(!self.panic_drop, "queue-value-destructor-control");
++        }
++    }
++
++    #[test]
++    fn queue_exact_layout_refusal_and_unused_slot_refund_before_effects() {
++        // This is the compiled layout of the REAL scheduler entry, not a
++        // guessed VecDeque capacity or a synthetic WorkItem substitute.
++        let probe = Arc::new(Probe::default());
++        assert!(
++            Slot::<super::super::WorkItem>::prepare(&memory::<super::super::WorkItem>(
++                &probe, true, false
++            ))
++            .is_err()
++        );
++        assert_eq!(probe.requests.load(Ordering::SeqCst), 1);
++        assert_eq!(probe.confirmed.load(Ordering::SeqCst), 0);
++        assert_eq!(probe.live.load(Ordering::SeqCst), 0);
++        let slot = Slot::<super::super::WorkItem>::prepare(&memory::<super::super::WorkItem>(
++            &probe, false, false,
++        ))
++        .unwrap();
++        assert_eq!(probe.live.load(Ordering::SeqCst), 1);
++        drop(slot); // Ready/unused: same actual empty Box dies before refund.
++        assert_eq!(probe.live.load(Ordering::SeqCst), 0);
++        assert_eq!(probe.confirmed.load(Ordering::SeqCst), 1);
++        assert!(
++            Slot::<super::super::WorkItem>::prepare(&None)
++                .unwrap()
++                .0
++                .is_none()
++        );
++        println!(
++            "LSF_WORK_QUEUE_LAYOUT_V1 bytes={} align={}",
++            Layout::new::<Entry<super::super::WorkItem>>().size(),
++            Layout::new::<Entry<super::super::WorkItem>>().align()
++        );
++        // Same pinned Arc implementation/source; compile a fresh layout
++        // witness without replaying the old private JoinState programme.
++        println!(
++            "LSF_JOIN_STATE_LAYOUT_V1 bytes={}",
++            super::super::abort::accounted_layout_witness()
++        );
++    }
++
++    #[test]
++    fn queue_fifo_promotion_retention_and_none_keep_original_order() {
++        for accounted in [false, true] {
++            let probe = Arc::new(Probe::default());
++            let memory = if accounted {
++                memory::<u32>(&probe, false, false)
++            } else {
++                None
++            };
++            let mut high = Queue::new(accounted);
++            let mut low = Queue::new(accounted);
++            for value in 0..8 {
++                let slot = Slot::prepare(&memory).unwrap();
++                low.push_front(slot, value);
++            }
++            assert_eq!(
++                low.iter().copied().collect::<Vec<_>>(),
++                (0..8).rev().collect::<Vec<_>>()
++            );
++            let (slot, value) = low.remove(3).unwrap();
++            assert_eq!(value, 4);
++            high.push_front(slot, value); // SAME node, no new admission.
++            low.retain(|value| value % 2 == 0);
++            assert_eq!(low.iter().copied().collect::<Vec<_>>(), vec![6, 2, 0]);
++            let (slot, value) = high.pop_back().unwrap();
++            assert_eq!(value, 4);
++            assert_eq!(
++                probe.requests.load(Ordering::SeqCst),
++                if accounted { 8 } else { 0 }
++            );
++            assert_eq!(
++                probe.live.load(Ordering::SeqCst),
++                if accounted { 4 } else { 0 }
++            );
++            drop(slot);
++            assert_eq!(low.pop_back().unwrap().1, 0);
++            assert_eq!(low.pop_back().unwrap().1, 2);
++            assert_eq!(low.pop_back().unwrap().1, 6);
++            assert!(low.is_empty() && high.is_empty());
++            drop((low, high));
++            assert_eq!(probe.live.load(Ordering::SeqCst), 0);
++        }
++    }
++
++    #[test]
++    fn queue_confirmation_unwind_and_value_drop_precede_original_refund() {
++        let probe = Arc::new(Probe::default());
++        assert!(
++            catch_unwind(AssertUnwindSafe(|| {
++                let _slot = Slot::<Value>::prepare(&memory::<Value>(&probe, false, true));
++            }))
++            .is_err()
++        );
++        assert_eq!(probe.live.load(Ordering::SeqCst), 0);
++        assert_eq!(probe.confirmed.load(Ordering::SeqCst), 1);
++        let slot = Slot::prepare(&memory::<Value>(&probe, false, false)).unwrap();
++        let mut queue = Queue::new(true);
++        queue.push_front(
++            slot,
++            Value {
++                probe: probe.clone(),
++                panic_drop: false,
++            },
++        );
++        probe.require_value_drop.store(true, Ordering::SeqCst);
++        drop(queue);
++        assert_eq!(probe.values_dropped.load(Ordering::SeqCst), 1);
++        assert_eq!(probe.live.load(Ordering::SeqCst), 0);
++    }
++
++    #[test]
++    fn queue_value_unwind_retains_same_node_and_remaining_chain_charges() {
++        let probe = Arc::new(Probe::default());
++        let memory = memory::<Value>(&probe, false, false);
++        let mut queue = Queue::new(true);
++        for panic_drop in [false, false, true] {
++            let slot = Slot::prepare(&memory).unwrap();
++            queue.push_front(
++                slot,
++                Value {
++                    probe: probe.clone(),
++                    panic_drop,
++                },
++            );
++        }
++        assert!(catch_unwind(AssertUnwindSafe(|| drop(queue))).is_err());
++        assert_eq!(probe.requests.load(Ordering::SeqCst), 3);
++        assert_eq!(probe.confirmed.load(Ordering::SeqCst), 3);
++        assert_eq!(probe.values_dropped.load(Ordering::SeqCst), 1);
++        assert_eq!(probe.live.load(Ordering::SeqCst), 3);
 +    }
 +}
 --- /dev/null
@@ -3089,10 +4457,19 @@
 +    pub fn new(engine: &Engine, memory: NativeMemory) -> ComponentStoreData {
          ComponentStoreData {
 -            instances: Default::default(),
-+            instances: NativeMap::new(memory),
++            instances: NativeMap::new(memory.clone()),
              trapped: false,
              num_component_instances: 0,
              component_host_table: Default::default(),
+@@ -103,7 +103,7 @@
+             task_state: if engine.tunables().concurrency_support {
+                 #[cfg(feature = "component-model-async")]
+                 {
+-                    ComponentTaskState::Concurrent(Default::default())
++                    ComponentTaskState::Concurrent(ConcurrentState::new(memory))
+                 }
+                 #[cfg(not(feature = "component-model-async"))]
+                 {
 @@ -289,7 +289,7 @@
      pub(crate) fn push_component_instance(
          &mut self,

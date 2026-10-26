@@ -2418,6 +2418,7 @@ fn settle_host_write(
 impl StoreOpaque {
     fn pipe_from_guest(
         &mut self,
+        queue_slot: super::QueueSlot<WorkItem>,
         kind: TransmitKind,
         id: TableId<TransmitState>,
         future: Pin<Box<dyn Future<Output = Result<StreamResult>> + Send + 'static>>,
@@ -2439,11 +2440,12 @@ impl StoreOpaque {
         };
 
         self.concurrent_state_mut_already_forced_current_thread()
-            .push_future(future.boxed());
+            .push_future(queue_slot, future.boxed());
     }
 
     fn pipe_to_guest(
         &mut self,
+        queue_slot: super::QueueSlot<WorkItem>,
         kind: TransmitKind,
         id: TableId<TransmitState>,
         future: Pin<Box<dyn Future<Output = Result<StreamResult>> + Send + 'static>>,
@@ -2465,7 +2467,7 @@ impl StoreOpaque {
         };
 
         self.concurrent_state_mut_already_forced_current_thread()
-            .push_future(future.boxed());
+            .push_future(queue_slot, future.boxed());
     }
 
     /// Drop the read end of a stream or future read from the host.
@@ -2675,6 +2677,13 @@ impl<T> StoreContextMut<'_, T> {
             move || {
                 let producer = producer.clone();
                 async move {
+                    // Any later guest realloc work is scheduled only with this
+                    // pre-funded node, reserved before the producer is polled.
+                    let worker_slot = if <P::Item as func::Lower>::MAY_REQUIRE_REALLOC {
+                        Some(tls::get(|store| store.concurrent_state_mut()?.prepare_queue_slot())?)
+                    } else {
+                        None
+                    };
                     let mut state = producer.take()?;
                     let (mine, buffer) = &mut *state;
 
@@ -2807,7 +2816,7 @@ impl<T> StoreContextMut<'_, T> {
                     drop(state);
 
                     if write_buffer {
-                        write(token, id, producer.clone(), kind).await?;
+                        write(token, id, producer.clone(), kind, worker_slot).await?;
                     }
 
                     Ok(if dropped {
@@ -2852,6 +2861,14 @@ impl<T> StoreContextMut<'_, T> {
         let token = StoreToken::new(self.as_context_mut());
         let state = self.0.concurrent_state_mut()?;
         let id = state.get_mut(id)?.state;
+        let queue_slot = if matches!(
+            state.get_mut(id)?.write,
+            WriteState::GuestReady { .. } | WriteState::HostReady { .. }
+        ) {
+            Some(state.prepare_queue_slot()?)
+        } else {
+            None
+        };
         let transmit = state.get_mut(id)?;
         let consumer = Arc::new(LockedState::new(Box::pin(consumer)));
         let consume_with_buffer = {
@@ -2979,7 +2996,12 @@ impl<T> StoreContextMut<'_, T> {
                     cancel: false,
                     cancel_waker: None,
                 };
-                self.0.pipe_from_guest(kind, id, future);
+                self.0.pipe_from_guest(
+                    queue_slot.expect("prepared consumer node"),
+                    kind,
+                    id,
+                    future,
+                );
             }
             WriteState::HostReady { .. } => {
                 let WriteState::HostReady { produce, .. } = mem::replace(
@@ -3032,7 +3054,10 @@ impl<T> StoreContextMut<'_, T> {
                     result
                 });
 
-                state.push_future(Box::pin(future));
+                state.push_future(
+                    queue_slot.expect("prepared consumer node"),
+                    Box::pin(future),
+                );
             }
             WriteState::Dropped => {
                 let reader = transmit.read_handle;
@@ -3048,6 +3073,7 @@ async fn write<D: 'static, P: Send + 'static, T: func::Lower + 'static, B: Write
     id: TableId<TransmitState>,
     pair: Arc<LockedState<(P, B)>>,
     kind: TransmitKind,
+    worker_slot: Option<super::QueueSlot<WorkItem>>,
 ) -> Result<()> {
     let (read, guest_offset) = tls::get(|store| {
         let transmit = store.concurrent_state_mut()?.get_mut(id)?;
@@ -3115,16 +3141,17 @@ async fn write<D: 'static, P: Send + 'static, T: func::Lower + 'static, B: Write
                     // host embedder frames on the stack is unsound.
                     let (tx, rx) = oneshot::channel();
                     tls::get(move |store| {
-                        store
-                            .concurrent_state_mut()?
-                            .push_high_priority(WorkItem::WorkerFunction(AlwaysMut::new(
+                        store.concurrent_state_mut()?.push_high_priority(
+                            worker_slot.expect("pre-producer completion node"),
+                            WorkItem::WorkerFunction(AlwaysMut::new(
                                 super::worker_function::WorkerFunction::legacy(Box::new(
                                     move |store| {
                                         _ = tx.send(accept(token.as_context_mut(store))?);
                                         Ok(())
                                     },
                                 )),
-                            )));
+                            )),
+                        );
                         crate::error::Ok(())
                     })?;
                     match rx.await {
@@ -3223,6 +3250,7 @@ impl Instance {
         guest_offset: ItemCount,
         cancel: bool,
     ) -> Result<ReturnCode> {
+        let queue_slot = store.concurrent_state_mut()?.prepare_queue_slot()?;
         let mut future = consume();
         store.concurrent_state_mut()?.get_mut(transmit_id)?.read = ReadState::HostReady {
             consume,
@@ -3244,7 +3272,7 @@ impl Instance {
                 code
             }
             Poll::Pending => {
-                store.pipe_from_guest(kind, transmit_id, future);
+                store.pipe_from_guest(queue_slot, kind, transmit_id, future);
                 ReturnCode::Blocked
             }
         })
@@ -3262,6 +3290,7 @@ impl Instance {
         guest_offset: ItemCount,
         cancel: bool,
     ) -> Result<ReturnCode> {
+        let queue_slot = store.concurrent_state_mut()?.prepare_queue_slot()?;
         let mut future = produce();
         store.concurrent_state_mut()?.get_mut(transmit_id)?.write = WriteState::HostReady {
             produce,
@@ -3284,7 +3313,7 @@ impl Instance {
                 code
             }
             Poll::Pending => {
-                store.pipe_to_guest(kind, transmit_id, future);
+                store.pipe_to_guest(queue_slot, kind, transmit_id, future);
                 ReturnCode::Blocked
             }
         })
