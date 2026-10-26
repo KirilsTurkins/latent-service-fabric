@@ -9,6 +9,7 @@ from tools import java_http_spi_fixture as fixture, java_http_spi_node as node
 from tools import qualify_java_http_spi as campaign
 from tools.phase2_operator_process import WorkflowError
 from tools.rust_capsule_project import ROOT, read_json, digest
+from tools.tests.test_java_scratch_wiring import original_compiler_parent
 
 
 def response(mode, selected):
@@ -213,6 +214,8 @@ class JavaSpiManualWorkflow(unittest.TestCase):
         self.assertEqual(selected['jobs']['dependency-ingestion']['if'],
             "${{ (github.event_name != 'workflow_dispatch' || !inputs.qualify-scratch-refusals) && (github.event_name != 'workflow_dispatch' || !inputs.java_http_spi) }}")
         selected['jobs']['dependency-ingestion']['if'] = old['jobs']['dependency-ingestion']['if']
+        selected['jobs']['compiler-component'] = original_compiler_parent(
+            self, selected['jobs']['compiler-component'])
         steps = selected['jobs']['compiler-component']['steps']
         retained = next(step for step in steps if step.get('name') ==
             'Retain diagnostics, generated source and component candidates')

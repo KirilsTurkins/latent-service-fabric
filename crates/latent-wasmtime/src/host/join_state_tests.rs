@@ -7,8 +7,8 @@ use latent_core::{
 };
 use std::future::Future;
 use std::sync::{
-    Arc, Mutex,
     atomic::{AtomicBool, Ordering},
+    Arc, Mutex,
 };
 use std::task::Poll;
 use std::time::Instant;
@@ -426,13 +426,11 @@ async fn canonical_backing_refusal_and_same_budget_fresh_store(refusal_request: 
                 .find_map(|cause| cause.downcast_ref::<OriginalAdmission>())
                 .expect("original typed budget error");
             assert_eq!(admitted.0.code, PlatformErrorCode::ResourceExhausted);
-            assert!(
-                admitted
-                    .0
-                    .details
-                    .iter()
-                    .any(|d| d.fields.get("dimension").map(String::as_str) == Some("memory-bytes"))
-            );
+            assert!(admitted.0.details.iter().any(|d| d
+                .fields
+                .get("dimension")
+                .map(String::as_str)
+                == Some("memory-bytes")));
             assert!(!entered.load(Ordering::SeqCst) && !polled.load(Ordering::SeqCst));
             let observed = probe.lock().unwrap();
             assert_eq!(observed.requests.len(), refusal_request);
