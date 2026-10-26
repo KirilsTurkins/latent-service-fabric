@@ -2938,6 +2938,27 @@ impl<T> StoreContextMut<'_, T> {
     ) -> Result<()> {
         let token = StoreToken::new(self.as_context_mut());
         let state = self.0.concurrent_state_mut()?;
+        // Force the original current thread exactly once, at its original point.
+        // No user code/effect intervenes before the nonfallible helper reborrow.
+        if state.queue_memory.is_some() {
+            self.set_consumer_storage::<C, AccountedConsumerCell<C>>(token, id, kind, consumer)
+        } else {
+            self.set_consumer_storage::<C, Arc<LockedState<Pin<Box<C>>>>>(token, id, kind, consumer)
+        }
+    }
+
+    fn set_consumer_storage<C, Storage>(
+        mut self,
+        token: StoreToken<T>,
+        id: TableId<TransmitHandle>,
+        kind: TransmitKind,
+        consumer: C,
+    ) -> Result<()>
+    where
+        C: StreamConsumer<T>,
+        Storage: ConsumerStorage<C>,
+    {
+        let state = self.0.concurrent_state_mut_already_forced_current_thread();
         let id = state.get_mut(id)?.state;
         #[cfg(test)]
         if state.queue_memory.is_some()
@@ -2977,8 +2998,11 @@ impl<T> StoreContextMut<'_, T> {
         } else {
             None
         };
+        // The original v17 queue/task/outer admissions precede these two.
+        // Stage BOTH exact consumer backing owners before allocating either.
+        let consumer_backing = Storage::prepare(&state.queue_memory)?;
         let transmit = state.get_mut(id)?;
-        let consumer = Arc::new(LockedState::new(Box::pin(consumer)));
+        let consumer = Storage::create(consumer_backing, consumer);
         let consume_with_buffer = {
             let consumer = consumer.clone();
             async move |mut host_buffer: Option<&mut dyn WriteBuffer<C::Item>>| {
@@ -5429,6 +5453,191 @@ fn allow_intra_component_read_write(ty: Option<&InterfaceType>) -> bool {
                 | InterfaceType::Float64
         )
     )
+}
+
+// Storage selection is static: the None monomorphization captures the original
+// Arc<LockedState<Pin<Box<C>>>>, never an enlarged enum inside that Arc or its
+// existing factory closures. Selected storage has its own complete paid layout.
+trait ConsumerStorage<C: Send + 'static>: Clone + Send + Sync + 'static {
+    type Prepared;
+    type Guard<'a>: DerefMut<Target = Pin<Box<C>>> + Send
+    where
+        Self: 'a;
+
+    fn prepare(memory: &crate::runtime::native_memory::Memory) -> Result<Self::Prepared>;
+    fn create(prepared: Self::Prepared, consumer: C) -> Self;
+    fn take(&self) -> Result<Self::Guard<'_>>;
+}
+
+impl<C: Send + 'static> ConsumerStorage<C> for Arc<LockedState<Pin<Box<C>>>> {
+    type Prepared = ();
+    type Guard<'a> = LockedStateGuard<'a, Pin<Box<C>>>;
+
+    fn prepare(memory: &crate::runtime::native_memory::Memory) -> Result<()> {
+        assert!(memory.is_none());
+        Ok(())
+    }
+
+    fn create((): (), consumer: C) -> Self {
+        // The original None expression, payload, pin and allocation order.
+        Arc::new(LockedState::new(Box::pin(consumer)))
+    }
+
+    fn take(&self) -> Result<Self::Guard<'_>> {
+        LockedState::take(self)
+    }
+}
+
+struct PreparedConsumerCell<C> {
+    pinned: Option<Box<dyn crate::NativeAllocation>>,
+    shared: Box<dyn crate::NativeAllocation>,
+    _consumer: PhantomData<fn() -> C>,
+}
+
+struct OwnedPinnedConsumer<C> {
+    value: ManuallyDrop<Pin<Box<C>>>,
+    allocation: ManuallyDrop<Option<Box<dyn crate::NativeAllocation>>>,
+}
+
+impl<C> OwnedPinnedConsumer<C> {
+    fn new(allocation: Option<Box<dyn crate::NativeAllocation>>, consumer: C) -> Self {
+        let mut owner = Self {
+            value: ManuallyDrop::new(Box::pin(consumer)),
+            allocation: ManuallyDrop::new(allocation),
+        };
+        // Actual C cleanup is installed before a foreign confirmation can panic.
+        if let Some(allocation) = owner.allocation.as_mut() {
+            allocation.allocated();
+        }
+        owner
+    }
+}
+
+impl<C> Drop for OwnedPinnedConsumer<C> {
+    fn drop(&mut self) {
+        // SAFETY: private fields are destroyed once, in physical-first order.
+        // If C's destructor unwinds, its uncertain affine charge is retained.
+        unsafe {
+            ManuallyDrop::drop(&mut self.value);
+            ManuallyDrop::drop(&mut self.allocation);
+        }
+    }
+}
+
+struct AccountedConsumerCellInner<C> {
+    state: ManuallyDrop<LockedState<OwnedPinnedConsumer<C>>>,
+    allocation: ManuallyDrop<Box<dyn crate::NativeAllocation>>,
+}
+
+// Same pinned Rust1.97.1/8bab26f4f68e0e26f0bb7960be334d5b520ea452
+// ArcInner contract used by concurrent::abort: repr(C,align(2)), two atomic
+// usize counters, then the ACTUAL payload (including both inline guard fields).
+#[repr(C, align(2))]
+struct ConsumerArcHeader {
+    strong: core::sync::atomic::AtomicUsize,
+    weak: core::sync::atomic::AtomicUsize,
+}
+
+struct AccountedConsumerCell<C> {
+    inner: Option<Arc<AccountedConsumerCellInner<C>>>,
+}
+
+impl<C> AccountedConsumerCell<C> {
+    fn layout() -> Result<core::alloc::Layout> {
+        Ok(core::alloc::Layout::new::<ConsumerArcHeader>()
+            .extend(core::alloc::Layout::new::<AccountedConsumerCellInner<C>>())?
+            .0
+            .pad_to_align())
+    }
+
+    fn inner(&self) -> &AccountedConsumerCellInner<C> {
+        self.inner.as_ref().expect("live private consumer cell")
+    }
+}
+
+impl<C> Clone for AccountedConsumerCell<C> {
+    fn clone(&self) -> Self {
+        Self {
+            inner: Some(Arc::clone(self.inner.as_ref().expect("live consumer cell"))),
+        }
+    }
+}
+
+impl<C> Drop for AccountedConsumerCell<C> {
+    fn drop(&mut self) {
+        let Some(inner) = self.inner.take().and_then(Arc::into_inner) else {
+            return;
+        };
+        // EVERY private alias uses into_inner. The winner receives Cell only
+        // after its Arc allocation/implicit Weak is physically deallocated.
+        // A taken guard borrows a live alias, so Cell cannot retire under it.
+        let mut inner = ManuallyDrop::new(inner);
+        // SAFETY: sole transferred payload; keep the shared charge through
+        // LockedState and pinned C destruction. Unwind retains uncertain credit.
+        unsafe {
+            ManuallyDrop::drop(&mut inner.state);
+            ManuallyDrop::drop(&mut inner.allocation);
+        }
+    }
+}
+
+struct AccountedConsumerGuard<'a, C> {
+    guard: LockedStateGuard<'a, OwnedPinnedConsumer<C>>,
+}
+
+impl<C> Deref for AccountedConsumerGuard<'_, C> {
+    type Target = Pin<Box<C>>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.guard.deref().value
+    }
+}
+
+impl<C> DerefMut for AccountedConsumerGuard<'_, C> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.guard.deref_mut().value
+    }
+}
+
+impl<C: Send + 'static> ConsumerStorage<C> for AccountedConsumerCell<C> {
+    type Prepared = PreparedConsumerCell<C>;
+    type Guard<'a> = AccountedConsumerGuard<'a, C>;
+
+    fn prepare(memory: &crate::runtime::native_memory::Memory) -> Result<Self::Prepared> {
+        assert!(memory.is_some());
+        let shared_layout = Self::layout()?;
+        let pinned =
+            crate::runtime::native_memory::reserve(memory, core::alloc::Layout::new::<C>().size())?;
+        let shared = crate::runtime::native_memory::reserve(memory, shared_layout.size())?
+            .expect("selected nonzero consumer header requires its original owner");
+        // Both reservations exist before either allocation. No Memory is kept.
+        Ok(PreparedConsumerCell {
+            pinned,
+            shared,
+            _consumer: PhantomData,
+        })
+    }
+
+    fn create(prepared: Self::Prepared, consumer: C) -> Self {
+        let PreparedConsumerCell { pinned, shared, .. } = prepared;
+        let consumer = OwnedPinnedConsumer::new(pinned, consumer);
+        let mut owner = Self {
+            inner: Some(Arc::new(AccountedConsumerCellInner {
+                state: ManuallyDrop::new(LockedState::new(consumer)),
+                allocation: ManuallyDrop::new(shared),
+            })),
+        };
+        let inner = Arc::get_mut(owner.inner.as_mut().expect("private cell exists"))
+            .expect("consumer cell has not been shared before confirmation");
+        inner.allocation.allocated();
+        owner
+    }
+
+    fn take(&self) -> Result<Self::Guard<'_>> {
+        Ok(AccountedConsumerGuard {
+            guard: self.inner().state.take()?,
+        })
+    }
 }
 
 /// Helper structure to manage moving a `T` in/out of an interior `Mutex` which
