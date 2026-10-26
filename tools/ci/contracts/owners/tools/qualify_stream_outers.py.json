@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_stream_outers.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Reviewed #736 consumer-cell v18: five finite private implementation counters plus two affected public HostReady cases;18 commands/36 raw channels, unchanged two locked Cargo targets/features/45m2400/900/60/30/cleanup5/j2. No WAT/old canonical4/stream6/cache replay. Existing stream/cache function sources exact; completed cache programme deliberately replaced only in this branch-owned workflow. Mandatory14-file isolated-workspace cache auth retained.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "57bd1e149b647fc5e4a339ac587500c4425f072f5496d5bc77a7ca41cb11d0c9"
+}

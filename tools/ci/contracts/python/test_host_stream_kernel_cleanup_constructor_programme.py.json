@@ -1,49 +1,18 @@
 {
-  "cases": [
-    "CleanupConstructorProgrammeSource.test_new_fixed_record_fit_never_certifies_whole_bootstrap_or_runtime",
-    "CleanupConstructorProgrammeSource.test_only_four_changed_defining_objects_and_no_old_programme_replay",
-    "CleanupConstructorProgrammeSource.test_paid_completion_expiry_and_provider_waitqueue_are_real_sizeof"
-  ],
-  "guards": {
-    "CleanupConstructorProgrammeSource.test_new_fixed_record_fit_never_certifies_whole_bootstrap_or_runtime": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:d6432e9f75ed7b8f311c5cff5c13576bfebaf77621289b1bed85a8500b58bcd2",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "CleanupConstructorProgrammeSource.test_only_four_changed_defining_objects_and_no_old_programme_replay": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:d6432e9f75ed7b8f311c5cff5c13576bfebaf77621289b1bed85a8500b58bcd2",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "CleanupConstructorProgrammeSource.test_paid_completion_expiry_and_provider_waitqueue_are_real_sizeof": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:d6432e9f75ed7b8f311c5cff5c13576bfebaf77621289b1bed85a8500b58bcd2",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    }
+  "cases":["CleanupConstructorProgrammeSource.test_new_fixed_record_fit_never_certifies_whole_bootstrap_or_runtime","CleanupConstructorProgrammeSource.test_only_four_changed_defining_objects_and_no_old_programme_replay","CleanupConstructorProgrammeSource.test_paid_completion_expiry_and_provider_waitqueue_are_real_sizeof"],
+  "guards":{
+    "CleanupConstructorProgrammeSource.test_new_fixed_record_fit_never_certifies_whole_bootstrap_or_runtime":
+      "2e96e144b61d1cae752c88e729ee6e96d73f1d908fbc38c220b398845a52be6d",
+    "CleanupConstructorProgrammeSource.test_only_four_changed_defining_objects_and_no_old_programme_replay":
+      "2e96e144b61d1cae752c88e729ee6e96d73f1d908fbc38c220b398845a52be6d",
+    "CleanupConstructorProgrammeSource.test_paid_completion_expiry_and_provider_waitqueue_are_real_sizeof":
+      "2e96e144b61d1cae752c88e729ee6e96d73f1d908fbc38c220b398845a52be6d"
   },
-  "kind": "python",
-  "module": "tools/tests/test_host_stream_kernel_cleanup_constructor_programme.py",
-  "reviewReason": "Additive retained paid constructor completion/deadline source controls and four changed defining-object geometry programme only. Preserve old24-object/native-atomic programmes and all prior cases. Full consumer, public IoCall integration and wall-clock bounds stay unqualified.",
-  "schemaVersion": "latent.ci.contracts.v1"
+  "kind":"python",
+  "module":"tools/tests/test_host_stream_kernel_cleanup_constructor_programme.py",
+  "reviewReason":"Additive retained paid constructor completion/deadline source controls and four changed defining-object geometry programme only. Preserve old24-object/native-atomic programmes and all prior cases. Full consumer, public IoCall integration and wall-clock bounds stay unqualified.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "2e96e144b61d1cae752c88e729ee6e96d73f1d908fbc38c220b398845a52be6d":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:d6432e9f75ed7b8f311c5cff5c13576bfebaf77621289b1bed85a8500b58bcd2","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+  }
 }

@@ -1,7 +1,7 @@
 {
   "schemaVersion":"latent.ci.contracts.v2",
   "kind":"python",
-  "reviewReason":"Preserve every existing test and execution guard; reconcile the upstream 73 MiB source cap and exactly charge the committed Windows CRLF archive conversion, including a one-byte overflow fixture.",
+  "reviewReason":"Reviewed cache security backport: complete14 source/fixedzstd0.14.3,safe8.2.0,sys2.1.2; distinctcache-repaircohort. ParentCHECKusesSAMEexistingv17FEATURES, cachelibtestBUILD plusprobe/list/exactupstreamroundtrip, fixed5commands/unchanged45m2400/900/60/30/j2/cleanup. No fixture or old6replay; fe9historicalonly.",
   "module":"tools/tests/test_build_source_capacity.py",
   "cases":["SourceCapacityTests.test_archive_and_content_byte_limits_are_enforced_independently","SourceCapacityTests.test_capture_byte_allowances_are_fixed_and_reject_one_over","SourceCapacityTests.test_committed_crlf_export_is_charged_as_archived_bytes","SourceCapacityTests.test_current_committed_repository_fits_capture_and_attribution_limits","SourceCapacityTests.test_current_committed_selection_passes_preflight_without_running_archive","SourceCapacityTests.test_source_inventory_uses_capture_file_ceiling_and_rejects_one_over","SourceCapacityTests.test_tree_file_limit_rejects_before_archive_and_cleans_up","SourceCapacityTests.test_tree_full_file_ceiling_passes_but_one_over_refuses_before_archive"],
   "guards":{

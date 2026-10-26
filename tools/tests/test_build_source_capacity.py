@@ -97,7 +97,7 @@ class SourceCapacityTests(unittest.TestCase):
             source, inventory, cache, _ = source_fixture(Path(temporary))
             rows = json.loads(inventory)
             maximum = SnapshotLimits().max_entries
-            self.assertEqual(maximum, 8960)
+            self.assertEqual(maximum, 8992)
             rows.extend({"path": f"tools/ci/contracts/fixture-{index}.json",
                          "digest": digest(b"fixture"), "size": 7, "mode": 420}
                         for index in range(maximum - len(rows)))

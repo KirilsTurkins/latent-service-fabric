@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-exclude = ["crates/vendor/bytes", "crates/vendor/rustls-outbound", "crates/vendor/wasmtime"]
+exclude = ["crates/vendor/bytes", "crates/vendor/rustls-outbound", "crates/vendor/wasmtime", "crates/vendor/wasmtime-cache"]
 members = [
     "apps/latentd",
     "apps/latent-control",

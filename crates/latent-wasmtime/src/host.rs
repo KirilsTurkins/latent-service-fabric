@@ -536,3 +536,6 @@ mod native_context_reply_tests;
 
 #[cfg(test)]
 mod join_state_tests;
+
+#[cfg(test)]
+mod native_stream_outer_tests;

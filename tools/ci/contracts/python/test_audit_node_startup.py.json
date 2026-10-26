@@ -1,62 +1,20 @@
 {
-  "cases": [
-    "AuditNodeStartupTests.test_oversize_requires_actual_original_bank_capacity_error_before_journal_birth",
-    "AuditNodeStartupTests.test_prebuild_refusal_keeps_failure_receipt_without_cargo_or_products",
-    "AuditNodeStartupTests.test_real_startup_cases_keep_record_policies_and_default_node_limits",
-    "AuditNodeStartupTests.test_refused_startup_retains_actual_bounded_stderr_without_retry"
-  ],
-  "guards": {
-    "AuditNodeStartupTests.test_oversize_requires_actual_original_bank_capacity_error_before_journal_birth": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:d15225e79c3c96becaaefc5b8a858d06d04d7df3e99b1598ef76061ffe25676f",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "AuditNodeStartupTests.test_prebuild_refusal_keeps_failure_receipt_without_cargo_or_products": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:d15225e79c3c96becaaefc5b8a858d06d04d7df3e99b1598ef76061ffe25676f",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "AuditNodeStartupTests.test_real_startup_cases_keep_record_policies_and_default_node_limits": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:d15225e79c3c96becaaefc5b8a858d06d04d7df3e99b1598ef76061ffe25676f",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "AuditNodeStartupTests.test_refused_startup_retains_actual_bounded_stderr_without_retry": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:d15225e79c3c96becaaefc5b8a858d06d04d7df3e99b1598ef76061ffe25676f",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    }
+  "cases":["AuditNodeStartupTests.test_oversize_requires_actual_original_bank_capacity_error_before_journal_birth","AuditNodeStartupTests.test_prebuild_refusal_keeps_failure_receipt_without_cargo_or_products","AuditNodeStartupTests.test_real_startup_cases_keep_record_policies_and_default_node_limits","AuditNodeStartupTests.test_refused_startup_retains_actual_bounded_stderr_without_retry"],
+  "guards":{
+    "AuditNodeStartupTests.test_oversize_requires_actual_original_bank_capacity_error_before_journal_birth":
+      "cf76a860ef9d9db7fbbb6d414dc0051757821792954085a46336e8151ea9e4f6",
+    "AuditNodeStartupTests.test_prebuild_refusal_keeps_failure_receipt_without_cargo_or_products":
+      "cf76a860ef9d9db7fbbb6d414dc0051757821792954085a46336e8151ea9e4f6",
+    "AuditNodeStartupTests.test_real_startup_cases_keep_record_policies_and_default_node_limits":
+      "cf76a860ef9d9db7fbbb6d414dc0051757821792954085a46336e8151ea9e4f6",
+    "AuditNodeStartupTests.test_refused_startup_retains_actual_bounded_stderr_without_retry":
+      "cf76a860ef9d9db7fbbb6d414dc0051757821792954085a46336e8151ea9e4f6"
   },
-  "kind": "python",
-  "module": "tools/tests/test_audit_node_startup.py",
-  "reviewReason": "Meaningful closed-policy, actual typed prebirth-refusal, retained stderr and no-Cargo prebuild-failure controls.",
-  "schemaVersion": "latent.ci.contracts.v1"
+  "kind":"python",
+  "module":"tools/tests/test_audit_node_startup.py",
+  "reviewReason":"Meaningful closed-policy, actual typed prebirth-refusal, retained stderr and no-Cargo prebuild-failure controls.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "cf76a860ef9d9db7fbbb6d414dc0051757821792954085a46336e8151ea9e4f6":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:d15225e79c3c96becaaefc5b8a858d06d04d7df3e99b1598ef76061ffe25676f","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+  }
 }

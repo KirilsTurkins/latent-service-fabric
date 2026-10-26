@@ -4,7 +4,7 @@ This is the complete crates.io Wasmtime 48.0.7 package, licensed under
 Apache-2.0 WITH LLVM-exception (see the unmodified LICENSE). The original
 archive checksum and all 250 original file identities are recorded in
 UPSTREAM.latent.json. `latent-dynamic-memory.patch` applies to that exact
-original package; it contains 33 changed upstream files and 21 added
+original package; it contains 34 changed upstream files and 22 added
 source/license files. Other Wasmtime packages remain at the original locked
 registry versions. The standalone development lock selects Tokio 1.51.6 for
 RUSTSEC-2026-0386; the immutable upstream inventory retains its original lock
@@ -36,7 +36,7 @@ retains confirmed actual allocations through native unwind, without confirming
 a hypothetical signature maximum as observed peak.
 
 The native cohort is
-`wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-unordered-futures-outer-sync-result-memory-v16`. Runtime engine configuration identity
+`wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-unordered-futures-outer-sync-result-stream-outers-memory-v17`. Runtime engine configuration identity
 includes this cohort, so old prepared/AOT identity cannot certify this host.
 The immutable v1/7b programme passed 61 controls; v2/de0 passed81,
 v3/48a passed85, v4/3e417 passed92, v5/94f passed97, v7/f535 passed114,
@@ -385,3 +385,88 @@ No old v15 aggregate, Java or unrelated private programme is reexecuted.
 Original45m/2400/900/60/30 bounds,5s cleanup and2 compile jobs remain; actual
 accounted host cases keep original1MiB/1B fuel/5s. Stream Boxes, collections,
 transitive metadata, allocator/RSS/full cost and whole #736 remain gaps.
+
+
+The frozen v16 source stage above was subsequently qualified in the dated
+docs/testing/evidence/canonical-outer-sync-result-native-2026-10-26.json.
+Its original source epochs, bounded actual outcomes and failed-attempt scopes
+remain that receipt's evidence; this new source stage borrows no runtime pass.
+
+The v17 SOURCE stage prepares the three exact stream outer future layouts.
+Guest HostReady read/write cuts admit their existing queue/Task plus exact
+completion Output before Busy, transmit replacement, factory invocation and
+first poll. The reverse already-GuestReady host consumer cut preserves the
+legitimate prior Busy state while admitting before its new consumer effects.
+HostReady producer-loop output has a distinct exact named factory and keeps
+the original success/error map deletion and error precedence. Ready retains
+the original inner through settle/error cleanup while unused outer admission
+refunds. Published outputs add no factory Memory Arc. None keeps original
+literal helper/loop bodies and their physical future/order boundaries.
+
+Six NEW controls are SOURCE ONLY, UNCOMPILED/UNEXECUTED: four owner-only ignored
+canonical read/write controls and two public HostReady controls. One future
+pinned wasm-tools1.254 parse writes the component ONLY to private RunnerTemp,
+not tracked inputs; its exact identity is rechecked before/after the controls.
+The one-page no-allocator fixture checks actual byte42 in both directions,
+separately from a fresh-Store answer42. Public original ActivationBudget stays
+1MiB/1B fuel/5s; private counter-owner evidence is separately64MiB/1B/120s and
+does not claim original ActivationBudget or signed-node coverage. Original
+45m/2400/900/60/30 bounds,5s cleanup and2 compile jobs remain. No old v15/v16,
+Java, SDK or other language programme is selected for replay.
+
+Inner producer/consume/accept factory Boxes, consumer Arc/pinned consumer,
+stream buffers, resource tables/collections and transitive backing remain
+separate unpaid scopes. Prepared outer Layout payload is not allocator/RSS
+quota; full CPU/memory accounting and whole #736 remain OPEN. Physical Store
+teardown and real escaped-waker retirement remain distinct from logical
+completion; consumed pipe handles have no invented rollback guarantee.
+
+
+The source-only zstd security backport retains the complete fourteen-file
+wasmtime-internal-cache48.0.7 package at crates/vendor/wasmtime-cache. Only its
+normalized Cargo.toml zstd requirement, explicit empty standalone workspace,
+and its own active Cargo.lock change;
+all published Rust, tests, build.rs, license and original manifest remain exact.
+The security inventory authenticates that isolated manifest by its whole-file
+digest through the existing isolated Cargo policy; no vendor exemption applies.
+The parent Wasmtime manifest selects that same-version local cache, retaining
+optional cache features/coverage; this is not an unmodified registry package.
+Both active standalone locks select zstd0.14.3, zstd-safe8.2.0 and
+zstd-sys2.1.2+zstd.1.5.7, with exact registry checksums in the source record.
+These satisfy all ten named RustSec fixes from advisory-db a78282a1414d6c28cc228c4eae3570451affb0dc.
+The original250 Wasmtime identities and complete275-file source remain bound;
+the separate14-file cache inventory is mandatory, not optional on absence.
+The existing v17/fe9 result retains its ORIGINAL source/dependencies. It does
+not qualify this backport; no cache compilation or runtime execution is
+claimed here. Native memory/refund code and runtime budgets are unchanged.
+
+Current source-cohort identity for this unqualified dependency backport is
+`wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-unordered-futures-outer-sync-result-stream-outers-consumer-memory-v18-cache-repair`. The original plain-v17/fe9 execution remains a separate immutable source.
+
+
+The v18 SOURCE stage adds exact selected consumer pinned-value and shared-cell
+backing. Existing queue/Task/outer preparation remains before both new affine
+reservations; both are admitted before either consumer allocation, consumer
+factory construction, first poll or transmit mutation. Shared retirement uses
+the pinned Arc::into_inner physical-header contract, then destroys the original
+LockedState and pinned consumer before releasing their original charges.
+Confirmation unwind has physical cleanup installed; destructor unwind keeps
+both uncertain original charges. No Memory/factory Arc enters either owner.
+None retains its original concrete Arc<LockedState<Pin<Box<C>>>> and literal
+Box/Arc allocation expression; this is not a machine-code identity claim.
+
+Five new private implementation controls and two affected public HostReady
+controls are prepared SOURCE ONLY, UNCOMPILED/UNEXECUTED. Public original
+ActivationBudget remains 1MiB / 1B fuel / 5s, with local queue/Task/outer/C-box/
+shared-cell admission order; private counter evidence is separate. The owning
+plan selects only those seven IDs in two locked targets, with no canonical WAT
+assembly, old four canonical controls, six-control programme or language replay.
+The dated fe9 v17 six-control native receipt remains scoped to that original
+source and dependency identity; it qualifies neither these new consumer owners
+nor this cache-repair source cohort. Strict 14-file cache authentication remains.
+
+Inner producer/consume/accept factory Boxes and closure backing, producer shared
+state, P::Buffer default/transitive allocations, per-invocation inner Boxes,
+resource tables/collections and borrowed host-to-host future backing remain
+separate unpaid scopes. Payload layouts are not allocator/RSS/full-cost quotas;
+whole #736 CPU/memory/retirement coverage remains OPEN.
