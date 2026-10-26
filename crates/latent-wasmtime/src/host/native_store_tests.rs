@@ -102,7 +102,7 @@ pub(super) fn store(
         binding,
     )
 }
-fn binding(
+pub(super) fn binding(
     budget: &ActivationBudget,
     observations: &Arc<Observations>,
 ) -> wasmtime::Result<NativeMemoryBinding> {
