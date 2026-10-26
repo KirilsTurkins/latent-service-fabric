@@ -1335,10 +1335,19 @@ impl<T> FutureReader<T> {
             }
         }
 
+        // This exact local adapter inherits StreamProducer::try_into's
+        // literal Err(me), with no user conversion callback or owning escape.
+        impl<D, P> FutureProducerBodyCustody<D> for Producer<P>
+        where
+            P: FutureProducer<D>,
+            P::Item: func::Lower + 'static,
+        {
+        }
+
         Ok(Self::new_(
             store
                 .as_context_mut()
-                .new_transmit(TransmitKind::Future, Producer(producer))?,
+                .new_future_transmit(Producer(producer))?,
         ))
     }
 
@@ -2744,6 +2753,45 @@ impl<T> StoreContextMut<'_, T> {
     {
         let token = StoreToken::new(self.as_context_mut());
         let state = self.0.concurrent_state_mut()?;
+        // Preserve the original single current-thread force before storage
+        // selection. Neither helper forces it again or keeps a factory Memory.
+        if state.queue_memory.is_some() {
+            self.new_transmit_accounted::<P, UnpaidStreamProducerBody>(token, kind, producer)
+        } else {
+            self.new_transmit_legacy(token, kind, producer)
+        }
+    }
+
+    fn new_future_transmit<P: FutureProducerBodyCustody<T>>(
+        mut self,
+        producer: P,
+    ) -> Result<TableId<TransmitHandle>>
+    where
+        P::Item: func::Lower,
+    {
+        let token = StoreToken::new(self.as_context_mut());
+        let state = self.0.concurrent_state_mut()?;
+        if state.queue_memory.is_some() {
+            self.new_transmit_accounted::<P, ClosedFutureProducerBody>(
+                token,
+                TransmitKind::Future,
+                producer,
+            )
+        } else {
+            self.new_transmit_legacy(token, TransmitKind::Future, producer)
+        }
+    }
+
+    fn new_transmit_legacy<P: StreamProducer<T>>(
+        mut self,
+        token: StoreToken<T>,
+        kind: TransmitKind,
+        producer: P,
+    ) -> Result<TableId<TransmitHandle>>
+    where
+        P::Item: func::Lower,
+    {
+        let state = self.0.concurrent_state_mut_already_forced_current_thread();
         let (_, read) = state.new_transmit(TransmitOrigin::Host {
             typecheck: types::typecheck_payload::<P::Item>,
         })?;
@@ -2894,7 +2942,7 @@ impl<T> StoreContextMut<'_, T> {
                     drop(state);
 
                     if write_buffer {
-                        write(token, id, producer.clone(), kind, worker_slot).await?;
+                        write::<T, Pin<Box<P>>, P::Item, P::Buffer, _>(token, id, producer.clone(), kind, worker_slot).await?;
                     }
 
                     Ok(if dropped {
@@ -2920,6 +2968,196 @@ impl<T> StoreContextMut<'_, T> {
                 }
             }
         });
+        state.get_mut(id)?.write = WriteState::HostReady {
+            produce,
+            try_into,
+            guest_offset: ItemCount::ZERO,
+            cancel: false,
+            cancel_waker: None,
+        };
+        Ok(read)
+    }
+
+    fn new_transmit_accounted<P, Policy>(
+        mut self,
+        token: StoreToken<T>,
+        kind: TransmitKind,
+        producer: P,
+    ) -> Result<TableId<TransmitHandle>>
+    where
+        P: StreamProducer<T>,
+        P::Item: func::Lower,
+        Policy: ProducerBodyPolicy<T, P>,
+    {
+        let state = self.0.concurrent_state_mut_already_forced_current_thread();
+        let prepared = prepare_producer_cell::<T, P, Policy>(&state.queue_memory)?;
+        let (_, read) = state.new_transmit(TransmitOrigin::Host {
+            typecheck: types::typecheck_payload::<P::Item>,
+        })?;
+        let producer = AccountedProducerCell::create(prepared, producer);
+        let id = state.get_mut(read)?.state;
+        let mut dropped = false;
+        let produce = Box::new({
+            let producer = producer.clone();
+            move || {
+                let producer = producer.clone();
+                async move {
+                    // Any later guest realloc work is scheduled only with this
+                    // pre-funded node, reserved before the producer is polled.
+                    let worker_slot = if <P::Item as func::ComponentType>::MAY_REQUIRE_REALLOC {
+                        Some(tls::get(|store| store.concurrent_state_mut()?.prepare_queue_slot())?)
+                    } else {
+                        None
+                    };
+                    let mut state = producer.take()?;
+                    let (mine, buffer) = &mut *state;
+
+                    let (result, cancelled) = if buffer.remaining().is_empty() {
+                        future::poll_fn(|cx| {
+                            tls::get(|store| {
+                                let transmit = store.concurrent_state_mut()?.get_mut(id)?;
+
+                                let &WriteState::HostReady { cancel, .. } = &transmit.write else {
+                                    bail_bug!("expected WriteState::HostReady")
+                                };
+
+                                let mut host_written = 0;
+                                let mut host_buffer =
+                                    if let ReadState::HostToHost { buffer, .. } = &mut transmit.read {
+                                        Some(mem::take(buffer))
+                                    } else {
+                                        None
+                                    };
+
+                                let poll = mine.as_mut().poll_produce(
+                                    cx,
+                                    token.as_context_mut(store),
+                                    Destination {
+                                        id,
+                                        buffer,
+                                        host_buffer: host_buffer.as_mut().map(|b| {
+                                            HostBuffer {
+                                                dst: b,
+                                                marked_written: &mut host_written,
+                                            }
+                                        }),
+                                        _phantom: PhantomData,
+                                    },
+                                    cancel,
+                                );
+
+                                let transmit = store.concurrent_state_mut()?.get_mut(id)?;
+
+                                let host_offset = if let (
+                                    Some(host_buffer),
+                                    ReadState::HostToHost { buffer, limit, .. },
+                                ) = (host_buffer, &mut transmit.read)
+                                {
+                                    *limit = host_written;
+                                    *buffer = host_buffer;
+                                    *limit
+                                } else {
+                                    0
+                                };
+
+                                {
+                                    let WriteState::HostReady {
+                                        guest_offset,
+                                        cancel,
+                                        cancel_waker,
+                                        ..
+                                    } = &mut transmit.write
+                                    else {
+                                        bail_bug!("expected WriteState::HostReady")
+                                    };
+
+                                    if poll.is_pending() {
+                                        if !buffer.remaining().is_empty()
+                                            || *guest_offset > 0
+                                            || host_offset > 0
+                                        {
+                                            bail!(
+                                                "StreamProducer::poll_produce returned Poll::Pending \
+                                                 after producing at least one item"
+                                            )
+                                        }
+                                        *cancel_waker = Some(cx.waker().clone());
+                                    } else {
+                                        *cancel_waker = None;
+                                        *cancel = false;
+                                    }
+                                }
+
+                                Ok(poll.map(|v| v.map(|result| (result, cancel))))
+                            })?
+                        })
+                            .await?
+                    } else {
+                        (StreamResult::Completed, false)
+                    };
+
+                    let (guest_offset, host_offset, count) = tls::get(|store| {
+                        let transmit = store.concurrent_state_mut()?.get_mut(id)?;
+                        let (count, host_offset) = match &transmit.read {
+                            &ReadState::GuestReady { count, .. } => (count.as_u32(), 0),
+                            &ReadState::HostToHost { limit, .. } => (1, limit),
+                            _ => bail_bug!("invalid read state"),
+                        };
+                        let guest_offset = match &transmit.write {
+                            &WriteState::HostReady { guest_offset, .. } => guest_offset,
+                            _ => bail_bug!("invalid write state"),
+                        };
+                        Ok((guest_offset, host_offset, count))
+                    })?;
+
+                    match result {
+                        StreamResult::Completed => {
+                            if count > 1
+                                && buffer.remaining().is_empty()
+                                && guest_offset == 0
+                                && host_offset == 0
+                            {
+                                bail!(
+                                    "StreamProducer::poll_produce returned StreamResult::Completed \
+                                     without producing any items"
+                                );
+                            }
+                        }
+                        StreamResult::Cancelled => {
+                            if !cancelled {
+                                bail!(
+                                    "StreamProducer::poll_produce returned StreamResult::Cancelled \
+                                     without being given a `finish` parameter value of true"
+                                );
+                            }
+                        }
+                        StreamResult::Dropped => {
+                            dropped = true;
+                        }
+                    }
+
+                    let write_buffer = !buffer.remaining().is_empty() || host_offset > 0;
+
+                    drop(state);
+
+                    if write_buffer {
+                        write::<T, Pin<Box<P>>, P::Item, P::Buffer, _>(token, id, producer.clone(), kind, worker_slot).await?;
+                    }
+
+                    Ok(if dropped {
+                        if producer.with(|p| p.1.remaining().is_empty())?  {
+                            StreamResult::Dropped
+                        } else {
+                            StreamResult::Completed
+                        }
+                    } else {
+                        result
+                    })
+                }
+                .boxed()
+            }
+        });
+        let try_into = Box::new(move |ty| producer.try_into::<T>(ty));
         state.get_mut(id)?.write = WriteState::HostReady {
             produce,
             try_into,
@@ -3217,10 +3455,16 @@ impl<T> StoreContextMut<'_, T> {
     }
 }
 
-async fn write<D: 'static, P: Send + 'static, T: func::Lower + 'static, B: WriteBuffer<T>>(
+async fn write<
+    D: 'static,
+    P: Send + 'static,
+    T: func::Lower + 'static,
+    B: WriteBuffer<T>,
+    Storage: ProducerPairStorage<P, B>,
+>(
     token: StoreToken<D>,
     id: TableId<TransmitState>,
-    pair: Arc<LockedState<(P, B)>>,
+    pair: Storage,
     kind: TransmitKind,
     worker_slot: Option<super::QueueSlot<WorkItem>>,
 ) -> Result<()> {
@@ -5453,6 +5697,303 @@ fn allow_intra_component_read_write(ty: Option<&InterfaceType>) -> bool {
                 | InterfaceType::Float64
         )
     )
+}
+
+// Only FutureReader::new's existing function-local Producer<P> implements this
+// private custody marker. Its StreamProducer impl inherits the literal default
+// Err(me); external FutureProducer implementations cannot override that impl.
+trait FutureProducerBodyCustody<D>: StreamProducer<D> {}
+
+trait ProducerBodyPolicy<D, P: StreamProducer<D>> {
+    fn reserve(
+        memory: &crate::runtime::native_memory::Memory,
+    ) -> Result<Option<Box<dyn crate::NativeAllocation>>>;
+}
+
+struct UnpaidStreamProducerBody;
+
+impl<D, P: StreamProducer<D>> ProducerBodyPolicy<D, P> for UnpaidStreamProducerBody {
+    fn reserve(
+        _: &crate::runtime::native_memory::Memory,
+    ) -> Result<Option<Box<dyn crate::NativeAllocation>>> {
+        // General owning try_into may export ANY original/different Box. This
+        // slice pays its shared cell only; it never donates a normal body charge.
+        Ok(None)
+    }
+}
+
+struct ClosedFutureProducerBody;
+
+impl<D, P: FutureProducerBodyCustody<D>> ProducerBodyPolicy<D, P> for ClosedFutureProducerBody {
+    fn reserve(
+        memory: &crate::runtime::native_memory::Memory,
+    ) -> Result<Option<Box<dyn crate::NativeAllocation>>> {
+        crate::runtime::native_memory::reserve(memory, core::alloc::Layout::new::<P>().size())
+    }
+}
+
+// This buffer-only access is the complete interface needed by write(). Its
+// guard must be Send across the original host-to-host accept await. P needs
+// Send, never a new public Sync bound. The legacy Arc/guard remain concrete.
+trait ProducerPairStorage<P: Send + 'static, B: Send + 'static>: Clone + Send + Sync + 'static {
+    type Guard<'a>: DerefMut<Target = (P, B)> + Send
+    where
+        Self: 'a;
+
+    fn take(&self) -> Result<Self::Guard<'_>>;
+    fn with<R>(&self, fun: impl FnOnce(&mut (P, B)) -> R) -> Result<R>;
+}
+
+impl<P: Send + 'static, B: Send + 'static> ProducerPairStorage<P, B> for Arc<LockedState<(P, B)>> {
+    type Guard<'a> = LockedStateGuard<'a, (P, B)>;
+
+    fn take(&self) -> Result<Self::Guard<'_>> {
+        LockedState::take(self)
+    }
+
+    fn with<R>(&self, fun: impl FnOnce(&mut (P, B)) -> R) -> Result<R> {
+        LockedState::with(self, fun)
+    }
+}
+
+struct PreparedProducerCell<P, B> {
+    pinned: Option<Box<dyn crate::NativeAllocation>>,
+    shared: Box<dyn crate::NativeAllocation>,
+    _producer: PhantomData<fn() -> (P, B)>,
+}
+
+fn prepare_producer_cell<D, P, Policy>(
+    memory: &crate::runtime::native_memory::Memory,
+) -> Result<PreparedProducerCell<P, P::Buffer>>
+where
+    P: StreamProducer<D>,
+    Policy: ProducerBodyPolicy<D, P>,
+{
+    assert!(memory.is_some());
+    let shared_layout = AccountedProducerCell::<P, P::Buffer>::layout()?;
+    let pinned = Policy::reserve(memory)?;
+    let shared = crate::runtime::native_memory::reserve(memory, shared_layout.size())?
+        .expect("selected producer shared backing is nonzero");
+    // No table mutation, backing/Buffer/default/factory/poll has occurred. Both
+    // future reservations or the one shared-only stream reservation exist now.
+    Ok(PreparedProducerCell {
+        pinned,
+        shared,
+        _producer: PhantomData,
+    })
+}
+
+struct OwnedPinnedProducer<P> {
+    value: ManuallyDrop<Pin<Box<P>>>,
+    allocation: ManuallyDrop<Option<Box<dyn crate::NativeAllocation>>>,
+}
+
+impl<P> OwnedPinnedProducer<P> {
+    fn new(allocation: Option<Box<dyn crate::NativeAllocation>>, producer: P) -> Self {
+        let mut owner = Self {
+            value: ManuallyDrop::new(Box::pin(producer)),
+            allocation: ManuallyDrop::new(allocation),
+        };
+        // Physical cleanup is installed before a confirmation or Buffer::default
+        // may panic. General stream bodies deliberately have no owner here.
+        if let Some(allocation) = owner.allocation.as_mut() {
+            allocation.allocated();
+        }
+        owner
+    }
+
+    fn into_parts(self) -> (Pin<Box<P>>, Option<Box<dyn crate::NativeAllocation>>) {
+        let mut me = ManuallyDrop::new(self);
+        // SAFETY: sole private value, transferred once without user/fallible code.
+        unsafe {
+            (
+                ManuallyDrop::take(&mut me.value),
+                ManuallyDrop::take(&mut me.allocation),
+            )
+        }
+    }
+}
+
+impl<P> Drop for OwnedPinnedProducer<P> {
+    fn drop(&mut self) {
+        // SAFETY: backing/value first. A user destructor unwind leaves the same
+        // uncertain affine guard retained, never refunded before deallocation.
+        unsafe {
+            ManuallyDrop::drop(&mut self.value);
+            ManuallyDrop::drop(&mut self.allocation);
+        }
+    }
+}
+
+struct OwnedProducerValue<P, B> {
+    pair: ManuallyDrop<(Pin<Box<P>>, B)>,
+    allocation: ManuallyDrop<Option<Box<dyn crate::NativeAllocation>>>,
+}
+
+impl<P, B> OwnedProducerValue<P, B> {
+    fn from_parts(
+        producer: Pin<Box<P>>,
+        buffer: B,
+        allocation: Option<Box<dyn crate::NativeAllocation>>,
+    ) -> Self {
+        Self {
+            pair: ManuallyDrop::new((producer, buffer)),
+            allocation: ManuallyDrop::new(allocation),
+        }
+    }
+
+    fn into_parts(self) -> (Pin<Box<P>>, B, Option<Box<dyn crate::NativeAllocation>>) {
+        let mut me = ManuallyDrop::new(self);
+        // SAFETY: sole taken value; the pin's owning pointer does not move P.
+        let ((producer, buffer), allocation) = unsafe {
+            (
+                ManuallyDrop::take(&mut me.pair),
+                ManuallyDrop::take(&mut me.allocation),
+            )
+        };
+        (producer, buffer, allocation)
+    }
+}
+
+impl<P, B> Drop for OwnedProducerValue<P, B> {
+    fn drop(&mut self) {
+        // SAFETY: preserve original tuple's P-then-B drop order, then its
+        // original body guard. Uncertain destructor unwind retains that guard.
+        unsafe {
+            ManuallyDrop::drop(&mut self.pair);
+            ManuallyDrop::drop(&mut self.allocation);
+        }
+    }
+}
+
+struct AccountedProducerCellInner<P, B> {
+    state: ManuallyDrop<LockedState<OwnedProducerValue<P, B>>>,
+    allocation: ManuallyDrop<Box<dyn crate::NativeAllocation>>,
+}
+
+struct AccountedProducerCell<P, B> {
+    inner: Option<Arc<AccountedProducerCellInner<P, B>>>,
+}
+
+impl<P, B> AccountedProducerCell<P, B> {
+    fn layout() -> Result<core::alloc::Layout> {
+        // Same pinned two-atomic Arc header contract as the consumer cell; the
+        // ACTUAL selected payload includes both guard fields and inline B.
+        Ok(core::alloc::Layout::new::<ConsumerArcHeader>()
+            .extend(core::alloc::Layout::new::<AccountedProducerCellInner<P, B>>())?
+            .0
+            .pad_to_align())
+    }
+
+    fn inner(&self) -> &AccountedProducerCellInner<P, B> {
+        self.inner.as_ref().expect("live private producer cell")
+    }
+
+    fn create(prepared: PreparedProducerCell<P, B>, producer: P) -> Self
+    where
+        B: Default,
+    {
+        let PreparedProducerCell { pinned, shared, .. } = prepared;
+        let producer = OwnedPinnedProducer::new(pinned, producer);
+        // Original initialization order: P Box, then B::default, then Arc.
+        let buffer = B::default();
+        let (producer, pinned) = producer.into_parts();
+        let value = OwnedProducerValue::from_parts(producer, buffer, pinned);
+        let mut owner = Self {
+            inner: Some(Arc::new(AccountedProducerCellInner {
+                state: ManuallyDrop::new(LockedState::new(value)),
+                allocation: ManuallyDrop::new(shared),
+            })),
+        };
+        Arc::get_mut(owner.inner.as_mut().expect("private producer cell exists"))
+            .expect("producer cell has not been shared before confirmation")
+            .allocation
+            .allocated();
+        owner
+    }
+
+    fn try_into<D>(&self, ty: TypeId) -> Option<Box<dyn Any>>
+    where
+        P: StreamProducer<D, Buffer = B>,
+    {
+        let value = self.inner().state.try_lock().ok()?.take()?;
+        let (mine, buffer, allocation) = value.into_parts();
+        // Custody crosses this owning call only for FutureReader's exact local
+        // adapter, whose source-known default returns the same me on Err.
+        // General producers carry None: ordinary Err never strands their credit.
+        // An unexpected Ok/panic in the closed adapter cannot authorize a refund.
+        let mut allocation = ManuallyDrop::new(allocation);
+        match P::try_into(mine, ty) {
+            Ok(value) => Some(value),
+            Err(mine) => {
+                // SAFETY: no user code between the known-default return and
+                // restoring its one original affine owner. No pointer test.
+                let allocation = unsafe { ManuallyDrop::take(&mut allocation) };
+                let restored = OwnedProducerValue::from_parts(mine, buffer, allocation);
+                *self.inner().state.try_lock().ok()? = Some(restored);
+                None
+            }
+        }
+    }
+}
+
+impl<P, B> Clone for AccountedProducerCell<P, B> {
+    fn clone(&self) -> Self {
+        Self {
+            inner: Some(Arc::clone(self.inner.as_ref().expect("live producer cell"))),
+        }
+    }
+}
+
+impl<P, B> Drop for AccountedProducerCell<P, B> {
+    fn drop(&mut self) {
+        let Some(inner) = self.inner.take().and_then(Arc::into_inner) else {
+            return;
+        };
+        // All private aliases take this route; implicit Weak/header backing is
+        // freed before this payload is returned. No Weak/raw Arc escapes.
+        let mut inner = ManuallyDrop::new(inner);
+        // SAFETY: sole payload, original P/B before shared credit. The same
+        // uncertain shared guard is retained if a value destructor unwinds.
+        unsafe {
+            ManuallyDrop::drop(&mut inner.state);
+            ManuallyDrop::drop(&mut inner.allocation);
+        }
+    }
+}
+
+struct AccountedProducerGuard<'a, P, B> {
+    guard: LockedStateGuard<'a, OwnedProducerValue<P, B>>,
+}
+
+impl<P, B> Deref for AccountedProducerGuard<'_, P, B> {
+    type Target = (Pin<Box<P>>, B);
+
+    fn deref(&self) -> &Self::Target {
+        &self.guard.deref().pair
+    }
+}
+
+impl<P, B> DerefMut for AccountedProducerGuard<'_, P, B> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.guard.deref_mut().pair
+    }
+}
+
+impl<P: Send + 'static, B: Send + 'static> ProducerPairStorage<Pin<Box<P>>, B>
+    for AccountedProducerCell<P, B>
+{
+    type Guard<'a> = AccountedProducerGuard<'a, P, B>;
+
+    fn take(&self) -> Result<Self::Guard<'_>> {
+        Ok(AccountedProducerGuard {
+            guard: self.inner().state.take()?,
+        })
+    }
+
+    fn with<R>(&self, fun: impl FnOnce(&mut (Pin<Box<P>>, B)) -> R) -> Result<R> {
+        self.inner().state.with(|value| fun(&mut value.pair))
+    }
 }
 
 // Storage selection is static: the None monomorphization captures the original

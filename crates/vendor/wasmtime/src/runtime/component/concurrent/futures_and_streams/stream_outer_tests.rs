@@ -869,3 +869,255 @@ fn consumer_cell_destructor_unwind_retains_both_original_uncertain_charges() {
     assert_eq!(probe.live.load(SeqCst), live);
     assert!(probe.refunds.lock().unwrap().is_empty());
 }
+
+// Producer implementation controls are private counters, not public grants.
+#[repr(align(256))]
+struct ProducerCellValue {
+    trace: Arc<Mutex<Vec<&'static str>>>,
+    panic_drop: bool,
+    not_sync: Cell<u8>,
+    _pinned: core::marker::PhantomPinned,
+}
+impl Drop for ProducerCellValue {
+    fn drop(&mut self) {
+        self.trace.lock().unwrap().push("P");
+        assert!(!self.panic_drop, "producer-cell-P-drop");
+    }
+}
+struct ProducerCellBuffer {
+    trace: Option<Arc<Mutex<Vec<&'static str>>>>,
+    panic_drop: bool,
+}
+impl Default for ProducerCellBuffer {
+    fn default() -> Self {
+        Self {
+            trace: None,
+            panic_drop: false,
+        }
+    }
+}
+impl Drop for ProducerCellBuffer {
+    fn drop(&mut self) {
+        if let Some(trace) = &self.trace {
+            trace.lock().unwrap().push("B");
+        }
+        assert!(!self.panic_drop, "producer-cell-B-drop");
+    }
+}
+fn producer_cell_value(
+    trace: &Arc<Mutex<Vec<&'static str>>>,
+    panic_drop: bool,
+) -> ProducerCellValue {
+    ProducerCellValue {
+        trace: trace.clone(),
+        panic_drop,
+        not_sync: Cell::new(0),
+        _pinned: core::marker::PhantomPinned,
+    }
+}
+// Exercise the physical owner with its exact P/B layouts. This is deliberately
+// NOT a marker implementation claiming arbitrary P has FutureReader custody.
+fn physical_producer_prepared<P, B>(probe: &Arc<ConsumerCellProbe>) -> PreparedProducerCell<P, B> {
+    let memory = consumer_cell_memory(probe);
+    PreparedProducerCell {
+        pinned: crate::runtime::native_memory::reserve(
+            &memory,
+            core::alloc::Layout::new::<P>().size(),
+        )
+        .unwrap(),
+        shared: crate::runtime::native_memory::reserve(
+            &memory,
+            AccountedProducerCell::<P, B>::layout().unwrap().size(),
+        )
+        .unwrap()
+        .unwrap(),
+        _producer: PhantomData,
+    }
+}
+
+#[test]
+fn producer_cell_stream_admission_is_shared_only_and_unused_refunds() {
+    let probe = Arc::new(ConsumerCellProbe::default());
+    let memory = consumer_cell_memory(&probe);
+    probe.refuse.store(1, SeqCst);
+    assert!(prepare_producer_cell::<(), Producer, UnpaidStreamProducerBody>(&memory).is_err());
+    assert_eq!(probe.confirmations.load(SeqCst), 0);
+    assert_eq!(probe.live.load(SeqCst), 0);
+    probe.refuse.store(0, SeqCst);
+    let prepared =
+        prepare_producer_cell::<(), Producer, UnpaidStreamProducerBody>(&memory).unwrap();
+    assert!(
+        prepared.pinned.is_none(),
+        "general owning conversion must never strand a body charge"
+    );
+    assert_eq!(
+        *probe.requests.lock().unwrap(),
+        [AccountedProducerCell::<Producer, Option<u8>>::layout()
+            .unwrap()
+            .size(); 2]
+    );
+    drop(prepared);
+    assert_eq!(probe.live.load(SeqCst), 0);
+    assert_eq!(probe.confirmations.load(SeqCst), 0);
+}
+
+#[test]
+fn producer_cell_pin_clone_send_guard_restore_and_p_then_b_retirement() {
+    fn send<T: Send>(_: &T) {}
+    let probe = Arc::new(ConsumerCellProbe::default());
+    let trace = Arc::new(Mutex::new(Vec::new()));
+    let prepared = physical_producer_prepared::<ProducerCellValue, ProducerCellBuffer>(&probe);
+    let cell = AccountedProducerCell::create(prepared, producer_cell_value(&trace, false));
+    let second = cell.clone();
+    let live = probe.live.load(SeqCst);
+    assert_eq!(probe.confirmations.load(SeqCst), 2);
+    let address = {
+        let mut guard = cell.take().unwrap();
+        send(&guard); // P contains Cell and !Unpin; no P:Sync requirement.
+        guard.0.as_ref().get_ref().not_sync.set(42);
+        guard.1.trace = Some(trace.clone());
+        let address = guard.0.as_ref().get_ref() as *const ProducerCellValue as usize;
+        assert_eq!(address % core::mem::align_of::<ProducerCellValue>(), 0);
+        address
+    };
+    assert!(
+        std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            let _guard = second.take().unwrap();
+            panic!("original taken-guard unwind");
+        }))
+        .is_err()
+    );
+    assert_eq!(
+        second.take().unwrap().0.as_ref().get_ref() as *const _ as usize,
+        address
+    );
+    drop(cell);
+    assert_eq!(probe.live.load(SeqCst), live);
+    assert!(trace.lock().unwrap().is_empty());
+    drop(second);
+    assert_eq!(*trace.lock().unwrap(), ["P", "B"]);
+    assert_eq!(*probe.refunds.lock().unwrap(), [1, 2]);
+    assert_eq!(probe.live.load(SeqCst), 0);
+}
+
+#[test]
+fn producer_cell_zst_and_original_none_tuple_remain_distinct() {
+    let probe = Arc::new(ConsumerCellProbe::default());
+    let prepared = physical_producer_prepared::<(), ()>(&probe);
+    assert!(prepared.pinned.is_none());
+    let cell = AccountedProducerCell::create(prepared, ());
+    assert_eq!(
+        *probe.requests.lock().unwrap(),
+        [AccountedProducerCell::<(), ()>::layout().unwrap().size()]
+    );
+    assert_eq!(probe.confirmations.load(SeqCst), 1);
+    drop(cell);
+    assert_eq!(probe.live.load(SeqCst), 0);
+    let trace = Arc::new(Mutex::new(Vec::new()));
+    // Literal original None allocation/exact tuple type and guard.
+    let cell: Arc<LockedState<(Pin<Box<ProducerCellValue>>, ProducerCellBuffer)>> =
+        Arc::new(LockedState::new((
+            Box::pin(producer_cell_value(&trace, false)),
+            ProducerCellBuffer::default(),
+        )));
+    let mut guard = LockedState::take(&cell).unwrap();
+    guard.1.trace = Some(trace.clone());
+    drop(guard);
+    drop(cell);
+    assert_eq!(*trace.lock().unwrap(), ["P", "B"]);
+    assert_eq!(probe.requests.lock().unwrap().len(), 1);
+}
+
+#[test]
+fn producer_cell_confirmation_and_buffer_default_unwind_install_cleanup_first() {
+    for confirmation in [1, 2] {
+        let probe = Arc::new(ConsumerCellProbe::default());
+        probe.panic_confirmation.store(confirmation, SeqCst);
+        let trace = Arc::new(Mutex::new(Vec::new()));
+        let prepared = physical_producer_prepared::<ProducerCellValue, ProducerCellBuffer>(&probe);
+        assert!(
+            std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                AccountedProducerCell::create(prepared, producer_cell_value(&trace, false))
+            }))
+            .is_err()
+        );
+        assert_eq!(*trace.lock().unwrap(), ["P"]);
+        assert_eq!(probe.live.load(SeqCst), 0);
+        assert_eq!(probe.refunds.lock().unwrap().len(), 2);
+    }
+    struct BufferDefaultPanic;
+    impl Default for BufferDefaultPanic {
+        fn default() -> Self {
+            panic!("producer-cell-buffer-default");
+        }
+    }
+    let probe = Arc::new(ConsumerCellProbe::default());
+    let trace = Arc::new(Mutex::new(Vec::new()));
+    let prepared = physical_producer_prepared::<ProducerCellValue, BufferDefaultPanic>(&probe);
+    assert!(
+        std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            AccountedProducerCell::create(prepared, producer_cell_value(&trace, false))
+        }))
+        .is_err()
+    );
+    assert_eq!(*trace.lock().unwrap(), ["P"]);
+    assert_eq!(probe.live.load(SeqCst), 0);
+}
+
+#[test]
+fn producer_cell_destructor_unwind_retains_same_original_guards() {
+    for panic_p in [true, false] {
+        let probe = Arc::new(ConsumerCellProbe::default());
+        let trace = Arc::new(Mutex::new(Vec::new()));
+        let prepared = physical_producer_prepared::<ProducerCellValue, ProducerCellBuffer>(&probe);
+        let cell = AccountedProducerCell::create(prepared, producer_cell_value(&trace, panic_p));
+        cell.with(|pair| {
+            pair.1.trace = Some(trace.clone());
+            pair.1.panic_drop = !panic_p;
+        })
+        .unwrap();
+        let live = probe.live.load(SeqCst);
+        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| drop(cell))).is_err());
+        assert_eq!(*trace.lock().unwrap(), ["P", "B"]);
+        assert_eq!(probe.live.load(SeqCst), live);
+        assert!(probe.refunds.lock().unwrap().is_empty());
+    }
+}
+
+#[tokio::test]
+async fn producer_cell_real_future_adapter_default_err_restores_original_custody() {
+    let engine = Engine::new(
+        Config::new()
+            .wasm_component_model(true)
+            .wasm_component_model_async(true)
+            .concurrency_support(true),
+    )
+    .unwrap();
+    let probe = Arc::new(Probe::default());
+    let mut store =
+        Store::try_new_with_memory(&engine, (), Arc::new(Memory(probe.clone()))).unwrap();
+    store.run_concurrent(async |_| ()).await.unwrap();
+    let before = probe.requests.lock().unwrap().len();
+    let initial = probe.live.load(SeqCst);
+    let mut reader = FutureReader::new(&mut store, async { crate::error::Ok(42u8) }).unwrap();
+    assert_eq!(probe.requests.lock().unwrap().len(), before + 2);
+    let live = probe.live.load(SeqCst);
+    assert!(live > initial);
+    for _ in 0..32 {
+        let state = store
+            .as_context_mut()
+            .0
+            .concurrent_state_mut_already_forced_current_thread();
+        let id = state.get_mut(reader.id).unwrap().state;
+        let WriteState::HostReady { try_into, .. } = &state.get_mut(id).unwrap().write else {
+            panic!("real FutureReader producer");
+        };
+        assert!(try_into(TypeId::of::<()>()).is_none());
+        assert_eq!(probe.live.load(SeqCst), live);
+        assert_eq!(probe.requests.lock().unwrap().len(), before + 2);
+    }
+    reader.close(&mut store).unwrap();
+    assert_eq!(probe.live.load(SeqCst), initial);
+    drop(store);
+    assert_eq!(probe.live.load(SeqCst), 0);
+}

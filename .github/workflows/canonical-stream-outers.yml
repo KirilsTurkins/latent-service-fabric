@@ -1,7 +1,7 @@
-name: Focused consumer cell ownership
+name: Focused producer cell ownership
 on:
   push:
-    branches: ['feat/sdk-736-consumer-cell-20261026']
+    branches: ['feat/sdk-736-producer-cell-20261026']
     paths:
       - '.github/workflows/canonical-stream-outers.yml'
       - 'crates/vendor/wasmtime/**'
@@ -18,7 +18,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   stream-outers:
-    name: Five consumer implementation and two public HostReady controls
+    name: Six producer implementation and five public ownership controls
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     env:
@@ -57,17 +57,17 @@ jobs:
       - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
         with:
           version: 1.254.0
-      - name: Execute only seven consumer cell ownership controls
+      - name: Execute only eleven producer cell ownership controls
         run: >-
           python3 -B tools/qualify_stream_outers.py
           --source-commit "${{ github.sha }}"
-          --consumer-cell
+          --producer-cell
           --output "$RUNNER_TEMP/canonical-stream-outers"
-      - name: Retain seven source-bound consumer cell outcomes
+      - name: Retain eleven source-bound producer cell outcomes
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: canonical-consumer-cells-${{ github.sha }}
+          name: canonical-producer-cells-${{ github.sha }}
           path: |
             ${{ runner.temp }}/canonical-stream-outers/receipt.json
             ${{ runner.temp }}/canonical-stream-outers/FAILED.json

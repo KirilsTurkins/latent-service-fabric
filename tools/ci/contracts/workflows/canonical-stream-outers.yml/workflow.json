@@ -5,11 +5,11 @@
       "cancel-in-progress": false,
       "group": "canonical-stream-outers-${{ github.ref }}"
     },
-    "name": "Focused consumer cell ownership",
+    "name": "Focused producer cell ownership",
     "on": {
       "push": {
         "branches": [
-          "feat/sdk-736-consumer-cell-20261026"
+          "feat/sdk-736-producer-cell-20261026"
         ],
         "paths": [
           ".github/workflows/canonical-stream-outers.yml",
@@ -30,7 +30,7 @@
   "requiredJobs": [
     "stream-outers"
   ],
-  "reviewReason": "Reviewed #736 consumer-cell v18: five finite private implementation counters plus two affected public HostReady cases;18 commands/36 raw channels, unchanged two locked Cargo targets/features/45m2400/900/60/30/cleanup5/j2. No WAT/old canonical4/stream6/cache replay. Existing stream/cache function sources exact; completed cache programme deliberately replaced only in this branch-owned workflow. Mandatory14-file isolated-workspace cache auth retained.",
+  "reviewReason": "Reviewed #736 producer-cell v19: six finite private implementation counters, three new public creation/conversion cases and two affected existing public HostReady cases;26 commands/52 raw channels, unchanged two locked Cargo targets/features/45m2400/900/60/30/cleanup5/j2. No WAT/old consumer-five/private-six/canonical/cache/language replay. Existing owner modes/functions source exact. General P Boxes remain unpaid; only exact local Future adapter owns body. Mandatory14-file strict workspace cache auth retained.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/canonical-stream-outers.yml"
 }

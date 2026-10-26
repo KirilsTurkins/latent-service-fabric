@@ -1,0 +1,775 @@
+{
+  "schemaVersion": "lsf.native.consumer-cell-qualification.v1",
+  "status": "passed",
+  "scope": "selected consumer pinned-value and shared-cell backing; five private implementation controls plus two actual public ActivationBudget cases",
+  "source": {
+    "executedRevision": "e4ce721088d51a718c837c9586afd187379df36f",
+    "executedTree": "4cb809a8a11ec70fd1ec9bccddf3645868438372",
+    "cohort": "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-unordered-futures-outer-sync-result-stream-outers-consumer-memory-v18-cache-repair"
+  },
+  "officialOrigin": {
+    "pr": 1516,
+    "branch": "feat/sdk-736-consumer-cell-20261026",
+    "workflow": ".github/workflows/canonical-stream-outers.yml",
+    "run": 40372424379,
+    "job": 121746381721,
+    "artifact": 12673676795,
+    "archive": {
+      "bytes": 1427589,
+      "sha256": "4e0e8038c9b7e728b4805c9592c7cedf136bde1fe8c884fb2a35402d29fa515d"
+    }
+  },
+  "actualCounts": {
+    "passedCases": 7,
+    "failedCases": 0,
+    "ignoredCases": 0,
+    "commands": 18,
+    "zeroExitCommands": 18,
+    "rawChannels": 36,
+    "safeCrcShaMembers": 39,
+    "sourceBindings": 8976
+  },
+  "sourceBindings": {
+    "beforeEqualsAfter": true,
+    "rawGitMatches": 8975,
+    "declaredCheckoutConversion": [
+      {
+        "path": "tools/intellij.cmd",
+        "git": {
+          "bytes": 894,
+          "sha256": "fcaca9e75d7d09ebd0863ca252222a1e1b7ac3f78bd1efb465f94b5209545049"
+        },
+        "checkout": {
+          "bytes": 922,
+          "sha256": "7d96a1573b04fb4c7aa3add1ec47fd5ba8a2c827dda142e6b2098843b33f45e4"
+        }
+      }
+    ],
+    "gitToCheckoutConversionIsNotDuringRunMutation": true,
+    "rawInventory": {
+      "bytes": 1473885,
+      "sha256": "51e45cf8a50ce1d72004bdd274af3714ae4de129a61e00c4fc928953a3aaf07b"
+    },
+    "canonicalInventory": {
+      "bytes": 1303340,
+      "sha256": "f6830b0d82c3e62d23c6f9a530041583a2d43e65fc688e1cb4b96516de464d0d"
+    }
+  },
+  "limits": {
+    "overallSeconds": 2400,
+    "buildCommandSeconds": 900,
+    "caseProcessSeconds": 60,
+    "listProcessSeconds": 30,
+    "cleanupReserveSeconds": 5
+  },
+  "publicOriginalBudget": {
+    "memoryBytes": 1048576,
+    "cpuFuel": 1000000000,
+    "wallTimeMilliseconds": 5000
+  },
+  "privateCounterOwner": {
+    "originalActivationBudget": false,
+    "guestExecuted": false,
+    "genericMemoryCeilingClaimed": false
+  },
+  "cases": [
+    {
+      "case": "runtime::component::concurrent::futures_and_streams::stream_outer_tests::consumer_cell_two_admissions_refuse_before_either_allocation_and_abandon_unused",
+      "stdout": {
+        "bytes": 460,
+        "sha256": "225daab027eca9bd79747ac8ab2d3ee0bd61f74fd209a0490832ccfc31e3bda5"
+      },
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "filteredOut": 215,
+      "scope": "private-consumer-implementation-counter",
+      "rawPath": "commands/logs/03-private-case-0.stdout.txt",
+      "rawMarkers": []
+    },
+    {
+      "case": "runtime::component::concurrent::futures_and_streams::stream_outer_tests::consumer_cell_pinned_value_and_shared_owner_live_through_clones_and_taken_guard",
+      "stdout": {
+        "bytes": 460,
+        "sha256": "c449b3d86507d4f5941a211e0d41db38e378fd6951eff886407d96776606b1e2"
+      },
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "filteredOut": 215,
+      "scope": "private-consumer-implementation-counter",
+      "rawPath": "commands/logs/05-private-case-1.stdout.txt",
+      "rawMarkers": []
+    },
+    {
+      "case": "runtime::component::concurrent::futures_and_streams::stream_outer_tests::consumer_cell_zst_and_none_preserve_actual_backing_routes",
+      "stdout": {
+        "bytes": 416,
+        "sha256": "0896d6ac5dd758ac019574ba02bb48798b3c93144dd6ccb4eb865861f2879d94"
+      },
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "filteredOut": 215,
+      "scope": "private-consumer-implementation-counter",
+      "rawPath": "commands/logs/07-private-case-2.stdout.txt",
+      "rawMarkers": []
+    },
+    {
+      "case": "runtime::component::concurrent::futures_and_streams::stream_outer_tests::consumer_cell_each_confirmation_unwind_has_physical_cleanup_installed",
+      "stdout": {
+        "bytes": 1366,
+        "sha256": "e2e20bc42937b1213627498fb8856b46b175cb78740dd581c4800a89af4ae6a4"
+      },
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "filteredOut": 215,
+      "scope": "private-consumer-implementation-counter",
+      "rawPath": "commands/logs/09-private-case-3.stdout.txt",
+      "rawMarkers": []
+    },
+    {
+      "case": "runtime::component::concurrent::futures_and_streams::stream_outer_tests::consumer_cell_destructor_unwind_retains_both_original_uncertain_charges",
+      "stdout": {
+        "bytes": 975,
+        "sha256": "fe1b36d5ff25928d29b58e02d6ea15a5e328f01562098b82c761f2d1bb04b012"
+      },
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "filteredOut": 215,
+      "scope": "private-consumer-implementation-counter",
+      "rawPath": "commands/logs/11-private-case-4.stdout.txt",
+      "rawMarkers": []
+    },
+    {
+      "case": "host::native_stream_outer_tests::actual_stream_host_ready_refusals_precede_consumer_factory_and_polls",
+      "stdout": {
+        "bytes": 830,
+        "sha256": "7e8f9ee62b8a96170ceb172c058b70487639c9ef186422e1230a3c08e4394382"
+      },
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "filteredOut": 489,
+      "scope": "public-original-ActivationBudget",
+      "rawPath": "commands/logs/15-public-case-0.stdout.txt",
+      "rawMarkers": [
+        "STREAM-PUBLIC-REFUSAL local=1 global=6 original-grant=1048576 polls=0",
+        "STREAM-PUBLIC-REFUSAL local=2 global=7 original-grant=1048576 polls=0",
+        "STREAM-PUBLIC-REFUSAL local=3 global=8 original-grant=1048576 polls=0",
+        "STREAM-PUBLIC-REFUSAL local=4 global=9 original-grant=1048576 polls=0",
+        "STREAM-PUBLIC-REFUSAL local=5 global=10 original-grant=1048576 polls=0"
+      ]
+    },
+    {
+      "case": "host::native_stream_outer_tests::actual_stream_host_ready_pending_ready_and_error_preserve_cleanup",
+      "stdout": {
+        "bytes": 887,
+        "sha256": "aef2d61a5d78d2d35acbdf3b5fb6874309dce6f240d9b5d7202ce9f6532f9673"
+      },
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "filteredOut": 489,
+      "scope": "public-original-ActivationBudget",
+      "rawPath": "commands/logs/17-public-case-1.stdout.txt",
+      "rawMarkers": [
+        "STREAM-PUBLIC-CLEANUP mode=0 payload=42 foreign-unchanged=true final=0 wall=5",
+        "STREAM-PUBLIC-CLEANUP mode=1 payload=42 foreign-unchanged=true final=0 wall=5",
+        "STREAM-PUBLIC-CLEANUP mode=2 payload=not-claimed foreign-unchanged=true final=0 wall=5",
+        "STREAM-PUBLIC-CLEANUP mode=3 payload=not-claimed foreign-unchanged=true final=0 wall=5",
+        "STREAM-PUBLIC-CLEANUP mode=4 payload=not-claimed foreign-unchanged=true final=0 wall=5"
+      ]
+    }
+  ],
+  "publicFiveRefusalVectors": [
+    {
+      "local": 1,
+      "global": 6,
+      "originalGrant": 1048576,
+      "polls": 0
+    },
+    {
+      "local": 2,
+      "global": 7,
+      "originalGrant": 1048576,
+      "polls": 0
+    },
+    {
+      "local": 3,
+      "global": 8,
+      "originalGrant": 1048576,
+      "polls": 0
+    },
+    {
+      "local": 4,
+      "global": 9,
+      "originalGrant": 1048576,
+      "polls": 0
+    },
+    {
+      "local": 5,
+      "global": 10,
+      "originalGrant": 1048576,
+      "polls": 0
+    }
+  ],
+  "publicFiveCleanupModes": [
+    {
+      "mode": 0,
+      "payload": "42",
+      "foreignUnchanged": true,
+      "final": 0,
+      "wall": 5
+    },
+    {
+      "mode": 1,
+      "payload": "42",
+      "foreignUnchanged": true,
+      "final": 0,
+      "wall": 5
+    },
+    {
+      "mode": 2,
+      "payload": "not-claimed",
+      "foreignUnchanged": true,
+      "final": 0,
+      "wall": 5
+    },
+    {
+      "mode": 3,
+      "payload": "not-claimed",
+      "foreignUnchanged": true,
+      "final": 0,
+      "wall": 5
+    },
+    {
+      "mode": 4,
+      "payload": "not-claimed",
+      "foreignUnchanged": true,
+      "final": 0,
+      "wall": 5
+    }
+  ],
+  "commandLedgerBoundary": "18 supervised build/library/list/test commands; normal pinned-tool resolver probes retain their existing owner and are not this ledger",
+  "commands": [
+    {
+      "stage": "build-private",
+      "exitCode": 0,
+      "seconds": 96.100792
+    },
+    {
+      "stage": "private-rust-library-path",
+      "exitCode": 0,
+      "seconds": 0.01418
+    },
+    {
+      "stage": "private-list-0",
+      "exitCode": 0,
+      "seconds": 0.013944
+    },
+    {
+      "stage": "private-case-0",
+      "exitCode": 0,
+      "seconds": 0.014063
+    },
+    {
+      "stage": "private-list-1",
+      "exitCode": 0,
+      "seconds": 0.014055
+    },
+    {
+      "stage": "private-case-1",
+      "exitCode": 0,
+      "seconds": 0.013964
+    },
+    {
+      "stage": "private-list-2",
+      "exitCode": 0,
+      "seconds": 0.014001
+    },
+    {
+      "stage": "private-case-2",
+      "exitCode": 0,
+      "seconds": 0.013986
+    },
+    {
+      "stage": "private-list-3",
+      "exitCode": 0,
+      "seconds": 0.013961
+    },
+    {
+      "stage": "private-case-3",
+      "exitCode": 0,
+      "seconds": 0.014041
+    },
+    {
+      "stage": "private-list-4",
+      "exitCode": 0,
+      "seconds": 0.013921
+    },
+    {
+      "stage": "private-case-4",
+      "exitCode": 0,
+      "seconds": 0.014012
+    },
+    {
+      "stage": "build-public",
+      "exitCode": 0,
+      "seconds": 234.738745
+    },
+    {
+      "stage": "public-rust-library-path",
+      "exitCode": 0,
+      "seconds": 0.014254
+    },
+    {
+      "stage": "public-list-0",
+      "exitCode": 0,
+      "seconds": 0.013804
+    },
+    {
+      "stage": "public-case-0",
+      "exitCode": 0,
+      "seconds": 0.013783
+    },
+    {
+      "stage": "public-list-1",
+      "exitCode": 0,
+      "seconds": 0.013734
+    },
+    {
+      "stage": "public-case-1",
+      "exitCode": 0,
+      "seconds": 0.013719
+    }
+  ],
+  "rawReceipt": {
+    "bytes": 3148019,
+    "sha256": "184d8aa5eb580b9c5bf5b2dfb8502f5a309cda63dbb230c980e0495f41696c8c"
+  },
+  "rawCommands": {
+    "bytes": 1513,
+    "sha256": "a205da7642e796994edcbb85c6858d13b052830a20bf55ee750d9a52977ece43"
+  },
+  "members": [
+    {
+      "path": "receipt.json",
+      "bytes": 3148019,
+      "sha256": "184d8aa5eb580b9c5bf5b2dfb8502f5a309cda63dbb230c980e0495f41696c8c"
+    },
+    {
+      "path": "commands.json",
+      "bytes": 1513,
+      "sha256": "a205da7642e796994edcbb85c6858d13b052830a20bf55ee750d9a52977ece43"
+    },
+    {
+      "path": "source-inputs.json",
+      "bytes": 1473885,
+      "sha256": "51e45cf8a50ce1d72004bdd274af3714ae4de129a61e00c4fc928953a3aaf07b"
+    },
+    {
+      "path": "commands/logs/00-build-private.stderr.txt",
+      "bytes": 11403,
+      "sha256": "c539855555c7c5c3b6dc8d97ba1d4ae5cd2cbcb35bb615b5ea6178c1443e1d0e"
+    },
+    {
+      "path": "commands/logs/00-build-private.stdout.txt",
+      "bytes": 212079,
+      "sha256": "dc945f2187a524f0c8ae75143b9eb51bcc8c2d7a6e11e40106b3eb63db8cbac0"
+    },
+    {
+      "path": "commands/logs/01-private-rust-library-path.stdout.txt",
+      "bytes": 105,
+      "sha256": "7675ece60101aa9118dc7df3c8865c010dc07858e7fb4b48536a3376fa3b9ed0"
+    },
+    {
+      "path": "commands/logs/01-private-rust-library-path.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "commands/logs/02-private-list-0.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "commands/logs/02-private-list-0.stdout.txt",
+      "bytes": 181,
+      "sha256": "5e528dace011541bcdf728f2b8d5b051054ea4043b5d3c9dbff0048482ed3bce"
+    },
+    {
+      "path": "commands/logs/03-private-case-0.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "commands/logs/03-private-case-0.stdout.txt",
+      "bytes": 460,
+      "sha256": "225daab027eca9bd79747ac8ab2d3ee0bd61f74fd209a0490832ccfc31e3bda5"
+    },
+    {
+      "path": "commands/logs/04-private-list-1.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "commands/logs/04-private-list-1.stdout.txt",
+      "bytes": 181,
+      "sha256": "78407dcbc8ce80a218c6f49b016703a1f8c458049ac4d2c0dffe281df0593666"
+    },
+    {
+      "path": "commands/logs/05-private-case-1.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "commands/logs/05-private-case-1.stdout.txt",
+      "bytes": 460,
+      "sha256": "c449b3d86507d4f5941a211e0d41db38e378fd6951eff886407d96776606b1e2"
+    },
+    {
+      "path": "commands/logs/06-private-list-2.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "commands/logs/06-private-list-2.stdout.txt",
+      "bytes": 159,
+      "sha256": "e3a0be4d9d745a2c49be0f21bf5bdea93f07224f83a324452f1f29ba139a1c94"
+    },
+    {
+      "path": "commands/logs/07-private-case-2.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "commands/logs/07-private-case-2.stdout.txt",
+      "bytes": 416,
+      "sha256": "0896d6ac5dd758ac019574ba02bb48798b3c93144dd6ccb4eb865861f2879d94"
+    },
+    {
+      "path": "commands/logs/08-private-list-3.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "commands/logs/08-private-list-3.stdout.txt",
+      "bytes": 171,
+      "sha256": "07131d7e5bef8395ea2319b7d2e936898272a9cd004b9ce54ba3a2bc9b4fc763"
+    },
+    {
+      "path": "commands/logs/09-private-case-3.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "commands/logs/09-private-case-3.stdout.txt",
+      "bytes": 1366,
+      "sha256": "e2e20bc42937b1213627498fb8856b46b175cb78740dd581c4800a89af4ae6a4"
+    },
+    {
+      "path": "commands/logs/10-private-list-4.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "commands/logs/10-private-list-4.stdout.txt",
+      "bytes": 173,
+      "sha256": "2e73fba70caf5fe9ec93d8a689b8db7e3994348cbae52343f20be2d0af0c00ad"
+    },
+    {
+      "path": "commands/logs/11-private-case-4.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "commands/logs/11-private-case-4.stdout.txt",
+      "bytes": 975,
+      "sha256": "fe1b36d5ff25928d29b58e02d6ea15a5e328f01562098b82c761f2d1bb04b012"
+    },
+    {
+      "path": "commands/logs/12-build-public.stderr.txt",
+      "bytes": 17588,
+      "sha256": "24c0a7b726c322b755fea62a55346f1ae6acc6d9616677b6e008ebfee558e67f"
+    },
+    {
+      "path": "commands/logs/12-build-public.stdout.txt",
+      "bytes": 337987,
+      "sha256": "eb392eb7c51525ec3eb062a9ed3c196323229a0db1736f63565782aaeea9e39b"
+    },
+    {
+      "path": "commands/logs/13-public-rust-library-path.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "commands/logs/13-public-rust-library-path.stdout.txt",
+      "bytes": 105,
+      "sha256": "7675ece60101aa9118dc7df3c8865c010dc07858e7fb4b48536a3376fa3b9ed0"
+    },
+    {
+      "path": "commands/logs/14-public-list-0.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "commands/logs/14-public-list-0.stdout.txt",
+      "bytes": 130,
+      "sha256": "60bde20b71941227d703d69b92676d03791e4dc8d756a4ee718b1f2f6afc580d"
+    },
+    {
+      "path": "commands/logs/15-public-case-0.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "commands/logs/15-public-case-0.stdout.txt",
+      "bytes": 830,
+      "sha256": "7e8f9ee62b8a96170ceb172c058b70487639c9ef186422e1230a3c08e4394382"
+    },
+    {
+      "path": "commands/logs/16-public-list-1.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "commands/logs/16-public-list-1.stdout.txt",
+      "bytes": 127,
+      "sha256": "32ecd8e36a2ec311d3c98e2bbac42c4fa066752872c558a53a871e063a007e02"
+    },
+    {
+      "path": "commands/logs/17-public-case-1.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "commands/logs/17-public-case-1.stdout.txt",
+      "bytes": 887,
+      "sha256": "aef2d61a5d78d2d35acbdf3b5fb6874309dce6f240d9b5d7202ce9f6532f9673"
+    }
+  ],
+  "compiledTargets": {
+    "private": {
+      "package_id": "path+file:///home/runner/work/latent-service-fabric/latent-service-fabric/crates/vendor/wasmtime#48.0.7",
+      "target": {
+        "kind": [
+          "lib"
+        ],
+        "crate_types": [
+          "lib"
+        ],
+        "name": "wasmtime",
+        "src_path": "/home/runner/work/latent-service-fabric/latent-service-fabric/crates/vendor/wasmtime/src/lib.rs",
+        "edition": "2024",
+        "doc": true,
+        "doctest": true,
+        "test": true
+      },
+      "features": [
+        "async",
+        "cache",
+        "component-model",
+        "component-model-async",
+        "coredump",
+        "cranelift",
+        "gc",
+        "gc-drc",
+        "once_cell",
+        "pooling-allocator",
+        "runtime",
+        "std",
+        "threads",
+        "wasmtime-jit-icache-coherence",
+        "wit-parser"
+      ],
+      "executable": "/home/runner/work/latent-service-fabric/latent-service-fabric/target/debug/deps/wasmtime-367b94e01c7b61eb",
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": 0,
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": true
+      }
+    },
+    "public": {
+      "package_id": "path+file:///home/runner/work/latent-service-fabric/latent-service-fabric/crates/latent-wasmtime#0.1.0-alpha.5",
+      "target": {
+        "kind": [
+          "lib"
+        ],
+        "crate_types": [
+          "lib"
+        ],
+        "name": "latent_wasmtime",
+        "src_path": "/home/runner/work/latent-service-fabric/latent-service-fabric/crates/latent-wasmtime/src/lib.rs",
+        "edition": "2021",
+        "doc": true,
+        "doctest": true,
+        "test": true
+      },
+      "features": [],
+      "executable": "/home/runner/work/latent-service-fabric/latent-service-fabric/target/debug/deps/latent_wasmtime-3a3d5d04cba4e47f",
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": 0,
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": true
+      }
+    }
+  },
+  "executables": {
+    "private": {
+      "name": "private-stream-controls",
+      "digest": "sha256:32b674ef2947ae8fe9226e47153c6aa286435f985cfefa5a871dead6a0c85158",
+      "size": 78877264
+    },
+    "public": {
+      "name": "public-stream-controls",
+      "digest": "sha256:ad998238722d7b29cbb954a3195a63c4a75b63c854930475f3a832f7ee4b0c8f",
+      "size": 125781688
+    }
+  },
+  "observedTools": [
+    {
+      "name": "cargo",
+      "digest": "sha256:828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953",
+      "size": 42839824
+    },
+    {
+      "name": "rustc",
+      "digest": "sha256:d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea",
+      "size": 645000
+    },
+    {
+      "name": "wasm-tools",
+      "digest": "sha256:cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6",
+      "size": 20231696
+    }
+  ],
+  "wasmtimeSource": {
+    "files": 275,
+    "recordSha256": "162338494e06c18c15bb3a813c4711595c2c8cf4034f2d0ba4df25fd2e9725bf",
+    "patchSha256": "b657b2865a1b5cbce7e0b215e871bdff2720481e75bffb2407c4086dd07e7e0f",
+    "upstreamArchive": "https://static.crates.io/crates/wasmtime/wasmtime-48.0.7.crate",
+    "upstreamSha256": "12300d040e8bea7e7ccde75b9919d27ebba47a217a64b09ba058ae8d3b4290b6",
+    "cachePackage": "wasmtime-internal-cache",
+    "cacheFiles": 14,
+    "cacheManifest": {
+      "sha256": "e68146456e40062edfde8d47c853ea8155f20b63044fba94bf8ef24f2c8bae5d",
+      "bytes": 3048
+    },
+    "fixedRegistryPackages": {
+      "zstd": {
+        "version": "0.14.3",
+        "checksum": "db3ae9bf90af6e40197bef767eeefc46ad6397420fe873830bd85e5fbbfb3c70"
+      },
+      "zstd-safe": {
+        "version": "8.2.0",
+        "checksum": "ded520f16b29e1a9b771c722221b2b0a0398c2316d9bb3c42b458a5414d7434b"
+      },
+      "zstd-sys": {
+        "version": "2.1.2+zstd.1.5.7",
+        "checksum": "481ada9c543b2323cbb7bbdbb5249177fbf0188ed959ed2c15e4b22421c84ed3"
+      }
+    }
+  },
+  "mergeComposition": {
+    "pr": 1516,
+    "testedHead": "e4ce721088d51a718c837c9586afd187379df36f",
+    "testedTree": "4cb809a8a11ec70fd1ec9bccddf3645868438372",
+    "merge": "8d9c6b176ebc99c296d32490517138e7cef5258a",
+    "mergeTree": "3dee326e7c44418472fdc127c07f262f7e5bb5d3",
+    "parent": "19ec6fdbff0fe56d5625df9ad3819923aba3bad1",
+    "incomingDependencyPR": 1509,
+    "exactOnlyDelta": {
+      "examples/renderer-profile/package-lock.json": {
+        "before": {
+          "bytes": 147230,
+          "sha256": "d80eb118f236878f1fcd365d9964751f8466c603beb8932e323b9f91ef2c5531"
+        },
+        "after": {
+          "bytes": 147230,
+          "sha256": "8e659f7c616a32a7ce0eb007e179fb9f4f41bcd3e1d269b2c3d3f3d75b235fca"
+        }
+      },
+      "examples/renderer-profile/package.json": {
+        "before": {
+          "bytes": 953,
+          "sha256": "cbdb798523589faa4a31ac583f9abfc978a924ea3201423a0f997dfe1da762c2"
+        },
+        "after": {
+          "bytes": 953,
+          "sha256": "fc1af6ed7111ceb1166f4b39dccf1deccac4d41877bbe7dfeeaedb38256c397b"
+        }
+      }
+    },
+    "allNativeRustCargoLocksCacheSourceOwnerWorkflowAndOtherBindingsExact": true,
+    "unchangedBindingRows": 8974,
+    "totalTestedBindings": 8976,
+    "selectedArchiveSizeUnchangedByEqualLengthSamePaths": 85975040,
+    "nativeProgrammeReplayed": false,
+    "historicalReceiptRetagged": false
+  },
+  "historicalExecutionRetagged": false,
+  "notExecuted": {
+    "signedGuest": true,
+    "oldCanonicalFour": true,
+    "oldStreamSixProgramme": true,
+    "cacheRoundtrip": true,
+    "languageCampaigns": true,
+    "wholeRuntimeOrVendorSuite": true
+  },
+  "limitations": {
+    "privateCountersAreNotActivationBudgetOrAllocatorFreeSensor": true,
+    "compilerImplicitInputsAttested": false,
+    "hermetic": false,
+    "allocatorRssQuotaQualified": false,
+    "whole736Complete": false,
+    "openCosts": [
+      "producer pinned/shared state",
+      "producer/consume/accept factory and per-invocation future Boxes",
+      "closure backing",
+      "buffer default/transitive heaps",
+      "tables and collections",
+      "full CPU/memory/retirement coverage"
+    ]
+  },
+  "relatedCIGates": {
+    "nativeExecutedRevision": "e4ce721088d51a718c837c9586afd187379df36f",
+    "pullHeadRevision": "e4ce721088d51a718c837c9586afd187379df36f",
+    "scannedMergeRevision": "c09eb1ace82fee3e7b2dccbc42238cfb1bea4737",
+    "scannedTree": "4cb809a8a11ec70fd1ec9bccddf3645868438372",
+    "scannedParents": [
+      "bdd50a4506394e9a1f0d85df14d09c1ec18d7ba4",
+      "e4ce721088d51a718c837c9586afd187379df36f"
+    ],
+    "nativeAndScannedTreeEqual": true,
+    "ci": {
+      "run": 40372479026,
+      "status": "success",
+      "selectedJobs": 24,
+      "aggregate": "success",
+      "pythonJob": 121746685338,
+      "clippyJob": 121746685121,
+      "rustTestsJob": 121746685257,
+      "standaloneJob": 121746685274
+    },
+    "security": {
+      "run": 40372478831,
+      "selectedChecks": "passed",
+      "sdkAdvisoryScope": "skipped"
+    },
+    "priorBaselineStandalone": {
+      "scope": "bdd baseline only",
+      "status": "pretest rustup bootstrap failure",
+      "cause": "partial toolchain cargo-clippy installation conflict",
+      "testsExecuted": 0,
+      "currentFeatureStandalonePassed": true,
+      "codeRepairClaimed": false
+    }
+  }
+}
