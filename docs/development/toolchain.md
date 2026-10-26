@@ -28,7 +28,8 @@ See [build-foundation.md](build-foundation.md) for generation ownership, focused
 | `wasmparser` |                               0.261.0 | Direct component binary validation; WIT tooling retains its separately locked parser dependencies |
 | `wasm-encoder` |                               0.261.0 | Component fixtures; `waitable_set_wait(memory)` retains the zero immediate used by the pinned runtime |
 | `wit-parser` |                               0.259.0 | Direct WIT parsing and component decoding; guest tooling retains its separately locked parser dependencies |
-| `wit-bindgen` |                               0.62.0 | Guest bindings and canonical ABI exports generated from WIT |
+| `wit-bindgen` Rust macro |                    0.63.0 | Rust guest bindings generated from WIT |
+| `wit-bindgen-cli` |                            0.62.0 | Separately pinned C/C#/Java and canonical ABI source fixtures |
 | Serde / `serde_json` |                    1.0.229 / 1.0.154 | Rust contract serialization |
 | TOML |                                1.1.6 | Configuration parsing and serialization |
 | BLAKE3 / SHA-256 |                       1.8.7 / 0.11.0 | Cache/prepared identity and artifact digest verification |
@@ -40,6 +41,15 @@ See [build-foundation.md](build-foundation.md) for generation ownership, focused
 | Eclipse Temurin JDK |                           25.0.4.1+1 | Java SDK build and runtime qualification; Java 25 minimum runtime |
 | Gradle (optional Java build) |                                9.1.0 | Java 25-compatible Gradle path; distribution SHA-256 pinned in `tools/toolchain.toml` |
 | Zig / Clang / C target | 0.16.0 / 21.1.0 / `x86_64-linux-gnu` | Pinned C11 header smoke test |
+
+The Rust macro and installed CLI have separate pins in `tools/toolchain.toml`:
+`rust.dependencies.wit-bindgen` selects 0.63.0, while
+`contracts.wit-bindgen-cli` retains 0.62.0 for the existing generated fixtures.
+The [0.63 migration](https://github.com/bytecodealliance/wit-bindgen/releases/tag/v0.63.0)
+removes the Rust macro's `async` option. Maintained runtime WIT already declares
+asynchronous functions; synchronous Core ABI adapters use `sync` overrides.
+Retained generated-source comments and ABI fixture identities describe their
+actual CLI generation and are not relabeled by a Rust crate update.
 
 Workspace dependencies are exact requirements and workspace crates consume them with `workspace = true`. Cargo ignores SemVer build metadata in requirements, so TOML is pinned as `=1.1.6`; the resolved package may display `1.1.6+spec-1.1.0` in `Cargo.lock`.
 

@@ -26,7 +26,8 @@ The [original October 12 reconciliation](https://github.com/KirilsTurkins/latent
 retains its historical clock-only boundary.
 
 Use Linux, Python 3.13.5, Rust 1.97.1, wasm-tools 1.254.0 and wit-bindgen-cli
-0.62.0. Follow the [toolchain setup](../development/toolchain.md), install
+0.62.0. The maintained Rust macro dependency is independently pinned to 0.63.0;
+the CLI pin preserves the existing generated-source profiles. Follow the [toolchain setup](../development/toolchain.md), install
 `tools/requirements.lock` in your Python environment, and run these commands
 from the LSF repository root. The build tools are compiled once:
 

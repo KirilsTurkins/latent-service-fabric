@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/generate_transaction_contracts.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Keep all exact historical baseline/before/coverage and case/guard obligations while reconciling current actual compiler/dependency/transaction/native owners. Reconcile exact development812b management and compiler prerequisites; preserve both parent case/decorator/skip inventories, all raw commands, matrices, deadlines and supported SDK regressions. Reconcile current native namespace management prerequisites with original affine state, real currentness clock and capability-session source; preserve all commands, cases, skip/decorator guards, historical mappings, matrices and deadlines. Reconcile exact development812b management and compiler prerequisites; preserve both parent case/decorator/skip inventories, all raw commands, matrices, deadlines and supported SDK regressions.",
+  "reviewReason": "Review Rust wit-bindgen 0.63.0 macro compatibility and separate 0.62.0 CLI selection; preserve existing execution commands and qualification cases.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "41ac505a365b800ffc8cbbb9d05cd67242e3bc0097d7ed81dfe360d5e548f7c2"
+  "sha256": "e4075954092fab43dec24a22c1d42e76c2082d1e18eaf10560f2e95014aa9dbd"
 }

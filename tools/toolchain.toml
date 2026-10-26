@@ -24,9 +24,11 @@ tracing-subscriber = "0.3.23"
 wasm-encoder = "0.261.0"
 wasmparser = "0.261.0"
 wasmtime = "48.0.7"
-wit-bindgen = "0.62.0"
+wit-bindgen = "0.63.0"
 
 [contracts]
+# CLI-generated C/C#/Java fixtures retain their separately reviewed generator.
+wit-bindgen-cli = "0.62.0"
 wasm-tools = "1.254.0"
 buf = "1.72.0"
 python = "3.13.5"

@@ -243,7 +243,7 @@ def prepare(output: Path, nonce: str):
     bindings = b'wit_bindgen::generate!({path: "wit", world: "service"});'
     require(initial['src/lib.rs'].count(bindings) == 1, 'rust-http-runtime-original-binding-generator')
     mappings = b','.join(b'"'+name.encode()+b'": generate' for name in sorted(AUTHORITY))
-    selected = b'wit_bindgen::generate!({path: "wit", world: "service", async: false, with: {'+mappings+b'}});'
+    selected = b'wit_bindgen::generate!({path: "wit", world: "service", sync: true, with: {'+mappings+b'}});'
     (app/'src/lib.rs').write_bytes(initial['src/lib.rs'].replace(marker, code+marker, 1)
         .replace(bindings, selected, 1))
     # All dependencies are declared; selection grants no authority. The actual
@@ -307,7 +307,7 @@ def capture(app: Path, outside: list[Path], specs: list[dict], cargo: Path) -> d
         'originalLibrariesRemoved':all(not p.exists() for p in outside),
         'executableInputs':executables,'implicitExecutableApproval':False,
         'catalogueRegistration':False,'applicationTransportInjected':False,'libraryCodePatched':False,
-        'developerBindingSelection':{'generator':'wit-bindgen 0.62.0','rustBindingsAsync':False,
+        'developerBindingSelection':{'generator':'wit-bindgen 0.63.0','rustBindingsAsync':False,
             'publicFunctionKind':'async-freestanding','selectedWitDigest':digest(read_file(app/'wit/world.wit')),
             'applicationRustDigest':digest(read_file(app/'src/lib.rs')),
             'sourceLanguageExecutorInjected':False}}
