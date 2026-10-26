@@ -5771,11 +5771,14 @@ impl ConcurrentState {
         // we don't need to promote anything, but we return true to indicate that
         // work is pending for the current instance.
         if self.high_priority.iter().any(&mut predicate) {
-            true
+            return true;
         }
         // Otherwise, look for a low-priority work item that matches the current
         // instance and promote it to high-priority.
-        else if let Some(idx) = self.low_priority.iter().position(&mut predicate) {
+        // Drop the opaque iterator at this statement boundary before mutating
+        // the same queue or transferring its node to the high-priority queue.
+        let position = self.low_priority.iter().position(&mut predicate);
+        if let Some(idx) = position {
             let (slot, item) = self.low_priority.remove(idx).unwrap();
             self.push_high_priority(slot, item);
             true

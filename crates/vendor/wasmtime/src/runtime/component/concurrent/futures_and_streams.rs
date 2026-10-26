@@ -2679,7 +2679,7 @@ impl<T> StoreContextMut<'_, T> {
                 async move {
                     // Any later guest realloc work is scheduled only with this
                     // pre-funded node, reserved before the producer is polled.
-                    let worker_slot = if <P::Item as func::Lower>::MAY_REQUIRE_REALLOC {
+                    let worker_slot = if <P::Item as func::ComponentType>::MAY_REQUIRE_REALLOC {
                         Some(tls::get(|store| store.concurrent_state_mut()?.prepare_queue_slot())?)
                     } else {
                         None

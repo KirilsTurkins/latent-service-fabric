@@ -950,12 +950,22 @@
          }
      }
  
-@@ -5677,8 +5776,8 @@
+@@ -5672,13 +5771,16 @@
+         // we don't need to promote anything, but we return true to indicate that
+         // work is pending for the current instance.
+         if self.high_priority.iter().any(&mut predicate) {
+-            true
++            return true;
+         }
          // Otherwise, look for a low-priority work item that matches the current
          // instance and promote it to high-priority.
-         else if let Some(idx) = self.low_priority.iter().position(&mut predicate) {
+-        else if let Some(idx) = self.low_priority.iter().position(&mut predicate) {
 -            let item = self.low_priority.remove(idx).unwrap();
 -            self.push_high_priority(item);
++        // Drop the opaque iterator at this statement boundary before mutating
++        // the same queue or transferring its node to the high-priority queue.
++        let position = self.low_priority.iter().position(&mut predicate);
++        if let Some(idx) = position {
 +            let (slot, item) = self.low_priority.remove(idx).unwrap();
 +            self.push_high_priority(slot, item);
              true
@@ -1914,7 +1924,7 @@
                  async move {
 +                    // Any later guest realloc work is scheduled only with this
 +                    // pre-funded node, reserved before the producer is polled.
-+                    let worker_slot = if <P::Item as func::Lower>::MAY_REQUIRE_REALLOC {
++                    let worker_slot = if <P::Item as func::ComponentType>::MAY_REQUIRE_REALLOC {
 +                        Some(tls::get(|store| store.concurrent_state_mut()?.prepare_queue_slot())?)
 +                    } else {
 +                        None
