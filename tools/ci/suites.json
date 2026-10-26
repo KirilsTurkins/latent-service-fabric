@@ -7565,14 +7565,16 @@
         "host::join_state_tests::canonical_join_state_first_poll_refusal_and_same_budget_fresh_store",
         "containment::tests::only_the_actual_engine_stack_overflow_produces_stack_exhaustion_diagnostic",
         "host::join_state_tests::canonical_call_future_first_poll_refusal_and_same_budget_fresh_store",
-        "host::join_state_tests::canonical_pending_future_first_poll_refusal_and_same_budget_fresh_store"
+        "host::join_state_tests::canonical_pending_future_first_poll_refusal_and_same_budget_fresh_store",
+        "host::join_state_tests::canonical_worker_function_first_poll_refusal_and_same_budget_fresh_store"
       ],
       "expectedIgnored": [
         "cache::measurement::cache_lookup_collector",
         "host::join_state_tests::canonical_join_state_first_poll_refusal_and_same_budget_fresh_store",
         "values::tests::measurement::codec_collector",
         "host::join_state_tests::canonical_call_future_first_poll_refusal_and_same_budget_fresh_store",
-        "host::join_state_tests::canonical_pending_future_first_poll_refusal_and_same_budget_fresh_store"
+        "host::join_state_tests::canonical_pending_future_first_poll_refusal_and_same_budget_fresh_store",
+        "host::join_state_tests::canonical_worker_function_first_poll_refusal_and_same_budget_fresh_store"
       ],
       "id": "latent-wasmtime.lib.latent-wasmtime",
       "ignoredLeaves": [
@@ -7580,11 +7582,12 @@
         "canonical_join_state_first_poll_refusal_and_same_budget_fresh_store",
         "codec_collector",
         "canonical_call_future_first_poll_refusal_and_same_budget_fresh_store",
-        "canonical_pending_future_first_poll_refusal_and_same_budget_fresh_store"
+        "canonical_pending_future_first_poll_refusal_and_same_budget_fresh_store",
+        "canonical_worker_function_first_poll_refusal_and_same_budget_fresh_store"
       ],
       "kind": "lib",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 488,
+      "minimumCases": 489,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [

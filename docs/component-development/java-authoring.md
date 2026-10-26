@@ -544,3 +544,18 @@ repeated for this cache-only source change.
 records all twelve original signed calls on a source-matched v11 host without
 Java/component recompilation. [The detailed runtime record](../runtime/java-activation-fibers.md#retained-public-fibers-through-the-normal-signed-node)
 retains the actual IDs, Store progress, cleanup samples, limits and remaining #741 gaps.
+
+## Published worker libraries through the normal signed node
+
+[The worker-library receipt](../testing/evidence/java-published-workers-runtime-2026-10-26.json)
+records twelve signed calls using ordinary Commons Lang3 3.14.0 and Hutool Core
+5.8.40 factories, one normally compiled component and a source-matched v12 host.
+All returned `42`, created fresh Stores and reached zero in the seven reported idle
+counters. Original Maven archives and deterministic selected JARs are separately
+bound. No application executor was injected; fixture callbacks use the existing
+declared activation wait and private JDK wait reference.
+
+The receipt also preserves 36 earlier thread/I/O/JDK-timer calls as separate v11
+evidence from the failed normal authoring run. Neither those observations nor the
+new twelve are retagged as later native cohorts. Full Java-profile and cost-model
+qualification, published timer-library behavior and whole #741 closure remain open.

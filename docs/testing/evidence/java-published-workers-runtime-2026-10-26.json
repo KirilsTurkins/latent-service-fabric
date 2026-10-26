@@ -1,0 +1,2963 @@
+{
+  "schemaVersion": "latent.java.published-workers-runtime-evidence.v1",
+  "status": "finite-signed-worker-library-cases-passed",
+  "qualifiedSource": {
+    "sourceRevision": "f2cfdf32d403e27c2f905ff6440453424d813c2d",
+    "localEquivalentCommit": "7f4094843e1bf7d55a7cdd38199c1b530514e81a",
+    "tree": "09d8154b4dbbd132b237966cc58f981cbd77a4e5",
+    "nativeInputs": 8926,
+    "javaInputs": 215,
+    "uniqueGitInputs": 9095,
+    "allBeforeAfterEqual": true,
+    "allGitBlobsMatched": true,
+    "eolTransforms": [
+      "tools/intellij.cmd"
+    ],
+    "canonicalInventory": {
+      "bytes": 1805003,
+      "sha256": "89427ff1972488b326e8d623b25ecaa7f414f4e7115fbec320820ba1b69786da"
+    }
+  },
+  "nativeCohort": "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-memory-v12",
+  "origin": {
+    "repository": "KirilsTurkins/latent-service-fabric",
+    "workflow": ".github/workflows/java-published-workers.yml",
+    "event": "push",
+    "branch": "feat/java-published-workers-20261026",
+    "run": 40259142691,
+    "job": 121367470716,
+    "attempt": 1,
+    "conclusion": "success",
+    "artifact": 12624311791,
+    "artifactName": "java-published-workers-f2cfdf32d403e27c2f905ff6440453424d813c2d",
+    "archive": {
+      "bytes": 6751089,
+      "sha256": "3eb237db8ea3df275482fb0f2774433d6310ede6034cc66d5c39bf9c5384f281"
+    },
+    "archiveMembers": 150,
+    "allCrcVerified": true,
+    "expandedBytes": 21449308,
+    "actionsArtifactIsPermanentArchive": false
+  },
+  "scope": {
+    "oneOrdinaryWorkerComponent": true,
+    "sourceMatchedNativeHarnessBuilt": true,
+    "compilerRecompiledComponent": true,
+    "llvmBuilt": false,
+    "applicationExecutorInjected": false,
+    "publishedPackagesModified": false,
+    "fixtureCallbacksUseDeclaredRuntimeWait": true,
+    "referenceKind": "private-runtime-wait-reference-using-JDK-threads",
+    "fullJavaProfileQualified": false,
+    "fullCostModelQualified": false,
+    "hermetic": false,
+    "compilerImplicitInputsAttested": false,
+    "whole741Closed": false,
+    "laterNativeCohortsExecutedByThisRun": false,
+    "statement": "unchanged ordinary library factories with explicit finite runtime-wait callbacks; no application executor injection, published timer client or complete profile claim"
+  },
+  "libraries": [
+    {
+      "id": "cn.hutool:hutool-core:5.8.40",
+      "originalDigest": "sha256:d6bedc908cba480cd12dbe6f8422fa60c0da31030b58a68c3c077f555fc0cbbc",
+      "selectedDigest": "sha256:98bbb79681cc7b9fbaf6ba34ab54d35557f0f6405799df5e87023c811ad7bf1c",
+      "original": {
+        "bytes": 1500560,
+        "sha256": "d6bedc908cba480cd12dbe6f8422fa60c0da31030b58a68c3c077f555fc0cbbc"
+      },
+      "selected": {
+        "bytes": 3344457,
+        "sha256": "98bbb79681cc7b9fbaf6ba34ab54d35557f0f6405799df5e87023c811ad7bf1c"
+      },
+      "selectedEntries": 932,
+      "originalEntryBytesPreserved": true
+    },
+    {
+      "id": "org.apache.commons:commons-lang3:3.14.0",
+      "originalDigest": "sha256:7b96bf3ee68949abb5bc465559ac270e0551596fa34523fddf890ec418dde13c",
+      "selectedDigest": "sha256:9948b2564eb3fd0fc0408b567b607f04e68a2a3bf7631a1faa64083022363514",
+      "original": {
+        "bytes": 657952,
+        "sha256": "7b96bf3ee68949abb5bc465559ac270e0551596fa34523fddf890ec418dde13c"
+      },
+      "selected": {
+        "bytes": 1515328,
+        "sha256": "9948b2564eb3fd0fc0408b567b607f04e68a2a3bf7631a1faa64083022363514"
+      },
+      "selectedEntries": 409,
+      "originalEntryBytesPreserved": true
+    }
+  ],
+  "capture": {
+    "status": "captured-not-executed",
+    "sourceModified": false,
+    "externalExecutorInjected": false,
+    "originalLibraries": {
+      "cn.hutool:hutool-core:5.8.40": "sha256:d6bedc908cba480cd12dbe6f8422fa60c0da31030b58a68c3c077f555fc0cbbc",
+      "org.apache.commons:commons-lang3:3.14.0": "sha256:7b96bf3ee68949abb5bc465559ac270e0551596fa34523fddf890ec418dde13c"
+    },
+    "capturedInputIdentity": "sha256:ef86de5ab739211b642ff0c248c5981d83f1af8d16a948bc9c78ae56d7fba30e",
+    "sdkLockDigest": "sha256:bcad7220a053a3946797e7c9b69307c7b42f2f0607b54075bb6e0624096c9dc0",
+    "applicationIdentity": "sha256:788952e51c50dc3ec15bdde2ac64935537ca867d147b3064d34058b4294866ff",
+    "selectedJars": [
+      {
+        "id": "cn.hutool:hutool-core:5.8.40",
+        "originalDigest": "sha256:d6bedc908cba480cd12dbe6f8422fa60c0da31030b58a68c3c077f555fc0cbbc",
+        "selectedDigest": "sha256:98bbb79681cc7b9fbaf6ba34ab54d35557f0f6405799df5e87023c811ad7bf1c"
+      },
+      {
+        "id": "org.apache.commons:commons-lang3:3.14.0",
+        "originalDigest": "sha256:7b96bf3ee68949abb5bc465559ac270e0551596fa34523fddf890ec418dde13c",
+        "selectedDigest": "sha256:9948b2564eb3fd0fc0408b567b607f04e68a2a3bf7631a1faa64083022363514"
+      }
+    ],
+    "classpathDigest": "sha256:d25366c447867d93b252b13f84afacfa49c2e48a973856f7b8b6b1374f3d068f"
+  },
+  "normalCompilerProduct": {
+    "normalVersion": "21.1.4-wasi-sdk-lsf-private-scalar-v1",
+    "sourceProfile": {
+      "bytes": 3105,
+      "sha256": "0f1d3c02be04e55599ae176156b7859c02d7f0cfa1ded6944b574ef5e86f7900"
+    },
+    "driverIdentity": {
+      "bytes": 112896,
+      "sha256": "2652b5c91dd9230bdac18a220d35a5c4c92ecd90653be7d0f8c24aff84a086e9"
+    },
+    "normalCommandShape": {
+      "bytes": 2021,
+      "sha256": "7d1958cc4912eb28bbc3d47e1ee4121e07922d18082befd394124ee806cc7190"
+    },
+    "linkedInventory": {
+      "bytes": 2772116,
+      "sha256": "057245a29ae0cc2a854521d2c3d34754965d750615e81e8be760e571cd194630"
+    },
+    "managedInventory": {
+      "bytes": 2771269,
+      "sha256": "24c4f39cd783851741aebe01e9ecc7fe36f35df4c488d1f44221ceec5ab01019"
+    }
+  },
+  "compilerInputInventory": {
+    "files": 10860,
+    "rawRecord": {
+      "bytes": 2912106,
+      "sha256": "281a0b32d7b8a1821fad5fe1f59bae659df0af80e42b69b51c2d5c7004e7b098"
+    },
+    "implicitInputsAttested": false
+  },
+  "component": {
+    "bytes": 2770771,
+    "sha256": "b3e82ac703bed2bde4ac5c7019b1306a4b048abba02cc794df86dde97ab0a4a3"
+  },
+  "source": {
+    "bytes": 4551,
+    "sha256": "7b1716af2f7b4075068c476c9d84730b4733e1275903ea8acd50e62af5e6ecf2"
+  },
+  "wit": {
+    "bytes": 340,
+    "sha256": "14c7bb47a7634153b4dcf39473a31f7f87f971f8c90a602b378be498dc938236"
+  },
+  "compilerRecordPreserved": {
+    "raw": {
+      "bytes": 164254,
+      "sha256": "4b7465cd3fd79967479898989f05b546701670487148af2778562dfb831f27aa"
+    },
+    "status": "component-built-unqualified",
+    "qualification": "pending",
+    "nodeExecution": "not-run",
+    "compilerSeconds": 104.937916,
+    "compilerRecipeInputs": 103,
+    "sdkInputs": 171,
+    "referenceJdkIterations": [
+      {
+        "iteration": 0,
+        "modes": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "results": [
+          42,
+          42,
+          42,
+          42
+        ]
+      },
+      {
+        "iteration": 1,
+        "modes": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "results": [
+          42,
+          42,
+          42,
+          42
+        ]
+      },
+      {
+        "iteration": 2,
+        "modes": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "results": [
+          42,
+          42,
+          42,
+          42
+        ]
+      }
+    ]
+  },
+  "sourceControls": {
+    "passed": 4,
+    "skipped": 0,
+    "stderr": {
+      "bytes": 1014,
+      "sha256": "dbb57c4bcd3ce735a477549b61320c4231b534088065ae2f815284c7a5c56a50"
+    }
+  },
+  "normalCompilerCommands": [
+    {
+      "stage": "java-version",
+      "exitCode": 0,
+      "seconds": 0.035754,
+      "command": {
+        "path": "compiler/0-java-version.command.json",
+        "bytes": 188,
+        "sha256": "e83ecdb7a722688ba9993a3a3b5f6477e30fbc230734f8a17c1eec21ed287f91"
+      },
+      "log": {
+        "path": "compiler/0-java-version.log",
+        "bytes": 201,
+        "sha256": "dc52985e291a871cd813e0ec48efca3a22da113e8faae9101f126c3d6b16ce36"
+      }
+    },
+    {
+      "stage": "gradle-version",
+      "exitCode": 0,
+      "seconds": 0.555643,
+      "command": {
+        "path": "compiler/1-gradle-version.command.json",
+        "bytes": 173,
+        "sha256": "c7d428f844940d2a147d6e214992b9398cc0e3c8a5708807c64b0d3b00889868"
+      },
+      "log": {
+        "path": "compiler/1-gradle-version.log",
+        "bytes": 806,
+        "sha256": "23dbdfcf47bece482ed891afa796d00ff6c97ea7b8ffebe27bb26c989dbb0a93"
+      }
+    },
+    {
+      "stage": "clang-version",
+      "exitCode": 0,
+      "seconds": 0.015474,
+      "command": {
+        "path": "compiler/2-clang-version.command.json",
+        "bytes": 188,
+        "sha256": "77c889942e13acb37f9ec838eb57bf3c1fe35f7fddfa1407a373b71d8fd929c9"
+      },
+      "log": {
+        "path": "compiler/2-clang-version.log",
+        "bytes": 275,
+        "sha256": "91c5ecee859cc8ca86d3d5deabba3b14841e857b4cc4912d51a2feb27bf87180"
+      }
+    },
+    {
+      "stage": "wit-bindgen-version",
+      "exitCode": 0,
+      "seconds": 0.015432,
+      "command": {
+        "path": "compiler/3-wit-bindgen-version.command.json",
+        "bytes": 174,
+        "sha256": "1e7725ba85c7e59500a55d2f0e88059bc02d84d9d9d844bcbe9fb87aa61df3da"
+      },
+      "log": {
+        "path": "compiler/3-wit-bindgen-version.log",
+        "bytes": 24,
+        "sha256": "54a3b7f07a7f22e6db46237d76553a5024aa175f6e8966d2db7111e653d9cf42"
+      }
+    },
+    {
+      "stage": "wasm-tools-version",
+      "exitCode": 0,
+      "seconds": 0.015363,
+      "command": {
+        "path": "compiler/4-wasm-tools-version.command.json",
+        "bytes": 158,
+        "sha256": "6ab2dab2ac73e0ee9ae558e281a7c780e0574b27c995275635a6eefc40a94f4b"
+      },
+      "log": {
+        "path": "compiler/4-wasm-tools-version.log",
+        "bytes": 43,
+        "sha256": "a9d05a8e1e1fd8ceb59716d851f535e44be83f11d8a2d6ff21b95fb6aafa39df"
+      }
+    },
+    {
+      "stage": "wit-graph",
+      "exitCode": 0,
+      "seconds": 0.015404,
+      "command": {
+        "path": "compiler/5-wit-graph.command.json",
+        "bytes": 249,
+        "sha256": "393526fed8dce1864377b73986390165582452219c8f9205112c9c2f4158b7c2"
+      },
+      "log": {
+        "path": "compiler/5-wit-graph.log",
+        "bytes": 41883,
+        "sha256": "5d5d27b6acbdb5d606bd21ac1a48355b6b9bcfe3b675ec3217279615cdec895a"
+      }
+    },
+    {
+      "stage": "wit-bindings",
+      "exitCode": 0,
+      "seconds": 0.015294,
+      "command": {
+        "path": "compiler/6-wit-bindings.command.json",
+        "bytes": 463,
+        "sha256": "5de162a653260cb34d54ceeeab75f05feceb9342d7ab6ea666daef743821df40"
+      },
+      "log": {
+        "path": "compiler/6-wit-bindings.log",
+        "bytes": 298,
+        "sha256": "6d57163bc710ca53470a8a62684683d9e08faff7a157ae36f0becda676334250"
+      }
+    },
+    {
+      "stage": "bindings-metadata",
+      "exitCode": 0,
+      "seconds": 0.015423,
+      "command": {
+        "path": "compiler/7-bindings-metadata.command.json",
+        "bytes": 271,
+        "sha256": "c8a03b6bd5ebaeb89fb78179ab2e826490ddb211e3daf200668a419fb5e5fad2"
+      },
+      "log": {
+        "path": "compiler/7-bindings-metadata.log",
+        "bytes": 8431,
+        "sha256": "16ad67914b30acd8ddc8f7336d9e9e20d2be36f535756bb2dc329a2ab34b371b"
+      }
+    },
+    {
+      "stage": "reference-jdk-compile",
+      "exitCode": 0,
+      "seconds": 0.844189,
+      "command": {
+        "path": "compiler/8-reference-jdk-compile.command.json",
+        "bytes": 1269,
+        "sha256": "8724e7e8ac1e2264c3191df1ab6a4d7c8792d42d749d48a58c8ae44dbe195d7f"
+      },
+      "log": {
+        "path": "compiler/8-reference-jdk-compile.log",
+        "bytes": 1,
+        "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      }
+    },
+    {
+      "stage": "reference-jdk-0",
+      "exitCode": 0,
+      "seconds": 1.078165,
+      "command": {
+        "path": "compiler/9-reference-jdk-0.command.json",
+        "bytes": 456,
+        "sha256": "6956ab40829e980db47f08890d0513c890ed2711c1b9857577ec6f95b3376b7f"
+      },
+      "log": {
+        "path": "compiler/9-reference-jdk-0.log",
+        "bytes": 13,
+        "sha256": "fdf2e0802b6ef92c6fa71955aa4ef252f4af6c420fe8e5a4679f3a7b7e2a22f6"
+      }
+    },
+    {
+      "stage": "reference-jdk-1",
+      "exitCode": 0,
+      "seconds": 1.079604,
+      "command": {
+        "path": "compiler/10-reference-jdk-1.command.json",
+        "bytes": 456,
+        "sha256": "0d563255369442960f15640df6acd4de0210382eca50578cf1ab46e89859b041"
+      },
+      "log": {
+        "path": "compiler/10-reference-jdk-1.log",
+        "bytes": 13,
+        "sha256": "fdf2e0802b6ef92c6fa71955aa4ef252f4af6c420fe8e5a4679f3a7b7e2a22f6"
+      }
+    },
+    {
+      "stage": "reference-jdk-2",
+      "exitCode": 0,
+      "seconds": 1.079755,
+      "command": {
+        "path": "compiler/11-reference-jdk-2.command.json",
+        "bytes": 456,
+        "sha256": "fb4b601594ceddce5d80241484167b12fe99bdbf24e6f4de3a794ae9f949a468"
+      },
+      "log": {
+        "path": "compiler/11-reference-jdk-2.log",
+        "bytes": 13,
+        "sha256": "fdf2e0802b6ef92c6fa71955aa4ef252f4af6c420fe8e5a4679f3a7b7e2a22f6"
+      }
+    },
+    {
+      "stage": "completable-reference-compile",
+      "exitCode": 0,
+      "seconds": 1.009202,
+      "command": {
+        "path": "compiler/12-completable-reference-compile.command.json",
+        "bytes": 634,
+        "sha256": "5f830bd9f4e3e381259eb2c8eabcd9488d96321594e01083ae691a7ee7c22374"
+      },
+      "log": {
+        "path": "compiler/12-completable-reference-compile.log",
+        "bytes": 1,
+        "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      }
+    },
+    {
+      "stage": "completable-reference-run",
+      "exitCode": 0,
+      "seconds": 0.07646,
+      "command": {
+        "path": "compiler/13-completable-reference-run.command.json",
+        "bytes": 326,
+        "sha256": "a738d5f2c3c034bd098a0856cd6e9649167c38a375c14a9e6f2fae9bda7f714d"
+      },
+      "log": {
+        "path": "compiler/13-completable-reference-run.log",
+        "bytes": 55,
+        "sha256": "dde87e351ce9c1f242332571a8b11ee53cce09ae623b61a0ebaacc2ff44c7b3b"
+      }
+    },
+    {
+      "stage": "completable-executor-reference-run",
+      "exitCode": 0,
+      "seconds": 0.056049,
+      "command": {
+        "path": "compiler/14-completable-executor-reference-run.command.json",
+        "bytes": 352,
+        "sha256": "0c2066bbf1a06229fe2ea93ee707f4d639f0fe2782a32952f8c45f91528aca1f"
+      },
+      "log": {
+        "path": "compiler/14-completable-executor-reference-run.log",
+        "bytes": 1075,
+        "sha256": "925d0730fbc2f7775d197d7c8306491908547ced0cd1c841d5a55b5e527d705e"
+      }
+    },
+    {
+      "stage": "completable-source-compile",
+      "exitCode": 0,
+      "seconds": 1.462237,
+      "command": {
+        "path": "compiler/15-completable-source-compile.command.json",
+        "bytes": 2141,
+        "sha256": "ef0028d6b8acadb42942053330a25ab7f1f7d36d3d0752cece6a2df2b8a30c10"
+      },
+      "log": {
+        "path": "compiler/15-completable-source-compile.log",
+        "bytes": 1,
+        "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      }
+    },
+    {
+      "stage": "completable-source-run",
+      "exitCode": 0,
+      "seconds": 0.126926,
+      "command": {
+        "path": "compiler/16-completable-source-run.command.json",
+        "bytes": 311,
+        "sha256": "8894cce8c57987c1e403b83e7c7312bad8100bbe3e53877fbee0531093c6bb9b"
+      },
+      "log": {
+        "path": "compiler/16-completable-source-run.log",
+        "bytes": 123,
+        "sha256": "18fc0518a14e7f1ba47ccf2440b296e25161d75e81d0f1235d6bfb8de79e9f41"
+      }
+    },
+    {
+      "stage": "completable-executor-source-run",
+      "exitCode": 0,
+      "seconds": 0.056209,
+      "command": {
+        "path": "compiler/17-completable-executor-source-run.command.json",
+        "bytes": 347,
+        "sha256": "5416732a2248bed05498ed6e241ddfbad23fd4438567dc0c19f4f81a08a2aacc"
+      },
+      "log": {
+        "path": "compiler/17-completable-executor-source-run.log",
+        "bytes": 1075,
+        "sha256": "925d0730fbc2f7775d197d7c8306491908547ced0cd1c841d5a55b5e527d705e"
+      }
+    },
+    {
+      "stage": "completable-executor-owners-run",
+      "exitCode": 0,
+      "seconds": 0.056157,
+      "command": {
+        "path": "compiler/18-completable-executor-owners-run.command.json",
+        "bytes": 348,
+        "sha256": "3f9dce5e79a457945888726ee6b07fab2aea2c7db5c27811ac99f5e50fba6596"
+      },
+      "log": {
+        "path": "compiler/18-completable-executor-owners-run.log",
+        "bytes": 66,
+        "sha256": "f17873cf9129c18438f1e12ae9cc73ee4f530ff28e98fad693d80aafb945f697"
+      }
+    },
+    {
+      "stage": "completable-executor-uncertain-run",
+      "exitCode": 0,
+      "seconds": 5.051242,
+      "command": {
+        "path": "compiler/19-completable-executor-uncertain-run.command.json",
+        "bytes": 350,
+        "sha256": "cbd0e600475ee66a5960f9f8c3dbf23ba2bb2a8e6944459ff7e5740d989ebbb3"
+      },
+      "log": {
+        "path": "compiler/19-completable-executor-uncertain-run.log",
+        "bytes": 133,
+        "sha256": "3edd51a31be86a9d8274387ac8af9511f13ce6fa04e5390ff5b58b92d0f182f8"
+      }
+    },
+    {
+      "stage": "activation-profile-wit",
+      "exitCode": 0,
+      "seconds": 0.01523,
+      "command": {
+        "path": "compiler/20-activation-profile-wit.command.json",
+        "bytes": 244,
+        "sha256": "7e8b9362af2e1b1f870043d46624e88fff97c1423407fb821138b5ed32ad5c53"
+      },
+      "log": {
+        "path": "compiler/20-activation-profile-wit.log",
+        "bytes": 10938,
+        "sha256": "f97649dda7bf85e06db8c8eeb346114d56ca3093b55282b02358b4b405606ae9"
+      }
+    },
+    {
+      "stage": "wit-graph",
+      "exitCode": 0,
+      "seconds": 0.015054,
+      "command": {
+        "path": "compiler/21-wit-graph.command.json",
+        "bytes": 232,
+        "sha256": "debcaa4ec827f490615848d42fded1040f9b359e4db8a0b37216f6f38867ddb3"
+      },
+      "log": {
+        "path": "compiler/21-wit-graph.log",
+        "bytes": 10938,
+        "sha256": "f97649dda7bf85e06db8c8eeb346114d56ca3093b55282b02358b4b405606ae9"
+      }
+    },
+    {
+      "stage": "wit-bindings",
+      "exitCode": 0,
+      "seconds": 0.015054,
+      "command": {
+        "path": "compiler/22-wit-bindings.command.json",
+        "bytes": 576,
+        "sha256": "f6026fc0d333e1f0abd06c1581ee198390193e64722f265a93bac846d915af0c"
+      },
+      "log": {
+        "path": "compiler/22-wit-bindings.log",
+        "bytes": 247,
+        "sha256": "0ce54ad10104814350f45f62b6039d08ff552415af3fecd8b02ee49f880e616e"
+      }
+    },
+    {
+      "stage": "bindings-metadata",
+      "exitCode": 0,
+      "seconds": 0.015112,
+      "command": {
+        "path": "compiler/23-bindings-metadata.command.json",
+        "bytes": 254,
+        "sha256": "7789fdd196645ea1e20e393ea2bfb427d2727005b73d57792a2b7aba47f3b9a8"
+      },
+      "log": {
+        "path": "compiler/23-bindings-metadata.log",
+        "bytes": 2276,
+        "sha256": "9b32f1bf90ec37d58b164e26703bbae8a84849bc70649c5ccd518d26e0d18497"
+      }
+    },
+    {
+      "stage": "wit-graph",
+      "exitCode": 0,
+      "seconds": 0.017092,
+      "command": {
+        "path": "compiler/24-wit-graph.command.json",
+        "bytes": 232,
+        "sha256": "142b96282d79e477a85d6794c97726e8399040f5d8328243b4c79e0778c8cdd8"
+      },
+      "log": {
+        "path": "compiler/24-wit-graph.log",
+        "bytes": 10938,
+        "sha256": "f97649dda7bf85e06db8c8eeb346114d56ca3093b55282b02358b4b405606ae9"
+      }
+    },
+    {
+      "stage": "wit-bindings",
+      "exitCode": 0,
+      "seconds": 0.018159,
+      "command": {
+        "path": "compiler/25-wit-bindings.command.json",
+        "bytes": 582,
+        "sha256": "163466f82d2b6e8e748e74295dd09324bbec137ca1f9192a22876b87c86acf57"
+      },
+      "log": {
+        "path": "compiler/25-wit-bindings.log",
+        "bytes": 265,
+        "sha256": "634bf6a511d932a357faa635edca6bb7e4fcbd87edbad6edb2b1024536d525ba"
+      }
+    },
+    {
+      "stage": "bindings-metadata",
+      "exitCode": 0,
+      "seconds": 0.015805,
+      "command": {
+        "path": "compiler/26-bindings-metadata.command.json",
+        "bytes": 260,
+        "sha256": "19e588c9e6ab29d634abc2866816ffc131dd8cfc47605be0d4b5e4488bd78558"
+      },
+      "log": {
+        "path": "compiler/26-bindings-metadata.log",
+        "bytes": 2276,
+        "sha256": "9b32f1bf90ec37d58b164e26703bbae8a84849bc70649c5ccd518d26e0d18497"
+      }
+    },
+    {
+      "stage": "java-source-origins",
+      "exitCode": 0,
+      "seconds": 0.893096,
+      "command": {
+        "path": "compiler/27-java-source-origins.command.json",
+        "bytes": 350,
+        "sha256": "23f611c708eb194bd36574f5b0ed06a9bd5bd7c421f7c55456a40f94625df687"
+      },
+      "log": {
+        "path": "compiler/27-java-source-origins.log",
+        "bytes": 113,
+        "sha256": "6b2f3640a203af9efa2553e10c262fc80ae7806c89fc0303a146ca6e33605758"
+      }
+    },
+    {
+      "stage": "java-owned-classes",
+      "exitCode": 0,
+      "seconds": 14.943185,
+      "command": {
+        "path": "compiler/28-java-owned-classes.command.json",
+        "bytes": 195,
+        "sha256": "887da4b194636c732bae5977dee76e81d23e44a665fe4b83a8800034f4b69b4e"
+      },
+      "log": {
+        "path": "compiler/28-java-owned-classes.log",
+        "bytes": 535,
+        "sha256": "ce74f8b4d1d6b1dfe41a0075d047fd8a774afece5339f4201f12d12cb6e7bb3e"
+      }
+    },
+    {
+      "stage": "java-coroutine-patch",
+      "exitCode": 0,
+      "seconds": 1.491177,
+      "command": {
+        "path": "compiler/29-java-coroutine-patch.command.json",
+        "bytes": 6196,
+        "sha256": "aafb1567218ee1b738a23d1632aa94bc32ef86f8570c39423771443d3a2b2c72"
+      },
+      "log": {
+        "path": "compiler/29-java-coroutine-patch.log",
+        "bytes": 1,
+        "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      }
+    },
+    {
+      "stage": "java-coroutine-original-control",
+      "exitCode": 0,
+      "seconds": 0.137251,
+      "command": {
+        "path": "compiler/30-java-coroutine-original-control.command.json",
+        "bytes": 5571,
+        "sha256": "955416e7698a6fbff0f99520294b6fe915ab74c05dae6b6dfae433f983563414"
+      },
+      "log": {
+        "path": "compiler/30-java-coroutine-original-control.log",
+        "bytes": 90,
+        "sha256": "01c538693a3632d25520419458df49878381435cf3447bbbf057656177ec326f"
+      }
+    },
+    {
+      "stage": "java-coroutine-monitor-original-control",
+      "exitCode": 0,
+      "seconds": 0.136919,
+      "command": {
+        "path": "compiler/31-java-coroutine-monitor-original-control.command.json",
+        "bytes": 5577,
+        "sha256": "9b7b7d1c1c5c589801954a717d383dc406cab7e0106c30c87ccbc913866c3f58"
+      },
+      "log": {
+        "path": "compiler/31-java-coroutine-monitor-original-control.log",
+        "bytes": 90,
+        "sha256": "51845c53fd413c79c1c4e61c01fee793d8425ef808a2fd09d4f9bd3d34d85795"
+      }
+    },
+    {
+      "stage": "java-coroutine-corrected-control",
+      "exitCode": 0,
+      "seconds": 0.157273,
+      "command": {
+        "path": "compiler/32-java-coroutine-corrected-control.command.json",
+        "bytes": 5486,
+        "sha256": "34bb4e0746f2ed8e55649057205e57f0c4a49c035ed84abcb505f6c54fe57cef"
+      },
+      "log": {
+        "path": "compiler/32-java-coroutine-corrected-control.log",
+        "bytes": 91,
+        "sha256": "4828f5d55aa6bab7d28b8266afd76eaca05911722b3338c1d23abc56c65b7d51"
+      }
+    },
+    {
+      "stage": "java-coroutine-monitor-corrected-control",
+      "exitCode": 0,
+      "seconds": 0.137031,
+      "command": {
+        "path": "compiler/33-java-coroutine-monitor-corrected-control.command.json",
+        "bytes": 5492,
+        "sha256": "68478703fb9b706c9b9ed620c3b0b68b4a6b9205b5bfe72578867ed2e15f02c1"
+      },
+      "log": {
+        "path": "compiler/33-java-coroutine-monitor-corrected-control.log",
+        "bytes": 91,
+        "sha256": "36ae283936a6b418b41521d8b079dfcea962b00da32322146ab4bbc64b99ab53"
+      }
+    },
+    {
+      "stage": "java-coroutine-copy-cost-control",
+      "exitCode": 0,
+      "seconds": 0.13702,
+      "command": {
+        "path": "compiler/34-java-coroutine-copy-cost-control.command.json",
+        "bytes": 5485,
+        "sha256": "7ecc21d34e0a8bac46d7b1b73dbb76e3387b9801c5c24d46a28c89982f363609"
+      },
+      "log": {
+        "path": "compiler/34-java-coroutine-copy-cost-control.log",
+        "bytes": 146,
+        "sha256": "ba65ac55e8818fb9bd9267963f0b59d24ca66ae05bb1d9cc6a2082e7d18bc1c3"
+      }
+    },
+    {
+      "stage": "java-to-c",
+      "exitCode": 0,
+      "seconds": 18.288531,
+      "command": {
+        "path": "compiler/35-java-to-c.command.json",
+        "bytes": 188,
+        "sha256": "aa8b6a72beb989e477e336776f0bcedd71340ab211ea7660ee2d6e1b2d9ce218"
+      },
+      "log": {
+        "path": "compiler/35-java-to-c.log",
+        "bytes": 921,
+        "sha256": "5f8480f745dd8ea21f4888bbca9f7b5cfe7fc1284c9a8bf47d0056d0698a5ec5"
+      }
+    },
+    {
+      "stage": "c-to-wasm",
+      "exitCode": 0,
+      "seconds": 24.55546,
+      "command": {
+        "path": "compiler/36-c-to-wasm.command.json",
+        "bytes": 1445,
+        "sha256": "04a09bd64c26d74c351748f62c679d2fbfff56b323ffd32a5aead6401757e3e4"
+      },
+      "log": {
+        "path": "compiler/36-c-to-wasm.log",
+        "bytes": 347616,
+        "sha256": "3ce2ac9e788d5525707228d605308e3bd4195029a5e16e80e954c9578e0f4367"
+      }
+    },
+    {
+      "stage": "closed-runtime",
+      "exitCode": 0,
+      "seconds": 0.015174,
+      "command": {
+        "path": "compiler/37-closed-runtime.command.json",
+        "bytes": 462,
+        "sha256": "e821c22df58e40a2317a03f618efa0e3bf937149944bcec3d4655e576a5293e3"
+      },
+      "log": {
+        "path": "compiler/37-closed-runtime.log",
+        "bytes": 1,
+        "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      }
+    },
+    {
+      "stage": "component-new",
+      "exitCode": 0,
+      "seconds": 0.035344,
+      "command": {
+        "path": "compiler/38-component-new.command.json",
+        "bytes": 419,
+        "sha256": "84f3cc6d21fdf9e23a0d2a0bc3b5857e81d79eda6f5087e39ab1443cce497852"
+      },
+      "log": {
+        "path": "compiler/38-component-new.log",
+        "bytes": 1,
+        "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      }
+    },
+    {
+      "stage": "component-validate",
+      "exitCode": 0,
+      "seconds": 0.015214,
+      "command": {
+        "path": "compiler/39-component-validate.command.json",
+        "bytes": 274,
+        "sha256": "bceda1b7701722201c824c16856a40713b557c51715002d2c4e322add92f69b8"
+      },
+      "log": {
+        "path": "compiler/39-component-validate.log",
+        "bytes": 1,
+        "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      }
+    },
+    {
+      "stage": "component-surface",
+      "exitCode": 0,
+      "seconds": 0.015111,
+      "command": {
+        "path": "compiler/40-component-surface.command.json",
+        "bytes": 237,
+        "sha256": "6e0ec7cf2593a86b31b34ea8c4eb1a8e79b0cd5fa80b4b9f8239a0968d8f878a"
+      },
+      "log": {
+        "path": "compiler/40-component-surface.log",
+        "bytes": 2121,
+        "sha256": "be2251aac61b2924b53e41004130ce9114b288a4398e2ed4afcde6ac535d3f85"
+      }
+    },
+    {
+      "stage": "expected-wit",
+      "exitCode": 0,
+      "seconds": 0.015052,
+      "command": {
+        "path": "compiler/41-expected-wit.command.json",
+        "bytes": 235,
+        "sha256": "e5d00a82e67b19b65637b988a81d0ec07115718baf053e356c582c60cea686df"
+      },
+      "log": {
+        "path": "compiler/41-expected-wit.log",
+        "bytes": 10938,
+        "sha256": "f97649dda7bf85e06db8c8eeb346114d56ca3093b55282b02358b4b405606ae9"
+      }
+    },
+    {
+      "stage": "compiled-wit",
+      "exitCode": 0,
+      "seconds": 0.014882,
+      "command": {
+        "path": "compiler/42-compiled-wit.command.json",
+        "bytes": 246,
+        "sha256": "a9958704a1e30e2950c5eb123436e839ea39aff0d71d437932a89f7a579582b3"
+      },
+      "log": {
+        "path": "compiler/42-compiled-wit.log",
+        "bytes": 9432,
+        "sha256": "724880ec390f7098aa96e0d772fcd17dbefbee9c5e626c186684c8f617ce54b2"
+      }
+    },
+    {
+      "stage": "throwable-model-compile",
+      "exitCode": 0,
+      "seconds": 0.844449,
+      "command": {
+        "path": "compiler/43-throwable-model-compile.command.json",
+        "bytes": 2470,
+        "sha256": "acccf05deeb5477490d230fcad0771a87d7414459b3409c7345456a7b35f1e8a"
+      },
+      "log": {
+        "path": "compiler/43-throwable-model-compile.log",
+        "bytes": 1,
+        "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      }
+    },
+    {
+      "stage": "throwable-model-control",
+      "exitCode": 0,
+      "seconds": 0.238188,
+      "command": {
+        "path": "compiler/44-throwable-model-control.command.json",
+        "bytes": 2184,
+        "sha256": "ce763f9aeb9eb5680dc3d0bb6395d1a51fc26007bb0aec194df40f2ba92c4605"
+      },
+      "log": {
+        "path": "compiler/44-throwable-model-control.log",
+        "bytes": 165,
+        "sha256": "2d5460d9ccafae047ee5b8c77a2f4ba5b929525bb75972913dd54266ae06e313"
+      }
+    },
+    {
+      "stage": "timeunit-model-compile",
+      "exitCode": 0,
+      "seconds": 0.986894,
+      "command": {
+        "path": "compiler/45-timeunit-model-compile.command.json",
+        "bytes": 2889,
+        "sha256": "cca797ab0f07da35e255be87bf85657de52cc17e207097e92ae2295de237f407"
+      },
+      "log": {
+        "path": "compiler/45-timeunit-model-compile.log",
+        "bytes": 1,
+        "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      }
+    },
+    {
+      "stage": "timeunit-model-control",
+      "exitCode": 0,
+      "seconds": 0.218197,
+      "command": {
+        "path": "compiler/46-timeunit-model-control.command.json",
+        "bytes": 2172,
+        "sha256": "3cdd9039223e4babbbf673b5b83298ff2f7d4eb8f94354ef589746adf85743fd"
+      },
+      "log": {
+        "path": "compiler/46-timeunit-model-control.log",
+        "bytes": 174,
+        "sha256": "9d13e90d23a3faa6f144f76752b2265622ddc8aa868c8e3fb5b0ea98f8640f02"
+      }
+    },
+    {
+      "stage": "timeunit-native-control",
+      "exitCode": 0,
+      "seconds": 0.045646,
+      "command": {
+        "path": "compiler/47-timeunit-native-control.command.json",
+        "bytes": 302,
+        "sha256": "4a744fed1863a638a32c6fa57cd07efd29582eb11bef47a2e0183ec34cedf42e"
+      },
+      "log": {
+        "path": "compiler/47-timeunit-native-control.log",
+        "bytes": 49,
+        "sha256": "8b23a3a821f75596ba7ec3bffe4449716a1fdbf3f560b42ad2e9a37622d4ae5c"
+      }
+    },
+    {
+      "stage": "wait-frame-model-compile",
+      "exitCode": 0,
+      "seconds": 1.30458,
+      "command": {
+        "path": "compiler/48-wait-frame-model-compile.command.json",
+        "bytes": 4351,
+        "sha256": "20b87c6fedbdcd102f034c7b4ddddeed84c69bbff5f126c7b5387824a65fd8ef"
+      },
+      "log": {
+        "path": "compiler/48-wait-frame-model-compile.log",
+        "bytes": 1,
+        "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      }
+    },
+    {
+      "stage": "wait-frame-model-control",
+      "exitCode": 0,
+      "seconds": 0.384661,
+      "command": {
+        "path": "compiler/49-wait-frame-model-control.command.json",
+        "bytes": 2365,
+        "sha256": "a4401a648c76873e377dd25baa2a06765368061eb37e12403e70d7488c790e63"
+      },
+      "log": {
+        "path": "compiler/49-wait-frame-model-control.log",
+        "bytes": 345,
+        "sha256": "938db7e1f6fa76e3fe16c6b43c97c8ca57025ec15551312cfbf467daae36d41d"
+      }
+    },
+    {
+      "stage": "queue-deadline-model-control",
+      "exitCode": 0,
+      "seconds": 0.197796,
+      "command": {
+        "path": "compiler/50-queue-deadline-model-control.command.json",
+        "bytes": 2373,
+        "sha256": "6f37e2d7747b9de326ce199bf728019b0ccffe80521181dfe92608b4030e8cf3"
+      },
+      "log": {
+        "path": "compiler/50-queue-deadline-model-control.log",
+        "bytes": 138,
+        "sha256": "e5c6024023f39bdea1633e3ca27ca8e9d067d45ac4e50b9b5492923fcfb7d8e5"
+      }
+    },
+    {
+      "stage": "timer-readiness-source-compile",
+      "exitCode": 0,
+      "seconds": 1.130682,
+      "command": {
+        "path": "compiler/51-timer-readiness-source-compile.command.json",
+        "bytes": 3349,
+        "sha256": "24ce40cd1a371814cf703eae926c09365fc13fe6cb21cae75689a3a70b555f4f"
+      },
+      "log": {
+        "path": "compiler/51-timer-readiness-source-compile.log",
+        "bytes": 1,
+        "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      }
+    },
+    {
+      "stage": "timer-readiness-source-control",
+      "exitCode": 0,
+      "seconds": 0.106757,
+      "command": {
+        "path": "compiler/52-timer-readiness-source-control.command.json",
+        "bytes": 2364,
+        "sha256": "0a636c82079c742b4fd930eb18cd5815f1b0e266cb5c43d23124b94ad2c3fcf7"
+      },
+      "log": {
+        "path": "compiler/52-timer-readiness-source-control.log",
+        "bytes": 216,
+        "sha256": "2bf33c1af037cce056eea17ca78630e1e275a82ac82f038d33a7803d4cd60207"
+      }
+    },
+    {
+      "stage": "completable-model-compile",
+      "exitCode": 0,
+      "seconds": 1.645389,
+      "command": {
+        "path": "compiler/53-completable-model-compile.command.json",
+        "bytes": 5652,
+        "sha256": "96c28b97052a5d69553168409528b12910b177534eaf34289ae884baad866a01"
+      },
+      "log": {
+        "path": "compiler/53-completable-model-compile.log",
+        "bytes": 1,
+        "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      }
+    },
+    {
+      "stage": "completable-model-control",
+      "exitCode": 0,
+      "seconds": 0.636623,
+      "command": {
+        "path": "compiler/54-completable-model-control.command.json",
+        "bytes": 2375,
+        "sha256": "e073cad77672612a82d8f6e1d7f80b8cdd048237673fe981d393eafdb687dd27"
+      },
+      "log": {
+        "path": "compiler/54-completable-model-control.log",
+        "bytes": 272,
+        "sha256": "64eafef96dde6bf7d15a6d738f5a857dbf321e6c69e71ccb86cc73e165919de3"
+      }
+    },
+    {
+      "stage": "completable-field-model-control",
+      "exitCode": 0,
+      "seconds": 0.443474,
+      "command": {
+        "path": "compiler/55-completable-field-model-control.command.json",
+        "bytes": 2386,
+        "sha256": "14c10b6f0e8053e5694324a16d88339be248e9960377d326f2b3a1e908ae8e46"
+      },
+      "log": {
+        "path": "compiler/55-completable-field-model-control.log",
+        "bytes": 131,
+        "sha256": "8e1d990d46ca95617a4bb8be8138930d295fd86d42e9cb194f7ab21d370a1e68"
+      }
+    }
+  ],
+  "nativeAndToolCommands": [
+    {
+      "stage": "source-paths",
+      "exitCode": 0,
+      "seconds": 0.078266
+    },
+    {
+      "stage": "source-controls",
+      "exitCode": 0,
+      "seconds": 1.91721
+    },
+    {
+      "stage": "gradle-download",
+      "exitCode": 0,
+      "seconds": 0.591652
+    },
+    {
+      "stage": "gradle-unpack",
+      "exitCode": 0,
+      "seconds": 0.95923
+    },
+    {
+      "stage": "wit-bindgen-install",
+      "exitCode": 0,
+      "seconds": 0.389649
+    },
+    {
+      "stage": "build-harness",
+      "exitCode": 0,
+      "seconds": 234.475454
+    },
+    {
+      "stage": "rust-library-path",
+      "exitCode": 0,
+      "seconds": 0.01522
+    },
+    {
+      "stage": "list-exact-case",
+      "exitCode": 0,
+      "seconds": 0.014723
+    },
+    {
+      "stage": "execute-exact-case",
+      "exitCode": 0,
+      "seconds": 14.353102
+    }
+  ],
+  "actualSignedExecution": {
+    "case": "runtime::signed_java_published_libraries_use_unchanged_default_workers",
+    "passed": 1,
+    "failed": 0,
+    "ignored": 0,
+    "filteredOut": 51,
+    "setupMicroseconds": 7966108,
+    "calls": [
+      {
+        "activationId": "java-worker-libraries-0-0",
+        "activeReservations": 0,
+        "brokerBufferBytes": 0,
+        "brokerCalls": 0,
+        "brokerHandles": 0,
+        "brokerResults": 0,
+        "brokerSessions": 0,
+        "cpuFuel": 7129792,
+        "iteration": 0,
+        "liveStores": 0,
+        "mode": 0,
+        "reportedPeakMemoryBytes": 10012306,
+        "storesBefore": 0,
+        "storesCreated": 1,
+        "value": 42
+      },
+      {
+        "activationId": "java-worker-libraries-0-1",
+        "activeReservations": 0,
+        "brokerBufferBytes": 0,
+        "brokerCalls": 0,
+        "brokerHandles": 0,
+        "brokerResults": 0,
+        "brokerSessions": 0,
+        "cpuFuel": 7002284,
+        "iteration": 0,
+        "liveStores": 0,
+        "mode": 1,
+        "reportedPeakMemoryBytes": 10012306,
+        "storesBefore": 1,
+        "storesCreated": 2,
+        "value": 42
+      },
+      {
+        "activationId": "java-worker-libraries-0-2",
+        "activeReservations": 0,
+        "brokerBufferBytes": 0,
+        "brokerCalls": 0,
+        "brokerHandles": 0,
+        "brokerResults": 0,
+        "brokerSessions": 0,
+        "cpuFuel": 9965142,
+        "iteration": 0,
+        "liveStores": 0,
+        "mode": 2,
+        "reportedPeakMemoryBytes": 10014234,
+        "storesBefore": 2,
+        "storesCreated": 3,
+        "value": 42
+      },
+      {
+        "activationId": "java-worker-libraries-0-3",
+        "activeReservations": 0,
+        "brokerBufferBytes": 0,
+        "brokerCalls": 0,
+        "brokerHandles": 0,
+        "brokerResults": 0,
+        "brokerSessions": 0,
+        "cpuFuel": 9988675,
+        "iteration": 0,
+        "liveStores": 0,
+        "mode": 3,
+        "reportedPeakMemoryBytes": 10014234,
+        "storesBefore": 3,
+        "storesCreated": 4,
+        "value": 42
+      },
+      {
+        "activationId": "java-worker-libraries-1-0",
+        "activeReservations": 0,
+        "brokerBufferBytes": 0,
+        "brokerCalls": 0,
+        "brokerHandles": 0,
+        "brokerResults": 0,
+        "brokerSessions": 0,
+        "cpuFuel": 7129792,
+        "iteration": 1,
+        "liveStores": 0,
+        "mode": 0,
+        "reportedPeakMemoryBytes": 10012306,
+        "storesBefore": 4,
+        "storesCreated": 5,
+        "value": 42
+      },
+      {
+        "activationId": "java-worker-libraries-1-1",
+        "activeReservations": 0,
+        "brokerBufferBytes": 0,
+        "brokerCalls": 0,
+        "brokerHandles": 0,
+        "brokerResults": 0,
+        "brokerSessions": 0,
+        "cpuFuel": 7002284,
+        "iteration": 1,
+        "liveStores": 0,
+        "mode": 1,
+        "reportedPeakMemoryBytes": 10012306,
+        "storesBefore": 5,
+        "storesCreated": 6,
+        "value": 42
+      },
+      {
+        "activationId": "java-worker-libraries-1-2",
+        "activeReservations": 0,
+        "brokerBufferBytes": 0,
+        "brokerCalls": 0,
+        "brokerHandles": 0,
+        "brokerResults": 0,
+        "brokerSessions": 0,
+        "cpuFuel": 10075434,
+        "iteration": 1,
+        "liveStores": 0,
+        "mode": 2,
+        "reportedPeakMemoryBytes": 10014234,
+        "storesBefore": 6,
+        "storesCreated": 7,
+        "value": 42
+      },
+      {
+        "activationId": "java-worker-libraries-1-3",
+        "activeReservations": 0,
+        "brokerBufferBytes": 0,
+        "brokerCalls": 0,
+        "brokerHandles": 0,
+        "brokerResults": 0,
+        "brokerSessions": 0,
+        "cpuFuel": 10073515,
+        "iteration": 1,
+        "liveStores": 0,
+        "mode": 3,
+        "reportedPeakMemoryBytes": 10014234,
+        "storesBefore": 7,
+        "storesCreated": 8,
+        "value": 42
+      },
+      {
+        "activationId": "java-worker-libraries-2-0",
+        "activeReservations": 0,
+        "brokerBufferBytes": 0,
+        "brokerCalls": 0,
+        "brokerHandles": 0,
+        "brokerResults": 0,
+        "brokerSessions": 0,
+        "cpuFuel": 7129792,
+        "iteration": 2,
+        "liveStores": 0,
+        "mode": 0,
+        "reportedPeakMemoryBytes": 10012306,
+        "storesBefore": 8,
+        "storesCreated": 9,
+        "value": 42
+      },
+      {
+        "activationId": "java-worker-libraries-2-1",
+        "activeReservations": 0,
+        "brokerBufferBytes": 0,
+        "brokerCalls": 0,
+        "brokerHandles": 0,
+        "brokerResults": 0,
+        "brokerSessions": 0,
+        "cpuFuel": 7002284,
+        "iteration": 2,
+        "liveStores": 0,
+        "mode": 1,
+        "reportedPeakMemoryBytes": 10012306,
+        "storesBefore": 9,
+        "storesCreated": 10,
+        "value": 42
+      },
+      {
+        "activationId": "java-worker-libraries-2-2",
+        "activeReservations": 0,
+        "brokerBufferBytes": 0,
+        "brokerCalls": 0,
+        "brokerHandles": 0,
+        "brokerResults": 0,
+        "brokerSessions": 0,
+        "cpuFuel": 10083918,
+        "iteration": 2,
+        "liveStores": 0,
+        "mode": 2,
+        "reportedPeakMemoryBytes": 10014234,
+        "storesBefore": 10,
+        "storesCreated": 11,
+        "value": 42
+      },
+      {
+        "activationId": "java-worker-libraries-2-3",
+        "activeReservations": 0,
+        "brokerBufferBytes": 0,
+        "brokerCalls": 0,
+        "brokerHandles": 0,
+        "brokerResults": 0,
+        "brokerSessions": 0,
+        "cpuFuel": 10056547,
+        "iteration": 2,
+        "liveStores": 0,
+        "mode": 3,
+        "reportedPeakMemoryBytes": 10014234,
+        "storesBefore": 11,
+        "storesCreated": 12,
+        "value": 42
+      }
+    ],
+    "stdout": {
+      "bytes": 8006,
+      "sha256": "f189a79c325e4e08398f6d099a991a95d87ba24e7b0b403aa80452ceab77c631"
+    }
+  },
+  "resourceLimits": {
+    "activation": {
+      "cpuFuel": 10000000000,
+      "memoryBytes": 67108864,
+      "wallTimeMilliseconds": 120000,
+      "outboundRequests": 0,
+      "cells": 1,
+      "tasks": 5,
+      "executors": 3,
+      "queuedWork": 8,
+      "waits": 8,
+      "timers": 2,
+      "results": 8,
+      "nativeOwners": 2
+    },
+    "owner": {
+      "overallSeconds": 2400,
+      "cleanupReserveSeconds": 5,
+      "compilerAggregateSeconds": 1200,
+      "compilerCommandSeconds": 600,
+      "nativeBuildSeconds": 900,
+      "caseProcessSeconds": 1800,
+      "listProcessSeconds": 30,
+      "sourceControlSeconds": 60
+    }
+  },
+  "privateRootRemoved": true,
+  "publicMemberInventory": {
+    "commands.json": {
+      "bytes": 761,
+      "sha256": "f235c548c3d3e6a172d34eb289562c895d702bc296d3300095d409966b5aa7c2"
+    },
+    "commands/logs/00-source-paths.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "commands/logs/00-source-paths.stdout.txt": {
+      "bytes": 463782,
+      "sha256": "35b1da1bc82e593186110586167d27c9984ae5c3530bfdedecd9e7adbdd10b38"
+    },
+    "commands/logs/01-source-controls.stderr.txt": {
+      "bytes": 1014,
+      "sha256": "dbb57c4bcd3ce735a477549b61320c4231b534088065ae2f815284c7a5c56a50"
+    },
+    "commands/logs/01-source-controls.stdout.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "commands/logs/02-gradle-download.stderr.txt": {
+      "bytes": 477,
+      "sha256": "c62c9a0576015760b90c3a66df37c0c1b3955876e85ba9887e71d4fe723cf24a"
+    },
+    "commands/logs/02-gradle-download.stdout.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "commands/logs/03-gradle-unpack.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "commands/logs/03-gradle-unpack.stdout.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "commands/logs/04-wit-bindgen-install.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "commands/logs/04-wit-bindgen-install.stdout.txt": {
+      "bytes": 42,
+      "sha256": "6950f8a07372f348c6525aef4653c3fc921ae29d807aea2157bbf7e36d374e19"
+    },
+    "commands/logs/05-build-harness.stderr.txt": {
+      "bytes": 20331,
+      "sha256": "6ba71976461838c640547c813e177b459fc1b3819d9d265da525b453282c7d91"
+    },
+    "commands/logs/05-build-harness.stdout.txt": {
+      "bytes": 340151,
+      "sha256": "102dd1d1bf7306a134b1c2354605461cab0889b019e5d09bdc964ffef9d165b1"
+    },
+    "commands/logs/06-rust-library-path.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "commands/logs/06-rust-library-path.stdout.txt": {
+      "bytes": 105,
+      "sha256": "7675ece60101aa9118dc7df3c8865c010dc07858e7fb4b48536a3376fa3b9ed0"
+    },
+    "commands/logs/07-list-exact-case.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "commands/logs/07-list-exact-case.stdout.txt": {
+      "bytes": 99,
+      "sha256": "e86706302e19d254348f79fff6d8755c765558f4bace3fb0ecc2fbfb43367348"
+    },
+    "commands/logs/08-execute-exact-case.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "commands/logs/08-execute-exact-case.stdout.txt": {
+      "bytes": 8006,
+      "sha256": "f189a79c325e4e08398f6d099a991a95d87ba24e7b0b403aa80452ceab77c631"
+    },
+    "compiler/0-java-version.command.json": {
+      "bytes": 188,
+      "sha256": "e83ecdb7a722688ba9993a3a3b5f6477e30fbc230734f8a17c1eec21ed287f91"
+    },
+    "compiler/0-java-version.log": {
+      "bytes": 201,
+      "sha256": "dc52985e291a871cd813e0ec48efca3a22da113e8faae9101f126c3d6b16ce36"
+    },
+    "compiler/1-gradle-version.command.json": {
+      "bytes": 173,
+      "sha256": "c7d428f844940d2a147d6e214992b9398cc0e3c8a5708807c64b0d3b00889868"
+    },
+    "compiler/1-gradle-version.log": {
+      "bytes": 806,
+      "sha256": "23dbdfcf47bece482ed891afa796d00ff6c97ea7b8ffebe27bb26c989dbb0a93"
+    },
+    "compiler/10-reference-jdk-1.command.json": {
+      "bytes": 456,
+      "sha256": "0d563255369442960f15640df6acd4de0210382eca50578cf1ab46e89859b041"
+    },
+    "compiler/10-reference-jdk-1.log": {
+      "bytes": 13,
+      "sha256": "fdf2e0802b6ef92c6fa71955aa4ef252f4af6c420fe8e5a4679f3a7b7e2a22f6"
+    },
+    "compiler/11-reference-jdk-2.command.json": {
+      "bytes": 456,
+      "sha256": "fb4b601594ceddce5d80241484167b12fe99bdbf24e6f4de3a794ae9f949a468"
+    },
+    "compiler/11-reference-jdk-2.log": {
+      "bytes": 13,
+      "sha256": "fdf2e0802b6ef92c6fa71955aa4ef252f4af6c420fe8e5a4679f3a7b7e2a22f6"
+    },
+    "compiler/12-completable-reference-compile.command.json": {
+      "bytes": 634,
+      "sha256": "5f830bd9f4e3e381259eb2c8eabcd9488d96321594e01083ae691a7ee7c22374"
+    },
+    "compiler/12-completable-reference-compile.log": {
+      "bytes": 1,
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    "compiler/13-completable-reference-run.command.json": {
+      "bytes": 326,
+      "sha256": "a738d5f2c3c034bd098a0856cd6e9649167c38a375c14a9e6f2fae9bda7f714d"
+    },
+    "compiler/13-completable-reference-run.log": {
+      "bytes": 55,
+      "sha256": "dde87e351ce9c1f242332571a8b11ee53cce09ae623b61a0ebaacc2ff44c7b3b"
+    },
+    "compiler/14-completable-executor-reference-run.command.json": {
+      "bytes": 352,
+      "sha256": "0c2066bbf1a06229fe2ea93ee707f4d639f0fe2782a32952f8c45f91528aca1f"
+    },
+    "compiler/14-completable-executor-reference-run.log": {
+      "bytes": 1075,
+      "sha256": "925d0730fbc2f7775d197d7c8306491908547ced0cd1c841d5a55b5e527d705e"
+    },
+    "compiler/15-completable-source-compile.command.json": {
+      "bytes": 2141,
+      "sha256": "ef0028d6b8acadb42942053330a25ab7f1f7d36d3d0752cece6a2df2b8a30c10"
+    },
+    "compiler/15-completable-source-compile.log": {
+      "bytes": 1,
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    "compiler/16-completable-source-run.command.json": {
+      "bytes": 311,
+      "sha256": "8894cce8c57987c1e403b83e7c7312bad8100bbe3e53877fbee0531093c6bb9b"
+    },
+    "compiler/16-completable-source-run.log": {
+      "bytes": 123,
+      "sha256": "18fc0518a14e7f1ba47ccf2440b296e25161d75e81d0f1235d6bfb8de79e9f41"
+    },
+    "compiler/17-completable-executor-source-run.command.json": {
+      "bytes": 347,
+      "sha256": "5416732a2248bed05498ed6e241ddfbad23fd4438567dc0c19f4f81a08a2aacc"
+    },
+    "compiler/17-completable-executor-source-run.log": {
+      "bytes": 1075,
+      "sha256": "925d0730fbc2f7775d197d7c8306491908547ced0cd1c841d5a55b5e527d705e"
+    },
+    "compiler/18-completable-executor-owners-run.command.json": {
+      "bytes": 348,
+      "sha256": "3f9dce5e79a457945888726ee6b07fab2aea2c7db5c27811ac99f5e50fba6596"
+    },
+    "compiler/18-completable-executor-owners-run.log": {
+      "bytes": 66,
+      "sha256": "f17873cf9129c18438f1e12ae9cc73ee4f530ff28e98fad693d80aafb945f697"
+    },
+    "compiler/19-completable-executor-uncertain-run.command.json": {
+      "bytes": 350,
+      "sha256": "cbd0e600475ee66a5960f9f8c3dbf23ba2bb2a8e6944459ff7e5740d989ebbb3"
+    },
+    "compiler/19-completable-executor-uncertain-run.log": {
+      "bytes": 133,
+      "sha256": "3edd51a31be86a9d8274387ac8af9511f13ce6fa04e5390ff5b58b92d0f182f8"
+    },
+    "compiler/2-clang-version.command.json": {
+      "bytes": 188,
+      "sha256": "77c889942e13acb37f9ec838eb57bf3c1fe35f7fddfa1407a373b71d8fd929c9"
+    },
+    "compiler/2-clang-version.log": {
+      "bytes": 275,
+      "sha256": "91c5ecee859cc8ca86d3d5deabba3b14841e857b4cc4912d51a2feb27bf87180"
+    },
+    "compiler/20-activation-profile-wit.command.json": {
+      "bytes": 244,
+      "sha256": "7e8b9362af2e1b1f870043d46624e88fff97c1423407fb821138b5ed32ad5c53"
+    },
+    "compiler/20-activation-profile-wit.log": {
+      "bytes": 10938,
+      "sha256": "f97649dda7bf85e06db8c8eeb346114d56ca3093b55282b02358b4b405606ae9"
+    },
+    "compiler/21-wit-graph.command.json": {
+      "bytes": 232,
+      "sha256": "debcaa4ec827f490615848d42fded1040f9b359e4db8a0b37216f6f38867ddb3"
+    },
+    "compiler/21-wit-graph.log": {
+      "bytes": 10938,
+      "sha256": "f97649dda7bf85e06db8c8eeb346114d56ca3093b55282b02358b4b405606ae9"
+    },
+    "compiler/22-wit-bindings.command.json": {
+      "bytes": 576,
+      "sha256": "f6026fc0d333e1f0abd06c1581ee198390193e64722f265a93bac846d915af0c"
+    },
+    "compiler/22-wit-bindings.log": {
+      "bytes": 247,
+      "sha256": "0ce54ad10104814350f45f62b6039d08ff552415af3fecd8b02ee49f880e616e"
+    },
+    "compiler/23-bindings-metadata.command.json": {
+      "bytes": 254,
+      "sha256": "7789fdd196645ea1e20e393ea2bfb427d2727005b73d57792a2b7aba47f3b9a8"
+    },
+    "compiler/23-bindings-metadata.log": {
+      "bytes": 2276,
+      "sha256": "9b32f1bf90ec37d58b164e26703bbae8a84849bc70649c5ccd518d26e0d18497"
+    },
+    "compiler/24-wit-graph.command.json": {
+      "bytes": 232,
+      "sha256": "142b96282d79e477a85d6794c97726e8399040f5d8328243b4c79e0778c8cdd8"
+    },
+    "compiler/24-wit-graph.log": {
+      "bytes": 10938,
+      "sha256": "f97649dda7bf85e06db8c8eeb346114d56ca3093b55282b02358b4b405606ae9"
+    },
+    "compiler/25-wit-bindings.command.json": {
+      "bytes": 582,
+      "sha256": "163466f82d2b6e8e748e74295dd09324bbec137ca1f9192a22876b87c86acf57"
+    },
+    "compiler/25-wit-bindings.log": {
+      "bytes": 265,
+      "sha256": "634bf6a511d932a357faa635edca6bb7e4fcbd87edbad6edb2b1024536d525ba"
+    },
+    "compiler/26-bindings-metadata.command.json": {
+      "bytes": 260,
+      "sha256": "19e588c9e6ab29d634abc2866816ffc131dd8cfc47605be0d4b5e4488bd78558"
+    },
+    "compiler/26-bindings-metadata.log": {
+      "bytes": 2276,
+      "sha256": "9b32f1bf90ec37d58b164e26703bbae8a84849bc70649c5ccd518d26e0d18497"
+    },
+    "compiler/27-java-source-origins.command.json": {
+      "bytes": 350,
+      "sha256": "23f611c708eb194bd36574f5b0ed06a9bd5bd7c421f7c55456a40f94625df687"
+    },
+    "compiler/27-java-source-origins.log": {
+      "bytes": 113,
+      "sha256": "6b2f3640a203af9efa2553e10c262fc80ae7806c89fc0303a146ca6e33605758"
+    },
+    "compiler/28-java-owned-classes.command.json": {
+      "bytes": 195,
+      "sha256": "887da4b194636c732bae5977dee76e81d23e44a665fe4b83a8800034f4b69b4e"
+    },
+    "compiler/28-java-owned-classes.log": {
+      "bytes": 535,
+      "sha256": "ce74f8b4d1d6b1dfe41a0075d047fd8a774afece5339f4201f12d12cb6e7bb3e"
+    },
+    "compiler/29-java-coroutine-patch.command.json": {
+      "bytes": 6196,
+      "sha256": "aafb1567218ee1b738a23d1632aa94bc32ef86f8570c39423771443d3a2b2c72"
+    },
+    "compiler/29-java-coroutine-patch.log": {
+      "bytes": 1,
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    "compiler/3-wit-bindgen-version.command.json": {
+      "bytes": 174,
+      "sha256": "1e7725ba85c7e59500a55d2f0e88059bc02d84d9d9d844bcbe9fb87aa61df3da"
+    },
+    "compiler/3-wit-bindgen-version.log": {
+      "bytes": 24,
+      "sha256": "54a3b7f07a7f22e6db46237d76553a5024aa175f6e8966d2db7111e653d9cf42"
+    },
+    "compiler/30-java-coroutine-original-control.command.json": {
+      "bytes": 5571,
+      "sha256": "955416e7698a6fbff0f99520294b6fe915ab74c05dae6b6dfae433f983563414"
+    },
+    "compiler/30-java-coroutine-original-control.log": {
+      "bytes": 90,
+      "sha256": "01c538693a3632d25520419458df49878381435cf3447bbbf057656177ec326f"
+    },
+    "compiler/31-java-coroutine-monitor-original-control.command.json": {
+      "bytes": 5577,
+      "sha256": "9b7b7d1c1c5c589801954a717d383dc406cab7e0106c30c87ccbc913866c3f58"
+    },
+    "compiler/31-java-coroutine-monitor-original-control.log": {
+      "bytes": 90,
+      "sha256": "51845c53fd413c79c1c4e61c01fee793d8425ef808a2fd09d4f9bd3d34d85795"
+    },
+    "compiler/32-java-coroutine-corrected-control.command.json": {
+      "bytes": 5486,
+      "sha256": "34bb4e0746f2ed8e55649057205e57f0c4a49c035ed84abcb505f6c54fe57cef"
+    },
+    "compiler/32-java-coroutine-corrected-control.log": {
+      "bytes": 91,
+      "sha256": "4828f5d55aa6bab7d28b8266afd76eaca05911722b3338c1d23abc56c65b7d51"
+    },
+    "compiler/33-java-coroutine-monitor-corrected-control.command.json": {
+      "bytes": 5492,
+      "sha256": "68478703fb9b706c9b9ed620c3b0b68b4a6b9205b5bfe72578867ed2e15f02c1"
+    },
+    "compiler/33-java-coroutine-monitor-corrected-control.log": {
+      "bytes": 91,
+      "sha256": "36ae283936a6b418b41521d8b079dfcea962b00da32322146ab4bbc64b99ab53"
+    },
+    "compiler/34-java-coroutine-copy-cost-control.command.json": {
+      "bytes": 5485,
+      "sha256": "7ecc21d34e0a8bac46d7b1b73dbb76e3387b9801c5c24d46a28c89982f363609"
+    },
+    "compiler/34-java-coroutine-copy-cost-control.log": {
+      "bytes": 146,
+      "sha256": "ba65ac55e8818fb9bd9267963f0b59d24ca66ae05bb1d9cc6a2082e7d18bc1c3"
+    },
+    "compiler/35-java-to-c.command.json": {
+      "bytes": 188,
+      "sha256": "aa8b6a72beb989e477e336776f0bcedd71340ab211ea7660ee2d6e1b2d9ce218"
+    },
+    "compiler/35-java-to-c.log": {
+      "bytes": 921,
+      "sha256": "5f8480f745dd8ea21f4888bbca9f7b5cfe7fc1284c9a8bf47d0056d0698a5ec5"
+    },
+    "compiler/36-c-to-wasm.command.json": {
+      "bytes": 1445,
+      "sha256": "04a09bd64c26d74c351748f62c679d2fbfff56b323ffd32a5aead6401757e3e4"
+    },
+    "compiler/36-c-to-wasm.log": {
+      "bytes": 347616,
+      "sha256": "3ce2ac9e788d5525707228d605308e3bd4195029a5e16e80e954c9578e0f4367"
+    },
+    "compiler/37-closed-runtime.command.json": {
+      "bytes": 462,
+      "sha256": "e821c22df58e40a2317a03f618efa0e3bf937149944bcec3d4655e576a5293e3"
+    },
+    "compiler/37-closed-runtime.log": {
+      "bytes": 1,
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    "compiler/38-component-new.command.json": {
+      "bytes": 419,
+      "sha256": "84f3cc6d21fdf9e23a0d2a0bc3b5857e81d79eda6f5087e39ab1443cce497852"
+    },
+    "compiler/38-component-new.log": {
+      "bytes": 1,
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    "compiler/39-component-validate.command.json": {
+      "bytes": 274,
+      "sha256": "bceda1b7701722201c824c16856a40713b557c51715002d2c4e322add92f69b8"
+    },
+    "compiler/39-component-validate.log": {
+      "bytes": 1,
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    "compiler/4-wasm-tools-version.command.json": {
+      "bytes": 158,
+      "sha256": "6ab2dab2ac73e0ee9ae558e281a7c780e0574b27c995275635a6eefc40a94f4b"
+    },
+    "compiler/4-wasm-tools-version.log": {
+      "bytes": 43,
+      "sha256": "a9d05a8e1e1fd8ceb59716d851f535e44be83f11d8a2d6ff21b95fb6aafa39df"
+    },
+    "compiler/40-component-surface.command.json": {
+      "bytes": 237,
+      "sha256": "6e0ec7cf2593a86b31b34ea8c4eb1a8e79b0cd5fa80b4b9f8239a0968d8f878a"
+    },
+    "compiler/40-component-surface.log": {
+      "bytes": 2121,
+      "sha256": "be2251aac61b2924b53e41004130ce9114b288a4398e2ed4afcde6ac535d3f85"
+    },
+    "compiler/41-expected-wit.command.json": {
+      "bytes": 235,
+      "sha256": "e5d00a82e67b19b65637b988a81d0ec07115718baf053e356c582c60cea686df"
+    },
+    "compiler/41-expected-wit.log": {
+      "bytes": 10938,
+      "sha256": "f97649dda7bf85e06db8c8eeb346114d56ca3093b55282b02358b4b405606ae9"
+    },
+    "compiler/42-compiled-wit.command.json": {
+      "bytes": 246,
+      "sha256": "a9958704a1e30e2950c5eb123436e839ea39aff0d71d437932a89f7a579582b3"
+    },
+    "compiler/42-compiled-wit.log": {
+      "bytes": 9432,
+      "sha256": "724880ec390f7098aa96e0d772fcd17dbefbee9c5e626c186684c8f617ce54b2"
+    },
+    "compiler/43-throwable-model-compile.command.json": {
+      "bytes": 2470,
+      "sha256": "acccf05deeb5477490d230fcad0771a87d7414459b3409c7345456a7b35f1e8a"
+    },
+    "compiler/43-throwable-model-compile.log": {
+      "bytes": 1,
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    "compiler/44-throwable-model-control.command.json": {
+      "bytes": 2184,
+      "sha256": "ce763f9aeb9eb5680dc3d0bb6395d1a51fc26007bb0aec194df40f2ba92c4605"
+    },
+    "compiler/44-throwable-model-control.log": {
+      "bytes": 165,
+      "sha256": "2d5460d9ccafae047ee5b8c77a2f4ba5b929525bb75972913dd54266ae06e313"
+    },
+    "compiler/45-timeunit-model-compile.command.json": {
+      "bytes": 2889,
+      "sha256": "cca797ab0f07da35e255be87bf85657de52cc17e207097e92ae2295de237f407"
+    },
+    "compiler/45-timeunit-model-compile.log": {
+      "bytes": 1,
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    "compiler/46-timeunit-model-control.command.json": {
+      "bytes": 2172,
+      "sha256": "3cdd9039223e4babbbf673b5b83298ff2f7d4eb8f94354ef589746adf85743fd"
+    },
+    "compiler/46-timeunit-model-control.log": {
+      "bytes": 174,
+      "sha256": "9d13e90d23a3faa6f144f76752b2265622ddc8aa868c8e3fb5b0ea98f8640f02"
+    },
+    "compiler/47-timeunit-native-control.command.json": {
+      "bytes": 302,
+      "sha256": "4a744fed1863a638a32c6fa57cd07efd29582eb11bef47a2e0183ec34cedf42e"
+    },
+    "compiler/47-timeunit-native-control.log": {
+      "bytes": 49,
+      "sha256": "8b23a3a821f75596ba7ec3bffe4449716a1fdbf3f560b42ad2e9a37622d4ae5c"
+    },
+    "compiler/48-wait-frame-model-compile.command.json": {
+      "bytes": 4351,
+      "sha256": "20b87c6fedbdcd102f034c7b4ddddeed84c69bbff5f126c7b5387824a65fd8ef"
+    },
+    "compiler/48-wait-frame-model-compile.log": {
+      "bytes": 1,
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    "compiler/49-wait-frame-model-control.command.json": {
+      "bytes": 2365,
+      "sha256": "a4401a648c76873e377dd25baa2a06765368061eb37e12403e70d7488c790e63"
+    },
+    "compiler/49-wait-frame-model-control.log": {
+      "bytes": 345,
+      "sha256": "938db7e1f6fa76e3fe16c6b43c97c8ca57025ec15551312cfbf467daae36d41d"
+    },
+    "compiler/5-wit-graph.command.json": {
+      "bytes": 249,
+      "sha256": "393526fed8dce1864377b73986390165582452219c8f9205112c9c2f4158b7c2"
+    },
+    "compiler/5-wit-graph.log": {
+      "bytes": 41883,
+      "sha256": "5d5d27b6acbdb5d606bd21ac1a48355b6b9bcfe3b675ec3217279615cdec895a"
+    },
+    "compiler/50-queue-deadline-model-control.command.json": {
+      "bytes": 2373,
+      "sha256": "6f37e2d7747b9de326ce199bf728019b0ccffe80521181dfe92608b4030e8cf3"
+    },
+    "compiler/50-queue-deadline-model-control.log": {
+      "bytes": 138,
+      "sha256": "e5c6024023f39bdea1633e3ca27ca8e9d067d45ac4e50b9b5492923fcfb7d8e5"
+    },
+    "compiler/51-timer-readiness-source-compile.command.json": {
+      "bytes": 3349,
+      "sha256": "24ce40cd1a371814cf703eae926c09365fc13fe6cb21cae75689a3a70b555f4f"
+    },
+    "compiler/51-timer-readiness-source-compile.log": {
+      "bytes": 1,
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    "compiler/52-timer-readiness-source-control.command.json": {
+      "bytes": 2364,
+      "sha256": "0a636c82079c742b4fd930eb18cd5815f1b0e266cb5c43d23124b94ad2c3fcf7"
+    },
+    "compiler/52-timer-readiness-source-control.log": {
+      "bytes": 216,
+      "sha256": "2bf33c1af037cce056eea17ca78630e1e275a82ac82f038d33a7803d4cd60207"
+    },
+    "compiler/53-completable-model-compile.command.json": {
+      "bytes": 5652,
+      "sha256": "96c28b97052a5d69553168409528b12910b177534eaf34289ae884baad866a01"
+    },
+    "compiler/53-completable-model-compile.log": {
+      "bytes": 1,
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    "compiler/54-completable-model-control.command.json": {
+      "bytes": 2375,
+      "sha256": "e073cad77672612a82d8f6e1d7f80b8cdd048237673fe981d393eafdb687dd27"
+    },
+    "compiler/54-completable-model-control.log": {
+      "bytes": 272,
+      "sha256": "64eafef96dde6bf7d15a6d738f5a857dbf321e6c69e71ccb86cc73e165919de3"
+    },
+    "compiler/55-completable-field-model-control.command.json": {
+      "bytes": 2386,
+      "sha256": "14c10b6f0e8053e5694324a16d88339be248e9960377d326f2b3a1e908ae8e46"
+    },
+    "compiler/55-completable-field-model-control.log": {
+      "bytes": 131,
+      "sha256": "8e1d990d46ca95617a4bb8be8138930d295fd86d42e9cb194f7ab21d370a1e68"
+    },
+    "compiler/6-wit-bindings.command.json": {
+      "bytes": 463,
+      "sha256": "5de162a653260cb34d54ceeeab75f05feceb9342d7ab6ea666daef743821df40"
+    },
+    "compiler/6-wit-bindings.log": {
+      "bytes": 298,
+      "sha256": "6d57163bc710ca53470a8a62684683d9e08faff7a157ae36f0becda676334250"
+    },
+    "compiler/7-bindings-metadata.command.json": {
+      "bytes": 271,
+      "sha256": "c8a03b6bd5ebaeb89fb78179ab2e826490ddb211e3daf200668a419fb5e5fad2"
+    },
+    "compiler/7-bindings-metadata.log": {
+      "bytes": 8431,
+      "sha256": "16ad67914b30acd8ddc8f7336d9e9e20d2be36f535756bb2dc329a2ab34b371b"
+    },
+    "compiler/8-reference-jdk-compile.command.json": {
+      "bytes": 1269,
+      "sha256": "8724e7e8ac1e2264c3191df1ab6a4d7c8792d42d749d48a58c8ae44dbe195d7f"
+    },
+    "compiler/8-reference-jdk-compile.log": {
+      "bytes": 1,
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    "compiler/9-reference-jdk-0.command.json": {
+      "bytes": 456,
+      "sha256": "6956ab40829e980db47f08890d0513c890ed2711c1b9857577ec6f95b3376b7f"
+    },
+    "compiler/9-reference-jdk-0.log": {
+      "bytes": 13,
+      "sha256": "fdf2e0802b6ef92c6fa71955aa4ef252f4af6c420fe8e5a4679f3a7b7e2a22f6"
+    },
+    "component/FIBERS-COMPILE.json": {
+      "bytes": 164254,
+      "sha256": "4b7465cd3fd79967479898989f05b546701670487148af2778562dfb831f27aa"
+    },
+    "component/build/component.wasm": {
+      "bytes": 2770771,
+      "sha256": "b3e82ac703bed2bde4ac5c7019b1306a4b048abba02cc794df86dde97ab0a4a3"
+    },
+    "component/compiler-inputs.json": {
+      "bytes": 2912106,
+      "sha256": "281a0b32d7b8a1821fad5fe1f59bae659df0af80e42b69b51c2d5c7004e7b098"
+    },
+    "component/library-inputs/application/java-dependencies.json": {
+      "bytes": 393,
+      "sha256": "b2ad594efddb9b5fe897192df1030a560efa579cf62cd73eea197ad2cb62743a"
+    },
+    "component/library-inputs/application/java-resolved.lock.json": {
+      "bytes": 1221,
+      "sha256": "5f6e2f440a24e52adb1ef39316cf6beb017de8d22959c327bf92cae80a539947"
+    },
+    "component/library-inputs/application/latent.dependencies.json": {
+      "bytes": 9380,
+      "sha256": "f64c7c5611572a5ac1895c3350934e25d6f6192eb8f46e2f4a107b56a4f9b568"
+    },
+    "component/library-inputs/application/latent.dependencies.lock.json": {
+      "bytes": 13151,
+      "sha256": "f1e98710cce696e68f2f62e645835adcf01da816b8d03788f9ddece64bacce15"
+    },
+    "component/library-inputs/candidate.json": {
+      "bytes": 13151,
+      "sha256": "f1e98710cce696e68f2f62e645835adcf01da816b8d03788f9ddece64bacce15"
+    },
+    "component/library-inputs/receipts/capture.json": {
+      "bytes": 1301,
+      "sha256": "ce1665f7ae243d5dcbc8fca5e9454b14c6e5d0062cdbd6af2b83ad1023549c0d"
+    },
+    "component/library-inputs/receipts/java-classpath.json": {
+      "bytes": 283262,
+      "sha256": "d25366c447867d93b252b13f84afacfa49c2e48a973856f7b8b6b1374f3d068f"
+    },
+    "component/src/Capsule.java": {
+      "bytes": 4551,
+      "sha256": "7b1716af2f7b4075068c476c9d84730b4733e1275903ea8acd50e62af5e6ecf2"
+    },
+    "component/wit/service.wit": {
+      "bytes": 340,
+      "sha256": "14c7bb47a7634153b4dcf39473a31f7f87f971f8c90a602b378be498dc938236"
+    },
+    "libraries/0.original.jar": {
+      "bytes": 1500560,
+      "sha256": "d6bedc908cba480cd12dbe6f8422fa60c0da31030b58a68c3c077f555fc0cbbc"
+    },
+    "libraries/0.selected.jar": {
+      "bytes": 3344457,
+      "sha256": "98bbb79681cc7b9fbaf6ba34ab54d35557f0f6405799df5e87023c811ad7bf1c"
+    },
+    "libraries/1.original.jar": {
+      "bytes": 657952,
+      "sha256": "7b96bf3ee68949abb5bc465559ac270e0551596fa34523fddf890ec418dde13c"
+    },
+    "libraries/1.selected.jar": {
+      "bytes": 1515328,
+      "sha256": "9948b2564eb3fd0fc0408b567b607f04e68a2a3bf7631a1faa64083022363514"
+    },
+    "normal-product.json": {
+      "bytes": 2114812,
+      "sha256": "841aa405c94748fe26815398c6f9311c93a226747757c23982258f1660f39319"
+    },
+    "receipt.json": {
+      "bytes": 3180769,
+      "sha256": "fd5a665a5343eca6899465fc0c43c014208c4ded38ab62185f99178dc21ca3d2"
+    },
+    "source-inputs.json": {
+      "bytes": 1575910,
+      "sha256": "28aa59a71877ff1c6f3987847c171dd2104032f88466e51fe3615f6e0e24d654"
+    }
+  },
+  "memberInventoryCanonical": {
+    "bytes": 20081,
+    "sha256": "4c2225ad706f94f70e80567994319539bb3d4a4654baa0d4fc1ee475e6ffa8bd"
+  },
+  "reviewedFeatureInputs": {
+    ".github/workflows/java-published-workers.yml": {
+      "gitBlob": "dc5683eeb71c2779aceb7f786aae9326a372a056",
+      "bytes": 5682,
+      "sha256": "625811115047e0e3fe1d75471e9c9135b6c49333a7e44ef7e33c37cd7a1a2a1a"
+    },
+    "crates/latent-wasmtime/tests/local_service/runtime.rs": {
+      "gitBlob": "03e9645d4128800dbf64139c3ea6f62e7e8d0461",
+      "bytes": 31124,
+      "sha256": "4506156b586cd4b1051f9a05afbcb3172c2257ecb277e431e393783c3e59d163"
+    },
+    "tools/ci/contracts/owners/tools/java_guest/compiler_profile_distribution.py.json": {
+      "gitBlob": "501143bf14abac5790542f8b61e0fbf1060f2065",
+      "bytes": 432,
+      "sha256": "0651e15188244d710aa9bfd7f88150c1a00bc1818d64137d209db9b25343a2ff"
+    },
+    "tools/ci/contracts/owners/tools/qualify_java_fibers.py.json": {
+      "gitBlob": "6cca2c2dd2adcfce6e211d9e9a7c512bc707cbd6",
+      "bytes": 411,
+      "sha256": "ca5d040769bf616be2b12a381c892a4d9157a480612bc52d5615497d0379dc28"
+    },
+    "tools/ci/contracts/owners/tools/qualify_java_published_workers.py.json": {
+      "gitBlob": "d9496387816b60b9b2905e3a0c05d208324f5f93",
+      "bytes": 401,
+      "sha256": "b79a634b543081fc19d4b2f2b39bf068b0589f47260110ed1c17fba268358a12"
+    },
+    "tools/ci/contracts/owners/tools/qualify_java_retained_fibers.py.json": {
+      "gitBlob": "cc802abcaaaf6141a352015007eeef01d012abc2",
+      "bytes": 420,
+      "sha256": "b0e9a21efffd135c7b0e33de6523b3fb357ab1bb54bd797a55ec079b0511d39c"
+    },
+    "tools/ci/contracts/python/test_java_namespace_read_backpressure.py.json": {
+      "gitBlob": "4bdbb46cccaee9816d66d4167b987a2fcda480fe",
+      "bytes": 5350,
+      "sha256": "590e565ef9eef347578647cfab60c00608ba1568a2f3b6b7b4c5e3633e35137c"
+    },
+    "tools/ci/contracts/python/test_java_published_workers.py.json": {
+      "gitBlob": "2367abdde7c3dfec8b906dc3e7eed3593734f29b",
+      "bytes": 2642,
+      "sha256": "d7baa4be6742444bd43f00f0d82ef620ca5f1baf3d4629990f50f7dc972c7d51"
+    },
+    "tools/ci/contracts/python/test_typescript_dependency_watch.py.json": {
+      "gitBlob": "6bc492c1e3f509a70acaac9624ffa9f023a231f4",
+      "bytes": 11244,
+      "sha256": "dd6cbf05fbdf1ffbce99e453c0a48dd65d1a828ea2b5f61b3ec1f6a03a5e4777"
+    },
+    "tools/ci/contracts/workflows/java-published-workers.yml/jobs/published-workers.json": {
+      "gitBlob": "c4470e62647d5d10136b06211e3b6f625691d431",
+      "bytes": 5097,
+      "sha256": "17f5c57dad1ed60bb7bedabaabb0f2ef919a4e13cfb62ba0cdb99b86024c5940"
+    },
+    "tools/ci/contracts/workflows/java-published-workers.yml/workflow.json": {
+      "gitBlob": "66d953ee07d5f418f232c3a307ecbcc601f67547",
+      "bytes": 1375,
+      "sha256": "8a5fd4ea54eaeec75ff73fa27c241b1fd041e82492eb88c9f02692ce0ba596c1"
+    },
+    "tools/java_dependency_resolution.py": {
+      "gitBlob": "f9e98d5eca5e81c31bcdcdada62cfd08af3ff9b3",
+      "bytes": 21701,
+      "sha256": "ca73b38b3dfccb8e07501dac66db77482d8bcfeffcf9c9e0e4e1690ce09409e2"
+    },
+    "tools/java_fiber_library_inputs.py": {
+      "gitBlob": "05ff26a63a7b02625f1284c23b120e6316db7710",
+      "bytes": 4970,
+      "sha256": "a077dc12899b2d9edfa151cbcc8893ae3b1ebd0bbc693a681519c60d702fbd94"
+    },
+    "tools/java_guest/compiler.py": {
+      "gitBlob": "0da4f5380da8391dc336d11ae01423928c863e23",
+      "bytes": 34303,
+      "sha256": "66a1ce9136fe4d9b74d8ce4431c860e8cb96ad0a5e7215a146a9921520ce369f"
+    },
+    "tools/java_guest/compiler_profile_distribution.py": {
+      "gitBlob": "cdb5216fd438c147a7865517deec20bab5b5f66c",
+      "bytes": 19897,
+      "sha256": "12443a135d933054ff3dc0ef9e06bca9a903ad2dd869b16b55e1cb2f245491b0"
+    },
+    "tools/java_registry_tls.py": {
+      "gitBlob": "977cf51a7f3ae2397ef46c54f47864852b71fbe5",
+      "bytes": 6805,
+      "sha256": "ced13f857387b76871bbc70ee45a8a103a39d7ea43b5c53f154f46ca19f45a1a"
+    },
+    "tools/qualify_java_fibers.py": {
+      "gitBlob": "bbfc0cfe573185b85c76131ae008885f50feac77",
+      "bytes": 38017,
+      "sha256": "547f52d21ae684ef16edbb24e22879a282c15770ad44c778d89a3153f368f9ba"
+    },
+    "tools/qualify_java_published_workers.py": {
+      "gitBlob": "7f8f2a3e6a1fb1a3b3d9cc2dd975f5dbb7c630bd",
+      "bytes": 16614,
+      "sha256": "c019aebb8c7ab1a7ea981ec8c72e08322a1d1f6c04069530eac349f651eea741"
+    },
+    "tools/qualify_java_retained_fibers.py": {
+      "gitBlob": "c1b7c281b09a24eb2a954f871ca8424083123742",
+      "bytes": 12181,
+      "sha256": "f7c9b9157c78979323b81f715882e72cd03219eeab63077b96951f1abea35f6b"
+    },
+    "tools/tests/test_java_published_workers.py": {
+      "gitBlob": "23512ea13ccb0ea62fe071a62f7f07db65b664d5",
+      "bytes": 7108,
+      "sha256": "6882f987be7d9855f7de7a2c1e60074726da9dad5ec4dfcbfbc82f9dfba344a0"
+    }
+  },
+  "historicalNormalProgrammes": {
+    "scope": "Separate actual historical v11 signed stages; not rerun, retagged as v12 or combined into this run.",
+    "workflowRun": 40248515377,
+    "job": 121335112166,
+    "actualCiSource": "398368b92c6231f8e6e44e00283f721c819381a4",
+    "prSourceHead": "3dddbffe48f25318ee076aece7aee1e695c78a4c",
+    "sourceTree": "fc992182c8995d72d0300788fca97708daa91f5b",
+    "nativeCohort": "v11",
+    "overallWorkflowConclusion": "failure",
+    "laterFailedStage": "printed-guide",
+    "actualFailure": "authoring guide byte limit",
+    "artifact": 12619949854,
+    "archive": {
+      "bytes": 92194398,
+      "sha256": "eef17ba86242599df8ffb6b3322f9b6e0fc46658f3b5e3ccb86ebbc439c9ff0d"
+    },
+    "totalSignedCalls": 36,
+    "programmes": [
+      {
+        "fixture": "threads",
+        "case": "runtime::signed_java_threads_spin_join_and_thread_local_use_real_activation_fibers",
+        "rawCompileRecordUnchanged": {
+          "status": "component-built-unqualified",
+          "qualification": "pending",
+          "nodeExecution": "not-run"
+        },
+        "compilerCommandsAllZero": 56,
+        "compilerRecipeInputs": 102,
+        "sdkInputs": 171,
+        "originalComponentDigest": "sha256:d6336d4667db6a01d4f6fd18dfb53850b0d27a7ab96d828660b98dfeb64f469c",
+        "sourcePath": "sdk/java-guest/fibers/conformance/Capsule.java",
+        "sourceSha256": "6a2f7a5a13b3295761b0f18989e47cc7ff106a7c9546c559492247fcd36430c8",
+        "componentBytes": 10282099,
+        "actualSignedRawRows": [
+          {
+            "iteration": 0,
+            "mode": 0,
+            "profile": "teavm-activation-fibers-v1",
+            "consumption": {
+              "cpu_fuel": 27539917,
+              "peak_memory_bytes": 9549672,
+              "wall_time_micros": 105917,
+              "child_calls": 0,
+              "outbound_requests": 0,
+              "state_read_bytes": 0,
+              "state_write_bytes": 0,
+              "blob_read_bytes": 0,
+              "blob_write_bytes": 0,
+              "log_bytes": 0,
+              "effect_count": 0
+            }
+          },
+          {
+            "iteration": 0,
+            "mode": 1,
+            "profile": "teavm-activation-fibers-v1",
+            "consumption": {
+              "cpu_fuel": 8727434,
+              "peak_memory_bytes": 9549999,
+              "wall_time_micros": 41294,
+              "child_calls": 0,
+              "outbound_requests": 0,
+              "state_read_bytes": 0,
+              "state_write_bytes": 0,
+              "blob_read_bytes": 0,
+              "blob_write_bytes": 0,
+              "log_bytes": 0,
+              "effect_count": 0
+            }
+          },
+          {
+            "iteration": 0,
+            "mode": 2,
+            "profile": "teavm-activation-fibers-v1",
+            "consumption": {
+              "cpu_fuel": 5708210,
+              "peak_memory_bytes": 9549999,
+              "wall_time_micros": 36546,
+              "child_calls": 0,
+              "outbound_requests": 0,
+              "state_read_bytes": 0,
+              "state_write_bytes": 0,
+              "blob_read_bytes": 0,
+              "blob_write_bytes": 0,
+              "log_bytes": 0,
+              "effect_count": 0
+            }
+          },
+          {
+            "iteration": 0,
+            "mode": 3,
+            "profile": "teavm-activation-fibers-v1",
+            "consumption": {
+              "cpu_fuel": 5889184,
+              "peak_memory_bytes": 9549999,
+              "wall_time_micros": 8879,
+              "child_calls": 0,
+              "outbound_requests": 0,
+              "state_read_bytes": 0,
+              "state_write_bytes": 0,
+              "blob_read_bytes": 0,
+              "blob_write_bytes": 0,
+              "log_bytes": 0,
+              "effect_count": 0
+            }
+          },
+          {
+            "iteration": 1,
+            "mode": 0,
+            "profile": "teavm-activation-fibers-v1",
+            "consumption": {
+              "cpu_fuel": 28891665,
+              "peak_memory_bytes": 9549672,
+              "wall_time_micros": 104177,
+              "child_calls": 0,
+              "outbound_requests": 0,
+              "state_read_bytes": 0,
+              "state_write_bytes": 0,
+              "blob_read_bytes": 0,
+              "blob_write_bytes": 0,
+              "log_bytes": 0,
+              "effect_count": 0
+            }
+          },
+          {
+            "iteration": 1,
+            "mode": 1,
+            "profile": "teavm-activation-fibers-v1",
+            "consumption": {
+              "cpu_fuel": 8727434,
+              "peak_memory_bytes": 9549999,
+              "wall_time_micros": 40609,
+              "child_calls": 0,
+              "outbound_requests": 0,
+              "state_read_bytes": 0,
+              "state_write_bytes": 0,
+              "blob_read_bytes": 0,
+              "blob_write_bytes": 0,
+              "log_bytes": 0,
+              "effect_count": 0
+            }
+          },
+          {
+            "iteration": 1,
+            "mode": 2,
+            "profile": "teavm-activation-fibers-v1",
+            "consumption": {
+              "cpu_fuel": 5708210,
+              "peak_memory_bytes": 9549999,
+              "wall_time_micros": 37339,
+              "child_calls": 0,
+              "outbound_requests": 0,
+              "state_read_bytes": 0,
+              "state_write_bytes": 0,
+              "blob_read_bytes": 0,
+              "blob_write_bytes": 0,
+              "log_bytes": 0,
+              "effect_count": 0
+            }
+          },
+          {
+            "iteration": 1,
+            "mode": 3,
+            "profile": "teavm-activation-fibers-v1",
+            "consumption": {
+              "cpu_fuel": 5889184,
+              "peak_memory_bytes": 9549999,
+              "wall_time_micros": 8895,
+              "child_calls": 0,
+              "outbound_requests": 0,
+              "state_read_bytes": 0,
+              "state_write_bytes": 0,
+              "blob_read_bytes": 0,
+              "blob_write_bytes": 0,
+              "log_bytes": 0,
+              "effect_count": 0
+            }
+          },
+          {
+            "iteration": 2,
+            "mode": 0,
+            "profile": "teavm-activation-fibers-v1",
+            "consumption": {
+              "cpu_fuel": 28926581,
+              "peak_memory_bytes": 9549672,
+              "wall_time_micros": 104376,
+              "child_calls": 0,
+              "outbound_requests": 0,
+              "state_read_bytes": 0,
+              "state_write_bytes": 0,
+              "blob_read_bytes": 0,
+              "blob_write_bytes": 0,
+              "log_bytes": 0,
+              "effect_count": 0
+            }
+          },
+          {
+            "iteration": 2,
+            "mode": 1,
+            "profile": "teavm-activation-fibers-v1",
+            "consumption": {
+              "cpu_fuel": 8727434,
+              "peak_memory_bytes": 9549999,
+              "wall_time_micros": 41675,
+              "child_calls": 0,
+              "outbound_requests": 0,
+              "state_read_bytes": 0,
+              "state_write_bytes": 0,
+              "blob_read_bytes": 0,
+              "blob_write_bytes": 0,
+              "log_bytes": 0,
+              "effect_count": 0
+            }
+          },
+          {
+            "iteration": 2,
+            "mode": 2,
+            "profile": "teavm-activation-fibers-v1",
+            "consumption": {
+              "cpu_fuel": 5708210,
+              "peak_memory_bytes": 9549999,
+              "wall_time_micros": 36702,
+              "child_calls": 0,
+              "outbound_requests": 0,
+              "state_read_bytes": 0,
+              "state_write_bytes": 0,
+              "blob_read_bytes": 0,
+              "blob_write_bytes": 0,
+              "log_bytes": 0,
+              "effect_count": 0
+            }
+          },
+          {
+            "iteration": 2,
+            "mode": 3,
+            "profile": "teavm-activation-fibers-v1",
+            "consumption": {
+              "cpu_fuel": 5889184,
+              "peak_memory_bytes": 9549999,
+              "wall_time_micros": 8094,
+              "child_calls": 0,
+              "outbound_requests": 0,
+              "state_read_bytes": 0,
+              "state_write_bytes": 0,
+              "blob_read_bytes": 0,
+              "blob_write_bytes": 0,
+              "log_bytes": 0,
+              "effect_count": 0
+            }
+          }
+        ],
+        "signedLog": {
+          "bytes": 3949,
+          "sha256": "d8f12eca4233c993a99376a0ad91129e48e5b5403fdc01add9fe8a459541038f"
+        },
+        "actualActivationIdsEmitted": false,
+        "sevenNumericIdleCountersEmitted": false,
+        "sourceAssertions": "Twelve successful outputs42 and original f.idle assertions; IDs and seven numeric counters were not printed.",
+        "componentByteSource": "authenticated original9871 cache; not retained twice in normal3983 ZIP"
+      },
+      {
+        "fixture": "fiber-io",
+        "case": "runtime::signed_java_host_imports_suspend_only_their_owned_callers",
+        "rawCompileRecordUnchanged": {
+          "status": "component-built-unqualified",
+          "qualification": "pending",
+          "nodeExecution": "not-run"
+        },
+        "compilerCommandsAllZero": 56,
+        "compilerRecipeInputs": 102,
+        "sdkInputs": 171,
+        "originalComponentDigest": "sha256:45406f8f79c4963ceee00e807800e75d5fa7554c41fc056c1855c7d99143168b",
+        "sourcePath": "sdk/java-guest/fibers/conformance/fiber-io/Capsule.java",
+        "sourceSha256": "12897715c40126c35a28d45e5dd01402003d40666e1747cbc9c121b3b1eae5ed",
+        "componentBytes": 1067597,
+        "actualSignedRawRows": [
+          {
+            "iteration": 0,
+            "mode": 0,
+            "profile": "teavm-activation-fibers-io-v1",
+            "consumption": {
+              "cpu_fuel": 5076587,
+              "peak_memory_bytes": 9351970,
+              "wall_time_micros": 255904,
+              "child_calls": 0,
+              "outbound_requests": 0,
+              "state_read_bytes": 0,
+              "state_write_bytes": 0,
+              "blob_read_bytes": 0,
+              "blob_write_bytes": 0,
+              "log_bytes": 0,
+              "effect_count": 0
+            }
+          },
+          {
+            "iteration": 0,
+            "mode": 1,
+            "profile": "teavm-activation-fibers-io-v1",
+            "consumption": {
+              "cpu_fuel": 5179259,
+              "peak_memory_bytes": 9353525,
+              "wall_time_micros": 205396,
+              "child_calls": 0,
+              "outbound_requests": 0,
+              "state_read_bytes": 0,
+              "state_write_bytes": 0,
+              "blob_read_bytes": 0,
+              "blob_write_bytes": 0,
+              "log_bytes": 0,
+              "effect_count": 0
+            }
+          },
+          {
+            "iteration": 0,
+            "mode": 2,
+            "profile": "teavm-activation-fibers-io-v1",
+            "consumption": {
+              "cpu_fuel": 5042558,
+              "peak_memory_bytes": 9351970,
+              "wall_time_micros": 104059,
+              "child_calls": 0,
+              "outbound_requests": 0,
+              "state_read_bytes": 0,
+              "state_write_bytes": 0,
+              "blob_read_bytes": 0,
+              "blob_write_bytes": 0,
+              "log_bytes": 0,
+              "effect_count": 0
+            }
+          },
+          {
+            "iteration": 0,
+            "mode": 3,
+            "profile": "teavm-activation-fibers-io-v1",
+            "consumption": {
+              "cpu_fuel": 5100722,
+              "peak_memory_bytes": 9353219,
+              "wall_time_micros": 104556,
+              "child_calls": 0,
+              "outbound_requests": 0,
+              "state_read_bytes": 0,
+              "state_write_bytes": 0,
+              "blob_read_bytes": 0,
+              "blob_write_bytes": 0,
+              "log_bytes": 0,
+              "effect_count": 0
+            }
+          },
+          {
+            "iteration": 1,
+            "mode": 0,
+            "profile": "teavm-activation-fibers-io-v1",
+            "consumption": {
+              "cpu_fuel": 5076587,
+              "peak_memory_bytes": 9351970,
+              "wall_time_micros": 254637,
+              "child_calls": 0,
+              "outbound_requests": 0,
+              "state_read_bytes": 0,
+              "state_write_bytes": 0,
+              "blob_read_bytes": 0,
+              "blob_write_bytes": 0,
+              "log_bytes": 0,
+              "effect_count": 0
+            }
+          },
+          {
+            "iteration": 1,
+            "mode": 1,
+            "profile": "teavm-activation-fibers-io-v1",
+            "consumption": {
+              "cpu_fuel": 5179259,
+              "peak_memory_bytes": 9353525,
+              "wall_time_micros": 204148,
+              "child_calls": 0,
+              "outbound_requests": 0,
+              "state_read_bytes": 0,
+              "state_write_bytes": 0,
+              "blob_read_bytes": 0,
+              "blob_write_bytes": 0,
+              "log_bytes": 0,
+              "effect_count": 0
+            }
+          },
+          {
+            "iteration": 1,
+            "mode": 2,
+            "profile": "teavm-activation-fibers-io-v1",
+            "consumption": {
+              "cpu_fuel": 5042558,
+              "peak_memory_bytes": 9351970,
+              "wall_time_micros": 104069,
+              "child_calls": 0,
+              "outbound_requests": 0,
+              "state_read_bytes": 0,
+              "state_write_bytes": 0,
+              "blob_read_bytes": 0,
+              "blob_write_bytes": 0,
+              "log_bytes": 0,
+              "effect_count": 0
+            }
+          },
+          {
+            "iteration": 1,
+            "mode": 3,
+            "profile": "teavm-activation-fibers-io-v1",
+            "consumption": {
+              "cpu_fuel": 5100722,
+              "peak_memory_bytes": 9353219,
+              "wall_time_micros": 105043,
+              "child_calls": 0,
+              "outbound_requests": 0,
+              "state_read_bytes": 0,
+              "state_write_bytes": 0,
+              "blob_read_bytes": 0,
+              "blob_write_bytes": 0,
+              "log_bytes": 0,
+              "effect_count": 0
+            }
+          },
+          {
+            "iteration": 2,
+            "mode": 0,
+            "profile": "teavm-activation-fibers-io-v1",
+            "consumption": {
+              "cpu_fuel": 5076587,
+              "peak_memory_bytes": 9351970,
+              "wall_time_micros": 255190,
+              "child_calls": 0,
+              "outbound_requests": 0,
+              "state_read_bytes": 0,
+              "state_write_bytes": 0,
+              "blob_read_bytes": 0,
+              "blob_write_bytes": 0,
+              "log_bytes": 0,
+              "effect_count": 0
+            }
+          },
+          {
+            "iteration": 2,
+            "mode": 1,
+            "profile": "teavm-activation-fibers-io-v1",
+            "consumption": {
+              "cpu_fuel": 5179259,
+              "peak_memory_bytes": 9353525,
+              "wall_time_micros": 204847,
+              "child_calls": 0,
+              "outbound_requests": 0,
+              "state_read_bytes": 0,
+              "state_write_bytes": 0,
+              "blob_read_bytes": 0,
+              "blob_write_bytes": 0,
+              "log_bytes": 0,
+              "effect_count": 0
+            }
+          },
+          {
+            "iteration": 2,
+            "mode": 2,
+            "profile": "teavm-activation-fibers-io-v1",
+            "consumption": {
+              "cpu_fuel": 5042558,
+              "peak_memory_bytes": 9351970,
+              "wall_time_micros": 104042,
+              "child_calls": 0,
+              "outbound_requests": 0,
+              "state_read_bytes": 0,
+              "state_write_bytes": 0,
+              "blob_read_bytes": 0,
+              "blob_write_bytes": 0,
+              "log_bytes": 0,
+              "effect_count": 0
+            }
+          },
+          {
+            "iteration": 2,
+            "mode": 3,
+            "profile": "teavm-activation-fibers-io-v1",
+            "consumption": {
+              "cpu_fuel": 5100722,
+              "peak_memory_bytes": 9353219,
+              "wall_time_micros": 104113,
+              "child_calls": 0,
+              "outbound_requests": 0,
+              "state_read_bytes": 0,
+              "state_write_bytes": 0,
+              "blob_read_bytes": 0,
+              "blob_write_bytes": 0,
+              "log_bytes": 0,
+              "effect_count": 0
+            }
+          }
+        ],
+        "signedLog": {
+          "bytes": 3979,
+          "sha256": "b8782ccec7b4ad5153136ada473a27154bdc5a37df63fac2c7b62578f6d32034"
+        },
+        "actualActivationIdsEmitted": false,
+        "sevenNumericIdleCountersEmitted": false,
+        "sourceAssertions": "Twelve successful outputs42 and original f.idle assertions; IDs and seven numeric counters were not printed."
+      },
+      {
+        "fixture": "timers",
+        "case": "runtime::signed_java_standard_timers_recur_cancel_and_drain_owned_workers",
+        "rawCompileRecordUnchanged": {
+          "status": "component-built-unqualified",
+          "qualification": "pending",
+          "nodeExecution": "not-run"
+        },
+        "compilerCommandsAllZero": 62,
+        "compilerRecipeInputs": 102,
+        "sdkInputs": 171,
+        "originalComponentDigest": "sha256:5b5e1e5d9855d5ceecc7a3aaadd5b9e7d5080ffc47bc39d0e0f558e07c0cfb67",
+        "sourcePath": "sdk/java-guest/fibers/conformance/timers/Capsule.java",
+        "sourceSha256": "cf8318d69366657260531441a4968d06044a53586c917f26837a1de7721281c8",
+        "componentBytes": 2774859,
+        "actualSignedRawRows": [
+          {
+            "iteration": 0,
+            "mode": 0,
+            "profile": "teavm-activation-fibers-v1",
+            "consumption": {
+              "cpu_fuel": 5593546,
+              "peak_memory_bytes": 9418404,
+              "wall_time_micros": 7188,
+              "child_calls": 0,
+              "outbound_requests": 0,
+              "state_read_bytes": 0,
+              "state_write_bytes": 0,
+              "blob_read_bytes": 0,
+              "blob_write_bytes": 0,
+              "log_bytes": 0,
+              "effect_count": 0
+            }
+          },
+          {
+            "iteration": 0,
+            "mode": 1,
+            "profile": "teavm-activation-fibers-v1",
+            "consumption": {
+              "cpu_fuel": 6317148,
+              "peak_memory_bytes": 9419007,
+              "wall_time_micros": 72088,
+              "child_calls": 0,
+              "outbound_requests": 0,
+              "state_read_bytes": 0,
+              "state_write_bytes": 0,
+              "blob_read_bytes": 0,
+              "blob_write_bytes": 0,
+              "log_bytes": 0,
+              "effect_count": 0
+            }
+          },
+          {
+            "iteration": 0,
+            "mode": 2,
+            "profile": "teavm-activation-fibers-v1",
+            "consumption": {
+              "cpu_fuel": 5414829,
+              "peak_memory_bytes": 9418727,
+              "wall_time_micros": 37928,
+              "child_calls": 0,
+              "outbound_requests": 0,
+              "state_read_bytes": 0,
+              "state_write_bytes": 0,
+              "blob_read_bytes": 0,
+              "blob_write_bytes": 0,
+              "log_bytes": 0,
+              "effect_count": 0
+            }
+          },
+          {
+            "iteration": 0,
+            "mode": 3,
+            "profile": "teavm-activation-fibers-v1",
+            "consumption": {
+              "cpu_fuel": 5365962,
+              "peak_memory_bytes": 9418727,
+              "wall_time_micros": 26170,
+              "child_calls": 0,
+              "outbound_requests": 0,
+              "state_read_bytes": 0,
+              "state_write_bytes": 0,
+              "blob_read_bytes": 0,
+              "blob_write_bytes": 0,
+              "log_bytes": 0,
+              "effect_count": 0
+            }
+          },
+          {
+            "iteration": 1,
+            "mode": 0,
+            "profile": "teavm-activation-fibers-v1",
+            "consumption": {
+              "cpu_fuel": 5597574,
+              "peak_memory_bytes": 9418404,
+              "wall_time_micros": 6119,
+              "child_calls": 0,
+              "outbound_requests": 0,
+              "state_read_bytes": 0,
+              "state_write_bytes": 0,
+              "blob_read_bytes": 0,
+              "blob_write_bytes": 0,
+              "log_bytes": 0,
+              "effect_count": 0
+            }
+          },
+          {
+            "iteration": 1,
+            "mode": 1,
+            "profile": "teavm-activation-fibers-v1",
+            "consumption": {
+              "cpu_fuel": 6317148,
+              "peak_memory_bytes": 9419007,
+              "wall_time_micros": 73023,
+              "child_calls": 0,
+              "outbound_requests": 0,
+              "state_read_bytes": 0,
+              "state_write_bytes": 0,
+              "blob_read_bytes": 0,
+              "blob_write_bytes": 0,
+              "log_bytes": 0,
+              "effect_count": 0
+            }
+          },
+          {
+            "iteration": 1,
+            "mode": 2,
+            "profile": "teavm-activation-fibers-v1",
+            "consumption": {
+              "cpu_fuel": 5414829,
+              "peak_memory_bytes": 9418727,
+              "wall_time_micros": 37863,
+              "child_calls": 0,
+              "outbound_requests": 0,
+              "state_read_bytes": 0,
+              "state_write_bytes": 0,
+              "blob_read_bytes": 0,
+              "blob_write_bytes": 0,
+              "log_bytes": 0,
+              "effect_count": 0
+            }
+          },
+          {
+            "iteration": 1,
+            "mode": 3,
+            "profile": "teavm-activation-fibers-v1",
+            "consumption": {
+              "cpu_fuel": 5365962,
+              "peak_memory_bytes": 9418727,
+              "wall_time_micros": 26121,
+              "child_calls": 0,
+              "outbound_requests": 0,
+              "state_read_bytes": 0,
+              "state_write_bytes": 0,
+              "blob_read_bytes": 0,
+              "blob_write_bytes": 0,
+              "log_bytes": 0,
+              "effect_count": 0
+            }
+          },
+          {
+            "iteration": 2,
+            "mode": 0,
+            "profile": "teavm-activation-fibers-v1",
+            "consumption": {
+              "cpu_fuel": 5597574,
+              "peak_memory_bytes": 9418404,
+              "wall_time_micros": 6251,
+              "child_calls": 0,
+              "outbound_requests": 0,
+              "state_read_bytes": 0,
+              "state_write_bytes": 0,
+              "blob_read_bytes": 0,
+              "blob_write_bytes": 0,
+              "log_bytes": 0,
+              "effect_count": 0
+            }
+          },
+          {
+            "iteration": 2,
+            "mode": 1,
+            "profile": "teavm-activation-fibers-v1",
+            "consumption": {
+              "cpu_fuel": 6342858,
+              "peak_memory_bytes": 9419007,
+              "wall_time_micros": 74549,
+              "child_calls": 0,
+              "outbound_requests": 0,
+              "state_read_bytes": 0,
+              "state_write_bytes": 0,
+              "blob_read_bytes": 0,
+              "blob_write_bytes": 0,
+              "log_bytes": 0,
+              "effect_count": 0
+            }
+          },
+          {
+            "iteration": 2,
+            "mode": 2,
+            "profile": "teavm-activation-fibers-v1",
+            "consumption": {
+              "cpu_fuel": 5414829,
+              "peak_memory_bytes": 9418727,
+              "wall_time_micros": 37068,
+              "child_calls": 0,
+              "outbound_requests": 0,
+              "state_read_bytes": 0,
+              "state_write_bytes": 0,
+              "blob_read_bytes": 0,
+              "blob_write_bytes": 0,
+              "log_bytes": 0,
+              "effect_count": 0
+            }
+          },
+          {
+            "iteration": 2,
+            "mode": 3,
+            "profile": "teavm-activation-fibers-v1",
+            "consumption": {
+              "cpu_fuel": 5365962,
+              "peak_memory_bytes": 9418727,
+              "wall_time_micros": 26508,
+              "child_calls": 0,
+              "outbound_requests": 0,
+              "state_read_bytes": 0,
+              "state_write_bytes": 0,
+              "blob_read_bytes": 0,
+              "blob_write_bytes": 0,
+              "log_bytes": 0,
+              "effect_count": 0
+            }
+          }
+        ],
+        "signedLog": {
+          "bytes": 3932,
+          "sha256": "36ae84b6bcaf08b309e62a042470bd169e81e3b1e8a9c5fda94d3766f8783b6a"
+        },
+        "actualActivationIdsEmitted": false,
+        "sevenNumericIdleCountersEmitted": false,
+        "sourceAssertions": "Twelve successful outputs42 and original f.idle assertions; IDs and seven numeric counters were not printed."
+      }
+    ],
+    "originalRawCompileRecordsRelabeled": false,
+    "allCompilerSdkGitMaterialsMatched": 273,
+    "compilerSdkMaterialCanonicalSha256": "3e86a8bdb0837f15ffa7737c0207c511bcb5f905d6b9b6b7bf4c14afdfbf66cc",
+    "subsequentGuideSizeRepair": "PR1475 moved historical prose; six guide Bash blocks unchanged; original failed run remains failed."
+  },
+  "remainingGates": [
+    "This is the finite unchanged Commons/Hutool worker fixture, not arbitrary library reachability or the complete Java standard concurrency profile.",
+    "Its callbacks use the existing explicit activation-wait barrier and private JDK wait reference; no published timer-library client was tested.",
+    "Seven reported idle counters reach zero; this does not establish complete engine/native/GC cost or physical-allocation closure.",
+    "The twelve calls executed at the exact v12 source above. Later development composition and independently qualified native cohorts are separate evidence.",
+    "The complete #741 acceptance criteria are not closed by these finite results."
+  ],
+  "nativeHarness": {
+    "name": "local-service-java-published-workers",
+    "digest": "sha256:86b01efc449c9492d8b8b6f43904442b982a8b14a21fb655d9ae71358f8c8575",
+    "size": 134828792
+  },
+  "observedTools": [
+    {
+      "name": "cargo",
+      "digest": "sha256:828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953",
+      "size": 42839824
+    },
+    {
+      "name": "rustc",
+      "digest": "sha256:d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea",
+      "size": 645000
+    },
+    {
+      "name": "wasm-tools",
+      "digest": "sha256:cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6",
+      "size": 20231696
+    }
+  ],
+  "finalComposition": {
+    "developmentBase": "7303241332d6b655712c63a73c4715fac47e26ec",
+    "developmentTree": "23b61cc062a2f1137baacf4a3903169187e33208",
+    "qualificationRemains": "f2cfdf32d403e27c2f905ff6440453424d813c2d/v12",
+    "all20ReviewedFeatureBlobsPreserved": true,
+    "incomingDevelopmentBlobsPreserved": true,
+    "incomingNativeCohort": "v13",
+    "incomingNativeQualification": "PR1476 independent five-control source-bound programme; not execution of these Java calls",
+    "incomingTestRepair": "PR1477 actual211/0 capability tests; production unchanged",
+    "incomingStorageOnly": "PR1478 ten existing v2 storage conversions,157 ordered cases/guards preserved; limits unchanged",
+    "qualifiedInputsChangedByComposition": {
+      "crates/latent-capabilities/src/broker/pools/tests/protocol.rs": {
+        "qualifiedBlob": "6f7bbfea630f35bf4b1709c48b3525e3a09eb58f",
+        "composedBlob": "34cf869372d160208f600acbc550ecdbe56a5ab5"
+      },
+      "crates/latent-wasmtime/src/host/join_state_tests.rs": {
+        "qualifiedBlob": "11bb34164592819ed97b37dbbbf9c5d4d7876bd3",
+        "composedBlob": "4372a4ef7a78fc09e87c18db8fd07e05db1cb126"
+      },
+      "crates/vendor/wasmtime/README.latent.md": {
+        "qualifiedBlob": "13e18e31bf22c25e448f4cdc3c241cdf498df1cb",
+        "composedBlob": "05ebe8b7768a53b6f89ef509fc5bf180116c414a"
+      },
+      "crates/vendor/wasmtime/UPSTREAM.latent.json": {
+        "qualifiedBlob": "7ca1dbd1fd58234bcc3ffb7de1ebde46fefade59",
+        "composedBlob": "29f5e6b59eed86c143e19088139ec2b8a97040bf"
+      },
+      "crates/vendor/wasmtime/latent-dynamic-memory.patch": {
+        "qualifiedBlob": "5d8ba18c5c206764b076e56d3aa5abbf69fa112b",
+        "composedBlob": "84ec4bfee2b691468b1e0f54b7ecaaa269d668f9"
+      },
+      "crates/vendor/wasmtime/src/runtime/component/concurrent.rs": {
+        "qualifiedBlob": "280eb5dfd11492f69abd754f4a3d2f20aabfb39a",
+        "composedBlob": "6de8749a4bc34278a5dd0d61a202ef42119ecb40"
+      },
+      "crates/vendor/wasmtime/src/runtime/component/concurrent/futures_and_streams.rs": {
+        "qualifiedBlob": "7a77ece71e2077c0032208cc03178ed215d64bbd",
+        "composedBlob": "e84f26d87e537a4c898d3dbacd68a1c3be7030b8"
+      },
+      "tools/ci/contracts/owners/tools/qualify_canonical_join_state.py.json": {
+        "qualifiedBlob": "26155b0b302f3a897c66b7a6a5736e04eca41e34",
+        "composedBlob": "1d8a71942b1dad0b5064ad1574e8a8ce9bf27861"
+      },
+      "tools/ci/contracts/python/test_c_thread_runtime.py.json": {
+        "qualifiedBlob": "269be62e8dd41569e0448756565fcea350ccf874",
+        "composedBlob": "e1915382f88568098fbc02678eab90797a79ef76"
+      },
+      "tools/ci/contracts/python/test_cargo_native_authoring.py.json": {
+        "qualifiedBlob": "efb4756918d689c1aca2016b7d772882fad226c8",
+        "composedBlob": "260960b007f4b0e71134422e138c406534511a34"
+      },
+      "tools/ci/contracts/python/test_dotnet_private_lifecycle.py.json": {
+        "qualifiedBlob": "65eea47f6146a1ae00096b293bbf90e91050cd20",
+        "composedBlob": "91e33836dcbcf1fb8e0593d4c7290c5a9ff4a868"
+      },
+      "tools/ci/contracts/python/test_dotnet_task_wait.py.json": {
+        "qualifiedBlob": "89a7ad81d90da6235e8ac96871f0c303df62341e",
+        "composedBlob": "de86744d417636d8dd6b48d2bb8882f2513f17e8"
+      },
+      "tools/ci/contracts/python/test_go_native_authoring.py.json": {
+        "qualifiedBlob": "95d7419b129640ac5eee048aae33304ed86122c3",
+        "composedBlob": "6df19cdf981667aab866925683b1d251ac2d913a"
+      },
+      "tools/ci/contracts/python/test_host_codec_wasmtime.py.json": {
+        "qualifiedBlob": "614ff8113ab0a01352f13d4fdfa97cd955f270bb",
+        "composedBlob": "129c836e72d94477ba54d0acc8052e0dd27c505d"
+      },
+      "tools/ci/contracts/python/test_host_stream_kernel_route.py.json": {
+        "qualifiedBlob": "bca31d74a209e03a01dd49d5e6b47444be0714ac",
+        "composedBlob": "2ab4089ab07f7ba0f21d714a14b86fd9b04b6d18"
+      },
+      "tools/ci/contracts/python/test_java_activation_authoring.py.json": {
+        "qualifiedBlob": "e7fcf8aa134f722d8fd3ad49d25d32165b459078",
+        "composedBlob": "8fb9d6714da12826b5098f9832fec7fe0e03f198"
+      },
+      "tools/ci/contracts/python/test_java_schema_view.py.json": {
+        "qualifiedBlob": "b79335fd87e8730e64b669fc492f42ddbaf5d472",
+        "composedBlob": "d3db7831c054ea555ce726e07615b50e819fdbb4"
+      },
+      "tools/ci/contracts/python/test_java_transaction_recovery.py.json": {
+        "qualifiedBlob": "9c724ebc8e2bdb42fec223ed163a6b9af67dca34",
+        "composedBlob": "7e734f2f64eed0542bff7404d0e40a2b1cdc8c2e"
+      },
+      "tools/ci/contracts/python/test_typescript_record_retirement.py.json": {
+        "qualifiedBlob": "7333c22627d8f51b1cb9a111f89f3ec380a4bc7b",
+        "composedBlob": "6952c742bb8017a866b2effc56ba2a196d9b641b"
+      },
+      "tools/ci/contracts/workflows/canonical-join-state.yml/jobs/join-state.json": {
+        "qualifiedBlob": "ca787dcb0b4482bd5bba7bfc1e903a29917e3ffb",
+        "composedBlob": "e17f12ee6f019537f9177d78a249cffc48b9cb5d"
+      },
+      "tools/ci/contracts/workflows/canonical-join-state.yml/workflow.json": {
+        "qualifiedBlob": "30cc7e0d1dcd9e763a6ff5578102f69cb48a2b71",
+        "composedBlob": "654e1e3f7b4218317ffd22d029bd8d4b3f74a5ef"
+      },
+      "tools/ci/suites.json": {
+        "qualifiedBlob": "a090d2f34851e402382249f9cf8cd92438f38dae",
+        "composedBlob": "6b31f1c782b2e93f3174658703ed5c64ca5e12ac"
+      },
+      "tools/host_codec_wasmtime.py": {
+        "qualifiedBlob": "d80870366d7498078aeb6c08997cc28a3767fac8",
+        "composedBlob": "0930c26877a1c7ede1d50af8245250e86929bd81"
+      },
+      "tools/qualify_canonical_join_state.py": {
+        "qualifiedBlob": "9875f1d3469061320ed293cd22c064542719d618",
+        "composedBlob": "5ada51195609a9b525699591ed8c5e0fb580d7f4"
+      },
+      "tools/tests/test_host_codec_wasmtime.py": {
+        "qualifiedBlob": "e5cf957b1b224b6f9ae41e180cb6750c3428e88e",
+        "composedBlob": "7c1a1c1cdcea4a72df7a6de4e3726ad12833fa80"
+      }
+    },
+    "qualifiedInputCountUnchanged": 9070,
+    "javaComponentReplayed": false,
+    "nativeHarnessReplayed": false,
+    "compilerRebuilt": false,
+    "currentTreeTwelveCallRequalificationClaimed": false
+  }
+}

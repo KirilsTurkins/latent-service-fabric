@@ -125,10 +125,100 @@ async fn protocol_metadata_reserves_before_work_and_survives_provider_retirement
     clean(&setup.pools).await;
 }
 
-// Only these new native-memory controls select the actual Phase 3 accounting
-// profile. Keep the original legacy Setup and all five existing controls exact.
-fn kernel_session(setup: &Setup, id: &str) -> (CapabilitySession, Control) {
-    use crate::broker::CapabilityBindingSpec;
+// Only these native-memory controls select the real stream provider and Phase 3
+// accounting. Keep the original legacy Setup and all five controls exact.
+fn kernel_endpoint() -> latent_policy::capability::StreamEndpoint {
+    latent_policy::capability::StreamEndpoint {
+        host: "127.0.0.1".into(),
+        port: 443,
+        transport: latent_policy::capability::StreamTransport::Tcp,
+    }
+}
+
+fn kernel_setup(limits: ProviderPoolLimits) -> Setup {
+    use crate::broker::{
+        network::{STREAM_CAPABILITY, STREAM_PROFILE},
+        ProviderConfiguration,
+    };
+    use latent_policy::capability::{MutationRequest, RecordKind};
+
+    // Reuse the real catalog/publication, without replacing its Secrets policy.
+    let fixture = Fixture::new(CapabilityBrokerLimits::default());
+    let digest = format!("sha256:{}", "2".repeat(64));
+    for (id, kind, document) in [
+        (
+            "stream-p",
+            RecordKind::Policy,
+            serde_json::json!({
+            "formatVersion":1,"tenant":"a","rules":[{
+                "id":"stream","effect":"allow","principals":[{"kind":"user","subject":"alice"}],
+                "services":["echo"],"publications":[fixture.publication.publication().as_str()],
+                "capability":STREAM_CAPABILITY,"operations":["connect"],
+                "resources":{"kind":"stream","endpoints":[kernel_endpoint()]},
+                "ceiling":{"operations":4,"inputBytes":128,"outputBytes":256,"wallTimeMillis":5000}
+            }]}),
+        ),
+        (
+            "stream-binding",
+            RecordKind::ProviderBinding,
+            serde_json::json!({
+            "formatVersion":1,"tenant":"a","capability":STREAM_CAPABILITY,
+            "providerProfile":STREAM_PROFILE,"configurationDigest":digest,"configurationEpoch":1,
+            "restriction":{"operations":[]}}),
+        ),
+    ] {
+        let bytes = serde_json::to_vec(&document).unwrap();
+        fixture
+            .policies
+            .mutate(
+                MutationRequest {
+                    tenant: "a",
+                    actor: "operator",
+                    id,
+                    kind,
+                    operation_id: id,
+                    expected_revision: 0,
+                    document: Some(&bytes),
+                },
+                Instant::now() + Duration::from_secs(1),
+                |_| Ok(()),
+            )
+            .unwrap();
+    }
+    let pools = ProviderPools::new(
+        fixture.broker.clone(),
+        Arc::new(IoRuntime::new(IoLimits::default()).unwrap()),
+        tokio::runtime::Handle::current(),
+        limits,
+    )
+    .unwrap();
+    let provider = pools
+        .install(
+            ProviderSetup {
+                logical_id: "streams",
+                credentials: b"stream-fixture-public-configuration",
+                authority: ProviderConfiguration {
+                    capability: STREAM_CAPABILITY,
+                    profile: STREAM_PROFILE,
+                    configuration_digest: &digest,
+                    configuration_epoch: 1,
+                    restriction_json: br#"{"operations":[]}"#,
+                    minimum_call_charges: &[],
+                },
+            },
+            0,
+        )
+        .unwrap();
+    let client = pools.client(&provider, 0).unwrap();
+    Setup {
+        fixture,
+        pools,
+        provider,
+        client,
+    }
+}
+
+fn kernel_request(setup: &Setup, id: &str) -> (latent_executor::ExecutionRequest, Control) {
     use latent_core::{ActivationBudget, BudgetProfile, ClockSample, EffectiveActivationBudget};
 
     let (request, mut control) = setup.fixture.request(id);
@@ -154,6 +244,17 @@ fn kernel_session(setup: &Setup, id: &str) -> (CapabilitySession, Control) {
         control.budget.deadline().unix_millis(),
         request.activation.deadline_unix_millis
     );
+    (request, control)
+}
+
+fn kernel_session(setup: &Setup, id: &str) -> (CapabilitySession, Control) {
+    use crate::broker::{network::STREAM_CAPABILITY, CapabilityBindingSpec};
+    let (mut request, control) = kernel_request(setup, id);
+    request.imports = vec![latent_executor::BoundImport {
+        capability: latent_core::CapabilityId(STREAM_CAPABILITY.into()),
+        contract: STREAM_CAPABILITY.into(),
+        opaque_handle: "not-authority".into(),
+    }];
     let plan = setup
         .fixture
         .broker
@@ -162,9 +263,9 @@ fn kernel_session(setup: &Setup, id: &str) -> (CapabilitySession, Control) {
             &[CapabilityBindingSpec {
                 definition_digest: None,
                 provider: &setup.provider.reference(),
-                imported_operations: &["read".into()],
-                policy_ids: &["p".into()],
-                provider_binding_id: "binding",
+                imported_operations: &["connect".into()],
+                policy_ids: &["stream-p".into()],
+                provider_binding_id: "stream-binding",
                 deployment_restriction_json: br#"{"operations":[]}"#,
             }],
             &setup.fixture.publication,
@@ -179,14 +280,49 @@ fn kernel_session(setup: &Setup, id: &str) -> (CapabilitySession, Control) {
     (session, control)
 }
 
+async fn kernel_call(setup: &Setup, session: &CapabilitySession) -> PoolCall {
+    use crate::broker::network::STREAM_CAPABILITY;
+    let endpoint = kernel_endpoint();
+    let ready = setup
+        .pools
+        .admit(&setup.client, session)
+        .unwrap()
+        .wait()
+        .await
+        .unwrap();
+    let handle = session
+        .bind(
+            STREAM_CAPABILITY,
+            "connect",
+            latent_policy::capability::ResourceTarget::Stream {
+                endpoint: &endpoint,
+            },
+        )
+        .unwrap();
+    let call = session
+        .dispatch(
+            handle,
+            "connect",
+            latent_policy::capability::ResourceTarget::Stream {
+                endpoint: &endpoint,
+            },
+            &[],
+            CapabilityCallCost::new(128),
+            |call| call,
+        )
+        .unwrap();
+    session.close_handle(handle).unwrap();
+    ready.start(call).unwrap()
+}
+
 #[tokio::test]
 async fn kernel_occupancy_retains_original_io_request_scope_and_memory() {
-    let setup = Setup::new(single());
+    let setup = kernel_setup(single());
     let (session, control) = kernel_session(&setup, "kernel-original-owner");
     let observer = session.observer();
     // The dispatched Work additionally owns its prepaid closed handle row.
     let before_call = control.budget.host_memory_bytes();
-    let call = setup.call(&session).await;
+    let call = kernel_call(&setup, &session).await;
     let scope = Arc::new(session.reserve_stream().unwrap());
     let (request, _) = setup.fixture.request("kernel-original-owner");
     let (core_payload, _) = crate::broker::session::native_backing::payload_bytes(
@@ -222,10 +358,10 @@ async fn kernel_occupancy_retains_original_io_request_scope_and_memory() {
 
 #[tokio::test]
 async fn kernel_occupancy_rejects_foreign_scope_and_nonoriginal_allowance() {
-    let setup = Setup::new(ProviderPoolLimits::default());
+    let setup = kernel_setup(ProviderPoolLimits::default());
     let (session, control) = kernel_session(&setup, "kernel-scope-original");
     let (foreign, foreign_control) = kernel_session(&setup, "kernel-scope-foreign");
-    let call = setup.call(&session).await;
+    let call = kernel_call(&setup, &session).await;
     let scope = Arc::new(session.reserve_stream().unwrap());
     let foreign_scope = Arc::new(foreign.reserve_stream().unwrap());
     let before = control.budget.host_memory_bytes();
@@ -240,15 +376,53 @@ async fn kernel_occupancy_rejects_foreign_scope_and_nonoriginal_allowance() {
     assert_eq!(foreign_control.budget.host_memory_bytes(), foreign_before);
     drop((call, scope, foreign_scope, session, foreign));
     clean(&setup.pools).await;
+
+    // A genuine Phase 3 Secrets call has no stream-provider authority, even
+    // with its own original session/scope and an otherwise valid fixed size.
+    let wrong = Setup::new(ProviderPoolLimits::default());
+    let (request, wrong_control) = kernel_request(&wrong, "kernel-wrong-provider");
+    let plan = wrong
+        .fixture
+        .broker
+        .compile_plan(
+            &wrong.fixture.revision,
+            &[crate::broker::CapabilityBindingSpec {
+                definition_digest: None,
+                provider: &wrong.provider.reference(),
+                imported_operations: &["read".into()],
+                policy_ids: &["p".into()],
+                provider_binding_id: "binding",
+                deployment_restriction_json: br#"{"operations":[]}"#,
+            }],
+            &wrong.fixture.publication,
+            Instant::now() + Duration::from_secs(1),
+        )
+        .unwrap();
+    let session = wrong
+        .fixture
+        .broker
+        .open_session(plan, &request, &wrong_control, &wrong.fixture.publication)
+        .unwrap();
+    let call = wrong.call(&session).await;
+    let scope = Arc::new(session.reserve_stream().unwrap());
+    let before = wrong_control.budget.host_memory_bytes();
+    let error = call
+        .reserve_stream_kernel_ownership(&scope, 65_536)
+        .err()
+        .unwrap();
+    assert_eq!(error.code, latent_core::PlatformErrorCode::PermissionDenied);
+    assert_eq!(wrong_control.budget.host_memory_bytes(), before);
+    drop((call, scope, session));
+    clean(&wrong.pools).await;
 }
 
 #[tokio::test]
 async fn stopped_kernel_occupancy_fails_checkpoint_without_refunding_owner() {
-    let setup = Setup::new(single());
+    let setup = kernel_setup(single());
     let (session, control) = kernel_session(&setup, "kernel-owner-stopped");
     // The dispatched Work additionally owns its prepaid closed handle row.
     let before_call = control.budget.host_memory_bytes();
-    let call = setup.call(&session).await;
+    let call = kernel_call(&setup, &session).await;
     let scope = Arc::new(session.reserve_stream().unwrap());
     let before = control.budget.host_memory_bytes();
     assert!(before > before_call);

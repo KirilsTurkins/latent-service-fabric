@@ -155,6 +155,22 @@ the Java twelve. This is unsigned native qualification of that Box only, not an
 allocator/RSS ceiling or completion of #736; completion WorkerFunction boxes,
 queue/node backing and other opaque/transitive allocations remain separate gaps.
 
+## Canonical completion closure backing
+
+[The focused v13 evidence](evidence/canonical-worker-function-native-2026-10-26.json)
+binds [run 40259061940](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40259061940)
+at `1f8eb3411c87454d19fd543339cd6e9b07342b20`: four new private controls and
+the actual request-5/refusal/fresh-42 control passed, with no ignored cases.
+All 25 archive members, 22 raw channels and 8,907 source bindings were checked.
+The selected completion closure now reserves its exact layout after pending
+admission 4 and before polling, keeping its original owner through queue/drop
+and one-shot invocation. The initial `743cf2c4` attempt failed compilation with
+E0308 and executed zero controls; wrapping its separate old stream callback in
+the infallible Legacy adapter preserved that callback's body and allocation.
+That Legacy stream Box, queue/node backing and other opaque/transitive backing
+remain unpaid gaps. This unsigned native result does not close #736 or establish
+an allocator/RSS ceiling, and does not replay the v11/v12 or Java qualifications.
+
 ## Scope retained outside this slice
 
 Initial linear-memory success/failure notifications, direct Core HostFunc construction, shared

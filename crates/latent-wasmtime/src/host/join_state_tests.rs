@@ -360,8 +360,14 @@ async fn canonical_pending_future_first_poll_refusal_and_same_budget_fresh_store
     canonical_backing_refusal_and_same_budget_fresh_store(4).await;
 }
 
+#[tokio::test]
+#[ignore = "requires focused actual prepared completion-closure qualification"]
+async fn canonical_worker_function_first_poll_refusal_and_same_budget_fresh_store() {
+    canonical_backing_refusal_and_same_budget_fresh_store(5).await;
+}
+
 async fn canonical_backing_refusal_and_same_budget_fresh_store(refusal_request: usize) {
-    assert!(matches!(refusal_request, 2..=4));
+    assert!(matches!(refusal_request, 2..=5));
     let expected = (refusal_request == 2).then(|| {
         let layout: usize = std::env::var("LSF_TEST_JOIN_STATE_LAYOUT")
             .expect("owning layout witness")
@@ -463,6 +469,13 @@ async fn canonical_backing_refusal_and_same_budget_fresh_store(refusal_request: 
                 assert!((1..=4096).contains(&observed.requests[2]));
                 assert!((1..=4096).contains(&observed.requests[3]));
             }
+            if refusal_request == 5 {
+                // SAME first four identities: callback Box, JoinState, inner
+                // CallFuture, pending-output reservation. Only then admit the
+                // exact one-shot completion closure before ANY user poll.
+                assert!((1..=4096).contains(&observed.requests[3]));
+                assert!((1..=4096).contains(&observed.requests[4]));
+            }
             drop(observed);
             drop(error);
             drop(send);
@@ -495,6 +508,11 @@ async fn canonical_backing_refusal_and_same_budget_fresh_store(refusal_request: 
     if refusal_request == 4 {
         println!(
             "LSF_PENDING_FUTURE_V1 refusal=memory-bytes requests=4 before-poll=true fresh=42 stores=2"
+        );
+    }
+    if refusal_request == 5 {
+        println!(
+            "LSF_WORKER_FUNCTION_V1 refusal=memory-bytes requests=5 before-poll=true fresh=42 stores=2"
         );
     }
 }
