@@ -1,101 +1,26 @@
 {
-  "cases": [
-    "BoundedTlsProviderReference.test_changed_source_identity_fails_before_output_or_any_native_process",
-    "BoundedTlsProviderReference.test_exact_bounded_provider_and_separate_upstream_peer_are_both_compiled",
-    "BoundedTlsProviderReference.test_kernel_tail_witness_cannot_be_replaced_with_a_logical_drop_substitute",
-    "BoundedTlsProviderReference.test_maximum_valid_and_last_physical_trust_owner_cases_are_mandatory",
-    "BoundedTlsProviderReference.test_only_all_exact_named_zero_filtered_successes_are_evidence",
-    "BoundedTlsProviderReference.test_partial_catalogue_changed_budget_or_ignored_controls_are_refused",
-    "BoundedTlsProviderReference.test_real_catalogue_keeps_public_refusal_and_activates_all_four_tls_controls"
-  ],
-  "guards": {
-    "BoundedTlsProviderReference.test_changed_source_identity_fails_before_output_or_any_native_process": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:1cc81783ef41cb2e9d64c2c1e46a3b7fd8fdb831a130526f9f9e3ad26c82d0bd",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "BoundedTlsProviderReference.test_exact_bounded_provider_and_separate_upstream_peer_are_both_compiled": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:1cc81783ef41cb2e9d64c2c1e46a3b7fd8fdb831a130526f9f9e3ad26c82d0bd",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "BoundedTlsProviderReference.test_kernel_tail_witness_cannot_be_replaced_with_a_logical_drop_substitute": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:1cc81783ef41cb2e9d64c2c1e46a3b7fd8fdb831a130526f9f9e3ad26c82d0bd",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "BoundedTlsProviderReference.test_maximum_valid_and_last_physical_trust_owner_cases_are_mandatory": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:1cc81783ef41cb2e9d64c2c1e46a3b7fd8fdb831a130526f9f9e3ad26c82d0bd",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "BoundedTlsProviderReference.test_only_all_exact_named_zero_filtered_successes_are_evidence": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:1cc81783ef41cb2e9d64c2c1e46a3b7fd8fdb831a130526f9f9e3ad26c82d0bd",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "BoundedTlsProviderReference.test_partial_catalogue_changed_budget_or_ignored_controls_are_refused": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:1cc81783ef41cb2e9d64c2c1e46a3b7fd8fdb831a130526f9f9e3ad26c82d0bd",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "BoundedTlsProviderReference.test_real_catalogue_keeps_public_refusal_and_activates_all_four_tls_controls": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:1cc81783ef41cb2e9d64c2c1e46a3b7fd8fdb831a130526f9f9e3ad26c82d0bd",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    }
+  "cases":["BoundedTlsProviderReference.test_changed_source_identity_fails_before_output_or_any_native_process","BoundedTlsProviderReference.test_exact_bounded_provider_and_separate_upstream_peer_are_both_compiled","BoundedTlsProviderReference.test_kernel_tail_witness_cannot_be_replaced_with_a_logical_drop_substitute","BoundedTlsProviderReference.test_maximum_valid_and_last_physical_trust_owner_cases_are_mandatory","BoundedTlsProviderReference.test_only_all_exact_named_zero_filtered_successes_are_evidence","BoundedTlsProviderReference.test_partial_catalogue_changed_budget_or_ignored_controls_are_refused","BoundedTlsProviderReference.test_real_catalogue_keeps_public_refusal_and_activates_all_four_tls_controls"],
+  "guards":{
+    "BoundedTlsProviderReference.test_changed_source_identity_fails_before_output_or_any_native_process":
+      "fd6f05eaab8c9110d2cabaa182aec250617dcf0e753014c9d2a45417380a1542",
+    "BoundedTlsProviderReference.test_exact_bounded_provider_and_separate_upstream_peer_are_both_compiled":
+      "fd6f05eaab8c9110d2cabaa182aec250617dcf0e753014c9d2a45417380a1542",
+    "BoundedTlsProviderReference.test_kernel_tail_witness_cannot_be_replaced_with_a_logical_drop_substitute":
+      "fd6f05eaab8c9110d2cabaa182aec250617dcf0e753014c9d2a45417380a1542",
+    "BoundedTlsProviderReference.test_maximum_valid_and_last_physical_trust_owner_cases_are_mandatory":
+      "fd6f05eaab8c9110d2cabaa182aec250617dcf0e753014c9d2a45417380a1542",
+    "BoundedTlsProviderReference.test_only_all_exact_named_zero_filtered_successes_are_evidence":
+      "fd6f05eaab8c9110d2cabaa182aec250617dcf0e753014c9d2a45417380a1542",
+    "BoundedTlsProviderReference.test_partial_catalogue_changed_budget_or_ignored_controls_are_refused":
+      "fd6f05eaab8c9110d2cabaa182aec250617dcf0e753014c9d2a45417380a1542",
+    "BoundedTlsProviderReference.test_real_catalogue_keeps_public_refusal_and_activates_all_four_tls_controls":
+      "fd6f05eaab8c9110d2cabaa182aec250617dcf0e753014c9d2a45417380a1542"
   },
-  "kind": "python",
-  "module": "tools/tests/test_host_stream_tls_provider_reference.py",
-  "reviewReason": "Retain the exact complete streams catalogue after the reviewed additional typed-fault control: strict44 cases, all original IDs/guards/oracles/timeouts preserved.",
-  "schemaVersion": "latent.ci.contracts.v1"
+  "kind":"python",
+  "module":"tools/tests/test_host_stream_tls_provider_reference.py",
+  "reviewReason":"Retain the exact complete streams catalogue after the reviewed additional typed-fault control: strict44 cases, all original IDs/guards/oracles/timeouts preserved.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "fd6f05eaab8c9110d2cabaa182aec250617dcf0e753014c9d2a45417380a1542":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:1cc81783ef41cb2e9d64c2c1e46a3b7fd8fdb831a130526f9f9e3ad26c82d0bd","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+  }
 }

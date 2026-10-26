@@ -1,114 +1,28 @@
 {
-  "cases": [
-    "CampaignOracle.test_clean_boolean_does_not_replace_actual_retired_owners",
-    "CampaignOracle.test_current_rpc_result_bytes_must_equal_original_http_payload",
-    "CampaignOracle.test_current_state_retirement_requires_both_physical_witnesses_and_every_zero_owner",
-    "CampaignOracle.test_evidence_path_and_byte_limits_refuse_before_publication",
-    "CampaignOracle.test_generic_platform_refusal_is_distinct_from_durable_abort_json",
-    "CampaignOracle.test_original_evidence_is_exclusive_and_never_overwritten",
-    "CampaignOracle.test_original_result_cannot_adopt_current_publication_or_another_caller_key",
-    "CampaignOracle.test_refusal_observation_uses_the_actual_early_or_ordinary_service"
-  ],
-  "guards": {
-    "CampaignOracle.test_clean_boolean_does_not_replace_actual_retired_owners": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:022e4093027b871ab6c5a45dc5d13f96d75d98ed4e2122f13d5b04c1adca83c8",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "CampaignOracle.test_current_rpc_result_bytes_must_equal_original_http_payload": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:022e4093027b871ab6c5a45dc5d13f96d75d98ed4e2122f13d5b04c1adca83c8",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "CampaignOracle.test_current_state_retirement_requires_both_physical_witnesses_and_every_zero_owner": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:022e4093027b871ab6c5a45dc5d13f96d75d98ed4e2122f13d5b04c1adca83c8",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "CampaignOracle.test_evidence_path_and_byte_limits_refuse_before_publication": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:022e4093027b871ab6c5a45dc5d13f96d75d98ed4e2122f13d5b04c1adca83c8",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "CampaignOracle.test_generic_platform_refusal_is_distinct_from_durable_abort_json": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:022e4093027b871ab6c5a45dc5d13f96d75d98ed4e2122f13d5b04c1adca83c8",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "CampaignOracle.test_original_evidence_is_exclusive_and_never_overwritten": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:022e4093027b871ab6c5a45dc5d13f96d75d98ed4e2122f13d5b04c1adca83c8",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "CampaignOracle.test_original_result_cannot_adopt_current_publication_or_another_caller_key": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:022e4093027b871ab6c5a45dc5d13f96d75d98ed4e2122f13d5b04c1adca83c8",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "CampaignOracle.test_refusal_observation_uses_the_actual_early_or_ordinary_service": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:022e4093027b871ab6c5a45dc5d13f96d75d98ed4e2122f13d5b04c1adca83c8",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    }
+  "cases":["CampaignOracle.test_clean_boolean_does_not_replace_actual_retired_owners","CampaignOracle.test_current_rpc_result_bytes_must_equal_original_http_payload","CampaignOracle.test_current_state_retirement_requires_both_physical_witnesses_and_every_zero_owner","CampaignOracle.test_evidence_path_and_byte_limits_refuse_before_publication","CampaignOracle.test_generic_platform_refusal_is_distinct_from_durable_abort_json","CampaignOracle.test_original_evidence_is_exclusive_and_never_overwritten","CampaignOracle.test_original_result_cannot_adopt_current_publication_or_another_caller_key","CampaignOracle.test_refusal_observation_uses_the_actual_early_or_ordinary_service"],
+  "guards":{
+    "CampaignOracle.test_clean_boolean_does_not_replace_actual_retired_owners":
+      "d44a9ae84384a6c059dd7a4e61715ba91c03f9170b7df359a5e5bafd99992a2b",
+    "CampaignOracle.test_current_rpc_result_bytes_must_equal_original_http_payload":
+      "d44a9ae84384a6c059dd7a4e61715ba91c03f9170b7df359a5e5bafd99992a2b",
+    "CampaignOracle.test_current_state_retirement_requires_both_physical_witnesses_and_every_zero_owner":
+      "d44a9ae84384a6c059dd7a4e61715ba91c03f9170b7df359a5e5bafd99992a2b",
+    "CampaignOracle.test_evidence_path_and_byte_limits_refuse_before_publication":
+      "d44a9ae84384a6c059dd7a4e61715ba91c03f9170b7df359a5e5bafd99992a2b",
+    "CampaignOracle.test_generic_platform_refusal_is_distinct_from_durable_abort_json":
+      "d44a9ae84384a6c059dd7a4e61715ba91c03f9170b7df359a5e5bafd99992a2b",
+    "CampaignOracle.test_original_evidence_is_exclusive_and_never_overwritten":
+      "d44a9ae84384a6c059dd7a4e61715ba91c03f9170b7df359a5e5bafd99992a2b",
+    "CampaignOracle.test_original_result_cannot_adopt_current_publication_or_another_caller_key":
+      "d44a9ae84384a6c059dd7a4e61715ba91c03f9170b7df359a5e5bafd99992a2b",
+    "CampaignOracle.test_refusal_observation_uses_the_actual_early_or_ordinary_service":
+      "d44a9ae84384a6c059dd7a4e61715ba91c03f9170b7df359a5e5bafd99992a2b"
   },
-  "kind": "python",
-  "module": "tools/tests/test_java_transaction_campaign.py",
-  "reviewReason": "Add actual selected service failure observation without changing existing test guards or cases.",
-  "schemaVersion": "latent.ci.contracts.v1"
+  "kind":"python",
+  "module":"tools/tests/test_java_transaction_campaign.py",
+  "reviewReason":"Add actual selected service failure observation without changing existing test guards or cases.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "d44a9ae84384a6c059dd7a4e61715ba91c03f9170b7df359a5e5bafd99992a2b":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:022e4093027b871ab6c5a45dc5d13f96d75d98ed4e2122f13d5b04c1adca83c8","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+  }
 }

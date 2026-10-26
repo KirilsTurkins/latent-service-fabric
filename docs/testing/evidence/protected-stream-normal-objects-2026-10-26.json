@@ -1,0 +1,287 @@
+{
+  "artifact": {
+    "admissionFiles": 80,
+    "admissionIdentity": {
+      "bytes": 10123,
+      "sha256": "d3ce122e7b8378f008a6657a566c77ac61b414e5d1c6e99c72b2d7dda3db5abd"
+    },
+    "allSafeCRCAndSHA256": true,
+    "archive": {
+      "bytes": 2092688,
+      "sha256": "bf9db091f2d7ab5ceabc5720557caccda19790314234468a84e53c410052afb5"
+    },
+    "expandedPublicBytes": 6995157,
+    "id": 12641857496,
+    "members": 81,
+    "name": "protected-stream-objects-c6f901819ba5d84a5a0474f2e6bbcad8019b6dcd"
+  },
+  "bounds": {
+    "aggregateLogsBytes": 16777216,
+    "applicationContexts": 4,
+    "bootstrapBytes": 1048576,
+    "combinedPerCommandOutputBytes": 4194304,
+    "compileCommandSeconds": 1200,
+    "infrastructureBytes": 196608,
+    "jobMinutes": 25,
+    "maximumConcurrentOwnedChildren": 1,
+    "originalRecords": 256,
+    "ownerSeconds": 1320,
+    "physicalBankBytes": 524288,
+    "proposedRXRing": 32,
+    "proposedTXRing": 64,
+    "publicUnionBytes": 134217728,
+    "ringUsefulFitProven": false
+  },
+  "commands": {
+    "allZeroExitAndDescendantCleanupConfirmed": true,
+    "commandsDocument": {
+      "bytes": 3229,
+      "sha256": "1f18289637363c4dad41a4d9c24c7720383e6c0978fb1adb8b06d07df3d37a71"
+    },
+    "compileChannels": {
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 7838,
+        "sha256": "0870f5020e66c7221267d9b0ae939041512b4dbb624cbc2bb1de741d62eac772"
+      }
+    },
+    "compileElapsedMillis": 18533.210856000012,
+    "count": 27,
+    "rawAggregateBytes": 3149472,
+    "rawChannelCanonicalIdentity": {
+      "bytes": 5864,
+      "sha256": "edf67abc25984b49d6e5a7e22b35ac2063373fe4160104a23cf74f27976a5ada"
+    },
+    "rawChannels": 54
+  },
+  "compiler": {
+    "actualFirstVersionLine": "gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+    "gcc": {
+      "bytes": 1023032,
+      "invocationPath": "/usr/bin/gcc",
+      "resolvedPath": "/usr/bin/x86_64-linux-gnu-gcc-13",
+      "sha256": "1b99826121ae6682a634e5efe09bd3e3df58ce58e0b28f849114ab5b89139c26"
+    },
+    "invocationPathPreserved": true,
+    "jobs": 2,
+    "make": {
+      "bytes": 259808,
+      "invocationPath": "/usr/bin/make",
+      "resolvedPath": "/usr/bin/make",
+      "sha256": "d78b8f1d099fbcfb6f2f49ab87223b9b68fb3956642f92d6ec6de812e8afa965"
+    }
+  },
+  "composition": {
+    "actualCompiledSourceRemains": "c6f901819ba5d84a5a0474f2e6bbcad8019b6dcd",
+    "all47CompiledSourcePathsPreserved": true,
+    "allOrderedCasesGuardsCoveragePreserved": true,
+    "base": "03a5994345294f8a2199c8388ed8e525e94612fb",
+    "classdirIncrementIncluded": false,
+    "compilerReplayForDocsStorageComposition": false,
+    "contractStorageConversionCount": 92,
+    "currentMainRoutineDependencyChangesAreCompositionOnly": true,
+    "existingLosslessPythonContractStorageOnly": true
+  },
+  "configuration": {
+    "generatedAutoconf": {
+      "bytes": 57331,
+      "sha256": "815d672d934387b66191941ff52d7fb059c1974257556eb816559a13fec2d9eb"
+    },
+    "onlyPrivateFactorySymbolEnabled": true,
+    "original": {
+      "bytes": 143135,
+      "sha256": "0015c9ac3b9af98af1e4a0f88788321e96193ce6a387c5a6cec6eaa358cdc1d6"
+    },
+    "originalBaselineRemainsExact": true,
+    "selected": {
+      "bytes": 143135,
+      "sha256": "0015c9ac3b9af98af1e4a0f88788321e96193ce6a387c5a6cec6eaa358cdc1d6"
+    }
+  },
+  "event": "push",
+  "gates": {
+    "booted": false,
+    "compiledUsefulFit": false,
+    "compilerImplicitInputsAttested": false,
+    "consumerSelected": false,
+    "hermetic": false,
+    "imageBuilt": false,
+    "kernelLinked": false,
+    "normalOperationsExecuted": false,
+    "physicalRootRetirementQualified": false,
+    "productionInstallation": false,
+    "whole738Complete": false
+  },
+  "inputBindings": {
+    "allSelectedGitBlobIdentitiesIndependentlyVerified": true,
+    "baselineInputDocument": {
+      "bytes": 862389,
+      "sha256": "753e9befa4652cc240562130a529c5863b42f7832db8e36c506c8091da4e6dae"
+    },
+    "baselineProjectionFiles": 327,
+    "current47Bytes": 337639,
+    "current47CanonicalSha256": "0d297733d0d376b952cafd03ae8e4c9477b979e5afd90d79d53e938ef34e4397",
+    "current47Files": 47,
+    "currentBeforeAfterExact": true,
+    "currentDerivedInputDocument": {
+      "bytes": 44578,
+      "sha256": "a4cc33f7862f45b257e3a6d81e52127416879264819d9898ad7dee43e4dfb642"
+    },
+    "currentGitMaterialCount": 2773,
+    "currentGitMaterialsCanonicalIdentity": {
+      "bytes": 381534,
+      "sha256": "b1f9acc1681d176c2c2ba46ebabdbfed8fdbf663c20a8430734a8c67ae8fdb3c"
+    },
+    "currentProjectionFiles": 365,
+    "currentSourceInputDocument": {
+      "bytes": 770864,
+      "sha256": "299fd84cbfa40b2909fb11f24861b22d1490d686fb8baae0ce94583414d101ec"
+    },
+    "currentWholeGitInventory": {
+      "bytes": 1562115,
+      "sha256": "a7593c67473c4193131bc40dbe425f363a2a8db286fcd2779d9b4d25ca825ee4"
+    },
+    "originalBaselineBeforeAfterExact": true,
+    "originalBaselineCommit": "013c3866942f1654b0effeebc93986b1c5268c2c",
+    "originalBaselineGitMaterials": 2725,
+    "originalBaselineMaterialsCanonicalIdentity": {
+      "bytes": 373912,
+      "sha256": "2804d4ea947ccb2187096abbd35c93ae14d885aaa5f1745a04e649a034890505"
+    },
+    "originalBaselineTree": "ee776dfd184e4f3128561ba5213f95988962c98e"
+  },
+  "issue": 738,
+  "job": 121498639038,
+  "objectFormat": "ELF64 little-endian x86-64 ET_REL; ordinary undefined relocations allowed; no link performed",
+  "objects": {
+    "drivers/base/core.o": {
+      "bytes": 131760,
+      "sha256": "79b4b9bb6a7477cffae3648bb9aa11390d916f14faec2f2f4cdcbb255853a7c1"
+    },
+    "drivers/net/virtio_net.o": {
+      "bytes": 137440,
+      "sha256": "6385d5c35e92236f4cea0d4f80733ee1da26cea77dbb13766a2c15dc65401ed3"
+    },
+    "drivers/virtio/virtio_pci_common.o": {
+      "bytes": 21752,
+      "sha256": "f5f1fcc3e8babbe6dc2203166843ef504ebf65266a82960aee9cee29103cd9a1"
+    },
+    "drivers/virtio/virtio_pci_modern.o": {
+      "bytes": 20440,
+      "sha256": "d341dc69f209c730d63845a7eed2ec01f82e6a39656f6b289f60ed9c8ed18fad"
+    },
+    "drivers/virtio/virtio_ring.o": {
+      "bytes": 52528,
+      "sha256": "14ce91eddc0c83a1458e26d6f4a3ad6c7e50f321c25210a4add5b2b030aa788a"
+    },
+    "lib/kobject.o": {
+      "bytes": 29304,
+      "sha256": "4670c1a806ba80252a4d45f74a693c7d78d9dfc6613d2d7b48be0627a8e8d26d"
+    },
+    "net/core/dev.o": {
+      "bytes": 325792,
+      "sha256": "2e99311bc0f16b82999dbe6a1a55d88701c0db3d7019c3e55c78d49b52c0f1c3"
+    },
+    "net/core/dev_addr_lists.o": {
+      "bytes": 29136,
+      "sha256": "38d65f216ac09546a6a41c368a790ef96fa63cc495b62d132af1ea11c483c191"
+    },
+    "net/core/net-sysfs.o": {
+      "bytes": 80136,
+      "sha256": "224556b6944c0147d52a69507cc6320699f6bda0b5865ebeb5fad094ab3d334f"
+    },
+    "net/core/skbuff.o": {
+      "bytes": 193416,
+      "sha256": "b1e8b1013afb3d279b567cd641326d2e2d558282d4e42574a9d30bbf1f089ead"
+    },
+    "net/core/sock.o": {
+      "bytes": 124360,
+      "sha256": "774ce997399fbe9d810192b5faa6f3b663a917817a30fdf5547aeda238d425da"
+    },
+    "net/ethernet/eth.o": {
+      "bytes": 18536,
+      "sha256": "8ae5a3169a3948cb5e4334ec7c288f1abc8a37fbb7cfeb46dbe41ec837a08421"
+    },
+    "net/factory.o": {
+      "bytes": 290592,
+      "sha256": "1745d9f47cdaec3210c56bc35aa2e8c1e45ea5d77828a687f2706d6c86d8249d"
+    },
+    "net/ipv4/af_inet.o": {
+      "bytes": 54192,
+      "sha256": "fb2ed3c364434f05e6fc4145773faf40a0809e1dc64d9b8b2cf008ec787f671c"
+    },
+    "net/ipv4/ip_output.o": {
+      "bytes": 44776,
+      "sha256": "77c6bb6cfe7f3799d27a743141136b73c09c78777bd780b2e3f2a4e653d8f495"
+    },
+    "net/ipv4/route.o": {
+      "bytes": 92136,
+      "sha256": "754a934311ee1356509623b6306e811bd6d45d0b4b7b0dab95970fdcca80098f"
+    },
+    "net/ipv6/af_inet6.o": {
+      "bytes": 39656,
+      "sha256": "7c791e5e0756930d6e34c49aad08dd95196c3a1afce6d8c483800ef56ac14ac5"
+    },
+    "net/socket.o": {
+      "bytes": 100496,
+      "sha256": "d6bb9ff745f0aa452791c79f176d40a7b0122e5afe884302225d9d1c36d517a2"
+    }
+  },
+  "priorFailures": [
+    {
+      "actualBaselineInputDocumentRetained": false,
+      "archive": {
+        "bytes": 672707,
+        "sha256": "06efefe7bfbfc39676b16ec750185208592b263d6362cb917cd28b05afcdc075"
+      },
+      "artifact": 12635835936,
+      "cause": "strict TCP route preimage expected pre-security text; retained existing normal blob-poison semantics in exact composition correction",
+      "eighteenObjectCommandExecuted": false,
+      "job": 121462024392,
+      "run": 40289833791,
+      "source": "ff66be1e69c5e54269462d8e5b6140182653e1d3",
+      "stage": "pure current source projection"
+    },
+    {
+      "archive": {
+        "bytes": 1001041,
+        "sha256": "69e07b07fe515ef313e30d90f95f13b1e54fb58f2cf16a019a74c060e3a62a79"
+      },
+      "artifact": 12638104918,
+      "cause": "three diagnostics: VIRTIO_RING_F_INDIRECT_DESC undeclared; shared private header lacked original uapi/linux/virtio_ring.h include",
+      "eighteenObjectCommandExecuted": true,
+      "job": 121478894640,
+      "partialObjectsQualified": false,
+      "run": 40295028688,
+      "source": "3d3f59e636993248e915a9064314e9a5a3f14a2b",
+      "stage": "first actual eighteen-object Kbuild"
+    }
+  ],
+  "receiptIdentity": {
+    "bytes": 24442,
+    "sha256": "5223b2d179cdf6366094cc77cd5970007d66168ab2ec12507604faa9e8c9aece"
+  },
+  "remaining": [
+    "complete normal class/kernfs/sysfs and allocating/freeing source closure",
+    "compiled useful 192 KiB/256-record physical geometry and full device/RX/DMA conservation",
+    "real selected kernel socket/RX/readiness/DNS/IPv6/TLS/stop/final-free qualification",
+    "sealed running image/layout and finite node/provider/operator qualification before installation"
+  ],
+  "run": 40301019517,
+  "runURL": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40301019517",
+  "schemaVersion": 1,
+  "scope": "eighteen transformed Linux objects compiled; no linked image or runtime qualification",
+  "sourceCommit": "c6f901819ba5d84a5a0474f2e6bbcad8019b6dcd",
+  "sourceTree": "6c547768422d86cc4805da6bd1c3e59eaece8168",
+  "successfulCorrection": {
+    "derivedFiles": 365,
+    "derivedHeaderBytesAdded": 36,
+    "description": "one original UAPI include in shared private ring header",
+    "macrosOrFeatureRefusalsRelaxed": false,
+    "other364DerivedFilesExact": true
+  },
+  "workflow": ".github/workflows/stream-provider-objects.yml"
+}

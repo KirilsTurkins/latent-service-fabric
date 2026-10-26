@@ -1,114 +1,28 @@
 {
-  "cases": [
-    "TypeScriptNodeBuffer.test_copy_views_subarray_slice_and_overlap_match_native",
-    "TypeScriptNodeBuffer.test_fixed_variable_and_big_integer_values_match_native",
-    "TypeScriptNodeBuffer.test_range_and_real_zero_filled_allocation_profile",
-    "TypeScriptNodeBuffer.test_real_compiler_resolver_alias_identity_and_other_modules_are_unselected",
-    "TypeScriptNodeBuffer.test_selected_materials_and_profile_refuse_forged_backend",
-    "TypeScriptNodeBuffer.test_text_hex_base64_and_invalid_utf8_match_native",
-    "TypeScriptNodeBuffer.test_truncated_write_fill_compare_and_concat_match_native",
-    "TypeScriptNodeBuffer.test_unselected_legacy_capture_does_not_require_new_buffer_declaration"
-  ],
-  "guards": {
-    "TypeScriptNodeBuffer.test_copy_views_subarray_slice_and_overlap_match_native": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:b465e5b1aaa61f769ebd222be56cf1ed6bbd8d098f6d2ca3e1a8a22ba44783c2",
-        "class:setup-sha256:e037200c6b06b12f23d2c3052471cc650854212a800d84d049c9d0364e65dc52"
-      ],
-      "skipSites": []
-    },
-    "TypeScriptNodeBuffer.test_fixed_variable_and_big_integer_values_match_native": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:b465e5b1aaa61f769ebd222be56cf1ed6bbd8d098f6d2ca3e1a8a22ba44783c2",
-        "class:setup-sha256:e037200c6b06b12f23d2c3052471cc650854212a800d84d049c9d0364e65dc52"
-      ],
-      "skipSites": []
-    },
-    "TypeScriptNodeBuffer.test_range_and_real_zero_filled_allocation_profile": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:b465e5b1aaa61f769ebd222be56cf1ed6bbd8d098f6d2ca3e1a8a22ba44783c2",
-        "class:setup-sha256:e037200c6b06b12f23d2c3052471cc650854212a800d84d049c9d0364e65dc52"
-      ],
-      "skipSites": []
-    },
-    "TypeScriptNodeBuffer.test_real_compiler_resolver_alias_identity_and_other_modules_are_unselected": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:b465e5b1aaa61f769ebd222be56cf1ed6bbd8d098f6d2ca3e1a8a22ba44783c2",
-        "class:setup-sha256:e037200c6b06b12f23d2c3052471cc650854212a800d84d049c9d0364e65dc52"
-      ],
-      "skipSites": []
-    },
-    "TypeScriptNodeBuffer.test_selected_materials_and_profile_refuse_forged_backend": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:b465e5b1aaa61f769ebd222be56cf1ed6bbd8d098f6d2ca3e1a8a22ba44783c2",
-        "class:setup-sha256:e037200c6b06b12f23d2c3052471cc650854212a800d84d049c9d0364e65dc52"
-      ],
-      "skipSites": []
-    },
-    "TypeScriptNodeBuffer.test_text_hex_base64_and_invalid_utf8_match_native": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:b465e5b1aaa61f769ebd222be56cf1ed6bbd8d098f6d2ca3e1a8a22ba44783c2",
-        "class:setup-sha256:e037200c6b06b12f23d2c3052471cc650854212a800d84d049c9d0364e65dc52"
-      ],
-      "skipSites": []
-    },
-    "TypeScriptNodeBuffer.test_truncated_write_fill_compare_and_concat_match_native": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:b465e5b1aaa61f769ebd222be56cf1ed6bbd8d098f6d2ca3e1a8a22ba44783c2",
-        "class:setup-sha256:e037200c6b06b12f23d2c3052471cc650854212a800d84d049c9d0364e65dc52"
-      ],
-      "skipSites": []
-    },
-    "TypeScriptNodeBuffer.test_unselected_legacy_capture_does_not_require_new_buffer_declaration": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:b465e5b1aaa61f769ebd222be56cf1ed6bbd8d098f6d2ca3e1a8a22ba44783c2",
-        "class:setup-sha256:e037200c6b06b12f23d2c3052471cc650854212a800d84d049c9d0364e65dc52"
-      ],
-      "skipSites": []
-    }
+  "cases":["TypeScriptNodeBuffer.test_copy_views_subarray_slice_and_overlap_match_native","TypeScriptNodeBuffer.test_fixed_variable_and_big_integer_values_match_native","TypeScriptNodeBuffer.test_range_and_real_zero_filled_allocation_profile","TypeScriptNodeBuffer.test_real_compiler_resolver_alias_identity_and_other_modules_are_unselected","TypeScriptNodeBuffer.test_selected_materials_and_profile_refuse_forged_backend","TypeScriptNodeBuffer.test_text_hex_base64_and_invalid_utf8_match_native","TypeScriptNodeBuffer.test_truncated_write_fill_compare_and_concat_match_native","TypeScriptNodeBuffer.test_unselected_legacy_capture_does_not_require_new_buffer_declaration"],
+  "guards":{
+    "TypeScriptNodeBuffer.test_copy_views_subarray_slice_and_overlap_match_native":
+      "619afd67c0cd6cdd6924c8831a5a8ad439fd7d9b8a9a2f04afc070612c11ce5f",
+    "TypeScriptNodeBuffer.test_fixed_variable_and_big_integer_values_match_native":
+      "619afd67c0cd6cdd6924c8831a5a8ad439fd7d9b8a9a2f04afc070612c11ce5f",
+    "TypeScriptNodeBuffer.test_range_and_real_zero_filled_allocation_profile":
+      "619afd67c0cd6cdd6924c8831a5a8ad439fd7d9b8a9a2f04afc070612c11ce5f",
+    "TypeScriptNodeBuffer.test_real_compiler_resolver_alias_identity_and_other_modules_are_unselected":
+      "619afd67c0cd6cdd6924c8831a5a8ad439fd7d9b8a9a2f04afc070612c11ce5f",
+    "TypeScriptNodeBuffer.test_selected_materials_and_profile_refuse_forged_backend":
+      "619afd67c0cd6cdd6924c8831a5a8ad439fd7d9b8a9a2f04afc070612c11ce5f",
+    "TypeScriptNodeBuffer.test_text_hex_base64_and_invalid_utf8_match_native":
+      "619afd67c0cd6cdd6924c8831a5a8ad439fd7d9b8a9a2f04afc070612c11ce5f",
+    "TypeScriptNodeBuffer.test_truncated_write_fill_compare_and_concat_match_native":
+      "619afd67c0cd6cdd6924c8831a5a8ad439fd7d9b8a9a2f04afc070612c11ce5f",
+    "TypeScriptNodeBuffer.test_unselected_legacy_capture_does_not_require_new_buffer_declaration":
+      "619afd67c0cd6cdd6924c8831a5a8ad439fd7d9b8a9a2f04afc070612c11ce5f"
   },
-  "kind": "python",
-  "module": "tools/tests/test_typescript_node_buffer.py",
-  "reviewReason": "Add one actual integrated captured-declaration selection regression: unselected old SDK requires no new file; selected missing or stale declarations refuse; preserve seven original controls",
-  "schemaVersion": "latent.ci.contracts.v1"
+  "kind":"python",
+  "module":"tools/tests/test_typescript_node_buffer.py",
+  "reviewReason":"Add one actual integrated captured-declaration selection regression: unselected old SDK requires no new file; selected missing or stale declarations refuse; preserve seven original controls",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "619afd67c0cd6cdd6924c8831a5a8ad439fd7d9b8a9a2f04afc070612c11ce5f":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:b465e5b1aaa61f769ebd222be56cf1ed6bbd8d098f6d2ca3e1a8a22ba44783c2","class:setup-sha256:e037200c6b06b12f23d2c3052471cc650854212a800d84d049c9d0364e65dc52"],"skipSites":[]}
+  }
 }
