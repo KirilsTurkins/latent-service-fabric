@@ -10,7 +10,8 @@
       "push": {
         "branches": [
           "test/sdk-738-stream-objects-20261026",
-          "test/sdk-738-classdir-objects-20261026"
+          "test/sdk-738-classdir-objects-20261026",
+          "test/sdk-738-classdir-kernfs-objects-20261026"
         ]
       }
     },
@@ -22,7 +23,7 @@
     "classdir-objects",
     "normal-objects"
   ],
-  "reviewReason": "Review the fixed private four-translation-unit classdir compile mode: exact approved initialized-object source, fifty frozen inputs, original eighteen-object defaults preserved, same process/config/deadline/caps and NULL consumer; no runtime or fit claim.",
+  "reviewReason": "Bind the reviewed empty-classdir kernfs52-source nine-TU programme to existing bounded ownership; preserve historical47/eighteen and50/four contracts and all previous test/coverage guards.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/stream-provider-objects.yml"
 }

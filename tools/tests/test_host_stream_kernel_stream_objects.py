@@ -53,7 +53,15 @@ class StreamObjectOwner(unittest.TestCase):
             root=Path(directory)
             for name in owner.CLASSDIR_SOURCE_PATHS:
                 target=root/name;target.parent.mkdir(parents=True,exist_ok=True)
-                target.write_bytes((owner.ROOT/name).read_bytes())
+                raw=(owner.ROOT/name).read_bytes()
+                if name=='tools/host_stream_kernel_stream_classdir.py':
+                    # TEST-ONLY exact historical positive fixture. The extended
+                    # current helper is bound in full ONLY by the new52 mode;
+                    # production old50 still refuses its changed whole bytes.
+                    raw=raw[:10630]
+                    self.assertEqual(owner.identity(raw),{'bytes':10630,
+                        'sha256':'d0f71e8566f9e8db028855737857a9671ae6e3412df9e745817b06378f24878f'})
+                target.write_bytes(raw)
             normal=owner.selected_sources(root)
             current=owner.selected_sources(root,classdir=True)
             self.assertEqual(len(normal),47)
@@ -78,6 +86,47 @@ class StreamObjectOwner(unittest.TestCase):
             forbidden=output/'objects/net/socket.o';forbidden.parent.mkdir(parents=True)
             forbidden.write_bytes(b'rejected before publication')
             with self.assertRaises(ValueError):owner.admit(output,classdir=True)
+
+    def test_classdir_kernfs_freeze_binds_full_projector_and_keeps_historical_modes_closed(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory)
+            for name in owner.REGISTRATION_SOURCE_PATHS:
+                target=root/name;target.parent.mkdir(parents=True,exist_ok=True)
+                target.write_bytes((owner.ROOT/name).read_bytes())
+            current=owner.selected_sources(root,classdir_kernfs=True)
+            normal=owner.selected_sources(root)
+            self.assertEqual(len(current),52)
+            self.assertEqual(len(normal),47)
+            self.assertTrue(all(current[name]==value for name,value in normal.items()))
+            helper='tools/host_stream_kernel_stream_classdir.py'
+            self.assertEqual(current[helper],owner.identity((owner.ROOT/helper).read_bytes()))
+            self.assertGreater(current[helper]['bytes'],10630)
+            with self.assertRaises(ValueError):owner.selected_sources(root,classdir=True)
+            with self.assertRaises(ValueError):owner.selected_sources(root,classdir_kernfs=1)
+            with self.assertRaises(ValueError):owner.selected_sources(root,classdir=True,classdir_kernfs=True)
+            path=root/'research/standard-outbound/linux-6.12-lineage/factory-stream-classdir-registration.c'
+            path.write_bytes(path.read_bytes()+b'\n')
+            self.assertEqual(owner.selected_sources(root),normal)
+            with self.assertRaises(ValueError):owner.selected_sources(root,classdir_kernfs=True)
+
+    def test_classdir_kernfs_public_gate_keeps_exact_nine_targets_and_current_only_channels(self):
+        expected={'net/factory.o','drivers/base/core.o','lib/kobject.o','fs/sysfs/dir.o',
+            'fs/kernfs/dir.o','lib/idr.o','lib/radix-tree.o','security/security.o','security/selinux/hooks.o'}
+        self.assertEqual(set(owner.mode_targets(classdir_kernfs=True)),expected)
+        self.assertEqual(len(owner.mode_targets()),18)
+        self.assertEqual(len(owner.mode_targets(classdir=True)),4)
+        self.assertIsNotNone(owner.public_allowed('logs/00-baseline-fetch.stdout.txt',classdir_kernfs=True))
+        self.assertIsNone(owner.public_allowed('logs/00-baseline-fetch.stdout.txt'))
+        self.assertIsNone(owner.public_allowed('logs/00-baseline-fetch.stdout.txt',classdir=True))
+        with tempfile.TemporaryDirectory() as directory:
+            output=Path(directory)
+            (output/'receipt.json').write_bytes(b'{"status":"failed","stage":"classdir-kernfs-objects"}\n')
+            self.assertEqual(set(owner.admit(output,classdir_kernfs=True)['files']),{'receipt.json'})
+            for name in ('net/socket.o','net/core/net-sysfs.o'):
+                self.assertIsNone(owner.public_allowed('objects/'+name,classdir_kernfs=True))
+            forbidden=output/'objects/net/core/net-sysfs.o';forbidden.parent.mkdir(parents=True)
+            forbidden.write_bytes(b'unchanged TU is outside this programme')
+            with self.assertRaises(ValueError):owner.admit(output,classdir_kernfs=True)
 
 
 if __name__=='__main__':unittest.main()
