@@ -1,166 +1,36 @@
 {
-  "cases": [
-    "KernelDeviceSysfsSource.test_actual_lsm_entry_rejects_unknown_hooks_but_keeps_mandatory_original_loop",
-    "KernelDeviceSysfsSource.test_authenticates_all_whole_prior_definitions_and_current_callback_table",
-    "KernelDeviceSysfsSource.test_default_and_outside_dispatch_preserves_every_original_body",
-    "KernelDeviceSysfsSource.test_duplicate_diagnostic_uses_original_bank_and_preserves_warning_cleanup",
-    "KernelDeviceSysfsSource.test_final_rcu_classifies_before_original_free_and_retains_complete_outside_body",
-    "KernelDeviceSysfsSource.test_initial_source_is_actual_kobject_before_namespace_and_ownership_callbacks",
-    "KernelDeviceSysfsSource.test_link_classifies_both_origins_before_target_dereference_and_keeps_actual_target_ref",
-    "KernelDeviceSysfsSource.test_private_birth_removes_normal_heap_and_per_cpu_preload_before_id_publication",
-    "KernelDeviceSysfsSource.test_private_descendant_keeps_sgid_parent_reference_and_same_dir_link_errors",
-    "KernelDeviceSysfsSource.test_rehashing_new_members_or_asserting_enablement_never_authenticates_fixture",
-    "KernelDeviceSysfsSource.test_selinux_actual_enodata_precedes_refusal_before_unclosed_context_allocation",
-    "KernelDeviceSysfsSource.test_unknown_missing_duplicate_drift_crlf_function_and_callback_object_refuse"
-  ],
-  "guards": {
-    "KernelDeviceSysfsSource.test_actual_lsm_entry_rejects_unknown_hooks_but_keeps_mandatory_original_loop": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:4a0313d938127f76c2eb73e89882a217fddaeb9618ba3cd2f48a59758414cbbe",
-        "class:setup-sha256:14602114e8e86a1ceb48d46278be947118204f0dd0f54436eb9dc9180d2ee24a"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceSysfsSource.test_authenticates_all_whole_prior_definitions_and_current_callback_table": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:4a0313d938127f76c2eb73e89882a217fddaeb9618ba3cd2f48a59758414cbbe",
-        "class:setup-sha256:14602114e8e86a1ceb48d46278be947118204f0dd0f54436eb9dc9180d2ee24a"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceSysfsSource.test_default_and_outside_dispatch_preserves_every_original_body": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:4a0313d938127f76c2eb73e89882a217fddaeb9618ba3cd2f48a59758414cbbe",
-        "class:setup-sha256:14602114e8e86a1ceb48d46278be947118204f0dd0f54436eb9dc9180d2ee24a"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceSysfsSource.test_duplicate_diagnostic_uses_original_bank_and_preserves_warning_cleanup": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:4a0313d938127f76c2eb73e89882a217fddaeb9618ba3cd2f48a59758414cbbe",
-        "class:setup-sha256:14602114e8e86a1ceb48d46278be947118204f0dd0f54436eb9dc9180d2ee24a"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceSysfsSource.test_final_rcu_classifies_before_original_free_and_retains_complete_outside_body": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:4a0313d938127f76c2eb73e89882a217fddaeb9618ba3cd2f48a59758414cbbe",
-        "class:setup-sha256:14602114e8e86a1ceb48d46278be947118204f0dd0f54436eb9dc9180d2ee24a"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceSysfsSource.test_initial_source_is_actual_kobject_before_namespace_and_ownership_callbacks": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:4a0313d938127f76c2eb73e89882a217fddaeb9618ba3cd2f48a59758414cbbe",
-        "class:setup-sha256:14602114e8e86a1ceb48d46278be947118204f0dd0f54436eb9dc9180d2ee24a"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceSysfsSource.test_link_classifies_both_origins_before_target_dereference_and_keeps_actual_target_ref": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:4a0313d938127f76c2eb73e89882a217fddaeb9618ba3cd2f48a59758414cbbe",
-        "class:setup-sha256:14602114e8e86a1ceb48d46278be947118204f0dd0f54436eb9dc9180d2ee24a"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceSysfsSource.test_private_birth_removes_normal_heap_and_per_cpu_preload_before_id_publication": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:4a0313d938127f76c2eb73e89882a217fddaeb9618ba3cd2f48a59758414cbbe",
-        "class:setup-sha256:14602114e8e86a1ceb48d46278be947118204f0dd0f54436eb9dc9180d2ee24a"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceSysfsSource.test_private_descendant_keeps_sgid_parent_reference_and_same_dir_link_errors": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:4a0313d938127f76c2eb73e89882a217fddaeb9618ba3cd2f48a59758414cbbe",
-        "class:setup-sha256:14602114e8e86a1ceb48d46278be947118204f0dd0f54436eb9dc9180d2ee24a"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceSysfsSource.test_rehashing_new_members_or_asserting_enablement_never_authenticates_fixture": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:4a0313d938127f76c2eb73e89882a217fddaeb9618ba3cd2f48a59758414cbbe",
-        "class:setup-sha256:14602114e8e86a1ceb48d46278be947118204f0dd0f54436eb9dc9180d2ee24a"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceSysfsSource.test_selinux_actual_enodata_precedes_refusal_before_unclosed_context_allocation": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:4a0313d938127f76c2eb73e89882a217fddaeb9618ba3cd2f48a59758414cbbe",
-        "class:setup-sha256:14602114e8e86a1ceb48d46278be947118204f0dd0f54436eb9dc9180d2ee24a"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceSysfsSource.test_unknown_missing_duplicate_drift_crlf_function_and_callback_object_refuse": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:4a0313d938127f76c2eb73e89882a217fddaeb9618ba3cd2f48a59758414cbbe",
-        "class:setup-sha256:14602114e8e86a1ceb48d46278be947118204f0dd0f54436eb9dc9180d2ee24a"
-      ],
-      "skipSites": []
-    }
+  "cases":["KernelDeviceSysfsSource.test_actual_lsm_entry_rejects_unknown_hooks_but_keeps_mandatory_original_loop","KernelDeviceSysfsSource.test_authenticates_all_whole_prior_definitions_and_current_callback_table","KernelDeviceSysfsSource.test_default_and_outside_dispatch_preserves_every_original_body","KernelDeviceSysfsSource.test_duplicate_diagnostic_uses_original_bank_and_preserves_warning_cleanup","KernelDeviceSysfsSource.test_final_rcu_classifies_before_original_free_and_retains_complete_outside_body","KernelDeviceSysfsSource.test_initial_source_is_actual_kobject_before_namespace_and_ownership_callbacks","KernelDeviceSysfsSource.test_link_classifies_both_origins_before_target_dereference_and_keeps_actual_target_ref","KernelDeviceSysfsSource.test_private_birth_removes_normal_heap_and_per_cpu_preload_before_id_publication","KernelDeviceSysfsSource.test_private_descendant_keeps_sgid_parent_reference_and_same_dir_link_errors","KernelDeviceSysfsSource.test_rehashing_new_members_or_asserting_enablement_never_authenticates_fixture","KernelDeviceSysfsSource.test_selinux_actual_enodata_precedes_refusal_before_unclosed_context_allocation","KernelDeviceSysfsSource.test_unknown_missing_duplicate_drift_crlf_function_and_callback_object_refuse"],
+  "guards":{
+    "KernelDeviceSysfsSource.test_actual_lsm_entry_rejects_unknown_hooks_but_keeps_mandatory_original_loop":
+      "f2d72e188819972ca2dc1561c40288297da368e63a3319af8c8993ebdbdb14c0",
+    "KernelDeviceSysfsSource.test_authenticates_all_whole_prior_definitions_and_current_callback_table":
+      "f2d72e188819972ca2dc1561c40288297da368e63a3319af8c8993ebdbdb14c0",
+    "KernelDeviceSysfsSource.test_default_and_outside_dispatch_preserves_every_original_body":
+      "f2d72e188819972ca2dc1561c40288297da368e63a3319af8c8993ebdbdb14c0",
+    "KernelDeviceSysfsSource.test_duplicate_diagnostic_uses_original_bank_and_preserves_warning_cleanup":
+      "f2d72e188819972ca2dc1561c40288297da368e63a3319af8c8993ebdbdb14c0",
+    "KernelDeviceSysfsSource.test_final_rcu_classifies_before_original_free_and_retains_complete_outside_body":
+      "f2d72e188819972ca2dc1561c40288297da368e63a3319af8c8993ebdbdb14c0",
+    "KernelDeviceSysfsSource.test_initial_source_is_actual_kobject_before_namespace_and_ownership_callbacks":
+      "f2d72e188819972ca2dc1561c40288297da368e63a3319af8c8993ebdbdb14c0",
+    "KernelDeviceSysfsSource.test_link_classifies_both_origins_before_target_dereference_and_keeps_actual_target_ref":
+      "f2d72e188819972ca2dc1561c40288297da368e63a3319af8c8993ebdbdb14c0",
+    "KernelDeviceSysfsSource.test_private_birth_removes_normal_heap_and_per_cpu_preload_before_id_publication":
+      "f2d72e188819972ca2dc1561c40288297da368e63a3319af8c8993ebdbdb14c0",
+    "KernelDeviceSysfsSource.test_private_descendant_keeps_sgid_parent_reference_and_same_dir_link_errors":
+      "f2d72e188819972ca2dc1561c40288297da368e63a3319af8c8993ebdbdb14c0",
+    "KernelDeviceSysfsSource.test_rehashing_new_members_or_asserting_enablement_never_authenticates_fixture":
+      "f2d72e188819972ca2dc1561c40288297da368e63a3319af8c8993ebdbdb14c0",
+    "KernelDeviceSysfsSource.test_selinux_actual_enodata_precedes_refusal_before_unclosed_context_allocation":
+      "f2d72e188819972ca2dc1561c40288297da368e63a3319af8c8993ebdbdb14c0",
+    "KernelDeviceSysfsSource.test_unknown_missing_duplicate_drift_crlf_function_and_callback_object_refuse":
+      "f2d72e188819972ca2dc1561c40288297da368e63a3319af8c8993ebdbdb14c0"
   },
-  "kind": "python",
-  "module": "tools/tests/test_host_stream_kernel_device_sysfs.py",
-  "reviewReason": "Reviewed grouped uninstalled PCI registration sysfs IDR and uevent consumers; exclusive48object/201function compile retains all prior profiles commands cases security and original bounds; no runtime physical closure link boot or installation qualification",
-  "schemaVersion": "latent.ci.contracts.v1"
+  "kind":"python",
+  "module":"tools/tests/test_host_stream_kernel_device_sysfs.py",
+  "reviewReason":"Reviewed grouped uninstalled PCI registration sysfs IDR and uevent consumers; exclusive48object/201function compile retains all prior profiles commands cases security and original bounds; no runtime physical closure link boot or installation qualification",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "f2d72e188819972ca2dc1561c40288297da368e63a3319af8c8993ebdbdb14c0":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:4a0313d938127f76c2eb73e89882a217fddaeb9618ba3cd2f48a59758414cbbe","class:setup-sha256:14602114e8e86a1ceb48d46278be947118204f0dd0f54436eb9dc9180d2ee24a"],"skipSites":[]}
+  }
 }

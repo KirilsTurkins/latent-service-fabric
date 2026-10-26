@@ -11,7 +11,8 @@ public final class RuntimeSubstitution implements SubstitutionPolicy {
     static final Set<String> API = Set.of("AbstractExecutorService", "ExecutorService", "Executors",
         "ThreadFactory", "Future", "Future$State", "FutureTask", "RunnableFuture",
         "RejectedExecutionException", "TimeoutException", "TimeUnit",
-        "CompletableFuture", "CompletionStage", "CompletionException");
+        "CompletableFuture", "CompletionStage", "CompletionException",
+        "Delayed", "ScheduledFuture", "ScheduledExecutorService", "ScheduledThreadPoolExecutor");
 
     @Override public void contribute(SubstitutionSink sink) {
         sink.selectClasses(name -> name.equals("java.lang.IllegalThreadStateException"))

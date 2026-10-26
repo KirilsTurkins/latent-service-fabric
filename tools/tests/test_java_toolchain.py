@@ -172,7 +172,7 @@ class BuildWiringTests(unittest.TestCase):
                 self.assertEqual(set(selectors), {expected}, str(path))
         self.assertIn("ci.yml", java_workflows)
         self.assertEqual(java_workflows, [
-            "ci.yml", "java-guest-feasibility.yml", "java-published-workers.yml",
+            "ci.yml", "java-guest-feasibility.yml", "java-published-workers.yml", "java-scheduled-library.yml",
         ])
         self.assertIn(sdk["java"], (ROOT / ".github/workflows/ci.yml").read_text())
 

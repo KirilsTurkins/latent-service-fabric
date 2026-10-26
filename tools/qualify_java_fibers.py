@@ -354,6 +354,50 @@ def standard_timer_model_control(compiler: Compiler, output: Path) -> dict:
             "sourceInputs": inputs, "portOrApplicationClassesInitialized": False, "actualGuestBindingsUsed": False}
 
 
+def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
+    """Real port source with a private host ledger, never injected guest bindings."""
+    private = compiler.sdk / 'fibers/conformance/compiler/scheduled-source-control'
+    ports = sorted((compiler.sdk / 'fibers/dev/latent/guest/runtime/concurrent').glob('*.java'))
+    controls = [private / name for name in ('ScheduledOwnerControl.java',
+        'dev/latent/generated/Bindings.java', 'dev/latent/guest/runtime/Activation.java')]
+    inputs = {path.relative_to(compiler.sdk).as_posix(): digest(read_file(path)) for path in (*ports, *controls)}
+    output.mkdir()
+    compiler.run('scheduled-source-compile', 'javac', '-proc:none', '--release', '25',
+        '-d', output, *ports, *controls)
+    result = compiler.run('scheduled-source-control', 'java', '-Xmx256m', '-cp', output, 'ScheduledOwnerControl').strip()
+    expected = ('SCHEDULED_OWNER_CONTROL PASS preadmission;actual-result;running-cancel-held;periodic-nonoverlap;'
+        'original-error-suppresses-repeat;timed-wait-cancel-and-interrupt;shutdown-policy;factory-rollback;all-retired')
+    if result != expected: raise ValueError('Java scheduled source control did not complete')
+    if inputs != {name: digest(read_file(compiler.sdk / name)) for name in inputs}:
+        raise ValueError('Java scheduled source control inputs changed')
+    return {'status': 'SDK-source-controls-passed', 'sourceInputs': inputs,
+        'componentExecutionPerformed': False, 'actualGuestBindingsUsed': False}
+
+
+def scheduled_model_control(compiler: Compiler, output: Path) -> dict:
+    """Actual pinned TeaVM public/private class identities before component cost."""
+    classpath, identities = locked_model_classpath(compiler, include_platform=True, include_dependency_analysis=True)
+    sources = [*sorted((compiler.sdk / 'fibers/compiler/dev/latent/guest/runtime/compiler').glob('*.java')),
+        *sorted((compiler.sdk / 'fibers/dev/latent/guest/runtime/concurrent').glob('*.java')),
+        compiler.sdk / 'fibers/conformance/compiler/ScheduledModelControl.java']
+    sources += [compiler.sdk / ('fibers/conformance/compiler/scheduled-source-control/' + name)
+        for name in ('dev/latent/generated/Bindings.java', 'dev/latent/guest/runtime/Activation.java')]
+    inputs = {path.relative_to(compiler.sdk).as_posix(): digest(read_file(path)) for path in sources}
+    output.mkdir()
+    compiler.run('scheduled-model-compile', 'javac', '-proc:none', '--release', '25', '-cp', classpath,
+        '-d', output, *sources)
+    result = compiler.run('scheduled-model-control', 'java', '-Xmx256m', '-cp',
+        str(output) + os.pathsep + classpath, 'dev.latent.guest.runtime.compiler.ScheduledModelControl').strip()
+    if result != ('SCHEDULED_MODEL_CONTROL PASS standard-APIs;private-task;canonical-fields-and-methods;'
+                  'ordinary-constructor;no-fallback;models=7'):
+        raise ValueError('Java scheduled model control did not complete')
+    if inputs != {name: digest(read_file(compiler.sdk / name)) for name in inputs}:
+        raise ValueError('Java scheduled model inputs changed')
+    return {'status': 'actual-locked-classlib-model-passed', 'models': 7,
+        'jarDigests': identities, 'sourceInputs': inputs,
+        'portOrApplicationClassesInitialized': False, 'actualGuestBindingsUsed': False}
+
+
 def recipe_inputs() -> dict[str, str]:
     from tools.java_capsule_build import RECIPE
     paths = [Path(__file__), *sorted((ROOT / "tools/java_guest").glob("*.py")),
@@ -371,12 +415,12 @@ def prepare(output: Path, wasi_sdk: Path, *, gradle="gradle", offline_cache: Pat
             read_only_cache: Path | None = None, fixture="threads", observe_public_wineh=False,
             derived_llvm_public=False, private_scalar_llvm_public=False, _deadline=None):
     if _deadline is not None:
-        if (fixture != 'worker-libraries' or type(_deadline) not in (int, float)
+        if (fixture not in {'worker-libraries', 'scheduled-library'} or type(_deadline) not in (int, float)
                 or not math.isfinite(_deadline) or _deadline <= time.monotonic() + 5):
             raise ValueError('Java-worker-parent-deadline')
         # Includes the existing process owner's five-second cleanup allowance.
         _deadline = min(_deadline, time.monotonic() + 1200)
-    if fixture not in {"threads", "completable", "timers", "fiber-io", "worker-libraries"}: raise ValueError("unknown Java fiber fixture")
+    if fixture not in {"threads", "completable", "timers", "fiber-io", "worker-libraries", "scheduled-library"}: raise ValueError("unknown Java fiber fixture")
     if type(observe_public_wineh) is not bool or observe_public_wineh and fixture != 'threads':
         raise ValueError('WinEH observation requires only the fixed normal public fiber fixture')
     if (type(derived_llvm_public) is not bool
@@ -436,7 +480,7 @@ def prepare(output: Path, wasi_sdk: Path, *, gradle="gradle", offline_cache: Pat
         compiler = selected_compiler(output / "compiler", wasi_sdk, gradle=gradle, offline_cache=offline_cache,
                             read_only_cache=read_only_cache, timeout=1200, **extra)
         library_jars, reference_jars = (), ()
-        if fixture == 'worker-libraries':
+        if fixture in {'worker-libraries', 'scheduled-library'}:
             from tools import java_fiber_library_inputs
             capture_options = {'gradle': gradle}
             if _deadline is not None:
@@ -457,12 +501,17 @@ def prepare(output: Path, wasi_sdk: Path, *, gradle="gradle", offline_cache: Pat
         reference_options = ['-cp', os.pathsep.join(map(str, reference_jars))] if reference_jars else []
         compiler.run("reference-jdk-compile", "javac", "-proc:none", *reference_options, "-d", control, source, main, *reference_sources)
         report["reference"] = []
-        for iteration in range(3):
+        modes = 8 if fixture == 'scheduled-library' else 4
+        for iteration in range(1 if fixture == 'scheduled-library' else 3):
             reference_classpath = os.pathsep.join(map(str, (control, *reference_jars)))
             result = compiler.run(f"reference-jdk-{iteration}", "java", "-cp", reference_classpath, "Main")
-            if result.strip() != "42 42 42 42": raise ValueError("reference-JDK fiber observable mismatch")
-            report["reference"].append({"iteration": iteration, "modes": [0, 1, 2, 3], "results": [42, 42, 42, 42]})
-        report["completableSource"] = completable_source_control(compiler, output / "completable-source")
+            if result.strip() != ' '.join(['42'] * modes): raise ValueError("reference-JDK fiber observable mismatch")
+            report["reference"].append({"iteration": iteration, "modes": list(range(modes)), "results": [42] * modes})
+        if fixture == 'scheduled-library':
+            report['scheduledSource'] = scheduled_source_control(compiler, output / 'scheduled-source')
+            report['scheduledModel'] = scheduled_model_control(compiler, output / 'scheduled-model')
+        else:
+            report["completableSource"] = completable_source_control(compiler, output / "completable-source")
         if fixture == "timers":
             report["standardTimerSource"] = standard_timer_source_control(compiler, output / "standard-timer-source")
             report["standardTimerModel"] = standard_timer_model_control(compiler, output / "standard-timer-model")
@@ -470,11 +519,12 @@ def prepare(output: Path, wasi_sdk: Path, *, gradle="gradle", offline_cache: Pat
         if library_jars: selection['application_classpath'] = library_jars
         component, report["record"] = compiler.compile(output / "src", wit.parent,
             "tests:caller/service@1.0.0", output / "build", activation_profile=True, **selection)
-        report["throwableModel"] = throwable_model_control(compiler, output / "throwable-model")
-        report["timeunitModel"] = timeunit_model_control(compiler, output / "timeunit-model")
-        report["waitFrameModel"] = wait_frame_model_control(compiler, output / "wait-frame-model")
-        report["completableModel"] = completable_model_control(compiler, output / "completable-model")
-        if fixture == 'worker-libraries':
+        if fixture != 'scheduled-library':
+            report["throwableModel"] = throwable_model_control(compiler, output / "throwable-model")
+            report["timeunitModel"] = timeunit_model_control(compiler, output / "timeunit-model")
+            report["waitFrameModel"] = wait_frame_model_control(compiler, output / "wait-frame-model")
+            report["completableModel"] = completable_model_control(compiler, output / "completable-model")
+        if fixture in {'worker-libraries', 'scheduled-library'}:
             java_fiber_library_inputs.check(output / 'library-inputs', report['libraries'])
         compiler.check_unchanged()
         report["sdkInputs"] = {name: digest(data) for name, data in compiler.original_sdk.items()}
@@ -526,7 +576,7 @@ def main():
     caches = parser.add_mutually_exclusive_group()
     caches.add_argument("--offline-cache", type=Path)
     caches.add_argument("--read-only-cache", type=Path)
-    parser.add_argument("--fixture", choices=("threads", "completable", "timers", "fiber-io", "worker-libraries"), default="threads")
+    parser.add_argument("--fixture", choices=("threads", "completable", "timers", "fiber-io", "worker-libraries", "scheduled-library"), default="threads")
     parser.add_argument('--observe-public-wineh', action='store_true',
                         help='Fixed-public-only WinEH observation: historical postfailure, or explicit derived pre-Clang diagnostic only')
     parser.add_argument('--derived-llvm-public', action='store_true',
