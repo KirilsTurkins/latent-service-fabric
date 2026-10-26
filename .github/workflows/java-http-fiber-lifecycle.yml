@@ -123,7 +123,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: python3 -B tools/qualify_java_http_fibers.py --prepare --output "$RUNNER_TEMP/java-http-fiber-prepared"
-      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v5.0.0
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v5.0.0
         with:
           distribution: temurin
           java-version: 25.0.4+101.0.LTS
@@ -203,7 +203,7 @@ jobs:
         run: git fetch --no-tags --depth=1 origin 36eaed79dbd92cac12bad2dd1f52cd5d1acd525f
       - name: Fetch the exact independent-tenant HTTP producer before its helper verification
         run: git fetch --no-tags --depth=1 origin 6f5f180136d140ac670561695260f71514781015
-      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v5.0.0
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v5.0.0
         with:
           distribution: temurin
           java-version: 25.0.4+101.0.LTS
@@ -332,7 +332,7 @@ jobs:
         run: git fetch --no-tags --depth=1 origin 36eaed79dbd92cac12bad2dd1f52cd5d1acd525f
       - name: Fetch the exact independent-tenant HTTP producer before its helper verification
         run: git fetch --no-tags --depth=1 origin 6f5f180136d140ac670561695260f71514781015
-      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v5.0.0
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v5.0.0
         with:
           distribution: temurin
           java-version: 25.0.4+101.0.LTS
@@ -525,7 +525,7 @@ jobs:
           --output "$RUNNER_TEMP/java-mixed-native"
       - name: Check only fixed public failed-assembly input retention
         run: python3 -B -m unittest tools.tests.test_java_phase_c_context -v
-      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v5.0.0
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v5.0.0
         with:
           distribution: temurin
           java-version: 25.0.4+101.0.LTS
@@ -625,7 +625,7 @@ jobs:
           --output "$RUNNER_TEMP/java-late-native"
       - name: Check only fixed public failed-assembly input retention
         run: python3 -B -m unittest tools.tests.test_java_phase_c_context -v
-      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v5.0.0
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v5.0.0
         with:
           distribution: temurin
           java-version: 25.0.4+101.0.LTS

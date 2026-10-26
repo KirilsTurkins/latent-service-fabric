@@ -32,7 +32,7 @@ jobs:
           python-version: 3.13.5
       - name: Fetch the immutable native producer source without rebuilding
         run: git fetch --no-tags --depth=1 origin b422af24d86344ac7abb8b8fa56c3782aab63915
-      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v5.0.0
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v5.0.0
         with:
           distribution: temurin
           java-version: 25.0.4+101.0.LTS
