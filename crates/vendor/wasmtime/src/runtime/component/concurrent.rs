@@ -107,6 +107,7 @@ pub use futures_and_streams::{
     StreamProducer, StreamReader, StreamResult, VecBuffer, WriteBuffer,
 };
 pub(crate) use futures_and_streams::{ResourcePair, lower_error_context_to_index};
+pub(crate) use pending_future::HostTaskFuture;
 
 mod abort;
 mod call_future;
@@ -114,6 +115,7 @@ mod error_contexts;
 mod func;
 mod future_stream_any;
 mod futures_and_streams;
+mod pending_future;
 pub(crate) mod table;
 pub(crate) mod tls;
 
@@ -858,7 +860,7 @@ pub(crate) fn poll_and_block<R: Send + Sync + 'static>(
 
             Ok(())
         })
-    }) as HostTaskFuture;
+    }) as BoxedHostTaskFuture;
 
     // Finally, poll the future.  We can use a dummy `Waker` here because we'll
     // add the future to `ConcurrentState::futures` and poll it automatically
@@ -3285,7 +3287,61 @@ impl Instance {
         let (join_handle, future) = JoinHandle::run_with_memory(future, memory.clone())?;
         // Admit the concrete pinned future backing before polling it or
         // publishing its join handle into the host task's running state.
-        let mut future = call_future::CallFuture::new(&memory, future)?;
+        let future = call_future::CallFuture::new(&memory, future)?;
+        // Reserve the exact factory-output Box before the first poll can
+        // perform user I/O. The prepared tuple retains the same inner owner,
+        // lowering closure, Store token and host-task identity.
+        let mut prepared = pending_future::PreparedFuture::new(
+            &memory,
+            (future, lower, token, task),
+            |(future, lower, token, task)| async move {
+                let result = match future.await {
+                    Some(result) => Some(result?),
+                    None => None,
+                };
+                let on_complete = move |store: &mut dyn VMStore| {
+                    // Restore the `current_thread` to be the host so `lower` knows
+                    // how to manipulate borrows and knows which scope of borrows
+                    // to check.
+                    let mut store = token.as_context_mut(store);
+                    let old = store.0.set_thread(task)?;
+
+                    let status = if result.is_some() {
+                        Status::Returned
+                    } else {
+                        Status::ReturnCancelled
+                    };
+
+                    lower(store.as_context_mut(), result, false)?;
+                    let state = store.0.concurrent_state_mut()?;
+                    match &mut state.get_mut(task)?.state {
+                        // The task is already flagged as finished because it was
+                        // cancelled. No need to transition further.
+                        HostTaskState::CalleeDone { .. } => {}
+
+                        // Otherwise transition this task to the done state.
+                        other => *other = HostTaskState::CalleeDone { cancelled: false },
+                    }
+                    Waitable::Host(task).set_event(state, Some(Event::Subtask { status }))?;
+
+                    store.0.set_thread(old)?;
+                    Ok(())
+                };
+
+                // Here we schedule a task to run on a worker fiber to do the
+                // lowering since it may involve a call to the guest's realloc
+                // function. This is necessary because calling the guest while
+                // there are host embedder frames on the stack is unsound.
+                tls::get(move |store| {
+                    store
+                        .concurrent_state_mut()?
+                        .push_high_priority(WorkItem::WorkerFunction(AlwaysMut::new(Box::new(
+                            on_complete,
+                        ))));
+                    Ok(())
+                })
+            },
+        )?;
         {
             let state = &mut state.get_mut(task)?.state;
             assert!(matches!(state, HostTaskState::CalleeStarted));
@@ -3297,12 +3353,15 @@ impl Instance {
         // automatically from the event loop if it doesn't complete immediately
         // here.
         let poll = tls::set(store.0, || {
-            Pin::new(&mut future).poll(&mut Context::from_waker(&Waker::noop()))
+            Pin::new(&mut prepared.args_mut().0).poll(&mut Context::from_waker(&Waker::noop()))
         });
 
         match poll {
             // It finished immediately; lower the result and delete the task.
             Poll::Ready(result) => {
+                // Keep the inner Box alive through direct lowering as before,
+                // but refund the unused continuation reservation first.
+                let (_future, lower, _token, _task) = prepared.into_args();
                 let result = result.transpose()?;
                 lower(store.as_context_mut(), result, true)?;
                 return Ok(Status::Returned.pack(None));
@@ -3319,53 +3378,7 @@ impl Instance {
         // Wrap the future in a closure responsible for lowering the result into
         // the guest's stack and memory, as well as notifying any waiters that
         // the task returned.
-        let future = Box::pin(async move {
-            let result = match future.await {
-                Some(result) => Some(result?),
-                None => None,
-            };
-            let on_complete = move |store: &mut dyn VMStore| {
-                // Restore the `current_thread` to be the host so `lower` knows
-                // how to manipulate borrows and knows which scope of borrows
-                // to check.
-                let mut store = token.as_context_mut(store);
-                let old = store.0.set_thread(task)?;
-
-                let status = if result.is_some() {
-                    Status::Returned
-                } else {
-                    Status::ReturnCancelled
-                };
-
-                lower(store.as_context_mut(), result, false)?;
-                let state = store.0.concurrent_state_mut()?;
-                match &mut state.get_mut(task)?.state {
-                    // The task is already flagged as finished because it was
-                    // cancelled. No need to transition further.
-                    HostTaskState::CalleeDone { .. } => {}
-
-                    // Otherwise transition this task to the done state.
-                    other => *other = HostTaskState::CalleeDone { cancelled: false },
-                }
-                Waitable::Host(task).set_event(state, Some(Event::Subtask { status }))?;
-
-                store.0.set_thread(old)?;
-                Ok(())
-            };
-
-            // Here we schedule a task to run on a worker fiber to do the
-            // lowering since it may involve a call to the guest's realloc
-            // function. This is necessary because calling the guest while
-            // there are host embedder frames on the stack is unsound.
-            tls::get(move |store| {
-                store
-                    .concurrent_state_mut()?
-                    .push_high_priority(WorkItem::WorkerFunction(AlwaysMut::new(Box::new(
-                        on_complete,
-                    ))));
-                Ok(())
-            })
-        });
+        let future = prepared.finish();
 
         // Make this task visible to the guest and then record what it
         // was made visible as.
@@ -3374,7 +3387,7 @@ impl Instance {
             None => bail_bug!("host task wasn't created but should have been"),
         };
         let state = store.0.concurrent_state_mut()?;
-        state.push_future(future);
+        state.push_host_future(future);
         let instance = state.get_mut(caller.task)?.instance;
         let (state, counter) = store.0.instance_state_and_handle_counter(instance);
         let handle = state
@@ -4672,7 +4685,7 @@ impl<T: 'static> VMComponentAsyncStore for StoreInner<T> {
     }
 }
 
-type HostTaskFuture = Pin<Box<dyn Future<Output = Result<()>> + Send + 'static>>;
+type BoxedHostTaskFuture = Pin<Box<dyn Future<Output = Result<()>> + Send + 'static>>;
 
 /// Represents the state of a pending host task.
 ///
@@ -5619,7 +5632,11 @@ impl ConcurrentState {
         self.table.get_mut().delete(Resource::from(id))
     }
 
-    fn push_future(&mut self, future: HostTaskFuture) {
+    fn push_future(&mut self, future: BoxedHostTaskFuture) {
+        self.push_host_future(HostTaskFuture::legacy(future));
+    }
+
+    fn push_host_future(&mut self, future: HostTaskFuture) {
         // Note that we can't directly push to `ConcurrentState::futures` here
         // since this may be called from a future that's being polled inside
         // `Self::poll_until`, which temporarily removes the `FuturesUnordered`
