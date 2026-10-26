@@ -1100,7 +1100,7 @@ async fn producer_cell_real_future_adapter_default_err_restores_original_custody
     let before = probe.requests.lock().unwrap().len();
     let initial = probe.live.load(SeqCst);
     let mut reader = FutureReader::new(&mut store, async { crate::error::Ok(42u8) }).unwrap();
-    assert_eq!(probe.requests.lock().unwrap().len(), before + 2);
+    assert_eq!(probe.requests.lock().unwrap().len(), before + 4);
     let live = probe.live.load(SeqCst);
     assert!(live > initial);
     for _ in 0..32 {
@@ -1112,12 +1112,253 @@ async fn producer_cell_real_future_adapter_default_err_restores_original_custody
         let WriteState::HostReady { try_into, .. } = &state.get_mut(id).unwrap().write else {
             panic!("real FutureReader producer");
         };
-        assert!(try_into(TypeId::of::<()>()).is_none());
+        assert!(try_into.invoke_conversion(TypeId::of::<()>()).is_none());
         assert_eq!(probe.live.load(SeqCst), live);
-        assert_eq!(probe.requests.lock().unwrap().len(), before + 2);
+        assert_eq!(probe.requests.lock().unwrap().len(), before + 4);
     }
     reader.close(&mut store).unwrap();
     assert_eq!(probe.live.load(SeqCst), initial);
     drop(store);
+    assert_eq!(probe.live.load(SeqCst), 0);
+}
+
+// Private factory implementation counters; not public grants or inner-future costs.
+#[repr(align(256))]
+struct ProducerFactoryCapture {
+    probe: Arc<ConsumerCellProbe>,
+    trace: Arc<Mutex<Vec<&'static str>>>,
+    name: &'static str,
+    panic_call: bool,
+    panic_drop: bool,
+}
+
+impl ProducerFactoryCapture {
+    fn call(&self) {
+        assert_eq!(self as *const Self as usize % 256, 0);
+        self.trace.lock().unwrap().push("call");
+        assert!(!self.panic_call, "producer-factory-call");
+    }
+
+    fn produce(&self) -> Pin<Box<dyn Future<Output = Result<StreamResult>> + Send + 'static>> {
+        self.call();
+        future::ready(Ok(StreamResult::Completed)).boxed()
+    }
+
+    fn convert(&self, _ty: TypeId) -> Option<Box<dyn Any>> {
+        self.call();
+        None
+    }
+}
+
+impl Drop for ProducerFactoryCapture {
+    fn drop(&mut self) {
+        self.trace.lock().unwrap().push(self.name);
+        self.probe.value_drops.fetch_add(1, SeqCst);
+        assert!(!self.panic_drop, "producer-factory-capture-drop");
+    }
+}
+
+fn producer_factory_capture(
+    probe: &Arc<ConsumerCellProbe>,
+    trace: &Arc<Mutex<Vec<&'static str>>>,
+    name: &'static str,
+    panic_call: bool,
+    panic_drop: bool,
+) -> ProducerFactoryCapture {
+    ProducerFactoryCapture {
+        probe: probe.clone(),
+        trace: trace.clone(),
+        name,
+        panic_call,
+        panic_drop,
+    }
+}
+
+fn producer_factory_output_layout<A, B, F>(
+    _: &PreparedProducerFactory<A, B, F>,
+) -> core::alloc::Layout {
+    core::alloc::Layout::new::<F>()
+}
+
+#[test]
+fn producer_factory_pair_admission_precedes_builders_and_unused_refunds() {
+    for refuse in [1, 2, 0] {
+        let probe = Arc::new(ConsumerCellProbe::default());
+        let memory = consumer_cell_memory(&probe);
+        let builders = Arc::new(AtomicUsize::new(0));
+        probe.refuse.store(refuse, SeqCst);
+        let result = (|| {
+            let built = builders.clone();
+            let produce =
+                PreparedProducerFactory::new(&memory, move |capture: ProducerFactoryCapture| {
+                    built.fetch_add(1, SeqCst);
+                    move || capture.produce()
+                })?;
+            let built = builders.clone();
+            let conversion =
+                PreparedProducerFactory::new(&memory, move |capture: ProducerFactoryCapture| {
+                    built.fetch_add(1, SeqCst);
+                    move |ty| capture.convert(ty)
+                })?;
+            crate::error::Ok((produce, conversion))
+        })();
+        assert_eq!(builders.load(SeqCst), 0);
+        assert_eq!(probe.confirmations.load(SeqCst), 0);
+        assert_eq!(probe.value_drops.load(SeqCst), 0);
+        if refuse != 0 {
+            assert!(result.is_err());
+            assert_eq!(probe.requests.lock().unwrap().len(), refuse);
+        } else {
+            let (produce, conversion) = result.unwrap();
+            let a = producer_factory_output_layout(&produce);
+            let b = producer_factory_output_layout(&conversion);
+            assert_eq!(a.align(), 256);
+            assert_eq!(b.align(), 256);
+            assert_eq!(*probe.requests.lock().unwrap(), [a.size(), b.size()]);
+            drop((produce, conversion));
+        }
+        assert_eq!(probe.live.load(SeqCst), 0);
+    }
+}
+
+#[test]
+fn producer_factory_confirmation_and_borrowed_call_keep_physical_owner() {
+    for confirmation in [1, 2] {
+        let probe = Arc::new(ConsumerCellProbe::default());
+        let trace = Arc::new(Mutex::new(Vec::new()));
+        let memory = consumer_cell_memory(&probe);
+        let produce =
+            PreparedProducerFactory::new(&memory, |c: ProducerFactoryCapture| move || c.produce())
+                .unwrap();
+        let conversion = PreparedProducerFactory::new(&memory, |c: ProducerFactoryCapture| {
+            move |ty| c.convert(ty)
+        })
+        .unwrap();
+        probe.panic_confirmation.store(confirmation, SeqCst);
+        assert!(
+            std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                let produce = produce.finish_producer(producer_factory_capture(
+                    &probe, &trace, "produce", false, false,
+                ));
+                let conversion = conversion.finish_conversion(producer_factory_capture(
+                    &probe, &trace, "convert", false, false,
+                ));
+                drop((produce, conversion));
+            }))
+            .is_err()
+        );
+        assert_eq!(probe.value_drops.load(SeqCst), confirmation);
+        assert_eq!(probe.live.load(SeqCst), 0);
+        assert_eq!(probe.refunds.lock().unwrap().len(), 2);
+    }
+    for panic_call in [false, true] {
+        let probe = Arc::new(ConsumerCellProbe::default());
+        let trace = Arc::new(Mutex::new(Vec::new()));
+        let memory = consumer_cell_memory(&probe);
+        let prepared = PreparedProducerFactory::new(&memory, |c: ProducerFactoryCapture| {
+            move |ty| c.convert(ty)
+        })
+        .unwrap();
+        let factory = prepared.finish_conversion(producer_factory_capture(
+            &probe, &trace, "convert", panic_call, false,
+        ));
+        let live = probe.live.load(SeqCst);
+        assert!(live > 0);
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            factory.invoke_conversion(TypeId::of::<()>())
+        }));
+        assert_eq!(result.is_err(), panic_call);
+        if let Ok(value) = result {
+            assert!(value.is_none());
+        }
+        assert_eq!(
+            probe.live.load(SeqCst),
+            live,
+            "borrowed call never consumes the Box"
+        );
+        assert_eq!(probe.value_drops.load(SeqCst), 0);
+        assert!(probe.refunds.lock().unwrap().is_empty());
+        probe.check_value_drop.store(true, SeqCst);
+        let moved = factory;
+        drop(moved);
+        assert_eq!(probe.value_drops.load(SeqCst), 1);
+        assert_eq!(probe.live.load(SeqCst), 0);
+        assert_eq!(*trace.lock().unwrap(), ["call", "convert"]);
+    }
+}
+
+#[test]
+fn producer_factory_capture_destructor_unwind_retains_original_guard() {
+    let probe = Arc::new(ConsumerCellProbe::default());
+    let trace = Arc::new(Mutex::new(Vec::new()));
+    let prepared = PreparedProducerFactory::new(
+        &consumer_cell_memory(&probe),
+        |c: ProducerFactoryCapture| move |ty| c.convert(ty),
+    )
+    .unwrap();
+    let factory = prepared.finish_conversion(producer_factory_capture(
+        &probe, &trace, "convert", false, true,
+    ));
+    let live = probe.live.load(SeqCst);
+    assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| drop(factory))).is_err());
+    assert_eq!(probe.value_drops.load(SeqCst), 1);
+    assert_eq!(*trace.lock().unwrap(), ["convert"]);
+    assert_eq!(probe.live.load(SeqCst), live);
+    assert!(probe.refunds.lock().unwrap().is_empty());
+}
+
+#[test]
+fn producer_factory_zst_legacy_and_returned_future_owners_are_distinct() {
+    let probe = Arc::new(ConsumerCellProbe::default());
+    let prepared = PreparedProducerFactory::new(&consumer_cell_memory(&probe), |()| {
+        || -> Pin<Box<dyn Future<Output = Result<StreamResult>> + Send + 'static>> {
+            future::ready(Ok(StreamResult::Completed)).boxed()
+        }
+    })
+    .unwrap();
+    assert_eq!(producer_factory_output_layout(&prepared).size(), 0);
+    let factory = prepared.finish_producer(());
+    drop(factory.invoke_producer()); // Inner future backing is explicitly unpaid.
+    drop(factory);
+    assert!(probe.requests.lock().unwrap().is_empty());
+    let trace = Arc::new(Mutex::new(Vec::new()));
+    let capture = producer_factory_capture(&probe, &trace, "legacy", false, false);
+    let factory = ProducerConversionFactory::legacy(Box::new(move |ty| capture.convert(ty)));
+    assert!(factory.invoke_conversion(TypeId::of::<()>()).is_none());
+    drop(factory);
+    assert_eq!(*trace.lock().unwrap(), ["call", "legacy"]);
+    assert!(probe.requests.lock().unwrap().is_empty());
+
+    let probe = Arc::new(ConsumerCellProbe::default());
+    let trace = Arc::new(Mutex::new(Vec::new()));
+    let prepared_cell = physical_producer_prepared::<ProducerCellValue, ProducerCellBuffer>(&probe);
+    let cell = AccountedProducerCell::create(prepared_cell, producer_cell_value(&trace, false));
+    let cell_bytes = probe.live.load(SeqCst);
+    let prepared = PreparedProducerFactory::new(
+        &consumer_cell_memory(&probe),
+        |cell: AccountedProducerCell<ProducerCellValue, ProducerCellBuffer>| {
+            move || {
+                let cell = cell.clone();
+                async move {
+                    cell.with(|_| ())?;
+                    Ok(StreamResult::Completed)
+                }
+                .boxed()
+            }
+        },
+    )
+    .unwrap();
+    let factory = prepared.finish_producer(cell);
+    assert!(probe.live.load(SeqCst) > cell_bytes);
+    let future = factory.invoke_producer();
+    drop(factory);
+    assert_eq!(
+        probe.live.load(SeqCst),
+        cell_bytes,
+        "future's cell charge is distinct from factory backing"
+    );
+    assert!(trace.lock().unwrap().is_empty());
+    drop(future);
+    assert_eq!(*trace.lock().unwrap(), ["P"]);
     assert_eq!(probe.live.load(SeqCst), 0);
 }

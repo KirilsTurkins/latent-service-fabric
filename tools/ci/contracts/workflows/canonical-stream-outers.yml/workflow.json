@@ -5,11 +5,11 @@
       "cancel-in-progress": false,
       "group": "canonical-stream-outers-${{ github.ref }}"
     },
-    "name": "Focused producer cell ownership",
+    "name": "Focused producer factory ownership",
     "on": {
       "push": {
         "branches": [
-          "feat/sdk-736-producer-cell-20261026"
+          "feat/sdk-736-producer-factories-20261026"
         ],
         "paths": [
           ".github/workflows/canonical-stream-outers.yml",
@@ -30,7 +30,7 @@
   "requiredJobs": [
     "stream-outers"
   ],
-  "reviewReason": "Reviewed #736 producer-cell v19: six finite private implementation counters, three new public creation/conversion cases and two affected existing public HostReady cases;26 commands/52 raw channels, unchanged two locked Cargo targets/features/45m2400/900/60/30/cleanup5/j2. No WAT/old consumer-five/private-six/canonical/cache/language replay. Existing owner modes/functions source exact. General P Boxes remain unpaid; only exact local Future adapter owns body. Mandatory14-file strict workspace cache auth retained.",
+  "reviewReason": "Reviewed #736 producer-factory v20: four new private and two new public implementation controls plus three affected historical count controls;9cases/22commands/44raw. Exact two locked Cargo targets/features,45m/2400/900/60/30/cleanup5/j2 unchanged. No WAT/cache/old11 aggregate/native-local replay. All13 historical owner functions source exact. General P/body Buffer/inner/consumer closures remain unpaid. Mandatory275Wasmtime+14cache auth retained; source-only pending owning outcome.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/canonical-stream-outers.yml"
 }

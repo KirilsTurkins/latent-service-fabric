@@ -441,7 +441,7 @@ not qualify this backport; no cache compilation or runtime execution is
 claimed here. Native memory/refund code and runtime budgets are unchanged.
 
 Current source-cohort identity for this unqualified dependency backport is
-`wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-unordered-futures-outer-sync-result-stream-outers-consumer-producer-memory-v19-cache-repair`. The original plain-v17/fe9 execution remains a separate immutable source.
+`wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-unordered-futures-outer-sync-result-stream-outers-consumer-producer-factories-memory-v20-cache-repair`. The original plain-v17/fe9 execution remains a separate immutable source.
 
 
 The v18 SOURCE stage adds exact selected consumer pinned-value and shared-cell
@@ -503,3 +503,33 @@ factories/completion closures, buffer-owned storage, tables/collections and
 transitive allocations remain unpaid. Layout is not allocator/RSS/full cost;
 whole #736 CPU/memory/retirement completion remains OPEN. Mandatory current
 14-file workspace-isolated cache authentication and fixed locks are unchanged.
+
+
+The v20 SOURCE stage adds exact producer factory closure backing on the selected
+path. Typed builders reserve the actual produce/conversion output Layout before
+transmit insertion, producer Box, Buffer::default, cell or factory construction.
+The original body-plus-cell or shared-only reservations remain first. Builders
+receive the actual ID/cell late and never retain NativeMemory or a factory Arc.
+
+Each original erased Box moves with an inline affine owner. Physical closure,
+capture and Box destruction precedes refund of its SAME guard; confirmation
+cleanup is installed first and capture-destructor unwind retains uncertain
+credit. Borrowed invocation and arbitrary general P::try_into return/escape do
+not transfer the factory owner. None keeps its original concrete Boxes,
+captures, tuple/Arc and force point through infallible inline adapters. Inline
+HostReady/outer metadata may grow; containing paid layouts use actual new types.
+There is no added P:Sync requirement and no inference from pointer history.
+
+Four new private and two new public controls plus only three affected old count
+cases are SOURCE ONLY, UNCOMPILED and UNEXECUTED. The proposed narrow owner has
+nine cases/22 commands/44 raw channels in the original two locked targets and
+original deadlines. Public grants stay1MiB/1B fuel/5s. Private implementation
+counters are not generic memory/RSS grants. No old eleven-case aggregate is
+replayed or credited as a fresh v20 result. Prior v19 source, failed attempts
+and any later qualification remain tied to their actual original source/run.
+
+General StreamProducer P Boxes, transitive Buffer heaps, set_consumer factories,
+returned inner futures and Legacy completion/collections remain explicit gaps.
+This narrows two physical factory allocations only, not whole736 cost-model or
+node/runtime completion. Mandatory275-file Wasmtime/14-file workspace-isolated
+cache authentication and all fixed dependency locks remain unchanged in scope.
