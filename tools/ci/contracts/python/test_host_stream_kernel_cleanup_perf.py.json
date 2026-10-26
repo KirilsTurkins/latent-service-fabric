@@ -1,75 +1,22 @@
 {
-  "cases": [
-    "CleanupPerfSource.test_actual_context_lifetime_and_both_group_walks",
-    "CleanupPerfSource.test_central_target_guard_precedes_actual_event_and_pmu_allocation",
-    "CleanupPerfSource.test_full_task_init_and_error_cleanup_project_to_original",
-    "CleanupPerfSource.test_primary_source_and_explicit_unsupported_operations",
-    "CleanupPerfSource.test_real_original_group_selector_precedes_unsupported_return"
-  ],
-  "guards": {
-    "CleanupPerfSource.test_actual_context_lifetime_and_both_group_walks": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:34a4ce86ebe9a1f79a37fb780a478547a81a711734ec54e7021befb3b4332126",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "CleanupPerfSource.test_central_target_guard_precedes_actual_event_and_pmu_allocation": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:34a4ce86ebe9a1f79a37fb780a478547a81a711734ec54e7021befb3b4332126",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "CleanupPerfSource.test_full_task_init_and_error_cleanup_project_to_original": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:34a4ce86ebe9a1f79a37fb780a478547a81a711734ec54e7021befb3b4332126",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "CleanupPerfSource.test_primary_source_and_explicit_unsupported_operations": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:34a4ce86ebe9a1f79a37fb780a478547a81a711734ec54e7021befb3b4332126",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "CleanupPerfSource.test_real_original_group_selector_precedes_unsupported_return": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:34a4ce86ebe9a1f79a37fb780a478547a81a711734ec54e7021befb3b4332126",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    }
+  "cases":["CleanupPerfSource.test_actual_context_lifetime_and_both_group_walks","CleanupPerfSource.test_central_target_guard_precedes_actual_event_and_pmu_allocation","CleanupPerfSource.test_full_task_init_and_error_cleanup_project_to_original","CleanupPerfSource.test_primary_source_and_explicit_unsupported_operations","CleanupPerfSource.test_real_original_group_selector_precedes_unsupported_return"],
+  "guards":{
+    "CleanupPerfSource.test_actual_context_lifetime_and_both_group_walks":
+      "5b04f3894d10fc8c0beb1a2da3c6c11070423614da8d22729cf258d55e694de3",
+    "CleanupPerfSource.test_central_target_guard_precedes_actual_event_and_pmu_allocation":
+      "5b04f3894d10fc8c0beb1a2da3c6c11070423614da8d22729cf258d55e694de3",
+    "CleanupPerfSource.test_full_task_init_and_error_cleanup_project_to_original":
+      "5b04f3894d10fc8c0beb1a2da3c6c11070423614da8d22729cf258d55e694de3",
+    "CleanupPerfSource.test_primary_source_and_explicit_unsupported_operations":
+      "5b04f3894d10fc8c0beb1a2da3c6c11070423614da8d22729cf258d55e694de3",
+    "CleanupPerfSource.test_real_original_group_selector_precedes_unsupported_return":
+      "5b04f3894d10fc8c0beb1a2da3c6c11070423614da8d22729cf258d55e694de3"
   },
-  "kind": "python",
-  "module": "tools/tests/test_host_stream_kernel_cleanup_perf.py",
-  "reviewReason": "Additive reviewed finite cleanup constructor source controls and one 24-object hosted geometry/atomic programme; original four-object recipe and all earlier cases retained; no kernel link/boot, consumer selection or runtime/native qualification.",
-  "schemaVersion": "latent.ci.contracts.v1"
+  "kind":"python",
+  "module":"tools/tests/test_host_stream_kernel_cleanup_perf.py",
+  "reviewReason":"Additive reviewed finite cleanup constructor source controls and one 24-object hosted geometry/atomic programme; original four-object recipe and all earlier cases retained; no kernel link/boot, consumer selection or runtime/native qualification.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "5b04f3894d10fc8c0beb1a2da3c6c11070423614da8d22729cf258d55e694de3":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:34a4ce86ebe9a1f79a37fb780a478547a81a711734ec54e7021befb3b4332126","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+  }
 }

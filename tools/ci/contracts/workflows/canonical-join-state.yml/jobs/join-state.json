@@ -13,7 +13,7 @@
       "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
       "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
     },
-    "name": "Six private unordered owners and fourteen actual affected cases",
+    "name": "Four remaining actual host controls",
     "runs-on": "ubuntu-24.04",
     "steps": [
       {
@@ -53,7 +53,7 @@
         }
       },
       {
-        "name": "Build only two locked host targets and execute the exact twenty controls",
+        "name": "Build only one locked host target and execute the exact four remaining controls",
         "run": "python3 -B tools/qualify_canonical_join_state.py --source-commit \"${{ github.sha }}\" --output \"$RUNNER_TEMP/canonical-join-state\""
       },
       {
@@ -62,7 +62,7 @@
         "uses": "actions/upload-artifact",
         "with": {
           "if-no-files-found": "warn",
-          "name": "canonical-unordered-backing-${{ github.sha }}",
+          "name": "canonical-outer-sync-result-${{ github.sha }}",
           "path": "${{ runner.temp }}/canonical-join-state/receipt.json\n${{ runner.temp }}/canonical-join-state/FAILED.json\n${{ runner.temp }}/canonical-join-state/source-inputs.json\n${{ runner.temp }}/canonical-join-state/commands.json\n${{ runner.temp }}/canonical-join-state/commands/logs/*.txt\n",
           "retention-days": 3
         }
@@ -72,7 +72,7 @@
   },
   "jobId": "join-state",
   "kind": "job",
-  "reviewReason": "Actual CI cancellation repairs preserve escaped Task/ready-weak charges until real late wake and warm the real two-header Store baseline before existing lift/foreign-Store assertions. Same six NEW private/eight canonical plus six affected ordinary IDs,20 total; original two locked Cargo builds/features/caps unchanged. Historical4eca18pass retained; no production refund change or whole-runtime claim. Explicit18-to20label extension; original CLI/before/coverage unchanged.",
+  "reviewReason": "Actual405 callback Err peak oracle excludes ONLY unallocated result backing at index4 after asserting its typed/dynamic R Layout; owner escrow256 and all8 admissions/error/Gate/zero checks retained. Completion ONLY4remaining actual cases,1locked root target/10commands; prior6private+3main passes historical405, no replay or production change; original bounds unchanged.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/canonical-join-state.yml"
 }
