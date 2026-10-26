@@ -1,0 +1,350 @@
+{
+  "schemaVersion": "lsf.protected-stream-empty-classdir-compile-evidence.v1",
+  "date": "2026-10-26",
+  "issue": 738,
+  "pullRequest": 1505,
+  "scope": "nine x86-64 C translation-unit objects only; no running provider or useful-fit qualification",
+  "executed": {
+    "sourceCommit": "a53bb3595eddc6990868a3a9299f9781834bedc3",
+    "sourceTree": "5fb4016d35ecb462713b1c0efd72c2078805b096",
+    "run": 40347086313,
+    "job": 121656779324,
+    "event": "push",
+    "branch": "test/sdk-738-classdir-kernfs-objects-20261026",
+    "status": "success",
+    "artifact": {
+      "id": 12661309756,
+      "bytes": 1863793,
+      "sha256": "4c3b2597e279fefb1b1f3aec9bf215467741396a8b31e8ff21267b126dc9c206",
+      "safeCrcShaMembers": 74,
+      "admittedPayloadMembers": 73,
+      "admittedPayloadBytes": 6388838,
+      "expandedUnionBytes": 6398076
+    }
+  },
+  "objects": {
+    "format": "ELF64 little-endian x86-64 ET_REL; ordinary unresolved externals are not a link claim",
+    "count": 9,
+    "targets": [
+      "net/factory.o",
+      "drivers/base/core.o",
+      "lib/kobject.o",
+      "fs/sysfs/dir.o",
+      "fs/kernfs/dir.o",
+      "lib/idr.o",
+      "lib/radix-tree.o",
+      "security/security.o",
+      "security/selinux/hooks.o"
+    ],
+    "identities": {
+      "drivers/base/core.o": {
+        "bytes": 135336,
+        "sha256": "67d297712922583a0d7f89a1e2f08ce6634b285fc094b6eed633c1f2729ef269"
+      },
+      "fs/kernfs/dir.o": {
+        "bytes": 45528,
+        "sha256": "35c74195eb2e9d8fc827f3c6988b54f8c3685cfa05090eb9148553eb10bd3398"
+      },
+      "fs/sysfs/dir.o": {
+        "bytes": 9168,
+        "sha256": "d5d2429e1e57fa9b70a6d7c7ec1e1f303f83fc09c4cccae2a699729ad433c16b"
+      },
+      "lib/idr.o": {
+        "bytes": 20288,
+        "sha256": "8bcbc7c665330e8e8a384fd0c6c60c544005c609c5b4c93bcdf0dcd74e63eed0"
+      },
+      "lib/kobject.o": {
+        "bytes": 31080,
+        "sha256": "a5de03f4f758459a56464b3e40c54434444bfd2aacd7adeab85e9e8c602cd19c"
+      },
+      "lib/radix-tree.o": {
+        "bytes": 36632,
+        "sha256": "417ec9f5a8ebab6320c47d3ea7d1bea6115dd4b7b4b7a191ba9fe62968a30876"
+      },
+      "net/factory.o": {
+        "bytes": 300944,
+        "sha256": "6e2759fb9c6eab0cd33c5df0a95c0890ee130af5a7a9c12356b8a08da6d88643"
+      },
+      "security/security.o": {
+        "bytes": 421240,
+        "sha256": "d41fe7d988d93d703c7069b5117ba88c418d5c973e28c24f6d8824b6bc703688"
+      },
+      "security/selinux/hooks.o": {
+        "bytes": 176104,
+        "sha256": "3b62bc082f692948e08f828c0beabbf068b81ee718f71b5b468416f302c06590"
+      }
+    }
+  },
+  "source": {
+    "rows": 52,
+    "bytes": 415655,
+    "canonicalSha256": "6784ec02a37b8c845edaab608f086ac7950ffb9e8afd5de36ce54fc2e90a8fdd",
+    "derivedRows": 369,
+    "derivedCanonicalSha256": "4eea93410e5226824b0571dcfb0d400216567fb9f83f54ebd04e0f8839dd3c40",
+    "currentBeforeAfterGitBindings": 2781,
+    "currentBeforeAfterEqual": true,
+    "currentInputCanonicalSha256": "3e7cc092ee46333590a6645216e42edcaef22dbae5b0fb73b4c0baabfef28080",
+    "wholeGitTreeInventory": {
+      "bytes": 1567595,
+      "sha256": "4e912f213311a6b6a9a961534f7afcc44b2ec5d64d7622b36e8d450afaa22d68"
+    },
+    "headAndTreeBeforeAfterEqual": true,
+    "baseline": {
+      "commit": "013c3866942f1654b0effeebc93986b1c5268c2c",
+      "tree": "ee776dfd184e4f3128561ba5213f95988962c98e",
+      "beforeAfterGitBindings": 2725,
+      "beforeAfterEqual": true,
+      "inputCanonicalSha256": "2804d4ea947ccb2187096abbd35c93ae14d885aaa5f1745a04e649a034890505",
+      "derivedRows": 327,
+      "derivedCanonicalSha256": "628b033c6b9dc46f5dfb1ea0d235770f1ae4875195af213f3b09754d649a3abe",
+      "compilerInvocations": 0,
+      "runtimeInvocations": 0,
+      "qualificationProjectionApplied": false
+    },
+    "acceptedConfiguration": {
+      "bytes": 143135,
+      "sha256": "0015c9ac3b9af98af1e4a0f88788321e96193ce6a387c5a6cec6eaa358cdc1d6"
+    },
+    "officialSourceArchive": {
+      "bytes": 148686048,
+      "sha256": "e09b6727e5c521253f0d41694900b9c38fb7604db7d35238a8197aa9f7de2428"
+    }
+  },
+  "process": {
+    "completedReapedZeroExitCommands": 28,
+    "rawChannels": 56,
+    "commandsIdentity": {
+      "bytes": 3351,
+      "sha256": "2f57c4ed040ebd5cefce7ca97caf9499c7630d7fb2672c52443920af8f4c9bc1"
+    },
+    "rawChannelsCanonicalSha256": "03281239a61602a86168135c6d31d483c7345426ea2d1a84ca7b333c9bbd7e01",
+    "compile": {
+      "completed": true,
+      "descendantsCleaned": true,
+      "elapsedMillis": 12171.924198999988,
+      "exitCode": 0,
+      "stage": "classdir-kernfs-objects"
+    },
+    "stageOrder": [
+      "source-head",
+      "source-tree",
+      "source-clean",
+      "baseline-fetch",
+      "baseline-object",
+      "baseline-tree",
+      "baseline-worktree",
+      "baseline-head",
+      "baseline-clean-before",
+      "locked-python-dependencies",
+      "normal-prerequisite-update",
+      "normal-prerequisite-install",
+      "gcc-version",
+      "make-version",
+      "as-version",
+      "ld-version",
+      "rustc-version",
+      "official-source",
+      "extract-source",
+      "original-defconfig",
+      "selected-olddefconfig",
+      "pure-baseline",
+      "baseline-clean-after",
+      "baseline-tree-after",
+      "classdir-kernfs-objects",
+      "source-clean-after",
+      "source-tree-after",
+      "source-head-after"
+    ],
+    "pureControls": {
+      "count": 2,
+      "hostedStepConclusion": "success",
+      "caseNames": [
+        "StreamObjectOwner.test_classdir_kernfs_freeze_binds_full_projector_and_keeps_historical_modes_closed",
+        "StreamObjectOwner.test_classdir_kernfs_public_gate_keeps_exact_nine_targets_and_current_only_channels"
+      ]
+    },
+    "oldFourObjectSteps": "skipped",
+    "oldEighteenObjectJob": {
+      "id": 121656782789,
+      "conclusion": "skipped"
+    }
+  },
+  "boundedReceipts": {
+    "receipt.json": {
+      "bytes": 24934,
+      "sha256": "74ec2095cb0d909a4a283785e508638d742693df199ff43c2e407e2c42705675"
+    },
+    "source-inputs.json": {
+      "bytes": 774202,
+      "sha256": "33bd01ac732ebb074e8945b36da8e2c119a006f85524c482300ff96e53677df0"
+    },
+    "baseline-inputs.json": {
+      "bytes": 862389,
+      "sha256": "753e9befa4652cc240562130a529c5863b42f7832db8e36c506c8091da4e6dae"
+    },
+    "derived-inputs.json": {
+      "bytes": 45136,
+      "sha256": "4eea93410e5226824b0571dcfb0d400216567fb9f83f54ebd04e0f8839dd3c40"
+    },
+    "commands.json": {
+      "bytes": 3351,
+      "sha256": "2f57c4ed040ebd5cefce7ca97caf9499c7630d7fb2672c52443920af8f4c9bc1"
+    },
+    "ADMISSION.json": {
+      "bytes": 9238,
+      "sha256": "771872dc056429712acfa85ef8f3639cef454eaff111aa2a9c8d2233347ffc33"
+    }
+  },
+  "limits": {
+    "jobMinutes": 25,
+    "ownerSeconds": 1320,
+    "maximumCompileSeconds": 1200,
+    "buildJobs": 2,
+    "oneCleanupReserveSeconds": 5,
+    "exactBaselineFetchSeconds": 90,
+    "publicUnionBytes": 134217728,
+    "admissionMaximumBytes": 1048576,
+    "bankBytes": 524288,
+    "infrastructureBytes": 196608,
+    "allocationRecords": 256,
+    "warningsAsErrors": true
+  },
+  "toolVersionFirstLines": {
+    "as": "GNU assembler (GNU Binutils for Ubuntu) 2.42",
+    "gcc": "gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+    "ld": "GNU ld (GNU Binutils for Ubuntu) 2.42",
+    "make": "GNU Make 4.3",
+    "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)"
+  },
+  "failedAttempts": [
+    {
+      "sourceCommit": "efd2209cc01b0f3b8b03deb7b78d8ca7e5cbb2ff",
+      "run": 40343046588,
+      "job": 121642552438,
+      "artifact": {
+        "id": 12659283687,
+        "bytes": 1003831,
+        "sha256": "946877d14b2e26c685fb4e0d64d1fe4a63caa28fac6c396113b235c89851ba5a"
+      },
+      "status": "failed",
+      "authenticatedScope": {
+        "head": "efd2209cc01b0f3b8b03deb7b78d8ca7e5cbb2ff",
+        "failedProgrammeRetained": true,
+        "safeCrcShaMembers": 58,
+        "admittedPayloadMembers": 57,
+        "currentInitialGitBindings": 2781,
+        "currentFinalSourceCheckReached": false,
+        "baselineBeforeAfterGitBindings": 2725,
+        "currentSourceRows": 52,
+        "derivedRows": 369,
+        "completedReapedCommands": 25,
+        "zeroExitCommands": 24,
+        "compileExitCode": 2,
+        "compileMillis": 6100.2273630000445,
+        "actualConfiguration": {
+          "bytes": 143135,
+          "sha256": "0015c9ac3b9af98af1e4a0f88788321e96193ce6a387c5a6cec6eaa358cdc1d6"
+        },
+        "nineObjectsQualified": false,
+        "diagnostic": "missing prototype for private kernfs_new_node; warnings-as-errors preserved"
+      },
+      "correction": "New kernfs helper is file-local static; the u32 clone preserves the full original static declaration. Other367 derived rows were exact; each changed TU gained7bytes."
+    },
+    {
+      "sourceCommit": "bc171d97f9cfa754fe2059b4c60cb5201f6cd5d2",
+      "run": 40345260977,
+      "job": 121650373271,
+      "artifact": {
+        "id": 12661731237,
+        "bytes": 1004002,
+        "sha256": "38724cf0e5b2cf22bf32be549724f007ec65ca57c8cde8b05d012fe7fc1b8dcf"
+      },
+      "status": "failed",
+      "authenticatedScope": {
+        "head": "bc171d97f9cfa754fe2059b4c60cb5201f6cd5d2",
+        "safeCrcShaMembers": 58,
+        "admittedMembers": 57,
+        "currentInitialGitBindings": 2781,
+        "currentBindingsUnchangedFromVerifiedEfd": 2779,
+        "changedBindingsIndependentlyGitVerified": [
+          "tools/host_stream_kernel_stream_classdir.py",
+          "tools/qualify_host_stream_kernel_stream_objects.py"
+        ],
+        "ownerContractOutsideRuntimeInputReader": true,
+        "baselineBeforeAfterGitBindings": 2725,
+        "source52Rows": 52,
+        "source52Bytes": 415571,
+        "derivedRows": 369,
+        "derivedOnlyTwoStaticPrefixes": {
+          "fs/kernfs/dir.c": {
+            "before": {
+              "bytes": 57664,
+              "sha256": "250144e72f382a305db05e37a01bfee341038916378a1e28ba52da07d328488a"
+            },
+            "after": {
+              "bytes": 57671,
+              "sha256": "3c68627ebb5fec9322d7d966e0d5faf19604d7868450ce1e33b262fc313a1245"
+            }
+          },
+          "lib/idr.c": {
+            "before": {
+              "bytes": 21665,
+              "sha256": "5ead1db2654da3bef400239bf7f6a2475d88c74891b24311e7d14e91ac36635f"
+            },
+            "after": {
+              "bytes": 21672,
+              "sha256": "df9249fd70edd86b7adee142f0cee95e1966d7577d74ed5eec0b899086b67684"
+            }
+          }
+        },
+        "completedReapedCommands": 25,
+        "zeroExitCommands": 24,
+        "compileExitCode": 2,
+        "compileMillis": 11341.851409000014,
+        "finalCurrentSourceCheckReached": false,
+        "nineObjectsQualified": false,
+        "failure": "three distinct-enum comparisons in compile-time assertions; warnings remain errors"
+      },
+      "correction": "All3 compile-time kind equalities retain their assertions and use6 explicit unsigned-int casts. One derived fragment gained84bytes; other368 rows remained exact."
+    }
+  ],
+  "historicalResults": {
+    "eighteenObjects": {
+      "sourceCommit": "c6f901819ba5d84a5a0474f2e6bbcad8019b6dcd",
+      "run": 40301019517,
+      "scope": "separate eighteen-object compile result, not replayed or relabelled"
+    },
+    "fourClassdirObjects": {
+      "sourceCommit": "5c1e8876a2495843b902595d961c8cc4f068901c",
+      "run": 40310522972,
+      "scope": "separate four-object compile result, not replayed or relabelled"
+    }
+  },
+  "claims": {
+    "compiledObjectsOnly": true,
+    "kernelLinked": false,
+    "imageBuilt": false,
+    "booted": false,
+    "normalOperationsExecuted": false,
+    "compiledUsefulFit": false,
+    "physicalRootRetirementQualified": false,
+    "consumerSelected": false,
+    "productionInstallation": false,
+    "whole738Complete": false,
+    "hermetic": false,
+    "compilerImplicitInputsAttested": false
+  },
+  "delivery": {
+    "laterDocumentationOnly": true,
+    "executedSourceRemains": "a53bb3595eddc6990868a3a9299f9781834bedc3",
+    "noCompilerReplayForDocsOrLosslessMetadata": true,
+    "rawFailedReceiptsRemainImmutable": true
+  },
+  "remaining": [
+    "Ordinary NETDEV directory/groups/files/symlinks/queues and full allocating/freeing source closure",
+    "Inherited label/iattr and other retained readiness cuts",
+    "Complete useful physical geometry under original bounds",
+    "Actual kernel RX/DMA/socket/DNS/TLS/stop and final Root retirement",
+    "Node/provider/operator installation qualification"
+  ]
+}
