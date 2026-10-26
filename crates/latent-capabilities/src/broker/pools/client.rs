@@ -712,12 +712,17 @@ mod stream_quarantine_controls {
 
     #[tokio::test]
     async fn temporarily_dequeued_quarantine_still_funds_its_original_reinsertion_place() {
-        let setup = Setup::new(single());
+        // single() bounds running requests, not physical connections (default8).
+        // Fund exactly one physical table place for this reinsertion control.
+        let mut limits = single();
+        limits.maximum_connections_per_client = 1;
+        let setup = Setup::new(limits);
         let (session, _control) = setup.session("quarantine-no-extra-slot");
         let call = setup.call(&session).await;
         let (connection, _peer) = connect(&setup.client, &call);
         connection.quarantine(); // Ordinary None remains permanent.
         let capacity = setup.client.idle.lock().unwrap().capacity();
+        assert_eq!(capacity, 1);
         let entry = setup.client.idle.lock().unwrap().pop_front().unwrap();
         let step = QuarantineStep {
             client: &setup.client,
