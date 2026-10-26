@@ -356,3 +356,18 @@ delivery for [#736](https://github.com/KirilsTurkins/latent-service-fabric/issue
 and [#745](https://github.com/KirilsTurkins/latent-service-fabric/issues/745); the
 whole tickets and the full TypeScript cost criterion require their remaining
 implementation and qualification.
+
+
+### Standalone cache dependency repair
+
+The separate cache-repair cohort at `757ae2285fdc1e0c3aef5d23a6b136b28fec2b86` passed its [five-command programme](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40356260339): locked parent checking with the existing compiler/cache features, cache-lib test building, target-library lookup, exact listing and the upstream `tests::test_write_read_cache` roundtrip. The one executed test passed with zero ignored; 21 other tests were filtered and unexecuted. Both Cargo streams identified the fixed zstd 0.14.3 / zstd-safe 8.2.0 / zstd-sys 2.1.2+zstd.1.5.7 graph and the local complete cache source. All 8,975 before/after source bindings matched, including the declared IntelliJ CRLF checkout conversion.
+
+The [separate machine receipt](evidence/wasmtime-cache-security-repair-2026-10-26.json) preserves the original six stream-control passes at `fe9a04fd8e94894ecdd15c45d9e6c5d6ca547fd5`, the ten Security findings and seven stale source-reader assertions. The six controls were not replayed or retagged to the new dependency cohort. RustSec, source/workflow and secret scanning jobs passed for the repaired head; SDK advisories and fail-closed canaries failed. This receipt records those job outcomes without inferring their cause or claiming a whole Security pass.
+
+This cache test uses no ActivationBudget and establishes no guest quota, RSS or complete-cost claim. Inner factories, consumer allocation, stream buffers, collections and transitive memory/CPU accounting remain open.
+
+
+The SDK-advisory and canary failures were traced to the new Cargo inventory entry lacking the existing isolated-package marker and empty workspace declaration. The follow-up adds `[workspace]`, the exact whole-manifest inventory digest and the matching source-provenance bindings; it leaves the generic scanner policy, all cache/Wasmtime Rust and all three locks unchanged. Both locked offline workspace resolutions and the 15 affected pure Security controls passed. The five-command result remains bound to its original `757ae...` source; no cache or runtime programme was replayed for this manifest-only repair. A fresh hosted Security result is still pending.
+
+
+Main CI run 40358355805 (job 121702592768) recorded 8,461 tests with two failures and 17 errors: 15 workspace-inventory errors and four missing-cache format/placeholder fixture failures. The follow-up adds one mandatory adjacent cache copy in each of the two existing fixtures; six affected pure controls passed in 65.687 seconds with no failures or ignored cases. These results do not claim a fresh whole-CI or hosted Security pass.

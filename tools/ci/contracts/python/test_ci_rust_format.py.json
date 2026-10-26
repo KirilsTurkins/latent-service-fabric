@@ -1,22 +1,22 @@
 {
   "schemaVersion":"latent.ci.contracts.v2",
   "kind":"python",
-  "reviewReason":"Reviewed fixture-only source repair: stage the real authenticated Wasmtime dependency required by the current workspace; preserve every original method, decorator, skip and refusal. Replace fixed historical helper counts with exact current staged identities.",
+  "reviewReason":"Bind the reviewed mandatory adjacent cache source copy in this fixture; preserve all cases, decorators and skip predicates.",
   "module":"tools/tests/test_ci_rust_format.py",
   "cases":["AuthenticatedRustFormat.test_fast_and_central_execution_share_the_same_exact_owned_selection","AuthenticatedRustFormat.test_legacy_workspace_without_this_derivation_keeps_original_all_command","AuthenticatedRustFormat.test_new_owned_member_is_automatically_included_instead_of_a_frozen_allowlist","AuthenticatedRustFormat.test_real_command_checks_every_owned_package_and_only_omits_authenticated_dependency","AuthenticatedRustFormat.test_unknown_excluded_dependency_or_changed_vendor_cannot_be_silently_skipped"],
   "guards":{
     "AuthenticatedRustFormat.test_real_command_checks_every_owned_package_and_only_omits_authenticated_dependency":
-      "a0d3868f565d7c7b622380e89e86a16c09d2dd9ad9a4bcfc573f5f6ad2afd9cc",
+      "b88072ec15ae3ba1156f363d8d6ae564df52041de2610522821a065fd220289a",
     "AuthenticatedRustFormat.test_legacy_workspace_without_this_derivation_keeps_original_all_command":
-      "a0d3868f565d7c7b622380e89e86a16c09d2dd9ad9a4bcfc573f5f6ad2afd9cc",
+      "b88072ec15ae3ba1156f363d8d6ae564df52041de2610522821a065fd220289a",
     "AuthenticatedRustFormat.test_new_owned_member_is_automatically_included_instead_of_a_frozen_allowlist":
-      "a0d3868f565d7c7b622380e89e86a16c09d2dd9ad9a4bcfc573f5f6ad2afd9cc",
+      "b88072ec15ae3ba1156f363d8d6ae564df52041de2610522821a065fd220289a",
     "AuthenticatedRustFormat.test_unknown_excluded_dependency_or_changed_vendor_cannot_be_silently_skipped":
-      "a0d3868f565d7c7b622380e89e86a16c09d2dd9ad9a4bcfc573f5f6ad2afd9cc",
+      "b88072ec15ae3ba1156f363d8d6ae564df52041de2610522821a065fd220289a",
     "AuthenticatedRustFormat.test_fast_and_central_execution_share_the_same_exact_owned_selection":
-      "a0d3868f565d7c7b622380e89e86a16c09d2dd9ad9a4bcfc573f5f6ad2afd9cc"
+      "b88072ec15ae3ba1156f363d8d6ae564df52041de2610522821a065fd220289a"
   },
   "guardDefinitions":{
-    "a0d3868f565d7c7b622380e89e86a16c09d2dd9ad9a4bcfc573f5f6ad2afd9cc":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:2ca71113498dde75d7a424faa8bbcfdb3c4fa5c723c8dd95ad9cc2e49e04fe1a","class:setup-sha256:ac2d4af2d7ca2f6e8a47a8c7a1146d610d61dcc97d0bdb20de7e4b119837dd9e"]}
+    "b88072ec15ae3ba1156f363d8d6ae564df52041de2610522821a065fd220289a":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:2ca71113498dde75d7a424faa8bbcfdb3c4fa5c723c8dd95ad9cc2e49e04fe1a","class:setup-sha256:2a9f8776eb6b9cb24ae9b5a8205cf717b5f38d8de057e6616709a27481013ff7"]}
   }
 }

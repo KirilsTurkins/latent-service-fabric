@@ -424,8 +424,11 @@ completion; consumed pipe handles have no invented rollback guarantee.
 
 The source-only zstd security backport retains the complete fourteen-file
 wasmtime-internal-cache48.0.7 package at crates/vendor/wasmtime-cache. Only its
-normalized Cargo.toml zstd requirement and its own active Cargo.lock change;
+normalized Cargo.toml zstd requirement, explicit empty standalone workspace,
+and its own active Cargo.lock change;
 all published Rust, tests, build.rs, license and original manifest remain exact.
+The security inventory authenticates that isolated manifest by its whole-file
+digest through the existing isolated Cargo policy; no vendor exemption applies.
 The parent Wasmtime manifest selects that same-version local cache, retaining
 optional cache features/coverage; this is not an unmodified registry package.
 Both active standalone locks select zstd0.14.3, zstd-safe8.2.0 and

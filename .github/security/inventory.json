@@ -344,7 +344,9 @@
     {
       "kind": "cargo",
       "lock": "crates/vendor/wasmtime-cache/Cargo.lock",
-      "path": "crates/vendor/wasmtime-cache/Cargo.toml"
+      "path": "crates/vendor/wasmtime-cache/Cargo.toml",
+      "isolated": true,
+      "manifest_sha256": "e68146456e40062edfde8d47c853ea8155f20b63044fba94bf8ef24f2c8bae5d"
     }
   ],
   "non_manifest_modules": [
