@@ -380,6 +380,9 @@ impl PoolReady {
     }
 }
 impl PoolCall {
+    pub(super) fn stream_request(&self) -> &Request {
+        &self.request
+    }
     pub(super) fn retain_stream_request(&self) -> Arc<Request> {
         Arc::clone(&self.request)
     }

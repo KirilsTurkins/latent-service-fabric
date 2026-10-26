@@ -98,7 +98,7 @@ impl PoolCall {
         bytes: u64,
     ) -> Result<StreamKernelOwnership, PlatformError> {
         self.io.checkpoint()?;
-        let provider = self.request.client.epoch.registration.reference();
+        let provider = self.stream_request().client.epoch.registration.reference();
         if !matches!(bytes, 65_536 | 98_304)
             || provider.capability() != crate::broker::network::STREAM_CAPABILITY
             || provider.profile() != crate::broker::network::STREAM_PROFILE
@@ -146,9 +146,9 @@ impl PoolCall {
         });
         let mut binding = [
             incarnation,
-            self.request.client.epoch.instance,
-            self.request.sequence,
-            u64::from(self.request.client.origin) + 1,
+            self.stream_request().client.epoch.instance,
+            self.stream_request().sequence,
+            u64::from(self.stream_request().client.origin) + 1,
             0,
             0,
             0,
